@@ -26,12 +26,13 @@ namespace TFE_Input
 	u8 s_mouseDown[MBUTTON_COUNT] = { 0 };
 	u8 s_mousePressed[MBUTTON_COUNT] = { 0 };
 	
+	bool s_mouseInWindow = true;
 	s32 s_mouseWheel[2] = { 0 };
 	s32 s_mouseMove[2] = { 0 };
 	s32 s_mouseMoveAccum[2] = { 0 };
 	s32 s_mousePos[2] = { 0 };
 
-	bool s_relativeMode = false;
+	MouseCursorMode s_mouseCursorMode = MCURSORMODE_OS;
 
 	static const char* const* s_controllerAxisNames;
 	static const char* const* s_controllerButtonNames;
@@ -116,6 +117,11 @@ namespace TFE_Input
 		s_mouseWheel[1] = dy;
 	}
 
+	void setMouseInWindow(bool mouseInWindow)
+	{
+		s_mouseInWindow = mouseInWindow;
+	}
+
 	void setRelativeMousePos(s32 x, s32 y)
 	{
 		s_mouseMove[0] = x;
@@ -130,9 +136,9 @@ namespace TFE_Input
 		s_mousePos[1] = y;
 	}
 
-	void enableRelativeMode(bool enable)
+	void setMouseCursorMode(MouseCursorMode mode)
 	{
-		s_relativeMode = enable;
+		s_mouseCursorMode = mode;
 	}
 	
 	// Buffered Input
@@ -183,6 +189,11 @@ namespace TFE_Input
 	{
 		s_mouseMoveAccum[0] = 0;
 		s_mouseMoveAccum[1] = 0;
+	}
+
+	bool isMouseInWindow()
+	{
+		return s_mouseInWindow;
 	}
 
 	void getMousePos(s32* x, s32* y)
@@ -319,9 +330,9 @@ namespace TFE_Input
 		return s_mousePressed[button] != 0;
 	}
 
-	bool relativeModeEnabled()
+	MouseCursorMode getMouseCursorMode()
 	{
-		return s_relativeMode;
+		return s_mouseCursorMode;
 	}
 
 	// Buffered Input

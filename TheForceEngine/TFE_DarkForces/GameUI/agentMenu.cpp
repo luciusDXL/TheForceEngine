@@ -497,7 +497,10 @@ namespace TFE_DarkForces
 	void agentMenu_blit()
 	{
 		setPalette();
-		menu_blitCursor(s_cursorPos.x, s_cursorPos.z, s_framebuffer);
+		if (TFE_Input::isMouseInWindow())
+		{
+			menu_blitCursor(s_cursorPos.x, s_cursorPos.z, s_framebuffer);
+		}
 		menu_blitToScreen(s_framebuffer);
 	}
 

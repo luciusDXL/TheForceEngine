@@ -1,5 +1,7 @@
 #include <cstring>
 
+#include <SDL.h>
+
 #include "escapeMenu.h"
 #include "delt.h"
 #include "uiDraw.h"
@@ -7,6 +9,7 @@
 #include <TFE_DarkForces/util.h>
 #include <TFE_DarkForces/hud.h>
 #include <TFE_DarkForces/config.h>
+#include <TFE_DarkForces/Landru/lrect.h>
 #include <TFE_Game/reticle.h>
 #include <TFE_Archive/archive.h>
 #include <TFE_Settings/settings.h>
@@ -18,6 +21,7 @@
 #include <TFE_Jedi/Level/rtexture.h>
 #include <TFE_Jedi/Level/roffscreenBuffer.h>
 #include <TFE_System/system.h>
+#include <TFE_Ui/ui.h>
 
 using namespace TFE_Jedi;
 using namespace TFE_Input;
@@ -237,6 +241,8 @@ namespace TFE_DarkForces
 
 	void escapeMenu_open(u8* framebuffer, u8* palette)
 	{
+		TFE_Input::setMouseCursorMode(MCURSORMODE_ABSOLUTE);
+
 		// TFE
 		reticle_enable(false);
 
@@ -256,13 +262,20 @@ namespace TFE_DarkForces
 		s_emState.escMenuOpen = JFALSE;
 	}
 
-	void escapeMenu_close()
+	void escapeMenu_close(EscapeMenuAction action)
 	{
 		s_emState.escMenuOpen = JFALSE;
+		// Avoid sound pops due to buffered sound when returning to the Agent or Main menu.
+		if (!s_levelComplete || action != ESC_ABORT_OR_NEXT)
+		{
+			clearBufferedSound();
+		}
 		resumeLevelSound();
 
 		// TFE
 		reticle_enable(true);
+
+		TFE_Input::setMouseCursorMode(MCURSORMODE_RELATIVE);
 	}
 
 	JBool escapeMenu_isOpen()
@@ -375,7 +388,7 @@ namespace TFE_DarkForces
 		}
 
 		// Draw the mouse.
-		if (drawMouse)
+		if (drawMouse && TFE_Input::isMouseInWindow())
 		{
 			screenGPU_blitTextureScaled(&s_cursor.texture, nullptr, intToFixed16(s_emState.cursorPos.x), intToFixed16(s_emState.cursorPos.z), xScale, yScale, 31);
 		}
@@ -445,8 +458,11 @@ namespace TFE_DarkForces
 				blitDeltaFrame(&s_emState.confirmMenuFrames[s_emState.buttonPressed == CONFIRM_NO ? CONFIRM_QUIT_NOBTN_DOWN : CONFIRM_QUIT_NOBTN_UP], 0, 0, s_emState.framebuffer);
 			}
 
-			// Draw the mouse.
-			blitDeltaFrame(&s_cursor, s_emState.cursorPos.x, s_emState.cursorPos.z, s_emState.framebuffer);
+			if (drawMouse && TFE_Input::isMouseInWindow())
+			{
+				// Draw the mouse.
+				blitDeltaFrame(&s_cursor, s_emState.cursorPos.x, s_emState.cursorPos.z, s_emState.framebuffer);
+			}
 		}
 		else
 		{
@@ -510,7 +526,7 @@ namespace TFE_DarkForces
 			}
 
 			// Draw the mouse.
-			if (drawMouse)
+			if (drawMouse && TFE_Input::isMouseInWindow())
 			{
 				blitDeltaFrameScaled(&s_cursor, s_emState.cursorPos.x, s_emState.cursorPos.z, xScale, yScale, s_emState.framebuffer);
 			}
@@ -524,16 +540,7 @@ namespace TFE_DarkForces
 		EscapeMenuAction action = escapeMenu_updateUI();
 		if (action != ESC_CONTINUE)
 		{
-			s_emState.escMenuOpen = JFALSE;
-			// Avoid sound pops due to buffered sound when returning to the Agent or Main menu.
-			if (!s_levelComplete || action != ESC_ABORT_OR_NEXT)
-			{
-				clearBufferedSound();
-			}
-			resumeLevelSound();
-
-			// TFE
-			reticle_enable(true);
+			escapeMenu_close(action);
 		}
 
 		escapeMenu_draw(JTRUE, JTRUE);
@@ -739,9 +746,12 @@ namespace TFE_DarkForces
 		DisplayInfo displayInfo;
 		TFE_RenderBackend::getDisplayInfo(&displayInfo);
 
-		s_emState.cursorPosAccum = { (s32)displayInfo.width >> 1, (s32)displayInfo.height >> 1 };
+		s_emState.cursorPosAccum = { (s32)displayInfo.width / 2, (s32)displayInfo.height / 2 };
 		s_emState.cursorPos.x = clamp(s_emState.cursorPosAccum.x * (s32)height / (s32)displayInfo.height, 0, (s32)width - 3);
 		s_emState.cursorPos.z = clamp(s_emState.cursorPosAccum.z * (s32)height / (s32)displayInfo.height, 0, (s32)height - 3);
+
+		// FIXME: this doesn't center the cursor correctly
+		SDL_WarpMouseInWindow(TFE_Ui::getSDLWindow(), s_emState.cursorPos.x, s_emState.cursorPos.z);
 	}
 
 	void escMenu_handleMousePosition()
@@ -758,19 +768,14 @@ namespace TFE_DarkForces
 		MonitorInfo monitorInfo;
 		TFE_RenderBackend::getCurrentMonitorInfo(&monitorInfo);
 
+		LRect displayRect = TFE_RenderBackend::calcDisplayRect();
+
 		s32 mx, my;
 		TFE_Input::getMousePos(&mx, &my);
 		s_emState.cursorPosAccum = { mx, my };
-
-		if (displayInfo.width >= displayInfo.height)
-		{
-			s_emState.cursorPos.x = clamp(s_emState.cursorPosAccum.x * (s32)height / (s32)displayInfo.height, 0, (s32)width - 3);
-			s_emState.cursorPos.z = clamp(s_emState.cursorPosAccum.z * (s32)height / (s32)displayInfo.height, 0, (s32)height - 3);
-		}
-		else
-		{
-			s_emState.cursorPos.x = clamp(s_emState.cursorPosAccum.x * (s32)width / (s32)displayInfo.width, 0, (s32)width - 3);
-			s_emState.cursorPos.z = clamp(s_emState.cursorPosAccum.z * (s32)width / (s32)displayInfo.width, 0, (s32)height - 3);
-		}
+		s_emState.cursorPos = {
+			interpolate(mx, displayRect.left, displayRect.right, 0, width),
+			interpolate(my, displayRect.top, displayRect.bottom, 0, height),
+		};
 	}
 }

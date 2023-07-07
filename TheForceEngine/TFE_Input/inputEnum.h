@@ -63,6 +63,14 @@ enum MouseButton
 	MBUTTON_UNKNOWN = MBUTTON_COUNT
 };
 
+enum MouseCursorMode
+{
+	MCURSORMODE_OS = 0,
+	MCURSORMODE_ABSOLUTE,
+	MCURSORMODE_RELATIVE,
+	MCURSORMODE_COUNT
+};
+
 // Matches SDL2 Keycodes but provided seperately for possible future changes and to avoid having to include SDL2 where it doesn't make sense.
 enum KeyboardCode
 {

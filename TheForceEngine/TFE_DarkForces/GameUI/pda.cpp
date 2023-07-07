@@ -120,6 +120,8 @@ namespace TFE_DarkForces
 	///////////////////////////////////////////
 	void pda_start(const char* levelName)
 	{
+		TFE_Input::setMouseCursorMode(MCURSORMODE_ABSOLUTE);
+
 		// TFE
 		reticle_enable(false);
 		s_mouseAccum = { 0 };
@@ -243,6 +245,8 @@ namespace TFE_DarkForces
 			TFE_Jedi::renderer_setType(RendererType(graphics->rendererIndex));
 			TFE_Jedi::renderer_setLimits();
 		}
+
+		TFE_Input::setMouseCursorMode(MCURSORMODE_RELATIVE);
 	}
 			
 	void pda_update()
@@ -316,7 +320,10 @@ namespace TFE_DarkForces
 		// Doing that we need to restore the transparent color before blitting the mouse cursor, otherwise its black edges will 
 		// show up incorrectly.
 		screenDraw_setTransColor(0);
-		menu_blitCursorScaled(s_cursorPos.x, s_cursorPos.z, vfb_getCpuBuffer());
+		if (TFE_Input::isMouseInWindow())
+		{
+			menu_blitCursorScaled(s_cursorPos.x, s_cursorPos.z, vfb_getCpuBuffer());
+		}
 		vfb_swap();
 	}
 	

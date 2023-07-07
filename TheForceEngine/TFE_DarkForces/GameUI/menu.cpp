@@ -1,5 +1,7 @@
 #include <cstring>
 
+#include <SDL.h>
+
 #include "menu.h"
 #include "delt.h"
 #include "uiDraw.h"
@@ -17,6 +19,7 @@
 #include <TFE_System/system.h>
 #include <TFE_Jedi/Renderer/virtualFramebuffer.h>
 #include <TFE_Jedi/Renderer/screenDraw.h>
+#include <TFE_Ui/ui.h>
 
 using namespace TFE_Jedi;
 
@@ -59,20 +62,16 @@ namespace TFE_DarkForces
 		s32 width  = bounds.right  - bounds.left;
 		s32 height = bounds.bottom - bounds.top;
 
+		LRect displayRect = TFE_RenderBackend::calcDisplayRect();
+
 		s32 mx, my;
 		TFE_Input::getMousePos(&mx, &my);
-		s_cursorPosAccum = { 12*mx/10, my };	// Account for 320x200 in 4:3 scaling.
 
-		if (displayInfo.width >= displayInfo.height)
-		{
-			s_cursorPos.x = clamp(s_cursorPosAccum.x * (s32)height / (s32)displayInfo.height, 0, (s32)width - 3);
-			s_cursorPos.z = clamp(s_cursorPosAccum.z * (s32)height / (s32)displayInfo.height, 0, (s32)height - 3);
-		}
-		else
-		{
-			s_cursorPos.x = clamp(s_cursorPosAccum.x * (s32)width / (s32)displayInfo.width, 0, (s32)width - 3);
-			s_cursorPos.z = clamp(s_cursorPosAccum.z * (s32)width / (s32)displayInfo.width, 0, (s32)height - 3);
-		}
+		s_cursorPosAccum = {
+			interpolate(mx, displayRect.left, displayRect.right, bounds.left, bounds.right),
+			interpolate(my, displayRect.top, displayRect.bottom, bounds.top, bounds.bottom),
+		};
+		s_cursorPos = s_cursorPosAccum;
 	}
 
 	void menu_resetCursor()
@@ -84,19 +83,36 @@ namespace TFE_DarkForces
 		DisplayInfo displayInfo;
 		TFE_RenderBackend::getDisplayInfo(&displayInfo);
 
-		s_cursorPosAccum = { (s32)displayInfo.width >> 1, (s32)displayInfo.height >> 1 };
+		s_cursorPosAccum = { (s32)displayInfo.width / 2, (s32)displayInfo.height / 2 };
 		s_cursorPos.x = clamp(s_cursorPosAccum.x * (s32)height / (s32)displayInfo.height, 0, (s32)width - 3);
 		s_cursorPos.z = clamp(s_cursorPosAccum.z * (s32)height / (s32)displayInfo.height, 0, (s32)height - 3);
+
+		LRect bounds;
+		lcanvas_getBounds(&bounds);
+
+		LRect displayRect = TFE_RenderBackend::calcDisplayRect();
+		SDL_WarpMouseInWindow(TFE_Ui::getSDLWindow(),
+			interpolate(s_cursorPos.x, bounds.left, bounds.right, displayRect.left, displayRect.right),
+			interpolate(s_cursorPos.z, bounds.top, bounds.bottom, displayRect.top, displayRect.bottom)
+		);
 	}
 
 	u8* menu_startupDisplay()
 	{
+		TFE_Input::setMouseCursorMode(MCURSORMODE_ABSOLUTE);
 		vfb_setResolution(320, 200);
 		return vfb_getCpuBuffer();
 	}
 
 	void menu_blitCursor(s32 x, s32 y, u8* framebuffer)
 	{
+		LRect bounds;
+		lcanvas_getBounds(&bounds);
+		if (x < bounds.left || x > bounds.right || y < bounds.top || y > bounds.bottom)
+		{
+			return;
+		}
+
 		blitDeltaFrame(&s_cursor, x, y, framebuffer);
 	}
 

@@ -18,6 +18,8 @@
 
 typedef std::vector<std::string> FileResult;
 
+struct SDL_Window;
+
 namespace TFE_Ui
 {
 	bool init(void* window, void* context, s32 uiScale = 100);
@@ -27,6 +29,7 @@ namespace TFE_Ui
 	void begin();
 	void render();
 
+	SDL_Window* getSDLWindow();
 	void setUiScale(s32 scale);
 	s32  getUiScale();
 

@@ -70,6 +70,11 @@ void shutdown()
 	ImGui::DestroyContext();
 }
 
+SDL_Window* getSDLWindow()
+{
+	return s_window;
+}
+
 void setUiScale(s32 scale)
 {
 	s_uiScale = scale;

@@ -753,6 +753,8 @@ namespace TFE_DarkForces
 			}  break;
 			case GMODE_MISSION:
 			{
+				TFE_Input::setMouseCursorMode(MCURSORMODE_RELATIVE);
+
 				sound_levelStart();
 
 				bitmap_setAllocator(s_levelRegion);

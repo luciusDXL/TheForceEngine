@@ -16,6 +16,7 @@ namespace TFE_DarkForces
 		LEXTENT
 	};
 
+	// A rectangle. The top left is inclusive and the bottom right is exclusive.
 	struct LRect
 	{
 		s16 top;

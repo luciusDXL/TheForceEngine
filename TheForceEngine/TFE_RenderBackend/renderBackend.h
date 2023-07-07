@@ -13,6 +13,7 @@
 #include <TFE_System/types.h>
 #include <TFE_RenderBackend/renderState.h>
 #include <TFE_RenderBackend/textureGpu.h>
+#include <TFE_DarkForces/Landru/lrect.h>
 
 enum WindowFlags
 {
@@ -163,4 +164,7 @@ namespace TFE_RenderBackend
 
 	// Generic line draw.
 	void drawLines(u32 lineCount);
+
+	// Get rectangle of displayed image relative to window.
+	TFE_DarkForces::LRect calcDisplayRect();
 };

@@ -37,6 +37,8 @@
 // Replace with music system
 #include <TFE_Audio/midiPlayer.h>
 
+#include "TFE_Ui/imGUI/imgui.h"
+
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN 1
 #include <Windows.h>
@@ -356,7 +358,7 @@ void setAppState(AppState newState, int argc, char* argv[])
 			}
 			else
 			{
-				TFE_Input::enableRelativeMode(true);
+				TFE_Input::setMouseCursorMode(MCURSORMODE_ABSOLUTE);
 			}
 		}
 		else if (!pathIsValid)
@@ -397,7 +399,7 @@ void setAppState(AppState newState, int argc, char* argv[])
 				}
 				else
 				{
-					TFE_Input::enableRelativeMode(true);
+					TFE_Input::setMouseCursorMode(MCURSORMODE_ABSOLUTE);
 				}
 			}
 		}
@@ -675,25 +677,30 @@ int main(int argc, char* argv[])
 	// Game loop
 	u32 frame = 0u;
 	bool showPerf = false;
-	bool relativeMode = false;
+	MouseCursorMode mouseCursorMode = MCURSORMODE_OS;
 	TFE_System::logWrite(LOG_MSG, "Progam Flow", "The Force Engine Game Loop Started");
 	while (s_loop && !TFE_System::quitMessagePosted())
 	{
 		TFE_FRAME_BEGIN();
 		TFE_System::frameLimiter_begin();
-		
-		bool enableRelative = TFE_Input::relativeModeEnabled();
-		if (enableRelative != relativeMode)
+
+		MouseCursorMode newMouseCursorMode = TFE_Input::getMouseCursorMode();
+		if (newMouseCursorMode != mouseCursorMode)
 		{
-			relativeMode = enableRelative;
-			SDL_SetRelativeMouseMode(relativeMode ? SDL_TRUE : SDL_FALSE);
+			mouseCursorMode = newMouseCursorMode;
+			SDL_SetRelativeMouseMode(mouseCursorMode == MCURSORMODE_RELATIVE ? SDL_TRUE : SDL_FALSE);
+			SDL_ShowCursor(mouseCursorMode == MCURSORMODE_OS ? SDL_ENABLE : SDL_DISABLE);
 		}
+
+		// ImGui requires the cursor state to be set every frame, or else it will show the cursor by default.
+		ImGui::SetMouseCursor(mouseCursorMode == MCURSORMODE_OS ? ImGuiMouseCursor_Arrow : ImGuiMouseCursor_None);
 
 		// System events
 		SDL_Event event;
 		while (SDL_PollEvent(&event)) { handleEvent(event); }
 
 		// Handle mouse state.
+		TFE_Input::setMouseInWindow(SDL_GetMouseFocus() == TFE_Ui::getSDLWindow());
 		s32 mouseX, mouseY;
 		s32 mouseAbsX, mouseAbsY;
 		u32 state = SDL_GetRelativeMouseState(&mouseX, &mouseY);
@@ -762,7 +769,7 @@ int main(int argc, char* argv[])
 				if (s_curGame)
 				{
 					s_curGame->pauseGame(false);
-					TFE_Input::enableRelativeMode(true);
+					TFE_Input::setMouseCursorMode(MCURSORMODE_RELATIVE);
 				}
 			}
 			else if (inputMapping_getActionState(IAS_CONSOLE) == STATE_PRESSED)
@@ -771,7 +778,7 @@ int main(int argc, char* argv[])
 				if (s_curGame)
 				{
 					s_curGame->pauseGame(isOpening);
-					TFE_Input::enableRelativeMode(!isOpening);
+					TFE_Input::setMouseCursorMode(!isOpening ? MCURSORMODE_RELATIVE : MCURSORMODE_OS);
 				}
 			}
 			else if (TFE_Input::keyPressed(KEY_F9) && TFE_Input::keyDown(KEY_LALT))
