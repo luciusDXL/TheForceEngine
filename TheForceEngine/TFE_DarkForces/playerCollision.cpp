@@ -733,9 +733,9 @@ namespace TFE_DarkForces
 	void console_exportTexture(const std::vector<std::string>& args)
 	{
 		// Raycast to determine the wall, floor, or ceiling hit.
-		SecObject* playerObj = s_curPlayerLogic->logic.obj;
-		vec3_fixed p0 = { floatToFixed16(s_cameraPos.x), floatToFixed16(s_cameraPos.y), floatToFixed16(s_cameraPos.z) };
-		vec3_fixed p1 = { p0.x + floatToFixed16(TFE_Jedi::s_cameraDir.x * 100.0f),
+		const SecObject* playerObj = s_curPlayerLogic->logic.obj;
+		const vec3_fixed p0 = { floatToFixed16(s_cameraPos.x), floatToFixed16(s_cameraPos.y), floatToFixed16(s_cameraPos.z) };
+		const vec3_fixed p1 = { p0.x + floatToFixed16(TFE_Jedi::s_cameraDir.x * 100.0f),
 			p0.y + floatToFixed16(TFE_Jedi::s_cameraDir.y * 100.0f), p0.z + floatToFixed16(TFE_Jedi::s_cameraDir.z * 100.0f) };
 
 		const RayHitInfo hitInfo = collision_rayCast3d(playerObj->sector, p0, p1, true);
@@ -774,7 +774,7 @@ namespace TFE_DarkForces
 			FileUtil::makeDirectory("Exports");
 
 			char msg[TFE_MAX_PATH];
-			sprintf(msg, "Export '%s' to 'Exports/%s'", name, name);
+			sprintf(msg, "Exported texture to 'Exports/%s'", name);
 			TFE_Console::addToHistory(msg);
 
 			// Write the original BM to the current directory.

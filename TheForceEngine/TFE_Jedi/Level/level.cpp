@@ -102,23 +102,11 @@ namespace TFE_Jedi
 		char levelPath[TFE_MAX_PATH];
 		strcpy(levelPath, levelName);
 		strcat(levelPath, ".LEV");
-
-		FilePath filePath;
-		if (!TFE_Paths::getFilePath(levelPath, &filePath))
-		{
-			TFE_System::logWrite(LOG_ERROR, "level_loadGeometry", "Cannot find level geometry '%s'.", levelName);
-			return false;
-		}
-		FileStream file;
-		if (!file.open(&filePath, Stream::MODE_READ))
+		if (!FileStream::loadFromFile(levelPath, &s_buffer))
 		{
 			TFE_System::logWrite(LOG_ERROR, "level_loadGeometry", "Cannot open level geometry '%s'.", levelName);
 			return false;
 		}
-		size_t len = file.getSize();
-		s_buffer.resize(len);
-		file.readBuffer(s_buffer.data(), u32(len));
-		file.close();
 
 		TFE_Parser parser;
 		size_t bufferPos = 0;
@@ -578,24 +566,11 @@ namespace TFE_Jedi
 		char levelPath[TFE_MAX_PATH];
 		strcpy(levelPath, levelName);
 		strcat(levelPath, ".GOL");
-				
-		FilePath filePath;
-		FileStream file;
-		if (!TFE_Paths::getFilePath(levelPath, &filePath))
-		{
-			TFE_System::logWrite(LOG_ERROR, "level_loadGoals", "Cannot find level goals '%s'.", levelName);
-			return JFALSE;
-		}
-		if (!file.open(&filePath, Stream::MODE_READ))
+		if (!FileStream::loadFromFile(levelPath, &s_buffer))
 		{
 			TFE_System::logWrite(LOG_ERROR, "level_loadGoals", "Cannot open level goals '%s'.", levelName);
-			return JFALSE;
+			return false;
 		}
-
-		size_t len = file.getSize();
-		s_buffer.resize(len);
-		file.readBuffer(s_buffer.data(), u32(len));
-		file.close();
 
 		TFE_Parser parser;
 		size_t bufferPos = 0;
@@ -640,7 +615,6 @@ namespace TFE_Jedi
 
 			line = parser.readLine(bufferPos);
 		}
-		file.close();
 
 		return JTRUE;
 	}
@@ -688,24 +662,11 @@ namespace TFE_Jedi
 		strcat(levelPath, ".O");
 
 		s32 curDiff = s32(difficulty) + 1;
-
-		FilePath filePath;
-		if (!TFE_Paths::getFilePath(levelPath, &filePath))
-		{
-			TFE_System::logWrite(LOG_ERROR, "Level Load", "Cannot find level objects '%s'.", levelName);
-			return false;
-		}
-		FileStream file;
-		if (!file.open(&filePath, Stream::MODE_READ))
+		if (!FileStream::loadFromFile(levelPath, &s_buffer))
 		{
 			TFE_System::logWrite(LOG_ERROR, "Level Load", "Cannot open level objects '%s'.", levelName);
 			return false;
 		}
-
-		size_t len = file.getSize();
-		s_buffer.resize(len);
-		file.readBuffer(s_buffer.data(), u32(len));
-		file.close();
 
 		TFE_Parser parser;
 		size_t bufferPos = 0;

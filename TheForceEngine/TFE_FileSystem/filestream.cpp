@@ -284,3 +284,23 @@ void FileStream::writeString(const std::string* ptr, u32 count)
 		fwrite(ptr[s].data(), 1, s_workBufferU32[s], m_file);
 	}
 }
+
+bool FileStream::loadFromFile(const FilePath& filePath, std::vector<char>* buffer)
+{
+	FileStream file;
+	if (!file.open(&filePath, Stream::MODE_READ)) { return false; }
+
+	const size_t len = file.getSize();
+	buffer->resize(len);
+	file.readBuffer(buffer->data(), u32(len));
+	file.close();
+
+	return true;
+}
+
+bool FileStream::loadFromFile(const char* fileName, std::vector<char>* buffer)
+{
+	FilePath filePath;
+	if (!TFE_Paths::getFilePath(fileName, &filePath)) { return false; }
+	return loadFromFile(filePath, buffer);
+}
