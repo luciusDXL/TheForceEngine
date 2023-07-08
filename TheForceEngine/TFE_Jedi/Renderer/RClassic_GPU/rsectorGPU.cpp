@@ -231,6 +231,7 @@ namespace TFE_Jedi
 		if (!m_gpuInit)
 		{
 			CVAR_BOOL(s_showWireframe, "d_enableWireframe", CVFLAG_DO_NOT_SERIALIZE, "Enable wireframe rendering.");
+			CVAR_BOOL(s_enableDebug, "d_enableDebug", CVFLAG_DO_NOT_SERIALIZE, "Enable debug rendering.");
 			TFE_COUNTER(s_wallSegGenerated, "Wall Segments");
 			
 			m_gpuInit = true;
