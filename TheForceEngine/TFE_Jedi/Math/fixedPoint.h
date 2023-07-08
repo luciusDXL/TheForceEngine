@@ -118,6 +118,10 @@ namespace TFE_Jedi
 		return angle14_16(angle * 45.5111f);
 	}
 
+	inline f32 angleToFloatDegrees(angle14_16 angle) {
+		return f32(angle) * 360.0f / 16384.0f;
+	}
+
 	// Convert a floating point angle from [0, 2pi) to a fixed point value where 0 -> 0 and 2pi -> 16384
 	// This isn't really the same as fixed16_16 but matches the original source.
 	inline fixed16_16 floatAngleToFixed(f32 angle)
