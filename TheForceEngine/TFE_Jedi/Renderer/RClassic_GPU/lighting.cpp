@@ -16,6 +16,7 @@
 #include <TFE_RenderBackend/shaderBuffer.h>
 
 #include <cstring>
+#include <cmath>
 
 using namespace TFE_Memory;
 #define MAX_LIGHT_SECTORS 16
