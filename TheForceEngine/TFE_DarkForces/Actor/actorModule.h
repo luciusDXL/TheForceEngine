@@ -30,13 +30,17 @@ enum LogicAnimFlags
 
 enum LogicAnimState : u32
 {
+	//ATTACK MODULE
 	STATE_DELAY = 0u,
 	STATE_ANIMATEATTACK,
 	STATE_FIRE1,
 	STATE_ANIMATE1,
 	STATE_FIRE2,
 	STATE_ANIMATE2,
-	STATE_COUNT
+	STATE_COUNT,
+	//THINKER MODULE
+	STATE_WALK = 1u,
+	STATE_TURN = 2u
 };
 
 typedef JBool(*ActorFunc)(ActorModule*, MovementModule*);
