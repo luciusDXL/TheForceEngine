@@ -14,6 +14,7 @@
 #include <TFE_FileSystem/paths.h>
 #include <TFE_FileSystem/filestream.h>
 #include <TFE_Jedi/Serialization/serialization.h>
+#include <TFE_Settings/settings.h>
 
 using namespace TFE_Jedi;
 
@@ -61,6 +62,9 @@ namespace TFE_DarkForces
 			JBool searchForSector;
 			SecObject* obj;
 			VueFrame* frame;
+			VueFrame* interpolatedFrame;
+			VueFrame* previous;
+			VueFrame* current;
 			Tick tick;
 			Tick pauseTick;
 			s32 prevFrame;
@@ -439,6 +443,13 @@ namespace TFE_DarkForces
 		return JFALSE;
 	}
 
+	fixed16_16 lerp(fixed16_16 a, fixed16_16 b, float t)
+	{
+		fixed16_16 tfixed = floatToFixed16(t);
+		fixed16_16 invtfixed = floatToFixed16(1 - t);
+		return mul16(b, tfixed) + mul16(a, invtfixed);
+	}
+
 	void vueLogicTaskFunc(MessageType msg)
 	{
 		task_begin_ctx;
@@ -540,13 +551,57 @@ namespace TFE_DarkForces
 						if (msg == MSG_FREE_TASK) { break; }
 
 						Tick dt = s_curTick - local(tick);
-						s32 frameIndex = dt / local(vue)->frameDelay;
+						s32 frameIndex;
+						float t;
+						bool smoothVUEs = TFE_Settings::getGameSettings()->df_smoothVUEs;
+						if (smoothVUEs)
+						{
+							float frameIndexF = float(dt) / float(local(vue)->frameDelay);
+							t = std::modf(frameIndexF, &frameIndexF); //normalized progress from prev to cur frame
+							frameIndex = s32(frameIndexF);
+						}
+						else
+						{
+							//vanilla behavior
+							frameIndex = dt / local(vue)->frameDelay;
+						}
+
 						for (; local(prevFrame) != frameIndex && local(frame); local(prevFrame)++)
 						{
 							local(frame) = (VueFrame*)allocator_getNext(local(vue)->frames);
+							if (smoothVUEs)
+							{
+								if (local(frame) && local(current) != local(frame)) {
+									local(previous) = local(current);
+									local(current) = local(frame);
+								}
+							}
+
 							if (!local(frame) || ((local(vue)->flags & VUE_PAUSED) && (local(frame)->flags & VFRAME_FIRST)))
 							{
 								break;
+							}
+						}
+
+						//if VUE smoothing is enabled, interpolate from previous frame to current frame, giving smooth motion at high framerates
+						if (smoothVUEs)
+						{
+							if (!local(interpolatedFrame)) local(interpolatedFrame) = (VueFrame*)allocator_newItem(local(vue)->frames);
+							if (local(frame) && local(current) && local(previous))
+							{
+								for (int i = 0; i < 9; i++) 
+								{
+									local(interpolatedFrame)->mtx[i] = lerp(local(previous)->mtx[i], local(current)->mtx[i], t);
+								}
+								local(interpolatedFrame)->offset.x = lerp(local(previous)->offset.x, local(current)->offset.x, t);
+								local(interpolatedFrame)->offset.y = lerp(local(previous)->offset.y, local(current)->offset.y, t);
+								local(interpolatedFrame)->offset.z = lerp(local(previous)->offset.z, local(current)->offset.z, t);
+								local(interpolatedFrame)->pitch = lerp(local(previous)->pitch, local(current)->pitch, t);
+								local(interpolatedFrame)->yaw = lerp(local(previous)->yaw, local(current)->yaw, t);
+								local(interpolatedFrame)->roll = lerp(local(previous)->roll, local(current)->roll, t);
+								local(interpolatedFrame)->flags = local(current)->flags;
+
+								local(frame) = local(interpolatedFrame);
 							}
 						}
 					}
