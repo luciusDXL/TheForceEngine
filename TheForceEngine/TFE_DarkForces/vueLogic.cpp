@@ -10,6 +10,7 @@
 #include <TFE_Jedi/Level/levelData.h>
 #include <TFE_Jedi/Level/rwall.h>
 #include <TFE_Jedi/Collision/collision.h>
+#include <TFE_System/math.h>
 #include <TFE_System/system.h>
 #include <TFE_FileSystem/paths.h>
 #include <TFE_FileSystem/filestream.h>
@@ -586,22 +587,32 @@ namespace TFE_DarkForces
 						//if VUE smoothing is enabled, interpolate from previous frame to current frame, giving smooth motion at high framerates
 						if (smoothVUEs)
 						{
+							//if distance between frames is longer than this, object teleported
+							const fixed16_16 MAX_INTERP_DISTANCE = FIXED(2500); //FIXED(50 * 50)
+
 							if (!local(interpolatedFrame)) local(interpolatedFrame) = (VueFrame*)allocator_newItem(local(vue)->frames);
 							if (local(frame) && local(current) && local(previous))
 							{
-								for (int i = 0; i < 9; i++) 
+								fixed16_16 dist = fixedSquaredDistance(local(current)->offset, local(previous)->offset);
+								
+								//sanity check; distance will be less than 0 if it overflowed (e.g. talay takeoff animation)
+								if (dist >= 0 && dist < MAX_INTERP_DISTANCE)
 								{
-									local(interpolatedFrame)->mtx[i] = lerp(local(previous)->mtx[i], local(current)->mtx[i], t);
-								}
-								local(interpolatedFrame)->offset.x = lerp(local(previous)->offset.x, local(current)->offset.x, t);
-								local(interpolatedFrame)->offset.y = lerp(local(previous)->offset.y, local(current)->offset.y, t);
-								local(interpolatedFrame)->offset.z = lerp(local(previous)->offset.z, local(current)->offset.z, t);
-								local(interpolatedFrame)->pitch = lerp(local(previous)->pitch, local(current)->pitch, t);
-								local(interpolatedFrame)->yaw = lerp(local(previous)->yaw, local(current)->yaw, t);
-								local(interpolatedFrame)->roll = lerp(local(previous)->roll, local(current)->roll, t);
-								local(interpolatedFrame)->flags = local(current)->flags;
+									for (int i = 0; i < 9; i++)
+									{
+										local(interpolatedFrame)->mtx[i] = lerp(local(previous)->mtx[i], local(current)->mtx[i], t);
+									}
 
-								local(frame) = local(interpolatedFrame);
+									local(interpolatedFrame)->offset.x = lerp(local(previous)->offset.x, local(current)->offset.x, t);
+									local(interpolatedFrame)->offset.y = lerp(local(previous)->offset.y, local(current)->offset.y, t);
+									local(interpolatedFrame)->offset.z = lerp(local(previous)->offset.z, local(current)->offset.z, t);
+									local(interpolatedFrame)->pitch = lerp(local(previous)->pitch, local(current)->pitch, t);
+									local(interpolatedFrame)->yaw = lerp(local(previous)->yaw, local(current)->yaw, t);
+									local(interpolatedFrame)->roll = lerp(local(previous)->roll, local(current)->roll, t);
+									local(interpolatedFrame)->flags = local(current)->flags;
+
+									local(frame) = local(interpolatedFrame);
+								}
 							}
 						}
 					}
