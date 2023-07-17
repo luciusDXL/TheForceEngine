@@ -1931,7 +1931,7 @@ namespace TFE_Jedi
 		{
 			midiChannel->sharedMidiChannel->priority = priority;
 			midiChannel->priority = priority;
-			ImControlChange(midiChannel->channelId, MID_GPC1_MSB, priority);
+			ImControlChange(midiChannel->channelId, MID_GPC3_MSB, priority);
 		}
 	}
 
