@@ -117,7 +117,7 @@ namespace TFE_Settings
 		}
 
 		firstRun = true;
-		checkGameData();
+		autodetectGamePaths();
 		return writeToDisk();
 	}
 
@@ -127,7 +127,7 @@ namespace TFE_Settings
 		writeToDisk();
 	}
 
-	void checkGameData()
+	void autodetectGamePaths()
 	{
 		for (u32 gameId = 0; gameId < Game_Count; gameId++)
 		{
@@ -223,7 +223,7 @@ namespace TFE_Settings
 			settings.close();
 
 			parseIniFile(s_iniBuffer.data(), len);
-			checkGameData();
+			autodetectGamePaths();
 
 			return true;
 		}
@@ -431,6 +431,7 @@ namespace TFE_Settings
 			{
 				writeKeyValue_Int(settings, "airControl", s_gameSettings.df_airControl);
 				writeKeyValue_Bool(settings, "bobaFettFacePlayer", s_gameSettings.df_bobaFettFacePlayer);
+				writeKeyValue_Bool(settings, "smoothVUEs", s_gameSettings.df_smoothVUEs);
 				writeKeyValue_Bool(settings, "disableFightMusic", s_gameSettings.df_disableFightMusic);
 				writeKeyValue_Bool(settings, "enableAutoaim", s_gameSettings.df_enableAutoaim);
 				writeKeyValue_Bool(settings, "showSecretFoundMsg", s_gameSettings.df_showSecretFoundMsg);
@@ -860,6 +861,10 @@ namespace TFE_Settings
 		else if (strcasecmp("bobaFettFacePlayer", key) == 0)
 		{
 			s_gameSettings.df_bobaFettFacePlayer = parseBool(value);
+		}	
+		else if (strcasecmp("smoothVUEs", key) == 0)
+		{
+			s_gameSettings.df_smoothVUEs = parseBool(value);
 		}
 		else if (strcasecmp("disableFightMusic", key) == 0)
 		{

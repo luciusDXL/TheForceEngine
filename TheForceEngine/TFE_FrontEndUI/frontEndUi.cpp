@@ -664,6 +664,7 @@ namespace TFE_FrontEndUI
 					// Game
 					gameSettings->df_showSecretFoundMsg = false;
 					gameSettings->df_bobaFettFacePlayer = false;
+					gameSettings->df_smoothVUEs = false;
 					// Graphics
 					graphicsSettings->rendererIndex = RENDERER_SOFTWARE;
 					graphicsSettings->widescreen = false;
@@ -1018,6 +1019,12 @@ namespace TFE_FrontEndUI
 		ImGui::PopStyleColor();
 		ImGui::Spacing();
 
+		if (ImGui::Button("Autodetect Paths"))
+		{
+			TFE_Settings::autodetectGamePaths();
+			TFE_Paths::setPath(PATH_SOURCE_DATA, darkForces->sourcePath);
+		}
+
 		ImGui::Text("Dark Forces:"); ImGui::SameLine(100*s_uiScale);
 		if (ImGui::InputText("##DarkForcesSource", darkForces->sourcePath, 1024))
 		{
@@ -1114,6 +1121,12 @@ namespace TFE_FrontEndUI
 		if (ImGui::Checkbox("Boba Fett Face Player Fix", &bobaFettFacePlayer))
 		{
 			gameSettings->df_bobaFettFacePlayer = bobaFettFacePlayer;
+		}
+		
+		bool smoothVUEs = gameSettings->df_smoothVUEs;
+		if (ImGui::Checkbox("Smooth VUEs", &smoothVUEs))
+		{
+			gameSettings->df_smoothVUEs = smoothVUEs;
 		}
 
 		bool ignoreInfLimit = gameSettings->df_ignoreInfLimit;
