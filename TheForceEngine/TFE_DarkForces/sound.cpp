@@ -14,6 +14,7 @@
 #include <TFE_Jedi/Serialization/serialization.h>
 #include <TFE_DarkForces/time.h>
 #include <TFE_System/system.h>
+#include <accessibility.h>
 
 namespace TFE_DarkForces
 {
@@ -290,6 +291,7 @@ namespace TFE_DarkForces
 		}
 		ImStartSfx(idInstance, priority);
 		sound_setVolume(idInstance, sound->volume);
+		TFE_A11Y::onSoundPlay(sound->name, TFE_A11Y::CaptionEnv::CC_Gameplay);
 
 		return idInstance;
 	}

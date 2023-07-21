@@ -1,0 +1,53 @@
+fall.voc "[Kyle screams]"
+ranofc02.voc "Officer: Stop where you are!"
+ranofc04.voc "Officer: You're not authorized in this area."
+ranofc05.voc "Officer: You're in violation of Imperial law!"
+ranofc06.voc "Officer: Halt!"
+ransto01.voc "Trooper: There he is, stop him!"
+ransto02.voc "Trooper: You there, stop where you are."
+ransto03.voc "Trooper: Stop, Rebel scum!"
+ransto04.voc "Trooper: You're not authorized in this area."
+ransto05.voc "Trooper: Surrender immediately!"
+ransto06.voc "Trooper: Halt!"
+ransto07.voc "Trooper: Set blasters on full!"
+ransto08.voc "Trooper: Blast him!"
+beep-10.voc  "[MINE BEEPING]"
+
+//CUTSCENES--------------------------------------
+//M01
+m01nar01 "Kyle delivers the plans to the Rebel Alliance. Soon afterwards, the Death Star is destroyed. But even as the Alliance celebrates this victory, another sinister plot is set in motion that will become an even greater concern for the Rebellion." 13.5
+m01vdr01 "The Emperor has approved your test demonstration, General Mohc."
+m01moc0a "Thank you Lord Vader. What I unveil today will mark a new era for the Empire."
+m01moc01 "Thank you Lord Vader. What I unveil today will mark a new era for the Empire."
+m01moc0b "We will be able to decimate the Rebels just as we did the Jedi Knights. At last, the Emperor's war will be filled only with the glory and beauty of decisive victory."
+m01vdr02 "A noble cause, General. I hope the demonstration lives up to your claims. Proceed."
+m01moc02 "With pleasure."
+m01moc03 "Dark Trooper: release."
+intcom3  "[Indistinct PA chatter]"
+intcom4  "[Indistinct PA chatter]"
+intcom5  "[Indistinct PA chatter]"
+intcom6  "[Indistinct PA chatter]"
+beep-3   "[Loud beep]"
+dt-door2 "[Mechanical noises]"
+dt-lower "[Equipment whirring]"
+dtlaunch "[Engine blast]"
+dive1 	 "[Howling engines]"
+m01vdr03 "Very impressive, General. The Emperor will be most pleased. Continue with your project."
+m01moc04 "Certainly, Lord Vader."
+m01mma01 "Thank you commander, for responding at such short notice. The Empire has been keeping us on the run since the destruction of the Death Star."
+m01mma02 "Five days ago the Empire attacked one of our secret bases in the city of Talay."
+m01mma03 "Tak Base was destroyed within minutes. Many innocent people in the surrounding city, as well as the Rebel staff, were killed. Intelligence thinks this may be an act of retaliation for the destruction of the Death Star." 12.5
+m01reb01 "This is Tak Base to anybody out there. Please, we're under Imperial attack! They're everywhere! There was no warning at all!"
+m01reb02 "Total devastation! They broke through our shields... they broke through our shields
+distress "This is Tak Base to anybody out there. Please, we're under Imperial attack! [Distortion] They're ev... no warn... ...otal devastation. They broke through our shields... they broke through our shields! [static]"
+m01kyl02 "Interesting... this looks like it could be a normal Imperial attack... except for those sounds."
+m01mma04 "Very perceptive commander. I know you understand that all we discuss here is classified." 5.0
+m01mma05 "This Imperial officer, Crix Madine, wishes to defect to the Alliance. He has supplied us with information on the development of a new Imperial weapon. Those sounds you heard, we believe, come from that weapon. A new type of Stormtrooper - the Dark Trooper." 17.3
+m01kyl03 "A new Stormtrooper that can take out a Rebel base that quickly? I shoulda kept working for the Empire."
+m01mma06 "The Rebel command is not taking this lightly. They have authorized me to hire you to find out if there is a threat, and if there is, to shut it down. That is, if you are still on our side." 12.5
+m01kyl04 "This could be interesting... [long pause] All right, I'm in. But I think I'll need some help on this one. I want Jan Ors as my mission officer."
+m01mma07 "Certainly. Then I will let Jan brief you further on your mission objectives. Thank you commander, and may the Force be with you."
+
+//jump-1.voc "The quick brown fox jumped over the lazy dog for sport"
+//land-1.voc "Land"
+//jump-1.voc "ภาษาไทย测试조선말"

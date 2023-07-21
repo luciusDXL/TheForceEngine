@@ -5,6 +5,8 @@
 #include <TFE_Jedi/IMuse/imuse.h>
 #include <TFE_FileSystem/paths.h>
 #include <TFE_FileSystem/filestream.h>
+#include <TFE_System/system.h>
+#include <accessibility.h>
 
 using namespace TFE_Jedi;
 
@@ -131,11 +133,13 @@ namespace TFE_DarkForces
 	/////////////////////////////////////////////////////////
 	void startSfx(LSound* sound)
 	{
+		TFE_A11Y::onSoundPlay(sound->name, TFE_A11Y::CaptionEnv::CC_Cutscene);
 		ImStartSfx((ImSoundId)sound, DEFAULT_PRIORITY);
 	}
 
 	void startSpeech(LSound* sound)
 	{
+		TFE_A11Y::onSoundPlay(sound->name, TFE_A11Y::CaptionEnv::CC_Cutscene);
 		ImStartVoice((ImSoundId)sound, DEFAULT_PRIORITY);
 	}
 
