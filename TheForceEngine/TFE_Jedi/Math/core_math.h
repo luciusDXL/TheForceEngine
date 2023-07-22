@@ -198,6 +198,25 @@ namespace TFE_Jedi
 		return fixedSqrt(mul16(dx, dx) + mul16(dy, dy) + mul16(dz, dz)) << 1;
 	}
 
+	inline fixed16_16 fixedSquaredDistance(vec3_fixed a, vec3_fixed b)
+	{
+		fixed16_16 dx = b.x - a.x;
+		fixed16_16 dy = b.y - a.y;
+		fixed16_16 dz = b.z - a.z;
+
+		// distSq overflows if dist > 181 units.
+		return mul16(dx, dx) + mul16(dy, dy) + mul16(dz, dz);
+	}
+
+	inline fixed16_16 fixedDistance(vec3_fixed a, vec3_fixed b)
+	{
+		fixed16_16 dx = b.x - a.x;
+		fixed16_16 dy = b.y - a.y;
+		fixed16_16 dz = b.z - a.z;
+
+		return vec3Length(dx, dy, dz);
+	}
+
 	fixed16_16 computeDirAndLength(fixed16_16 dx, fixed16_16 dz, fixed16_16* dirX, fixed16_16* dirZ);
 
 	void computeTransformFromAngles_Fixed(angle14_32 yaw, angle14_32 pitch, angle14_32 roll, fixed16_16* transform);
