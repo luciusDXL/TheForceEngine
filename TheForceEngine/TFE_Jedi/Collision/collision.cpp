@@ -3,6 +3,7 @@
 #include <TFE_Jedi/Level/rsector.h>
 #include <TFE_Jedi/Level/rwall.h>
 #include <TFE_Jedi/Level/robject.h>
+#include <TFE_Jedi/Level/rtexture.h>
 #include <TFE_Jedi/Math/core_math.h>
 #include <TFE_Jedi/InfSystem/infSystem.h>
 // Merge player collision into collision
@@ -1034,6 +1035,192 @@ namespace TFE_Jedi
 			hitWall = collision_pathWallCollision(nextSector);
 		}
 		return (sector == endSector) ? JTRUE : JFALSE;
+	}
+
+	fixed16_16 computeYIntersect(const vec3_fixed p0, const vec3_fixed p1, f32 scaleXZ)
+	{
+		const f32 dx = fixed16ToFloat(p1.x - p0.x);
+		const f32 dy = fixed16ToFloat(p1.y - p0.y);
+		const f32 dz = fixed16ToFloat(p1.z - p0.z);
+		const f32 u = sqrtf(dx*dx + dz*dz) * scaleXZ;
+		return p0.y + floatToFixed16(u * dy);
+	}
+
+	bool hitSign(RWall* hitWall, fixed16_16 paramPos, fixed16_16 yPos)
+	{
+		fixed16_16 baseHeight = 0;
+		fixed16_16 uOffset = 0;
+		switch (hitWall->drawFlags)
+		{
+			case WDF_MIDDLE:
+			{
+				baseHeight = hitWall->sector->floorHeight;
+				uOffset = hitWall->midOffset.x;
+			} break;
+			case WDF_TOP:
+			{
+				baseHeight = hitWall->nextSector->ceilingHeight;
+				uOffset = hitWall->topOffset.x;
+			} break;
+			case WDF_BOT:
+			case WDF_TOP_AND_BOT:
+			{
+				baseHeight = hitWall->sector->floorHeight;
+				uOffset = hitWall->botOffset.x;
+			} break;
+		}
+
+		if (yPos)
+		{
+			fixed16_16 base = baseHeight + (hitWall->signOffset.z >> 3);
+			// base + 0.5
+			fixed16_16 y0 = base + HALF_16;
+			// base - texHeight/8 - 0.5
+			fixed16_16 y1 = base - ((*hitWall->signTex)->height << 13) - HALF_16;
+			if (y0 < yPos || y1 > yPos)
+			{
+				return false;
+			}
+		}
+
+		if (paramPos)
+		{
+			fixed16_16 base = (hitWall->signOffset.x - uOffset) >> 3;
+			// base - 0.5
+			fixed16_16 left = base - HALF_16;
+			// base + texWidth/8 + 0.5
+			fixed16_16 right = base + ((*hitWall->signTex)->width << 13) + HALF_16;
+			if (paramPos < left || paramPos > right)
+			{
+				return false;
+			}
+		}
+
+		return true;
+	}
+
+	RayHitInfo collision_rayCast3d(RSector* sector, vec3_fixed p0, vec3_fixed p1, bool stopAtMidTex)
+	{
+		RayHitInfo outRayHit = { RHit_None, nullptr, nullptr };
+		fixed16_16 ceilHeight, floorHeight;
+
+		// Use existing code to raytrace through the scene.
+		RWall* wall = collision_wallCollisionFromPath(sector, p0.x, p0.z, p1.x, p1.z);
+
+		// No walls are hit, so just test against the floor and ceiling in the current sector.
+		if (!wall)
+		{
+			fixed16_16 y0 = p0.y;
+			fixed16_16 y1 = p1.y;
+			floorHeight = sector->floorHeight;
+			ceilHeight = sector->ceilingHeight;
+
+			fixed16_16 nextY = y1;
+			if (y1 >= floorHeight)
+			{
+				outRayHit.hit = RHit_Floor;
+				outRayHit.sector = sector;
+			}
+			else if (y1 <= ceilHeight)
+			{
+				outRayHit.hit = RHit_Ceiling;
+				outRayHit.sector = sector;
+			}
+			return outRayHit;
+		}
+
+		// Compute the ray length and direction using floats to avoid overflow.
+		const vec2_float offset = { fixed16ToFloat(p1.x) - fixed16ToFloat(p0.x),
+			                        fixed16ToFloat(p1.z) - fixed16ToFloat(p0.z) };
+		const f32 lenXZ = sqrtf(offset.x * offset.x + offset.z * offset.z);
+
+		if (lenXZ < FLT_EPSILON) { return outRayHit; }
+		const f32 scaleXZ = 1.0f / lenXZ;
+
+		// Trace through the sectors.
+		while (wall)
+		{
+			fixed16_16 bot, top;
+			if (wall->nextSector && (!(wall->flags1 & WF1_ADJ_MID_TEX) || !stopAtMidTex))
+			{
+				// Determine the opening in the wall.
+				wall_getOpeningHeightRange(wall, &top, &bot);
+
+				// Determine if the ray trivially passes through.
+				if (p0.y <= bot && p0.y >= top && p1.y <= bot && p1.y >= top)
+				{
+					sector = wall->nextSector;
+					wall = collision_pathWallCollision(sector);
+					continue;
+				}
+			}
+			else
+			{
+				// There is no opening in the wall.
+				bot = -SEC_SKY_HEIGHT;
+				top = SEC_SKY_HEIGHT;
+			}
+
+			collision_getHitPoint(&p1.x, &p1.z);
+
+			const fixed16_16 y = computeYIntersect(p0, p1, scaleXZ);
+			floorHeight = sector->floorHeight;
+			ceilHeight = sector->ceilingHeight;
+
+			if (y >= floorHeight)
+			{
+				outRayHit.hit = RHit_Floor;
+				outRayHit.sector = sector;
+				break;
+			}
+			else if (y <= ceilHeight)
+			{
+				outRayHit.hit = RHit_Ceiling;
+				outRayHit.sector = sector;
+				break;
+			}
+
+			// Check to see if it can pass through the opening.
+			if (y <= bot && y >= top)
+			{
+				sector = wall->nextSector;
+				wall = collision_pathWallCollision(sector);
+			}
+			// Wall Hit!
+			else
+			{
+				outRayHit.hit = RHit_WallMid;
+				if (wall->signTex && *wall->signTex)
+				{
+					fixed16_16 distFromW0 = vec2Length(wall->w0->x - p1.x, wall->w0->z - p1.z);
+					if (hitSign(wall, distFromW0, y))
+					{
+						outRayHit.hit = RHit_WallSign;
+						outRayHit.sector = sector;
+						outRayHit.wall = wall;
+						break;
+					}
+				}
+
+				if (wall->nextSector && wall->nextSector->ceilingHeight > sector->ceilingHeight && y < wall->nextSector->ceilingHeight)
+				{
+					outRayHit.hit = RHit_WallTop;
+				}
+				else if (wall->nextSector && wall->nextSector->floorHeight < sector->floorHeight && y > wall->nextSector->floorHeight)
+				{
+					outRayHit.hit = RHit_WallBot;
+				}
+				else if (wall->nextSector) // Is this a transparent mid texture?
+				{
+					outRayHit.hit = RHit_WallMid_Trans;
+				}
+
+				outRayHit.sector = sector;
+				outRayHit.wall = wall;
+				break;
+			}
+		}
+		return outRayHit;
 	}
 
 	JBool collision_propogateExplosion(RSector* sector)

@@ -24,6 +24,9 @@ public:
 	static u32 readContents(const char* filePath, void* output, size_t size);
 	static u32 readContents(const FilePath* filePath, void** output);
 	static u32 readContents(const FilePath* filePath, void* output, size_t size);
+
+	static bool loadFromFile(const FilePath& filePath, std::vector<char>* buffer);
+	static bool loadFromFile(const char* fileName, std::vector<char>* buffer);
 	
 	//derived functions.
 	bool seek(s32 offset, Origin origin=ORIGIN_START) override;

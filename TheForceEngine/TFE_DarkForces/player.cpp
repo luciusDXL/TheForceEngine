@@ -316,6 +316,8 @@ namespace TFE_DarkForces
 		CCMD("warp", player_warp, 3, "Warp to the specific x, y, z position.");
 		CCMD("addLight", player_addTestLight, 0, "Add a test light");
 		CCMD_NOREPEAT("sector", player_sector, 0, "Get the current sector ID.");
+
+		initPlayerCollision();
 	}
 
 	void player_setPitchLimit(PitchLimit limit)

@@ -140,6 +140,11 @@ namespace TFE_Jedi
 		return s_textureList[pool][index].texture;
 	}
 
+	const char* bitmap_getTextureName(s32 index, AssetPool pool)
+	{
+		return s_textureList[pool][index].name.c_str();
+	}
+
 	// Serialize only level textures.
 	void bitmap_serializeLevelTextures(Stream* stream)
 	{
@@ -252,6 +257,10 @@ namespace TFE_Jedi
 		texture->animSetup = 0;
 		// value is ignored.
 		data++;
+
+		// Added for TFE, this fixes textures created by old tools.
+		if (texture->uvWidth == 0) { texture->uvWidth = texture->width; }
+		if (texture->uvHeight == 0) { texture->uvHeight = texture->height; }
 		
 		if (texture->compressed)
 		{
