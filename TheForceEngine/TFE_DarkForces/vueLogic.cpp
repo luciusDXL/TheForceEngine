@@ -444,11 +444,30 @@ namespace TFE_DarkForces
 		return JFALSE;
 	}
 
-	fixed16_16 lerp(fixed16_16 a, fixed16_16 b, float t)
+	fixed16_16 lerp(fixed16_16 a, fixed16_16 b, f32 t)
 	{
 		fixed16_16 tfixed = floatToFixed16(t);
 		fixed16_16 invtfixed = floatToFixed16(1 - t);
 		return mul16(b, tfixed) + mul16(a, invtfixed);
+	}
+
+	// Interpolate from 'previous' to 'current' based on 't' and store the results in 'interpolatedFrame'.
+	void interpolateFrame(VueFrame* interpolatedFrame, const VueFrame* previous, const VueFrame* current, f32 t)
+	{
+		// This is a linear approximation that works due to the regular nature of the keyframes and small deltas.
+		for (s32 i = 0; i < 9; i++)
+		{
+			interpolatedFrame->mtx[i] = lerp(previous->mtx[i], current->mtx[i], t);
+		}
+		// Use linear interpolation for offset and angles.
+		interpolatedFrame->offset.x = lerp(previous->offset.x, current->offset.x, t);
+		interpolatedFrame->offset.y = lerp(previous->offset.y, current->offset.y, t);
+		interpolatedFrame->offset.z = lerp(previous->offset.z, current->offset.z, t);
+		interpolatedFrame->pitch = lerp(previous->pitch, current->pitch, t);
+		interpolatedFrame->yaw = lerp(previous->yaw, current->yaw, t);
+		interpolatedFrame->roll = lerp(previous->roll, current->roll, t);
+		// Copy the flags from the current frame.
+		interpolatedFrame->flags = current->flags;
 	}
 
 	void vueLogicTaskFunc(MessageType msg)
@@ -553,11 +572,11 @@ namespace TFE_DarkForces
 
 						Tick dt = s_curTick - local(tick);
 						s32 frameIndex;
-						float t;
+						f32 t = 0.0f;
 						bool smoothVUEs = TFE_Settings::getGameSettings()->df_smoothVUEs;
 						if (smoothVUEs)
 						{
-							float frameIndexF = float(dt) / float(local(vue)->frameDelay);
+							f32 frameIndexF = f32(dt) / f32(local(vue)->frameDelay);
 							t = std::modf(frameIndexF, &frameIndexF); //normalized progress from prev to cur frame
 							frameIndex = s32(frameIndexF);
 						}
@@ -584,33 +603,21 @@ namespace TFE_DarkForces
 							}
 						}
 
-						//if VUE smoothing is enabled, interpolate from previous frame to current frame, giving smooth motion at high framerates
+						// If VUE smoothing is enabled, interpolate from previous frame to current frame, giving smooth motion at high framerates.
 						if (smoothVUEs)
 						{
-							//if distance between frames is longer than this, object teleported
-							const fixed16_16 MAX_INTERP_DISTANCE = FIXED(2500); //FIXED(50 * 50)
+							// If distance between frames is longer than this, object teleported.
+							const fixed16_16 MAX_INTERP_DISTANCE = FIXED(2500); // FIXED(50 * 50)
 
-							if (!local(interpolatedFrame)) local(interpolatedFrame) = (VueFrame*)allocator_newItem(local(vue)->frames);
+							if (!local(interpolatedFrame)) { local(interpolatedFrame) = (VueFrame*)allocator_newItem(local(vue)->frames); }
 							if (local(frame) && local(current) && local(previous))
 							{
-								fixed16_16 dist = fixedSquaredDistance(local(current)->offset, local(previous)->offset);
-								
-								//sanity check; distance will be less than 0 if it overflowed (e.g. talay takeoff animation)
+								const fixed16_16 dist = fixedSquaredDistance(local(current)->offset, local(previous)->offset);
+							
+								// Sanity check; distance will be less than 0 if it overflowed (e.g. talay takeoff animation)
 								if (dist >= 0 && dist < MAX_INTERP_DISTANCE)
 								{
-									for (int i = 0; i < 9; i++)
-									{
-										local(interpolatedFrame)->mtx[i] = lerp(local(previous)->mtx[i], local(current)->mtx[i], t);
-									}
-
-									local(interpolatedFrame)->offset.x = lerp(local(previous)->offset.x, local(current)->offset.x, t);
-									local(interpolatedFrame)->offset.y = lerp(local(previous)->offset.y, local(current)->offset.y, t);
-									local(interpolatedFrame)->offset.z = lerp(local(previous)->offset.z, local(current)->offset.z, t);
-									local(interpolatedFrame)->pitch = lerp(local(previous)->pitch, local(current)->pitch, t);
-									local(interpolatedFrame)->yaw = lerp(local(previous)->yaw, local(current)->yaw, t);
-									local(interpolatedFrame)->roll = lerp(local(previous)->roll, local(current)->roll, t);
-									local(interpolatedFrame)->flags = local(current)->flags;
-
+									interpolateFrame(local(interpolatedFrame), local(previous), local(current), t);
 									local(frame) = local(interpolatedFrame);
 								}
 							}
