@@ -197,6 +197,7 @@ struct TFE_Settings_Game
 	// Dark Forces
 	s32  df_airControl = 0;				// Air control, default = 0, where 0 = speed/256 and 8 = speed; range = [0, 8]
 	bool df_bobaFettFacePlayer = false;	// Make Boba Fett try to face the player in all his attack phases.
+	bool df_smoothVUEs = false;			// Smooths VUE animations (e.g. the Moldy Crow entering and exiting levels)
 	bool df_disableFightMusic  = false;	// Set to true to disable fight music and music transitions during gameplay.
 	bool df_enableAutoaim      = true;  // Set to true to enable autoaim, false to disable.
 	bool df_showSecretFoundMsg = true;  // Show a message when the player finds a secret.
@@ -229,4 +230,5 @@ namespace TFE_Settings
 	TFE_Settings_Game* getGameSettings();
 
 	bool validatePath(const char* path, const char* sentinel);
+	void autodetectGamePaths();
 }

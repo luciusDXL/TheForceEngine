@@ -60,6 +60,7 @@
 #Directories
 .vs/
 Internal/
+TheForceEngine/Games/
 TheForceEngine/Mods/
 TheForceEngine/screenshots/
 TheForceEngine/Reference/

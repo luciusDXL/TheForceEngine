@@ -1296,7 +1296,7 @@ namespace TFE_Jedi
 
 	void ImHandleChannelPriorityChange(ImMidiPlayer* player, ImMidiOutChannel* channel)
 	{
-		channel->priority = channel->partPriority + player->priority;
+		channel->priority = min(channel->partPriority + player->priority, 127);
 		if (channel->data)
 		{
 			ImMidiChannelSetPriority(channel->data, channel->priority);
@@ -1931,7 +1931,7 @@ namespace TFE_Jedi
 		{
 			midiChannel->sharedMidiChannel->priority = priority;
 			midiChannel->priority = priority;
-			ImControlChange(midiChannel->channelId, MID_GPC1_MSB, priority);
+			ImControlChange(midiChannel->channelId, MID_GPC3_MSB, priority);
 		}
 	}
 

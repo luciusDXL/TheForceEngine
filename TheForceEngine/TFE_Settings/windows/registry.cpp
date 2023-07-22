@@ -101,22 +101,79 @@ namespace WindowsRegistry
 		}
 	}
 
-	bool getSteamPathFromRegistry(u32 productId, const char* localPath, const char* localSubPath, const char* fileToValidate, char* outPath)
+	bool getAllSteamLibraryPaths(const char* vdfPath, std::vector<std::string>& paths)
 	{
-		char steamPath[TFE_MAX_PATH];
-		if (!readStringFromRegistry(HKEY_CURRENT_USER, "Software\\Valve\\Steam", "SteamPath", steamPath) &&
-			!readStringFromRegistry(HKEY_LOCAL_MACHINE,"Software\\Valve\\Steam", "InstallPath", steamPath))
+		FileStream vdf;
+		if (!vdf.open(vdfPath, Stream::MODE_READ))
 		{
 			return false;
 		}
 
-		// First try reading the ACF
-		char acfPath[TFE_MAX_PATH];
-		char vdfPath[TFE_MAX_PATH];
-		char subPath[TFE_MAX_PATH];
-		sprintf(acfPath, "%s/SteamApps/appmanifest_%u.acf", steamPath, productId);
-		sprintf(vdfPath, "%s/SteamApps/libraryfolders.vdf", steamPath);
+		// read the file.
+		size_t len = vdf.getSize();
+		if (len < 1u)
+		{
+			vdf.close();
+			return false;
+		}
 
+		char* vdfData = (char*)malloc(len + 1);
+		if (!vdfData)
+		{
+			vdf.close();
+			return false;
+		}
+		vdf.readBuffer(vdfData, (u32)len);
+		vdfData[len] = 0;
+		vdf.close();
+
+		// read out all possible paths.
+		const char* pathKey = "\"path\"";
+		const char* appPath = strstr(vdfData, pathKey);
+		while (appPath)
+		{
+			char path[TFE_MAX_PATH];
+			appPath += strlen(pathKey);
+			extractKeyword(appPath, path);
+			fixPathSlashes(path);
+
+			paths.push_back(path);
+			appPath = strstr(appPath, pathKey);
+		}
+		free(vdfData);
+
+		return !paths.empty();
+	}
+
+	const char* readAcfFile(const char* steamPath, u32 productId, const std::vector<std::string>& libraryPaths)
+	{
+		// First try the base path.
+		char acfPath[TFE_MAX_PATH];
+		sprintf(acfPath, "%s/SteamApps/appmanifest_%u.acf", steamPath, productId);
+
+		bool pathFound = true;
+		if (!FileUtil::exists(steamPath))
+		{
+			pathFound = false;
+			// Now attempt to use the library paths instead.
+			for (size_t i = 0; i < libraryPaths.size(); i++)
+			{
+				const char* libPath = libraryPaths[i].c_str();
+				sprintf(acfPath, "%s/SteamApps/appmanifest_%u.acf", libPath, productId);
+				if (FileUtil::exists(steamPath))
+				{
+					pathFound = true;
+					break;
+				}
+			}
+		}
+
+		if (!pathFound)
+		{
+			return nullptr;
+		}
+
+		// Read the file.
 		char* acfData = nullptr;
 		FileStream acf;
 		if (acf.open(acfPath, Stream::MODE_READ))
@@ -130,58 +187,53 @@ namespace WindowsRegistry
 			}
 			acf.close();
 		}
+		return acfData;
+	}
 
-		FileStream vdf;
-		char* vdfData = nullptr;
-		if (vdf.open(vdfPath, Stream::MODE_READ))
+	bool getSteamPathFromRegistry(u32 productId, const char* localPath, const char* localSubPath, const char* fileToValidate, char* outPath)
+	{
+		char steamPath[TFE_MAX_PATH];
+		if (!readStringFromRegistry(HKEY_CURRENT_USER, "Software\\Valve\\Steam", "SteamPath", steamPath) &&
+			!readStringFromRegistry(HKEY_LOCAL_MACHINE, "Software\\Valve\\Steam", "SteamPath", steamPath) &&
+			!readStringFromRegistry(HKEY_LOCAL_MACHINE,"Software\\Valve\\Steam", "InstallPath", steamPath))
 		{
-			size_t len = vdf.getSize();
-			vdfData = (char*)malloc(len + 1);
-			if (vdfData)
-			{
-				vdf.readBuffer(vdfData, (u32)len);
-				vdfData[len] = 0;
-			}
-			vdf.close();
+			return false;
 		}
 
+		// First try reading the ACF
+		char vdfPath[TFE_MAX_PATH];
+		char subPath[TFE_MAX_PATH];
+		sprintf(vdfPath, "%s/SteamApps/libraryfolders.vdf", steamPath);
+
+		std::vector<std::string> libraryPaths;
+		bool hasLibraryPaths = getAllSteamLibraryPaths(vdfPath, libraryPaths);
+		const char* acfData = readAcfFile(steamPath, productId, libraryPaths);
+
 		bool pathFound = false;
-		if (acfData && vdfData)
+		if (acfData && hasLibraryPaths)
 		{
 			const char* installKey = "\"installdir\"";
-			const char* pathKey = "\"path\"";
-
 			const char* installDir = strstr(acfData, installKey);
 			if (installDir)
 			{
 				extractKeyword(installDir + strlen(installKey), subPath);
-
 				if (subPath[0])
 				{
-					// Now search libraryfolders.vdf for the rest of the path.
-					// For now we can just exhaustively check each path.
-					const char* appPath = strstr(vdfData, pathKey);
-					while (appPath)
+					for (size_t i = 0; i < libraryPaths.size(); i++)
 					{
-						char path[TFE_MAX_PATH];
-						appPath += strlen(pathKey);
-						extractKeyword(appPath, path);
-
 						// Does this work?
-						sprintf(outPath, "%s/SteamApps/common/%s/%s", path, subPath, localSubPath);
+						sprintf(outPath, "%s/SteamApps/common/%s/%s", libraryPaths[i].c_str(), subPath, localSubPath);
 						fixPathSlashes(outPath);
 						if (TFE_Settings::validatePath(outPath, fileToValidate))
 						{
 							pathFound = true;
 							break;
 						}
-						appPath = strstr(appPath, pathKey);
 					}
 				}
 			}
 		}
-		free(vdfData);
-		free(acfData);
+		free((void*)acfData);
 
 		// Fall back to the steam path.
 		if (!pathFound)
@@ -189,6 +241,21 @@ namespace WindowsRegistry
 			sprintf(outPath, "%s/SteamApps/common/%s", steamPath, localPath);
 			fixPathSlashes(outPath);
 			pathFound = TFE_Settings::validatePath(outPath, fileToValidate);
+
+			// If that fails, try to use the library paths directly...
+			if (!pathFound && hasLibraryPaths)
+			{
+				for (size_t i = 0; i < libraryPaths.size(); i++)
+				{
+					sprintf(outPath, "%s/SteamApps/common/%s", libraryPaths[i].c_str(), localPath);
+					fixPathSlashes(outPath);
+					pathFound = TFE_Settings::validatePath(outPath, fileToValidate);
+					if (pathFound)
+					{
+						break;
+					}
+				}
+			}
 		}
 		return pathFound;
 	}
