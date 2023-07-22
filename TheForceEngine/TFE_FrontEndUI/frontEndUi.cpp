@@ -2742,94 +2742,68 @@ namespace TFE_FrontEndUI
 
 		switch (temp)
 		{
-		case TEMPLATE_MODERN:
-		{
-			// Controls
-			s_inputConfig->mouseMode = MMODE_LOOK;
-			// Game
-			gameSettings->df_showSecretFoundMsg = true;
-			gameSettings->df_bobaFettFacePlayer = true;
-			gameSettings->df_smoothVUEs = true;
-			// Graphics
-			graphicsSettings->rendererIndex = RENDERER_HARDWARE;
-			graphicsSettings->skyMode = SKYMODE_CYLINDER;
-			graphicsSettings->widescreen = true;
-			graphicsSettings->gameResolution.x = displayInfo.width;
-			graphicsSettings->gameResolution.z = displayInfo.height;
-			graphicsSettings->bloomEnabled = true;
-			graphicsSettings->colorMode = COLORMODE_TRUE_COLOR;
-			graphicsSettings->texMagFilter = TMAG_LINEAR;
-			graphicsSettings->texMinFilter = TMIN_LINEAR;
-			graphicsSettings->bilinearSharpness = 1.0f;
-			graphicsSettings->dynamicLighting = true;
-			graphicsSettings->shadowQuality = 2;
-			// Reticle.
-			graphicsSettings->reticleEnable = true;
-			graphicsSettings->reticleIndex = 4;
-			graphicsSettings->reticleRed = 0.25f;
-			graphicsSettings->reticleGreen = 1.0f;
-			graphicsSettings->reticleBlue = 0.25f;
-			graphicsSettings->reticleOpacity = 1.0f;
-			graphicsSettings->reticleScale = 0.5f;
+			case TEMPLATE_MODERN:
+			case TEMPLATE_RETRO:
+			{
+				// Controls
+				s_inputConfig->mouseMode = MMODE_LOOK;
+				// Game
+				gameSettings->df_showSecretFoundMsg = true;
+				gameSettings->df_bobaFettFacePlayer = true;
+				gameSettings->df_smoothVUEs = true;
+				// Graphics
+				graphicsSettings->rendererIndex = RENDERER_HARDWARE;
+				graphicsSettings->skyMode = SKYMODE_CYLINDER;
+				graphicsSettings->widescreen = true;
+				graphicsSettings->gameResolution.x = displayInfo.width;
+				graphicsSettings->gameResolution.z = displayInfo.height;
+				graphicsSettings->bloomEnabled = true;
+				graphicsSettings->bilinearSharpness = 1.0f;
+				graphicsSettings->dynamicLighting = true;
+				// Color mode and texture filtering are the main differences between modes.
+				graphicsSettings->shadowQuality = temp == TEMPLATE_MODERN ? 2 : 1;
+				graphicsSettings->colorMode = temp == TEMPLATE_MODERN ? COLORMODE_TRUE_COLOR : COLORMODE_8BIT_INTERP;
+				graphicsSettings->texMagFilter = temp == TEMPLATE_MODERN ? TMAG_LINEAR : TMAG_NONE;
+				graphicsSettings->texMinFilter = temp == TEMPLATE_MODERN ? TMIN_LINEAR : TMIN_NONE;
+				// Reticle.
+				graphicsSettings->reticleEnable = true;
+				graphicsSettings->reticleIndex = 4;
+				graphicsSettings->reticleRed = 0.25f;
+				graphicsSettings->reticleGreen = 1.0f;
+				graphicsSettings->reticleBlue = 0.25f;
+				graphicsSettings->reticleOpacity = 1.0f;
+				graphicsSettings->reticleScale = 0.5f;
 
-			reticle_setShape(graphicsSettings->reticleIndex);
-			reticle_setScale(graphicsSettings->reticleScale);
-			reticle_setColor(&graphicsSettings->reticleRed);
-		} break;
-		case TEMPLATE_RETRO:
-		{
-			// Controls
-			s_inputConfig->mouseMode = MMODE_LOOK;
-			// Game
-			gameSettings->df_showSecretFoundMsg = true;
-			gameSettings->df_bobaFettFacePlayer = true;
-			gameSettings->df_smoothVUEs = true;
-			// Graphics
-			graphicsSettings->rendererIndex = RENDERER_HARDWARE;
-			graphicsSettings->skyMode = SKYMODE_CYLINDER;
-			graphicsSettings->widescreen = true;
-			graphicsSettings->gameResolution.x = displayInfo.width;
-			graphicsSettings->gameResolution.z = displayInfo.height;
-			graphicsSettings->bloomEnabled = true;
-			graphicsSettings->colorMode = COLORMODE_8BIT_INTERP;
-			graphicsSettings->dynamicLighting = true;
-			graphicsSettings->shadowQuality = 1;
-			// Reticle.
-			graphicsSettings->reticleEnable = true;
-			graphicsSettings->reticleIndex = 4;
-			graphicsSettings->reticleRed = 0.25f;
-			graphicsSettings->reticleGreen = 1.0f;
-			graphicsSettings->reticleBlue = 0.25f;
-			graphicsSettings->reticleOpacity = 1.0f;
-			graphicsSettings->reticleScale = 0.5f;
-
-			reticle_setShape(graphicsSettings->reticleIndex);
-			reticle_setScale(graphicsSettings->reticleScale);
-			reticle_setColor(&graphicsSettings->reticleRed);
-		} break;
-		case TEMPLATE_VANILLA:
-		{
-			// Controls
-			s_inputConfig->mouseMode = MMODE_TURN;
-			// Game
-			gameSettings->df_showSecretFoundMsg = false;
-			gameSettings->df_bobaFettFacePlayer = false;
-			gameSettings->df_smoothVUEs = false;
-			// Graphics
-			graphicsSettings->rendererIndex = RENDERER_SOFTWARE;
-			graphicsSettings->widescreen = false;
-			graphicsSettings->gameResolution.x = 320;
-			graphicsSettings->gameResolution.z = 200;
-			graphicsSettings->bloomEnabled = false;
-			graphicsSettings->dynamicLighting = false;
-			// Reticle.
-			graphicsSettings->reticleEnable = false;
-		} break;
-		default:
-		{
-			TFE_System::logWrite(LOG_ERROR, "Settings", "Invalid settings template: %d", s32(temp));
-			return;
-		}
+				reticle_setShape(graphicsSettings->reticleIndex);
+				reticle_setScale(graphicsSettings->reticleScale);
+				reticle_setColor(&graphicsSettings->reticleRed);
+			} break;
+			case TEMPLATE_VANILLA:
+			{
+				// Controls
+				s_inputConfig->mouseMode = MMODE_TURN;
+				// Game
+				gameSettings->df_showSecretFoundMsg = false;
+				gameSettings->df_bobaFettFacePlayer = false;
+				gameSettings->df_smoothVUEs = false;
+				// Graphics
+				graphicsSettings->rendererIndex = RENDERER_SOFTWARE;
+				graphicsSettings->widescreen = false;
+				graphicsSettings->gameResolution.x = 320;
+				graphicsSettings->gameResolution.z = 200;
+				graphicsSettings->bloomEnabled = false;
+				graphicsSettings->dynamicLighting = false;
+				graphicsSettings->colorMode = COLORMODE_8BIT;
+				graphicsSettings->texMagFilter = TMAG_NONE;
+				graphicsSettings->texMinFilter = TMIN_NONE;
+				// Reticle.
+				graphicsSettings->reticleEnable = false;
+			} break;
+			default:
+			{
+				TFE_System::logWrite(LOG_ERROR, "Settings", "Invalid settings template: %d", s32(temp));
+				return;
+			}
 		}
 
 		TFE_Settings::writeToDisk();
