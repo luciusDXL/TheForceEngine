@@ -98,6 +98,7 @@ namespace TFE_DarkForces
 	static s32 s_prevSecondaryAmmo = 0;
 	static JBool s_prevSuperchageHud = JFALSE;
 	static JBool s_prevHeadlampActive = JFALSE;
+	static bool s_showAdvancedData = false;
 
 	///////////////////////////////////////////
 	// Shared State
@@ -345,6 +346,8 @@ namespace TFE_DarkForces
 
 	void hud_startup(JBool fromSave)
 	{
+		CVAR_BOOL(s_showAdvancedData, "d_showData", CVFLAG_DO_NOT_SERIALIZE, "Enable to display debug information in HUD.");
+
 		// Reset cached values.
 		s_prevBatteryPower = 0;
 		s_prevLifeCount = 0;
@@ -383,7 +386,7 @@ namespace TFE_DarkForces
 			// s_screenDirtyLeft[s_curFrameBufferIdx] = JTRUE;
 		}
 
-		if (s_showData && s_playerEye)
+		if (s_playerEye && (s_showData || s_showAdvancedData))
 		{
 			fixed16_16 x, z;
 			getCameraXZ(&x, &z);
@@ -394,6 +397,16 @@ namespace TFE_DarkForces
 			sprintf((char*)dataStr, "X:%04d Y:%.1f Z:%04d H:%.1f S:%d%%", floor16(x), -fixed16ToFloat(s_playerEye->posWS.y), floor16(z), fixed16ToFloat(s_playerEye->worldHeight), s_secretsPercent);
 			displayHudMessage(s_hudFont, (DrawRect*)vfb_getScreenRect(VFB_RECT_UI), 164 + xOffset, 10, dataStr, framebuffer);
 			// s_screenDirtyRight[s_curFrameBufferIdx] = JTRUE;
+
+			if (s_showAdvancedData) {
+				f32 pitch = angleToFloatDegrees(s_playerEye->pitch);
+				f32 yaw = angleToFloatDegrees(s_playerEye->yaw);
+				//f32 roll = angleToFloatDegrees(s_playerEye->roll); //always 0
+				sprintf((char*)dataStr, "PIT:%05.1f YAW:%05.1f SEC:%d%", pitch, yaw, s_playerEye->sector->id);
+				displayHudMessage(s_hudFont, (DrawRect*)vfb_getScreenRect(VFB_RECT_UI), 164 + xOffset, 20, dataStr, framebuffer);
+				sprintf((char*)dataStr, "TICK:%04d", s_playerTick);
+				displayHudMessage(s_hudFont, (DrawRect*)vfb_getScreenRect(VFB_RECT_UI), 164 + xOffset, 30, dataStr, framebuffer);
+			}
 		}
 	}
 

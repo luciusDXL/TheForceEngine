@@ -194,6 +194,13 @@ namespace TFE_DarkForces
 		if (args.size() < 3) { return; }
 		logic_spawnEnemy(args[1].c_str(), args[2].c_str());
 	}
+	
+	void console_showMessage(const ConsoleArgList& args)
+	{
+		if (args.size() < 2) return;
+		if (args.size() == 2) hud_sendTextMessage(args[1].c_str(), 0);
+		if (args.size() >= 3) hud_sendTextMessage(args[1].c_str(), strToInt(args[2].c_str()));
+	}
 
 	void mission_createDisplay()
 	{
@@ -353,7 +360,8 @@ namespace TFE_DarkForces
 		{
 			// TFE-specific
 			mission_addCheatCommands();
-			CCMD("spawnEnemy", console_spawnEnemy, 2, "spawnEnemy(waxName, enemyTypeName) - spawns an enemy 8 units away in the player direction. Example: spawnEnemy offcfin.wax i_officer");
+			CCMD("spawnEnemy", console_spawnEnemy, 2, "  spawnEnemy(waxName, enemyTypeName) - spawns an enemy 8 units in front of\n  the player. Example:\n      spawnEnemy offcfin.wax i_officer");
+			CCMD("showMessage", console_showMessage, 1, "  showMessage(message, [priority]) Display a message in the HUD, optionally\n  with priority. Examples:\n      showMessage \"Hello World\"\n      showMessage Testing 1");
 
 			// Make sure the loading screen is displayed for at least 1 second.
 			if (!s_loadingFromSave)
