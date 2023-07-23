@@ -852,10 +852,7 @@ int main(int argc, char* argv[])
 		}
 
 		bool drawFps = s_curGame && graphics->showFps;
-		if (s_curGame) { 
-			drawFps = drawFps && (!s_curGame->isPaused()); 
-			if (!s_curGame->isPaused()) TFE_A11Y::draw();
-		}
+		if (s_curGame) { drawFps = drawFps && (!s_curGame->isPaused()); }
 
 		TFE_FrontEndUI::setCurrentGame(s_curGame);
 		TFE_FrontEndUI::draw(s_curState == APP_STATE_MENU || s_curState == APP_STATE_NO_GAME_DATA || s_curState == APP_STATE_SET_DEFAULTS,

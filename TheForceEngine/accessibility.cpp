@@ -93,6 +93,11 @@ namespace TFE_A11Y { //a11y is industry slang for accessibility
 		};
 	}
 
+	void clear() 
+	{
+		active.clear();
+	}
+
 	void onSoundPlay(char name[], CaptionEnv env)
 	{
 		TFE_System::logWrite(LOG_ERROR, "a11y", name);

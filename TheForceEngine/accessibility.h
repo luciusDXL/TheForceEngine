@@ -14,6 +14,7 @@ namespace TFE_A11Y {
 	};
 
 	void init();
+	void clear();
 	void draw();
 	void addCaption(Caption caption);
 	void onSoundPlay(char name[], CaptionEnv env);

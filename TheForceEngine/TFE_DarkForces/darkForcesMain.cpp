@@ -55,6 +55,7 @@
 
 // Add texture callbacks.
 #include <TFE_Jedi/Level/levelTextures.h>
+#include <accessibility.h>
 
 using namespace TFE_Memory;
 using namespace TFE_Input;
@@ -582,7 +583,11 @@ namespace TFE_DarkForces
 			} break;
 			case GSTATE_CUTSCENE:
 			{
-				if (!cutscene_update())
+				if (cutscene_update())
+				{
+					TFE_A11Y::draw();
+				}
+				else
 				{
 					s_runGameState.cutsceneIndex++;
 					if (s_cutsceneData[s_runGameState.cutsceneIndex].nextGameMode == GMODE_END)
@@ -594,6 +599,7 @@ namespace TFE_DarkForces
 					{
 						startNextMode();
 					}
+					TFE_A11Y::clear();
 				}
 			} break;
 			case GSTATE_BRIEFING:
@@ -623,7 +629,11 @@ namespace TFE_DarkForces
 			{
 				// At this point the mission has already been launched.
 				// The task system will take over. Basically every frame we just check to see if there are any tasks running.
-				if (!task_getCount())
+				if (task_getCount())
+				{
+					if (!s_gamePaused) TFE_A11Y::draw();
+				}
+				else
 				{
 					// We have returned from the mission tasks.
 					renderer_reset();
