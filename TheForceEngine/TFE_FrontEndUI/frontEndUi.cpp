@@ -67,7 +67,8 @@ namespace TFE_FrontEndUI
 		CONFIG_HUD,
 		CONFIG_SOUND,
 		CONFIG_SYSTEM,
-		CONFIG_COUNT
+		CONFIG_A11Y,
+		CONFIG_COUNT,
 	};
 
 	enum
@@ -86,6 +87,7 @@ namespace TFE_FrontEndUI
 		"Hud",
 		"Sound",
 		"System",
+		"Accessibility"
 	};
 
 	static const Vec2i c_resolutionDim[] =
@@ -207,6 +209,13 @@ namespace TFE_FrontEndUI
 		"Mouselook"
 	};
 
+	static const char* c_fontSize[] =
+	{
+		"Small",
+		"Medium",
+		"Large"
+	};
+
 	static InputConfig* s_inputConfig = nullptr;
 	static bool s_controllerWinOpen = true;
 	static bool s_mouseWinOpen = true;
@@ -224,6 +233,7 @@ namespace TFE_FrontEndUI
 	void configHud();
 	void configSound();
 	void configSystem();
+	void configA11y();
 	void pickCurrentResolution();
 	void manual();
 	void credits();
@@ -841,6 +851,12 @@ namespace TFE_FrontEndUI
 				TFE_Settings::writeToDisk();
 				inputMapping_serialize();
 			}
+			if (ImGui::Button("Accessibility", sideBarButtonSize))
+			{
+				s_configTab = CONFIG_A11Y;
+				TFE_Settings::writeToDisk();
+				inputMapping_serialize();
+			}
 			ImGui::Separator();
 			if (ImGui::Button("Return", sideBarButtonSize))
 			{
@@ -916,6 +932,9 @@ namespace TFE_FrontEndUI
 				break;
 			case CONFIG_SYSTEM:
 				configSystem();
+				break;
+			case CONFIG_A11Y:
+				configA11y();
 				break;
 			};
 			renderBackground();
@@ -2563,6 +2582,56 @@ namespace TFE_FrontEndUI
 		{
 			system->returnToModLoader = returnToModLoader;
 		}
+	}
+
+	void DrawFontSizeCombo(const char* labelTag, const char* label, const char* comboTag, s32* currentValue)
+	{
+		ImGui::SetNextItemWidth(196 * s_uiScale);
+		ImGui::LabelText(labelTag, label);
+		ImGui::SameLine();
+		ImGui::SetNextItemWidth(196 * s_uiScale);
+		ImGui::Combo(comboTag, currentValue, c_fontSize, IM_ARRAYSIZE(c_fontSize));
+	}
+		
+	//Accessibility
+	void configA11y()
+	{
+		TFE_Settings_A11y* a11y = TFE_Settings::getA11ySettings();
+		bool showCutsceneSubtitles = a11y->showCutsceneSubtitles;
+		bool showCutsceneCaptions = a11y->showCutsceneCaptions;
+		bool showGameplaySubtitles = a11y->showGameplaySubtitles;
+		bool showGameplayCaptions = a11y->showGameplayCaptions;
+
+		ImGui::PushFont(s_dialogFont);
+		ImGui::LabelText("##ConfigLabel2", "Cutscenes");
+		ImGui::PopFont();
+
+		if (ImGui::Checkbox("Cutscene Subtitles (voice)", &showCutsceneSubtitles))
+		{
+			a11y->showCutsceneSubtitles = showCutsceneSubtitles;
+		}
+		ImGui::SameLine();
+		if (ImGui::Checkbox("Cutscene Captions (SFX)", &showCutsceneCaptions))
+		{
+			a11y->showCutsceneCaptions = showCutsceneCaptions;
+		}
+
+		DrawFontSizeCombo("##CFSL", "Cutscene Font Size", "##CFS", (s32*)&a11y->cutsceneFontSize);
+
+		ImGui::PushFont(s_dialogFont);
+		ImGui::LabelText("##ConfigLabel3", "Gameplay");
+		ImGui::PopFont();
+		if (ImGui::Checkbox("Gameplay Subtitles (voice)", &showGameplaySubtitles))
+		{
+			a11y->showGameplaySubtitles = showGameplaySubtitles;
+		}
+		ImGui::SameLine();
+		if (ImGui::Checkbox("Gameplay Captions (SFX)", &showGameplayCaptions))
+		{
+			a11y->showGameplayCaptions = showGameplayCaptions;
+		}
+
+		DrawFontSizeCombo("##GFSL", "Gameplay Font Size", "##GFS", (s32*)&a11y->gameplayFontSize);
 	}
 
 	void pickCurrentResolution()

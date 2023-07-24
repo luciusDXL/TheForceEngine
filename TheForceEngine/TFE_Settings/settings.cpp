@@ -31,6 +31,7 @@ namespace TFE_Settings
 	static TFE_Settings_Hud s_hudSettings = {};
 	static TFE_Settings_Sound s_soundSettings = {};
 	static TFE_Settings_System s_systemSettings = {};
+	static TFE_Settings_A11y s_a11ySettings = {};
 	static TFE_Game s_game = {};
 	static TFE_Settings_Game s_gameSettings = {};
 	static char s_lineBuffer[LINEBUF_LEN];
@@ -43,6 +44,7 @@ namespace TFE_Settings
 		SECTION_HUD,
 		SECTION_SOUND,
 		SECTION_SYSTEM,
+		SECTION_A11Y, //accessibility
 		SECTION_GAME,
 		SECTION_DARK_FORCES,
 		SECTION_OUTLAWS,
@@ -59,6 +61,7 @@ namespace TFE_Settings
 		"Hud",
 		"Sound",
 		"System",
+		"A11y",
 		"Game",
 		"Dark_Forces",
 		"Outlaws",
@@ -74,6 +77,7 @@ namespace TFE_Settings
 	void writeHudSettings(FileStream& settings);
 	void writeSoundSettings(FileStream& settings);
 	void writeSystemSettings(FileStream& settings);
+	void writeA11ySettings(FileStream& settings);
 	void writeGameSettings(FileStream& settings);
 	void writePerGameSettings(FileStream& settings);
 	void writeCVars(FileStream& settings);
@@ -86,6 +90,7 @@ namespace TFE_Settings
 	void parseHudSettings(const char* key, const char* value);
 	void parseSoundSettings(const char* key, const char* value);
 	void parseSystemSettings(const char* key, const char* value);
+	void parseA11ySettings(const char* key, const char* value);
 	void parseGame(const char* key, const char* value);
 	void parseDark_ForcesSettings(const char* key, const char* value);
 	void parseOutlawsSettings(const char* key, const char* value);
@@ -240,6 +245,7 @@ namespace TFE_Settings
 			writeHudSettings(settings);
 			writeSoundSettings(settings);
 			writeSystemSettings(settings);
+			writeA11ySettings(settings);
 			writeGameSettings(settings);
 			writePerGameSettings(settings);
 			writeCVars(settings);
@@ -274,6 +280,11 @@ namespace TFE_Settings
 	TFE_Settings_System* getSystemSettings()
 	{
 		return &s_systemSettings;
+	}	
+	
+	TFE_Settings_A11y* getA11ySettings()
+	{
+		return &s_a11ySettings;
 	}
 
 	TFE_Game* getGame()
@@ -413,6 +424,17 @@ namespace TFE_Settings
 		writeKeyValue_Bool(settings, "returnToModLoader", s_systemSettings.returnToModLoader);
 	}
 
+	void writeA11ySettings(FileStream& settings)
+	{
+		writeHeader(settings, c_sectionNames[SECTION_A11Y]);
+		writeKeyValue_Bool(settings, "showCutsceneSubtitles", s_a11ySettings.showCutsceneSubtitles);
+		writeKeyValue_Bool(settings, "showCutsceneCaptions", s_a11ySettings.showCutsceneCaptions);
+		writeKeyValue_Bool(settings, "showGameplaySubtitles", s_a11ySettings.showGameplaySubtitles);
+		writeKeyValue_Bool(settings, "showGameplayCaptions", s_a11ySettings.showGameplayCaptions);
+		writeKeyValue_Int(settings, "cutsceneFontSize", s_a11ySettings.cutsceneFontSize);
+		writeKeyValue_Int(settings, "gameplayFontSize", s_a11ySettings.gameplayFontSize);
+	}
+
 	void writeGameSettings(FileStream& settings)
 	{
 		writeHeader(settings, c_sectionNames[SECTION_GAME]);
@@ -537,6 +559,9 @@ namespace TFE_Settings
 					break;
 				case SECTION_SYSTEM:
 					parseSystemSettings(tokens[0].c_str(), tokens[1].c_str());
+					break;
+				case SECTION_A11Y:
+					parseA11ySettings(tokens[0].c_str(), tokens[1].c_str());
 					break;
 				case SECTION_GAME:
 					parseGame(tokens[0].c_str(), tokens[1].c_str());
@@ -810,6 +835,34 @@ namespace TFE_Settings
 		else if (strcasecmp("returnToModLoader", key) == 0)
 		{
 			s_systemSettings.returnToModLoader = parseBool(value);
+		}
+	}
+	
+	void parseA11ySettings(const char* key, const char* value)
+	{
+		if (strcasecmp("showCutsceneSubtitles", key) == 0)
+		{
+			s_a11ySettings.showCutsceneSubtitles = parseBool(value);
+		}
+		else if (strcasecmp("showCutsceneCaptions", key) == 0)
+		{
+			s_a11ySettings.showCutsceneCaptions = parseBool(value);
+		}
+		else if (strcasecmp("showGameplaySubtitles", key) == 0)
+		{
+			s_a11ySettings.showGameplaySubtitles = parseBool(value);
+		}
+		else if (strcasecmp("showGameplayCaptions", key) == 0)
+		{
+			s_a11ySettings.showGameplayCaptions = parseBool(value);
+		}
+		else if (strcasecmp("cutsceneFontSize", key) == 0)
+		{
+			s_a11ySettings.cutsceneFontSize = (FontSize)parseInt(value);
+		}
+		else if (strcasecmp("gameplayFontSize", key) == 0)
+		{
+			s_a11ySettings.gameplayFontSize = (FontSize)parseInt(value);
 		}
 	}
 

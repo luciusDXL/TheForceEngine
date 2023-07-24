@@ -91,6 +91,13 @@ enum PitchLimit
 	PITCH_COUNT
 };
 
+enum FontSize
+{
+	FONT_SMALL,
+	FONT_MEDIUM,
+	FONT_LARGE
+};
+
 static const char* c_tfeHudScaleStrings[] =
 {
 	"Proportional",		// TFE_HUDSCALE_PROPORTIONAL
@@ -172,6 +179,16 @@ struct TFE_Settings_System
 	bool returnToModLoader = true;		// Return to the Mod Loader if running a mod.
 };
 
+struct TFE_Settings_A11y 
+{
+	bool showCutsceneSubtitles; //voice
+	bool showCutsceneCaptions; //descriptive (e.g. "[Mine beeping]", "[Engine roaring]"
+	bool showGameplaySubtitles; //voice
+	bool showGameplayCaptions; //descriptive
+	FontSize cutsceneFontSize;
+	FontSize gameplayFontSize;
+};
+
 namespace TFE_Settings
 {
 	bool init(bool& firstRun);
@@ -188,6 +205,7 @@ namespace TFE_Settings
 	TFE_Game* getGame();
 	TFE_GameHeader* getGameHeader(const char* gameName);
 	TFE_Settings_Game* getGameSettings();
+	TFE_Settings_A11y* getA11ySettings();
 
 	bool validatePath(const char* path, const char* sentinel);
 	void autodetectGamePaths();

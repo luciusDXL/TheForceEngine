@@ -4,23 +4,20 @@
 #include <string>
 
 #include "accessibility.h"
-#include <TFE_Ui/imGUI/imgui.h>
-#include <TFE_System/system.h>
-#include <TFE_FrontEndUI/console.h>
 #include <TFE_FileSystem/filestream.h>
-#include <TFE_System/parser.h>
+#include <TFE_FrontEndUI/console.h>
 #include <TFE_RenderBackend/renderBackend.h>
+#include <TFE_Settings/settings.h>
+#include <TFE_System/parser.h>
+#include <TFE_System/system.h>
+#include <TFE_Ui/imGUI/imgui.h>
 
 using namespace std::chrono;
 using std::string;
 
 namespace TFE_A11Y { //a11y is industry slang for accessibility
-
-	const bool WRAP_TEXT = true;
-
 	int maxLines = 5;
 	float maxDuration = 10000;
-	float fontScale = 1.0;
 	u32 screenWidth;
 	u32 screenHeight;
 	float time = -1;
@@ -38,6 +35,28 @@ namespace TFE_A11Y { //a11y is industry slang for accessibility
 	// Forward Declarations
 	///////////////////////////////////////////
 	void addCaption(const ConsoleArgList& args);
+
+	string toUpper(string input)
+	{
+		unsigned char* p = (unsigned char*)input.c_str();
+		while (*p) {
+			*p = toupper((unsigned char)*p);
+			p++;
+		}
+
+		return input;
+	}	
+	
+	string toLower(string input)
+	{
+		unsigned char* p = (unsigned char*)input.c_str();
+		while (*p) {
+			*p = tolower((unsigned char)*p);
+			p++;
+		}
+
+		return input;
+	}
 
 	void init()
 	{
@@ -83,9 +102,11 @@ namespace TFE_A11Y { //a11y is industry slang for accessibility
 				if (caption.msRemaining > maxDuration) caption.msRemaining = maxDuration;
 			}
 			assert(caption.msRemaining > 0);
+			
+			if (caption.text[0] == '[') caption.type = CC_Effect;
+			else caption.type == CC_Voice;
 
-			//convert file name to lower-case
-			string name = _strlwr((char*)tokens[0].c_str());
+			string name = toLower(tokens[0]);
 			captionMap[name] = caption;
 
 			//TFE_System::logWrite(LOG_ERROR, "a11y", name.c_str());
@@ -100,11 +121,28 @@ namespace TFE_A11Y { //a11y is industry slang for accessibility
 
 	void onSoundPlay(char name[], CaptionEnv env)
 	{
+		auto settings = TFE_Settings::getA11ySettings();
+		if (env == CC_Cutscene && !settings->showCutsceneCaptions && !settings->showCutsceneSubtitles) return;
+		if (env == CC_Gameplay && !settings->showGameplayCaptions && !settings->showGameplaySubtitles) return;
+
 		TFE_System::logWrite(LOG_ERROR, "a11y", name);
 
-		if (captionMap.count(string(name))) 
+		string nameLower = toLower(name);
+
+		if (captionMap.count(nameLower))
 		{
-			Caption caption = captionMap[string(name)]; //copy
+			Caption caption = captionMap[nameLower]; //copy
+			if (env == CC_Cutscene)
+			{
+				if (caption.type == CC_Effect && !settings->showCutsceneCaptions) return;
+				else if (caption.type == CC_Voice && !settings->showCutsceneSubtitles) return;
+			}
+			if (env == CC_Gameplay)
+			{
+				if (caption.type == CC_Effect && !settings->showGameplayCaptions) return;
+				else if (caption.type == CC_Voice && !settings->showGameplaySubtitles) return;
+			}
+
 			caption.env = env;
 			TFE_System::logWrite(LOG_ERROR, "a11y", caption.text.c_str());
 			addCaption(caption);
@@ -119,6 +157,7 @@ namespace TFE_A11Y { //a11y is industry slang for accessibility
 		caption.text = args[1];
 		caption.env = CC_Cutscene;
 		caption.msRemaining = caption.text.length() * 90 + 750;
+		caption.type == CC_Voice;
 
 		addCaption(caption);
 	}
@@ -137,23 +176,37 @@ namespace TFE_A11Y { //a11y is industry slang for accessibility
 	void draw() {
 		if (active.size() > 0)
 		{
-			const float LINE_HEIGHT = 23;
+			//track time elapsed
+			const float DEFAULT_LINE_HEIGHT = 23;
 			auto time = system_clock::now().time_since_epoch();
 			auto elapsed = time - lastTime;
 			auto elapsedMS = duration_cast<milliseconds>(elapsed).count();
 
 			DisplayInfo display;
 			TFE_RenderBackend::getDisplayInfo(&display);
-
 			screenWidth = display.width;
 			screenHeight = display.height;
-			int lineHeight = LINE_HEIGHT * fontScale;
+
+			//calculate font size
+			float fontScale = screenHeight / 1024.0f; //scale based on window resolution
+			fontScale = fmax(fontScale, 1);
+			if (active[0].env == CC_Cutscene)
+			{
+				fontScale += (float)(TFE_Settings::getA11ySettings()->cutsceneFontSize);
+			}
+			else
+			{
+				fontScale += (float)(TFE_Settings::getA11ySettings()->gameplayFontSize);
+			}
+
+			//init window
+			int lineHeight = DEFAULT_LINE_HEIGHT * fontScale;
 			ImVec2 windowSize = ImVec2(screenWidth * .6, lineHeight * maxLines);
 			ImGui::SetNextWindowSize(windowSize);
 			//TFE_System::logWrite(LOG_ERROR, "a11y", (std::to_string(screenWidth) + " " + std::to_string(subtitleWindowSize.x) + ", " + std::to_string(screenHeight) + " " + std::to_string(subtitleWindowSize.y)).c_str());
 			if (active[0].env == CC_Gameplay)
 			{
-				ImGui::SetNextWindowPos(ImVec2((float)((screenWidth - windowSize.x) / 2), (float)(lineHeight * 2)));
+				ImGui::SetNextWindowPos(ImVec2((float)((screenWidth - windowSize.x) / 2), DEFAULT_LINE_HEIGHT * 2.0f));
 				ImGui::Begin("##Captions", &t, ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoInputs);
 			}
 			else
@@ -163,18 +216,20 @@ namespace TFE_A11Y { //a11y is industry slang for accessibility
 			}
 			ImGui::SetWindowFontScale(fontScale);
 
+			//display each caption
 			int totalLines = 0;
 			for (int i = 0; i < active.size() && totalLines <= maxLines; i++)
 			{
 				Caption* title = &active[i];
-				float wrapWidth = WRAP_TEXT ? 1.0f : -1.0f;
+				bool wrapText = (title->env == CC_Cutscene); //wrapped for cutscenes, centered for gameplay
+				float wrapWidth = wrapText ? 1.0f : -1.0f;
 				auto textSize = ImGui::CalcTextSize(title->text.c_str(), 0, false, wrapWidth);
 				int lines = round(textSize.y / (lineHeight * lineHeight));
 				totalLines += lines;
 
 				//TFE_System::logWrite(LOG_ERROR, "a11y", (std::to_string(i) + " " + std::to_string(textSize.y) + ", " + std::to_string(lineHeight) + " " + std::to_string(lines) + " " + std::to_string(totalLines) + " " + std::to_string(windowSize.y)).c_str());
 
-				if (WRAP_TEXT)
+				if (wrapText)
 				{
 					ImGui::TextWrapped(title->text.c_str());
 				}
@@ -184,6 +239,7 @@ namespace TFE_A11Y { //a11y is industry slang for accessibility
 					ImGui::Text(title->text.c_str());
 				}
 
+				//reduce the caption's time remaining, removing it from the list if it's out of time
 				title->msRemaining -= elapsedMS;
 				if (title->msRemaining <= 0) {
 					active.erase(active.begin() + i);
@@ -194,5 +250,17 @@ namespace TFE_A11Y { //a11y is industry slang for accessibility
 			ImGui::End();
 			lastTime = time;
 		}
+	}
+
+	bool cutsceneCaptionsEnabled()
+	{
+		auto settings = TFE_Settings::getA11ySettings();
+		return (settings->showCutsceneCaptions || settings->showCutsceneSubtitles);
+	}	
+	
+	bool gameplayCaptionsEnabled()
+	{
+		auto settings = TFE_Settings::getA11ySettings();
+		return (settings->showGameplayCaptions || settings->showGameplaySubtitles);
 	}
 }

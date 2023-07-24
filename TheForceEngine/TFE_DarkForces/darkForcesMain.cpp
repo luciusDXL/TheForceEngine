@@ -585,7 +585,7 @@ namespace TFE_DarkForces
 			{
 				if (cutscene_update())
 				{
-					TFE_A11Y::draw();
+					if (TFE_A11Y::cutsceneCaptionsEnabled) TFE_A11Y::draw();
 				}
 				else
 				{
@@ -631,7 +631,7 @@ namespace TFE_DarkForces
 				// The task system will take over. Basically every frame we just check to see if there are any tasks running.
 				if (task_getCount())
 				{
-					if (!s_gamePaused) TFE_A11Y::draw();
+					if (!s_gamePaused && TFE_A11Y::gameplayCaptionsEnabled()) TFE_A11Y::draw();
 				}
 				else
 				{
