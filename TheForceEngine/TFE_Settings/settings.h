@@ -232,10 +232,13 @@ struct TFE_Settings_A11y
 	bool showCutsceneCaptions; //descriptive (e.g. "[Mine beeping]", "[Engine roaring]"
 	FontSize cutsceneFontSize;
 	RGBA cutsceneFontColor = RGBA::fromFloats(1.0f, 1.0f, 1.0f);
+	float cutsceneTextBackgroundAlpha = 0.75f;
+
 	bool showGameplaySubtitles; //voice
 	bool showGameplayCaptions; //descriptive
 	FontSize gameplayFontSize;
 	RGBA gameplayFontColor = RGBA::fromFloats(1.0f, 1.0f, 1.0f);
+	int gameplayMaxTextLines = 3;
 };
 
 namespace TFE_Settings

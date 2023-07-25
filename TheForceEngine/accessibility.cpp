@@ -16,7 +16,6 @@ using namespace std::chrono;
 using std::string;
 
 namespace TFE_A11Y { //a11y is industry slang for accessibility
-	int maxLines = 5;
 	float maxDuration = 10000;
 	u32 screenWidth;
 	u32 screenHeight;
@@ -30,11 +29,13 @@ namespace TFE_A11Y { //a11y is industry slang for accessibility
 	TFE_Parser parser;
 	std::map<string, Caption> captionMap;
 	std::vector<Caption> active;
+	std::vector<Caption> exampleCaptions;
 
 	///////////////////////////////////////////
 	// Forward Declarations
 	///////////////////////////////////////////
 	void addCaption(const ConsoleArgList& args);
+	void drawCaptions(std::vector<Caption>* captions);
 
 	string toUpper(string input)
 	{
@@ -98,7 +99,7 @@ namespace TFE_A11Y { //a11y is industry slang for accessibility
 			if (caption.msRemaining <= 0)
 			{
 				//calculate caption duration based on text length
-				caption.msRemaining = caption.text.length() * 90 + 750;
+				caption.msRemaining = caption.text.length() * 70 + 900;
 				if (caption.msRemaining > maxDuration) caption.msRemaining = maxDuration;
 			}
 			assert(caption.msRemaining > 0);
@@ -114,12 +115,12 @@ namespace TFE_A11Y { //a11y is industry slang for accessibility
 		};
 	}
 
-	void clear() 
+	void clearCaptions() 
 	{
 		active.clear();
 	}
 
-	void onSoundPlay(char name[], CaptionEnv env)
+	void onSoundPlay(char* name, CaptionEnv env)
 	{
 		auto settings = TFE_Settings::getA11ySettings();
 		if (env == CC_Cutscene && !settings->showCutsceneCaptions && !settings->showCutsceneSubtitles) return;
@@ -167,107 +168,137 @@ namespace TFE_A11Y { //a11y is industry slang for accessibility
 			lastTime = system_clock::now().time_since_epoch();
 		}
 		active.push_back(caption);
-		if (active.size() > maxLines) {
-			active.erase(active.begin());
-		}
 		//TFE_System::logWrite(LOG_ERROR, "a11y", std::to_string(active.size()).c_str());
 	}
 
-	void draw() {
+	void drawCaptions() {
 		if (active.size() > 0)
 		{
-			auto settings = TFE_Settings::getA11ySettings();
+			drawCaptions(&active);
+		}
+	}
 
-			//track time elapsed
-			const float DEFAULT_LINE_HEIGHT = 20;
-			const float LINE_PADDING = 5;
-			auto time = system_clock::now().time_since_epoch();
-			auto elapsed = time - lastTime;
-			auto elapsedMS = duration_cast<milliseconds>(elapsed).count();
+	void drawCaptions(std::vector<Caption>* captions)
+	{
+		auto settings = TFE_Settings::getA11ySettings();
 
-			DisplayInfo display;
-			TFE_RenderBackend::getDisplayInfo(&display);
-			screenWidth = display.width;
-			screenHeight = display.height;
+		//track time elapsed
+		const float DEFAULT_LINE_HEIGHT = 20;
+		const float LINE_PADDING = 5;
+		auto time = system_clock::now().time_since_epoch();
+		auto elapsed = time - lastTime;
+		auto elapsedMS = duration_cast<milliseconds>(elapsed).count();
 
-			//calculate font size
-			float fontScale = screenHeight / 1024.0f; //scale based on window resolution
-			fontScale = fmax(fontScale, 1);
-			if (active[0].env == CC_Gameplay)
+		DisplayInfo display;
+		TFE_RenderBackend::getDisplayInfo(&display);
+		screenWidth = display.width;
+		screenHeight = display.height;
+		int maxLines;
+
+		//calculate font size
+		float fontScale = screenHeight / 1024.0f; //scale based on window resolution
+		fontScale = fmax(fontScale, 1);
+		if (captions->at(0).env == CC_Gameplay)
+		{
+			fontScale += (float)(settings->gameplayFontSize * screenHeight / 1280.0f);
+			maxLines = settings->gameplayMaxTextLines;
+		}
+		else
+		{
+			fontScale += (float)(settings->cutsceneFontSize * screenHeight / 1280.0f);
+			maxLines = 5;
+		}
+
+		while (captions->size() > maxLines)
+		{
+			captions->erase(captions->begin());
+		}
+
+		//init window
+		int lineHeight = DEFAULT_LINE_HEIGHT * fontScale;
+		ImVec2 windowSize = ImVec2(screenWidth * .8, 0); //auto-size vertically
+		ImGui::SetNextWindowSize(windowSize);
+
+		RGBA* fontColor;
+		ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.0f, 0.0f, 0.0f, settings->cutsceneTextBackgroundAlpha)); //window bg
+		ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(0.5f, 0.5f, 0.5f, settings->cutsceneTextBackgroundAlpha)); //window border
+		//TFE_System::logWrite(LOG_ERROR, "a11y", (std::to_string(screenWidth) + " " + std::to_string(subtitleWindowSize.x) + ", " + std::to_string(screenHeight) + " " + std::to_string(subtitleWindowSize.y)).c_str());
+		if (captions->at(0).env == CC_Gameplay)
+		{
+			ImGui::SetNextWindowPos(ImVec2((float)((screenWidth - windowSize.x) / 2), DEFAULT_LINE_HEIGHT * 2.0f));
+			ImGui::Begin("##Captions", &t, ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoInputs);
+			fontColor = &settings->gameplayFontColor;
+		}
+		else //cutscenes
+		{
+			ImGui::SetNextWindowPos(ImVec2((float)((screenWidth - windowSize.x) / 2), screenHeight - lineHeight), 0, ImVec2(0, 1));
+			ImGui::Begin("##Captions", &t, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoInputs);
+			fontColor = &settings->cutsceneFontColor;
+		}
+		ImGui::SetWindowFontScale(fontScale);
+		ImGui::PopStyleColor(); //window border
+		ImGui::PopStyleColor(); //window bg
+
+		ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(fontColor->getRedF(), fontColor->getGreenF(), fontColor->getBlueF(), fontColor->getAlphaF()));
+
+		//display each caption
+		int totalLines = 0;
+		for (int i = 0; i < captions->size() && totalLines < maxLines; i++)
+		{
+			Caption* title = &captions->at(i);
+			bool wrapText = (title->env == CC_Cutscene); //wrapped for cutscenes, centered for gameplay
+			float wrapWidth = wrapText ? windowSize.x : -1.0f;
+			auto textSize = ImGui::CalcTextSize(title->text.c_str(), 0, false, wrapWidth);
+			if (!wrapText && textSize.x > windowSize.x)
 			{
-				fontScale += (float)(settings->gameplayFontSize * screenHeight / 1280.0f);
+				wrapText = true;
+				wrapWidth = windowSize.x;
+				textSize = ImGui::CalcTextSize(title->text.c_str(), 0, false, wrapWidth);
+			}
+
+			int lines = round(textSize.y / lineHeight);
+			totalLines += lines;
+
+			//TFE_System::logWrite(LOG_ERROR, "a11y", (std::to_string(i) + " " + std::to_string(textSize.y) + ", " + std::to_string(lineHeight) + " " + std::to_string(lines) + " " + std::to_string(totalLines) + " " + std::to_string(windowSize.y)).c_str());
+
+			if (wrapText)
+			{
+				ImGui::TextWrapped(title->text.c_str());
 			}
 			else
 			{
-				fontScale += (float)(settings->cutsceneFontSize * screenHeight / 1280.0f);
+				ImGui::SetCursorPosX((windowSize.x - textSize.x) * 0.5f);
+				ImGui::Text(title->text.c_str());
 			}
 
-			//init window
-			int lineHeight = DEFAULT_LINE_HEIGHT * fontScale;
-			ImVec2 windowSize = ImVec2(screenWidth * .8, 0); //auto-size vertically
-			ImGui::SetNextWindowSize(windowSize);
-
-			RGBA* fontColor;
-			//TFE_System::logWrite(LOG_ERROR, "a11y", (std::to_string(screenWidth) + " " + std::to_string(subtitleWindowSize.x) + ", " + std::to_string(screenHeight) + " " + std::to_string(subtitleWindowSize.y)).c_str());
-			if (active[0].env == CC_Gameplay)
+			//reduce the caption's time remaining, removing it from the list if it's out of time
+			if (i == 0)
 			{
-				ImGui::SetNextWindowPos(ImVec2((float)((screenWidth - windowSize.x) / 2), DEFAULT_LINE_HEIGHT * 2.0f));
-				ImGui::Begin("##Captions", &t, ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoInputs);
-				fontColor = &settings->gameplayFontColor;
-			}
-			else
-			{
-				ImGui::SetNextWindowPos(ImVec2((float)((screenWidth - windowSize.x) / 2), screenHeight - lineHeight), ImGuiCond_Appearing, ImVec2(0, 1));
-				ImGui::Begin("##Captions", &t, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoInputs);
-				fontColor = &settings->cutsceneFontColor;
-			}
-			ImGui::SetWindowFontScale(fontScale);
-
-			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(fontColor->getRedF(), fontColor->getGreenF(), fontColor->getBlueF(), fontColor->getAlphaF()));
-
-			//display each caption
-			int totalLines = 0;
-			for (int i = 0; i < active.size() && totalLines < maxLines; i++)
-			{
-				Caption* title = &active[i];
-				bool wrapText = (title->env == CC_Cutscene); //wrapped for cutscenes, centered for gameplay
-				float wrapWidth = wrapText ? windowSize.x : -1.0f;
-				auto textSize = ImGui::CalcTextSize(title->text.c_str(), 0, false, wrapWidth);
-				if (!wrapText && textSize.x > windowSize.x)
-				{
-					wrapText = true;
-					wrapWidth = windowSize.x;
-					textSize = ImGui::CalcTextSize(title->text.c_str(), 0, false, wrapWidth);
-				}
-
-				int lines = round(textSize.y / lineHeight);
-				totalLines += lines;
-				TFE_System::logWrite(LOG_ERROR, "a11y", string(to_string(lines) + " " + to_string(totalLines)).c_str());
-
-				//TFE_System::logWrite(LOG_ERROR, "a11y", (std::to_string(i) + " " + std::to_string(textSize.y) + ", " + std::to_string(lineHeight) + " " + std::to_string(lines) + " " + std::to_string(totalLines) + " " + std::to_string(windowSize.y)).c_str());
-
-				if (wrapText)
-				{
-					ImGui::TextWrapped(title->text.c_str());
-				}
-				else
-				{
-					ImGui::SetCursorPosX((windowSize.x - textSize.x) * 0.5f);
-					ImGui::Text(title->text.c_str());
-				}
-
-				//reduce the caption's time remaining, removing it from the list if it's out of time
 				title->msRemaining -= elapsedMS;
 				if (title->msRemaining <= 0) {
-					active.erase(active.begin() + i);
+					captions->erase(captions->begin() + i);
 					i--;
 				}
 			}
-			ImGui::PopStyleColor();
-
-			ImGui::End();
-			lastTime = time;
 		}
+		ImGui::PopStyleColor();
+
+		ImGui::End();
+		lastTime = time;
+	}
+
+	void drawExampleCaptions()
+	{
+		if (exampleCaptions.size() == 0)
+		{
+			Caption caption;
+			caption.text = "This is an example cutscene caption";
+			caption.msRemaining = 500;
+			caption.env = CaptionEnv::CC_Cutscene;
+			caption.type = CC_Voice;
+			exampleCaptions.push_back(caption);
+		}
+		drawCaptions(&exampleCaptions);
 	}
 
 	bool cutsceneCaptionsEnabled()
@@ -280,5 +311,10 @@ namespace TFE_A11Y { //a11y is industry slang for accessibility
 	{
 		auto settings = TFE_Settings::getA11ySettings();
 		return (settings->showGameplayCaptions || settings->showGameplaySubtitles);
+	}
+
+	void focusCaptions()
+	{
+		ImGui::SetWindowFocus("##Captions");
 	}
 }

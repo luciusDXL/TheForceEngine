@@ -22,8 +22,10 @@ namespace TFE_A11Y {
 	};
 
 	void init();
-	void clear();
-	void draw();
+	void clearCaptions();
+	void drawCaptions();
+	void drawExampleCaptions();
+	void focusCaptions();
 	void addCaption(Caption caption);
 	void onSoundPlay(char name[], CaptionEnv env);
 

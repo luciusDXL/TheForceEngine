@@ -440,6 +440,8 @@ namespace TFE_Settings
 		writeKeyValue_Int(settings, "gameplayFontSize", s_a11ySettings.gameplayFontSize);
 		writeKeyValue_RGBA(settings, "cutsceneFontColor", s_a11ySettings.cutsceneFontColor);
 		writeKeyValue_RGBA(settings, "gameplayFontColor", s_a11ySettings.gameplayFontColor);
+		writeKeyValue_Float(settings, "cutsceneTextBackgroundAlpha", s_a11ySettings.cutsceneTextBackgroundAlpha);
+		writeKeyValue_Int(settings, "gameplayMaxTextLines", s_a11ySettings.gameplayMaxTextLines);
 	}
 
 	void writeGameSettings(FileStream& settings)
@@ -884,6 +886,14 @@ namespace TFE_Settings
 		else if (strcasecmp("gameplayFontColor", key) == 0)
 		{
 			s_a11ySettings.gameplayFontColor = parseColor(value);
+		}
+		else if (strcasecmp("cutsceneTextBackgroundAlpha", key) == 0)
+		{
+			s_a11ySettings.cutsceneTextBackgroundAlpha = parseFloat(value);
+		}
+		else if (strcasecmp("gameplayMaxTextLines", key) == 0)
+		{
+			s_a11ySettings.gameplayMaxTextLines = parseInt(value);
 		}
 	}
 

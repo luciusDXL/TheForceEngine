@@ -33,6 +33,7 @@
 #include <TFE_Jedi/Renderer/jediRenderer.h>
 
 #include <climits>
+#include <accessibility.h>
 
 using namespace TFE_Input;
 using namespace TFE_Audio;
@@ -785,8 +786,9 @@ namespace TFE_FrontEndUI
 		else if (s_subUI == FEUI_CONFIG)
 		{
 			bool active = true;
+			//NoBringToFrontOnFocus prevents windows from covering the subtitle example on A11y screen
 			u32 window_flags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove |
-				ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoSavedSettings;
+				ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoBringToFrontOnFocus;
 
 			TFE_Input::clearAccumulatedMouseMove();
 
@@ -2621,41 +2623,51 @@ namespace TFE_FrontEndUI
 		bool showCutsceneCaptions = a11y->showCutsceneCaptions;
 		bool showGameplaySubtitles = a11y->showGameplaySubtitles;
 		bool showGameplayCaptions = a11y->showGameplayCaptions;
+		float cutsceneTextBackgroundAlpha = a11y->cutsceneTextBackgroundAlpha;
+		int gameplayMaxTextLines = a11y->gameplayMaxTextLines;
 
+		//CUTSCENES -----------------------------------------
 		ImGui::PushFont(s_dialogFont);
 		ImGui::LabelText("##ConfigLabel2", "Cutscenes");
 		ImGui::PopFont();
 
-		if (ImGui::Checkbox("Cutscene Subtitles (voice)", &showCutsceneSubtitles))
+		if (ImGui::Checkbox("Subtitles (voice)##Cutscenes", &showCutsceneSubtitles))
 		{
 			a11y->showCutsceneSubtitles = showCutsceneSubtitles;
 		}
 		ImGui::SameLine();
-		if (ImGui::Checkbox("Cutscene Captions (SFX)", &showCutsceneCaptions))
+		if (ImGui::Checkbox("Captions (SFX)##Cutscenes", &showCutsceneCaptions))
 		{
 			a11y->showCutsceneCaptions = showCutsceneCaptions;
 		}
+		DrawFontSizeCombo("##CFSL", "Font Size##Cutscenes", "##CFS", (s32*)&a11y->cutsceneFontSize);
+		DrawRGBFields("Font Color##Cutscenes", &a11y->cutsceneFontColor);
+		if (ImGui::SliderFloat("Background Opacity", &cutsceneTextBackgroundAlpha, 0, 1))
+		{
+			a11y->cutsceneTextBackgroundAlpha = cutsceneTextBackgroundAlpha;
+		}
 
-		DrawFontSizeCombo("##CFSL", "Cutscene Font Size", "##CFS", (s32*)&a11y->cutsceneFontSize);
-
-		DrawRGBFields("Cutscene Font Color", &a11y->cutsceneFontColor);
-
+		// GAMEPLAY------------------------------------------
 		ImGui::PushFont(s_dialogFont);
 		ImGui::LabelText("##ConfigLabel3", "Gameplay");
 		ImGui::PopFont();
-		if (ImGui::Checkbox("Gameplay Subtitles (voice)", &showGameplaySubtitles))
+		if (ImGui::Checkbox("Subtitles (voice)##Gameplay", &showGameplaySubtitles))
 		{
 			a11y->showGameplaySubtitles = showGameplaySubtitles;
 		}
 		ImGui::SameLine();
-		if (ImGui::Checkbox("Gameplay Captions (SFX)", &showGameplayCaptions))
+		if (ImGui::Checkbox("Captions (SFX)##Gameplay", &showGameplayCaptions))
 		{
 			a11y->showGameplayCaptions = showGameplayCaptions;
 		}
-
-		DrawFontSizeCombo("##GFSL", "Gameplay Font Size", "##GFS", (s32*)&a11y->gameplayFontSize);
-
-		DrawRGBFields("Gameplay Font Color", &a11y->gameplayFontColor);
+		DrawFontSizeCombo("##GFSL", "Font Size##Gameplay", "##GFS", (s32*)&a11y->gameplayFontSize);
+		DrawRGBFields("Font Color##Gameplay", &a11y->gameplayFontColor);
+		if (ImGui::SliderInt("Max Lines##Gameplay", &gameplayMaxTextLines, 2, 7))
+		{
+			a11y->gameplayMaxTextLines = gameplayMaxTextLines;
+		}
+		
+		TFE_A11Y::drawExampleCaptions();
 	}
 
 	void pickCurrentResolution()
