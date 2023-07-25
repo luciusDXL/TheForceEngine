@@ -213,7 +213,8 @@ namespace TFE_FrontEndUI
 	{
 		"Small",
 		"Medium",
-		"Large"
+		"Large",
+		"Extra-Large"
 	};
 
 	static InputConfig* s_inputConfig = nullptr;
@@ -2592,7 +2593,26 @@ namespace TFE_FrontEndUI
 		ImGui::SetNextItemWidth(196 * s_uiScale);
 		ImGui::Combo(comboTag, currentValue, c_fontSize, IM_ARRAYSIZE(c_fontSize));
 	}
-		
+	
+	void DrawRGBFields(const char* label, RGBA* color)
+	{
+		ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(color->getRedF(), color->getGreenF(), color->getBlueF(), color->getAlphaF()));
+		ImGui::LabelText("##ConfigLabel", label);
+		ImGui::PopStyleColor();
+
+		RGBAf c;
+		c.r = color->getRedF();
+		c.g = color->getGreenF();
+		c.b = color->getBlueF();
+		c.a = color->getAlphaF();
+
+		ImGui::SetNextItemWidth(600);
+		if (ImGui::SliderFloat4((string("###color") + label).c_str(), &c.r, 0.0f, 1.0f))
+		{
+			color->color = RGBA::fromFloats(c.r, c.g, c.b, c.a).color;
+		}
+	}
+
 	//Accessibility
 	void configA11y()
 	{
@@ -2618,6 +2638,8 @@ namespace TFE_FrontEndUI
 
 		DrawFontSizeCombo("##CFSL", "Cutscene Font Size", "##CFS", (s32*)&a11y->cutsceneFontSize);
 
+		DrawRGBFields("Cutscene Font Color", &a11y->cutsceneFontColor);
+
 		ImGui::PushFont(s_dialogFont);
 		ImGui::LabelText("##ConfigLabel3", "Gameplay");
 		ImGui::PopFont();
@@ -2632,6 +2654,8 @@ namespace TFE_FrontEndUI
 		}
 
 		DrawFontSizeCombo("##GFSL", "Gameplay Font Size", "##GFS", (s32*)&a11y->gameplayFontSize);
+
+		DrawRGBFields("Gameplay Font Color", &a11y->gameplayFontColor);
 	}
 
 	void pickCurrentResolution()

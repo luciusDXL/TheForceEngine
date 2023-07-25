@@ -176,8 +176,11 @@ namespace TFE_A11Y { //a11y is industry slang for accessibility
 	void draw() {
 		if (active.size() > 0)
 		{
+			auto settings = TFE_Settings::getA11ySettings();
+
 			//track time elapsed
-			const float DEFAULT_LINE_HEIGHT = 23;
+			const float DEFAULT_LINE_HEIGHT = 20;
+			const float LINE_PADDING = 5;
 			auto time = system_clock::now().time_since_epoch();
 			auto elapsed = time - lastTime;
 			auto elapsedMS = duration_cast<milliseconds>(elapsed).count();
@@ -190,42 +193,56 @@ namespace TFE_A11Y { //a11y is industry slang for accessibility
 			//calculate font size
 			float fontScale = screenHeight / 1024.0f; //scale based on window resolution
 			fontScale = fmax(fontScale, 1);
-			if (active[0].env == CC_Cutscene)
+			if (active[0].env == CC_Gameplay)
 			{
-				fontScale += (float)(TFE_Settings::getA11ySettings()->cutsceneFontSize);
+				fontScale += (float)(settings->gameplayFontSize * screenHeight / 1280.0f);
 			}
 			else
 			{
-				fontScale += (float)(TFE_Settings::getA11ySettings()->gameplayFontSize);
+				fontScale += (float)(settings->cutsceneFontSize * screenHeight / 1280.0f);
 			}
 
 			//init window
 			int lineHeight = DEFAULT_LINE_HEIGHT * fontScale;
-			ImVec2 windowSize = ImVec2(screenWidth * .6, lineHeight * maxLines);
+			ImVec2 windowSize = ImVec2(screenWidth * .8, 0); //auto-size vertically
 			ImGui::SetNextWindowSize(windowSize);
+
+			RGBA* fontColor;
 			//TFE_System::logWrite(LOG_ERROR, "a11y", (std::to_string(screenWidth) + " " + std::to_string(subtitleWindowSize.x) + ", " + std::to_string(screenHeight) + " " + std::to_string(subtitleWindowSize.y)).c_str());
 			if (active[0].env == CC_Gameplay)
 			{
 				ImGui::SetNextWindowPos(ImVec2((float)((screenWidth - windowSize.x) / 2), DEFAULT_LINE_HEIGHT * 2.0f));
 				ImGui::Begin("##Captions", &t, ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoInputs);
+				fontColor = &settings->gameplayFontColor;
 			}
 			else
 			{
-				ImGui::SetNextWindowPos(ImVec2((float)((screenWidth - windowSize.x) / 2), screenHeight - windowSize.y - lineHeight));
+				ImGui::SetNextWindowPos(ImVec2((float)((screenWidth - windowSize.x) / 2), screenHeight - lineHeight), ImGuiCond_Appearing, ImVec2(0, 1));
 				ImGui::Begin("##Captions", &t, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoInputs);
+				fontColor = &settings->cutsceneFontColor;
 			}
 			ImGui::SetWindowFontScale(fontScale);
 
+			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(fontColor->getRedF(), fontColor->getGreenF(), fontColor->getBlueF(), fontColor->getAlphaF()));
+
 			//display each caption
 			int totalLines = 0;
-			for (int i = 0; i < active.size() && totalLines <= maxLines; i++)
+			for (int i = 0; i < active.size() && totalLines < maxLines; i++)
 			{
 				Caption* title = &active[i];
 				bool wrapText = (title->env == CC_Cutscene); //wrapped for cutscenes, centered for gameplay
-				float wrapWidth = wrapText ? 1.0f : -1.0f;
+				float wrapWidth = wrapText ? windowSize.x : -1.0f;
 				auto textSize = ImGui::CalcTextSize(title->text.c_str(), 0, false, wrapWidth);
-				int lines = round(textSize.y / (lineHeight * lineHeight));
+				if (!wrapText && textSize.x > windowSize.x)
+				{
+					wrapText = true;
+					wrapWidth = windowSize.x;
+					textSize = ImGui::CalcTextSize(title->text.c_str(), 0, false, wrapWidth);
+				}
+
+				int lines = round(textSize.y / lineHeight);
 				totalLines += lines;
+				TFE_System::logWrite(LOG_ERROR, "a11y", string(to_string(lines) + " " + to_string(totalLines)).c_str());
 
 				//TFE_System::logWrite(LOG_ERROR, "a11y", (std::to_string(i) + " " + std::to_string(textSize.y) + ", " + std::to_string(lineHeight) + " " + std::to_string(lines) + " " + std::to_string(totalLines) + " " + std::to_string(windowSize.y)).c_str());
 
@@ -246,6 +263,7 @@ namespace TFE_A11Y { //a11y is industry slang for accessibility
 					i--;
 				}
 			}
+			ImGui::PopStyleColor();
 
 			ImGui::End();
 			lastTime = time;

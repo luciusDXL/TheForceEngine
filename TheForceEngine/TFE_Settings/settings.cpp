@@ -346,6 +346,11 @@ namespace TFE_Settings
 		file.writeBuffer(s_lineBuffer, (u32)strlen(s_lineBuffer));
 	}
 
+	void writeKeyValue_RGBA(FileStream& file, const char* key, RGBA value)
+	{
+		writeKeyValue_Int(file, key, value.color);
+	}
+
 	void writeWindowSettings(FileStream& settings)
 	{
 		writeHeader(settings, c_sectionNames[SECTION_WINDOW]);
@@ -433,6 +438,8 @@ namespace TFE_Settings
 		writeKeyValue_Bool(settings, "showGameplayCaptions", s_a11ySettings.showGameplayCaptions);
 		writeKeyValue_Int(settings, "cutsceneFontSize", s_a11ySettings.cutsceneFontSize);
 		writeKeyValue_Int(settings, "gameplayFontSize", s_a11ySettings.gameplayFontSize);
+		writeKeyValue_RGBA(settings, "cutsceneFontColor", s_a11ySettings.cutsceneFontColor);
+		writeKeyValue_RGBA(settings, "gameplayFontColor", s_a11ySettings.gameplayFontColor);
 	}
 
 	void writeGameSettings(FileStream& settings)
@@ -598,6 +605,12 @@ namespace TFE_Settings
 	{
 		if (value[0] == 'f' || value[0] == '0') { return false; }
 		return true;
+	}
+
+	RGBA parseColor(const char* value)
+	{
+		s32 v = parseInt(value);
+		return RGBA(v);
 	}
 
 	void parseWindowSettings(const char* key, const char* value)
@@ -863,6 +876,14 @@ namespace TFE_Settings
 		else if (strcasecmp("gameplayFontSize", key) == 0)
 		{
 			s_a11ySettings.gameplayFontSize = (FontSize)parseInt(value);
+		}
+		else if (strcasecmp("cutsceneFontColor", key) == 0)
+		{
+			s_a11ySettings.cutsceneFontColor = parseColor(value);
+		}
+		else if (strcasecmp("gameplayFontColor", key) == 0)
+		{
+			s_a11ySettings.gameplayFontColor = parseColor(value);
 		}
 	}
 
