@@ -434,14 +434,20 @@ namespace TFE_Settings
 		writeHeader(settings, c_sectionNames[SECTION_A11Y]);
 		writeKeyValue_Bool(settings, "showCutsceneSubtitles", s_a11ySettings.showCutsceneSubtitles);
 		writeKeyValue_Bool(settings, "showCutsceneCaptions", s_a11ySettings.showCutsceneCaptions);
+		writeKeyValue_Int(settings, "cutsceneFontSize", s_a11ySettings.cutsceneFontSize);
+		writeKeyValue_RGBA(settings, "cutsceneFontColor", s_a11ySettings.cutsceneFontColor);
+		writeKeyValue_Float(settings, "cutsceneTextBackgroundAlpha", s_a11ySettings.cutsceneTextBackgroundAlpha);
+		writeKeyValue_Bool(settings, "showCutsceneTextBorder", s_a11ySettings.showCutsceneTextBorder);
+		writeKeyValue_Float(settings, "cutsceneTextSpeed", s_a11ySettings.cutsceneTextSpeed);
+
 		writeKeyValue_Bool(settings, "showGameplaySubtitles", s_a11ySettings.showGameplaySubtitles);
 		writeKeyValue_Bool(settings, "showGameplayCaptions", s_a11ySettings.showGameplayCaptions);
-		writeKeyValue_Int(settings, "cutsceneFontSize", s_a11ySettings.cutsceneFontSize);
 		writeKeyValue_Int(settings, "gameplayFontSize", s_a11ySettings.gameplayFontSize);
-		writeKeyValue_RGBA(settings, "cutsceneFontColor", s_a11ySettings.cutsceneFontColor);
 		writeKeyValue_RGBA(settings, "gameplayFontColor", s_a11ySettings.gameplayFontColor);
-		writeKeyValue_Float(settings, "cutsceneTextBackgroundAlpha", s_a11ySettings.cutsceneTextBackgroundAlpha);
+		writeKeyValue_Float(settings, "gameplayTextBackgroundAlpha", s_a11ySettings.gameplayTextBackgroundAlpha);
+		writeKeyValue_Bool(settings, "showGameplayTextBorder", s_a11ySettings.showGameplayTextBorder);
 		writeKeyValue_Int(settings, "gameplayMaxTextLines", s_a11ySettings.gameplayMaxTextLines);
+		writeKeyValue_Float(settings, "gameplayTextSpeed", s_a11ySettings.gameplayTextSpeed);
 	}
 
 	void writeGameSettings(FileStream& settings)
@@ -891,9 +897,29 @@ namespace TFE_Settings
 		{
 			s_a11ySettings.cutsceneTextBackgroundAlpha = parseFloat(value);
 		}
+		else if (strcasecmp("gameplayTextBackgroundAlpha", key) == 0)
+		{
+			s_a11ySettings.gameplayTextBackgroundAlpha = parseFloat(value);
+		}
 		else if (strcasecmp("gameplayMaxTextLines", key) == 0)
 		{
 			s_a11ySettings.gameplayMaxTextLines = parseInt(value);
+		}
+		else if (strcasecmp("showCutsceneTextBorder", key) == 0)
+		{
+			s_a11ySettings.showCutsceneTextBorder = parseBool(value);
+		}
+		else if (strcasecmp("showGameplayTextBorder", key) == 0)
+		{
+			s_a11ySettings.showGameplayTextBorder = parseBool(value);
+		}
+		else if (strcasecmp("cutsceneTextSpeed", key) == 0)
+		{
+			s_a11ySettings.cutsceneTextSpeed = parseFloat(value);
+		}
+		else if (strcasecmp("gameplayTextSpeed", key) == 0)
+		{
+			s_a11ySettings.gameplayTextSpeed = parseFloat(value);
 		}
 	}
 

@@ -668,6 +668,7 @@ namespace TFE_DarkForces
 					bitmap_clearLevelData();
 					bitmap_setAllocator(s_gameRegion);
 					level_freeAllAssets();
+					TFE_A11Y::clearCaptions();
 				}
 			} break;
 		}

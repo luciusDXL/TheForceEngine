@@ -180,6 +180,10 @@ struct TFE_Settings_System
 	bool returnToModLoader = true;		// Return to the Mod Loader if running a mod.
 };
 
+/// <summary>
+/// Represents an RGBA color as a 32-bit unsigned integer, with properties for reading the channel
+/// values as U8s or floats.
+/// </summary>
 struct RGBA
 {
 	u32 color;
@@ -233,12 +237,17 @@ struct TFE_Settings_A11y
 	FontSize cutsceneFontSize;
 	RGBA cutsceneFontColor = RGBA::fromFloats(1.0f, 1.0f, 1.0f);
 	float cutsceneTextBackgroundAlpha = 0.75f;
+	bool showCutsceneTextBorder = true;
+	float cutsceneTextSpeed = 1.0f;
 
 	bool showGameplaySubtitles; //voice
 	bool showGameplayCaptions; //descriptive
 	FontSize gameplayFontSize;
 	RGBA gameplayFontColor = RGBA::fromFloats(1.0f, 1.0f, 1.0f);
 	int gameplayMaxTextLines = 3;
+	float gameplayTextBackgroundAlpha = 0.0f;
+	bool showGameplayTextBorder = false;
+	float gameplayTextSpeed = 1.0f;
 };
 
 namespace TFE_Settings

@@ -16,6 +16,7 @@
 #include <TFE_FileSystem/filestream.h>
 #include <TFE_System/parser.h>
 #include <cstring>
+#include <accessibility.h>
 
 using namespace TFE_Jedi;
 
@@ -215,6 +216,7 @@ namespace TFE_DarkForces
 		else if (TFE_Input::keyPressed(KEY_SPACE))
 		{
 			s_nextSceneInput = JTRUE;
+			if (TFE_A11Y::cutsceneCaptionsEnabled) TFE_A11Y::clearCaptions();
 		}
 
 		/////////////////////////////////
