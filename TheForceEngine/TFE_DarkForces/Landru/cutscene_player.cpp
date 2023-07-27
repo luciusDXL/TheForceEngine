@@ -209,7 +209,9 @@ namespace TFE_DarkForces
 		if (s_scene == SCENE_EXIT) { return JFALSE; }
 
 		// TFE: Added since inputs can be skipped at low framerates.
-		if (TFE_Input::keyPressed(KEY_ESCAPE) || TFE_Input::keyPressed(KEY_RETURN))
+		// Ignore Enter key if player is pressing Alt-Enter (to switch between windowed and fullscreen)
+		if (TFE_Input::keyPressed(KEY_ESCAPE) || (TFE_Input::keyPressed(KEY_RETURN) && !TFE_Input::keyDown(KEY_LALT) 
+			&& !TFE_Input::keyDown(KEY_RALT)))
 		{
 			s_skipSceneInput = JTRUE;
 		}
