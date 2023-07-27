@@ -291,7 +291,6 @@ namespace TFE_DarkForces
 		}
 		ImStartSfx(idInstance, priority);
 		sound_setVolume(idInstance, sound->volume);
-		TFE_A11Y::onSoundPlay(sound->name, TFE_A11Y::CaptionEnv::CC_Gameplay);
 
 		return idInstance;
 	}
@@ -411,6 +410,12 @@ namespace TFE_DarkForces
 		angle14_32 angle = vec2ToAngle(x - s_eyePos.x, z - s_eyePos.z);
 		angle = getAngleDifference(s_yaw, angle);
 		*pan = s_tPan[((angle + 8192) / 512) & 31];
+
+		//TFE subtitles/captions
+		if (TFE_A11Y::gameplayCaptionsEnabled() && *vol > TFE_Settings::getA11ySettings()->gameplayCaptionMinVolume)
+		{
+			TFE_A11Y::onSoundPlay(sound->name, TFE_A11Y::CaptionEnv::CC_Gameplay);
+		}
 	}
 		
 	SoundEffectId soundInstance(SoundSourceId soundId, s32 instance)

@@ -249,6 +249,7 @@ struct TFE_Settings_A11y
 	f32 gameplayTextBackgroundAlpha = 0.0f;
 	bool showGameplayTextBorder = false;
 	f32 gameplayTextSpeed = 1.0f;
+	s32 gameplayCaptionMinVolume = 32; //in range 0 - 127
 };
 
 namespace TFE_Settings

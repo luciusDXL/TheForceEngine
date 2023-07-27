@@ -448,6 +448,7 @@ namespace TFE_Settings
 		writeKeyValue_Bool(settings, "showGameplayTextBorder", s_a11ySettings.showGameplayTextBorder);
 		writeKeyValue_Int(settings, "gameplayMaxTextLines", s_a11ySettings.gameplayMaxTextLines);
 		writeKeyValue_Float(settings, "gameplayTextSpeed", s_a11ySettings.gameplayTextSpeed);
+		writeKeyValue_Int(settings, "gameplayCaptionMinVolume", s_a11ySettings.gameplayCaptionMinVolume);
 	}
 
 	void writeGameSettings(FileStream& settings)
@@ -921,6 +922,10 @@ namespace TFE_Settings
 		else if (strcasecmp("gameplayTextSpeed", key) == 0)
 		{
 			s_a11ySettings.gameplayTextSpeed = parseFloat(value);
+		}
+		else if (strcasecmp("gameplayCaptionMinVolume", key) == 0)
+		{
+			s_a11ySettings.gameplayCaptionMinVolume = parseInt(value);
 		}
 	}
 
