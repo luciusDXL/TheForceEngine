@@ -676,6 +676,7 @@ namespace TFE_FrontEndUI
 					// Game
 					gameSettings->df_showSecretFoundMsg = false;
 					gameSettings->df_bobaFettFacePlayer = false;
+					gameSettings->df_smoothVUEs = false;
 					// Graphics
 					graphicsSettings->rendererIndex = RENDERER_SOFTWARE;
 					graphicsSettings->widescreen = false;
@@ -1142,6 +1143,12 @@ namespace TFE_FrontEndUI
 		if (ImGui::Checkbox("Boba Fett Face Player Fix", &bobaFettFacePlayer))
 		{
 			gameSettings->df_bobaFettFacePlayer = bobaFettFacePlayer;
+		}
+		
+		bool smoothVUEs = gameSettings->df_smoothVUEs;
+		if (ImGui::Checkbox("Smooth VUEs", &smoothVUEs))
+		{
+			gameSettings->df_smoothVUEs = smoothVUEs;
 		}
 
 		bool ignoreInfLimit = gameSettings->df_ignoreInfLimit;
