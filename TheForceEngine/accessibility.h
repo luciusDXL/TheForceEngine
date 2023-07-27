@@ -1,5 +1,6 @@
 #pragma once
 #include <string>
+#include <TFE_System/system.h>
 using std::string;
 
 namespace TFE_A11Y {
@@ -16,7 +17,7 @@ namespace TFE_A11Y {
 	struct Caption 
 	{
 		string text;
-		long msRemaining;
+		s64 msRemaining;
 		CaptionType type;
 		CaptionEnv env;
 	};
@@ -27,7 +28,7 @@ namespace TFE_A11Y {
 	void drawExampleCaptions();
 	void focusCaptions();
 	void addCaption(Caption caption);
-	void onSoundPlay(char name[], CaptionEnv env);
+	void onSoundPlay(char* name, CaptionEnv env);
 
 	//True if captions or subtitles are enabled for cutscenes
 	bool cutsceneCaptionsEnabled();

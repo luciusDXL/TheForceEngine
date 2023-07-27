@@ -585,7 +585,7 @@ namespace TFE_DarkForces
 			{
 				if (cutscene_update())
 				{
-					if (TFE_A11Y::cutsceneCaptionsEnabled) TFE_A11Y::drawCaptions();
+					if (TFE_A11Y::cutsceneCaptionsEnabled()) TFE_A11Y::drawCaptions();
 				}
 				else
 				{

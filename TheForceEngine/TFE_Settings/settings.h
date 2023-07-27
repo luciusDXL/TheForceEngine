@@ -208,13 +208,13 @@ struct RGBA
 		this->color = color;
 	}
 
-	static RGBA fromFloats(float r, float g, float b)
+	static RGBA fromFloats(f32 r, f32 g, f32 b)
 	{
 		RGBA color;
 		color.color = (u8)(b * 255) + ((u8)(g * 255) << 8) + ((u8)(r * 255) << 16) + (255 << 24);
 		return color;
 	}
-	static RGBA fromFloats(float r, float g, float b, float a)
+	static RGBA fromFloats(f32 r, f32 g, f32 b, f32 a)
 	{
 		RGBA color;
 		color.color = (u8)(b * 255) + ((u8)(g * 255) << 8) + ((u8)(r * 255) << 16) + ((u8)(a * 255) << 24);
@@ -237,18 +237,18 @@ struct TFE_Settings_A11y
 	bool showCutsceneCaptions; //descriptive (e.g. "[Mine beeping]", "[Engine roaring]"
 	FontSize cutsceneFontSize;
 	RGBA cutsceneFontColor = RGBA::fromFloats(1.0f, 1.0f, 1.0f);
-	float cutsceneTextBackgroundAlpha = 0.75f;
+	f32 cutsceneTextBackgroundAlpha = 0.75f;
 	bool showCutsceneTextBorder = true;
-	float cutsceneTextSpeed = 1.0f;
+	f32 cutsceneTextSpeed = 1.0f;
 
 	bool showGameplaySubtitles; //voice
 	bool showGameplayCaptions; //descriptive
 	FontSize gameplayFontSize;
 	RGBA gameplayFontColor = RGBA::fromFloats(1.0f, 1.0f, 1.0f);
 	int gameplayMaxTextLines = 3;
-	float gameplayTextBackgroundAlpha = 0.0f;
+	f32 gameplayTextBackgroundAlpha = 0.0f;
 	bool showGameplayTextBorder = false;
-	float gameplayTextSpeed = 1.0f;
+	f32 gameplayTextSpeed = 1.0f;
 };
 
 namespace TFE_Settings
