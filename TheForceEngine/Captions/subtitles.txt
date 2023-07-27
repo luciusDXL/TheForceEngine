@@ -1,4 +1,4 @@
-fall.voc "[Kyle screams]"
+//ENEMIES
 ranofc02.voc "Officer: Stop where you are!"
 ranofc04.voc "Officer: You're not authorized in this area."
 ranofc05.voc "Officer: You're in violation of Imperial law!"
@@ -11,10 +11,70 @@ ransto05.voc "Trooper: Surrender immediately!"
 ransto06.voc "Trooper: Halt!"
 ransto07.voc "Trooper: Set blasters on full!"
 ransto08.voc "Trooper: Blast him!"
-beep-10.voc  "[MINE BEEPING]"
+icmdo-1.voc  "Commando: He's over here! Stop that man!"
+ioffic-1.voc "Officer: Halt! Hold it right there."
 
-//CUTSCENES--------------------------------------
-//M01
+//SFX
+boba-1.voc	"[Fett laughs]"
+boba-3.voc	"[Fett yells]"
+boba-4.voc	"[Fett screams]"
+beep-10.voc "[MINE BEEPING]"
+fall.voc 	"[Kyle screams]"
+door.voc 	"[Door hisses]"
+door-04.voc "[Door clanking]"
+door1-1.voc "[Door hisses]"
+//door1-2.voc "[Door mechanism whirring]" //too frequent
+//door1-3.voc "[Door thuds]"
+door2-1.voc "[Door clanking]"
+//door2-2.voc "[Door mechanism whirring]" //too frequent
+//door2-3.voc "[Door thuds]"
+door3-1.voc "[Door clanking]"
+//door3-2.voc "[Door mechanism whirring]" //too frequent
+//door3-3.voc "[Door thuds]"
+ex-lrg1.voc "[Huge explosion]"
+ex-med1.voc "[Big Explosion]"
+ex-small.voc "[Explosion]"
+ex-tiny.voc "[Bang]"
+landing1.voc "[Thrusters firing]"
+locked-1.voc "[Locked]"
+swim-in.voc "[Splash]"
+
+//----- MISSION VOICEOVER --------------------------------------
+//M01 (Secret Base)
+m01kyl01.voc "Kyle: This is too easy. Now to get to my ship."
+//M02 (Talay)
+m02kyl01.voc "Kyle: Jan?"
+m02jan01.voc "Jan: Go ahead, Kyle."
+m02kyl02.voc "Kyle: Looks like I found something that could help us out."
+m02jan02.voc "Jan: Get back to the landing pad and I'll meet you there."
+//M03 (Anoat)
+m03kyl01.voc "Kyle: Jan, I found Moff Rebus. I'm ready to get out of this mess."
+m03jan01.voc "Jan: You're the boss, Kyle."
+//M04 (Research Facility)
+m04kyl01.voc "Kyle: I found some interesting-looking metal. I think this may offer some important clues."
+m04jan01.voc "Jan: That's all we need. Let's get out of here, I'm getting nervous."
+//M05 (Gromas)
+m05kyl01.voc "Kyle: Kyle to Jan, charge set. Ready to clear."
+m05kyl02.voc "Kyle: Jan, you better get me out of here. I think I just finished off a Dark Trooper. I don't wanna find out if there are any more around."
+m05jan01.voc "Jan: OK Kyle, sounds good to me."
+m05kyl03.voc "Kyle: If that thing down there is any indicatio6n of what we're dealing with, we're going to need more firepower."
+//M06 (Detention Center)
+m06kyl01.voc "Kyle: Okay Jan, I've rescued Madine."
+m06jan01.voc "Jan: Don't hang around, let's get out of here before any more troopers arrive."
+//M07 (Ramsees Head)
+m07kyl01.voc "Kyle: Tracking device is secured."
+m07jan01.voc "Jan: Picking up the signal. Looks like we're done here."
+m07jan02.voc "Jan: OK Kyle, let's see where these smugglers are headed."
+//M08 (Robotics Facility)
+m08kyl01.voc "Kyle: Charge 1 set."
+m08kyl02.voc "Kyle: Charge 2 set."
+m08kyl03.voc "Kyle: All charges set."
+m08kyl04.voc "Kyle: Woman after my own heart."
+m08kyl05.voc "Kyle: Ah, sh- [static]"
+
+
+//----- CUTSCENES -----------------------------------------------
+//Before M02 (Talay)
 m01nar01 "Kyle delivers the plans to the Rebel Alliance. Soon afterwards, the Death Star is destroyed. But even as the Alliance celebrates this victory, another sinister plot is set in motion that will become an even greater concern for the Rebellion." 13.5
 m01vdr01 "The Emperor has approved your test demonstration, General Mohc."
 m01moc0a "Thank you Lord Vader. What I unveil today will mark a new era for the Empire."
@@ -48,6 +108,15 @@ m01mma06 "The Rebel command is not taking this lightly. They have authorized me 
 m01kyl04 "This could be interesting... [long pause] All right, I'm in. But I think I'll need some help on this one. I want Jan Ors as my mission officer."
 m01mma07 "Certainly. Then I will let Jan brief you further on your mission objectives. Thank you commander, and may the Force be with you."
 
+//After M05 (Gromas)
+ex-grom1 "[Distant booming]" 4
+
+//Before M06 (Detention Center)
+m05moc01 "This contemptible excuse for an officer will no longer divulge any more information to that Rebel, Kyle Katarn." 7
+m05vdr01 "Katarn will not be as easy to deal with. He is very resourceful - more resourceful, it seems, than even your dark troopers."
+m05moc02 "I understand the threat, Lord Vader. Katarn was once an impressive Imperial officer, but he was weak and gave up on the struggle for our new order. I wouldn't put much faith in his abilities. Katarn will never come near this ship. My new hire will see to that..." 19.5
+
+//jump-1.voc "[Jump]"
 //jump-1.voc "The quick brown fox jumped over the lazy dog for sport"
 //land-1.voc "Land"
 //jump-1.voc "ภาษาไทย测试조선말"
