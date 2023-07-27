@@ -17,7 +17,19 @@ using std::string;
 
 namespace TFE_A11Y { //a11y is industry slang for accessibility
 	const float MAX_CAPTION_WIDTH = 1200;
+	const float DEFAULT_LINE_HEIGHT = 20;
+	const float LINE_PADDING = 5;
+
+	const int MAX_CAPTION_CHARS[] = { //keyed by font size
+		160, 160, 120, 78
+	};
+
+	const int CUTSCENE_MAX_LINES[] = { //keyed by font size
+		5, 5, 4, 3
+	};
+
 	static float s_maxDuration = 10000;
+	static DisplayInfo s_display;
 	static u32 s_screenWidth;
 	static u32 s_screenHeight;
 	static bool s_active = true;
@@ -35,6 +47,8 @@ namespace TFE_A11Y { //a11y is industry slang for accessibility
 	///////////////////////////////////////////
 	void addCaption(const ConsoleArgList& args);
 	void drawCaptions(std::vector<Caption>* captions);
+
+
 
 	string toUpper(string input)
 	{
@@ -108,9 +122,6 @@ namespace TFE_A11Y { //a11y is industry slang for accessibility
 
 			string name = toLower(tokens[0]);
 			s_captionMap[name] = caption;
-
-			//TFE_System::logWrite(LOG_ERROR, "a11y", name.c_str());
-			//TFE_System::logWrite(LOG_ERROR, "a11y", std::to_string(caption.msRemaining).c_str());
 		};
 	}
 
@@ -119,23 +130,89 @@ namespace TFE_A11Y { //a11y is industry slang for accessibility
 		s_activeCaptions.clear();
 	}
 
+	ImVec2 calcWindowSize(float* fontScale, CaptionEnv env)
+	{
+		auto settings = TFE_Settings::getA11ySettings();
+		*fontScale = s_screenHeight / 1024.0f; //scale based on window resolution
+		*fontScale = fmax(*fontScale, 1);
+
+		float maxWidth = MAX_CAPTION_WIDTH;
+		float windowWidth = s_screenWidth * .8;
+		if (env == CC_Gameplay)
+		{
+			*fontScale += (float)(settings->gameplayFontSize * s_screenHeight / 1280.0f);
+			maxWidth += 100 * settings->gameplayFontSize;
+		}
+		else
+		{
+			*fontScale += (float)(settings->cutsceneFontSize * s_screenHeight / 1280.0f);
+			maxWidth += 100 * settings->cutsceneFontSize;
+		}
+		*fontScale = fmax(*fontScale, 1);
+
+		if (windowWidth > maxWidth) windowWidth = maxWidth;
+		ImVec2 windowSize = ImVec2(windowWidth, 0); //auto-size vertically
+		return windowSize;
+	}
+
+	void loadScreenSize()
+	{
+		TFE_RenderBackend::getDisplayInfo(&s_display);
+		s_screenWidth = s_display.width;
+		s_screenHeight = s_display.height;
+	}
+
 	void onSoundPlay(char* name, CaptionEnv env)
 	{
 		auto settings = TFE_Settings::getA11ySettings();
 		if (env == CC_Cutscene && !settings->showCutsceneCaptions && !settings->showCutsceneSubtitles) return;
 		if (env == CC_Gameplay && !settings->showGameplayCaptions && !settings->showGameplaySubtitles) return;
 
-		TFE_System::logWrite(LOG_ERROR, "a11y", name);
+		//TFE_System::logWrite(LOG_ERROR, "a11y", name);
 
 		string nameLower = toLower(name);
 
 		if (s_captionMap.count(nameLower))
 		{
 			Caption caption = s_captionMap[nameLower]; //copy
+			caption.env = env;
+
 			if (env == CC_Cutscene)
 			{
 				if (caption.type == CC_Effect && !settings->showCutsceneCaptions) return;
 				else if (caption.type == CC_Voice && !settings->showCutsceneSubtitles) return;
+				int maxLines = CUTSCENE_MAX_LINES[settings->cutsceneFontSize];
+
+				//split caption into chunks if it's very long and would take up too much screen
+				//real estate at the selected font size (e.g. narration before Talay)
+				loadScreenSize();
+				float fontScale;
+				auto windowSize = calcWindowSize(&fontScale, env);
+				const float CHAR_WIDTH = 10.12;
+				int maxCharsPerLine = windowSize.x / (CHAR_WIDTH * fontScale);
+				int maxChars = maxCharsPerLine * maxLines;
+				int count = 1;
+				while (caption.text.length() > maxChars)
+				{
+					Caption next = caption; //copy
+					int spaceIndex = 0;
+					for (int i = 0; i < maxLines; i++)
+					{
+						spaceIndex = next.text.rfind(' ', spaceIndex + maxCharsPerLine);
+						if (spaceIndex < 0) break;
+					}
+					if (spaceIndex > 0)
+					{
+						float ratio = spaceIndex / (float)caption.text.length();
+						next.text = next.text.substr(0, spaceIndex);
+						next.msRemaining *= ratio;
+						addCaption(next);
+						caption.text = caption.text.substr(spaceIndex + 1);
+						caption.msRemaining -= next.msRemaining;
+						count++;
+					}
+					else break;
+				}
 			}
 			if (env == CC_Gameplay)
 			{
@@ -143,8 +220,6 @@ namespace TFE_A11Y { //a11y is industry slang for accessibility
 				else if (caption.type == CC_Voice && !settings->showGameplaySubtitles) return;
 			}
 
-			caption.env = env;
-			TFE_System::logWrite(LOG_ERROR, "a11y", caption.text.c_str());
 			addCaption(caption);
 		}
 	}
@@ -182,8 +257,6 @@ namespace TFE_A11Y { //a11y is industry slang for accessibility
 		auto settings = TFE_Settings::getA11ySettings();
 
 		//track time elapsed
-		const float DEFAULT_LINE_HEIGHT = 20;
-		const float LINE_PADDING = 5;
 		auto s_time = system_clock::now().time_since_epoch();
 		auto elapsed = s_time - s_lastTime;
 		auto elapsedMS = duration_cast<milliseconds>(elapsed).count();
@@ -193,35 +266,24 @@ namespace TFE_A11Y { //a11y is industry slang for accessibility
 		s_screenWidth = display.width;
 		s_screenHeight = display.height;
 		int maxLines;
-		float windowWidth = s_screenWidth * .8;
-		float maxWidth = MAX_CAPTION_WIDTH;
 
-		//calculate font size
-		float fontScale = s_screenHeight / 1024.0f; //scale based on window resolution
-		fontScale = fmax(fontScale, 1);
+		//calculate font size and window dimensions
 		if (captions->at(0).env == CC_Gameplay)
 		{
-			fontScale += (float)(settings->gameplayFontSize * s_screenHeight / 1280.0f);
 			maxLines = settings->gameplayMaxTextLines;
-			maxWidth += 100 * settings->gameplayFontSize;
+			//if too many captions, remove oldest captions
+			while (captions->size() > maxLines)	captions->erase(captions->begin());
 		}
-		else
+		else //cutscene
 		{
-			fontScale += (float)(settings->cutsceneFontSize * s_screenHeight / 1280.0f);
-			maxLines = 5;
-			maxWidth += 100 * settings->cutsceneFontSize;
-		}
-
-		while (captions->size() > maxLines)
-		{
-			captions->erase(captions->begin());
+			maxLines = maxLines = CUTSCENE_MAX_LINES[settings->cutsceneFontSize];
 		}
 
 		//init window
-		int lineHeight = DEFAULT_LINE_HEIGHT * fontScale;
-		if (windowWidth > maxWidth) windowWidth = maxWidth;
-		ImVec2 windowSize = ImVec2(windowWidth, 0); //auto-size vertically
+		float fontScale;
+		ImVec2 windowSize = calcWindowSize(&fontScale, captions->at(0).env);
 		ImGui::SetNextWindowSize(windowSize);
+		int lineHeight = DEFAULT_LINE_HEIGHT * fontScale;
 
 		RGBA* fontColor;
 		//TFE_System::logWrite(LOG_ERROR, "a11y", (std::to_string(screenWidth) + " " + std::to_string(subtitleWindowSize.x) + ", " + std::to_string(screenHeight) + " " + std::to_string(subtitleWindowSize.y)).c_str());
