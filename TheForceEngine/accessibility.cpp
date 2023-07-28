@@ -113,8 +113,8 @@ namespace TFE_A11Y { // a11y is industry slang for accessibility
 	void onSoundPlay(char* name, CaptionEnv env)
 	{
 		auto settings = TFE_Settings::getA11ySettings();
-		if (env == CC_Cutscene && !settings->showCutsceneCaptions && !settings->showCutsceneSubtitles) return;
-		if (env == CC_Gameplay && !settings->showGameplayCaptions && !settings->showGameplaySubtitles) return;
+		if (env == CC_Cutscene && !settings->showCutsceneCaptions && !settings->showCutsceneSubtitles) { return; }
+		if (env == CC_Gameplay && !settings->showGameplayCaptions && !settings->showGameplaySubtitles) { return; }
 
 		//TFE_System::logWrite(LOG_ERROR, "a11y", name);
 
@@ -124,11 +124,11 @@ namespace TFE_A11Y { // a11y is industry slang for accessibility
 		{
 			Caption caption = s_captionMap[nameLower]; //copy
 			caption.env = env;
+			// Don't add caption if the last caption has the same text
+			if (s_activeCaptions.size() > 0 && s_activeCaptions.back().text == caption.text) { return; }
 
 			if (env == CC_Cutscene)
 			{
-				if (caption.type == CC_Effect && !settings->showCutsceneCaptions) return;
-				else if (caption.type == CC_Voice && !settings->showCutsceneSubtitles) return;
 				s32 maxLines = CUTSCENE_MAX_LINES[settings->cutsceneFontSize];
 
 				// Split caption into chunks if it's very long and would take up too much screen
@@ -148,7 +148,7 @@ namespace TFE_A11Y { // a11y is industry slang for accessibility
 					for (s32 i = 0; i < maxLines; i++)
 					{
 						spaceIndex = (s32)next.text.rfind(' ', spaceIndex + maxCharsPerLine);
-						if (spaceIndex < 0) break;
+						if (spaceIndex < 0) { break; }
 					}
 					if (spaceIndex > 0)
 					{
@@ -160,13 +160,8 @@ namespace TFE_A11Y { // a11y is industry slang for accessibility
 						caption.msRemaining -= next.msRemaining;
 						count++;
 					}
-					else break;
+					else { break; }
 				}
-			}
-			if (env == CC_Gameplay)
-			{
-				if (caption.type == CC_Effect && !settings->showGameplayCaptions) return;
-				else if (caption.type == CC_Voice && !settings->showGameplaySubtitles) return;
 			}
 
 			addCaption(caption);

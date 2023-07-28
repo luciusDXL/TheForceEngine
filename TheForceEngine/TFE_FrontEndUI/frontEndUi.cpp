@@ -88,7 +88,7 @@ namespace TFE_FrontEndUI
 		"Hud",
 		"Sound",
 		"System",
-		"Accessibility"
+		"Accessibility (beta)"
 	};
 
 	static const Vec2i c_resolutionDim[] =
@@ -2677,7 +2677,7 @@ namespace TFE_FrontEndUI
 
 		DrawFontSizeCombo(labelW, valueW, "Font Size##Gameplay", "##GFS", (s32*)&a11y->gameplayFontSize);
 		DrawRGBFields(labelW, valueW, "Font Color##Gameplay", &a11y->gameplayFontColor);
-		DrawLabelledFloatSlider(labelW, valueW * 0.5f - 2, "Background Opacity", "##GBO", &a11y->cutsceneTextBackgroundAlpha, 0.0f, 1.0f);
+		DrawLabelledFloatSlider(labelW, valueW * 0.5f - 2, "Background Opacity", "##GBO", &a11y->gameplayTextBackgroundAlpha, 0.0f, 1.0f);
 		ImGui::SameLine(0, 40);
 		ImGui::Checkbox("Border##Gameplay", &a11y->showGameplayTextBorder);
 		DrawLabelledFloatSlider(labelW, valueW, "Text speed", "##GTS", &a11y->gameplayTextSpeed, 0.5f, 2.0f);
