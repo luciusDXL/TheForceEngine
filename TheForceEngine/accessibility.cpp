@@ -132,7 +132,7 @@ namespace TFE_A11Y { // a11y is industry slang for accessibility
 				s32 maxLines = CUTSCENE_MAX_LINES[settings->cutsceneFontSize];
 
 				// Split caption into chunks if it's very long and would take up too much screen
-				//real estate at the selected font size (e.g. narration before Talay).
+				// real estate at the selected font size (e.g. narration before Talay).
 				loadScreenSize();
 				f32 fontScale;
 				auto windowSize = calcWindowSize(&fontScale, env);
@@ -333,7 +333,9 @@ namespace TFE_A11Y { // a11y is industry slang for accessibility
 		ImGui::SetWindowFocus("##Captions");
 	}
 
-	//HELPERS
+	///////////////////////////////////////////
+	// Helpers
+	///////////////////////////////////////////
 	string toUpper(string input)
 	{
 		unsigned char* p = (unsigned char*)input.c_str();
@@ -366,7 +368,7 @@ namespace TFE_A11Y { // a11y is industry slang for accessibility
 	ImVec2 calcWindowSize(f32* fontScale, CaptionEnv env)
 	{
 		auto settings = TFE_Settings::getA11ySettings();
-		*fontScale = s_screenHeight / 1024.0f; //scale based on window resolution
+		*fontScale = s_screenHeight / 1024.0f; // Scale based on window resolution
 		*fontScale = (f32)fmax(*fontScale, 1);
 
 		f32 maxWidth = MAX_CAPTION_WIDTH;
@@ -384,7 +386,7 @@ namespace TFE_A11Y { // a11y is industry slang for accessibility
 		*fontScale = (f32)fmax(*fontScale, 1);
 
 		if (windowWidth > maxWidth) windowWidth = maxWidth;
-		ImVec2 windowSize = ImVec2(windowWidth, 0); //auto-size vertically
+		ImVec2 windowSize = ImVec2(windowWidth, 0); // Auto-size vertically
 		return windowSize;
 	}
 }

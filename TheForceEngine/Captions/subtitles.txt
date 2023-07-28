@@ -11,8 +11,9 @@ ransto05.voc "Trooper: Surrender immediately!"
 ransto06.voc "Trooper: Halt!"
 ransto07.voc "Trooper: Set blasters on full!"
 ransto08.voc "Trooper: Blast him!"
-icmdo-1.voc  "Commando: He's over here! Stop that man!"
+icmdo-1.voc  "Commando: He's over here! Stop that man!" //unused?
 ioffic-1.voc "Officer: Halt! Hold it right there."
+m16moc01.voc "General Mohc: It's been a long time since I've challenged a man to battle. I'm glad my opponent is so worthy."
 
 //SFX
 boba-1.voc	"[Fett laughs]"
@@ -31,13 +32,24 @@ door2-1.voc "[Door clanking]"
 door3-1.voc "[Door clanking]"
 //door3-2.voc "[Door mechanism whirring]" //too frequent
 //door3-3.voc "[Door thuds]"
-ex-lrg1.voc "[Huge explosion]"
+ex-lrg1.voc "[Explosion]"
 ex-med1.voc "[Big Explosion]"
-ex-small.voc "[Explosion]"
 ex-tiny.voc "[Bang]"
+swim-in.voc "[Splash]"
+gamor-3.voc "[Porcine grunting]"
+reeyee1.voc "[Yelling in alien tongue]"
+reeyee-1.voc "[Yelling in alien tongue]"
+probe-1.voc "[Staccato droid speech]"
+//probalm.voc "[Circuits overloading]"
+bossk-1.voc "[Alien hissing]"
+choke.voc	"[Kyle gasps and grunts]" 5
+kell-1.voc 	"[Kell dragon roaring]"
+kell-2.voc	"[Aggressive growling]"
 landing1.voc "[Thrusters firing]"
 locked-1.voc "[Locked]"
-swim-in.voc "[Splash]"
+ex-small.voc "[Explosion]"
+creatur1.voc "[Menacing rumble, water sloshing]"
+intalert.voc "[Warbling droid repulsorlift]"
 
 //----- MISSION VOICEOVER --------------------------------------
 //M01 (Secret Base)
@@ -69,16 +81,46 @@ m07jan02.voc "Jan: OK Kyle, let's see where these smugglers are headed."
 m08kyl01.voc "Kyle: Charge 1 set."
 m08kyl02.voc "Kyle: Charge 2 set."
 m08kyl03.voc "Kyle: All charges set."
+mo8jan01.voc "Jan: Good job. Let's blow this ice cube." //note the typo in file name, o instead of 0
 m08kyl04.voc "Kyle: Woman after my own heart."
-m08kyl05.voc "Kyle: Ah, sh- [static]"
-
+m08kyl05.voc "Kyle: Ah, sh- [static]" //unused?
+//M09 (Nar Shaddaa)
+m09kyl01.voc "Kyle: Jan! I found that Imperial nava card."
+m09jan01.voc "Jan: Those must be smuggler routes to the Arc Hammer. I think it's time to get out of here."
+m09jana1.voc "Jan: Those must be smuggler routes to the Arc Hammer. I think it's time to get out of here." //alternate take
+//M10 (Jabba's Ship
+m10jan01.voc "Jan: Thanks, I thought I was done for."
+m10kyl03.voc "Kyle: No time for hugs. Let's get out of here."
+//M11 (Imperial City)
+m11jan01.voc "Jan: Good job Kyle, but you're not done yet."
+m11jan02.voc "Jan: Beautiful Kyle. Now get that data tape and high-tail your mercenary hide back to the landing pad. I can't stay out here too long before Imperial security takes notice." 8
+m11jan03.voc "Jan: Kyle, something strange is going down over here. Get back here - I mean it!"
+m11jan04.voc "Jan: Oh no! Kyle, you better look out, I just saw... [loud static]"
+m11jan05.voc "Jan: Kyle, where are you? I'm back at the landing pad."
+m11jan06.voc "Jan: I had TIE Fighters all over me. I had to properly dispose of them."
+m11jana6.voc "Jan: I had TIE Fighters all over me. I had to properly dispose of them." //alt. take
+//M12 (Fuel Station)
+m12imp01.voc "Officer: Smuggler ship, your flight path is clear. Begin your docking procedure." 4.5
+m12kyl01.voc "Kyle: Okay Jan - smuggler ship secured."
+m12jan01.voc "Jan: Good job, Kyle."
+m12kyl02.voc "Kyle: Now launching... I'll see you on the dark side, Jan."
+m12jan02.voc "Jan: Good luck, Kyle... and may the Force be with you."
+//M13 (Executor)
+m13kyl01.voc "Kyle: Here we go..."
+//M16 (Arc Hammer) Yes, that's how it's numbered
+m16kyl01.voc "Kyle: That's one..."
+m16kyl02.voc "Kyle: That's two..."
+m16kyl03.voc "Kyle: One more left."
+m16kyl04.voc "Kyle: Jan would be proud..."
+m16kyl05.voc "Kyle: There is no glory in war, Mohc..." //sounds like he forgot how to act...
+m16kyl06.voc "Kyle: For freedom."
 
 //----- CUTSCENES -----------------------------------------------
 //Before M02 (Talay)
 m01nar01 "Kyle delivers the plans to the Rebel Alliance. Soon afterwards, the Death Star is destroyed. But even as the Alliance celebrates this victory, another sinister plot is set in motion that will become an even greater concern for the Rebellion." 13.5
 m01vdr01 "The Emperor has approved your test demonstration, General Mohc."
 m01moc0a "Thank you Lord Vader. What I unveil today will mark a new era for the Empire."
-m01moc01 "Thank you Lord Vader. What I unveil today will mark a new era for the Empire."
+m01moc01 "Thank you Lord Vader. What I unveil today will mark a new era for the Empire." //duplicate
 m01moc0b "We will be able to decimate the Rebels just as we did the Jedi Knights. At last, the Emperor's war will be filled only with the glory and beauty of decisive victory."
 m01vdr02 "A noble cause, General. I hope the demonstration lives up to your claims. Proceed."
 m01moc02 "With pleasure."
@@ -108,14 +150,38 @@ m01mma06 "The Rebel command is not taking this lightly. They have authorized me 
 m01kyl04 "This could be interesting... [long pause] All right, I'm in. But I think I'll need some help on this one. I want Jan Ors as my mission officer."
 m01mma07 "Certainly. Then I will let Jan brief you further on your mission objectives. Thank you commander, and may the Force be with you."
 
-//After M05 (Gromas)
-ex-grom1 "[Distant booming]" 4
-
 //Before M06 (Detention Center)
 m05moc01 "This contemptible excuse for an officer will no longer divulge any more information to that Rebel, Kyle Katarn." 7
 m05vdr01 "Katarn will not be as easy to deal with. He is very resourceful - more resourceful, it seems, than even your dark troopers."
 m05moc02 "I understand the threat, Lord Vader. Katarn was once an impressive Imperial officer, but he was weak and gave up on the struggle for our new order. I wouldn't put much faith in his abilities. Katarn will never come near this ship. My new hire will see to that..." 19.5
+guncock "[Blaster cocking]"
 
+//Before M10 (Jabba's Ship)
+ray		 "[Beam pulsing]" 2.9
+hyp-in-8 "[Engines whining]" 3
+shiplock "[Clang]"
+snort	 "[Gamorreans grunting]"
+m10kyl01 "Jabba? What have you done with Jan? If any harm comes to her, I'll personally shove my blaster down your slimy throat."
+m10kyl02 "I wish you were here too, Jabba. There's nothing like roast Kell dragon."
+pigpush	 "[Gamorrean grunts]"
+
+//M16 (unused?)
+m16moc02 "You are an excellent adversary, commander. The warrior's flame burns in your soul. It is a shame that we are not allies."
+m16moc03 "It is unfortunate that you do not appreciate what I am building here, commander. This is all for the soldier's glory, and his ultimate war - something a warrior's soul, like yours, should understand."
+m16moc04 "No glory? Then why do you engage in this war?"
+m16moc05 "You delude your, commander. We all fight for freedom. Too bad you will never see the conclusion of the Arc Hammer and its true goal!"
+
+
+//After M16 (Arc Hammer)
+m16vdr01 "This is an unfortunate setback. The Force is strong with Katarn..." 4.5
+
+//MISC
+m12imp01 "Smuggler ship, your flight path is clear. Begin your docking procedure." 4.5
+xw-nf-1  "[Engines roaring]"
+ex-grom1 "[Distant booming]" 4
+tube1	 "[Mechanisms whirring]"
+
+//FOR TESTING
 //jump-1.voc "[Jump]"
 //jump-1.voc "The quick brown fox jumped over the lazy dog for sport"
 //land-1.voc "Land"
