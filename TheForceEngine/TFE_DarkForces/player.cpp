@@ -943,6 +943,41 @@ namespace TFE_DarkForces
 		}
 	}
 
+	void cheat_addLife()
+	{
+		if (s_lifeCount < 9)
+		{
+			s_lifeCount++;
+			const char* msg = TFE_System::getMessage(TFE_MSG_ADDLIFE);
+			if (msg) { hud_sendTextMessage(msg, 1); }
+		}
+		else
+		{
+			const char* msg = TFE_System::getMessage(TFE_MSG_ADDLIFEFAIL);
+			if (msg) { hud_sendTextMessage(msg, 1); }
+		}
+	}
+	
+	void cheat_subLife()
+	{
+		if (s_lifeCount > 0)
+		{
+			s_lifeCount--;
+			const char* msg = TFE_System::getMessage(TFE_MSG_SUBLIFE);
+			if (msg) { hud_sendTextMessage(msg, 1); }
+		}
+	}
+
+	void cheat_die()
+	{
+		if (!s_playerDying)
+		{
+			player_applyDamage(FIXED(999), FIXED(999), JFALSE);
+			const char* msg = TFE_System::getMessage(TFE_MSG_DIE);
+			if (msg) { hud_sendTextMessage(msg, 1); }
+		}
+	}
+
 	void player_setupCamera()
 	{
 		if (s_playerEye)
