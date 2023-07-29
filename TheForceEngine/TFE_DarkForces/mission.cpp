@@ -235,6 +235,9 @@ namespace TFE_DarkForces
 		TFE_Jedi::renderer_setType(RendererType(graphics->rendererIndex));
 		TFE_Jedi::render_setResolution();
 		TFE_Jedi::renderer_setLimits();
+
+		// Clear the palette for now.
+		blankScreen();
 	}
 
 	void mission_setLoadingFromSave()
