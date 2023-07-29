@@ -11,9 +11,9 @@
 namespace TFE_Jedi
 {
 	// Pack portal info into a 16-bit value.
-	#define PACK_PORTAL_INFO(offset, count) (u32(offset) | (u32(count) << 13u))
-	#define UNPACK_PORTAL_INFO_COUNT(info) (info >> 13u)
-	#define UNPACK_PORTAL_INFO_OFFSET(info) (info & ((1u << 13u) - 1u))
+	#define PACK_PORTAL_INFO(offset, count) (u32(offset) | (u32(count) << 16u))
+	#define UNPACK_PORTAL_INFO_COUNT(info) (info >> 16u)
+	#define UNPACK_PORTAL_INFO_OFFSET(info) (info & ((1u << 16u) - 1u))
 
 	enum SectorPass
 	{

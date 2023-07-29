@@ -10,6 +10,7 @@
 #include <TFE_Jedi/Level/rtexture.h>
 #include <TFE_Jedi/Math/fixedPoint.h>
 #include <TFE_Jedi/Math/core_math.h>
+#include <TFE_Jedi/Renderer/jediRenderer.h>
 
 #include <TFE_Input/input.h>
 
@@ -18,6 +19,8 @@
 #include <TFE_RenderBackend/indexBuffer.h>
 #include <TFE_RenderBackend/shader.h>
 #include <TFE_RenderBackend/shaderBuffer.h>
+
+#include <TFE_Settings/settings.h>
 
 #include "modelGPU.h"
 #include "frustum.h"
@@ -69,6 +72,12 @@ namespace TFE_Jedi
 		void* obj;
 	};
 
+	struct ModelShaderSettings
+	{
+		bool colormapInterp = false;
+		bool ditheredBilinear = false;
+	};
+	
 	static const AttributeMapping c_modelAttrMapping[] =
 	{
 		{ATTR_POS,   ATYPE_FLOAT, 3, 0, false},
@@ -87,6 +96,8 @@ namespace TFE_Jedi
 
 	static s32 s_3doRendered = 0;
 	static s32 s_3doPolygons = 0;
+
+	static ModelShaderSettings s_shaderSettings = {};
 
 	struct ShaderInputs
 	{
@@ -148,6 +159,8 @@ namespace TFE_Jedi
 		CompositeVertexList modelVertexList;
 	};
 
+	bool model_updateShaders(bool initialize);
+
 	static ModelGPU *newModelGPU(void)
 	{
 		ModelGPU* mgpu = (ModelGPU *)malloc(sizeof(ModelGPU));
@@ -186,18 +199,7 @@ namespace TFE_Jedi
 
 	bool model_init()
 	{
-		bool result = true;
-		for (s32 i = 0; i < MGPU_SHADER_COUNT - 1; i++)
-		{
-			result = result && model_buildShaderVariant(ModelShader(i), 0, nullptr);
-		}
-
-		ShaderDefine defines[] =
-		{
-			{"MODEL_TRANSPARENT_PASS", "1"}
-		};
-		result = result && model_buildShaderVariant(MGPU_SHADER_TRANS, TFE_ARRAYSIZE(defines), defines);
-
+		bool result = model_updateShaders(true);
 		TFE_COUNTER(s_3doRendered, "3DO Objects Rendered");
 		TFE_COUNTER(s_3doPolygons, "3DO Polygons Rendered");
 		return result;
@@ -209,6 +211,52 @@ namespace TFE_Jedi
 		{
 			s_modelShaders[i].destroy();
 		}
+	}
+		
+	bool model_updateShaders(bool initialize)
+	{
+		TFE_Settings_Graphics* graphics = TFE_Settings::getGraphicsSettings();
+		bool needsUpdate = initialize ||
+			s_shaderSettings.ditheredBilinear != graphics->ditheredBilinear ||
+			s_shaderSettings.colormapInterp != (graphics->colorMode == COLORMODE_8BIT_INTERP);
+		if (!needsUpdate) { return true; }
+
+		// Then update the settings.
+		s_shaderSettings.ditheredBilinear = graphics->ditheredBilinear;
+		s_shaderSettings.colormapInterp = (graphics->colorMode == COLORMODE_8BIT_INTERP);
+
+		ShaderDefine defines[16] = {};
+
+		s32 defineCount = 0;
+		if (s_shaderSettings.ditheredBilinear)
+		{
+			defines[defineCount].name = "OPT_BILINEAR_DITHER";
+			defines[defineCount].value = "1";
+			defineCount++;
+		}
+		if (s_shaderSettings.colormapInterp)
+		{
+			defines[defineCount].name = "OPT_COLORMAP_INTERP";
+			defines[defineCount].value = "1";
+			defineCount++;
+
+			defines[defineCount].name = "OPT_SMOOTH_LIGHTRAMP";
+			defines[defineCount].value = "1";
+			defineCount++;
+		}
+
+		bool result = true;
+		for (s32 i = 0; i < MGPU_SHADER_COUNT - 1; i++)
+		{
+			result = result && model_buildShaderVariant(ModelShader(i), defineCount, defines);
+		}
+
+		defines[defineCount].name = "MODEL_TRANSPARENT_PASS";
+		defines[defineCount].value = "1";
+		defineCount++;
+
+		result = result && model_buildShaderVariant(MGPU_SHADER_TRANS, defineCount, defines);
+		return result;
 	}
 
 	static bool buildModelDrawVertices(JediModel* model, s32* indexStart, s32* vertexStart)
@@ -667,6 +715,7 @@ namespace TFE_Jedi
 		}
 		s_3doRendered = 0;
 		s_3doPolygons = 0;
+		model_updateShaders(false);
 	}
 
 	void model_drawListFinish()
@@ -704,8 +753,9 @@ namespace TFE_Jedi
 
 		drawItem->lightData =
 		{
-			f32(s_worldAmbient), min(ambient, 31.0f) + (s_cameraLightSource ? 64.0f : 0.0f)
+			f32(s_worldAmbient) + (s_showWireframe ? 128.0f : 0.0f), min(ambient, 31.0f) + (s_cameraLightSource ? 64.0f : 0.0f)
 		};
+		assert(drawItem->lightData.x < 64.0f || s_showWireframe);
 		drawItem->textureOffsets =
 		{
 			floorOffset.x, floorOffset.z,

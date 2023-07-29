@@ -325,7 +325,10 @@ echo ^)";
     </Manifest>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="Shaders\filter.h" />
     <ClInclude Include="Shaders\grid.h" />
+    <ClInclude Include="Shaders\lighting.h" />
+    <ClInclude Include="Shaders\textureSampleFunc.h" />
     <ClInclude Include="TFE_Archive\archive.h" />
     <ClInclude Include="TFE_Archive\gobArchive.h" />
     <ClInclude Include="TFE_Archive\gobMemoryArchive.h" />

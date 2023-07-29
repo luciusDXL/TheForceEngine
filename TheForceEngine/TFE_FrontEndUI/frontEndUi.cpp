@@ -70,6 +70,13 @@ namespace TFE_FrontEndUI
 		CONFIG_COUNT
 	};
 
+	enum SettingsTemplate
+	{
+		TEMPLATE_MODERN = 0,
+		TEMPLATE_RETRO,
+		TEMPLATE_VANILLA,
+	};
+
 	enum
 	{
 		MAX_AUDIO_OUTPUTS = 16
@@ -155,6 +162,13 @@ namespace TFE_FrontEndUI
 		"GPU / OpenGL",
 	};
 
+	static const char* c_colorMode[] =
+	{
+		"8-bit (Classic)",		// COLORMODE_8BIT
+		"8-bit Interpolated",   // COLORMODE_8BIT_INTERP
+		//"True Color",           // COLORMODE_TRUE_COLOR
+	};
+
 	typedef void(*MenuItemSelected)();
 
 	static s32 s_resIndex = 0;
@@ -230,6 +244,7 @@ namespace TFE_FrontEndUI
 
 	void configSaveLoadBegin(bool save);
 	void renderBackground();
+	void setSettingsTemplate(SettingsTemplate temp);
 
 	void menuItem_Start();
 	void menuItem_Load();
@@ -617,6 +632,7 @@ namespace TFE_FrontEndUI
 				ImGui::Separator();
 				ImGui::PushFont(s_dialogFont);
 
+				// TODO: Medium setting - Retro (port over once dynamic lighting is ready)
 				ImGui::LabelText("##ConfigLabel", "Modern:  Play in high resolution, widescreen, and use modern controls.");
 				ImGui::LabelText("##ConfigLabel", "Vanilla: Play using the original resolution and controls.");
 				ImGui::Separator();
@@ -628,53 +644,13 @@ namespace TFE_FrontEndUI
 				ImGui::SetCursorPosX(1280.0f * s_uiScale * 0.5f - 128.0f*s_uiScale);
 				if (ImGui::Button("Modern"))
 				{
-					// Controls
-					s_inputConfig->mouseMode = MMODE_LOOK;
-					// Game
-					gameSettings->df_showSecretFoundMsg = true;
-					gameSettings->df_bobaFettFacePlayer = true;
-					// Graphics
-					graphicsSettings->rendererIndex = RENDERER_HARDWARE;
-					graphicsSettings->skyMode = SKYMODE_CYLINDER;
-					graphicsSettings->widescreen = true;
-					graphicsSettings->gameResolution.x = displayInfo.width;
-					graphicsSettings->gameResolution.z = displayInfo.height;
-					// Reticle.
-					graphicsSettings->reticleEnable = true;
-					graphicsSettings->reticleIndex = 4;
-					graphicsSettings->reticleRed = 0.25f;
-					graphicsSettings->reticleGreen = 1.0f;
-					graphicsSettings->reticleBlue = 0.25f;
-					graphicsSettings->reticleOpacity = 1.0f;
-					graphicsSettings->reticleScale = 0.5f;
-
-					reticle_setShape(graphicsSettings->reticleIndex);
-					reticle_setScale(graphicsSettings->reticleScale);
-					reticle_setColor(&graphicsSettings->reticleRed);
-					// Now go to the menu.
-					TFE_Settings::writeToDisk();
-					inputMapping_serialize();
+					setSettingsTemplate(TEMPLATE_MODERN);
 					s_appState = APP_STATE_MENU;
 				}
 				ImGui::SameLine();
 				if (ImGui::Button("Vanilla"))
 				{
-					// Controls
-					s_inputConfig->mouseMode = MMODE_TURN;
-					// Game
-					gameSettings->df_showSecretFoundMsg = false;
-					gameSettings->df_bobaFettFacePlayer = false;
-					gameSettings->df_smoothVUEs = false;
-					// Graphics
-					graphicsSettings->rendererIndex = RENDERER_SOFTWARE;
-					graphicsSettings->widescreen = false;
-					graphicsSettings->gameResolution.x = 320;
-					graphicsSettings->gameResolution.z = 200;
-					// Reticle.
-					graphicsSettings->reticleEnable = false;
-					// Now go to the menu.
-					TFE_Settings::writeToDisk();
-					inputMapping_serialize();
+					setSettingsTemplate(TEMPLATE_VANILLA);
 					s_appState = APP_STATE_MENU;
 				}
 				ImGui::End();
@@ -2270,6 +2246,18 @@ namespace TFE_FrontEndUI
 			{
 				graphics->skyMode = SkyMode(skyMode);
 			}
+
+			ImGui::Separator();
+
+			// Color Mode
+			ImGui::LabelText("##ConfigLabel", "Color Mode"); ImGui::SameLine(90 * s_uiScale);
+			ImGui::SetNextItemWidth(196 * s_uiScale);
+			ImGui::Combo("##ColorMode", &graphics->colorMode, c_colorMode, IM_ARRAYSIZE(c_colorMode));
+
+			if (graphics->colorMode == COLORMODE_8BIT || graphics->colorMode == COLORMODE_8BIT_INTERP)
+			{
+				ImGui::Checkbox("Dithered Bilinear", &graphics->ditheredBilinear);
+			}
 		}
 		ImGui::Separator();
 
@@ -2703,5 +2691,75 @@ namespace TFE_FrontEndUI
 			TFE_Settings_Graphics* graphics = TFE_Settings::getGraphicsSettings();
 			TFE_DarkForces::mission_render(graphics->rendererIndex);
 		}
+	}
+
+	void setSettingsTemplate(SettingsTemplate temp)
+	{
+		DisplayInfo displayInfo;
+		TFE_RenderBackend::getDisplayInfo(&displayInfo);
+
+		s_inputConfig = inputMapping_get();
+		TFE_Settings_Game* gameSettings = TFE_Settings::getGameSettings();
+		TFE_Settings_Graphics* graphicsSettings = TFE_Settings::getGraphicsSettings();
+
+		switch (temp)
+		{
+			case TEMPLATE_MODERN:
+			case TEMPLATE_RETRO:
+			{
+				// Controls
+				s_inputConfig->mouseMode = MMODE_LOOK;
+				// Game
+				gameSettings->df_showSecretFoundMsg = true;
+				gameSettings->df_bobaFettFacePlayer = true;
+				gameSettings->df_smoothVUEs = true;
+				// Graphics
+				graphicsSettings->rendererIndex = RENDERER_HARDWARE;
+				graphicsSettings->skyMode = SKYMODE_CYLINDER;
+				graphicsSettings->widescreen = true;
+				graphicsSettings->gameResolution.x = displayInfo.width;
+				graphicsSettings->gameResolution.z = displayInfo.height;
+				// Color mode and texture filtering are the main differences between modes.
+				// TODO: temp == TEMPLATE_MODERN ? COLORMODE_TRUE_COLOR : COLORMODE_8BIT_INTERP;
+				graphicsSettings->colorMode = COLORMODE_8BIT_INTERP;
+				// Reticle.
+				graphicsSettings->reticleEnable = true;
+				graphicsSettings->reticleIndex = 4;
+				graphicsSettings->reticleRed = 0.25f;
+				graphicsSettings->reticleGreen = 1.0f;
+				graphicsSettings->reticleBlue = 0.25f;
+				graphicsSettings->reticleOpacity = 1.0f;
+				graphicsSettings->reticleScale = 0.5f;
+
+				reticle_setShape(graphicsSettings->reticleIndex);
+				reticle_setScale(graphicsSettings->reticleScale);
+				reticle_setColor(&graphicsSettings->reticleRed);
+			} break;
+			case TEMPLATE_VANILLA:
+			{
+				// Controls
+				s_inputConfig->mouseMode = MMODE_TURN;
+				// Game
+				gameSettings->df_showSecretFoundMsg = false;
+				gameSettings->df_bobaFettFacePlayer = false;
+				gameSettings->df_smoothVUEs = false;
+				// Graphics
+				graphicsSettings->rendererIndex = RENDERER_SOFTWARE;
+				graphicsSettings->widescreen = false;
+				graphicsSettings->gameResolution.x = 320;
+				graphicsSettings->gameResolution.z = 200;
+				graphicsSettings->colorMode = COLORMODE_8BIT;
+				// Reticle.
+				graphicsSettings->reticleEnable = false;
+			} break;
+			default:
+			{
+				TFE_System::logWrite(LOG_ERROR, "Settings", "Invalid settings template: %d", s32(temp));
+				return;
+			}
+		}
+
+		TFE_Settings::writeToDisk();
+		inputMapping_serialize();
 	}
 }

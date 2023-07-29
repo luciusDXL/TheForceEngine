@@ -30,7 +30,9 @@ namespace TFE_Jedi
 		static TextureGpu* getColormap();
 
 	private: 
-		static bool updateBasePassShader();
+		static bool updateShaderSettings(bool initialize = false);
+		static bool updateShaders();
+		static void updateColorMap();
 	private:
 		bool m_gpuInit;
 		bool m_levelInit;

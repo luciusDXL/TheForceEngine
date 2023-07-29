@@ -12,6 +12,7 @@
 #include <TFE_Jedi/Level/levelTextures.h>
 #include <TFE_Jedi/Math/fixedPoint.h>
 #include <TFE_Jedi/Math/core_math.h>
+#include <TFE_Jedi/Renderer/jediRenderer.h>
 #include <TFE_Settings/settings.h>
 
 #include <TFE_RenderBackend/renderBackend.h>
@@ -112,8 +113,14 @@ namespace TFE_Jedi
 	static Vec2f  s_rangeSrc[2];
 	static Segment s_wallSegments[2048];
 
-	static bool s_showWireframe = false;
-	static SkyMode s_skyMode = SKYMODE_CYLINDER;
+	struct ShaderSettings
+	{
+		SkyMode skyMode = SKYMODE_CYLINDER;
+		bool colormapInterp = false;
+		bool ditheredBilinear = false;
+	};
+
+	static ShaderSettings s_shaderSettings = {};
 	static RSector* s_clipSector;
 	static Vec3f s_clipObjPos;
 
@@ -128,9 +135,9 @@ namespace TFE_Jedi
 	extern s32   s_displayCurrentPortalId;
 	extern ShaderBuffer s_displayListPlanesGPU;
 		
-	bool loadSpriteShader()
+	bool loadSpriteShader(s32 defineCount, ShaderDefine* defines)
 	{
-		if (!s_spriteShader.load("Shaders/gpu_render_sprite.vert", "Shaders/gpu_render_sprite.frag", 0, nullptr, SHADER_VER_STD))
+		if (!s_spriteShader.load("Shaders/gpu_render_sprite.vert", "Shaders/gpu_render_sprite.frag", defineCount, defines, SHADER_VER_STD))
 		{
 			return false;
 		}
@@ -225,12 +232,102 @@ namespace TFE_Jedi
 	{
 		s_flushCache = JTRUE;
 	}
+
+	void TFE_Sectors_GPU::updateColorMap()
+	{
+		// Load the colormap based on the data.
+		// Build the color map.
+		if (s_colorMap && s_lightSourceRamp)
+		{
+			u32 colormapData[256 * 32];
+			if (s_shaderSettings.colormapInterp)
+			{
+				f32 filter0[128];
+				f32 filter1[128];
+				for (s32 i = 0; i < 128; i++)
+				{
+					filter0[i] = f32(s_lightSourceRamp[i]);
+				}
+				// 2 passes...
+				for (s32 i = 0; i < 128; i++)
+				{
+					filter1[i] = (filter0[max(0, i - 1)] + filter0[min(127, i + 1)]) * 0.5f;
+				}
+				for (s32 i = 0; i < 128; i++)
+				{
+					filter0[i] = (filter1[max(0, i - 1)] + filter1[min(127, i + 1)]) * 0.5f;
+				}
+				for (s32 i = 0; i < 128; i++)
+				{
+					filter0[i] = max(0.0f, min(31.0f, filter0[i]));
+				}
+
+				for (s32 i = 0; i < 256 * 32; i++)
+				{
+					u8* data = (u8*)&colormapData[i];
+					data[0] = s_colorMap[i];
+					if (i < 128)
+					{
+						data[1] = u8(filter0[i] * 8.23f);
+					}
+					else
+					{
+						data[1] = 0;
+					}
+					data[2] = data[3] = 0;
+				}
+			}
+			else
+			{
+				for (s32 i = 0; i < 256 * 32; i++)
+				{
+					u8* data = (u8*)&colormapData[i];
+					data[0] = s_colorMap[i];
+					if (i < 128)
+					{
+						data[1] = s_lightSourceRamp[i];
+					}
+					else
+					{
+						data[1] = 0;
+					}
+					data[2] = data[3] = 0;
+				}
+			}
+
+			TFE_RenderBackend::freeTexture(s_colormapTex);
+			s_colormapTex = TFE_RenderBackend::createTexture(256, 32, colormapData);
+		}
+	}
+
+	bool TFE_Sectors_GPU::updateShaderSettings(bool initialize)
+	{
+		TFE_Settings_Graphics* graphics = TFE_Settings::getGraphicsSettings();
+		// First check to see if an update is needed. Generally this happens when initializing or if settings are changed at runtime.
+		bool needsUpdate = initialize ||
+			s_shaderSettings.skyMode != SkyMode(graphics->skyMode) ||
+			s_shaderSettings.ditheredBilinear != graphics->ditheredBilinear ||
+			s_shaderSettings.colormapInterp != (graphics->colorMode == COLORMODE_8BIT_INTERP);
+		if (!needsUpdate) { return true; }
+
+		// Then update the settings.
+		s_shaderSettings.skyMode = SkyMode(graphics->skyMode);
+		s_shaderSettings.ditheredBilinear = graphics->ditheredBilinear;
+		s_shaderSettings.colormapInterp = (graphics->colorMode == COLORMODE_8BIT_INTERP);
+
+		// Update the color map based on interpolation or true color settings.
+		updateColorMap();
+
+		// Update the shaders.
+		bool result = updateShaders();
+		assert(result);
+		return result;
+	}
 		
 	void TFE_Sectors_GPU::prepare()
 	{
 		if (!m_gpuInit)
 		{
-			CVAR_BOOL(s_showWireframe, "d_enableWireframe", CVFLAG_DO_NOT_SERIALIZE, "Enable wireframe rendering.");
 			TFE_COUNTER(s_wallSegGenerated, "Wall Segments");
 			
 			m_gpuInit = true;
@@ -240,27 +337,15 @@ namespace TFE_Jedi
 				s_portalList = (Portal*)malloc(sizeof(Portal) * MAX_DISP_ITEMS);
 			}
 
-			// Read the current graphics settings before compiling shaders.
-			TFE_Settings_Graphics* graphics = TFE_Settings::getGraphicsSettings();
-			s_skyMode = SkyMode(graphics->skyMode);
+			// Update the shaders
+			updateShaderSettings(true);
 
-			bool result = updateBasePassShader();
-			assert(result);
-
-			// Load the transparent version of the shader.
-			ShaderDefine defines[] = { "SECTOR_TRANSPARENT_PASS", "1" };
-			result = loadShaderVariant(1, TFE_ARRAYSIZE(defines), defines);
-			assert(result);
-
-			result = loadSpriteShader();
-			assert(result);
-
-			// Handles up to 65536 sector quads in the view.
-			u16* indices = (u16*)level_alloc(sizeof(u16) * 6 * MAX_DISP_ITEMS);
-			u16* index = indices;
-			for (s32 q = 0; q < MAX_DISP_ITEMS; q++, index += 6)
+			// Handles up to MAX_DISP_ITEMS sector quads in the view.
+			u32* indices = (u32*)level_alloc(sizeof(u32) * 6u * MAX_DISP_ITEMS);
+			u32* index = indices;
+			for (u32 q = 0; q < MAX_DISP_ITEMS; q++, index += 6u)
 			{
-				const s32 i = q * 4;
+				const u32 i = q * 4u;
 				index[0] = i + 0;
 				index[1] = i + 1;
 				index[2] = i + 2;
@@ -269,7 +354,7 @@ namespace TFE_Jedi
 				index[4] = i + 3;
 				index[5] = i + 2;
 			}
-			s_indexBuffer.create(6 * MAX_DISP_ITEMS, sizeof(u16), false, (void*)indices);
+			s_indexBuffer.create(6u * MAX_DISP_ITEMS, sizeof(u32), false, (void*)indices);
 			level_free(indices);
 
 			// Initialize the display list with the GPU buffers.
@@ -402,28 +487,6 @@ namespace TFE_Jedi
 			}
 			m_prevSectorCount = s_levelState.sectorCount;
 			m_prevWallCount = wallCount;
-			
-			// Build the color map.
-			if (s_colorMap && s_lightSourceRamp)
-			{
-				u32 colormapData[256 * 32];
-				for (s32 i = 0; i < 256 * 32; i++)
-				{
-					u8* data = (u8*)&colormapData[i];
-					data[0] = s_colorMap[i];
-					if (i < 128)
-					{
-						data[1] = s_lightSourceRamp[i];
-					}
-					else
-					{
-						data[1] = 0;
-					}
-					data[2] = data[3] = 0;
-				}
-				TFE_RenderBackend::freeTexture(s_colormapTex);
-				s_colormapTex = TFE_RenderBackend::createTexture(256, 32, colormapData);
-			}
 
 			// Load textures into GPU memory.
 			if (texturepacker_getGlobal())
@@ -436,6 +499,8 @@ namespace TFE_Jedi
 			}
 
 			model_loadGpuModels();
+			// Update the color map based on interpolation or true color settings.
+			updateColorMap();
 		}
  		else
 		{
@@ -1357,13 +1422,7 @@ namespace TFE_Jedi
 	{
 		// Check to see if a rendering setting has changed
 		// (this may require a shader recompile)
-		TFE_Settings_Graphics* graphics = TFE_Settings::getGraphicsSettings();
-		if (graphics->skyMode != s_skyMode)
-		{
-			s_skyMode = SkyMode(graphics->skyMode);
-			bool result = updateBasePassShader();
-			assert(result);
-		}
+		updateShaderSettings(false);
 
 		// Build the draw list.
 		if (!traverseScene(sector))
@@ -1418,17 +1477,78 @@ namespace TFE_Jedi
 	{
 	}
 
-	bool TFE_Sectors_GPU::updateBasePassShader()
+	bool TFE_Sectors_GPU::updateShaders()
 	{
-		// Load the opaque version of the shader.
-		ShaderDefine basePassdefines[1] = {};
-		s32 passPassDefineCount = 0;
-		if (s_skyMode == SKYMODE_VANILLA)
+		// Base Pass
+		ShaderDefine defines[16] = {};
+
+		s32 defineCount = 0;
+		if (s_shaderSettings.skyMode == SKYMODE_VANILLA)
 		{
-			basePassdefines[0].name = "SKYMODE_VANILLA";
-			basePassdefines[0].value = "1";
-			passPassDefineCount = 1;
+			defines[0].name = "SKYMODE_VANILLA";
+			defines[0].value = "1";
+			defineCount = 1;
 		}
-		return loadShaderVariant(0, passPassDefineCount, basePassdefines);
+		if (s_shaderSettings.ditheredBilinear)
+		{
+			defines[defineCount].name = "OPT_BILINEAR_DITHER";
+			defines[defineCount].value = "1";
+			defineCount++;
+		}
+		if (s_shaderSettings.colormapInterp)
+		{
+			defines[defineCount].name = "OPT_COLORMAP_INTERP";
+			defines[defineCount].value = "1";
+			defineCount++;
+
+			defines[defineCount].name = "OPT_SMOOTH_LIGHTRAMP";
+			defines[defineCount].value = "1";
+			defineCount++;
+		}
+		bool success = loadShaderVariant(0, defineCount, defines);
+
+		// Load the transparent version of the shader.
+		defines[0].name = "SECTOR_TRANSPARENT_PASS";
+		defines[0].value = "1";
+		defineCount = 1;
+		if (s_shaderSettings.ditheredBilinear)
+		{
+			defines[defineCount].name = "OPT_BILINEAR_DITHER";
+			defines[defineCount].value = "1";
+			defineCount++;
+		}
+		if (s_shaderSettings.colormapInterp)
+		{
+			defines[defineCount].name = "OPT_COLORMAP_INTERP";
+			defines[defineCount].value = "1";
+			defineCount++;
+
+			defines[defineCount].name = "OPT_SMOOTH_LIGHTRAMP";
+			defines[defineCount].value = "1";
+			defineCount++;
+		}
+		success |= loadShaderVariant(1, defineCount, defines);
+
+		defineCount = 0;
+		if (s_shaderSettings.ditheredBilinear)
+		{
+			defines[defineCount].name = "OPT_BILINEAR_DITHER";
+			defines[defineCount].value = "1";
+			defineCount++;
+		}
+		if (s_shaderSettings.colormapInterp)
+		{
+			defines[defineCount].name = "OPT_COLORMAP_INTERP";
+			defines[defineCount].value = "1";
+			defineCount++;
+
+			defines[defineCount].name = "OPT_SMOOTH_LIGHTRAMP";
+			defines[defineCount].value = "1";
+			defineCount++;
+		}
+		success |= loadSpriteShader(defineCount, defines);
+
+		assert(success);
+		return success;
 	}
 }

@@ -1,14 +1,12 @@
+#include "Shaders/textureSampleFunc.h"
+#include "Shaders/filter.h"
+#include "Shaders/lighting.h"
+
 uniform vec3 CameraPos;
 uniform vec3 CameraDir;
 uniform vec4 LightData;
 uniform vec4 GlobalLightData;	// x = flat lighting, y = flat light value.
 uniform vec2 SkyParallax;
-
-uniform sampler2D Colormap;
-uniform sampler2D Palette;
-uniform sampler2DArray Textures;
-
-uniform isamplerBuffer TextureTable;
 
 #ifdef SKYMODE_VANILLA
 uniform vec4 SkyParam0;	// xOffset, yOffset, xScale, yScale
@@ -23,113 +21,6 @@ flat in int Frag_Flags;
 in vec3 Frag_Pos;
 in vec4 Texture_Data;
 out vec4 Out_Color;
-
-vec3 getAttenuatedColor(int baseColor, int light)
-{
-	int color = baseColor;
-	if (light < 31)
-	{
-		ivec2 uv = ivec2(color, light);
-		color = int(texelFetch(Colormap, uv, 0).r * 255.0);
-	}
-	return texelFetch(Palette, ivec2(color, 0), 0).rgb;
-}
-
-ivec2 imod(ivec2 x, ivec2 y)
-{
-	return x - (x/y)*y;
-}
-
-int wrapCoordScalar(int x, int edge)
-{
-	x = x - (x/edge)*edge;
-	x += (x < 0) ? edge : 0;
-	return x;
-}
-
-ivec2 wrapCoord(ivec2 uv, ivec2 edge)
-{
-	uv = imod(uv, edge);
-	uv.x += (uv.x < 0) ? edge.x : 0;
-	uv.y += (uv.y < 0) ? edge.y : 0;
-	return uv;
-}
-
-// Approximate the distortion that happens in software when floor and ceiling textures are not 64x64.
-ivec2 wrapCoordFlat(ivec2 uv, ivec2 edge)
-{
-	int coord = (uv.x & 63) * 64 + (uv.y & 63);
-	uv = wrapCoord(ivec2(coord/edge.y, coord), edge);
-	uv.x += (uv.x < 0) ? edge.x : 0;
-	uv.y += (uv.y < 0) ? edge.y : 0;
-	return uv;
-}
-
-float sampleTexture(int id, vec2 uv, bool sky, bool flip, bool applyFlatWarp)
-{
-	ivec4 sampleData = texelFetch(TextureTable, id);
-	ivec3 iuv;
-	iuv.xy = ivec2(floor(uv));
-	iuv.z = 0;
-
-	if (sky)
-	{
-		if (abs(iuv.y) >= 9999)
-		{
-			// TODO: Single sample for the whole area.
-			iuv.xy = ivec2(sampleData.z/2, sampleData.w/2);
-		}
-		else
-		{
-			iuv.x = wrapCoordScalar(iuv.x, sampleData.z);
-			iuv.y = wrapCoordScalar(iuv.y, sampleData.w);
-		}
-	}
-	else if (applyFlatWarp)
-	{
-		iuv.xy = wrapCoordFlat(iuv.xy, sampleData.zw);
-		if (flip)
-		{
-			iuv.x = sampleData.z - iuv.x - 1;
-		}
-	}
-	else
-	{
-		iuv.xy = wrapCoord(iuv.xy, sampleData.zw);
-		if (flip)
-		{
-			iuv.x = sampleData.z - iuv.x - 1;
-		}
-	}
-	iuv.xy += (sampleData.xy & ivec2(4095));
-	iuv.z = sampleData.x >> 12;
-
-	return texelFetch(Textures, iuv, 0).r * 255.0;
-}
-
-float sampleTextureClamp(int id, vec2 uv, bool opaque)
-{
-	ivec4 sampleData = texelFetch(TextureTable, id);
-	ivec3 iuv;
-	iuv.xy = ivec2(floor(uv));
-	iuv.z = 0;
-
-	if ( any(lessThan(iuv.xy, ivec2(0))) || any(greaterThan(iuv.xy, sampleData.zw-1)) )
-	{
-		return 0.0;
-	}
-	iuv.xy += (sampleData.xy & ivec2(4095));
-	iuv.z = sampleData.x >> 12;
-
-	float value = texelFetch(Textures, iuv, 0).r * 255.0;
-	if (opaque) { value = max(0.75, value); }	// avoid clipping if opaque.
-	return value;
-}
-
-float sqr(float x)
-{
-	return x*x;
-}
 
 vec2 calculateSkyProjection(vec3 cameraVec, vec2 texOffset, out float fade, out float yLimit)
 {
@@ -255,18 +146,18 @@ void main()
 	#endif
 
 	float light = 31.0;
-	float baseColor = Frag_Color.g;
+	float ambient = 31.0;
 	if (!sky && !fullbright)
 	{
 		float z = dot(cameraRelativePos, CameraDir);
 		float lightOffset   = Frag_Color.r;
-		float sectorAmbient = Frag_Color.b;
+		ambient = Frag_Color.b;
 		if (GlobalLightData.x != 0.0)
 		{
-			sectorAmbient = GlobalLightData.y;
+			ambient = GlobalLightData.y;
 		}
 
-		if (sectorAmbient < 31.0)
+		if (ambient < 31.0)
 		{
 			// Camera light and world ambient.
 			float worldAmbient = floor(LightData.x + 0.5);
@@ -275,23 +166,19 @@ void main()
 			light = 0.0;
 			if (worldAmbient < 31.0 || cameraLightSource != 0.0)
 			{
-				float depthScaled = min(floor(z * 4.0), 127.0);
-				float lightSource = 31.0 - (texture(Colormap, vec2(depthScaled/256.0, 0.0)).g*255.0 + worldAmbient);
+				float lightSource = getLightRampValue(z, worldAmbient);
 				if (lightSource > 0)
 				{
 					light += lightSource;
 				}
 			}
-			light = max(light, sectorAmbient);
-
-			float minAmbient = sectorAmbient * 7.0 / 8.0;
-			float depthAtten = floor(z / 16.0f) + floor(z / 32.0f);
-			light = max(light - depthAtten, minAmbient) + lightOffset;
-			light = clamp(light, 0.0, 31.0);
+			light = max(light, ambient);
+			light = getDepthAttenuation(z, ambient, light, lightOffset);
 		}
 	}
 
-	// Use define.
+	float baseColor;
+
 	#ifdef SECTOR_TRANSPARENT_PASS
 	if (sign)
 	{
@@ -302,15 +189,6 @@ void main()
 	{
 		baseColor = sampleTexture(Frag_TextureId, uv, sky, flip, applyFlatWarp);
 	}
-	// End
-
-	// Support transparent textures.
-	#ifdef SECTOR_TRANSPARENT_PASS
-	if (baseColor < 0.5)
-	{
-		discard;
-	}
-	#endif
 
 	if (skyFade > 0.0)
 	{
@@ -330,7 +208,12 @@ void main()
 		}
 	}
 
+	// Support transparent textures.
+	#ifdef SECTOR_TRANSPARENT_PASS
+	if (baseColor < 0.5 && LightData.w < 1.0) { discard; }
+	#endif
+
+	Out_Color = getFinalColor(baseColor, light);
 	// Enable solid color rendering for wireframe.
-	Out_Color.rgb = LightData.w > 0.5 ? vec3(0.6, 0.7, 0.8) : getAttenuatedColor(int(baseColor), int(light));
-	Out_Color.a = 1.0;
+	Out_Color.rgb = LightData.w > 0.5 ? vec3(0.6, 0.7, 0.8) : Out_Color.rgb;
 }

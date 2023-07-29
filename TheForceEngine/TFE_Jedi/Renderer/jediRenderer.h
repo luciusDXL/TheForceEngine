@@ -86,5 +86,6 @@ namespace TFE_Jedi
 	void renderer_addHudTextureCallback(TextureListCallback hudTextureCallback);
 
 	extern s32 s_drawnObjCount;
+	extern bool s_showWireframe;
 	extern SecObject* s_drawnObj[];
 }

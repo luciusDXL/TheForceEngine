@@ -362,6 +362,7 @@ namespace TFE_Settings
 		writeKeyValue_Bool(settings, "show_fps", s_graphicsSettings.showFps);
 		writeKeyValue_Bool(settings, "3doNormalFix", s_graphicsSettings.fix3doNormalOverflow);
 		writeKeyValue_Bool(settings, "ignore3doLimits", s_graphicsSettings.ignore3doLimits);
+		writeKeyValue_Bool(settings, "ditheredBilinear", s_graphicsSettings.ditheredBilinear);
 		writeKeyValue_Int(settings, "frameRateLimit", s_graphicsSettings.frameRateLimit);
 		writeKeyValue_Float(settings, "brightness", s_graphicsSettings.brightness);
 		writeKeyValue_Float(settings, "contrast", s_graphicsSettings.contrast);
@@ -377,6 +378,7 @@ namespace TFE_Settings
 		writeKeyValue_Float(settings, "reticleScale",   s_graphicsSettings.reticleScale);
 
 		writeKeyValue_Int(settings, "renderer", s_graphicsSettings.rendererIndex);
+		writeKeyValue_Int(settings, "colorMode", s_graphicsSettings.colorMode);
 		writeKeyValue_Int(settings, "skyMode", s_graphicsSettings.skyMode);
 	}
 		
@@ -658,6 +660,10 @@ namespace TFE_Settings
 		{
 			s_graphicsSettings.ignore3doLimits = parseBool(value);
 		}
+		else if (strcasecmp("ditheredBilinear", key) == 0)
+		{
+			s_graphicsSettings.ditheredBilinear = parseBool(value);
+		}
 		else if (strcasecmp("frameRateLimit", key) == 0)
 		{
 			s_graphicsSettings.frameRateLimit = parseInt(value);
@@ -709,6 +715,10 @@ namespace TFE_Settings
 		else if (strcasecmp("renderer", key) == 0)
 		{
 			s_graphicsSettings.rendererIndex = parseInt(value);
+		}
+		else if (strcasecmp("colorMode", key) == 0)
+		{
+			s_graphicsSettings.colorMode = parseInt(value);
 		}
 		else if (strcasecmp("skyMode", key) == 0)
 		{
