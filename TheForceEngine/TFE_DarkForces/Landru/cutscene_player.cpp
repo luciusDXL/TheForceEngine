@@ -10,13 +10,13 @@
 #include <TFE_Game/igame.h>
 #include <TFE_System/system.h>
 #include <TFE_Input/input.h>
+#include <TFE_A11y/accessibility.h>
 #include <TFE_Archive/lfdArchive.h>
 #include <TFE_Jedi/Math/core_math.h>
 #include <TFE_Jedi/Renderer/virtualFramebuffer.h>
 #include <TFE_FileSystem/filestream.h>
 #include <TFE_System/parser.h>
 #include <cstring>
-#include <accessibility.h>
 
 using namespace TFE_Jedi;
 

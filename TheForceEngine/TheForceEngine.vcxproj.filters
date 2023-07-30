@@ -176,6 +176,9 @@
     <Filter Include="Source\TFE_Audio\MidiSynth">
       <UniqueIdentifier>{92bc3a8b-84cf-4313-928e-cad926435b95}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\TFE_A11y">
+      <UniqueIdentifier>{5c2d10d7-1c36-45ae-9929-871859cf24b7}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="main.h">
@@ -1249,6 +1252,9 @@
     <ClInclude Include="TFE_Audio\MidiSynth\fm4Tables.h">
       <Filter>Source\TFE_Audio\MidiSynth</Filter>
     </ClInclude>
+    <ClInclude Include="TFE_A11y\accessibility.h">
+      <Filter>Source\TFE_A11y</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -2111,6 +2117,9 @@
     </ClCompile>
     <ClCompile Include="TFE_Audio\MidiSynth\fm4Opl3Device.cpp">
       <Filter>Source\TFE_Audio\MidiSynth</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_A11y\accessibility.cpp">
+      <Filter>Source\TFE_A11y</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

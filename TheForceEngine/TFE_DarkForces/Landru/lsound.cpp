@@ -1,12 +1,12 @@
 #include <cstring>
 
 #include "lsound.h"
+#include <TFE_A11y/accessibility.h>
 #include <TFE_Game/igame.h>
 #include <TFE_Jedi/IMuse/imuse.h>
 #include <TFE_FileSystem/paths.h>
 #include <TFE_FileSystem/filestream.h>
 #include <TFE_System/system.h>
-#include <accessibility.h>
 
 using namespace TFE_Jedi;
 

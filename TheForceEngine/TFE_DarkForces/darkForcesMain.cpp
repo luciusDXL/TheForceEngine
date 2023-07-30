@@ -36,6 +36,7 @@
 #include <TFE_FileSystem/paths.h>
 #include <TFE_FileSystem/fileutil.h>
 #include <TFE_FileSystem/filestream.h>
+#include <TFE_A11y/accessibility.h>
 #include <TFE_Audio/midiPlayer.h>
 #include <TFE_Audio/audioSystem.h>
 #include <TFE_Asset/modelAsset_jedi.h>
@@ -55,7 +56,6 @@
 
 // Add texture callbacks.
 #include <TFE_Jedi/Level/levelTextures.h>
-#include <accessibility.h>
 
 using namespace TFE_Memory;
 using namespace TFE_Input;

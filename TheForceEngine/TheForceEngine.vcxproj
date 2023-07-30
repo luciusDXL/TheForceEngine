@@ -326,6 +326,7 @@ echo ^)";
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="Shaders\grid.h" />
+    <ClInclude Include="TFE_A11y\accessibility.h" />
     <ClInclude Include="TFE_Archive\archive.h" />
     <ClInclude Include="TFE_Archive\gobArchive.h" />
     <ClInclude Include="TFE_Archive\gobMemoryArchive.h" />
@@ -684,6 +685,7 @@ echo ^)";
     <ClInclude Include="version.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="TFE_A11y\accessibility.cpp" />
     <ClCompile Include="TFE_Archive\archive.cpp" />
     <ClCompile Include="TFE_Archive\gobArchive.cpp" />
     <ClCompile Include="TFE_Archive\gobMemoryArchive.cpp" />

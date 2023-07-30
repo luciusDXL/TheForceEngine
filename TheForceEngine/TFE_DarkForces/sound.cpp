@@ -2,6 +2,7 @@
 
 #include "sound.h"
 #include "player.h"
+#include <TFE_A11y/accessibility.h>
 #include <TFE_DarkForces/Landru/lsound.h>
 #include <TFE_Settings/settings.h>
 #include <TFE_Game/igame.h>
@@ -14,7 +15,6 @@
 #include <TFE_Jedi/Serialization/serialization.h>
 #include <TFE_DarkForces/time.h>
 #include <TFE_System/system.h>
-#include <accessibility.h>
 
 namespace TFE_DarkForces
 {
@@ -302,13 +302,13 @@ namespace TFE_DarkForces
 
 	SoundEffectId sound_play(SoundSourceId id)
 	{
-		return sound_playPriority(id, -1, true);
+		return sound_playPriority(id, -1, JTRUE);
 	}	
 	
 	// TFE
 	SoundEffectId sound_play_noCaptions(SoundSourceId id)
 	{
-		return sound_playPriority(id, -1, false);
+		return sound_playPriority(id, -1, JFALSE);
 	}
 
 	SoundEffectId sound_playCued(SoundSourceId id, vec3_fixed pos)

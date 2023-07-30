@@ -28,7 +28,7 @@
 #include <TFE_Ui/ui.h>
 #include <TFE_FrontEndUI/frontEndUi.h>
 #include <TFE_ForceScript/vm.h>
-#include <accessibility.h>
+#include <TFE_A11y/accessibility.h>
 #include <algorithm>
 #include <cinttypes>
 #include <time.h>

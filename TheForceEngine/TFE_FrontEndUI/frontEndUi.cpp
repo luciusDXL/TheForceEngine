@@ -2,6 +2,7 @@
 #include "console.h"
 #include "profilerView.h"
 #include "modLoader.h"
+#include <TFE_A11y/accessibility.h>
 #include <TFE_Audio/audioSystem.h>
 #include <TFE_Audio/midiPlayer.h>
 #include <TFE_Audio/midiDevice.h>
@@ -33,7 +34,6 @@
 #include <TFE_Jedi/Renderer/jediRenderer.h>
 
 #include <climits>
-#include <accessibility.h>
 
 using namespace TFE_Input;
 using namespace TFE_Audio;
