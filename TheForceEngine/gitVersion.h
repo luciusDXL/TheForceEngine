@@ -1,3 +1,3 @@
 const char c_gitVersion[] = R"(
-v1.09.300-12-g1029772e
+v1.09.300-13-g184ba92f
 )";

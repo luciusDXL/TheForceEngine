@@ -624,16 +624,15 @@ namespace TFE_FrontEndUI
 				ImGui::PopFont();
 
 				ImGui::PushFont(s_versionFont);
-				ImGui::LabelText("##ConfigLabel", "Note that individual settings, (crosshair pattern, pitch limits, etc.), can be changed using");
+				ImGui::LabelText("##ConfigLabel", "Individual settings, (crosshair pattern, pitch limits, etc.), can be changed using");
 				ImGui::LabelText("##ConfigLabel", "  Settings/Configuration at any time.");
-				ImGui::LabelText("##ConfigLabel", "Individual settings can be changed at anytime.");
 				ImGui::PopFont();
 
 				ImGui::Separator();
 				ImGui::PushFont(s_dialogFont);
 
-				// TODO: Medium setting - Retro (port over once dynamic lighting is ready)
-				ImGui::LabelText("##ConfigLabel", "Modern:  Play in high resolution, widescreen, and use modern controls.");
+				ImGui::LabelText("##ConfigLabel", "Modern:  Similar to Retro but adds more modern effects such as bloom.");
+				ImGui::LabelText("##ConfigLabel", "Retro:   Play in high resolution, widescreen, and use modern controls.");
 				ImGui::LabelText("##ConfigLabel", "Vanilla: Play using the original resolution and controls.");
 				ImGui::Separator();
 
@@ -645,6 +644,12 @@ namespace TFE_FrontEndUI
 				if (ImGui::Button("Modern"))
 				{
 					setSettingsTemplate(TEMPLATE_MODERN);
+					s_appState = APP_STATE_MENU;
+				}
+				ImGui::SameLine();
+				if (ImGui::Button("Retro"))
+				{
+					setSettingsTemplate(TEMPLATE_RETRO);
 					s_appState = APP_STATE_MENU;
 				}
 				ImGui::SameLine();
@@ -2331,18 +2336,13 @@ namespace TFE_FrontEndUI
 		ImGui::LabelText("##ConfigLabel", "Post-FX");
 		ImGui::PopFont();
 
-		static bool s_bloom = false;
-		static f32  s_bloomSoftness = 0.5f;
-		static f32  s_bloomIntensity = 0.5f;
-
-		//ImGui::Checkbox("Bloom", &s_bloom);
-		ImGui::TextColored({ 1.0f, 1.0f, 1.0f, 0.33f }, "Bloom [TODO]");
-		if (s_bloom)
+		ImGui::Checkbox("Bloom", &graphics->bloomEnabled);
+		if (graphics->bloomEnabled)
 		{
-			ImGui::SetNextItemWidth(196*s_uiScale);
-			ImGui::SliderFloat("Softness", &s_bloomSoftness, 0.0f, 1.0f);
-			ImGui::SetNextItemWidth(196*s_uiScale);
-			ImGui::SliderFloat("Intensity", &s_bloomIntensity, 0.0f, 1.0f);
+			ImGui::SetNextItemWidth(196 * s_uiScale);
+			ImGui::SliderFloat("Strength", &graphics->bloomStrength, 0.0f, 1.0f);
+			ImGui::SetNextItemWidth(196 * s_uiScale);
+			ImGui::SliderFloat("Spread", &graphics->bloomSpread, 0.0f, 1.0f);
 		}
 	}
 
@@ -2722,6 +2722,17 @@ namespace TFE_FrontEndUI
 				// Color mode and texture filtering are the main differences between modes.
 				// TODO: temp == TEMPLATE_MODERN ? COLORMODE_TRUE_COLOR : COLORMODE_8BIT_INTERP;
 				graphicsSettings->colorMode = COLORMODE_8BIT_INTERP;
+				// Post-FX
+				if (temp == TEMPLATE_MODERN)
+				{
+					graphicsSettings->bloomEnabled = true;
+					graphicsSettings->bloomStrength = 0.5f;
+					graphicsSettings->bloomSpread = 0.5f;
+				}
+				else
+				{
+					graphicsSettings->bloomEnabled = false;
+				}
 				// Reticle.
 				graphicsSettings->reticleEnable = true;
 				graphicsSettings->reticleIndex = 4;

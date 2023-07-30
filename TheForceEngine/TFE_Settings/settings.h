@@ -78,6 +78,11 @@ struct TFE_Settings_Graphics
 	f32  reticleOpacity = 1.00f;
 	f32  reticleScale   = 1.0f;
 
+	// Bloom options
+	bool bloomEnabled = false;
+	f32  bloomStrength = 0.5f;
+	f32  bloomSpread = 0.5f;
+
 	// Sky (Ignored when using the software renderer)
 	s32  skyMode = SKYMODE_CYLINDER;
 };
