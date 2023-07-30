@@ -100,6 +100,7 @@ namespace TFE_Jedi
 
 	bool bitmap_getTextureIndex(TextureData* tex, s32* index, AssetPool* pool);
 	TextureData* bitmap_getTextureByIndex(s32 index, AssetPool pool);
+	const char* bitmap_getTextureName(s32 index, AssetPool pool);
 
 	// Used for tools.
 	TextureData* bitmap_loadFromMemory(const u8* data, size_t size, u32 decompress);

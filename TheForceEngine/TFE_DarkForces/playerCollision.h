@@ -13,6 +13,8 @@ namespace TFE_DarkForces
 	typedef JBool(*CollisionObjFunc)(RSector*);
 	typedef JBool(*CollisionProxFunc)();
 
+	void initPlayerCollision();
+
 	JBool collision_handleCrushing(RSector* sector);
 	JBool collision_checkPickups(RSector* sector);
 	JBool handleCollisionFunc(RSector* sector);

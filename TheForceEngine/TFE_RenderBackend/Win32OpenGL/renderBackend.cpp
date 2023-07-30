@@ -38,6 +38,7 @@ namespace TFE_RenderBackend
 	static void* m_window;
 	static DynamicTexture* s_virtualDisplay = nullptr;
 	static DynamicTexture* s_palette = nullptr;
+	static u32 s_paletteCpu[256];
 	static TextureGpu* s_virtualRenderTexture = nullptr;
 	static RenderTarget* s_virtualRenderTarget = nullptr;
 	static ScreenCapture*  s_screenCapture = nullptr;
@@ -570,6 +571,12 @@ namespace TFE_RenderBackend
 			TFE_ZONE("Update Palette");
 			s_palette->update(palette, 256 * sizeof(u32));
 		}
+		memcpy(s_paletteCpu, palette, 256 * sizeof(u32));
+	}
+
+	const u32* getPalette()
+	{
+		return s_paletteCpu;
 	}
 
 	const TextureGpu* getPaletteTexture()
