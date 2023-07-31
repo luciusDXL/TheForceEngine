@@ -15,20 +15,23 @@
 using namespace std::chrono;
 using std::string;
 
-namespace TFE_A11Y { // a11y is industry slang for accessibility
+namespace TFE_A11Y  // a11y is industry slang for accessibility
+{
 	const f32 MAX_CAPTION_WIDTH = 1200;
 	const f32 DEFAULT_LINE_HEIGHT = 20;
 	const f32 LINE_PADDING = 5;
 
-	const s32 MAX_CAPTION_CHARS[] = {	// keyed by font size
+	const s32 MAX_CAPTION_CHARS[] = // keyed by font size
+	{
 		160, 160, 120, 78
 	};
 
-	const s32 CUTSCENE_MAX_LINES[] = {	// keyed by font size
+	const s32 CUTSCENE_MAX_LINES[] = // keyed by font size
+	{
 		5, 5, 4, 3
 	};
 
-	static f32 s_maxDuration = 10000;
+	static f32 s_maxDuration = 10000.0f;
 	static DisplayInfo s_display;
 	static u32 s_screenWidth;
 	static u32 s_screenHeight;
@@ -154,7 +157,7 @@ namespace TFE_A11Y { // a11y is industry slang for accessibility
 					{
 						f32 ratio = spaceIndex / (f32)caption.text.length();
 						next.text = next.text.substr(0, spaceIndex);
-						next.msRemaining *= ratio;
+						next.msRemaining = s64(next.msRemaining * ratio);  // Fixes a float to int warning.
 						addCaption(next);
 						caption.text = caption.text.substr(spaceIndex + 1);
 						caption.msRemaining -= next.msRemaining;
@@ -168,9 +171,9 @@ namespace TFE_A11Y { // a11y is industry slang for accessibility
 		}
 	}
 
-	void addCaption(const ConsoleArgList& args) {
+	void addCaption(const ConsoleArgList& args)
+	{
 		if (args.size() < 2) { return; }
-		//strcpy(buffer, args[1].c_str());
 
 		Caption caption;
 		caption.text = args[1];
@@ -181,7 +184,8 @@ namespace TFE_A11Y { // a11y is industry slang for accessibility
 		addCaption(caption);
 	}
 
-	void addCaption(Caption caption) {
+	void addCaption(Caption caption)
+	{
 		if (s_activeCaptions.size() == 0) {
 			s_lastTime = system_clock::now().time_since_epoch();
 		}
@@ -189,7 +193,8 @@ namespace TFE_A11Y { // a11y is industry slang for accessibility
 		//TFE_System::logWrite(LOG_ERROR, "a11y", std::to_string(active.size()).c_str());
 	}
 
-	void drawCaptions() {
+	void drawCaptions()
+	{
 		if (s_activeCaptions.size() > 0)
 		{
 			drawCaptions(&s_activeCaptions);
@@ -275,7 +280,6 @@ namespace TFE_A11Y { // a11y is industry slang for accessibility
 			totalLines += lines;
 
 			//TFE_System::logWrite(LOG_ERROR, "a11y", (std::to_string(i) + " " + std::to_string(textSize.y) + ", " + std::to_string(lineHeight) + " " + std::to_string(lines) + " " + std::to_string(totalLines) + " " + std::to_string(windowSize.y)).c_str());
-
 			if (wrapText)
 			{
 				ImGui::TextWrapped(title->text.c_str());
@@ -338,23 +342,23 @@ namespace TFE_A11Y { // a11y is industry slang for accessibility
 	///////////////////////////////////////////
 	string toUpper(string input)
 	{
-		unsigned char* p = (unsigned char*)input.c_str();
-		while (*p) {
-			*p = toupper((unsigned char)*p);
+		u8* p = (u8*)input.c_str();
+		while (*p)
+		{
+			*p = toupper((u8)*p);
 			p++;
 		}
-
 		return input;
 	}
 
 	string toLower(string input)
 	{
-		unsigned char* p = (unsigned char*)input.c_str();
-		while (*p) {
-			*p = tolower((unsigned char)*p);
+		u8* p = (u8*)input.c_str();
+		while (*p)
+		{
+			*p = tolower((u8)*p);
 			p++;
 		}
-
 		return input;
 	}
 
@@ -367,7 +371,7 @@ namespace TFE_A11Y { // a11y is industry slang for accessibility
 
 	ImVec2 calcWindowSize(f32* fontScale, CaptionEnv env)
 	{
-		auto settings = TFE_Settings::getA11ySettings();
+		TFE_Settings_A11y* settings = TFE_Settings::getA11ySettings();
 		*fontScale = s_screenHeight / 1024.0f; // Scale based on window resolution
 		*fontScale = (f32)fmax(*fontScale, 1);
 
