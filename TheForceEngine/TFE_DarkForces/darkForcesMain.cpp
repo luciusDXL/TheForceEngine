@@ -36,6 +36,7 @@
 #include <TFE_FileSystem/paths.h>
 #include <TFE_FileSystem/fileutil.h>
 #include <TFE_FileSystem/filestream.h>
+#include <TFE_A11y/accessibility.h>
 #include <TFE_Audio/midiPlayer.h>
 #include <TFE_Audio/audioSystem.h>
 #include <TFE_Asset/modelAsset_jedi.h>
@@ -582,7 +583,11 @@ namespace TFE_DarkForces
 			} break;
 			case GSTATE_CUTSCENE:
 			{
-				if (!cutscene_update())
+				if (cutscene_update())
+				{
+					if (TFE_A11Y::cutsceneCaptionsEnabled()) TFE_A11Y::drawCaptions();
+				}
+				else
 				{
 					s_runGameState.cutsceneIndex++;
 					if (s_cutsceneData[s_runGameState.cutsceneIndex].nextGameMode == GMODE_END)
@@ -594,6 +599,7 @@ namespace TFE_DarkForces
 					{
 						startNextMode();
 					}
+					TFE_A11Y::clearCaptions();
 				}
 			} break;
 			case GSTATE_BRIEFING:
@@ -623,7 +629,11 @@ namespace TFE_DarkForces
 			{
 				// At this point the mission has already been launched.
 				// The task system will take over. Basically every frame we just check to see if there are any tasks running.
-				if (!task_getCount())
+				if (task_getCount())
+				{
+					if (!s_gamePaused && TFE_A11Y::gameplayCaptionsEnabled()) TFE_A11Y::drawCaptions();
+				}
+				else
 				{
 					// We have returned from the mission tasks.
 					renderer_reset();
@@ -658,6 +668,7 @@ namespace TFE_DarkForces
 					bitmap_clearLevelData();
 					bitmap_setAllocator(s_gameRegion);
 					level_freeAllAssets();
+					TFE_A11Y::clearCaptions();
 				}
 			} break;
 		}

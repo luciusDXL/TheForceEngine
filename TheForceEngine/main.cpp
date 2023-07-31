@@ -28,6 +28,7 @@
 #include <TFE_Ui/ui.h>
 #include <TFE_FrontEndUI/frontEndUi.h>
 #include <TFE_ForceScript/vm.h>
+#include <TFE_A11y/accessibility.h>
 #include <algorithm>
 #include <cinttypes>
 #include <time.h>
@@ -57,6 +58,7 @@
 
 #pragma comment(lib, "SDL2main.lib")
 using namespace TFE_Input;
+using namespace TFE_A11Y;
 
 static bool s_loop  = true;
 static bool s_nullAudioDevice = false;
@@ -639,6 +641,7 @@ int main(int argc, char* argv[])
 	game_init();
 	inputMapping_startup();
 	TFE_SaveSystem::init();
+	TFE_A11Y::init();
 
 	// Uncomment to test memory region allocator.
 	// TFE_Memory::region_test();

@@ -2,6 +2,7 @@
 #include "console.h"
 #include "profilerView.h"
 #include "modLoader.h"
+#include <TFE_A11y/accessibility.h>
 #include <TFE_Audio/audioSystem.h>
 #include <TFE_Audio/midiPlayer.h>
 #include <TFE_Audio/midiDevice.h>
@@ -67,7 +68,8 @@ namespace TFE_FrontEndUI
 		CONFIG_HUD,
 		CONFIG_SOUND,
 		CONFIG_SYSTEM,
-		CONFIG_COUNT
+		CONFIG_A11Y,
+		CONFIG_COUNT,
 	};
 
 	enum SettingsTemplate
@@ -93,6 +95,7 @@ namespace TFE_FrontEndUI
 		"Hud",
 		"Sound",
 		"System",
+		"Accessibility (beta)"
 	};
 
 	static const Vec2i c_resolutionDim[] =
@@ -221,6 +224,14 @@ namespace TFE_FrontEndUI
 		"Mouselook"
 	};
 
+	static const char* c_fontSize[] =
+	{
+		"Small",
+		"Medium",
+		"Large",
+		"Extra-Large"
+	};
+
 	static InputConfig* s_inputConfig = nullptr;
 	static bool s_controllerWinOpen = true;
 	static bool s_mouseWinOpen = true;
@@ -238,6 +249,7 @@ namespace TFE_FrontEndUI
 	void configHud();
 	void configSound();
 	void configSystem();
+	void configA11y();
 	void pickCurrentResolution();
 	void manual();
 	void credits();
@@ -756,8 +768,9 @@ namespace TFE_FrontEndUI
 		else if (s_subUI == FEUI_CONFIG)
 		{
 			bool active = true;
+			//NoBringToFrontOnFocus prevents windows from covering the subtitle example on A11y screen
 			u32 window_flags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove |
-				ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoSavedSettings;
+				ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoBringToFrontOnFocus;
 
 			TFE_Input::clearAccumulatedMouseMove();
 
@@ -823,6 +836,12 @@ namespace TFE_FrontEndUI
 				TFE_Settings::writeToDisk();
 				inputMapping_serialize();
 			}
+			if (ImGui::Button("Accessibility", sideBarButtonSize))
+			{
+				s_configTab = CONFIG_A11Y;
+				TFE_Settings::writeToDisk();
+				inputMapping_serialize();
+			}
 			ImGui::Separator();
 			if (ImGui::Button("Return", sideBarButtonSize))
 			{
@@ -850,7 +869,7 @@ namespace TFE_FrontEndUI
 
 			// adjust the width based on tab.
 			s32 tabWidth = w - s32(160*s_uiScale);
-			if (s_configTab >= CONFIG_INPUT && s_configTab < CONFIG_SYSTEM)
+			if (s_configTab >= CONFIG_INPUT && s_configTab < CONFIG_SYSTEM || s_configTab == CONFIG_A11Y)
 			{
 				tabWidth = s32(414*s_uiScale);
 			}
@@ -898,6 +917,9 @@ namespace TFE_FrontEndUI
 				break;
 			case CONFIG_SYSTEM:
 				configSystem();
+				break;
+			case CONFIG_A11Y:
+				configA11y();
 				break;
 			};
 			renderBackground();
@@ -2564,6 +2586,100 @@ namespace TFE_FrontEndUI
 		{
 			system->returnToModLoader = returnToModLoader;
 		}
+	}
+
+	void DrawFontSizeCombo(float labelWidth, float valueWidth, const char* label, const char* comboTag, s32* currentValue)
+	{
+		ImGui::SetNextItemWidth(labelWidth);
+		ImGui::LabelText("##ConfigLabel", label);
+		ImGui::SameLine();
+		ImGui::SetNextItemWidth(valueWidth);
+		ImGui::Combo(comboTag, currentValue, c_fontSize, IM_ARRAYSIZE(c_fontSize));
+	}
+	
+	void DrawRGBFields(float labelWidth, float valueWidth, const char* label, RGBA* color)
+	{
+		ImGui::SetNextItemWidth(labelWidth);
+		ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(color->getRedF(), color->getGreenF(), color->getBlueF(), color->getAlphaF()));
+		ImGui::LabelText("##ConfigLabel", label);
+		ImGui::PopStyleColor();
+		ImGui::SameLine();
+		RGBAf c;
+		c.r = color->getRedF();
+		c.g = color->getGreenF();
+		c.b = color->getBlueF();
+		c.a = color->getAlphaF();
+
+		ImGui::SetNextItemWidth(valueWidth);
+		if (ImGui::SliderFloat4((string("##color") + label).c_str(), &c.r, 0.0f, 1.0f))
+		{
+			color->color = RGBA::fromFloats(c.r, c.g, c.b, c.a).color;
+		}
+	}
+
+	void DrawLabelledFloatSlider(float labelWidth, float valueWidth, const char* label, const char* tag, float* value, float min, float max)
+	{
+		ImGui::SetNextItemWidth(labelWidth);
+		ImGui::LabelText("##ConfigLabel", label);
+		ImGui::SameLine();
+		ImGui::SetNextItemWidth(valueWidth);
+		ImGui::SliderFloat(tag, value, min, max);
+	}
+	
+	void DrawLabelledIntSlider(float labelWidth, float valueWidth, const char* label, const char* tag, int* value, int min, int max)
+	{
+		ImGui::SetNextItemWidth(labelWidth);
+		ImGui::LabelText("##ConfigLabel", label);
+		ImGui::SameLine();
+		ImGui::SetNextItemWidth(valueWidth);
+		ImGui::SliderInt(tag, value, min, max);
+	}
+
+	//Accessibility
+	void configA11y()
+	{
+		TFE_Settings_A11y* a11y = TFE_Settings::getA11ySettings();
+		float labelW = 140 * s_uiScale;
+		float valueW = 260 * s_uiScale;
+
+		//CUTSCENES -----------------------------------------
+		ImGui::PushFont(s_dialogFont);
+		ImGui::LabelText("##ConfigLabel2", "Cutscenes");
+		ImGui::PopFont();
+
+		ImGui::Checkbox("Subtitles (voice)##Cutscenes", &a11y->showCutsceneSubtitles);
+		ImGui::SameLine(0, 22);
+		ImGui::Checkbox("Captions (SFX)##Cutscenes", &a11y->showCutsceneCaptions);
+		
+		DrawFontSizeCombo(labelW, valueW, "Font Size##Cutscenes", "##CFS", (s32*)&a11y->cutsceneFontSize);
+		DrawRGBFields(labelW, valueW, "Font Color##Cutscenes", &a11y->cutsceneFontColor);
+		DrawLabelledFloatSlider(labelW, valueW * 0.5f - 2, "Background Opacity", "##CBO", &a11y->cutsceneTextBackgroundAlpha, 0.0f, 1.0f);
+		ImGui::SameLine(0, 40);
+		ImGui::Checkbox("Border##Cutscenes", &a11y->showCutsceneTextBorder);
+		DrawLabelledFloatSlider(labelW, valueW, "Text speed", "##CTS", &a11y->cutsceneTextSpeed, 0.5f, 2.0f);
+
+		ImGui::Separator();
+
+		// GAMEPLAY------------------------------------------
+		ImGui::PushFont(s_dialogFont);
+		ImGui::LabelText("##ConfigLabel3", "Gameplay");
+		ImGui::PopFont();
+
+		ImGui::Checkbox("Subtitles (voice)##Gameplay", &a11y->showGameplaySubtitles);
+		ImGui::SameLine(0, 22);
+		ImGui::Checkbox("Captions (SFX)##Gameplay", &a11y->showGameplayCaptions);
+
+		DrawFontSizeCombo(labelW, valueW, "Font Size##Gameplay", "##GFS", (s32*)&a11y->gameplayFontSize);
+		DrawRGBFields(labelW, valueW, "Font Color##Gameplay", &a11y->gameplayFontColor);
+		DrawLabelledFloatSlider(labelW, valueW * 0.5f - 2, "Background Opacity", "##GBO", &a11y->gameplayTextBackgroundAlpha, 0.0f, 1.0f);
+		ImGui::SameLine(0, 40);
+		ImGui::Checkbox("Border##Gameplay", &a11y->showGameplayTextBorder);
+		DrawLabelledFloatSlider(labelW, valueW, "Text speed", "##GTS", &a11y->gameplayTextSpeed, 0.5f, 2.0f);
+
+		DrawLabelledIntSlider(labelW, valueW, "Max Lines", "##CML", &a11y->gameplayMaxTextLines, 2, 7);
+		DrawLabelledIntSlider(labelW, valueW, "Min. Volume", "##CMV", &a11y->gameplayCaptionMinVolume, 0, 127);
+
+		TFE_A11Y::drawExampleCaptions();
 	}
 
 	void pickCurrentResolution()

@@ -108,6 +108,14 @@ enum PitchLimit
 	PITCH_COUNT
 };
 
+enum FontSize
+{
+	FONT_SMALL,
+	FONT_MEDIUM,
+	FONT_LARGE,
+	FONT_XL
+};
+
 static const char* c_tfeHudScaleStrings[] =
 {
 	"Proportional",		// TFE_HUDSCALE_PROPORTIONAL
@@ -190,6 +198,77 @@ struct TFE_Settings_System
 	bool returnToModLoader = true;		// Return to the Mod Loader if running a mod.
 };
 
+/// <summary>
+/// Represents an RGBA color as a 32-bit unsigned integer, with properties for reading the channel
+/// values as U8s or floats.
+/// </summary>
+struct RGBA
+{
+	u32 color;
+	u8 getAlpha() { return (color >> 24) & 0xff; }
+	u8 getRed() { return (color >> 16) & 0xff; }
+	u8 getGreen() { return (color >> 8) & 0xff; }
+	u8 getBlue() { return color & 0xff; }
+
+	f32 getAlphaF() { return getAlpha() / 255.0f; }
+	f32 getRedF() { return getRed() / 255.0f; }
+	f32 getGreenF() { return getGreen() / 255.0f; }
+	f32 getBlueF() { return getBlue() / 255.0f; }
+
+	RGBA()
+	{
+		
+	}	
+	
+	RGBA(u32 color)
+	{
+		this->color = color;
+	}
+
+	static RGBA fromFloats(f32 r, f32 g, f32 b)
+	{
+		RGBA color;
+		color.color = (u8)(b * 255) + ((u8)(g * 255) << 8) + ((u8)(r * 255) << 16) + (255 << 24);
+		return color;
+	}
+	static RGBA fromFloats(f32 r, f32 g, f32 b, f32 a)
+	{
+		RGBA color;
+		color.color = (u8)(b * 255) + ((u8)(g * 255) << 8) + ((u8)(r * 255) << 16) + ((u8)(a * 255) << 24);
+		return color;
+	}
+};
+
+struct RGBAf {
+	f32 r, g, b, a;
+
+	RGBA ToRGBA()
+	{
+		return RGBA::fromFloats(r, g, b, a);
+	}
+};
+
+struct TFE_Settings_A11y
+{
+	bool showCutsceneSubtitles; //voice
+	bool showCutsceneCaptions; //descriptive (e.g. "[Mine beeping]", "[Engine roaring]"
+	FontSize cutsceneFontSize;
+	RGBA cutsceneFontColor = RGBA::fromFloats(1.0f, 1.0f, 1.0f);
+	f32 cutsceneTextBackgroundAlpha = 0.75f;
+	bool showCutsceneTextBorder = true;
+	f32 cutsceneTextSpeed = 1.0f;
+
+	bool showGameplaySubtitles; //voice
+	bool showGameplayCaptions; //descriptive
+	FontSize gameplayFontSize;
+	RGBA gameplayFontColor = RGBA::fromFloats(1.0f, 1.0f, 1.0f);
+	int gameplayMaxTextLines = 3;
+	f32 gameplayTextBackgroundAlpha = 0.0f;
+	bool showGameplayTextBorder = false;
+	f32 gameplayTextSpeed = 1.0f;
+	s32 gameplayCaptionMinVolume = 32; //in range 0 - 127
+};
+
 namespace TFE_Settings
 {
 	bool init(bool& firstRun);
@@ -206,6 +285,7 @@ namespace TFE_Settings
 	TFE_Game* getGame();
 	TFE_GameHeader* getGameHeader(const char* gameName);
 	TFE_Settings_Game* getGameSettings();
+	TFE_Settings_A11y* getA11ySettings();
 
 	bool validatePath(const char* path, const char* sentinel);
 	void autodetectGamePaths();

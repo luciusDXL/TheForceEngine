@@ -2,6 +2,7 @@
 
 #include "sound.h"
 #include "player.h"
+#include <TFE_A11y/accessibility.h>
 #include <TFE_DarkForces/Landru/lsound.h>
 #include <TFE_Settings/settings.h>
 #include <TFE_Game/igame.h>
@@ -271,8 +272,9 @@ namespace TFE_DarkForces
 	{
 		// no-op.
 	}
-		
-	SoundEffectId sound_playPriority(SoundSourceId id, s32 priority)
+
+	// TFE: added `withCaptions` argument, for non-cued sounds like player weaps and mission VO
+	SoundEffectId sound_playPriority(SoundSourceId id, s32 priority, JBool withCaptions)
 	{
 		if (!id) { return 0; }
 
@@ -290,13 +292,23 @@ namespace TFE_DarkForces
 		}
 		ImStartSfx(idInstance, priority);
 		sound_setVolume(idInstance, sound->volume);
+		if (withCaptions && TFE_A11Y::gameplayCaptionsEnabled())
+		{
+			TFE_A11Y::onSoundPlay(sound->name, TFE_A11Y::CaptionEnv::CC_Gameplay);
+		}
 
 		return idInstance;
 	}
 
 	SoundEffectId sound_play(SoundSourceId id)
 	{
-		return sound_playPriority(id, -1);
+		return sound_playPriority(id, -1, JTRUE);
+	}	
+	
+	// TFE
+	SoundEffectId sound_play_noCaptions(SoundSourceId id)
+	{
+		return sound_playPriority(id, -1, JFALSE);
 	}
 
 	SoundEffectId sound_playCued(SoundSourceId id, vec3_fixed pos)
@@ -308,7 +320,7 @@ namespace TFE_DarkForces
 			s32 vol, pan;
 			soundCalculateCue(sound, pos.x, pos.y, pos.z, &vol, &pan);
 
-			idInstance = sound_play(id);
+			idInstance = sound_play_noCaptions(id); // TFE; captions for cued sounds come from soundCalculateCue
 			sound_setVolume(idInstance, vol);
 			sound_setPan(idInstance, pan);
 		}
@@ -409,6 +421,12 @@ namespace TFE_DarkForces
 		angle14_32 angle = vec2ToAngle(x - s_eyePos.x, z - s_eyePos.z);
 		angle = getAngleDifference(s_yaw, angle);
 		*pan = s_tPan[((angle + 8192) / 512) & 31];
+
+		// TFE subtitles/captions
+		if (TFE_A11Y::gameplayCaptionsEnabled() && *vol > TFE_Settings::getA11ySettings()->gameplayCaptionMinVolume)
+		{
+			TFE_A11Y::onSoundPlay(sound->name, TFE_A11Y::CaptionEnv::CC_Gameplay);
+		}
 	}
 		
 	SoundEffectId soundInstance(SoundSourceId soundId, s32 instance)
