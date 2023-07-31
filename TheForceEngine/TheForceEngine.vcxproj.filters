@@ -1258,6 +1258,15 @@
     <ClInclude Include="Shaders\filter.h">
       <Filter>Source\Shaders</Filter>
     </ClInclude>
+    <ClInclude Include="TFE_PostProcess\bloomThreshold.h">
+      <Filter>Source\TFE_PostProcess</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_PostProcess\bloomDownsample.h">
+      <Filter>Source\TFE_PostProcess</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_PostProcess\bloomMerge.h">
+      <Filter>Source\TFE_PostProcess</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -2121,6 +2130,15 @@
     <ClCompile Include="TFE_Audio\MidiSynth\fm4Opl3Device.cpp">
       <Filter>Source\TFE_Audio\MidiSynth</Filter>
     </ClCompile>
+    <ClCompile Include="TFE_PostProcess\bloomThreshold.cpp">
+      <Filter>Source\TFE_PostProcess</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_PostProcess\bloomDownsample.cpp">
+      <Filter>Source\TFE_PostProcess</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_PostProcess\bloomMerge.cpp">
+      <Filter>Source\TFE_PostProcess</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="TheForceEngine.rc">
@@ -2308,6 +2326,15 @@
       <Filter>Source\Shaders</Filter>
     </None>
     <None Include="Shaders\quad2d.vert">
+      <Filter>Source\Shaders</Filter>
+    </None>
+    <None Include="Shaders\bloomThreshold.frag">
+      <Filter>Source\Shaders</Filter>
+    </None>
+    <None Include="Shaders\bloomDownsample.frag">
+      <Filter>Source\Shaders</Filter>
+    </None>
+    <None Include="Shaders\bloomMerge.frag">
       <Filter>Source\Shaders</Filter>
     </None>
   </ItemGroup>

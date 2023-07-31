@@ -1278,7 +1278,7 @@ namespace TFE_FrontEndUI
 
 		if (!s_saveImageView)
 		{
-			s_saveImageView = TFE_RenderBackend::createTexture(TFE_SaveSystem::SAVE_IMAGE_WIDTH, TFE_SaveSystem::SAVE_IMAGE_HEIGHT, 4);
+			s_saveImageView = TFE_RenderBackend::createTexture(TFE_SaveSystem::SAVE_IMAGE_WIDTH, TFE_SaveSystem::SAVE_IMAGE_HEIGHT, TexFormat::TEX_RGBA8);
 		}
 		TFE_SaveSystem::populateSaveDirectory(s_saveDir);
 		s_hasQuicksave = (!s_saveDir.empty() && strcasecmp(s_saveDir[0].saveName, "Quicksave") == 0);
@@ -2296,10 +2296,7 @@ namespace TFE_FrontEndUI
 			graphics->saturation = 1.0f;
 			graphics->gamma = 1.0f;
 		}
-
-		const ColorCorrection colorCorrection = { graphics->brightness, graphics->contrast, graphics->saturation, graphics->gamma };
-		TFE_RenderBackend::setColorCorrection(graphics->colorCorrection, &colorCorrection);
-
+				
 		ImGui::Separator();
 
 		//////////////////////////////////////////////////////
@@ -2336,7 +2333,7 @@ namespace TFE_FrontEndUI
 		ImGui::LabelText("##ConfigLabel", "Post-FX");
 		ImGui::PopFont();
 
-		ImGui::Checkbox("Bloom", &graphics->bloomEnabled);
+		bool bloomChanged = ImGui::Checkbox("Bloom", &graphics->bloomEnabled);
 		if (graphics->bloomEnabled)
 		{
 			ImGui::SetNextItemWidth(196 * s_uiScale);
@@ -2344,6 +2341,9 @@ namespace TFE_FrontEndUI
 			ImGui::SetNextItemWidth(196 * s_uiScale);
 			ImGui::SliderFloat("Spread", &graphics->bloomSpread, 0.0f, 1.0f);
 		}
+
+		const ColorCorrection colorCorrection = { graphics->brightness, graphics->contrast, graphics->saturation, graphics->gamma };
+		TFE_RenderBackend::setColorCorrection(graphics->colorCorrection, &colorCorrection, bloomChanged);
 	}
 
 	void configHud()

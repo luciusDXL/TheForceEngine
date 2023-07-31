@@ -1,5 +1,9 @@
 uniform sampler2D VirtualDisplay;
 
+#ifdef ENABLE_BLOOM
+uniform sampler2D Bloom;
+#endif
+
 #ifdef ENABLE_GPU_COLOR_CONVERSION
 uniform sampler2D Palette;
 #endif
@@ -57,6 +61,12 @@ void main()
 	Out_Color.rgb = texture(Palette, vec2(index, 0.5)).rgb;
 #else
 	Out_Color.rgb = texture(VirtualDisplay, Frag_UV).rgb;
+#endif
+
+#ifdef ENABLE_BLOOM
+	vec3 bloom = texture(Bloom, Frag_UV).rgb;
+	// clamp to 1.0 to avoid issues with color correction below.
+	Out_Color.rgb = min(Out_Color.rgb + bloom, vec3(1.0));
 #endif
 
 #ifdef ENABLE_GPU_COLOR_CORRECTION

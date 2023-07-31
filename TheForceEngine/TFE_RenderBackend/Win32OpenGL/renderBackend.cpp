@@ -7,6 +7,9 @@
 #include <TFE_Asset/imageAsset.h>	// For image saving, this should be refactored...
 #include <TFE_System/profiler.h>
 #include <TFE_PostProcess/blit.h>
+#include <TFE_PostProcess/bloomThreshold.h>
+#include <TFE_PostProcess/bloomDownsample.h>
+#include <TFE_PostProcess/bloomMerge.h>
 #include <TFE_PostProcess/postprocess.h>
 #include "renderTarget.h"
 #include "screenCapture.h"
@@ -40,6 +43,7 @@ namespace TFE_RenderBackend
 	static DynamicTexture* s_palette = nullptr;
 	static u32 s_paletteCpu[256];
 	static TextureGpu* s_virtualRenderTexture = nullptr;
+	static TextureGpu* s_materialRenderTexture = nullptr;
 	static RenderTarget* s_virtualRenderTarget = nullptr;
 	static ScreenCapture*  s_screenCapture = nullptr;
 
@@ -53,15 +57,19 @@ namespace TFE_RenderBackend
 	static bool s_asyncFrameBuffer = true;
 	static bool s_gpuColorConvert = false;
 	static bool s_useRenderTarget = false;
+	static bool s_bloomEnable = false;
 	static DisplayMode s_displayMode;
 	static f32 s_clearColor[4] = { 0.0f };
 	static u32 s_rtWidth, s_rtHeight;
 
 	static Blit* s_postEffectBlit;
+	static BloomThreshold* s_bloomTheshold;
+	static BloomDownsample* s_bloomDownsample;
+	static BloomMerge* s_bloomMerge;
 	static std::vector<SDL_Rect> s_displayBounds;
 
 	void drawVirtualDisplay();
-	void setupPostEffectChain(bool useDynamicTexture);
+	void setupPostEffectChain(bool useDynamicTexture, bool useBloom);
 		
 	SDL_Window* createWindow(const WindowState& state)
 	{
@@ -143,6 +151,15 @@ namespace TFE_RenderBackend
 		s_postEffectBlit = new Blit();
 		s_postEffectBlit->init();
 		s_postEffectBlit->enableFeatures(BLIT_GPU_COLOR_CONVERSION);
+
+		s_bloomTheshold = new BloomThreshold();
+		s_bloomTheshold->init();
+
+		s_bloomDownsample = new BloomDownsample();
+		s_bloomDownsample->init();
+
+		s_bloomMerge = new BloomMerge();
+		s_bloomMerge->init();
 		
 		glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 		glClearDepth(0.0f);
@@ -166,15 +183,28 @@ namespace TFE_RenderBackend
 		s_postEffectBlit->destroy();
 		delete s_postEffectBlit;
 
+		s_bloomTheshold->destroy();
+		delete s_bloomTheshold;
+
+		s_bloomDownsample->destroy();
+		delete s_bloomDownsample;
+
+		s_bloomMerge->destroy();
+		delete s_bloomMerge;
+
 		TFE_PostProcess::destroy();
 		TFE_Ui::shutdown();
 
 		delete s_virtualDisplay;
 		delete s_virtualRenderTarget;
+		delete s_virtualRenderTexture;
+		delete s_materialRenderTexture;
 		SDL_DestroyWindow((SDL_Window*)m_window);
 
 		s_virtualDisplay = nullptr;
 		s_virtualRenderTarget = nullptr;
+		s_virtualRenderTexture = nullptr;
+		s_materialRenderTexture = nullptr;
 		m_window = nullptr;
 	}
 
@@ -270,7 +300,7 @@ namespace TFE_RenderBackend
 			windowSettings->baseHeight = height;
 		}
 		glViewport(0, 0, width, height);
-		setupPostEffectChain(!s_useRenderTarget);
+		setupPostEffectChain(!s_useRenderTarget, s_bloomEnable);
 
 		s_screenCapture->resize(width, height);
 	}
@@ -405,7 +435,7 @@ namespace TFE_RenderBackend
 		}
 
 		glViewport(0, 0, m_windowState.width, m_windowState.height);
-		setupPostEffectChain(!s_useRenderTarget);
+		setupPostEffectChain(!s_useRenderTarget, s_bloomEnable);
 		s_screenCapture->resize(m_windowState.width, m_windowState.height);
 	}
 
@@ -423,8 +453,7 @@ namespace TFE_RenderBackend
 		displayInfo->refreshRate = (m_windowState.flags & WINFLAG_VSYNC) != 0 ? m_windowState.refreshRate : 0.0f;
 	}
 
-	// New version of the function.
-	bool createVirtualDisplay(const VirtualDisplayInfo& vdispInfo)
+	bool recreateDisplay(bool setupPostFx)
 	{
 		if (s_virtualDisplay)
 		{
@@ -434,31 +463,51 @@ namespace TFE_RenderBackend
 		{
 			delete s_virtualRenderTarget;
 		}
+		// Sync issue?
+		if (s_virtualRenderTexture)
+		{
+			delete s_virtualRenderTexture;
+		}
+		if (s_materialRenderTexture)
+		{
+			delete s_materialRenderTexture;
+		}
 		s_virtualDisplay = nullptr;
 		s_virtualRenderTarget = nullptr;
-
-		s_virtualWidth = vdispInfo.width;
-		s_virtualHeight = vdispInfo.height;
-		s_virtualWidthUi = vdispInfo.widthUi;
-		s_virtualWidth3d = vdispInfo.width3d;
-		s_displayMode = vdispInfo.mode;
-		s_widescreen = (vdispInfo.flags & VDISP_WIDESCREEN) != 0;
-		s_asyncFrameBuffer = (vdispInfo.flags & VDISP_ASYNC_FRAMEBUFFER) != 0;
-		s_gpuColorConvert = (vdispInfo.flags & VDISP_GPU_COLOR_CONVERT) != 0;
-		s_useRenderTarget = (vdispInfo.flags & VDISP_RENDER_TARGET) != 0;
+		s_virtualRenderTexture = nullptr;
+		s_materialRenderTexture = nullptr;
 
 		bool result = false;
 		if (s_useRenderTarget)
 		{
 			s_virtualRenderTarget = new RenderTarget();
 			s_virtualRenderTexture = new TextureGpu();
+			result = s_virtualRenderTexture->create(s_virtualWidth, s_virtualHeight);
 
-			result  = s_virtualRenderTexture->create(s_virtualWidth, s_virtualHeight);
-			result &= s_virtualRenderTarget->create(s_virtualRenderTexture, true);
+			if (s_bloomEnable) // Output to two textures.
+			{
+				s_materialRenderTexture = new TextureGpu();
+				result &= s_materialRenderTexture->create(s_virtualWidth, s_virtualHeight);
+
+				TextureGpu* textures[] = { s_virtualRenderTexture, s_materialRenderTexture };
+				result &= s_virtualRenderTarget->create(2, textures, true);
+			}
+			else
+			{
+				result &= s_virtualRenderTarget->create(1, &s_virtualRenderTexture, true);
+			}
 
 			// The renderer will handle this instead.
 			s_postEffectBlit->disableFeatures(BLIT_GPU_COLOR_CONVERSION);
-			setupPostEffectChain(false);
+			if (s_bloomEnable)
+			{
+				s_postEffectBlit->enableFeatures(BLIT_BLOOM);
+			}
+			else
+			{
+				s_postEffectBlit->disableFeatures(BLIT_BLOOM);
+			}
+			if (setupPostFx) { setupPostEffectChain(false, s_bloomEnable); }
 		}
 		else
 		{
@@ -471,11 +520,29 @@ namespace TFE_RenderBackend
 			{
 				s_postEffectBlit->disableFeatures(BLIT_GPU_COLOR_CONVERSION);
 			}
-
-			setupPostEffectChain(true);
+			s_postEffectBlit->disableFeatures(BLIT_BLOOM);
+			if (setupPostFx) { setupPostEffectChain(true, false); }
 			result = s_virtualDisplay->create(s_virtualWidth, s_virtualHeight, s_asyncFrameBuffer ? 2 : 1, s_gpuColorConvert ? DTEX_R8 : DTEX_RGBA8);
 		}
 		return result;
+	}
+
+	// New version of the function.
+	bool createVirtualDisplay(const VirtualDisplayInfo& vdispInfo)
+	{
+		const TFE_Settings_Graphics* graphicsSettings = TFE_Settings::getGraphicsSettings();
+		s_virtualWidth = vdispInfo.width;
+		s_virtualHeight = vdispInfo.height;
+		s_virtualWidthUi = vdispInfo.widthUi;
+		s_virtualWidth3d = vdispInfo.width3d;
+		s_displayMode = vdispInfo.mode;
+		s_widescreen = (vdispInfo.flags & VDISP_WIDESCREEN) != 0;
+		s_asyncFrameBuffer = (vdispInfo.flags & VDISP_ASYNC_FRAMEBUFFER) != 0;
+		s_gpuColorConvert = (vdispInfo.flags & VDISP_GPU_COLOR_CONVERT) != 0;
+		s_useRenderTarget = (vdispInfo.flags & VDISP_RENDER_TARGET) != 0;
+		s_bloomEnable = graphicsSettings->bloomEnabled && s_useRenderTarget;
+
+		return recreateDisplay(true);
 	}
 
 	u32 getVirtualDisplayWidth2D()
@@ -584,14 +651,21 @@ namespace TFE_RenderBackend
 		return s_palette->getTexture();
 	}
 
-	void setColorCorrection(bool enabled, const ColorCorrection* color/* = nullptr*/)
+	void setColorCorrection(bool enabled, const ColorCorrection* color/* = nullptr*/, bool bloomChanged/* = false*/)
 	{
-		if (s_postEffectBlit->featureEnabled(BLIT_GPU_COLOR_CORRECTION) != enabled)
+		if (bloomChanged)
+		{
+			TFE_Settings_Graphics* graphicsSettings = TFE_Settings::getGraphicsSettings();
+			s_bloomEnable = graphicsSettings->bloomEnabled && s_useRenderTarget;
+			recreateDisplay(false);
+		}
+
+		if (s_postEffectBlit->featureEnabled(BLIT_GPU_COLOR_CORRECTION) != enabled || bloomChanged)
 		{
 			if (enabled) { s_postEffectBlit->enableFeatures(BLIT_GPU_COLOR_CORRECTION); }
 			else { s_postEffectBlit->disableFeatures(BLIT_GPU_COLOR_CORRECTION); }
 
-			setupPostEffectChain(!s_useRenderTarget);
+			setupPostEffectChain(!s_useRenderTarget, s_bloomEnable);
 		}
 
 		if (color)
@@ -621,7 +695,7 @@ namespace TFE_RenderBackend
 		RenderTarget* newTarget = new RenderTarget();
 		TextureGpu* texture = new TextureGpu();
 		texture->create(width, height);
-		newTarget->create(texture, hasDepthBuffer);
+		newTarget->create(1, &texture, hasDepthBuffer);
 
 		return RenderTargetHandle(newTarget);
 	}
@@ -690,10 +764,10 @@ namespace TFE_RenderBackend
 		*height = texture->getHeight();
 	}
 
-	TextureGpu* createTexture(u32 width, u32 height, u32 channels)
+	TextureGpu* createTexture(u32 width, u32 height, TexFormat format)
 	{
 		TextureGpu* texture = new TextureGpu();
-		texture->create(width, height, channels);
+		texture->create(width, height, format);
 		return texture;
 	}
 
@@ -739,9 +813,100 @@ namespace TFE_RenderBackend
 		glDrawArrays(GL_LINES, 0, lineCount * 2);
 	}
 
+	static u32 s_bloomBufferCount = 0;
+	static RenderTarget* s_bloomTargets[16] = { 0 };
+	static TextureGpu* s_bloomTextures[16] = { 0 };
+
+	void setupBloomStages()
+	{
+		// Free existing buffers...
+		for (s32 i = 0; i < s_bloomBufferCount; i++)
+		{
+			delete s_bloomTargets[i];
+			delete s_bloomTextures[i];
+			s_bloomTargets[i] = nullptr;
+			s_bloomTextures[i] = nullptr;
+		}
+		s_bloomBufferCount = 0;
+
+		// Create new textures and stages.
+		const TextureGpu* baseTex = s_virtualRenderTarget->getTexture();
+		u32 width  = baseTex->getWidth()/2;
+		u32 height = baseTex->getHeight()/2;
+
+		// Threshold.
+		s32 index = s_bloomBufferCount;
+		s_bloomBufferCount++;
+
+		s_bloomTextures[index] = new TextureGpu();
+		s_bloomTextures[index]->create(width, height, TexFormat::TEX_RGBAF16, false, MAG_FILTER_LINEAR);
+		s_bloomTargets[index] = new RenderTarget();
+		s_bloomTargets[index]->create(1, &s_bloomTextures[index], false);
+
+		const PostEffectInput bloomTresholdInputs[] =
+		{
+			{ PTYPE_TEXTURE, (void*)s_virtualRenderTarget->getTexture(0) },
+			{ PTYPE_TEXTURE, (void*)s_virtualRenderTarget->getTexture(1) },
+		};
+		TFE_PostProcess::appendEffect(s_bloomTheshold, TFE_ARRAYSIZE(bloomTresholdInputs), bloomTresholdInputs, s_bloomTargets[index], 0, 0, width, height, true);
+
+		// Downscale.
+		while (s_bloomBufferCount < 8 && width > 8 && height > 8)
+		{
+			s32 index = s_bloomBufferCount;
+			s_bloomBufferCount++;
+
+			width  >>= 1;
+			height >>= 1;
+			s_bloomTextures[index] = new TextureGpu();
+			s_bloomTextures[index]->create(width, height, TexFormat::TEX_RGBAF16, false, MAG_FILTER_LINEAR);
+			s_bloomTargets[index] = new RenderTarget();
+			s_bloomTargets[index]->create(1, &s_bloomTextures[index], false);
+
+			const PostEffectInput bloomDownsampleInputs[] =
+			{
+				{ PTYPE_TEXTURE, (void*)s_bloomTextures[index - 1] },
+			};
+			TFE_PostProcess::appendEffect(s_bloomDownsample, TFE_ARRAYSIZE(bloomDownsampleInputs), bloomDownsampleInputs, s_bloomTargets[index], 0, 0, width, height);
+		}
+
+		// Upscale and Merge.
+		s32 end = s_bloomBufferCount - 1;
+		for (s32 i = end; i > 0; i--)
+		{
+			width  = s_bloomTextures[i - 1]->getWidth();
+			height = s_bloomTextures[i - 1]->getHeight();
+
+			s32 index = s_bloomBufferCount;
+			s_bloomBufferCount++;
+
+			s_bloomTextures[index] = new TextureGpu();
+			s_bloomTextures[index]->create(width, height, TexFormat::TEX_RGBAF16, false, MAG_FILTER_LINEAR);
+			s_bloomTargets[index] = new RenderTarget();
+			s_bloomTargets[index]->create(1, &s_bloomTextures[index], false);
+
+			const PostEffectInput bloomMergeInputs[] =
+			{
+				{ PTYPE_TEXTURE, (void*)s_bloomTextures[i - 1] },
+				{ PTYPE_TEXTURE, s_bloomTextures[index - 1] },
+			};
+			TFE_PostProcess::appendEffect(s_bloomMerge, TFE_ARRAYSIZE(bloomMergeInputs), bloomMergeInputs, s_bloomTargets[index], 0, 0, width, height);
+		}
+
+		// Final result is in s_bloomTargets[s_bloomBufferCount-1]
+	}
+
+	// A quick way of toggling the bloom, but just for the final blit.
+	void bloomPostEnable(bool enable)
+	{
+		if (!s_bloomEnable) { return; }
+		if (enable) { s_postEffectBlit->enableFeatures(BLIT_BLOOM); }
+		else        { s_postEffectBlit->disableFeatures(BLIT_BLOOM); }
+	}
+
 	// Setup the Post effect chain based on current settings.
 	// TODO: Move out of render backend since this should be independent of the backend.
-	void setupPostEffectChain(bool useDynamicTexture)
+	void setupPostEffectChain(bool useDynamicTexture, bool useBloom)
 	{
 		s32 x = 0, y = 0;
 		s32 w = m_windowState.width;
@@ -777,6 +942,18 @@ namespace TFE_RenderBackend
 			const PostEffectInput blitInputs[] =
 			{
 				{ PTYPE_DYNAMIC_TEX, s_virtualDisplay },
+				{ PTYPE_DYNAMIC_TEX, s_palette }
+			};
+			TFE_PostProcess::appendEffect(s_postEffectBlit, TFE_ARRAYSIZE(blitInputs), blitInputs, nullptr, x, y, w, h);
+		}
+		else if (useBloom)
+		{
+			setupBloomStages();
+
+			const PostEffectInput blitInputs[] =
+			{
+				{ PTYPE_TEXTURE, (void*)s_virtualRenderTarget->getTexture(0) },
+				{ PTYPE_TEXTURE, (void*)s_bloomTextures[s_bloomBufferCount-1] },
 				{ PTYPE_DYNAMIC_TEX, s_palette }
 			};
 			TFE_PostProcess::appendEffect(s_postEffectBlit, TFE_ARRAYSIZE(blitInputs), blitInputs, nullptr, x, y, w, h);

@@ -9,6 +9,7 @@
 #include <TFE_RenderShared/lineDraw2d.h>
 #include <TFE_RenderShared/quadDraw2d.h>
 #include <TFE_RenderShared/texturePacker.h>
+#include <TFE_Settings/settings.h>
 
 #include "screenDrawGPU.h"
 #include "rsectorGPU.h"
@@ -40,6 +41,12 @@ namespace TFE_Jedi
 	static u32 s_scrQuadsWidth;
 	static u32 s_scrQuadsHeight;
 
+	struct ShaderSettings
+	{
+		bool bloom = false;
+	};
+	static ShaderSettings s_shaderSettings = {};
+
 	enum Constants
 	{
 		SCR_MAX_QUAD_COUNT = 4096,
@@ -47,7 +54,16 @@ namespace TFE_Jedi
 
 	bool screenGPU_loadShaders()
 	{
-		if (!s_scrQuadShader.load("Shaders/gpu_render_quad.vert", "Shaders/gpu_render_quad.frag", 0, nullptr, SHADER_VER_STD))
+		u32 defineCount = 0;
+		ShaderDefine defines[16];
+		if (s_shaderSettings.bloom)
+		{
+			defines[defineCount].name = "OPT_BLOOM";
+			defines[defineCount].value = "1";
+			defineCount++;
+		}
+
+		if (!s_scrQuadShader.load("Shaders/gpu_render_quad.vert", "Shaders/gpu_render_quad.frag", defineCount, defines, SHADER_VER_STD))
 		{
 			return false;
 		}
@@ -92,6 +108,7 @@ namespace TFE_Jedi
 			s_screenQuadCount = 0;
 
 			// Shaders and variables.
+			s_shaderSettings.bloom = TFE_Settings::getGraphicsSettings()->bloomEnabled;
 			screenGPU_loadShaders();
 		}
 		s_initialized = true;
@@ -109,6 +126,7 @@ namespace TFE_Jedi
 		}
 		s_scrQuads = nullptr;
 		s_initialized = false;
+		s_shaderSettings = {};
 	}
 
 	void screenGPU_setHudTextureCallbacks(s32 count, TextureListCallback* callbacks)
@@ -133,6 +151,14 @@ namespace TFE_Jedi
 		s_screenQuadCount = 0;
 		s_scrQuadsWidth = width;
 		s_scrQuadsHeight = height;
+
+		// Update the shaders if needed.
+		bool bloomEnabled = TFE_Settings::getGraphicsSettings()->bloomEnabled;
+		if (s_shaderSettings.bloom != bloomEnabled)
+		{
+			s_shaderSettings.bloom = bloomEnabled;
+			screenGPU_loadShaders();
+		}
 	}
 
 	void screenGPU_endQuads()

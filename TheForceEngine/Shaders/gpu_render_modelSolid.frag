@@ -15,7 +15,12 @@ flat in int Frag_Color;
 flat in int Frag_TextureId;
 flat in int Frag_TextureMode;
 
+#ifdef OPT_BLOOM
+layout(location = 0) out vec4 Out_Color;
+layout(location = 1) out vec4 Out_Material;
+#else
 out vec4 Out_Color;
+#endif
 
 void main()
 {
@@ -81,4 +86,9 @@ void main()
 	Out_Color = getFinalColor(baseColor, light);
 	// Enable solid color rendering for wireframe.
 	Out_Color.rgb = LightData.x > 64.0 ? vec3(0.3, 0.3, 0.8) : Out_Color.rgb;
+
+#ifdef OPT_BLOOM
+	// Material (just emissive for now)
+	Out_Material = getMaterialColor(baseColor);
+#endif
 }

@@ -30,25 +30,36 @@ RenderTarget::~RenderTarget()
 	}
 }
 
-bool RenderTarget::create(TextureGpu* texture, bool depthBuffer)
+bool RenderTarget::create(s32 textureCount, TextureGpu** textures, bool depthBuffer)
 {
-	if (!texture) { return false; }
-	m_texture = texture;
+	if (textureCount < 1 || !textures || !textures[0]) { return false; }
+	m_textureCount = textureCount;
+	for (u32 i = 0; i < m_textureCount; i++)
+	{
+		m_texture[i] = textures[i];
+	}
 
 	glGenFramebuffers(1, &m_gpuHandle);
 	glBindFramebuffer(GL_FRAMEBUFFER, m_gpuHandle);
-	glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, m_texture->getHandle(), 0);
+	for (u32 i = 0; i < m_textureCount; i++)
+	{
+		glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, m_texture[i]->getHandle(), 0);
+	}
 
 	m_depthBufferHandle = 0;
 	if (depthBuffer)
 	{
-		m_depthBufferHandle = createDepthBuffer(texture->getWidth(), texture->getHeight());
+		m_depthBufferHandle = createDepthBuffer(m_texture[0]->getWidth(), m_texture[0]->getHeight());
 		glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, m_depthBufferHandle);
 	}
 
 	// Set the list of draw buffers.
-	GLenum drawBuffers[1] = { GL_COLOR_ATTACHMENT0 };
-	glDrawBuffers(1, drawBuffers); // "1" is the size of DrawBuffers
+	GLenum drawBuffers[MAX_ATTACHMENT] = { 0 };
+	for (u32 i = 0; i < m_textureCount; i++)
+	{
+		drawBuffers[i] = GL_COLOR_ATTACHMENT0 + i;
+	}
+	glDrawBuffers(m_textureCount, drawBuffers);
 
 	// check FBO status
 	GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
@@ -65,7 +76,7 @@ bool RenderTarget::create(TextureGpu* texture, bool depthBuffer)
 void RenderTarget::bind()
 {
 	glBindFramebuffer(GL_FRAMEBUFFER, m_gpuHandle);
-	glViewport(0, 0, m_texture->getWidth(), m_texture->getHeight());
+	glViewport(0, 0, m_texture[0]->getWidth(), m_texture[0]->getHeight());
 	glDepthRange(0.0f, 1.0f);
 }
 

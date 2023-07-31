@@ -76,6 +76,7 @@ namespace TFE_Jedi
 	{
 		bool colormapInterp = false;
 		bool ditheredBilinear = false;
+		bool bloom = false;
 	};
 	
 	static const AttributeMapping c_modelAttrMapping[] =
@@ -218,11 +219,13 @@ namespace TFE_Jedi
 		TFE_Settings_Graphics* graphics = TFE_Settings::getGraphicsSettings();
 		bool needsUpdate = initialize ||
 			s_shaderSettings.ditheredBilinear != graphics->ditheredBilinear ||
+			s_shaderSettings.bloom != graphics->bloomEnabled || 
 			s_shaderSettings.colormapInterp != (graphics->colorMode == COLORMODE_8BIT_INTERP);
 		if (!needsUpdate) { return true; }
 
 		// Then update the settings.
 		s_shaderSettings.ditheredBilinear = graphics->ditheredBilinear;
+		s_shaderSettings.bloom = graphics->bloomEnabled;
 		s_shaderSettings.colormapInterp = (graphics->colorMode == COLORMODE_8BIT_INTERP);
 
 		ShaderDefine defines[16] = {};
@@ -231,6 +234,12 @@ namespace TFE_Jedi
 		if (s_shaderSettings.ditheredBilinear)
 		{
 			defines[defineCount].name = "OPT_BILINEAR_DITHER";
+			defines[defineCount].value = "1";
+			defineCount++;
+		}
+		if (s_shaderSettings.bloom)
+		{
+			defines[defineCount].name = "OPT_BLOOM";
 			defines[defineCount].value = "1";
 			defineCount++;
 		}

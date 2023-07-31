@@ -20,7 +20,12 @@ flat in int Frag_TextureId;
 flat in int Frag_Flags;
 in vec3 Frag_Pos;
 in vec4 Texture_Data;
+#ifdef OPT_BLOOM
+layout(location = 0) out vec4 Out_Color;
+layout(location = 1) out vec4 Out_Material;
+#else
 out vec4 Out_Color;
+#endif
 
 vec2 calculateSkyProjection(vec3 cameraVec, vec2 texOffset, out float fade, out float yLimit)
 {
@@ -216,4 +221,9 @@ void main()
 	Out_Color = getFinalColor(baseColor, light);
 	// Enable solid color rendering for wireframe.
 	Out_Color.rgb = LightData.w > 0.5 ? vec3(0.6, 0.7, 0.8) : Out_Color.rgb;
+
+	#ifdef OPT_BLOOM
+	// Material (just emissive for now)
+	Out_Material = getMaterialColor(baseColor);
+	#endif
 }

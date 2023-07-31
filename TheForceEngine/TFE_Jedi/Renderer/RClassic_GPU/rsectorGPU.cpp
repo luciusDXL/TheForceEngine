@@ -118,6 +118,7 @@ namespace TFE_Jedi
 		SkyMode skyMode = SKYMODE_CYLINDER;
 		bool colormapInterp = false;
 		bool ditheredBilinear = false;
+		bool bloom = false;
 	};
 
 	static ShaderSettings s_shaderSettings = {};
@@ -307,12 +308,14 @@ namespace TFE_Jedi
 		bool needsUpdate = initialize ||
 			s_shaderSettings.skyMode != SkyMode(graphics->skyMode) ||
 			s_shaderSettings.ditheredBilinear != graphics->ditheredBilinear ||
+			s_shaderSettings.bloom != graphics->bloomEnabled ||
 			s_shaderSettings.colormapInterp != (graphics->colorMode == COLORMODE_8BIT_INTERP);
 		if (!needsUpdate) { return true; }
 
 		// Then update the settings.
 		s_shaderSettings.skyMode = SkyMode(graphics->skyMode);
 		s_shaderSettings.ditheredBilinear = graphics->ditheredBilinear;
+		s_shaderSettings.bloom = graphics->bloomEnabled;
 		s_shaderSettings.colormapInterp = (graphics->colorMode == COLORMODE_8BIT_INTERP);
 
 		// Update the color map based on interpolation or true color settings.
@@ -1495,6 +1498,12 @@ namespace TFE_Jedi
 			defines[defineCount].value = "1";
 			defineCount++;
 		}
+		if (s_shaderSettings.bloom)
+		{
+			defines[defineCount].name = "OPT_BLOOM";
+			defines[defineCount].value = "1";
+			defineCount++;
+		}
 		if (s_shaderSettings.colormapInterp)
 		{
 			defines[defineCount].name = "OPT_COLORMAP_INTERP";
@@ -1517,6 +1526,12 @@ namespace TFE_Jedi
 			defines[defineCount].value = "1";
 			defineCount++;
 		}
+		if (s_shaderSettings.bloom)
+		{
+			defines[defineCount].name = "OPT_BLOOM";
+			defines[defineCount].value = "1";
+			defineCount++;
+		}
 		if (s_shaderSettings.colormapInterp)
 		{
 			defines[defineCount].name = "OPT_COLORMAP_INTERP";
@@ -1533,6 +1548,12 @@ namespace TFE_Jedi
 		if (s_shaderSettings.ditheredBilinear)
 		{
 			defines[defineCount].name = "OPT_BILINEAR_DITHER";
+			defines[defineCount].value = "1";
+			defineCount++;
+		}
+		if (s_shaderSettings.bloom)
+		{
+			defines[defineCount].name = "OPT_BLOOM";
 			defines[defineCount].value = "1";
 			defineCount++;
 		}

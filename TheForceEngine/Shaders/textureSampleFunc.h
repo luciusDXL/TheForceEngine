@@ -198,19 +198,6 @@ vec3 getAttenuatedColorBlend(float baseColor, float light)
 	return texelFetch(Palette, ivec2(color, 0), 0).rgb;
 }
 
-// TODO: Replace baseColor with emissive factor, derived from an emissive texture.
-float writeBloomMask(int baseColor, float intensity)
-{
-	float mask = 0.5;
-#ifdef OPT_BLOOM
-	if (baseColor > 0 && baseColor < 32)
-	{
-		mask = 0.5 + 0.5*intensity;
-	}
-#endif
-	return mask;
-}
-
 vec4 getFinalColor(float baseColor, float lightLevel)
 {
 	vec4 color;
@@ -219,6 +206,14 @@ vec4 getFinalColor(float baseColor, float lightLevel)
 #else
 	color.rgb = getAttenuatedColor(int(baseColor), int(lightLevel));
 #endif
-	color.a = writeBloomMask(int(baseColor), 1.0);
+	color.a = 1.0;
+	return color;
+}
+
+vec4 getMaterialColor(float baseColor)
+{
+	// TODO: Replace with emissive channel from textures.
+	vec4 color = vec4(0.0);
+	color.x = baseColor > 0.0 && baseColor < 32.0 ? 1.0 : 0.0;
 	return color;
 }
