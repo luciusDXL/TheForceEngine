@@ -93,8 +93,8 @@ namespace TFE_Jedi
 		s_displayListPos    = (Vec4f*)malloc(sizeof(Vec4f) * SECTOR_PASS_COUNT * MAX_DISP_ITEMS);
 		s_displayListData   = (Vec4ui*)malloc(sizeof(Vec4ui) * SECTOR_PASS_COUNT * MAX_DISP_ITEMS);
 		s_displayListPlanes = (Vec4f*)malloc(sizeof(Vec4f) * MAX_BUFFER_SIZE);
-		s_portalPlaneInfo   = (u32*)malloc(sizeof(u32) * MAX_DISP_ITEMS);
-		s_portalFrustumVert = (Frustum*)malloc(sizeof(Frustum) * MAX_DISP_ITEMS);
+		s_portalPlaneInfo   = (u32*)malloc(sizeof(u32) * MAX_BUFFER_SIZE);
+		s_portalFrustumVert = (Frustum*)malloc(sizeof(Frustum) * MAX_BUFFER_SIZE);
 
 		const ShaderBufferDef bufferDefDisplayListPos  = { 4, sizeof(f32), BUF_CHANNEL_FLOAT };
 		const ShaderBufferDef bufferDefDisplayListData = { 4, sizeof(u32), BUF_CHANNEL_UINT };
@@ -567,7 +567,7 @@ namespace TFE_Jedi
 		s_displayListDataGPU[passId].bind(s_dataIndex[passId]);
 		s_displayListPlanesGPU.bind(s_planesIndex);
 
-		TFE_RenderBackend::drawIndexedTriangles(2 * s_displayListCount[passId], sizeof(u16));
+		TFE_RenderBackend::drawIndexedTriangles(2 * s_displayListCount[passId], sizeof(u32));
 
 		s_displayListPosGPU[passId].unbind(s_posIndex[passId]);
 		s_displayListDataGPU[passId].unbind(s_dataIndex[passId]);

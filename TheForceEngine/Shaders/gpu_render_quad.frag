@@ -5,7 +5,12 @@ uniform isamplerBuffer TextureTable;
 
 in vec2 Frag_Uv;		// base uv coordinates (0 - 1)
 flat in vec4 Frag_TextureId_Color;
+#ifdef OPT_BLOOM
+layout(location = 0) out vec4 Out_Color;
+layout(location = 1) out vec4 Out_Material;
+#else
 out vec4 Out_Color;
+#endif
 
 vec3 getAttenuatedColor(int baseColor, int light)
 {
@@ -57,4 +62,8 @@ void main()
 	// Get the final attenuated color.
 	Out_Color.rgb = getAttenuatedColor(baseColor, lightLevel);
 	Out_Color.a = 1.0;
+
+#ifdef OPT_BLOOM
+	Out_Material = vec4(0.0);
+#endif
 }

@@ -28,6 +28,7 @@ namespace TFE_PostProcess
 		s32 y;
 		s32 width;
 		s32 height;
+		bool forceLinearFilter;
 	};
 
 	struct EffectVertex
@@ -96,7 +97,7 @@ namespace TFE_PostProcess
 		s_effects.clear();
 	}
 
-	void appendEffect(PostProcessEffect* effect, u32 inputCount, const PostEffectInput* inputs, RenderTargetHandle output, s32 x, s32 y, s32 width, s32 height)
+	void appendEffect(PostProcessEffect* effect, u32 inputCount, const PostEffectInput* inputs, RenderTargetHandle output, s32 x, s32 y, s32 width, s32 height, bool forceLinearFilter)
 	{
 		PostEffectInstance instance =
 		{
@@ -106,7 +107,8 @@ namespace TFE_PostProcess
 			nullptr,
 			output,
 			x, y,
-			width, height
+			width, height,
+			forceLinearFilter
 		};
 		instance.inputs = new PostEffectInput[inputCount];
 		memcpy(instance.inputs, inputs, inputCount * sizeof(PostEffectInput));
@@ -278,8 +280,15 @@ namespace TFE_PostProcess
 			{
 				if (!effectInst->inputs[i].ptr) { continue; }
 
-				if (effectInst->inputs[i].type == PTYPE_TEXTURE) { effectInst->inputs[i].tex->bind(i); }
-				else if (effectInst->inputs[i].type == PTYPE_DYNAMIC_TEX) { effectInst->inputs[i].dyntex->bind(i); }
+				if (effectInst->inputs[i].type == PTYPE_TEXTURE)
+				{
+					effectInst->inputs[i].tex->bind(i);
+					if (effectInst->forceLinearFilter) { effectInst->inputs[i].tex->setFilter(MAG_FILTER_LINEAR); }
+				}
+				else if (effectInst->inputs[i].type == PTYPE_DYNAMIC_TEX)
+				{
+					effectInst->inputs[i].dyntex->bind(i);
+				}
 			}
 
 			// Setup any effect specific state.
@@ -291,6 +300,12 @@ namespace TFE_PostProcess
 			// Cleanup
 			for (u32 i = 0; i < effectInst->inputCount; i++)
 			{
+				if (!effectInst->inputs[i].ptr) { continue; }
+				if (effectInst->inputs[i].type == PTYPE_TEXTURE && effectInst->forceLinearFilter)
+				{
+					effectInst->inputs[i].tex->bind(i);
+					if (effectInst->forceLinearFilter) { effectInst->inputs[i].tex->setFilter(MAG_FILTER_NONE); }
+				}
 				TextureGpu::clear(i);
 			}
 		}
@@ -374,7 +389,6 @@ namespace TFE_PostProcess
 		const f32 offsetX = 2.0f * f32(x) * s_screenScale[0] - 1.0f;
 		const f32 offsetY = 2.0f * f32(y) * s_screenScale[1] - 1.0f;
 		const f32 scaleOffset[] = { scaleX, scaleY, offsetX, offsetY };
-
 		shader->setVariable(variableId, SVT_VEC4, scaleOffset);
 	}
 }

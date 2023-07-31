@@ -239,6 +239,7 @@ namespace TFE_DarkForces
 	{
 		// TFE
 		reticle_enable(false);
+		TFE_RenderBackend::bloomPostEnable(false);
 
 		pauseLevelSound();
 		s_emState.escMenuOpen = JTRUE;
@@ -263,6 +264,7 @@ namespace TFE_DarkForces
 
 		// TFE
 		reticle_enable(true);
+		TFE_RenderBackend::bloomPostEnable(true);
 	}
 
 	JBool escapeMenu_isOpen()
@@ -534,6 +536,7 @@ namespace TFE_DarkForces
 
 			// TFE
 			reticle_enable(true);
+			TFE_RenderBackend::bloomPostEnable(true);
 		}
 
 		escapeMenu_draw(JTRUE, JTRUE);

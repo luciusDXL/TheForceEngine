@@ -20,6 +20,14 @@ enum SkyMode
 	SKYMODE_COUNT
 };
 
+enum ColorMode
+{
+	COLORMODE_8BIT = 0,		// Default vanilla
+	COLORMODE_8BIT_INTERP,	// Interpolate between colormap values.
+	// COLORMODE_TRUE_COLOR,	// Will be enabled when the feature comes online.
+	COLORMODE_COUNT,
+};
+
 static const char* c_tfeSkyModeStrings[] =
 {
 	"Vanilla",		// SKYMODE_VANILLA
@@ -56,6 +64,10 @@ struct TFE_Settings_Graphics
 	f32   saturation = 1.0f;
 	f32   gamma = 1.0f;
 	s32   rendererIndex = 0;
+	s32   colorMode = COLORMODE_8BIT;
+
+	// 8-bit options.
+	bool ditheredBilinear = false;
 
 	// Reticle
 	bool reticleEnable  = false;
@@ -65,6 +77,11 @@ struct TFE_Settings_Graphics
 	f32  reticleBlue    = 0.25f;
 	f32  reticleOpacity = 1.00f;
 	f32  reticleScale   = 1.0f;
+
+	// Bloom options
+	bool bloomEnabled = false;
+	f32  bloomStrength = 0.4f;
+	f32  bloomSpread = 0.6f;
 
 	// Sky (Ignored when using the software renderer)
 	s32  skyMode = SKYMODE_CYLINDER;

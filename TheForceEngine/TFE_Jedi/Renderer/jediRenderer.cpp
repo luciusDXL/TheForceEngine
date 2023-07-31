@@ -30,6 +30,7 @@ namespace TFE_Jedi
 	static TFE_SubRenderer s_subRenderer = TSR_CLASSIC_FIXED;
 	static std::vector<TextureListCallback> s_hudTextureCallbacks;
 	static TFE_Sectors* s_sectorRendererCache[TSR_COUNT] = { nullptr };
+	bool s_showWireframe = false;
 	TFE_Sectors* s_sectorRenderer = nullptr;
 	RendererType s_rendererType = RENDERER_SOFTWARE;
 
@@ -107,6 +108,7 @@ namespace TFE_Jedi
 		CVAR_INT(s_maxWallCount,  "d_maxWallCount",  CVFLAG_DO_NOT_SERIALIZE, "Maximum wall count for a given sector.");
 		CVAR_INT(s_maxDepthCount, "d_maxDepthCount", CVFLAG_DO_NOT_SERIALIZE, "Maximum adjoin depth count.");
 		CVAR_INT(s_sectorAmbient, "d_sectorAmbient", CVFLAG_DO_NOT_SERIALIZE, "Current Sector Ambient.");
+		CVAR_BOOL(s_showWireframe, "d_enableWireframe", CVFLAG_DO_NOT_SERIALIZE, "Enable wireframe rendering.");
 
 		// Remove temporarily until they do something useful again.
 		CCMD("rsetSubRenderer", console_setSubRenderer, 1, "Set the sub-renderer - valid values are: Classic_Fixed, Classic_Float, Classic_GPU.");
@@ -400,12 +402,7 @@ namespace TFE_Jedi
 		}
 		if (s_subRenderer == TSR_CLASSIC_GPU)
 		{
-		#ifdef _DEBUG
-			// Clear the color in debug in order to make it easier to see artifacts.
-			vfb_bindRenderTarget(true);
-		#else
-			vfb_bindRenderTarget(false);
-		#endif
+			vfb_bindRenderTarget(/*clearColor*/s_showWireframe);
 
 			u32 width, height;
 			vfb_getResolution(&width, &height);

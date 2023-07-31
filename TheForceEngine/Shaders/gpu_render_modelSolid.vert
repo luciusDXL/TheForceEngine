@@ -1,3 +1,6 @@
+uniform sampler2D Colormap;
+#include "Shaders/lighting.h"
+
 uniform vec3 CameraPos;
 uniform vec3 CameraRight;
 uniform vec3 CameraDir;
@@ -9,7 +12,6 @@ uniform mat3 ModelMtx;
 uniform vec3 ModelPos;
 uniform uvec2 PortalInfo;
 
-uniform sampler2D Colormap;
 uniform samplerBuffer DrawListPlanes;
 
 // Vertex Data
@@ -29,8 +31,8 @@ flat out int Frag_TextureMode;
 
 void unpackPortalInfo(uint portalInfo, out uint portalOffset, out uint portalCount)
 {
-	portalCount  = (portalInfo >> 13u) & 15u;
-	portalOffset = portalInfo & 8191u;
+	portalCount  = (portalInfo >> 16u) & 15u;
+	portalOffset = portalInfo & 65535u;
 }
 
 float directionalLighting(vec3 nrm, float scale)
@@ -42,7 +44,11 @@ float directionalLighting(vec3 nrm, float scale)
 		float L = max(0.0, dot(nrm, lightDir));
 		lighting += L * 31.0;
 	}
+#ifdef OPT_COLORMAP_INTERP // Smooth out the attenuation.
+	return lighting * scale;
+#else
 	return floor(lighting * scale);
+#endif
 }
 
 void main()
@@ -87,26 +93,21 @@ void main()
 			light += dirLighting;
 		
 			// Calculate Z value and scaled ambient.
-			float scaledAmbient = ambient * 7.0 / 8.0;
 			float z = max(0.0, dot((worldPos - CameraPos), CameraDir));
 
 			// Camera Light
-			float worldAmbient = LightData.x;
-			float cameraLightSource = LightData.y > 63.0 ? 1.0 : 0.0;
+			float worldAmbient = LightData.x > 64.0 ? LightData.x - 128.0 : LightData.x;
+			float cameraLightSource = LightData.y > 32.0 ? 1.0 : 0.0;
 			if (worldAmbient < 31.0 || cameraLightSource > 0.0)
 			{
-				float depthScaled = min(floor(z * 4.0), 127.0);
-				float lightSource = 31.0 - (texture(Colormap, vec2(depthScaled/256.0, 0.0)).g*255.0 + worldAmbient);
+				float lightSource = getLightRampValue(z, worldAmbient);
 				if (lightSource > 0)
 				{
 					light += lightSource;
 				}
 			}
 			light = max(light, ambient);
-
-			// Falloff
-			float falloff = floor(z / 16.0) + floor(z / 32.0);
-			light = clamp(light - falloff, scaledAmbient, 31.0);
+			light = getDepthAttenuation(z, ambient, light, 0.0);
 		}
 		else
 		{

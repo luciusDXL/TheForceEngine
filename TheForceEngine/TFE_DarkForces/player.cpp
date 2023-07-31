@@ -313,6 +313,8 @@ namespace TFE_DarkForces
 
 		CCMD("warp", player_warp, 3, "Warp to the specific x, y, z position.");
 		CCMD_NOREPEAT("sector", player_sector, 0, "Get the current sector ID.");
+
+		initPlayerCollision();
 	}
 
 	void player_setPitchLimit(PitchLimit limit)

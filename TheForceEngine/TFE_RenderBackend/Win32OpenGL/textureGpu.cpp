@@ -4,6 +4,11 @@
 #include <assert.h>
 
 static std::vector<u8> s_workBuffer;
+const GLenum c_channelFormat[] = { GL_UNSIGNED_BYTE, GL_UNSIGNED_BYTE, GL_HALF_FLOAT, GL_HALF_FLOAT };
+const GLenum c_internalFormat[] = { GL_RGBA8, GL_R8, GL_RGBA16F, GL_R16F };
+const GLenum c_baseFormat[] = { GL_RGBA, GL_RED, GL_RGBA, GL_RED };
+const GLenum c_channelCount[] = { 4, 1, 4, 1 };
+const GLenum c_bytesPerChannel[] = {1, 1, 2, 2 };
 
 TextureGpu::~TextureGpu()
 {
@@ -17,29 +22,23 @@ TextureGpu::~TextureGpu()
 	}
 }
 
-bool TextureGpu::create(u32 width, u32 height, u32 channels)
+bool TextureGpu::create(u32 width, u32 height, TexFormat format, bool hasMipmaps, MagFilter magFilter)
 {
 	m_width = width;
 	m_height = height;
-	m_channels = channels;
+	m_channels = c_channelCount[format];
+	m_bytesPerChannel = c_bytesPerChannel[format];
 	m_layers = 1;
 
 	glGenTextures(1, &m_gpuHandle);
 	if (!m_gpuHandle) { return false; }
 
 	glBindTexture(GL_TEXTURE_2D, m_gpuHandle);
-	if (channels == 1)
-	{
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_R8, width, height, 0, GL_RED, GL_UNSIGNED_BYTE, nullptr);
-	}
-	else if (channels == 4)
-	{
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
-	}
+	glTexImage2D(GL_TEXTURE_2D, 0, c_internalFormat[format], width, height, 0, c_baseFormat[format], c_channelFormat[format], nullptr);
 	assert(glGetError() == GL_NO_ERROR);
 
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, hasMipmaps ? GL_LINEAR_MIPMAP_LINEAR : GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, magFilter == MAG_FILTER_LINEAR ? GL_LINEAR : GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
@@ -53,12 +52,13 @@ bool TextureGpu::createArray(u32 width, u32 height, u32 layers, u32 channels)
 	// No need to make this a texture array if the layer count == 1.
 	if (layers <= 1)
 	{
-		return create(width, height, channels);
+		return create(width, height, channels == 4 ? TexFormat::TEX_RGBA8 : TexFormat::TEX_R8);
 	}
 
 	m_width = width;
 	m_height = height;
 	m_channels = channels;
+	m_bytesPerChannel = 1;
 	m_layers = layers;
 
 	glGenTextures(1, &m_gpuHandle);
@@ -91,6 +91,7 @@ bool TextureGpu::createWithData(u32 width, u32 height, const void* buffer, MagFi
 	m_width = width;
 	m_height = height;
 	m_channels = 4;
+	m_bytesPerChannel = 1;
 	m_layers = 1;
 
 	glGenTextures(1, &m_gpuHandle);
@@ -135,6 +136,11 @@ bool TextureGpu::update(const void* buffer, size_t size, s32 layer)
 
 	assert(glGetError() == GL_NO_ERROR);
 	return true;
+}
+
+void TextureGpu::setFilter(MagFilter filter)
+{
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, filter == MAG_FILTER_LINEAR ? GL_LINEAR : GL_NEAREST);
 }
 
 void TextureGpu::bind(u32 slot/* = 0*/) const

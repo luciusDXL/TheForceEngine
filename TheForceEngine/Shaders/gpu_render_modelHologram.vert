@@ -17,8 +17,8 @@ in vec4 vtx_color;
 
 void unpackPortalInfo(uint portalInfo, out uint portalOffset, out uint portalCount)
 {
-	portalCount  = (portalInfo >> 13u) & 15u;
-	portalOffset = portalInfo & 8191u;
+	portalCount  = (portalInfo >> 16u) & 15u;
+	portalOffset = portalInfo & 65535u;
 }
 
 flat out int Frag_Color;

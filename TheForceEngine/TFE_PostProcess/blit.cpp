@@ -47,6 +47,20 @@ bool Blit::buildShaders()
 	m_featureShaders[3].bindTextureNameToSlot("VirtualDisplay", 0);
 	m_featureShaders[3].bindTextureNameToSlot("Palette", 1);
 
+
+	// BLIT_BLOOM feature
+	defines[0] = { "ENABLE_BLOOM", "1" };
+	m_featureShaders[4].load("Shaders/blit.vert", "Shaders/blit.frag", 1, defines);
+	m_featureShaders[4].bindTextureNameToSlot("VirtualDisplay", 0);
+	m_featureShaders[4].bindTextureNameToSlot("Bloom", 1);
+
+	// BLIT_BLOOM + BLIT_GPU_COLOR_CORRECTION feature
+	defines[0] = { "ENABLE_BLOOM", "1" };
+	defines[1] = { "ENABLE_GPU_COLOR_CORRECTION", "1" };
+	m_featureShaders[5].load("Shaders/blit.vert", "Shaders/blit.frag", 1, defines);
+	m_featureShaders[5].bindTextureNameToSlot("VirtualDisplay", 0);
+	m_featureShaders[5].bindTextureNameToSlot("Bloom", 1);
+
 	return true;
 }
 
@@ -74,6 +88,14 @@ void Blit::setupShader()
 	else if (m_features & BLIT_GPU_COLOR_CORRECTION)
 	{
 		m_shader = &m_featureShaders[2];
+	}
+	else if ((m_features & BLIT_GPU_COLOR_CONVERSION) && (m_features & BLIT_BLOOM))
+	{
+		m_shader = &m_featureShaders[5];
+	}
+	else if (m_features & BLIT_BLOOM)
+	{
+		m_shader = &m_featureShaders[4];
 	}
 	m_scaleOffsetId = m_shader->getVariableId("ScaleOffset");
 

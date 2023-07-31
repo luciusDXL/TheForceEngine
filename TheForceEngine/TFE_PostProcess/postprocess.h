@@ -32,7 +32,7 @@ namespace TFE_PostProcess
 	void destroy();
 
 	void clearEffectStack();
-	void appendEffect(PostProcessEffect* effect, u32 inputCount, const PostEffectInput* inputs, RenderTargetHandle output = nullptr, s32 x = 0, s32 y = 0, s32 width = 0, s32 height = 0);
+	void appendEffect(PostProcessEffect* effect, u32 inputCount, const PostEffectInput* inputs, RenderTargetHandle output = nullptr, s32 x = 0, s32 y = 0, s32 width = 0, s32 height = 0, bool forceLinearFilter = false);
 		
 	// Overlays - images drawn on top after the post process stack has executed.
 	OverlayID addOverlayTexture(OverlayImage* overlay, f32* tint, f32 screenX, f32 screenY, f32 scale = 1.0f);

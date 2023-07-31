@@ -122,8 +122,9 @@ namespace TFE_RenderBackend
 	void copyBackbufferToRenderTarget(RenderTargetHandle dst);
 	void clearVirtualDisplay(f32* color, bool clearColor=true);
 	void setPalette(const u32* palette);
+	const u32* getPalette();
 	const TextureGpu* getPaletteTexture();
-	void setColorCorrection(bool enabled, const ColorCorrection* color = nullptr);
+	void setColorCorrection(bool enabled, const ColorCorrection* color = nullptr, bool bloomChanged = false);
 	bool getWidescreen();
 	bool getFrameBufferAsync();
 	bool getGPUColorConvert();
@@ -149,11 +150,14 @@ namespace TFE_RenderBackend
 	   
 	// Create a GPU version of a texture, assumes RGBA8 and returns a GPU handle.
 	TextureGpu* createTexture(u32 width, u32 height, const u32* data, MagFilter magFilter = MAG_FILTER_NONE);
-	TextureGpu* createTexture(u32 width, u32 height, u32 channels);
+	TextureGpu* createTexture(u32 width, u32 height, TexFormat format);
 	TextureGpu* createTextureArray(u32 width, u32 height, u32 layers, u32 channels);
 	void freeTexture(TextureGpu* texture);
 	void getTextureDim(TextureGpu* texture, u32* width, u32* height);
 	void* getGpuPtr(const TextureGpu* texture);
+
+	// Toggle bloom - but only the final post process.
+	void bloomPostEnable(bool enable = true);
 
 	// Generic triangle draw.
 	// triCount : number of triangles to draw.
