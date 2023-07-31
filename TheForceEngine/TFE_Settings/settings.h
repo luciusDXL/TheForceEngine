@@ -80,8 +80,8 @@ struct TFE_Settings_Graphics
 
 	// Bloom options
 	bool bloomEnabled = false;
-	f32  bloomStrength = 0.5f;
-	f32  bloomSpread = 0.5f;
+	f32  bloomStrength = 0.4f;
+	f32  bloomSpread = 0.6f;
 
 	// Sky (Ignored when using the software renderer)
 	s32  skyMode = SKYMODE_CYLINDER;

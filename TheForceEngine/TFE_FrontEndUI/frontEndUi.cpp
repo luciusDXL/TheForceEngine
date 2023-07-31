@@ -2336,6 +2336,12 @@ namespace TFE_FrontEndUI
 		bool bloomChanged = ImGui::Checkbox("Bloom", &graphics->bloomEnabled);
 		if (graphics->bloomEnabled)
 		{
+			if (ImGui::Button("Reset To Default###Bloom"))
+			{
+				graphics->bloomStrength = 0.4f;
+				graphics->bloomSpread = 0.6f;
+			}
+
 			ImGui::SetNextItemWidth(196 * s_uiScale);
 			ImGui::SliderFloat("Strength", &graphics->bloomStrength, 0.0f, 1.0f);
 			ImGui::SetNextItemWidth(196 * s_uiScale);
