@@ -66,6 +66,7 @@ if(LINUX)
 	
 	# set up build directory to be able to run TFE immediately: symlink
 	# the necessary support file directories into the build env.
+	execute_process(COMMAND ln -sf ${CMAKE_SOURCE_DIR}/TheForceEngine/Captions)
 	execute_process(COMMAND ln -sf ${CMAKE_SOURCE_DIR}/TheForceEngine/Documentation)
 	execute_process(COMMAND ln -sf ${CMAKE_SOURCE_DIR}/TheForceEngine/Fonts)
 	execute_process(COMMAND ln -sf ${CMAKE_SOURCE_DIR}/TheForceEngine/Mods)
@@ -92,6 +93,7 @@ install(TARGETS tfe
 
 # Support data
 install(DIRECTORY
+	"${CMAKE_CURRENT_SOURCE_DIR}/TheForceEngine/Captions"
 	"${CMAKE_CURRENT_SOURCE_DIR}/TheForceEngine/Documentation"
 	"${CMAKE_CURRENT_SOURCE_DIR}/TheForceEngine/UI_Text"
 	"${CMAKE_CURRENT_SOURCE_DIR}/TheForceEngine/UI_Images"
