@@ -589,6 +589,11 @@ namespace TFE_DarkForces
 						for (; local(prevFrame) != frameIndex && local(frame); local(prevFrame)++)
 						{
 							local(frame) = (VueFrame*)allocator_getNext(local(vue)->frames);
+
+							// We added the interpolated frame to the end of the frame sequence, so we need to make sure we ignore it rather
+							// than trying to play it as part of the sequence.
+							if (local(interpolatedFrame) && local(frame) == local(interpolatedFrame)) { local(frame) = nullptr; }
+
 							if (smoothVUEs)
 							{
 								if (local(frame) && local(current) != local(frame)) {
