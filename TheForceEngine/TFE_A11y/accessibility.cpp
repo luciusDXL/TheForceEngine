@@ -116,6 +116,7 @@ namespace TFE_A11Y  // a11y is industry slang for accessibility
 	void onSoundPlay(char* name, CaptionEnv env)
 	{
 		const TFE_Settings_A11y* settings = TFE_Settings::getA11ySettings();
+		// Don't add caption if captions are disabled for the current env
 		if (env == CC_Cutscene && !settings->showCutsceneCaptions && !settings->showCutsceneSubtitles) { return; }
 		if (env == CC_Gameplay && !settings->showGameplayCaptions && !settings->showGameplaySubtitles) { return; }
 
@@ -132,6 +133,10 @@ namespace TFE_A11Y  // a11y is industry slang for accessibility
 
 			if (env == CC_Cutscene)
 			{
+				// Don't add caption if this type of caption is disabled
+				if (caption.type == CC_Effect && !settings->showCutsceneCaptions) return;
+				else if (caption.type == CC_Voice && !settings->showCutsceneSubtitles) return;
+
 				s32 maxLines = CUTSCENE_MAX_LINES[settings->cutsceneFontSize];
 
 				// Split caption into chunks if it's very long and would take up too much screen
@@ -165,6 +170,12 @@ namespace TFE_A11Y  // a11y is industry slang for accessibility
 					}
 					else { break; }
 				}
+			}
+			else if (env == CC_Gameplay)
+			{
+				// Don't add caption if this type of caption is disabled
+				if (caption.type == CC_Effect && !settings->showGameplayCaptions) return;
+				else if (caption.type == CC_Voice && !settings->showGameplaySubtitles) return;
 			}
 
 			addCaption(caption);
@@ -203,11 +214,11 @@ namespace TFE_A11Y  // a11y is industry slang for accessibility
 
 	void drawCaptions(std::vector<Caption>* captions)
 	{
-		auto settings = TFE_Settings::getA11ySettings();
+		TFE_Settings_A11y* settings = TFE_Settings::getA11ySettings();
 
 		// Track time elapsed since last update
-		auto s_time = system_clock::now().time_since_epoch();
-		auto elapsed = s_time - s_lastTime;
+		system_clock::duration s_time = system_clock::now().time_since_epoch();
+		system_clock::duration elapsed = s_time - s_lastTime;
 		s64 elapsedMS = duration_cast<milliseconds>(elapsed).count();
 
 		loadScreenSize();
