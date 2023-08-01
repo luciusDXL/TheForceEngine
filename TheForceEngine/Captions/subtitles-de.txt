@@ -1,4 +1,4 @@
-#Language: de
+#language: de
 //ENEMIES
 ranofc02.voc "Offizier: Bleib wo du bist!"
 ranofc04.voc "Offizier: Sie sind nicht befugt sich hier aufzuhalten."
@@ -14,7 +14,7 @@ ransto07.voc "Soldat: Blasters auf volle Stärke!"
 ransto08.voc "Soldat: Macht ihn fertig!"
 icmdo-1.voc  "Offizier: Da ist er! Stoppt ihn!" //unused?
 ioffic-1.voc "Officer: Halt! Hold it right there." //Probably unused - not translated
-m16moc01.voc "Offizier Mohc: Es ist lange her, seit ich einen Mann zum Kampf herausgefordert habe. Es freut mich das mein Gegner würdig ist."
+m16moc01.voc "Offizier Mohc: Es ist lange her, seit ich einen Mann zum Kampf herausgefordert habe. Es freut mich, dass mein Gegner würdig ist."
 
 //SFX
 boba-1.voc	"[Fett lacht]"
@@ -58,9 +58,9 @@ intalert.voc "[Droiden Repulsorlift]"
 m01kyl01.voc "Kyle: Das war fast zu einfach. Jetzt nichts wie zurück zu meinem Schiff."
 //M02 (Talay)
 m02kyl01.voc "Kyle: Jan?"
-m02jan01.voc "Jan: Go ahead, Kyle."
-m02kyl02.voc "Kyle: Es sieht so auch als habe ich was gefunden das uns weiterhilft.."
-m02jan02.voc "Jan: Get back to the landing pad and I'll meet you there."
+m02jan01.voc "Jan: Fahr fort, Kyle."
+m02kyl02.voc "Kyle: Es sieht so aus als habe ich was gefunden, das uns weiterhilft."
+m02jan02.voc "Jan: Kehre zum Landeplatz zurück. Ich werde dich dort treffen."
 //M03 (Anoat)
 m03kyl01.voc "Kyle: Jan, Ich habe Moff Rebus gefunden. Ich werde jetzt verschwinden."
 m03jan01.voc "Jan: Ganz wie du willst, Kyle."
@@ -69,45 +69,45 @@ m04kyl01.voc "Kyle: I habe ein interessantes Metall gefunden. Ich glaube, dass d
 m04jan01.voc "Jan: Das ist alles was wir hier brauchen. Lass uns von hier verschwinden, ich werde langsam nervös."
 //M05 (Gromas)
 m05kyl01.voc "Kyle: Jan hier ist Kyle, Ladungen gesetzt. Ich bin fertig hier."
-m05kyl02.voc "Kyle: Jan,du holst mich besser hier raus. Ich denke ich habe gerade einen dieser Dark Trooper erledigt. Ich will nicht herausfinden ob es hier noch mehr hat." #self translated
+m05kyl02.voc "Kyle: Jan, du holst mich besser hier raus. Ich denke ich habe gerade einen dieser Dark Trooper erledigt. Ich will nicht herausfinden ob es hier noch mehr hat." //translated
 m05jan01.voc "Jan: Alles klar bin unterwegs."
-m05kyl03.voc "Kyle: Wenn das Ding einen Hinweis darauf ist womit wir es zu tun bekommen, dann brauchen wir mehr Feuerkraft."
+m05kyl03.voc "Kyle: Wenn das Ding einen Hinweis darauf ist, womit wir es zu tun bekommen, dann brauchen wir mehr Feuerkraft."
 //M06 (Detention Center)
 m06kyl01.voc "Kyle: Okay Jan, ich habe Madine befreit."
-m06jan01.voc "Jan: Beil dich, wir müssen zusehen das wir von hier verschwinden bevor noch mehr Sturmtruppen eintreffen "
+m06jan01.voc "Jan: Beil dich, wir müssen zusehen das wir von hier verschwinden, bevor noch mehr Sturmtruppen eintreffen "
 //M07 (Ramsees Head)
 m07kyl01.voc "Kyle: Der Signalgeber ist platziert."
-m07jan01.voc "Jan: Ich empfange das Signal. Sieht so aus als wären wir hier fertig."
-m07jan02.voc "Jan: OK dann lass uns mals sehen wohin diese Schmuggler hinfliegenS."
+m07jan01.voc "Jan: Ich empfange das Signal. Sieht so aus, als wären wir hier fertig."
+m07jan02.voc "Jan: OK dann lass uns mal sehen, wohin diese Schmuggler hinfliegen."
 //M08 (Robotics Facility)
 m08kyl01.voc "Kyle: Erste Ladung scharf gemacht."
 m08kyl02.voc "Kyle: Zweite Ladung scharf gemacht."
 m08kyl03.voc "Kyle: OK, Alle Ladungen scharf gemacht."
-mo8jan01.voc "Jan: Good job. Let's blow this ice cube." //note the typo in file name, o instead of 0
-m08kyl04.voc "Kyle: Eine Frau nach meinem geschmack."
-m08kyl05.voc "Kyle: Oh verdammt! [static]" //unused?
+mo8jan01.voc "Jan: Gut gemacht. Lass uns diesen Eiswürfel sprengen." //note the typo in file name, o instead of 0
+m08kyl04.voc "Kyle: Eine Frau nach meinem gGeschmack."
+m08kyl05.voc "Kyle: Oh verdammt! [rauschen]" //unused?
 //M09 (Nar Shaddaa)
 m09kyl01.voc "Kyle: Jan! Ich habe eine imperiale Nava Card gefunden."
-m09jan01.voc "Jan: Das müssen die Schmugglerrouten zur Arc Hammer sein. Ich glaube es ist Zeit von hier zu verschwinden."
-m09jana1.voc "Jan: an: Das müssen die Schmugglerrouten zur Arc Hammer sein. Ich glaube es ist Zeit von hier zu verschwinden." //alternate take
+m09jan01.voc "Jan: Das müssen die Schmugglerrouten zur Arc Hammer sein. Ich glaube, es ist Zeit von hier zu verschwinden."
+m09jana1.voc "Jan: Das müssen die Schmugglerrouten zur Arc Hammer sein. Ich glaube, es ist Zeit von hier zu verschwinden." //alternate take
 //M10 (Jabba's Ship
 m10jan01.voc "Jan: Danke, ich dachte es wäre aus."
-m10kyl03.voc "Kyle: Keine Zeit zum feiern. Lass uns hier verschwinden"
+m10kyl03.voc "Kyle: Keine Zeit zum feiern. Lass uns hier verschwinden."
 //M11 (Imperial City)
 m11jan01.voc "Jan: Gut gemacht aber du bist noch nicht fertig."
-m11jan02.voc "Jan: Klasse. Schnapp dir nun das Datenband und kehre schleunigst zur Landeplattform zurück. Ich kann hier nicht allzulange bleiben bevor die Imperialen mich hier entedecken." 8
-m11jan03.voc "Jan: Kyle, irgendetwas seltsames geht hier vor. Beil dich ich meine es ernst!"
-m11jan04.voc "Jan: Oh no! Kyle, pass besser auf, Ich habe gerade gesehen wie... [loud static]"
+m11jan02.voc "Jan: Klasse. Schnapp dir nun das Datenband und kehre schleunigst zur Landeplattform zurück. Ich kann hier nicht allzulange bleiben, bevor die Imperialen mich hier entdecken." 8
+m11jan03.voc "Jan: Kyle, irgendetwas seltsames geht hier vor. Beil dich, ich meine es ernst!"
+m11jan04.voc "Jan: Oh no! Kyle, pass besser auf, Ich habe gerade gesehen wie... [rauschen]"
 m11jan05.voc "Jan: Kyle, wo bist du? Ich bin zurück auf dem Landefeld."
 m11jan06.voc "Jan: Es tauchten TIE-Jäger auf. Ich musste sie irgendwie loswerden."
 m11jana6.voc "Jan: Es tauchten TIE-Jäger auf. Ich musste sie irgendwie loswerden." //alt. take
 m11kyl01.voc  "Kyle: Ich habe das Zentralschloss aufgebrochen. Ich bin drinn."
 m11kyl02.voc  "Kyle: Ok die Nava Card wird dekodiert."
-m11kyl03.voc  "Kyle: Ich habe das Band. Bin auf dem Weg zurück"
+m11kyl03.voc  "Kyle: Ich habe das Band. Bin auf dem Weg zurück."
 m11kyl04.voc  "Kyle: Wo warst du Jan."
 
 //M12 (Fuel Station)
-m12imp01.voc "Officer: Smuggler ship, your flight path is clear. Begin your docking procedure." 4.5
+m12imp01.voc "Officer: Schmugglerschiff, ihr Anflug ist genemigt. Beginnen Sie Ihr Andockmanöver." 4.5
 m12kyl01.voc "Kyle: Okay Jan, das Schiff gehört mir."
 m12jan01.voc "Jan: Gut gemacht, Kyle."
 m12kyl02.voc "Kyle: Ich starte jetzt... Ich sehe dich auf der dunklen Seite, Jan."
@@ -119,19 +119,19 @@ m16kyl01.voc "Kyle: Das war die Erste..."
 m16kyl02.voc "Kyle: Das ist die Zweite..."
 m16kyl03.voc "Kyle: Jetzt noch die Letzte."
 m16kyl04.voc "Kyle: Jan würde stolz auf mich sein."
-m16kyl05.voc "Kyle: Es gibt keine Ehre im Krieg Mhoc..."
+m16kyl05.voc "Kyle: Es gibt keine Ehre im Krieg Mhoc."
 m16kyl06.voc "Kyle: Für die Freiheit."
 
 //----- CUTSCENES -----------------------------------------------
 //Before M02 (Talay)
-m01nar01 "Kyle delivers the plans to the Rebel Alliance. Soon afterwards, the Death Star is destroyed. But even as the Alliance celebrates this victory, another sinister plot is set in motion that will become an even greater concern for the Rebellion." 13.5
-m01vdr01 "The Emperor has approved your test demonstration, General Mohc."
-m01moc0a "Thank you Lord Vader. What I unveil today will mark a new era for the Empire."
-m01moc01 "Thank you Lord Vader. What I unveil today will mark a new era for the Empire." //duplicate
-m01moc0b "We will be able to decimate the Rebels just as we did the Jedi Knights. At last, the Emperor's war will be filled only with the glory and beauty of decisive victory."
-m01vdr02 "A noble cause, General. I hope the demonstration lives up to your claims. Proceed."
-m01moc02 "With pleasure."
-m01moc03 "Dark Trooper: absetzen."
+m01nar01 "Kyle übergibt die Pläne der Rebellen. Kurze Zeit später ist der Todesstern vernichtet. Noch während die Allianz diesen Sieg feiert, wird eine weitere unheilvolle Verschwörung in Gang gesetzt, die eine viel grössere Bedrohung für die Rebellen darstellen könnte." 13.5
+m01vdr01 "Der Imperator hat Ihrem Testversuch zugestimmt, General Mohc."
+m01moc0a "Vielen Dank Lord Vader. Was ich heute demonstriere, wird eine neue Ära für das Imperium einläuten."
+m01moc01 "Vielen Dank Lord Vader. Was ich heute demonstriere, wird eine neue Ära für das Imperium einläuten." //duplicate
+m01moc0b "Wir werden in der Lage sein die Rebellen so zu dezimieren, wie wir es damals mit den Jedi-Rittern gemacht haben. Der Krieg des Imperators wird am Ende nur noch im Zeichen des glanzvollen Sieges über die Rebellion stehen."
+m01vdr02 "Eine ehrenvolle Angelegenheit, General. Ich hoffe, Ihre Demonstration wird diesen Ansprüchen gerecht werden. Fahren Sie fort."
+m01moc02 "Mit Vergnügen."
+m01moc03 "Dark Trooper: abwerfen."
 intcom3  "[Unverständliche Lautsprecherdurchsage]"
 intcom4  "[Unverständliche Lautsprecherdurchsage]"
 intcom5  "[Unverständliche Lautsprecherdurchsage]"
@@ -140,39 +140,39 @@ beep-3   "[Alarm]"
 dt-door2 "[Mechanische Geräusche]"
 dt-lower "[Mechanische Geräusche]"
 dtlaunch "[Triebwerk startet]"
-dive1 	 "[Triebwerk ]"
-m01vdr03 "Very impressive, General. The Emperor will be most pleased. Continue with your project."
-m01moc04 "Certainly, Lord Vader."
-m01mma01 "Thank you commander, for responding at such short notice. The Empire has been keeping us on the run since the destruction of the Death Star."
-m01mma02 "Five days ago the Empire attacked one of our secret bases in the city of Talay."
-m01mma03 "Tak Base was destroyed within minutes. Many innocent people in the surrounding city, as well as the Rebel staff, were killed. Intelligence thinks this may be an act of retaliation for the destruction of the Death Star." 12.5
-m01reb01 "This is Tak Base to anybody out there. Please, we're under Imperial attack! They're everywhere! There was no warning at all!"
-m01reb02 "Total devastation! They broke through our shields... they broke through our shields
-distress "This is Tak Base to anybody out there. Please, we're under Imperial attack! [Distortion] They're ev... no warn... ...otal devastation. They broke through our shields... they broke through our shields! [static]"
-m01kyl02 "Interesting... this looks like it could be a normal Imperial attack... except for those sounds."
-m01mma04 "Very perceptive commander. I know you understand that all we discuss here is classified." 5.0
-m01mma05 "This Imperial officer, Crix Madine, wishes to defect to the Alliance. He has supplied us with information on the development of a new Imperial weapon. Those sounds you heard, we believe, come from that weapon. A new type of Stormtrooper - the Dark Trooper." 17.3
-m01kyl03 "A new Stormtrooper that can take out a Rebel base that quickly? I shoulda kept working for the Empire."
-m01mma06 "The Rebel command is not taking this lightly. They have authorized me to hire you to find out if there is a threat, and if there is, to shut it down. That is, if you are still on our side." 12.5
-m01kyl04 "This could be interesting... [long pause] All right, I'm in. But I think I'll need some help on this one. I want Jan Ors as my mission officer."
-m01mma07 "Certainly. Then I will let Jan brief you further on your mission objectives. Thank you commander, and may the Force be with you."
+dive1 	 "[Triebwerk Geräusche]"
+m01vdr03 "Sehr eindrucksvoll General. Der Imperator wird überaus zufrieden sein. Setzen Sie ihr Projekt fort."
+m01moc04 "Wie Sie wünschen, Lord Vader."
+m01mma01 "Vielen Dank Commander, dass sie so kurzfristig kommen konnten. Das Imperium hält uns ganz schön auf Trab, seit der Todesstern zerstört wurde."
+m01mma02 "Vor fünf Tagen hat das Imperium einen unserer geheimen Stützpunkte auf Talay angegriffen."
+m01mma03 "Tak Base wurde innerhalb von Minuten zerstört. Viele unschuldige Stadtbewohner hat es genauso getroffen wie unsere eigenen Leute. Der Geheimdienst vermutet, dass es sich dabei um eine Art Vergeltung für die Vernichtung des Todesstern handelte." 12.5
+m01reb01 "Ist da draussen jemand der uns hört? Dies ist Tak Base. Bitte wir werden angegriffen! Sie sind überall! Wir wurde vollkommen überrascht!" //unused
+m01reb02 "Total Zerstörung! Sie brechen durch unsere Schilde... Sie brechen durch unsere Schilde!" //unused
+distress "Ist da jemand draussen der uns hört? Dies ist Tak Base. Bitte, [Unterbruch] wir werden angegriffen! Sie sind überall! Wir wurden [Unterbruch]  vollkommen überrascht! Total Zerstörung! Sie brechen durch unsere [Unterbruch] Schilde... Sie brechen durch unsere Schilde!"
+m01kyl02 "Interessant. Abgesehen von diesen Geräuschen macht es den Anschein eines normalen imperialen Angriffs."
+m01mma04 "Sehr richtig Commander. Ich hoffe Sie werden verstehen was wir hier besprechen vertraulich ist." 5.0
+m01mma05 "Dieser imperiale Offizier, Crix Madine, möchte zur Allianz überlaufen. Er hat uns mit Informationen über die Entwicklung einer neuen imperialen Waffe versorgt. Wir glauben, dass diese Geräusche die Sie gerade gehört haben, von dieser Waffe stammen. Einen neuen Typ von Sturmtruppler, dem Dark Trooper." 17.3
+m01kyl03 "Ein neuer Sturmtruppler der eine Rebellenbasis derartig schnell ausschalten kann? Ich hätte besser weiter für das Imperium arbeiten sollen."
+m01mma06 "Die Rebellenführung nimmt diese Angelegenheit nicht auf die leichte Schulter. Sie hat veranlasst Sie zu beauftragen herauszufinden ob eine Bedrohung besteht und gegebenenfalls auszuschalten. Das heisst falls Sie noch auf unserer Seite stehen." 12.5
+m01kyl04 "Klingt interessant... [lange Pause] Okay ich bin dabei. Aber ich brauche dennoch Unterstützung bei diesem Auftrag. Ich möchte das Jan Ors mein Missionsoffizier ist."
+m01mma07 "Einverstanden. Dann werde ich dafür sorgen das Jan sie auf die Missionsziele einweist. Vielen Dank Commander und möge die Macht mit Ihnen sein."
 
 //Before M06 (Detention Center)
-m05moc01 "This contemptible excuse for an officer will no longer divulge any more information to that Rebel, Kyle Katarn." 7
-m05vdr01 "Katarn will not be as easy to deal with. He is very resourceful - more resourceful, it seems, than even your dark troopers."
-m05moc02 "I understand the threat, Lord Vader. Katarn was once an impressive Imperial officer, but he was weak and gave up on the struggle for our new order. I wouldn't put much faith in his abilities. Katarn will never come near this ship. My new hire will see to that..." 19.5
-guncock "[Blaster cocking]"
+m05moc01 "Dieser verächtliche Abschaum von Offizier wird keine weiteren Informationen an diesen Rebellen an diesen Rebellen Kyle Katarn weitergeben." 7
+m05vdr01 "Katarn wird schwer zu erledigen sein. Er ist sehr clever, vielleicht cleverer als Ihre Dark Trooper."
+m05moc02 "Sie könnten recht haben, Katarn war ein eindrucksvoller imperialer Offizier, dennoch war er schwach und hat den Kampf für unsere neue Ordnung aufgegeben. Ich würde seinen Fähigkeiten nicht viel Glauben schenken. Katarn wird nicht einmal in die Nähe dieses Schiffs gelangen. Mein neuer Mitarbeiter wird sich schon darum kümmern." 19.5
+guncock "[Blaster wird geladen]"
 
 //Before M10 (Jabba's Ship)
 ray		 "[Traktorstrahl pulsiert]" 2.9
 hyp-in-8 "[Triebwerk whining]" 3
 shiplock "[Clang]"
 snort	 "[Gamorreaner grunzt]"
-m10kyl01 "Jabba? Was hast du mit Jan gemacht? Stösst ihr irgendetwas zu, werde ich persönlich meine Blaster deinen schleimigen Hals reinstecken." #verify
-m10kyl02 "I wish you were here too, Jabba. There's nothing like roast Kell dragon."
+m10kyl01 "Jabba? Was hast du mit Jan gemacht? Falls ihr irgendetwas zustossen sollte, werde ich persönlich meine Blaster in deinen schleimigen Hals stecken."
+m10kyl02 "Das wünschte ich mir auch Jabba. Es gibt nichts besseres als gerösteten Kelldrachen."
 pigpush	 "[Gamorreaner grunzt]"
 
-//M16 (unused?)
+//M16 (unused)
 m16moc02 "You are an excellent adversary, commander. The warrior's flame burns in your soul. It is a shame that we are not allies."
 m16moc03 "It is unfortunate that you do not appreciate what I am building here, commander. This is all for the soldier's glory, and his ultimate war - something a warrior's soul, like yours, should understand."
 m16moc04 "No glory? Then why do you engage in this war?"
@@ -180,10 +180,10 @@ m16moc05 "You delude your, commander. We all fight for freedom. Too bad you will
 
 
 //After M16 (Arc Hammer)
-m16vdr01 "This is an unfortunate setback. The Force is strong with Katarn..." 4.5
+m16vdr01 "Dies ist ein unglücklicher Rückschlag. Die Macht ist stark in Katarn..." 4.5
 
 //MISC
-m12imp01 "Smuggler ship, your flight path is clear. Begin your docking procedure." 4.5
-xw-nf-1  "[Engines roaring]"
-ex-grom1 "[Distant booming]" 4
-tube1	 "[Mechanisms whirring]"
+m12imp01 "Schmugglerschiff, ihr Anflug ist genemigt. Beginnen Sie Ihr Andockmanöver." 4.5 //translated
+xw-nf-1  "[Triebwerk]"
+ex-grom1 "[Entferntes grollen]" 4
+tube1	 "[Mechanische Geräusche]"
