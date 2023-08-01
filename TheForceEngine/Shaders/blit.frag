@@ -66,7 +66,7 @@ void main()
 #ifdef ENABLE_BLOOM
 	vec3 bloom = texture(Bloom, Frag_UV).rgb;
 	// clamp to 1.0 to avoid issues with color correction below.
-	Out_Color.rgb = min(Out_Color.rgb + bloom, vec3(1.0));
+	Out_Color.rgb = clamp(Out_Color.rgb + bloom, vec3(0.0), vec3(1.0));
 #endif
 
 #ifdef ENABLE_GPU_COLOR_CORRECTION
