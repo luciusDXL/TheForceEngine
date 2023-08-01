@@ -1,3 +1,4 @@
+add_subdirectory(TFE_A11y/)
 add_subdirectory(TFE_Archive/)
 add_subdirectory(TFE_Asset/)
 add_subdirectory(TFE_Audio/)
