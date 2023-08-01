@@ -35,7 +35,14 @@ bool TextureGpu::create(u32 width, u32 height, TexFormat format, bool hasMipmaps
 
 	glBindTexture(GL_TEXTURE_2D, m_gpuHandle);
 	glTexImage2D(GL_TEXTURE_2D, 0, c_internalFormat[format], width, height, 0, c_baseFormat[format], c_channelFormat[format], nullptr);
-	assert(glGetError() == GL_NO_ERROR);
+	GLenum error = glGetError();
+	// Handle OpenGL driver wonkiness around float16 textures.
+	if (error != GL_NO_ERROR && c_channelFormat[format] == GL_FLOAT)
+	{
+		glTexImage2D(GL_TEXTURE_2D, 0, c_internalFormat[format], width, height, 0, c_baseFormat[format], GL_HALF_FLOAT, nullptr);
+		error = glGetError();
+	}
+	assert(error == GL_NO_ERROR);
 
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, hasMipmaps ? GL_LINEAR_MIPMAP_LINEAR : GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, magFilter == MAG_FILTER_LINEAR ? GL_LINEAR : GL_NEAREST);
