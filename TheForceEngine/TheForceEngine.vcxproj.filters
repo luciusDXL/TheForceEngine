@@ -2346,5 +2346,8 @@
     <None Include="Shaders\bloomMerge.frag">
       <Filter>Source\Shaders</Filter>
     </None>
+    <None Include="Shaders\bloom.vert">
+      <Filter>Source\Shaders</Filter>
+    </None>
   </ItemGroup>
 </Project>

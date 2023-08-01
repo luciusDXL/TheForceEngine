@@ -7,41 +7,40 @@ out vec4 Out_Color;
 
 vec3 sampleWeighted(vec2 uv, vec2 step, float x, float y)
 {
-	vec2 subOffs = vec2(0.5, -0.5);
-	return texture(ColorBuffer, vec2(uv.x + step.x*(x+subOffs.x), uv.y + step.y*(y+subOffs.y))).rgb *
-	       texture(MaterialBuffer, vec2(uv.x + step.x*(x+subOffs.x), uv.y + step.y*(y+subOffs.y))).r;
+	vec2 sampleUv = uv + step*vec2(x, y);
+	return texture(ColorBuffer, sampleUv).rgb * texture(MaterialBuffer, sampleUv).r;
 }
 
 vec3 smoothWeightedDownsample(vec2 baseUV, vec2 step)
 {
 	// Take 13 samples around current texel, using bilinear filtering to grab neighbors, where e is the center.
-	vec3 a = sampleWeighted(baseUV, step, -2.0,  2.0);
-	vec3 b = sampleWeighted(baseUV, step,  0.0,  2.0);
-	vec3 c = sampleWeighted(baseUV, step,  2.0,  2.0);
+	// High Weights (0.5 / 4.0)
+	vec3 h0 = sampleWeighted(baseUV, step, -1.0,  1.0);
+	vec3 h1 = sampleWeighted(baseUV, step,  1.0,  1.0);
+	vec3 h2 = sampleWeighted(baseUV, step, -1.0, -1.0);
+	vec3 h3 = sampleWeighted(baseUV, step,  1.0, -1.0);
 
-	vec3 d = sampleWeighted(baseUV, step, -2.0,  0.0);
-	vec3 e = sampleWeighted(baseUV, step,  0.0,  0.0);
-	vec3 f = sampleWeighted(baseUV, step,  2.0,  0.0);
+	// Low Weights (0.5 / 9.0)
+	vec3 l0 = sampleWeighted(baseUV, step, -2.0,  2.0);
+	vec3 l1 = sampleWeighted(baseUV, step,  0.0,  2.0);
+	vec3 l2 = sampleWeighted(baseUV, step,  2.0,  2.0);
 
-	vec3 g = sampleWeighted(baseUV, step, -2.0, -2.0);
-	vec3 h = sampleWeighted(baseUV, step,  0.0, -2.0);
-	vec3 i = sampleWeighted(baseUV, step,  2.0, -2.0);
+	vec3 l3 = sampleWeighted(baseUV, step, -2.0,  0.0);
+	vec3 l4 = sampleWeighted(baseUV, step,  0.0,  0.0);
+	vec3 l5 = sampleWeighted(baseUV, step,  2.0,  0.0);
 
-	vec3 j = sampleWeighted(baseUV, step, -1.0,  1.0);
-	vec3 k = sampleWeighted(baseUV, step,  1.0,  1.0);
-	vec3 l = sampleWeighted(baseUV, step, -1.0, -1.0);
-	vec3 m = sampleWeighted(baseUV, step,  1.0, -1.0);
-
+	vec3 l6 = sampleWeighted(baseUV, step, -2.0, -2.0);
+	vec3 l7 = sampleWeighted(baseUV, step,  0.0, -2.0);
+	vec3 l8 = sampleWeighted(baseUV, step,  2.0, -2.0);
+		
     // Apply weighted distribution:
-    // 0.5 + 0.125 + 0.125 + 0.125 + 0.125 = 1
-    return e*0.125 + (a+c+g+i)*0.03125 + (b+d+f+h)*0.0625 + (j+k+l+m)*0.125;
+	// 4 samples at +/-1 sum to 0.5, the rest of the samples also sum to 0.5
+	return (h0 + h1 + h2 + h3) * 0.125 + (l0 + l1 + l2 + l3 + l4 + l5 + l6 + l7 + l8) * 0.0555555;
 }
 
 void main()
 {
 	vec2 step = vec2(1.0) / vec2(textureSize(ColorBuffer, 0));
-	vec2 baseUV = vec2(Frag_UV.x, 1.0 - Frag_UV.y);
-
-	Out_Color.rgb = smoothWeightedDownsample(baseUV, step) * bloomIntensity;
+	Out_Color.rgb = smoothWeightedDownsample(Frag_UV, step) * bloomIntensity;
 	Out_Color.a = 1.0;
 }

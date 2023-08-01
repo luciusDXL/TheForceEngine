@@ -1015,6 +1015,7 @@ echo ^)";
     <None Include="Documentation\markdown\Manual.md" />
     <None Include="Shaders\blit.frag" />
     <None Include="Shaders\blit.vert" />
+    <None Include="Shaders\bloom.vert" />
     <None Include="Shaders\bloomDownsample.frag" />
     <None Include="Shaders\bloomMerge.frag" />
     <None Include="Shaders\bloomThreshold.frag" />

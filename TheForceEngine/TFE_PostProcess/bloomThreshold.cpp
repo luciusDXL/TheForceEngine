@@ -18,7 +18,7 @@ void BloomThreshold::destroy()
 bool BloomThreshold::buildShaders()
 {
 	// Base shader.
-	if (!m_shaderInternal.load("Shaders/blit.vert", "Shaders/bloomThreshold.frag", 0u, nullptr, SHADER_VER_STD))
+	if (!m_shaderInternal.load("Shaders/bloom.vert", "Shaders/bloomThreshold.frag", 0u, nullptr, SHADER_VER_STD))
 	{
 		return false;
 	}

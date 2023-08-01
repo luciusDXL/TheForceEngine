@@ -16,7 +16,7 @@ void BloomDownsample::destroy()
 bool BloomDownsample::buildShaders()
 {
 	// Base shader.
-	if (!m_shaderInternal.load("Shaders/blit.vert", "Shaders/bloomDownsample.frag", 0u, nullptr, SHADER_VER_STD))
+	if (!m_shaderInternal.load("Shaders/bloom.vert", "Shaders/bloomDownsample.frag", 0u, nullptr, SHADER_VER_STD))
 	{
 		return false;
 	}

@@ -32,16 +32,11 @@ vec3 blur3x3(sampler2D tex, vec2 uv, vec2 scale)
 void main()
 {
 	float blurScale = 1.5;
-	vec2 baseUV = vec2(Frag_UV.x, 1.0 - Frag_UV.y);
-	vec3 curSample = texture(MergeCur, baseUV).rgb;
-
-	// 3x3 blur on current.
-	//vec2 scaleCur = vec2(1.0) / vec2(textureSize(MergeCur, 0));
-	//vec3 curSample = blur3x3(MergeCur, baseUV, scaleCur);
+	vec3 curSample = texture(MergeCur, Frag_UV).rgb;
 
 	// 3x3 blur on upscale.
 	vec2 scaleUpsampled = vec2(blurScale) / vec2(textureSize(MergePrev, 0));
-	vec3 upsampled = blur3x3(MergePrev, baseUV, scaleUpsampled);
+	vec3 upsampled = blur3x3(MergePrev, Frag_UV, scaleUpsampled);
 
 	Out_Color.rgb = mix(curSample, upsampled, bloomSpread);
 	Out_Color.a = 1.0;

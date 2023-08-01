@@ -21,7 +21,7 @@ void BloomMerge::destroy()
 bool BloomMerge::buildShaders()
 {
 	// Base shader.
-	if (!m_shaderInternal.load("Shaders/blit.vert", "Shaders/bloomMerge.frag", 0u, nullptr, SHADER_VER_STD))
+	if (!m_shaderInternal.load("Shaders/bloom.vert", "Shaders/bloomMerge.frag", 0u, nullptr, SHADER_VER_STD))
 	{
 		return false;
 	}

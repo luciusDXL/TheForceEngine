@@ -115,7 +115,7 @@ namespace TFE_A11Y  // a11y is industry slang for accessibility
 
 	void onSoundPlay(char* name, CaptionEnv env)
 	{
-		auto settings = TFE_Settings::getA11ySettings();
+		const TFE_Settings_A11y* settings = TFE_Settings::getA11ySettings();
 		if (env == CC_Cutscene && !settings->showCutsceneCaptions && !settings->showCutsceneSubtitles) { return; }
 		if (env == CC_Gameplay && !settings->showGameplayCaptions && !settings->showGameplaySubtitles) { return; }
 
