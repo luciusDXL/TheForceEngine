@@ -1,4 +1,5 @@
 #include <TFE_RenderBackend/textureGpu.h>
+#include <TFE_System/system.h>
 #include <GL/glew.h>
 #include <vector>
 #include <assert.h>
@@ -9,6 +10,20 @@ const GLenum c_internalFormat[] = { GL_RGBA8, GL_R8, GL_RGBA16F, GL_R16F };
 const GLenum c_baseFormat[] = { GL_RGBA, GL_RED, GL_RGBA, GL_RED };
 const GLenum c_channelCount[] = { 4, 1, 4, 1 };
 const GLenum c_bytesPerChannel[] = {1, 1, 2, 2 };
+
+static const char* c_magFilterStr[] =
+{
+	"MAG_FILTER_NONE",
+	"MAG_FILTER_LINEAR",
+};
+
+static const char* c_texFormatStr[] =
+{
+	"TEX_RGBA8",
+	"TEX_R8",
+	"TEX_RGBAF16",
+	"TEX_R16F",
+};
 
 TextureGpu::~TextureGpu()
 {
@@ -43,6 +58,13 @@ bool TextureGpu::create(u32 width, u32 height, TexFormat format, bool hasMipmaps
 		error = glGetError();
 	}
 	assert(error == GL_NO_ERROR);
+	if (error != GL_NO_ERROR)
+	{
+		TFE_System::logWrite(LOG_ERROR, "TextureGPU - OpenGL", "Failed to create texture - size: (%u, %u), format: %s.",
+			m_width, m_height, c_texFormatStr[format]);
+		glBindTexture(GL_TEXTURE_2D, 0);
+		return false;
+	}
 
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, hasMipmaps ? GL_LINEAR_MIPMAP_LINEAR : GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, magFilter == MAG_FILTER_LINEAR ? GL_LINEAR : GL_NEAREST);
