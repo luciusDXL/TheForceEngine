@@ -27,6 +27,7 @@ namespace TFE_A11Y  // a11y is industry slang for accessibility
 	void loadScreenSize();
 	ImVec2 calcWindowSize(f32* fontScale, CaptionEnv env);
 	s64 secondsToMicroseconds(f32 seconds);
+	s64 calculateDuration(string text);
 
 	///////////////////////////////////////////
 	// Constants
@@ -34,11 +35,15 @@ namespace TFE_A11Y  // a11y is industry slang for accessibility
 	const f32 MAX_CAPTION_WIDTH = 1200;
 	const f32 DEFAULT_LINE_HEIGHT = 20;
 	const f32 LINE_PADDING = 5;
-	const s32 MAX_CAPTION_CHARS[] = // keyed by font size
+	// Base duration of a caption
+	const s64 BASE_DURATION_MICROSECONDS = secondsToMicroseconds(0.9f);
+	// How many microseconds are added to the caption duration per character
+	const s64 MICROSECONDS_PER_CHAR = secondsToMicroseconds(0.07f);
+	const s32 MAX_CAPTION_CHARS[] = // Keyed by font size
 	{
 		160, 160, 120, 78
 	};
-	const s32 CUTSCENE_MAX_LINES[] = // keyed by font size
+	const s32 CUTSCENE_MAX_LINES[] = // Keyed by font size
 	{
 		5, 5, 4, 3
 	};
@@ -74,9 +79,6 @@ namespace TFE_A11Y  // a11y is industry slang for accessibility
 		s_parser.addCommentString("#");
 		s_parser.addCommentString("//");
 
-		const s64 MICROSECONDS_PER_CHAR = secondsToMicroseconds(0.07f);
-		const s64 BASE_DURATION_MICROSECONDS = secondsToMicroseconds(0.9f);
-
 		size_t bufferPos = 0;
 		while (bufferPos < size)
 		{
@@ -103,7 +105,7 @@ namespace TFE_A11Y  // a11y is industry slang for accessibility
 			if (caption.microsecondsRemaining <= 0)
 			{
 				// Calculate caption duration based on text length
-				caption.microsecondsRemaining = caption.text.length() * MICROSECONDS_PER_CHAR + BASE_DURATION_MICROSECONDS;
+				caption.microsecondsRemaining = calculateDuration(caption.text);
 				if (caption.microsecondsRemaining > s_maxDuration) caption.microsecondsRemaining = (s64)s_maxDuration;
 			}
 			assert(caption.microsecondsRemaining > 0);
@@ -198,7 +200,7 @@ namespace TFE_A11Y  // a11y is industry slang for accessibility
 		Caption caption;
 		caption.text = args[1];
 		caption.env = CC_Cutscene;
-		caption.microsecondsRemaining = caption.text.length() * 90 + 750;
+		caption.microsecondsRemaining = calculateDuration(caption.text);
 		caption.type = CC_Voice;
 
 		addCaption(caption);
@@ -314,10 +316,13 @@ namespace TFE_A11Y  // a11y is industry slang for accessibility
 			// Reduce the caption's time remaining, removing it from the list if it's out of time
 			if (i == 0)
 			{
-				title->microsecondsRemaining -= elapsedMS;
-				if (title->microsecondsRemaining <= 0) {
-					captions->erase(captions->begin() + i);
-					i--;
+				if (!TFE_Console::isOpen()) // Don't advance timer while console is open
+				{
+					title->microsecondsRemaining -= elapsedMS;
+					if (title->microsecondsRemaining <= 0) {
+						captions->erase(captions->begin() + i);
+						i--;
+					}
 				}
 			}
 		}
@@ -332,7 +337,7 @@ namespace TFE_A11Y  // a11y is industry slang for accessibility
 		if (s_exampleCaptions.size() == 0)
 		{
 			Caption caption;
-			caption.text = "This is an example cutscene caption";
+			caption.text = "This is an example cutscene caption.";
 			caption.microsecondsRemaining = secondsToMicroseconds(0.5f);
 			caption.env = CaptionEnv::CC_Cutscene;
 			caption.type = CC_Voice;
@@ -418,5 +423,9 @@ namespace TFE_A11Y  // a11y is industry slang for accessibility
 	s64 secondsToMicroseconds(f32 seconds)
 	{
 		return (s64)(seconds * 1000000);
+	}
+
+	s64 calculateDuration(string text) {
+		return BASE_DURATION_MICROSECONDS + text.length() * MICROSECONDS_PER_CHAR;
 	}
 }
