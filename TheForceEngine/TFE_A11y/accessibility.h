@@ -17,7 +17,7 @@ namespace TFE_A11Y {
 	struct Caption 
 	{
 		string text;
-		s64 msRemaining;
+		s64 microsecondsRemaining;
 		CaptionType type;
 		CaptionEnv env;
 	};

@@ -17,21 +17,36 @@ using std::string;
 
 namespace TFE_A11Y  // a11y is industry slang for accessibility
 {
+	///////////////////////////////////////////
+	// Forward Declarations
+	///////////////////////////////////////////
+	void addCaption(const ConsoleArgList& args);
+	void drawCaptions(std::vector<Caption>* captions);
+	string toUpper(string input);
+	string toLower(string input);
+	void loadScreenSize();
+	ImVec2 calcWindowSize(f32* fontScale, CaptionEnv env);
+	s64 secondsToMicroseconds(f32 seconds);
+
+	///////////////////////////////////////////
+	// Constants
+	///////////////////////////////////////////
 	const f32 MAX_CAPTION_WIDTH = 1200;
 	const f32 DEFAULT_LINE_HEIGHT = 20;
 	const f32 LINE_PADDING = 5;
-
 	const s32 MAX_CAPTION_CHARS[] = // keyed by font size
 	{
 		160, 160, 120, 78
 	};
-
 	const s32 CUTSCENE_MAX_LINES[] = // keyed by font size
 	{
 		5, 5, 4, 3
 	};
 
-	static f32 s_maxDuration = 10000.0f;
+	///////////////////////////////////////////
+	// Static vars
+	///////////////////////////////////////////
+	static s64 s_maxDuration = secondsToMicroseconds(10.0f);
 	static DisplayInfo s_display;
 	static u32 s_screenWidth;
 	static u32 s_screenHeight;
@@ -44,16 +59,6 @@ namespace TFE_A11Y  // a11y is industry slang for accessibility
 	static std::map<string, Caption> s_captionMap;
 	static std::vector<Caption> s_activeCaptions;
 	static std::vector<Caption> s_exampleCaptions;
-
-	///////////////////////////////////////////
-	// Forward Declarations
-	///////////////////////////////////////////
-	void addCaption(const ConsoleArgList& args);
-	void drawCaptions(std::vector<Caption>* captions);
-	string toUpper(string input);
-	string toLower(string input);
-	void loadScreenSize();
-	ImVec2 calcWindowSize(f32* fontScale, CaptionEnv env);
 
 	void init()
 	{
@@ -68,6 +73,9 @@ namespace TFE_A11Y  // a11y is industry slang for accessibility
 		// Ignore commented lines
 		s_parser.addCommentString("#");
 		s_parser.addCommentString("//");
+
+		const s64 MICROSECONDS_PER_CHAR = secondsToMicroseconds(0.07f);
+		const s64 BASE_DURATION_MICROSECONDS = secondsToMicroseconds(0.9f);
 
 		size_t bufferPos = 0;
 		while (bufferPos < size)
@@ -87,18 +95,18 @@ namespace TFE_A11Y  // a11y is industry slang for accessibility
 			{
 				try
 				{
-					caption.msRemaining = (s64)(std::stof(tokens[2]) * 1000);
+					caption.microsecondsRemaining = secondsToMicroseconds(std::stof(tokens[2]));
 				}
 				catch(...) {
 				}
 			}
-			if (caption.msRemaining <= 0)
+			if (caption.microsecondsRemaining <= 0)
 			{
 				// Calculate caption duration based on text length
-				caption.msRemaining = caption.text.length() * 70 + 900;
-				if (caption.msRemaining > s_maxDuration) caption.msRemaining = (s64)s_maxDuration;
+				caption.microsecondsRemaining = caption.text.length() * MICROSECONDS_PER_CHAR + BASE_DURATION_MICROSECONDS;
+				if (caption.microsecondsRemaining > s_maxDuration) caption.microsecondsRemaining = (s64)s_maxDuration;
 			}
-			assert(caption.msRemaining > 0);
+			assert(caption.microsecondsRemaining > 0);
 			
 			if (caption.text[0] == '[') caption.type = CC_Effect;
 			else caption.type = CC_Voice;
@@ -116,9 +124,11 @@ namespace TFE_A11Y  // a11y is industry slang for accessibility
 	void onSoundPlay(char* name, CaptionEnv env)
 	{
 		const TFE_Settings_A11y* settings = TFE_Settings::getA11ySettings();
+		// Don't add caption if captions are disabled for the current env
 		if (env == CC_Cutscene && !settings->showCutsceneCaptions && !settings->showCutsceneSubtitles) { return; }
 		if (env == CC_Gameplay && !settings->showGameplayCaptions && !settings->showGameplaySubtitles) { return; }
 
+		// TODO: enable/disable this line of logging with console variable
 		//TFE_System::logWrite(LOG_ERROR, "a11y", name);
 
 		string nameLower = toLower(name);
@@ -132,6 +142,10 @@ namespace TFE_A11Y  // a11y is industry slang for accessibility
 
 			if (env == CC_Cutscene)
 			{
+				// Don't add caption if this type of caption is disabled
+				if (caption.type == CC_Effect && !settings->showCutsceneCaptions) return;
+				else if (caption.type == CC_Voice && !settings->showCutsceneSubtitles) return;
+
 				s32 maxLines = CUTSCENE_MAX_LINES[settings->cutsceneFontSize];
 
 				// Split caption into chunks if it's very long and would take up too much screen
@@ -146,7 +160,7 @@ namespace TFE_A11Y  // a11y is industry slang for accessibility
 				s32 count = 1;
 				while (caption.text.length() > maxChars)
 				{
-					Caption next = caption; //copy
+					Caption next = caption; // Copy
 					s32 spaceIndex = 0;
 					for (s32 i = 0; i < maxLines; i++)
 					{
@@ -157,14 +171,20 @@ namespace TFE_A11Y  // a11y is industry slang for accessibility
 					{
 						f32 ratio = spaceIndex / (f32)caption.text.length();
 						next.text = next.text.substr(0, spaceIndex);
-						next.msRemaining = s64(next.msRemaining * ratio);  // Fixes a float to int warning.
+						next.microsecondsRemaining = s64(next.microsecondsRemaining * ratio);  // Fixes a float to int warning.
 						addCaption(next);
 						caption.text = caption.text.substr(spaceIndex + 1);
-						caption.msRemaining -= next.msRemaining;
+						caption.microsecondsRemaining -= next.microsecondsRemaining;
 						count++;
 					}
 					else { break; }
 				}
+			}
+			else if (env == CC_Gameplay)
+			{
+				// Don't add caption if this type of caption is disabled
+				if (caption.type == CC_Effect && !settings->showGameplayCaptions) return;
+				else if (caption.type == CC_Voice && !settings->showGameplaySubtitles) return;
 			}
 
 			addCaption(caption);
@@ -178,7 +198,7 @@ namespace TFE_A11Y  // a11y is industry slang for accessibility
 		Caption caption;
 		caption.text = args[1];
 		caption.env = CC_Cutscene;
-		caption.msRemaining = caption.text.length() * 90 + 750;
+		caption.microsecondsRemaining = caption.text.length() * 90 + 750;
 		caption.type = CC_Voice;
 
 		addCaption(caption);
@@ -203,12 +223,13 @@ namespace TFE_A11Y  // a11y is industry slang for accessibility
 
 	void drawCaptions(std::vector<Caption>* captions)
 	{
-		auto settings = TFE_Settings::getA11ySettings();
+		TFE_Settings_A11y* settings = TFE_Settings::getA11ySettings();
 
 		// Track time elapsed since last update
-		auto s_time = system_clock::now().time_since_epoch();
-		auto elapsed = s_time - s_lastTime;
-		s64 elapsedMS = duration_cast<milliseconds>(elapsed).count();
+		system_clock::duration time = system_clock::now().time_since_epoch();
+		system_clock::duration elapsed = time - s_lastTime;
+		// Microseconds, not milliseconds
+		s64 elapsedMS = duration_cast<microseconds>(elapsed).count();
 
 		loadScreenSize();
 		s32 maxLines;
@@ -217,10 +238,10 @@ namespace TFE_A11Y  // a11y is industry slang for accessibility
 		if (captions->at(0).env == CC_Gameplay)
 		{
 			maxLines = settings->gameplayMaxTextLines;
-			//if too many captions, remove oldest captions
+			// If too many captions, remove oldest captions
 			while (captions->size() > maxLines)	captions->erase(captions->begin());
 		}
-		else //cutscene
+		else // Cutscene
 		{
 			maxLines = maxLines = CUTSCENE_MAX_LINES[settings->cutsceneFontSize];
 		}
@@ -266,7 +287,7 @@ namespace TFE_A11Y  // a11y is industry slang for accessibility
 		for (s32 i = 0; i < captions->size() && totalLines < maxLines; i++)
 		{
 			Caption* title = &captions->at(i);
-			bool wrapText = (title->env == CC_Cutscene); //wrapped for cutscenes, centered for gameplay
+			bool wrapText = (title->env == CC_Cutscene); // Wrapped for cutscenes, centered for gameplay
 			f32 wrapWidth = wrapText ? windowSize.x : -1.0f;
 			auto textSize = ImGui::CalcTextSize(title->text.c_str(), 0, false, wrapWidth);
 			if (!wrapText && textSize.x > windowSize.x)
@@ -293,8 +314,8 @@ namespace TFE_A11Y  // a11y is industry slang for accessibility
 			// Reduce the caption's time remaining, removing it from the list if it's out of time
 			if (i == 0)
 			{
-				title->msRemaining -= elapsedMS;
-				if (title->msRemaining <= 0) {
+				title->microsecondsRemaining -= elapsedMS;
+				if (title->microsecondsRemaining <= 0) {
 					captions->erase(captions->begin() + i);
 					i--;
 				}
@@ -303,7 +324,7 @@ namespace TFE_A11Y  // a11y is industry slang for accessibility
 		ImGui::PopStyleColor();
 
 		ImGui::End();
-		s_lastTime = s_time;
+		s_lastTime = time;
 	}
 
 	void drawExampleCaptions()
@@ -312,7 +333,7 @@ namespace TFE_A11Y  // a11y is industry slang for accessibility
 		{
 			Caption caption;
 			caption.text = "This is an example cutscene caption";
-			caption.msRemaining = 500;
+			caption.microsecondsRemaining = secondsToMicroseconds(0.5f);
 			caption.env = CaptionEnv::CC_Cutscene;
 			caption.type = CC_Voice;
 			s_exampleCaptions.push_back(caption);
@@ -392,5 +413,10 @@ namespace TFE_A11Y  // a11y is industry slang for accessibility
 		if (windowWidth > maxWidth) windowWidth = maxWidth;
 		ImVec2 windowSize = ImVec2(windowWidth, 0); // Auto-size vertically
 		return windowSize;
+	}
+
+	s64 secondsToMicroseconds(f32 seconds)
+	{
+		return (s64)(seconds * 1000000);
 	}
 }
