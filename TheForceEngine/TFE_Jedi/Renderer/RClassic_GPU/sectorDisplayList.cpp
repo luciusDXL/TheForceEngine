@@ -360,7 +360,7 @@ namespace TFE_Jedi
 				noTop = true;
 			}
 			if ((curSector->flags1 & SEC_FLAGS1_EXTERIOR) && (curSector->flags1 & SEC_FLAGS1_EXT_ADJ) && (srcWall->flags1 & WF1_ADJ_MID_TEX) &&
-				(nextSector->flags1 & SEC_FLAGS1_EXTERIOR))
+				(nextSector->flags1 & SEC_FLAGS1_EXTERIOR) && (nextSector->flags1 & SEC_FLAGS1_EXT_ADJ))
 			{
 				stretchToTop = true;
 			}
@@ -409,12 +409,12 @@ namespace TFE_Jedi
 				else
 				{
 					// Below the horizon line.
-					u32 flags = 1 << 10;
+					u32 flags = ((curSector->flags1 & SEC_FLAGS1_PIT) || forceTreatAsSolid) ? (1 << 10) : (3 << 10);
 					addDisplayListItem(pos, { flags | SPARTID_WALL_MID | SPARTID_SKY, data.y, data.z,
 						wallGpuId | (curSector->floorTex && *curSector->floorTex ? (*curSector->floorTex)->textureId : 0) }, SECTOR_PASS_OPAQUE);
 
 					// Above the horizon line.
-					flags = 2 << 10;
+					flags = ((curSector->flags1 & SEC_FLAGS1_EXTERIOR) || forceTreatAsSolid) ? (2 << 10) : (4 << 10);
 					addDisplayListItem(pos, { flags | SPARTID_WALL_MID | SPARTID_SKY, data.y, data.z,
 						wallGpuId | (curSector->ceilTex && *curSector->ceilTex ? (*curSector->ceilTex)->textureId : 0) }, SECTOR_PASS_OPAQUE);
 				}

@@ -191,6 +191,20 @@ void main()
 			{
 				vtx_pos.y = (vertexId < 2) ? vtx_pos.y : CameraPos.y;
 			}
+			// No wall case, but without sky mapping.
+			else if (nextId == 3)   // floor but not really sky
+			{
+				vtx_pos.y = (vertexId >= 2) ? vtx_pos.y : CameraPos.y;
+				vtx_uv.zw = texelFetch(Walls, wallId*3 + 1).xy;
+				sky = false;
+				flatIndex = 0;
+			}
+			else if (nextId == 4)	// ceiling but not really sky
+			{
+				vtx_pos.y = (vertexId < 2) ? vtx_pos.y : CameraPos.y;
+				vtx_uv.zw = texelFetch(Walls, wallId*3 + 1).xy;
+				sky = false;
+			}
 			vec4 sectorTexOffsets = texelFetch(Sectors, sectorId*2+1);
 			texture_data.xy = (flatIndex == 0) ? sectorTexOffsets.xy : sectorTexOffsets.zw;
 		}
