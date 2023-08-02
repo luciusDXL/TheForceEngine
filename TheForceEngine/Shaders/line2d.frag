@@ -2,7 +2,14 @@ in float Frag_Width;
 in vec4 Frag_UV;
 in vec2 Frag_Pos;
 in vec4 Frag_Color;
-out vec4 Out_Color;
+
+#ifdef OPT_BLOOM
+	layout(location = 0) out vec4 Out_Color;
+	layout(location = 1) out vec4 Out_Material;
+#else
+	out vec4 Out_Color;
+#endif
+
 void main()
 {
     vec2 dir = Frag_UV.zw - Frag_UV.xy;
@@ -17,4 +24,8 @@ void main()
 
     Out_Color.rgb = Frag_Color.rgb * alpha;
     Out_Color.a = alpha;
+
+#ifdef OPT_BLOOM
+	Out_Material = vec4(0.0);
+#endif
 }

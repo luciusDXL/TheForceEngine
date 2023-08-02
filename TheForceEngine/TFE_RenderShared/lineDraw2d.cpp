@@ -3,6 +3,7 @@
 #include <TFE_RenderBackend/shader.h>
 #include <TFE_RenderBackend/vertexBuffer.h>
 #include <TFE_RenderBackend/indexBuffer.h>
+#include <TFE_Settings/settings.h>
 #include <TFE_System/system.h>
 #include <vector>
 
@@ -16,6 +17,10 @@ namespace TFE_RenderShared
 		Vec3f pos;		// 2D position + width.
 		Vec4f uv;		// Line relative position in pixels.
 		u32   color;	// Line color + opacity.
+	};
+	struct ShaderSettings
+	{
+		bool bloom = false;
 	};
 	static const AttributeMapping c_lineAttrMapping[]=
 	{
@@ -34,17 +39,37 @@ namespace TFE_RenderShared
 	static LineVertex* s_vertices = nullptr;
 	static u32 s_lineCount;
 
-	static u32 s_width, s_height;
+	static ShaderSettings s_shaderSettings = {};
 
-	bool init()
+	static u32 s_width, s_height;
+	   
+	bool loadShader()
 	{
-		if (!s_shader.load("Shaders/line2d.vert", "Shaders/line2d.frag"))
+		ShaderDefine defines[2] = {};
+		u32 defineCount = 0;
+		if (s_shaderSettings.bloom)
+		{
+			defines[0].name = "OPT_BLOOM";
+			defines[0].value = "1";
+			defineCount++;
+		}
+
+		if (!s_shader.load("Shaders/line2d.vert", "Shaders/line2d.frag", defineCount, defines, SHADER_VER_STD))
 		{
 			return false;
 		}
-
 		s_svScaleOffset = s_shader.getVariableId("ScaleOffset");
 		if (s_svScaleOffset < 0)
+		{
+			return false;
+		}
+		return true;
+	}
+
+	bool init()
+	{
+		s_shaderSettings.bloom = TFE_Settings::getGraphicsSettings()->bloomEnabled;
+		if (!loadShader())
 		{
 			return false;
 		}
@@ -80,6 +105,9 @@ namespace TFE_RenderShared
 		s_indexBuffer.destroy();
 		delete[] s_vertices;
 		s_vertices = nullptr;
+
+		s_shader.destroy();
+		s_shaderSettings = {};
 	}
 	
 	void lineDraw2d_begin(u32 width, u32 height)
@@ -162,6 +190,13 @@ namespace TFE_RenderShared
 	void lineDraw2d_drawLines()
 	{
 		if (s_lineCount < 1) { return; }
+		// First see if the shader needs to be updated.
+		bool bloomEnabled = TFE_Settings::getGraphicsSettings()->bloomEnabled;
+		if (bloomEnabled != s_shaderSettings.bloom)
+		{
+			s_shaderSettings.bloom = bloomEnabled;
+			loadShader();
+		}
 
 		s_vertexBuffer.update(s_vertices, s_lineCount * 4 * sizeof(LineVertex));
 
