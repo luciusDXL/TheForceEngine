@@ -305,12 +305,12 @@ namespace TFE_A11Y  // a11y is industry slang for accessibility
 			//TFE_System::logWrite(LOG_ERROR, "a11y", (std::to_string(i) + " " + std::to_string(textSize.y) + ", " + std::to_string(lineHeight) + " " + std::to_string(lines) + " " + std::to_string(totalLines) + " " + std::to_string(windowSize.y)).c_str());
 			if (wrapText)
 			{
-				ImGui::TextWrapped(title->text.c_str());
+				ImGui::TextWrapped("%s", title->text.c_str());
 			}
 			else
 			{
 				ImGui::SetCursorPosX((windowSize.x - textSize.x) * 0.5f);
-				ImGui::Text(title->text.c_str());
+				ImGui::Text("%s", title->text.c_str());
 			}
 
 			// Reduce the caption's time remaining, removing it from the list if it's out of time
