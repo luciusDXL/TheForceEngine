@@ -19,6 +19,7 @@
 #include <TFE_Archive/archive.h>
 #include <TFE_Settings/settings.h>
 #include <TFE_Input/input.h>
+#include <TFE_Input/inputMapping.h>
 #include <TFE_RenderBackend/renderBackend.h>
 #include <TFE_Jedi/Math/core_math.h>
 #include <TFE_Jedi/Renderer/virtualFramebuffer.h>
@@ -32,6 +33,7 @@
 #include <TFE_System/system.h>
 
 using namespace TFE_Jedi;
+using namespace TFE_Input;
 
 namespace TFE_DarkForces
 {
@@ -252,7 +254,7 @@ namespace TFE_DarkForces
 			return;
 		}
 		
-		if (TFE_Input::keyPressed(KEY_F1) || TFE_Input::keyPressed(KEY_ESCAPE))
+		if (inputMapping_getActionState(IADF_PDA_TOGGLE) == STATE_PRESSED || TFE_Input::keyPressed(KEY_ESCAPE))
 		{
 			pda_close();
 			return;

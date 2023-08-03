@@ -1189,6 +1189,9 @@ namespace TFE_DarkForces
 			// For now just deal with a few controls.
 			if (inputMapping_getActionState(IADF_PDA_TOGGLE) == STATE_PRESSED)
 			{
+				// Clear out the PDA_TOGGLE state for this frame since it will be read again later.
+				inputMapping_removeState(IADF_PDA_TOGGLE);
+
 				mission_pause(JTRUE);
 				pda_start(agent_getLevelName());
 			}
