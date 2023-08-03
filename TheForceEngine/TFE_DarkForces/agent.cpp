@@ -451,11 +451,11 @@ namespace TFE_DarkForces
 		{
 			return JFALSE;
 		}
-		saveData->agentData.selectedMission = TFE_Endian::le32_to_cpu(saveData->agentData.selectedMission);
-		saveData->agentData.nextMission = TFE_Endian::le32_to_cpu(saveData->agentData.nextMission);
+		saveData->agentData.selectedMission = TFE_Endian::cpu_to_le32(saveData->agentData.selectedMission);
+		saveData->agentData.nextMission = TFE_Endian::cpu_to_le32(saveData->agentData.nextMission);
 		for (s32 i = 0; i < 140; i++)
 		{
-			saveData->ammo[i] = TFE_Endian::le32_to_cpu(saveData->ammo[i]);
+			saveData->ammo[i] = TFE_Endian::cpu_to_le32(saveData->ammo[i]);
 		}
 		file->writeBuffer(saveData, sizeof(LevelSaveData));
 		return JTRUE;

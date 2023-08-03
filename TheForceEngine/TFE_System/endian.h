@@ -15,6 +15,11 @@ namespace TFE_Endian
 		return SDL_SwapLE32(x);
 	}
 
+	inline u32 cpu_to_le32(u32 x)
+	{
+		return SDL_SwapLE32(x);
+	}
+
 	inline u64 le64_to_cpu(u64 x)
 	{
 		return SDL_SwapLE64(x);
