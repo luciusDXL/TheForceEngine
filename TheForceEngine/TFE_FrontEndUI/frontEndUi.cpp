@@ -2591,7 +2591,7 @@ namespace TFE_FrontEndUI
 	void DrawFontSizeCombo(float labelWidth, float valueWidth, const char* label, const char* comboTag, s32* currentValue)
 	{
 		ImGui::SetNextItemWidth(labelWidth);
-		ImGui::LabelText("##ConfigLabel", label);
+		ImGui::LabelText("##ConfigLabel", "%s", label);
 		ImGui::SameLine();
 		ImGui::SetNextItemWidth(valueWidth);
 		ImGui::Combo(comboTag, currentValue, c_fontSize, IM_ARRAYSIZE(c_fontSize));
@@ -2601,7 +2601,7 @@ namespace TFE_FrontEndUI
 	{
 		ImGui::SetNextItemWidth(labelWidth);
 		ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(color->getRedF(), color->getGreenF(), color->getBlueF(), color->getAlphaF()));
-		ImGui::LabelText("##ConfigLabel", label);
+		ImGui::LabelText("##ConfigLabel", "%s", label);
 		ImGui::PopStyleColor();
 		ImGui::SameLine();
 		RGBAf c;
@@ -2620,7 +2620,7 @@ namespace TFE_FrontEndUI
 	void DrawLabelledFloatSlider(float labelWidth, float valueWidth, const char* label, const char* tag, float* value, float min, float max)
 	{
 		ImGui::SetNextItemWidth(labelWidth);
-		ImGui::LabelText("##ConfigLabel", label);
+		ImGui::LabelText("##ConfigLabel", "%s", label);
 		ImGui::SameLine();
 		ImGui::SetNextItemWidth(valueWidth);
 		ImGui::SliderFloat(tag, value, min, max);
@@ -2629,7 +2629,7 @@ namespace TFE_FrontEndUI
 	void DrawLabelledIntSlider(float labelWidth, float valueWidth, const char* label, const char* tag, int* value, int min, int max)
 	{
 		ImGui::SetNextItemWidth(labelWidth);
-		ImGui::LabelText("##ConfigLabel", label);
+		ImGui::LabelText("##ConfigLabel", "%s", label);
 		ImGui::SameLine();
 		ImGui::SetNextItemWidth(valueWidth);
 		ImGui::SliderInt(tag, value, min, max);

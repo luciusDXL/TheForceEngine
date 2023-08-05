@@ -1,4 +1,5 @@
 #include <cstring>
+#include <cmath>
 
 #include "vueLogic.h"
 #include "time.h"

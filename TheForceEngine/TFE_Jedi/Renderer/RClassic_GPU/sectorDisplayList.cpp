@@ -410,13 +410,19 @@ namespace TFE_Jedi
 				{
 					// Below the horizon line.
 					u32 flags = ((curSector->flags1 & SEC_FLAGS1_PIT) || forceTreatAsSolid) ? (1 << 10) : (3 << 10);
+					u32 texId = ((curSector->flags1 & SEC_FLAGS1_PIT) || forceTreatAsSolid) ?
+						(curSector->floorTex && *curSector->floorTex ? (*curSector->floorTex)->textureId : 0) :
+						(srcWall->midTex && *srcWall->midTex ? (*srcWall->midTex)->textureId : 0);
 					addDisplayListItem(pos, { flags | SPARTID_WALL_MID | SPARTID_SKY, data.y, data.z,
-						wallGpuId | (curSector->floorTex && *curSector->floorTex ? (*curSector->floorTex)->textureId : 0) }, SECTOR_PASS_OPAQUE);
+						wallGpuId | texId }, SECTOR_PASS_OPAQUE);
 
 					// Above the horizon line.
+					texId = ((curSector->flags1 & SEC_FLAGS1_EXTERIOR) || forceTreatAsSolid) ?
+						(curSector->ceilTex && *curSector->ceilTex ? (*curSector->ceilTex)->textureId : 0) :
+						(srcWall->midTex && *srcWall->midTex ? (*srcWall->midTex)->textureId : 0);
 					flags = ((curSector->flags1 & SEC_FLAGS1_EXTERIOR) || forceTreatAsSolid) ? (2 << 10) : (4 << 10);
 					addDisplayListItem(pos, { flags | SPARTID_WALL_MID | SPARTID_SKY, data.y, data.z,
-						wallGpuId | (curSector->ceilTex && *curSector->ceilTex ? (*curSector->ceilTex)->textureId : 0) }, SECTOR_PASS_OPAQUE);
+						wallGpuId | texId }, SECTOR_PASS_OPAQUE);
 				}
 			}
 			else
