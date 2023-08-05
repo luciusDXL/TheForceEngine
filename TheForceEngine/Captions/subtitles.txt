@@ -92,11 +92,15 @@ m09jana1.voc "Jan: Those must be smuggler routes to the Arc Hammer. I think it's
 m10jan01.voc "Jan: Thanks, I thought I was done for."
 m10kyl03.voc "Kyle: No time for hugs. Let's get out of here."
 //M11 (Imperial City)
+m11kyl01.voc "Kyle: Jan, I've cracked the central lock. I'm in."
 m11jan01.voc "Jan: Good job Kyle, but you're not done yet."
+m11kyl02.voc "Kyle: Navacard inserted and decoding."
 m11jan02.voc "Jan: Beautiful Kyle. Now get that data tape and high-tail your mercenary hide back to the landing pad. I can't stay out here too long before Imperial security takes notice." 8
+m11kyl03.voc "Kyle: Data tapes in hand, I'm on my way out."
 m11jan03.voc "Jan: Kyle, something strange is going down over here. Get back here - I mean it!"
 m11jan04.voc "Jan: Oh no! Kyle, you better look out, I just saw... [loud static]"
 m11jan05.voc "Jan: Kyle, where are you? I'm back at the landing pad."
+m11kyl04.voc "Kyle: Where were you, Jan?"
 m11jan06.voc "Jan: I had TIE Fighters all over me. I had to properly dispose of them."
 m11jana6.voc "Jan: I had TIE Fighters all over me. I had to properly dispose of them." //alt. take
 //M12 (Fuel Station)
