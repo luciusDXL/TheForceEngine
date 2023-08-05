@@ -24,18 +24,18 @@ beep-01.voc "[Alarm]"
 beep-10.voc "[MIENE PIPST]"
 fall.voc 	"[Kyle schreit]"
 door.voc 	"[Türe zischt]"
-door-04.voc "[Türe schliesst]"
+door-04.voc "[Türe bewegt sich]"
 door1-1.voc "[Türe zischt]"
 //door1-2.voc "[Türe bewegt sich]" //too frequent
 //door1-3.voc "[Türe schliesst]"
-door2-1.voc "[Türe schliesst]"
+door2-1.voc "[Türe bewegt sich]"
 //door2-2.voc "[Türe bewegt sich]" //too frequent
 //door2-3.voc "[Türe schliesst]"
 door3-1.voc "[Türe schliesst]"
 //door3-2.voc "[Türe bewegt sich]" //too frequent
 //door3-3.voc "[Türe schliesst]"
-ex-lrg1.voc "[Explosion]"
-ex-med1.voc "[Grosse Explosion]"
+ex-lrg1.voc "[Grosse Explosion]"
+ex-med1.voc "[Explosion]"
 ex-tiny.voc "[Kleine Explosion]"
 swim-in.voc "[Pflotsch]"
 gamor-3.voc "[Gamorianer grunzt]"
@@ -65,12 +65,12 @@ m02jan02.voc "Jan: Kehre zum Landeplatz zurück. Ich werde dich dort treffen."
 m03kyl01.voc "Kyle: Jan, Ich habe Moff Rebus gefunden. Ich werde jetzt verschwinden."
 m03jan01.voc "Jan: Ganz wie du willst, Kyle."
 //M04 (Research Facility)
-m04kyl01.voc "Kyle: I habe ein interessantes Metall gefunden. Ich glaube, dass dies uns weiterbringt."
+m04kyl01.voc "Kyle: Ich habe ein interessantes Metall gefunden. Ich glaube, dass dies uns weiterbringt."
 m04jan01.voc "Jan: Das ist alles was wir hier brauchen. Lass uns von hier verschwinden, ich werde langsam nervös."
 //M05 (Gromas)
 m05kyl01.voc "Kyle: Jan hier ist Kyle, Ladungen gesetzt. Ich bin fertig hier."
-m05kyl02.voc "Kyle: Jan, du holst mich besser hier raus. Ich denke ich habe gerade einen dieser Dark Trooper erledigt. Ich will nicht herausfinden ob es hier noch mehr hat." //translated
-m05jan01.voc "Jan: Alles klar bin unterwegs."
+m05kyl02.voc "Kyle: Jan, du solltest mich besser hier rausholen. Ich glaube ich gerade einen Dark Trooper erledigt und ich möchte nicht herausfinden ob es hier noch mehr gibt"
+m05jan01.voc "Jan: Alles klar Kyle, bin unterwegs."
 m05kyl03.voc "Kyle: Wenn das Ding einen Hinweis darauf ist, womit wir es zu tun bekommen, dann brauchen wir mehr Feuerkraft."
 //M06 (Detention Center)
 m06kyl01.voc "Kyle: Okay Jan, ich habe Madine befreit."
@@ -84,13 +84,13 @@ m08kyl01.voc "Kyle: Erste Ladung scharf gemacht."
 m08kyl02.voc "Kyle: Zweite Ladung scharf gemacht."
 m08kyl03.voc "Kyle: OK, Alle Ladungen scharf gemacht."
 mo8jan01.voc "Jan: Gut gemacht. Lass uns diesen Eiswürfel sprengen." //note the typo in file name, o instead of 0
-m08kyl04.voc "Kyle: Eine Frau nach meinem gGeschmack."
+m08kyl04.voc "Kyle: Eine Frau nach meinem Geschmack."
 m08kyl05.voc "Kyle: Oh verdammt! [rauschen]" //unused?
 //M09 (Nar Shaddaa)
 m09kyl01.voc "Kyle: Jan! Ich habe eine imperiale Nava Card gefunden."
 m09jan01.voc "Jan: Das müssen die Schmugglerrouten zur Arc Hammer sein. Ich glaube, es ist Zeit von hier zu verschwinden."
 m09jana1.voc "Jan: Das müssen die Schmugglerrouten zur Arc Hammer sein. Ich glaube, es ist Zeit von hier zu verschwinden." //alternate take
-//M10 (Jabba's Ship
+//M10 (Jabba's Ship)
 m10jan01.voc "Jan: Danke, ich dachte es wäre aus."
 m10kyl03.voc "Kyle: Keine Zeit zum feiern. Lass uns hier verschwinden."
 //M11 (Imperial City)
@@ -165,7 +165,7 @@ guncock "[Blaster wird geladen]"
 
 //Before M10 (Jabba's Ship)
 ray		 "[Traktorstrahl pulsiert]" 2.9
-hyp-in-8 "[Triebwerk whining]" 3
+hyp-in-8 "[Triebwerkgeräusche]" 3
 shiplock "[Clang]"
 snort	 "[Gamorreaner grunzt]"
 m10kyl01 "Jabba? Was hast du mit Jan gemacht? Falls ihr irgendetwas zustossen sollte, werde ich persönlich meine Blaster in deinen schleimigen Hals stecken."
@@ -184,6 +184,6 @@ m16vdr01 "Dies ist ein unglücklicher Rückschlag. Die Macht ist stark in Katarn
 
 //MISC
 m12imp01 "Schmugglerschiff, ihr Anflug ist genemigt. Beginnen Sie Ihr Andockmanöver." 4.5 //translated
-xw-nf-1  "[Triebwerk]"
-ex-grom1 "[Entferntes grollen]" 4
+xw-nf-1  "[Triebwerkgeräusche]"
+ex-grom1 "[Entfernte Explosionen]" 4
 tube1	 "[Mechanische Geräusche]"
