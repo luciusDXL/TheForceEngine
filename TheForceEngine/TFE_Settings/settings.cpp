@@ -438,6 +438,8 @@ namespace TFE_Settings
 	void writeA11ySettings(FileStream& settings)
 	{
 		writeHeader(settings, c_sectionNames[SECTION_A11Y]);
+		writeKeyValue_String(settings, "language", s_a11ySettings.language.c_str());
+
 		writeKeyValue_Bool(settings, "showCutsceneSubtitles", s_a11ySettings.showCutsceneSubtitles);
 		writeKeyValue_Bool(settings, "showCutsceneCaptions", s_a11ySettings.showCutsceneCaptions);
 		writeKeyValue_Int(settings, "cutsceneFontSize", s_a11ySettings.cutsceneFontSize);
@@ -889,6 +891,10 @@ namespace TFE_Settings
 	
 	void parseA11ySettings(const char* key, const char* value)
 	{
+		if (strcasecmp("language", key) == 0)
+		{
+			s_a11ySettings.language = value;
+		}
 		if (strcasecmp("showCutsceneSubtitles", key) == 0)
 		{
 			s_a11ySettings.showCutsceneSubtitles = parseBool(value);

@@ -1,17 +1,23 @@
 #pragma once
 #include <string>
+#include <vector>
 #include <TFE_System/system.h>
 using std::string;
 
 namespace TFE_A11Y {
+	enum A11yStatus
+	{
+		CC_NOT_LOADED, CC_LOADED, CC_ERROR
+	};
+
 	enum CaptionEnv 
 	{
-		CC_Gameplay, CC_Cutscene
+		CC_GAMEPLAY, CC_CUTSCENE
 	};
 
 	enum CaptionType
 	{
-		CC_Voice, CC_Effect
+		CC_VOICE, CC_EFFECT
 	};
 
 	struct Caption 
@@ -23,7 +29,11 @@ namespace TFE_A11Y {
 	};
 
 	void init();
-	void clearCaptions();
+	std::vector<string> getCaptionFileNames();
+	void loadCaptions(const string fileName);
+	string getCurrentCaptionFileName();
+	A11yStatus getStatus();
+	void clearActiveCaptions();
 	void drawCaptions();
 	void drawExampleCaptions();
 	void focusCaptions();

@@ -2635,16 +2635,46 @@ namespace TFE_FrontEndUI
 		ImGui::SliderInt(tag, value, min, max);
 	}
 
-	//Accessibility
+	void DrawLanguageListCombo()
+	{
+		std::vector<string> names = TFE_A11Y::getCaptionFileNames();
+		string currentFile = TFE_A11Y::getCurrentCaptionFileName();
+		if (ImGui::BeginCombo("##combo", currentFile.c_str()))
+		{
+			for (int n = 0; n < names.size(); n++)
+			{
+				bool is_selected = (currentFile == names[n]);
+				if (ImGui::Selectable(names[n].c_str(), is_selected)) { currentFile = names[n]; }
+				if (is_selected) { ImGui::SetItemDefaultFocus(); }
+			}
+			ImGui::EndCombo();
+		}
+		// If user changed the selected caption file, reload captions
+		if (currentFile != TFE_A11Y::getCurrentCaptionFileName())
+		{
+			TFE_A11Y::clearActiveCaptions();
+			TFE_A11Y::loadCaptions(currentFile);
+		}
+	}
+
+	// Accessibility
 	void configA11y()
 	{
 		TFE_Settings_A11y* a11y = TFE_Settings::getA11ySettings();
 		float labelW = 140 * s_uiScale;
 		float valueW = 260 * s_uiScale;
 
-		//CUTSCENES -----------------------------------------
+		if (TFE_A11Y::getStatus() == TFE_A11Y::CC_ERROR)
+		{
+			ImGui::LabelText("##ConfigLabel", "Error: Caption file could not be loaded!");
+		}
+
+		ImGui::LabelText("##ConfigLabel", "Subtitle/caption file:");
+		DrawLanguageListCombo();
+
+		// CUTSCENES -----------------------------------------
 		ImGui::PushFont(s_dialogFont);
-		ImGui::LabelText("##ConfigLabel2", "Cutscenes");
+		ImGui::LabelText("##ConfigLabel", "Cutscenes");
 		ImGui::PopFont();
 
 		ImGui::Checkbox("Subtitles (voice)##Cutscenes", &a11y->showCutsceneSubtitles);

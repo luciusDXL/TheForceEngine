@@ -599,7 +599,7 @@ namespace TFE_DarkForces
 					{
 						startNextMode();
 					}
-					TFE_A11Y::clearCaptions();
+					TFE_A11Y::clearActiveCaptions();
 				}
 			} break;
 			case GSTATE_BRIEFING:
@@ -668,7 +668,7 @@ namespace TFE_DarkForces
 					bitmap_clearLevelData();
 					bitmap_setAllocator(s_gameRegion);
 					level_freeAllAssets();
-					TFE_A11Y::clearCaptions();
+					TFE_A11Y::clearActiveCaptions();
 				}
 			} break;
 		}

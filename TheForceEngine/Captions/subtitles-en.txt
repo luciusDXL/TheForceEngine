@@ -1,3 +1,5 @@
+example_cutscene "This is an example cutscene caption."
+
 //ENEMIES
 ranofc02.voc "Officer: Stop where you are!"
 ranofc04.voc "Officer: You're not authorized in this area."
