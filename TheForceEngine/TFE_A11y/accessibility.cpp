@@ -21,6 +21,7 @@ namespace TFE_A11Y  // a11y is industry slang for accessibility
 	///////////////////////////////////////////
 	// Forward Declarations
 	///////////////////////////////////////////
+	void findCaptionFiles(const char path[]);
 	void onFileError(const string path);
 	void addCaption(const ConsoleArgList& args);
 	void drawCaptions(std::vector<Caption>* captions);
@@ -83,16 +84,10 @@ namespace TFE_A11Y  // a11y is industry slang for accessibility
 		// Get all caption file names from the Captions directory; we will use this to populate the
 		// dropdown in the Accessibility settings menu.
 		FileList dirList;
-		FileUtil::readDirectory("Captions/", "txt", dirList);
-		if (!dirList.empty())
-		{
-			const size_t count = dirList.size();
-			const std::string* dir = dirList.data();
-			for (size_t d = 0; d < count; d++)
-			{
-				if (dir[d].substr(0, FILE_NAME_START.length()) == FILE_NAME_START) { s_captionFileNames.push_back(dir[d]); }
-			}
-		}
+		char captionsDir[TFE_MAX_PATH];
+		const char* programDir = TFE_Paths::getPath(PATH_PROGRAM);
+		sprintf(captionsDir, "%sCaptions/", programDir);
+		findCaptionFiles(captionsDir);
 		
 		string fileName = FILE_NAME_START + TFE_Settings::getA11ySettings()->language + FILE_NAME_EXT;
 		loadCaptions(fileName);
@@ -102,6 +97,21 @@ namespace TFE_A11Y  // a11y is industry slang for accessibility
 		{
 			string fileName = FILE_NAME_START + "en" + FILE_NAME_EXT;
 			loadCaptions(fileName);
+		}
+	}
+
+	void findCaptionFiles(const char path[])
+	{
+		FileList dirList;
+		FileUtil::readDirectory(path, "txt", dirList);
+		if (!dirList.empty())
+		{
+			const size_t count = dirList.size();
+			const std::string* dir = dirList.data();
+			for (size_t d = 0; d < count; d++)
+			{
+				if (dir[d].substr(0, FILE_NAME_START.length()) == FILE_NAME_START) { s_captionFileNames.push_back(dir[d]); }
+			}
 		}
 	}
 
