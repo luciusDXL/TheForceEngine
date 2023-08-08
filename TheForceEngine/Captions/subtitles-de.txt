@@ -1,4 +1,5 @@
-#language: de
+example_cutscene "Dies ist ein Beispiel der Untertitel in Zwischensequenzen."
+
 //ENEMIES
 ranofc02.voc "Offizier: Bleib wo du bist!"
 ranofc04.voc "Offizier: Sie sind nicht befugt sich hier aufzuhalten."
@@ -38,16 +39,16 @@ ex-lrg1.voc "[Grosse Explosion]"
 ex-med1.voc "[Explosion]"
 ex-tiny.voc "[Kleine Explosion]"
 swim-in.voc "[Pflotsch]"
-gamor-3.voc "[Gamorianer grunzt]"
+gamor-3.voc "[Gamorreaner grunzt]"
 reeyee1.voc "[Alien schreit]"
 reeyee-1.voc "[Alien schreit]"
 probe-1.voc "[Suchdroidesprache]"
 //probalm.voc "[Schaltkreise überladen]"
-bossk-1.voc "[Alien hissing]"
+bossk-1.voc "[Alien zischt]"
 choke.voc	"[Kyle japst und hustet]" 5
 kell-1.voc 	"[Kelldrache brüllt]"
 kell-2.voc	"[Kelldrache grummelt]"
-landing1.voc "[Thrusters firing]"
+landing1.voc "[Triebwerkgeräusche]"
 locked-1.voc "[Verschlossen]"
 creatur1.voc "[Bedrohliche Geräusche, Wasser spritzt]"
 intalert.voc "[Droiden Repulsorlift]"
@@ -97,14 +98,14 @@ m10kyl03.voc "Kyle: Keine Zeit zum feiern. Lass uns hier verschwinden."
 m11jan01.voc "Jan: Gut gemacht aber du bist noch nicht fertig."
 m11jan02.voc "Jan: Klasse. Schnapp dir nun das Datenband und kehre schleunigst zur Landeplattform zurück. Ich kann hier nicht allzulange bleiben, bevor die Imperialen mich hier entdecken." 8
 m11jan03.voc "Jan: Kyle, irgendetwas seltsames geht hier vor. Beil dich, ich meine es ernst!"
-m11jan04.voc "Jan: Oh no! Kyle, pass besser auf, Ich habe gerade gesehen wie... [rauschen]"
+m11jan04.voc "Jan: Oh nein! Kyle, pass besser auf, Ich habe gerade gesehen wie... [rauschen]"
 m11jan05.voc "Jan: Kyle, wo bist du? Ich bin zurück auf dem Landefeld."
 m11jan06.voc "Jan: Es tauchten TIE-Jäger auf. Ich musste sie irgendwie loswerden."
 m11jana6.voc "Jan: Es tauchten TIE-Jäger auf. Ich musste sie irgendwie loswerden." //alt. take
 m11kyl01.voc  "Kyle: Ich habe das Zentralschloss aufgebrochen. Ich bin drinn."
 m11kyl02.voc  "Kyle: Ok die Nava Card wird dekodiert."
 m11kyl03.voc  "Kyle: Ich habe das Band. Bin auf dem Weg zurück."
-m11kyl04.voc  "Kyle: Wo warst du Jan."
+m11kyl04.voc  "Kyle: Wo warst du Jan?"
 
 //M12 (Fuel Station)
 m12imp01.voc "Officer: Schmugglerschiff, ihr Anflug ist genemigt. Beginnen Sie Ihr Andockmanöver." 4.5
@@ -140,7 +141,7 @@ beep-3   "[Alarm]"
 dt-door2 "[Mechanische Geräusche]"
 dt-lower "[Mechanische Geräusche]"
 dtlaunch "[Triebwerk startet]"
-dive1 	 "[Triebwerk Geräusche]"
+dive1 	 "[Triebwerkgeräusche]"
 m01vdr03 "Sehr eindrucksvoll General. Der Imperator wird überaus zufrieden sein. Setzen Sie ihr Projekt fort."
 m01moc04 "Wie Sie wünschen, Lord Vader."
 m01mma01 "Vielen Dank Commander, dass sie so kurzfristig kommen konnten. Das Imperium hält uns ganz schön auf Trab, seit der Todesstern zerstört wurde."
