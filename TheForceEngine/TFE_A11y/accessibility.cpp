@@ -63,6 +63,7 @@ namespace TFE_A11Y  // a11y is industry slang for accessibility
 	static u32 s_screenWidth;
 	static u32 s_screenHeight;
 	static bool s_active = true;
+	static bool s_logSFXNames = false;
 	static system_clock::duration s_lastTime;
 
 	static FileStream s_captionsStream;
@@ -77,6 +78,7 @@ namespace TFE_A11Y  // a11y is industry slang for accessibility
 	{
 		assert(s_status == CC_NOT_LOADED);
 		CCMD("showCaption", addCaption, 1, "Display a test caption. Example: showCaption \"Hello, world\"");
+		CVAR_BOOL(s_logSFXNames, "d_logSFXNames", CVFLAG_DO_NOT_SERIALIZE, "If enabled, log the name of each sound effect that plays.");
 
 		// Get all caption file names from the Captions directory; we will use this to populate the
 		// dropdown in the Accessibility settings menu.
@@ -204,14 +206,13 @@ namespace TFE_A11Y  // a11y is industry slang for accessibility
 		if (env == CC_CUTSCENE && !settings->showCutsceneCaptions && !settings->showCutsceneSubtitles) { return; }
 		if (env == CC_GAMEPLAY && !settings->showGameplayCaptions && !settings->showGameplaySubtitles) { return; }
 
-		// TODO: enable/disable this line of logging with console variable
-		//TFE_System::logWrite(LOG_ERROR, "a11y", name);
+		if (s_logSFXNames) { TFE_System::logWrite(LOG_ERROR, "a11y", name); }
 
 		string nameLower = toLower(name);
 
 		if (s_captionMap.count(nameLower))
 		{
-			Caption caption = s_captionMap[nameLower]; //copy
+			Caption caption = s_captionMap[nameLower]; // Copy
 			caption.env = env;
 			// Don't add caption if the last caption has the same text
 			if (s_activeCaptions.size() > 0 && s_activeCaptions.back().text == caption.text) { return; }
@@ -332,9 +333,9 @@ namespace TFE_A11Y  // a11y is industry slang for accessibility
 		//TFE_System::logWrite(LOG_ERROR, "a11y", (std::to_string(screenWidth) + " " + std::to_string(subtitleWindowSize.x) + ", " + std::to_string(screenHeight) + " " + std::to_string(subtitleWindowSize.y)).c_str());
 		if (captions->at(0).env == CC_GAMEPLAY)
 		{
-			ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.0f, 0.0f, 0.0f, settings->gameplayTextBackgroundAlpha)); //window bg
+			ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.0f, 0.0f, 0.0f, settings->gameplayTextBackgroundAlpha)); // Window bg
 			f32 borderAlpha = settings->showGameplayTextBorder ? settings->gameplayTextBackgroundAlpha : 0;
-			ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(0.5f, 0.5f, 0.5f, borderAlpha)); //window border
+			ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(0.5f, 0.5f, 0.5f, borderAlpha)); // Window border
 			ImGui::SetNextWindowPos(ImVec2((f32)((s_screenWidth - windowSize.x) / 2), DEFAULT_LINE_HEIGHT * 2.0f));
 			ImGui::Begin("##Captions", &s_active, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoInputs);
 			fontColor = &settings->gameplayFontColor;
@@ -343,9 +344,9 @@ namespace TFE_A11Y  // a11y is industry slang for accessibility
 		}
 		else // Cutscenes
 		{
-			ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.0f, 0.0f, 0.0f, settings->cutsceneTextBackgroundAlpha)); //window bg
+			ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.0f, 0.0f, 0.0f, settings->cutsceneTextBackgroundAlpha)); // Window bg
 			f32 borderAlpha = settings->showCutsceneTextBorder ? settings->cutsceneTextBackgroundAlpha : 0;
-			ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(0.5f, 0.5f, 0.5f, borderAlpha)); //window border
+			ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(0.5f, 0.5f, 0.5f, borderAlpha)); // Window border
 			ImGui::SetNextWindowPos(ImVec2((f32)((s_screenWidth - windowSize.x) / 2), s_screenHeight - DEFAULT_LINE_HEIGHT), 0, ImVec2(0, 1));
 			ImGui::Begin("##Captions", &s_active, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoInputs);
 			fontColor = &settings->cutsceneFontColor;
