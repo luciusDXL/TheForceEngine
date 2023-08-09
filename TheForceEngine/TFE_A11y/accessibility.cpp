@@ -27,6 +27,7 @@ namespace TFE_A11Y  // a11y is industry slang for accessibility
 	void drawCaptions(std::vector<Caption>* captions);
 	string toUpper(string input);
 	string toLower(string input);
+	string toFileName(string language);
 	void loadScreenSize();
 	ImVec2 calcWindowSize(f32* fontScale, CaptionEnv env);
 	s64 secondsToMicroseconds(f32 seconds);
@@ -35,8 +36,6 @@ namespace TFE_A11Y  // a11y is industry slang for accessibility
 	///////////////////////////////////////////
 	// Constants
 	///////////////////////////////////////////
-	const string FILE_NAME_START = "subtitles-";
-	const string FILE_NAME_EXT = ".txt";
 	const f32 MAX_CAPTION_WIDTH = 1200;
 	const f32 DEFAULT_LINE_HEIGHT = 20;
 	const f32 LINE_PADDING = 5;
@@ -57,8 +56,10 @@ namespace TFE_A11Y  // a11y is industry slang for accessibility
 	// Static vars
 	///////////////////////////////////////////
 	static A11yStatus s_status = CC_NOT_LOADED;
+	static std::vector<string> s_captionFilePaths;
 	static std::vector<string> s_captionFileNames;
 	static string s_currentCaptionFileName;
+	static string s_currentCaptionFilePath;
 	static s64 s_maxDuration = secondsToMicroseconds(10.0f);
 	static DisplayInfo s_display;
 	static u32 s_screenWidth;
@@ -81,21 +82,33 @@ namespace TFE_A11Y  // a11y is industry slang for accessibility
 		CCMD("showCaption", addCaption, 1, "Display a test caption. Example: showCaption \"Hello, world\"");
 		CVAR_BOOL(s_logSFXNames, "d_logSFXNames", CVFLAG_DO_NOT_SERIALIZE, "If enabled, log the name of each sound effect that plays.");
 
-		// Get all caption file names from the Captions directory; we will use this to populate the
+		// Get all caption file names from the Captions directories; we will use this to populate the
 		// dropdown in the Accessibility settings menu.
-		FileList dirList;
-		char captionsDir[TFE_MAX_PATH];
+		// First we check the User Documents directory for custom subtitle files added by the user.
+		char docsCaptionsDir[TFE_MAX_PATH];
+		const char* docsDir = TFE_Paths::getPath(PATH_USER_DOCUMENTS);
+		sprintf(docsCaptionsDir, "%sCaptions/", docsDir);
+		findCaptionFiles(docsCaptionsDir);
+		// Then we check the Program directory for subtitle files that shipped with TFE
+		char programCaptionsDir[TFE_MAX_PATH];
 		const char* programDir = TFE_Paths::getPath(PATH_PROGRAM);
-		sprintf(captionsDir, "%sCaptions/", programDir);
-		findCaptionFiles(captionsDir);
+		sprintf(programCaptionsDir, "%sCaptions/", programDir);
+		findCaptionFiles(programCaptionsDir);
 		
-		string fileName = FILE_NAME_START + TFE_Settings::getA11ySettings()->language + FILE_NAME_EXT;
-		loadCaptions(fileName);
+		string search = toFileName(TFE_Settings::getA11ySettings()->language);
+		for (s32 i = 0; i < s_captionFilePaths.size(); i++)
+		{
+			string path = s_captionFilePaths.at(i);
+			if (path.find(search) != string::npos) {
+				loadCaptions(path);
+				break;
+			}
+		}
 
 		// If the language didn't load, default to English
-		if (s_status == CC_ERROR)
+		if (s_status != CC_LOADED)
 		{
-			string fileName = FILE_NAME_START + "en" + FILE_NAME_EXT;
+			string fileName = programCaptionsDir + toFileName("en");
 			loadCaptions(fileName);
 		}
 	}
@@ -110,25 +123,32 @@ namespace TFE_A11Y  // a11y is industry slang for accessibility
 			const std::string* dir = dirList.data();
 			for (size_t d = 0; d < count; d++)
 			{
-				if (dir[d].substr(0, FILE_NAME_START.length()) == FILE_NAME_START) { s_captionFileNames.push_back(dir[d]); }
+				if (dir[d].substr(0, FILE_NAME_START.length()) == FILE_NAME_START) 
+				{ 
+					s_captionFileNames.push_back(dir[d]);
+					s_captionFilePaths.push_back(path + dir[d]);
+				}
 			}
 		}
 	}
 
 	// Get the file names of all sub/caption files we detect in the Captions directory
 	std::vector<string> getCaptionFileNames() { return s_captionFileNames; }
+	// Get the full paths of all sub/caption files we detect in the Captions directory
+	std::vector<string> getCaptionFilePaths() { return s_captionFilePaths; }
 
 	// The name of the currently selected Caption file
 	string getCurrentCaptionFileName() { return s_currentCaptionFileName; }
+	// The full path of the currently selected Caption file
+	string getCurrentCaptionFilePath() { return s_currentCaptionFilePath; }
 
 	// Load the caption file with the given name and parse the subs/captions from it
-	void loadCaptions(const string fileName)
+	void loadCaptions(const string path)
 	{
 		s_captionMap.clear();
 
 		// Try to open the file
-		s_currentCaptionFileName = fileName;
-		const string path = "Captions/" + fileName;
+		s_currentCaptionFilePath = path;
 		if (!s_captionsStream.open(path.c_str(), Stream::AccessMode::MODE_READ))
 		{
 			onFileError(path);
@@ -138,9 +158,14 @@ namespace TFE_A11Y  // a11y is industry slang for accessibility
 		// Parse language name; for example, if file name is "subtitles-de.txt", the language is "de".
 		// The idea is for the language name to be an ISO 639-1 two-letter code, but for now the system
 		// doesn't actually care how long the language name is or whether it's a valid 639-1 code.
-		string language = fileName.substr(FILE_NAME_START.length());
-		language = language.substr(0, language.length() - FILE_NAME_EXT.length());
-		TFE_Settings::getA11ySettings()->language = language;
+		s32 start = path.find(FILE_NAME_START);
+		if (start != string::npos)
+		{
+			s_currentCaptionFileName = path.substr(start);
+			string language = path.substr(start + FILE_NAME_START.length());
+			language = language.substr(0, language.length() - FILE_NAME_EXT.length());
+			TFE_Settings::getA11ySettings()->language = language;
+		}
 
 		auto size = (u32)s_captionsStream.getSize();
 		s_captionsBuffer = (char*)malloc(size);
@@ -468,6 +493,11 @@ namespace TFE_A11Y  // a11y is industry slang for accessibility
 			p++;
 		}
 		return input;
+	}
+	
+	string toFileName(string language)
+	{
+		return FILE_NAME_START + language + FILE_NAME_EXT;
 	}
 
 	void loadScreenSize()

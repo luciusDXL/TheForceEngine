@@ -2635,25 +2635,34 @@ namespace TFE_FrontEndUI
 		ImGui::SliderInt(tag, value, min, max);
 	}
 
-	void DrawLanguageListCombo()
+	void DrawCaptionsLanguageListCombo()
 	{
-		std::vector<string> names = TFE_A11Y::getCaptionFileNames();
-		string currentFile = TFE_A11Y::getCurrentCaptionFileName();
-		if (ImGui::BeginCombo("##combo", currentFile.c_str()))
+		// We only display the file name in the dropdown, but internally track the full path.
+		string currentFileName = TFE_A11Y::getCurrentCaptionFileName();
+		string currentFilePath = TFE_A11Y::getCurrentCaptionFilePath();
+		if (ImGui::BeginCombo("##combo", currentFileName.c_str()))
 		{
+			std::vector<string> names = TFE_A11Y::getCaptionFileNames();
+			std::vector<string> paths = TFE_A11Y::getCaptionFilePaths();
+
 			for (int n = 0; n < names.size(); n++)
 			{
-				bool is_selected = (currentFile == names[n]);
-				if (ImGui::Selectable(names[n].c_str(), is_selected)) { currentFile = names[n]; }
-				if (is_selected) { ImGui::SetItemDefaultFocus(); }
+				string name = names[n];
+				string path = paths[n];
+				bool is_selected = (currentFilePath == path);
+				if (ImGui::Selectable(name.c_str(), is_selected)) { currentFilePath = path; }
+				if (is_selected) 
+				{ 
+					ImGui::SetItemDefaultFocus();
+				}
 			}
 			ImGui::EndCombo();
 		}
 		// If user changed the selected caption file, reload captions
-		if (currentFile != TFE_A11Y::getCurrentCaptionFileName())
+		if (currentFilePath != TFE_A11Y::getCurrentCaptionFilePath())
 		{
 			TFE_A11Y::clearActiveCaptions();
-			TFE_A11Y::loadCaptions(currentFile);
+			TFE_A11Y::loadCaptions(currentFilePath);
 		}
 	}
 
@@ -2670,7 +2679,7 @@ namespace TFE_FrontEndUI
 		}
 
 		ImGui::LabelText("##ConfigLabel", "Subtitle/caption file:");
-		DrawLanguageListCombo();
+		DrawCaptionsLanguageListCombo();
 
 		// CUTSCENES -----------------------------------------
 		ImGui::PushFont(s_dialogFont);
