@@ -59,7 +59,8 @@ enum ObjStateVersion : u32
 {
 	ObjState_InitVersion = 1,
 	ObjState_FlyModeAdded = 2,
-	ObjState_CurVersion = ObjState_FlyModeAdded,
+	ObjState_VueSmoothing = 3,
+	ObjState_CurVersion = ObjState_VueSmoothing,
 };
 
 #define SPRITE_SCALE_FIXED FIXED(10)
