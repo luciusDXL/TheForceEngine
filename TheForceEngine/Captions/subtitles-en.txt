@@ -19,7 +19,7 @@ m16moc01.voc "General Mohc: It's been a long time since I've challenged a man to
 
 
 //SFX
-door.voc 	"[Door hisses]"
+door.voc    "[Door hisses]"
 door-04.voc "[Door clanking]"
 door1-1.voc "[Door hisses]"
 //door1-2.voc "[Door mechanism whirring]" //too frequent
@@ -30,30 +30,30 @@ door2-1.voc "[Door clanking]"
 door3-1.voc "[Door clanking]"
 //door3-2.voc "[Door mechanism whirring]" //too frequent
 //door3-3.voc "[Door thuds]"
-boba-1.voc   "[Fett laughs]"						//Boba Fett taunt
-//boba-3.voc "[Fett yells]" 						//Boba Fett pain (nearly inaudible)
-boba-4.voc   "[Fett screams]"						//Boba Fett death
-gamor-1.voc  "[Porcine scream]"						//Gamorrean death
-gamor-3.voc  "[Porcine grunting]"					//Gamorrean alert
-reeyee1.voc  "[Alien yelling]"						//Gran alert
-reeyee-1.voc "[Alien yelling]"						//Gran alert (duplicate)
-reeyee3.voc  "[Alien death yell]"					//Gran death
-reeyee-3.voc "[Alien death yell]"					//Gran death (duplicate)
-probe-1.voc  "[Staccato droid speech]"				//Probe alert
-probalm.voc  "[Circuits overloading]"				//Probe death
-bossk-1.voc  "[Reptilian hissing]"					//Trandoshan alert
-bosskdie.voc "[Reptilian hiss-scream]"				//Trandoshan death
-kell-1.voc   "[Kell dragon roaring]"				//Kell dragon
-kell-2.voc   "[Aggressive growling]"				//Kell dragon
-kell-7.voc   "[Kell dragon screaming]"				//Kell dragon death
-intalert.voc "[Warbling droid repulsorlift]"		//Interrogator droid alert
-weld-die.voc "[Welder grinds to a halt]"			//Welder death
-st-die-1.voc "[Death yell]"							//Trooper/officer death
-phase1a.voc  "[Menacing electronic buzz]"			//Phase 1 alert
-phase1c.voc  "[Mechanics failing]"					//Phase 1 death
+boba-1.voc   "[Fett laughs]"                        //Boba Fett taunt
+//boba-3.voc "[Fett yells]"                         //Boba Fett pain (nearly inaudible)
+boba-4.voc   "[Fett screams]"                       //Boba Fett death
+gamor-1.voc  "[Porcine scream]"                     //Gamorrean death
+gamor-3.voc  "[Porcine grunting]"                   //Gamorrean alert
+reeyee1.voc  "[Alien yelling]"                      //Gran alert
+reeyee-1.voc "[Alien yelling]"                      //Gran alert (duplicate)
+reeyee3.voc  "[Alien death yell]"                   //Gran death
+reeyee-3.voc "[Alien death yell]"                   //Gran death (duplicate)
+probe-1.voc  "[Staccato droid speech]"              //Probe alert
+probalm.voc  "[Circuits overloading]"               //Probe death
+bossk-1.voc  "[Reptilian hissing]"                  //Trandoshan alert
+bosskdie.voc "[Reptilian hiss-scream]"              //Trandoshan death
+kell-1.voc   "[Kell dragon roaring]"                //Kell dragon
+kell-2.voc   "[Aggressive growling]"                //Kell dragon
+kell-7.voc   "[Kell dragon screaming]"              //Kell dragon death
+intalert.voc "[Warbling droid repulsorlift]"        //Interrogator droid alert
+weld-die.voc "[Welder grinds to a halt]"            //Welder death
+st-die-1.voc "[Death yell]"                         //Trooper/officer death
+phase1a.voc  "[Menacing electronic buzz]"           //Phase 1 alert
+phase1c.voc  "[Mechanical death rattle]"            //Phase 1 death
 phase2c.voc  "[Synthesized yell, collapsing metal]" //Phase 3 death
-phase3a.voc  "[Clanking, Mohc laughs]" 				//Phase 3 taunt
-phase3c.voc  "[Mohc scream]" 						//Phase 3 death
+phase3a.voc  "[Clanking, Mohc laughs]"              //Phase 3 taunt
+phase3c.voc  "[Mohc scream]"                        //Phase 3 death
 ex-lrg1.voc  "[Explosion]"
 ex-med1.voc  "[Big Explosion]"
 ex-tiny.voc  "[Bang]"
@@ -152,7 +152,7 @@ beep-3   "[Loud beep]"
 dt-door2 "[Mechanical noises]"
 dt-lower "[Equipment whirring]"
 dtlaunch "[Engine blast]"
-dive1 	 "[Howling engines]"
+dive1    "[Howling engines]"
 m01vdr03 "Very impressive, General. The Emperor will be most pleased. Continue with your project."
 m01moc04 "Certainly, Lord Vader."
 m01mma01 "Thank you commander, for responding at such short notice. The Empire has been keeping us on the run since the destruction of the Death Star."
@@ -176,13 +176,13 @@ m05moc02 "I understand the threat, Lord Vader. Katarn was once an impressive Imp
 guncock "[Blaster cocking]"
 
 //Before M10 (Jabba's Ship)
-ray		 "[Beam pulsing]" 2.9
+ray      "[Beam pulsing]" 2.9
 hyp-in-8 "[Engines whining]" 3
 shiplock "[Clang]"
-snort	 "[Gamorreans grunting]"
+snort    "[Gamorreans grunting]"
 m10kyl01 "Jabba? What have you done with Jan? If any harm comes to her, I'll personally shove my blaster down your slimy throat."
 m10kyl02 "I wish you were here too, Jabba. There's nothing like roast Kell dragon."
-pigpush	 "[Gamorrean grunts]"
+pigpush  "[Gamorrean grunts]"
 
 //M16 (unused?)
 m16moc02 "You are an excellent adversary, commander. The warrior's flame burns in your soul. It is a shame that we are not allies."
@@ -198,7 +198,7 @@ m16vdr01 "This is an unfortunate setback. The Force is strong with Katarn..." 4.
 m12imp01 "Smuggler ship, your flight path is clear. Begin your docking procedure." 4.5
 xw-nf-1  "[Engines roaring]"
 ex-grom1 "[Distant booming]" 4
-tube1	 "[Mechanisms whirring]"
+tube1    "[Mechanisms whirring]"
 
 //FOR TESTING
 //jump-1.voc "[Jump]"
