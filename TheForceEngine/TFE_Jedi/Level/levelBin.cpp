@@ -182,7 +182,6 @@ namespace TFE_Jedi
 	s32 level_loadTextureListBin(ChunkHeader* header, u32& offset, const u8* data)
 	{
 		const u32 dataEnd = offset + header->size;
-		const s32 baseOffset = offset;
 
 		loadChunkHeader(data, offset, header);
 		if (header->sig != LvbTexCountSig)
@@ -217,7 +216,6 @@ namespace TFE_Jedi
 					if (!tex)
 					{
 						TFE_System::logWrite(LOG_ERROR, "level_loadTextureListBin", "'default.bm' is not a valid BM file!");
-						offset = baseOffset;
 						assert(0);
 						return false;
 					}
@@ -233,7 +231,6 @@ namespace TFE_Jedi
 				}
 			}
 		}
-		offset = baseOffset;
 		return 0;
 	}
 		
@@ -324,12 +321,10 @@ namespace TFE_Jedi
 	s32 level_loadSectorsBin(ChunkHeader* header, u32& offset, const u8* data)
 	{
 		const u32 dataEnd = offset + header->size;
-		const s32 baseOffset = offset;
 
 		loadChunkHeader(data, offset, header);
 		if (header->sig != LvbSectorCountSig)
 		{
-			offset = baseOffset;
 			TFE_System::logWrite(LOG_WARNING, "level_loadSectorsBin", "Invalid sector list formatting.");
 			return 1;
 		}
@@ -346,7 +341,6 @@ namespace TFE_Jedi
 			loadChunkHeader(data, offset, header);
 			if (header->sig != LvbSectorSig)
 			{
-				offset = baseOffset;
 				TFE_System::logWrite(LOG_WARNING, "level_loadSectorsBin", "Invalid sector list formatting.");
 				return 1;
 			}
@@ -382,7 +376,6 @@ namespace TFE_Jedi
 			/////////////////////////////////////////////
 			if (header->sig != LvbSectorInfoSig)
 			{
-				offset = baseOffset;
 				TFE_System::logWrite(LOG_WARNING, "level_loadSectorsBin", "Invalid sector list formatting.");
 				return 1;
 			}
@@ -409,7 +402,7 @@ namespace TFE_Jedi
 			sector->flags1  = BufferReadU16(SectorFlags1);
 			sector->flags2  = BufferReadU16(SectorFlags2);
 			sector->flags3  = BufferReadU16(SectorFlags3);
-			sector->layer   = BufferReadU16(SectorLayer);
+			sector->layer   = BufferReadS16(SectorLayer);
 
 			// Create a door if needed.
 			if (sector->flags1 & SEC_FLAGS1_DOOR)
@@ -436,7 +429,6 @@ namespace TFE_Jedi
 			loadChunkHeader(data, offset, header);
 			if (header->sig != LvbVertexCountSig)
 			{
-				offset = baseOffset;
 				TFE_System::logWrite(LOG_WARNING, "level_loadSectorsBin", "Invalid sector list formatting.");
 				return 1;
 			}
@@ -457,7 +449,6 @@ namespace TFE_Jedi
 			loadChunkHeader(data, offset, header);
 			if (header->sig != LvbWallListSig)
 			{
-				offset = baseOffset;
 				TFE_System::logWrite(LOG_WARNING, "level_loadSectorsBin", "Invalid sector list formatting.");
 				return 1;
 			}
@@ -465,7 +456,6 @@ namespace TFE_Jedi
 		}
 
 		level_postProcessGeometry();
-		offset = baseOffset;
 		return 0;
 	}
 
@@ -526,6 +516,7 @@ namespace TFE_Jedi
 		while (offset < endOfFile)
 		{
 			loadChunkHeader(data, offset, &header);
+			const u32 curOffset = offset;
 			const u32 chunkSize = header.size;
 
 			switch (header.sig)
@@ -565,7 +556,8 @@ namespace TFE_Jedi
 					level_loadSectorsBin(&header, offset, data);
 				} break;
 			}
-			offset += chunkSize;
+
+			offset = curOffset + chunkSize;
 		}
 
 		return true;
