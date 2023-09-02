@@ -24,7 +24,7 @@ enum ColorMode
 {
 	COLORMODE_8BIT = 0,		// Default vanilla
 	COLORMODE_8BIT_INTERP,	// Interpolate between colormap values.
-	// COLORMODE_TRUE_COLOR,	// Will be enabled when the feature comes online.
+	COLORMODE_TRUE_COLOR,	// Will be enabled when the feature comes online.
 	COLORMODE_COUNT,
 };
 
@@ -63,11 +63,18 @@ struct TFE_Settings_Graphics
 	f32   contrast = 1.0f;
 	f32   saturation = 1.0f;
 	f32   gamma = 1.0f;
+	s32   fov = 90;
 	s32   rendererIndex = 0;
 	s32   colorMode = COLORMODE_8BIT;
 
 	// 8-bit options.
 	bool ditheredBilinear = false;
+
+	// True-color options.
+	bool useBilinear = false;
+	bool useMipmapping = false;
+	f32  bilinearSharpness = 1.0f;	// 0 disables and uses pure hardware bilinear.
+	f32  anisotropyQuality = 1.0f;	// quality of anisotropic filtering, 0 disables.
 
 	// Reticle
 	bool reticleEnable  = false;

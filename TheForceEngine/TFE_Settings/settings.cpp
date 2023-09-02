@@ -366,8 +366,9 @@ namespace TFE_Settings
 	void writeGraphicsSettings(FileStream& settings)
 	{
 		writeHeader(settings, c_sectionNames[SECTION_GRAPHICS]);
-		writeKeyValue_Int(settings, "gameWidth", s_graphicsSettings.gameResolution.x);
+		writeKeyValue_Int(settings, "gameWidth",  s_graphicsSettings.gameResolution.x);
 		writeKeyValue_Int(settings, "gameHeight", s_graphicsSettings.gameResolution.z);
+		writeKeyValue_Int(settings, "fov",        s_graphicsSettings.fov);
 		writeKeyValue_Bool(settings, "widescreen", s_graphicsSettings.widescreen);
 		writeKeyValue_Bool(settings, "asyncFramebuffer", s_graphicsSettings.asyncFramebuffer);
 		writeKeyValue_Bool(settings, "gpuColorConvert", s_graphicsSettings.gpuColorConvert);
@@ -379,12 +380,18 @@ namespace TFE_Settings
 		writeKeyValue_Bool(settings, "3doNormalFix", s_graphicsSettings.fix3doNormalOverflow);
 		writeKeyValue_Bool(settings, "ignore3doLimits", s_graphicsSettings.ignore3doLimits);
 		writeKeyValue_Bool(settings, "ditheredBilinear", s_graphicsSettings.ditheredBilinear);
+		
+		writeKeyValue_Bool(settings, "useBilinear", s_graphicsSettings.useBilinear);
+		writeKeyValue_Bool(settings, "useMipmapping", s_graphicsSettings.useMipmapping);
+		writeKeyValue_Float(settings, "bilinearSharpness", s_graphicsSettings.bilinearSharpness);
+		writeKeyValue_Float(settings, "anisotropyQuality", s_graphicsSettings.anisotropyQuality);
+
 		writeKeyValue_Int(settings, "frameRateLimit", s_graphicsSettings.frameRateLimit);
 		writeKeyValue_Float(settings, "brightness", s_graphicsSettings.brightness);
 		writeKeyValue_Float(settings, "contrast", s_graphicsSettings.contrast);
 		writeKeyValue_Float(settings, "saturation", s_graphicsSettings.saturation);
 		writeKeyValue_Float(settings, "gamma", s_graphicsSettings.gamma);
-		
+				
 		writeKeyValue_Bool(settings, "reticleEnable",   s_graphicsSettings.reticleEnable);
 		writeKeyValue_Int(settings,  "reticleIndex",    s_graphicsSettings.reticleIndex);
 		writeKeyValue_Float(settings, "reticleRed",     s_graphicsSettings.reticleRed);
@@ -671,6 +678,10 @@ namespace TFE_Settings
 		{
 			s_graphicsSettings.gameResolution.z = parseInt(value);
 		}
+		else if (strcasecmp("fov", key) == 0)
+		{
+			s_graphicsSettings.fov = parseInt(value);
+		}
 		else if (strcasecmp("widescreen", key) == 0)
 		{
 			s_graphicsSettings.widescreen = parseBool(value);
@@ -714,6 +725,22 @@ namespace TFE_Settings
 		else if (strcasecmp("ditheredBilinear", key) == 0)
 		{
 			s_graphicsSettings.ditheredBilinear = parseBool(value);
+		}
+		else if (strcasecmp("useBilinear", key) == 0)
+		{
+			s_graphicsSettings.useBilinear = parseBool(value);
+		}
+		else if (strcasecmp("useMipmapping", key) == 0)
+		{
+			s_graphicsSettings.useMipmapping = parseBool(value);
+		}
+		else if (strcasecmp("bilinearSharpness", key) == 0)
+		{
+			s_graphicsSettings.bilinearSharpness = parseFloat(value);
+		}
+		else if (strcasecmp("anisotropyQuality", key) == 0)
+		{
+			s_graphicsSettings.anisotropyQuality = parseFloat(value);
 		}
 		else if (strcasecmp("frameRateLimit", key) == 0)
 		{
