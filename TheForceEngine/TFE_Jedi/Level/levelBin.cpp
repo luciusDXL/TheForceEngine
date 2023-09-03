@@ -48,7 +48,9 @@ namespace TFE_Jedi
 		LvbWallListSig    = CHUNK_SIG('W', 'L', 'S'),
 		LvbWallCountSig   = CHUNK_SIG('W', 'N', 'O'),
 		// Other Constants.
-		LvbVersion = 20,
+		LvbVersionMax = 20,
+		LvbVersionMin = 19,
+		LvbVersion_Layers_WallLight = 20,
 		LvbChunkSizeMask   = 0xf0,
 		LvbChunkSize16bits = 0xf2,
 		LvbChunkSize32bits = 0xf4,
@@ -107,6 +109,8 @@ namespace TFE_Jedi
 	#define BufferReadFixed16(offset) *((fixed16_16*)&buffer[offset])
 	#define BufferReadS16(offset) *((s16*)&buffer[offset])
 	#define BufferReadU16(offset) *((u16*)&buffer[offset])
+
+	static s32 s_lvbVersion = 0;
 
 	/////////////////////////////////////////////////
 	// Chunk File Format Code
@@ -312,7 +316,10 @@ namespace TFE_Jedi
 			wall->flags1 = BufferReadS16(WallFlags1);
 			wall->flags2 = BufferReadS16(WallFlags2);
 			wall->flags3 = BufferReadS16(WallFlags3);
-			wall->wallLight = intToFixed16(BufferReadS16(WallLight));
+			if (s_lvbVersion >= LvbVersion_Layers_WallLight)
+			{
+				wall->wallLight = intToFixed16(BufferReadS16(WallLight));
+			}
 		}
 
 		return 0;
@@ -402,7 +409,10 @@ namespace TFE_Jedi
 			sector->flags1  = BufferReadU16(SectorFlags1);
 			sector->flags2  = BufferReadU16(SectorFlags2);
 			sector->flags3  = BufferReadU16(SectorFlags3);
-			sector->layer   = BufferReadS16(SectorLayer);
+			if (s_lvbVersion >= LvbVersion_Layers_WallLight)
+			{
+				sector->layer = BufferReadS16(SectorLayer);
+			}
 
 			// Create a door if needed.
 			if (sector->flags1 & SEC_FLAGS1_DOOR)
@@ -505,10 +515,10 @@ namespace TFE_Jedi
 			TFE_System::logWrite(LOG_ERROR, "level_loadGeometryBin", "Invalid LVB format for '%s'.", levelName);
 			return false;
 		}
-		s32 version = loadChunkNumber(&header, data, offset);
-		if (version != LvbVersion)
+		s_lvbVersion = loadChunkNumber(&header, data, offset);
+		if (s_lvbVersion > LvbVersionMax && s_lvbVersion < LvbVersionMin)
 		{
-			TFE_System::logWrite(LOG_ERROR, "level_loadGeometryBin", "Invalid LVB version '%d' for '%s', it should be '%d'", version, levelName, LvbVersion);
+			TFE_System::logWrite(LOG_ERROR, "level_loadGeometryBin", "Unsupported LVB version '%d' for '%s'.", s_lvbVersion, levelName);
 			return false;
 		}
 
