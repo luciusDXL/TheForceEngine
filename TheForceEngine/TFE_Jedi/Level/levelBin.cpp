@@ -1,3 +1,5 @@
+#include <cstring>
+
 #include "levelBin.h"
 #include "level.h"
 #include "levelData.h"
