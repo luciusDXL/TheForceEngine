@@ -54,6 +54,7 @@ namespace TFE_Jedi
 	void level_loadPalette();
 
 	void level_updateSecretPercent();
+	void level_postProcessGeometry();
 
 	void ambientSoundTaskFunc(MessageType msg);
 }
