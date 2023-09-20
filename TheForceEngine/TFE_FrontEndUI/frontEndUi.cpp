@@ -2604,7 +2604,7 @@ namespace TFE_FrontEndUI
 		ImGui::LabelText("##ConfigLabel", "%s", label);
 		ImGui::PopStyleColor();
 		ImGui::SameLine();
-		RGBAf c;
+		RGBAf c = RGBAf();
 		c.r = color->getRedF();
 		c.g = color->getGreenF();
 		c.b = color->getBlueF();
@@ -2634,21 +2634,19 @@ namespace TFE_FrontEndUI
 		ImGui::SetNextItemWidth(valueWidth);
 		ImGui::SliderInt(tag, value, min, max);
 	}
-
-	void DrawCaptionsLanguageListCombo()
+	
+	string DrawFileListCombo(const char* tag, string currentFileName, string currentFilePath, TFE_A11Y::FilePathList filePathList)
 	{
 		// We only display the file name in the dropdown, but internally track the full path.
-		string currentFileName = TFE_A11Y::getCurrentCaptionFileName();
-		string currentFilePath = TFE_A11Y::getCurrentCaptionFilePath();
-		if (ImGui::BeginCombo("##combo", currentFileName.c_str()))
+		if (ImGui::BeginCombo(tag, currentFileName.c_str()))
 		{
-			std::vector<string> names = TFE_A11Y::getCaptionFileNames();
-			std::vector<string> paths = TFE_A11Y::getCaptionFilePaths();
+			std::vector<string>* names = filePathList.getFileNames();
+			std::vector<string>* paths = filePathList.getFilePaths();
 
-			for (int n = 0; n < names.size(); n++)
+			for (int n = 0; n < names->size(); n++)
 			{
-				string name = names[n];
-				string path = paths[n];
+				string name = names->at(n);
+				string path = paths->at(n);
 				bool is_selected = (currentFilePath == path);
 				if (ImGui::Selectable(name.c_str(), is_selected)) { currentFilePath = path; }
 				if (is_selected) 
@@ -2658,12 +2656,7 @@ namespace TFE_FrontEndUI
 			}
 			ImGui::EndCombo();
 		}
-		// If user changed the selected caption file, reload captions
-		if (currentFilePath != TFE_A11Y::getCurrentCaptionFilePath())
-		{
-			TFE_A11Y::clearActiveCaptions();
-			TFE_A11Y::loadCaptions(currentFilePath);
-		}
+		return currentFilePath;	
 	}
 
 	// Accessibility
@@ -2678,8 +2671,27 @@ namespace TFE_FrontEndUI
 			ImGui::LabelText("##ConfigLabel", "Error: Caption file could not be loaded!");
 		}
 
+		// Caption file dropdown.
 		ImGui::LabelText("##ConfigLabel", "Subtitle/caption file:");
-		DrawCaptionsLanguageListCombo();
+		TFE_A11Y::FilePath currentCaptionFile = TFE_A11Y::getCurrentCaptionFile();
+		string currentCaptionFilePath = DrawFileListCombo("##ccfile", currentCaptionFile.name, currentCaptionFile.path, TFE_A11Y::getCaptionFiles());
+		// If user changed the selected caption file, reload captions
+		if (currentCaptionFilePath != currentCaptionFile.path)
+		{
+			TFE_A11Y::clearActiveCaptions();
+			TFE_A11Y::loadCaptions(currentCaptionFilePath);
+		}
+		
+		// Font file dropdown.
+		ImGui::LabelText("##ConfigLabel", "Font:");
+		TFE_A11Y::FilePath currentFont = TFE_A11Y::getCurrentFontFile();
+		string currentFontPath = DrawFileListCombo("##fontfile", currentFont.name, currentFont.path, TFE_A11Y::getFontFiles());
+		// If user changed the selected font file, queue the font to load after we finish rendering ImGui
+		// (we can't add new fonts to the ImGui font atlas while ImGui is active).
+		if (currentFontPath != currentFont.path)
+		{
+			TFE_A11Y::setPendingFont(currentFontPath);
+		}
 
 		// CUTSCENES -----------------------------------------
 		ImGui::PushFont(s_dialogFont);

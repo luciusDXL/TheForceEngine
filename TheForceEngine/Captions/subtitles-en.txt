@@ -53,7 +53,7 @@ phase1a.voc  "[Menacing electronic buzz]"           //Phase 1 alert
 phase1c.voc  "[Mechanical death rattle]"            //Phase 1 death
 phase2c.voc  "[Synthesized yell, collapsing metal]" //Phase 3 death
 phase3a.voc  "[Clanking, Mohc laughs]"              //Phase 3 taunt
-phase3c.voc  "[Mohc scream]"                        //Phase 3 death
+phase3c.voc  "[Mohc screams]"                       //Phase 3 death
 ex-lrg1.voc  "[Explosion]"
 ex-med1.voc  "[Big Explosion]"
 ex-tiny.voc  "[Bang]"
@@ -137,11 +137,11 @@ m16kyl06.voc "Kyle: For freedom."
 //----- CUTSCENES -----------------------------------------------
 //Before M02 (Talay)
 m01nar01 "Kyle delivers the plans to the Rebel Alliance. Soon afterwards, the Death Star is destroyed. But even as the Alliance celebrates this victory, another sinister plot is set in motion that will become an even greater concern for the Rebellion." 13.5
-m01vdr01 "The Emperor has approved your test demonstration, General Mohc."
-m01moc0a "Thank you Lord Vader. What I unveil today will mark a new era for the Empire."
-m01moc01 "Thank you Lord Vader. What I unveil today will mark a new era for the Empire." //duplicate
-m01moc0b "We will be able to decimate the Rebels just as we did the Jedi Knights. At last, the Emperor's war will be filled only with the glory and beauty of decisive victory."
-m01vdr02 "A noble cause, General. I hope the demonstration lives up to your claims. Proceed."
+m01vdr01 "The Emperor has approved your test demonstration, General Mohc." 4
+m01moc0a "Thank you Lord Vader. What I unveil today will mark a new era for the Empire." 5.1
+m01moc01 "Thank you Lord Vader. What I unveil today will mark a new era for the Empire." 5.1 //duplicate
+m01moc0b "We will be able to decimate the Rebels just as we did the Jedi Knights. At last, the Emperor's war will be filled only with the glory and beauty of decisive victory." 11
+m01vdr02 "A noble cause, General. I hope the demonstration lives up to your claims. Proceed." 6
 m01moc02 "With pleasure."
 m01moc03 "Dark Trooper: release."
 intcom3  "[Indistinct PA chatter]"

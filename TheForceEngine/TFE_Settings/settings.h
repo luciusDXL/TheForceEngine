@@ -258,6 +258,7 @@ struct RGBAf {
 struct TFE_Settings_A11y
 {
 	string language = "en"; //ISO 639-1 two-letter code
+	string lastFontPath;
 
 	bool showCutsceneSubtitles; // Voice
 	bool showCutsceneCaptions;  // Descriptive (e.g. "[Mine beeping]", "[Engine roaring]"

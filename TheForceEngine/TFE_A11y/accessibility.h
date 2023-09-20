@@ -2,6 +2,7 @@
 #include <string>
 #include <vector>
 #include <TFE_System/system.h>
+#include <filePathList.h>
 using std::string;
 
 namespace TFE_A11Y {
@@ -41,17 +42,24 @@ namespace TFE_A11Y {
 	// Functions
 	///////////////////////////////////////////
 	void init();
-	std::vector<string> getCaptionFilePaths();
-	std::vector<string> getCaptionFileNames();
-	void loadCaptions(const string fileName);
-	string getCurrentCaptionFilePath();
-	string getCurrentCaptionFileName();
+
+	// Fonts
+	FilePathList getFontFiles();
+	FilePath getCurrentFontFile();
+	void setPendingFont(const string path);
+	bool hasPendingFont();
+	void loadPendingFont();
+
+	// Captions
+	FilePathList getCaptionFiles();
+	FilePath getCurrentCaptionFile();
 	A11yStatus getStatus();
+	void loadCaptions(const string path);
 	void clearActiveCaptions();
 	void drawCaptions();
 	void drawExampleCaptions();
 	void focusCaptions();
-	void addCaption(Caption caption);
+	void enqueueCaption(Caption caption);
 	void onSoundPlay(char* name, CaptionEnv env);
 
 	// True if captions or subtitles are enabled for cutscenes
