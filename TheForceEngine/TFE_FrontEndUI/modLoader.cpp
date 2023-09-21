@@ -36,6 +36,7 @@ namespace TFE_FrontEndUI
 		QREAD_ZIP,
 		QREAD_COUNT
 	};
+	const u32 c_itemsPerFrame = 1;
 
 	struct QueuedRead
 	{
@@ -74,6 +75,7 @@ namespace TFE_FrontEndUI
 	static char s_prevModFilter[256] = { 0 };
 	static size_t s_filterLen = 0;
 	static bool s_filterUpdated = false;
+	static bool s_modsRead = false;
 
 	void fixupName(char* name);
 	void readFromQueue(size_t itemsPerFrame);
@@ -89,6 +91,9 @@ namespace TFE_FrontEndUI
 
 	void modLoader_read()
 	{
+		if (s_modsRead) { return; }
+		s_modsRead = true;
+
 		s_mods.clear();
 		s_filteredMods.clear();
 		s_selectedMod = -1;
@@ -377,6 +382,11 @@ namespace TFE_FrontEndUI
 		}
 		ImGui::PopFont();
 	}
+
+	void modLoader_preLoad()
+	{
+		readFromQueue(c_itemsPerFrame);
+	}
 		
 	bool modLoader_selectionUI()
 	{
@@ -384,7 +394,7 @@ namespace TFE_FrontEndUI
 		f32 uiScale = (f32)TFE_Ui::getUiScale() * 0.01f;
 
 		// Load in the mod data a few at a time so to limit waiting for loading.
-		readFromQueue(1);
+		readFromQueue(c_itemsPerFrame);
 		clearSelectedMod();
 		if (s_mods.empty()) { return stayOpen; }
 
@@ -549,10 +559,6 @@ namespace TFE_FrontEndUI
 			if (!open)
 			{
 				s_selectedMod = -1;
-				if (retFromLoader)
-				{
-					modLoader_cleanupResources();
-				}
 			}
 		}
 		else if (TFE_Input::keyPressed(KEY_ESCAPE))

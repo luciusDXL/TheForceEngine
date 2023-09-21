@@ -1,5 +1,8 @@
 uniform sampler2D Colormap;
 #include "Shaders/lighting.h"
+#ifdef OPT_TRUE_COLOR
+uniform sampler2D BasePalette;
+#endif
 
 uniform vec3 CameraPos;
 uniform vec3 CameraRight;
@@ -25,7 +28,11 @@ out vec2 Frag_Uv;
 out vec3 Frag_WorldPos;
 noperspective out float Frag_Light;
 flat out float Frag_ModelY;
+#ifdef OPT_TRUE_COLOR
+flat out vec4 Frag_Color;
+#else
 flat out int Frag_Color;
+#endif
 flat out int Frag_TextureId;
 flat out int Frag_TextureMode;
 
@@ -118,7 +125,20 @@ void main()
 	// Write out the per-vertex uv and color.
 	Frag_ModelY = ModelPos.y;
 	Frag_WorldPos = worldPos;
+#ifdef OPT_TRUE_COLOR
+	int palIndex = int(vtx_color.x * 255.0 + 0.5);
+	Frag_Color = texelFetch(BasePalette, ivec2(palIndex, 0), 0);
+	if (palIndex > 0 && palIndex < 32)
+	{
+		Frag_Color.a = 1.0;
+	}
+	else
+	{
+		Frag_Color.a = 0.5;
+	}
+#else
 	Frag_Color = int(vtx_color.x * 255.0 + 0.5);
+#endif
 	Frag_Light = vertexLighting ? light : ambient;
 	Frag_TextureId = int(floor(vtx_color.y * 255.0 + 0.5) + floor(vtx_color.z * 255.0 + 0.5)*256.0 + 0.5);
 	Frag_TextureMode = textureMode;

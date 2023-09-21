@@ -86,7 +86,10 @@ bool Shader::create(const char* vertexShaderGLSL, const char* fragmentShaderGLSL
 	u32 fragHandle = glCreateShader(GL_FRAGMENT_SHADER);
 	glShaderSource(fragHandle, 3, fragment_shader_with_version, NULL);
 	glCompileShader(fragHandle);
-	if (!ShaderGL::CheckShader(fragHandle, "fragment shader")) { return false; }
+	if (!ShaderGL::CheckShader(fragHandle, "fragment shader"))
+	{
+		return false;
+	}
 
 	m_gpuHandle = glCreateProgram();
 	glAttachShader(m_gpuHandle, vertHandle);
@@ -230,6 +233,39 @@ void Shader::setVariable(s32 id, ShaderVariableType type, const f32* data)
 		break;
 	case SVT_MAT4x4:
 		glUniformMatrix4fv(id, 1, false, data);
+		break;
+	default:
+		TFE_System::logWrite(LOG_ERROR, "Shader", "Mismatched parameter type.");
+		assert(0);
+	}
+}
+
+void Shader::setVariableArray(s32 id, ShaderVariableType type, const f32* data, u32 count)
+{
+	if (id < 0) { return; }
+
+	switch (type)
+	{
+	case SVT_SCALAR:
+		glUniform1fv(id, count, data);
+		break;
+	case SVT_VEC2:
+		glUniform2fv(id, count, data);
+		break;
+	case SVT_VEC3:
+		glUniform3fv(id, count, data);
+		break;
+	case SVT_VEC4:
+		glUniform4fv(id, count, data);
+		break;
+	case SVT_MAT3x3:
+		glUniformMatrix3fv(id, count, false, data);
+		break;
+	case SVT_MAT4x3:
+		glUniformMatrix4x3fv(id, count, false, data);
+		break;
+	case SVT_MAT4x4:
+		glUniformMatrix4fv(id, count, false, data);
 		break;
 	default:
 		TFE_System::logWrite(LOG_ERROR, "Shader", "Mismatched parameter type.");

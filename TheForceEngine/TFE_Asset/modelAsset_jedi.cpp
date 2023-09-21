@@ -509,6 +509,7 @@ namespace TFE_Model_Jedi
 				{
 					TFE_System::logWrite(LOG_WARNING, "Object3D_Load", "'%s' unable to parse TEXTURE: entry.", name);
 					*texture = TFE_Jedi::bitmap_load("default.bm", 1, pool);
+					if ((*texture)) { (*texture)->flags |= ENABLE_MIP_MAPS; }
 					continue;
 				}
 
@@ -521,6 +522,7 @@ namespace TFE_Model_Jedi
 						*texture = TFE_Jedi::bitmap_load("default.bm", 1, pool);
 					}
 				}
+				if ((*texture)) { (*texture)->flags |= ENABLE_MIP_MAPS; }
 			}
 		}
 		TFE_Jedi::bitmap_setAllocator(prevMemRegion);

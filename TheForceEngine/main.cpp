@@ -27,6 +27,7 @@
 #include <TFE_Asset/imageAsset.h>
 #include <TFE_Ui/ui.h>
 #include <TFE_FrontEndUI/frontEndUi.h>
+#include <TFE_FrontEndUI/modLoader.h>
 #include <TFE_ForceScript/vm.h>
 #include <TFE_A11y/accessibility.h>
 #include <algorithm>
@@ -674,6 +675,9 @@ int main(int argc, char* argv[])
 
 	// Setup the framelimiter.
 	TFE_System::frameLimiter_set(graphics->frameRateLimit);
+
+	// Start reading the mods immediately?
+	TFE_FrontEndUI::modLoader_read();
 
 	// Game loop
 	u32 frame = 0u;

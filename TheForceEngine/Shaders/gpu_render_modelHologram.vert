@@ -8,6 +8,9 @@ uniform vec3 ModelPos;
 uniform uvec2 PortalInfo;
 
 uniform samplerBuffer DrawListPlanes;
+#ifdef OPT_TRUE_COLOR
+uniform sampler2D BasePalette;
+#endif
 
 // Vertex Data
 out float gl_ClipDistance[8];
@@ -21,7 +24,12 @@ void unpackPortalInfo(uint portalInfo, out uint portalOffset, out uint portalCou
 	portalOffset = portalInfo & 65535u;
 }
 
+#ifdef OPT_TRUE_COLOR
+flat out vec3 Frag_Color;
+#else
 flat out int Frag_Color;
+#endif
+
 void main()
 {
 	// Transform by the model matrix.
@@ -53,5 +61,10 @@ void main()
 	gl_Position = vec4(vpos, 1.0) * CameraProj;
 	
 	// Write out the per-vertex uv and color.
-	Frag_Color  = int(floor(vtx_color.x * 255.0 + 0.5));
+#ifdef OPT_TRUE_COLOR
+	int palIndex = int(vtx_color.x * 255.0 + 0.5);
+	Frag_Color = texelFetch(BasePalette, ivec2(palIndex, 0), 0).rgb;
+#else
+	Frag_Color = int(vtx_color.x * 255.0 + 0.5);
+#endif
 }

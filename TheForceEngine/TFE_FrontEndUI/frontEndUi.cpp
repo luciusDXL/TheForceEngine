@@ -169,7 +169,7 @@ namespace TFE_FrontEndUI
 	{
 		"8-bit (Classic)",		// COLORMODE_8BIT
 		"8-bit Interpolated",   // COLORMODE_8BIT_INTERP
-		//"True Color",           // COLORMODE_TRUE_COLOR
+		"True Color",           // COLORMODE_TRUE_COLOR
 	};
 
 	typedef void(*MenuItemSelected)();
@@ -362,6 +362,7 @@ namespace TFE_FrontEndUI
 
 	void shutdown()
 	{
+		modLoader_cleanupResources();
 		delete[] s_aboutDisplayStr;
 		delete[] s_manualDisplayStr;
 		delete[] s_creditsDisplayStr;
@@ -753,14 +754,12 @@ namespace TFE_FrontEndUI
 			if (ImGui::Button("Cancel") || !active)
 			{
 				s_subUI = FEUI_NONE;
-				modLoader_cleanupResources();
 			}
 			else
 			{
 				if (!modLoader_selectionUI())
 				{
 					s_subUI = FEUI_NONE;
-					modLoader_cleanupResources();
 				}
 			}
 			ImGui::End();
@@ -2265,6 +2264,13 @@ namespace TFE_FrontEndUI
 				game->df_pitchLimit = PitchLimit(s_pitchLimit);
 			}
 
+			// FOV.
+			ImGui::SetNextItemWidth(196 * s_uiScale);
+			ImGui::SliderInt("FOV", &graphics->fov, 20, 160, "%03d"); ImGui::SameLine(0.0f, 32.0f*s_uiScale);
+			ImGui::SetNextItemWidth(128 * s_uiScale);
+			ImGui::InputInt("##FOVText", &graphics->fov, 1, 20, ImGuiInputTextFlags_CharsDecimal);
+			graphics->fov = clamp(graphics->fov, 5, 175);
+
 			// Sky rendering mode.
 			s32 skyMode = graphics->skyMode;
 			ImGui::LabelText("##ConfigLabel", "Sky Render Mode"); ImGui::SameLine(comboOffset);
@@ -2284,6 +2290,22 @@ namespace TFE_FrontEndUI
 			if (graphics->colorMode == COLORMODE_8BIT || graphics->colorMode == COLORMODE_8BIT_INTERP)
 			{
 				ImGui::Checkbox("Dithered Bilinear", &graphics->ditheredBilinear);
+			}
+			else if (graphics->colorMode == COLORMODE_TRUE_COLOR)
+			{
+				ImGui::LabelText("##TextureFilterLabel", "Texture Filtering");
+				ImGui::Checkbox("Enable Bilinear Filter", &graphics->useBilinear);
+				ImGui::Checkbox("Enable Mipmapping", &graphics->useMipmapping);
+				if (graphics->useBilinear)
+				{
+					ImGui::SetNextItemWidth(196 * s_uiScale);
+					ImGui::SliderFloat("Bilinear Sharpness", &graphics->bilinearSharpness, 0.0f, 1.0f);
+				}
+				if (graphics->useMipmapping)
+				{
+					ImGui::SetNextItemWidth(196 * s_uiScale);
+					ImGui::SliderFloat("Anisotropic Filter Quality", &graphics->anisotropyQuality, 0.0f, 1.0f);
+				}
 			}
 		}
 		ImGui::Separator();
@@ -2835,6 +2857,7 @@ namespace TFE_FrontEndUI
 				gameSettings->df_showSecretFoundMsg = true;
 				gameSettings->df_bobaFettFacePlayer = true;
 				gameSettings->df_smoothVUEs = true;
+				gameSettings->df_pitchLimit = (temp == TEMPLATE_MODERN) ? PITCH_MAXIMUM : PITCH_VANILLA_PLUS;
 				// Graphics
 				graphicsSettings->rendererIndex = RENDERER_HARDWARE;
 				graphicsSettings->skyMode = SKYMODE_CYLINDER;
@@ -2842,14 +2865,21 @@ namespace TFE_FrontEndUI
 				graphicsSettings->gameResolution.x = displayInfo.width;
 				graphicsSettings->gameResolution.z = displayInfo.height;
 				// Color mode and texture filtering are the main differences between modes.
-				// TODO: temp == TEMPLATE_MODERN ? COLORMODE_TRUE_COLOR : COLORMODE_8BIT_INTERP;
-				graphicsSettings->colorMode = COLORMODE_8BIT_INTERP;
+				graphicsSettings->colorMode = (temp == TEMPLATE_MODERN) ? COLORMODE_TRUE_COLOR : COLORMODE_8BIT_INTERP;
+				// Texture filtering.
+				if (temp == TEMPLATE_MODERN)
+				{
+					graphicsSettings->anisotropyQuality = 1.0f;
+					graphicsSettings->bilinearSharpness = 1.0f;
+					graphicsSettings->useBilinear   = true;
+					graphicsSettings->useMipmapping = true;
+				}
 				// Post-FX
 				if (temp == TEMPLATE_MODERN)
 				{
 					graphicsSettings->bloomEnabled = true;
-					graphicsSettings->bloomStrength = 0.5f;
-					graphicsSettings->bloomSpread = 0.5f;
+					graphicsSettings->bloomStrength = 0.4f;
+					graphicsSettings->bloomSpread = 0.6f;
 				}
 				else
 				{

@@ -106,6 +106,7 @@ namespace TFE_Jedi
 	#define ChunkReadS8()  *((s8*)&data[offset]);  offset++
 	#define ChunkReadS16() *((s16*)&data[offset]); offset += 2
 	#define ChunkReadS32() *((s32*)&data[offset]); offset += 4
+	#define ChunkReadFixed16() *((fixed16_16*)&data[offset]); offset += sizeof(fixed16_16)
 	#define BufferReadFixed16(offset) *((fixed16_16*)&buffer[offset])
 	#define BufferReadS16(offset) *((s16*)&buffer[offset])
 	#define BufferReadU16(offset) *((u16*)&buffer[offset])
@@ -224,6 +225,7 @@ namespace TFE_Jedi
 						return false;
 					}
 				}
+				tex->flags |= ENABLE_MIP_MAPS;
 				*texture = tex;
 				// This version never gets modified, so serialization is simpler.
 				*texBase = tex;
@@ -516,7 +518,7 @@ namespace TFE_Jedi
 			return false;
 		}
 		s_lvbVersion = loadChunkNumber(&header, data, offset);
-		if (s_lvbVersion > LvbVersionMax && s_lvbVersion < LvbVersionMin)
+		if (s_lvbVersion > LvbVersionMax || s_lvbVersion < LvbVersionMin)
 		{
 			TFE_System::logWrite(LOG_ERROR, "level_loadGeometryBin", "Unsupported LVB version '%d' for '%s'.", s_lvbVersion, levelName);
 			return false;
@@ -544,7 +546,14 @@ namespace TFE_Jedi
 					s_levelState.levelPaletteName[header.size] = 0;
 
 					// HACK!
-					strcpy(s_levelState.levelPaletteName, "SECBASE.PAL");
+					if (strcasecmp(s_levelState.levelPaletteName, "agamar.pal") == 0)
+					{
+						strcpy(s_levelState.levelPaletteName, "TALAY.PAL");
+					}
+					else
+					{
+						strcpy(s_levelState.levelPaletteName, "SECBASE.PAL");
+					}
 
 					level_loadPalette();
 				} break;
@@ -554,8 +563,8 @@ namespace TFE_Jedi
 				} break;
 				case LvbLevelInfoSig:
 				{
-					s_levelState.parallax0 = *((fixed16_16*)&data[offset]);
-					s_levelState.parallax1 = *((fixed16_16*)&data[offset + 4]);
+					s_levelState.parallax0 = ChunkReadFixed16();
+					s_levelState.parallax1 = ChunkReadFixed16();
 				} break;
 				case LvbTexListSig:
 				{

@@ -75,6 +75,7 @@ namespace TFE_Jedi
 	struct ModelShaderSettings
 	{
 		bool colormapInterp = false;
+		bool trueColor = false;
 		bool ditheredBilinear = false;
 		bool bloom = false;
 	};
@@ -112,6 +113,9 @@ namespace TFE_Jedi
 		s32 modelPosId;
 		s32 cameraRightId;
 		s32 portalInfo;
+		s32 texSamplingParamId;
+		s32 palFxLumMask;
+		s32 palFxFlash;
 	};
 	static ShaderInputs s_shaderInputs[MGPU_SHADER_COUNT];
 	static std::vector<ModelDraw> s_modelDrawList[MGPU_SHADER_COUNT];
@@ -189,12 +193,16 @@ namespace TFE_Jedi
 		s_shaderInputs[variant].lightDataId   = shader->getVariableId("LightData");
 		s_shaderInputs[variant].textureOffsetId = shader->getVariableId("TextureOffsets");
 		s_shaderInputs[variant].portalInfo    = shader->getVariableId("PortalInfo");
+		s_shaderInputs[variant].texSamplingParamId = shader->getVariableId("TexSamplingParam");
+		s_shaderInputs[variant].palFxLumMask = shader->getVariableId("PalFxLumMask");
+		s_shaderInputs[variant].palFxFlash   = shader->getVariableId("PalFxFlash");
 		
 		shader->bindTextureNameToSlot("Palette",  0);
 		shader->bindTextureNameToSlot("Colormap", 1);
 		shader->bindTextureNameToSlot("Textures", 2);
 		shader->bindTextureNameToSlot("TextureTable",   3);
 		shader->bindTextureNameToSlot("DrawListPlanes", 4);
+		shader->bindTextureNameToSlot("BasePalette",    5);
 		return true;
 	}
 
@@ -220,13 +228,15 @@ namespace TFE_Jedi
 		bool needsUpdate = initialize ||
 			s_shaderSettings.ditheredBilinear != graphics->ditheredBilinear ||
 			s_shaderSettings.bloom != graphics->bloomEnabled || 
-			s_shaderSettings.colormapInterp != (graphics->colorMode == COLORMODE_8BIT_INTERP);
+			s_shaderSettings.colormapInterp != (graphics->colorMode == COLORMODE_8BIT_INTERP) ||
+			s_shaderSettings.trueColor != (graphics->colorMode == COLORMODE_TRUE_COLOR);
 		if (!needsUpdate) { return true; }
 
 		// Then update the settings.
 		s_shaderSettings.ditheredBilinear = graphics->ditheredBilinear;
 		s_shaderSettings.bloom = graphics->bloomEnabled;
 		s_shaderSettings.colormapInterp = (graphics->colorMode == COLORMODE_8BIT_INTERP);
+		s_shaderSettings.trueColor = (graphics->colorMode == COLORMODE_TRUE_COLOR);
 
 		ShaderDefine defines[16] = {};
 
@@ -243,13 +253,19 @@ namespace TFE_Jedi
 			defines[defineCount].value = "1";
 			defineCount++;
 		}
-		if (s_shaderSettings.colormapInterp)
+		if (s_shaderSettings.colormapInterp || s_shaderSettings.trueColor)
 		{
 			defines[defineCount].name = "OPT_COLORMAP_INTERP";
 			defines[defineCount].value = "1";
 			defineCount++;
 
 			defines[defineCount].name = "OPT_SMOOTH_LIGHTRAMP";
+			defines[defineCount].value = "1";
+			defineCount++;
+		}
+		if (s_shaderSettings.trueColor)
+		{
+			defines[defineCount].name = "OPT_TRUE_COLOR";
 			defines[defineCount].value = "1";
 			defineCount++;
 		}
@@ -777,6 +793,8 @@ namespace TFE_Jedi
 
 	void model_drawList()
 	{
+		const TFE_Settings_Graphics* settings = TFE_Settings::getGraphicsSettings();
+
 		// Bind the uber-vertex and index buffers. This holds geometry for *all* 3D models currently loaded.
 		s_modelVertexBuffer.bind();
 		s_modelIndexBuffer.bind();
@@ -787,7 +805,7 @@ namespace TFE_Jedi
 			const size_t listCount = s_modelDrawList[s].size();
 			const ModelDraw* drawList = s_modelDrawList[s].data();
 			if (!listCount) { continue; }
-
+			
 			// Bind the shader and set per-frame shader variables.
 			shader->bind();
 
@@ -796,6 +814,26 @@ namespace TFE_Jedi
 			shader->setVariable(s_shaderInputs[s].cameraProjId,  SVT_MAT4x4, s_cameraProj.data);
 			shader->setVariable(s_shaderInputs[s].cameraDirId,   SVT_VEC3,   s_cameraDir.m);
 			shader->setVariable(s_shaderInputs[s].cameraRightId, SVT_VEC3,   s_cameraRight.m);
+			if (s_shaderInputs[s].texSamplingParamId > 0)
+			{
+				const f32 texSamplingParam[] = { settings->useBilinear ? settings->bilinearSharpness : 0.0f, 0.0f, 0.0f, 0.0f };
+				shader->setVariable(s_shaderInputs[s].texSamplingParamId, SVT_VEC4, texSamplingParam);
+			}
+			if (s_shaderInputs[s].palFxLumMask >= 0 && s_shaderInputs[s].palFxFlash >= 0)
+			{
+				Vec3f lumMask, palFx;
+				renderer_getPalFx(&lumMask, &palFx);
+
+				shader->setVariable(s_shaderInputs[s].palFxLumMask, SVT_VEC3, lumMask.m);
+				shader->setVariable(s_shaderInputs[s].palFxFlash, SVT_VEC3, palFx.m);
+			}
+
+			if (s == MGPU_SHADER_TRANS && s_shaderSettings.trueColor)
+			{
+				// Alpha blending...
+				TFE_RenderState::setStateEnable(true, STATE_BLEND);
+				TFE_RenderState::setBlendMode(BLEND_ONE, BLEND_ONE_MINUS_SRC_ALPHA);
+			}
 			
 			// Draw items in the current draw list (draw lists are bucketed by shader).
 			for (size_t i = 0; i < listCount; i++)
@@ -818,6 +856,12 @@ namespace TFE_Jedi
 				{
 					s_drawnObj[s_drawnObjCount++] = (SecObject*)drawItem->obj;
 				}
+			}
+
+			if (s == MGPU_SHADER_TRANS && s_shaderSettings.trueColor)
+			{
+				// Alpha blending...
+				TFE_RenderState::setStateEnable(false, STATE_BLEND);
 			}
 		}
 

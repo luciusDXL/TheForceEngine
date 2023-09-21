@@ -29,4 +29,6 @@ namespace OpenGL_Caps
 
 	u32 getDeviceTier();
 	s32 getMaxTextureBufferSize();
+	f32 getMaxAnisotropy();
+	f32 getAnisotropyFromQuality(f32 quality);
 };

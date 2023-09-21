@@ -1,6 +1,7 @@
 #include "openGL_Caps.h"
 #include <GL/glew.h>
 #include <assert.h>
+#include <algorithm>
 
 enum CapabilityFlags
 {
@@ -20,6 +21,7 @@ namespace OpenGL_Caps
 	static u32 m_supportFlags = 0;
 	static u32 m_deviceTier = 0;
 	static s32 m_textureBufferMaxSize = 0;
+	static f32 m_maxAnisotropy = 1.0f;
 
 	enum SpecMinimum
 	{
@@ -38,6 +40,7 @@ namespace OpenGL_Caps
 
 		// Get texture buffer maximum size.
 		glGetIntegerv(GL_MAX_TEXTURE_BUFFER_SIZE, &m_textureBufferMaxSize);
+		glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY, &m_maxAnisotropy);
 
 		if (GLEW_VERSION_4_5 && m_textureBufferMaxSize >= GLSPEC_MAX_TEXTURE_BUFFER_SIZE_MIN)
 		{
@@ -100,6 +103,16 @@ namespace OpenGL_Caps
 	s32 getMaxTextureBufferSize()
 	{
 		return m_textureBufferMaxSize;
+	}
+
+	f32 getMaxAnisotropy()
+	{
+		return m_maxAnisotropy;
+	}
+
+	f32 getAnisotropyFromQuality(f32 quality)
+	{
+		return std::max(1.0f, floorf(quality * m_maxAnisotropy + 0.1f));
 	}
 
 	u32 getDeviceTier()

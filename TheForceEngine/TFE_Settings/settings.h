@@ -58,7 +58,7 @@ struct TFE_Settings_Graphics
 	bool  showFps = false;
 	bool  fix3doNormalOverflow = true;
 	bool  ignore3doLimits = true;
-	s32   frameRateLimit = 0;
+	s32   frameRateLimit = 240;
 	f32   brightness = 1.0f;
 	f32   contrast = 1.0f;
 	f32   saturation = 1.0f;

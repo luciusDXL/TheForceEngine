@@ -113,6 +113,16 @@ namespace TFE_Jedi
 			sector_computeBounds(sector);
 			// TFE: Added to support non-fixed-point rendering.
 			sector->dirtyFlags = SDF_ALL;
+
+			// TFE: Try to figure out if a texture is for sky...
+			if ((sector->flags1 & SEC_FLAGS1_EXTERIOR) && (*sector->ceilTex))
+			{
+				(*sector->ceilTex)->flags |= ALWAYS_FULLBRIGHT;
+			}
+			if ((sector->flags1 & SEC_FLAGS1_PIT) && (*sector->floorTex))
+			{
+				(*sector->floorTex)->flags |= ALWAYS_FULLBRIGHT;
+			}
 		}
 
 		// Setup the control sector.
@@ -236,6 +246,7 @@ namespace TFE_Jedi
 			{
 				TFE_System::logWrite(LOG_ERROR, "level_loadGeometry", "Cannot read texture name.");
 				*texture = bitmap_load("default.bm", 1);
+				(*texture)->flags |= ENABLE_MIP_MAPS;
 			}
 			else if (strcasecmp(textureName, "<NoTexture>") == 0)
 			{
@@ -255,6 +266,8 @@ namespace TFE_Jedi
 						return false;
 					}
 				}
+				// TFE - so we know which textures to mip.
+				tex->flags |= ENABLE_MIP_MAPS;
 				*texture = tex;
 				// This version never gets modified, so serialization is simpler.
 				*texBase = tex;
@@ -889,19 +902,43 @@ namespace TFE_Jedi
 						{
 							case KW_3D:
 							{
-								sector_addObject(sector, obj);
-								obj3d_setData(obj, s_levelIntState.pods[s_dataIndex]);
-								obj3d_computeTransform(obj);
+								if (s_levelIntState.pods)
+								{
+									sector_addObject(sector, obj);
+									obj3d_setData(obj, s_levelIntState.pods[s_dataIndex]);
+									obj3d_computeTransform(obj);
+								}
+								else
+								{
+									freeObject(obj);
+									obj = nullptr;
+								}
 							} break;
 							case KW_SPRITE:
 							{
-								sector_addObject(sector, obj);
-								sprite_setData(obj, s_levelIntState.sprites[s_dataIndex]);
+								if (s_levelIntState.sprites)
+								{
+									sector_addObject(sector, obj);
+									sprite_setData(obj, s_levelIntState.sprites[s_dataIndex]);
+								}
+								else
+								{
+									freeObject(obj);
+									obj = nullptr;
+								}
 							} break;
 							case KW_FRAME:
 							{
-								sector_addObject(sector, obj);
-								frame_setData(obj, s_levelIntState.frames[s_dataIndex]);
+								if (s_levelIntState.frames)
+								{
+									sector_addObject(sector, obj);
+									frame_setData(obj, s_levelIntState.frames[s_dataIndex]);
+								}
+								else
+								{
+									freeObject(obj);
+									obj = nullptr;
+								}
 							} break;
 							case KW_SPIRIT:
 							{
