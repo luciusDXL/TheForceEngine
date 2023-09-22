@@ -1276,6 +1276,9 @@
     <ClInclude Include="TFE_Jedi\Level\levelBin.h">
       <Filter>Source\TFE_Jedi\Level</Filter>
     </ClInclude>
+    <ClInclude Include="TFE_A11y\filePathList.h">
+      <Filter>Source\TFE_A11y</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -2153,6 +2156,9 @@
     </ClCompile>
     <ClCompile Include="TFE_Jedi\Level\levelBin.cpp">
       <Filter>Source\TFE_Jedi\Level</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_A11y\filePathList.cpp">
+      <Filter>Source\TFE_A11y</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

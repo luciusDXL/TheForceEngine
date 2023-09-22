@@ -754,6 +754,7 @@ int main(int argc, char* argv[])
 			}
 		}
 
+		if (TFE_A11Y::hasPendingFont()) { TFE_A11Y::loadPendingFont(); } // Can't load new fonts between TFE_Ui::begin() and TFE_Ui::render();
 		TFE_Ui::begin();
 		TFE_System::update();
 

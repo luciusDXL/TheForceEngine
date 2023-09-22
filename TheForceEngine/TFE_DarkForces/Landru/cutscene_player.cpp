@@ -218,7 +218,7 @@ namespace TFE_DarkForces
 		else if (TFE_Input::keyPressed(KEY_SPACE))
 		{
 			s_nextSceneInput = JTRUE;
-			if (TFE_A11Y::cutsceneCaptionsEnabled()) TFE_A11Y::clearCaptions();
+			if (TFE_A11Y::cutsceneCaptionsEnabled()) TFE_A11Y::clearActiveCaptions();
 		}
 
 		/////////////////////////////////

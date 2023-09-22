@@ -294,7 +294,7 @@ namespace TFE_DarkForces
 		sound_setVolume(idInstance, sound->volume);
 		if (withCaptions && TFE_A11Y::gameplayCaptionsEnabled())
 		{
-			TFE_A11Y::onSoundPlay(sound->name, TFE_A11Y::CaptionEnv::CC_Gameplay);
+			TFE_A11Y::onSoundPlay(sound->name, TFE_A11Y::CaptionEnv::CC_GAMEPLAY);
 		}
 
 		return idInstance;
@@ -425,7 +425,7 @@ namespace TFE_DarkForces
 		// TFE subtitles/captions
 		if (TFE_A11Y::gameplayCaptionsEnabled() && *vol > TFE_Settings::getA11ySettings()->gameplayCaptionMinVolume)
 		{
-			TFE_A11Y::onSoundPlay(sound->name, TFE_A11Y::CaptionEnv::CC_Gameplay);
+			TFE_A11Y::onSoundPlay(sound->name, TFE_A11Y::CaptionEnv::CC_GAMEPLAY);
 		}
 	}
 		

@@ -330,6 +330,7 @@ echo ^)";
     <ClInclude Include="Shaders\lighting.h" />
     <ClInclude Include="Shaders\textureSampleFunc.h" />
     <ClInclude Include="TFE_A11y\accessibility.h" />
+    <ClInclude Include="TFE_A11y\filePathList.h" />
     <ClInclude Include="TFE_Archive\archive.h" />
     <ClInclude Include="TFE_Archive\gobArchive.h" />
     <ClInclude Include="TFE_Archive\gobMemoryArchive.h" />
@@ -693,6 +694,7 @@ echo ^)";
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="TFE_A11y\accessibility.cpp" />
+    <ClCompile Include="TFE_A11y\filePathList.cpp" />
     <ClCompile Include="TFE_Archive\archive.cpp" />
     <ClCompile Include="TFE_Archive\gobArchive.cpp" />
     <ClCompile Include="TFE_Archive\gobMemoryArchive.cpp" />
