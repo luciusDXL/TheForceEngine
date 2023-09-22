@@ -3,3 +3,7 @@
 "Fly Mode Toggle."     // TFE_MSG_FLYMODE
 "No Clip Toggle."      // TFE_MSG_NOCLIP
 "Testing Mode Toggle." // TFE_MSG_TESTER
+"Add Life."			   // TFE_ADDLIFE
+"Don't get greedy."	   // TFE_ADDLIFE (lives full)
+"Subtract Life."	   // TFE_SUBLIFE
+"Goodbye."			   // TFE_DIE
