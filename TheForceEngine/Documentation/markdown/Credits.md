@@ -7,6 +7,7 @@ I believe that I have captured all of the individual contributors and dependenci
   * Manuel Lauss - Most of the Linux support contributions, other contributions.
   * Matthew Gilmore - Contributed to Linux support and testing.
   * RC2225 (Tim) - Contributed to Linux support.
+  * Kevin Foley - Accessibility options - such as captions, and other contributions.
  
   * Craig Yates - TFE Logo design. Minimalist title screen design.
   * Pawel "Dzierzan" Dzierzanowski - Adjustable Hud mod (built-in).
