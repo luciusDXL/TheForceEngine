@@ -101,7 +101,6 @@ void main()
 		emissive = clamp((baseColor.a - 0.5) * 2.0, 0.0, 1.0);
 		#ifdef MODEL_TRANSPARENT_PASS
 			baseColor.a = min(baseColor.a * 2.008, 1.0);
-			baseColor.rgb *= baseColor.a;
 		#endif
 	#else
 		emissive = baseColor;

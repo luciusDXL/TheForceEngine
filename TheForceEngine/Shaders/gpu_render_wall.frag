@@ -247,7 +247,6 @@ void main()
 	if (discardPixel(baseColor, LightData.w)) { discard; }
 	#ifdef OPT_TRUE_COLOR
 		Out_Color.a = min(Out_Color.a * 2.008, 1.0);
-		Out_Color.rgb *= Out_Color.a;
 	#endif
 #endif
 	
