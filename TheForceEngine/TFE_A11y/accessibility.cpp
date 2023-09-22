@@ -3,7 +3,7 @@
 #include <map>
 
 #include "accessibility.h"
-#include <filePathList.h>
+#include <TFE_A11y/filePathList.h>
 #include <TFE_FileSystem/filestream.h>
 #include <TFE_FileSystem/fileutil.h>
 #include <TFE_FrontEndUI/console.h>
