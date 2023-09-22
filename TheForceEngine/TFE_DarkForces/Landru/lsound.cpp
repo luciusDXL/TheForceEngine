@@ -133,13 +133,13 @@ namespace TFE_DarkForces
 	/////////////////////////////////////////////////////////
 	void startSfx(LSound* sound)
 	{
-		TFE_A11Y::onSoundPlay(sound->name, TFE_A11Y::CaptionEnv::CC_Cutscene);
+		TFE_A11Y::onSoundPlay(sound->name, TFE_A11Y::CaptionEnv::CC_CUTSCENE);
 		ImStartSfx((ImSoundId)sound, DEFAULT_PRIORITY);
 	}
 
 	void startSpeech(LSound* sound)
 	{
-		TFE_A11Y::onSoundPlay(sound->name, TFE_A11Y::CaptionEnv::CC_Cutscene);
+		TFE_A11Y::onSoundPlay(sound->name, TFE_A11Y::CaptionEnv::CC_CUTSCENE);
 		ImStartVoice((ImSoundId)sound, DEFAULT_PRIORITY);
 	}
 

@@ -257,23 +257,26 @@ struct RGBAf {
 
 struct TFE_Settings_A11y
 {
-	bool showCutsceneSubtitles; //voice
-	bool showCutsceneCaptions; //descriptive (e.g. "[Mine beeping]", "[Engine roaring]"
+	string language = "en"; //ISO 639-1 two-letter code
+	string lastFontPath;
+
+	bool showCutsceneSubtitles; // Voice
+	bool showCutsceneCaptions;  // Descriptive (e.g. "[Mine beeping]", "[Engine roaring]"
 	FontSize cutsceneFontSize;
 	RGBA cutsceneFontColor = RGBA::fromFloats(1.0f, 1.0f, 1.0f);
 	f32 cutsceneTextBackgroundAlpha = 0.75f;
 	bool showCutsceneTextBorder = true;
 	f32 cutsceneTextSpeed = 1.0f;
 
-	bool showGameplaySubtitles; //voice
-	bool showGameplayCaptions; //descriptive
+	bool showGameplaySubtitles; // Voice
+	bool showGameplayCaptions;  // Descriptive
 	FontSize gameplayFontSize;
 	RGBA gameplayFontColor = RGBA::fromFloats(1.0f, 1.0f, 1.0f);
 	int gameplayMaxTextLines = 3;
 	f32 gameplayTextBackgroundAlpha = 0.0f;
 	bool showGameplayTextBorder = false;
 	f32 gameplayTextSpeed = 1.0f;
-	s32 gameplayCaptionMinVolume = 32; //in range 0 - 127
+	s32 gameplayCaptionMinVolume = 32; // In range 0 - 127
 };
 
 namespace TFE_Settings
