@@ -11,7 +11,6 @@ namespace TFE_DarkForces
 {
 	struct GameConfig
 	{
-		JBool headwave;
 		JBool wpnAutoMount;
 		JBool mouseTurnEnabled;
 		JBool mouseLookEnabled;

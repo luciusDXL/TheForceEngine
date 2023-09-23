@@ -2064,7 +2064,7 @@ namespace TFE_DarkForces
 		// Headwave
 		s32 xWpnWaveOffset = 0;
 		s_headwaveVerticalOffset = 0;
-		if (s_config.headwave && (player->flags & OBJ_FLAG_EYE))
+		if (TFE_Settings::getA11ySettings()->enableHeadwave && (player->flags & OBJ_FLAG_EYE))
 		{
 			fixed16_16 playerSpeedAve = distApprox(0, 0, s_playerVelX, s_playerVelZ);
 			if (!moved)

@@ -465,6 +465,8 @@ namespace TFE_Settings
 		writeKeyValue_Int(settings, "gameplayMaxTextLines", s_a11ySettings.gameplayMaxTextLines);
 		writeKeyValue_Float(settings, "gameplayTextSpeed", s_a11ySettings.gameplayTextSpeed);
 		writeKeyValue_Int(settings, "gameplayCaptionMinVolume", s_a11ySettings.gameplayCaptionMinVolume);
+		
+		writeKeyValue_Bool(settings, "enableHeadwave", s_a11ySettings.enableHeadwave);
 	}
 
 	void writeGameSettings(FileStream& settings)
@@ -990,6 +992,10 @@ namespace TFE_Settings
 		else if (strcasecmp("gameplayCaptionMinVolume", key) == 0)
 		{
 			s_a11ySettings.gameplayCaptionMinVolume = parseInt(value);
+		}
+		else if (strcasecmp("enableHeadwave", key) == 0)
+		{
+			s_a11ySettings.enableHeadwave = parseBool(value);
 		}
 	}
 

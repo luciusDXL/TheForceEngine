@@ -1298,8 +1298,9 @@ namespace TFE_DarkForces
 
 			if (inputMapping_getActionState(IADF_HEADWAVE_TOGGLE) == STATE_PRESSED)
 			{
-				s_config.headwave = ~s_config.headwave;
-				if (s_config.headwave)
+				TFE_Settings_A11y* settings = TFE_Settings::getA11ySettings();
+				settings->enableHeadwave = !settings->enableHeadwave;
+				if (settings->enableHeadwave)
 				{
 					hud_sendTextMessage(14);
 				}
