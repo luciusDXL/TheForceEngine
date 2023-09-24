@@ -158,7 +158,7 @@ namespace TFE_A11Y  // a11y is industry slang for accessibility
 	void loadDefaultFont(bool clearAtlas)
 	{
 		char fontpath[TFE_MAX_PATH];
-		sprintf(fontpath, DEFAULT_FONT);
+		sprintf(fontpath, "%s", DEFAULT_FONT);
 		TFE_Paths::mapSystemPath(fontpath);
 		loadFont(fontpath, clearAtlas);
 	}
