@@ -14,6 +14,7 @@
 #include "screenDrawGPU.h"
 #include "rsectorGPU.h"
 #include <algorithm>
+#include <cstring>
 
 namespace TFE_Jedi
 {
