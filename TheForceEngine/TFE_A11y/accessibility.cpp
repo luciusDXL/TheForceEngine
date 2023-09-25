@@ -158,7 +158,7 @@ namespace TFE_A11Y  // a11y is industry slang for accessibility
 	void loadDefaultFont(bool clearAtlas)
 	{
 		char fontpath[TFE_MAX_PATH];
-		sprintf(fontpath, DEFAULT_FONT);
+		snprintf(fontpath, TFE_MAX_PATH, "%s", DEFAULT_FONT);
 		TFE_Paths::mapSystemPath(fontpath);
 		loadFont(fontpath, clearAtlas);
 	}
@@ -208,7 +208,7 @@ namespace TFE_A11Y  // a11y is industry slang for accessibility
 		}
 		assert(s_currentCaptionFont != nullptr);
 
-		char name[256];
+		char name[TFE_MAX_PATH];
 		FileUtil::getFileNameFromPath(path.c_str(), name);
 		s_currentFontFile.name = string(name);
 		s_currentFontFile.path = path;

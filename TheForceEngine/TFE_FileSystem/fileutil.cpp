@@ -233,11 +233,6 @@ namespace FileUtil
 		return !(GetFileAttributesA(path)==INVALID_FILE_ATTRIBUTES && GetLastError()==ERROR_FILE_NOT_FOUND);
 	}
 
-	bool existsNoCase( const char *path )
-	{
-		return exists(path);
-	}
-
 	u64 getModifiedTime( const char* path )
 	{
 		FILETIME creationTime;
@@ -303,13 +298,6 @@ namespace FileUtil
 		}
 #endif
 		pathOS[len] = 0;
-	}
-
-	char *findFileNoCase(const char *fn)
-	{
-		// windows doesn't care about file name case, return that
-		// we have not found the file.
-		return NULL;
 	}
 
 	void replaceExtension(const char* srcPath, const char* newExt, char* outPath)
