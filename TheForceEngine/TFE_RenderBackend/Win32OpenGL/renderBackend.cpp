@@ -820,7 +820,7 @@ namespace TFE_RenderBackend
 	void setupBloomStages()
 	{
 		// Free existing buffers...
-		for (s32 i = 0; i < s_bloomBufferCount; i++)
+		for (u32 i = 0; i < s_bloomBufferCount; i++)
 		{
 			delete s_bloomTargets[i];
 			delete s_bloomTextures[i];

@@ -434,7 +434,7 @@ namespace TFE_A11Y  // a11y is industry slang for accessibility
 						// If the chunk has three lines, add it as a new caption.
 						if (chunkLineCount >= 3)
 						{
-							s32 length = chunk.length();
+							s32 length = (s32)chunk.length();
 							f32 ratio = length / (f32)caption.text.length();
 							Caption next = caption; // Copy
 							next.text = chunk;

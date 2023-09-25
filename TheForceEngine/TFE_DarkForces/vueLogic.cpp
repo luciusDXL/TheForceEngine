@@ -101,7 +101,7 @@ namespace TFE_DarkForces
 		return (Logic*)vueLogic;
 	}
 
-	void vueLogic_serializeFramePointer(Stream* stream, VueLogic* logic, VueFrame** frame, bool modeWrite, s32 version)
+	void vueLogic_serializeFramePointer(Stream* stream, VueLogic* logic, VueFrame** frame, bool modeWrite, u32 version)
 	{
 		s32 index = -1;
 		if (modeWrite && logic->frames && *frame)

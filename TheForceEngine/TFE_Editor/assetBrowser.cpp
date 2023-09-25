@@ -327,7 +327,8 @@ namespace AssetBrowser
 				texW *= scale;
 				texH *= scale;
 
-				ImGui::Image(TFE_RenderBackend::getGpuPtr(asset->texture.texGpu[tex->curFrame]), ImVec2(texW, texH), ImVec2(0, 1), ImVec2(1, 0));
+				ImGui::Image(TFE_RenderBackend::getGpuPtr(asset->texture.texGpu[tex->curFrame]),
+					ImVec2((f32)texW, (f32)texH), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f));
 			}
 		}
 		ImGui::End();
@@ -337,13 +338,13 @@ namespace AssetBrowser
 	{
 		if (index == s_selected)
 		{
-			return ImVec4(1, 1, 0.5, 1.0);
+			return ImVec4(1.0f, 1.0f, 0.5f, 1.0f);
 		}
 		else if (index == s_hovered)
 		{
-			return ImVec4(0.5, 1, 1, 1.0);
+			return ImVec4(0.5f, 1.0f, 1.0f, 1.0f);
 		}
-		return ImVec4(0.1, 0.1, 0.1, 1.0);
+		return ImVec4(0.1f, 0.1f, 0.1f, 1.0f);
 	}
 
 	void listPanel()
@@ -420,8 +421,9 @@ namespace AssetBrowser
 						offsetX += (itemWidth - 64) / 2;
 
 						// Draw the image.
-						ImGui::SetCursorPos(ImVec2(offsetX, offsetY));
-						ImGui::Image(TFE_RenderBackend::getGpuPtr(s_viewAssetList[a].texture.texGpu[0]), ImVec2(width, height), ImVec2(0, 1), ImVec2(1, 0));
+						ImGui::SetCursorPos(ImVec2((f32)offsetX, (f32)offsetY));
+						ImGui::Image(TFE_RenderBackend::getGpuPtr(s_viewAssetList[a].texture.texGpu[0]),
+							ImVec2((f32)width, (f32)height), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f));
 
 						// Draw the label.
 						ImGui::SetCursorPos(ImVec2(8.0f, 64.0f));
@@ -539,7 +541,7 @@ namespace AssetBrowser
 
 		if (strcasecmp(name, "SECBASE.PAL") == 0)
 		{
-			s_defaultPal = s_palettes.size() - 1;
+			s_defaultPal = (s32)s_palettes.size() - 1;
 		}
 	}
 

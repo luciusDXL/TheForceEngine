@@ -28,7 +28,7 @@ namespace TFE_Editor
 		{
 			if (strcasecmp(texture->name, name) == 0)
 			{
-				for (s32 f = 0; f < texture->frameCount; f++)
+				for (u32 f = 0; f < texture->frameCount; f++)
 				{
 					TFE_RenderBackend::freeTexture(texture->texGpu[f]);
 				}
@@ -37,8 +37,8 @@ namespace TFE_Editor
 			}
 		}
 		s_texturesLoaded.clear();
-		const size_t newCount = s_textureList.size();
-		for (size_t i = 0; i < newCount; i++, texture++)
+		const s32 newCount = (s32)s_textureList.size();
+		for (s32 i = 0; i < newCount; i++, texture++)
 		{
 			s_texturesLoaded[s_textureList[i].name] = i;
 		}
@@ -50,7 +50,7 @@ namespace TFE_Editor
 		const EditorTexture* texture = s_textureList.data();
 		for (size_t i = 0; i < count; i++, texture++)
 		{
-			for (s32 f = 0; f < texture->frameCount; f++)
+			for (u32 f = 0; f < texture->frameCount; f++)
 			{
 				TFE_RenderBackend::freeTexture(texture->texGpu[f]);
 			}
@@ -95,10 +95,10 @@ namespace TFE_Editor
 		u32* imageBuffer = (u32*)buffer.data();
 		const u8* srcImage = image;
 
-		for (s32 x = 0; x < width; x++, srcImage += height)
+		for (u32 x = 0; x < width; x++, srcImage += height)
 		{
 			const u8* column = srcImage;
-			for (s32 y = 0; y < height; y++)
+			for (u32 y = 0; y < height; y++)
 			{
 				u8 palIndex = column[y];
 				imageBuffer[y*width + x] = palette[s_remapTable[palIndex]];
@@ -145,7 +145,7 @@ namespace TFE_Editor
 				{
 					u8 frameRate  = texData->image[0];
 					u8 animatedId = texData->image[1];
-					u8 frameCount = texData->uvHeight;
+					u8 frameCount = (u8)texData->uvHeight;
 					if (animatedId != 2)
 					{
 						free(texData);
