@@ -277,6 +277,9 @@ struct TFE_Settings_A11y
 	bool showGameplayTextBorder = false;
 	f32 gameplayTextSpeed = 1.0f;
 	s32 gameplayCaptionMinVolume = 32; // In range 0 - 127
+
+	// Motion sickness settings
+	bool enableHeadwave = true;
 };
 
 namespace TFE_Settings

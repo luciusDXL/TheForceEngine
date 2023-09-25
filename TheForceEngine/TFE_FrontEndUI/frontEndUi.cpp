@@ -2754,6 +2754,11 @@ namespace TFE_FrontEndUI
 		DrawLabelledIntSlider(labelW, valueW, "Max Lines", "##CML", &a11y->gameplayMaxTextLines, 2, 7);
 		DrawLabelledIntSlider(labelW, valueW, "Min. Volume", "##CMV", &a11y->gameplayCaptionMinVolume, 0, 127);
 
+		ImGui::PushFont(s_dialogFont);
+		ImGui::LabelText("##ConfigLabel4", "Motion Sickess");
+		ImGui::PopFont();
+		ImGui::Checkbox("Enable headwave", &a11y->enableHeadwave);
+
 		TFE_A11Y::drawExampleCaptions();
 	}
 
