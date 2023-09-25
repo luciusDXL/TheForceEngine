@@ -29,3 +29,4 @@ float getLightRampValue(float z, float worldAmbient)
 #endif
 	return lightSource;
 }
+
