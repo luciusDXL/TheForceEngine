@@ -9,6 +9,11 @@
 #include <deque>
 #include <string>
 
+namespace FileUtil {
+	extern bool existsNoCase(const char *filename);
+	extern char *findDirNoCase(const char *dn);
+}
+
 namespace TFE_Paths
 {
 	struct FileMapping
@@ -163,6 +168,11 @@ namespace TFE_Paths
 		for (auto it = s_systemPaths.begin(); it != s_systemPaths.end(); it++) {
 			sprintf(fullname, "%s%s", it->c_str(), fname);
 			if (FileUtil::existsNoCase(fullname)) {
+				strncpy(fname, fullname, TFE_MAX_PATH);
+				return true;
+			}
+			// is it a dir?
+			if (FileUtil::findDirNoCase(fullname)) {
 				strncpy(fname, fullname, TFE_MAX_PATH);
 				return true;
 			}

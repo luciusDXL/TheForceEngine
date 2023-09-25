@@ -15,6 +15,7 @@
 // implement TFE FileUtil for Linux and compatibles.
 namespace FileUtil
 {
+	bool existsNoCase(const char *filename);
 	static char *findFileObjectNoCase(const char *filename, bool objisdir);
 
 	void readDirectory(const char *dir, const char *ext, FileList& fileList)
@@ -324,6 +325,11 @@ namespace FileUtil
 	char *findFileNoCase(const char *filename)
 	{
 		return findFileObjectNoCase(filename, false);
+	}
+
+	char *findDirNoCase(const char *dn)
+	{
+		return findFileObjectNoCase(dn, true);
 	}
 
 	bool existsNoCase(const char *filename)
