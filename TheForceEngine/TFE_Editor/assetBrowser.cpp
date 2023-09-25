@@ -23,6 +23,11 @@ using namespace TFE_Editor;
 
 namespace AssetBrowser
 {
+	enum UIConst : u32
+	{
+		INFO_PANEL_WIDTH = 524u,
+	};
+
 	enum AssetType : s32
 	{
 		TYPE_TEXTURE = 0,
@@ -203,7 +208,7 @@ namespace AssetBrowser
 		DisplayInfo displayInfo;
 		TFE_RenderBackend::getDisplayInfo(&displayInfo);
 
-		u32 w = std::min(512u, displayInfo.width);
+		u32 w = std::min((u32)INFO_PANEL_WIDTH, displayInfo.width);
 
 		ImGui::SetWindowPos("Asset Browser##Settings", { 0.0f, 20.0f });
 		ImGui::SetWindowSize("Asset Browser##Settings", { f32(w), 196.0f });
@@ -262,7 +267,7 @@ namespace AssetBrowser
 		DisplayInfo displayInfo;
 		TFE_RenderBackend::getDisplayInfo(&displayInfo);
 
-		u32 w = std::min(512u, displayInfo.width);
+		u32 w = std::min((u32)INFO_PANEL_WIDTH, displayInfo.width);
 		u32 h = std::max(256u, displayInfo.height - 216);
 
 		ImGui::SetWindowPos("Asset Info", { 0.0f, 216.0f });
@@ -342,7 +347,7 @@ namespace AssetBrowser
 				{
 					ImGui::Separator();
 					ImGui::Image(TFE_RenderBackend::getGpuPtr(asset->texture.texGpu[1]),
-						ImVec2(500.0f, 64.0f), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f));
+						ImVec2(512.0f, 64.0f), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f));
 				}
 			}
 		}
@@ -366,12 +371,13 @@ namespace AssetBrowser
 	{
 		DisplayInfo displayInfo;
 		TFE_RenderBackend::getDisplayInfo(&displayInfo);
-		if (displayInfo.width < 512) { return; }
+		if (displayInfo.width < INFO_PANEL_WIDTH) { return; }
 
-		u32 w = displayInfo.width - 512u;
-		u32 h = displayInfo.height - 20u;
+		s32 w = displayInfo.width - (s32)INFO_PANEL_WIDTH;
+		s32 h = displayInfo.height - 20;
+		if (w <= 0 || h <= 0) { return; }
 
-		ImGui::SetWindowPos("Asset List", { 512.0f, 20.0f });
+		ImGui::SetWindowPos("Asset List", { f32(INFO_PANEL_WIDTH), 20.0f });
 		ImGui::SetWindowSize("Asset List", { f32(w), f32(h) });
 		ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse;
 
