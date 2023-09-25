@@ -47,12 +47,20 @@ bool TextureGpu::create(u32 width, u32 height, TexFormat format, bool hasMipmaps
 	m_bytesPerChannel = c_bytesPerChannel[format];
 	m_layers = 1;
 
+	// Catch a case where a pre-existing error is causing failures.
+	GLenum error = glGetError();
+	assert(error == GL_NO_ERROR);
+	if (error != GL_NO_ERROR)
+	{
+		TFE_System::logWrite(LOG_WARNING, "TextureGPU - OpenGL", "Pre-existing OpenGL error: 0x%x when calling TextureGpu::create().", error);
+	}
+
 	glGenTextures(1, &m_gpuHandle);
 	if (!m_gpuHandle) { return false; }
 
 	glBindTexture(GL_TEXTURE_2D, m_gpuHandle);
 	glTexImage2D(GL_TEXTURE_2D, 0, c_internalFormat[format], width, height, 0, c_baseFormat[format], c_channelFormat[format], nullptr);
-	GLenum error = glGetError();
+	error = glGetError();
 	// Handle OpenGL driver wonkiness around float16 textures.
 	if (error != GL_NO_ERROR && c_channelFormat[format] == GL_FLOAT)
 	{
