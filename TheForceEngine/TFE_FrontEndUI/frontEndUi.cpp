@@ -690,14 +690,16 @@ namespace TFE_FrontEndUI
 				ImVec2 textSize = ImVec2(f32(textWidth), f32(textHeight));
 				for (s32 i = 0; i < s_menuItemCount; i++)
 				{
-					// Disable the editor for now.
-					// Remove this out once it is working again.
+				#if ENABLE_EDITOR == 0
+					// Disable the editor for now when not running on Windows.
 					if (s_menuItemselected[i] == menuItem_Editor)
 					{
 						ImGui::ImageAnimButton(s_buttonNormal[i].image, s_buttonSelected[i].image, textSize,
-							ImVec2(0,0), ImVec2(1,1), ImVec2(0,0), ImVec2(1,1), -1, ImVec4(0,0,0,0), ImVec4(0.25f, 0.25f, 0.25f, 1.0f));
+							ImVec2(0, 0), ImVec2(1, 1), ImVec2(0, 0), ImVec2(1, 1), -1, ImVec4(0, 0, 0, 0), ImVec4(0.25f, 0.25f, 0.25f, 1.0f));
 					}
-					else if (ImGui::ImageAnimButton(s_buttonNormal[i].image, s_buttonSelected[i].image, textSize))
+					else
+				#endif
+					if (ImGui::ImageAnimButton(s_buttonNormal[i].image, s_buttonSelected[i].image, textSize))
 					{
 						s_menuItemselected[i]();
 					}

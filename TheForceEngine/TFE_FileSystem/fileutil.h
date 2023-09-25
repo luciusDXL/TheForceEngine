@@ -32,4 +32,5 @@ namespace FileUtil
 	void convertToOSPath(const char* path, char* pathOS);
 
 	char *findFileNoCase(const char *fn);
+	void replaceExtension(const char* srcPath, const char* newExt, char* outPath);
 }

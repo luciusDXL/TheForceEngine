@@ -1,8 +1,5 @@
 #include "editor.h"
-#include "perfWindow.h"
-#include "archiveViewer.h"
-#include "levelEditor.h"
-#include "Help/helpWindow.h"
+#include "assetBrowser.h"
 #include <TFE_RenderBackend/renderBackend.h>
 #include <TFE_System/system.h>
 #include <TFE_FileSystem/fileutil.h>
@@ -22,74 +19,49 @@ namespace TFE_Editor
 	
 	static bool s_showPerf = true;
 	static bool s_showEditor = true;
-	static TFE_Renderer* s_renderer = nullptr;
 	static EditorMode s_editorMode = EDIT_ASSET;
-	static Help s_showHelp = HELP_NONE;
 	static bool s_exitEditor = false;
+	static WorkBuffer s_workBuffer;
 	
 	void menu();
 
-	void enable(TFE_Renderer* renderer)
+	WorkBuffer& getWorkBuffer()
+	{
+		return s_workBuffer;
+	}
+
+	void enable()
 	{
 		// Ui begin/render is called so we have a "UI Frame" in which to setup UI state.
-		TFE_Ui::begin();
-
-		ArchiveViewer::init(renderer);
-		LevelEditor::init(renderer);
-		HelpWindow::init();
-
-		TFE_Ui::render();
+		s_editorMode = EDIT_ASSET;
 		s_exitEditor = false;
+		AssetBrowser::init();
 	}
 
 	void disable()
 	{
-		LevelEditor::disable();
+		AssetBrowser::destroy();
 	}
 
 	bool update(bool consoleOpen)
 	{
-		bool fullscreen = s_editorMode == EDIT_ASSET ? ArchiveViewer::isFullscreen() : LevelEditor::isFullscreen();
-		if (!fullscreen) { menu(); }
-
+		TFE_RenderBackend::clearWindow();
+		menu();
 		if (s_editorMode == EDIT_ASSET)
-			ArchiveViewer::draw(&s_showEditor);
-		else if (s_editorMode == EDIT_LEVEL)
-			LevelEditor::draw(&s_showEditor);
-
-		DisplayInfo displayInfo;
-		TFE_RenderBackend::getDisplayInfo(&displayInfo);
-		if (s_showHelp != HELP_NONE)
 		{
-			if (!HelpWindow::show(s_showHelp, displayInfo.width / 2, displayInfo.height - 200))
-			{
-				s_showHelp = HELP_NONE;
-			}
+			AssetBrowser::update();
 		}
-
-		if (s_exitEditor)
-		{
-			disable();
-		}
-
+		
 		return s_exitEditor;
 	}
 
 	bool render()
 	{
 		if (s_editorMode == EDIT_ASSET)
-			return ArchiveViewer::render3dView();
-		else if (s_editorMode == EDIT_LEVEL)
-			return LevelEditor::render3dView();
-
-		return false;
-	}
-
-	void showPerf(u32 frame)
-	{
-		const f64 dt = TFE_System::getDeltaTime();
-		PerfWindow::setCurrentDt(dt, frame);
-		PerfWindow::draw(&s_showPerf);
+		{
+			AssetBrowser::render();
+		}
+		return true;
 	}
 
 	bool beginMenuBar()
@@ -121,7 +93,7 @@ namespace TFE_Editor
 			// General menu items.
 			if (ImGui::BeginMenu("Editor"))
 			{
-				if (ImGui::MenuItem("Asset Viewer", NULL, s_editorMode == EDIT_ASSET))
+				if (ImGui::MenuItem("Asset Browser", NULL, s_editorMode == EDIT_ASSET))
 				{
 					s_editorMode = EDIT_ASSET;
 				}
@@ -135,24 +107,6 @@ namespace TFE_Editor
 				}
 				if (ImGui::MenuItem("Exit", NULL, (bool*)NULL))
 				{
-				}
-				ImGui::EndMenu();
-			}
-			// Level Editor specific menu items.
-			if (s_editorMode == EDIT_LEVEL)
-			{
-				LevelEditor::menu();
-			}
-			// Help
-			if (ImGui::BeginMenu("Help"))
-			{
-				if (ImGui::MenuItem("About", "", (bool*)NULL))
-				{
-					s_showHelp = HELP_ABOUT;
-				}
-				if (ImGui::MenuItem("Manual", "", (bool*)NULL))
-				{
-					s_showHelp = HELP_MANUAL;
 				}
 				ImGui::EndMenu();
 			}

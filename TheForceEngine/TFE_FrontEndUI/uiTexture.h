@@ -10,7 +10,7 @@
 #include <TFE_System/types.h>
 #include <TFE_RenderBackend/renderBackend.h>
 
-struct EditorTexture
+struct UiTexture
 {
 	TextureGpu* texture = nullptr;
 	u32  width = 0;
@@ -24,5 +24,5 @@ namespace TFE_FrontEndUI
 {
 	bool convertPalette(const u8* srcPalette, u32* dstPalette);
 	void convertDfTextureToTrueColor(const TextureData* src, const u32* palette, u32* image);
-	bool createTexture(const TextureData* src, const u32* palette, EditorTexture* tex, MagFilter filter = MAG_FILTER_NONE);
+	bool createTexture(const TextureData* src, const u32* palette, UiTexture* tex, MagFilter filter = MAG_FILTER_NONE);
 }

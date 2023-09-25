@@ -1,4 +1,4 @@
-#include "editorTexture.h"
+#include "uiTexture.h"
 #include <TFE_Input/input.h>
 #include <TFE_RenderBackend/renderBackend.h>
 #include <TFE_RenderBackend/textureGpu.h>
@@ -42,7 +42,7 @@ namespace TFE_FrontEndUI
 		}
 	}
 
-	bool createTexture(const TextureData* src, const u32* palette, EditorTexture* tex, MagFilter filter)
+	bool createTexture(const TextureData* src, const u32* palette, UiTexture* tex, MagFilter filter)
 	{
 		if (!src || !tex) { return false; }
 		tex->scale = { 1.0f, 1.0f };

@@ -1,7 +1,7 @@
 #include "modLoader.h"
 #include "frontEndUi.h"
 #include "console.h"
-#include "editorTexture.h"
+#include "uiTexture.h"
 #include "profilerView.h"
 #include <TFE_DarkForces/config.h>
 #include <TFE_RenderBackend/renderBackend.h>
@@ -50,7 +50,7 @@ namespace TFE_FrontEndUI
 		std::vector<std::string> gobFiles;
 		std::string textFile;
 		std::string imageFile;
-		EditorTexture image;
+		UiTexture image;
 
 		std::string name;
 		std::string relativePath;
@@ -80,8 +80,8 @@ namespace TFE_FrontEndUI
 	void fixupName(char* name);
 	void readFromQueue(size_t itemsPerFrame);
 	bool parseNameFromText(const char* textFileName, const char* path, char* name, std::string* fullText);
-	void extractPosterFromImage(const char* baseDir, const char* zipFile, const char* imageFileName, EditorTexture* poster);
-	void extractPosterFromMod(const char* baseDir, const char* archiveFileName, EditorTexture* poster);
+	void extractPosterFromImage(const char* baseDir, const char* zipFile, const char* imageFileName, UiTexture* poster);
+	void extractPosterFromMod(const char* baseDir, const char* archiveFileName, UiTexture* poster);
 	void filterMods(bool filterByName, bool sort = true);
 
 	bool sortQueueByName(QueuedRead& a, QueuedRead& b)
@@ -998,7 +998,7 @@ namespace TFE_FrontEndUI
 		}
 	}
 
-	void extractPosterFromImage(const char* baseDir, const char* zipFile, const char* imageFileName, EditorTexture* poster)
+	void extractPosterFromImage(const char* baseDir, const char* zipFile, const char* imageFileName, UiTexture* poster)
 	{
 		if (zipFile && zipFile[0])
 		{
@@ -1044,7 +1044,7 @@ namespace TFE_FrontEndUI
 		}
 	}
 
-	void extractPosterFromMod(const char* baseDir, const char* archiveFileName, EditorTexture* poster)
+	void extractPosterFromMod(const char* baseDir, const char* archiveFileName, UiTexture* poster)
 	{
 		// Extract a "poster", if possible, from the GOB file.
 		// And then save it as a JPG in /ProgramData/TheForceEngine/ModPosters/NAME.jpg

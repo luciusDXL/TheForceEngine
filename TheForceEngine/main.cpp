@@ -9,7 +9,6 @@
 #include <TFE_Game/saveSystem.h>
 #include <TFE_Game/reticle.h>
 #include <TFE_Jedi/InfSystem/infSystem.h>
-//#include <TFE_Editor/editor.h>
 #include <TFE_FileSystem/fileutil.h>
 #include <TFE_Audio/audioSystem.h>
 #include <TFE_FileSystem/paths.h>
@@ -35,6 +34,10 @@
 #include <time.h>
 #include <sys/types.h>
 #include <sys/timeb.h>
+
+#if ENABLE_EDITOR == 1
+#include <TFE_Editor/editor.h>
+#endif
 
 // Replace with music system
 #include <TFE_Audio/midiPlayer.h>
@@ -306,10 +309,12 @@ void setAppState(AppState newState, int argc, char* argv[])
 {
 	const TFE_Settings_Graphics* config = TFE_Settings::getGraphicsSettings();
 
+#if ENABLE_EDITOR == 1
 	if (newState != APP_STATE_EDITOR)
 	{
-		//TFE_Editor::disable();
+		TFE_Editor::disable();
 	}
+#endif
 
 	switch (newState)
 	{
@@ -317,11 +322,12 @@ void setAppState(AppState newState, int argc, char* argv[])
 	case APP_STATE_SET_DEFAULTS:
 		break;
 	case APP_STATE_EDITOR:
+
 		if (validatePath())
 		{
-			//renderer->changeResolution(640, 480, false, TFE_Settings::getGraphicsSettings()->asyncFramebuffer, false);
-			// TFE_GameUi::updateUiResolution();
-			//TFE_Editor::enable(renderer);
+		#if ENABLE_EDITOR == 1
+			TFE_Editor::enable();
+		#endif
 		}
 		else
 		{
@@ -831,12 +837,12 @@ int main(int argc, char* argv[])
 		bool endInputFrame = true;
 		if (s_curState == APP_STATE_EDITOR)
 		{
-			/*
+		#if ENABLE_EDITOR == 1
 			if (TFE_Editor::update(isConsoleOpen))
 			{
 				TFE_FrontEndUI::setAppState(APP_STATE_MENU);
 			}
-			*/
+		#endif
 		}
 		else if (s_curState == APP_STATE_GAME)
 		{
@@ -870,10 +876,12 @@ int main(int argc, char* argv[])
 		}
 
 		bool swap = s_curState != APP_STATE_EDITOR && (s_curState != APP_STATE_MENU || TFE_FrontEndUI::isConfigMenuOpen());
+	#if ENABLE_EDITOR == 1
 		if (s_curState == APP_STATE_EDITOR)
 		{
-			//swap = TFE_Editor::render();
+			swap = TFE_Editor::render();
 		}
+	#endif
 
 		// Blit the frame to the window and draw UI.
 		TFE_RenderBackend::swap(swap);
