@@ -62,8 +62,8 @@ bool TextureGpu::create(u32 width, u32 height, TexFormat format, bool hasMipmaps
 	assert(error == GL_NO_ERROR);
 	if (error != GL_NO_ERROR)
 	{
-		TFE_System::logWrite(LOG_ERROR, "TextureGPU - OpenGL", "Failed to create texture - size: (%u, %u), format: %s.",
-			m_width, m_height, c_texFormatStr[format]);
+		TFE_System::logWrite(LOG_ERROR, "TextureGPU - OpenGL", "Failed to create texture - size: (%u, %u), format: %s. Error ID: 0x%x",
+			m_width, m_height, c_texFormatStr[format], error);
 		glBindTexture(GL_TEXTURE_2D, 0);
 		return false;
 	}
