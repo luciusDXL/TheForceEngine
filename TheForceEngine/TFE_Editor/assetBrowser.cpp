@@ -915,7 +915,6 @@ namespace AssetBrowser
 							const size_t len = cmapArchive->getFileLength();
 							cmapArchive->readFile(colormapData, min(8192u, (u32)len));
 							cmapArchive->closeFile();
-							cmapArchive->closeFile();
 							hasColormap = true;
 							break;
 						}
