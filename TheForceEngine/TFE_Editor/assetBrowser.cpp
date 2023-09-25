@@ -422,7 +422,7 @@ namespace AssetBrowser
 					ImGui::SetCursorPos(cursor);
 
 					ImGui::PushStyleColor(ImGuiCol_Border, getBorderColor(a));
-					if (ImGui::BeginChild(buttonLabel, ImVec2(itemWidth, itemHeight), true, ImGuiWindowFlags_NoDecoration))
+					if (ImGui::BeginChild(buttonLabel, ImVec2(itemWidth, itemHeight), true, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoScrollWithMouse))
 					{
 						EditorTexture* tex = &s_viewAssetList[a].texture;
 						s32 offsetX = 0, offsetY = 0;
