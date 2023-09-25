@@ -219,4 +219,75 @@ namespace TFE_Editor
 
 		return result;
 	}
+
+	bool loadPaletteAsTexture(Archive* archive, const char* filename, const u8* colormapData, EditorTexture* texture)
+	{
+		if (!archive && !filename) { return false; }
+		if (!texture) { return false; }
+
+		s32 id = findTexture(filename);
+		if (id >= 0)
+		{
+			*texture = s_textureList[id];
+			return true;
+		}
+
+		if (!archive->openFile(filename))
+		{
+			return false;
+		}
+		size_t len = archive->getFileLength();
+		if (!len)
+		{
+			archive->closeFile();
+			return false;
+		}
+		WorkBuffer& buffer = getWorkBuffer();
+		buffer.resize(len);
+		archive->readFile(buffer.data(), len);
+		archive->closeFile();
+
+		id = allocateTexture(filename);
+		strcpy(s_textureList[id].name, filename);
+		s_textureList[id].width  = 16;
+		s_textureList[id].height = 16;
+		s_textureList[id].frameCount = 1;
+		s_textureList[id].curFrame = 0;
+		s_textureList[id].lightLevel = 32;
+		s_textureList[id].paletteIndex = 0;
+		
+		u32 image[16 * 16];
+		const u8* srcPal = buffer.data();
+		for (s32 i = 0; i < 256; i++, srcPal += 3)
+		{
+			s32 x = i & 15;
+			s32 y = 15 - (i >> 4);
+
+			image[(y<<4)+x] = 0xff000000 | CONV_6bitTo8bit(srcPal[0]) | (CONV_6bitTo8bit(srcPal[1]) << 8) | (CONV_6bitTo8bit(srcPal[2]) << 16);
+		}
+		s_textureList[id].texGpu[0] = TFE_RenderBackend::createTexture(16, 16, image);
+
+		// Create a second frame to hold the colormap data if it exists.
+		if (colormapData)
+		{
+			s_textureList[id].frameCount = 2;
+			u32 colormapTrueColor[256 * 32];
+			srcPal = buffer.data();
+			for (s32 y = 0; y < 32; y++)
+			{
+				const u8* ramp = &colormapData[y << 8];
+				for (s32 x = 0; x < 256; x++)
+				{
+					const u8* color = &srcPal[ramp[x] * 3];
+					colormapTrueColor[y*256+x] = 0xff000000 |
+						CONV_6bitTo8bit(color[0]) | (CONV_6bitTo8bit(color[1]) << 8) | (CONV_6bitTo8bit(color[2]) << 16);
+				}
+			}
+			s_textureList[id].texGpu[1] = TFE_RenderBackend::createTexture(256, 32, colormapTrueColor);
+		}
+
+		*texture = s_textureList[id];
+		
+		return true;
+	}
 }

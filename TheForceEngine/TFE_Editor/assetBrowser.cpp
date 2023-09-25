@@ -75,6 +75,7 @@ namespace AssetBrowser
 	struct LevelTextures
 	{
 		std::string levelName;
+		std::string paletteName;
 		std::vector<std::string> textures;
 	};
 	std::vector<LevelTextures> s_levelTextures;
@@ -329,6 +330,20 @@ namespace AssetBrowser
 
 				ImGui::Image(TFE_RenderBackend::getGpuPtr(asset->texture.texGpu[tex->curFrame]),
 					ImVec2((f32)texW, (f32)texH), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f));
+			}
+			else if (asset->type == TYPE_PALETTE)
+			{
+				EditorTexture* tex = &asset->texture;
+				ImGui::Image(TFE_RenderBackend::getGpuPtr(asset->texture.texGpu[0]),
+					ImVec2(128.0f, 128.0f), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f));
+
+				// Show the colormap if it exists.
+				if (tex->frameCount == 2)
+				{
+					ImGui::Separator();
+					ImGui::Image(TFE_RenderBackend::getGpuPtr(asset->texture.texGpu[1]),
+						ImVec2(500.0f, 64.0f), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f));
+				}
 			}
 		}
 		ImGui::End();
@@ -663,6 +678,8 @@ namespace AssetBrowser
 				s32 paletteId = getPaletteId(paletteName);
 				if (paletteId < 0) { paletteId = 0; }
 
+				levelTextures.paletteName = paletteName;
+
 				// Another value that is ignored.
 				line = parser.readLine(bufferPos);
 				if (sscanf(line, " MUSIC %s", readBuffer) == 1)
@@ -816,6 +833,12 @@ namespace AssetBrowser
 		return false;
 	}
 
+	bool isLevelPalette(const char* name)
+	{
+		if (s_viewInfo.levelSource < 0) { return true; }
+		return strcasecmp(name, s_levelTextures[s_viewInfo.levelSource].paletteName.c_str()) == 0;
+	}
+
 	void updateAssetList()
 	{
 		// Only Dark Forces for now.
@@ -828,7 +851,6 @@ namespace AssetBrowser
 
 		preprocessAssets();
 		s_viewAssetList.clear();
-		// For now, just populate textures...
 		if (s_viewInfo.type == TYPE_TEXTURE)
 		{
 			const u32 count = (u32)s_projectAssetList[TYPE_TEXTURE].size();
@@ -852,6 +874,56 @@ namespace AssetBrowser
 				s32 palId = getTexturePalette(projAsset->name.c_str());
 
 				loadEditorTexture(TEX_BM, archive, projAsset->name.c_str(), s_palettes[palId].data, palId, &asset.texture);
+				s_viewAssetList.push_back(asset);
+			}
+		}
+		else if (s_viewInfo.type == TYPE_PALETTE)
+		{
+			const u32 count = (u32)s_projectAssetList[TYPE_PALETTE].size();
+			const Asset* projAsset = s_projectAssetList[TYPE_PALETTE].data();
+			for (u32 i = 0; i < count; i++, projAsset++)
+			{
+				if (!isLevelPalette(projAsset->name.c_str()))
+				{
+					continue;
+				}
+
+				Archive* archive = getArchive(projAsset->archiveName.c_str(), projAsset->gameId);
+				Asset asset;
+				asset.type = projAsset->type;
+				asset.name = projAsset->name;
+				asset.gameId = projAsset->gameId;
+				asset.archiveName = projAsset->archiveName;
+				asset.filePath = projAsset->filePath;
+
+				// Does it have a colormap too?
+				// For now we assume the names match.
+				char colorMapPath[256];
+				FileUtil::replaceExtension(projAsset->name.c_str(), "CMP", colorMapPath);
+
+				const size_t cmapCount = s_projectAssetList[TYPE_COLORMAP].size();
+				const Asset* projAssetCM = s_projectAssetList[TYPE_COLORMAP].data();
+				u8 colormapData[256 * 32];
+				bool hasColormap = false;
+				for (size_t i = 0; i < cmapCount; i++, projAssetCM++)
+				{
+					if (strcasecmp(projAssetCM->name.c_str(), colorMapPath) == 0)
+					{
+						Archive* cmapArchive = getArchive(projAssetCM->archiveName.c_str(), projAssetCM->gameId);
+						if (cmapArchive && cmapArchive->openFile(colorMapPath))
+						{
+							const size_t len = cmapArchive->getFileLength();
+							cmapArchive->readFile(colormapData, min(8192u, (u32)len));
+							cmapArchive->closeFile();
+							cmapArchive->closeFile();
+							hasColormap = true;
+							break;
+						}
+					}
+				}
+
+				memset(&asset.texture, 0, sizeof(EditorTexture));
+				loadPaletteAsTexture(archive, projAsset->name.c_str(), hasColormap ? colormapData : nullptr, &asset.texture);
 				s_viewAssetList.push_back(asset);
 			}
 		}
