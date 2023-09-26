@@ -1,4 +1,5 @@
 #include "editor.h"
+#include "editorConfig.h"
 #include "assetBrowser.h"
 #include <TFE_RenderBackend/renderBackend.h>
 #include <TFE_System/system.h>
@@ -13,14 +14,17 @@ namespace TFE_Editor
 {
 	enum EditorMode
 	{
-		EDIT_ASSET = 0,
+		EDIT_CONFIG = 0,
+		EDIT_ASSET,
 		EDIT_LEVEL,
 	};
 	
 	static bool s_showPerf = true;
 	static bool s_showEditor = true;
 	static EditorMode s_editorMode = EDIT_ASSET;
+	static EditorMode s_prevEditorMode = EDIT_ASSET;
 	static bool s_exitEditor = false;
+	static bool s_configView = false;
 	static WorkBuffer s_workBuffer;
 	
 	void menu();
@@ -35,6 +39,7 @@ namespace TFE_Editor
 		// Ui begin/render is called so we have a "UI Frame" in which to setup UI state.
 		s_editorMode = EDIT_ASSET;
 		s_exitEditor = false;
+		loadConfig();
 		AssetBrowser::init();
 	}
 
@@ -47,7 +52,20 @@ namespace TFE_Editor
 	{
 		TFE_RenderBackend::clearWindow();
 		menu();
-		if (s_editorMode == EDIT_ASSET)
+
+		if (configSetupRequired())
+		{
+			s_editorMode = EDIT_CONFIG;
+		}
+
+		if (s_editorMode == EDIT_CONFIG)
+		{
+			if (configUi())
+			{
+				s_editorMode = s_prevEditorMode;
+			}
+		}
+		else if (s_editorMode == EDIT_ASSET)
 		{
 			AssetBrowser::update();
 		}
@@ -93,6 +111,15 @@ namespace TFE_Editor
 			// General menu items.
 			if (ImGui::BeginMenu("Editor"))
 			{
+				if (ImGui::MenuItem("Editor Config", NULL, s_editorMode == EDIT_CONFIG))
+				{
+					s_prevEditorMode = s_editorMode;
+					if (s_prevEditorMode == EDIT_CONFIG)
+					{
+						s_prevEditorMode = EDIT_ASSET;
+					}
+					s_editorMode = EDIT_CONFIG;
+				}
 				if (ImGui::MenuItem("Asset Browser", NULL, s_editorMode == EDIT_ASSET))
 				{
 					s_editorMode = EDIT_ASSET;

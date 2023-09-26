@@ -1291,6 +1291,9 @@
     <ClInclude Include="TFE_Editor\assetBrowser.h">
       <Filter>Source\TFE_Editor</Filter>
     </ClInclude>
+    <ClInclude Include="TFE_Editor\editorConfig.h">
+      <Filter>Source\TFE_Editor</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -2179,6 +2182,9 @@
       <Filter>Source\TFE_FrontEndUI</Filter>
     </ClCompile>
     <ClCompile Include="TFE_Editor\assetBrowser.cpp">
+      <Filter>Source\TFE_Editor</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Editor\editorConfig.cpp">
       <Filter>Source\TFE_Editor</Filter>
     </ClCompile>
   </ItemGroup>
