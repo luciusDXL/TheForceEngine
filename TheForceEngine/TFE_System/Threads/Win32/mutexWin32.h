@@ -12,5 +12,5 @@ public:
 	virtual s32 unlock();
 
 private:
-	mutable CRITICAL_SECTION C;
+	SRWLOCK C;
 };

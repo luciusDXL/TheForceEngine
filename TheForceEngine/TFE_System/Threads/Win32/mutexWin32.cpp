@@ -2,23 +2,23 @@
 
 MutexWin32::MutexWin32() : Mutex()
 { 
-	InitializeCriticalSection(&C); 
+	InitializeSRWLock(&C);
 }
 
 MutexWin32::~MutexWin32()
 { 
-	DeleteCriticalSection(&C); 
+ 
 }
 
 s32 MutexWin32::lock()
 { 
-	EnterCriticalSection(&C); 
+	AcquireSRWLockExclusive(&C);
 	return 0; 
 }
 
 s32 MutexWin32::unlock()
 { 
-	LeaveCriticalSection(&C); 
+	ReleaseSRWLockExclusive(&C);
 	return 0; 
 }
 
