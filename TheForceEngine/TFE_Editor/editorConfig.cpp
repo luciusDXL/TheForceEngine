@@ -142,23 +142,20 @@ namespace TFE_Editor
 		}
 
 		// File dialogs...
-		if (browseWinOpen >= 0)
+		if (browseWinOpen == 0)
 		{
-			if (browseWinOpen == 0)
+			FileResult res = TFE_Ui::directorySelectDialog("Editor Path", s_editorConfig.editorPath);
+			if (!res.empty())
 			{
-				FileResult res = TFE_Ui::directorySelectDialog("Editor Path", s_editorConfig.editorPath);
-				if (!res.empty())
-				{
-					strcpy(s_editorConfig.editorPath, res[0].c_str());
-				}
+				strcpy(s_editorConfig.editorPath, res[0].c_str());
 			}
-			else
+		}
+		else if (browseWinOpen == 1)
+		{
+			FileResult res = TFE_Ui::directorySelectDialog("Export Path", s_editorConfig.exportPath);
+			if (!res.empty())
 			{
-				FileResult res = TFE_Ui::directorySelectDialog("Export Path", s_editorConfig.exportPath);
-				if (!res.empty())
-				{
-					strcpy(s_editorConfig.exportPath, res[0].c_str());
-				}
+				strcpy(s_editorConfig.exportPath, res[0].c_str());
 			}
 		}
 
