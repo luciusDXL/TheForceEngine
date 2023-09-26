@@ -55,6 +55,7 @@ namespace TFE_Jedi
 		PALETTE_DEFAULT_IDX = 1,
 		COLOR_INDEX_COUNT = 8,
 	};
+	static const f32 c_satLimit = 0.2f;
 
 	static std::vector<TextureNode*> s_nodes;
 	static TextureNode* s_root;
@@ -82,7 +83,7 @@ namespace TFE_Jedi
 	static TexturePacker* s_globalTexturePacker = nullptr;
 
 	static s32 s_colorIndexStart = -1;
-
+		
 	TextureNode* allocateNode();
 	u8* getWritePointer(s32 page, s32 x, s32 y, u32 mipLevel = 0);
 
@@ -423,8 +424,7 @@ namespace TFE_Jedi
 		const f32 minc = min(r, min(g, b));
 		const f32 lum = maxc - minc;
 
-		const f32 sat = (lum < 0.5f) ? (maxc - minc) / (maxc + minc) : (maxc - minc) / (2.0f - maxc - minc);
-		return sat;
+		return (lum < 0.5f) ? lum / (maxc + minc) : lum / (2.0f - maxc - minc);
 	}
 
 	f64 addMultiplier(u32 cFull, u32 cHalf, f64* accum)
@@ -505,7 +505,7 @@ namespace TFE_Jedi
 					{
 						output[x] = palIndex == 0 ? 0u : pal[remap[palIndex]];
 						f32 sat = getSaturation(output[x]);
-						if (sat < 0.1f)
+						if (sat < c_satLimit)
 						{
 							grayScaleCount++;
 						}
@@ -516,7 +516,7 @@ namespace TFE_Jedi
 						accumCount += addMultiplier(output[x], halfValue, accum);
 
 						sat = getSaturation(halfValue);
-						if (sat < 0.1f)
+						if (sat < c_satLimit)
 						{
 							grayScaleCountHalf++;
 						}
