@@ -4,6 +4,8 @@ uniform isamplerBuffer TextureTable;
 uniform sampler2D Colormap;	// The color map has full RGB pre-backed in.
 uniform sampler2D Palette;
 
+uniform uint TextureSettings;
+
 #ifdef OPT_TRUE_COLOR
 uniform vec4 TexSamplingParam;
 #endif
@@ -58,8 +60,8 @@ vec2 wrapCoordF(vec2 uv, vec2 edge)
 	uv += vec2(0.5,-0.5);
 
 	uv = fmod(uv, edge);
-	uv.x += (uv.x < 0) ? edge.x : 0;
-	uv.y += (uv.y < 0) ? edge.y : 0;
+	uv.x += (uv.x < 0.0) ? edge.x : 0.0;
+	uv.y += (uv.y < 0.0) ? edge.y : 0.0;
 
 	uv -= vec2(0.5,-0.5);
 	return uv;
@@ -70,8 +72,8 @@ vec2 wrapCoordFlatF(vec2 uv, vec2 edge)
 {
 	float coord = fmod(uv.x, 64.0) * 64.0 + fmod(uv.y, 64.0);
 	uv = wrapCoordF(vec2(coord / edge.y, coord), edge);
-	uv.x += (uv.x < 0) ? edge.x : 0;
-	uv.y += (uv.y < 0) ? edge.y : 0;
+	uv.x += (uv.x < 0.0) ? edge.x : 0.0;
+	uv.y += (uv.y < 0.0) ? edge.y : 0.0;
 	return uv;
 }
 
@@ -94,9 +96,25 @@ vec2 bilinearDither(vec2 uv)
 // TODO: Make this optional.
 #define OPT_MIPMAPPING 1
 
+vec3 getHalfTint(ivec2 packedColor)
+{
+	int r = (packedColor.x >> 15) & 255;
+	int g = (packedColor.x >> 23) & 255;
+	int b = (packedColor.y >> 15) & 255;
+
+	float scale = 1.0 / 255.0;
+	vec3 tint;
+	tint.x = float(r) * scale;
+	tint.y = float(g) * scale;
+	tint.z = float(b) * scale;
+	return tint;
+}
+
 vec4 sampleTexture(int id, vec2 uv)
 {
 	ivec4 sampleData = texelFetch(TextureTable, id);
+	sampleData.zw &= ivec2(32767);
+
 	vec2 baseUv = uv;
 	uv = bilinearSharpness(uv, TexSamplingParam.x);
 
@@ -113,9 +131,12 @@ vec4 sampleTexture(int id, vec2 uv)
 #endif
 }
 
-vec4 sampleTexture(int id, vec2 uv, bool sky, bool flip, bool applyFlatWarp)
+vec4 sampleTexture(int id, vec2 uv, bool sky, bool flip, bool applyFlatWarp, out vec3 tint)
 {
 	ivec4 sampleData = texelFetch(TextureTable, id);
+	tint = TextureSettings == 0u ? vec3(1.0) : getHalfTint(sampleData.zw);
+	sampleData.zw &= ivec2(32767);
+
 	vec2 baseUv = uv;
 	uv = bilinearSharpness(uv, TexSamplingParam.x);
 	
@@ -172,6 +193,8 @@ vec4 sampleTexture(int id, vec2 uv, bool sky, bool flip, bool applyFlatWarp)
 vec4 sampleTextureClamp(int id, vec2 uv)
 {
 	ivec4 sampleData = texelFetch(TextureTable, id);
+	sampleData.zw &= ivec2(32767);
+
 	uv = bilinearSharpness(uv, TexSamplingParam.x);
 
 	vec3 uv3 = vec3(uv, 0.0);
@@ -184,6 +207,8 @@ vec4 sampleTextureClamp(int id, vec2 uv)
 vec4 sampleTextureClamp(int id, vec2 uv, bool opaque)
 {
 	ivec4 sampleData = texelFetch(TextureTable, id);
+	sampleData.zw &= ivec2(32767);
+
 	vec2 baseUv = uv;
 	uv = bilinearSharpness(uv, TexSamplingParam.x);
 
@@ -208,6 +233,8 @@ vec4 sampleTextureClamp(int id, vec2 uv, bool opaque)
 float sampleTexture(int id, vec2 uv)
 {
 	ivec4 sampleData = texelFetch(TextureTable, id);
+	sampleData.zw &= ivec2(32767);
+
 	ivec3 iuv;
 
 #ifdef OPT_BILINEAR_DITHER
@@ -227,6 +254,8 @@ float sampleTexture(int id, vec2 uv)
 float sampleTexture(int id, vec2 uv, bool sky, bool flip, bool applyFlatWarp)
 {
 	ivec4 sampleData = texelFetch(TextureTable, id);
+	sampleData.zw &= ivec2(32767);
+
 	ivec3 iuv;
 
 #ifdef OPT_BILINEAR_DITHER
@@ -274,6 +303,8 @@ float sampleTexture(int id, vec2 uv, bool sky, bool flip, bool applyFlatWarp)
 float sampleTextureClamp(int id, vec2 uv)
 {
 	ivec4 sampleData = texelFetch(TextureTable, id);
+	sampleData.zw &= ivec2(32767);
+
 	ivec3 iuv;
 
 #ifdef OPT_BILINEAR_DITHER
@@ -297,6 +328,8 @@ float sampleTextureClamp(int id, vec2 uv)
 float sampleTextureClamp(int id, vec2 uv, bool opaque)
 {
 	ivec4 sampleData = texelFetch(TextureTable, id);
+	sampleData.zw &= ivec2(32767);
+
 	ivec3 iuv;
 
 #ifdef OPT_BILINEAR_DITHER

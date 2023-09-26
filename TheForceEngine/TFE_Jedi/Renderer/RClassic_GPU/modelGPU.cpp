@@ -37,6 +37,7 @@ namespace TFE_Jedi
 {
 	extern s32 s_drawnObjCount;
 	extern SecObject* s_drawnObj[];
+	extern u32 s_textureSettings;
 
 	enum ModelShader
 	{
@@ -116,6 +117,7 @@ namespace TFE_Jedi
 		s32 texSamplingParamId;
 		s32 palFxLumMask;
 		s32 palFxFlash;
+		s32 textureSettings;
 	};
 	static ShaderInputs s_shaderInputs[MGPU_SHADER_COUNT];
 	static std::vector<ModelDraw> s_modelDrawList[MGPU_SHADER_COUNT];
@@ -196,6 +198,7 @@ namespace TFE_Jedi
 		s_shaderInputs[variant].texSamplingParamId = shader->getVariableId("TexSamplingParam");
 		s_shaderInputs[variant].palFxLumMask = shader->getVariableId("PalFxLumMask");
 		s_shaderInputs[variant].palFxFlash   = shader->getVariableId("PalFxFlash");
+		s_shaderInputs[variant].textureSettings = shader->getVariableId("TextureSettings");
 		
 		shader->bindTextureNameToSlot("Palette",  0);
 		shader->bindTextureNameToSlot("Colormap", 1);
@@ -826,6 +829,10 @@ namespace TFE_Jedi
 
 				shader->setVariable(s_shaderInputs[s].palFxLumMask, SVT_VEC3, lumMask.m);
 				shader->setVariable(s_shaderInputs[s].palFxFlash, SVT_VEC3, palFx.m);
+			}
+			if (s_shaderInputs[s].textureSettings >= 0)
+			{
+				shader->setVariable(s_shaderInputs[s].textureSettings, SVT_USCALAR, &s_textureSettings);
 			}
 
 			if (s == MGPU_SHADER_TRANS && s_shaderSettings.trueColor)

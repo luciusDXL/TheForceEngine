@@ -223,13 +223,29 @@ void main()
 	else
 #endif
 	{
+	#ifdef OPT_TRUE_COLOR
+		vec3 tint;
+		baseColor = sampleTexture(Frag_TextureId, uv, sky, flip, applyFlatWarp, tint);
+		// Per-texture color correction factor.
+		if (light < 31.0)
+		{
+			float tintFactor = clamp((31.0 - light) / 15.0, 0.0, 1.0) * (1.0 - clamp((baseColor.a - 0.5) * 2.0, 0.0, 1.0));
+			baseColor.rgb *= mix(vec3(1.0), tint, tintFactor);
+		}
+	#else
 		baseColor = sampleTexture(Frag_TextureId, uv, sky, flip, applyFlatWarp);
+	#endif
 	}
 
 	// Handle sky fading.
 	if (skyFade > 0.0 && getBayerIndex(uv) < skyFade)
 	{
+	#ifdef OPT_TRUE_COLOR
+		vec3 tint; // ignore.
+		baseColor = sampleTexture(Frag_TextureId, vec2(256.0, yLimit), sky, flip, false, tint);
+	#else
 		baseColor = sampleTexture(Frag_TextureId, vec2(256.0, yLimit), sky, flip, false);
+	#endif
 	}
 
 	// Compute emissive.

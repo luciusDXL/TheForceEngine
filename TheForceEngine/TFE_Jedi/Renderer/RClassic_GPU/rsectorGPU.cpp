@@ -90,6 +90,7 @@ namespace TFE_Jedi
 		s32 texSamplingParamId;
 		s32 palFxLumMask;
 		s32 palFxFlash;
+		s32 textureSettings;
 	};
 	struct ShaderSkyInputs
 	{
@@ -144,6 +145,7 @@ namespace TFE_Jedi
 	static Vec3f s_clipObjPos;
 
 	static JBool s_flushCache = JFALSE;
+	u32 s_textureSettings = 1u;
 
 	extern Mat3  s_cameraMtx;
 	extern Mat4  s_cameraProj;
@@ -171,6 +173,7 @@ namespace TFE_Jedi
 		s_shaderInputs[SPRITE_PASS].texSamplingParamId = s_spriteShader.getVariableId("TexSamplingParam");
 		s_shaderInputs[SPRITE_PASS].palFxLumMask = s_spriteShader.getVariableId("PalFxLumMask");
 		s_shaderInputs[SPRITE_PASS].palFxFlash = s_spriteShader.getVariableId("PalFxFlash");
+		s_shaderInputs[SPRITE_PASS].textureSettings = s_spriteShader.getVariableId("TextureSettings");
 		s_cameraRightId = s_spriteShader.getVariableId("CameraRight");
 
 		s_spriteShader.bindTextureNameToSlot("DrawListPosXZ_Texture", 0);
@@ -206,6 +209,7 @@ namespace TFE_Jedi
 		s_shaderInputs[index].texSamplingParamId = s_wallShader[index].getVariableId("TexSamplingParam");
 		s_shaderInputs[index].palFxLumMask = s_wallShader[index].getVariableId("PalFxLumMask");
 		s_shaderInputs[index].palFxFlash = s_wallShader[index].getVariableId("PalFxFlash");
+		s_shaderInputs[index].textureSettings = s_wallShader[index].getVariableId("TextureSettings");
 
 		s_shaderSkyInputs[index].skyParallaxId = s_wallShader[index].getVariableId("SkyParallax");
 		s_shaderSkyInputs[index].skyParam0Id = s_wallShader[index].getVariableId("SkyParam0");
@@ -426,7 +430,6 @@ namespace TFE_Jedi
 		TFE_Image::writeImage("ColorMap.png", 256-32, 32, outImage);
 #endif
 
-		//
 		for (s32 i = 1; i < 32; i++)
 		{
 			palIndex = getColormapWhiterampColor(i);
@@ -474,6 +477,7 @@ namespace TFE_Jedi
 		//   RGB = Multiply color, A = ?
 		//   RGB = Fog color, A = blendFactor
 		Vec4f mulRamp[32], fogRamp[32];
+		bool ignoreTextureTint = false;
 		for (s32 i = 0; i < fogRegionCount; i++)
 		{
 			curRegion = &regions[i];
@@ -482,6 +486,11 @@ namespace TFE_Jedi
 				Vec3f white = { 1.0f, 1.0f, 1.0f };
 				Vec3f mulColor = curRegion->start == 31 ? white : curRegion->startColor;
 				Vec3f fogColor = curRegion->endColor;
+
+				if (fogColor.x > 0.1f || fogColor.y > 0.1f || fogColor.z > 0.1f)
+				{
+					ignoreTextureTint = true;
+				}
 
 				for (s32 j = curRegion->start; j >= curRegion->end; j--)
 				{
@@ -522,6 +531,7 @@ namespace TFE_Jedi
 	#endif
 		TFE_RenderBackend::freeTexture(s_trueColorMapping);
 		s_trueColorMapping = TFE_RenderBackend::createTexture(64, 1, mappingTable);
+		s_textureSettings = (ignoreTextureTint) ? 0 : 1;
 
 		// Generate a comparison color map.
 #if SHOW_TRUE_COLOR_COMPARISION
@@ -1912,6 +1922,10 @@ namespace TFE_Jedi
 			shader->setVariable(s_shaderInputs[pass].palFxLumMask, SVT_VEC3, lumMask.m);
 			shader->setVariable(s_shaderInputs[pass].palFxFlash, SVT_VEC3, palFx.m);
 		}
+		if (s_shaderInputs[pass].textureSettings >= 0)
+		{
+			shader->setVariable(s_shaderInputs[pass].textureSettings, SVT_USCALAR, &s_textureSettings);
+		}
 
 		// Draw the sector display list.
 		sdisplayList_draw(pass);
@@ -1997,6 +2011,10 @@ namespace TFE_Jedi
 
 			s_spriteShader.setVariable(s_shaderInputs[SPRITE_PASS].palFxLumMask, SVT_VEC3, lumMask.m);
 			s_spriteShader.setVariable(s_shaderInputs[SPRITE_PASS].palFxFlash, SVT_VEC3, palFx.m);
+		}
+		if (s_shaderInputs[SPRITE_PASS].textureSettings >= 0)
+		{
+			s_spriteShader.setVariable(s_shaderInputs[SPRITE_PASS].textureSettings, SVT_USCALAR, &s_textureSettings);
 		}
 
 		// Draw the sector display list.

@@ -410,22 +410,68 @@ namespace TFE_Jedi
 		}
 	}
 
+	f32 getSaturation(u32 color)
+	{
+		if ((color & 0x00ffffff) == 0) { return 0.0f; }
+
+		const f32 scale = 1.0f / 255.0f;
+		const f32 r = f32(color & 0xff) * scale;
+		const f32 g = f32((color >> 8) & 0xff) * scale;
+		const f32 b = f32((color >> 16) & 0xff) * scale;
+
+		const f32 maxc = max(r, max(g, b));
+		const f32 minc = min(r, min(g, b));
+		const f32 lum = maxc - minc;
+
+		const f32 sat = (lum < 0.5f) ? (maxc - minc) / (maxc + minc) : (maxc - minc) / (2.0f - maxc - minc);
+		return sat;
+	}
+
+	f64 addMultiplier(u32 cFull, u32 cHalf, f64* accum)
+	{
+		if ((cFull & 0x00ffffff) == 0) { return 0.0; }
+
+		u32 r[2] = { cFull & 0xff, cHalf & 0xff };
+		u32 g[2] = { (cFull >> 8) & 0xff, (cHalf >> 8) & 0xff };
+		u32 b[2] = { (cFull >> 16) & 0xff, (cHalf >> 16) & 0xff };
+
+		f64 scale = 1.0 / 255.0;
+		f64 rFull = f64(r[0]) * scale;
+		f64 gFull = f64(g[0]) * scale;
+		f64 bFull = f64(b[0]) * scale;
+		f64 rHalf = f64(r[1]) * scale;
+		f64 gHalf = f64(g[1]) * scale;
+		f64 bHalf = f64(b[1]) * scale;
+
+		f64 mR = rFull > FLT_EPSILON ? rHalf / rFull : -1.0;
+		f64 mG = gFull > FLT_EPSILON ? gHalf / gFull : -1.0;
+		f64 mB = bFull > FLT_EPSILON ? bHalf / bFull : -1.0;
+
+		accum[0] += mR > FLT_EPSILON ? mR : 0.0;
+		accum[1] += mG > FLT_EPSILON ? mG : 0.0;
+		accum[2] += mB > FLT_EPSILON ? mB : 0.0;
+		return 1.0;
+	}
+
 	void packNode(const TextureNode* node, const TextureData* texData, Vec4i* tableEntry, s32 paddingX, s32 paddingY, s32 mipCount)
 	{
-		if (texData->width == 128 && texData->height == 256)
-		{
-			static s32 _x = 0;
-			_x++;
-		}
-
 		// Copy the texture into place.
 		s32 offsetX = paddingX / 2;
 		s32 offsetY = paddingY / 2;
 		const u8* srcImage = texData->image;
+
+		Vec3f halfTint = { 1.0f, 1.0f, 1.0f };
+		s32 grayScaleCount = 0;
+		s32 grayScaleCountHalf = 0;
+		s32 totalCount = 0;
 		if (s_texturePacker->trueColor)
 		{
 			const u32* pal = getPalette(texData->palIndex);
 			const u8* remap = &TFE_DarkForces::s_levelColorMap[31 << 8];
+			const u8* remapHalf = &TFE_DarkForces::s_levelColorMap[16 << 8];
+
+			f64 accum[3] = { 0.0 };
+			f64 accumCount = 0.0;
 
 			u32* output = (u32*)getWritePointer(s_currentPage, node->rect.x, node->rect.y, 0);
 			for (s32 y = 0; y < texData->height+paddingY; y++, output += s_texturePacker->width)
@@ -458,12 +504,46 @@ namespace TFE_Jedi
 					else
 					{
 						output[x] = palIndex == 0 ? 0u : pal[remap[palIndex]];
+						f32 sat = getSaturation(output[x]);
+						if (sat < 0.1f)
+						{
+							grayScaleCount++;
+						}
+						totalCount++;
+						
+						// Also figure out the average multiplier.
+						u32 halfValue = palIndex == 0 ? 0u : pal[remapHalf[palIndex]];
+						accumCount += addMultiplier(output[x], halfValue, accum);
+
+						sat = getSaturation(halfValue);
+						if (sat < 0.1f)
+						{
+							grayScaleCountHalf++;
+						}
 					}
 
 					if (!(texData->flags & INDEXED))
 					{
 						handleAlpha8Bit(palIndex, &output[x]);
 					}
+				}
+			}
+
+			if (accumCount > 0.0)
+			{
+				// Try to guess at which textures have areas that should not be tinted.
+				if (grayScaleCount > totalCount / 4 && grayScaleCountHalf > 3 * totalCount / 8)
+				{
+					halfTint = { 1.0f, 1.0f, 1.0f };
+				}
+				else
+				{
+					const f64 scale = 1.0 / max(accum[0], max(accum[1], accum[2]));
+					accum[0] *= scale;
+					accum[1] *= scale;
+					accum[2] *= scale;
+
+					halfTint = { f32(accum[0]), f32(accum[1]), f32(accum[2]) };
 				}
 			}
 
@@ -503,6 +583,13 @@ namespace TFE_Jedi
 
 		// Page the page index into the x offset.
 		tableEntry->x |= (s_currentPage << 12);
+
+		// Half color tint packed.
+		s32 r = s32(halfTint.x * 255.0);
+		s32 g = s32(halfTint.y * 255.0);
+		s32 b = s32(halfTint.z * 255.0);
+		tableEntry->z |= ((r << 15) | (g << 23));
+		tableEntry->w |= (b << 15);
 	}
 
 	void packNodeDeltaTex(const TextureNode* node, const TextureData* texData, Vec4i* tableEntry, s32 paddingX, s32 paddingY)
