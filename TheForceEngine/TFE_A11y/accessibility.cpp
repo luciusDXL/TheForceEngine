@@ -354,7 +354,7 @@ namespace TFE_A11Y  // a11y is industry slang for accessibility
 		};
 
 		s_status = CC_LOADED;
-		delete s_captionsBuffer;
+		free(s_captionsBuffer);
 	}
 
 	void onFileError(const string path)
