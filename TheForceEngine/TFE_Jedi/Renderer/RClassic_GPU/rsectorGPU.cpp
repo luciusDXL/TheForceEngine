@@ -1953,11 +1953,13 @@ namespace TFE_Jedi
 		TFE_RenderState::setDepthFunction(CMP_ALWAYS);
 
 		// Alpha blending...
+	#if 0  // Disable for now.
 		if (s_shaderSettings.trueColor)
 		{
 			TFE_RenderState::setStateEnable(true, STATE_BLEND);
 			TFE_RenderState::setBlendMode(BLEND_ONE, BLEND_ONE_MINUS_SRC_ALPHA);
 		}
+	#endif
 
 		s_spriteShader.bind();
 		s_indexBuffer.bind();

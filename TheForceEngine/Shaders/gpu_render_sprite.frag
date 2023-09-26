@@ -61,10 +61,10 @@ void main()
 
 	// Sample the texture.
 	baseColor = sampleTextureClamp(Frag_TextureId, Frag_Uv);
-	if (discardPixel(baseColor, LightData.w)) { discard; }
+	// if (discardPixel(baseColor, LightData.w)) { discard; }
 	// Either discard very close to the iso-value or
 	// do a two-pass filter - close cut with depth-write + alpha blend without depth-write.
-	// if (baseColor.a < 0.48) { discard; }
+	if (baseColor.a < 0.48 && LightData.w < 1.0) { discard; }
 
 	// Get the emissive factor (0 = normal, 1 = 100% fullbright).
 	#ifdef OPT_TRUE_COLOR
