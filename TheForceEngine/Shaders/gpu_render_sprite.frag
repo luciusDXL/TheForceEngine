@@ -64,7 +64,17 @@ void main()
 	// if (discardPixel(baseColor, LightData.w)) { discard; }
 	// Either discard very close to the iso-value or
 	// do a two-pass filter - close cut with depth-write + alpha blend without depth-write.
-	if (baseColor.a < 0.48 && LightData.w < 1.0) { discard; }
+	#ifdef OPT_TRUE_COLOR
+	if (baseColor.a < 0.48 && LightData.w < 1.0)
+	{
+		discard;
+	}
+	#else
+	if (baseColor < 0.5 && LightData.w < 1.0)
+	{
+		discard;
+	}
+	#endif
 
 	// Get the emissive factor (0 = normal, 1 = 100% fullbright).
 	#ifdef OPT_TRUE_COLOR
