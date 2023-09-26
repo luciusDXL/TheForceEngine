@@ -16,8 +16,8 @@ namespace TFE_Editor
 	{
 		char editorPath[TFE_MAX_PATH] = "";
 		char exportPath[TFE_MAX_PATH] = "";
-		f32 fontScale = 1.0f;
-		f32 thumbnailScale = 1.0f;
+		s32 fontScale = 100;
+		s32 thumbnailSize = 64;
 	};
 
 	bool configSetupRequired();

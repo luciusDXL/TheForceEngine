@@ -83,14 +83,49 @@ namespace TFE_Editor
 		snprintf(lineBuffer, 1024, "%s=\"%s\"\r\n", "ExportPath", s_editorConfig.exportPath);
 		configFile.writeBuffer(lineBuffer, (u32)strlen(lineBuffer));
 
-		snprintf(lineBuffer, 1024, "%s=%0.3f\r\n", "FontScale", s_editorConfig.fontScale);
+		snprintf(lineBuffer, 1024, "%s=%d\r\n", "FontScale", s_editorConfig.fontScale);
 		configFile.writeBuffer(lineBuffer, (u32)strlen(lineBuffer));
 
-		snprintf(lineBuffer, 1024, "%s=%0.3f\r\n", "ThumbnailScale", s_editorConfig.thumbnailScale);
+		snprintf(lineBuffer, 1024, "%s=%d\r\n", "ThumbnailSize", s_editorConfig.thumbnailSize);
 		configFile.writeBuffer(lineBuffer, (u32)strlen(lineBuffer));
 
 		configFile.close();
 		return true;
+	}
+
+	void fontScaleControl()
+	{
+		const char* fontScaleStr[] =
+		{
+			"100",
+			"125",
+			"150",
+			"175",
+			"200",
+		};
+
+		s32 item = (s_editorConfig.fontScale - 100) / 25;
+		if (ImGui::Combo("Font Scale", &item, fontScaleStr, IM_ARRAYSIZE(fontScaleStr)))
+		{
+			s_editorConfig.fontScale = item * 25 + 100;
+		}
+	}
+
+	void thumbnailSizeControl()
+	{
+		const char* thumbnailSizeStr[] =
+		{
+			"32",
+			"64",
+			"128",
+			"256",
+		};
+
+		s32 item = s32(log2(s_editorConfig.thumbnailSize) + 0.5) - 5;
+		if (ImGui::Combo("Thumbnail Size", &item, thumbnailSizeStr, IM_ARRAYSIZE(thumbnailSizeStr)))
+		{
+			s_editorConfig.thumbnailSize = 1 << (item + 5);
+		}
 	}
 
 	bool configUi()
@@ -120,18 +155,8 @@ namespace TFE_Editor
 			browseWinOpen = 1;
 		}
 
-		ImGui::LabelText("##ConfigLabel", "Font Scale:");
-		ImGui::SetNextItemWidth(196);
-		ImGui::SliderFloat("##FontScaleSlider", &s_editorConfig.fontScale, 0.0f, 4.0f); ImGui::SameLine(220);
-		ImGui::SetNextItemWidth(64);
-		ImGui::InputFloat("##FontScaleInput", &s_editorConfig.fontScale);
-
-		ImGui::LabelText("##ConfigLabel", "Thumbnail Scale:");
-		ImGui::SetNextItemWidth(196);
-		ImGui::SliderFloat("##ThumbnailScaleSlider", &s_editorConfig.thumbnailScale, 0.0f, 4.0f); ImGui::SameLine(220);
-		ImGui::SetNextItemWidth(64);
-		ImGui::InputFloat("##ThumbnailScaleInput", &s_editorConfig.thumbnailScale);
-
+		fontScaleControl();
+		thumbnailSizeControl();
 		ImGui::Separator();
 
 		if (ImGui::Button("Save Config"))
@@ -179,11 +204,11 @@ namespace TFE_Editor
 		}
 		else if (strcasecmp(key, "FontScale") == 0)
 		{
-			s_editorConfig.fontScale = (f32)strtod(value, &endPtr);
+			s_editorConfig.fontScale = (s32)strtol(value, &endPtr, 10);
 		}
-		else if (strcasecmp(key, "ThumbnailScale") == 0)
+		else if (strcasecmp(key, "ThumbnailSize") == 0)
 		{
-			s_editorConfig.thumbnailScale = (f32)strtod(value, &endPtr);
+			s_editorConfig.thumbnailSize = (s32)strtol(value, &endPtr, 10);
 		}
 	}
 }
