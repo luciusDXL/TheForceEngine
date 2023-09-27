@@ -24,24 +24,27 @@ namespace TFE_Editor
 		bool setupRequired = !s_configLoaded;
 		if (setupRequired)
 		{
-			// Compute default scales.
+			// Compute default UI scale based on display resolution.
 			if (!s_configDefaultsSet)
 			{
 				DisplayInfo displayInfo;
 				TFE_RenderBackend::getDisplayInfo(&displayInfo);
 
+				// 1080p defaults.
 				s_editorConfig.fontScale = 100;
 				s_editorConfig.thumbnailSize = 64;
 
-				if (displayInfo.height >= 1440)
-				{
-					s_editorConfig.fontScale = 125;
-					s_editorConfig.thumbnailSize = 64;
-				}
-				else if (displayInfo.height >= 2160)
+				// 4k defaults.
+				if (displayInfo.height >= 2160)
 				{
 					s_editorConfig.fontScale = 150;
 					s_editorConfig.thumbnailSize = 128;
+				}
+				// 1440p defaults.
+				else if (displayInfo.height >= 1440)
+				{
+					s_editorConfig.fontScale = 125;
+					s_editorConfig.thumbnailSize = 64;
 				}
 				s_configDefaultsSet = true;
 			}
