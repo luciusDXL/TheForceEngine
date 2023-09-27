@@ -133,18 +133,18 @@ namespace TFE_Editor
 				}
 				if (ImGui::MenuItem("Asset Browser", NULL, s_editorMode == EDIT_ASSET))
 				{
+					if (s_editorMode == EDIT_CONFIG) { saveConfig(); }
 					s_editorMode = EDIT_ASSET;
 				}
 				if (ImGui::MenuItem("Level Editor", NULL, s_editorMode == EDIT_LEVEL))
 				{
+					if (s_editorMode == EDIT_CONFIG) { saveConfig(); }
 					s_editorMode = EDIT_LEVEL;
 				}
 				if (ImGui::MenuItem("Return to Game", NULL, (bool*)NULL))
 				{
+					if (s_editorMode == EDIT_CONFIG) { saveConfig(); }
 					s_exitEditor = true;
-				}
-				if (ImGui::MenuItem("Exit", NULL, (bool*)NULL))
-				{
 				}
 				ImGui::EndMenu();
 			}

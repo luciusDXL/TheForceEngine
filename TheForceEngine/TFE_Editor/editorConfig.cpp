@@ -136,13 +136,13 @@ namespace TFE_Editor
 		bool active = true;
 		bool finished = false;
 		ImGui::SetWindowPos("Editor Config", { 0.0f, f32(menuHeight) });
-		ImGui::SetWindowSize("Editor Config", { UI_SCALE(512), 70.0f + UI_SCALE(100) });
+		ImGui::SetWindowSize("Editor Config", { UI_SCALE(550), 70.0f + UI_SCALE(100) });
 		ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse;
 
 		ImGui::Begin("Editor Config", &active, window_flags);
 
 		s32 browseWinOpen = -1;
-		ImGui::Text("Editor Path:"); ImGui::SameLine(UI_SCALE(100));
+		ImGui::Text("Editor Path:"); ImGui::SameLine(UI_SCALE(120));
 		ImGui::InputText("##EditorPath", s_editorConfig.editorPath, TFE_MAX_PATH);
 		ImGui::SameLine();
 		if (ImGui::Button("Browse##EditorPath"))
@@ -150,7 +150,7 @@ namespace TFE_Editor
 			browseWinOpen = 0;
 		}
 
-		ImGui::Text("Export Path:"); ImGui::SameLine(UI_SCALE(100));
+		ImGui::Text("Export Path:"); ImGui::SameLine(UI_SCALE(120));
 		ImGui::InputText("##ExportPath", s_editorConfig.exportPath, TFE_MAX_PATH);
 		ImGui::SameLine();
 		if (ImGui::Button("Browse##ExportPath"))
