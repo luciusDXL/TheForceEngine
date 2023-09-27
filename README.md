@@ -1,3 +1,4 @@
+
 # The Force Engine (TFE)
 * [Website](https://theforceengine.github.io/)
 * [Release Downloads](https://theforceengine.github.io/downloads.html)
@@ -53,9 +54,11 @@ This can be overridden by defining the "__TFE_DATA_HOME__" environment variable.
 ### Required Libraries
 * [SDL2](TheForceEngine/TFE_FrontEndUI/frontEndUi.cpp) 2.24 or higher
 * [devIL](https://openil.sourceforge.net)
-* [RtMidi](https://www.music.mcgill.ca/~gary/rtmidi/) 5.0.0 or higher
 * [GLEW](http://glew.sourceforge.net/) 2.2.0
 * OpenGL 3.3 capable driver (latest [mesa](https://www.mesa3d.org) or nvidia proprietary driver recommended)
+
+### Optional Libraries
+* [RtMidi](https://www.music.mcgill.ca/~gary/rtmidi/) 5.0.0 or higher for external MIDI Synthesizer support
 
 ### Building from Source
 #### Recommended Tools

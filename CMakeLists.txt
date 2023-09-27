@@ -37,6 +37,9 @@ else()
 endif()
 include(GNUInstallDirs)
 
+## Options
+option(DISABLE_SYSMIDI "Disable System-MIDI Output" OFF)
+
 
 add_executable(tfe)
 set_target_properties(tfe PROPERTIES OUTPUT_NAME "theforceengine")
@@ -44,7 +47,6 @@ set_target_properties(tfe PROPERTIES OUTPUT_NAME "theforceengine")
 if(LINUX)
 	find_package(PkgConfig REQUIRED)
 	find_package(Threads REQUIRED)
-	pkg_check_modules(RTMIDI REQUIRED rtmidi>=5.0.0)
 	pkg_check_modules(SDL2 REQUIRED sdl2)
 	pkg_check_modules(GLEW REQUIRED glew)
 	pkg_check_modules(IL REQUIRED IL)
@@ -59,9 +61,13 @@ if(LINUX)
 				${SDL2_LIBRARIES}
 				${IL_LIBRARIES}
 				${ILU_LIBRARIES}
-				${RTMIDI_LIBRARIES}
 	)
-	
+
+	if(NOT DISABLE_SYSMIDI)
+		pkg_check_modules(RTMIDI REQUIRED rtmidi>=5.0.0)
+		target_link_libraries(tfe PRIVATE ${RTMIDI_LIBRARIES})
+	endif()
+
 	# set up build directory to be able to run TFE immediately: symlink
 	# the necessary support file directories into the build env.
 	execute_process(COMMAND ln -sf ${CMAKE_SOURCE_DIR}/TheForceEngine/Captions)
@@ -75,6 +81,12 @@ if(LINUX)
 	include(CreateGitVersionH.cmake)
 	create_git_version_h()
 endif()
+
+
+if(DISABLE_SYSMIDI)
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DNOSYSMIDI")
+endif()
+
 
 target_include_directories(tfe PRIVATE TheForceEngine)
 

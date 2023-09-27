@@ -5,7 +5,7 @@ struct GMidiAsset;
 
 namespace TFE_MidiPlayer
 {
-	bool init(s32 midiDeviceIndex, MidiDeviceType type = MIDI_TYPE_SYSTEM);
+	bool init(s32 midiDeviceIndex, MidiDeviceType type = MIDI_TYPE_OPL3);
 	void setDeviceType(MidiDeviceType type);
 	MidiDeviceType getDeviceType();
 	void destroy();
