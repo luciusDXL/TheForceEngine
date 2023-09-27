@@ -1166,7 +1166,7 @@ namespace AssetBrowser
 				asset.archiveName = projAsset->archiveName;
 				asset.filePath = projAsset->filePath;
 
-				memset(&asset.texture, 0, sizeof(EditorTexture));
+				memset(&asset.frame, 0, sizeof(EditorFrame));
 				s32 palId = getAssetPalette(projAsset->name.c_str());
 
 				loadEditorFrame(FRAME_FME, archive, projAsset->name.c_str(), s_palettes[palId].data, palId, &asset.frame);
