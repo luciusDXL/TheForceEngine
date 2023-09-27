@@ -403,11 +403,11 @@ namespace TFE_A11Y  // a11y is industry slang for accessibility
 				f32 fontScale;
 				auto windowSize = calcWindowSize(&fontScale, env);
 				assert(fontScale > 0);
-				s32 count = 1;
-				size_t idx = 0;
+
+				size_t idx = 0;   // Index of current character in string.
+				string line = ""; // Current line of the current chunk.
 				string chunk;
 				s32 chunkLineCount = 0;
-				string line = "";
 				while (idx < caption.text.length())
 				{
 					// Extend the line one character at a time until we exceed the width of the panel
@@ -431,8 +431,8 @@ namespace TFE_A11Y  // a11y is industry slang for accessibility
 						}
 						else { break; }
 
-						// If the chunk has three lines, add it as a new caption.
-						if (chunkLineCount >= 3)
+						// If the chunk has reached the maximum number of lines, add it as a new caption.
+						if (chunkLineCount >= maxLines)
 						{
 							s32 length = (s32)chunk.length();
 							f32 ratio = length / (f32)caption.text.length();
@@ -450,7 +450,6 @@ namespace TFE_A11Y  // a11y is industry slang for accessibility
 							else { break; }
 
 							caption.microsecondsRemaining -= next.microsecondsRemaining;
-							count++;
 							idx = 0;
 							chunkLineCount = 0;
 							chunk = "";
