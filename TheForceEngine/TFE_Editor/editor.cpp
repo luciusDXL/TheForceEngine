@@ -18,11 +18,6 @@ namespace TFE_Editor
 		EDIT_ASSET,
 		EDIT_LEVEL,
 	};
-		
-	enum EditorConst
-	{
-		FONT_SIZE_COUNT = 5,
-	};
 	
 	static bool s_showPerf = true;
 	static bool s_showEditor = true;
@@ -164,7 +159,7 @@ namespace TFE_Editor
 		TFE_Paths::mapSystemPath(fontPath);
 
 		ImGuiIO& io = ImGui::GetIO();
-		ImFont** fontSmall = &s_fonts[FONT_SMALL * FONT_COUNT];
+		ImFont** fontSmall = &s_fonts[FONT_SMALL * FONT_SIZE_COUNT];
 		fontSmall[0] = io.Fonts->AddFontFromFileTTF(fontPath, 16 * 100 / 100);
 		fontSmall[1] = io.Fonts->AddFontFromFileTTF(fontPath, 16 * 125 / 100);
 		fontSmall[2] = io.Fonts->AddFontFromFileTTF(fontPath, 16 * 150 / 100);
@@ -175,10 +170,9 @@ namespace TFE_Editor
 		
 	void pushFont(FontType type)
 	{
-		s32 scaleToIndex = (s_editorConfig.fontScale - 100) / 25;
-
-		ImFont** fonts = &s_fonts[type * FONT_COUNT];
-		ImGui::PushFont(fonts[scaleToIndex]);
+		const s32 index = fontScaleToIndex(s_editorConfig.fontScale);
+		ImFont** fonts = &s_fonts[type * FONT_SIZE_COUNT];
+		ImGui::PushFont(fonts[index]);
 	}
 
 	void popFont()

@@ -21,11 +21,18 @@ namespace TFE_Editor
 		s32 fontScale = 100;
 		s32 thumbnailSize = 64;
 	};
+	enum EditorFontConst
+	{
+		FONT_SIZE_COUNT = 5,
+	};
 
 	bool configSetupRequired();
 	bool loadConfig();
 	bool saveConfig();
 	bool configUi();
+
+	s32 fontScaleToIndex(s32 scale);
+	s32 fontIndexToScale(s32 index);
 
 	extern EditorConfig s_editorConfig;
 }

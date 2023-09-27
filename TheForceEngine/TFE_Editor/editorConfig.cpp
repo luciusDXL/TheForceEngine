@@ -104,10 +104,10 @@ namespace TFE_Editor
 			"200%",
 		};
 
-		s32 item = (s_editorConfig.fontScale - 100) / 25;
+		s32 item = fontScaleToIndex(s_editorConfig.fontScale);
 		if (ImGui::Combo("Font Scale", &item, fontScaleStr, IM_ARRAYSIZE(fontScaleStr)))
 		{
-			s_editorConfig.fontScale = item * 25 + 100;
+			s_editorConfig.fontScale = fontIndexToScale(item);
 		}
 	}
 
@@ -190,6 +190,16 @@ namespace TFE_Editor
 		ImGui::End();
 		popFont();
 		return finished;
+	}
+		
+	s32 fontScaleToIndex(s32 scale)
+	{
+		return (s_editorConfig.fontScale - 100) / 25;
+	}
+
+	s32 fontIndexToScale(s32 index)
+	{
+		return 100 + index * 25;
 	}
 
 	//////////////////////////////////////////
