@@ -14,13 +14,39 @@
 namespace TFE_Editor
 {
 	static bool s_configLoaded = false;
+	static bool s_configDefaultsSet = false;
 	EditorConfig s_editorConfig = {};
 
 	void parseValue(const char* key, const char* value);
 	
 	bool configSetupRequired()
 	{
-		return !s_configLoaded;
+		bool setupRequired = !s_configLoaded;
+		if (setupRequired)
+		{
+			// Compute default scales.
+			if (!s_configDefaultsSet)
+			{
+				DisplayInfo displayInfo;
+				TFE_RenderBackend::getDisplayInfo(&displayInfo);
+
+				s_editorConfig.fontScale = 100;
+				s_editorConfig.thumbnailSize = 64;
+
+				if (displayInfo.height >= 1440)
+				{
+					s_editorConfig.fontScale = 125;
+					s_editorConfig.thumbnailSize = 64;
+				}
+				else if (displayInfo.height >= 2160)
+				{
+					s_editorConfig.fontScale = 150;
+					s_editorConfig.thumbnailSize = 128;
+				}
+				s_configDefaultsSet = true;
+			}
+		}
+		return setupRequired;
 	}
 
 	bool loadConfig()
