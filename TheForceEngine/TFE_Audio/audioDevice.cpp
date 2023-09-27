@@ -17,10 +17,11 @@ namespace TFE_AudioDevice
 	{
 		int d = SDL_GetNumAudioDevices(0);
 		s_outputDeviceList.clear();
+		s_outputDeviceList.push_back({"<autoselect>", 0});
 		for (u32 i = 0; i < d; i++) {
 			const char *dn = SDL_GetAudioDeviceName(i, 0);
 			TFE_System::logWrite(LOG_MSG, "Audio", "Device %02d: %s", i, dn);
-			s_outputDeviceList.push_back({dn, i});
+			s_outputDeviceList.push_back({dn, i+1});
 		}
 		return d;
 	}
@@ -74,24 +75,7 @@ namespace TFE_AudioDevice
 
 	s32 getDefaultOutputDevice()
 	{
-		int ret, i;
-		char *devname;
-		SDL_AudioSpec spec;
-
-		ret = SDL_GetDefaultAudioInfo(&devname, &spec, 0);
-		if ((ret != 0) || !devname)
-		{
-			TFE_System::logWrite(LOG_ERROR, "Audio", "cannot determine default audio device, SDLError '%s'", SDL_GetError());
-			return 0;
-		}
-		if (s_outputDeviceList.empty()) { ret = sdla_queryaudiodevs(); }
-		ret = s_outputDeviceList.size();
-		for (i = 0; i < ret; i++)
-		{
-			if (0 == strcmp(devname, s_outputDeviceList[i].name.c_str()))
-				return i;
-		}
-		return -1;
+		return 0;
 	}
 
 	s32 getOutputDeviceId()
@@ -133,11 +117,14 @@ namespace TFE_AudioDevice
 		dn = s_outputDeviceList[s_outputDevice].name.c_str();
 
 		TFE_System::logWrite(LOG_MSG, "Audio", "Starting up audio stream for device '%s'", dn);
+		if (s_outputDevice < 1)
+			dn = NULL;
 
 		adevid = SDL_OpenAudioDevice(dn, 0, &specin, &specout, 0);
 		if (adevid == 0)
 		{
-			TFE_System::logWrite(LOG_ERROR, "Audio", "Open Audio Device %s failed with '%s'", dn, SDL_GetError());
+			TFE_System::logWrite(LOG_ERROR, "Audio", "Open Audio Device '%s' failed with '%s'",
+					s_outputDeviceList[s_outputDevice].name.c_str(), SDL_GetError());
 			return false;
 		}
 
