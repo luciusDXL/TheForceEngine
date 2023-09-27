@@ -83,10 +83,7 @@ namespace TFE_AudioDevice
 	{
 		SDL_AudioDeviceID adevid;
 		SDL_AudioSpec specin, specout;
-		const char *dn;
-
-		if (s_outputDevice < 0 || getOutputDeviceCount() < 1)
-			return false;
+		const char *dn = s_outputDeviceList[s_outputDevice].name.c_str();
 
 		specin.freq = (int)sampleRate;
 		specin.format = AUDIO_F32LSB;
@@ -94,7 +91,6 @@ namespace TFE_AudioDevice
 		specin.callback = callback;
 		specin.userdata = userData;
 		specin.samples = s_audioFrameSize;
-		dn = s_outputDeviceList[s_outputDevice].name.c_str();
 
 		TFE_System::logWrite(LOG_MSG, "Audio", "Starting up audio stream for device '%s'", dn);
 		if (s_outputDevice < 1)
