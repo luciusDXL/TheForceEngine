@@ -2785,7 +2785,7 @@ namespace TFE_FrontEndUI
 		ImGui::Dummy(ImVec2(0.0f, 10.0f));
 		ImGui::Separator();
 		ImGui::PushFont(s_dialogFont);
-		ImGui::LabelText("##ConfigLabel4", "Motion Sickess");
+		ImGui::LabelText("##ConfigLabel4", "Motion Sickness");
 		ImGui::PopFont();
 		ImGui::Checkbox("Enable headwave", &a11ySettings->enableHeadwave);
 	}
