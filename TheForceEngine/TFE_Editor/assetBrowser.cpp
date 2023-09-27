@@ -1,5 +1,6 @@
 #include "assetBrowser.h"
 #include "editorTexture.h"
+#include "editorFrame.h"
 #include "editorConfig.h"
 #include "editor.h"
 #include <TFE_DarkForces/mission.h>
@@ -66,6 +67,7 @@ namespace AssetBrowser
 		std::string filePath;
 
 		EditorTexture texture;
+		EditorFrame frame;
 	};
 	typedef std::vector<Asset> AssetList;
 
@@ -78,18 +80,21 @@ namespace AssetBrowser
 		u8 colormap[256 * 32];
 	};
 
-	struct LevelTextures
+	struct LevelAssets
 	{
 		std::string levelName;
 		std::string paletteName;
 		std::vector<std::string> textures;
+		std::vector<std::string> frames;
+		std::vector<std::string> sprites;
+		std::vector<std::string> pods;
 	};
-	std::vector<LevelTextures> s_levelTextures;
+	std::vector<LevelAssets> s_levelAssets;
 
 	static bool s_reloadProjectAssets = true;
 	static bool s_assetsNeedProcess = true;
 	static std::vector<Palette> s_palettes;
-	static std::map<std::string, s32> s_texPalette;
+	static std::map<std::string, s32> s_assetPalette;
 	static s32 s_defaultPal = 0;
 
 	static s32 s_hovered = -1;
@@ -116,7 +121,7 @@ namespace AssetBrowser
 
 	// Forward Declarations
 	void updateAssetList();
-	void reloadTexture(Asset* asset, s32 palId, s32 lightLevel = 32);
+	void reloadAsset(Asset* asset, s32 palId, s32 lightLevel = 32);
 
 	void init()
 	{
@@ -128,7 +133,7 @@ namespace AssetBrowser
 		s_reloadProjectAssets = true;
 		s_assetsNeedProcess = true;
 		s_palettes.clear();
-		s_texPalette.clear();;
+		s_assetPalette.clear();
 		s_defaultPal = 0;
 
 		s_viewInfo = {};
@@ -175,7 +180,7 @@ namespace AssetBrowser
 		}
 		else
 		{
-			LevelTextures* textures = (LevelTextures*)data;
+			LevelAssets* textures = (LevelAssets*)data;
 			*out_text = textures[idx - 1].levelName.c_str();
 		}
 		return true;
@@ -191,7 +196,7 @@ namespace AssetBrowser
 		ImGui::Combo(comboId, index, paletteItemGetter, listValues.data(), (s32)listValues.size());
 	}
 
-	void listSelectionLevel(const char* labelText, std::vector<LevelTextures>& listValues, s32* index)
+	void listSelectionLevel(const char* labelText, std::vector<LevelAssets>& listValues, s32* index)
 	{
 		ImGui::SetNextItemWidth(UI_SCALE(256));
 		ImGui::LabelText("##Label", labelText); ImGui::SameLine(UI_SCALE(96));
@@ -221,7 +226,7 @@ namespace AssetBrowser
 		ImGui::Begin("Asset Browser##Settings", &active, window_flags);
 		LIST_SELECT("Game", c_games, s_viewInfo.game);
 		LIST_SELECT("Asset Type", c_assetType, s_viewInfo.type);
-		listSelectionLevel("Level", s_levelTextures, &levelSource);
+		listSelectionLevel("Level", s_levelAssets, &levelSource);
 		ImGui::Separator();
 
 		bool listChanged = false;
@@ -315,7 +320,7 @@ namespace AssetBrowser
 				{
 					// Make sure the frame isn't reset when reloading the texture.
 					s32 curFrame = tex->curFrame;
-					reloadTexture(asset, newPaletteIndex, newLightLevel);
+					reloadAsset(asset, newPaletteIndex, newLightLevel);
 					tex->curFrame = curFrame;
 				}
 
@@ -336,6 +341,49 @@ namespace AssetBrowser
 				texH *= scale;
 
 				ImGui::Image(TFE_RenderBackend::getGpuPtr(asset->texture.texGpu[tex->curFrame]),
+					ImVec2((f32)texW, (f32)texH), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f));
+			}
+			else if (asset->type == TYPE_FRAME)
+			{
+				EditorFrame* frame = &asset->frame;
+
+				ImGui::LabelText("##Size", "Size: %d x %d", frame->width, frame->height);
+				ImGui::LabelText("##Dim",  "World Dim: %0.3f x %0.3f", frame->worldWidth, frame->worldHeight);
+
+				bool reloadRequired = false;
+				s32 newPaletteIndex = frame->paletteIndex;
+				listSelectionPalette("Palette", s_palettes, &newPaletteIndex);
+				if (newPaletteIndex != frame->paletteIndex)
+				{
+					reloadRequired = true;
+				}
+
+				s32 newLightLevel = frame->lightLevel;
+				if (s_palettes[newPaletteIndex].hasColormap)
+				{
+					ImGui::SliderInt("Light Level", &newLightLevel, 0, 32);
+				}
+				else
+				{
+					newLightLevel = 32;
+				}
+				if (newLightLevel != frame->lightLevel)
+				{
+					reloadRequired = true;
+				}
+
+				if (reloadRequired)
+				{
+					reloadAsset(asset, newPaletteIndex, newLightLevel);
+				}
+
+				s32 texW = frame->width;
+				s32 texH = frame->height;
+				s32 scale = max(1, min(4, s32(w) / texW));
+				texW *= scale;
+				texH *= scale;
+
+				ImGui::Image(TFE_RenderBackend::getGpuPtr(asset->frame.texGpu),
 					ImVec2((f32)texW, (f32)texH), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f));
 			}
 			else if (asset->type == TYPE_PALETTE)
@@ -394,7 +442,7 @@ namespace AssetBrowser
 			const Asset* asset = s_viewAssetList.data();
 
 			s32 textWidth = (s32)ImGui::CalcTextSize("12345678.123").x;
-			s32 fontSize  = ImGui::GetFontSize();
+			s32 fontSize  = (s32)ImGui::GetFontSize();
 
 			char buttonLabel[32];
 			s32 itemWidth  = 16 + max(textWidth, s_editorConfig.thumbnailSize);
@@ -428,33 +476,55 @@ namespace AssetBrowser
 					ImGui::SetCursorPos(cursor);
 
 					ImGui::PushStyleColor(ImGuiCol_Border, getBorderColor(a));
-					if (ImGui::BeginChild(buttonLabel, ImVec2(itemWidth, itemHeight), true, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoScrollWithMouse))
+					if (ImGui::BeginChild(buttonLabel, ImVec2(f32(itemWidth), f32(itemHeight)), true, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoScrollWithMouse))
 					{
-						EditorTexture* tex = &s_viewAssetList[a].texture;
 						s32 offsetX = 0, offsetY = 0;
 						s32 width = s_editorConfig.thumbnailSize, height = s_editorConfig.thumbnailSize;
-						// Preserve the image aspect ratio.
-						if (tex->width >= tex->height)
+
+						TextureGpu* textureGpu = nullptr;
+						if (s_viewAssetList[a].type == TYPE_TEXTURE || s_viewAssetList[a].type == TYPE_PALETTE)
 						{
-							height = tex->height * s_editorConfig.thumbnailSize / tex->width;
-							offsetY = (width - height) / 2;
+							EditorTexture* tex = &s_viewAssetList[a].texture;
+							textureGpu = tex->texGpu[0];
+							// Preserve the image aspect ratio.
+							if (tex->width >= tex->height)
+							{
+								height = tex->height * s_editorConfig.thumbnailSize / tex->width;
+								offsetY = (width - height) / 2;
+							}
+							else
+							{
+								width = tex->width * s_editorConfig.thumbnailSize / tex->height;
+								offsetX = (height - width) / 2;
+							}
 						}
-						else
+						else if (s_viewAssetList[a].type == TYPE_FRAME)
 						{
-							width = tex->width * s_editorConfig.thumbnailSize / tex->height;
-							offsetX = (height - width) / 2;
+							EditorFrame* frame = &s_viewAssetList[a].frame;
+							textureGpu = frame->texGpu;
+							// Preserve the image aspect ratio.
+							if (frame->width >= frame->height)
+							{
+								height = frame->height * s_editorConfig.thumbnailSize / frame->width;
+								offsetY = (width - height) / 2;
+							}
+							else
+							{
+								width = frame->width * s_editorConfig.thumbnailSize / frame->height;
+								offsetX = (height - width) / 2;
+							}
 						}
 						// Center image.
 						offsetX += (itemWidth - s_editorConfig.thumbnailSize) / 2;
 
 						// Draw the image.
 						ImGui::SetCursorPos(ImVec2((f32)offsetX, (f32)offsetY));
-						ImGui::Image(TFE_RenderBackend::getGpuPtr(s_viewAssetList[a].texture.texGpu[0]),
+						ImGui::Image(TFE_RenderBackend::getGpuPtr(textureGpu),
 							ImVec2((f32)width, (f32)height), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f));
 
 						// Draw the label.
 						ImGui::SetCursorPos(ImVec2(8.0f, (f32)s_editorConfig.thumbnailSize));
-						ImGui::SetNextItemWidth(itemWidth - 16);
+						ImGui::SetNextItemWidth(f32(itemWidth - 16));
 						ImGui::LabelText("###", "%s", asset[a].name.c_str());
 
 						if (ImGui::IsWindowHovered())
@@ -502,7 +572,7 @@ namespace AssetBrowser
 				
 		// Push the "small" font and draw the panels.
 		pushFont(TFE_Editor::FONT_SMALL);
-		s_menuHeight = 6 + ImGui::GetFontSize();
+		s_menuHeight = 6 + (s32)ImGui::GetFontSize();
 
 		infoPanel(infoWidth, infoHeight);
 		listPanel(infoWidth, infoHeight);
@@ -603,21 +673,21 @@ namespace AssetBrowser
 		return -1;
 	}
 
-	void setTexturePalette(const char* name, s32 paletteId)
+	void setAssetPalette(const char* name, s32 paletteId)
 	{
-		std::map<std::string, s32>::iterator iTexPal = s_texPalette.find(name);
-		if (iTexPal == s_texPalette.end())
+		std::map<std::string, s32>::iterator iAssetPal = s_assetPalette.find(name);
+		if (iAssetPal == s_assetPalette.end())
 		{
-			s_texPalette[name] = paletteId;
+			s_assetPalette[name] = paletteId;
 		}
 	}
 
-	s32 getTexturePalette(const char* name)
+	s32 getAssetPalette(const char* name)
 	{
-		std::map<std::string, s32>::iterator iTexPal = s_texPalette.find(name);
-		if (iTexPal != s_texPalette.end())
+		std::map<std::string, s32>::iterator iAssetPal = s_assetPalette.find(name);
+		if (iAssetPal != s_assetPalette.end())
 		{
-			return iTexPal->second;
+			return iAssetPal->second;
 		}
 		// Not sure how to automatically figure this out yet.
 		if (strcasecmp(name, "WAIT.BM") == 0)
@@ -627,24 +697,24 @@ namespace AssetBrowser
 		return s_defaultPal;
 	}
 		
-	void addToLevelTextures(std::vector<std::string>& textures, const char* textureName)
+	void addToLevelAssets(std::vector<std::string>& assetList, const char* assetName)
 	{
-		const size_t count = textures.size();
+		const size_t count = assetList.size();
 		for (size_t i = 0; i < count; i++)
 		{
-			if (textures[i] == textureName)
+			if (assetList[i] == assetName)
 			{
 				return;
 			}
 		}
-		textures.push_back(textureName);
+		assetList.push_back(assetName);
 	}
 
 	void preprocessAssets()
 	{
 		if (!s_assetsNeedProcess) { return; }
 		s_assetsNeedProcess = false;
-		s_levelTextures.clear();
+		s_levelAssets.clear();
 
 		WorkBuffer& buffer = getWorkBuffer();
 		const u32 count = (u32)s_projectAssetList[TYPE_PALETTE].size();
@@ -666,109 +736,210 @@ namespace AssetBrowser
 			// Parse the level for 1) the palette, 2) the data lists.
 			if (archive->openFile(projAsset->name.c_str()))
 			{
-				LevelTextures levelTextures;
-				levelTextures.levelName = projAsset->name;
+				LevelAssets levelAssets;
+				levelAssets.levelName = projAsset->name;
+				s32 paletteId = s_defaultPal;
 
-				size_t len = archive->getFileLength();
-				buffer.resize(len);
-				archive->readFile(buffer.data(), len);
-				archive->closeFile();
-
-				TFE_Parser parser;
-				size_t bufferPos = 0;
-				parser.init((char*)buffer.data(), buffer.size());
-				parser.addCommentString("#");
-				parser.convertToUpperCase(true);
-
-				// Read just enough of the file...
-				const char* line;
-				line = parser.readLine(bufferPos);
-				s32 versionMajor, versionMinor;
-				if (sscanf(line, " LEV %d.%d", &versionMajor, &versionMinor) != 2)
+				// .LEV
 				{
-					continue;
-				}
+					size_t len = archive->getFileLength();
+					buffer.resize(len);
+					archive->readFile(buffer.data(), len);
+					archive->closeFile();
 
-				char readBuffer[256];
-				line = parser.readLine(bufferPos);
-				if (sscanf(line, " LEVELNAME %s", readBuffer) != 1)
-				{
-					continue;
-				}
+					TFE_Parser parser;
+					size_t bufferPos = 0;
+					parser.init((char*)buffer.data(), buffer.size());
+					parser.addCommentString("#");
+					parser.convertToUpperCase(true);
 
-				// This gets read here just to be overwritten later... so just ignore for now.
-				line = parser.readLine(bufferPos);
-				if (sscanf(line, " PALETTE %s", readBuffer) != 1)
-				{
-					continue;
-				}
-				// Fixup the palette, strip any path.
-				char paletteName[256];
-				FileUtil::getFileNameFromPath(readBuffer, paletteName, true);
-				s32 paletteId = getPaletteId(paletteName);
-				if (paletteId < 0) { paletteId = 0; }
-
-				levelTextures.paletteName = paletteName;
-
-				// Another value that is ignored.
-				line = parser.readLine(bufferPos);
-				if (sscanf(line, " MUSIC %s", readBuffer) == 1)
-				{
+					// Read just enough of the file...
+					const char* line;
 					line = parser.readLine(bufferPos);
-				}
-
-				// Sky Parallax - this option until version 1.9, so handle its absence.
-				f32 x, z;
-				if (sscanf(line, " PARALLAX %f %f", &x, &z) == 2)
-				{
-					line = parser.readLine(bufferPos);
-				}
-
-				// Number of textures used by the level.
-				s32 textureCount = 0;
-				if (sscanf(line, " TEXTURES %d", &textureCount) != 1)
-				{
-					continue;
-				}
-
-				// Read texture names.
-				char textureName[256];
-				for (s32 i = 0; i < textureCount; i++)
-				{
-					line = parser.readLine(bufferPos);
-					if (sscanf(line, " TEXTURE: %s ", textureName) == 1)
+					s32 versionMajor, versionMinor;
+					if (sscanf(line, " LEV %d.%d", &versionMajor, &versionMinor) != 2)
 					{
-						setTexturePalette(textureName, paletteId);
-						addToLevelTextures(levelTextures.textures, textureName);
+						continue;
+					}
+
+					char readBuffer[256];
+					line = parser.readLine(bufferPos);
+					if (sscanf(line, " LEVELNAME %s", readBuffer) != 1)
+					{
+						continue;
+					}
+
+					// This gets read here just to be overwritten later... so just ignore for now.
+					line = parser.readLine(bufferPos);
+					if (sscanf(line, " PALETTE %s", readBuffer) != 1)
+					{
+						continue;
+					}
+					// Fixup the palette, strip any path.
+					char paletteName[256];
+					FileUtil::getFileNameFromPath(readBuffer, paletteName, true);
+					paletteId = getPaletteId(paletteName);
+					if (paletteId < 0) { paletteId = 0; }
+
+					levelAssets.paletteName = paletteName;
+
+					// Another value that is ignored.
+					line = parser.readLine(bufferPos);
+					if (sscanf(line, " MUSIC %s", readBuffer) == 1)
+					{
+						line = parser.readLine(bufferPos);
+					}
+
+					// Sky Parallax - this option until version 1.9, so handle its absence.
+					f32 x, z;
+					if (sscanf(line, " PARALLAX %f %f", &x, &z) == 2)
+					{
+						line = parser.readLine(bufferPos);
+					}
+
+					// Number of textures used by the level.
+					s32 textureCount = 0;
+					if (sscanf(line, " TEXTURES %d", &textureCount) != 1)
+					{
+						continue;
+					}
+
+					// Read texture names.
+					char textureName[256];
+					for (s32 i = 0; i < textureCount; i++)
+					{
+						line = parser.readLine(bufferPos);
+						if (sscanf(line, " TEXTURE: %s ", textureName) == 1)
+						{
+							setAssetPalette(textureName, paletteId);
+							addToLevelAssets(levelAssets.textures, textureName);
+						}
+					}
+					// Sometimes there are extra textures, just add them - they will be compacted later.
+					bool readNext = true;
+					while (sscanf(line, " TEXTURE: %s ", textureName) == 1)
+					{
+						setAssetPalette(textureName, paletteId);
+						addToLevelAssets(levelAssets.textures, textureName);
+						line = parser.readLine(bufferPos);
+						readNext = false;
 					}
 				}
-				// Sometimes there are extra textures, just add them - they will be compacted later.
-				bool readNext = true;
-				while (sscanf(line, " TEXTURE: %s ", textureName) == 1)
+
+				// .O File
+				char objFile[TFE_MAX_PATH];
+				FileUtil::replaceExtension(projAsset->name.c_str(), "O", objFile);
+				if (archive->openFile(objFile))
 				{
-					setTexturePalette(textureName, paletteId);
-					addToLevelTextures(levelTextures.textures, textureName);
-					line = parser.readLine(bufferPos);
-					readNext = false;
+					size_t len = archive->getFileLength();
+					buffer.resize(len);
+					archive->readFile(buffer.data(), len);
+					archive->closeFile();
+
+					TFE_Parser parser;
+					size_t bufferPos = 0;
+					parser.init((char*)buffer.data(), buffer.size());
+					parser.addCommentString("#");
+					parser.convertToUpperCase(true);
+
+					enum ProcessFlags
+					{
+						PFLAG_POD = (1 << 0),
+						PFLAG_SPRITE = (1 << 1),
+						PFLAG_FRAME = (1 << 2),
+						PFLAG_PROCESS_DONE = PFLAG_POD | PFLAG_SPRITE | PFLAG_FRAME
+					};
+					u32 processFlags = 0;
+					const char* line;
+					while ((line = parser.readLine(bufferPos)) && (processFlags != PFLAG_PROCESS_DONE))
+					{
+						// Search for "PODS"
+						s32 count = 0;
+						char assetName[32];
+						if (sscanf(line, "PODS %d", &count) == 1)
+						{
+							for (s32 p = 0; p < count; p++)
+							{
+								line = parser.readLine(bufferPos);
+								if (line)
+								{
+									if (sscanf(line, " POD: %s", assetName) == 1)
+									{
+										setAssetPalette(assetName, paletteId);
+										addToLevelAssets(levelAssets.pods, assetName);
+									}
+								}
+							}
+							processFlags |= PFLAG_POD;
+						}
+						else if (sscanf(line, "SPRS %d", &count) == 1)
+						{
+							for (s32 p = 0; p < count; p++)
+							{
+								line = parser.readLine(bufferPos);
+								if (line)
+								{
+									if (sscanf(line, " SPR: %s", assetName) == 1)
+									{
+										setAssetPalette(assetName, paletteId);
+										addToLevelAssets(levelAssets.sprites, assetName);
+									}
+								}
+							}
+							processFlags |= PFLAG_SPRITE;
+						}
+						else if (sscanf(line, "FMES %d", &count) == 1)
+						{
+							for (s32 p = 0; p < count; p++)
+							{
+								line = parser.readLine(bufferPos);
+								if (line)
+								{
+									if (sscanf(line, " FME: %s", assetName) == 1)
+									{
+										setAssetPalette(assetName, paletteId);
+										addToLevelAssets(levelAssets.frames, assetName);
+									}
+								}
+							}
+							processFlags |= PFLAG_FRAME;
+						}
+					}
 				}
-				s_levelTextures.push_back(levelTextures);
+
+				s_levelAssets.push_back(levelAssets);
 			}
 		}
 	}
 
-	void reloadTexture(Asset* asset, s32 palId, s32 lightLevel)
+	void reloadAsset(Asset* asset, s32 palId, s32 lightLevel)
 	{
 		Archive* archive = getArchive(asset->archiveName.c_str(), asset->gameId);
 		if (archive)
 		{
-			freeTexture(asset->name.c_str());
-			if (lightLevel == 32 || !s_palettes[palId].hasColormap)
+			if (asset->type == TYPE_TEXTURE)
 			{
-				loadEditorTexture(TEX_BM, archive, asset->name.c_str(), s_palettes[palId].data, palId, &asset->texture);
+				freeTexture(asset->name.c_str());
+				if (lightLevel == 32 || !s_palettes[palId].hasColormap)
+				{
+					loadEditorTexture(TEX_BM, archive, asset->name.c_str(), s_palettes[palId].data, palId, &asset->texture);
+				}
+				else
+				{
+					loadEditorTextureLit(TEX_BM, archive, asset->name.c_str(), s_palettes[palId].data, palId, s_palettes[palId].colormap, lightLevel, &asset->texture);
+				}
 			}
-			else
+			else if (asset->type == TYPE_FRAME)
 			{
-				loadEditorTextureLit(TEX_BM, archive, asset->name.c_str(), s_palettes[palId].data, palId, s_palettes[palId].colormap, lightLevel, &asset->texture);
+				freeFrame(asset->name.c_str());
+				if (lightLevel == 32 || !s_palettes[palId].hasColormap)
+				{
+					loadEditorFrame(FRAME_FME, archive, asset->name.c_str(), s_palettes[palId].data, palId, &asset->frame);
+				}
+				else
+				{
+					loadEditorFrameLit(FRAME_FME, archive, asset->name.c_str(), s_palettes[palId].data, palId, s_palettes[palId].colormap, lightLevel, &asset->frame);
+				}
 			}
 		}
 	}
@@ -791,6 +962,10 @@ namespace AssetBrowser
 		else if (strcasecmp(ext, "CMP") == 0)
 		{
 			return TYPE_COLORMAP;
+		}
+		else if (strcasecmp(ext, "FME") == 0)
+		{
+			return TYPE_FRAME;
 		}
 		return TYPE_COUNT;
 	}
@@ -851,8 +1026,8 @@ namespace AssetBrowser
 	{
 		if (s_viewInfo.levelSource < 0) { return true; }
 
-		const size_t count = s_levelTextures[s_viewInfo.levelSource].textures.size();
-		const std::string* texName = s_levelTextures[s_viewInfo.levelSource].textures.data();
+		const size_t count = s_levelAssets[s_viewInfo.levelSource].textures.size();
+		const std::string* texName = s_levelAssets[s_viewInfo.levelSource].textures.data();
 		for (size_t i = 0; i < count; i++, texName++)
 		{
 			if (strcasecmp(name, texName->c_str()) == 0)
@@ -863,12 +1038,28 @@ namespace AssetBrowser
 		return false;
 	}
 
+	bool isLevelFrame(const char* name)
+	{
+		if (s_viewInfo.levelSource < 0) { return true; }
+
+		const size_t count = s_levelAssets[s_viewInfo.levelSource].frames.size();
+		const std::string* frameName = s_levelAssets[s_viewInfo.levelSource].frames.data();
+		for (size_t i = 0; i < count; i++, frameName++)
+		{
+			if (strcasecmp(name, frameName->c_str()) == 0)
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+
 	bool isLevelPalette(const char* name)
 	{
 		if (s_viewInfo.levelSource < 0) { return true; }
-		return strcasecmp(name, s_levelTextures[s_viewInfo.levelSource].paletteName.c_str()) == 0;
+		return strcasecmp(name, s_levelAssets[s_viewInfo.levelSource].paletteName.c_str()) == 0;
 	}
-
+		
 	void updateAssetList()
 	{
 		// Only Dark Forces for now.
@@ -901,7 +1092,7 @@ namespace AssetBrowser
 				asset.filePath = projAsset->filePath;
 
 				memset(&asset.texture, 0, sizeof(EditorTexture));
-				s32 palId = getTexturePalette(projAsset->name.c_str());
+				s32 palId = getAssetPalette(projAsset->name.c_str());
 
 				loadEditorTexture(TEX_BM, archive, projAsset->name.c_str(), s_palettes[palId].data, palId, &asset.texture);
 				s_viewAssetList.push_back(asset);
@@ -953,6 +1144,32 @@ namespace AssetBrowser
 
 				memset(&asset.texture, 0, sizeof(EditorTexture));
 				loadPaletteAsTexture(archive, projAsset->name.c_str(), hasColormap ? colormapData : nullptr, &asset.texture);
+				s_viewAssetList.push_back(asset);
+			}
+		}
+		else if (s_viewInfo.type == TYPE_FRAME)
+		{
+			const u32 count = (u32)s_projectAssetList[TYPE_FRAME].size();
+			const Asset* projAsset = s_projectAssetList[TYPE_FRAME].data();
+			for (u32 i = 0; i < count; i++, projAsset++)
+			{
+				if (!isLevelFrame(projAsset->name.c_str()))
+				{
+					continue;
+				}
+
+				Archive* archive = getArchive(projAsset->archiveName.c_str(), projAsset->gameId);
+				Asset asset;
+				asset.type = projAsset->type;
+				asset.name = projAsset->name;
+				asset.gameId = projAsset->gameId;
+				asset.archiveName = projAsset->archiveName;
+				asset.filePath = projAsset->filePath;
+
+				memset(&asset.texture, 0, sizeof(EditorTexture));
+				s32 palId = getAssetPalette(projAsset->name.c_str());
+
+				loadEditorFrame(FRAME_FME, archive, projAsset->name.c_str(), s_palettes[palId].data, palId, &asset.frame);
 				s_viewAssetList.push_back(asset);
 			}
 		}

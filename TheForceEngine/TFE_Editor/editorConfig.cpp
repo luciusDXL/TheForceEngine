@@ -119,6 +119,7 @@ namespace TFE_Editor
 		configFile.writeBuffer(lineBuffer, (u32)strlen(lineBuffer));
 
 		configFile.close();
+		s_configLoaded = true;
 		return true;
 	}
 
@@ -160,7 +161,7 @@ namespace TFE_Editor
 	bool configUi()
 	{
 		pushFont(TFE_Editor::FONT_SMALL);
-		s32 menuHeight = 6 + ImGui::GetFontSize();
+		s32 menuHeight = 6 + (s32)ImGui::GetFontSize();
 
 		bool active = true;
 		bool finished = false;
@@ -194,7 +195,6 @@ namespace TFE_Editor
 		if (ImGui::Button("Save Config"))
 		{
 			saveConfig();
-			s_configLoaded = true;
 			finished = true;
 		}
 

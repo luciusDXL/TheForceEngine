@@ -1294,6 +1294,12 @@
     <ClInclude Include="TFE_Editor\editorConfig.h">
       <Filter>Source\TFE_Editor</Filter>
     </ClInclude>
+    <ClInclude Include="TFE_Editor\editorFrame.h">
+      <Filter>Source\TFE_Editor</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Editor\editorColormap.h">
+      <Filter>Source\TFE_Editor</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -2185,6 +2191,12 @@
       <Filter>Source\TFE_Editor</Filter>
     </ClCompile>
     <ClCompile Include="TFE_Editor\editorConfig.cpp">
+      <Filter>Source\TFE_Editor</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Editor\editorFrame.cpp">
+      <Filter>Source\TFE_Editor</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Editor\editorColormap.cpp">
       <Filter>Source\TFE_Editor</Filter>
     </ClCompile>
   </ItemGroup>

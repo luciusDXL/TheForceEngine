@@ -95,6 +95,8 @@ namespace TFE_Sprite_Jedi
 	void freeAll();
 	void freeLevelData();
 
+	JediFrame* loadFrameFromMemory(const u8* data, size_t size);
+
 	const std::vector<JediWax*>& getWaxList(AssetPool pool = POOL_LEVEL);
 	const std::vector<JediFrame*>& getFrameList(AssetPool pool = POOL_LEVEL);
 

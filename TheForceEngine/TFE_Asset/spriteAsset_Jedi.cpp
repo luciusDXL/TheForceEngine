@@ -109,6 +109,52 @@ namespace TFE_Sprite_Jedi
 		return asset;
 	}
 
+	JediFrame* loadFrameFromMemory(const u8* data, size_t size)
+	{
+		// Determine ahead of time how much we need to allocate.
+		const WaxFrame* base_frame = (WaxFrame*)data;
+		const WaxCell* base_cell = WAX_CellPtr(data, base_frame);
+		const u32 columnSize = base_cell->sizeX * sizeof(u32);
+
+		// This is a "load in place" format in the original code.
+		// We are going to allocate new memory and copy the data.
+		u8* assetPtr = (u8*)malloc(size + columnSize);
+		JediFrame* asset = (JediFrame*)assetPtr;
+
+		memcpy(asset, data, size);
+
+		WaxFrame* frame = asset;
+		WaxCell* cell = WAX_CellPtr(asset, frame);
+
+		// After load, the frame data has to be fixed up before rendering.
+		// frame sizes remain in fixed point.
+		frame->widthWS = div16(intToFixed16(cell->sizeX), SPRITE_SCALE_FIXED);
+		frame->heightWS = div16(intToFixed16(cell->sizeY), SPRITE_SCALE_FIXED);
+
+		const s32 offsetX = -intToFixed16(frame->offsetX);
+		const s32 offsetY = intToFixed16(cell->sizeY) + intToFixed16(frame->offsetY);
+		frame->offsetX = div16(offsetX, SPRITE_SCALE_FIXED);
+		frame->offsetY = div16(offsetY, SPRITE_SCALE_FIXED);
+
+		if (cell->compressed == 1)
+		{
+			// Update the column offset, it starts right after the cell data.
+			cell->columnOffset = frame->cellOffset + sizeof(WaxCell);
+		}
+		else
+		{
+			u32* columns = (u32*)((u8*)asset + size);
+			// Local pointer.
+			cell->columnOffset = u32((u8*)columns - (u8*)asset);
+			// Calculate column offsets.
+			for (s32 c = 0; c < cell->sizeX; c++)
+			{
+				columns[c] = cell->sizeY * c;
+			}
+		}
+		return asset;
+	}
+
 	static std::vector<u32> s_cellOffsets;
 
 	bool isUniqueCell(u32 offset)

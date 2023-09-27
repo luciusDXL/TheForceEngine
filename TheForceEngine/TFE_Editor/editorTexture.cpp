@@ -1,9 +1,11 @@
 #include "editorTexture.h"
 #include "editor.h"
+#include "editorColormap.h"
 #include <TFE_DarkForces/mission.h>
 #include <TFE_System/system.h>
 #include <TFE_Archive/archive.h>
 #include <TFE_Jedi/Level/rtexture.h>
+#include <TFE_Jedi/Renderer/rcommon.h>
 #include <algorithm>
 #include <vector>
 #include <map>
@@ -15,10 +17,6 @@ namespace TFE_Editor
 		
 	static TextureMap s_texturesLoaded;
 	static TextureList s_textureList;
-	static u32 s_palette[256];
-	static u8 s_identityTable[256];
-	static bool s_rebuildIdentityTable = true;
-	static const u8* s_remapTable = s_identityTable;
 
 	void freeTexture(const char* name)
 	{
@@ -77,18 +75,9 @@ namespace TFE_Editor
 		return index;
 	}
 
-	void buildIdentityTable()
-	{
-		for (s32 i = 0; i < 256; i++) { s_identityTable[i] = i; }
-	}
-
 	TextureGpu* loadBmFrame(u32 width, u32 height, const u8* image, const u32* palette)
 	{
-		if (s_rebuildIdentityTable)
-		{
-			s_rebuildIdentityTable = false;
-			buildIdentityTable();
-		}
+		buildIdentityTable();
 
 		WorkBuffer& buffer = getWorkBuffer();
 		buffer.resize(width * height * 4);
@@ -203,7 +192,6 @@ namespace TFE_Editor
 
 			return result;
 		}
-
 		return false;
 	}
 
@@ -287,7 +275,6 @@ namespace TFE_Editor
 		}
 
 		*texture = s_textureList[id];
-		
 		return true;
 	}
 }
