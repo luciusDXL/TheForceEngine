@@ -115,7 +115,7 @@ namespace TFE_Editor
 					if (animatedId != 2)
 					{
 						free(texData);
-						return false;
+						return -1;
 					}
 
 					if (id < 0) { id = allocateTexture(filename); }
