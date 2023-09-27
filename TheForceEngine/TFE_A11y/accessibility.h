@@ -41,7 +41,12 @@ namespace TFE_A11Y {
 	///////////////////////////////////////////
 	// Functions
 	///////////////////////////////////////////
+
+	// Initialize the A11y system.
 	void init();
+
+	// Initialize the caption system. Only call this if the current status is CC_NOT_LOADED.
+	void initCaptions();
 
 	// Fonts
 	FilePathList getFontFiles();
@@ -53,7 +58,7 @@ namespace TFE_A11Y {
 	// Captions
 	FilePathList getCaptionFiles();
 	FilePath getCurrentCaptionFile();
-	A11yStatus getStatus();
+	A11yStatus getCaptionSystemStatus();
 	void loadCaptions(const string path);
 	void clearActiveCaptions();
 	void drawCaptions();

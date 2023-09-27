@@ -2690,7 +2690,12 @@ namespace TFE_FrontEndUI
 		float labelW = 140 * s_uiScale;
 		float valueW = 260 * s_uiScale;
 
-		if (TFE_A11Y::getStatus() == TFE_A11Y::CC_ERROR)
+		// Check status, and init the caption system if necessary.
+		if (TFE_A11Y::getCaptionSystemStatus() == TFE_A11Y::CC_NOT_LOADED) 
+		{
+			TFE_A11Y::initCaptions(); 
+		}
+		if (TFE_A11Y::getCaptionSystemStatus() == TFE_A11Y::CC_ERROR)
 		{
 			ImGui::LabelText("##ConfigLabel", "Error: Caption file could not be loaded!");
 		}
@@ -2699,7 +2704,7 @@ namespace TFE_FrontEndUI
 		ImGui::LabelText("##ConfigLabel", "Subtitle/caption file:");
 		TFE_A11Y::FilePath currentCaptionFile = TFE_A11Y::getCurrentCaptionFile();
 		string currentCaptionFilePath = DrawFileListCombo("##ccfile", currentCaptionFile.name, currentCaptionFile.path, TFE_A11Y::getCaptionFiles());
-		// If user changed the selected caption file, reload captions
+		// If user changed the selected caption file, reload captions.
 		if (currentCaptionFilePath != currentCaptionFile.path)
 		{
 			TFE_A11Y::clearActiveCaptions();
