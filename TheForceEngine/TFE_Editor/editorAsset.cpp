@@ -139,9 +139,6 @@ namespace TFE_Editor
 		switch (type)
 		{
 			case TYPE_TEXTURE:
-			{
-				data = getTextureData(index);
-			} break;
 			case TYPE_PALETTE:
 			{
 				data = getTextureData(index);
