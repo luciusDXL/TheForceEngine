@@ -2,12 +2,12 @@
 #include <TFE_Audio/midi.h>
 #include <TFE_Audio/midiPlayer.h>
 #include <TFE_System/system.h>
-#include <TFE_System/Threads/thread.h>
 #include <TFE_Memory/memoryRegion.h>
 #include <TFE_Jedi/Math/fixedPoint.h>
 #include <TFE_Jedi/Math/core_math.h>
 #include <TFE_FileSystem/filestream.h>
 #include <TFE_FileSystem/paths.h>
+#include <cstring>
 #include <assert.h>
 #include "imList.h"
 #include "imTrigger.h"

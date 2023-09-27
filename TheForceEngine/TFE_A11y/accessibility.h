@@ -37,11 +37,17 @@ namespace TFE_A11Y {
 	///////////////////////////////////////////
 	const string FILE_NAME_START = "subtitles-";
 	const string FILE_NAME_EXT = ".txt";
+	const f32 DEFAULT_LINE_HEIGHT = 20;
 
 	///////////////////////////////////////////
 	// Functions
 	///////////////////////////////////////////
+
+	// Initialize the A11y system.
 	void init();
+
+	// Initialize the caption system. Only call this if the current status is CC_NOT_LOADED.
+	void initCaptions();
 
 	// Fonts
 	FilePathList getFontFiles();
@@ -53,11 +59,11 @@ namespace TFE_A11Y {
 	// Captions
 	FilePathList getCaptionFiles();
 	FilePath getCurrentCaptionFile();
-	A11yStatus getStatus();
+	A11yStatus getCaptionSystemStatus();
 	void loadCaptions(const string path);
 	void clearActiveCaptions();
-	void drawCaptions();
-	void drawExampleCaptions();
+	Vec2f drawCaptions();
+	Vec2f drawExampleCaptions();
 	void focusCaptions();
 	void enqueueCaption(Caption caption);
 	void onSoundPlay(char* name, CaptionEnv env);

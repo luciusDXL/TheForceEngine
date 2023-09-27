@@ -278,6 +278,11 @@ struct TFE_Settings_A11y
 	f32 gameplayTextSpeed = 1.0f;
 	s32 gameplayCaptionMinVolume = 32; // In range 0 - 127
 
+	bool captionSystemEnabled()
+	{
+		return showCutsceneSubtitles || showCutsceneCaptions || showGameplaySubtitles || showGameplayCaptions;
+	}
+
 	// Motion sickness settings
 	bool enableHeadwave = true;
 };
