@@ -30,6 +30,8 @@ namespace TFE_Ui
 	void setUiScale(s32 scale);
 	s32  getUiScale();
 
+	void invalidateFontAtlas();
+
 	// File dialogs use OS based dialogs in order to provide all of the features that users expect.
 	// These do NOT use imGUI so they may clash visually with the rest of the UI but that is a small price to pay for robustness.
 	FileResult openFileDialog(const char* title, const char* initPath, std::vector<std::string> const &filters = { "All Files", "*" }, bool multiSelect = false);

@@ -18,6 +18,11 @@ namespace TFE_Editor
 		EDIT_ASSET,
 		EDIT_LEVEL,
 	};
+		
+	enum EditorConst
+	{
+		FONT_SIZE_COUNT = 5,
+	};
 	
 	static bool s_showPerf = true;
 	static bool s_showEditor = true;
@@ -26,8 +31,11 @@ namespace TFE_Editor
 	static bool s_exitEditor = false;
 	static bool s_configView = false;
 	static WorkBuffer s_workBuffer;
+
+	static ImFont* s_fonts[FONT_COUNT * FONT_SIZE_COUNT] = { 0 };
 	
 	void menu();
+	void loadFonts();
 
 	WorkBuffer& getWorkBuffer()
 	{
@@ -39,6 +47,7 @@ namespace TFE_Editor
 		// Ui begin/render is called so we have a "UI Frame" in which to setup UI state.
 		s_editorMode = EDIT_ASSET;
 		s_exitEditor = false;
+		loadFonts();
 		loadConfig();
 		AssetBrowser::init();
 	}
@@ -106,6 +115,8 @@ namespace TFE_Editor
 		
 	void menu()
 	{
+		pushFont(FONT_SMALL);
+
 		beginMenuBar();
 		{
 			// General menu items.
@@ -139,5 +150,39 @@ namespace TFE_Editor
 			}
 		}
 		endMenuBar();
+
+		popFont();
+	}
+		
+	void loadFonts()
+	{
+		// Assume if any fonts are loaded, they all are.
+		if (s_fonts[0]) { return; }
+
+		char fontPath[TFE_MAX_PATH];
+		sprintf(fontPath, "%s", "Fonts/DroidSansMono.ttf");
+		TFE_Paths::mapSystemPath(fontPath);
+
+		ImGuiIO& io = ImGui::GetIO();
+		ImFont** fontSmall = &s_fonts[FONT_SMALL * FONT_COUNT];
+		fontSmall[0] = io.Fonts->AddFontFromFileTTF(fontPath, 16 * 100 / 100);
+		fontSmall[1] = io.Fonts->AddFontFromFileTTF(fontPath, 16 * 125 / 100);
+		fontSmall[2] = io.Fonts->AddFontFromFileTTF(fontPath, 16 * 150 / 100);
+		fontSmall[3] = io.Fonts->AddFontFromFileTTF(fontPath, 16 * 175 / 100);
+		fontSmall[4] = io.Fonts->AddFontFromFileTTF(fontPath, 16 * 200 / 100);
+		TFE_Ui::invalidateFontAtlas();
+	}
+		
+	void pushFont(FontType type)
+	{
+		s32 scaleToIndex = (s_editorConfig.fontScale - 100) / 25;
+
+		ImFont** fonts = &s_fonts[type * FONT_COUNT];
+		ImGui::PushFont(fonts[scaleToIndex]);
+	}
+
+	void popFont()
+	{
+		ImGui::PopFont();
 	}
 }

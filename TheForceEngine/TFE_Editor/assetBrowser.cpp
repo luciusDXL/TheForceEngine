@@ -94,6 +94,7 @@ namespace AssetBrowser
 
 	static s32 s_hovered = -1;
 	static s32 s_selected = -1;
+	static s32 s_menuHeight = 20;
 	   	
 	struct ViewerInfo
 	{
@@ -150,8 +151,8 @@ namespace AssetBrowser
 
 	void listSelection(const char* labelText, const char** listValues, size_t listLen, s32* index)
 	{
-		ImGui::SetNextItemWidth(256.0f);
-		ImGui::LabelText("##Label", labelText); ImGui::SameLine(96.0f);
+		ImGui::SetNextItemWidth(UI_SCALE(256));
+		ImGui::LabelText("##Label", labelText); ImGui::SameLine(UI_SCALE(96));
 
 		char comboId[256];
 		sprintf(comboId, "##%s", labelText);
@@ -182,8 +183,8 @@ namespace AssetBrowser
 
 	void listSelectionPalette(const char* labelText, std::vector<Palette>& listValues, s32* index)
 	{
-		ImGui::SetNextItemWidth(256.0f);
-		ImGui::LabelText("##Label", labelText); ImGui::SameLine(96.0f);
+		ImGui::SetNextItemWidth(UI_SCALE(256));
+		ImGui::LabelText("##Label", labelText); ImGui::SameLine(UI_SCALE(96));
 
 		char comboId[256];
 		sprintf(comboId, "##%s", labelText);
@@ -192,8 +193,8 @@ namespace AssetBrowser
 
 	void listSelectionLevel(const char* labelText, std::vector<LevelTextures>& listValues, s32* index)
 	{
-		ImGui::SetNextItemWidth(256.0f);
-		ImGui::LabelText("##Label", labelText); ImGui::SameLine(96.0f);
+		ImGui::SetNextItemWidth(UI_SCALE(256));
+		ImGui::LabelText("##Label", labelText); ImGui::SameLine(UI_SCALE(96));
 
 		char comboId[256];
 		sprintf(comboId, "##%s", labelText);
@@ -204,15 +205,15 @@ namespace AssetBrowser
 		}
 	}
 		
-	void infoPanel()
+	void infoPanel(u32 infoWidth, u32 infoHeight)
 	{
 		DisplayInfo displayInfo;
 		TFE_RenderBackend::getDisplayInfo(&displayInfo);
+		u32 w = infoWidth;
+		u32 h = infoHeight;
 
-		u32 w = std::min((u32)INFO_PANEL_WIDTH, displayInfo.width);
-
-		ImGui::SetWindowPos("Asset Browser##Settings", { 0.0f, 20.0f });
-		ImGui::SetWindowSize("Asset Browser##Settings", { f32(w), 196.0f });
+		ImGui::SetWindowPos("Asset Browser##Settings", { 0.0f, f32(s_menuHeight) });
+		ImGui::SetWindowSize("Asset Browser##Settings", { f32(w), f32(h) });
 		ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse;
 
 		bool active = true;
@@ -235,10 +236,10 @@ namespace AssetBrowser
 		s_viewInfo.prevType = s_viewInfo.type;
 
 		// Filter
-		label("Filter");
-		ImGui::SetNextItemWidth(256.0f);
+		ImGui::LabelText("##Label", "Filter"); ImGui::SameLine(UI_SCALE(96));
+		ImGui::SetNextItemWidth((f32)UI_SCALE(256));
 		ImGui::InputText("##FilterText", s_viewInfo.assetFilter, 64);
-		ImGui::SameLine(272.0f);
+		ImGui::SameLine(UI_SCALE(358));
 		if (ImGui::Button("CLEAR"))
 		{
 			s_viewInfo.assetFilter[0] = 0;
@@ -263,15 +264,15 @@ namespace AssetBrowser
 		}
 	}
 
-	void drawInfoPanel(Asset* asset)
+	void drawInfoPanel(Asset* asset, u32 infoWidth, u32 infoHeight)
 	{
 		DisplayInfo displayInfo;
 		TFE_RenderBackend::getDisplayInfo(&displayInfo);
 
-		u32 w = std::min((u32)INFO_PANEL_WIDTH, displayInfo.width);
-		u32 h = std::max(256u, displayInfo.height - 216);
+		u32 w = std::min(infoWidth,  displayInfo.width);
+		u32 h = std::max(256u, displayInfo.height - (infoHeight + s_menuHeight));
 
-		ImGui::SetWindowPos("Asset Info", { 0.0f, 216.0f });
+		ImGui::SetWindowPos("Asset Info", { 0.0f, f32(infoHeight + s_menuHeight) });
 		ImGui::SetWindowSize("Asset Info", { f32(w), f32(h) });
 		ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse;
 
@@ -368,17 +369,17 @@ namespace AssetBrowser
 		return ImVec4(0.1f, 0.1f, 0.1f, 1.0f);
 	}
 
-	void listPanel()
+	void listPanel(u32 infoWidth, u32 infoHeight)
 	{
 		DisplayInfo displayInfo;
 		TFE_RenderBackend::getDisplayInfo(&displayInfo);
-		if (displayInfo.width < INFO_PANEL_WIDTH) { return; }
+		if (displayInfo.width < infoWidth) { return; }
 
-		s32 w = displayInfo.width - (s32)INFO_PANEL_WIDTH;
-		s32 h = displayInfo.height - 20;
+		s32 w = displayInfo.width - (s32)infoWidth;
+		s32 h = displayInfo.height - s_menuHeight;
 		if (w <= 0 || h <= 0) { return; }
 
-		ImGui::SetWindowPos("Asset List", { f32(INFO_PANEL_WIDTH), 20.0f });
+		ImGui::SetWindowPos("Asset List", { f32(infoWidth), f32(s_menuHeight) });
 		ImGui::SetWindowSize("Asset List", { f32(w), f32(h) });
 		ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse;
 
@@ -392,11 +393,14 @@ namespace AssetBrowser
 			const s32 count = (s32)s_viewAssetList.size();
 			const Asset* asset = s_viewAssetList.data();
 
-			char buttonLabel[32];
-			s32 itemWidth  = 66 + s_editorConfig.thumbnailSize;
-			s32 itemHeight = 20 + s_editorConfig.thumbnailSize;
+			s32 textWidth = (s32)ImGui::CalcTextSize("12345678.123").x;
+			s32 fontSize  = ImGui::GetFontSize();
 
-			s32 columnCount = max(1, s32(w - 16) / (itemWidth + 10));
+			char buttonLabel[32];
+			s32 itemWidth  = 16 + max(textWidth, s_editorConfig.thumbnailSize);
+			s32 itemHeight =  4 + fontSize + s_editorConfig.thumbnailSize;
+
+			s32 columnCount = max(1, s32(w - 16) / itemWidth);
 			f32 topPos = ImGui::GetCursorPosY();
 						
 			bool mouseClicked = false;
@@ -414,12 +418,13 @@ namespace AssetBrowser
 			}
 
 			s32 a = 0;
+			ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, { 0.0f, 0.0f });
 			for (s32 y = 0; a < count; y++)
 			{
 				for (s32 x = 0; x < columnCount && a < count; x++, a++)
 				{
 					sprintf(buttonLabel, "###asset%d", a);
-					ImVec2 cursor((8.0f + x * (itemWidth + 10)), topPos + y * itemHeight);
+					ImVec2 cursor((8.0f + x * itemWidth), topPos + y * itemHeight);
 					ImGui::SetCursorPos(cursor);
 
 					ImGui::PushStyleColor(ImGuiCol_Border, getBorderColor(a));
@@ -449,6 +454,7 @@ namespace AssetBrowser
 
 						// Draw the label.
 						ImGui::SetCursorPos(ImVec2(8.0f, (f32)s_editorConfig.thumbnailSize));
+						ImGui::SetNextItemWidth(itemWidth - 16);
 						ImGui::LabelText("###", "%s", asset[a].name.c_str());
 
 						if (ImGui::IsWindowHovered())
@@ -464,6 +470,7 @@ namespace AssetBrowser
 					ImGui::PopStyleColor();
 				}
 			}
+			ImGui::PopStyleVar();
 
 			// Info Panel
 			Asset* selectedAsset = nullptr;
@@ -475,7 +482,7 @@ namespace AssetBrowser
 			{
 				selectedAsset = &s_viewAssetList[s_hovered];
 			}
-			drawInfoPanel(selectedAsset);
+			drawInfoPanel(selectedAsset, infoWidth, infoHeight);
 		}
 
 		ImGui::End();
@@ -483,8 +490,24 @@ namespace AssetBrowser
 
 	void update()
 	{
-		infoPanel();
-		listPanel();
+		DisplayInfo displayInfo;
+		TFE_RenderBackend::getDisplayInfo(&displayInfo);
+
+		// Figure out how to scale the info column and panel based on the font scale.
+		s32 wScale = 100 + max(0, s_editorConfig.fontScale - 125);
+		s32 hScale = 100 + (s_editorConfig.fontScale - 100) / 2;
+
+		u32 infoWidth = std::min((u32)(INFO_PANEL_WIDTH * wScale / 100), displayInfo.width);
+		u32 infoHeight = (u32)(150 * hScale / 100);
+				
+		// Push the "small" font and draw the panels.
+		pushFont(TFE_Editor::FONT_SMALL);
+		s_menuHeight = 6 + ImGui::GetFontSize();
+
+		infoPanel(infoWidth, infoHeight);
+		listPanel(infoWidth, infoHeight);
+
+		popFont();
 	}
 
 	void render()

@@ -12,11 +12,19 @@
 namespace TFE_Editor
 {
 	typedef std::vector<u8> WorkBuffer;
+	enum FontType
+	{
+		FONT_SMALL = 0,
+		FONT_COUNT,
+	};
 
 	void enable();
 	void disable();
 	bool update(bool consoleOpen = false);
 	bool render();
+
+	void pushFont(FontType type);
+	void popFont();
 
 	// Resizable temporary memory.
 	WorkBuffer& getWorkBuffer();

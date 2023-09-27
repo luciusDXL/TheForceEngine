@@ -10,6 +10,8 @@
 #include <TFE_FileSystem/paths.h>
 #include <string>
 
+#define UI_SCALE(x) f32((x) * TFE_Editor::s_editorConfig.fontScale / 100)
+
 namespace TFE_Editor
 {
 	struct EditorConfig
