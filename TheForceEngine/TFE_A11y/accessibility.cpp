@@ -506,6 +506,8 @@ namespace TFE_A11Y  // a11y is industry slang for accessibility
 		{
 			return drawCaptions(&s_activeCaptions);
 		}
+		// We need to always return a value.
+		return { 0 };
 	}
 
 	Vec2f drawCaptions(std::vector<Caption>* captions)
