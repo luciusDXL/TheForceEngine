@@ -44,7 +44,6 @@ set_target_properties(tfe PROPERTIES OUTPUT_NAME "theforceengine")
 if(LINUX)
 	find_package(PkgConfig REQUIRED)
 	find_package(Threads REQUIRED)
-	pkg_check_modules(RTAUDIO REQUIRED rtaudio>=5.2.0)
 	pkg_check_modules(RTMIDI REQUIRED rtmidi>=5.0.0)
 	pkg_check_modules(SDL2 REQUIRED sdl2)
 	pkg_check_modules(GLEW REQUIRED glew)
@@ -60,7 +59,6 @@ if(LINUX)
 				${SDL2_LIBRARIES}
 				${IL_LIBRARIES}
 				${ILU_LIBRARIES}
-				${RTAUDIO_LIBRARIES}
 				${RTMIDI_LIBRARIES}
 	)
 	

@@ -75,7 +75,7 @@ namespace TFE_Audio
 	static AudioUpsampleFilter s_upsampleFilter = AUF_DEFAULT;
 	static AudioThreadCallback s_audioThreadCallback = nullptr;
 
-	s32 audioCallback(void *outputBuffer, void* inputBuffer, u32 bufferSize, f64 streamTime, u32 status, void* userData);
+	static void audioCallback(void*, unsigned char*, int);
 	void setSoundVolumeConsole(const ConsoleArgList& args);
 	void getSoundVolumeConsole(const ConsoleArgList& args);
 
@@ -447,16 +447,18 @@ namespace TFE_Audio
 	}
 			
 	// Audio callback
-	s32 audioCallback(void *outputBuffer, void* inputBuffer, u32 bufferSize, f64 streamTime, u32 status, void* userData)
+	static void audioCallback(void* userData, unsigned char* outputBuffer, int bufsize)
 	{
 		f32* buffer = (f32*)outputBuffer;
+		u32 bufferSize = (u32)bufsize;
+		u32 frames = bufferSize / (AUDIO_CHANNEL_COUNT * sizeof(f32));
 
 	#if AUDIO_TIMING == 1
 		u64 soundIterStart = TFE_System::getCurrentTimeInTicks();
 	#endif
 
 		// First clear samples
-		memset(buffer, 0, sizeof(f32)*bufferSize*AUDIO_CHANNEL_COUNT);
+		memset(buffer, 0, bufferSize);
 			   
 		MUTEX_LOCK(&s_mutex);
 		// Then call the audio thread callback
@@ -493,7 +495,7 @@ namespace TFE_Audio
 			if (snd->volume < SND_CULL_VOLUME)
 			{
 				// Pretend we played the sound and handle looping.
-				snd->sampleIndex += bufferSize;
+				snd->sampleIndex += frames;
 				if (snd->sampleIndex >= sndBufferSize)
 				{
 					if (snd->flags&SND_FLAG_LOOPING)
@@ -514,7 +516,7 @@ namespace TFE_Audio
 			buffer = (f32*)outputBuffer;
 			// The sound may be split into multiple iterations if it loops or the loop
 			// may end early, once we reach the end.
-			for (u32 i = 0; i < bufferSize;)
+			for (u32 i = 0; i < frames;)
 			{
 				if (snd->sampleIndex >= sndBufferSize)
 				{
@@ -533,7 +535,7 @@ namespace TFE_Audio
 
 				const SoundDataType type = snd->buffer->type;
 				const u8* data = snd->buffer->data;
-				const u32 end = std::min(sndBufferSize, snd->sampleIndex + bufferSize - i);
+				const u32 end = std::min(sndBufferSize, snd->sampleIndex + frames - i);
 				u32 sIndex = snd->sampleIndex;
 				for (; sIndex < end; i++, sIndex++, buffer += 2)
 				{
@@ -550,14 +552,14 @@ namespace TFE_Audio
 		// Handle midi synthesis results.
 		if (!s_paused)
 		{
-			TFE_MidiPlayer::synthesizeMidi((f32*)outputBuffer, bufferSize, !s_silentAudioFrames);
+			TFE_MidiPlayer::synthesizeMidi((f32*)outputBuffer, frames, !s_silentAudioFrames);
 		}
 		if (s_silentAudioFrames > 0) { s_silentAudioFrames--; }
 		MUTEX_UNLOCK(&s_mutex);
 
 		// Handle out of range audio samples.
 		buffer = (f32*)outputBuffer;
-		for (u32 i = 0; i < bufferSize; i++, buffer += 2)
+		for (u32 i = 0; i < frames; i++, buffer += 2)
 		{
 			const f32 valueLeft  = buffer[0];
 			const f32 valueRight = buffer[1];
@@ -588,10 +590,8 @@ namespace TFE_Audio
 		s_soundIterAve = s32(s_soundIterAveF);
 		s_soundIterMax = s32(s_soundIterMaxF);
 	#endif
-		
-		return 0;
 	}
-		
+
 	// Console functions.
 	void setSoundVolumeConsole(const ConsoleArgList& args)
 	{

@@ -349,9 +349,6 @@
     <ClInclude Include="TFE_Audio\audioSystem.h">
       <Filter>Source\TFE_Audio</Filter>
     </ClInclude>
-    <ClInclude Include="TFE_Audio\RtAudio.h">
-      <Filter>Source\TFE_Audio</Filter>
-    </ClInclude>
     <ClInclude Include="TFE_FrontEndUI\frontEndUi.h">
       <Filter>Source\TFE_FrontEndUI</Filter>
     </ClInclude>
@@ -1435,9 +1432,6 @@
       <Filter>Source\TFE_Audio</Filter>
     </ClCompile>
     <ClCompile Include="TFE_Audio\audioSystem.cpp">
-      <Filter>Source\TFE_Audio</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_Audio\RtAudio.cpp">
       <Filter>Source\TFE_Audio</Filter>
     </ClCompile>
     <ClCompile Include="TFE_FrontEndUI\frontEndUi.cpp">

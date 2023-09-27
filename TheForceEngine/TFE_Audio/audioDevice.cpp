@@ -1,148 +1,71 @@
-#include "audioDevice.h"
+#include <vector>
 #include <TFE_System/system.h>
-#ifdef __linux__
- #include <rtaudio/RtAudio.h>
-#else
- #include "RtAudio.h"
-#endif
+#include <SDL_audio.h>
 
-//This system uses "RtAudio" as the low level, cross platform interface to the Audio system.
-//https://www.music.mcgill.ca/~gary/rtaudio/
+#include "audioDevice.h"
 
+// Audio Output using SDL Audio API
 namespace TFE_AudioDevice
 {
-	static const char* c_audioErrorType[] =
-	{
-		"WARNING",           /*!< A non-critical error. */
-		"DEBUG_WARNING",     /*!< A non-critical error which might be useful for debugging. */
-		"UNSPECIFIED",       /*!< The default, unspecified error type. */
-		"NO_DEVICES_FOUND",  /*!< No devices found on system. */
-		"INVALID_DEVICE",    /*!< An invalid device ID was specified. */
-		"MEMORY_ERROR",      /*!< An error occured during memory allocation. */
-		"INVALID_PARAMETER", /*!< An invalid parameter was specified to a function. */
-		"INVALID_USE",       /*!< The function was called incorrectly. */
-		"DRIVER_ERROR",      /*!< A system driver error occured. */
-		"SYSTEM_ERROR",      /*!< A system error occured. */
-		"THREAD_ERROR"       /*!< A thread error occured. */
-	};
-
-#ifdef _WIN32
-	static const RtAudio::Api c_audioApis[] =
-	{
-		RtAudio::WINDOWS_WASAPI, // The Microsoft WASAPI API.
-		RtAudio::WINDOWS_ASIO,   // The Steinberg Audio Stream I/O API.
-		RtAudio::WINDOWS_DS,     // The Microsoft DirectSound API.
-	};
-
-	static const char* c_audioApiName[] =
-	{
-		"Windows WASAPI",
-		"Windows ASIO",
-		"Windows DirectSound",
-	};
-#else
-	static const RtAudio::Api c_audioApis[] =
-	{
-		RtAudio::LINUX_ALSA,     // The Advanced Linux Sound Architecture API.
-		RtAudio::LINUX_PULSE,    // The Linux PulseAudio API.
-		RtAudio::LINUX_OSS,      // The Linux Open Sound System API.
-	};
-
-	static const char* c_audioApiName[] =
-	{
-		"Linux ALSA",
-		"Linux PULSE",
-		"Linux OSS",
-	};
-#endif
-
-	static RtAudio* s_device = NULL;
-	static u32 s_outputDevice;
-	static u32 s_inputDevice;
-	static u32 s_apiIndex;
-
-	static RtAudio::DeviceInfo s_InputInfo;
-	static RtAudio::DeviceInfo s_OutputInfo;
-
-	static u32  s_audioFrameSize;
-	static bool s_streamStarted;
-
+	static u32 s_audioFrameSize;
+	static int s_outputDevice = -1;
+	static bool s_streamStarted = false;
 	static std::vector<OutputDeviceInfo> s_outputDeviceList;
-	static u32 s_defaultOutputDeviceId;
+	static SDL_AudioDeviceID s_adevid = 0;
 
-	bool queryOutputDevices();
+	static int sdla_queryaudiodevs(void)
+	{
+		int d = SDL_GetNumAudioDevices(0);
+		s_outputDeviceList.clear();
+		for (u32 i = 0; i < d; i++) {
+			const char *dn = SDL_GetAudioDeviceName(i, 0);
+			TFE_System::logWrite(LOG_MSG, "Audio", "Device %02d: %s", i, dn);
+			s_outputDeviceList.push_back({dn, i});
+		}
+		return d;
+	}
 
 	bool init(u32 audioFrameSize, s32 deviceId/*=-1*/, bool useNullDevice/*=false*/)
 	{
-		s_device = nullptr;
+		if (s_adevid != 0)
+		{
+			destroy();
+		}
+
 		if (useNullDevice)
 		{
 			TFE_System::logWrite(LOG_WARNING, "Audio", "Audio disabled.");
 			return false;
 		}
 
-		// There are multiple possible APIs that can be used.
-		// The default works well on most devices, but on some with sound cards, the default fails.
-		// So this code will attempt to try different APIs.
-		for (size_t i = 0; i < TFE_ARRAYSIZE(c_audioApis) && !s_device; i++)
-		{
-			TFE_System::logWrite(LOG_MSG, "Audio", "Attempting to initialize Audio System using API '%s'.", c_audioApiName[i]);
-			try
-			{
-				s_device = new RtAudio(c_audioApis[i]);
-			}
-			catch (RtAudioError& error)
-			{
-				TFE_System::logWrite(LOG_WARNING, "Audio", "Cannot initialize the audio system using API '%s'. Error: '%s', type: '%s'",
-					c_audioApiName[i], error.getMessage().c_str(), c_audioErrorType[error.getType()]);
-				delete s_device;
-				s_device = nullptr;
-			}
-			if (!s_device) { continue; }
+		const char *dn = SDL_GetCurrentAudioDriver();
+		TFE_System::logWrite(LOG_MSG, "Audio", "SDLAudio using interface '%s'", dn);
 
-			// Query the output devices.
-			if (!queryOutputDevices())
-			{
-				delete s_device;
-				s_device = nullptr;
-			}
-
-			// Finally set the API once it is verified.
-			if (s_device)
-			{
-				s_apiIndex = u32(i);
-			}
-		}
-		if (!s_device)
+		int cnt = sdla_queryaudiodevs();
+		if (cnt < 1)
 		{
-			TFE_System::logWrite(LOG_ERROR, "Audio", "Cannot initialize audio device.");
-			return false;
+			TFE_System::logWrite(LOG_WARNING, "Audio", "no output devices!");
 		}
-		TFE_System::logWrite(LOG_MSG, "Audio", "Audio initialized using API '%s'.", c_audioApiName[s_apiIndex]);
 
 		// Validate the device ID.
 		if (deviceId >= 0)
 		{
-			bool foundDevice = false;
-			for (size_t i = 0; i < s_outputDeviceList.size(); i++)
+			bool found = false;
+			for (int i = 0; i < s_outputDeviceList.size(); i++)
 			{
 				if (s_outputDeviceList[i].id == deviceId)
 				{
-					foundDevice = true;
+					found = true;
 					break;
 				}
 			}
-			if (!foundDevice)
+			if (!found)
 			{
 				deviceId = -1;
 			}
 		}
 
-		s_outputDevice = deviceId < 0 ? s_device->getDefaultOutputDevice() : deviceId;
-		s_inputDevice  = s_device->getDefaultInputDevice();
-		s_InputInfo  = s_device->getDeviceInfo(s_inputDevice);
-		s_OutputInfo = s_device->getDeviceInfo(s_outputDevice);
-
+		s_outputDevice = deviceId < 0 ? getDefaultOutputDevice() : deviceId;
 		s_streamStarted  = false;
 		s_audioFrameSize = audioFrameSize;
 
@@ -151,7 +74,24 @@ namespace TFE_AudioDevice
 
 	s32 getDefaultOutputDevice()
 	{
-		return s_device->getDefaultOutputDevice();
+		int ret, i;
+		char *devname;
+		SDL_AudioSpec spec;
+
+		ret = SDL_GetDefaultAudioInfo(&devname, &spec, 0);
+		if ((ret != 0) || !devname)
+		{
+			TFE_System::logWrite(LOG_ERROR, "Audio", "cannot determine default audio device, SDLError '%s'", SDL_GetError());
+			return 0;
+		}
+		if (s_outputDeviceList.empty()) { ret = sdla_queryaudiodevs(); }
+		ret = s_outputDeviceList.size();
+		for (i = 0; i < ret; i++)
+		{
+			if (0 == strcmp(devname, s_outputDeviceList[i].name.c_str()))
+				return i;
+		}
+		return -1;
 	}
 
 	s32 getOutputDeviceId()
@@ -167,86 +107,55 @@ namespace TFE_AudioDevice
 	void destroy()
 	{
 		stopOutput();
-		delete s_device;
-		s_device = nullptr;
 	}
 
 	// Fills in deviceNames for all devices.
 	bool queryOutputDevices()
 	{
-		try
-		{
-			s_defaultOutputDeviceId = s_device->getDefaultOutputDevice();
-			TFE_System::logWrite(LOG_MSG, "Audio", "Default Audio Output ID: %u.", s_defaultOutputDeviceId);
-
-			s_outputDeviceList.clear();
-			u32 deviceCount = s_device->getDeviceCount();
-			TFE_System::logWrite(LOG_MSG, "Audio", "Device Count: %u.", deviceCount);
-			for (u32 i = 0; i < deviceCount; i++)
-			{
-				RtAudio::DeviceInfo srcInfo = s_device->getDeviceInfo(i);
-				TFE_System::logWrite(LOG_MSG, "Audio", "Device: '%s', ID: %u, Output Channel Count: %u.", srcInfo.name.c_str(), i, srcInfo.outputChannels);
-				if (srcInfo.outputChannels < 2)
-				{
-					continue;
-				}
-				s_outputDeviceList.push_back({ srcInfo.name, i });
-			}
-			return !s_outputDeviceList.empty();
-		}
-		catch (RtAudioError& error)
-		{
-			TFE_System::logWrite(LOG_WARNING, "Audio", "Cannot query audio output devices. Error: '%s', type: '%s'", error.getMessage().c_str(), c_audioErrorType[error.getType()]);
-		}
-		return false;
+		return sdla_queryaudiodevs() > 0;
 	}
 
-	void errorCallback(RtAudioError::Type type, const std::string &errorText)
+	bool startOutput(SDL_AudioCallback callback, void* userData, u32 channels, u32 sampleRate)
 	{
-		TFE_System::logWrite(LOG_ERROR, "Audio Device", "Error: '%s', type: '%s'", errorText.c_str(), c_audioErrorType[type]);
-	}
+		SDL_AudioDeviceID adevid;
+		SDL_AudioSpec specin, specout;
+		const char *dn;
 
-	bool startOutput(StreamCallback callback, void* userData, u32 channels, u32 sampleRate)
-	{
-		if (!s_device) { return false; }
+		if (s_outputDevice < 0 || getOutputDeviceCount() < 1)
+			return false;
 
-		try
+		specin.freq = (int)sampleRate;
+		specin.format = AUDIO_F32LSB;
+		specin.channels = channels;
+		specin.callback = callback;
+		specin.userdata = userData;
+		specin.samples = s_audioFrameSize;
+		dn = s_outputDeviceList[s_outputDevice].name.c_str();
+
+		TFE_System::logWrite(LOG_MSG, "Audio", "Starting up audio stream for device '%s'", dn);
+
+		adevid = SDL_OpenAudioDevice(dn, 0, &specin, &specout, 0);
+		if (adevid == 0)
 		{
-			RtAudio::StreamParameters  outParam;
-			RtAudio::StreamParameters  inParam;
-			RtAudio::StreamParameters* param[2] = { NULL, NULL };
-			TFE_System::logWrite(LOG_MSG, "Audio", "Starting up audio stream for device '%s', id %u.", s_OutputInfo.name.c_str(), s_outputDevice);
-
-			outParam.deviceId = s_outputDevice;
-			outParam.nChannels = channels;
-			outParam.firstChannel = 0;
-			param[0] = &outParam;
-
-			RtAudio::StreamOptions options = {};
-			options.numberOfBuffers = 4;
-
-			s_device->openStream(param[0], param[1], RTAUDIO_FLOAT32, sampleRate, &s_audioFrameSize, callback, userData, &options, errorCallback);
-			s_device->startStream();
-			s_streamStarted = true;
-		}
-		catch (RtAudioError& error)
-		{
-			TFE_System::logWrite(LOG_ERROR, "Audio", "Cannot start audio stream for output device %u.", s_outputDevice);
-			TFE_System::logWrite(LOG_ERROR, "Audio", "Error: '%s', type: '%s'", error.getMessage().c_str(), c_audioErrorType[error.getType()]);
-			s_streamStarted = false;
+			TFE_System::logWrite(LOG_ERROR, "Audio", "Open Audio Device %s failed with '%s'", dn, SDL_GetError());
 			return false;
 		}
+
+		s_adevid = adevid;
+		SDL_PauseAudioDevice(adevid, 0);	// unpause
+		s_streamStarted = true;
 
 		return true;
 	}
 
 	void stopOutput()
 	{
-		if (s_device && s_streamStarted)
+		if (s_streamStarted)
 		{
 			TFE_System::logWrite(LOG_MSG, "Audio", "Stop Audio Stream.");
-			s_device->stopStream();
+			SDL_CloseAudioDevice(s_adevid);
 			s_streamStarted = false;
+			s_adevid = 0;
 		}
 	}
 
