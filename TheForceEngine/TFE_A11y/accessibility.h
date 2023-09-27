@@ -37,6 +37,7 @@ namespace TFE_A11Y {
 	///////////////////////////////////////////
 	const string FILE_NAME_START = "subtitles-";
 	const string FILE_NAME_EXT = ".txt";
+	const f32 DEFAULT_LINE_HEIGHT = 20;
 
 	///////////////////////////////////////////
 	// Functions
@@ -61,8 +62,8 @@ namespace TFE_A11Y {
 	A11yStatus getCaptionSystemStatus();
 	void loadCaptions(const string path);
 	void clearActiveCaptions();
-	void drawCaptions();
-	void drawExampleCaptions();
+	Vec2f drawCaptions();
+	Vec2f drawExampleCaptions();
 	void focusCaptions();
 	void enqueueCaption(Caption caption);
 	void onSoundPlay(char* name, CaptionEnv env);

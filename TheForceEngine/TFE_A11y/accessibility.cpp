@@ -33,7 +33,7 @@ namespace TFE_A11Y  // a11y is industry slang for accessibility
 	bool filterCaptionFile(const string fileName);
 	void onFileError(const string path);
 	void enqueueCaption(const ConsoleArgList& args);
-	void drawCaptions(std::vector<Caption>* captions);
+	Vec2f drawCaptions(std::vector<Caption>* captions);
 	string toUpper(string input);
 	string toLower(string input);
 	string toFileName(string language);
@@ -47,7 +47,6 @@ namespace TFE_A11Y  // a11y is industry slang for accessibility
 	///////////////////////////////////////////
 	const char* DEFAULT_FONT = "Fonts/NotoSans-Regular.ttf";
 	const f32 MAX_CAPTION_WIDTH = 1200;
-	const f32 DEFAULT_LINE_HEIGHT = 20;
 	const f32 LINE_PADDING = 5;
 	// Base duration of a caption
 	const s64 BASE_DURATION_MICROSECONDS = secondsToMicroseconds(0.9f);
@@ -501,15 +500,15 @@ namespace TFE_A11Y  // a11y is industry slang for accessibility
 		//TFE_System::logWrite(LOG_ERROR, "a11y", std::to_string(active.size()).c_str());
 	}
 
-	void drawCaptions()
+	Vec2f drawCaptions()
 	{
 		if (s_activeCaptions.size() > 0)
 		{
-			drawCaptions(&s_activeCaptions);
+			return drawCaptions(&s_activeCaptions);
 		}
 	}
 
-	void drawCaptions(std::vector<Caption>* captions)
+	Vec2f drawCaptions(std::vector<Caption>* captions)
 	{
 		if (isFontLoaded()) { ImGui::PushFont(s_currentCaptionFont); }
 
@@ -614,15 +613,19 @@ namespace TFE_A11Y  // a11y is industry slang for accessibility
 				}
 			}
 		}
+
+		ImVec2 finalWindowSize = ImGui::GetWindowSize();
 		ImGui::PopStyleColor();
 		ImGui::End();
 
 		if (isFontLoaded()) { ImGui::PopFont(); }
 
 		s_lastTime = time;
+
+		return { finalWindowSize.x, finalWindowSize.y };
 	}
 
-	void drawExampleCaptions()
+	Vec2f drawExampleCaptions()
 	{
 		if (s_exampleCaptions.size() == 0)
 		{
@@ -630,7 +633,7 @@ namespace TFE_A11Y  // a11y is industry slang for accessibility
 			caption.env = CC_CUTSCENE;
 			s_exampleCaptions.push_back(caption);
 		}
-		drawCaptions(&s_exampleCaptions);
+		return drawCaptions(&s_exampleCaptions);
 	}
 
 	bool cutsceneCaptionsEnabled()
