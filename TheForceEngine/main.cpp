@@ -245,8 +245,6 @@ void handleEvent(SDL_Event& Event)
 
 bool sdlInit()
 {
-	// Audio is handled outside of SDL2.
-	// Using the Force Engine Audio system for sound mixing, FluidSynth for Midi handling and rtAudio for audio I/O.
 	const int code = SDL_Init(SDL_INIT_TIMER | SDL_INIT_VIDEO | SDL_INIT_EVENTS | SDL_INIT_GAMECONTROLLER | SDL_INIT_AUDIO);
 	if (code != 0) { return false; }
 
