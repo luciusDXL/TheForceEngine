@@ -24,4 +24,6 @@ namespace TFE_Editor
 	bool loadConfig();
 	bool saveConfig();
 	bool configUi();
+
+	extern EditorConfig s_editorConfig;
 }

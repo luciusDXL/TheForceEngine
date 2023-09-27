@@ -14,7 +14,7 @@
 namespace TFE_Editor
 {
 	static bool s_configLoaded = false;
-	static EditorConfig s_editorConfig = {};
+	EditorConfig s_editorConfig = {};
 
 	void parseValue(const char* key, const char* value);
 	
@@ -34,7 +34,7 @@ namespace TFE_Editor
 			return false;
 		}
 
-		const size_t len = configFile.getSize();
+		const u32 len = (u32)configFile.getSize();
 		WorkBuffer& buffer = getWorkBuffer();
 		buffer.resize(len);
 		configFile.readBuffer(buffer.data(), len);
@@ -97,11 +97,11 @@ namespace TFE_Editor
 	{
 		const char* fontScaleStr[] =
 		{
-			"100",
-			"125",
-			"150",
-			"175",
-			"200",
+			"100%",
+			"125%",
+			"150%",
+			"175%",
+			"200%",
 		};
 
 		s32 item = (s_editorConfig.fontScale - 100) / 25;

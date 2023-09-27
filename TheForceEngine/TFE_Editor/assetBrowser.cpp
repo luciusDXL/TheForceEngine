@@ -1,5 +1,6 @@
 #include "assetBrowser.h"
 #include "editorTexture.h"
+#include "editorConfig.h"
 #include "editor.h"
 #include <TFE_DarkForces/mission.h>
 #include <TFE_FrontEndUI/frontEndUi.h>
@@ -392,8 +393,8 @@ namespace AssetBrowser
 			const Asset* asset = s_viewAssetList.data();
 
 			char buttonLabel[32];
-			const s32 itemWidth = 130;
-			const s32 itemHeight = 84;
+			s32 itemWidth  = 66 + s_editorConfig.thumbnailSize;
+			s32 itemHeight = 20 + s_editorConfig.thumbnailSize;
 
 			s32 columnCount = max(1, s32(w - 16) / (itemWidth + 10));
 			f32 topPos = ImGui::GetCursorPosY();
@@ -426,20 +427,20 @@ namespace AssetBrowser
 					{
 						EditorTexture* tex = &s_viewAssetList[a].texture;
 						s32 offsetX = 0, offsetY = 0;
-						s32 width = 64, height = 64;
+						s32 width = s_editorConfig.thumbnailSize, height = s_editorConfig.thumbnailSize;
 						// Preserve the image aspect ratio.
 						if (tex->width >= tex->height)
 						{
-							height = tex->height * 64 / tex->width;
+							height = tex->height * s_editorConfig.thumbnailSize / tex->width;
 							offsetY = (width - height) / 2;
 						}
 						else
 						{
-							width = tex->width * 64 / tex->height;
+							width = tex->width * s_editorConfig.thumbnailSize / tex->height;
 							offsetX = (height - width) / 2;
 						}
 						// Center image.
-						offsetX += (itemWidth - 64) / 2;
+						offsetX += (itemWidth - s_editorConfig.thumbnailSize) / 2;
 
 						// Draw the image.
 						ImGui::SetCursorPos(ImVec2((f32)offsetX, (f32)offsetY));
@@ -447,7 +448,7 @@ namespace AssetBrowser
 							ImVec2((f32)width, (f32)height), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f));
 
 						// Draw the label.
-						ImGui::SetCursorPos(ImVec2(8.0f, 64.0f));
+						ImGui::SetCursorPos(ImVec2(8.0f, (f32)s_editorConfig.thumbnailSize));
 						ImGui::LabelText("###", "%s", asset[a].name.c_str());
 
 						if (ImGui::IsWindowHovered())
