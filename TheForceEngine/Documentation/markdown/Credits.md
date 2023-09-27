@@ -63,7 +63,7 @@ Most of the source code listed below is embedded within the project so that it c
 
 Note that some libraries will be replaced by custom code or simpler libraries in the future (such as DevIL).
 
-**Windowing/OpenGL**
+**Windowing/OpenGL/Audio**
 SDL 2.0.x
   * [https://www.libsdl.org/](https://www.libsdl.org/)
   * License: ZLIB
@@ -94,11 +94,7 @@ DevIL
   * [http://openil.sourceforge.net/](http://openil.sourceforge.net/)
   * License: LGPL 2.1
 
-**Audio**
-RtAudio (Core Audio I/O)
-  * [http://www.music.mcgill.ca/~gary/rtaudio/](http://www.music.mcgill.ca/~gary/rtaudio/)
-  * License: Custom
-
+**Music**
 RtMidi (Core Midi Hardware I/O)
   * [https://www.music.mcgill.ca/~gary/rtmidi/](https://www.music.mcgill.ca/~gary/rtmidi/)
   * License: Custom
