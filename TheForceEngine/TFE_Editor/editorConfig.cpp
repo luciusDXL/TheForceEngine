@@ -136,7 +136,7 @@ namespace TFE_Editor
 		bool active = true;
 		bool finished = false;
 		ImGui::SetWindowPos("Editor Config", { 0.0f, f32(menuHeight) });
-		ImGui::SetWindowSize("Editor Config", { UI_SCALE(512), UI_SCALE(196) });
+		ImGui::SetWindowSize("Editor Config", { UI_SCALE(512), 70.0f + UI_SCALE(100) });
 		ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse;
 
 		ImGui::Begin("Editor Config", &active, window_flags);
