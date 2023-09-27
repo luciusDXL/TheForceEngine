@@ -2,9 +2,10 @@
 #include "midiDevice.h"
 #include "audioDevice.h"
 #include "systemMidiDevice.h"
+#include <SDL_mutex.h>
+#include <SDL_thread.h>
 #include <TFE_Asset/gmidAsset.h>
 #include <TFE_System/system.h>
-#include <TFE_System/Threads/thread.h>
 #include <TFE_Settings/settings.h>
 #include <TFE_FrontEndUI/console.h>
 #include <TFE_Audio/MidiSynth/soundFontDevice.h>
@@ -53,11 +54,11 @@ namespace TFE_MidiPlayer
 	static const f32 c_musicVolumeScale = 0.75f;
 	static f32 s_masterVolume = 1.0f;
 	static f32 s_masterVolumeScaled = s_masterVolume * c_musicVolumeScale;
-	static Thread* s_thread = nullptr;
+	static SDL_Thread* s_thread = nullptr;
 
 	static atomic_bool s_runMusicThread;
 	static u8 s_channelSrcVolume[MIDI_CHANNEL_COUNT] = { 0 };
-	static Mutex s_mutex;
+	static SDL_mutex* s_mutex;
 
 	static MidiDevice* s_midiDevice = nullptr;
 	static MidiCallback s_midiCallback = {};
@@ -74,7 +75,7 @@ namespace TFE_MidiPlayer
 	static Instrument s_instrOn[MIDI_INSTRUMENT_COUNT] = { 0 };
 	static f64 s_curNoteTime = 0.0;
 
-	TFE_THREADRET midiUpdateFunc(void* userData);
+	int midiUpdateFunc(void* userData);
 	void stopAllNotes();
 	void changeVolume();
 	void allocateMidiDevice(MidiDeviceType type);
@@ -93,8 +94,15 @@ namespace TFE_MidiPlayer
 	bool init(s32 midiDeviceIndex, MidiDeviceType type)
 	{
 		TFE_System::logWrite(LOG_MSG, "Startup", "TFE_MidiPlayer::init");
-
 		bool res = false;
+
+		s_mutex = SDL_CreateMutex();
+		if (!s_mutex)
+		{
+			TFE_System::logWrite(LOG_ERROR, "Midi", "cannot initialize SDL mutex");
+			return false;
+		}
+
 		allocateMidiDevice(type);
 
 		if (s_midiDevice)
@@ -111,12 +119,13 @@ namespace TFE_MidiPlayer
 		}
 
 		s_runMusicThread.store(true);
-		MUTEX_INITIALIZE(&s_mutex);
 
-		s_thread = Thread::create("MidiThread", midiUpdateFunc, nullptr);
-		if (s_thread)
+
+		s_thread = SDL_CreateThread(midiUpdateFunc, "TFE_MidiThread", nullptr);
+		if (!s_thread)
 		{
-			s_thread->run();
+			TFE_System::logWrite(LOG_ERROR, "Midi", "cannot create Midi Thread!");
+			res = false;
 		}
 
 		CCMD("setMusicVolume", setMusicVolumeConsole, 1, "Sets the music volume, range is 0.0 to 1.0");
@@ -131,19 +140,16 @@ namespace TFE_MidiPlayer
 
 	void destroy()
 	{
+		int i;
+
 		TFE_System::logWrite(LOG_MSG, "MidiPlayer", "Shutdown");
 		// Destroy the thread before shutting down the Midi Device.
 		s_runMusicThread.store(false);
-		if (s_thread->isPaused())
-		{
-			s_thread->resume();
-		}
-		s_thread->waitOnExit();
+		SDL_WaitThread(s_thread, &i);
 
-		delete s_thread;
 		delete s_midiDevice;
 
-		MUTEX_DESTROY(&s_mutex);
+		SDL_DestroyMutex(s_mutex);
 	}
 
 	MidiDevice* getMidiDevice()
@@ -198,14 +204,14 @@ namespace TFE_MidiPlayer
 	//////////////////////////////////////////////////
 	void setVolume(f32 volume)
 	{
-		MUTEX_LOCK(&s_mutex);
+		SDL_LockMutex(s_mutex);
 		MidiCmd* midiCmd = midiAllocCmd();
 		if (midiCmd)
 		{
 			midiCmd->cmd = MIDI_CHANGE_VOL;
 			midiCmd->newVolume = volume;
 		}
-		MUTEX_UNLOCK(&s_mutex);
+		SDL_UnlockMutex(s_mutex);
 	}
 	
 	// Set the length in seconds that a note is allowed to play for in seconds.
@@ -214,53 +220,37 @@ namespace TFE_MidiPlayer
 		s_maxNoteLength = f64(dt);
 	}
 
-	void pauseThread()
-	{
-		if (s_thread)
-		{
-			s_thread->pause();
-		}
-	}
-
-	void resumeThread()
-	{
-		if (s_thread)
-		{
-			s_thread->resume();
-		}
-	}
-
 	void pause()
 	{
-		MUTEX_LOCK(&s_mutex);
+		SDL_LockMutex(s_mutex);
 		MidiCmd* midiCmd = midiAllocCmd();
 		if (midiCmd)
 		{
 			midiCmd->cmd = MIDI_PAUSE;
 		}
-		MUTEX_UNLOCK(&s_mutex);
+		SDL_UnlockMutex(s_mutex);
 	}
 
 	void resume()
 	{
-		MUTEX_LOCK(&s_mutex);
+		SDL_LockMutex(s_mutex);
 		MidiCmd* midiCmd = midiAllocCmd();
 		if (midiCmd)
 		{
 			midiCmd->cmd = MIDI_RESUME;
 		}
-		MUTEX_UNLOCK(&s_mutex);
+		SDL_UnlockMutex(s_mutex);
 	}
 
 	void stopMidiSound()
 	{
-		MUTEX_LOCK(&s_mutex);
+		SDL_LockMutex(s_mutex);
 		MidiCmd* midiCmd = midiAllocCmd();
 		if (midiCmd)
 		{
 			midiCmd->cmd = MIDI_STOP_NOTES;
 		}
-		MUTEX_UNLOCK(&s_mutex);
+		SDL_UnlockMutex(s_mutex);
 	}
 
 	void synthesizeMidi(f32* buffer, u32 stereoSampleCount, bool updateBuffer)
@@ -278,7 +268,7 @@ namespace TFE_MidiPlayer
 				s_sampleBufferPtr = s_sampleBuffer.data();
 			}
 
-			MUTEX_LOCK(&s_mutex);
+			SDL_LockMutex(s_mutex);
 			// This is checked again, in case it was immediately changed in another thread; such as when changing midi devices or outputs.
 			if (s_midiDevice && s_midiDevice->canRender())
 			{
@@ -293,7 +283,7 @@ namespace TFE_MidiPlayer
 					}
 				}
 			}
-			MUTEX_UNLOCK(&s_mutex);
+			SDL_UnlockMutex(s_mutex);
 		}
 	}
 
@@ -304,7 +294,7 @@ namespace TFE_MidiPlayer
 
 	void midiSetCallback(void(*callback)(void), f64 timeStep)
 	{
-		MUTEX_LOCK(&s_mutex);
+		SDL_LockMutex(s_mutex);
 		s_midiCallback.callback = callback;
 		s_midiCallback.timeStep = timeStep;
 		s_midiCallback.accumulator = 0.0;
@@ -314,16 +304,16 @@ namespace TFE_MidiPlayer
 			s_channelSrcVolume[i] = CHANNEL_MAX_VOLUME;
 		}
 		changeVolume();
-		MUTEX_UNLOCK(&s_mutex);
+		SDL_UnlockMutex(s_mutex);
 	}
 
 	void midiClearCallback()
 	{
-		MUTEX_LOCK(&s_mutex);
+		SDL_LockMutex(s_mutex);
 		s_midiCallback.callback = nullptr;
 		s_midiCallback.timeStep = 0.0;
 		s_midiCallback.accumulator = 0.0;
-		MUTEX_UNLOCK(&s_mutex);
+		SDL_UnlockMutex(s_mutex);
 	}
 
 	//////////////////////////////////////////////////
@@ -432,7 +422,7 @@ namespace TFE_MidiPlayer
 	}
 
 	// Thread Function
-	TFE_THREADRET midiUpdateFunc(void* userData)
+	int midiUpdateFunc(void* userData)
 	{
 		bool runThread  = true;
 		bool wasPlaying = false;
@@ -444,7 +434,7 @@ namespace TFE_MidiPlayer
 		f64 dt = 0.0;
 		while (runThread)
 		{
-			MUTEX_LOCK(&s_mutex);
+			SDL_LockMutex(s_mutex);
 						
 			// Read from the command buffer.
 			MidiCmd* midiCmd = s_midiCmdBuffer;
@@ -494,11 +484,11 @@ namespace TFE_MidiPlayer
 				detectHangingNotes();
 			}
 
-			MUTEX_UNLOCK(&s_mutex);
+			SDL_UnlockMutex(s_mutex);
 			runThread = s_runMusicThread.load();
 		};
 		
-		return (TFE_THREADRET)0;
+		return 0;
 	}
 
 	// Console Functions
