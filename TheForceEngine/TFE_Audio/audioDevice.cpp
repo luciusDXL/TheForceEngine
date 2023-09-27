@@ -43,30 +43,10 @@ namespace TFE_AudioDevice
 		TFE_System::logWrite(LOG_MSG, "Audio", "SDLAudio using interface '%s'", dn);
 
 		int cnt = sdla_queryaudiodevs();
-		if (cnt < 1)
-		{
-			TFE_System::logWrite(LOG_WARNING, "Audio", "no output devices!");
-		}
+		if ((deviceId > cnt) || (deviceId < 0))
+			deviceId = getDefaultOutputDevice();
 
-		// Validate the device ID.
-		if (deviceId >= 0)
-		{
-			bool found = false;
-			for (int i = 0; i < s_outputDeviceList.size(); i++)
-			{
-				if (s_outputDeviceList[i].id == deviceId)
-				{
-					found = true;
-					break;
-				}
-			}
-			if (!found)
-			{
-				deviceId = -1;
-			}
-		}
-
-		s_outputDevice = deviceId < 0 ? getDefaultOutputDevice() : deviceId;
+		s_outputDevice = deviceId;
 		s_streamStarted  = false;
 		s_audioFrameSize = audioFrameSize;
 
@@ -85,7 +65,7 @@ namespace TFE_AudioDevice
 
 	s32 getOutputDeviceCount()
 	{
-		return (s32)s_outputDeviceList.size();
+		return sdla_queryaudiodevs();
 	}
 
 	void destroy()
