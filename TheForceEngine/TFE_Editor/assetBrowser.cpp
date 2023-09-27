@@ -1,6 +1,7 @@
 #include "assetBrowser.h"
 #include "editorTexture.h"
 #include "editorFrame.h"
+#include "editorSprite.h"
 #include "editorConfig.h"
 #include "editor.h"
 #include <TFE_DarkForces/mission.h>
@@ -68,6 +69,7 @@ namespace AssetBrowser
 
 		EditorTexture texture;
 		EditorFrame frame;
+		EditorSprite sprite;
 	};
 	typedef std::vector<Asset> AssetList;
 
@@ -482,6 +484,8 @@ namespace AssetBrowser
 						s32 width = s_editorConfig.thumbnailSize, height = s_editorConfig.thumbnailSize;
 
 						TextureGpu* textureGpu = nullptr;
+						f32 u0 = 0.0f, v0 = 1.0f;
+						f32 u1 = 1.0f, v1 = 0.0f;
 						if (s_viewAssetList[a].type == TYPE_TEXTURE || s_viewAssetList[a].type == TYPE_PALETTE)
 						{
 							EditorTexture* tex = &s_viewAssetList[a].texture;
@@ -514,13 +518,36 @@ namespace AssetBrowser
 								offsetX = (height - width) / 2;
 							}
 						}
+						else if (s_viewAssetList[a].type == TYPE_SPRITE)
+						{
+							EditorSprite* sprite = &s_viewAssetList[a].sprite;
+							textureGpu = sprite->texGpu;
+							SpriteCell* cell = &sprite->cell[0];
+							// Preserve the image aspect ratio.
+							if (cell->w >= cell->h)
+							{
+								height = cell->h * s_editorConfig.thumbnailSize / cell->w;
+								offsetY = (width - height) / 2;
+							}
+							else
+							{
+								width = cell->w * s_editorConfig.thumbnailSize / cell->h;
+								offsetX = (height - width) / 2;
+							}
+
+							u0 = f32(cell->u) / (f32)textureGpu->getWidth();
+							v1 = f32(cell->v) / (f32)textureGpu->getHeight();
+
+							u1 = f32(cell->u + cell->w) / (f32)textureGpu->getWidth();
+							v0 = f32(cell->v + cell->h) / (f32)textureGpu->getHeight();
+						}
 						// Center image.
 						offsetX += (itemWidth - s_editorConfig.thumbnailSize) / 2;
 
 						// Draw the image.
 						ImGui::SetCursorPos(ImVec2((f32)offsetX, (f32)offsetY));
 						ImGui::Image(TFE_RenderBackend::getGpuPtr(textureGpu),
-							ImVec2((f32)width, (f32)height), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f));
+							ImVec2((f32)width, (f32)height), ImVec2(u0, v0), ImVec2(u1, v1));
 
 						// Draw the label.
 						ImGui::SetCursorPos(ImVec2(8.0f, (f32)s_editorConfig.thumbnailSize));
@@ -941,6 +968,18 @@ namespace AssetBrowser
 					loadEditorFrameLit(FRAME_FME, archive, asset->name.c_str(), s_palettes[palId].data, palId, s_palettes[palId].colormap, lightLevel, &asset->frame);
 				}
 			}
+			else if (asset->type == TYPE_SPRITE)
+			{
+				freeSprite(asset->name.c_str());
+				if (lightLevel == 32 || !s_palettes[palId].hasColormap)
+				{
+					loadEditorSprite(SPRITE_WAX, archive, asset->name.c_str(), s_palettes[palId].data, palId, &asset->sprite);
+				}
+				else
+				{
+					loadEditorSpriteLit(SPRITE_WAX, archive, asset->name.c_str(), s_palettes[palId].data, palId, s_palettes[palId].colormap, lightLevel, &asset->sprite);
+				}
+			}
 		}
 	}
 
@@ -966,6 +1005,10 @@ namespace AssetBrowser
 		else if (strcasecmp(ext, "FME") == 0)
 		{
 			return TYPE_FRAME;
+		}
+		else if (strcasecmp(ext, "WAX") == 0)
+		{
+			return TYPE_SPRITE;
 		}
 		return TYPE_COUNT;
 	}
@@ -1047,6 +1090,22 @@ namespace AssetBrowser
 		for (size_t i = 0; i < count; i++, frameName++)
 		{
 			if (strcasecmp(name, frameName->c_str()) == 0)
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+
+	bool isLevelSprite(const char* name)
+	{
+		if (s_viewInfo.levelSource < 0) { return true; }
+
+		const size_t count = s_levelAssets[s_viewInfo.levelSource].sprites.size();
+		const std::string* spriteName = s_levelAssets[s_viewInfo.levelSource].sprites.data();
+		for (size_t i = 0; i < count; i++, spriteName++)
+		{
+			if (strcasecmp(name, spriteName->c_str()) == 0)
 			{
 				return true;
 			}
@@ -1170,6 +1229,32 @@ namespace AssetBrowser
 				s32 palId = getAssetPalette(projAsset->name.c_str());
 
 				loadEditorFrame(FRAME_FME, archive, projAsset->name.c_str(), s_palettes[palId].data, palId, &asset.frame);
+				s_viewAssetList.push_back(asset);
+			}
+		}
+		else if (s_viewInfo.type == TYPE_SPRITE)
+		{
+			const u32 count = (u32)s_projectAssetList[TYPE_SPRITE].size();
+			const Asset* projAsset = s_projectAssetList[TYPE_SPRITE].data();
+			for (u32 i = 0; i < count; i++, projAsset++)
+			{
+				if (!isLevelSprite(projAsset->name.c_str()))
+				{
+					continue;
+				}
+
+				Archive* archive = getArchive(projAsset->archiveName.c_str(), projAsset->gameId);
+				Asset asset;
+				asset.type = projAsset->type;
+				asset.name = projAsset->name;
+				asset.gameId = projAsset->gameId;
+				asset.archiveName = projAsset->archiveName;
+				asset.filePath = projAsset->filePath;
+
+				memset(&asset.frame, 0, sizeof(EditorFrame));
+				s32 palId = getAssetPalette(projAsset->name.c_str());
+
+				loadEditorSprite(SPRITE_WAX, archive, projAsset->name.c_str(), s_palettes[palId].data, palId, &asset.sprite);
 				s_viewAssetList.push_back(asset);
 			}
 		}

@@ -1300,6 +1300,9 @@
     <ClInclude Include="TFE_Editor\editorColormap.h">
       <Filter>Source\TFE_Editor</Filter>
     </ClInclude>
+    <ClInclude Include="TFE_Editor\editorSprite.h">
+      <Filter>Source\TFE_Editor</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -2197,6 +2200,9 @@
       <Filter>Source\TFE_Editor</Filter>
     </ClCompile>
     <ClCompile Include="TFE_Editor\editorColormap.cpp">
+      <Filter>Source\TFE_Editor</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Editor\editorSprite.cpp">
       <Filter>Source\TFE_Editor</Filter>
     </ClCompile>
   </ItemGroup>

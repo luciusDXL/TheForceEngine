@@ -14,7 +14,7 @@ namespace TFE_Editor
 {
 	struct EditorFrame
 	{
-		TextureGpu* texGpu = { nullptr };
+		TextureGpu* texGpu = nullptr;
 		u32  width = 0;
 		u32  height = 0;
 		f32  worldWidth = 0.0f;
