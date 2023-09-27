@@ -1162,7 +1162,7 @@ namespace AssetBrowser
 					}
 				}
 
-				AssetColorData colorData = { nullptr, colormapData, 0, 32 };
+				AssetColorData colorData = { nullptr, hasColormap ? colormapData : nullptr, 0, 32 };
 				asset.handle = loadAssetData(TYPE_PALETTE, archive, &colorData, projAsset->name.c_str());
 				s_viewAssetList.push_back(asset);
 			}
