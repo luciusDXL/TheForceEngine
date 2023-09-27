@@ -249,7 +249,7 @@ namespace TFE_FrontEndUI
 	void configHud();
 	void configSound();
 	void configSystem();
-	void configA11y();
+	void configA11y(s32 tabWidth, u32 height);
 	void pickCurrentResolution();
 	void manual();
 	void credits();
@@ -882,7 +882,7 @@ namespace TFE_FrontEndUI
 			}
 
 			ImGui::SetNextWindowPos(ImVec2(160.0f*s_uiScale, 0.0f));
-			ImGui::SetNextWindowSize(ImVec2(f32(tabWidth), f32(h)));
+			if (s_configTab != CONFIG_A11Y) { ImGui::SetNextWindowSize(ImVec2(f32(tabWidth), f32(h))); }
 			ImGui::SetNextWindowBgAlpha(0.95f);
 			ImGui::Begin("##Settings", &active, window_flags);
 
@@ -920,7 +920,7 @@ namespace TFE_FrontEndUI
 				configSystem();
 				break;
 			case CONFIG_A11Y:
-				configA11y();
+				configA11y(tabWidth, h);
 				break;
 			};
 			renderBackground();
@@ -2680,13 +2680,40 @@ namespace TFE_FrontEndUI
 	}
 
 	// Accessibility
-	void configA11y()
+	void configA11y(s32 tabWidth, u32 height)
 	{
-		TFE_Settings_A11y* a11y = TFE_Settings::getA11ySettings();
-		float labelW = 140 * s_uiScale;
-		float valueW = 260 * s_uiScale;
+		// WINDOW --------------------------------------------
+		TFE_Settings_A11y* a11ySettings = TFE_Settings::getA11ySettings();
+		f32 labelW = 140 * s_uiScale;
+		f32 valueW = 260 * s_uiScale - 10;
 
-		if (TFE_A11Y::getStatus() == TFE_A11Y::CC_ERROR)
+		// Draw the example caption if captions are enabled, and resize the settings window accordingly.
+		if (a11ySettings->captionSystemEnabled())
+		{
+			Vec2f captionWindowSize = TFE_A11Y::drawExampleCaptions();
+
+			// Resize the settings window so it isn't covered by the example caption
+			ImVec2 windowSize;
+			windowSize.x = tabWidth;
+			windowSize.y = height - captionWindowSize.z - TFE_A11Y::DEFAULT_LINE_HEIGHT * 2;
+			ImGui::SetWindowSize(windowSize);
+		}
+		else // Captions not enabled
+		{
+			ImGui::SetWindowSize(ImVec2(tabWidth, height));
+		}
+
+		// CAPTIONS -------------------------------------------
+		ImGui::PushFont(s_dialogFont);
+		ImGui::LabelText("##ConfigLabel", "Captions");
+		ImGui::PopFont();
+
+		// Check status, and init the caption system if necessary.
+		if (TFE_A11Y::getCaptionSystemStatus() == TFE_A11Y::CC_NOT_LOADED) 
+		{
+			TFE_A11Y::initCaptions(); 
+		}
+		if (TFE_A11Y::getCaptionSystemStatus() == TFE_A11Y::CC_ERROR)
 		{
 			ImGui::LabelText("##ConfigLabel", "Error: Caption file could not be loaded!");
 		}
@@ -2695,7 +2722,7 @@ namespace TFE_FrontEndUI
 		ImGui::LabelText("##ConfigLabel", "Subtitle/caption file:");
 		TFE_A11Y::FilePath currentCaptionFile = TFE_A11Y::getCurrentCaptionFile();
 		string currentCaptionFilePath = DrawFileListCombo("##ccfile", currentCaptionFile.name, currentCaptionFile.path, TFE_A11Y::getCaptionFiles());
-		// If user changed the selected caption file, reload captions
+		// If user changed the selected caption file, reload captions.
 		if (currentCaptionFilePath != currentCaptionFile.path)
 		{
 			TFE_A11Y::clearActiveCaptions();
@@ -2714,48 +2741,49 @@ namespace TFE_FrontEndUI
 		}
 
 		// CUTSCENES -----------------------------------------
-		ImGui::PushFont(s_dialogFont);
+		ImGui::Dummy(ImVec2(0.0f, 10.0f));
+		ImGui::PushFont(s_versionFont);
 		ImGui::LabelText("##ConfigLabel", "Cutscenes");
 		ImGui::PopFont();
 
-		ImGui::Checkbox("Subtitles (voice)##Cutscenes", &a11y->showCutsceneSubtitles);
+		ImGui::Checkbox("Subtitles (voice)##Cutscenes", &a11ySettings->showCutsceneSubtitles);
 		ImGui::SameLine(0, 22);
-		ImGui::Checkbox("Captions (SFX)##Cutscenes", &a11y->showCutsceneCaptions);
+		ImGui::Checkbox("Captions (SFX)##Cutscenes", &a11ySettings->showCutsceneCaptions);
 		
-		DrawFontSizeCombo(labelW, valueW, "Font Size##Cutscenes", "##CFS", (s32*)&a11y->cutsceneFontSize);
-		DrawRGBFields(labelW, valueW, "Font Color##Cutscenes", &a11y->cutsceneFontColor);
-		DrawLabelledFloatSlider(labelW, valueW * 0.5f - 2, "Background Opacity", "##CBO", &a11y->cutsceneTextBackgroundAlpha, 0.0f, 1.0f);
+		DrawFontSizeCombo(labelW, valueW, "Font Size##Cutscenes", "##CFS", (s32*)&a11ySettings->cutsceneFontSize);
+		DrawRGBFields(labelW, valueW, "Font Color##Cutscenes", &a11ySettings->cutsceneFontColor);
+		DrawLabelledFloatSlider(labelW, valueW * 0.5f - 2, "Background Opacity", "##CBO", &a11ySettings->cutsceneTextBackgroundAlpha, 0.0f, 1.0f);
 		ImGui::SameLine(0, 40);
-		ImGui::Checkbox("Border##Cutscenes", &a11y->showCutsceneTextBorder);
-		DrawLabelledFloatSlider(labelW, valueW, "Text speed", "##CTS", &a11y->cutsceneTextSpeed, 0.5f, 2.0f);
+		ImGui::Checkbox("Border##Cutscenes", &a11ySettings->showCutsceneTextBorder);
+		DrawLabelledFloatSlider(labelW, valueW, "Text speed", "##CTS", &a11ySettings->cutsceneTextSpeed, 0.5f, 2.0f);
 
-		ImGui::Separator();
-
-		// GAMEPLAY------------------------------------------
-		ImGui::PushFont(s_dialogFont);
+		// GAMEPLAY ------------------------------------------
+		ImGui::Dummy(ImVec2(0.0f, 10.0f));
+		ImGui::PushFont(s_versionFont);
 		ImGui::LabelText("##ConfigLabel3", "Gameplay");
 		ImGui::PopFont();
 
-		ImGui::Checkbox("Subtitles (voice)##Gameplay", &a11y->showGameplaySubtitles);
+		ImGui::Checkbox("Subtitles (voice)##Gameplay", &a11ySettings->showGameplaySubtitles);
 		ImGui::SameLine(0, 22);
-		ImGui::Checkbox("Captions (SFX)##Gameplay", &a11y->showGameplayCaptions);
+		ImGui::Checkbox("Captions (SFX)##Gameplay", &a11ySettings->showGameplayCaptions);
 
-		DrawFontSizeCombo(labelW, valueW, "Font Size##Gameplay", "##GFS", (s32*)&a11y->gameplayFontSize);
-		DrawRGBFields(labelW, valueW, "Font Color##Gameplay", &a11y->gameplayFontColor);
-		DrawLabelledFloatSlider(labelW, valueW * 0.5f - 2, "Background Opacity", "##GBO", &a11y->gameplayTextBackgroundAlpha, 0.0f, 1.0f);
+		DrawFontSizeCombo(labelW, valueW, "Font Size##Gameplay", "##GFS", (s32*)&a11ySettings->gameplayFontSize);
+		DrawRGBFields(labelW, valueW, "Font Color##Gameplay", &a11ySettings->gameplayFontColor);
+		DrawLabelledFloatSlider(labelW, valueW * 0.5f - 2, "Background Opacity", "##GBO", &a11ySettings->gameplayTextBackgroundAlpha, 0.0f, 1.0f);
 		ImGui::SameLine(0, 40);
-		ImGui::Checkbox("Border##Gameplay", &a11y->showGameplayTextBorder);
-		DrawLabelledFloatSlider(labelW, valueW, "Text speed", "##GTS", &a11y->gameplayTextSpeed, 0.5f, 2.0f);
+		ImGui::Checkbox("Border##Gameplay", &a11ySettings->showGameplayTextBorder);
+		DrawLabelledFloatSlider(labelW, valueW, "Text speed", "##GTS", &a11ySettings->gameplayTextSpeed, 0.5f, 2.0f);
 
-		DrawLabelledIntSlider(labelW, valueW, "Max Lines", "##CML", &a11y->gameplayMaxTextLines, 2, 7);
-		DrawLabelledIntSlider(labelW, valueW, "Min. Volume", "##CMV", &a11y->gameplayCaptionMinVolume, 0, 127);
+		DrawLabelledIntSlider(labelW, valueW, "Max Lines", "##CML", &a11ySettings->gameplayMaxTextLines, 2, 7);
+		DrawLabelledIntSlider(labelW, valueW, "Min. Volume", "##CMV", &a11ySettings->gameplayCaptionMinVolume, 0, 127);
 
+		// MOTION SICKNESS -------------------------------------
+		ImGui::Dummy(ImVec2(0.0f, 10.0f));
+		ImGui::Separator();
 		ImGui::PushFont(s_dialogFont);
-		ImGui::LabelText("##ConfigLabel4", "Motion Sickess");
+		ImGui::LabelText("##ConfigLabel4", "Motion Sickness");
 		ImGui::PopFont();
-		ImGui::Checkbox("Enable headwave", &a11y->enableHeadwave);
-
-		TFE_A11Y::drawExampleCaptions();
+		ImGui::Checkbox("Enable headwave", &a11ySettings->enableHeadwave);
 	}
 
 	void pickCurrentResolution()
