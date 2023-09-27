@@ -12,16 +12,13 @@
 
 namespace TFE_Editor
 {
-	typedef std::map<std::string, s32> TextureMap;
 	typedef std::vector<EditorTexture> TextureList;
-		
-	static TextureMap s_texturesLoaded;
 	static TextureList s_textureList;
 
 	void freeTexture(const char* name)
 	{
 		const size_t count = s_textureList.size();
-		const EditorTexture* texture = s_textureList.data();
+		EditorTexture* texture = s_textureList.data();
 		for (size_t i = 0; i < count; i++, texture++)
 		{
 			if (strcasecmp(texture->name, name) == 0)
@@ -30,15 +27,9 @@ namespace TFE_Editor
 				{
 					TFE_RenderBackend::freeTexture(texture->texGpu[f]);
 				}
-				s_textureList.erase(s_textureList.begin() + i);
+				*texture = {};
 				break;
 			}
-		}
-		s_texturesLoaded.clear();
-		const s32 newCount = (s32)s_textureList.size();
-		for (s32 i = 0; i < newCount; i++, texture++)
-		{
-			s_texturesLoaded[s_textureList[i].name] = i;
 		}
 	}
 
@@ -53,25 +44,13 @@ namespace TFE_Editor
 				TFE_RenderBackend::freeTexture(texture->texGpu[f]);
 			}
 		}
-		s_texturesLoaded.clear();
 		s_textureList.clear();
-	}
-
-	s32 findTexture(const char* name)
-	{
-		TextureMap::iterator iTex = s_texturesLoaded.find(name);
-		if (iTex != s_texturesLoaded.end())
-		{
-			return iTex->second;
-		}
-		return -1;
 	}
 
 	s32 allocateTexture(const char* name)
 	{
 		s32 index = (s32)s_textureList.size();
 		s_textureList.push_back({});
-		s_texturesLoaded[name] = index;
 		return index;
 	}
 
@@ -95,28 +74,26 @@ namespace TFE_Editor
 		}
 		return TFE_RenderBackend::createTexture(width, height, imageBuffer);
 	}
-		
-	bool loadEditorTexture(SourceType type, Archive* archive, const char* filename, const u32* palette, s32 palIndex, EditorTexture* texture)
-	{
-		if (!archive && !filename) { return false; }
-		if (!texture) { return false; }
 
-		s32 id = findTexture(filename);
-		if (id >= 0)
-		{
-			*texture = s_textureList[id];
-			return true;
-		}
+	EditorTexture* getTextureData(u32 index)
+	{
+		if (index >= s_textureList.size()) { return nullptr; }
+		return &s_textureList[index];
+	}
+
+	s32 loadEditorTexture(SourceType type, Archive* archive, const char* filename, const u32* palette, s32 palIndex, s32 id)
+	{
+		if (!archive && !filename) { return -1; }
 
 		if (!archive->openFile(filename))
 		{
-			return false;
+			return -1;
 		}
 		size_t len = archive->getFileLength();
 		if (!len)
 		{
 			archive->closeFile();
-			return false;
+			return -1;
 		}
 		WorkBuffer& buffer = getWorkBuffer();
 		buffer.resize(len);
@@ -132,7 +109,7 @@ namespace TFE_Editor
 				// What about animated textures?
 				if (texData->uvWidth == BM_ANIMATED_TEXTURE)
 				{
-					u8 frameRate  = texData->image[0];
+					u8 frameRate = texData->image[0];
 					u8 animatedId = texData->image[1];
 					u8 frameCount = (u8)texData->uvHeight;
 					if (animatedId != 2)
@@ -141,9 +118,9 @@ namespace TFE_Editor
 						return false;
 					}
 
-					id = allocateTexture(filename);
+					if (id < 0) { id = allocateTexture(filename); }
 					s_textureList[id].frameCount = frameCount;
-					
+
 					const u32* textureOffsets = (u32*)(texData->image + 2);
 					const u8* base = texData->image + 2;
 					for (s32 i = 0; i < frameCount; i++)
@@ -167,15 +144,15 @@ namespace TFE_Editor
 
 						if (i == 0)
 						{
-							s_textureList[id].width  = frame->width;
+							s_textureList[id].width = frame->width;
 							s_textureList[id].height = frame->height;
 						}
 					}
 				}
 				else
 				{
-					id = allocateTexture(filename);
-					s_textureList[id].width  = texData->width;
+					if (id < 0) { id = allocateTexture(filename); }
+					s_textureList[id].width = texData->width;
 					s_textureList[id].height = texData->height;
 					s_textureList[id].frameCount = 1;
 					s_textureList[id].texGpu[0] = loadBmFrame(texData->width, texData->height, texData->image, palette);
@@ -183,22 +160,23 @@ namespace TFE_Editor
 				strcpy(s_textureList[id].name, filename);
 				s_textureList[id].paletteIndex = palIndex;
 				s_textureList[id].lightLevel = 32;
-
-				*texture = s_textureList[id];
-				result = true;
 			}
 			if (texData) { free(texData->image); }
 			free(texData);
-
-			return result;
 		}
-		return false;
+		return id;
 	}
 
-	bool loadEditorTextureLit(SourceType type, Archive* archive, const char* filename, const u32* palette, s32 palIndex, const u8* colormap, s32 lightLevel, EditorTexture* texture)
+	bool loadEditorTextureLit(SourceType type, Archive* archive, const u32* palette, s32 palIndex, const u8* colormap, s32 lightLevel, u32 index)
 	{
-		s_remapTable = &colormap[lightLevel * 256];
-		bool result = loadEditorTexture(type, archive, filename, palette, palIndex, texture);
+		EditorTexture* texture = getTextureData(index);
+
+		s_remapTable = lightLevel == 32 ? s_identityTable : &colormap[lightLevel * 256];
+		char name[TFE_MAX_PATH];
+		strcpy(name, texture->name);
+		freeTexture(name);
+
+		bool result = loadEditorTexture(type, archive, name, palette, palIndex, (s32)index);
 		if (result)
 		{
 			texture->lightLevel = lightLevel;
@@ -208,42 +186,34 @@ namespace TFE_Editor
 		return result;
 	}
 
-	bool loadPaletteAsTexture(Archive* archive, const char* filename, const u8* colormapData, EditorTexture* texture)
+	s32 loadPaletteAsTexture(Archive* archive, const char* filename, const u8* colormapData, s32 id)
 	{
-		if (!archive && !filename) { return false; }
-		if (!texture) { return false; }
-
-		s32 id = findTexture(filename);
-		if (id >= 0)
-		{
-			*texture = s_textureList[id];
-			return true;
-		}
+		if (!archive && !filename) { return -1; }
 
 		if (!archive->openFile(filename))
 		{
-			return false;
+			return -1;
 		}
 		size_t len = archive->getFileLength();
 		if (!len)
 		{
 			archive->closeFile();
-			return false;
+			return -1;
 		}
 		WorkBuffer& buffer = getWorkBuffer();
 		buffer.resize(len);
 		archive->readFile(buffer.data(), len);
 		archive->closeFile();
 
-		id = allocateTexture(filename);
+		if (id < 0) { id = allocateTexture(filename); }
 		strcpy(s_textureList[id].name, filename);
-		s_textureList[id].width  = 16;
+		s_textureList[id].width = 16;
 		s_textureList[id].height = 16;
 		s_textureList[id].frameCount = 1;
 		s_textureList[id].curFrame = 0;
 		s_textureList[id].lightLevel = 32;
 		s_textureList[id].paletteIndex = 0;
-		
+
 		u32 image[16 * 16];
 		const u8* srcPal = buffer.data();
 		for (s32 i = 0; i < 256; i++, srcPal += 3)
@@ -251,7 +221,7 @@ namespace TFE_Editor
 			s32 x = i & 15;
 			s32 y = 15 - (i >> 4);
 
-			image[(y<<4)+x] = 0xff000000 | CONV_6bitTo8bit(srcPal[0]) | (CONV_6bitTo8bit(srcPal[1]) << 8) | (CONV_6bitTo8bit(srcPal[2]) << 16);
+			image[(y << 4) + x] = 0xff000000 | CONV_6bitTo8bit(srcPal[0]) | (CONV_6bitTo8bit(srcPal[1]) << 8) | (CONV_6bitTo8bit(srcPal[2]) << 16);
 		}
 		s_textureList[id].texGpu[0] = TFE_RenderBackend::createTexture(16, 16, image);
 
@@ -267,14 +237,12 @@ namespace TFE_Editor
 				for (s32 x = 0; x < 256; x++)
 				{
 					const u8* color = &srcPal[ramp[x] * 3];
-					colormapTrueColor[y*256+x] = 0xff000000 |
+					colormapTrueColor[y * 256 + x] = 0xff000000 |
 						CONV_6bitTo8bit(color[0]) | (CONV_6bitTo8bit(color[1]) << 8) | (CONV_6bitTo8bit(color[2]) << 16);
 				}
 			}
 			s_textureList[id].texGpu[1] = TFE_RenderBackend::createTexture(256, 32, colormapTrueColor);
 		}
-
-		*texture = s_textureList[id];
-		return true;
+		return id;
 	}
 }

@@ -33,8 +33,9 @@ namespace TFE_Editor
 		
 	void freeCachedTextures();
 	void freeTexture(const char* name);
-	bool loadEditorTexture(SourceType type, Archive* archive, const char* filename, const u32* palette, s32 palIndex, EditorTexture* texture);
-	bool loadEditorTextureLit(SourceType type, Archive* archive, const char* filename, const u32* palette, s32 palIndex, const u8* colormap, s32 lightLevel, EditorTexture* texture);
 
-	bool loadPaletteAsTexture(Archive* archive, const char* filename, const u8* colormapData, EditorTexture* texture);
+	s32 loadEditorTexture(SourceType type, Archive* archive, const char* filename, const u32* palette, s32 palIndex, s32 id = -1);
+	s32 loadPaletteAsTexture(Archive* archive, const char* filename, const u8* colormapData, s32 id = -1);
+	bool loadEditorTextureLit(SourceType type, Archive* archive, const u32* palette, s32 palIndex, const u8* colormap, s32 lightLevel, u32 index);
+	EditorTexture* getTextureData(u32 index);
 }

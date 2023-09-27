@@ -13,10 +13,7 @@
 
 namespace TFE_Editor
 {
-	typedef std::map<std::string, s32> SpriteMap;
 	typedef std::vector<EditorSprite> SpriteList;
-		
-	static SpriteMap s_spritesLoaded;
 	static SpriteList s_spriteList;
 	static std::map<WaxCell*, s32> s_waxDataMap;
 	static std::vector<WaxCell*> s_waxDataList;
@@ -24,21 +21,15 @@ namespace TFE_Editor
 	void freeSprite(const char* name)
 	{
 		const size_t count = s_spriteList.size();
-		const EditorSprite* sprite = s_spriteList.data();
+		EditorSprite* sprite = s_spriteList.data();
 		for (size_t i = 0; i < count; i++, sprite++)
 		{
 			if (strcasecmp(sprite->name, name) == 0)
 			{
 				TFE_RenderBackend::freeTexture(sprite->texGpu);
-				s_spriteList.erase(s_spriteList.begin() + i);
+				*sprite = {};
 				break;
 			}
-		}
-		s_spritesLoaded.clear();
-		const s32 newCount = (s32)s_spriteList.size();
-		for (s32 i = 0; i < newCount; i++)
-		{
-			s_spritesLoaded[s_spriteList[i].name] = i;
 		}
 	}
 
@@ -50,25 +41,13 @@ namespace TFE_Editor
 		{
 			TFE_RenderBackend::freeTexture(sprite->texGpu);
 		}
-		s_spritesLoaded.clear();
 		s_spriteList.clear();
-	}
-
-	s32 findSprite(const char* name)
-	{
-		SpriteMap::iterator iSprite = s_spritesLoaded.find(name);
-		if (iSprite != s_spritesLoaded.end())
-		{
-			return iSprite->second;
-		}
-		return -1;
 	}
 
 	s32 allocateSprite(const char* name)
 	{
 		s32 index = (s32)s_spriteList.size();
 		s_spriteList.push_back({});
-		s_spritesLoaded[name] = index;
 		return index;
 	}
 
@@ -115,29 +94,21 @@ namespace TFE_Editor
 			}
 		}
 	}
-				
-	bool loadEditorSprite(SpriteSourceType type, Archive* archive, const char* filename, const u32* palette, s32 palIndex, EditorSprite* sprite)
-	{
-		if (!archive && !filename) { return false; }
-		if (!sprite) { return false; }
-		buildIdentityTable();
 
-		s32 id = findSprite(filename);
-		if (id >= 0)
-		{
-			*sprite = s_spriteList[id];
-			return true;
-		}
+	s32 loadEditorSprite(SpriteSourceType type, Archive* archive, const char* filename, const u32* palette, s32 palIndex, s32 id)
+	{
+		if (!archive && !filename) { return -1; }
+		buildIdentityTable();
 
 		if (!archive->openFile(filename))
 		{
-			return false;
+			return -1;
 		}
 		size_t len = archive->getFileLength();
 		if (!len)
 		{
 			archive->closeFile();
-			return false;
+			return -1;
 		}
 		WorkBuffer& buffer = getWorkBuffer();
 		buffer.resize(len);
@@ -149,11 +120,11 @@ namespace TFE_Editor
 			JediWax* wax = TFE_Sprite_Jedi::loadWaxFromMemory(buffer.data(), len);
 			if (!wax)
 			{
-				return false;
+				return -1;
 			}
 
 			// Allocate
-			id = allocateSprite(filename);
+			if (id < 0) { id = allocateSprite(filename); }
 			EditorSprite* outSprite = &s_spriteList[id];
 			outSprite->anim.clear();
 			outSprite->frame.clear();
@@ -169,9 +140,9 @@ namespace TFE_Editor
 				if (!anim) { continue; }
 
 				SpriteAnim outAnim;
-				outAnim.frameRate   = anim->frameRate;
-				outAnim.frameCount  = anim->frameCount;
-				outAnim.worldWidth  = fixed16ToFloat(anim->worldWidth);
+				outAnim.frameRate = anim->frameRate;
+				outAnim.frameCount = anim->frameCount;
+				outAnim.worldWidth = fixed16ToFloat(anim->worldWidth);
 				outAnim.worldHeight = fixed16ToFloat(anim->worldHeight);
 				for (s32 v = 0; v < WAX_MAX_VIEWS; v++)
 				{
@@ -196,9 +167,9 @@ namespace TFE_Editor
 						SpriteFrame outFrame;
 						outFrame.cellIndex = id;
 						outFrame.flip = frame->flip;
-						outFrame.offsetX  = frame->offsetX;
-						outFrame.offsetY  = frame->offsetY;
-						outFrame.widthWS  = fixed16ToFloat(frame->widthWS);
+						outFrame.offsetX = frame->offsetX;
+						outFrame.offsetY = frame->offsetY;
+						outFrame.widthWS = fixed16ToFloat(frame->widthWS);
 						outFrame.heightWS = fixed16ToFloat(frame->heightWS);
 						outSprite->frame.push_back(outFrame);
 					}
@@ -254,19 +225,22 @@ namespace TFE_Editor
 			outSprite->paletteIndex = palIndex;
 			outSprite->lightLevel = 32;
 			strcpy(outSprite->name, filename);
-					
+
 			free(wax);
-			*sprite = *outSprite;
-			return true;
 		}
-
-		return false;
+		return id;
 	}
-
-	bool loadEditorSpriteLit(SpriteSourceType type, Archive* archive, const char* filename, const u32* palette, s32 palIndex, const u8* colormap, s32 lightLevel, EditorSprite* sprite)
+				
+	bool loadEditorSpriteLit(SpriteSourceType type, Archive* archive, const u32* palette, s32 palIndex, const u8* colormap, s32 lightLevel, u32 index)
 	{
-		s_remapTable = &colormap[lightLevel * 256];
-		bool result = loadEditorSprite(type, archive, filename, palette, palIndex, sprite);
+		EditorSprite* sprite = getSpriteData(index);
+
+		s_remapTable = lightLevel == 32 ? s_identityTable : &colormap[lightLevel * 256];
+		char name[TFE_MAX_PATH];
+		strcpy(name, sprite->name);
+		freeSprite(name);
+
+		bool result = loadEditorSprite(type, archive, name, palette, palIndex, (s32)index);
 		if (result)
 		{
 			sprite->lightLevel = lightLevel;
@@ -274,5 +248,11 @@ namespace TFE_Editor
 		s_remapTable = s_identityTable;
 
 		return result;
+	}
+
+	EditorSprite* getSpriteData(u32 index)
+	{
+		if (index >= s_spriteList.size()) { return nullptr; }
+		return &s_spriteList[index];
 	}
 }

@@ -64,6 +64,8 @@ namespace TFE_Editor
 		
 	void freeCachedSprites();
 	void freeSprite(const char* name);
-	bool loadEditorSprite(SpriteSourceType type, Archive* archive, const char* filename, const u32* palette, s32 palIndex, EditorSprite* sprite);
-	bool loadEditorSpriteLit(SpriteSourceType type, Archive* archive, const char* filename, const u32* palette, s32 palIndex, const u8* colormap, s32 lightLevel, EditorSprite* sprite);
+
+	s32 loadEditorSprite(SpriteSourceType type, Archive* archive, const char* filename, const u32* palette, s32 palIndex, s32 id = -1);
+	bool loadEditorSpriteLit(SpriteSourceType type, Archive* archive, const u32* palette, s32 palIndex, const u8* colormap, s32 lightLevel, u32 index);
+	EditorSprite* getSpriteData(u32 index);
 }
