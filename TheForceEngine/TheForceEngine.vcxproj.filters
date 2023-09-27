@@ -71,12 +71,6 @@
     <Filter Include="Source\TFE_FrontEndUI">
       <UniqueIdentifier>{a8504c90-e13a-4a84-b3dc-faa166cfaabf}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source\TFE_System\Threads">
-      <UniqueIdentifier>{f874d79b-66c7-41e5-a393-96ab92bea739}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\TFE_System\Threads\Win32">
-      <UniqueIdentifier>{1389f658-d350-4b30-91ca-293ec673341e}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source\TFE_PostProcess">
       <UniqueIdentifier>{17a1b5a3-c20e-4777-bd0e-2774b8180e3e}</UniqueIdentifier>
     </Filter>
@@ -363,24 +357,6 @@
     </ClInclude>
     <ClInclude Include="TFE_Audio\midiPlayer.h">
       <Filter>Source\TFE_Audio</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_System\Threads\mutex.h">
-      <Filter>Source\TFE_System\Threads</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_System\Threads\signal.h">
-      <Filter>Source\TFE_System\Threads</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_System\Threads\thread.h">
-      <Filter>Source\TFE_System\Threads</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_System\Threads\Win32\mutexWin32.h">
-      <Filter>Source\TFE_System\Threads\Win32</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_System\Threads\Win32\signalWin32.h">
-      <Filter>Source\TFE_System\Threads\Win32</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_System\Threads\Win32\threadWin32.h">
-      <Filter>Source\TFE_System\Threads\Win32</Filter>
     </ClInclude>
     <ClInclude Include="TFE_FrontEndUI\console.h">
       <Filter>Source\TFE_FrontEndUI</Filter>
@@ -1297,6 +1273,12 @@
     <ClInclude Include="TFE_Editor\editorColormap.h">
       <Filter>Source\TFE_Editor</Filter>
     </ClInclude>
+    <ClInclude Include="TFE_Editor\editorSprite.h">
+      <Filter>Source\TFE_Editor</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Editor\editorAsset.h">
+      <Filter>Source\TFE_Editor</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -1445,15 +1427,6 @@
     </ClCompile>
     <ClCompile Include="TFE_Audio\midiPlayer.cpp">
       <Filter>Source\TFE_Audio</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_System\Threads\Win32\mutexWin32.cpp">
-      <Filter>Source\TFE_System\Threads\Win32</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_System\Threads\Win32\signalWin32.cpp">
-      <Filter>Source\TFE_System\Threads\Win32</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_System\Threads\Win32\threadWin32.cpp">
-      <Filter>Source\TFE_System\Threads\Win32</Filter>
     </ClCompile>
     <ClCompile Include="TFE_FrontEndUI\console.cpp">
       <Filter>Source\TFE_FrontEndUI</Filter>
@@ -2191,6 +2164,12 @@
       <Filter>Source\TFE_Editor</Filter>
     </ClCompile>
     <ClCompile Include="TFE_Editor\editorColormap.cpp">
+      <Filter>Source\TFE_Editor</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Editor\editorSprite.cpp">
+      <Filter>Source\TFE_Editor</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Editor\editorAsset.cpp">
       <Filter>Source\TFE_Editor</Filter>
     </ClCompile>
   </ItemGroup>

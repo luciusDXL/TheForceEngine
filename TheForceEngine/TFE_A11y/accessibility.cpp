@@ -33,7 +33,7 @@ namespace TFE_A11Y  // a11y is industry slang for accessibility
 	bool filterCaptionFile(const string fileName);
 	void onFileError(const string path);
 	void enqueueCaption(const ConsoleArgList& args);
-	void drawCaptions(std::vector<Caption>* captions);
+	Vec2f drawCaptions(std::vector<Caption>* captions);
 	string toUpper(string input);
 	string toLower(string input);
 	string toFileName(string language);
@@ -47,7 +47,6 @@ namespace TFE_A11Y  // a11y is industry slang for accessibility
 	///////////////////////////////////////////
 	const char* DEFAULT_FONT = "Fonts/NotoSans-Regular.ttf";
 	const f32 MAX_CAPTION_WIDTH = 1200;
-	const f32 DEFAULT_LINE_HEIGHT = 20;
 	const f32 LINE_PADDING = 5;
 	// Base duration of a caption
 	const s64 BASE_DURATION_MICROSECONDS = secondsToMicroseconds(0.9f);
@@ -65,7 +64,7 @@ namespace TFE_A11Y  // a11y is industry slang for accessibility
 	///////////////////////////////////////////
 	// Static vars
 	///////////////////////////////////////////
-	static A11yStatus s_status = CC_NOT_LOADED;
+	static A11yStatus s_captionsStatus = CC_NOT_LOADED;
 	static FilePathList s_captionFileList;
 	static FilePathList s_fontFileList;
 	static FilePath s_currentCaptionFile;
@@ -74,7 +73,7 @@ namespace TFE_A11Y  // a11y is industry slang for accessibility
 	static DisplayInfo s_display;
 	static u32 s_screenWidth;
 	static u32 s_screenHeight;
-	static bool s_active = true;
+	static bool s_active = true; // Used by ImGui
 	static bool s_logSFXNames = false;
 	static system_clock::duration s_lastTime;
 
@@ -88,10 +87,19 @@ namespace TFE_A11Y  // a11y is industry slang for accessibility
 	static ImFont* s_currentCaptionFont;
 	static string s_pendingFontPath;
 
-	// Initialize the Accessibility system. Only call this once on application launch.
 	void init()
 	{
-		assert(s_status == CC_NOT_LOADED);
+		if (TFE_Settings::getA11ySettings()->captionSystemEnabled())
+		{
+			initCaptions();
+		}
+	}
+
+	void initCaptions()
+	{
+		TFE_System::logWrite(LOG_MSG, "a11y", "Initializing caption system...");
+
+		assert(s_captionsStatus == CC_NOT_LOADED);
 		CCMD("showCaption", enqueueCaption, 1, "Display a test caption. Example: showCaption \"Hello, world\"");
 		CVAR_BOOL(s_logSFXNames, "d_logSFXNames", CVFLAG_DO_NOT_SERIALIZE, "If enabled, log the name of each sound effect that plays.");
 
@@ -146,7 +154,9 @@ namespace TFE_A11Y  // a11y is industry slang for accessibility
 
 		// Try to load the previously selected font.
 		string lastFontPath = TFE_Settings::getA11ySettings()->lastFontPath;
-		tryLoadFont(lastFontPath, false);
+
+		if (lastFontPath, ImGui::GetIO().Fonts->Locked)	{ setPendingFont(lastFontPath);	} 
+		else { tryLoadFont(lastFontPath, false); }
 	}
 
 	// Specify a font to load after ImGui finishes rendering.
@@ -226,13 +236,13 @@ namespace TFE_A11Y  // a11y is industry slang for accessibility
 	// Captions
 	//////////////////////////////////////////////////////
 	
+	A11yStatus getCaptionSystemStatus() { return s_captionsStatus; }
+
 	// Get the list of all caption files we detect in the Captions directories.
 	FilePathList getCaptionFiles() { return s_captionFileList; }
 
 	// The name and path of the currently selected Caption file
 	FilePath getCurrentCaptionFile() { return s_currentCaptionFile; }
-
-	A11yStatus getStatus() { return s_status; }
 
 	// Get all caption file names from the Captions directories; we will use this to populate the
 	// dropdown in the Accessibility settings menu.
@@ -267,7 +277,7 @@ namespace TFE_A11Y  // a11y is industry slang for accessibility
 		}
 
 		// If the language didn't load, default to English.
-		if (s_status != CC_LOADED)
+		if (s_captionsStatus != CC_LOADED)
 		{
 			string fileName = programCaptionsDir + toFileName("en");
 			loadCaptions(fileName);
@@ -353,15 +363,15 @@ namespace TFE_A11Y  // a11y is industry slang for accessibility
 			s_captionMap[name] = caption;
 		};
 
-		s_status = CC_LOADED;
-		delete s_captionsBuffer;
+		s_captionsStatus = CC_LOADED;
+		free(s_captionsBuffer);
 	}
 
 	void onFileError(const string path)
 	{
 		string error = "Couldn't find caption file at " + path;
 		TFE_System::logWrite(LOG_ERROR, "a11y", error.c_str());
-		s_status = CC_ERROR;
+		s_captionsStatus = CC_ERROR;
 		// TODO: display an error dialog
 	}
 
@@ -403,11 +413,11 @@ namespace TFE_A11Y  // a11y is industry slang for accessibility
 				f32 fontScale;
 				auto windowSize = calcWindowSize(&fontScale, env);
 				assert(fontScale > 0);
-				s32 count = 1;
-				size_t idx = 0;
+
+				size_t idx = 0;   // Index of current character in string.
+				string line = ""; // Current line of the current chunk.
 				string chunk;
 				s32 chunkLineCount = 0;
-				string line = "";
 				while (idx < caption.text.length())
 				{
 					// Extend the line one character at a time until we exceed the width of the panel
@@ -431,8 +441,8 @@ namespace TFE_A11Y  // a11y is industry slang for accessibility
 						}
 						else { break; }
 
-						// If the chunk has three lines, add it as a new caption.
-						if (chunkLineCount >= 3)
+						// If the chunk has reached the maximum number of lines, add it as a new caption.
+						if (chunkLineCount >= maxLines)
 						{
 							s32 length = (s32)chunk.length();
 							f32 ratio = length / (f32)caption.text.length();
@@ -450,7 +460,6 @@ namespace TFE_A11Y  // a11y is industry slang for accessibility
 							else { break; }
 
 							caption.microsecondsRemaining -= next.microsecondsRemaining;
-							count++;
 							idx = 0;
 							chunkLineCount = 0;
 							chunk = "";
@@ -491,15 +500,17 @@ namespace TFE_A11Y  // a11y is industry slang for accessibility
 		//TFE_System::logWrite(LOG_ERROR, "a11y", std::to_string(active.size()).c_str());
 	}
 
-	void drawCaptions()
+	Vec2f drawCaptions()
 	{
 		if (s_activeCaptions.size() > 0)
 		{
-			drawCaptions(&s_activeCaptions);
+			return drawCaptions(&s_activeCaptions);
 		}
+		// We need to always return a value.
+		return { 0 };
 	}
 
-	void drawCaptions(std::vector<Caption>* captions)
+	Vec2f drawCaptions(std::vector<Caption>* captions)
 	{
 		if (isFontLoaded()) { ImGui::PushFont(s_currentCaptionFont); }
 
@@ -604,15 +615,19 @@ namespace TFE_A11Y  // a11y is industry slang for accessibility
 				}
 			}
 		}
+
+		ImVec2 finalWindowSize = ImGui::GetWindowSize();
 		ImGui::PopStyleColor();
 		ImGui::End();
 
 		if (isFontLoaded()) { ImGui::PopFont(); }
 
 		s_lastTime = time;
+
+		return { finalWindowSize.x, finalWindowSize.y };
 	}
 
-	void drawExampleCaptions()
+	Vec2f drawExampleCaptions()
 	{
 		if (s_exampleCaptions.size() == 0)
 		{
@@ -620,7 +635,7 @@ namespace TFE_A11Y  // a11y is industry slang for accessibility
 			caption.env = CC_CUTSCENE;
 			s_exampleCaptions.push_back(caption);
 		}
-		drawCaptions(&s_exampleCaptions);
+		return drawCaptions(&s_exampleCaptions);
 	}
 
 	bool cutsceneCaptionsEnabled()

@@ -446,9 +446,11 @@ echo ^)";
     <ClInclude Include="TFE_DarkForces\weaponFireFunc.h" />
     <ClInclude Include="TFE_Editor\assetBrowser.h" />
     <ClInclude Include="TFE_Editor\editor.h" />
+    <ClInclude Include="TFE_Editor\editorAsset.h" />
     <ClInclude Include="TFE_Editor\editorColormap.h" />
     <ClInclude Include="TFE_Editor\editorConfig.h" />
     <ClInclude Include="TFE_Editor\editorFrame.h" />
+    <ClInclude Include="TFE_Editor\editorSprite.h" />
     <ClInclude Include="TFE_Editor\editorTexture.h" />
     <ClInclude Include="TFE_FileSystem\filestream.h" />
     <ClInclude Include="TFE_FileSystem\fileutil.h" />
@@ -670,12 +672,6 @@ echo ^)";
     <ClInclude Include="TFE_System\profiler.h" />
     <ClInclude Include="TFE_System\system.h" />
     <ClInclude Include="TFE_System\tfeMessage.h" />
-    <ClInclude Include="TFE_System\Threads\mutex.h" />
-    <ClInclude Include="TFE_System\Threads\signal.h" />
-    <ClInclude Include="TFE_System\Threads\thread.h" />
-    <ClInclude Include="TFE_System\Threads\Win32\mutexWin32.h" />
-    <ClInclude Include="TFE_System\Threads\Win32\signalWin32.h" />
-    <ClInclude Include="TFE_System\Threads\Win32\threadWin32.h" />
     <ClInclude Include="TFE_System\types.h" />
     <ClInclude Include="TFE_Ui\imGUI\Dirent\dirent.h" />
     <ClInclude Include="TFE_Ui\imGUI\imconfig.h" />
@@ -805,9 +801,11 @@ echo ^)";
     <ClCompile Include="TFE_DarkForces\weaponFireFunc.cpp" />
     <ClCompile Include="TFE_Editor\assetBrowser.cpp" />
     <ClCompile Include="TFE_Editor\editor.cpp" />
+    <ClCompile Include="TFE_Editor\editorAsset.cpp" />
     <ClCompile Include="TFE_Editor\editorColormap.cpp" />
     <ClCompile Include="TFE_Editor\editorConfig.cpp" />
     <ClCompile Include="TFE_Editor\editorFrame.cpp" />
+    <ClCompile Include="TFE_Editor\editorSprite.cpp" />
     <ClCompile Include="TFE_Editor\editorTexture.cpp" />
     <ClCompile Include="TFE_FileSystem\filestream.cpp" />
     <ClCompile Include="TFE_FileSystem\fileutil.cpp" />
@@ -983,9 +981,6 @@ echo ^)";
     <ClCompile Include="TFE_System\profiler.cpp" />
     <ClCompile Include="TFE_System\system.cpp" />
     <ClCompile Include="TFE_System\tfeMessage.cpp" />
-    <ClCompile Include="TFE_System\Threads\Win32\mutexWin32.cpp" />
-    <ClCompile Include="TFE_System\Threads\Win32\signalWin32.cpp" />
-    <ClCompile Include="TFE_System\Threads\Win32\threadWin32.cpp" />
     <ClCompile Include="TFE_Ui\imGUI\imgui.cpp" />
     <ClCompile Include="TFE_Ui\imGUI\imgui_demo.cpp" />
     <ClCompile Include="TFE_Ui\imGUI\imgui_draw.cpp" />

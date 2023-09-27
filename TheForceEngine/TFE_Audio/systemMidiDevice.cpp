@@ -1,4 +1,6 @@
+#include <algorithm>
 #include <cstring>
+#include <SDL_mutex.h>
 #include "midi.h"
 
 #include "systemMidiDevice.h"
@@ -8,7 +10,6 @@
  #include "RtMidi.h"
 #endif
 #include <TFE_System/system.h>
-#include <algorithm>
 
 #ifdef _WIN32
 // Windows library required to access the midi device(s).
@@ -27,9 +28,13 @@ namespace TFE_Audio
 	};
 
 	void midiErrorCallback(RtMidiError::Type, const std::string&, void*);
+	// serialize access to the physical MIDI port, to at least
+	// prevent a buffer overrun in the Linux ALSA MIDI parser.
+	static SDL_mutex* serializer = nullptr;
 
 	SystemMidiDevice::SystemMidiDevice()
 	{
+		serializer = SDL_CreateMutex();
 		m_outputId = -1;
 		m_midiout = new RtMidiOut();
 		m_midiout->setErrorCallback(midiErrorCallback);
@@ -40,6 +45,11 @@ namespace TFE_Audio
 	SystemMidiDevice::~SystemMidiDevice()
 	{
 		exit();
+		if (serializer)
+		{
+			SDL_DestroyMutex(serializer);
+			serializer = nullptr;
+		}
 	}
 
 	void SystemMidiDevice::exit()
@@ -59,16 +69,24 @@ namespace TFE_Audio
 		return c_SystemMidi_Name;
 	}
 
+	void SystemMidiDevice::message(const u8* msg, u32 len)
+	{
+		if (m_outputId >= 0 && serializer)
+		{
+			// this mutex is uncontended except for a short time
+			// after a midi device switch is done in the settings.
+			SDL_LockMutex(serializer);
+			m_midiout->sendMessage(msg, (size_t)len);
+			SDL_UnlockMutex(serializer);
+		}
+	}
+
 	void SystemMidiDevice::message(u8 type, u8 arg1, u8 arg2)
 	{
 		const u8 msg[3] = { type, arg1, arg2 };
-		if (m_midiout) { m_midiout->sendMessage(msg, 3); }
+		message(msg, 3);
 	}
-	
-	void SystemMidiDevice::message(const u8* msg, u32 len)
-	{
-		if (m_midiout) { m_midiout->sendMessage(msg, (size_t)len); }
-	}
+
 
 	void SystemMidiDevice::noteAllOff()
 	{

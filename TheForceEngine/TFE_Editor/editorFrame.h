@@ -14,7 +14,7 @@ namespace TFE_Editor
 {
 	struct EditorFrame
 	{
-		TextureGpu* texGpu = { nullptr };
+		TextureGpu* texGpu = nullptr;
 		u32  width = 0;
 		u32  height = 0;
 		f32  worldWidth = 0.0f;
@@ -32,6 +32,8 @@ namespace TFE_Editor
 		
 	void freeCachedFrames();
 	void freeFrame(const char* name);
-	bool loadEditorFrame(FrameSourceType type, Archive* archive, const char* filename, const u32* palette, s32 palIndex, EditorFrame* texture);
-	bool loadEditorFrameLit(FrameSourceType type, Archive* archive, const char* filename, const u32* palette, s32 palIndex, const u8* colormap, s32 lightLevel, EditorFrame* texture);
+
+	EditorFrame* getFrameData(u32 index);
+	s32 loadEditorFrame(FrameSourceType type, Archive* archive, const char* filename, const u32* palette, s32 palIndex, s32 id = -1);
+	bool loadEditorFrameLit(FrameSourceType type, Archive* archive, const u32* palette, s32 palIndex, const u8* colormap, s32 lightLevel, u32 index);
 }

@@ -20,9 +20,9 @@ m16moc01.voc "Offizier Mohc: Es ist lange her, seit ich einen Mann zum Kampf her
 //SFX
 boba-1.voc	"[Fett lacht]"
 boba-3.voc	"[Fett grunzt]"
-boba-4.voc	"[Fett Todesschrei]"
+boba-4.voc	"[Fetts Todesschrei]"
 beep-01.voc "[Alarm]"
-beep-10.voc "[MIENE PIPST]"
+beep-10.voc "[MINE PIEPST]"
 fall.voc 	"[Kyle schreit]"
 door.voc 	"[Türe zischt]"
 door-04.voc "[Türe bewegt sich]"
@@ -75,11 +75,11 @@ m05jan01.voc "Jan: Alles klar Kyle, bin unterwegs."
 m05kyl03.voc "Kyle: Wenn das Ding einen Hinweis darauf ist, womit wir es zu tun bekommen, dann brauchen wir mehr Feuerkraft."
 //M06 (Detention Center)
 m06kyl01.voc "Kyle: Okay Jan, ich habe Madine befreit."
-m06jan01.voc "Jan: Beil dich, wir müssen zusehen das wir von hier verschwinden, bevor noch mehr Sturmtruppen eintreffen "
-//M07 (Ramsees Head)
+m06jan01.voc "Jan: Beeil dich, wir müssen zusehen dass wir von hier verschwinden, bevor noch mehr Sturmtruppen eintreffen "
+//M07 (Ramsees Hed)
 m07kyl01.voc "Kyle: Der Signalgeber ist platziert."
 m07jan01.voc "Jan: Ich empfange das Signal. Sieht so aus, als wären wir hier fertig."
-m07jan02.voc "Jan: OK dann lass uns mal sehen, wohin diese Schmuggler hinfliegen."
+m07jan02.voc "Jan: OK dann lass uns mal sehen, wo diese Schmuggler hinfliegen."
 //M08 (Robotics Facility)
 m08kyl01.voc "Kyle: Erste Ladung scharf gemacht."
 m08kyl02.voc "Kyle: Zweite Ladung scharf gemacht."
@@ -119,8 +119,8 @@ m13kyl01.voc "Kyle: Es geht los!"
 m16kyl01.voc "Kyle: Das war die Erste..."
 m16kyl02.voc "Kyle: Das ist die Zweite..."
 m16kyl03.voc "Kyle: Jetzt noch die Letzte."
-m16kyl04.voc "Kyle: Jan würde stolz auf mich sein."
-m16kyl05.voc "Kyle: Es gibt keine Ehre im Krieg Mhoc."
+m16kyl04.voc "Kyle: Jan wäre stolz auf mich."
+m16kyl05.voc "Kyle: Es gibt keine Ehre im Krieg, Mohc."
 m16kyl06.voc "Kyle: Für die Freiheit."
 
 //----- CUTSCENES -----------------------------------------------
@@ -149,10 +149,10 @@ m01mma02 "Vor fünf Tagen hat das Imperium einen unserer geheimen Stützpunkte a
 m01mma03 "Tak Base wurde innerhalb von Minuten zerstört. Viele unschuldige Stadtbewohner hat es genauso getroffen wie unsere eigenen Leute. Der Geheimdienst vermutet, dass es sich dabei um eine Art Vergeltung für die Vernichtung des Todesstern handelte." 12.5
 m01reb01 "Ist da draussen jemand der uns hört? Dies ist Tak Base. Bitte wir werden angegriffen! Sie sind überall! Wir wurde vollkommen überrascht!" //unused
 m01reb02 "Total Zerstörung! Sie brechen durch unsere Schilde... Sie brechen durch unsere Schilde!" //unused
-distress "Ist da jemand draussen der uns hört? Dies ist Tak Base. Bitte, [Unterbruch] wir werden angegriffen! Sie sind überall! Wir wurden [Unterbruch]  vollkommen überrascht! Total Zerstörung! Sie brechen durch unsere [Unterbruch] Schilde... Sie brechen durch unsere Schilde!"
+distress "Ist da jemand draussen der uns hört? Dies ist Tak Base. Bitte, [Störung] wir werden angegriffen! Sie sind überall! Wir wurden [Störung] vollkommen überrascht! Totale Zerstörung! Sie brechen durch unsere [Störung] Schilde... Sie brechen durch unsere Schilde!"
 m01kyl02 "Interessant. Abgesehen von diesen Geräuschen macht es den Anschein eines normalen imperialen Angriffs."
-m01mma04 "Sehr richtig Commander. Ich hoffe Sie werden verstehen was wir hier besprechen vertraulich ist." 5.0
-m01mma05 "Dieser imperiale Offizier, Crix Madine, möchte zur Allianz überlaufen. Er hat uns mit Informationen über die Entwicklung einer neuen imperialen Waffe versorgt. Wir glauben, dass diese Geräusche die Sie gerade gehört haben, von dieser Waffe stammen. Einen neuen Typ von Sturmtruppler, dem Dark Trooper." 17.3
+m01mma04 "Sehr richtig Commander. Ich hoffe Sie werden verstehen dass alles was wir hier besprechen vertraulich ist." 5.0
+m01mma05 "Dieser imperiale Offizier, Crix Madine, möchte zur Allianz überlaufen. Er hat uns mit Informationen über die Entwicklung einer neuen imperialen Waffe versorgt. Wir glauben, dass diese Geräusche die Sie gerade gehört haben, von dieser Waffe stammen. Einem neuen Typ von Sturmtruppler, dem Dark Trooper." 17.3
 m01kyl03 "Ein neuer Sturmtruppler der eine Rebellenbasis derartig schnell ausschalten kann? Ich hätte besser weiter für das Imperium arbeiten sollen."
 m01mma06 "Die Rebellenführung nimmt diese Angelegenheit nicht auf die leichte Schulter. Sie hat veranlasst Sie zu beauftragen herauszufinden ob eine Bedrohung besteht und gegebenenfalls auszuschalten. Das heisst falls Sie noch auf unserer Seite stehen." 12.5
 m01kyl04 "Klingt interessant... [lange Pause] Okay ich bin dabei. Aber ich brauche dennoch Unterstützung bei diesem Auftrag. Ich möchte das Jan Ors mein Missionsoffizier ist."
