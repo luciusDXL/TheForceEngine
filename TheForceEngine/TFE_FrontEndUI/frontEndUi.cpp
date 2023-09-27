@@ -1019,7 +1019,7 @@ namespace TFE_FrontEndUI
 		ImGui::PopFont();
 
 		ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.25f, 1.0f, 0.25f, 1.0f));
-		ImGui::LabelText("##ConfigLabel", "The path should contain the source game exe or gob/lab files.");
+		ImGui::TextWrapped("The path should contain the source game exe or gob/lab files.");
 		ImGui::PopStyleColor();
 		ImGui::Spacing();
 
