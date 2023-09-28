@@ -91,7 +91,8 @@ namespace TFE_SaveSystem
 		}
 
 		// Save to memory.
-		u8* png;
+		u8* png = (u8*)malloc(newSize);
+		// FIXME: check memory!
 		u32 pngSize = (u32)TFE_Image::writeImageToMemory(png, newWidth, newHeight, s_imageBuffer[1]);
 
 		// Master version.
@@ -129,6 +130,7 @@ namespace TFE_SaveSystem
 		// Image.
 		stream->write(&pngSize);
 		stream->writeBuffer(png, pngSize);
+		free(png);
 	}
 
 	void loadHeader(Stream* stream, SaveHeader* header, const char* fileName)
@@ -177,9 +179,13 @@ namespace TFE_SaveSystem
 		stream->readBuffer(s_imageBuffer[0], pngSize);
 
 		Image image = { 0 };
-		image.data = header->imageData;
 		TFE_Image::readImageFromMemory(&image, pngSize, s_imageBuffer[0]);
-		assert(image.width == SAVE_IMAGE_WIDTH && image.height == SAVE_IMAGE_HEIGHT);
+		if (image.width == SAVE_IMAGE_WIDTH && image.height == SAVE_IMAGE_HEIGHT)
+		{
+			const u32 sz = SAVE_IMAGE_WIDTH * SAVE_IMAGE_HEIGHT * sizeof(u32);
+			memcpy(header->imageData, image.data, sz);
+			TFE_Image::free(&image);
+		}
 	}
 
 	void populateSaveDirectory(std::vector<SaveHeader>& dir)

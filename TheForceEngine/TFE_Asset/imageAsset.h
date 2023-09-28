@@ -1,13 +1,13 @@
 #pragma once
 //////////////////////////////////////////////////////////////////////
 // The Force Engine Image Loading
-// TODO: Replace DeviL with libPNG? or STB_IMAGE?
-// Can use std_image.h and std_image_write.h for reading and writing.
 //////////////////////////////////////////////////////////////////////
 #include <TFE_System/types.h>
+#include <SDL_image.h>
 
 struct Image
 {
+	SDL_Surface* sdl = nullptr;
 	u32 width  = 0u;
 	u32 height = 0u;
 	u32* data  = nullptr;
@@ -25,6 +25,6 @@ namespace TFE_Image
 
 	void writeImage(const char* path, u32 width, u32 height, u32* pixelData);
 
-	size_t writeImageToMemory(u8*& output, u32 width, u32 height, const u32* pixelData);
+	size_t writeImageToMemory(u8* output, u32 width, u32 height, const u32* pixelData);
 	void readImageFromMemory(Image* output, size_t size, const u32* pixelData);
 }
