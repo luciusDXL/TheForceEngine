@@ -30,7 +30,9 @@ namespace TFE_Audio
 		{
 			char dir[TFE_MAX_PATH];
 			const char* programDir = TFE_Paths::getPath(PATH_PROGRAM);
-			sprintf(dir, "%sSoundFonts/", programDir);
+			sprintf(dir, "%s", "SoundFonts/");
+			if (!TFE_Paths::mapSystemPath(dir))
+				sprintf(dir, "%sSoundFonts/", programDir);
 
 			FileUtil::readDirectory(dir, "sf2", m_outputs);
 			// Remove the extension.
@@ -92,7 +94,9 @@ namespace TFE_Audio
 
 		char filePath[TFE_MAX_PATH];
 		const char* programDir = TFE_Paths::getPath(PATH_PROGRAM);
-		sprintf(filePath, "%sSoundFonts/%s.sf2", programDir, soundFont);
+		sprintf(filePath, "SoundFonts/%s.sf2", soundFont);
+		if (!TFE_Paths::mapSystemPath(filePath))
+			sprintf(filePath, "%sSoundFonts/%s.sf2", programDir, soundFont);
 
 		m_soundFont = tsf_load_filename(filePath);
 		if (m_soundFont)
