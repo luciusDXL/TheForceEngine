@@ -117,11 +117,8 @@ namespace TFE_Editor
 
 		if (type == SPRITE_WAX)
 		{
-			JediWax* wax = TFE_Sprite_Jedi::loadWaxFromMemory(buffer.data(), len);
-			if (!wax)
-			{
-				return -1;
-			}
+			JediWax* wax = TFE_Sprite_Jedi::loadWaxFromMemory(buffer.data(), len, false);
+			if (!wax) { return -1; }
 
 			// Allocate
 			if (id < 0) { id = allocateSprite(filename); }
@@ -134,15 +131,21 @@ namespace TFE_Editor
 			// First gather all of the cells.
 			s_waxDataMap.clear();
 			s_waxDataList.clear();
+
+			outSprite->rect[0] =  INT_MAX;
+			outSprite->rect[1] =  INT_MAX;
+			outSprite->rect[2] = -INT_MAX;
+			outSprite->rect[3] = -INT_MAX;
+
 			for (s32 animId = 0; animId < wax->animCount; animId++)
 			{
 				WaxAnim* anim = WAX_AnimPtr(wax, animId);
 				if (!anim) { continue; }
-
+								
 				SpriteAnim outAnim;
-				outAnim.frameRate = anim->frameRate;
-				outAnim.frameCount = anim->frameCount;
-				outAnim.worldWidth = fixed16ToFloat(anim->worldWidth);
+				outAnim.frameRate   = anim->frameRate;
+				outAnim.frameCount  = anim->frameCount;
+				outAnim.worldWidth  = fixed16ToFloat(anim->worldWidth);
 				outAnim.worldHeight = fixed16ToFloat(anim->worldHeight);
 				for (s32 v = 0; v < WAX_MAX_VIEWS; v++)
 				{
@@ -167,11 +170,16 @@ namespace TFE_Editor
 						SpriteFrame outFrame;
 						outFrame.cellIndex = id;
 						outFrame.flip = frame->flip;
-						outFrame.offsetX = frame->offsetX;
-						outFrame.offsetY = frame->offsetY;
-						outFrame.widthWS = fixed16ToFloat(frame->widthWS);
+						outFrame.offsetX =  frame->offsetX;
+						outFrame.offsetY =  frame->offsetY;
+						outFrame.widthWS  = fixed16ToFloat(frame->widthWS);
 						outFrame.heightWS = fixed16ToFloat(frame->heightWS);
 						outSprite->frame.push_back(outFrame);
+
+						outSprite->rect[0] = min(outSprite->rect[0], frame->offsetX);
+						outSprite->rect[1] = min(outSprite->rect[1], frame->offsetY);
+						outSprite->rect[2] = max(outSprite->rect[2], frame->offsetX + cell->sizeX);
+						outSprite->rect[3] = max(outSprite->rect[3], frame->offsetY + cell->sizeY);
 					}
 				}
 				outSprite->anim.push_back(outAnim);

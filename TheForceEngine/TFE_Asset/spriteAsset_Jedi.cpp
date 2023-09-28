@@ -391,7 +391,7 @@ namespace TFE_Sprite_Jedi
 		return asset;
 	}
 
-	JediWax* loadWaxFromMemory(const u8* data, size_t size)
+	JediWax* loadWaxFromMemory(const u8* data, size_t size, bool transformOffsets)
 	{
 		const Wax* srcWax = (Wax*)data;
 
@@ -471,8 +471,16 @@ namespace TFE_Sprite_Jedi
 					WaxFrame* dstFrame = (WaxFrame*)((u8*)asset + frameOffset[f]);
 
 					// Some frames are shared between animations, so we need to read from the source, unmodified data.
-					dstFrame->offsetX = round16(mul16(dstAnim->worldWidth, intToFixed16(srcFrame->offsetX)));
-					dstFrame->offsetY = round16(mul16(dstAnim->worldHeight, intToFixed16(srcFrame->offsetY)));
+					if (transformOffsets)
+					{
+						dstFrame->offsetX = round16(mul16(dstAnim->worldWidth, intToFixed16(srcFrame->offsetX)));
+						dstFrame->offsetY = round16(mul16(dstAnim->worldHeight, intToFixed16(srcFrame->offsetY)));
+					}
+					else
+					{
+						dstFrame->offsetX = srcFrame->offsetX;
+						dstFrame->offsetY = srcFrame->offsetY;
+					}
 
 					WaxCell* dstCell = dstFrame->cellOffset ? (WaxCell*)((u8*)asset + dstFrame->cellOffset) : nullptr;
 					if (dstCell)
@@ -503,9 +511,12 @@ namespace TFE_Sprite_Jedi
 							}
 						}
 
-						dstFrame->offsetX = div16(-intToFixed16(dstFrame->offsetX), SPRITE_SCALE_FIXED);
-						const s32 adjOffsetY = mul16(intToFixed16(dstCell->sizeY), dstAnim->worldHeight) + intToFixed16(dstFrame->offsetY);
-						dstFrame->offsetY = div16(adjOffsetY, SPRITE_SCALE_FIXED);
+						if (transformOffsets)
+						{
+							dstFrame->offsetX = div16(-intToFixed16(dstFrame->offsetX), SPRITE_SCALE_FIXED);
+							const s32 adjOffsetY = mul16(intToFixed16(dstCell->sizeY), dstAnim->worldHeight) + intToFixed16(dstFrame->offsetY);
+							dstFrame->offsetY = div16(adjOffsetY, SPRITE_SCALE_FIXED);
+						}
 					}
 				}
 				if (v == 0)

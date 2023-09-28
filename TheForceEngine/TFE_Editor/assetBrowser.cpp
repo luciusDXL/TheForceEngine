@@ -366,6 +366,90 @@ namespace AssetBrowser
 				ImGui::Image(TFE_RenderBackend::getGpuPtr(frame->texGpu),
 					ImVec2((f32)texW, (f32)texH), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f));
 			}
+			else if (asset->type == TYPE_SPRITE)
+			{
+				EditorSprite* sprite = (EditorSprite*)getAssetData(asset->handle);
+				ImGui::LabelText("##Dim", "World Dim: %0.3f x %0.3f", sprite->frame[0].widthWS, sprite->frame[0].heightWS);
+				ImGui::LabelText("##AnimCount", "Animation Count: %d", (s32)sprite->anim.size());
+				ImGui::LabelText("##CellCount", "Cell Count: %d", (s32)sprite->cell.size());
+				ImGui::Separator();
+				bool reloadRequired = false;
+				s32 newPaletteIndex = sprite->paletteIndex;
+				listSelectionPalette("Palette", s_palettes, &newPaletteIndex);
+				if (newPaletteIndex != sprite->paletteIndex)
+				{
+					reloadRequired = true;
+				}
+
+				s32 newLightLevel = sprite->lightLevel;
+				if (s_palettes[newPaletteIndex].hasColormap)
+				{
+					ImGui::SliderInt("Light Level", &newLightLevel, 0, 32);
+				}
+				else
+				{
+					newLightLevel = 32;
+				}
+				if (newLightLevel != sprite->lightLevel)
+				{
+					reloadRequired = true;
+				}
+
+				if (reloadRequired)
+				{
+					reloadAsset(asset, newPaletteIndex, newLightLevel);
+					sprite = (EditorSprite*)getAssetData(asset->handle);
+				}
+				ImGui::Separator();
+				if (sprite->anim.size() > 1)
+				{
+					s32 animId = (s32)sprite->animId;
+					if (ImGui::SliderInt("Anim", &animId, 0, (s32)sprite->anim.size() - 1))
+					{
+						sprite->frameId = 0;
+					}
+					sprite->animId = (u8)animId;
+				}
+				const SpriteAnim* anim = &sprite->anim[sprite->animId];
+				if (anim->frameCount > 1)
+				{
+					s32 frameId = (s32)sprite->frameId;
+					ImGui::SliderInt("Frame", &frameId, 0, (s32)anim->frameCount - 1);
+					sprite->frameId = (u8)frameId;
+				}
+				// View
+				{
+					s32 viewId = (s32)sprite->viewId;
+					ImGui::SliderInt("View Angle", &viewId, 0, 31);
+					sprite->viewId = (u8)viewId;
+				}
+				ImGui::Separator();
+				// Get the actual cell...
+				s32 frameIndex = sprite->anim[sprite->animId].views[sprite->viewId].frameIndex[sprite->frameId];
+				SpriteFrame* frame = &sprite->frame[frameIndex];
+				SpriteCell* cell = &sprite->cell[frame->cellIndex];
+
+				s32 texW = cell->w;
+				s32 texH = cell->h;
+				s32 scale = max(1, min(4, s32(w) / (sprite->rect[2] - sprite->rect[0])));
+				texW *= scale;
+				texH *= scale;
+
+				f32 u0 = f32(cell->u) / (f32)sprite->texGpu->getWidth();
+				f32 v1 = f32(cell->v) / (f32)sprite->texGpu->getHeight();
+				f32 u1 = f32(cell->u + cell->w) / (f32)sprite->texGpu->getWidth();
+				f32 v0 = f32(cell->v + cell->h) / (f32)sprite->texGpu->getHeight();
+				if (frame->flip) { std::swap(u0, u1); }
+
+				// Handle the offset.
+				ImVec2 cursor = ImGui::GetCursorPos();
+				cursor.x += f32((frame->offsetX - sprite->rect[0]) * scale);
+				cursor.y += f32((frame->offsetY - sprite->rect[1]) * scale);
+				ImGui::SetCursorPos(cursor);
+
+				ImGui::Image(TFE_RenderBackend::getGpuPtr(sprite->texGpu),
+					ImVec2((f32)texW, (f32)texH), ImVec2(u0, v0), ImVec2(u1, v1));
+			}
 			else if (asset->type == TYPE_PALETTE)
 			{
 				EditorTexture* tex = (EditorTexture*)getAssetData(asset->handle);
@@ -1079,6 +1163,39 @@ namespace AssetBrowser
 		s_viewAssetList.push_back(asset);
 	}
 
+	// Return true if 'str' matches the 'filter', taking into account special symbols.
+	bool editorStringFilter(const char* str, const char* filter, size_t filterLength)
+	{
+		for (size_t i = 0; i < filterLength; i++)
+		{
+			if (filter[i] == '?') { continue; }
+			if (tolower(str[i]) != tolower(filter[i])) { return false; }
+		}
+		return true;
+	}
+
+	// Returns true if it passes the filter.
+	bool editorFilter(const char* name)
+	{
+		// No filter applied.
+		if (s_viewInfo.assetFilter[0] == 0 || s_viewInfo.filterLen == 0) { return true; }
+
+		// Make sure the name is at least as long as the filter.
+		const size_t nameLength = strlen(name);
+		if (nameLength < s_viewInfo.filterLen) { return false; }
+
+		// See if there is a match...
+		const size_t validLength = nameLength - s_viewInfo.filterLen + 1;
+		for (size_t i = 0; i < validLength; i++)
+		{
+			if (editorStringFilter(&name[i], s_viewInfo.assetFilter, s_viewInfo.filterLen))
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+
 	void updateAssetList()
 	{
 		// Only Dark Forces for now.
@@ -1097,7 +1214,8 @@ namespace AssetBrowser
 			const Asset* projAsset = s_projectAssetList[TYPE_TEXTURE].data();
 			for (u32 i = 0; i < count; i++, projAsset++)
 			{
-				if (!isLevelTexture(projAsset->name.c_str())) { continue; }
+				const char* name = projAsset->name.c_str();
+				if (!editorFilter(name) || !isLevelTexture(name)) { continue; }
 				loadAsset(projAsset);
 			}
 		}
@@ -1107,7 +1225,8 @@ namespace AssetBrowser
 			const Asset* projAsset = s_projectAssetList[TYPE_FRAME].data();
 			for (u32 i = 0; i < count; i++, projAsset++)
 			{
-				if (!isLevelFrame(projAsset->name.c_str())) { continue; }
+				const char* name = projAsset->name.c_str();
+				if (!editorFilter(name) || !isLevelFrame(name)) { continue; }
 				loadAsset(projAsset);
 			}
 		}
@@ -1117,7 +1236,8 @@ namespace AssetBrowser
 			const Asset* projAsset = s_projectAssetList[TYPE_SPRITE].data();
 			for (u32 i = 0; i < count; i++, projAsset++)
 			{
-				if (!isLevelSprite(projAsset->name.c_str())) { continue; }
+				const char* name = projAsset->name.c_str();
+				if (!editorFilter(name) || !isLevelSprite(name)) { continue; }
 				loadAsset(projAsset);
 			}
 		}
@@ -1127,7 +1247,8 @@ namespace AssetBrowser
 			const Asset* projAsset = s_projectAssetList[TYPE_PALETTE].data();
 			for (u32 i = 0; i < count; i++, projAsset++)
 			{
-				if (!isLevelPalette(projAsset->name.c_str())) { continue; }
+				const char* name = projAsset->name.c_str();
+				if (!editorFilter(name) || !isLevelPalette(name)) { continue; }
 
 				Archive* archive = getArchive(projAsset->archiveName.c_str(), projAsset->gameId);
 				Asset asset;

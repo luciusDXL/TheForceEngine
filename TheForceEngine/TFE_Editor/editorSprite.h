@@ -51,9 +51,13 @@ namespace TFE_Editor
 		std::vector<SpriteFrame> frame;
 		std::vector<SpriteCell>  cell;
 
+		s32 rect[4];
+
 		u8   paletteIndex = 0;
 		u8   lightLevel = 32;
-		u8   pad[2];
+		u8   animId = 0;
+		u8   viewId = 0;
+		u32  frameId = 0;
 		char name[64] = "";
 	};
 	enum SpriteSourceType
