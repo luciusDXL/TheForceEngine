@@ -937,7 +937,10 @@ namespace TFE_FrontEndUI
 			char path[TFE_MAX_PATH];
 			char fileName[TFE_MAX_PATH];
 			strcpy(fileName, "Documentation/markdown/TheForceEngineManual.md");
-			TFE_Paths::appendPath(PATH_PROGRAM, fileName, path);
+			if (!TFE_Paths::mapSystemPath(fileName))
+				TFE_Paths::appendPath(PATH_PROGRAM, fileName, path);
+			else
+				strcpy(path, fileName);
 
 			FileStream file;
 			if (file.open(path, Stream::MODE_READ))
@@ -962,7 +965,10 @@ namespace TFE_FrontEndUI
 			char path[TFE_MAX_PATH];
 			char fileName[TFE_MAX_PATH];
 			strcpy(fileName, "Documentation/markdown/credits.md");
-			TFE_Paths::appendPath(PATH_PROGRAM, fileName, path);
+			if (!TFE_Paths::mapSystemPath(fileName))
+				TFE_Paths::appendPath(PATH_PROGRAM, fileName, path);
+			else
+				strcpy(path, fileName);
 
 			FileStream file;
 			if (file.open(path, Stream::MODE_READ))
@@ -987,7 +993,10 @@ namespace TFE_FrontEndUI
 			char path[TFE_MAX_PATH];
 			char fileName[TFE_MAX_PATH];
 			strcpy(fileName, "Documentation/markdown/TheForceEngine.md");
-			TFE_Paths::appendPath(PATH_PROGRAM, fileName, path);
+			if (!TFE_Paths::mapSystemPath(fileName))
+				TFE_Paths::appendPath(PATH_PROGRAM, fileName, path);
+			else
+				strcpy(path, fileName);
 
 			FileStream file;
 			if (file.open(path, Stream::MODE_READ))

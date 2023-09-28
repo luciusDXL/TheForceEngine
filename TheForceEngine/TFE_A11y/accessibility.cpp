@@ -261,7 +261,9 @@ namespace TFE_A11Y  // a11y is industry slang for accessibility
 		// Then we check the Program directory for subtitle files that shipped with TFE.
 		char programCaptionsDir[TFE_MAX_PATH];
 		const char* programDir = TFE_Paths::getPath(PATH_PROGRAM);
-		sprintf(programCaptionsDir, "%sCaptions/", programDir);
+		sprintf(programCaptionsDir, "%s", "Captions/");
+		if (!TFE_Paths::mapSystemPath(programCaptionsDir))
+			sprintf(programCaptionsDir, "%sCaptions/", programDir);
 		s_captionFileList.addFiles(programCaptionsDir, "txt", filterCaptionFile);
 
 		// Try to load captions for the previously selected language.
