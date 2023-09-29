@@ -67,7 +67,7 @@ namespace TFE_Image
 		SDL_RWops* memops = SDL_RWFromConstMem(buffer, size);
 		if (!memops)
 			return nullptr;
-			
+
 		SDL_Surface* sdlimg = IMG_Load_RW(memops, 1);
 		if (!sdlimg)
 			return nullptr;
