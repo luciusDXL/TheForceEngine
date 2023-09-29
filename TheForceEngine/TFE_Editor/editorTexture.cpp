@@ -25,8 +25,9 @@ namespace TFE_Editor
 			{
 				for (u32 f = 0; f < texture->frameCount; f++)
 				{
-					TFE_RenderBackend::freeTexture(texture->texGpu[f]);
+					TFE_RenderBackend::freeTexture(texture->frames[f]);
 				}
+				texture->frames.clear();
 				*texture = {};
 				break;
 			}
@@ -41,7 +42,7 @@ namespace TFE_Editor
 		{
 			for (u32 f = 0; f < texture->frameCount; f++)
 			{
-				TFE_RenderBackend::freeTexture(texture->texGpu[f]);
+				TFE_RenderBackend::freeTexture(texture->frames[f]);
 			}
 		}
 		s_textureList.clear();
@@ -123,6 +124,7 @@ namespace TFE_Editor
 
 					const u32* textureOffsets = (u32*)(texData->image + 2);
 					const u8* base = texData->image + 2;
+					s_textureList[id].frames.resize(frameCount);
 					for (s32 i = 0; i < frameCount; i++)
 					{
 						const TextureData* frame = (TextureData*)(base + textureOffsets[i]);
@@ -140,7 +142,7 @@ namespace TFE_Editor
 						outFrame.animSetup = 1;
 						outFrame.palIndex = 1;
 						outFrame.columns = nullptr;
-						s_textureList[id].texGpu[i] = loadBmFrame(frame->width, frame->height, image, palette);
+						s_textureList[id].frames[i] = loadBmFrame(frame->width, frame->height, image, palette);
 
 						if (i == 0)
 						{
@@ -155,7 +157,9 @@ namespace TFE_Editor
 					s_textureList[id].width = texData->width;
 					s_textureList[id].height = texData->height;
 					s_textureList[id].frameCount = 1;
-					s_textureList[id].texGpu[0] = loadBmFrame(texData->width, texData->height, texData->image, palette);
+
+					s_textureList[id].frames.resize(1);
+					s_textureList[id].frames[0] = loadBmFrame(texData->width, texData->height, texData->image, palette);
 				}
 				strcpy(s_textureList[id].name, filename);
 				s_textureList[id].paletteIndex = palIndex;
@@ -223,7 +227,8 @@ namespace TFE_Editor
 
 			image[(y << 4) + x] = 0xff000000 | CONV_6bitTo8bit(srcPal[0]) | (CONV_6bitTo8bit(srcPal[1]) << 8) | (CONV_6bitTo8bit(srcPal[2]) << 16);
 		}
-		s_textureList[id].texGpu[0] = TFE_RenderBackend::createTexture(16, 16, image);
+		s_textureList[id].frames.resize(colormapData ? 2 : 1);
+		s_textureList[id].frames[0] = TFE_RenderBackend::createTexture(16, 16, image);
 
 		// Create a second frame to hold the colormap data if it exists.
 		if (colormapData)
@@ -241,7 +246,7 @@ namespace TFE_Editor
 						CONV_6bitTo8bit(color[0]) | (CONV_6bitTo8bit(color[1]) << 8) | (CONV_6bitTo8bit(color[2]) << 16);
 				}
 			}
-			s_textureList[id].texGpu[1] = TFE_RenderBackend::createTexture(256, 32, colormapTrueColor);
+			s_textureList[id].frames[1] = TFE_RenderBackend::createTexture(256, 32, colormapTrueColor);
 		}
 		return id;
 	}

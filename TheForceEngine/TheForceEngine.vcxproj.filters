@@ -1279,6 +1279,12 @@
     <ClInclude Include="TFE_Editor\editorAsset.h">
       <Filter>Source\TFE_Editor</Filter>
     </ClInclude>
+    <ClInclude Include="TFE_Editor\editorObj3D.h">
+      <Filter>Source\TFE_Editor</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Editor\editorLevelPreview.h">
+      <Filter>Source\TFE_Editor</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -2170,6 +2176,12 @@
       <Filter>Source\TFE_Editor</Filter>
     </ClCompile>
     <ClCompile Include="TFE_Editor\editorAsset.cpp">
+      <Filter>Source\TFE_Editor</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Editor\editorObj3D.cpp">
+      <Filter>Source\TFE_Editor</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Editor\editorLevelPreview.cpp">
       <Filter>Source\TFE_Editor</Filter>
     </ClCompile>
   </ItemGroup>

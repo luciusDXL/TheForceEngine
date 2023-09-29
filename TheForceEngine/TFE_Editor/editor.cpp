@@ -1,6 +1,7 @@
 #include "editor.h"
 #include "editorConfig.h"
 #include "assetBrowser.h"
+#include <TFE_Input/input.h>
 #include <TFE_RenderBackend/renderBackend.h>
 #include <TFE_System/system.h>
 #include <TFE_FileSystem/fileutil.h>
@@ -72,6 +73,11 @@ namespace TFE_Editor
 		else if (s_editorMode == EDIT_ASSET)
 		{
 			AssetBrowser::update();
+		}
+
+		if (TFE_Input::keyPressed(KEY_ESCAPE))
+		{
+			s_exitEditor = true;
 		}
 		
 		return s_exitEditor;

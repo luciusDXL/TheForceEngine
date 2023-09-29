@@ -12,6 +12,8 @@
 #include "editorFrame.h"
 #include "editorSprite.h"
 #include "editorTexture.h"
+#include "EditorObj3D.h"
+#include "editorLevelPreview.h"
 
 namespace TFE_Editor
 {

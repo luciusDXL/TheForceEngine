@@ -67,18 +67,7 @@ namespace AssetBrowser
 		std::vector<std::string> sprites;
 		std::vector<std::string> pods;
 	};
-	std::vector<LevelAssets> s_levelAssets;
 
-	static bool s_reloadProjectAssets = true;
-	static bool s_assetsNeedProcess = true;
-	static std::vector<Palette> s_palettes;
-	static std::map<std::string, s32> s_assetPalette;
-	static s32 s_defaultPal = 0;
-
-	static s32 s_hovered = -1;
-	static s32 s_selected = -1;
-	static s32 s_menuHeight = 20;
-	   	
 	struct ViewerInfo
 	{
 		std::string exportPath;
@@ -93,6 +82,19 @@ namespace AssetBrowser
 		s32 levelSource = -1;
 		u32 filterLen;
 	};
+
+	std::vector<LevelAssets> s_levelAssets;
+
+	static bool s_reloadProjectAssets = true;
+	static bool s_assetsNeedProcess = true;
+	static std::vector<Palette> s_palettes;
+	static std::map<std::string, s32> s_assetPalette;
+	static s32 s_defaultPal = 0;
+
+	static s32 s_hovered = -1;
+	static s32 s_selected = -1;
+	static s32 s_menuHeight = 20;
+	   	
 	static ViewerInfo s_viewInfo = {};
 	static AssetList s_viewAssetList;
 	static AssetList s_projectAssetList[TYPE_COUNT];
@@ -120,7 +122,7 @@ namespace AssetBrowser
 		{
 			s_projectAssetList[i].clear();
 		}
-		freeCachedTextures();
+		freeAllAssetData();
 	}
 
 	void label(const char* label)
@@ -319,7 +321,7 @@ namespace AssetBrowser
 				texW *= scale;
 				texH *= scale;
 
-				ImGui::Image(TFE_RenderBackend::getGpuPtr(tex->texGpu[tex->curFrame]),
+				ImGui::Image(TFE_RenderBackend::getGpuPtr(tex->frames[tex->curFrame]),
 					ImVec2((f32)texW, (f32)texH), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f));
 			}
 			else if (asset->type == TYPE_FRAME)
@@ -453,14 +455,14 @@ namespace AssetBrowser
 			else if (asset->type == TYPE_PALETTE)
 			{
 				EditorTexture* tex = (EditorTexture*)getAssetData(asset->handle);
-				ImGui::Image(TFE_RenderBackend::getGpuPtr(tex->texGpu[0]),
+				ImGui::Image(TFE_RenderBackend::getGpuPtr(tex->frames[0]),
 					ImVec2(128.0f, 128.0f), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f));
 
 				// Show the colormap if it exists.
 				if (tex->frameCount == 2)
 				{
 					ImGui::Separator();
-					ImGui::Image(TFE_RenderBackend::getGpuPtr(tex->texGpu[1]),
+					ImGui::Image(TFE_RenderBackend::getGpuPtr(tex->frames[1]),
 						ImVec2(512.0f, 64.0f), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f));
 				}
 			}
@@ -551,65 +553,115 @@ namespace AssetBrowser
 						if (s_viewAssetList[a].type == TYPE_TEXTURE || s_viewAssetList[a].type == TYPE_PALETTE)
 						{
 							EditorTexture* tex = (EditorTexture*)getAssetData(s_viewAssetList[a].handle);
-							textureGpu = tex->texGpu[0];
-							// Preserve the image aspect ratio.
-							if (tex->width >= tex->height)
+							textureGpu = tex ? tex->frames[0] : nullptr;
+							if (textureGpu)
 							{
-								height = tex->height * s_editorConfig.thumbnailSize / tex->width;
-								offsetY = (width - height) / 2;
-							}
-							else
-							{
-								width = tex->width * s_editorConfig.thumbnailSize / tex->height;
-								offsetX = (height - width) / 2;
+								// Preserve the image aspect ratio.
+								if (tex->width >= tex->height)
+								{
+									height = tex->height * s_editorConfig.thumbnailSize / tex->width;
+									offsetY = (width - height) / 2;
+								}
+								else
+								{
+									width = tex->width * s_editorConfig.thumbnailSize / tex->height;
+									offsetX = (height - width) / 2;
+								}
 							}
 						}
 						else if (s_viewAssetList[a].type == TYPE_FRAME)
 						{
 							EditorFrame* frame = (EditorFrame*)getAssetData(s_viewAssetList[a].handle);
-							textureGpu = frame->texGpu;
-							// Preserve the image aspect ratio.
-							if (frame->width >= frame->height)
+							textureGpu = frame ? frame->texGpu : nullptr;
+							if (textureGpu)
 							{
-								height = frame->height * s_editorConfig.thumbnailSize / frame->width;
-								offsetY = (width - height) / 2;
-							}
-							else
-							{
-								width = frame->width * s_editorConfig.thumbnailSize / frame->height;
-								offsetX = (height - width) / 2;
+								// Preserve the image aspect ratio.
+								if (frame->width >= frame->height)
+								{
+									height = frame->height * s_editorConfig.thumbnailSize / frame->width;
+									offsetY = (width - height) / 2;
+								}
+								else
+								{
+									width = frame->width * s_editorConfig.thumbnailSize / frame->height;
+									offsetX = (height - width) / 2;
+								}
 							}
 						}
 						else if (s_viewAssetList[a].type == TYPE_SPRITE)
 						{
 							EditorSprite* sprite = (EditorSprite*)getAssetData(s_viewAssetList[a].handle);
-							textureGpu = sprite->texGpu;
-							SpriteCell* cell = &sprite->cell[0];
-							// Preserve the image aspect ratio.
-							if (cell->w >= cell->h)
+							textureGpu = sprite ? sprite->texGpu : nullptr;
+							if (textureGpu)
 							{
-								height = cell->h * s_editorConfig.thumbnailSize / cell->w;
-								offsetY = (width - height) / 2;
+								SpriteCell* cell = &sprite->cell[0];
+								// Preserve the image aspect ratio.
+								if (cell->w >= cell->h)
+								{
+									height = cell->h * s_editorConfig.thumbnailSize / cell->w;
+									offsetY = (width - height) / 2;
+								}
+								else
+								{
+									width = cell->w * s_editorConfig.thumbnailSize / cell->h;
+									offsetX = (height - width) / 2;
+								}
+
+								u0 = f32(cell->u) / (f32)textureGpu->getWidth();
+								v1 = f32(cell->v) / (f32)textureGpu->getHeight();
+
+								u1 = f32(cell->u + cell->w) / (f32)textureGpu->getWidth();
+								v0 = f32(cell->v + cell->h) / (f32)textureGpu->getHeight();
 							}
-							else
+						}
+						else if (s_viewAssetList[a].type == TYPE_3DOBJ)
+						{
+							EditorObj3D* obj3D = (EditorObj3D*)getAssetData(s_viewAssetList[a].handle);
+							textureGpu = obj3D ? obj3D->thumbnail : nullptr;
+							if (textureGpu)
 							{
-								width = cell->w * s_editorConfig.thumbnailSize / cell->h;
-								offsetX = (height - width) / 2;
+								// Preserve the image aspect ratio.
+								if (textureGpu->getWidth() >= textureGpu->getHeight())
+								{
+									height = textureGpu->getHeight() * s_editorConfig.thumbnailSize / textureGpu->getWidth();
+									offsetY = (width - height) / 2;
+								}
+								else
+								{
+									width = textureGpu->getWidth() * s_editorConfig.thumbnailSize / textureGpu->getHeight();
+									offsetX = (height - width) / 2;
+								}
 							}
-
-							u0 = f32(cell->u) / (f32)textureGpu->getWidth();
-							v1 = f32(cell->v) / (f32)textureGpu->getHeight();
-
-							u1 = f32(cell->u + cell->w) / (f32)textureGpu->getWidth();
-							v0 = f32(cell->v + cell->h) / (f32)textureGpu->getHeight();
+						}
+						else if (s_viewAssetList[a].type == TYPE_LEVEL)
+						{
+							EditorLevelPreview* lev = (EditorLevelPreview*)getAssetData(s_viewAssetList[a].handle);
+							textureGpu = lev ? lev->thumbnail : nullptr;
+							if (textureGpu)
+							{
+								// Preserve the image aspect ratio.
+								if (textureGpu->getWidth() >= textureGpu->getHeight())
+								{
+									height = textureGpu->getHeight() * s_editorConfig.thumbnailSize / textureGpu->getWidth();
+									offsetY = (width - height) / 2;
+								}
+								else
+								{
+									width = textureGpu->getWidth() * s_editorConfig.thumbnailSize / textureGpu->getHeight();
+									offsetX = (height - width) / 2;
+								}
+							}
 						}
 						// Center image.
 						offsetX += (itemWidth - s_editorConfig.thumbnailSize) / 2;
 
 						// Draw the image.
 						ImGui::SetCursorPos(ImVec2((f32)offsetX, (f32)offsetY));
-						ImGui::Image(TFE_RenderBackend::getGpuPtr(textureGpu),
-							ImVec2((f32)width, (f32)height), ImVec2(u0, v0), ImVec2(u1, v1));
+						if (textureGpu)
+						{
+							ImGui::Image(TFE_RenderBackend::getGpuPtr(textureGpu),
+								ImVec2((f32)width, (f32)height), ImVec2(u0, v0), ImVec2(u1, v1));
+						}
 
 						// Draw the label.
 						ImGui::SetCursorPos(ImVec2(8.0f, (f32)s_editorConfig.thumbnailSize));
@@ -1038,6 +1090,14 @@ namespace AssetBrowser
 		{
 			return TYPE_SPRITE;
 		}
+		else if (strcasecmp(ext, "3DO") == 0)
+		{
+			return TYPE_3DOBJ;
+		}
+		else if (strcasecmp(ext, "LEV") == 0)
+		{
+			return TYPE_LEVEL;
+		}
 		return TYPE_COUNT;
 	}
 
@@ -1134,6 +1194,22 @@ namespace AssetBrowser
 		for (size_t i = 0; i < count; i++, spriteName++)
 		{
 			if (strcasecmp(name, spriteName->c_str()) == 0)
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+
+	bool isLevel3D(const char* name)
+	{
+		if (s_viewInfo.levelSource < 0) { return true; }
+
+		const size_t count = s_levelAssets[s_viewInfo.levelSource].pods.size();
+		const std::string* podName = s_levelAssets[s_viewInfo.levelSource].pods.data();
+		for (size_t i = 0; i < count; i++, podName++)
+		{
+			if (strcasecmp(name, podName->c_str()) == 0)
 			{
 				return true;
 			}
@@ -1238,6 +1314,28 @@ namespace AssetBrowser
 			{
 				const char* name = projAsset->name.c_str();
 				if (!editorFilter(name) || !isLevelSprite(name)) { continue; }
+				loadAsset(projAsset);
+			}
+		}
+		else if (s_viewInfo.type == TYPE_3DOBJ)
+		{
+			const u32 count = (u32)s_projectAssetList[TYPE_3DOBJ].size();
+			const Asset* projAsset = s_projectAssetList[TYPE_3DOBJ].data();
+			for (u32 i = 0; i < count; i++, projAsset++)
+			{
+				const char* name = projAsset->name.c_str();
+				if (!editorFilter(name) || !isLevel3D(name)) { continue; }
+				loadAsset(projAsset);
+			}
+		}
+		else if (s_viewInfo.type == TYPE_LEVEL)
+		{
+			const u32 count = (u32)s_projectAssetList[TYPE_LEVEL].size();
+			const Asset* projAsset = s_projectAssetList[TYPE_LEVEL].data();
+			for (u32 i = 0; i < count; i++, projAsset++)
+			{
+				const char* name = projAsset->name.c_str();
+				if (!editorFilter(name) || !isLevel3D(name)) { continue; }
 				loadAsset(projAsset);
 			}
 		}

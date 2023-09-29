@@ -450,6 +450,8 @@ echo ^)";
     <ClInclude Include="TFE_Editor\editorColormap.h" />
     <ClInclude Include="TFE_Editor\editorConfig.h" />
     <ClInclude Include="TFE_Editor\editorFrame.h" />
+    <ClInclude Include="TFE_Editor\editorLevelPreview.h" />
+    <ClInclude Include="TFE_Editor\editorObj3D.h" />
     <ClInclude Include="TFE_Editor\editorSprite.h" />
     <ClInclude Include="TFE_Editor\editorTexture.h" />
     <ClInclude Include="TFE_FileSystem\filestream.h" />
@@ -805,6 +807,8 @@ echo ^)";
     <ClCompile Include="TFE_Editor\editorColormap.cpp" />
     <ClCompile Include="TFE_Editor\editorConfig.cpp" />
     <ClCompile Include="TFE_Editor\editorFrame.cpp" />
+    <ClCompile Include="TFE_Editor\editorLevelPreview.cpp" />
+    <ClCompile Include="TFE_Editor\editorObj3D.cpp" />
     <ClCompile Include="TFE_Editor\editorSprite.cpp" />
     <ClCompile Include="TFE_Editor\editorTexture.cpp" />
     <ClCompile Include="TFE_FileSystem\filestream.cpp" />

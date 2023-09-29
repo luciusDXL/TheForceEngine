@@ -63,6 +63,14 @@ namespace TFE_Editor
 			{
 				index = loadEditorSprite(SPRITE_WAX, archive, name, colorData->palette, colorData->palIndex);
 			} break;
+			case TYPE_3DOBJ:
+			{
+				index = loadEditorObj3D(OBJ3D_3DO, archive, name, colorData->palette, colorData->palIndex);
+			} break;
+			case TYPE_LEVEL:
+			{
+				index = loadEditorLevelPreview(LEV_LEV, archive, name);
+			} break;
 			default:
 			{
 				TFE_System::logWrite(LOG_WARNING, "Editor", "Asset data loading not implemented, or bad type: %d", type);
@@ -96,6 +104,8 @@ namespace TFE_Editor
 				loadEditorTextureLit(TEX_BM, archive, colorData->palette, colorData->palIndex, colorData->colormap, colorData->lightLevel, index);
 			} break;
 			case TYPE_PALETTE:
+			case TYPE_3DOBJ:
+			case TYPE_LEVEL:
 			{
 				// This doesn't make sense for palettes/colormaps, so do nothing.
 			} break;
@@ -112,12 +122,6 @@ namespace TFE_Editor
 				TFE_System::logWrite(LOG_WARNING, "Editor", "Asset data loading not implemented, or bad type: %d", type);
 			}
 		}
-	}
-
-	// Load or generate thumbnail.
-	TextureGpu* loadAssetThumbnail(AssetType type, Archive* archive, const char* name, u32 thumbnailSize)
-	{
-		return nullptr;
 	}
 
 	// Free asset data.
@@ -151,6 +155,14 @@ namespace TFE_Editor
 			{
 				data = getSpriteData(index);
 			} break;
+			case TYPE_3DOBJ:
+			{
+				data = getObj3DData(index);
+			} break;
+			case TYPE_LEVEL:
+			{
+				data = getLevelPreviewData(index);
+			} break;
 			default:
 			{
 				TFE_System::logWrite(LOG_WARNING, "Editor", "Asset data loading not implemented, or bad type: %d", type);
@@ -164,6 +176,9 @@ namespace TFE_Editor
 		freeCachedTextures();
 		freeCachedFrames();
 		freeCachedSprites();
+		freeCachedObj3D();
+		freeCachedLevelPreview();
+		s_assetsLoaded.clear();
 	}
 
 	void freeAllThumbnails()

@@ -9,12 +9,13 @@
 #include <TFE_System/types.h>
 #include <TFE_Archive/archive.h>
 #include <TFE_RenderBackend/renderBackend.h>
+#include <vector>
 
 namespace TFE_Editor
 {
 	struct EditorTexture
 	{
-		TextureGpu* texGpu[32] = { nullptr };
+		std::vector<TextureGpu*> frames;
 		u32  width = 0;
 		u32  height = 0;
 		u32  frameCount = 1;
