@@ -96,11 +96,8 @@ bool ScreenCapture::changeBufferCount(u32 newBufferCount, bool forceRealloc/* = 
 
 static void flipVert32bpp(void* mem, u32 w, u32 h)
 {
-	u32 stride = w * 4;
+	const u32 stride = w * 4;
 	const u32 size = stride * h;
-	// increase copysize to at least a certain size for perf reasons.
-	while (stride < 16384)
-		stride *= 2;
 	char* upper = (char *)mem;
 	char* lower = (char *)mem + size - stride;
 	char* tmpb = (char *)malloc(stride);
