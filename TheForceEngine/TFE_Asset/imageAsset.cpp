@@ -8,66 +8,78 @@
 #include <vector>
 #include <string>
 #include <map>
-
-#define IL_USE_PRAGMA_LIBS
-#include <IL/il.h>
-#include <IL/ilu.h>
+#include <SDL_image.h>
+#include <SDL_rwops.h>
 
 namespace TFE_Image
 {
-	typedef std::map<std::string, Image*> ImageMap;
+	typedef std::map<std::string, SDL_Surface*> ImageMap;
 	static ImageMap s_images;
 	static std::vector<u8> s_buffer;
 
+	static SDL_Surface* convertToRGBA(SDL_Surface* src)
+	{
+		SDL_PixelFormat rgba32 = {
+			.format = SDL_PIXELFORMAT_RGBA32,
+			.palette = NULL,
+			.BitsPerPixel = 32,
+			.BytesPerPixel = 4,
+			.Rmask = 0x000000FF,
+			.Gmask = 0x0000FF00,
+			.Bmask = 0x00FF0000,
+			.Amask = 0xFF000000,
+			.Rloss = 0,
+			.Gloss = 0,
+			.Bloss = 0,
+			.Aloss = 0,
+			.Rshift = 0,
+			.Gshift = 8,
+			.Bshift = 16,
+			.Ashift = 24
+		};
+
+		SDL_Surface* n = SDL_ConvertSurface(src, &rgba32, 0);
+		SDL_FreeSurface(src);
+		return n;
+	}
+
 	void init()
 	{
+		int ret;
+		int flags = IMG_INIT_PNG | IMG_INIT_JPG;
+		
 		TFE_System::logWrite(LOG_MSG, "Startup", "TFE_Image::init");
-
-		// Initialize IL
-		ilInit();
-		iluInit();
-
-		// We want all images to be loaded in a consistent manner
-		ilEnable(IL_ORIGIN_SET);
-		ilOriginFunc(IL_ORIGIN_UPPER_LEFT);
+		ret = IMG_Init(flags);
+		if ((ret & flags) != flags)
+		{
+			TFE_System::logWrite(LOG_ERROR, "ImageAsset", "SDL_image init failed!");
+		}
 	}
 
 	void shutdown()
 	{
 		freeAll();
-		ilShutDown();
+		IMG_Quit();
 	}
 
-	Image* loadFromMemory(const u8* buffer, size_t size)
+	SDL_Surface* loadFromMemory(const u8* buffer, size_t size)
 	{
-		Image* image = new Image;
-
-		// Now let's switch over to using devIL...
-		ILuint handle;
-
-		// In the next section, we load one image
-		ilGenImages(1, &handle);
-		ilBindImage(handle);
-		if (ilLoadL(IL_JPG, buffer, (ILuint)size) == IL_FALSE)
-		{
+		SDL_RWops* memops = SDL_RWFromConstMem(buffer, size);
+		if (!memops)
 			return nullptr;
-		}
-		
-		// Let’s spy on it a little bit
-		image->width  = (u32)ilGetInteger(IL_IMAGE_WIDTH);  // getting image width
-		image->height = (u32)ilGetInteger(IL_IMAGE_HEIGHT); // and height
 
-		image->data = new u32[image->width * image->height];
-		// get the image data
-		ilCopyPixels(0, 0, 0, image->width, image->height, 1, IL_RGBA, IL_UNSIGNED_BYTE, image->data);
+		SDL_Surface* sdlimg = IMG_Load_RW(memops, 1);
+		if (!sdlimg)
+			return nullptr;
+		if (sdlimg->format->BitsPerPixel != 32)
+			sdlimg = convertToRGBA(sdlimg);
+		if (!sdlimg)
+			return nullptr;
 
-		// Finally, clean the mess!
-		ilDeleteImages(1, &handle);
-
-		return image;
+		return sdlimg;
 	}
 
-	Image* get(const char* imagePath)
+	SDL_Surface* get(const char* imagePath)
 	{
 		ImageMap::iterator iImage = s_images.find(imagePath);
 		if (iImage != s_images.end())
@@ -75,47 +87,28 @@ namespace TFE_Image
 			return iImage->second;
 		}
 
-		Image* image = new Image;
-
-		// Now let's switch over to using devIL...
-		ILuint handle;
-
-		// In the next section, we load one image
-		ilGenImages(1, &handle);
-		ilBindImage(handle);
-		if (ilLoadImage(imagePath) == IL_FALSE)
-		{
-			// TODO: handle error.
-			// ILenum error = ilGetError();
+		SDL_Surface* sdlimg = IMG_Load(imagePath);
+		if (!sdlimg)
 			return nullptr;
-		}
-
-		// Let’s spy on it a little bit
-		image->width  = (u32)ilGetInteger(IL_IMAGE_WIDTH);  // getting image width
-		image->height = (u32)ilGetInteger(IL_IMAGE_HEIGHT); // and height
-
-		image->data = new u32[image->width * image->height];
-		// get the image data
-		ilCopyPixels(0, 0, 0, image->width, image->height, 1, IL_RGBA, IL_UNSIGNED_BYTE, image->data);
-
-		// Finally, clean the mess!
-		ilDeleteImages(1, &handle);
-
-		s_images[imagePath] = image;
-		return image;
+		if (sdlimg->format->BitsPerPixel != 32)
+			sdlimg = convertToRGBA(sdlimg);
+		if (!sdlimg)
+			return nullptr;
+		
+		s_images[imagePath] = sdlimg;
+		return sdlimg;
 	}
 
-	void free(Image* image)
+	void free(SDL_Surface* image)
 	{
 		if (!image) { return; }
-		delete[] image->data;
 
+		SDL_FreeSurface(image);
 		ImageMap::iterator iImage = s_images.begin();
 		for (; iImage != s_images.end(); ++iImage)
 		{
 			if (iImage->second == image)
 			{
-				delete iImage->second;
 				s_images.erase(iImage);
 				break;
 			}
@@ -127,138 +120,109 @@ namespace TFE_Image
 		ImageMap::iterator iImage = s_images.begin();
 		for (; iImage != s_images.end(); ++iImage)
 		{
-			Image* image = iImage->second;
+			SDL_Surface* image = iImage->second;
 			if (image)
 			{
-				delete[] image->data;
+				SDL_FreeSurface(image);
 			}
-			delete image;
 		}
 		s_images.clear();
 	}
 
 	void writeImage(const char* path, u32 width, u32 height, u32* pixelData)
 	{
-		ILuint handle;
-		ilGenImages(1, &handle);
-		ilBindImage(handle);
-
-		ilTexImage(width, height, 1, 4, IL_RGBA, IL_UNSIGNED_BYTE, (void*)pixelData);
-		ilSetData((void*)pixelData);
-		ilEnable(IL_FILE_OVERWRITE);
-		ilSaveImage(path);
-
-		ilBindImage(0);
-		ilDeleteImage(handle);
-	}
-
-	//////////////////////////////////////////////////////
-	// Wacky file overrides to get Devil to read and write
-	// images to/from memory.
-	//////////////////////////////////////////////////////
-	static MemoryStream s_memStream;
-
-	ILHANDLE ILAPIENTRY iOpen(const char *FileName)
-	{
-		return (ILHANDLE)1;
-	}
-
-	void ILAPIENTRY iClose(ILHANDLE Handle)
-	{
-	}
-
-	ILboolean ILAPIENTRY iEof(ILHANDLE Handle)
-	{
-		return s_memStream.getLoc() >= s_memStream.getSize();
-	}
-
-	ILint ILAPIENTRY iGetc(ILHANDLE Handle)
-	{
-		u8 c;
-		s_memStream.read(&c);
-		return ILint(c);
-	}
-
-	ILint ILAPIENTRY iPutc(ILubyte Char, ILHANDLE Handle)
-	{
-		u8 c = u8(Char);
-		s_memStream.write(&c);
-		return 1;
-	}
-
-	ILint ILAPIENTRY iRead(void *Buffer, ILuint Size, ILuint Number, ILHANDLE Handle)
-	{
-		s_memStream.readBuffer(Buffer, Size, Number);
-		return Number;
-	}
-
-	ILint ILAPIENTRY iWrite(const void *Buffer, ILuint Size, ILuint Number, ILHANDLE Handle)
-	{
-		s_memStream.writeBuffer(Buffer, Size, Number);
-		return Number;
-	}
-
-	ILint ILAPIENTRY iSeek(ILHANDLE Handle, ILint Offset, ILint Mode)
-	{
-		Stream::Origin c_origin[] =
+		SDL_Surface* surf = SDL_CreateRGBSurfaceFrom(pixelData, width, height,
+							     32, width * sizeof(u32), 
+							     0xFF, 0xFF00, 0xFF0000, 0xFF000000);
+		if (!surf)
+			return;
+		int ret = IMG_SavePNG(surf, path);
+		if (ret != 0)
 		{
-			Stream::ORIGIN_START,
-			Stream::ORIGIN_CURRENT,
-			Stream::ORIGIN_END,
-		};
-		return s_memStream.seek(Offset, c_origin[Mode]) ? 0 : -1;
+			TFE_System::logWrite(LOG_ERROR, "writeImage", "Saving PNG '%s' failed with '%s'", path, SDL_GetError());
+		}
 	}
 
-	ILint ILAPIENTRY iTell(ILHANDLE Handle)
+	//////////////////////////////////////////////////////
+	// Wacky file override to get SDL-Image to write
+	// images to memory. SDL_RWmemOps by default do not support writing.
+	//////////////////////////////////////////////////////
+	static size_t SDLCALL _sdl_wop_mem(struct SDL_RWops* context, const void *ptr,
+					   size_t size, size_t num)
 	{
-		return (ILint)s_memStream.getLoc();
+		const size_t bytes = num * size;
+		const ptrdiff_t space = context->hidden.mem.stop - context->hidden.mem.here;
+		if (space >= bytes)
+		{
+			memcpy(context->hidden.mem.here, ptr, bytes);
+			context->hidden.mem.here += bytes;
+			return bytes;
+		}
+		return 0;
 	}
-	
+
 	//////////////////////////////////////////////////////
 	// Code to write and read images from memory.
 	//////////////////////////////////////////////////////
-	size_t writeImageToMemory(u8*& output, u32 width, u32 height, const u32* pixelData)
+	size_t writeImageToMemory(u8* output, u32 srcw, u32 srch, u32 dstw,
+				  u32 dsth, const u32* pixelData)
 	{
-		s_memStream.open(Stream::MODE_WRITE);
-		ilSetWrite(iOpen, iClose, iPutc, iSeek, iTell, iWrite);
+		size_t written;
+		int ret;
 
-		writeImage("image.png", width, height, (u32*)pixelData);
-
-		ilResetWrite();
-		s_memStream.close();
-
-		output = (u8*)s_memStream.data();
-		return s_memStream.getSize();
-	}
-
-	void readImageFromMemory(Image* output, size_t size, const u32* pixelData)
-	{
-		s_memStream.load(size, pixelData);
-		s_memStream.open(Stream::MODE_READ);
-		ilSetRead(iOpen, iClose, iEof, iGetc, iRead, iSeek, iTell);
-
-		// Now let's switch over to using devIL...
-		ILuint handle;
-
-		// In the next section, we load one image
-		ilGenImages(1, &handle);
-		ilBindImage(handle);
-		if (ilLoadImage("image.png") == IL_FALSE)
+		SDL_Surface* surf = SDL_CreateRGBSurfaceFrom((void *)pixelData, srcw, srch, 32, srcw * sizeof(u32),
+							     0xFF, 0xFF00, 0xFF0000, 0xFF000000);
+		if (!surf)
+			return 0;
+		if ((srcw != dstw) || (srch != dsth))
 		{
-			ILenum error = ilGetError();
-			return;
+			const SDL_Rect rs = { 0, 0, (int)srcw, (int)srch };
+			const SDL_Rect rd = { 0, 0, (int)dstw, (int)dsth };
+			SDL_Surface* scaled = SDL_CreateRGBSurface(0, dstw, dsth, 32,
+								  0xFF, 0xFF00, 0xFF0000, 0xFF000000);
+			if (!scaled)
+			{
+				SDL_FreeSurface(surf);
+				return 0;
+			}
+			ret = SDL_SoftStretchLinear(surf, &rs, scaled, &rd);
+			if (ret != 0)
+			{
+				SDL_FreeSurface(surf);
+				SDL_FreeSurface(scaled);
+				return 0;
+			}
+			SDL_FreeSurface(surf);
+			surf = scaled;
+			srcw = dstw;
+			srch = dsth;
 		}
 
-		// Let’s spy on it a little bit
-		output->width = (u32)ilGetInteger(IL_IMAGE_WIDTH);  // getting image width
-		output->height = (u32)ilGetInteger(IL_IMAGE_HEIGHT); // and height
-		// get the image data
-		ilCopyPixels(0, 0, 0, output->width, output->height, 1, IL_RGBA, IL_UNSIGNED_BYTE, output->data);
+		SDL_RWops* memops = SDL_RWFromMem(output, srcw * srch * sizeof(u32));
+		if (!memops)
+		{
+			SDL_FreeSurface(surf);
+			return 0;
+		}
+		memops->write = _sdl_wop_mem;
+		ret = IMG_SavePNG_RW(surf, memops, 0);
+		SDL_FreeSurface(surf);
+		if (ret == 0)
+		{
+			written = memops->hidden.mem.here - memops->hidden.mem.base;
+		}
+		SDL_FreeRW(memops);
+		return written;
+	}
 
-		// Finally, clean the mess!
-		ilDeleteImages(1, &handle);
+	void readImageFromMemory(SDL_Surface** output, size_t size, const u32* pixelData)
+	{
+		SDL_RWops* memops = SDL_RWFromConstMem(pixelData, size);
+		if (!memops)
+			return;
 
-		ilResetRead();
-		s_memStream.close();
+		SDL_Surface* sdlimg = IMG_Load_RW(memops, 1);
+		if (output)
+			*output = sdlimg;
 	}
 }

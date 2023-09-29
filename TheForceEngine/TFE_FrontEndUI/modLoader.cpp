@@ -1014,16 +1014,15 @@ namespace TFE_FrontEndUI
 				zipArchive.readFile(s_imageBuffer.data(), imageSize);
 				zipArchive.closeFile();
 
-				Image* image = TFE_Image::loadFromMemory((u8*)s_imageBuffer.data(), imageSize);
+				SDL_Surface* image = TFE_Image::loadFromMemory((u8*)s_imageBuffer.data(), imageSize);
 				if (image)
 				{
-					TextureGpu* gpuImage = TFE_RenderBackend::createTexture(image->width, image->height, image->data, MAG_FILTER_LINEAR);
+					TextureGpu* gpuImage = TFE_RenderBackend::createTexture(image->w, image->h, (u32*)image->pixels, MAG_FILTER_LINEAR);
 					poster->texture = gpuImage;
-					poster->width = image->width;
-					poster->height = image->height;
+					poster->width = image->w;
+					poster->height = image->h;
 
-					delete[] image->data;
-					delete image;
+					TFE_Image::free(image);
 				}
 			}
 			zipArchive.close();
@@ -1033,13 +1032,13 @@ namespace TFE_FrontEndUI
 			char imagePath[TFE_MAX_PATH];
 			sprintf(imagePath, "%s%s", baseDir, imageFileName);
 
-			Image* image = TFE_Image::get(imagePath);
+			SDL_Surface* image = TFE_Image::get(imagePath);
 			if (image)
 			{
-				TextureGpu* gpuImage = TFE_RenderBackend::createTexture(image->width, image->height, image->data, MAG_FILTER_LINEAR);
+				TextureGpu* gpuImage = TFE_RenderBackend::createTexture(image->w, image->h, (u32*)image->pixels, MAG_FILTER_LINEAR);
 				poster->texture = gpuImage;
-				poster->width = image->width;
-				poster->height = image->height;
+				poster->width = image->w;
+				poster->height = image->h;
 			}
 		}
 	}

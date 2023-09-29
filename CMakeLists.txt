@@ -47,10 +47,9 @@ set_target_properties(tfe PROPERTIES OUTPUT_NAME "theforceengine")
 if(LINUX)
 	find_package(PkgConfig REQUIRED)
 	find_package(Threads REQUIRED)
-	pkg_check_modules(SDL2 REQUIRED sdl2)
+	find_package(SDL2 2.24 REQUIRED)
+	pkg_check_modules(SDL2_IMAGE REQUIRED SDL2_image)
 	pkg_check_modules(GLEW REQUIRED glew)
-	pkg_check_modules(IL REQUIRED IL)
-	pkg_check_modules(ILU REQUIRED ILU)
 	set(OpenGL_GL_PREFERENCE GLVND)
 	find_package(OpenGL REQUIRED)
 	target_include_directories(tfe PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
@@ -59,8 +58,7 @@ if(LINUX)
 				${OPENGL_LIBRARIES}
 				${GLEW_LIBRARIES}
 				${SDL2_LIBRARIES}
-				${IL_LIBRARIES}
-				${ILU_LIBRARIES}
+				${SDL2_IMAGE_LIBRARIES}
 	)
 
 	if(NOT DISABLE_SYSMIDI)

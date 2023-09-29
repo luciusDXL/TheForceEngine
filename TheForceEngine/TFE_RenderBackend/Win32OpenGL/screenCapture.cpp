@@ -94,10 +94,31 @@ bool ScreenCapture::changeBufferCount(u32 newBufferCount, bool forceRealloc/* = 
 	return m_bufferCount;
 }
 
+static void flipVert32bpp(void* mem, u32 w, u32 h)
+{
+	const u32 stride = w * 4;
+	const u32 size = stride * h;
+	char* upper = (char *)mem;
+	char* lower = (char *)mem + size - stride;
+	char* tmpb = (char *)malloc(stride);
+	while (tmpb && (upper < lower)) {
+		memcpy(tmpb, upper, stride);
+		memcpy(upper, lower, stride);
+		memcpy(lower, tmpb, stride);
+		upper += stride;
+		lower -= stride;
+	}
+	free(tmpb);
+}
+
 void ScreenCapture::captureFrontBufferToMemory(u32* mem)
 {
 	glReadBuffer(GL_FRONT);
 	glReadPixels(0, 0, m_width, m_height, GL_RGBA, GL_UNSIGNED_BYTE, mem);
+
+	// Need to flip image upside-down. OpenGL has (0|0) at lower left
+	// corner, while the rest of the world places it in the upper left.
+	flipVert32bpp(mem, m_width, m_height);
 }
 
 void ScreenCapture::update(bool flush)
