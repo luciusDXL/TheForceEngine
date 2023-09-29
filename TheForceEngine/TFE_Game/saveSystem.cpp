@@ -54,7 +54,6 @@ namespace TFE_SaveSystem
 		u32 pngSize = (u32)TFE_Image::writeImageToMemory(png, displayInfo.width, displayInfo.height,
 								 SAVE_IMAGE_WIDTH, SAVE_IMAGE_HEIGHT,
 								 s_imageBuffer[0]);
-
 		// Master version.
 		u32 version = SVER_CUR;
 		stream->write(&version);

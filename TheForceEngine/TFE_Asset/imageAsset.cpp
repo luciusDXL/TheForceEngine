@@ -203,8 +203,8 @@ namespace TFE_Image
 			return 0;
 		if ((srcw != dstw) || (srch != dsth))
 		{
-			const SDL_Rect rs = { .x = 0, .y = 0, .w = srcw, .h = srch };
-			const SDL_Rect rd = { .x = 0, .y = 0, .w = dstw, .h = dsth };
+			const SDL_Rect rs = { 0, 0, srcw, srch };
+			const SDL_Rect rd = { 0, 0, dstw, dsth };
 			SDL_Surface* scaled = SDL_CreateRGBSurface(0, dstw, dsth, 32,
 								  0xFF, 0xFF00, 0xFF0000, 0xFF000000);
 			if (!scaled)
