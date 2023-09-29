@@ -1,6 +1,6 @@
 #include <algorithm>
 #include <cstring>
-#include <SDL_mutex.h>
+
 #include "midi.h"
 
 #include "systemMidiDevice.h"
@@ -28,15 +28,59 @@ namespace TFE_Audio
 	};
 
 	void midiErrorCallback(RtMidiError::Type, const std::string&, void*);
-	// serialize access to the physical MIDI port, to at least
-	// prevent a buffer overrun in the Linux ALSA MIDI parser.
-	static SDL_mutex* serializer = nullptr;
 
+	void SystemMidiDevice::recordMidiState(u8 cmd, u8 a1, u8 a2)
+	{
+		u8 id = cmd & 0xf0;
+		u8 chan = cmd & 0x0f;
+		if (id == MID_PROGRAM_CHANGE)
+		{
+			m_midiState.pg[chan] = a1;
+		}
+		else if ((id == MID_CONTROL_CHANGE) && (a1 < 120))
+		{
+			(m_midiState.cc[chan])[a1] = a2;
+		}
+	}
+
+	// replay all the program change and control change
+	// messages for each of the 16 channels to the
+	// midi device.
+	void SystemMidiDevice::restoreMidiState(void)
+	{
+		u8 buf[3];
+		SDL_LockMutex(m_portLock);
+		for (u8 i = 0; i < MIDI_CHANNEL_COUNT; i++)
+		{
+			buf[0] = MID_PROGRAM_CHANGE + i;
+			buf[1] = m_midiState.pg[i];
+			_message(buf, 2);
+			buf[0] = MID_CONTROL_CHANGE + i;
+			buf[1] = 121;	// reset all controllers
+			buf[2] = 0;
+			_message(buf, 3);
+			auto m = (m_midiState.cc)[i];
+			for (auto mit = m.begin(); mit != m.end(); mit++)
+			{
+				buf[1] = mit->first;
+				buf[2] = mit->second;
+				_message(buf, 3);
+			}
+		}
+		SDL_UnlockMutex(m_portLock);
+	}
+	
 	SystemMidiDevice::SystemMidiDevice()
 	{
-		serializer = SDL_CreateMutex();
+		m_midiout = nullptr;
 		m_outputId = 0;
+		m_midiState.clear();
+		m_portLock = SDL_CreateMutex();
+		if (!m_portLock)
+			return;
 		m_midiout = new RtMidiOut();
+		if (!m_midiout)
+			return;
 		m_midiout->setErrorCallback(midiErrorCallback);
 
 		getOutputCount();
@@ -45,11 +89,8 @@ namespace TFE_Audio
 	SystemMidiDevice::~SystemMidiDevice()
 	{
 		exit();
-		if (serializer)
-		{
-			SDL_DestroyMutex(serializer);
-			serializer = nullptr;
-		}
+		SDL_DestroyMutex(m_portLock);
+		m_portLock = nullptr;
 	}
 
 	void SystemMidiDevice::exit()
@@ -60,8 +101,8 @@ namespace TFE_Audio
 			delete m_midiout;
 			m_midiout = nullptr;
 		}
-
 		m_outputId = -1;
+		m_midiState.clear();
 	}
 
 	const char* SystemMidiDevice::getName()
@@ -69,16 +110,23 @@ namespace TFE_Audio
 		return c_SystemMidi_Name;
 	}
 
+	void SystemMidiDevice::_message(const u8* msg, u32 len)
+	{
+		if (m_outputId > 0)
+			m_midiout->sendMessage(msg, (size_t)len);
+	}
+
 	void SystemMidiDevice::message(const u8* msg, u32 len)
 	{
-		if (m_outputId > 0 && serializer)
-		{
-			// this mutex is uncontended except for a short time
-			// after a midi device switch is done in the settings.
-			SDL_LockMutex(serializer);
-			m_midiout->sendMessage(msg, (size_t)len);
-			SDL_UnlockMutex(serializer);
-		}
+		// this mutex is uncontended except for a short time
+		// after a midi device switch is done in the settings.
+		// It's here to avoid multiple threads writing to this
+		// port at the same time, which confuses the hell out
+		// of at least the Linux ALSA midi parser.
+		SDL_LockMutex(m_portLock);
+		recordMidiState(msg[0], msg[1], msg[2]);
+		_message(msg, len);
+		SDL_UnlockMutex(m_portLock);
 	}
 
 	void SystemMidiDevice::message(u8 type, u8 arg1, u8 arg2)
@@ -90,10 +138,15 @@ namespace TFE_Audio
 
 	void SystemMidiDevice::noteAllOff()
 	{
+		u8 buf[3] = { 0, MID_ALL_NOTES_OFF, 0 };
+
+		SDL_LockMutex(m_portLock);
 		for (u32 c = 0; c < MIDI_CHANNEL_COUNT; c++)
 		{
-			message(MID_CONTROL_CHANGE + c, MID_ALL_NOTES_OFF, 0);
+			buf[0] = MID_CONTROL_CHANGE + c;
+			_message(buf, 3);
 		}
+		SDL_UnlockMutex(m_portLock);
 	}
 
 	void SystemMidiDevice::setVolume(f32 volume)
@@ -140,11 +193,8 @@ namespace TFE_Audio
 			if (index > 0)	// real Device
 			{
 				m_midiout->openPort(index - 1);
-				for (s32 i = 0; i < MIDI_CHANNEL_COUNT; i++)
-				{
-					u8 msg[2] = { u8(MID_PROGRAM_CHANGE | i), 0 };
-					message(msg, 2);
-				}
+				if (m_midiout->isPortOpen())
+					restoreMidiState();
 			}
 		}
 		m_outputId = index;

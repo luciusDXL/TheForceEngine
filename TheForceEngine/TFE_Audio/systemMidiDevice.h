@@ -1,11 +1,20 @@
 #pragma once
+#include <array>
+#include <map>
 #include <TFE_System/types.h>
+#include <SDL_mutex.h>
 #include "midiDevice.h"
 
 class RtMidiOut;
 
 namespace TFE_Audio
 {
+	struct midiState
+	{
+		u8 pg[MIDI_CHANNEL_COUNT];				// per channel selected program
+		std::array<std::map<u8, u8>, MIDI_CHANNEL_COUNT> cc;	// per channel control params
+	};
+
 	class SystemMidiDevice : public MidiDevice
 	{
 	public:
@@ -34,9 +43,15 @@ namespace TFE_Audio
 		s32  getActiveOutput(void) override;
 
 	private:
+		void _message(u8 type, u8 arg1, u8 arg2);
+		void recordMidiState(u8 cmd, u8 a1, u8 a2);
+		void restoreMidiState(void);
+
 		RtMidiOut* m_midiout;
 
 		s32  m_outputId;
 		FileList m_outputs;
+		SDL_Mutex *m_portLock;
+		midiState m_midiState;
 	};
 }
