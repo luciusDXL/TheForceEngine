@@ -13,7 +13,7 @@
 
 namespace TFE_Image
 {
-	typedef std::map<std::string, Image*> ImageMap;
+	typedef std::map<std::string, SDL_Surface*> ImageMap;
 	static ImageMap s_images;
 	static std::vector<u8> s_buffer;
 
@@ -62,7 +62,7 @@ namespace TFE_Image
 		IMG_Quit();
 	}
 
-	Image* loadFromMemory(const u8* buffer, size_t size)
+	SDL_Surface* loadFromMemory(const u8* buffer, size_t size)
 	{
 		SDL_RWops* memops = SDL_RWFromConstMem(buffer, size);
 		if (!memops)
@@ -76,18 +76,10 @@ namespace TFE_Image
 		if (!sdlimg)
 			return nullptr;
 
-		Image* image = new Image;
-		
-		image->sdl = sdlimg;
-		image->width  = (u32)sdlimg->w;
-		image->height = (u32)sdlimg->h;
-		image->data = (u32*)sdlimg->pixels;
-		SDL_LockSurface(sdlimg);	// required to manipulate the pixel buffer
-
-		return image;
+		return sdlimg;
 	}
 
-	Image* get(const char* imagePath)
+	SDL_Surface* get(const char* imagePath)
 	{
 		ImageMap::iterator iImage = s_images.find(imagePath);
 		if (iImage != s_images.end())
@@ -103,37 +95,20 @@ namespace TFE_Image
 		if (!sdlimg)
 			return nullptr;
 		
-		Image* image = new Image;
-		if (!image)
-		{
-			SDL_FreeSurface(sdlimg);
-			return nullptr;
-		}
-
-		image->sdl = sdlimg;
-		image->width  = (u32)sdlimg->w;
-		image->height = (u32)sdlimg->h;
-		image->data = (u32*)sdlimg->pixels;
-		SDL_LockSurface(sdlimg);	// required to manipulate the pixel buffer
-
-		s_images[imagePath] = image;
-		return image;
+		s_images[imagePath] = sdlimg;
+		return sdlimg;
 	}
 
-	void free(Image* image)
+	void free(SDL_Surface* image)
 	{
 		if (!image) { return; }
 
-		SDL_UnlockSurface(image->sdl);
-		SDL_FreeSurface(image->sdl);
-		image->sdl = nullptr;
-		
+		SDL_FreeSurface(image);
 		ImageMap::iterator iImage = s_images.begin();
 		for (; iImage != s_images.end(); ++iImage)
 		{
 			if (iImage->second == image)
 			{
-				delete iImage->second;
 				s_images.erase(iImage);
 				break;
 			}
@@ -145,13 +120,11 @@ namespace TFE_Image
 		ImageMap::iterator iImage = s_images.begin();
 		for (; iImage != s_images.end(); ++iImage)
 		{
-			Image* image = iImage->second;
+			SDL_Surface* image = iImage->second;
 			if (image)
 			{
-				SDL_UnlockSurface(image->sdl);
-				SDL_FreeSurface(image->sdl);
+				SDL_FreeSurface(image);
 			}
-			delete image;
 		}
 		s_images.clear();
 	}
@@ -242,26 +215,14 @@ namespace TFE_Image
 		return written;
 	}
 
-	void readImageFromMemory(Image* output, size_t size, const u32* pixelData)
+	void readImageFromMemory(SDL_Surface** output, size_t size, const u32* pixelData)
 	{
 		SDL_RWops* memops = SDL_RWFromConstMem(pixelData, size);
 		if (!memops)
 			return;
 			
 		SDL_Surface* sdlimg = IMG_Load_RW(memops, 1);
-		if (!sdlimg)
-			return;
-
-		if (output->sdl)
-		{
-			SDL_UnlockSurface(output->sdl);
-			SDL_FreeSurface(output->sdl);
-		}
-
-		output->sdl = sdlimg;
-		output->width  = (u32)sdlimg->w;
-		output->height = (u32)sdlimg->h;
-		output->data = (u32*)sdlimg->pixels;
-		SDL_LockSurface(sdlimg);	// required to manipulate the pixel buffer
+		if (output)
+			*output = sdlimg;
 	}
 }

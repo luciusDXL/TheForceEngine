@@ -137,13 +137,13 @@ namespace TFE_SaveSystem
 		}
 		stream->readBuffer(s_imageBuffer[0], pngSize);
 
-		Image image = { 0 };
+		SDL_Surface* image;
 		TFE_Image::readImageFromMemory(&image, pngSize, s_imageBuffer[0]);
-		if (image.width == SAVE_IMAGE_WIDTH && image.height == SAVE_IMAGE_HEIGHT)
+		if (image)
 		{
 			const u32 sz = SAVE_IMAGE_WIDTH * SAVE_IMAGE_HEIGHT * sizeof(u32);
-			memcpy(header->imageData, image.data, sz);
-			TFE_Image::free(&image);
+			memcpy(header->imageData, image->pixels, sz);
+			TFE_Image::free(image);
 		}
 	}
 

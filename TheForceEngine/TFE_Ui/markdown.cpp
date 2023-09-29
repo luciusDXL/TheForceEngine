@@ -95,10 +95,10 @@ namespace TFE_Markdown
 			return iTexture->second;
 		}
 
-		const Image* image = TFE_Image::get(path);
+		const SDL_Surface* image = TFE_Image::get(path);
 		if (!image) { return nullptr; }
 
-		TextureGpu* texture = TFE_RenderBackend::createTexture(image->width, image->height, image->data);
+		TextureGpu* texture = TFE_RenderBackend::createTexture(image->w, image->h, (u32*)image->pixels);
 		if (texture) { s_textures[path] = texture; }
 		return texture;
 	}

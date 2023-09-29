@@ -275,13 +275,13 @@ namespace TFE_FrontEndUI
 			memset(imagePath, 0, TFE_MAX_PATH);
 			TFE_Paths::appendPath(TFE_PathType::PATH_PROGRAM, localPath, imagePath, TFE_MAX_PATH);
 		}
-		Image* image = TFE_Image::get(imagePath);
+		SDL_Surface* image = TFE_Image::get(imagePath);
 		if (image)
 		{
-			TextureGpu* gpuImage = TFE_RenderBackend::createTexture(image->width, image->height, image->data, MAG_FILTER_LINEAR);
+			TextureGpu* gpuImage = TFE_RenderBackend::createTexture(image->w, image->h, (u32*)image->pixels, MAG_FILTER_LINEAR);
 			uiImage->image = TFE_RenderBackend::getGpuPtr(gpuImage);
-			uiImage->width = image->width;
-			uiImage->height = image->height;
+			uiImage->width = image->w;
+			uiImage->height = image->h;
 			return true;
 		}
 		return false;
