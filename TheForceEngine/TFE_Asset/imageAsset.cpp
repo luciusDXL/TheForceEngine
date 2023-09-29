@@ -37,7 +37,7 @@ namespace TFE_Image
 			.Bshift = 16,
 			.Ashift = 24
 		};
-		
+
 		SDL_Surface* n = SDL_ConvertSurface(src, &rgba32, 0);
 		SDL_FreeSurface(src);
 		return n;
@@ -139,15 +139,15 @@ namespace TFE_Image
 		int ret = IMG_SavePNG(surf, path);
 		if (ret != 0)
 		{
-			fprintf(stderr, "writeImage(%s) failed '%s'\n", path, SDL_GetError());
+			TFE_System::logWrite(LOG_ERROR, "writeImage", "Saving PNG '%s' failed with '%s'", path, SDL_GetError());
 		}
 	}
 
 	//////////////////////////////////////////////////////
 	// Wacky file override to get SDL-Image to write
-	// images to memory.
+	// images to memory. SDL_RWmemOps by default do not support writing.
 	//////////////////////////////////////////////////////
-	static size_t SDLCALL _sdl_wop_mem(struct SDL_RWops * context, const void *ptr,
+	static size_t SDLCALL _sdl_wop_mem(struct SDL_RWops* context, const void *ptr,
 					   size_t size, size_t num)
 	{
 		const size_t bytes = num * size;
@@ -176,14 +176,14 @@ namespace TFE_Image
 			return 0;
 		if ((srcw != dstw) || (srch != dsth))
 		{
-			const SDL_Rect rs = { 0, 0, srcw, srch };
-			const SDL_Rect rd = { 0, 0, dstw, dsth };
+			const SDL_Rect rs = { 0, 0, (int)srcw, (int)srch };
+			const SDL_Rect rd = { 0, 0, (int)dstw, (int)dsth };
 			SDL_Surface* scaled = SDL_CreateRGBSurface(0, dstw, dsth, 32,
 								  0xFF, 0xFF00, 0xFF0000, 0xFF000000);
 			if (!scaled)
 			{
-					SDL_FreeSurface(surf);
-					return 0;
+				SDL_FreeSurface(surf);
+				return 0;
 			}
 			ret = SDL_SoftStretchLinear(surf, &rs, scaled, &rd);
 			if (ret != 0)
@@ -220,7 +220,7 @@ namespace TFE_Image
 		SDL_RWops* memops = SDL_RWFromConstMem(pixelData, size);
 		if (!memops)
 			return;
-			
+
 		SDL_Surface* sdlimg = IMG_Load_RW(memops, 1);
 		if (output)
 			*output = sdlimg;
