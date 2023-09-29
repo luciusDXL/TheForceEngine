@@ -177,41 +177,63 @@ namespace TFE_Image
 	static size_t SDLCALL _sdl_wop_mem(struct SDL_RWops * context, const void *ptr,
 					   size_t size, size_t num)
 	{
-		size_t bytes = num * size;
-		ptrdiff_t space = context->hidden.mem.stop - context->hidden.mem.here;
+		const size_t bytes = num * size;
+		const ptrdiff_t space = context->hidden.mem.stop - context->hidden.mem.here;
 		if (space >= bytes)
 		{
 			memcpy(context->hidden.mem.here, ptr, bytes);
 			context->hidden.mem.here += bytes;
 			return bytes;
 		}
-		else
-		{
-			fprintf(stderr, "AIEEE: _sdl_wop_mem %p %x %x | %llu %llu\n", ptr, size, num, space, bytes);
-		}
-			
 		return 0;
 	}
 
 	//////////////////////////////////////////////////////
 	// Code to write and read images from memory.
 	//////////////////////////////////////////////////////
-	size_t writeImageToMemory(u8* output, u32 width, u32 height, const u32* pixelData)
+	size_t writeImageToMemory(u8* output, u32 srcw, u32 srch, u32 dstw,
+				  u32 dsth, const u32* pixelData)
 	{
-		SDL_Surface* surf = SDL_CreateRGBSurfaceFrom((void *)pixelData, width, height, 32, width * sizeof(u32), 
+		size_t written;
+		int ret;
+
+		SDL_Surface* surf = SDL_CreateRGBSurfaceFrom((void *)pixelData, srcw, srch, 32, srcw * sizeof(u32),
 							     0xFF, 0xFF00, 0xFF0000, 0xFF000000);
 		if (!surf)
 			return 0;
-		SDL_RWops* memops = SDL_RWFromMem(output, width * height * sizeof(u32));
+		if ((srcw != dstw) || (srch != dsth))
+		{
+			const SDL_Rect rs = { .x = 0, .y = 0, .w = srcw, .h = srch };
+			const SDL_Rect rd = { .x = 0, .y = 0, .w = dstw, .h = dsth };
+			SDL_Surface* scaled = SDL_CreateRGBSurface(0, dstw, dsth, 32,
+								  0xFF, 0xFF00, 0xFF0000, 0xFF000000);
+			if (!scaled)
+			{
+					SDL_FreeSurface(surf);
+					return 0;
+			}
+			ret = SDL_SoftStretchLinear(surf, &rs, scaled, &rd);
+			if (ret != 0)
+			{
+				SDL_FreeSurface(surf);
+				SDL_FreeSurface(scaled);
+				return 0;
+			}
+			SDL_FreeSurface(surf);
+			surf = scaled;
+			srcw = dstw;
+			srch = dsth;
+		}
+
+		SDL_RWops* memops = SDL_RWFromMem(output, srcw * srch * sizeof(u32));
 		if (!memops)
 		{
 			SDL_FreeSurface(surf);
 			return 0;
 		}
 		memops->write = _sdl_wop_mem;
-		int ret = IMG_SavePNG_RW(surf, memops, 0);
+		ret = IMG_SavePNG_RW(surf, memops, 0);
 		SDL_FreeSurface(surf);
-		size_t written = 0;
 		if (ret == 0)
 		{
 			written = memops->hidden.mem.here - memops->hidden.mem.base;

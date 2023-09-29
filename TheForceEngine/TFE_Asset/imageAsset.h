@@ -25,6 +25,6 @@ namespace TFE_Image
 
 	void writeImage(const char* path, u32 width, u32 height, u32* pixelData);
 
-	size_t writeImageToMemory(u8* output, u32 width, u32 height, const u32* pixelData);
+	size_t writeImageToMemory(u8* output, u32 srcw, u32 srch, u32 dstw, u32 dsth, const u32* pixelData);
 	void readImageFromMemory(Image* output, size_t size, const u32* pixelData);
 }
