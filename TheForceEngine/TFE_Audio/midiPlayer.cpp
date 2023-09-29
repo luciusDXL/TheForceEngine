@@ -534,6 +534,8 @@ namespace TFE_MidiPlayer
 				break;
 			default:
 				TFE_System::logWrite(LOG_ERROR, "Midi", "Invalid midi type selected: %d", (s32)type);
+				s_midiDevice = new Fm4Opl3Device();
+				break;
 		}
 	}
 }
