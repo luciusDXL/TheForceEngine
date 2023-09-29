@@ -54,7 +54,7 @@ namespace TFE_Image
 	{
 		int ret;
 		int flags = IMG_INIT_PNG | IMG_INIT_JPG;
-		
+
 		TFE_System::logWrite(LOG_MSG, "Startup", "TFE_Image::init");
 		ret = IMG_Init(flags);
 		if ((ret & flags) != flags)
@@ -101,7 +101,7 @@ namespace TFE_Image
 			sdlimg = convertToRGBA(sdlimg);
 		if (!sdlimg)
 			return nullptr;
-		
+
 		s_images[imagePath] = sdlimg;
 		return sdlimg;
 	}
@@ -136,21 +136,23 @@ namespace TFE_Image
 		s_images.clear();
 	}
 
-	void writeImage(const char* path, u32 width, u32 height, u32* pixelData)
+	// Return the flipped image in a temporary buffer.
+	u32* flipImage(const u32* srcImage, u32 width, u32 height)
 	{
-		// Screenshots are upside down on Windows, so fix it here for now.
-		u32* writeBuffer = pixelData;
-#ifdef _WIN32
-		// Images are upside down.
 		s_buffer.resize(width * height * 4);
-		const u32* srcBuffer = pixelData;
+		const u32* srcBuffer = srcImage;
 		u32* dstBuffer = (u32*)s_buffer.data();
 		for (u32 y = 0; y < height; y++)
 		{
 			memcpy(&dstBuffer[y * width], &srcBuffer[(height - y - 1) * width], width * 4);
 		}
-		writeBuffer = dstBuffer;
-#endif
+		return dstBuffer;
+	}
+
+	void writeImage(const char* path, u32 width, u32 height, u32* pixelData)
+	{
+		// TODO: This seems to be specific to the PBO/capture path, so the flip should really happen there.
+		u32* writeBuffer = flipImage(pixelData, width, height);
 
 		SDL_Surface* surf = SDL_CreateRGBSurfaceFrom(writeBuffer, width, height,
 							     32, width * sizeof(u32), 
