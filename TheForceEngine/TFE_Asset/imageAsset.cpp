@@ -8,8 +8,13 @@
 #include <vector>
 #include <string>
 #include <map>
+#include <SDL.h>
 #include <SDL_image.h>
 #include <SDL_rwops.h>
+
+#ifdef _WIN32
+#pragma comment( lib, "SDL2_image.lib" )
+#endif
 
 namespace TFE_Image
 {
@@ -20,24 +25,26 @@ namespace TFE_Image
 	static SDL_Surface* convertToRGBA(SDL_Surface* src)
 	{
 		SDL_PixelFormat rgba32 = {
-			.format = SDL_PIXELFORMAT_RGBA32,
-			.palette = NULL,
-			.BitsPerPixel = 32,
-			.BytesPerPixel = 4,
-			.Rmask = 0x000000FF,
-			.Gmask = 0x0000FF00,
-			.Bmask = 0x00FF0000,
-			.Amask = 0xFF000000,
-			.Rloss = 0,
-			.Gloss = 0,
-			.Bloss = 0,
-			.Aloss = 0,
-			.Rshift = 0,
-			.Gshift = 8,
-			.Bshift = 16,
-			.Ashift = 24
+			SDL_PIXELFORMAT_RGBA32,
+			NULL,        // Palette
+			32,          // BitsPerPixel
+			4,           // BytesPerPixel
+			{0, 0},      // padding
+			0x000000FF,  // Rmask
+			0x0000FF00,  // Gmask
+			0x00FF0000,  // Bmask
+			0xFF000000,  // Amask
+			0,           // Rloss
+			0,           // Gloss
+			0,           // Bloss
+			0,           // Aloss 
+			0,           // Rshift
+			8,           // Gshift
+			16,          // Bshift
+			24,          // Ashift
+			0,
+			nullptr
 		};
-
 		SDL_Surface* n = SDL_ConvertSurface(src, &rgba32, 0);
 		SDL_FreeSurface(src);
 		return n;
@@ -185,7 +192,7 @@ namespace TFE_Image
 				SDL_FreeSurface(surf);
 				return 0;
 			}
-			ret = SDL_SoftStretchLinear(surf, &rs, scaled, &rd);
+			ret = SDL_SoftStretch(surf, &rs, scaled, &rd);
 			if (ret != 0)
 			{
 				SDL_FreeSurface(surf);

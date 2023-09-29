@@ -50,14 +50,17 @@ namespace TFE_SaveSystem
 		TFE_RenderBackend::captureScreenToMemory(s_imageBuffer[0]);
 		// Save to memory.
 		u8* png = (u8*)malloc(SAVE_IMAGE_WIDTH * SAVE_IMAGE_HEIGHT * 4);
+		u32 pngSize = 0;
 		if (png)
 		{
-			u32 pngSize = (u32)TFE_Image::writeImageToMemory(png, displayInfo.width, displayInfo.height,
+			pngSize = (u32)TFE_Image::writeImageToMemory(png, displayInfo.width, displayInfo.height,
 								 SAVE_IMAGE_WIDTH, SAVE_IMAGE_HEIGHT,
 								 s_imageBuffer[0]);
-		} else {
+		}
+		else
+		{
 			pngSize = 0;
-			png = s_imageBuffer[0];
+			png = (u8*)s_imageBuffer[0];
 		}
 
 		// Master version.

@@ -20,6 +20,8 @@
 
 namespace
 {
+	static std::vector<u8> s_imageBuffer;
+
 	void checkGlError()
 	{
 		GLenum error = glGetError();
@@ -242,7 +244,19 @@ void ScreenCapture::writeFramesToDisk()
 	for (u32 i = 0; i < m_readCount; i++)
 	{
 		const u32 index = m_readIndex[i];
-		TFE_Image::writeImage(m_captures[index].outputPath.c_str(), m_width, m_height, (u32*)m_captures[index].imageData.data());
+		// Screenshots are upside down on Windows, so fix it here for now.
+	#ifdef _WIN32
+		// Images are upside down.
+		s_imageBuffer.resize(m_width * m_height * 4);
+		const u32* srcBuffer = (u32*)m_captures[index].imageData.data();
+		u32* dstBuffer = (u32*)s_imageBuffer.data();
+		for (u32 y = 0; y < m_height; y++)
+		{
+			memcpy(&dstBuffer[y * m_width], &srcBuffer[(m_height - y - 1) * m_width], m_width * 4);
+		}
+	#endif
+
+		TFE_Image::writeImage(m_captures[index].outputPath.c_str(), m_width, m_height, dstBuffer);
 	}
 	m_readCount = 0;
 }
