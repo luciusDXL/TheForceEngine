@@ -317,10 +317,10 @@ namespace LevelEditor
 	{
 		char imagePath[TFE_MAX_PATH];
 		TFE_Paths::appendPath(TFE_PathType::PATH_PROGRAM, localPath, imagePath, TFE_MAX_PATH);
-		Image* image = TFE_Image::get(imagePath);
+		SDL_Surface* image = TFE_Image::get(imagePath);
 		if (image)
 		{
-			TextureGpu* editCtrlHandle = TFE_RenderBackend::createTexture(image->width, image->height, image->data);
+			TextureGpu* editCtrlHandle = TFE_RenderBackend::createTexture(image->w, image->h, (u32*)image->pixels);
 			return TFE_RenderBackend::getGpuPtr(editCtrlHandle);
 		}
 		return nullptr;

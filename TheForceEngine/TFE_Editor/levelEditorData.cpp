@@ -127,16 +127,16 @@ namespace LevelEditorData
 				if (tex) { return tex; }
 
 				TFE_Paths::appendPath(TFE_PathType::PATH_PROGRAM, "UI_Images/SpiritObject.png", imagePath, TFE_MAX_PATH);
-				Image* image = TFE_Image::get(imagePath);
+				SDL_Surface* image = TFE_Image::get(imagePath);
 				if (image)
 				{
 					s_objIcons.push_back({});
 					tex = &s_objIcons.back();
 					tex->scale = { 1.0f, 1.0f };
 
-					tex->texture = TFE_RenderBackend::createTexture(image->width, image->height, image->data);
-					tex->width = image->width;
-					tex->height = image->height;
+					tex->texture = TFE_RenderBackend::createTexture(image->w, image->h, (u32*)image->pixels);
+					tex->width = image->w;
+					tex->height = image->h;
 					strcpy(tex->name, "SpiritObject.png");
 
 					s_editorLevel.textureMap[tex->name] = tex;
@@ -149,16 +149,16 @@ namespace LevelEditorData
 				if (tex) { return tex; }
 
 				TFE_Paths::appendPath(TFE_PathType::PATH_PROGRAM, "UI_Images/SafeObject.png", imagePath, TFE_MAX_PATH);
-				Image* image = TFE_Image::get(imagePath);
+				SDL_Surface* image = TFE_Image::get(imagePath);
 				if (image)
 				{
 					s_objIcons.push_back({});
 					tex = &s_objIcons.back();
 					tex->scale = { 1.0f, 1.0f };
 
-					tex->texture = TFE_RenderBackend::createTexture(image->width, image->height, image->data);
-					tex->width = image->width;
-					tex->height = image->height;
+					tex->texture = TFE_RenderBackend::createTexture(image->w, image->h, (u32*)image->pixels);
+					tex->width = image->w;
+					tex->height = image->h;
 					strcpy(tex->name, "SafeObject.png");
 
 					s_editorLevel.textureMap[tex->name] = tex;
@@ -221,16 +221,16 @@ namespace LevelEditorData
 				if (tex) { return tex; }
 								
 				TFE_Paths::appendPath(TFE_PathType::PATH_PROGRAM, "UI_Images/SoundObject.png", imagePath, TFE_MAX_PATH);
-				Image* image = TFE_Image::get(imagePath);
+				SDL_Surface* image = TFE_Image::get(imagePath);
 				if (image)
 				{
 					s_objIcons.push_back({});
 					tex = &s_objIcons.back();
 					tex->scale = { 1.0f, 1.0f };
 
-					tex->texture = TFE_RenderBackend::createTexture(image->width, image->height, image->data);
-					tex->width = image->width;
-					tex->height = image->height;
+					tex->texture = TFE_RenderBackend::createTexture(image->w, image->h, (u32*)image->pixels);
+					tex->width = image->w;
+					tex->height = image->h;
 					strcpy(tex->name, "SoundObject.png");
 
 					s_editorLevel.textureMap[tex->name] = tex;
