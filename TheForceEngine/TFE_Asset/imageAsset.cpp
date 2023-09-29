@@ -71,7 +71,7 @@ namespace TFE_Image
 
 	SDL_Surface* loadFromMemory(const u8* buffer, size_t size)
 	{
-		SDL_RWops* memops = SDL_RWFromConstMem(buffer, size);
+		SDL_RWops* memops = SDL_RWFromConstMem(buffer, (s32)size);
 		if (!memops)
 			return nullptr;
 
@@ -138,13 +138,29 @@ namespace TFE_Image
 
 	void writeImage(const char* path, u32 width, u32 height, u32* pixelData)
 	{
-		SDL_Surface* surf = SDL_CreateRGBSurfaceFrom(pixelData, width, height,
+		// Screenshots are upside down on Windows, so fix it here for now.
+		u32* writeBuffer = pixelData;
+#ifdef _WIN32
+		// Images are upside down.
+		s_buffer.resize(width * height * 4);
+		const u32* srcBuffer = pixelData;
+		u32* dstBuffer = (u32*)s_buffer.data();
+		for (u32 y = 0; y < height; y++)
+		{
+			memcpy(&dstBuffer[y * width], &srcBuffer[(height - y - 1) * width], width * 4);
+		}
+		writeBuffer = dstBuffer;
+#endif
+
+		SDL_Surface* surf = SDL_CreateRGBSurfaceFrom(writeBuffer, width, height,
 							     32, width * sizeof(u32), 
 							     0xFF, 0xFF00, 0xFF0000, 0xFF000000);
 		if (!surf)
+		{
+			TFE_System::logWrite(LOG_ERROR, "writeImage", "Saving PNG '%s' - cannot allocate surface", path);
 			return;
-		int ret = IMG_SavePNG(surf, path);
-		if (ret != 0)
+		}
+		if (IMG_SavePNG(surf, path) != 0)
 		{
 			TFE_System::logWrite(LOG_ERROR, "writeImage", "Saving PNG '%s' failed with '%s'", path, SDL_GetError());
 		}
@@ -159,7 +175,7 @@ namespace TFE_Image
 	{
 		const size_t bytes = num * size;
 		const ptrdiff_t space = context->hidden.mem.stop - context->hidden.mem.here;
-		if (space >= bytes)
+		if (space >= (ptrdiff_t)bytes)
 		{
 			memcpy(context->hidden.mem.here, ptr, bytes);
 			context->hidden.mem.here += bytes;
@@ -224,7 +240,7 @@ namespace TFE_Image
 
 	void readImageFromMemory(SDL_Surface** output, size_t size, const u32* pixelData)
 	{
-		SDL_RWops* memops = SDL_RWFromConstMem(pixelData, size);
+		SDL_RWops* memops = SDL_RWFromConstMem(pixelData, (s32)size);
 		if (!memops)
 			return;
 
