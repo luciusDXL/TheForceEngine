@@ -1616,9 +1616,10 @@ namespace AssetBrowser
 		size_t len = strlen(path);
 		if (path[len - 1] != '/' && path[len - 1] != '\\')
 		{
-			path[len] = '\\';
+			path[len] = '/';
 			path[len + 1] = 0;
 		}
+		FileUtil::fixupPath(path);
 
 		const char* assetSubPath[] =
 		{
@@ -1655,7 +1656,7 @@ namespace AssetBrowser
 			archive->closeFile();
 
 			char fullPath[TFE_MAX_PATH];
-			sprintf(fullPath, "%s\\%s", subDir, asset->name.c_str());
+			sprintf(fullPath, "%s/%s", subDir, asset->name.c_str());
 			FileStream outFile;
 			if (outFile.open(fullPath, FileStream::MODE_WRITE))
 			{
