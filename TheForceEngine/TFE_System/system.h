@@ -11,7 +11,9 @@
 #define TFE_MINOR_VERSION 2
 #define TFE_BUILD_VERSION 1
 
+#if defined(_WIN32) || defined(BUILD_EDITOR)
 #define ENABLE_EDITOR 1
+#endif
 
 enum LogWriteType
 {
