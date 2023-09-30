@@ -11,12 +11,7 @@
 #define TFE_MINOR_VERSION 2
 #define TFE_BUILD_VERSION 1
 
-// Avoid breaking the Linux build for now.
-#ifdef _WIN32
-	#define ENABLE_EDITOR 1
-#else
-	#define ENABLE_EDITOR 0
-#endif
+#define ENABLE_EDITOR 1
 
 enum LogWriteType
 {

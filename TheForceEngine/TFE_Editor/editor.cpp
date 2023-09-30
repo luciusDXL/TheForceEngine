@@ -72,7 +72,7 @@ namespace TFE_Editor
 			f32 textWidth = ImGui::CalcTextSize(s_msgBox.msg).x + style.FramePadding.x;
 			f32 buttonWidth = ImGui::CalcTextSize("OK").x;
 
-			ImGui::Text(s_msgBox.msg);
+			ImGui::Text("%s", s_msgBox.msg);
 			ImGui::Separator();
 
 			ImGui::SetCursorPosX(ImGui::GetCursorPosX() + (textWidth - buttonWidth) * 0.5f);

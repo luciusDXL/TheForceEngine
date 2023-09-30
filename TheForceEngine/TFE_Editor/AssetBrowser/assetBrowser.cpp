@@ -140,7 +140,7 @@ namespace AssetBrowser
 	void label(const char* label)
 	{
 		ImGui::PushFont(TFE_FrontEndUI::getDialogFont());
-		ImGui::LabelText("##Label", label);
+		ImGui::LabelText("##Label", "%s", label);
 		ImGui::PopFont();
 	}
 
@@ -149,7 +149,7 @@ namespace AssetBrowser
 	void listSelection(const char* labelText, const char** listValues, size_t listLen, s32* index)
 	{
 		ImGui::SetNextItemWidth(UI_SCALE(256));
-		ImGui::LabelText("##Label", labelText); ImGui::SameLine(UI_SCALE(96));
+		ImGui::LabelText("##Label", "%s", labelText); ImGui::SameLine(UI_SCALE(96));
 
 		char comboId[256];
 		sprintf(comboId, "##%s", labelText);
@@ -181,7 +181,7 @@ namespace AssetBrowser
 	void listSelectionPalette(const char* labelText, std::vector<Palette>& listValues, s32* index)
 	{
 		ImGui::SetNextItemWidth(UI_SCALE(256));
-		ImGui::LabelText("##Label", labelText); ImGui::SameLine(UI_SCALE(96));
+		ImGui::LabelText("##Label", "%s", labelText); ImGui::SameLine(UI_SCALE(96));
 
 		char comboId[256];
 		sprintf(comboId, "##%s", labelText);
@@ -191,7 +191,7 @@ namespace AssetBrowser
 	void listSelectionLevel(const char* labelText, std::vector<LevelAssets>& listValues, s32* index)
 	{
 		ImGui::SetNextItemWidth(UI_SCALE(256));
-		ImGui::LabelText("##Label", labelText); ImGui::SameLine(UI_SCALE(96));
+		ImGui::LabelText("##Label", "%s", labelText); ImGui::SameLine(UI_SCALE(96));
 
 		char comboId[256];
 		sprintf(comboId, "##%s", labelText);
