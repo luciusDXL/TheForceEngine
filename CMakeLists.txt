@@ -54,6 +54,7 @@ if(LINUX)
 	find_package(OpenGL REQUIRED)
 	target_include_directories(tfe PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 	target_include_directories(tfe PRIVATE ${SDL2_INCLUDE_DIRS})
+	target_include_directories(tfe PRIVATE ${SDL2_IMAGE_INCLUDE_DIRS})
 	target_link_libraries(tfe PRIVATE
 				${OPENGL_LIBRARIES}
 				${GLEW_LIBRARIES}
