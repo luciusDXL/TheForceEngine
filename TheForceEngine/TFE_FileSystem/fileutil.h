@@ -31,4 +31,5 @@ namespace FileUtil
 	void convertToOSPath(const char* path, char* pathOS);
 
 	void replaceExtension(const char* srcPath, const char* newExt, char* outPath);
+	void stripExtension(const char* srcPath, char* outPath);
 }

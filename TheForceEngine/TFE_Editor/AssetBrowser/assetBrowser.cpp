@@ -1595,6 +1595,14 @@ namespace AssetBrowser
 		}
 	}
 
+	void writeGpuTextureAsPng(TextureGpu* tex, const char* writePath)
+	{
+		WorkBuffer& buffer = getWorkBuffer();
+		buffer.resize(tex->getWidth() * tex->getHeight() * 4);
+		tex->readCpu(buffer.data());
+		TFE_Image::writeImage(writePath, tex->getWidth(), tex->getHeight(), (u32*)buffer.data());
+	}
+
 	void exportSelected()
 	{
 		if (!FileUtil::directoryExits(s_editorConfig.exportPath))
@@ -1655,56 +1663,36 @@ namespace AssetBrowser
 				outFile.close();
 			}
 
+			char pngFile[TFE_MAX_PATH];
 			if (asset->type == TYPE_TEXTURE)
 			{
 				EditorTexture* texture = (EditorTexture*)getAssetData(asset->handle);
 				if (texture && texture->frameCount == 1)
 				{
-					TextureGpu* frame = texture->frames[0];
-					buffer.resize(frame->getWidth() * frame->getHeight() * 4);
-					frame->readCpu(buffer.data());
-
-					char pngFile[TFE_MAX_PATH];
 					FileUtil::replaceExtension(fullPath, "PNG", pngFile);
-					TFE_Image::writeImage(pngFile, texture->width, texture->height, (u32*)buffer.data());
+					writeGpuTextureAsPng(texture->frames[0], pngFile);
 				}
 				else if (texture && texture->frameCount > 1)
 				{
-					char pngFile[TFE_MAX_PATH];
-					FileUtil::getFileNameFromPath(fullPath, pngFile);
-
+					FileUtil::stripExtension(fullPath, pngFile);
 					for (u32 f = 0; f < texture->frameCount; f++)
 					{
-						sprintf(fullPath, "%s\\%s_%d.png", subDir, pngFile, f);
-
-						TextureGpu* frame = texture->frames[f];
-						buffer.resize(frame->getWidth() * frame->getHeight() * 4);
-						frame->readCpu(buffer.data());
-						TFE_Image::writeImage(fullPath, texture->width, texture->height, (u32*)buffer.data());
+						sprintf(fullPath, "%s_%d.png", pngFile, f);
+						writeGpuTextureAsPng(texture->frames[f], fullPath);
 					}
 				}
 			}
 			else if (asset->type == TYPE_FRAME)
 			{
 				EditorFrame* frame = (EditorFrame*)getAssetData(asset->handle);
-				TextureGpu* tex = frame->texGpu;
-				buffer.resize(tex->getWidth() * tex->getHeight() * 4);
-				tex->readCpu(buffer.data());
-
-				char pngFile[TFE_MAX_PATH];
 				FileUtil::replaceExtension(fullPath, "PNG", pngFile);
-				TFE_Image::writeImage(pngFile, tex->getWidth(), tex->getHeight(), (u32*)buffer.data());
+				writeGpuTextureAsPng(frame->texGpu, pngFile);
 			}
 			else if (asset->type == TYPE_SPRITE)
 			{
 				EditorSprite* sprite = (EditorSprite*)getAssetData(asset->handle);
-				TextureGpu* tex = sprite->texGpu;
-				buffer.resize(tex->getWidth() * tex->getHeight() * 4);
-				tex->readCpu(buffer.data());
-
-				char pngFile[TFE_MAX_PATH];
 				FileUtil::replaceExtension(fullPath, "PNG", pngFile);
-				TFE_Image::writeImage(pngFile, tex->getWidth(), tex->getHeight(), (u32*)buffer.data());
+				writeGpuTextureAsPng(sprite->texGpu, pngFile);
 			}
 		}
 	}

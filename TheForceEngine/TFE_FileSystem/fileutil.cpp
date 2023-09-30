@@ -320,4 +320,24 @@ namespace FileUtil
 			strcat(outPath, newExt);
 		}
 	}
+
+	void stripExtension(const char* srcPath, char* outPath)
+	{
+		// Find the last '.' in the name.
+		size_t len = strlen(srcPath);
+		s32 lastDot = -1;
+		for (size_t i = 0; i < len; i++)
+		{
+			if (srcPath[i] == '.') { lastDot = (s32)i; }
+		}
+		if (lastDot >= 0)
+		{
+			outPath[0] = 0;
+			strncpy(outPath, srcPath, lastDot);
+		}
+		else
+		{
+			strcpy(outPath, srcPath);
+		}
+	}
 }
