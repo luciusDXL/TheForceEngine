@@ -1291,6 +1291,12 @@
     <ClInclude Include="TFE_Editor\AssetBrowser\assetBrowser.h">
       <Filter>Source\TFE_Editor\AssetBrowser</Filter>
     </ClInclude>
+    <ClInclude Include="TFE_Editor\editorProject.h">
+      <Filter>Source\TFE_Editor</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Editor\errorMessages.h">
+      <Filter>Source\TFE_Editor</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -2189,6 +2195,12 @@
     </ClCompile>
     <ClCompile Include="TFE_Editor\AssetBrowser\assetBrowser.cpp">
       <Filter>Source\TFE_Editor\AssetBrowser</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Editor\editorProject.cpp">
+      <Filter>Source\TFE_Editor</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Editor\errorMessages.cpp">
+      <Filter>Source\TFE_Editor</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

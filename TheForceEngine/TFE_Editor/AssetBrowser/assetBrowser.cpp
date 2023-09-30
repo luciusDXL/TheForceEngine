@@ -1,15 +1,19 @@
 #include "assetBrowser.h"
+#include <TFE_Editor/errorMessages.h>
 #include <TFE_Editor/editorConfig.h>
 #include <TFE_Editor/editor.h>
 #include <TFE_Editor/EditorAsset/editorAsset.h>
 #include <TFE_Editor/EditorAsset/editorTexture.h>
 #include <TFE_Editor/EditorAsset/editorFrame.h>
 #include <TFE_Editor/EditorAsset/editorSprite.h>
+#include <TFE_Asset/imageAsset.h>
 #include <TFE_DarkForces/mission.h>
+#include <TFE_Input/input.h>
 #include <TFE_FrontEndUI/frontEndUi.h>
 #include <TFE_RenderBackend/renderBackend.h>
 #include <TFE_System/system.h>
 #include <TFE_Settings/settings.h>
+#include <TFE_FileSystem/filestream.h>
 #include <TFE_FileSystem/fileutil.h>
 #include <TFE_FileSystem/paths.h>
 #include <TFE_Archive/archive.h>
@@ -48,6 +52,7 @@ namespace AssetBrowser
 		AssetHandle handle;
 	};
 	typedef std::vector<Asset> AssetList;
+	typedef std::vector<s32> SelectionList;
 
 	struct Palette
 	{
@@ -92,8 +97,10 @@ namespace AssetBrowser
 	static s32 s_defaultPal = 0;
 
 	static s32 s_hovered = -1;
-	static s32 s_selected = -1;
 	static s32 s_menuHeight = 20;
+
+	static SelectionList s_selected;
+	static s32 s_selectRange[2];
 	   	
 	static ViewerInfo s_viewInfo = {};
 	static AssetList s_viewAssetList;
@@ -102,6 +109,11 @@ namespace AssetBrowser
 	// Forward Declarations
 	void updateAssetList();
 	void reloadAsset(Asset* asset, s32 palId, s32 lightLevel = 32);
+	bool isSelected(s32 index);
+	void unselect(s32 index);
+	void select(s32 index);
+	void exportSelected();
+	s32 getAssetPalette(const char* name);
 
 	void init()
 	{
@@ -214,8 +226,10 @@ namespace AssetBrowser
 		{ 
 			listChanged = true;
 			s_viewInfo.levelSource = levelSource;
-			s_selected = -1;
+			s_selected.clear();
 			s_hovered = -1;
+			s_selectRange[0] = -1;
+			s_selectRange[1] = -1;
 		}
 		s_viewInfo.prevGame = s_viewInfo.game;
 		s_viewInfo.prevType = s_viewInfo.type;
@@ -249,7 +263,9 @@ namespace AssetBrowser
 		}
 	}
 
-	void drawInfoPanel(Asset* asset, u32 infoWidth, u32 infoHeight)
+	static s32 s_selectedPalette = 0;
+
+	void drawInfoPanel(Asset* asset, u32 infoWidth, u32 infoHeight, bool multiselect)
 	{
 		DisplayInfo displayInfo;
 		TFE_RenderBackend::getDisplayInfo(&displayInfo);
@@ -263,10 +279,56 @@ namespace AssetBrowser
 
 		bool active = true;
 		ImGui::Begin("Asset Info", &active, window_flags);
-		if (asset)
+		if (multiselect)
+		{
+			AssetType type = s_viewAssetList[s_selected[0]].type;
+			ImGui::LabelText("##SelectedCount", "Selected Count: %d", (s32)s_selected.size());
+			ImGui::LabelText("##Type", "Type: %s", c_assetType[type]);
+
+			if (type == TYPE_TEXTURE || type == TYPE_SPRITE || type == TYPE_FRAME)
+			{
+				listSelectionPalette("Palette", s_palettes, &s_selectedPalette);
+				if (ImGui::Button("Force Palette"))
+				{
+					const size_t count = s_selected.size();
+					for (size_t i = 0; i < count; i++)
+					{
+						Asset* asset = &s_viewAssetList[s_selected[i]];
+						reloadAsset(asset, s_selectedPalette, 32);
+					}
+				}
+				ImGui::SameLine();
+				if (ImGui::Button("Reset To Default"))
+				{
+					const size_t count = s_selected.size();
+					for (size_t i = 0; i < count; i++)
+					{
+						Asset* asset = &s_viewAssetList[s_selected[i]];
+						s32 palId = getAssetPalette(asset->name.c_str());
+						reloadAsset(asset, palId, 32);
+					}
+				}
+				ImGui::Separator();
+			}
+			if (ImGui::Button("Export"))
+			{
+				exportSelected();
+			}
+		}
+		else if (asset)
 		{
 			ImGui::LabelText("##Name", "Name: %s", asset->name.c_str());
 			ImGui::LabelText("##Type", "Type: %s", c_assetType[asset->type]);
+
+			if (!s_selected.empty())
+			{
+				ImGui::Separator();
+				if (ImGui::Button("Export"))
+				{
+					exportSelected();
+				}
+				ImGui::Separator();
+			}
 
 			if (asset->type == TYPE_TEXTURE)
 			{
@@ -469,10 +531,78 @@ namespace AssetBrowser
 		}
 		ImGui::End();
 	}
+
+	bool isSelected(s32 index)
+	{
+		if(s_selected.empty()) { return false; }
+
+		const size_t count = s_selected.size();
+		const s32* selected = s_selected.data();
+		for (size_t i = 0; i < count; i++)
+		{
+			if (selected[i] == index) { return true; }
+		}
+		return false;
+	}
+				
+	void unselect(s32 index)
+	{
+		if (index < 0 || index >= s_viewAssetList.size()) { return; }
+		const size_t count = s_selected.size();
+		const s32* selected = s_selected.data();
+		size_t selectedIndex = count;
+		for (size_t i = 0; i < count; i++)
+		{
+			if (selected[i] == index)
+			{
+				selectedIndex = i;
+				break;
+			}
+		}
+		if (selectedIndex < count)
+		{
+			s_selected.erase(s_selected.begin() + selectedIndex);
+		}
+	}
+
+	void select(s32 index)
+	{
+		if (index < 0 || index >= s_viewAssetList.size()) { return; }
+		const size_t count = s_selected.size();
+		const s32* selected = s_selected.data();
+		size_t selectedIndex = count;
+		for (size_t i = 0; i < count; i++)
+		{
+			if (selected[i] == index)
+			{
+				// Already selected.
+				return;
+			}
+		}
+		s_selected.push_back(index);
+	}
+
+	void selectRange()
+	{
+		s_selected.clear();
+		if (s_selectRange[1] < 0)
+		{
+			s_selected.push_back(s_selectRange[0]);
+			return;
+		}
+		if (s_selectRange[0] > s_selectRange[1])
+		{
+			std::swap(s_selectRange[0], s_selectRange[1]);
+		}
+		for (s32 i = s_selectRange[0]; i <= s_selectRange[1]; i++)
+		{
+			s_selected.push_back(i);
+		}
+	}
 		
 	ImVec4 getBorderColor(s32 index)
 	{
-		if (index == s_selected)
+		if (isSelected(index))
 		{
 			return ImVec4(1.0f, 1.0f, 0.5f, 1.0f);
 		}
@@ -523,7 +653,12 @@ namespace AssetBrowser
 				if (ImGui::IsMouseClicked(0) && ImGui::IsWindowHovered(ImGuiHoveredFlags_ChildWindows))
 				{
 					mouseClicked = true;
-					s_selected = -1;
+					if (!TFE_Input::keyModDown(KEYMOD_CTRL) && !TFE_Input::keyModDown(KEYMOD_SHIFT))
+					{
+						s_selected.clear();
+						s_selectRange[0] = -1;
+						s_selectRange[1] = -1;
+					}
 				}
 			}
 			else
@@ -671,9 +806,40 @@ namespace AssetBrowser
 						if (ImGui::IsWindowHovered())
 						{
 							s_hovered = a;
-							if (mouseClicked)
+							if (mouseClicked && TFE_Input::keyModDown(KEYMOD_CTRL))
 							{
-								s_selected = a;
+								if (isSelected(a))
+								{
+									unselect(a);
+								}
+								else
+								{
+									select(a);
+								}
+
+								s_selectRange[0] = a;
+								s_selectRange[1] = -1;
+							}
+							else if (mouseClicked && TFE_Input::keyModDown(KEYMOD_SHIFT))
+							{
+								if (s_selectRange[0] < 0)
+								{
+									s_selectRange[0] = a;
+									s_selectRange[1] = -1;
+								}
+								else
+								{
+									s_selectRange[1] = a;
+								}
+								selectRange();
+							}
+							else if (mouseClicked)
+							{
+								s_selected.resize(1);
+								s_selected[0] = a;
+
+								s_selectRange[0] = a;
+								s_selectRange[1] = -1;
 							}
 						}
 					}
@@ -685,15 +851,20 @@ namespace AssetBrowser
 
 			// Info Panel
 			Asset* selectedAsset = nullptr;
-			if (s_selected >= 0 && s_selected < s_viewAssetList.size())
+			bool multiselect = false;
+			if (s_selected.size() == 1 && s_selected[0] < s_viewAssetList.size())
 			{
-				selectedAsset = &s_viewAssetList[s_selected];
+				selectedAsset = &s_viewAssetList[s_selected[0]];
+			}
+			else if (s_selected.size() > 1)
+			{
+				multiselect = true;
 			}
 			else if (s_hovered >= 0 && s_hovered < s_viewAssetList.size())
 			{
 				selectedAsset = &s_viewAssetList[s_hovered];
 			}
-			drawInfoPanel(selectedAsset, infoWidth, infoHeight);
+			drawInfoPanel(selectedAsset, infoWidth, infoHeight, multiselect);
 		}
 
 		ImGui::End();
@@ -723,6 +894,42 @@ namespace AssetBrowser
 
 	void render()
 	{
+	}
+
+	void selectAll()
+	{
+		const s32 count = (s32)s_viewAssetList.size();
+		s_selected.resize(count);
+		for (s32 i = 0; i < count; i++)
+		{
+			s_selected[i] = i;
+		}
+
+		s_selectRange[0] = 0;
+		s_selectRange[1] = -1;
+	}
+
+	void selectNone()
+	{
+		s_selected.clear();
+		s_selectRange[0] = -1;
+		s_selectRange[1] = -1;
+	}
+
+	void invertSelection()
+	{
+		const s32 count = (s32)s_viewAssetList.size();
+		SelectionList list;
+		s_selectRange[0] = -1;
+		s_selectRange[1] = -1;
+		for (s32 i = 0; i < count; i++)
+		{
+			if (!isSelected(i))
+			{
+				list.push_back(i);
+			}
+		}
+		s_selected = list;
 	}
 
 	////////////////////////////////////////////////
@@ -1384,6 +1591,120 @@ namespace AssetBrowser
 				AssetColorData colorData = { nullptr, hasColormap ? colormapData : nullptr, 0, 32 };
 				asset.handle = loadAssetData(TYPE_PALETTE, archive, &colorData, projAsset->name.c_str());
 				s_viewAssetList.push_back(asset);
+			}
+		}
+	}
+
+	void exportSelected()
+	{
+		if (!FileUtil::directoryExits(s_editorConfig.exportPath))
+		{
+			showMessageBox("ERROR", getErrorMsg(ERROR_INVALID_EXPORT_PATH), s_editorConfig.exportPath);
+			return;
+		}
+
+		char path[TFE_MAX_PATH];
+		strcpy(path, s_editorConfig.exportPath);
+		size_t len = strlen(path);
+		if (path[len - 1] != '/' && path[len - 1] != '\\')
+		{
+			path[len] = '\\';
+			path[len + 1] = 0;
+		}
+
+		const char* assetSubPath[] =
+		{
+			"Textures",    // TYPE_TEXTURE
+			"Sprites",     // TYPE_SPRITE
+			"Frames",      // TYPE_FRAME
+			"Models",      // TYPE_3DOBJ
+			"Levels",      // TYPE_LEVEL
+			"Palettes",    // TYPE_PALETTE
+		};
+
+		const s32 count = (s32)s_selected.size();
+		const s32* index = s_selected.data();
+		for (s32 i = 0; i < count; i++)
+		{
+			Asset* asset = &s_viewAssetList[index[i]];
+
+			char subDir[TFE_MAX_PATH];
+			sprintf(subDir, "%s%s", path, assetSubPath[asset->type]);
+			if (!FileUtil::directoryExits(subDir))
+			{
+				FileUtil::makeDirectory(subDir);
+			}
+
+			// Read the full contents.
+			Archive* archive = getArchive(asset->archiveName.c_str(), asset->gameId);
+			if (!archive) { continue; }
+			if (!archive->openFile(asset->name.c_str())) { continue;}
+
+			WorkBuffer& buffer = getWorkBuffer();
+			size_t len = archive->getFileLength();
+			buffer.resize(len);
+			archive->readFile(buffer.data(), len);
+			archive->closeFile();
+
+			char fullPath[TFE_MAX_PATH];
+			sprintf(fullPath, "%s\\%s", subDir, asset->name.c_str());
+			FileStream outFile;
+			if (outFile.open(fullPath, FileStream::MODE_WRITE))
+			{
+				outFile.writeBuffer(buffer.data(), (u32)len);
+				outFile.close();
+			}
+
+			if (asset->type == TYPE_TEXTURE)
+			{
+				EditorTexture* texture = (EditorTexture*)getAssetData(asset->handle);
+				if (texture && texture->frameCount == 1)
+				{
+					TextureGpu* frame = texture->frames[0];
+					buffer.resize(frame->getWidth() * frame->getHeight() * 4);
+					frame->readCpu(buffer.data());
+
+					char pngFile[TFE_MAX_PATH];
+					FileUtil::replaceExtension(fullPath, "PNG", pngFile);
+					TFE_Image::writeImage(pngFile, texture->width, texture->height, (u32*)buffer.data());
+				}
+				else if (texture && texture->frameCount > 1)
+				{
+					char pngFile[TFE_MAX_PATH];
+					FileUtil::getFileNameFromPath(fullPath, pngFile);
+
+					for (u32 f = 0; f < texture->frameCount; f++)
+					{
+						sprintf(fullPath, "%s\\%s_%d.png", subDir, pngFile, f);
+
+						TextureGpu* frame = texture->frames[f];
+						buffer.resize(frame->getWidth() * frame->getHeight() * 4);
+						frame->readCpu(buffer.data());
+						TFE_Image::writeImage(fullPath, texture->width, texture->height, (u32*)buffer.data());
+					}
+				}
+			}
+			else if (asset->type == TYPE_FRAME)
+			{
+				EditorFrame* frame = (EditorFrame*)getAssetData(asset->handle);
+				TextureGpu* tex = frame->texGpu;
+				buffer.resize(tex->getWidth() * tex->getHeight() * 4);
+				tex->readCpu(buffer.data());
+
+				char pngFile[TFE_MAX_PATH];
+				FileUtil::replaceExtension(fullPath, "PNG", pngFile);
+				TFE_Image::writeImage(pngFile, tex->getWidth(), tex->getHeight(), (u32*)buffer.data());
+			}
+			else if (asset->type == TYPE_SPRITE)
+			{
+				EditorSprite* sprite = (EditorSprite*)getAssetData(asset->handle);
+				TextureGpu* tex = sprite->texGpu;
+				buffer.resize(tex->getWidth() * tex->getHeight() * 4);
+				tex->readCpu(buffer.data());
+
+				char pngFile[TFE_MAX_PATH];
+				FileUtil::replaceExtension(fullPath, "PNG", pngFile);
+				TFE_Image::writeImage(pngFile, tex->getWidth(), tex->getHeight(), (u32*)buffer.data());
 			}
 		}
 	}

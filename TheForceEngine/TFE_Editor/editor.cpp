@@ -19,6 +19,13 @@ namespace TFE_Editor
 		EDIT_ASSET,
 		EDIT_LEVEL,
 	};
+
+	struct MessageBox
+	{
+		bool active = false;
+		char id[512];
+		char msg[TFE_MAX_PATH * 2] = "";
+	};
 	
 	static bool s_showPerf = true;
 	static bool s_showEditor = true;
@@ -27,6 +34,8 @@ namespace TFE_Editor
 	static bool s_exitEditor = false;
 	static bool s_configView = false;
 	static WorkBuffer s_workBuffer;
+
+	static MessageBox s_msgBox = {};
 
 	static ImFont* s_fonts[FONT_COUNT * FONT_SIZE_COUNT] = { 0 };
 	
@@ -46,6 +55,7 @@ namespace TFE_Editor
 		loadFonts();
 		loadConfig();
 		AssetBrowser::init();
+		s_msgBox = {};
 	}
 
 	void disable()
@@ -53,12 +63,41 @@ namespace TFE_Editor
 		AssetBrowser::destroy();
 	}
 
+	void messageBoxUi()
+	{
+		pushFont(FONT_SMALL);
+		if (ImGui::BeginPopupModal(s_msgBox.id, nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+		{
+			ImGuiStyle& style = ImGui::GetStyle();
+			f32 textWidth = ImGui::CalcTextSize(s_msgBox.msg).x + style.FramePadding.x;
+			f32 buttonWidth = ImGui::CalcTextSize("OK").x;
+
+			ImGui::Text(s_msgBox.msg);
+			ImGui::Separator();
+
+			ImGui::SetCursorPosX(ImGui::GetCursorPosX() + (textWidth - buttonWidth) * 0.5f);
+			if (ImGui::Button("OK"))
+			{
+				s_msgBox.active = false;
+				ImGui::CloseCurrentPopup();
+			}
+			ImGui::EndPopup();
+		}
+		popFont();
+	}
+
 	bool update(bool consoleOpen)
 	{
 		TFE_RenderBackend::clearWindow();
+
+		if (s_msgBox.active)
+		{
+			ImGui::OpenPopup(s_msgBox.id);
+		}
+
 		menu();
 
-		if (configSetupRequired())
+		if (configSetupRequired() && !s_msgBox.active)
 		{
 			s_editorMode = EDIT_CONFIG;
 		}
@@ -75,9 +114,22 @@ namespace TFE_Editor
 			AssetBrowser::update();
 		}
 
+		if (s_msgBox.active)
+		{
+			messageBoxUi();
+		}
+
 		if (TFE_Input::keyPressed(KEY_ESCAPE))
 		{
-			s_exitEditor = true;
+			if (s_msgBox.active)
+			{
+				s_msgBox.active = false;
+				ImGui::CloseCurrentPopup();
+			}
+			else
+			{
+				s_exitEditor = true;
+			}
 		}
 		
 		return s_exitEditor;
@@ -149,6 +201,31 @@ namespace TFE_Editor
 				}
 				ImGui::EndMenu();
 			}
+			if (ImGui::BeginMenu("Select"))
+			{
+				if (ImGui::MenuItem("Select All", NULL, (bool*)NULL))
+				{
+					if (s_editorMode == EDIT_ASSET)
+					{
+						AssetBrowser::selectAll();
+					}
+				}
+				if (ImGui::MenuItem("Select None", NULL, (bool*)NULL))
+				{
+					if (s_editorMode == EDIT_ASSET)
+					{
+						AssetBrowser::selectNone();
+					}
+				}
+				if (ImGui::MenuItem("Invert Selection", NULL, (bool*)NULL))
+				{
+					if (s_editorMode == EDIT_ASSET)
+					{
+						AssetBrowser::invertSelection();
+					}
+				}
+				ImGui::EndMenu();
+			}
 		}
 		endMenuBar();
 
@@ -184,5 +261,18 @@ namespace TFE_Editor
 	void popFont()
 	{
 		ImGui::PopFont();
+	}
+		
+	void showMessageBox(const char* type, const char* msg, ...)
+	{
+		char fullStr[TFE_MAX_PATH * 2];
+		va_list arg;
+		va_start(arg, msg);
+		vsprintf(fullStr, msg, arg);
+		va_end(arg);
+
+		s_msgBox.active = true;
+		strcpy(s_msgBox.msg, fullStr);
+		sprintf(s_msgBox.id, "%s##MessageBox", type);
 	}
 }

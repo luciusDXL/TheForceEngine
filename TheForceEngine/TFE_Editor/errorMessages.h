@@ -11,23 +11,11 @@
 
 namespace TFE_Editor
 {
-	typedef std::vector<u8> WorkBuffer;
-	enum FontType
+	enum EditorError
 	{
-		FONT_SMALL = 0,
-		FONT_COUNT,
+		ERROR_INVALID_EXPORT_PATH = 0,
+		ERROR_COUNT,
 	};
 
-	void enable();
-	void disable();
-	bool update(bool consoleOpen = false);
-	bool render();
-
-	void pushFont(FontType type);
-	void popFont();
-
-	void showMessageBox(const char* type, const char* msg, ...);
-
-	// Resizable temporary memory.
-	WorkBuffer& getWorkBuffer();
+	const char* getErrorMsg(EditorError err);
 }

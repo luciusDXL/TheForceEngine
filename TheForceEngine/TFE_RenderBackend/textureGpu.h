@@ -47,6 +47,8 @@ public:
 	u32  getHeight() const { return m_height; }
 	u32  getLayers() const { return m_layers; }
 
+	void readCpu(u8* image);
+
 	inline u32 getHandle() const { return m_gpuHandle; }
 
 private:

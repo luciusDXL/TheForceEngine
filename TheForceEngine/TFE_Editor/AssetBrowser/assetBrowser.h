@@ -15,4 +15,8 @@ namespace AssetBrowser
 
 	void update();
 	void render();
+
+	void selectAll();
+	void selectNone();
+	void invertSelection();
 }
