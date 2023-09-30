@@ -1,10 +1,10 @@
 #include "assetBrowser.h"
-#include "editorAsset.h"
-#include "editorTexture.h"
-#include "editorFrame.h"
-#include "editorSprite.h"
-#include "editorConfig.h"
-#include "editor.h"
+#include <TFE_Editor/editorConfig.h>
+#include <TFE_Editor/editor.h>
+#include <TFE_Editor/EditorAsset/editorAsset.h>
+#include <TFE_Editor/EditorAsset/editorTexture.h>
+#include <TFE_Editor/EditorAsset/editorFrame.h>
+#include <TFE_Editor/EditorAsset/editorSprite.h>
 #include <TFE_DarkForces/mission.h>
 #include <TFE_FrontEndUI/frontEndUi.h>
 #include <TFE_RenderBackend/renderBackend.h>

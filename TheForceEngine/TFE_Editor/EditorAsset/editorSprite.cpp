@@ -1,6 +1,6 @@
 #include "editorSprite.h"
-#include "editor.h"
 #include "editorColormap.h"
+#include <TFE_Editor/editor.h>
 #include <TFE_Asset/spriteAsset_Jedi.h>
 #include <TFE_DarkForces/mission.h>
 #include <TFE_System/system.h>

@@ -52,7 +52,6 @@ namespace TFE_Editor
 	typedef u64 AssetHandle;
 
 	AssetHandle loadAssetData(AssetType type, Archive* archive, const AssetColorData* colorData, const char* name);
-	TextureGpu* loadAssetThumbnail(AssetType type, Archive* archive, const char* name, u32 thumbnailSize);
 	void  reloadAssetData(AssetHandle handle, Archive* archive, const AssetColorData* colorData);
 	void  freeAssetData(AssetHandle handle);
 	void* getAssetData(AssetHandle handle);

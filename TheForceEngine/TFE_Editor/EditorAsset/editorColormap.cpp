@@ -1,5 +1,5 @@
 #include "editorFrame.h"
-#include "editor.h"
+#include <TFE_Editor/editor.h>
 #include <TFE_DarkForces/mission.h>
 #include <TFE_System/system.h>
 #include <TFE_Archive/archive.h>

@@ -176,6 +176,12 @@
     <Filter Include="Source\TFE_Editor">
       <UniqueIdentifier>{7f1d4b6d-31c7-431d-8458-e47f7949c742}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\TFE_Editor\EditorAsset">
+      <UniqueIdentifier>{59028c8c-f700-4749-b808-6603d9161958}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\TFE_Editor\AssetBrowser">
+      <UniqueIdentifier>{39aec0b3-0a4e-4584-989b-a78fd6583de5}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="main.h">
@@ -1255,35 +1261,35 @@
     <ClInclude Include="TFE_Editor\editor.h">
       <Filter>Source\TFE_Editor</Filter>
     </ClInclude>
-    <ClInclude Include="TFE_Editor\editorTexture.h">
-      <Filter>Source\TFE_Editor</Filter>
-    </ClInclude>
     <ClInclude Include="TFE_FrontEndUI\uiTexture.h">
       <Filter>Source\TFE_FrontEndUI</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_Editor\assetBrowser.h">
-      <Filter>Source\TFE_Editor</Filter>
     </ClInclude>
     <ClInclude Include="TFE_Editor\editorConfig.h">
       <Filter>Source\TFE_Editor</Filter>
     </ClInclude>
-    <ClInclude Include="TFE_Editor\editorFrame.h">
-      <Filter>Source\TFE_Editor</Filter>
+    <ClInclude Include="TFE_Editor\EditorAsset\editorAsset.h">
+      <Filter>Source\TFE_Editor\EditorAsset</Filter>
     </ClInclude>
-    <ClInclude Include="TFE_Editor\editorColormap.h">
-      <Filter>Source\TFE_Editor</Filter>
+    <ClInclude Include="TFE_Editor\EditorAsset\editorColormap.h">
+      <Filter>Source\TFE_Editor\EditorAsset</Filter>
     </ClInclude>
-    <ClInclude Include="TFE_Editor\editorSprite.h">
-      <Filter>Source\TFE_Editor</Filter>
+    <ClInclude Include="TFE_Editor\EditorAsset\editorFrame.h">
+      <Filter>Source\TFE_Editor\EditorAsset</Filter>
     </ClInclude>
-    <ClInclude Include="TFE_Editor\editorAsset.h">
-      <Filter>Source\TFE_Editor</Filter>
+    <ClInclude Include="TFE_Editor\EditorAsset\editorLevelPreview.h">
+      <Filter>Source\TFE_Editor\EditorAsset</Filter>
     </ClInclude>
-    <ClInclude Include="TFE_Editor\editorObj3D.h">
-      <Filter>Source\TFE_Editor</Filter>
+    <ClInclude Include="TFE_Editor\EditorAsset\editorObj3D.h">
+      <Filter>Source\TFE_Editor\EditorAsset</Filter>
     </ClInclude>
-    <ClInclude Include="TFE_Editor\editorLevelPreview.h">
-      <Filter>Source\TFE_Editor</Filter>
+    <ClInclude Include="TFE_Editor\EditorAsset\editorSprite.h">
+      <Filter>Source\TFE_Editor\EditorAsset</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Editor\EditorAsset\editorTexture.h">
+      <Filter>Source\TFE_Editor\EditorAsset</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Editor\AssetBrowser\assetBrowser.h">
+      <Filter>Source\TFE_Editor\AssetBrowser</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -2154,35 +2160,35 @@
     <ClCompile Include="TFE_Editor\editor.cpp">
       <Filter>Source\TFE_Editor</Filter>
     </ClCompile>
-    <ClCompile Include="TFE_Editor\editorTexture.cpp">
-      <Filter>Source\TFE_Editor</Filter>
-    </ClCompile>
     <ClCompile Include="TFE_FrontEndUI\uiTexture.cpp">
       <Filter>Source\TFE_FrontEndUI</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_Editor\assetBrowser.cpp">
-      <Filter>Source\TFE_Editor</Filter>
     </ClCompile>
     <ClCompile Include="TFE_Editor\editorConfig.cpp">
       <Filter>Source\TFE_Editor</Filter>
     </ClCompile>
-    <ClCompile Include="TFE_Editor\editorFrame.cpp">
-      <Filter>Source\TFE_Editor</Filter>
+    <ClCompile Include="TFE_Editor\EditorAsset\editorAsset.cpp">
+      <Filter>Source\TFE_Editor\EditorAsset</Filter>
     </ClCompile>
-    <ClCompile Include="TFE_Editor\editorColormap.cpp">
-      <Filter>Source\TFE_Editor</Filter>
+    <ClCompile Include="TFE_Editor\EditorAsset\editorColormap.cpp">
+      <Filter>Source\TFE_Editor\EditorAsset</Filter>
     </ClCompile>
-    <ClCompile Include="TFE_Editor\editorSprite.cpp">
-      <Filter>Source\TFE_Editor</Filter>
+    <ClCompile Include="TFE_Editor\EditorAsset\editorFrame.cpp">
+      <Filter>Source\TFE_Editor\EditorAsset</Filter>
     </ClCompile>
-    <ClCompile Include="TFE_Editor\editorAsset.cpp">
-      <Filter>Source\TFE_Editor</Filter>
+    <ClCompile Include="TFE_Editor\EditorAsset\editorLevelPreview.cpp">
+      <Filter>Source\TFE_Editor\EditorAsset</Filter>
     </ClCompile>
-    <ClCompile Include="TFE_Editor\editorObj3D.cpp">
-      <Filter>Source\TFE_Editor</Filter>
+    <ClCompile Include="TFE_Editor\EditorAsset\editorObj3D.cpp">
+      <Filter>Source\TFE_Editor\EditorAsset</Filter>
     </ClCompile>
-    <ClCompile Include="TFE_Editor\editorLevelPreview.cpp">
-      <Filter>Source\TFE_Editor</Filter>
+    <ClCompile Include="TFE_Editor\EditorAsset\editorSprite.cpp">
+      <Filter>Source\TFE_Editor\EditorAsset</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Editor\EditorAsset\editorTexture.cpp">
+      <Filter>Source\TFE_Editor\EditorAsset</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Editor\AssetBrowser\assetBrowser.cpp">
+      <Filter>Source\TFE_Editor\AssetBrowser</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
