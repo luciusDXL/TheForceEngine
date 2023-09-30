@@ -39,6 +39,7 @@ include(GNUInstallDirs)
 
 ## Options
 option(DISABLE_SYSMIDI "Disable System-MIDI Output" OFF)
+option(ENABLE_EDITOR "Enable TFE Editor" OFF)
 
 
 add_executable(tfe)
@@ -84,6 +85,9 @@ endif()
 
 if(DISABLE_SYSMIDI)
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DNOSYSMIDI")
+endif()
+if(ENABLE_EDITOR)
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DBUILD_EDITOR")
 endif()
 
 
