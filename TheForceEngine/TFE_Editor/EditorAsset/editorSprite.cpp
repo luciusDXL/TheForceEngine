@@ -8,6 +8,8 @@
 #include <TFE_Jedi/Level/rtexture.h>
 #include <TFE_Jedi/Renderer/rcommon.h>
 #include <algorithm>
+#include <climits>
+#include <cstring>
 #include <vector>
 #include <map>
 
