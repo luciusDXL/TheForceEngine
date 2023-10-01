@@ -28,16 +28,13 @@ namespace TFE_Audio
 	};
 
 	void midiErrorCallback(RtMidiError::Type, const std::string&, void*);
-	// serialize access to the physical MIDI port, to at least
-	// prevent a buffer overrun in the Linux ALSA MIDI parser.
-	static SDL_mutex* serializer = nullptr;
 
 	SystemMidiDevice::SystemMidiDevice()
 	{
-		serializer = SDL_CreateMutex();
 		m_outputId = -1;
 		m_midiout = new RtMidiOut();
 		m_midiout->setErrorCallback(midiErrorCallback);
+		portLock = SDL_CreateMutex();
 
 		getOutputCount();
 	}
@@ -45,11 +42,8 @@ namespace TFE_Audio
 	SystemMidiDevice::~SystemMidiDevice()
 	{
 		exit();
-		if (serializer)
-		{
-			SDL_DestroyMutex(serializer);
-			serializer = nullptr;
-		}
+		SDL_DestroyMutex(portLock);
+		portLock = nullptr;
 	}
 
 	void SystemMidiDevice::exit()
@@ -71,13 +65,13 @@ namespace TFE_Audio
 
 	void SystemMidiDevice::message(const u8* msg, u32 len)
 	{
-		if (m_outputId >= 0 && serializer)
+		if (m_outputId >= 0)
 		{
 			// this mutex is uncontended except for a short time
 			// after a midi device switch is done in the settings.
-			SDL_LockMutex(serializer);
+			SDL_LockMutex(portLock);
 			m_midiout->sendMessage(msg, (size_t)len);
-			SDL_UnlockMutex(serializer);
+			SDL_UnlockMutex(portLock);
 		}
 	}
 
