@@ -204,6 +204,12 @@ namespace TFE_Jedi
 
 	TextureData* bitmap_load(const char* name, u32 decompress, AssetPool pool, bool addToCache)
 	{
+		if (strcasecmp(name, "SCRBARS.BM") == 0)
+		{
+			static s32 __x = 0;
+			__x++;
+		}
+
 		// TFE: Keep track of per-level texture state for serialization.
 		// This is also useful for handling per-level GPU texture mirrors.
 		TextureTable::iterator iTex = s_textureTable[pool].find(name);
@@ -437,11 +443,16 @@ namespace TFE_Jedi
 
 			// Allocate and read the BM image.
 			texture->image = (u8*)malloc(texture->dataSize);
-			if (texture->image)
+			if (texture->image && intptr_t((u8*)data - (u8*)fheader) + texture->dataSize <= size)
 			{
 				memcpy(texture->image, data, texture->dataSize);
 			}
-			data += texture->dataSize;
+			else
+			{
+				// Invalid data.
+				free(texture);
+				return nullptr;
+			}
 		}
 
 		return texture;

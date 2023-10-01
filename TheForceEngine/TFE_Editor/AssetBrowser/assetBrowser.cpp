@@ -1,6 +1,7 @@
 #include "assetBrowser.h"
 #include <TFE_Editor/errorMessages.h>
 #include <TFE_Editor/editorConfig.h>
+#include <TFE_Editor/editorResources.h>
 #include <TFE_Editor/editor.h>
 #include <TFE_Editor/EditorAsset/editorAsset.h>
 #include <TFE_Editor/EditorAsset/editorTexture.h>
@@ -35,6 +36,11 @@ namespace AssetBrowser
 	{
 		INFO_PANEL_WIDTH = 524u,
 	};
+	enum AssetFlags
+	{
+		AFLAG_NONE = 0,
+		AFLAG_VANILLA = FLAG_BIT(0),
+	};
 	const char* c_games[] =
 	{
 		"Dark Forces",
@@ -45,10 +51,12 @@ namespace AssetBrowser
 	{
 		AssetType type;
 		GameID gameId;
+		Archive* archive;
+
 		std::string name;
-		std::string archiveName;
 		std::string filePath;
 
+		u32 flags;
 		AssetHandle handle;
 	};
 	typedef std::vector<Asset> AssetList;
@@ -872,6 +880,13 @@ namespace AssetBrowser
 
 	void update()
 	{
+		if (resources_listChanged())
+		{
+			s_reloadProjectAssets = true;
+			s_assetsNeedProcess = true;
+			updateAssetList();
+		}
+
 		DisplayInfo displayInfo;
 		TFE_RenderBackend::getDisplayInfo(&displayInfo);
 
@@ -946,12 +961,14 @@ namespace AssetBrowser
 		
 	void addPalette(const char* name, Archive* archive)
 	{
+		s32 id = -1;
 		const size_t count = s_palettes.size();
 		for (size_t i = 0; i < count; i++)
 		{
 			if (strcasecmp(s_palettes[i].name.c_str(), name) == 0)
 			{
-				return;
+				id = s32(i);
+				break;
 			}
 		}
 
@@ -983,7 +1000,7 @@ namespace AssetBrowser
 		{
 			if (strcasecmp(projAsset->name.c_str(), colorMapPath) == 0)
 			{
-				Archive* cmapArchive = getArchive(projAsset->archiveName.c_str(), projAsset->gameId);
+				Archive* cmapArchive = projAsset->archive;
 				if (cmapArchive && cmapArchive->openFile(colorMapPath))
 				{
 					WorkBuffer& buffer = getWorkBuffer();
@@ -1000,7 +1017,8 @@ namespace AssetBrowser
 				}
 			}
 		}
-		s_palettes.push_back(dstPalette);
+		if (id < 0) { s_palettes.push_back(dstPalette); }
+		else { s_palettes[id] = dstPalette; }
 
 		if (strcasecmp(name, "SECBASE.PAL") == 0)
 		{
@@ -1071,7 +1089,7 @@ namespace AssetBrowser
 		const Asset* projAsset = s_projectAssetList[TYPE_PALETTE].data();
 		for (u32 f = 0; f < count; f++, projAsset++)
 		{
-			addPalette(projAsset->name.c_str(), getArchive(projAsset->archiveName.c_str(), projAsset->gameId));
+			addPalette(projAsset->name.c_str(), projAsset->archive);
 		}
 
 		// Then for levels.
@@ -1079,7 +1097,7 @@ namespace AssetBrowser
 		projAsset = s_projectAssetList[TYPE_LEVEL].data();
 		for (u32 f = 0; f < levelCount; f++, projAsset++)
 		{
-			Archive* archive = getArchive(projAsset->archiveName.c_str(), projAsset->gameId);
+			Archive* archive = projAsset->archive;
 
 			// Parse the level for 1) the palette, 2) the data lists.
 			if (archive->openFile(projAsset->name.c_str()))
@@ -1262,11 +1280,10 @@ namespace AssetBrowser
 
 	void reloadAsset(Asset* asset, s32 palId, s32 lightLevel)
 	{
-		Archive* archive = getArchive(asset->archiveName.c_str(), asset->gameId);
-		if (archive)
+		if (asset && asset->archive)
 		{
 			AssetColorData colorData = { s_palettes[palId].data, s_palettes[palId].colormap, palId, lightLevel };
-			reloadAssetData(asset->handle, archive, &colorData);
+			reloadAssetData(asset->handle, asset->archive, &colorData);
 		}
 	}
 
@@ -1308,6 +1325,67 @@ namespace AssetBrowser
 		return TYPE_COUNT;
 	}
 
+	s32 findAsset(Asset& asset)
+	{
+		s32 foundId = -1;
+		const AssetList& list = s_projectAssetList[asset.type];
+		const s32 count = (s32)list.size();
+		const Asset* assetList = list.data();
+		for (s32 i = 0; i < count; i++)
+		{
+			if (strcasecmp(assetList[i].name.c_str(), asset.name.c_str()) == 0)
+			{
+				foundId = i;
+				break;
+			}
+		}
+		return foundId;
+	}
+
+	void addArchiveFiles(Archive* archive, GameID gameId, const char* name, u32 flags)
+	{
+		if (!archive) { return; }
+		u32 fileCount = archive->getFileCount();
+		for (u32 f = 0; f < fileCount; f++)
+		{
+			const char* fileName = archive->getFileName(f);
+			char ext[16];
+			FileUtil::getFileExtension(fileName, ext);
+
+			AssetType type = getAssetType(ext);
+			if (type < TYPE_COUNT)
+			{
+				Asset newAsset =
+				{
+					type,		// type
+					gameId,		// gameId
+					archive,	// Archive
+					fileName,	// name
+					"",			// filepath
+					flags,		// flags
+				};
+
+				// Check to see if the asset already exists, if so replace it.
+				s32 id = findAsset(newAsset);
+				AssetList& list = s_projectAssetList[type];
+				if (id < 0)
+				{
+					list.push_back(newAsset);
+				}
+				else
+				{
+					list[id] = newAsset;
+				}
+			}
+		}
+	}
+
+	void addDirectoryFiles(const char* path, GameID gameId, const char* name, u32 flags)
+	{
+		if (!path) { return; }
+		// TODO.
+	}
+
 	void buildProjectAssetList(GameID gameId)
 	{
 		if (!s_reloadProjectAssets) { return; }
@@ -1332,29 +1410,21 @@ namespace AssetBrowser
 			for (size_t i = 0; i < count; i++)
 			{
 				Archive* archive = getArchive(darkForcesArchives[i], gameId);
-				if (!archive) { continue; }
+				addArchiveFiles(archive, gameId, darkForcesArchives[i], AFLAG_VANILLA);
+			}
 
-				u32 fileCount = archive->getFileCount();
-				for (u32 f = 0; f < fileCount; f++)
+			// External resources.
+			u32 resCount = 0;
+			EditorResource* res = resources_get(resCount);
+			for (u32 i = 0; i < resCount; i++, res++)
+			{
+				if (res->type == RES_ARCHIVE)
 				{
-					const char* fileName = archive->getFileName(f);
-					char ext[16];
-					FileUtil::getFileExtension(fileName, ext);
-
-					AssetType type = getAssetType(ext);
-					if (type < TYPE_COUNT)
-					{
-						Asset newAsset =
-						{
-							type,
-							gameId,
-							fileName,
-							darkForcesArchives[i],
-							fileName,
-							{}
-						};
-						s_projectAssetList[type].push_back(newAsset);
-					}
+					addArchiveFiles(res->archive, gameId, res->name, AFLAG_NONE);
+				}
+				else if (res->type == RES_DIRECTORY)
+				{
+					addDirectoryFiles(res->path, gameId, res->name, AFLAG_NONE);
 				}
 			}
 		}
@@ -1432,18 +1502,26 @@ namespace AssetBrowser
 
 	void loadAsset(const Asset* projAsset)
 	{
-		Archive* archive = getArchive(projAsset->archiveName.c_str(), projAsset->gameId);
+		// Filter out vanilla assets if desired.
+		if ((projAsset->flags & AFLAG_VANILLA) && resources_ignoreVanillaAssets()) { return; }
+
 		Asset asset;
 		asset.type = projAsset->type;
 		asset.name = projAsset->name;
 		asset.gameId = projAsset->gameId;
-		asset.archiveName = projAsset->archiveName;
+		asset.archive = projAsset->archive;
 		asset.filePath = projAsset->filePath;
+		asset.flags = projAsset->flags;
 		s32 palId = getAssetPalette(projAsset->name.c_str());
 
 		AssetColorData colorData = { s_palettes[palId].data, nullptr, palId, 32 };
-		asset.handle = loadAssetData(projAsset->type, archive, &colorData, projAsset->name.c_str());
-		s_viewAssetList.push_back(asset);
+		asset.handle = loadAssetData(projAsset->type, projAsset->archive, &colorData, projAsset->name.c_str());
+		// For now allow stubbed types to squeak through...
+		// TODO: Make this more strict once those are properly loaded.
+		if (asset.handle != NULL_ASSET || asset.type == TYPE_3DOBJ || asset.type == TYPE_LEVEL)
+		{
+			s_viewAssetList.push_back(asset);
+		}
 	}
 
 	// Return true if 'str' matches the 'filter', taking into account special symbols.
@@ -1555,13 +1633,17 @@ namespace AssetBrowser
 				const char* name = projAsset->name.c_str();
 				if (!editorFilter(name) || !isLevelPalette(name)) { continue; }
 
-				Archive* archive = getArchive(projAsset->archiveName.c_str(), projAsset->gameId);
+				// Filter out vanilla assets if desired.
+				if ((projAsset->flags & AFLAG_VANILLA) && resources_ignoreVanillaAssets()) { continue; }
+
+				Archive* archive = projAsset->archive;
 				Asset asset;
 				asset.type = projAsset->type;
 				asset.name = projAsset->name;
 				asset.gameId = projAsset->gameId;
-				asset.archiveName = projAsset->archiveName;
+				asset.archive = projAsset->archive;
 				asset.filePath = projAsset->filePath;
+				asset.flags = projAsset->flags;
 
 				// Does it have a colormap too?
 				// For now we assume the names match.
@@ -1576,7 +1658,7 @@ namespace AssetBrowser
 				{
 					if (strcasecmp(projAssetCM->name.c_str(), colorMapPath) == 0)
 					{
-						Archive* cmapArchive = getArchive(projAssetCM->archiveName.c_str(), projAssetCM->gameId);
+						Archive* cmapArchive = projAssetCM->archive;
 						if (cmapArchive && cmapArchive->openFile(colorMapPath))
 						{
 							const size_t len = cmapArchive->getFileLength();
@@ -1645,7 +1727,7 @@ namespace AssetBrowser
 			}
 
 			// Read the full contents.
-			Archive* archive = getArchive(asset->archiveName.c_str(), asset->gameId);
+			Archive* archive = asset->archive;
 			if (!archive) { continue; }
 			if (!archive->openFile(asset->name.c_str())) { continue;}
 

@@ -18,6 +18,15 @@ namespace TFE_Editor
 		FONT_COUNT,
 	};
 
+	enum EditorTextColor
+	{
+		TEXTCLR_NORMAL = 0,
+		TEXTCLR_ERROR,
+		TEXTCLR_WARNING,
+		TEXTCLR_SPECIAL,
+		TEXTCLR_COUNT
+	};
+
 	void enable();
 	void disable();
 	bool update(bool consoleOpen = false);

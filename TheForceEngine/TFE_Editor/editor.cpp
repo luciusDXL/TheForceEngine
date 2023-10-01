@@ -1,5 +1,6 @@
 #include "editor.h"
 #include "editorConfig.h"
+#include "editorResources.h"
 #include <TFE_Editor/AssetBrowser/assetBrowser.h>
 #include <TFE_Input/input.h>
 #include <TFE_RenderBackend/renderBackend.h>
@@ -16,6 +17,7 @@ namespace TFE_Editor
 	enum EditorMode
 	{
 		EDIT_CONFIG = 0,
+		EDIT_RESOURCES,
 		EDIT_ASSET,
 		EDIT_LEVEL,
 	};
@@ -63,6 +65,14 @@ namespace TFE_Editor
 		AssetBrowser::destroy();
 	}
 
+	const ImVec4 c_textColors[]=
+	{
+		ImVec4(1.0f, 1.0f, 1.0f, 1.0f), // TEXTCLR_NORMAL
+		ImVec4(1.0f, 0.25f, 0.25f, 1.0f), // TEXTCLR_ERROR
+		ImVec4(1.0f, 1.0f, 0.25f, 1.0f), // TEXTCLR_WARNING
+		ImVec4(0.25f, 1.0f, 0.25f, 1.0f), // TEXTCLR_SPECIAL
+	};
+
 	void messageBoxUi()
 	{
 		pushFont(FONT_SMALL);
@@ -108,6 +118,10 @@ namespace TFE_Editor
 			{
 				s_editorMode = s_prevEditorMode;
 			}
+		}
+		else if (s_editorMode == EDIT_RESOURCES)
+		{
+			resources_ui();
 		}
 		else if (s_editorMode == EDIT_ASSET)
 		{
@@ -183,6 +197,11 @@ namespace TFE_Editor
 						s_prevEditorMode = EDIT_ASSET;
 					}
 					s_editorMode = EDIT_CONFIG;
+				}
+				if (ImGui::MenuItem("Resources", NULL, s_editorMode == EDIT_RESOURCES))
+				{
+					if (s_editorMode == EDIT_CONFIG) { saveConfig(); }
+					s_editorMode = EDIT_RESOURCES;
 				}
 				if (ImGui::MenuItem("Asset Browser", NULL, s_editorMode == EDIT_ASSET))
 				{
