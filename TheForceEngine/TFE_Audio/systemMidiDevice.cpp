@@ -1,7 +1,6 @@
 #include <algorithm>
 #include <cstring>
 #include <SDL_mutex.h>
-#include <assert.h>
 #include "midi.h"
 
 #include "systemMidiDevice.h"
@@ -31,11 +30,11 @@ namespace TFE_Audio
 	void midiErrorCallback(RtMidiError::Type, const std::string&, void*);
 	// serialize access to the physical MIDI port, to at least
 	// prevent a buffer overrun in the Linux ALSA MIDI parser.
-	static SDL_mutex* s_serializer = nullptr;
+	static SDL_mutex* serializer = nullptr;
 
 	SystemMidiDevice::SystemMidiDevice()
 	{
-		s_serializer = SDL_CreateMutex();
+		serializer = SDL_CreateMutex();
 		m_outputId = -1;
 		m_midiout = new RtMidiOut();
 		m_midiout->setErrorCallback(midiErrorCallback);
@@ -45,18 +44,11 @@ namespace TFE_Audio
 
 	SystemMidiDevice::~SystemMidiDevice()
 	{
-		SDL_mutex* mutex = s_serializer;
-		s_serializer = nullptr;
-
-		// If we exit while a message is occuring, a crash can occur.
-		// So lock to avoid that.
-		if (mutex) { SDL_LockMutex(mutex); }
-			exit();
-		if (mutex) { SDL_UnlockMutex(mutex); }
-
-		if (mutex)
+		exit();
+		if (serializer)
 		{
-			SDL_DestroyMutex(mutex);
+			SDL_DestroyMutex(serializer);
+			serializer = nullptr;
 		}
 	}
 
@@ -68,6 +60,7 @@ namespace TFE_Audio
 		}
 		delete m_midiout;
 		m_midiout = nullptr;
+
 		m_outputId = -1;
 	}
 
@@ -78,14 +71,13 @@ namespace TFE_Audio
 
 	void SystemMidiDevice::message(const u8* msg, u32 len)
 	{
-		SDL_mutex* mutex = s_serializer;
-		if (m_outputId >= 0 && mutex)
+		if (m_outputId >= 0 && serializer)
 		{
 			// this mutex is uncontended except for a short time
 			// after a midi device switch is done in the settings.
-			SDL_LockMutex(mutex);
+			SDL_LockMutex(serializer);
 			m_midiout->sendMessage(msg, (size_t)len);
-			SDL_UnlockMutex(mutex);
+			SDL_UnlockMutex(serializer);
 		}
 	}
 
