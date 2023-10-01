@@ -516,6 +516,7 @@ namespace TFE_MidiPlayer
 
 	void allocateMidiDevice(MidiDeviceType type)
 	{
+		if (s_midiDevice && s_midiDevice->getType() == type) { return; }
 		delete s_midiDevice;
 		s_midiDevice = nullptr;
 
