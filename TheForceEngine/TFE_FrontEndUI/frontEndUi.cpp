@@ -2514,6 +2514,7 @@ namespace TFE_FrontEndUI
 			if (ImGui::Combo("##Midi Type", &curType, (const char*)outputMidiTypeNames, typeCount))
 			{
 				TFE_Audio::pause();
+				TFE_MidiPlayer::pauseThread();
 
 				TFE_MidiPlayer::setDeviceType(MidiDeviceType(curType));
 				device = TFE_MidiPlayer::getMidiDevice();
@@ -2522,7 +2523,8 @@ namespace TFE_FrontEndUI
 					sound->midiType = (s32)device->getType();
 					sound->midiOutput = device->getActiveOutput();
 				}
-				
+
+				TFE_MidiPlayer::resumeThread();
 				TFE_Audio::resume();
 
 				if (s_game) { s_game->restartMusic(); }
@@ -2555,11 +2557,13 @@ namespace TFE_FrontEndUI
 			if (hasChanged)
 			{
 				TFE_Audio::pause();
+				TFE_MidiPlayer::pauseThread();
 
 				device->selectOutput(curOutput);
 				sound->midiType = (s32)device->getType();
 				sound->midiOutput = device->getActiveOutput();
 
+				TFE_MidiPlayer::resumeThread();
 				TFE_Audio::resume();
 
 				if (s_game) { s_game->restartMusic(); }

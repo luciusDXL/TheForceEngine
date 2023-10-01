@@ -57,6 +57,7 @@ namespace TFE_MidiPlayer
 	static f32 s_masterVolume = 1.0f;
 	static f32 s_masterVolumeScaled = s_masterVolume * c_musicVolumeScale;
 	static SDL_Thread* s_thread = nullptr;
+	static bool s_tPaused = false;
 
 	static atomic_bool s_runMusicThread;
 	static u8 s_channelSrcVolume[MIDI_CHANNEL_COUNT] = { 0 };
@@ -222,6 +223,24 @@ namespace TFE_MidiPlayer
 	void setMaximumNoteLength(f32 dt)
 	{
 		s_maxNoteLength = f64(dt);
+	}
+
+	void pauseThread()
+	{
+		if (!s_tPaused && s_mutex)
+		{
+			SDL_LockMutex(s_mutex);
+			s_tPaused = true;
+		}
+	}
+
+	void resumeThread()
+	{
+		if (s_tPaused && s_mutex)
+		{
+			SDL_UnlockMutex(s_mutex);
+			s_tPaused = false;
+		}
 	}
 
 	void pause()
