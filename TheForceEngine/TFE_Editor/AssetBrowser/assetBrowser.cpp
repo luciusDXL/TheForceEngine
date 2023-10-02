@@ -1342,6 +1342,70 @@ namespace AssetBrowser
 		return foundId;
 	}
 
+	ArchiveType getArchiveType(const char* filename)
+	{
+		ArchiveType type = ARCHIVE_UNKNOWN;
+
+		char ext[16];
+		FileUtil::getFileExtension(filename, ext);
+		if (strcasecmp(ext, "GOB") == 0)
+		{
+			type = ARCHIVE_GOB;
+		}
+		else if (strcasecmp(ext, "LAB") == 0)
+		{
+			type = ARCHIVE_LAB;
+		}
+		else if (strcasecmp(ext, "LFD") == 0)
+		{
+			type = ARCHIVE_LFD;
+		}
+		else if (strcasecmp(ext, "ZIP") == 0)
+		{
+			type = ARCHIVE_ZIP;
+		}
+
+		return type;
+	}
+
+	void getTempDirectory(char* tmpDir)
+	{
+		sprintf(tmpDir, "%s/Temp", s_editorConfig.editorPath);
+		FileUtil::fixupPath(tmpDir);
+		if (!FileUtil::directoryExits(tmpDir))
+		{
+			FileUtil::makeDirectory(tmpDir);
+		}
+	}
+
+	bool extractArchive(Archive* srcArchive, const char* filename, char* outPath)
+	{
+		if (!srcArchive->openFile(filename)) { return false; }
+
+		char tmpDir[TFE_MAX_PATH];
+		getTempDirectory(tmpDir);
+
+		// Copy the file into a temporary location and then add it.
+		char newPath[TFE_MAX_PATH];
+		sprintf(newPath, "%s/%s", tmpDir, filename);
+
+		WorkBuffer& buffer = getWorkBuffer();
+		const size_t len = srcArchive->getFileLength();
+		buffer.resize(len);
+		srcArchive->readFile(buffer.data(), len);
+
+		FileStream newArchive;
+		if (newArchive.open(newPath, Stream::MODE_WRITE))
+		{
+			newArchive.writeBuffer(buffer.data(), len);
+			newArchive.close();
+		}
+		srcArchive->closeFile();
+
+		if (outPath) { strcpy(outPath, newPath); }
+		return true;
+	}
+
 	void addArchiveFiles(Archive* archive, GameID gameId, const char* name, u32 flags)
 	{
 		if (!archive) { return; }
@@ -1351,6 +1415,20 @@ namespace AssetBrowser
 			const char* fileName = archive->getFileName(f);
 			char ext[16];
 			FileUtil::getFileExtension(fileName, ext);
+
+			// Handle archives inside of directories.
+			ArchiveType archiveType = getArchiveType(fileName);
+			if (archiveType != ARCHIVE_UNKNOWN)
+			{
+				char newPath[TFE_MAX_PATH];
+				if (extractArchive(archive, fileName, newPath))
+				{
+					// Add the temporary archive.
+					Archive* archive = Archive::getArchive(archiveType, fileName, newPath);
+					addArchiveFiles(archive, gameId, fileName, 0);
+				}
+				continue;
+			}
 
 			AssetType type = getAssetType(ext);
 			if (type < TYPE_COUNT)
@@ -1379,7 +1457,7 @@ namespace AssetBrowser
 			}
 		}
 	}
-
+	
 	void addDirectoryFiles(const char* path, GameID gameId, const char* name, u32 flags)
 	{
 		if (!path) { return; }
@@ -1427,11 +1505,12 @@ namespace AssetBrowser
 				sprintf(filepath, "%s%s", pathOS, fileName);
 				FileUtil::fixupPath(filepath);
 
-				// Handle GOBs inside of directories.
-				if (strcasecmp(ext, "GOB") == 0)
+				// Handle archives inside of directories.
+				ArchiveType archiveType = getArchiveType(fileName);
+				if (archiveType != ARCHIVE_UNKNOWN)
 				{
 					// Add the gob
-					Archive* archive = Archive::getArchive(ARCHIVE_GOB, fileName, filepath);
+					Archive* archive = Archive::getArchive(archiveType, fileName, filepath);
 					addArchiveFiles(archive, gameId, fileName, 0);
 					continue;
 				}

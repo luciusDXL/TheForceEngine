@@ -27,8 +27,6 @@ namespace TFE_Editor
 		{ "LAB Archive", "*.LAB *.lab", "Zip", "*.ZIP *.zip" },  // Game_Outlaws
 	};
 
-	void addSubArchives(const char* filepath, const char* name, ArchiveType type);
-
 	bool resources_ui()
 	{
 		pushFont(TFE_Editor::FONT_SMALL);
@@ -74,7 +72,6 @@ namespace TFE_Editor
 					FileUtil::getFileExtension(filepath, ext);
 
 					eRes.archive = nullptr;
-					bool tryAddSubArchives = false;
 					if (strcasecmp(ext, "GOB") == 0)
 					{
 						eRes.archive = Archive::getArchive(ARCHIVE_GOB, eRes.name, filepath);
@@ -82,14 +79,8 @@ namespace TFE_Editor
 					else if (strcasecmp(ext, "ZIP") == 0)
 					{
 						eRes.archive = Archive::getArchive(ARCHIVE_ZIP, eRes.name, filepath);
-						tryAddSubArchives = true;
 					}
 					s_res.push_back(eRes);
-
-					if (tryAddSubArchives)
-					{
-						addSubArchives(filepath, eRes.name, ARCHIVE_ZIP);
-					}
 				}
 
 				s_resChanged = true;
@@ -163,58 +154,4 @@ namespace TFE_Editor
 	/////////////////////////////////////////////
 	// Internal
 	/////////////////////////////////////////////
-	void addSubArchives(const char* filepath, const char* name, ArchiveType type)
-	{
-		Archive* archive = Archive::getArchive(type, name, filepath);
-		if (!archive) { return; }
-
-		// TODO: Change based on game.
-		const char* gameArchive = "GOB";
-		ArchiveType newType = ARCHIVE_GOB;
-
-		// TODO: Pull out temporary directory stuff, make sure to clear on exit.
-		char tmpDir[TFE_MAX_PATH];
-		sprintf(tmpDir, "%s/Temp", s_editorConfig.editorPath);
-		FileUtil::fixupPath(tmpDir);
-		if (!FileUtil::directoryExits(tmpDir))
-		{
-			FileUtil::makeDirectory(tmpDir);
-		}
-
-		const u32 count = archive->getFileCount();
-		for (u32 i = 0; i < count; i++)
-		{
-			const char* filename = archive->getFileName(i);
-			char ext[16];
-			FileUtil::getFileExtension(filename, ext);
-			if (strcasecmp(ext, gameArchive) == 0)
-			{
-				if (!archive->openFile(i)) { continue; }
-
-				// Copy the file into a temporary location and then add it.
-				char newPath[TFE_MAX_PATH];
-				sprintf(newPath, "%s/%s", tmpDir, filename);
-
-				WorkBuffer& buffer = getWorkBuffer();
-				const size_t len = archive->getFileLength();
-				buffer.resize(len);
-				archive->readFile(buffer.data(), len);
-
-				FileStream newArchive;
-				if (newArchive.open(newPath, Stream::MODE_WRITE))
-				{
-					newArchive.writeBuffer(buffer.data(), len);
-					newArchive.close();
-				}
-				archive->closeFile();
-
-				// Now add the archive itself.
-				EditorResource eRes;
-				strcpy(eRes.name, filename);
-				eRes.type = RES_ARCHIVE;
-				eRes.archive = Archive::getArchive(newType, filename, newPath);
-				s_res.push_back(eRes);
-			}
-		}
-	}
 }
