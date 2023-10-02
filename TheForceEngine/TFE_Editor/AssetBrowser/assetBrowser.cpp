@@ -1513,34 +1513,31 @@ namespace AssetBrowser
 		if (!s_reloadProjectAssets) { return; }
 		s_reloadProjectAssets = false;
 
-		if (gameId == Game_Dark_Forces)
+		resources_setGame(gameId);
+		for (u32 i = 0; i < TYPE_COUNT; i++)
 		{
-			resources_setGame(gameId);
-			for (u32 i = 0; i < TYPE_COUNT; i++)
-			{
-				s_projectAssetList[i].clear();
-			}
+			s_projectAssetList[i].clear();
+		}
 
-			u32 resCount = 0;
-			// Add the base game resources first.
-			EditorResource* res = resources_getBaseGame(resCount);
-			for (u32 i = 0; i < resCount; i++, res++)
+		u32 resCount = 0;
+		// Add the base game resources first.
+		EditorResource* res = resources_getBaseGame(resCount);
+		for (u32 i = 0; i < resCount; i++, res++)
+		{
+			assert(res->type == RES_ARCHIVE);
+			addArchiveFiles(res->archive, gameId, res->name, AFLAG_VANILLA);
+		}
+		// Then add external resources.
+		res = resources_get(resCount);
+		for (u32 i = 0; i < resCount; i++, res++)
+		{
+			if (res->type == RES_ARCHIVE)
 			{
-				assert(res->type == RES_ARCHIVE);
-				addArchiveFiles(res->archive, gameId, res->name, AFLAG_VANILLA);
+				addArchiveFiles(res->archive, gameId, res->name, AFLAG_NONE);
 			}
-			// Then add external resources.
-			res = resources_get(resCount);
-			for (u32 i = 0; i < resCount; i++, res++)
+			else if (res->type == RES_DIRECTORY)
 			{
-				if (res->type == RES_ARCHIVE)
-				{
-					addArchiveFiles(res->archive, gameId, res->name, AFLAG_NONE);
-				}
-				else if (res->type == RES_DIRECTORY)
-				{
-					addDirectoryFiles(res->path, gameId, res->name, AFLAG_NONE);
-				}
+				addDirectoryFiles(res->path, gameId, res->name, AFLAG_NONE);
 			}
 		}
 	}
