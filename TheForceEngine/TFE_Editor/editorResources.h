@@ -35,5 +35,7 @@ namespace TFE_Editor
 	void resources_setGame(GameID gameId);
 	bool resources_listChanged();
 	bool resources_ignoreVanillaAssets();
+
 	EditorResource* resources_get(u32& count);
+	EditorResource* resources_getBaseGame(u32& count);
 }

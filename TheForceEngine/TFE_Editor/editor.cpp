@@ -1,6 +1,7 @@
 #include "editor.h"
 #include "editorConfig.h"
 #include "editorResources.h"
+#include <TFE_Settings/settings.h>
 #include <TFE_Editor/AssetBrowser/assetBrowser.h>
 #include <TFE_Input/input.h>
 #include <TFE_RenderBackend/renderBackend.h>
@@ -293,5 +294,51 @@ namespace TFE_Editor
 		s_msgBox.active = true;
 		strcpy(s_msgBox.msg, fullStr);
 		sprintf(s_msgBox.id, "%s##MessageBox", type);
+	}
+		
+	ArchiveType getArchiveType(const char* filename)
+	{
+		ArchiveType type = ARCHIVE_UNKNOWN;
+
+		char ext[16];
+		FileUtil::getFileExtension(filename, ext);
+		if (strcasecmp(ext, "GOB") == 0)
+		{
+			type = ARCHIVE_GOB;
+		}
+		else if (strcasecmp(ext, "LAB") == 0)
+		{
+			type = ARCHIVE_LAB;
+		}
+		else if (strcasecmp(ext, "LFD") == 0)
+		{
+			type = ARCHIVE_LFD;
+		}
+		else if (strcasecmp(ext, "ZIP") == 0)
+		{
+			type = ARCHIVE_ZIP;
+		}
+
+		return type;
+	}
+
+	Archive* getArchive(const char* name, GameID gameId)
+	{
+		TFE_Settings_Game* game = TFE_Settings::getGameSettings();
+		char filePath[TFE_MAX_PATH];
+		sprintf(filePath, "%s%s", game->header[gameId].sourcePath, name);
+
+		ArchiveType type = getArchiveType(name);
+		return type != ARCHIVE_UNKNOWN ? Archive::getArchive(type, name, filePath) : nullptr;
+	}
+
+	void getTempDirectory(char* tmpDir)
+	{
+		sprintf(tmpDir, "%s/Temp", s_editorConfig.editorPath);
+		FileUtil::fixupPath(tmpDir);
+		if (!FileUtil::directoryExits(tmpDir))
+		{
+			FileUtil::makeDirectory(tmpDir);
+		}
 	}
 }

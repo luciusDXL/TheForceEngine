@@ -7,6 +7,8 @@
 // to "play" the game as intended.
 //////////////////////////////////////////////////////////////////////
 #include <TFE_System/types.h>
+#include <TFE_Archive/archive.h>
+#include <TFE_Game/igame.h>
 #include <vector>
 
 namespace TFE_Editor
@@ -39,4 +41,7 @@ namespace TFE_Editor
 
 	// Resizable temporary memory.
 	WorkBuffer& getWorkBuffer();
+	ArchiveType getArchiveType(const char* filename);
+	Archive* getArchive(const char* name, GameID gameId);
+	void getTempDirectory(char* tmpDir);
 }

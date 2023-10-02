@@ -1341,43 +1341,7 @@ namespace AssetBrowser
 		}
 		return foundId;
 	}
-
-	ArchiveType getArchiveType(const char* filename)
-	{
-		ArchiveType type = ARCHIVE_UNKNOWN;
-
-		char ext[16];
-		FileUtil::getFileExtension(filename, ext);
-		if (strcasecmp(ext, "GOB") == 0)
-		{
-			type = ARCHIVE_GOB;
-		}
-		else if (strcasecmp(ext, "LAB") == 0)
-		{
-			type = ARCHIVE_LAB;
-		}
-		else if (strcasecmp(ext, "LFD") == 0)
-		{
-			type = ARCHIVE_LFD;
-		}
-		else if (strcasecmp(ext, "ZIP") == 0)
-		{
-			type = ARCHIVE_ZIP;
-		}
-
-		return type;
-	}
-
-	void getTempDirectory(char* tmpDir)
-	{
-		sprintf(tmpDir, "%s/Temp", s_editorConfig.editorPath);
-		FileUtil::fixupPath(tmpDir);
-		if (!FileUtil::directoryExits(tmpDir))
-		{
-			FileUtil::makeDirectory(tmpDir);
-		}
-	}
-
+	
 	bool extractArchive(Archive* srcArchive, const char* filename, char* outPath)
 	{
 		if (!srcArchive->openFile(filename)) { return false; }
@@ -1397,7 +1361,7 @@ namespace AssetBrowser
 		FileStream newArchive;
 		if (newArchive.open(newPath, Stream::MODE_WRITE))
 		{
-			newArchive.writeBuffer(buffer.data(), len);
+			newArchive.writeBuffer(buffer.data(), (u32)len);
 			newArchive.close();
 		}
 		srcArchive->closeFile();
@@ -1509,7 +1473,7 @@ namespace AssetBrowser
 				ArchiveType archiveType = getArchiveType(fileName);
 				if (archiveType != ARCHIVE_UNKNOWN)
 				{
-					// Add the gob
+					// Add the archive.
 					Archive* archive = Archive::getArchive(archiveType, fileName, filepath);
 					addArchiveFiles(archive, gameId, fileName, 0);
 					continue;
@@ -1551,29 +1515,22 @@ namespace AssetBrowser
 
 		if (gameId == Game_Dark_Forces)
 		{
-			const char* darkForcesArchives[] =
-			{
-				"DARK.GOB",
-				"SOUNDS.GOB",
-				"TEXTURES.GOB",
-				"SPRITES.GOB",
-			};
-
+			resources_setGame(gameId);
 			for (u32 i = 0; i < TYPE_COUNT; i++)
 			{
 				s_projectAssetList[i].clear();
 			}
 
-			const size_t count = TFE_ARRAYSIZE(darkForcesArchives);
-			for (size_t i = 0; i < count; i++)
-			{
-				Archive* archive = getArchive(darkForcesArchives[i], gameId);
-				addArchiveFiles(archive, gameId, darkForcesArchives[i], AFLAG_VANILLA);
-			}
-
-			// External resources.
 			u32 resCount = 0;
-			EditorResource* res = resources_get(resCount);
+			// Add the base game resources first.
+			EditorResource* res = resources_getBaseGame(resCount);
+			for (u32 i = 0; i < resCount; i++, res++)
+			{
+				assert(res->type == RES_ARCHIVE);
+				addArchiveFiles(res->archive, gameId, res->name, AFLAG_VANILLA);
+			}
+			// Then add external resources.
+			res = resources_get(resCount);
 			for (u32 i = 0; i < resCount; i++, res++)
 			{
 				if (res->type == RES_ARCHIVE)

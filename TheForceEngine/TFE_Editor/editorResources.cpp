@@ -1,6 +1,7 @@
 #include "editorResources.h"
 #include "editor.h"
 #include "editorConfig.h"
+#include <TFE_Settings/settings.h>
 #include <TFE_RenderBackend/renderBackend.h>
 #include <TFE_System/system.h>
 #include <TFE_System/parser.h>
@@ -14,13 +15,24 @@
 
 namespace TFE_Editor
 {
-	static std::vector<EditorResource> s_res;
+	static std::vector<EditorResource> s_baseResources;
+	static std::vector<EditorResource> s_extResources;
 	static bool s_ignoreVanilla = false;
 	static bool s_resChanged = false;
 	static s32 s_curResource = -1;
 	static GameID s_gameId = Game_Dark_Forces;
 	static char s_selectPath[TFE_MAX_PATH] = "";
 
+	// Dark Forces default game resources.
+	// TODO: Make definitions external?
+	const char* c_darkForcesArchives[] =
+	{
+		"DARK.GOB",
+		"SOUNDS.GOB",
+		"TEXTURES.GOB",
+		"SPRITES.GOB",
+	};
+	// Archive filters.
 	const std::vector<std::string> filters[] =
 	{
 		{ "GOB Archive", "*.GOB *.gob", "Zip", "*.ZIP *.zip" },  // Game_Dark_Forces
@@ -46,8 +58,8 @@ namespace TFE_Editor
 			}
 
 			ImGui::ListBoxHeader("##ResourceList", ImVec2(UI_SCALE(480), UI_SCALE(200)));
-			const size_t count = s_res.size();
-			const EditorResource* res = s_res.data();
+			const size_t count = s_extResources.size();
+			const EditorResource* res = s_extResources.data();
 			for (size_t i = 0; i < count; i++, res++)
 			{
 				bool isSelected = s_curResource == i;
@@ -80,7 +92,7 @@ namespace TFE_Editor
 					{
 						eRes.archive = Archive::getArchive(ARCHIVE_ZIP, eRes.name, filepath);
 					}
-					s_res.push_back(eRes);
+					s_extResources.push_back(eRes);
 				}
 
 				s_resChanged = true;
@@ -95,7 +107,7 @@ namespace TFE_Editor
 					eRes.type = RES_DIRECTORY;
 					FileUtil::getFileNameFromPath(res[0].c_str(), eRes.name, true);
 					strcpy(eRes.path, res[0].c_str());
-					s_res.push_back(eRes);
+					s_extResources.push_back(eRes);
 				}
 				s_resChanged = true;
 			}
@@ -104,7 +116,7 @@ namespace TFE_Editor
 			{
 				if (s_curResource >= 0)
 				{
-					s_res.erase(s_res.begin() + s_curResource);
+					s_extResources.erase(s_extResources.begin() + s_curResource);
 				}
 				s_curResource = -1;
 				s_resChanged = true;
@@ -124,12 +136,34 @@ namespace TFE_Editor
 
 	void resources_clear()
 	{
-		s_res.clear();
+		s_extResources.clear();
 	}
-		
+						
 	void resources_setGame(GameID gameId)
 	{
 		s_gameId = gameId;
+		s_baseResources.clear();
+
+		const char** defaultResList = nullptr;
+		s32 count = 0;
+		if (gameId == Game_Dark_Forces)
+		{
+			defaultResList = c_darkForcesArchives;
+			count = (s32)TFE_ARRAYSIZE(c_darkForcesArchives);
+		}
+
+		if (defaultResList)
+		{
+			s_baseResources.resize(count);
+			for (s32 i = 0; i < count; i++)
+			{
+				EditorResource res;
+				strcpy(res.name, defaultResList[i]);
+				res.archive = getArchive(res.name, gameId);
+				res.type = RES_ARCHIVE;
+				s_baseResources[i] = res;
+			}
+		}
 	}
 
 	bool resources_listChanged()
@@ -147,11 +181,13 @@ namespace TFE_Editor
 
 	EditorResource* resources_get(u32& count)
 	{
-		count = (u32)s_res.size();
-		return s_res.data();
+		count = (u32)s_extResources.size();
+		return s_extResources.data();
 	}
 
-	/////////////////////////////////////////////
-	// Internal
-	/////////////////////////////////////////////
+	EditorResource* resources_getBaseGame(u32& count)
+	{
+		count = (u32)s_baseResources.size();
+		return s_baseResources.data();
+	}
 }
