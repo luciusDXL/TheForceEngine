@@ -1383,7 +1383,86 @@ namespace AssetBrowser
 	void addDirectoryFiles(const char* path, GameID gameId, const char* name, u32 flags)
 	{
 		if (!path) { return; }
-		// TODO.
+		char pathOS[TFE_MAX_PATH];
+		sprintf(pathOS, "%s/", path);
+		FileUtil::fixupPath(pathOS);
+
+		std::vector<std::string> searchStack;
+		searchStack.push_back(pathOS);
+
+		while (!searchStack.empty())
+		{
+			const std::string dir = searchStack.back();
+			searchStack.pop_back();
+
+			// First add any subdirectories to the search path.
+			FileList dirList;
+			FileUtil::readSubdirectories(dir.c_str(), dirList);
+			if (!dirList.empty())
+			{
+				const size_t count = dirList.size();
+				char subDir[1024];
+				for (size_t i = 0; i < count; i++)
+				{
+					strcpy(subDir, dirList[i].c_str());
+					FileUtil::fixupPath(subDir);
+
+					searchStack.push_back(subDir);
+				}
+			}
+
+			// Then handle the files.
+			FileList fileList;
+			FileUtil::readDirectory(dir.c_str(), "*", fileList);
+			const size_t count = fileList.size();
+			for (size_t i = 0; i < count; i++)
+			{
+				const char* fileName = fileList[i].c_str();
+				if (!fileName || fileName[0] == '.') { continue; }
+
+				char ext[16];
+				FileUtil::getFileExtension(fileName, ext);
+
+				char filepath[TFE_MAX_PATH];
+				sprintf(filepath, "%s%s", pathOS, fileName);
+				FileUtil::fixupPath(filepath);
+
+				// Handle GOBs inside of directories.
+				if (strcasecmp(ext, "GOB") == 0)
+				{
+					// Add the gob
+					Archive* archive = Archive::getArchive(ARCHIVE_GOB, fileName, filepath);
+					addArchiveFiles(archive, gameId, fileName, 0);
+					continue;
+				}
+
+				AssetType type = getAssetType(ext);
+				if (type < TYPE_COUNT)
+				{
+					Asset newAsset =
+					{
+						type,		// Type
+						gameId,		// Game ID
+						nullptr,	// Archive
+						fileName,	// Name
+						filepath,	// File path
+						flags,		// Flags
+					};
+
+					// Check to see if the asset already exists, if so replace it.
+					s32 id = findAsset(newAsset);
+					AssetList& list = s_projectAssetList[type];
+					if (id < 0)
+					{
+						list.push_back(newAsset);
+					}
+					else
+					{
+						list[id] = newAsset;
+					}
+				}
+			}
+		}
 	}
 
 	void buildProjectAssetList(GameID gameId)
