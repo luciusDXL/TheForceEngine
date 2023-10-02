@@ -93,7 +93,7 @@ namespace TFE_Editor
 				{
 					EditorResource eRes;
 					eRes.type = RES_DIRECTORY;
-					FileUtil::getFileNameFromPath(res[0].c_str(), eRes.name);
+					FileUtil::getFileNameFromPath(res[0].c_str(), eRes.name, true);
 					strcpy(eRes.path, res[0].c_str());
 					s_res.push_back(eRes);
 				}
