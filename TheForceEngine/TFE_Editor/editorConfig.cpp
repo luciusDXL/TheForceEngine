@@ -165,59 +165,65 @@ namespace TFE_Editor
 
 		bool active = true;
 		bool finished = false;
-		ImGui::SetWindowPos("Editor Config", { 0.0f, f32(menuHeight) });
 		ImGui::SetWindowSize("Editor Config", { UI_SCALE(550), 70.0f + UI_SCALE(100) });
-		ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse;
+		ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoResize;
 
-		ImGui::Begin("Editor Config", &active, window_flags);
-
-		s32 browseWinOpen = -1;
-		ImGui::Text("Editor Path:"); ImGui::SameLine(UI_SCALE(120));
-		ImGui::InputText("##EditorPath", s_editorConfig.editorPath, TFE_MAX_PATH);
-		ImGui::SameLine();
-		if (ImGui::Button("Browse##EditorPath"))
+		if (ImGui::BeginPopupModal("Editor Config", &active, window_flags))
 		{
-			browseWinOpen = 0;
-		}
-
-		ImGui::Text("Export Path:"); ImGui::SameLine(UI_SCALE(120));
-		ImGui::InputText("##ExportPath", s_editorConfig.exportPath, TFE_MAX_PATH);
-		ImGui::SameLine();
-		if (ImGui::Button("Browse##ExportPath"))
-		{
-			browseWinOpen = 1;
-		}
-
-		fontScaleControl();
-		thumbnailSizeControl();
-		ImGui::Separator();
-
-		if (ImGui::Button("Save Config"))
-		{
-			saveConfig();
-			finished = true;
-		}
-
-		// File dialogs...
-		if (browseWinOpen == 0)
-		{
-			FileResult res = TFE_Ui::directorySelectDialog("Editor Path", s_editorConfig.editorPath);
-			if (!res.empty())
+			s32 browseWinOpen = -1;
+			ImGui::Text("Editor Path:"); ImGui::SameLine(UI_SCALE(120));
+			ImGui::InputText("##EditorPath", s_editorConfig.editorPath, TFE_MAX_PATH);
+			ImGui::SameLine();
+			if (ImGui::Button("Browse##EditorPath"))
 			{
-				strcpy(s_editorConfig.editorPath, res[0].c_str());
+				browseWinOpen = 0;
 			}
-		}
-		else if (browseWinOpen == 1)
-		{
-			FileResult res = TFE_Ui::directorySelectDialog("Export Path", s_editorConfig.exportPath);
-			if (!res.empty())
-			{
-				strcpy(s_editorConfig.exportPath, res[0].c_str());
-			}
-		}
 
-		ImGui::End();
+			ImGui::Text("Export Path:"); ImGui::SameLine(UI_SCALE(120));
+			ImGui::InputText("##ExportPath", s_editorConfig.exportPath, TFE_MAX_PATH);
+			ImGui::SameLine();
+			if (ImGui::Button("Browse##ExportPath"))
+			{
+				browseWinOpen = 1;
+			}
+
+			fontScaleControl();
+			thumbnailSizeControl();
+			ImGui::Separator();
+
+			if (ImGui::Button("Save Config"))
+			{
+				saveConfig();
+				finished = true;
+			}
+
+			// File dialogs...
+			if (browseWinOpen == 0)
+			{
+				FileResult res = TFE_Ui::directorySelectDialog("Editor Path", s_editorConfig.editorPath);
+				if (!res.empty())
+				{
+					strcpy(s_editorConfig.editorPath, res[0].c_str());
+				}
+			}
+			else if (browseWinOpen == 1)
+			{
+				FileResult res = TFE_Ui::directorySelectDialog("Export Path", s_editorConfig.exportPath);
+				if (!res.empty())
+				{
+					strcpy(s_editorConfig.exportPath, res[0].c_str());
+				}
+			}
+
+			ImGui::EndPopup();
+		}
 		popFont();
+
+		if (!active)
+		{
+			finished = true;
+			saveConfig();
+		}
 		return finished;
 	}
 		

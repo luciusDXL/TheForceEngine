@@ -19,12 +19,19 @@ namespace TFE_Editor
 {
 	enum EditorMode
 	{
-		EDIT_CONFIG = 0,
-		EDIT_RESOURCES,
-		EDIT_NEW_PROJECT,
-		EDIT_EDIT_PROJECT,
-		EDIT_ASSET_BROWSER,
+		EDIT_ASSET_BROWSER = 0,
 		EDIT_ASSET,
+	};
+
+	enum EditorPopup
+	{
+		POPUP_NONE = 0,
+		POPUP_MSG_BOX,
+		POPUP_CONFIG,
+		POPUP_RESOURCES,
+		POPUP_NEW_PROJECT,
+		POPUP_EDIT_PROJECT,
+		POPUP_COUNT
 	};
 
 	const ImVec4 c_textColors[] =
@@ -38,7 +45,6 @@ namespace TFE_Editor
 
 	struct MessageBox
 	{
-		bool active = false;
 		char id[512];
 		char msg[TFE_MAX_PATH * 2] = "";
 	};
@@ -46,7 +52,7 @@ namespace TFE_Editor
 	static bool s_showPerf = true;
 	static bool s_showEditor = true;
 	static EditorMode s_editorMode = EDIT_ASSET_BROWSER;
-	static EditorMode s_prevEditorMode = EDIT_ASSET_BROWSER;
+	static EditorPopup s_editorPopup = POPUP_NONE;
 	static bool s_exitEditor = false;
 	static bool s_configView = false;
 	static WorkBuffer s_workBuffer;
@@ -79,8 +85,10 @@ namespace TFE_Editor
 		AssetBrowser::destroy();
 	}
 
-	void messageBoxUi()
+	bool messageBoxUi()
 	{
+		bool finished = false;
+
 		pushFont(FONT_SMALL);
 		if (ImGui::BeginPopupModal(s_msgBox.id, nullptr, ImGuiWindowFlags_AlwaysAutoResize))
 		{
@@ -94,56 +102,89 @@ namespace TFE_Editor
 			ImGui::SetCursorPosX(ImGui::GetCursorPosX() + (textWidth - buttonWidth) * 0.5f);
 			if (ImGui::Button("OK"))
 			{
-				s_msgBox.active = false;
-				ImGui::CloseCurrentPopup();
+				finished = true;
 			}
 			ImGui::EndPopup();
 		}
 		popFont();
+		return finished;
 	}
 
-	bool update(bool consoleOpen)
+	void handlePopupBegin()
 	{
-		TFE_RenderBackend::clearWindow();
-
-		if (s_msgBox.active)
+		if (s_editorPopup == POPUP_NONE) { return; }
+		switch (s_editorPopup)
 		{
-			ImGui::OpenPopup(s_msgBox.id);
-		}
-
-		menu();
-
-		if (configSetupRequired() && !s_msgBox.active)
-		{
-			s_editorMode = EDIT_CONFIG;
-		}
-
-		if (s_editorMode == EDIT_CONFIG)
-		{
-			if (configUi())
+			case POPUP_MSG_BOX:
 			{
-				s_editorMode = s_prevEditorMode;
-			}
+				ImGui::OpenPopup(s_msgBox.id);
+			} break;
+			case POPUP_CONFIG:
+			{
+				ImGui::OpenPopup("Editor Config");
+			} break;
+			case POPUP_RESOURCES:
+			{
+				ImGui::OpenPopup("Editor Resources");
+			} break;
+			case POPUP_NEW_PROJECT:
+			{
+			} break;
+			case POPUP_EDIT_PROJECT:
+			{
+			} break;
 		}
-		else if (s_editorMode == EDIT_RESOURCES)
-		{
-			resources_ui();
-		}
-		else if (s_editorMode == EDIT_ASSET_BROWSER)
-		{
-			AssetBrowser::update();
-		}
+	}
 
-		if (s_msgBox.active)
+	void handlePopupEnd()
+	{
+		if (s_editorPopup == POPUP_NONE) { return; }
+
+		switch (s_editorPopup)
 		{
-			messageBoxUi();
+			case POPUP_MSG_BOX:
+			{
+				if (messageBoxUi())
+				{
+					ImGui::CloseCurrentPopup();
+					s_editorPopup = POPUP_NONE;
+				}
+			} break;
+			case POPUP_CONFIG:
+			{
+				if (configUi())
+				{
+					ImGui::CloseCurrentPopup();
+					s_editorPopup = POPUP_NONE;
+				}
+			} break;
+			case POPUP_RESOURCES:
+			{
+				if (resources_ui())
+				{
+					ImGui::CloseCurrentPopup();
+					s_editorPopup = POPUP_NONE;
+				}
+			} break;
+			case POPUP_NEW_PROJECT:
+			{
+			} break;
+			case POPUP_EDIT_PROJECT:
+			{
+			} break;
 		}
 
 		if (TFE_Input::keyPressed(KEY_ESCAPE))
 		{
-			if (s_msgBox.active)
+			if (s_editorPopup != POPUP_NONE)
 			{
-				s_msgBox.active = false;
+				// Make sure the config is saved.
+				if (s_editorPopup == POPUP_CONFIG)
+				{
+					saveConfig();
+				}
+
+				s_editorPopup = POPUP_NONE;
 				ImGui::CloseCurrentPopup();
 			}
 			else
@@ -151,6 +192,25 @@ namespace TFE_Editor
 				s_exitEditor = true;
 			}
 		}
+	}
+
+	bool update(bool consoleOpen)
+	{
+		TFE_RenderBackend::clearWindow();
+
+		handlePopupBegin();
+		menu();
+
+		if (s_editorMode == EDIT_ASSET_BROWSER)
+		{
+			AssetBrowser::update();
+		}
+		else if (s_editorMode == EDIT_ASSET)
+		{
+			// TODO: handle asset editor.
+		}
+
+		handlePopupEnd();
 		
 		return s_exitEditor;
 	}
@@ -217,7 +277,7 @@ namespace TFE_Editor
 		ImGui::SameLine(f32((winWidth - titleWidth)/2));
 		ImGui::TextColored(titleColor, title);
 	}
-		
+
 	void menu()
 	{
 		pushFont(FONT_SMALL);
@@ -227,24 +287,17 @@ namespace TFE_Editor
 			// General menu items.
 			if (ImGui::BeginMenu("Editor"))
 			{
-				if (ImGui::MenuItem("Editor Config", NULL, s_editorMode == EDIT_CONFIG))
+				if (ImGui::MenuItem("Editor Config", NULL, (bool*)NULL))
 				{
-					s_prevEditorMode = s_editorMode;
-					if (s_prevEditorMode == EDIT_CONFIG)
-					{
-						s_prevEditorMode = EDIT_ASSET_BROWSER;
-					}
-					s_editorMode = EDIT_CONFIG;
+					s_editorPopup = POPUP_CONFIG;
 				}
-				if (ImGui::MenuItem("Resources", NULL, s_editorMode == EDIT_RESOURCES))
+				if (ImGui::MenuItem("Resources", NULL, (bool*)NULL))
 				{
-					if (s_editorMode == EDIT_CONFIG) { saveConfig(); }
-					s_editorMode = EDIT_RESOURCES;
+					s_editorPopup = POPUP_RESOURCES;
 				}
 				ImGui::Separator();
 				if (ImGui::MenuItem("Asset Browser", NULL, s_editorMode == EDIT_ASSET_BROWSER))
 				{
-					if (s_editorMode == EDIT_CONFIG) { saveConfig(); }
 					s_editorMode = EDIT_ASSET_BROWSER;
 				}
 
@@ -255,7 +308,6 @@ namespace TFE_Editor
 				if (disable) { disableNextItem(); }
 				if (ImGui::MenuItem("Asset Editor", NULL, s_editorMode == EDIT_ASSET))
 				{
-					if (s_editorMode == EDIT_CONFIG) { saveConfig(); }
 					s_editorMode = EDIT_ASSET;
 				}
 				if (disable) { enableNextItem(); }
@@ -263,7 +315,6 @@ namespace TFE_Editor
 				ImGui::Separator();
 				if (ImGui::MenuItem("Return to Game", NULL, (bool*)NULL))
 				{
-					if (s_editorMode == EDIT_CONFIG) { saveConfig(); }
 					s_exitEditor = true;
 				}
 				ImGui::EndMenu();
@@ -297,18 +348,15 @@ namespace TFE_Editor
 			{
 				if (ImGui::MenuItem("New", NULL, (bool*)NULL))
 				{
-					if (s_editorMode == EDIT_CONFIG) { saveConfig(); }
 					//s_editorMode = EDIT_NEW_PROJECT;
 				}
 				if (ImGui::MenuItem("Open", NULL, (bool*)NULL))
 				{
-					if (s_editorMode == EDIT_CONFIG) { saveConfig(); }
 					// TODO
 				}
 				ImGui::Separator();
 				if (ImGui::MenuItem("Edit", NULL, (bool*)NULL))
 				{
-					if (s_editorMode == EDIT_CONFIG) { saveConfig(); }
 					//s_editorMode = EDIT_EDIT_PROJECT;
 				}
 				if (ImGui::MenuItem("Close", NULL, (bool*)NULL))
@@ -382,7 +430,7 @@ namespace TFE_Editor
 		vsprintf(fullStr, msg, arg);
 		va_end(arg);
 
-		s_msgBox.active = true;
+		s_editorPopup = POPUP_MSG_BOX;
 		strcpy(s_msgBox.msg, fullStr);
 		sprintf(s_msgBox.id, "%s##MessageBox", type);
 	}

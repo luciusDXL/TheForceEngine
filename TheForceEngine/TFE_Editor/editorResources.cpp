@@ -47,29 +47,31 @@ namespace TFE_Editor
 
 		bool active = true;
 		bool finished = false;
-		ImGui::SetWindowPos("Editor Resources", { 0.0f, f32(menuHeight) });
-		ImGui::SetWindowSize("Editor Resources", { UI_SCALE(550), 70.0f + UI_SCALE(240) });
-		ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse;
+		f32 winWidth = UI_SCALE(550);
+		ImGui::SetWindowSize("Editor Resources", { winWidth, 70.0f + UI_SCALE(260) });
+		ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoResize;
 
-		ImGui::Begin("Editor Resources", &active, window_flags);
+		if (ImGui::BeginPopupModal("Editor Resources", &active, window_flags))
 		{
 			if (ImGui::Checkbox("Ignore Vanilla Assets", &s_ignoreVanilla))
 			{
 				s_resChanged = true;
 			}
 
-			ImGui::ListBoxHeader("##ResourceList", ImVec2(UI_SCALE(480), UI_SCALE(200)));
-			const size_t count = s_extResources.size();
-			const EditorResource* res = s_extResources.data();
-			for (size_t i = 0; i < count; i++, res++)
+			if (ImGui::ListBoxHeader("##ResourceList", ImVec2(UI_SCALE(480), UI_SCALE(200))))
 			{
-				bool isSelected = s_curResource == i;
-				if (ImGui::Selectable(res->name, &isSelected))
+				const size_t count = s_extResources.size();
+				const EditorResource* res = s_extResources.data();
+				for (size_t i = 0; i < count; i++, res++)
 				{
-					s_curResource = s32(i);
+					bool isSelected = s_curResource == i;
+					if (ImGui::Selectable(res->name, &isSelected))
+					{
+						s_curResource = s32(i);
+					}
 				}
+				ImGui::ListBoxFooter();
 			}
-			ImGui::ListBoxFooter();
 
 			if (ImGui::Button("Add Archive"))
 			{
@@ -128,11 +130,21 @@ namespace TFE_Editor
 				resources_clear();
 				s_resChanged = true;
 			}
+			ImGui::Separator();
+
+			if (ImGui::Button("Close"))
+			{
+				finished = true;
+			}
+			ImGui::EndPopup();
 		}
-		ImGui::End();
 		popFont();
 
-		return false;
+		if (!active)
+		{
+			finished = true;
+		}
+		return finished;
 	}
 
 	void resources_clear()
