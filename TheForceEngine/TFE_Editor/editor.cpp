@@ -58,6 +58,7 @@ namespace TFE_Editor
 	static bool s_exitEditor = false;
 	static bool s_configView = false;
 	static WorkBuffer s_workBuffer;
+	static char s_projectPath[TFE_MAX_PATH] = "";
 
 	static MessageBox s_msgBox = {};
 
@@ -130,11 +131,9 @@ namespace TFE_Editor
 				ImGui::OpenPopup("Editor Resources");
 			} break;
 			case POPUP_NEW_PROJECT:
-			{
-				ImGui::OpenPopup("Project");
-			} break;
 			case POPUP_EDIT_PROJECT:
 			{
+				ImGui::OpenPopup("Project");
 			} break;
 		}
 	}
@@ -179,6 +178,11 @@ namespace TFE_Editor
 			} break;
 			case POPUP_EDIT_PROJECT:
 			{
+				if (project_editUi(false))
+				{
+					ImGui::CloseCurrentPopup();
+					s_editorPopup = POPUP_NONE;
+				}
 			} break;
 		}
 
@@ -361,17 +365,28 @@ namespace TFE_Editor
 				}
 				if (ImGui::MenuItem("Open", NULL, (bool*)NULL))
 				{
-					// TODO
+					FileResult res = TFE_Ui::openFileDialog("Open Project", s_projectPath, { "Project", "*.INI *.ini" });
+					if (!res.empty())
+					{
+						char filePath[TFE_MAX_PATH];
+						strcpy(filePath, res[0].c_str());
+						FileUtil::fixupPath(filePath);
+						project_load(filePath);
+					}
 				}
 				ImGui::Separator();
+				bool projectActive = project_get()->active;
+				if (!projectActive) { disableNextItem(); }
 				if (ImGui::MenuItem("Edit", NULL, (bool*)NULL))
 				{
-					//s_editorMode = EDIT_EDIT_PROJECT;
+					s_editorPopup = POPUP_EDIT_PROJECT;
+					project_prepareEdit();
 				}
 				if (ImGui::MenuItem("Close", NULL, (bool*)NULL))
 				{
 					project_close();
 				}
+				if (!projectActive) { enableNextItem(); }
 				ImGui::Separator();
 				if (ImGui::MenuItem("Export", NULL, (bool*)NULL))
 				{
@@ -382,16 +397,27 @@ namespace TFE_Editor
 				{
 					const size_t count = s_recents.size();
 					const RecentProject* recents = s_recents.data();
+					s32 removeId = -1;
 					for (size_t i = 0; i < count; i++)
 					{
 						char item[TFE_MAX_PATH];
 						sprintf(item, "%d %s", i + 1, recents[i].name.c_str());
 						if (ImGui::MenuItem(item, NULL, (bool*)NULL))
 						{
-							project_load(recents[i].path.c_str());
+							if (!project_load(recents[i].path.c_str()))
+							{
+								// Remove from recents if it is no longer valid.
+								removeId = s32(i);
+							}
 						}
 					}
 					ImGui::EndMenu();
+
+					if (removeId >= 0)
+					{
+						s_recents.erase(s_recents.begin() + removeId);
+						saveConfig();
+					}
 				}
 				if (s_recents.empty()) { enableNextItem(); }
 				ImGui::EndMenu();

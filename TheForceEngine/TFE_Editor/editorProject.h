@@ -58,6 +58,7 @@ namespace TFE_Editor
 	void project_save();
 	void project_close();
 	void project_prepareNew();
+	void project_prepareEdit();
 	bool project_load(const char* filepath);
 	bool project_editUi(bool newProject);
 }

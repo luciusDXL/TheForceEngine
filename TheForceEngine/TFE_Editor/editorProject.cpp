@@ -56,6 +56,11 @@ namespace TFE_Editor
 		s_newProject = {};
 		s_createDir = true;
 	}
+
+	void project_prepareEdit()
+	{
+		s_newProject = s_curProject;
+	}
 		
 	void project_save()
 	{
@@ -211,14 +216,14 @@ namespace TFE_Editor
 			}
 
 			ImGui::Separator();
-			if (ImGui::Button("Create Project"))
+			if (ImGui::Button(newProject ? "Create Project" : "Save Project"))
 			{
 				// Actually create the project.
 				project_close();
 				s_curProject = s_newProject;
 
 				// TODO: Validate.
-				if (s_createDir)
+				if (s_createDir && newProject)
 				{
 					sprintf(s_curProject.path, "%s/%s", s_curProject.path, s_curProject.name);
 					FileUtil::fixupPath(s_curProject.path);
