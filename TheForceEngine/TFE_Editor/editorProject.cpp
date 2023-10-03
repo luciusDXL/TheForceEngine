@@ -141,6 +141,17 @@ namespace TFE_Editor
 				parseProjectValue(tokens[0].c_str(), tokens[1].c_str());
 			}
 		}
+
+		// Validate that the path exists.
+		if (!FileUtil::directoryExits(s_curProject.path))
+		{
+			TFE_System::logWrite(LOG_ERROR, "Editor Project", "Editor Project Path '%s' does not exist.", s_curProject.path);
+			removeFromRecents(s_curProject.path);
+
+			s_curProject = {};
+			return false;
+		}
+
 		s_curProject.active = true;
 		addToRecents(filepath);
 		return true;
@@ -222,7 +233,7 @@ namespace TFE_Editor
 				project_close();
 				s_curProject = s_newProject;
 
-				// TODO: Validate.
+				bool succeeded = true;
 				if (s_createDir && newProject)
 				{
 					sprintf(s_curProject.path, "%s/%s", s_curProject.path, s_curProject.name);
@@ -233,9 +244,21 @@ namespace TFE_Editor
 						FileUtil::makeDirectory(s_curProject.path);
 					}
 				}
+				else if (newProject)
+				{
+					if (!FileUtil::directoryExits(s_curProject.path))
+					{
+						// TODO: Show message box.
+						TFE_System::logWrite(LOG_ERROR, "Editor Project", "Editor Project Path '%s' does not exist, creation failed.", s_curProject.path);
+						succeeded = false;
+					}
+				}
 
-				project_save();
-				s_curProject.active = true;
+				if (succeeded)
+				{
+					project_save();
+					s_curProject.active = true;
+				}
 				finished = true;
 			}
 			ImGui::SameLine();

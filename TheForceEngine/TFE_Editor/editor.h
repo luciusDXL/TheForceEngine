@@ -57,6 +57,7 @@ namespace TFE_Editor
 
 	void clearRecents();
 	void addToRecents(const char* path);
+	void removeFromRecents(const char* path);
 	std::vector<RecentProject>* getRecentProjects();
 	
 	ImVec4 getTextColor(EditorTextColor color);

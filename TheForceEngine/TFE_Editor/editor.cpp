@@ -388,9 +388,11 @@ namespace TFE_Editor
 				}
 				if (!projectActive) { enableNextItem(); }
 				ImGui::Separator();
+				disableNextItem();  // Disable until it does something...
 				if (ImGui::MenuItem("Export", NULL, (bool*)NULL))
 				{
 				}
+				enableNextItem();
 				ImGui::Separator();
 				if (s_recents.empty()) { disableNextItem(); }
 				if (ImGui::BeginMenu("Recent Projects"))
@@ -554,6 +556,26 @@ namespace TFE_Editor
 			s_recents.push_back({name, path});
 		}
 		saveConfig();
+	}
+
+	void removeFromRecents(const char* path)
+	{
+		// Does it already exist?
+		const size_t count = s_recents.size();
+		s32 foundId = -1;
+		for (size_t i = 0; i < count; i++)
+		{
+			if (strcasecmp(s_recents[i].path.c_str(), path) == 0)
+			{
+				foundId = s32(i);
+				break;
+			}
+		}
+		// Remove if it exists.
+		if (foundId >= 0)
+		{
+			s_recents.erase(s_recents.begin() + foundId);
+		}
 	}
 
 	std::vector<RecentProject>* getRecentProjects()
