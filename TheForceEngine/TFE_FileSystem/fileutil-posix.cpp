@@ -1,3 +1,7 @@
+#include <algorithm>
+#include <tuple>
+#include <utility>
+#include <map>
 #include <dirent.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -19,6 +23,99 @@ namespace FileUtil
 	bool existsNoCase(const char *filename);
 	static char *findFileObjectNoCase(const char *filename, bool objisdir);
 
+	// paths to gather files from, in descending order of priority.
+	static const int path_prio[] = { PATH_USER_DOCUMENTS,
+					PATH_USER_DOCUMENTS, PATH_PROGRAM, -1 };
+
+	typedef std::pair<std::string, int> PathPrio;
+	typedef std::map<std::string, PathPrio> FList;
+
+	static void readtfedir(const char *dir, const char *ext, FList& ft, int prio)
+	{
+		char buf[PATH_MAX];
+		struct dirent *de;
+		struct stat st;
+		int el, dl, ret;
+		char *dn;
+		DIR *d;
+
+		d = opendir(dir);
+		if (!d && (errno != ENOENT)) {
+			TFE_System::logWrite(LOG_ERROR, "readTFEDirectory", "opendir(%s) failed with %d\n", dir, errno);
+			return;
+		}
+
+		el = strlen(ext);
+		while (NULL != (de = readdir(d))) {
+			dn = de->d_name;
+			dl = strlen(dn);
+			memset(buf, 0, PATH_MAX);
+			snprintf(buf, PATH_MAX - 1, "%s%s", dir, de->d_name);
+			ret = stat(buf, &st);
+			if (ret || !S_ISREG(st.st_mode))
+				continue;
+
+			// skip dotfiles, dotdirs, too short and files without extensions.
+			if ((dl < (el + 2)) || (dn[0] == '.'))
+				continue;
+			if (dn[dl - el - 1] != '.')
+				continue;
+			// does the extension match (unix: case sensitive!)
+			if (0 != strncasecmp(dn + dl - el, ext, el))
+				continue;
+			// we have a winner
+			auto it = ft.find(string(dn));
+			if (it == ft.end()) {
+				ft[string(dn)] = std::make_pair(string(dir), prio);
+			} else {
+				if ((it->second).second > prio) {
+					ft.erase(it);
+					ft[string(dn)] = std::make_pair(string(dir), prio);
+				}
+			} // else already exists.
+		}
+		closedir(d);
+	}
+
+	void readTFEDirectory(const char *dir, const char *ext, FileList2& fileList)
+	{
+		FList files;
+		char xpath[PATH_MAX];
+		int iter;
+
+		fprintf(stderr, "readTFEDirectory '%s', '%s'\n", dir, ext);
+		if (dir && dir[0] == '/')
+		{
+			TFE_System::logWrite(LOG_ERROR, "readTFEDirectory", "NO ABSOLUTE PATHS PLEASE: '%s' '%s'", dir, ext);
+			return;
+		}
+		
+		iter = 0;
+		while (1) {
+			int pid = path_prio[iter];
+			if (pid < 0)
+				break;
+			const char *p = TFE_Paths::getPath((TFE_PathType)pid);
+			if (p && strlen(p))
+			{
+				sprintf(xpath, "%s%s", p, dir);
+				readtfedir(xpath, ext, files, pid);
+			}
+			iter++;
+		}
+
+		for (auto it = files.begin(); it != files.end(); it++) {
+			std::string fn = it->first;
+			auto p = fn.rfind('.');
+			std::string fe = fn.substr(p + 1);
+			fn.erase(p);
+			PathPrio& pl = it->second;
+			fileList.push_back(std::make_tuple(pl.first, fn, fe));
+		}
+		files.clear();
+		fprintf(stderr, "readTFEDirectory done\n");
+	}
+
 	void readDirectory(const char *dir, const char *ext, FileList& fileList)
 	{
 		char buf[PATH_MAX];
@@ -29,7 +126,7 @@ namespace FileUtil
 		DIR *d;
 
 		d = opendir(dir);
-		if (!d) {
+		if (!d && (errno != ENOENT)) {
 			TFE_System::logWrite(LOG_ERROR, "readDirectory", "opendir(%s) failed with %d\n", dir, errno);
 			return;
 		}
@@ -67,7 +164,7 @@ namespace FileUtil
 		DIR *d;
 
 		d = opendir(dir);
-		if (!d) {
+		if (!d && (errno != ENOENT)) {
 			TFE_System::logWrite(LOG_ERROR, "readSubdirctories", "opendir(%s) failed with %d\n", dir, errno);
 			return;
 		}

@@ -2,6 +2,7 @@
 #include <TFE_System/types.h>
 #include <TFE_Audio/midiDevice.h>
 #include <TFE_Audio/midi.h>
+#include <TFE_FileSystem/fileutil.h>
 
 struct tsf;
 
@@ -33,10 +34,10 @@ namespace TFE_Audio
 		s32  getActiveOutput(void) override;
 
 	private:
-		bool beginStream(const char* soundFont, s32 sampleRate);
+		bool beginStream(FilePath2& soundFont, s32 sampleRate);
 
 		tsf* m_soundFont;
 		s32  m_outputId;
-		FileList m_outputs;
+		FileList2 m_outputs;
 	};
 };

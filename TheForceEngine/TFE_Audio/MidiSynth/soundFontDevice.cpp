@@ -1,6 +1,7 @@
 #include "soundFontDevice.h"
 #include <TFE_Audio/midi.h>
 #include <TFE_FileSystem/filestream.h>
+#include <TFE_FileSystem/fileutil.h>
 #include <algorithm>
 #include <assert.h>
 
@@ -28,20 +29,7 @@ namespace TFE_Audio
 	{
 		if (m_outputs.empty())
 		{
-			char dir[TFE_MAX_PATH];
-			const char* programDir = TFE_Paths::getPath(PATH_PROGRAM);
-			sprintf(dir, "%s", "SoundFonts/");
-			if (!TFE_Paths::mapSystemPath(dir))
-				sprintf(dir, "%sSoundFonts/", programDir);
-
-			FileUtil::readDirectory(dir, "sf2", m_outputs);
-			// Remove the extension.
-			for (size_t i = 0; i < m_outputs.size(); i++)
-			{
-				char name[256];
-				FileUtil::getFileNameFromPath(m_outputs[i].c_str(), name);
-				m_outputs[i] = name;
-			}
+			FileUtil::readTFEDirectory("SoundFonts/", "sf2", m_outputs);
 		}
 		return (u32)m_outputs.size();
 	}
@@ -49,7 +37,7 @@ namespace TFE_Audio
 	void SoundFontDevice::getOutputName(s32 index, char* buffer, u32 maxLength)
 	{
 		if (index < 0 || index >= (s32)getOutputCount()) { return; }
-		const char* name = m_outputs[index].c_str();
+		const char* name = FL2_NAME(m_outputs[index]).c_str();
 		strncpy(buffer, name, maxLength);
 		buffer[strlen(name)] = 0;
 	}
@@ -63,7 +51,7 @@ namespace TFE_Audio
 			index = 0;
 			for (u32 i = 0; i < outputCount; i++)
 			{
-				if (strcasecmp(c_defaultOutput, m_outputs[i].c_str()) == 0)
+				if (strcasecmp(c_defaultOutput, FL2_NAME(m_outputs[i]).c_str()) == 0)
 				{
 					index = i;
 					break;
@@ -73,12 +61,9 @@ namespace TFE_Audio
 		bool res = false;
 		if (index != m_outputId)
 		{
-			char outputName[TFE_MAX_PATH];
-			getOutputName(index, outputName, TFE_MAX_PATH);
-			m_outputId = index;
-
 			exit();
-			res = beginStream(outputName, SFD_SAMPLE_RATE);
+			m_outputId = index;
+			res = beginStream(m_outputs[index], SFD_SAMPLE_RATE);
 		}
 		return res;
 	}
@@ -88,17 +73,11 @@ namespace TFE_Audio
 		return m_outputId;
 	}
 
-	bool SoundFontDevice::beginStream(const char* soundFont, s32 sampleRate)
+	bool SoundFontDevice::beginStream(FilePath2& soundFont, s32 sampleRate)
 	{
 		getOutputCount();
 
-		char filePath[TFE_MAX_PATH];
-		const char* programDir = TFE_Paths::getPath(PATH_PROGRAM);
-		sprintf(filePath, "SoundFonts/%s.sf2", soundFont);
-		if (!TFE_Paths::mapSystemPath(filePath))
-			sprintf(filePath, "%sSoundFonts/%s.sf2", programDir, soundFont);
-
-		m_soundFont = tsf_load_filename(filePath);
+		m_soundFont = tsf_load_filename(FL2_FULLFILE(soundFont).c_str());
 		if (m_soundFont)
 		{
 			// Set the SoundFont rendering output mode
