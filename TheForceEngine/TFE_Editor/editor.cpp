@@ -1,6 +1,7 @@
 #include "editor.h"
 #include "editorConfig.h"
 #include "editorResources.h"
+#include "editorProject.h"
 #include <TFE_Settings/settings.h>
 #include <TFE_Editor/AssetBrowser/assetBrowser.h>
 #include <TFE_Input/input.h>
@@ -12,6 +13,7 @@
 #include <TFE_Ui/ui.h>
 
 #include <TFE_Ui/imGUI/imgui.h>
+#include <TFE_Ui/imGUI/imgui_internal.h>
 
 namespace TFE_Editor
 {
@@ -19,9 +21,20 @@ namespace TFE_Editor
 	{
 		EDIT_CONFIG = 0,
 		EDIT_RESOURCES,
+		EDIT_NEW_PROJECT,
+		EDIT_EDIT_PROJECT,
+		EDIT_ASSET_BROWSER,
 		EDIT_ASSET,
-		EDIT_LEVEL,
 	};
+
+	const ImVec4 c_textColors[] =
+	{
+		ImVec4(1.0f, 1.0f, 1.0f, 1.0f), // TEXTCLR_NORMAL
+		ImVec4(0.5f, 1.0f, 0.5f, 1.0f), // TEXTCLR_TITLE_ACTIVE
+		ImVec4(1.0f, 0.8f, 0.5f, 1.0f), // TEXTCLR_TITLE_INACTIVE
+	};
+
+	const char* c_readOnly = "<Read Only Mode>";
 
 	struct MessageBox
 	{
@@ -32,8 +45,8 @@ namespace TFE_Editor
 	
 	static bool s_showPerf = true;
 	static bool s_showEditor = true;
-	static EditorMode s_editorMode = EDIT_ASSET;
-	static EditorMode s_prevEditorMode = EDIT_ASSET;
+	static EditorMode s_editorMode = EDIT_ASSET_BROWSER;
+	static EditorMode s_prevEditorMode = EDIT_ASSET_BROWSER;
 	static bool s_exitEditor = false;
 	static bool s_configView = false;
 	static WorkBuffer s_workBuffer;
@@ -53,7 +66,7 @@ namespace TFE_Editor
 	void enable()
 	{
 		// Ui begin/render is called so we have a "UI Frame" in which to setup UI state.
-		s_editorMode = EDIT_ASSET;
+		s_editorMode = EDIT_ASSET_BROWSER;
 		s_exitEditor = false;
 		loadFonts();
 		loadConfig();
@@ -65,14 +78,6 @@ namespace TFE_Editor
 	{
 		AssetBrowser::destroy();
 	}
-
-	const ImVec4 c_textColors[]=
-	{
-		ImVec4(1.0f, 1.0f, 1.0f, 1.0f), // TEXTCLR_NORMAL
-		ImVec4(1.0f, 0.25f, 0.25f, 1.0f), // TEXTCLR_ERROR
-		ImVec4(1.0f, 1.0f, 0.25f, 1.0f), // TEXTCLR_WARNING
-		ImVec4(0.25f, 1.0f, 0.25f, 1.0f), // TEXTCLR_SPECIAL
-	};
 
 	void messageBoxUi()
 	{
@@ -124,7 +129,7 @@ namespace TFE_Editor
 		{
 			resources_ui();
 		}
-		else if (s_editorMode == EDIT_ASSET)
+		else if (s_editorMode == EDIT_ASSET_BROWSER)
 		{
 			AssetBrowser::update();
 		}
@@ -152,11 +157,16 @@ namespace TFE_Editor
 
 	bool render()
 	{
-		if (s_editorMode == EDIT_ASSET)
+		if (s_editorMode == EDIT_ASSET_BROWSER)
 		{
 			AssetBrowser::render();
 		}
 		return true;
+	}
+
+	ImVec4 getTextColor(EditorTextColor color)
+	{
+		return c_textColors[color];
 	}
 
 	bool beginMenuBar()
@@ -180,6 +190,33 @@ namespace TFE_Editor
 		ImGui::EndMenuBar();
 		ImGui::End();
 	}
+
+	void disableNextItem()
+	{
+		ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
+		ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.5f);
+	}
+
+	void enableNextItem()
+	{
+		ImGui::PopItemFlag();
+		ImGui::PopStyleVar();
+	}
+		
+	void drawTitle()
+	{
+		DisplayInfo info;
+		TFE_RenderBackend::getDisplayInfo(&info);
+		const s32 winWidth = info.width;
+
+		const Project* project = project_get();
+		const char* title = project->active ? project->name.c_str() : c_readOnly;
+		const s32 titleWidth = (s32)ImGui::CalcTextSize(title).x;
+
+		const ImVec4 titleColor = getTextColor(project->active ? TEXTCLR_TITLE_ACTIVE : TEXTCLR_TITLE_INACTIVE);
+		ImGui::SameLine(f32((winWidth - titleWidth)/2));
+		ImGui::TextColored(titleColor, title);
+	}
 		
 	void menu()
 	{
@@ -195,7 +232,7 @@ namespace TFE_Editor
 					s_prevEditorMode = s_editorMode;
 					if (s_prevEditorMode == EDIT_CONFIG)
 					{
-						s_prevEditorMode = EDIT_ASSET;
+						s_prevEditorMode = EDIT_ASSET_BROWSER;
 					}
 					s_editorMode = EDIT_CONFIG;
 				}
@@ -204,16 +241,26 @@ namespace TFE_Editor
 					if (s_editorMode == EDIT_CONFIG) { saveConfig(); }
 					s_editorMode = EDIT_RESOURCES;
 				}
-				if (ImGui::MenuItem("Asset Browser", NULL, s_editorMode == EDIT_ASSET))
+				ImGui::Separator();
+				if (ImGui::MenuItem("Asset Browser", NULL, s_editorMode == EDIT_ASSET_BROWSER))
+				{
+					if (s_editorMode == EDIT_CONFIG) { saveConfig(); }
+					s_editorMode = EDIT_ASSET_BROWSER;
+				}
+
+				// Disable the Asset Editor menu item, unless actually in an Asset Editor.
+				// This allows the item to be highlighted, and to be able to switch back to
+				// the Asset Browser using the menu.
+				const bool disable = s_editorMode != EDIT_ASSET;
+				if (disable) { disableNextItem(); }
+				if (ImGui::MenuItem("Asset Editor", NULL, s_editorMode == EDIT_ASSET))
 				{
 					if (s_editorMode == EDIT_CONFIG) { saveConfig(); }
 					s_editorMode = EDIT_ASSET;
 				}
-				if (ImGui::MenuItem("Level Editor", NULL, s_editorMode == EDIT_LEVEL))
-				{
-					if (s_editorMode == EDIT_CONFIG) { saveConfig(); }
-					s_editorMode = EDIT_LEVEL;
-				}
+				if (disable) { enableNextItem(); }
+
+				ImGui::Separator();
 				if (ImGui::MenuItem("Return to Game", NULL, (bool*)NULL))
 				{
 					if (s_editorMode == EDIT_CONFIG) { saveConfig(); }
@@ -225,27 +272,71 @@ namespace TFE_Editor
 			{
 				if (ImGui::MenuItem("Select All", NULL, (bool*)NULL))
 				{
-					if (s_editorMode == EDIT_ASSET)
+					if (s_editorMode == EDIT_ASSET_BROWSER)
 					{
 						AssetBrowser::selectAll();
 					}
 				}
 				if (ImGui::MenuItem("Select None", NULL, (bool*)NULL))
 				{
-					if (s_editorMode == EDIT_ASSET)
+					if (s_editorMode == EDIT_ASSET_BROWSER)
 					{
 						AssetBrowser::selectNone();
 					}
 				}
 				if (ImGui::MenuItem("Invert Selection", NULL, (bool*)NULL))
 				{
-					if (s_editorMode == EDIT_ASSET)
+					if (s_editorMode == EDIT_ASSET_BROWSER)
 					{
 						AssetBrowser::invertSelection();
 					}
 				}
 				ImGui::EndMenu();
 			}
+			if (ImGui::BeginMenu("Project"))
+			{
+				if (ImGui::MenuItem("New", NULL, (bool*)NULL))
+				{
+					if (s_editorMode == EDIT_CONFIG) { saveConfig(); }
+					//s_editorMode = EDIT_NEW_PROJECT;
+				}
+				if (ImGui::MenuItem("Open", NULL, (bool*)NULL))
+				{
+					if (s_editorMode == EDIT_CONFIG) { saveConfig(); }
+					// TODO
+				}
+				ImGui::Separator();
+				if (ImGui::MenuItem("Edit", NULL, (bool*)NULL))
+				{
+					if (s_editorMode == EDIT_CONFIG) { saveConfig(); }
+					//s_editorMode = EDIT_EDIT_PROJECT;
+				}
+				if (ImGui::MenuItem("Close", NULL, (bool*)NULL))
+				{
+					project_close();
+				}
+				ImGui::Separator();
+				if (ImGui::MenuItem("Export", NULL, (bool*)NULL))
+				{
+				}
+				ImGui::Separator();
+				if (ImGui::BeginMenu("Recents"))
+				{
+					if (ImGui::MenuItem("1 Mt. Kurek", NULL, (bool*)NULL))
+					{
+					}
+					if (ImGui::MenuItem("2 Test Project", NULL, (bool*)NULL))
+					{
+					}
+					if (ImGui::MenuItem("3 Dark Tide 2", NULL, (bool*)NULL))
+					{
+					}
+					ImGui::EndMenu();
+				}
+				ImGui::EndMenu();
+			}
+
+			drawTitle();
 		}
 		endMenuBar();
 

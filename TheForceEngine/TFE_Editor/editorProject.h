@@ -8,6 +8,7 @@
 //////////////////////////////////////////////////////////////////////
 #include <TFE_System/types.h>
 #include <TFE_FileSystem/paths.h>
+#include <TFE_Editor/editorResources.h>
 #include <TFE_Game/igame.h>
 #include <string>
 
@@ -27,21 +28,33 @@ namespace TFE_Editor
 		FSET_COUNT
 	};
 
+	enum ProjectFlags
+	{
+		PFLAG_NONE = 0,
+		// Require True color mode, true color assets are *not* converted to 8-bit on import.
+		PFLAG_TRUE_COLOR = FLAG_BIT(0),
+	};
+
 	struct Project
 	{
 		std::string name;
 		std::string path;
 		std::string desc;
 		std::string authors;
+		std::string credits;
 
-		ProjectType type;
-		GameID game;
-		FeatureSet featureSet;
+		bool active = false;
+		ProjectType type = PROJ_LEVELS;
+		GameID game = Game_Dark_Forces;
+		FeatureSet featureSet = FSET_VANILLA;
+
+		u32 flags = PFLAG_NONE;	// See ProjectFlags
 	};
 
-	Project* getProject();
-
-	bool ui_loadProject();
-	void ui_closeProject();
-	void ui_newProject();
+	Project* project_get();
+	
+	void project_save();
+	void project_close();
+	bool project_load(const char* filepath);
+	bool project_editUi(bool newProject);
 }

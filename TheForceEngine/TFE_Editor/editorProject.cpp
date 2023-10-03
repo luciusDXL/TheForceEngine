@@ -14,29 +14,39 @@
 
 namespace TFE_Editor
 {
-	static Project* s_curProject = nullptr;
+	static Project s_curProject = {};
 
-	Project* getProject()
+	Project* project_get()
 	{
-		return s_curProject;
+		return &s_curProject;
 	}
 
-	void closeProject()
+	void project_close()
 	{
-		// TODO: Clear project specific editor data.
-		s_curProject = nullptr;
+		s_curProject = {};
+	}
+		
+	void project_save()
+	{
 	}
 
-	void saveProject()
-	{
-	}
-
-	bool ui_loadProject()
+	bool project_load(const char* filepath)
 	{
 		return false;
 	}
 
-	void ui_newProject()
+	bool project_editUi(bool newProject)
 	{
+		// Make sure we are *either* creating a new project or editing an active project.
+		if (!newProject && !s_curProject.active) { return false; }
+		if (newProject)
+		{
+			s_curProject = {};
+			s_curProject.active = true;
+		}
+
+
+
+		return false;
 	}
 }

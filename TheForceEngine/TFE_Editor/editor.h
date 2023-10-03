@@ -11,6 +11,8 @@
 #include <TFE_Game/igame.h>
 #include <vector>
 
+struct ImVec4;
+
 namespace TFE_Editor
 {
 	typedef std::vector<u8> WorkBuffer;
@@ -23,9 +25,8 @@ namespace TFE_Editor
 	enum EditorTextColor
 	{
 		TEXTCLR_NORMAL = 0,
-		TEXTCLR_ERROR,
-		TEXTCLR_WARNING,
-		TEXTCLR_SPECIAL,
+		TEXTCLR_TITLE_ACTIVE,
+		TEXTCLR_TITLE_INACTIVE,
 		TEXTCLR_COUNT
 	};
 
@@ -44,4 +45,6 @@ namespace TFE_Editor
 	ArchiveType getArchiveType(const char* filename);
 	Archive* getArchive(const char* name, GameID gameId);
 	void getTempDirectory(char* tmpDir);
+
+	ImVec4 getTextColor(EditorTextColor color);
 }

@@ -1528,7 +1528,7 @@ namespace AssetBrowser
 			addArchiveFiles(res->archive, gameId, res->name, AFLAG_VANILLA);
 		}
 		// Then add external resources.
-		res = resources_get(resCount);
+		res = resources_getExternal(resCount);
 		for (u32 i = 0; i < resCount; i++, res++)
 		{
 			if (res->type == RES_ARCHIVE)

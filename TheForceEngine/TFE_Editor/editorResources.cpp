@@ -38,7 +38,8 @@ namespace TFE_Editor
 		{ "GOB Archive", "*.GOB *.gob", "Zip", "*.ZIP *.zip" },  // Game_Dark_Forces
 		{ "LAB Archive", "*.LAB *.lab", "Zip", "*.ZIP *.zip" },  // Game_Outlaws
 	};
-
+	
+	// TODO: Add drag and drop functionality.
 	bool resources_ui()
 	{
 		pushFont(TFE_Editor::FONT_SMALL);
@@ -179,7 +180,7 @@ namespace TFE_Editor
 		return s_ignoreVanilla;
 	}
 
-	EditorResource* resources_get(u32& count)
+	EditorResource* resources_getExternal(u32& count)
 	{
 		count = (u32)s_extResources.size();
 		return s_extResources.data();
