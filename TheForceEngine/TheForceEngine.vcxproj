@@ -671,6 +671,7 @@ echo ^)";
     <ClInclude Include="TFE_Settings\windows\registry.h" />
     <ClInclude Include="TFE_System\CrashHandler\crashHandler.h" />
     <ClInclude Include="TFE_System\frameLimiter.h" />
+    <ClInclude Include="TFE_System\iniParser.h" />
     <ClInclude Include="TFE_System\math.h" />
     <ClInclude Include="TFE_System\memoryPool.h" />
     <ClInclude Include="TFE_System\parser.h" />
@@ -984,6 +985,7 @@ echo ^)";
     <ClCompile Include="TFE_Settings\windows\registry.cpp" />
     <ClCompile Include="TFE_System\CrashHandler\crashHandlerWin32.cpp" />
     <ClCompile Include="TFE_System\frameLimiter.cpp" />
+    <ClCompile Include="TFE_System\iniParser.cpp" />
     <ClCompile Include="TFE_System\log.cpp" />
     <ClCompile Include="TFE_System\math.cpp" />
     <ClCompile Include="TFE_System\memoryPool.cpp" />

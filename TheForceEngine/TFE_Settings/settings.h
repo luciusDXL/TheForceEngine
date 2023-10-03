@@ -9,6 +9,7 @@
 //////////////////////////////////////////////////////////////////////
 
 #include <TFE_System/types.h>
+#include <TFE_System/iniParser.h>
 #include <TFE_FileSystem/paths.h>
 #include <TFE_Audio/midiDevice.h>
 #include "gameSourceData.h"
@@ -203,56 +204,6 @@ struct TFE_Settings_System
 {
 	bool gameQuitExitsToMenu = true;	// Quitting from the game returns to the main menu instead.
 	bool returnToModLoader = true;		// Return to the Mod Loader if running a mod.
-};
-
-/// <summary>
-/// Represents an RGBA color as a 32-bit unsigned integer, with properties for reading the channel
-/// values as U8s or floats.
-/// </summary>
-struct RGBA
-{
-	u32 color;
-	u8 getAlpha() { return (color >> 24) & 0xff; }
-	u8 getRed() { return (color >> 16) & 0xff; }
-	u8 getGreen() { return (color >> 8) & 0xff; }
-	u8 getBlue() { return color & 0xff; }
-
-	f32 getAlphaF() { return getAlpha() / 255.0f; }
-	f32 getRedF() { return getRed() / 255.0f; }
-	f32 getGreenF() { return getGreen() / 255.0f; }
-	f32 getBlueF() { return getBlue() / 255.0f; }
-
-	RGBA()
-	{
-		
-	}	
-	
-	RGBA(u32 color)
-	{
-		this->color = color;
-	}
-
-	static RGBA fromFloats(f32 r, f32 g, f32 b)
-	{
-		RGBA color;
-		color.color = (u8)(b * 255) + ((u8)(g * 255) << 8) + ((u8)(r * 255) << 16) + (255 << 24);
-		return color;
-	}
-	static RGBA fromFloats(f32 r, f32 g, f32 b, f32 a)
-	{
-		RGBA color;
-		color.color = (u8)(b * 255) + ((u8)(g * 255) << 8) + ((u8)(r * 255) << 16) + ((u8)(a * 255) << 24);
-		return color;
-	}
-};
-
-struct RGBAf {
-	f32 r, g, b, a;
-
-	RGBA ToRGBA()
-	{
-		return RGBA::fromFloats(r, g, b, a);
-	}
 };
 
 struct TFE_Settings_A11y

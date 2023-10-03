@@ -18,13 +18,13 @@
 #include "linux/steamlnx.h"
 #endif
 
+using namespace TFE_IniParser;
+
 namespace TFE_Settings
 {
 	//////////////////////////////////////////////////////////////////////////////////
 	// Local State
 	//////////////////////////////////////////////////////////////////////////////////
-#define LINEBUF_LEN 1024
-
 	static char s_settingsPath[TFE_MAX_PATH];
 	static TFE_Settings_Window s_windowSettings = {};
 	static TFE_Settings_Graphics s_graphicsSettings = {};
@@ -34,7 +34,6 @@ namespace TFE_Settings
 	static TFE_Settings_A11y s_a11ySettings = {};
 	static TFE_Game s_game = {};
 	static TFE_Settings_Game s_gameSettings = {};
-	static char s_lineBuffer[LINEBUF_LEN];
 	static std::vector<char> s_iniBuffer;
 
 	enum SectionID
@@ -310,47 +309,6 @@ namespace TFE_Settings
 		return &s_gameSettings;
 	}
 
-	void writeHeader(FileStream& file, const char* section)
-	{
-		snprintf(s_lineBuffer, LINEBUF_LEN, "[%s]\r\n", section);
-		file.writeBuffer(s_lineBuffer, (u32)strlen(s_lineBuffer));
-	}
-
-	void writeComment(FileStream& file, const char* comment)
-	{
-		snprintf(s_lineBuffer, LINEBUF_LEN, ";%s\r\n", comment);
-		file.writeBuffer(s_lineBuffer, (u32)strlen(s_lineBuffer));
-	}
-
-	void writeKeyValue_String(FileStream& file, const char* key, const char* value)
-	{
-		snprintf(s_lineBuffer, LINEBUF_LEN, "%s=\"%s\"\r\n", key, value);
-		file.writeBuffer(s_lineBuffer, (u32)strlen(s_lineBuffer));
-	}
-
-	void writeKeyValue_Int(FileStream& file, const char* key, s32 value)
-	{
-		snprintf(s_lineBuffer, LINEBUF_LEN, "%s=%d\r\n", key, value);
-		file.writeBuffer(s_lineBuffer, (u32)strlen(s_lineBuffer));
-	}
-
-	void writeKeyValue_Float(FileStream& file, const char* key, f32 value)
-	{
-		snprintf(s_lineBuffer, LINEBUF_LEN, "%s=%0.3f\r\n", key, value);
-		file.writeBuffer(s_lineBuffer, (u32)strlen(s_lineBuffer));
-	}
-
-	void writeKeyValue_Bool(FileStream& file, const char* key, bool value)
-	{
-		snprintf(s_lineBuffer, LINEBUF_LEN, "%s=%s\r\n", key, value ? "true" : "false");
-		file.writeBuffer(s_lineBuffer, (u32)strlen(s_lineBuffer));
-	}
-
-	void writeKeyValue_RGBA(FileStream& file, const char* key, RGBA value)
-	{
-		writeKeyValue_Int(file, key, value.color);
-	}
-
 	void writeWindowSettings(FileStream& settings)
 	{
 		writeHeader(settings, c_sectionNames[SECTION_WINDOW]);
@@ -615,30 +573,6 @@ namespace TFE_Settings
 				};
 			}
 		}
-	}
-
-	s32 parseInt(const char* value)
-	{
-		char* endPtr = nullptr;
-		return strtol(value, &endPtr, 10);
-	}
-
-	f32 parseFloat(const char* value)
-	{
-		char* endPtr = nullptr;
-		return (f32)strtod(value, &endPtr);
-	}
-
-	bool parseBool(const char* value)
-	{
-		if (value[0] == 'f' || value[0] == '0') { return false; }
-		return true;
-	}
-
-	RGBA parseColor(const char* value)
-	{
-		s32 v = parseInt(value);
-		return RGBA(v);
 	}
 
 	void parseWindowSettings(const char* key, const char* value)

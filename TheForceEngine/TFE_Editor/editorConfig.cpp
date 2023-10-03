@@ -3,6 +3,7 @@
 #include <TFE_RenderBackend/renderBackend.h>
 #include <TFE_System/system.h>
 #include <TFE_System/parser.h>
+#include <TFE_System/iniParser.h>
 #include <TFE_FileSystem/filestream.h>
 #include <TFE_FileSystem/fileutil.h>
 #include <TFE_FileSystem/paths.h>
@@ -75,6 +76,8 @@ namespace TFE_Editor
 		parser.addCommentString("#");
 
 		s_editorConfig = {};
+		clearRecents();
+
 		size_t bufferPos = 0;
 		while (bufferPos < len)
 		{
@@ -105,18 +108,23 @@ namespace TFE_Editor
 			return false;
 		}
 
-		char lineBuffer[1024];
-		snprintf(lineBuffer, 1024, "%s=\"%s\"\r\n", "EditorPath", s_editorConfig.editorPath);
-		configFile.writeBuffer(lineBuffer, (u32)strlen(lineBuffer));
+		TFE_IniParser::writeKeyValue_String(configFile, "EditorPath", s_editorConfig.editorPath);
+		TFE_IniParser::writeKeyValue_String(configFile, "ExportPath", s_editorConfig.exportPath);
+		TFE_IniParser::writeKeyValue_Int(configFile, "FontScale",     s_editorConfig.fontScale);
+		TFE_IniParser::writeKeyValue_Int(configFile, "ThumbnailSize", s_editorConfig.thumbnailSize);
 
-		snprintf(lineBuffer, 1024, "%s=\"%s\"\r\n", "ExportPath", s_editorConfig.exportPath);
-		configFile.writeBuffer(lineBuffer, (u32)strlen(lineBuffer));
-
-		snprintf(lineBuffer, 1024, "%s=%d\r\n", "FontScale", s_editorConfig.fontScale);
-		configFile.writeBuffer(lineBuffer, (u32)strlen(lineBuffer));
-
-		snprintf(lineBuffer, 1024, "%s=%d\r\n", "ThumbnailSize", s_editorConfig.thumbnailSize);
-		configFile.writeBuffer(lineBuffer, (u32)strlen(lineBuffer));
+		// Recent files.
+		std::vector<RecentProject>* recentProjects = getRecentProjects();
+		if (recentProjects && !recentProjects->empty())
+		{
+			char key[256];
+			const s32 count = (s32)recentProjects->size();
+			for (s32 i = 0; i < count; i++)
+			{
+				sprintf(key, "Recent[%d]", i);
+				TFE_IniParser::writeKeyValue_String(configFile, key, (*recentProjects)[i].path.c_str());
+			}
+		}
 
 		configFile.close();
 		s_configLoaded = true;
@@ -242,7 +250,6 @@ namespace TFE_Editor
 	//////////////////////////////////////////
 	void parseValue(const char* key, const char* value)
 	{
-		char* endPtr = nullptr;
 		if (strcasecmp(key, "EditorPath") == 0)
 		{
 			strcpy(s_editorConfig.editorPath, value);
@@ -253,11 +260,15 @@ namespace TFE_Editor
 		}
 		else if (strcasecmp(key, "FontScale") == 0)
 		{
-			s_editorConfig.fontScale = (s32)strtol(value, &endPtr, 10);
+			s_editorConfig.fontScale = TFE_IniParser::parseInt(value);
 		}
 		else if (strcasecmp(key, "ThumbnailSize") == 0)
 		{
-			s_editorConfig.thumbnailSize = (s32)strtol(value, &endPtr, 10);
+			s_editorConfig.thumbnailSize = TFE_IniParser::parseInt(value);
+		}
+		else if (strncasecmp(key, "Recent", strlen("Recent")) == 0)
+		{
+			addToRecents(value);
 		}
 	}
 }

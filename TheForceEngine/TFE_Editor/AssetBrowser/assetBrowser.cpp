@@ -152,18 +152,6 @@ namespace AssetBrowser
 		ImGui::PopFont();
 	}
 
-#define LIST_SELECT(label, arr, index) listSelection(label, arr, IM_ARRAYSIZE(arr), (s32*)&index)
-
-	void listSelection(const char* labelText, const char** listValues, size_t listLen, s32* index)
-	{
-		ImGui::SetNextItemWidth(UI_SCALE(256));
-		ImGui::LabelText("##Label", "%s", labelText); ImGui::SameLine(UI_SCALE(96));
-
-		char comboId[256];
-		sprintf(comboId, "##%s", labelText);
-		ImGui::Combo(comboId, index, listValues, (s32)listLen);
-	}
-
 	bool paletteItemGetter(void* data, int idx, const char** out_text)
 	{
 		Palette* palette = (Palette*)data;

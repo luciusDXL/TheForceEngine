@@ -48,6 +48,8 @@ namespace TFE_Editor
 		char id[512];
 		char msg[TFE_MAX_PATH * 2] = "";
 	};
+
+	static std::vector<RecentProject> s_recents;
 	
 	static bool s_showPerf = true;
 	static bool s_showEditor = true;
@@ -129,6 +131,7 @@ namespace TFE_Editor
 			} break;
 			case POPUP_NEW_PROJECT:
 			{
+				ImGui::OpenPopup("Project");
 			} break;
 			case POPUP_EDIT_PROJECT:
 			{
@@ -168,6 +171,11 @@ namespace TFE_Editor
 			} break;
 			case POPUP_NEW_PROJECT:
 			{
+				if (project_editUi(true))
+				{
+					ImGui::CloseCurrentPopup();
+					s_editorPopup = POPUP_NONE;
+				}
 			} break;
 			case POPUP_EDIT_PROJECT:
 			{
@@ -270,7 +278,7 @@ namespace TFE_Editor
 		const s32 winWidth = info.width;
 
 		const Project* project = project_get();
-		const char* title = project->active ? project->name.c_str() : c_readOnly;
+		const char* title = project->active ? project->name : c_readOnly;
 		const s32 titleWidth = (s32)ImGui::CalcTextSize(title).x;
 
 		const ImVec4 titleColor = getTextColor(project->active ? TEXTCLR_TITLE_ACTIVE : TEXTCLR_TITLE_INACTIVE);
@@ -348,7 +356,8 @@ namespace TFE_Editor
 			{
 				if (ImGui::MenuItem("New", NULL, (bool*)NULL))
 				{
-					//s_editorMode = EDIT_NEW_PROJECT;
+					s_editorPopup = POPUP_NEW_PROJECT;
+					project_prepareNew();
 				}
 				if (ImGui::MenuItem("Open", NULL, (bool*)NULL))
 				{
@@ -368,19 +377,23 @@ namespace TFE_Editor
 				{
 				}
 				ImGui::Separator();
-				if (ImGui::BeginMenu("Recents"))
+				if (s_recents.empty()) { disableNextItem(); }
+				if (ImGui::BeginMenu("Recent Projects"))
 				{
-					if (ImGui::MenuItem("1 Mt. Kurek", NULL, (bool*)NULL))
+					const size_t count = s_recents.size();
+					const RecentProject* recents = s_recents.data();
+					for (size_t i = 0; i < count; i++)
 					{
-					}
-					if (ImGui::MenuItem("2 Test Project", NULL, (bool*)NULL))
-					{
-					}
-					if (ImGui::MenuItem("3 Dark Tide 2", NULL, (bool*)NULL))
-					{
+						char item[TFE_MAX_PATH];
+						sprintf(item, "%d %s", i + 1, recents[i].name.c_str());
+						if (ImGui::MenuItem(item, NULL, (bool*)NULL))
+						{
+							project_load(recents[i].path.c_str());
+						}
 					}
 					ImGui::EndMenu();
 				}
+				if (s_recents.empty()) { enableNextItem(); }
 				ImGui::EndMenu();
 			}
 
@@ -479,5 +492,57 @@ namespace TFE_Editor
 		{
 			FileUtil::makeDirectory(tmpDir);
 		}
+	}
+
+	void clearRecents()
+	{
+		s_recents.clear();
+	}
+		
+	void addToRecents(const char* path)
+	{
+		char name[256];
+		FileUtil::getFileNameFromPath(path, name);
+
+		// Does it already exist?
+		const size_t count = s_recents.size();
+		s32 foundId = -1;
+		for (size_t i = 0; i < count; i++)
+		{
+			if (strcasecmp(s_recents[i].path.c_str(), path) == 0)
+			{
+				foundId = s32(i);
+				break;
+			}
+		}
+		if (foundId > 0)
+		{
+			// Move it to the front.
+			RecentProject curRecent = s_recents[foundId];
+			s_recents.erase(s_recents.begin() + foundId);
+			s_recents.insert(s_recents.begin(), curRecent);
+		}
+		else if (foundId < 0 && count < 10)	// Only have up to 10.
+		{
+			// Otherwise add it.
+			s_recents.push_back({name, path});
+		}
+		saveConfig();
+	}
+
+	std::vector<RecentProject>* getRecentProjects()
+	{
+		return &s_recents;
+	}
+
+	void listSelection(const char* labelText, const char** listValues, size_t listLen, s32* index, s32 comboOffset/*=96*/, s32 comboWidth/*=0*/)
+	{
+		ImGui::SetNextItemWidth(UI_SCALE(256));
+		ImGui::LabelText("##Label", "%s", labelText); ImGui::SameLine(UI_SCALE(comboOffset));
+
+		char comboId[256];
+		sprintf(comboId, "##%s", labelText);
+		if (comboWidth) { ImGui::SetNextItemWidth(UI_SCALE(comboWidth)); }
+		ImGui::Combo(comboId, index, listValues, (s32)listLen);
 	}
 }

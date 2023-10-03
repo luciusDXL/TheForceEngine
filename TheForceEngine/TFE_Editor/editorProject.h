@@ -16,8 +16,8 @@ namespace TFE_Editor
 {
 	enum ProjectType
 	{
-		PROJ_RESOURCE_ONLY = 0,
-		PROJ_LEVELS,
+		PROJ_LEVELS = 0,
+		PROJ_RESOURCE_ONLY,
 		PROJ_COUNT
 	};
 
@@ -37,8 +37,10 @@ namespace TFE_Editor
 
 	struct Project
 	{
-		std::string name;
-		std::string path;
+		// Use raw character strings for ease of use and to reduce memory allocations.
+		char name[256] = "";
+		char path[TFE_MAX_PATH] = "";
+		// These can be arbitrary in length, so leave as strings.
 		std::string desc;
 		std::string authors;
 		std::string credits;
@@ -55,6 +57,7 @@ namespace TFE_Editor
 	
 	void project_save();
 	void project_close();
+	void project_prepareNew();
 	bool project_load(const char* filepath);
 	bool project_editUi(bool newProject);
 }
