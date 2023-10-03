@@ -96,11 +96,20 @@ namespace TFE_Image
 
 		SDL_Surface* sdlimg = IMG_Load(imagePath);
 		if (!sdlimg)
+		{
+			TFE_System::logWrite(LOG_ERROR, "Image", "Cannot load image from '%s', error: '%s'", imagePath, SDL_GetError());
 			return nullptr;
+		}
+
 		if (sdlimg->format->BitsPerPixel != 32)
+		{
 			sdlimg = convertToRGBA(sdlimg);
+		}
 		if (!sdlimg)
+		{
+			TFE_System::logWrite(LOG_ERROR, "Image", "Cannot convert image '%s' to 32-bits, error: '%s'", imagePath, SDL_GetError());
 			return nullptr;
+		}
 
 		s_images[imagePath] = sdlimg;
 		return sdlimg;
