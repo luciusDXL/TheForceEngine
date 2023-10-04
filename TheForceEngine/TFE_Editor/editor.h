@@ -36,6 +36,18 @@ namespace TFE_Editor
 		TEXTCLR_COUNT
 	};
 
+	enum EditorPopup
+	{
+		POPUP_NONE = 0,
+		POPUP_MSG_BOX,
+		POPUP_CONFIG,
+		POPUP_RESOURCES,
+		POPUP_NEW_PROJECT,
+		POPUP_EDIT_PROJECT,
+		POPUP_NEW_LEVEL,
+		POPUP_COUNT
+	};
+
 	#define LIST_SELECT(label, arr, index) listSelection(label, arr, IM_ARRAYSIZE(arr), (s32*)&index)
 		
 	void enable();
@@ -47,6 +59,7 @@ namespace TFE_Editor
 	void popFont();
 
 	void showMessageBox(const char* type, const char* msg, ...);
+	void openEditorPopup(EditorPopup popup);
 	void listSelection(const char* labelText, const char** listValues, size_t listLen, s32* index, s32 comboOffset=96, s32 comboWidth=0);
 
 	// Resizable temporary memory.

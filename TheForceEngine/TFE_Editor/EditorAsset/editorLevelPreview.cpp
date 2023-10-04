@@ -53,21 +53,25 @@ namespace TFE_Editor
 	{
 		if (!archive && !filename) { return -1; }
 
-		if (!archive->openFile(filename))
+		if (archive)
 		{
-			return -1;
-		}
-		size_t len = archive->getFileLength();
-		if (!len)
-		{
+			if (!archive->openFile(filename))
+			{
+				return -1;
+			}
+			size_t len = archive->getFileLength();
+			if (!len)
+			{
+				archive->closeFile();
+				return -1;
+			}
+			WorkBuffer& buffer = getWorkBuffer();
+			buffer.resize(len);
+			archive->readFile(buffer.data(), len);
 			archive->closeFile();
-			return -1;
 		}
-		WorkBuffer& buffer = getWorkBuffer();
-		buffer.resize(len);
-		archive->readFile(buffer.data(), len);
-		archive->closeFile();
-
+		// TODO: Handle non-archive...
+		
 		if (type == LEV_LEV)
 		{
 			return -1;

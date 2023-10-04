@@ -1,6 +1,7 @@
 #include "assetBrowser.h"
 #include <TFE_Editor/errorMessages.h>
 #include <TFE_Editor/editorConfig.h>
+#include <TFE_Editor/editorLevel.h>
 #include <TFE_Editor/editorProject.h>
 #include <TFE_Editor/editorResources.h>
 #include <TFE_Editor/editor.h>
@@ -269,9 +270,8 @@ namespace AssetBrowser
 			ImGui::Separator();
 			if (ImGui::Button("Create New Level"))
 			{
-				// TODO: rebuild assets.
-				s_reloadProjectAssets = true;
-				listChanged = true;
+				openEditorPopup(POPUP_NEW_LEVEL);
+				level_prepareNew();
 			}
 			ImGui::SameLine(0.0f, UI_SCALE(64));
 			if (ImGui::Checkbox("Show Only Mod Levels", &s_viewInfo.showOnlyModLevels))
@@ -1144,6 +1144,8 @@ namespace AssetBrowser
 		for (u32 f = 0; f < levelCount; f++, projAsset++)
 		{
 			Archive* archive = projAsset->archive;
+			// TODO: Handle non-archive levels.
+			if (!archive) { continue; }
 
 			// Parse the level for 1) the palette, 2) the data lists.
 			if (archive->openFile(projAsset->name.c_str()))

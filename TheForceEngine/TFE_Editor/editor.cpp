@@ -1,5 +1,6 @@
 #include "editor.h"
 #include "editorConfig.h"
+#include "editorLevel.h"
 #include "editorResources.h"
 #include "editorProject.h"
 #include <TFE_Settings/settings.h>
@@ -22,18 +23,7 @@ namespace TFE_Editor
 		EDIT_ASSET_BROWSER = 0,
 		EDIT_ASSET,
 	};
-
-	enum EditorPopup
-	{
-		POPUP_NONE = 0,
-		POPUP_MSG_BOX,
-		POPUP_CONFIG,
-		POPUP_RESOURCES,
-		POPUP_NEW_PROJECT,
-		POPUP_EDIT_PROJECT,
-		POPUP_COUNT
-	};
-
+	
 	const ImVec4 c_textColors[] =
 	{
 		ImVec4(1.0f, 1.0f, 1.0f, 1.0f), // TEXTCLR_NORMAL
@@ -135,6 +125,10 @@ namespace TFE_Editor
 			{
 				ImGui::OpenPopup("Project");
 			} break;
+			case POPUP_NEW_LEVEL:
+			{
+				ImGui::OpenPopup("New Level");
+			} break;
 		}
 	}
 
@@ -179,6 +173,14 @@ namespace TFE_Editor
 			case POPUP_EDIT_PROJECT:
 			{
 				if (project_editUi(false))
+				{
+					ImGui::CloseCurrentPopup();
+					s_editorPopup = POPUP_NONE;
+				}
+			} break;
+			case POPUP_NEW_LEVEL:
+			{
+				if (level_newLevelUi())
 				{
 					ImGui::CloseCurrentPopup();
 					s_editorPopup = POPUP_NONE;
@@ -288,6 +290,10 @@ namespace TFE_Editor
 		const ImVec4 titleColor = getTextColor(project->active ? TEXTCLR_TITLE_ACTIVE : TEXTCLR_TITLE_INACTIVE);
 		ImGui::SameLine(f32((winWidth - titleWidth)/2));
 		ImGui::TextColored(titleColor, title);
+	}
+
+	void openEditorPopup()
+	{
 	}
 
 	void menu()
@@ -474,6 +480,11 @@ namespace TFE_Editor
 		s_editorPopup = POPUP_MSG_BOX;
 		strcpy(s_msgBox.msg, fullStr);
 		sprintf(s_msgBox.id, "%s##MessageBox", type);
+	}
+
+	void openEditorPopup(EditorPopup popup)
+	{
+		s_editorPopup = popup;
 	}
 		
 	ArchiveType getArchiveType(const char* filename)
