@@ -5,6 +5,8 @@
 #include <TFE_RenderBackend/renderBackend.h>
 #include <TFE_System/system.h>
 #include <TFE_System/parser.h>
+#include <TFE_System/iniParser.h>
+#include <TFE_Editor/editorProject.h>
 #include <TFE_FileSystem/filestream.h>
 #include <TFE_FileSystem/fileutil.h>
 #include <TFE_FileSystem/paths.h>
@@ -144,6 +146,11 @@ namespace TFE_Editor
 		{
 			finished = true;
 		}
+		if (finished)
+		{
+			project_save();
+		}
+
 		return finished;
 	}
 
@@ -202,5 +209,75 @@ namespace TFE_Editor
 	{
 		count = (u32)s_baseResources.size();
 		return s_baseResources.data();
+	}
+
+	const char* c_resTypeStr[] =
+	{
+		"Archive",   // RES_ARCHIVE
+		"Directory", // RES_DIRECTORY
+	};
+	static ArchiveType s_curArchiveType;
+
+	void resources_save(FileStream& outFile)
+	{
+		const s32 count = (s32)s_extResources.size();
+		const EditorResource* res = s_extResources.data();
+		for (s32 i = 0; i < count; i++)
+		{
+			TFE_IniParser::writeHeader(outFile, "Resource");
+			TFE_IniParser::writeKeyValue_String(outFile, "ResName", res[i].name);
+			TFE_IniParser::writeKeyValue_String(outFile, "ResType", c_resTypeStr[res[i].type]);
+			if (res[i].type == RES_ARCHIVE)
+			{
+				TFE_IniParser::writeKeyValue_Int(outFile, "ResArchiveType", (s32)res[i].archive->getType());
+				TFE_IniParser::writeKeyValue_String(outFile, "ResPath", res[i].archive->getPath());
+			}
+			else if (res[i].type == RES_DIRECTORY)
+			{
+				TFE_IniParser::writeKeyValue_String(outFile, "ResPath", res[i].path);
+			}
+		}
+	}
+		
+	void resources_createExternalEmpty()
+	{
+		s_extResources.push_back({});
+	}
+
+	void resources_parse(const char* key, const char* value)
+	{
+		EditorResource& res = s_extResources.back();
+
+		if (strcasecmp(key, "ResName") == 0)
+		{
+			strcpy(res.name, value);
+		}
+		else if (strcasecmp(key, "ResType") == 0)
+		{
+			const size_t count = TFE_ARRAYSIZE(c_resTypeStr);
+			for (size_t i = 0; i < count; i++)
+			{
+				if (strcasecmp(value, c_resTypeStr[i]) == 0)
+				{
+					res.type = ResourceType(i);
+					break;
+				}
+			}
+		}
+		else if (strcasecmp(key, "ResArchiveType") == 0)
+		{
+			s_curArchiveType = (ArchiveType)TFE_IniParser::parseInt(value);
+		}
+		else if (strcasecmp(key, "ResPath") == 0)
+		{
+			if (res.type == RES_ARCHIVE)
+			{
+				res.archive = Archive::getArchive(s_curArchiveType, res.name, value);
+			}
+			else
+			{
+				strcpy(res.path, value);
+			}
+		}
 	}
 }

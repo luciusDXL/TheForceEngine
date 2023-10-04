@@ -1,6 +1,7 @@
 #include "editorProject.h"
 #include <TFE_Editor/editorConfig.h>
 #include <TFE_Editor/editor.h>
+#include <TFE_Editor/AssetBrowser/assetBrowser.h>
 #include <TFE_RenderBackend/renderBackend.h>
 #include <TFE_System/system.h>
 #include <TFE_System/parser.h>
@@ -49,6 +50,8 @@ namespace TFE_Editor
 	void project_close()
 	{
 		s_curProject = {};
+		resources_clear();
+		AssetBrowser::rebuildAssets();
 	}
 
 	void project_prepareNew()
@@ -64,6 +67,8 @@ namespace TFE_Editor
 		
 	void project_save()
 	{
+		if (!s_curProject.active) { return; }
+
 		char projFile[TFE_MAX_PATH];
 		sprintf(projFile, "%s/%s.ini", s_curProject.path, s_curProject.name);
 		FileUtil::fixupPath(projFile);
@@ -85,11 +90,14 @@ namespace TFE_Editor
 		TFE_IniParser::writeKeyValue_String(proj, "FeatureSet", c_featureSet[s_curProject.game]);
 		TFE_IniParser::writeKeyValue_Int(proj, "Flags", (s32)s_curProject.flags);
 
+		// Save Resources.
+		resources_save(proj);
+
 		proj.close();
 
 		addToRecents(projFile);
 	}
-		
+
 	bool project_load(const char* filepath)
 	{
 		FileStream projectFile;
@@ -97,6 +105,7 @@ namespace TFE_Editor
 		{
 			return false;
 		}
+		resources_clear();
 
 		const u32 len = (u32)projectFile.getSize();
 		WorkBuffer& buffer = getWorkBuffer();
@@ -112,6 +121,7 @@ namespace TFE_Editor
 		s_curProject = {};
 		s_curStringOut = nullptr;
 		size_t bufferPos = 0;
+		bool inResource = false;
 		while (bufferPos < len)
 		{
 			const char* line = parser.readLine(bufferPos);
@@ -131,6 +141,12 @@ namespace TFE_Editor
 				}
 				continue;
 			}
+			else if (strcasecmp(line, "[Resource]") == 0)
+			{
+				resources_createExternalEmpty();
+				inResource = true;
+				continue;
+			}
 
 			TokenList tokens;
 			parser.tokenizeLine(line, tokens);
@@ -138,7 +154,14 @@ namespace TFE_Editor
 
 			if (tokens.size() == 2)
 			{
-				parseProjectValue(tokens[0].c_str(), tokens[1].c_str());
+				if (inResource)
+				{
+					resources_parse(tokens[0].c_str(), tokens[1].c_str());
+				}
+				else
+				{
+					parseProjectValue(tokens[0].c_str(), tokens[1].c_str());
+				}
 			}
 		}
 
@@ -154,6 +177,8 @@ namespace TFE_Editor
 
 		s_curProject.active = true;
 		addToRecents(filepath);
+		AssetBrowser::rebuildAssets();
+
 		return true;
 	}
 		
@@ -230,7 +255,6 @@ namespace TFE_Editor
 			if (ImGui::Button(newProject ? "Create Project" : "Save Project"))
 			{
 				// Actually create the project.
-				project_close();
 				s_curProject = s_newProject;
 
 				bool succeeded = true;
@@ -256,6 +280,7 @@ namespace TFE_Editor
 
 				if (succeeded)
 				{
+					if (newProject) { resources_clear(); }
 					project_save();
 					s_curProject.active = true;
 				}

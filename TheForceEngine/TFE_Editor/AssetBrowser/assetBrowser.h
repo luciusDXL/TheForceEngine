@@ -19,4 +19,7 @@ namespace AssetBrowser
 	void selectAll();
 	void selectNone();
 	void invertSelection();
+
+	bool showOnlyModLevels();
+	void rebuildAssets();
 }

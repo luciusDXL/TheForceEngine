@@ -1,6 +1,7 @@
 #include "assetBrowser.h"
 #include <TFE_Editor/errorMessages.h>
 #include <TFE_Editor/editorConfig.h>
+#include <TFE_Editor/editorProject.h>
 #include <TFE_Editor/editorResources.h>
 #include <TFE_Editor/editor.h>
 #include <TFE_Editor/EditorAsset/editorAsset.h>
@@ -36,10 +37,12 @@ namespace AssetBrowser
 	{
 		INFO_PANEL_WIDTH = 524u,
 	};
-	enum AssetFlags
+	enum AssetSource
 	{
-		AFLAG_NONE = 0,
-		AFLAG_VANILLA = FLAG_BIT(0),
+		ASRC_VANILLA = 0,
+		ASRC_EXTERNAL,
+		ASRC_PROJECT,
+		ASRC_COUNT
 	};
 	const char* c_games[] =
 	{
@@ -56,7 +59,7 @@ namespace AssetBrowser
 		std::string name;
 		std::string filePath;
 
-		u32 flags;
+		AssetSource assetSource;
 		AssetHandle handle;
 	};
 	typedef std::vector<Asset> AssetList;
@@ -93,7 +96,8 @@ namespace AssetBrowser
 		char assetFilter[64] = "";
 		char prevAssetFilter[64] = "";
 		s32 levelSource = -1;
-		u32 filterLen;
+		u32 filterLen = 0;
+		bool showOnlyModLevels = true;
 	};
 
 	std::vector<LevelAssets> s_levelAssets;
@@ -106,6 +110,7 @@ namespace AssetBrowser
 
 	static s32 s_hovered = -1;
 	static s32 s_menuHeight = 20;
+	static s32 s_selectedPalette = 0;
 
 	static SelectionList s_selected;
 	static s32 s_selectRange[2];
@@ -205,6 +210,13 @@ namespace AssetBrowser
 		u32 w = infoWidth;
 		u32 h = infoHeight;
 
+		Project* project = project_get();
+		bool projActive = project->active;
+		if (projActive && s_viewInfo.type == TYPE_LEVEL)
+		{
+			h += (u32)UI_SCALE(40);
+		}
+
 		ImGui::SetWindowPos("Asset Browser##Settings", { 0.0f, f32(s_menuHeight) });
 		ImGui::SetWindowSize("Asset Browser##Settings", { f32(w), f32(h) });
 		ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse;
@@ -251,6 +263,23 @@ namespace AssetBrowser
 			listChanged = true;
 		}
 
+		// Add new level.
+		if (projActive && s_viewInfo.type == TYPE_LEVEL)
+		{
+			ImGui::Separator();
+			if (ImGui::Button("Create New Level"))
+			{
+				// TODO: rebuild assets.
+				s_reloadProjectAssets = true;
+				listChanged = true;
+			}
+			ImGui::SameLine(0.0f, UI_SCALE(64));
+			if (ImGui::Checkbox("Show Only Mod Levels", &s_viewInfo.showOnlyModLevels))
+			{
+				listChanged = true;
+			}
+		}
+
 		ImGui::End();
 
 		if (listChanged)
@@ -259,8 +288,6 @@ namespace AssetBrowser
 		}
 	}
 
-	static s32 s_selectedPalette = 0;
-
 	void drawInfoPanel(Asset* asset, u32 infoWidth, u32 infoHeight, bool multiselect)
 	{
 		DisplayInfo displayInfo;
@@ -268,6 +295,13 @@ namespace AssetBrowser
 
 		u32 w = std::min(infoWidth,  displayInfo.width);
 		u32 h = std::max(256u, displayInfo.height - (infoHeight + s_menuHeight));
+
+		Project* project = project_get();
+		bool projActive = project->active;
+		if (projActive && s_viewInfo.type == TYPE_LEVEL)
+		{
+			infoHeight += (u32)UI_SCALE(40);
+		}
 
 		ImGui::SetWindowPos("Asset Info", { 0.0f, f32(infoHeight + s_menuHeight) });
 		ImGui::SetWindowSize("Asset Info", { f32(w), f32(h) });
@@ -662,14 +696,26 @@ namespace AssetBrowser
 				s_hovered = -1;
 			}
 
-			s32 a = 0;
+			s32 a = 0, yOffset = 0;
 			ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, { 0.0f, 0.0f });
+			AssetSource src = s_viewAssetList[0].assetSource;
 			for (s32 y = 0; a < count; y++)
 			{
 				for (s32 x = 0; x < columnCount && a < count; x++, a++)
 				{
+					// Seperate Out asset sources.
+					if (src != s_viewAssetList[a].assetSource)
+					{
+						src = s_viewAssetList[a].assetSource;
+						ImGui::Separator();
+
+						yOffset += 10;
+						if (x != 0) { y++; }
+						x = 0;
+					}
+
 					sprintf(buttonLabel, "###asset%d", a);
-					ImVec2 cursor((8.0f + x * itemWidth), topPos + y * itemHeight);
+					ImVec2 cursor((8.0f + x * itemWidth), topPos + y * itemHeight + yOffset);
 					ImGui::SetCursorPos(cursor);
 
 					ImGui::PushStyleColor(ImGuiCol_Border, getBorderColor(a));
@@ -933,6 +979,18 @@ namespace AssetBrowser
 			}
 		}
 		s_selected = list;
+	}
+
+	bool showOnlyModLevels()
+	{
+		return s_viewInfo.showOnlyModLevels;
+	}
+
+	void rebuildAssets()
+	{
+		s_reloadProjectAssets = true;
+		s_assetsNeedProcess = true;
+		updateAssetList();
 	}
 
 	////////////////////////////////////////////////
@@ -1358,7 +1416,7 @@ namespace AssetBrowser
 		return true;
 	}
 
-	void addArchiveFiles(Archive* archive, GameID gameId, const char* name, u32 flags)
+	void addArchiveFiles(Archive* archive, GameID gameId, const char* name, AssetSource assetSource)
 	{
 		if (!archive) { return; }
 		u32 fileCount = archive->getFileCount();
@@ -1377,7 +1435,7 @@ namespace AssetBrowser
 				{
 					// Add the temporary archive.
 					Archive* archive = Archive::getArchive(archiveType, fileName, newPath);
-					addArchiveFiles(archive, gameId, fileName, 0);
+					addArchiveFiles(archive, gameId, fileName, ASRC_EXTERNAL);
 				}
 				continue;
 			}
@@ -1392,7 +1450,7 @@ namespace AssetBrowser
 					archive,	// Archive
 					fileName,	// name
 					"",			// filepath
-					flags,		// flags
+					assetSource,// flags
 				};
 
 				// Check to see if the asset already exists, if so replace it.
@@ -1410,7 +1468,7 @@ namespace AssetBrowser
 		}
 	}
 	
-	void addDirectoryFiles(const char* path, GameID gameId, const char* name, u32 flags)
+	void addDirectoryFiles(const char* path, GameID gameId, AssetSource assetSource)
 	{
 		if (!path) { return; }
 		char pathOS[TFE_MAX_PATH];
@@ -1463,7 +1521,7 @@ namespace AssetBrowser
 				{
 					// Add the archive.
 					Archive* archive = Archive::getArchive(archiveType, fileName, filepath);
-					addArchiveFiles(archive, gameId, fileName, 0);
+					addArchiveFiles(archive, gameId, fileName, ASRC_EXTERNAL);
 					continue;
 				}
 
@@ -1477,7 +1535,7 @@ namespace AssetBrowser
 						nullptr,	// Archive
 						fileName,	// Name
 						filepath,	// File path
-						flags,		// Flags
+						assetSource,// Asset Source
 					};
 
 					// Check to see if the asset already exists, if so replace it.
@@ -1493,6 +1551,25 @@ namespace AssetBrowser
 					}
 				}
 			}
+		}
+	}
+
+	bool sortByAssetSource(Asset& a, Asset& b)
+	{
+		const s32 order[] =
+		{
+			2, // ASRC_VANILLA
+			1, // ASRC_EXTERNAL
+			0, // ASRC_PROJECT
+		};
+		return order[a.assetSource] < order[b.assetSource];
+	}
+
+	void sortAssetList()
+	{
+		for (u32 i = 0; i < TYPE_COUNT; i++)
+		{
+			std::sort(s_projectAssetList[i].begin(), s_projectAssetList[i].end(), sortByAssetSource);
 		}
 	}
 
@@ -1513,7 +1590,7 @@ namespace AssetBrowser
 		for (u32 i = 0; i < resCount; i++, res++)
 		{
 			assert(res->type == RES_ARCHIVE);
-			addArchiveFiles(res->archive, gameId, res->name, AFLAG_VANILLA);
+			addArchiveFiles(res->archive, gameId, res->name, ASRC_VANILLA);
 		}
 		// Then add external resources.
 		res = resources_getExternal(resCount);
@@ -1521,13 +1598,21 @@ namespace AssetBrowser
 		{
 			if (res->type == RES_ARCHIVE)
 			{
-				addArchiveFiles(res->archive, gameId, res->name, AFLAG_NONE);
+				addArchiveFiles(res->archive, gameId, res->name, ASRC_EXTERNAL);
 			}
 			else if (res->type == RES_DIRECTORY)
 			{
-				addDirectoryFiles(res->path, gameId, res->name, AFLAG_NONE);
+				addDirectoryFiles(res->path, gameId, ASRC_EXTERNAL);
 			}
 		}
+		// Add resources from the mod itself (if loaded).
+		Project* project = project_get();
+		if (project->active)
+		{
+			addDirectoryFiles(project->path, gameId, ASRC_PROJECT);
+		}
+		// Then sort from Mod -> Resources -> Vanilla.
+		sortAssetList();
 	}
 
 	bool isLevelTexture(const char* name)
@@ -1603,7 +1688,7 @@ namespace AssetBrowser
 	void loadAsset(const Asset* projAsset)
 	{
 		// Filter out vanilla assets if desired.
-		if ((projAsset->flags & AFLAG_VANILLA) && resources_ignoreVanillaAssets()) { return; }
+		if ((projAsset->assetSource == ASRC_VANILLA) && resources_ignoreVanillaAssets()) { return; }
 
 		Asset asset;
 		asset.type = projAsset->type;
@@ -1611,7 +1696,7 @@ namespace AssetBrowser
 		asset.gameId = projAsset->gameId;
 		asset.archive = projAsset->archive;
 		asset.filePath = projAsset->filePath;
-		asset.flags = projAsset->flags;
+		asset.assetSource = projAsset->assetSource;
 		s32 palId = getAssetPalette(projAsset->name.c_str());
 
 		AssetColorData colorData = { s_palettes[palId].data, nullptr, palId, 32 };
@@ -1665,6 +1750,7 @@ namespace AssetBrowser
 		{
 			return;
 		}
+		Project* project = project_get();
 		buildProjectAssetList(s_viewInfo.game);
 
 		preprocessAssets();
@@ -1721,6 +1807,13 @@ namespace AssetBrowser
 			{
 				const char* name = projAsset->name.c_str();
 				if (!editorFilter(name) || !isLevel3D(name)) { continue; }
+
+				// Only show levels from the project.
+				if (project->active && s_viewInfo.showOnlyModLevels && projAsset->assetSource != ASRC_PROJECT)
+				{
+					continue;
+				}
+
 				loadAsset(projAsset);
 			}
 		}
@@ -1734,7 +1827,7 @@ namespace AssetBrowser
 				if (!editorFilter(name) || !isLevelPalette(name)) { continue; }
 
 				// Filter out vanilla assets if desired.
-				if ((projAsset->flags & AFLAG_VANILLA) && resources_ignoreVanillaAssets()) { continue; }
+				if ((projAsset->assetSource == ASRC_VANILLA) && resources_ignoreVanillaAssets()) { continue; }
 
 				Archive* archive = projAsset->archive;
 				Asset asset;
@@ -1743,7 +1836,7 @@ namespace AssetBrowser
 				asset.gameId = projAsset->gameId;
 				asset.archive = projAsset->archive;
 				asset.filePath = projAsset->filePath;
-				asset.flags = projAsset->flags;
+				asset.assetSource = projAsset->assetSource;
 
 				// Does it have a colormap too?
 				// For now we assume the names match.
