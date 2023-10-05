@@ -16,6 +16,7 @@
 #include <TFE_RenderBackend/renderBackend.h>
 #include <TFE_Input/inputMapping.h>
 #include <TFE_Settings/settings.h>
+#include <TFE_ForceScript/forceScript.h>
 #include <TFE_System/system.h>
 #include <TFE_System/CrashHandler/crashHandler.h>
 #include <TFE_System/frameLimiter.h>
@@ -27,7 +28,6 @@
 #include <TFE_Ui/ui.h>
 #include <TFE_FrontEndUI/frontEndUi.h>
 #include <TFE_FrontEndUI/modLoader.h>
-#include <TFE_ForceScript/vm.h>
 #include <TFE_A11y/accessibility.h>
 #include <algorithm>
 #include <cinttypes>
@@ -41,6 +41,8 @@
 
 // Replace with music system
 #include <TFE_Audio/midiPlayer.h>
+
+#define FORCE_SCRIPT_ENABLE 1
 
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN 1
@@ -659,8 +661,9 @@ int main(int argc, char* argv[])
 	reticle_init();
 
 	// Test
-	#ifdef VM_ENABLE
-		TFE_ForceScript::test();
+	#ifdef FORCE_SCRIPT_ENABLE
+	TFE_ForceScript::init();
+	TFE_ForceScript::destroy();
 	#endif
 
 	// Start up the game and skip the title screen.

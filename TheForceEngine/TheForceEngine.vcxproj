@@ -131,8 +131,8 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>$(ProjectDir);$(ProjectDir)\glew\include;$(ProjectDir)\TFE_ScriptSystem\AngelScript\sdk\angelscript\include;$(ProjectDir)\TFE_ScriptSystem\AngelScript\sdk\add_on;$(ProjectDir)\devILx64\include;$(ProjectDir)\sdl2_win32\include;$(IncludePath)</IncludePath>
-    <LibraryPath>$(ProjectDir)\sdl2_win32\lib\x64;$(ProjectDir)\lib;$(ProjectDir)\devILx64\lib\x64\Release;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(ProjectDir);$(ProjectDir)\glew\include;$(ProjectDir)\TFE_ForceScript\Angelscript\angelscript\include;$(ProjectDir)\TFE_ForceScript\Angelscript\add_on;$(ProjectDir)\sdl2_win32\include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(ProjectDir)\sdl2_win32\lib\x64;$(ProjectDir)\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
@@ -145,8 +145,8 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(ProjectDir);$(ProjectDir)\glew\include;$(ProjectDir)\TFE_ScriptSystem\AngelScript\sdk\angelscript\include;$(ProjectDir)\TFE_ScriptSystem\AngelScript\sdk\add_on;$(ProjectDir)\devILx64\include;$(ProjectDir)\sdl2_win32\include;$(IncludePath)</IncludePath>
-    <LibraryPath>$(ProjectDir)\sdl2_win32\lib\x64;$(ProjectDir)\lib;$(ProjectDir)\devILx64\lib\x64\Release;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(ProjectDir);$(ProjectDir)\glew\include;$(ProjectDir)\TFE_ForceScript\Angelscript\angelscript\include;$(ProjectDir)\TFE_ForceScript\Angelscript\add_on;$(ProjectDir)\sdl2_win32\include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(ProjectDir)\sdl2_win32\lib\x64;$(ProjectDir)\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='BuildForRelease|x64'">
     <LinkIncremental>false</LinkIncremental>
@@ -463,80 +463,11 @@ echo ^)";
     <ClInclude Include="TFE_FileSystem\memorystream.h" />
     <ClInclude Include="TFE_FileSystem\paths.h" />
     <ClInclude Include="TFE_FileSystem\stream.h" />
-    <ClInclude Include="TFE_ForceScript\asmjit\asmjit-scope-begin.h" />
-    <ClInclude Include="TFE_ForceScript\asmjit\asmjit-scope-end.h" />
-    <ClInclude Include="TFE_ForceScript\asmjit\asmjit.h" />
-    <ClInclude Include="TFE_ForceScript\asmjit\core.h" />
-    <ClInclude Include="TFE_ForceScript\asmjit\core\api-build_p.h" />
-    <ClInclude Include="TFE_ForceScript\asmjit\core\api-config.h" />
-    <ClInclude Include="TFE_ForceScript\asmjit\core\archcommons.h" />
-    <ClInclude Include="TFE_ForceScript\asmjit\core\archtraits.h" />
-    <ClInclude Include="TFE_ForceScript\asmjit\core\assembler.h" />
-    <ClInclude Include="TFE_ForceScript\asmjit\core\builder.h" />
-    <ClInclude Include="TFE_ForceScript\asmjit\core\codebuffer.h" />
-    <ClInclude Include="TFE_ForceScript\asmjit\core\codeholder.h" />
-    <ClInclude Include="TFE_ForceScript\asmjit\core\codewriter_p.h" />
-    <ClInclude Include="TFE_ForceScript\asmjit\core\compiler.h" />
-    <ClInclude Include="TFE_ForceScript\asmjit\core\compilerdefs.h" />
-    <ClInclude Include="TFE_ForceScript\asmjit\core\constpool.h" />
-    <ClInclude Include="TFE_ForceScript\asmjit\core\cpuinfo.h" />
-    <ClInclude Include="TFE_ForceScript\asmjit\core\emithelper_p.h" />
-    <ClInclude Include="TFE_ForceScript\asmjit\core\emitter.h" />
-    <ClInclude Include="TFE_ForceScript\asmjit\core\emitterutils_p.h" />
-    <ClInclude Include="TFE_ForceScript\asmjit\core\environment.h" />
-    <ClInclude Include="TFE_ForceScript\asmjit\core\errorhandler.h" />
-    <ClInclude Include="TFE_ForceScript\asmjit\core\formatter.h" />
-    <ClInclude Include="TFE_ForceScript\asmjit\core\formatter_p.h" />
-    <ClInclude Include="TFE_ForceScript\asmjit\core\func.h" />
-    <ClInclude Include="TFE_ForceScript\asmjit\core\funcargscontext_p.h" />
-    <ClInclude Include="TFE_ForceScript\asmjit\core\globals.h" />
-    <ClInclude Include="TFE_ForceScript\asmjit\core\inst.h" />
-    <ClInclude Include="TFE_ForceScript\asmjit\core\jitallocator.h" />
-    <ClInclude Include="TFE_ForceScript\asmjit\core\jitruntime.h" />
-    <ClInclude Include="TFE_ForceScript\asmjit\core\logger.h" />
-    <ClInclude Include="TFE_ForceScript\asmjit\core\misc_p.h" />
-    <ClInclude Include="TFE_ForceScript\asmjit\core\operand.h" />
-    <ClInclude Include="TFE_ForceScript\asmjit\core\osutils.h" />
-    <ClInclude Include="TFE_ForceScript\asmjit\core\osutils_p.h" />
-    <ClInclude Include="TFE_ForceScript\asmjit\core\raassignment_p.h" />
-    <ClInclude Include="TFE_ForceScript\asmjit\core\rabuilders_p.h" />
-    <ClInclude Include="TFE_ForceScript\asmjit\core\radefs_p.h" />
-    <ClInclude Include="TFE_ForceScript\asmjit\core\ralocal_p.h" />
-    <ClInclude Include="TFE_ForceScript\asmjit\core\rapass_p.h" />
-    <ClInclude Include="TFE_ForceScript\asmjit\core\rastack_p.h" />
-    <ClInclude Include="TFE_ForceScript\asmjit\core\string.h" />
-    <ClInclude Include="TFE_ForceScript\asmjit\core\support.h" />
-    <ClInclude Include="TFE_ForceScript\asmjit\core\target.h" />
-    <ClInclude Include="TFE_ForceScript\asmjit\core\type.h" />
-    <ClInclude Include="TFE_ForceScript\asmjit\core\virtmem.h" />
-    <ClInclude Include="TFE_ForceScript\asmjit\core\zone.h" />
-    <ClInclude Include="TFE_ForceScript\asmjit\core\zonehash.h" />
-    <ClInclude Include="TFE_ForceScript\asmjit\core\zonelist.h" />
-    <ClInclude Include="TFE_ForceScript\asmjit\core\zonestack.h" />
-    <ClInclude Include="TFE_ForceScript\asmjit\core\zonestring.h" />
-    <ClInclude Include="TFE_ForceScript\asmjit\core\zonetree.h" />
-    <ClInclude Include="TFE_ForceScript\asmjit\core\zonevector.h" />
-    <ClInclude Include="TFE_ForceScript\asmjit\x86.h" />
-    <ClInclude Include="TFE_ForceScript\asmjit\x86\x86archtraits_p.h" />
-    <ClInclude Include="TFE_ForceScript\asmjit\x86\x86assembler.h" />
-    <ClInclude Include="TFE_ForceScript\asmjit\x86\x86builder.h" />
-    <ClInclude Include="TFE_ForceScript\asmjit\x86\x86compiler.h" />
-    <ClInclude Include="TFE_ForceScript\asmjit\x86\x86emithelper_p.h" />
-    <ClInclude Include="TFE_ForceScript\asmjit\x86\x86emitter.h" />
-    <ClInclude Include="TFE_ForceScript\asmjit\x86\x86formatter_p.h" />
-    <ClInclude Include="TFE_ForceScript\asmjit\x86\x86func_p.h" />
-    <ClInclude Include="TFE_ForceScript\asmjit\x86\x86globals.h" />
-    <ClInclude Include="TFE_ForceScript\asmjit\x86\x86instapi_p.h" />
-    <ClInclude Include="TFE_ForceScript\asmjit\x86\x86instdb.h" />
-    <ClInclude Include="TFE_ForceScript\asmjit\x86\x86instdb_p.h" />
-    <ClInclude Include="TFE_ForceScript\asmjit\x86\x86opcode_p.h" />
-    <ClInclude Include="TFE_ForceScript\asmjit\x86\x86operand.h" />
-    <ClInclude Include="TFE_ForceScript\asmjit\x86\x86rapass_p.h" />
-    <ClInclude Include="TFE_ForceScript\jit.h" />
-    <ClInclude Include="TFE_ForceScript\value.h" />
-    <ClInclude Include="TFE_ForceScript\vm.h" />
-    <ClInclude Include="TFE_ForceScript\vmConfig.h" />
-    <ClInclude Include="TFE_ForceScript\vmOps.h" />
+    <ClInclude Include="TFE_ForceScript\Angelscript\add_on\scriptarray\scriptarray.h" />
+    <ClInclude Include="TFE_ForceScript\Angelscript\add_on\scriptbuilder\scriptbuilder.h" />
+    <ClInclude Include="TFE_ForceScript\Angelscript\add_on\scriptstdstring\scriptstdstring.h" />
+    <ClInclude Include="TFE_ForceScript\Angelscript\angelscript\angelscript.h" />
+    <ClInclude Include="TFE_ForceScript\forceScript.h" />
     <ClInclude Include="TFE_FrontEndUI\console.h" />
     <ClInclude Include="TFE_FrontEndUI\frontEndUi.h" />
     <ClInclude Include="TFE_FrontEndUI\modLoader.h" />
@@ -824,56 +755,11 @@ echo ^)";
     <ClCompile Include="TFE_FileSystem\fileutil.cpp" />
     <ClCompile Include="TFE_FileSystem\memorystream.cpp" />
     <ClCompile Include="TFE_FileSystem\paths.cpp" />
-    <ClCompile Include="TFE_ForceScript\asmjit\core\archtraits.cpp" />
-    <ClCompile Include="TFE_ForceScript\asmjit\core\assembler.cpp" />
-    <ClCompile Include="TFE_ForceScript\asmjit\core\builder.cpp" />
-    <ClCompile Include="TFE_ForceScript\asmjit\core\codeholder.cpp" />
-    <ClCompile Include="TFE_ForceScript\asmjit\core\codewriter.cpp" />
-    <ClCompile Include="TFE_ForceScript\asmjit\core\compiler.cpp" />
-    <ClCompile Include="TFE_ForceScript\asmjit\core\constpool.cpp" />
-    <ClCompile Include="TFE_ForceScript\asmjit\core\cpuinfo.cpp" />
-    <ClCompile Include="TFE_ForceScript\asmjit\core\emithelper.cpp" />
-    <ClCompile Include="TFE_ForceScript\asmjit\core\emitter.cpp" />
-    <ClCompile Include="TFE_ForceScript\asmjit\core\emitterutils.cpp" />
-    <ClCompile Include="TFE_ForceScript\asmjit\core\environment.cpp" />
-    <ClCompile Include="TFE_ForceScript\asmjit\core\errorhandler.cpp" />
-    <ClCompile Include="TFE_ForceScript\asmjit\core\formatter.cpp" />
-    <ClCompile Include="TFE_ForceScript\asmjit\core\func.cpp" />
-    <ClCompile Include="TFE_ForceScript\asmjit\core\funcargscontext.cpp" />
-    <ClCompile Include="TFE_ForceScript\asmjit\core\globals.cpp" />
-    <ClCompile Include="TFE_ForceScript\asmjit\core\inst.cpp" />
-    <ClCompile Include="TFE_ForceScript\asmjit\core\jitallocator.cpp" />
-    <ClCompile Include="TFE_ForceScript\asmjit\core\jitruntime.cpp" />
-    <ClCompile Include="TFE_ForceScript\asmjit\core\logger.cpp" />
-    <ClCompile Include="TFE_ForceScript\asmjit\core\operand.cpp" />
-    <ClCompile Include="TFE_ForceScript\asmjit\core\osutils.cpp" />
-    <ClCompile Include="TFE_ForceScript\asmjit\core\ralocal.cpp" />
-    <ClCompile Include="TFE_ForceScript\asmjit\core\rapass.cpp" />
-    <ClCompile Include="TFE_ForceScript\asmjit\core\rastack.cpp" />
-    <ClCompile Include="TFE_ForceScript\asmjit\core\string.cpp" />
-    <ClCompile Include="TFE_ForceScript\asmjit\core\support.cpp" />
-    <ClCompile Include="TFE_ForceScript\asmjit\core\target.cpp" />
-    <ClCompile Include="TFE_ForceScript\asmjit\core\type.cpp" />
-    <ClCompile Include="TFE_ForceScript\asmjit\core\virtmem.cpp" />
-    <ClCompile Include="TFE_ForceScript\asmjit\core\zone.cpp" />
-    <ClCompile Include="TFE_ForceScript\asmjit\core\zonehash.cpp" />
-    <ClCompile Include="TFE_ForceScript\asmjit\core\zonelist.cpp" />
-    <ClCompile Include="TFE_ForceScript\asmjit\core\zonestack.cpp" />
-    <ClCompile Include="TFE_ForceScript\asmjit\core\zonetree.cpp" />
-    <ClCompile Include="TFE_ForceScript\asmjit\core\zonevector.cpp" />
-    <ClCompile Include="TFE_ForceScript\asmjit\x86\x86assembler.cpp" />
-    <ClCompile Include="TFE_ForceScript\asmjit\x86\x86builder.cpp" />
-    <ClCompile Include="TFE_ForceScript\asmjit\x86\x86compiler.cpp" />
-    <ClCompile Include="TFE_ForceScript\asmjit\x86\x86emithelper.cpp" />
-    <ClCompile Include="TFE_ForceScript\asmjit\x86\x86formatter.cpp" />
-    <ClCompile Include="TFE_ForceScript\asmjit\x86\x86func.cpp" />
-    <ClCompile Include="TFE_ForceScript\asmjit\x86\x86instapi.cpp" />
-    <ClCompile Include="TFE_ForceScript\asmjit\x86\x86instdb.cpp" />
-    <ClCompile Include="TFE_ForceScript\asmjit\x86\x86operand.cpp" />
-    <ClCompile Include="TFE_ForceScript\asmjit\x86\x86rapass.cpp" />
-    <ClCompile Include="TFE_ForceScript\jit.cpp" />
-    <ClCompile Include="TFE_ForceScript\value.cpp" />
-    <ClCompile Include="TFE_ForceScript\vm.cpp" />
+    <ClCompile Include="TFE_ForceScript\Angelscript\add_on\scriptarray\scriptarray.cpp" />
+    <ClCompile Include="TFE_ForceScript\Angelscript\add_on\scriptbuilder\scriptbuilder.cpp" />
+    <ClCompile Include="TFE_ForceScript\Angelscript\add_on\scriptstdstring\scriptstdstring.cpp" />
+    <ClCompile Include="TFE_ForceScript\Angelscript\add_on\scriptstdstring\scriptstdstring_utils.cpp" />
+    <ClCompile Include="TFE_ForceScript\forceScript.cpp" />
     <ClCompile Include="TFE_FrontEndUI\console.cpp" />
     <ClCompile Include="TFE_FrontEndUI\frontEndUi.cpp" />
     <ClCompile Include="TFE_FrontEndUI\modLoader.cpp" />

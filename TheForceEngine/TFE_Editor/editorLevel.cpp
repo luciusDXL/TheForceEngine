@@ -86,6 +86,7 @@ namespace TFE_Editor
 		file.writeBuffer(buffer, strlen(buffer));
 				
 		file.close();
+		return true;
 	}
 
 	bool level_newLevelUi()
