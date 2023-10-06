@@ -466,7 +466,44 @@ echo ^)";
     <ClInclude Include="TFE_ForceScript\Angelscript\add_on\scriptarray\scriptarray.h" />
     <ClInclude Include="TFE_ForceScript\Angelscript\add_on\scriptbuilder\scriptbuilder.h" />
     <ClInclude Include="TFE_ForceScript\Angelscript\add_on\scriptstdstring\scriptstdstring.h" />
-    <ClInclude Include="TFE_ForceScript\Angelscript\angelscript\angelscript.h" />
+    <ClInclude Include="TFE_ForceScript\Angelscript\angelscript\include\angelscript.h" />
+    <ClInclude Include="TFE_ForceScript\Angelscript\angelscript\source\as_array.h" />
+    <ClInclude Include="TFE_ForceScript\Angelscript\angelscript\source\as_atomic.h" />
+    <ClInclude Include="TFE_ForceScript\Angelscript\angelscript\source\as_builder.h" />
+    <ClInclude Include="TFE_ForceScript\Angelscript\angelscript\source\as_bytecode.h" />
+    <ClInclude Include="TFE_ForceScript\Angelscript\angelscript\source\as_callfunc.h" />
+    <ClInclude Include="TFE_ForceScript\Angelscript\angelscript\source\as_compiler.h" />
+    <ClInclude Include="TFE_ForceScript\Angelscript\angelscript\source\as_config.h" />
+    <ClInclude Include="TFE_ForceScript\Angelscript\angelscript\source\as_configgroup.h" />
+    <ClInclude Include="TFE_ForceScript\Angelscript\angelscript\source\as_context.h" />
+    <ClInclude Include="TFE_ForceScript\Angelscript\angelscript\source\as_criticalsection.h" />
+    <ClInclude Include="TFE_ForceScript\Angelscript\angelscript\source\as_datatype.h" />
+    <ClInclude Include="TFE_ForceScript\Angelscript\angelscript\source\as_debug.h" />
+    <ClInclude Include="TFE_ForceScript\Angelscript\angelscript\source\as_gc.h" />
+    <ClInclude Include="TFE_ForceScript\Angelscript\angelscript\source\as_generic.h" />
+    <ClInclude Include="TFE_ForceScript\Angelscript\angelscript\source\as_map.h" />
+    <ClInclude Include="TFE_ForceScript\Angelscript\angelscript\source\as_memory.h" />
+    <ClInclude Include="TFE_ForceScript\Angelscript\angelscript\source\as_module.h" />
+    <ClInclude Include="TFE_ForceScript\Angelscript\angelscript\source\as_namespace.h" />
+    <ClInclude Include="TFE_ForceScript\Angelscript\angelscript\source\as_objecttype.h" />
+    <ClInclude Include="TFE_ForceScript\Angelscript\angelscript\source\as_outputbuffer.h" />
+    <ClInclude Include="TFE_ForceScript\Angelscript\angelscript\source\as_parser.h" />
+    <ClInclude Include="TFE_ForceScript\Angelscript\angelscript\source\as_property.h" />
+    <ClInclude Include="TFE_ForceScript\Angelscript\angelscript\source\as_restore.h" />
+    <ClInclude Include="TFE_ForceScript\Angelscript\angelscript\source\as_scriptcode.h" />
+    <ClInclude Include="TFE_ForceScript\Angelscript\angelscript\source\as_scriptengine.h" />
+    <ClInclude Include="TFE_ForceScript\Angelscript\angelscript\source\as_scriptfunction.h" />
+    <ClInclude Include="TFE_ForceScript\Angelscript\angelscript\source\as_scriptnode.h" />
+    <ClInclude Include="TFE_ForceScript\Angelscript\angelscript\source\as_scriptobject.h" />
+    <ClInclude Include="TFE_ForceScript\Angelscript\angelscript\source\as_string.h" />
+    <ClInclude Include="TFE_ForceScript\Angelscript\angelscript\source\as_string_util.h" />
+    <ClInclude Include="TFE_ForceScript\Angelscript\angelscript\source\as_symboltable.h" />
+    <ClInclude Include="TFE_ForceScript\Angelscript\angelscript\source\as_texts.h" />
+    <ClInclude Include="TFE_ForceScript\Angelscript\angelscript\source\as_thread.h" />
+    <ClInclude Include="TFE_ForceScript\Angelscript\angelscript\source\as_tokendef.h" />
+    <ClInclude Include="TFE_ForceScript\Angelscript\angelscript\source\as_tokenizer.h" />
+    <ClInclude Include="TFE_ForceScript\Angelscript\angelscript\source\as_typeinfo.h" />
+    <ClInclude Include="TFE_ForceScript\Angelscript\angelscript\source\as_variablescope.h" />
     <ClInclude Include="TFE_ForceScript\forceScript.h" />
     <ClInclude Include="TFE_FrontEndUI\console.h" />
     <ClInclude Include="TFE_FrontEndUI\frontEndUi.h" />
@@ -759,6 +796,36 @@ echo ^)";
     <ClCompile Include="TFE_ForceScript\Angelscript\add_on\scriptbuilder\scriptbuilder.cpp" />
     <ClCompile Include="TFE_ForceScript\Angelscript\add_on\scriptstdstring\scriptstdstring.cpp" />
     <ClCompile Include="TFE_ForceScript\Angelscript\add_on\scriptstdstring\scriptstdstring_utils.cpp" />
+    <ClCompile Include="TFE_ForceScript\Angelscript\angelscript\source\as_atomic.cpp" />
+    <ClCompile Include="TFE_ForceScript\Angelscript\angelscript\source\as_builder.cpp" />
+    <ClCompile Include="TFE_ForceScript\Angelscript\angelscript\source\as_bytecode.cpp" />
+    <ClCompile Include="TFE_ForceScript\Angelscript\angelscript\source\as_callfunc.cpp" />
+    <ClCompile Include="TFE_ForceScript\Angelscript\angelscript\source\as_callfunc_x64_msvc.cpp" />
+    <ClCompile Include="TFE_ForceScript\Angelscript\angelscript\source\as_callfunc_x86.cpp" />
+    <ClCompile Include="TFE_ForceScript\Angelscript\angelscript\source\as_compiler.cpp" />
+    <ClCompile Include="TFE_ForceScript\Angelscript\angelscript\source\as_configgroup.cpp" />
+    <ClCompile Include="TFE_ForceScript\Angelscript\angelscript\source\as_context.cpp" />
+    <ClCompile Include="TFE_ForceScript\Angelscript\angelscript\source\as_datatype.cpp" />
+    <ClCompile Include="TFE_ForceScript\Angelscript\angelscript\source\as_gc.cpp" />
+    <ClCompile Include="TFE_ForceScript\Angelscript\angelscript\source\as_generic.cpp" />
+    <ClCompile Include="TFE_ForceScript\Angelscript\angelscript\source\as_globalproperty.cpp" />
+    <ClCompile Include="TFE_ForceScript\Angelscript\angelscript\source\as_memory.cpp" />
+    <ClCompile Include="TFE_ForceScript\Angelscript\angelscript\source\as_module.cpp" />
+    <ClCompile Include="TFE_ForceScript\Angelscript\angelscript\source\as_objecttype.cpp" />
+    <ClCompile Include="TFE_ForceScript\Angelscript\angelscript\source\as_outputbuffer.cpp" />
+    <ClCompile Include="TFE_ForceScript\Angelscript\angelscript\source\as_parser.cpp" />
+    <ClCompile Include="TFE_ForceScript\Angelscript\angelscript\source\as_restore.cpp" />
+    <ClCompile Include="TFE_ForceScript\Angelscript\angelscript\source\as_scriptcode.cpp" />
+    <ClCompile Include="TFE_ForceScript\Angelscript\angelscript\source\as_scriptengine.cpp" />
+    <ClCompile Include="TFE_ForceScript\Angelscript\angelscript\source\as_scriptfunction.cpp" />
+    <ClCompile Include="TFE_ForceScript\Angelscript\angelscript\source\as_scriptnode.cpp" />
+    <ClCompile Include="TFE_ForceScript\Angelscript\angelscript\source\as_scriptobject.cpp" />
+    <ClCompile Include="TFE_ForceScript\Angelscript\angelscript\source\as_string.cpp" />
+    <ClCompile Include="TFE_ForceScript\Angelscript\angelscript\source\as_string_util.cpp" />
+    <ClCompile Include="TFE_ForceScript\Angelscript\angelscript\source\as_thread.cpp" />
+    <ClCompile Include="TFE_ForceScript\Angelscript\angelscript\source\as_tokenizer.cpp" />
+    <ClCompile Include="TFE_ForceScript\Angelscript\angelscript\source\as_typeinfo.cpp" />
+    <ClCompile Include="TFE_ForceScript\Angelscript\angelscript\source\as_variablescope.cpp" />
     <ClCompile Include="TFE_ForceScript\forceScript.cpp" />
     <ClCompile Include="TFE_FrontEndUI\console.cpp" />
     <ClCompile Include="TFE_FrontEndUI\frontEndUi.cpp" />
@@ -962,6 +1029,13 @@ echo ^)";
     <None Include="Shaders\tri3dTexture.vert" />
     <None Include="Shaders\tri3dTextureClamp.frag" />
     <None Include="Shaders\tri3dTextureTrans.frag" />
+    <CustomBuild Include="TFE_ForceScript\Angelscript\angelscript\source\as_callfunc_x64_msvc_asm.asm">
+      <FileType>Document</FileType>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">ml64.exe /c  /nologo /Fo"$(Configuration)\as_callfunc_x64_msvc_asm.obj" /W3 /Zi /Ta "%(RootDir)%(Directory)\%(Filename)%(Extension)"</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(Configuration)\as_callfunc_x64_msvc_asm.obj;%(Outputs)</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">ml64.exe /c  /nologo /Fo"$(Configuration)\as_callfunc_x64_msvc_asm.obj" /W3 /Zi /Ta "%(RootDir)%(Directory)\%(Filename)%(Extension)"</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(Configuration)\as_callfunc_x64_msvc_asm.obj;%(Outputs)</Outputs>
+    </CustomBuild>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

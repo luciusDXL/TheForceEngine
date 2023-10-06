@@ -1,20 +1,17 @@
 #include "forceScript.h"
 #include <TFE_System/system.h>
 #include <TFE_FrontEndUI/frontEndUI.h>
+#include <assert.h>
+
+#ifdef ENABLE_FORCE_SCRIPT
+// TFE_ForceScript wraps Anglescript, so these includes should only exist here.
 #include <angelscript.h>
 #include <scriptstdstring/scriptstdstring.h>
 #include <scriptbuilder/scriptbuilder.h>
-#include <assert.h>
-
-#ifdef _DEBUG
-#pragma comment( lib, "angelscript64d.lib" )
-#else
-#pragma comment( lib, "angelscript64.lib" )
-#endif
 
 namespace TFE_ForceScript
 {
-	static asIScriptEngine* s_engine = nullptr;
+	static asIScriptEngine*  s_engine  = nullptr;
 	static asIScriptContext* s_context = nullptr;
 
 	void test();
@@ -148,3 +145,13 @@ namespace TFE_ForceScript
 		}
 	}
 }  // TFE_ForceScript
+
+#else
+
+namespace TFE_ForceScript
+{
+	void init() {} 
+	void destroy() {}
+}
+
+#endif

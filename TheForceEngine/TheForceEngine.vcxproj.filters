@@ -173,20 +173,29 @@
     <Filter Include="Source\TFE_Editor\AssetBrowser">
       <UniqueIdentifier>{39aec0b3-0a4e-4584-989b-a78fd6583de5}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source\TFE_ForceScript\Anglescript">
-      <UniqueIdentifier>{9c230d1b-ea3b-4612-9c90-cc4554a6a134}</UniqueIdentifier>
+    <Filter Include="Source\TFE_ForceScript\Angelscript">
+      <UniqueIdentifier>{c13790bd-e0c3-402a-a2e0-d33542d9a0c3}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source\TFE_ForceScript\add_on">
-      <UniqueIdentifier>{3e89d540-0eb5-421b-a953-3f5da7536f44}</UniqueIdentifier>
+    <Filter Include="Source\TFE_ForceScript\Angelscript\add_on">
+      <UniqueIdentifier>{3fee4fb4-8992-40df-9ee8-5eb225a89484}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source\TFE_ForceScript\add_on\scriptbuilder">
-      <UniqueIdentifier>{86ceb3b0-beb9-4cc9-9dc1-900714574892}</UniqueIdentifier>
+    <Filter Include="Source\TFE_ForceScript\Angelscript\angelscript">
+      <UniqueIdentifier>{f0c1002b-87e8-40c2-b7da-790e6398a8a8}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source\TFE_ForceScript\add_on\scriptstdstring">
-      <UniqueIdentifier>{a7d37f23-2fbe-4e05-a203-a5f6c24f69cd}</UniqueIdentifier>
+    <Filter Include="Source\TFE_ForceScript\Angelscript\add_on\scriptarray">
+      <UniqueIdentifier>{4ea8f0e2-2268-4a55-bd0a-fc5125ef8471}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source\TFE_ForceScript\add_on\scriptarray">
-      <UniqueIdentifier>{71c535c6-2593-42eb-9285-ef13f8e1c30e}</UniqueIdentifier>
+    <Filter Include="Source\TFE_ForceScript\Angelscript\add_on\scriptbuilder">
+      <UniqueIdentifier>{0dd08bcb-7f4e-42ff-bbce-d1bf2d5bceb6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\TFE_ForceScript\Angelscript\add_on\scriptstdstring">
+      <UniqueIdentifier>{ca2ff737-6f93-4fdf-a8da-159b86e48d3c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\TFE_ForceScript\Angelscript\angelscript\include">
+      <UniqueIdentifier>{0e4d6216-482b-495c-8b88-e1f75556d747}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\TFE_ForceScript\Angelscript\angelscript\source">
+      <UniqueIdentifier>{eda60bca-8bac-41ef-815b-769600dea4ef}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -1093,17 +1102,128 @@
     <ClInclude Include="TFE_ForceScript\forceScript.h">
       <Filter>Source\TFE_ForceScript</Filter>
     </ClInclude>
-    <ClInclude Include="TFE_ForceScript\Angelscript\angelscript\angelscript.h">
-      <Filter>Source\TFE_ForceScript\Anglescript</Filter>
+    <ClInclude Include="TFE_ForceScript\Angelscript\add_on\scriptarray\scriptarray.h">
+      <Filter>Source\TFE_ForceScript\Angelscript\add_on\scriptarray</Filter>
     </ClInclude>
     <ClInclude Include="TFE_ForceScript\Angelscript\add_on\scriptbuilder\scriptbuilder.h">
-      <Filter>Source\TFE_ForceScript\add_on\scriptbuilder</Filter>
+      <Filter>Source\TFE_ForceScript\Angelscript\add_on\scriptbuilder</Filter>
     </ClInclude>
     <ClInclude Include="TFE_ForceScript\Angelscript\add_on\scriptstdstring\scriptstdstring.h">
-      <Filter>Source\TFE_ForceScript\add_on\scriptstdstring</Filter>
+      <Filter>Source\TFE_ForceScript\Angelscript\add_on\scriptstdstring</Filter>
     </ClInclude>
-    <ClInclude Include="TFE_ForceScript\Angelscript\add_on\scriptarray\scriptarray.h">
-      <Filter>Source\TFE_ForceScript\add_on\scriptarray</Filter>
+    <ClInclude Include="TFE_ForceScript\Angelscript\angelscript\include\angelscript.h">
+      <Filter>Source\TFE_ForceScript\Angelscript\angelscript\include</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\Angelscript\angelscript\source\as_array.h">
+      <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\Angelscript\angelscript\source\as_atomic.h">
+      <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\Angelscript\angelscript\source\as_builder.h">
+      <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\Angelscript\angelscript\source\as_bytecode.h">
+      <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\Angelscript\angelscript\source\as_callfunc.h">
+      <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\Angelscript\angelscript\source\as_compiler.h">
+      <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\Angelscript\angelscript\source\as_config.h">
+      <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\Angelscript\angelscript\source\as_configgroup.h">
+      <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\Angelscript\angelscript\source\as_context.h">
+      <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\Angelscript\angelscript\source\as_criticalsection.h">
+      <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\Angelscript\angelscript\source\as_datatype.h">
+      <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\Angelscript\angelscript\source\as_debug.h">
+      <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\Angelscript\angelscript\source\as_gc.h">
+      <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\Angelscript\angelscript\source\as_generic.h">
+      <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\Angelscript\angelscript\source\as_map.h">
+      <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\Angelscript\angelscript\source\as_memory.h">
+      <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\Angelscript\angelscript\source\as_module.h">
+      <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\Angelscript\angelscript\source\as_namespace.h">
+      <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\Angelscript\angelscript\source\as_objecttype.h">
+      <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\Angelscript\angelscript\source\as_outputbuffer.h">
+      <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\Angelscript\angelscript\source\as_parser.h">
+      <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\Angelscript\angelscript\source\as_property.h">
+      <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\Angelscript\angelscript\source\as_restore.h">
+      <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\Angelscript\angelscript\source\as_scriptcode.h">
+      <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\Angelscript\angelscript\source\as_scriptengine.h">
+      <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\Angelscript\angelscript\source\as_scriptfunction.h">
+      <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\Angelscript\angelscript\source\as_scriptnode.h">
+      <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\Angelscript\angelscript\source\as_scriptobject.h">
+      <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\Angelscript\angelscript\source\as_string.h">
+      <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\Angelscript\angelscript\source\as_string_util.h">
+      <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\Angelscript\angelscript\source\as_symboltable.h">
+      <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\Angelscript\angelscript\source\as_texts.h">
+      <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\Angelscript\angelscript\source\as_thread.h">
+      <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\Angelscript\angelscript\source\as_tokendef.h">
+      <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\Angelscript\angelscript\source\as_tokenizer.h">
+      <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\Angelscript\angelscript\source\as_typeinfo.h">
+      <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\Angelscript\angelscript\source\as_variablescope.h">
+      <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -1872,17 +1992,107 @@
     <ClCompile Include="TFE_ForceScript\forceScript.cpp">
       <Filter>Source\TFE_ForceScript</Filter>
     </ClCompile>
+    <ClCompile Include="TFE_ForceScript\Angelscript\add_on\scriptarray\scriptarray.cpp">
+      <Filter>Source\TFE_ForceScript\Angelscript\add_on\scriptarray</Filter>
+    </ClCompile>
     <ClCompile Include="TFE_ForceScript\Angelscript\add_on\scriptbuilder\scriptbuilder.cpp">
-      <Filter>Source\TFE_ForceScript\add_on\scriptbuilder</Filter>
+      <Filter>Source\TFE_ForceScript\Angelscript\add_on\scriptbuilder</Filter>
     </ClCompile>
     <ClCompile Include="TFE_ForceScript\Angelscript\add_on\scriptstdstring\scriptstdstring.cpp">
-      <Filter>Source\TFE_ForceScript\add_on\scriptstdstring</Filter>
+      <Filter>Source\TFE_ForceScript\Angelscript\add_on\scriptstdstring</Filter>
     </ClCompile>
     <ClCompile Include="TFE_ForceScript\Angelscript\add_on\scriptstdstring\scriptstdstring_utils.cpp">
-      <Filter>Source\TFE_ForceScript\add_on\scriptstdstring</Filter>
+      <Filter>Source\TFE_ForceScript\Angelscript\add_on\scriptstdstring</Filter>
     </ClCompile>
-    <ClCompile Include="TFE_ForceScript\Angelscript\add_on\scriptarray\scriptarray.cpp">
-      <Filter>Source\TFE_ForceScript\add_on\scriptarray</Filter>
+    <ClCompile Include="TFE_ForceScript\Angelscript\angelscript\source\as_atomic.cpp">
+      <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_ForceScript\Angelscript\angelscript\source\as_builder.cpp">
+      <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_ForceScript\Angelscript\angelscript\source\as_bytecode.cpp">
+      <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_ForceScript\Angelscript\angelscript\source\as_callfunc.cpp">
+      <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_ForceScript\Angelscript\angelscript\source\as_callfunc_x64_msvc.cpp">
+      <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_ForceScript\Angelscript\angelscript\source\as_callfunc_x86.cpp">
+      <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_ForceScript\Angelscript\angelscript\source\as_compiler.cpp">
+      <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_ForceScript\Angelscript\angelscript\source\as_configgroup.cpp">
+      <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_ForceScript\Angelscript\angelscript\source\as_context.cpp">
+      <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_ForceScript\Angelscript\angelscript\source\as_datatype.cpp">
+      <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_ForceScript\Angelscript\angelscript\source\as_gc.cpp">
+      <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_ForceScript\Angelscript\angelscript\source\as_generic.cpp">
+      <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_ForceScript\Angelscript\angelscript\source\as_globalproperty.cpp">
+      <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_ForceScript\Angelscript\angelscript\source\as_memory.cpp">
+      <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_ForceScript\Angelscript\angelscript\source\as_module.cpp">
+      <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_ForceScript\Angelscript\angelscript\source\as_objecttype.cpp">
+      <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_ForceScript\Angelscript\angelscript\source\as_outputbuffer.cpp">
+      <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_ForceScript\Angelscript\angelscript\source\as_parser.cpp">
+      <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_ForceScript\Angelscript\angelscript\source\as_restore.cpp">
+      <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_ForceScript\Angelscript\angelscript\source\as_scriptcode.cpp">
+      <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_ForceScript\Angelscript\angelscript\source\as_scriptengine.cpp">
+      <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_ForceScript\Angelscript\angelscript\source\as_scriptfunction.cpp">
+      <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_ForceScript\Angelscript\angelscript\source\as_scriptnode.cpp">
+      <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_ForceScript\Angelscript\angelscript\source\as_scriptobject.cpp">
+      <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_ForceScript\Angelscript\angelscript\source\as_string.cpp">
+      <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_ForceScript\Angelscript\angelscript\source\as_string_util.cpp">
+      <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_ForceScript\Angelscript\angelscript\source\as_thread.cpp">
+      <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_ForceScript\Angelscript\angelscript\source\as_tokenizer.cpp">
+      <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_ForceScript\Angelscript\angelscript\source\as_typeinfo.cpp">
+      <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_ForceScript\Angelscript\angelscript\source\as_variablescope.cpp">
+      <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -2085,5 +2295,10 @@
     <None Include="Shaders\bloom.vert">
       <Filter>Source\Shaders</Filter>
     </None>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="TFE_ForceScript\Angelscript\angelscript\source\as_callfunc_x64_msvc_asm.asm">
+      <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
+    </CustomBuild>
   </ItemGroup>
 </Project>

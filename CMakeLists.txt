@@ -40,7 +40,7 @@ include(GNUInstallDirs)
 ## Options
 option(DISABLE_SYSMIDI "Disable System-MIDI Output" OFF)
 option(ENABLE_EDITOR "Enable TFE Editor" OFF)
-
+option(ENABLE_FORCE_SCRIPT "Enable Force Script" OFF)
 
 add_executable(tfe)
 set_target_properties(tfe PROPERTIES OUTPUT_NAME "theforceengine")
@@ -88,6 +88,9 @@ if(DISABLE_SYSMIDI)
 endif()
 if(ENABLE_EDITOR)
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DBUILD_EDITOR")
+endif()
+if(ENABLE_FORCE_SCRIPT)
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DBUILD_FORCE_SCRIPT")
 endif()
 
 
