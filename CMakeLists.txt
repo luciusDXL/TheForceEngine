@@ -94,11 +94,12 @@ if(ENABLE_FORCE_SCRIPT)
 endif()
 
 
-target_include_directories(tfe PRIVATE TheForceEngine)
 if(ENABLE_FORCE_SCRIPT)
 	target_include_directories(tfe PRIVATE "TheForceEngine/TFE_ForceScript/Angelscript/angelscript/include")
 	target_include_directories(tfe PRIVATE "TheForceEngine/TFE_ForceScript/Angelscript/add_on")
 endif()
+target_include_directories(tfe PRIVATE TheForceEngine)
+
 
 add_subdirectory(TheForceEngine/)
 
