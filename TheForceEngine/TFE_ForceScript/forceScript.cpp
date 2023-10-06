@@ -65,38 +65,40 @@ namespace TFE_ForceScript
 			s_engine = nullptr;
 		}
 	}
-
-	bool createModule(const char* moduleName, const char* sectionName, const char* srcCode)
+					
+	ModuleHandle createModule(const char* moduleName, const char* sectionName, const char* srcCode)
 	{
 		CScriptBuilder builder;
 		s32 res;
 		res = builder.StartNewModule(s_engine, moduleName);
 		if (res < 0)
 		{
-			return false;
+			return nullptr;
 		}
 		res = builder.AddSectionFromMemory(sectionName, srcCode);
 		if (res < 0)
 		{
-			return false;
+			return nullptr;
 		}
 		res = builder.BuildModule();
 		if (res < 0)
 		{
-			return false;
+			return nullptr;
 		}
-		return true;
+		return s_engine->GetModule(moduleName);
 	}
 
-	asIScriptFunction* findScriptFunc(const char* moduleName, const char* funcName)
+	FunctionHandle findScriptFunc(ModuleHandle modHandle, const char* funcName)
 	{
+		if (!modHandle) { return nullptr; }
+
 		// Find the function that is to be called. 
-		asIScriptModule* mod = s_engine->GetModule(moduleName);
+		asIScriptModule* mod = (asIScriptModule*)modHandle;
 		if (!mod)
 		{
 			// The function couldn't be found. Instruct the script writer
 			// to include the expected function in the script.
-			TFE_System::logWrite(LOG_ERROR, "Script", "Cannot find module '%s'.\n", moduleName);
+			TFE_System::logWrite(LOG_ERROR, "Script", "Cannot find module '%s'.\n", mod->GetName());
 			return nullptr;
 		}
 
@@ -111,9 +113,10 @@ namespace TFE_ForceScript
 		return func;
 	}
 
-	void runScriptFunc(asIScriptFunction* func)
+	void execFunc(FunctionHandle funcHandle)
 	{
-		if (!func) { return; }
+		if (!funcHandle) { return; }
+		asIScriptFunction* func = (asIScriptFunction*)funcHandle;
 
 		// Create our context, prepare it, and then execute
 		s_context->Prepare(func);
@@ -138,10 +141,11 @@ namespace TFE_ForceScript
 			"	print(\"Hello world\");\n"
 			"}\n";
 
-		if (createModule("Test", "Test.as", c_testScript))
+		ModuleHandle mod = createModule("Test", "Test.as", c_testScript);
+		if (mod)
 		{
-			asIScriptFunction* func = findScriptFunc("Test", "void main()");
-			runScriptFunc(func);
+			FunctionHandle func = findScriptFunc(mod, "void main()");
+			execFunc(func);
 		}
 	}
 }  // TFE_ForceScript
