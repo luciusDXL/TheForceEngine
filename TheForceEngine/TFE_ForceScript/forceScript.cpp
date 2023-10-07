@@ -9,7 +9,7 @@
 #ifdef ENABLE_FORCE_SCRIPT
 #include "script_system.h"
 
-#define FS_TEST_MEMORY_LOAD 0
+#define FS_TEST_MEMORY_LOAD 1
 // TFE_ForceScript wraps Anglescript, so these includes should only exist here.
 #include <angelscript.h>
 #include <scriptstdstring/scriptstdstring.h>
