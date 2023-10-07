@@ -65,25 +65,25 @@ namespace TFE_Editor
 
 		char buffer[256];
 		strcpy(buffer, "LEV 2.1\r\n");
-		file.writeBuffer(buffer, strlen(buffer));
+		file.writeBuffer(buffer, (u32)strlen(buffer));
 
 		sprintf(buffer, "LEVELNAME %s\r\n", level.name);
-		file.writeBuffer(buffer, strlen(buffer));
+		file.writeBuffer(buffer, (u32)strlen(buffer));
 
 		sprintf(buffer, "PALETTE %s.PAL\r\n", c_darkForcesSlots[level.slotId]);
-		file.writeBuffer(buffer, strlen(buffer));
+		file.writeBuffer(buffer, (u32)strlen(buffer));
 
 		strcpy(buffer, "MUSIC surfin.GMD\r\n");
-		file.writeBuffer(buffer, strlen(buffer));
+		file.writeBuffer(buffer, (u32)strlen(buffer));
 
 		strcpy(buffer, "PARALLAX 1024.0 1024.0\r\n");
-		file.writeBuffer(buffer, strlen(buffer));
+		file.writeBuffer(buffer, (u32)strlen(buffer));
 
 		strcpy(buffer, "TEXTURES 0\r\n");
-		file.writeBuffer(buffer, strlen(buffer));
+		file.writeBuffer(buffer, (u32)strlen(buffer));
 
 		strcpy(buffer, "NUMSECTORS 0\r\n");
-		file.writeBuffer(buffer, strlen(buffer));
+		file.writeBuffer(buffer, (u32)strlen(buffer));
 				
 		file.close();
 		return true;

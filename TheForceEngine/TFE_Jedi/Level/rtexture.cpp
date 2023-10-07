@@ -443,7 +443,7 @@ namespace TFE_Jedi
 
 			// Allocate and read the BM image.
 			texture->image = (u8*)malloc(texture->dataSize);
-			if (texture->image && intptr_t((u8*)data - (u8*)fheader) + texture->dataSize <= size)
+			if (texture->image && intptr_t((u8*)data - (u8*)fheader) + texture->dataSize <= (intptr_t)size)
 			{
 				memcpy(texture->image, data, texture->dataSize);
 			}

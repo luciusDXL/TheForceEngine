@@ -505,6 +505,7 @@ echo ^)";
     <ClInclude Include="TFE_ForceScript\Angelscript\angelscript\source\as_typeinfo.h" />
     <ClInclude Include="TFE_ForceScript\Angelscript\angelscript\source\as_variablescope.h" />
     <ClInclude Include="TFE_ForceScript\forceScript.h" />
+    <ClInclude Include="TFE_ForceScript\script_system.h" />
     <ClInclude Include="TFE_FrontEndUI\console.h" />
     <ClInclude Include="TFE_FrontEndUI\frontEndUi.h" />
     <ClInclude Include="TFE_FrontEndUI\modLoader.h" />
@@ -827,6 +828,7 @@ echo ^)";
     <ClCompile Include="TFE_ForceScript\Angelscript\angelscript\source\as_typeinfo.cpp" />
     <ClCompile Include="TFE_ForceScript\Angelscript\angelscript\source\as_variablescope.cpp" />
     <ClCompile Include="TFE_ForceScript\forceScript.cpp" />
+    <ClCompile Include="TFE_ForceScript\script_system.cpp" />
     <ClCompile Include="TFE_FrontEndUI\console.cpp" />
     <ClCompile Include="TFE_FrontEndUI\frontEndUi.cpp" />
     <ClCompile Include="TFE_FrontEndUI\modLoader.cpp" />

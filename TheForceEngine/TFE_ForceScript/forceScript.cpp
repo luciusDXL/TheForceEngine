@@ -7,7 +7,9 @@
 #include <assert.h>
 
 #ifdef ENABLE_FORCE_SCRIPT
-#define FS_TEST_MEMORY_LOAD 1
+#include "script_system.h"
+
+#define FS_TEST_MEMORY_LOAD 0
 // TFE_ForceScript wraps Anglescript, so these includes should only exist here.
 #include <angelscript.h>
 #include <scriptstdstring/scriptstdstring.h>
@@ -37,13 +39,7 @@ namespace TFE_ForceScript
 		else if (msg->type == asMSGTYPE_INFORMATION) { type = LOG_MSG; }
 		TFE_System::logWrite(type, "Script", "%s (%d, %d) : %s", msg->section, msg->row, msg->col, msg->message);
 	}
-
-	// Print the script string to the standard output stream
-	void print(std::string& msg)
-	{
-		TFE_FrontEndUI::logToConsole(msg.c_str());
-	}
-
+		
 	void yield(f32 delay)
 	{
 		asIScriptContext* context = asGetActiveContext();
@@ -73,9 +69,12 @@ namespace TFE_ForceScript
 		// Register std::string as the script string type.
 		RegisterStdString(s_engine);
 
-		// Register a test function.
-		res = s_engine->RegisterGlobalFunction("void system_print(const string &in)", asFUNCTION(print), asCALL_CDECL); assert(res >= 0);
-		res = s_engine->RegisterGlobalFunction("void system_yield(float)", asFUNCTION(yield), asCALL_CDECL); assert(res >= 0);
+		// Language features.
+		res = s_engine->RegisterGlobalFunction("void yield(float)", asFUNCTION(yield), asCALL_CDECL); assert(res >= 0);
+		// Register core functions.
+		registerSystemFunctions(s_engine);
+
+		// Register editor functions.
 
 		// Temp.
 		test();
@@ -103,7 +102,7 @@ namespace TFE_ForceScript
 			// Fill holes with new threads.
 			if (thread[i].asContext == nullptr) { continue; }
 
-			thread[i].delay = std::max(0.0f, s_scriptThreads[i].delay - dt);
+			thread[i].delay = std::max(0.0f, thread[i].delay - dt);
 			if (thread[i].delay == 0.0f)
 			{
 				asIScriptContext* context = thread[i].asContext;
