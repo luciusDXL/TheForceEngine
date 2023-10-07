@@ -13,6 +13,7 @@ namespace TFE_ForceScript
 
 	void init();
 	void destroy();
+	void update();
 
 	ModuleHandle createModule(const char* moduleName, const char* sectionName, const char* srcCode);
 	FunctionHandle findScriptFunc(ModuleHandle modHandle, const char* funcName);

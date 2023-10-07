@@ -662,9 +662,8 @@ int main(int argc, char* argv[])
 	// Test
 	#ifdef ENABLE_FORCE_SCRIPT
 	TFE_ForceScript::init();
-	TFE_ForceScript::destroy();
 	#endif
-
+		
 	// Start up the game and skip the title screen.
 	if (firstRun)
 	{
@@ -833,6 +832,10 @@ int main(int argc, char* argv[])
 			}
 		}
 
+		#ifdef ENABLE_FORCE_SCRIPT
+			TFE_ForceScript::update();
+		#endif
+
 		const bool isConsoleOpen = TFE_FrontEndUI::isConsoleOpen();
 		bool endInputFrame = true;
 		if (s_curState == APP_STATE_EDITOR)
@@ -926,6 +929,10 @@ int main(int argc, char* argv[])
 	TFE_RenderBackend::destroy();
 	TFE_SaveSystem::destroy();
 	SDL_Quit();
+
+	#ifdef ENABLE_FORCE_SCRIPT
+	TFE_ForceScript::destroy();
+	#endif
 		
 	TFE_System::logWrite(LOG_MSG, "Progam Flow", "The Force Engine Game Loop Ended.");
 	TFE_System::logClose();
