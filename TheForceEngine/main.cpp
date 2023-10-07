@@ -16,7 +16,6 @@
 #include <TFE_RenderBackend/renderBackend.h>
 #include <TFE_Input/inputMapping.h>
 #include <TFE_Settings/settings.h>
-#include <TFE_ForceScript/forceScript.h>
 #include <TFE_System/system.h>
 #include <TFE_System/CrashHandler/crashHandler.h>
 #include <TFE_System/frameLimiter.h>
@@ -38,11 +37,11 @@
 #if ENABLE_EDITOR == 1
 #include <TFE_Editor/editor.h>
 #endif
+#if ENABLE_FORCE_SCRIPT == 1
+#include <TFE_ForceScript/forceScript.h>
+#endif
 
-// Replace with music system
 #include <TFE_Audio/midiPlayer.h>
-
-#define FORCE_SCRIPT_ENABLE 1
 
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN 1
@@ -661,7 +660,7 @@ int main(int argc, char* argv[])
 	reticle_init();
 
 	// Test
-	#ifdef FORCE_SCRIPT_ENABLE
+	#ifdef ENABLE_FORCE_SCRIPT
 	TFE_ForceScript::init();
 	TFE_ForceScript::destroy();
 	#endif
