@@ -1,6 +1,7 @@
 #include "forceScript.h"
 #include <TFE_System/system.h>
 #include <TFE_FrontEndUI/frontEndUI.h>
+#include <stdint.h>
 #include <cstring>
 #include <algorithm>
 #include <assert.h>
@@ -14,18 +15,17 @@
 
 namespace TFE_ForceScript
 {
-	const asPWORD TaskMgrId = 1002;
-
-	static asIScriptEngine*  s_engine  = nullptr;
-	static asIScriptContext* s_context = nullptr;
-
+	const asPWORD ThreadId = 1002;
+	
 	struct ScriptThread
 	{
 		asIScriptContext* asContext;
 		f32 delay;
 	};
-	std::vector<ScriptThread> s_scriptThreads;
-	std::vector<s32> s_freeThreads;
+
+	static asIScriptEngine* s_engine = nullptr;
+	static std::vector<ScriptThread> s_scriptThreads;
+	static std::vector<s32> s_freeThreads;
 
 	void test();
 
@@ -49,7 +49,7 @@ namespace TFE_ForceScript
 		asIScriptContext* context = asGetActiveContext();
 		if (context)
 		{
-			const s32 id = (s32)context->GetUserData(TaskMgrId);
+			const s32 id = (s32)((intptr_t)context->GetUserData(ThreadId));
 			assert(id >= 0 && id < (s32)s_scriptThreads.size());
 			s_scriptThreads[id].delay = delay;
 			context->Suspend();
@@ -59,6 +59,37 @@ namespace TFE_ForceScript
 	void resume(s32 id)
 	{
 		s_scriptThreads[id].delay = 0.0f;
+	}
+
+	void init()
+	{
+		// Create the script engine.
+		s_engine = asCreateScriptEngine();
+
+		// Set the message callback to receive information on errors in human readable form.
+		s32 res = s_engine->SetMessageCallback(asFUNCTION(messageCallback), 0, asCALL_CDECL);
+		assert(res >= 0);
+
+		// Register std::string as the script string type.
+		RegisterStdString(s_engine);
+
+		// Register a test function.
+		res = s_engine->RegisterGlobalFunction("void system_print(const string &in)", asFUNCTION(print), asCALL_CDECL); assert(res >= 0);
+		res = s_engine->RegisterGlobalFunction("void system_yield(float)", asFUNCTION(yield), asCALL_CDECL); assert(res >= 0);
+
+		// Temp.
+		test();
+	}
+
+	void destroy()
+	{
+		// Clean up
+		stopAllFunc();
+		if (s_engine)
+		{
+			s_engine->ShutDownAndRelease();
+			s_engine = nullptr;
+		}
 	}
 
 	void update()
@@ -89,46 +120,29 @@ namespace TFE_ForceScript
 		}
 	}
 
-	void init()
+	void stopAllFunc()
 	{
-		// Create the script engine.
-		s_engine = asCreateScriptEngine();
+		const s32 count = (s32)s_scriptThreads.size();
+		ScriptThread* thread = s_scriptThreads.data();
+		for (s32 i = 0; i < count; i++)
+		{
+			// Allow for holes to keep IDs consistent.
+			// Fill holes with new threads.
+			if (thread[i].asContext == nullptr) { continue; }
 
-		// Set the message callback to receive information on errors in human readable form.
-		s32 res = s_engine->SetMessageCallback(asFUNCTION(messageCallback), 0, asCALL_CDECL);
-		assert(res >= 0);
-
-		// Register std::string as the script string type.
-		RegisterStdString(s_engine);
-
-		// Register a test function.
-		res = s_engine->RegisterGlobalFunction("void system_print(const string &in)", asFUNCTION(print), asCALL_CDECL); assert(res >= 0);
-		res = s_engine->RegisterGlobalFunction("void system_yield(float)", asFUNCTION(yield), asCALL_CDECL); assert(res >= 0);
+			asIScriptContext* context = thread[i].asContext;
+			context->Abort();
+			s_engine->ReturnContext(context);
+		}
+		// Take this opportunity to defrag.
+		s_scriptThreads.clear();
+		s_freeThreads.clear();
+	}
 		
-		s_context = s_engine->CreateContext();
-		test();
-	}
-
-	void destroy()
-	{
-		// Clean up
-		if (s_context)
-		{
-			s_context->Release();
-			s_context = nullptr;
-		}
-		if (s_engine)
-		{
-			s_engine->ShutDownAndRelease();
-			s_engine = nullptr;
-		}
-	}
-
 	ModuleHandle createModule(const char* moduleName, const char* filePath)
 	{
 		CScriptBuilder builder;
-		s32 res;
-		res = builder.StartNewModule(s_engine, moduleName);
+		s32 res = builder.StartNewModule(s_engine, moduleName);
 		if (res < 0)
 		{
 			return nullptr;
@@ -149,8 +163,7 @@ namespace TFE_ForceScript
 	ModuleHandle createModule(const char* moduleName, const char* sectionName, const char* srcCode)
 	{
 		CScriptBuilder builder;
-		s32 res;
-		res = builder.StartNewModule(s_engine, moduleName);
+		s32 res = builder.StartNewModule(s_engine, moduleName);
 		if (res < 0)
 		{
 			return nullptr;
@@ -192,11 +205,12 @@ namespace TFE_ForceScript
 		}
 		return func;
 	}
-
+		
 	// Add a script function to be executed during the update.
-	void execFunc(FunctionHandle funcHandle)
+	s32 execFunc(FunctionHandle funcHandle)
 	{
-		if (!funcHandle) { return; }
+		s32 id = -1;
+		if (!funcHandle) { return id; }
 		asIScriptFunction* func = (asIScriptFunction*)funcHandle;
 
 		// Get a free context.
@@ -204,18 +218,17 @@ namespace TFE_ForceScript
 		if (!context)
 		{
 			// ERROR
-			return;
+			return id;
 		}
 		// Then prepare it for execution.
 		s32 res = context->Prepare(func);
 		if (res < 0)
 		{
 			s_engine->ReturnContext(context);
-			return;
+			return id;
 		}
 		// Get the new thread ID and prepare it.
 		// The function will be executed during the next update.
-		s32 id = -1;
 		if (!s_freeThreads.empty())
 		{
 			id = s_freeThreads.back();
@@ -228,7 +241,9 @@ namespace TFE_ForceScript
 		}
 		s_scriptThreads[id].asContext = context;
 		s_scriptThreads[id].delay = 0.0f;
-		context->SetUserData((void*)id, TaskMgrId);
+		context->SetUserData((void*)((intptr_t)id), ThreadId);
+
+		return id;
 	}
 
 	void test()
