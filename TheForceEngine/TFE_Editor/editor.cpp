@@ -409,7 +409,7 @@ namespace TFE_Editor
 					for (size_t i = 0; i < count; i++)
 					{
 						char item[TFE_MAX_PATH];
-						sprintf(item, "%d %s", i + 1, recents[i].name.c_str());
+						sprintf(item, "%d %s", (s32)i + 1, recents[i].name.c_str());
 						if (ImGui::MenuItem(item, NULL, (bool*)NULL))
 						{
 							if (!project_load(recents[i].path.c_str()))

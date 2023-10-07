@@ -1,6 +1,6 @@
 #include "forceScript.h"
 #include <TFE_System/system.h>
-#include <TFE_FrontEndUI/frontEndUI.h>
+#include <TFE_FrontEndUI/frontEndUi.h>
 #include <stdint.h>
 #include <cstring>
 #include <algorithm>
