@@ -15,5 +15,4 @@ namespace LevelEditor
 	void destroy();
 
 	void update();
-	void render();
 }
