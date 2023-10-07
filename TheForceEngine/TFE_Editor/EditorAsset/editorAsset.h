@@ -39,7 +39,7 @@ namespace TFE_Editor
 		ASRC_COUNT
 	};
 
-	#define NULL_ASSET AssetHandle(0)
+	#define NULL_ASSET TFE_Editor::AssetHandle(0)
 
 	static const char* c_assetType[] =
 	{

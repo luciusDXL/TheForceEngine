@@ -1,4 +1,5 @@
 #include "levelEditor.h"
+#include "levelEditorData.h"
 #include <TFE_Editor/errorMessages.h>
 #include <TFE_Editor/editorConfig.h>
 #include <TFE_Editor/editorLevel.h>
@@ -38,14 +39,23 @@ namespace LevelEditor
 	// metadata, etc.
 	// So existing levels need to be loaded into that format.
 	// If the correct format already exists, though, then it is loaded directly.
+	static EditorLevel s_level = {};
 
-	void init(Asset* asset)
+	bool init(Asset* asset)
 	{
-		asset; // ununsed as of yet.
+		// Cleanup any existing level data.
+		destroy();
+		// Load the new level.
+		if (!loadLevelFromAsset(asset, &s_level))
+		{
+			return false;
+		}
+		return true;
 	}
 
 	void destroy()
 	{
+		s_level.sectors.clear();
 	}
 
 	void update()

@@ -985,6 +985,20 @@ namespace AssetBrowser
 		updateAssetList();
 	}
 
+	Asset* findAsset(const char* name, AssetType type)
+	{
+		const size_t len = s_projectAssetList[type].size();
+		Asset* asset = s_projectAssetList[type].data();
+		for (size_t i = 0; i < len; i++, asset++)
+		{
+			if (strcasecmp(asset->name.c_str(), name) == 0)
+			{
+				return asset;
+			}
+		}
+		return nullptr;
+	}
+
 	////////////////////////////////////////////////
 	// Internal
 	////////////////////////////////////////////////
@@ -1677,6 +1691,13 @@ namespace AssetBrowser
 	{
 		if (s_viewInfo.levelSource < 0) { return true; }
 		return strcasecmp(name, s_levelAssets[s_viewInfo.levelSource].paletteName.c_str()) == 0;
+	}
+
+	AssetHandle loadAssetData(const Asset* asset)
+	{
+		s32 palId = getAssetPalette(asset->name.c_str());
+		AssetColorData colorData = { s_palettes[palId].data, nullptr, palId, 32 };
+		return loadAssetData(asset->type, asset->archive, &colorData, asset->name.c_str());
 	}
 
 	void loadAsset(const Asset* projAsset)

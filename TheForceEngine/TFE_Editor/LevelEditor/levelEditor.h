@@ -11,7 +11,7 @@
 
 namespace LevelEditor
 {
-	void init(TFE_Editor::Asset* asset);
+	bool init(TFE_Editor::Asset* asset);
 	void destroy();
 
 	void update();
