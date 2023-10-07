@@ -1,6 +1,7 @@
 #include "forceScript.h"
 #include <TFE_System/system.h>
 #include <TFE_FrontEndUI/frontEndUI.h>
+#include <cstring>
 #include <assert.h>
 
 #ifdef ENABLE_FORCE_SCRIPT
