@@ -8,6 +8,7 @@
 //////////////////////////////////////////////////////////////////////
 #include <TFE_System/types.h>
 #include <TFE_Archive/archive.h>
+#include <TFE_Game/igame.h>
 #include "editorColormap.h"
 #include "editorFrame.h"
 #include "editorSprite.h"
@@ -29,6 +30,15 @@ namespace TFE_Editor
 		TYPE_COUNT,
 		TYPE_NOT_SET = TYPE_COUNT
 	};
+
+	enum AssetSource
+	{
+		ASRC_VANILLA = 0,
+		ASRC_EXTERNAL,
+		ASRC_PROJECT,
+		ASRC_COUNT
+	};
+
 	#define NULL_ASSET AssetHandle(0)
 
 	static const char* c_assetType[] =
@@ -41,6 +51,8 @@ namespace TFE_Editor
 		"Palette",    // TYPE_PALETTE
 	};
 
+	typedef u64 AssetHandle;
+
 	struct AssetColorData
 	{
 		const u32* palette;
@@ -49,8 +61,19 @@ namespace TFE_Editor
 		s32 lightLevel;
 	};
 
-	typedef u64 AssetHandle;
+	struct Asset
+	{
+		AssetType type;
+		GameID gameId;
+		Archive* archive;
 
+		std::string name;
+		std::string filePath;
+
+		AssetSource assetSource;
+		AssetHandle handle;
+	};
+		
 	AssetHandle loadAssetData(AssetType type, Archive* archive, const AssetColorData* colorData, const char* name);
 	void  reloadAssetData(AssetHandle handle, Archive* archive, const AssetColorData* colorData);
 	void  freeAssetData(AssetHandle handle);

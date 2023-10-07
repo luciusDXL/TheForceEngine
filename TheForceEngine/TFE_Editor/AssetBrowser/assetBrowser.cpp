@@ -38,31 +38,12 @@ namespace AssetBrowser
 	{
 		INFO_PANEL_WIDTH = 524u,
 	};
-	enum AssetSource
-	{
-		ASRC_VANILLA = 0,
-		ASRC_EXTERNAL,
-		ASRC_PROJECT,
-		ASRC_COUNT
-	};
 	const char* c_games[] =
 	{
 		"Dark Forces",
 		"Outlaws",
 	};
 
-	struct Asset
-	{
-		AssetType type;
-		GameID gameId;
-		Archive* archive;
-
-		std::string name;
-		std::string filePath;
-
-		AssetSource assetSource;
-		AssetHandle handle;
-	};
 	typedef std::vector<Asset> AssetList;
 	typedef std::vector<s32> SelectionList;
 
@@ -344,6 +325,12 @@ namespace AssetBrowser
 			{
 				exportSelected();
 			}
+			ImGui::SameLine();
+			// Only one asset can be edited at a time, so just pick the first one.
+			if (ImGui::Button("Editor"))
+			{
+				enableAssetEditor(&s_viewAssetList[s_selected[0]]);
+			}
 		}
 		else if (asset)
 		{
@@ -356,6 +343,11 @@ namespace AssetBrowser
 				if (ImGui::Button("Export"))
 				{
 					exportSelected();
+				}
+				ImGui::SameLine();
+				if (ImGui::Button("Editor"))
+				{
+					enableAssetEditor(asset);
 				}
 				ImGui::Separator();
 			}

@@ -197,6 +197,9 @@
     <Filter Include="Source\TFE_ForceScript\Angelscript\angelscript\source">
       <UniqueIdentifier>{eda60bca-8bac-41ef-815b-769600dea4ef}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\TFE_Editor\LevelEditor">
+      <UniqueIdentifier>{d60dce85-e5d8-42e7-9e10-db1ae940accb}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="main.h">
@@ -1228,6 +1231,9 @@
     <ClInclude Include="TFE_ForceScript\script_system.h">
       <Filter>Source\TFE_ForceScript</Filter>
     </ClInclude>
+    <ClInclude Include="TFE_Editor\LevelEditor\levelEditor.h">
+      <Filter>Source\TFE_Editor\LevelEditor</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -2099,6 +2105,9 @@
     </ClCompile>
     <ClCompile Include="TFE_ForceScript\script_system.cpp">
       <Filter>Source\TFE_ForceScript</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Editor\LevelEditor\levelEditor.cpp">
+      <Filter>Source\TFE_Editor\LevelEditor</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

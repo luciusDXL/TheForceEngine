@@ -5,6 +5,8 @@
 #include "editorProject.h"
 #include <TFE_Settings/settings.h>
 #include <TFE_Editor/AssetBrowser/assetBrowser.h>
+#include <TFE_Editor/LevelEditor/levelEditor.h>
+#include <TFE_Editor/EditorAsset/editorAsset.h>
 #include <TFE_Input/input.h>
 #include <TFE_RenderBackend/renderBackend.h>
 #include <TFE_System/system.h>
@@ -43,6 +45,7 @@ namespace TFE_Editor
 	
 	static bool s_showPerf = true;
 	static bool s_showEditor = true;
+	static AssetType s_editorAssetType = TYPE_NOT_SET;
 	static EditorMode s_editorMode = EDIT_ASSET_BROWSER;
 	static EditorPopup s_editorPopup = POPUP_NONE;
 	static bool s_exitEditor = false;
@@ -221,7 +224,19 @@ namespace TFE_Editor
 		}
 		else if (s_editorMode == EDIT_ASSET)
 		{
-			// TODO: handle asset editor.
+			switch (s_editorAssetType)
+			{
+				case TYPE_LEVEL:
+				{
+					LevelEditor::update();
+				} break;
+				default:
+				{
+					// Invalid mode, this code should never be reached.
+					assert(0);
+					s_editorMode = EDIT_ASSET_BROWSER;
+				}
+			}
 		}
 
 		handlePopupEnd();
@@ -603,5 +618,23 @@ namespace TFE_Editor
 		sprintf(comboId, "##%s", labelText);
 		if (comboWidth) { ImGui::SetNextItemWidth(UI_SCALE(comboWidth)); }
 		ImGui::Combo(comboId, index, listValues, (s32)listLen);
+	}
+
+	void enableAssetEditor(Asset* asset)
+	{
+		if (!asset) { return; }
+
+		// For now, only the levels have an asset editor.
+		// TODO: Other asset editors.
+		if (asset->type == TYPE_LEVEL)
+		{
+			s_editorMode = EDIT_ASSET;
+			s_editorAssetType = asset->type;
+			LevelEditor::init(asset);
+		}
+		else
+		{
+			showMessageBox("Warning", "The selected asset '%s' does not yet have an Asset Editor.", asset->name.c_str());
+		}
 	}
 }
