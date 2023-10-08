@@ -200,6 +200,9 @@
     <Filter Include="Source\TFE_Editor\LevelEditor">
       <UniqueIdentifier>{d60dce85-e5d8-42e7-9e10-db1ae940accb}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\TFE_Editor\LevelEditor\Rendering">
+      <UniqueIdentifier>{8e854a2b-4fb2-4f86-875a-daf00ab6b35a}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="main.h">
@@ -1237,6 +1240,9 @@
     <ClInclude Include="TFE_Editor\LevelEditor\levelEditorData.h">
       <Filter>Source\TFE_Editor\LevelEditor</Filter>
     </ClInclude>
+    <ClInclude Include="TFE_Editor\LevelEditor\Rendering\grid2d.h">
+      <Filter>Source\TFE_Editor\LevelEditor\Rendering</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -2114,6 +2120,9 @@
     </ClCompile>
     <ClCompile Include="TFE_Editor\LevelEditor\levelEditorData.cpp">
       <Filter>Source\TFE_Editor\LevelEditor</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Editor\LevelEditor\Rendering\grid2d.cpp">
+      <Filter>Source\TFE_Editor\LevelEditor\Rendering</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

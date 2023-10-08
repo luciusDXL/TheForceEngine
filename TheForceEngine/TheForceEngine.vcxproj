@@ -460,6 +460,7 @@ echo ^)";
     <ClInclude Include="TFE_Editor\errorMessages.h" />
     <ClInclude Include="TFE_Editor\LevelEditor\levelEditor.h" />
     <ClInclude Include="TFE_Editor\LevelEditor\levelEditorData.h" />
+    <ClInclude Include="TFE_Editor\LevelEditor\Rendering\grid2d.h" />
     <ClInclude Include="TFE_FileSystem\filestream.h" />
     <ClInclude Include="TFE_FileSystem\fileutil.h" />
     <ClInclude Include="TFE_FileSystem\memorystream.h" />
@@ -793,6 +794,7 @@ echo ^)";
     <ClCompile Include="TFE_Editor\errorMessages.cpp" />
     <ClCompile Include="TFE_Editor\LevelEditor\levelEditor.cpp" />
     <ClCompile Include="TFE_Editor\LevelEditor\levelEditorData.cpp" />
+    <ClCompile Include="TFE_Editor\LevelEditor\Rendering\grid2d.cpp" />
     <ClCompile Include="TFE_FileSystem\filestream.cpp" />
     <ClCompile Include="TFE_FileSystem\fileutil.cpp" />
     <ClCompile Include="TFE_FileSystem\memorystream.cpp" />

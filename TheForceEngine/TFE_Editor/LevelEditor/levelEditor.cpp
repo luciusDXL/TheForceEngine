@@ -1,5 +1,6 @@
 #include "levelEditor.h"
 #include "levelEditorData.h"
+#include <TFE_Editor/LevelEditor/Rendering/grid2d.h>
 #include <TFE_Editor/errorMessages.h>
 #include <TFE_Editor/editorConfig.h>
 #include <TFE_Editor/editorLevel.h>
@@ -86,6 +87,7 @@ namespace LevelEditor
 	static Vec2i s_editWinSize = { 0 };
 	static Vec2f s_editWinMapCorner = { 0 };
 	static f32 s_gridSize = 32.0f;
+	static f32 s_gridOpacity = 0.5f;
 	static f32 s_gridSize2d = 32.0f;	// current finest grid visible in 2D.
 	static f32 s_zoom2d = 0.25f;			// current zoom level in 2D.
 	static RenderTargetHandle s_viewportRt = 0;
@@ -112,14 +114,13 @@ namespace LevelEditor
 			return false;
 		}
 		updateViewport();
-		s_gridSize = 32.0f;
+		s_gridSize = 4.0f;
 
-		//s_viewportPos.x = (s_level.bounds[0].x + s_level.bounds[1].x) * 0.5f;
-		//s_viewportPos.z = (s_level.bounds[0].z + s_level.bounds[1].z) * 0.5f;
-		s_viewportPos = s_level.bounds[0];
-		s_curLayer = s_level.layerRange[1];
+		s_viewportPos = { -24.0f, 0.0f, -200.0f };
+		s_curLayer = 1;	// should be 0?
 
 		TFE_RenderShared::init(false);
+		grid2d_init();
 		return true;
 	}
 
@@ -128,6 +129,7 @@ namespace LevelEditor
 		s_level.sectors.clear();
 		TFE_RenderBackend::freeRenderTarget(s_viewportRt);
 		s_viewportRt = 0;
+		grid2d_destroy();
 		TFE_RenderShared::destroy();
 	}
 
@@ -160,6 +162,21 @@ namespace LevelEditor
 				{ 0.0f, 0.0f }, { 1.0f, 1.0f }, 0, { 0.0f, 0.0f, 0.0f, 1.0f }, { 1.0f, 1.0f, 1.0f, 1.0f });
 			const ImVec2 itemPos = ImGui::GetItemRectMin();
 			s_editWinMapCorner = { itemPos.x, itemPos.y };
+
+			// Print the position.
+			ImGui::SetCursorScreenPos({ itemPos.x, itemPos.y });
+
+			// We want to zoom into the mouse position.
+			s32 mx, my;
+			TFE_Input::getMousePos(&mx, &my);
+			s32 relX = s32(mx - s_editWinMapCorner.x);
+			s32 relY = s32(my - s_editWinMapCorner.z);
+			// Old position in world units.
+			Vec2f worldPos;
+			worldPos.x = s_viewportPos.x + f32(relX) * s_zoom2d;
+			worldPos.z = s_viewportPos.z + f32(relY) * s_zoom2d;
+
+			ImGui::Text("X: %0.3f, Z: %0.3f", worldPos.x, -worldPos.z);
 		}
 		levelEditWinEnd();
 	}
@@ -243,16 +260,16 @@ namespace LevelEditor
 	{
 		ImGui::End();
 	}
-		
+
 	void computeViewportTransform2d()
 	{
 		// Compute the scale and offset.
 		f32 pixelsToWorldUnits = s_zoom2d;
-		s_viewportTrans2d.x = 1.0f / pixelsToWorldUnits;
-		s_viewportTrans2d.z = 1.0f / pixelsToWorldUnits;
+		s_viewportTrans2d.x =  1.0f / pixelsToWorldUnits;
+		s_viewportTrans2d.z = -1.0f / pixelsToWorldUnits;
 
 		s_viewportTrans2d.y = -s_viewportPos.x * s_viewportTrans2d.x;
-		s_viewportTrans2d.w = -s_viewportPos.z * s_viewportTrans2d.z;
+		s_viewportTrans2d.w =  s_viewportPos.z * s_viewportTrans2d.z;
 	}
 
 	void renderSectorWalls2d(s32 layerStart, s32 layerEnd)
@@ -297,10 +314,7 @@ namespace LevelEditor
 
 	void renderLevel2D()
 	{
-		// Compute the best base level of detail for the 2D grid based on the zoom.
-		// Note the grid will never be finer than the current grid size.
-		s_gridSize2d = floorf(log2f(1.0f / s_zoom2d));
-		s_gridSize2d = max(s_gridSize, powf(2.0f, s_gridSize2d));
+		s_gridSize2d = s_gridSize;
 
 		// Prepare for drawing.
 		computeViewportTransform2d();
@@ -315,6 +329,7 @@ namespace LevelEditor
 		// Draw the grid layer.
 		if (s_editFlags & LEF_SHOW_GRID)
 		{
+			grid2d_blitToScreen(s_viewportSize, s_gridSize2d, s_zoom2d, s_viewportPos, s_gridOpacity);
 		}
 
 		// Draw the current layer.
