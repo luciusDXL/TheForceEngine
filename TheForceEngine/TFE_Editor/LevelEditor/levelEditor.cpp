@@ -22,6 +22,7 @@
 #include <TFE_FileSystem/paths.h>
 #include <TFE_Archive/archive.h>
 #include <TFE_RenderBackend/renderBackend.h>
+#include <TFE_Polygon/polygon.h>
 #include <TFE_System/parser.h>
 #include <TFE_Ui/ui.h>
 
@@ -43,6 +44,9 @@ namespace LevelEditor
 	u32 s_editFlags = LEF_DEFAULT;
 	s32 s_curLayer = 0;
 
+	EditorSector* s_hoveredSector = nullptr;
+	EditorSector* s_selectedSector = nullptr;
+
 	static EditorView s_view = EDIT_VIEW_2D;
 	static LevelEditMode s_editMode = LEDIT_DRAW;
 	static Vec2i s_editWinPos = { 0, 69 };
@@ -53,7 +57,7 @@ namespace LevelEditor
 
 	static char s_layerMem[4 * 31];
 	static char* s_layerStr[31];
-
+		
 	static s32 s_gridIndex = 6;
 	static f32 c_gridSizeMap[] =
 	{
@@ -88,6 +92,7 @@ namespace LevelEditor
 	void levelEditWinEnd();
 	void messagePanel(ImVec2 pos);
 	void cameraControl2d(s32 mx, s32 my);
+	Vec2f mouseCoordToWorldPos2d(s32 mx, s32 my);
 	
 	////////////////////////////////////////////////////////
 	// Public API
@@ -136,7 +141,10 @@ namespace LevelEditor
 		}
 
 		s_viewportPos = { -24.0f, 0.0f, -200.0f };
-		s_curLayer = 1;	// should be 0?
+		s_curLayer = std::min(1, s_level.layerRange[1]);
+
+		s_hoveredSector  = nullptr;
+		s_selectedSector = nullptr;
 
 		TFE_RenderShared::init(false);
 		return true;
@@ -152,6 +160,33 @@ namespace LevelEditor
 		s_editCtrlToolbarData = nullptr;
 	}
 
+	bool isPointInsideSector2d(EditorSector* sector, Vec2f pos, s32 layer)
+	{
+		// The layers need to match.
+		if (sector->layer != layer) { return false; }
+		// The point has to be within the bounding box.
+		if (pos.x < sector->bounds[0].x || pos.x > sector->bounds[1].x ||
+			pos.z < sector->bounds[0].z || pos.z > sector->bounds[1].z)
+		{
+			return false;
+		}
+		return TFE_Polygon::pointInsidePolygon(&sector->poly, pos);
+	}
+
+	EditorSector* findSector2d(Vec2f pos, s32 layer)
+	{
+		const size_t sectorCount = s_level.sectors.size();
+		EditorSector* sector = s_level.sectors.data();
+		for (size_t s = 0; s < sectorCount; s++, sector++)
+		{
+			if (isPointInsideSector2d(sector, pos, layer))
+			{
+				return sector;
+			}
+		}
+		return nullptr;
+	}
+		
 	void updateWindowControls()
 	{
 		s32 mx, my;
@@ -164,6 +199,30 @@ namespace LevelEditor
 		if (s_view == EDIT_VIEW_2D)
 		{
 			cameraControl2d(mx, my);
+
+			// Selection
+			Vec2f worldPos = mouseCoordToWorldPos2d(mx, my);
+			if (s_editMode != LEDIT_DRAW)
+			{
+				// First check to see if the current hovered sector is still valid.
+				if (s_hoveredSector)
+				{
+					if (!isPointInsideSector2d(s_hoveredSector, worldPos, s_curLayer))
+					{
+						s_hoveredSector = nullptr;
+					}
+				}
+				// If not, then try to find one.
+				if (!s_hoveredSector)
+				{
+					s_hoveredSector = findSector2d(worldPos, s_curLayer);
+				}
+				
+				if (s_editMode == LEDIT_SECTOR && TFE_Input::mousePressed(MouseButton::MBUTTON_LEFT))
+				{
+					s_selectedSector = s_hoveredSector;
+				}
+			}
 		}
 	}
 
@@ -344,6 +403,18 @@ namespace LevelEditor
 		ImGui::End();
 	}
 
+	Vec2f mouseCoordToWorldPos2d(s32 mx, s32 my)
+	{
+		// We want to zoom into the mouse position.
+		s32 relX = s32(mx - s_editWinMapCorner.x);
+		s32 relY = s32(my - s_editWinMapCorner.z);
+		// Old position in world units.
+		Vec2f worldPos;
+		worldPos.x =   s_viewportPos.x + f32(relX) * s_zoom2d;
+		worldPos.z = -(s_viewportPos.z + f32(relY) * s_zoom2d);
+		return worldPos;
+	}
+
 	void messagePanel(ImVec2 pos)
 	{
 		bool msgPanel = true;
@@ -360,16 +431,10 @@ namespace LevelEditor
 		TFE_Input::getMousePos(&mx, &my);
 		if (mx >= s_editWinPos.x && mx < s_editWinPos.x + s_editWinSize.x && my >= s_editWinPos.z && my < s_editWinPos.z + s_editWinSize.z)
 		{
-			// We want to zoom into the mouse position.
-			s32 relX = s32(mx - s_editWinMapCorner.x);
-			s32 relY = s32(my - s_editWinMapCorner.z);
-			// Old position in world units.
-			Vec2f worldPos;
-			worldPos.x = s_viewportPos.x + f32(relX) * s_zoom2d;
-			worldPos.z = s_viewportPos.z + f32(relY) * s_zoom2d;
 			if (s_view == EDIT_VIEW_2D)
 			{
-				ImGui::TextColored({ 0.5f, 0.5f, 0.5f, 0.75f }, "Zoom %0.3f : Pos %0.2f, %0.2f", s_zoom2d, worldPos.x, -worldPos.z);
+				Vec2f worldPos = mouseCoordToWorldPos2d(mx, my);
+				ImGui::TextColored({ 0.5f, 0.5f, 0.5f, 0.75f }, "Zoom %0.3f : Pos %0.2f, %0.2f", s_zoom2d, worldPos.x, worldPos.z);
 			}
 			else
 			{

@@ -17,6 +17,31 @@ using namespace TFE_RenderShared;
 namespace LevelEditor
 {
 	const f32 c_vertexSize = 2.0f;
+	enum Highlight
+	{
+		HL_NONE = 0,
+		HL_HOVERED,
+		HL_SELECTED,
+		HL_COUNT
+	};
+
+	enum SectorColor
+	{
+		SCOLOR_POLY_NORM     = 0x60402020,
+		SCOLOR_POLY_HOVERED  = 0x60404020,
+		SCOLOR_POLY_SELECTED = 0x60053060,
+
+		SCOLOR_LINE_NORM     = 0xffffffff,
+		SCOLOR_LINE_HOVERED  = 0xffffff80,
+		SCOLOR_LINE_SELECTED = 0xff1080ff,
+
+		SCOLOR_LINE_NORM_ADJ     = 0xff808080,
+		SCOLOR_LINE_HOVERED_ADJ  = 0xff808040,
+		SCOLOR_LINE_SELECTED_ADJ = 0xff004080,
+	};
+	static const SectorColor c_sectorPolyClr[] = { SCOLOR_POLY_NORM, SCOLOR_POLY_HOVERED, SCOLOR_POLY_SELECTED };
+	static const SectorColor c_sectorLineClr[] = { SCOLOR_LINE_NORM, SCOLOR_LINE_HOVERED, SCOLOR_LINE_SELECTED };
+	static const SectorColor c_sectorLineClrAdjoin[] = { SCOLOR_LINE_NORM_ADJ, SCOLOR_LINE_HOVERED_ADJ, SCOLOR_LINE_SELECTED_ADJ };
 
 	static RenderTargetHandle s_viewportRt = 0;
 	static std::vector<Vec2f> s_transformedVtx;
@@ -31,10 +56,13 @@ namespace LevelEditor
 	extern EditorLevel s_level;
 	extern u32 s_editFlags;
 	extern s32 s_curLayer;
+	extern EditorSector* s_hoveredSector;
+	extern EditorSector* s_selectedSector;
 
 	void renderLevel2D();
 	void renderLevel3D();
 	void renderSectorWalls2d(s32 layerStart, s32 layerEnd);
+	void drawSector2d(const EditorSector* sector, Highlight highlight);
 	void renderSectorVertices2d();
 
 	void viewport_init()
@@ -119,6 +147,17 @@ namespace LevelEditor
 		// Draw the current layer.
 		renderSectorWalls2d(s_curLayer, s_curLayer);
 
+		// Draw the hovered and selected sectors.
+		// Note they intentionally overlap if s_hoveredSector == s_selectedSector.
+		if (s_hoveredSector)
+		{
+			drawSector2d(s_hoveredSector, HL_HOVERED);
+		}
+		if (s_selectedSector)
+		{
+			drawSector2d(s_selectedSector, HL_SELECTED);
+		}
+
 		// Draw vertices.
 		renderSectorVertices2d();
 
@@ -149,6 +188,44 @@ namespace LevelEditor
 			triDraw2d_addColored(idxCount, (u32)vtxCount, transVtx, idxData, color);
 		}
 	}
+		
+	void drawSector2d(const EditorSector* sector, Highlight highlight)
+	{
+		// Draw a background polygon to help sectors stand out a bit.
+		if (sector->layer == s_curLayer)
+		{
+			renderSectorPolygon2d(&sector->poly, c_sectorPolyClr[highlight]);
+		}
+
+		// Draw lines.
+		const size_t wallCount = sector->walls.size();
+		const EditorWall* wall = sector->walls.data();
+		const Vec2f* vtx = sector->vtx.data();
+		for (size_t w = 0; w < wallCount; w++, wall++)
+		{
+			Vec2f w0 = vtx[wall->idx[0]];
+			Vec2f w1 = vtx[wall->idx[1]];
+
+			// Transformed positions.
+			Vec2f line[2];
+			line[0] = { w0.x * s_viewportTrans2d.x + s_viewportTrans2d.y, w0.z * s_viewportTrans2d.z + s_viewportTrans2d.w };
+			line[1] = { w1.x * s_viewportTrans2d.x + s_viewportTrans2d.y, w1.z * s_viewportTrans2d.z + s_viewportTrans2d.w };
+
+			u32 baseColor;
+			if (s_curLayer != sector->layer)
+			{
+				u32 alpha = 0x40 / (s_curLayer - sector->layer);
+				baseColor = 0x00808000 | (alpha << 24);
+			}
+			else
+			{
+				baseColor = wall->adjoinId < 0 ? c_sectorLineClr[highlight] : c_sectorLineClrAdjoin[highlight];
+			}
+			u32 color[2] = { baseColor, baseColor };
+
+			TFE_RenderShared::lineDraw2d_addLine(1.25f, line, color);
+		}
+	}
 
 	void renderSectorWalls2d(s32 layerStart, s32 layerEnd)
 	{
@@ -159,41 +236,9 @@ namespace LevelEditor
 		for (size_t s = 0; s < count; s++, sector++)
 		{
 			if (sector->layer < layerStart || sector->layer > layerEnd) { continue; }
+			if (sector == s_hoveredSector || sector == s_selectedSector) { continue; }
 
-			// Draw a background polygon to help sectors stand out a bit.
-			if (sector->layer == s_curLayer)
-			{
-				renderSectorPolygon2d(&sector->poly, 0x60402020);
-			}
-
-			// Draw lines.
-			const size_t wallCount = sector->walls.size();
-			const EditorWall* wall = sector->walls.data();
-			const Vec2f* vtx = sector->vtx.data();
-			for (size_t w = 0; w < wallCount; w++, wall++)
-			{
-				Vec2f w0 = vtx[wall->idx[0]];
-				Vec2f w1 = vtx[wall->idx[1]];
-
-				// Transformed positions.
-				Vec2f line[2];
-				line[0] = { w0.x * s_viewportTrans2d.x + s_viewportTrans2d.y, w0.z * s_viewportTrans2d.z + s_viewportTrans2d.w };
-				line[1] = { w1.x * s_viewportTrans2d.x + s_viewportTrans2d.y, w1.z * s_viewportTrans2d.z + s_viewportTrans2d.w };
-
-				u32 baseColor;
-				if (s_curLayer != sector->layer)
-				{
-					u32 alpha = 0x40 / (s_curLayer - sector->layer);
-					baseColor = 0x00808000 | (alpha << 24);
-				}
-				else
-				{
-					baseColor = wall->adjoinId < 0 ? 0xffffffff : 0xff808080;
-				}
-				u32 color[2] = { baseColor, baseColor };
-
-				TFE_RenderShared::lineDraw2d_addLine(1.25f, line, color);
-			}
+			drawSector2d(sector, HL_NONE);
 		}
 	}
 

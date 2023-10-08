@@ -412,7 +412,7 @@ namespace TFE_Polygon
 				{
 					if (p.x < x0)
 					{
-						f32 dzSignMatches = (dz >= 0.0f && dzLast >= 0.0f) ? 1.0f : -1.0f;
+						f32 dzSignMatches = ((dz >= 0.0f && dzLast >= 0.0f) || (dz <= 0.0f && dzLast <= 0.0f)) ? 1.0f : -1.0f;
 						if (dzSignMatches >= 0 || dzLast == 0)  // the signs match OR dz or dz0 are positive OR dz0 EQUALS 0.
 						{
 							crossings++;
