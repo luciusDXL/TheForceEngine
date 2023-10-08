@@ -471,6 +471,10 @@ namespace TFE_DarkForces
 			hudScaleY = floatToFixed16(fixed16ToFloat(yScale) * hudSettings->scale);
 		}
 
+		u16 hud_width = s_hudStatusL->width; // should be 76 or 76*2 = 152
+		u16 hud_height = s_hudStatusL->height; // should be 40 or 80
+		u16 hudDoubled = hud_width == 76 ? 0 : 1;
+
 		fixed16_16 x0, x1;
 		if (hudSettings->hudPos == TFE_HUDPOS_4_3)
 		{
@@ -479,7 +483,7 @@ namespace TFE_DarkForces
 		}
 		else
 		{
-			x0 = intToFixed16(dispWidth) - mul16(intToFixed16(s_cachedHudRight->width - 1), hudScaleX);
+			x0 = intToFixed16(dispWidth) - (mul16(intToFixed16(s_cachedHudRight->width - 1), hudScaleX) >> hudDoubled);
 			x1 = 0;
 		}
 		x0 -= intToFixed16(hudSettings->pixelOffset[0]);
@@ -490,13 +494,13 @@ namespace TFE_DarkForces
 		y0 += intToFixed16(hudSettings->pixelOffset[2]);
 		y1 += intToFixed16(hudSettings->pixelOffset[2]);
 
-		screenGPU_blitTextureScaled(s_hudStatusR, nullptr, x0, y0, hudScaleX, hudScaleY, 255);
-		screenGPU_blitTextureScaled(s_hudStatusL, nullptr, x1, y1, hudScaleX, hudScaleY, 255);
+		screenGPU_blitTextureScaled(s_hudStatusR, nullptr, x0, y0, hudScaleX >> hudDoubled, hudScaleY >> hudDoubled, 255);
+		screenGPU_blitTextureScaled(s_hudStatusL, nullptr, x1, y1, hudScaleX >> hudDoubled, hudScaleY >> hudDoubled, 255);
 		if ((hudSettings->hudPos == TFE_HUDPOS_4_3 || hudSettings->pixelOffset[0] > 0 || hudSettings->pixelOffset[1] > 0) && 
 			s_hudCapLeft && s_hudCapRight)
 		{
 			screenGPU_blitTextureScaled(s_hudCapLeft,  nullptr, x1 - mul16(intToFixed16(s_hudCapLeft->width - 1), hudScaleX), y1, hudScaleX, hudScaleY, 31);
-			screenGPU_blitTextureScaled(s_hudCapRight, nullptr, x0 + mul16(intToFixed16(s_hudStatusR->width), hudScaleX), y1, hudScaleX, hudScaleY, 31);
+			screenGPU_blitTextureScaled(s_hudCapRight, nullptr, x0 + mul16(intToFixed16(s_hudStatusR->width >> hudDoubled), hudScaleX), y1, hudScaleX, hudScaleY, 31);
 		}
 
 		// Energy
@@ -525,7 +529,6 @@ namespace TFE_DarkForces
 		{
 			char lifeCountStr[8];
 			sprintf(lifeCountStr, "%1d", lifeCount);
-
 			fixed16_16 xPos = mul16(intToFixed16(52), hudScaleX) + x1;
 			fixed16_16 yPos = mul16(intToFixed16(26), hudScaleY) + y1;
 			hud_drawStringGpu(s_hudHealthFont, xPos, yPos, hudScaleX, hudScaleY, lifeCountStr);
@@ -538,11 +541,11 @@ namespace TFE_DarkForces
 			fixed16_16 yPos = y0;
 			if (s_headlampActive)
 			{
-				screenGPU_blitTextureScaled(s_hudLightOn, nullptr, xPos, yPos, hudScaleX, hudScaleY, 31);
+				screenGPU_blitTextureScaled(s_hudLightOn, nullptr, xPos, yPos, hudScaleX >> hudDoubled, hudScaleY >> hudDoubled, 31);
 			}
 			else
 			{
-				screenGPU_blitTextureScaled(s_hudLightOff, nullptr, xPos, yPos, hudScaleX, hudScaleY, 31);
+				screenGPU_blitTextureScaled(s_hudLightOff, nullptr, xPos, yPos, hudScaleX >> hudDoubled, hudScaleY >> hudDoubled, 31);
 			}
 			s_rightHudShow = 4;
 		}
