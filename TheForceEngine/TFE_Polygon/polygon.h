@@ -23,4 +23,5 @@ struct Polygon
 namespace TFE_Polygon
 {
 	bool computeTriangulation(Polygon* poly);
+	bool pointInsidePolygon(Polygon* poly, Vec2f p);
 }

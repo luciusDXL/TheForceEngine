@@ -8,6 +8,8 @@
 #define TRI_MAX 4096
 #define IDX_MAX TRI_MAX * 3
 
+#define SHOW_WIREFRAME 0
+
 namespace TFE_RenderShared
 {
 	// Vertex Definition
@@ -163,7 +165,11 @@ namespace TFE_RenderShared
 		TFE_RenderState::setStateEnable(false, STATE_CULLING | STATE_DEPTH_TEST | STATE_DEPTH_WRITE);
 
 		// Enable blending.
-		TFE_RenderState::setStateEnable(true, STATE_BLEND);
+		#if SHOW_WIREFRAME == 1
+			TFE_RenderState::setStateEnable(true, STATE_BLEND | STATE_WIREFRAME);
+		#else
+			TFE_RenderState::setStateEnable(true, STATE_BLEND);
+		#endif
 		TFE_RenderState::setBlendMode(BLEND_ONE, BLEND_ONE_MINUS_SRC_ALPHA);
 
 		s_shader.bind();
@@ -192,6 +198,10 @@ namespace TFE_RenderShared
 		s_shader.unbind();
 		s_vertexBuffer.unbind();
 		s_indexBuffer.unbind();
+
+		#if SHOW_WIREFRAME == 1
+			TFE_RenderState::setStateEnable(false, STATE_WIREFRAME);
+		#endif
 
 		// Clear
 		s_triDrawCount = 0;

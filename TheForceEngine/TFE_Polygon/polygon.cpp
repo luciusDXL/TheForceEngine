@@ -11,7 +11,7 @@
 
 namespace TFE_Polygon
 {
-	struct Edge
+	struct TriEdge
 	{
 		s32 idx[2];
 		s32 refCount;
@@ -23,6 +23,7 @@ namespace TFE_Polygon
 		s32 id;
 		s32 idx[3];
 		s32 adj[3];
+		Vec2f centroid;
 		Vec2f circle;
 		f32 radiusSq;
 	};
@@ -30,7 +31,7 @@ namespace TFE_Polygon
 	static std::vector<Vec2f> s_vertices;
 	static std::vector<Triangle> s_triangles;
 	static std::vector<s32> s_freeList;
-	static std::vector<Edge> s_edges;
+	static std::vector<TriEdge> s_edges;
 
 	s32 computeAdjacency(s32 i0, s32 i1, s32 id)
 	{
@@ -99,6 +100,11 @@ namespace TFE_Polygon
 		Vec2f v1 = s_vertices[i1];
 		Vec2f v2 = s_vertices[i2];
 
+		// Compute the centroid.
+		tri->centroid.x = (v0.x + v1.x + v2.x) / 3.0f;
+		tri->centroid.z = (v0.z + v1.z + v2.z) / 3.0f;
+
+		// Compute the circumcircle.
 		Vec2f a = { v1.x - v0.x, v1.z - v0.z };
 		Vec2f b = { v2.x - v0.x, v2.z - v0.z };
 		f32 m = v1.x*v1.x - v0.x*v0.x + v1.z*v1.z - v0.z*v0.z;
@@ -153,6 +159,11 @@ namespace TFE_Polygon
 		s_vertices.push_back(v1);
 		s_vertices.push_back(v2);
 
+		// Compute the centroid.
+		tri->centroid.x = (v0.x + v1.x + v2.x) / 3.0f;
+		tri->centroid.z = (v0.z + v1.z + v2.z) / 3.0f;
+
+		// Compute the cirumcircle.
 		Vec2f a = { v1.x - v0.x, v1.z - v0.z };
 		Vec2f b = { v2.x - v0.x, v2.z - v0.z };
 		f32 m = v1.x*v1.x - v0.x*v0.x + v1.z*v1.z - v0.z*v0.z;
@@ -181,7 +192,7 @@ namespace TFE_Polygon
 	void addEdge(s32 i0, s32 i1)
 	{
 		const size_t count = s_edges.size();
-		Edge* edge = s_edges.data();
+		TriEdge* edge = s_edges.data();
 		for (size_t e = 0; e < count; e++, edge++)
 		{
 			if ((edge->idx[0] == i0 && edge->idx[1] == i1) || (edge->idx[0] == i1 && edge->idx[1] == i0))
@@ -253,7 +264,7 @@ namespace TFE_Polygon
 
 		// Form a new triangle between the vertex and any edge with adjacency.
 		const size_t edgeCount = s_edges.size();
-		const Edge* edge = s_edges.data();
+		const TriEdge* edge = s_edges.data();
 		for (size_t e = 0; e < edgeCount; e++, edge++)
 		{
 			if (edge->refCount) { continue; }
@@ -261,6 +272,162 @@ namespace TFE_Polygon
 			// Form a triangle from vtxIndex -> edge indices.
 			addTriangle(vtxIndex, edge->idx[0], edge->idx[1]);
 		}
+	}
+
+	// The original DF algorithm.
+	enum PointSegSide
+	{
+		PS_INSIDE = -1,
+		PS_ON_LINE = 0,
+		PS_OUTSIDE = 1
+	};
+
+	PointSegSide lineSegmentSide(Vec2f p, Vec2f p0, Vec2f p1)
+	{
+		f32 dx = p0.x - p1.x;
+		f32 dz = p0.z - p1.z;
+		if (dx == 0)
+		{
+			if (dz > 0)
+			{
+				if (p.z < p1.z || p.z > p0.z || p.x > p0.x) { return PS_INSIDE; }
+			}
+			else
+			{
+				if (p.z < p0.z || p.z > p1.z || p.x > p0.x) { return PS_INSIDE; }
+			}
+			return (p.x == p0.x) ? PS_ON_LINE : PS_OUTSIDE;
+		}
+		else if (dz == 0)
+		{
+			if (p.z != p0.z)
+			{
+				// I believe this should be -1 or +1 depending on if z is less than or greater than z0.
+				// Otherwise flat lines always give the same answer.
+				return PS_INSIDE;
+			}
+			if (dx > 0)
+			{
+				return (p.x > p0.x) ? PS_INSIDE : (p.x < p1.x) ? PS_OUTSIDE : PS_ON_LINE;
+			}
+			return (p.x > p1.x) ? PS_INSIDE : (p.x < p0.x) ? PS_OUTSIDE : PS_ON_LINE;
+		}
+		else if (dx > 0)
+		{
+			if (p.x > p0.x) { return PS_INSIDE; }
+
+			p.x -= p1.x;
+			if (dz > 0)
+			{
+				if (p.z < p1.z || p.z > p0.z) { return PS_INSIDE; }
+				p.z -= p1.z;
+			}
+			else
+			{
+				if (p.z < p0.z || p.z > p1.z) { return PS_INSIDE; }
+				dz = -dz;
+				p1.z -= p.z;
+				p.z = p1.z;
+			}
+		}
+		else // dx <= 0
+		{
+			if (p.x > p1.x) { return PS_INSIDE; }
+
+			p.x -= p0.x;
+			dx = -dx;
+			if (dz > 0)
+			{
+				if (p.z < p1.z || p.z > p0.z) { return PS_INSIDE; }
+				p0.z -= p.z;
+				p.z = p0.z;
+			}
+			else  // dz <= 0
+			{
+				if (p.z < p0.z || p.z > p1.z) { return PS_INSIDE; }
+				dz = -dz;
+				p.z -= p0.z;
+			}
+		}
+		const f32 zDx = p.z * dx;
+		const f32 xDz = p.x * dz;
+		if (xDz == zDx)
+		{
+			return PS_ON_LINE;
+		}
+		return (xDz > zDx) ? PS_INSIDE : PS_OUTSIDE;
+	}
+
+	bool pointInsidePolygon(Polygon* poly, Vec2f p)
+	{
+		const f32 xFrac = p.x - floorf(p.x);
+		const f32 zFrac = p.z - floorf(p.z);
+		const s32 xInt = (s32)floorf(p.x);
+		const s32 zInt = (s32)floorf(p.z);
+
+		const s32 edgeCount = (s32)poly->edge.size();
+		const Edge* edge = poly->edge.data();
+		const Edge* last = &edge[edgeCount - 1];
+		const Vec2f* vtx = poly->vtx.data();
+
+		const Vec2f* w0 = &vtx[last->i0];
+		const Vec2f* w1 = &vtx[last->i1];
+		f32 dzLast = w1->z - w0->z;
+		s32 crossings = 0;
+
+		for (s32 e = 0; e < edgeCount; e++, edge++)
+		{
+			w0 = &vtx[edge->i0];
+			w1 = &vtx[edge->i1];
+
+			const f32 x0 = w0->x;
+			const f32 x1 = w1->x;
+			const f32 z0 = w0->z;
+			const f32 z1 = w1->z;
+			const f32 dz = z1 - z0;
+
+			if (dz != 0)
+			{
+				if (p.z == z0 && p.x == x0)
+				{
+					return true;
+				}
+				else if (p.z != z0)
+				{
+					if (p.z != z1)
+					{
+						PointSegSide side = lineSegmentSide(p, { x0, z0 }, { x1, z1 });
+						if (side == PS_OUTSIDE)
+						{
+							crossings++;
+						}
+						else if (side == PS_ON_LINE)
+						{
+							return true;
+						}
+					}
+					dzLast = dz;
+				}
+				else if (p.x != x0)
+				{
+					if (p.x < x0)
+					{
+						f32 dzSignMatches = (dz >= 0.0f && dzLast >= 0.0f) ? 1.0f : -1.0f;
+						if (dzSignMatches >= 0 || dzLast == 0)  // the signs match OR dz or dz0 are positive OR dz0 EQUALS 0.
+						{
+							crossings++;
+						}
+					}
+					dzLast = dz;
+				}
+			}
+			else if (lineSegmentSide(p, { x0, z0 }, { x1, z1 }) == PS_ON_LINE)
+			{
+				return true;
+			}
+		}
+
+		return (crossings & 1) != 0;
 	}
 
 	// Compute a valid triangulation for the polygon.
@@ -333,15 +500,29 @@ namespace TFE_Polygon
 				tri->allocated = false;
 				continue;
 			}
+		}
+		
+		// 3. Insert edges, splitting triangles as needed (note: new vertices may be added, but polygons should be re-triangulated instead).
+
+		// 4. Given the final resulting triangles, determine which are *inside* of the complex polygon, discard the rest.
+		tri = s_triangles.data();
+		for (size_t t = 0; t < triCount; t++, tri++)
+		{
+			if (!tri->allocated) { continue; }
+			// Determine if the circumcenter is inside the polygon.
+			if (!pointInsidePolygon(poly, tri->centroid))
+			{
+				tri->allocated = false;
+				continue;
+			}
 
 			// For now just add it here.
 			poly->indices.push_back(tri->idx[0]);
 			poly->indices.push_back(tri->idx[1]);
 			poly->indices.push_back(tri->idx[2]);
 		}
+		// TODO: Remove unused vertices.
 		poly->triVtx = s_vertices;
-
-		// 3. Given the final resulting triangles, determine which are *inside* of the complex complex, discard the rest.
 
 		return true;
 	}
