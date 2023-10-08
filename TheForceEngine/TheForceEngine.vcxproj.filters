@@ -1243,6 +1243,9 @@
     <ClInclude Include="TFE_Editor\LevelEditor\Rendering\grid2d.h">
       <Filter>Source\TFE_Editor\LevelEditor\Rendering</Filter>
     </ClInclude>
+    <ClInclude Include="TFE_Editor\LevelEditor\Rendering\viewport.h">
+      <Filter>Source\TFE_Editor\LevelEditor\Rendering</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -2122,6 +2125,9 @@
       <Filter>Source\TFE_Editor\LevelEditor</Filter>
     </ClCompile>
     <ClCompile Include="TFE_Editor\LevelEditor\Rendering\grid2d.cpp">
+      <Filter>Source\TFE_Editor\LevelEditor\Rendering</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Editor\LevelEditor\Rendering\viewport.cpp">
       <Filter>Source\TFE_Editor\LevelEditor\Rendering</Filter>
     </ClCompile>
   </ItemGroup>

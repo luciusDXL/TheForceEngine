@@ -11,6 +11,35 @@
 
 namespace LevelEditor
 {
+	enum SectorDrawMode
+	{
+		SDM_WIREFRAME = 0,
+		SDM_LIGHTING,
+		SDM_TEXTURED_FLOOR,
+		SDM_TEXTURED_CEIL,
+		SDM_COUNT
+	};
+
+	enum LevelEditMode
+	{
+		LEDIT_DRAW = 1,
+		LEDIT_SMART,	// vertex + wall + height "smart" edit.
+		LEDIT_VERTEX,	// vertex only
+		LEDIT_WALL,		// wall only in 2D, wall + floor/ceiling in 3D
+		LEDIT_SECTOR,
+		LEDIT_ENTITY
+	};
+
+	enum LevelEditFlags
+	{
+		LEF_NONE = 0,
+		LEF_SHOW_GRID = FLAG_BIT(0),
+		LEF_SHOW_LOWER_LAYERS = FLAG_BIT(1),
+		LEF_SHOW_INF_COLORS = FLAG_BIT(2),
+
+		LEF_DEFAULT = LEF_SHOW_GRID | LEF_SHOW_LOWER_LAYERS | LEF_SHOW_INF_COLORS
+	};
+
 	bool init(TFE_Editor::Asset* asset);
 	void destroy();
 
