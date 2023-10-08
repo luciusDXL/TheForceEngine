@@ -23,7 +23,7 @@ namespace LevelEditor
 	enum LevelEditMode
 	{
 		LEDIT_DRAW = 1,
-		LEDIT_SMART,	// vertex + wall + height "smart" edit.
+		//LEDIT_SMART,	// vertex + wall + height "smart" edit.
 		LEDIT_VERTEX,	// vertex only
 		LEDIT_WALL,		// wall only in 2D, wall + floor/ceiling in 3D
 		LEDIT_SECTOR,
