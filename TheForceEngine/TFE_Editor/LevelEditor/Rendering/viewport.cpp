@@ -13,6 +13,8 @@
 
 namespace LevelEditor
 {
+	const f32 c_vertexSize = 2.0f;
+
 	static RenderTargetHandle s_viewportRt = 0;
 	Vec2i s_viewportSize = { 0 };
 	Vec3f s_viewportPos = { 0 };
@@ -28,6 +30,7 @@ namespace LevelEditor
 	void renderLevel2D();
 	void renderLevel3D();
 	void renderSectorWalls2d(s32 layerStart, s32 layerEnd);
+	void renderSectorVertices2d();
 
 	void viewport_init()
 	{
@@ -108,6 +111,9 @@ namespace LevelEditor
 		// Draw the current layer.
 		renderSectorWalls2d(s_curLayer, s_curLayer);
 
+		// Draw vertices.
+		renderSectorVertices2d();
+
 		// Submit.
 		TFE_RenderShared::lineDraw2d_drawLines();
 	}
@@ -152,6 +158,46 @@ namespace LevelEditor
 				u32 color[2] = { baseColor, baseColor };
 
 				TFE_RenderShared::lineDraw2d_addLine(1.25f, line, color);
+			}
+		}
+	}
+
+	void drawVertex(const Vec2f* pos, f32 scale, const u32* color)
+	{
+		u32 colors[] = { color[0], color[1] };
+
+		const Vec2f p0 = { pos->x * s_viewportTrans2d.x + s_viewportTrans2d.y, pos->z * s_viewportTrans2d.z + s_viewportTrans2d.w };
+		const Vec2f vtx[]=
+		{
+			{ p0.x - scale, p0.z - scale },
+			{ p0.x + scale, p0.z - scale },
+			{ p0.x + scale, p0.z + scale },
+			{ p0.x - scale, p0.z + scale },
+			{ p0.x - scale, p0.z - scale },
+		};
+		TFE_RenderShared::lineDraw2d_addLine(1.5f, &vtx[0], colors);
+		TFE_RenderShared::lineDraw2d_addLine(1.5f, &vtx[1], colors);
+		TFE_RenderShared::lineDraw2d_addLine(1.5f, &vtx[2], colors);
+		TFE_RenderShared::lineDraw2d_addLine(1.5f, &vtx[3], colors);
+	}
+
+	void renderSectorVertices2d()
+	{
+		const u32 color[4] = { 0xffae8653, 0xffae8653, 0xff51331a, 0xff51331a };
+		const u32 colorSelected[4] = { 0xffffc379, 0xffffc379, 0xff764a26, 0xff764a26 };
+		const f32 scale = std::min(1.0f, 1.0f/s_zoom2d) * c_vertexSize;
+
+		const size_t sectorCount = s_level.sectors.size();
+		const EditorSector* sector = s_level.sectors.data();
+		for (size_t s = 0; s < sectorCount; s++, sector++)
+		{
+			if (sector->layer != s_curLayer) { continue; }
+
+			const size_t vtxCount = sector->vtx.size();
+			const Vec2f* vtx = sector->vtx.data();
+			for (size_t v = 0; v < vtxCount; v++, vtx++)
+			{
+				drawVertex(vtx, scale, color);
 			}
 		}
 	}
