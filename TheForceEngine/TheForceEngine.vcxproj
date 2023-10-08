@@ -616,7 +616,6 @@ echo ^)";
     <ClInclude Include="TFE_Memory\memoryRegion.h" />
     <ClInclude Include="TFE_Outlaws\outlawsMain.h" />
     <ClInclude Include="TFE_Polygon\clipper.hpp" />
-    <ClInclude Include="TFE_Polygon\MPE_fastpoly2tri.h" />
     <ClInclude Include="TFE_Polygon\polygon.h" />
     <ClInclude Include="TFE_PostProcess\blit.h" />
     <ClInclude Include="TFE_PostProcess\bloomDownsample.h" />
@@ -640,6 +639,7 @@ echo ^)";
     <ClInclude Include="TFE_RenderShared\lineDraw2d.h" />
     <ClInclude Include="TFE_RenderShared\quadDraw2d.h" />
     <ClInclude Include="TFE_RenderShared\texturePacker.h" />
+    <ClInclude Include="TFE_RenderShared\triDraw2d.h" />
     <ClInclude Include="TFE_Settings\gameSourceData.h" />
     <ClInclude Include="TFE_Settings\settings.h" />
     <ClInclude Include="TFE_Settings\windows\registry.h" />
@@ -946,6 +946,7 @@ echo ^)";
     <ClCompile Include="TFE_RenderShared\lineDraw2d.cpp" />
     <ClCompile Include="TFE_RenderShared\quadDraw2d.cpp" />
     <ClCompile Include="TFE_RenderShared\texturePacker.cpp" />
+    <ClCompile Include="TFE_RenderShared\triDraw2d.cpp" />
     <ClCompile Include="TFE_Settings\settings.cpp" />
     <ClCompile Include="TFE_Settings\windows\registry.cpp" />
     <ClCompile Include="TFE_System\CrashHandler\crashHandlerWin32.cpp" />
@@ -1029,8 +1030,6 @@ echo ^)";
     <None Include="Shaders\overlay.vert" />
     <None Include="Shaders\quad2d.frag" />
     <None Include="Shaders\quad2d.vert" />
-    <None Include="Shaders\tri2dColor.frag" />
-    <None Include="Shaders\tri2dColor.vert" />
     <None Include="Shaders\tri2dTextured.frag" />
     <None Include="Shaders\tri2dTextured.vert" />
     <None Include="Shaders\tri3dColor.frag" />

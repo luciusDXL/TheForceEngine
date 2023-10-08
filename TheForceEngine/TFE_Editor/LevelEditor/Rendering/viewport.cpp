@@ -6,16 +6,21 @@
 #include <TFE_RenderBackend/vertexBuffer.h>
 #include <TFE_RenderBackend/indexBuffer.h>
 #include <TFE_RenderShared/lineDraw2d.h>
+#include <TFE_RenderShared/triDraw2d.h>
 #include <TFE_System/system.h>
 #include <TFE_RenderBackend/renderBackend.h>
 #include <algorithm>
 #include <vector>
+
+using namespace TFE_RenderShared;
 
 namespace LevelEditor
 {
 	const f32 c_vertexSize = 2.0f;
 
 	static RenderTargetHandle s_viewportRt = 0;
+	static std::vector<Vec2f> s_transformedVtx;
+
 	Vec2i s_viewportSize = { 0 };
 	Vec3f s_viewportPos = { 0 };
 	Vec4f s_viewportTrans2d = { 0 };
@@ -35,12 +40,14 @@ namespace LevelEditor
 	void viewport_init()
 	{
 		grid2d_init();
+		tri2d_init();
 	}
 
 	void viewport_destroy()
 	{
 		TFE_RenderBackend::freeRenderTarget(s_viewportRt);
 		grid2d_destroy();
+		tri2d_destroy();
 		s_viewportRt = 0;
 	}
 
@@ -95,6 +102,7 @@ namespace LevelEditor
 		// Prepare for drawing.
 		computeViewportTransform2d();
 		TFE_RenderShared::lineDraw2d_begin(s_viewportSize.x, s_viewportSize.z);
+		TFE_RenderShared::triDraw2d_begin(s_viewportSize.x, s_viewportSize.z);
 
 		// Draw lower layers, if enabled.
 		if (s_editFlags & LEF_SHOW_LOWER_LAYERS)
@@ -115,11 +123,31 @@ namespace LevelEditor
 		renderSectorVertices2d();
 
 		// Submit.
+		TFE_RenderShared::triDraw2d_draw();
 		TFE_RenderShared::lineDraw2d_drawLines();
 	}
 
 	void renderLevel3D()
 	{
+	}
+
+	void renderSectorPolygon2d(const Polygon* poly, u32 color)
+	{
+		const size_t idxCount = poly->indices.size();
+		if (idxCount)
+		{
+			const s32*    idxData = poly->indices.data();
+			const Vec2f*  vtxData = poly->triVtx.data();
+			const size_t vtxCount = poly->triVtx.size();
+
+			s_transformedVtx.resize(vtxCount);
+			Vec2f* transVtx = s_transformedVtx.data();
+			for (size_t v = 0; v < vtxCount; v++, vtxData++)
+			{
+				transVtx[v] = { vtxData->x * s_viewportTrans2d.x + s_viewportTrans2d.y, vtxData->z * s_viewportTrans2d.z + s_viewportTrans2d.w };
+			}
+			triDraw2d_addColored(idxCount, (u32)vtxCount, transVtx, idxData, color);
+		}
 	}
 
 	void renderSectorWalls2d(s32 layerStart, s32 layerEnd)
@@ -132,6 +160,13 @@ namespace LevelEditor
 		{
 			if (sector->layer < layerStart || sector->layer > layerEnd) { continue; }
 
+			// Draw a background polygon to help sectors stand out a bit.
+			if (sector->layer == s_curLayer)
+			{
+				renderSectorPolygon2d(&sector->poly, 0x60402020);
+			}
+
+			// Draw lines.
 			const size_t wallCount = sector->walls.size();
 			const EditorWall* wall = sector->walls.data();
 			const Vec2f* vtx = sector->vtx.data();

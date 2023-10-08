@@ -10,6 +10,7 @@
 #include <TFE_Editor/EditorAsset/editorAsset.h>
 #include <TFE_Editor/EditorAsset/editorTexture.h>
 #include <TFE_Editor/editorProject.h>
+#include <TFE_Polygon/polygon.h>
 
 namespace LevelEditor
 {
@@ -62,6 +63,9 @@ namespace LevelEditor
 		// Bounds
 		Vec3f bounds[2];
 		s32 layer = 0;
+
+		// Polygon
+		Polygon poly;
 	};
 
 	struct EditorLevel
@@ -83,4 +87,6 @@ namespace LevelEditor
 	};
 
 	bool loadLevelFromAsset(TFE_Editor::Asset* asset, EditorLevel* level);
+	void sectorToPolygon(EditorSector* sector);
+	void polygonToSector(EditorSector* sector);
 }

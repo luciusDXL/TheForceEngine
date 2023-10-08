@@ -325,9 +325,6 @@
     <ClInclude Include="TFE_Polygon\clipper.hpp">
       <Filter>Source\TFE_Polygon</Filter>
     </ClInclude>
-    <ClInclude Include="TFE_Polygon\MPE_fastpoly2tri.h">
-      <Filter>Source\TFE_Polygon</Filter>
-    </ClInclude>
     <ClInclude Include="TFE_Polygon\polygon.h">
       <Filter>Source\TFE_Polygon</Filter>
     </ClInclude>
@@ -1246,6 +1243,9 @@
     <ClInclude Include="TFE_Editor\LevelEditor\Rendering\viewport.h">
       <Filter>Source\TFE_Editor\LevelEditor\Rendering</Filter>
     </ClInclude>
+    <ClInclude Include="TFE_RenderShared\triDraw2d.h">
+      <Filter>Source\TFE_RenderShared</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -2130,6 +2130,9 @@
     <ClCompile Include="TFE_Editor\LevelEditor\Rendering\viewport.cpp">
       <Filter>Source\TFE_Editor\LevelEditor\Rendering</Filter>
     </ClCompile>
+    <ClCompile Include="TFE_RenderShared\triDraw2d.cpp">
+      <Filter>Source\TFE_RenderShared</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="TheForceEngine.rc">
@@ -2161,12 +2164,6 @@
       <Filter>Source\Shaders</Filter>
     </None>
     <None Include="Shaders\line2d.vert">
-      <Filter>Source\Shaders</Filter>
-    </None>
-    <None Include="Shaders\tri2dColor.frag">
-      <Filter>Source\Shaders</Filter>
-    </None>
-    <None Include="Shaders\tri2dColor.vert">
       <Filter>Source\Shaders</Filter>
     </None>
     <None Include="Shaders\tri2dTextured.frag">

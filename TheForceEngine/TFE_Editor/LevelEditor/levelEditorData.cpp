@@ -347,8 +347,52 @@ namespace LevelEditor
 
 			level->layerRange[0] = min(level->layerRange[0], sector->layer);
 			level->layerRange[1] = max(level->layerRange[1], sector->layer);
+
+			// Build the polygons for each sector.
+			sectorToPolygon(sector);
 		}
 
 		return true;
+	}
+
+	// Update the sector's polygon from the sector data.
+	void sectorToPolygon(EditorSector* sector)
+	{
+		Polygon& poly = sector->poly;
+		poly.edge.resize(sector->walls.size());
+		poly.vtx.resize(sector->vtx.size());
+
+		poly.bounds[0] = {  FLT_MAX,  FLT_MAX };
+		poly.bounds[1] = { -FLT_MAX, -FLT_MAX };
+
+		const size_t vtxCount = sector->vtx.size();
+		const Vec2f* vtx = sector->vtx.data();
+		for (size_t v = 0; v < vtxCount; v++, vtx++)
+		{
+			poly.vtx[v] = *vtx;
+			poly.bounds[0].x = std::min(poly.bounds[0].x, vtx->x);
+			poly.bounds[0].z = std::min(poly.bounds[0].z, vtx->z);
+			poly.bounds[1].x = std::max(poly.bounds[1].x, vtx->x);
+			poly.bounds[1].z = std::max(poly.bounds[1].z, vtx->z);
+		}
+
+		const size_t wallCount = sector->walls.size();
+		const EditorWall* wall = sector->walls.data();
+		for (size_t w = 0; w < wallCount; w++, wall++)
+		{
+			poly.edge[w] = { wall->idx[0], wall->idx[1] };
+		}
+
+		// Clear out cached triangle data.
+		poly.triVtx.clear();
+		poly.indices.clear();
+
+		TFE_Polygon::computeTriangulation(&sector->poly);
+	}
+
+	// Update the sector itself from the sector's polygon.
+	void polygonToSector(EditorSector* sector)
+	{
+		// TODO
 	}
 }
