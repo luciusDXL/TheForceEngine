@@ -3,6 +3,7 @@
 #include <TFE_System/math.h>
 #include <TFE_Editor/LevelEditor/levelEditor.h>
 #include <TFE_Editor/LevelEditor/levelEditorData.h>
+#include <TFE_Editor/EditorAsset/editorTexture.h>
 #include <TFE_RenderBackend/shader.h>
 #include <TFE_RenderBackend/vertexBuffer.h>
 #include <TFE_RenderBackend/indexBuffer.h>
@@ -14,6 +15,7 @@
 #include <vector>
 
 using namespace TFE_RenderShared;
+using namespace TFE_Editor;
 
 namespace LevelEditor
 {
@@ -52,8 +54,22 @@ namespace LevelEditor
 	static const SectorColor c_sectorLineClrAdjoin[] = { SCOLOR_LINE_NORM_ADJ, SCOLOR_LINE_HOVERED_ADJ, SCOLOR_LINE_SELECTED_ADJ };
 	static const VertexColor c_vertexClr[] = { VCOLOR_NORM, VCOLOR_HOVERED, VCOLOR_SELECTED };
 
+	#define AMBIENT(x) (x * 255/31) | ((x * 255/31)<<8) | ((x * 255/31)<<16) | (0xff << 24)
+	static const u32 c_sectorTexClr[] =
+	{
+		AMBIENT(0), AMBIENT(1), AMBIENT(2), AMBIENT(3),
+		AMBIENT(4), AMBIENT(5), AMBIENT(6), AMBIENT(7),
+		AMBIENT(8), AMBIENT(9), AMBIENT(10), AMBIENT(11),
+		AMBIENT(12), AMBIENT(13), AMBIENT(14), AMBIENT(15),
+		AMBIENT(16), AMBIENT(17), AMBIENT(18), AMBIENT(19),
+		AMBIENT(20), AMBIENT(21), AMBIENT(22), AMBIENT(23),
+		AMBIENT(24), AMBIENT(25), AMBIENT(26), AMBIENT(27),
+		AMBIENT(28), AMBIENT(29), AMBIENT(30), AMBIENT(31)
+	};
+
 	static RenderTargetHandle s_viewportRt = 0;
 	static std::vector<Vec2f> s_transformedVtx;
+	static std::vector<Vec2f> s_uvBuffer;
 
 	SectorDrawMode s_sectorDrawMode = SDM_WIREFRAME;
 	Vec2i s_viewportSize = { 0 };
@@ -87,6 +103,7 @@ namespace LevelEditor
 	void renderLevel2D();
 	void renderLevel3D();
 	void renderSectorWalls2d(s32 layerStart, s32 layerEnd);
+	void renderSectorPreGrid();
 	void drawSector2d(const EditorSector* sector, Highlight highlight);
 	void drawVertex2d(const Vec2f* pos, f32 scale, Highlight highlight);
 	void drawVertex2d(const EditorSector* sector, s32 id, f32 extraScale, Highlight highlight);
@@ -166,6 +183,9 @@ namespace LevelEditor
 			renderSectorWalls2d(s_level.layerRange[0], s_curLayer - 1);
 		}
 
+		// Draw pre-grid polygons
+		renderSectorPreGrid();
+
 		// Draw the grid layer.
 		if (s_editFlags & LEF_SHOW_GRID)
 		{
@@ -218,7 +238,7 @@ namespace LevelEditor
 	void renderLevel3D()
 	{
 	}
-
+		
 	void renderSectorPolygon2d(const Polygon* poly, u32 color)
 	{
 		const size_t idxCount = poly->indices.size();
@@ -235,6 +255,28 @@ namespace LevelEditor
 				transVtx[v] = { vtxData->x * s_viewportTrans2d.x + s_viewportTrans2d.y, vtxData->z * s_viewportTrans2d.z + s_viewportTrans2d.w };
 			}
 			triDraw2d_addColored(idxCount, (u32)vtxCount, transVtx, idxData, color);
+		}
+	}
+
+	void renderTexturedSectorPolygon2d(const Polygon* poly, u32 color, EditorTexture* tex, const Vec2f& offset)
+	{
+		const size_t idxCount = poly->indices.size();
+		if (idxCount)
+		{
+			const s32*    idxData = poly->indices.data();
+			const Vec2f*  vtxData = poly->triVtx.data();
+			const size_t vtxCount = poly->triVtx.size();
+
+			s_uvBuffer.resize(vtxCount);
+			s_transformedVtx.resize(vtxCount);
+			Vec2f* transVtx = s_transformedVtx.data();
+			Vec2f* uv = s_uvBuffer.data();
+			for (size_t v = 0; v < vtxCount; v++, vtxData++)
+			{
+				transVtx[v] = { vtxData->x * s_viewportTrans2d.x + s_viewportTrans2d.y, vtxData->z * s_viewportTrans2d.z + s_viewportTrans2d.w };
+				uv[v] = { (vtxData->x - offset.x) / 8.0f, (vtxData->z - offset.z) / 8.0f };
+			}
+			triDraw2D_addTextured(idxCount, (u32)vtxCount, transVtx, uv, idxData, color, tex->frames[0]);
 		}
 	}
 
@@ -275,13 +317,16 @@ namespace LevelEditor
 
 		TFE_RenderShared::lineDraw2d_addLines(lineCount, 1.25f * extraScale, line, color);
 	}
-		
+
 	void drawSector2d(const EditorSector* sector, Highlight highlight)
 	{
 		// Draw a background polygon to help sectors stand out a bit.
 		if (sector->layer == s_curLayer)
 		{
-			renderSectorPolygon2d(&sector->poly, c_sectorPolyClr[highlight]);
+			if (s_sectorDrawMode == SDM_WIREFRAME || highlight != HL_NONE)
+			{
+				renderSectorPolygon2d(&sector->poly, c_sectorPolyClr[highlight]);
+			}
 		}
 
 		// Draw lines.
@@ -299,6 +344,35 @@ namespace LevelEditor
 
 			drawWall2d(sector, wall, 1.0f, highlight);
 		}
+	}
+
+	void renderSectorPreGrid()
+	{
+		if (s_sectorDrawMode != SDM_TEXTURED_FLOOR && s_sectorDrawMode != SDM_TEXTURED_CEIL && s_sectorDrawMode != SDM_LIGHTING) { return; }
+
+		const size_t count = s_level.sectors.size();
+		const EditorSector* sector = s_level.sectors.data();
+		for (size_t s = 0; s < count; s++, sector++)
+		{
+			if (sector->layer != s_curLayer) { continue; }
+			const u32 colorIndex = (s_editFlags & LEF_FULLBRIGHT) && s_sectorDrawMode != SDM_LIGHTING ? 31 : sector->ambient;
+
+			if (s_sectorDrawMode == SDM_LIGHTING)
+			{
+				renderSectorPolygon2d(&sector->poly, c_sectorTexClr[colorIndex]);
+			}
+			else if (s_sectorDrawMode == SDM_TEXTURED_FLOOR)
+			{
+				renderTexturedSectorPolygon2d(&sector->poly, c_sectorTexClr[colorIndex], (EditorTexture*)getAssetData(sector->floorTex.handle), sector->floorTex.offset);
+			}
+			else if (s_sectorDrawMode == SDM_TEXTURED_CEIL)
+			{
+				renderTexturedSectorPolygon2d(&sector->poly, c_sectorTexClr[colorIndex], (EditorTexture*)getAssetData(sector->ceilTex.handle), sector->ceilTex.offset);
+			}
+		}
+
+		TFE_RenderShared::triDraw2d_draw();
+		TFE_RenderShared::triDraw2d_begin(s_viewportSize.x, s_viewportSize.z);
 	}
 
 	void renderSectorWalls2d(s32 layerStart, s32 layerEnd)

@@ -616,6 +616,9 @@ namespace TFE_Polygon
 		s_vertices.clear();
 		s_constraints.clear();
 
+		poly->triVtx.clear();
+		poly->indices.clear();
+
 		const size_t edgeCount = poly->edge.size();
 		if (edgeCount < 3)
 		{
