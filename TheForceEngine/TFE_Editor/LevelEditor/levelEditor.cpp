@@ -13,6 +13,7 @@
 #include <TFE_Editor/EditorAsset/editorTexture.h>
 #include <TFE_Editor/EditorAsset/editorFrame.h>
 #include <TFE_Editor/EditorAsset/editorSprite.h>
+#include <TFE_Editor/LevelEditor/Rendering/grid2d.h>
 #include <TFE_Input/input.h>
 #include <TFE_RenderBackend/renderBackend.h>
 #include <TFE_RenderShared/lineDraw2d.h>
@@ -50,7 +51,7 @@ namespace LevelEditor
 	LevelEditMode s_editMode = LEDIT_DRAW;
 	u32 s_editFlags = LEF_DEFAULT;
 	s32 s_curLayer = 0;
-		
+			
 	// Sector
 	EditorSector* s_hoveredSector = nullptr;
 	EditorSector* s_selectedSector = nullptr;
@@ -75,6 +76,7 @@ namespace LevelEditor
 	static Vec2f s_editWinMapCorner = { 0 };
 	static f32 s_gridSize = 32.0f;
 	static f32 s_zoom = c_defaultZoom;
+	static bool s_uiActive = false;
 
 	static AssetList s_textureList;
 
@@ -118,6 +120,8 @@ namespace LevelEditor
 	void resetZoom();
 	Vec2f mouseCoordToWorldPos2d(s32 mx, s32 my);
 	Vec2i worldPos2dToMap(const Vec2f& worldPos);
+	bool isUiActive();
+	bool isViewportElementHovered();
 	
 	////////////////////////////////////////////////////////
 	// Public API
@@ -268,10 +272,22 @@ namespace LevelEditor
 		}
 		return closestId;
 	}
+
+	bool isUiActive()
+	{
+		return getMenuActive() || s_uiActive;
+	}
+
+	bool isViewportElementHovered()
+	{
+		return (s_hoveredVtxId >= 0 && s_editMode == LEDIT_VERTEX) || (s_hoveredWallId >= 0 && s_editMode == LEDIT_WALL) || 
+			   (s_hoveredSector && s_editMode == LEDIT_SECTOR) || (s_selectedVtxId >= 0 && s_editMode == LEDIT_VERTEX) || 
+			   (s_selectedWallId >= 0 && s_editMode == LEDIT_WALL) || (s_selectedSector && s_editMode == LEDIT_SECTOR);
+	}
 		
 	void updateWindowControls()
 	{
-		if (getMenuActive()) { return; }
+		if (isUiActive()) { return; }
 
 		s32 mx, my;
 		TFE_Input::getMousePos(&mx, &my);
@@ -1063,6 +1079,7 @@ namespace LevelEditor
 		viewport_render(s_view);
 
 		// Toolbar
+		s_uiActive = false;
 		toolbarBegin();
 		{
 			void* gpuPtr = TFE_RenderBackend::getGpuPtr(s_editCtrlToolbarData);
@@ -1085,10 +1102,19 @@ namespace LevelEditor
 
 			ImGui::SameLine(0.0f, 32.0f);
 			ImGui::PushItemWidth(64.0f);
-			if (ImGui::Combo("Grid Size", &s_gridIndex, c_gridSizes, IM_ARRAYSIZE(c_gridSizes)))
+			if (ImGui::BeginCombo("Grid Size", c_gridSizes[s_gridIndex]))
 			{
-				s_gridSize = c_gridSizeMap[s_gridIndex];
-				s_gridSize2d = s_gridSize;
+				s_uiActive = true;
+				for (int n = 0; n < TFE_ARRAYSIZE(c_gridSizes); n++)
+				{
+					if (ImGui::Selectable(c_gridSizes[n], n == s_gridIndex))
+					{
+						s_gridIndex = n;
+						s_gridSize = c_gridSizeMap[s_gridIndex];
+						s_gridSize2d = s_gridSize;
+					}
+				}
+				ImGui::EndCombo();
 			}
 			ImGui::PopItemWidth();
 			// Get the "Grid Size" combo position to align the message panel later.
@@ -1098,8 +1124,19 @@ namespace LevelEditor
 			ImGui::PushItemWidth(64.0f);
 			s32 layerIndex = s_curLayer - s_level.layerRange[0];
 			s32 minLayerIndex = s_level.layerRange[0] + 15;
-			ImGui::Combo("Layer", &layerIndex, &s_layerStr[minLayerIndex], s_level.layerRange[1] - s_level.layerRange[0] + 1);
-			s_curLayer = layerIndex + s_level.layerRange[0];
+			//ImGui::Combo("Layer", &layerIndex, &s_layerStr[minLayerIndex], s_level.layerRange[1] - s_level.layerRange[0] + 1);
+			if (ImGui::BeginCombo("Layer", s_layerStr[layerIndex + minLayerIndex]))
+			{
+				s_uiActive = true;
+				for (int n = 0; n < s_level.layerRange[1] - s_level.layerRange[0] + 1; n++)
+				{
+					if (ImGui::Selectable(s_layerStr[n + minLayerIndex], n == layerIndex))
+					{
+						s_curLayer = n + s_level.layerRange[0];
+					}
+				}
+				ImGui::EndCombo();
+			}
 			ImGui::PopItemWidth();
 
 			// Message Panel
@@ -1127,7 +1164,7 @@ namespace LevelEditor
 			TFE_Input::getMousePos(&mx, &my);
 			const bool editWinHovered = mx >= s_editWinPos.x && mx < s_editWinPos.x + s_editWinSize.x && my >= s_editWinPos.z && my < s_editWinPos.z + s_editWinSize.z;
 
-			if (s_view == EDIT_VIEW_2D && !getMenuActive())
+			if (s_view == EDIT_VIEW_2D && !getMenuActive() && !isUiActive())
 			{
 				// Display vertex info.
 				if (s_hoveredVtxSector && s_hoveredVtxId >= 0 && editWinHovered)
@@ -1143,6 +1180,62 @@ namespace LevelEditor
 					ImGui::Begin("##VtxInfo", nullptr, window_flags);
 					ImGui::Text("%d: %0.3f, %0.3f", s_hoveredVtxId, vtx.x, vtx.z);
 					ImGui::End();
+				}
+
+				// Display Grid Info
+				if ((s_editFlags & LEF_SHOW_GRID) && !isUiActive() && !isViewportElementHovered())
+				{
+					Vec2f worldPos = mouseCoordToWorldPos2d(mx, my);
+					Vec2f snappedPos;
+					grid2d_snap(worldPos, 1, snappedPos);
+					f32 grid = grid2d_getGrid(1);
+
+					Vec2i mapPos0 = worldPos2dToMap(snappedPos);
+					Vec2i mapPos1 = worldPos2dToMap({ snappedPos.x + grid, snappedPos.z + grid });
+
+					if (mapPos0.x >= s_editWinMapCorner.x && mapPos1.x < s_editWinMapCorner.x + s_editWinSize.x &&
+						mapPos1.z >= s_editWinMapCorner.z && mapPos1.z < s_editWinMapCorner.x + s_editWinSize.x)
+					{
+						char dispString[64];
+						if (grid == 1.0f) { sprintf(dispString, "%d unit", s32(grid)); }
+						else if (grid > 1.0f) { sprintf(dispString, "%d units", s32(grid)); }
+						else { sprintf(dispString, "1/%d unit", s32(1.0f / grid)); }
+
+						f32 len = ImGui::CalcTextSize(dispString).x;
+						f32 offset = (mapPos1.x - mapPos0.x - len)*0.5f;
+						f32 height = ImGui::GetFontSize();
+						if (offset >= 0.0f)
+						{
+							const ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize
+								| ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoNav | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoBackground;
+
+							ImGui::PushStyleColor(ImGuiCol_Text, { 0.8f, 0.9f, 1.0f, 0.25f });
+							ImGui::SetNextWindowSize({ f32(mapPos1.x - mapPos0.x) + 4.0f, ImGui::GetFontSize() + 8.0f });
+							ImGui::SetNextWindowPos({ (f32)mapPos0.x, (f32)mapPos1.z - UI_SCALE(20) - 4 });
+							ImGui::Begin("##GridInfo", nullptr, window_flags);
+
+							ImVec2 pos = ImGui::GetCursorPos();
+							ImDrawList* drawList = ImGui::GetWindowDrawList();
+
+							Vec2f lPos0 = { mapPos0.x, pos.y + height * 0.5f + mapPos1.z - UI_SCALE(20) - 4 };
+							Vec2f lPos1 = { lPos0.x + offset - 2.0f, lPos0.z };
+							Vec2f rPos0 = { lPos0.x + len + offset + 2.0f, lPos0.z };
+							Vec2f rPos1 = { (f32)mapPos1.x - 4.0f, lPos0.z };
+							if (rPos1.x > rPos0.x)
+							{
+								drawList->AddLine({ lPos0.x, lPos0.z }, { lPos1.x, lPos1.z }, 0x40e6ccff, 1.25f);
+								drawList->AddLine({ rPos0.x, rPos0.z }, { rPos1.x, rPos1.z }, 0x40e6ccff, 1.25f);
+
+								drawList->AddLine({ lPos0.x + 4.0f, lPos0.z - 6.0f }, { lPos0.x + 4.0f, lPos0.z + 6.0f }, 0x40e6ccff, 1.25f);
+								drawList->AddLine({ rPos1.x, rPos1.z - 6.0f }, { rPos1.x, rPos1.z + 6.0f }, 0x40e6ccff, 1.25f);
+							}
+
+							ImGui::SetCursorPos({ offset, pos.y });
+							ImGui::Text(dispString, s32(grid));
+							ImGui::End();
+							ImGui::PopStyleColor();
+						}
+					}
 				}
 			}
 		}
@@ -1320,7 +1413,7 @@ namespace LevelEditor
 
 		s32 mx, my;
 		TFE_Input::getMousePos(&mx, &my);
-		if (mx >= s_editWinPos.x && mx < s_editWinPos.x + s_editWinSize.x && my >= s_editWinPos.z && my < s_editWinPos.z + s_editWinSize.z && !getMenuActive())
+		if (mx >= s_editWinPos.x && mx < s_editWinPos.x + s_editWinSize.x && my >= s_editWinPos.z && my < s_editWinPos.z + s_editWinSize.z && !getMenuActive() && !isUiActive())
 		{
 			if (s_view == EDIT_VIEW_2D)
 			{

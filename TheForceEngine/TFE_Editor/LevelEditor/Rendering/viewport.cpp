@@ -169,7 +169,8 @@ namespace LevelEditor
 		// Draw the grid layer.
 		if (s_editFlags & LEF_SHOW_GRID)
 		{
-			grid2d_blitToScreen(s_viewportSize, s_gridSize2d, s_zoom2d, s_viewportPos, s_gridOpacity);
+			grid2d_computeScale(s_viewportSize, s_gridSize2d, s_zoom2d, s_viewportPos);
+			grid2d_blitToScreen(s_gridOpacity);
 		}
 
 		// Draw the current layer.

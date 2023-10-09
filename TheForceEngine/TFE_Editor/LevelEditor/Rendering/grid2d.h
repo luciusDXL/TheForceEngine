@@ -15,5 +15,9 @@ namespace LevelEditor
 	bool grid2d_init();
 	void grid2d_destroy();
 
-	void grid2d_blitToScreen(Vec2i viewportSize, f32 baseGridScale, f32 pixelsToWorldUnits, Vec3f viewPos, f32 gridOpacity);
+	void grid2d_computeScale(Vec2i viewportSize, f32 baseGridScale, f32 pixelsToWorldUnits, Vec3f viewPos);
+	void grid2d_snap(const Vec2f& worldPos, s32 layer, Vec2f& snappedPos);
+	void grid2d_blitToScreen(f32 gridOpacity);
+
+	f32  grid2d_getGrid(s32 layer);
 }
