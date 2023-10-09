@@ -66,14 +66,27 @@ namespace LevelEditor
 	{
 		DisplayInfo display;
 		TFE_RenderBackend::getDisplayInfo(&display);
-		const f32 gridScale = pixelsToWorldUnits / baseGridScale;
-		const f32 scaleX = f32(viewportSize.x) * gridScale;
-		const f32 scaleY = f32(viewportSize.z) * gridScale;
-		const f32 offsetX = viewPos.x / baseGridScale;
-		const f32 offsetY = viewPos.z / baseGridScale;
+		// Finest grid.
+		f32 gridScale = pixelsToWorldUnits / baseGridScale;
 
+		// Zoom out until the finest grid is visible.
+		const f32 eps = 0.01f;
 		f32 fadeMain = std::min(1.0f, std::max(0.0f, 1.0f - gridScale * 5.0f));
+		// Given the zoom limits, the maximum number of loop iterations is 4.
+		while (fadeMain < eps)
+		{
+			baseGridScale *= 8.0f;
+			gridScale = pixelsToWorldUnits / baseGridScale;
+			fadeMain = std::min(1.0f, std::max(0.0f, 1.0f - gridScale * 5.0f));
+		}
+		// Adjust the grid scale.
+		f32 scaleX = f32(viewportSize.x) * gridScale;
+		f32 scaleY = f32(viewportSize.z) * gridScale;
+		f32 offsetX = viewPos.x / baseGridScale;
+		f32 offsetY = viewPos.z / baseGridScale;
+
 		f32 fadeSub  = std::min(1.0f, std::max(0.0f, 1.0f - gridScale * 5.0f / 8.0f));
+		f32 fadeSub2 = std::min(1.0f, std::max(0.0f, 1.0f - gridScale * 5.0f / 64.0f));
 
 		TFE_RenderState::setStateEnable(false, STATE_CULLING | STATE_DEPTH_TEST);
 		TFE_RenderState::setStateEnable(true, STATE_BLEND);
@@ -84,9 +97,9 @@ namespace LevelEditor
 		s_shader.bind();
 		// Bind Uniforms & Textures.
 		const f32 scaleOffset[] = { scaleX, scaleY, offsetX, offsetY };
-		const f32 gridOpacitySubGrid[] = { gridOpacity * fadeMain, std::max(0.02f, gridOpacity * fadeSub) };
+		const f32 gridOpacitySubGrid[] = { gridOpacity * fadeMain, gridOpacity * fadeSub, std::max(0.02f, gridOpacity * fadeSub2) };
 		s_shader.setVariable(s_svScaleOffset, SVT_VEC4, scaleOffset);
-		s_shader.setVariable(s_svGridOpacity, SVT_VEC2, gridOpacitySubGrid);
+		s_shader.setVariable(s_svGridOpacity, SVT_VEC3, gridOpacitySubGrid);
 
 		// Bind vertex/index buffers and setup attributes for BlitVert
 		s_vertexBuffer.bind();

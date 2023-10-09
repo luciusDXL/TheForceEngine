@@ -3,10 +3,13 @@
 #include <TFE_RenderBackend/vertexBuffer.h>
 #include <TFE_RenderBackend/indexBuffer.h>
 #include <TFE_System/system.h>
+#include <assert.h>
 #include <vector>
 
-#define TRI_MAX 4096
+#define TRI_MAX_DRAW_COUNT 4096
+#define TRI_MAX 65536
 #define IDX_MAX TRI_MAX * 3
+#define VTX_MAX TRI_MAX * 3
 
 #define SHOW_WIREFRAME 0
 
@@ -49,7 +52,7 @@ namespace TFE_RenderShared
 	static u32 s_vtxCount;
 	static u32 s_idxCount;
 
-	static TriDraw s_triDraw[TRI_MAX];
+	static TriDraw s_triDraw[TRI_MAX_DRAW_COUNT];
 	static u32 s_width, s_height;
 
 	bool tri2d_init()
@@ -73,10 +76,10 @@ namespace TFE_RenderShared
 
 		// Create buffers
 		// Create vertex and index buffers.
-		s_vertices = new TriVertex[3 * TRI_MAX];
+		s_vertices = new TriVertex[VTX_MAX];
 		s_indices = new s32[IDX_MAX];
 
-		s_vertexBuffer.create(3 * TRI_MAX, sizeof(TriVertex), c_triAttrCount, c_triAttrMapping, true);
+		s_vertexBuffer.create(VTX_MAX, sizeof(TriVertex), c_triAttrCount, c_triAttrMapping, true);
 		s_indexBuffer.create(IDX_MAX, sizeof(u32), true);
 
 		s_idxCount = 0;
@@ -91,7 +94,9 @@ namespace TFE_RenderShared
 		s_vertexBuffer.destroy();
 		s_indexBuffer.destroy();
 		delete[] s_vertices;
+		delete[] s_indices;
 		s_vertices = nullptr;
+		s_indices = nullptr;
 	}
 	
 	void triDraw2d_begin(u32 width, u32 height)
@@ -114,14 +119,24 @@ namespace TFE_RenderShared
 		const s32 idxOffset = s_idxCount;
 		const s32 vtxOffset = s_vtxCount;
 
+		// Do we have enough room for the vertices and indices?
+		if (s_vtxCount + vtxCount > VTX_MAX || s_idxCount + idxCount > IDX_MAX)
+		{
+			return;
+		}
+
 		// New draw call or add to the existing call?
 		if (s_triDrawCount > 0 && s_triDraw[s_triDrawCount - 1].texture == texture)
 		{
+			// Append to the previous draw call.
 			s_triDraw[s_triDrawCount - 1].vtxCount += vtxCount;
 			s_triDraw[s_triDrawCount - 1].idxCount += idxCount;
 		}
 		else
 		{
+			// Too many draw calls?
+			if (s_triDrawCount >= TRI_MAX_DRAW_COUNT) { return; }
+			// Add a new draw call.
 			s_triDraw[s_triDrawCount].texture = texture;
 			s_triDraw[s_triDrawCount].vtxOffset = vtxOffset;
 			s_triDraw[s_triDrawCount].idxOffset = idxOffset;
@@ -134,14 +149,14 @@ namespace TFE_RenderShared
 		s32* outIdx = &s_indices[s_idxCount];
 
 		const Vec2f zero = { 0 };
-		for (s32 i = 0; i < vtxCount; i++, vertices++)
+		for (u32 i = 0; i < vtxCount; i++, vertices++)
 		{
 			outVert[i].pos = *vertices;
 			outVert[i].uv = uv ? uv[i] : zero;
 			outVert[i].color = color;
 		}
 
-		for (s32 i = 0; i < idxCount; i++)
+		for (u32 i = 0; i < idxCount; i++)
 		{
 			outIdx[i] = indices[i] + vtxOffset;
 		}
@@ -205,5 +220,7 @@ namespace TFE_RenderShared
 
 		// Clear
 		s_triDrawCount = 0;
+		s_vtxCount = 0;
+		s_idxCount = 0;
 	}
 }

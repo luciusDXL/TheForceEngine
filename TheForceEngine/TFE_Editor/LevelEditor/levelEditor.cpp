@@ -81,13 +81,15 @@ namespace LevelEditor
 	static char s_layerMem[4 * 31];
 	static char* s_layerStr[31];
 		
-	static s32 s_gridIndex = 6;
+	static s32 s_gridIndex = 8;
 	static f32 c_gridSizeMap[] =
 	{
-		0.0625f, 0.125f, 0.25f, 0.5f, 1.0f, 2.0f, 4.0f, 8.0f, 16.0f, 32.0f, 64.0f, 128.0f, 256.0f
+		0.015625f, 0.03125f, 0.0625f, 0.125f, 0.25f, 0.5f, 1.0f, 2.0f, 4.0f, 8.0f, 16.0f, 32.0f, 64.0f
 	};
 	static const char* c_gridSizes[] =
 	{
+		"1/64",
+		"1/32",
 		"1/16",
 		"1/8",
 		"1/4",
@@ -99,8 +101,6 @@ namespace LevelEditor
 		"16",
 		"32",
 		"64",
-		"128",
-		"256",
 	};
 	
 	static TextureGpu* s_editCtrlToolbarData = nullptr;
@@ -153,6 +153,7 @@ namespace LevelEditor
 		}
 		viewport_init();
 		viewport_update((s32)UI_SCALE(480) + 16, (s32)UI_SCALE(68) + 18);
+		s_gridIndex = 8;
 		s_gridSize = 4.0f;
 		s_gridSize2d = s_gridSize;
 
@@ -1049,6 +1050,12 @@ namespace LevelEditor
 
 	void update()
 	{
+		if (s_curLayer == 0)
+		{
+			static s32 __x = 0;
+			__x++;
+		}
+
 		pushFont(TFE_Editor::FONT_SMALL);
 		updateWindowControls();
 
@@ -1212,6 +1219,8 @@ namespace LevelEditor
 			worldPos.z = s_viewportPos.z + f32(relY) * s_zoom2d;
 
 			s_zoom = std::max(s_zoom - f32(dy) * s_zoom * 0.1f, 1.0f/1024.0f);
+			s_zoom = std::min(s_zoom, 4.0f);
+
 			s_zoom2d = floorf(s_zoom * 1024.0f) / 1024.0f;
 
 			// We want worldPos to stay put as we zoom

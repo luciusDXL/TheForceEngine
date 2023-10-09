@@ -1,4 +1,4 @@
-uniform vec2 GridOpacitySubGrid;
+uniform vec3 GridOpacitySubGrid;
 in vec2 Frag_UV;
 out vec4 Out_Color;
 
@@ -15,7 +15,6 @@ float computeGrid(inout vec3 curColor, float scale, float lineScale, float gridO
     float alpha = sqr(max(opacity.x, opacity.y)) * gridOpacity;
 
     vec3 color = vec3(0.8, 0.9, 1.0);
-
 	curColor = mix(curColor, color, alpha);
     return alpha;
 }
@@ -40,8 +39,9 @@ void main()
 
 	// Main Grid
 	float alphaMain = computeGrid(curColor, 1.0, 2.0, GridOpacitySubGrid.x);
-	float alphaSub  = computeGrid(curColor, 1.0/8.0, 2.0/7.0, GridOpacitySubGrid.y);
-	float outAlpha  = max(alphaMain, alphaSub);
+	float alphaSub  = computeGrid(curColor, 1.0/8.0,  2.0/7.0, GridOpacitySubGrid.y);
+	float alphaSub2 = computeGrid(curColor, 1.0/64.0, 2.0/60.0, GridOpacitySubGrid.z);
+	float outAlpha  = max(alphaMain, max(alphaSub, alphaSub2));
 
 	// Coordinate Axis
 	float coordAxis = computeCoordAxis(curColor, 1.0/8.0, 2.0/6.0);
