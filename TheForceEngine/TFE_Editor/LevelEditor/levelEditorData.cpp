@@ -322,6 +322,11 @@ namespace LevelEditor
 				wall->tex[WP_TOP].handle = texId[WP_TOP] >= 0 ? s_textureList[texId[WP_TOP]] : NULL_ASSET;
 				wall->tex[WP_BOT].handle = texId[WP_BOT] >= 0 ? s_textureList[texId[WP_BOT]] : NULL_ASSET;
 				wall->tex[WP_SIGN].handle = texId[WP_SIGN] >= 0 ? s_textureList[texId[WP_SIGN]] : NULL_ASSET;
+
+				if (wall->tex[WP_SIGN].handle == NULL_ASSET)
+				{
+					wall->tex[WP_SIGN].offset = { 0 };
+				}
 			}
 		}
 

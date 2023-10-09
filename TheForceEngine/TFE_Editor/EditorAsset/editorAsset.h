@@ -15,6 +15,7 @@
 #include "editorTexture.h"
 #include "editorObj3D.h"
 #include "editorLevelPreview.h"
+#include <vector>
 
 namespace TFE_Editor
 {
@@ -73,6 +74,7 @@ namespace TFE_Editor
 		AssetSource assetSource;
 		AssetHandle handle;
 	};
+	typedef std::vector<Asset> AssetList;
 		
 	AssetHandle loadAssetData(AssetType type, Archive* archive, const AssetColorData* colorData, const char* name);
 	void  reloadAssetData(AssetHandle handle, Archive* archive, const AssetColorData* colorData);

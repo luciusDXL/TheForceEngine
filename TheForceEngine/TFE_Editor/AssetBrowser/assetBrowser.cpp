@@ -44,7 +44,6 @@ namespace AssetBrowser
 		"Outlaws",
 	};
 
-	typedef std::vector<Asset> AssetList;
 	typedef std::vector<s32> SelectionList;
 
 	struct Palette
@@ -1755,6 +1754,31 @@ namespace AssetBrowser
 			}
 		}
 		return false;
+	}
+
+	void getLevelTextures(AssetList& list, const char* levelName)
+	{
+		list.clear();
+		const u32 count = (u32)s_projectAssetList[TYPE_TEXTURE].size();
+		const Asset* projAsset = s_projectAssetList[TYPE_TEXTURE].data();
+		for (u32 i = 0; i < count; i++, projAsset++)
+		{
+			const char* name = projAsset->name.c_str();
+			if (!isLevelTexture(name)) { continue; }
+			
+			Asset asset;
+			asset.type = projAsset->type;
+			asset.name = projAsset->name;
+			asset.gameId = projAsset->gameId;
+			asset.archive = projAsset->archive;
+			asset.filePath = projAsset->filePath;
+			asset.assetSource = projAsset->assetSource;
+			s32 palId = getAssetPalette(projAsset->name.c_str());
+
+			AssetColorData colorData = { s_palettes[palId].data, nullptr, palId, 32 };
+			asset.handle = loadAssetData(projAsset->type, projAsset->archive, &colorData, projAsset->name.c_str());
+			list.push_back(asset);
+		}
 	}
 
 	void updateAssetList()
