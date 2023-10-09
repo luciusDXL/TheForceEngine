@@ -38,10 +38,21 @@ namespace LevelEditor
 		SCOLOR_LINE_NORM_ADJ     = 0xff808080,
 		SCOLOR_LINE_HOVERED_ADJ  = 0xff808040,
 		SCOLOR_LINE_SELECTED_ADJ = 0xff004080,
+
+		//const u32 color[4] = { 0xffae8653, 0xffae8653, 0xff51331a, 0xff51331a };
+		//const u32 colorSelected[4] = { 0xffffc379, 0xffffc379, 0xff764a26, 0xff764a26 };
 	};
+	enum VertexColor
+	{
+		VCOLOR_NORM     = 0xffae8653,
+		VCOLOR_HOVERED  = 0xffffff20,
+		VCOLOR_SELECTED = 0xff4a76ff
+	};
+
 	static const SectorColor c_sectorPolyClr[] = { SCOLOR_POLY_NORM, SCOLOR_POLY_HOVERED, SCOLOR_POLY_SELECTED };
 	static const SectorColor c_sectorLineClr[] = { SCOLOR_LINE_NORM, SCOLOR_LINE_HOVERED, SCOLOR_LINE_SELECTED };
 	static const SectorColor c_sectorLineClrAdjoin[] = { SCOLOR_LINE_NORM_ADJ, SCOLOR_LINE_HOVERED_ADJ, SCOLOR_LINE_SELECTED_ADJ };
+	static const VertexColor c_vertexClr[] = { VCOLOR_NORM, VCOLOR_HOVERED, VCOLOR_SELECTED };
 
 	static RenderTargetHandle s_viewportRt = 0;
 	static std::vector<Vec2f> s_transformedVtx;
@@ -59,10 +70,17 @@ namespace LevelEditor
 	extern EditorSector* s_hoveredSector;
 	extern EditorSector* s_selectedSector;
 
+	extern EditorSector* s_hoveredVtxSector;
+	extern EditorSector* s_selectedVtxSector;
+	extern s32 s_hoveredVtxId;
+	extern s32 s_selectedVtxId;
+
 	void renderLevel2D();
 	void renderLevel3D();
 	void renderSectorWalls2d(s32 layerStart, s32 layerEnd);
 	void drawSector2d(const EditorSector* sector, Highlight highlight);
+	void drawVertex2d(const Vec2f* pos, f32 scale, Highlight highlight);
+	void drawVertex2d(const EditorSector* sector, s32 id, f32 extraScale, Highlight highlight);
 	void renderSectorVertices2d();
 
 	void viewport_init()
@@ -161,6 +179,16 @@ namespace LevelEditor
 		// Draw vertices.
 		renderSectorVertices2d();
 
+		// Draw the hovered and selected vertices.
+		if (s_hoveredVtxSector && s_hoveredVtxId >= 0)
+		{
+			drawVertex2d(s_hoveredVtxSector, s_hoveredVtxId, 1.5f, HL_HOVERED);
+		}
+		if (s_selectedVtxSector && s_selectedVtxId >= 0)
+		{
+			drawVertex2d(s_selectedVtxSector, s_selectedVtxId, 1.5f, HL_SELECTED);
+		}
+
 		// Submit.
 		TFE_RenderShared::triDraw2d_draw();
 		TFE_RenderShared::lineDraw2d_drawLines();
@@ -242,9 +270,10 @@ namespace LevelEditor
 		}
 	}
 
-	void drawVertex(const Vec2f* pos, f32 scale, const u32* color)
+	void drawVertex2d(const Vec2f* pos, f32 scale, Highlight highlight)
 	{
-		u32 colors[] = { color[0], color[1] };
+		u32 color = c_vertexClr[highlight];
+		u32 colors[] = { color, color };
 
 		const Vec2f p0 = { pos->x * s_viewportTrans2d.x + s_viewportTrans2d.y, pos->z * s_viewportTrans2d.z + s_viewportTrans2d.w };
 		const Vec2f vtx[]=
@@ -259,6 +288,13 @@ namespace LevelEditor
 		TFE_RenderShared::lineDraw2d_addLine(1.5f, &vtx[1], colors);
 		TFE_RenderShared::lineDraw2d_addLine(1.5f, &vtx[2], colors);
 		TFE_RenderShared::lineDraw2d_addLine(1.5f, &vtx[3], colors);
+	}
+
+	void drawVertex2d(const EditorSector* sector, s32 id, f32 extraScale, Highlight highlight)
+	{
+		const Vec2f* pos = &sector->vtx[id];
+		const f32 scale = std::min(1.0f, 1.0f / s_zoom2d) * c_vertexSize * extraScale;
+		drawVertex2d(pos, scale, highlight);
 	}
 
 	void renderSectorVertices2d()
@@ -277,7 +313,13 @@ namespace LevelEditor
 			const Vec2f* vtx = sector->vtx.data();
 			for (size_t v = 0; v < vtxCount; v++, vtx++)
 			{
-				drawVertex(vtx, scale, color);
+				// Skip drawing hovered/selected vertices.
+				if ((sector == s_hoveredVtxSector  && v == s_hoveredVtxId) ||
+					(sector == s_selectedVtxSector && v == s_selectedVtxId))
+				{
+					continue;
+				}
+				drawVertex2d(vtx, scale, HL_NONE);
 			}
 		}
 	}

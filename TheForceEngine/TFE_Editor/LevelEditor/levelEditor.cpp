@@ -47,6 +47,12 @@ namespace LevelEditor
 	EditorSector* s_hoveredSector = nullptr;
 	EditorSector* s_selectedSector = nullptr;
 
+	// Vertex
+	EditorSector* s_hoveredVtxSector = nullptr;
+	EditorSector* s_selectedVtxSector = nullptr;
+	s32 s_hoveredVtxId = -1;
+	s32 s_selectedVtxId = -1;
+
 	static EditorView s_view = EDIT_VIEW_2D;
 	static LevelEditMode s_editMode = LEDIT_DRAW;
 	static Vec2i s_editWinPos = { 0, 69 };
@@ -93,6 +99,7 @@ namespace LevelEditor
 	void messagePanel(ImVec2 pos);
 	void cameraControl2d(s32 mx, s32 my);
 	Vec2f mouseCoordToWorldPos2d(s32 mx, s32 my);
+	Vec2i worldPos2dToMap(const Vec2f& worldPos);
 	
 	////////////////////////////////////////////////////////
 	// Public API
@@ -193,6 +200,10 @@ namespace LevelEditor
 		TFE_Input::getMousePos(&mx, &my);
 		if (!TFE_Input::relativeModeEnabled() && (mx < s_editWinPos.x || mx >= s_editWinPos.x + s_editWinSize.x || my < s_editWinPos.z || my >= s_editWinPos.z + s_editWinSize.z))
 		{
+			// Nothing is "hovered" if the mouse is not in the window.
+			s_hoveredSector = nullptr;
+			s_hoveredVtxSector = nullptr;
+			s_hoveredVtxId = -1;
 			return;
 		}
 
@@ -221,6 +232,66 @@ namespace LevelEditor
 				if (s_editMode == LEDIT_SECTOR && TFE_Input::mousePressed(MouseButton::MBUTTON_LEFT))
 				{
 					s_selectedSector = s_hoveredSector;
+				}
+				else if (s_editMode != LEDIT_SECTOR)
+				{
+					s_selectedSector = nullptr;
+				}
+
+				if (s_editMode == LEDIT_VERTEX)
+				{
+					// See if we are close enough to "hover" a vertex
+					s_hoveredVtxSector = nullptr;
+					s_hoveredVtxId = -1;
+					if (s_hoveredSector)
+					{
+						const size_t vtxCount = s_hoveredSector->vtx.size();
+						const Vec2f* vtx = s_hoveredSector->vtx.data();
+
+						f32 closestDistSq = FLT_MAX;
+						s32 closestVtx = -1;
+						for (size_t v = 0; v < vtxCount; v++, vtx++)
+						{
+							Vec2f offset = { worldPos.x - vtx->x, worldPos.z - vtx->z };
+							f32 distSq = offset.x*offset.x + offset.z*offset.z;
+							if (distSq < closestDistSq)
+							{
+								closestDistSq = distSq;
+								closestVtx = (s32)v;
+							}
+						}
+
+						const f32 maxDist = s_zoom2d * 16.0f;
+						if (closestDistSq <= maxDist*maxDist)
+						{
+							s_hoveredVtxSector = s_hoveredSector;
+							s_hoveredVtxId = closestVtx;
+						}
+					}
+
+					if (TFE_Input::mousePressed(MouseButton::MBUTTON_LEFT))
+					{
+						s_selectedVtxSector = nullptr;
+						s_selectedVtxId = -1;
+						if (s_hoveredVtxSector && s_hoveredVtxId >= 0)
+						{
+							s_selectedVtxSector = s_hoveredVtxSector;
+							s_selectedVtxId = s_hoveredVtxId;
+						}
+					}
+				}
+				else
+				{
+					s_hoveredVtxSector = nullptr;
+					s_selectedVtxSector = nullptr;
+					s_hoveredVtxId = -1;
+					s_selectedVtxId = -1;
+				}
+
+				// DEBUG
+				if (s_selectedSector && TFE_Input::keyPressed(KEY_T))
+				{
+					TFE_Polygon::computeTriangulation(&s_selectedSector->poly);
 				}
 			}
 		}
@@ -285,6 +356,30 @@ namespace LevelEditor
 				{ 0.0f, 0.0f }, { 1.0f, 1.0f }, 0, { 0.0f, 0.0f, 0.0f, 1.0f }, { 1.0f, 1.0f, 1.0f, 1.0f });
 			const ImVec2 itemPos = ImGui::GetItemRectMin();
 			s_editWinMapCorner = { itemPos.x, itemPos.y };
+
+			// Display items on top of the viewport.
+			s32 mx, my;
+			TFE_Input::getMousePos(&mx, &my);
+			const bool editWinHovered = mx >= s_editWinPos.x && mx < s_editWinPos.x + s_editWinSize.x && my >= s_editWinPos.z && my < s_editWinPos.z + s_editWinSize.z;
+
+			if (s_view == EDIT_VIEW_2D)
+			{
+				// Display vertex info.
+				if (s_hoveredSector && s_hoveredVtxId >= 0 && editWinHovered)
+				{
+					// Give the "world space" vertex position, get back to the pixel position for the UI.
+					const Vec2f vtx = s_hoveredSector->vtx[s_hoveredVtxId];
+					const Vec2i mapPos = worldPos2dToMap(vtx);
+
+					const ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize
+						| ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoNav | ImGuiWindowFlags_AlwaysAutoResize;
+
+					ImGui::SetNextWindowPos({ (f32)mapPos.x - UI_SCALE(20), (f32)mapPos.z - UI_SCALE(20) - 16 });
+					ImGui::Begin("##VtxInfo", nullptr, window_flags);
+					ImGui::Text("%d: %0.3f, %0.3f", s_hoveredVtxId, vtx.x, vtx.z);
+					ImGui::End();
+				}
+			}
 		}
 		levelEditWinEnd();
 		popFont();
@@ -413,6 +508,14 @@ namespace LevelEditor
 		worldPos.x =   s_viewportPos.x + f32(relX) * s_zoom2d;
 		worldPos.z = -(s_viewportPos.z + f32(relY) * s_zoom2d);
 		return worldPos;
+	}
+
+	Vec2i worldPos2dToMap(const Vec2f& worldPos)
+	{
+		Vec2i mapPos;
+		mapPos.x = s32(( worldPos.x - s_viewportPos.x) / s_zoom2d) + s_editWinMapCorner.x;
+		mapPos.z = s32((-worldPos.z - s_viewportPos.z) / s_zoom2d) + s_editWinMapCorner.z;
+		return mapPos;
 	}
 
 	void messagePanel(ImVec2 pos)
