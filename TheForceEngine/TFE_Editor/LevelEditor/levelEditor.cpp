@@ -49,6 +49,7 @@ namespace LevelEditor
 
 	// Vertex
 	EditorSector* s_hoveredVtxSector = nullptr;
+	EditorSector* s_lastHoveredVtxSector = nullptr;
 	EditorSector* s_selectedVtxSector = nullptr;
 	s32 s_hoveredVtxId = -1;
 	s32 s_selectedVtxId = -1;
@@ -203,6 +204,7 @@ namespace LevelEditor
 			// Nothing is "hovered" if the mouse is not in the window.
 			s_hoveredSector = nullptr;
 			s_hoveredVtxSector = nullptr;
+			s_lastHoveredVtxSector = nullptr;
 			s_hoveredVtxId = -1;
 			return;
 		}
@@ -243,10 +245,14 @@ namespace LevelEditor
 					// See if we are close enough to "hover" a vertex
 					s_hoveredVtxSector = nullptr;
 					s_hoveredVtxId = -1;
-					if (s_hoveredSector)
+					if (s_hoveredSector || s_lastHoveredVtxSector)
 					{
-						const size_t vtxCount = s_hoveredSector->vtx.size();
-						const Vec2f* vtx = s_hoveredSector->vtx.data();
+						// Keep track of the last vertex hovered sector and use it if no hovered sector is active to
+						// make selecting vertices less fiddly.
+						EditorSector* hoveredSector = s_hoveredSector ? s_hoveredSector : s_lastHoveredVtxSector;
+
+						const size_t vtxCount = hoveredSector->vtx.size();
+						const Vec2f* vtx = hoveredSector->vtx.data();
 
 						f32 closestDistSq = FLT_MAX;
 						s32 closestVtx = -1;
@@ -264,7 +270,8 @@ namespace LevelEditor
 						const f32 maxDist = s_zoom2d * 16.0f;
 						if (closestDistSq <= maxDist*maxDist)
 						{
-							s_hoveredVtxSector = s_hoveredSector;
+							s_hoveredVtxSector = hoveredSector;
+							s_lastHoveredVtxSector = hoveredSector;
 							s_hoveredVtxId = closestVtx;
 						}
 					}
@@ -365,10 +372,10 @@ namespace LevelEditor
 			if (s_view == EDIT_VIEW_2D)
 			{
 				// Display vertex info.
-				if (s_hoveredSector && s_hoveredVtxId >= 0 && editWinHovered)
+				if (s_hoveredVtxSector && s_hoveredVtxId >= 0 && editWinHovered)
 				{
 					// Give the "world space" vertex position, get back to the pixel position for the UI.
-					const Vec2f vtx = s_hoveredSector->vtx[s_hoveredVtxId];
+					const Vec2f vtx = s_hoveredVtxSector->vtx[s_hoveredVtxId];
 					const Vec2i mapPos = worldPos2dToMap(vtx);
 
 					const ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize
