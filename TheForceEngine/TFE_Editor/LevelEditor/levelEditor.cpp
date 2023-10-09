@@ -36,6 +36,8 @@ using namespace TFE_Editor;
 
 namespace LevelEditor
 {
+	const f32 c_defaultZoom = 0.25f;
+
 	// The TFE Level Editor format is different than the base format and contains extra 
 	// metadata, etc.
 	// So existing levels need to be loaded into that format.
@@ -44,7 +46,7 @@ namespace LevelEditor
 	LevelEditMode s_editMode = LEDIT_DRAW;
 	u32 s_editFlags = LEF_DEFAULT;
 	s32 s_curLayer = 0;
-
+		
 	// Sector
 	EditorSector* s_hoveredSector = nullptr;
 	EditorSector* s_selectedSector = nullptr;
@@ -68,7 +70,7 @@ namespace LevelEditor
 	static Vec2i s_editWinSize = { 0 };
 	static Vec2f s_editWinMapCorner = { 0 };
 	static f32 s_gridSize = 32.0f;
-	static f32 s_zoom = 0.25f;
+	static f32 s_zoom = c_defaultZoom;
 
 	static char s_layerMem[4 * 31];
 	static char* s_layerStr[31];
@@ -107,6 +109,7 @@ namespace LevelEditor
 	void levelEditWinEnd();
 	void messagePanel(ImVec2 pos);
 	void cameraControl2d(s32 mx, s32 my);
+	void resetZoom();
 	Vec2f mouseCoordToWorldPos2d(s32 mx, s32 my);
 	Vec2i worldPos2dToMap(const Vec2f& worldPos);
 	
@@ -159,6 +162,7 @@ namespace LevelEditor
 		s_viewportPos = { -24.0f, 0.0f, -200.0f };
 		s_curLayer = std::min(1, s_level.layerRange[1]);
 
+		s_sectorDrawMode = SDM_WIREFRAME;
 		s_hoveredSector         = nullptr;
 		s_selectedSector        = nullptr;
 		s_hoveredVtxSector      = nullptr;
@@ -258,6 +262,8 @@ namespace LevelEditor
 		
 	void updateWindowControls()
 	{
+		if (getMenuActive()) { return; }
+
 		s32 mx, my;
 		TFE_Input::getMousePos(&mx, &my);
 		if (!TFE_Input::relativeModeEnabled() && (mx < s_editWinPos.x || mx >= s_editWinPos.x + s_editWinSize.x || my < s_editWinPos.z || my >= s_editWinPos.z + s_editWinSize.z))
@@ -411,6 +417,112 @@ namespace LevelEditor
 		}
 	}
 
+	bool menu()
+	{
+		bool menuActive = false;
+		if (ImGui::BeginMenu("Level"))
+		{
+			menuActive = true;
+			// Disable Save/Backup when there is no project.
+			bool projectActive = project_get()->active;
+			if (!projectActive) { disableNextItem(); }
+			if (ImGui::MenuItem("Save", "Ctrl+S", (bool*)NULL))
+			{
+			}
+			if (ImGui::MenuItem("Backup", "Ctrl+B", (bool*)NULL))
+			{
+			}
+			if (!projectActive) { enableNextItem(); }
+
+			if (ImGui::MenuItem("Close", NULL, (bool*)NULL))
+			{
+				// TODO: If the level has changed, pop up a warning and allow the level to be saved.
+				disableAssetEditor();
+			}
+			ImGui::Separator();
+			if (ImGui::MenuItem("Undo", "Ctrl+Z", (bool*)NULL))
+			{
+			}
+			if (ImGui::MenuItem("Redo", "Ctrl+Y", (bool*)NULL))
+			{
+			}
+			ImGui::Separator();
+			if (ImGui::MenuItem("Cut", "Ctrl+X", (bool*)NULL))
+			{
+			}
+			if (ImGui::MenuItem("Copy", "Ctrl+C", (bool*)NULL))
+			{
+			}
+			if (ImGui::MenuItem("Paste", "Ctrl+V", (bool*)NULL))
+			{
+			}
+			if (ImGui::MenuItem("Duplicate", "Ctrl+D", (bool*)NULL))
+			{
+			}
+			if (ImGui::MenuItem("Delete", "Del", (bool*)NULL))
+			{
+			}
+			ImGui::EndMenu();
+		}
+		if (ImGui::BeginMenu("View"))
+		{
+			menuActive = true;
+			if (ImGui::MenuItem("2D", "Ctrl+1", s_view == EDIT_VIEW_2D))
+			{
+				s_view = EDIT_VIEW_2D;
+			}
+			if (ImGui::MenuItem("3D (Editor)", "Ctrl+2", s_view == EDIT_VIEW_3D))
+			{
+				// TODO
+			}
+			if (ImGui::MenuItem("3D (Game)", "Ctrl+3", s_view == EDIT_VIEW_3D_GAME))
+			{
+				// TODO
+			}
+			ImGui::Separator();
+			if (ImGui::MenuItem("Reset Zoom", nullptr, (bool*)NULL))
+			{
+				resetZoom();
+			}
+
+			bool showLower = (s_editFlags & LEF_SHOW_LOWER_LAYERS) != 0;
+			if (ImGui::MenuItem("Show Lower Layers", "Ctrl+L", showLower))
+			{
+				showLower = !showLower;
+				if (showLower) { s_editFlags |= LEF_SHOW_LOWER_LAYERS;  }
+				else { s_editFlags &= ~LEF_SHOW_LOWER_LAYERS; }
+			}
+			ImGui::Separator();
+			if (ImGui::MenuItem("Wireframe", "Ctrl+F1", s_sectorDrawMode == SDM_WIREFRAME))
+			{
+				s_sectorDrawMode = SDM_WIREFRAME;
+			}
+			if (ImGui::MenuItem("Lighting", "Ctrl+F2", s_sectorDrawMode == SDM_LIGHTING))
+			{
+				s_sectorDrawMode = SDM_LIGHTING;
+			}
+			if (ImGui::MenuItem("Textured (Floor)", "Ctrl+F3", s_sectorDrawMode == SDM_TEXTURED_FLOOR))
+			{
+				s_sectorDrawMode = SDM_TEXTURED_FLOOR;
+			}
+			if (ImGui::MenuItem("Textured (Ceiling)", "Ctrl+F4", s_sectorDrawMode == SDM_TEXTURED_CEIL))
+			{
+				s_sectorDrawMode = SDM_TEXTURED_CEIL;
+			}
+			ImGui::Separator();
+			bool fullbright = (s_editFlags & LEF_FULLBRIGHT) != 0;
+			if (ImGui::MenuItem("Fullbright", "Ctrl+F5", fullbright))
+			{
+				fullbright = !fullbright;
+				if (fullbright) { s_editFlags |= LEF_FULLBRIGHT; }
+				else { s_editFlags &= ~LEF_FULLBRIGHT; }
+			}
+			ImGui::EndMenu();
+		}
+
+		return menuActive;
+	}
+
 	void update()
 	{
 		pushFont(TFE_Editor::FONT_SMALL);
@@ -476,7 +588,7 @@ namespace LevelEditor
 			TFE_Input::getMousePos(&mx, &my);
 			const bool editWinHovered = mx >= s_editWinPos.x && mx < s_editWinPos.x + s_editWinSize.x && my >= s_editWinPos.z && my < s_editWinPos.z + s_editWinSize.z;
 
-			if (s_view == EDIT_VIEW_2D)
+			if (s_view == EDIT_VIEW_2D && !getMenuActive())
 			{
 				// Display vertex info.
 				if (s_hoveredVtxSector && s_hoveredVtxId >= 0 && editWinHovered)
@@ -502,6 +614,27 @@ namespace LevelEditor
 	////////////////////////////////////////////////////////
 	// Internal
 	////////////////////////////////////////////////////////
+	void resetZoom()
+	{
+		// We want to zoom into the mouse position.
+		s32 relX = s_editWinSize.x / 2;
+		s32 relY = s_editWinSize.z / 2;
+		// Old position in world units.
+		Vec2f worldPos;
+		worldPos.x = s_viewportPos.x + f32(relX) * s_zoom2d;
+		worldPos.z = s_viewportPos.z + f32(relY) * s_zoom2d;
+
+		s_zoom = c_defaultZoom;
+		s_zoom2d = c_defaultZoom;
+
+		// We want worldPos to stay put as we zoom
+		Vec2f newWorldPos;
+		newWorldPos.x = s_viewportPos.x + f32(relX) * s_zoom2d;
+		newWorldPos.z = s_viewportPos.z + f32(relY) * s_zoom2d;
+		s_viewportPos.x += (worldPos.x - newWorldPos.x);
+		s_viewportPos.z += (worldPos.z - newWorldPos.z);
+	}
+
 	void cameraControl2d(s32 mx, s32 my)
 	{
 		// WASD controls.
@@ -646,12 +779,13 @@ namespace LevelEditor
 
 		s32 mx, my;
 		TFE_Input::getMousePos(&mx, &my);
-		if (mx >= s_editWinPos.x && mx < s_editWinPos.x + s_editWinSize.x && my >= s_editWinPos.z && my < s_editWinPos.z + s_editWinSize.z)
+		if (mx >= s_editWinPos.x && mx < s_editWinPos.x + s_editWinSize.x && my >= s_editWinPos.z && my < s_editWinPos.z + s_editWinSize.z && !getMenuActive())
 		{
 			if (s_view == EDIT_VIEW_2D)
 			{
 				Vec2f worldPos = mouseCoordToWorldPos2d(mx, my);
-				ImGui::TextColored({ 0.5f, 0.5f, 0.5f, 0.75f }, "Zoom %0.3f : Pos %0.2f, %0.2f", s_zoom2d, worldPos.x, worldPos.z);
+				// Assume the default zoom = 0.25 = 100%
+				ImGui::TextColored({ 0.5f, 0.5f, 0.5f, 0.75f }, "Zoom %0.2f%% : Pos %0.2f, %0.2f", 0.25f * 100.0f / s_zoom2d, worldPos.x, worldPos.z);
 			}
 			else
 			{

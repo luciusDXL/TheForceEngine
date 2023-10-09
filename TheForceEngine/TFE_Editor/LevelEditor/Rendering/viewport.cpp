@@ -55,6 +55,7 @@ namespace LevelEditor
 	static RenderTargetHandle s_viewportRt = 0;
 	static std::vector<Vec2f> s_transformedVtx;
 
+	SectorDrawMode s_sectorDrawMode = SDM_WIREFRAME;
 	Vec2i s_viewportSize = { 0 };
 	Vec3f s_viewportPos = { 0 };
 	Vec4f s_viewportTrans2d = { 0 };

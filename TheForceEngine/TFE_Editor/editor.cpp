@@ -53,8 +53,8 @@ namespace TFE_Editor
 	static WorkBuffer s_workBuffer;
 	static char s_projectPath[TFE_MAX_PATH] = "";
 
+	static bool s_menuActive = false;
 	static MessageBox s_msgBox = {};
-
 	static ImFont* s_fonts[FONT_COUNT * FONT_SIZE_COUNT] = { 0 };
 	
 	void menu();
@@ -258,6 +258,11 @@ namespace TFE_Editor
 		return c_textColors[color];
 	}
 
+	bool getMenuActive()
+	{
+		return s_menuActive;
+	}
+
 	bool beginMenuBar()
 	{
 		bool menuActive = true;
@@ -315,11 +320,13 @@ namespace TFE_Editor
 	{
 		pushFont(FONT_SMALL);
 
+		s_menuActive = false;
 		beginMenuBar();
 		{
 			// General menu items.
 			if (ImGui::BeginMenu("Editor"))
 			{
+				s_menuActive = true;
 				if (ImGui::MenuItem("Editor Config", NULL, (bool*)NULL))
 				{
 					s_editorPopup = POPUP_CONFIG;
@@ -354,6 +361,7 @@ namespace TFE_Editor
 			}
 			if (ImGui::BeginMenu("Select"))
 			{
+				s_menuActive = true;
 				if (ImGui::MenuItem("Select All", NULL, (bool*)NULL))
 				{
 					if (s_editorMode == EDIT_ASSET_BROWSER)
@@ -379,6 +387,7 @@ namespace TFE_Editor
 			}
 			if (ImGui::BeginMenu("Project"))
 			{
+				s_menuActive = true;
 				if (ImGui::MenuItem("New", NULL, (bool*)NULL))
 				{
 					s_editorPopup = POPUP_NEW_PROJECT;
@@ -444,6 +453,25 @@ namespace TFE_Editor
 				}
 				if (s_recents.empty()) { enableNextItem(); }
 				ImGui::EndMenu();
+			}
+			// Allow the current Asset Editor to add its own menus.
+			if (s_editorMode == EDIT_ASSET)
+			{
+				switch (s_editorAssetType)
+				{
+					case TYPE_LEVEL:
+					{
+						if (LevelEditor::menu())
+						{
+							s_menuActive = true;
+						}
+					} break;
+					default:
+					{
+						// Invalid mode, this code should never be reached.
+						assert(0);
+					}
+				}
 			}
 
 			drawTitle();
@@ -636,5 +664,10 @@ namespace TFE_Editor
 		{
 			showMessageBox("Warning", "The selected asset '%s' does not yet have an Asset Editor.", asset->name.c_str());
 		}
+	}
+
+	void disableAssetEditor()
+	{
+		s_editorMode = EDIT_ASSET_BROWSER;
 	}
 }

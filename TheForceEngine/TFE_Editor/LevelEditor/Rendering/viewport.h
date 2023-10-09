@@ -19,6 +19,14 @@ namespace LevelEditor
 		EDIT_VIEW_3D_GAME,
 		EDIT_VIEW_PLAY,
 	};
+	enum SectorDrawMode
+	{
+		SDM_WIREFRAME = 0,
+		SDM_LIGHTING,
+		SDM_TEXTURED_FLOOR,
+		SDM_TEXTURED_CEIL,
+		SDM_COUNT
+	};
 
 	void viewport_init();
 	void viewport_destroy();
@@ -27,6 +35,7 @@ namespace LevelEditor
 	const TextureGpu* viewport_getTexture();
 	void viewport_update(s32 resvWidth, s32 resvHeight);
 
+	extern SectorDrawMode s_sectorDrawMode;
 	extern Vec2i s_viewportSize;
 	extern Vec3f s_viewportPos;
 	extern Vec4f s_viewportTrans2d;
