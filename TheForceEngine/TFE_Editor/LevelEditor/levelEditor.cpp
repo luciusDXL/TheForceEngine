@@ -41,9 +41,11 @@ namespace LevelEditor
 	// So existing levels need to be loaded into that format.
 	// If the correct format already exists, though, then it is loaded directly.
 	EditorLevel s_level = {};
+	LevelEditMode s_editMode = LEDIT_DRAW;
 	u32 s_editFlags = LEF_DEFAULT;
 	s32 s_curLayer = 0;
 
+	// Sector
 	EditorSector* s_hoveredSector = nullptr;
 	EditorSector* s_selectedSector = nullptr;
 
@@ -54,8 +56,14 @@ namespace LevelEditor
 	s32 s_hoveredVtxId = -1;
 	s32 s_selectedVtxId = -1;
 
+	// Wall
+	EditorSector* s_hoveredWallSector = nullptr;
+	EditorSector* s_lastHoveredWallSector = nullptr;
+	EditorSector* s_selectedWallSector = nullptr;
+	s32 s_hoveredWallId = -1;
+	s32 s_selectedWallId = -1;
+		
 	static EditorView s_view = EDIT_VIEW_2D;
-	static LevelEditMode s_editMode = LEDIT_DRAW;
 	static Vec2i s_editWinPos = { 0, 69 };
 	static Vec2i s_editWinSize = { 0 };
 	static Vec2f s_editWinMapCorner = { 0 };
@@ -151,8 +159,16 @@ namespace LevelEditor
 		s_viewportPos = { -24.0f, 0.0f, -200.0f };
 		s_curLayer = std::min(1, s_level.layerRange[1]);
 
-		s_hoveredSector  = nullptr;
-		s_selectedSector = nullptr;
+		s_hoveredSector         = nullptr;
+		s_selectedSector        = nullptr;
+		s_hoveredVtxSector      = nullptr;
+		s_selectedVtxSector     = nullptr;
+		s_lastHoveredVtxSector  = nullptr;
+		s_hoveredWallSector     = nullptr;
+		s_lastHoveredWallSector = nullptr;
+		s_selectedWallSector    = nullptr;
+		s_hoveredVtxId          = -1;
+		s_hoveredWallId         = -1;
 
 		TFE_RenderShared::init(false);
 		return true;
@@ -194,6 +210,51 @@ namespace LevelEditor
 		}
 		return nullptr;
 	}
+
+	// Find the closest point to p2 on line segment p0 -> p1 as a parametric value on the segment.
+	// Fills in point with the point itself.
+	f32 closestPointOnLineSegment(Vec2f p0, Vec2f p1, Vec2f p2, Vec2f* point)
+	{
+		const Vec2f r = { p2.x - p0.x, p2.z - p0.z };
+		const Vec2f d = { p1.x - p0.x, p1.z - p0.z };
+		const f32 denom = d.x * d.x + d.z * d.z;
+		if (fabsf(denom) < FLT_EPSILON) { return 0.0f; }
+
+		const f32 s = std::max(0.0f, std::min(1.0f, (r.x * d.x + r.z * d.z) / denom));
+		point->x = p0.x + s * d.x;
+		point->z = p0.z + s * d.z;
+		return s;
+	}
+
+	s32 findClosestWallInSector(const EditorSector* sector, const Vec2f* pos, f32 maxDistSq, f32* minDistToWallSq)
+	{
+		const u32 count = (u32)sector->walls.size();
+		f32 minDistSq = FLT_MAX;
+		s32 closestId = -1;
+		const EditorWall* walls = sector->walls.data();
+		const Vec2f* vertices = sector->vtx.data();
+		for (u32 w = 0; w < count; w++)
+		{
+			const Vec2f* v0 = &vertices[walls[w].idx[0]];
+			const Vec2f* v1 = &vertices[walls[w].idx[1]];
+
+			Vec2f pointOnSeg;
+			closestPointOnLineSegment(*v0, *v1, *pos, &pointOnSeg);
+			const Vec2f diff = { pointOnSeg.x - pos->x, pointOnSeg.z - pos->z };
+			const f32 distSq = diff.x*diff.x + diff.z*diff.z;
+
+			if (distSq < maxDistSq && distSq < minDistSq && (!minDistToWallSq || distSq < *minDistToWallSq))
+			{
+				minDistSq = distSq;
+				closestId = s32(w);
+			}
+		}
+		if (minDistToWallSq)
+		{
+			*minDistToWallSq = std::min(*minDistToWallSq, minDistSq);
+		}
+		return closestId;
+	}
 		
 	void updateWindowControls()
 	{
@@ -205,7 +266,10 @@ namespace LevelEditor
 			s_hoveredSector = nullptr;
 			s_hoveredVtxSector = nullptr;
 			s_lastHoveredVtxSector = nullptr;
+			s_hoveredWallSector = nullptr;
+			s_lastHoveredWallSector = nullptr;
 			s_hoveredVtxId = -1;
+			s_hoveredWallId = -1;
 			return;
 		}
 
@@ -293,6 +357,49 @@ namespace LevelEditor
 					s_selectedVtxSector = nullptr;
 					s_hoveredVtxId = -1;
 					s_selectedVtxId = -1;
+				}
+
+				if (s_editMode == LEDIT_WALL)
+				{
+					// See if we are close enough to "hover" a vertex
+					s_hoveredWallSector = nullptr;
+					s_hoveredWallId = -1;
+					if (s_hoveredSector || s_lastHoveredWallSector)
+					{
+						// Keep track of the last vertex hovered sector and use it if no hovered sector is active to
+						// make selecting vertices less fiddly.
+						EditorSector* hoveredSector = s_hoveredSector ? s_hoveredSector : s_lastHoveredWallSector;
+
+						const f32 maxDist = s_zoom2d * 16.0f;
+						s_hoveredWallId = findClosestWallInSector(hoveredSector, &worldPos, maxDist * maxDist, nullptr);
+						if (s_hoveredWallId >= 0)
+						{
+							s_hoveredWallSector = hoveredSector;
+							s_lastHoveredWallSector = hoveredSector;
+						}
+						else
+						{
+							s_hoveredWallSector = nullptr;
+						}
+					}
+
+					if (TFE_Input::mousePressed(MouseButton::MBUTTON_LEFT))
+					{
+						s_selectedWallSector = nullptr;
+						s_selectedWallId = -1;
+						if (s_hoveredWallSector && s_hoveredWallId >= 0)
+						{
+							s_selectedWallSector = s_hoveredWallSector;
+							s_selectedWallId = s_hoveredWallId;
+						}
+					}
+				}
+				else
+				{
+					s_hoveredWallSector = nullptr;
+					s_selectedWallSector = nullptr;
+					s_hoveredWallId = -1;
+					s_selectedWallId = -1;
 				}
 
 				// DEBUG

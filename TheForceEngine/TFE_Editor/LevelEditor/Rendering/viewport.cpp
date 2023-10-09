@@ -1,5 +1,6 @@
 #include "viewport.h"
 #include "grid2d.h"
+#include <TFE_System/math.h>
 #include <TFE_Editor/LevelEditor/levelEditor.h>
 #include <TFE_Editor/LevelEditor/levelEditorData.h>
 #include <TFE_RenderBackend/shader.h>
@@ -36,11 +37,8 @@ namespace LevelEditor
 		SCOLOR_LINE_SELECTED = 0xff1080ff,
 
 		SCOLOR_LINE_NORM_ADJ     = 0xff808080,
-		SCOLOR_LINE_HOVERED_ADJ  = 0xff808040,
-		SCOLOR_LINE_SELECTED_ADJ = 0xff004080,
-
-		//const u32 color[4] = { 0xffae8653, 0xffae8653, 0xff51331a, 0xff51331a };
-		//const u32 colorSelected[4] = { 0xffffc379, 0xffffc379, 0xff764a26, 0xff764a26 };
+		SCOLOR_LINE_HOVERED_ADJ  = 0xffa0a060,
+		SCOLOR_LINE_SELECTED_ADJ = 0xff0060a0,
 	};
 	enum VertexColor
 	{
@@ -65,15 +63,25 @@ namespace LevelEditor
 	f32 s_zoom2d = 0.25f;			// current zoom level in 2D.
 
 	extern EditorLevel s_level;
+	extern LevelEditMode s_editMode;
 	extern u32 s_editFlags;
 	extern s32 s_curLayer;
+
+	// Sector
 	extern EditorSector* s_hoveredSector;
 	extern EditorSector* s_selectedSector;
 
+	// Vertex
 	extern EditorSector* s_hoveredVtxSector;
 	extern EditorSector* s_selectedVtxSector;
 	extern s32 s_hoveredVtxId;
 	extern s32 s_selectedVtxId;
+
+	// Wall
+	extern EditorSector* s_hoveredWallSector;
+	extern EditorSector* s_selectedWallSector;
+	extern s32 s_hoveredWallId;
+	extern s32 s_selectedWallId;
 
 	void renderLevel2D();
 	void renderLevel3D();
@@ -81,6 +89,7 @@ namespace LevelEditor
 	void drawSector2d(const EditorSector* sector, Highlight highlight);
 	void drawVertex2d(const Vec2f* pos, f32 scale, Highlight highlight);
 	void drawVertex2d(const EditorSector* sector, s32 id, f32 extraScale, Highlight highlight);
+	void drawWall2d(const EditorSector* sector, const EditorWall* wall, f32 extraScale, Highlight highlight, bool drawNormal = false);
 	void renderSectorVertices2d();
 
 	void viewport_init()
@@ -167,13 +176,23 @@ namespace LevelEditor
 
 		// Draw the hovered and selected sectors.
 		// Note they intentionally overlap if s_hoveredSector == s_selectedSector.
-		if (s_hoveredSector)
+		if (s_hoveredSector && s_editMode == LEDIT_SECTOR)
 		{
 			drawSector2d(s_hoveredSector, HL_HOVERED);
 		}
-		if (s_selectedSector)
+		if (s_selectedSector && s_editMode == LEDIT_SECTOR)
 		{
 			drawSector2d(s_selectedSector, HL_SELECTED);
+		}
+
+		// Draw the hovered and selected walls.
+		if (s_hoveredWallSector && s_hoveredWallId >= 0)
+		{
+			drawWall2d(s_hoveredWallSector, &s_hoveredWallSector->walls[s_hoveredWallId], 1.5f, HL_HOVERED, /*draw normal*/true);
+		}
+		if (s_selectedWallSector && s_selectedWallId >= 0)
+		{
+			drawWall2d(s_selectedWallSector, &s_selectedWallSector->walls[s_selectedWallId], 1.5f, HL_SELECTED, /*draw normal*/true);
 		}
 
 		// Draw vertices.
@@ -216,6 +235,44 @@ namespace LevelEditor
 			triDraw2d_addColored(idxCount, (u32)vtxCount, transVtx, idxData, color);
 		}
 	}
+
+	void drawWall2d(const EditorSector* sector, const EditorWall* wall, f32 extraScale, Highlight highlight, bool drawNormal)
+	{
+		Vec2f w0 = sector->vtx[wall->idx[0]];
+		Vec2f w1 = sector->vtx[wall->idx[1]];
+
+		// Transformed positions.
+		s32 lineCount = 1;
+		Vec2f line[4];
+		line[0] = { w0.x * s_viewportTrans2d.x + s_viewportTrans2d.y, w0.z * s_viewportTrans2d.z + s_viewportTrans2d.w };
+		line[1] = { w1.x * s_viewportTrans2d.x + s_viewportTrans2d.y, w1.z * s_viewportTrans2d.z + s_viewportTrans2d.w };
+
+		if (drawNormal)
+		{
+			lineCount++;
+
+			Vec2f midPoint = { (line[0].x + line[1].x)*0.5f, (line[0].z + line[1].z)*0.5f };
+			Vec2f dir = { -(line[1].z - line[0].z), line[1].x - line[0].x };
+			dir = TFE_Math::normalize(&dir);
+
+			line[2] = midPoint;
+			line[3] = { midPoint.x + dir.x * 8.0f, midPoint.z + dir.z * 8.0f };
+		}
+
+		u32 baseColor;
+		if (s_curLayer != sector->layer)
+		{
+			u32 alpha = 0x40 / (s_curLayer - sector->layer);
+			baseColor = 0x00808000 | (alpha << 24);
+		}
+		else
+		{
+			baseColor = wall->adjoinId < 0 ? c_sectorLineClr[highlight] : c_sectorLineClrAdjoin[highlight];
+		}
+		u32 color[4] = { baseColor, baseColor, baseColor, baseColor };
+
+		TFE_RenderShared::lineDraw2d_addLines(lineCount, 1.25f * extraScale, line, color);
+	}
 		
 	void drawSector2d(const EditorSector* sector, Highlight highlight)
 	{
@@ -231,27 +288,14 @@ namespace LevelEditor
 		const Vec2f* vtx = sector->vtx.data();
 		for (size_t w = 0; w < wallCount; w++, wall++)
 		{
-			Vec2f w0 = vtx[wall->idx[0]];
-			Vec2f w1 = vtx[wall->idx[1]];
-
-			// Transformed positions.
-			Vec2f line[2];
-			line[0] = { w0.x * s_viewportTrans2d.x + s_viewportTrans2d.y, w0.z * s_viewportTrans2d.z + s_viewportTrans2d.w };
-			line[1] = { w1.x * s_viewportTrans2d.x + s_viewportTrans2d.y, w1.z * s_viewportTrans2d.z + s_viewportTrans2d.w };
-
-			u32 baseColor;
-			if (s_curLayer != sector->layer)
+			// Skip hovered or selected walls.
+			if ((s_hoveredWallSector == sector && s_hoveredWallId == w) ||
+				(s_selectedWallSector == sector && s_selectedWallId == w))
 			{
-				u32 alpha = 0x40 / (s_curLayer - sector->layer);
-				baseColor = 0x00808000 | (alpha << 24);
+				continue;
 			}
-			else
-			{
-				baseColor = wall->adjoinId < 0 ? c_sectorLineClr[highlight] : c_sectorLineClrAdjoin[highlight];
-			}
-			u32 color[2] = { baseColor, baseColor };
 
-			TFE_RenderShared::lineDraw2d_addLine(1.25f, line, color);
+			drawWall2d(sector, wall, 1.0f, highlight);
 		}
 	}
 
@@ -264,7 +308,7 @@ namespace LevelEditor
 		for (size_t s = 0; s < count; s++, sector++)
 		{
 			if (sector->layer < layerStart || sector->layer > layerEnd) { continue; }
-			if (sector == s_hoveredSector || sector == s_selectedSector) { continue; }
+			if ((sector == s_hoveredSector || sector == s_selectedSector) && s_editMode == LEDIT_SECTOR) { continue; }
 
 			drawSector2d(sector, HL_NONE);
 		}
