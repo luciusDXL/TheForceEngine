@@ -123,30 +123,11 @@ namespace LevelEditor
 	Vec2i worldPos2dToMap(const Vec2f& worldPos);
 	bool isUiActive();
 	bool isViewportElementHovered();
+	TextureGpu* loadGpuImage(const char* path);
 	
 	////////////////////////////////////////////////////////
 	// Public API
 	////////////////////////////////////////////////////////
-	TextureGpu* loadGpuImage(const char* path)
-	{
-		char imagePath[TFE_MAX_PATH];
-		strcpy(imagePath, path);
-		if (!TFE_Paths::mapSystemPath(imagePath))
-		{
-			memset(imagePath, 0, TFE_MAX_PATH);
-			TFE_Paths::appendPath(TFE_PathType::PATH_PROGRAM, path, imagePath, TFE_MAX_PATH);
-			FileUtil::fixupPath(imagePath);
-		}
-
-		TextureGpu* gpuImage = nullptr;
-		SDL_Surface* image = TFE_Image::get(path);
-		if (image)
-		{
-			gpuImage = TFE_RenderBackend::createTexture(image->w, image->h, (u32*)image->pixels, MAG_FILTER_LINEAR);
-		}
-		return gpuImage;
-	}
-
 	bool init(Asset* asset)
 	{
 		// Cleanup any existing level data.
@@ -551,12 +532,6 @@ namespace LevelEditor
 	
 	void update()
 	{
-		if (s_curLayer == 0)
-		{
-			static s32 __x = 0;
-			__x++;
-		}
-
 		pushFont(TFE_Editor::FONT_SMALL);
 		updateWindowControls();
 
@@ -702,7 +677,7 @@ namespace LevelEditor
 							ImVec2 pos = ImGui::GetCursorPos();
 							ImDrawList* drawList = ImGui::GetWindowDrawList();
 
-							Vec2f lPos0 = { mapPos0.x, pos.y + height * 0.5f + mapPos1.z - UI_SCALE(20) - 4 };
+							Vec2f lPos0 = { (f32)mapPos0.x, pos.y + height * 0.5f + (f32)mapPos1.z - UI_SCALE(20) - 4.0f };
 							Vec2f lPos1 = { lPos0.x + offset - 2.0f, lPos0.z };
 							Vec2f rPos0 = { lPos0.x + len + offset + 2.0f, lPos0.z };
 							Vec2f rPos1 = { (f32)mapPos1.x - 4.0f, lPos0.z };
@@ -866,21 +841,18 @@ namespace LevelEditor
 
 	Vec2f mouseCoordToWorldPos2d(s32 mx, s32 my)
 	{
-		// We want to zoom into the mouse position.
-		s32 relX = s32(mx - s_editWinMapCorner.x);
-		s32 relY = s32(my - s_editWinMapCorner.z);
-		// Old position in world units.
+		// World position from viewport position, relative mouse position and zoom.
 		Vec2f worldPos;
-		worldPos.x =   s_viewportPos.x + f32(relX) * s_zoom2d;
-		worldPos.z = -(s_viewportPos.z + f32(relY) * s_zoom2d);
+		worldPos.x =   s_viewportPos.x + f32(mx - s_editWinMapCorner.x) * s_zoom2d;
+		worldPos.z = -(s_viewportPos.z + f32(my - s_editWinMapCorner.z) * s_zoom2d);
 		return worldPos;
 	}
 
 	Vec2i worldPos2dToMap(const Vec2f& worldPos)
 	{
 		Vec2i mapPos;
-		mapPos.x = s32(( worldPos.x - s_viewportPos.x) / s_zoom2d) + s_editWinMapCorner.x;
-		mapPos.z = s32((-worldPos.z - s_viewportPos.z) / s_zoom2d) + s_editWinMapCorner.z;
+		mapPos.x = s32(( worldPos.x - s_viewportPos.x) / s_zoom2d + s_editWinMapCorner.x);
+		mapPos.z = s32((-worldPos.z - s_viewportPos.z) / s_zoom2d + s_editWinMapCorner.z);
 		return mapPos;
 	}
 
@@ -913,5 +885,25 @@ namespace LevelEditor
 		}
 
 		ImGui::EndChild();
+	}
+
+	TextureGpu* loadGpuImage(const char* path)
+	{
+		char imagePath[TFE_MAX_PATH];
+		strcpy(imagePath, path);
+		if (!TFE_Paths::mapSystemPath(imagePath))
+		{
+			memset(imagePath, 0, TFE_MAX_PATH);
+			TFE_Paths::appendPath(TFE_PathType::PATH_PROGRAM, path, imagePath, TFE_MAX_PATH);
+			FileUtil::fixupPath(imagePath);
+		}
+
+		TextureGpu* gpuImage = nullptr;
+		SDL_Surface* image = TFE_Image::get(path);
+		if (image)
+		{
+			gpuImage = TFE_RenderBackend::createTexture(image->w, image->h, (u32*)image->pixels, MAG_FILTER_LINEAR);
+		}
+		return gpuImage;
 	}
 }
