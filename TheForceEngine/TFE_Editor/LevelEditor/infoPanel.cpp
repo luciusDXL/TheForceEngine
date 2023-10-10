@@ -101,12 +101,12 @@ namespace LevelEditor
 		ImGui::CheckboxFlags("Errors", &s_outputFilter, LFILTER_ERROR);
 
 		ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize
-			| ImGuiWindowFlags_NoCollapse;
+			| ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoFocusOnAppearing;
 
 		ImVec2 pos = ImGui::GetCursorPos();
 		ImGui::SetNextWindowSize({ s_infoWith, s_infoHeight - pos.y });
 		ImGui::SetNextWindowPos({s_infoPos.x, pos.y + s_infoPos.z});
-		ImGui::Begin("Output", nullptr, window_flags);
+		ImGui::Begin("Output##MapInfo", nullptr, window_flags);
 		const size_t count = s_outputMsg.size();
 		const LeMessage* msg = s_outputMsg.data();
 		const ImVec4 c_typeColor[] = { {1.0f, 1.0f, 1.0f, 0.7f}, {1.0f, 1.0f, 0.25f, 1.0f}, {1.0f, 0.25f, 0.25f, 1.0f} };
