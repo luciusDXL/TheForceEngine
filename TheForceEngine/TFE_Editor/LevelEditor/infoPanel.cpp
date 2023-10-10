@@ -204,8 +204,8 @@ namespace LevelEditor
 		const ImVec2 imageRight0 = ImGui::GetItemRectMax();
 
 		// Names
-		ImGui::Text("%s %dx%d", midTex ? midTex->name : "NONE", midTex ? midTex->width : 0, midTex ? midTex->height : 0); ImGui::SameLine(texCol);
-		ImGui::Text("%s %dx%d", sgnTex ? sgnTex->name : "NONE", sgnTex ? sgnTex->width : 0, sgnTex ? sgnTex->height : 0);
+		ImGui::Text("%s", midTex ? midTex->name : "NONE"); ImGui::SameLine(texCol);
+		ImGui::Text("%s", sgnTex ? sgnTex->name : "NONE");
 
 		ImVec2 imageLeft1, imageRight1;
 		if (wall->adjoinId >= 0)
@@ -228,8 +228,8 @@ namespace LevelEditor
 			imageRight1 = ImGui::GetItemRectMax();
 
 			// Names
-			ImGui::Text("%s %dx%d", topTex ? topTex->name : "NONE", topTex ? topTex->width : 0, topTex ? topTex->height : 0); ImGui::SameLine(texCol);
-			ImGui::Text("%s %dx%d", botTex ? botTex->name : "NONE", botTex ? botTex->width : 0, botTex ? botTex->height : 0);
+			ImGui::Text("%s", topTex ? topTex->name : "NONE"); ImGui::SameLine(texCol);
+			ImGui::Text("%s", botTex ? botTex->name : "NONE");
 		}
 
 		// Texture Offsets
@@ -400,11 +400,11 @@ namespace LevelEditor
 		// Names
 		if (floorTex)
 		{
-			ImGui::Text("%s %dx%d", floorTex->name, floorTex->width, floorTex->height); ImGui::SameLine(texCol);
+			ImGui::Text("%s", floorTex->name); ImGui::SameLine(texCol);
 		}
 		if (ceilTex)
 		{
-			ImGui::Text("%s %dx%d", ceilTex->name, ceilTex->width, ceilTex->height); ImGui::SameLine();
+			ImGui::Text("%s", ceilTex->name); ImGui::SameLine();
 		}
 
 		// Texture Offsets
