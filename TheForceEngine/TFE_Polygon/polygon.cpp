@@ -36,8 +36,9 @@ namespace TFE_Polygon
 		f32 radiusSq;
 	};
 
-	const f32 eps = 1e-4f;
+	const f32 eps = 1e-3f;
 
+	static bool s_init = false;
 	static std::vector<Vec2f> s_vertices;
 	static std::vector<Triangle> s_triangles;
 	static std::vector<s32> s_freeList;
@@ -57,21 +58,18 @@ namespace TFE_Polygon
 			if (t == id || !tri->allocated) { continue; }
 			if ((tri->idx[0] == i1 && tri->idx[1] == i0) || (tri->idx[0] == i0 && tri->idx[1] == i1))
 			{
-				//PolyAssert(tri->adj[0] < 0 || tri->adj[0] == id);
 				adj = (s32)t;
 				tri->adj[0] = id;
 				break;
 			}
 			else if ((tri->idx[1] == i1 && tri->idx[2] == i0) || (tri->idx[1] == i0 && tri->idx[2] == i1))
 			{
-				//PolyAssert(tri->adj[1] < 0 || tri->adj[1] == id);
 				adj = (s32)t;
 				tri->adj[1] = id;
 				break;
 			}
 			else if ((tri->idx[2] == i1 && tri->idx[0] == i0) || (tri->idx[2] == i0 && tri->idx[0] == i1))
 			{
-				//PolyAssert(tri->adj[2] < 0 || tri->adj[2] == id);
 				adj = (s32)t;
 				tri->adj[2] = id;
 				break;
@@ -365,13 +363,13 @@ namespace TFE_Polygon
 		return (xDz > zDx) ? PS_INSIDE : PS_OUTSIDE;
 	}
 
+	f32 sign(f32 x)
+	{
+		return x < 0.0f ? -1.0f : 1.0f;
+	}
+
 	bool pointInsidePolygon(Polygon* poly, Vec2f p)
 	{
-		const f32 xFrac = p.x - floorf(p.x);
-		const f32 zFrac = p.z - floorf(p.z);
-		const s32 xInt = (s32)floorf(p.x);
-		const s32 zInt = (s32)floorf(p.z);
-
 		const s32 edgeCount = (s32)poly->edge.size();
 		const Edge* edge = poly->edge.data();
 		const Edge* last = &edge[edgeCount - 1];
@@ -419,18 +417,19 @@ namespace TFE_Polygon
 				{
 					if (p.x < x0)
 					{
-					f32 dzSignMatches = ((dz >= 0.0f && dzLast >= 0.0f) || (dz <= 0.0f && dzLast <= 0.0f)) ? 1.0f : -1.0f;
-					if (dzSignMatches >= 0 || dzLast == 0)  // the signs match OR dz or dz0 are positive OR dz0 EQUALS 0.
-					{
-						crossings++;
-					}
+						//f32 dzSignMatches = ((dz >= 0.0f && dzLast >= 0.0f) || (dz <= 0.0f && dzLast <= 0.0f)) ? 1.0f : -1.0f;
+						bool dzSignMatches = sign(dz) == sign(dzLast);
+						if (dzSignMatches || dzLast == 0)  // the signs match OR dz or dz0 are positive OR dz0 EQUALS 0.
+						{
+							crossings++;
+						}
 					}
 					dzLast = dz;
 				}
 			}
 			else if (lineSegmentSide(p, { x0, z0 }, { x1, z1 }) == PS_ON_LINE)
 			{
-			return true;
+				return true;
 			}
 		}
 
@@ -609,15 +608,24 @@ namespace TFE_Polygon
 	// Polygons may be complex, self-intersecting, and even be incomplete.
 	// The goal is a *robust* triangulation system that will always produce
 	// a plausible result even with malformed data.
-	bool computeTriangulation(Polygon* poly)
+	bool computeTriangulation(Polygon* poly, u32 debug)
 	{
+		if (!s_init)
+		{
+			s_init = true;
+			s_freeList.reserve(256);
+			s_constraints.reserve(256);
+			s_triangles.reserve(1024);
+			s_vertices.reserve(1024);
+		}
+
 		s_freeList.clear();
 		s_triangles.clear();
 		s_vertices.clear();
 		s_constraints.clear();
 
 		poly->triVtx.clear();
-		poly->indices.clear();
+		poly->triIdx.clear();
 
 		const size_t edgeCount = poly->edge.size();
 		if (edgeCount < 3)
@@ -626,33 +634,20 @@ namespace TFE_Polygon
 			return false;
 		}
 
-		// 0. If the polygon has 3 or 4 edges, assume it is already convex.
-		// Many of the sectors in a level are actually 4-sided doorways, so optimize for the common case.
-		if (edgeCount <= 4)
+		// 0. If the polygon has 3 edges, assume it is already convex.
+		// Note: this assumption *cannot* be made for 4 edges, that generates failures in one of the original levels.
+		if (edgeCount == 3)
 		{
-			poly->triVtx.resize(edgeCount);
-			poly->indices.resize((edgeCount - 2) * 3);
+			poly->triVtx.resize(3);
+			poly->triIdx.resize(3);
 
-			for (s32 i = 0; i < edgeCount; i++)
+			for (s32 i = 0; i < 3; i++)
 			{
 				poly->triVtx[i] = poly->vtx[poly->edge[i].i0];
 			}
-			if (edgeCount == 4)
-			{
-				poly->indices[0] = 0;
-				poly->indices[1] = 1;
-				poly->indices[2] = 2;
-
-				poly->indices[3] = 0;
-				poly->indices[4] = 2;
-				poly->indices[5] = 3;
-			}
-			else
-			{
-				poly->indices[0] = 0;
-				poly->indices[1] = 1;
-				poly->indices[2] = 2;
-			}
+			poly->triIdx[0] = 0;
+			poly->triIdx[1] = 1;
+			poly->triIdx[2] = 2;
 			return true;
 		}
 
@@ -668,20 +663,8 @@ namespace TFE_Polygon
 			addPoint(vtx);
 		}
 
-		// 2. Remove triangles that contain a super triangle vertex.
-		const size_t triCount = s_triangles.size();
-		Triangle* tri = s_triangles.data();
-		for (size_t t = 0; t < triCount; t++, tri++)
-		{
-			if (!tri->allocated) { continue; }
-			if (tri->idx[0] < 3 || tri->idx[1] < 3 || tri->idx[2] < 3)
-			{
-				deleteTriangle(tri);
-				continue;
-			}
-		}
-
-		// 3. Insert edges, splitting triangles as needed (note: new vertices may be added, but polygons should be re-triangulated instead).
+		// 2. Insert edges, splitting triangles as needed (note: new vertices may be added, but polygons should be re-triangulated instead).
+		size_t triCount = s_triangles.size();
 		const Edge* edge = poly->edge.data();
 		for (size_t e = 0; e < edgeCount; e++, edge++)
 		{
@@ -690,7 +673,7 @@ namespace TFE_Polygon
 			s32 i1 = edge->i1 + 3;
 
 			bool edgeFound = false;
-			tri = s_triangles.data();
+			Triangle* tri = tri = s_triangles.data();
 			for (size_t t = 0; t < triCount; t++, tri++)
 			{
 				if (!tri->allocated) { continue; }
@@ -698,16 +681,19 @@ namespace TFE_Polygon
 					(tri->idx[1] == i0 && tri->idx[2] == i1) || (tri->idx[1] == i1 && tri->idx[2] == i0) ||
 					(tri->idx[2] == i0 && tri->idx[0] == i1) || (tri->idx[2] == i1 && tri->idx[0] == i0))
 				{
-					edgeFound = true;
-					break;
+					// Make sure this isn't part of the super triangle!
+					if (tri->idx[0] >= 3 && tri->idx[1] >= 3 && tri->idx[2] >= 3)
+					{
+						edgeFound = true;
+						break;
+					}
 				}
 			}
 
 			// Other add the edge for insertion.
 			if (!edgeFound)
 			{
-				Edge newEdge = { i0, i1 };
-				s_constraints.push_back(newEdge);
+				s_constraints.push_back({ i0, i1 });
 			}
 		}
 		const size_t constraintCount = s_constraints.size();
@@ -717,10 +703,11 @@ namespace TFE_Polygon
 		{
 			// Find all triangles that share a vertex with the constraint.
 			Triangle* triList = s_triangles.data();
+			// curTriCount = s_triangles.size(); // Does this make sense?
 			bool constraintHasMatch = false;
 			for (size_t t = 0; t < curTriCount; t++)
 			{
-				tri = &triList[t];
+				Triangle* tri = &triList[t];
 				if (!tri->allocated) { continue; }
 				s32 startIndex = -1;
 				if (tri->idx[0] == constraint->i0) { startIndex = 0; }
@@ -742,22 +729,44 @@ namespace TFE_Polygon
 			//PolyAssert(constraintHasMatch);
 		}
 
+		// 3. Remove triangles that contain a super triangle vertex.
+		triCount = s_triangles.size();
+		Triangle* tri = s_triangles.data();
+		if (!(debug & PDBG_SHOW_SUPERTRI))
+		{
+			for (size_t t = 0; t < triCount; t++, tri++)
+			{
+				if (!tri->allocated) { continue; }
+				if (tri->idx[0] < 3 || tri->idx[1] < 3 || tri->idx[2] < 3)
+				{
+					deleteTriangle(tri);
+					continue;
+				}
+			}
+		}
+
 		// 4. Given the final resulting triangles, determine which are *inside* of the complex polygon, discard the rest.
 		tri = s_triangles.data();
 		for (size_t t = 0; t < triCount; t++, tri++)
 		{
 			if (!tri->allocated) { continue; }
 			// Determine if the circumcenter is inside the polygon.
-			if (!pointInsidePolygon(poly, tri->centroid))
+			if (!(debug & PDBG_SHOW_SUPERTRI) && !(debug & PDBG_SKIP_INSIDE_TEST))
 			{
-				deleteTriangle(tri);
-				continue;
+				// Always jitter the centroid z slightly so that it is less likely to be exactly the same as a vertex z,
+				// which can cause detection issues.
+				tri->centroid.z += 0.01f;
+				if (!pointInsidePolygon(poly, tri->centroid))
+				{
+					deleteTriangle(tri);
+					continue;
+				}
 			}
 
 			// For now just add it here.
-			poly->indices.push_back(tri->idx[0]);
-			poly->indices.push_back(tri->idx[1]);
-			poly->indices.push_back(tri->idx[2]);
+			poly->triIdx.push_back(tri->idx[0]);
+			poly->triIdx.push_back(tri->idx[1]);
+			poly->triIdx.push_back(tri->idx[2]);
 		}
 		// TODO: Remove unused vertices.
 		poly->triVtx = s_vertices;

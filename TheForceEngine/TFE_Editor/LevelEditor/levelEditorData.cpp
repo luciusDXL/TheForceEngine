@@ -353,7 +353,6 @@ namespace LevelEditor
 			level->layerRange[0] = min(level->layerRange[0], sector->layer);
 			level->layerRange[1] = max(level->layerRange[1], sector->layer);
 
-			// Build the polygons for each sector.
 			sectorToPolygon(sector);
 		}
 
@@ -390,7 +389,7 @@ namespace LevelEditor
 
 		// Clear out cached triangle data.
 		poly.triVtx.clear();
-		poly.indices.clear();
+		poly.triIdx.clear();
 
 		TFE_Polygon::computeTriangulation(&sector->poly);
 	}

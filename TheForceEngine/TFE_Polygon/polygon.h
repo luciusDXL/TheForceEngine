@@ -17,11 +17,18 @@ struct Polygon
 
 	// Cached triangles - every 3 indices = 1 triangle.
 	std::vector<Vec2f> triVtx;
-	std::vector<s32> indices;
+	std::vector<s32> triIdx;
+};
+
+enum PolyDebug
+{
+	PDBG_NONE = 0,
+	PDBG_SHOW_SUPERTRI = FLAG_BIT(0),
+	PDBG_SKIP_INSIDE_TEST = FLAG_BIT(1),
 };
 
 namespace TFE_Polygon
 {
-	bool computeTriangulation(Polygon* poly);
+	bool computeTriangulation(Polygon* poly, u32 debug=PDBG_NONE);
 	bool pointInsidePolygon(Polygon* poly, Vec2f p);
 }

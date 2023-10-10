@@ -221,10 +221,10 @@ namespace LevelEditor
 		
 	void renderSectorPolygon2d(const Polygon* poly, u32 color)
 	{
-		const size_t idxCount = poly->indices.size();
+		const size_t idxCount = poly->triIdx.size();
 		if (idxCount)
 		{
-			const s32*    idxData = poly->indices.data();
+			const s32*    idxData = poly->triIdx.data();
 			const Vec2f*  vtxData = poly->triVtx.data();
 			const size_t vtxCount = poly->triVtx.size();
 
@@ -240,10 +240,10 @@ namespace LevelEditor
 
 	void renderTexturedSectorPolygon2d(const Polygon* poly, u32 color, EditorTexture* tex, const Vec2f& offset)
 	{
-		const size_t idxCount = poly->indices.size();
+		const size_t idxCount = poly->triIdx.size();
 		if (idxCount)
 		{
-			const s32*    idxData = poly->indices.data();
+			const s32*    idxData = poly->triIdx.data();
 			const Vec2f*  vtxData = poly->triVtx.data();
 			const size_t vtxCount = poly->triVtx.size();
 

@@ -109,7 +109,7 @@ namespace LevelEditor
 		ImGui::Begin("Output", nullptr, window_flags);
 		const size_t count = s_outputMsg.size();
 		const LeMessage* msg = s_outputMsg.data();
-		const ImVec4 c_typeColor[] = { {1.0f, 1.0f, 1.0f, 0.7}, {1.0f, 1.0f, 0.25f, 1.0}, {1.0f, 0.25f, 0.25f, 1.0} };
+		const ImVec4 c_typeColor[] = { {1.0f, 1.0f, 1.0f, 0.7f}, {1.0f, 1.0f, 0.25f, 1.0f}, {1.0f, 0.25f, 0.25f, 1.0f} };
 
 		for (size_t i = 0; i < count; i++, msg++)
 		{
