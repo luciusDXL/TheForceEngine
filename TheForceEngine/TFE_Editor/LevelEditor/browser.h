@@ -7,24 +7,10 @@
 // to "play" the game as intended.
 //////////////////////////////////////////////////////////////////////
 #include <TFE_System/types.h>
-#include <TFE_Editor/EditorAsset/editorAsset.h>
 
 namespace LevelEditor
 {
-	enum LevelEditFlags
-	{
-		LEF_NONE = 0,
-		LEF_SHOW_GRID = FLAG_BIT(0),
-		LEF_SHOW_LOWER_LAYERS = FLAG_BIT(1),
-		LEF_SHOW_INF_COLORS = FLAG_BIT(2),
-		LEF_FULLBRIGHT = FLAG_BIT(3),
-
-		LEF_DEFAULT = LEF_SHOW_GRID | LEF_SHOW_LOWER_LAYERS | LEF_SHOW_INF_COLORS
-	};
-
-	bool init(TFE_Editor::Asset* asset);
-	void destroy();
-
-	void update();
-	bool menu();
+	void browserBegin(s32 offset);
+	void drawBrowser();
+	void browserEnd();
 }

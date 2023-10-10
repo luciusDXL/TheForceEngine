@@ -3,6 +3,7 @@
 #include <TFE_System/math.h>
 #include <TFE_Editor/LevelEditor/levelEditor.h>
 #include <TFE_Editor/LevelEditor/levelEditorData.h>
+#include <TFE_Editor/LevelEditor/sharedState.h>
 #include <TFE_Editor/EditorAsset/editorTexture.h>
 #include <TFE_RenderBackend/shader.h>
 #include <TFE_RenderBackend/vertexBuffer.h>
@@ -78,27 +79,6 @@ namespace LevelEditor
 	f32 s_gridOpacity = 0.5f;
 	f32 s_gridSize2d;
 	f32 s_zoom2d = 0.25f;			// current zoom level in 2D.
-
-	extern EditorLevel s_level;
-	extern LevelEditMode s_editMode;
-	extern u32 s_editFlags;
-	extern s32 s_curLayer;
-
-	// Sector
-	extern EditorSector* s_hoveredSector;
-	extern EditorSector* s_selectedSector;
-
-	// Vertex
-	extern EditorSector* s_hoveredVtxSector;
-	extern EditorSector* s_selectedVtxSector;
-	extern s32 s_hoveredVtxId;
-	extern s32 s_selectedVtxId;
-
-	// Wall
-	extern EditorSector* s_hoveredWallSector;
-	extern EditorSector* s_selectedWallSector;
-	extern s32 s_hoveredWallId;
-	extern s32 s_selectedWallId;
 
 	void renderLevel2D();
 	void renderLevel3D();

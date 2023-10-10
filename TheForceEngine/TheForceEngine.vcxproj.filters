@@ -1246,6 +1246,15 @@
     <ClInclude Include="TFE_RenderShared\triDraw2d.h">
       <Filter>Source\TFE_RenderShared</Filter>
     </ClInclude>
+    <ClInclude Include="TFE_Editor\LevelEditor\infoPanel.h">
+      <Filter>Source\TFE_Editor\LevelEditor</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Editor\LevelEditor\sharedState.h">
+      <Filter>Source\TFE_Editor\LevelEditor</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Editor\LevelEditor\browser.h">
+      <Filter>Source\TFE_Editor\LevelEditor</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -2132,6 +2141,12 @@
     </ClCompile>
     <ClCompile Include="TFE_RenderShared\triDraw2d.cpp">
       <Filter>Source\TFE_RenderShared</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Editor\LevelEditor\infoPanel.cpp">
+      <Filter>Source\TFE_Editor\LevelEditor</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Editor\LevelEditor\browser.cpp">
+      <Filter>Source\TFE_Editor\LevelEditor</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
