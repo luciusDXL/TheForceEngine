@@ -704,12 +704,11 @@ namespace TFE_Polygon
 		}
 		const size_t constraintCount = s_constraints.size();
 		const Edge* constraint = s_constraints.data();
-		size_t curTriCount = s_triangles.size();
 		for (size_t e = 0; e < constraintCount; e++, constraint++)
 		{
 			// Find all triangles that share a vertex with the constraint.
 			Triangle* triList = s_triangles.data();
-			// curTriCount = s_triangles.size(); // Does this make sense?
+			size_t curTriCount = s_triangles.size(); // Update the count since triangles can change.
 			bool constraintHasMatch = false;
 			for (size_t t = 0; t < curTriCount; t++)
 			{
@@ -728,7 +727,6 @@ namespace TFE_Polygon
 					}
 					// The triangle count may change, but triangle order will not.
 					// The memory address may change if the array is resized.
-					//curTriCount = s_triangles.size();
 					triList = s_triangles.data();
 				}
 			}
@@ -753,6 +751,7 @@ namespace TFE_Polygon
 
 		// 4. Given the final resulting triangles, determine which are *inside* of the complex polygon, discard the rest.
 		tri = s_triangles.data();
+		triCount = s_triangles.size();
 		for (size_t t = 0; t < triCount; t++, tri++)
 		{
 			if (!tri->allocated) { continue; }

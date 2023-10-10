@@ -12,6 +12,7 @@
 #define VTX_MAX TRI_MAX * 3
 
 #define SHOW_WIREFRAME 0
+#define SHOW_RAINBOW 0
 
 namespace TFE_RenderShared
 {
@@ -153,7 +154,11 @@ namespace TFE_RenderShared
 		{
 			outVert[i].pos = *vertices;
 			outVert[i].uv = uv ? uv[i] : zero;
+		#if SHOW_RAINBOW == 1
+			outVert[i].color = (color + 0x114020*i) | 0xff000000;
+		#else
 			outVert[i].color = color;
+		#endif
 		}
 
 		for (u32 i = 0; i < idxCount; i++)
