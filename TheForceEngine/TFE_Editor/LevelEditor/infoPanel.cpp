@@ -13,12 +13,43 @@
 #include <algorithm>
 #include <vector>
 #include <string>
+#include <cstring>
 
 using namespace TFE_Editor;
 
 namespace LevelEditor
 {
+	struct LeMessage
+	{
+		LeMsgType type;
+		std::string msg;
+	};
+	static std::vector<LeMessage> s_outputMsg;
+	static u32 s_outputFilter = LFILTER_DEFAULT;
+	static f32 s_infoWith;
 	static s32 s_infoHeight;
+	static Vec2f s_infoPos;
+		
+	void infoPanelClearMessages()
+	{
+		s_outputMsg.clear();
+	}
+
+	void infoPanelAddMsg(LeMsgType type, const char* msg, ...)
+	{
+		char fullStr[TFE_MAX_PATH * 2];
+		va_list arg;
+		va_start(arg, msg);
+		vsprintf(fullStr, msg, arg);
+		va_end(arg);
+
+		s_outputMsg.push_back({ type, fullStr });
+	}
+
+	void infoPanelSetMsgFilter(u32 filter/*LFILTER_DEFAULT*/)
+	{
+		s_outputFilter = filter;
+	}
 		
 	s32 infoPanelGetHeight()
 	{
@@ -32,8 +63,11 @@ namespace LevelEditor
 		DisplayInfo displayInfo;
 		TFE_RenderBackend::getDisplayInfo(&displayInfo);
 
-		ImGui::SetWindowPos("Info Panel", { (f32)displayInfo.width - 480.0f, 22.0f });
-		ImGui::SetWindowSize("Info Panel", { 480.0f, f32(height) });
+		s_infoWith = 480.0f;
+		s_infoPos = { (f32)displayInfo.width - 480.0f, 22.0f };
+
+		ImGui::SetWindowPos("Info Panel", { s_infoPos.x, s_infoPos.z });
+		ImGui::SetWindowSize("Info Panel", { s_infoWith, f32(height) });
 		ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize
 			| ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoBringToFrontOnFocus;
 
@@ -60,6 +94,31 @@ namespace LevelEditor
 		//ImGui::InputFloat("##GridHeight", &s_gridHeight, 0.0f, 0.0f, "%0.2f", ImGuiInputTextFlags_CharsDecimal);
 		//ImGui::Checkbox("Grid Auto Adjust", &s_gridAutoAdjust);
 		//ImGui::Checkbox("Show Grid When Camera Is Inside a Sector", &s_showGridInSector);
+
+		// Display messages here?
+		ImGui::CheckboxFlags("Info", &s_outputFilter, LFILTER_INFO); ImGui::SameLine(0.0f, 32.0f);
+		ImGui::CheckboxFlags("Warnings", &s_outputFilter, LFILTER_WARNING); ImGui::SameLine(0.0f, 32.0f);
+		ImGui::CheckboxFlags("Errors", &s_outputFilter, LFILTER_ERROR);
+
+		ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize
+			| ImGuiWindowFlags_NoCollapse;
+
+		ImVec2 pos = ImGui::GetCursorPos();
+		ImGui::SetNextWindowSize({ s_infoWith, s_infoHeight - pos.y });
+		ImGui::SetNextWindowPos({s_infoPos.x, pos.y + s_infoPos.z});
+		ImGui::Begin("Output", nullptr, window_flags);
+		const size_t count = s_outputMsg.size();
+		const LeMessage* msg = s_outputMsg.data();
+		const ImVec4 c_typeColor[] = { {1.0f, 1.0f, 1.0f, 0.7}, {1.0f, 1.0f, 0.25f, 1.0}, {1.0f, 0.25f, 0.25f, 1.0} };
+
+		for (size_t i = 0; i < count; i++, msg++)
+		{
+			u32 typeFlag = 1 << msg->type;
+			if (!(typeFlag & s_outputFilter)) { continue; }
+
+			ImGui::TextColored(c_typeColor[msg->type], "%s", msg->msg.c_str());
+		}
+		ImGui::End();
 	}
 
 	void infoPanelVertex()

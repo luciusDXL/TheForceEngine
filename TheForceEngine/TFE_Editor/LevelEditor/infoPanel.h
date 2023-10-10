@@ -11,9 +11,29 @@
 
 namespace LevelEditor
 {
+	enum LeMsgType
+	{
+		LE_MSG_INFO = 0,
+		LE_MSG_WARNING,
+		LE_MSG_ERROR,
+		LE_MSG_COUNT
+	};
+	enum LeMsgFilter
+	{
+		LFILTER_INFO    = (1 << LE_MSG_INFO),
+		LFILTER_WARNING = (1 << LE_MSG_WARNING),
+		LFILTER_ERROR   = (1 << LE_MSG_ERROR),
+		LFILTER_DEFAULT = LFILTER_INFO | LFILTER_WARNING | LFILTER_ERROR
+	};
+
 	void infoToolBegin(s32 height);
 	void drawInfoPanel();
 	void infoToolEnd();
+
+	// Output messages
+	void infoPanelClearMessages();
+	void infoPanelAddMsg(LeMsgType type, const char* msg, ...);
+	void infoPanelSetMsgFilter(u32 filter=LFILTER_DEFAULT);
 
 	s32 infoPanelGetHeight();
 }

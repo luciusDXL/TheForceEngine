@@ -130,6 +130,10 @@ namespace LevelEditor
 	////////////////////////////////////////////////////////
 	bool init(Asset* asset)
 	{
+		// Reset output messages.
+		infoPanelClearMessages();
+		infoPanelSetMsgFilter();
+
 		// Cleanup any existing level data.
 		destroy();
 		// Load the new level.
@@ -137,6 +141,8 @@ namespace LevelEditor
 		{
 			return false;
 		}
+		infoPanelAddMsg(LE_MSG_INFO, "Loaded level '%s'", s_level.name.c_str());
+
 		viewport_init();
 		viewport_update((s32)UI_SCALE(480) + 16, (s32)UI_SCALE(68) + 18);
 		s_gridIndex = 3;
@@ -144,6 +150,14 @@ namespace LevelEditor
 		s_gridSize2d = s_gridSize;
 
 		s_editCtrlToolbarData = loadGpuImage("UI_Images/EditCtrl_32x6.png");
+		if (s_editCtrlToolbarData)
+		{
+			infoPanelAddMsg(LE_MSG_INFO, "Loaded toolbar images 'UI_Images/EditCtrl_32x6.png'");
+		}
+		else
+		{
+			infoPanelAddMsg(LE_MSG_ERROR, "Failed to load toolbar images 'UI_Images/EditCtrl_32x6.png'");
+		}
 
 		u32 idx = 0;
 		for (s32 i = -15; i < 16; i++, idx += 4)
