@@ -44,6 +44,7 @@ namespace TFE_Polygon
 	static std::vector<s32> s_freeList;
 	static std::vector<TriEdge> s_edges;
 	static std::vector<Edge> s_constraints;
+	static Vec2f s_coordCenter;
 
 	void deleteTriangle(Triangle* tri);
 
@@ -191,6 +192,11 @@ namespace TFE_Polygon
 	void createSuperTriangle(Polygon* poly)
 	{
 		Vec2f centroid = { (poly->bounds[0].x + poly->bounds[1].x) * 0.5f, (poly->bounds[0].z + poly->bounds[1].z) * 0.5f };
+		s_coordCenter.x = floorf(centroid.x);
+		s_coordCenter.z = floorf(centroid.z);
+		centroid.x -= s_coordCenter.x;
+		centroid.z -= s_coordCenter.z;
+
 		Vec2f ext = { poly->bounds[1].x - poly->bounds[0].x, poly->bounds[1].z - poly->bounds[0].z };
 		f32 maxExt = std::max(ext.x, ext.z);
 
@@ -224,10 +230,10 @@ namespace TFE_Polygon
 		s_freeList.push_back(tri->id);
 	}
 
-	void addPoint(const Vec2f* vtx)
+	void addPoint(Vec2f vtx)
 	{
 		s32 vtxIndex = (s32)s_vertices.size();
-		s_vertices.push_back(*vtx);
+		s_vertices.push_back(vtx);
 
 		const size_t count = s_triangles.size();
 		Triangle* tri = s_triangles.data();
@@ -239,7 +245,7 @@ namespace TFE_Polygon
 			if (!tri->allocated) { continue; }
 
 			// Is the point inside the circumcircle?
-			const Vec2f offset = { vtx->x - tri->circle.x, vtx->z - tri->circle.z };
+			const Vec2f offset = { vtx.x - tri->circle.x, vtx.z - tri->circle.z };
 			const f32 distSq = offset.x*offset.x + offset.z*offset.z;
 
 			const f32 diff = fabsf(distSq - tri->radiusSq);
@@ -660,7 +666,7 @@ namespace TFE_Polygon
 		const Vec2f* vtx = poly->vtx.data();
 		for (size_t v = 0; v < vtxCount; v++, vtx++)
 		{
-			addPoint(vtx);
+			addPoint({ vtx->x - s_coordCenter.x, vtx->z - s_coordCenter.z });
 		}
 
 		// 2. Insert edges, splitting triangles as needed (note: new vertices may be added, but polygons should be re-triangulated instead).
@@ -756,7 +762,7 @@ namespace TFE_Polygon
 				// Always jitter the centroid z slightly so that it is less likely to be exactly the same as a vertex z,
 				// which can cause detection issues.
 				tri->centroid.z += 0.01f;
-				if (!pointInsidePolygon(poly, tri->centroid))
+				if (!pointInsidePolygon(poly, { tri->centroid.x + s_coordCenter.x, tri->centroid.z + s_coordCenter.z }))
 				{
 					deleteTriangle(tri);
 					continue;
@@ -769,7 +775,15 @@ namespace TFE_Polygon
 			poly->triIdx.push_back(tri->idx[2]);
 		}
 		// TODO: Remove unused vertices.
-		poly->triVtx = s_vertices;
+		const size_t finalVtxCount = s_vertices.size();
+		poly->triVtx.resize(finalVtxCount);
+
+		const Vec2f* srcVtx = s_vertices.data();
+		Vec2f* dstVtx = poly->triVtx.data();
+		for (size_t v = 0; v < finalVtxCount; v++, srcVtx++)
+		{
+			dstVtx[v] = { srcVtx->x + s_coordCenter.x, srcVtx->z + s_coordCenter.z };
+		}
 
 		return true;
 	}
