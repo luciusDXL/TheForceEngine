@@ -8,6 +8,7 @@
 //////////////////////////////////////////////////////////////////////
 #include <TFE_System/types.h>
 #include <TFE_Editor/EditorAsset/editorAsset.h>
+#include <TFE_RenderShared/lineDraw3d.h>
 #include "levelEditorData.h"
 
 namespace LevelEditor
@@ -33,4 +34,11 @@ namespace LevelEditor
 	extern EditorSector* s_selectedWallSector;
 	extern s32 s_hoveredWallId;
 	extern s32 s_selectedWallId;
+
+	// Camera
+	extern Camera3d s_camera;
+	extern Vec3f s_viewDir;
+	extern Vec3f s_viewRight;
+	extern Vec3f s_cursor3d;
+	extern f32 s_yaw, s_pitch;
 }

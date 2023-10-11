@@ -459,6 +459,7 @@ echo ^)";
     <ClInclude Include="TFE_Editor\editorResources.h" />
     <ClInclude Include="TFE_Editor\errorMessages.h" />
     <ClInclude Include="TFE_Editor\LevelEditor\browser.h" />
+    <ClInclude Include="TFE_Editor\LevelEditor\camera.h" />
     <ClInclude Include="TFE_Editor\LevelEditor\infoPanel.h" />
     <ClInclude Include="TFE_Editor\LevelEditor\levelEditor.h" />
     <ClInclude Include="TFE_Editor\LevelEditor\levelEditorData.h" />
@@ -640,6 +641,7 @@ echo ^)";
     <ClInclude Include="TFE_RenderBackend\Win32OpenGL\renderTarget.h" />
     <ClInclude Include="TFE_RenderBackend\Win32OpenGL\screenCapture.h" />
     <ClInclude Include="TFE_RenderShared\lineDraw2d.h" />
+    <ClInclude Include="TFE_RenderShared\lineDraw3d.h" />
     <ClInclude Include="TFE_RenderShared\quadDraw2d.h" />
     <ClInclude Include="TFE_RenderShared\texturePacker.h" />
     <ClInclude Include="TFE_RenderShared\triDraw2d.h" />
@@ -797,6 +799,7 @@ echo ^)";
     <ClCompile Include="TFE_Editor\editorResources.cpp" />
     <ClCompile Include="TFE_Editor\errorMessages.cpp" />
     <ClCompile Include="TFE_Editor\LevelEditor\browser.cpp" />
+    <ClCompile Include="TFE_Editor\LevelEditor\camera.cpp" />
     <ClCompile Include="TFE_Editor\LevelEditor\infoPanel.cpp" />
     <ClCompile Include="TFE_Editor\LevelEditor\levelEditor.cpp" />
     <ClCompile Include="TFE_Editor\LevelEditor\levelEditorData.cpp" />
@@ -949,6 +952,7 @@ echo ^)";
     <ClCompile Include="TFE_RenderBackend\Win32OpenGL\textureGpu.cpp" />
     <ClCompile Include="TFE_RenderBackend\Win32OpenGL\vertexBuffer.cpp" />
     <ClCompile Include="TFE_RenderShared\lineDraw2d.cpp" />
+    <ClCompile Include="TFE_RenderShared\lineDraw3d.cpp" />
     <ClCompile Include="TFE_RenderShared\quadDraw2d.cpp" />
     <ClCompile Include="TFE_RenderShared\texturePacker.cpp" />
     <ClCompile Include="TFE_RenderShared\triDraw2d.cpp" />

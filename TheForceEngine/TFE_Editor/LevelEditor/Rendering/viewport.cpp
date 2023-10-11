@@ -94,6 +94,7 @@ namespace LevelEditor
 	{
 		grid2d_init();
 		tri2d_init();
+		TFE_RenderShared::line3d_init();
 	}
 
 	void viewport_destroy()
@@ -101,6 +102,7 @@ namespace LevelEditor
 		TFE_RenderBackend::freeRenderTarget(s_viewportRt);
 		grid2d_destroy();
 		tri2d_destroy();
+		TFE_RenderShared::line3d_destroy();
 		s_viewportRt = 0;
 	}
 
@@ -217,6 +219,77 @@ namespace LevelEditor
 
 	void renderLevel3D()
 	{
+		// Prepare for drawing.
+		TFE_RenderShared::lineDraw3d_begin(s_viewportSize.x, s_viewportSize.z);
+
+		// Draw the coordinate axis.
+		f32 len = 4096.0f;
+
+		u32 xAxisClr[] = { 0xffff0000, 0xffff0000 };
+		u32 yAxisClr[] = { 0xff00ff00, 0xff00ff00 };
+		u32 zAxisClr[] = { 0xff0000ff, 0xff0000ff };
+
+		Vec3f xAxis0[] = { {0.1f, 0.0f, 0.0f}, {len, 0.0f, 0.0f} };
+		Vec3f yAxis0[] = { {0.0f, 0.1f, 0.0f}, {0.0f, len, 0.0f} };
+		Vec3f zAxis0[] = { {0.0f, 0.0f, 0.1f}, {0.0f, 0.0f, len} };
+		TFE_RenderShared::lineDraw3d_addLine(3.0f, xAxis0, xAxisClr);
+		TFE_RenderShared::lineDraw3d_addLine(3.0f, yAxis0, yAxisClr);
+		TFE_RenderShared::lineDraw3d_addLine(3.0f, zAxis0, zAxisClr);
+
+		Vec3f xAxis1[] = { {-len, 0.0f, 0.0f}, {0.1f, 0.0f, 0.0f}, };
+		Vec3f yAxis1[] = { {0.0f, -len, 0.0f}, {0.0f, 0.1f, 0.0f}, };
+		Vec3f zAxis1[] = { {0.0f, 0.0f, -len}, {0.0f, 0.0f, 0.1f}, };
+		TFE_RenderShared::lineDraw3d_addLine(3.0f, xAxis1, xAxisClr);
+		TFE_RenderShared::lineDraw3d_addLine(3.0f, yAxis1, yAxisClr);
+		TFE_RenderShared::lineDraw3d_addLine(3.0f, zAxis1, zAxisClr);
+
+		// HACKY, draw all of the sectors on the 0 plane.
+		const f32 width = 2.5f;
+		const size_t count = s_level.sectors.size();
+		const EditorSector* sector = s_level.sectors.data();
+		for (size_t s = 0; s < count; s++, sector++)
+		{
+			if (sector->layer != s_curLayer) { continue; }
+			Highlight highlight = HL_NONE;
+			if (sector == s_selectedSector) { highlight = HL_SELECTED; }
+			else if (sector == s_hoveredSector) { highlight = HL_HOVERED; }
+
+			// Draw lines.
+			const size_t wallCount = sector->walls.size();
+			const EditorWall* wall = sector->walls.data();
+			const Vec2f* vtx = sector->vtx.data();
+			for (size_t w = 0; w < wallCount; w++, wall++)
+			{
+				// Skip hovered or selected walls.
+				if ((s_hoveredWallSector == sector && s_hoveredWallId == w) ||
+					(s_selectedWallSector == sector && s_selectedWallId == w))
+				{
+					continue;
+				}
+
+				u32 color = c_sectorLineClr[highlight];
+				// Test
+				color &= 0x00ffffff;
+				color |= 0x80000000;
+
+				Vec3f line0[] =
+				{ { sector->vtx[wall->idx[0]].x, -sector->floorHeight, sector->vtx[wall->idx[0]].z }, 
+				  { sector->vtx[wall->idx[1]].x, -sector->floorHeight, sector->vtx[wall->idx[1]].z } };
+				TFE_RenderShared::lineDraw3d_addLine(width, line0, &color);
+
+				Vec3f line1[] =
+				{ { sector->vtx[wall->idx[0]].x, -sector->ceilHeight, sector->vtx[wall->idx[0]].z },
+				  { sector->vtx[wall->idx[1]].x, -sector->ceilHeight, sector->vtx[wall->idx[1]].z } };
+				TFE_RenderShared::lineDraw3d_addLine(width, line1, &color);
+
+				Vec3f line2[] =
+				{ { sector->vtx[wall->idx[0]].x, -sector->floorHeight, sector->vtx[wall->idx[0]].z },
+				  { sector->vtx[wall->idx[0]].x, -sector->ceilHeight, sector->vtx[wall->idx[0]].z } };
+				TFE_RenderShared::lineDraw3d_addLine(width, line2, &color);
+			}
+		}
+
+		TFE_RenderShared::lineDraw3d_drawLines(&s_camera, false, false);
 	}
 		
 	void renderSectorPolygon2d(const Polygon* poly, u32 color)

@@ -56,6 +56,8 @@ namespace LevelEditor
 			for (u32 t = 0; t < 6; t++)
 			{
 				EditorTexture* texture = (EditorTexture*)getAssetData(s_levelTextureList[i * 6 + t].handle);
+				if (!texture) { continue; }
+
 				void* ptr = TFE_RenderBackend::getGpuPtr(texture->frames[0]);
 				u32 w = 64, h = 64;
 				if (texture->width > texture->height)

@@ -2,6 +2,9 @@
 #include "levelEditorData.h"
 #include "infoPanel.h"
 #include "browser.h"
+#include "camera.h"
+#include "sharedState.h"
+#include <TFE_FrontEndUI/frontEndUi.h>
 #include <TFE_Editor/AssetBrowser/assetBrowser.h>
 #include <TFE_Asset/imageAsset.h>
 #include <TFE_Editor/LevelEditor/Rendering/viewport.h>
@@ -19,6 +22,7 @@
 #include <TFE_Input/input.h>
 #include <TFE_RenderBackend/renderBackend.h>
 #include <TFE_RenderShared/lineDraw2d.h>
+#include <TFE_RenderShared/lineDraw3d.h>
 #include <TFE_Jedi/Level/rwall.h>
 #include <TFE_Jedi/Level/rsector.h>
 #include <TFE_System/system.h>
@@ -52,6 +56,7 @@ namespace LevelEditor
 	EditorLevel s_level = {};
 	AssetList s_levelTextureList;
 	LevelEditMode s_editMode = LEDIT_DRAW;
+	
 	u32 s_editFlags = LEF_DEFAULT;
 	s32 s_curLayer = 0;
 			
@@ -118,13 +123,14 @@ namespace LevelEditor
 	void levelEditWinEnd();
 	void messagePanel(ImVec2 pos);
 	void cameraControl2d(s32 mx, s32 my);
+	void cameraControl3d(s32 mx, s32 my);
 	void resetZoom();
 	Vec2f mouseCoordToWorldPos2d(s32 mx, s32 my);
 	Vec2i worldPos2dToMap(const Vec2f& worldPos);
 	bool isUiActive();
 	bool isViewportElementHovered();
 	TextureGpu* loadGpuImage(const char* path);
-	
+		
 	////////////////////////////////////////////////////////
 	// Public API
 	////////////////////////////////////////////////////////
@@ -182,6 +188,10 @@ namespace LevelEditor
 		s_hoveredWallId         = -1;
 
 		AssetBrowser::getLevelTextures(s_levelTextureList, asset->name.c_str());
+		computeCameraTransform(0.0f, 0.0f, { 0.0f, 0.0f, 0.0f });
+		s_cursor3d = { 0 };
+		s_yaw = 0.0f;
+		s_pitch = 0.0f;
 
 		TFE_RenderShared::init(false);
 		return true;
@@ -436,6 +446,10 @@ namespace LevelEditor
 				}
 			}
 		}
+		else if (s_view == EDIT_VIEW_3D)
+		{
+			cameraControl3d(mx, my);
+		}
 	}
 
 	bool menu()
@@ -461,6 +475,7 @@ namespace LevelEditor
 				disableAssetEditor();
 			}
 			ImGui::Separator();
+			// TODO: Add GOTO option (to go to a sector or other object).
 			if (ImGui::MenuItem("Undo", "Ctrl+Z", (bool*)NULL))
 			{
 			}
@@ -494,7 +509,7 @@ namespace LevelEditor
 			}
 			if (ImGui::MenuItem("3D (Editor)", "Ctrl+2", s_view == EDIT_VIEW_3D))
 			{
-				// TODO
+				s_view = EDIT_VIEW_3D;
 			}
 			if (ImGui::MenuItem("3D (Game)", "Ctrl+3", s_view == EDIT_VIEW_3D_GAME))
 			{
@@ -715,6 +730,9 @@ namespace LevelEditor
 		}
 		levelEditWinEnd();
 		popFont();
+
+		// Test
+		TFE_FrontEndUI::drawFps(1800);
 	}
 
 	////////////////////////////////////////////////////////
@@ -797,6 +815,66 @@ namespace LevelEditor
 			s_viewportPos.x += (worldPos.x - newWorldPos.x);
 			s_viewportPos.z += (worldPos.z - newWorldPos.z);
 		}
+	}
+
+	void cameraControl3d(s32 mx, s32 my)
+	{
+		// WASD controls.
+		f32 moveSpd = f32(16.0 * TFE_System::getDeltaTime());
+		if (TFE_Input::keyDown(KEY_LSHIFT) || TFE_Input::keyDown(KEY_RSHIFT))
+		{
+			moveSpd *= 10.0f;
+		}
+
+		if (TFE_Input::keyDown(KEY_W))
+		{
+			s_camera.pos.x -= s_camera.viewMtx.m2.x * moveSpd;
+			s_camera.pos.y -= s_camera.viewMtx.m2.y * moveSpd;
+			s_camera.pos.z -= s_camera.viewMtx.m2.z * moveSpd;
+		}
+		else if (TFE_Input::keyDown(KEY_S))
+		{
+			s_camera.pos.x += s_camera.viewMtx.m2.x * moveSpd;
+			s_camera.pos.y += s_camera.viewMtx.m2.y * moveSpd;
+			s_camera.pos.z += s_camera.viewMtx.m2.z * moveSpd;
+		}
+
+		if (TFE_Input::keyDown(KEY_A))
+		{
+			s_camera.pos.x -= s_camera.viewMtx.m0.x * moveSpd;
+			s_camera.pos.y -= s_camera.viewMtx.m0.y * moveSpd;
+			s_camera.pos.z -= s_camera.viewMtx.m0.z * moveSpd;
+		}
+		else if (TFE_Input::keyDown(KEY_D))
+		{
+			s_camera.pos.x += s_camera.viewMtx.m0.x * moveSpd;
+			s_camera.pos.y += s_camera.viewMtx.m0.y * moveSpd;
+			s_camera.pos.z += s_camera.viewMtx.m0.z * moveSpd;
+		}
+
+		// Turning.
+		if (TFE_Input::mouseDown(MBUTTON_RIGHT))
+		{
+			s32 dx, dy;
+			TFE_Input::getAccumulatedMouseMove(&dx, &dy);
+
+			const f32 turnSpeed = 0.01f;
+			s_yaw   += f32(dx) * turnSpeed;
+			s_pitch -= f32(dy) * turnSpeed;
+
+			if (s_yaw < 0.0f) { s_yaw += PI * 2.0f; }
+			else { s_yaw = fmodf(s_yaw, PI * 2.0f); }
+
+			if (s_pitch < -1.55f) { s_pitch = -1.55f; }
+			else if (s_pitch > 1.55f) { s_pitch = 1.55f; }
+
+			s_cursor3d = { 0 };
+		}
+		else
+		{
+			TFE_Input::clearAccumulatedMouseMove();
+		}
+		computeCameraTransform(s_pitch, s_yaw, s_camera.pos);
 	}
 		
 	void toolbarBegin()
