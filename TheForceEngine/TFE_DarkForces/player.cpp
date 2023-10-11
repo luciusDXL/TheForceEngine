@@ -211,6 +211,7 @@ namespace TFE_DarkForces
 	JBool s_playerSecMoved = JFALSE;
 	JBool s_flyMode = JFALSE;
 	JBool s_noclip = JFALSE;
+	JBool s_oneHitKillEnabled = JFALSE;
 	u32*  s_playerInvSaved = nullptr;
 
 	RSector* s_playerSector = nullptr;
@@ -533,6 +534,7 @@ namespace TFE_DarkForces
 		s_invincibility = 0;
 		s_flyMode = JFALSE;
 		s_noclip = JFALSE;
+		s_oneHitKillEnabled = JFALSE;
 
 		// The player will always start a level with at least 100 shields, though if they have more it carries over.
 		s_playerInfo.shields = max(100, s_playerInfo.shields);
@@ -978,6 +980,13 @@ namespace TFE_DarkForces
 			const char* msg = TFE_System::getMessage(TFE_MSG_DIE);
 			if (msg) { hud_sendTextMessage(msg, 1); }
 		}
+	}
+	
+	void cheat_oneHitKill()
+	{
+		s_oneHitKillEnabled = ~s_oneHitKillEnabled;
+		const char* msg = TFE_System::getMessage(TFE_MSG_ONEHITKILL);
+		if (msg) { hud_sendTextMessage(msg, 1); }
 	}
 
 	void player_setupCamera()

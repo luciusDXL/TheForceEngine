@@ -83,6 +83,7 @@ namespace TFE_DarkForces
 	extern s32 s_weaponLight;
 	extern s32 s_baseAtten;
 	extern s32 s_invincibility;
+	extern JBool s_oneHitKillEnabled;
 	extern fixed16_16 s_gravityAccel;
 	extern JBool s_weaponFiring;
 	extern JBool s_weaponFiringSec;
@@ -168,6 +169,7 @@ namespace TFE_DarkForces
 	void cheat_addLife();
 	void cheat_subLife();
 	void cheat_die();
+	void cheat_oneHitKill();
 
 	// Serialization
 	void playerLogic_serialize(Logic*& logic, SecObject* obj, Stream* stream);

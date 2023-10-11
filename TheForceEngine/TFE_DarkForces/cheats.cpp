@@ -44,7 +44,8 @@ namespace TFE_DarkForces
 		"TESTER",
 		"ADDLIFE",
 		"SUBLIFE",
-		"DIE"
+		"DIE",
+		"IMDEATH", // Enemies die in one hit.
 	};
 
 	char s_cheatString[32] = { 0 };
