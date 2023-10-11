@@ -1107,6 +1107,11 @@ namespace TFE_DarkForces
 			}
 		}
 
+		if (s_instaDeathEnabled) // "Hardcore" cheat
+		{
+			shieldDmg = FIXED(999);
+		}
+
 		player_applyDamage(0, shieldDmg, playHitSound);
 	}
 
@@ -2248,11 +2253,6 @@ namespace TFE_DarkForces
 		health += s_playerInfo.healthFract;
 
 		s32 applyDmg = s_invincibility ? 0 : 1;
-		if (applyDmg && s_instaDeathEnabled) // 'Hardcore' cheat
-		{
-			healthDmg = FIXED(999);
-			shieldDmg = FIXED(999);
-		}
 		if (applyDmg && health && shieldDmg >= 0)
 		{
 			if (shieldDmg && s_curTick > s_nextShieldDmgTick && !s_config.superShield)
