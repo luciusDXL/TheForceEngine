@@ -529,9 +529,10 @@ namespace TFE_DarkForces
 		{
 			char lifeCountStr[8];
 			sprintf(lifeCountStr, "%1d", lifeCount);
+			// box starts at x=104, y=52
 			fixed16_16 xPos = mul16(intToFixed16(52), hudScaleX) + x1;
 			fixed16_16 yPos = mul16(intToFixed16(26), hudScaleY) + y1;
-			hud_drawStringGpu(s_hudHealthFont, xPos, yPos, hudScaleX, hudScaleY, lifeCountStr);
+			hud_drawStringGpu(s_hudHealthFont, xPos, yPos, hudScaleX >> hudDoubled, hudScaleY >> hudDoubled, lifeCountStr);
 			
 			s_rightHudShow = 4;
 		}
@@ -593,7 +594,7 @@ namespace TFE_DarkForces
 
 			fixed16_16 xPos = mul16(intToFixed16(15), hudScaleX) + x1;
 			fixed16_16 yPos = mul16(intToFixed16(26), hudScaleY) + y1;
-			hud_drawStringGpu(s_hudShieldFont, xPos, yPos, hudScaleX, hudScaleY, shieldStr);
+			hud_drawStringGpu(s_hudShieldFont, xPos, yPos, hudScaleX >> hudDoubled, hudScaleY >> hudDoubled, shieldStr);
 		}
 		// Health
 		{
@@ -606,7 +607,7 @@ namespace TFE_DarkForces
 			sprintf(healthStr, "%03d", s_playerInfo.health);
 			fixed16_16 xPos = mul16(intToFixed16(33), hudScaleX) + x1;
 			fixed16_16 yPos = mul16(intToFixed16(26), hudScaleY) + y1;
-			hud_drawStringGpu(s_hudHealthFont, xPos, yPos, hudScaleX, hudScaleY, healthStr);
+			hud_drawStringGpu(s_hudHealthFont, xPos, yPos, hudScaleX >> hudDoubled, hudScaleY >> hudDoubled, healthStr);
 
 			s_leftHudShow = 4;
 		}
@@ -651,13 +652,13 @@ namespace TFE_DarkForces
 			}
 			fixed16_16 xPos = mul16(intToFixed16(12), hudScaleX) + x0;
 			fixed16_16 yPos = mul16(intToFixed16(21), hudScaleY) + y0;
-			hud_drawStringGpu(s_superChargeHud ? s_hudSuperAmmoFont : s_hudMainAmmoFont, xPos, yPos, hudScaleX, hudScaleY, str);
+			hud_drawStringGpu(s_superChargeHud ? s_hudSuperAmmoFont : s_hudMainAmmoFont, xPos, yPos, hudScaleX >> hudDoubled, hudScaleY >> hudDoubled, str);
 
 			// Draw a colored quad to hide single-pixel "leaking" from beneath.
 			xPos = mul16(intToFixed16(25), hudScaleX) + x0;
 			yPos = mul16(intToFixed16(12), hudScaleY) + y0;
-			fixed16_16 quadWidth  = mul16(intToFixed16(11), hudScaleX);
-			fixed16_16 quadHeight = mul16(intToFixed16(7),  hudScaleY);
+			fixed16_16 quadWidth  = mul16(intToFixed16(11), hudScaleX >> hudDoubled);
+			fixed16_16 quadHeight = mul16(intToFixed16(7),  hudScaleY >> hudDoubled);
 
 			screenGPU_drawColoredQuad(xPos, yPos, xPos + quadWidth, yPos + quadHeight, 0);
 
@@ -669,7 +670,7 @@ namespace TFE_DarkForces
 			{
 				sprintf(str, "%02d", ammo1);
 			}
-			hud_drawStringGpu(s_hudShieldFont, xPos, yPos, hudScaleX, hudScaleY, str);
+			hud_drawStringGpu(s_hudShieldFont, xPos, yPos, hudScaleX >> hudDoubled, hudScaleY >> hudDoubled, str);
 
 			s_rightHudShow = 4;
 		}
