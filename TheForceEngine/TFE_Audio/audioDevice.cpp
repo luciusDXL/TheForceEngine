@@ -15,13 +15,14 @@ namespace TFE_AudioDevice
 
 	static int sdla_queryaudiodevs(void)
 	{
-		int d = SDL_GetNumAudioDevices(0);
+		s32 d = SDL_GetNumAudioDevices(0);
 		s_outputDeviceList.clear();
 		s_outputDeviceList.push_back({"<autoselect>", 0});
-		for (u32 i = 0; i < d; i++) {
-			const char *dn = SDL_GetAudioDeviceName(i, 0);
+		for (s32 i = 0; i < d; i++)
+		{
+			const char* dn = SDL_GetAudioDeviceName(i, 0);
 			TFE_System::logWrite(LOG_MSG, "Audio", "Device %02d: %s", i, dn);
-			s_outputDeviceList.push_back({dn, i+1});
+			s_outputDeviceList.push_back({dn, (u32)i+1});
 		}
 		return d;
 	}

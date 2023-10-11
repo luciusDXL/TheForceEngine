@@ -27,7 +27,6 @@
 #include <TFE_Ui/ui.h>
 #include <TFE_FrontEndUI/frontEndUi.h>
 #include <TFE_FrontEndUI/modLoader.h>
-#include <TFE_ForceScript/vm.h>
 #include <TFE_A11y/accessibility.h>
 #include <algorithm>
 #include <cinttypes>
@@ -38,8 +37,10 @@
 #if ENABLE_EDITOR == 1
 #include <TFE_Editor/editor.h>
 #endif
+#if ENABLE_FORCE_SCRIPT == 1
+#include <TFE_ForceScript/forceScript.h>
+#endif
 
-// Replace with music system
 #include <TFE_Audio/midiPlayer.h>
 
 #ifdef _WIN32
@@ -639,7 +640,6 @@ int main(int argc, char* argv[])
 	TFE_FrontEndUI::initConsole();
 	TFE_Audio::init(s_nullAudioDevice, TFE_Settings::getSoundSettings()->audioDevice);
 	TFE_MidiPlayer::init(TFE_Settings::getSoundSettings()->midiOutput, (MidiDeviceType)TFE_Settings::getSoundSettings()->midiType);
-	TFE_Polygon::init();
 	TFE_Image::init();
 	TFE_Palette::createDefault256();
 	TFE_FrontEndUI::init();
@@ -659,10 +659,10 @@ int main(int argc, char* argv[])
 	reticle_init();
 
 	// Test
-	#ifdef VM_ENABLE
-		TFE_ForceScript::test();
+	#ifdef ENABLE_FORCE_SCRIPT
+	TFE_ForceScript::init();
 	#endif
-
+		
 	// Start up the game and skip the title screen.
 	if (firstRun)
 	{
@@ -831,6 +831,10 @@ int main(int argc, char* argv[])
 			}
 		}
 
+		#ifdef ENABLE_FORCE_SCRIPT
+			TFE_ForceScript::update();
+		#endif
+
 		const bool isConsoleOpen = TFE_FrontEndUI::isConsoleOpen();
 		bool endInputFrame = true;
 		if (s_curState == APP_STATE_EDITOR)
@@ -915,7 +919,6 @@ int main(int argc, char* argv[])
 	TFE_FrontEndUI::shutdown();
 	TFE_Audio::shutdown();
 	TFE_MidiPlayer::destroy();
-	TFE_Polygon::shutdown();
 	TFE_Image::shutdown();
 	TFE_Palette::freeAll();
 	TFE_RenderBackend::updateSettings();
@@ -924,6 +927,10 @@ int main(int argc, char* argv[])
 	TFE_RenderBackend::destroy();
 	TFE_SaveSystem::destroy();
 	SDL_Quit();
+
+	#ifdef ENABLE_FORCE_SCRIPT
+	TFE_ForceScript::destroy();
+	#endif
 		
 	TFE_System::logWrite(LOG_MSG, "Progam Flow", "The Force Engine Game Loop Ended.");
 	TFE_System::logClose();

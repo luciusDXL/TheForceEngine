@@ -7,6 +7,7 @@
 // to "play" the game as intended.
 //////////////////////////////////////////////////////////////////////
 #include <TFE_System/types.h>
+#include <TFE_Editor/EditorAsset/editorAsset.h>
 
 namespace AssetBrowser
 {
@@ -22,4 +23,8 @@ namespace AssetBrowser
 
 	bool showOnlyModLevels();
 	void rebuildAssets();
+
+	TFE_Editor::Asset* findAsset(const char* name, TFE_Editor::AssetType type);
+	TFE_Editor::AssetHandle loadAssetData(const TFE_Editor::Asset* asset);
+	void getLevelTextures(TFE_Editor::AssetList& list, const char* levelName);
 }
