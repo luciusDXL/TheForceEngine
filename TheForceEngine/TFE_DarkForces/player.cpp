@@ -2896,6 +2896,8 @@ namespace TFE_DarkForces
 		SERIALIZE(ObjState_InitVersion, s_superChargeHud, 0);
 		SERIALIZE(ObjState_InitVersion, s_playerSecMoved, 0);
 		SERIALIZE(ObjState_FlyModeAdded, s_flyMode, JFALSE);
+		SERIALIZE(ObjState_OneHitCheats, s_oneHitKillEnabled, JFALSE);
+		SERIALIZE(ObjState_OneHitCheats, s_instaDeathEnabled, JFALSE);
 
 		s32 invSavedSize = 0;
 		if (serialization_getMode() == SMODE_WRITE && s_playerInvSaved)
