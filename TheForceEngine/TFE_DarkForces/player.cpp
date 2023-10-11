@@ -212,6 +212,7 @@ namespace TFE_DarkForces
 	JBool s_flyMode = JFALSE;
 	JBool s_noclip = JFALSE;
 	JBool s_oneHitKillEnabled = JFALSE;
+	JBool s_instaDeathEnabled = JFALSE;
 	u32*  s_playerInvSaved = nullptr;
 
 	RSector* s_playerSector = nullptr;
@@ -535,6 +536,7 @@ namespace TFE_DarkForces
 		s_flyMode = JFALSE;
 		s_noclip = JFALSE;
 		s_oneHitKillEnabled = JFALSE;
+		s_instaDeathEnabled = JFALSE;
 
 		// The player will always start a level with at least 100 shields, though if they have more it carries over.
 		s_playerInfo.shields = max(100, s_playerInfo.shields);
@@ -986,6 +988,17 @@ namespace TFE_DarkForces
 	{
 		s_oneHitKillEnabled = ~s_oneHitKillEnabled;
 		const char* msg = TFE_System::getMessage(TFE_MSG_ONEHITKILL);
+		if (msg) { hud_sendTextMessage(msg, 1); }
+	}
+	
+	void cheat_instaDeath()
+	{
+		// This way if we already had one-hit-kill enabled, we don't end
+		// up with one-hit kill off and insta-death on - though if the
+		// player wants that to happen, they can type LA_IMDEATH again
+		// after using this cheat.
+		s_instaDeathEnabled = ~s_instaDeathEnabled;
+		const char* msg = TFE_System::getMessage(TFE_MSG_HARDCORE);
 		if (msg) { hud_sendTextMessage(msg, 1); }
 	}
 
@@ -2235,6 +2248,11 @@ namespace TFE_DarkForces
 		health += s_playerInfo.healthFract;
 
 		s32 applyDmg = s_invincibility ? 0 : 1;
+		if (applyDmg && s_instaDeathEnabled) // 'Hardcore' cheat
+		{
+			healthDmg = FIXED(999);
+			shieldDmg = FIXED(999);
+		}
 		if (applyDmg && health && shieldDmg >= 0)
 		{
 			if (shieldDmg && s_curTick > s_nextShieldDmgTick && !s_config.superShield)

@@ -46,6 +46,7 @@ namespace TFE_DarkForces
 		"SUBLIFE",
 		"DIE",
 		"IMDEATH", // Enemies die in one hit.
+		"HARDCORE" // Player dies in one hit.
 	};
 
 	char s_cheatString[32] = { 0 };
