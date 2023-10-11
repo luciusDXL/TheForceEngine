@@ -2709,13 +2709,13 @@ namespace TFE_FrontEndUI
 
 			// Resize the settings window so it isn't covered by the example caption
 			ImVec2 windowSize;
-			windowSize.x = tabWidth;
-			windowSize.y = height - captionWindowSize.z - TFE_A11Y::DEFAULT_LINE_HEIGHT * 2;
+			windowSize.x = (f32)tabWidth;
+			windowSize.y = (f32)height - captionWindowSize.z - TFE_A11Y::DEFAULT_LINE_HEIGHT * 2;
 			ImGui::SetWindowSize(windowSize);
 		}
 		else // Captions not enabled
 		{
-			ImGui::SetWindowSize(ImVec2(tabWidth, height));
+			ImGui::SetWindowSize(ImVec2((f32)tabWidth, (f32)height));
 		}
 
 		// CAPTIONS -------------------------------------------

@@ -38,32 +38,12 @@ namespace AssetBrowser
 	{
 		INFO_PANEL_WIDTH = 524u,
 	};
-	enum AssetSource
-	{
-		ASRC_VANILLA = 0,
-		ASRC_EXTERNAL,
-		ASRC_PROJECT,
-		ASRC_COUNT
-	};
 	const char* c_games[] =
 	{
 		"Dark Forces",
 		"Outlaws",
 	};
 
-	struct Asset
-	{
-		AssetType type;
-		GameID gameId;
-		Archive* archive;
-
-		std::string name;
-		std::string filePath;
-
-		AssetSource assetSource;
-		AssetHandle handle;
-	};
-	typedef std::vector<Asset> AssetList;
 	typedef std::vector<s32> SelectionList;
 
 	struct Palette
@@ -344,6 +324,12 @@ namespace AssetBrowser
 			{
 				exportSelected();
 			}
+			ImGui::SameLine();
+			// Only one asset can be edited at a time, so just pick the first one.
+			if (ImGui::Button("Editor"))
+			{
+				enableAssetEditor(&s_viewAssetList[s_selected[0]]);
+			}
 		}
 		else if (asset)
 		{
@@ -356,6 +342,11 @@ namespace AssetBrowser
 				if (ImGui::Button("Export"))
 				{
 					exportSelected();
+				}
+				ImGui::SameLine();
+				if (ImGui::Button("Editor"))
+				{
+					enableAssetEditor(asset);
 				}
 				ImGui::Separator();
 			}
@@ -991,6 +982,20 @@ namespace AssetBrowser
 		s_reloadProjectAssets = true;
 		s_assetsNeedProcess = true;
 		updateAssetList();
+	}
+
+	Asset* findAsset(const char* name, AssetType type)
+	{
+		const size_t len = s_projectAssetList[type].size();
+		Asset* asset = s_projectAssetList[type].data();
+		for (size_t i = 0; i < len; i++, asset++)
+		{
+			if (strcasecmp(asset->name.c_str(), name) == 0)
+			{
+				return asset;
+			}
+		}
+		return nullptr;
 	}
 
 	////////////////////////////////////////////////
@@ -1687,6 +1692,13 @@ namespace AssetBrowser
 		return strcasecmp(name, s_levelAssets[s_viewInfo.levelSource].paletteName.c_str()) == 0;
 	}
 
+	AssetHandle loadAssetData(const Asset* asset)
+	{
+		s32 palId = getAssetPalette(asset->name.c_str());
+		AssetColorData colorData = { s_palettes[palId].data, nullptr, palId, 32 };
+		return loadAssetData(asset->type, asset->archive, &colorData, asset->name.c_str());
+	}
+
 	void loadAsset(const Asset* projAsset)
 	{
 		// Filter out vanilla assets if desired.
@@ -1742,6 +1754,31 @@ namespace AssetBrowser
 			}
 		}
 		return false;
+	}
+
+	void getLevelTextures(AssetList& list, const char* levelName)
+	{
+		list.clear();
+		const u32 count = (u32)s_projectAssetList[TYPE_TEXTURE].size();
+		const Asset* projAsset = s_projectAssetList[TYPE_TEXTURE].data();
+		for (u32 i = 0; i < count; i++, projAsset++)
+		{
+			const char* name = projAsset->name.c_str();
+			if (!isLevelTexture(name)) { continue; }
+			
+			Asset asset;
+			asset.type = projAsset->type;
+			asset.name = projAsset->name;
+			asset.gameId = projAsset->gameId;
+			asset.archive = projAsset->archive;
+			asset.filePath = projAsset->filePath;
+			asset.assetSource = projAsset->assetSource;
+			s32 palId = getAssetPalette(projAsset->name.c_str());
+
+			AssetColorData colorData = { s_palettes[palId].data, nullptr, palId, 32 };
+			asset.handle = loadAssetData(projAsset->type, projAsset->archive, &colorData, projAsset->name.c_str());
+			list.push_back(asset);
+		}
 	}
 
 	void updateAssetList()

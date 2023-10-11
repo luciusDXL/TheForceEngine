@@ -5,6 +5,8 @@
 #include "editorProject.h"
 #include <TFE_Settings/settings.h>
 #include <TFE_Editor/AssetBrowser/assetBrowser.h>
+#include <TFE_Editor/LevelEditor/levelEditor.h>
+#include <TFE_Editor/EditorAsset/editorAsset.h>
 #include <TFE_Input/input.h>
 #include <TFE_RenderBackend/renderBackend.h>
 #include <TFE_System/system.h>
@@ -43,6 +45,7 @@ namespace TFE_Editor
 	
 	static bool s_showPerf = true;
 	static bool s_showEditor = true;
+	static AssetType s_editorAssetType = TYPE_NOT_SET;
 	static EditorMode s_editorMode = EDIT_ASSET_BROWSER;
 	static EditorPopup s_editorPopup = POPUP_NONE;
 	static bool s_exitEditor = false;
@@ -50,8 +53,8 @@ namespace TFE_Editor
 	static WorkBuffer s_workBuffer;
 	static char s_projectPath[TFE_MAX_PATH] = "";
 
+	static bool s_menuActive = false;
 	static MessageBox s_msgBox = {};
-
 	static ImFont* s_fonts[FONT_COUNT * FONT_SIZE_COUNT] = { 0 };
 	
 	void menu();
@@ -221,7 +224,19 @@ namespace TFE_Editor
 		}
 		else if (s_editorMode == EDIT_ASSET)
 		{
-			// TODO: handle asset editor.
+			switch (s_editorAssetType)
+			{
+				case TYPE_LEVEL:
+				{
+					LevelEditor::update();
+				} break;
+				default:
+				{
+					// Invalid mode, this code should never be reached.
+					assert(0);
+					s_editorMode = EDIT_ASSET_BROWSER;
+				}
+			}
 		}
 
 		handlePopupEnd();
@@ -241,6 +256,11 @@ namespace TFE_Editor
 	ImVec4 getTextColor(EditorTextColor color)
 	{
 		return c_textColors[color];
+	}
+
+	bool getMenuActive()
+	{
+		return s_menuActive;
 	}
 
 	bool beginMenuBar()
@@ -300,11 +320,13 @@ namespace TFE_Editor
 	{
 		pushFont(FONT_SMALL);
 
+		s_menuActive = false;
 		beginMenuBar();
 		{
 			// General menu items.
 			if (ImGui::BeginMenu("Editor"))
 			{
+				s_menuActive = true;
 				if (ImGui::MenuItem("Editor Config", NULL, (bool*)NULL))
 				{
 					s_editorPopup = POPUP_CONFIG;
@@ -339,6 +361,7 @@ namespace TFE_Editor
 			}
 			if (ImGui::BeginMenu("Select"))
 			{
+				s_menuActive = true;
 				if (ImGui::MenuItem("Select All", NULL, (bool*)NULL))
 				{
 					if (s_editorMode == EDIT_ASSET_BROWSER)
@@ -364,6 +387,7 @@ namespace TFE_Editor
 			}
 			if (ImGui::BeginMenu("Project"))
 			{
+				s_menuActive = true;
 				if (ImGui::MenuItem("New", NULL, (bool*)NULL))
 				{
 					s_editorPopup = POPUP_NEW_PROJECT;
@@ -409,7 +433,7 @@ namespace TFE_Editor
 					for (size_t i = 0; i < count; i++)
 					{
 						char item[TFE_MAX_PATH];
-						sprintf(item, "%d %s", i + 1, recents[i].name.c_str());
+						sprintf(item, "%d %s", (s32)i + 1, recents[i].name.c_str());
 						if (ImGui::MenuItem(item, NULL, (bool*)NULL))
 						{
 							if (!project_load(recents[i].path.c_str()))
@@ -429,6 +453,25 @@ namespace TFE_Editor
 				}
 				if (s_recents.empty()) { enableNextItem(); }
 				ImGui::EndMenu();
+			}
+			// Allow the current Asset Editor to add its own menus.
+			if (s_editorMode == EDIT_ASSET)
+			{
+				switch (s_editorAssetType)
+				{
+					case TYPE_LEVEL:
+					{
+						if (LevelEditor::menu())
+						{
+							s_menuActive = true;
+						}
+					} break;
+					default:
+					{
+						// Invalid mode, this code should never be reached.
+						assert(0);
+					}
+				}
 			}
 
 			drawTitle();
@@ -603,5 +646,28 @@ namespace TFE_Editor
 		sprintf(comboId, "##%s", labelText);
 		if (comboWidth) { ImGui::SetNextItemWidth(UI_SCALE(comboWidth)); }
 		ImGui::Combo(comboId, index, listValues, (s32)listLen);
+	}
+
+	void enableAssetEditor(Asset* asset)
+	{
+		if (!asset) { return; }
+
+		// For now, only the levels have an asset editor.
+		// TODO: Other asset editors.
+		if (asset->type == TYPE_LEVEL)
+		{
+			s_editorMode = EDIT_ASSET;
+			s_editorAssetType = asset->type;
+			LevelEditor::init(asset);
+		}
+		else
+		{
+			showMessageBox("Warning", "The selected asset '%s' does not yet have an Asset Editor.", asset->name.c_str());
+		}
+	}
+
+	void disableAssetEditor()
+	{
+		s_editorMode = EDIT_ASSET_BROWSER;
 	}
 }
