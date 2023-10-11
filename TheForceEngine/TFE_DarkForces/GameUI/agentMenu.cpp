@@ -449,8 +449,13 @@ namespace TFE_DarkForces
 
 	void agentMenu_load(LangHotkeys* langKeys)
 	{
+		s_langKeys = langKeys;
+
 		FilePath filePath;
-		if (!TFE_Paths::getFilePath("AGENTMNU.LFD", &filePath)) { return; }
+		if (!TFE_Paths::getFilePath("AGENTMNU.LFD", &filePath)) {
+			TFE_System::logWrite(LOG_ERROR, "AgentMenu", "agentMenu_load: AGENTMNU.LFD NOT FOUND.");
+			return; 
+		}
 		Archive* archive = Archive::getArchive(ARCHIVE_LFD, "AGENTMNU", filePath.path);
 		TFE_Paths::addLocalArchive(archive);
 
@@ -459,8 +464,6 @@ namespace TFE_DarkForces
 		s_agentDlgCount = getFramesFromAnim("agentdlg.anim", &s_agentDlgFrames);
 		getFrameFromDelt("cursor.delt", &s_cursor);
 		TFE_Paths::removeLastArchive();
-		
-		s_langKeys = langKeys;
 	}
 		
 	void agentMenu_startup()
