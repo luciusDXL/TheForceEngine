@@ -1,8 +1,8 @@
 // Number of grid levels
 #define LEVELS 6
-#define DIST_SCALE_BASE 0.005
-#define LINE_WIDTH_SCALE 1.5
-#define GRID_SCALE_MAX (1.0 / 256.0)
+#define DIST_SCALE_BASE 0.004
+#define LINE_WIDTH_SCALE 1.75
+#define GRID_SCALE_MAX (1.0 / 512.0)
 #define GRID_COLOR vec3(0.8, 0.9, 1.0)
 #define GRID_COLOR_RED vec3(1.0, 0.0, 0.0)
 #define GRID_COLOR_BLUE vec3(0.0, 0.0, 1.0)
@@ -60,10 +60,10 @@ void computeGrid(vec2 pUV, float falloff, inout vec3 outColor, inout float outAl
 	outAlpha = min(alpha + outAlpha * (1.0 - alpha), 1.0);
 }
 
-void drawFloorGridLevels(inout vec3 baseColor, inout float baseAlpha, float gridOpacity, vec2 inUv, float viewFalloff, vec3 inPos)
+void drawFloorGridLevels(inout vec3 baseColor, inout float baseAlpha, float gridOpacity, float gridSize, vec2 inUv, float viewFalloff, vec3 inPos)
 {
-	float uvScale = 1.0;
-	float distScale = DIST_SCALE_BASE;
+	float uvScale = 1.0 / gridSize;
+	float distScale = DIST_SCALE_BASE / gridSize;
 
 	vec3 outColor = vec3(0.0);
 	float outAlpha = 0.0;
@@ -74,13 +74,9 @@ void drawFloorGridLevels(inout vec3 baseColor, inout float baseAlpha, float grid
 		float falloff = computeDistanceFalloff(distScale, inPos) * viewFalloff;
 		computeGrid(pUV, falloff, outColor, outAlpha);
 
-		uvScale *= 0.5;
-		distScale *= 0.5;
+		uvScale /= 8.0;
+		distScale /= 8.0;
 	}
-
-	// Final large scale level with no distance based falloff.
-	vec2 pUV = inUv * GRID_SCALE_MAX;
-	computeGrid(pUV, viewFalloff, outColor, outAlpha);
 
 	// We have the final grid color and opacity, factor in the gridOpacity from the application.
 	outColor *= gridOpacity;
@@ -96,7 +92,7 @@ void drawXZAxis(inout vec3 outColor, inout float outAlpha, vec2 inUv, float view
 {
 	vec2 pUV = inUv.xy * GRID_SCALE_MAX;
 	vec2 uv = fract(pUV);
-	vec2 filterWidth = computeLineFilter(pUV);
+	vec2 filterWidth = computeLineFilter(pUV) * 2.5;
 	float alpha;
 
 	// X Axis (red)

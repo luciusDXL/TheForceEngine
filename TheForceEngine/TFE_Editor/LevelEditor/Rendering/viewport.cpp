@@ -1,5 +1,6 @@
 #include "viewport.h"
 #include "grid2d.h"
+#include "grid3d.h"
 #include <TFE_System/math.h>
 #include <TFE_Editor/LevelEditor/levelEditor.h>
 #include <TFE_Editor/LevelEditor/levelEditorData.h>
@@ -79,6 +80,7 @@ namespace LevelEditor
 	f32 s_gridOpacity = 0.5f;
 	f32 s_gridSize2d;
 	f32 s_zoom2d = 0.25f;			// current zoom level in 2D.
+	f32 s_gridHeight = 0.0f;
 
 	void renderLevel2D();
 	void renderLevel3D();
@@ -94,6 +96,7 @@ namespace LevelEditor
 	{
 		grid2d_init();
 		tri2d_init();
+		grid3d_init();
 		TFE_RenderShared::line3d_init();
 	}
 
@@ -102,6 +105,7 @@ namespace LevelEditor
 		TFE_RenderBackend::freeRenderTarget(s_viewportRt);
 		grid2d_destroy();
 		tri2d_destroy();
+		grid3d_destroy();
 		TFE_RenderShared::line3d_destroy();
 		s_viewportRt = 0;
 	}
@@ -245,7 +249,16 @@ namespace LevelEditor
 		// Prepare for drawing.
 		TFE_RenderShared::lineDraw3d_begin(s_viewportSize.x, s_viewportSize.z);
 
-		renderCoordinateAxis();
+		if (s_camera.pos.y >= s_gridHeight)
+		{
+			grid3d_draw(s_gridSize2d, s_gridOpacity, s_gridHeight);
+			renderCoordinateAxis();
+		}
+		else
+		{
+			renderCoordinateAxis();
+			grid3d_draw(s_gridSize2d, s_gridOpacity, s_gridHeight);
+		}
 
 		// HACKY, draw all of the sectors on the 0 plane.
 		const f32 width = 2.5f;

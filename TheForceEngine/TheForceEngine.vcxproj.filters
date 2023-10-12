@@ -1264,6 +1264,9 @@
     <ClInclude Include="TFE_RenderShared\camera3d.h">
       <Filter>Source\TFE_RenderShared</Filter>
     </ClInclude>
+    <ClInclude Include="TFE_Editor\LevelEditor\Rendering\grid3d.h">
+      <Filter>Source\TFE_Editor\LevelEditor\Rendering</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -2162,6 +2165,9 @@
     </ClCompile>
     <ClCompile Include="TFE_Editor\LevelEditor\camera.cpp">
       <Filter>Source\TFE_Editor\LevelEditor</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Editor\LevelEditor\Rendering\grid3d.cpp">
+      <Filter>Source\TFE_Editor\LevelEditor\Rendering</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

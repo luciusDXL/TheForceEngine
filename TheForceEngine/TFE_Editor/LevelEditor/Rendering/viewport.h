@@ -42,4 +42,5 @@ namespace LevelEditor
 	extern f32 s_gridOpacity;
 	extern f32 s_gridSize2d;
 	extern f32 s_zoom2d;
+	extern f32 s_gridHeight;
 }
