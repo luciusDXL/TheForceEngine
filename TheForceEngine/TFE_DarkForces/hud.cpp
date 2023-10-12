@@ -373,7 +373,9 @@ namespace TFE_DarkForces
 		{
 			hud_setupToggleAnim1(JTRUE);
 		}
-		offscreenBuffer_drawTexture(s_cachedHudRight, s_hudLightOff, 19, 0);
+		u16 hudWidth = s_hudStatusL->width; // should be 76(dos) or 76*2 = 152(mac)
+		u16 hudDoubled = hudWidth == 76 ? 0 : 1;
+		offscreenBuffer_drawTexture(s_cachedHudRight, s_hudLightOff, 19 << hudDoubled, 0);
 	}
 		
 	void hud_drawMessage(u8* framebuffer)
@@ -471,9 +473,8 @@ namespace TFE_DarkForces
 			hudScaleY = floatToFixed16(fixed16ToFloat(yScale) * hudSettings->scale);
 		}
 
-		u16 hud_width = s_hudStatusL->width; // should be 76 or 76*2 = 152
-		u16 hud_height = s_hudStatusL->height; // should be 40 or 80
-		u16 hudDoubled = hud_width == 76 ? 0 : 1;
+		u16 hudWidth = s_hudStatusL->width; // should be 76(dos) or 76*2 = 152(mac)
+		u16 hudDoubled = hudWidth == 76 ? 0 : 1;
 
 		fixed16_16 x0, x1;
 		if (hudSettings->hudPos == TFE_HUDPOS_4_3)
@@ -755,6 +756,9 @@ namespace TFE_DarkForces
 		// Go ahead and just update the HUD every frame, there are already checks to see if each item changed.
 		//if (s_leftHudShow || s_rightHudShow)
 		{
+			u16 hudWidth = s_hudStatusL->width; // should be 76(dos) or 76*2 = 152(mac)
+			u16 hudDoubled = hudWidth == 76 ? 0 : 1;
+
 			fixed16_16 batteryPower = TFE_Jedi::abs(s_batteryPower * 100);
 			s32 percent = round16(batteryPower >> 1);
 			if (s_prevBatteryPower != percent)  // True when energy ticks down.
@@ -785,7 +789,7 @@ namespace TFE_DarkForces
 
 				char lifeCountStr[8];
 				sprintf(lifeCountStr, "%1d", lifeCount);
-				hud_drawString(s_cachedHudLeft, s_hudHealthFont, 52, 26, lifeCountStr);
+				hud_drawString(s_cachedHudLeft, s_hudHealthFont, 52 << hudDoubled, 26 << hudDoubled, lifeCountStr);
 
 				s_rightHudShow = 4;
 			}
@@ -794,11 +798,11 @@ namespace TFE_DarkForces
 				s_prevHeadlampActive = s_headlampActive;
 				if (s_headlampActive)
 				{
-					offscreenBuffer_drawTexture(s_cachedHudRight, s_hudLightOn, 19, 0);
+					offscreenBuffer_drawTexture(s_cachedHudRight, s_hudLightOn, 19 << hudDoubled, 0);
 				}
 				else
 				{
-					offscreenBuffer_drawTexture(s_cachedHudRight, s_hudLightOff, 19, 0);
+					offscreenBuffer_drawTexture(s_cachedHudRight, s_hudLightOff, 19 << hudDoubled, 0);
 				}
 				s_rightHudShow = 4;
 			}
@@ -845,7 +849,7 @@ namespace TFE_DarkForces
 					sprintf(shieldStr, "%03d", s_playerInfo.shields);
 				}
 				s_prevShields = s_playerInfo.shields;
-				hud_drawString(s_cachedHudLeft, s_hudShieldFont, 15, 26, shieldStr);
+				hud_drawString(s_cachedHudLeft, s_hudShieldFont, 15 << hudDoubled, 26 << hudDoubled, shieldStr);
 			}
 			if (s_playerInfo.health != s_prevHealth)
 			{
@@ -857,7 +861,7 @@ namespace TFE_DarkForces
 
 				char healthStr[32];
 				sprintf(healthStr, "%03d", s_playerInfo.health);
-				hud_drawString(s_cachedHudLeft, s_hudHealthFont, 33, 26, healthStr);
+				hud_drawString(s_cachedHudLeft, s_hudHealthFont, 33 << hudDoubled, 26 << hudDoubled, healthStr);
 
 				s_leftHudShow = 4;
 			}
@@ -900,7 +904,7 @@ namespace TFE_DarkForces
 				{
 					sprintf(str, "%03d", ammo0);
 				}
-				hud_drawString(s_cachedHudRight, s_superChargeHud ? s_hudSuperAmmoFont : s_hudMainAmmoFont, 12, 21, str);
+				hud_drawString(s_cachedHudRight, s_superChargeHud ? s_hudSuperAmmoFont : s_hudMainAmmoFont, 12 << hudDoubled, 21 << hudDoubled, str);
 
 				if (ammo1 < 0)
 				{
@@ -910,7 +914,7 @@ namespace TFE_DarkForces
 				{
 					sprintf(str, "%02d", ammo1);
 				}
-				hud_drawString(s_cachedHudRight, s_hudShieldFont, 25, 12, str);
+				hud_drawString(s_cachedHudRight, s_hudShieldFont, 25 << hudDoubled, 12 << hudDoubled, str);
 
 				s_rightHudShow = 4;
 				s_prevPrimaryAmmo = ammo0;
@@ -957,9 +961,11 @@ namespace TFE_DarkForces
 		vfb_getResolution(&dispWidth, &dispHeight);
 		if (dispWidth == 320 && dispHeight == 200)
 		{
+			u16 hudHeight = s_hudStatusL->height; // should be 40(dos) or 80(mac)
+			u16 hudOffset = hudHeight - 40;
 			// The original 320x200 code.
-			hud_drawElementToScreen(s_cachedHudRight, screenRect, 260, c_hudVertAnimTable[s_rightHudVertAnim], framebuffer);
-			hud_drawElementToScreen(s_cachedHudLeft,  screenRect,   0, c_hudVertAnimTable[s_leftHudVertAnim],  framebuffer);
+			hud_drawElementToScreen(s_cachedHudRight, screenRect, 320-s_cachedHudRight->width, c_hudVertAnimTable[s_rightHudVertAnim] - hudOffset, framebuffer);
+			hud_drawElementToScreen(s_cachedHudLeft,  screenRect,   0, c_hudVertAnimTable[s_leftHudVertAnim] - hudOffset,  framebuffer);
 		}
 		else
 		{
