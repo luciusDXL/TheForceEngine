@@ -71,7 +71,7 @@ namespace TFE_DarkForces
 		"SOUNDS.GOB",
 		"TEXTURES.GOB",
 		"SPRITES.GOB",
-		"WEAPONS.GOB", // Mac data has weapons in here
+		"WEAPONS.GOB", // Mac data has weapons in here instead of textures
 	};
 
 	enum GameConstants
@@ -1122,7 +1122,12 @@ namespace TFE_DarkForces
 			}
 			else
 			{
-				TFE_System::logWrite(LOG_ERROR, "Dark Forces Main", "Cannot find required game data - '%s'.", c_gobFileNames[i]);
+				if (strcmp(c_gobFileNames[i],"WEAPONS.GOB") == 0) {
+					TFE_System::logWrite(LOG_WARNING, "Dark Forces Main", "Cannot find required mac game data - '%s'.", c_gobFileNames[i]);
+				}
+				else {
+					TFE_System::logWrite(LOG_ERROR, "Dark Forces Main", "Cannot find required game data - '%s'.", c_gobFileNames[i]);
+				}
 			}
 		}
 	}
