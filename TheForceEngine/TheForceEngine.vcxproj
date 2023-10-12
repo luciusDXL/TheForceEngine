@@ -640,6 +640,7 @@ echo ^)";
     <ClInclude Include="TFE_RenderBackend\Win32OpenGL\openGL_Caps.h" />
     <ClInclude Include="TFE_RenderBackend\Win32OpenGL\renderTarget.h" />
     <ClInclude Include="TFE_RenderBackend\Win32OpenGL\screenCapture.h" />
+    <ClInclude Include="TFE_RenderShared\camera3d.h" />
     <ClInclude Include="TFE_RenderShared\lineDraw2d.h" />
     <ClInclude Include="TFE_RenderShared\lineDraw3d.h" />
     <ClInclude Include="TFE_RenderShared\quadDraw2d.h" />

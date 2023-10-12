@@ -1261,6 +1261,9 @@
     <ClInclude Include="TFE_Editor\LevelEditor\camera.h">
       <Filter>Source\TFE_Editor\LevelEditor</Filter>
     </ClInclude>
+    <ClInclude Include="TFE_RenderShared\camera3d.h">
+      <Filter>Source\TFE_RenderShared</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">

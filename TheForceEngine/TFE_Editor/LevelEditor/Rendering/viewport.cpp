@@ -217,31 +217,35 @@ namespace LevelEditor
 		TFE_RenderShared::lineDraw2d_drawLines();
 	}
 
+	void renderCoordinateAxis()
+	{
+		const f32 len = 4096.0f;
+		const f32 lenY = 50.0f;
+		const u32 xAxisClr = 0xc00000ff;
+		const u32 yAxisClr = 0xc000ff00;
+		const u32 zAxisClr = 0xc0ff0000;
+
+		const u32 axisColor[] = { /*left*/xAxisClr, yAxisClr, zAxisClr, /*right*/xAxisClr, yAxisClr, zAxisClr };
+		const Vec3f axis[] =
+		{
+			// Left
+			{0.1f, 0.0f, 0.0f}, {len, 0.0f, 0.0f},
+			{0.0f, 0.1f, 0.0f}, {0.0f, lenY, 0.0f},
+			{0.0f, 0.0f, 0.1f}, {0.0f, 0.0f, len},
+			// Right
+			{-len, 0.0f, 0.0f}, {0.1f, 0.0f, 0.0f},
+			{0.0f,-lenY, 0.0f}, {0.0f, 0.1f, 0.0f},
+			{0.0f, 0.0f, -len}, {0.0f, 0.0f, 0.1f},
+		};
+		TFE_RenderShared::lineDraw3d_addLines(6, 3.0f, axis, axisColor);
+	}
+
 	void renderLevel3D()
 	{
 		// Prepare for drawing.
 		TFE_RenderShared::lineDraw3d_begin(s_viewportSize.x, s_viewportSize.z);
 
-		// Draw the coordinate axis.
-		f32 len = 4096.0f;
-
-		u32 xAxisClr[] = { 0xffff0000, 0xffff0000 };
-		u32 yAxisClr[] = { 0xff00ff00, 0xff00ff00 };
-		u32 zAxisClr[] = { 0xff0000ff, 0xff0000ff };
-
-		Vec3f xAxis0[] = { {0.1f, 0.0f, 0.0f}, {len, 0.0f, 0.0f} };
-		Vec3f yAxis0[] = { {0.0f, 0.1f, 0.0f}, {0.0f, len, 0.0f} };
-		Vec3f zAxis0[] = { {0.0f, 0.0f, 0.1f}, {0.0f, 0.0f, len} };
-		TFE_RenderShared::lineDraw3d_addLine(3.0f, xAxis0, xAxisClr);
-		TFE_RenderShared::lineDraw3d_addLine(3.0f, yAxis0, yAxisClr);
-		TFE_RenderShared::lineDraw3d_addLine(3.0f, zAxis0, zAxisClr);
-
-		Vec3f xAxis1[] = { {-len, 0.0f, 0.0f}, {0.1f, 0.0f, 0.0f}, };
-		Vec3f yAxis1[] = { {0.0f, -len, 0.0f}, {0.0f, 0.1f, 0.0f}, };
-		Vec3f zAxis1[] = { {0.0f, 0.0f, -len}, {0.0f, 0.0f, 0.1f}, };
-		TFE_RenderShared::lineDraw3d_addLine(3.0f, xAxis1, xAxisClr);
-		TFE_RenderShared::lineDraw3d_addLine(3.0f, yAxis1, yAxisClr);
-		TFE_RenderShared::lineDraw3d_addLine(3.0f, zAxis1, zAxisClr);
+		renderCoordinateAxis();
 
 		// HACKY, draw all of the sectors on the 0 plane.
 		const f32 width = 2.5f;
@@ -273,18 +277,18 @@ namespace LevelEditor
 				color |= 0x80000000;
 
 				Vec3f line0[] =
-				{ { sector->vtx[wall->idx[0]].x, -sector->floorHeight, sector->vtx[wall->idx[0]].z }, 
-				  { sector->vtx[wall->idx[1]].x, -sector->floorHeight, sector->vtx[wall->idx[1]].z } };
+				{ { sector->vtx[wall->idx[0]].x, sector->floorHeight, sector->vtx[wall->idx[0]].z }, 
+				  { sector->vtx[wall->idx[1]].x, sector->floorHeight, sector->vtx[wall->idx[1]].z } };
 				TFE_RenderShared::lineDraw3d_addLine(width, line0, &color);
 
 				Vec3f line1[] =
-				{ { sector->vtx[wall->idx[0]].x, -sector->ceilHeight, sector->vtx[wall->idx[0]].z },
-				  { sector->vtx[wall->idx[1]].x, -sector->ceilHeight, sector->vtx[wall->idx[1]].z } };
+				{ { sector->vtx[wall->idx[0]].x, sector->ceilHeight, sector->vtx[wall->idx[0]].z },
+				  { sector->vtx[wall->idx[1]].x, sector->ceilHeight, sector->vtx[wall->idx[1]].z } };
 				TFE_RenderShared::lineDraw3d_addLine(width, line1, &color);
 
 				Vec3f line2[] =
-				{ { sector->vtx[wall->idx[0]].x, -sector->floorHeight, sector->vtx[wall->idx[0]].z },
-				  { sector->vtx[wall->idx[0]].x, -sector->ceilHeight, sector->vtx[wall->idx[0]].z } };
+				{ { sector->vtx[wall->idx[0]].x, sector->floorHeight, sector->vtx[wall->idx[0]].z },
+				  { sector->vtx[wall->idx[0]].x, sector->ceilHeight, sector->vtx[wall->idx[0]].z } };
 				TFE_RenderShared::lineDraw3d_addLine(width, line2, &color);
 			}
 		}

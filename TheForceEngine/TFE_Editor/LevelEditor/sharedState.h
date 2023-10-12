@@ -40,5 +40,4 @@ namespace LevelEditor
 	extern Vec3f s_viewDir;
 	extern Vec3f s_viewRight;
 	extern Vec3f s_cursor3d;
-	extern f32 s_yaw, s_pitch;
 }

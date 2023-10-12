@@ -10,5 +10,5 @@
 
 namespace LevelEditor
 {
-	void computeCameraTransform(f32 pitch, f32 yaw, Vec3f pos);
+	void computeCameraTransform();
 }

@@ -4,13 +4,7 @@
 //////////////////////////////////////////////////////////////////////
 
 #include <TFE_System/types.h>
-
-struct Camera3d
-{
-	Vec3f pos;
-	Mat3  viewMtx;
-	Mat4  projMtx;
-};
+#include "camera3d.h"
 
 namespace TFE_RenderShared
 {

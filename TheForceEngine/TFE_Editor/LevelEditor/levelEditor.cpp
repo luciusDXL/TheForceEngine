@@ -48,6 +48,7 @@ using namespace TFE_Editor;
 namespace LevelEditor
 {
 	const f32 c_defaultZoom = 0.25f;
+	const f32 c_defaultYaw = PI;
 
 	// The TFE Level Editor format is different than the base format and contains extra 
 	// metadata, etc.
@@ -188,10 +189,10 @@ namespace LevelEditor
 		s_hoveredWallId         = -1;
 
 		AssetBrowser::getLevelTextures(s_levelTextureList, asset->name.c_str());
-		computeCameraTransform(0.0f, 0.0f, { 0.0f, 0.0f, 0.0f });
+		s_camera = { 0 };
+		s_camera.yaw = c_defaultYaw;
+		computeCameraTransform();
 		s_cursor3d = { 0 };
-		s_yaw = 0.0f;
-		s_pitch = 0.0f;
 
 		TFE_RenderShared::init(false);
 		return true;
@@ -509,7 +510,12 @@ namespace LevelEditor
 			}
 			if (ImGui::MenuItem("3D (Editor)", "Ctrl+2", s_view == EDIT_VIEW_3D))
 			{
+				Vec2f worldPos = mouseCoordToWorldPos2d(s_viewportSize.x/2 + s_editWinMapCorner.x, s_viewportSize.z/2 + s_editWinMapCorner.z);
+
 				s_view = EDIT_VIEW_3D;
+
+				s_camera.pos = { worldPos.x, 0.0f, worldPos.z };
+				computeCameraTransform();
 			}
 			if (ImGui::MenuItem("3D (Game)", "Ctrl+3", s_view == EDIT_VIEW_3D_GAME))
 			{
@@ -859,14 +865,14 @@ namespace LevelEditor
 			TFE_Input::getAccumulatedMouseMove(&dx, &dy);
 
 			const f32 turnSpeed = 0.01f;
-			s_yaw   += f32(dx) * turnSpeed;
-			s_pitch -= f32(dy) * turnSpeed;
+			s_camera.yaw   += f32(dx) * turnSpeed;
+			s_camera.pitch += f32(dy) * turnSpeed;
 
-			if (s_yaw < 0.0f) { s_yaw += PI * 2.0f; }
-			else { s_yaw = fmodf(s_yaw, PI * 2.0f); }
+			if (s_camera.yaw < 0.0f) { s_camera.yaw += PI * 2.0f; }
+			else { s_camera.yaw = fmodf(s_camera.yaw, PI * 2.0f); }
 
-			if (s_pitch < -1.55f) { s_pitch = -1.55f; }
-			else if (s_pitch > 1.55f) { s_pitch = 1.55f; }
+			if (s_camera.pitch < -1.55f) { s_camera.pitch = -1.55f; }
+			else if (s_camera.pitch > 1.55f) { s_camera.pitch = 1.55f; }
 
 			s_cursor3d = { 0 };
 		}
@@ -874,7 +880,7 @@ namespace LevelEditor
 		{
 			TFE_Input::clearAccumulatedMouseMove();
 		}
-		computeCameraTransform(s_pitch, s_yaw, s_camera.pos);
+		computeCameraTransform();
 	}
 		
 	void toolbarBegin()
@@ -972,7 +978,7 @@ namespace LevelEditor
 			}
 			else
 			{
-				//ImGui::TextColored({ 0.5f, 0.5f, 0.5f, 0.75f }, "Dir %0.3f, %0.3f, %0.3f   Sub-grid %0.2f", s_rayDir.x, s_rayDir.y, s_rayDir.z, s_gridSize / s_subGridSize);
+				ImGui::TextColored({ 0.5f, 0.5f, 0.5f, 0.75f }, "Pos %0.3f, %0.3f, %0.3f", s_camera.pos.x, s_camera.pos.y, s_camera.pos.z);
 			}
 		}
 
