@@ -1,7 +1,7 @@
 #pragma once
 //////////////////////////////////////////////////////////////////////
-// Dark Forces Player -
-// Player information and object data.
+// Dark Forces Weapon Fire Functions
+// Logic for player weapons (not enemy weapons)
 //////////////////////////////////////////////////////////////////////
 #include <TFE_System/types.h>
 #include <TFE_Jedi/InfSystem/message.h>
