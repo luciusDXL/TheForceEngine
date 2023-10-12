@@ -1,5 +1,5 @@
-#include "Shaders/textureSampleFunc.h"
 #include "Shaders/filter.h"
+#include "Shaders/textureSampleFunc.h"
 #include "Shaders/lighting.h"
 
 uniform vec3 CameraPos;
@@ -15,24 +15,30 @@ flat in vec3 Frag_Lighting;
 flat in int Frag_TextureId;
 flat in vec4 Texture_Data;
 #ifdef OPT_BLOOM
-layout(location = 0) out vec4 Out_Color;
-layout(location = 1) out vec4 Out_Material;
+	layout(location = 0) out vec4 Out_Color;
+	layout(location = 1) out vec4 Out_Material;
 #else
-out vec4 Out_Color;
+	out vec4 Out_Color;
 #endif
 
 void main()
 {
     vec3 cameraRelativePos = Frag_Pos;
-
 	float light = 31.0;
-	float baseColor = 0.0;
 
+#ifdef OPT_TRUE_COLOR
+	vec4 baseColor = vec4(0.0);
+#else
+	float baseColor = 0.0;
+#endif
+
+	// Handle shading.
 	if (GlobalLightData.x == 0.0)
 	{
 		float z = dot(cameraRelativePos, CameraDir);
 		float sectorAmbient = float(Texture_Data.y);
 
+		// Only apply shading is sector ambient is less than max.
 		if (sectorAmbient < 31.0)
 		{
 			// Camera light and world ambient.
@@ -55,14 +61,43 @@ void main()
 
 	// Sample the texture.
 	baseColor = sampleTextureClamp(Frag_TextureId, Frag_Uv);
-	if (baseColor < 0.5 && LightData.w < 1.0) { discard; }
+	// if (discardPixel(baseColor, LightData.w)) { discard; }
+	// Either discard very close to the iso-value or
+	// do a two-pass filter - close cut with depth-write + alpha blend without depth-write.
+	#ifdef OPT_TRUE_COLOR
+	if (baseColor.a < 0.48 && LightData.w < 1.0)
+	{
+		discard;
+	}
+	#else
+	if (baseColor < 0.5 && LightData.w < 1.0)
+	{
+		discard;
+	}
+	#endif
 
-	Out_Color = getFinalColor(baseColor, light);
-	// Enable solid color rendering for wireframe.
-	Out_Color.rgb = LightData.w > 0.5 ? vec3(0.6, 0.8, 0.6) : Out_Color.rgb;
+	// Get the emissive factor (0 = normal, 1 = 100% fullbright).
+	#ifdef OPT_TRUE_COLOR
+		float emissive = clamp((baseColor.a - 0.5) * 2.0, 0.0, 1.0);
+	#else
+		float emissive = baseColor;
+	#endif
 
-#ifdef OPT_BLOOM
-	// Material (just emissive for now)
-	Out_Material = getMaterialColor(baseColor);
-#endif
+	// Get the final lit color, enable solid color for wireframe.
+	Out_Color = getFinalColor(baseColor, light, emissive);
+	Out_Color.rgb = LightData.w > 0.5 ? vec3(0.6, 0.8, 0.6) : handlePaletteFx(Out_Color.rgb);
+
+	// Handle pre-multiplied alpha blending.
+	#ifdef OPT_TRUE_COLOR
+	Out_Color.a = min(Out_Color.a * 2.008, 1.0);
+	#endif
+
+	#ifdef OPT_BLOOM
+		// Material (just emissive for now)
+		Out_Material = getMaterialColor(emissive);
+		#ifdef OPT_TRUE_COLOR
+			Out_Material.a = Out_Color.a;
+			Out_Material.rgb *= Out_Material.a;
+		#endif
+	#endif
 }

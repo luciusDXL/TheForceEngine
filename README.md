@@ -1,3 +1,4 @@
+
 # The Force Engine (TFE)
 * [Website](https://theforceengine.github.io/)
 * [Release Downloads](https://theforceengine.github.io/downloads.html)
@@ -51,12 +52,11 @@ Runtime data like Savegames, Configuration, Mods, ... are by default stored at _
 This can be overridden by defining the "__TFE_DATA_HOME__" environment variable.
 
 ### Required Libraries
-* [SDL2](TheForceEngine/TFE_FrontEndUI/frontEndUi.cpp) 2.24 or higher
-* [devIL](https://openil.sourceforge.net)
-* [RtAudio](https://www.music.mcgill.ca/~gary/rtaudio/) 5.2.0 or higher
-* [RtMidi](https://www.music.mcgill.ca/~gary/rtmidi/) 5.0.0 or higher
+* [SDL2](http://libsdl.org) Version 2.24
+* [SDL2-image](https://github.com/libsdl-org/SDL_image) Version 2.6.3
 * [GLEW](http://glew.sourceforge.net/) 2.2.0
 * OpenGL 3.3 capable driver (latest [mesa](https://www.mesa3d.org) or nvidia proprietary driver recommended)
+* [RtMidi](https://www.music.mcgill.ca/~gary/rtmidi/) 5.0.0 or higher for external MIDI Synthesizer support
 
 ### Building from Source
 #### Recommended Tools
@@ -64,13 +64,14 @@ This can be overridden by defining the "__TFE_DATA_HOME__" environment variable.
 * GCC-11 and newer or equivalent clang version.
 #### How to build
 * Unpack the source or fetch from github
-* Create a build directory and chdir into it:
+* Create a build directory and chdir into it:  
 __mkdir tfe-build; cd tfe-build__
-* Run CMake in the build directory, the build type must be specified (debug or release):
+* Run CMake in the build directory, the build type must be specified (debug or release):  
 __cmake -S /path/to/tfe-source/__
-* Build it:
+[add  -DDISABLE_SYSMIDI=ON   to disable RtMidi (external MIDI Synthesizers) support]
+* Build it:  
 __make__
-* Install it:
+* Install it:  
 __sudo make install__  
 * If no additional parameters were added to CMake, files will be installed in __/usr/local/bin__, __/usr/local/share/TheForceEngine/__
 

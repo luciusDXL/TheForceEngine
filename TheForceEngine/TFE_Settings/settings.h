@@ -9,6 +9,7 @@
 //////////////////////////////////////////////////////////////////////
 
 #include <TFE_System/types.h>
+#include <TFE_System/iniParser.h>
 #include <TFE_FileSystem/paths.h>
 #include <TFE_Audio/midiDevice.h>
 #include "gameSourceData.h"
@@ -24,7 +25,7 @@ enum ColorMode
 {
 	COLORMODE_8BIT = 0,		// Default vanilla
 	COLORMODE_8BIT_INTERP,	// Interpolate between colormap values.
-	// COLORMODE_TRUE_COLOR,	// Will be enabled when the feature comes online.
+	COLORMODE_TRUE_COLOR,	// Will be enabled when the feature comes online.
 	COLORMODE_COUNT,
 };
 
@@ -58,16 +59,23 @@ struct TFE_Settings_Graphics
 	bool  showFps = false;
 	bool  fix3doNormalOverflow = true;
 	bool  ignore3doLimits = true;
-	s32   frameRateLimit = 0;
+	s32   frameRateLimit = 240;
 	f32   brightness = 1.0f;
 	f32   contrast = 1.0f;
 	f32   saturation = 1.0f;
 	f32   gamma = 1.0f;
+	s32   fov = 90;
 	s32   rendererIndex = 0;
 	s32   colorMode = COLORMODE_8BIT;
 
 	// 8-bit options.
 	bool ditheredBilinear = false;
+
+	// True-color options.
+	bool useBilinear = false;
+	bool useMipmapping = false;
+	f32  bilinearSharpness = 1.0f;	// 0 disables and uses pure hardware bilinear.
+	f32  anisotropyQuality = 1.0f;	// quality of anisotropic filtering, 0 disables.
 
 	// Reticle
 	bool reticleEnable  = false;
@@ -198,75 +206,36 @@ struct TFE_Settings_System
 	bool returnToModLoader = true;		// Return to the Mod Loader if running a mod.
 };
 
-/// <summary>
-/// Represents an RGBA color as a 32-bit unsigned integer, with properties for reading the channel
-/// values as U8s or floats.
-/// </summary>
-struct RGBA
-{
-	u32 color;
-	u8 getAlpha() { return (color >> 24) & 0xff; }
-	u8 getRed() { return (color >> 16) & 0xff; }
-	u8 getGreen() { return (color >> 8) & 0xff; }
-	u8 getBlue() { return color & 0xff; }
-
-	f32 getAlphaF() { return getAlpha() / 255.0f; }
-	f32 getRedF() { return getRed() / 255.0f; }
-	f32 getGreenF() { return getGreen() / 255.0f; }
-	f32 getBlueF() { return getBlue() / 255.0f; }
-
-	RGBA()
-	{
-		
-	}	
-	
-	RGBA(u32 color)
-	{
-		this->color = color;
-	}
-
-	static RGBA fromFloats(f32 r, f32 g, f32 b)
-	{
-		RGBA color;
-		color.color = (u8)(b * 255) + ((u8)(g * 255) << 8) + ((u8)(r * 255) << 16) + (255 << 24);
-		return color;
-	}
-	static RGBA fromFloats(f32 r, f32 g, f32 b, f32 a)
-	{
-		RGBA color;
-		color.color = (u8)(b * 255) + ((u8)(g * 255) << 8) + ((u8)(r * 255) << 16) + ((u8)(a * 255) << 24);
-		return color;
-	}
-};
-
-struct RGBAf {
-	f32 r, g, b, a;
-
-	RGBA ToRGBA()
-	{
-		return RGBA::fromFloats(r, g, b, a);
-	}
-};
-
 struct TFE_Settings_A11y
 {
-	bool showCutsceneSubtitles; //voice
-	bool showCutsceneCaptions; //descriptive (e.g. "[Mine beeping]", "[Engine roaring]"
+	string language = "en"; //ISO 639-1 two-letter code
+	string lastFontPath;
+
+	bool showCutsceneSubtitles; // Voice
+	bool showCutsceneCaptions;  // Descriptive (e.g. "[Mine beeping]", "[Engine roaring]"
 	FontSize cutsceneFontSize;
 	RGBA cutsceneFontColor = RGBA::fromFloats(1.0f, 1.0f, 1.0f);
 	f32 cutsceneTextBackgroundAlpha = 0.75f;
 	bool showCutsceneTextBorder = true;
 	f32 cutsceneTextSpeed = 1.0f;
 
-	bool showGameplaySubtitles; //voice
-	bool showGameplayCaptions; //descriptive
+	bool showGameplaySubtitles; // Voice
+	bool showGameplayCaptions;  // Descriptive
 	FontSize gameplayFontSize;
 	RGBA gameplayFontColor = RGBA::fromFloats(1.0f, 1.0f, 1.0f);
 	int gameplayMaxTextLines = 3;
 	f32 gameplayTextBackgroundAlpha = 0.0f;
 	bool showGameplayTextBorder = false;
 	f32 gameplayTextSpeed = 1.0f;
-	s32 gameplayCaptionMinVolume = 32; //in range 0 - 127
+	s32 gameplayCaptionMinVolume = 32; // In range 0 - 127
+
+	bool captionSystemEnabled()
+	{
+		return showCutsceneSubtitles || showCutsceneCaptions || showGameplaySubtitles || showGameplayCaptions;
+	}
+
+	// Motion sickness settings
+	bool enableHeadwave = true;
 };
 
 namespace TFE_Settings

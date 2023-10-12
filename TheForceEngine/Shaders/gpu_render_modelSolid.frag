@@ -1,5 +1,5 @@
-#include "Shaders/textureSampleFunc.h"
 #include "Shaders/filter.h"
+#include "Shaders/textureSampleFunc.h"
 #include "Shaders/lighting.h"
 
 uniform vec3 CameraPos;
@@ -11,7 +11,11 @@ in vec2 Frag_Uv;
 in vec3 Frag_WorldPos;
 noperspective in float Frag_Light;
 flat in float Frag_ModelY;
+#ifdef OPT_TRUE_COLOR
+flat in vec4 Frag_Color;
+#else
 flat in int Frag_Color;
+#endif
 flat in int Frag_TextureId;
 flat in int Frag_TextureMode;
 
@@ -24,7 +28,11 @@ out vec4 Out_Color;
 
 void main()
 {
-	float baseColor = float(Frag_Color);
+	#ifdef OPT_TRUE_COLOR
+		vec4 baseColor = Frag_Color;
+	#else
+		float baseColor = float(Frag_Color);
+	#endif
 	float light = 31.0;
 	if (Frag_TextureId < 65535) // 0xffff = no texture
 	{
@@ -70,7 +78,11 @@ void main()
 		baseColor = sampleTexture(Frag_TextureId, uv);
 
 		#ifdef MODEL_TRANSPARENT_PASS
-		if (baseColor < 0.5) { discard; }
+			#ifdef OPT_TRUE_COLOR
+				if (baseColor.a < 0.01) { discard; }
+			#else
+				if (baseColor < 0.5) { discard; }
+			#endif
 		#endif
 	}
 	// Vertex-lit.
@@ -83,12 +95,32 @@ void main()
 		light = floor(Frag_Light + 0.5*dither);
 	#endif
 	}
-	Out_Color = getFinalColor(baseColor, light);
+
+	float emissive;
+	#ifdef OPT_TRUE_COLOR
+		emissive = clamp((baseColor.a - 0.5) * 2.0, 0.0, 1.0);
+		#ifdef MODEL_TRANSPARENT_PASS
+			baseColor.a = min(baseColor.a * 2.008, 1.0);
+		#endif
+	#else
+		emissive = baseColor;
+	#endif
+
+	Out_Color = getFinalColor(baseColor, light, emissive);
+	
 	// Enable solid color rendering for wireframe.
 	Out_Color.rgb = LightData.x > 64.0 ? vec3(0.3, 0.3, 0.8) : Out_Color.rgb;
+	if (Frag_TextureId < 65535)
+	{
+		Out_Color.rgb = handlePaletteFx(Out_Color.rgb);
+	}
 
 #ifdef OPT_BLOOM
 	// Material (just emissive for now)
-	Out_Material = getMaterialColor(baseColor);
+	Out_Material = getMaterialColor(emissive);
+	#ifdef OPT_TRUE_COLOR
+		Out_Material.a = baseColor.a;
+		Out_Material.rgb *= Out_Material.a;
+	#endif
 #endif
 }

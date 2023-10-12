@@ -60,7 +60,7 @@ bool GobMemoryArchive::openFile(const char *file)
 	m_fileOffset = 0;
 
 	//search for this file.
-	for (s32 i = 0; i < m_fileList.MASTERN; i++)
+	for (u32 i = 0; i < m_fileList.MASTERN; i++)
 	{
 		if (strcasecmp(file, m_fileList.entries[i].NAME) == 0)
 		{
@@ -101,7 +101,7 @@ u32 GobMemoryArchive::getFileIndex(const char* file)
 	if (!m_archiveOpen) { return INVALID_FILE; }
 
 	//search for this file.
-	for (s32 i = 0; i < m_fileList.MASTERN; i++)
+	for (u32 i = 0; i < m_fileList.MASTERN; i++)
 	{
 		if (strcasecmp(file, m_fileList.entries[i].NAME) == 0)
 		{
@@ -117,7 +117,7 @@ bool GobMemoryArchive::fileExists(const char *file)
 	m_curFile = -1;
 
 	//search for this file.
-	for (s32 i = 0; i < m_fileList.MASTERN; i++)
+	for (u32 i = 0; i < m_fileList.MASTERN; i++)
 	{
 		if (strcasecmp(file, m_fileList.entries[i].NAME) == 0)
 		{

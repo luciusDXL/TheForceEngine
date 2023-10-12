@@ -17,6 +17,7 @@
 #include <TFE_Jedi/Level/rfont.h>
 #include <TFE_Jedi/Level/rtexture.h>
 #include <TFE_Jedi/Level/roffscreenBuffer.h>
+#include <TFE_RenderShared/texturePacker.h>
 #include <cstring>
 
 #define TFE_CONVERT_CAPS 0
@@ -246,6 +247,12 @@ namespace TFE_DarkForces
 		s_hudSuperAmmoFont = hud_loadFont("SuperWep.fnt");
 		s_hudShieldFont    = hud_loadFont("ArmNum.fnt");
 		s_hudHealthFont    = hud_loadFont("HelNum.fnt");
+
+		// TFE: Setup the HUD status textures as indexed.
+		s_hudStatusL->flags |= INDEXED;
+		s_hudStatusR->flags |= INDEXED;
+		// Set the index range in the texture packer, so HUD status textures are properly setup for true-color indexing.
+		texturepacker_setIndexStart(HUD_COLORS_START);
 
 		// Gracefully handle 'StatusLf' or 'StatusRt' not loading correctly.
 		// The original code just crashes (probably) in this case.
@@ -483,8 +490,8 @@ namespace TFE_DarkForces
 		y0 += intToFixed16(hudSettings->pixelOffset[2]);
 		y1 += intToFixed16(hudSettings->pixelOffset[2]);
 
-		screenGPU_blitTextureScaled(s_hudStatusR, nullptr, x0, y0, hudScaleX, hudScaleY, 31);
-		screenGPU_blitTextureScaled(s_hudStatusL, nullptr, x1, y1, hudScaleX, hudScaleY, 31);
+		screenGPU_blitTextureScaled(s_hudStatusR, nullptr, x0, y0, hudScaleX, hudScaleY, 255);
+		screenGPU_blitTextureScaled(s_hudStatusL, nullptr, x1, y1, hudScaleX, hudScaleY, 255);
 		if ((hudSettings->hudPos == TFE_HUDPOS_4_3 || hudSettings->pixelOffset[0] > 0 || hudSettings->pixelOffset[1] > 0) && 
 			s_hudCapLeft && s_hudCapRight)
 		{
@@ -697,6 +704,20 @@ namespace TFE_DarkForces
 				s_leftHudShow--;
 			}
 		}
+
+		// Update colors...
+		Vec4f colors[HUD_COLORS_COUNT];
+		const f32 scale = 1.0f / 63.0f; // Convert from VGA color (6-bit) to float.
+		// Copy the final 8 HUD colors to the loaded palette.
+		for (s32 i = 0; i < HUD_COLORS_COUNT; i++)
+		{
+			const u8* colorSrc = s_hudPalette + i * 3;
+			colors[i].x = f32(colorSrc[0]) * scale;
+			colors[i].y = f32(colorSrc[1]) * scale;
+			colors[i].z = f32(colorSrc[2]) * scale;
+			colors[i].w = 1.0f;
+		}
+		screenGPU_setIndexedColors(HUD_COLORS_COUNT, colors);
 	}
 		
 	void hud_drawAndUpdate(u8* framebuffer)

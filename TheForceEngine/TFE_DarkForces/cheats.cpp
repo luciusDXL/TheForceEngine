@@ -42,6 +42,9 @@ namespace TFE_DarkForces
 		"FLY",
 		"NOCLIP",
 		"TESTER",
+		"ADDLIFE",
+		"SUBLIFE",
+		"DIE"
 	};
 
 	char s_cheatString[32] = { 0 };

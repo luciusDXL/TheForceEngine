@@ -1,5 +1,7 @@
 #include <TFE_RenderBackend/textureGpu.h>
 #include <TFE_System/system.h>
+#include <TFE_Settings/settings.h>
+#include "openGL_Caps.h"
 #include <GL/glew.h>
 #include <vector>
 #include <assert.h>
@@ -45,12 +47,20 @@ bool TextureGpu::create(u32 width, u32 height, TexFormat format, bool hasMipmaps
 	m_bytesPerChannel = c_bytesPerChannel[format];
 	m_layers = 1;
 
+	// Catch a case where a pre-existing error is causing failures.
+	GLenum error = glGetError();
+	assert(error == GL_NO_ERROR);
+	if (error != GL_NO_ERROR)
+	{
+		TFE_System::logWrite(LOG_WARNING, "TextureGPU - OpenGL", "Pre-existing OpenGL error: 0x%x when calling TextureGpu::create().", error);
+	}
+
 	glGenTextures(1, &m_gpuHandle);
 	if (!m_gpuHandle) { return false; }
 
 	glBindTexture(GL_TEXTURE_2D, m_gpuHandle);
 	glTexImage2D(GL_TEXTURE_2D, 0, c_internalFormat[format], width, height, 0, c_baseFormat[format], c_channelFormat[format], nullptr);
-	GLenum error = glGetError();
+	error = glGetError();
 	// Handle OpenGL driver wonkiness around float16 textures.
 	if (error != GL_NO_ERROR && c_channelFormat[format] == GL_FLOAT)
 	{
@@ -60,8 +70,8 @@ bool TextureGpu::create(u32 width, u32 height, TexFormat format, bool hasMipmaps
 	assert(error == GL_NO_ERROR);
 	if (error != GL_NO_ERROR)
 	{
-		TFE_System::logWrite(LOG_ERROR, "TextureGPU - OpenGL", "Failed to create texture - size: (%u, %u), format: %s.",
-			m_width, m_height, c_texFormatStr[format]);
+		TFE_System::logWrite(LOG_ERROR, "TextureGPU - OpenGL", "Failed to create texture - size: (%u, %u), format: %s. Error ID: 0x%x",
+			m_width, m_height, c_texFormatStr[format], error);
 		glBindTexture(GL_TEXTURE_2D, 0);
 		return false;
 	}
@@ -76,7 +86,7 @@ bool TextureGpu::create(u32 width, u32 height, TexFormat format, bool hasMipmaps
 	return true;
 }
 
-bool TextureGpu::createArray(u32 width, u32 height, u32 layers, u32 channels)
+bool TextureGpu::createArray(u32 width, u32 height, u32 layers, u32 channels, u32 mipCount)
 {
 	// No need to make this a texture array if the layer count == 1.
 	if (layers <= 1)
@@ -88,21 +98,27 @@ bool TextureGpu::createArray(u32 width, u32 height, u32 layers, u32 channels)
 	m_height = height;
 	m_channels = channels;
 	m_bytesPerChannel = 1;
+	m_mipCount = mipCount;
 	m_layers = layers;
 
 	glGenTextures(1, &m_gpuHandle);
 	if (!m_gpuHandle) { return false; }
 
 	glBindTexture(GL_TEXTURE_2D_ARRAY, m_gpuHandle);
-	if (channels == 1)
+	for (u32 mip = 0; mip < m_mipCount; mip++)
 	{
-		glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_R8, width, height, layers, 0, GL_RED, GL_UNSIGNED_BYTE, nullptr);
+		if (channels == 1)
+		{
+			glTexImage3D(GL_TEXTURE_2D_ARRAY, mip, GL_R8, width, height, layers, 0, GL_RED, GL_UNSIGNED_BYTE, nullptr);
+		}
+		else if (channels == 4)
+		{
+			glTexImage3D(GL_TEXTURE_2D_ARRAY, mip, GL_RGBA8, width, height, layers, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+		}
+		width  >>= 1;
+		height >>= 1;
+		assert(glGetError() == GL_NO_ERROR);
 	}
-	else if (channels == 4)
-	{
-		glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_RGBA8, width, height, layers, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
-	}
-	assert(glGetError() == GL_NO_ERROR);
 
 	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -143,22 +159,25 @@ bool TextureGpu::createWithData(u32 width, u32 height, const void* buffer, MagFi
 	return true;
 }
 
-bool TextureGpu::update(const void* buffer, size_t size, s32 layer)
+bool TextureGpu::update(const void* buffer, size_t size, s32 layer, s32 mipLevel)
 {
 	s32 layerCount = layer < 0 ? m_layers : 1;
 	s32 layerIndex = layer < 0 ? 0 : layer;
-	if (size < m_width * m_height * layerCount) { return false; }
+	//if (mipLevel == 0 && size < m_width * m_height * m_channels * layerCount) { return false; }
+
+	u32 width  = m_width  >> mipLevel;
+	u32 height = m_height >> mipLevel;
 
 	if (m_layers == 1)
 	{
 		glBindTexture(GL_TEXTURE_2D, m_gpuHandle);
-		glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, m_width, m_height, m_channels == 4 ? GL_RGBA : GL_RED, GL_UNSIGNED_BYTE, buffer);
+		glTexSubImage2D(GL_TEXTURE_2D, mipLevel, 0, 0, width, height, m_channels == 4 ? GL_RGBA : GL_RED, GL_UNSIGNED_BYTE, buffer);
 		glBindTexture(GL_TEXTURE_2D, 0);
 	}
 	else
 	{
 		glBindTexture(GL_TEXTURE_2D_ARRAY, m_gpuHandle);
-		glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0/*level*/, 0/*xOffset*/, 0/*yOffset*/, layerIndex, m_width, m_height, layerCount,
+		glTexSubImage3D(GL_TEXTURE_2D_ARRAY, mipLevel, 0/*xOffset*/, 0/*yOffset*/, layerIndex, width, height, layerCount,
 			m_channels == 4 ? GL_RGBA : GL_RED, GL_UNSIGNED_BYTE, buffer);
 		glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
 	}
@@ -167,9 +186,25 @@ bool TextureGpu::update(const void* buffer, size_t size, s32 layer)
 	return true;
 }
 
-void TextureGpu::setFilter(MagFilter filter)
+void TextureGpu::setFilter(MagFilter magFilter, MinFilter minFilter, bool isArray) const
 {
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, filter == MAG_FILTER_LINEAR ? GL_LINEAR : GL_NEAREST);
+	glTexParameteri(isArray ? GL_TEXTURE_2D_ARRAY : GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, magFilter == MAG_FILTER_LINEAR ? GL_LINEAR : GL_NEAREST);
+	if (minFilter == MIN_FILTER_MIPMAP && m_mipCount > 1)
+	{
+		glTexParameteri(isArray ? GL_TEXTURE_2D_ARRAY : GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+		glTexParameteri(isArray ? GL_TEXTURE_2D_ARRAY : GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, (s32)m_mipCount-1);
+		glTexParameteri(isArray ? GL_TEXTURE_2D_ARRAY : GL_TEXTURE_2D, GL_TEXTURE_MAX_LOD, (s32)m_mipCount-1);
+
+		const f32 ani = OpenGL_Caps::getAnisotropyFromQuality(TFE_Settings::getGraphicsSettings()->anisotropyQuality);
+		glTexParameterf(isArray ? GL_TEXTURE_2D_ARRAY : GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY, ani);
+	}
+	else
+	{
+		glTexParameteri(isArray ? GL_TEXTURE_2D_ARRAY : GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, minFilter == MIN_FILTER_NONE ? GL_NEAREST : GL_LINEAR);
+		glTexParameteri(isArray ? GL_TEXTURE_2D_ARRAY : GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0);
+		glTexParameteri(isArray ? GL_TEXTURE_2D_ARRAY : GL_TEXTURE_2D, GL_TEXTURE_MAX_LOD, 0);
+		glTexParameterf(isArray ? GL_TEXTURE_2D_ARRAY : GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY, 1.0f);
+	}
 }
 
 void TextureGpu::bind(u32 slot/* = 0*/) const
@@ -198,4 +233,11 @@ void TextureGpu::clearSlots(u32 count, u32 start/* = 0*/)
 		glActiveTexture(GL_TEXTURE0 + i + start);
 		glBindTexture(GL_TEXTURE_2D, 0);
 	}
+}
+
+void TextureGpu::readCpu(u8* image)
+{
+	glBindTexture(GL_TEXTURE_2D, m_gpuHandle);
+	glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, image);
+	glBindTexture(GL_TEXTURE_2D, 0);
 }

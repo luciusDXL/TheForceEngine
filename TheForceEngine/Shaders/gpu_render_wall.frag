@@ -1,5 +1,5 @@
-#include "Shaders/textureSampleFunc.h"
 #include "Shaders/filter.h"
+#include "Shaders/textureSampleFunc.h"
 #include "Shaders/lighting.h"
 
 uniform vec3 CameraPos;
@@ -92,35 +92,24 @@ vec2 calculateSkyProjection(vec3 cameraVec, vec2 texOffset, out float fade, out 
 	return uv;
 }
 
-void main()
+vec2 computeUV(float type, inout vec3 cameraRelativePos, inout float skyFade, inout float yLimit, inout bool sign, inout bool applyFlatWarp)
 {
-    vec3 cameraRelativePos = Frag_Pos;
-	vec2 uv = vec2(0.0);
-	bool sky = Frag_Uv.y > 2.5;
-	bool sign = false;
-	bool flip = Frag_Color.a > 0.5;
-	bool applyFlatWarp = false;
-	float skyFade = 0.0;
-	float yLimit = 0.0;
-
-	bool fullbright = (Frag_Flags & 1) != 0;
-	bool opaque = (Frag_Flags & 2) != 0;
-
-	if (sky) // Sky
+	vec2 uv;
+	if (type > 2.5)			// Sky
 	{
 		uv = calculateSkyProjection(cameraRelativePos, Texture_Data.xy, skyFade, yLimit);
 	}
-	else if (Frag_Uv.y > 1.5) // Wall
+	else if (type > 1.5)	// Wall
 	{
 		uv.x = length((Frag_Pos.xz + CameraPos.xz) - Texture_Data.xy) * Texture_Data.z;
 		uv.y = (Frag_Uv.x - Frag_Pos.y - CameraPos.y) * Frag_Scale;
 		uv *= 8.0;
-
+				
 		// Texture Offset
 		uv += Frag_Uv.zw;
 	}
-	#ifdef SECTOR_TRANSPARENT_PASS
-	else // Sign
+#ifdef SECTOR_TRANSPARENT_PASS
+	else	// Sign
 	{
 		uv.x = length((Frag_Pos.xz + CameraPos.xz) - Texture_Data.xy) * Texture_Data.z;
 		uv.y = Frag_Uv.x - Frag_Pos.y - CameraPos.y;
@@ -130,8 +119,8 @@ void main()
 		uv += Frag_Uv.zw;
 		sign = true;
 	}
-	#else
-	else if (Frag_Uv.y > 0.0) // Flat
+#else
+	else if (type > 0.0) // Flat
 	{
 		// Project onto the floor or ceiling plane.
 		float t = Frag_Uv.x / Frag_Pos.y;
@@ -142,18 +131,22 @@ void main()
 		applyFlatWarp = true;
 		uv = (cameraRelativePos.xz + CameraPos.xz - Texture_Data.xy)*vec2(-8.0, 8.0);
 	}
-	else // Cap
+	else	 // Cap
 	{
 		// Warp texture uvs for non-64x64 tiles.
 		applyFlatWarp = true;
 		uv = (cameraRelativePos.xz + CameraPos.xz - Texture_Data.xy)*vec2(-8.0, 8.0);
 	}
-	#endif
+#endif
+	return uv;
+}
 
+float computeShading(bool fullbright, vec3 cameraRelativePos)
+{
 	float light = 31.0;
-	float ambient = 31.0;
-	if (!sky && !fullbright)
+	if (!fullbright)
 	{
+		float ambient = 31.0;
 		float z = dot(cameraRelativePos, CameraDir);
 		float lightOffset   = Frag_Color.r;
 		ambient = Frag_Color.b;
@@ -181,49 +174,107 @@ void main()
 			light = getDepthAttenuation(z, ambient, light, lightOffset);
 		}
 	}
+	return light;
+}
 
+float getBayerIndex(vec2 uv)
+{
+	// 4x4 Ordered Dither pattern.
+	mat4 bayerIndex = mat4(
+		vec4(00.0/16.0, 12.0/16.0, 03.0/16.0, 15.0/16.0),
+		vec4(08.0/16.0, 04.0/16.0, 11.0/16.0, 07.0/16.0),
+		vec4(02.0/16.0, 14.0/16.0, 01.0/16.0, 13.0/16.0),
+		vec4(10.0/16.0, 06.0/16.0, 09.0/16.0, 05.0/16.0));
+
+	ivec2 iuv = ivec2(uv * 2.0);
+	return bayerIndex[iuv.x&3][iuv.y&3];
+}
+
+void main()
+{
+    vec3 cameraRelativePos = Frag_Pos;
+	bool sky = Frag_Uv.y > 2.5;
+	bool sign = false;
+	bool flip = Frag_Color.a > 0.5;
+	bool applyFlatWarp = false;
+	float skyFade = 0.0;
+	float yLimit = 0.0;
+
+	bool fullbright = (Frag_Flags & 1) != 0;
+	bool opaque = (Frag_Flags & 2) != 0;
+
+	// Compute the texture coordinates.
+	vec2 uv = computeUV(Frag_Uv.y, cameraRelativePos, skyFade, yLimit, sign, applyFlatWarp);
+	// Compute the shading (light) value.
+	float light = computeShading(sky || fullbright, cameraRelativePos);
+		
+	// Read the base color.
+#ifdef OPT_TRUE_COLOR
+	vec4 baseColor;
+#else
 	float baseColor;
+#endif
 
-	#ifdef SECTOR_TRANSPARENT_PASS
+#ifdef SECTOR_TRANSPARENT_PASS
 	if (sign)
 	{
 		baseColor = sampleTextureClamp(Frag_TextureId, uv, opaque);
 	}
 	else
-	#endif
+#endif
 	{
-		baseColor = sampleTexture(Frag_TextureId, uv, sky, flip, applyFlatWarp);
-	}
-
-	if (skyFade > 0.0)
-	{
-		// 4x4 Ordered Dither pattern.
-		mat4 bayerIndex = mat4(
-			vec4(00.0/16.0, 12.0/16.0, 03.0/16.0, 15.0/16.0),
-			vec4(08.0/16.0, 04.0/16.0, 11.0/16.0, 07.0/16.0),
-			vec4(02.0/16.0, 14.0/16.0, 01.0/16.0, 13.0/16.0),
-			vec4(10.0/16.0, 06.0/16.0, 09.0/16.0, 05.0/16.0));
-
-		ivec2 iuv = ivec2(uv * 2.0);
-		float rnd = bayerIndex[iuv.x&3][iuv.y&3];
-		
-		if (rnd < skyFade)
+	#ifdef OPT_TRUE_COLOR
+		vec3 tint;
+		baseColor = sampleTexture(Frag_TextureId, uv, sky, flip, applyFlatWarp, tint);
+		// Per-texture color correction factor.
+		if (light < 31.0)
 		{
-			baseColor = sampleTexture(Frag_TextureId, vec2(256.0, yLimit), sky, flip, false);
+			float tintFactor = clamp((31.0 - light) / 15.0, 0.0, 1.0) * (1.0 - clamp((baseColor.a - 0.5) * 2.0, 0.0, 1.0));
+			baseColor.rgb *= mix(vec3(1.0), tint, tintFactor);
 		}
+	#else
+		baseColor = sampleTexture(Frag_TextureId, uv, sky, flip, applyFlatWarp);
+	#endif
 	}
 
-	// Support transparent textures.
-	#ifdef SECTOR_TRANSPARENT_PASS
-	if (baseColor < 0.5 && LightData.w < 1.0) { discard; }
+	// Handle sky fading.
+	if (skyFade > 0.0 && getBayerIndex(uv) < skyFade)
+	{
+	#ifdef OPT_TRUE_COLOR
+		vec3 tint; // ignore.
+		baseColor = sampleTexture(Frag_TextureId, vec2(256.0, yLimit), sky, flip, false, tint);
+	#else
+		baseColor = sampleTexture(Frag_TextureId, vec2(256.0, yLimit), sky, flip, false);
+	#endif
+	}
+
+	// Compute emissive.
+	#ifdef OPT_TRUE_COLOR
+		float emissive = clamp((baseColor.a - 0.5) * 2.0, 0.0, 1.0);
+	#else
+		float emissive = baseColor;
 	#endif
 
-	Out_Color = getFinalColor(baseColor, light);
+	// Get the final shaded color.
+	Out_Color = getFinalColor(baseColor, light, emissive);
+
+	// Handle transparency.
+#ifdef SECTOR_TRANSPARENT_PASS
+	if (discardPixel(baseColor, LightData.w)) { discard; }
+	#ifdef OPT_TRUE_COLOR
+		Out_Color.a = min(Out_Color.a * 2.008, 1.0);
+	#endif
+#endif
+	
 	// Enable solid color rendering for wireframe.
-	Out_Color.rgb = LightData.w > 0.5 ? vec3(0.6, 0.7, 0.8) : Out_Color.rgb;
+	Out_Color.rgb = LightData.w > 0.5 ? vec3(0.6, 0.7, 0.8) : handlePaletteFx(Out_Color.rgb);
 
-	#ifdef OPT_BLOOM
 	// Material (just emissive for now)
-	Out_Material = getMaterialColor(baseColor);
+#ifdef OPT_BLOOM
+	Out_Material = getMaterialColor(emissive);
+	#if defined(OPT_TRUE_COLOR) && defined(SECTOR_TRANSPARENT_PASS)
+		Out_Material.a = Out_Color.a;
+		Out_Material.rgb *= Out_Material.a;
 	#endif
+#endif
 }

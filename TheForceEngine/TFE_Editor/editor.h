@@ -6,16 +6,80 @@
 // in order to properly test elements in isolation without having
 // to "play" the game as intended.
 //////////////////////////////////////////////////////////////////////
-
 #include <TFE_System/types.h>
-#include <TFE_Renderer/renderer.h>
+#include <TFE_Archive/archive.h>
+#include <TFE_Game/igame.h>
+#include <vector>
+
+struct ImVec4;
 
 namespace TFE_Editor
 {
-	void enable(TFE_Renderer* renderer);
+	struct Asset;
+
+	typedef std::vector<u8> WorkBuffer;
+	struct RecentProject
+	{
+		std::string name;
+		std::string path;
+	};
+
+	enum FontType
+	{
+		FONT_SMALL = 0,
+		FONT_COUNT,
+	};
+
+	enum EditorTextColor
+	{
+		TEXTCLR_NORMAL = 0,
+		TEXTCLR_TITLE_ACTIVE,
+		TEXTCLR_TITLE_INACTIVE,
+		TEXTCLR_COUNT
+	};
+
+	enum EditorPopup
+	{
+		POPUP_NONE = 0,
+		POPUP_MSG_BOX,
+		POPUP_CONFIG,
+		POPUP_RESOURCES,
+		POPUP_NEW_PROJECT,
+		POPUP_EDIT_PROJECT,
+		POPUP_NEW_LEVEL,
+		POPUP_COUNT
+	};
+
+	#define LIST_SELECT(label, arr, index) listSelection(label, arr, IM_ARRAYSIZE(arr), (s32*)&index)
+		
+	void enable();
 	void disable();
 	bool update(bool consoleOpen = false);
 	bool render();
 
-	void showPerf(u32 frame);
+	void pushFont(FontType type);
+	void popFont();
+
+	void showMessageBox(const char* type, const char* msg, ...);
+	void openEditorPopup(EditorPopup popup);
+	void listSelection(const char* labelText, const char** listValues, size_t listLen, s32* index, s32 comboOffset=96, s32 comboWidth=0);
+
+	void enableAssetEditor(Asset* asset);
+	void disableAssetEditor();
+	void disableNextItem();
+	void enableNextItem();
+
+	// Resizable temporary memory.
+	WorkBuffer& getWorkBuffer();
+	ArchiveType getArchiveType(const char* filename);
+	Archive* getArchive(const char* name, GameID gameId);
+	void getTempDirectory(char* tmpDir);
+
+	void clearRecents();
+	void addToRecents(const char* path);
+	void removeFromRecents(const char* path);
+	std::vector<RecentProject>* getRecentProjects();
+	
+	ImVec4 getTextColor(EditorTextColor color);
+	bool getMenuActive();
 }

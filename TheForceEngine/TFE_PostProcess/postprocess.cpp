@@ -283,7 +283,7 @@ namespace TFE_PostProcess
 				if (effectInst->inputs[i].type == PTYPE_TEXTURE)
 				{
 					effectInst->inputs[i].tex->bind(i);
-					if (effectInst->forceLinearFilter) { effectInst->inputs[i].tex->setFilter(MAG_FILTER_LINEAR); }
+					if (effectInst->forceLinearFilter) { effectInst->inputs[i].tex->setFilter(MAG_FILTER_LINEAR, MIN_FILTER_LINEAR); }
 				}
 				else if (effectInst->inputs[i].type == PTYPE_DYNAMIC_TEX)
 				{
@@ -304,7 +304,7 @@ namespace TFE_PostProcess
 				if (effectInst->inputs[i].type == PTYPE_TEXTURE && effectInst->forceLinearFilter)
 				{
 					effectInst->inputs[i].tex->bind(i);
-					if (effectInst->forceLinearFilter) { effectInst->inputs[i].tex->setFilter(MAG_FILTER_NONE); }
+					if (effectInst->forceLinearFilter) { effectInst->inputs[i].tex->setFilter(MAG_FILTER_NONE, MIN_FILTER_NONE); }
 				}
 				TextureGpu::clear(i);
 			}

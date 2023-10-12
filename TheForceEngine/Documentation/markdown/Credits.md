@@ -7,6 +7,7 @@ I believe that I have captured all of the individual contributors and dependenci
   * Manuel Lauss - Most of the Linux support contributions, other contributions.
   * Matthew Gilmore - Contributed to Linux support and testing.
   * RC2225 (Tim) - Contributed to Linux support.
+  * Kevin Foley - Accessibility options - such as captions, and other contributions.
  
   * Craig Yates - TFE Logo design. Minimalist title screen design.
   * Pawel "Dzierzan" Dzierzanowski - Adjustable Hud mod (built-in).
@@ -62,7 +63,7 @@ Most of the source code listed below is embedded within the project so that it c
 
 Note that some libraries will be replaced by custom code or simpler libraries in the future (such as DevIL).
 
-**Windowing/OpenGL**
+**Windowing/OpenGL/Audio/Image**
 SDL 2.0.x
   * [https://www.libsdl.org/](https://www.libsdl.org/)
   * License: ZLIB
@@ -88,16 +89,7 @@ Clipper
   * [http://www.angusj.com/delphi/clipper.php](http://www.angusj.com/delphi/clipper.php)
   * License: Boost Software License
 
-**Image Loading**
-DevIL
-  * [http://openil.sourceforge.net/](http://openil.sourceforge.net/)
-  * License: LGPL 2.1
-
-**Audio**
-RtAudio (Core Audio I/O)
-  * [http://www.music.mcgill.ca/~gary/rtaudio/](http://www.music.mcgill.ca/~gary/rtaudio/)
-  * License: Custom
-
+**Music**
 RtMidi (Core Midi Hardware I/O)
   * [https://www.music.mcgill.ca/~gary/rtmidi/](https://www.music.mcgill.ca/~gary/rtmidi/)
   * License: Custom
@@ -109,6 +101,10 @@ TinySoundFont
 Nuked-OPL3
   * https://github.com/nukeykt/Nuked-OPL3
   * License: GPL 2.1
+
+**Scripting**
+Angelscript
+  * [https://www.angelcode.com/angelscript/](https://www.angelcode.com/angelscript/)
 
 **Other**
   * [https://github.com/kuba--/zip](https://github.com/kuba--/zip)

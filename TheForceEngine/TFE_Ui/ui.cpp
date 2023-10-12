@@ -99,6 +99,11 @@ void render()
 	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 }
 
+void invalidateFontAtlas()
+{
+	ImGui_ImplOpenGL3_DestroyFontsTexture();
+}
+
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
 // General TFE tries to keep paths consistently using forward slashes for readability, consistency and
 // generally they work equally well on Linux, Mac and Windows.

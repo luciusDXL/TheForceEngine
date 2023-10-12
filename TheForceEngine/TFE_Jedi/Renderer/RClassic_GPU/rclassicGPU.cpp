@@ -6,6 +6,7 @@
 #include <TFE_Jedi/Math/fixedPoint.h>
 #include <TFE_Jedi/Math/core_math.h>
 #include <TFE_RenderBackend/renderBackend.h>
+#include <TFE_Settings/settings.h>
 #include <TFE_Game/igame.h>
 #include "../redgePair.h"
 #include "../rcommon.h"
@@ -36,10 +37,10 @@ namespace RClassic_GPU
 	{
 		s_width = width;
 		s_height = height;
-		s_rcfltState.halfWidth = f32(width >> 1);
-		s_rcfltState.focalLength = s_rcfltState.halfWidth;
+		s_rcfltState.halfWidth      = f32(width >> 1);
+		s_rcfltState.focalLength    = s_rcfltState.halfWidth;
 		s_rcfltState.focalLenAspect = s_rcfltState.halfWidth;
-		s_rcfltState.aspectScaleY = 1.0f;
+		s_rcfltState.aspectScaleY   = 1.0f;
 
 		if (TFE_RenderBackend::getWidescreen())
 		{
@@ -66,6 +67,16 @@ namespace RClassic_GPU
 		}
 		s_rcfltState.focalLenAspect *= s_rcfltState.aspectScaleY;
 
+		// Allow for FOV changes, assumes the base horizontal FOV when using 4:3 is 90 degrees.
+		// FOV scale = tan(FOV/2)
+		const s32 fov = TFE_Settings::getGraphicsSettings()->fov;
+		if (fov != 90 && fov > 0 && fov < 180)
+		{
+			const f32 fovScale = 1.0f / tanf(f32(fov) * 0.5f * PI / 180.0f);
+			s_rcfltState.focalLength *= fovScale;
+			s_rcfltState.focalLenAspect *= fovScale;
+		}
+
 		s_cameraProj = TFE_Math::computeProjMatrixExplicit(2.0f*s_rcfltState.focalLength / f32(s_width),
 			2.0f*s_rcfltState.focalLenAspect / f32(s_height), 0.01f, 4096.0f);
 	}
@@ -81,7 +92,7 @@ namespace RClassic_GPU
 		sinCosFlt(-pitch, &sinPitch, &cosPitch);
 
 		s_cameraMtx.m0 = { cosYaw, 0.0f, sinYaw };
-		s_cameraMtx.m1 = { sinYaw * sinPitch, cosPitch, -cosYaw * sinPitch };
+		s_cameraMtx.m1 = { sinYaw * sinPitch,  cosPitch, -cosYaw * sinPitch };
 		s_cameraMtx.m2 = { sinYaw * cosPitch, -sinPitch, -cosYaw * cosPitch };
 		s_cameraDir    = { -s_cameraMtx.m2.x, -s_cameraMtx.m2.y, -s_cameraMtx.m2.z };
 		s_cameraRight  = {  s_cameraMtx.m0.x,  s_cameraMtx.m0.y,  s_cameraMtx.m0.z };

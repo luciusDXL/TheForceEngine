@@ -169,7 +169,7 @@ namespace TFE_FrontEndUI
 	{
 		"8-bit (Classic)",		// COLORMODE_8BIT
 		"8-bit Interpolated",   // COLORMODE_8BIT_INTERP
-		//"True Color",           // COLORMODE_TRUE_COLOR
+		"True Color",           // COLORMODE_TRUE_COLOR
 	};
 
 	typedef void(*MenuItemSelected)();
@@ -249,7 +249,7 @@ namespace TFE_FrontEndUI
 	void configHud();
 	void configSound();
 	void configSystem();
-	void configA11y();
+	void configA11y(s32 tabWidth, u32 height);
 	void pickCurrentResolution();
 	void manual();
 	void credits();
@@ -271,17 +271,19 @@ namespace TFE_FrontEndUI
 	{
 		char imagePath[TFE_MAX_PATH];
 		strcpy(imagePath, localPath);
-		if (!TFE_Paths::mapSystemPath(imagePath)) {
+		if (!TFE_Paths::mapSystemPath(imagePath))
+		{
 			memset(imagePath, 0, TFE_MAX_PATH);
 			TFE_Paths::appendPath(TFE_PathType::PATH_PROGRAM, localPath, imagePath, TFE_MAX_PATH);
+			FileUtil::fixupPath(imagePath);
 		}
-		Image* image = TFE_Image::get(imagePath);
+		SDL_Surface* image = TFE_Image::get(imagePath);
 		if (image)
 		{
-			TextureGpu* gpuImage = TFE_RenderBackend::createTexture(image->width, image->height, image->data, MAG_FILTER_LINEAR);
+			TextureGpu* gpuImage = TFE_RenderBackend::createTexture(image->w, image->h, (u32*)image->pixels, MAG_FILTER_LINEAR);
 			uiImage->image = TFE_RenderBackend::getGpuPtr(gpuImage);
-			uiImage->width = image->width;
-			uiImage->height = image->height;
+			uiImage->width = image->w;
+			uiImage->height = image->h;
 			return true;
 		}
 		return false;
@@ -362,6 +364,7 @@ namespace TFE_FrontEndUI
 
 	void shutdown()
 	{
+		modLoader_cleanupResources();
 		delete[] s_aboutDisplayStr;
 		delete[] s_manualDisplayStr;
 		delete[] s_creditsDisplayStr;
@@ -689,14 +692,16 @@ namespace TFE_FrontEndUI
 				ImVec2 textSize = ImVec2(f32(textWidth), f32(textHeight));
 				for (s32 i = 0; i < s_menuItemCount; i++)
 				{
-					// Disable the editor for now.
-					// Remove this out once it is working again.
+				#if ENABLE_EDITOR == 0
+					// Disable the editor for now when not running on Windows.
 					if (s_menuItemselected[i] == menuItem_Editor)
 					{
 						ImGui::ImageAnimButton(s_buttonNormal[i].image, s_buttonSelected[i].image, textSize,
-							ImVec2(0,0), ImVec2(1,1), ImVec2(0,0), ImVec2(1,1), -1, ImVec4(0,0,0,0), ImVec4(0.25f, 0.25f, 0.25f, 1.0f));
+							ImVec2(0, 0), ImVec2(1, 1), ImVec2(0, 0), ImVec2(1, 1), -1, ImVec4(0, 0, 0, 0), ImVec4(0.25f, 0.25f, 0.25f, 1.0f));
 					}
-					else if (ImGui::ImageAnimButton(s_buttonNormal[i].image, s_buttonSelected[i].image, textSize))
+					else
+				#endif
+					if (ImGui::ImageAnimButton(s_buttonNormal[i].image, s_buttonSelected[i].image, textSize))
 					{
 						s_menuItemselected[i]();
 					}
@@ -753,14 +758,12 @@ namespace TFE_FrontEndUI
 			if (ImGui::Button("Cancel") || !active)
 			{
 				s_subUI = FEUI_NONE;
-				modLoader_cleanupResources();
 			}
 			else
 			{
 				if (!modLoader_selectionUI())
 				{
 					s_subUI = FEUI_NONE;
-					modLoader_cleanupResources();
 				}
 			}
 			ImGui::End();
@@ -881,7 +884,7 @@ namespace TFE_FrontEndUI
 			}
 
 			ImGui::SetNextWindowPos(ImVec2(160.0f*s_uiScale, 0.0f));
-			ImGui::SetNextWindowSize(ImVec2(f32(tabWidth), f32(h)));
+			if (s_configTab != CONFIG_A11Y) { ImGui::SetNextWindowSize(ImVec2(f32(tabWidth), f32(h))); }
 			ImGui::SetNextWindowBgAlpha(0.95f);
 			ImGui::Begin("##Settings", &active, window_flags);
 
@@ -919,7 +922,7 @@ namespace TFE_FrontEndUI
 				configSystem();
 				break;
 			case CONFIG_A11Y:
-				configA11y();
+				configA11y(tabWidth, h);
 				break;
 			};
 			renderBackground();
@@ -936,7 +939,10 @@ namespace TFE_FrontEndUI
 			char path[TFE_MAX_PATH];
 			char fileName[TFE_MAX_PATH];
 			strcpy(fileName, "Documentation/markdown/TheForceEngineManual.md");
-			TFE_Paths::appendPath(PATH_PROGRAM, fileName, path);
+			if (!TFE_Paths::mapSystemPath(fileName))
+				TFE_Paths::appendPath(PATH_PROGRAM, fileName, path);
+			else
+				strcpy(path, fileName);
 
 			FileStream file;
 			if (file.open(path, Stream::MODE_READ))
@@ -961,7 +967,10 @@ namespace TFE_FrontEndUI
 			char path[TFE_MAX_PATH];
 			char fileName[TFE_MAX_PATH];
 			strcpy(fileName, "Documentation/markdown/credits.md");
-			TFE_Paths::appendPath(PATH_PROGRAM, fileName, path);
+			if (!TFE_Paths::mapSystemPath(fileName))
+				TFE_Paths::appendPath(PATH_PROGRAM, fileName, path);
+			else
+				strcpy(path, fileName);
 
 			FileStream file;
 			if (file.open(path, Stream::MODE_READ))
@@ -986,7 +995,10 @@ namespace TFE_FrontEndUI
 			char path[TFE_MAX_PATH];
 			char fileName[TFE_MAX_PATH];
 			strcpy(fileName, "Documentation/markdown/TheForceEngine.md");
-			TFE_Paths::appendPath(PATH_PROGRAM, fileName, path);
+			if (!TFE_Paths::mapSystemPath(fileName))
+				TFE_Paths::appendPath(PATH_PROGRAM, fileName, path);
+			else
+				strcpy(path, fileName);
 
 			FileStream file;
 			if (file.open(path, Stream::MODE_READ))
@@ -1018,7 +1030,7 @@ namespace TFE_FrontEndUI
 		ImGui::PopFont();
 
 		ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.25f, 1.0f, 0.25f, 1.0f));
-		ImGui::LabelText("##ConfigLabel", "The path should contain the source game exe or gob/lab files.");
+		ImGui::TextWrapped("The path should contain the source game exe or gob/lab files.");
 		ImGui::PopStyleColor();
 		ImGui::Spacing();
 
@@ -2265,6 +2277,13 @@ namespace TFE_FrontEndUI
 				game->df_pitchLimit = PitchLimit(s_pitchLimit);
 			}
 
+			// FOV.
+			ImGui::SetNextItemWidth(196 * s_uiScale);
+			ImGui::SliderInt("FOV", &graphics->fov, 20, 160, "%03d"); ImGui::SameLine(0.0f, 32.0f*s_uiScale);
+			ImGui::SetNextItemWidth(128 * s_uiScale);
+			ImGui::InputInt("##FOVText", &graphics->fov, 1, 20, ImGuiInputTextFlags_CharsDecimal);
+			graphics->fov = clamp(graphics->fov, 5, 175);
+
 			// Sky rendering mode.
 			s32 skyMode = graphics->skyMode;
 			ImGui::LabelText("##ConfigLabel", "Sky Render Mode"); ImGui::SameLine(comboOffset);
@@ -2284,6 +2303,22 @@ namespace TFE_FrontEndUI
 			if (graphics->colorMode == COLORMODE_8BIT || graphics->colorMode == COLORMODE_8BIT_INTERP)
 			{
 				ImGui::Checkbox("Dithered Bilinear", &graphics->ditheredBilinear);
+			}
+			else if (graphics->colorMode == COLORMODE_TRUE_COLOR)
+			{
+				ImGui::LabelText("##TextureFilterLabel", "Texture Filtering");
+				ImGui::Checkbox("Enable Bilinear Filter", &graphics->useBilinear);
+				ImGui::Checkbox("Enable Mipmapping", &graphics->useMipmapping);
+				if (graphics->useBilinear)
+				{
+					ImGui::SetNextItemWidth(196 * s_uiScale);
+					ImGui::SliderFloat("Bilinear Sharpness", &graphics->bilinearSharpness, 0.0f, 1.0f);
+				}
+				if (graphics->useMipmapping)
+				{
+					ImGui::SetNextItemWidth(196 * s_uiScale);
+					ImGui::SliderFloat("Anisotropic Filter Quality", &graphics->anisotropyQuality, 0.0f, 1.0f);
+				}
 			}
 		}
 		ImGui::Separator();
@@ -2490,7 +2525,7 @@ namespace TFE_FrontEndUI
 					sound->midiType = (s32)device->getType();
 					sound->midiOutput = device->getActiveOutput();
 				}
-				
+
 				TFE_MidiPlayer::resumeThread();
 				TFE_Audio::resume();
 
@@ -2604,7 +2639,7 @@ namespace TFE_FrontEndUI
 		ImGui::LabelText("##ConfigLabel", "%s", label);
 		ImGui::PopStyleColor();
 		ImGui::SameLine();
-		RGBAf c;
+		RGBAf c = RGBAf();
 		c.r = color->getRedF();
 		c.g = color->getGreenF();
 		c.b = color->getBlueF();
@@ -2634,52 +2669,136 @@ namespace TFE_FrontEndUI
 		ImGui::SetNextItemWidth(valueWidth);
 		ImGui::SliderInt(tag, value, min, max);
 	}
-
-	//Accessibility
-	void configA11y()
+	
+	string DrawFileListCombo(const char* tag, string currentFileName, string currentFilePath, TFE_A11Y::FilePathList filePathList)
 	{
-		TFE_Settings_A11y* a11y = TFE_Settings::getA11ySettings();
-		float labelW = 140 * s_uiScale;
-		float valueW = 260 * s_uiScale;
+		// We only display the file name in the dropdown, but internally track the full path.
+		if (ImGui::BeginCombo(tag, currentFileName.c_str()))
+		{
+			std::vector<string>* names = filePathList.getFileNames();
+			std::vector<string>* paths = filePathList.getFilePaths();
 
-		//CUTSCENES -----------------------------------------
+			for (int n = 0; n < names->size(); n++)
+			{
+				string name = names->at(n);
+				string path = paths->at(n);
+				bool is_selected = (currentFilePath == path);
+				if (ImGui::Selectable(name.c_str(), is_selected)) { currentFilePath = path; }
+				if (is_selected) 
+				{ 
+					ImGui::SetItemDefaultFocus();
+				}
+			}
+			ImGui::EndCombo();
+		}
+		return currentFilePath;	
+	}
+
+	// Accessibility
+	void configA11y(s32 tabWidth, u32 height)
+	{
+		// WINDOW --------------------------------------------
+		TFE_Settings_A11y* a11ySettings = TFE_Settings::getA11ySettings();
+		f32 labelW = 140 * s_uiScale;
+		f32 valueW = 260 * s_uiScale - 10;
+
+		// Draw the example caption if captions are enabled, and resize the settings window accordingly.
+		if (a11ySettings->captionSystemEnabled())
+		{
+			Vec2f captionWindowSize = TFE_A11Y::drawExampleCaptions();
+
+			// Resize the settings window so it isn't covered by the example caption
+			ImVec2 windowSize;
+			windowSize.x = (f32)tabWidth;
+			windowSize.y = (f32)height - captionWindowSize.z - TFE_A11Y::DEFAULT_LINE_HEIGHT * 2;
+			ImGui::SetWindowSize(windowSize);
+		}
+		else // Captions not enabled
+		{
+			ImGui::SetWindowSize(ImVec2((f32)tabWidth, (f32)height));
+		}
+
+		// CAPTIONS -------------------------------------------
 		ImGui::PushFont(s_dialogFont);
-		ImGui::LabelText("##ConfigLabel2", "Cutscenes");
+		ImGui::LabelText("##ConfigLabel", "Captions");
 		ImGui::PopFont();
 
-		ImGui::Checkbox("Subtitles (voice)##Cutscenes", &a11y->showCutsceneSubtitles);
-		ImGui::SameLine(0, 22);
-		ImGui::Checkbox("Captions (SFX)##Cutscenes", &a11y->showCutsceneCaptions);
+		// Check status, and init the caption system if necessary.
+		if (TFE_A11Y::getCaptionSystemStatus() == TFE_A11Y::CC_NOT_LOADED) 
+		{
+			TFE_A11Y::initCaptions(); 
+		}
+		if (TFE_A11Y::getCaptionSystemStatus() == TFE_A11Y::CC_ERROR)
+		{
+			ImGui::LabelText("##ConfigLabel", "Error: Caption file could not be loaded!");
+		}
+
+		// Caption file dropdown.
+		ImGui::LabelText("##ConfigLabel", "Subtitle/caption file:");
+		TFE_A11Y::FilePath currentCaptionFile = TFE_A11Y::getCurrentCaptionFile();
+		string currentCaptionFilePath = DrawFileListCombo("##ccfile", currentCaptionFile.name, currentCaptionFile.path, TFE_A11Y::getCaptionFiles());
+		// If user changed the selected caption file, reload captions.
+		if (currentCaptionFilePath != currentCaptionFile.path)
+		{
+			TFE_A11Y::clearActiveCaptions();
+			TFE_A11Y::loadCaptions(currentCaptionFilePath);
+		}
 		
-		DrawFontSizeCombo(labelW, valueW, "Font Size##Cutscenes", "##CFS", (s32*)&a11y->cutsceneFontSize);
-		DrawRGBFields(labelW, valueW, "Font Color##Cutscenes", &a11y->cutsceneFontColor);
-		DrawLabelledFloatSlider(labelW, valueW * 0.5f - 2, "Background Opacity", "##CBO", &a11y->cutsceneTextBackgroundAlpha, 0.0f, 1.0f);
+		// Font file dropdown.
+		ImGui::LabelText("##ConfigLabel", "Font:");
+		TFE_A11Y::FilePath currentFont = TFE_A11Y::getCurrentFontFile();
+		string currentFontPath = DrawFileListCombo("##fontfile", currentFont.name, currentFont.path, TFE_A11Y::getFontFiles());
+		// If user changed the selected font file, queue the font to load after we finish rendering ImGui
+		// (we can't add new fonts to the ImGui font atlas while ImGui is active).
+		if (currentFontPath != currentFont.path)
+		{
+			TFE_A11Y::setPendingFont(currentFontPath);
+		}
+
+		// CUTSCENES -----------------------------------------
+		ImGui::Dummy(ImVec2(0.0f, 10.0f));
+		ImGui::PushFont(s_versionFont);
+		ImGui::LabelText("##ConfigLabel", "Cutscenes");
+		ImGui::PopFont();
+
+		ImGui::Checkbox("Subtitles (voice)##Cutscenes", &a11ySettings->showCutsceneSubtitles);
+		ImGui::SameLine(0, 22);
+		ImGui::Checkbox("Captions (SFX)##Cutscenes", &a11ySettings->showCutsceneCaptions);
+		
+		DrawFontSizeCombo(labelW, valueW, "Font Size##Cutscenes", "##CFS", (s32*)&a11ySettings->cutsceneFontSize);
+		DrawRGBFields(labelW, valueW, "Font Color##Cutscenes", &a11ySettings->cutsceneFontColor);
+		DrawLabelledFloatSlider(labelW, valueW * 0.5f - 2, "Background Opacity", "##CBO", &a11ySettings->cutsceneTextBackgroundAlpha, 0.0f, 1.0f);
 		ImGui::SameLine(0, 40);
-		ImGui::Checkbox("Border##Cutscenes", &a11y->showCutsceneTextBorder);
-		DrawLabelledFloatSlider(labelW, valueW, "Text speed", "##CTS", &a11y->cutsceneTextSpeed, 0.5f, 2.0f);
+		ImGui::Checkbox("Border##Cutscenes", &a11ySettings->showCutsceneTextBorder);
+		DrawLabelledFloatSlider(labelW, valueW, "Text speed", "##CTS", &a11ySettings->cutsceneTextSpeed, 0.5f, 2.0f);
 
-		ImGui::Separator();
-
-		// GAMEPLAY------------------------------------------
-		ImGui::PushFont(s_dialogFont);
+		// GAMEPLAY ------------------------------------------
+		ImGui::Dummy(ImVec2(0.0f, 10.0f));
+		ImGui::PushFont(s_versionFont);
 		ImGui::LabelText("##ConfigLabel3", "Gameplay");
 		ImGui::PopFont();
 
-		ImGui::Checkbox("Subtitles (voice)##Gameplay", &a11y->showGameplaySubtitles);
+		ImGui::Checkbox("Subtitles (voice)##Gameplay", &a11ySettings->showGameplaySubtitles);
 		ImGui::SameLine(0, 22);
-		ImGui::Checkbox("Captions (SFX)##Gameplay", &a11y->showGameplayCaptions);
+		ImGui::Checkbox("Captions (SFX)##Gameplay", &a11ySettings->showGameplayCaptions);
 
-		DrawFontSizeCombo(labelW, valueW, "Font Size##Gameplay", "##GFS", (s32*)&a11y->gameplayFontSize);
-		DrawRGBFields(labelW, valueW, "Font Color##Gameplay", &a11y->gameplayFontColor);
-		DrawLabelledFloatSlider(labelW, valueW * 0.5f - 2, "Background Opacity", "##GBO", &a11y->gameplayTextBackgroundAlpha, 0.0f, 1.0f);
+		DrawFontSizeCombo(labelW, valueW, "Font Size##Gameplay", "##GFS", (s32*)&a11ySettings->gameplayFontSize);
+		DrawRGBFields(labelW, valueW, "Font Color##Gameplay", &a11ySettings->gameplayFontColor);
+		DrawLabelledFloatSlider(labelW, valueW * 0.5f - 2, "Background Opacity", "##GBO", &a11ySettings->gameplayTextBackgroundAlpha, 0.0f, 1.0f);
 		ImGui::SameLine(0, 40);
-		ImGui::Checkbox("Border##Gameplay", &a11y->showGameplayTextBorder);
-		DrawLabelledFloatSlider(labelW, valueW, "Text speed", "##GTS", &a11y->gameplayTextSpeed, 0.5f, 2.0f);
+		ImGui::Checkbox("Border##Gameplay", &a11ySettings->showGameplayTextBorder);
+		DrawLabelledFloatSlider(labelW, valueW, "Text speed", "##GTS", &a11ySettings->gameplayTextSpeed, 0.5f, 2.0f);
 
-		DrawLabelledIntSlider(labelW, valueW, "Max Lines", "##CML", &a11y->gameplayMaxTextLines, 2, 7);
-		DrawLabelledIntSlider(labelW, valueW, "Min. Volume", "##CMV", &a11y->gameplayCaptionMinVolume, 0, 127);
+		DrawLabelledIntSlider(labelW, valueW, "Max Lines", "##CML", &a11ySettings->gameplayMaxTextLines, 2, 7);
+		DrawLabelledIntSlider(labelW, valueW, "Min. Volume", "##CMV", &a11ySettings->gameplayCaptionMinVolume, 0, 127);
 
-		TFE_A11Y::drawExampleCaptions();
+		// MOTION SICKNESS -------------------------------------
+		ImGui::Dummy(ImVec2(0.0f, 10.0f));
+		ImGui::Separator();
+		ImGui::PushFont(s_dialogFont);
+		ImGui::LabelText("##ConfigLabel4", "Motion Sickness");
+		ImGui::PopFont();
+		ImGui::Checkbox("Enable headwave", &a11ySettings->enableHeadwave);
 	}
 
 	void pickCurrentResolution()
@@ -2835,6 +2954,7 @@ namespace TFE_FrontEndUI
 				gameSettings->df_showSecretFoundMsg = true;
 				gameSettings->df_bobaFettFacePlayer = true;
 				gameSettings->df_smoothVUEs = true;
+				gameSettings->df_pitchLimit = (temp == TEMPLATE_MODERN) ? PITCH_MAXIMUM : PITCH_VANILLA_PLUS;
 				// Graphics
 				graphicsSettings->rendererIndex = RENDERER_HARDWARE;
 				graphicsSettings->skyMode = SKYMODE_CYLINDER;
@@ -2842,14 +2962,21 @@ namespace TFE_FrontEndUI
 				graphicsSettings->gameResolution.x = displayInfo.width;
 				graphicsSettings->gameResolution.z = displayInfo.height;
 				// Color mode and texture filtering are the main differences between modes.
-				// TODO: temp == TEMPLATE_MODERN ? COLORMODE_TRUE_COLOR : COLORMODE_8BIT_INTERP;
-				graphicsSettings->colorMode = COLORMODE_8BIT_INTERP;
+				graphicsSettings->colorMode = (temp == TEMPLATE_MODERN) ? COLORMODE_TRUE_COLOR : COLORMODE_8BIT_INTERP;
+				// Texture filtering.
+				if (temp == TEMPLATE_MODERN)
+				{
+					graphicsSettings->anisotropyQuality = 1.0f;
+					graphicsSettings->bilinearSharpness = 1.0f;
+					graphicsSettings->useBilinear   = true;
+					graphicsSettings->useMipmapping = true;
+				}
 				// Post-FX
 				if (temp == TEMPLATE_MODERN)
 				{
 					graphicsSettings->bloomEnabled = true;
-					graphicsSettings->bloomStrength = 0.5f;
-					graphicsSettings->bloomSpread = 0.5f;
+					graphicsSettings->bloomStrength = 0.4f;
+					graphicsSettings->bloomSpread = 0.6f;
 				}
 				else
 				{

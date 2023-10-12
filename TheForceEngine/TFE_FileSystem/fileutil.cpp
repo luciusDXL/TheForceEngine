@@ -233,11 +233,6 @@ namespace FileUtil
 		return !(GetFileAttributesA(path)==INVALID_FILE_ATTRIBUTES && GetLastError()==ERROR_FILE_NOT_FOUND);
 	}
 
-	bool existsNoCase( const char *path )
-	{
-		return exists(path);
-	}
-
 	u64 getModifiedTime( const char* path )
 	{
 		FILETIME creationTime;
@@ -305,10 +300,44 @@ namespace FileUtil
 		pathOS[len] = 0;
 	}
 
-	char *findFileNoCase(const char *fn)
+	void replaceExtension(const char* srcPath, const char* newExt, char* outPath)
 	{
-		// windows doesn't care about file name case, return that
-		// we have not found the file.
-		return NULL;
+		// Find the last '.' in the name.
+		strcpy(outPath, srcPath);
+		size_t len = strlen(srcPath);
+		s32 lastDot = -1;
+		for (size_t i = 0; i < len; i++)
+		{
+			if (srcPath[i] == '.') { lastDot = (s32)i; }
+		}
+		if (lastDot >= 0)
+		{
+			strcpy(&outPath[lastDot + 1], newExt);
+		}
+		else
+		{
+			strcat(outPath, ".");
+			strcat(outPath, newExt);
+		}
+	}
+
+	void stripExtension(const char* srcPath, char* outPath)
+	{
+		// Find the last '.' in the name.
+		size_t len = strlen(srcPath);
+		s32 lastDot = -1;
+		for (size_t i = 0; i < len; i++)
+		{
+			if (srcPath[i] == '.') { lastDot = (s32)i; }
+		}
+		if (lastDot >= 0)
+		{
+			outPath[0] = 0;
+			strncpy(outPath, srcPath, lastDot);
+		}
+		else
+		{
+			strcpy(outPath, srcPath);
+		}
 	}
 }

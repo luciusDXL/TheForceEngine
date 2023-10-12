@@ -9,7 +9,6 @@
 #include <TFE_Game/saveSystem.h>
 #include <TFE_Game/reticle.h>
 #include <TFE_Jedi/InfSystem/infSystem.h>
-//#include <TFE_Editor/editor.h>
 #include <TFE_FileSystem/fileutil.h>
 #include <TFE_Audio/audioSystem.h>
 #include <TFE_FileSystem/paths.h>
@@ -27,7 +26,7 @@
 #include <TFE_Asset/imageAsset.h>
 #include <TFE_Ui/ui.h>
 #include <TFE_FrontEndUI/frontEndUi.h>
-#include <TFE_ForceScript/vm.h>
+#include <TFE_FrontEndUI/modLoader.h>
 #include <TFE_A11y/accessibility.h>
 #include <algorithm>
 #include <cinttypes>
@@ -35,7 +34,13 @@
 #include <sys/types.h>
 #include <sys/timeb.h>
 
-// Replace with music system
+#if ENABLE_EDITOR == 1
+#include <TFE_Editor/editor.h>
+#endif
+#if ENABLE_FORCE_SCRIPT == 1
+#include <TFE_ForceScript/forceScript.h>
+#endif
+
 #include <TFE_Audio/midiPlayer.h>
 
 #ifdef _WIN32
@@ -156,7 +161,7 @@ void handleEvent(SDL_Event& Event)
 					TFE_Paths::appendPath(TFE_PathType::PATH_USER_DOCUMENTS, "Screenshots/", screenshotDir);
 										
 					char screenshotPath[TFE_MAX_PATH];
-					sprintf(screenshotPath, "%stfe_screenshot_%s_%" PRIu64 ".jpg", screenshotDir, s_screenshotTime, _screenshotIndex);
+					sprintf(screenshotPath, "%stfe_screenshot_%s_%" PRIu64 ".png", screenshotDir, s_screenshotTime, _screenshotIndex);
 					_screenshotIndex++;
 
 					TFE_RenderBackend::queueScreenshot(screenshotPath);
@@ -241,9 +246,7 @@ void handleEvent(SDL_Event& Event)
 
 bool sdlInit()
 {
-	// Audio is handled outside of SDL2.
-	// Using the Force Engine Audio system for sound mixing, FluidSynth for Midi handling and rtAudio for audio I/O.
-	const int code = SDL_Init(SDL_INIT_TIMER | SDL_INIT_VIDEO | SDL_INIT_EVENTS | SDL_INIT_GAMECONTROLLER);
+	const int code = SDL_Init(SDL_INIT_TIMER | SDL_INIT_VIDEO | SDL_INIT_EVENTS | SDL_INIT_GAMECONTROLLER | SDL_INIT_AUDIO);
 	if (code != 0) { return false; }
 
 	TFE_Settings_Window* windowSettings = TFE_Settings::getWindowSettings();
@@ -305,10 +308,12 @@ void setAppState(AppState newState, int argc, char* argv[])
 {
 	const TFE_Settings_Graphics* config = TFE_Settings::getGraphicsSettings();
 
+#if ENABLE_EDITOR == 1
 	if (newState != APP_STATE_EDITOR)
 	{
-		//TFE_Editor::disable();
+		TFE_Editor::disable();
 	}
+#endif
 
 	switch (newState)
 	{
@@ -316,11 +321,12 @@ void setAppState(AppState newState, int argc, char* argv[])
 	case APP_STATE_SET_DEFAULTS:
 		break;
 	case APP_STATE_EDITOR:
+
 		if (validatePath())
 		{
-			//renderer->changeResolution(640, 480, false, TFE_Settings::getGraphicsSettings()->asyncFramebuffer, false);
-			// TFE_GameUi::updateUiResolution();
-			//TFE_Editor::enable(renderer);
+		#if ENABLE_EDITOR == 1
+			TFE_Editor::enable();
+		#endif
 		}
 		else
 		{
@@ -634,7 +640,6 @@ int main(int argc, char* argv[])
 	TFE_FrontEndUI::initConsole();
 	TFE_Audio::init(s_nullAudioDevice, TFE_Settings::getSoundSettings()->audioDevice);
 	TFE_MidiPlayer::init(TFE_Settings::getSoundSettings()->midiOutput, (MidiDeviceType)TFE_Settings::getSoundSettings()->midiType);
-	TFE_Polygon::init();
 	TFE_Image::init();
 	TFE_Palette::createDefault256();
 	TFE_FrontEndUI::init();
@@ -654,10 +659,10 @@ int main(int argc, char* argv[])
 	reticle_init();
 
 	// Test
-	#ifdef VM_ENABLE
-		TFE_ForceScript::test();
+	#ifdef ENABLE_FORCE_SCRIPT
+	TFE_ForceScript::init();
 	#endif
-
+		
 	// Start up the game and skip the title screen.
 	if (firstRun)
 	{
@@ -674,6 +679,9 @@ int main(int argc, char* argv[])
 
 	// Setup the framelimiter.
 	TFE_System::frameLimiter_set(graphics->frameRateLimit);
+
+	// Start reading the mods immediately?
+	TFE_FrontEndUI::modLoader_read();
 
 	// Game loop
 	u32 frame = 0u;
@@ -750,6 +758,7 @@ int main(int argc, char* argv[])
 			}
 		}
 
+		if (TFE_A11Y::hasPendingFont()) { TFE_A11Y::loadPendingFont(); } // Can't load new fonts between TFE_Ui::begin() and TFE_Ui::render();
 		TFE_Ui::begin();
 		TFE_System::update();
 
@@ -822,16 +831,20 @@ int main(int argc, char* argv[])
 			}
 		}
 
+		#ifdef ENABLE_FORCE_SCRIPT
+			TFE_ForceScript::update();
+		#endif
+
 		const bool isConsoleOpen = TFE_FrontEndUI::isConsoleOpen();
 		bool endInputFrame = true;
 		if (s_curState == APP_STATE_EDITOR)
 		{
-			/*
+		#if ENABLE_EDITOR == 1
 			if (TFE_Editor::update(isConsoleOpen))
 			{
 				TFE_FrontEndUI::setAppState(APP_STATE_MENU);
 			}
-			*/
+		#endif
 		}
 		else if (s_curState == APP_STATE_GAME)
 		{
@@ -865,10 +878,12 @@ int main(int argc, char* argv[])
 		}
 
 		bool swap = s_curState != APP_STATE_EDITOR && (s_curState != APP_STATE_MENU || TFE_FrontEndUI::isConfigMenuOpen());
+	#if ENABLE_EDITOR == 1
 		if (s_curState == APP_STATE_EDITOR)
 		{
-			//swap = TFE_Editor::render();
+			swap = TFE_Editor::render();
 		}
+	#endif
 
 		// Blit the frame to the window and draw UI.
 		TFE_RenderBackend::swap(swap);
@@ -904,7 +919,6 @@ int main(int argc, char* argv[])
 	TFE_FrontEndUI::shutdown();
 	TFE_Audio::shutdown();
 	TFE_MidiPlayer::destroy();
-	TFE_Polygon::shutdown();
 	TFE_Image::shutdown();
 	TFE_Palette::freeAll();
 	TFE_RenderBackend::updateSettings();
@@ -913,6 +927,10 @@ int main(int argc, char* argv[])
 	TFE_RenderBackend::destroy();
 	TFE_SaveSystem::destroy();
 	SDL_Quit();
+
+	#ifdef ENABLE_FORCE_SCRIPT
+	TFE_ForceScript::destroy();
+	#endif
 		
 	TFE_System::logWrite(LOG_MSG, "Progam Flow", "The Force Engine Game Loop Ended.");
 	TFE_System::logClose();

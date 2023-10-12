@@ -2,6 +2,7 @@
 #include <cstring>
 
 #include "level.h"
+#include "levelBin.h"
 #include "levelData.h"
 #include "rwall.h"
 #include "rtexture.h"
@@ -87,7 +88,48 @@ namespace TFE_Jedi
 		memcpy(s_basePalette, s_levelPalette, 768);
 		s_palModified = JTRUE;
 	}
-		
+
+	void level_postProcessGeometry()
+	{
+		// Process sectors after load.
+		RSector* sector = s_levelState.sectors;
+		for (u32 i = 0; i < s_levelState.sectorCount; i++, sector++)
+		{
+			RWall* wall = sector->walls;
+			for (s32 w = 0; w < sector->wallCount; w++, wall++)
+			{
+				RSector* nextSector = wall->nextSector;
+				if (nextSector)
+				{
+					RWall* mirror = &nextSector->walls[wall->mirror];
+					wall->mirrorWall = mirror;
+					// Both sides of a mirror should have the same lower flags3 (such as walkability).
+					wall->flags3 |= (mirror->flags3 & 0x0f);
+					mirror->flags3 |= (wall->flags3 & 0x0f);
+				}
+			}
+			sector_setupWallDrawFlags(sector);
+			sector_adjustHeights(sector, 0, 0, 0);
+			sector_computeBounds(sector);
+			// TFE: Added to support non-fixed-point rendering.
+			sector->dirtyFlags = SDF_ALL;
+
+			// TFE: Try to figure out if a texture is for sky...
+			if ((sector->flags1 & SEC_FLAGS1_EXTERIOR) && (*sector->ceilTex))
+			{
+				(*sector->ceilTex)->flags |= ALWAYS_FULLBRIGHT;
+			}
+			if ((sector->flags1 & SEC_FLAGS1_PIT) && (*sector->floorTex))
+			{
+				(*sector->floorTex)->flags |= ALWAYS_FULLBRIGHT;
+			}
+		}
+
+		// Setup the control sector.
+		s_levelState.controlSector->id = s_levelState.sectorCount;
+		s_levelState.controlSector->index = s_levelState.controlSector->id;
+	}
+
 	JBool level_loadGeometry(const char* levelName)
 	{
 		s_levelState.secretCount = 0;
@@ -96,6 +138,13 @@ namespace TFE_Jedi
 		s_levelState.maxLayer = INT_MIN;
 		message_free();
 
+		// Try loading as an LVB
+		if (level_loadGeometryBin(levelName, s_buffer))
+		{
+			return JTRUE;
+		}
+
+		// Otherwise load the LEV
 		char levelPath[TFE_MAX_PATH];
 		strcpy(levelPath, levelName);
 		strcat(levelPath, ".LEV");
@@ -197,6 +246,7 @@ namespace TFE_Jedi
 			{
 				TFE_System::logWrite(LOG_ERROR, "level_loadGeometry", "Cannot read texture name.");
 				*texture = bitmap_load("default.bm", 1);
+				(*texture)->flags |= ENABLE_MIP_MAPS;
 			}
 			else if (strcasecmp(textureName, "<NoTexture>") == 0)
 			{
@@ -216,6 +266,8 @@ namespace TFE_Jedi
 						return false;
 					}
 				}
+				// TFE - so we know which textures to mip.
+				tex->flags |= ENABLE_MIP_MAPS;
 				*texture = tex;
 				// This version never gets modified, so serialization is simpler.
 				*texBase = tex;
@@ -513,33 +565,7 @@ namespace TFE_Jedi
 			}
 		}
 
-		// Process sectors after load.
-		RSector* sector = s_levelState.sectors;
-		for (u32 i = 0; i < s_levelState.sectorCount; i++, sector++)
-		{
-			RWall* wall = sector->walls;
-			for (s32 w = 0; w < sector->wallCount; w++, wall++)
-			{
-				RSector* nextSector = wall->nextSector;
-				if (nextSector)
-				{
-					RWall* mirror = &nextSector->walls[wall->mirror];
-					wall->mirrorWall = mirror;
-					// Both sides of a mirror should have the same lower flags3 (such as walkability).
-					wall->flags3 |= (mirror->flags3 & 0x0f);
-					mirror->flags3 |= (wall->flags3 & 0x0f);
-				}
-			}
-			sector_setupWallDrawFlags(sector);
-			sector_adjustHeights(sector, 0, 0, 0);
-			sector_computeBounds(sector);
-			// TFE: Added to support non-fixed-point rendering.
-			sector->dirtyFlags = SDF_ALL;
-		}
-
-		// Setup the control sector.
-		s_levelState.controlSector->id = s_levelState.sectorCount;
-		s_levelState.controlSector->index = s_levelState.controlSector->id;
+		level_postProcessGeometry();
 
 		return true;
 	}
@@ -876,19 +902,43 @@ namespace TFE_Jedi
 						{
 							case KW_3D:
 							{
-								sector_addObject(sector, obj);
-								obj3d_setData(obj, s_levelIntState.pods[s_dataIndex]);
-								obj3d_computeTransform(obj);
+								if (s_levelIntState.pods)
+								{
+									sector_addObject(sector, obj);
+									obj3d_setData(obj, s_levelIntState.pods[s_dataIndex]);
+									obj3d_computeTransform(obj);
+								}
+								else
+								{
+									freeObject(obj);
+									obj = nullptr;
+								}
 							} break;
 							case KW_SPRITE:
 							{
-								sector_addObject(sector, obj);
-								sprite_setData(obj, s_levelIntState.sprites[s_dataIndex]);
+								if (s_levelIntState.sprites)
+								{
+									sector_addObject(sector, obj);
+									sprite_setData(obj, s_levelIntState.sprites[s_dataIndex]);
+								}
+								else
+								{
+									freeObject(obj);
+									obj = nullptr;
+								}
 							} break;
 							case KW_FRAME:
 							{
-								sector_addObject(sector, obj);
-								frame_setData(obj, s_levelIntState.frames[s_dataIndex]);
+								if (s_levelIntState.frames)
+								{
+									sector_addObject(sector, obj);
+									frame_setData(obj, s_levelIntState.frames[s_dataIndex]);
+								}
+								else
+								{
+									freeObject(obj);
+									obj = nullptr;
+								}
 							} break;
 							case KW_SPIRIT:
 							{

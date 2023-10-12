@@ -29,7 +29,7 @@ void main()
 	// We do our own vertex fetching and geometry expansion, so calculate the relevent values from the vertex ID.
 	int partIndex = gl_VertexID / 4;
 	int vertexId  = gl_VertexID & 3;
-	
+
 	// Read part position and data.
 	vec4 positions = texelFetch(DrawListPos, partIndex);
 	uvec4 data = texelFetch(DrawListData, partIndex);
@@ -47,7 +47,7 @@ void main()
 	int sectorId = int(data.y);
 	int lightOffset = int(data.z & 63u) - 32;
 	int flags = (fullbright ? 1 : 0) | (opaque ? 2 : 0);
-	bool flip    = (data.z & 64u) != 0u;
+	bool flip = (data.z & 64u) != 0u;
 	float scale = 1.0;
 
 	uint portalOffset, portalCount;

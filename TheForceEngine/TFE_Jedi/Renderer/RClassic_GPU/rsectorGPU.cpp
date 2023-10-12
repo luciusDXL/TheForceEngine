@@ -22,6 +22,9 @@
 #include <TFE_RenderBackend/shaderBuffer.h>
 #include <TFE_RenderShared/texturePacker.h>
 
+// Temp
+#include <TFE_Asset/imageAsset.h>
+
 #include <TFE_FrontEndUI/console.h>
 
 #include "rclassicGPU.h"
@@ -38,6 +41,9 @@
 
 // TODO: FIx
 #include "../RClassic_Float/rclassicFloatSharedState.h"
+
+#define SHOW_TRUE_COLOR_COMPARISION 0
+#define ACCURATE_MAPPING_ENABLE 0	// TODO: Still work in progress - more accurate mapping without color errors...
 
 #define PTR_OFFSET(ptr, base) size_t((u8*)ptr - (u8*)base)
 using namespace TFE_RenderBackend;
@@ -81,6 +87,10 @@ namespace TFE_Jedi
 		s32 cameraDirId;
 		s32 lightDataId;
 		s32 globalLightingId;
+		s32 texSamplingParamId;
+		s32 palFxLumMask;
+		s32 palFxFlash;
+		s32 textureSettings;
 	};
 	struct ShaderSkyInputs
 	{
@@ -91,6 +101,7 @@ namespace TFE_Jedi
 
 	static GPUSourceData s_gpuSourceData = { 0 };
 
+	TextureGpu* s_trueColorMapping = nullptr;
 	static TextureGpu*  s_colormapTex = nullptr;
 	static ShaderBuffer s_sectorGpuBuffer;
 	static ShaderBuffer s_wallGpuBuffer;
@@ -99,6 +110,10 @@ namespace TFE_Jedi
 	static ShaderInputs s_shaderInputs[SECTOR_PASS_COUNT + 1];
 	static ShaderSkyInputs s_shaderSkyInputs[SECTOR_PASS_COUNT];
 	static s32 s_cameraRightId;
+
+#if ACCURATE_MAPPING_ENABLE   // Future work.
+	static TextureGpu* s_trueColorToPal = nullptr;
+#endif
 
 	static IndexBuffer s_indexBuffer;
 	static GPUCachedSector* s_cachedSectors;
@@ -113,12 +128,16 @@ namespace TFE_Jedi
 	static Vec2f  s_rangeSrc[2];
 	static Segment s_wallSegments[2048];
 
+	static bool s_trueColor = false;
+	static bool s_mipmapping = false;
+
 	struct ShaderSettings
 	{
 		SkyMode skyMode = SKYMODE_CYLINDER;
 		bool colormapInterp = false;
 		bool ditheredBilinear = false;
 		bool bloom = false;
+		bool trueColor = false;
 	};
 
 	static ShaderSettings s_shaderSettings = {};
@@ -126,6 +145,7 @@ namespace TFE_Jedi
 	static Vec3f s_clipObjPos;
 
 	static JBool s_flushCache = JFALSE;
+	u32 s_textureSettings = 1u;
 
 	extern Mat3  s_cameraMtx;
 	extern Mat4  s_cameraProj;
@@ -150,6 +170,10 @@ namespace TFE_Jedi
 		s_shaderInputs[SPRITE_PASS].cameraDirId  = s_spriteShader.getVariableId("CameraDir");
 		s_shaderInputs[SPRITE_PASS].lightDataId  = s_spriteShader.getVariableId("LightData");
 		s_shaderInputs[SPRITE_PASS].globalLightingId = s_spriteShader.getVariableId("GlobalLightData");
+		s_shaderInputs[SPRITE_PASS].texSamplingParamId = s_spriteShader.getVariableId("TexSamplingParam");
+		s_shaderInputs[SPRITE_PASS].palFxLumMask = s_spriteShader.getVariableId("PalFxLumMask");
+		s_shaderInputs[SPRITE_PASS].palFxFlash = s_spriteShader.getVariableId("PalFxFlash");
+		s_shaderInputs[SPRITE_PASS].textureSettings = s_spriteShader.getVariableId("TextureSettings");
 		s_cameraRightId = s_spriteShader.getVariableId("CameraRight");
 
 		s_spriteShader.bindTextureNameToSlot("DrawListPosXZ_Texture", 0);
@@ -182,6 +206,10 @@ namespace TFE_Jedi
 		s_shaderInputs[index].cameraDirId  = s_wallShader[index].getVariableId("CameraDir");
 		s_shaderInputs[index].lightDataId  = s_wallShader[index].getVariableId("LightData");
 		s_shaderInputs[index].globalLightingId = s_wallShader[index].getVariableId("GlobalLightData");
+		s_shaderInputs[index].texSamplingParamId = s_wallShader[index].getVariableId("TexSamplingParam");
+		s_shaderInputs[index].palFxLumMask = s_wallShader[index].getVariableId("PalFxLumMask");
+		s_shaderInputs[index].palFxFlash = s_wallShader[index].getVariableId("PalFxFlash");
+		s_shaderInputs[index].textureSettings = s_wallShader[index].getVariableId("TextureSettings");
 
 		s_shaderSkyInputs[index].skyParallaxId = s_wallShader[index].getVariableId("SkyParallax");
 		s_shaderSkyInputs[index].skyParam0Id = s_wallShader[index].getVariableId("SkyParam0");
@@ -196,6 +224,7 @@ namespace TFE_Jedi
 		s_wallShader[index].bindTextureNameToSlot("Palette",        6);
 		s_wallShader[index].bindTextureNameToSlot("Textures",       7);
 		s_wallShader[index].bindTextureNameToSlot("TextureTable",   8);
+		s_wallShader[index].bindTextureNameToSlot("TrueColorMapping", 9);
 
 		return true;
 	}
@@ -210,10 +239,17 @@ namespace TFE_Jedi
 		s_sectorGpuBuffer.destroy();
 		s_wallGpuBuffer.destroy();
 		TFE_RenderBackend::freeTexture(s_colormapTex);
+		TFE_RenderBackend::freeTexture(s_trueColorMapping);
+
+	#if ACCURATE_MAPPING_ENABLE   // Future work.
+		TFE_RenderBackend::freeTexture(s_trueColorToPal);
+		s_trueColorToPal = nullptr;
+	#endif
 		
 		s_portalList = nullptr;
 		s_cachedSectors = nullptr;
 		s_colormapTex = nullptr;
+		s_trueColorMapping = nullptr;
 
 		sdisplayList_destroy();
 		sprdisplayList_destroy();
@@ -234,6 +270,435 @@ namespace TFE_Jedi
 		s_flushCache = JTRUE;
 	}
 
+	s32 getColormapWhiterampColor(s32 invLightLevel)
+	{
+		const u8 whitePoint = 32;
+		const u8* level = &s_colorMap[(MAX_LIGHT_LEVEL - invLightLevel)<<8];
+		return level[whitePoint];
+	}
+
+	Vec3f getPaletteColor(u8 palColor, const u32* pal)
+	{
+		const f32 scale = 1.0f / 255.0f;
+		const u32 rgba = pal[palColor];
+		Vec3f color = { f32((rgba) & 0xff) * scale, f32((rgba >> 8) & 0xff) * scale, f32((rgba >> 16) & 0xff) * scale };
+		return color;
+	}
+
+	u32 convertToRGBA(Vec4f colorf)
+	{
+		u32 r = clamp(u32(colorf.x * 255.0f), 0, 255);
+		u32 g = clamp(u32(colorf.y * 255.0f), 0, 255);
+		u32 b = clamp(u32(colorf.z * 255.0f), 0, 255);
+		u32 a = clamp(u32(colorf.w * 255.0f), 0, 255);
+
+		return r | (g << 8u) | (b << 16u) | (a << 24u);
+	}
+
+	bool isFogRegion(s32 light, const u32* pal)
+	{
+		// Is this a "fog" region?
+		const u8 whitePoint = 32;
+		const f32 eps = 3.0f / 255.0f;
+		const u8* level = &s_colorMap[(MAX_LIGHT_LEVEL - light) << 8];
+
+		Vec3f clr0 = getPaletteColor(level[whitePoint], pal);
+		f32 max0 = max(clr0.x, max(clr0.y, clr0.z));
+
+		Vec3f clr1 = getPaletteColor(level[whitePoint+15], pal);
+		f32 max1 = max(clr1.x, max(clr1.y, clr1.z));
+
+		return fabsf(max0 - max1) < eps;
+	}
+
+	f32 dotF(Vec3f a, Vec3f b)
+	{
+		return a.x*b.x + a.y*b.y + a.z*b.z;
+	}
+
+	f32 rgb2Hue(Vec3f c)
+	{
+		const f32 minComp = min(min(c.x, c.y), c.z);
+		const f32 maxComp = max(max(c.x, c.y), c.z);
+		const f32 delta = maxComp - minComp;
+
+		if (fabsf(maxComp) < FLT_EPSILON || fabsf(delta) < FLT_EPSILON)
+		{
+			return 0.0f;
+		}
+		const f32 scale = 1.0f / delta;
+		const f32 normFactor = 1.0f / 6.0f;
+
+		f32 hue;
+		if (c.x == maxComp) { hue = (c.y - c.z) * scale; }
+		else if (c.y == maxComp) { hue = 2.0f + (c.z - c.x) * scale; }
+		else { hue = 4.0f + (c.x - c.y) * scale; }
+
+		// Convert to 0..1 range.
+		hue *= normFactor;
+		hue = fmodf(hue, 1.0f);
+		if (hue < 0.0f) { hue += 1.0f; }
+
+		return hue;
+	}
+
+	f32 computeHueMatch(u8 baseIndex, u8 curIndex, const u32* pal)
+	{
+		const Vec3f baseColor = getPaletteColor(baseIndex, pal);
+		const Vec3f curColor = getPaletteColor(curIndex, pal);
+
+		const f32 baseHue = rgb2Hue(baseColor);
+		const f32 curHue = rgb2Hue(curColor);
+
+		return fabsf(baseHue - curHue);
+	}
+
+	bool useColorShift(s32 light, const u32* pal)
+	{
+		// check colored regions to see if they color shift.
+		// Green 80  +32 = 112
+		// Blue  120 +32 = 152
+		// Red   128 +32 = 160
+		enum ColorPoints
+		{
+			CP_Green = 112,
+			CP_Blue = 152,
+			CP_Red = 160
+		};
+		const f32 eps = 0.1f;
+
+		const u8* baseLevel = &s_colorMap[MAX_LIGHT_LEVEL << 8];
+		const u8* curLevel = &s_colorMap[(MAX_LIGHT_LEVEL - light) << 8];
+		
+		// Compare the hue of the base level vs the current level.
+		f32 greenMatch = computeHueMatch(baseLevel[CP_Green], curLevel[CP_Green], pal);
+		f32 blueMatch = computeHueMatch(baseLevel[CP_Blue], curLevel[CP_Blue], pal);
+		f32 redMatch = computeHueMatch(baseLevel[CP_Red], curLevel[CP_Red], pal);
+
+		// Then compare to each other.
+		f32 blueMatchB = computeHueMatch(curLevel[CP_Green], curLevel[CP_Blue], pal);
+		f32 redMatchB = computeHueMatch(curLevel[CP_Green], curLevel[CP_Red], pal);
+
+		s32 shiftCount = 0;
+		if (greenMatch > eps) { shiftCount++; }
+		if (blueMatch  > eps) { shiftCount++; }
+		if (redMatch   > eps) { shiftCount++; }
+		return (blueMatchB < eps && redMatchB < eps && shiftCount > 1);
+	}
+
+#if ACCURATE_MAPPING_ENABLE
+	void generateTrueColorMapping2();
+#endif
+
+	void generateTrueColorMapping()
+	{
+		struct FogRegion
+		{
+			u8 start, end;
+			Vec3f startColor;
+			Vec3f endColor;
+			bool isFog;
+			bool colorShift;
+		};
+		int fogRegionCount = 1;
+		FogRegion regions[16];
+
+		// Determine fog regions.
+		const u32* pal = TFE_Jedi::renderer_getSourcePalette();
+		u8 palIndex = getColormapWhiterampColor(0);
+		Vec3f prevColor = getPaletteColor(palIndex, pal);
+		f32 prevMax = max(prevColor.x, max(prevColor.y, prevColor.z));
+
+		FogRegion* curRegion = &regions[0];
+		curRegion->start = 31;
+		curRegion->end = 0;
+		curRegion->startColor = prevColor;
+		curRegion->isFog = false;
+		curRegion->colorShift = false;
+
+		// Generate an image...
+#if SHOW_TRUE_COLOR_COMPARISION
+		u32 outImage[(256-32) * 32 * 2];
+		for (s32 x = 32; x < 256; x++)
+		{
+			for (s32 y = 0; y < 32; y++)
+			{
+				u8 palIndex = s_colorMap[y * 256 + x];
+				outImage[y * (256 - 32) + x - 32] = pal[palIndex];
+			}
+		}
+		TFE_Image::writeImage("ColorMap.png", 256-32, 32, outImage);
+#endif
+
+		for (s32 i = 1; i < 32; i++)
+		{
+			palIndex = getColormapWhiterampColor(i);
+			Vec3f curColor = getPaletteColor(palIndex, pal);
+			f32 curMax = max(curColor.x, max(curColor.y, curColor.z));
+
+			const f32 stepScale = prevMax > 0.0f ? curMax / prevMax : 1.0f;
+
+			// Create new fog region.
+			if (stepScale > 1.5f)
+			{
+				// End the ramp on the previous texel.
+				curRegion->end = 31 - (i - 1);
+				curRegion->endColor = prevColor;
+				curRegion->isFog = isFogRegion(i - 1, pal);
+				
+				// Add a new region.
+				curRegion = &regions[fogRegionCount];
+				fogRegionCount++;
+
+				curRegion->start = 31 - i;
+				curRegion->end = 0;
+				curRegion->startColor = curColor;
+				curRegion->endColor = curColor;
+				curRegion->isFog = false;
+				curRegion->colorShift = useColorShift(i, pal);
+				if (i == 31)
+				{
+					curRegion->isFog = isFogRegion(i, pal);
+				}
+			}
+			else if (i == 31)
+			{
+				curRegion->end = 0;
+				curRegion->endColor = curColor;
+				curRegion->isFog = isFogRegion(i, pal);
+			}
+
+			prevMax = curMax;
+			prevColor = curColor;
+		}
+
+		// Process regions and use them to generate a mapping.
+		// Two values:
+		//   RGB = Multiply color, A = ?
+		//   RGB = Fog color, A = blendFactor
+		Vec4f mulRamp[32], fogRamp[32];
+		bool ignoreTextureTint = false;
+		for (s32 i = 0; i < fogRegionCount; i++)
+		{
+			curRegion = &regions[i];
+			if (curRegion->isFog)
+			{
+				Vec3f white = { 1.0f, 1.0f, 1.0f };
+				Vec3f mulColor = curRegion->start == 31 ? white : curRegion->startColor;
+				Vec3f fogColor = curRegion->endColor;
+
+				if (fogColor.x > 0.1f || fogColor.y > 0.1f || fogColor.z > 0.1f)
+				{
+					ignoreTextureTint = true;
+				}
+
+				for (s32 j = curRegion->start; j >= curRegion->end; j--)
+				{
+					f32 fogFactor = f32(curRegion->start - j) / f32(curRegion->start - curRegion->end);
+					mulRamp[j] = { mulColor.x, mulColor.y, mulColor.z, curRegion->colorShift ? 1.0f : 0.0f };
+					fogRamp[j] = { fogColor.x, fogColor.y, fogColor.z, fogFactor };
+				}
+			}
+			else
+			{
+				for (s32 j = curRegion->start; j >= curRegion->end; j--)
+				{
+					f32 range = f32(curRegion->start - curRegion->end);
+					f32 mulFactor = range > 0.0f ? f32(curRegion->start - j) / f32(curRegion->start - curRegion->end) : 1.0f;
+
+					const Vec3f white = { 1.0f, 1.0f, 1.0f };
+					const Vec3f startColor = curRegion->start == 31 ? white : curRegion->startColor;
+					const Vec3f endColor = curRegion->endColor;
+
+					Vec3f mulColor;
+					mulColor.x = startColor.x + mulFactor * (endColor.x - startColor.x);
+					mulColor.y = startColor.y + mulFactor * (endColor.y - startColor.y);
+					mulColor.z = startColor.z + mulFactor * (endColor.z - startColor.z);
+
+					mulRamp[j] = { mulColor.x, mulColor.y, mulColor.z, curRegion->colorShift ? 1.0f : 0.0f };
+					fogRamp[j] = { 0.0f, 0.0f, 0.0f, 0.0f };
+				}
+			}
+		}
+		u32 mappingTable[64];
+		for (s32 i = 0; i < 32; i++)
+		{
+			mappingTable[i] = convertToRGBA(mulRamp[i]);
+			mappingTable[i+32] = convertToRGBA(fogRamp[i]);
+		}
+	#if SHOW_TRUE_COLOR_COMPARISION
+		TFE_Image::writeImage("TrueColorMapping.png", 64, 1, mappingTable);
+	#endif
+		TFE_RenderBackend::freeTexture(s_trueColorMapping);
+		s_trueColorMapping = TFE_RenderBackend::createTexture(64, 1, mappingTable);
+		s_textureSettings = (ignoreTextureTint) ? 0 : 1;
+
+		// Generate a comparison color map.
+#if SHOW_TRUE_COLOR_COMPARISION
+		u32* outImage2 = &outImage[(256 - 32) * 32];
+		for (s32 x = 32; x < 256; x++)
+		{
+			for (s32 y = 0; y < 32; y++)
+			{
+				Vec3f baseColor = getPaletteColor(x, pal);
+
+				// Multiply
+				if (mulRamp[y].w > 0.5f)
+				{
+					const f32 lum = max(baseColor.x, max(baseColor.y, baseColor.z));
+					baseColor.x = mulRamp[y].x * lum;
+					baseColor.y = mulRamp[y].y * lum;
+					baseColor.z = mulRamp[y].z * lum;
+				}
+				else
+				{
+					baseColor.x *= mulRamp[y].x;
+					baseColor.y *= mulRamp[y].y;
+					baseColor.z *= mulRamp[y].z;
+				}
+
+				// Fog
+				baseColor.x = (1.0f - fogRamp[y].w) * baseColor.x + fogRamp[y].w * fogRamp[y].x;
+				baseColor.y = (1.0f - fogRamp[y].w) * baseColor.y + fogRamp[y].w * fogRamp[y].y;
+				baseColor.z = (1.0f - fogRamp[y].w) * baseColor.z + fogRamp[y].w * fogRamp[y].z;
+
+				Vec4f color = { baseColor.x, baseColor.y, baseColor.z, 1.0f };
+				outImage2[y * (256 - 32) + x - 32] = convertToRGBA(color);
+			}
+		}
+		TFE_Image::writeImage("ColorMap_TC.png", 256 - 32, 64, outImage);
+#endif
+
+	// TODO: Continue work on improved colormap remapping.
+	#if ACCURATE_MAPPING_ENABLE
+		generateTrueColorMapping2();
+	#endif
+	}
+
+#if ACCURATE_MAPPING_ENABLE
+	// Concept: 
+	// Build a 64^3 (RGB) * 32 (Ambient Levels) table.
+	Vec3f computeLinearColor(Vec3f srgb)
+	{
+		const f32 gamma = 2.2f;
+		Vec3f linear;
+		linear.x = powf(srgb.x, gamma);
+		linear.y = powf(srgb.y, gamma);
+		linear.z = powf(srgb.z, gamma);
+
+		return linear;
+	}
+
+	Vec3f computeSrgbColor(u32 inColor)
+	{
+		const f32 scale = 1.0f / 255.0f;
+
+		Vec3f srgb;
+		srgb.x = f32((inColor) & 0xff) * scale;
+		srgb.y = f32((inColor >> 8) & 0xff) * scale;
+		srgb.z = f32((inColor >> 16) & 0xff) * scale;
+
+		return srgb;
+	}
+
+	f32 getColorDistSq(Vec3f c0, Vec3f c1)
+	{
+		// Colour metric - Thiadmer Riemersma - https://www.compuphase.com/cmetric.htm
+		f32 rmean = (c0.x + c1.x) * 0.5f;
+		Vec3f delta = { c1.x - c0.x, c1.y - c0.y, c1.z - c0.z };
+		Vec3f deltaSq = { delta.x*delta.x, delta.y*delta.y, delta.z*delta.z };
+		Vec3f scaleMetric = { 2.0f + rmean, 4.0f, 3.0f - rmean };
+		return deltaSq.x * scaleMetric.x + deltaSq.y * scaleMetric.y + deltaSq.z * scaleMetric.z;
+	}
+
+	s32 getClosestColor(const u8 rgb6[3], const Vec3f* linPal)
+	{
+		const f32 scale = 1.0f / 63.0f;
+		Vec3f srgb = { f32(rgb6[0]) * scale, f32(rgb6[1]) * scale, f32(rgb6[2]) * scale };
+		Vec3f lin = computeLinearColor(srgb);
+		bool nonZero = lin.x > 0.0f || lin.y > 0.0f || lin.z > 0.0f;
+
+		// First closest
+		f32 closestDist = FLT_MAX;
+		s32 closestIndex = -1;
+		for (s32 i = 32; i < 256; i++)
+		//for (s32 i = 0; i < 256; i++)
+		{
+			// Make sure that non-zero colors map to non-zero palette entries.
+			if (nonZero && (lin.x*linPal[i].x + lin.y*linPal[i].y + lin.z*linPal[i].z == 0.0f)) { continue; }
+
+			// Make sure that the palette entries have all components required for mapping.
+			if ((lin.x > FLT_EPSILON && linPal[i].x <= FLT_EPSILON) || (lin.y > FLT_EPSILON && linPal[i].y <= FLT_EPSILON) ||
+				(lin.z > FLT_EPSILON && linPal[i].z <= FLT_EPSILON))
+			{
+				continue;
+			}
+			
+			// Find the closest color.
+			const f32 dist = getColorDistSq(lin, linPal[i]);
+			if (dist < closestDist)
+			{
+				closestDist = dist;
+				closestIndex = i;
+			}
+		}
+		return closestIndex;
+	}
+
+	void generateTrueColorMapping2()
+	{
+		// First generate colors from the palette.
+		Vec3f srgbPal[256] = { 0 };
+		Vec3f linPal[256] = { 0 };
+		const u32* pal = TFE_Jedi::renderer_getSourcePalette();
+		for (s32 i = 32; i < 256; i++)
+		{
+			srgbPal[i] = computeSrgbColor(pal[i]);
+			linPal[i] = computeLinearColor(srgbPal[i]);
+		}
+
+		// Now build the table itself...
+		const u32 count = 64 * 64 * 64;
+		static Vec4f table[count];
+		static u32 colorTable[count];
+		for (u32 i = 0; i < count; i++)
+		{
+			const u8 rgb[4] =
+			{
+				i & 63,
+				(i >> 6) & 63,
+				(i >> 12) & 63,
+				0
+			};
+
+			const f32 scale = 1.0f / 63.0f;
+			s32 index = getClosestColor(rgb, linPal);
+			Vec3f p = srgbPal[index];
+			Vec3f c = { f32(rgb[0]) * scale, f32(rgb[1]) * scale, f32(rgb[2]) * scale };
+			Vec3f m = { 1.0f, 1.0f, 1.0f };
+			if (p.x > 0.0f) { m.x = c.x / p.x; }
+			if (p.y > 0.0f) { m.y = c.y / p.y; }
+			if (p.z > 0.0f) { m.z = c.z / p.z; }
+
+			table[i] = { m.x, m.y, m.z, f32(index) };
+			colorTable[i] = pal[index];
+		}
+
+		if (s_trueColorToPal)
+		{
+			TFE_RenderBackend::freeTexture(s_trueColorToPal);
+			s_trueColorToPal = nullptr;
+		}
+		s_trueColorToPal = TFE_RenderBackend::createTextureArray(64, 64, 64, 4);
+		s_trueColorToPal->update(colorTable, count * sizeof(u32));
+
+		// Setup custom filtering.
+		s_trueColorToPal->bind(0);
+		s_trueColorToPal->setFilter(MAG_FILTER_LINEAR, MIN_FILTER_LINEAR, true);
+		s_trueColorToPal->clearSlots(1);
+	}
+#endif
+
 	void TFE_Sectors_GPU::updateColorMap()
 	{
 		// Load the colormap based on the data.
@@ -241,7 +706,7 @@ namespace TFE_Jedi
 		if (s_colorMap && s_lightSourceRamp)
 		{
 			u32 colormapData[256 * 32];
-			if (s_shaderSettings.colormapInterp)
+			if (s_shaderSettings.colormapInterp || s_shaderSettings.trueColor)
 			{
 				f32 filter0[128];
 				f32 filter1[128];
@@ -299,6 +764,12 @@ namespace TFE_Jedi
 			TFE_RenderBackend::freeTexture(s_colormapTex);
 			s_colormapTex = TFE_RenderBackend::createTexture(256, 32, colormapData);
 		}
+
+		// Build a color ramp for true-color...
+		if (s_shaderSettings.trueColor)
+		{
+			generateTrueColorMapping();
+		}
 	}
 
 	bool TFE_Sectors_GPU::updateShaderSettings(bool initialize)
@@ -309,7 +780,8 @@ namespace TFE_Jedi
 			s_shaderSettings.skyMode != SkyMode(graphics->skyMode) ||
 			s_shaderSettings.ditheredBilinear != graphics->ditheredBilinear ||
 			s_shaderSettings.bloom != graphics->bloomEnabled ||
-			s_shaderSettings.colormapInterp != (graphics->colorMode == COLORMODE_8BIT_INTERP);
+			s_shaderSettings.colormapInterp != (graphics->colorMode == COLORMODE_8BIT_INTERP) ||
+			s_shaderSettings.trueColor != (graphics->colorMode == COLORMODE_TRUE_COLOR);
 		if (!needsUpdate) { return true; }
 
 		// Then update the settings.
@@ -317,6 +789,7 @@ namespace TFE_Jedi
 		s_shaderSettings.ditheredBilinear = graphics->ditheredBilinear;
 		s_shaderSettings.bloom = graphics->bloomEnabled;
 		s_shaderSettings.colormapInterp = (graphics->colorMode == COLORMODE_8BIT_INTERP);
+		s_shaderSettings.trueColor = (graphics->colorMode == COLORMODE_TRUE_COLOR);
 
 		// Update the color map based on interpolation or true color settings.
 		updateColorMap();
@@ -423,7 +896,8 @@ namespace TFE_Jedi
 
 					Vec2f offset = { fixed16ToFloat(srcWall->w1->x) - wallData->x, fixed16ToFloat(srcWall->w1->z) - wallData->y };
 					wallData[0].z = fixed16ToFloat(srcWall->length) / sqrtf(offset.x*offset.x + offset.z*offset.z);
-					wallData[0].w = 0.0f;
+					//wallData[0].w = 0.0f;
+					wallData[0].w = sqrtf(offset.x*offset.x + offset.z*offset.z);
 
 					// Texture offsets.
 					wallData[1].x = fixed16ToFloat(srcWall->midOffset.x);
@@ -492,6 +966,8 @@ namespace TFE_Jedi
 			m_prevWallCount = wallCount;
 
 			// Load textures into GPU memory.
+			s_trueColor  = (TFE_Settings::getGraphicsSettings()->colorMode == COLORMODE_TRUE_COLOR);
+			s_mipmapping = s_trueColor && TFE_Settings::getGraphicsSettings()->useMipmapping;
 			if (texturepacker_getGlobal())
 			{
 				texturepacker_discardUnreservedPages(texturepacker_getGlobal());
@@ -513,6 +989,21 @@ namespace TFE_Jedi
 				{
 					RSector* sector = &s_levelState.sectors[i];
 					sector->dirtyFlags = SDF_ALL;
+				}
+			}
+			bool useMips = s_trueColor && TFE_Settings::getGraphicsSettings()->useMipmapping;
+			if (s_trueColor != (TFE_Settings::getGraphicsSettings()->colorMode == COLORMODE_TRUE_COLOR) || s_mipmapping != useMips)
+			{
+				s_trueColor = (TFE_Settings::getGraphicsSettings()->colorMode == COLORMODE_TRUE_COLOR);
+				s_mipmapping = s_trueColor && TFE_Settings::getGraphicsSettings()->useMipmapping;
+				// Load textures into GPU memory.
+				if (texturepacker_getGlobal())
+				{
+					texturepacker_discardUnreservedPages(texturepacker_getGlobal());
+
+					texturepacker_pack(level_getLevelTextures, POOL_LEVEL);
+					texturepacker_pack(level_getObjectTextures, POOL_LEVEL);
+					texturepacker_commit();
 				}
 			}
 			s_gpuFrame++;
@@ -797,6 +1288,13 @@ namespace TFE_Jedi
 		GPUCachedSector* cached = &s_cachedSectors[curSector->index];
 		cached->builtFrame = s_gpuFrame;
 
+		// Compute the "minimum Z" of the portal in 2D for culling in order to emulate the software renderer.
+		// This is the "loose" portal near plane culling that Dark Forces uses - without emulating it the visuals
+		// will break in various areas in the vanilla levels (and mods).
+		const f32 pz0 = (p0.x - s_cameraPos.x) * s_cameraDirXZ.x + (p0.z - s_cameraPos.z) * s_cameraDirXZ.z;
+		const f32 pz1 = (p1.x - s_cameraPos.x) * s_cameraDirXZ.x + (p1.z - s_cameraPos.z) * s_cameraDirXZ.z;
+		const f32 portalMinZ = min(pz0, pz1);
+
 		// Portal range, all segments must be clipped to this.
 		// The actual clip vertices are p0 and p1.
 		s_rangeSrc[0] = p0;
@@ -854,8 +1352,17 @@ namespace TFE_Jedi
 				continue;
 			}
 
-			// Make sure the wall is on the correct side of the portal plane, if not in the initial sector.
-			if (!initSector && !isWallInFrontOfPlane({ x0, z0 }, { x1, z1 }, p0, p1))
+			// Emulate software culling based on portal min Z.
+			// Note that this can be problematic when looking up and down with proper perspective, which is why
+			// it is only enabled if portal min Z > 1
+			if (portalMinZ > 1.0f && !initSector)
+			{
+				const f32 vz0 = (x0 - s_cameraPos.x) * s_cameraDirXZ.x + (z0 - s_cameraPos.z) * s_cameraDirXZ.z;
+				const f32 vz1 = (x1 - s_cameraPos.x) * s_cameraDirXZ.x + (z1 - s_cameraPos.z) * s_cameraDirXZ.z;
+				if (vz0 < portalMinZ && vz1 < portalMinZ) { continue; }
+			}
+			// If that fails (invalid portal min Z), fall back to the portal plane test.
+			else if (!initSector && !isWallInFrontOfPlane({ x0, z0 }, { x1, z1 }, p0, p1))
 			{
 				continue;
 			}
@@ -1248,6 +1755,13 @@ namespace TFE_Jedi
 		traverseSector(sector, nullptr, nullptr, 0, level, uploadFlags, startView[0], startView[1]);
 		frustum_pop();
 
+		// Fixup the transparencies if using bilinear filtering.
+		const TFE_Settings_Graphics* graphics = TFE_Settings::getGraphicsSettings();
+		if (graphics->colorMode == COLORMODE_TRUE_COLOR && graphics->useBilinear)
+		{
+			sdisplayList_fixupTrans();
+		}
+
 		sdisplayList_finish();
 		sprdisplayList_finish();
 		model_drawListFinish();
@@ -1277,9 +1791,30 @@ namespace TFE_Jedi
 		return sdisplayList_getSize() > 0;
 	}
 
+	void handleTextureFiltering(const TextureGpu* texture)
+	{
+		if (s_shaderSettings.trueColor)
+		{
+			const TFE_Settings_Graphics* settings = TFE_Settings::getGraphicsSettings();
+			MagFilter magFilter = MAG_FILTER_NONE;
+			MinFilter minFilter = MIN_FILTER_NONE;
+			if (settings->useBilinear)
+			{
+				magFilter = MAG_FILTER_LINEAR;
+				minFilter = MIN_FILTER_LINEAR;
+			}
+			if (settings->useMipmapping)
+			{
+				minFilter = MIN_FILTER_MIPMAP;
+			}
+			texture->setFilter(magFilter, minFilter, true);
+		}
+	}
+
 	void drawPass(SectorPass pass)
 	{
 		if (!sdisplayList_getSize(pass)) { return; }
+		const TFE_Settings_Graphics* settings = TFE_Settings::getGraphicsSettings();
 
 		TexturePacker* texturePacker = texturepacker_getGlobal();
 		const TextureGpu* palette  = TFE_RenderBackend::getPaletteTexture();
@@ -1290,7 +1825,14 @@ namespace TFE_Jedi
 
 		TFE_RenderState::setStateEnable(true, STATE_DEPTH_WRITE | STATE_DEPTH_TEST);
 		TFE_RenderState::setDepthFunction(CMP_LEQUAL);
-		
+
+		// Alpha blending...
+		if (s_shaderSettings.trueColor && pass == SECTOR_PASS_TRANS)
+		{
+			TFE_RenderState::setStateEnable(true, STATE_BLEND);
+			TFE_RenderState::setBlendMode(BLEND_ONE, BLEND_ONE_MINUS_SRC_ALPHA);
+		}
+				
 		Shader* shader = &s_wallShader[pass];
 		shader->bind();
 
@@ -1298,9 +1840,25 @@ namespace TFE_Jedi
 		s_sectorGpuBuffer.bind(0);
 		s_wallGpuBuffer.bind(1);
 		s_colormapTex->bind(5);
-		palette->bind(6);
+		if (s_shaderSettings.trueColor)
+		{
+			s_trueColorMapping->bind(6);
+		}
+		else
+		{
+			palette->bind(6);
+		}
 		textures->bind(7);
+		handleTextureFiltering(textures);
+
 		textureTable->bind(8);
+
+	#if ACCURATE_MAPPING_ENABLE // Future work
+		if (s_trueColorToPal)
+		{
+			s_trueColorToPal->bind(9);
+		}
+	#endif
 
 		// Camera and lighting.
 		const Vec4f lightData = { f32(s_worldAmbient), s_cameraLightSource ? 1.0f : 0.0f, 0.0f, s_showWireframe ? 1.0f : 0.0f };
@@ -1346,33 +1904,85 @@ namespace TFE_Jedi
 			shader->setVariable(skyInputs->skyParam1Id, SVT_VEC2, skyParam1);
 		}
 
-		if (s_shaderInputs[pass].globalLightingId > 0)
+		if (s_shaderInputs[pass].globalLightingId >= 0)
 		{
 			const f32 globalLighting[] = { s_flatLighting ? 1.0f : 0.0f, (f32)s_flatAmbient, 0.0f, 0.0f };
 			shader->setVariable(s_shaderInputs[pass].globalLightingId, SVT_VEC4, globalLighting);
 		}
+		if (s_shaderInputs[pass].texSamplingParamId >= 0)
+		{
+			const f32 texSamplingParam[] = { settings->useBilinear ? settings->bilinearSharpness : 0.0f, 0.0f, 0.0f, 0.0f };
+			shader->setVariable(s_shaderInputs[pass].texSamplingParamId, SVT_VEC4, texSamplingParam);
+		}
+		if (s_shaderInputs[pass].palFxLumMask >= 0 && s_shaderInputs[pass].palFxFlash >= 0)
+		{
+			Vec3f lumMask, palFx;
+			renderer_getPalFx(&lumMask, &palFx);
+
+			shader->setVariable(s_shaderInputs[pass].palFxLumMask, SVT_VEC3, lumMask.m);
+			shader->setVariable(s_shaderInputs[pass].palFxFlash, SVT_VEC3, palFx.m);
+		}
+		if (s_shaderInputs[pass].textureSettings >= 0)
+		{
+			shader->setVariable(s_shaderInputs[pass].textureSettings, SVT_USCALAR, &s_textureSettings);
+		}
 
 		// Draw the sector display list.
 		sdisplayList_draw(pass);
+
+		// Reset
+		textures->bind(7);
+		if (settings->useBilinear)
+		{
+			textures->setFilter(MagFilter::MAG_FILTER_NONE, MinFilter::MIN_FILTER_NONE, true);
+		}
+
+		// Alpha blending...
+		if (s_shaderSettings.trueColor && pass == SECTOR_PASS_TRANS)
+		{
+			TFE_RenderState::setStateEnable(false, STATE_BLEND);
+		}
 	}
 
 	void drawSprites()
 	{
 		if (!sprdisplayList_getSize()) { return; }
+		const TFE_Settings_Graphics* settings = TFE_Settings::getGraphicsSettings();
 		// For some reason depth test is required to write, so set the comparison function to always instead.
 		TFE_RenderState::setStateEnable(true,  STATE_DEPTH_WRITE | STATE_DEPTH_TEST);
 		TFE_RenderState::setDepthFunction(CMP_ALWAYS);
+
+		// Alpha blending...
+	#if 0  // Disable for now.
+		if (s_shaderSettings.trueColor)
+		{
+			TFE_RenderState::setStateEnable(true, STATE_BLEND);
+			TFE_RenderState::setBlendMode(BLEND_ONE, BLEND_ONE_MINUS_SRC_ALPHA);
+		}
+	#endif
 
 		s_spriteShader.bind();
 		s_indexBuffer.bind();
 		s_colormapTex->bind(3);
 
 		const TextureGpu* palette = TFE_RenderBackend::getPaletteTexture();
-		palette->bind(4);
+		//palette->bind(4);
+		if (s_shaderSettings.trueColor)
+		{
+			s_trueColorMapping->bind(4);
+		}
+		else
+		{
+			palette->bind(4);
+		}
 
 		TexturePacker* texturePacker = texturepacker_getGlobal();
 		const TextureGpu* textures = texturePacker->texture;
 		textures->bind(5);
+		if (settings->useBilinear)
+		{
+			textures->setFilter(MagFilter::MAG_FILTER_LINEAR, MinFilter::MIN_FILTER_LINEAR, true);
+		}
 
 		ShaderBuffer* textureTable = &texturePacker->textureTableGPU;
 		textureTable->bind(6);
@@ -1386,31 +1996,72 @@ namespace TFE_Jedi
 		s_spriteShader.setVariable(s_shaderInputs[SPRITE_PASS].cameraDirId,  SVT_VEC3,   s_cameraDir.m);
 		s_spriteShader.setVariable(s_shaderInputs[SPRITE_PASS].lightDataId,  SVT_VEC4,   lightData.m);
 
-		if (s_shaderInputs[SPRITE_PASS].globalLightingId > 0)
+		if (s_shaderInputs[SPRITE_PASS].globalLightingId >= 0)
 		{
 			const f32 globalLighting[] = { s_flatLighting ? 1.0f : 0.0f, (f32)s_flatAmbient, 0.0f, 0.0f };
 			s_spriteShader.setVariable(s_shaderInputs[SPRITE_PASS].globalLightingId, SVT_VEC4, globalLighting);
+		}
+		if (s_shaderInputs[SPRITE_PASS].texSamplingParamId >= 0)
+		{
+			const f32 texSamplingParam[] = { settings->useBilinear ? settings->bilinearSharpness : 0.0f, 0.0f, 0.0f, 0.0f };
+			s_spriteShader.setVariable(s_shaderInputs[SPRITE_PASS].texSamplingParamId, SVT_VEC4, texSamplingParam);
+		}
+		if (s_shaderInputs[SPRITE_PASS].palFxLumMask >= 0 && s_shaderInputs[SPRITE_PASS].palFxFlash >= 0)
+		{
+			Vec3f lumMask, palFx;
+			renderer_getPalFx(&lumMask, &palFx);
+
+			s_spriteShader.setVariable(s_shaderInputs[SPRITE_PASS].palFxLumMask, SVT_VEC3, lumMask.m);
+			s_spriteShader.setVariable(s_shaderInputs[SPRITE_PASS].palFxFlash, SVT_VEC3, palFx.m);
+		}
+		if (s_shaderInputs[SPRITE_PASS].textureSettings >= 0)
+		{
+			s_spriteShader.setVariable(s_shaderInputs[SPRITE_PASS].textureSettings, SVT_USCALAR, &s_textureSettings);
 		}
 
 		// Draw the sector display list.
 		sprdisplayList_draw();
 
 		s_spriteShader.unbind();
+
+		textures->bind(5);
+		if (settings->useBilinear)
+		{
+			textures->setFilter(MagFilter::MAG_FILTER_NONE, MinFilter::MIN_FILTER_NONE, true);
+		}
+
+		// Alpha blending...
+		if (s_shaderSettings.trueColor)
+		{
+			TFE_RenderState::setStateEnable(false, STATE_BLEND);
+		}
 	}
 
 	void draw3d()
 	{
+		const TFE_Settings_Graphics* settings = TFE_Settings::getGraphicsSettings();
+
 		TFE_RenderState::setStateEnable(true, STATE_DEPTH_WRITE | STATE_DEPTH_TEST);
 		TFE_RenderState::setDepthFunction(CMP_LEQUAL);
 
 		const TextureGpu* palette = TFE_RenderBackend::getPaletteTexture();
-		palette->bind(0);
+
+		if (s_shaderSettings.trueColor)
+		{
+			s_trueColorMapping->bind(0);
+			palette->bind(5);
+		}
+		else
+		{
+			palette->bind(0);
+		}
 
 		s_colormapTex->bind(1);
 
 		TexturePacker* texturePacker = texturepacker_getGlobal();
 		const TextureGpu* textures = texturePacker->texture;
 		textures->bind(2);
+		handleTextureFiltering(textures);
 
 		ShaderBuffer* textureTable = &texturePacker->textureTableGPU;
 		textureTable->bind(3);
@@ -1418,6 +2069,12 @@ namespace TFE_Jedi
 		model_drawList();
 
 		// Cleanup
+		textures->bind(2);
+		if (settings->useBilinear)
+		{
+			textures->setFilter(MagFilter::MAG_FILTER_NONE, MinFilter::MIN_FILTER_NONE, true);
+		}
+
 		TextureGpu::clearSlots(3);
 	}
 		
@@ -1454,6 +2111,10 @@ namespace TFE_Jedi
 
 		// Draw 3D Objects.
 		draw3d();
+
+		// TODO: Alpha blended passes afterward, discard alpha < 0.5 for passes above.
+		// The idea is to reduce the size of the area where issues can occur but avoid clear gaps.
+		// OR: Split the transparent mid-texture and sprite passes and interleave (most accurate).
 				
 		// Cleanup
 		s_indexBuffer.unbind();
@@ -1504,13 +2165,19 @@ namespace TFE_Jedi
 			defines[defineCount].value = "1";
 			defineCount++;
 		}
-		if (s_shaderSettings.colormapInterp)
+		if (s_shaderSettings.colormapInterp || s_shaderSettings.trueColor)
 		{
 			defines[defineCount].name = "OPT_COLORMAP_INTERP";
 			defines[defineCount].value = "1";
 			defineCount++;
 
 			defines[defineCount].name = "OPT_SMOOTH_LIGHTRAMP";
+			defines[defineCount].value = "1";
+			defineCount++;
+		}
+		if (s_shaderSettings.trueColor)
+		{
+			defines[defineCount].name = "OPT_TRUE_COLOR";
 			defines[defineCount].value = "1";
 			defineCount++;
 		}
@@ -1532,13 +2199,19 @@ namespace TFE_Jedi
 			defines[defineCount].value = "1";
 			defineCount++;
 		}
-		if (s_shaderSettings.colormapInterp)
+		if (s_shaderSettings.colormapInterp || s_shaderSettings.trueColor)
 		{
 			defines[defineCount].name = "OPT_COLORMAP_INTERP";
 			defines[defineCount].value = "1";
 			defineCount++;
 
 			defines[defineCount].name = "OPT_SMOOTH_LIGHTRAMP";
+			defines[defineCount].value = "1";
+			defineCount++;
+		}
+		if (s_shaderSettings.trueColor)
+		{
+			defines[defineCount].name = "OPT_TRUE_COLOR";
 			defines[defineCount].value = "1";
 			defineCount++;
 		}
@@ -1557,13 +2230,19 @@ namespace TFE_Jedi
 			defines[defineCount].value = "1";
 			defineCount++;
 		}
-		if (s_shaderSettings.colormapInterp)
+		if (s_shaderSettings.colormapInterp || s_shaderSettings.trueColor)
 		{
 			defines[defineCount].name = "OPT_COLORMAP_INTERP";
 			defines[defineCount].value = "1";
 			defineCount++;
 
 			defines[defineCount].name = "OPT_SMOOTH_LIGHTRAMP";
+			defines[defineCount].value = "1";
+			defineCount++;
+		}
+		if (s_shaderSettings.trueColor)
+		{
+			defines[defineCount].name = "OPT_TRUE_COLOR";
 			defines[defineCount].value = "1";
 			defineCount++;
 		}

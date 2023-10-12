@@ -2,6 +2,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <libgen.h>
+#include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -15,6 +16,7 @@
 // implement TFE FileUtil for Linux and compatibles.
 namespace FileUtil
 {
+	bool existsNoCase(const char *filename);
 	static char *findFileObjectNoCase(const char *filename, bool objisdir);
 
 	void readDirectory(const char *dir, const char *ext, FileList& fileList)
@@ -326,6 +328,11 @@ namespace FileUtil
 		return findFileObjectNoCase(filename, false);
 	}
 
+	char *findDirNoCase(const char *dn)
+	{
+		return findFileObjectNoCase(dn, true);
+	}
+
 	bool existsNoCase(const char *filename)
 	{
 		char *fn2 = findFileNoCase(filename);
@@ -367,5 +374,46 @@ namespace FileUtil
 		memset(out, 0, TFE_MAX_PATH);
 		strncpy(out, in, TFE_MAX_PATH - 1);
 		fixupPath(out);
+	}
+
+	void replaceExtension(const char* srcPath, const char* newExt, char* outPath)
+	{
+		// Find the last '.' in the name.
+		strcpy(outPath, srcPath);
+		size_t len = strlen(srcPath);
+		s32 lastDot = -1;
+		for (size_t i = 0; i < len; i++)
+		{
+			if (srcPath[i] == '.') { lastDot = (s32)i; }
+		}
+		if (lastDot >= 0)
+		{
+			strcpy(&outPath[lastDot + 1], newExt);
+		}
+		else
+		{
+			strcat(outPath, ".");
+			strcat(outPath, newExt);
+		}
+	}
+
+	void stripExtension(const char* srcPath, char* outPath)
+	{
+		// Find the last '.' in the name.
+		size_t len = strlen(srcPath);
+		s32 lastDot = -1;
+		for (size_t i = 0; i < len; i++)
+		{
+			if (srcPath[i] == '.') { lastDot = (s32)i; }
+		}
+		if (lastDot >= 0)
+		{
+			outPath[0] = 0;
+			strncpy(outPath, srcPath, lastDot);
+		}
+		else
+		{
+			strcpy(outPath, srcPath);
+		}
 	}
 }

@@ -254,7 +254,10 @@ namespace TFE_Jedi
 		texture->flags = readByte(data);
 		texture->logSizeY = readByte(data);
 		texture->compressed = readByte(data);
+		texture->palIndex = 1;
 		texture->animSetup = 0;
+
+		texture->flags &= OPACITY_MASK;
 		// value is ignored.
 		data++;
 		
@@ -434,11 +437,16 @@ namespace TFE_Jedi
 
 			// Allocate and read the BM image.
 			texture->image = (u8*)malloc(texture->dataSize);
-			if (texture->image)
+			if (texture->image && intptr_t((u8*)data - (u8*)fheader) + texture->dataSize <= (intptr_t)size)
 			{
 				memcpy(texture->image, data, texture->dataSize);
 			}
-			data += texture->dataSize;
+			else
+			{
+				// Invalid data.
+				free(texture);
+				return nullptr;
+			}
 		}
 
 		return texture;
@@ -454,6 +462,8 @@ namespace TFE_Jedi
 		TextureData* tex = *texture;
 		frameRate = tex->image[0];
 		u8 animatedId = tex->image[1];
+		// TFE
+		bool enableMips = (tex->flags & ENABLE_MIP_MAPS) != 0;
 
 		// if animatedId != DF_ANIM_ID, then this is not a properly setup animated texture.
 		if (animatedId != DF_ANIM_ID)
@@ -501,7 +511,14 @@ namespace TFE_Jedi
 			outFrames[i].frameIdx = i;
 			outFrames[i].animPtr = anim;
 			outFrames[i].animSetup = 1;
+			outFrames[i].palIndex = 1;
 			outFrames[i].columns = nullptr;
+
+			outFrames[i].flags &= OPACITY_MASK;
+			if (enableMips)
+			{
+				outFrames[i].flags |= ENABLE_MIP_MAPS;
+			}
 
 			anim->frameList[i] = &outFrames[i];
 		}

@@ -37,6 +37,10 @@ else()
 endif()
 include(GNUInstallDirs)
 
+## Options
+option(DISABLE_SYSMIDI "Disable System-MIDI Output" OFF)
+option(ENABLE_EDITOR "Enable TFE Editor" OFF)
+option(ENABLE_FORCE_SCRIPT "Enable Force Script" OFF)
 
 add_executable(tfe)
 set_target_properties(tfe PROPERTIES OUTPUT_NAME "theforceengine")
@@ -44,26 +48,26 @@ set_target_properties(tfe PROPERTIES OUTPUT_NAME "theforceengine")
 if(LINUX)
 	find_package(PkgConfig REQUIRED)
 	find_package(Threads REQUIRED)
-	pkg_check_modules(RTAUDIO REQUIRED rtaudio>=5.2.0)
-	pkg_check_modules(RTMIDI REQUIRED rtmidi>=5.0.0)
-	pkg_check_modules(SDL2 REQUIRED sdl2)
+	find_package(SDL2 2.24 REQUIRED)
+	pkg_check_modules(SDL2_IMAGE REQUIRED SDL2_image)
 	pkg_check_modules(GLEW REQUIRED glew)
-	pkg_check_modules(IL REQUIRED IL)
-	pkg_check_modules(ILU REQUIRED ILU)
 	set(OpenGL_GL_PREFERENCE GLVND)
 	find_package(OpenGL REQUIRED)
 	target_include_directories(tfe PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 	target_include_directories(tfe PRIVATE ${SDL2_INCLUDE_DIRS})
+	target_include_directories(tfe PRIVATE ${SDL2_IMAGE_INCLUDE_DIRS})
 	target_link_libraries(tfe PRIVATE
 				${OPENGL_LIBRARIES}
 				${GLEW_LIBRARIES}
 				${SDL2_LIBRARIES}
-				${IL_LIBRARIES}
-				${ILU_LIBRARIES}
-				${RTAUDIO_LIBRARIES}
-				${RTMIDI_LIBRARIES}
+				${SDL2_IMAGE_LIBRARIES}
 	)
-	
+
+	if(NOT DISABLE_SYSMIDI)
+		pkg_check_modules(RTMIDI REQUIRED rtmidi>=5.0.0)
+		target_link_libraries(tfe PRIVATE ${RTMIDI_LIBRARIES})
+	endif()
+
 	# set up build directory to be able to run TFE immediately: symlink
 	# the necessary support file directories into the build env.
 	execute_process(COMMAND ln -sf ${CMAKE_SOURCE_DIR}/TheForceEngine/Captions)
@@ -78,7 +82,24 @@ if(LINUX)
 	create_git_version_h()
 endif()
 
+
+if(DISABLE_SYSMIDI)
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DNOSYSMIDI")
+endif()
+if(ENABLE_EDITOR)
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DBUILD_EDITOR")
+endif()
+if(ENABLE_FORCE_SCRIPT)
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DBUILD_FORCE_SCRIPT")
+endif()
+
+
+if(ENABLE_FORCE_SCRIPT)
+	target_include_directories(tfe PRIVATE "TheForceEngine/TFE_ForceScript/Angelscript/angelscript/include")
+	target_include_directories(tfe PRIVATE "TheForceEngine/TFE_ForceScript/Angelscript/add_on")
+endif()
 target_include_directories(tfe PRIVATE TheForceEngine)
+
 
 add_subdirectory(TheForceEngine/)
 

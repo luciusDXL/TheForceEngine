@@ -77,7 +77,7 @@ namespace TFE_Jedi
 	static f32* s_audioNormalization = &s_audioNormalizationMem[MAX_SOUND_CHANNELS * 128 + 4];
 
 	static f32* s_audioDriverOut;
-	static s16 s_audioOut[AUDIO_BUFFER_SIZE + IM_AUDIO_OVERSAMPLE];	// Add 2 stereo samples from the next frame for interpolation.
+	static s16 s_audioOut[AUDIO_BUFFER_SIZE + IM_AUDIO_OVERSAMPLE*2];	// Add 2 stereo samples from the next frame for interpolation.
 	static s32 s_audioOutSize;
 	static u8* s_audioData;
 			
@@ -196,7 +196,7 @@ namespace TFE_Jedi
 		s_audioDriverOut = buffer;
 		s_audioOutSize = bufferSize;
 		assert(bufferSize * 2 <= AUDIO_BUFFER_SIZE);
-		memset(s_audioOut, 0, (2*bufferSize + IM_AUDIO_OVERSAMPLE) * sizeof(s16));
+		memset(s_audioOut, 0, 2*(bufferSize + IM_AUDIO_OVERSAMPLE) * sizeof(s16));
 
 		// Write sounds to s_audioOut.
 		ImWaveSound* sound = s_imWaveSoundList;
@@ -742,7 +742,7 @@ namespace TFE_Jedi
 			return imInvalidSound;
 		}
 
-		s32 bufferSize = s_audioOutSize*2 + IM_AUDIO_OVERSAMPLE;
+		s32 bufferSize = 2*(s_audioOutSize + IM_AUDIO_OVERSAMPLE);
 		s16* audioOut  = s_audioOut;
 		f32* driverOut = s_audioDriverOut;
 		for (s32 i = 0; i < bufferSize; i++, audioOut++, driverOut++)

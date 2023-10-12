@@ -945,6 +945,41 @@ namespace TFE_DarkForces
 		}
 	}
 
+	void cheat_addLife()
+	{
+		if (s_lifeCount < 9)
+		{
+			s_lifeCount++;
+			const char* msg = TFE_System::getMessage(TFE_MSG_ADDLIFE);
+			if (msg) { hud_sendTextMessage(msg, 1); }
+		}
+		else
+		{
+			const char* msg = TFE_System::getMessage(TFE_MSG_ADDLIFEFAIL);
+			if (msg) { hud_sendTextMessage(msg, 1); }
+		}
+	}
+	
+	void cheat_subLife()
+	{
+		if (s_lifeCount > 0)
+		{
+			s_lifeCount--;
+			const char* msg = TFE_System::getMessage(TFE_MSG_SUBLIFE);
+			if (msg) { hud_sendTextMessage(msg, 1); }
+		}
+	}
+
+	void cheat_die()
+	{
+		if (!s_playerDying)
+		{
+			player_applyDamage(FIXED(999), FIXED(999), JFALSE);
+			const char* msg = TFE_System::getMessage(TFE_MSG_DIE);
+			if (msg) { hud_sendTextMessage(msg, 1); }
+		}
+	}
+
 	void player_setupCamera()
 	{
 		if (s_playerEye)
@@ -2029,7 +2064,7 @@ namespace TFE_DarkForces
 		// Headwave
 		s32 xWpnWaveOffset = 0;
 		s_headwaveVerticalOffset = 0;
-		if (s_config.headwave && (player->flags & OBJ_FLAG_EYE))
+		if (TFE_Settings::getA11ySettings()->enableHeadwave && (player->flags & OBJ_FLAG_EYE))
 		{
 			fixed16_16 playerSpeedAve = distApprox(0, 0, s_playerVelX, s_playerVelZ);
 			if (!moved)

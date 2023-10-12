@@ -572,7 +572,7 @@ namespace TFE_Texture
 		return index;
 	}
 
-	Texture* convertImageToTexture_8bit(const char* name, const Image* image, const char* paletteName)
+	Texture* convertImageToTexture_8bit(const char* name, const SDL_Surface* image, const char* paletteName)
 	{
 		TextureMap::iterator iTex = s_textures.find(name);
 		if (iTex != s_textures.end())
@@ -591,7 +591,7 @@ namespace TFE_Texture
 		strcpy(texture->name, name);
 
 		// Allocate memory.
-		texture->memory = new u8[sizeof(TextureFrame) + image->width * image->height];
+		texture->memory = new u8[sizeof(TextureFrame) + image->w * image->h];
 		texture->frames = (TextureFrame*)texture->memory;
 		texture->frameCount = 1;
 		texture->frameRate = 0;	// arbitrary.
@@ -599,23 +599,24 @@ namespace TFE_Texture
 		texture->frames[0].image = texture->memory + sizeof(TextureFrame);
 		u8* imageOut = texture->frames[0].image;
 
-		texture->frames[0].width = image->width;
-		texture->frames[0].height = image->height;
+		texture->frames[0].width = image->w;
+		texture->frames[0].height = image->h;
 		texture->frames[0].logSizeY = 0;
 		texture->frames[0].offsetX = 0;
 		texture->frames[0].offsetY = 0;
 		texture->frames[0].opacity = TEX_OPACITY_TRANS;
-		texture->frames[0].uvWidth = image->width;
-		texture->frames[0].uvHeight = image->height;
+		texture->frames[0].uvWidth = image->w;
+		texture->frames[0].uvHeight = image->h;
 
 		// For now look for the closest "manhattan" match.
-		s32 pixelCount = image->width * image->height;
+		s32 pixelCount = image->w * image->h;
 		for (s32 i = 0; i < pixelCount; i++)
 		{
-			u8 srcR = image->data[i] & 0xffu;
-			u8 srcG = (image->data[i] >> 8u) & 0xff;
-			u8 srcB = (image->data[i] >> 16u) & 0xff;
-			u8 srcA = (image->data[i] >> 24u) & 0xff;
+			u32 pixel = ((u32*)(image->pixels))[i];
+			u8 srcR = pixel & 0xffu;
+			u8 srcG = (pixel >> 8u) & 0xff;
+			u8 srcB = (pixel >> 16u) & 0xff;
+			u8 srcA = (pixel >> 24u) & 0xff;
 
 			if (srcA < 128u)
 			{

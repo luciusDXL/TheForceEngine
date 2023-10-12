@@ -43,7 +43,7 @@ bool LfdArchive::open(const char *archivePath)
 	m_fileList.entries = new LFD_EntryFinal_t[m_fileList.MASTERN];
 
 	s32 IX = sizeof(LFD_Entry_t) + root.LENGTH;
-	for (s32 i = 0; i < m_fileList.MASTERN; i++)
+	for (u32 i = 0; i < m_fileList.MASTERN; i++)
 	{
 		m_file.readBuffer(&entry, sizeof(LFD_Entry_t));
 
@@ -88,7 +88,7 @@ bool LfdArchive::openFile(const char *file)
 	m_fileOffset = 0;
 
 	//search for this file.
-	for (s32 i = 0; i < m_fileList.MASTERN; i++)
+	for (u32 i = 0; i < m_fileList.MASTERN; i++)
 	{
 		if (strcasecmp(file, m_fileList.entries[i].NAME) == 0)
 		{
@@ -132,7 +132,7 @@ u32 LfdArchive::getFileIndex(const char* file)
 	m_curFile = -1;
 
 	//search for this file.
-	for (s32 i = 0; i < m_fileList.MASTERN; i++)
+	for (u32 i = 0; i < m_fileList.MASTERN; i++)
 	{
 		if (strcasecmp(file, m_fileList.entries[i].NAME) == 0)
 		{
@@ -148,7 +148,7 @@ bool LfdArchive::fileExists(const char *file)
 	m_curFile = -1;
 
 	//search for this file.
-	for (s32 i = 0; i < m_fileList.MASTERN; i++)
+	for (u32 i = 0; i < m_fileList.MASTERN; i++)
 	{
 		if (strcasecmp(file, m_fileList.entries[i].NAME) == 0)
 		{

@@ -1,5 +1,6 @@
 #pragma once
 #include <TFE_System/types.h>
+#include <SDL_mutex.h>
 #include "midiDevice.h"
 
 class RtMidiOut;
@@ -36,6 +37,10 @@ namespace TFE_Audio
 	private:
 		RtMidiOut* m_midiout;
 
+		// serialize access to the physical MIDI port, to at least
+		// prevent a buffer overrun in the Linux ALSA MIDI parser.
+		SDL_mutex* portLock = nullptr;
+		
 		s32  m_outputId;
 		FileList m_outputs;
 	};

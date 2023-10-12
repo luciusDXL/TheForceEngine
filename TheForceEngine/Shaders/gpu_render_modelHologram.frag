@@ -1,5 +1,10 @@
 uniform sampler2D Palette;
+#ifdef OPT_TRUE_COLOR
+flat in vec3 Frag_Color;
+#else
 flat in int Frag_Color;
+#endif
+
 #ifdef OPT_BLOOM
 layout(location = 0) out vec4 Out_Color;
 layout(location = 1) out vec4 Out_Material;
@@ -9,9 +14,11 @@ out vec4 Out_Color;
 
 void main()
 {
-	ivec2 uv = ivec2(Frag_Color, 0);
-
-	Out_Color.rgb = texelFetch(Palette, uv, 0).rgb;
+	#ifdef OPT_TRUE_COLOR
+		Out_Color.rgb = Frag_Color;
+	#else
+		Out_Color.rgb = texelFetch(Palette, ivec2(Frag_Color, 0), 0).rgb;
+	#endif
 	Out_Color.a = 1.0;
 
 #ifdef OPT_BLOOM

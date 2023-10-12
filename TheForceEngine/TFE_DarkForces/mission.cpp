@@ -29,6 +29,7 @@
 #include <TFE_Jedi/Renderer/rcommon.h>
 #include <TFE_Jedi/Renderer/screenDraw.h>
 #include <TFE_Jedi/Renderer/RClassic_Fixed/rclassicFixed.h>
+#include <TFE_RenderShared/texturePacker.h>
 #include <TFE_Jedi/Serialization/serialization.h>
 #include <TFE_FrontEndUI/frontEndUi.h>
 #include <TFE_FrontEndUI/console.h>
@@ -188,6 +189,9 @@ namespace TFE_DarkForces
 	CHEAT_CMD(LAFLY);
 	CHEAT_CMD(LANOCLIP);
 	CHEAT_CMD(LATESTER);
+	CHEAT_CMD(LAADDLIFE);
+	CHEAT_CMD(LASUBLIFE);
+	CHEAT_CMD(LADIE);
 
 	void console_spawnEnemy(const ConsoleArgList& args)
 	{
@@ -231,6 +235,25 @@ namespace TFE_DarkForces
 			TFE_Jedi::setSubRenderer(TSR_CLASSIC_FIXED);
 		}
 		automap_resetScale();
+
+		// Copy the level palette...
+		// Update the palette.
+		u32 levelPalette[256];
+		u32* outColor = levelPalette;
+		u8* srcColor = s_levelPalette;
+		for (s32 i = 0; i < 256; i++, outColor++, srcColor += 3)
+		{
+			*outColor = CONV_6bitTo8bit(srcColor[0]) | (CONV_6bitTo8bit(srcColor[1]) << 8u) | (CONV_6bitTo8bit(srcColor[2]) << 16u) | (0xffu << 24u);
+		}
+		TFE_RenderBackend::setPalette(levelPalette);
+		TFE_Jedi::renderer_setSourcePalette(levelPalette);
+		texturepacker_setConversionPalette(1, 6, s_levelPalette);
+
+		// TFE
+		if (TFE_Settings::getGraphicsSettings()->colorMode == COLORMODE_TRUE_COLOR)
+		{
+			TFE_Jedi::render_clearCachedTextures();
+		}
 
 		TFE_Jedi::renderer_setType(RendererType(graphics->rendererIndex));
 		TFE_Jedi::render_setResolution();
@@ -335,6 +358,9 @@ namespace TFE_DarkForces
 			console_LAFLY,		// CHEAT_LAFLY,
 			console_LANOCLIP,	// CHEAT_LANOCLIP,
 			console_LATESTER,	// CHEAT_LATESTER,
+			console_LAADDLIFE,
+			console_LASUBLIFE,
+			console_LADIE
 		};
 
 		CCMD("cheat", console_cheat, 1, "Enter a Dark Forces cheat code as a string, example: cheat lacds");
@@ -379,7 +405,6 @@ namespace TFE_DarkForces
 			{
 				s_missionMode = MISSION_MODE_LOAD_START;
 				mission_setupTasks();
-			
 				displayLoadingScreen();
 
 				// Add a yield here, so the loading screen is shown immediately.
@@ -545,6 +570,13 @@ namespace TFE_DarkForces
 				hud_drawAndUpdate(s_framebuffer);
 				hud_drawMessage(s_framebuffer);
 				handlePaletteFx();
+			}
+			else
+			{
+				// TFE: Gpu Renderer.
+				Vec3f lumMaskGpu = { 0 };
+				Vec3f palFxGpu = { 0 };
+				TFE_Jedi::renderer_setPalFx(&lumMaskGpu, &palFxGpu);
 			}
 			
 			// Move this out of handleGeneralInput so that the HUD is properly copied.
@@ -734,6 +766,10 @@ namespace TFE_DarkForces
 		JBool copiedPalette = JFALSE;
 		if (!s_canChangePal) { return; }
 
+		// TFE
+		Vec3f lumMaskGpu = { 0 };
+		Vec3f palFxGpu = { 0 };
+
 		if (s_luminanceMask[0] || s_luminanceMask[1] || s_luminanceMask[2])
 		{
 			if (!copiedPalette)
@@ -744,6 +780,8 @@ namespace TFE_DarkForces
 			applyLuminanceFilter(s_framePalette, s_luminanceMask[0], s_luminanceMask[1], s_luminanceMask[2]);
 			s_palModified = JTRUE;
 			useFramePal = JTRUE;
+
+			lumMaskGpu = { s_luminanceMask[0] ? 1.0f : 0.0f, s_luminanceMask[1] ? 1.0f : 0.0f, s_luminanceMask[2] ? 1.0f : 0.0f };
 		}
 		else if (s_palModified)
 		{
@@ -763,6 +801,8 @@ namespace TFE_DarkForces
 				applyScreenFxToPalette(s_framePalette, s_healthFxLevel, s_shieldFxLevel, s_flashFxLevel);
 				useFramePal = JTRUE;
 				s_palModified = JTRUE;
+
+				palFxGpu = { min(1.0f, f32(s_healthFxLevel) / 63.0f), min(1.0f, f32(s_shieldFxLevel) / 63.0f), min(1.0f, f32(s_flashFxLevel) / 63.0f) };
 			}
 			else if (s_palModified)
 			{
@@ -814,6 +854,9 @@ namespace TFE_DarkForces
 				s_updateHudColors = JFALSE;
 			}
 		}
+
+		// TFE: Gpu Renderer.
+		TFE_Jedi::renderer_setPalFx(&lumMaskGpu, &palFxGpu);
 
 		// TFE uses a dynamic multi-buffered texture for the palette. This doesn't work well when trying to set it only once.
 		// For this reason, it is easier to just set the palette every frame regardless of change.
@@ -1112,6 +1155,18 @@ namespace TFE_DarkForces
 			{
 				cheat_tester();
 			} break;
+			case CHEAT_LAADDLIFE:
+			{
+				cheat_addLife();
+			} break;
+			case CHEAT_LASUBLIFE:
+			{
+				cheat_subLife();
+			} break;
+			case CHEAT_LADIE:
+			{
+				cheat_die();
+			} break;
 		}
 	}
 		
@@ -1243,8 +1298,9 @@ namespace TFE_DarkForces
 
 			if (inputMapping_getActionState(IADF_HEADWAVE_TOGGLE) == STATE_PRESSED)
 			{
-				s_config.headwave = ~s_config.headwave;
-				if (s_config.headwave)
+				TFE_Settings_A11y* settings = TFE_Settings::getA11ySettings();
+				settings->enableHeadwave = !settings->enableHeadwave;
+				if (settings->enableHeadwave)
 				{
 					hud_sendTextMessage(14);
 				}

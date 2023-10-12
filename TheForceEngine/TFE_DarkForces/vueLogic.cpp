@@ -100,6 +100,20 @@ namespace TFE_DarkForces
 
 		return (Logic*)vueLogic;
 	}
+
+	void vueLogic_serializeFramePointer(Stream* stream, VueLogic* logic, VueFrame** frame, bool modeWrite, u32 version)
+	{
+		s32 index = -1;
+		if (modeWrite && logic->frames && *frame)
+		{
+			index = allocator_getIndex(logic->frames, *frame);
+		}
+		SERIALIZE(version, index, -1);
+		if (!modeWrite)
+		{
+			*frame = (index >= 0) ? (VueFrame*)allocator_getByIndex(logic->frames, index) : nullptr;
+		}
+	}
 		
 	void vueLogic_serializeTaskLocalMemory(Stream* stream, void* userData, void* mem)
 	{
@@ -125,16 +139,13 @@ namespace TFE_DarkForces
 				locals->obj = objData_getObjectBySerializationId(objIndex);
 			}
 		}
-		s32 index = -1;
-		if (modeWrite && self->frames && locals->frame)
-		{
-			index = allocator_getIndex(self->frames, locals->frame);
-		}
-		SERIALIZE(SaveVersionInit, index, -1);
-		if (!modeWrite)
-		{
-			locals->frame = (VueFrame*)allocator_getByIndex(self->frames, index);
-		}
+
+		// local frame pointers.
+		vueLogic_serializeFramePointer(stream, self, &locals->frame, modeWrite, SaveVersionInit);
+		vueLogic_serializeFramePointer(stream, self, &locals->interpolatedFrame, modeWrite, ObjState_VueSmoothing);
+		vueLogic_serializeFramePointer(stream, self, &locals->previous, modeWrite, ObjState_VueSmoothing);
+		vueLogic_serializeFramePointer(stream, self, &locals->current, modeWrite, ObjState_VueSmoothing);
+
 		SERIALIZE(SaveVersionInit, locals->tick, 0);
 		SERIALIZE(SaveVersionInit, locals->pauseTick, 0);
 		SERIALIZE(SaveVersionInit, locals->prevFrame, 0);

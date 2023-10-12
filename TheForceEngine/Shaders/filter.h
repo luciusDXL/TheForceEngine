@@ -1,33 +1,84 @@
+#ifdef OPT_TRUE_COLOR
+uniform vec3 PalFxLumMask;
+uniform vec3 PalFxFlash;
+#endif
+
 // Adjust the output 
 vec2 bilinearSharpness(vec2 uv, float sharpness)
 {
+	// Determine the edges
+	if (sharpness > 0.5)
+	{
+		vec2 w = fwidth(uv);
+		float negMip = -0.5 * log2(dot(w, w));	// ranges from 1 at 200% scale and 0 at 100% scale
+		sharpness *= (clamp(negMip, 0.0, 1.0)*0.5 + 0.5);
+	}
 	// Sharpness == 0 is the same as standard bilinear.
 	if (sharpness == 0.0) { return uv; }
 
-	// Sharpness == 1 adjust the filter width based on the per-pixel texel size in order
-	// to approximate "antialised point-sampling".
-	if (sharpness == 1.0)
+	float e0 = 0.0, e1 = 1.0;
+	if (sharpness > 0.5)
 	{
-		vec2 w = fwidth(uv);
-		float scale = 0.5;
-		float mag = clamp(-log2(dot(w, w))*scale, 0.0, 1.0);
-		sharpness = mag * 0.5 + 0.5;
+		// Adjust the endpoints of the curve inward toward the center.
+		e0 = 0.425 * (sharpness - 0.5) * 2.0;
+		e1 = 1.0 - e0;
 	}
+	
+	vec2 offset = vec2(0.5);
 
-	// Adjust the sub-texel sample position by mapping the linear change to an exponentiated S-Curve.
-	float ex = max(1.0, (sharpness - 0.5) * 32.0);
-	vec2 st = fract(uv);
-	vec2 stAdj = pow(uv*uv*(3.0 - 2.0*st), vec2(ex));
-	st = mix(st, stAdj, min(1.0, sharpness*2.0));
+	// Deconstruct the uv coordinate into integer and fractional components.
+	uv += offset;
+	vec2 iuv = floor(uv);
+	vec2 fuv = uv - iuv;
 
-	// The final texture coordinate is the integer position + adjusted sub-texel position.
-	return floor(uv) + st;
+	// Adjusted uv using an s-curve where S(0.5) = 0.5
+	vec2 uvAdj = smoothstep(e0, e1, fuv);
+	// Blend between the standard linear and adjusted coordinates.
+	float blendFactor = clamp(sharpness * 2.0, 0.0, 1.0); // 0 @ sharpness = 0, 1 @ sharpess >= 0.5
+	fuv = mix(fuv, uvAdj, blendFactor);
+	
+	// Reconstruct the uv coordinate.
+	return iuv + fuv - offset;
 }
 
 float computeMipLevel(vec2 uv)
 {
-	vec2 dx = dFdx(uv);
-	vec2 dy = dFdy(uv);
-	float maxSq = max(dot(dx, dx), dot(dy, dy));
-	return 0.5 * log2(maxSq);	// same as log2(maxSq^0.5)
+	vec2 w = fwidth(uv);
+	return 0.5 * log2(dot(w, w));	// same as log2(maxSq^0.5)
+}
+
+vec3 handlePaletteFx(vec3 inColor)
+{
+	vec3 outColor = inColor;
+#ifdef OPT_TRUE_COLOR
+	// Luminance mask.
+	if (dot(PalFxLumMask, PalFxLumMask) > 0.1)
+	{
+		// Compute the approximate luminance (red/4 + green/2 + blue/4)
+		vec3 lumMask = vec3(0.25, 0.5, 0.25);
+		float L = dot(outColor, lumMask);
+		// Then assign the luminance to the requested channels.
+		outColor = PalFxLumMask * L;
+	}
+	// Flashes.
+	if (PalFxFlash.x > 0.0)
+	{
+		float flashLevel = 1.0 - PalFxFlash.x;
+		outColor.x   = 1.0 - abs(1.0 - outColor.x) * flashLevel;
+		outColor.yz *= flashLevel;
+	}
+	else if (PalFxFlash.y > 0.0)
+	{
+		float flashLevel = 1.0 - PalFxFlash.y;
+		outColor.y   = 1.0 - abs(1.0 - outColor.y) * flashLevel;
+		outColor.xz *= flashLevel;
+	}
+	else if (PalFxFlash.z > 0.0)
+	{
+		float flashLevel = 1.0 - PalFxFlash.z;
+		outColor.z   = 1.0 - abs(1.0 - outColor.z) * flashLevel;
+		outColor.xy *= flashLevel;
+	}
+#endif
+	return outColor;
 }

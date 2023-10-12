@@ -241,6 +241,7 @@ namespace TFE_Jedi
 			// texBase[] remains unmodified for serialization, whereas textures[] can be modified with animated textures.
 			if (read)
 			{
+				if (texBase[i]) { texBase[i]->flags |= ENABLE_MIP_MAPS; }
 				textures[i] = texBase[i];
 			}
 			if (read && s_levelState.textures[i] && s_levelState.textures[i]->uvWidth == BM_ANIMATED_TEXTURE)

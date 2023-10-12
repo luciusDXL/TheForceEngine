@@ -599,7 +599,7 @@ namespace TFE_DarkForces
 					{
 						startNextMode();
 					}
-					TFE_A11Y::clearCaptions();
+					TFE_A11Y::clearActiveCaptions();
 				}
 			} break;
 			case GSTATE_BRIEFING:
@@ -668,7 +668,7 @@ namespace TFE_DarkForces
 					bitmap_clearLevelData();
 					bitmap_setAllocator(s_gameRegion);
 					level_freeAllAssets();
-					TFE_A11Y::clearCaptions();
+					TFE_A11Y::clearActiveCaptions();
 				}
 			} break;
 		}
@@ -1091,11 +1091,15 @@ namespace TFE_DarkForces
 		sprintf(path, "%sMods/", programData);
 		TFE_Paths::addAbsoluteSearchPath(path);
 
-		sprintf(path, "%sMods/", programDir);
+		sprintf(path, "%s", "Mods/");
+		if (!TFE_Paths::mapSystemPath(path))
+			sprintf(path, "%sMods/", programDir);
 		TFE_Paths::addAbsoluteSearchPath(path);
 
 		// Add the adjustable HUD.
-		sprintf(path, "%sMods/TFE/AdjustableHud", programDir);
+		sprintf(path, "%s", "Mods/TFE/AdjustableHud");
+		if (!TFE_Paths::mapSystemPath(path))
+			sprintf(path, "%sMods/TFE/AdjustableHud", programDir);
 		TFE_Paths::addAbsoluteSearchPath(path);
 	}
 

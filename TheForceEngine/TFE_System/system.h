@@ -7,9 +7,17 @@
 #include <ctype.h>
 #include "types.h"
 
-#define TFE_MAJOR_VERSION 0
-#define TFE_MINOR_VERSION 2
-#define TFE_BUILD_VERSION 1
+#define TFE_MAJOR_VERSION 1
+#define TFE_MINOR_VERSION 9
+#define TFE_BUILD_VERSION 5
+
+#if defined(_WIN32) || defined(BUILD_EDITOR)
+#define ENABLE_EDITOR 1
+#endif
+
+#if defined(_WIN32) || defined(BUILD_FORCE_SCRIPT)
+#define ENABLE_FORCE_SCRIPT 1
+#endif
 
 enum LogWriteType
 {

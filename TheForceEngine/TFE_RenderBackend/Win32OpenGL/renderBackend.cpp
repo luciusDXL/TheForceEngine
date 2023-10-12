@@ -771,10 +771,10 @@ namespace TFE_RenderBackend
 		return texture;
 	}
 
-	TextureGpu* createTextureArray(u32 width, u32 height, u32 layers, u32 channels)
+	TextureGpu* createTextureArray(u32 width, u32 height, u32 layers, u32 channels, u32 mipCount)
 	{
 		TextureGpu* texture = new TextureGpu();
-		texture->createArray(width, height, layers, channels);
+		texture->createArray(width, height, layers, channels, mipCount);
 		return texture;
 	}
 
@@ -820,7 +820,7 @@ namespace TFE_RenderBackend
 	void setupBloomStages()
 	{
 		// Free existing buffers...
-		for (s32 i = 0; i < s_bloomBufferCount; i++)
+		for (u32 i = 0; i < s_bloomBufferCount; i++)
 		{
 			delete s_bloomTargets[i];
 			delete s_bloomTextures[i];

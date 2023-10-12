@@ -15,6 +15,8 @@ For example,
 This corresponds to General Moc's third line of dialog during the cutscene before 
 Talay. Because this is for a cutscene, the file name (m01moc03) has no extension. 
 The number at the end indicates that the subtitle should display for 1.5 seconds.
+When the duration value is not included, the caption duration is automatically
+calculated from the length of the caption (in bytes).
 
     ransto01.voc "Trooper: There he is, stop him!"
 
@@ -37,3 +39,13 @@ Lines that begin with // or # are ignored
 
     //this is a comment
     # this is also a comment
+
+UTF-8 Unicode is supported, but make sure that you select a font which supports the
+necessary character set. If a unicode character is missing from the selected font,
+the missing character will be replaced by a rectangle or question mark.
+
+Because automatic caption durations are calculated by measuring the length of the
+caption in bytes, and UTF-8 characters may be more than 1 byte long, the automatic
+duration may be too long when the caption consists primarily of multi-byte Unicode
+characters. You can avoid this issue by including the duration value in the caption
+file.

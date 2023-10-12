@@ -18,13 +18,13 @@
 #include "linux/steamlnx.h"
 #endif
 
+using namespace TFE_IniParser;
+
 namespace TFE_Settings
 {
 	//////////////////////////////////////////////////////////////////////////////////
 	// Local State
 	//////////////////////////////////////////////////////////////////////////////////
-#define LINEBUF_LEN 1024
-
 	static char s_settingsPath[TFE_MAX_PATH];
 	static TFE_Settings_Window s_windowSettings = {};
 	static TFE_Settings_Graphics s_graphicsSettings = {};
@@ -34,7 +34,6 @@ namespace TFE_Settings
 	static TFE_Settings_A11y s_a11ySettings = {};
 	static TFE_Game s_game = {};
 	static TFE_Settings_Game s_gameSettings = {};
-	static char s_lineBuffer[LINEBUF_LEN];
 	static std::vector<char> s_iniBuffer;
 
 	enum SectionID
@@ -310,47 +309,6 @@ namespace TFE_Settings
 		return &s_gameSettings;
 	}
 
-	void writeHeader(FileStream& file, const char* section)
-	{
-		snprintf(s_lineBuffer, LINEBUF_LEN, "[%s]\r\n", section);
-		file.writeBuffer(s_lineBuffer, (u32)strlen(s_lineBuffer));
-	}
-
-	void writeComment(FileStream& file, const char* comment)
-	{
-		snprintf(s_lineBuffer, LINEBUF_LEN, ";%s\r\n", comment);
-		file.writeBuffer(s_lineBuffer, (u32)strlen(s_lineBuffer));
-	}
-
-	void writeKeyValue_String(FileStream& file, const char* key, const char* value)
-	{
-		snprintf(s_lineBuffer, LINEBUF_LEN, "%s=\"%s\"\r\n", key, value);
-		file.writeBuffer(s_lineBuffer, (u32)strlen(s_lineBuffer));
-	}
-
-	void writeKeyValue_Int(FileStream& file, const char* key, s32 value)
-	{
-		snprintf(s_lineBuffer, LINEBUF_LEN, "%s=%d\r\n", key, value);
-		file.writeBuffer(s_lineBuffer, (u32)strlen(s_lineBuffer));
-	}
-
-	void writeKeyValue_Float(FileStream& file, const char* key, f32 value)
-	{
-		snprintf(s_lineBuffer, LINEBUF_LEN, "%s=%0.3f\r\n", key, value);
-		file.writeBuffer(s_lineBuffer, (u32)strlen(s_lineBuffer));
-	}
-
-	void writeKeyValue_Bool(FileStream& file, const char* key, bool value)
-	{
-		snprintf(s_lineBuffer, LINEBUF_LEN, "%s=%s\r\n", key, value ? "true" : "false");
-		file.writeBuffer(s_lineBuffer, (u32)strlen(s_lineBuffer));
-	}
-
-	void writeKeyValue_RGBA(FileStream& file, const char* key, RGBA value)
-	{
-		writeKeyValue_Int(file, key, value.color);
-	}
-
 	void writeWindowSettings(FileStream& settings)
 	{
 		writeHeader(settings, c_sectionNames[SECTION_WINDOW]);
@@ -366,8 +324,9 @@ namespace TFE_Settings
 	void writeGraphicsSettings(FileStream& settings)
 	{
 		writeHeader(settings, c_sectionNames[SECTION_GRAPHICS]);
-		writeKeyValue_Int(settings, "gameWidth", s_graphicsSettings.gameResolution.x);
+		writeKeyValue_Int(settings, "gameWidth",  s_graphicsSettings.gameResolution.x);
 		writeKeyValue_Int(settings, "gameHeight", s_graphicsSettings.gameResolution.z);
+		writeKeyValue_Int(settings, "fov",        s_graphicsSettings.fov);
 		writeKeyValue_Bool(settings, "widescreen", s_graphicsSettings.widescreen);
 		writeKeyValue_Bool(settings, "asyncFramebuffer", s_graphicsSettings.asyncFramebuffer);
 		writeKeyValue_Bool(settings, "gpuColorConvert", s_graphicsSettings.gpuColorConvert);
@@ -379,12 +338,18 @@ namespace TFE_Settings
 		writeKeyValue_Bool(settings, "3doNormalFix", s_graphicsSettings.fix3doNormalOverflow);
 		writeKeyValue_Bool(settings, "ignore3doLimits", s_graphicsSettings.ignore3doLimits);
 		writeKeyValue_Bool(settings, "ditheredBilinear", s_graphicsSettings.ditheredBilinear);
+		
+		writeKeyValue_Bool(settings, "useBilinear", s_graphicsSettings.useBilinear);
+		writeKeyValue_Bool(settings, "useMipmapping", s_graphicsSettings.useMipmapping);
+		writeKeyValue_Float(settings, "bilinearSharpness", s_graphicsSettings.bilinearSharpness);
+		writeKeyValue_Float(settings, "anisotropyQuality", s_graphicsSettings.anisotropyQuality);
+
 		writeKeyValue_Int(settings, "frameRateLimit", s_graphicsSettings.frameRateLimit);
 		writeKeyValue_Float(settings, "brightness", s_graphicsSettings.brightness);
 		writeKeyValue_Float(settings, "contrast", s_graphicsSettings.contrast);
 		writeKeyValue_Float(settings, "saturation", s_graphicsSettings.saturation);
 		writeKeyValue_Float(settings, "gamma", s_graphicsSettings.gamma);
-		
+				
 		writeKeyValue_Bool(settings, "reticleEnable",   s_graphicsSettings.reticleEnable);
 		writeKeyValue_Int(settings,  "reticleIndex",    s_graphicsSettings.reticleIndex);
 		writeKeyValue_Float(settings, "reticleRed",     s_graphicsSettings.reticleRed);
@@ -438,6 +403,9 @@ namespace TFE_Settings
 	void writeA11ySettings(FileStream& settings)
 	{
 		writeHeader(settings, c_sectionNames[SECTION_A11Y]);
+		writeKeyValue_String(settings, "language", s_a11ySettings.language.c_str());
+		writeKeyValue_String(settings, "lastFontPath", s_a11ySettings.lastFontPath.c_str());
+
 		writeKeyValue_Bool(settings, "showCutsceneSubtitles", s_a11ySettings.showCutsceneSubtitles);
 		writeKeyValue_Bool(settings, "showCutsceneCaptions", s_a11ySettings.showCutsceneCaptions);
 		writeKeyValue_Int(settings, "cutsceneFontSize", s_a11ySettings.cutsceneFontSize);
@@ -455,6 +423,8 @@ namespace TFE_Settings
 		writeKeyValue_Int(settings, "gameplayMaxTextLines", s_a11ySettings.gameplayMaxTextLines);
 		writeKeyValue_Float(settings, "gameplayTextSpeed", s_a11ySettings.gameplayTextSpeed);
 		writeKeyValue_Int(settings, "gameplayCaptionMinVolume", s_a11ySettings.gameplayCaptionMinVolume);
+		
+		writeKeyValue_Bool(settings, "enableHeadwave", s_a11ySettings.enableHeadwave);
 	}
 
 	void writeGameSettings(FileStream& settings)
@@ -605,30 +575,6 @@ namespace TFE_Settings
 		}
 	}
 
-	s32 parseInt(const char* value)
-	{
-		char* endPtr = nullptr;
-		return strtol(value, &endPtr, 10);
-	}
-
-	f32 parseFloat(const char* value)
-	{
-		char* endPtr = nullptr;
-		return (f32)strtod(value, &endPtr);
-	}
-
-	bool parseBool(const char* value)
-	{
-		if (value[0] == 'f' || value[0] == '0') { return false; }
-		return true;
-	}
-
-	RGBA parseColor(const char* value)
-	{
-		s32 v = parseInt(value);
-		return RGBA(v);
-	}
-
 	void parseWindowSettings(const char* key, const char* value)
 	{
 		if (strcasecmp("x", key) == 0)
@@ -670,6 +616,10 @@ namespace TFE_Settings
 		else if (strcasecmp("gameHeight", key) == 0)
 		{
 			s_graphicsSettings.gameResolution.z = parseInt(value);
+		}
+		else if (strcasecmp("fov", key) == 0)
+		{
+			s_graphicsSettings.fov = parseInt(value);
 		}
 		else if (strcasecmp("widescreen", key) == 0)
 		{
@@ -714,6 +664,22 @@ namespace TFE_Settings
 		else if (strcasecmp("ditheredBilinear", key) == 0)
 		{
 			s_graphicsSettings.ditheredBilinear = parseBool(value);
+		}
+		else if (strcasecmp("useBilinear", key) == 0)
+		{
+			s_graphicsSettings.useBilinear = parseBool(value);
+		}
+		else if (strcasecmp("useMipmapping", key) == 0)
+		{
+			s_graphicsSettings.useMipmapping = parseBool(value);
+		}
+		else if (strcasecmp("bilinearSharpness", key) == 0)
+		{
+			s_graphicsSettings.bilinearSharpness = parseFloat(value);
+		}
+		else if (strcasecmp("anisotropyQuality", key) == 0)
+		{
+			s_graphicsSettings.anisotropyQuality = parseFloat(value);
 		}
 		else if (strcasecmp("frameRateLimit", key) == 0)
 		{
@@ -889,7 +855,15 @@ namespace TFE_Settings
 	
 	void parseA11ySettings(const char* key, const char* value)
 	{
-		if (strcasecmp("showCutsceneSubtitles", key) == 0)
+		if (strcasecmp("language", key) == 0)
+		{
+			s_a11ySettings.language = value;
+		} 
+		else if (strcasecmp("lastFontPath", key) == 0)
+		{
+			s_a11ySettings.lastFontPath = value;
+		} 
+		else if (strcasecmp("showCutsceneSubtitles", key) == 0)
 		{
 			s_a11ySettings.showCutsceneSubtitles = parseBool(value);
 		}
@@ -952,6 +926,10 @@ namespace TFE_Settings
 		else if (strcasecmp("gameplayCaptionMinVolume", key) == 0)
 		{
 			s_a11ySettings.gameplayCaptionMinVolume = parseInt(value);
+		}
+		else if (strcasecmp("enableHeadwave", key) == 0)
+		{
+			s_a11ySettings.enableHeadwave = parseBool(value);
 		}
 	}
 

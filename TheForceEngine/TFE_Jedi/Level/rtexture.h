@@ -24,6 +24,11 @@ struct BM_Header
 enum OpacityFlags
 {
 	OPACITY_TRANS = FLAG_BIT(3),
+	// TFE
+	OPACITY_MASK = FLAG_BIT(5) - 1,
+	INDEXED = FLAG_BIT(5),
+	ALWAYS_FULLBRIGHT = FLAG_BIT(6),
+	ENABLE_MIP_MAPS   = FLAG_BIT(7),
 };
 
 // was BM_SubHeader
@@ -50,9 +55,10 @@ struct TextureData
 	u32* columns;	// columns will be NULL except when compressed.
 
 	// 4 bytes
-	u8 flags;
-	u8 compressed; // 0 = not compressed, 1 = compressed (RLE), 2 = compressed (RLE0)
-	u8 pad3[2];
+	u8 flags = 0;
+	u8 compressed;  // 0 = not compressed, 1 = compressed (RLE), 2 = compressed (RLE0)
+	u8 palIndex = 1;// TFE - which palette to use.
+	u8 pad3;
 
 	// TFE
 	s32 animIndex = -1;

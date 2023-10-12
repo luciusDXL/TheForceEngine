@@ -319,6 +319,27 @@ namespace TFE_Jedi
 		s_displayListPos[index] = pos;
 		s_displayListData[index] = data;
 	}
+
+	void reverseOrder(const SectorPass bufferIndex)
+	{
+		const s32 startIndex = MAX_DISP_ITEMS * bufferIndex;
+		const s32 count = s_displayListCount[bufferIndex];
+		const s32 swapCount = count >> 1;
+
+		// Use floor(count/2) swaps to reverse the order in-place.
+		// There are generally very few transparent edges - usually less than 10
+		// (so less than 5 swaps).
+		for (s32 i = 0; i < swapCount; i++)
+		{
+			std::swap( s_displayListPos[startIndex+i],  s_displayListPos[startIndex + count - 1 - i]);
+			std::swap(s_displayListData[startIndex+i], s_displayListData[startIndex + count - 1 - i]);
+		}
+	}
+
+	void sdisplayList_fixupTrans()
+	{
+		reverseOrder(SECTOR_PASS_TRANS);
+	}
 		
 	/*********************************
 	Current GPU Renderer Limits:
@@ -397,8 +418,8 @@ namespace TFE_Jedi
 				// If the floor and ceiling textures are different, split into two.
 				// Since no next sector is required, this is treated as a solid wall, the space is re-used as flags to differeniate between the three cases:
 				// (0) Both above and below the horizon using the same texture (the ceiling).
-				// (1) Below the horizon line, using the floor texture.
-				// (2) Above the horizon line, using the ceiling texture.
+				// (1) Below the horizon line, using the floor or wall texture.
+				// (2) Above the horizon line, using the ceiling or wall texture.
 				if (curSector->floorTex == curSector->ceilTex)
 				{
 					// Above AND below the horizon line (single quad).
