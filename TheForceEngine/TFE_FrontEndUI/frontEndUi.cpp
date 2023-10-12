@@ -2799,6 +2799,14 @@ namespace TFE_FrontEndUI
 		ImGui::LabelText("##ConfigLabel4", "Motion Sickness");
 		ImGui::PopFont();
 		ImGui::Checkbox("Enable headwave", &a11ySettings->enableHeadwave);
+
+		// OTHER -----------------------------------------------
+		ImGui::Dummy(ImVec2(0.0f, 10.0f));
+		ImGui::Separator();
+		ImGui::PushFont(s_dialogFont);
+		ImGui::LabelText("##ConfigLabel5", "Misc");
+		ImGui::PopFont();
+		ImGui::Checkbox("Disable screen flashes", &a11ySettings->disableScreenFlashes);
 	}
 
 	void pickCurrentResolution()

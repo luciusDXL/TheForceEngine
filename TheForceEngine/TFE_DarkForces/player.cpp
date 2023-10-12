@@ -2589,6 +2589,8 @@ namespace TFE_DarkForces
 				
 	void handlePlayerScreenFx()
 	{
+		if (TFE_Settings::getA11ySettings()->disableScreenFlashes) { return; }
+
 		s32 healthFx, shieldFx, flashFx;
 		if (s_healthDamageFx)
 		{
