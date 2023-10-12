@@ -236,6 +236,7 @@ struct TFE_Settings_A11y
 
 	// Motion sickness settings
 	bool enableHeadwave = true;
+	bool disableScreenFlashes = false;
 };
 
 namespace TFE_Settings

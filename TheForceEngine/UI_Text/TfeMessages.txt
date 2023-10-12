@@ -1,9 +1,11 @@
-"Game Saved."          // TFE_MSG_SAVE
-"You found a secret!"  // TFE_MSG_SECRET
-"Fly Mode Toggle."     // TFE_MSG_FLYMODE
-"No Clip Toggle."      // TFE_MSG_NOCLIP
-"Testing Mode Toggle." // TFE_MSG_TESTER
-"Add Life."			   // TFE_ADDLIFE
-"Don't get greedy."	   // TFE_ADDLIFE (lives full)
-"Subtract Life."	   // TFE_SUBLIFE
-"Goodbye."			   // TFE_DIE
+"Game Saved."           // TFE_MSG_SAVE
+"You found a secret!"   // TFE_MSG_SECRET
+"Fly Mode Toggle."      // TFE_MSG_FLYMODE
+"No Clip Toggle."       // TFE_MSG_NOCLIP
+"Testing Mode Toggle."  // TFE_MSG_TESTER
+"Add Life."             // TFE_MSG_ADDLIFE
+"Don't get greedy."     // TFE_MSG_ADDLIFE (lives full)
+"Subtract Life."        // TFE_MSG_SUBLIFE
+"Goodbye."              // TFE_MSG_DIE
+"One-Hit Kill Toggle."  // TFE_MSG_ONEHITKILL
+"Hardcore Mode Toggle." // TFE_MSG_HARDCORE
