@@ -1,6 +1,6 @@
 // Number of grid levels
 #define LEVELS 6
-#define DIST_SCALE_BASE 0.004
+#define DIST_SCALE_BASE 0.003
 #define LINE_WIDTH_SCALE 1.75
 #define GRID_SCALE_MAX (1.0 / 512.0)
 #define GRID_COLOR vec3(0.8, 0.9, 1.0)
@@ -60,7 +60,7 @@ void computeGrid(vec2 pUV, float falloff, inout vec3 outColor, inout float outAl
 	outAlpha = min(alpha + outAlpha * (1.0 - alpha), 1.0);
 }
 
-void drawFloorGridLevels(inout vec3 baseColor, inout float baseAlpha, float gridOpacity, float gridSize, vec2 inUv, float viewFalloff, vec3 inPos)
+void drawFloorGridLevels(inout vec3 baseColor, inout float baseAlpha, float gridSize, vec2 inUv, float viewFalloff, vec3 inPos)
 {
 	float uvScale = 1.0 / gridSize;
 	float distScale = DIST_SCALE_BASE / gridSize;
@@ -77,10 +77,6 @@ void drawFloorGridLevels(inout vec3 baseColor, inout float baseAlpha, float grid
 		uvScale /= 8.0;
 		distScale /= 8.0;
 	}
-
-	// We have the final grid color and opacity, factor in the gridOpacity from the application.
-	outColor *= gridOpacity;
-	outAlpha *= gridOpacity;
 
 	// Blend the incoming base color and alpha with the grid.
 	baseColor = mix(baseColor, outColor, outAlpha);

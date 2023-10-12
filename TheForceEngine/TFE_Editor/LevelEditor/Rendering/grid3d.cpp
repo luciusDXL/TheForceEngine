@@ -83,7 +83,7 @@ namespace LevelEditor
 
 		s_shader.bind();
 		// Bind Uniforms & Textures.
-		const f32 gridOpacitySubGrid[] = { gridOpacity*2.0f, gridScale, 0.0f };
+		const f32 gridOpacitySubGrid[] = { gridOpacity, gridScale, 0.0f };
 		s_shader.setVariable(s_svCameraPos, SVT_VEC3, s_camera.pos.m);
 		s_shader.setVariable(s_svCameraView, SVT_MAT3x3, s_camera.viewMtx.data);
 		s_shader.setVariable(s_svCameraProj, SVT_MAT4x4, s_camera.projMtx.data);
