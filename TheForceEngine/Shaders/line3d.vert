@@ -52,6 +52,9 @@ void main()
 	gl_Position.xy += (top == 0 ? -screenNormal * vtx_uv1.y : screenNormal * vtx_uv1.y);
 	gl_Position.xyz *= gl_Position.w;
 
+	float zbias = -0.00005;
+	gl_Position.z += zbias;
+
 	Frag_Uv.xy = (ppos0.xy * vec2(0.5,0.5) + 0.5) * ScreenSize;
 	Frag_Uv.zw = (ppos1.xy * vec2(0.5,0.5) + 0.5) * ScreenSize;
 	Frag_Width = vtx_uv1.x;

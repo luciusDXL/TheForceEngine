@@ -99,4 +99,6 @@ namespace LevelEditor
 	bool loadLevelFromAsset(TFE_Editor::Asset* asset, EditorLevel* level);
 	void sectorToPolygon(EditorSector* sector);
 	void polygonToSector(EditorSector* sector);
+
+	s32 findSector2d(EditorLevel* level, s32 layer, const Vec2f* pos);
 }

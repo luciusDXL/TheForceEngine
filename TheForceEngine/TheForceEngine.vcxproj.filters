@@ -1267,6 +1267,9 @@
     <ClInclude Include="TFE_Editor\LevelEditor\Rendering\grid3d.h">
       <Filter>Source\TFE_Editor\LevelEditor\Rendering</Filter>
     </ClInclude>
+    <ClInclude Include="TFE_RenderShared\triDraw3d.h">
+      <Filter>Source\TFE_RenderShared</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -2169,6 +2172,9 @@
     <ClCompile Include="TFE_Editor\LevelEditor\Rendering\grid3d.cpp">
       <Filter>Source\TFE_Editor\LevelEditor\Rendering</Filter>
     </ClCompile>
+    <ClCompile Include="TFE_RenderShared\triDraw3d.cpp">
+      <Filter>Source\TFE_RenderShared</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="TheForceEngine.rc">
@@ -2362,6 +2368,12 @@
       <Filter>Source\Shaders</Filter>
     </None>
     <None Include="Shaders\bloom.vert">
+      <Filter>Source\Shaders</Filter>
+    </None>
+    <None Include="Shaders\tri3dWall.frag">
+      <Filter>Source\Shaders</Filter>
+    </None>
+    <None Include="Shaders\tri3dWall.vert">
       <Filter>Source\Shaders</Filter>
     </None>
   </ItemGroup>

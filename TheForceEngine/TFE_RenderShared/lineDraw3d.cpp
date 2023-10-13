@@ -147,7 +147,7 @@ namespace TFE_RenderShared
 
 		TFE_RenderState::setStateEnable(false, STATE_CULLING | STATE_DEPTH_WRITE);
 		TFE_RenderState::setStateEnable(depthTest, STATE_DEPTH_TEST);
-		TFE_RenderState::setDepthFunction(CMP_EQUAL);
+		TFE_RenderState::setDepthFunction(CMP_LEQUAL);
 
 		// Enable blending.
 		TFE_RenderState::setStateEnable(true, STATE_BLEND);

@@ -11,6 +11,7 @@
 #include <TFE_RenderBackend/indexBuffer.h>
 #include <TFE_RenderShared/lineDraw2d.h>
 #include <TFE_RenderShared/triDraw2d.h>
+#include <TFE_RenderShared/triDraw3d.h>
 #include <TFE_System/system.h>
 #include <TFE_RenderBackend/renderBackend.h>
 #include <algorithm>
@@ -96,6 +97,7 @@ namespace LevelEditor
 	{
 		grid2d_init();
 		tri2d_init();
+		tri3d_init();
 		grid3d_init();
 		TFE_RenderShared::line3d_init();
 	}
@@ -105,6 +107,7 @@ namespace LevelEditor
 		TFE_RenderBackend::freeRenderTarget(s_viewportRt);
 		grid2d_destroy();
 		tri2d_destroy();
+		tri3d_destroy();
 		grid3d_destroy();
 		TFE_RenderShared::line3d_destroy();
 		s_viewportRt = 0;
@@ -244,10 +247,25 @@ namespace LevelEditor
 		TFE_RenderShared::lineDraw3d_addLines(6, 3.0f, axis, axisColor);
 	}
 
+	static bool s_gridAutoAdjust = true;
+
 	void renderLevel3D()
 	{
+		// Figure out which sector we are over.
+		const Vec2f worldPos2d = { s_camera.pos.x, s_camera.pos.z };
+		s32 overSector = findSector2d(&s_level, s_curLayer, &worldPos2d);
+		if (overSector >= 0 && s_level.sectors[overSector].floorHeight > s_camera.pos.y)
+		{
+			overSector = -1;
+		}
+		if (overSector >= 0 && s_gridAutoAdjust)
+		{
+			s_gridHeight = s_level.sectors[overSector].floorHeight;
+		}
+
 		// Prepare for drawing.
 		TFE_RenderShared::lineDraw3d_begin(s_viewportSize.x, s_viewportSize.z);
+		TFE_RenderShared::triDraw3d_begin();
 
 		if (s_camera.pos.y >= s_gridHeight)
 		{
@@ -289,26 +307,101 @@ namespace LevelEditor
 				color &= 0x00ffffff;
 				color |= 0x80000000;
 
+				const Vec2f& v0 = sector->vtx[wall->idx[0]];
+				const Vec2f& v1 = sector->vtx[wall->idx[1]];
+
 				Vec3f line0[] =
-				{ { sector->vtx[wall->idx[0]].x, sector->floorHeight, sector->vtx[wall->idx[0]].z }, 
-				  { sector->vtx[wall->idx[1]].x, sector->floorHeight, sector->vtx[wall->idx[1]].z } };
+				{ { v0.x, sector->floorHeight, v0.z },
+				  { v1.x, sector->floorHeight, v1.z } };
 				TFE_RenderShared::lineDraw3d_addLine(width, line0, &color);
 
 				Vec3f line1[] =
-				{ { sector->vtx[wall->idx[0]].x, sector->ceilHeight, sector->vtx[wall->idx[0]].z },
-				  { sector->vtx[wall->idx[1]].x, sector->ceilHeight, sector->vtx[wall->idx[1]].z } };
+				{ { v0.x, sector->ceilHeight, v0.z },
+				  { v1.x, sector->ceilHeight, v1.z } };
 				TFE_RenderShared::lineDraw3d_addLine(width, line1, &color);
 
 				Vec3f line2[] =
-				{ { sector->vtx[wall->idx[0]].x, sector->floorHeight, sector->vtx[wall->idx[0]].z },
-				  { sector->vtx[wall->idx[0]].x, sector->ceilHeight, sector->vtx[wall->idx[0]].z } };
+				{ { v0.x, sector->floorHeight, v0.z },
+				  { v0.x, sector->ceilHeight, v0.z } };
 				TFE_RenderShared::lineDraw3d_addLine(width, line2, &color);
+
+				if (wall->adjoinId >= 0)
+				{
+					EditorSector* next = &s_level.sectors[wall->adjoinId];
+					// Top
+					if (next->ceilHeight < sector->ceilHeight && next->layer != s_curLayer)
+					{
+						Vec3f line0[] =
+						{ { v0.x, next->ceilHeight, v0.z },
+						  { v1.x, next->ceilHeight, v1.z } };
+						TFE_RenderShared::lineDraw3d_addLine(width, line0, &color);
+					}
+					// Bottom
+					if (next->floorHeight > sector->floorHeight && next->layer != s_curLayer)
+					{
+						Vec3f line0[] =
+						{ { v0.x, next->floorHeight, v0.z },
+						  { v1.x, next->floorHeight, v1.z } };
+						TFE_RenderShared::lineDraw3d_addLine(width, line0, &color);
+					}
+				}
+
+				// Wall Parts
+				u32 wallColor = 0xff1a0f0d;
+				if (wall->adjoinId < 0)
+				{
+					Vec3f corners[] = { {v0.x, sector->ceilHeight,  v0.z},
+										{v1.x, sector->floorHeight, v1.z} };
+					TFE_RenderShared::triDraw3d_addQuadColored(corners, wallColor);
+				}
+				else
+				{
+					EditorSector* next = &s_level.sectors[wall->adjoinId];
+					// Top
+					if (next->ceilHeight < sector->ceilHeight)
+					{
+						Vec3f corners[] = { {v0.x, sector->ceilHeight, v0.z},
+										    {v1.x, next->ceilHeight,   v1.z} };
+						TFE_RenderShared::triDraw3d_addQuadColored(corners, wallColor);
+					}
+					// Bottom
+					if (next->floorHeight > sector->floorHeight)
+					{
+						Vec3f corners[] = { {v0.x, next->floorHeight,   v0.z},
+										    {v1.x, sector->floorHeight, v1.z} };
+						TFE_RenderShared::triDraw3d_addQuadColored(corners, wallColor);
+					}
+					// Mid only for mask textures (TODO).
+				}
+			}
+
+			// Draw the floor and ceiling.
+			u32 floorColor = 0xff402020;
+			const u32 idxCount = sector->poly.triIdx.size();
+			const u32 vtxCount = sector->poly.triVtx.size();
+			const Vec2f* triVtx = sector->poly.triVtx.data();
+			Vec3f vtxDataFlr[512];
+			Vec3f vtxDataCeil[512];
+			for (u32 v = 0; v < vtxCount; v++)
+			{
+				vtxDataFlr[v] = { triVtx[v].x, sector->floorHeight, triVtx[v].z };
+				vtxDataCeil[v] = { triVtx[v].x, sector->ceilHeight,  triVtx[v].z };
+			}
+
+			if (s_camera.pos.y > sector->floorHeight)
+			{
+				triDraw3d_addColored(idxCount, vtxCount, vtxDataFlr, sector->poly.triIdx.data(), floorColor, false);
+			}
+			if (s_camera.pos.y < sector->ceilHeight)
+			{
+				triDraw3d_addColored(idxCount, vtxCount, vtxDataCeil, sector->poly.triIdx.data(), floorColor, true);
 			}
 		}
 
-		TFE_RenderShared::lineDraw3d_drawLines(&s_camera, false, false);
+		TFE_RenderShared::triDraw3d_draw(&s_camera);
+		TFE_RenderShared::lineDraw3d_drawLines(&s_camera, true, false);
 	}
-		
+
 	void renderSectorPolygon2d(const Polygon* poly, u32 color)
 	{
 		const size_t idxCount = poly->triIdx.size();

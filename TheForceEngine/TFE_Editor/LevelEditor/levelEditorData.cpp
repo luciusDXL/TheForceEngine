@@ -399,4 +399,22 @@ namespace LevelEditor
 	{
 		// TODO
 	}
+
+	s32 findSector2d(EditorLevel* level, s32 layer, const Vec2f* pos)
+	{
+		if (level->sectors.empty()) { return -1; }
+
+		const s32 sectorCount = (s32)level->sectors.size();
+		EditorSector* sectors = level->sectors.data();
+
+		for (s32 i = 0; i < sectorCount; i++)
+		{
+			if (sectors[i].layer != layer) { continue; }
+			if (TFE_Polygon::pointInsidePolygon(&sectors[i].poly, *pos))
+			{
+				return i;
+			}
+		}
+		return -1;
+	}
 }

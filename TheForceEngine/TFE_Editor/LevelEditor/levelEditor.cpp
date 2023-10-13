@@ -44,11 +44,13 @@
 #include <map>
 
 using namespace TFE_Editor;
+#define SHOW_EDITOR_FPS 0
 
 namespace LevelEditor
 {
 	const f32 c_defaultZoom = 0.25f;
 	const f32 c_defaultYaw = PI;
+	const f32 c_defaultCameraHeight = 6.0f;
 
 	// The TFE Level Editor format is different than the base format and contains extra 
 	// metadata, etc.
@@ -190,6 +192,7 @@ namespace LevelEditor
 
 		AssetBrowser::getLevelTextures(s_levelTextureList, asset->name.c_str());
 		s_camera = { 0 };
+		s_camera.pos.y = c_defaultCameraHeight;
 		s_camera.yaw = c_defaultYaw;
 		computeCameraTransform();
 		s_cursor3d = { 0 };
@@ -506,16 +509,26 @@ namespace LevelEditor
 			menuActive = true;
 			if (ImGui::MenuItem("2D", "Ctrl+1", s_view == EDIT_VIEW_2D))
 			{
+				if (s_view == EDIT_VIEW_3D)
+				{
+					// Center the 2D map on the 3D camera position before changing.
+					Vec2f mapPos = { s_camera.pos.x * c_defaultZoom / s_zoom2d, -s_camera.pos.z * c_defaultZoom / s_zoom2d };
+					s_viewportPos.x = mapPos.x - (s_viewportSize.x / 2) * s_zoom2d;
+					s_viewportPos.z = mapPos.z - (s_viewportSize.z / 2) * s_zoom2d;
+				}
 				s_view = EDIT_VIEW_2D;
 			}
 			if (ImGui::MenuItem("3D (Editor)", "Ctrl+2", s_view == EDIT_VIEW_3D))
 			{
-				Vec2f worldPos = mouseCoordToWorldPos2d(s_viewportSize.x/2 + s_editWinMapCorner.x, s_viewportSize.z/2 + s_editWinMapCorner.z);
-
+				// Put the 3D camera at the center of the 2D map.
+				if (s_view == EDIT_VIEW_2D)
+				{
+					Vec2f worldPos = mouseCoordToWorldPos2d(s_viewportSize.x / 2 + s_editWinMapCorner.x, s_viewportSize.z / 2 + s_editWinMapCorner.z);
+					s_camera.pos.x = worldPos.x;
+					s_camera.pos.z = worldPos.z;
+					computeCameraTransform();
+				}
 				s_view = EDIT_VIEW_3D;
-
-				s_camera.pos = { worldPos.x, 0.0f, worldPos.z };
-				computeCameraTransform();
 			}
 			if (ImGui::MenuItem("3D (Game)", "Ctrl+3", s_view == EDIT_VIEW_3D_GAME))
 			{
@@ -737,8 +750,9 @@ namespace LevelEditor
 		levelEditWinEnd();
 		popFont();
 
-		// Test
-		TFE_FrontEndUI::drawFps(1800);
+	#if SHOW_EDITOR_FPS == 1
+		//TFE_FrontEndUI::drawFps(1800);
+	#endif
 	}
 
 	////////////////////////////////////////////////////////

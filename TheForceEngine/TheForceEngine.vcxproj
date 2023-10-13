@@ -647,6 +647,7 @@ echo ^)";
     <ClInclude Include="TFE_RenderShared\quadDraw2d.h" />
     <ClInclude Include="TFE_RenderShared\texturePacker.h" />
     <ClInclude Include="TFE_RenderShared\triDraw2d.h" />
+    <ClInclude Include="TFE_RenderShared\triDraw3d.h" />
     <ClInclude Include="TFE_Settings\gameSourceData.h" />
     <ClInclude Include="TFE_Settings\settings.h" />
     <ClInclude Include="TFE_Settings\windows\registry.h" />
@@ -959,6 +960,7 @@ echo ^)";
     <ClCompile Include="TFE_RenderShared\quadDraw2d.cpp" />
     <ClCompile Include="TFE_RenderShared\texturePacker.cpp" />
     <ClCompile Include="TFE_RenderShared\triDraw2d.cpp" />
+    <ClCompile Include="TFE_RenderShared\triDraw3d.cpp" />
     <ClCompile Include="TFE_Settings\settings.cpp" />
     <ClCompile Include="TFE_Settings\windows\registry.cpp" />
     <ClCompile Include="TFE_System\CrashHandler\crashHandlerWin32.cpp" />
@@ -1057,6 +1059,8 @@ echo ^)";
       <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">ml64.exe /c  /nologo /Fo"$(Configuration)\as_callfunc_x64_msvc_asm.obj" /W3 /Zi /Ta "%(RootDir)%(Directory)\%(Filename)%(Extension)"</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(Configuration)\as_callfunc_x64_msvc_asm.obj;%(Outputs)</Outputs>
     </CustomBuild>
+    <None Include="Shaders\tri3dWall.frag" />
+    <None Include="Shaders\tri3dWall.vert" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
