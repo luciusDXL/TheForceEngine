@@ -245,7 +245,7 @@ namespace TFE_DarkForces
 				s_buttonPressed = AGENT_REMOVE;
 				s_buttonHover = JTRUE;
 			}
-			else if (TFE_Input::keyPressed(KEY_D))	// DOS
+			else if (TFE_Input::keyPressed(s_langKeys->k_quit))	// DOS
 			{
 				s_buttonPressed = AGENT_EXIT;
 				s_buttonHover = JTRUE;
