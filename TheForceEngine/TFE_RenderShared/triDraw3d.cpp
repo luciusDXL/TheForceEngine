@@ -41,6 +41,7 @@ namespace TFE_RenderShared
 	static s32 s_svCameraPos = -1;
 	static s32 s_svCameraView = -1;
 	static s32 s_svCameraProj = -1;
+	static s32 s_svGridScaleOpacity = -1;
 
 	static Shader s_shader;
 	static VertexBuffer s_vertexBuffer;
@@ -65,6 +66,7 @@ namespace TFE_RenderShared
 		s_svCameraPos = s_shader.getVariableId("CameraPos");
 		s_svCameraView = s_shader.getVariableId("CameraView");
 		s_svCameraProj = s_shader.getVariableId("CameraProj");
+		s_svGridScaleOpacity = s_shader.getVariableId("GridScaleOpacity");
 		if (s_svCameraPos < 0 || s_svCameraView < 0 || s_svCameraProj < 0)
 		{
 			return false;
@@ -108,6 +110,9 @@ namespace TFE_RenderShared
 		const s32 idxOffset = s_idxCount;
 		const s32 vtxOffset = s_vtxCount;
 
+		const f32 dx = fabsf(corners[1].x - corners[0].x);
+		const f32 dz = fabsf(corners[1].z - corners[0].z);
+
 		// Do we have enough room for the vertices and indices?
 		if (s_vtxCount + 4 > VTX3D_MAX || s_idxCount + 6 > IDX3D_MAX)
 		{
@@ -139,18 +144,22 @@ namespace TFE_RenderShared
 
 		outVert[0].pos = { corners[0].x, corners[0].y, corners[0].z };
 		outVert[0].uv = { 0.0f, 0.0f };
+		outVert[0].uv1 = { (dx >= dz) ? corners[0].x : corners[0].z, corners[0].y };
 		outVert[0].color = color;
 
 		outVert[1].pos = { corners[1].x, corners[0].y, corners[1].z };
 		outVert[1].uv = { 1.0f, 0.0f };
+		outVert[1].uv1 = { (dx >= dz) ? corners[1].x : corners[1].z, corners[0].y };
 		outVert[1].color = color;
 
 		outVert[2].pos = { corners[1].x, corners[1].y, corners[1].z };
 		outVert[2].uv = { 1.0f, 1.0f };
+		outVert[2].uv1 = { (dx >= dz) ? corners[1].x : corners[1].z, corners[1].y };
 		outVert[2].color = color;
 
 		outVert[3].pos = { corners[0].x, corners[1].y, corners[0].z };
 		outVert[3].uv = { 0.0f, 1.0f };
+		outVert[3].uv1 = { (dx >= dz) ? corners[0].x : corners[0].z, corners[1].y };
 		outVert[3].color = color;
 
 		outIdx[0] = vtxOffset + 0;
@@ -204,6 +213,7 @@ namespace TFE_RenderShared
 		{
 			outVert[v].pos = vertices[v];
 			outVert[v].uv = { 0.5f, 0.5f };
+			outVert[v].uv1 = { outVert[v].pos.x, outVert[v].pos.z };
 			outVert[v].color = color;
 		}
 
@@ -227,7 +237,7 @@ namespace TFE_RenderShared
 		s_idxCount += idxCount;
 	}
 
-	void triDraw3d_draw(const Camera3d* camera)
+	void triDraw3d_draw(const Camera3d* camera, f32 gridScale, f32 gridOpacity)
 	{
 		if (s_triDrawCount < 1) { return; }
 
@@ -247,6 +257,11 @@ namespace TFE_RenderShared
 		s_shader.setVariable(s_svCameraPos, SVT_VEC3, camera->pos.m);
 		s_shader.setVariable(s_svCameraView, SVT_MAT3x3, camera->viewMtx.data);
 		s_shader.setVariable(s_svCameraProj, SVT_MAT4x4, camera->projMtx.data);
+		if (s_svGridScaleOpacity >= 0)
+		{
+			f32 gridScaleOpacity[] = { gridScale, gridOpacity };
+			s_shader.setVariable(s_svGridScaleOpacity, SVT_VEC2, gridScaleOpacity);
+		}
 
 		// Bind vertex/index buffers and setup attributes for BlitVert
 		s_vertexBuffer.bind();

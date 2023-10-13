@@ -17,5 +17,5 @@ namespace TFE_RenderShared
 	void triDraw3d_addQuadColored(Vec3f* corners, const u32 color);
 	void triDraw3d_addColored(u32 idxCount, u32 vtxCount, const Vec3f* vertices, const s32* indices, const u32 color, bool invSide);
 
-	void triDraw3d_draw(const Camera3d* camera);
+	void triDraw3d_draw(const Camera3d* camera, f32 gridScale, f32 gridOpacity);
 }

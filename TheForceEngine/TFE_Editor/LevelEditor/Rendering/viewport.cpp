@@ -301,7 +301,7 @@ namespace LevelEditor
 				{
 					continue;
 				}
-
+				
 				u32 color = c_sectorLineClr[highlight];
 				// Test
 				color &= 0x00ffffff;
@@ -398,8 +398,21 @@ namespace LevelEditor
 			}
 		}
 
-		TFE_RenderShared::triDraw3d_draw(&s_camera);
+		TFE_RenderShared::triDraw3d_draw(&s_camera, s_gridSize2d, s_gridOpacity);
 		TFE_RenderShared::lineDraw3d_drawLines(&s_camera, true, false);
+
+		/*
+		if (s_camera.pos.y >= s_gridHeight)
+		{
+			grid3d_draw(s_gridSize2d, s_gridOpacity, s_gridHeight);
+			renderCoordinateAxis();
+		}
+		else
+		{
+			renderCoordinateAxis();
+			grid3d_draw(s_gridSize2d, s_gridOpacity, s_gridHeight);
+		}
+		*/
 	}
 
 	void renderSectorPolygon2d(const Polygon* poly, u32 color)

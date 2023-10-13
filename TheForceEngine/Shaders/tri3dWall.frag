@@ -1,7 +1,12 @@
+#include "Shaders/grid.h"
+
 in vec4 Frag_Color;
 in vec2 Frag_Uv;
+in vec2 Frag_Uv1;
 in vec3 Frag_Pos;
 out vec4 Out_Color;
+
+uniform vec2 GridScaleOpacity;
 
 void main()
 {
@@ -19,5 +24,14 @@ void main()
 	vec3 edgeColor = vec3(1.0, 1.0, 1.0);
 	outColor.rgb = mix(outColor.rgb, edgeColor, alpha * 0.5);
 
+	// Grid
+	vec3 viewNormal = computeViewNormal(Frag_Pos);
+	float viewFalloff = min(1.0, 2.0*computeViewFalloff(Frag_Pos, viewNormal));
+
+	float outAlpha = 0.0;
+	vec3 gridColor = vec3(0.0);
+	drawFloorGridLevels(gridColor, outAlpha, GridScaleOpacity.x, Frag_Uv1.xy, viewFalloff, Frag_Pos);
+	outColor.rgb = mix(outColor.rgb, gridColor, outAlpha * GridScaleOpacity.y);
+	
     Out_Color = vec4(outColor.rgb * outColor.a, outColor.a);
 }
