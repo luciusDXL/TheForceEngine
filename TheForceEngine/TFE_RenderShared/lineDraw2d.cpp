@@ -40,6 +40,8 @@ namespace TFE_RenderShared
 	static u32 s_lineCount;
 
 	static ShaderSettings s_shaderSettings = {};
+	static bool s_allowBloom = true;
+	static bool s_line2d_init = false;
 
 	static u32 s_width, s_height;
 	   
@@ -66,13 +68,17 @@ namespace TFE_RenderShared
 		return true;
 	}
 
-	bool init()
+	bool init(bool allowBloom)
 	{
-		s_shaderSettings.bloom = TFE_Settings::getGraphicsSettings()->bloomEnabled;
+		s_allowBloom = allowBloom;
+		if (s_line2d_init) { return true; }
+
+		s_shaderSettings.bloom = s_allowBloom && TFE_Settings::getGraphicsSettings()->bloomEnabled;
 		if (!loadShader())
 		{
 			return false;
 		}
+		s_line2d_init = true;
 
 		// Create buffers
 		// Create vertex and index buffers.
@@ -108,6 +114,8 @@ namespace TFE_RenderShared
 
 		s_shader.destroy();
 		s_shaderSettings = {};
+
+		s_line2d_init = false;
 	}
 	
 	void lineDraw2d_begin(u32 width, u32 height)
@@ -191,7 +199,7 @@ namespace TFE_RenderShared
 	{
 		if (s_lineCount < 1) { return; }
 		// First see if the shader needs to be updated.
-		bool bloomEnabled = TFE_Settings::getGraphicsSettings()->bloomEnabled;
+		bool bloomEnabled = s_allowBloom && TFE_Settings::getGraphicsSettings()->bloomEnabled;
 		if (bloomEnabled != s_shaderSettings.bloom)
 		{
 			s_shaderSettings.bloom = bloomEnabled;

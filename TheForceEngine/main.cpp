@@ -640,7 +640,6 @@ int main(int argc, char* argv[])
 	TFE_FrontEndUI::initConsole();
 	TFE_Audio::init(s_nullAudioDevice, TFE_Settings::getSoundSettings()->audioDevice);
 	TFE_MidiPlayer::init(TFE_Settings::getSoundSettings()->midiOutput, (MidiDeviceType)TFE_Settings::getSoundSettings()->midiType);
-	TFE_Polygon::init();
 	TFE_Image::init();
 	TFE_Palette::createDefault256();
 	TFE_FrontEndUI::init();
@@ -920,7 +919,6 @@ int main(int argc, char* argv[])
 	TFE_FrontEndUI::shutdown();
 	TFE_Audio::shutdown();
 	TFE_MidiPlayer::destroy();
-	TFE_Polygon::shutdown();
 	TFE_Image::shutdown();
 	TFE_Palette::freeAll();
 	TFE_RenderBackend::updateSettings();

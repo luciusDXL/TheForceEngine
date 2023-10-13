@@ -192,6 +192,8 @@ namespace TFE_DarkForces
 	CHEAT_CMD(LAADDLIFE);
 	CHEAT_CMD(LASUBLIFE);
 	CHEAT_CMD(LADIE);
+	CHEAT_CMD(LAIMDEATH);
+	CHEAT_CMD(LAHARDCORE);
 
 	void console_spawnEnemy(const ConsoleArgList& args)
 	{
@@ -360,7 +362,9 @@ namespace TFE_DarkForces
 			console_LATESTER,	// CHEAT_LATESTER,
 			console_LAADDLIFE,
 			console_LASUBLIFE,
-			console_LADIE
+			console_LADIE,
+			console_LAIMDEATH,
+			console_LAHARDCORE
 		};
 
 		CCMD("cheat", console_cheat, 1, "Enter a Dark Forces cheat code as a string, example: cheat lacds");
@@ -1166,6 +1170,14 @@ namespace TFE_DarkForces
 			case CHEAT_LADIE:
 			{
 				cheat_die();
+			} break;
+			case CHEAT_LAIMDEATH:
+			{
+				cheat_oneHitKill();
+			} break;
+			case CHEAT_LAHARDCORE:
+			{
+				cheat_instaDeath();
 			} break;
 		}
 	}

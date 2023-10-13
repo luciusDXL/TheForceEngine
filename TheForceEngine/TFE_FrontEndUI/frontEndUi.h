@@ -66,4 +66,5 @@ namespace TFE_FrontEndUI
 	bool getCanSave();
 
 	void toggleProfilerView();
+	void drawFps(s32 windowWidth);
 }

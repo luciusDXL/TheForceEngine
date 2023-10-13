@@ -7,7 +7,7 @@
 
 namespace TFE_RenderShared
 {
-	bool init();
+	bool init(bool allowBloom = true);
 	void destroy();
 
 	void lineDraw2d_begin(u32 width, u32 height);

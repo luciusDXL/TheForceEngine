@@ -554,7 +554,12 @@ namespace TFE_DarkForces
 		// Shields
 		{
 			char shieldStr[8];
-			if (s_playerInfo.shields == -1)
+			s32 shields = s_playerInfo.shields;
+			if (s_instaDeathEnabled) // "Hardcore" cheat
+			{
+				shields = 0;
+			}
+			if (shields == -1)
 			{
 				s_hudWorkPalette[0] = 55;
 				s_hudWorkPalette[1] = 55;
@@ -567,9 +572,9 @@ namespace TFE_DarkForces
 			{
 				s_hudWorkPalette[0] = 0;
 				s32 upperShields;
-				if (s_playerInfo.shields > 100)
+				if (shields > 100)
 				{
-					upperShields = s_playerInfo.shields;
+					upperShields = shields;
 				}
 				else
 				{
@@ -581,16 +586,16 @@ namespace TFE_DarkForces
 
 				s_hudWorkPalette[3] = 0;
 				s32 lowerShields;
-				if (s_playerInfo.shields < 100)
+				if (shields < 100)
 				{
-					lowerShields = s_playerInfo.shields;
+					lowerShields = shields;
 				}
 				else
 				{
 					lowerShields = 100;
 				}
 				s_hudWorkPalette[4] = 8 + (lowerShields >> 1);
-				sprintf(shieldStr, "%03d", s_playerInfo.shields);
+				sprintf(shieldStr, "%03d", shields);
 			}
 
 			fixed16_16 xPos = mul16(intToFixed16(15), hudScaleX) + x1;
@@ -599,13 +604,19 @@ namespace TFE_DarkForces
 		}
 		// Health
 		{
-			s32 health = min(100, s_playerInfo.health);
+			s32 health = s_playerInfo.health;
+			if (s_instaDeathEnabled) // "Hardcore" cheat
+			{
+				health = 1;
+			}
+			s32 healthClamped = min(100, health);
+
 			// 6: color 2, red channel, 7 = green channel
-			s_hudWorkPalette[6] = 8 + (health >> 1);
-			s_hudWorkPalette[7] = health * 63 / 400;
+			s_hudWorkPalette[6] = 8 + (healthClamped >> 1);
+			s_hudWorkPalette[7] = healthClamped * 63 / 400;
 
 			char healthStr[32];
-			sprintf(healthStr, "%03d", s_playerInfo.health);
+			sprintf(healthStr, "%03d", health);
 			fixed16_16 xPos = mul16(intToFixed16(33), hudScaleX) + x1;
 			fixed16_16 yPos = mul16(intToFixed16(26), hudScaleY) + y1;
 			hud_drawStringGpu(s_hudHealthFont, xPos, yPos, hudScaleX >> hudDoubled, hudScaleY >> hudDoubled, healthStr);
@@ -806,11 +817,17 @@ namespace TFE_DarkForces
 				}
 				s_rightHudShow = 4;
 			}
-			if (s_playerInfo.shields != s_prevShields)
+
+			s32 shields = s_playerInfo.shields;
+			if (s_instaDeathEnabled) // "Hardcore" cheat
+			{
+				shields = 0;
+			}
+			if (shields != s_prevShields)
 			{
 				char shieldStr[8];
 
-				if (s_playerInfo.shields == -1)
+				if (shields == -1)
 				{
 					s_hudWorkPalette[0] = 55;
 					s_hudWorkPalette[1] = 55;
@@ -823,9 +840,9 @@ namespace TFE_DarkForces
 				{
 					s_hudWorkPalette[0] = 0;
 					s32 upperShields;
-					if (s_playerInfo.shields > 100)
+					if (shields > 100)
 					{
-						upperShields = s_playerInfo.shields;
+						upperShields = shields;
 					}
 					else
 					{
@@ -837,30 +854,36 @@ namespace TFE_DarkForces
 
 					s_hudWorkPalette[3] = 0;
 					s32 lowerShields;
-					if (s_playerInfo.shields < 100)
+					if (shields < 100)
 					{
-						lowerShields = s_playerInfo.shields;
+						lowerShields = shields;
 					}
 					else
 					{
 						lowerShields = 100;
 					}
 					s_hudWorkPalette[4] = 8 + (lowerShields >> 1);
-					sprintf(shieldStr, "%03d", s_playerInfo.shields);
+					sprintf(shieldStr, "%03d", shields);
 				}
-				s_prevShields = s_playerInfo.shields;
+				s_prevShields = shields;
 				hud_drawString(s_cachedHudLeft, s_hudShieldFont, 15 << hudDoubled, 26 << hudDoubled, shieldStr);
 			}
-			if (s_playerInfo.health != s_prevHealth)
+
+			s32 health = s_playerInfo.health;
+			if (s_instaDeathEnabled) // "Hardcore" cheat
 			{
-				s32 health = min(100, s_playerInfo.health);
+				health = 1;
+			}
+			if (health != s_prevHealth)
+			{
+				s32 healthClamped = min(100, health);
 				// 6: color 2, red channel, 7 = green channel
-				s_hudWorkPalette[6] = 8 + (health >> 1);
-				s_hudWorkPalette[7] = health * 63 / 400;
-				s_prevHealth = s_playerInfo.health;
+				s_hudWorkPalette[6] = 8 + (healthClamped >> 1);
+				s_hudWorkPalette[7] = healthClamped * 63 / 400;
+				s_prevHealth = health;
 
 				char healthStr[32];
-				sprintf(healthStr, "%03d", s_playerInfo.health);
+				sprintf(healthStr, "%03d", health);
 				hud_drawString(s_cachedHudLeft, s_hudHealthFont, 33 << hudDoubled, 26 << hudDoubled, healthStr);
 
 				s_leftHudShow = 4;

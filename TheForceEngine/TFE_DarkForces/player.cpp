@@ -211,6 +211,8 @@ namespace TFE_DarkForces
 	JBool s_playerSecMoved = JFALSE;
 	JBool s_flyMode = JFALSE;
 	JBool s_noclip = JFALSE;
+	JBool s_oneHitKillEnabled = JFALSE;
+	JBool s_instaDeathEnabled = JFALSE;
 	u32*  s_playerInvSaved = nullptr;
 
 	RSector* s_playerSector = nullptr;
@@ -533,6 +535,8 @@ namespace TFE_DarkForces
 		s_invincibility = 0;
 		s_flyMode = JFALSE;
 		s_noclip = JFALSE;
+		s_oneHitKillEnabled = JFALSE;
+		s_instaDeathEnabled = JFALSE;
 
 		// The player will always start a level with at least 100 shields, though if they have more it carries over.
 		s_playerInfo.shields = max(100, s_playerInfo.shields);
@@ -979,6 +983,24 @@ namespace TFE_DarkForces
 			if (msg) { hud_sendTextMessage(msg, 1); }
 		}
 	}
+	
+	void cheat_oneHitKill()
+	{
+		s_oneHitKillEnabled = ~s_oneHitKillEnabled;
+		const char* msg = TFE_System::getMessage(TFE_MSG_ONEHITKILL);
+		if (msg) { hud_sendTextMessage(msg, 1); }
+	}
+	
+	void cheat_instaDeath()
+	{
+		// This way if we already had one-hit-kill enabled, we don't end
+		// up with one-hit kill off and insta-death on - though if the
+		// player wants that to happen, they can type LA_IMDEATH again
+		// after using this cheat.
+		s_instaDeathEnabled = ~s_instaDeathEnabled;
+		const char* msg = TFE_System::getMessage(TFE_MSG_HARDCORE);
+		if (msg) { hud_sendTextMessage(msg, 1); }
+	}
 
 	void player_setupCamera()
 	{
@@ -1083,6 +1105,11 @@ namespace TFE_DarkForces
 			{
 				shieldDmg = s_msgArg1;
 			}
+		}
+
+		if (s_instaDeathEnabled) // "Hardcore" cheat
+		{
+			shieldDmg = FIXED(999);
 		}
 
 		player_applyDamage(0, shieldDmg, playHitSound);
@@ -2562,6 +2589,8 @@ namespace TFE_DarkForces
 				
 	void handlePlayerScreenFx()
 	{
+		if (TFE_Settings::getA11ySettings()->disableScreenFlashes) { return; }
+
 		s32 healthFx, shieldFx, flashFx;
 		if (s_healthDamageFx)
 		{
@@ -2869,6 +2898,8 @@ namespace TFE_DarkForces
 		SERIALIZE(ObjState_InitVersion, s_superChargeHud, 0);
 		SERIALIZE(ObjState_InitVersion, s_playerSecMoved, 0);
 		SERIALIZE(ObjState_FlyModeAdded, s_flyMode, JFALSE);
+		SERIALIZE(ObjState_OneHitCheats, s_oneHitKillEnabled, JFALSE);
+		SERIALIZE(ObjState_OneHitCheats, s_instaDeathEnabled, JFALSE);
 
 		s32 invSavedSize = 0;
 		if (serialization_getMode() == SMODE_WRITE && s_playerInvSaved)

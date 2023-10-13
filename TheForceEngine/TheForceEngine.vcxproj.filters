@@ -197,6 +197,12 @@
     <Filter Include="Source\TFE_ForceScript\Angelscript\angelscript\source">
       <UniqueIdentifier>{eda60bca-8bac-41ef-815b-769600dea4ef}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\TFE_Editor\LevelEditor">
+      <UniqueIdentifier>{d60dce85-e5d8-42e7-9e10-db1ae940accb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\TFE_Editor\LevelEditor\Rendering">
+      <UniqueIdentifier>{8e854a2b-4fb2-4f86-875a-daf00ab6b35a}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="main.h">
@@ -317,9 +323,6 @@
       <Filter>Source\TFE_Asset</Filter>
     </ClInclude>
     <ClInclude Include="TFE_Polygon\clipper.hpp">
-      <Filter>Source\TFE_Polygon</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_Polygon\MPE_fastpoly2tri.h">
       <Filter>Source\TFE_Polygon</Filter>
     </ClInclude>
     <ClInclude Include="TFE_Polygon\polygon.h">
@@ -1228,6 +1231,42 @@
     <ClInclude Include="TFE_ForceScript\script_system.h">
       <Filter>Source\TFE_ForceScript</Filter>
     </ClInclude>
+    <ClInclude Include="TFE_Editor\LevelEditor\levelEditor.h">
+      <Filter>Source\TFE_Editor\LevelEditor</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Editor\LevelEditor\levelEditorData.h">
+      <Filter>Source\TFE_Editor\LevelEditor</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Editor\LevelEditor\Rendering\grid2d.h">
+      <Filter>Source\TFE_Editor\LevelEditor\Rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Editor\LevelEditor\Rendering\viewport.h">
+      <Filter>Source\TFE_Editor\LevelEditor\Rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_RenderShared\triDraw2d.h">
+      <Filter>Source\TFE_RenderShared</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Editor\LevelEditor\infoPanel.h">
+      <Filter>Source\TFE_Editor\LevelEditor</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Editor\LevelEditor\sharedState.h">
+      <Filter>Source\TFE_Editor\LevelEditor</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Editor\LevelEditor\browser.h">
+      <Filter>Source\TFE_Editor\LevelEditor</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_RenderShared\lineDraw3d.h">
+      <Filter>Source\TFE_RenderShared</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Editor\LevelEditor\camera.h">
+      <Filter>Source\TFE_Editor\LevelEditor</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_RenderShared\camera3d.h">
+      <Filter>Source\TFE_RenderShared</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Editor\LevelEditor\Rendering\grid3d.h">
+      <Filter>Source\TFE_Editor\LevelEditor\Rendering</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -2100,6 +2139,36 @@
     <ClCompile Include="TFE_ForceScript\script_system.cpp">
       <Filter>Source\TFE_ForceScript</Filter>
     </ClCompile>
+    <ClCompile Include="TFE_Editor\LevelEditor\levelEditor.cpp">
+      <Filter>Source\TFE_Editor\LevelEditor</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Editor\LevelEditor\levelEditorData.cpp">
+      <Filter>Source\TFE_Editor\LevelEditor</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Editor\LevelEditor\Rendering\grid2d.cpp">
+      <Filter>Source\TFE_Editor\LevelEditor\Rendering</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Editor\LevelEditor\Rendering\viewport.cpp">
+      <Filter>Source\TFE_Editor\LevelEditor\Rendering</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_RenderShared\triDraw2d.cpp">
+      <Filter>Source\TFE_RenderShared</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Editor\LevelEditor\infoPanel.cpp">
+      <Filter>Source\TFE_Editor\LevelEditor</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Editor\LevelEditor\browser.cpp">
+      <Filter>Source\TFE_Editor\LevelEditor</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_RenderShared\lineDraw3d.cpp">
+      <Filter>Source\TFE_RenderShared</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Editor\LevelEditor\camera.cpp">
+      <Filter>Source\TFE_Editor\LevelEditor</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Editor\LevelEditor\Rendering\grid3d.cpp">
+      <Filter>Source\TFE_Editor\LevelEditor\Rendering</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="TheForceEngine.rc">
@@ -2131,12 +2200,6 @@
       <Filter>Source\Shaders</Filter>
     </None>
     <None Include="Shaders\line2d.vert">
-      <Filter>Source\Shaders</Filter>
-    </None>
-    <None Include="Shaders\tri2dColor.frag">
-      <Filter>Source\Shaders</Filter>
-    </None>
-    <None Include="Shaders\tri2dColor.vert">
       <Filter>Source\Shaders</Filter>
     </None>
     <None Include="Shaders\tri2dTextured.frag">
