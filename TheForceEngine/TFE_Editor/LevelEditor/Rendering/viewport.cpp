@@ -291,6 +291,123 @@ namespace LevelEditor
 		return tex;
 	}
 
+	void drawWallLines3D(const EditorSector* sector, const EditorSector* next, const EditorWall* wall, f32 width, Highlight highlight)
+	{
+		f32 bias = 1.0f / 1024.0f;
+		f32 floorBias = (s_camera.pos.y >= sector->floorHeight) ? bias : -bias;
+		f32 ceilBias  = (s_camera.pos.y <= sector->ceilHeight) ? -bias : bias;
+
+		const Vec2f& v0 = sector->vtx[wall->idx[0]];
+		const Vec2f& v1 = sector->vtx[wall->idx[1]];
+
+		u32 color = c_sectorLineClr[highlight];
+		// Test
+		color &= 0x00ffffff;
+		color |= 0x80000000;
+
+		if ((s_editFlags & LEF_SECTOR_EDGES) || !next || next->floorHeight != sector->floorHeight || s_camera.pos.y > sector->floorHeight)
+		{
+			Vec3f line0[] =
+			{ { v0.x, sector->floorHeight + floorBias, v0.z },
+			  { v1.x, sector->floorHeight + floorBias, v1.z } };
+			TFE_RenderShared::lineDraw3d_addLine(width, line0, &color);
+		}
+		if ((s_editFlags & LEF_SECTOR_EDGES) || !next || next->ceilHeight != sector->ceilHeight || s_camera.pos.y < sector->ceilHeight)
+		{
+			Vec3f line1[] =
+			{ { v0.x, sector->ceilHeight + ceilBias, v0.z },
+			  { v1.x, sector->ceilHeight + ceilBias, v1.z } };
+			TFE_RenderShared::lineDraw3d_addLine(width, line1, &color);
+		}
+		
+		Vec2f vtx[] = { v0, v1 };
+		s32 count = highlight == HL_NONE ? 1 : 2;
+		for (s32 v = 0; v < count; v++)
+		{
+			if (s_editFlags & LEF_SECTOR_EDGES)
+			{
+				Vec3f line2[] =
+				{ { vtx[v].x, sector->floorHeight + floorBias, vtx[v].z },
+				  { vtx[v].x, sector->ceilHeight + ceilBias, vtx[v].z } };
+				TFE_RenderShared::lineDraw3d_addLine(width, line2, &color);
+			}
+			else
+			{
+				// Show edges only where geometry exists.
+				if (wall->adjoinId < 0)
+				{
+					Vec3f line2[] =
+					{ { vtx[v].x, sector->floorHeight + floorBias, vtx[v].z },
+					  { vtx[v].x, sector->ceilHeight + ceilBias, vtx[v].z } };
+					TFE_RenderShared::lineDraw3d_addLine(width, line2, &color);
+				}
+				else
+				{
+					// Top
+					if (next->ceilHeight < sector->ceilHeight)
+					{
+						f32 topBias = (s_camera.pos.y <= next->ceilHeight) ? -bias : bias;
+
+						Vec3f line0[] =
+						{ { vtx[v].x, next->ceilHeight + topBias, vtx[v].z },
+						  { vtx[v].x, next->ceilHeight + topBias, vtx[v].z } };
+						TFE_RenderShared::lineDraw3d_addLine(width, line0, &color);
+					}
+					// Bottom
+					if (next->floorHeight > sector->floorHeight)
+					{
+						f32 botBias = (s_camera.pos.y >= next->floorHeight) ? bias : -bias;
+
+						Vec3f line0[] =
+						{ { vtx[v].x, next->floorHeight + botBias, vtx[v].z },
+						  { vtx[v].x, next->floorHeight + botBias, vtx[v].z } };
+						TFE_RenderShared::lineDraw3d_addLine(width, line0, &color);
+					}
+				}
+			}
+		}
+
+		if (next)
+		{
+			// Top
+			if (next->ceilHeight < sector->ceilHeight && next->layer != s_curLayer)
+			{
+				f32 topBias = (s_camera.pos.y <= next->ceilHeight) ? -bias : bias;
+
+				Vec3f line0[] =
+				{ { v0.x, next->ceilHeight + topBias, v0.z },
+				  { v1.x, next->ceilHeight + topBias, v1.z } };
+				TFE_RenderShared::lineDraw3d_addLine(width, line0, &color);
+			}
+			// Bottom
+			if (next->floorHeight > sector->floorHeight && next->layer != s_curLayer)
+			{
+				f32 botBias = (s_camera.pos.y >= next->floorHeight) ? bias : -bias;
+
+				Vec3f line0[] =
+				{ { v0.x, next->floorHeight + botBias, v0.z },
+				  { v1.x, next->floorHeight + botBias, v1.z } };
+				TFE_RenderShared::lineDraw3d_addLine(width, line0, &color);
+			}
+		}
+	}
+
+	void drawSelectedWall3D()
+	{
+		if (s_selectedWallId >= 0 && s_selectedWallSector)
+		{
+			EditorWall* wall = &s_selectedWallSector->walls[s_selectedWallId];
+			EditorSector* next = wall->adjoinId < 0 ? nullptr : &s_level.sectors[wall->adjoinId];
+			drawWallLines3D(s_selectedWallSector, next, wall, 2.5f, HL_SELECTED);
+		}
+		if (s_hoveredWallId >= 0 && s_hoveredWallSector)
+		{
+			EditorWall* wall = &s_hoveredWallSector->walls[s_hoveredWallId];
+			EditorSector* next = wall->adjoinId < 0 ? nullptr : &s_level.sectors[wall->adjoinId];
+			drawWallLines3D(s_hoveredWallSector, next, wall, 2.5f, HL_HOVERED);
+		}
+	}
+
 	void renderLevel3D()
 	{
 		// Figure out which sector we are over.
@@ -347,78 +464,20 @@ namespace LevelEditor
 			for (size_t w = 0; w < wallCount; w++, wall++)
 			{
 				// Skip hovered or selected walls.
+				bool skipLines = false;
 				if ((s_hoveredWallSector == sector && s_hoveredWallId == w) ||
 					(s_selectedWallSector == sector && s_selectedWallId == w))
 				{
-					continue;
+					skipLines = true;
 				}
 
 				EditorSector* next = wall->adjoinId < 0 ? nullptr : &s_level.sectors[wall->adjoinId];
-				
-				u32 color = c_sectorLineClr[highlight];
-				// Test
-				color &= 0x00ffffff;
-				color |= 0x80000000;
-
 				const Vec2f& v0 = sector->vtx[wall->idx[0]];
 				const Vec2f& v1 = sector->vtx[wall->idx[1]];
 
-				if ((s_editFlags & LEF_SECTOR_EDGES) || !next || next->floorHeight != sector->floorHeight || s_camera.pos.y > sector->floorHeight)
+				if (!skipLines)
 				{
-					Vec3f line0[] =
-					{ { v0.x, sector->floorHeight + floorBias, v0.z },
-					  { v1.x, sector->floorHeight + floorBias, v1.z } };
-					TFE_RenderShared::lineDraw3d_addLine(width, line0, &color);
-				}
-
-				if ((s_editFlags & LEF_SECTOR_EDGES) || !next || next->ceilHeight != sector->ceilHeight || s_camera.pos.y < sector->ceilHeight)
-				{
-					Vec3f line1[] =
-					{ { v0.x, sector->ceilHeight + ceilBias, v0.z },
-					  { v1.x, sector->ceilHeight + ceilBias, v1.z } };
-					TFE_RenderShared::lineDraw3d_addLine(width, line1, &color);
-				}
-
-				if (s_editFlags & LEF_SECTOR_EDGES)
-				{
-					Vec3f line2[] =
-					{ { v0.x, sector->floorHeight + floorBias, v0.z },
-					  { v0.x, sector->ceilHeight + ceilBias, v0.z } };
-					TFE_RenderShared::lineDraw3d_addLine(width, line2, &color);
-				}
-				else
-				{
-					// Show edges only where geometry exists.
-					if (wall->adjoinId < 0)
-					{
-						Vec3f line2[] =
-						{ { v0.x, sector->floorHeight + floorBias, v0.z },
-						  { v0.x, sector->ceilHeight + ceilBias, v0.z } };
-						TFE_RenderShared::lineDraw3d_addLine(width, line2, &color);
-					}
-					else
-					{
-						// Top
-						if (next->ceilHeight < sector->ceilHeight)
-						{
-							f32 topBias = (s_camera.pos.y <= next->ceilHeight) ? -bias : bias;
-
-							Vec3f line0[] =
-							{ { v0.x, next->ceilHeight + topBias, v0.z },
-							  { v0.x, next->ceilHeight + topBias, v0.z } };
-							TFE_RenderShared::lineDraw3d_addLine(width, line0, &color);
-						}
-						// Bottom
-						if (next->floorHeight > sector->floorHeight)
-						{
-							f32 botBias = (s_camera.pos.y >= next->floorHeight) ? bias : -bias;
-
-							Vec3f line0[] =
-							{ { v0.x, next->floorHeight + botBias, v0.z },
-							  { v0.x, next->floorHeight + botBias, v0.z } };
-							TFE_RenderShared::lineDraw3d_addLine(width, line0, &color);
-						}
-					}
+					drawWallLines3D(sector, next, wall, width, highlight);
 				}
 
 				s32 wallColorIndex = (s32)colorIndex;
@@ -432,32 +491,7 @@ namespace LevelEditor
 				{
 					wallColor = c_sectorTexClr[wallColorIndex];
 				}
-
-				if (wall->adjoinId >= 0)
-				{
-					EditorSector* next = &s_level.sectors[wall->adjoinId];
-					// Top
-					if (next->ceilHeight < sector->ceilHeight && next->layer != s_curLayer)
-					{
-						f32 topBias = (s_camera.pos.y <= next->ceilHeight) ? -bias : bias;
-
-						Vec3f line0[] =
-						{ { v0.x, next->ceilHeight + topBias, v0.z },
-						  { v1.x, next->ceilHeight + topBias, v1.z } };
-						TFE_RenderShared::lineDraw3d_addLine(width, line0, &color);
-					}
-					// Bottom
-					if (next->floorHeight > sector->floorHeight && next->layer != s_curLayer)
-					{
-						f32 botBias = (s_camera.pos.y >= next->floorHeight) ? bias : -bias;
-
-						Vec3f line0[] =
-						{ { v0.x, next->floorHeight + botBias, v0.z },
-						  { v1.x, next->floorHeight + botBias, v1.z } };
-						TFE_RenderShared::lineDraw3d_addLine(width, line0, &color);
-					}
-				}
-
+								
 				// Wall Parts
 				const Vec2f wallOffset = { v1.x - v0.x, v1.z - v0.z };
 				const f32 wallLengthTexels = sqrtf(wallOffset.x*wallOffset.x + wallOffset.z*wallOffset.z) * 8.0f;
@@ -617,6 +651,8 @@ namespace LevelEditor
 				}
 			}
 		}
+
+		drawSelectedWall3D();
 
 		TFE_RenderShared::triDraw3d_draw(&s_camera, s_gridSize2d, s_gridOpacity);
 		TFE_RenderShared::lineDraw3d_drawLines(&s_camera, true, false);

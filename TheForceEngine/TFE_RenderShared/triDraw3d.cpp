@@ -155,7 +155,7 @@ namespace TFE_RenderShared
 			return false;
 		}
 		s_triDrawCapacity[pass] += TRI3D_DRAW_COUNT_RES;
-		s_triDraw[pass] = (Tri3dDraw*)realloc(s_triDraw, sizeof(Tri3dDraw) * s_triDrawCapacity[pass]);
+		s_triDraw[pass] = (Tri3dDraw*)realloc(s_triDraw[pass], sizeof(Tri3dDraw) * s_triDrawCapacity[pass]);
 		return true;
 	}
 

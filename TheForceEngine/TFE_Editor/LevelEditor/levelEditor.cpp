@@ -769,7 +769,7 @@ namespace LevelEditor
 		popFont();
 
 	#if SHOW_EDITOR_FPS == 1
-		//TFE_FrontEndUI::drawFps(1800);
+		TFE_FrontEndUI::drawFps(1800);
 	#endif
 	}
 
