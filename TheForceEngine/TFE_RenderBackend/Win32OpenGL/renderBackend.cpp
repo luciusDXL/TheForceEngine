@@ -178,19 +178,24 @@ namespace TFE_RenderBackend
 	void destroy()
 	{
 		delete s_screenCapture;
+		s_screenCapture = nullptr;
 
 		// TODO: Move effect destruction into post effect system.
 		s_postEffectBlit->destroy();
 		delete s_postEffectBlit;
+		s_postEffectBlit = nullptr;
 
 		s_bloomTheshold->destroy();
 		delete s_bloomTheshold;
+		s_bloomTheshold = nullptr;
 
 		s_bloomDownsample->destroy();
 		delete s_bloomDownsample;
+		s_bloomDownsample = nullptr;
 
 		s_bloomMerge->destroy();
 		delete s_bloomMerge;
+		s_bloomMerge = nullptr;
 
 		TFE_PostProcess::destroy();
 		TFE_Ui::shutdown();

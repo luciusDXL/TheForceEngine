@@ -17,6 +17,7 @@ namespace LevelEditor
 	extern TFE_Editor::AssetList s_levelTextureList;
 	extern LevelEditMode s_editMode;
 	extern u32 s_editFlags;
+	extern u32 s_lwinOpen;
 	extern s32 s_curLayer;
 
 	// Sector

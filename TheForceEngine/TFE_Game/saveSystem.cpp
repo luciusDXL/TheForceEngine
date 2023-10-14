@@ -182,6 +182,7 @@ namespace TFE_SaveSystem
 		{
 			free(s_imageBuffer[i]);
 			s_imageBufferSize[i] = 0;
+			s_imageBuffer[i] = nullptr;
 		}
 	}
 

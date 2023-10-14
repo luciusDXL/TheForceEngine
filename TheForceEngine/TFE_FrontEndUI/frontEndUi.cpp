@@ -370,6 +370,10 @@ namespace TFE_FrontEndUI
 		delete[] s_creditsDisplayStr;
 		TFE_Console::destroy();
 		TFE_ProfilerView::destroy();
+
+		s_aboutDisplayStr   = nullptr;
+		s_manualDisplayStr  = nullptr;
+		s_creditsDisplayStr = nullptr;
 	}
 
 	AppState update()

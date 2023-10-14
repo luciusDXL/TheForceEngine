@@ -61,6 +61,7 @@ namespace LevelEditor
 	LevelEditMode s_editMode = LEDIT_DRAW;
 	
 	u32 s_editFlags = LEF_DEFAULT;
+	u32 s_lwinOpen = LWIN_NONE;
 	s32 s_curLayer = 0;
 			
 	// Sector
@@ -466,9 +467,11 @@ namespace LevelEditor
 			if (!projectActive) { disableNextItem(); }
 			if (ImGui::MenuItem("Save", "Ctrl+S", (bool*)NULL))
 			{
+				// Save the current state of the level to disk.
 			}
-			if (ImGui::MenuItem("Backup", "Ctrl+B", (bool*)NULL))
+			if (ImGui::MenuItem("Snapshot", "Ctrl+N", (bool*)NULL))
 			{
+				// Bring up a pop-up where the snapshot can be named.
 			}
 			if (!projectActive) { enableNextItem(); }
 
@@ -483,6 +486,9 @@ namespace LevelEditor
 			{
 			}
 			if (ImGui::MenuItem("Redo", "Ctrl+Y", (bool*)NULL))
+			{
+			}
+			if (ImGui::MenuItem("History View", NULL, (s_lwinOpen & LWIN_HISTORY) != 0))
 			{
 			}
 			ImGui::Separator();
@@ -579,6 +585,10 @@ namespace LevelEditor
 				fullbright = !fullbright;
 				if (fullbright) { s_editFlags |= LEF_FULLBRIGHT; }
 				else { s_editFlags &= ~LEF_FULLBRIGHT; }
+			}
+			ImGui::Separator();
+			if (ImGui::MenuItem("View Settings", NULL, (bool*)NULL))
+			{
 			}
 			ImGui::EndMenu();
 		}

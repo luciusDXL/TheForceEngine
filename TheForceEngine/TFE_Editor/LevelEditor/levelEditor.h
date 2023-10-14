@@ -25,6 +25,13 @@ namespace LevelEditor
 		LEF_DEFAULT = LEF_SHOW_GRID | LEF_SHOW_LOWER_LAYERS | LEF_SHOW_INF_COLORS
 	};
 
+	// Level Windows open.
+	enum LevelWindows
+	{
+		LWIN_NONE = 0,
+		LWIN_HISTORY = FLAG_BIT(0),
+	};
+
 	bool init(TFE_Editor::Asset* asset);
 	void destroy();
 

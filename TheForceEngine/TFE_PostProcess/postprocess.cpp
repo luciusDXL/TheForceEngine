@@ -90,6 +90,7 @@ namespace TFE_PostProcess
 		s_indexBuffer.destroy();
 		s_overlayEffect->destroy();
 		delete s_overlayEffect;
+		s_overlayEffect = nullptr;
 	}
 
 	void clearEffectStack()
