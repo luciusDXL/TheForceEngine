@@ -65,7 +65,7 @@ void drawFloorGridLevels(inout vec3 baseColor, inout float baseAlpha, float grid
 	float uvScale = 1.0 / gridSize;
 	float distScale = DIST_SCALE_BASE / gridSize;
 
-	vec3 outColor = vec3(0.0);
+	vec3 outColor = baseColor;
 	float outAlpha = 0.0;
 
 	for (int i = 0; i < LEVELS; i++)
