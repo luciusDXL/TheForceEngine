@@ -1037,7 +1037,7 @@ namespace AssetBrowser
 		for (s32 i = 0; i < 256; i++)
 		{
 			const u8* rgb6 = &pal666[i * 3];
-			dstPalette.data[i] = 0xff000000 | CONV_6bitTo8bit(rgb6[0]) | (CONV_6bitTo8bit(rgb6[1]) << 8) | (CONV_6bitTo8bit(rgb6[2]) << 16);
+			dstPalette.data[i] = (i == 0) ? 0 : 0xff000000 | CONV_6bitTo8bit(rgb6[0]) | (CONV_6bitTo8bit(rgb6[1]) << 8) | (CONV_6bitTo8bit(rgb6[2]) << 16);
 		}
 
 		// Does it have a colormap?

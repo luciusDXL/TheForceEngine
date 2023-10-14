@@ -270,6 +270,27 @@ namespace LevelEditor
 		return tex;
 	}
 
+	const EditorTexture* calculateSignTextureCoords(const EditorWall* wall, const LevelTexture* baseTex, const LevelTexture* ltex, f32 wallLengthTexels, f32 partHeight, bool flipHorz, Vec2f* uvCorners)
+	{
+		const EditorTexture* tex = (EditorTexture*)getAssetData(ltex->handle);
+		const Vec2f texScale = { 1.0f / f32(tex->width), 1.0f / f32(tex->height) };
+
+		Vec2f offset = { baseTex->offset.x - ltex->offset.x, -TFE_Math::fract(std::max(baseTex->offset.z, 0.0f)) + ltex->offset.z };
+
+		uvCorners[0] = { offset.x * 8.0f, (offset.z + partHeight) * 8.0f };
+		uvCorners[1] = { uvCorners[0].x + wallLengthTexels, offset.z * 8.0f };
+		uvCorners[0].x *= texScale.x;
+		uvCorners[1].x *= texScale.x;
+		uvCorners[0].z *= texScale.z;
+		uvCorners[1].z *= texScale.z;
+		if (flipHorz)
+		{
+			uvCorners[0].x = 1.0f - uvCorners[0].x;
+			uvCorners[1].x = 1.0f - uvCorners[1].x;
+		}
+		return tex;
+	}
+
 	void renderLevel3D()
 	{
 		// Figure out which sector we are over.
@@ -299,7 +320,6 @@ namespace LevelEditor
 			grid3d_draw(s_gridSize2d, s_gridOpacity, s_gridHeight);
 		}
 
-		// HACKY, draw all of the sectors on the 0 plane.
 		const f32 width = 2.5f;
 		const size_t count = s_level.sectors.size();
 		const EditorSector* sector = s_level.sectors.data();
@@ -458,50 +478,81 @@ namespace LevelEditor
 					if (s_sectorDrawMode == SDM_TEXTURED_FLOOR || s_sectorDrawMode == SDM_TEXTURED_CEIL)
 					{
 						const EditorTexture* tex = calculateTextureCoords(wall, &wall->tex[WP_MID], wallLengthTexels, sectorHeight, flipHorz, uvCorners);
-						TFE_RenderShared::triDraw3d_addQuadTextured(corners, uvCorners, wallColor, tex->frames[0]);
+						TFE_RenderShared::triDraw3d_addQuadTextured(TRIMODE_OPAQUE, corners, uvCorners, wallColor, tex->frames[0]);
 					}
 					else
 					{
-						TFE_RenderShared::triDraw3d_addQuadColored(corners, wallColor);
+						TFE_RenderShared::triDraw3d_addQuadColored(TRIMODE_OPAQUE, corners, wallColor);
+					}
+
+					// Sign?
+					if (wall->tex[WP_SIGN].handle && (s_sectorDrawMode == SDM_TEXTURED_FLOOR || s_sectorDrawMode == SDM_TEXTURED_CEIL))
+					{
+						const EditorTexture* tex = calculateSignTextureCoords(wall, &wall->tex[WP_MID], &wall->tex[WP_SIGN], wallLengthTexels, sectorHeight, false, uvCorners);
+						TFE_RenderShared::triDraw3d_addQuadTextured(TRIMODE_CLAMP, corners, uvCorners, wallColor, tex->frames[0]);
 					}
 				}
 				else
 				{
 					EditorSector* next = &s_level.sectors[wall->adjoinId];
+					bool botSign = false;
+					// Bottom
+					if (next->floorHeight > sector->floorHeight)
+					{
+						const f32 botHeight = next->floorHeight - sector->floorHeight;
+						Vec3f corners[] = { {v0.x, next->floorHeight,   v0.z},
+											{v1.x, sector->floorHeight, v1.z} };
+						if (s_sectorDrawMode == SDM_TEXTURED_FLOOR || s_sectorDrawMode == SDM_TEXTURED_CEIL)
+						{
+							const EditorTexture* tex = calculateTextureCoords(wall, &wall->tex[WP_BOT], wallLengthTexels, botHeight, flipHorz, uvCorners);
+							TFE_RenderShared::triDraw3d_addQuadTextured(TRIMODE_OPAQUE, corners, uvCorners, wallColor, tex->frames[0]);
+						}
+						else
+						{
+							TFE_RenderShared::triDraw3d_addQuadColored(TRIMODE_OPAQUE, corners, wallColor);
+						}
+
+						// Sign?
+						if (wall->tex[WP_SIGN].handle && (s_sectorDrawMode == SDM_TEXTURED_FLOOR || s_sectorDrawMode == SDM_TEXTURED_CEIL))
+						{
+							const EditorTexture* tex = calculateSignTextureCoords(wall, &wall->tex[WP_BOT], &wall->tex[WP_SIGN], wallLengthTexels, botHeight, false, uvCorners);
+							TFE_RenderShared::triDraw3d_addQuadTextured(TRIMODE_CLAMP, corners, uvCorners, wallColor, tex->frames[0]);
+							botSign = true;
+						}
+					}
 					// Top
 					if (next->ceilHeight < sector->ceilHeight)
 					{
+						const f32 topHeight = sector->ceilHeight - next->ceilHeight;
 						Vec3f corners[] = { {v0.x, sector->ceilHeight, v0.z},
 										    {v1.x, next->ceilHeight,   v1.z} };
 
 						if (s_sectorDrawMode == SDM_TEXTURED_FLOOR || s_sectorDrawMode == SDM_TEXTURED_CEIL)
 						{
-							const f32 topHeight = sector->ceilHeight - next->ceilHeight;
 							const EditorTexture* tex = calculateTextureCoords(wall, &wall->tex[WP_TOP], wallLengthTexels, topHeight, flipHorz, uvCorners);
-							TFE_RenderShared::triDraw3d_addQuadTextured(corners, uvCorners, wallColor, tex->frames[0]);
+							TFE_RenderShared::triDraw3d_addQuadTextured(TRIMODE_OPAQUE, corners, uvCorners, wallColor, tex->frames[0]);
 						}
 						else
 						{
-							TFE_RenderShared::triDraw3d_addQuadColored(corners, wallColor);
+							TFE_RenderShared::triDraw3d_addQuadColored(TRIMODE_OPAQUE, corners, wallColor);
+						}
+
+						// Sign?
+						if (!botSign && wall->tex[WP_SIGN].handle && (s_sectorDrawMode == SDM_TEXTURED_FLOOR || s_sectorDrawMode == SDM_TEXTURED_CEIL))
+						{
+							const EditorTexture* tex = calculateSignTextureCoords(wall, &wall->tex[WP_TOP], &wall->tex[WP_SIGN], wallLengthTexels, topHeight, false, uvCorners);
+							TFE_RenderShared::triDraw3d_addQuadTextured(TRIMODE_CLAMP, corners, uvCorners, wallColor, tex->frames[0]);
 						}
 					}
-					// Bottom
-					if (next->floorHeight > sector->floorHeight)
+					// Mid only for mask textures.
+					if (next && (wall->flags[0] & WF1_ADJ_MID_TEX) && (s_sectorDrawMode == SDM_TEXTURED_FLOOR || s_sectorDrawMode == SDM_TEXTURED_CEIL))
 					{
-						Vec3f corners[] = { {v0.x, next->floorHeight,   v0.z},
-										    {v1.x, sector->floorHeight, v1.z} };
-						if (s_sectorDrawMode == SDM_TEXTURED_FLOOR || s_sectorDrawMode == SDM_TEXTURED_CEIL)
-						{
-							const f32 botHeight = next->floorHeight - sector->floorHeight;
-							const EditorTexture* tex = calculateTextureCoords(wall, &wall->tex[WP_BOT], wallLengthTexels, botHeight, flipHorz, uvCorners);
-							TFE_RenderShared::triDraw3d_addQuadTextured(corners, uvCorners, wallColor, tex->frames[0]);
-						}
-						else
-						{
-							TFE_RenderShared::triDraw3d_addQuadColored(corners, wallColor);
-						}
+						Vec3f corners[] = { {v0.x, min(next->ceilHeight, sector->ceilHeight), v0.z},
+											{v1.x, max(next->floorHeight, sector->floorHeight), v1.z} };
+
+						const EditorTexture* tex = calculateTextureCoords(wall, &wall->tex[WP_MID], wallLengthTexels, fabsf(corners[1].y - corners[0].y), flipHorz, uvCorners);
+						TFE_RenderShared::triDraw3d_addQuadTextured(TRIMODE_BLEND, corners, uvCorners, wallColor, tex->frames[0]);
 					}
-					// Mid only for mask textures (TODO).
 				}
 			}
 
@@ -539,30 +590,30 @@ namespace LevelEditor
 			{
 				if (s_sectorDrawMode == SDM_TEXTURED_FLOOR || s_sectorDrawMode == SDM_TEXTURED_CEIL)
 				{
-					triDraw3d_addTextured(idxCount, vtxCount, vtxDataFlr, uvFlr, sector->poly.triIdx.data(), c_sectorTexClr[colorIndex], false, floorTex->frames[0]);
+					triDraw3d_addTextured(TRIMODE_OPAQUE, idxCount, vtxCount, vtxDataFlr, uvFlr, sector->poly.triIdx.data(), c_sectorTexClr[colorIndex], false, floorTex->frames[0]);
 				}
 				else if (s_sectorDrawMode == SDM_LIGHTING)
 				{
-					triDraw3d_addColored(idxCount, vtxCount, vtxDataFlr, sector->poly.triIdx.data(), c_sectorTexClr[colorIndex], false);
+					triDraw3d_addColored(TRIMODE_OPAQUE, idxCount, vtxCount, vtxDataFlr, sector->poly.triIdx.data(), c_sectorTexClr[colorIndex], false);
 				}
 				else
 				{
-					triDraw3d_addColored(idxCount, vtxCount, vtxDataFlr, sector->poly.triIdx.data(), floorColor, false);
+					triDraw3d_addColored(TRIMODE_OPAQUE, idxCount, vtxCount, vtxDataFlr, sector->poly.triIdx.data(), floorColor, false);
 				}
 			}
 			if (s_camera.pos.y < sector->ceilHeight)
 			{
 				if (s_sectorDrawMode == SDM_TEXTURED_FLOOR || s_sectorDrawMode == SDM_TEXTURED_CEIL)
 				{
-					triDraw3d_addTextured(idxCount, vtxCount, vtxDataCeil, uvCeil, sector->poly.triIdx.data(), c_sectorTexClr[colorIndex], true, ceilTex->frames[0]);
+					triDraw3d_addTextured(TRIMODE_OPAQUE, idxCount, vtxCount, vtxDataCeil, uvCeil, sector->poly.triIdx.data(), c_sectorTexClr[colorIndex], true, ceilTex->frames[0]);
 				}
 				else if (s_sectorDrawMode == SDM_LIGHTING)
 				{
-					triDraw3d_addColored(idxCount, vtxCount, vtxDataCeil, sector->poly.triIdx.data(), c_sectorTexClr[colorIndex], true);
+					triDraw3d_addColored(TRIMODE_OPAQUE, idxCount, vtxCount, vtxDataCeil, sector->poly.triIdx.data(), c_sectorTexClr[colorIndex], true);
 				}
 				else
 				{
-					triDraw3d_addColored(idxCount, vtxCount, vtxDataCeil, sector->poly.triIdx.data(), floorColor, true);
+					triDraw3d_addColored(TRIMODE_OPAQUE, idxCount, vtxCount, vtxDataCeil, sector->poly.triIdx.data(), floorColor, true);
 				}
 			}
 		}

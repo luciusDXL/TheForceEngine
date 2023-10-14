@@ -39,6 +39,19 @@ void main()
 	vec3 gridColor = outColor.rgb;
 	drawFloorGridLevels(gridColor, outAlpha, GridScaleOpacity.x, Frag_Uv1.xy, viewFalloff, Frag_Pos);
 	outColor.rgb = mix(outColor.rgb, gridColor, GridScaleOpacity.y);
+
+#ifdef TRANS
+	if (outColor.a < 0.01)
+	{
+		discard;
+	}
+#endif
+#ifdef TEX_CLAMP
+	if (Frag_Uv2.x < 0.0 || Frag_Uv2.x >= 1.0 || Frag_Uv2.y < 0.0 || Frag_Uv2.y >= 1.0)
+	{
+		discard;
+	}
+#endif
 	
     Out_Color = vec4(outColor.rgb * outColor.a, outColor.a);
 }

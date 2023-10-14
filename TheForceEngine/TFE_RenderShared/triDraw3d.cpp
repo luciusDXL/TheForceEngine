@@ -26,6 +26,7 @@ namespace TFE_RenderShared
 	struct Tri3dDraw
 	{
 		TextureGpu* texture;
+		DrawMode mode;
 		s32 vtxOffset;
 		s32 idxOffset;
 		s32 vtxCount;
@@ -41,43 +42,59 @@ namespace TFE_RenderShared
 	};
 	static const u32 c_tri3dAttrCount = TFE_ARRAYSIZE(c_tri3dAttrMapping);
 
-	static s32 s_svCameraPos = -1;
-	static s32 s_svCameraView = -1;
-	static s32 s_svCameraProj = -1;
-	static s32 s_svGridScaleOpacity = -1;
-	static s32 s_svIsTextured = -1;
+	struct ShaderState
+	{
+		s32 svCameraPos = -1;
+		s32 svCameraView = -1;
+		s32 svCameraProj = -1;
+		s32 svGridScaleOpacity = -1;
+		s32 svIsTextured = -1;
+	};
+	static ShaderState s_shaderState[TRIMODE_COUNT];
 
-	static Shader s_shader;
+	static Shader s_shader[TRIMODE_COUNT];
 	static VertexBuffer s_vertexBuffer;
 	static IndexBuffer  s_indexBuffer;
 
 	static Tri3dVertex* s_vertices = nullptr;
 	static s32* s_indices = nullptr;
-	static u32 s_triDrawCount;
-	static u32 s_triDrawCapacity;
-
+	
 	static u32 s_vtxCount;
 	static u32 s_idxCount;
 
-	static Tri3dDraw* s_triDraw = nullptr;
+	static Tri3dDraw* s_triDraw[TRIMODE_COUNT] = { nullptr };
+	static u32 s_triDrawCount[TRIMODE_COUNT];
+	static u32 s_triDrawCapacity[TRIMODE_COUNT];
+
+	static DrawMode s_lastDrawMode = TRIMODE_COUNT;
+
+	bool tri3d_loadTextureVariant(DrawMode mode, u32 defineCount, ShaderDefine* defines)
+	{
+		// Transparent
+		if (!s_shader[mode].load("Shaders/tri3dWall.vert", "Shaders/tri3dWall.frag", defineCount, defines))
+		{
+			return false;
+		}
+		s_shader[mode].bindTextureNameToSlot("Image", 0);
+
+		s_shaderState[mode].svCameraPos = s_shader[mode].getVariableId("CameraPos");
+		s_shaderState[mode].svCameraView = s_shader[mode].getVariableId("CameraView");
+		s_shaderState[mode].svCameraProj = s_shader[mode].getVariableId("CameraProj");
+		s_shaderState[mode].svGridScaleOpacity = s_shader[mode].getVariableId("GridScaleOpacity");
+		s_shaderState[mode].svIsTextured = s_shader[mode].getVariableId("isTextured");
+		if (s_shaderState[mode].svCameraPos < 0 || s_shaderState[mode].svCameraView < 0 || s_shaderState[mode].svCameraProj < 0)
+		{
+			return false;
+		}
+		return true;
+	}
 	
 	bool tri3d_init()
 	{
-		if (!s_shader.load("Shaders/tri3dWall.vert", "Shaders/tri3dWall.frag"))
-		{
-			return false;
-		}
-		s_shader.bindTextureNameToSlot("Image", 0);
-
-		s_svCameraPos = s_shader.getVariableId("CameraPos");
-		s_svCameraView = s_shader.getVariableId("CameraView");
-		s_svCameraProj = s_shader.getVariableId("CameraProj");
-		s_svGridScaleOpacity = s_shader.getVariableId("GridScaleOpacity");
-		s_svIsTextured = s_shader.getVariableId("isTextured");
-		if (s_svCameraPos < 0 || s_svCameraView < 0 || s_svCameraProj < 0)
-		{
-			return false;
-		}
+		ShaderDefine defines[] = { { "TRANS", "1" }, { "TEX_CLAMP", "1" } };
+		tri3d_loadTextureVariant(TRIMODE_OPAQUE, 0, nullptr);
+		tri3d_loadTextureVariant(TRIMODE_BLEND, 1, defines);
+		tri3d_loadTextureVariant(TRIMODE_CLAMP, 2, defines);
 
 		// Create buffers
 		// Create vertex and index buffers.
@@ -87,12 +104,20 @@ namespace TFE_RenderShared
 		s_vertexBuffer.create(VTX3D_MAX, sizeof(Tri3dVertex), c_tri3dAttrCount, c_tri3dAttrMapping, true);
 		s_indexBuffer.create(IDX3D_MAX, sizeof(u32), true);
 
-		s_triDraw = (Tri3dDraw*)malloc(sizeof(Tri3dDraw) * TRI3D_DRAW_COUNT_RES);
-		s_triDrawCapacity = TRI3D_DRAW_COUNT_RES;
+		s_triDraw[TRIMODE_OPAQUE] = (Tri3dDraw*)malloc(sizeof(Tri3dDraw) * TRI3D_DRAW_COUNT_RES);
+		s_triDrawCapacity[TRIMODE_OPAQUE] = TRI3D_DRAW_COUNT_RES;
+
+		s_triDraw[TRIMODE_BLEND] = (Tri3dDraw*)malloc(sizeof(Tri3dDraw) * TRI3D_DRAW_COUNT_RES);
+		s_triDrawCapacity[TRIMODE_BLEND] = TRI3D_DRAW_COUNT_RES;
+
+		s_triDraw[TRIMODE_CLAMP] = (Tri3dDraw*)malloc(sizeof(Tri3dDraw) * TRI3D_DRAW_COUNT_RES);
+		s_triDrawCapacity[TRIMODE_CLAMP] = TRI3D_DRAW_COUNT_RES;
 
 		s_idxCount = 0;
 		s_vtxCount = 0;
-		s_triDrawCount = 0;
+		s_triDrawCount[TRIMODE_OPAQUE] = 0;
+		s_triDrawCount[TRIMODE_BLEND] = 0;
+		s_triDrawCount[TRIMODE_CLAMP] = 0;
 
 		return true;
 	}
@@ -103,42 +128,56 @@ namespace TFE_RenderShared
 		s_indexBuffer.destroy();
 		delete[] s_vertices;
 		delete[] s_indices;
-		free(s_triDraw);
 		s_vertices = nullptr;
 		s_indices = nullptr;
-		s_triDraw = nullptr;
+		for (s32 i = 0; i < TRIMODE_COUNT; i++)
+		{
+			free(s_triDraw[i]);
+			s_triDraw[i] = nullptr;
+		}
 	}
 	
 	void triDraw3d_begin()
 	{
 		s_idxCount = 0;
 		s_vtxCount = 0;
-		s_triDrawCount = 0;
+		s_lastDrawMode = TRIMODE_COUNT;
+		for (s32 i = 0; i < TRIMODE_COUNT; i++)
+		{
+			s_triDrawCount[i] = 0;
+		}
 	}
 		
-	bool triDraw3d_expand()
+	bool triDraw3d_expand(DrawMode pass)
 	{
-		if (s_triDrawCapacity >= TRI3D_MAX_DRAW_COUNT)
+		if (s_triDrawCapacity[pass] >= TRI3D_MAX_DRAW_COUNT)
 		{
 			return false;
 		}
-		s_triDrawCapacity += TRI3D_DRAW_COUNT_RES;
-		s_triDraw = (Tri3dDraw*)realloc(s_triDraw, sizeof(Tri3dDraw) * s_triDrawCapacity);
+		s_triDrawCapacity[pass] += TRI3D_DRAW_COUNT_RES;
+		s_triDraw[pass] = (Tri3dDraw*)realloc(s_triDraw, sizeof(Tri3dDraw) * s_triDrawCapacity[pass]);
 		return true;
 	}
 
-	Tri3dDraw* getTriDraw()
+	Tri3dDraw* getTriDraw(DrawMode pass)
 	{
-		if (s_triDrawCount >= s_triDrawCapacity)
+		if (s_triDrawCount[pass] >= s_triDrawCapacity[pass])
 		{
-			if (!triDraw3d_expand()) { return nullptr; }
+			if (!triDraw3d_expand(pass)) { return nullptr; }
 		}
-		Tri3dDraw* draw = &s_triDraw[s_triDrawCount];
-		s_triDrawCount++;
+		Tri3dDraw* draw = &s_triDraw[pass][s_triDrawCount[pass]];
+		s_triDrawCount[pass]++;
 		return draw;
 	}
+
+	bool canMergeDraws(DrawMode mode, TextureGpu* texture)
+	{
+		bool canMerge = (s_triDrawCount[mode] > 0 && s_triDraw[mode][s_triDrawCount[mode] - 1].texture == texture && mode == s_lastDrawMode);
+		s_lastDrawMode = mode;
+		return canMerge;
+	}
 		
-	void triDraw3d_addQuadTextured(Vec3f* corners, const Vec2f* uvCorners, const u32 color, TextureGpu* texture)
+	void triDraw3d_addQuadTextured(DrawMode pass, Vec3f* corners, const Vec2f* uvCorners, const u32 color, TextureGpu* texture)
 	{
 		if (!s_vertices) { return; }
 		const s32 idxOffset = s_idxCount;
@@ -154,20 +193,21 @@ namespace TFE_RenderShared
 		}
 
 		// New draw call or add to the existing call?
-		if (s_triDrawCount > 0 && s_triDraw[s_triDrawCount - 1].texture == texture)
+		if (canMergeDraws(pass, texture))
 		{
 			// Append to the previous draw call.
-			s_triDraw[s_triDrawCount - 1].vtxCount += 4;
-			s_triDraw[s_triDrawCount - 1].idxCount += 6;
+			s_triDraw[pass][s_triDrawCount[pass] - 1].vtxCount += 4;
+			s_triDraw[pass][s_triDrawCount[pass] - 1].idxCount += 6;
 		}
 		else
 		{
 			// Too many draw calls?
-			Tri3dDraw* draw = getTriDraw();
+			Tri3dDraw* draw = getTriDraw(pass);
 			// Add a new draw call.
 			if (draw)
 			{
 				draw->texture = texture;
+				draw->mode = pass;
 				draw->vtxOffset = vtxOffset;
 				draw->idxOffset = idxOffset;
 				draw->vtxCount = 4;
@@ -218,7 +258,7 @@ namespace TFE_RenderShared
 		s_idxCount += 6;
 	}
 
-	void triDraw3d_addTextured(u32 idxCount, u32 vtxCount, const Vec3f* vertices, const Vec2f* uv, const s32* indices, const u32 color, bool invSide, TextureGpu* texture)
+	void triDraw3d_addTextured(DrawMode pass, u32 idxCount, u32 vtxCount, const Vec3f* vertices, const Vec2f* uv, const s32* indices, const u32 color, bool invSide, TextureGpu* texture)
 	{
 		if (!s_vertices) { return; }
 		const s32 idxOffset = s_idxCount;
@@ -231,20 +271,21 @@ namespace TFE_RenderShared
 		}
 
 		// New draw call or add to the existing call?
-		if (s_triDrawCount > 0 && s_triDraw[s_triDrawCount - 1].texture == texture)
+		if (canMergeDraws(pass, texture))
 		{
 			// Append to the previous draw call.
-			s_triDraw[s_triDrawCount - 1].vtxCount += vtxCount;
-			s_triDraw[s_triDrawCount - 1].idxCount += idxCount;
+			s_triDraw[pass][s_triDrawCount[pass] - 1].vtxCount += vtxCount;
+			s_triDraw[pass][s_triDrawCount[pass] - 1].idxCount += idxCount;
 		}
 		else
 		{
 			// Too many draw calls?
-			Tri3dDraw* draw = getTriDraw();
+			Tri3dDraw* draw = getTriDraw(pass);
 			// Add a new draw call.
 			if (draw)
 			{
 				draw->texture = texture;
+				draw->mode = pass;
 				draw->vtxOffset = vtxOffset;
 				draw->idxOffset = idxOffset;
 				draw->vtxCount = vtxCount;
@@ -288,7 +329,7 @@ namespace TFE_RenderShared
 		s_idxCount += idxCount;
 	}
 
-	void triDraw3d_addQuadColored(Vec3f* corners, const u32 color)
+	void triDraw3d_addQuadColored(DrawMode pass, Vec3f* corners, const u32 color)
 	{
 		if (!s_vertices) { return; }
 		const s32 idxOffset = s_idxCount;
@@ -304,20 +345,21 @@ namespace TFE_RenderShared
 		}
 
 		// New draw call or add to the existing call?
-		if (s_triDrawCount > 0 && s_triDraw[s_triDrawCount - 1].texture == nullptr)
+		if (canMergeDraws(pass, nullptr))
 		{
 			// Append to the previous draw call.
-			s_triDraw[s_triDrawCount - 1].vtxCount += 4;
-			s_triDraw[s_triDrawCount - 1].idxCount += 6;
+			s_triDraw[pass][s_triDrawCount[pass] - 1].vtxCount += 4;
+			s_triDraw[pass][s_triDrawCount[pass] - 1].idxCount += 6;
 		}
 		else
 		{
 			// Too many draw calls?
-			Tri3dDraw* draw = getTriDraw();
+			Tri3dDraw* draw = getTriDraw(pass);
 			// Add a new draw call.
 			if (draw)
 			{
 				draw->texture = nullptr;
+				draw->mode = pass;
 				draw->vtxOffset = vtxOffset;
 				draw->idxOffset = idxOffset;
 				draw->vtxCount = 4;
@@ -364,7 +406,7 @@ namespace TFE_RenderShared
 		s_idxCount += 6;
 	}
 
-	void triDraw3d_addColored(u32 idxCount, u32 vtxCount, const Vec3f* vertices, const s32* indices, const u32 color, bool invSide)
+	void triDraw3d_addColored(DrawMode pass, u32 idxCount, u32 vtxCount, const Vec3f* vertices, const s32* indices, const u32 color, bool invSide)
 	{
 		if (!s_vertices) { return; }
 		const s32 idxOffset = s_idxCount;
@@ -377,20 +419,21 @@ namespace TFE_RenderShared
 		}
 
 		// New draw call or add to the existing call?
-		if (s_triDrawCount > 0 && s_triDraw[s_triDrawCount - 1].texture == nullptr)
+		if (canMergeDraws(pass, nullptr))
 		{
 			// Append to the previous draw call.
-			s_triDraw[s_triDrawCount - 1].vtxCount += vtxCount;
-			s_triDraw[s_triDrawCount - 1].idxCount += idxCount;
+			s_triDraw[pass][s_triDrawCount[pass] - 1].vtxCount += vtxCount;
+			s_triDraw[pass][s_triDrawCount[pass] - 1].idxCount += idxCount;
 		}
 		else
 		{
 			// Too many draw calls?
-			Tri3dDraw* draw = getTriDraw();
+			Tri3dDraw* draw = getTriDraw(pass);
 			// Add a new draw call.
 			if (draw)
 			{
 				draw->texture = nullptr;
+				draw->mode = pass;
 				draw->vtxOffset = vtxOffset;
 				draw->idxOffset = idxOffset;
 				draw->vtxCount = vtxCount;
@@ -435,7 +478,7 @@ namespace TFE_RenderShared
 
 	void triDraw3d_draw(const Camera3d* camera, f32 gridScale, f32 gridOpacity)
 	{
-		if (s_triDrawCount < 1) { return; }
+		if (s_vtxCount < 1 || s_idxCount < 1) { return; }
 
 		s_vertexBuffer.update(s_vertices, s_vtxCount * sizeof(Tri3dVertex));
 		s_indexBuffer.update(s_indices, s_idxCount * sizeof(s32));
@@ -445,45 +488,54 @@ namespace TFE_RenderShared
 		TFE_RenderState::setDepthFunction(CMP_LEQUAL);
 
 		// Enable blending.
-		TFE_RenderState::setStateEnable(true, STATE_BLEND);
 		TFE_RenderState::setBlendMode(BLEND_ONE, BLEND_ONE_MINUS_SRC_ALPHA);
 
-		s_shader.bind();
-		// Bind Uniforms & Textures.
-		s_shader.setVariable(s_svCameraPos, SVT_VEC3, camera->pos.m);
-		s_shader.setVariable(s_svCameraView, SVT_MAT3x3, camera->viewMtx.data);
-		s_shader.setVariable(s_svCameraProj, SVT_MAT4x4, camera->projMtx.data);
-		if (s_svGridScaleOpacity >= 0)
+		bool blendEnable[] = { false, true };
+		for (s32 i = 0; i < TRIMODE_COUNT; i++)
 		{
-			f32 gridScaleOpacity[] = { gridScale, gridOpacity };
-			s_shader.setVariable(s_svGridScaleOpacity, SVT_VEC2, gridScaleOpacity);
-		}
-		
-		// Bind vertex/index buffers and setup attributes for BlitVert
-		s_vertexBuffer.bind();
-		s_indexBuffer.bind();
+			if (s_triDrawCount[i] < 1) { continue; }
 
-		// Draw.
-		for (u32 t = 0; t < s_triDrawCount; t++)
-		{
-			Tri3dDraw* draw = &s_triDraw[t];
-			s32 isTextured = draw->texture ? 1 : 0;
-			s_shader.setVariable(s_svIsTextured, SVT_ISCALAR, &isTextured);
-			if (isTextured)
+			s_shader[i].bind();
+			// Bind Uniforms & Textures.
+			s_shader[i].setVariable(s_shaderState[i].svCameraPos, SVT_VEC3, camera->pos.m);
+			s_shader[i].setVariable(s_shaderState[i].svCameraView, SVT_MAT3x3, camera->viewMtx.data);
+			s_shader[i].setVariable(s_shaderState[i].svCameraProj, SVT_MAT4x4, camera->projMtx.data);
+			if (s_shaderState[i].svGridScaleOpacity >= 0)
 			{
-				draw->texture->bind(0);
+				f32 gridScaleOpacity[] = { gridScale, gridOpacity };
+				s_shader[i].setVariable(s_shaderState[i].svGridScaleOpacity, SVT_VEC2, gridScaleOpacity);
 			}
 
-			TFE_RenderBackend::drawIndexedTriangles(draw->idxCount / 3, sizeof(u32), draw->idxOffset);
+			// Bind vertex/index buffers and setup attributes for BlitVert
+			s_vertexBuffer.bind();
+			s_indexBuffer.bind();
+
+			TFE_RenderState::setStateEnable(blendEnable[i], STATE_BLEND);
+
+			// Draw.
+			for (u32 t = 0; t < s_triDrawCount[i]; t++)
+			{
+				Tri3dDraw* draw = &s_triDraw[i][t];
+				s32 isTextured = draw->texture ? 1 : 0;
+				s_shader[i].setVariable(s_shaderState[i].svIsTextured, SVT_ISCALAR, &isTextured);
+				if (isTextured)
+				{
+					draw->texture->bind(0);
+				}
+				TFE_RenderBackend::drawIndexedTriangles(draw->idxCount / 3, sizeof(u32), draw->idxOffset);
+			}
 		}
 
 		// Cleanup.
-		s_shader.unbind();
+		s_shader[0].unbind();
 		s_vertexBuffer.unbind();
 		s_indexBuffer.unbind();
 		TFE_RenderState::setDepthBias();
 
 		// Clear
-		s_triDrawCount = 0;
+		for (s32 i = 0; i < TRIMODE_COUNT; i++)
+		{
+			s_triDrawCount[i] = 0;
+		}
 	}
 }
