@@ -75,7 +75,7 @@ namespace LevelEditor
 	void grid2d_computeScale(Vec2i viewportSize, f32 baseGridScale, f32 pixelsToWorldUnits, Vec3f viewPos)
 	{
 		// Finest grid.
-		f32 gridScale = pixelsToWorldUnits / baseGridScale;
+		f32 gridScale = baseGridScale == 0.0f ? 0.0f : pixelsToWorldUnits / baseGridScale;
 
 		// Zoom out until the finest grid is visible.
 		const f32 eps = 0.01f;
@@ -84,7 +84,7 @@ namespace LevelEditor
 		while (fadeMain < eps)
 		{
 			baseGridScale *= 8.0f;
-			gridScale = pixelsToWorldUnits / baseGridScale;
+			gridScale = baseGridScale == 0.0f ? 0.0f : pixelsToWorldUnits / baseGridScale;
 			fadeMain = std::min(1.0f, std::max(0.0f, 1.0f - gridScale * 5.0f));
 		}
 		// Adjust the grid scale.

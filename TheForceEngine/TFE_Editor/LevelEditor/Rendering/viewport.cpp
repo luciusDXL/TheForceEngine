@@ -81,7 +81,7 @@ namespace LevelEditor
 	Vec3f s_viewportPos = { 0 };
 	Vec4f s_viewportTrans2d = { 0 };
 	f32 s_gridOpacity = 0.5f;
-	f32 s_gridSize2d;
+	f32 s_gridSize = 0.0625f;
 	f32 s_zoom2d = 0.25f;			// current zoom level in 2D.
 	f32 s_gridHeight = 0.0f;
 
@@ -180,7 +180,7 @@ namespace LevelEditor
 		// Draw the grid layer.
 		if (s_editFlags & LEF_SHOW_GRID)
 		{
-			grid2d_computeScale(s_viewportSize, s_gridSize2d, s_zoom2d, s_viewportPos);
+			grid2d_computeScale(s_viewportSize, s_gridSize, s_zoom2d, s_viewportPos);
 			grid2d_blitToScreen(s_gridOpacity);
 		}
 
@@ -428,13 +428,13 @@ namespace LevelEditor
 
 		if (s_camera.pos.y >= s_gridHeight)
 		{
-			grid3d_draw(s_gridSize2d, s_gridOpacity, s_gridHeight);
+			grid3d_draw(s_gridSize, s_gridOpacity, s_gridHeight);
 			renderCoordinateAxis();
 		}
 		else
 		{
 			renderCoordinateAxis();
-			grid3d_draw(s_gridSize2d, s_gridOpacity, s_gridHeight);
+			grid3d_draw(s_gridSize, s_gridOpacity, s_gridHeight);
 		}
 
 		const f32 width = 2.5f;
@@ -654,19 +654,19 @@ namespace LevelEditor
 
 		drawSelectedWall3D();
 
-		TFE_RenderShared::triDraw3d_draw(&s_camera, s_gridSize2d, s_gridOpacity);
+		TFE_RenderShared::triDraw3d_draw(&s_camera, s_gridSize, s_gridOpacity);
 		TFE_RenderShared::lineDraw3d_drawLines(&s_camera, true, false);
 
 		/*
 		if (s_camera.pos.y >= s_gridHeight)
 		{
-			grid3d_draw(s_gridSize2d, s_gridOpacity, s_gridHeight);
+			grid3d_draw(s_gridSize, s_gridOpacity, s_gridHeight);
 			renderCoordinateAxis();
 		}
 		else
 		{
 			renderCoordinateAxis();
-			grid3d_draw(s_gridSize2d, s_gridOpacity, s_gridHeight);
+			grid3d_draw(s_gridSize, s_gridOpacity, s_gridHeight);
 		}
 		*/
 	}

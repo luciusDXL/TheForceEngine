@@ -85,20 +85,20 @@ namespace LevelEditor
 	static Vec2i s_editWinPos = { 0, 69 };
 	static Vec2i s_editWinSize = { 0 };
 	static Vec2f s_editWinMapCorner = { 0 };
-	static f32 s_gridSize = 0.0625f;
 	static f32 s_zoom = c_defaultZoom;
 	static bool s_uiActive = false;
 		
 	static char s_layerMem[4 * 31];
 	static char* s_layerStr[31];
 		
-	static s32 s_gridIndex = 3;
+	static s32 s_gridIndex = 4;
 	static f32 c_gridSizeMap[] =
 	{
-		0.015625f, 0.03125f, 0.0625f, 0.125f, 0.25f, 0.5f, 1.0f, 2.0f, 4.0f, 8.0f, 16.0f, 32.0f, 64.0f
+		0.0f, 0.015625f, 0.03125f, 0.0625f, 0.125f, 0.25f, 0.5f, 1.0f, 2.0f, 4.0f, 8.0f, 16.0f, 32.0f, 64.0f
 	};
 	static const char* c_gridSizes[] =
 	{
+		"Off",
 		"1/64",
 		"1/32",
 		"1/16",
@@ -154,9 +154,8 @@ namespace LevelEditor
 
 		viewport_init();
 		viewport_update((s32)UI_SCALE(480) + 16, (s32)UI_SCALE(68) + 18);
-		s_gridIndex = 3;
+		s_gridIndex = 4;
 		s_gridSize = c_gridSizeMap[s_gridIndex];
-		s_gridSize2d = s_gridSize;
 
 		s_editCtrlToolbarData = loadGpuImage("UI_Images/EditCtrl_32x6.png");
 		if (s_editCtrlToolbarData)
@@ -628,7 +627,6 @@ namespace LevelEditor
 					{
 						s_gridIndex = n;
 						s_gridSize = c_gridSizeMap[s_gridIndex];
-						s_gridSize2d = s_gridSize;
 					}
 				}
 				ImGui::EndCombo();

@@ -40,7 +40,7 @@ namespace LevelEditor
 	extern Vec3f s_viewportPos;
 	extern Vec4f s_viewportTrans2d;
 	extern f32 s_gridOpacity;
-	extern f32 s_gridSize2d;
+	extern f32 s_gridSize;
 	extern f32 s_zoom2d;
 	extern f32 s_gridHeight;
 }
