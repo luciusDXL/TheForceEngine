@@ -547,6 +547,15 @@ namespace LevelEditor
 				if (showLower) { s_editFlags |= LEF_SHOW_LOWER_LAYERS;  }
 				else { s_editFlags &= ~LEF_SHOW_LOWER_LAYERS; }
 			}
+
+			bool showAllEdges = (s_editFlags & LEF_SECTOR_EDGES) != 0;
+			if (ImGui::MenuItem("Show All Sector Edges", "Ctrl+E", showAllEdges))
+			{
+				showAllEdges = !showAllEdges;
+				if (showAllEdges) { s_editFlags |= LEF_SECTOR_EDGES; }
+				else { s_editFlags &= ~LEF_SECTOR_EDGES; }
+			}
+
 			ImGui::Separator();
 			if (ImGui::MenuItem("Wireframe", "Ctrl+F1", s_sectorDrawMode == SDM_WIREFRAME))
 			{

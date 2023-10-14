@@ -3,14 +3,21 @@
 in vec4 Frag_Color;
 in vec2 Frag_Uv;
 in vec2 Frag_Uv1;
+in vec2 Frag_Uv2;
 in vec3 Frag_Pos;
 out vec4 Out_Color;
 
+uniform sampler2D image;
+uniform int isTextured;
 uniform vec2 GridScaleOpacity;
 
 void main()
 {
 	vec4 outColor = Frag_Color;
+	if (int(isTextured) == int(1))
+	{
+		outColor *= texture(image, Frag_Uv2);
+	}
 
 	// Outline
 	float lineScale = 2.0;
@@ -29,9 +36,9 @@ void main()
 	float viewFalloff = min(1.0, 2.0*computeViewFalloff(Frag_Pos, viewNormal));
 
 	float outAlpha = 0.0;
-	vec3 gridColor = vec3(0.0);
+	vec3 gridColor = outColor.rgb;
 	drawFloorGridLevels(gridColor, outAlpha, GridScaleOpacity.x, Frag_Uv1.xy, viewFalloff, Frag_Pos);
-	outColor.rgb = mix(outColor.rgb, gridColor, outAlpha * GridScaleOpacity.y);
+	outColor.rgb = mix(outColor.rgb, gridColor, GridScaleOpacity.y);
 	
     Out_Color = vec4(outColor.rgb * outColor.a, outColor.a);
 }

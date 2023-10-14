@@ -6,6 +6,8 @@
 #include <TFE_Editor/LevelEditor/levelEditorData.h>
 #include <TFE_Editor/LevelEditor/sharedState.h>
 #include <TFE_Editor/EditorAsset/editorTexture.h>
+#include <TFE_Jedi/Level/rwall.h>
+#include <TFE_Jedi/Level/rsector.h>
 #include <TFE_RenderBackend/shader.h>
 #include <TFE_RenderBackend/vertexBuffer.h>
 #include <TFE_RenderBackend/indexBuffer.h>
@@ -57,7 +59,7 @@ namespace LevelEditor
 	static const SectorColor c_sectorLineClrAdjoin[] = { SCOLOR_LINE_NORM_ADJ, SCOLOR_LINE_HOVERED_ADJ, SCOLOR_LINE_SELECTED_ADJ };
 	static const VertexColor c_vertexClr[] = { VCOLOR_NORM, VCOLOR_HOVERED, VCOLOR_SELECTED };
 
-	#define AMBIENT(x) (x * 255/31) | ((x * 255/31)<<8) | ((x * 255/31)<<16) | (0xff << 24)
+	#define AMBIENT(x) (u32)(x * 255/31) | ((x * 255/31)<<8) | ((x * 255/31)<<16) | (0xff << 24)
 	static const u32 c_sectorTexClr[] =
 	{
 		AMBIENT(0), AMBIENT(1), AMBIENT(2), AMBIENT(3),
@@ -249,6 +251,25 @@ namespace LevelEditor
 
 	static bool s_gridAutoAdjust = true;
 
+	const EditorTexture* calculateTextureCoords(const EditorWall* wall, const LevelTexture* ltex, f32 wallLengthTexels, f32 partHeight, bool flipHorz, Vec2f* uvCorners)
+	{
+		const EditorTexture* tex = (EditorTexture*)getAssetData(ltex->handle);
+		const Vec2f texScale = { 1.0f / f32(tex->width), 1.0f / f32(tex->height) };
+
+		uvCorners[0] = { ltex->offset.x * 8.0f, (ltex->offset.z + partHeight) * 8.0f };
+		uvCorners[1] = { uvCorners[0].x + wallLengthTexels, ltex->offset.z * 8.0f };
+		uvCorners[0].x *= texScale.x;
+		uvCorners[1].x *= texScale.x;
+		uvCorners[0].z *= texScale.z;
+		uvCorners[1].z *= texScale.z;
+		if (flipHorz)
+		{
+			uvCorners[0].x = 1.0f - uvCorners[0].x;
+			uvCorners[1].x = 1.0f - uvCorners[1].x;
+		}
+		return tex;
+	}
+
 	void renderLevel3D()
 	{
 		// Figure out which sector we are over.
@@ -289,6 +310,14 @@ namespace LevelEditor
 			if (sector == s_selectedSector) { highlight = HL_SELECTED; }
 			else if (sector == s_hoveredSector) { highlight = HL_HOVERED; }
 
+			// Sector lighting.
+			const u32 colorIndex = (s_editFlags & LEF_FULLBRIGHT) && s_sectorDrawMode != SDM_LIGHTING ? 31 : sector->ambient;
+
+			// Floor/ceiling line bias.
+			f32 bias = 1.0f / 1024.0f;
+			f32 floorBias = (s_camera.pos.y >= sector->floorHeight) ?  bias : -bias;
+			f32 ceilBias  = (s_camera.pos.y <= sector->ceilHeight)  ? -bias :  bias;
+
 			// Draw lines.
 			const size_t wallCount = sector->walls.size();
 			const EditorWall* wall = sector->walls.data();
@@ -301,6 +330,8 @@ namespace LevelEditor
 				{
 					continue;
 				}
+
+				EditorSector* next = wall->adjoinId < 0 ? nullptr : &s_level.sectors[wall->adjoinId];
 				
 				u32 color = c_sectorLineClr[highlight];
 				// Test
@@ -310,20 +341,75 @@ namespace LevelEditor
 				const Vec2f& v0 = sector->vtx[wall->idx[0]];
 				const Vec2f& v1 = sector->vtx[wall->idx[1]];
 
-				Vec3f line0[] =
-				{ { v0.x, sector->floorHeight, v0.z },
-				  { v1.x, sector->floorHeight, v1.z } };
-				TFE_RenderShared::lineDraw3d_addLine(width, line0, &color);
+				if ((s_editFlags & LEF_SECTOR_EDGES) || !next || next->floorHeight != sector->floorHeight || s_camera.pos.y > sector->floorHeight)
+				{
+					Vec3f line0[] =
+					{ { v0.x, sector->floorHeight + floorBias, v0.z },
+					  { v1.x, sector->floorHeight + floorBias, v1.z } };
+					TFE_RenderShared::lineDraw3d_addLine(width, line0, &color);
+				}
 
-				Vec3f line1[] =
-				{ { v0.x, sector->ceilHeight, v0.z },
-				  { v1.x, sector->ceilHeight, v1.z } };
-				TFE_RenderShared::lineDraw3d_addLine(width, line1, &color);
+				if ((s_editFlags & LEF_SECTOR_EDGES) || !next || next->ceilHeight != sector->ceilHeight || s_camera.pos.y < sector->ceilHeight)
+				{
+					Vec3f line1[] =
+					{ { v0.x, sector->ceilHeight + ceilBias, v0.z },
+					  { v1.x, sector->ceilHeight + ceilBias, v1.z } };
+					TFE_RenderShared::lineDraw3d_addLine(width, line1, &color);
+				}
 
-				Vec3f line2[] =
-				{ { v0.x, sector->floorHeight, v0.z },
-				  { v0.x, sector->ceilHeight, v0.z } };
-				TFE_RenderShared::lineDraw3d_addLine(width, line2, &color);
+				if (s_editFlags & LEF_SECTOR_EDGES)
+				{
+					Vec3f line2[] =
+					{ { v0.x, sector->floorHeight + floorBias, v0.z },
+					  { v0.x, sector->ceilHeight + ceilBias, v0.z } };
+					TFE_RenderShared::lineDraw3d_addLine(width, line2, &color);
+				}
+				else
+				{
+					// Show edges only where geometry exists.
+					if (wall->adjoinId < 0)
+					{
+						Vec3f line2[] =
+						{ { v0.x, sector->floorHeight + floorBias, v0.z },
+						  { v0.x, sector->ceilHeight + ceilBias, v0.z } };
+						TFE_RenderShared::lineDraw3d_addLine(width, line2, &color);
+					}
+					else
+					{
+						// Top
+						if (next->ceilHeight < sector->ceilHeight)
+						{
+							f32 topBias = (s_camera.pos.y <= next->ceilHeight) ? -bias : bias;
+
+							Vec3f line0[] =
+							{ { v0.x, next->ceilHeight + topBias, v0.z },
+							  { v0.x, next->ceilHeight + topBias, v0.z } };
+							TFE_RenderShared::lineDraw3d_addLine(width, line0, &color);
+						}
+						// Bottom
+						if (next->floorHeight > sector->floorHeight)
+						{
+							f32 botBias = (s_camera.pos.y >= next->floorHeight) ? bias : -bias;
+
+							Vec3f line0[] =
+							{ { v0.x, next->floorHeight + botBias, v0.z },
+							  { v0.x, next->floorHeight + botBias, v0.z } };
+							TFE_RenderShared::lineDraw3d_addLine(width, line0, &color);
+						}
+					}
+				}
+
+				s32 wallColorIndex = (s32)colorIndex;
+				if (wallColorIndex < 31)
+				{
+					wallColorIndex = std::max(0, std::min(31, wallColorIndex + wall->wallLight));
+				}
+
+				u32 wallColor = 0xff1a0f0d;
+				if (s_sectorDrawMode != SDM_WIREFRAME)
+				{
+					wallColor = c_sectorTexClr[wallColorIndex];
+				}
 
 				if (wall->adjoinId >= 0)
 				{
@@ -331,28 +417,46 @@ namespace LevelEditor
 					// Top
 					if (next->ceilHeight < sector->ceilHeight && next->layer != s_curLayer)
 					{
+						f32 topBias = (s_camera.pos.y <= next->ceilHeight) ? -bias : bias;
+
 						Vec3f line0[] =
-						{ { v0.x, next->ceilHeight, v0.z },
-						  { v1.x, next->ceilHeight, v1.z } };
+						{ { v0.x, next->ceilHeight + topBias, v0.z },
+						  { v1.x, next->ceilHeight + topBias, v1.z } };
 						TFE_RenderShared::lineDraw3d_addLine(width, line0, &color);
 					}
 					// Bottom
 					if (next->floorHeight > sector->floorHeight && next->layer != s_curLayer)
 					{
+						f32 botBias = (s_camera.pos.y >= next->floorHeight) ? bias : -bias;
+
 						Vec3f line0[] =
-						{ { v0.x, next->floorHeight, v0.z },
-						  { v1.x, next->floorHeight, v1.z } };
+						{ { v0.x, next->floorHeight + botBias, v0.z },
+						  { v1.x, next->floorHeight + botBias, v1.z } };
 						TFE_RenderShared::lineDraw3d_addLine(width, line0, &color);
 					}
 				}
 
 				// Wall Parts
-				u32 wallColor = 0xff1a0f0d;
+				const Vec2f wallOffset = { v1.x - v0.x, v1.z - v0.z };
+				const f32 wallLengthTexels = sqrtf(wallOffset.x*wallOffset.x + wallOffset.z*wallOffset.z) * 8.0f;
+				const f32 sectorHeight = sector->ceilHeight - sector->floorHeight;
+				const bool flipHorz = (wall->flags[0] & WF1_FLIP_HORIZ) != 0u;
+				Vec2f uvCorners[2];
+
 				if (wall->adjoinId < 0)
 				{
 					Vec3f corners[] = { {v0.x, sector->ceilHeight,  v0.z},
 										{v1.x, sector->floorHeight, v1.z} };
-					TFE_RenderShared::triDraw3d_addQuadColored(corners, wallColor);
+
+					if (s_sectorDrawMode == SDM_TEXTURED_FLOOR || s_sectorDrawMode == SDM_TEXTURED_CEIL)
+					{
+						const EditorTexture* tex = calculateTextureCoords(wall, &wall->tex[WP_MID], wallLengthTexels, sectorHeight, flipHorz, uvCorners);
+						TFE_RenderShared::triDraw3d_addQuadTextured(corners, uvCorners, wallColor, tex->frames[0]);
+					}
+					else
+					{
+						TFE_RenderShared::triDraw3d_addQuadColored(corners, wallColor);
+					}
 				}
 				else
 				{
@@ -362,14 +466,33 @@ namespace LevelEditor
 					{
 						Vec3f corners[] = { {v0.x, sector->ceilHeight, v0.z},
 										    {v1.x, next->ceilHeight,   v1.z} };
-						TFE_RenderShared::triDraw3d_addQuadColored(corners, wallColor);
+
+						if (s_sectorDrawMode == SDM_TEXTURED_FLOOR || s_sectorDrawMode == SDM_TEXTURED_CEIL)
+						{
+							const f32 topHeight = sector->ceilHeight - next->ceilHeight;
+							const EditorTexture* tex = calculateTextureCoords(wall, &wall->tex[WP_TOP], wallLengthTexels, topHeight, flipHorz, uvCorners);
+							TFE_RenderShared::triDraw3d_addQuadTextured(corners, uvCorners, wallColor, tex->frames[0]);
+						}
+						else
+						{
+							TFE_RenderShared::triDraw3d_addQuadColored(corners, wallColor);
+						}
 					}
 					// Bottom
 					if (next->floorHeight > sector->floorHeight)
 					{
 						Vec3f corners[] = { {v0.x, next->floorHeight,   v0.z},
 										    {v1.x, sector->floorHeight, v1.z} };
-						TFE_RenderShared::triDraw3d_addQuadColored(corners, wallColor);
+						if (s_sectorDrawMode == SDM_TEXTURED_FLOOR || s_sectorDrawMode == SDM_TEXTURED_CEIL)
+						{
+							const f32 botHeight = next->floorHeight - sector->floorHeight;
+							const EditorTexture* tex = calculateTextureCoords(wall, &wall->tex[WP_BOT], wallLengthTexels, botHeight, flipHorz, uvCorners);
+							TFE_RenderShared::triDraw3d_addQuadTextured(corners, uvCorners, wallColor, tex->frames[0]);
+						}
+						else
+						{
+							TFE_RenderShared::triDraw3d_addQuadColored(corners, wallColor);
+						}
 					}
 					// Mid only for mask textures (TODO).
 				}
@@ -377,24 +500,63 @@ namespace LevelEditor
 
 			// Draw the floor and ceiling.
 			u32 floorColor = 0xff402020;
-			const u32 idxCount = sector->poly.triIdx.size();
-			const u32 vtxCount = sector->poly.triVtx.size();
+			const u32 idxCount = (u32)sector->poly.triIdx.size();
+			const u32 vtxCount = (u32)sector->poly.triVtx.size();
 			const Vec2f* triVtx = sector->poly.triVtx.data();
 			Vec3f vtxDataFlr[512];
 			Vec3f vtxDataCeil[512];
+			Vec2f uvFlr[512];
+			Vec2f uvCeil[512];
+
+			EditorTexture* floorTex = (EditorTexture*)getAssetData(sector->floorTex.handle);
+			EditorTexture* ceilTex  = (EditorTexture*)getAssetData(sector->ceilTex.handle);
+			const Vec2f& floorOffset = sector->floorTex.offset;
+			const Vec2f& ceilOffset = sector->ceilTex.offset;
+
 			for (u32 v = 0; v < vtxCount; v++)
 			{
 				vtxDataFlr[v] = { triVtx[v].x, sector->floorHeight, triVtx[v].z };
 				vtxDataCeil[v] = { triVtx[v].x, sector->ceilHeight,  triVtx[v].z };
 			}
+						
+			if (s_sectorDrawMode == SDM_TEXTURED_FLOOR || s_sectorDrawMode == SDM_TEXTURED_CEIL)
+			{
+				for (u32 v = 0; v < vtxCount; v++)
+				{
+					uvFlr[v]  = { (triVtx[v].x - floorOffset.x) / 8.0f, (triVtx[v].z - floorOffset.z) / 8.0f };
+					uvCeil[v] = { (triVtx[v].x - ceilOffset.x) / 8.0f, (triVtx[v].z - ceilOffset.z) / 8.0f };
+				}
+			}
 
 			if (s_camera.pos.y > sector->floorHeight)
 			{
-				triDraw3d_addColored(idxCount, vtxCount, vtxDataFlr, sector->poly.triIdx.data(), floorColor, false);
+				if (s_sectorDrawMode == SDM_TEXTURED_FLOOR || s_sectorDrawMode == SDM_TEXTURED_CEIL)
+				{
+					triDraw3d_addTextured(idxCount, vtxCount, vtxDataFlr, uvFlr, sector->poly.triIdx.data(), c_sectorTexClr[colorIndex], false, floorTex->frames[0]);
+				}
+				else if (s_sectorDrawMode == SDM_LIGHTING)
+				{
+					triDraw3d_addColored(idxCount, vtxCount, vtxDataFlr, sector->poly.triIdx.data(), c_sectorTexClr[colorIndex], false);
+				}
+				else
+				{
+					triDraw3d_addColored(idxCount, vtxCount, vtxDataFlr, sector->poly.triIdx.data(), floorColor, false);
+				}
 			}
 			if (s_camera.pos.y < sector->ceilHeight)
 			{
-				triDraw3d_addColored(idxCount, vtxCount, vtxDataCeil, sector->poly.triIdx.data(), floorColor, true);
+				if (s_sectorDrawMode == SDM_TEXTURED_FLOOR || s_sectorDrawMode == SDM_TEXTURED_CEIL)
+				{
+					triDraw3d_addTextured(idxCount, vtxCount, vtxDataCeil, uvCeil, sector->poly.triIdx.data(), c_sectorTexClr[colorIndex], true, ceilTex->frames[0]);
+				}
+				else if (s_sectorDrawMode == SDM_LIGHTING)
+				{
+					triDraw3d_addColored(idxCount, vtxCount, vtxDataCeil, sector->poly.triIdx.data(), c_sectorTexClr[colorIndex], true);
+				}
+				else
+				{
+					triDraw3d_addColored(idxCount, vtxCount, vtxDataCeil, sector->poly.triIdx.data(), floorColor, true);
+				}
 			}
 		}
 
@@ -430,7 +592,7 @@ namespace LevelEditor
 			{
 				transVtx[v] = { vtxData->x * s_viewportTrans2d.x + s_viewportTrans2d.y, vtxData->z * s_viewportTrans2d.z + s_viewportTrans2d.w };
 			}
-			triDraw2d_addColored(idxCount, (u32)vtxCount, transVtx, idxData, color);
+			triDraw2d_addColored((u32)idxCount, (u32)vtxCount, transVtx, idxData, color);
 		}
 	}
 
@@ -452,7 +614,7 @@ namespace LevelEditor
 				transVtx[v] = { vtxData->x * s_viewportTrans2d.x + s_viewportTrans2d.y, vtxData->z * s_viewportTrans2d.z + s_viewportTrans2d.w };
 				uv[v] = { (vtxData->x - offset.x) / 8.0f, (vtxData->z - offset.z) / 8.0f };
 			}
-			triDraw2D_addTextured(idxCount, (u32)vtxCount, transVtx, uv, idxData, color, tex->frames[0]);
+			triDraw2D_addTextured((u32)idxCount, (u32)vtxCount, transVtx, uv, idxData, color, tex->frames[0]);
 		}
 	}
 

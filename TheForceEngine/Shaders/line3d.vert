@@ -52,9 +52,17 @@ void main()
 	gl_Position.xy += (top == 0 ? -screenNormal * vtx_uv1.y : screenNormal * vtx_uv1.y);
 	gl_Position.xyz *= gl_Position.w;
 
-	float zbias = -0.00005;
+	// Remove the bias once the depth gets far enough away.
+	float z = abs(end == 0 ? vpos0.z : vpos1.z);
+	float biasScale = 1.0;
+	// Reduce the bias as we get further away to avoid lines bleeding through walls.
+	if (z > 100.0)
+	{
+		biasScale = clamp(1.0 - (z - 100.0) / 100.0, 0.0, 1.0);
+	}
+	float zbias = -0.0015 * biasScale;
 	gl_Position.z += zbias;
-
+	
 	Frag_Uv.xy = (ppos0.xy * vec2(0.5,0.5) + 0.5) * ScreenSize;
 	Frag_Uv.zw = (ppos1.xy * vec2(0.5,0.5) + 0.5) * ScreenSize;
 	Frag_Width = vtx_uv1.x;
