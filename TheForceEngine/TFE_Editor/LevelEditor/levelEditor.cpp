@@ -641,19 +641,28 @@ namespace LevelEditor
 			ImGui::PushItemWidth(64.0f);
 			s32 layerIndex = s_curLayer - s_level.layerRange[0];
 			s32 minLayerIndex = s_level.layerRange[0] + 15;
-			//ImGui::Combo("Layer", &layerIndex, &s_layerStr[minLayerIndex], s_level.layerRange[1] - s_level.layerRange[0] + 1);
-			if (ImGui::BeginCombo("Layer", s_layerStr[layerIndex + minLayerIndex]))
+			s32 count = s_level.layerRange[1] - s_level.layerRange[0] + 1;
+			bool showAllLayers = (s_editFlags & LEF_SHOW_ALL_LAYERS) != 0;
+			if (ImGui::BeginCombo("Layer", showAllLayers ? "All" : s_layerStr[layerIndex + minLayerIndex]))
 			{
 				s_uiActive = true;
-				for (int n = 0; n < s_level.layerRange[1] - s_level.layerRange[0] + 1; n++)
+				for (int n = 0; n < count; n++)
 				{
 					if (ImGui::Selectable(s_layerStr[n + minLayerIndex], n == layerIndex))
 					{
 						s_curLayer = n + s_level.layerRange[0];
+						showAllLayers = false;
 					}
+				}
+				// Add the "all" option
+				if (ImGui::Selectable("All", showAllLayers))
+				{
+					showAllLayers = true;
 				}
 				ImGui::EndCombo();
 			}
+			if (showAllLayers) { s_editFlags |= LEF_SHOW_ALL_LAYERS; }
+			else { s_editFlags &= ~LEF_SHOW_ALL_LAYERS; }
 			ImGui::PopItemWidth();
 
 			// Message Panel

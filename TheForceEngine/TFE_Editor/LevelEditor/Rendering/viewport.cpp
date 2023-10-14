@@ -305,7 +305,9 @@ namespace LevelEditor
 		const EditorSector* sector = s_level.sectors.data();
 		for (size_t s = 0; s < count; s++, sector++)
 		{
-			if (sector->layer != s_curLayer) { continue; }
+			// Skip other layers unless all layers is enabled.
+			if (sector->layer != s_curLayer && !(s_editFlags & LEF_SHOW_ALL_LAYERS)) { continue; }
+
 			Highlight highlight = HL_NONE;
 			if (sector == s_selectedSector) { highlight = HL_SELECTED; }
 			else if (sector == s_hoveredSector) { highlight = HL_HOVERED; }
@@ -442,6 +444,11 @@ namespace LevelEditor
 				const f32 sectorHeight = sector->ceilHeight - sector->floorHeight;
 				const bool flipHorz = (wall->flags[0] & WF1_FLIP_HORIZ) != 0u;
 				Vec2f uvCorners[2];
+
+				// Skip backfacing walls.
+				const Vec2f cameraOffset = { v0.x - s_camera.pos.x, v0.z - s_camera.pos.z };
+				const f32 facing = -wallOffset.z * cameraOffset.x + wallOffset.x * cameraOffset.z;
+				if (facing < 0.0f) { continue; }
 
 				if (wall->adjoinId < 0)
 				{

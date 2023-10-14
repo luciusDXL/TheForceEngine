@@ -6,7 +6,8 @@
 #include <assert.h>
 #include <vector>
 
-#define TRI3D_MAX_DRAW_COUNT 4096
+#define TRI3D_MAX_DRAW_COUNT 65536
+#define TRI3D_DRAW_COUNT_RES 4096
 #define TRI3D_MAX 65536
 #define IDX3D_MAX TRI3D_MAX * 3
 #define VTX3D_MAX TRI3D_MAX * 3
@@ -53,11 +54,12 @@ namespace TFE_RenderShared
 	static Tri3dVertex* s_vertices = nullptr;
 	static s32* s_indices = nullptr;
 	static u32 s_triDrawCount;
+	static u32 s_triDrawCapacity;
 
 	static u32 s_vtxCount;
 	static u32 s_idxCount;
 
-	static Tri3dDraw s_triDraw[TRI3D_MAX_DRAW_COUNT];
+	static Tri3dDraw* s_triDraw = nullptr;
 	
 	bool tri3d_init()
 	{
@@ -85,6 +87,9 @@ namespace TFE_RenderShared
 		s_vertexBuffer.create(VTX3D_MAX, sizeof(Tri3dVertex), c_tri3dAttrCount, c_tri3dAttrMapping, true);
 		s_indexBuffer.create(IDX3D_MAX, sizeof(u32), true);
 
+		s_triDraw = (Tri3dDraw*)malloc(sizeof(Tri3dDraw) * TRI3D_DRAW_COUNT_RES);
+		s_triDrawCapacity = TRI3D_DRAW_COUNT_RES;
+
 		s_idxCount = 0;
 		s_vtxCount = 0;
 		s_triDrawCount = 0;
@@ -98,8 +103,10 @@ namespace TFE_RenderShared
 		s_indexBuffer.destroy();
 		delete[] s_vertices;
 		delete[] s_indices;
+		free(s_triDraw);
 		s_vertices = nullptr;
 		s_indices = nullptr;
+		s_triDraw = nullptr;
 	}
 	
 	void triDraw3d_begin()
@@ -107,6 +114,28 @@ namespace TFE_RenderShared
 		s_idxCount = 0;
 		s_vtxCount = 0;
 		s_triDrawCount = 0;
+	}
+		
+	bool triDraw3d_expand()
+	{
+		if (s_triDrawCapacity >= TRI3D_MAX_DRAW_COUNT)
+		{
+			return false;
+		}
+		s_triDrawCapacity += TRI3D_DRAW_COUNT_RES;
+		s_triDraw = (Tri3dDraw*)realloc(s_triDraw, sizeof(Tri3dDraw) * s_triDrawCapacity);
+		return true;
+	}
+
+	Tri3dDraw* getTriDraw()
+	{
+		if (s_triDrawCount >= s_triDrawCapacity)
+		{
+			if (!triDraw3d_expand()) { return nullptr; }
+		}
+		Tri3dDraw* draw = &s_triDraw[s_triDrawCount];
+		s_triDrawCount++;
+		return draw;
 	}
 		
 	void triDraw3d_addQuadTextured(Vec3f* corners, const Vec2f* uvCorners, const u32 color, TextureGpu* texture)
@@ -134,14 +163,20 @@ namespace TFE_RenderShared
 		else
 		{
 			// Too many draw calls?
-			if (s_triDrawCount >= TRI3D_MAX_DRAW_COUNT) { return; }
+			Tri3dDraw* draw = getTriDraw();
 			// Add a new draw call.
-			s_triDraw[s_triDrawCount].texture = texture;
-			s_triDraw[s_triDrawCount].vtxOffset = vtxOffset;
-			s_triDraw[s_triDrawCount].idxOffset = idxOffset;
-			s_triDraw[s_triDrawCount].vtxCount = 4;
-			s_triDraw[s_triDrawCount].idxCount = 6;
-			s_triDrawCount++;
+			if (draw)
+			{
+				draw->texture = texture;
+				draw->vtxOffset = vtxOffset;
+				draw->idxOffset = idxOffset;
+				draw->vtxCount = 4;
+				draw->idxCount = 6;
+			}
+			else
+			{
+				return;
+			}
 		}
 
 		Tri3dVertex* outVert = &s_vertices[s_vtxCount];
@@ -205,14 +240,20 @@ namespace TFE_RenderShared
 		else
 		{
 			// Too many draw calls?
-			if (s_triDrawCount >= TRI3D_MAX_DRAW_COUNT) { return; }
+			Tri3dDraw* draw = getTriDraw();
 			// Add a new draw call.
-			s_triDraw[s_triDrawCount].texture = texture;
-			s_triDraw[s_triDrawCount].vtxOffset = vtxOffset;
-			s_triDraw[s_triDrawCount].idxOffset = idxOffset;
-			s_triDraw[s_triDrawCount].vtxCount = vtxCount;
-			s_triDraw[s_triDrawCount].idxCount = idxCount;
-			s_triDrawCount++;
+			if (draw)
+			{
+				draw->texture = texture;
+				draw->vtxOffset = vtxOffset;
+				draw->idxOffset = idxOffset;
+				draw->vtxCount = vtxCount;
+				draw->idxCount = idxCount;
+			}
+			else
+			{
+				return;
+			}
 		}
 
 		Tri3dVertex* outVert = &s_vertices[s_vtxCount];
@@ -272,14 +313,20 @@ namespace TFE_RenderShared
 		else
 		{
 			// Too many draw calls?
-			if (s_triDrawCount >= TRI3D_MAX_DRAW_COUNT) { return; }
+			Tri3dDraw* draw = getTriDraw();
 			// Add a new draw call.
-			s_triDraw[s_triDrawCount].texture = nullptr;
-			s_triDraw[s_triDrawCount].vtxOffset = vtxOffset;
-			s_triDraw[s_triDrawCount].idxOffset = idxOffset;
-			s_triDraw[s_triDrawCount].vtxCount = 4;
-			s_triDraw[s_triDrawCount].idxCount = 6;
-			s_triDrawCount++;
+			if (draw)
+			{
+				draw->texture = nullptr;
+				draw->vtxOffset = vtxOffset;
+				draw->idxOffset = idxOffset;
+				draw->vtxCount = 4;
+				draw->idxCount = 6;
+			}
+			else
+			{
+				return;
+			}
 		}
 
 		Tri3dVertex* outVert = &s_vertices[s_vtxCount];
@@ -339,14 +386,20 @@ namespace TFE_RenderShared
 		else
 		{
 			// Too many draw calls?
-			if (s_triDrawCount >= TRI3D_MAX_DRAW_COUNT) { return; }
+			Tri3dDraw* draw = getTriDraw();
 			// Add a new draw call.
-			s_triDraw[s_triDrawCount].texture = nullptr;
-			s_triDraw[s_triDrawCount].vtxOffset = vtxOffset;
-			s_triDraw[s_triDrawCount].idxOffset = idxOffset;
-			s_triDraw[s_triDrawCount].vtxCount = vtxCount;
-			s_triDraw[s_triDrawCount].idxCount = idxCount;
-			s_triDrawCount++;
+			if (draw)
+			{
+				draw->texture = nullptr;
+				draw->vtxOffset = vtxOffset;
+				draw->idxOffset = idxOffset;
+				draw->vtxCount = vtxCount;
+				draw->idxCount = idxCount;
+			}
+			else
+			{
+				return;
+			}
 		}
 
 		Tri3dVertex* outVert = &s_vertices[s_vtxCount];
