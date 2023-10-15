@@ -398,6 +398,7 @@ namespace TFE_Settings
 		writeHeader(settings, c_sectionNames[SECTION_SYSTEM]);
 		writeKeyValue_Bool(settings, "gameExitsToMenu",   s_systemSettings.gameQuitExitsToMenu);
 		writeKeyValue_Bool(settings, "returnToModLoader", s_systemSettings.returnToModLoader);
+		writeKeyValue_Float(settings, "gifRecordingFramerate", s_systemSettings.gifRecordingFramerate);
 	}
 
 	void writeA11ySettings(FileStream& settings)
@@ -850,6 +851,10 @@ namespace TFE_Settings
 		else if (strcasecmp("returnToModLoader", key) == 0)
 		{
 			s_systemSettings.returnToModLoader = parseBool(value);
+		}
+		else if (strcasecmp("gifRecordingFramerate", key) == 0)
+		{
+			s_systemSettings.gifRecordingFramerate = parseFloat(value);
 		}
 	}
 	

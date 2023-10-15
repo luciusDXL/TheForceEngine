@@ -8,6 +8,7 @@
 #include <TFE_Asset/gifWriter.h>
 #include <GL/glew.h>
 #include <assert.h>
+#include <TFE_Settings/settings.h>
 
 #ifdef _DEBUG
 	#define CHECK_GL_ERROR checkGlError();
@@ -144,7 +145,7 @@ void ScreenCapture::update(bool flush)
 			recordingTime = f32(TFE_System::getTime() - m_recordingTimeStart);
 		}
 
-		f64 recordingFrame = floor(recordingTime * m_recordingFramerate);
+		f64 recordingFrame = floor(recordingTime * TFE_Settings::getSystemSettings()->gifRecordingFramerate);
 		if (m_recordingFrameLast != recordingFrame)
 		{
 			captureFrame("");
@@ -224,7 +225,8 @@ void ScreenCapture::beginRecording(const char* path)
 	m_recordingTimeStart = 0.0;
 	m_recordingFrameLast = -1.0;
 
-	TFE_GIF::startGif(path, m_width, m_height, (u32)m_recordingFramerate);
+	u32 framerate = (u32)TFE_Settings::getSystemSettings()->gifRecordingFramerate;
+	TFE_GIF::startGif(path, m_width, m_height, framerate);
 }
 
 void ScreenCapture::endRecording()

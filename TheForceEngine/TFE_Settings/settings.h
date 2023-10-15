@@ -204,6 +204,7 @@ struct TFE_Settings_System
 {
 	bool gameQuitExitsToMenu = true;	// Quitting from the game returns to the main menu instead.
 	bool returnToModLoader = true;		// Return to the Mod Loader if running a mod.
+	f32 gifRecordingFramerate = 18;		// Used with GIF recording (Alt-F2)
 };
 
 struct TFE_Settings_A11y
