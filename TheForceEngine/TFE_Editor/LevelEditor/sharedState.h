@@ -29,6 +29,8 @@ namespace LevelEditor
 	extern EditorSector* s_selectedVtxSector;
 	extern s32 s_hoveredVtxId;
 	extern s32 s_selectedVtxId;
+	extern Vec3f s_hoveredVtxPos;
+	extern Vec3f s_selectedVtxPos;
 
 	// Wall
 	extern EditorSector* s_hoveredWallSector;

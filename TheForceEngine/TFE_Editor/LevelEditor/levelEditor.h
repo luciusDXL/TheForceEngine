@@ -30,6 +30,7 @@ namespace LevelEditor
 	{
 		LWIN_NONE = 0,
 		LWIN_HISTORY = FLAG_BIT(0),
+		LWIN_VIEW_SETTINGS = FLAG_BIT(1),
 	};
 
 	bool init(TFE_Editor::Asset* asset);

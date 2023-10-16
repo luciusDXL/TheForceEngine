@@ -142,4 +142,36 @@ namespace TFE_Math
 			mat[2] = {-sY,                cY * sX,                cY * cX };
 		}
 	}
+
+	// Returns true if the segment (a0, a1) intersects the line segment (b0, b1)
+	// intersection is: I = a0 + s*(a1-a0) = b0 + t*(b1 - b0)
+	// Returns false if the intersection occurs between the lines but not the segments.
+	bool lineSegmentIntersect(const Vec2f* a0, const Vec2f* a1, const Vec2f* b0, const Vec2f* b1, f32* s, f32* t)
+	{
+		const Vec2f u = { a1->x - a0->x, a1->z - a0->z };
+		const Vec2f v = { b1->x - b0->x, b1->z - b0->z };
+		const Vec2f w = { a0->x - b0->x, a0->z - b0->z };
+
+		f32 det = v.x*u.z - v.z*u.x;
+		if (fabsf(det) < FLT_EPSILON) { return false; }
+		det = 1.0f / det;
+
+		*s = (v.z*w.x - v.x*w.z) * det;
+		*t = -(u.x*w.z - u.z*w.x) * det;
+
+		return (*s) > -FLT_EPSILON && (*s) < 1.0f + FLT_EPSILON && (*t) > -FLT_EPSILON && (*t) < 1.0f + FLT_EPSILON;
+	}
+
+	// line: p0, p1; plane: planeHeight + planeDir (+/-Y)
+	// returns true if the intersection occurs within the segment
+	bool lineYPlaneIntersect(const Vec3f* p0, const Vec3f* p1, f32 planeHeight, Vec3f* hitPoint)
+	{
+		if (fabsf(p1->y - p0->y) < FLT_EPSILON) { return false; }
+
+		const f32 s = (planeHeight - p0->y) / (p1->y - p0->y);
+		if (s < -FLT_EPSILON || s > 1.0f + FLT_EPSILON) { return false; }
+
+		*hitPoint = { p0->x + s * (p1->x - p0->x), p0->y + s * (p1->y - p0->y), p0->z + s * (p1->z - p0->z) };
+		return true;
+	}
 }

@@ -150,4 +150,7 @@ namespace TFE_Math
 	Mat4 mulMatrix4(const Mat4& mtx0, const Mat4& mtx1);
 
 	void buildRotationMatrix(Vec3f angles, Vec3f* mat);
+
+	bool lineSegmentIntersect(const Vec2f* a0, const Vec2f* a1, const Vec2f* b0, const Vec2f* b1, f32* s, f32* t);
+	bool lineYPlaneIntersect(const Vec3f* p0, const Vec3f* p1, f32 planeHeight, Vec3f* hitPoint);
 }

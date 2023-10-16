@@ -74,6 +74,8 @@ namespace LevelEditor
 	EditorSector* s_selectedVtxSector = nullptr;
 	s32 s_hoveredVtxId = -1;
 	s32 s_selectedVtxId = -1;
+	Vec3f s_hoveredVtxPos;
+	Vec3f s_selectedVtxPos;
 
 	// Wall
 	EditorSector* s_hoveredWallSector = nullptr;
@@ -86,6 +88,7 @@ namespace LevelEditor
 	static Vec2i s_editWinPos = { 0, 69 };
 	static Vec2i s_editWinSize = { 0 };
 	static Vec2f s_editWinMapCorner = { 0 };
+	static Vec3f s_rayDir = { 0.0f, 0.0f, 1.0f };
 	static f32 s_zoom = c_defaultZoom;
 	static bool s_uiActive = false;
 		
@@ -130,6 +133,7 @@ namespace LevelEditor
 	void cameraControl3d(s32 mx, s32 my);
 	void resetZoom();
 	Vec2f mouseCoordToWorldPos2d(s32 mx, s32 my);
+	Vec3f mouseCoordToWorldDir3d(s32 mx, s32 my);
 	Vec2i worldPos2dToMap(const Vec2f& worldPos);
 	bool isUiActive();
 	bool isViewportElementHovered();
@@ -294,6 +298,148 @@ namespace LevelEditor
 			   (s_hoveredSector && s_editMode == LEDIT_SECTOR) || (s_selectedVtxId >= 0 && s_editMode == LEDIT_VERTEX) || 
 			   (s_selectedWallId >= 0 && s_editMode == LEDIT_WALL) || (s_selectedSector && s_editMode == LEDIT_SECTOR);
 	}
+
+	Vec3f rayGridPlaneHit(const Vec3f& origin, const Vec3f& rayDir)
+	{
+		Vec3f hit = { 0 };
+		if (fabsf(rayDir.y) < FLT_EPSILON) { return hit; }
+
+		f32 s = (s_gridHeight - origin.y) / rayDir.y;
+		if (s <= 0) { return hit; }
+
+		hit.x = origin.x + s * rayDir.x;
+		hit.y = origin.y + s * rayDir.y;
+		hit.z = origin.z + s * rayDir.z;
+		return hit;
+	}
+
+	void handleHoverAndSelection(RayHitInfo* info)
+	{
+		if (info->hitSectorId < 0) { return; }
+		s_hoveredSector = &s_level.sectors[info->hitSectorId];
+		if (s_hoveredSector)
+		{
+			s_gridHeight = s_hoveredSector->floorHeight;
+		}
+
+		//////////////////////////////////////
+		// SECTOR
+		//////////////////////////////////////
+		if (s_editMode == LEDIT_SECTOR && TFE_Input::mousePressed(MouseButton::MBUTTON_LEFT))
+		{
+			s_selectedSector = s_hoveredSector;
+		}
+		else if (s_editMode != LEDIT_SECTOR)
+		{
+			s_selectedSector = nullptr;
+		}
+
+		//////////////////////////////////////
+		// VERTEX
+		//////////////////////////////////////
+		if (s_editMode == LEDIT_VERTEX)
+		{
+			s32 prevId = s_hoveredVtxId;
+			// See if we are close enough to "hover" a vertex
+			s_hoveredVtxSector = nullptr;
+			s_hoveredVtxId = -1;
+			if (s_hoveredSector)
+			{
+				// Keep track of the last vertex hovered sector and use it if no hovered sector is active to
+				// make selecting vertices less fiddly.
+				EditorSector* hoveredSector = s_hoveredSector;
+
+				const size_t vtxCount = hoveredSector->vtx.size();
+				const Vec2f* vtx = hoveredSector->vtx.data();
+				const Vec3f* refPos = &info->hitPos;
+
+				const f32 distFromCam = TFE_Math::distance(&info->hitPos, &s_camera.pos);
+				const f32 maxDist = distFromCam * 64.0f / f32(s_viewportSize.z);
+				const f32 floor = hoveredSector->floorHeight;
+				const f32 ceil  = hoveredSector->ceilHeight;
+
+				f32 closestDistSq = maxDist * maxDist;
+				s32 closestVtx = -1;
+				HitPart closestPart = HP_FLOOR;
+				Vec3f finalPos;
+				for (size_t v = 0; v < vtxCount; v++)
+				{
+					// Check against the floor and ceiling vertex of each vertex.
+					const Vec3f floorVtx = { vtx[v].x, floor, vtx[v].z };
+					const Vec3f ceilVtx  = { vtx[v].x, ceil,  vtx[v].z };
+					const f32 floorDistSq = TFE_Math::distanceSq(&floorVtx, refPos);
+					const f32 ceilDistSq  = TFE_Math::distanceSq(&ceilVtx,  refPos);
+
+					if (floorDistSq < closestDistSq || ceilDistSq < closestDistSq)
+					{
+						closestDistSq = min(floorDistSq, ceilDistSq);
+						closestPart = floorDistSq <= ceilDistSq ? HP_FLOOR : HP_CEIL;
+						closestVtx = v;
+						finalPos = floorDistSq <= ceilDistSq ? floorVtx : ceilVtx;
+					}
+				}
+
+				if (closestVtx >= 0)
+				{
+					s_hoveredVtxSector = hoveredSector;
+					s_hoveredVtxId = closestVtx;
+					s_hoveredVtxPos = finalPos;
+				}
+			}
+
+			if (TFE_Input::mousePressed(MouseButton::MBUTTON_LEFT))
+			{
+				s_selectedVtxSector = nullptr;
+				s_selectedVtxId = -1;
+				if (s_hoveredVtxSector && s_hoveredVtxId >= 0)
+				{
+					s_selectedVtxSector = s_hoveredVtxSector;
+					s_selectedVtxId = s_hoveredVtxId;
+					s_selectedVtxPos = s_hoveredVtxPos;
+				}
+			}
+		}
+		else
+		{
+			s_hoveredVtxSector = nullptr;
+			s_selectedVtxSector = nullptr;
+			s_hoveredVtxId = -1;
+			s_selectedVtxId = -1;
+		}
+
+		//////////////////////////////////////
+		// WALL
+		//////////////////////////////////////
+		if (s_editMode == LEDIT_WALL)
+		{
+			// See if we are close enough to "hover" a vertex
+			s_hoveredWallSector = nullptr;
+			s_hoveredWallId = -1;
+			if (info->hitWallId)
+			{
+				s_hoveredWallSector = s_hoveredSector;
+				s_hoveredWallId = info->hitWallId;
+			}
+
+			if (TFE_Input::mousePressed(MouseButton::MBUTTON_LEFT))
+			{
+				s_selectedWallSector = nullptr;
+				s_selectedWallId = -1;
+				if (s_hoveredWallSector && s_hoveredWallId >= 0)
+				{
+					s_selectedWallSector = s_hoveredWallSector;
+					s_selectedWallId = s_hoveredWallId;
+				}
+			}
+		}
+		else
+		{
+			s_hoveredWallSector = nullptr;
+			s_selectedWallSector = nullptr;
+			s_hoveredWallId = -1;
+			s_selectedWallId = -1;
+		}
+	}
 		
 	void updateWindowControls()
 	{
@@ -453,6 +599,30 @@ namespace LevelEditor
 		else if (s_view == EDIT_VIEW_3D)
 		{
 			cameraControl3d(mx, my);
+
+			s_hoveredSector = nullptr;
+			s_hoveredWallId = -1;
+			s_hoveredWallSector = nullptr;
+			s_hoveredVtxId = -1;
+			s_hoveredVtxSector = nullptr;
+
+			// Trace a ray through the mouse cursor.
+			s_rayDir = mouseCoordToWorldDir3d(mx, my);
+			RayHitInfo hitInfo;
+			Ray ray = { s_camera.pos, s_rayDir, 1000.0f, s_curLayer };
+			if (traceRay(&ray, &s_level, &hitInfo))
+			{
+				s_cursor3d = hitInfo.hitPos;
+				if (s_editMode != LEDIT_DRAW)
+				{
+					handleHoverAndSelection(&hitInfo);
+				}
+			}
+			else
+			{
+				s_hoveredSector = nullptr;
+				s_cursor3d = rayGridPlaneHit(s_camera.pos, s_rayDir);
+			}
 		}
 	}
 
@@ -587,7 +757,7 @@ namespace LevelEditor
 				else { s_editFlags &= ~LEF_FULLBRIGHT; }
 			}
 			ImGui::Separator();
-			if (ImGui::MenuItem("View Settings", NULL, (bool*)NULL))
+			if (ImGui::MenuItem("View Settings", NULL, (s_lwinOpen & LWIN_VIEW_SETTINGS) != 0))
 			{
 			}
 			ImGui::EndMenu();
@@ -977,6 +1147,7 @@ namespace LevelEditor
 		ImGui::End();
 	}
 
+	// Convert from viewport mouse coordinates to world space 2D position.
 	Vec2f mouseCoordToWorldPos2d(s32 mx, s32 my)
 	{
 		// World position from viewport position, relative mouse position and zoom.
@@ -992,6 +1163,33 @@ namespace LevelEditor
 		mapPos.x = s32(( worldPos.x - s_viewportPos.x) / s_zoom2d + s_editWinMapCorner.x);
 		mapPos.z = s32((-worldPos.z - s_viewportPos.z) / s_zoom2d + s_editWinMapCorner.z);
 		return mapPos;
+	}
+
+	Vec4f transform(const Mat4& mtx, const Vec4f& vec)
+	{
+		return { TFE_Math::dot(&mtx.m0, &vec), TFE_Math::dot(&mtx.m1, &vec), TFE_Math::dot(&mtx.m2, &vec), TFE_Math::dot(&mtx.m3, &vec) };
+	}
+
+	// Convert from viewport mouse coordinates to world space 3D direction.
+	Vec3f mouseCoordToWorldDir3d(s32 mx, s32 my)
+	{
+		const Vec4f posScreen =
+		{
+			f32(mx - s_editWinMapCorner.x) / f32(s_viewportSize.x) * 2.0f - 1.0f,
+			f32(my - s_editWinMapCorner.z) / f32(s_viewportSize.z) * 2.0f - 1.0f,
+			-1.0f, 1.0f
+		};
+		const Vec4f posView = transform(s_camera.invProj, posScreen);
+		const Mat3  viewT = TFE_Math::transpose(s_camera.viewMtx);
+
+		const Vec3f posView3 = { posView.x, -posView.y, posView.z };
+		const Vec3f posRelWorld =	// world relative to the camera position.
+		{
+			TFE_Math::dot(&posView3, &viewT.m0),
+			TFE_Math::dot(&posView3, &viewT.m1),
+			TFE_Math::dot(&posView3, &viewT.m2)
+		};
+		return TFE_Math::normalize(&posRelWorld);
 	}
 
 	void messagePanel(ImVec2 pos)

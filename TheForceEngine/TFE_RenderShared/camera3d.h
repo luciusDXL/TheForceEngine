@@ -10,6 +10,7 @@ struct Camera3d
 	Vec3f pos;
 	Mat3  viewMtx;
 	Mat4  projMtx;
+	Mat4  invProj;
 
 	f32 yaw;
 	f32 pitch;

@@ -33,6 +33,22 @@ namespace LevelEditor
 		WP_COUNT
 	};
 
+	enum HitPart
+	{
+		HP_MID = 0,
+		HP_TOP,
+		HP_BOT,
+		HP_SIGN,
+		HP_FLOOR,
+		HP_CEIL,
+		HP_COUNT
+	};
+
+	enum RayConst
+	{
+		LAYER_ANY = -256,
+	};
+
 	struct LevelTexture
 	{
 		TFE_Editor::AssetHandle handle = NULL_ASSET;
@@ -96,9 +112,32 @@ namespace LevelEditor
 		s32 layerRange[2] = { 0 };
 	};
 
+	// Collision
+	struct Ray
+	{
+		Vec3f origin;
+		Vec3f dir;
+		f32 maxDist;
+		s32 layer;
+	};
+
+	struct RayHitInfo
+	{
+		// What was hit.
+		s32 hitSectorId;
+		s32 hitWallId;
+		HitPart hitPart;
+		// TODO: hitObj
+
+		// Actual hit position.
+		Vec3f hitPos;
+		f32 dist;
+	};
+
 	bool loadLevelFromAsset(TFE_Editor::Asset* asset, EditorLevel* level);
 	void sectorToPolygon(EditorSector* sector);
 	void polygonToSector(EditorSector* sector);
 
 	s32 findSector2d(EditorLevel* level, s32 layer, const Vec2f* pos);
+	bool traceRay(const Ray* ray, const EditorLevel* level, RayHitInfo* hitInfo);
 }

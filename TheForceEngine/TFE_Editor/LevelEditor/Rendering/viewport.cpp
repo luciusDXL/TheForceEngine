@@ -51,13 +51,14 @@ namespace LevelEditor
 	{
 		VCOLOR_NORM     = 0xffae8653,
 		VCOLOR_HOVERED  = 0xffffff20,
-		VCOLOR_SELECTED = 0xff4a76ff
+		VCOLOR_SELECTED = 0xff4a76ff,
+		VCOLOR_HOV_AND_SEL = 0xff94ec8f,
 	};
 
 	static const SectorColor c_sectorPolyClr[] = { SCOLOR_POLY_NORM, SCOLOR_POLY_HOVERED, SCOLOR_POLY_SELECTED };
 	static const SectorColor c_sectorLineClr[] = { SCOLOR_LINE_NORM, SCOLOR_LINE_HOVERED, SCOLOR_LINE_SELECTED };
 	static const SectorColor c_sectorLineClrAdjoin[] = { SCOLOR_LINE_NORM_ADJ, SCOLOR_LINE_HOVERED_ADJ, SCOLOR_LINE_SELECTED_ADJ };
-	static const VertexColor c_vertexClr[] = { VCOLOR_NORM, VCOLOR_HOVERED, VCOLOR_SELECTED };
+	static const VertexColor c_vertexClr[] = { VCOLOR_NORM, VCOLOR_HOVERED, VCOLOR_SELECTED, VCOLOR_HOV_AND_SEL };
 
 	#define AMBIENT(x) (u32)(x * 255/31) | ((x * 255/31)<<8) | ((x * 255/31)<<16) | (0xff << 24)
 	static const u32 c_sectorTexClr[] =
@@ -94,6 +95,8 @@ namespace LevelEditor
 	void drawVertex2d(const EditorSector* sector, s32 id, f32 extraScale, Highlight highlight);
 	void drawWall2d(const EditorSector* sector, const EditorWall* wall, f32 extraScale, Highlight highlight, bool drawNormal = false);
 	void renderSectorVertices2d();
+	void drawBox(const Vec3f* center, f32 side, f32 lineWidth, u32 color);
+	void drawSolidBox(const Vec3f* center, f32 side, u32 color);
 
 	void viewport_init()
 	{
@@ -254,7 +257,8 @@ namespace LevelEditor
 	const EditorTexture* calculateTextureCoords(const EditorWall* wall, const LevelTexture* ltex, f32 wallLengthTexels, f32 partHeight, bool flipHorz, Vec2f* uvCorners)
 	{
 		const EditorTexture* tex = (EditorTexture*)getAssetData(ltex->handle);
-		const Vec2f texScale = { 1.0f / f32(tex->width), 1.0f / f32(tex->height) };
+		if (!tex) { return nullptr; }
+		Vec2f texScale = { 1.0f / f32(tex->width), 1.0f / f32(tex->height) };
 
 		uvCorners[0] = { ltex->offset.x * 8.0f, (ltex->offset.z + partHeight) * 8.0f };
 		uvCorners[1] = { uvCorners[0].x + wallLengthTexels, ltex->offset.z * 8.0f };
@@ -408,6 +412,16 @@ namespace LevelEditor
 		}
 	}
 
+	void drawVertex3d(const Vec3f* vtx, const EditorSector* sector, u32 color)
+	{
+		const f32 scale = TFE_Math::distance(vtx, &s_camera.pos) / f32(s_viewportSize.z);
+		const f32 size = 16.0f * scale;
+		const f32 sizeExp = 17.0f * scale;
+
+		drawBox(vtx, sizeExp, 3.0f, c_vertexClr[HL_NONE]);
+		drawSolidBox(vtx, size, color);
+	}
+
 	void renderLevel3D()
 	{
 		// Figure out which sector we are over.
@@ -512,7 +526,7 @@ namespace LevelEditor
 					if (s_sectorDrawMode == SDM_TEXTURED_FLOOR || s_sectorDrawMode == SDM_TEXTURED_CEIL)
 					{
 						const EditorTexture* tex = calculateTextureCoords(wall, &wall->tex[WP_MID], wallLengthTexels, sectorHeight, flipHorz, uvCorners);
-						TFE_RenderShared::triDraw3d_addQuadTextured(TRIMODE_OPAQUE, corners, uvCorners, wallColor, tex->frames[0]);
+						TFE_RenderShared::triDraw3d_addQuadTextured(TRIMODE_OPAQUE, corners, uvCorners, wallColor, tex ? tex->frames[0] : nullptr);
 					}
 					else
 					{
@@ -523,7 +537,10 @@ namespace LevelEditor
 					if (wall->tex[WP_SIGN].handle && (s_sectorDrawMode == SDM_TEXTURED_FLOOR || s_sectorDrawMode == SDM_TEXTURED_CEIL))
 					{
 						const EditorTexture* tex = calculateSignTextureCoords(wall, &wall->tex[WP_MID], &wall->tex[WP_SIGN], wallLengthTexels, sectorHeight, false, uvCorners);
-						TFE_RenderShared::triDraw3d_addQuadTextured(TRIMODE_CLAMP, corners, uvCorners, wallColor, tex->frames[0]);
+						if (tex)
+						{
+							TFE_RenderShared::triDraw3d_addQuadTextured(TRIMODE_CLAMP, corners, uvCorners, wallColor, tex->frames[0]);
+						}
 					}
 				}
 				else
@@ -564,7 +581,7 @@ namespace LevelEditor
 						if (s_sectorDrawMode == SDM_TEXTURED_FLOOR || s_sectorDrawMode == SDM_TEXTURED_CEIL)
 						{
 							const EditorTexture* tex = calculateTextureCoords(wall, &wall->tex[WP_TOP], wallLengthTexels, topHeight, flipHorz, uvCorners);
-							TFE_RenderShared::triDraw3d_addQuadTextured(TRIMODE_OPAQUE, corners, uvCorners, wallColor, tex->frames[0]);
+							TFE_RenderShared::triDraw3d_addQuadTextured(TRIMODE_OPAQUE, corners, uvCorners, wallColor, tex ? tex->frames[0] : nullptr);
 						}
 						else
 						{
@@ -653,6 +670,30 @@ namespace LevelEditor
 		}
 
 		drawSelectedWall3D();
+
+		// Draw the cursor
+		{
+			// Snap to the grid.
+			//s_cursor3d.x = floorf(s_cursor3d.x / s_gridSize + 0.5f) * s_gridSize;
+			//s_cursor3d.y = floorf(s_cursor3d.y / s_gridSize) * s_gridSize;
+			//s_cursor3d.z = floorf(s_cursor3d.z / s_gridSize + 0.5f) * s_gridSize;
+
+			const f32 distFromCam = TFE_Math::distance(&s_cursor3d, &s_camera.pos);
+			const f32 size = distFromCam * 16.0f / f32(s_viewportSize.z);
+			const f32 sizeExp = distFromCam * 18.0f / f32(s_viewportSize.z);
+			drawBox(&s_cursor3d, size, 3.0f, 0x80ff8020);
+
+			bool alsoHovered = false;
+			if (s_selectedVtxId >= 0)
+			{
+				alsoHovered = s_hoveredVtxId == s_selectedVtxId && s_hoveredVtxSector == s_selectedVtxSector;
+				drawVertex3d(&s_selectedVtxPos, s_selectedVtxSector, alsoHovered ? c_vertexClr[HL_SELECTED + 1] : c_vertexClr[HL_SELECTED]);
+			}
+			if (s_hoveredVtxId >= 0 && !alsoHovered)
+			{
+				drawVertex3d(&s_hoveredVtxPos, s_hoveredVtxSector, c_vertexClr[HL_HOVERED]);
+			}
+		}
 
 		TFE_RenderShared::triDraw3d_draw(&s_camera, s_gridSize, s_gridOpacity);
 		TFE_RenderShared::lineDraw3d_drawLines(&s_camera, true, false);
@@ -874,5 +915,61 @@ namespace LevelEditor
 				drawVertex2d(vtx, scale, HL_NONE);
 			}
 		}
+	}
+
+	void drawSolidBox(const Vec3f* center, f32 side, u32 color)
+	{
+		const f32 w = side * 0.5f;
+		const Vec3f vtx[8] =
+		{
+			{center->x - w, center->y - w, center->z - w},
+			{center->x + w, center->y - w, center->z - w},
+			{center->x + w, center->y - w, center->z + w},
+			{center->x - w, center->y - w, center->z + w},
+
+			{center->x - w, center->y + w, center->z - w},
+			{center->x + w, center->y + w, center->z - w},
+			{center->x + w, center->y + w, center->z + w},
+			{center->x - w, center->y + w, center->z + w},
+		};
+		const s32 idx[36] =
+		{
+			0, 1, 2, 0, 2, 3,	// bot
+			4, 6, 5, 4, 7, 6,	// top
+			0, 5, 1, 0, 4, 5,
+			1, 6, 2, 1, 5, 6,
+			2, 7, 3, 2, 6, 7,
+			3, 4, 0, 3, 7, 4
+		};
+		triDraw3d_addColored(TRIMODE_OPAQUE, 36, 8, vtx, idx, color, false);
+	}
+
+	void drawBox(const Vec3f* center, f32 side, f32 lineWidth, u32 color)
+	{
+		const f32 w = side * 0.5f;
+		const Vec3f lines[] =
+		{
+			{center->x - w, center->y - w, center->z - w}, {center->x + w, center->y - w, center->z - w},
+			{center->x + w, center->y - w, center->z - w}, {center->x + w, center->y - w, center->z + w},
+			{center->x + w, center->y - w, center->z + w}, {center->x - w, center->y - w, center->z + w},
+			{center->x - w, center->y - w, center->z + w}, {center->x - w, center->y - w, center->z - w},
+
+			{center->x - w, center->y + w, center->z - w}, {center->x + w, center->y + w, center->z - w},
+			{center->x + w, center->y + w, center->z - w}, {center->x + w, center->y + w, center->z + w},
+			{center->x + w, center->y + w, center->z + w}, {center->x - w, center->y + w, center->z + w},
+			{center->x - w, center->y + w, center->z + w}, {center->x - w, center->y + w, center->z - w},
+
+			{center->x - w, center->y - w, center->z - w}, {center->x - w, center->y + w, center->z - w},
+			{center->x + w, center->y - w, center->z - w}, {center->x + w, center->y + w, center->z - w},
+			{center->x + w, center->y - w, center->z + w}, {center->x + w, center->y + w, center->z + w},
+			{center->x - w, center->y - w, center->z + w}, {center->x - w, center->y + w, center->z + w},
+		};
+		u32 colors[12];
+		for (u32 i = 0; i < 12; i++)
+		{
+			colors[i] = color;
+		}
+
+		lineDraw3d_addLines(12, lineWidth, lines, colors);
 	}
 }

@@ -30,5 +30,5 @@ enum PolyDebug
 namespace TFE_Polygon
 {
 	bool computeTriangulation(Polygon* poly, u32 debug=PDBG_NONE);
-	bool pointInsidePolygon(Polygon* poly, Vec2f p);
+	bool pointInsidePolygon(const Polygon* poly, Vec2f p);
 }

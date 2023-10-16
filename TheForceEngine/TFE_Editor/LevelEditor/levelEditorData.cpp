@@ -10,6 +10,8 @@
 #include <TFE_Editor/EditorAsset/editorFrame.h>
 #include <TFE_Editor/EditorAsset/editorSprite.h>
 #include <TFE_Editor/AssetBrowser/assetBrowser.h>
+#include <TFE_Jedi/Level/rwall.h>
+#include <TFE_Jedi/Level/rsector.h>
 #include <TFE_Asset/imageAsset.h>
 #include <TFE_DarkForces/mission.h>
 #include <TFE_Input/input.h>
@@ -23,6 +25,7 @@
 #include <TFE_Archive/archive.h>
 #include <TFE_RenderBackend/renderBackend.h>
 #include <TFE_System/parser.h>
+#include <TFE_System/math.h>
 #include <TFE_Ui/ui.h>
 
 #include <TFE_Ui/imGUI/imgui.h>
@@ -416,5 +419,232 @@ namespace LevelEditor
 			}
 		}
 		return -1;
+	}
+
+	bool rayHitAABB(const Ray* ray, const Vec3f* bounds)
+	{
+		enum
+		{
+			LEFT = 0,
+			RIGHT,
+			MID,
+		};
+
+		// Pick representative planes.
+		s32 quadrant[3];
+		f32 candidatePlane[3];
+		bool inside = true;
+		for (s32 i = 0; i < 3; i++)
+		{
+			quadrant[i] = MID;
+			if (ray->origin.m[i] < bounds[0].m[i])
+			{
+				quadrant[i] = LEFT;
+				candidatePlane[i] = bounds[0].m[i];
+				inside = false;
+			}
+			else if (ray->origin.m[i] > bounds[0].m[i])
+			{
+				quadrant[i] = RIGHT;
+				candidatePlane[i] = bounds[1].m[i];
+				inside = false;
+			}
+		}
+		// The ray starts inside the bounds, so we're done.
+		if (inside) { return true; }
+
+		// Calcuate the distance to the candidate planes.
+		f32 maxT[3];
+		for (s32 i = 0; i < 3; i++)
+		{
+			maxT[i] = -1.0f;
+			if (quadrant[i] != MID && ray->dir.m[i] != 0.0f)
+			{
+				maxT[i] = (candidatePlane[i] - ray->origin.m[i]) / ray->dir.m[i];
+			}
+		}
+
+		// Get the largest dist
+		s32 planeId = 0;
+		for (s32 i = 1; i < 3; i++)
+		{
+			if (maxT[planeId] < maxT[i]) { planeId = i; }
+		}
+
+		// Make sure it is really inside.
+		if (maxT[planeId] < 0.0f) { return false; }
+		Vec3f coord = { 0 };
+		for (s32 i = 0; i < 3; i++)
+		{
+			if (planeId != i)
+			{
+				coord.m[i] = ray->origin.m[i] + maxT[planeId] * ray->dir.m[i];
+				if (coord.m[i] < bounds[0].m[i] || coord.m[i] > bounds[1].m[i])
+				{
+					return false;
+				}
+			}
+			else
+			{
+				coord.m[i] = candidatePlane[i];
+			}
+		}
+		return true;
+	}
+		
+	// Return true if a hit is found.
+	bool traceRay(const Ray* ray, const EditorLevel* level, RayHitInfo* hitInfo)
+	{
+		if (level->sectors.empty()) { return false; }
+		const s32 sectorCount = (s32)level->sectors.size();
+		const EditorSector* sector = level->sectors.data();
+
+		f32 maxDist  = ray->maxDist;
+		Vec3f origin = ray->origin;
+		Vec2f p0xz = { origin.x, origin.z };
+		Vec2f p1xz = { origin.x + ray->dir.x * maxDist, origin.z + ray->dir.z * maxDist };
+		Vec2f dirxz = { ray->dir.x, ray->dir.z };
+
+		f32 overallClosestHit = FLT_MAX;
+		hitInfo->hitSectorId = -1;
+		hitInfo->hitWallId = -1;
+		hitInfo->hitPart = HP_MID;
+		hitInfo->hitPos = { 0 };
+		hitInfo->dist = FLT_MAX;
+
+		// Loop through sectors in the world.
+		for (s32 s = 0; s < sectorCount; s++, sector++)
+		{
+			if (ray->layer != LAYER_ANY && ray->layer != sector->layer) { continue; }
+
+			// Check the bounds.
+			//if (!rayHitAABB(ray, sector->bounds)) { continue; }
+
+			// Now check against the walls.
+			const u32 wallCount = (u32)sector->walls.size();
+			const EditorWall* wall = sector->walls.data();
+			const Vec2f* vtx = sector->vtx.data();
+			f32 closestHit = FLT_MAX;
+			s32 closestWallId = -1;
+			for (u32 w = 0; w < wallCount; w++, wall++)
+			{
+				const Vec2f* v0 = &vtx[wall->idx[0]];
+				const Vec2f* v1 = &vtx[wall->idx[1]];
+				Vec2f nrm = { -(v1->z - v0->z), v1->x - v0->x };
+				if (TFE_Math::dot(&dirxz, &nrm) < 0.0f) { continue; }
+
+				f32 s, t;
+				if (TFE_Math::lineSegmentIntersect(&p0xz, &p1xz, v0, v1, &s, &t))
+				{
+					if (s < closestHit)
+					{
+						const f32 yAtHit = origin.y + ray->dir.y * s * maxDist;
+						if (yAtHit > sector->floorHeight - FLT_EPSILON && yAtHit < sector->ceilHeight + FLT_EPSILON)
+						{
+							bool canHit = true;
+							if (wall->adjoinId >= 0)
+							{
+								const EditorSector* next = &level->sectors[wall->adjoinId];
+								canHit = (yAtHit <= next->floorHeight) || (yAtHit >= next->ceilHeight) || (wall->flags[0] & WF1_ADJ_MID_TEX);
+							}
+							if (canHit)
+							{
+								closestHit = s;
+								closestWallId = w;
+							}
+						}
+					}
+				}
+			}
+
+			// Test the closest wall
+			wall = sector->walls.data();
+			if (closestWallId >= 0)
+			{
+				closestHit *= maxDist;
+				const Vec3f hitPoint = { origin.x + ray->dir.x*closestHit, origin.y + ray->dir.y*closestHit, origin.z + ray->dir.z*closestHit };
+
+				if (wall[closestWallId].adjoinId >= 0)
+				{
+					// given the hit point, is it below the next floor or above the next ceiling?
+					const EditorSector* next = &level->sectors[wall[closestWallId].adjoinId];
+					if ((hitPoint.y <= next->floorHeight || hitPoint.y >= next->ceilHeight) && closestHit < overallClosestHit)
+					{
+						overallClosestHit = closestHit;
+						hitInfo->hitSectorId = sector->id;
+						hitInfo->hitWallId = closestWallId;
+						hitInfo->hitPart = hitPoint.y <= next->floorHeight ? HP_BOT : HP_TOP;
+						hitInfo->hitPos = hitPoint;
+						hitInfo->dist = closestHit;
+					}
+					else if ((wall[closestWallId].flags[0] & WF1_ADJ_MID_TEX) && closestHit < overallClosestHit)
+					{
+						overallClosestHit = closestHit;
+						hitInfo->hitSectorId = sector->id;
+						hitInfo->hitWallId = closestWallId;
+						hitInfo->hitPart = HP_MID;
+						hitInfo->hitPos = hitPoint;
+						hitInfo->dist = closestHit;
+					}
+					// TODO: Handle Sign.
+				}
+				else if (closestHit < overallClosestHit)
+				{
+					overallClosestHit = closestHit;
+					hitInfo->hitSectorId = sector->id;
+					hitInfo->hitWallId = closestWallId;
+					hitInfo->hitPart = HP_MID;
+					hitInfo->hitPos = hitPoint;
+					hitInfo->dist = closestHit;
+				}
+			}
+
+			// Test the floor and ceiling planes.
+			const Vec3f planeTest = { origin.x + ray->dir.x*maxDist, origin.y + ray->dir.y*maxDist, origin.z + ray->dir.z*maxDist };
+			Vec3f hitPoint;
+			if (origin.y > sector->floorHeight && ray->dir.y < 0.0f && TFE_Math::lineYPlaneIntersect(&origin, &planeTest, sector->floorHeight, &hitPoint))
+			{
+				const Vec3f offset = { hitPoint.x - origin.x, hitPoint.y - origin.y, hitPoint.z - origin.z };
+				const f32 distSq = TFE_Math::dot(&offset, &offset);
+				if (overallClosestHit == FLT_MAX || distSq < overallClosestHit*overallClosestHit)
+				{
+					// The ray hit the plane, but is it inside of the sector polygon?
+					Vec2f testPt = { hitPoint.x, hitPoint.z };
+					if (TFE_Polygon::pointInsidePolygon(&sector->poly, testPt))
+					{
+						overallClosestHit = sqrtf(distSq);
+						hitInfo->hitSectorId = sector->id;
+						hitInfo->hitWallId = -1;
+						hitInfo->hitPart = HP_FLOOR;
+						hitInfo->hitPos = hitPoint;
+						hitInfo->dist = overallClosestHit;
+					}
+				}
+			}
+			if (origin.y < sector->ceilHeight && ray->dir.y > 0.0f && TFE_Math::lineYPlaneIntersect(&origin, &planeTest, sector->ceilHeight, &hitPoint))
+			{
+				const Vec3f offset = { hitPoint.x - origin.x, hitPoint.y - origin.y, hitPoint.z - origin.z };
+				const f32 distSq = TFE_Math::dot(&offset, &offset);
+				if (overallClosestHit == FLT_MAX || distSq < overallClosestHit*overallClosestHit)
+				{
+					// The ray hit the plane, but is it inside of the sector polygon?
+					Vec2f testPt = { hitPoint.x, hitPoint.z };
+					if (TFE_Polygon::pointInsidePolygon(&sector->poly, testPt))
+					{
+						overallClosestHit = sqrtf(distSq);
+						hitInfo->hitSectorId = sector->id;
+						hitInfo->hitWallId = -1;
+						hitInfo->hitPart = HP_CEIL;
+						hitInfo->hitPos = hitPoint;
+						hitInfo->dist = overallClosestHit;
+					}
+				}
+			}
+
+			// Objects
+			// TODO
+		}
+
+		return hitInfo->hitSectorId >= 0;
 	}
 }

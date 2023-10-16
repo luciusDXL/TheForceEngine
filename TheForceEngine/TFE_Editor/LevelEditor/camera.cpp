@@ -32,6 +32,7 @@ namespace LevelEditor
 		Vec3f lookDir = { sinf(s_camera.yaw) * cosf(s_camera.pitch), sinf(s_camera.pitch), cosf(s_camera.yaw) * cosf(s_camera.pitch) };
 		s_camera.viewMtx = TFE_Math::computeViewMatrix(&lookDir, &upDir);
 		s_camera.projMtx = TFE_Math::computeProjMatrix(c_editorCameraFov, f32(s_viewportSize.x) / f32(s_viewportSize.z), 0.25f, 4096.0f);
+		s_camera.invProj = TFE_Math::computeInvProjMatrix(s_camera.projMtx);
 
 		// Flip the y coordinate.
 		s_camera.projMtx.m1.y *= -1.0f;
