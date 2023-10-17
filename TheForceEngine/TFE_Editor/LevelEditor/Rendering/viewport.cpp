@@ -367,7 +367,7 @@ namespace LevelEditor
 				{ v0->x, height, v0->z },
 				{ v1->x, height, v1->z },
 			};
-			TFE_RenderShared::lineDraw3d_addLines(4, width, lines, &color);
+			TFE_RenderShared::lineDraw3d_addLine(width, lines, &color);
 		}
 
 		Vec3f flatVtx[512];
