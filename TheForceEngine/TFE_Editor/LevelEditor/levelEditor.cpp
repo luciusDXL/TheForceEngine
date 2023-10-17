@@ -426,7 +426,7 @@ namespace LevelEditor
 				// Project the point onto the floor.
 				const Vec2f pos2d = { info->hitPos.x, info->hitPos.z };
 				const f32 distFromCam = TFE_Math::distance(&info->hitPos, &s_camera.pos);
-				const f32 maxDist = distFromCam * 64.0f / f32(s_viewportSize.z);
+				const f32 maxDist = distFromCam * 16.0f / f32(s_viewportSize.z);
 				const f32 maxDistSq = maxDist * maxDist;
 				s_hoveredWallId = findClosestWallInSector(s_hoveredSector, &pos2d, maxDist * maxDist, nullptr);
 				if (s_hoveredWallId >= 0)
@@ -665,11 +665,14 @@ namespace LevelEditor
 			s_hoveredVtxId = -1;
 			s_hoveredVtxSector = nullptr;
 
+			// TODO: Move out to common place for hotkeys.
+			bool hitBackfaces = TFE_Input::keyDown(KEY_B);
+
 			// Trace a ray through the mouse cursor.
 			s_rayDir = mouseCoordToWorldDir3d(mx, my);
 			RayHitInfo hitInfo;
 			Ray ray = { s_camera.pos, s_rayDir, 1000.0f, s_curLayer };
-			if (traceRay(&ray, &s_level, &hitInfo))
+			if (traceRay(&ray, &s_level, &hitInfo, hitBackfaces))
 			{
 				s_cursor3d = hitInfo.hitPos;
 				if (s_editMode != LEDIT_DRAW)

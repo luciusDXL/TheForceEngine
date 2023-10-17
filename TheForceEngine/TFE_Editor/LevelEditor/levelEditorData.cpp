@@ -498,7 +498,7 @@ namespace LevelEditor
 	}
 		
 	// Return true if a hit is found.
-	bool traceRay(const Ray* ray, const EditorLevel* level, RayHitInfo* hitInfo)
+	bool traceRay(const Ray* ray, const EditorLevel* level, RayHitInfo* hitInfo, bool flipFaces)
 	{
 		if (level->sectors.empty()) { return false; }
 		const s32 sectorCount = (s32)level->sectors.size();
@@ -536,7 +536,8 @@ namespace LevelEditor
 				const Vec2f* v0 = &vtx[wall->idx[0]];
 				const Vec2f* v1 = &vtx[wall->idx[1]];
 				Vec2f nrm = { -(v1->z - v0->z), v1->x - v0->x };
-				if (TFE_Math::dot(&dirxz, &nrm) < 0.0f) { continue; }
+				if (flipFaces && TFE_Math::dot(&dirxz, &nrm) > 0.0f) { continue; }
+				else if (!flipFaces && TFE_Math::dot(&dirxz, &nrm) < 0.0f) { continue; }
 
 				f32 s, t;
 				if (TFE_Math::lineSegmentIntersect(&p0xz, &p1xz, v0, v1, &s, &t))
@@ -607,7 +608,13 @@ namespace LevelEditor
 			// Test the floor and ceiling planes.
 			const Vec3f planeTest = { origin.x + ray->dir.x*maxDist, origin.y + ray->dir.y*maxDist, origin.z + ray->dir.z*maxDist };
 			Vec3f hitPoint;
-			if (origin.y > sector->floorHeight && ray->dir.y < 0.0f && TFE_Math::lineYPlaneIntersect(&origin, &planeTest, sector->floorHeight, &hitPoint))
+
+			const bool canHitFloor = (!flipFaces && origin.y > sector->floorHeight && ray->dir.y < 0.0f) ||
+	               (flipFaces && origin.y < sector->floorHeight && ray->dir.y > 0.0f);
+			const bool canHitCeil = (!flipFaces && origin.y < sector->ceilHeight && ray->dir.y > 0.0f) ||
+			      (flipFaces && origin.y > sector->ceilHeight && ray->dir.y < 0.0f);
+
+			if (canHitFloor && TFE_Math::lineYPlaneIntersect(&origin, &planeTest, sector->floorHeight, &hitPoint))
 			{
 				const Vec3f offset = { hitPoint.x - origin.x, hitPoint.y - origin.y, hitPoint.z - origin.z };
 				const f32 distSq = TFE_Math::dot(&offset, &offset);
@@ -626,7 +633,7 @@ namespace LevelEditor
 					}
 				}
 			}
-			if (origin.y < sector->ceilHeight && ray->dir.y > 0.0f && TFE_Math::lineYPlaneIntersect(&origin, &planeTest, sector->ceilHeight, &hitPoint))
+			if (canHitCeil && TFE_Math::lineYPlaneIntersect(&origin, &planeTest, sector->ceilHeight, &hitPoint))
 			{
 				const Vec3f offset = { hitPoint.x - origin.x, hitPoint.y - origin.y, hitPoint.z - origin.z };
 				const f32 distSq = TFE_Math::dot(&offset, &offset);

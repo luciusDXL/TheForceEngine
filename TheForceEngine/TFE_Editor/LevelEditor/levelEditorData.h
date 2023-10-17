@@ -139,5 +139,5 @@ namespace LevelEditor
 	void polygonToSector(EditorSector* sector);
 
 	s32 findSector2d(EditorLevel* level, s32 layer, const Vec2f* pos);
-	bool traceRay(const Ray* ray, const EditorLevel* level, RayHitInfo* hitInfo);
+	bool traceRay(const Ray* ray, const EditorLevel* level, RayHitInfo* hitInfo, bool flipFaces);
 }
