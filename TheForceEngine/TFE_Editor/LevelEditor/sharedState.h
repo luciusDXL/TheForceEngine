@@ -38,6 +38,10 @@ namespace LevelEditor
 	extern s32 s_hoveredWallId;
 	extern s32 s_selectedWallId;
 
+	// 3D Selection
+	extern HitPart s_hoveredWallPart;
+	extern HitPart s_selectedWallPart;
+
 	// Camera
 	extern Camera3d s_camera;
 	extern Vec3f s_viewDir;

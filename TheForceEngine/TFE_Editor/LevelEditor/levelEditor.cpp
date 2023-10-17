@@ -83,6 +83,9 @@ namespace LevelEditor
 	EditorSector* s_selectedWallSector = nullptr;
 	s32 s_hoveredWallId = -1;
 	s32 s_selectedWallId = -1;
+	// 3D Selection
+	HitPart s_hoveredWallPart = HP_COUNT;
+	HitPart s_selectedWallPart = HP_COUNT;
 		
 	static EditorView s_view = EDIT_VIEW_2D;
 	static Vec2i s_editWinPos = { 0, 69 };
@@ -329,10 +332,6 @@ namespace LevelEditor
 		{
 			s_selectedSector = s_hoveredSector;
 		}
-		else if (s_editMode != LEDIT_SECTOR)
-		{
-			s_selectedSector = nullptr;
-		}
 
 		//////////////////////////////////////
 		// VERTEX
@@ -415,20 +414,68 @@ namespace LevelEditor
 			// See if we are close enough to "hover" a vertex
 			s_hoveredWallSector = nullptr;
 			s_hoveredWallId = -1;
-			if (info->hitWallId)
+			if (info->hitWallId >= 0)
 			{
 				s_hoveredWallSector = s_hoveredSector;
 				s_hoveredWallId = info->hitWallId;
+				s_hoveredWallPart = info->hitPart;
+			}
+			else
+			{
+				// Are we close enough to an edge?
+				// Project the point onto the floor.
+				const Vec2f pos2d = { info->hitPos.x, info->hitPos.z };
+				const f32 distFromCam = TFE_Math::distance(&info->hitPos, &s_camera.pos);
+				const f32 maxDist = distFromCam * 64.0f / f32(s_viewportSize.z);
+				const f32 maxDistSq = maxDist * maxDist;
+				s_hoveredWallId = findClosestWallInSector(s_hoveredSector, &pos2d, maxDist * maxDist, nullptr);
+				if (s_hoveredWallId >= 0)
+				{
+					s_hoveredWallSector = s_hoveredSector;
+					EditorWall* wall = &s_hoveredWallSector->walls[s_hoveredWallId];
+					EditorSector* next = wall->adjoinId >= 0 ? &s_level.sectors[wall->adjoinId] : nullptr;
+					if (!next)
+					{
+						s_hoveredWallPart = HP_MID;
+					}
+					else if (info->hitPart == HP_FLOOR)
+					{
+						s_hoveredWallPart = (next->floorHeight > s_hoveredWallSector->floorHeight) ? HP_BOT : HP_MID;
+					}
+					else if (info->hitPart == HP_CEIL)
+					{
+						s_hoveredWallPart = (next->ceilHeight < s_hoveredWallSector->ceilHeight) ? HP_TOP : HP_MID;
+					}
+				}
+				else
+				{
+					// Otherwise, select the floor or ceiling...
+					if (info->hitPart == HP_FLOOR)
+					{
+						s_hoveredWallPart = HP_FLOOR;
+					}
+					else if (info->hitPart == HP_CEIL)
+					{
+						s_hoveredWallPart = HP_CEIL;
+					}
+				}
 			}
 
 			if (TFE_Input::mousePressed(MouseButton::MBUTTON_LEFT))
 			{
 				s_selectedWallSector = nullptr;
+				s_selectedSector = nullptr;
 				s_selectedWallId = -1;
 				if (s_hoveredWallSector && s_hoveredWallId >= 0)
 				{
 					s_selectedWallSector = s_hoveredWallSector;
 					s_selectedWallId = s_hoveredWallId;
+					s_selectedWallPart = s_hoveredWallPart;
+				}
+				else if (s_hoveredSector && (s_hoveredWallPart == HP_FLOOR || s_hoveredWallPart == HP_CEIL))
+				{
+					s_selectedSector = s_hoveredSector;
+					s_selectedWallPart = s_hoveredWallPart;
 				}
 			}
 		}
@@ -438,6 +485,13 @@ namespace LevelEditor
 			s_selectedWallSector = nullptr;
 			s_hoveredWallId = -1;
 			s_selectedWallId = -1;
+			s_hoveredWallPart = HP_COUNT;
+			s_selectedWallPart = HP_COUNT;
+		}
+
+		if (s_editMode != LEDIT_SECTOR && (s_editMode != LEDIT_WALL || (s_hoveredWallPart != HP_FLOOR && s_hoveredWallPart != HP_CEIL)))
+		{
+			s_hoveredSector = nullptr;
 		}
 	}
 		
@@ -548,7 +602,7 @@ namespace LevelEditor
 
 				if (s_editMode == LEDIT_WALL)
 				{
-					// See if we are close enough to "hover" a vertex
+					// See if we are close enough to "hover" a wall
 					s_hoveredWallSector = nullptr;
 					s_hoveredWallId = -1;
 					if (s_hoveredSector || s_lastHoveredWallSector)
@@ -589,6 +643,11 @@ namespace LevelEditor
 					s_selectedWallId = -1;
 				}
 
+				if (s_editMode != LEDIT_SECTOR)
+				{
+					s_hoveredSector = nullptr;
+				}
+
 				// DEBUG
 				if (s_selectedSector && TFE_Input::keyPressed(KEY_T))
 				{
@@ -622,6 +681,15 @@ namespace LevelEditor
 			{
 				s_hoveredSector = nullptr;
 				s_cursor3d = rayGridPlaneHit(s_camera.pos, s_rayDir);
+
+				if (TFE_Input::mousePressed(MouseButton::MBUTTON_LEFT))
+				{
+					s_selectedVtxSector = nullptr;
+					s_selectedWallSector = nullptr;
+					s_selectedSector = nullptr;
+					s_selectedWallId = -1;
+					s_selectedVtxId = -1;
+				}
 			}
 		}
 	}

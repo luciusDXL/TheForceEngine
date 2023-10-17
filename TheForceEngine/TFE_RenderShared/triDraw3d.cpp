@@ -500,11 +500,9 @@ namespace TFE_RenderShared
 			s_shader[i].setVariable(s_shaderState[i].svCameraPos, SVT_VEC3, camera->pos.m);
 			s_shader[i].setVariable(s_shaderState[i].svCameraView, SVT_MAT3x3, camera->viewMtx.data);
 			s_shader[i].setVariable(s_shaderState[i].svCameraProj, SVT_MAT4x4, camera->projMtx.data);
-			if (s_shaderState[i].svGridScaleOpacity >= 0)
-			{
-				f32 gridScaleOpacity[] = { gridScale, gridOpacity };
-				s_shader[i].setVariable(s_shaderState[i].svGridScaleOpacity, SVT_VEC2, gridScaleOpacity);
-			}
+
+			f32 gridScaleOpacity[] = { gridScale, gridOpacity };
+			f32 gridScaleOpacityTex[] = { gridScale, gridOpacity };
 
 			// Bind vertex/index buffers and setup attributes for BlitVert
 			s_vertexBuffer.bind();
@@ -513,6 +511,7 @@ namespace TFE_RenderShared
 			TFE_RenderState::setStateEnable(blendEnable[i], STATE_BLEND);
 
 			// Draw.
+			s32 isTexPrev = -1;
 			for (u32 t = 0; t < s_triDrawCount[i]; t++)
 			{
 				Tri3dDraw* draw = &s_triDraw[i][t];
@@ -521,7 +520,12 @@ namespace TFE_RenderShared
 				if (isTextured)
 				{
 					draw->texture->bind(0);
+
+					if (isTexPrev != isTextured) { s_shader[i].setVariable(s_shaderState[i].svGridScaleOpacity, SVT_VEC2, gridScaleOpacityTex); }
 				}
+				else if (isTexPrev != isTextured) { s_shader[i].setVariable(s_shaderState[i].svGridScaleOpacity, SVT_VEC2, gridScaleOpacity); }
+				isTexPrev = isTextured;
+
 				TFE_RenderBackend::drawIndexedTriangles(draw->idxCount / 3, sizeof(u32), draw->idxOffset);
 			}
 		}

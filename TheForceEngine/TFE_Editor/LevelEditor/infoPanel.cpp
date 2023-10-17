@@ -197,7 +197,7 @@ namespace LevelEditor
 		s32 light = wall->wallLight;
 		ImGui::LabelText("##SectorLight", "Light Adjustment"); ImGui::SameLine(148.0f);
 		infoIntInput("##SectorLightInput", 96, &light);
-		wall->wallLight = (s16)light;
+		wall->wallLight = light;
 
 		ImGui::Separator();
 
@@ -502,13 +502,15 @@ namespace LevelEditor
 			{
 				infoPanelVertex();
 			}
-			else if (s_editMode == LEDIT_SECTOR && (s_hoveredSector || s_selectedSector))
+			else if (s_editMode == LEDIT_WALL || s_editMode == LEDIT_SECTOR)
 			{
-				infoPanelSector();
-			}
-			else if (s_editMode == LEDIT_WALL && (s_hoveredWallId >= 0 || s_selectedWallId >= 0))
-			{
-				infoPanelWall();
+				// Prioritize selected wall, selected sector, hovered wall, hovered sector.
+				// Allow sector views in wall mode, but NOT wall views in sector mode.
+				if (s_editMode == LEDIT_WALL && s_selectedWallId >= 0) { infoPanelWall(); }
+				else if (s_selectedSector) { infoPanelSector(); }
+				else if (s_editMode == LEDIT_WALL && s_hoveredWallId >= 0) { infoPanelWall(); }
+				else if (s_hoveredSector) { infoPanelSector(); }
+				else { infoPanelMap(); }
 			}
 			// TODO
 			//else if (s_hoveredEntity >= 0 || s_selectedEntity >= 0)

@@ -321,6 +321,11 @@ namespace LevelEditor
 					return false;
 				}
 
+				if (wall->wallLight >= 32768)
+				{
+					wall->wallLight -= 65536;
+				}
+
 				wall->tex[WP_MID].handle = texId[WP_MID] >= 0 ? s_textureList[texId[WP_MID]] : NULL_ASSET;
 				wall->tex[WP_TOP].handle = texId[WP_TOP] >= 0 ? s_textureList[texId[WP_TOP]] : NULL_ASSET;
 				wall->tex[WP_BOT].handle = texId[WP_BOT] >= 0 ? s_textureList[texId[WP_BOT]] : NULL_ASSET;

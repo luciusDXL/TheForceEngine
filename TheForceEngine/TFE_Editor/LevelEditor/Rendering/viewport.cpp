@@ -295,7 +295,132 @@ namespace LevelEditor
 		return tex;
 	}
 
-	void drawWallLines3D(const EditorSector* sector, const EditorSector* next, const EditorWall* wall, f32 width, Highlight highlight)
+	void drawWallLines3D_Highlighted(const EditorSector* sector, const EditorSector* next, const EditorWall* wall, f32 width, Highlight highlight, bool halfAlpha)
+	{
+		const Vec2f& v0 = sector->vtx[wall->idx[0]];
+		const Vec2f& v1 = sector->vtx[wall->idx[1]];
+
+		u32 color = c_sectorLineClr[highlight];
+		if (halfAlpha)
+		{
+			color &= 0x00ffffff;
+			color |= 0x80000000;
+		}
+
+		Vec3f lines[] =
+		{
+			{ v0.x, sector->floorHeight, v0.z },
+			{ v1.x, sector->floorHeight, v1.z },
+			{ v0.x, sector->ceilHeight, v0.z },
+			{ v1.x, sector->ceilHeight, v1.z },
+
+			{ v0.x, sector->floorHeight, v0.z },
+			{ v0.x, sector->ceilHeight,  v0.z },
+			{ v1.x, sector->floorHeight, v1.z },
+			{ v1.x, sector->ceilHeight,  v1.z },
+		};
+		u32 colors[4] = { color, color, color, color };
+		TFE_RenderShared::lineDraw3d_addLines(4, width, lines, colors);
+
+		if (next)
+		{
+			// Top
+			if (next->ceilHeight < sector->ceilHeight)
+			{
+				Vec3f line0[] =
+				{ { v0.x, next->ceilHeight, v0.z },
+				  { v1.x, next->ceilHeight, v1.z } };
+				TFE_RenderShared::lineDraw3d_addLine(width, line0, &color);
+			}
+			// Bottom
+			if (next->floorHeight > sector->floorHeight)
+			{
+				Vec3f line0[] =
+				{ { v0.x, next->floorHeight, v0.z },
+				  { v1.x, next->floorHeight, v1.z } };
+				TFE_RenderShared::lineDraw3d_addLine(width, line0, &color);
+			}
+		}
+	}
+
+	void drawFlat3D_Highlighted(const EditorSector* sector, HitPart part, f32 width, Highlight highlight, bool halfAlpha)
+	{
+		if (part != HP_FLOOR && part != HP_CEIL) { return; }
+
+		u32 color = c_sectorLineClr[highlight];
+		if (halfAlpha)
+		{
+			color &= 0x00ffffff;
+			color |= 0x80000000;
+		}
+
+		f32 height = part == HP_FLOOR ? sector->floorHeight : sector->ceilHeight;
+		const size_t wallCount = sector->walls.size();
+		const EditorWall* wall = sector->walls.data();
+		for (size_t w = 0; w < wallCount; w++, wall++)
+		{
+			const Vec2f* v0 = &sector->vtx[wall->idx[0]];
+			const Vec2f* v1 = &sector->vtx[wall->idx[1]];
+
+			Vec3f lines[2] =
+			{
+				{ v0->x, height, v0->z },
+				{ v1->x, height, v1->z },
+			};
+			TFE_RenderShared::lineDraw3d_addLines(4, width, lines, &color);
+		}
+
+		Vec3f flatVtx[512];
+		const size_t vtxCount = sector->poly.triVtx.size();
+		const Vec2f* vtx = sector->poly.triVtx.data();
+		for (size_t v = 0; v < vtxCount; v++)
+		{
+			flatVtx[v] = { vtx[v].x, height, vtx[v].z };
+		}
+		triDraw3d_addColored(TRIMODE_BLEND, sector->poly.triIdx.size(), vtxCount, flatVtx, sector->poly.triIdx.data(), c_sectorPolyClr[highlight], part == HP_CEIL);
+	}
+
+	void drawWallColor3d_Highlighted(const EditorSector* sector, const Vec2f* vtx, const EditorWall* wall, u32 color, HitPart part)
+	{
+		const Vec2f* v0 = &vtx[wall->idx[0]];
+		const Vec2f* v1 = &vtx[wall->idx[1]];
+
+		if (wall->adjoinId < 0 && (part == HP_COUNT || part == HP_MID))
+		{
+			// No adjoin - a single quad.
+			Vec3f corners[] = { {v0->x, sector->ceilHeight, v0->z}, {v1->x, sector->floorHeight, v1->z} };
+			triDraw3d_addQuadColored(TRIMODE_BLEND, corners, color);
+		}
+		else if (wall->adjoinId >= 0)
+		{
+			// lower
+			f32 nextFloor = s_level.sectors[wall->adjoinId].floorHeight;
+			if (nextFloor > sector->floorHeight && (part == HP_COUNT || part == HP_BOT))
+			{
+				Vec3f corners[] = { {v0->x, nextFloor, v0->z}, {v1->x, sector->floorHeight, v1->z} };
+				triDraw3d_addQuadColored(TRIMODE_BLEND, corners, color);
+			}
+
+			// upper
+			f32 nextCeil = s_level.sectors[wall->adjoinId].ceilHeight;
+			if (nextCeil < sector->ceilHeight && (part == HP_COUNT || part == HP_TOP))
+			{
+				Vec3f corners[] = { {v0->x, sector->ceilHeight, v0->z}, {v1->x, nextCeil, v1->z} };
+				triDraw3d_addQuadColored(TRIMODE_BLEND, corners, color);
+			}
+
+			// mask wall or highlight.
+			if (part == HP_FLOOR || part == HP_CEIL || part == HP_MID)
+			{
+				const f32 ceil  = std::min(nextCeil, sector->ceilHeight);
+				const f32 floor = std::max(nextFloor, sector->floorHeight);
+				Vec3f corners[] = { {v0->x, ceil, v0->z}, {v1->x, floor, v1->z} };
+				triDraw3d_addQuadColored(TRIMODE_BLEND, corners, color);
+			}
+		}
+	}
+
+	void drawWallLines3D(const EditorSector* sector, const EditorSector* next, const EditorWall* wall, f32 width, Highlight highlight, bool halfAlpha)
 	{
 		f32 bias = 1.0f / 1024.0f;
 		f32 floorBias = (s_camera.pos.y >= sector->floorHeight) ? bias : -bias;
@@ -305,9 +430,11 @@ namespace LevelEditor
 		const Vec2f& v1 = sector->vtx[wall->idx[1]];
 
 		u32 color = c_sectorLineClr[highlight];
-		// Test
-		color &= 0x00ffffff;
-		color |= 0x80000000;
+		if (halfAlpha)
+		{
+			color &= 0x00ffffff;
+			color |= 0x80000000;
+		}
 
 		if ((s_editFlags & LEF_SECTOR_EDGES) || !next || next->floorHeight != sector->floorHeight || s_camera.pos.y > sector->floorHeight)
 		{
@@ -396,30 +523,80 @@ namespace LevelEditor
 		}
 	}
 
-	void drawSelectedWall3D()
+	void drawSelectedSurface3D()
 	{
+		// In 3D, the floor and ceiling are surfaces too.
+		bool hoverAndSelect = s_selectedSector == s_hoveredSector;
+		if (s_selectedSector && (s_selectedWallPart == HP_FLOOR || s_selectedWallPart == HP_CEIL))
+		{
+			drawFlat3D_Highlighted(s_selectedSector, s_selectedWallPart, 3.5f, HL_SELECTED, false);
+		}
+		if (s_hoveredSector && (s_hoveredWallPart == HP_FLOOR || s_hoveredWallPart == HP_CEIL))
+		{
+			drawFlat3D_Highlighted(s_hoveredSector, s_hoveredWallPart, 3.5f, HL_HOVERED, hoverAndSelect);
+		}
+
+		hoverAndSelect = s_selectedWallId == s_hoveredWallId && s_selectedWallSector == s_hoveredWallSector;
+		// Draw thicker lines.
 		if (s_selectedWallId >= 0 && s_selectedWallSector)
 		{
 			EditorWall* wall = &s_selectedWallSector->walls[s_selectedWallId];
 			EditorSector* next = wall->adjoinId < 0 ? nullptr : &s_level.sectors[wall->adjoinId];
-			drawWallLines3D(s_selectedWallSector, next, wall, 2.5f, HL_SELECTED);
+			drawWallLines3D_Highlighted(s_selectedWallSector, next, wall, 3.5f, HL_SELECTED, false);
 		}
 		if (s_hoveredWallId >= 0 && s_hoveredWallSector)
 		{
 			EditorWall* wall = &s_hoveredWallSector->walls[s_hoveredWallId];
 			EditorSector* next = wall->adjoinId < 0 ? nullptr : &s_level.sectors[wall->adjoinId];
-			drawWallLines3D(s_hoveredWallSector, next, wall, 2.5f, HL_HOVERED);
+			drawWallLines3D_Highlighted(s_hoveredWallSector, next, wall, 3.5f, HL_HOVERED, hoverAndSelect);
+		}
+
+		// Draw translucent surfaces.
+		if (s_selectedWallId >= 0 && s_selectedWallSector)
+		{
+			u32 color = SCOLOR_POLY_SELECTED;
+			drawWallColor3d_Highlighted(s_selectedWallSector, s_selectedWallSector->vtx.data(), s_selectedWallSector->walls.data() + s_selectedWallId, color, s_selectedWallPart);
+		}
+		if (s_hoveredWallId >= 0 && s_hoveredWallSector)
+		{
+			u32 color = SCOLOR_POLY_HOVERED;
+			drawWallColor3d_Highlighted(s_hoveredWallSector, s_hoveredWallSector->vtx.data(), s_hoveredWallSector->walls.data() + s_hoveredWallId, color, s_hoveredWallPart);
 		}
 	}
 
 	void drawVertex3d(const Vec3f* vtx, const EditorSector* sector, u32 color)
 	{
 		const f32 scale = TFE_Math::distance(vtx, &s_camera.pos) / f32(s_viewportSize.z);
-		const f32 size = 16.0f * scale;
-		const f32 sizeExp = 17.0f * scale;
+		const f32 size = 8.0f * scale;
+		drawBox(vtx, size, 3.0f, color);
+	}
 
-		drawBox(vtx, sizeExp, 3.0f, c_vertexClr[HL_NONE]);
-		drawSolidBox(vtx, size, color);
+	// Render highlighted 3d elements.
+	void renderHighlighted3d()
+	{
+		lineDraw3d_begin(s_viewportSize.x, s_viewportSize.z);
+		triDraw3d_begin();
+
+		if (s_editMode == LEDIT_WALL)
+		{
+			drawSelectedSurface3D();
+		}
+		else if (s_editMode == LEDIT_VERTEX)
+		{
+			bool alsoHovered = false;
+			if (s_selectedVtxId >= 0)
+			{
+				alsoHovered = s_hoveredVtxId == s_selectedVtxId && s_hoveredVtxSector == s_selectedVtxSector;
+				drawVertex3d(&s_selectedVtxPos, s_selectedVtxSector, alsoHovered ? c_vertexClr[HL_SELECTED + 1] : c_vertexClr[HL_SELECTED]);
+			}
+			if (s_hoveredVtxId >= 0 && !alsoHovered)
+			{
+				drawVertex3d(&s_hoveredVtxPos, s_hoveredVtxSector, c_vertexClr[HL_HOVERED]);
+			}
+		}
+
+		triDraw3d_draw(&s_camera, s_gridSize, 0.0f);
+		lineDraw3d_drawLines(&s_camera, false, false);
 	}
 
 	void renderLevel3D()
@@ -460,8 +637,6 @@ namespace LevelEditor
 			if (sector->layer != s_curLayer && !(s_editFlags & LEF_SHOW_ALL_LAYERS)) { continue; }
 
 			Highlight highlight = HL_NONE;
-			if (sector == s_selectedSector) { highlight = HL_SELECTED; }
-			else if (sector == s_hoveredSector) { highlight = HL_HOVERED; }
 
 			// Sector lighting.
 			const u32 colorIndex = (s_editFlags & LEF_FULLBRIGHT) && s_sectorDrawMode != SDM_LIGHTING ? 31 : sector->ambient;
@@ -491,7 +666,7 @@ namespace LevelEditor
 
 				if (!skipLines)
 				{
-					drawWallLines3D(sector, next, wall, width, highlight);
+					drawWallLines3D(sector, next, wall, width, highlight, true);
 				}
 
 				s32 wallColorIndex = (s32)colorIndex;
@@ -669,35 +844,19 @@ namespace LevelEditor
 			}
 		}
 
-		drawSelectedWall3D();
-
-		// Draw the cursor
+		// Draw the 3D cursor.
 		{
-			// Snap to the grid.
-			//s_cursor3d.x = floorf(s_cursor3d.x / s_gridSize + 0.5f) * s_gridSize;
-			//s_cursor3d.y = floorf(s_cursor3d.y / s_gridSize) * s_gridSize;
-			//s_cursor3d.z = floorf(s_cursor3d.z / s_gridSize + 0.5f) * s_gridSize;
-
 			const f32 distFromCam = TFE_Math::distance(&s_cursor3d, &s_camera.pos);
 			const f32 size = distFromCam * 16.0f / f32(s_viewportSize.z);
 			const f32 sizeExp = distFromCam * 18.0f / f32(s_viewportSize.z);
 			drawBox(&s_cursor3d, size, 3.0f, 0x80ff8020);
-
-			bool alsoHovered = false;
-			if (s_selectedVtxId >= 0)
-			{
-				alsoHovered = s_hoveredVtxId == s_selectedVtxId && s_hoveredVtxSector == s_selectedVtxSector;
-				drawVertex3d(&s_selectedVtxPos, s_selectedVtxSector, alsoHovered ? c_vertexClr[HL_SELECTED + 1] : c_vertexClr[HL_SELECTED]);
-			}
-			if (s_hoveredVtxId >= 0 && !alsoHovered)
-			{
-				drawVertex3d(&s_hoveredVtxPos, s_hoveredVtxSector, c_vertexClr[HL_HOVERED]);
-			}
 		}
 
 		TFE_RenderShared::triDraw3d_draw(&s_camera, s_gridSize, s_gridOpacity);
 		TFE_RenderShared::lineDraw3d_drawLines(&s_camera, true, false);
 
+		renderHighlighted3d();
+						
 		/*
 		if (s_camera.pos.y >= s_gridHeight)
 		{
