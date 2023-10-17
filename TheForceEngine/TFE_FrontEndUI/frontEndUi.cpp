@@ -249,6 +249,8 @@ namespace TFE_FrontEndUI
 	void configHud();
 	void configSound();
 	void configSystem();
+	void DrawLabelledIntSlider(float labelWidth, float valueWidth, const char* label, const char* tag, int* value, int min, int max);
+	void DrawLabelledFloatSlider(float labelWidth, float valueWidth, const char* label, const char* tag, float* value, float min, float max);
 	void configA11y(s32 tabWidth, u32 height);
 	void pickCurrentResolution();
 	void manual();
@@ -2625,6 +2627,12 @@ namespace TFE_FrontEndUI
 		{
 			system->returnToModLoader = returnToModLoader;
 		}
+
+		f32 labelW = 140 * s_uiScale;
+		f32 valueW = 260 * s_uiScale - 10;
+		s32 framerate = (s32)system->gifRecordingFramerate;
+		DrawLabelledIntSlider(labelW, valueW - 2, "GIF Recording Framerate", "##CBO", &framerate, 10, 30);
+		system->gifRecordingFramerate = (f32)framerate;
 	}
 
 	void DrawFontSizeCombo(float labelWidth, float valueWidth, const char* label, const char* comboTag, s32* currentValue)
