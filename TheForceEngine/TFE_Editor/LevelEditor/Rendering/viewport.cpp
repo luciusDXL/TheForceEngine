@@ -343,7 +343,7 @@ namespace LevelEditor
 		}
 	}
 
-	void drawFlat3D_Highlighted(const EditorSector* sector, HitPart part, f32 width, Highlight highlight, bool halfAlpha)
+	void drawFlat3D_Highlighted(const EditorSector* sector, HitPart part, f32 width, Highlight highlight, bool halfAlpha, bool skipLines)
 	{
 		if (part != HP_FLOOR && part != HP_CEIL) { return; }
 
@@ -355,19 +355,22 @@ namespace LevelEditor
 		}
 
 		f32 height = part == HP_FLOOR ? sector->floorHeight : sector->ceilHeight;
-		const size_t wallCount = sector->walls.size();
-		const EditorWall* wall = sector->walls.data();
-		for (size_t w = 0; w < wallCount; w++, wall++)
+		if (!skipLines)
 		{
-			const Vec2f* v0 = &sector->vtx[wall->idx[0]];
-			const Vec2f* v1 = &sector->vtx[wall->idx[1]];
-
-			Vec3f lines[2] =
+			const size_t wallCount = sector->walls.size();
+			const EditorWall* wall = sector->walls.data();
+			for (size_t w = 0; w < wallCount; w++, wall++)
 			{
-				{ v0->x, height, v0->z },
-				{ v1->x, height, v1->z },
-			};
-			TFE_RenderShared::lineDraw3d_addLine(width, lines, &color);
+				const Vec2f* v0 = &sector->vtx[wall->idx[0]];
+				const Vec2f* v1 = &sector->vtx[wall->idx[1]];
+
+				Vec3f lines[2] =
+				{
+					{ v0->x, height, v0->z },
+					{ v1->x, height, v1->z },
+				};
+				TFE_RenderShared::lineDraw3d_addLine(width, lines, &color);
+			}
 		}
 
 		Vec3f flatVtx[512];
@@ -523,17 +526,46 @@ namespace LevelEditor
 		}
 	}
 
+	void drawSelectedSector3D()
+	{
+		bool hoverAndSelect = s_selectedSector == s_hoveredSector;
+		if (s_selectedSector)
+		{
+			drawFlat3D_Highlighted(s_selectedSector, HP_FLOOR, 3.5f, HL_SELECTED, false, true);
+			drawFlat3D_Highlighted(s_selectedSector, HP_CEIL, 3.5f, HL_SELECTED, false, true);
+			const size_t wallCount = s_selectedSector->walls.size();
+			const EditorWall* wall = s_selectedSector->walls.data();
+			for (size_t w = 0; w < wallCount; w++, wall++)
+			{
+				EditorSector* next = wall->adjoinId < 0 ? nullptr : &s_level.sectors[wall->adjoinId];
+				drawWallLines3D_Highlighted(s_selectedSector, next, wall, 3.5f, HL_SELECTED, false);
+			}
+		}
+		if (s_hoveredSector)
+		{
+			drawFlat3D_Highlighted(s_hoveredSector, HP_FLOOR, 3.5f, HL_HOVERED, hoverAndSelect, true);
+			drawFlat3D_Highlighted(s_hoveredSector, HP_CEIL, 3.5f, HL_HOVERED, hoverAndSelect, true);
+			const size_t wallCount = s_hoveredSector->walls.size();
+			const EditorWall* wall = s_hoveredSector->walls.data();
+			for (size_t w = 0; w < wallCount; w++, wall++)
+			{
+				EditorSector* next = wall->adjoinId < 0 ? nullptr : &s_level.sectors[wall->adjoinId];
+				drawWallLines3D_Highlighted(s_hoveredSector, next, wall, 3.5f, HL_HOVERED, hoverAndSelect);
+			}
+		}
+	}
+
 	void drawSelectedSurface3D()
 	{
 		// In 3D, the floor and ceiling are surfaces too.
 		bool hoverAndSelect = s_selectedSector == s_hoveredSector;
 		if (s_selectedSector && (s_selectedWallPart == HP_FLOOR || s_selectedWallPart == HP_CEIL))
 		{
-			drawFlat3D_Highlighted(s_selectedSector, s_selectedWallPart, 3.5f, HL_SELECTED, false);
+			drawFlat3D_Highlighted(s_selectedSector, s_selectedWallPart, 3.5f, HL_SELECTED, false, false);
 		}
 		if (s_hoveredSector && (s_hoveredWallPart == HP_FLOOR || s_hoveredWallPart == HP_CEIL))
 		{
-			drawFlat3D_Highlighted(s_hoveredSector, s_hoveredWallPart, 3.5f, HL_HOVERED, hoverAndSelect);
+			drawFlat3D_Highlighted(s_hoveredSector, s_hoveredWallPart, 3.5f, HL_HOVERED, hoverAndSelect, false);
 		}
 
 		hoverAndSelect = s_selectedWallId == s_hoveredWallId && s_selectedWallSector == s_hoveredWallSector;
@@ -577,7 +609,11 @@ namespace LevelEditor
 		lineDraw3d_begin(s_viewportSize.x, s_viewportSize.z);
 		triDraw3d_begin();
 
-		if (s_editMode == LEDIT_WALL)
+		if (s_editMode == LEDIT_SECTOR)
+		{
+			drawSelectedSector3D();
+		}
+		else if (s_editMode == LEDIT_WALL)
 		{
 			drawSelectedSurface3D();
 		}
