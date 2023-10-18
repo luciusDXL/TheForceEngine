@@ -48,6 +48,7 @@ namespace LevelEditor
 {
 	SelectionList s_selectionList;
 	SectorList s_sectorChangeList;
+	DragSelect s_dragSelect = { 0 };
 
 	enum FeatureIdPacking : u64
 	{
@@ -81,9 +82,10 @@ namespace LevelEditor
 	}
 
 	// Selection
-	void selection_clear()
+	void selection_clear(bool clearDragSelect)
 	{
 		s_selectionList.clear();
+		if (clearDragSelect) { s_dragSelect.active = false; }
 	}
 		
 	bool selection_doesFeatureExist(FeatureId id)

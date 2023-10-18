@@ -60,11 +60,11 @@ namespace LevelEditor
 	EditorLevel s_level = {};
 	AssetList s_levelTextureList;
 	LevelEditMode s_editMode = LEDIT_DRAW;
-	
+
 	u32 s_editFlags = LEF_DEFAULT;
 	u32 s_lwinOpen = LWIN_NONE;
 	s32 s_curLayer = 0;
-			
+
 	// Sector
 	EditorSector* s_hoveredSector = nullptr;
 	EditorSector* s_selectedSector = nullptr;
@@ -89,7 +89,7 @@ namespace LevelEditor
 	HitPart s_selectedWallPart = HP_COUNT;
 
 	static bool s_editMove = false;
-		
+
 	static EditorView s_view = EDIT_VIEW_2D;
 	static Vec2i s_editWinPos = { 0, 69 };
 	static Vec2i s_editWinSize = { 0 };
@@ -97,10 +97,10 @@ namespace LevelEditor
 	static Vec3f s_rayDir = { 0.0f, 0.0f, 1.0f };
 	static f32 s_zoom = c_defaultZoom;
 	static bool s_uiActive = false;
-		
+
 	static char s_layerMem[4 * 31];
 	static char* s_layerStr[31];
-		
+
 	static s32 s_gridIndex = 4;
 	static f32 c_gridSizeMap[] =
 	{
@@ -123,7 +123,7 @@ namespace LevelEditor
 		"32",
 		"64",
 	};
-	
+
 	static TextureGpu* s_editCtrlToolbarData = nullptr;
 
 	////////////////////////////////////////////////////////
@@ -147,7 +147,7 @@ namespace LevelEditor
 
 	void selectFromSingleVertex(EditorSector* root, s32 featureId, bool clearList);
 	void toggleVertexGroupInclusion(EditorSector* sector, s32 featureId);
-		
+
 	////////////////////////////////////////////////////////
 	// Public API
 	////////////////////////////////////////////////////////
@@ -200,8 +200,8 @@ namespace LevelEditor
 		s_hoveredWallSector     = nullptr;
 		s_lastHoveredWallSector = nullptr;
 		s_selectedWallSector    = nullptr;
-		s_hoveredVtxId          = -1;
-		s_hoveredWallId         = -1;
+		s_hoveredVtxId  = -1;
+		s_hoveredWallId = -1;
 		s_editMove = false;
 
 		AssetBrowser::getLevelTextures(s_levelTextureList, asset->name.c_str());
@@ -304,9 +304,9 @@ namespace LevelEditor
 
 	bool isViewportElementHovered()
 	{
-		return (s_hoveredVtxId >= 0 && s_editMode == LEDIT_VERTEX) || (s_hoveredWallId >= 0 && s_editMode == LEDIT_WALL) || 
-			   (s_hoveredSector && s_editMode == LEDIT_SECTOR) || (s_selectedVtxId >= 0 && s_editMode == LEDIT_VERTEX) || 
-			   (s_selectedWallId >= 0 && s_editMode == LEDIT_WALL) || (s_selectedSector && s_editMode == LEDIT_SECTOR);
+		return (s_hoveredVtxId >= 0 && s_editMode == LEDIT_VERTEX) || (s_hoveredWallId >= 0 && s_editMode == LEDIT_WALL) ||
+			(s_hoveredSector && s_editMode == LEDIT_SECTOR) || (s_selectedVtxId >= 0 && s_editMode == LEDIT_VERTEX) ||
+			(s_selectedWallId >= 0 && s_editMode == LEDIT_WALL) || (s_selectedSector && s_editMode == LEDIT_SECTOR);
 	}
 
 	Vec3f rayGridPlaneHit(const Vec3f& origin, const Vec3f& rayDir)
@@ -329,11 +329,98 @@ namespace LevelEditor
 		s_gridHeight = sector->floorHeight;
 	}
 
+	bool aabbOverlap2d(const Vec3f* aabb0, const Vec3f* aabb1)
+	{
+		// Ignore the Y axis.
+		// X
+		if (aabb0[0].x > aabb1[1].x || aabb0[1].x < aabb1[0].x ||
+			aabb1[0].x > aabb0[1].x || aabb1[1].x < aabb0[0].x)
+		{
+			return false;
+		}
+
+		// Z
+		if (aabb0[0].z > aabb1[1].z || aabb0[1].z < aabb1[0].z ||
+			aabb1[0].z > aabb0[1].z || aabb1[1].z < aabb0[0].z)
+		{
+			return false;
+		}
+
+		return true;
+	}
+
+	void vertexComputeDragSelect()
+	{
+		if (s_dragSelect.curPos.x == s_dragSelect.startPos.x && s_dragSelect.curPos.z == s_dragSelect.startPos.z)
+		{
+			return;
+		}
+		selection_clear(false);
+
+		if (s_view == EDIT_VIEW_2D)
+		{
+			// Convert drag select coordinates to world space.
+			// World position from viewport position, relative mouse position and zoom.
+			Vec2f worldPos[2];
+			worldPos[0].x =   s_viewportPos.x + f32(s_dragSelect.curPos.x) * s_zoom2d;
+			worldPos[0].z = -(s_viewportPos.z + f32(s_dragSelect.curPos.z) * s_zoom2d);
+			worldPos[1].x =   s_viewportPos.x + f32(s_dragSelect.startPos.x) * s_zoom2d;
+			worldPos[1].z = -(s_viewportPos.z + f32(s_dragSelect.startPos.z) * s_zoom2d);
+
+			Vec3f aabb[] =
+			{
+				{ std::min(worldPos[0].x, worldPos[1].x), 0.0f, std::min(worldPos[0].z, worldPos[1].z) },
+				{ std::max(worldPos[0].x, worldPos[1].x), 0.0f, std::max(worldPos[0].z, worldPos[1].z) }
+			};
+
+			const size_t sectorCount = s_level.sectors.size();
+			EditorSector* sector = s_level.sectors.data();
+			for (size_t s = 0; s < sectorCount; s++, sector++)
+			{
+				if (s_curLayer != sector->layer && s_curLayer != LAYER_ANY) { continue; }
+				if (!aabbOverlap2d(sector->bounds, aabb)) { continue; }
+
+				const size_t vtxCount = sector->vtx.size();
+				const Vec2f* vtx = sector->vtx.data();
+				for (size_t v = 0; v < vtxCount; v++, vtx++)
+				{
+					if (vtx->x >= aabb[0].x && vtx->x < aabb[1].x && vtx->z >= aabb[0].z && vtx->z < aabb[1].z)
+					{
+						FeatureId id = createFeatureId(sector, (s32)v, 0, false);
+						selection_add(id);
+					}
+				}
+			}
+		}
+		else if (s_view == EDIT_VIEW_3D)
+		{
+			// Inverse project corners at z = 1.
+			// Test vertices against the frustum.
+			// TODO
+		}
+	}
+			
 	void handleMouseControlVertex()
 	{
+		s32 mx, my;
+		TFE_Input::getMousePos(&mx, &my);
+
 		if (TFE_Input::mousePressed(MouseButton::MBUTTON_LEFT))
 		{
-			if (TFE_Input::keyModDown(KEYMOD_CTRL))
+			if (TFE_Input::keyModDown(KEYMOD_SHIFT) && !TFE_Input::keyModDown(KEYMOD_CTRL))
+			{
+				// Drag select start.
+				mx -= s_editWinMapCorner.x;
+				my -= s_editWinMapCorner.z;
+				if (mx >= 0 && my >= 0 && mx < s_viewportSize.x && my < s_viewportSize.z)
+				{
+					s_dragSelect.active = true;
+					s_dragSelect.moved = false;
+					s_dragSelect.startPos = { mx, my };
+					s_dragSelect.curPos = s_dragSelect.startPos;
+				}
+			}
+			else if (!s_dragSelect.active && TFE_Input::keyModDown(KEYMOD_CTRL))
 			{
 				if (s_hoveredVtxSector && s_hoveredVtxId >= 0)
 				{
@@ -342,7 +429,7 @@ namespace LevelEditor
 					toggleVertexGroupInclusion(s_hoveredVtxSector, s_hoveredVtxId);
 				}
 			}
-			else
+			else if (!s_dragSelect.active)
 			{
 				s_selectedVtxSector = nullptr;
 				s_selectedVtxId = -1;
@@ -360,7 +447,7 @@ namespace LevelEditor
 				}
 			}
 		}
-		else if (TFE_Input::mouseDown(MouseButton::MBUTTON_LEFT) && TFE_Input::keyModDown(KEYMOD_CTRL) && TFE_Input::keyModDown(KEYMOD_SHIFT))
+		else if (!s_dragSelect.active && TFE_Input::mouseDown(MouseButton::MBUTTON_LEFT) && TFE_Input::keyModDown(KEYMOD_CTRL) && TFE_Input::keyModDown(KEYMOD_SHIFT))
 		{
 			if (s_hoveredVtxSector && s_hoveredVtxId >= 0)
 			{
@@ -368,6 +455,27 @@ namespace LevelEditor
 				adjustGridHeight(s_hoveredVtxSector);
 				selectFromSingleVertex(s_hoveredVtxSector, s_hoveredVtxId, false);
 			}
+		}
+		// Draw select continue.
+		else if (TFE_Input::mouseDown(MouseButton::MBUTTON_LEFT) && TFE_Input::keyModDown(KEYMOD_SHIFT))
+		{
+			// Drag select start.
+			mx -= s_editWinMapCorner.x;
+			my -= s_editWinMapCorner.z;
+			if (mx < 0 || my < 0 || mx >= s_viewportSize.x || my >= s_viewportSize.z)
+			{
+				s_dragSelect.active = false;
+			}
+			else
+			{
+				s_dragSelect.curPos = { mx, my };
+				vertexComputeDragSelect();
+			}
+		}
+
+		if (s_dragSelect.active && (!TFE_Input::mouseDown(MouseButton::MBUTTON_LEFT) || !TFE_Input::keyModDown(KEYMOD_SHIFT)))
+		{
+			s_dragSelect.active = false;
 		}
 	}
 

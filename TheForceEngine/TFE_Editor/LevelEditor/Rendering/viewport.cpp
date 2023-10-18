@@ -238,6 +238,28 @@ namespace LevelEditor
 			drawVertex2d(s_hoveredVtxSector, s_hoveredVtxId, 1.5f, HL_HOVERED);
 		}
 
+		// Draw drag select, if active.
+		if (s_dragSelect.active)
+		{
+			Vec2f vtx[] =
+			{
+				{ s_dragSelect.startPos.x, s_dragSelect.startPos.z },
+				{ s_dragSelect.curPos.x,   s_dragSelect.startPos.z },
+				{ s_dragSelect.curPos.x,   s_dragSelect.curPos.z },
+				{ s_dragSelect.startPos.x, s_dragSelect.curPos.z },
+				{ s_dragSelect.startPos.x, s_dragSelect.startPos.z },
+			};
+			s32 idx[6] = { 0, 1, 2, 0, 2, 3 };
+
+			triDraw2d_addColored(6, 4, vtx, idx, 0x40ff0000);
+
+			u32 colors[2] = { 0xffff0000, 0xffff0000 };
+			lineDraw2d_addLine(2.0f, &vtx[0], colors);
+			lineDraw2d_addLine(2.0f, &vtx[1], colors);
+			lineDraw2d_addLine(2.0f, &vtx[2], colors);
+			lineDraw2d_addLine(2.0f, &vtx[3], colors);
+		}
+
 		// Submit.
 		TFE_RenderShared::triDraw2d_draw();
 		TFE_RenderShared::lineDraw2d_drawLines();
