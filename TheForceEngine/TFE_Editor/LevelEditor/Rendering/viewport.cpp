@@ -76,7 +76,8 @@ namespace LevelEditor
 
 	static RenderTargetHandle s_viewportRt = 0;
 	static std::vector<Vec2f> s_transformedVtx;
-	static std::vector<Vec2f> s_uvBuffer;
+	static std::vector<Vec2f> s_bufferVec2;
+	static std::vector<Vec3f> s_bufferVec3;
 
 	SectorDrawMode s_sectorDrawMode = SDM_WIREFRAME;
 	Vec2i s_viewportSize = { 0 };
@@ -409,9 +410,11 @@ namespace LevelEditor
 			}
 		}
 
-		Vec3f flatVtx[512];
 		const size_t vtxCount = sector->poly.triVtx.size();
 		const Vec2f* vtx = sector->poly.triVtx.data();
+
+		s_bufferVec3.resize(vtxCount);
+		Vec3f* flatVtx = s_bufferVec3.data();
 		for (size_t v = 0; v < vtxCount; v++)
 		{
 			flatVtx[v] = { vtx[v].x, height, vtx[v].z };
@@ -860,10 +863,14 @@ namespace LevelEditor
 			const u32 idxCount = (u32)sector->poly.triIdx.size();
 			const u32 vtxCount = (u32)sector->poly.triVtx.size();
 			const Vec2f* triVtx = sector->poly.triVtx.data();
-			Vec3f vtxDataFlr[512];
-			Vec3f vtxDataCeil[512];
-			Vec2f uvFlr[512];
-			Vec2f uvCeil[512];
+
+			s_bufferVec3.resize(vtxCount * 2);
+			Vec3f* vtxDataFlr = s_bufferVec3.data();
+			Vec3f* vtxDataCeil = vtxDataFlr + vtxCount;
+
+			s_bufferVec2.resize(vtxCount * 2);
+			Vec2f* uvFlr = s_bufferVec2.data();
+			Vec2f* uvCeil = uvFlr + vtxCount;
 
 			EditorTexture* floorTex = (EditorTexture*)getAssetData(sector->floorTex.handle);
 			EditorTexture* ceilTex  = (EditorTexture*)getAssetData(sector->ceilTex.handle);
@@ -972,10 +979,10 @@ namespace LevelEditor
 			const Vec2f*  vtxData = poly->triVtx.data();
 			const size_t vtxCount = poly->triVtx.size();
 
-			s_uvBuffer.resize(vtxCount);
+			s_bufferVec2.resize(vtxCount);
 			s_transformedVtx.resize(vtxCount);
 			Vec2f* transVtx = s_transformedVtx.data();
-			Vec2f* uv = s_uvBuffer.data();
+			Vec2f* uv = s_bufferVec2.data();
 			for (size_t v = 0; v < vtxCount; v++, vtxData++)
 			{
 				transVtx[v] = { vtxData->x * s_viewportTrans2d.x + s_viewportTrans2d.y, vtxData->z * s_viewportTrans2d.z + s_viewportTrans2d.w };
