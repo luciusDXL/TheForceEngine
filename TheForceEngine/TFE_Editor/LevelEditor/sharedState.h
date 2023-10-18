@@ -28,7 +28,6 @@ namespace LevelEditor
 	// Vertex
 	extern EditorSector* s_hoveredVtxSector;
 	extern EditorSector* s_selectedVtxSector;
-	extern std::vector<u64> s_selectedVertices;
 	extern s32 s_hoveredVtxId;
 	extern s32 s_selectedVtxId;
 	extern Vec3f s_hoveredVtxPos;

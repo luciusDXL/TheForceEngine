@@ -1,5 +1,6 @@
 #include "levelEditor.h"
 #include "levelEditorData.h"
+#include "selection.h"
 #include "infoPanel.h"
 #include "browser.h"
 #include "camera.h"
@@ -72,7 +73,6 @@ namespace LevelEditor
 	EditorSector* s_hoveredVtxSector = nullptr;
 	EditorSector* s_lastHoveredVtxSector = nullptr;
 	EditorSector* s_selectedVtxSector = nullptr;
-	std::vector<u64> s_selectedVertices;
 	s32 s_hoveredVtxId = -1;
 	s32 s_selectedVtxId = -1;
 	Vec3f s_hoveredVtxPos;
@@ -147,7 +147,6 @@ namespace LevelEditor
 
 	void selectFromSingleVertex(EditorSector* root, s32 featureId, bool clearList);
 	void toggleVertexGroupInclusion(EditorSector* sector, s32 featureId);
-	bool isVertexInList(u64 id);
 		
 	////////////////////////////////////////////////////////
 	// Public API
@@ -427,7 +426,7 @@ namespace LevelEditor
 						s_editMove = true;
 
 						// Clear the selection if this is a new vertex and Ctrl isn't held.
-						bool clearList = !isVertexInList(createID(s_selectedVtxSector, s_selectedVtxId, false)) && !isVertexInList(createID(s_selectedVtxSector, s_selectedVtxId, true));
+						bool clearList = !selection_doesFeatureExist(createFeatureId(s_selectedVtxSector, s_selectedVtxId));
 						selectFromSingleVertex(s_selectedVtxSector, s_selectedVtxId, clearList);
 					}
 				}
@@ -439,7 +438,7 @@ namespace LevelEditor
 			s_selectedVtxSector = nullptr;
 			s_hoveredVtxId = -1;
 			s_selectedVtxId = -1;
-			s_selectedVertices.clear();
+			selection_clear();
 		}
 
 		//////////////////////////////////////
@@ -648,7 +647,7 @@ namespace LevelEditor
 								s_editMove = true;
 
 								// Clear the selection if this is a new vertex and Ctrl isn't held.
-								bool clearList = !isVertexInList(createID(s_selectedVtxSector, s_selectedVtxId, false)) && !isVertexInList(createID(s_selectedVtxSector, s_selectedVtxId, true));
+								bool clearList = !selection_doesFeatureExist(createFeatureId(s_selectedVtxSector, s_selectedVtxId));
 								selectFromSingleVertex(s_selectedVtxSector, s_selectedVtxId, clearList);
 							}
 						}
@@ -660,7 +659,7 @@ namespace LevelEditor
 					s_selectedVtxSector = nullptr;
 					s_hoveredVtxId = -1;
 					s_selectedVtxId = -1;
-					s_selectedVertices.clear();
+					selection_clear();
 				}
 
 				if (s_editMode == LEDIT_WALL)
@@ -756,7 +755,7 @@ namespace LevelEditor
 					s_selectedSector = nullptr;
 					s_selectedWallId = -1;
 					s_selectedVtxId = -1;
-					s_selectedVertices.clear();
+					selection_clear();
 				}
 			}
 		}
@@ -907,7 +906,7 @@ namespace LevelEditor
 		s_selectedVtxId = -1;
 		s_selectedWallId = -1;
 		s_selectedSector = nullptr;
-		s_selectedVertices.clear();
+		selection_clear();
 	}
 	
 	void update()
@@ -1147,20 +1146,6 @@ namespace LevelEditor
 			pos->z = floorf(pos->z * 65536.0f + 0.5f) / 65536.0f;
 		}
 	}
-				
-	u64 createID(const EditorSector* sector, s32 featureIndex, bool overlapped)
-	{
-		return u64(sector->id) | (u64(featureIndex) << u64(32)) | (u64(overlapped ? 1 : 0) << u64(63));
-	}
-
-	EditorSector* unpackID(u64 id, s32* featureIndex, bool* overlapped)
-	{
-		u32 sectorIndex = u32(id & 0xffffffffull);
-		*featureIndex = s32((id >> u64(32)) & 0x7fffffffull);
-		*overlapped = (id >> u64(63)) != 0;
-		assert(sectorIndex < (u32)s_level.sectors.size());
-		return &s_level.sectors[sectorIndex];
-	}
 	
 	bool vtxEqual(const Vec2f* a, const Vec2f* b)
 	{
@@ -1168,43 +1153,20 @@ namespace LevelEditor
 		return fabsf(a->x - b->x) < eps && fabsf(a->z - b->z) < eps;
 	}
 
-	bool isVertexInList(u64 id)
-	{
-		const size_t count = s_selectedVertices.size();
-		const u64* list = s_selectedVertices.data();
-		for (size_t i = 0; i < count; i++)
-		{
-			if (list[i] == id) { return true; }
-		}
-		return false;
-	}
-
-	bool addVertexToList(u64 id)
-	{
-		const size_t count = s_selectedVertices.size();
-		const u64* list = s_selectedVertices.data();
-		for (size_t i = 0; i < count; i++)
-		{
-			if (list[i] == id) { return false; }
-		}
-		s_selectedVertices.push_back(id);
-		return true;
-	}
-
 	static u32 s_searchKey = 0;
 
 	void selectFromSingleVertex(EditorSector* root, s32 featureId, bool clearList)
 	{
 		const Vec2f* rootVtx = &root->vtx[featureId];
-		u64 rootId = createID(root, featureId, false);
+		FeatureId rootId = createFeatureId(root, featureId, 0, false);
 		if (clearList)
 		{
-			s_selectedVertices.clear();
-			s_selectedVertices.push_back(rootId);
+			selection_clear();
+			selection_add(rootId);
 		}
 		else
 		{
-			if (!addVertexToList(rootId))
+			if (!selection_add(rootId))
 			{
 				return;
 			}
@@ -1253,8 +1215,8 @@ namespace LevelEditor
 
 				if (idx >= 0)
 				{
-					u64 id = createID(sector, wall->idx[idx], true);
-					addVertexToList(id);
+					FeatureId id = createFeatureId(sector, wall->idx[idx], 0, true);
+					selection_add(id);
 					// Add the next sector to the stack, if it hasn't already been processed.
 					EditorSector* next = wall->adjoinId < 0 ? nullptr : &s_level.sectors[wall->adjoinId];
 					if (next && next->searchKey != s_searchKey)
@@ -1269,9 +1231,8 @@ namespace LevelEditor
 
 	void toggleVertexGroupInclusion(EditorSector* sector, s32 featureId)
 	{
-		u64 id0 = createID(sector, featureId, false);
-		u64 id1 = createID(sector, featureId, true);
-		if (isVertexInList(id0) || isVertexInList(id1))
+		FeatureId id = createFeatureId(sector, featureId);
+		if (selection_doesFeatureExist(id))
 		{
 			// Remove, and all matches.
 		}
@@ -1287,13 +1248,13 @@ namespace LevelEditor
 		snapToGrid(&worldPos2d);
 		Vec2f delta = { worldPos2d.x - s_selectedVtxSector->vtx[s_selectedVtxId].x, worldPos2d.z - s_selectedVtxSector->vtx[s_selectedVtxId].z };
 
-		const size_t count = s_selectedVertices.size();
-		const u64* id = s_selectedVertices.data();
+		const size_t count = s_selectionList.size();
+		const FeatureId* id = s_selectionList.data();
 		for (size_t i = 0; i < count; i++)
 		{
-			s32 featureIndex;
+			s32 featureIndex, featureData;
 			bool overlapped;
-			EditorSector* sector = unpackID(id[i], &featureIndex, &overlapped);
+			EditorSector* sector = unpackFeatureId(id[i], &featureIndex, &featureData, &overlapped);
 
 			sector->vtx[featureIndex].x += delta.x;
 			sector->vtx[featureIndex].z += delta.z;

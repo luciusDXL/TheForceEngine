@@ -42,10 +42,4 @@ namespace LevelEditor
 	bool menu();
 
 	void selectNone();
-
-	// sector: sector the feature exists in.
-	// featureIndex: sector local index of the feature, such as vertex index or wall index.
-	// overlapped: true if this feature overlaps with another.
-	u64 createID(const EditorSector* sector, s32 featureIndex, bool overlapped);
-	EditorSector* unpackID(u64 id, s32* featureIndex, bool* overlapped);
 }

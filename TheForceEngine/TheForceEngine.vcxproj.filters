@@ -1270,6 +1270,9 @@
     <ClInclude Include="TFE_RenderShared\triDraw3d.h">
       <Filter>Source\TFE_RenderShared</Filter>
     </ClInclude>
+    <ClInclude Include="TFE_Editor\LevelEditor\selection.h">
+      <Filter>Source\TFE_Editor\LevelEditor</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -2174,6 +2177,9 @@
     </ClCompile>
     <ClCompile Include="TFE_RenderShared\triDraw3d.cpp">
       <Filter>Source\TFE_RenderShared</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Editor\LevelEditor\selection.cpp">
+      <Filter>Source\TFE_Editor\LevelEditor</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

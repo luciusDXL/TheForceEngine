@@ -5,6 +5,7 @@
 #include <TFE_Editor/LevelEditor/levelEditor.h>
 #include <TFE_Editor/LevelEditor/levelEditorData.h>
 #include <TFE_Editor/LevelEditor/sharedState.h>
+#include <TFE_Editor/LevelEditor/selection.h>
 #include <TFE_Editor/EditorAsset/editorTexture.h>
 #include <TFE_Jedi/Level/rwall.h>
 #include <TFE_Jedi/Level/rsector.h>
@@ -216,15 +217,15 @@ namespace LevelEditor
 
 		// Draw the hovered and selected vertices.
 		bool alsoHovered = false;
-		if (s_selectedVertices.size())
+		if (s_selectionList.size())
 		{
-			const size_t count = s_selectedVertices.size();
-			const u64* list = s_selectedVertices.data();
+			const size_t count = s_selectionList.size();
+			const FeatureId* list = s_selectionList.data();
 			for (size_t i = 0; i < count; i++)
 			{
-				s32 featureIndex;
+				s32 featureIndex, featureData;
 				bool overlapped;
-				EditorSector* sector = unpackID(list[i], &featureIndex, &overlapped);
+				EditorSector* sector = unpackFeatureId(list[i], &featureIndex, &featureData, &overlapped);
 				if (overlapped || !sector) { continue; }
 
 				const bool thisAlsoHovered = s_hoveredVtxId == featureIndex && s_hoveredVtxSector == sector;
@@ -633,15 +634,15 @@ namespace LevelEditor
 		else if (s_editMode == LEDIT_VERTEX)
 		{
 			bool alsoHovered = false;
-			if (s_selectedVertices.size())
+			if (s_selectionList.size())
 			{
-				const size_t count = s_selectedVertices.size();
-				const u64* list = s_selectedVertices.data();
+				const size_t count = s_selectionList.size();
+				const FeatureId* list = s_selectionList.data();
 				for (size_t i = 0; i < count; i++)
 				{
-					s32 featureIndex;
+					s32 featureIndex, featureData;
 					bool overlapped;
-					EditorSector* sector = unpackID(list[i], &featureIndex, &overlapped);
+					EditorSector* sector = unpackFeatureId(list[i], &featureIndex, &featureData, &overlapped);
 					if (overlapped || !sector) { continue; }
 
 					bool thisAlsoHovered = s_hoveredVtxId == featureIndex && s_hoveredVtxSector == sector;
