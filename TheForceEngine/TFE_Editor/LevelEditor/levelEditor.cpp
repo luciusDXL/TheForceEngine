@@ -329,6 +329,48 @@ namespace LevelEditor
 		s_gridHeight = sector->floorHeight;
 	}
 
+	void handleMouseControlVertex()
+	{
+		if (TFE_Input::mousePressed(MouseButton::MBUTTON_LEFT))
+		{
+			if (TFE_Input::keyModDown(KEYMOD_CTRL))
+			{
+				if (s_hoveredVtxSector && s_hoveredVtxId >= 0)
+				{
+					s_editMove = true;
+					adjustGridHeight(s_hoveredVtxSector);
+					toggleVertexGroupInclusion(s_hoveredVtxSector, s_hoveredVtxId);
+				}
+			}
+			else
+			{
+				s_selectedVtxSector = nullptr;
+				s_selectedVtxId = -1;
+				if (s_hoveredVtxSector && s_hoveredVtxId >= 0)
+				{
+					s_selectedVtxSector = s_hoveredVtxSector;
+					s_selectedVtxId = s_hoveredVtxId;
+					s_selectedVtxPos = s_hoveredVtxPos;
+					adjustGridHeight(s_selectedVtxSector);
+					s_editMove = true;
+
+					// Clear the selection if this is a new vertex and Ctrl isn't held.
+					bool clearList = !selection_doesFeatureExist(createFeatureId(s_selectedVtxSector, s_selectedVtxId));
+					selectFromSingleVertex(s_selectedVtxSector, s_selectedVtxId, clearList);
+				}
+			}
+		}
+		else if (TFE_Input::mouseDown(MouseButton::MBUTTON_LEFT) && TFE_Input::keyModDown(KEYMOD_CTRL) && TFE_Input::keyModDown(KEYMOD_SHIFT))
+		{
+			if (s_hoveredVtxSector && s_hoveredVtxId >= 0)
+			{
+				s_editMove = true;
+				adjustGridHeight(s_hoveredVtxSector);
+				selectFromSingleVertex(s_hoveredVtxSector, s_hoveredVtxId, false);
+			}
+		}
+	}
+
 	void handleHoverAndSelection(RayHitInfo* info)
 	{
 		if (info->hitSectorId < 0) { return; }
@@ -402,44 +444,7 @@ namespace LevelEditor
 				}
 			}
 
-			if (TFE_Input::mousePressed(MouseButton::MBUTTON_LEFT))
-			{
-				if (TFE_Input::keyModDown(KEYMOD_CTRL))
-				{
-					if (s_hoveredVtxSector && s_hoveredVtxId >= 0)
-					{
-						s_editMove = true;
-						adjustGridHeight(s_hoveredVtxSector);
-						toggleVertexGroupInclusion(s_hoveredVtxSector, s_hoveredVtxId);
-					}
-				}
-				else
-				{
-					s_selectedVtxSector = nullptr;
-					s_selectedVtxId = -1;
-					if (s_hoveredVtxSector && s_hoveredVtxId >= 0)
-					{
-						s_selectedVtxSector = s_hoveredVtxSector;
-						s_selectedVtxId = s_hoveredVtxId;
-						s_selectedVtxPos = s_hoveredVtxPos;
-						adjustGridHeight(s_selectedVtxSector);
-						s_editMove = true;
-
-						// Clear the selection if this is a new vertex and Ctrl isn't held.
-						bool clearList = !selection_doesFeatureExist(createFeatureId(s_selectedVtxSector, s_selectedVtxId));
-						selectFromSingleVertex(s_selectedVtxSector, s_selectedVtxId, clearList);
-					}
-				}
-			}
-			else if (TFE_Input::mouseDown(MouseButton::MBUTTON_LEFT) && TFE_Input::keyModDown(KEYMOD_CTRL) && TFE_Input::keyModDown(KEYMOD_SHIFT))
-			{
-				if (s_hoveredVtxSector && s_hoveredVtxId >= 0)
-				{
-					s_editMove = true;
-					adjustGridHeight(s_hoveredVtxSector);
-					selectFromSingleVertex(s_hoveredVtxSector, s_hoveredVtxId, false);
-				}
-			}
+			handleMouseControlVertex();
 		}
 		else
 		{
@@ -633,43 +638,7 @@ namespace LevelEditor
 						}
 					}
 
-					if (TFE_Input::mousePressed(MouseButton::MBUTTON_LEFT))
-					{
-						if (TFE_Input::keyModDown(KEYMOD_CTRL))
-						{
-							if (s_hoveredVtxSector && s_hoveredVtxId >= 0)
-							{
-								s_editMove = true;
-								adjustGridHeight(s_hoveredVtxSector);
-								toggleVertexGroupInclusion(s_hoveredVtxSector, s_hoveredVtxId);
-							}
-						}
-						else
-						{
-							s_selectedVtxSector = nullptr;
-							s_selectedVtxId = -1;
-							if (s_hoveredVtxSector && s_hoveredVtxId >= 0)
-							{
-								s_selectedVtxSector = s_hoveredVtxSector;
-								s_selectedVtxId = s_hoveredVtxId;
-								adjustGridHeight(s_selectedVtxSector);
-								s_editMove = true;
-
-								// Clear the selection if this is a new vertex and Ctrl isn't held.
-								bool clearList = !selection_doesFeatureExist(createFeatureId(s_selectedVtxSector, s_selectedVtxId));
-								selectFromSingleVertex(s_selectedVtxSector, s_selectedVtxId, clearList);
-							}
-						}
-					}
-					else if (TFE_Input::mouseDown(MouseButton::MBUTTON_LEFT) && TFE_Input::keyModDown(KEYMOD_CTRL) && TFE_Input::keyModDown(KEYMOD_SHIFT))
-					{
-						if (s_hoveredVtxSector && s_hoveredVtxId >= 0)
-						{
-							s_editMove = true;
-							adjustGridHeight(s_hoveredVtxSector);
-							selectFromSingleVertex(s_hoveredVtxSector, s_hoveredVtxId, false);
-						}
-					}
+					handleMouseControlVertex();
 				}
 				else
 				{
@@ -952,6 +921,7 @@ namespace LevelEditor
 				{
 					s_editMode = LevelEditMode(i);
 					s_editMove = false;
+					selection_clear();
 				}
 				ImGui::SameLine();
 			}
@@ -1381,7 +1351,7 @@ namespace LevelEditor
 
 			if (s_editMode == LEDIT_VERTEX)
 			{
-				if (s_selectedVtxId >= 0 && s_selectedVtxSector && TFE_Input::mouseDown(MBUTTON_LEFT) && !TFE_Input::keyModDown(KEYMOD_CTRL))
+				if (s_selectedVtxId >= 0 && s_selectedVtxSector && TFE_Input::mouseDown(MBUTTON_LEFT) && !TFE_Input::keyModDown(KEYMOD_CTRL) && !TFE_Input::keyModDown(KEYMOD_SHIFT))
 				{
 					moveVertex(worldPos2d);
 				}
@@ -1469,7 +1439,7 @@ namespace LevelEditor
 
 			if (s_editMode == LEDIT_VERTEX)
 			{
-				if (s_selectedVtxId >= 0 && s_selectedVtxSector && TFE_Input::mouseDown(MBUTTON_LEFT) && !TFE_Input::keyModDown(KEYMOD_CTRL))
+				if (s_selectedVtxId >= 0 && s_selectedVtxSector && TFE_Input::mouseDown(MBUTTON_LEFT) && !TFE_Input::keyModDown(KEYMOD_CTRL) && !TFE_Input::keyModDown(KEYMOD_SHIFT))
 				{
 					moveVertex(worldPos2d);
 				}
