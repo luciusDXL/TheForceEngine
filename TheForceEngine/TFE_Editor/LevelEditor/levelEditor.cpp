@@ -356,6 +356,8 @@ namespace LevelEditor
 			return;
 		}
 		selection_clear(false);
+		s_selectedVtxId = -1;
+		s_selectedVtxSector = nullptr;
 
 		if (s_view == EDIT_VIEW_2D)
 		{

@@ -2,6 +2,7 @@
 #include "levelEditorData.h"
 #include "infoPanel.h"
 #include "sharedState.h"
+#include "selection.h"
 #include <TFE_Editor/errorMessages.h>
 #include <TFE_Editor/editorConfig.h>
 #include <TFE_Editor/EditorAsset/editorTexture.h>
@@ -123,8 +124,20 @@ namespace LevelEditor
 
 	void infoPanelVertex()
 	{
-		EditorSector* sector = (s_selectedVtxId >= 0) ? s_selectedVtxSector : s_hoveredVtxSector;
-		s32 index = s_selectedVtxId >= 0 ? s_selectedVtxId : s_hoveredVtxId;
+		s32 index = -1;
+		EditorSector* sector = nullptr;
+		if (s_selectedVtxId < 0 && s_hoveredVtxId < 0 && !s_selectionList.empty())
+		{
+			FeatureId id = s_selectionList[0];
+			s32 featureData;
+			bool isOverlapped;
+			sector = unpackFeatureId(id, &index, &featureData, &isOverlapped);
+		}
+		else
+		{
+			sector = (s_selectedVtxId >= 0) ? s_selectedVtxSector : s_hoveredVtxSector;
+			index = s_selectedVtxId >= 0 ? s_selectedVtxId : s_hoveredVtxId;
+		}
 		if (index < 0 || !sector) { return; }
 
 		Vec2f* vtx = sector->vtx.data() + index;
@@ -498,7 +511,7 @@ namespace LevelEditor
 
 		infoToolBegin(s_infoHeight);
 		{
-			if (s_editMode == LEDIT_VERTEX && (s_hoveredVtxId >= 0 || s_selectedVtxId >= 0))
+			if (s_editMode == LEDIT_VERTEX && (s_hoveredVtxId >= 0 || s_selectedVtxId >= 0 || !s_selectionList.empty()))
 			{
 				infoPanelVertex();
 			}
