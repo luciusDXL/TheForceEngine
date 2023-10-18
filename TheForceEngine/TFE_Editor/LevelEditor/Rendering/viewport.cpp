@@ -215,13 +215,26 @@ namespace LevelEditor
 		renderSectorVertices2d();
 
 		// Draw the hovered and selected vertices.
-		if (s_hoveredVtxSector && s_hoveredVtxId >= 0)
+		bool alsoHovered = false;
+		if (s_selectedVertices.size())
+		{
+			const size_t count = s_selectedVertices.size();
+			const u64* list = s_selectedVertices.data();
+			for (size_t i = 0; i < count; i++)
+			{
+				s32 featureIndex;
+				bool overlapped;
+				EditorSector* sector = unpackID(list[i], &featureIndex, &overlapped);
+				if (overlapped || !sector) { continue; }
+
+				const bool thisAlsoHovered = s_hoveredVtxId == featureIndex && s_hoveredVtxSector == sector;
+				if (thisAlsoHovered) { alsoHovered = true; }
+				drawVertex2d(sector, featureIndex, 1.5f, thisAlsoHovered ? Highlight(HL_SELECTED + 1) : HL_SELECTED);
+			}
+		}
+		if (s_hoveredVtxSector && s_hoveredVtxId >= 0 && !alsoHovered)
 		{
 			drawVertex2d(s_hoveredVtxSector, s_hoveredVtxId, 1.5f, HL_HOVERED);
-		}
-		if (s_selectedVtxSector && s_selectedVtxId >= 0)
-		{
-			drawVertex2d(s_selectedVtxSector, s_selectedVtxId, 1.5f, HL_SELECTED);
 		}
 
 		// Submit.
@@ -620,10 +633,23 @@ namespace LevelEditor
 		else if (s_editMode == LEDIT_VERTEX)
 		{
 			bool alsoHovered = false;
-			if (s_selectedVtxId >= 0)
+			if (s_selectedVertices.size())
 			{
-				alsoHovered = s_hoveredVtxId == s_selectedVtxId && s_hoveredVtxSector == s_selectedVtxSector;
-				drawVertex3d(&s_selectedVtxPos, s_selectedVtxSector, alsoHovered ? c_vertexClr[HL_SELECTED + 1] : c_vertexClr[HL_SELECTED]);
+				const size_t count = s_selectedVertices.size();
+				const u64* list = s_selectedVertices.data();
+				for (size_t i = 0; i < count; i++)
+				{
+					s32 featureIndex;
+					bool overlapped;
+					EditorSector* sector = unpackID(list[i], &featureIndex, &overlapped);
+					if (overlapped || !sector) { continue; }
+
+					bool thisAlsoHovered = s_hoveredVtxId == featureIndex && s_hoveredVtxSector == sector;
+					if (thisAlsoHovered) { alsoHovered = true; }
+
+					Vec3f pos = { sector->vtx[featureIndex].x, sector->floorHeight, sector->vtx[featureIndex].z };
+					drawVertex3d(&pos, sector, thisAlsoHovered ? c_vertexClr[HL_SELECTED + 1] : c_vertexClr[HL_SELECTED]);
+				}
 			}
 			if (s_hoveredVtxId >= 0 && !alsoHovered)
 			{
@@ -637,18 +663,6 @@ namespace LevelEditor
 
 	void renderLevel3D()
 	{
-		// Figure out which sector we are over.
-		const Vec2f worldPos2d = { s_camera.pos.x, s_camera.pos.z };
-		s32 overSector = findSector2d(&s_level, s_curLayer, &worldPos2d);
-		if (overSector >= 0 && s_level.sectors[overSector].floorHeight > s_camera.pos.y)
-		{
-			overSector = -1;
-		}
-		if (overSector >= 0 && s_gridAutoAdjust)
-		{
-			s_gridHeight = s_level.sectors[overSector].floorHeight;
-		}
-
 		// Prepare for drawing.
 		TFE_RenderShared::lineDraw3d_begin(s_viewportSize.x, s_viewportSize.z);
 		TFE_RenderShared::triDraw3d_begin();

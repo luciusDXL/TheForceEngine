@@ -375,6 +375,13 @@ namespace TFE_Editor
 					{
 						AssetBrowser::selectNone();
 					}
+					else if (s_editorMode == EDIT_ASSET)
+					{
+						if (s_editorAssetType == TYPE_LEVEL)
+						{
+							LevelEditor::selectNone();
+						}
+					}
 				}
 				if (ImGui::MenuItem("Invert Selection", NULL, (bool*)NULL))
 				{

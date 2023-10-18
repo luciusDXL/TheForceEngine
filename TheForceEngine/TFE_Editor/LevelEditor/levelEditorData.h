@@ -92,6 +92,9 @@ namespace LevelEditor
 
 		// Polygon
 		Polygon poly;
+
+		// For searches.
+		u32 searchKey = 0;
 	};
 
 	struct EditorLevel

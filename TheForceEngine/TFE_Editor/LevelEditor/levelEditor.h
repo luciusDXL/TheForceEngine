@@ -11,6 +11,8 @@
 
 namespace LevelEditor
 {
+	struct EditorSector;
+
 	enum LevelEditFlags
 	{
 		LEF_NONE = 0,
@@ -38,4 +40,12 @@ namespace LevelEditor
 
 	void update();
 	bool menu();
+
+	void selectNone();
+
+	// sector: sector the feature exists in.
+	// featureIndex: sector local index of the feature, such as vertex index or wall index.
+	// overlapped: true if this feature overlaps with another.
+	u64 createID(const EditorSector* sector, s32 featureIndex, bool overlapped);
+	EditorSector* unpackID(u64 id, s32* featureIndex, bool* overlapped);
 }
