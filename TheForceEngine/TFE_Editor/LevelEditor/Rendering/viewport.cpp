@@ -243,11 +243,11 @@ namespace LevelEditor
 		{
 			Vec2f vtx[] =
 			{
-				{ s_dragSelect.startPos.x, s_dragSelect.startPos.z },
-				{ s_dragSelect.curPos.x,   s_dragSelect.startPos.z },
-				{ s_dragSelect.curPos.x,   s_dragSelect.curPos.z },
-				{ s_dragSelect.startPos.x, s_dragSelect.curPos.z },
-				{ s_dragSelect.startPos.x, s_dragSelect.startPos.z },
+				{ (f32)s_dragSelect.startPos.x, (f32)s_dragSelect.startPos.z },
+				{ (f32)s_dragSelect.curPos.x,   (f32)s_dragSelect.startPos.z },
+				{ (f32)s_dragSelect.curPos.x,   (f32)s_dragSelect.curPos.z },
+				{ (f32)s_dragSelect.startPos.x, (f32)s_dragSelect.curPos.z },
+				{ (f32)s_dragSelect.startPos.x, (f32)s_dragSelect.startPos.z },
 			};
 			s32 idx[6] = { 0, 1, 2, 0, 2, 3 };
 
@@ -416,7 +416,7 @@ namespace LevelEditor
 		{
 			flatVtx[v] = { vtx[v].x, height, vtx[v].z };
 		}
-		triDraw3d_addColored(TRIMODE_BLEND, sector->poly.triIdx.size(), vtxCount, flatVtx, sector->poly.triIdx.data(), c_sectorPolyClr[highlight], part == HP_CEIL);
+		triDraw3d_addColored(TRIMODE_BLEND, (u32)sector->poly.triIdx.size(), (u32)vtxCount, flatVtx, sector->poly.triIdx.data(), c_sectorPolyClr[highlight], part == HP_CEIL);
 	}
 
 	void drawWallColor3d_Highlighted(const EditorSector* sector, const Vec2f* vtx, const EditorWall* wall, u32 color, HitPart part)

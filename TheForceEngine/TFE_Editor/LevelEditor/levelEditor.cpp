@@ -410,8 +410,8 @@ namespace LevelEditor
 			if (TFE_Input::keyModDown(KEYMOD_SHIFT) && !TFE_Input::keyModDown(KEYMOD_CTRL))
 			{
 				// Drag select start.
-				mx -= s_editWinMapCorner.x;
-				my -= s_editWinMapCorner.z;
+				mx -= (s32)s_editWinMapCorner.x;
+				my -= (s32)s_editWinMapCorner.z;
 				if (mx >= 0 && my >= 0 && mx < s_viewportSize.x && my < s_viewportSize.z)
 				{
 					s_dragSelect.active = true;
@@ -460,8 +460,8 @@ namespace LevelEditor
 		else if (TFE_Input::mouseDown(MouseButton::MBUTTON_LEFT) && TFE_Input::keyModDown(KEYMOD_SHIFT))
 		{
 			// Drag select start.
-			mx -= s_editWinMapCorner.x;
-			my -= s_editWinMapCorner.z;
+			mx -= (s32)s_editWinMapCorner.x;
+			my -= (s32)s_editWinMapCorner.z;
 			if (mx < 0 || my < 0 || mx >= s_viewportSize.x || my >= s_viewportSize.z)
 			{
 				s_dragSelect.active = false;
