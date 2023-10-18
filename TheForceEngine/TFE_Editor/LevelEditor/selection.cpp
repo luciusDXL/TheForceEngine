@@ -47,6 +47,7 @@ using namespace TFE_Editor;
 namespace LevelEditor
 {
 	SelectionList s_selectionList;
+	SectorList s_sectorChangeList;
 
 	enum FeatureIdPacking : u64
 	{

@@ -16,7 +16,10 @@ namespace LevelEditor
 	// Feature ID
 	typedef u64 FeatureId;
 	typedef std::vector<FeatureId> SelectionList;
+	typedef std::vector<EditorSector*> SectorList;
+
 	extern SelectionList s_selectionList;
+	extern SectorList s_sectorChangeList;
 
 	FeatureId createFeatureId(EditorSector* sector, s32 featureIndex, s32 featureData = 0, bool isOverlapped = false);
 	EditorSector* unpackFeatureId(FeatureId id, s32* featureIndex, s32* featureData, bool* isOverlapped);

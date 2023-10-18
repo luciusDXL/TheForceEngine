@@ -389,7 +389,7 @@ namespace LevelEditor
 					{
 						closestDistSq = min(floorDistSq, ceilDistSq);
 						closestPart = floorDistSq <= ceilDistSq ? HP_FLOOR : HP_CEIL;
-						closestVtx = v;
+						closestVtx = (s32)v;
 						finalPos = floorDistSq <= ceilDistSq ? floorVtx : ceilVtx;
 					}
 				}
@@ -429,6 +429,15 @@ namespace LevelEditor
 						bool clearList = !selection_doesFeatureExist(createFeatureId(s_selectedVtxSector, s_selectedVtxId));
 						selectFromSingleVertex(s_selectedVtxSector, s_selectedVtxId, clearList);
 					}
+				}
+			}
+			else if (TFE_Input::mouseDown(MouseButton::MBUTTON_LEFT) && TFE_Input::keyModDown(KEYMOD_CTRL) && TFE_Input::keyModDown(KEYMOD_SHIFT))
+			{
+				if (s_hoveredVtxSector && s_hoveredVtxId >= 0)
+				{
+					s_editMove = true;
+					adjustGridHeight(s_hoveredVtxSector);
+					selectFromSingleVertex(s_hoveredVtxSector, s_hoveredVtxId, false);
 				}
 			}
 		}
@@ -652,6 +661,15 @@ namespace LevelEditor
 							}
 						}
 					}
+					else if (TFE_Input::mouseDown(MouseButton::MBUTTON_LEFT) && TFE_Input::keyModDown(KEYMOD_CTRL) && TFE_Input::keyModDown(KEYMOD_SHIFT))
+					{
+						if (s_hoveredVtxSector && s_hoveredVtxId >= 0)
+						{
+							s_editMove = true;
+							adjustGridHeight(s_hoveredVtxSector);
+							selectFromSingleVertex(s_hoveredVtxSector, s_hoveredVtxId, false);
+						}
+					}
 				}
 				else
 				{
@@ -833,7 +851,7 @@ namespace LevelEditor
 				// Put the 3D camera at the center of the 2D map.
 				if (s_view == EDIT_VIEW_2D)
 				{
-					Vec2f worldPos = mouseCoordToWorldPos2d(s_viewportSize.x / 2 + s_editWinMapCorner.x, s_viewportSize.z / 2 + s_editWinMapCorner.z);
+					Vec2f worldPos = mouseCoordToWorldPos2d(s_viewportSize.x / 2 + (s32)s_editWinMapCorner.x, s_viewportSize.z / 2 + (s32)s_editWinMapCorner.z);
 					s_camera.pos.x = worldPos.x;
 					s_camera.pos.z = worldPos.z;
 					computeCameraTransform();
@@ -1164,12 +1182,9 @@ namespace LevelEditor
 			selection_clear();
 			selection_add(rootId);
 		}
-		else
+		else if (!selection_add(rootId))
 		{
-			if (!selection_add(rootId))
-			{
-				return;
-			}
+			return;
 		}
 		s_searchKey++;
 
@@ -1229,25 +1244,44 @@ namespace LevelEditor
 		}
 	}
 
-	void toggleVertexGroupInclusion(EditorSector* sector, s32 featureId)
+	void toggleVertexGroupInclusion(EditorSector* sector, s32 featureIndex)
 	{
-		FeatureId id = createFeatureId(sector, featureId);
+		FeatureId id = createFeatureId(sector, featureIndex);
 		if (selection_doesFeatureExist(id))
 		{
 			// Remove, and all matches.
+			const Vec2f* vtx = &sector->vtx[featureIndex];
+			// Remove all features were vertices match...
+			s32 count = (s32)s_selectionList.size();
+			FeatureId* list = s_selectionList.data();
+			for (s32 i = count - 1; i >= 0; i--)
+			{
+				s32 _featureIndex, _featureData;
+				bool _overlapped;
+				EditorSector* featureSector = unpackFeatureId(list[i], &_featureIndex, &_featureData, &_overlapped);
+
+				if (vtxEqual(vtx, &featureSector->vtx[_featureIndex]))
+				{
+					selection_remove(list[i]);
+				}
+			}
 		}
 		else
 		{
 			// Add
-			selectFromSingleVertex(sector, featureId, false);
+			selectFromSingleVertex(sector, featureIndex, false);
 		}
 	}
 
 	void moveVertex(Vec2f worldPos2d)
 	{
 		snapToGrid(&worldPos2d);
-		Vec2f delta = { worldPos2d.x - s_selectedVtxSector->vtx[s_selectedVtxId].x, worldPos2d.z - s_selectedVtxSector->vtx[s_selectedVtxId].z };
+		const Vec2f delta = { worldPos2d.x - s_selectedVtxSector->vtx[s_selectedVtxId].x, worldPos2d.z - s_selectedVtxSector->vtx[s_selectedVtxId].z };
 
+		s_sectorChangeList.clear();
+		s_searchKey++;
+
+		// As vertices are being updated, add a list of sectors that need updating.
 		const size_t count = s_selectionList.size();
 		const FeatureId* id = s_selectionList.data();
 		for (size_t i = 0; i < count; i++)
@@ -1259,6 +1293,20 @@ namespace LevelEditor
 			sector->vtx[featureIndex].x += delta.x;
 			sector->vtx[featureIndex].z += delta.z;
 
+			// Only update a sector once.
+			if (sector->searchKey != s_searchKey)
+			{
+				s_sectorChangeList.push_back(sector);
+				sector->searchKey = s_searchKey;
+			}
+		}
+
+		// Update sectors after changes.
+		const size_t changeCount = s_sectorChangeList.size();
+		EditorSector** list = s_sectorChangeList.data();
+		for (size_t i = 0; i < changeCount; i++)
+		{
+			EditorSector* sector = list[i];
 			sectorToPolygon(sector);
 			sector->bounds[0] = { sector->poly.bounds[0].x, 0.0f, sector->poly.bounds[0].z };
 			sector->bounds[1] = { sector->poly.bounds[1].x, 0.0f, sector->poly.bounds[1].z };
