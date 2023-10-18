@@ -526,6 +526,24 @@ bool validatePath()
 	return TFE_Paths::hasPath(PATH_SOURCE_DATA);
 }
 
+bool checkPortableMode(int argc, char* argv[])
+{
+	if (argc >= 1) {
+		const char* curOptionName = nullptr;
+		bool longName = false;
+		std::vector<const char*> values;
+		for (s32 i = 1; i < argc; i++)
+		{
+			const char* opt = argv[i];
+			if (!strcasecmp(opt, "-portable"))
+			{
+				return true;
+			}
+		}
+	}
+	return  FileUtil::exists("PORTABLE");
+}
+
 int main(int argc, char* argv[])
 {
 	#if INSTALL_CRASH_HANDLER
@@ -536,8 +554,16 @@ int main(int argc, char* argv[])
 	// Paths
 	bool pathsSet = true;
 	pathsSet &= TFE_Paths::setProgramPath();
-	pathsSet &= TFE_Paths::setProgramDataPath("TheForceEngine");
-	pathsSet &= TFE_Paths::setUserDocumentsPath("TheForceEngine");
+	bool portableMode = pathsSet && checkPortableMode(argc, argv);
+	if (portableMode)
+	{
+		TFE_Paths::activatePortableMode();
+	}
+	else
+	{
+		pathsSet &= TFE_Paths::setProgramDataPath("TheForceEngine");
+		pathsSet &= TFE_Paths::setUserDocumentsPath("TheForceEngine");
+	}
 	TFE_System::logOpen("the_force_engine_log.txt");
 	TFE_System::logWrite(LOG_MSG, "Main", "The Force Engine %s", c_gitVersion);
 	if (!pathsSet)

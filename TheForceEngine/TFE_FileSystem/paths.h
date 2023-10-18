@@ -29,6 +29,7 @@ namespace TFE_Paths
 	// Paths, such as the source data or mods.
 	void setPath(TFE_PathType pathType, const char* path);
 
+	void activatePortableMode();
 	// Platform specific user data path.
 	bool setProgramDataPath(const char* append);
 	bool setUserDocumentsPath(const char* append);
