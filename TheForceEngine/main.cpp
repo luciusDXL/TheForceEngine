@@ -526,6 +526,8 @@ bool validatePath()
 	return TFE_Paths::hasPath(PATH_SOURCE_DATA);
 }
 
+// Check the command-line arguments for the '-portable' switch. Note this is separate from,
+// and happens earlier than, processing any other command-line arguments.
 bool checkPortableMode(int argc, char* argv[])
 {
 	if (argc >= 1) {

@@ -70,6 +70,7 @@ TheForceEngine/Exports/
 TheForceEngine/VTune Profiler Results/
 TheForceEngine/glslang/
 TheForceEngine/Documentation/blog posts/
+TheForceEngine/UserDocs/
 BuildExes/
 Build/
 TheForceEngine/bug_reports/
@@ -79,4 +80,3 @@ CMakeFiles/
 
 # Linux
 TheForceEngine/tfelnx
-TheForceEngine/UserDocs/
