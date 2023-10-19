@@ -83,6 +83,10 @@ namespace TFE_DarkForces
 	extern s32 s_weaponLight;
 	extern s32 s_baseAtten;
 	extern s32 s_invincibility;
+	extern JBool s_limitStepHeight;
+	extern JBool s_smallModeEnabled;
+	extern JBool s_flyMode;
+	extern JBool s_noclip;
 	extern JBool s_oneHitKillEnabled;
 	extern JBool s_instaDeathEnabled;
 	extern fixed16_16 s_gravityAccel;
@@ -154,7 +158,7 @@ namespace TFE_DarkForces
 	void computeDamagePushVelocity(ProjectileLogic* proj, vec3_fixed* vel);
 
 	void cheat_teleport();
-	void cheat_enableNoheightCheck();
+	void cheat_toggleHeightCheck();
 	void cheat_bugMode();
 	void cheat_pauseAI();
 	void cheat_postal();

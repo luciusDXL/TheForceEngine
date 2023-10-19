@@ -40,7 +40,11 @@ namespace TFE_DarkForces
 	void mission_setupTasks();
 	void mission_serialize(Stream* stream);
 	void mission_serializeColorMap(Stream* stream);
-		
+
+	void cheat_revealMap();
+	void cheat_supercharge();
+	void cheat_toggleData();
+	
 	extern JBool s_gamePaused;
 	extern GameMissionMode s_missionMode;
 	extern TextureData* s_loadScreen;

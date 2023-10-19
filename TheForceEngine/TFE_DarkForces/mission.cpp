@@ -1030,6 +1030,22 @@ namespace TFE_DarkForces
 		s_exitLevel = JTRUE;
 	}
 
+	void cheat_revealMap()
+	{
+		automap_updateMapData(MAP_INCR_SECTOR_MODE);
+	}
+
+	void cheat_supercharge()
+	{
+		pickupSupercharge();
+		hud_sendTextMessage(701);
+	}
+	
+	void cheat_toggleData()
+	{
+		hud_toggleDataDisplay();
+	}
+
 	void executeCheat(CheatID cheatID)
 	{
 		if (cheatID == CHEAT_NONE)
@@ -1041,7 +1057,7 @@ namespace TFE_DarkForces
 		{
 			case CHEAT_LACDS:
 			{
-				automap_updateMapData(MAP_INCR_SECTOR_MODE);
+				cheat_revealMap();
 			} break;
 			case CHEAT_LANTFH:
 			{
@@ -1050,12 +1066,11 @@ namespace TFE_DarkForces
 			} break;
 			case CHEAT_LAPOGO:
 			{
-				cheat_enableNoheightCheck();
+				cheat_toggleHeightCheck();
 			} break;
 			case CHEAT_LARANDY:
 			{
-				pickupSupercharge();
-				hud_sendTextMessage(701);
+				cheat_supercharge();
 			} break;
 			case CHEAT_LAIMLAME:
 			{
@@ -1067,7 +1082,7 @@ namespace TFE_DarkForces
 			} break;
 			case CHEAT_LADATA:
 			{
-				hud_toggleDataDisplay();
+				cheat_toggleData();
 			} break;
 			case CHEAT_LABUG:
 			{
