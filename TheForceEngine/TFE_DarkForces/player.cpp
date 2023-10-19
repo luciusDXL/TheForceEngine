@@ -973,6 +973,13 @@ namespace TFE_DarkForces
 			if (msg) { hud_sendTextMessage(msg, 1); }
 		}
 	}
+	
+	void cheat_maxLives()
+	{
+		s_lifeCount = 9;
+		const char* msg = TFE_System::getMessage(TFE_MSG_CAT);
+		if (msg) { hud_sendTextMessage(msg, 1); }
+	}
 
 	void cheat_die()
 	{

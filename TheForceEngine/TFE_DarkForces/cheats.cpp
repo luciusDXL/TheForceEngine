@@ -44,6 +44,7 @@ namespace TFE_DarkForces
 		"TESTER",
 		"ADDLIFE",
 		"SUBLIFE",
+		"CAT",
 		"DIE",
 		"IMDEATH", // Enemies die in one hit.
 		"HARDCORE" // Player dies in one hit.

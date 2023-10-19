@@ -169,6 +169,7 @@ namespace TFE_DarkForces
 	void cheat_tester();
 	void cheat_addLife();
 	void cheat_subLife();
+	void cheat_maxLives();
 	void cheat_die();
 	void cheat_oneHitKill();
 	void cheat_instaDeath();

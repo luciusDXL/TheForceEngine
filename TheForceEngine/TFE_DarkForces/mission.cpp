@@ -191,6 +191,7 @@ namespace TFE_DarkForces
 	CHEAT_CMD(LATESTER);
 	CHEAT_CMD(LAADDLIFE);
 	CHEAT_CMD(LASUBLIFE);
+	CHEAT_CMD(LACAT);
 	CHEAT_CMD(LADIE);
 	CHEAT_CMD(LAIMDEATH);
 	CHEAT_CMD(LAHARDCORE);
@@ -362,6 +363,7 @@ namespace TFE_DarkForces
 			console_LATESTER,	// CHEAT_LATESTER,
 			console_LAADDLIFE,
 			console_LASUBLIFE,
+			console_LACAT,
 			console_LADIE,
 			console_LAIMDEATH,
 			console_LAHARDCORE
@@ -1166,6 +1168,10 @@ namespace TFE_DarkForces
 			case CHEAT_LASUBLIFE:
 			{
 				cheat_subLife();
+			} break;
+			case CHEAT_LACAT:
+			{
+				cheat_maxLives();
 			} break;
 			case CHEAT_LADIE:
 			{
