@@ -1,5 +1,6 @@
 #include "levelEditor.h"
 #include "levelEditorData.h"
+#include "levelEditorHistory.h"
 #include "selection.h"
 #include "infoPanel.h"
 #include "browser.h"
@@ -57,7 +58,6 @@ namespace LevelEditor
 	// metadata, etc.
 	// So existing levels need to be loaded into that format.
 	// If the correct format already exists, though, then it is loaded directly.
-	EditorLevel s_level = {};
 	AssetList s_levelTextureList;
 	LevelEditMode s_editMode = LEDIT_DRAW;
 
@@ -88,6 +88,9 @@ namespace LevelEditor
 	HitPart s_hoveredWallPart = HP_COUNT;
 	HitPart s_selectedWallPart = HP_COUNT;
 
+	// Search
+	u32 s_searchKey = 0;
+
 	static bool s_editMove = false;
 
 	static EditorView s_view = EDIT_VIEW_2D;
@@ -97,6 +100,10 @@ namespace LevelEditor
 	static Vec3f s_rayDir = { 0.0f, 0.0f, 1.0f };
 	static f32 s_zoom = c_defaultZoom;
 	static bool s_uiActive = false;
+
+	static bool s_moveStarted = false;
+	static Vec2f s_moveStartPos;
+	static Vec2f s_moveTotalDelta;
 
 	static char s_layerMem[4 * 31];
 	static char* s_layerStr[31];
@@ -160,7 +167,7 @@ namespace LevelEditor
 		// Cleanup any existing level data.
 		destroy();
 		// Load the new level.
-		if (!loadLevelFromAsset(asset, &s_level))
+		if (!loadLevelFromAsset(asset))
 		{
 			return false;
 		}
@@ -211,6 +218,9 @@ namespace LevelEditor
 		computeCameraTransform();
 		s_cursor3d = { 0 };
 
+		levHistory_init();
+		levHistory_createSnapshot("Imported Level");
+
 		TFE_RenderShared::init(false);
 		return true;
 	}
@@ -223,6 +233,8 @@ namespace LevelEditor
 
 		TFE_RenderBackend::freeTexture(s_editCtrlToolbarData);
 		s_editCtrlToolbarData = nullptr;
+
+		levHistory_destroy();
 	}
 
 	bool isPointInsideSector2d(EditorSector* sector, Vec2f pos, s32 layer)
@@ -832,7 +844,7 @@ namespace LevelEditor
 			s_rayDir = mouseCoordToWorldDir3d(mx, my);
 			RayHitInfo hitInfo;
 			Ray ray = { s_camera.pos, s_rayDir, 1000.0f, s_curLayer };
-			if (traceRay(&ray, &s_level, &hitInfo, hitBackfaces))
+			if (traceRay(&ray, &hitInfo, hitBackfaces))
 			{
 				s_cursor3d = hitInfo.hitPos;
 				if (s_editMode != LEDIT_DRAW)
@@ -1010,6 +1022,16 @@ namespace LevelEditor
 	{
 		pushFont(TFE_Editor::FONT_SMALL);
 		updateWindowControls();
+
+		// Hotkeys...
+		if (TFE_Input::keyPressed(KEY_Z) && TFE_Input::keyModDown(KEYMOD_CTRL))
+		{
+			levHistory_undo();
+		}
+		else if (TFE_Input::keyPressed(KEY_Y) && TFE_Input::keyModDown(KEYMOD_CTRL))
+		{
+			levHistory_redo();
+		}
 
 		viewport_update((s32)UI_SCALE(480) + 16, (s32)UI_SCALE(68) + 18);
 		viewport_render(s_view);
@@ -1250,9 +1272,7 @@ namespace LevelEditor
 		const f32 eps = 0.00001f;
 		return fabsf(a->x - b->x) < eps && fabsf(a->z - b->z) < eps;
 	}
-
-	static u32 s_searchKey = 0;
-
+		
 	void selectFromSingleVertex(EditorSector* root, s32 featureId, bool clearList)
 	{
 		const Vec2f* rootVtx = &root->vtx[featureId];
@@ -1353,22 +1373,16 @@ namespace LevelEditor
 		}
 	}
 
-	void moveVertex(Vec2f worldPos2d)
+	void edit_moveVertices(s32 count, const FeatureId* vtxIds, Vec2f delta)
 	{
-		snapToGrid(&worldPos2d);
-		const Vec2f delta = { worldPos2d.x - s_selectedVtxSector->vtx[s_selectedVtxId].x, worldPos2d.z - s_selectedVtxSector->vtx[s_selectedVtxId].z };
-
-		s_sectorChangeList.clear();
 		s_searchKey++;
+		s_sectorChangeList.clear();
 
-		// As vertices are being updated, add a list of sectors that need updating.
-		const size_t count = s_selectionList.size();
-		const FeatureId* id = s_selectionList.data();
-		for (size_t i = 0; i < count; i++)
+		for (s32 i = 0; i < count; i++)
 		{
 			s32 featureIndex, featureData;
 			bool overlapped;
-			EditorSector* sector = unpackFeatureId(id[i], &featureIndex, &featureData, &overlapped);
+			EditorSector* sector = unpackFeatureId(vtxIds[i], &featureIndex, &featureData, &overlapped);
 
 			sector->vtx[featureIndex].x += delta.x;
 			sector->vtx[featureIndex].z += delta.z;
@@ -1393,6 +1407,23 @@ namespace LevelEditor
 			sector->bounds[0].y = min(sector->floorHeight, sector->ceilHeight);
 			sector->bounds[1].y = max(sector->floorHeight, sector->ceilHeight);
 		}
+	}
+		
+	void moveVertex(Vec2f worldPos2d)
+	{
+		snapToGrid(&worldPos2d);
+
+		// Overall movement since mousedown, for the history.
+		if (!s_moveStarted)
+		{
+			s_moveStarted = true;
+			s_moveStartPos = s_selectedVtxSector->vtx[s_selectedVtxId];
+		}
+		s_moveTotalDelta = { worldPos2d.x - s_moveStartPos.x, worldPos2d.z - s_moveStartPos.z };
+		
+		// Current movement.
+		const Vec2f delta = { worldPos2d.x - s_selectedVtxSector->vtx[s_selectedVtxId].x, worldPos2d.z - s_selectedVtxSector->vtx[s_selectedVtxId].z };
+		edit_moveVertices((s32)s_selectionList.size(), s_selectionList.data(), delta);
 
 		s_selectedVtxPos.x = s_selectedVtxSector->vtx[s_selectedVtxId].x;
 		s_selectedVtxPos.z = s_selectedVtxSector->vtx[s_selectedVtxId].z;
@@ -1465,15 +1496,17 @@ namespace LevelEditor
 				{
 					moveVertex(worldPos2d);
 				}
-				else if (s_selectedVtxId >= 0 && s_selectedVtxSector && s_editMove)
+				else if (s_selectedVtxId >= 0 && s_selectedVtxSector && s_moveStarted)
 				{
-					// Finalize
-					// TODO: Add to history.
 					s_editMove = false;
+					s_moveStarted = false;
+
+					cmd_addMoveVertices(s_selectionList.size(), s_selectionList.data(), s_moveTotalDelta);
 				}
 				else
 				{
 					s_editMove = false;
+					s_moveStarted = false;
 				}
 			}
 		}
@@ -1553,11 +1586,12 @@ namespace LevelEditor
 				{
 					moveVertex(worldPos2d);
 				}
-				else if (s_selectedVtxId >= 0 && s_selectedVtxSector && s_editMove)
+				else if (s_selectedVtxId >= 0 && s_selectedVtxSector && s_moveStarted)
 				{
-					// Finalize
-					// TODO: Add to history.
 					s_editMove = false;
+					s_moveStarted = false;
+
+					cmd_addMoveVertices(s_selectionList.size(), s_selectionList.data(), s_moveTotalDelta);
 				}
 				else
 				{

@@ -11,6 +11,7 @@
 #include <TFE_Editor/EditorAsset/editorTexture.h>
 #include <TFE_Editor/editorProject.h>
 #include <TFE_Polygon/polygon.h>
+#include <TFE_Editor/history.h>
 
 namespace LevelEditor
 {
@@ -49,9 +50,15 @@ namespace LevelEditor
 		LAYER_ANY = -256,
 	};
 
+	struct LevelTextureAsset
+	{
+		std::string name;
+		TFE_Editor::AssetHandle handle = NULL_ASSET;
+	};
+
 	struct LevelTexture
 	{
-		TFE_Editor::AssetHandle handle = NULL_ASSET;
+		s32 texIndex = -1;
 		Vec2f offset = { 0 };
 	};
 
@@ -79,7 +86,7 @@ namespace LevelEditor
 		f32 ceilHeight = 0.0f;
 		f32 secHeight = 0.0f;
 
-		s32 ambient = 0;
+		u32 ambient = 0;
 		u32 flags[3] = { 0 };
 
 		// Geometry
@@ -106,6 +113,9 @@ namespace LevelEditor
 
 		// Sky Parallax.
 		Vec2f parallax = { 1024.0f, 1024.0f };
+
+		// Texture data.
+		std::vector<LevelTextureAsset> textures;
 
 		// Sector data.
 		std::vector<EditorSector> sectors;
@@ -137,10 +147,15 @@ namespace LevelEditor
 		f32 dist;
 	};
 
-	bool loadLevelFromAsset(TFE_Editor::Asset* asset, EditorLevel* level);
+	bool loadLevelFromAsset(TFE_Editor::Asset* asset);
 	void sectorToPolygon(EditorSector* sector);
 	void polygonToSector(EditorSector* sector);
 
-	s32 findSector2d(EditorLevel* level, s32 layer, const Vec2f* pos);
-	bool traceRay(const Ray* ray, const EditorLevel* level, RayHitInfo* hitInfo, bool flipFaces);
+	TFE_Editor::EditorTexture* getTexture(s32 index);
+
+	s32 findSector2d(s32 layer, const Vec2f* pos);
+	bool traceRay(const Ray* ray, RayHitInfo* hitInfo, bool flipFaces);
+
+	void level_createSnapshot(TFE_Editor::SnapshotBuffer* buffer);
+	void level_unpackSnapshot(s32 id, u32 size, void* data);
 }

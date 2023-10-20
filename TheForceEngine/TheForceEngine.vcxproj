@@ -458,11 +458,13 @@ echo ^)";
     <ClInclude Include="TFE_Editor\editorProject.h" />
     <ClInclude Include="TFE_Editor\editorResources.h" />
     <ClInclude Include="TFE_Editor\errorMessages.h" />
+    <ClInclude Include="TFE_Editor\history.h" />
     <ClInclude Include="TFE_Editor\LevelEditor\browser.h" />
     <ClInclude Include="TFE_Editor\LevelEditor\camera.h" />
     <ClInclude Include="TFE_Editor\LevelEditor\infoPanel.h" />
     <ClInclude Include="TFE_Editor\LevelEditor\levelEditor.h" />
     <ClInclude Include="TFE_Editor\LevelEditor\levelEditorData.h" />
+    <ClInclude Include="TFE_Editor\LevelEditor\levelEditorHistory.h" />
     <ClInclude Include="TFE_Editor\LevelEditor\Rendering\grid2d.h" />
     <ClInclude Include="TFE_Editor\LevelEditor\Rendering\grid3d.h" />
     <ClInclude Include="TFE_Editor\LevelEditor\Rendering\viewport.h" />
@@ -802,11 +804,13 @@ echo ^)";
     <ClCompile Include="TFE_Editor\editorProject.cpp" />
     <ClCompile Include="TFE_Editor\editorResources.cpp" />
     <ClCompile Include="TFE_Editor\errorMessages.cpp" />
+    <ClCompile Include="TFE_Editor\history.cpp" />
     <ClCompile Include="TFE_Editor\LevelEditor\browser.cpp" />
     <ClCompile Include="TFE_Editor\LevelEditor\camera.cpp" />
     <ClCompile Include="TFE_Editor\LevelEditor\infoPanel.cpp" />
     <ClCompile Include="TFE_Editor\LevelEditor\levelEditor.cpp" />
     <ClCompile Include="TFE_Editor\LevelEditor\levelEditorData.cpp" />
+    <ClCompile Include="TFE_Editor\LevelEditor\levelEditorHistory.cpp" />
     <ClCompile Include="TFE_Editor\LevelEditor\Rendering\grid2d.cpp" />
     <ClCompile Include="TFE_Editor\LevelEditor\Rendering\grid3d.cpp" />
     <ClCompile Include="TFE_Editor\LevelEditor\Rendering\viewport.cpp" />

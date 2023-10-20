@@ -48,4 +48,7 @@ namespace LevelEditor
 	extern Vec3f s_viewDir;
 	extern Vec3f s_viewRight;
 	extern Vec3f s_cursor3d;
+
+	// Search
+	extern u32 s_searchKey;
 }

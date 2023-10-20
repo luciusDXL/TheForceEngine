@@ -253,10 +253,10 @@ namespace LevelEditor
 
 		ImGui::Separator();
 
-		EditorTexture* midTex = (EditorTexture*)getAssetData(wall->tex[WP_MID].handle);
-		EditorTexture* topTex = (EditorTexture*)getAssetData(wall->tex[WP_TOP].handle);
-		EditorTexture* botTex = (EditorTexture*)getAssetData(wall->tex[WP_BOT].handle);
-		EditorTexture* sgnTex = (EditorTexture*)getAssetData(wall->tex[WP_SIGN].handle);
+		EditorTexture* midTex = getTexture(wall->tex[WP_MID].texIndex);
+		EditorTexture* topTex = getTexture(wall->tex[WP_TOP].texIndex);
+		EditorTexture* botTex = getTexture(wall->tex[WP_BOT].texIndex);
+		EditorTexture* sgnTex = getTexture(wall->tex[WP_SIGN].texIndex);
 
 		const f32 texCol = 150.0f;
 		// Labels
@@ -446,8 +446,8 @@ namespace LevelEditor
 		ImGui::Separator();
 
 		// Textures
-		EditorTexture* floorTex = (EditorTexture*)getAssetData(sector->floorTex.handle);
-		EditorTexture* ceilTex  = (EditorTexture*)getAssetData(sector->ceilTex.handle);
+		EditorTexture* floorTex = getTexture(sector->floorTex.texIndex);
+		EditorTexture* ceilTex  = getTexture(sector->ceilTex.texIndex);
 
 		void* floorPtr = floorTex ? TFE_RenderBackend::getGpuPtr(floorTex->frames[0]) : nullptr;
 		void* ceilPtr = ceilTex ? TFE_RenderBackend::getGpuPtr(ceilTex->frames[0]) : nullptr;

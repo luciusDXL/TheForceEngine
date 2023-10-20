@@ -1,4 +1,6 @@
 #include "levelEditorData.h"
+#include "selection.h"
+#include <TFE_Editor/history.h>
 #include <TFE_Editor/errorMessages.h>
 #include <TFE_Editor/editorConfig.h>
 #include <TFE_Editor/editorLevel.h>
@@ -40,9 +42,15 @@ using namespace TFE_Editor;
 namespace LevelEditor
 {
 	static std::vector<u8> s_fileData;
-	static std::vector<AssetHandle> s_textureList;
 	static u32* s_palette = nullptr;
 	static s32 s_palIndex = 0;
+
+	static s32 s_curSnapshotId = -1;
+	static EditorLevel s_curSnapshot;
+	static SnapshotBuffer* s_buffer = nullptr;
+	static const u8* s_readBuffer;
+
+	EditorLevel s_level = {};
 
 	enum Constants
 	{
@@ -58,8 +66,10 @@ namespace LevelEditor
 		return AssetBrowser::loadAssetData(texAsset);
 	}
 
-	bool loadLevelFromAsset(Asset* asset, EditorLevel* level)
+	bool loadLevelFromAsset(Asset* asset)
 	{
+		EditorLevel* level = &s_level;
+
 		s_fileData.clear();
 		if (asset->archive)
 		{
@@ -146,7 +156,7 @@ namespace LevelEditor
 		{
 			return false;
 		}
-		s_textureList.resize(textureCount);
+		level->textures.resize(textureCount);
 
 		// Read texture names.
 		char textureName[256];
@@ -160,7 +170,7 @@ namespace LevelEditor
 
 			char bmTextureName[32];
 			FileUtil::replaceExtension(textureName, "BM", bmTextureName);
-			s_textureList[i] = loadTexture(bmTextureName);
+			level->textures[i] = { bmTextureName, loadTexture(bmTextureName) };
 		}
 		// Sometimes there are extra textures, just add them - they will be compacted later.
 		bool readNext = true;
@@ -168,7 +178,7 @@ namespace LevelEditor
 		{
 			char bmTextureName[32];
 			FileUtil::replaceExtension(textureName, "BM", bmTextureName);
-			s_textureList.push_back(loadTexture(bmTextureName));
+			level->textures.push_back({ bmTextureName, loadTexture(bmTextureName) });
 
 			line = parser.readLine(bufferPos);
 			readNext = false;
@@ -228,7 +238,7 @@ namespace LevelEditor
 			{
 				return false;
 			}
-			sector->floorTex.handle = s_textureList[floorTexId];
+			sector->floorTex.texIndex = floorTexId;
 			
 			// Ceiling Texture & Offset
 			line = parser.readLine(bufferPos);
@@ -241,7 +251,7 @@ namespace LevelEditor
 			{
 				return false;
 			}
-			sector->ceilTex.handle = s_textureList[ceilTexId];
+			sector->ceilTex.texIndex = ceilTexId;
 
 			// Second Altitude
 			line = parser.readLine(bufferPos);
@@ -327,12 +337,12 @@ namespace LevelEditor
 					wall->wallLight -= 65536;
 				}
 
-				wall->tex[WP_MID].handle = texId[WP_MID] >= 0 ? s_textureList[texId[WP_MID]] : NULL_ASSET;
-				wall->tex[WP_TOP].handle = texId[WP_TOP] >= 0 ? s_textureList[texId[WP_TOP]] : NULL_ASSET;
-				wall->tex[WP_BOT].handle = texId[WP_BOT] >= 0 ? s_textureList[texId[WP_BOT]] : NULL_ASSET;
-				wall->tex[WP_SIGN].handle = texId[WP_SIGN] >= 0 ? s_textureList[texId[WP_SIGN]] : NULL_ASSET;
+				wall->tex[WP_MID].texIndex = texId[WP_MID] >= 0 ? texId[WP_MID] : -1;
+				wall->tex[WP_TOP].texIndex = texId[WP_TOP] >= 0 ? texId[WP_TOP] : -1;
+				wall->tex[WP_BOT].texIndex = texId[WP_BOT] >= 0 ? texId[WP_BOT] : -1;
+				wall->tex[WP_SIGN].texIndex = texId[WP_SIGN] >= 0 ? texId[WP_SIGN] : -1;
 
-				if (wall->tex[WP_SIGN].handle == NULL_ASSET)
+				if (wall->tex[WP_SIGN].texIndex < 0)
 				{
 					wall->tex[WP_SIGN].offset = { 0 };
 				}
@@ -366,6 +376,12 @@ namespace LevelEditor
 		}
 
 		return true;
+	}
+
+	EditorTexture* getTexture(s32 index)
+	{
+		if (index < 0) { return nullptr; }
+		return (EditorTexture*)getAssetData(s_level.textures[index].handle);
 	}
 
 	// Update the sector's polygon from the sector data.
@@ -409,12 +425,12 @@ namespace LevelEditor
 		// TODO
 	}
 
-	s32 findSector2d(EditorLevel* level, s32 layer, const Vec2f* pos)
+	s32 findSector2d(s32 layer, const Vec2f* pos)
 	{
-		if (level->sectors.empty()) { return -1; }
+		if (s_level.sectors.empty()) { return -1; }
 
-		const s32 sectorCount = (s32)level->sectors.size();
-		EditorSector* sectors = level->sectors.data();
+		const s32 sectorCount = (s32)s_level.sectors.size();
+		EditorSector* sectors = s_level.sectors.data();
 
 		for (s32 i = 0; i < sectorCount; i++)
 		{
@@ -499,8 +515,9 @@ namespace LevelEditor
 	}
 		
 	// Return true if a hit is found.
-	bool traceRay(const Ray* ray, const EditorLevel* level, RayHitInfo* hitInfo, bool flipFaces)
+	bool traceRay(const Ray* ray, RayHitInfo* hitInfo, bool flipFaces)
 	{
+		const EditorLevel* level = &s_level;
 		if (level->sectors.empty()) { return false; }
 		const s32 sectorCount = (s32)level->sectors.size();
 		const EditorSector* sector = level->sectors.data();
@@ -659,5 +676,210 @@ namespace LevelEditor
 		}
 
 		return hitInfo->hitSectorId >= 0;
+	}
+	
+	// Note: memcpys() are used to avoid pointer alignment issues.
+	void writeU8(u8 value)
+	{
+		s_buffer->push_back(value);
+	}
+
+	void writeU32(u32 value)
+	{
+		const size_t pos = s_buffer->size();
+		s_buffer->resize(pos + sizeof(u32));
+		memcpy(s_buffer->data() + pos, &value, sizeof(u32));
+	}
+
+	void writeS32(s32 value)
+	{
+		const size_t pos = s_buffer->size();
+		s_buffer->resize(pos + sizeof(s32));
+		memcpy(s_buffer->data() + pos, &value, sizeof(s32));
+	}
+
+	void writeF32(f32 value)
+	{
+		const size_t pos = s_buffer->size();
+		s_buffer->resize(pos + sizeof(f32));
+		memcpy(s_buffer->data() + pos, &value, sizeof(f32));
+	}
+
+	void writeData(const void* srcData, u32 size)
+	{
+		const size_t pos = s_buffer->size();
+		s_buffer->resize(pos + size);
+		memcpy(s_buffer->data() + pos, srcData, size);
+	}
+
+	void writeString(const std::string& str)
+	{
+		writeU32((u32)str.length());
+		writeData(str.data(), (u32)str.length());
+	}
+
+	u8 readU8()
+	{
+		u8 value = *s_readBuffer;
+		s_readBuffer++;
+		return value;
+	}
+
+	u32 readU32()
+	{
+		u32 value;
+		memcpy(&value, s_readBuffer, sizeof(u32));
+		s_readBuffer += sizeof(u32);
+		return value;
+	}
+
+	s32 readS32()
+	{
+		s32 value;
+		memcpy(&value, s_readBuffer, sizeof(s32));
+		s_readBuffer += sizeof(s32);
+		return value;
+	}
+
+	f32 readF32()
+	{
+		f32 value;
+		memcpy(&value, s_readBuffer, sizeof(f32));
+		s_readBuffer += sizeof(f32);
+		return value;
+	}
+
+	void readData(void* dstData, u32 size)
+	{
+		memcpy(dstData, s_readBuffer, size);
+		s_readBuffer += size;
+	}
+
+	void readString(std::string& str)
+	{
+		u32 len = readU32();
+		char strBuffer[1024];
+		readData(strBuffer, len);
+		strBuffer[len] = 0;
+
+		str = strBuffer;
+	}
+		
+	void level_createSnapshot(SnapshotBuffer* buffer)
+	{
+		assert(buffer);
+		// Serialize the level into a buffer.
+		s_buffer = buffer;
+		
+		writeString(s_level.name);
+		writeString(s_level.slot);
+		writeString(s_level.palette);
+		writeU8((u8)s_level.featureSet);
+		writeData(&s_level.parallax, sizeof(Vec2f));
+
+		const u32 texCount = (u32)s_level.textures.size();
+		writeU32(texCount);
+		for (u32 i = 0; i < texCount; i++)
+		{
+			writeString(s_level.textures[i].name);
+		}
+
+		const u32 sectorCount = (u32)s_level.sectors.size();
+		const EditorSector* sector = s_level.sectors.data();
+		writeU32(sectorCount);
+		for (u32 s = 0; s < sectorCount; s++, sector++)
+		{
+			writeU32(sector->id);
+			writeString(sector->name);
+			writeData(&sector->floorTex, sizeof(LevelTexture));
+			writeData(&sector->ceilTex, sizeof(LevelTexture));
+			writeF32(sector->floorHeight);
+			writeF32(sector->ceilHeight);
+			writeF32(sector->secHeight);
+			writeU32(sector->ambient);
+			writeS32(sector->layer);
+			writeData(sector->flags, sizeof(u32) * 3);
+			writeU32((u32)sector->vtx.size());
+			writeU32((u32)sector->walls.size());
+			writeData(sector->vtx.data(), u32(sizeof(Vec2f) * sector->vtx.size()));
+			writeData(sector->walls.data(), u32(sizeof(EditorWall) * sector->walls.size()));
+		}
+	}
+		
+	void level_unpackSnapshot(s32 id, u32 size, void* data)
+	{
+		// Only unpack the snapshot if its not already cached.
+		if (s_curSnapshotId != id)
+		{
+			s_curSnapshotId = id;
+
+			s_readBuffer = (u8*)data;
+			readString(s_curSnapshot.name);
+			readString(s_curSnapshot.slot);
+			readString(s_curSnapshot.palette);
+			s_curSnapshot.featureSet = (FeatureSet)readU8();
+			readData(&s_curSnapshot.parallax, sizeof(Vec2f));
+
+			u32 texCount = readU32();
+			s_curSnapshot.textures.resize(texCount);
+			for (u32 i = 0; i < texCount; i++)
+			{
+				readString(s_curSnapshot.textures[i].name);
+				s_curSnapshot.textures[i].handle = loadTexture(s_curSnapshot.textures[i].name.c_str());
+			}
+
+			u32 sectorCount = readU32();
+			s_curSnapshot.sectors.resize(sectorCount);
+			EditorSector* sector = s_curSnapshot.sectors.data();
+			for (u32 s = 0; s < sectorCount; s++, sector++)
+			{
+				sector->id = readU32();
+				readString(sector->name);
+				readData(&sector->floorTex, sizeof(LevelTexture));
+				readData(&sector->ceilTex, sizeof(LevelTexture));
+				sector->floorHeight = readF32();
+				sector->ceilHeight = readF32();
+				sector->secHeight = readF32();
+				sector->ambient = readU32();
+				sector->layer = readS32();
+				readData(sector->flags, sizeof(u32) * 3);
+
+				u32 vtxCount = readU32();
+				u32 wallCount = readU32();
+				sector->vtx.resize(vtxCount);
+				sector->walls.resize(wallCount);
+
+				readData(sector->vtx.data(), u32(sizeof(Vec2f) * vtxCount));
+				readData(sector->walls.data(), u32(sizeof(EditorWall) * wallCount));
+
+				// Compute derived data.
+				sectorToPolygon(sector);
+				sector->bounds[0] = { sector->poly.bounds[0].x, std::min(sector->floorHeight, sector->ceilHeight), sector->poly.bounds[0].z };
+				sector->bounds[1] = { sector->poly.bounds[1].x, std::max(sector->floorHeight, sector->ceilHeight), sector->poly.bounds[1].z };
+				sector->searchKey = 0;
+			}
+
+			// Compute final snapshot bounds.
+			s_curSnapshot.bounds[0] = {  FLT_MAX,  FLT_MAX,  FLT_MAX };
+			s_curSnapshot.bounds[1] = { -FLT_MAX, -FLT_MAX, -FLT_MAX };
+			s_curSnapshot.layerRange[0] =  INT_MAX;
+			s_curSnapshot.layerRange[1] = -INT_MAX;
+			sector = s_curSnapshot.sectors.data();
+			for (size_t i = 0; i < sectorCount; i++, sector++)
+			{
+				s_curSnapshot.bounds[0].x = min(s_curSnapshot.bounds[0].x, sector->bounds[0].x);
+				s_curSnapshot.bounds[0].y = min(s_curSnapshot.bounds[0].y, sector->bounds[0].y);
+				s_curSnapshot.bounds[0].z = min(s_curSnapshot.bounds[0].z, sector->bounds[0].z);
+
+				s_curSnapshot.bounds[1].x = max(s_curSnapshot.bounds[1].x, sector->bounds[1].x);
+				s_curSnapshot.bounds[1].y = max(s_curSnapshot.bounds[1].y, sector->bounds[1].y);
+				s_curSnapshot.bounds[1].z = max(s_curSnapshot.bounds[1].z, sector->bounds[1].z);
+
+				s_curSnapshot.layerRange[0] = min(s_curSnapshot.layerRange[0], sector->layer);
+				s_curSnapshot.layerRange[1] = max(s_curSnapshot.layerRange[1], sector->layer);
+			}
+		}
+		// Then copy the snapshot to the level data itself. Its the new state.
+		s_level = s_curSnapshot;
 	}
 }

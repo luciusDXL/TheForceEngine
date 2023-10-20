@@ -293,7 +293,7 @@ namespace LevelEditor
 
 	const EditorTexture* calculateTextureCoords(const EditorWall* wall, const LevelTexture* ltex, f32 wallLengthTexels, f32 partHeight, bool flipHorz, Vec2f* uvCorners)
 	{
-		const EditorTexture* tex = (EditorTexture*)getAssetData(ltex->handle);
+		const EditorTexture* tex = getTexture(ltex->texIndex);
 		if (!tex) { return nullptr; }
 		Vec2f texScale = { 1.0f / f32(tex->width), 1.0f / f32(tex->height) };
 
@@ -313,7 +313,7 @@ namespace LevelEditor
 
 	const EditorTexture* calculateSignTextureCoords(const EditorWall* wall, const LevelTexture* baseTex, const LevelTexture* ltex, f32 wallLengthTexels, f32 partHeight, bool flipHorz, Vec2f* uvCorners)
 	{
-		const EditorTexture* tex = (EditorTexture*)getAssetData(ltex->handle);
+		const EditorTexture* tex = getTexture(ltex->texIndex);
 		const Vec2f texScale = { 1.0f / f32(tex->width), 1.0f / f32(tex->height) };
 
 		Vec2f offset = { baseTex->offset.x - ltex->offset.x, -TFE_Math::fract(std::max(baseTex->offset.z, 0.0f)) + ltex->offset.z };
@@ -785,7 +785,7 @@ namespace LevelEditor
 					}
 
 					// Sign?
-					if (wall->tex[WP_SIGN].handle && (s_sectorDrawMode == SDM_TEXTURED_FLOOR || s_sectorDrawMode == SDM_TEXTURED_CEIL))
+					if (wall->tex[WP_SIGN].texIndex >= 0 && (s_sectorDrawMode == SDM_TEXTURED_FLOOR || s_sectorDrawMode == SDM_TEXTURED_CEIL))
 					{
 						const EditorTexture* tex = calculateSignTextureCoords(wall, &wall->tex[WP_MID], &wall->tex[WP_SIGN], wallLengthTexels, sectorHeight, false, uvCorners);
 						if (tex)
@@ -815,7 +815,7 @@ namespace LevelEditor
 						}
 
 						// Sign?
-						if (wall->tex[WP_SIGN].handle && (s_sectorDrawMode == SDM_TEXTURED_FLOOR || s_sectorDrawMode == SDM_TEXTURED_CEIL))
+						if (wall->tex[WP_SIGN].texIndex >= 0 && (s_sectorDrawMode == SDM_TEXTURED_FLOOR || s_sectorDrawMode == SDM_TEXTURED_CEIL))
 						{
 							const EditorTexture* tex = calculateSignTextureCoords(wall, &wall->tex[WP_BOT], &wall->tex[WP_SIGN], wallLengthTexels, botHeight, false, uvCorners);
 							TFE_RenderShared::triDraw3d_addQuadTextured(TRIMODE_CLAMP, corners, uvCorners, wallColor, tex->frames[0]);
@@ -840,7 +840,7 @@ namespace LevelEditor
 						}
 
 						// Sign?
-						if (!botSign && wall->tex[WP_SIGN].handle && (s_sectorDrawMode == SDM_TEXTURED_FLOOR || s_sectorDrawMode == SDM_TEXTURED_CEIL))
+						if (!botSign && wall->tex[WP_SIGN].texIndex >= 0 && (s_sectorDrawMode == SDM_TEXTURED_FLOOR || s_sectorDrawMode == SDM_TEXTURED_CEIL))
 						{
 							const EditorTexture* tex = calculateSignTextureCoords(wall, &wall->tex[WP_TOP], &wall->tex[WP_SIGN], wallLengthTexels, topHeight, false, uvCorners);
 							TFE_RenderShared::triDraw3d_addQuadTextured(TRIMODE_CLAMP, corners, uvCorners, wallColor, tex->frames[0]);
@@ -872,8 +872,8 @@ namespace LevelEditor
 			Vec2f* uvFlr = s_bufferVec2.data();
 			Vec2f* uvCeil = uvFlr + vtxCount;
 
-			EditorTexture* floorTex = (EditorTexture*)getAssetData(sector->floorTex.handle);
-			EditorTexture* ceilTex  = (EditorTexture*)getAssetData(sector->ceilTex.handle);
+			EditorTexture* floorTex = getTexture(sector->floorTex.texIndex);
+			EditorTexture* ceilTex  = getTexture(sector->ceilTex.texIndex);
 			const Vec2f& floorOffset = sector->floorTex.offset;
 			const Vec2f& ceilOffset = sector->ceilTex.offset;
 
@@ -1075,11 +1075,11 @@ namespace LevelEditor
 			}
 			else if (s_sectorDrawMode == SDM_TEXTURED_FLOOR)
 			{
-				renderTexturedSectorPolygon2d(&sector->poly, c_sectorTexClr[colorIndex], (EditorTexture*)getAssetData(sector->floorTex.handle), sector->floorTex.offset);
+				renderTexturedSectorPolygon2d(&sector->poly, c_sectorTexClr[colorIndex], getTexture(sector->floorTex.texIndex), sector->floorTex.offset);
 			}
 			else if (s_sectorDrawMode == SDM_TEXTURED_CEIL)
 			{
-				renderTexturedSectorPolygon2d(&sector->poly, c_sectorTexClr[colorIndex], (EditorTexture*)getAssetData(sector->ceilTex.handle), sector->ceilTex.offset);
+				renderTexturedSectorPolygon2d(&sector->poly, c_sectorTexClr[colorIndex], getTexture(sector->ceilTex.texIndex), sector->ceilTex.offset);
 			}
 		}
 

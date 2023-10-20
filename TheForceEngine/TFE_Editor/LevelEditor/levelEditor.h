@@ -8,6 +8,7 @@
 //////////////////////////////////////////////////////////////////////
 #include <TFE_System/types.h>
 #include <TFE_Editor/EditorAsset/editorAsset.h>
+#include "selection.h"
 
 namespace LevelEditor
 {
@@ -42,4 +43,7 @@ namespace LevelEditor
 	bool menu();
 
 	void selectNone();
+
+	// Shared Edit Commands
+	void edit_moveVertices(s32 count, const FeatureId* vtxIds, Vec2f delta);
 }

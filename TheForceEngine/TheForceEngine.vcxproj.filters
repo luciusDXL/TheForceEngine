@@ -1273,6 +1273,12 @@
     <ClInclude Include="TFE_Editor\LevelEditor\selection.h">
       <Filter>Source\TFE_Editor\LevelEditor</Filter>
     </ClInclude>
+    <ClInclude Include="TFE_Editor\LevelEditor\levelEditorHistory.h">
+      <Filter>Source\TFE_Editor\LevelEditor</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Editor\history.h">
+      <Filter>Source\TFE_Editor</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -2180,6 +2186,12 @@
     </ClCompile>
     <ClCompile Include="TFE_Editor\LevelEditor\selection.cpp">
       <Filter>Source\TFE_Editor\LevelEditor</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Editor\LevelEditor\levelEditorHistory.cpp">
+      <Filter>Source\TFE_Editor\LevelEditor</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Editor\history.cpp">
+      <Filter>Source\TFE_Editor</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
