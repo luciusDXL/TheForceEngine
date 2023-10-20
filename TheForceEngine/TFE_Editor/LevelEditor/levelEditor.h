@@ -46,4 +46,5 @@ namespace LevelEditor
 
 	// Shared Edit Commands
 	void edit_moveVertices(s32 count, const FeatureId* vtxIds, Vec2f delta);
+	void edit_setVertexPos(FeatureId id, Vec2f pos);
 }

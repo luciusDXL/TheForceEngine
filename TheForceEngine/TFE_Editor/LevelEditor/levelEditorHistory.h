@@ -16,4 +16,5 @@ namespace LevelEditor
 
 	// Commands
 	void cmd_addMoveVertices(s32 count, const FeatureId* vertices, Vec2f delta);
+	void cmd_addSetVertex(FeatureId vertex, Vec2f pos);
 }

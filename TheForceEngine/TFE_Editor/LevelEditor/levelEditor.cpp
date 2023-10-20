@@ -1373,6 +1373,20 @@ namespace LevelEditor
 		}
 	}
 
+	void edit_setVertexPos(FeatureId id, Vec2f pos)
+	{
+		s32 featureIndex, featureData;
+		bool overlapped;
+		EditorSector* sector = unpackFeatureId(id, &featureIndex, &featureData, &overlapped);
+		sector->vtx[featureIndex] = pos;
+
+		sectorToPolygon(sector);
+		sector->bounds[0] = { sector->poly.bounds[0].x, 0.0f, sector->poly.bounds[0].z };
+		sector->bounds[1] = { sector->poly.bounds[1].x, 0.0f, sector->poly.bounds[1].z };
+		sector->bounds[0].y = min(sector->floorHeight, sector->ceilHeight);
+		sector->bounds[1].y = max(sector->floorHeight, sector->ceilHeight);
+	}
+
 	void edit_moveVertices(s32 count, const FeatureId* vtxIds, Vec2f delta)
 	{
 		s_searchKey++;

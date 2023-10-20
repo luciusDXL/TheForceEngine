@@ -42,6 +42,7 @@ namespace TFE_Editor
 
 	// Get values from the buffer.
 	s32   hBuffer_getS32();
+	u64   hBuffer_getU64();
 	Vec2f hBuffer_getVec2f();
 	const u16* hBuffer_getArrayU16(s32 count);
 	const u32* hBuffer_getArrayU32(s32 count);
@@ -49,6 +50,7 @@ namespace TFE_Editor
 
 	// Add values to the buffer.
 	void hBuffer_addS32(s32 value);
+	void hBuffer_addU64(u64 value);
 	void hBuffer_addVec2f(Vec2f value);
 	void hBuffer_addArrayU16(s32 count, const u16* values);
 	void hBuffer_addArrayU32(s32 count, const u32* values);

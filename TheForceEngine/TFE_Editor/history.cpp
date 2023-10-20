@@ -238,6 +238,13 @@ namespace TFE_Editor
 		return value;
 	}
 
+	u64 hBuffer_getU64()
+	{
+		u64 value = *((u64*)&s_historyBuffer[s_curBufferAddr]);
+		s_curBufferAddr += sizeof(u64);
+		return value;
+	}
+
 	Vec2f hBuffer_getVec2f()
 	{
 		Vec2f value = *((Vec2f*)&s_historyBuffer[s_curBufferAddr]);
@@ -273,6 +280,15 @@ namespace TFE_Editor
 		s_historyBuffer.resize(s_curBufferAddr + dataSize);
 
 		*((s32*)&s_historyBuffer[s_curBufferAddr]) = value;
+		s_curBufferAddr += dataSize;
+	}
+
+	void hBuffer_addU64(u64 value)
+	{
+		u32 dataSize = sizeof(u64);
+		s_historyBuffer.resize(s_curBufferAddr + dataSize);
+
+		*((u64*)&s_historyBuffer[s_curBufferAddr]) = value;
 		s_curBufferAddr += dataSize;
 	}
 

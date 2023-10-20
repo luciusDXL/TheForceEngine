@@ -1,5 +1,6 @@
 #include "levelEditor.h"
 #include "levelEditorData.h"
+#include "levelEditorHistory.h"
 #include "infoPanel.h"
 #include "sharedState.h"
 #include "selection.h"
@@ -151,7 +152,18 @@ namespace LevelEditor
 
 		ImGui::SameLine();
 		ImGui::PushItemWidth(196.0f);
-		ImGui::InputFloat2("##VertexPosition", &vtx->x, "%0.3f", ImGuiInputTextFlags_CharsDecimal);
+		Vec2f prevPos = *vtx;
+		if (ImGui::InputFloat2("##VertexPosition", &vtx->x, "%0.6f", ImGuiInputTextFlags_CharsDecimal))
+		{
+			// TODO: Merge changes?
+			if (vtx->x != prevPos.x || vtx->z != prevPos.z)
+			{
+				const FeatureId id = createFeatureId(sector, index, 0, false);
+				cmd_addSetVertex(id, *vtx);
+				// Call the editor function, so the sector data is updated.
+				edit_setVertexPos(id, *vtx);
+			}
+		}
 		ImGui::PopItemWidth();
 	}
 
