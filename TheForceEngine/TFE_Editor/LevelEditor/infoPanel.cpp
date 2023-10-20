@@ -4,6 +4,7 @@
 #include "infoPanel.h"
 #include "sharedState.h"
 #include "selection.h"
+#include <TFE_Input/input.h>
 #include <TFE_Editor/errorMessages.h>
 #include <TFE_Editor/editorConfig.h>
 #include <TFE_Editor/EditorAsset/editorTexture.h>
@@ -123,6 +124,46 @@ namespace LevelEditor
 		ImGui::End();
 	}
 
+	// Manually created Vec2 control, so that the value is only updated when an input loses focus
+	// or Return is pressed. This avoids vertices or other elements jittering as values are added, and
+	// avoids many useless undo commands being created.
+	// Return true if the value should be updated.
+	bool inputVec2f(const char* id, Vec2f* value)
+	{
+		char id0[256], id1[256];
+		sprintf(id0, "%sX", id);
+		sprintf(id1, "%sZ", id);
+
+		bool hadFocusX = false, hadFocusZ = false;
+		Vec2f prevPos = *value;
+		ImGui::PushItemWidth(98.0f);
+		if (ImGui::InputFloat(id0, &value->x, NULL, NULL, "%0.6f", ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_NoUndoRedo))
+		{
+			if (value->x != prevPos.x)
+			{
+				hadFocusX = true;
+			}
+		}
+		bool lostFocusX = !ImGui::IsItemFocused() && !ImGui::IsItemHovered() && !ImGui::IsItemActive();
+
+		ImGui::SameLine();
+		ImGui::PushItemWidth(98.0f);
+		if (ImGui::InputFloat(id1, &value->z, NULL, NULL, "%0.6f", ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_NoUndoRedo))
+		{
+			if (value->z != prevPos.z)
+			{
+				hadFocusZ = true;
+			}
+		}
+		bool lostFocusZ = !ImGui::IsItemFocused() && !ImGui::IsItemHovered() && !ImGui::IsItemActive();
+
+		// Only update the value and add the edit when the input loses focus (clicking away or on another control) or
+		// Enter/Return is pressed.
+		bool retOrTabPressed = TFE_Input::keyPressed(KEY_RETURN) || TFE_Input::keyPressed(KEY_TAB);
+		return ((lostFocusX || retOrTabPressed) && hadFocusX) ||
+			   ((lostFocusZ || retOrTabPressed) && hadFocusZ);
+	}
+	
 	void infoPanelVertex()
 	{
 		s32 index = -1;
@@ -151,18 +192,12 @@ namespace LevelEditor
 		ImGui::PopItemWidth();
 
 		ImGui::SameLine();
-		ImGui::PushItemWidth(196.0f);
-		Vec2f prevPos = *vtx;
-		if (ImGui::InputFloat2("##VertexPosition", &vtx->x, "%0.6f", ImGuiInputTextFlags_CharsDecimal))
+		Vec2f curPos = *vtx;
+		if (inputVec2f("##VertexPosition", &curPos))
 		{
-			// TODO: Merge changes?
-			if (vtx->x != prevPos.x || vtx->z != prevPos.z)
-			{
-				const FeatureId id = createFeatureId(sector, index, 0, false);
-				cmd_addSetVertex(id, *vtx);
-				// Call the editor function, so the sector data is updated.
-				edit_setVertexPos(id, *vtx);
-			}
+			const FeatureId id = createFeatureId(sector, index, 0, false);
+			cmd_addSetVertex(id, curPos);
+			edit_setVertexPos(id, curPos);
 		}
 		ImGui::PopItemWidth();
 	}
