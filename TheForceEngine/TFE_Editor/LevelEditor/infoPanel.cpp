@@ -183,8 +183,14 @@ namespace LevelEditor
 		if (index < 0 || !sector) { return; }
 
 		Vec2f* vtx = sector->vtx.data() + index;
-
-		ImGui::Text("Vertex %d of Sector %d", index, sector->id);
+		if (s_selectionList.size() > 1)
+		{
+			ImGui::Text("Multiple vertices selected, enter a movement delta.");
+		}
+		else
+		{
+			ImGui::Text("Vertex %d of Sector %d", index, sector->id);
+		}
 
 		ImGui::NewLine();
 		ImGui::PushItemWidth(UI_SCALE(80));
@@ -192,12 +198,27 @@ namespace LevelEditor
 		ImGui::PopItemWidth();
 
 		ImGui::SameLine();
-		Vec2f curPos = *vtx;
+		Vec2f curPos = { 0 };
+		if (s_selectionList.size() <= 1)
+		{
+			curPos = *vtx;
+		}
+
+		Vec2f prevPos = curPos;
 		if (inputVec2f("##VertexPosition", &curPos))
 		{
-			const FeatureId id = createFeatureId(sector, index, 0, false);
-			cmd_addSetVertex(id, curPos);
-			edit_setVertexPos(id, curPos);
+			if (s_selectionList.size() <= 1) // Move the single vertex.
+			{
+				const FeatureId id = createFeatureId(sector, index, 0, false);
+				cmd_addSetVertex(id, curPos);
+				edit_setVertexPos(id, curPos);
+			}
+			else  // Move the whole group.
+			{
+				const Vec2f delta = { curPos.x - prevPos.x, curPos.z - prevPos.z };
+				cmd_addMoveVertices((s32)s_selectionList.size(), s_selectionList.data(), delta);
+				edit_moveVertices((s32)s_selectionList.size(), s_selectionList.data(), delta);
+			}
 		}
 		ImGui::PopItemWidth();
 	}
