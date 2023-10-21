@@ -314,6 +314,8 @@ namespace LevelEditor
 	const EditorTexture* calculateSignTextureCoords(const EditorWall* wall, const LevelTexture* baseTex, const LevelTexture* ltex, f32 wallLengthTexels, f32 partHeight, bool flipHorz, Vec2f* uvCorners)
 	{
 		const EditorTexture* tex = getTexture(ltex->texIndex);
+		if (!tex) { return nullptr; }
+
 		const Vec2f texScale = { 1.0f / f32(tex->width), 1.0f / f32(tex->height) };
 
 		Vec2f offset = { baseTex->offset.x - ltex->offset.x, -TFE_Math::fract(std::max(baseTex->offset.z, 0.0f)) + ltex->offset.z };

@@ -420,21 +420,24 @@ namespace LevelEditor
 		}
 		else if (s_view == EDIT_VIEW_3D)
 		{
+			// In 3D, build a frustum and select point inside the frustum.
+			// The near plane corners of the frustum are derived from the screenspace rectangle.
 			const s32 x0 = std::min(s_dragSelect.startPos.x, s_dragSelect.curPos.x);
 			const s32 x1 = std::max(s_dragSelect.startPos.x, s_dragSelect.curPos.x);
 			const s32 z0 = std::min(s_dragSelect.startPos.z, s_dragSelect.curPos.z);
 			const s32 z1 = std::max(s_dragSelect.startPos.z, s_dragSelect.curPos.z);
-
+			// Directions to the near-plane frustum corners.
 			const Vec3f d0 = viewportCoordToWorldDir3d({ x0, z0 });
 			const Vec3f d1 = viewportCoordToWorldDir3d({ x1, z0 });
 			const Vec3f d2 = viewportCoordToWorldDir3d({ x1, z1 });
 			const Vec3f d3 = viewportCoordToWorldDir3d({ x0, z1 });
-
+			// Camera forward vector.
 			const Vec3f fwd = { -s_camera.viewMtx.m2.x, -s_camera.viewMtx.m2.y, -s_camera.viewMtx.m2.z };
 			// Trace forward at the screen center to get the likely focus sector.
 			Vec3f centerViewDir = viewportCoordToWorldDir3d({ s_viewportSize.x / 2, s_viewportSize.z / 2 });
 			RayHitInfo hitInfo;
 			Ray ray = { s_camera.pos, centerViewDir, 1000.0f, s_curLayer };
+			f32 nearDist = 1.0f;
 			f32 farDist = 100.0f;
 			if (traceRay(&ray, &hitInfo, false) && hitInfo.hitSectorId >= 0)
 			{
@@ -461,17 +464,12 @@ namespace LevelEditor
 						maxDist = dist;
 					}
 				}
-				if (maxDist > 0.0f) { farDist = maxDist + 0.1f; }
+				if (maxDist > 0.0f) { farDist = maxDist; }
 			}
-
-			Vec4f plane[6];
-			Vec3f near = { s_camera.pos.x + 1.0f*fwd.x, s_camera.pos.y + 1.0f*fwd.y, s_camera.pos.z + 1.0f*fwd.z };
-			Vec3f far  = { s_camera.pos.x + farDist*fwd.x, s_camera.pos.y + farDist*fwd.y, s_camera.pos.z + farDist*fwd.z };
-
-			plane[0] = { -fwd.x, -fwd.y, -fwd.z, TFE_Math::dot(&fwd, &near) };
-			plane[1] = { fwd.x, fwd.y, fwd.z, -TFE_Math::dot(&fwd, &far) };
-
 			// Build Planes.
+			Vec3f near = { s_camera.pos.x + nearDist*fwd.x, s_camera.pos.y + nearDist*fwd.y, s_camera.pos.z + nearDist*fwd.z };
+			Vec3f far  = { s_camera.pos.x + farDist*fwd.x, s_camera.pos.y + farDist*fwd.y, s_camera.pos.z + farDist*fwd.z };
+						
 			Vec3f left  = TFE_Math::cross(&d3, &d0);
 			Vec3f right = TFE_Math::cross(&d1, &d2);
 			Vec3f top   = TFE_Math::cross(&d0, &d1);
@@ -482,10 +480,15 @@ namespace LevelEditor
 			top   = TFE_Math::normalize(&top);
 			bot   = TFE_Math::normalize(&bot);
 
-			plane[2] = { left.x, left.y, left.z, -TFE_Math::dot(&left, &s_camera.pos) };
-			plane[3] = { right.x, right.y, right.z, -TFE_Math::dot(&right, &s_camera.pos) };
-			plane[4] = { top.x, top.y, top.z, -TFE_Math::dot(&top, &s_camera.pos) };
-			plane[5] = { bot.x, bot.y, bot.z, -TFE_Math::dot(&bot, &s_camera.pos) };
+			const Vec4f plane[] =
+			{
+				{ -fwd.x, -fwd.y, -fwd.z,  TFE_Math::dot(&fwd, &near) },
+				{  fwd.x,  fwd.y,  fwd.z, -TFE_Math::dot(&fwd, &far) },
+				{ left.x, left.y, left.z, -TFE_Math::dot(&left, &s_camera.pos) },
+				{ right.x, right.y, right.z, -TFE_Math::dot(&right, &s_camera.pos) },
+				{ top.x, top.y, top.z, -TFE_Math::dot(&top, &s_camera.pos) },
+				{ bot.x, bot.y, bot.z, -TFE_Math::dot(&bot, &s_camera.pos) }
+			};
 
 			const size_t sectorCount = s_level.sectors.size();
 			EditorSector* sector = s_level.sectors.data();
@@ -513,7 +516,7 @@ namespace LevelEditor
 						FeatureId id = createFeatureId(sector, (s32)v, 0, false);
 						if (s_dragSelect.mode == DSEL_REM) { selection_remove(id); }
 						else { selection_add(id); }
-						selectOverlappingVertices(sector, v, vtx, s_dragSelect.mode != DSEL_REM);
+						selectOverlappingVertices(sector, (s32)v, vtx, s_dragSelect.mode != DSEL_REM);
 					}
 				}
 			}
@@ -1663,7 +1666,7 @@ namespace LevelEditor
 					s_editMove = false;
 					s_moveStarted = false;
 
-					cmd_addMoveVertices(s_selectionList.size(), s_selectionList.data(), s_moveTotalDelta);
+					cmd_addMoveVertices((s32)s_selectionList.size(), s_selectionList.data(), s_moveTotalDelta);
 				}
 				else
 				{
@@ -1753,7 +1756,7 @@ namespace LevelEditor
 					s_editMove = false;
 					s_moveStarted = false;
 
-					cmd_addMoveVertices(s_selectionList.size(), s_selectionList.data(), s_moveTotalDelta);
+					cmd_addMoveVertices((s32)s_selectionList.size(), s_selectionList.data(), s_moveTotalDelta);
 				}
 				else
 				{
