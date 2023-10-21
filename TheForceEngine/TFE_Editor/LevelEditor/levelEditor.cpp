@@ -145,11 +145,11 @@ namespace LevelEditor
 	void cameraControl2d(s32 mx, s32 my);
 	void cameraControl3d(s32 mx, s32 my);
 	void resetZoom();
+	bool isUiActive();
+	bool isViewportElementHovered();
 	Vec2f mouseCoordToWorldPos2d(s32 mx, s32 my);
 	Vec3f mouseCoordToWorldDir3d(s32 mx, s32 my);
 	Vec2i worldPos2dToMap(const Vec2f& worldPos);
-	bool isUiActive();
-	bool isViewportElementHovered();
 	TextureGpu* loadGpuImage(const char* path);
 
 	void selectFromSingleVertex(EditorSector* root, s32 featureId, bool clearList);
@@ -367,7 +367,10 @@ namespace LevelEditor
 		{
 			return;
 		}
-		selection_clear(false);
+		if (s_dragSelect.mode == DSEL_SET)
+		{
+			selection_clear(false);
+		}
 		s_selectedVtxId = -1;
 		s_selectedVtxSector = nullptr;
 
@@ -401,7 +404,14 @@ namespace LevelEditor
 					if (vtx->x >= aabb[0].x && vtx->x < aabb[1].x && vtx->z >= aabb[0].z && vtx->z < aabb[1].z)
 					{
 						FeatureId id = createFeatureId(sector, (s32)v, 0, false);
-						selection_add(id);
+						if (s_dragSelect.mode == DSEL_REM)
+						{
+							selection_remove(id);
+						}
+						else
+						{
+							selection_add(id);
+						}
 					}
 				}
 			}
@@ -413,28 +423,60 @@ namespace LevelEditor
 			// TODO
 		}
 	}
+
+	void startDragSelect(s32 mx, s32 my, DragSelectMode mode)
+	{
+		// Drag select start.
+		mx -= (s32)s_editWinMapCorner.x;
+		my -= (s32)s_editWinMapCorner.z;
+		if (mx >= 0 && my >= 0 && mx < s_viewportSize.x && my < s_viewportSize.z)
+		{
+			s_dragSelect.mode = mode;
+			s_dragSelect.active = true;
+			s_dragSelect.moved = false;
+			s_dragSelect.startPos = { mx, my };
+			s_dragSelect.curPos = s_dragSelect.startPos;
+		}
+	}
+
+	void updateDragSelect(s32 mx, s32 my)
+	{
+		// Drag select start.
+		mx -= (s32)s_editWinMapCorner.x;
+		my -= (s32)s_editWinMapCorner.z;
+		if (mx < 0 || my < 0 || mx >= s_viewportSize.x || my >= s_viewportSize.z)
+		{
+			s_dragSelect.active = false;
+		}
+		else
+		{
+			s_dragSelect.curPos = { mx, my };
+			vertexComputeDragSelect();
+		}
+	}
 			
 	void handleMouseControlVertex()
 	{
 		s32 mx, my;
 		TFE_Input::getMousePos(&mx, &my);
 
-		if (TFE_Input::mousePressed(MouseButton::MBUTTON_LEFT))
+		// Short names to make the logic easier to follow.
+		const bool selAdd    = TFE_Input::keyModDown(KEYMOD_SHIFT);
+		const bool selRem    = TFE_Input::keyModDown(KEYMOD_ALT);
+		const bool selToggle = TFE_Input::keyModDown(KEYMOD_CTRL);
+		const bool selToggleDrag = selAdd && selToggle;
+
+		const bool mousePressed = TFE_Input::mousePressed(MouseButton::MBUTTON_LEFT);
+		const bool mouseDown = TFE_Input::mouseDown(MouseButton::MBUTTON_LEFT);
+
+		if (mousePressed)
 		{
-			if (TFE_Input::keyModDown(KEYMOD_SHIFT) && !TFE_Input::keyModDown(KEYMOD_CTRL))
+			assert(!s_dragSelect.active);
+			if (!selToggle && (selAdd || selRem))
 			{
-				// Drag select start.
-				mx -= (s32)s_editWinMapCorner.x;
-				my -= (s32)s_editWinMapCorner.z;
-				if (mx >= 0 && my >= 0 && mx < s_viewportSize.x && my < s_viewportSize.z)
-				{
-					s_dragSelect.active = true;
-					s_dragSelect.moved = false;
-					s_dragSelect.startPos = { mx, my };
-					s_dragSelect.curPos = s_dragSelect.startPos;
-				}
+				startDragSelect(mx, my, selAdd ? DSEL_ADD : DSEL_REM);
 			}
-			else if (!s_dragSelect.active && TFE_Input::keyModDown(KEYMOD_CTRL))
+			else if (selToggle)
 			{
 				if (s_hoveredVtxSector && s_hoveredVtxId >= 0)
 				{
@@ -443,7 +485,7 @@ namespace LevelEditor
 					toggleVertexGroupInclusion(s_hoveredVtxSector, s_hoveredVtxId);
 				}
 			}
-			else if (!s_dragSelect.active)
+			else
 			{
 				s_selectedVtxSector = nullptr;
 				s_selectedVtxId = -1;
@@ -459,35 +501,34 @@ namespace LevelEditor
 					bool clearList = !selection_doesFeatureExist(createFeatureId(s_selectedVtxSector, s_selectedVtxId));
 					selectFromSingleVertex(s_selectedVtxSector, s_selectedVtxId, clearList);
 				}
+				else if (!s_editMove)
+				{
+					startDragSelect(mx, my, DSEL_SET);
+				}
 			}
 		}
-		else if (!s_dragSelect.active && TFE_Input::mouseDown(MouseButton::MBUTTON_LEFT) && TFE_Input::keyModDown(KEYMOD_CTRL) && TFE_Input::keyModDown(KEYMOD_SHIFT))
+		else if (mouseDown)
 		{
-			if (s_hoveredVtxSector && s_hoveredVtxId >= 0)
+			if (!s_dragSelect.active)
 			{
-				s_editMove = true;
-				adjustGridHeight(s_hoveredVtxSector);
-				selectFromSingleVertex(s_hoveredVtxSector, s_hoveredVtxId, false);
+				if (selToggleDrag && s_hoveredVtxSector && s_hoveredVtxId >= 0)
+				{
+					s_editMove = true;
+					adjustGridHeight(s_hoveredVtxSector);
+					selectFromSingleVertex(s_hoveredVtxSector, s_hoveredVtxId, false);
+				}
 			}
-		}
-		// Draw select continue.
-		else if (TFE_Input::mouseDown(MouseButton::MBUTTON_LEFT) && TFE_Input::keyModDown(KEYMOD_SHIFT))
-		{
-			// Drag select start.
-			mx -= (s32)s_editWinMapCorner.x;
-			my -= (s32)s_editWinMapCorner.z;
-			if (mx < 0 || my < 0 || mx >= s_viewportSize.x || my >= s_viewportSize.z)
+			// Draw select continue.
+			else if (!selToggle && !s_editMove)
 			{
-				s_dragSelect.active = false;
+				updateDragSelect(mx, my);
 			}
 			else
 			{
-				s_dragSelect.curPos = { mx, my };
-				vertexComputeDragSelect();
+				s_dragSelect.active = false;
 			}
 		}
-
-		if (s_dragSelect.active && (!TFE_Input::mouseDown(MouseButton::MBUTTON_LEFT) || !TFE_Input::keyModDown(KEYMOD_SHIFT)))
+		else if (s_dragSelect.active)
 		{
 			s_dragSelect.active = false;
 		}

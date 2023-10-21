@@ -48,7 +48,7 @@ namespace LevelEditor
 {
 	SelectionList s_selectionList;
 	SectorList s_sectorChangeList;
-	DragSelect s_dragSelect = { 0 };
+	DragSelect s_dragSelect = {};
 
 	enum FeatureIdPacking : u64
 	{

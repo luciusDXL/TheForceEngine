@@ -13,8 +13,17 @@ namespace LevelEditor
 {
 	struct EditorSector;
 
+	enum DragSelectMode
+	{
+		DSEL_SET = 0,
+		DSEL_ADD,
+		DSEL_REM,
+		DSEL_COUNT
+	};
+
 	struct DragSelect
 	{
+		DragSelectMode mode = DSEL_SET;
 		bool active = false;
 		bool moved = false;
 		Vec2i startPos = { 0 };
