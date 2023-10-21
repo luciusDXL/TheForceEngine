@@ -936,6 +936,34 @@ namespace LevelEditor
 		TFE_RenderShared::lineDraw3d_drawLines(&s_camera, true, false);
 
 		renderHighlighted3d();
+
+		// Draw drag select, if active.
+		if (s_dragSelect.active)
+		{
+			lineDraw2d_begin(s_viewportSize.x, s_viewportSize.z);
+			triDraw2d_begin(s_viewportSize.x, s_viewportSize.z);
+
+			Vec2f vtx[] =
+			{
+				{ (f32)s_dragSelect.startPos.x, (f32)s_dragSelect.startPos.z },
+				{ (f32)s_dragSelect.curPos.x,   (f32)s_dragSelect.startPos.z },
+				{ (f32)s_dragSelect.curPos.x,   (f32)s_dragSelect.curPos.z },
+				{ (f32)s_dragSelect.startPos.x, (f32)s_dragSelect.curPos.z },
+				{ (f32)s_dragSelect.startPos.x, (f32)s_dragSelect.startPos.z },
+			};
+			s32 idx[6] = { 0, 1, 2, 0, 2, 3 };
+
+			triDraw2d_addColored(6, 4, vtx, idx, 0x40ff0000);
+
+			u32 colors[2] = { 0xffff0000, 0xffff0000 };
+			lineDraw2d_addLine(2.0f, &vtx[0], colors);
+			lineDraw2d_addLine(2.0f, &vtx[1], colors);
+			lineDraw2d_addLine(2.0f, &vtx[2], colors);
+			lineDraw2d_addLine(2.0f, &vtx[3], colors);
+
+			triDraw2d_draw();
+			lineDraw2d_drawLines();
+		}
 						
 		/*
 		if (s_camera.pos.y >= s_gridHeight)

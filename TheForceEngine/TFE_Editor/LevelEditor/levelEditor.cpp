@@ -149,10 +149,12 @@ namespace LevelEditor
 	bool isViewportElementHovered();
 	Vec2f mouseCoordToWorldPos2d(s32 mx, s32 my);
 	Vec3f mouseCoordToWorldDir3d(s32 mx, s32 my);
+	Vec3f viewportCoordToWorldDir3d(Vec2i vCoord);
 	Vec2i worldPos2dToMap(const Vec2f& worldPos);
 	TextureGpu* loadGpuImage(const char* path);
 
-	void selectFromSingleVertex(EditorSector* root, s32 featureId, bool clearList);
+	void selectFromSingleVertex(EditorSector* root, s32 featureIndex, bool clearList);
+	void selectOverlappingVertices(EditorSector* root, s32 featureIndex, const Vec2f* rootVtx, bool addToSelection);
 	void toggleVertexGroupInclusion(EditorSector* sector, s32 featureId);
 
 	////////////////////////////////////////////////////////
@@ -418,9 +420,103 @@ namespace LevelEditor
 		}
 		else if (s_view == EDIT_VIEW_3D)
 		{
-			// Inverse project corners at z = 1.
-			// Test vertices against the frustum.
-			// TODO
+			const s32 x0 = std::min(s_dragSelect.startPos.x, s_dragSelect.curPos.x);
+			const s32 x1 = std::max(s_dragSelect.startPos.x, s_dragSelect.curPos.x);
+			const s32 z0 = std::min(s_dragSelect.startPos.z, s_dragSelect.curPos.z);
+			const s32 z1 = std::max(s_dragSelect.startPos.z, s_dragSelect.curPos.z);
+
+			const Vec3f d0 = viewportCoordToWorldDir3d({ x0, z0 });
+			const Vec3f d1 = viewportCoordToWorldDir3d({ x1, z0 });
+			const Vec3f d2 = viewportCoordToWorldDir3d({ x1, z1 });
+			const Vec3f d3 = viewportCoordToWorldDir3d({ x0, z1 });
+
+			const Vec3f fwd = { -s_camera.viewMtx.m2.x, -s_camera.viewMtx.m2.y, -s_camera.viewMtx.m2.z };
+			// Trace forward at the screen center to get the likely focus sector.
+			Vec3f centerViewDir = viewportCoordToWorldDir3d({ s_viewportSize.x / 2, s_viewportSize.z / 2 });
+			RayHitInfo hitInfo;
+			Ray ray = { s_camera.pos, centerViewDir, 1000.0f, s_curLayer };
+			f32 farDist = 100.0f;
+			if (traceRay(&ray, &hitInfo, false) && hitInfo.hitSectorId >= 0)
+			{
+				EditorSector* hitSector = &s_level.sectors[hitInfo.hitSectorId];
+				Vec3f bbox[] =
+				{
+					{hitSector->bounds[0].x, hitSector->floorHeight, hitSector->bounds[0].z},
+					{hitSector->bounds[1].x, hitSector->floorHeight, hitSector->bounds[0].z},
+					{hitSector->bounds[1].x, hitSector->floorHeight, hitSector->bounds[1].z},
+					{hitSector->bounds[0].x, hitSector->floorHeight, hitSector->bounds[1].z},
+
+					{hitSector->bounds[0].x, hitSector->ceilHeight, hitSector->bounds[0].z},
+					{hitSector->bounds[1].x, hitSector->ceilHeight, hitSector->bounds[0].z},
+					{hitSector->bounds[1].x, hitSector->ceilHeight, hitSector->bounds[1].z},
+					{hitSector->bounds[0].x, hitSector->ceilHeight, hitSector->bounds[1].z},
+				};
+				f32 maxDist = 0.0f;
+				for (s32 i = 0; i < 8; i++)
+				{
+					Vec3f offset = { bbox[i].x - s_camera.pos.x, bbox[i].y - s_camera.pos.y, bbox[i].z - s_camera.pos.z };
+					f32 dist = TFE_Math::dot(&offset, &fwd);
+					if (dist > maxDist)
+					{
+						maxDist = dist;
+					}
+				}
+				if (maxDist > 0.0f) { farDist = maxDist + 0.1f; }
+			}
+
+			Vec4f plane[6];
+			Vec3f near = { s_camera.pos.x + 1.0f*fwd.x, s_camera.pos.y + 1.0f*fwd.y, s_camera.pos.z + 1.0f*fwd.z };
+			Vec3f far  = { s_camera.pos.x + farDist*fwd.x, s_camera.pos.y + farDist*fwd.y, s_camera.pos.z + farDist*fwd.z };
+
+			plane[0] = { -fwd.x, -fwd.y, -fwd.z, TFE_Math::dot(&fwd, &near) };
+			plane[1] = { fwd.x, fwd.y, fwd.z, -TFE_Math::dot(&fwd, &far) };
+
+			// Build Planes.
+			Vec3f left  = TFE_Math::cross(&d3, &d0);
+			Vec3f right = TFE_Math::cross(&d1, &d2);
+			Vec3f top   = TFE_Math::cross(&d0, &d1);
+			Vec3f bot   = TFE_Math::cross(&d2, &d3);
+
+			left  = TFE_Math::normalize(&left);
+			right = TFE_Math::normalize(&right);
+			top   = TFE_Math::normalize(&top);
+			bot   = TFE_Math::normalize(&bot);
+
+			plane[2] = { left.x, left.y, left.z, -TFE_Math::dot(&left, &s_camera.pos) };
+			plane[3] = { right.x, right.y, right.z, -TFE_Math::dot(&right, &s_camera.pos) };
+			plane[4] = { top.x, top.y, top.z, -TFE_Math::dot(&top, &s_camera.pos) };
+			plane[5] = { bot.x, bot.y, bot.z, -TFE_Math::dot(&bot, &s_camera.pos) };
+
+			const size_t sectorCount = s_level.sectors.size();
+			EditorSector* sector = s_level.sectors.data();
+			for (size_t s = 0; s < sectorCount; s++, sector++)
+			{
+				if (s_curLayer != sector->layer && s_curLayer != LAYER_ANY) { continue; }
+
+				// For now, do them all...
+				const size_t vtxCount = sector->vtx.size();
+				const Vec2f* vtx = sector->vtx.data();
+				for (size_t v = 0; v < vtxCount; v++, vtx++)
+				{
+					bool inside = true;
+					for (s32 p = 0; p < 6; p++)
+					{
+						if (plane[p].x*vtx->x + plane[p].y*sector->floorHeight + plane[p].z*vtx->z + plane[p].w > 0.0f)
+						{
+							inside = false;
+							break;
+						}
+					}
+
+					if (inside)
+					{
+						FeatureId id = createFeatureId(sector, (s32)v, 0, false);
+						if (s_dragSelect.mode == DSEL_REM) { selection_remove(id); }
+						else { selection_add(id); }
+						selectOverlappingVertices(sector, v, vtx, s_dragSelect.mode != DSEL_REM);
+					}
+				}
+			}
 		}
 	}
 
@@ -898,7 +994,11 @@ namespace LevelEditor
 				s_hoveredSector = nullptr;
 				s_cursor3d = rayGridPlaneHit(s_camera.pos, s_rayDir);
 
-				if (TFE_Input::mousePressed(MouseButton::MBUTTON_LEFT))
+				if (s_editMode == LEDIT_VERTEX)
+				{
+					handleMouseControlVertex();
+				}
+				else if (TFE_Input::mousePressed(MouseButton::MBUTTON_LEFT))
 				{
 					s_selectedVtxSector = nullptr;
 					s_selectedWallSector = nullptr;
@@ -1313,20 +1413,9 @@ namespace LevelEditor
 		const f32 eps = 0.00001f;
 		return fabsf(a->x - b->x) < eps && fabsf(a->z - b->z) < eps;
 	}
-		
-	void selectFromSingleVertex(EditorSector* root, s32 featureId, bool clearList)
+
+	void selectOverlappingVertices(EditorSector* root, s32 featureIndex, const Vec2f* rootVtx, bool addToSelection)
 	{
-		const Vec2f* rootVtx = &root->vtx[featureId];
-		FeatureId rootId = createFeatureId(root, featureId, 0, false);
-		if (clearList)
-		{
-			selection_clear();
-			selection_add(rootId);
-		}
-		else if (!selection_add(rootId))
-		{
-			return;
-		}
 		s_searchKey++;
 
 		// Which walls share the vertex?
@@ -1338,7 +1427,7 @@ namespace LevelEditor
 			EditorWall* wall = root->walls.data();
 			for (size_t w = 0; w < wallCount; w++, wall++)
 			{
-				if ((wall->idx[0] == featureId || wall->idx[1] == featureId) && wall->adjoinId >= 0)
+				if ((wall->idx[0] == featureIndex || wall->idx[1] == featureIndex) && wall->adjoinId >= 0)
 				{
 					EditorSector* next = &s_level.sectors[wall->adjoinId];
 					if (next->searchKey != s_searchKey)
@@ -1372,7 +1461,9 @@ namespace LevelEditor
 				if (idx >= 0)
 				{
 					FeatureId id = createFeatureId(sector, wall->idx[idx], 0, true);
-					selection_add(id);
+					if (addToSelection) { selection_add(id); }
+					else { selection_remove(id); }
+
 					// Add the next sector to the stack, if it hasn't already been processed.
 					EditorSector* next = wall->adjoinId < 0 ? nullptr : &s_level.sectors[wall->adjoinId];
 					if (next && next->searchKey != s_searchKey)
@@ -1383,6 +1474,22 @@ namespace LevelEditor
 				}
 			}
 		}
+	}
+		
+	void selectFromSingleVertex(EditorSector* root, s32 featureIndex, bool clearList)
+	{
+		const Vec2f* rootVtx = &root->vtx[featureIndex];
+		FeatureId rootId = createFeatureId(root, featureIndex, 0, false);
+		if (clearList)
+		{
+			selection_clear();
+			selection_add(rootId);
+		}
+		else if (!selection_add(rootId))
+		{
+			return;
+		}
+		selectOverlappingVertices(root, featureIndex, rootVtx, true);
 	}
 
 	void toggleVertexGroupInclusion(EditorSector* sector, s32 featureIndex)
@@ -1733,13 +1840,12 @@ namespace LevelEditor
 		return { TFE_Math::dot(&mtx.m0, &vec), TFE_Math::dot(&mtx.m1, &vec), TFE_Math::dot(&mtx.m2, &vec), TFE_Math::dot(&mtx.m3, &vec) };
 	}
 
-	// Convert from viewport mouse coordinates to world space 3D direction.
-	Vec3f mouseCoordToWorldDir3d(s32 mx, s32 my)
+	Vec3f viewportCoordToWorldDir3d(Vec2i vCoord)
 	{
 		const Vec4f posScreen =
 		{
-			f32(mx - s_editWinMapCorner.x) / f32(s_viewportSize.x) * 2.0f - 1.0f,
-			f32(my - s_editWinMapCorner.z) / f32(s_viewportSize.z) * 2.0f - 1.0f,
+			f32(vCoord.x) / f32(s_viewportSize.x) * 2.0f - 1.0f,
+			f32(vCoord.z) / f32(s_viewportSize.z) * 2.0f - 1.0f,
 			-1.0f, 1.0f
 		};
 		const Vec4f posView = transform(s_camera.invProj, posScreen);
@@ -1753,6 +1859,12 @@ namespace LevelEditor
 			TFE_Math::dot(&posView3, &viewT.m2)
 		};
 		return TFE_Math::normalize(&posRelWorld);
+	}
+
+	// Convert from viewport mouse coordinates to world space 3D direction.
+	Vec3f mouseCoordToWorldDir3d(s32 mx, s32 my)
+	{
+		return viewportCoordToWorldDir3d({ mx - (s32)s_editWinMapCorner.x, my - (s32)s_editWinMapCorner.z });
 	}
 
 	void messagePanel(ImVec2 pos)
