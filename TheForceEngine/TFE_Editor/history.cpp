@@ -2,6 +2,8 @@
 #include "errorMessages.h"
 #include <assert.h>
 #include <algorithm>
+#include <cstring>
+#include <string>
 
 namespace TFE_Editor
 {
