@@ -156,6 +156,7 @@ namespace LevelEditor
 	void selectFromSingleVertex(EditorSector* root, s32 featureIndex, bool clearList);
 	void selectOverlappingVertices(EditorSector* root, s32 featureIndex, const Vec2f* rootVtx, bool addToSelection);
 	void toggleVertexGroupInclusion(EditorSector* sector, s32 featureId);
+	void edit_moveFeaturesXZ(const Vec2f& newPos);
 
 	////////////////////////////////////////////////////////
 	// Public API
@@ -1593,7 +1594,7 @@ namespace LevelEditor
 		s_selectedVtxPos.x = s_selectedVtxSector->vtx[s_selectedVtxId].x;
 		s_selectedVtxPos.z = s_selectedVtxSector->vtx[s_selectedVtxId].z;
 	}
-
+	
 	void cameraControl2d(s32 mx, s32 my)
 	{
 		// WASD controls.
@@ -1653,30 +1654,11 @@ namespace LevelEditor
 
 		if (s_editMove)
 		{
-			Vec2f worldPos2d = mouseCoordToWorldPos2d(mx, my);
-
-			if (s_editMode == LEDIT_VERTEX)
-			{
-				if (s_selectedVtxId >= 0 && s_selectedVtxSector && TFE_Input::mouseDown(MBUTTON_LEFT) && !TFE_Input::keyModDown(KEYMOD_CTRL) && !TFE_Input::keyModDown(KEYMOD_SHIFT))
-				{
-					moveVertex(worldPos2d);
-				}
-				else if (s_selectedVtxId >= 0 && s_selectedVtxSector && s_moveStarted)
-				{
-					s_editMove = false;
-					s_moveStarted = false;
-
-					cmd_addMoveVertices((s32)s_selectionList.size(), s_selectionList.data(), s_moveTotalDelta);
-				}
-				else
-				{
-					s_editMove = false;
-					s_moveStarted = false;
-				}
-			}
+			const Vec2f worldPos2d = mouseCoordToWorldPos2d(mx, my);
+			edit_moveFeaturesXZ(worldPos2d);
 		}
 	}
-
+		
 	void cameraControl3d(s32 mx, s32 my)
 	{
 		// WASD controls.
@@ -1738,31 +1720,13 @@ namespace LevelEditor
 
 		if (s_editMove)
 		{
-			// TODO: Factor out 2D and 3D versions.
-			// TODO: Auto-select overlapping vertices from connected sectors.
-			f32 u = (s_selectedVtxPos.y - s_camera.pos.y) / (s_cursor3d.y - s_camera.pos.y);
-			Vec2f worldPos2d;
-			worldPos2d.x = s_camera.pos.x + u * (s_cursor3d.x - s_camera.pos.x);
-			worldPos2d.z = s_camera.pos.z + u * (s_cursor3d.z - s_camera.pos.z);
-
-			if (s_editMode == LEDIT_VERTEX)
+			const f32 u = (s_selectedVtxPos.y - s_camera.pos.y) / (s_cursor3d.y - s_camera.pos.y);
+			const Vec2f worldPos2d =
 			{
-				if (s_selectedVtxId >= 0 && s_selectedVtxSector && TFE_Input::mouseDown(MBUTTON_LEFT) && !TFE_Input::keyModDown(KEYMOD_CTRL) && !TFE_Input::keyModDown(KEYMOD_SHIFT))
-				{
-					moveVertex(worldPos2d);
-				}
-				else if (s_selectedVtxId >= 0 && s_selectedVtxSector && s_moveStarted)
-				{
-					s_editMove = false;
-					s_moveStarted = false;
-
-					cmd_addMoveVertices((s32)s_selectionList.size(), s_selectionList.data(), s_moveTotalDelta);
-				}
-				else
-				{
-					s_editMove = false;
-				}
-			}
+				s_camera.pos.x + u * (s_cursor3d.x - s_camera.pos.x),
+				s_camera.pos.z + u * (s_cursor3d.z - s_camera.pos.z)
+			};
+			edit_moveFeaturesXZ(worldPos2d);
 		}
 	}
 		
@@ -1919,5 +1883,27 @@ namespace LevelEditor
 			gpuImage = TFE_RenderBackend::createTexture(image->w, image->h, (u32*)image->pixels, MAG_FILTER_LINEAR);
 		}
 		return gpuImage;
+	}
+
+	void edit_moveFeaturesXZ(const Vec2f& newPos)
+	{
+		if (s_editMode == LEDIT_VERTEX)
+		{
+			if (s_selectedVtxId >= 0 && s_selectedVtxSector && TFE_Input::mouseDown(MBUTTON_LEFT) && !TFE_Input::keyModDown(KEYMOD_CTRL) && !TFE_Input::keyModDown(KEYMOD_SHIFT))
+			{
+				moveVertex(newPos);
+			}
+			else if (s_selectedVtxId >= 0 && s_selectedVtxSector && s_moveStarted)
+			{
+				s_editMove = false;
+				s_moveStarted = false;
+				cmd_addMoveVertices((s32)s_selectionList.size(), s_selectionList.data(), s_moveTotalDelta);
+			}
+			else
+			{
+				s_editMove = false;
+				s_moveStarted = false;
+			}
+		}
 	}
 }
