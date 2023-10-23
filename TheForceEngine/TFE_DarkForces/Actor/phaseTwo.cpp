@@ -44,7 +44,7 @@ namespace TFE_DarkForces
 		JBool noDeath;
 	};
 
-	struct PhaseThreeShared
+	struct PhaseTwoShared
 	{
 		SoundSourceId phase2aSndID = NULL_SOUND;
 		SoundSourceId phase2bSndID = NULL_SOUND;
@@ -52,7 +52,7 @@ namespace TFE_DarkForces
 		SoundSourceId phase2RocketSndID = NULL_SOUND;
 		s32 trooperNum = 0;
 	};
-	static PhaseThreeShared s_shared = {};
+	static PhaseTwoShared s_shared = {};
 	static PhaseTwo* s_curTrooper = nullptr;
 
 	void phaseTwo_exit()
