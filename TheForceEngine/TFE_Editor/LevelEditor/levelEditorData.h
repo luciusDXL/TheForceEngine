@@ -42,7 +42,8 @@ namespace LevelEditor
 		HP_SIGN,
 		HP_FLOOR,
 		HP_CEIL,
-		HP_COUNT
+		HP_COUNT,
+		HP_NONE = HP_COUNT
 	};
 
 	enum RayConst

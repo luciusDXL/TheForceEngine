@@ -14,6 +14,14 @@
 
 namespace LevelEditor
 {
+	struct Feature
+	{
+		EditorSector* sector = nullptr;
+		EditorSector* prevSector = nullptr;
+		s32 featureIndex = -1;
+		HitPart part = HP_NONE;
+	};
+		
 	extern EditorLevel s_level;
 	extern TFE_Editor::AssetList s_levelTextureList;
 	extern LevelEditMode s_editMode;
@@ -22,26 +30,19 @@ namespace LevelEditor
 	extern s32 s_curLayer;
 
 	// Sector
-	extern EditorSector* s_hoveredSector;
-	extern EditorSector* s_selectedSector;
+	extern Feature s_sectorHovered;
+	extern Feature s_sectorCur;
 
 	// Vertex
-	extern EditorSector* s_hoveredVtxSector;
-	extern EditorSector* s_selectedVtxSector;
-	extern s32 s_hoveredVtxId;
-	extern s32 s_selectedVtxId;
-	extern Vec3f s_hoveredVtxPos;
-	extern Vec3f s_selectedVtxPos;
+	extern Feature s_vertexHovered;
+	extern Feature s_vertexCur;
 
 	// Wall
-	extern EditorSector* s_hoveredWallSector;
-	extern EditorSector* s_selectedWallSector;
-	extern s32 s_hoveredWallId;
-	extern s32 s_selectedWallId;
+	extern Feature s_wallHovered;
+	extern Feature s_wallCur;
 
-	// 3D Selection
-	extern HitPart s_hoveredWallPart;
-	extern HitPart s_selectedWallPart;
+	extern Vec3f s_hoveredVtxPos;
+	extern Vec3f s_curVtxPos;
 
 	// Camera
 	extern Camera3d s_camera;
