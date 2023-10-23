@@ -65,19 +65,13 @@ namespace LevelEditor
 	u32 s_lwinOpen = LWIN_NONE;
 	s32 s_curLayer = 0;
 
-	// Sector
-	Feature s_sectorHovered = {};
-	Feature s_sectorCur = {};
+	// Unified feature hover/cur
+	Feature s_featureHovered = {};
+	Feature s_featureCur = {};
 
 	// Vertex
-	Feature s_vertexHovered = {};
-	Feature s_vertexCur = {};
 	Vec3f s_hoveredVtxPos;
 	Vec3f s_curVtxPos;
-
-	// Wall
-	Feature s_wallHovered = {};
-	Feature s_wallCur = {};
 		
 	// Search
 	u32 s_searchKey = 0;
@@ -193,12 +187,8 @@ namespace LevelEditor
 		s_curLayer = std::min(1, s_level.layerRange[1]);
 
 		s_sectorDrawMode = SDM_WIREFRAME;
-		s_sectorHovered = {};
-		s_sectorCur = {};
-		s_vertexHovered = {};
-		s_vertexCur = {};
-		s_wallHovered = {};
-		s_wallCur = {};
+		s_featureHovered = {};
+		s_featureCur = {};
 		s_editMove = false;
 
 		AssetBrowser::getLevelTextures(s_levelTextureList, asset->name.c_str());
@@ -306,9 +296,7 @@ namespace LevelEditor
 
 	bool isViewportElementHovered()
 	{
-		return (s_vertexHovered.featureIndex >= 0 && s_editMode == LEDIT_VERTEX) || (s_wallHovered.featureIndex >= 0 && s_editMode == LEDIT_WALL) ||
-			(s_sectorHovered.sector && s_editMode == LEDIT_SECTOR) || (s_vertexCur.featureIndex >= 0 && s_editMode == LEDIT_VERTEX) ||
-			(s_wallCur.featureIndex >= 0 && s_editMode == LEDIT_WALL) || (s_sectorCur.sector && s_editMode == LEDIT_SECTOR);
+		return s_featureHovered.featureIndex >= 0 || s_featureCur.featureIndex >= 0;
 	}
 
 	Vec3f rayGridPlaneHit(const Vec3f& origin, const Vec3f& rayDir)
@@ -361,8 +349,8 @@ namespace LevelEditor
 		{
 			selection_clear(false);
 		}
-		s_vertexCur.featureIndex = -1;
-		s_vertexCur.sector = nullptr;
+		s_featureCur.featureIndex = -1;
+		s_featureCur.sector = nullptr;
 
 		if (s_view == EDIT_VIEW_2D)
 		{
@@ -565,28 +553,28 @@ namespace LevelEditor
 			}
 			else if (selToggle)
 			{
-				if (s_vertexHovered.sector && s_vertexHovered.featureIndex >= 0)
+				if (s_featureHovered.sector && s_featureHovered.featureIndex >= 0)
 				{
 					s_editMove = true;
-					adjustGridHeight(s_vertexHovered.sector);
-					toggleVertexGroupInclusion(s_vertexHovered.sector, s_vertexHovered.featureIndex);
+					adjustGridHeight(s_featureHovered.sector);
+					toggleVertexGroupInclusion(s_featureHovered.sector, s_featureHovered.featureIndex);
 				}
 			}
 			else
 			{
-				s_vertexCur.sector = nullptr;
-				s_vertexCur.featureIndex = -1;
-				if (s_vertexHovered.sector && s_vertexHovered.featureIndex >= 0)
+				s_featureCur.sector = nullptr;
+				s_featureCur.featureIndex = -1;
+				if (s_featureHovered.sector && s_featureHovered.featureIndex >= 0)
 				{
-					s_vertexCur.sector = s_vertexHovered.sector;
-					s_vertexCur.featureIndex = s_vertexHovered.featureIndex;
+					s_featureCur.sector = s_featureHovered.sector;
+					s_featureCur.featureIndex = s_featureHovered.featureIndex;
 					s_curVtxPos = s_hoveredVtxPos;
-					adjustGridHeight(s_vertexCur.sector);
+					adjustGridHeight(s_featureCur.sector);
 					s_editMove = true;
 
 					// Clear the selection if this is a new vertex and Ctrl isn't held.
-					bool clearList = !selection_doesFeatureExist(createFeatureId(s_vertexCur.sector, s_vertexCur.featureIndex));
-					selectFromSingleVertex(s_vertexCur.sector, s_vertexCur.featureIndex, clearList);
+					bool clearList = !selection_doesFeatureExist(createFeatureId(s_featureCur.sector, s_featureCur.featureIndex));
+					selectFromSingleVertex(s_featureCur.sector, s_featureCur.featureIndex, clearList);
 				}
 				else if (!s_editMove)
 				{
@@ -598,11 +586,11 @@ namespace LevelEditor
 		{
 			if (!s_dragSelect.active)
 			{
-				if (selToggleDrag && s_vertexHovered.sector && s_vertexHovered.featureIndex >= 0)
+				if (selToggleDrag && s_featureHovered.sector && s_featureHovered.featureIndex >= 0)
 				{
 					s_editMove = true;
-					adjustGridHeight(s_vertexHovered.sector);
-					selectFromSingleVertex(s_vertexHovered.sector, s_vertexHovered.featureIndex, false);
+					adjustGridHeight(s_featureHovered.sector);
+					selectFromSingleVertex(s_featureHovered.sector, s_featureHovered.featureIndex, false);
 				}
 			}
 			// Draw select continue.
@@ -624,21 +612,30 @@ namespace LevelEditor
 	void handleHoverAndSelection(RayHitInfo* info)
 	{
 		if (info->hitSectorId < 0) { return; }
-		s_sectorHovered.sector = &s_level.sectors[info->hitSectorId];
+		s_featureHovered.sector = &s_level.sectors[info->hitSectorId];
+		s_featureHovered.featureIndex = -1;
 
 		// TODO: Move to central hotkey list.
-		if (s_sectorHovered.sector && TFE_Input::keyModDown(KEYMOD_CTRL) && TFE_Input::keyPressed(KEY_G))
+		if (s_featureHovered.sector && TFE_Input::keyModDown(KEYMOD_CTRL) && TFE_Input::keyPressed(KEY_G))
 		{
-			adjustGridHeight(s_sectorHovered.sector);
+			adjustGridHeight(s_featureHovered.sector);
 		}
 
 		//////////////////////////////////////
 		// SECTOR
 		//////////////////////////////////////
-		if (s_editMode == LEDIT_SECTOR && TFE_Input::mousePressed(MouseButton::MBUTTON_LEFT))
+		if (s_editMode == LEDIT_SECTOR)
 		{
-			s_sectorCur.sector = s_sectorHovered.sector;
-			adjustGridHeight(s_sectorCur.sector);
+			if (TFE_Input::mousePressed(MouseButton::MBUTTON_LEFT))
+			{
+				s_featureCur.sector = s_featureHovered.sector;
+				s_featureCur.featureIndex = 0;
+				adjustGridHeight(s_featureCur.sector);
+			}
+			else if (s_featureHovered.sector)
+			{
+				s_featureHovered.featureIndex = 0;
+			}
 		}
 
 		//////////////////////////////////////
@@ -646,13 +643,12 @@ namespace LevelEditor
 		//////////////////////////////////////
 		if (s_editMode == LEDIT_VERTEX)
 		{
-			s32 prevId = s_vertexHovered.featureIndex;
+			s32 prevId = s_featureHovered.featureIndex;
 			// See if we are close enough to "hover" a vertex
-			s_vertexHovered.sector = nullptr;
-			s_vertexHovered.featureIndex = -1;
-			if (s_sectorHovered.sector)
+			s_featureHovered.featureIndex = -1;
+			if (s_featureHovered.sector)
 			{
-				EditorSector* hoveredSector = s_sectorHovered.sector;
+				EditorSector* hoveredSector = s_featureHovered.sector;
 
 				const size_t vtxCount = hoveredSector->vtx.size();
 				const Vec2f* vtx = hoveredSector->vtx.data();
@@ -686,21 +682,12 @@ namespace LevelEditor
 
 				if (closestVtx >= 0)
 				{
-					s_vertexHovered.sector = hoveredSector;
-					s_vertexHovered.featureIndex = closestVtx;
+					s_featureHovered.featureIndex = closestVtx;
 					s_hoveredVtxPos = finalPos;
 				}
 			}
 
 			handleMouseControlVertex();
-		}
-		else
-		{
-			s_vertexHovered.sector = nullptr;
-			s_vertexCur.sector = nullptr;
-			s_vertexHovered.featureIndex = -1;
-			s_vertexCur.featureIndex = -1;
-			selection_clear();
 		}
 
 		//////////////////////////////////////
@@ -709,13 +696,11 @@ namespace LevelEditor
 		if (s_editMode == LEDIT_WALL)
 		{
 			// See if we are close enough to "hover" a vertex
-			s_wallHovered.sector = nullptr;
-			s_wallHovered.featureIndex = -1;
+			s_featureHovered.featureIndex = -1;
 			if (info->hitWallId >= 0)
 			{
-				s_wallHovered.sector = s_sectorHovered.sector;
-				s_wallHovered.featureIndex = info->hitWallId;
-				s_wallHovered.part = info->hitPart;
+				s_featureHovered.featureIndex = info->hitWallId;
+				s_featureHovered.part = info->hitPart;
 			}
 			else
 			{
@@ -725,23 +710,22 @@ namespace LevelEditor
 				const f32 distFromCam = TFE_Math::distance(&info->hitPos, &s_camera.pos);
 				const f32 maxDist = distFromCam * 16.0f / f32(s_viewportSize.z);
 				const f32 maxDistSq = maxDist * maxDist;
-				s_wallHovered.featureIndex = findClosestWallInSector(s_sectorHovered.sector, &pos2d, maxDist * maxDist, nullptr);
-				if (s_wallHovered.featureIndex >= 0)
+				s_featureHovered.featureIndex = findClosestWallInSector(s_featureHovered.sector, &pos2d, maxDist * maxDist, nullptr);
+				if (s_featureHovered.featureIndex >= 0)
 				{
-					s_wallHovered.sector = s_sectorHovered.sector;
-					EditorWall* wall = &s_wallHovered.sector->walls[s_wallHovered.featureIndex];
+					EditorWall* wall = &s_featureHovered.sector->walls[s_featureHovered.featureIndex];
 					EditorSector* next = wall->adjoinId >= 0 ? &s_level.sectors[wall->adjoinId] : nullptr;
 					if (!next)
 					{
-						s_wallHovered.part = HP_MID;
+						s_featureHovered.part = HP_MID;
 					}
 					else if (info->hitPart == HP_FLOOR)
 					{
-						s_wallHovered.part = (next->floorHeight > s_wallHovered.sector->floorHeight) ? HP_BOT : HP_MID;
+						s_featureHovered.part = (next->floorHeight > s_featureHovered.sector->floorHeight) ? HP_BOT : HP_MID;
 					}
 					else if (info->hitPart == HP_CEIL)
 					{
-						s_wallHovered.part = (next->ceilHeight < s_wallHovered.sector->ceilHeight) ? HP_TOP : HP_MID;
+						s_featureHovered.part = (next->ceilHeight < s_featureHovered.sector->ceilHeight) ? HP_TOP : HP_MID;
 					}
 				}
 				else
@@ -749,44 +733,33 @@ namespace LevelEditor
 					// Otherwise, select the floor or ceiling...
 					if (info->hitPart == HP_FLOOR)
 					{
-						s_wallHovered.part = HP_FLOOR;
+						s_featureHovered.part = HP_FLOOR;
 					}
 					else if (info->hitPart == HP_CEIL)
 					{
-						s_wallHovered.part = HP_CEIL;
+						s_featureHovered.part = HP_CEIL;
 					}
 				}
 			}
 
 			if (TFE_Input::mousePressed(MouseButton::MBUTTON_LEFT))
 			{
-				s_wallCur.sector = nullptr;
-				s_sectorCur.sector = nullptr;
-				s_wallCur.featureIndex = -1;
-				if (s_wallHovered.sector && s_wallHovered.featureIndex >= 0)
+				s_featureCur.sector = nullptr;
+				s_featureCur.featureIndex = -1;
+				if (s_featureHovered.sector && s_featureHovered.featureIndex >= 0)
 				{
-					s_wallCur.sector = s_wallHovered.sector;
-					s_wallCur.featureIndex = s_wallHovered.featureIndex;
-					s_wallCur.part = s_wallHovered.part;
-					adjustGridHeight(s_wallCur.sector);
+					s_featureCur.sector = s_featureHovered.sector;
+					s_featureCur.featureIndex = s_featureHovered.featureIndex;
+					s_featureCur.part = s_featureHovered.part;
+					adjustGridHeight(s_featureCur.sector);
 				}
-				else if (s_sectorHovered.sector && (s_wallHovered.part == HP_FLOOR || s_wallHovered.part == HP_CEIL))
+				else if (s_featureHovered.sector && (s_featureHovered.part == HP_FLOOR || s_featureHovered.part == HP_CEIL))
 				{
-					s_sectorCur.sector = s_sectorHovered.sector;
-					s_wallCur.part = s_wallHovered.part;
-					adjustGridHeight(s_sectorCur.sector);
+					s_featureCur.sector = s_featureHovered.sector;
+					s_featureCur.part = s_featureHovered.part;
+					adjustGridHeight(s_featureCur.sector);
 				}
 			}
-		}
-		else
-		{
-			s_wallHovered = {};
-			s_wallCur = {};
-		}
-
-		if (s_editMode != LEDIT_SECTOR && (s_editMode != LEDIT_WALL || (s_wallHovered.part != HP_FLOOR && s_wallHovered.part != HP_CEIL)))
-		{
-			s_sectorHovered.sector = nullptr;
 		}
 	}
 		
@@ -799,13 +772,7 @@ namespace LevelEditor
 		if (!TFE_Input::relativeModeEnabled() && (mx < s_editWinPos.x || mx >= s_editWinPos.x + s_editWinSize.x || my < s_editWinPos.z || my >= s_editWinPos.z + s_editWinSize.z))
 		{
 			// Nothing is "hovered" if the mouse is not in the window.
-			s_sectorHovered.sector = nullptr;
-			s_vertexHovered.sector = nullptr;
-			s_vertexHovered.prevSector = nullptr;
-			s_wallHovered.sector = nullptr;
-			s_wallHovered.prevSector = nullptr;
-			s_vertexHovered.featureIndex = -1;
-			s_wallHovered.featureIndex = -1;
+			s_featureHovered = {};
 			return;
 		}
 
@@ -818,44 +785,46 @@ namespace LevelEditor
 			if (s_editMode != LEDIT_DRAW)
 			{
 				// First check to see if the current hovered sector is still valid.
-				if (s_sectorHovered.sector)
+				if (s_featureHovered.sector)
 				{
-					if (!isPointInsideSector2d(s_sectorHovered.sector, worldPos, s_curLayer))
+					if (!isPointInsideSector2d(s_featureHovered.sector, worldPos, s_curLayer))
 					{
-						s_sectorHovered.sector = nullptr;
+						s_featureHovered.sector = nullptr;
 					}
 				}
 				// If not, then try to find one.
-				if (!s_sectorHovered.sector)
+				if (!s_featureHovered.sector)
 				{
-					s_sectorHovered.sector = findSector2d(worldPos, s_curLayer);
+					s_featureHovered.sector = findSector2d(worldPos, s_curLayer);
 				}
+				s_featureHovered.featureIndex = -1;
+
 				// TODO: Move to central hotkey list.
-				if (s_sectorHovered.sector && TFE_Input::keyModDown(KEYMOD_CTRL) && TFE_Input::keyPressed(KEY_G))
+				if (s_featureHovered.sector && TFE_Input::keyModDown(KEYMOD_CTRL) && TFE_Input::keyPressed(KEY_G))
 				{
-					adjustGridHeight(s_sectorHovered.sector);
+					adjustGridHeight(s_featureHovered.sector);
 				}
 				
-				if (s_editMode == LEDIT_SECTOR && TFE_Input::mousePressed(MouseButton::MBUTTON_LEFT))
+				if (s_editMode == LEDIT_SECTOR)
 				{
-					s_sectorCur.sector = s_sectorHovered.sector;
-					adjustGridHeight(s_sectorCur.sector);
-				}
-				else if (s_editMode != LEDIT_SECTOR)
-				{
-					s_sectorCur.sector = nullptr;
+					if (TFE_Input::mousePressed(MouseButton::MBUTTON_LEFT))
+					{
+						s_featureCur.sector = s_featureHovered.sector;
+						s_featureCur.featureIndex = 0;
+						adjustGridHeight(s_featureCur.sector);
+					}
+					s_featureHovered.featureIndex = 0;
 				}
 
 				if (s_editMode == LEDIT_VERTEX)
 				{
 					// See if we are close enough to "hover" a vertex
-					s_vertexHovered.sector = nullptr;
-					s_vertexHovered.featureIndex = -1;
-					if (s_sectorHovered.sector || s_vertexHovered.prevSector)
+					s_featureHovered.featureIndex = -1;
+					if (s_featureHovered.sector || s_featureHovered.prevSector)
 					{
 						// Keep track of the last vertex hovered sector and use it if no hovered sector is active to
 						// make selecting vertices less fiddly.
-						EditorSector* hoveredSector = s_sectorHovered.sector ? s_sectorHovered.sector : s_vertexHovered.prevSector;
+						EditorSector* hoveredSector = s_featureHovered.sector ? s_featureHovered.sector : s_featureHovered.prevSector;
 
 						const size_t vtxCount = hoveredSector->vtx.size();
 						const Vec2f* vtx = hoveredSector->vtx.data();
@@ -876,86 +845,62 @@ namespace LevelEditor
 						const f32 maxDist = s_zoom2d * 16.0f;
 						if (closestDistSq <= maxDist*maxDist)
 						{
-							s_vertexHovered.sector = hoveredSector;
-							s_vertexHovered.prevSector = hoveredSector;
-							s_vertexHovered.featureIndex = closestVtx;
+							s_featureHovered.sector = hoveredSector;
+							s_featureHovered.prevSector = hoveredSector;
+							s_featureHovered.featureIndex = closestVtx;
 						}
 					}
 
 					handleMouseControlVertex();
 				}
-				else
-				{
-					s_vertexHovered.sector = nullptr;
-					s_vertexCur.sector = nullptr;
-					s_vertexHovered.featureIndex = -1;
-					s_vertexCur.featureIndex = -1;
-					selection_clear();
-				}
 
 				if (s_editMode == LEDIT_WALL)
 				{
 					// See if we are close enough to "hover" a wall
-					s_wallHovered.sector = nullptr;
-					s_wallHovered.featureIndex = -1;
-					if (s_sectorHovered.sector || s_wallHovered.prevSector)
+					s_featureHovered.featureIndex = -1;
+					if (s_featureHovered.sector || s_featureHovered.prevSector)
 					{
 						// Keep track of the last vertex hovered sector and use it if no hovered sector is active to
 						// make selecting vertices less fiddly.
-						EditorSector* hoveredSector = s_sectorHovered.sector ? s_sectorHovered.sector : s_wallHovered.prevSector;
+						EditorSector* hoveredSector = s_featureHovered.sector ? s_featureHovered.sector : s_featureHovered.prevSector;
 
 						const f32 maxDist = s_zoom2d * 16.0f;
-						s_wallHovered.featureIndex = findClosestWallInSector(hoveredSector, &worldPos, maxDist * maxDist, nullptr);
-						if (s_wallHovered.featureIndex >= 0)
+						s_featureHovered.featureIndex = findClosestWallInSector(hoveredSector, &worldPos, maxDist * maxDist, nullptr);
+						if (s_featureHovered.featureIndex >= 0)
 						{
-							s_wallHovered.sector = hoveredSector;
-							s_wallHovered.prevSector = hoveredSector;
+							s_featureHovered.sector = hoveredSector;
+							s_featureHovered.prevSector = hoveredSector;
 						}
 						else
 						{
-							s_wallHovered.sector = nullptr;
+							s_featureHovered.sector = nullptr;
 						}
 					}
 
 					if (TFE_Input::mousePressed(MouseButton::MBUTTON_LEFT))
 					{
-						s_wallCur.sector = nullptr;
-						s_wallCur.featureIndex = -1;
-						if (s_wallHovered.sector && s_wallHovered.featureIndex >= 0)
+						s_featureCur.sector = nullptr;
+						s_featureCur.featureIndex = -1;
+						if (s_featureHovered.sector && s_featureHovered.featureIndex >= 0)
 						{
-							s_wallCur.sector = s_wallHovered.sector;
-							s_wallCur.featureIndex = s_wallHovered.featureIndex;
-							adjustGridHeight(s_wallCur.sector);
+							s_featureCur.sector = s_featureHovered.sector;
+							s_featureCur.featureIndex = s_featureHovered.featureIndex;
+							adjustGridHeight(s_featureCur.sector);
 						}
 					}
 				}
-				else
-				{
-					s_wallHovered = {};
-					s_wallCur = {};
-				}
-
-				if (s_editMode != LEDIT_SECTOR)
-				{
-					s_sectorHovered.sector = nullptr;
-				}
 
 				// DEBUG
-				if (s_sectorCur.sector && TFE_Input::keyPressed(KEY_T))
+				if (s_featureCur.sector && TFE_Input::keyPressed(KEY_T))
 				{
-					TFE_Polygon::computeTriangulation(&s_sectorCur.sector->poly);
+					TFE_Polygon::computeTriangulation(&s_featureCur.sector->poly);
 				}
 			}
 		}
 		else if (s_view == EDIT_VIEW_3D)
 		{
 			cameraControl3d(mx, my);
-
-			s_sectorHovered.sector = nullptr;
-			s_wallHovered.featureIndex = -1;
-			s_wallHovered.sector = nullptr;
-			s_vertexHovered.featureIndex = -1;
-			s_vertexHovered.sector = nullptr;
+			s_featureHovered = {};
 
 			// TODO: Move out to common place for hotkeys.
 			bool hitBackfaces = TFE_Input::keyDown(KEY_B);
@@ -974,7 +919,7 @@ namespace LevelEditor
 			}
 			else
 			{
-				s_sectorHovered.sector = nullptr;
+				s_featureHovered.sector = nullptr;
 				s_cursor3d = rayGridPlaneHit(s_camera.pos, s_rayDir);
 
 				if (s_editMode == LEDIT_VERTEX)
@@ -983,11 +928,7 @@ namespace LevelEditor
 				}
 				else if (TFE_Input::mousePressed(MouseButton::MBUTTON_LEFT))
 				{
-					s_vertexCur.sector = nullptr;
-					s_wallCur.sector = nullptr;
-					s_sectorCur.sector = nullptr;
-					s_wallCur.featureIndex = -1;
-					s_vertexCur.featureIndex = -1;
+					s_featureCur = {};
 					selection_clear();
 				}
 			}
@@ -1136,9 +1077,7 @@ namespace LevelEditor
 
 	void selectNone()
 	{
-		s_vertexCur.featureIndex = -1;
-		s_wallCur.featureIndex = -1;
-		s_sectorCur.sector = nullptr;
+		s_featureCur = {};
 		selection_clear();
 	}
 	
@@ -1177,6 +1116,8 @@ namespace LevelEditor
 				{
 					s_editMode = LevelEditMode(i);
 					s_editMove = false;
+					s_featureCur = {};
+					s_featureHovered = {};
 					selection_clear();
 				}
 				ImGui::SameLine();
@@ -1259,10 +1200,10 @@ namespace LevelEditor
 			if (s_view == EDIT_VIEW_2D && !getMenuActive() && !isUiActive())
 			{
 				// Display vertex info.
-				if (s_vertexHovered.sector && s_vertexHovered.featureIndex >= 0 && editWinHovered)
+				if (s_featureHovered.sector && s_featureHovered.featureIndex >= 0 && editWinHovered)
 				{
 					// Give the "world space" vertex position, get back to the pixel position for the UI.
-					const Vec2f vtx = s_vertexHovered.sector->vtx[s_vertexHovered.featureIndex];
+					const Vec2f vtx = s_featureHovered.sector->vtx[s_featureHovered.featureIndex];
 					const Vec2i mapPos = worldPos2dToMap(vtx);
 
 					const ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize
@@ -1270,7 +1211,7 @@ namespace LevelEditor
 
 					ImGui::SetNextWindowPos({ (f32)mapPos.x - UI_SCALE(20), (f32)mapPos.z - UI_SCALE(20) - 16 });
 					ImGui::Begin("##VtxInfo", nullptr, window_flags);
-					ImGui::Text("%d: %0.3f, %0.3f", s_vertexHovered.featureIndex, vtx.x, vtx.z);
+					ImGui::Text("%d: %0.3f, %0.3f", s_featureHovered.featureIndex, vtx.x, vtx.z);
 					ImGui::End();
 				}
 
@@ -1562,16 +1503,16 @@ namespace LevelEditor
 		if (!s_moveStarted)
 		{
 			s_moveStarted = true;
-			s_moveStartPos = s_vertexCur.sector->vtx[s_vertexCur.featureIndex];
+			s_moveStartPos = s_featureCur.sector->vtx[s_featureCur.featureIndex];
 		}
 		s_moveTotalDelta = { worldPos2d.x - s_moveStartPos.x, worldPos2d.z - s_moveStartPos.z };
 		
 		// Current movement.
-		const Vec2f delta = { worldPos2d.x - s_vertexCur.sector->vtx[s_vertexCur.featureIndex].x, worldPos2d.z - s_vertexCur.sector->vtx[s_vertexCur.featureIndex].z };
+		const Vec2f delta = { worldPos2d.x - s_featureCur.sector->vtx[s_featureCur.featureIndex].x, worldPos2d.z - s_featureCur.sector->vtx[s_featureCur.featureIndex].z };
 		edit_moveVertices((s32)s_selectionList.size(), s_selectionList.data(), delta);
 
-		s_curVtxPos.x = s_vertexCur.sector->vtx[s_vertexCur.featureIndex].x;
-		s_curVtxPos.z = s_vertexCur.sector->vtx[s_vertexCur.featureIndex].z;
+		s_curVtxPos.x = s_featureCur.sector->vtx[s_featureCur.featureIndex].x;
+		s_curVtxPos.z = s_featureCur.sector->vtx[s_featureCur.featureIndex].z;
 	}
 	
 	void cameraControl2d(s32 mx, s32 my)
@@ -1868,11 +1809,11 @@ namespace LevelEditor
 	{
 		if (s_editMode == LEDIT_VERTEX)
 		{
-			if (s_vertexCur.featureIndex >= 0 && s_vertexCur.sector && TFE_Input::mouseDown(MBUTTON_LEFT) && !TFE_Input::keyModDown(KEYMOD_CTRL) && !TFE_Input::keyModDown(KEYMOD_SHIFT))
+			if (s_featureCur.featureIndex >= 0 && s_featureCur.sector && TFE_Input::mouseDown(MBUTTON_LEFT) && !TFE_Input::keyModDown(KEYMOD_CTRL) && !TFE_Input::keyModDown(KEYMOD_SHIFT))
 			{
 				moveVertex(newPos);
 			}
-			else if (s_vertexCur.featureIndex >= 0 && s_vertexCur.sector && s_moveStarted)
+			else if (s_featureCur.featureIndex >= 0 && s_featureCur.sector && s_moveStarted)
 			{
 				s_editMove = false;
 				s_moveStarted = false;

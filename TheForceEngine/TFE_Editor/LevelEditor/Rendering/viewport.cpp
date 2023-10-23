@@ -193,50 +193,53 @@ namespace LevelEditor
 		renderSectorWalls2d(s_curLayer, s_curLayer);
 
 		// Draw the hovered and selected sectors.
-		// Note they intentionally overlap if s_sectorHovered.sector == s_sectorCur.sector.
-		if (s_sectorHovered.sector && s_editMode == LEDIT_SECTOR)
+		// Note they intentionally overlap if s_featureHovered.sector == s_featureCur.sector.
+		if (s_featureHovered.sector && s_editMode == LEDIT_SECTOR)
 		{
-			drawSector2d(s_sectorHovered.sector, HL_HOVERED);
+			drawSector2d(s_featureHovered.sector, HL_HOVERED);
 		}
-		if (s_sectorCur.sector && s_editMode == LEDIT_SECTOR)
+		if (s_featureCur.sector && s_editMode == LEDIT_SECTOR)
 		{
-			drawSector2d(s_sectorCur.sector, HL_SELECTED);
+			drawSector2d(s_featureCur.sector, HL_SELECTED);
 		}
 
 		// Draw the hovered and selected walls.
-		if (s_wallHovered.sector && s_wallHovered.featureIndex >= 0)
+		if (s_featureHovered.sector && s_featureHovered.featureIndex >= 0 && s_editMode == LEDIT_WALL)
 		{
-			drawWall2d(s_wallHovered.sector, &s_wallHovered.sector->walls[s_wallHovered.featureIndex], 1.5f, HL_HOVERED, /*draw normal*/true);
+			drawWall2d(s_featureHovered.sector, &s_featureHovered.sector->walls[s_featureHovered.featureIndex], 1.5f, HL_HOVERED, /*draw normal*/true);
 		}
-		if (s_wallCur.sector && s_wallCur.featureIndex >= 0)
+		if (s_featureCur.sector && s_featureCur.featureIndex >= 0 && s_editMode == LEDIT_WALL)
 		{
-			drawWall2d(s_wallCur.sector, &s_wallCur.sector->walls[s_wallCur.featureIndex], 1.5f, HL_SELECTED, /*draw normal*/true);
+			drawWall2d(s_featureCur.sector, &s_featureCur.sector->walls[s_featureCur.featureIndex], 1.5f, HL_SELECTED, /*draw normal*/true);
 		}
 
 		// Draw vertices.
 		renderSectorVertices2d();
 
 		// Draw the hovered and selected vertices.
-		bool alsoHovered = false;
-		if (s_selectionList.size())
+		if (s_editMode == LEDIT_VERTEX)
 		{
-			const size_t count = s_selectionList.size();
-			const FeatureId* list = s_selectionList.data();
-			for (size_t i = 0; i < count; i++)
+			bool alsoHovered = false;
+			if (s_selectionList.size())
 			{
-				s32 featureIndex, featureData;
-				bool overlapped;
-				EditorSector* sector = unpackFeatureId(list[i], &featureIndex, &featureData, &overlapped);
-				if (overlapped || !sector) { continue; }
+				const size_t count = s_selectionList.size();
+				const FeatureId* list = s_selectionList.data();
+				for (size_t i = 0; i < count; i++)
+				{
+					s32 featureIndex, featureData;
+					bool overlapped;
+					EditorSector* sector = unpackFeatureId(list[i], &featureIndex, &featureData, &overlapped);
+					if (overlapped || !sector) { continue; }
 
-				const bool thisAlsoHovered = s_vertexHovered.featureIndex == featureIndex && s_vertexHovered.sector == sector;
-				if (thisAlsoHovered) { alsoHovered = true; }
-				drawVertex2d(sector, featureIndex, 1.5f, thisAlsoHovered ? Highlight(HL_SELECTED + 1) : HL_SELECTED);
+					const bool thisAlsoHovered = s_featureHovered.featureIndex == featureIndex && s_featureHovered.sector == sector;
+					if (thisAlsoHovered) { alsoHovered = true; }
+					drawVertex2d(sector, featureIndex, 1.5f, thisAlsoHovered ? Highlight(HL_SELECTED + 1) : HL_SELECTED);
+				}
 			}
-		}
-		if (s_vertexHovered.sector && s_vertexHovered.featureIndex >= 0 && !alsoHovered)
-		{
-			drawVertex2d(s_vertexHovered.sector, s_vertexHovered.featureIndex, 1.5f, HL_HOVERED);
+			if (s_featureHovered.sector && s_featureHovered.featureIndex >= 0 && !alsoHovered)
+			{
+				drawVertex2d(s_featureHovered.sector, s_featureHovered.featureIndex, 1.5f, HL_HOVERED);
+			}
 		}
 
 		// Draw drag select, if active.
@@ -569,29 +572,29 @@ namespace LevelEditor
 
 	void drawSelectedSector3D()
 	{
-		bool hoverAndSelect = s_sectorCur.sector == s_sectorHovered.sector;
-		if (s_sectorCur.sector)
+		bool hoverAndSelect = s_featureCur.sector == s_featureHovered.sector;
+		if (s_featureCur.sector)
 		{
-			drawFlat3D_Highlighted(s_sectorCur.sector, HP_FLOOR, 3.5f, HL_SELECTED, false, true);
-			drawFlat3D_Highlighted(s_sectorCur.sector, HP_CEIL, 3.5f, HL_SELECTED, false, true);
-			const size_t wallCount = s_sectorCur.sector->walls.size();
-			const EditorWall* wall = s_sectorCur.sector->walls.data();
+			drawFlat3D_Highlighted(s_featureCur.sector, HP_FLOOR, 3.5f, HL_SELECTED, false, true);
+			drawFlat3D_Highlighted(s_featureCur.sector, HP_CEIL, 3.5f, HL_SELECTED, false, true);
+			const size_t wallCount = s_featureCur.sector->walls.size();
+			const EditorWall* wall = s_featureCur.sector->walls.data();
 			for (size_t w = 0; w < wallCount; w++, wall++)
 			{
 				EditorSector* next = wall->adjoinId < 0 ? nullptr : &s_level.sectors[wall->adjoinId];
-				drawWallLines3D_Highlighted(s_sectorCur.sector, next, wall, 3.5f, HL_SELECTED, false);
+				drawWallLines3D_Highlighted(s_featureCur.sector, next, wall, 3.5f, HL_SELECTED, false);
 			}
 		}
-		if (s_sectorHovered.sector)
+		if (s_featureHovered.sector)
 		{
-			drawFlat3D_Highlighted(s_sectorHovered.sector, HP_FLOOR, 3.5f, HL_HOVERED, hoverAndSelect, true);
-			drawFlat3D_Highlighted(s_sectorHovered.sector, HP_CEIL, 3.5f, HL_HOVERED, hoverAndSelect, true);
-			const size_t wallCount = s_sectorHovered.sector->walls.size();
-			const EditorWall* wall = s_sectorHovered.sector->walls.data();
+			drawFlat3D_Highlighted(s_featureHovered.sector, HP_FLOOR, 3.5f, HL_HOVERED, hoverAndSelect, true);
+			drawFlat3D_Highlighted(s_featureHovered.sector, HP_CEIL, 3.5f, HL_HOVERED, hoverAndSelect, true);
+			const size_t wallCount = s_featureHovered.sector->walls.size();
+			const EditorWall* wall = s_featureHovered.sector->walls.data();
 			for (size_t w = 0; w < wallCount; w++, wall++)
 			{
 				EditorSector* next = wall->adjoinId < 0 ? nullptr : &s_level.sectors[wall->adjoinId];
-				drawWallLines3D_Highlighted(s_sectorHovered.sector, next, wall, 3.5f, HL_HOVERED, hoverAndSelect);
+				drawWallLines3D_Highlighted(s_featureHovered.sector, next, wall, 3.5f, HL_HOVERED, hoverAndSelect);
 			}
 		}
 	}
@@ -599,41 +602,41 @@ namespace LevelEditor
 	void drawSelectedSurface3D()
 	{
 		// In 3D, the floor and ceiling are surfaces too.
-		bool hoverAndSelect = s_sectorCur.sector == s_sectorHovered.sector;
-		if (s_sectorCur.sector && (s_wallCur.part == HP_FLOOR || s_wallCur.part == HP_CEIL))
+		bool hoverAndSelect = s_featureCur.sector == s_featureHovered.sector;
+		if (s_featureCur.sector && (s_featureCur.part == HP_FLOOR || s_featureCur.part == HP_CEIL))
 		{
-			drawFlat3D_Highlighted(s_sectorCur.sector, s_wallCur.part, 3.5f, HL_SELECTED, false, false);
+			drawFlat3D_Highlighted(s_featureCur.sector, s_featureCur.part, 3.5f, HL_SELECTED, false, false);
 		}
-		if (s_sectorHovered.sector && (s_wallHovered.part == HP_FLOOR || s_wallHovered.part == HP_CEIL))
+		if (s_featureHovered.sector && (s_featureHovered.part == HP_FLOOR || s_featureHovered.part == HP_CEIL))
 		{
-			drawFlat3D_Highlighted(s_sectorHovered.sector, s_wallHovered.part, 3.5f, HL_HOVERED, hoverAndSelect, false);
+			drawFlat3D_Highlighted(s_featureHovered.sector, s_featureHovered.part, 3.5f, HL_HOVERED, hoverAndSelect, false);
 		}
 
-		hoverAndSelect = s_wallCur.featureIndex == s_wallHovered.featureIndex && s_wallCur.sector == s_wallHovered.sector;
+		hoverAndSelect = s_featureCur.featureIndex == s_featureHovered.featureIndex && s_featureCur.sector == s_featureHovered.sector;
 		// Draw thicker lines.
-		if (s_wallCur.featureIndex >= 0 && s_wallCur.sector)
+		if (s_featureCur.featureIndex >= 0 && s_featureCur.sector)
 		{
-			EditorWall* wall = &s_wallCur.sector->walls[s_wallCur.featureIndex];
+			EditorWall* wall = &s_featureCur.sector->walls[s_featureCur.featureIndex];
 			EditorSector* next = wall->adjoinId < 0 ? nullptr : &s_level.sectors[wall->adjoinId];
-			drawWallLines3D_Highlighted(s_wallCur.sector, next, wall, 3.5f, HL_SELECTED, false);
+			drawWallLines3D_Highlighted(s_featureCur.sector, next, wall, 3.5f, HL_SELECTED, false);
 		}
-		if (s_wallHovered.featureIndex >= 0 && s_wallHovered.sector)
+		if (s_featureHovered.featureIndex >= 0 && s_featureHovered.sector)
 		{
-			EditorWall* wall = &s_wallHovered.sector->walls[s_wallHovered.featureIndex];
+			EditorWall* wall = &s_featureHovered.sector->walls[s_featureHovered.featureIndex];
 			EditorSector* next = wall->adjoinId < 0 ? nullptr : &s_level.sectors[wall->adjoinId];
-			drawWallLines3D_Highlighted(s_wallHovered.sector, next, wall, 3.5f, HL_HOVERED, hoverAndSelect);
+			drawWallLines3D_Highlighted(s_featureHovered.sector, next, wall, 3.5f, HL_HOVERED, hoverAndSelect);
 		}
 
 		// Draw translucent surfaces.
-		if (s_wallCur.featureIndex >= 0 && s_wallCur.sector)
+		if (s_featureCur.featureIndex >= 0 && s_featureCur.sector)
 		{
 			u32 color = SCOLOR_POLY_SELECTED;
-			drawWallColor3d_Highlighted(s_wallCur.sector, s_wallCur.sector->vtx.data(), s_wallCur.sector->walls.data() + s_wallCur.featureIndex, color, s_wallCur.part);
+			drawWallColor3d_Highlighted(s_featureCur.sector, s_featureCur.sector->vtx.data(), s_featureCur.sector->walls.data() + s_featureCur.featureIndex, color, s_featureCur.part);
 		}
-		if (s_wallHovered.featureIndex >= 0 && s_wallHovered.sector)
+		if (s_featureHovered.featureIndex >= 0 && s_featureHovered.sector)
 		{
 			u32 color = SCOLOR_POLY_HOVERED;
-			drawWallColor3d_Highlighted(s_wallHovered.sector, s_wallHovered.sector->vtx.data(), s_wallHovered.sector->walls.data() + s_wallHovered.featureIndex, color, s_wallHovered.part);
+			drawWallColor3d_Highlighted(s_featureHovered.sector, s_featureHovered.sector->vtx.data(), s_featureHovered.sector->walls.data() + s_featureHovered.featureIndex, color, s_featureHovered.part);
 		}
 	}
 
@@ -672,16 +675,16 @@ namespace LevelEditor
 					EditorSector* sector = unpackFeatureId(list[i], &featureIndex, &featureData, &overlapped);
 					if (overlapped || !sector) { continue; }
 
-					bool thisAlsoHovered = s_vertexHovered.featureIndex == featureIndex && s_vertexHovered.sector == sector;
+					bool thisAlsoHovered = s_featureHovered.featureIndex == featureIndex && s_featureHovered.sector == sector;
 					if (thisAlsoHovered) { alsoHovered = true; }
 
 					Vec3f pos = { sector->vtx[featureIndex].x, sector->floorHeight, sector->vtx[featureIndex].z };
 					drawVertex3d(&pos, sector, thisAlsoHovered ? c_vertexClr[HL_SELECTED + 1] : c_vertexClr[HL_SELECTED]);
 				}
 			}
-			if (s_vertexHovered.featureIndex >= 0 && !alsoHovered)
+			if (s_featureHovered.featureIndex >= 0 && !alsoHovered)
 			{
-				drawVertex3d(&s_hoveredVtxPos, s_vertexHovered.sector, c_vertexClr[HL_HOVERED]);
+				drawVertex3d(&s_hoveredVtxPos, s_featureHovered.sector, c_vertexClr[HL_HOVERED]);
 			}
 		}
 
@@ -732,8 +735,8 @@ namespace LevelEditor
 			{
 				// Skip hovered or selected walls.
 				bool skipLines = false;
-				if ((s_wallHovered.sector == sector && s_wallHovered.featureIndex == w) ||
-					(s_wallCur.sector == sector && s_wallCur.featureIndex == w))
+				if (s_editMode == LEDIT_WALL && ((s_featureHovered.sector == sector && s_featureHovered.featureIndex == w) ||
+					(s_featureCur.sector == sector && s_featureCur.featureIndex == w)))
 				{
 					skipLines = true;
 				}
@@ -1078,8 +1081,8 @@ namespace LevelEditor
 		for (size_t w = 0; w < wallCount; w++, wall++)
 		{
 			// Skip hovered or selected walls.
-			if ((s_wallHovered.sector == sector && s_wallHovered.featureIndex == w) ||
-				(s_wallCur.sector == sector && s_wallCur.featureIndex == w))
+			if (s_editMode == LEDIT_WALL && ((s_featureHovered.sector == sector && s_featureHovered.featureIndex == w) ||
+				(s_featureCur.sector == sector && s_featureCur.featureIndex == w)))
 			{
 				continue;
 			}
@@ -1126,7 +1129,7 @@ namespace LevelEditor
 		for (size_t s = 0; s < count; s++, sector++)
 		{
 			if (sector->layer < layerStart || sector->layer > layerEnd) { continue; }
-			if ((sector == s_sectorHovered.sector || sector == s_sectorCur.sector) && s_editMode == LEDIT_SECTOR) { continue; }
+			if ((sector == s_featureHovered.sector || sector == s_featureCur.sector) && s_editMode == LEDIT_SECTOR) { continue; }
 
 			drawSector2d(sector, HL_NONE);
 		}
@@ -1176,8 +1179,8 @@ namespace LevelEditor
 			for (size_t v = 0; v < vtxCount; v++, vtx++)
 			{
 				// Skip drawing hovered/selected vertices.
-				if ((sector == s_vertexHovered.sector  && v == s_vertexHovered.featureIndex) ||
-					(sector == s_vertexCur.sector && v == s_vertexCur.featureIndex))
+				if (s_editMode == LEDIT_VERTEX && ((sector == s_featureHovered.sector  && v == s_featureHovered.featureIndex) ||
+					(sector == s_featureCur.sector && v == s_featureCur.featureIndex)))
 				{
 					continue;
 				}

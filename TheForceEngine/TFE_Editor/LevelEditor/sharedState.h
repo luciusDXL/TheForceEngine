@@ -29,17 +29,8 @@ namespace LevelEditor
 	extern u32 s_lwinOpen;
 	extern s32 s_curLayer;
 
-	// Sector
-	extern Feature s_sectorHovered;
-	extern Feature s_sectorCur;
-
-	// Vertex
-	extern Feature s_vertexHovered;
-	extern Feature s_vertexCur;
-
-	// Wall
-	extern Feature s_wallHovered;
-	extern Feature s_wallCur;
+	extern Feature s_featureHovered;
+	extern Feature s_featureCur;
 
 	extern Vec3f s_hoveredVtxPos;
 	extern Vec3f s_curVtxPos;

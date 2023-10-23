@@ -168,7 +168,7 @@ namespace LevelEditor
 	{
 		s32 index = -1;
 		EditorSector* sector = nullptr;
-		if (s_vertexCur.featureIndex < 0 && s_vertexHovered.featureIndex < 0 && !s_selectionList.empty())
+		if (s_featureCur.featureIndex < 0 && s_featureHovered.featureIndex < 0 && !s_selectionList.empty())
 		{
 			FeatureId id = s_selectionList[0];
 			s32 featureData;
@@ -177,8 +177,8 @@ namespace LevelEditor
 		}
 		else
 		{
-			sector = (s_vertexCur.featureIndex >= 0) ? s_vertexCur.sector : s_vertexHovered.sector;
-			index = s_vertexCur.featureIndex >= 0 ? s_vertexCur.featureIndex : s_vertexHovered.featureIndex;
+			sector = (s_featureCur.featureIndex >= 0) ? s_featureCur.sector : s_featureHovered.sector;
+			index = s_featureCur.featureIndex >= 0 ? s_featureCur.featureIndex : s_featureHovered.featureIndex;
 		}
 		if (index < 0 || !sector) { return; }
 
@@ -256,8 +256,8 @@ namespace LevelEditor
 	{
 		s32 wallId;
 		EditorSector* sector;
-		if (s_wallCur.featureIndex >= 0) { sector = s_wallCur.sector; wallId = s_wallCur.featureIndex; }
-		else if (s_wallHovered.featureIndex >= 0) { sector = s_wallHovered.sector; wallId = s_wallHovered.featureIndex; }
+		if (s_featureCur.featureIndex >= 0) { sector = s_featureCur.sector; wallId = s_featureCur.featureIndex; }
+		else if (s_featureHovered.featureIndex >= 0) { sector = s_featureHovered.sector; wallId = s_featureHovered.featureIndex; }
 		else { return; }
 
 		EditorWall* wall = sector->walls.data() + wallId;
@@ -424,7 +424,7 @@ namespace LevelEditor
 
 	void infoPanelSector()
 	{
-		EditorSector* sector = s_sectorCur.sector ? s_sectorCur.sector : s_sectorHovered.sector;
+		EditorSector* sector = s_featureCur.sector ? s_featureCur.sector : s_featureHovered.sector;
 		ImGui::Text("Sector ID: %d      Wall Count: %u", sector->id, (u32)sector->walls.size());
 		ImGui::Separator();
 
@@ -579,7 +579,7 @@ namespace LevelEditor
 
 		infoToolBegin(s_infoHeight);
 		{
-			if (s_editMode == LEDIT_VERTEX && (s_vertexHovered.featureIndex >= 0 || s_vertexCur.featureIndex >= 0 || !s_selectionList.empty()))
+			if (s_editMode == LEDIT_VERTEX && (s_featureHovered.featureIndex >= 0 || s_featureCur.featureIndex >= 0 || !s_selectionList.empty()))
 			{
 				infoPanelVertex();
 			}
@@ -587,10 +587,10 @@ namespace LevelEditor
 			{
 				// Prioritize selected wall, selected sector, hovered wall, hovered sector.
 				// Allow sector views in wall mode, but NOT wall views in sector mode.
-				if (s_editMode == LEDIT_WALL && s_wallCur.featureIndex >= 0) { infoPanelWall(); }
-				else if (s_sectorCur.sector) { infoPanelSector(); }
-				else if (s_editMode == LEDIT_WALL && s_wallHovered.featureIndex >= 0) { infoPanelWall(); }
-				else if (s_sectorHovered.sector) { infoPanelSector(); }
+				if (s_editMode == LEDIT_WALL && s_featureCur.featureIndex >= 0) { infoPanelWall(); }
+				else if (s_featureCur.sector) { infoPanelSector(); }
+				else if (s_editMode == LEDIT_WALL && s_featureHovered.featureIndex >= 0) { infoPanelWall(); }
+				else if (s_featureHovered.sector) { infoPanelSector(); }
 				else { infoPanelMap(); }
 			}
 			// TODO
