@@ -88,6 +88,7 @@ namespace LevelEditor
 
 	static bool s_moveStarted = false;
 	static Vec2f s_moveStartPos;
+	static Vec2f s_moveStartPos1;
 	static Vec2f s_moveTotalDelta;
 
 	static char s_layerMem[4 * 31];
@@ -1651,6 +1652,33 @@ namespace LevelEditor
 		}
 	}
 
+	f32 snapAlongPath(const Vec2f& startPos, const Vec2f& path, f32 pathOffset)
+	{
+		f32 dX = FLT_MAX, dZ = FLT_MAX;
+		f32 offset = FLT_MAX;
+		if (fabsf(path.x) > FLT_EPSILON)
+		{
+			f32 nextPos = s_moveStartPos.x + path.x * pathOffset;
+			snapToGrid(&nextPos);
+			dX = (nextPos - s_moveStartPos.x) / s_wallNrm.x;
+		}
+		if (fabsf(path.z) > FLT_EPSILON)
+		{
+			f32 nextPos = s_moveStartPos.z + path.z * pathOffset;
+			snapToGrid(&nextPos);
+			dZ = (nextPos - s_moveStartPos.z) / s_wallNrm.z;
+		}
+		if (dX < FLT_MAX && fabsf(dX - pathOffset) < fabsf(dZ - pathOffset))
+		{
+			offset = dX;
+		}
+		else if (dZ < FLT_MAX)
+		{
+			offset = dZ;
+		}
+		return offset;
+	}
+
 	void moveWall(Vec3f worldPos)
 	{
 		// Overall movement since mousedown, for the history.
@@ -1661,6 +1689,7 @@ namespace LevelEditor
 		{
 			s_moveStarted = true;
 			s_moveStartPos  = v0;
+			s_moveStartPos1 = v1;
 
 			s_wallNrm = { -(v1.z - v0.z), v1.x - v0.x };
 			s_wallNrm = TFE_Math::normalize(&s_wallNrm);
@@ -1684,7 +1713,22 @@ namespace LevelEditor
 		Vec2f offset = { worldPos.x - s_moveStartPos.x, worldPos.z - s_moveStartPos.z };
 		f32 nrmOffset = TFE_Math::dot(&offset, &s_wallNrm);
 
-		// TODO: Snap to grid.
+		if (!TFE_Input::keyModDown(KEYMOD_ALT))
+		{
+			// Find the snap point along the path from vertex 0 and vertex 1.
+			f32 v0Offset = snapAlongPath(s_moveStartPos, s_wallNrm, nrmOffset);
+			f32 v1Offset = snapAlongPath(s_moveStartPos1, s_wallNrm, nrmOffset);
+
+			// Finally determine which snap to take (whichever is the smallest).
+			if (v0Offset < FLT_MAX && fabsf(v0Offset - nrmOffset) < fabsf(v1Offset - nrmOffset))
+			{
+				nrmOffset = v0Offset;
+			}
+			else if (v1Offset < FLT_MAX)
+			{
+				nrmOffset = v1Offset;
+			}
+		}
 
 		// Move all of the vertices by the offset.
 		Vec2f delta = { s_moveStartPos.x + s_wallNrm.x * nrmOffset - v0.x, s_moveStartPos.z + s_wallNrm.z * nrmOffset - v0.z };
