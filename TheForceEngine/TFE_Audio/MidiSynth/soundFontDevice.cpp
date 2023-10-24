@@ -38,7 +38,7 @@ namespace TFE_Audio
 			// Remove the extension.
 			for (size_t i = 0; i < m_outputs.size(); i++)
 			{
-				char name[256];
+				char name[TFE_MAX_PATH];
 				FileUtil::getFileNameFromPath(m_outputs[i].c_str(), name);
 				m_outputs[i] = name;
 			}
