@@ -171,8 +171,6 @@ namespace TFE_DarkForces
 	static JBool s_playerSecFire = JFALSE;
 	static JBool s_playerJumping = JFALSE;
 	static JBool s_playerInWater = JFALSE;
-	static JBool s_limitStepHeight = JTRUE;
-	static JBool s_smallModeEnabled = JFALSE;
 	JBool s_aiActive = JTRUE;
 	// Currently playing sound effects.
 	static SoundEffectId s_crushSoundId = 0;
@@ -209,6 +207,8 @@ namespace TFE_DarkForces
 	JBool s_superCharge   = JFALSE;
 	JBool s_superChargeHud= JFALSE;
 	JBool s_playerSecMoved = JFALSE;
+	JBool s_limitStepHeight = JTRUE;
+	JBool s_smallModeEnabled = JFALSE;
 	JBool s_flyMode = JFALSE;
 	JBool s_noclip = JFALSE;
 	JBool s_oneHitKillEnabled = JFALSE;
@@ -853,7 +853,7 @@ namespace TFE_DarkForces
 		}
 	}
 
-	void cheat_enableNoheightCheck()
+	void cheat_toggleHeightCheck()
 	{
 		s_limitStepHeight = ~s_limitStepHeight;
 		hud_sendTextMessage(700);
@@ -972,6 +972,13 @@ namespace TFE_DarkForces
 			const char* msg = TFE_System::getMessage(TFE_MSG_SUBLIFE);
 			if (msg) { hud_sendTextMessage(msg, 1); }
 		}
+	}
+	
+	void cheat_maxLives()
+	{
+		s_lifeCount = 9;
+		const char* msg = TFE_System::getMessage(TFE_MSG_CAT);
+		if (msg) { hud_sendTextMessage(msg, 1); }
 	}
 
 	void cheat_die()
