@@ -93,6 +93,11 @@ namespace LevelEditor
 	static char s_layerMem[4 * 31];
 	static char* s_layerStr[31];
 
+	// Wall editing
+	static Vec2f s_wallNrm;
+	static Vec2f s_wallTan;
+	static Vec3f s_prevPos = { 0 };
+
 	static s32 s_gridIndex = 4;
 	static f32 c_gridSizeMap[] =
 	{
@@ -141,7 +146,7 @@ namespace LevelEditor
 	void selectFromSingleVertex(EditorSector* root, s32 featureIndex, bool clearList);
 	void selectOverlappingVertices(EditorSector* root, s32 featureIndex, const Vec2f* rootVtx, bool addToSelection);
 	void toggleVertexGroupInclusion(EditorSector* sector, s32 featureId);
-	void edit_moveFeaturesXZ(const Vec2f& newPos);
+	void edit_moveFeatures(const Vec3f& newPos);
 
 	////////////////////////////////////////////////////////
 	// Public API
@@ -526,7 +531,14 @@ namespace LevelEditor
 		else
 		{
 			s_dragSelect.curPos = { mx, my };
-			vertexComputeDragSelect();
+			if (s_editMode == LEDIT_VERTEX)
+			{
+				vertexComputeDragSelect();
+			}
+			else if (s_editMode == LEDIT_WALL)
+			{
+				// TODO
+			}
 		}
 	}
 			
@@ -591,6 +603,91 @@ namespace LevelEditor
 					s_editMove = true;
 					adjustGridHeight(s_featureHovered.sector);
 					selectFromSingleVertex(s_featureHovered.sector, s_featureHovered.featureIndex, false);
+				}
+			}
+			// Draw select continue.
+			else if (!selToggle && !s_editMove)
+			{
+				updateDragSelect(mx, my);
+			}
+			else
+			{
+				s_dragSelect.active = false;
+			}
+		}
+		else if (s_dragSelect.active)
+		{
+			s_dragSelect.active = false;
+		}
+	}
+
+	void handleMouseControlWall()
+	{
+		s32 mx, my;
+		TFE_Input::getMousePos(&mx, &my);
+
+		// Short names to make the logic easier to follow.
+		const bool selAdd = TFE_Input::keyModDown(KEYMOD_SHIFT);
+		const bool selRem = TFE_Input::keyModDown(KEYMOD_ALT);
+		const bool selToggle = TFE_Input::keyModDown(KEYMOD_CTRL);
+		const bool selToggleDrag = selAdd && selToggle;
+
+		const bool mousePressed = TFE_Input::mousePressed(MouseButton::MBUTTON_LEFT);
+		const bool mouseDown = TFE_Input::mouseDown(MouseButton::MBUTTON_LEFT);
+
+		if (mousePressed)
+		{
+			assert(!s_dragSelect.active);
+			if (!selToggle && (selAdd || selRem))
+			{
+				startDragSelect(mx, my, selAdd ? DSEL_ADD : DSEL_REM);
+			}
+			else if (selToggle)
+			{
+				if (s_featureHovered.sector && s_featureHovered.featureIndex >= 0)
+				{
+					s_editMove = true;
+					adjustGridHeight(s_featureHovered.sector);
+					// TODO:
+					//toggleVertexGroupInclusion(s_featureHovered.sector, s_featureHovered.featureIndex);
+				}
+			}
+			else
+			{
+				s_featureCur.sector = nullptr;
+				s_featureCur.featureIndex = -1;
+				if (s_featureHovered.sector && s_featureHovered.featureIndex >= 0)
+				{
+					s_featureCur.sector = s_featureHovered.sector;
+					s_featureCur.featureIndex = s_featureHovered.featureIndex;
+					s_featureCur.part = s_featureHovered.part;
+					// Set this to the 3D cursor position, so the wall doesn't "pop" when grabbed.
+					s_curVtxPos = s_cursor3d;
+					adjustGridHeight(s_featureCur.sector);
+					s_editMove = true;
+
+					// Clear the selection if this is a new feature and Ctrl isn't held.
+					bool clearList = true;// !selection_doesFeatureExist(createFeatureId(s_featureCur.sector, s_featureCur.featureIndex));
+					EditorWall* wall = &s_featureCur.sector->walls[s_featureCur.featureIndex];
+					selectFromSingleVertex(s_featureCur.sector, wall->idx[0], clearList);
+					selectFromSingleVertex(s_featureCur.sector, wall->idx[1], false);
+				}
+				else if (!s_editMove)
+				{
+					startDragSelect(mx, my, DSEL_SET);
+				}
+			}
+		}
+		else if (mouseDown)
+		{
+			if (!s_dragSelect.active)
+			{
+				if (selToggleDrag && s_featureHovered.sector && s_featureHovered.featureIndex >= 0)
+				{
+					s_editMove = true;
+					adjustGridHeight(s_featureHovered.sector);
+					// TODO:
+					// selectFromSingleVertex(s_featureHovered.sector, s_featureHovered.featureIndex, false);
 				}
 			}
 			// Draw select continue.
@@ -734,32 +831,17 @@ namespace LevelEditor
 					if (info->hitPart == HP_FLOOR)
 					{
 						s_featureHovered.part = HP_FLOOR;
+						s_featureHovered.featureIndex = 0;
 					}
 					else if (info->hitPart == HP_CEIL)
 					{
 						s_featureHovered.part = HP_CEIL;
+						s_featureHovered.featureIndex = 0;
 					}
 				}
 			}
 
-			if (TFE_Input::mousePressed(MouseButton::MBUTTON_LEFT))
-			{
-				s_featureCur.sector = nullptr;
-				s_featureCur.featureIndex = -1;
-				if (s_featureHovered.sector && s_featureHovered.featureIndex >= 0)
-				{
-					s_featureCur.sector = s_featureHovered.sector;
-					s_featureCur.featureIndex = s_featureHovered.featureIndex;
-					s_featureCur.part = s_featureHovered.part;
-					adjustGridHeight(s_featureCur.sector);
-				}
-				else if (s_featureHovered.sector && (s_featureHovered.part == HP_FLOOR || s_featureHovered.part == HP_CEIL))
-				{
-					s_featureCur.sector = s_featureHovered.sector;
-					s_featureCur.part = s_featureHovered.part;
-					adjustGridHeight(s_featureCur.sector);
-				}
-			}
+			handleMouseControlWall();
 		}
 	}
 		
@@ -877,17 +959,7 @@ namespace LevelEditor
 						}
 					}
 
-					if (TFE_Input::mousePressed(MouseButton::MBUTTON_LEFT))
-					{
-						s_featureCur.sector = nullptr;
-						s_featureCur.featureIndex = -1;
-						if (s_featureHovered.sector && s_featureHovered.featureIndex >= 0)
-						{
-							s_featureCur.sector = s_featureHovered.sector;
-							s_featureCur.featureIndex = s_featureHovered.featureIndex;
-							adjustGridHeight(s_featureCur.sector);
-						}
-					}
+					handleMouseControlWall();
 				}
 
 				// DEBUG
@@ -1304,6 +1376,18 @@ namespace LevelEditor
 		s_viewportPos.z += (worldPos.z - newWorldPos.z);
 	}
 
+	void snapToGrid(f32* value)
+	{
+		if (!TFE_Input::keyModDown(KEYMOD_ALT))
+		{
+			*value = floorf((*value) / s_gridSize + 0.5f) * s_gridSize;
+		}
+		else  // Snap to the finest grid.
+		{
+			*value = floorf((*value) * 65536.0f + 0.5f) / 65536.0f;
+		}
+	}
+
 	void snapToGrid(Vec2f* pos)
 	{
 		if (!TFE_Input::keyModDown(KEYMOD_ALT))
@@ -1514,6 +1598,98 @@ namespace LevelEditor
 		s_curVtxPos.x = s_featureCur.sector->vtx[s_featureCur.featureIndex].x;
 		s_curVtxPos.z = s_featureCur.sector->vtx[s_featureCur.featureIndex].z;
 	}
+		
+	Vec3f moveAlongRail(Vec3f dir)
+	{
+		const Vec3f rail[] =
+		{
+			s_curVtxPos,
+			{ s_curVtxPos.x + dir.x, s_curVtxPos.y + dir.y, s_curVtxPos.z + dir.z },
+		};
+		// Ray through the mouse cursor.
+		const Vec3f cameraRay[] =
+		{
+			s_camera.pos,
+			{ s_camera.pos.x + s_rayDir.x, s_camera.pos.y + s_rayDir.y, s_camera.pos.z + s_rayDir.z }
+		};
+
+		f32 railInt, cameraInt;
+		Vec3f worldPos;
+		if (TFE_Math::closestPointBetweenLines(&rail[0], &rail[1], &cameraRay[0], &cameraRay[1], &railInt, &cameraInt))
+		{
+			worldPos = { rail[0].x + railInt * (rail[1].x - rail[0].x), rail[0].y + railInt * (rail[1].y - rail[0].y), rail[0].z + railInt * (rail[1].z - rail[0].z) };
+			s_prevPos = worldPos;
+		}
+		else  // If the closest point on lines is unresolvable (parallel lines, etc.) - then just don't move.
+		{
+			worldPos = s_prevPos;
+		}
+		return worldPos;
+	}
+		
+	void moveFlat()
+	{
+		if (!s_moveStarted)
+		{
+			s_moveStarted = true;
+			s_moveStartPos.x = s_featureCur.part == HP_FLOOR ? s_featureCur.sector->floorHeight : s_featureCur.sector->ceilHeight;
+			s_moveStartPos.z = 0.0f;
+			s_prevPos = s_curVtxPos;
+		}
+
+		Vec3f worldPos = moveAlongRail({ 0.0f, 1.0f, 0.0f });
+		f32 y = worldPos.y;
+
+		snapToGrid(&y);
+		if (s_featureCur.part == HP_FLOOR)
+		{
+			s_featureCur.sector->floorHeight = y;
+		}
+		else
+		{
+			s_featureCur.sector->ceilHeight = y;
+		}
+	}
+
+	void moveWall(Vec3f worldPos)
+	{
+		// Overall movement since mousedown, for the history.
+		const EditorWall* wall = &s_featureCur.sector->walls[s_featureCur.featureIndex];
+		const Vec2f& v0 = s_featureCur.sector->vtx[wall->idx[0]];
+		const Vec2f& v1 = s_featureCur.sector->vtx[wall->idx[1]];
+		if (!s_moveStarted)
+		{
+			s_moveStarted = true;
+			s_moveStartPos  = v0;
+
+			s_wallNrm = { -(v1.z - v0.z), v1.x - v0.x };
+			s_wallNrm = TFE_Math::normalize(&s_wallNrm);
+
+			s_wallTan = { v1.x - v0.x, v1.z - v0.z };
+			s_wallTan = TFE_Math::normalize(&s_wallTan);
+
+			if (s_view == EDIT_VIEW_3D)
+			{
+				s_prevPos = s_curVtxPos;
+			}
+		}
+
+		// Compute the world position based on the intersection with the move plane.
+		if (s_view == EDIT_VIEW_3D)
+		{
+			worldPos = moveAlongRail({ s_wallNrm.x, 0.0f, s_wallNrm.z });
+		}
+
+		// Compute the movement.
+		Vec2f offset = { worldPos.x - s_moveStartPos.x, worldPos.z - s_moveStartPos.z };
+		f32 nrmOffset = TFE_Math::dot(&offset, &s_wallNrm);
+
+		// TODO: Snap to grid.
+
+		// Move all of the vertices by the offset.
+		Vec2f delta = { s_moveStartPos.x + s_wallNrm.x * nrmOffset - v0.x, s_moveStartPos.z + s_wallNrm.z * nrmOffset - v0.z };
+		edit_moveVertices((u32)s_selectionList.size(), s_selectionList.data(), delta);
+	}
 	
 	void cameraControl2d(s32 mx, s32 my)
 	{
@@ -1575,7 +1751,7 @@ namespace LevelEditor
 		if (s_editMove)
 		{
 			const Vec2f worldPos2d = mouseCoordToWorldPos2d(mx, my);
-			edit_moveFeaturesXZ(worldPos2d);
+			edit_moveFeatures({worldPos2d.x, 0.0f, worldPos2d.z});
 		}
 	}
 		
@@ -1640,13 +1816,24 @@ namespace LevelEditor
 
 		if (s_editMove)
 		{
-			const f32 u = (s_curVtxPos.y - s_camera.pos.y) / (s_cursor3d.y - s_camera.pos.y);
-			const Vec2f worldPos2d =
+			Vec3f worldPos;
+			if (s_editMode == LEDIT_VERTEX)
 			{
-				s_camera.pos.x + u * (s_cursor3d.x - s_camera.pos.x),
-				s_camera.pos.z + u * (s_cursor3d.z - s_camera.pos.z)
-			};
-			edit_moveFeaturesXZ(worldPos2d);
+				const f32 u = (s_curVtxPos.y - s_camera.pos.y) / (s_cursor3d.y - s_camera.pos.y);
+				worldPos =
+				{
+					s_camera.pos.x + u * (s_cursor3d.x - s_camera.pos.x),
+					0.0f,
+					s_camera.pos.z + u * (s_cursor3d.z - s_camera.pos.z)
+				};
+			}
+			else if (s_editMode == LEDIT_WALL)
+			{
+				// When wall editing is enabled, then what we really want is a plane that passes through the cursor and is oriented along
+				// the direction of movement (aka, the normal is perpendicular to this movement).
+				worldPos = s_cursor3d;
+			}
+			edit_moveFeatures(worldPos);
 		}
 	}
 		
@@ -1805,19 +1992,53 @@ namespace LevelEditor
 		return gpuImage;
 	}
 
-	void edit_moveFeaturesXZ(const Vec2f& newPos)
+	void edit_moveFeatures(const Vec3f& newPos)
 	{
 		if (s_editMode == LEDIT_VERTEX)
 		{
 			if (s_featureCur.featureIndex >= 0 && s_featureCur.sector && TFE_Input::mouseDown(MBUTTON_LEFT) && !TFE_Input::keyModDown(KEYMOD_CTRL) && !TFE_Input::keyModDown(KEYMOD_SHIFT))
 			{
-				moveVertex(newPos);
+				moveVertex({ newPos.x, newPos.z });
 			}
 			else if (s_featureCur.featureIndex >= 0 && s_featureCur.sector && s_moveStarted)
 			{
 				s_editMove = false;
 				s_moveStarted = false;
 				cmd_addMoveVertices((s32)s_selectionList.size(), s_selectionList.data(), s_moveTotalDelta);
+			}
+			else
+			{
+				s_editMove = false;
+				s_moveStarted = false;
+			}
+		}
+		else if (s_editMode == LEDIT_WALL)
+		{
+			if (s_featureCur.featureIndex >= 0 && s_featureCur.sector && TFE_Input::mouseDown(MBUTTON_LEFT) && !TFE_Input::keyModDown(KEYMOD_CTRL) && !TFE_Input::keyModDown(KEYMOD_SHIFT))
+			{
+				if (s_featureCur.part == HP_FLOOR || s_featureCur.part == HP_CEIL)
+				{
+					moveFlat();
+				}
+				else
+				{
+					moveWall(newPos);
+				}
+
+				// TODO: Move into commands.
+				EditorSector* sector = s_featureCur.sector;
+				sectorToPolygon(sector);
+				sector->bounds[0] = { sector->poly.bounds[0].x, 0.0f, sector->poly.bounds[0].z };
+				sector->bounds[1] = { sector->poly.bounds[1].x, 0.0f, sector->poly.bounds[1].z };
+				sector->bounds[0].y = min(sector->floorHeight, sector->ceilHeight);
+				sector->bounds[1].y = max(sector->floorHeight, sector->ceilHeight);
+			}
+			else if (s_featureCur.featureIndex >= 0 && s_featureCur.sector && s_moveStarted)
+			{
+				s_editMove = false;
+				s_moveStarted = false;
+				// TODO:
+				//cmd_addMoveVertices((s32)s_selectionList.size(), s_selectionList.data(), s_moveTotalDelta);
 			}
 			else
 			{

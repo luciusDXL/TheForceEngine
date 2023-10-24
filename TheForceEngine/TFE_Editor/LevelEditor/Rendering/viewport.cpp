@@ -613,14 +613,17 @@ namespace LevelEditor
 		}
 
 		hoverAndSelect = s_featureCur.featureIndex == s_featureHovered.featureIndex && s_featureCur.sector == s_featureHovered.sector;
+
+		bool curFlat = s_featureCur.part == HP_FLOOR || s_featureCur.part == HP_CEIL;
+		bool hoveredFlat = s_featureHovered.part == HP_FLOOR || s_featureHovered.part == HP_CEIL;
 		// Draw thicker lines.
-		if (s_featureCur.featureIndex >= 0 && s_featureCur.sector)
+		if (s_featureCur.featureIndex >= 0 && s_featureCur.sector && !curFlat)
 		{
 			EditorWall* wall = &s_featureCur.sector->walls[s_featureCur.featureIndex];
 			EditorSector* next = wall->adjoinId < 0 ? nullptr : &s_level.sectors[wall->adjoinId];
 			drawWallLines3D_Highlighted(s_featureCur.sector, next, wall, 3.5f, HL_SELECTED, false);
 		}
-		if (s_featureHovered.featureIndex >= 0 && s_featureHovered.sector)
+		if (s_featureHovered.featureIndex >= 0 && s_featureHovered.sector && !hoveredFlat)
 		{
 			EditorWall* wall = &s_featureHovered.sector->walls[s_featureHovered.featureIndex];
 			EditorSector* next = wall->adjoinId < 0 ? nullptr : &s_level.sectors[wall->adjoinId];
@@ -628,12 +631,12 @@ namespace LevelEditor
 		}
 
 		// Draw translucent surfaces.
-		if (s_featureCur.featureIndex >= 0 && s_featureCur.sector)
+		if (s_featureCur.featureIndex >= 0 && s_featureCur.sector && !curFlat)
 		{
 			u32 color = SCOLOR_POLY_SELECTED;
 			drawWallColor3d_Highlighted(s_featureCur.sector, s_featureCur.sector->vtx.data(), s_featureCur.sector->walls.data() + s_featureCur.featureIndex, color, s_featureCur.part);
 		}
-		if (s_featureHovered.featureIndex >= 0 && s_featureHovered.sector)
+		if (s_featureHovered.featureIndex >= 0 && s_featureHovered.sector && !hoveredFlat)
 		{
 			u32 color = SCOLOR_POLY_HOVERED;
 			drawWallColor3d_Highlighted(s_featureHovered.sector, s_featureHovered.sector->vtx.data(), s_featureHovered.sector->walls.data() + s_featureHovered.featureIndex, color, s_featureHovered.part);

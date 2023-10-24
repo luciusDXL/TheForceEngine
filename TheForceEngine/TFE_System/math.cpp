@@ -174,4 +174,31 @@ namespace TFE_Math
 		*hitPoint = { p0->x + s * (p1->x - p0->x), p0->y + s * (p1->y - p0->y), p0->z + s * (p1->z - p0->z) };
 		return true;
 	}
+
+	bool closestPointBetweenLines(const Vec3f* p1, const Vec3f* p2, const Vec3f* p3, const Vec3f* p4, f32* u, f32* v)
+	{
+		const f32 eps = 0.0001f;
+		// Delta between first vertex of each line.
+		const Vec3f p13 = { p1->x - p3->x, p1->y - p3->y, p1->z - p3->z };
+
+		// Compute line deltas, if either are 0 than return false.
+		const Vec3f p43 = { p4->x - p3->x, p4->y - p3->y, p4->z - p3->z };
+		const Vec3f p21 = { p2->x - p1->x, p2->y - p1->y, p2->z - p1->z };
+		if (fabsf(p43.x) < eps && fabsf(p43.y) < eps && fabsf(p43.z) < eps) { return false; }
+		if (fabsf(p21.x) < eps && fabsf(p21.y) < eps && fabsf(p21.z) < eps) { return false; }
+
+		const f32 d1343 = dot(&p13, &p43);
+		const f32 d4321 = dot(&p43, &p21);
+		const f32 d1321 = dot(&p13, &p21);
+		const f32 d4343 = dot(&p43, &p43);
+		const f32 d2121 = dot(&p21, &p21);
+
+		const f32 denom = d2121 * d4343 - d4321 * d4321;
+		if (fabsf(denom) < eps) { return false; }
+		const f32 numer = d1343 * d4321 - d1321 * d4343;
+
+		*u = numer / denom;
+		*v = (d1343 + d4321 * (*u)) / d4343;
+		return true;
+	}
 }
