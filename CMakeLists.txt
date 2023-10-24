@@ -1,4 +1,5 @@
 cmake_minimum_required(VERSION 3.12 FATAL_ERROR)
+include(CheckCXXCompilerFlag)
 
 set(CMAKE_DISABLE_SOURCE_CHANGES ON)
 set(CMAKE_DISABLE_IN_SOURCE_BUILD ON)
@@ -16,6 +17,13 @@ project(TheForceEngine
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
+
+## gcc-12+ and clang-15+ have a feature to automatically zero all variables/members/...
+## this mimics what modern MSVC does.  Enable it for release builds (i.e.
+## when not debugging to not hide any real bugs).
+if(CMAKE_BUILD_TYPE STREQUAL "Release")
+	check_cxx_compiler_flag("-ftrivial-auto-var-init=zero" COMPILER_ENABLE_AUTOZERO)
+endif()
 
 if (UNIX AND NOT APPLE)
 	set(LINUX ON)
@@ -48,7 +56,7 @@ set_target_properties(tfe PROPERTIES OUTPUT_NAME "theforceengine")
 if(LINUX)
 	find_package(PkgConfig REQUIRED)
 	find_package(Threads REQUIRED)
-	find_package(SDL2 2.24 REQUIRED)
+	find_package(SDL2 2.0.20 REQUIRED)
 	pkg_check_modules(SDL2_IMAGE REQUIRED SDL2_image)
 	pkg_check_modules(GLEW REQUIRED glew)
 	set(OpenGL_GL_PREFERENCE GLVND)
@@ -82,6 +90,10 @@ if(LINUX)
 	create_git_version_h()
 endif()
 
+if(COMPILER_ENABLE_AUTOZERO)
+	message(STATUS "enabled -ftrivial-auto-var-init=zero")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ftrivial-auto-var-init=zero")
+endif()
 
 if(DISABLE_SYSMIDI)
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DNOSYSMIDI")

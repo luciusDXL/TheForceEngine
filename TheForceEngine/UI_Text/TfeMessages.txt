@@ -6,6 +6,7 @@
 "Add Life."             // TFE_MSG_ADDLIFE
 "Don't get greedy."     // TFE_MSG_ADDLIFE (lives full)
 "Subtract Life."        // TFE_MSG_SUBLIFE
+"Max Lives."            // TFE_MSG_CAT
 "Goodbye."              // TFE_MSG_DIE
 "One-Hit Kill Toggle."  // TFE_MSG_ONEHITKILL
 "Hardcore Mode Toggle." // TFE_MSG_HARDCORE
