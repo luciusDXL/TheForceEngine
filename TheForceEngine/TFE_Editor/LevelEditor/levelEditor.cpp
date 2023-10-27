@@ -1627,7 +1627,7 @@ namespace LevelEditor
 
 	void snapToGrid(f32* value)
 	{
-		if (!TFE_Input::keyModDown(KEYMOD_ALT))
+		if (!TFE_Input::keyModDown(KEYMOD_ALT) && s_gridSize != 0.0f)
 		{
 			*value = floorf((*value) / s_gridSize + 0.5f) * s_gridSize;
 		}
@@ -1639,7 +1639,7 @@ namespace LevelEditor
 
 	void snapToGrid(Vec2f* pos)
 	{
-		if (!TFE_Input::keyModDown(KEYMOD_ALT))
+		if (!TFE_Input::keyModDown(KEYMOD_ALT) && s_gridSize != 0.0f)
 		{
 			pos->x = floorf(pos->x / s_gridSize + 0.5f) * s_gridSize;
 			pos->z = floorf(pos->z / s_gridSize + 0.5f) * s_gridSize;
@@ -1653,7 +1653,7 @@ namespace LevelEditor
 
 	void snapToGrid(Vec3f* pos)
 	{
-		if (!TFE_Input::keyModDown(KEYMOD_ALT))
+		if (!TFE_Input::keyModDown(KEYMOD_ALT) && s_gridSize != 0.0f)
 		{
 			pos->x = floorf(pos->x / s_gridSize + 0.5f) * s_gridSize;
 			pos->z = floorf(pos->z / s_gridSize + 0.5f) * s_gridSize;
