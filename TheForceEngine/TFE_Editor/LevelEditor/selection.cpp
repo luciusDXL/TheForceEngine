@@ -47,6 +47,7 @@ using namespace TFE_Editor;
 namespace LevelEditor
 {
 	SelectionList s_selectionList;
+	SelectionList s_vertexList;
 	SectorList s_sectorChangeList;
 	DragSelect s_dragSelect = {};
 
@@ -60,7 +61,7 @@ namespace LevelEditor
 		FID_SECTOR_MASK        = (1ull << 32ull) - 1ull,
 		FID_FEATURE_INDEX_MASK = (1ull << 23ull) - 1ull,
 		FID_FEATURE_DATA_MASK  = (1ull << 8ull) - 1ull,
-		FID_COMPARE_MASK = (1ull << 55ull) - 1ull,
+		FID_COMPARE_MASK = (1ull << 63ull) - 1ull,
 	};
 
 	FeatureId createFeatureId(EditorSector* sector, s32 featureIndex, s32 featureData, bool isOverlapped)
@@ -133,5 +134,48 @@ namespace LevelEditor
 			return;
 		}
 		selection_add(id);
+	}
+		
+	// Vertex Selection
+	void vtxSelection_clear()
+	{
+		s_vertexList.clear();
+	}
+
+	bool vtxSelection_doesFeatureExist(FeatureId id)
+	{
+		const u64 compareValue = u64(id) & FID_COMPARE_MASK;
+		const size_t count = s_vertexList.size();
+		const FeatureId* feature = s_vertexList.data();
+		for (size_t i = 0; i < count; i++, feature++)
+		{
+			if ((u64(*feature) & FID_COMPARE_MASK) == compareValue)
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+
+	bool vtxSelection_add(FeatureId id)
+	{
+		if (vtxSelection_doesFeatureExist(id)) { return false; }
+		s_vertexList.push_back(id);
+		return true;
+	}
+
+	void vtxSelection_remove(FeatureId id)
+	{
+		const u64 compareValue = u64(id) & FID_COMPARE_MASK;
+		const size_t count = s_vertexList.size();
+		const FeatureId* feature = s_selectionList.data();
+		for (size_t i = 0; i < count; i++, feature++)
+		{
+			if ((u64(*feature) & FID_COMPARE_MASK) == compareValue)
+			{
+				s_vertexList.erase(s_vertexList.begin() + i);
+				return;
+			}
+		}
 	}
 }

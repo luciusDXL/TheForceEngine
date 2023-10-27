@@ -54,6 +54,15 @@ namespace LevelEditor
 	const f32 c_defaultYaw = PI;
 	const f32 c_defaultCameraHeight = 6.0f;
 
+	enum WallMoveMode
+	{
+		WMM_NORMAL = 0,
+		WMM_TANGENT,
+		WMM_FREE,
+		WMM_COUNT
+	};
+	static WallMoveMode s_wallMoveMode = WMM_NORMAL;
+
 	// The TFE Level Editor format is different than the base format and contains extra 
 	// metadata, etc.
 	// So existing levels need to be loaded into that format.
@@ -145,10 +154,13 @@ namespace LevelEditor
 	TextureGpu* loadGpuImage(const char* path);
 
 	void selectFromSingleVertex(EditorSector* root, s32 featureIndex, bool clearList);
-	void selectOverlappingVertices(EditorSector* root, s32 featureIndex, const Vec2f* rootVtx, bool addToSelection);
+	void selectOverlappingVertices(EditorSector* root, s32 featureIndex, const Vec2f* rootVtx, bool addToSelection, bool addToVtxList=false);
 	void toggleVertexGroupInclusion(EditorSector* sector, s32 featureId);
+	void toggleWallGroupInclusion(EditorSector* sector, s32 featureIndex, s32 part);
+	void gatherVerticesFromWallSelection();
+	bool vtxEqual(const Vec2f* a, const Vec2f* b);
 	void edit_moveFeatures(const Vec3f& newPos);
-
+	
 	////////////////////////////////////////////////////////
 	// Public API
 	////////////////////////////////////////////////////////
@@ -345,6 +357,187 @@ namespace LevelEditor
 		return true;
 	}
 
+	void wallComputeDragSelect()
+	{
+		if (s_dragSelect.curPos.x == s_dragSelect.startPos.x && s_dragSelect.curPos.z == s_dragSelect.startPos.z)
+		{
+			return;
+		}
+		if (s_dragSelect.mode == DSEL_SET)
+		{
+			selection_clear(false);
+		}
+		s_featureCur.featureIndex = -1;
+		s_featureCur.sector = nullptr;
+
+		if (s_view == EDIT_VIEW_2D)
+		{
+			// Convert drag select coordinates to world space.
+			// World position from viewport position, relative mouse position and zoom.
+			Vec2f worldPos[2];
+			worldPos[0].x =   s_viewportPos.x + f32(s_dragSelect.curPos.x) * s_zoom2d;
+			worldPos[0].z = -(s_viewportPos.z + f32(s_dragSelect.curPos.z) * s_zoom2d);
+			worldPos[1].x =   s_viewportPos.x + f32(s_dragSelect.startPos.x) * s_zoom2d;
+			worldPos[1].z = -(s_viewportPos.z + f32(s_dragSelect.startPos.z) * s_zoom2d);
+
+			Vec3f aabb[] =
+			{
+				{ std::min(worldPos[0].x, worldPos[1].x), 0.0f, std::min(worldPos[0].z, worldPos[1].z) },
+				{ std::max(worldPos[0].x, worldPos[1].x), 0.0f, std::max(worldPos[0].z, worldPos[1].z) }
+			};
+
+			const size_t sectorCount = s_level.sectors.size();
+			EditorSector* sector = s_level.sectors.data();
+			for (size_t s = 0; s < sectorCount; s++, sector++)
+			{
+				if (s_curLayer != sector->layer && s_curLayer != LAYER_ANY) { continue; }
+				if (!aabbOverlap2d(sector->bounds, aabb)) { continue; }
+
+				const size_t wallCount = sector->walls.size();
+				const EditorWall* wall = sector->walls.data();
+				const Vec2f* vtx = sector->vtx.data();
+				for (size_t w = 0; w < wallCount; w++, wall++)
+				{
+					const Vec2f* v0 = &vtx[wall->idx[0]];
+					const Vec2f* v1 = &vtx[wall->idx[1]];
+
+					if (v0->x >= aabb[0].x && v0->x < aabb[1].x && v0->z >= aabb[0].z && v0->z < aabb[1].z &&
+						v1->x >= aabb[0].x && v1->x < aabb[1].x && v1->z >= aabb[0].z && v1->z < aabb[1].z)
+					{
+						FeatureId id = createFeatureId(sector, (s32)w, HP_MID);
+						if (s_dragSelect.mode == DSEL_REM)
+						{
+							selection_remove(id);
+						}
+						else
+						{
+							selection_add(id);
+						}
+					}
+				}
+			}
+		}
+		else if (s_view == EDIT_VIEW_3D)
+		{
+			// In 3D, build a frustum and select point inside the frustum.
+			// The near plane corners of the frustum are derived from the screenspace rectangle.
+			const s32 x0 = std::min(s_dragSelect.startPos.x, s_dragSelect.curPos.x);
+			const s32 x1 = std::max(s_dragSelect.startPos.x, s_dragSelect.curPos.x);
+			const s32 z0 = std::min(s_dragSelect.startPos.z, s_dragSelect.curPos.z);
+			const s32 z1 = std::max(s_dragSelect.startPos.z, s_dragSelect.curPos.z);
+			// Directions to the near-plane frustum corners.
+			const Vec3f d0 = viewportCoordToWorldDir3d({ x0, z0 });
+			const Vec3f d1 = viewportCoordToWorldDir3d({ x1, z0 });
+			const Vec3f d2 = viewportCoordToWorldDir3d({ x1, z1 });
+			const Vec3f d3 = viewportCoordToWorldDir3d({ x0, z1 });
+			// Camera forward vector.
+			const Vec3f fwd = { -s_camera.viewMtx.m2.x, -s_camera.viewMtx.m2.y, -s_camera.viewMtx.m2.z };
+			// Trace forward at the screen center to get the likely focus sector.
+			Vec3f centerViewDir = viewportCoordToWorldDir3d({ s_viewportSize.x / 2, s_viewportSize.z / 2 });
+			RayHitInfo hitInfo;
+			Ray ray = { s_camera.pos, centerViewDir, 1000.0f, s_curLayer };
+			f32 nearDist = 1.0f;
+			f32 farDist = 100.0f;
+			if (traceRay(&ray, &hitInfo, false) && hitInfo.hitSectorId >= 0)
+			{
+				EditorSector* hitSector = &s_level.sectors[hitInfo.hitSectorId];
+				Vec3f bbox[] =
+				{
+					{hitSector->bounds[0].x, hitSector->floorHeight, hitSector->bounds[0].z},
+					{hitSector->bounds[1].x, hitSector->floorHeight, hitSector->bounds[0].z},
+					{hitSector->bounds[1].x, hitSector->floorHeight, hitSector->bounds[1].z},
+					{hitSector->bounds[0].x, hitSector->floorHeight, hitSector->bounds[1].z},
+
+					{hitSector->bounds[0].x, hitSector->ceilHeight, hitSector->bounds[0].z},
+					{hitSector->bounds[1].x, hitSector->ceilHeight, hitSector->bounds[0].z},
+					{hitSector->bounds[1].x, hitSector->ceilHeight, hitSector->bounds[1].z},
+					{hitSector->bounds[0].x, hitSector->ceilHeight, hitSector->bounds[1].z},
+				};
+				f32 maxDist = 0.0f;
+				for (s32 i = 0; i < 8; i++)
+				{
+					Vec3f offset = { bbox[i].x - s_camera.pos.x, bbox[i].y - s_camera.pos.y, bbox[i].z - s_camera.pos.z };
+					f32 dist = TFE_Math::dot(&offset, &fwd);
+					if (dist > maxDist)
+					{
+						maxDist = dist;
+					}
+				}
+				if (maxDist > 0.0f) { farDist = maxDist; }
+			}
+			// Build Planes.
+			Vec3f near = { s_camera.pos.x + nearDist*fwd.x, s_camera.pos.y + nearDist*fwd.y, s_camera.pos.z + nearDist*fwd.z };
+			Vec3f far  = { s_camera.pos.x + farDist*fwd.x, s_camera.pos.y + farDist*fwd.y, s_camera.pos.z + farDist*fwd.z };
+						
+			Vec3f left  = TFE_Math::cross(&d3, &d0);
+			Vec3f right = TFE_Math::cross(&d1, &d2);
+			Vec3f top   = TFE_Math::cross(&d0, &d1);
+			Vec3f bot   = TFE_Math::cross(&d2, &d3);
+
+			left  = TFE_Math::normalize(&left);
+			right = TFE_Math::normalize(&right);
+			top   = TFE_Math::normalize(&top);
+			bot   = TFE_Math::normalize(&bot);
+
+			const Vec4f plane[] =
+			{
+				{ -fwd.x, -fwd.y, -fwd.z,  TFE_Math::dot(&fwd, &near) },
+				{  fwd.x,  fwd.y,  fwd.z, -TFE_Math::dot(&fwd, &far) },
+				{ left.x, left.y, left.z, -TFE_Math::dot(&left, &s_camera.pos) },
+				{ right.x, right.y, right.z, -TFE_Math::dot(&right, &s_camera.pos) },
+				{ top.x, top.y, top.z, -TFE_Math::dot(&top, &s_camera.pos) },
+				{ bot.x, bot.y, bot.z, -TFE_Math::dot(&bot, &s_camera.pos) }
+			};
+
+			const size_t sectorCount = s_level.sectors.size();
+			EditorSector* sector = s_level.sectors.data();
+			for (size_t s = 0; s < sectorCount; s++, sector++)
+			{
+				if (s_curLayer != sector->layer && s_curLayer != LAYER_ANY) { continue; }
+
+				// For now, do them all...
+				const size_t wallCount = sector->walls.size();
+				const EditorWall* wall = sector->walls.data();
+				const Vec2f* vtx = sector->vtx.data();
+				for (size_t w = 0; w < wallCount; w++, wall++)
+				{
+					const Vec2f* v0 = &vtx[wall->idx[0]];
+					const Vec2f* v1 = &vtx[wall->idx[1]];
+
+					struct Vec3f wallVtx[]=
+					{
+						{ v0->x, sector->floorHeight, v0->z },
+						{ v1->x, sector->floorHeight, v1->z },
+						{ v1->x, sector->ceilHeight, v1->z },
+						{ v0->x, sector->ceilHeight, v0->z }
+					};
+					
+					bool inside = true;
+					for (s32 p = 0; p < 6; p++)
+					{
+						// Check the wall vertices.
+						for (s32 v = 0; v < 4; v++)
+						{
+							if (plane[p].x*wallVtx[v].x + plane[p].y*wallVtx[v].y + plane[p].z*wallVtx[v].z + plane[p].w > 0.0f)
+							{
+								inside = false;
+								break;
+							}
+						}
+					}
+
+					if (inside)
+					{
+						FeatureId id = createFeatureId(sector, w, HP_MID);
+						if (s_dragSelect.mode == DSEL_REM) { selection_remove(id); }
+						else { selection_add(id); }
+					}
+				}
+				// TODO: Check the floor and ceiling?
+			}
+		}
+	}
+
 	void vertexComputeDragSelect()
 	{
 		if (s_dragSelect.curPos.x == s_dragSelect.startPos.x && s_dragSelect.curPos.z == s_dragSelect.startPos.z)
@@ -538,9 +731,32 @@ namespace LevelEditor
 			}
 			else if (s_editMode == LEDIT_WALL)
 			{
-				// TODO
+				wallComputeDragSelect();
 			}
 		}
+	}
+
+	bool isSingleOverlappedVertex()
+	{
+		const size_t count = s_selectionList.size();
+		if (count <= 1) { return true; }
+
+		const FeatureId* list = s_selectionList.data();
+
+		s32 featureIndex, featureData;
+		bool overlapped;
+		EditorSector* featureSector = unpackFeatureId(list[0], &featureIndex, &featureData, &overlapped);
+		const Vec2f* vtx = &featureSector->vtx[featureIndex];
+
+		for (size_t i = 1; i < count; i++)
+		{
+			EditorSector* featureSector = unpackFeatureId(list[i], &featureIndex, &featureData, &overlapped);
+			if (!vtxEqual(vtx, &featureSector->vtx[featureIndex]))
+			{
+				return false;
+			}
+		}
+		return true;
 	}
 			
 	void handleMouseControlVertex()
@@ -579,15 +795,26 @@ namespace LevelEditor
 				s_featureCur.featureIndex = -1;
 				if (s_featureHovered.sector && s_featureHovered.featureIndex >= 0)
 				{
-					s_featureCur.sector = s_featureHovered.sector;
-					s_featureCur.featureIndex = s_featureHovered.featureIndex;
-					s_curVtxPos = s_hoveredVtxPos;
-					adjustGridHeight(s_featureCur.sector);
-					s_editMove = true;
+					FeatureId id = createFeatureId(s_featureHovered.sector, s_featureHovered.featureIndex);
+					bool doesItemExist = selection_doesFeatureExist(id);
+					bool canChangeSelection = true;
+					if (s_selectionList.size() > 1 && !doesItemExist)
+					{
+						canChangeSelection = isSingleOverlappedVertex();
+					}
 
-					// Clear the selection if this is a new vertex and Ctrl isn't held.
-					bool clearList = !selection_doesFeatureExist(createFeatureId(s_featureCur.sector, s_featureCur.featureIndex));
-					selectFromSingleVertex(s_featureCur.sector, s_featureCur.featureIndex, clearList);
+					if (canChangeSelection)
+					{
+						s_featureCur.sector = s_featureHovered.sector;
+						s_featureCur.featureIndex = s_featureHovered.featureIndex;
+						s_curVtxPos = s_hoveredVtxPos;
+						adjustGridHeight(s_featureCur.sector);
+						s_editMove = true;
+
+						// Clear the selection if this is a new vertex and Ctrl isn't held.
+						bool clearList = !doesItemExist;
+						selectFromSingleVertex(s_featureCur.sector, s_featureCur.featureIndex, clearList);
+					}
 				}
 				else if (!s_editMove)
 				{
@@ -649,8 +876,7 @@ namespace LevelEditor
 				{
 					s_editMove = true;
 					adjustGridHeight(s_featureHovered.sector);
-					// TODO:
-					//toggleVertexGroupInclusion(s_featureHovered.sector, s_featureHovered.featureIndex);
+					toggleWallGroupInclusion(s_featureHovered.sector, s_featureHovered.featureIndex, s_featureHovered.part);
 				}
 			}
 			else
@@ -659,19 +885,33 @@ namespace LevelEditor
 				s_featureCur.featureIndex = -1;
 				if (s_featureHovered.sector && s_featureHovered.featureIndex >= 0)
 				{
-					s_featureCur.sector = s_featureHovered.sector;
-					s_featureCur.featureIndex = s_featureHovered.featureIndex;
-					s_featureCur.part = s_featureHovered.part;
-					// Set this to the 3D cursor position, so the wall doesn't "pop" when grabbed.
-					s_curVtxPos = s_cursor3d;
-					adjustGridHeight(s_featureCur.sector);
-					s_editMove = true;
+					FeatureId id = createFeatureId(s_featureHovered.sector, s_featureHovered.featureIndex, s_featureHovered.part);
+					bool doesItemExist = selection_doesFeatureExist(id);
+					if (s_selectionList.size() <= 1 || doesItemExist)
+					{
+						s_featureCur.sector = s_featureHovered.sector;
+						s_featureCur.featureIndex = s_featureHovered.featureIndex;
+						s_featureCur.part = s_featureHovered.part;
+						// Set this to the 3D cursor position, so the wall doesn't "pop" when grabbed.
+						s_curVtxPos = s_cursor3d;
+						adjustGridHeight(s_featureCur.sector);
+						s_editMove = true;
 
-					// Clear the selection if this is a new feature and Ctrl isn't held.
-					bool clearList = true;// !selection_doesFeatureExist(createFeatureId(s_featureCur.sector, s_featureCur.featureIndex));
-					EditorWall* wall = &s_featureCur.sector->walls[s_featureCur.featureIndex];
-					selectFromSingleVertex(s_featureCur.sector, wall->idx[0], clearList);
-					selectFromSingleVertex(s_featureCur.sector, wall->idx[1], false);
+						// TODO: Hotkeys...
+						s_wallMoveMode = WMM_FREE;
+						if (TFE_Input::keyDown(KEY_T))
+						{
+							s_wallMoveMode = WMM_TANGENT;
+						}
+						else if (TFE_Input::keyDown(KEY_N))
+						{
+							s_wallMoveMode = WMM_NORMAL;
+						}
+
+						if (!doesItemExist) { selection_clear(); }
+						selection_add(id);
+						gatherVerticesFromWallSelection();
+					}
 				}
 				else if (!s_editMove)
 				{
@@ -687,8 +927,9 @@ namespace LevelEditor
 				{
 					s_editMove = true;
 					adjustGridHeight(s_featureHovered.sector);
-					// TODO:
-					// selectFromSingleVertex(s_featureHovered.sector, s_featureHovered.featureIndex, false);
+
+					FeatureId id = createFeatureId(s_featureHovered.sector, s_featureHovered.featureIndex, s_featureHovered.part);
+					selection_add(id);
 				}
 			}
 			// Draw select continue.
@@ -865,6 +1106,8 @@ namespace LevelEditor
 
 			// Selection
 			Vec2f worldPos = mouseCoordToWorldPos2d(mx, my);
+			s_cursor3d = { worldPos.x, 0.0f, worldPos.z };
+
 			if (s_editMode != LEDIT_DRAW)
 			{
 				// First check to see if the current hovered sector is still valid.
@@ -953,6 +1196,7 @@ namespace LevelEditor
 						{
 							s_featureHovered.sector = hoveredSector;
 							s_featureHovered.prevSector = hoveredSector;
+							s_featureHovered.part = HP_MID;
 						}
 						else
 						{
@@ -998,6 +1242,10 @@ namespace LevelEditor
 				if (s_editMode == LEDIT_VERTEX)
 				{
 					handleMouseControlVertex();
+				}
+				else if (s_editMode == LEDIT_WALL)
+				{
+					handleMouseControlWall();
 				}
 				else if (TFE_Input::mousePressed(MouseButton::MBUTTON_LEFT))
 				{
@@ -1423,7 +1671,7 @@ namespace LevelEditor
 		return fabsf(a->x - b->x) < eps && fabsf(a->z - b->z) < eps;
 	}
 
-	void selectOverlappingVertices(EditorSector* root, s32 featureIndex, const Vec2f* rootVtx, bool addToSelection)
+	void selectOverlappingVertices(EditorSector* root, s32 featureIndex, const Vec2f* rootVtx, bool addToSelection, bool addToVtxList/*=false*/)
 	{
 		s_searchKey++;
 
@@ -1470,8 +1718,8 @@ namespace LevelEditor
 				if (idx >= 0)
 				{
 					FeatureId id = createFeatureId(sector, wall->idx[idx], 0, true);
-					if (addToSelection) { selection_add(id); }
-					else { selection_remove(id); }
+					if (addToSelection) { addToVtxList ? vtxSelection_add(id) :  selection_add(id); }
+					else { addToVtxList ? vtxSelection_remove(id) : selection_remove(id); }
 
 					// Add the next sector to the stack, if it hasn't already been processed.
 					EditorSector* next = wall->adjoinId < 0 ? nullptr : &s_level.sectors[wall->adjoinId];
@@ -1482,6 +1730,55 @@ namespace LevelEditor
 					}
 				}
 			}
+		}
+	}
+
+	void gatherVerticesFromWallSelection()
+	{
+		const s32 count = (s32)s_selectionList.size();
+		const FeatureId* list = s_selectionList.data();
+		vtxSelection_clear();
+
+		for (s32 i = 0; i < count; i++)
+		{
+			s32 featureIndex;
+			HitPart part;
+			bool isOverlapped;
+			EditorSector* sector = unpackFeatureId(list[i], &featureIndex, (s32*)&part, &isOverlapped);
+			EditorWall* wall = &sector->walls[featureIndex];
+
+			// Skip flats.
+			if (part == HP_FLOOR || part == HP_CEIL) { continue; }
+
+			// Add front face.
+			FeatureId v0 = createFeatureId(sector, wall->idx[0]);
+			FeatureId v1 = createFeatureId(sector, wall->idx[1]);
+			vtxSelection_add(v0);
+			vtxSelection_add(v1);
+
+			// Add mirror (if it exists).
+			if (wall->adjoinId >= 0 && wall->mirrorId >= 0)
+			{
+				EditorSector* nextSector = &s_level.sectors[wall->adjoinId];
+				EditorWall* mirror = &nextSector->walls[wall->mirrorId];
+
+				FeatureId v2 = createFeatureId(nextSector, mirror->idx[0]);
+				FeatureId v3 = createFeatureId(nextSector, mirror->idx[1]);
+				vtxSelection_add(v2);
+				vtxSelection_add(v3);
+			}
+		}
+
+		const s32 vtxCount = (s32)s_vertexList.size();
+		for (s32 v = 0; v < vtxCount; v++)
+		{
+			s32 featureIndex;
+			s32 featureData;
+			bool isOverlapped;
+			EditorSector* sector = unpackFeatureId(s_vertexList[v], &featureIndex, &featureData, &isOverlapped);
+
+			const Vec2f* rootVtx = &sector->vtx[featureIndex];
+			selectOverlappingVertices(sector, featureIndex, rootVtx, true, /*addToVtxList*/true);
 		}
 	}
 		
@@ -1499,6 +1796,19 @@ namespace LevelEditor
 			return;
 		}
 		selectOverlappingVertices(root, featureIndex, rootVtx, true);
+	}
+
+	void toggleWallGroupInclusion(EditorSector* sector, s32 featureIndex, s32 part)
+	{
+		FeatureId id = createFeatureId(sector, featureIndex, part);
+		if (selection_doesFeatureExist(id))
+		{
+			selection_remove(id);
+		}
+		else
+		{
+			selection_add(id);
+		}
 	}
 
 	void toggleVertexGroupInclusion(EditorSector* sector, s32 featureIndex)
@@ -1599,6 +1909,18 @@ namespace LevelEditor
 		s_curVtxPos.x = s_featureCur.sector->vtx[s_featureCur.featureIndex].x;
 		s_curVtxPos.z = s_featureCur.sector->vtx[s_featureCur.featureIndex].z;
 	}
+
+	Vec3f moveAlongXZPlane(f32 yHeight)
+	{
+		const f32 eps = 0.001f;
+		Vec3f worldPos = s_prevPos;
+		if (fabsf(s_rayDir.y) > eps)
+		{
+			const f32 s = (yHeight - s_camera.pos.y) / s_rayDir.y;
+			worldPos = { s_camera.pos.x + s*s_rayDir.x, s_camera.pos.y + s*s_rayDir.y, s_camera.pos.z + s* s_rayDir.z };
+		}
+		return worldPos;
+	}
 		
 	Vec3f moveAlongRail(Vec3f dir)
 	{
@@ -1642,13 +1964,39 @@ namespace LevelEditor
 		f32 y = worldPos.y;
 
 		snapToGrid(&y);
+		f32 heightDelta;
 		if (s_featureCur.part == HP_FLOOR)
 		{
-			s_featureCur.sector->floorHeight = y;
+			heightDelta = y - s_featureCur.sector->floorHeight;
 		}
 		else
 		{
-			s_featureCur.sector->ceilHeight = y;
+			heightDelta = y - s_featureCur.sector->ceilHeight;
+		}
+
+		const s32 count = (s32)s_selectionList.size();
+		const FeatureId* list = s_selectionList.data();
+		for (s32 i = 0; i < count; i++)
+		{
+			s32 featureIndex;
+			HitPart part;
+			bool isOverlapped;
+			EditorSector* sector = unpackFeatureId(list[i], &featureIndex, (s32*)&part, &isOverlapped);
+
+			if (part == HP_FLOOR)
+			{
+				sector->floorHeight += heightDelta;
+			}
+			else if (part == HP_CEIL)
+			{
+				sector->ceilHeight += heightDelta;
+			}
+
+			if (sector->searchKey != s_searchKey)
+			{
+				sector->searchKey = s_searchKey;
+				s_sectorChangeList.push_back(sector);
+			}
 		}
 	}
 
@@ -1660,13 +2008,13 @@ namespace LevelEditor
 		{
 			f32 nextPos = s_moveStartPos.x + path.x * pathOffset;
 			snapToGrid(&nextPos);
-			dX = (nextPos - s_moveStartPos.x) / s_wallNrm.x;
+			dX = (nextPos - s_moveStartPos.x) / path.x;
 		}
 		if (fabsf(path.z) > FLT_EPSILON)
 		{
 			f32 nextPos = s_moveStartPos.z + path.z * pathOffset;
 			snapToGrid(&nextPos);
-			dZ = (nextPos - s_moveStartPos.z) / s_wallNrm.z;
+			dZ = (nextPos - s_moveStartPos.z) / path.z;
 		}
 		if (dX < FLT_MAX && fabsf(dX - pathOffset) < fabsf(dZ - pathOffset))
 		{
@@ -1678,7 +2026,7 @@ namespace LevelEditor
 		}
 		return offset;
 	}
-
+		
 	void moveWall(Vec3f worldPos)
 	{
 		// Overall movement since mousedown, for the history.
@@ -1702,37 +2050,95 @@ namespace LevelEditor
 				s_prevPos = s_curVtxPos;
 			}
 		}
-
-		// Compute the world position based on the intersection with the move plane.
+		
+		Vec2f moveDir = s_wallNrm;
+		Vec2f startPos = s_moveStartPos;
 		if (s_view == EDIT_VIEW_3D)
 		{
-			worldPos = moveAlongRail({ s_wallNrm.x, 0.0f, s_wallNrm.z });
+			if (s_wallMoveMode == WMM_TANGENT)
+			{
+				worldPos = moveAlongRail({ s_wallTan.x, 0.0f, s_wallTan.z });
+				moveDir = s_wallTan;
+				startPos = { s_curVtxPos.x, s_curVtxPos.z };
+			}
+			else if (s_wallMoveMode == WMM_NORMAL)
+			{
+				worldPos = moveAlongRail({ s_wallNrm.x, 0.0f, s_wallNrm.z });
+			}
+			else
+			{
+				worldPos = moveAlongXZPlane(s_curVtxPos.y);
+			}
 		}
-
-		// Compute the movement.
-		Vec2f offset = { worldPos.x - s_moveStartPos.x, worldPos.z - s_moveStartPos.z };
-		f32 nrmOffset = TFE_Math::dot(&offset, &s_wallNrm);
-
-		if (!TFE_Input::keyModDown(KEYMOD_ALT))
+		else
 		{
-			// Find the snap point along the path from vertex 0 and vertex 1.
-			f32 v0Offset = snapAlongPath(s_moveStartPos, s_wallNrm, nrmOffset);
-			f32 v1Offset = snapAlongPath(s_moveStartPos1, s_wallNrm, nrmOffset);
-
-			// Finally determine which snap to take (whichever is the smallest).
-			if (v0Offset < FLT_MAX && fabsf(v0Offset - nrmOffset) < fabsf(v1Offset - nrmOffset))
+			if (s_wallMoveMode == WMM_TANGENT)
 			{
-				nrmOffset = v0Offset;
-			}
-			else if (v1Offset < FLT_MAX)
-			{
-				nrmOffset = v1Offset;
+				moveDir = s_wallTan;
+				startPos = { s_curVtxPos.x, s_curVtxPos.z };
 			}
 		}
 
-		// Move all of the vertices by the offset.
-		Vec2f delta = { s_moveStartPos.x + s_wallNrm.x * nrmOffset - v0.x, s_moveStartPos.z + s_wallNrm.z * nrmOffset - v0.z };
-		edit_moveVertices((u32)s_selectionList.size(), s_selectionList.data(), delta);
+		if (s_wallMoveMode == WMM_FREE)
+		{
+			Vec2f delta = { worldPos.x - s_curVtxPos.x, worldPos.z - s_curVtxPos.z };
+
+			if (!TFE_Input::keyModDown(KEYMOD_ALT))
+			{
+				// Smallest snap distance.
+				Vec2f p0 = { s_moveStartPos.x + delta.x, s_moveStartPos.z + delta.z };
+				Vec2f p1 = { s_moveStartPos1.x + delta.x, s_moveStartPos1.z + delta.z };
+
+				Vec2f s0 = p0, s1 = p1;
+				snapToGrid(&s0);
+				snapToGrid(&s1);
+
+				Vec2f d0 = { p0.x - s0.x, p0.z - s0.z };
+				Vec2f d1 = { p1.x - s1.x, p1.z - s1.z };
+				if (TFE_Math::dot(&d0, &d0) <= TFE_Math::dot(&d1, &d1))
+				{
+					delta = { s0.x - v0.x, s0.z - v0.z };
+				}
+				else
+				{
+					delta = { s1.x - v1.x, s1.z - v1.z };
+				}
+			}
+			else
+			{
+				delta = { s_moveStartPos.x + delta.x - v0.x, s_moveStartPos.z + delta.z - v0.z };
+			}
+
+			// Move all of the vertices by the offset.
+			edit_moveVertices((u32)s_vertexList.size(), s_vertexList.data(), delta);
+		}
+		else
+		{
+			// Compute the movement.
+			Vec2f offset = { worldPos.x - startPos.x, worldPos.z - startPos.z };
+			f32 nrmOffset = TFE_Math::dot(&offset, &moveDir);
+
+			if (!TFE_Input::keyModDown(KEYMOD_ALT))
+			{
+				// Find the snap point along the path from vertex 0 and vertex 1.
+				f32 v0Offset = snapAlongPath(s_moveStartPos, moveDir, nrmOffset);
+				f32 v1Offset = snapAlongPath(s_moveStartPos1, moveDir, nrmOffset);
+
+				// Finally determine which snap to take (whichever is the smallest).
+				if (v0Offset < FLT_MAX && fabsf(v0Offset - nrmOffset) < fabsf(v1Offset - nrmOffset))
+				{
+					nrmOffset = v0Offset;
+				}
+				else if (v1Offset < FLT_MAX)
+				{
+					nrmOffset = v1Offset;
+				}
+			}
+
+			// Move all of the vertices by the offset.
+			Vec2f delta = { s_moveStartPos.x + moveDir.x * nrmOffset - v0.x, s_moveStartPos.z + moveDir.z * nrmOffset - v0.z };
+			edit_moveVertices((u32)s_vertexList.size(), s_vertexList.data(), delta);
+		}
 	}
 	
 	void cameraControl2d(s32 mx, s32 my)
@@ -2060,6 +2466,9 @@ namespace LevelEditor
 		{
 			if (s_featureCur.featureIndex >= 0 && s_featureCur.sector && TFE_Input::mouseDown(MBUTTON_LEFT) && !TFE_Input::keyModDown(KEYMOD_CTRL) && !TFE_Input::keyModDown(KEYMOD_SHIFT))
 			{
+				s_sectorChangeList.clear();
+				s_searchKey++;
+
 				if (s_featureCur.part == HP_FLOOR || s_featureCur.part == HP_CEIL)
 				{
 					moveFlat();

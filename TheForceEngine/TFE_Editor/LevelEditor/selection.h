@@ -36,6 +36,7 @@ namespace LevelEditor
 	typedef std::vector<EditorSector*> SectorList;
 
 	extern SelectionList s_selectionList;
+	extern SelectionList s_vertexList;
 	extern SectorList s_sectorChangeList;
 	extern DragSelect s_dragSelect;
 
@@ -48,4 +49,9 @@ namespace LevelEditor
 	void selection_remove(FeatureId id);
 	void selection_toggle(FeatureId id);
 	bool selection_doesFeatureExist(FeatureId id);
+
+	void vtxSelection_clear();
+	bool vtxSelection_doesFeatureExist(FeatureId id);
+	bool vtxSelection_add(FeatureId id);
+	void vtxSelection_remove(FeatureId id);
 }

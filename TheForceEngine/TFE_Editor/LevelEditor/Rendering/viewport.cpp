@@ -208,9 +208,23 @@ namespace LevelEditor
 		{
 			drawWall2d(s_featureHovered.sector, &s_featureHovered.sector->walls[s_featureHovered.featureIndex], 1.5f, HL_HOVERED, /*draw normal*/true);
 		}
-		if (s_featureCur.sector && s_featureCur.featureIndex >= 0 && s_editMode == LEDIT_WALL)
+		if (s_editMode == LEDIT_WALL)
 		{
-			drawWall2d(s_featureCur.sector, &s_featureCur.sector->walls[s_featureCur.featureIndex], 1.5f, HL_SELECTED, /*draw normal*/true);
+			const size_t count = s_selectionList.size();
+			const FeatureId* list = s_selectionList.data();
+			for (size_t i = 0; i < count; i++)
+			{
+				for (size_t i = 0; i < count; i++)
+				{
+					s32 featureIndex;
+					HitPart part;
+					bool overlapped;
+					EditorSector* sector = unpackFeatureId(list[i], &featureIndex, (s32*)&part, &overlapped);
+					if (overlapped || !sector || part == HP_FLOOR || part == HP_CEIL) { continue; }
+
+					drawWall2d(sector, &sector->walls[featureIndex], 1.5f, HL_SELECTED, true);
+				}
+			}
 		}
 
 		// Draw vertices.
@@ -601,45 +615,58 @@ namespace LevelEditor
 
 	void drawSelectedSurface3D()
 	{
-		// In 3D, the floor and ceiling are surfaces too.
-		bool hoverAndSelect = s_featureCur.sector == s_featureHovered.sector;
-		if (s_featureCur.sector && (s_featureCur.part == HP_FLOOR || s_featureCur.part == HP_CEIL))
+		const size_t count = s_selectionList.size();
+		const FeatureId* list = s_selectionList.data();
+		bool hoverAndSelectFlat = false;
+		bool hoverAndSelect = false;
+		for (size_t i = 0; i < count; i++)
 		{
-			drawFlat3D_Highlighted(s_featureCur.sector, s_featureCur.part, 3.5f, HL_SELECTED, false, false);
+			s32 featureIndex;
+			HitPart featureData;
+			bool isOverlapped;
+			EditorSector* featureSector = unpackFeatureId(list[i], &featureIndex, (s32*)&featureData, &isOverlapped);
+
+			// In 3D, the floor and ceiling are surfaces too.
+			hoverAndSelectFlat = featureSector == s_featureHovered.sector;
+			if (featureSector && (featureData == HP_FLOOR || featureData == HP_CEIL))
+			{
+				drawFlat3D_Highlighted(featureSector, featureData, 3.5f, HL_SELECTED, false, false);
+			}
+
+			hoverAndSelect = featureIndex == s_featureHovered.featureIndex && featureSector == s_featureHovered.sector;
+
+			bool curFlat = featureData == HP_FLOOR || featureData == HP_CEIL;
+			// Draw thicker lines.
+			if (featureIndex >= 0 && featureSector && !curFlat)
+			{
+				EditorWall* wall = &featureSector->walls[featureIndex];
+				EditorSector* next = wall->adjoinId < 0 ? nullptr : &s_level.sectors[wall->adjoinId];
+				drawWallLines3D_Highlighted(featureSector, next, wall, 3.5f, HL_SELECTED, false);
+			}
+			
+			// Draw translucent surfaces.
+			if (featureIndex >= 0 && featureSector && !curFlat)
+			{
+				u32 color = SCOLOR_POLY_SELECTED;
+				drawWallColor3d_Highlighted(featureSector, featureSector->vtx.data(), featureSector->walls.data() + featureIndex, color, featureData);
+			}
 		}
+
+		bool hoveredFlat = s_featureHovered.part == HP_FLOOR || s_featureHovered.part == HP_CEIL;
 		if (s_featureHovered.sector && (s_featureHovered.part == HP_FLOOR || s_featureHovered.part == HP_CEIL))
 		{
-			drawFlat3D_Highlighted(s_featureHovered.sector, s_featureHovered.part, 3.5f, HL_HOVERED, hoverAndSelect, false);
+			drawFlat3D_Highlighted(s_featureHovered.sector, s_featureHovered.part, 3.5f, HL_HOVERED, hoverAndSelectFlat, false);
 		}
-
-		hoverAndSelect = s_featureCur.featureIndex == s_featureHovered.featureIndex && s_featureCur.sector == s_featureHovered.sector;
-
-		bool curFlat = s_featureCur.part == HP_FLOOR || s_featureCur.part == HP_CEIL;
-		bool hoveredFlat = s_featureHovered.part == HP_FLOOR || s_featureHovered.part == HP_CEIL;
-		// Draw thicker lines.
-		if (s_featureCur.featureIndex >= 0 && s_featureCur.sector && !curFlat)
+		if (s_featureHovered.featureIndex >= 0 && s_featureHovered.sector && !hoveredFlat)
 		{
-			EditorWall* wall = &s_featureCur.sector->walls[s_featureCur.featureIndex];
-			EditorSector* next = wall->adjoinId < 0 ? nullptr : &s_level.sectors[wall->adjoinId];
-			drawWallLines3D_Highlighted(s_featureCur.sector, next, wall, 3.5f, HL_SELECTED, false);
+			u32 color = SCOLOR_POLY_HOVERED;
+			drawWallColor3d_Highlighted(s_featureHovered.sector, s_featureHovered.sector->vtx.data(), s_featureHovered.sector->walls.data() + s_featureHovered.featureIndex, color, s_featureHovered.part);
 		}
 		if (s_featureHovered.featureIndex >= 0 && s_featureHovered.sector && !hoveredFlat)
 		{
 			EditorWall* wall = &s_featureHovered.sector->walls[s_featureHovered.featureIndex];
 			EditorSector* next = wall->adjoinId < 0 ? nullptr : &s_level.sectors[wall->adjoinId];
 			drawWallLines3D_Highlighted(s_featureHovered.sector, next, wall, 3.5f, HL_HOVERED, hoverAndSelect);
-		}
-
-		// Draw translucent surfaces.
-		if (s_featureCur.featureIndex >= 0 && s_featureCur.sector && !curFlat)
-		{
-			u32 color = SCOLOR_POLY_SELECTED;
-			drawWallColor3d_Highlighted(s_featureCur.sector, s_featureCur.sector->vtx.data(), s_featureCur.sector->walls.data() + s_featureCur.featureIndex, color, s_featureCur.part);
-		}
-		if (s_featureHovered.featureIndex >= 0 && s_featureHovered.sector && !hoveredFlat)
-		{
-			u32 color = SCOLOR_POLY_HOVERED;
-			drawWallColor3d_Highlighted(s_featureHovered.sector, s_featureHovered.sector->vtx.data(), s_featureHovered.sector->walls.data() + s_featureHovered.featureIndex, color, s_featureHovered.part);
 		}
 	}
 
