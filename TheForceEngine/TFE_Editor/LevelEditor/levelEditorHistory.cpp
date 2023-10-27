@@ -13,19 +13,14 @@ namespace LevelEditor
 	{
 		LCmd_MoveVertex = CMD_START,
 		LCmd_SetVertex,
+		LCmd_MoveFlat,
 		LCmd_Count
 	};
-
-	enum LevCommandName
-	{
-		LName_MoveVertex = 0,
-		LName_SetVertex,
-		LName_Count
-	};
-
+		
 	// Command Functions
 	void cmd_applyMoveVertices();
 	void cmd_applySetVertex();
+	void cmd_applyMoveFlats();
 
 	void levHistory_init()
 	{
@@ -33,8 +28,11 @@ namespace LevelEditor
 
 		history_registerCommand(LCmd_MoveVertex, cmd_applyMoveVertices);
 		history_registerCommand(LCmd_SetVertex, cmd_applySetVertex);
-		history_registerName(LName_MoveVertex, "Move Vertices");
+		history_registerCommand(LCmd_MoveFlat, cmd_applyMoveFlats);
+		history_registerName(LName_MoveVertex, "Move Vertice(s)");
 		history_registerName(LName_SetVertex, "Set Vertex Position");
+		history_registerName(LName_MoveWall, "Move Wall(s)");
+		history_registerName(LName_MoveFlat, "Move Flat(s)");
 	}
 
 	void levHistory_destroy()
@@ -72,11 +70,11 @@ namespace LevelEditor
 	
 	/////////////////////////////////
 	// Move Vertices
-	void cmd_addMoveVertices(s32 count, const FeatureId* vertices, Vec2f delta)
+	void cmd_addMoveVertices(s32 count, const FeatureId* vertices, Vec2f delta, LevCommandName name)
 	{
 		// Try to create a command, if it returns false - then a snapshot was created
 		// instead.
-		if (!history_createCommand(LCmd_MoveVertex, LName_MoveVertex)) { return; }
+		if (!history_createCommand(LCmd_MoveVertex, name)) { return; }
 		// Add the command data.
 		hBuffer_addS32(count);
 		hBuffer_addArrayU64(count, vertices);
@@ -112,5 +110,28 @@ namespace LevelEditor
 		const Vec2f pos = hBuffer_getVec2f();
 		// Call the editor command.
 		edit_setVertexPos(id, pos);
+	}
+
+	/////////////////////////////////
+	// Move Flats
+	void cmd_addMoveFlats(s32 count, const FeatureId* flats, f32 delta)
+	{
+		// Try to create a command, if it returns false - then a snapshot was created
+		// instead.
+		if (!history_createCommand(LCmd_MoveFlat, LName_MoveFlat)) { return; }
+		// Add the command data.
+		hBuffer_addS32(count);
+		hBuffer_addArrayU64(count, flats);
+		hBuffer_addF32(delta);
+	}
+
+	void cmd_applyMoveFlats()
+	{
+		// Extract the command data.
+		const s32 count = hBuffer_getS32();
+		const FeatureId* flats = (FeatureId*)hBuffer_getArrayU64(count);
+		const f32 delta = hBuffer_getF32();
+		// Call the editor command.
+		edit_moveFlats(count, flats, delta);
 	}
 }

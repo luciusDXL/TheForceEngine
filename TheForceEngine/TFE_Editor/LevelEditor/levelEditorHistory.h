@@ -5,6 +5,15 @@
 
 namespace LevelEditor
 {
+	enum LevCommandName
+	{
+		LName_MoveVertex = 0,
+		LName_SetVertex,
+		LName_MoveWall,
+		LName_MoveFlat,
+		LName_Count
+	};
+
 	void levHistory_init();
 	void levHistory_destroy();
 
@@ -15,6 +24,7 @@ namespace LevelEditor
 	void levHistory_redo();
 
 	// Commands
-	void cmd_addMoveVertices(s32 count, const FeatureId* vertices, Vec2f delta);
+	void cmd_addMoveVertices(s32 count, const FeatureId* vertices, Vec2f delta, LevCommandName name = LName_MoveVertex);
 	void cmd_addSetVertex(FeatureId vertex, Vec2f pos);
+	void cmd_addMoveFlats(s32 count, const FeatureId* flats, f32 delta);
 }

@@ -528,7 +528,7 @@ namespace LevelEditor
 
 					if (inside)
 					{
-						FeatureId id = createFeatureId(sector, w, HP_MID);
+						FeatureId id = createFeatureId(sector, (s32)w, HP_MID);
 						if (s_dragSelect.mode == DSEL_REM) { selection_remove(id); }
 						else { selection_add(id); }
 					}
@@ -1949,51 +1949,26 @@ namespace LevelEditor
 		}
 		return worldPos;
 	}
-		
-	void moveFlat()
+
+	void edit_moveFlats(s32 count, const FeatureId* flatIds, f32 delta)
 	{
-		if (!s_moveStarted)
-		{
-			s_moveStarted = true;
-			s_moveStartPos.x = s_featureCur.part == HP_FLOOR ? s_featureCur.sector->floorHeight : s_featureCur.sector->ceilHeight;
-			s_moveStartPos.z = 0.0f;
-			s_prevPos = s_curVtxPos;
-		}
+		s_searchKey++;
+		s_sectorChangeList.clear();
 
-		Vec3f worldPos = moveAlongRail({ 0.0f, 1.0f, 0.0f });
-		f32 y = worldPos.y;
-
-		snapToGrid(&y);
-		f32 heightDelta;
-		if (s_featureCur.part == HP_FLOOR)
-		{
-			heightDelta = y - s_featureCur.sector->floorHeight;
-		}
-		else
-		{
-			heightDelta = y - s_featureCur.sector->ceilHeight;
-		}
-
-		const s32 count = (s32)s_selectionList.size();
-		const FeatureId* list = s_selectionList.data();
 		for (s32 i = 0; i < count; i++)
 		{
 			s32 featureIndex;
 			HitPart part;
 			bool isOverlapped;
-			EditorSector* sector = unpackFeatureId(list[i], &featureIndex, (s32*)&part, &isOverlapped);
+			EditorSector* sector = unpackFeatureId(flatIds[i], &featureIndex, (s32*)&part, &isOverlapped);
 
-			// Apply collision to avoid floors and ceilings crossing.
-			// However a zero-height sector is valid.
 			if (part == HP_FLOOR)
 			{
-				sector->floorHeight += heightDelta;
-				sector->floorHeight = std::min(sector->floorHeight, sector->ceilHeight);
+				sector->floorHeight += delta;
 			}
 			else if (part == HP_CEIL)
 			{
-				sector->ceilHeight += heightDelta;
-				sector->ceilHeight = std::max(sector->floorHeight, sector->ceilHeight);
+				sector->ceilHeight += delta;
 			}
 
 			if (sector->searchKey != s_searchKey)
@@ -2011,7 +1986,7 @@ namespace LevelEditor
 			s32 featureIndex;
 			HitPart part;
 			bool isOverlapped;
-			EditorSector* sector = unpackFeatureId(list[i], &featureIndex, (s32*)&part, &isOverlapped);
+			EditorSector* sector = unpackFeatureId(flatIds[i], &featureIndex, (s32*)&part, &isOverlapped);
 
 			if (part == HP_FLOOR)
 			{
@@ -2022,6 +1997,44 @@ namespace LevelEditor
 				sector->ceilHeight = std::max(sector->floorHeight, sector->ceilHeight);
 			}
 		}
+
+		const size_t changeCount = s_sectorChangeList.size();
+		EditorSector** sectorList = s_sectorChangeList.data();
+		for (size_t i = 0; i < changeCount; i++)
+		{
+			EditorSector* sector = sectorList[i];
+			sector->bounds[0].y = std::min(sector->floorHeight, sector->ceilHeight);
+			sector->bounds[1].y = std::max(sector->floorHeight, sector->ceilHeight);
+		}
+	}
+		
+	void moveFlat()
+	{
+		if (!s_moveStarted)
+		{
+			s_moveStarted = true;
+			s_moveStartPos.x = s_featureCur.part == HP_FLOOR ? s_featureCur.sector->floorHeight : s_featureCur.sector->ceilHeight;
+			s_moveStartPos.z = 0.0f;
+			s_moveTotalDelta.x = 0.0f;
+			s_prevPos = s_curVtxPos;
+		}
+
+		Vec3f worldPos = moveAlongRail({ 0.0f, 1.0f, 0.0f });
+		f32 y = worldPos.y;
+
+		snapToGrid(&y);
+		f32 heightDelta;
+		if (s_featureCur.part == HP_FLOOR)
+		{
+			heightDelta = y - s_featureCur.sector->floorHeight;
+		}
+		else
+		{
+			heightDelta = y - s_featureCur.sector->ceilHeight;
+		}
+
+		s_moveTotalDelta.x = y - s_moveStartPos.x;
+		edit_moveFlats((s32)s_selectionList.size(), s_selectionList.data(), heightDelta);
 	}
 
 	f32 snapAlongPath(const Vec2f& startPos, const Vec2f& path, f32 pathOffset)
@@ -2134,6 +2147,7 @@ namespace LevelEditor
 			}
 
 			// Move all of the vertices by the offset.
+			s_moveTotalDelta = { v0.x + delta.x - s_moveStartPos.x, v0.z + delta.z - s_moveStartPos.z };
 			edit_moveVertices((u32)s_vertexList.size(), s_vertexList.data(), delta);
 		}
 		else
@@ -2161,6 +2175,7 @@ namespace LevelEditor
 
 			// Move all of the vertices by the offset.
 			Vec2f delta = { s_moveStartPos.x + moveDir.x * nrmOffset - v0.x, s_moveStartPos.z + moveDir.z * nrmOffset - v0.z };
+			s_moveTotalDelta = { v0.x + delta.x - s_moveStartPos.x, v0.z + delta.z - s_moveStartPos.z };
 			edit_moveVertices((u32)s_vertexList.size(), s_vertexList.data(), delta);
 		}
 	}
@@ -2490,9 +2505,6 @@ namespace LevelEditor
 		{
 			if (s_featureCur.featureIndex >= 0 && s_featureCur.sector && TFE_Input::mouseDown(MBUTTON_LEFT) && !TFE_Input::keyModDown(KEYMOD_CTRL) && !TFE_Input::keyModDown(KEYMOD_SHIFT))
 			{
-				s_sectorChangeList.clear();
-				s_searchKey++;
-
 				if (s_featureCur.part == HP_FLOOR || s_featureCur.part == HP_CEIL)
 				{
 					moveFlat();
@@ -2501,21 +2513,20 @@ namespace LevelEditor
 				{
 					moveWall(newPos);
 				}
-
-				// TODO: Move into commands.
-				EditorSector* sector = s_featureCur.sector;
-				sectorToPolygon(sector);
-				sector->bounds[0] = { sector->poly.bounds[0].x, 0.0f, sector->poly.bounds[0].z };
-				sector->bounds[1] = { sector->poly.bounds[1].x, 0.0f, sector->poly.bounds[1].z };
-				sector->bounds[0].y = min(sector->floorHeight, sector->ceilHeight);
-				sector->bounds[1].y = max(sector->floorHeight, sector->ceilHeight);
 			}
 			else if (s_featureCur.featureIndex >= 0 && s_featureCur.sector && s_moveStarted)
 			{
 				s_editMove = false;
 				s_moveStarted = false;
-				// TODO:
-				//cmd_addMoveVertices((s32)s_selectionList.size(), s_selectionList.data(), s_moveTotalDelta);
+
+				if (s_featureCur.part == HP_FLOOR || s_featureCur.part == HP_CEIL)
+				{
+					cmd_addMoveFlats((s32)s_selectionList.size(), s_selectionList.data(), s_moveTotalDelta.x);
+				}
+				else // Re-use the move vertices command, but with the name LName_MoveWall.
+				{
+					cmd_addMoveVertices((s32)s_vertexList.size(), s_vertexList.data(), s_moveTotalDelta, LName_MoveWall);
+				}
 			}
 			else
 			{
