@@ -587,9 +587,12 @@ namespace LevelEditor
 			{
 				// Prioritize selected wall, selected sector, hovered wall, hovered sector.
 				// Allow sector views in wall mode, but NOT wall views in sector mode.
-				if (s_editMode == LEDIT_WALL && s_featureCur.featureIndex >= 0) { infoPanelWall(); }
+				const bool curFeatureIsFlat = s_featureCur.part == HP_FLOOR || s_featureCur.part == HP_CEIL;
+				const bool hoverFeatureIsFlat = s_featureHovered.part == HP_FLOOR || s_featureHovered.part == HP_CEIL;
+
+				if (s_editMode == LEDIT_WALL && s_featureCur.featureIndex >= 0 && !curFeatureIsFlat) { infoPanelWall(); }
 				else if (s_featureCur.sector) { infoPanelSector(); }
-				else if (s_editMode == LEDIT_WALL && s_featureHovered.featureIndex >= 0) { infoPanelWall(); }
+				else if (s_editMode == LEDIT_WALL && s_featureHovered.featureIndex >= 0 && !hoverFeatureIsFlat) { infoPanelWall(); }
 				else if (s_featureHovered.sector) { infoPanelSector(); }
 				else { infoPanelMap(); }
 			}
