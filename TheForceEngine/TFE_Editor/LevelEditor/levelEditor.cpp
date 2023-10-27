@@ -1983,19 +1983,43 @@ namespace LevelEditor
 			bool isOverlapped;
 			EditorSector* sector = unpackFeatureId(list[i], &featureIndex, (s32*)&part, &isOverlapped);
 
+			// Apply collision to avoid floors and ceilings crossing.
+			// However a zero-height sector is valid.
 			if (part == HP_FLOOR)
 			{
 				sector->floorHeight += heightDelta;
+				sector->floorHeight = std::min(sector->floorHeight, sector->ceilHeight);
 			}
 			else if (part == HP_CEIL)
 			{
 				sector->ceilHeight += heightDelta;
+				sector->ceilHeight = std::max(sector->floorHeight, sector->ceilHeight);
 			}
 
 			if (sector->searchKey != s_searchKey)
 			{
 				sector->searchKey = s_searchKey;
 				s_sectorChangeList.push_back(sector);
+			}
+		}
+
+		// Apply collision to avoid floors and ceilings crossing by looping through a second time.
+		// That way if moving both floor and ceiling at the same time, they don't interfere with each other.
+		// However a zero-height sector is valid.
+		for (s32 i = 0; i < count; i++)
+		{
+			s32 featureIndex;
+			HitPart part;
+			bool isOverlapped;
+			EditorSector* sector = unpackFeatureId(list[i], &featureIndex, (s32*)&part, &isOverlapped);
+
+			if (part == HP_FLOOR)
+			{
+				sector->floorHeight = std::min(sector->floorHeight, sector->ceilHeight);
+			}
+			else if (part == HP_CEIL)
+			{
+				sector->ceilHeight = std::max(sector->floorHeight, sector->ceilHeight);
 			}
 		}
 	}
