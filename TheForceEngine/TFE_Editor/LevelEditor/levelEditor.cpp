@@ -849,7 +849,135 @@ namespace LevelEditor
 		}
 	}
 
-	void handleMouseControlWall()
+	void splitWall1(EditorSector* sector, s32 wallIndex, Vec2f newPos, EditorWall* outWalls[])
+	{
+		// TODO: Is it worth it to insert the vertex right after i0 as well instead of at the end?
+		const s32 newIdx = (s32)sector->vtx.size();
+		sector->vtx.push_back(newPos);
+
+		EditorWall* srcWall = &sector->walls[wallIndex];
+		const s32 idx[3] = { srcWall->idx[0], newIdx, srcWall->idx[1] };
+
+		// Copy wall attributes (textures, flags, etc.).
+		EditorWall newWall = *srcWall;
+		// Then setup indices.
+		srcWall->idx[0] = idx[0];
+		srcWall->idx[1] = idx[1];
+		newWall.idx[0] = idx[1];
+		newWall.idx[1] = idx[2];
+
+		// Insert the new wall right after the wall being split.
+		// This makes the process a bit more complicated, but keeps things clean.
+		sector->walls.insert(sector->walls.begin() + wallIndex, newWall);
+
+		// Pointers to the new walls (note that since the wall array was resized, the source wall
+		// pointer might have changed as well).
+		outWalls[0] = &sector->walls[wallIndex];
+		outWalls[1] = &sector->walls[wallIndex + 1];
+	}
+
+	void fixupWallMirrors(EditorSector* sector, s32 wallIndex)
+	{
+		bool hasWallsPastSplit = wallIndex + 1 < sector->walls.size();
+		if (!hasWallsPastSplit) { return; }
+
+		// Gather sectors that might need to be changed.
+		s_searchKey++;
+		s_sectorChangeList.clear();
+		const size_t wallCount = sector->walls.size();
+		EditorWall* wall = sector->walls.data();
+		for (size_t w = 0; w < wallCount; w++, wall++)
+		{
+			if (wall->adjoinId < 0) { continue; }
+			EditorSector* nextSector = &s_level.sectors[wall->adjoinId];
+			if (nextSector->searchKey != s_searchKey)
+			{
+				nextSector->searchKey = s_searchKey;
+				s_sectorChangeList.push_back(nextSector);
+			}
+		}
+
+		// Loop through potentially effected sectors and adjust mirrors.
+		const size_t sectorCount = s_sectorChangeList.size();
+		EditorSector** sectorList = s_sectorChangeList.data();
+		for (size_t s = 0; s < sectorCount; s++)
+		{
+			EditorSector* matchSector = sectorList[s];
+			if (matchSector == sector) { continue; }
+
+			const size_t wallCount = matchSector->walls.size();
+			EditorWall* wall = matchSector->walls.data();
+			for (size_t w = 0; w < wallCount; w++, wall++)
+			{
+				if (wall->adjoinId != sector->id) { continue; }
+				if (wall->mirrorId > wallIndex)
+				{
+					wall->mirrorId++;
+				}
+			}
+		}
+	}
+
+	void splitWall(EditorSector* sector, s32 wallIndex, Vec2f newPos)
+	{
+		// First make sure there isn't already a vertex here...
+		const size_t vtxCount = sector->vtx.size();
+		const Vec2f* vtx = sector->vtx.data();
+		for (size_t v = 0; v < vtxCount; v++)
+		{
+			// If the vertex already exists, then do nothing.
+			if (vtxEqual(&newPos, &vtx[v]))
+			{
+				return;
+			}
+		}
+
+		// Algorithm:
+		// Insert new wall after current wall.
+		// Find any references to sector with mirror > currentWall and modify (+1).
+		// If current wall has an adjoin, split the mirror wall.
+		// Find any references to the adjoined sector with mirror > currentWall mirror.
+
+		// Insert new wall.
+		EditorWall* outWalls[2] = { nullptr };
+		splitWall1(sector, wallIndex, newPos, outWalls);
+
+		// Find any references to > wallIndex and fix them up.
+		fixupWallMirrors(sector, wallIndex);
+
+		// If the current wall is an adjoin, split the matching adjoin.
+		if (outWalls[0]->adjoinId >= 0 && outWalls[0]->mirrorId >= 0)
+		{
+			EditorWall* outWallsAdjoin[2] = { nullptr };
+			EditorSector* nextSector = &s_level.sectors[outWalls[0]->adjoinId];
+			s32 mirrorWallIndex = outWalls[0]->mirrorId;
+
+			splitWall1(nextSector, mirrorWallIndex, newPos, outWallsAdjoin);
+						
+			sectorToPolygon(nextSector);
+			nextSector->bounds[0] = { nextSector->poly.bounds[0].x, 0.0f, nextSector->poly.bounds[0].z };
+			nextSector->bounds[1] = { nextSector->poly.bounds[1].x, 0.0f, nextSector->poly.bounds[1].z };
+			nextSector->bounds[0].y = min(nextSector->floorHeight, nextSector->ceilHeight);
+			nextSector->bounds[1].y = max(nextSector->floorHeight, nextSector->ceilHeight);
+
+			// Fix-up the mirrors for the adjoined sector.
+			fixupWallMirrors(nextSector, mirrorWallIndex);
+
+			// Connect the split edges together.
+			outWalls[0]->mirrorId = mirrorWallIndex + 1;
+			outWalls[1]->mirrorId = mirrorWallIndex;
+			outWallsAdjoin[0]->mirrorId = wallIndex;
+			outWallsAdjoin[1]->mirrorId = wallIndex + 1;
+		}
+
+		sectorToPolygon(sector);
+		sector->bounds[0] = { sector->poly.bounds[0].x, 0.0f, sector->poly.bounds[0].z };
+		sector->bounds[1] = { sector->poly.bounds[1].x, 0.0f, sector->poly.bounds[1].z };
+		sector->bounds[0].y = min(sector->floorHeight, sector->ceilHeight);
+		sector->bounds[1].y = max(sector->floorHeight, sector->ceilHeight);
+	}
+
+	void handleMouseControlWall(Vec2f worldPos)
 	{
 		s32 mx, my;
 		TFE_Input::getMousePos(&mx, &my);
@@ -945,6 +1073,29 @@ namespace LevelEditor
 		else if (s_dragSelect.active)
 		{
 			s_dragSelect.active = false;
+		}
+
+		if (!s_editMove && !mouseDown && !mousePressed && s_featureHovered.sector && s_featureHovered.featureIndex >= 0 &&
+			 s_featureHovered.part != HP_FLOOR && s_featureHovered.part != HP_CEIL)
+		{
+			// TODO: Hotkeys.
+			bool insertVtx = TFE_Input::keyDown(KEY_INSERT);
+			if (insertVtx)
+			{
+				// TODO: Snap to grid.
+
+				EditorWall* wall = &s_featureHovered.sector->walls[s_featureHovered.featureIndex];
+				Vec2f v0 = s_featureHovered.sector->vtx[wall->idx[0]];
+				Vec2f v1 = s_featureHovered.sector->vtx[wall->idx[1]];
+				Vec2f newPos = v0;
+
+				f32 s = closestPointOnLineSegment(v0, v1, worldPos, &newPos);
+				if (s > FLT_EPSILON && s < 1.0f - FLT_EPSILON)
+				{
+					// Split the wall.
+					splitWall(s_featureHovered.sector, s_featureHovered.featureIndex, newPos);
+				}
+			}
 		}
 	}
 
@@ -1083,7 +1234,7 @@ namespace LevelEditor
 				}
 			}
 
-			handleMouseControlWall();
+			handleMouseControlWall({ s_cursor3d.x, s_cursor3d.z });
 		}
 	}
 		
@@ -1204,7 +1355,7 @@ namespace LevelEditor
 						}
 					}
 
-					handleMouseControlWall();
+					handleMouseControlWall(worldPos);
 				}
 
 				// DEBUG
@@ -1245,7 +1396,7 @@ namespace LevelEditor
 				}
 				else if (s_editMode == LEDIT_WALL)
 				{
-					handleMouseControlWall();
+					handleMouseControlWall({ s_cursor3d.x, s_cursor3d.z });
 				}
 				else if (TFE_Input::mousePressed(MouseButton::MBUTTON_LEFT))
 				{
