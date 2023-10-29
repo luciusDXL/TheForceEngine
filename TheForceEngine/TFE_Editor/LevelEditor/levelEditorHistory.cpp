@@ -175,7 +175,7 @@ namespace LevelEditor
 		const s32 wallIndex = hBuffer_getS32();
 		const Vec2f newPos = hBuffer_getVec2f();
 		// Call the editor command.
-		edit_splitWall(&s_level.sectors[sectorIndex], wallIndex, newPos);
+		edit_splitWall(sectorIndex, wallIndex, newPos);
 		// For now, clear out selections.
 		clearSelections();
 	}

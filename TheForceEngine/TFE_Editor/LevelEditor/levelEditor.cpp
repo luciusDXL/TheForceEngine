@@ -857,7 +857,7 @@ namespace LevelEditor
 		handleVertexInsert(worldPos);
 	}
 
-	void splitWall1(EditorSector* sector, s32 wallIndex, Vec2f newPos, EditorWall* outWalls[])
+	void splitWall(EditorSector* sector, s32 wallIndex, Vec2f newPos, EditorWall* outWalls[])
 	{
 		// TODO: Is it worth it to insert the vertex right after i0 as well instead of at the end?
 		const s32 newIdx = (s32)sector->vtx.size();
@@ -931,8 +931,9 @@ namespace LevelEditor
 	// * Find any references to sector with mirror > currentWall and fix-up (+1).
 	// * If current wall has an adjoin, split the mirror wall.
 	// * Find any references to the adjoined sector with mirror > currentWall mirror.
-	void edit_splitWall(EditorSector* sector, s32 wallIndex, Vec2f newPos)
+	void edit_splitWall(s32 sectorId, s32 wallIndex, Vec2f newPos)
 	{
+		EditorSector* sector = &s_level.sectors[sectorId];
 		// If a vertex at the desired position already exists, do not split the wall (early-out).
 		const size_t vtxCount = sector->vtx.size();
 		const Vec2f* vtx = sector->vtx.data();
@@ -941,7 +942,7 @@ namespace LevelEditor
 		// Split the wall, insert the new wall after the original.
 		// Example, split B into {B, N} : {A, B, C, D} -> {A, B, N, C, D}.
 		EditorWall* outWalls[2] = { nullptr };
-		splitWall1(sector, wallIndex, newPos, outWalls);
+		splitWall(sector, wallIndex, newPos, outWalls);
 
 		// Find any references to > wallIndex and fix them up.
 		fixupWallMirrors(sector, wallIndex);
@@ -954,8 +955,8 @@ namespace LevelEditor
 
 			// Split the mirror wall.
 			EditorWall* outWallsAdjoin[2] = { nullptr };
-			splitWall1(nextSector, mirrorWallIndex, newPos, outWallsAdjoin);
-						
+			splitWall(nextSector, mirrorWallIndex, newPos, outWallsAdjoin);
+	
 			// Fix-up the mirrors for the adjoined sector.
 			fixupWallMirrors(nextSector, mirrorWallIndex);
 
@@ -1029,7 +1030,7 @@ namespace LevelEditor
 		{
 			// Split the wall.
 			cmd_addInsertVertex(sector->id, wallIndex, newPos);
-			edit_splitWall(sector, wallIndex, newPos);
+			edit_splitWall(sector->id, wallIndex, newPos);
 		}
 	}
 
