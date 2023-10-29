@@ -160,6 +160,10 @@ namespace LevelEditor
 	void gatherVerticesFromWallSelection();
 	bool vtxEqual(const Vec2f* a, const Vec2f* b);
 	void edit_moveFeatures(const Vec3f& newPos);
+
+	void snapToGrid(f32* value);
+	void snapToGrid(Vec2f* pos);
+	void snapToGrid(Vec3f* pos);
 	
 	////////////////////////////////////////////////////////
 	// Public API
@@ -868,7 +872,7 @@ namespace LevelEditor
 
 		// Insert the new wall right after the wall being split.
 		// This makes the process a bit more complicated, but keeps things clean.
-		sector->walls.insert(sector->walls.begin() + wallIndex, newWall);
+		sector->walls.insert(sector->walls.begin() + wallIndex + 1, newWall);
 
 		// Pointers to the new walls (note that since the wall array was resized, the source wall
 		// pointer might have changed as well).
@@ -966,8 +970,8 @@ namespace LevelEditor
 			// Connect the split edges together.
 			outWalls[0]->mirrorId = mirrorWallIndex + 1;
 			outWalls[1]->mirrorId = mirrorWallIndex;
-			outWallsAdjoin[0]->mirrorId = wallIndex;
-			outWallsAdjoin[1]->mirrorId = wallIndex + 1;
+			outWallsAdjoin[0]->mirrorId = wallIndex + 1;
+			outWallsAdjoin[1]->mirrorId = wallIndex;
 		}
 
 		sectorToPolygon(sector);
@@ -975,6 +979,64 @@ namespace LevelEditor
 		sector->bounds[1] = { sector->poly.bounds[1].x, 0.0f, sector->poly.bounds[1].z };
 		sector->bounds[0].y = min(sector->floorHeight, sector->ceilHeight);
 		sector->bounds[1].y = max(sector->floorHeight, sector->ceilHeight);
+	}
+
+	void handleVertexInsert(Vec2f worldPos)
+	{
+		const bool mousePressed = TFE_Input::mousePressed(MouseButton::MBUTTON_LEFT);
+		const bool mouseDown = TFE_Input::mouseDown(MouseButton::MBUTTON_LEFT);
+		// TODO: Hotkeys.
+		const bool insertVtx = TFE_Input::keyPressed(KEY_INSERT);
+		const bool snapToGridEnabled = !TFE_Input::keyModDown(KEYMOD_ALT) && s_gridSize > 0.0f;
+
+		// Early out.
+		if (!insertVtx || s_editMove || mouseDown || mousePressed) { return; }
+
+		EditorSector* sector = nullptr;
+		s32 wallIndex = -1;
+		if (s_editMode == LEDIT_WALL && s_featureHovered.part != HP_FLOOR && s_featureHovered.part != HP_CEIL)
+		{
+			sector = s_featureHovered.sector;
+			wallIndex = s_featureHovered.featureIndex;
+		}
+		else if (s_editMode == LEDIT_VERTEX)
+		{
+			
+		}
+
+		// Return if no wall is found in range.
+		if (!sector || wallIndex < 0) { return; }
+
+		EditorWall* wall = &sector->walls[wallIndex];
+		Vec2f v0 = sector->vtx[wall->idx[0]];
+		Vec2f v1 = sector->vtx[wall->idx[1]];
+		Vec2f newPos = v0;
+
+		f32 s = closestPointOnLineSegment(v0, v1, worldPos, &newPos);
+		if (snapToGridEnabled)
+		{
+			// Determine which projection we are using (XY or ZY).
+			// This should match the way grids are rendered on surfaces.
+			const f32 dx = fabsf(v1.x - v0.x);
+			const f32 dz = fabsf(v1.z - v0.z);
+			if (dx >= dz)  // X-intersect with line segment.
+			{
+				snapToGrid(&newPos.x);
+				s = (newPos.x - v0.x) / (v1.x - v0.x);
+			}
+			else  // Z-intersect with line segment.
+			{
+				snapToGrid(&newPos.z);
+				s = (newPos.z - v0.z) / (v1.z - v0.z);
+			}
+			newPos = { v0.x + s * (v1.x - v0.x), v0.z + s * (v1.z - v0.z) };
+		}
+
+		if (s > FLT_EPSILON && s < 1.0f - FLT_EPSILON)
+		{
+			// Split the wall.
+			splitWall(sector, wallIndex, newPos);
+		}
 	}
 
 	void handleMouseControlWall(Vec2f worldPos)
@@ -1075,28 +1137,7 @@ namespace LevelEditor
 			s_dragSelect.active = false;
 		}
 
-		if (!s_editMove && !mouseDown && !mousePressed && s_featureHovered.sector && s_featureHovered.featureIndex >= 0 &&
-			 s_featureHovered.part != HP_FLOOR && s_featureHovered.part != HP_CEIL)
-		{
-			// TODO: Hotkeys.
-			bool insertVtx = TFE_Input::keyDown(KEY_INSERT);
-			if (insertVtx)
-			{
-				// TODO: Snap to grid.
-
-				EditorWall* wall = &s_featureHovered.sector->walls[s_featureHovered.featureIndex];
-				Vec2f v0 = s_featureHovered.sector->vtx[wall->idx[0]];
-				Vec2f v1 = s_featureHovered.sector->vtx[wall->idx[1]];
-				Vec2f newPos = v0;
-
-				f32 s = closestPointOnLineSegment(v0, v1, worldPos, &newPos);
-				if (s > FLT_EPSILON && s < 1.0f - FLT_EPSILON)
-				{
-					// Split the wall.
-					splitWall(s_featureHovered.sector, s_featureHovered.featureIndex, newPos);
-				}
-			}
-		}
+		handleVertexInsert(worldPos);
 	}
 
 	void handleHoverAndSelection(RayHitInfo* info)
@@ -1775,7 +1816,7 @@ namespace LevelEditor
 		s_viewportPos.x += (worldPos.x - newWorldPos.x);
 		s_viewportPos.z += (worldPos.z - newWorldPos.z);
 	}
-
+		
 	void snapToGrid(f32* value)
 	{
 		if (!TFE_Input::keyModDown(KEYMOD_ALT) && s_gridSize != 0.0f)
