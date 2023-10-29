@@ -1285,6 +1285,27 @@ namespace LevelEditor
 			handleMouseControlWall({ s_cursor3d.x, s_cursor3d.z });
 		}
 	}
+
+	void checkForWallHit2d(Vec2f& worldPos, EditorSector*& wallSector, s32& wallIndex, HitPart& part, EditorSector* hoverSector)
+	{
+		// See if we are close enough to "hover" a wall
+		wallIndex = -1;
+		wallSector = nullptr;
+		if (hoverSector)
+		{
+			const f32 maxDist = s_zoom2d * 16.0f;
+			wallIndex = findClosestWallInSector(hoverSector, &worldPos, maxDist * maxDist, nullptr);
+			if (wallIndex >= 0)
+			{
+				wallSector = hoverSector;
+				part = HP_MID;
+			}
+			else
+			{
+				wallSector = nullptr;
+			}
+		}
+	}
 		
 	void updateWindowControls()
 	{
@@ -1343,14 +1364,14 @@ namespace LevelEditor
 
 				if (s_editMode == LEDIT_VERTEX)
 				{
+					// Keep track of the last vertex hovered sector and use it if no hovered sector is active to
+					// make selecting vertices less fiddly.
+					EditorSector* hoveredSector = s_featureHovered.sector ? s_featureHovered.sector : s_featureHovered.prevSector;
+
 					// See if we are close enough to "hover" a vertex
 					s_featureHovered.featureIndex = -1;
 					if (s_featureHovered.sector || s_featureHovered.prevSector)
 					{
-						// Keep track of the last vertex hovered sector and use it if no hovered sector is active to
-						// make selecting vertices less fiddly.
-						EditorSector* hoveredSector = s_featureHovered.sector ? s_featureHovered.sector : s_featureHovered.prevSector;
-
 						const size_t vtxCount = hoveredSector->vtx.size();
 						const Vec2f* vtx = hoveredSector->vtx.data();
 
@@ -1376,6 +1397,10 @@ namespace LevelEditor
 						}
 					}
 
+					// Check for the nearest wall as well.
+					checkForWallHit2d(worldPos, s_featureCurWall.sector, s_featureCurWall.featureIndex, s_featureCurWall.part, hoveredSector);
+
+					// Handle mouse control.
 					handleMouseControlVertex(worldPos);
 				}
 
@@ -1383,25 +1408,10 @@ namespace LevelEditor
 				{
 					// See if we are close enough to "hover" a wall
 					s_featureHovered.featureIndex = -1;
-					if (s_featureHovered.sector || s_featureHovered.prevSector)
-					{
-						// Keep track of the last vertex hovered sector and use it if no hovered sector is active to
-						// make selecting vertices less fiddly.
-						EditorSector* hoveredSector = s_featureHovered.sector ? s_featureHovered.sector : s_featureHovered.prevSector;
 
-						const f32 maxDist = s_zoom2d * 16.0f;
-						s_featureHovered.featureIndex = findClosestWallInSector(hoveredSector, &worldPos, maxDist * maxDist, nullptr);
-						if (s_featureHovered.featureIndex >= 0)
-						{
-							s_featureHovered.sector = hoveredSector;
-							s_featureHovered.prevSector = hoveredSector;
-							s_featureHovered.part = HP_MID;
-						}
-						else
-						{
-							s_featureHovered.sector = nullptr;
-						}
-					}
+					EditorSector* hoverSector = s_featureHovered.sector ? s_featureHovered.sector : s_featureHovered.prevSector;
+					checkForWallHit2d(worldPos, s_featureHovered.sector, s_featureHovered.featureIndex, s_featureHovered.part, hoverSector);
+					if (s_featureHovered.sector) { s_featureHovered.prevSector = s_featureHovered.sector; }
 
 					handleMouseControlWall(worldPos);
 				}

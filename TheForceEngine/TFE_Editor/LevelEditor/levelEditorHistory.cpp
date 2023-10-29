@@ -66,6 +66,14 @@ namespace LevelEditor
 		history_step(1);
 	}
 
+	void clearSelections()
+	{
+		s_selectionList.clear();
+		s_featureCur = {};
+		s_featureCurWall = {};
+		s_featureHovered = {};
+	}
+
 	////////////////////////////////
 	// Commands
 	////////////////////////////////
@@ -160,5 +168,7 @@ namespace LevelEditor
 		const Vec2f newPos = hBuffer_getVec2f();
 		// Call the editor command.
 		edit_splitWall(&s_level.sectors[sectorIndex], wallIndex, newPos);
+		// For now, clear out selections.
+		clearSelections();
 	}
 }
