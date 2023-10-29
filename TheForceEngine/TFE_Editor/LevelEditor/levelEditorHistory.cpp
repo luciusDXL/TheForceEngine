@@ -7,6 +7,8 @@
 
 using namespace TFE_Editor;
 
+// TODO: Capture edit mode and selection data when creating a delta/snapshot.
+
 namespace LevelEditor
 {
 	enum LevCommand
@@ -101,6 +103,8 @@ namespace LevelEditor
 		const Vec2f delta = hBuffer_getVec2f();
 		// Call the editor command.
 		edit_moveVertices(count, vertices, delta);
+		// For now, clear out selections.
+		clearSelections();
 	}
 
 	/////////////////////////////////
@@ -122,6 +126,8 @@ namespace LevelEditor
 		const Vec2f pos = hBuffer_getVec2f();
 		// Call the editor command.
 		edit_setVertexPos(id, pos);
+		// For now, clear out selections.
+		clearSelections();
 	}
 
 	/////////////////////////////////
@@ -145,6 +151,8 @@ namespace LevelEditor
 		const f32 delta = hBuffer_getF32();
 		// Call the editor command.
 		edit_moveFlats(count, flats, delta);
+		// For now, clear out selections.
+		clearSelections();
 	}
 
 	/////////////////////////////////
