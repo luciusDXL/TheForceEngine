@@ -417,6 +417,12 @@ namespace LevelEditor
 		poly.triIdx.clear();
 
 		TFE_Polygon::computeTriangulation(&sector->poly);
+
+		// Update the sector bounds.
+		sector->bounds[0] = { poly.bounds[0].x, 0.0f, poly.bounds[0].z };
+		sector->bounds[1] = { poly.bounds[1].x, 0.0f, poly.bounds[1].z };
+		sector->bounds[0].y = min(sector->floorHeight, sector->ceilHeight);
+		sector->bounds[1].y = max(sector->floorHeight, sector->ceilHeight);
 	}
 
 	// Update the sector itself from the sector's polygon.

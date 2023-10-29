@@ -958,12 +958,6 @@ namespace LevelEditor
 
 			splitWall1(nextSector, mirrorWallIndex, newPos, outWallsAdjoin);
 						
-			sectorToPolygon(nextSector);
-			nextSector->bounds[0] = { nextSector->poly.bounds[0].x, 0.0f, nextSector->poly.bounds[0].z };
-			nextSector->bounds[1] = { nextSector->poly.bounds[1].x, 0.0f, nextSector->poly.bounds[1].z };
-			nextSector->bounds[0].y = min(nextSector->floorHeight, nextSector->ceilHeight);
-			nextSector->bounds[1].y = max(nextSector->floorHeight, nextSector->ceilHeight);
-
 			// Fix-up the mirrors for the adjoined sector.
 			fixupWallMirrors(nextSector, mirrorWallIndex);
 
@@ -972,13 +966,12 @@ namespace LevelEditor
 			outWalls[1]->mirrorId = mirrorWallIndex;
 			outWallsAdjoin[0]->mirrorId = wallIndex + 1;
 			outWallsAdjoin[1]->mirrorId = wallIndex;
-		}
 
+			// Fix-up the adjoined sector polygon.
+			sectorToPolygon(nextSector);
+		}
+		// Fix-up the sector polygon.
 		sectorToPolygon(sector);
-		sector->bounds[0] = { sector->poly.bounds[0].x, 0.0f, sector->poly.bounds[0].z };
-		sector->bounds[1] = { sector->poly.bounds[1].x, 0.0f, sector->poly.bounds[1].z };
-		sector->bounds[0].y = min(sector->floorHeight, sector->ceilHeight);
-		sector->bounds[1].y = max(sector->floorHeight, sector->ceilHeight);
 	}
 
 	void handleVertexInsert(Vec2f worldPos)
@@ -1001,7 +994,7 @@ namespace LevelEditor
 		}
 		else if (s_editMode == LEDIT_VERTEX)
 		{
-			
+			// Determine the wall under the cursor.
 		}
 
 		// Return if no wall is found in range.
@@ -2040,10 +2033,6 @@ namespace LevelEditor
 		sector->vtx[featureIndex] = pos;
 
 		sectorToPolygon(sector);
-		sector->bounds[0] = { sector->poly.bounds[0].x, 0.0f, sector->poly.bounds[0].z };
-		sector->bounds[1] = { sector->poly.bounds[1].x, 0.0f, sector->poly.bounds[1].z };
-		sector->bounds[0].y = min(sector->floorHeight, sector->ceilHeight);
-		sector->bounds[1].y = max(sector->floorHeight, sector->ceilHeight);
 	}
 
 	void edit_moveVertices(s32 count, const FeatureId* vtxIds, Vec2f delta)
@@ -2075,10 +2064,6 @@ namespace LevelEditor
 		{
 			EditorSector* sector = list[i];
 			sectorToPolygon(sector);
-			sector->bounds[0] = { sector->poly.bounds[0].x, 0.0f, sector->poly.bounds[0].z };
-			sector->bounds[1] = { sector->poly.bounds[1].x, 0.0f, sector->poly.bounds[1].z };
-			sector->bounds[0].y = min(sector->floorHeight, sector->ceilHeight);
-			sector->bounds[1].y = max(sector->floorHeight, sector->ceilHeight);
 		}
 	}
 		
