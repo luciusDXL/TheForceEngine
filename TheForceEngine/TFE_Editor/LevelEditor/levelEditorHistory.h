@@ -11,6 +11,7 @@ namespace LevelEditor
 		LName_SetVertex,
 		LName_MoveWall,
 		LName_MoveFlat,
+		LName_InsertVertex,
 		LName_Count
 	};
 
@@ -27,4 +28,5 @@ namespace LevelEditor
 	void cmd_addMoveVertices(s32 count, const FeatureId* vertices, Vec2f delta, LevCommandName name = LName_MoveVertex);
 	void cmd_addSetVertex(FeatureId vertex, Vec2f pos);
 	void cmd_addMoveFlats(s32 count, const FeatureId* flats, f32 delta);
+	void cmd_addInsertVertex(s32 sectorIndex, s32 wallIndex, Vec2f newPos);
 }

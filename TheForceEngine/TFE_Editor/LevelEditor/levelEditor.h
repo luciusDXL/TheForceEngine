@@ -48,4 +48,5 @@ namespace LevelEditor
 	void edit_moveVertices(s32 count, const FeatureId* vtxIds, Vec2f delta);
 	void edit_moveFlats(s32 count, const FeatureId* flatIds, f32 delta);
 	void edit_setVertexPos(FeatureId id, Vec2f pos);
+	void edit_splitWall(EditorSector* sector, s32 wallIndex, Vec2f newPos);
 }

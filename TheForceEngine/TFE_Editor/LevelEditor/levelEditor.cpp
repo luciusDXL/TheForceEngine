@@ -77,6 +77,7 @@ namespace LevelEditor
 	// Unified feature hover/cur
 	Feature s_featureHovered = {};
 	Feature s_featureCur = {};
+	Feature s_featureCurWall = {};	// used to access wall data in other modes.
 
 	// Vertex
 	Vec3f s_hoveredVtxPos;
@@ -160,6 +161,7 @@ namespace LevelEditor
 	void gatherVerticesFromWallSelection();
 	bool vtxEqual(const Vec2f* a, const Vec2f* b);
 	void edit_moveFeatures(const Vec3f& newPos);
+	void handleVertexInsert(Vec2f worldPos);
 
 	void snapToGrid(f32* value);
 	void snapToGrid(Vec2f* pos);
@@ -763,7 +765,7 @@ namespace LevelEditor
 		return true;
 	}
 			
-	void handleMouseControlVertex()
+	void handleMouseControlVertex(Vec2f worldPos)
 	{
 		s32 mx, my;
 		TFE_Input::getMousePos(&mx, &my);
@@ -851,6 +853,8 @@ namespace LevelEditor
 		{
 			s_dragSelect.active = false;
 		}
+
+		handleVertexInsert(worldPos);
 	}
 
 	void splitWall1(EditorSector* sector, s32 wallIndex, Vec2f newPos, EditorWall* outWalls[])
@@ -922,27 +926,20 @@ namespace LevelEditor
 		}
 	}
 
-	void splitWall(EditorSector* sector, s32 wallIndex, Vec2f newPos)
+	// Algorithm:
+	// * Insert new wall after current wall.
+	// * Find any references to sector with mirror > currentWall and fix-up (+1).
+	// * If current wall has an adjoin, split the mirror wall.
+	// * Find any references to the adjoined sector with mirror > currentWall mirror.
+	void edit_splitWall(EditorSector* sector, s32 wallIndex, Vec2f newPos)
 	{
-		// First make sure there isn't already a vertex here...
+		// If a vertex at the desired position already exists, do not split the wall (early-out).
 		const size_t vtxCount = sector->vtx.size();
 		const Vec2f* vtx = sector->vtx.data();
-		for (size_t v = 0; v < vtxCount; v++)
-		{
-			// If the vertex already exists, then do nothing.
-			if (vtxEqual(&newPos, &vtx[v]))
-			{
-				return;
-			}
-		}
+		for (size_t v = 0; v < vtxCount; v++) { if (vtxEqual(&newPos, &vtx[v])) {return;} }
 
-		// Algorithm:
-		// Insert new wall after current wall.
-		// Find any references to sector with mirror > currentWall and modify (+1).
-		// If current wall has an adjoin, split the mirror wall.
-		// Find any references to the adjoined sector with mirror > currentWall mirror.
-
-		// Insert new wall.
+		// Split the wall, insert the new wall after the original.
+		// Example, split B into {B, N} : {A, B, C, D} -> {A, B, N, C, D}.
 		EditorWall* outWalls[2] = { nullptr };
 		splitWall1(sector, wallIndex, newPos, outWalls);
 
@@ -952,10 +949,11 @@ namespace LevelEditor
 		// If the current wall is an adjoin, split the matching adjoin.
 		if (outWalls[0]->adjoinId >= 0 && outWalls[0]->mirrorId >= 0)
 		{
-			EditorWall* outWallsAdjoin[2] = { nullptr };
 			EditorSector* nextSector = &s_level.sectors[outWalls[0]->adjoinId];
-			s32 mirrorWallIndex = outWalls[0]->mirrorId;
+			const s32 mirrorWallIndex = outWalls[0]->mirrorId;
 
+			// Split the mirror wall.
+			EditorWall* outWallsAdjoin[2] = { nullptr };
 			splitWall1(nextSector, mirrorWallIndex, newPos, outWallsAdjoin);
 						
 			// Fix-up the mirrors for the adjoined sector.
@@ -992,9 +990,11 @@ namespace LevelEditor
 			sector = s_featureHovered.sector;
 			wallIndex = s_featureHovered.featureIndex;
 		}
-		else if (s_editMode == LEDIT_VERTEX)
+		else if (s_editMode == LEDIT_VERTEX && s_featureCurWall.sector && s_featureCurWall.part != HP_FLOOR && s_featureCurWall.part != HP_CEIL)
 		{
 			// Determine the wall under the cursor.
+			sector = s_featureCurWall.sector;
+			wallIndex = s_featureCurWall.featureIndex;
 		}
 
 		// Return if no wall is found in range.
@@ -1028,7 +1028,8 @@ namespace LevelEditor
 		if (s > FLT_EPSILON && s < 1.0f - FLT_EPSILON)
 		{
 			// Split the wall.
-			splitWall(sector, wallIndex, newPos);
+			cmd_addInsertVertex(sector->id, wallIndex, newPos);
+			edit_splitWall(sector, wallIndex, newPos);
 		}
 	}
 
@@ -1133,6 +1134,59 @@ namespace LevelEditor
 		handleVertexInsert(worldPos);
 	}
 
+	void checkForWallHit3d(RayHitInfo* info, EditorSector*& wallSector, s32& wallIndex, HitPart& part, const EditorSector* hoverSector)
+	{
+		// See if we are close enough to "hover" a vertex
+		wallIndex = -1;
+		if (info->hitWallId >= 0 && info->hitSectorId >= 0)
+		{
+			wallSector = &s_level.sectors[info->hitSectorId];
+			wallIndex = info->hitWallId;
+			part = info->hitPart;
+		}
+		else
+		{
+			// Are we close enough to an edge?
+			// Project the point onto the floor.
+			const Vec2f pos2d = { info->hitPos.x, info->hitPos.z };
+			const f32 distFromCam = TFE_Math::distance(&info->hitPos, &s_camera.pos);
+			const f32 maxDist = distFromCam * 16.0f / f32(s_viewportSize.z);
+			const f32 maxDistSq = maxDist * maxDist;
+			wallIndex = findClosestWallInSector(hoverSector, &pos2d, maxDist * maxDist, nullptr);
+			if (wallIndex >= 0)
+			{
+				const EditorWall* wall = &hoverSector->walls[wallIndex];
+				const EditorSector* next = wall->adjoinId >= 0 ? &s_level.sectors[wall->adjoinId] : nullptr;
+				if (!next)
+				{
+					part = HP_MID;
+				}
+				else if (info->hitPart == HP_FLOOR)
+				{
+					part = (next->floorHeight > hoverSector->floorHeight) ? HP_BOT : HP_MID;
+				}
+				else if (info->hitPart == HP_CEIL)
+				{
+					part = (next->ceilHeight < hoverSector->ceilHeight) ? HP_TOP : HP_MID;
+				}
+			}
+			else
+			{
+				// Otherwise, select the floor or ceiling...
+				if (info->hitPart == HP_FLOOR)
+				{
+					part = HP_FLOOR;
+					wallIndex = 0;
+				}
+				else if (info->hitPart == HP_CEIL)
+				{
+					part = HP_CEIL;
+					wallIndex = 0;
+				}
+			}
+		}
+	}
+
 	void handleHoverAndSelection(RayHitInfo* info)
 	{
 		if (info->hitSectorId < 0) { return; }
@@ -1209,9 +1263,14 @@ namespace LevelEditor
 					s_featureHovered.featureIndex = closestVtx;
 					s_hoveredVtxPos = finalPos;
 				}
+
+				// Also check for the overlapping wall and store it in a special feature.
+				// This is used for features such as vertex insertion even when not in wall mode.
+				s_featureCurWall = {};
+				checkForWallHit3d(info, s_featureCurWall.sector, s_featureCurWall.featureIndex, s_featureCurWall.part, hoveredSector);
 			}
 
-			handleMouseControlVertex();
+			handleMouseControlVertex({ s_cursor3d.x, s_cursor3d.z });
 		}
 
 		//////////////////////////////////////
@@ -1220,54 +1279,9 @@ namespace LevelEditor
 		if (s_editMode == LEDIT_WALL)
 		{
 			// See if we are close enough to "hover" a vertex
+			const EditorSector* hoveredSector = s_featureHovered.sector;
 			s_featureHovered.featureIndex = -1;
-			if (info->hitWallId >= 0)
-			{
-				s_featureHovered.featureIndex = info->hitWallId;
-				s_featureHovered.part = info->hitPart;
-			}
-			else
-			{
-				// Are we close enough to an edge?
-				// Project the point onto the floor.
-				const Vec2f pos2d = { info->hitPos.x, info->hitPos.z };
-				const f32 distFromCam = TFE_Math::distance(&info->hitPos, &s_camera.pos);
-				const f32 maxDist = distFromCam * 16.0f / f32(s_viewportSize.z);
-				const f32 maxDistSq = maxDist * maxDist;
-				s_featureHovered.featureIndex = findClosestWallInSector(s_featureHovered.sector, &pos2d, maxDist * maxDist, nullptr);
-				if (s_featureHovered.featureIndex >= 0)
-				{
-					EditorWall* wall = &s_featureHovered.sector->walls[s_featureHovered.featureIndex];
-					EditorSector* next = wall->adjoinId >= 0 ? &s_level.sectors[wall->adjoinId] : nullptr;
-					if (!next)
-					{
-						s_featureHovered.part = HP_MID;
-					}
-					else if (info->hitPart == HP_FLOOR)
-					{
-						s_featureHovered.part = (next->floorHeight > s_featureHovered.sector->floorHeight) ? HP_BOT : HP_MID;
-					}
-					else if (info->hitPart == HP_CEIL)
-					{
-						s_featureHovered.part = (next->ceilHeight < s_featureHovered.sector->ceilHeight) ? HP_TOP : HP_MID;
-					}
-				}
-				else
-				{
-					// Otherwise, select the floor or ceiling...
-					if (info->hitPart == HP_FLOOR)
-					{
-						s_featureHovered.part = HP_FLOOR;
-						s_featureHovered.featureIndex = 0;
-					}
-					else if (info->hitPart == HP_CEIL)
-					{
-						s_featureHovered.part = HP_CEIL;
-						s_featureHovered.featureIndex = 0;
-					}
-				}
-			}
-
+			checkForWallHit3d(info, s_featureHovered.sector, s_featureHovered.featureIndex, s_featureHovered.part, hoveredSector);
 			handleMouseControlWall({ s_cursor3d.x, s_cursor3d.z });
 		}
 	}
@@ -1362,7 +1376,7 @@ namespace LevelEditor
 						}
 					}
 
-					handleMouseControlVertex();
+					handleMouseControlVertex(worldPos);
 				}
 
 				if (s_editMode == LEDIT_WALL)
@@ -1426,7 +1440,7 @@ namespace LevelEditor
 
 				if (s_editMode == LEDIT_VERTEX)
 				{
-					handleMouseControlVertex();
+					handleMouseControlVertex({ s_cursor3d.x, s_cursor3d.z });
 				}
 				else if (s_editMode == LEDIT_WALL)
 				{

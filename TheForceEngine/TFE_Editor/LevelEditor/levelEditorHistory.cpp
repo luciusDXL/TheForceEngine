@@ -14,6 +14,7 @@ namespace LevelEditor
 		LCmd_MoveVertex = CMD_START,
 		LCmd_SetVertex,
 		LCmd_MoveFlat,
+		LCmd_InsertVertex,
 		LCmd_Count
 	};
 		
@@ -21,6 +22,7 @@ namespace LevelEditor
 	void cmd_applyMoveVertices();
 	void cmd_applySetVertex();
 	void cmd_applyMoveFlats();
+	void cmd_applyInsertVertex();
 
 	void levHistory_init()
 	{
@@ -29,10 +31,12 @@ namespace LevelEditor
 		history_registerCommand(LCmd_MoveVertex, cmd_applyMoveVertices);
 		history_registerCommand(LCmd_SetVertex, cmd_applySetVertex);
 		history_registerCommand(LCmd_MoveFlat, cmd_applyMoveFlats);
+		history_registerCommand(LCmd_InsertVertex, cmd_applyInsertVertex);
 		history_registerName(LName_MoveVertex, "Move Vertice(s)");
 		history_registerName(LName_SetVertex, "Set Vertex Position");
 		history_registerName(LName_MoveWall, "Move Wall(s)");
 		history_registerName(LName_MoveFlat, "Move Flat(s)");
+		history_registerName(LName_InsertVertex, "Insert Vertex");
 	}
 
 	void levHistory_destroy()
@@ -133,5 +137,28 @@ namespace LevelEditor
 		const f32 delta = hBuffer_getF32();
 		// Call the editor command.
 		edit_moveFlats(count, flats, delta);
+	}
+
+	/////////////////////////////////
+	// Insert Vertex
+	void cmd_addInsertVertex(s32 sectorIndex, s32 wallIndex, Vec2f newPos)
+	{
+		// Try to create a command, if it returns false - then a snapshot was created
+		// instead.
+		if (!history_createCommand(LCmd_InsertVertex, LName_InsertVertex)) { return; }
+		// Add the command data.
+		hBuffer_addS32(sectorIndex);
+		hBuffer_addS32(wallIndex);
+		hBuffer_addVec2f(newPos);
+	}
+
+	void cmd_applyInsertVertex()
+	{
+		// Extract the command data.
+		const s32 sectorIndex = hBuffer_getS32();
+		const s32 wallIndex = hBuffer_getS32();
+		const Vec2f newPos = hBuffer_getVec2f();
+		// Call the editor command.
+		edit_splitWall(&s_level.sectors[sectorIndex], wallIndex, newPos);
 	}
 }

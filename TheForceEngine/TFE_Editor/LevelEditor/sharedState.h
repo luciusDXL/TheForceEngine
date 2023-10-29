@@ -31,6 +31,7 @@ namespace LevelEditor
 
 	extern Feature s_featureHovered;
 	extern Feature s_featureCur;
+	extern Feature s_featureCurWall;
 
 	extern Vec3f s_hoveredVtxPos;
 	extern Vec3f s_curVtxPos;
