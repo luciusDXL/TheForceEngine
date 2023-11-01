@@ -1185,6 +1185,7 @@ namespace LevelEditor
 			const f32 maxDist = distFromCam * 16.0f / f32(s_viewportSize.z);
 			const f32 maxDistSq = maxDist * maxDist;
 			wallIndex = findClosestWallInSector(hoverSector, &pos2d, maxDist * maxDist, nullptr);
+			wallSector = (EditorSector*)hoverSector;
 			if (wallIndex >= 0)
 			{
 				const EditorWall* wall = &hoverSector->walls[wallIndex];

@@ -59,13 +59,11 @@ namespace LevelEditor
 		
 	void levHistory_undo()
 	{
-		// TODO: Figure out how to track sector changes properly.
 		history_step(-1);
 	}
 
 	void levHistory_redo()
 	{
-		// TODO: Figure out how to track sector changes properly.
 		history_step(1);
 	}
 		
