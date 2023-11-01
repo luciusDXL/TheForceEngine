@@ -4,6 +4,7 @@
 #include <TFE_Editor/LevelEditor/levelEditorData.h>
 #include <assert.h>
 #include <algorithm>
+#include <cstring>
 
 using namespace TFE_Editor;
 
