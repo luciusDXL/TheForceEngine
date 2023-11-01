@@ -973,6 +973,37 @@ namespace LevelEditor
 		sectorToPolygon(sector);
 	}
 
+	// Merge two walls into a single wall. This collapses both into wall 0.
+	// We assume that the walls are a vertex, aka wall0[i1] == wall1[i0]
+	void edit_mergeWalls(s32 sectorId, s32 wallIndex0, s32 wallIndex1)
+	{
+		EditorSector* sector = &s_level.sectors[sectorId];
+		EditorWall* wall0 = &sector->walls[wallIndex0];
+		EditorWall* wall1 = &sector->walls[wallIndex1];
+		if (wall1->idx[1] == wall0->idx[0])
+		{
+			std::swap(wallIndex0, wallIndex1);
+			std::swap(wall0, wall1);
+		}
+		// These walls don't share a vertex.
+		if (wall0->idx[1] != wall1->idx[0])
+		{
+			return;
+		}
+
+		if (sector->walls.size() <= 3)
+		{
+			// Delete the sector...
+			return;
+		}
+
+		s32 vtxToDelete  = wall0->idx[1];
+		s32 wallToDelete = wallIndex1;
+		wall0->idx[1] = wall1->idx[1];
+
+		
+	}
+
 	void handleVertexInsert(Vec2f worldPos)
 	{
 		const bool mousePressed = TFE_Input::mousePressed(MouseButton::MBUTTON_LEFT);
@@ -2736,5 +2767,13 @@ namespace LevelEditor
 				s_moveStarted = false;
 			}
 		}
+	}
+
+	void edit_clearSelections()
+	{
+		s_selectionList.clear();
+		s_featureCur = {};
+		s_featureCurWall = {};
+		s_featureHovered = {};
 	}
 }

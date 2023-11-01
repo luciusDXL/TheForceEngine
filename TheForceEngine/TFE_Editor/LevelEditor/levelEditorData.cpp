@@ -52,6 +52,8 @@ namespace LevelEditor
 
 	EditorLevel s_level = {};
 
+	extern void edit_clearSelections();
+
 	enum Constants
 	{
 		LevVersionMin = 15,
@@ -887,5 +889,9 @@ namespace LevelEditor
 		}
 		// Then copy the snapshot to the level data itself. Its the new state.
 		s_level = s_curSnapshot;
+
+		// For now until the way snapshot memory is handled is refactored, to avoid duplicate code that will be removed later.
+		// TODO: Handle edit state properly here too.
+		edit_clearSelections();
 	}
 }

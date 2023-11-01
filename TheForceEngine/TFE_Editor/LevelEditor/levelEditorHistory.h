@@ -24,6 +24,9 @@ namespace LevelEditor
 	void levHistory_undo();
 	void levHistory_redo();
 
+	void captureEditState();
+	void restoreEditState();
+
 	// Commands
 	void cmd_addMoveVertices(s32 count, const FeatureId* vertices, Vec2f delta, LevCommandName name = LName_MoveVertex);
 	void cmd_addSetVertex(FeatureId vertex, Vec2f pos);

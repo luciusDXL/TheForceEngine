@@ -233,6 +233,13 @@ namespace TFE_Editor
 	}
 
 	// Get values from the buffer.
+	s16 hBuffer_getS16()
+	{
+		s16 value = *((s16*)&s_historyBuffer[s_curBufferAddr]);
+		s_curBufferAddr += sizeof(s16);
+		return value;
+	}
+
 	s32 hBuffer_getS32()
 	{
 		s32 value = *((s32*)&s_historyBuffer[s_curBufferAddr]);
@@ -244,6 +251,13 @@ namespace TFE_Editor
 	{
 		f32 value = *((f32*)&s_historyBuffer[s_curBufferAddr]);
 		s_curBufferAddr += sizeof(f32);
+		return value;
+	}
+
+	u32 hBuffer_getU32()
+	{
+		u32 value = *((u32*)&s_historyBuffer[s_curBufferAddr]);
+		s_curBufferAddr += sizeof(u32);
 		return value;
 	}
 
@@ -283,6 +297,15 @@ namespace TFE_Editor
 	}
 
 	// Add values to the buffer.
+	void hBuffer_addS16(s16 value)
+	{
+		u16 dataSize = sizeof(s16);
+		s_historyBuffer.resize(s_curBufferAddr + dataSize);
+
+		*((s16*)&s_historyBuffer[s_curBufferAddr]) = value;
+		s_curBufferAddr += dataSize;
+	}
+
 	void hBuffer_addS32(s32 value)
 	{
 		u32 dataSize = sizeof(s32);
@@ -298,6 +321,15 @@ namespace TFE_Editor
 		s_historyBuffer.resize(s_curBufferAddr + dataSize);
 
 		*((f32*)&s_historyBuffer[s_curBufferAddr]) = value;
+		s_curBufferAddr += dataSize;
+	}
+
+	void hBuffer_addU32(u32 value)
+	{
+		u32 dataSize = sizeof(u32);
+		s_historyBuffer.resize(s_curBufferAddr + dataSize);
+
+		*((u32*)&s_historyBuffer[s_curBufferAddr]) = value;
 		s_curBufferAddr += dataSize;
 	}
 
