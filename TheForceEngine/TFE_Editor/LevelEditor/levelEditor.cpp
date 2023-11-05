@@ -810,6 +810,7 @@ namespace LevelEditor
 
 			edit_deleteVertex(sectorId, vertexIndex);
 			cmd_addDeleteVertex(sectorId, vertexIndex);
+			return;
 		}
 
 		if (mousePressed)
@@ -1450,6 +1451,37 @@ namespace LevelEditor
 
 		const bool mousePressed = TFE_Input::mousePressed(MouseButton::MBUTTON_LEFT);
 		const bool mouseDown = TFE_Input::mouseDown(MouseButton::MBUTTON_LEFT);
+
+		const bool del = TFE_Input::keyPressed(KEY_DELETE);
+
+		if (del && (!s_selectionList.empty() || s_featureCur.featureIndex >= 0 || s_featureHovered.featureIndex >= 0))
+		{
+			s32 sectorId, wallIndex;
+			if (!s_selectionList.empty())
+			{
+				// TODO: Currently, you can only delete one vertex at a time. It should be possible to delete multiple.
+				EditorSector* featureSector = unpackFeatureId(s_selectionList[0], &wallIndex);
+				sectorId = featureSector->id;
+			}
+			else if (s_featureCur.featureIndex >= 0 && s_featureCur.sector)
+			{
+				sectorId = s_featureCur.sector->id;
+				wallIndex = s_featureCur.featureIndex;
+			}
+			else if (s_featureHovered.featureIndex >= 0 && s_featureHovered.sector)
+			{
+				sectorId = s_featureHovered.sector->id;
+				wallIndex = s_featureHovered.featureIndex;
+			}
+
+			// Deleting a wall is the same as deleting vertex 0.
+			// So re-use the same command, but with the delete wall name.
+			const s32 vertexIndex = s_level.sectors[sectorId].walls[wallIndex].idx[0];
+
+			edit_deleteVertex(sectorId, vertexIndex);
+			cmd_addDeleteVertex(sectorId, vertexIndex, LName_DeleteWall);
+			return;
+		}
 
 		if (mousePressed)
 		{

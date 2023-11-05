@@ -44,6 +44,7 @@ namespace LevelEditor
 		history_registerName(LName_MoveFlat, "Move Flat(s)");
 		history_registerName(LName_InsertVertex, "Insert Vertex");
 		history_registerName(LName_DeleteVertex, "Delete Vertex");
+		history_registerName(LName_DeleteWall, "Delete Wall");
 	}
 
 	void levHistory_destroy()
@@ -243,9 +244,9 @@ namespace LevelEditor
 
 	/////////////////////////////////
 	// Delete Vertex
-	void cmd_addDeleteVertex(s32 sectorIndex, s32 vertexIndex)
+	void cmd_addDeleteVertex(s32 sectorIndex, s32 vertexIndex, LevCommandName name)
 	{
-		CMD_BEGIN(LCmd_DeleteVertex, LName_DeleteVertex);
+		CMD_BEGIN(LCmd_DeleteVertex, name);
 		// Add the command data.
 		hBuffer_addS32(sectorIndex);
 		hBuffer_addS32(vertexIndex);
