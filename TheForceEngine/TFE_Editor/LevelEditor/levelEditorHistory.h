@@ -14,6 +14,7 @@ namespace LevelEditor
 		LName_InsertVertex,
 		LName_DeleteVertex,
 		LName_DeleteWall,
+		LName_DeleteSector,
 		LName_Count
 	};
 
@@ -35,4 +36,5 @@ namespace LevelEditor
 	void cmd_addMoveFlats(s32 count, const FeatureId* flats, f32 delta);
 	void cmd_addInsertVertex(s32 sectorIndex, s32 wallIndex, Vec2f newPos);
 	void cmd_addDeleteVertex(s32 sectorIndex, s32 vertexIndex, LevCommandName name = LName_DeleteVertex);
+	void cmd_addDeleteSector(s32 sectorId);
 }

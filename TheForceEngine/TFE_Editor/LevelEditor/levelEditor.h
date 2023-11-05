@@ -50,5 +50,6 @@ namespace LevelEditor
 	void edit_setVertexPos(FeatureId id, Vec2f pos);
 	void edit_splitWall(s32 sectorId, s32 wallIndex, Vec2f newPos);
 	void edit_deleteVertex(s32 sectorId, s32 vertexIndex);
+	void edit_deleteSector(s32 sectorId);
 	void edit_clearSelections();
 }
