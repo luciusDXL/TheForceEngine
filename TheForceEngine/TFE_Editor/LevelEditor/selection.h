@@ -41,7 +41,7 @@ namespace LevelEditor
 	extern DragSelect s_dragSelect;
 
 	FeatureId createFeatureId(EditorSector* sector, s32 featureIndex, s32 featureData = 0, bool isOverlapped = false);
-	EditorSector* unpackFeatureId(FeatureId id, s32* featureIndex, s32* featureData, bool* isOverlapped);
+	EditorSector* unpackFeatureId(FeatureId id, s32* featureIndex, s32* featureData = nullptr, bool* isOverlapped = nullptr);
 
 	// Selection
 	void selection_clear(bool clearDragSelect = true);

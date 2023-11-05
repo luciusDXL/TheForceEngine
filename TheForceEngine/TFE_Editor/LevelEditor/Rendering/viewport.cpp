@@ -623,8 +623,7 @@ namespace LevelEditor
 		{
 			s32 featureIndex;
 			HitPart featureData;
-			bool isOverlapped;
-			EditorSector* featureSector = unpackFeatureId(list[i], &featureIndex, (s32*)&featureData, &isOverlapped);
+			EditorSector* featureSector = unpackFeatureId(list[i], &featureIndex, (s32*)&featureData);
 
 			// In 3D, the floor and ceiling are surfaces too.
 			hoverAndSelectFlat = featureSector == s_featureHovered.sector;

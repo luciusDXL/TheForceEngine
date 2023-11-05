@@ -54,6 +54,13 @@ namespace LevelEditor
 	const f32 c_defaultYaw = PI;
 	const f32 c_defaultCameraHeight = 6.0f;
 
+	struct VertexWallGroup
+	{
+		EditorSector* sector;
+		s32 vertexIndex;
+		s32 leftWall, rightWall;
+	};
+	
 	enum WallMoveMode
 	{
 		WMM_NORMAL = 0,
@@ -85,9 +92,10 @@ namespace LevelEditor
 		
 	// Search
 	u32 s_searchKey = 0;
+	static std::vector<VertexWallGroup> s_vertexWallGroups;
 
 	static bool s_editMove = false;
-
+	
 	static EditorView s_view = EDIT_VIEW_2D;
 	static Vec2i s_editWinPos = { 0, 69 };
 	static Vec2i s_editWinSize = { 0 };
@@ -749,14 +757,13 @@ namespace LevelEditor
 
 		const FeatureId* list = s_selectionList.data();
 
-		s32 featureIndex, featureData;
-		bool overlapped;
-		EditorSector* featureSector = unpackFeatureId(list[0], &featureIndex, &featureData, &overlapped);
+		s32 featureIndex;
+		EditorSector* featureSector = unpackFeatureId(list[0], &featureIndex);
 		const Vec2f* vtx = &featureSector->vtx[featureIndex];
 
 		for (size_t i = 1; i < count; i++)
 		{
-			EditorSector* featureSector = unpackFeatureId(list[i], &featureIndex, &featureData, &overlapped);
+			EditorSector* featureSector = unpackFeatureId(list[i], &featureIndex);
 			if (!vtxEqual(vtx, &featureSector->vtx[featureIndex]))
 			{
 				return false;
@@ -778,6 +785,32 @@ namespace LevelEditor
 
 		const bool mousePressed = TFE_Input::mousePressed(MouseButton::MBUTTON_LEFT);
 		const bool mouseDown = TFE_Input::mouseDown(MouseButton::MBUTTON_LEFT);
+
+		const bool del = TFE_Input::keyPressed(KEY_DELETE);
+
+		if (del && (!s_selectionList.empty() || s_featureCur.featureIndex >= 0 || s_featureHovered.featureIndex >= 0))
+		{
+			s32 sectorId, vertexIndex;
+			if (!s_selectionList.empty())
+			{
+				// TODO: Currently, you can only delete one vertex at a time. It should be possible to delete multiple.
+				EditorSector* featureSector = unpackFeatureId(s_selectionList[0], &vertexIndex);
+				sectorId = featureSector->id;
+			}
+			else if (s_featureCur.featureIndex >= 0 && s_featureCur.sector)
+			{
+				sectorId = s_featureCur.sector->id;
+				vertexIndex = s_featureCur.featureIndex;
+			}
+			else if (s_featureHovered.featureIndex >= 0 && s_featureHovered.sector)
+			{
+				sectorId = s_featureHovered.sector->id;
+				vertexIndex = s_featureHovered.featureIndex;
+			}
+
+			edit_deleteVertex(sectorId, vertexIndex);
+			cmd_addDeleteVertex(sectorId, vertexIndex);
+		}
 
 		if (mousePressed)
 		{
@@ -973,35 +1006,374 @@ namespace LevelEditor
 		sectorToPolygon(sector);
 	}
 
-	// Merge two walls into a single wall. This collapses both into wall 0.
-	// We assume that the walls are a vertex, aka wall0[i1] == wall1[i0]
-	void edit_mergeWalls(s32 sectorId, s32 wallIndex0, s32 wallIndex1)
+	void deleteSector(s32 sectorId)
+	{
+		// TODO
+	}
+		
+	void selectVerticesToDelete(EditorSector* root, s32 featureIndex, const Vec2f* rootVtx)
+	{
+		s_searchKey++;
+
+		// Which walls share the vertex?
+		std::vector<EditorSector*> stack;
+
+		root->searchKey = s_searchKey;
+		{
+			const size_t wallCount = root->walls.size();
+			EditorWall* wall = root->walls.data();
+			s32 leftIdx = -1, rightIdx = -1;
+			for (size_t w = 0; w < wallCount; w++, wall++)
+			{
+				if (wall->idx[0] == featureIndex || wall->idx[1] == featureIndex)
+				{
+					if (wall->idx[0] == featureIndex) { rightIdx = w; }
+					else { leftIdx = w; }
+
+					if (wall->adjoinId >= 0)
+					{
+						EditorSector* next = &s_level.sectors[wall->adjoinId];
+						if (next->searchKey != s_searchKey)
+						{
+							stack.push_back(next);
+							next->searchKey = s_searchKey;
+						}
+					}
+				}
+			}
+
+			if (leftIdx >= 0 || rightIdx >= 0)
+			{
+				s_vertexWallGroups.push_back({ root, featureIndex, leftIdx, rightIdx });
+			}
+		}
+
+		while (!stack.empty())
+		{
+			EditorSector* sector = stack.back();
+			stack.pop_back();
+
+			const size_t wallCount = sector->walls.size();
+			EditorWall* wall = sector->walls.data();
+			s32 leftIdx = -1, rightIdx = -1;
+			s32 vtxId = -1;
+			for (size_t w = 0; w < wallCount; w++, wall++)
+			{
+				s32 i = -1;
+				if (vtxEqual(rootVtx, &sector->vtx[wall->idx[0]]))
+				{
+					i = 0;
+					rightIdx = w;
+					vtxId = wall->idx[0];
+				}
+				else if (vtxEqual(rootVtx, &sector->vtx[wall->idx[1]]))
+				{
+					i = 1;
+					leftIdx = w;
+					vtxId = wall->idx[1];
+				}
+
+				if (i >= 0)
+				{
+					// Add the next sector to the stack, if it hasn't already been processed.
+					EditorSector* next = wall->adjoinId < 0 ? nullptr : &s_level.sectors[wall->adjoinId];
+					if (next && next->searchKey != s_searchKey)
+					{
+						stack.push_back(next);
+						next->searchKey = s_searchKey;
+					}
+				}
+			}
+
+			if ((leftIdx >= 0 || rightIdx >= 0) && vtxId >= 0)
+			{
+				s_vertexWallGroups.push_back({ sector, vtxId, leftIdx, rightIdx });
+			}
+		}
+	}
+
+	void deleteVertex(EditorSector* sector, s32 vertexIndex)
+	{
+		// First delete the vertex.
+		sector->vtx.erase(sector->vtx.begin() + vertexIndex);
+
+		// Then fix-up the indices.
+		const s32 wallCount = (s32)sector->walls.size();
+		EditorWall* wall = sector->walls.data();
+		for (s32 w = 0; w < wallCount; w++, wall++)
+		{
+			assert(wall->idx[0] != vertexIndex && wall->idx[1] != vertexIndex);
+			if (wall->idx[0] > vertexIndex) { wall->idx[0]--; }
+			if (wall->idx[1] > vertexIndex) { wall->idx[1]--; }
+		}
+	}
+
+	bool sortBySectorId(EditorSector*& a, EditorSector*& b)
+	{
+		return a->id > b->id;
+	}
+
+	void deleteInvalidSectors(SectorList& list)
+	{
+		// Sort from highest id to lowest.
+		std::sort(list.begin(), list.end(), sortBySectorId);
+
+		// Then loop through the list and delete invalid sectors.
+		//   * Adjoins referencing a deleted sector must be removed.
+		//   * Adjoins referencing sectors by a higher ID must be modified.
+		//   * Deleted sectors must be removed from the list.
+		std::vector<s32> itemsToDelete;
+
+		const s32 count = (s32)list.size();
+		for (s32 i = 0; i < count; i++)
+		{
+			EditorSector* sector = list[i];
+			// For now just look at vertex count, later remove degenerates?
+			if (sector->vtx.size() >= 3) { continue; }
+
+			// *TODO*
+			// Is the sector degenerate (aka, has no area)?
+			
+			// *TODO*
+			// Go through the walls, we need to delete any mirrors - but only if this is a sub-sector.
+
+			// Get the ID and then erase it from the level.
+			s32 delId = sector->id;
+			s_level.sectors.erase(s_level.sectors.begin() + delId);
+
+			// Update Sector IDs
+			const s32 levSectorCount = (s32)s_level.sectors.size();
+			sector = s_level.sectors.data() + delId;
+			for (s32 s = delId; s < levSectorCount; s++, sector++)
+			{
+				sector->id--;
+			}
+
+			// Update Adjoins.
+			sector = s_level.sectors.data();
+			for (s32 s = 0; s < levSectorCount; s++, sector++)
+			{
+				const s32 wallCount = (s32)sector->walls.size();
+				EditorWall* wall = sector->walls.data();
+				for (s32 w = 0; w < wallCount; w++, wall++)
+				{
+					if (wall->adjoinId == delId)
+					{
+						// Remove adjoin since the sector no longer exists.
+						wall->adjoinId = -1;
+						wall->mirrorId = -1;
+					}
+					else if (wall->adjoinId > delId)
+					{
+						// All of the sector IDs after delID shifted down by 1.
+						wall->adjoinId--;
+					}
+				}
+			}
+
+			// Add to the erase list.
+			itemsToDelete.push_back(i);
+		}
+
+		// Erase sectors from the list since later fixup is not required.
+		const s32 delCount = (s32)itemsToDelete.size();
+		const s32* delList = itemsToDelete.data();
+		for (s32 i = delCount - 1; i >= 0; i--)
+		{
+			list.erase(list.begin() + delList[i]);
+		}
+	}
+
+	// This is an N^2 operation, the sector list should be as limited as possible.
+	void findAdjoinsInList(SectorList& list)
+	{
+		const s32 sectorCount = (s32)list.size();
+		EditorSector** sectorList = list.data();
+		for (s32 s0 = 0; s0 < sectorCount; s0++)
+		{
+			EditorSector* sector0 = sectorList[s0];
+			const s32 wallCount0 = (s32)sector0->walls.size();
+			EditorWall* wall0 = sector0->walls.data();
+			for (s32 w0 = 0; w0 < wallCount0; w0++, wall0++)
+			{
+				if (wall0->adjoinId >= 0 && wall0->mirrorId >= 0) { continue; }
+				const Vec2f* v0 = &sector0->vtx[wall0->idx[0]];
+				const Vec2f* v1 = &sector0->vtx[wall0->idx[1]];
+
+				// Now check for overlaps in other sectors in the list.
+				bool foundMirror = false;
+				for (s32 s1 = 0; s1 < sectorCount && !foundMirror; s1++)
+				{
+					EditorSector* sector1 = sectorList[s1];
+					if (sector1 == sector0) { continue; }
+
+					const s32 wallCount1 = (s32)sector1->walls.size();
+					EditorWall* wall1 = sector1->walls.data();
+					for (s32 w1 = 0; w1 < wallCount1 && !foundMirror; w1++, wall1++)
+					{
+						if (wall1->adjoinId >= 0 && wall1->mirrorId >= 0) { continue; }
+						const Vec2f* v2 = &sector1->vtx[wall1->idx[0]];
+						const Vec2f* v3 = &sector1->vtx[wall1->idx[1]];
+
+						if (vtxEqual(v0, v3) && vtxEqual(v1, v2))
+						{
+							// Found an adjoin!
+							wall0->adjoinId = sector1->id;
+							wall0->mirrorId = w1;
+							wall1->adjoinId = sector0->id;
+							wall1->mirrorId = w0;
+							// For now, assume one adjoin per wall.
+							foundMirror = true;
+						}
+						else if (vtxEqual(v0, v2) && vtxEqual(v1, v3))
+						{
+							assert(0);
+						}
+					}
+				}
+			}
+		}
+	}
+
+	// Get the proper mirror ID, assuming the existing ID is no longer valid.
+	s32 getMirrorId(EditorSector* sector, s32 wallId)
+	{
+		const EditorWall* curWall = &sector->walls[wallId];
+		const EditorSector* next = curWall->adjoinId < 0 ? nullptr : &s_level.sectors[curWall->adjoinId];
+		if (!next) { return -1; }
+
+		const Vec2f* v0 = &sector->vtx[curWall->idx[0]];
+		const Vec2f* v1 = &sector->vtx[curWall->idx[1]];
+		
+		const s32 wallCount = (s32)next->walls.size();
+		const EditorWall* wall = next->walls.data();
+		for (s32 w = 0; w < wallCount; w++, wall++)
+		{
+			const Vec2f* v2 = &next->vtx[wall->idx[0]];
+			const Vec2f* v3 = &next->vtx[wall->idx[1]];
+
+			if ((vtxEqual(v0, v3) && vtxEqual(v1, v2)) || (vtxEqual(v0, v2) && vtxEqual(v1, v3)))
+			{
+				return w;
+			}
+		}
+		return -1;
+	}
+
+	// Delete a vertex.
+	void edit_deleteVertex(s32 sectorId, s32 vertexIndex)
 	{
 		EditorSector* sector = &s_level.sectors[sectorId];
-		EditorWall* wall0 = &sector->walls[wallIndex0];
-		EditorWall* wall1 = &sector->walls[wallIndex1];
-		if (wall1->idx[1] == wall0->idx[0])
+		const Vec2f* pos = &sector->vtx[vertexIndex];
+
+		// Gather a list of walls and vertices.
+		s_vertexWallGroups.clear();
+		selectVerticesToDelete(sector, vertexIndex, pos);
+
+		s_searchKey++;
+		s_sectorChangeList.clear();
+				
+		const s32 wallGroupCount = (s32)s_vertexWallGroups.size();
+		VertexWallGroup* group = s_vertexWallGroups.data();
+		for (s32 i = 0; i < wallGroupCount; i++, group++)
 		{
-			std::swap(wallIndex0, wallIndex1);
-			std::swap(wall0, wall1);
-		}
-		// These walls don't share a vertex.
-		if (wall0->idx[1] != wall1->idx[0])
-		{
-			return;
+			EditorSector* sector = group->sector;
+			// Gather sectors to later re-generate adjoins.
+			if (sector->searchKey != s_searchKey)
+			{
+				sector->searchKey = s_searchKey;
+				s_sectorChangeList.push_back(sector);
+
+				// Add adjoined sectors as well.
+				const s32 wallCount = (s32)sector->walls.size();
+				EditorWall* wall = sector->walls.data();
+				for (s32 w = 0; w < wallCount; w++, wall++)
+				{
+					EditorSector* next = wall->adjoinId < 0 ? nullptr : &s_level.sectors[wall->adjoinId];
+					if (next && next->searchKey != s_searchKey)
+					{
+						next->searchKey = s_searchKey;
+						s_sectorChangeList.push_back(next);
+					}
+				}
+			}
+
+			// Merge walls in group.
+			if (group->leftWall >= 0 && group->rightWall >= 0)
+			{
+				EditorWall* left  = &sector->walls[group->leftWall];
+				EditorWall* right = &sector->walls[group->rightWall];
+				left->idx[1] = right->idx[1];
+								
+				// Erase adjoins, these will be fixed up later.
+				if (left->adjoinId >= 0)
+				{
+					const s32 mirrorId = getMirrorId(sector, group->leftWall);
+					EditorSector* next = &s_level.sectors[left->adjoinId];
+					if (mirrorId >= 0 && mirrorId < (s32)next->walls.size())
+					{
+						next->walls[mirrorId].adjoinId = -1;
+						next->walls[mirrorId].mirrorId = -1;
+					}
+				}
+				if (right->adjoinId >= 0 && right->mirrorId >= 0)
+				{
+					const s32 mirrorId = getMirrorId(sector, group->rightWall);
+					EditorSector* next = &s_level.sectors[right->adjoinId];
+					if (mirrorId >= 0 && mirrorId < (s32)next->walls.size())
+					{
+						next->walls[mirrorId].adjoinId = -1;
+						next->walls[mirrorId].mirrorId = -1;
+					}
+				}
+				left->adjoinId = -1;
+				left->mirrorId = -1;
+
+				sector->walls.erase(sector->walls.begin() + group->rightWall);
+			}
+			else if (group->leftWall >= 0)
+			{
+				EditorWall* left = &sector->walls[group->leftWall];
+				if (left->adjoinId >= 0)
+				{
+					const s32 mirrorId = getMirrorId(sector, group->leftWall);
+					EditorSector* next = &s_level.sectors[left->adjoinId];
+					if (mirrorId >= 0 && mirrorId < (s32)next->walls.size())
+					{
+						next->walls[mirrorId].adjoinId = -1;
+						next->walls[mirrorId].mirrorId = -1;
+					}
+				}
+				sector->walls.erase(sector->walls.begin() + group->leftWall);
+			}
+			else if (group->rightWall >= 0)
+			{
+				EditorWall* right = &sector->walls[group->rightWall];
+				if (right->adjoinId >= 0)
+				{
+					const s32 mirrorId = getMirrorId(sector, group->rightWall);
+					EditorSector* next = &s_level.sectors[right->adjoinId];
+					if (mirrorId >= 0 && mirrorId < (s32)next->walls.size())
+					{
+						next->walls[mirrorId].adjoinId = -1;
+						next->walls[mirrorId].mirrorId = -1;
+					}
+				}
+				sector->walls.erase(sector->walls.begin() + group->rightWall);
+			}
+
+			deleteVertex(sector, group->vertexIndex);
+			sectorToPolygon(sector);
 		}
 
-		if (sector->walls.size() <= 3)
-		{
-			// Delete the sector...
-			return;
-		}
+		// Remove any invalid sectors.
+		deleteInvalidSectors(s_sectorChangeList);
 
-		s32 vtxToDelete  = wall0->idx[1];
-		s32 wallToDelete = wallIndex1;
-		wall0->idx[1] = wall1->idx[1];
+		// Then find adjoins.
+		findAdjoinsInList(s_sectorChangeList);
 
-		
+		// When deleting features, we need to clear out the selections.
+		edit_clearSelections();
 	}
 
 	void handleVertexInsert(Vec2f worldPos)
@@ -1985,8 +2357,7 @@ namespace LevelEditor
 		{
 			s32 featureIndex;
 			HitPart part;
-			bool isOverlapped;
-			EditorSector* sector = unpackFeatureId(list[i], &featureIndex, (s32*)&part, &isOverlapped);
+			EditorSector* sector = unpackFeatureId(list[i], &featureIndex, (s32*)&part);
 			EditorWall* wall = &sector->walls[featureIndex];
 
 			// Skip flats.
@@ -2015,9 +2386,7 @@ namespace LevelEditor
 		for (s32 v = 0; v < vtxCount; v++)
 		{
 			s32 featureIndex;
-			s32 featureData;
-			bool isOverlapped;
-			EditorSector* sector = unpackFeatureId(s_vertexList[v], &featureIndex, &featureData, &isOverlapped);
+			EditorSector* sector = unpackFeatureId(s_vertexList[v], &featureIndex);
 
 			const Vec2f* rootVtx = &sector->vtx[featureIndex];
 			selectOverlappingVertices(sector, featureIndex, rootVtx, true, /*addToVtxList*/true);
@@ -2065,9 +2434,8 @@ namespace LevelEditor
 			FeatureId* list = s_selectionList.data();
 			for (s32 i = count - 1; i >= 0; i--)
 			{
-				s32 _featureIndex, _featureData;
-				bool _overlapped;
-				EditorSector* featureSector = unpackFeatureId(list[i], &_featureIndex, &_featureData, &_overlapped);
+				s32 _featureIndex;
+				EditorSector* featureSector = unpackFeatureId(list[i], &_featureIndex);
 
 				if (vtxEqual(vtx, &featureSector->vtx[_featureIndex]))
 				{
@@ -2084,9 +2452,8 @@ namespace LevelEditor
 
 	void edit_setVertexPos(FeatureId id, Vec2f pos)
 	{
-		s32 featureIndex, featureData;
-		bool overlapped;
-		EditorSector* sector = unpackFeatureId(id, &featureIndex, &featureData, &overlapped);
+		s32 featureIndex;
+		EditorSector* sector = unpackFeatureId(id, &featureIndex);
 		sector->vtx[featureIndex] = pos;
 
 		sectorToPolygon(sector);
@@ -2099,9 +2466,8 @@ namespace LevelEditor
 
 		for (s32 i = 0; i < count; i++)
 		{
-			s32 featureIndex, featureData;
-			bool overlapped;
-			EditorSector* sector = unpackFeatureId(vtxIds[i], &featureIndex, &featureData, &overlapped);
+			s32 featureIndex;
+			EditorSector* sector = unpackFeatureId(vtxIds[i], &featureIndex);
 
 			sector->vtx[featureIndex].x += delta.x;
 			sector->vtx[featureIndex].z += delta.z;
@@ -2193,8 +2559,7 @@ namespace LevelEditor
 		{
 			s32 featureIndex;
 			HitPart part;
-			bool isOverlapped;
-			EditorSector* sector = unpackFeatureId(flatIds[i], &featureIndex, (s32*)&part, &isOverlapped);
+			EditorSector* sector = unpackFeatureId(flatIds[i], &featureIndex, (s32*)&part);
 
 			if (part == HP_FLOOR)
 			{
@@ -2219,8 +2584,7 @@ namespace LevelEditor
 		{
 			s32 featureIndex;
 			HitPart part;
-			bool isOverlapped;
-			EditorSector* sector = unpackFeatureId(flatIds[i], &featureIndex, (s32*)&part, &isOverlapped);
+			EditorSector* sector = unpackFeatureId(flatIds[i], &featureIndex, (s32*)&part);
 
 			if (part == HP_FLOOR)
 			{

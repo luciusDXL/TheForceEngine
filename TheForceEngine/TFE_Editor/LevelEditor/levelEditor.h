@@ -24,7 +24,7 @@ namespace LevelEditor
 		LEF_FULLBRIGHT = FLAG_BIT(4),
 
 		LEF_SECTOR_EDGES = FLAG_BIT(16),
-		
+
 		LEF_DEFAULT = LEF_SHOW_GRID | LEF_SHOW_LOWER_LAYERS | LEF_SHOW_INF_COLORS
 	};
 
@@ -49,5 +49,6 @@ namespace LevelEditor
 	void edit_moveFlats(s32 count, const FeatureId* flatIds, f32 delta);
 	void edit_setVertexPos(FeatureId id, Vec2f pos);
 	void edit_splitWall(s32 sectorId, s32 wallIndex, Vec2f newPos);
+	void edit_deleteVertex(s32 sectorId, s32 vertexIndex);
 	void edit_clearSelections();
 }

@@ -170,10 +170,7 @@ namespace LevelEditor
 		EditorSector* sector = nullptr;
 		if (s_featureCur.featureIndex < 0 && s_featureHovered.featureIndex < 0 && !s_selectionList.empty())
 		{
-			FeatureId id = s_selectionList[0];
-			s32 featureData;
-			bool isOverlapped;
-			sector = unpackFeatureId(id, &index, &featureData, &isOverlapped);
+			sector = unpackFeatureId(s_selectionList[0], &index);
 		}
 		else
 		{

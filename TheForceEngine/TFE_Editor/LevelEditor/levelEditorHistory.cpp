@@ -18,6 +18,7 @@ namespace LevelEditor
 		LCmd_SetVertex,
 		LCmd_MoveFlat,
 		LCmd_InsertVertex,
+		LCmd_DeleteVertex,
 		LCmd_Count
 	};
 		
@@ -26,6 +27,7 @@ namespace LevelEditor
 	void cmd_applySetVertex();
 	void cmd_applyMoveFlats();
 	void cmd_applyInsertVertex();
+	void cmd_applyDeleteVertex();
 
 	void levHistory_init()
 	{
@@ -35,11 +37,13 @@ namespace LevelEditor
 		history_registerCommand(LCmd_SetVertex, cmd_applySetVertex);
 		history_registerCommand(LCmd_MoveFlat, cmd_applyMoveFlats);
 		history_registerCommand(LCmd_InsertVertex, cmd_applyInsertVertex);
+		history_registerCommand(LCmd_DeleteVertex, cmd_applyDeleteVertex);
 		history_registerName(LName_MoveVertex, "Move Vertice(s)");
 		history_registerName(LName_SetVertex, "Set Vertex Position");
 		history_registerName(LName_MoveWall, "Move Wall(s)");
 		history_registerName(LName_MoveFlat, "Move Flat(s)");
 		history_registerName(LName_InsertVertex, "Insert Vertex");
+		history_registerName(LName_DeleteVertex, "Delete Vertex");
 	}
 
 	void levHistory_destroy()
@@ -234,6 +238,28 @@ namespace LevelEditor
 		const Vec2f newPos = hBuffer_getVec2f();
 		// Call the editor command.
 		edit_splitWall(sectorIndex, wallIndex, newPos);
+		CMD_APPLY_END();
+	}
+
+	/////////////////////////////////
+	// Delete Vertex
+	void cmd_addDeleteVertex(s32 sectorIndex, s32 vertexIndex)
+	{
+		CMD_BEGIN(LCmd_DeleteVertex, LName_DeleteVertex);
+		// Add the command data.
+		hBuffer_addS32(sectorIndex);
+		hBuffer_addS32(vertexIndex);
+		CMD_END();
+	}
+
+	void cmd_applyDeleteVertex()
+	{
+		CMD_APPLY_BEGIN();
+		// Extract the command data.
+		const s32 sectorIndex = hBuffer_getS32();
+		const s32 vertexIndex = hBuffer_getS32();
+		// Call the editor command.
+		edit_deleteVertex(sectorIndex, vertexIndex);
 		CMD_APPLY_END();
 	}
 }
