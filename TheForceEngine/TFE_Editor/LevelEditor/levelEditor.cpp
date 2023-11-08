@@ -120,6 +120,7 @@ namespace LevelEditor
 	static Vec3f s_rayDir = { 0.0f, 0.0f, 1.0f };
 	static f32 s_zoom = c_defaultZoom;
 	static bool s_gravity = false;
+	static bool s_showAllLabels = false;
 	static bool s_uiActive = false;
 
 	static bool s_moveStarted = false;
@@ -246,6 +247,7 @@ namespace LevelEditor
 		s_featureCur = {};
 		s_editMove = false;
 		s_gravity = false;
+		s_showAllLabels = false;
 
 		AssetBrowser::getLevelTextures(s_levelTextureList, asset->name.c_str());
 		s_camera = { 0 };
@@ -2747,20 +2749,31 @@ namespace LevelEditor
 	{
 		char id[256];
 		sprintf(id, "##ViewportInfo%d", index);
+		ImVec2 size = ImGui::CalcTextSize(info);
+		// Padding is 8, so 16 total is added.
+		size.x += 16.0f;
+		size.y += 16.0f;
 
 		const ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize
 			| ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoNav | ImGuiWindowFlags_AlwaysAutoResize;
 
+		ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 7.0f);
+		// TODO: Tweak padding (and size)?
+		//ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, { 4.0f, 4.0f });
+
 		ImGui::PushStyleColor(ImGuiCol_Text, { 0.8f, 0.9f, 1.0f, 0.5f*alpha });
-		ImGui::PushStyleColor(ImGuiCol_WindowBg, { 0.06f, 0.06f, 0.06f, 0.94f*0.75f*alpha });
+		ImGui::PushStyleColor(ImGuiCol_ChildBg, { 0.06f, 0.06f, 0.06f, 0.94f*0.75f*alpha });
 		ImGui::PushStyleColor(ImGuiCol_Border, { 0.43f, 0.43f, 0.50f, 0.25f*alpha });
-		
+
 		ImGui::SetNextWindowPos({ (f32)mapPos.x + xOffset, (f32)mapPos.z + yOffset });
-		ImGui::Begin(id, nullptr, window_flags);
-		ImGui::Text("%s", info);
-		ImGui::End();
+		if (ImGui::BeginChild(id, size, true, window_flags))
+		{
+			ImGui::Text("%s", info);
+		}
+		ImGui::EndChild();
 
 		ImGui::PopStyleColor(3);
+		ImGui::PopStyleVar();
 	}
 
 	void floatToString(f32 value, char* str)
@@ -2844,6 +2857,10 @@ namespace LevelEditor
 		else if (TFE_Input::keyPressed(KEY_Y) && TFE_Input::keyModDown(KEYMOD_CTRL))
 		{
 			levHistory_redo();
+		}
+		if (TFE_Input::keyPressed(KEY_TAB))
+		{
+			s_showAllLabels = !s_showAllLabels;
 		}
 
 		viewport_update((s32)UI_SCALE(480) + 16, (s32)UI_SCALE(68) + 18);
@@ -3010,7 +3027,7 @@ namespace LevelEditor
 							EditorSector* sector = s_featureHovered.sector;
 							Vec3f worldPos = { (sector->bounds[0].x + sector->bounds[1].x) * 0.5f, sector->floorHeight + 1.0f, (sector->bounds[0].z + sector->bounds[1].z) * 0.5f };
 							Vec2f screenPos;
-							if (!sector->name.empty() && worldPosToViewportCoord(worldPos, &screenPos))
+							if (!s_showAllLabels && !sector->name.empty() && worldPosToViewportCoord(worldPos, &screenPos))
 							{
 								strcpy(lenStr, sector->name.c_str());
 								f32 textOffset = floorf(ImGui::CalcTextSize(lenStr).x * 0.5f);
@@ -3048,7 +3065,7 @@ namespace LevelEditor
 					}
 				}
 				// Sector Info.
-				else if (s_featureHovered.sector && editWinHovered && s_editMode == LEDIT_SECTOR)
+				else if (!s_showAllLabels && s_featureHovered.sector && editWinHovered && s_editMode == LEDIT_SECTOR)
 				{
 					const EditorSector* sector = s_featureHovered.sector;
 					if (!sector->name.empty())
@@ -3175,6 +3192,48 @@ namespace LevelEditor
 							char info[256];
 							floatToString(s_drawHeight[1] - s_drawHeight[0], info);
 							drawViewportInfo(0, { s32(screenPos.x + 20.0f), s32(screenPos.z - 20.0f) }, info, 0, 0);
+						}
+					}
+				}
+
+				if (s_showAllLabels)
+				{
+					const s32 count = (s32)s_level.sectors.size();
+					EditorSector* sector = s_level.sectors.data();
+					s32 layer = ((s_editFlags & LEF_SHOW_ALL_LAYERS) && s_view != EDIT_VIEW_2D) ? LAYER_ANY : s_curLayer;
+					for (s32 i = 0; i < count; i++, sector++)
+					{
+						if (layer != LAYER_ANY && sector->layer != layer) { continue; }
+						if (sector->name.empty()) { continue; }
+
+						Vec2i mapPos;
+						f32 textOffset = floorf(ImGui::CalcTextSize(sector->name.c_str()).x * 0.5f);
+						bool showInfo = true;
+						if (s_view == EDIT_VIEW_2D)
+						{
+							Vec2f center = { (sector->bounds[0].x + sector->bounds[1].x) * 0.5f, (sector->bounds[0].z + sector->bounds[1].z) * 0.5f };
+
+							mapPos = worldPos2dToMap(center);
+							mapPos.x -= (textOffset + 12);
+							mapPos.z -= 16;
+						}
+						else if (s_view == EDIT_VIEW_3D)
+						{
+							Vec3f center = { (sector->bounds[0].x + sector->bounds[1].x) * 0.5f, sector->floorHeight, (sector->bounds[0].z + sector->bounds[1].z) * 0.5f };
+							Vec2f screenPos;
+							if (worldPosToViewportCoord(center, &screenPos))
+							{
+								f32 textOffset = floorf(ImGui::CalcTextSize(sector->name.c_str()).x * 0.5f);
+								mapPos = { s32(screenPos.x - textOffset), s32(screenPos.z) };
+							}
+							else
+							{
+								showInfo = false;
+							}
+						}
+						if (showInfo)
+						{
+							drawViewportInfo(i, mapPos, sector->name.c_str(), 0, 0);
 						}
 					}
 				}
@@ -3997,7 +4056,7 @@ namespace LevelEditor
 		ImGui::SetWindowPos("LevelEditWin", { (f32)s_editWinPos.x, (f32)s_editWinPos.z });
 		ImGui::SetWindowSize("LevelEditWin", { (f32)s_editWinSize.x, (f32)s_editWinSize.z });
 		ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize
-			| ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoNav | ImGuiWindowFlags_NoBringToFrontOnFocus;
+			| ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoNav | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoScrollWithMouse;
 
 		ImGui::Begin("LevelEditWin", &gridActive, window_flags);
 	}
