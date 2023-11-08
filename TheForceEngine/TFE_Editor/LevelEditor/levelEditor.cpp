@@ -68,6 +68,13 @@ namespace LevelEditor
 		WMM_FREE,
 		WMM_COUNT
 	};
+
+	enum EdgeId
+	{
+		EDGE0 = (0 << 8),
+		EDGE1 = (1 << 8)
+	};
+
 	static WallMoveMode s_wallMoveMode = WMM_NORMAL;
 
 	// The TFE Level Editor format is different than the base format and contains extra 
@@ -93,6 +100,16 @@ namespace LevelEditor
 	// Search
 	u32 s_searchKey = 0;
 	static std::vector<VertexWallGroup> s_vertexWallGroups;
+
+	// Sector Drawing
+	const f32 c_defaultSectorHeight = 16.0f;
+
+	bool s_drawStarted = false;
+	DrawMode s_drawMode;
+	f32 s_drawHeight[2];
+	std::vector<Vec2f> s_shape;
+	Vec2f s_drawCurPos;
+	Polygon s_shapePolygon;
 
 	static bool s_editMove = false;
 	
@@ -156,6 +173,7 @@ namespace LevelEditor
 	void resetZoom();
 	bool isUiActive();
 	bool isViewportElementHovered();
+	Vec3f moveAlongRail(Vec3f dir);
 	Vec2f mouseCoordToWorldPos2d(s32 mx, s32 my);
 	Vec3f mouseCoordToWorldDir3d(s32 mx, s32 my);
 	Vec3f viewportCoordToWorldDir3d(Vec2i vCoord);
@@ -174,6 +192,8 @@ namespace LevelEditor
 	void snapToGrid(f32* value);
 	void snapToGrid(Vec2f* pos);
 	void snapToGrid(Vec3f* pos);
+
+	void drawViewportInfo(s32 index, Vec2i mapPos, const char* info, f32 xOffset, f32 yOffset, f32 alpha = 1.0f);
 	
 	////////////////////////////////////////////////////////
 	// Public API
@@ -357,6 +377,33 @@ namespace LevelEditor
 		// X
 		if (aabb0[0].x > aabb1[1].x || aabb0[1].x < aabb1[0].x ||
 			aabb1[0].x > aabb0[1].x || aabb1[1].x < aabb0[0].x)
+		{
+			return false;
+		}
+
+		// Z
+		if (aabb0[0].z > aabb1[1].z || aabb0[1].z < aabb1[0].z ||
+			aabb1[0].z > aabb0[1].z || aabb1[1].z < aabb0[0].z)
+		{
+			return false;
+		}
+
+		return true;
+	}
+
+	bool aabbOverlap3d(const Vec3f* aabb0, const Vec3f* aabb1)
+	{
+		// Ignore the Y axis.
+		// X
+		if (aabb0[0].x > aabb1[1].x || aabb0[1].x < aabb1[0].x ||
+			aabb1[0].x > aabb0[1].x || aabb1[1].x < aabb0[0].x)
+		{
+			return false;
+		}
+
+		// Y
+		if (aabb0[0].y > aabb1[1].y || aabb0[1].y < aabb1[0].y ||
+			aabb1[0].y > aabb0[1].y || aabb1[1].y < aabb0[0].y)
 		{
 			return false;
 		}
@@ -965,13 +1012,14 @@ namespace LevelEditor
 	// * Find any references to sector with mirror > currentWall and fix-up (+1).
 	// * If current wall has an adjoin, split the mirror wall.
 	// * Find any references to the adjoined sector with mirror > currentWall mirror.
-	void edit_splitWall(s32 sectorId, s32 wallIndex, Vec2f newPos)
+	// Return true if a split was required.
+	bool edit_splitWall(s32 sectorId, s32 wallIndex, Vec2f newPos)
 	{
 		EditorSector* sector = &s_level.sectors[sectorId];
 		// If a vertex at the desired position already exists, do not split the wall (early-out).
 		const size_t vtxCount = sector->vtx.size();
 		const Vec2f* vtx = sector->vtx.data();
-		for (size_t v = 0; v < vtxCount; v++) { if (vtxEqual(&newPos, &vtx[v])) {return;} }
+		for (size_t v = 0; v < vtxCount; v++) { if (vtxEqual(&newPos, &vtx[v])) {return false;} }
 
 		// Split the wall, insert the new wall after the original.
 		// Example, split B into {B, N} : {A, B, C, D} -> {A, B, N, C, D}.
@@ -1005,11 +1053,7 @@ namespace LevelEditor
 		}
 		// Fix-up the sector polygon.
 		sectorToPolygon(sector);
-	}
-
-	void deleteSector(s32 sectorId)
-	{
-		// TODO
+		return true;
 	}
 		
 	void selectVerticesToDelete(EditorSector* root, s32 featureIndex, const Vec2f* rootVtx)
@@ -1840,6 +1884,529 @@ namespace LevelEditor
 		}
 	}
 		
+	void shapeToPolygon(s32 count, Vec2f* vtx, Polygon& poly)
+	{
+		poly.edge.resize(count);
+		poly.vtx.resize(count);
+
+		poly.bounds[0] = { FLT_MAX,  FLT_MAX };
+		poly.bounds[1] = { -FLT_MAX, -FLT_MAX };
+
+		for (size_t v = 0; v < count; v++, vtx++)
+		{
+			poly.vtx[v] = *vtx;
+			poly.bounds[0].x = std::min(poly.bounds[0].x, vtx->x);
+			poly.bounds[0].z = std::min(poly.bounds[0].z, vtx->z);
+			poly.bounds[1].x = std::max(poly.bounds[1].x, vtx->x);
+			poly.bounds[1].z = std::max(poly.bounds[1].z, vtx->z);
+		}
+
+		for (s32 w = 0; w < count; w++)
+		{
+			s32 a = w;
+			s32 b = (w + 1) % count;
+			poly.edge[w] = { a, b };
+		}
+
+		// Clear out cached triangle data.
+		poly.triVtx.clear();
+		poly.triIdx.clear();
+
+		TFE_Polygon::computeTriangulation(&poly);
+	}
+
+	void createNewSector(EditorSector* sector)
+	{
+		*sector = {};
+		sector->id = (s32)s_level.sectors.size();
+		// Just copy for now.
+		sector->floorTex.texIndex = s_level.sectors[0].floorTex.texIndex;
+		sector->ceilTex.texIndex = s_level.sectors[0].ceilTex.texIndex;
+
+		sector->floorHeight = std::min(s_drawHeight[0], s_drawHeight[1]);
+		sector->ceilHeight  = std::max(s_drawHeight[0], s_drawHeight[1]);
+		sector->ambient = 20;
+		sector->layer   = s_curLayer;
+	}
+		
+	bool edgesColinear(const Vec2f* points, s32& newPointCount, s32* newPoints)
+	{
+		const f32 eps = 0.00001f;
+		newPointCount = 0;
+		
+		// Is v0 or v1 on v2->v3?
+		Vec2f point;
+		f32 s = closestPointOnLineSegment(points[2], points[3], points[0], &point);
+		if (s > -eps && s < 1.0f + eps && vtxEqual(&points[0], &point)) { newPoints[newPointCount++] = 0 | EDGE1; }
+
+		s = closestPointOnLineSegment(points[2], points[3], points[1], &point);
+		if (s > -eps && s < 1.0f + eps && vtxEqual(&points[1], &point)) { newPoints[newPointCount++] = 1 | EDGE1; }
+		
+		// Is v2 or v3 on v0->v1?
+		s = closestPointOnLineSegment(points[0], points[1], points[2], &point);
+		if (s > -eps && s < 1.0f + eps && vtxEqual(&points[2], &point)) { newPoints[newPointCount++] = 2 | EDGE0; }
+
+		s = closestPointOnLineSegment(points[0], points[1], points[3], &point);
+		if (s > -eps && s < 1.0f + eps && vtxEqual(&points[3], &point)) { newPoints[newPointCount++] = 3 | EDGE0; }
+
+		const bool areColinear = newPointCount >= 2;
+		if (newPointCount > 2)
+		{
+			s32 p0 = newPoints[0] & 255, p1 = newPoints[1] & 255, p2 = newPoints[2] & 255;
+			s32 d0 = -1, d1 = -1;
+			if (vtxEqual(&points[p0], &points[p1]))
+			{
+				d0 = 0;
+				d1 = 1;
+			}
+			else if (vtxEqual(&points[p0], &points[p2]))
+			{
+				d0 = 0;
+				d1 = 2;
+			}
+			else if (vtxEqual(&points[p1], &points[p2]))
+			{
+				d0 = 1;
+				d1 = 2;
+			}
+
+			// Disambiguate duplicates.
+			if (d0 >= 0 && d1 >= 0)
+			{
+				// Keep the one that isn't already on the segment.
+				s32 p01 = newPoints[d0] & 255;
+				s32 p11 = newPoints[d1] & 255;
+				s32 edge0 = newPoints[d0] >> 8;
+				s32 edge1 = newPoints[d1] >> 8;
+				s32 discard = d0;
+				if (edge0 != edge1)
+				{
+					if ((edge1 == 0 && (vtxEqual(&points[p11], &points[0]) || vtxEqual(&points[p11], &points[1]))) ||
+					    (edge1 == 1 && (vtxEqual(&points[p11], &points[2]) || vtxEqual(&points[p11], &points[3]))))
+					{
+						discard = d1;
+					}
+				}
+				for (s32 i = discard; i < newPointCount - 1; i++)
+				{
+					newPoints[i] = newPoints[i + 1];
+				}
+				newPointCount--;
+			}
+		}
+		return areColinear && !vtxEqual(&points[newPoints[0]&255], &points[newPoints[1]&255]);
+	}
+
+	void mergeAdjoins(EditorSector* sector0)
+	{
+		const s32 levelSectorCount = (s32)s_level.sectors.size();
+		EditorSector* levelSectors = s_level.sectors.data();
+
+		s32 id0 = sector0->id;
+
+		// Build a list ahead of time, instead of traversing through all sectors multiple times.
+		std::vector<EditorSector*> mergeList;
+		for (s32 i = 0; i < levelSectorCount; i++)
+		{
+			EditorSector* sector1 = &levelSectors[i];
+			if (sector1 == sector0) { continue; }
+
+			// Cannot merge adjoins if the sectors don't overlap in 3D space.
+			if (!aabbOverlap3d(sector0->bounds, sector1->bounds))
+			{
+				continue;
+			}
+			mergeList.push_back(sector1);
+		}
+
+		// Loop through each wall of the new sector and see if it can be adjoined to another sector/wall in the list created above.
+		// Once colinear walls are found, properly splits are made and the loop is restarted. Adjoins are only added when exact
+		// matches are found.
+		bool restart = true;
+		while (restart)
+		{
+			restart = false;
+			const s32 sectorCount = (s32)mergeList.size();
+			EditorSector** sectorList = mergeList.data();
+			sector0 = &s_level.sectors[id0];
+
+			s32 wallCount0 = (s32)sector0->walls.size();
+			EditorWall* wall0 = sector0->walls.data();
+			bool wallLoop = true;
+			for (s32 w0 = 0; w0 < wallCount0 && wallLoop; w0++, wall0++)
+			{
+				if (wall0->adjoinId >= 0 && wall0->mirrorId >= 0) { continue; }
+				const Vec2f* v0 = &sector0->vtx[wall0->idx[0]];
+				const Vec2f* v1 = &sector0->vtx[wall0->idx[1]];
+
+				// Now check for overlaps in other sectors in the list.
+				bool foundMirror = false;
+				for (s32 s1 = 0; s1 < sectorCount && !foundMirror; s1++)
+				{
+					EditorSector* sector1 = sectorList[s1];
+					const s32 wallCount1 = (s32)sector1->walls.size();
+					EditorWall* wall1 = sector1->walls.data();
+
+					for (s32 w1 = 0; w1 < wallCount1 && !foundMirror; w1++, wall1++)
+					{
+						if (wall1->adjoinId >= 0 && wall1->mirrorId >= 0) { continue; }
+						const Vec2f* v2 = &sector1->vtx[wall1->idx[0]];
+						const Vec2f* v3 = &sector1->vtx[wall1->idx[1]];
+
+						// Do the vertices match exactly?
+						if (vtxEqual(v0, v3) && vtxEqual(v1, v2))
+						{
+							// Found an adjoin!
+							wall0->adjoinId = sector1->id;
+							wall0->mirrorId = w1;
+							wall1->adjoinId = sector0->id;
+							wall1->mirrorId = w0;
+							// For now, assume one adjoin per wall.
+							foundMirror = true;
+							continue;
+						}
+
+						// Are these edges co-linear?
+						s32 newPointCount;
+						s32 newPoints[4];
+						Vec2f points[] = { *v0, *v1, *v2, *v3 };
+						if (edgesColinear(points, newPointCount, newPoints))
+						{
+							assert(newPointCount == 2);
+
+							// 4 Cases:
+							// 1. v0,v1 left of v2,v3
+							if ((newPoints[0] >> 8) == 0 && (newPoints[1] >> 8) == 1)
+							{
+								assert((newPoints[0] & 255) >= 2);
+								assert((newPoints[1] & 255) < 2);
+
+								// Insert newPoints[0] & 255 into wall0
+								edit_splitWall(sector0->id, w0, points[newPoints[0] & 255]);
+								// Insert newPoints[1] & 255 into wall1
+								edit_splitWall(sector1->id, w1, points[newPoints[1] & 255]);
+							}
+							// 2. v0,v1 right of v2,v3
+							else if ((newPoints[0] >> 8) == 1 && (newPoints[1] >> 8) == 0)
+							{
+								assert((newPoints[0] & 255) < 2);
+								assert((newPoints[1] & 255) >= 2);
+
+								// Insert newPoints[0] & 255 into wall1
+								edit_splitWall(sector1->id, w1, points[newPoints[0] & 255]);
+								// Insert newPoints[1] & 255 into wall0
+								edit_splitWall(sector0->id, w0, points[newPoints[1] & 255]);
+							}
+							// 3. v2,v3 inside of v0,v1
+							else if ((newPoints[0] >> 8) == 0 && (newPoints[1] >> 8) == 0)
+							{
+								assert((newPoints[0] & 255) >= 2);
+								assert((newPoints[1] & 255) >= 2);
+
+								// Insert newPoints[0] & 255 into wall0
+								// Insert newPoints[1] & 255 into wall0
+								if (edit_splitWall(sector0->id, w0, points[newPoints[1] & 255])) { w0++; }
+								edit_splitWall(sector0->id, w0, points[newPoints[0] & 255]);
+							}
+							// 4. v0,v1 inside of v2,v3
+							else if ((newPoints[0] >> 8) == 1 && (newPoints[1] >> 8) == 1)
+							{
+								assert((newPoints[0] & 255) < 2);
+								assert((newPoints[1] & 255) < 2);
+
+								// Insert newPoints[0] & 255 into wall1
+								// Insert newPoints[1] & 255 into wall1
+								if (edit_splitWall(sector1->id, w1, points[newPoints[1] & 255])) { w1++; }
+								edit_splitWall(sector1->id, w1, points[newPoints[0] & 255]);
+							}
+							restart = true;
+							wallLoop = false;
+							break;
+						}
+					}
+				}
+			}
+		}
+
+		const s32 sectorCount = (s32)mergeList.size();
+		EditorSector** sectorList = mergeList.data();
+		for (s32 s = 0; s < sectorCount; s++)
+		{
+			EditorSector* sector = sectorList[s];
+			polygonToSector(sector);
+		}
+		polygonToSector(sector0);
+	}
+
+	void createSectorFromRect()
+	{
+		EditorSector newSector;
+		createNewSector(&newSector);
+
+		s32 count = 4;
+		newSector.vtx.resize(count);
+		newSector.walls.resize(count);
+
+		const Vec2f* shapeVtx = s_shape.data();
+		Vec2f corners[2];
+		corners[0] = { std::max(shapeVtx[0].x, shapeVtx[1].x), std::min(shapeVtx[0].z, shapeVtx[1].z) };
+		corners[1] = { std::min(shapeVtx[0].x, shapeVtx[1].x), std::max(shapeVtx[0].z, shapeVtx[1].z) };
+
+		Vec2f rect[] =
+		{
+			{ corners[0].x, corners[0].z },
+			{ corners[1].x, corners[0].z },
+			{ corners[1].x, corners[1].z },
+			{ corners[0].x, corners[1].z },
+		};
+
+		Vec2f* outVtx = newSector.vtx.data();
+		for (s32 v = 0; v < count; v++)
+		{
+			outVtx[v] = rect[v];
+		}
+
+		EditorWall* wall = newSector.walls.data();
+		for (s32 w = 0; w < count; w++, wall++)
+		{
+			s32 a = w;
+			s32 b = (w + 1) % count;
+
+			*wall = {};
+			wall->idx[0] = a;
+			wall->idx[1] = b;
+
+			// Just copy for now...
+			wall->tex[WP_MID].texIndex = s_level.sectors[0].walls[0].tex[WP_MID].texIndex;
+			wall->tex[WP_TOP].texIndex = wall->tex[WP_MID].texIndex;
+			wall->tex[WP_BOT].texIndex = wall->tex[WP_MID].texIndex;
+		}
+
+		s_level.sectors.push_back(newSector);
+		sectorToPolygon(&s_level.sectors.back());
+
+		mergeAdjoins(&s_level.sectors.back());
+	}
+		
+	void createSectorFromShape()
+	{
+		EditorSector newSector = {};
+		createNewSector(&newSector);
+
+		const s32 count = (s32)s_shape.size();
+		newSector.vtx.resize(count);
+		newSector.walls.resize(count);
+
+		const f32 area = TFE_Polygon::signedArea((s32)s_shape.size(), s_shape.data());
+		Vec2f* outVtx = newSector.vtx.data();
+		if (area >= 0.0f)
+		{
+			// If area is positive, than the polygon winding is clockwise, which is what we want.
+			for (s32 v = 0; v < count; v++)
+			{
+				outVtx[v] = s_shape[v];
+			}
+		}
+		else
+		{
+			// If area is negative, than the polygon winding is counter-clockwise, so read the vertices in reverse-order.
+			for (s32 v = 0; v < count; v++)
+			{
+				outVtx[v] = s_shape[count - v - 1];
+			}
+		}
+
+		EditorWall* wall = newSector.walls.data();
+		for (s32 w = 0; w < count; w++, wall++)
+		{
+			s32 a = w;
+			s32 b = (w + 1) % count;
+
+			*wall = {};
+			wall->idx[0] = a;
+			wall->idx[1] = b;
+
+			// Just copy for now...
+			wall->tex[WP_MID].texIndex = s_level.sectors[0].walls[0].tex[WP_MID].texIndex;
+			wall->tex[WP_TOP].texIndex = wall->tex[WP_MID].texIndex;
+			wall->tex[WP_BOT].texIndex = wall->tex[WP_MID].texIndex;
+		}
+
+		s_level.sectors.push_back(newSector);
+		sectorToPolygon(&s_level.sectors.back());
+
+		mergeAdjoins(&s_level.sectors.back());
+	}
+
+	void removeLastShapePoint()
+	{
+		// Remove the last place vertex.
+		if (!s_shape.empty())
+		{
+			s_shape.pop_back();
+		}
+		// If no vertices are left, cancel drawing.
+		if (s_shape.empty())
+		{
+			s_drawStarted = false;
+		}
+	}
+
+	void handleSectorDraw(RayHitInfo* hitInfo)
+	{
+		EditorSector* hoverSector = nullptr;
+
+		// Get the hover sector in 2D.
+		if (s_view == EDIT_VIEW_2D)
+		{
+			hoverSector = s_featureHovered.sector;
+		}
+		else // Or the hit sector in 3D.
+		{
+			hoverSector = hitInfo->hitSectorId < 0 ? nullptr : &s_level.sectors[hitInfo->hitSectorId];
+		}
+
+		// Snap the cursor to the grid.
+		Vec2f onGrid = { s_cursor3d.x, s_cursor3d.z };
+		snapToGrid(&onGrid);
+
+		s_cursor3d.x = onGrid.x;
+		s_cursor3d.z = onGrid.z;
+
+		// For now just draw independent sector.
+
+		// Two ways to draw: rectangle (shift + left click and drag, escape to cancel), shape (left click to start, backspace to go back one point, escape to cancel)
+		if (s_drawStarted)
+		{
+			s_drawCurPos = onGrid;
+			if (s_drawMode == DMODE_RECT)
+			{
+				s_shape[1] = onGrid;
+				if (TFE_Input::keyPressed(KEY_ESCAPE))
+				{
+					// CANCEL
+					s_drawStarted = false;
+				}
+				else if (!TFE_Input::mouseDown(MouseButton::MBUTTON_LEFT))
+				{
+					if (s_view == EDIT_VIEW_3D)
+					{
+						s_drawMode = DMODE_RECT_VERT;
+						s_curVtxPos = { onGrid.x, s_gridHeight, onGrid.z };
+					}
+					else
+					{
+						s_drawHeight[1] = s_drawHeight[0] + c_defaultSectorHeight;
+						s_drawStarted = false;
+						createSectorFromRect();
+					}
+				}
+			}
+			else if (s_drawMode == DMODE_SHAPE)
+			{
+				if (TFE_Input::mousePressed(MouseButton::MBUTTON_LEFT))
+				{
+					if (vtxEqual(&onGrid, &s_shape[0]))
+					{
+						if (s_view == EDIT_VIEW_3D)
+						{
+							s_drawMode = DMODE_SHAPE_VERT;
+							s_curVtxPos = { onGrid.x, s_gridHeight, onGrid.z };
+							shapeToPolygon((s32)s_shape.size(), s_shape.data(), s_shapePolygon);
+						}
+						else
+						{
+							s_drawHeight[1] = s_drawHeight[0] + c_defaultSectorHeight;
+							s_drawStarted = false;
+							createSectorFromShape();
+						}
+					}
+					else
+					{
+						s_shape.push_back(onGrid);
+					}
+				}
+				else if (TFE_Input::keyPressed(KEY_BACKSPACE))
+				{
+					removeLastShapePoint();
+				}
+				else if (TFE_Input::keyPressed(KEY_RETURN))
+				{
+					if (s_view == EDIT_VIEW_3D)
+					{
+						s_drawMode = DMODE_SHAPE_VERT;
+						s_curVtxPos = { onGrid.x, s_gridHeight, onGrid.z };
+						shapeToPolygon((s32)s_shape.size(), s_shape.data(), s_shapePolygon);
+					}
+					else
+					{
+						s_drawHeight[1] = s_drawHeight[0] + c_defaultSectorHeight;
+						s_drawStarted = false;
+						createSectorFromShape();
+					}
+				}
+				else if (TFE_Input::keyPressed(KEY_ESCAPE))
+				{
+					// CANCEL
+					s_drawStarted = false;
+				}
+			}
+			else if (s_drawMode == DMODE_RECT_VERT || s_drawMode == DMODE_SHAPE_VERT)
+			{
+				if (TFE_Input::keyPressed(KEY_ESCAPE))
+				{
+					// CANCEL
+					s_drawStarted = false;
+				}
+				else if (TFE_Input::keyPressed(KEY_BACKSPACE) && s_drawMode == DMODE_SHAPE_VERT)
+				{
+					s_drawMode = DMODE_SHAPE;
+					s_drawHeight[1] = s_drawHeight[0];
+					removeLastShapePoint();
+				}
+				else if (TFE_Input::mousePressed(MouseButton::MBUTTON_LEFT))
+				{
+					s_drawStarted = false;
+					if (s_drawMode == DMODE_SHAPE_VERT) { createSectorFromShape(); }
+					else { createSectorFromRect(); }
+				}
+
+				Vec3f worldPos = moveAlongRail({ 0.0f, 1.0f, 0.0f });
+				s_drawHeight[1] = worldPos.y;
+				snapToGrid(&s_drawHeight[1]);
+			}
+		}
+		else if (TFE_Input::mousePressed(MouseButton::MBUTTON_LEFT))
+		{
+			if (hoverSector)
+			{
+				s_gridHeight = hoverSector->floorHeight;
+			}
+
+			s_drawStarted = true;
+			s_drawMode = TFE_Input::keyModDown(KEYMOD_SHIFT) ? DMODE_RECT : DMODE_SHAPE;
+			s_drawHeight[0] = s_gridHeight;
+			s_drawHeight[1] = s_gridHeight;
+			s_drawCurPos = onGrid;
+
+			s_shape.clear();
+			if (s_drawMode == DMODE_RECT)
+			{
+				s_shape.resize(2);
+				s_shape[0] = onGrid;
+				s_shape[1] = onGrid;
+			}
+			else
+			{
+				s_shape.push_back(onGrid);
+			}
+		}
+		else
+		{
+			s_drawCurPos = onGrid;
+		}
+ 	}
+		
 	void updateWindowControls()
 	{
 		if (isUiActive()) { return; }
@@ -1861,93 +2428,96 @@ namespace LevelEditor
 			Vec2f worldPos = mouseCoordToWorldPos2d(mx, my);
 			s_cursor3d = { worldPos.x, 0.0f, worldPos.z };
 
-			if (s_editMode != LEDIT_DRAW)
+			// First check to see if the current hovered sector is still valid.
+			if (s_featureHovered.sector)
 			{
-				// First check to see if the current hovered sector is still valid.
-				if (s_featureHovered.sector)
+				if (!isPointInsideSector2d(s_featureHovered.sector, worldPos, s_curLayer))
 				{
-					if (!isPointInsideSector2d(s_featureHovered.sector, worldPos, s_curLayer))
+					s_featureHovered.sector = nullptr;
+				}
+			}
+			// If not, then try to find one.
+			if (!s_featureHovered.sector)
+			{
+				s_featureHovered.sector = findSector2d(worldPos, s_curLayer);
+			}
+			s_featureHovered.featureIndex = -1;
+
+			// TODO: Move to central hotkey list.
+			if (s_featureHovered.sector && TFE_Input::keyModDown(KEYMOD_CTRL) && TFE_Input::keyPressed(KEY_G))
+			{
+				adjustGridHeight(s_featureHovered.sector);
+			}
+
+			if (s_editMode == LEDIT_DRAW)
+			{
+				handleSectorDraw(nullptr/*2d so no ray hit info*/);
+				return;
+			}
+				
+			if (s_editMode == LEDIT_SECTOR)
+			{
+				handleMouseControlSector();
+			}
+
+			if (s_editMode == LEDIT_VERTEX)
+			{
+				// Keep track of the last vertex hovered sector and use it if no hovered sector is active to
+				// make selecting vertices less fiddly.
+				EditorSector* hoveredSector = s_featureHovered.sector ? s_featureHovered.sector : s_featureHovered.prevSector;
+
+				// See if we are close enough to "hover" a vertex
+				s_featureHovered.featureIndex = -1;
+				if (s_featureHovered.sector || s_featureHovered.prevSector)
+				{
+					const size_t vtxCount = hoveredSector->vtx.size();
+					const Vec2f* vtx = hoveredSector->vtx.data();
+
+					f32 closestDistSq = FLT_MAX;
+					s32 closestVtx = -1;
+					for (size_t v = 0; v < vtxCount; v++, vtx++)
 					{
-						s_featureHovered.sector = nullptr;
+						Vec2f offset = { worldPos.x - vtx->x, worldPos.z - vtx->z };
+						f32 distSq = offset.x*offset.x + offset.z*offset.z;
+						if (distSq < closestDistSq)
+						{
+							closestDistSq = distSq;
+							closestVtx = (s32)v;
+						}
+					}
+
+					const f32 maxDist = s_zoom2d * 16.0f;
+					if (closestDistSq <= maxDist*maxDist)
+					{
+						s_featureHovered.sector = hoveredSector;
+						s_featureHovered.prevSector = hoveredSector;
+						s_featureHovered.featureIndex = closestVtx;
 					}
 				}
-				// If not, then try to find one.
-				if (!s_featureHovered.sector)
-				{
-					s_featureHovered.sector = findSector2d(worldPos, s_curLayer);
-				}
+
+				// Check for the nearest wall as well.
+				checkForWallHit2d(worldPos, s_featureCurWall.sector, s_featureCurWall.featureIndex, s_featureCurWall.part, hoveredSector);
+
+				// Handle mouse control.
+				handleMouseControlVertex(worldPos);
+			}
+
+			if (s_editMode == LEDIT_WALL)
+			{
+				// See if we are close enough to "hover" a wall
 				s_featureHovered.featureIndex = -1;
 
-				// TODO: Move to central hotkey list.
-				if (s_featureHovered.sector && TFE_Input::keyModDown(KEYMOD_CTRL) && TFE_Input::keyPressed(KEY_G))
-				{
-					adjustGridHeight(s_featureHovered.sector);
-				}
-				
-				if (s_editMode == LEDIT_SECTOR)
-				{
-					handleMouseControlSector();
-				}
+				EditorSector* hoverSector = s_featureHovered.sector ? s_featureHovered.sector : s_featureHovered.prevSector;
+				checkForWallHit2d(worldPos, s_featureHovered.sector, s_featureHovered.featureIndex, s_featureHovered.part, hoverSector);
+				if (s_featureHovered.sector) { s_featureHovered.prevSector = s_featureHovered.sector; }
 
-				if (s_editMode == LEDIT_VERTEX)
-				{
-					// Keep track of the last vertex hovered sector and use it if no hovered sector is active to
-					// make selecting vertices less fiddly.
-					EditorSector* hoveredSector = s_featureHovered.sector ? s_featureHovered.sector : s_featureHovered.prevSector;
+				handleMouseControlWall(worldPos);
+			}
 
-					// See if we are close enough to "hover" a vertex
-					s_featureHovered.featureIndex = -1;
-					if (s_featureHovered.sector || s_featureHovered.prevSector)
-					{
-						const size_t vtxCount = hoveredSector->vtx.size();
-						const Vec2f* vtx = hoveredSector->vtx.data();
-
-						f32 closestDistSq = FLT_MAX;
-						s32 closestVtx = -1;
-						for (size_t v = 0; v < vtxCount; v++, vtx++)
-						{
-							Vec2f offset = { worldPos.x - vtx->x, worldPos.z - vtx->z };
-							f32 distSq = offset.x*offset.x + offset.z*offset.z;
-							if (distSq < closestDistSq)
-							{
-								closestDistSq = distSq;
-								closestVtx = (s32)v;
-							}
-						}
-
-						const f32 maxDist = s_zoom2d * 16.0f;
-						if (closestDistSq <= maxDist*maxDist)
-						{
-							s_featureHovered.sector = hoveredSector;
-							s_featureHovered.prevSector = hoveredSector;
-							s_featureHovered.featureIndex = closestVtx;
-						}
-					}
-
-					// Check for the nearest wall as well.
-					checkForWallHit2d(worldPos, s_featureCurWall.sector, s_featureCurWall.featureIndex, s_featureCurWall.part, hoveredSector);
-
-					// Handle mouse control.
-					handleMouseControlVertex(worldPos);
-				}
-
-				if (s_editMode == LEDIT_WALL)
-				{
-					// See if we are close enough to "hover" a wall
-					s_featureHovered.featureIndex = -1;
-
-					EditorSector* hoverSector = s_featureHovered.sector ? s_featureHovered.sector : s_featureHovered.prevSector;
-					checkForWallHit2d(worldPos, s_featureHovered.sector, s_featureHovered.featureIndex, s_featureHovered.part, hoverSector);
-					if (s_featureHovered.sector) { s_featureHovered.prevSector = s_featureHovered.sector; }
-
-					handleMouseControlWall(worldPos);
-				}
-
-				// DEBUG
-				if (s_featureCur.sector && TFE_Input::keyPressed(KEY_T))
-				{
-					TFE_Polygon::computeTriangulation(&s_featureCur.sector->poly);
-				}
+			// DEBUG
+			if (s_featureCur.sector && TFE_Input::keyPressed(KEY_T))
+			{
+				TFE_Polygon::computeTriangulation(&s_featureCur.sector->poly);
 			}
 		}
 		else if (s_view == EDIT_VIEW_3D)
@@ -1957,23 +2527,28 @@ namespace LevelEditor
 
 			// TODO: Move out to common place for hotkeys.
 			bool hitBackfaces = TFE_Input::keyDown(KEY_B);
-
-			// Trace a ray through the mouse cursor.
 			s_rayDir = mouseCoordToWorldDir3d(mx, my);
+
 			RayHitInfo hitInfo;
 			Ray ray = { s_camera.pos, s_rayDir, 1000.0f, s_curLayer };
-			if (traceRay(&ray, &hitInfo, hitBackfaces))
+			const bool rayHit = traceRay(&ray, &hitInfo, hitBackfaces);
+			if (rayHit) { s_cursor3d = hitInfo.hitPos; }
+			else  		{ s_cursor3d = rayGridPlaneHit(s_camera.pos, s_rayDir); }
+
+			if (s_editMode == LEDIT_DRAW)
 			{
-				s_cursor3d = hitInfo.hitPos;
-				if (s_editMode != LEDIT_DRAW)
-				{
-					handleHoverAndSelection(&hitInfo);
-				}
+				handleSectorDraw(&hitInfo);
+				return;
+			}
+			
+			// Trace a ray through the mouse cursor.
+			if (rayHit)
+			{
+				handleHoverAndSelection(&hitInfo);
 			}
 			else
 			{
 				s_featureHovered.sector = nullptr;
-				s_cursor3d = rayGridPlaneHit(s_camera.pos, s_rayDir);
 
 				if (s_editMode == LEDIT_VERTEX)
 				{
@@ -2137,6 +2712,90 @@ namespace LevelEditor
 		s_featureCur = {};
 		selection_clear();
 	}
+		
+	void drawViewportInfo(s32 index, Vec2i mapPos, const char* info, f32 xOffset, f32 yOffset, f32 alpha)
+	{
+		char id[256];
+		sprintf(id, "##ViewportInfo%d", index);
+
+		const ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize
+			| ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoNav | ImGuiWindowFlags_AlwaysAutoResize;
+
+		ImGui::PushStyleColor(ImGuiCol_Text, { 0.8f, 0.9f, 1.0f, 0.5f*alpha });
+		ImGui::PushStyleColor(ImGuiCol_WindowBg, { 0.06f, 0.06f, 0.06f, 0.94f*0.75f*alpha });
+		ImGui::PushStyleColor(ImGuiCol_Border, { 0.43f, 0.43f, 0.50f, 0.25f*alpha });
+		
+		ImGui::SetNextWindowPos({ (f32)mapPos.x + xOffset, (f32)mapPos.z + yOffset });
+		ImGui::Begin(id, nullptr, window_flags);
+		ImGui::Text("%s", info);
+		ImGui::End();
+
+		ImGui::PopStyleColor(3);
+	}
+
+	void floatToString(f32 value, char* str)
+	{
+		const f32 valueOnGrid = s_gridSize != 0.0f ? floorf(value/s_gridSize) * s_gridSize : 1.0f;
+		const f32 eps = 0.00001f;
+
+		if (fabsf(floorf(value)-value) < eps)
+		{
+			// Integer value.
+			sprintf(str, "%d", s32(value));
+		}
+		else if (s_gridSize < 1.0f && s_gridSize > 0.0f && fabsf(valueOnGrid - value) < eps)
+		{
+			// Fractional grid-aligned value, show as a fraction so its easier to see the value in terms of grid cells.
+			s32 den = s32(1.0f / s_gridSize);
+			if (value >= 1.0f)
+			{
+				sprintf(str, "%d %d/%d", s32(value), s32(value * (f32)den)&(den - 1), den);
+			}
+			else
+			{
+				sprintf(str, "%d/%d", s32(value * (f32)den)&(den - 1), den);
+			}
+		}
+		else
+		{
+			// Floating point, removing extra zeros.
+			sprintf(str, "%0.4f", value);
+			s32 len = (s32)strlen(str);
+			for (s32 i = 1; i <= 4; i++)
+			{
+				if (str[len - i] == '0') { str[len - i] = 0; }
+				else { break; }
+			}
+		}
+	}
+
+	void getWallLengthText(const Vec2f* v0, const Vec2f* v1, char* text, Vec2i& mapPos, s32 index)
+	{
+		Vec2f c = { (v0->x + v1->x) * 0.5f, (v0->z + v1->z)*0.5f };
+		Vec2f n = { -(v1->z - v0->z), v1->x - v0->x };
+		n = TFE_Math::normalize(&n);
+
+		Vec2f offset = { v1->x - v0->x, v1->z - v0->z };
+		f32 len = sqrtf(offset.x*offset.x + offset.z*offset.z);
+
+		char num[256];
+		floatToString(len, num);
+
+		if (index >= 0) { sprintf(text, "%d: %s", index, num); }
+		else { strcpy(text, num); }
+
+		mapPos = worldPos2dToMap(c);
+		Vec2f mapOffset = { ImGui::CalcTextSize(text).x + 16.0f, -20 };
+		if (n.x < 0.0f)
+		{
+			mapPos.x += s32(mapOffset.x * (n.x*0.5f - 0.5f));
+		}
+		else
+		{
+			mapPos.x += s32(mapOffset.x * (-(1.0f - n.x)*0.5f));
+		}
+		mapPos.z += s32(n.z * mapOffset.z - 16.0f);
+	}
 	
 	void update()
 	{
@@ -2256,20 +2915,104 @@ namespace LevelEditor
 
 			if (s_view == EDIT_VIEW_2D && !getMenuActive() && !isUiActive())
 			{
+				const ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize
+					| ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoNav | ImGuiWindowFlags_AlwaysAutoResize;
+
 				// Display vertex info.
-				if (s_featureHovered.sector && s_featureHovered.featureIndex >= 0 && editWinHovered)
+				if (s_featureHovered.sector && s_featureHovered.featureIndex >= 0 && editWinHovered && s_editMode == LEDIT_VERTEX)
 				{
 					// Give the "world space" vertex position, get back to the pixel position for the UI.
 					const Vec2f vtx = s_featureHovered.sector->vtx[s_featureHovered.featureIndex];
 					const Vec2i mapPos = worldPos2dToMap(vtx);
+					
+					char x[256], z[256];
+					floatToString(vtx.x, x);
+					floatToString(vtx.z, z);
 
-					const ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize
-						| ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoNav | ImGuiWindowFlags_AlwaysAutoResize;
+					char info[256];
+					sprintf(info, "%d: %s, %s", s_featureHovered.featureIndex, x, z);
 
-					ImGui::SetNextWindowPos({ (f32)mapPos.x - UI_SCALE(20), (f32)mapPos.z - UI_SCALE(20) - 16 });
-					ImGui::Begin("##VtxInfo", nullptr, window_flags);
-					ImGui::Text("%d: %0.3f, %0.3f", s_featureHovered.featureIndex, vtx.x, vtx.z);
-					ImGui::End();
+					drawViewportInfo(0, mapPos, info, -UI_SCALE(20), -UI_SCALE(20) - 16);
+				}
+				// Display wall info.
+				else if (s_featureHovered.sector && s_featureHovered.featureIndex >= 0 && editWinHovered && s_editMode == LEDIT_WALL)
+				{
+					const EditorWall* wall = &s_featureHovered.sector->walls[s_featureHovered.featureIndex];
+					const Vec2f* v0 = &s_featureHovered.sector->vtx[wall->idx[0]];
+					const Vec2f* v1 = &s_featureHovered.sector->vtx[wall->idx[1]];
+
+					char lenStr[256];
+					Vec2i mapPos;
+					getWallLengthText(v0, v1, lenStr, mapPos, s_featureHovered.featureIndex);
+					drawViewportInfo(0, mapPos, lenStr, 0, 0);
+				}
+				// Sector Info.
+				else if (s_featureHovered.sector && editWinHovered && s_editMode == LEDIT_SECTOR)
+				{
+					const EditorSector* sector = s_featureHovered.sector;
+					if (!sector->name.empty())
+					{
+						Vec2f center = { (sector->bounds[0].x + sector->bounds[1].x) * 0.5f, (sector->bounds[0].z + sector->bounds[1].z) * 0.5f };
+						f32 textOffset = floorf(ImGui::CalcTextSize(sector->name.c_str()).x * 0.5f);
+												
+						const Vec2i mapPos = worldPos2dToMap(center);
+						drawViewportInfo(0, mapPos, sector->name.c_str(), -textOffset - 12, -16);
+					}
+				}
+				else if (s_editMode == LEDIT_DRAW && s_drawStarted)
+				{
+					if (s_drawMode == DMODE_RECT)
+					{
+						f32 x0 = std::max(s_shape[0].x, s_shape[1].x);
+						f32 x1 = std::min(s_shape[0].x, s_shape[1].x);
+						f32 z0 = std::max(s_shape[0].z, s_shape[1].z);
+						f32 z1 = std::min(s_shape[0].z, s_shape[1].z);
+
+						f32 width  = fabsf(x1 - x0);
+						f32 height = fabsf(z1 - z0);
+						f32 midX = (x0 + x1) * 0.5f;
+						f32 midZ = (z0 + z1) * 0.5f;
+						const Vec2f cen[] =
+						{
+							{ midX, z0 },
+							{ x0, midZ },
+						};
+						const Vec2i mapPos[] =
+						{
+							worldPos2dToMap(cen[0]),
+							worldPos2dToMap(cen[1]),
+						};
+						const f32 len[] = { width, height };
+						const Vec2f offs[] = { {0.0f, -20.0f}, {25.0f, 0.0f} };
+
+						for (s32 i = 0; i < 2; i++)
+						{
+							char info[256];
+							floatToString(len[i], info);
+
+							f32 textOffset = ImGui::CalcTextSize(info).x;
+							if (i == 0) { textOffset = floorf(textOffset * 0.5f); }
+							else if (i == 1) { textOffset = 0.0f; }
+
+							drawViewportInfo(i, mapPos[i], info, -16.0f + offs[i].x - textOffset, -16.0f + offs[i].z);
+						}
+					}
+					else if (s_drawMode == DMODE_SHAPE && !s_shape.empty())
+					{
+						const s32 count = (s32)s_shape.size();
+						const Vec2f* vtx = s_shape.data();
+						// Only show a limited number of wall lengths, otherwise it just turns into noise.
+						for (s32 v = 0; v < count; v++)
+						{
+							const Vec2f* v0 = &vtx[v];
+							const Vec2f* v1 = v+1 < count ? &vtx[v + 1] : &s_drawCurPos;
+
+							char info[256];
+							Vec2i mapPos;
+							getWallLengthText(v0, v1, info, mapPos, -1);
+							drawViewportInfo(v, mapPos, info, 0, 0);
+						}
+					}
 				}
 
 				// Display Grid Info

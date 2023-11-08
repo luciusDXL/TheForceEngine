@@ -25,6 +25,15 @@ namespace LevelEditor
 		LEDIT_ENTITY
 	};
 
+	enum DrawMode
+	{
+		DMODE_RECT = 0,
+		DMODE_SHAPE,
+		DMODE_RECT_VERT,
+		DMODE_SHAPE_VERT,
+		DMODE_COUNT
+	};
+
 	enum WallPart
 	{
 		WP_MID = 0,

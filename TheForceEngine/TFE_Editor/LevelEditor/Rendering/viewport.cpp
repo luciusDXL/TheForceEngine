@@ -99,6 +99,7 @@ namespace LevelEditor
 	void renderSectorVertices2d();
 	void drawBox(const Vec3f* center, f32 side, f32 lineWidth, u32 color);
 	void drawSolidBox(const Vec3f* center, f32 side, u32 color);
+	void drawSectorShape2D();
 
 	void viewport_init()
 	{
@@ -256,6 +257,11 @@ namespace LevelEditor
 			}
 		}
 
+		if (s_editMode == LEDIT_DRAW)
+		{
+			drawSectorShape2D();
+		}
+		
 		// Draw drag select, if active.
 		if (s_dragSelect.active)
 		{
@@ -584,6 +590,195 @@ namespace LevelEditor
 		}
 	}
 
+	// Temp
+	extern bool s_drawStarted;
+	extern DrawMode s_drawMode;
+	extern f32 s_drawHeight[2];
+	extern std::vector<Vec2f> s_shape;
+	extern Vec2f s_drawCurPos;
+	extern Polygon s_shapePolygon;
+
+	void drawSectorShape2D()
+	{
+		u32 color[] = { 0xffffffff, 0xffffffff };
+		f32 width = 1.5f;
+		if (s_drawStarted && s_drawMode == DMODE_RECT)
+		{
+			//transVtx[v] = { vtxData->x * s_viewportTrans2d.x + s_viewportTrans2d.y, vtxData->z * s_viewportTrans2d.z + s_viewportTrans2d.w };
+			Vec2f vtx[] =
+			{
+				{ s_shape[0].x * s_viewportTrans2d.x + s_viewportTrans2d.y, s_shape[0].z * s_viewportTrans2d.z + s_viewportTrans2d.w },
+				{ s_shape[1].x * s_viewportTrans2d.x + s_viewportTrans2d.y, s_shape[0].z * s_viewportTrans2d.z + s_viewportTrans2d.w },
+				{ s_shape[1].x * s_viewportTrans2d.x + s_viewportTrans2d.y, s_shape[1].z * s_viewportTrans2d.z + s_viewportTrans2d.w },
+				{ s_shape[0].x * s_viewportTrans2d.x + s_viewportTrans2d.y, s_shape[1].z * s_viewportTrans2d.z + s_viewportTrans2d.w },
+				{ s_shape[0].x * s_viewportTrans2d.x + s_viewportTrans2d.y, s_shape[0].z * s_viewportTrans2d.z + s_viewportTrans2d.w }
+			};
+			TFE_RenderShared::lineDraw2d_addLine(width, &vtx[0], color);
+			TFE_RenderShared::lineDraw2d_addLine(width, &vtx[1], color);
+			TFE_RenderShared::lineDraw2d_addLine(width, &vtx[2], color);
+			TFE_RenderShared::lineDraw2d_addLine(width, &vtx[3], color);
+		}
+		else if (s_drawStarted && s_drawMode == DMODE_SHAPE)
+		{
+			const s32 vtxCount = (s32)s_shape.size();
+			const Vec2f* vtx = s_shape.data();
+			for (s32 v = 0; v < vtxCount - 1; v++)
+			{
+				const Vec2f lineVtx[] =
+				{
+					{ vtx[v].x * s_viewportTrans2d.x + s_viewportTrans2d.y, vtx[v].z * s_viewportTrans2d.z + s_viewportTrans2d.w },
+					{ vtx[v + 1].x * s_viewportTrans2d.x + s_viewportTrans2d.y, vtx[v + 1].z * s_viewportTrans2d.z + s_viewportTrans2d.w }
+				};
+				TFE_RenderShared::lineDraw2d_addLine(width, lineVtx, color);
+			}
+			// Draw from the last vertex to curPos.
+			const Vec2f lineVtx[] =
+			{
+				{vtx[vtxCount - 1].x * s_viewportTrans2d.x + s_viewportTrans2d.y, vtx[vtxCount - 1].z * s_viewportTrans2d.z + s_viewportTrans2d.w},
+			    {s_drawCurPos.x * s_viewportTrans2d.x + s_viewportTrans2d.y,  s_drawCurPos.z * s_viewportTrans2d.z + s_viewportTrans2d.w}
+			};
+			TFE_RenderShared::lineDraw2d_addLine(width, lineVtx, color);
+		}
+
+		// Draw the cursor.
+		const u32 cursorColor[] = { 0x80ff8020, 0x80ff8020 };
+		const f32 scale = std::min(1.0f, 1.0f / s_zoom2d) * c_vertexSize;
+		const Vec2f p0 = { s_drawCurPos.x * s_viewportTrans2d.x + s_viewportTrans2d.y, s_drawCurPos.z * s_viewportTrans2d.z + s_viewportTrans2d.w };
+		const Vec2f vtx[] =
+		{
+			{ p0.x - scale, p0.z - scale },
+			{ p0.x + scale, p0.z - scale },
+			{ p0.x + scale, p0.z + scale },
+			{ p0.x - scale, p0.z + scale },
+			{ p0.x - scale, p0.z - scale },
+		};
+		TFE_RenderShared::lineDraw2d_addLine(1.5f, &vtx[0], cursorColor);
+		TFE_RenderShared::lineDraw2d_addLine(1.5f, &vtx[1], cursorColor);
+		TFE_RenderShared::lineDraw2d_addLine(1.5f, &vtx[2], cursorColor);
+		TFE_RenderShared::lineDraw2d_addLine(1.5f, &vtx[3], cursorColor);
+	}
+
+	void drawSectorShape3D()
+	{
+		u32 color = 0xffffffff;
+		if (s_drawStarted && s_drawMode == DMODE_RECT)
+		{
+			// Draw the rect on the grid itself.
+			Vec3f vtx[] =
+			{
+				{ s_shape[0].x, s_drawHeight[0], s_shape[0].z },
+				{ s_shape[1].x, s_drawHeight[0], s_shape[0].z },
+				{ s_shape[1].x, s_drawHeight[0], s_shape[1].z },
+				{ s_shape[0].x, s_drawHeight[0], s_shape[1].z },
+				{ s_shape[0].x, s_drawHeight[0], s_shape[0].z }
+			};
+			TFE_RenderShared::lineDraw3d_addLine(3.0f, &vtx[0], &color);
+			TFE_RenderShared::lineDraw3d_addLine(3.0f, &vtx[1], &color);
+			TFE_RenderShared::lineDraw3d_addLine(3.0f, &vtx[2], &color);
+			TFE_RenderShared::lineDraw3d_addLine(3.0f, &vtx[3], &color);
+		}
+		else if (s_drawStarted && s_drawMode == DMODE_RECT_VERT)
+		{
+			const Vec2f vtx[] =
+			{
+				{ s_shape[0].x, s_shape[0].z },
+				{ s_shape[1].x, s_shape[0].z },
+				{ s_shape[1].x, s_shape[1].z },
+				{ s_shape[0].x, s_shape[1].z }
+			};
+
+			for (s32 v = 0; v < 4; v++)
+			{
+				s32 a = v;
+				s32 b = (v + 1) & 3;
+
+				// Floor
+				const Vec3f floor[] =
+				{
+					{ vtx[a].x, s_drawHeight[0], vtx[a].z },
+					{ vtx[b].x, s_drawHeight[0], vtx[b].z },
+				};
+				TFE_RenderShared::lineDraw3d_addLine(3.0f, floor, &color);
+
+				// Ceiling
+				const Vec3f ceil[] =
+				{
+					{ vtx[a].x, s_drawHeight[1], vtx[a].z },
+					{ vtx[b].x, s_drawHeight[1], vtx[b].z },
+				};
+				TFE_RenderShared::lineDraw3d_addLine(3.0f, ceil, &color);
+
+				// Edge
+				const Vec3f edge[] =
+				{
+					{ vtx[a].x, s_drawHeight[0], vtx[a].z },
+					{ vtx[a].x, s_drawHeight[1], vtx[a].z },
+				};
+				TFE_RenderShared::lineDraw3d_addLine(3.0f, edge, &color);
+			}
+
+			// Draw solid bottom.
+			Vec3f baseVtx[4] =
+			{
+				{ s_shape[0].x, s_drawHeight[0], s_shape[0].z },
+				{ s_shape[1].x, s_drawHeight[0], s_shape[0].z },
+				{ s_shape[1].x, s_drawHeight[0], s_shape[1].z },
+				{ s_shape[0].x, s_drawHeight[0], s_shape[1].z }
+			};
+			s32 idx[6]=
+			{
+				0, 1, 2,
+				0, 2, 3
+			};
+			triDraw3d_addColored(TRIMODE_BLEND, 6, 4, baseVtx, idx, SCOLOR_POLY_NORM, false);
+		}
+		else if (s_drawStarted && s_drawMode == DMODE_SHAPE)
+		{
+			const s32 vtxCount = (s32)s_shape.size();
+			const Vec2f* vtx = s_shape.data();
+			for (s32 v = 0; v < vtxCount - 1; v++)
+			{
+				const Vec3f lineVtx[] = { {vtx[v].x, s_drawHeight[0], vtx[v].z}, {vtx[v+1].x, s_drawHeight[0], vtx[v+1].z} };
+				TFE_RenderShared::lineDraw3d_addLine(3.0f, lineVtx, &color);
+			}
+			// Draw from the last vertex to curPos.
+			const Vec3f lineVtx[] = { {vtx[vtxCount-1].x, s_drawHeight[0], vtx[vtxCount-1].z}, {s_drawCurPos.x, s_drawHeight[0], s_drawCurPos.z} };
+			TFE_RenderShared::lineDraw3d_addLine(3.0f, lineVtx, &color);
+		}
+		else if (s_drawStarted && s_drawMode == DMODE_SHAPE_VERT)
+		{
+			const s32 vtxCount = (s32)s_shape.size();
+			const Vec2f* vtx = s_shape.data();
+			for (s32 v = 0; v < vtxCount; v++)
+			{
+				s32 a = v;
+				s32 b = (v + 1) % vtxCount;
+
+				// Draw the faces.
+				const Vec3f lineVtx0[] = { {vtx[a].x, s_drawHeight[0], vtx[a].z}, {vtx[b].x, s_drawHeight[0], vtx[b].z} };
+				const Vec3f lineVtx1[] = { {vtx[a].x, s_drawHeight[1], vtx[a].z}, {vtx[b].x, s_drawHeight[1], vtx[b].z} };
+				TFE_RenderShared::lineDraw3d_addLine(3.0f, lineVtx0, &color);
+				TFE_RenderShared::lineDraw3d_addLine(3.0f, lineVtx1, &color);
+
+				// Draw the edges.
+				const Vec3f lineVtxEdge[] = { {vtx[a].x, s_drawHeight[0], vtx[a].z}, {vtx[a].x, s_drawHeight[1], vtx[a].z} };
+				TFE_RenderShared::lineDraw3d_addLine(3.0f, lineVtxEdge, &color);
+			}
+			// Draw the polygon
+			const s32 triVtxCount = (s32)s_shapePolygon.triVtx.size();
+			const Vec2f* triVtx = s_shapePolygon.triVtx.data();
+
+			s_bufferVec3.resize(triVtxCount);
+			Vec3f* flatVtx = s_bufferVec3.data();
+
+			for (size_t v = 0; v < triVtxCount; v++)
+			{
+				flatVtx[v] = { triVtx[v].x, s_drawHeight[0], triVtx[v].z };
+			}
+			triDraw3d_addColored(TRIMODE_BLEND, (u32)s_shapePolygon.triIdx.size(), (u32)triVtxCount, flatVtx, s_shapePolygon.triIdx.data(), SCOLOR_POLY_NORM, false);
+		}
+	}
+
 	void drawSelectedSector3D()
 	{
 		bool hoverAndSelect = s_featureCur.sector == s_featureHovered.sector;
@@ -682,7 +877,11 @@ namespace LevelEditor
 		lineDraw3d_begin(s_viewportSize.x, s_viewportSize.z);
 		triDraw3d_begin();
 
-		if (s_editMode == LEDIT_SECTOR)
+		if (s_editMode == LEDIT_DRAW)
+		{
+			drawSectorShape3D();
+		}
+		else if (s_editMode == LEDIT_SECTOR)
 		{
 			drawSelectedSector3D();
 		}
