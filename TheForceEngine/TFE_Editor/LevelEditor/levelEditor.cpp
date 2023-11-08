@@ -119,6 +119,7 @@ namespace LevelEditor
 	static Vec2f s_editWinMapCorner = { 0 };
 	static Vec3f s_rayDir = { 0.0f, 0.0f, 1.0f };
 	static f32 s_zoom = c_defaultZoom;
+	static bool s_gravity = false;
 	static bool s_uiActive = false;
 
 	static bool s_moveStarted = false;
@@ -186,7 +187,7 @@ namespace LevelEditor
 	void toggleWallGroupInclusion(EditorSector* sector, s32 featureIndex, s32 part);
 	void gatherVerticesFromWallSelection();
 	bool vtxEqual(const Vec2f* a, const Vec2f* b);
-	void edit_moveFeatures(const Vec3f& newPos);
+	void moveFeatures(const Vec3f& newPos);
 	void handleVertexInsert(Vec2f worldPos);
 
 	void snapToGrid(f32* value);
@@ -242,6 +243,7 @@ namespace LevelEditor
 		s_featureHovered = {};
 		s_featureCur = {};
 		s_editMove = false;
+		s_gravity = false;
 
 		AssetBrowser::getLevelTextures(s_levelTextureList, asset->name.c_str());
 		s_camera = { 0 };
@@ -496,7 +498,10 @@ namespace LevelEditor
 			// Trace forward at the screen center to get the likely focus sector.
 			Vec3f centerViewDir = viewportCoordToWorldDir3d({ s_viewportSize.x / 2, s_viewportSize.z / 2 });
 			RayHitInfo hitInfo;
-			Ray ray = { s_camera.pos, centerViewDir, 1000.0f, s_curLayer };
+
+			s32 layer = (s_editFlags & LEF_SHOW_ALL_LAYERS) ? LAYER_ANY : s_curLayer;
+			Ray ray = { s_camera.pos, centerViewDir, 1000.0f, layer };
+
 			f32 nearDist = 1.0f;
 			f32 farDist = 100.0f;
 			if (traceRay(&ray, &hitInfo, false) && hitInfo.hitSectorId >= 0)
@@ -554,7 +559,7 @@ namespace LevelEditor
 			EditorSector* sector = s_level.sectors.data();
 			for (size_t s = 0; s < sectorCount; s++, sector++)
 			{
-				if (s_curLayer != sector->layer && s_curLayer != LAYER_ANY) { continue; }
+				if (layer != sector->layer && layer != LAYER_ANY) { continue; }
 
 				// For now, do them all...
 				const size_t wallCount = sector->walls.size();
@@ -672,7 +677,10 @@ namespace LevelEditor
 			// Trace forward at the screen center to get the likely focus sector.
 			Vec3f centerViewDir = viewportCoordToWorldDir3d({ s_viewportSize.x / 2, s_viewportSize.z / 2 });
 			RayHitInfo hitInfo;
-			Ray ray = { s_camera.pos, centerViewDir, 1000.0f, s_curLayer };
+
+			s32 layer = (s_editFlags & LEF_SHOW_ALL_LAYERS) ? LAYER_ANY : s_curLayer;
+			Ray ray = { s_camera.pos, centerViewDir, 1000.0f, layer };
+
 			f32 nearDist = 1.0f;
 			f32 farDist = 100.0f;
 			if (traceRay(&ray, &hitInfo, false) && hitInfo.hitSectorId >= 0)
@@ -730,7 +738,7 @@ namespace LevelEditor
 			EditorSector* sector = s_level.sectors.data();
 			for (size_t s = 0; s < sectorCount; s++, sector++)
 			{
-				if (s_curLayer != sector->layer && s_curLayer != LAYER_ANY) { continue; }
+				if (layer != sector->layer && layer != LAYER_ANY) { continue; }
 
 				// For now, do them all...
 				const size_t vtxCount = sector->vtx.size();
@@ -2524,13 +2532,33 @@ namespace LevelEditor
 		{
 			cameraControl3d(mx, my);
 			s_featureHovered = {};
+			s32 layer = (s_editFlags & LEF_SHOW_ALL_LAYERS) ? LAYER_ANY : s_curLayer;
+
+			// TODO: Hotkeys.
+			if (TFE_Input::keyPressed(KEY_G))
+			{
+				s_gravity = !s_gravity;
+				if (s_gravity) { infoPanelAddMsg(LE_MSG_INFO, "Gravity Enabled."); }
+				else { infoPanelAddMsg(LE_MSG_INFO, "Gravity Disabled."); }
+			}
+			if (s_gravity)
+			{
+				Ray ray = { s_camera.pos, { 0.0f, -1.0f, 0.0f}, 32.0f, layer };
+				RayHitInfo hitInfo;
+				if (traceRay(&ray, &hitInfo, false))
+				{
+					f32 newY = s_level.sectors[hitInfo.hitSectorId].floorHeight + 5.8f;
+					f32 blendFactor = std::min(1.0f, (f32)TFE_System::getDeltaTime() * 10.0f);
+					s_camera.pos.y = newY * blendFactor + s_camera.pos.y * (1.0f - blendFactor);
+				}
+			}
 
 			// TODO: Move out to common place for hotkeys.
 			bool hitBackfaces = TFE_Input::keyDown(KEY_B);
 			s_rayDir = mouseCoordToWorldDir3d(mx, my);
 
 			RayHitInfo hitInfo;
-			Ray ray = { s_camera.pos, s_rayDir, 1000.0f, s_curLayer };
+			Ray ray = { s_camera.pos, s_rayDir, 1000.0f, layer };
 			const bool rayHit = traceRay(&ray, &hitInfo, hitBackfaces);
 			if (rayHit) { s_cursor3d = hitInfo.hitPos; }
 			else  		{ s_cursor3d = rayGridPlaneHit(s_camera.pos, s_rayDir); }
@@ -3703,7 +3731,7 @@ namespace LevelEditor
 		if (s_editMove)
 		{
 			const Vec2f worldPos2d = mouseCoordToWorldPos2d(mx, my);
-			edit_moveFeatures({worldPos2d.x, 0.0f, worldPos2d.z});
+			moveFeatures({worldPos2d.x, 0.0f, worldPos2d.z});
 		}
 	}
 		
@@ -3785,7 +3813,7 @@ namespace LevelEditor
 				// the direction of movement (aka, the normal is perpendicular to this movement).
 				worldPos = s_cursor3d;
 			}
-			edit_moveFeatures(worldPos);
+			moveFeatures(worldPos);
 		}
 	}
 		
@@ -3944,7 +3972,7 @@ namespace LevelEditor
 		return gpuImage;
 	}
 
-	void edit_moveFeatures(const Vec3f& newPos)
+	void moveFeatures(const Vec3f& newPos)
 	{
 		if (s_editMode == LEDIT_VERTEX)
 		{
