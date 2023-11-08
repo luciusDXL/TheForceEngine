@@ -20,6 +20,8 @@ namespace LevelEditor
 		LCmd_InsertVertex,
 		LCmd_DeleteVertex,
 		LCmd_DeleteSector,
+		LCmd_CreateSectorFromRect,
+		LCmd_CreateSectorFromShape,
 		LCmd_Count
 	};
 		
@@ -30,6 +32,8 @@ namespace LevelEditor
 	void cmd_applyInsertVertex();
 	void cmd_applyDeleteVertex();
 	void cmd_applyDeleteSector();
+	void cmd_applyCreateSectorFromRect();
+	void cmd_applyCreateSectorFromShape();
 
 	void levHistory_init()
 	{
@@ -41,6 +45,8 @@ namespace LevelEditor
 		history_registerCommand(LCmd_InsertVertex, cmd_applyInsertVertex);
 		history_registerCommand(LCmd_DeleteVertex, cmd_applyDeleteVertex);
 		history_registerCommand(LCmd_DeleteSector, cmd_applyDeleteSector);
+		history_registerCommand(LCmd_CreateSectorFromRect, cmd_applyCreateSectorFromRect);
+		history_registerCommand(LCmd_CreateSectorFromShape, cmd_applyCreateSectorFromShape);
 		history_registerName(LName_MoveVertex, "Move Vertice(s)");
 		history_registerName(LName_SetVertex, "Set Vertex Position");
 		history_registerName(LName_MoveWall, "Move Wall(s)");
@@ -49,6 +55,8 @@ namespace LevelEditor
 		history_registerName(LName_DeleteVertex, "Delete Vertex");
 		history_registerName(LName_DeleteWall, "Delete Wall");
 		history_registerName(LName_DeleteSector, "Delete Sector");
+		history_registerName(LName_CreateSectorFromRect, "Create Sector (Rect)");
+		history_registerName(LName_CreateSectorFromShape, "Create Sector (Shape)");
 	}
 
 	void levHistory_destroy()
@@ -285,6 +293,52 @@ namespace LevelEditor
 		const s32 sectorIndex = hBuffer_getS32();
 		// Call the editor command.
 		edit_deleteSector(sectorIndex);
+		CMD_APPLY_END();
+	}
+		
+	/////////////////////////////////
+	// Create Sector From Rect
+	void cmd_addCreateSectorFromRect(const f32* heights, const Vec2f* corners)
+	{
+		CMD_BEGIN(LCmd_CreateSectorFromRect, LName_CreateSectorFromRect);
+		// Add the command data.
+		hBuffer_addArrayF32(2, heights);
+		hBuffer_addArrayVec2f(2, corners);
+		CMD_END();
+	}
+
+	void cmd_applyCreateSectorFromRect()
+	{
+		CMD_APPLY_BEGIN();
+		// Extract the command data.
+		const f32* heights   = hBuffer_getArrayF32(2);
+		const Vec2f* corners = hBuffer_getArrayVec2f(2);
+		// Call the editor command.
+		edit_createSectorFromRect(heights, corners);
+		CMD_APPLY_END();
+	}
+
+	/////////////////////////////////
+	// Create Sector From Shape
+	void cmd_addCreateSectorFromShape(const f32* heights, s32 vertexCount, const Vec2f* vtx)
+	{
+		CMD_BEGIN(LCmd_CreateSectorFromShape, LName_CreateSectorFromShape);
+		// Add the command data.
+		hBuffer_addS32(vertexCount);
+		hBuffer_addArrayF32(2, heights);
+		hBuffer_addArrayVec2f(vertexCount, vtx);
+		CMD_END();
+	}
+
+	void cmd_applyCreateSectorFromShape()
+	{
+		CMD_APPLY_BEGIN();
+		// Extract the command data.
+		s32 vertexCount = hBuffer_getS32();
+		const f32* heights = hBuffer_getArrayF32(2);
+		const Vec2f* vtx = hBuffer_getArrayVec2f(vertexCount);
+		// Call the editor command.
+		edit_createSectorFromShape(heights, vertexCount, vtx);
 		CMD_APPLY_END();
 	}
 }

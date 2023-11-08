@@ -50,6 +50,8 @@ namespace TFE_Editor
 	const u16* hBuffer_getArrayU16(s32 count);
 	const u32* hBuffer_getArrayU32(s32 count);
 	const u64* hBuffer_getArrayU64(s32 count);
+	const f32* hBuffer_getArrayF32(s32 count);
+	const Vec2f* hBuffer_getArrayVec2f(s32 count);
 
 	// Add values to the buffer.
 	void hBuffer_addS16(s16 value);
@@ -61,4 +63,6 @@ namespace TFE_Editor
 	void hBuffer_addArrayU16(s32 count, const u16* values);
 	void hBuffer_addArrayU32(s32 count, const u32* values);
 	void hBuffer_addArrayU64(s32 count, const u64* values);
+	void hBuffer_addArrayF32(s32 count, const f32* values);
+	void hBuffer_addArrayVec2f(s32 count, const Vec2f* values);
 }

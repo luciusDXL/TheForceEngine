@@ -1927,7 +1927,7 @@ namespace LevelEditor
 		TFE_Polygon::computeTriangulation(&poly);
 	}
 
-	void createNewSector(EditorSector* sector)
+	void createNewSector(EditorSector* sector, const f32* heights)
 	{
 		*sector = {};
 		sector->id = (s32)s_level.sectors.size();
@@ -1935,8 +1935,8 @@ namespace LevelEditor
 		sector->floorTex.texIndex = s_level.sectors[0].floorTex.texIndex;
 		sector->ceilTex.texIndex = s_level.sectors[0].ceilTex.texIndex;
 
-		sector->floorHeight = std::min(s_drawHeight[0], s_drawHeight[1]);
-		sector->ceilHeight  = std::max(s_drawHeight[0], s_drawHeight[1]);
+		sector->floorHeight = std::min(heights[0], heights[1]);
+		sector->ceilHeight  = std::max(heights[0], heights[1]);
 		sector->ambient = 20;
 		sector->layer   = s_curLayer;
 	}
@@ -2150,16 +2150,18 @@ namespace LevelEditor
 		polygonToSector(sector0);
 	}
 
-	void createSectorFromRect()
+	void edit_createSectorFromRect(const f32* heights, const Vec2f* vtx)
 	{
+		s_drawStarted = false;
+
 		EditorSector newSector;
-		createNewSector(&newSector);
+		createNewSector(&newSector, heights);
 
 		s32 count = 4;
 		newSector.vtx.resize(count);
 		newSector.walls.resize(count);
 
-		const Vec2f* shapeVtx = s_shape.data();
+		const Vec2f* shapeVtx = vtx;
 		Vec2f corners[2];
 		corners[0] = { std::max(shapeVtx[0].x, shapeVtx[1].x), std::min(shapeVtx[0].z, shapeVtx[1].z) };
 		corners[1] = { std::min(shapeVtx[0].x, shapeVtx[1].x), std::max(shapeVtx[0].z, shapeVtx[1].z) };
@@ -2199,40 +2201,41 @@ namespace LevelEditor
 
 		mergeAdjoins(&s_level.sectors.back());
 	}
-		
-	void createSectorFromShape()
+				
+	void edit_createSectorFromShape(const f32* heights, s32 vertexCount, const Vec2f* vtx)
 	{
+		s_drawStarted = false;
+
 		EditorSector newSector = {};
-		createNewSector(&newSector);
+		createNewSector(&newSector, heights);
 
-		const s32 count = (s32)s_shape.size();
-		newSector.vtx.resize(count);
-		newSector.walls.resize(count);
+		newSector.vtx.resize(vertexCount);
+		newSector.walls.resize(vertexCount);
 
-		const f32 area = TFE_Polygon::signedArea((s32)s_shape.size(), s_shape.data());
+		const f32 area = TFE_Polygon::signedArea(vertexCount, vtx);
 		Vec2f* outVtx = newSector.vtx.data();
 		if (area >= 0.0f)
 		{
 			// If area is positive, than the polygon winding is clockwise, which is what we want.
-			for (s32 v = 0; v < count; v++)
+			for (s32 v = 0; v < vertexCount; v++)
 			{
-				outVtx[v] = s_shape[v];
+				outVtx[v] = vtx[v];
 			}
 		}
 		else
 		{
 			// If area is negative, than the polygon winding is counter-clockwise, so read the vertices in reverse-order.
-			for (s32 v = 0; v < count; v++)
+			for (s32 v = 0; v < vertexCount; v++)
 			{
-				outVtx[v] = s_shape[count - v - 1];
+				outVtx[v] = vtx[vertexCount - v - 1];
 			}
 		}
 
 		EditorWall* wall = newSector.walls.data();
-		for (s32 w = 0; w < count; w++, wall++)
+		for (s32 w = 0; w < vertexCount; w++, wall++)
 		{
 			s32 a = w;
-			s32 b = (w + 1) % count;
+			s32 b = (w + 1) % vertexCount;
 
 			*wall = {};
 			wall->idx[0] = a;
@@ -2248,6 +2251,18 @@ namespace LevelEditor
 		sectorToPolygon(&s_level.sectors.back());
 
 		mergeAdjoins(&s_level.sectors.back());
+	}
+
+	void createSectorFromRect()
+	{
+		cmd_addCreateSectorFromRect(s_drawHeight, s_shape.data());
+		edit_createSectorFromRect(s_drawHeight, s_shape.data());
+	}
+		
+	void createSectorFromShape()
+	{
+		cmd_addCreateSectorFromShape(s_drawHeight, (s32)s_shape.size(), s_shape.data());
+		edit_createSectorFromShape(s_drawHeight, (s32)s_shape.size(), s_shape.data());
 	}
 
 	void removeLastShapePoint()
@@ -2309,7 +2324,6 @@ namespace LevelEditor
 					else
 					{
 						s_drawHeight[1] = s_drawHeight[0] + c_defaultSectorHeight;
-						s_drawStarted = false;
 						createSectorFromRect();
 					}
 				}
@@ -2329,7 +2343,6 @@ namespace LevelEditor
 						else
 						{
 							s_drawHeight[1] = s_drawHeight[0] + c_defaultSectorHeight;
-							s_drawStarted = false;
 							createSectorFromShape();
 						}
 					}
@@ -2353,7 +2366,6 @@ namespace LevelEditor
 					else
 					{
 						s_drawHeight[1] = s_drawHeight[0] + c_defaultSectorHeight;
-						s_drawStarted = false;
 						createSectorFromShape();
 					}
 				}
@@ -2378,7 +2390,6 @@ namespace LevelEditor
 				}
 				else if (TFE_Input::mousePressed(MouseButton::MBUTTON_LEFT))
 				{
-					s_drawStarted = false;
 					if (s_drawMode == DMODE_SHAPE_VERT) { createSectorFromShape(); }
 					else { createSectorFromRect(); }
 				}

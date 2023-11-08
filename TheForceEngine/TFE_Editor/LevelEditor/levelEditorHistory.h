@@ -15,6 +15,8 @@ namespace LevelEditor
 		LName_DeleteVertex,
 		LName_DeleteWall,
 		LName_DeleteSector,
+		LName_CreateSectorFromRect,
+		LName_CreateSectorFromShape,
 		LName_Count
 	};
 
@@ -37,4 +39,6 @@ namespace LevelEditor
 	void cmd_addInsertVertex(s32 sectorIndex, s32 wallIndex, Vec2f newPos);
 	void cmd_addDeleteVertex(s32 sectorIndex, s32 vertexIndex, LevCommandName name = LName_DeleteVertex);
 	void cmd_addDeleteSector(s32 sectorId);
+	void cmd_addCreateSectorFromRect(const f32* heights, const Vec2f* corners);
+	void cmd_addCreateSectorFromShape(const f32* heights, s32 vertexCount, const Vec2f* vtx);
 }

@@ -295,6 +295,20 @@ namespace TFE_Editor
 		s_curBufferAddr += count * sizeof(u64);
 		return values;
 	}
+	
+	const f32* hBuffer_getArrayF32(s32 count)
+	{
+		const f32* values = (f32*)&s_historyBuffer[s_curBufferAddr];
+		s_curBufferAddr += count * sizeof(f32);
+		return values;
+	}
+
+	const Vec2f* hBuffer_getArrayVec2f(s32 count)
+	{
+		const Vec2f* values = (Vec2f*)&s_historyBuffer[s_curBufferAddr];
+		s_curBufferAddr += count * sizeof(Vec2f);
+		return values;
+	}
 
 	// Add values to the buffer.
 	void hBuffer_addS16(s16 value)
@@ -377,6 +391,26 @@ namespace TFE_Editor
 		s_historyBuffer.resize(s_curBufferAddr + dataSize);
 
 		u64* dstValues = (u64*)&s_historyBuffer[s_curBufferAddr];
+		memcpy(dstValues, values, dataSize);
+		s_curBufferAddr += dataSize;
+	}
+		
+	void hBuffer_addArrayF32(s32 count, const f32* values)
+	{
+		u32 dataSize = count * sizeof(f32);
+		s_historyBuffer.resize(s_curBufferAddr + dataSize);
+
+		f32* dstValues = (f32*)&s_historyBuffer[s_curBufferAddr];
+		memcpy(dstValues, values, dataSize);
+		s_curBufferAddr += dataSize;
+	}
+
+	void hBuffer_addArrayVec2f(s32 count, const Vec2f* values)
+	{
+		u32 dataSize = count * sizeof(Vec2f);
+		s_historyBuffer.resize(s_curBufferAddr + dataSize);
+
+		Vec2f* dstValues = (Vec2f*)&s_historyBuffer[s_curBufferAddr];
 		memcpy(dstValues, values, dataSize);
 		s_curBufferAddr += dataSize;
 	}
