@@ -179,6 +179,7 @@ namespace LevelEditor
 	Vec3f mouseCoordToWorldDir3d(s32 mx, s32 my);
 	Vec3f viewportCoordToWorldDir3d(Vec2i vCoord);
 	Vec2i worldPos2dToMap(const Vec2f& worldPos);
+	bool worldPosToViewportCoord(Vec3f worldPos, Vec2f* screenPos);
 	TextureGpu* loadGpuImage(const char* path);
 
 	void selectFromSingleVertex(EditorSector* root, s32 featureIndex, bool clearList);
@@ -194,7 +195,8 @@ namespace LevelEditor
 	void snapToGrid(Vec2f* pos);
 	void snapToGrid(Vec3f* pos);
 
-	void drawViewportInfo(s32 index, Vec2i mapPos, const char* info, f32 xOffset, f32 yOffset, f32 alpha = 1.0f);
+	void drawViewportInfo(s32 index, Vec2i mapPos, const char* info, f32 xOffset, f32 yOffset, f32 alpha=1.0f);
+	void getWallLengthText(const Vec2f* v0, const Vec2f* v1, char* text, Vec2i& mapPos, s32 index = -1, Vec2f* mapOffset = nullptr);
 	
 	////////////////////////////////////////////////////////
 	// Public API
@@ -2797,7 +2799,7 @@ namespace LevelEditor
 		}
 	}
 
-	void getWallLengthText(const Vec2f* v0, const Vec2f* v1, char* text, Vec2i& mapPos, s32 index)
+	void getWallLengthText(const Vec2f* v0, const Vec2f* v1, char* text, Vec2i& mapPos, s32 index, Vec2f* mapOffset_)
 	{
 		Vec2f c = { (v0->x + v1->x) * 0.5f, (v0->z + v1->z)*0.5f };
 		Vec2f n = { -(v1->z - v0->z), v1->x - v0->x };
@@ -2816,13 +2818,17 @@ namespace LevelEditor
 		Vec2f mapOffset = { ImGui::CalcTextSize(text).x + 16.0f, -20 };
 		if (n.x < 0.0f)
 		{
-			mapPos.x += s32(mapOffset.x * (n.x*0.5f - 0.5f));
+			mapOffset.x = s32(mapOffset.x * (n.x*0.5f - 0.5f));
 		}
 		else
 		{
-			mapPos.x += s32(mapOffset.x * (-(1.0f - n.x)*0.5f));
+			mapOffset.x = s32(mapOffset.x * (-(1.0f - n.x)*0.5f));
 		}
-		mapPos.z += s32(n.z * mapOffset.z - 16.0f);
+		mapOffset.z = s32(n.z * mapOffset.z - 16.0f);
+
+		mapPos.x += mapOffset.x;
+		mapPos.z += mapOffset.z;
+		if (mapOffset_) { *mapOffset_ = mapOffset; }
 	}
 	
 	void update()
@@ -2941,7 +2947,7 @@ namespace LevelEditor
 			TFE_Input::getMousePos(&mx, &my);
 			const bool editWinHovered = mx >= s_editWinPos.x && mx < s_editWinPos.x + s_editWinSize.x && my >= s_editWinPos.z && my < s_editWinPos.z + s_editWinSize.z;
 
-			if (s_view == EDIT_VIEW_2D && !getMenuActive() && !isUiActive())
+			if (!getMenuActive() && !isUiActive())
 			{
 				const ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize
 					| ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoNav | ImGuiWindowFlags_AlwaysAutoResize;
@@ -2951,16 +2957,37 @@ namespace LevelEditor
 				{
 					// Give the "world space" vertex position, get back to the pixel position for the UI.
 					const Vec2f vtx = s_featureHovered.sector->vtx[s_featureHovered.featureIndex];
-					const Vec2i mapPos = worldPos2dToMap(vtx);
+					Vec2i mapPos;
+					bool showInfo = true;
+					if (s_view == EDIT_VIEW_2D)
+					{
+						mapPos = worldPos2dToMap(vtx);
+					}
+					else if (s_view == EDIT_VIEW_3D)
+					{
+						// Project the position.
+						Vec2f screenPos;
+						if (worldPosToViewportCoord({ vtx.x, s_featureHovered.sector->floorHeight, vtx.z }, &screenPos))
+						{
+							mapPos = { s32(screenPos.x), s32(screenPos.z) };
+						}
+						else
+						{
+							showInfo = false;
+						}
+					}
 					
-					char x[256], z[256];
-					floatToString(vtx.x, x);
-					floatToString(vtx.z, z);
+					if (showInfo)
+					{
+						char x[256], z[256];
+						floatToString(vtx.x, x);
+						floatToString(vtx.z, z);
 
-					char info[256];
-					sprintf(info, "%d: %s, %s", s_featureHovered.featureIndex, x, z);
+						char info[256];
+						sprintf(info, "%d: %s, %s", s_featureHovered.featureIndex, x, z);
 
-					drawViewportInfo(0, mapPos, info, -UI_SCALE(20), -UI_SCALE(20) - 16);
+						drawViewportInfo(0, mapPos, info, -UI_SCALE(20), -UI_SCALE(20) - 16);
+					}
 				}
 				// Display wall info.
 				else if (s_featureHovered.sector && s_featureHovered.featureIndex >= 0 && editWinHovered && s_editMode == LEDIT_WALL)
@@ -2969,10 +2996,56 @@ namespace LevelEditor
 					const Vec2f* v0 = &s_featureHovered.sector->vtx[wall->idx[0]];
 					const Vec2f* v1 = &s_featureHovered.sector->vtx[wall->idx[1]];
 
-					char lenStr[256];
 					Vec2i mapPos;
-					getWallLengthText(v0, v1, lenStr, mapPos, s_featureHovered.featureIndex);
-					drawViewportInfo(0, mapPos, lenStr, 0, 0);
+					bool showInfo = true;
+					char lenStr[256];
+					if (s_view == EDIT_VIEW_2D)
+					{
+						getWallLengthText(v0, v1, lenStr, mapPos, s_featureHovered.featureIndex);
+					}
+					else if (s_view == EDIT_VIEW_3D)
+					{
+						if (s_featureHovered.part == HP_FLOOR || s_featureHovered.part == HP_CEIL)
+						{
+							EditorSector* sector = s_featureHovered.sector;
+							Vec3f worldPos = { (sector->bounds[0].x + sector->bounds[1].x) * 0.5f, sector->floorHeight + 1.0f, (sector->bounds[0].z + sector->bounds[1].z) * 0.5f };
+							Vec2f screenPos;
+							if (!sector->name.empty() && worldPosToViewportCoord(worldPos, &screenPos))
+							{
+								strcpy(lenStr, sector->name.c_str());
+								f32 textOffset = floorf(ImGui::CalcTextSize(lenStr).x * 0.5f);
+								mapPos = { s32(screenPos.x - textOffset), s32(screenPos.z) };
+							}
+							else
+							{
+								showInfo = false;
+							}
+						}
+						else
+						{
+							Vec3f worldPos = { (v0->x + v1->x) * 0.5f, s_featureHovered.sector->floorHeight + 1.0f, (v0->z + v1->z) * 0.5f };
+							Vec2f screenPos;
+							if (worldPosToViewportCoord(worldPos, &screenPos))
+							{
+								mapPos = { s32(screenPos.x), s32(screenPos.z) - 20 };
+								Vec2f offset = { v1->x - v0->x, v1->z - v0->z };
+								f32 len = sqrtf(offset.x*offset.x + offset.z*offset.z);
+
+								char num[256];
+								floatToString(len, num);
+								sprintf(lenStr, "%d: %s", s_featureHovered.featureIndex, num);
+							}
+							else
+							{
+								showInfo = false;
+							}
+						}
+					}
+
+					if (showInfo)
+					{
+						drawViewportInfo(0, mapPos, lenStr, 0, 0);
+					}
 				}
 				// Sector Info.
 				else if (s_featureHovered.sector && editWinHovered && s_editMode == LEDIT_SECTOR)
@@ -2980,11 +3053,35 @@ namespace LevelEditor
 					const EditorSector* sector = s_featureHovered.sector;
 					if (!sector->name.empty())
 					{
-						Vec2f center = { (sector->bounds[0].x + sector->bounds[1].x) * 0.5f, (sector->bounds[0].z + sector->bounds[1].z) * 0.5f };
+						bool showInfo = true;
+						Vec2i mapPos;
 						f32 textOffset = floorf(ImGui::CalcTextSize(sector->name.c_str()).x * 0.5f);
-												
-						const Vec2i mapPos = worldPos2dToMap(center);
-						drawViewportInfo(0, mapPos, sector->name.c_str(), -textOffset - 12, -16);
+						if (s_view == EDIT_VIEW_2D)
+						{
+							Vec2f center = { (sector->bounds[0].x + sector->bounds[1].x) * 0.5f, (sector->bounds[0].z + sector->bounds[1].z) * 0.5f };
+							
+							mapPos = worldPos2dToMap(center);
+							mapPos.x -= (textOffset + 12);
+							mapPos.z -= 16;
+						}
+						else if (s_view == EDIT_VIEW_3D)
+						{
+							Vec3f center = { (sector->bounds[0].x + sector->bounds[1].x) * 0.5f, sector->floorHeight, (sector->bounds[0].z + sector->bounds[1].z) * 0.5f };
+							Vec2f screenPos;
+							if (worldPosToViewportCoord(center, &screenPos))
+							{
+								f32 textOffset = floorf(ImGui::CalcTextSize(sector->name.c_str()).x * 0.5f);
+								mapPos = { s32(screenPos.x - textOffset), s32(screenPos.z) };
+							}
+							else
+							{
+								showInfo = false;
+							}
+						}
+						if (showInfo)
+						{
+							drawViewportInfo(0, mapPos, sector->name.c_str(), 0, 0);
+						}
 					}
 				}
 				else if (s_editMode == LEDIT_DRAW && s_drawStarted)
@@ -3022,7 +3119,18 @@ namespace LevelEditor
 							if (i == 0) { textOffset = floorf(textOffset * 0.5f); }
 							else if (i == 1) { textOffset = 0.0f; }
 
-							drawViewportInfo(i, mapPos[i], info, -16.0f + offs[i].x - textOffset, -16.0f + offs[i].z);
+							if (s_view == EDIT_VIEW_2D)
+							{
+								drawViewportInfo(i, mapPos[i], info, -16.0f + offs[i].x - textOffset, -16.0f + offs[i].z);
+							}
+							else if (s_view == EDIT_VIEW_3D)
+							{
+								Vec2f screenPos;
+								if (worldPosToViewportCoord({ cen[i].x, s_gridHeight, cen[i].z }, &screenPos))
+								{
+									drawViewportInfo(i, { (s32)screenPos.x, (s32)screenPos.z }, info, -16.0f + offs[i].x - textOffset, -16.0f + offs[i].z);
+								}
+							}
 						}
 					}
 					else if (s_drawMode == DMODE_SHAPE && !s_shape.empty())
@@ -3037,14 +3145,42 @@ namespace LevelEditor
 
 							char info[256];
 							Vec2i mapPos;
-							getWallLengthText(v0, v1, info, mapPos, -1);
-							drawViewportInfo(v, mapPos, info, 0, 0);
+							Vec2f mapOffset;
+							getWallLengthText(v0, v1, info, mapPos, -1, &mapOffset);
+
+							if (s_view == EDIT_VIEW_2D)
+							{
+								drawViewportInfo(v, mapPos, info, 0, 0);
+							}
+							else if (s_view == EDIT_VIEW_3D)
+							{
+								Vec2f screenPos;
+								if (worldPosToViewportCoord({ (v0->x + v1->x)*0.5f, s_gridHeight, (v0->z+v1->z)*0.5f }, &screenPos))
+								{
+									screenPos.x += mapOffset.x;
+									screenPos.z += mapOffset.z;
+									drawViewportInfo(v, { (s32)screenPos.x, (s32)screenPos.z }, info, 0, 0);
+								}
+							}
+						}
+					}
+					else if ((s_drawMode == DMODE_RECT_VERT || s_drawMode == DMODE_SHAPE_VERT) && s_view == EDIT_VIEW_3D)
+					{
+						f32 height = (s_drawHeight[0] + s_drawHeight[1]) * 0.5f;
+						Vec3f pos = { s_curVtxPos.x, height, s_curVtxPos.z };
+
+						Vec2f screenPos;
+						if (worldPosToViewportCoord(pos, &screenPos))
+						{
+							char info[256];
+							floatToString(s_drawHeight[1] - s_drawHeight[0], info);
+							drawViewportInfo(0, { s32(screenPos.x + 20.0f), s32(screenPos.z - 20.0f) }, info, 0, 0);
 						}
 					}
 				}
 
 				// Display Grid Info
-				if ((s_editFlags & LEF_SHOW_GRID) && !isUiActive() && !isViewportElementHovered())
+				if (s_view == EDIT_VIEW_2D && (s_editFlags & LEF_SHOW_GRID) && !isUiActive() && !isViewportElementHovered())
 				{
 					Vec2f worldPos = mouseCoordToWorldPos2d(mx, my);
 					Vec2f snappedPos;
@@ -3892,6 +4028,30 @@ namespace LevelEditor
 	Vec4f transform(const Mat4& mtx, const Vec4f& vec)
 	{
 		return { TFE_Math::dot(&mtx.m0, &vec), TFE_Math::dot(&mtx.m1, &vec), TFE_Math::dot(&mtx.m2, &vec), TFE_Math::dot(&mtx.m3, &vec) };
+	}
+
+	Vec3f transform(const Mat3& mtx, const Vec3f& vec)
+	{
+		return { TFE_Math::dot(&mtx.m0, &vec), TFE_Math::dot(&mtx.m1, &vec), TFE_Math::dot(&mtx.m2, &vec) };
+	}
+
+	bool worldPosToViewportCoord(Vec3f worldPos, Vec2f* screenPos)
+	{
+		Vec3f cameraRel = { worldPos.x - s_camera.pos.x, worldPos.y - s_camera.pos.y, worldPos.z - s_camera.pos.z };
+		Vec3f viewPosXYZ = transform(s_camera.viewMtx, cameraRel);
+
+		Vec4f viewPos = { viewPosXYZ.x, viewPosXYZ.y, viewPosXYZ.z, 1.0f };
+		Vec4f proj = transform(s_camera.projMtx, viewPos);
+
+		if (proj.w < FLT_EPSILON)
+		{
+			return false;
+		}
+
+		f32 wScale = 1.0f / proj.w;
+		screenPos->x = (proj.x * wScale * 0.5f + 0.5f) * (f32)s_viewportSize.x + (f32)s_editWinMapCorner.x;
+		screenPos->z = (proj.y * wScale * 0.5f + 0.5f) * (f32)s_viewportSize.z + (f32)s_editWinMapCorner.z;
+		return true;
 	}
 
 	Vec3f viewportCoordToWorldDir3d(Vec2i vCoord)
