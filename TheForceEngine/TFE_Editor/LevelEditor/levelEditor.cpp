@@ -5212,10 +5212,6 @@ namespace LevelEditor
 			{
 				applyTextureToSelection(index, nullptr);
 			}
-			else
-			{
-				// TODO: Add it now.
-			}
 		}
 		else if (TFE_Input::keyPressed(KEY_V) && TFE_Input::keyModDown(KEYMOD_CTRL) && s_selectedTexture >= 0)
 		{
@@ -5223,10 +5219,6 @@ namespace LevelEditor
 			if (index >= 0)
 			{
 				applyTextureToSelection(index, &s_copiedTextureOffset);
-			}
-			else
-			{
-				// TODO: Add it now.
 			}
 		}
 	}

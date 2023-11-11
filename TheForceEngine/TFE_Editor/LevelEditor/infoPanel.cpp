@@ -257,6 +257,14 @@ namespace LevelEditor
 		else if (s_featureHovered.featureIndex >= 0) { sector = s_featureHovered.sector; wallId = s_featureHovered.featureIndex; }
 		else { return; }
 
+		bool insertTexture = s_selectedTexture >= 0 && TFE_Input::keyPressed(KEY_T);
+		bool removeTexture = TFE_Input::mousePressed(MBUTTON_RIGHT);
+		s32 texIndex = -1;
+		if (insertTexture)
+		{
+			texIndex = getTextureIndex(s_levelTextureList[s_selectedTexture].name.c_str());
+		}
+
 		EditorWall* wall = sector->walls.data() + wallId;
 		Vec2f* vertices = sector->vtx.data();
 		f32 len = TFE_Math::distance(&vertices[wall->idx[0]], &vertices[wall->idx[1]]);
@@ -335,8 +343,13 @@ namespace LevelEditor
 		const f32 aspectSgn[] = { sgnTex ? f32(sgnTex->width) * sgnScale : 1.0f, sgnTex ? f32(sgnTex->height) * sgnScale : 1.0f };
 
 		ImGui::ImageButton(midTex ? TFE_RenderBackend::getGpuPtr(midTex->frames[0]) : nullptr, { 128.0f * aspectMid[0], 128.0f * aspectMid[1] });
+		if (texIndex>=0 && ImGui::IsItemHovered()) { wall->tex[WP_MID].texIndex = texIndex; }
+
 		ImGui::SameLine(texCol);
 		ImGui::ImageButton(sgnTex ? TFE_RenderBackend::getGpuPtr(sgnTex->frames[0]) : nullptr, { 128.0f * aspectSgn[0], 128.0f * aspectSgn[1] });
+		if (texIndex>=0 && ImGui::IsItemHovered()) { wall->tex[WP_SIGN].texIndex = texIndex; }
+		else if (removeTexture && ImGui::IsItemHovered()) { wall->tex[WP_SIGN].texIndex = -1; }
+
 		const ImVec2 imageLeft0 = ImGui::GetItemRectMin();
 		const ImVec2 imageRight0 = ImGui::GetItemRectMax();
 
@@ -359,8 +372,12 @@ namespace LevelEditor
 			const f32 aspectBot[] = { botTex ? f32(botTex->width) * botScale : 1.0f, botTex ? f32(botTex->height) * botScale : 1.0f };
 
 			ImGui::ImageButton(topTex ? TFE_RenderBackend::getGpuPtr(topTex->frames[0]) : nullptr, { 128.0f * aspectTop[0], 128.0f * aspectTop[1] });
+			if (texIndex>=0 && ImGui::IsItemHovered()) { wall->tex[WP_TOP].texIndex = texIndex; }
+
 			ImGui::SameLine(texCol);
 			ImGui::ImageButton(botTex ? TFE_RenderBackend::getGpuPtr(botTex->frames[0]) : nullptr, { 128.0f * aspectBot[0], 128.0f * aspectBot[1] });
+			if (texIndex>=0 && ImGui::IsItemHovered()) { wall->tex[WP_BOT].texIndex = texIndex; }
+
 			imageLeft1 = ImGui::GetItemRectMin();
 			imageRight1 = ImGui::GetItemRectMax();
 
@@ -421,6 +438,13 @@ namespace LevelEditor
 
 	void infoPanelSector()
 	{
+		bool insertTexture = s_selectedTexture >= 0 && TFE_Input::keyPressed(KEY_T);
+		s32 texIndex = -1;
+		if (insertTexture)
+		{
+			texIndex = getTextureIndex(s_levelTextureList[s_selectedTexture].name.c_str());
+		}
+
 		EditorSector* sector = s_featureCur.sector ? s_featureCur.sector : s_featureHovered.sector;
 		ImGui::Text("Sector ID: %d      Wall Count: %u", sector->id, (u32)sector->walls.size());
 		ImGui::Separator();
@@ -529,8 +553,12 @@ namespace LevelEditor
 		const f32 aspectCeil[] = { ceilTex ? f32(ceilTex->width) * ceilScale : 1.0f, ceilTex ? f32(ceilTex->height) * ceilScale : 1.0f };
 
 		ImGui::ImageButton(floorPtr, { 128.0f * aspectFloor[0], 128.0f * aspectFloor[1] }, { 0.0f, 1.0f }, { 1.0f, 0.0f });
+		if (texIndex >= 0 && ImGui::IsItemHovered()) { sector->floorTex.texIndex = texIndex; }
+
 		ImGui::SameLine(texCol);
 		ImGui::ImageButton(ceilPtr, { 128.0f * aspectCeil[0], 128.0f * aspectCeil[1] }, { 0.0f, 1.0f }, { 1.0f, 0.0f });
+		if (texIndex >= 0 && ImGui::IsItemHovered()) { sector->ceilTex.texIndex = texIndex; }
+
 		const ImVec2 imageLeft = ImGui::GetItemRectMin();
 		const ImVec2 imageRight = ImGui::GetItemRectMax();
 

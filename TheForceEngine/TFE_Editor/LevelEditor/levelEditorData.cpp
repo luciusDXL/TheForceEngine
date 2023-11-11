@@ -52,6 +52,7 @@ namespace LevelEditor
 
 	EditorLevel s_level = {};
 
+	extern AssetList s_levelTextureList;
 	extern void edit_clearSelections();
 
 	enum Constants
@@ -386,6 +387,20 @@ namespace LevelEditor
 		return (EditorTexture*)getAssetData(s_level.textures[index].handle);
 	}
 
+	Asset* getTextureAssetByName(const char* name)
+	{
+		const s32 count = s_levelTextureList.size();
+		Asset* asset = s_levelTextureList.data();
+		for (s32 i = 0; i < count; i++)
+		{
+			if (strcasecmp(asset[i].name.c_str(), name) == 0)
+			{
+				return &asset[i];
+			}
+		}
+		return nullptr;
+	}
+
 	s32 getTextureIndex(const char* name)
 	{
 		const s32 count = (s32)s_level.textures.size();
@@ -396,6 +411,16 @@ namespace LevelEditor
 			{
 				return i;
 			}
+		}
+		Asset* asset = getTextureAssetByName(name);
+		if (asset)
+		{
+			s32 newId = count;
+			LevelTextureAsset newTex;
+			newTex.name = name;
+			newTex.handle = asset->handle;
+			s_level.textures.push_back(newTex);
+			return newId;
 		}
 		return -1;
 	}
