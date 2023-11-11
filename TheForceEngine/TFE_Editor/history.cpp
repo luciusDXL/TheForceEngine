@@ -231,7 +231,24 @@ namespace TFE_Editor
 	{
 		return (s32)s_history.size();
 	}
+		
+	bool history_canMergeCommand(u16 cmd, u16 name, const void* dataToMatch, u32 matchSize)
+	{
+		CommandHeader* header = hBuffer_getHeader(s_curPosInHistory - 1);
+		if (header->cmdId != cmd || header->cmdName != name)
+		{
+			return false;
+		}
+		const u8* prevCmdData = (u8*)&s_historyBuffer[s_curBufferAddr];
+		return memcmp(dataToMatch, prevCmdData, matchSize) == 0;
+	}
 
+	u8* history_getPrevCmdBufferData(s32 offset)
+	{
+		hBuffer_getHeader(s_curPosInHistory - 1);
+		return (u8*)&s_historyBuffer[s_curBufferAddr + offset];
+	}
+	
 	// Get values from the buffer.
 	s16 hBuffer_getS16()
 	{

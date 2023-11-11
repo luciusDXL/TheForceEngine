@@ -54,4 +54,6 @@ namespace LevelEditor
 	void edit_clearSelections();
 	void edit_createSectorFromRect(const f32* heights, const Vec2f* vtx);
 	void edit_createSectorFromShape(const f32* heights, s32 vertexCount, const Vec2f* vtx);
+	void edit_moveTexture(s32 count, const FeatureId* featureList, Vec2f delta);
+	void edit_setTexture(s32 count, const FeatureId* feature, s32 texIndex, Vec2f* offset = nullptr);
 }

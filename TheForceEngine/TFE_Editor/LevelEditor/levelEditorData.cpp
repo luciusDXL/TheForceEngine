@@ -386,6 +386,20 @@ namespace LevelEditor
 		return (EditorTexture*)getAssetData(s_level.textures[index].handle);
 	}
 
+	s32 getTextureIndex(const char* name)
+	{
+		const s32 count = (s32)s_level.textures.size();
+		const LevelTextureAsset* texAsset = s_level.textures.data();
+		for (s32 i = 0; i < count; i++, texAsset++)
+		{
+			if (strcasecmp(texAsset->name.c_str(), name) == 0)
+			{
+				return i;
+			}
+		}
+		return -1;
+	}
+
 	// Update the sector's polygon from the sector data.
 	void sectorToPolygon(EditorSector* sector)
 	{

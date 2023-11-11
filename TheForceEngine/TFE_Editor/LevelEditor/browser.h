@@ -13,4 +13,5 @@ namespace LevelEditor
 	void browserBegin(s32 offset);
 	void drawBrowser();
 	void browserEnd();
+	void browserScrollToSelection();
 }

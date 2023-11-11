@@ -16,6 +16,8 @@ using namespace TFE_Editor;
 
 namespace LevelEditor
 {
+	static s32 s_focusOnRow = -1;
+
 	void browseTextures();
 	
 	void browserBegin(s32 offset)
@@ -31,6 +33,12 @@ namespace LevelEditor
 			| ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoBringToFrontOnFocus;
 
 		ImGui::Begin("Browser", &browser, window_flags);
+
+		if (s_focusOnRow >= 0)
+		{
+			ImGui::SetScrollY(s_focusOnRow * (64 + 8) - 128);
+			s_focusOnRow = -1;
+		}
 	}
 
 	void browserEnd()
@@ -45,17 +53,29 @@ namespace LevelEditor
 		browserEnd();
 	}
 
+	void browserScrollToSelection()
+	{
+		if (s_selectedTexture < 0) { return; }
+		s_focusOnRow = s_selectedTexture / 6;
+	}
+
 	void browseTextures()
 	{
 		u32 count = (u32)s_levelTextureList.size();
 		u32 rows = count / 6;
 		u32 leftOver = count - rows * 6;
 		f32 y = 0.0f;
+
+		ImVec4 bgColor       = { 0.0f, 0.0f, 0.0f, 0.0f };
+		ImVec4 tintColorNrml = { 1.0f, 1.0f, 1.0f, 1.0f };
+		ImVec4 tintColorSel  = { 1.5f, 1.5f, 1.5f, 1.0f };
+
 		for (u32 i = 0; i < rows; i++)
 		{
 			for (u32 t = 0; t < 6; t++)
 			{
-				EditorTexture* texture = (EditorTexture*)getAssetData(s_levelTextureList[i * 6 + t].handle);
+				s32 index = i * 6 + t;
+				EditorTexture* texture = (EditorTexture*)getAssetData(s_levelTextureList[index].handle);
 				if (!texture) { continue; }
 
 				void* ptr = TFE_RenderBackend::getGpuPtr(texture->frames[0]);
@@ -71,11 +91,23 @@ namespace LevelEditor
 					w = 64 * texture->width / texture->height;
 				}
 
+				bool isSelected = s_selectedTexture == index;
+				if (isSelected)
+				{
+					ImGui::PushStyleColor(ImGuiCol_Button, {1.0f, 1.0f, 0.3f, 1.0f});
+				}
+				
 				if (ImGui::ImageButton(ptr, ImVec2(f32(w), f32(h)), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f), 2))
 				{
-					// TODO: select textures.
 					// TODO: add hover functionality (tool tip - but show full texture + file name + size)
+					s_selectedTexture = index;
 				}
+
+				if (isSelected)
+				{
+					ImGui::PopStyleColor();
+				}
+
 				ImGui::SameLine();
 			}
 			ImGui::NewLine();

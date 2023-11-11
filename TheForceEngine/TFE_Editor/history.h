@@ -40,6 +40,10 @@ namespace TFE_Editor
 	s32  history_getPos();
 	s32  history_getSize();
 
+	// Handle merging commands.
+	bool history_canMergeCommand(u16 cmd, u16 name, const void* dataToMatch, u32 matchSize);
+	u8*  history_getPrevCmdBufferData(s32 offset);
+
 	// Get values from the buffer.
 	s16   hBuffer_getS16();
 	s32   hBuffer_getS32();

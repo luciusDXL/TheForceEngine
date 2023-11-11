@@ -2,6 +2,7 @@
 #include "sharedState.h"
 #include <TFE_Editor/LevelEditor/levelEditor.h>
 #include <TFE_Editor/LevelEditor/levelEditorData.h>
+#include <TFE_System/system.h>
 #include <assert.h>
 #include <algorithm>
 #include <cstring>
@@ -22,9 +23,16 @@ namespace LevelEditor
 		LCmd_DeleteSector,
 		LCmd_CreateSectorFromRect,
 		LCmd_CreateSectorFromShape,
+		LCmd_MoveTexture,
+		LCmd_SetTexture,
+		LCmd_CopyTexture,
 		LCmd_Count
 	};
-		
+
+	// Used to merge certain commands.
+	static f64 c_mergeThreshold = 1.0;
+	static f64 s_lastMoveTex = 0.0;
+				
 	// Command Functions
 	void cmd_applyMoveVertices();
 	void cmd_applySetVertex();
@@ -34,7 +42,16 @@ namespace LevelEditor
 	void cmd_applyDeleteSector();
 	void cmd_applyCreateSectorFromRect();
 	void cmd_applyCreateSectorFromShape();
+	void cmd_applyMoveTexture();
+	void cmd_applySetTexture();
+	void cmd_applySetTextureWithOffset();
 
+	// Command Merging Helpers
+	bool mergeMoveTextureCmd(s32 count, FeatureId* features, Vec2f delta);
+
+	///////////////////////////////////
+	// API
+	///////////////////////////////////
 	void levHistory_init()
 	{
 		history_init(level_unpackSnapshot, level_createSnapshot);
@@ -47,6 +64,9 @@ namespace LevelEditor
 		history_registerCommand(LCmd_DeleteSector, cmd_applyDeleteSector);
 		history_registerCommand(LCmd_CreateSectorFromRect, cmd_applyCreateSectorFromRect);
 		history_registerCommand(LCmd_CreateSectorFromShape, cmd_applyCreateSectorFromShape);
+		history_registerCommand(LCmd_MoveTexture, cmd_applyMoveTexture);
+		history_registerCommand(LCmd_SetTexture, cmd_applySetTexture);
+		history_registerCommand(LCmd_CopyTexture, cmd_applySetTextureWithOffset);
 		history_registerName(LName_MoveVertex, "Move Vertice(s)");
 		history_registerName(LName_SetVertex, "Set Vertex Position");
 		history_registerName(LName_MoveWall, "Move Wall(s)");
@@ -57,6 +77,11 @@ namespace LevelEditor
 		history_registerName(LName_DeleteSector, "Delete Sector");
 		history_registerName(LName_CreateSectorFromRect, "Create Sector (Rect)");
 		history_registerName(LName_CreateSectorFromShape, "Create Sector (Shape)");
+		history_registerName(LName_MoveTexture, "Move Texture");
+		history_registerName(LName_SetTexture, "Set Texture");
+		history_registerName(LName_CopyTexture, "Copy Texture");
+
+		s_lastMoveTex = 0.0;
 	}
 
 	void levHistory_destroy()
@@ -340,5 +365,98 @@ namespace LevelEditor
 		// Call the editor command.
 		edit_createSectorFromShape(heights, vertexCount, vtx);
 		CMD_APPLY_END();
+	}
+
+	/////////////////////////////////
+	// Texture Offset
+	void cmd_addMoveTexture(s32 count, FeatureId* features, Vec2f delta)
+	{
+		// Special: try to merge the command to avoid too many tiny movements.
+		if (mergeMoveTextureCmd(count, features, delta)) { return; }
+
+		CMD_BEGIN(LCmd_MoveTexture, LName_MoveTexture);
+		// Add the command data.
+		hBuffer_addS32(count);
+		hBuffer_addArrayU64(count, features);
+		hBuffer_addVec2f(delta);
+		CMD_END();
+	}
+
+	void cmd_applyMoveTexture()
+	{
+		CMD_APPLY_BEGIN();
+		// Extract the command data.
+		s32 count = hBuffer_getS32();
+		FeatureId* features = (FeatureId*)hBuffer_getArrayU64(count);
+		Vec2f delta = hBuffer_getVec2f();
+		// Call the editor command.
+		edit_moveTexture(count, features, delta);
+		CMD_APPLY_END();
+	}
+
+	/////////////////////////////////
+	// Texture Offset
+	void cmd_addSetTexture(s32 count, FeatureId* features, s32 texId, Vec2f* offset)
+	{
+		CMD_BEGIN(offset ? LCmd_CopyTexture : LCmd_SetTexture, offset ? LName_CopyTexture : LName_SetTexture);
+		// Add the command data.
+		hBuffer_addS32(count);
+		hBuffer_addS32(texId);
+		hBuffer_addArrayU64(count, features);
+		if (offset)
+		{
+			hBuffer_addVec2f(*offset);
+		}
+		CMD_END();
+	}
+
+	void cmd_applySetTexture()
+	{
+		CMD_APPLY_BEGIN();
+		// Extract the command data.
+		s32 count = hBuffer_getS32();
+		s32 texId = hBuffer_getS32();
+		FeatureId* features = (FeatureId*)hBuffer_getArrayU64(count);
+		// Call the editor command.
+		edit_setTexture(count, features, texId);
+		CMD_APPLY_END();
+	}
+
+	void cmd_applySetTextureWithOffset()
+	{
+		CMD_APPLY_BEGIN();
+		// Extract the command data.
+		s32 count = hBuffer_getS32();
+		s32 texId = hBuffer_getS32();
+		FeatureId* features = (FeatureId*)hBuffer_getArrayU64(count);
+		Vec2f offset = hBuffer_getVec2f();
+		// Call the editor command.
+		edit_setTexture(count, features, texId, &offset);
+		CMD_APPLY_END();
+	}
+
+	/////////////////////////////////
+	// Command Merging
+	/////////////////////////////////
+	bool mergeMoveTextureCmd(s32 count, FeatureId* features, Vec2f delta)
+	{
+		bool canMerge = false;
+		f64 curTime = TFE_System::getTime();
+		if (curTime - s_lastMoveTex < c_mergeThreshold)
+		{
+			// Add the command data.
+			u32 testData[3] = { (u32)count, u32(features[0]), u32(features[0] >> u64(32)) };
+			canMerge = history_canMergeCommand(LCmd_MoveTexture, LName_MoveTexture, testData, sizeof(u32) * 3);
+
+			if (canMerge)
+			{
+				s32 dataOffset = sizeof(s32)/*count*/ + sizeof(u64)*count/*feature array*/;
+				Vec2f* prevData = (Vec2f*)history_getPrevCmdBufferData(dataOffset);
+				prevData->x += delta.x;
+				prevData->z += delta.z;
+			}
+		}
+		s_lastMoveTex = curTime;
+		return canMerge;
 	}
 }

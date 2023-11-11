@@ -14,9 +14,20 @@ uniform vec2 GridScaleOpacity;
 void main()
 {
 	vec4 outColor = Frag_Color;
+	float gridOpacityMod = 1.0;
 	if (int(isTextured) == int(1))
 	{
-		outColor *= texture(image, Frag_Uv2);
+		vec4 texColor = texture(image, Frag_Uv2);
+	#ifdef TRANS
+		outColor *= texColor;
+	#else
+		outColor.rgb *= texColor.rgb;
+	#endif
+
+		// Make the grid more translucent on darker surfaces.
+		// On bright surfaces it stays about the same.
+		float L = dot(outColor.rgb, vec3(0.3333));
+		gridOpacityMod = L * 0.75 + 0.25;
 	}
 
 	// Outline
@@ -38,7 +49,7 @@ void main()
 	float outAlpha = 0.0;
 	vec3 gridColor = outColor.rgb;
 	drawFloorGridLevels(gridColor, outAlpha, GridScaleOpacity.x, Frag_Uv1.xy, viewFalloff, Frag_Pos);
-	outColor.rgb = mix(outColor.rgb, gridColor, GridScaleOpacity.y);
+	outColor.rgb = mix(outColor.rgb, gridColor, GridScaleOpacity.y * gridOpacityMod);
 
 #ifdef TRANS
 	if (outColor.a < 0.01)

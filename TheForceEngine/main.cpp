@@ -129,9 +129,9 @@ void handleEvent(SDL_Event& Event)
 		} break;
 		case SDL_KEYDOWN:
 		{
-			if (Event.key.keysym.scancode && Event.key.repeat == 0)
+			if (Event.key.keysym.scancode)
 			{
-				TFE_Input::setKeyDown(KeyboardCode(Event.key.keysym.scancode));
+				TFE_Input::setKeyDown(KeyboardCode(Event.key.keysym.scancode), Event.key.repeat != 0);
 			}
 
 			if (Event.key.keysym.scancode)

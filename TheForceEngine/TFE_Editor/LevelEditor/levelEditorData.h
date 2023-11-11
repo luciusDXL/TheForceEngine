@@ -162,6 +162,7 @@ namespace LevelEditor
 	void polygonToSector(EditorSector* sector);
 
 	TFE_Editor::EditorTexture* getTexture(s32 index);
+	s32 getTextureIndex(const char* name);
 
 	s32 findSector2d(s32 layer, const Vec2f* pos);
 	bool traceRay(const Ray* ray, RayHitInfo* hitInfo, bool flipFaces);

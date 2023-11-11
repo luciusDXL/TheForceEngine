@@ -38,6 +38,7 @@
 #include <TFE_System/parser.h>
 #include <TFE_System/math.h>
 #include <TFE_Ui/ui.h>
+#include <SDL.h>
 
 #include <TFE_Ui/imGUI/imgui.h>
 #include <algorithm>
@@ -53,6 +54,7 @@ namespace LevelEditor
 	const f32 c_defaultZoom = 0.25f;
 	const f32 c_defaultYaw = PI;
 	const f32 c_defaultCameraHeight = 6.0f;
+	const f64 c_doubleClickThreshold = 0.25f;
 
 	struct VertexWallGroup
 	{
@@ -96,6 +98,10 @@ namespace LevelEditor
 	// Vertex
 	Vec3f s_hoveredVtxPos;
 	Vec3f s_curVtxPos;
+
+	// Texture
+	s32 s_selectedTexture = -1;
+	Vec2f s_copiedTextureOffset = { 0 };
 		
 	// Search
 	u32 s_searchKey = 0;
@@ -122,6 +128,9 @@ namespace LevelEditor
 	static bool s_gravity = false;
 	static bool s_showAllLabels = false;
 	static bool s_uiActive = false;
+	static bool s_singleClick = false;
+	static bool s_doubleClick = false;
+	static f64 s_lastClickTime = 0.0;
 
 	static bool s_moveStarted = false;
 	static Vec2f s_moveStartPos;
@@ -135,6 +144,13 @@ namespace LevelEditor
 	static Vec2f s_wallNrm;
 	static Vec2f s_wallTan;
 	static Vec3f s_prevPos = { 0 };
+
+	// Texture Alignment
+	static bool s_startTexMove = false;
+	static Vec3f s_startTexPos;
+	static Vec2f s_startTexOffset;
+	static Feature s_featureTex = {};
+	static Vec2f s_texNormal, s_texTangent;
 
 	static s32 s_gridIndex = 4;
 	static f32 c_gridSizeMap[] =
@@ -191,6 +207,7 @@ namespace LevelEditor
 	bool vtxEqual(const Vec2f* a, const Vec2f* b);
 	void moveFeatures(const Vec3f& newPos);
 	void handleVertexInsert(Vec2f worldPos);
+	void handleTextureAlignment();
 
 	void snapToGrid(f32* value);
 	void snapToGrid(Vec2f* pos);
@@ -198,6 +215,10 @@ namespace LevelEditor
 
 	void drawViewportInfo(s32 index, Vec2i mapPos, const char* info, f32 xOffset, f32 yOffset, f32 alpha=1.0f);
 	void getWallLengthText(const Vec2f* v0, const Vec2f* v1, char* text, Vec2i& mapPos, s32 index = -1, Vec2f* mapOffset = nullptr);
+
+	void copyToClipboard(const char* str);
+	bool copyFromClipboard(char* str);
+	void applySurfaceTextures();
 	
 	////////////////////////////////////////////////////////
 	// Public API
@@ -245,9 +266,14 @@ namespace LevelEditor
 		s_sectorDrawMode = SDM_WIREFRAME;
 		s_featureHovered = {};
 		s_featureCur = {};
+		s_featureTex = {};
 		s_editMove = false;
 		s_gravity = false;
 		s_showAllLabels = false;
+		s_doubleClick = false;
+		s_singleClick = false;
+		s_selectedTexture = -1;
+		s_copiedTextureOffset = { 0 };
 
 		AssetBrowser::getLevelTextures(s_levelTextureList, asset->name.c_str());
 		s_camera = { 0 };
@@ -842,7 +868,7 @@ namespace LevelEditor
 		const bool selToggle = TFE_Input::keyModDown(KEYMOD_CTRL);
 		const bool selToggleDrag = selAdd && selToggle;
 
-		const bool mousePressed = TFE_Input::mousePressed(MouseButton::MBUTTON_LEFT);
+		const bool mousePressed = s_singleClick;
 		const bool mouseDown = TFE_Input::mouseDown(MouseButton::MBUTTON_LEFT);
 
 		const bool del = TFE_Input::keyPressed(KEY_DELETE);
@@ -1487,7 +1513,7 @@ namespace LevelEditor
 
 	void handleVertexInsert(Vec2f worldPos)
 	{
-		const bool mousePressed = TFE_Input::mousePressed(MouseButton::MBUTTON_LEFT);
+		const bool mousePressed = s_singleClick;
 		const bool mouseDown = TFE_Input::mouseDown(MouseButton::MBUTTON_LEFT);
 		// TODO: Hotkeys.
 		const bool insertVtx = TFE_Input::keyPressed(KEY_INSERT);
@@ -1546,6 +1572,309 @@ namespace LevelEditor
 		}
 	}
 
+	// We are looking for other flats of the same height, texture, and part.
+	void selectSimilarFlats(EditorSector* rootSector, HitPart part)
+	{
+		s_searchKey++;
+		s_sectorChangeList.clear();
+		s_sectorChangeList.push_back(rootSector);
+
+		s32 texId = -1;
+		if (s_sectorDrawMode == SDM_TEXTURED_CEIL || s_sectorDrawMode == SDM_TEXTURED_FLOOR)
+		{
+			texId = part == HP_FLOOR ? rootSector->floorTex.texIndex : rootSector->ceilTex.texIndex;
+		}
+
+		while (!s_sectorChangeList.empty())
+		{
+			EditorSector* sector = s_sectorChangeList.back();
+			s_sectorChangeList.pop_back();
+
+			FeatureId id = createFeatureId(sector, 0, part);
+			selection_add(id);
+
+			const s32 wallCount = (s32)sector->walls.size();
+			const EditorWall* wall = sector->walls.data();
+			for (s32 w = 0; w < wallCount; w++, wall++)
+			{
+				if (wall->adjoinId < 0) { continue; }
+				EditorSector* next = &s_level.sectors[wall->adjoinId];
+				if (next->searchKey != s_searchKey)
+				{
+					next->searchKey = s_searchKey;
+					if ((part == HP_FLOOR && next->floorHeight == rootSector->floorHeight) || (part == HP_CEIL && next->ceilHeight == rootSector->ceilHeight))
+					{
+						bool texMatches = true;
+						if (texId >= 0)
+						{
+							s32 curTexId = part == HP_FLOOR ? next->floorTex.texIndex : next->ceilTex.texIndex;
+							texMatches = curTexId == texId;
+						}
+						if (texMatches)
+						{
+							s_sectorChangeList.push_back(next);
+						}
+					}
+				}
+			}
+		}
+	}
+
+	s32 getPartTextureIndex(EditorWall* wall, HitPart part)
+	{
+		s32 texId = -1;
+		switch (part)
+		{
+			case HP_MID:
+			{
+				texId = wall->tex[WP_MID].texIndex;
+			} break;
+			case HP_TOP:
+			{
+				texId = wall->tex[WP_TOP].texIndex;
+			} break;
+			case HP_BOT:
+			{
+				texId = wall->tex[WP_BOT].texIndex;
+			} break;
+			case HP_SIGN:
+			{
+				texId = wall->tex[WP_SIGN].texIndex;
+			} break;
+		}
+		return texId;
+	}
+
+	s32 getLeftWall(EditorSector* sector, s32 wallIndex)
+	{
+		EditorWall* baseWall = &sector->walls[wallIndex];
+		s32 leftIndex = baseWall->idx[0];
+
+		const s32 wallCount = (s32)sector->walls.size();
+		const EditorWall* wall = sector->walls.data();
+		for (s32 w = 0; w < wallCount; w++, wall++)
+		{
+			if (wall->idx[1] == leftIndex)
+			{
+				return w;
+			}
+		}
+		return -1;
+	}
+
+	s32 getRightWall(EditorSector* sector, s32 wallIndex)
+	{
+		EditorWall* baseWall = &sector->walls[wallIndex];
+		s32 rightIndex = baseWall->idx[1];
+
+		const s32 wallCount = (s32)sector->walls.size();
+		const EditorWall* wall = sector->walls.data();
+		for (s32 w = 0; w < wallCount; w++, wall++)
+		{
+			if (wall->idx[0] == rightIndex)
+			{
+				return w;
+			}
+		}
+		return -1;
+	}
+
+	struct Adjoin
+	{
+		s32 adjoinId;
+		s32 mirrorId;
+		s32 side;
+	};
+	std::vector<Adjoin> s_adjoinList;
+
+	void addToAdjoinList(Adjoin adjoin)
+	{
+		s32 count = (s32)s_adjoinList.size();
+		Adjoin* adj = s_adjoinList.data();
+		for (s32 i = 0; i < count; i++, adj++)
+		{
+			if (adjoin.adjoinId == adj->adjoinId && adjoin.mirrorId == adj->mirrorId && adjoin.side == adj->side)
+			{
+				return;
+			}
+		}
+		s_adjoinList.push_back(adjoin);
+	}
+
+	void selectSimilarTraverse(EditorSector* sector, s32 wallIndex, s32 texId, s32 fixedDir)
+	{
+		const s32 layer = (s_editFlags & LEF_SHOW_ALL_LAYERS) ? LAYER_ANY : s_curLayer;
+
+		s32 start = 0;
+		s32 end = 2;
+		if (fixedDir == 0) { end = 1; }
+		else if (fixedDir == 1) { start = 1; }
+
+		for (s32 dir = start; dir < end; dir++)
+		{
+			// Walk right until we either loop around again or stop.
+			// If we stop, we need to loop left.
+			s32 nextIndex = dir == 0 ? getRightWall(sector, wallIndex) : getLeftWall(sector, wallIndex);
+			while (nextIndex >= 0)
+			{
+				EditorWall* wall = &sector->walls[nextIndex];
+				if (wall->adjoinId < 0)
+				{
+					s32 curTexId = getPartTextureIndex(wall, HP_MID);
+					if (texId < 0 || curTexId == texId)
+					{
+						FeatureId id = createFeatureId(sector, nextIndex, HP_MID);
+						if (!selection_add(id))
+						{
+							break;
+						}
+					}
+					else
+					{
+						break;
+					}
+				}
+				else
+				{
+					bool hasMatch = false;
+					EditorSector* next = &s_level.sectors[wall->adjoinId];
+
+					// Add adjoin to the list.
+					// Then go left and right from the adjoin.
+					if (layer == LAYER_ANY || next->layer == layer)
+					{
+						addToAdjoinList({ wall->adjoinId, wall->mirrorId, dir });
+					}
+
+					if (next->ceilHeight < sector->ceilHeight)
+					{
+						// top
+						s32 curTexId = getPartTextureIndex(wall, HP_TOP);
+						if (texId < 0 || curTexId == texId)
+						{
+							FeatureId id = createFeatureId(sector, nextIndex, HP_TOP);
+							if (selection_add(id))
+							{
+								hasMatch = true;
+							}
+						}
+					}
+					if (next->floorHeight > sector->floorHeight)
+					{
+						// bottom
+						s32 curTexId = getPartTextureIndex(wall, HP_BOT);
+						if (texId < 0 || curTexId == texId)
+						{
+							FeatureId id = createFeatureId(sector, nextIndex, HP_BOT);
+							if (selection_add(id))
+							{
+								hasMatch = true;
+							}
+						}
+					}
+					if (wall->flags[0] & WF1_ADJ_MID_TEX)
+					{
+						// mid
+						s32 curTexId = getPartTextureIndex(wall, HP_MID);
+						if (texId < 0 || curTexId == texId)
+						{
+							FeatureId id = createFeatureId(sector, nextIndex, HP_MID);
+							if (selection_add(id))
+							{
+								hasMatch = true;
+							}
+						}
+					}
+
+					if (!hasMatch)
+					{
+						break;
+					}
+					else
+					{
+						// Add adjoin to the list.
+						// Then go left and right from the adjoin.
+						if (layer == LAYER_ANY || next->layer == layer)
+						{
+							addToAdjoinList({ wall->adjoinId, wall->mirrorId, !dir });
+						}
+					}
+				}
+
+				nextIndex = dir == 0 ? getRightWall(sector, nextIndex) : getLeftWall(sector, nextIndex);
+			}
+		}
+	}
+
+	void selectSimilarWalls(EditorSector* rootSector, s32 wallIndex, HitPart part)
+	{
+		s32 rootWallIndex = wallIndex;
+		EditorWall* rootWall = &rootSector->walls[wallIndex];
+		s32 texId = -1;
+		if (s_sectorDrawMode == SDM_TEXTURED_CEIL || s_sectorDrawMode == SDM_TEXTURED_FLOOR)
+		{
+			texId = getPartTextureIndex(rootWall, part);
+		}
+
+		// Add the matching parts from the start wall.
+		if (rootWall->adjoinId < 0)
+		{
+			s32 curTexId = getPartTextureIndex(rootWall, HP_MID);
+			if (texId < 0 || curTexId == texId)
+			{
+				FeatureId id = createFeatureId(rootSector, wallIndex, HP_MID);
+				selection_add(id);
+			}
+		}
+		else
+		{
+			EditorSector* next = &s_level.sectors[rootWall->adjoinId];
+			if (next->ceilHeight < rootSector->ceilHeight)
+			{
+				s32 curTexId = getPartTextureIndex(rootWall, HP_TOP);
+				if (texId < 0 || curTexId == texId)
+				{
+					FeatureId id = createFeatureId(rootSector, wallIndex, HP_TOP);
+					selection_add(id);
+				}
+			}
+			if (next->floorHeight > rootSector->floorHeight)
+			{
+				s32 curTexId = getPartTextureIndex(rootWall, HP_BOT);
+				if (texId < 0 || curTexId == texId)
+				{
+					FeatureId id = createFeatureId(rootSector, wallIndex, HP_BOT);
+					selection_add(id);
+				}
+			}
+			if (rootWall->flags[0] & WF1_ADJ_MID_TEX)
+			{
+				s32 curTexId = getPartTextureIndex(rootWall, HP_MID);
+				if (texId < 0 || curTexId == texId)
+				{
+					FeatureId id = createFeatureId(rootSector, wallIndex, HP_MID);
+					selection_add(id);
+				}
+			}
+		}
+
+		s_adjoinList.clear();
+		selectSimilarTraverse(rootSector, wallIndex, texId, -1);
+
+		// Only traverse adjoins if using textures as a separator.
+		// Otherwise we often select too many walls (most or all of the level).
+		if (texId >= 0)
+		{
+			size_t adjoinIndex = 0;
+			while (adjoinIndex < s_adjoinList.size())
+			{
+				EditorSector* sector = &s_level.sectors[s_adjoinList[adjoinIndex].adjoinId];
+				selectSimilarTraverse(sector, s_adjoinList[adjoinIndex].mirrorId, texId, s_adjoinList[adjoinIndex].side);
+				adjoinIndex++;
+			}
+		}
+	}
+
 	void handleMouseControlWall(Vec2f worldPos)
 	{
 		s32 mx, my;
@@ -1557,7 +1886,7 @@ namespace LevelEditor
 		const bool selToggle = TFE_Input::keyModDown(KEYMOD_CTRL);
 		const bool selToggleDrag = selAdd && selToggle;
 
-		const bool mousePressed = TFE_Input::mousePressed(MouseButton::MBUTTON_LEFT);
+		const bool mousePressed = s_singleClick;
 		const bool mouseDown = TFE_Input::mouseDown(MouseButton::MBUTTON_LEFT);
 
 		const bool del = TFE_Input::keyPressed(KEY_DELETE);
@@ -1657,6 +1986,26 @@ namespace LevelEditor
 				}
 			}
 		}
+		else if (s_doubleClick)
+		{
+			s_featureCur.sector = nullptr;
+			s_featureCur.featureIndex = -1;
+			if (s_featureHovered.sector && s_featureHovered.featureIndex >= 0)
+			{
+				if (!TFE_Input::keyModDown(KEYMOD_SHIFT))
+				{
+					s_selectionList.clear();
+				}
+				if (s_featureHovered.part == HP_FLOOR || s_featureHovered.part == HP_CEIL)
+				{
+					selectSimilarFlats(s_featureHovered.sector, s_featureHovered.part);
+				}
+				else
+				{
+					selectSimilarWalls(s_featureHovered.sector, s_featureHovered.featureIndex, s_featureHovered.part);
+				}
+			}
+		}
 		else if (mouseDown)
 		{
 			if (!s_dragSelect.active)
@@ -1683,6 +2032,12 @@ namespace LevelEditor
 		else if (s_dragSelect.active)
 		{
 			s_dragSelect.active = false;
+		}
+
+		// Handle copy and paste.
+		if (s_view == EDIT_VIEW_3D && s_featureHovered.sector && s_featureHovered.featureIndex >= 0)
+		{
+			applySurfaceTextures();
 		}
 
 		handleVertexInsert(worldPos);
@@ -1719,7 +2074,7 @@ namespace LevelEditor
 			return;
 		}
 
-		if (TFE_Input::mousePressed(MouseButton::MBUTTON_LEFT))
+		if (s_singleClick)
 		{
 			s_featureCur.sector = s_featureHovered.sector;
 			s_featureCur.featureIndex = 0;
@@ -1728,6 +2083,12 @@ namespace LevelEditor
 		if (s_featureHovered.sector)
 		{
 			s_featureHovered.featureIndex = 0;
+		}
+
+		// Handle copy and paste.
+		if (s_view == EDIT_VIEW_2D && s_featureHovered.sector)
+		{
+			applySurfaceTextures();
 		}
 	}
 
@@ -2309,12 +2670,7 @@ namespace LevelEditor
 			if (s_drawMode == DMODE_RECT)
 			{
 				s_shape[1] = onGrid;
-				if (TFE_Input::keyPressed(KEY_ESCAPE))
-				{
-					// CANCEL
-					s_drawStarted = false;
-				}
-				else if (!TFE_Input::mouseDown(MouseButton::MBUTTON_LEFT))
+				if (!TFE_Input::mouseDown(MouseButton::MBUTTON_LEFT))
 				{
 					if (s_view == EDIT_VIEW_3D)
 					{
@@ -2330,9 +2686,57 @@ namespace LevelEditor
 			}
 			else if (s_drawMode == DMODE_SHAPE)
 			{
-				if (TFE_Input::mousePressed(MouseButton::MBUTTON_LEFT))
+				if (s_singleClick)
 				{
 					if (vtxEqual(&onGrid, &s_shape[0]))
+					{
+						if (s_shape.size() >= 3)
+						{
+							// Need to form a polygon.
+							if (s_view == EDIT_VIEW_3D)
+							{
+								s_drawMode = DMODE_SHAPE_VERT;
+								s_curVtxPos = { onGrid.x, s_gridHeight, onGrid.z };
+								shapeToPolygon((s32)s_shape.size(), s_shape.data(), s_shapePolygon);
+							}
+							else
+							{
+								s_drawHeight[1] = s_drawHeight[0] + c_defaultSectorHeight;
+								createSectorFromShape();
+							}
+						}
+						else
+						{
+							s_drawStarted = false;
+						}
+					}
+					else
+					{
+						// Make sure the vertex hasn't already been placed.
+						const s32 count = (s32)s_shape.size();
+						const Vec2f* vtx = s_shape.data();
+						bool vtxExists = false;
+						for (s32 i = 0; i < count; i++, vtx++)
+						{
+							if (vtxEqual(vtx, &onGrid))
+							{
+								vtxExists = true;
+								break;
+							}
+						}
+						if (!vtxExists)
+						{
+							s_shape.push_back(onGrid);
+						}
+					}
+				}
+				else if (TFE_Input::keyPressed(KEY_BACKSPACE))
+				{
+					removeLastShapePoint();
+				}
+				else if (TFE_Input::keyPressed(KEY_RETURN) || s_doubleClick)
+				{
+					if (s_shape.size() >= 3)
 					{
 						if (s_view == EDIT_VIEW_3D)
 						{
@@ -2348,47 +2752,19 @@ namespace LevelEditor
 					}
 					else
 					{
-						s_shape.push_back(onGrid);
+						s_drawStarted = false;
 					}
-				}
-				else if (TFE_Input::keyPressed(KEY_BACKSPACE))
-				{
-					removeLastShapePoint();
-				}
-				else if (TFE_Input::keyPressed(KEY_RETURN))
-				{
-					if (s_view == EDIT_VIEW_3D)
-					{
-						s_drawMode = DMODE_SHAPE_VERT;
-						s_curVtxPos = { onGrid.x, s_gridHeight, onGrid.z };
-						shapeToPolygon((s32)s_shape.size(), s_shape.data(), s_shapePolygon);
-					}
-					else
-					{
-						s_drawHeight[1] = s_drawHeight[0] + c_defaultSectorHeight;
-						createSectorFromShape();
-					}
-				}
-				else if (TFE_Input::keyPressed(KEY_ESCAPE))
-				{
-					// CANCEL
-					s_drawStarted = false;
 				}
 			}
 			else if (s_drawMode == DMODE_RECT_VERT || s_drawMode == DMODE_SHAPE_VERT)
 			{
-				if (TFE_Input::keyPressed(KEY_ESCAPE))
-				{
-					// CANCEL
-					s_drawStarted = false;
-				}
-				else if (TFE_Input::keyPressed(KEY_BACKSPACE) && s_drawMode == DMODE_SHAPE_VERT)
+				if (TFE_Input::keyPressed(KEY_BACKSPACE) && s_drawMode == DMODE_SHAPE_VERT)
 				{
 					s_drawMode = DMODE_SHAPE;
 					s_drawHeight[1] = s_drawHeight[0];
 					removeLastShapePoint();
 				}
-				else if (TFE_Input::mousePressed(MouseButton::MBUTTON_LEFT))
+				else if (s_singleClick)
 				{
 					if (s_drawMode == DMODE_SHAPE_VERT) { createSectorFromShape(); }
 					else { createSectorFromRect(); }
@@ -2399,7 +2775,7 @@ namespace LevelEditor
 				snapToGrid(&s_drawHeight[1]);
 			}
 		}
-		else if (TFE_Input::mousePressed(MouseButton::MBUTTON_LEFT))
+		else if (s_singleClick)
 		{
 			if (hoverSector)
 			{
@@ -2429,6 +2805,102 @@ namespace LevelEditor
 			s_drawCurPos = onGrid;
 		}
  	}
+
+	Vec2f getTextureOffset(EditorSector* sector, HitPart part, s32 index)
+	{
+		Vec2f offset = { 0 };
+		if (part == HP_FLOOR)
+		{
+			offset = sector->floorTex.offset;
+		}
+		else if (part == HP_CEIL)
+		{
+			offset = sector->ceilTex.offset;
+		}
+		else if (part == HP_MID)
+		{
+			EditorWall* wall = &sector->walls[index];
+			offset = wall->tex[WP_MID].offset;
+		}
+		else if (part == HP_BOT)
+		{
+			EditorWall* wall = &sector->walls[index];
+			offset = wall->tex[WP_BOT].offset;
+		}
+		else if (part == HP_TOP)
+		{
+			EditorWall* wall = &sector->walls[index];
+			offset = wall->tex[WP_TOP].offset;
+		}
+		else if (part == HP_SIGN)
+		{
+			EditorWall* wall = &sector->walls[index];
+			offset = wall->tex[WP_SIGN].offset;
+		}
+		return offset;
+	}
+
+	void modifyTextureOffset(EditorSector* sector, HitPart part, s32 index, Vec2f delta)
+	{
+		if (part == HP_FLOOR)
+		{
+			sector->floorTex.offset.x += delta.x;
+			sector->floorTex.offset.z += delta.z;
+		}
+		else if (part == HP_CEIL)
+		{
+			sector->ceilTex.offset.x += delta.x;
+			sector->ceilTex.offset.z += delta.z;
+		}
+		else if (part == HP_MID)
+		{
+			EditorWall* wall = &sector->walls[index];
+			wall->tex[WP_MID].offset.x += delta.x;
+			wall->tex[WP_MID].offset.z += delta.z;
+		}
+		else if (part == HP_BOT)
+		{
+			EditorWall* wall = &sector->walls[index];
+			wall->tex[WP_BOT].offset.x += delta.x;
+			wall->tex[WP_BOT].offset.z += delta.z;
+		}
+		else if (part == HP_TOP)
+		{
+			EditorWall* wall = &sector->walls[index];
+			wall->tex[WP_TOP].offset.x += delta.x;
+			wall->tex[WP_TOP].offset.z += delta.z;
+		}
+		else if (part == HP_SIGN)
+		{
+			EditorWall* wall = &sector->walls[index];
+			wall->tex[WP_SIGN].offset.x += delta.x;
+			wall->tex[WP_SIGN].offset.z += delta.z;
+		}
+	}
+
+	void snapToSurfaceGrid(EditorSector* sector, EditorWall* wall, Vec3f& pos)
+	{
+		const Vec2f* v0 = &sector->vtx[wall->idx[0]];
+		const Vec2f* v1 = &sector->vtx[wall->idx[1]];
+
+		// Determine which projection we are using (XY or ZY).
+		// This should match the way grids are rendered on surfaces.
+		const f32 dx = fabsf(v1->x - v0->x);
+		const f32 dz = fabsf(v1->z - v0->z);
+		f32 s;
+		if (dx >= dz)  // X-intersect with line segment.
+		{
+			snapToGrid(&pos.x);
+			s = (pos.x - v0->x) / (v1->x - v0->x);
+		}
+		else  // Z-intersect with line segment.
+		{
+			snapToGrid(&pos.z);
+			s = (pos.z - v0->z) / (v1->z - v0->z);
+		}
+		pos = { v0->x + s * (v1->x - v0->x), pos.y, v0->z + s * (v1->z - v0->z) };
+		snapToGrid(&pos.y);
+	}
 		
 	void updateWindowControls()
 	{
@@ -2441,6 +2913,19 @@ namespace LevelEditor
 			// Nothing is "hovered" if the mouse is not in the window.
 			s_featureHovered = {};
 			return;
+		}
+
+		// Handle Escape, this gives a priority of what is being escaped.
+		if (TFE_Input::keyPressed(KEY_ESCAPE))
+		{
+			if (s_drawStarted)
+			{
+				s_drawStarted = false;
+			}
+			else if (!s_startTexMove)
+			{
+				edit_clearSelections();
+			}
 		}
 
 		if (s_view == EDIT_VIEW_2D)
@@ -2537,11 +3022,16 @@ namespace LevelEditor
 				handleMouseControlWall(worldPos);
 			}
 
+			// Texture alignment.
+			handleTextureAlignment();
+
 			// DEBUG
+		#if 0
 			if (s_featureCur.sector && TFE_Input::keyPressed(KEY_T))
 			{
 				TFE_Polygon::computeTriangulation(&s_featureCur.sector->poly);
 			}
+		#endif
 		}
 		else if (s_view == EDIT_VIEW_3D)
 		{
@@ -2550,7 +3040,7 @@ namespace LevelEditor
 			s32 layer = (s_editFlags & LEF_SHOW_ALL_LAYERS) ? LAYER_ANY : s_curLayer;
 
 			// TODO: Hotkeys.
-			if (TFE_Input::keyPressed(KEY_G))
+			if (TFE_Input::keyPressed(KEY_G) && !TFE_Input::keyModDown(KEYMOD_CTRL))
 			{
 				s_gravity = !s_gravity;
 				if (s_gravity) { infoPanelAddMsg(LE_MSG_INFO, "Gravity Enabled."); }
@@ -2567,7 +3057,7 @@ namespace LevelEditor
 					s_camera.pos.y = newY * blendFactor + s_camera.pos.y * (1.0f - blendFactor);
 				}
 			}
-
+					
 			// TODO: Move out to common place for hotkeys.
 			bool hitBackfaces = TFE_Input::keyDown(KEY_B);
 			s_rayDir = mouseCoordToWorldDir3d(mx, my);
@@ -2601,12 +3091,15 @@ namespace LevelEditor
 				{
 					handleMouseControlWall({ s_cursor3d.x, s_cursor3d.z });
 				}
-				else if (TFE_Input::mousePressed(MouseButton::MBUTTON_LEFT))
+				else if (s_singleClick)
 				{
 					s_featureCur = {};
 					selection_clear();
 				}
 			}
+			
+			// Texture alignment.
+			handleTextureAlignment();
 		}
 	}
 
@@ -2854,9 +3347,30 @@ namespace LevelEditor
 		mapPos.z += mapOffset.z;
 		if (mapOffset_) { *mapOffset_ = mapOffset; }
 	}
-	
+
+	void handleMouseClick()
+	{
+		s_doubleClick = false;
+		s_singleClick = false;
+		if (TFE_Input::mousePressed(MBUTTON_LEFT))
+		{
+			f64 curTime = TFE_System::getTime();
+			if (curTime - s_lastClickTime < c_doubleClickThreshold)
+			{
+				s_doubleClick = true;
+			}
+			else
+			{
+				s_lastClickTime = curTime;
+				s_singleClick = true;
+			}
+		}
+	}
+			
 	void update()
 	{
+		handleMouseClick();
+
 		pushFont(TFE_Editor::FONT_SMALL);
 		updateWindowControls();
 
@@ -2873,7 +3387,7 @@ namespace LevelEditor
 		{
 			s_showAllLabels = !s_showAllLabels;
 		}
-
+				
 		viewport_update((s32)UI_SCALE(480) + 16, (s32)UI_SCALE(68) + 18);
 		viewport_render(s_view);
 
@@ -2894,8 +3408,10 @@ namespace LevelEditor
 				{
 					s_editMode = LevelEditMode(i);
 					s_editMove = false;
+					s_startTexMove = false;
 					s_featureCur = {};
 					s_featureHovered = {};
+					s_featureTex = {};
 					selection_clear();
 				}
 				ImGui::SameLine();
@@ -4263,5 +4779,477 @@ namespace LevelEditor
 		s_featureCur = {};
 		s_featureCurWall = {};
 		s_featureHovered = {};
+		s_featureTex = {};
+	}
+
+	static Vec2f s_texDelta = { 0 };
+
+	void edit_moveTexture(s32 count, const FeatureId* featureList, Vec2f delta)
+	{
+		for (s32 i = 0; i < count; i++)
+		{
+			s32 featureIndex;
+			HitPart part;
+			EditorSector* sector = unpackFeatureId(featureList[i], &featureIndex, (s32*)&part);
+			modifyTextureOffset(sector, part, featureIndex, delta);
+		}
+	}
+
+	void handleTextureAlignment()
+	{
+		// TODO: Remove code duplication between the 2D and 3D versions.
+		if (s_view == EDIT_VIEW_2D && s_editMode == LEDIT_SECTOR && s_featureHovered.sector && (s_sectorDrawMode == SDM_TEXTURED_CEIL || s_sectorDrawMode == SDM_TEXTURED_FLOOR))
+		{
+			HitPart part = s_sectorDrawMode == SDM_TEXTURED_CEIL ? HP_CEIL : HP_FLOOR;
+			s_featureHovered.part = part;
+			if (s_featureTex.featureIndex >= 0)
+			{
+				s_featureHovered = s_featureTex;
+			}
+
+			FeatureId id = createFeatureId(s_featureHovered.sector, s_featureHovered.featureIndex, s_featureHovered.part);
+			bool doesItemExist = selection_doesFeatureExist(id);
+			if (s_selectionList.size() <= 1 || doesItemExist)
+			{
+				Vec2f delta = { 0 };
+
+				// Cannot move using the arrow keys and the mouse at the same time.
+				if (!s_startTexMove)
+				{
+					const f32 move = TFE_Input::keyModDown(KEYMOD_SHIFT) ? 1.0f : 1.0f / 8.0f;
+
+					if (TFE_Input::keyPressedWithRepeat(KEY_RIGHT)) { delta.x += move; }
+					else if (TFE_Input::keyPressedWithRepeat(KEY_LEFT)) { delta.x -= move; }
+
+					if (TFE_Input::keyPressedWithRepeat(KEY_UP)) { delta.z += move; }
+					else if (TFE_Input::keyPressedWithRepeat(KEY_DOWN)) { delta.z -= move; }
+
+					if (delta.x || delta.z)
+					{
+						// Add command.
+						const s32 count = (s32)s_selectionList.size();
+						if (!count)
+						{
+							cmd_addMoveTexture(1, &id, delta);
+						}
+						else
+						{
+							cmd_addMoveTexture(count, s_selectionList.data(), delta);
+						}
+					}
+				}
+
+				EditorSector* sector = s_featureHovered.sector;
+				Vec2f cursor = { s_cursor3d.x, s_cursor3d.z };
+
+				if (!s_startTexMove)
+				{
+					snapToGrid(&cursor);
+				}
+
+				bool middleMousePressed = TFE_Input::mousePressed(MBUTTON_MIDDLE);
+				bool middleMouseDown = TFE_Input::mouseDown(MBUTTON_MIDDLE);
+				if (middleMousePressed && !s_startTexMove)
+				{
+					s_startTexMove = true;
+					s_startTexPos = { cursor.x, 0.0f, cursor.z };
+					s_startTexOffset = getTextureOffset(s_featureHovered.sector, part, s_featureHovered.featureIndex);
+					snapToGrid(&s_startTexOffset);
+					s_featureTex = s_featureHovered;
+					// Cancel out any key-based movement, cannot do both at once.
+					delta = { 0 };
+					s_texDelta = { 0 };
+				}
+				else if (middleMouseDown && s_startTexMove)
+				{
+					Vec2f offset = { 0 };
+					const f32 texScale = 1.0f;
+					
+					snapToGrid(&cursor);
+					offset = { cursor.x - s_startTexPos.x, cursor.z - s_startTexPos.z };
+
+					delta.x = offset.x * texScale;
+					delta.z = offset.z * texScale;
+					s_texDelta = delta;
+
+					Vec2f curOffset = getTextureOffset(s_featureHovered.sector, s_featureHovered.part, s_featureHovered.featureIndex);
+					delta.x = (s_startTexOffset.x + delta.x) - curOffset.x;
+					delta.z = (s_startTexOffset.z + delta.z) - curOffset.z;
+				}
+				else if (!middleMousePressed && !middleMouseDown)
+				{
+					// Add command.
+					const s32 count = (s32)s_selectionList.size();
+					if (!count)
+					{
+						cmd_addMoveTexture(1, &id, s_texDelta);
+					}
+					else
+					{
+						cmd_addMoveTexture(count, s_selectionList.data(), s_texDelta);
+					}
+
+					s_startTexMove = false;
+					s_featureTex = {};
+				}
+
+				if (delta.x || delta.z)
+				{
+					const s32 count = (s32)s_selectionList.size();
+					if (!count) { edit_moveTexture(1, &id, delta); }
+					else { edit_moveTexture(count, s_selectionList.data(), delta); }
+				} // delta.x || delta.z
+			}
+		}
+		else if (s_view == EDIT_VIEW_3D && s_editMode == LEDIT_WALL && (s_featureHovered.featureIndex >= 0 || s_featureTex.featureIndex >= 0))
+		{
+			if (s_featureTex.featureIndex >= 0)
+			{
+				s_featureHovered = s_featureTex;
+			}
+
+			FeatureId id = createFeatureId(s_featureHovered.sector, s_featureHovered.featureIndex, s_featureHovered.part);
+			bool doesItemExist = selection_doesFeatureExist(id);
+			if (s_selectionList.size() <= 1 || doesItemExist)
+			{
+				Vec2f delta = { 0 };
+
+				if (!s_startTexMove)
+				{
+					f32 move = TFE_Input::keyModDown(KEYMOD_SHIFT) ? 1.0f : 1.0f / 8.0f;
+					if (TFE_Input::keyPressedWithRepeat(KEY_RIGHT)) { delta.x -= move; }
+					else if (TFE_Input::keyPressedWithRepeat(KEY_LEFT)) { delta.x += move; }
+					if (TFE_Input::keyPressedWithRepeat(KEY_UP)) { delta.z -= move; }
+					else if (TFE_Input::keyPressedWithRepeat(KEY_DOWN)) { delta.z += move; }
+
+					if (delta.x || delta.z)
+					{
+						// Add command.
+						const s32 count = (s32)s_selectionList.size();
+						if (!count)
+						{
+							cmd_addMoveTexture(1, &id, delta);
+						}
+						else
+						{
+							cmd_addMoveTexture(count, s_selectionList.data(), delta);
+						}
+					}
+				}
+
+				EditorSector* sector = s_featureHovered.sector;
+				HitPart part = s_featureHovered.part;
+				Vec3f cursor = s_cursor3d;
+
+				if (!s_startTexMove)
+				{
+					if (part == HP_FLOOR || part == HP_CEIL)
+					{
+						snapToGrid(&cursor);
+					}
+					// Snap to the surface grid.
+					else
+					{
+						EditorWall* wall = &sector->walls[s_featureHovered.featureIndex];
+						snapToSurfaceGrid(sector, wall, cursor);
+					}
+				}
+										
+				bool middleMousePressed = TFE_Input::mousePressed(MBUTTON_MIDDLE);
+				bool middleMouseDown = TFE_Input::mouseDown(MBUTTON_MIDDLE);
+				if (middleMousePressed && !s_startTexMove)
+				{
+					s_startTexMove = true;
+					s_startTexPos = cursor;
+					s_startTexOffset = getTextureOffset(s_featureHovered.sector, s_featureHovered.part, s_featureHovered.featureIndex);
+					snapToGrid(&s_startTexOffset);
+					s_featureTex = s_featureHovered;
+
+					if (part != HP_FLOOR && part != HP_CEIL)
+					{
+						EditorWall* wall = &sector->walls[s_featureHovered.featureIndex];
+						const Vec2f* v0 = &sector->vtx[wall->idx[0]];
+						const Vec2f* v1 = &sector->vtx[wall->idx[1]];
+						const Vec2f t = { -(v1->x - v0->x), -(v1->z - v0->z) };
+						const Vec2f n = { -(v1->z - v0->z), v1->x - v0->x };
+
+						s_texTangent = TFE_Math::normalize(&t);
+						s_texNormal = TFE_Math::normalize(&n);
+					}
+
+					// Cancel out any key-based movement, cannot do both at once.
+					delta = { 0 };
+					s_texDelta = { 0 };
+				}
+				else if (middleMouseDown && s_startTexMove)
+				{
+					Vec3f offset = { 0 };
+					const f32 texScale = 1.0f;
+					if (part == HP_FLOOR || part == HP_CEIL)
+					{
+						// Intersect the ray from the camera, through the plane.
+						f32 planeHeight = (part == HP_FLOOR) ? sector->floorHeight : sector->ceilHeight;
+						f32 s = (planeHeight - s_camera.pos.y) / (cursor.y - s_camera.pos.y);
+						cursor.x = s_camera.pos.x + s * (cursor.x - s_camera.pos.x);
+						cursor.z = s_camera.pos.z + s * (cursor.z - s_camera.pos.z);
+
+						snapToGrid(&cursor);
+						offset = { cursor.x - s_startTexPos.x, cursor.y - s_startTexPos.y, cursor.z - s_startTexPos.z };
+
+						delta.x = offset.x * texScale;
+						delta.z = offset.z * texScale;
+						s_texDelta = delta;
+
+						Vec2f curOffset = getTextureOffset(s_featureHovered.sector, s_featureHovered.part, s_featureHovered.featureIndex);
+						delta.x = (s_startTexOffset.x + delta.x) - curOffset.x;
+						delta.z = (s_startTexOffset.z + delta.z) - curOffset.z;
+					}
+					else
+					{
+						// Intersect the ray with the plane.
+						const Vec2f off0 = { s_camera.pos.x - s_startTexPos.x, s_camera.pos.z - s_startTexPos.z };
+						const Vec2f off1 = { cursor.x - s_startTexPos.x, cursor.z - s_startTexPos.z };
+						const f32 d0 = TFE_Math::dot(&off0, &s_texNormal);
+						const f32 d1 = TFE_Math::dot(&off1, &s_texNormal);
+						const f32 t = -d0 / (d1 - d0);
+						cursor.x = s_camera.pos.x + t * (cursor.x - s_camera.pos.x);
+						cursor.y = s_camera.pos.y + t * (cursor.y - s_camera.pos.y);
+						cursor.z = s_camera.pos.z + t * (cursor.z - s_camera.pos.z);
+
+						EditorWall* wall = &sector->walls[s_featureHovered.featureIndex];
+						snapToSurfaceGrid(sector, wall, cursor);
+						offset = { cursor.x - s_startTexPos.x, cursor.y - s_startTexPos.y, cursor.z - s_startTexPos.z };
+
+						delta.x = (offset.x * s_texTangent.x + offset.z * s_texTangent.z) * texScale;
+						delta.z = -offset.y * texScale;
+						s_texDelta = delta;
+
+						Vec2f curOffset = getTextureOffset(s_featureHovered.sector, s_featureHovered.part, s_featureHovered.featureIndex);
+						delta.x = (s_startTexOffset.x + delta.x) - curOffset.x;
+						delta.z = (s_startTexOffset.z + delta.z) - curOffset.z;
+					}
+				}
+				else if (!middleMousePressed && !middleMouseDown)
+				{
+					// Add command.
+					if (s_startTexMove)
+					{
+						const s32 count = (s32)s_selectionList.size();
+						if (!count)
+						{
+							cmd_addMoveTexture(1, &id, s_texDelta);
+						}
+						else
+						{
+							cmd_addMoveTexture(count, s_selectionList.data(), s_texDelta);
+						}
+					}
+
+					s_startTexMove = false;
+					s_featureTex = {};
+				}
+
+				if (delta.x || delta.z)
+				{
+					const s32 count = (s32)s_selectionList.size();
+					if (!count) { edit_moveTexture(1, &id, delta); }
+					else { edit_moveTexture(count, s_selectionList.data(), delta); }
+				} // delta.x || delta.z
+			}
+		}
+		else
+		{
+			if (s_startTexMove)
+			{
+				// command...
+				s_startTexMove = false;
+			}
+			s_featureTex = {};
+		}
+	}
+
+	void applyTextureToItem(EditorSector* sector, HitPart part, s32 index, s32 texIndex, Vec2f* offset)
+	{
+		if (s_view == EDIT_VIEW_2D)
+		{
+			if (s_sectorDrawMode == SDM_TEXTURED_FLOOR)
+			{
+				sector->floorTex.texIndex = texIndex;
+				if (offset) { sector->floorTex.offset = *offset; }
+			}
+			else if (s_sectorDrawMode == SDM_TEXTURED_CEIL)
+			{
+				sector->ceilTex.texIndex = texIndex;
+				if (offset) { sector->ceilTex.offset = *offset; }
+			}
+		}
+		else
+		{
+			if (part == HP_FLOOR) { sector->floorTex.texIndex = texIndex; if (offset) { sector->floorTex.offset = *offset; } }
+			else if (part == HP_CEIL) { sector->ceilTex.texIndex = texIndex; if (offset) { sector->ceilTex.offset = *offset; } }
+			else
+			{
+				EditorWall* wall = &sector->walls[index];
+				if (part == HP_MID) { wall->tex[WP_MID].texIndex = texIndex; if (offset) { wall->tex[WP_MID].offset = *offset; } }
+				else if (part == HP_TOP) { wall->tex[HP_TOP].texIndex = texIndex;  if (offset) { wall->tex[HP_TOP].offset = *offset; } }
+				else if (part == HP_BOT) { wall->tex[HP_BOT].texIndex = texIndex;  if (offset) { wall->tex[HP_BOT].offset = *offset; } }
+				else if (part == HP_SIGN) { wall->tex[HP_SIGN].texIndex = texIndex;  if (offset) { wall->tex[HP_SIGN].offset = *offset; } }
+			}
+		}
+	}
+
+	void edit_setTexture(s32 count, const FeatureId* feature, s32 texIndex, Vec2f* offset)
+	{
+		for (s32 i = 0; i < count; i++)
+		{
+			HitPart part;
+			s32 index;
+			EditorSector* sector = unpackFeatureId(feature[i], &index, (s32*)&part);
+			applyTextureToItem(sector, part, index, texIndex, offset);
+		}
+	}
+
+	void applyTextureToSelection(s32 texIndex, Vec2f* offset)
+	{
+		FeatureId id = createFeatureId(s_featureHovered.sector, s_featureHovered.featureIndex, s_featureHovered.part);
+		bool doesItemExist = selection_doesFeatureExist(id);
+		const s32 count = (s32)s_selectionList.size();
+		if (count <= 1 || doesItemExist)
+		{
+			s32 index = s_featureHovered.featureIndex;
+			if (doesItemExist)
+			{
+				edit_setTexture(count, s_selectionList.data(), texIndex, offset);
+				cmd_addSetTexture(count, s_selectionList.data(), texIndex, offset);
+			}
+			else
+			{
+				edit_setTexture(1, &id, texIndex, offset);
+				cmd_addSetTexture(1, &id, texIndex, offset);
+			}
+		}
+	}
+
+	void applySurfaceTextures()
+	{
+		EditorSector* sector = s_featureHovered.sector;
+		HitPart part = s_featureHovered.part;
+		s32 index = s_featureHovered.featureIndex;
+		if (TFE_Input::keyPressed(KEY_T) && TFE_Input::keyModDown(KEYMOD_CTRL))
+		{
+			const LevelTextureAsset* textureAsset = nullptr;
+			if (s_view == EDIT_VIEW_2D)
+			{
+				if (s_sectorDrawMode == SDM_TEXTURED_FLOOR)
+				{
+					textureAsset = sector->floorTex.texIndex < 0 ? nullptr : &s_level.textures[sector->floorTex.texIndex];
+					s_copiedTextureOffset = sector->floorTex.offset;
+				}
+				else if (s_sectorDrawMode == SDM_TEXTURED_CEIL)
+				{
+					textureAsset = sector->ceilTex.texIndex < 0 ? nullptr : &s_level.textures[sector->ceilTex.texIndex];
+					s_copiedTextureOffset = sector->ceilTex.offset;
+				}
+			}
+			else
+			{
+				if (part == HP_FLOOR)
+				{
+					textureAsset = sector->floorTex.texIndex < 0 ? nullptr : &s_level.textures[sector->floorTex.texIndex];
+					s_copiedTextureOffset = sector->floorTex.offset;
+				}
+				else if (part == HP_CEIL)
+				{
+					textureAsset = sector->ceilTex.texIndex < 0 ? nullptr : &s_level.textures[sector->ceilTex.texIndex];
+					s_copiedTextureOffset = sector->ceilTex.offset;
+				}
+				else
+				{
+					const EditorWall* wall = &sector->walls[index];
+					if (part == HP_MID)
+					{
+						textureAsset = wall->tex[WP_MID].texIndex < 0 ? nullptr : &s_level.textures[wall->tex[WP_MID].texIndex];
+						s_copiedTextureOffset = wall->tex[WP_MID].offset;
+					}
+					else if (part == HP_TOP)
+					{
+						textureAsset = wall->tex[HP_TOP].texIndex < 0 ? nullptr : &s_level.textures[wall->tex[HP_TOP].texIndex];
+						s_copiedTextureOffset = wall->tex[HP_TOP].offset;
+					}
+					else if (part == HP_BOT)
+					{
+						textureAsset = wall->tex[HP_BOT].texIndex < 0 ? nullptr : &s_level.textures[wall->tex[HP_BOT].texIndex];
+						s_copiedTextureOffset = wall->tex[HP_BOT].offset;
+					}
+					else if (part == HP_SIGN)
+					{
+						textureAsset = wall->tex[HP_SIGN].texIndex < 0 ? nullptr : &s_level.textures[wall->tex[HP_SIGN].texIndex];
+						s_copiedTextureOffset = wall->tex[HP_SIGN].offset;
+					}
+				}
+			}
+
+			if (textureAsset)
+			{
+				// Find the texture in the list.
+				const s32 count = (s32)s_levelTextureList.size();
+				const Asset* levelTexAsset = s_levelTextureList.data();
+				for (s32 i = 0; i < count; i++, levelTexAsset++)
+				{
+					if (strcasecmp(levelTexAsset->name.c_str(), textureAsset->name.c_str()) == 0)
+					{
+						s_selectedTexture = i;
+						browserScrollToSelection();
+						break;
+					}
+				}
+			}
+		}
+		else if (TFE_Input::keyPressed(KEY_T) && s_selectedTexture >= 0)
+		{
+			index = getTextureIndex(s_levelTextureList[s_selectedTexture].name.c_str());
+			if (index >= 0)
+			{
+				applyTextureToSelection(index, nullptr);
+			}
+			else
+			{
+				// TODO: Add it now.
+			}
+		}
+		else if (TFE_Input::keyPressed(KEY_V) && TFE_Input::keyModDown(KEYMOD_CTRL) && s_selectedTexture >= 0)
+		{
+			index = getTextureIndex(s_levelTextureList[s_selectedTexture].name.c_str());
+			if (index >= 0)
+			{
+				applyTextureToSelection(index, &s_copiedTextureOffset);
+			}
+			else
+			{
+				// TODO: Add it now.
+			}
+		}
+	}
+	
+	void copyToClipboard(const char* str)
+	{
+		SDL_SetClipboardText(str);
+	}
+
+	bool copyFromClipboard(char* str)
+	{
+		bool hasText = SDL_HasClipboardText();
+		if (hasText)
+		{
+			char* text = SDL_GetClipboardText();
+			hasText = false;
+			if (text && text[0])
+			{
+				strcpy(str, text);
+				hasText = true;
+			}
+			SDL_free(text);
+		}
+		return hasText;
 	}
 }

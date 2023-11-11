@@ -36,6 +36,8 @@ namespace LevelEditor
 	extern Vec3f s_hoveredVtxPos;
 	extern Vec3f s_curVtxPos;
 
+	extern s32 s_selectedTexture;
+
 	// Camera
 	extern Camera3d s_camera;
 	extern Vec3f s_viewDir;

@@ -25,7 +25,7 @@ namespace TFE_Input
 	void setButtonDown(Button button);
 	void setButtonUp(Button button);
 
-	void setKeyDown(KeyboardCode key);
+	void setKeyDown(KeyboardCode key, bool repeat);
 	void setKeyUp(KeyboardCode key);
 
 	void setMouseButtonDown(MouseButton button);
@@ -51,6 +51,7 @@ namespace TFE_Input
 	bool buttonPressed(Button button);
 	bool keyDown(KeyboardCode key);
 	bool keyPressed(KeyboardCode key);
+	bool keyPressedWithRepeat(KeyboardCode key);
 	bool keyModDown(KeyModifier keyMod, bool allowAltOnNone = false);
 	bool mouseDown(MouseButton button);
 	bool mousePressed(MouseButton button);

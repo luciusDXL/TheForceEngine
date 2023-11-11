@@ -17,6 +17,9 @@ namespace LevelEditor
 		LName_DeleteSector,
 		LName_CreateSectorFromRect,
 		LName_CreateSectorFromShape,
+		LName_MoveTexture,
+		LName_SetTexture,
+		LName_CopyTexture,
 		LName_Count
 	};
 
@@ -41,4 +44,6 @@ namespace LevelEditor
 	void cmd_addDeleteSector(s32 sectorId);
 	void cmd_addCreateSectorFromRect(const f32* heights, const Vec2f* corners);
 	void cmd_addCreateSectorFromShape(const f32* heights, s32 vertexCount, const Vec2f* vtx);
+	void cmd_addMoveTexture(s32 count, FeatureId* features, Vec2f delta);
+	void cmd_addSetTexture(s32 count, FeatureId* features, s32 texId, Vec2f* offset);
 }

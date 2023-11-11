@@ -381,15 +381,15 @@ namespace LevelEditor
 		ImGui::BeginChild("##TextureOffsets0Wall", offsetSize);
 		{
 			ImGui::Text("Mid Offset");
-			ImGui::PushItemWidth(128.0f);
-			ImGui::InputFloat2("##MidOffsetInput", &wall->tex[WP_MID].offset.x, "%.2f");
+			ImGui::PushItemWidth(136.0f);
+			ImGui::InputFloat2("##MidOffsetInput", &wall->tex[WP_MID].offset.x, "%.3f");
 			ImGui::PopItemWidth();
 
 			ImGui::NewLine();
 
 			ImGui::Text("Sign Offset");
-			ImGui::PushItemWidth(128.0f);
-			ImGui::InputFloat2("##SignOffsetInput", &wall->tex[WP_SIGN].offset.x, "%.2f");
+			ImGui::PushItemWidth(136.0f);
+			ImGui::InputFloat2("##SignOffsetInput", &wall->tex[WP_SIGN].offset.x, "%.3f");
 			ImGui::PopItemWidth();
 		}
 		ImGui::EndChild();
@@ -404,15 +404,15 @@ namespace LevelEditor
 			ImGui::BeginChild("##TextureOffsets1Wall", offsetSize);
 			{
 				ImGui::Text("Top Offset");
-				ImGui::PushItemWidth(128.0f);
-				ImGui::InputFloat2("##TopOffsetInput", &wall->tex[WP_TOP].offset.x, "%.2f");
+				ImGui::PushItemWidth(136.0f);
+				ImGui::InputFloat2("##TopOffsetInput", &wall->tex[WP_TOP].offset.x, "%.3f");
 				ImGui::PopItemWidth();
 
 				ImGui::NewLine();
 
 				ImGui::Text("Bottom Offset");
-				ImGui::PushItemWidth(128.0f);
-				ImGui::InputFloat2("##BotOffsetInput", &wall->tex[WP_BOT].offset.x, "%.2f");
+				ImGui::PushItemWidth(136.0f);
+				ImGui::InputFloat2("##BotOffsetInput", &wall->tex[WP_BOT].offset.x, "%.3f");
 				ImGui::PopItemWidth();
 			}
 			ImGui::EndChild();
@@ -555,15 +555,15 @@ namespace LevelEditor
 		ImGui::BeginChild("##TextureOffsetsSector", offsetSize);
 		{
 			ImGui::Text("Floor Offset");
-			ImGui::PushItemWidth(128.0f);
-			ImGui::InputFloat2("##FloorOffsetInput", &sector->floorTex.offset.x, "%.2f");
+			ImGui::PushItemWidth(136.0f);
+			ImGui::InputFloat2("##FloorOffsetInput", &sector->floorTex.offset.x, "%.3f");
 			ImGui::PopItemWidth();
 
 			ImGui::NewLine();
 
 			ImGui::Text("Ceil Offset");
-			ImGui::PushItemWidth(128.0f);
-			ImGui::InputFloat2("##CeilOffsetInput", &sector->ceilTex.offset.x, "%.2f");
+			ImGui::PushItemWidth(136.0f);
+			ImGui::InputFloat2("##CeilOffsetInput", &sector->ceilTex.offset.x, "%.3f");
 			ImGui::PopItemWidth();
 		}
 		ImGui::EndChild();
