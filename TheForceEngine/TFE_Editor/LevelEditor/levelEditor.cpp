@@ -3387,7 +3387,7 @@ namespace LevelEditor
 		{
 			s_showAllLabels = !s_showAllLabels;
 		}
-				
+
 		viewport_update((s32)UI_SCALE(480) + 16, (s32)UI_SCALE(68) + 18);
 		viewport_render(s_view);
 
@@ -5098,8 +5098,22 @@ namespace LevelEditor
 		}
 	}
 
+	void edit_clearTexture(s32 count, const FeatureId* feature)
+	{
+		for (s32 i = 0; i < count; i++)
+		{
+			HitPart part;
+			s32 index;
+			EditorSector* sector = unpackFeatureId(feature[i], &index, (s32*)&part);
+			applyTextureToItem(sector, part, index, -1, nullptr);
+		}
+	}
+
 	void edit_setTexture(s32 count, const FeatureId* feature, s32 texIndex, Vec2f* offset)
 	{
+		texIndex = getTextureIndex(s_levelTextureList[texIndex].name.c_str());
+		if (texIndex < 0) { return; }
+
 		for (s32 i = 0; i < count; i++)
 		{
 			HitPart part;
@@ -5207,19 +5221,11 @@ namespace LevelEditor
 		}
 		else if (TFE_Input::keyPressed(KEY_T) && s_selectedTexture >= 0)
 		{
-			index = getTextureIndex(s_levelTextureList[s_selectedTexture].name.c_str());
-			if (index >= 0)
-			{
-				applyTextureToSelection(index, nullptr);
-			}
+			applyTextureToSelection(s_selectedTexture, nullptr);
 		}
 		else if (TFE_Input::keyPressed(KEY_V) && TFE_Input::keyModDown(KEYMOD_CTRL) && s_selectedTexture >= 0)
 		{
-			index = getTextureIndex(s_levelTextureList[s_selectedTexture].name.c_str());
-			if (index >= 0)
-			{
-				applyTextureToSelection(index, &s_copiedTextureOffset);
-			}
+			applyTextureToSelection(s_selectedTexture, &s_copiedTextureOffset);
 		}
 	}
 	

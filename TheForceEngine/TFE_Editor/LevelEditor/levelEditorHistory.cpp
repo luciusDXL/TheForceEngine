@@ -26,6 +26,7 @@ namespace LevelEditor
 		LCmd_MoveTexture,
 		LCmd_SetTexture,
 		LCmd_CopyTexture,
+		LCmd_ClearTexture,
 		LCmd_Count
 	};
 
@@ -45,6 +46,8 @@ namespace LevelEditor
 	void cmd_applyMoveTexture();
 	void cmd_applySetTexture();
 	void cmd_applySetTextureWithOffset();
+	void cmd_applySetTexture();
+	void cmd_applyClearTexture();
 
 	// Command Merging Helpers
 	bool mergeMoveTextureCmd(s32 count, FeatureId* features, Vec2f delta);
@@ -67,6 +70,7 @@ namespace LevelEditor
 		history_registerCommand(LCmd_MoveTexture, cmd_applyMoveTexture);
 		history_registerCommand(LCmd_SetTexture, cmd_applySetTexture);
 		history_registerCommand(LCmd_CopyTexture, cmd_applySetTextureWithOffset);
+		history_registerCommand(LCmd_ClearTexture, cmd_applyClearTexture);
 		history_registerName(LName_MoveVertex, "Move Vertice(s)");
 		history_registerName(LName_SetVertex, "Set Vertex Position");
 		history_registerName(LName_MoveWall, "Move Wall(s)");
@@ -80,6 +84,7 @@ namespace LevelEditor
 		history_registerName(LName_MoveTexture, "Move Texture");
 		history_registerName(LName_SetTexture, "Set Texture");
 		history_registerName(LName_CopyTexture, "Copy Texture");
+		history_registerName(LName_ClearTexture, "Clear Texture");
 
 		s_lastMoveTex = 0.0;
 	}
@@ -432,6 +437,28 @@ namespace LevelEditor
 		Vec2f offset = hBuffer_getVec2f();
 		// Call the editor command.
 		edit_setTexture(count, features, texId, &offset);
+		CMD_APPLY_END();
+	}
+
+	/////////////////////////////////
+	// Clear Texture
+	void cmd_addClearTexture(s32 count, FeatureId* features)
+	{
+		CMD_BEGIN(LCmd_ClearTexture, LName_ClearTexture);
+		// Add the command data.
+		hBuffer_addS32(count);
+		hBuffer_addArrayU64(count, features);
+		CMD_END();
+	}
+
+	void cmd_applyClearTexture()
+	{
+		CMD_APPLY_BEGIN();
+		// Extract the command data.
+		s32 count = hBuffer_getS32();
+		FeatureId* features = (FeatureId*)hBuffer_getArrayU64(count);
+		// Call the editor command.
+		edit_clearTexture(count, features);
 		CMD_APPLY_END();
 	}
 

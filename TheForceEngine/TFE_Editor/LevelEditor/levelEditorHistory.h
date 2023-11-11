@@ -20,6 +20,7 @@ namespace LevelEditor
 		LName_MoveTexture,
 		LName_SetTexture,
 		LName_CopyTexture,
+		LName_ClearTexture,
 		LName_Count
 	};
 
@@ -46,4 +47,5 @@ namespace LevelEditor
 	void cmd_addCreateSectorFromShape(const f32* heights, s32 vertexCount, const Vec2f* vtx);
 	void cmd_addMoveTexture(s32 count, FeatureId* features, Vec2f delta);
 	void cmd_addSetTexture(s32 count, FeatureId* features, s32 texId, Vec2f* offset);
+	void cmd_addClearTexture(s32 count, FeatureId* features);
 }
