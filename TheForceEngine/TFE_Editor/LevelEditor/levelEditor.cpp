@@ -219,6 +219,8 @@ namespace LevelEditor
 	void copyToClipboard(const char* str);
 	bool copyFromClipboard(char* str);
 	void applySurfaceTextures();
+	f32 getWallLength(EditorSector* sector, EditorWall* wall);
+	void selectSimilarWalls(EditorSector* rootSector, s32 wallIndex, HitPart part, bool autoAlign=false);
 	
 	////////////////////////////////////////////////////////
 	// Public API
@@ -1645,6 +1647,61 @@ namespace LevelEditor
 		return texId;
 	}
 
+	Vec2f getPartTextureOffset(EditorWall* wall, HitPart part)
+	{
+		Vec2f offset = { 0 };
+		switch (part)
+		{
+			case HP_MID:
+			{
+				offset = wall->tex[WP_MID].offset;
+			} break;
+			case HP_TOP:
+			{
+				offset = wall->tex[WP_TOP].offset;
+			} break;
+			case HP_BOT:
+			{
+				offset = wall->tex[WP_BOT].offset;
+			} break;
+			case HP_SIGN:
+			{
+				offset = wall->tex[WP_SIGN].offset;
+			} break;
+		}
+		return offset;
+	}
+
+	Vec2f getTexOffsetMod(s32 texIndex, Vec2f offset)
+	{
+		EditorTexture* tex = getTexture(texIndex);
+		f32 xmod = tex->width  / 8.0f;
+		return { fmodf(offset.x, xmod), offset.z };
+	}
+
+	void setPartTextureOffset(EditorWall* wall, HitPart part, Vec2f offset)
+	{
+		switch (part)
+		{
+			case HP_MID:
+			{
+				wall->tex[WP_MID].offset = getTexOffsetMod(wall->tex[WP_MID].texIndex, offset);
+			} break;
+			case HP_TOP:
+			{
+				wall->tex[WP_TOP].offset = getTexOffsetMod(wall->tex[WP_TOP].texIndex, offset);
+			} break;
+			case HP_BOT:
+			{
+				wall->tex[WP_BOT].offset = getTexOffsetMod(wall->tex[WP_BOT].texIndex, offset);
+			} break;
+			case HP_SIGN:
+			{
+				wall->tex[WP_SIGN].offset = offset;
+			} break;
+		}
+	}
+
 	s32 getLeftWall(EditorSector* sector, s32 wallIndex)
 	{
 		EditorWall* baseWall = &sector->walls[wallIndex];
@@ -1684,6 +1741,7 @@ namespace LevelEditor
 		s32 adjoinId;
 		s32 mirrorId;
 		s32 side;
+		Vec2f offset[2];
 	};
 	std::vector<Adjoin> s_adjoinList;
 
@@ -1701,7 +1759,7 @@ namespace LevelEditor
 		s_adjoinList.push_back(adjoin);
 	}
 
-	void selectSimilarTraverse(EditorSector* sector, s32 wallIndex, s32 texId, s32 fixedDir)
+	void selectSimilarTraverse(EditorSector* sector, s32 wallIndex, s32 texId, s32 fixedDir, Vec2f* texOffset, f32 baseHeight)
 	{
 		const s32 layer = (s_editFlags & LEF_SHOW_ALL_LAYERS) ? LAYER_ANY : s_curLayer;
 
@@ -1728,6 +1786,12 @@ namespace LevelEditor
 						{
 							break;
 						}
+						if (texOffset)
+						{
+							if (dir == 1) { texOffset[dir].x -= getWallLength(sector, wall); }
+							setPartTextureOffset(wall, HP_MID, { texOffset[dir].x, texOffset[dir].z + sector->floorHeight - baseHeight });
+							if (dir == 0) { texOffset[dir].x += getWallLength(sector, wall); }
+						}
 					}
 					else
 					{
@@ -1739,11 +1803,25 @@ namespace LevelEditor
 					bool hasMatch = false;
 					EditorSector* next = &s_level.sectors[wall->adjoinId];
 
+					f32 offsetX = 0.0f, offsetZ = 0.0f;
+					if (texOffset)
+					{
+						offsetX = dir == 1 ? texOffset[dir].x - getWallLength(sector, wall) : texOffset[dir].x;
+						offsetZ = texOffset[dir].z;
+					}
+
 					// Add adjoin to the list.
 					// Then go left and right from the adjoin.
 					if (layer == LAYER_ANY || next->layer == layer)
 					{
-						addToAdjoinList({ wall->adjoinId, wall->mirrorId, dir });
+						if (texOffset)
+						{
+							addToAdjoinList({ wall->adjoinId, wall->mirrorId, dir, {texOffset[0], texOffset[1]} });
+						}
+						else
+						{
+							addToAdjoinList({ wall->adjoinId, wall->mirrorId, dir, {0} });
+						}
 					}
 
 					if (next->ceilHeight < sector->ceilHeight)
@@ -1756,6 +1834,10 @@ namespace LevelEditor
 							if (selection_add(id))
 							{
 								hasMatch = true;
+								if (texOffset)
+								{
+									setPartTextureOffset(wall, HP_TOP, { offsetX, offsetZ + next->ceilHeight - baseHeight });
+								}
 							}
 						}
 					}
@@ -1769,6 +1851,10 @@ namespace LevelEditor
 							if (selection_add(id))
 							{
 								hasMatch = true;
+								if (texOffset)
+								{
+									setPartTextureOffset(wall, HP_BOT, { offsetX, offsetZ + sector->floorHeight - baseHeight });
+								}
 							}
 						}
 					}
@@ -1782,6 +1868,10 @@ namespace LevelEditor
 							if (selection_add(id))
 							{
 								hasMatch = true;
+								if (texOffset)
+								{
+									setPartTextureOffset(wall, HP_MID, { offsetX, offsetZ + sector->floorHeight - baseHeight });
+								}
 							}
 						}
 					}
@@ -1796,7 +1886,19 @@ namespace LevelEditor
 						// Then go left and right from the adjoin.
 						if (layer == LAYER_ANY || next->layer == layer)
 						{
-							addToAdjoinList({ wall->adjoinId, wall->mirrorId, !dir });
+							if (texOffset)
+							{
+								addToAdjoinList({ wall->adjoinId, wall->mirrorId, !dir, { texOffset[0], texOffset[1] } });
+							}
+							else
+							{
+								addToAdjoinList({ wall->adjoinId, wall->mirrorId, !dir, {0} });
+							}
+						}
+						if (texOffset)
+						{
+							if (dir == 1) { texOffset[dir].x -= getWallLength(sector, wall); }
+							if (dir == 0) { texOffset[dir].x += getWallLength(sector, wall); }
 						}
 					}
 				}
@@ -1806,7 +1908,30 @@ namespace LevelEditor
 		}
 	}
 
-	void selectSimilarWalls(EditorSector* rootSector, s32 wallIndex, HitPart part)
+	// Hacky version for now, clean up once it works... (separate selection lists).
+	void edit_autoAlign(s32 sectorId, s32 wallIndex, HitPart part)
+	{
+		EditorSector* rootSector = &s_level.sectors[sectorId];
+		// Save the selection and clear.
+		SelectionList curSelection = s_selectionList;
+		s_selectionList.clear();
+
+		// Find similar walls.
+		selectSimilarWalls(rootSector, wallIndex, part, true);
+
+		// Restore the selection.
+		s_selectionList = curSelection;
+	}
+
+	f32 getWallLength(EditorSector* sector, EditorWall* wall)
+	{
+		const Vec2f* v0 = &sector->vtx[wall->idx[0]];
+		const Vec2f* v1 = &sector->vtx[wall->idx[1]];
+		const Vec2f delta = { v1->x - v0->x, v1->z - v0->z };
+		return sqrtf(delta.x*delta.x + delta.z*delta.z);
+	}
+
+	void selectSimilarWalls(EditorSector* rootSector, s32 wallIndex, HitPart part, bool autoAlign/*=false*/)
 	{
 		s32 rootWallIndex = wallIndex;
 		EditorWall* rootWall = &rootSector->walls[wallIndex];
@@ -1814,6 +1939,17 @@ namespace LevelEditor
 		if (s_sectorDrawMode == SDM_TEXTURED_CEIL || s_sectorDrawMode == SDM_TEXTURED_FLOOR)
 		{
 			texId = getPartTextureIndex(rootWall, part);
+		}
+
+		f32 leftAlign  = 0.0f;
+		f32 rightAlign = autoAlign ? getWallLength(rootSector, rootWall) : 0.0f;
+		Vec2f texOffsetLeft  = getPartTextureOffset(rootWall, part);
+		Vec2f texOffset[2] = { { texOffsetLeft.x + rightAlign, texOffsetLeft.z }, texOffsetLeft };
+		f32 baseHeight = rootSector->floorHeight;
+		if (part == HP_TOP)
+		{
+			EditorSector* next = &s_level.sectors[rootWall->adjoinId];
+			baseHeight = next->ceilHeight;
 		}
 
 		// Add the matching parts from the start wall.
@@ -1836,6 +1972,7 @@ namespace LevelEditor
 				{
 					FeatureId id = createFeatureId(rootSector, wallIndex, HP_TOP);
 					selection_add(id);
+					if (autoAlign) { setPartTextureOffset(rootWall, HP_TOP, { texOffset[1].x, texOffset[1].z + next->ceilHeight - baseHeight }); }
 				}
 			}
 			if (next->floorHeight > rootSector->floorHeight)
@@ -1845,6 +1982,7 @@ namespace LevelEditor
 				{
 					FeatureId id = createFeatureId(rootSector, wallIndex, HP_BOT);
 					selection_add(id);
+					if (autoAlign) { setPartTextureOffset(rootWall, HP_BOT, { texOffset[1].x, texOffset[1].z + rootSector->floorHeight - baseHeight }); }
 				}
 			}
 			if (rootWall->flags[0] & WF1_ADJ_MID_TEX)
@@ -1854,12 +1992,13 @@ namespace LevelEditor
 				{
 					FeatureId id = createFeatureId(rootSector, wallIndex, HP_MID);
 					selection_add(id);
+					if (autoAlign) { setPartTextureOffset(rootWall, HP_MID, { texOffset[1].x, texOffset[1].z + rootSector->floorHeight - baseHeight }); }
 				}
 			}
 		}
 
 		s_adjoinList.clear();
-		selectSimilarTraverse(rootSector, wallIndex, texId, -1);
+		selectSimilarTraverse(rootSector, wallIndex, texId, -1, autoAlign ? texOffset : nullptr, baseHeight);
 
 		// Only traverse adjoins if using textures as a separator.
 		// Otherwise we often select too many walls (most or all of the level).
@@ -1869,7 +2008,8 @@ namespace LevelEditor
 			while (adjoinIndex < s_adjoinList.size())
 			{
 				EditorSector* sector = &s_level.sectors[s_adjoinList[adjoinIndex].adjoinId];
-				selectSimilarTraverse(sector, s_adjoinList[adjoinIndex].mirrorId, texId, s_adjoinList[adjoinIndex].side);
+				Vec2f adjOffset[] = { s_adjoinList[adjoinIndex].offset[0], s_adjoinList[adjoinIndex].offset[1] };
+				selectSimilarTraverse(sector, s_adjoinList[adjoinIndex].mirrorId, texId, s_adjoinList[adjoinIndex].side, autoAlign ? adjOffset : nullptr, baseHeight);
 				adjoinIndex++;
 			}
 		}
@@ -4397,22 +4537,25 @@ namespace LevelEditor
 	{
 		// WASD controls.
 		const f32 moveSpd = s_zoom2d * f32(960.0 * TFE_System::getDeltaTime());
-		if (TFE_Input::keyDown(KEY_W))
+		if (!TFE_Input::keyModDown(KEYMOD_CTRL))
 		{
-			s_viewportPos.z -= moveSpd;
-		}
-		else if (TFE_Input::keyDown(KEY_S))
-		{
-			s_viewportPos.z += moveSpd;
-		}
+			if (TFE_Input::keyDown(KEY_W))
+			{
+				s_viewportPos.z -= moveSpd;
+			}
+			else if (TFE_Input::keyDown(KEY_S))
+			{
+				s_viewportPos.z += moveSpd;
+			}
 
-		if (TFE_Input::keyDown(KEY_A))
-		{
-			s_viewportPos.x -= moveSpd;
-		}
-		else if (TFE_Input::keyDown(KEY_D))
-		{
-			s_viewportPos.x += moveSpd;
+			if (TFE_Input::keyDown(KEY_A))
+			{
+				s_viewportPos.x -= moveSpd;
+			}
+			else if (TFE_Input::keyDown(KEY_D))
+			{
+				s_viewportPos.x += moveSpd;
+			}
 		}
 
 		// Mouse scrolling.
@@ -4466,30 +4609,33 @@ namespace LevelEditor
 			moveSpd *= 10.0f;
 		}
 
-		if (TFE_Input::keyDown(KEY_W))
+		if (!TFE_Input::keyModDown(KEYMOD_CTRL))
 		{
-			s_camera.pos.x -= s_camera.viewMtx.m2.x * moveSpd;
-			s_camera.pos.y -= s_camera.viewMtx.m2.y * moveSpd;
-			s_camera.pos.z -= s_camera.viewMtx.m2.z * moveSpd;
-		}
-		else if (TFE_Input::keyDown(KEY_S))
-		{
-			s_camera.pos.x += s_camera.viewMtx.m2.x * moveSpd;
-			s_camera.pos.y += s_camera.viewMtx.m2.y * moveSpd;
-			s_camera.pos.z += s_camera.viewMtx.m2.z * moveSpd;
-		}
+			if (TFE_Input::keyDown(KEY_W))
+			{
+				s_camera.pos.x -= s_camera.viewMtx.m2.x * moveSpd;
+				s_camera.pos.y -= s_camera.viewMtx.m2.y * moveSpd;
+				s_camera.pos.z -= s_camera.viewMtx.m2.z * moveSpd;
+			}
+			else if (TFE_Input::keyDown(KEY_S))
+			{
+				s_camera.pos.x += s_camera.viewMtx.m2.x * moveSpd;
+				s_camera.pos.y += s_camera.viewMtx.m2.y * moveSpd;
+				s_camera.pos.z += s_camera.viewMtx.m2.z * moveSpd;
+			}
 
-		if (TFE_Input::keyDown(KEY_A))
-		{
-			s_camera.pos.x -= s_camera.viewMtx.m0.x * moveSpd;
-			s_camera.pos.y -= s_camera.viewMtx.m0.y * moveSpd;
-			s_camera.pos.z -= s_camera.viewMtx.m0.z * moveSpd;
-		}
-		else if (TFE_Input::keyDown(KEY_D))
-		{
-			s_camera.pos.x += s_camera.viewMtx.m0.x * moveSpd;
-			s_camera.pos.y += s_camera.viewMtx.m0.y * moveSpd;
-			s_camera.pos.z += s_camera.viewMtx.m0.z * moveSpd;
+			if (TFE_Input::keyDown(KEY_A))
+			{
+				s_camera.pos.x -= s_camera.viewMtx.m0.x * moveSpd;
+				s_camera.pos.y -= s_camera.viewMtx.m0.y * moveSpd;
+				s_camera.pos.z -= s_camera.viewMtx.m0.z * moveSpd;
+			}
+			else if (TFE_Input::keyDown(KEY_D))
+			{
+				s_camera.pos.x += s_camera.viewMtx.m0.x * moveSpd;
+				s_camera.pos.y += s_camera.viewMtx.m0.y * moveSpd;
+				s_camera.pos.z += s_camera.viewMtx.m0.z * moveSpd;
+			}
 		}
 
 		// Turning.
@@ -5226,6 +5372,11 @@ namespace LevelEditor
 		else if (TFE_Input::keyPressed(KEY_V) && TFE_Input::keyModDown(KEYMOD_CTRL) && s_selectedTexture >= 0)
 		{
 			applyTextureToSelection(s_selectedTexture, &s_copiedTextureOffset);
+		}
+		else if (TFE_Input::keyPressed(KEY_A) && TFE_Input::keyModDown(KEYMOD_CTRL))
+		{
+			edit_autoAlign(s_featureHovered.sector->id, s_featureHovered.featureIndex, s_featureHovered.part);
+			cmd_addAutoAlign(s_featureHovered.sector->id, s_featureHovered.featureIndex, s_featureHovered.part);
 		}
 	}
 	

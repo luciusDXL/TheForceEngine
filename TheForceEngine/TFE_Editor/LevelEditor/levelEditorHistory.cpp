@@ -27,6 +27,7 @@ namespace LevelEditor
 		LCmd_SetTexture,
 		LCmd_CopyTexture,
 		LCmd_ClearTexture,
+		LCmd_Autoalign,
 		LCmd_Count
 	};
 
@@ -48,6 +49,7 @@ namespace LevelEditor
 	void cmd_applySetTextureWithOffset();
 	void cmd_applySetTexture();
 	void cmd_applyClearTexture();
+	void cmd_applyAutoalign();
 
 	// Command Merging Helpers
 	bool mergeMoveTextureCmd(s32 count, FeatureId* features, Vec2f delta);
@@ -71,6 +73,7 @@ namespace LevelEditor
 		history_registerCommand(LCmd_SetTexture, cmd_applySetTexture);
 		history_registerCommand(LCmd_CopyTexture, cmd_applySetTextureWithOffset);
 		history_registerCommand(LCmd_ClearTexture, cmd_applyClearTexture);
+		history_registerCommand(LCmd_Autoalign, cmd_applyAutoalign);
 		history_registerName(LName_MoveVertex, "Move Vertice(s)");
 		history_registerName(LName_SetVertex, "Set Vertex Position");
 		history_registerName(LName_MoveWall, "Move Wall(s)");
@@ -85,6 +88,7 @@ namespace LevelEditor
 		history_registerName(LName_SetTexture, "Set Texture");
 		history_registerName(LName_CopyTexture, "Copy Texture");
 		history_registerName(LName_ClearTexture, "Clear Texture");
+		history_registerName(LName_Autoalign, "Autoalign Textures");
 
 		s_lastMoveTex = 0.0;
 	}
@@ -459,6 +463,30 @@ namespace LevelEditor
 		FeatureId* features = (FeatureId*)hBuffer_getArrayU64(count);
 		// Call the editor command.
 		edit_clearTexture(count, features);
+		CMD_APPLY_END();
+	}
+
+	/////////////////////////////////
+	// Auto Align
+	void cmd_addAutoAlign(s32 sectorId, s32 featureIndex, HitPart part)
+	{
+		CMD_BEGIN(LCmd_Autoalign, LName_Autoalign);
+		// Add the command data.
+		hBuffer_addS32(sectorId);
+		hBuffer_addS32(featureIndex);
+		hBuffer_addS32((s32)part);
+		CMD_END();
+	}
+
+	void cmd_applyAutoalign()
+	{
+		CMD_APPLY_BEGIN();
+		// Extract the command data.
+		s32 sectorId = hBuffer_getS32();
+		s32 featureIndex = hBuffer_getS32();
+		HitPart part = (HitPart)hBuffer_getS32();
+		// Call the editor command.
+		edit_autoAlign(sectorId, featureIndex, part);
 		CMD_APPLY_END();
 	}
 

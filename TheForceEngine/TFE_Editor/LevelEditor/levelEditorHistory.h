@@ -2,6 +2,7 @@
 #include <TFE_System/types.h>
 #include <TFE_Editor/history.h>
 #include <TFE_Editor/LevelEditor/selection.h>
+#include <TFE_Editor/LevelEditor/levelEditorData.h>
 
 namespace LevelEditor
 {
@@ -21,6 +22,7 @@ namespace LevelEditor
 		LName_SetTexture,
 		LName_CopyTexture,
 		LName_ClearTexture,
+		LName_Autoalign,
 		LName_Count
 	};
 
@@ -48,4 +50,5 @@ namespace LevelEditor
 	void cmd_addMoveTexture(s32 count, FeatureId* features, Vec2f delta);
 	void cmd_addSetTexture(s32 count, FeatureId* features, s32 texId, Vec2f* offset);
 	void cmd_addClearTexture(s32 count, FeatureId* features);
+	void cmd_addAutoAlign(s32 sectorId, s32 featureIndex, HitPart part);
 }
