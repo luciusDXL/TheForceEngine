@@ -2059,6 +2059,10 @@ namespace LevelEditor
 			{
 				if (featureSector && wallIndex >= 0)
 				{
+					// Clear the selections when deleting a sign -
+					// otherwise the source wall will still be selected.
+					edit_clearSelections();
+
 					FeatureId id = createFeatureId(featureSector, wallIndex, HP_SIGN);
 					edit_clearTexture(1, &id);
 					cmd_addClearTexture(1, &id);
@@ -3480,16 +3484,16 @@ namespace LevelEditor
 		Vec2f mapOffset = { ImGui::CalcTextSize(text).x + 16.0f, -20 };
 		if (n.x < 0.0f)
 		{
-			mapOffset.x = s32(mapOffset.x * (n.x*0.5f - 0.5f));
+			mapOffset.x = floorf(mapOffset.x * (n.x*0.5f - 0.5f));
 		}
 		else
 		{
-			mapOffset.x = s32(mapOffset.x * (-(1.0f - n.x)*0.5f));
+			mapOffset.x = floorf(mapOffset.x * (-(1.0f - n.x)*0.5f));
 		}
-		mapOffset.z = s32(n.z * mapOffset.z - 16.0f);
+		mapOffset.z = floorf(n.z * mapOffset.z - 16.0f);
 
-		mapPos.x += mapOffset.x;
-		mapPos.z += mapOffset.z;
+		mapPos.x += s32(mapOffset.x);
+		mapPos.z += s32(mapOffset.z);
 		if (mapOffset_) { *mapOffset_ = mapOffset; }
 	}
 
@@ -3750,7 +3754,7 @@ namespace LevelEditor
 							Vec2f center = { (sector->bounds[0].x + sector->bounds[1].x) * 0.5f, (sector->bounds[0].z + sector->bounds[1].z) * 0.5f };
 							
 							mapPos = worldPos2dToMap(center);
-							mapPos.x -= (textOffset + 12);
+							mapPos.x -= s32(textOffset + 12);
 							mapPos.z -= 16;
 						}
 						else if (s_view == EDIT_VIEW_3D)
@@ -3886,7 +3890,7 @@ namespace LevelEditor
 							Vec2f center = { (sector->bounds[0].x + sector->bounds[1].x) * 0.5f, (sector->bounds[0].z + sector->bounds[1].z) * 0.5f };
 
 							mapPos = worldPos2dToMap(center);
-							mapPos.x -= (textOffset + 12);
+							mapPos.x -= s32(textOffset + 12);
 							mapPos.z -= 16;
 						}
 						else if (s_view == EDIT_VIEW_3D)

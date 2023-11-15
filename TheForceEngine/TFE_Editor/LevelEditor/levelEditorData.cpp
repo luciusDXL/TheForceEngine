@@ -389,7 +389,7 @@ namespace LevelEditor
 
 	Asset* getTextureAssetByName(const char* name)
 	{
-		const s32 count = s_levelTextureList.size();
+		const s32 count = (s32)s_levelTextureList.size();
 		Asset* asset = s_levelTextureList.data();
 		for (s32 i = 0; i < count; i++)
 		{
