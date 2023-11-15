@@ -100,6 +100,8 @@ namespace LevelEditor
 	void drawBox(const Vec3f* center, f32 side, f32 lineWidth, u32 color);
 	void drawSolidBox(const Vec3f* center, f32 side, u32 color);
 	void drawSectorShape2D();
+	void drawWallLines3D_Highlighted(const EditorSector* sector, const EditorSector* next, const EditorWall* wall, f32 width, Highlight highlight, bool halfAlpha, bool showSign = false);
+	bool computeSignCorners(const EditorSector* sector, const EditorWall* wall, Vec3f* corners);
 
 	void viewport_init()
 	{
@@ -341,7 +343,9 @@ namespace LevelEditor
 
 		const Vec2f texScale = { 1.0f / f32(tex->width), 1.0f / f32(tex->height) };
 
-		Vec2f offset = { baseTex->offset.x - ltex->offset.x, -TFE_Math::fract(std::max(baseTex->offset.z, 0.0f)) + ltex->offset.z };
+		// TODO: Does this break anything?
+		//Vec2f offset = { baseTex->offset.x - ltex->offset.x, -TFE_Math::fract(std::max(baseTex->offset.z, 0.0f)) + ltex->offset.z };
+		Vec2f offset = { baseTex->offset.x - ltex->offset.x, ltex->offset.z };
 
 		uvCorners[0] = { offset.x * 8.0f, (offset.z + partHeight) * 8.0f };
 		uvCorners[1] = { uvCorners[0].x + wallLengthTexels, offset.z * 8.0f };
@@ -357,7 +361,7 @@ namespace LevelEditor
 		return tex;
 	}
 
-	void drawWallLines3D_Highlighted(const EditorSector* sector, const EditorSector* next, const EditorWall* wall, f32 width, Highlight highlight, bool halfAlpha)
+	void drawWallLines3D_Highlighted(const EditorSector* sector, const EditorSector* next, const EditorWall* wall, f32 width, Highlight highlight, bool halfAlpha, bool showSign)
 	{
 		const Vec2f& v0 = sector->vtx[wall->idx[0]];
 		const Vec2f& v1 = sector->vtx[wall->idx[1]];
@@ -383,7 +387,7 @@ namespace LevelEditor
 		};
 		u32 colors[4] = { color, color, color, color };
 		TFE_RenderShared::lineDraw3d_addLines(4, width, lines, colors);
-
+				
 		if (next)
 		{
 			// Top
@@ -402,6 +406,25 @@ namespace LevelEditor
 				  { v1.x, next->floorHeight, v1.z } };
 				TFE_RenderShared::lineDraw3d_addLine(width, line0, &color);
 			}
+		}
+
+		Vec3f sgnCorners[2];
+		if (showSign && computeSignCorners(sector, wall, sgnCorners))
+		{
+			Vec3f sgnLines[] =
+			{
+				{ sgnCorners[0].x, sgnCorners[0].y, sgnCorners[0].z },
+				{ sgnCorners[1].x, sgnCorners[0].y, sgnCorners[1].z },
+				{ sgnCorners[0].x, sgnCorners[1].y, sgnCorners[0].z },
+				{ sgnCorners[1].x, sgnCorners[1].y, sgnCorners[1].z },
+
+				{ sgnCorners[0].x, sgnCorners[0].y, sgnCorners[0].z },
+				{ sgnCorners[0].x, sgnCorners[1].y, sgnCorners[0].z },
+				{ sgnCorners[1].x, sgnCorners[0].y, sgnCorners[1].z },
+				{ sgnCorners[1].x, sgnCorners[1].y, sgnCorners[1].z },
+			};
+			u32 colors[4] = { color, color, color, color };
+			TFE_RenderShared::lineDraw3d_addLines(4, width, sgnLines, colors);
 		}
 	}
 
@@ -447,15 +470,41 @@ namespace LevelEditor
 		triDraw3d_addColored(TRIMODE_BLEND, (u32)sector->poly.triIdx.size(), (u32)vtxCount, flatVtx, sector->poly.triIdx.data(), c_sectorPolyClr[highlight], part == HP_CEIL);
 	}
 
+	bool computeSignCorners(const EditorSector* sector, const EditorWall* wall, Vec3f* corners)
+	{
+		Vec2f ext[2];
+		bool hasSign = false;
+		if (getSignExtents(sector, wall, ext))
+		{
+			hasSign = true;
+			const Vec2f* v0 = &sector->vtx[wall->idx[0]];
+			const Vec2f* v1 = &sector->vtx[wall->idx[1]];
+			Vec2f wallDir = { v1->x - v0->x, v1->z - v0->z };
+			Vec2f wallNrm = { -(v1->z - v0->z), v1->x - v0->x };
+			wallDir = TFE_Math::normalize(&wallDir);
+			wallNrm = TFE_Math::normalize(&wallNrm);
+
+			const f32 zBias = 0.01f;
+			corners[1] = { v0->x + wallDir.x * ext[1].x - wallNrm.x*zBias, ext[0].z, v0->z + wallDir.z * ext[1].x - wallNrm.z*zBias };
+			corners[0] = { v0->x + wallDir.x * ext[0].x - wallNrm.x*zBias, ext[1].z, v0->z + wallDir.z * ext[0].x - wallNrm.z*zBias };
+		}
+		return hasSign;
+	}
+
 	void drawWallColor3d_Highlighted(const EditorSector* sector, const Vec2f* vtx, const EditorWall* wall, u32 color, HitPart part)
 	{
 		const Vec2f* v0 = &vtx[wall->idx[0]];
 		const Vec2f* v1 = &vtx[wall->idx[1]];
 
-		if (wall->adjoinId < 0 && (part == HP_COUNT || part == HP_MID))
+		Vec3f sgnCorners[2];
+		if (part == HP_SIGN && computeSignCorners(sector, wall, sgnCorners))
+		{
+			triDraw3d_addQuadColored(TRIMODE_BLEND, sgnCorners, color);
+		}
+		else if (wall->adjoinId < 0 && (part == HP_COUNT || part == HP_MID))
 		{
 			// No adjoin - a single quad.
-			Vec3f corners[] = { {v0->x, sector->ceilHeight, v0->z}, {v1->x, sector->floorHeight, v1->z} };
+			Vec3f corners[] = { { v0->x, sector->ceilHeight,  v0->z }, { v1->x, sector->floorHeight, v1->z } };
 			triDraw3d_addQuadColored(TRIMODE_BLEND, corners, color);
 		}
 		else if (wall->adjoinId >= 0)
@@ -835,7 +884,7 @@ namespace LevelEditor
 			{
 				EditorWall* wall = &featureSector->walls[featureIndex];
 				EditorSector* next = wall->adjoinId < 0 ? nullptr : &s_level.sectors[wall->adjoinId];
-				drawWallLines3D_Highlighted(featureSector, next, wall, 3.5f, HL_SELECTED, false);
+				drawWallLines3D_Highlighted(featureSector, next, wall, 3.5f, HL_SELECTED, false, featureData == HP_SIGN);
 			}
 			
 			// Draw translucent surfaces.
@@ -860,7 +909,7 @@ namespace LevelEditor
 		{
 			EditorWall* wall = &s_featureHovered.sector->walls[s_featureHovered.featureIndex];
 			EditorSector* next = wall->adjoinId < 0 ? nullptr : &s_level.sectors[wall->adjoinId];
-			drawWallLines3D_Highlighted(s_featureHovered.sector, next, wall, 3.5f, HL_HOVERED, hoverAndSelect);
+			drawWallLines3D_Highlighted(s_featureHovered.sector, next, wall, 3.5f, HL_HOVERED, hoverAndSelect, s_featureHovered.part == HP_SIGN);
 		}
 	}
 

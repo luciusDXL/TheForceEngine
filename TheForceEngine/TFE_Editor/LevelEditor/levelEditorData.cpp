@@ -560,9 +560,80 @@ namespace LevelEditor
 		}
 		return true;
 	}
+
+	f32 getWallLength(const EditorSector* sector, const EditorWall* wall)
+	{
+		const Vec2f* v0 = &sector->vtx[wall->idx[0]];
+		const Vec2f* v1 = &sector->vtx[wall->idx[1]];
+		const Vec2f delta = { v1->x - v0->x, v1->z - v0->z };
+		return sqrtf(delta.x*delta.x + delta.z*delta.z);
+	}
+
+	bool getSignExtents(const EditorSector* sector, const EditorWall* wall, Vec2f ext[2])
+	{
+		if (wall->tex[WP_SIGN].texIndex < 0) { return false; }
+
+		f32 uOffset = wall->tex[WP_MID].offset.x;
+		f32 vOffset = sector->floorHeight;
+		if (wall->adjoinId >= 0)
+		{
+			const EditorSector* next = &s_level.sectors[wall->adjoinId];
+			if (next->floorHeight > sector->floorHeight)
+			{
+				uOffset = wall->tex[WP_BOT].offset.x;
+			}
+			else if (next->ceilHeight < sector->ceilHeight)
+			{
+				uOffset = wall->tex[WP_TOP].offset.x;
+				vOffset = next->ceilHeight;
+			}
+		}
+
+		bool hasSign = false;
+		const EditorTexture* tex = getTexture(wall->tex[WP_SIGN].texIndex);
+		if (tex)
+		{
+			ext[0].x = wall->tex[WP_SIGN].offset.x - uOffset;
+			ext[1].x = ext[0].x + f32(tex->width) / 8.0f;
+			ext[0].z = vOffset - wall->tex[WP_SIGN].offset.z;
+			ext[1].z = ext[0].z + f32(tex->height) / 8.0f;
+			hasSign = true;
+		}
+		return hasSign;
+	}
+
+	void centerSignOnSurface(const EditorSector* sector, EditorWall* wall)
+	{
+		if (wall->tex[WP_SIGN].texIndex < 0) { return; }
+		const EditorTexture* signTex = getTexture(wall->tex[WP_SIGN].texIndex);
+		if (!signTex) { return; }
+
+		f32 uOffset = wall->tex[WP_MID].offset.x;
+		f32 baseY = sector->floorHeight;
+		f32 partHeight = std::max(0.0f, sector->ceilHeight - sector->floorHeight);
+		if (wall->adjoinId >= 0)
+		{
+			const EditorSector* next = &s_level.sectors[wall->adjoinId];
+			if (next->floorHeight > sector->floorHeight)
+			{
+				uOffset = wall->tex[WP_BOT].offset.x;
+				partHeight = next->floorHeight - sector->floorHeight;
+			}
+			else if (next->ceilHeight < sector->ceilHeight)
+			{
+				uOffset = wall->tex[WP_TOP].offset.x;
+				baseY = next->ceilHeight;
+				partHeight = sector->ceilHeight - next->ceilHeight;
+			}
+		}
+
+		f32 wallLen = getWallLength(sector, wall);
+		wall->tex[WP_SIGN].offset.x = uOffset + std::max(0.0f, (wallLen - signTex->width/8.0f)*0.5f);
+		wall->tex[WP_SIGN].offset.z = -std::max(0.0f, partHeight - signTex->height/8.0f) * 0.5f;
+	}
 		
 	// Return true if a hit is found.
-	bool traceRay(const Ray* ray, RayHitInfo* hitInfo, bool flipFaces)
+	bool traceRay(const Ray* ray, RayHitInfo* hitInfo, bool flipFaces, bool canHitSigns)
 	{
 		const EditorLevel* level = &s_level;
 		if (level->sectors.empty()) { return false; }
@@ -635,7 +706,40 @@ namespace LevelEditor
 				closestHit *= maxDist;
 				const Vec3f hitPoint = { origin.x + ray->dir.x*closestHit, origin.y + ray->dir.y*closestHit, origin.z + ray->dir.z*closestHit };
 
-				if (wall[closestWallId].adjoinId >= 0)
+				Vec2f signExt[2];
+				f32 hitU = 0.0f;
+				const bool hasSign = canHitSigns && getSignExtents(sector, &wall[closestWallId], signExt);
+				bool hitSign = false;
+				if (hasSign)
+				{
+					const Vec2f* v0 = &sector->vtx[wall[closestWallId].idx[0]];
+					const Vec2f* v1 = &sector->vtx[wall[closestWallId].idx[1]];
+					Vec2f wallDir = { v1->x - v0->x, v1->z - v0->z };
+					wallDir = TFE_Math::normalize(&wallDir);
+
+					if (fabsf(wallDir.x) >= fabsf(wallDir.z))
+					{
+						hitU = (hitPoint.x - v0->x) / wallDir.x;
+					}
+					else
+					{
+						hitU = (hitPoint.z - v0->z) / wallDir.z;
+					}
+
+					hitSign = hitU >= signExt[0].x && hitU < signExt[1].x && 
+						hitPoint.y >= signExt[0].z && hitPoint.y < signExt[1].z;
+				}
+
+				if (hitSign && closestHit < overallClosestHit)
+				{
+					overallClosestHit = closestHit;
+					hitInfo->hitSectorId = sector->id;
+					hitInfo->hitWallId = closestWallId;
+					hitInfo->hitPart = HP_SIGN;
+					hitInfo->hitPos = hitPoint;
+					hitInfo->dist = closestHit;
+				}
+				else if (wall[closestWallId].adjoinId >= 0)
 				{
 					// given the hit point, is it below the next floor or above the next ceiling?
 					const EditorSector* next = &level->sectors[wall[closestWallId].adjoinId];

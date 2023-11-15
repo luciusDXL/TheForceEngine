@@ -149,6 +149,7 @@ namespace LevelEditor
 	static bool s_startTexMove = false;
 	static Vec3f s_startTexPos;
 	static Vec2f s_startTexOffset;
+	static bool s_texMoveSign = false;
 	static Feature s_featureTex = {};
 	static Vec2f s_texNormal, s_texTangent;
 
@@ -212,6 +213,7 @@ namespace LevelEditor
 	void snapToGrid(f32* value);
 	void snapToGrid(Vec2f* pos);
 	void snapToGrid(Vec3f* pos);
+	void snapSignToCursor(EditorSector* sector, EditorWall* wall, s32 signTexIndex, Vec2f* signOffset);
 
 	void drawViewportInfo(s32 index, Vec2i mapPos, const char* info, f32 xOffset, f32 yOffset, f32 alpha=1.0f);
 	void getWallLengthText(const Vec2f* v0, const Vec2f* v1, char* text, Vec2i& mapPos, s32 index = -1, Vec2f* mapOffset = nullptr);
@@ -219,7 +221,6 @@ namespace LevelEditor
 	void copyToClipboard(const char* str);
 	bool copyFromClipboard(char* str);
 	void applySurfaceTextures();
-	f32 getWallLength(EditorSector* sector, EditorWall* wall);
 	void selectSimilarWalls(EditorSector* rootSector, s32 wallIndex, HitPart part, bool autoAlign=false);
 	
 	////////////////////////////////////////////////////////
@@ -536,7 +537,7 @@ namespace LevelEditor
 
 			f32 nearDist = 1.0f;
 			f32 farDist = 100.0f;
-			if (traceRay(&ray, &hitInfo, false) && hitInfo.hitSectorId >= 0)
+			if (traceRay(&ray, &hitInfo, false, false) && hitInfo.hitSectorId >= 0)
 			{
 				EditorSector* hitSector = &s_level.sectors[hitInfo.hitSectorId];
 				Vec3f bbox[] =
@@ -715,7 +716,7 @@ namespace LevelEditor
 
 			f32 nearDist = 1.0f;
 			f32 farDist = 100.0f;
-			if (traceRay(&ray, &hitInfo, false) && hitInfo.hitSectorId >= 0)
+			if (traceRay(&ray, &hitInfo, false, false) && hitInfo.hitSectorId >= 0)
 			{
 				EditorSector* hitSector = &s_level.sectors[hitInfo.hitSectorId];
 				Vec3f bbox[] =
@@ -1922,15 +1923,7 @@ namespace LevelEditor
 		// Restore the selection.
 		s_selectionList = curSelection;
 	}
-
-	f32 getWallLength(EditorSector* sector, EditorWall* wall)
-	{
-		const Vec2f* v0 = &sector->vtx[wall->idx[0]];
-		const Vec2f* v1 = &sector->vtx[wall->idx[1]];
-		const Vec2f delta = { v1->x - v0->x, v1->z - v0->z };
-		return sqrtf(delta.x*delta.x + delta.z*delta.z);
-	}
-
+		
 	void selectSimilarWalls(EditorSector* rootSector, s32 wallIndex, HitPart part, bool autoAlign/*=false*/)
 	{
 		s32 rootWallIndex = wallIndex;
@@ -2035,20 +2028,23 @@ namespace LevelEditor
 		{
 			s32 sectorId, wallIndex;
 			HitPart part;
+			EditorSector* featureSector = nullptr;
 			if (!s_selectionList.empty())
 			{
 				// TODO: Currently, you can only delete one vertex at a time. It should be possible to delete multiple.
-				EditorSector* featureSector = unpackFeatureId(s_selectionList[0], &wallIndex, (s32*)&part);
+				featureSector = unpackFeatureId(s_selectionList[0], &wallIndex, (s32*)&part);
 				sectorId = featureSector->id;
 			}
 			else if (s_featureCur.featureIndex >= 0 && s_featureCur.sector)
 			{
+				featureSector = s_featureCur.sector;
 				sectorId = s_featureCur.sector->id;
 				wallIndex = s_featureCur.featureIndex;
 				part = s_featureCur.part;
 			}
 			else if (s_featureHovered.featureIndex >= 0 && s_featureHovered.sector)
 			{
+				featureSector = s_featureHovered.sector;
 				sectorId = s_featureHovered.sector->id;
 				wallIndex = s_featureHovered.featureIndex;
 				part = s_featureHovered.part;
@@ -2058,6 +2054,15 @@ namespace LevelEditor
 			{
 				edit_deleteSector(sectorId);
 				cmd_addDeleteSector(sectorId);
+			}
+			else if (part == HP_SIGN)
+			{
+				if (featureSector && wallIndex >= 0)
+				{
+					FeatureId id = createFeatureId(featureSector, wallIndex, HP_SIGN);
+					edit_clearTexture(1, &id);
+					cmd_addClearTexture(1, &id);
+				}
 			}
 			else
 			{
@@ -3190,7 +3195,7 @@ namespace LevelEditor
 			{
 				Ray ray = { s_camera.pos, { 0.0f, -1.0f, 0.0f}, 32.0f, layer };
 				RayHitInfo hitInfo;
-				if (traceRay(&ray, &hitInfo, false))
+				if (traceRay(&ray, &hitInfo, false, false))
 				{
 					f32 newY = s_level.sectors[hitInfo.hitSectorId].floorHeight + 5.8f;
 					f32 blendFactor = std::min(1.0f, (f32)TFE_System::getDeltaTime() * 10.0f);
@@ -3204,7 +3209,7 @@ namespace LevelEditor
 
 			RayHitInfo hitInfo;
 			Ray ray = { s_camera.pos, s_rayDir, 1000.0f, layer };
-			const bool rayHit = traceRay(&ray, &hitInfo, hitBackfaces);
+			const bool rayHit = traceRay(&ray, &hitInfo, hitBackfaces, s_sectorDrawMode == SDM_TEXTURED_CEIL || s_sectorDrawMode == SDM_TEXTURED_FLOOR);
 			if (rayHit) { s_cursor3d = hitInfo.hitPos; }
 			else  		{ s_cursor3d = rayGridPlaneHit(s_camera.pos, s_rayDir); }
 
@@ -5070,6 +5075,11 @@ namespace LevelEditor
 
 					if (delta.x || delta.z)
 					{
+						if (s_featureHovered.part == HP_SIGN)
+						{
+							delta.x = -delta.x;
+						}
+
 						// Add command.
 						const s32 count = (s32)s_selectionList.size();
 						if (!count)
@@ -5108,7 +5118,20 @@ namespace LevelEditor
 					s_startTexMove = true;
 					s_startTexPos = cursor;
 					s_startTexOffset = getTextureOffset(s_featureHovered.sector, s_featureHovered.part, s_featureHovered.featureIndex);
-					snapToGrid(&s_startTexOffset);
+					s_texMoveSign = s_featureHovered.part == HP_SIGN;
+					if (s_texMoveSign)
+					{
+						// TODO: Revisit sign snapping.
+						// This will re-center, but that isn't really what we want...
+						//EditorWall* wall = &sector->walls[s_featureHovered.featureIndex];
+						//snapSignToCursor(s_featureHovered.sector, wall, wall->tex[HP_SIGN].texIndex, &s_startTexOffset);
+
+						s_startTexOffset.x = -s_startTexOffset.x;
+					}
+					else
+					{
+						snapToGrid(&s_startTexOffset);
+					}
 					s_featureTex = s_featureHovered;
 
 					if (part != HP_FLOOR && part != HP_CEIL)
@@ -5171,7 +5194,14 @@ namespace LevelEditor
 						s_texDelta = delta;
 
 						Vec2f curOffset = getTextureOffset(s_featureHovered.sector, s_featureHovered.part, s_featureHovered.featureIndex);
-						delta.x = (s_startTexOffset.x + delta.x) - curOffset.x;
+						if (part == HP_SIGN)
+						{
+							delta.x = -(s_startTexOffset.x + delta.x) - curOffset.x;
+						}
+						else
+						{
+							delta.x = (s_startTexOffset.x + delta.x) - curOffset.x;
+						}
 						delta.z = (s_startTexOffset.z + delta.z) - curOffset.z;
 					}
 				}
@@ -5269,6 +5299,65 @@ namespace LevelEditor
 		}
 	}
 
+	void snapSignToCursor(EditorSector* sector, EditorWall* wall, s32 signTexIndex, Vec2f* signOffset)
+	{
+		EditorTexture* signTex = (EditorTexture*)getAssetData(s_level.textures[signTexIndex].handle);
+		if (!signTex) { return; }
+
+		// Center the sign on the mouse cursor.
+		const Vec2f* v0 = &sector->vtx[wall->idx[0]];
+		const Vec2f* v1 = &sector->vtx[wall->idx[1]];
+		Vec2f wallDir = { v1->x - v0->x, v1->z - v0->z };
+		wallDir = TFE_Math::normalize(&wallDir);
+
+		f32 uOffset = wall->tex[WP_MID].offset.x;
+		f32 vOffset = sector->floorHeight;
+		if (wall->adjoinId >= 0)
+		{
+			const EditorSector* next = &s_level.sectors[wall->adjoinId];
+			if (next->floorHeight > sector->floorHeight)
+			{
+				uOffset = wall->tex[WP_BOT].offset.x;
+			}
+			else if (next->ceilHeight < sector->ceilHeight)
+			{
+				uOffset = wall->tex[WP_TOP].offset.x;
+				vOffset = next->ceilHeight;
+			}
+		}
+
+		Vec3f mousePos = s_cursor3d;
+		snapToSurfaceGrid(sector, wall, mousePos);
+
+		f32 wallIntersect;
+		if (fabsf(wallDir.x) >= fabsf(wallDir.z)) { wallIntersect = (mousePos.x - v0->x) / wallDir.x; }
+		else { wallIntersect = (mousePos.z - v0->z) / wallDir.z; }
+
+		signOffset->x = uOffset + wallIntersect - 0.5f*signTex->width / 8.0f;
+		signOffset->z = vOffset - mousePos.y + 0.5f*signTex->height / 8.0f;
+	}
+
+	void applySignToSelection(s32 signIndex)
+	{
+		s32 texIndex = getTextureIndex(s_levelTextureList[signIndex].name.c_str());
+		if (texIndex < 0) { return; }
+		EditorTexture* signTex = (EditorTexture*)getAssetData(s_level.textures[texIndex].handle);
+		if (!signTex) { return; }
+
+		// For now, this only works for hovered features.
+		FeatureId id = createFeatureId(s_featureHovered.sector, s_featureHovered.featureIndex, WP_SIGN);
+		
+		// Center the sign on the mouse cursor.
+		EditorSector* sector = s_featureHovered.sector;
+		EditorWall* wall = &sector->walls[s_featureHovered.featureIndex];
+
+		Vec2f offset = { 0 };
+		snapSignToCursor(sector, wall, texIndex, &offset);
+
+		edit_setTexture(1, &id, signIndex, &offset);
+		cmd_addSetTexture(1, &id, signIndex, &offset);
+	}
+
 	void applyTextureToSelection(s32 texIndex, Vec2f* offset)
 	{
 		FeatureId id = createFeatureId(s_featureHovered.sector, s_featureHovered.featureIndex, s_featureHovered.part);
@@ -5364,6 +5453,10 @@ namespace LevelEditor
 					}
 				}
 			}
+		}
+		else if (TFE_Input::keyPressed(KEY_T) && TFE_Input::keyModDown(KEYMOD_SHIFT) && s_selectedTexture >= 0)
+		{
+			applySignToSelection(s_selectedTexture);
 		}
 		else if (TFE_Input::keyPressed(KEY_T) && s_selectedTexture >= 0)
 		{

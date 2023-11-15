@@ -165,7 +165,11 @@ namespace LevelEditor
 	s32 getTextureIndex(const char* name);
 
 	s32 findSector2d(s32 layer, const Vec2f* pos);
-	bool traceRay(const Ray* ray, RayHitInfo* hitInfo, bool flipFaces);
+	bool traceRay(const Ray* ray, RayHitInfo* hitInfo, bool flipFaces, bool canHitSigns);
+
+	f32 getWallLength(const EditorSector* sector, const EditorWall* wall);
+	bool getSignExtents(const EditorSector* sector, const EditorWall* wall, Vec2f ext[2]);
+	void centerSignOnSurface(const EditorSector* sector, EditorWall* wall);
 
 	void level_createSnapshot(TFE_Editor::SnapshotBuffer* buffer);
 	void level_unpackSnapshot(s32 id, u32 size, void* data);

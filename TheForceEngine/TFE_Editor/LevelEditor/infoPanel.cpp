@@ -342,7 +342,7 @@ namespace LevelEditor
 		const f32 aspectMid[] = { midTex ? f32(midTex->width) * midScale : 1.0f, midTex ? f32(midTex->height) * midScale : 1.0f };
 		const f32 aspectSgn[] = { sgnTex ? f32(sgnTex->width) * sgnScale : 1.0f, sgnTex ? f32(sgnTex->height) * sgnScale : 1.0f };
 
-		ImGui::ImageButton(midTex ? TFE_RenderBackend::getGpuPtr(midTex->frames[0]) : nullptr, { 128.0f * aspectMid[0], 128.0f * aspectMid[1] });
+		ImGui::ImageButton(midTex ? TFE_RenderBackend::getGpuPtr(midTex->frames[0]) : nullptr, { 128.0f * aspectMid[0], 128.0f * aspectMid[1] }, { 0.0f, 1.0f }, { 1.0f, 0.0f });
 		if (texIndex>=0 && ImGui::IsItemHovered())
 		{
 			FeatureId id = createFeatureId(sector, wallId, HP_MID);
@@ -351,7 +351,7 @@ namespace LevelEditor
 		}
 
 		ImGui::SameLine(texCol);
-		ImGui::ImageButton(sgnTex ? TFE_RenderBackend::getGpuPtr(sgnTex->frames[0]) : nullptr, { 128.0f * aspectSgn[0], 128.0f * aspectSgn[1] });
+		ImGui::ImageButton(sgnTex ? TFE_RenderBackend::getGpuPtr(sgnTex->frames[0]) : nullptr, { 128.0f * aspectSgn[0], 128.0f * aspectSgn[1] }, { 0.0f, 1.0f }, { 1.0f, 0.0f });
 		if (texIndex>=0 && ImGui::IsItemHovered())
 		{
 			FeatureId id = createFeatureId(sector, wallId, HP_SIGN);
@@ -386,7 +386,7 @@ namespace LevelEditor
 			const f32 aspectTop[] = { topTex ? f32(topTex->width) * topScale : 1.0f, topTex ? f32(topTex->height) * topScale : 1.0f };
 			const f32 aspectBot[] = { botTex ? f32(botTex->width) * botScale : 1.0f, botTex ? f32(botTex->height) * botScale : 1.0f };
 
-			ImGui::ImageButton(topTex ? TFE_RenderBackend::getGpuPtr(topTex->frames[0]) : nullptr, { 128.0f * aspectTop[0], 128.0f * aspectTop[1] });
+			ImGui::ImageButton(topTex ? TFE_RenderBackend::getGpuPtr(topTex->frames[0]) : nullptr, { 128.0f * aspectTop[0], 128.0f * aspectTop[1] }, { 0.0f, 1.0f }, { 1.0f, 0.0f });
 			if (texIndex>=0 && ImGui::IsItemHovered())
 			{
 				FeatureId id = createFeatureId(sector, wallId, HP_TOP);
@@ -395,7 +395,7 @@ namespace LevelEditor
 			}
 
 			ImGui::SameLine(texCol);
-			ImGui::ImageButton(botTex ? TFE_RenderBackend::getGpuPtr(botTex->frames[0]) : nullptr, { 128.0f * aspectBot[0], 128.0f * aspectBot[1] });
+			ImGui::ImageButton(botTex ? TFE_RenderBackend::getGpuPtr(botTex->frames[0]) : nullptr, { 128.0f * aspectBot[0], 128.0f * aspectBot[1] }, { 0.0f, 1.0f }, { 1.0f, 0.0f });
 			if (texIndex>=0 && ImGui::IsItemHovered())
 			{
 				FeatureId id = createFeatureId(sector, wallId, HP_BOT);
@@ -411,13 +411,39 @@ namespace LevelEditor
 			ImGui::Text("%s", botTex ? botTex->name : "NONE");
 		}
 
+		// Sign buttons.
+		ImVec2 signLeft = { imageLeft0.x + texCol - 8.0f, imageLeft0.y + 2.0f };
+		ImGui::SetNextWindowPos(signLeft);
+		ImGui::BeginChild("##SignOptions", {32, 48});
+		{
+			if (ImGui::Button("X") && wall->tex[HP_SIGN].texIndex >= 0)
+			{
+				FeatureId id = createFeatureId(sector, wallId, HP_SIGN);
+				edit_clearTexture(1, &id);
+				cmd_addClearTexture(1, &id);
+			}
+			if (ImGui::Button("C") && wall->tex[HP_SIGN].texIndex >= 0)
+			{
+				Vec2f prevOffset = wall->tex[HP_SIGN].offset;
+				centerSignOnSurface(sector, wall);
+				Vec2f delta = { wall->tex[HP_SIGN].offset.x - prevOffset.x, wall->tex[HP_SIGN].offset.z - prevOffset.z };
+
+				if (delta.x || delta.z)
+				{
+					FeatureId id = createFeatureId(sector, wallId, HP_SIGN);
+					cmd_addMoveTexture(1, &id, delta);
+				}
+			}
+		}
+		ImGui::EndChild();
+
 		// Texture Offsets
 		DisplayInfo displayInfo;
 		TFE_RenderBackend::getDisplayInfo(&displayInfo);
-
+				
 		// Set 0
-		ImVec2 offsetLeft = { imageLeft0.x + texCol + 8.0f, imageLeft0.y + 8.0f };
-		ImVec2 offsetSize = { displayInfo.width - (imageLeft0.x + texCol + 16.0f), 128.0f };
+		ImVec2 offsetLeft = { imageLeft0.x + texCol + 8.0f + 16.0f, imageLeft0.y + 8.0f };
+		ImVec2 offsetSize = { displayInfo.width - (imageLeft0.x + texCol + 16.0f - 32.0f), 128.0f };
 		ImGui::SetNextWindowPos(offsetLeft);
 		// A child window is used here in order to place the controls in the desired position - to the right of the image buttons.
 		ImGui::BeginChild("##TextureOffsets0Wall", offsetSize);
