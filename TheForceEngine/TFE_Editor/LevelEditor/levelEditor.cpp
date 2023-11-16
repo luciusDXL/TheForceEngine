@@ -264,6 +264,14 @@ namespace LevelEditor
 		}
 
 		s_viewportPos = { -24.0f, 0.0f, -200.0f };
+		if (s_level.layerRange[1] < s_level.layerRange[0])
+		{
+			// This is a new level, so just default to layer 0.
+			s_level.layerRange[0] = 0;
+			s_level.layerRange[1] = 0;
+			s_level.bounds[0] = { 0 };
+			s_level.bounds[1] = { 0 };
+		}
 		s_curLayer = std::min(1, s_level.layerRange[1]);
 
 		s_sectorDrawMode = SDM_WIREFRAME;
@@ -2442,8 +2450,10 @@ namespace LevelEditor
 		*sector = {};
 		sector->id = (s32)s_level.sectors.size();
 		// Just copy for now.
-		sector->floorTex.texIndex = s_level.sectors[0].floorTex.texIndex;
-		sector->ceilTex.texIndex = s_level.sectors[0].ceilTex.texIndex;
+		bool hasSectors = !s_level.sectors.empty();
+
+		sector->floorTex.texIndex = hasSectors ? s_level.sectors[0].floorTex.texIndex : getTextureIndex("DEFAULT.BM");
+		sector->ceilTex.texIndex = hasSectors ? s_level.sectors[0].ceilTex.texIndex : getTextureIndex("DEFAULT.BM");
 
 		sector->floorHeight = std::min(heights[0], heights[1]);
 		sector->ceilHeight  = std::max(heights[0], heights[1]);
@@ -2663,6 +2673,7 @@ namespace LevelEditor
 	void edit_createSectorFromRect(const f32* heights, const Vec2f* vtx)
 	{
 		s_drawStarted = false;
+		bool hasSectors = !s_level.sectors.empty();
 
 		EditorSector newSector;
 		createNewSector(&newSector, heights);
@@ -2701,7 +2712,7 @@ namespace LevelEditor
 			wall->idx[1] = b;
 
 			// Just copy for now...
-			wall->tex[WP_MID].texIndex = s_level.sectors[0].walls[0].tex[WP_MID].texIndex;
+			wall->tex[WP_MID].texIndex = hasSectors ? s_level.sectors[0].walls[0].tex[WP_MID].texIndex : getTextureIndex("DEFAULT.BM");
 			wall->tex[WP_TOP].texIndex = wall->tex[WP_MID].texIndex;
 			wall->tex[WP_BOT].texIndex = wall->tex[WP_MID].texIndex;
 		}
@@ -2715,6 +2726,7 @@ namespace LevelEditor
 	void edit_createSectorFromShape(const f32* heights, s32 vertexCount, const Vec2f* vtx)
 	{
 		s_drawStarted = false;
+		bool hasSectors = !s_level.sectors.empty();
 
 		EditorSector newSector = {};
 		createNewSector(&newSector, heights);
@@ -2752,7 +2764,7 @@ namespace LevelEditor
 			wall->idx[1] = b;
 
 			// Just copy for now...
-			wall->tex[WP_MID].texIndex = s_level.sectors[0].walls[0].tex[WP_MID].texIndex;
+			wall->tex[WP_MID].texIndex = hasSectors ? s_level.sectors[0].walls[0].tex[WP_MID].texIndex : getTextureIndex("DEFAULT.BM");
 			wall->tex[WP_TOP].texIndex = wall->tex[WP_MID].texIndex;
 			wall->tex[WP_BOT].texIndex = wall->tex[WP_MID].texIndex;
 		}
