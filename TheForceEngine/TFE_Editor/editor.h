@@ -63,6 +63,7 @@ namespace TFE_Editor
 	void showMessageBox(const char* type, const char* msg, ...);
 	void openEditorPopup(EditorPopup popup);
 	void listSelection(const char* labelText, const char** listValues, size_t listLen, s32* index, s32 comboOffset=96, s32 comboWidth=0);
+	void setTooltip(const char* msg, ...);
 
 	void enableAssetEditor(Asset* asset);
 	void disableAssetEditor();
@@ -74,6 +75,7 @@ namespace TFE_Editor
 	ArchiveType getArchiveType(const char* filename);
 	Archive* getArchive(const char* name, GameID gameId);
 	void getTempDirectory(char* tmpDir);
+	bool editorStringFilter(const char* str, const char* filter, size_t filterLength);
 
 	void clearRecents();
 	void addToRecents(const char* path);

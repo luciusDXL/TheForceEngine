@@ -85,6 +85,7 @@ namespace LevelEditor
 	// If the correct format already exists, though, then it is loaded directly.
 	AssetList s_levelTextureList;
 	LevelEditMode s_editMode = LEDIT_DRAW;
+	BoolMode s_boolMode = BMODE_NORMAL;
 
 	u32 s_editFlags = LEF_DEFAULT;
 	u32 s_lwinOpen = LWIN_NONE;
@@ -177,13 +178,15 @@ namespace LevelEditor
 	};
 
 	static TextureGpu* s_editCtrlToolbarData = nullptr;
+	static TextureGpu* s_boolToolbarData = nullptr;
 
 	////////////////////////////////////////////////////////
 	// Forward Declarations
 	////////////////////////////////////////////////////////
 	void toolbarBegin();
 	void toolbarEnd();
-	bool drawToolbarButton(void* ptr, u32 imageId, bool highlight);
+	bool drawToolbarButton(void* ptr, u32 imageId, bool highlight, const char* tooltip);
+	bool drawToolbarBooleanButton(void* ptr, u32 imageId, bool highlight, const char* tooltip);
 	void levelEditWinBegin();
 	void levelEditWinEnd();
 	void messagePanel(ImVec2 pos);
@@ -255,6 +258,15 @@ namespace LevelEditor
 		{
 			infoPanelAddMsg(LE_MSG_ERROR, "Failed to load toolbar images 'UI_Images/EditCtrl_32x6.png'");
 		}
+		s_boolToolbarData = loadGpuImage("UI_Images/Boolean_32x3.png");
+		if (s_boolToolbarData)
+		{
+			infoPanelAddMsg(LE_MSG_INFO, "Loaded toolbar images 'UI_Images/Boolean_32x3.png'");
+		}
+		else
+		{
+			infoPanelAddMsg(LE_MSG_ERROR, "Failed to load toolbar images 'UI_Images/Boolean_32x3.png'");
+		}
 
 		u32 idx = 0;
 		for (s32 i = -15; i < 16; i++, idx += 4)
@@ -307,7 +319,9 @@ namespace LevelEditor
 		TFE_RenderShared::destroy();
 
 		TFE_RenderBackend::freeTexture(s_editCtrlToolbarData);
+		TFE_RenderBackend::freeTexture(s_boolToolbarData);
 		s_editCtrlToolbarData = nullptr;
+		s_boolToolbarData = nullptr;
 
 		levHistory_destroy();
 	}
@@ -2602,10 +2616,9 @@ namespace LevelEditor
 						s32 newPointCount;
 						s32 newPoints[4];
 						Vec2f points[] = { *v0, *v1, *v2, *v3 };
-						if (edgesColinear(points, newPointCount, newPoints))
+						bool collinear = edgesColinear(points, newPointCount, newPoints);
+						if (collinear && newPointCount == 2)
 						{
-							assert(newPointCount == 2);
-
 							// 4 Cases:
 							// 1. v0,v1 left of v2,v3
 							if ((newPoints[0] >> 8) == 0 && (newPoints[1] >> 8) == 1)
@@ -3556,8 +3569,24 @@ namespace LevelEditor
 		s_uiActive = false;
 		toolbarBegin();
 		{
+			const char* toolbarTooltips[]=
+			{
+				"Play the level",
+				"Sector draw mode",
+				"Vertex mode",
+				"Wall/Surface mode",
+				"Sector mode",
+				"Entity mode"
+			};
+			const char* csgTooltips[] =
+			{
+				"Draw independent sectors",
+				"Merge sectors",
+				"Subtract sectors"
+			};
+
 			void* gpuPtr = TFE_RenderBackend::getGpuPtr(s_editCtrlToolbarData);
-			if (drawToolbarButton(gpuPtr, 0, false))
+			if (drawToolbarButton(gpuPtr, 0, false, toolbarTooltips[0]))
 			{
 				// Play
 			}
@@ -3565,7 +3594,7 @@ namespace LevelEditor
 
 			for (u32 i = 1; i < 6; i++)
 			{
-				if (drawToolbarButton(gpuPtr, i, i == s_editMode))
+				if (drawToolbarButton(gpuPtr, i, i == s_editMode, toolbarTooltips[i]))
 				{
 					s_editMode = LevelEditMode(i);
 					s_editMove = false;
@@ -3578,7 +3607,17 @@ namespace LevelEditor
 				ImGui::SameLine();
 			}
 
-			// Leave Boolean buttons off for now.
+			// CSG Toolbar.
+			ImGui::SameLine(0.0f, 32.0f);
+			gpuPtr = TFE_RenderBackend::getGpuPtr(s_boolToolbarData);
+			for (u32 i = 0; i < 3; i++)
+			{
+				if (drawToolbarBooleanButton(gpuPtr, i, i == s_boolMode, csgTooltips[i]))
+				{
+					s_boolMode = BoolMode(i);
+				}
+				ImGui::SameLine();
+			}
 
 			ImGui::SameLine(0.0f, 32.0f);
 			ImGui::PushItemWidth(64.0f);
@@ -4726,14 +4765,29 @@ namespace LevelEditor
 		ImGui::End();
 	}
 
-	bool drawToolbarButton(void* ptr, u32 imageId, bool highlight)
+	bool drawToolbarButton(void* ptr, u32 imageId, bool highlight, const char* tooltip)
 	{
 		const f32 imageHeightScale = 1.0f / 192.0f;
 		const f32 y0 = f32(imageId) * 32.0f;
 		const f32 y1 = y0 + 32.0f;
 
 		ImGui::PushID(imageId);
-		bool res = ImGui::ImageButton(ptr, ImVec2(32, 32), ImVec2(0.0f, y0 * imageHeightScale), ImVec2(1.0f, y1 * imageHeightScale), 0, ImVec4(0, 0, 0, highlight ? 0.75f : 0.25f), ImVec4(1, 1, 1, 1));
+		bool res = ImGui::ImageButton(ptr, ImVec2(32, 32), ImVec2(0.0f, y0 * imageHeightScale), ImVec2(1.0f, y1 * imageHeightScale), 1, ImVec4(0, 0, 0, highlight ? 0.75f : 0.25f), ImVec4(1, 1, 1, 1));
+		setTooltip(tooltip);
+		ImGui::PopID();
+
+		return res;
+	}
+
+	bool drawToolbarBooleanButton(void* ptr, u32 imageId, bool highlight, const char* tooltip)
+	{
+		const f32 imageHeightScale = 1.0f / 96.0f;
+		const f32 y0 = f32(imageId) * 32.0f;
+		const f32 y1 = y0 + 32.0f;
+
+		ImGui::PushID(imageId);
+		bool res = ImGui::ImageButton(ptr, ImVec2(32, 32), ImVec2(0.0f, y0 * imageHeightScale), ImVec2(1.0f, y1 * imageHeightScale), 1, ImVec4(0, 0, 0, highlight ? 0.75f : 0.25f), ImVec4(1, 1, 1, 1));
+		setTooltip(tooltip);
 		ImGui::PopID();
 
 		return res;

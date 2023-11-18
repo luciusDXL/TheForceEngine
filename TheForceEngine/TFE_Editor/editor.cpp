@@ -56,9 +56,15 @@ namespace TFE_Editor
 	static bool s_menuActive = false;
 	static MessageBox s_msgBox = {};
 	static ImFont* s_fonts[FONT_COUNT * FONT_SIZE_COUNT] = { 0 };
+
+	static f64 s_tooltipTime = 0.0;
+	static Vec2i s_prevMousePos = { 0 };
+	static const f64 c_tooltipDelay = 0.2;
+	static bool s_canShowTooltips = false;
 	
 	void menu();
 	void loadFonts();
+	void updateTooltips();
 
 	WorkBuffer& getWorkBuffer()
 	{
@@ -215,6 +221,7 @@ namespace TFE_Editor
 	{
 		TFE_RenderBackend::clearWindow();
 
+		updateTooltips();
 		handlePopupBegin();
 		menu();
 
@@ -676,5 +683,46 @@ namespace TFE_Editor
 	void disableAssetEditor()
 	{
 		s_editorMode = EDIT_ASSET_BROWSER;
+	}
+
+	void updateTooltips()
+	{
+		Vec2i mouse;
+		TFE_Input::getMousePos(&mouse.x, &mouse.z);
+		bool mouseStationary = mouse.x == s_prevMousePos.x && mouse.z == s_prevMousePos.z;
+		s_canShowTooltips = mouseStationary && s_tooltipTime >= c_tooltipDelay;
+		if (mouseStationary)
+		{
+			s_tooltipTime += TFE_System::getDeltaTime();
+		}
+		else
+		{
+			s_tooltipTime = 0.0;
+		}
+		s_prevMousePos = mouse;
+	}
+
+	void setTooltip(const char* msg, ...)
+	{
+		if (!ImGui::IsItemHovered() || !s_canShowTooltips) { return; }
+
+		char fullStr[TFE_MAX_PATH];
+		va_list arg;
+		va_start(arg, msg);
+		vsprintf(fullStr, msg, arg);
+		va_end(arg);
+
+		ImGui::SetTooltip("%s", fullStr);
+	}
+
+	// Return true if 'str' matches the 'filter', taking into account special symbols.
+	bool editorStringFilter(const char* str, const char* filter, size_t filterLength)
+	{
+		for (size_t i = 0; i < filterLength; i++)
+		{
+			if (filter[i] == '?') { continue; }
+			if (tolower(str[i]) != tolower(filter[i])) { return false; }
+		}
+		return true;
 	}
 }

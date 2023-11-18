@@ -1722,18 +1722,7 @@ namespace AssetBrowser
 			s_viewAssetList.push_back(asset);
 		}
 	}
-
-	// Return true if 'str' matches the 'filter', taking into account special symbols.
-	bool editorStringFilter(const char* str, const char* filter, size_t filterLength)
-	{
-		for (size_t i = 0; i < filterLength; i++)
-		{
-			if (filter[i] == '?') { continue; }
-			if (tolower(str[i]) != tolower(filter[i])) { return false; }
-		}
-		return true;
-	}
-
+		
 	// Returns true if it passes the filter.
 	bool editorFilter(const char* name)
 	{
