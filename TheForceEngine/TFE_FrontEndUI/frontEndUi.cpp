@@ -2930,9 +2930,12 @@ namespace TFE_FrontEndUI
 		ImGui::Dummy(ImVec2(0.0f, 10.0f));
 		ImGui::Separator();
 		ImGui::PushFont(s_dialogFont);
-		ImGui::LabelText("##ConfigLabel5", "Misc");
+		ImGui::LabelText("##ConfigLabel5", "Photosensitivity");
 		ImGui::PopFont();
 		ImGui::Checkbox("Disable screen flashes", &a11ySettings->disableScreenFlashes);
+		Tooltip("Disable screen flashes when taking damage or collecting powerups.");
+		ImGui::Checkbox("Disable weapon lighting", &a11ySettings->disablePlayerWeaponLighting);
+		Tooltip("Disable illumination around the player caused by firing weapons.");
 	}
 
 	void pickCurrentResolution()

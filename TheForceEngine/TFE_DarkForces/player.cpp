@@ -2236,7 +2236,15 @@ namespace TFE_DarkForces
 				headlamp = floor16(mul16(batteryPower, FIXED(64)));
 				headlamp = min(MAX_LIGHT_LEVEL, headlamp);
 			}
-			s32 atten = max(headlamp, s_weaponLight + s_levelAtten);
+			s32 atten;
+			if (TFE_Settings::getA11ySettings()->disablePlayerWeaponLighting)
+			{
+				atten = max(headlamp, s_levelAtten);
+			}
+			else
+			{
+				atten = max(headlamp, s_weaponLight + s_levelAtten);
+			}
 			s_baseAtten = atten;
 			if (s_nightvisionActive)
 			{
