@@ -237,7 +237,9 @@ struct TFE_Settings_A11y
 
 	// Motion sickness settings
 	bool enableHeadwave = true;
+	// Photosensitivity settings
 	bool disableScreenFlashes = false;
+	bool disablePlayerWeaponLighting = false;
 };
 
 namespace TFE_Settings
