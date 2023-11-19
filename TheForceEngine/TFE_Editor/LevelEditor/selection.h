@@ -7,6 +7,7 @@
 // to "play" the game as intended.
 //////////////////////////////////////////////////////////////////////
 #include <TFE_System/types.h>
+#include "levelEditorData.h"
 #include <vector>
 
 namespace LevelEditor
@@ -33,7 +34,6 @@ namespace LevelEditor
 	// Feature ID
 	typedef u64 FeatureId;
 	typedef std::vector<FeatureId> SelectionList;
-	typedef std::vector<EditorSector*> SectorList;
 
 	extern SelectionList s_selectionList;
 	extern SelectionList s_vertexList;

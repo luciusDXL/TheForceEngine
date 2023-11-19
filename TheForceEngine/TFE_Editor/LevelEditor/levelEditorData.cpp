@@ -828,6 +828,73 @@ namespace LevelEditor
 
 		return hitInfo->hitSectorId >= 0;
 	}
+
+	bool aabbOverlap3d(const Vec3f* aabb0, const Vec3f* aabb1)
+	{
+		// Ignore the Y axis.
+		// X
+		if (aabb0[0].x > aabb1[1].x || aabb0[1].x < aabb1[0].x ||
+			aabb1[0].x > aabb0[1].x || aabb1[1].x < aabb0[0].x)
+		{
+			return false;
+		}
+
+		// Y
+		if (aabb0[0].y > aabb1[1].y || aabb0[1].y < aabb1[0].y ||
+			aabb1[0].y > aabb0[1].y || aabb1[1].y < aabb0[0].y)
+		{
+			return false;
+		}
+
+		// Z
+		if (aabb0[0].z > aabb1[1].z || aabb0[1].z < aabb1[0].z ||
+			aabb1[0].z > aabb0[1].z || aabb1[1].z < aabb0[0].z)
+		{
+			return false;
+		}
+
+		return true;
+	}
+
+	// TODO: Spatial data structure to handle cases where there are 10k, 100k, etc. sectors.
+	bool getOverlappingSectorsPt(const Vec3f* pos, SectorList* result)
+	{
+		if (!pos || !result) { return false; }
+
+		result->clear();
+		const s32 count = (s32)s_level.sectors.size();
+		EditorSector* sector = s_level.sectors.data();
+		for (s32 i = 0; i < count; i++, sector++)
+		{
+			if (pos->x < sector->bounds[0].x || pos->x > sector->bounds[1].x ||
+				pos->y < sector->bounds[0].y || pos->y > sector->bounds[1].y ||
+				pos->z < sector->bounds[0].z || pos->z > sector->bounds[1].z)
+			{
+				continue;
+			}
+			result->push_back(sector);
+		}
+
+		return !result->empty();
+	}
+	   
+	bool getOverlappingSectorsBounds(const Vec3f bounds[2], SectorList* result)
+	{
+		if (!bounds || !result) { return false; }
+
+		result->clear();
+		const s32 count = (s32)s_level.sectors.size();
+		EditorSector* sector = s_level.sectors.data();
+		for (s32 i = 0; i < count; i++, sector++)
+		{
+			if (aabbOverlap3d(sector->bounds, bounds))
+			{
+				result->push_back(sector);
+			}
+		}
+
+		return !result->empty();
+	}
 	
 	// Note: memcpys() are used to avoid pointer alignment issues.
 	void writeU8(u8 value)

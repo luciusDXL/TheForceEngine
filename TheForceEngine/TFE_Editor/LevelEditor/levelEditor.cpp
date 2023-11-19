@@ -216,6 +216,7 @@ namespace LevelEditor
 	void snapToGrid(f32* value);
 	void snapToGrid(Vec2f* pos);
 	void snapToGrid(Vec3f* pos);
+	void snapToSurfaceGrid(EditorSector* sector, EditorWall* wall, Vec3f& pos);
 	void snapSignToCursor(EditorSector* sector, EditorWall* wall, s32 signTexIndex, Vec2f* signOffset);
 
 	void drawViewportInfo(s32 index, Vec2i mapPos, const char* info, f32 xOffset, f32 yOffset, f32 alpha=1.0f);
@@ -447,34 +448,7 @@ namespace LevelEditor
 
 		return true;
 	}
-
-	bool aabbOverlap3d(const Vec3f* aabb0, const Vec3f* aabb1)
-	{
-		// Ignore the Y axis.
-		// X
-		if (aabb0[0].x > aabb1[1].x || aabb0[1].x < aabb1[0].x ||
-			aabb1[0].x > aabb0[1].x || aabb1[1].x < aabb0[0].x)
-		{
-			return false;
-		}
-
-		// Y
-		if (aabb0[0].y > aabb1[1].y || aabb0[1].y < aabb1[0].y ||
-			aabb1[0].y > aabb0[1].y || aabb1[1].y < aabb0[0].y)
-		{
-			return false;
-		}
-
-		// Z
-		if (aabb0[0].z > aabb1[1].z || aabb0[1].z < aabb1[0].z ||
-			aabb1[0].z > aabb0[1].z || aabb1[1].z < aabb0[0].z)
-		{
-			return false;
-		}
-
-		return true;
-	}
-
+	
 	void wallComputeDragSelect()
 	{
 		if (s_dragSelect.curPos.x == s_dragSelect.startPos.x && s_dragSelect.curPos.z == s_dragSelect.startPos.z)
@@ -2621,15 +2595,16 @@ namespace LevelEditor
 						{
 							// 4 Cases:
 							// 1. v0,v1 left of v2,v3
+							bool wallSplit = false;
 							if ((newPoints[0] >> 8) == 0 && (newPoints[1] >> 8) == 1)
 							{
 								assert((newPoints[0] & 255) >= 2);
 								assert((newPoints[1] & 255) < 2);
 
 								// Insert newPoints[0] & 255 into wall0
-								edit_splitWall(sector0->id, w0, points[newPoints[0] & 255]);
+								wallSplit |= edit_splitWall(sector0->id, w0, points[newPoints[0] & 255]);
 								// Insert newPoints[1] & 255 into wall1
-								edit_splitWall(sector1->id, w1, points[newPoints[1] & 255]);
+								wallSplit |= edit_splitWall(sector1->id, w1, points[newPoints[1] & 255]);
 							}
 							// 2. v0,v1 right of v2,v3
 							else if ((newPoints[0] >> 8) == 1 && (newPoints[1] >> 8) == 0)
@@ -2638,9 +2613,9 @@ namespace LevelEditor
 								assert((newPoints[1] & 255) >= 2);
 
 								// Insert newPoints[0] & 255 into wall1
-								edit_splitWall(sector1->id, w1, points[newPoints[0] & 255]);
+								wallSplit |= edit_splitWall(sector1->id, w1, points[newPoints[0] & 255]);
 								// Insert newPoints[1] & 255 into wall0
-								edit_splitWall(sector0->id, w0, points[newPoints[1] & 255]);
+								wallSplit |= edit_splitWall(sector0->id, w0, points[newPoints[1] & 255]);
 							}
 							// 3. v2,v3 inside of v0,v1
 							else if ((newPoints[0] >> 8) == 0 && (newPoints[1] >> 8) == 0)
@@ -2650,8 +2625,8 @@ namespace LevelEditor
 
 								// Insert newPoints[0] & 255 into wall0
 								// Insert newPoints[1] & 255 into wall0
-								if (edit_splitWall(sector0->id, w0, points[newPoints[1] & 255])) { w0++; }
-								edit_splitWall(sector0->id, w0, points[newPoints[0] & 255]);
+								if (edit_splitWall(sector0->id, w0, points[newPoints[1] & 255])) { w0++; wallSplit |= true; }
+								wallSplit |= edit_splitWall(sector0->id, w0, points[newPoints[0] & 255]);
 							}
 							// 4. v0,v1 inside of v2,v3
 							else if ((newPoints[0] >> 8) == 1 && (newPoints[1] >> 8) == 1)
@@ -2661,12 +2636,15 @@ namespace LevelEditor
 
 								// Insert newPoints[0] & 255 into wall1
 								// Insert newPoints[1] & 255 into wall1
-								if (edit_splitWall(sector1->id, w1, points[newPoints[1] & 255])) { w1++; }
-								edit_splitWall(sector1->id, w1, points[newPoints[0] & 255]);
+								if (edit_splitWall(sector1->id, w1, points[newPoints[1] & 255])) { w1++; wallSplit |= true; }
+								wallSplit |= edit_splitWall(sector1->id, w1, points[newPoints[0] & 255]);
 							}
-							restart = true;
-							wallLoop = false;
-							break;
+							if (wallSplit)
+							{
+								restart = true;
+								wallLoop = false;
+								break;
+							}
 						}
 					}
 				}
@@ -2814,6 +2792,55 @@ namespace LevelEditor
 		}
 	}
 
+	bool snapToLine(Vec2f& pos, f32 maxDist, Vec2f& newPos, FeatureId& snappedFeature)
+	{
+		Vec3f pos3d = { pos.x, s_gridHeight, pos.z };
+		SectorList sectorList;
+		if (!getOverlappingSectorsPt(&pos3d, &sectorList))
+		{
+			return false;
+		}
+
+		const s32 count = (s32)sectorList.size();
+		EditorSector** list = sectorList.data();
+		f32 closestDistSq = FLT_MAX;
+		Vec2f closestPt = pos;
+		FeatureId closestFeature = FeatureId(0);
+		for (s32 i = 0; i < count; i++)
+		{
+			EditorSector* sector = list[i];
+			const s32 wallCount = (s32)sector->walls.size();
+			const EditorWall* wall = sector->walls.data();
+			const Vec2f* vtx = sector->vtx.data();
+
+			for (s32 w = 0; w < wallCount; w++, wall++)
+			{
+				const Vec2f* v0 = &vtx[wall->idx[0]];
+				const Vec2f* v1 = &vtx[wall->idx[1]];
+				Vec2f pointOnSeg;
+				f32 s = closestPointOnLineSegment(*v0, *v1, pos, &pointOnSeg);
+
+				const Vec2f diff = { pointOnSeg.x - pos.x, pointOnSeg.z - pos.z };
+				const f32 distSq = diff.x*diff.x + diff.z*diff.z;
+				if (distSq < closestDistSq)
+				{
+					closestDistSq = distSq;
+					closestPt = pointOnSeg;
+					closestFeature = createFeatureId(sector, w);
+				}
+			}
+		}
+
+		if (closestDistSq > maxDist*maxDist)
+		{
+			return false;
+		}
+
+		newPos = closestPt;
+		snappedFeature = closestFeature;
+		return true;
+	}
+		
 	void handleSectorDraw(RayHitInfo* hitInfo)
 	{
 		EditorSector* hoverSector = nullptr;
@@ -2830,7 +2857,24 @@ namespace LevelEditor
 
 		// Snap the cursor to the grid.
 		Vec2f onGrid = { s_cursor3d.x, s_cursor3d.z };
-		snapToGrid(&onGrid);
+
+		const f32 maxLineDist = 0.5f * s_gridSize;
+		Vec2f newPos;
+		FeatureId featureId;
+		if (snapToLine(onGrid, maxLineDist, newPos, featureId))
+		{
+			s32 wallIndex;
+			EditorSector* sector = unpackFeatureId(featureId, &wallIndex);
+
+			// Snap the result to the surface grid.
+			Vec3f snapPos = { newPos.x, s_gridHeight, newPos.z };
+			snapToSurfaceGrid(sector, &sector->walls[wallIndex], snapPos);
+			onGrid = { snapPos.x, snapPos.z };
+		}
+		else
+		{
+			snapToGrid(&onGrid);
+		}
 
 		s_cursor3d.x = onGrid.x;
 		s_cursor3d.z = onGrid.z;

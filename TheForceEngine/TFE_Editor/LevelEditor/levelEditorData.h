@@ -122,6 +122,8 @@ namespace LevelEditor
 		u32 searchKey = 0;
 	};
 
+	typedef std::vector<EditorSector*> SectorList;
+
 	struct EditorLevel
 	{
 		std::string name;
@@ -171,14 +173,21 @@ namespace LevelEditor
 
 	TFE_Editor::EditorTexture* getTexture(s32 index);
 	s32 getTextureIndex(const char* name);
-
-	s32 findSector2d(s32 layer, const Vec2f* pos);
-	bool traceRay(const Ray* ray, RayHitInfo* hitInfo, bool flipFaces, bool canHitSigns);
-
+		
 	f32 getWallLength(const EditorSector* sector, const EditorWall* wall);
 	bool getSignExtents(const EditorSector* sector, const EditorWall* wall, Vec2f ext[2]);
 	void centerSignOnSurface(const EditorSector* sector, EditorWall* wall);
 
 	void level_createSnapshot(TFE_Editor::SnapshotBuffer* buffer);
 	void level_unpackSnapshot(s32 id, u32 size, void* data);
+
+	// Spatial Queries
+	s32  findSector2d(s32 layer, const Vec2f* pos);
+	bool traceRay(const Ray* ray, RayHitInfo* hitInfo, bool flipFaces, bool canHitSigns);
+	// Get all sectors that have bounds that contain the point.
+	bool getOverlappingSectorsPt(const Vec3f* pos, SectorList* result);
+	// Get all sectors that have bounds that overlap the input bounds.
+	bool getOverlappingSectorsBounds(const Vec3f bounds[2], SectorList* result);
+	// Helpers
+	bool aabbOverlap3d(const Vec3f* aabb0, const Vec3f* aabb1);
 }
