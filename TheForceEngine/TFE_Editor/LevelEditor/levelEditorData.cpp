@@ -831,7 +831,6 @@ namespace LevelEditor
 
 	bool aabbOverlap3d(const Vec3f* aabb0, const Vec3f* aabb1)
 	{
-		// Ignore the Y axis.
 		// X
 		if (aabb0[0].x > aabb1[1].x || aabb0[1].x < aabb1[0].x ||
 			aabb1[0].x > aabb0[1].x || aabb1[1].x < aabb0[0].x)
@@ -842,6 +841,26 @@ namespace LevelEditor
 		// Y
 		if (aabb0[0].y > aabb1[1].y || aabb0[1].y < aabb1[0].y ||
 			aabb1[0].y > aabb0[1].y || aabb1[1].y < aabb0[0].y)
+		{
+			return false;
+		}
+
+		// Z
+		if (aabb0[0].z > aabb1[1].z || aabb0[1].z < aabb1[0].z ||
+			aabb1[0].z > aabb0[1].z || aabb1[1].z < aabb0[0].z)
+		{
+			return false;
+		}
+
+		return true;
+	}
+
+	bool aabbOverlap2d(const Vec3f* aabb0, const Vec3f* aabb1)
+	{
+		// Ignore the Y axis.
+		// X
+		if (aabb0[0].x > aabb1[1].x || aabb0[1].x < aabb1[0].x ||
+			aabb1[0].x > aabb0[1].x || aabb1[1].x < aabb0[0].x)
 		{
 			return false;
 		}
@@ -878,7 +897,7 @@ namespace LevelEditor
 		return !result->empty();
 	}
 	   
-	bool getOverlappingSectorsBounds(const Vec3f bounds[2], SectorList* result)
+	bool getOverlappingSectorsBounds(const Vec3f bounds[2], SectorList* result, bool includeNeighborHeights)
 	{
 		if (!bounds || !result) { return false; }
 
@@ -887,7 +906,29 @@ namespace LevelEditor
 		EditorSector* sector = s_level.sectors.data();
 		for (s32 i = 0; i < count; i++, sector++)
 		{
-			if (aabbOverlap3d(sector->bounds, bounds))
+			if (includeNeighborHeights && aabbOverlap2d(sector->bounds, bounds))
+			{
+				f32 yBounds[] = { sector->bounds[0].y, sector->bounds[1].y };
+
+				const s32 wallCount = (s32)sector->walls.size();
+				const EditorWall* wall = sector->walls.data();
+				for (s32 w = 0; w < wallCount; w++, wall++)
+				{
+					if (wall->adjoinId < 0) { continue; }
+					EditorSector* next = &s_level.sectors[wall->adjoinId];
+					yBounds[0] = std::min(yBounds[0], next->bounds[0].y);
+					yBounds[1] = std::max(yBounds[1], next->bounds[1].y);
+				}
+
+				// Y
+				if (yBounds[0] > bounds[1].y || yBounds[1] < bounds[0].y ||
+					bounds[0].y > yBounds[1] || bounds[1].y < yBounds[0])
+				{
+					continue;
+				}
+				result->push_back(sector);
+			}
+			else if (aabbOverlap3d(sector->bounds, bounds))
 			{
 				result->push_back(sector);
 			}

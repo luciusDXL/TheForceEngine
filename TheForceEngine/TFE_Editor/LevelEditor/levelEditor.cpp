@@ -119,6 +119,7 @@ namespace LevelEditor
 	Polygon s_shapePolygon;
 
 	static bool s_editMove = false;
+	static SectorList s_workList;
 	
 	static EditorView s_view = EDIT_VIEW_2D;
 	static Vec2i s_editWinPos = { 0, 69 };
@@ -340,6 +341,23 @@ namespace LevelEditor
 		return TFE_Polygon::pointInsidePolygon(&sector->poly, pos);
 	}
 
+	bool isPointInsideSector3d(EditorSector* sector, Vec3f pos, s32 layer)
+	{
+		// The layers need to match.
+		if (sector->layer != layer) { return false; }
+		// The point has to be within the bounding box.
+		if (pos.x < sector->bounds[0].x || pos.x > sector->bounds[1].x ||
+			pos.y < sector->bounds[0].y || pos.y > sector->bounds[1].y ||
+			pos.z < sector->bounds[0].z || pos.z > sector->bounds[1].z)
+		{
+			return false;
+		}
+		// Jitter the z position if needed.
+		bool inside = TFE_Polygon::pointInsidePolygon(&sector->poly, { pos.x, pos.z });
+		if (!inside) { inside = TFE_Polygon::pointInsidePolygon(&sector->poly, { pos.x, pos.z + 0.0001f }); }
+		return inside;
+	}
+
 	EditorSector* findSector2d(Vec2f pos, s32 layer)
 	{
 		const size_t sectorCount = s_level.sectors.size();
@@ -347,6 +365,20 @@ namespace LevelEditor
 		for (size_t s = 0; s < sectorCount; s++, sector++)
 		{
 			if (isPointInsideSector2d(sector, pos, layer))
+			{
+				return sector;
+			}
+		}
+		return nullptr;
+	}
+
+	EditorSector* findSector3d(Vec3f pos, s32 layer)
+	{
+		const size_t sectorCount = s_level.sectors.size();
+		EditorSector* sector = s_level.sectors.data();
+		for (size_t s = 0; s < sectorCount; s++, sector++)
+		{
+			if (isPointInsideSector3d(sector, pos, layer))
 			{
 				return sector;
 			}
@@ -427,26 +459,6 @@ namespace LevelEditor
 	{
 		if (!sector) { return; }
 		s_gridHeight = sector->floorHeight;
-	}
-
-	bool aabbOverlap2d(const Vec3f* aabb0, const Vec3f* aabb1)
-	{
-		// Ignore the Y axis.
-		// X
-		if (aabb0[0].x > aabb1[1].x || aabb0[1].x < aabb1[0].x ||
-			aabb1[0].x > aabb0[1].x || aabb1[1].x < aabb0[0].x)
-		{
-			return false;
-		}
-
-		// Z
-		if (aabb0[0].z > aabb1[1].z || aabb0[1].z < aabb1[0].z ||
-			aabb1[0].z > aabb0[1].z || aabb1[1].z < aabb0[0].z)
-		{
-			return false;
-		}
-
-		return true;
 	}
 	
 	void wallComputeDragSelect()
@@ -1002,6 +1014,49 @@ namespace LevelEditor
 		outWalls[1] = &sector->walls[wallIndex + 1];
 	}
 
+	void fixupWallMirrorsDel(EditorSector* sector, s32 wallIndex)
+	{
+		bool hasWallsPastSplit = wallIndex + 1 < sector->walls.size();
+		if (!hasWallsPastSplit) { return; }
+
+		// Gather sectors that might need to be changed.
+		s_searchKey++;
+		s_sectorChangeList.clear();
+		const size_t wallCount = sector->walls.size();
+		const s32 levelSectorCount = (s32)s_level.sectors.size();
+		EditorWall* wall = sector->walls.data();
+		for (size_t w = 0; w < wallCount; w++, wall++)
+		{
+			if (wall->adjoinId < 0 || wall->adjoinId >= levelSectorCount) { continue; }
+			EditorSector* nextSector = &s_level.sectors[wall->adjoinId];
+			if (nextSector->searchKey != s_searchKey)
+			{
+				nextSector->searchKey = s_searchKey;
+				s_sectorChangeList.push_back(nextSector);
+			}
+		}
+
+		// Loop through potentially effected sectors and adjust mirrors.
+		const size_t sectorCount = s_sectorChangeList.size();
+		EditorSector** sectorList = s_sectorChangeList.data();
+		for (size_t s = 0; s < sectorCount; s++)
+		{
+			EditorSector* matchSector = sectorList[s];
+			if (matchSector == sector) { continue; }
+
+			const size_t wallCount = matchSector->walls.size();
+			EditorWall* wall = matchSector->walls.data();
+			for (size_t w = 0; w < wallCount; w++, wall++)
+			{
+				if (wall->adjoinId != sector->id) { continue; }
+				if (wall->mirrorId > wallIndex)
+				{
+					wall->mirrorId--;
+				}
+			}
+		}
+	}
+
 	void fixupWallMirrors(EditorSector* sector, s32 wallIndex)
 	{
 		bool hasWallsPastSplit = wallIndex + 1 < sector->walls.size();
@@ -1011,10 +1066,11 @@ namespace LevelEditor
 		s_searchKey++;
 		s_sectorChangeList.clear();
 		const size_t wallCount = sector->walls.size();
+		const s32 levelSectorCount = (s32)s_level.sectors.size();
 		EditorWall* wall = sector->walls.data();
 		for (size_t w = 0; w < wallCount; w++, wall++)
 		{
-			if (wall->adjoinId < 0) { continue; }
+			if (wall->adjoinId < 0 || wall->adjoinId >= levelSectorCount) { continue; }
 			EditorSector* nextSector = &s_level.sectors[wall->adjoinId];
 			if (nextSector->searchKey != s_searchKey)
 			{
@@ -1044,6 +1100,21 @@ namespace LevelEditor
 		}
 	}
 
+	bool canSplitWall(EditorSector* sector, s32 wallIndex, Vec2f newPos)
+	{
+		// If a vertex at the desired position already exists, do not split the wall (early-out).
+		const size_t vtxCount = sector->vtx.size();
+		const Vec2f* vtx = sector->vtx.data();
+		for (size_t v = 0; v < vtxCount; v++)
+		{
+			if (vtxEqual(&newPos, &vtx[v]))
+			{
+				return false;
+			}
+		}
+		return true;
+	}
+
 	// Algorithm:
 	// * Insert new wall after current wall.
 	// * Find any references to sector with mirror > currentWall and fix-up (+1).
@@ -1054,9 +1125,7 @@ namespace LevelEditor
 	{
 		EditorSector* sector = &s_level.sectors[sectorId];
 		// If a vertex at the desired position already exists, do not split the wall (early-out).
-		const size_t vtxCount = sector->vtx.size();
-		const Vec2f* vtx = sector->vtx.data();
-		for (size_t v = 0; v < vtxCount; v++) { if (vtxEqual(&newPos, &vtx[v])) {return false;} }
+		if (!canSplitWall(sector, wallIndex, newPos)) { return false; }
 
 		// Split the wall, insert the new wall after the original.
 		// Example, split B into {B, N} : {A, B, C, D} -> {A, B, N, C, D}.
@@ -2661,6 +2730,331 @@ namespace LevelEditor
 		polygonToSector(sector0);
 	}
 
+	bool isSubSector(s32 count, const Vec2f* vtx, f32 baseHeight, EditorSector** sectors)
+	{
+		bool isInVoid = false;
+		for (s32 v = 0; v < count; v++)
+		{
+			sectors[v] = findSector3d({ vtx[v].x, baseHeight, vtx[v].z }, s_curLayer);
+			if (!sectors[v]) { isInVoid = true; }
+		}
+		return !isInVoid;
+	}
+
+	s32 getVertexIndex(EditorSector* sector, const Vec2f* newVtx)
+	{
+		const s32 count = (s32)sector->vtx.size();
+		const Vec2f* vtx = sector->vtx.data();
+		for (s32 v = 0; v < count; v++, vtx++)
+		{
+			if (vtxEqual(vtx, newVtx))
+			{
+				return v;
+			}
+		}
+		return -1;
+	}
+
+	void merge_splitSectorWallsBySector(EditorSector* splitSector, EditorSector* newSector)
+	{
+		EditorWall* newWall = newSector->walls.data();
+		const s32 newWallCount = (s32)newSector->walls.size();
+		const Vec2f* curNewVtx = newSector->vtx.data();
+		for (s32 w0 = 0; w0 < newWallCount; w0++, newWall++)
+		{
+			// Only check for v0 and v0->v1 intersection.
+			const Vec2f v0 = curNewVtx[newWall->idx[0]];
+
+			const s32 wallCount = (s32)splitSector->walls.size();
+			EditorWall* wall = splitSector->walls.data();
+			const Vec2f* vtx = splitSector->vtx.data();
+			for (s32 w1 = 0; w1 < wallCount; w1++, wall++)
+			{
+				Vec2f v2 = vtx[wall->idx[0]];
+				Vec2f v3 = vtx[wall->idx[1]];
+
+				// Add a check for intersection...
+				// For now just check for point touching.
+				Vec2f pt0;
+				closestPointOnLineSegment(v2, v3, v0, &pt0);
+				Vec2f offs0 = { v0.x - pt0.x, v0.z - pt0.z };
+				EditorWall* outWalls[2];
+				if (offs0.x*offs0.x + offs0.z*offs0.z < 0.0001f)
+				{
+					// Clear out adjoin - add back later.
+					wall->adjoinId = -1;
+					wall->mirrorId = -1;
+
+					splitWall(splitSector, w1, v0, outWalls);
+					break;
+				}
+			}
+		}
+	}
+		
+	void merge_addHoleToSector(EditorSector* splitSector, EditorSector* newSector)
+	{
+		EditorWall* newWall = newSector->walls.data();
+		s32 newWallCount = (s32)newSector->walls.size();
+		Vec2f* curNewVtx = newSector->vtx.data();
+		// First pass, go through deletions.
+		for (s32 w0 = 0; w0 < newWallCount; w0++, newWall++)
+		{
+			const Vec2f v0 = curNewVtx[newWall->idx[0]];
+			const Vec2f v1 = curNewVtx[newWall->idx[1]];
+
+			const s32 wallCount = (s32)splitSector->walls.size();
+			EditorWall* wall = splitSector->walls.data();
+			const Vec2f* vtx = splitSector->vtx.data();
+			bool wallFound = false;
+			for (s32 w1 = 0; w1 < wallCount; w1++, wall++)
+			{
+				Vec2f v2 = vtx[wall->idx[0]];
+				Vec2f v3 = vtx[wall->idx[1]];
+
+				bool matchSameOrder = vtxEqual(&v0, &v2) && vtxEqual(&v1, &v3);
+				bool matchOppOrder = vtxEqual(&v0, &v3) && vtxEqual(&v1, &v2);
+				if (matchSameOrder || matchOppOrder)
+				{
+					// Clear out the adjoin.
+					wall->adjoinId = -1;
+					wall->mirrorId = -1;
+					wallFound = true;
+					break;
+				}
+			}
+
+			if (!wallFound)
+			{
+				// Make sure the wall is actually inside the sector...
+				const f32 eps = 0.0001f;
+				bool v0Inside = isPointInsideSector2d(splitSector, v0, s_curLayer) || isPointInsideSector2d(splitSector, { v0.x, v0.z + eps }, s_curLayer);
+				bool v1Inside = isPointInsideSector2d(splitSector, v1, s_curLayer) || isPointInsideSector2d(splitSector, { v1.x, v1.z + eps }, s_curLayer);
+				if (v0Inside && v1Inside)
+				{
+					s32 i0 = getVertexIndex(splitSector, &v1);
+					if (i0 < 0) { i0 = (s32)splitSector->vtx.size(); splitSector->vtx.push_back(v1); }
+
+					s32 i1 = getVertexIndex(splitSector, &v0);
+					if (i1 < 0) { i1 = (s32)splitSector->vtx.size(); splitSector->vtx.push_back(v0); }
+
+					EditorWall mirrorWall = splitSector->walls.back();
+					mirrorWall.adjoinId = -1;
+					mirrorWall.mirrorId = -1;
+					mirrorWall.idx[0] = i0;
+					mirrorWall.idx[1] = i1;
+					splitSector->walls.push_back(mirrorWall);
+				}
+			}
+		}
+	}
+
+	void merge_fixupAdjoins(EditorSector* splitSector, EditorSector* newSector, bool delSameDirWalls)
+	{
+		std::vector<s32> edgeToDelete;
+
+		EditorWall* newWall = newSector->walls.data();
+		s32 newWallCount = (s32)newSector->walls.size();
+		Vec2f* curNewVtx = newSector->vtx.data();
+		// First pass, go through deletions.
+		for (s32 w0 = 0; w0 < newWallCount; w0++, newWall++)
+		{
+			const Vec2f v0 = curNewVtx[newWall->idx[0]];
+			const Vec2f v1 = curNewVtx[newWall->idx[1]];
+
+			const s32 wallCount = (s32)splitSector->walls.size();
+			EditorWall* wall = splitSector->walls.data();
+			const Vec2f* vtx = splitSector->vtx.data();
+			for (s32 w1 = 0; w1 < wallCount; w1++, wall++)
+			{
+				Vec2f v2 = vtx[wall->idx[0]];
+				Vec2f v3 = vtx[wall->idx[1]];
+
+				bool matchSameOrder = vtxEqual(&v0, &v2) && vtxEqual(&v1, &v3);
+				if (matchSameOrder && delSameDirWalls)
+				{
+					// The new sector is gaining the edge, it needs to be removed from the splitSector.
+					newWall->adjoinId = -1;
+					newWall->mirrorId = -1;
+					edgeToDelete.push_back(w1);
+				}
+			}
+		}
+		if (delSameDirWalls)
+		{
+			// Sort from smallest to largest, walk backwards and delete.
+			// This way deletions have no effect on future deletions.
+			std::sort(edgeToDelete.begin(), edgeToDelete.end());
+			// Delete walls from the split sector, new walls will be created in their place
+			// belonging to the new sector.
+			const s32 delCount = (s32)edgeToDelete.size();
+			const s32* index = edgeToDelete.data();
+			for (s32 i = delCount - 1; i >= 0; i--)
+			{
+				const s32 curWallCount = (s32)splitSector->walls.size();
+				EditorWall* wall = splitSector->walls.data();
+				for (s32 w = index[i]; w < curWallCount - 1; w++)
+				{
+					wall[w] = wall[w + 1];
+				}
+				splitSector->walls.pop_back();
+			}
+		}
+		// Second pass, go through adjoins.
+		newWall = newSector->walls.data();
+		newWallCount = (s32)newSector->walls.size();
+		curNewVtx = newSector->vtx.data();
+		for (s32 w0 = 0; w0 < newWallCount; w0++, newWall++)
+		{
+			const Vec2f v0 = curNewVtx[newWall->idx[0]];
+			const Vec2f v1 = curNewVtx[newWall->idx[1]];
+
+			const s32 wallCount = (s32)splitSector->walls.size();
+			EditorWall* wall = splitSector->walls.data();
+			const Vec2f* vtx = splitSector->vtx.data();
+			for (s32 w1 = 0; w1 < wallCount; w1++, wall++)
+			{
+				Vec2f v2 = vtx[wall->idx[0]];
+				Vec2f v3 = vtx[wall->idx[1]];
+
+				bool matchSameOrder = vtxEqual(&v0, &v2) && vtxEqual(&v1, &v3);
+				bool matchOppOrder = vtxEqual(&v0, &v3) && vtxEqual(&v1, &v2);
+				assert(!matchSameOrder || !delSameDirWalls);
+				if (matchOppOrder)
+				{
+					// This is an adjoin.
+					newWall->adjoinId = splitSector->id;
+					newWall->mirrorId = w1;
+
+					wall->adjoinId = newSector->id;
+					wall->mirrorId = w0;
+				}
+			}
+		}
+	}
+
+	void merge_addAdjoinSectors(SectorList& sectorList)
+	{
+		s_searchKey++;
+
+		// First update the search key for sectors already in the list.
+		const s32 count = (s32)sectorList.size();
+		EditorSector** list = sectorList.data();
+		for (s32 s = 0; s < count; s++)
+		{
+			list[s]->searchKey = s_searchKey;
+		}
+
+		// Next loop through all of the sectors and walls, add adjoins.
+		for (s32 s = 0; s < count; s++)
+		{
+			EditorSector* sector = sectorList[s]; // Directly access the vector since it may be resized.
+			const s32 wallCount = (s32)sector->walls.size();
+			EditorWall* wall = sector->walls.data();
+			for (s32 w = 0; w < wallCount; w++, wall++)
+			{
+				if (wall->adjoinId < 0) { continue; }
+				EditorSector* next = &s_level.sectors[wall->adjoinId];
+				if (next->searchKey != s_searchKey)
+				{
+					next->searchKey = s_searchKey;
+					sectorList.push_back(next);
+				}
+			}
+		}
+	}
+
+	// Cases:
+	//   * Treat as a merge.
+	//     * Intersect edges.
+	//     * Handle outer versus inner sub-sectors.
+	//   * Floor sub-sector (draw on floor).
+	//   * [Later] Ceiling sub-sector (draw on ceiling).
+	void insertSubSector(s32 sectorCount, EditorSector** sectors, EditorSector* newSector)
+	{
+		const f32 eps = 0.00001f;
+
+		EditorSector* parent = sectors[0];
+		// Get the overlapping sectors.
+		Vec3f bounds[2] =
+		{
+			{ FLT_MAX, std::min(newSector->floorHeight, newSector->ceilHeight)-eps, FLT_MAX },
+			{ FLT_MIN, std::max(newSector->floorHeight, newSector->ceilHeight)+eps, FLT_MIN },
+		};
+		const s32 newVtxCount = (s32)newSector->vtx.size();
+		const Vec2f* newVtx = newSector->vtx.data();
+		for (s32 v = 0; v < newVtxCount; v++)
+		{
+			bounds[0].x = std::min(bounds[0].x, newVtx[v].x);
+			bounds[0].z = std::min(bounds[0].z, newVtx[v].z);
+			bounds[1].x = std::max(bounds[1].x, newVtx[v].x);
+			bounds[1].z = std::max(bounds[1].z, newVtx[v].z);
+		}
+		bounds[0].x -= eps;
+		bounds[0].z -= eps;
+		bounds[1].x += eps;
+		bounds[1].z += eps;
+		SectorList sectorList;
+		if (!getOverlappingSectorsBounds(bounds, &sectorList, true))
+		{
+			return;
+		}
+		// Add adjoined sectors to the overlap list.
+		merge_addAdjoinSectors(sectorList);
+
+		// Then attempt to add the sub-sector to each overlapping sector (if it makes sense).
+		const s32 overlapCount = (s32)sectorList.size();
+		EditorSector** list = sectorList.data();
+		for (s32 s = 0; s < overlapCount; s++)
+		{
+			EditorSector* sector = list[s];
+
+			// Split the sector walls by the new sector.
+			merge_splitSectorWallsBySector(sector, newSector);
+			merge_addHoleToSector(sector, newSector);
+			merge_fixupAdjoins(sector, newSector, true);
+		}
+
+		// Now merge between overlaps, in case they were cleared.
+		for (s32 s0 = 0; s0 < overlapCount; s0++)
+		{
+			EditorSector* sector0 = list[s0];
+			for (s32 s1 = 0; s1 < overlapCount; s1++)
+			{
+				if (s0 == s1) { continue; }
+				EditorSector* sector1 = list[s1];
+				merge_fixupAdjoins(sector0, sector1, false);
+			}
+		}
+
+		// Copy data from the parent sector.
+		if (s_view == EDIT_VIEW_3D)
+		{
+			if (newSector->floorHeight < parent->floorHeight)
+			{
+				newSector->floorHeight = newSector->floorHeight;
+			}
+			else
+			{
+				newSector->floorHeight = newSector->ceilHeight;
+			}
+			newSector->ceilHeight = parent->ceilHeight;
+		}
+		else
+		{
+			newSector->floorHeight = parent->floorHeight;
+			newSector->ceilHeight = parent->ceilHeight;
+		}
+		newSector->floorTex = parent->floorTex;
+		newSector->ceilTex = parent->ceilTex;
+		newSector->flags[0] = parent->flags[0];
+		newSector->flags[1] = parent->flags[1];
+		newSector->flags[2] = parent->flags[2];
+		newSector->ambient = parent->ambient;
+
+		sectorToPolygon(parent);
+	}
+		
 	void edit_createSectorFromRect(const f32* heights, const Vec2f* vtx)
 	{
 		s_drawStarted = false;
@@ -2692,6 +3086,10 @@ namespace LevelEditor
 			outVtx[v] = rect[v];
 		}
 
+		// Handle sub-sectors.
+		EditorSector* sectors[4];
+		bool subSector = isSubSector(4, outVtx, s_gridHeight, sectors);
+
 		EditorWall* wall = newSector.walls.data();
 		for (s32 w = 0; w < count; w++, wall++)
 		{
@@ -2708,10 +3106,20 @@ namespace LevelEditor
 			wall->tex[WP_BOT].texIndex = wall->tex[WP_MID].texIndex;
 		}
 
+		// Then we can treat this is a sub-sector of any overlapping sectors.
+		// For now only handle single sector case, and assume no wall overlaps.
+		if (subSector)
+		{
+			insertSubSector(4, sectors, &newSector);
+		}
+
 		s_level.sectors.push_back(newSector);
 		sectorToPolygon(&s_level.sectors.back());
 
 		mergeAdjoins(&s_level.sectors.back());
+
+		s_featureHovered = {};
+		selection_clear();
 	}
 				
 	void edit_createSectorFromShape(const f32* heights, s32 vertexCount, const Vec2f* vtx)
@@ -2744,6 +3152,11 @@ namespace LevelEditor
 			}
 		}
 
+		// Handle sub-sectors.
+		s_workList.resize(vertexCount);
+		EditorSector** sectors = s_workList.data();
+		bool subSector = isSubSector(vertexCount, outVtx, s_gridHeight, sectors);
+
 		EditorWall* wall = newSector.walls.data();
 		for (s32 w = 0; w < vertexCount; w++, wall++)
 		{
@@ -2760,10 +3173,20 @@ namespace LevelEditor
 			wall->tex[WP_BOT].texIndex = wall->tex[WP_MID].texIndex;
 		}
 
+		// Then we can treat this is a sub-sector of any overlapping sectors.
+		// For now only handle single sector case, and assume no wall overlaps.
+		if (subSector)
+		{
+			insertSubSector((s32)s_workList.size(), sectors, &newSector);
+		}
+		
 		s_level.sectors.push_back(newSector);
 		sectorToPolygon(&s_level.sectors.back());
 
 		mergeAdjoins(&s_level.sectors.back());
+
+		s_featureHovered = {};
+		selection_clear();
 	}
 
 	void createSectorFromRect()
