@@ -108,6 +108,9 @@ namespace LevelEditor
 	u32 s_searchKey = 0;
 	static std::vector<VertexWallGroup> s_vertexWallGroups;
 
+	// Merging
+	static std::vector<u8> s_usedMask;
+
 	// Sector Drawing
 	const f32 c_defaultSectorHeight = 16.0f;
 
@@ -2785,7 +2788,10 @@ namespace LevelEditor
 					wall->adjoinId = -1;
 					wall->mirrorId = -1;
 
-					splitWall(splitSector, w1, v0, outWalls);
+					if (canSplitWall(splitSector, w1, v0))
+					{
+						splitWall(splitSector, w1, v0, outWalls);
+					}
 					break;
 				}
 			}
@@ -2848,7 +2854,7 @@ namespace LevelEditor
 			}
 		}
 	}
-
+		
 	void merge_fixupAdjoins(EditorSector* splitSector, EditorSector* newSector, bool delSameDirWalls)
 	{
 		std::vector<s32> edgeToDelete;
@@ -2898,6 +2904,29 @@ namespace LevelEditor
 					wall[w] = wall[w + 1];
 				}
 				splitSector->walls.pop_back();
+			}
+
+			// If walls were deleted, this may leave behind extra unused vertices.
+			// So go through the walls are marked used vertices.
+			const s32 vtxCount = (s32)splitSector->vtx.size();
+			s_usedMask.resize(vtxCount);
+			u8* mask = s_usedMask.data();
+			memset(mask, 0, vtxCount);
+
+			const s32 curWallCount = (s32)splitSector->walls.size();
+			const EditorWall* wall = splitSector->walls.data();
+			for (s32 w = 0; w < curWallCount; w++, wall++)
+			{
+				mask[wall->idx[0]] = 1;
+				mask[wall->idx[1]] = 1;
+			}
+
+			// Now go through the mask backwards and delete the unused vertices.
+			const s32 maskCount = vtxCount;
+			for (s32 v = maskCount - 1; v >= 0; v--)
+			{
+				if (mask[v]) { continue; }
+				deleteVertex(splitSector, v);
 			}
 		}
 		// Second pass, go through adjoins.
