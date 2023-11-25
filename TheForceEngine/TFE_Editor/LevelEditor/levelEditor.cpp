@@ -109,6 +109,7 @@ namespace LevelEditor
 	static std::vector<VertexWallGroup> s_vertexWallGroups;
 
 	// Merging
+	static std::vector<s32> s_edgesToDelete;
 	static std::vector<u8> s_usedMask;
 
 	// Sector Drawing
@@ -2819,7 +2820,7 @@ namespace LevelEditor
 				Vec2f v3 = vtx[wall->idx[1]];
 
 				bool matchSameOrder = vtxEqual(&v0, &v2) && vtxEqual(&v1, &v3);
-				bool matchOppOrder = vtxEqual(&v0, &v3) && vtxEqual(&v1, &v2);
+				bool matchOppOrder  = vtxEqual(&v0, &v3) && vtxEqual(&v1, &v2);
 				if (matchSameOrder || matchOppOrder)
 				{
 					// Clear out the adjoin.
@@ -2857,44 +2858,45 @@ namespace LevelEditor
 		
 	void merge_fixupAdjoins(EditorSector* splitSector, EditorSector* newSector, bool delSameDirWalls)
 	{
-		std::vector<s32> edgeToDelete;
-
 		EditorWall* newWall = newSector->walls.data();
 		s32 newWallCount = (s32)newSector->walls.size();
 		Vec2f* curNewVtx = newSector->vtx.data();
 		// First pass, go through deletions.
-		for (s32 w0 = 0; w0 < newWallCount; w0++, newWall++)
-		{
-			const Vec2f v0 = curNewVtx[newWall->idx[0]];
-			const Vec2f v1 = curNewVtx[newWall->idx[1]];
-
-			const s32 wallCount = (s32)splitSector->walls.size();
-			EditorWall* wall = splitSector->walls.data();
-			const Vec2f* vtx = splitSector->vtx.data();
-			for (s32 w1 = 0; w1 < wallCount; w1++, wall++)
-			{
-				Vec2f v2 = vtx[wall->idx[0]];
-				Vec2f v3 = vtx[wall->idx[1]];
-
-				bool matchSameOrder = vtxEqual(&v0, &v2) && vtxEqual(&v1, &v3);
-				if (matchSameOrder && delSameDirWalls)
-				{
-					// The new sector is gaining the edge, it needs to be removed from the splitSector.
-					newWall->adjoinId = -1;
-					newWall->mirrorId = -1;
-					edgeToDelete.push_back(w1);
-				}
-			}
-		}
 		if (delSameDirWalls)
 		{
+			s_edgesToDelete.clear();
+			for (s32 w0 = 0; w0 < newWallCount; w0++, newWall++)
+			{
+				const Vec2f v0 = curNewVtx[newWall->idx[0]];
+				const Vec2f v1 = curNewVtx[newWall->idx[1]];
+
+				const s32 wallCount = (s32)splitSector->walls.size();
+				EditorWall* wall = splitSector->walls.data();
+				const Vec2f* vtx = splitSector->vtx.data();
+				for (s32 w1 = 0; w1 < wallCount; w1++, wall++)
+				{
+					Vec2f v2 = vtx[wall->idx[0]];
+					Vec2f v3 = vtx[wall->idx[1]];
+
+					bool matchSameOrder = vtxEqual(&v0, &v2) && vtxEqual(&v1, &v3);
+					if (matchSameOrder)
+					{
+						// The new sector is gaining the edge, it needs to be removed from the splitSector.
+						newWall->adjoinId = -1;
+						newWall->mirrorId = -1;
+						s_edgesToDelete.push_back(w1);
+					}
+				}
+			}
+		
 			// Sort from smallest to largest, walk backwards and delete.
 			// This way deletions have no effect on future deletions.
-			std::sort(edgeToDelete.begin(), edgeToDelete.end());
+			std::sort(s_edgesToDelete.begin(), s_edgesToDelete.end());
+
 			// Delete walls from the split sector, new walls will be created in their place
 			// belonging to the new sector.
-			const s32 delCount = (s32)edgeToDelete.size();
-			const s32* index = edgeToDelete.data();
+			const s32 delCount = (s32)s_edgesToDelete.size();
+			const s32* index = s_edgesToDelete.data();
 			for (s32 i = delCount - 1; i >= 0; i--)
 			{
 				const s32 curWallCount = (s32)splitSector->walls.size();
@@ -3834,7 +3836,7 @@ namespace LevelEditor
 				if (s_view == EDIT_VIEW_3D)
 				{
 					// Center the 2D map on the 3D camera position before changing.
-					Vec2f mapPos = { s_camera.pos.x * c_defaultZoom / s_zoom2d, -s_camera.pos.z * c_defaultZoom / s_zoom2d };
+					Vec2f mapPos = { s_camera.pos.x, -s_camera.pos.z };
 					s_viewportPos.x = mapPos.x - (s_viewportSize.x / 2) * s_zoom2d;
 					s_viewportPos.z = mapPos.z - (s_viewportSize.z / 2) * s_zoom2d;
 				}
