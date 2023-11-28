@@ -17,11 +17,17 @@
 #include <TFE_RenderShared/triDraw3d.h>
 #include <TFE_System/system.h>
 #include <TFE_RenderBackend/renderBackend.h>
+
+// Jedi GPU Renderer.
+#include <TFE_Jedi/Level/levelData.h>
+#include <TFE_Jedi/Renderer/RClassic_GPU/rsectorGPU.h>
+
 #include <algorithm>
 #include <vector>
 
 using namespace TFE_RenderShared;
 using namespace TFE_Editor;
+using namespace TFE_Jedi;
 
 namespace LevelEditor
 {
@@ -90,6 +96,7 @@ namespace LevelEditor
 
 	void renderLevel2D();
 	void renderLevel3D();
+	void renderLevel3DGame();
 	void renderSectorWalls2d(s32 layerStart, s32 layerEnd);
 	void renderSectorPreGrid();
 	void drawSector2d(const EditorSector* sector, Highlight highlight);
@@ -132,7 +139,8 @@ namespace LevelEditor
 		TFE_RenderBackend::clearRenderTarget(s_viewportRt, clearColor);
 
 		if (view == EDIT_VIEW_2D) { renderLevel2D(); }
-		else { renderLevel3D(); }
+		else if (view == EDIT_VIEW_3D) { renderLevel3D(); }
+		else if (view == EDIT_VIEW_3D_GAME) { renderLevel3DGame(); }
 
 		TFE_RenderBackend::unbindRenderTarget();
 	}
@@ -1259,6 +1267,39 @@ namespace LevelEditor
 			grid3d_draw(s_gridSize, s_gridOpacity, s_gridHeight);
 		}
 		*/
+	}
+
+	TFE_Sectors_GPU* s_sectorDraw = nullptr;
+	std::vector<RSector> s_gpuSectors;
+	std::vector<TextureData*> s_gpuTextures;
+
+	void convertToLevelState()
+	{ 
+		s_levelState = {};
+		s_levelState.minLayer = s_level.layerRange[0];
+		s_levelState.maxLayer = s_level.layerRange[1];
+		s_levelState.sectorCount = (u32)s_level.sectors.size();
+		s_levelState.textureCount = (s32)s_level.textures.size();
+		s_levelState.parallax0 = floatToFixed16(s_level.parallax.x);
+		s_levelState.parallax1 = floatToFixed16(s_level.parallax.z);
+
+		s_gpuSectors.resize(s_levelState.sectorCount);
+		s_levelState.sectors = s_gpuSectors.data();
+
+		s_gpuTextures.resize(s_levelState.textureCount);
+		s_levelState.textures = s_gpuTextures.data();
+
+		// TODO: Fill in textures and sectors.
+	}
+
+	void renderLevel3DGame()
+	{
+	#if 0
+		if (!s_sectorDraw)
+		{
+			s_sectorDraw = new TFE_Sectors_GPU();
+		}
+	#endif
 	}
 
 	void renderSectorPolygon2d(const Polygon* poly, u32 color)

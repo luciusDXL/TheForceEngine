@@ -3033,9 +3033,17 @@ namespace LevelEditor
 		// Add adjoined sectors to the overlap list.
 		merge_addAdjoinSectors(sectorList);
 
-		// Then attempt to add the sub-sector to each overlapping sector (if it makes sense).
+		// Split the new sector by the existing sectors...
 		const s32 overlapCount = (s32)sectorList.size();
 		EditorSector** list = sectorList.data();
+		for (s32 s = 0; s < overlapCount; s++)
+		{
+			EditorSector* sector = list[s];
+			merge_splitSectorWallsBySector(newSector, sector);
+		}
+
+		// Then attempt to add the sub-sector to each overlapping sector (if it makes sense).
+		list = sectorList.data();
 		for (s32 s = 0; s < overlapCount; s++)
 		{
 			EditorSector* sector = list[s];
@@ -3056,6 +3064,15 @@ namespace LevelEditor
 				EditorSector* sector1 = list[s1];
 				merge_fixupAdjoins(sector0, sector1, false);
 			}
+			// Re-attempt the merge with the newSector, this could have gotten removed above.
+			merge_fixupAdjoins(sector0, newSector, false);
+		}
+
+		// Finally update all of the overlaps.
+		for (s32 s = 0; s < overlapCount; s++)
+		{
+			EditorSector* sector = list[s];
+			sectorToPolygon(sector);
 		}
 
 		// Copy data from the parent sector.
@@ -3077,13 +3094,11 @@ namespace LevelEditor
 			newSector->ceilHeight = parent->ceilHeight;
 		}
 		newSector->floorTex = parent->floorTex;
-		newSector->ceilTex = parent->ceilTex;
+		newSector->ceilTex  = parent->ceilTex;
 		newSector->flags[0] = parent->flags[0];
 		newSector->flags[1] = parent->flags[1];
 		newSector->flags[2] = parent->flags[2];
-		newSector->ambient = parent->ambient;
-
-		sectorToPolygon(parent);
+		newSector->ambient  = parent->ambient;
 	}
 		
 	void edit_createSectorFromRect(const f32* heights, const Vec2f* vtx)
@@ -3856,7 +3871,7 @@ namespace LevelEditor
 			}
 			if (ImGui::MenuItem("3D (Game)", "Ctrl+3", s_view == EDIT_VIEW_3D_GAME))
 			{
-				// TODO
+				s_view = EDIT_VIEW_3D_GAME;
 			}
 			ImGui::Separator();
 			if (ImGui::MenuItem("Reset Zoom", nullptr, (bool*)NULL))
