@@ -143,7 +143,7 @@ namespace TFE_DarkForces
 
 				if (local(physicsActor)->hp <= 0)
 				{
-					local(physicsActor)->state = 4;
+					local(physicsActor)->state = P1STATE_DYING;
 					msg = MSG_RUN_TASK;
 					task_setMessage(msg);
 				}
@@ -233,7 +233,7 @@ namespace TFE_DarkForces
 
 			if (local(physicsActor)->hp <= 0)
 			{
-				local(physicsActor)->state = 4;
+				local(physicsActor)->state = P1STATE_DYING;
 				local(physicsActor)->vel = local(vel);
 				msg = MSG_RUN_TASK;
 				task_setMessage(msg);
@@ -353,7 +353,7 @@ namespace TFE_DarkForces
 		local(anim)->flags &= ~AFLAG_PLAYED;
 		actor_setupBossAnimation(local(obj), 0, local(anim));
 
-		while (local(physicsActor)->state == 1)
+		while (local(physicsActor)->state == P1STATE_CHARGE)
 		{
 			do
 			{
@@ -361,7 +361,7 @@ namespace TFE_DarkForces
 				s_curTrooper = local(trooper);
 				task_callTaskFunc(phaseOne_handleMsg);
 			} while (msg != MSG_RUN_TASK);
-			if (local(physicsActor)->state != 1) { break; }
+			if (local(physicsActor)->state != P1STATE_CHARGE) { break; }
 
 			if (!s_playerDying && phaseOne_canSeePlayer(local(trooper)))
 			{
@@ -369,14 +369,14 @@ namespace TFE_DarkForces
 				fixed16_16 dist = dy + distApprox(s_playerObject->posWS.x, s_playerObject->posWS.z, local(obj)->posWS.x, local(obj)->posWS.z);
 				if (dist <= FIXED(15) && local(obj)->yaw == local(target)->yaw)
 				{
-					local(physicsActor)->state = 3;
+					local(physicsActor)->state = P1STATE_ATTACK;
 				}
 			}
 			else if (!s_playerDying)
 			{
-				local(physicsActor)->state = 5;
+				local(physicsActor)->state = P1STATE_SEARCH;
 			}
-			if (local(physicsActor)->state != 1) { break; }
+			if (local(physicsActor)->state != P1STATE_CHARGE) { break; }
 
 			local(target)->flags &= ~TARGET_FREEZE;
 			if (actor_handleSteps(&local(physicsActor)->moveMod, local(target)))
@@ -412,7 +412,7 @@ namespace TFE_DarkForces
 		task_end;
 	}
 
-	void phaseOne_handleState2(MessageType msg)
+	void phaseOne_handleWander(MessageType msg)
 	{
 		struct LocalContext
 		{
@@ -454,7 +454,7 @@ namespace TFE_DarkForces
 			local(target)->flags |= TARGET_MOVE_ROT;
 		task_localBlockEnd;
 
-		while (local(physicsActor)->state == 2)
+		while (local(physicsActor)->state == P1STATE_WANDER)
 		{
 			do
 			{
@@ -462,20 +462,20 @@ namespace TFE_DarkForces
 				s_curTrooper = local(trooper);
 				task_callTaskFunc(phaseOne_handleMsg);
 			} while (msg != MSG_RUN_TASK);
-			if (local(physicsActor)->state != 2) { break; }
+			if (local(physicsActor)->state != P1STATE_WANDER) { break; }
 
 			task_localBlockBegin;
 			CollisionInfo* collisionInfo = &local(physicsActor)->moveMod.physics;
 			if (collisionInfo->wall || collisionInfo->collidedObj)
 			{
-				local(physicsActor)->state = 1;
+				local(physicsActor)->state = P1STATE_CHARGE;
 				break;
 			}
 			
 			fixed16_16 dist = distApprox(s_playerObject->posWS.x, s_playerObject->posWS.z, local(obj)->posWS.x, local(obj)->posWS.z);
 			if (s_playerDying || !phaseOne_canSeePlayer(local(trooper)) || dist > FIXED(25))
 			{
-				local(physicsActor)->state = 1;
+				local(physicsActor)->state = P1STATE_CHARGE;
 				break;
 			}
 			task_localBlockEnd;
@@ -484,7 +484,7 @@ namespace TFE_DarkForces
 			{
 				if (random(100) <= 70)
 				{
-					local(physicsActor)->state = 3;
+					local(physicsActor)->state = P1STATE_ATTACK;
 					fixed16_16 dx = s_playerObject->posWS.x - local(obj)->posWS.x;
 					fixed16_16 dz = s_playerObject->posWS.z - local(obj)->posWS.z;
 					local(target)->yaw = vec2ToAngle(dx, dz);
@@ -540,7 +540,7 @@ namespace TFE_DarkForces
 		local(anim) = &local(physicsActor)->anim;
 
 		local(target)->flags |= TARGET_FREEZE;
-		while (local(physicsActor)->state == 3)
+		while (local(physicsActor)->state == P1STATE_ATTACK)
 		{
 			do
 			{
@@ -548,7 +548,7 @@ namespace TFE_DarkForces
 				s_curTrooper = local(trooper);
 				task_callTaskFunc(phaseOne_handleMsg);
 			} while (msg != MSG_RUN_TASK);
-			if (local(physicsActor)->state != 3) { break; }
+			if (local(physicsActor)->state != P1STATE_ATTACK) { break; }
 
 			local(anim)->flags |= AFLAG_PLAYED;
 			actor_setupBossAnimation(local(obj), 1, local(anim));
@@ -568,11 +568,11 @@ namespace TFE_DarkForces
 			if (dist <= FIXED(15))
 			{
 				player_applyDamage(FIXED(20), 0, JTRUE);
-				local(physicsActor)->state = 2;
+				local(physicsActor)->state = P1STATE_WANDER;
 			}
 			else
 			{
-				local(physicsActor)->state = 1;
+				local(physicsActor)->state = P1STATE_CHARGE;
 			}
 		}
 				
@@ -636,7 +636,7 @@ namespace TFE_DarkForces
 		task_end;
 	}
 
-	void phaseOne_handleState5(MessageType msg)
+	void phaseOne_lookForPlayer(MessageType msg)
 	{
 		struct LocalContext
 		{
@@ -669,7 +669,7 @@ namespace TFE_DarkForces
 		actor_setupBossAnimation(local(obj), 0, local(anim));
 		local(target)->flags &= ~TARGET_FREEZE;
 
-		while (local(physicsActor)->state == 5)
+		while (local(physicsActor)->state == P1STATE_SEARCH)
 		{
 			do
 			{
@@ -677,14 +677,14 @@ namespace TFE_DarkForces
 				s_curTrooper = local(trooper);
 				task_callTaskFunc(phaseOne_handleMsg);
 			} while (msg != MSG_RUN_TASK);
-			if (local(physicsActor)->state != 5 || s_playerDying) { break; }
+			if (local(physicsActor)->state != P1STATE_SEARCH || s_playerDying) { break; }
 
 			JBool canSee = actor_canSeeObject(local(obj), s_playerObject);
 			if (canSee)
 			{
 				local(physicsActor)->lastPlayerPos.x = s_playerObject->posWS.x;
 				local(physicsActor)->lastPlayerPos.z = s_playerObject->posWS.z;
-				local(physicsActor)->state = 1;
+				local(physicsActor)->state = P1STATE_CHARGE;
 				break;
 			}
 
@@ -703,17 +703,16 @@ namespace TFE_DarkForces
 			if (local(updateTargetPos))
 			{
 				local(updateTargetPos) = JFALSE;
-				if (s_curTick > local(nextTick))
+				if (local(nextTick) > s_curTick)
+				{
+					targetX = local(physicsActor)->lastPlayerPos.x;
+					targetZ = local(physicsActor)->lastPlayerPos.z;	
+				}
+				else
 				{
 					targetX = s_eyePos.x;
 					targetZ = s_eyePos.z;
 				}
-				else
-				{
-					targetX = local(physicsActor)->lastPlayerPos.x;
-					targetZ = local(physicsActor)->lastPlayerPos.z;
-				}
-
 				fixed16_16 dx = TFE_Jedi::abs(s_playerObject->posWS.x - local(obj)->posWS.x);
 				fixed16_16 offset = dx >> 2;
 				angle14_32 angle = vec2ToAngle(local(obj)->posWS.x - targetX, local(obj)->posWS.z - targetZ);
@@ -770,34 +769,34 @@ namespace TFE_DarkForces
 			msg = MSG_RUN_TASK;
 			task_setMessage(msg);
 
-			if (local(physicsActor)->state == 1)
+			if (local(physicsActor)->state == P1STATE_CHARGE)
 			{
 				s_curTrooper = local(trooper);
 				task_callTaskFunc(phaseOne_handleCharge);
 			}
-			else if (local(physicsActor)->state == 2)
+			else if (local(physicsActor)->state == P1STATE_WANDER)
 			{
 				s_curTrooper = local(trooper);
-				task_callTaskFunc(phaseOne_handleState2);
+				task_callTaskFunc(phaseOne_handleWander);
 			}
-			else if (local(physicsActor)->state == 3)
+			else if (local(physicsActor)->state == P1STATE_ATTACK)
 			{
 				s_curTrooper = local(trooper);
 				task_callTaskFunc(phaseOne_handleAttack);
 			}
-			else if (local(physicsActor)->state == 4)
+			else if (local(physicsActor)->state == P1STATE_DYING)
 			{
 				s_curTrooper = local(trooper);
 				task_callTaskFunc(phaseOne_handleDyingState);
 			}
-			else if (local(physicsActor)->state == 5)
+			else if (local(physicsActor)->state == P1STATE_SEARCH)
 			{
 				s_curTrooper = local(trooper);
-				task_callTaskFunc(phaseOne_handleState5);
+				task_callTaskFunc(phaseOne_lookForPlayer);
 			}
 			else
 			{
-				while (local(physicsActor)->state == 0)
+				while (local(physicsActor)->state == P1STATE_DEFAULT)
 				{
 					do
 					{
@@ -807,16 +806,16 @@ namespace TFE_DarkForces
 
 						if (msg == MSG_DAMAGE || msg == MSG_EXPLOSION)
 						{
-							local(physicsActor)->state = 1;
+							local(physicsActor)->state = P1STATE_CHARGE;
 							task_makeActive(local(physicsActor)->actorTask);
 							task_yield(TASK_NO_DELAY);
 						}
 					} while (msg != MSG_RUN_TASK);
 
-					if (local(physicsActor)->state == 0 && phaseOne_canSeePlayer(local(trooper)))
+					if (local(physicsActor)->state == P1STATE_DEFAULT && phaseOne_canSeePlayer(local(trooper)))
 					{
 						sound_playCued(s_shared.phase1aSndID, local(obj)->posWS);
-						local(physicsActor)->state = 1;
+						local(physicsActor)->state = P1STATE_CHARGE;
 					}
 				}  // while (state == 0)
 			}
@@ -927,7 +926,7 @@ namespace TFE_DarkForces
 		
 		physicsActor->alive = JTRUE;
 		physicsActor->hp = FIXED(180);
-		physicsActor->state = 0;
+		physicsActor->state = P1STATE_DEFAULT;
 		physicsActor->actorTask = task;
 		trooper->hitSndId = 0;
 		trooper->reflectSndId = 0;
