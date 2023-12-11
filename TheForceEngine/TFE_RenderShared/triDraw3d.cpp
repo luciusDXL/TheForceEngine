@@ -27,6 +27,7 @@ namespace TFE_RenderShared
 	{
 		TextureGpu* texture;
 		DrawMode mode;
+		u32 drawFlags;
 		s32 vtxOffset;
 		s32 idxOffset;
 		s32 vtxCount;
@@ -67,6 +68,8 @@ namespace TFE_RenderShared
 	static u32 s_triDrawCapacity[TRIMODE_COUNT];
 
 	static DrawMode s_lastDrawMode = TRIMODE_COUNT;
+
+	bool canMergeDraws(DrawMode mode, TextureGpu* texture, bool showGrid = true);
 
 	bool tri3d_loadTextureVariant(DrawMode mode, u32 defineCount, ShaderDefine* defines)
 	{
@@ -170,9 +173,12 @@ namespace TFE_RenderShared
 		return draw;
 	}
 
-	bool canMergeDraws(DrawMode mode, TextureGpu* texture)
+	bool canMergeDraws(DrawMode mode, TextureGpu* texture, bool showGrid)
 	{
 		bool canMerge = (s_triDrawCount[mode] > 0 && s_triDraw[mode][s_triDrawCount[mode] - 1].texture == texture && mode == s_lastDrawMode);
+		// Grid settings.
+		if (canMerge && showGrid && (s_triDraw[mode][s_triDrawCount[mode] - 1].drawFlags & TFLAG_NO_GRID)) { canMerge = false; }
+		else if (canMerge && !showGrid && !(s_triDraw[mode][s_triDrawCount[mode] - 1].drawFlags & TFLAG_NO_GRID)) { canMerge = false; }
 		s_lastDrawMode = mode;
 		return canMerge;
 	}
@@ -212,6 +218,7 @@ namespace TFE_RenderShared
 				draw->idxOffset = idxOffset;
 				draw->vtxCount = 4;
 				draw->idxCount = 6;
+				draw->drawFlags = TFLAG_NONE;
 			}
 			else
 			{
@@ -258,7 +265,7 @@ namespace TFE_RenderShared
 		s_idxCount += 6;
 	}
 
-	void triDraw3d_addTextured(DrawMode pass, u32 idxCount, u32 vtxCount, const Vec3f* vertices, const Vec2f* uv, const s32* indices, const u32 color, bool invSide, TextureGpu* texture)
+	void triDraw3d_addTextured(DrawMode pass, u32 idxCount, u32 vtxCount, const Vec3f* vertices, const Vec2f* uv, const s32* indices, const u32 color, bool invSide, TextureGpu* texture, bool showGrid)
 	{
 		if (!s_vertices) { return; }
 		const s32 idxOffset = s_idxCount;
@@ -271,7 +278,7 @@ namespace TFE_RenderShared
 		}
 
 		// New draw call or add to the existing call?
-		if (canMergeDraws(pass, texture))
+		if (canMergeDraws(pass, texture, showGrid))
 		{
 			// Append to the previous draw call.
 			s_triDraw[pass][s_triDrawCount[pass] - 1].vtxCount += vtxCount;
@@ -290,6 +297,7 @@ namespace TFE_RenderShared
 				draw->idxOffset = idxOffset;
 				draw->vtxCount = vtxCount;
 				draw->idxCount = idxCount;
+				draw->drawFlags = showGrid ? TFLAG_NONE : TFLAG_NO_GRID;
 			}
 			else
 			{
@@ -364,6 +372,7 @@ namespace TFE_RenderShared
 				draw->idxOffset = idxOffset;
 				draw->vtxCount = 4;
 				draw->idxCount = 6;
+				draw->drawFlags = TFLAG_NONE;
 			}
 			else
 			{
@@ -406,7 +415,7 @@ namespace TFE_RenderShared
 		s_idxCount += 6;
 	}
 
-	void triDraw3d_addColored(DrawMode pass, u32 idxCount, u32 vtxCount, const Vec3f* vertices, const s32* indices, const u32 color, bool invSide)
+	void triDraw3d_addColored(DrawMode pass, u32 idxCount, u32 vtxCount, const Vec3f* vertices, const s32* indices, const u32 color, bool invSide, bool showGrid)
 	{
 		if (!s_vertices) { return; }
 		const s32 idxOffset = s_idxCount;
@@ -419,7 +428,7 @@ namespace TFE_RenderShared
 		}
 
 		// New draw call or add to the existing call?
-		if (canMergeDraws(pass, nullptr))
+		if (canMergeDraws(pass, nullptr, showGrid))
 		{
 			// Append to the previous draw call.
 			s_triDraw[pass][s_triDrawCount[pass] - 1].vtxCount += vtxCount;
@@ -438,6 +447,7 @@ namespace TFE_RenderShared
 				draw->idxOffset = idxOffset;
 				draw->vtxCount = vtxCount;
 				draw->idxCount = idxCount;
+				draw->drawFlags = showGrid ? TFLAG_NONE : TFLAG_NO_GRID;
 			}
 			else
 			{
@@ -501,6 +511,7 @@ namespace TFE_RenderShared
 			s_shader[i].setVariable(s_shaderState[i].svCameraView, SVT_MAT3x3, camera->viewMtx.data);
 			s_shader[i].setVariable(s_shaderState[i].svCameraProj, SVT_MAT4x4, camera->projMtx.data);
 
+			f32 gridScaleOpacityNone[] = { 0.0f, 0.0f };
 			f32 gridScaleOpacity[] = { gridScale, gridOpacity };
 			f32 gridScaleOpacityTex[] = { gridScale, gridOpacity };
 
@@ -512,19 +523,27 @@ namespace TFE_RenderShared
 
 			// Draw.
 			s32 isTexPrev = -1;
+			bool prevGrid = true;
 			for (u32 t = 0; t < s_triDrawCount[i]; t++)
 			{
 				Tri3dDraw* draw = &s_triDraw[i][t];
 				s32 isTextured = draw->texture ? 1 : 0;
+				bool showGrid = !(draw->drawFlags & TFLAG_NO_GRID);
 				s_shader[i].setVariable(s_shaderState[i].svIsTextured, SVT_ISCALAR, &isTextured);
 				if (isTextured)
 				{
 					draw->texture->bind(0);
-
-					if (isTexPrev != isTextured) { s_shader[i].setVariable(s_shaderState[i].svGridScaleOpacity, SVT_VEC2, gridScaleOpacityTex); }
+					if (isTexPrev != isTextured)
+					{
+						s_shader[i].setVariable(s_shaderState[i].svGridScaleOpacity, SVT_VEC2, showGrid ? gridScaleOpacityTex : gridScaleOpacityNone);
+					}
 				}
-				else if (isTexPrev != isTextured) { s_shader[i].setVariable(s_shaderState[i].svGridScaleOpacity, SVT_VEC2, gridScaleOpacity); }
+				else if (isTexPrev != isTextured || prevGrid != showGrid)
+				{
+					s_shader[i].setVariable(s_shaderState[i].svGridScaleOpacity, SVT_VEC2, showGrid ? gridScaleOpacity : gridScaleOpacityNone);
+				}
 				isTexPrev = isTextured;
+				prevGrid = showGrid;
 
 				TFE_RenderBackend::drawIndexedTriangles(draw->idxCount / 3, sizeof(u32), draw->idxOffset);
 			}

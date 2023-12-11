@@ -14,6 +14,11 @@
 
 namespace LevelEditor
 {
+	enum GridFlags
+	{
+		GFLAG_NONE = 0,
+		GFLAG_OVER = FLAG_BIT(0),
+	};
 	struct Feature
 	{
 		EditorSector* sector = nullptr;
@@ -37,6 +42,8 @@ namespace LevelEditor
 	extern Vec3f s_curVtxPos;
 
 	extern s32 s_selectedTexture;
+	extern u32 s_gridFlags;
+	extern f32 s_gridHeight;
 
 	// Camera
 	extern Camera3d s_camera;

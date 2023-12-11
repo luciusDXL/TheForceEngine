@@ -977,21 +977,30 @@ namespace LevelEditor
 		lineDraw3d_drawLines(&s_camera, false, false);
 	}
 
+	void drawGrid3D(bool gridOver)
+	{
+		f32 opacity = gridOver ? 1.5f * s_gridOpacity : s_gridOpacity;
+		if (s_camera.pos.y >= s_gridHeight)
+		{
+			grid3d_draw(s_gridSize, opacity, s_gridHeight);
+			renderCoordinateAxis();
+		}
+		else
+		{
+			renderCoordinateAxis();
+			grid3d_draw(s_gridSize, opacity, s_gridHeight);
+		}
+	}
+
 	void renderLevel3D()
 	{
 		// Prepare for drawing.
 		TFE_RenderShared::lineDraw3d_begin(s_viewportSize.x, s_viewportSize.z);
 		TFE_RenderShared::triDraw3d_begin();
 
-		if (s_camera.pos.y >= s_gridHeight)
+		if (!(s_gridFlags & GFLAG_OVER))
 		{
-			grid3d_draw(s_gridSize, s_gridOpacity, s_gridHeight);
-			renderCoordinateAxis();
-		}
-		else
-		{
-			renderCoordinateAxis();
-			grid3d_draw(s_gridSize, s_gridOpacity, s_gridHeight);
+			drawGrid3D(false);
 		}
 
 		const f32 width = 2.5f;
@@ -1182,34 +1191,35 @@ namespace LevelEditor
 				}
 			}
 
+			bool showGridOnFlats = !(s_gridFlags & GFLAG_OVER);
 			if (s_camera.pos.y > sector->floorHeight)
 			{
 				if (s_sectorDrawMode == SDM_TEXTURED_FLOOR || s_sectorDrawMode == SDM_TEXTURED_CEIL)
 				{
-					triDraw3d_addTextured(TRIMODE_OPAQUE, idxCount, vtxCount, vtxDataFlr, uvFlr, sector->poly.triIdx.data(), c_sectorTexClr[colorIndex], false, floorTex->frames[0]);
+					triDraw3d_addTextured(TRIMODE_OPAQUE, idxCount, vtxCount, vtxDataFlr, uvFlr, sector->poly.triIdx.data(), c_sectorTexClr[colorIndex], false, floorTex->frames[0], showGridOnFlats);
 				}
 				else if (s_sectorDrawMode == SDM_LIGHTING)
 				{
-					triDraw3d_addColored(TRIMODE_OPAQUE, idxCount, vtxCount, vtxDataFlr, sector->poly.triIdx.data(), c_sectorTexClr[colorIndex], false);
+					triDraw3d_addColored(TRIMODE_OPAQUE, idxCount, vtxCount, vtxDataFlr, sector->poly.triIdx.data(), c_sectorTexClr[colorIndex], false, showGridOnFlats);
 				}
 				else
 				{
-					triDraw3d_addColored(TRIMODE_OPAQUE, idxCount, vtxCount, vtxDataFlr, sector->poly.triIdx.data(), floorColor, false);
+					triDraw3d_addColored(TRIMODE_OPAQUE, idxCount, vtxCount, vtxDataFlr, sector->poly.triIdx.data(), floorColor, false, showGridOnFlats);
 				}
 			}
 			if (s_camera.pos.y < sector->ceilHeight)
 			{
 				if (s_sectorDrawMode == SDM_TEXTURED_FLOOR || s_sectorDrawMode == SDM_TEXTURED_CEIL)
 				{
-					triDraw3d_addTextured(TRIMODE_OPAQUE, idxCount, vtxCount, vtxDataCeil, uvCeil, sector->poly.triIdx.data(), c_sectorTexClr[colorIndex], true, ceilTex->frames[0]);
+					triDraw3d_addTextured(TRIMODE_OPAQUE, idxCount, vtxCount, vtxDataCeil, uvCeil, sector->poly.triIdx.data(), c_sectorTexClr[colorIndex], true, ceilTex->frames[0], showGridOnFlats);
 				}
 				else if (s_sectorDrawMode == SDM_LIGHTING)
 				{
-					triDraw3d_addColored(TRIMODE_OPAQUE, idxCount, vtxCount, vtxDataCeil, sector->poly.triIdx.data(), c_sectorTexClr[colorIndex], true);
+					triDraw3d_addColored(TRIMODE_OPAQUE, idxCount, vtxCount, vtxDataCeil, sector->poly.triIdx.data(), c_sectorTexClr[colorIndex], true, showGridOnFlats);
 				}
 				else
 				{
-					triDraw3d_addColored(TRIMODE_OPAQUE, idxCount, vtxCount, vtxDataCeil, sector->poly.triIdx.data(), floorColor, true);
+					triDraw3d_addColored(TRIMODE_OPAQUE, idxCount, vtxCount, vtxDataCeil, sector->poly.triIdx.data(), floorColor, true, showGridOnFlats);
 				}
 			}
 		}
@@ -1255,18 +1265,10 @@ namespace LevelEditor
 			lineDraw2d_drawLines();
 		}
 						
-		/*
-		if (s_camera.pos.y >= s_gridHeight)
+		if (s_gridFlags & GFLAG_OVER)
 		{
-			grid3d_draw(s_gridSize, s_gridOpacity, s_gridHeight);
-			renderCoordinateAxis();
+			drawGrid3D(true);
 		}
-		else
-		{
-			renderCoordinateAxis();
-			grid3d_draw(s_gridSize, s_gridOpacity, s_gridHeight);
-		}
-		*/
 	}
 
 	TFE_Sectors_GPU* s_sectorDraw = nullptr;
@@ -1290,6 +1292,10 @@ namespace LevelEditor
 		s_levelState.textures = s_gpuTextures.data();
 
 		// TODO: Fill in textures and sectors.
+		for (s32 s = 0; s < s_levelState.textureCount; s++)
+		{
+
+		}
 	}
 
 	void renderLevel3DGame()

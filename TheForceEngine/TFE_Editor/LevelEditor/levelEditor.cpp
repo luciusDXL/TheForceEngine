@@ -85,11 +85,12 @@ namespace LevelEditor
 	// If the correct format already exists, though, then it is loaded directly.
 	AssetList s_levelTextureList;
 	LevelEditMode s_editMode = LEDIT_DRAW;
-	BoolMode s_boolMode = BMODE_NORMAL;
+	BoolMode s_boolMode = BMODE_MERGE;
 
 	u32 s_editFlags = LEF_DEFAULT;
 	u32 s_lwinOpen = LWIN_NONE;
 	s32 s_curLayer = 0;
+	u32 s_gridFlags = GFLAG_NONE;
 
 	// Unified feature hover/cur
 	Feature s_featureHovered = {};
@@ -116,6 +117,7 @@ namespace LevelEditor
 	const f32 c_defaultSectorHeight = 16.0f;
 
 	bool s_drawStarted = false;
+	bool s_gridMoveStart = false;
 	DrawMode s_drawMode;
 	f32 s_drawHeight[2];
 	std::vector<Vec2f> s_shape;
@@ -293,6 +295,7 @@ namespace LevelEditor
 		s_curLayer = std::min(1, s_level.layerRange[1]);
 
 		s_sectorDrawMode = SDM_WIREFRAME;
+		s_gridFlags = GFLAG_NONE;
 		s_featureHovered = {};
 		s_featureCur = {};
 		s_featureTex = {};
@@ -2612,6 +2615,7 @@ namespace LevelEditor
 			mergeList.push_back(sector1);
 		}
 
+		// This loop needs to be more careful with overlaps.
 		// Loop through each wall of the new sector and see if it can be adjoined to another sector/wall in the list created above.
 		// Once colinear walls are found, properly splits are made and the loop is restarted. Adjoins are only added when exact
 		// matches are found.
@@ -3134,7 +3138,7 @@ namespace LevelEditor
 
 		// Handle sub-sectors.
 		EditorSector* sectors[4];
-		bool subSector = isSubSector(4, outVtx, s_gridHeight, sectors);
+		bool subSector = isSubSector(4, outVtx, s_gridHeight, sectors) && !(s_gridFlags & GFLAG_OVER);
 
 		EditorWall* wall = newSector.walls.data();
 		for (s32 w = 0; w < count; w++, wall++)
@@ -3154,7 +3158,7 @@ namespace LevelEditor
 
 		// Then we can treat this is a sub-sector of any overlapping sectors.
 		// For now only handle single sector case, and assume no wall overlaps.
-		if (subSector)
+		if (subSector && s_boolMode == BMODE_MERGE)
 		{
 			insertSubSector(4, sectors, &newSector);
 		}
@@ -3201,7 +3205,7 @@ namespace LevelEditor
 		// Handle sub-sectors.
 		s_workList.resize(vertexCount);
 		EditorSector** sectors = s_workList.data();
-		bool subSector = isSubSector(vertexCount, outVtx, s_gridHeight, sectors);
+		bool subSector = isSubSector(vertexCount, outVtx, s_gridHeight, sectors) && !(s_gridFlags & GFLAG_OVER);
 
 		EditorWall* wall = newSector.walls.data();
 		for (s32 w = 0; w < vertexCount; w++, wall++)
@@ -3228,7 +3232,6 @@ namespace LevelEditor
 		
 		s_level.sectors.push_back(newSector);
 		sectorToPolygon(&s_level.sectors.back());
-
 		mergeAdjoins(&s_level.sectors.back());
 
 		s_featureHovered = {};
@@ -3323,7 +3326,7 @@ namespace LevelEditor
 		{
 			hoverSector = hitInfo->hitSectorId < 0 ? nullptr : &s_level.sectors[hitInfo->hitSectorId];
 		}
-
+		
 		// Snap the cursor to the grid.
 		Vec2f onGrid = { s_cursor3d.x, s_cursor3d.z };
 
@@ -3348,10 +3351,25 @@ namespace LevelEditor
 		s_cursor3d.x = onGrid.x;
 		s_cursor3d.z = onGrid.z;
 
-		// For now just draw independent sector.
+		// Hot Key
+		const bool heightMove = TFE_Input::keyDown(KEY_H);
 
 		// Two ways to draw: rectangle (shift + left click and drag, escape to cancel), shape (left click to start, backspace to go back one point, escape to cancel)
-		if (s_drawStarted)
+		if (s_gridMoveStart)
+		{
+			if (!TFE_Input::mouseDown(MouseButton::MBUTTON_LEFT))
+			{
+				s_gridMoveStart = false;
+			}
+			else
+			{
+				Vec3f worldPos = moveAlongRail({ 0.0f, 1.0f, 0.0f });
+				f32 yValue = worldPos.y;
+				snapToGrid(&yValue);
+				s_gridHeight = yValue;
+			}
+		}
+		else if (s_drawStarted)
 		{
 			s_drawCurPos = onGrid;
 			if (s_drawMode == DMODE_RECT)
@@ -3462,9 +3480,14 @@ namespace LevelEditor
 				snapToGrid(&s_drawHeight[1]);
 			}
 		}
+		else if (heightMove && s_singleClick)
+		{
+			s_gridMoveStart = true;
+			s_curVtxPos = { onGrid.x, s_gridHeight, onGrid.z };
+		}
 		else if (s_singleClick)
 		{
-			if (hoverSector)
+			if (hoverSector && !(s_gridFlags & GFLAG_OVER))
 			{
 				s_gridHeight = hoverSector->floorHeight;
 			}
@@ -3755,6 +3778,12 @@ namespace LevelEditor
 			if (rayHit) { s_cursor3d = hitInfo.hitPos; }
 			else  		{ s_cursor3d = rayGridPlaneHit(s_camera.pos, s_rayDir); }
 
+			// Note that the 3D cursor must be adjusted if the grid is shown over the geometry.
+			if ((s_gridFlags & GFLAG_OVER) && hitInfo.hitWallId < 0)
+			{
+				s_cursor3d = rayGridPlaneHit(s_camera.pos, s_rayDir);
+			}
+
 			if (s_editMode == LEDIT_DRAW)
 			{
 				handleSectorDraw(&hitInfo);
@@ -3841,6 +3870,26 @@ namespace LevelEditor
 			if (ImGui::MenuItem("Delete", "Del", (bool*)NULL))
 			{
 			}
+			ImGui::EndMenu();
+		}
+		if (ImGui::BeginMenu("Grid"))
+		{
+			menuActive = true;
+			if (ImGui::MenuItem("Reset", ""))
+			{
+				s_gridFlags = GFLAG_NONE;
+			}
+			ImGui::Separator();
+			if (ImGui::MenuItem("Show Over Sectors", "", s_gridFlags & GFLAG_OVER))
+			{
+				if (s_gridFlags & GFLAG_OVER) { s_gridFlags &= ~GFLAG_OVER; }
+				else { s_gridFlags |= GFLAG_OVER; }
+			}
+			ImGui::Separator();
+			if (ImGui::MenuItem("Align To Edge", ""))
+			{
+			}
+
 			ImGui::EndMenu();
 		}
 		if (ImGui::BeginMenu("View"))

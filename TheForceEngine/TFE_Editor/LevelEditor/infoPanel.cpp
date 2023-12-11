@@ -91,12 +91,11 @@ namespace LevelEditor
 		ImGui::Text("Bounds: (%0.3f, %0.3f, %0.3f)\n        (%0.3f, %0.3f, %0.3f)", s_level.bounds[0].x, s_level.bounds[0].y, s_level.bounds[0].z,
 			s_level.bounds[1].x, s_level.bounds[1].y, s_level.bounds[1].z);
 		ImGui::Text("Layer Range: [%d, %d]", s_level.layerRange[0], s_level.layerRange[1]);
+		ImGui::LabelText("##GridLabel", "Grid Height");
+		ImGui::SameLine(128.0f);
+		ImGui::SetNextItemWidth(196.0f);
+		ImGui::InputFloat("##GridHeight", &s_gridHeight, 0.0f, 0.0f, "%0.2f", ImGuiInputTextFlags_CharsDecimal);
 		ImGui::Separator();
-		//ImGui::LabelText("##GridLabel", "Grid Height");
-		//ImGui::SetNextItemWidth(196.0f);
-		//ImGui::InputFloat("##GridHeight", &s_gridHeight, 0.0f, 0.0f, "%0.2f", ImGuiInputTextFlags_CharsDecimal);
-		//ImGui::Checkbox("Grid Auto Adjust", &s_gridAutoAdjust);
-		//ImGui::Checkbox("Show Grid When Camera Is Inside a Sector", &s_showGridInSector);
 
 		// Display messages here?
 		ImGui::CheckboxFlags("Info", &s_outputFilter, LFILTER_INFO); ImGui::SameLine(0.0f, 32.0f);

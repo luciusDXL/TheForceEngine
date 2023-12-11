@@ -27,7 +27,7 @@ namespace LevelEditor
 
 	enum BoolMode
 	{
-		BMODE_NORMAL = 0,
+		BMODE_SET = 0,
 		BMODE_MERGE,
 		BMODE_SUBTRACT,
 		BMODE_COUNT
