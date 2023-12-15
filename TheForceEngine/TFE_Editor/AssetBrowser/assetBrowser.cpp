@@ -1968,6 +1968,46 @@ namespace AssetBrowser
 			}
 
 			char pngFile[TFE_MAX_PATH];
+			if (asset->type == TYPE_LEVEL)
+			{
+				char objPath[TFE_MAX_PATH];
+				char infPath[TFE_MAX_PATH];
+				FileUtil::replaceExtension(fullPath, "O", objPath);
+				FileUtil::replaceExtension(fullPath, "INF", infPath);
+
+				char assetObj[TFE_MAX_PATH];
+				char assetInf[TFE_MAX_PATH];
+				FileUtil::replaceExtension(asset->name.c_str(), "O", assetObj);
+				if (archive->openFile(assetObj))
+				{ 
+					len = archive->getFileLength();
+					buffer.resize(len);
+					archive->readFile(buffer.data(), len);
+					archive->closeFile();
+
+					FileStream outFile;
+					if (outFile.open(objPath, FileStream::MODE_WRITE))
+					{
+						outFile.writeBuffer(buffer.data(), (u32)len);
+						outFile.close();
+					}
+				}
+				FileUtil::replaceExtension(asset->name.c_str(), "INF", assetInf);
+				if (archive->openFile(assetInf))
+				{
+					len = archive->getFileLength();
+					buffer.resize(len);
+					archive->readFile(buffer.data(), len);
+					archive->closeFile();
+
+					FileStream outFile;
+					if (outFile.open(infPath, FileStream::MODE_WRITE))
+					{
+						outFile.writeBuffer(buffer.data(), (u32)len);
+						outFile.close();
+					}
+				}
+			}
 			if (asset->type == TYPE_TEXTURE)
 			{
 				EditorTexture* texture = (EditorTexture*)getAssetData(asset->handle);
