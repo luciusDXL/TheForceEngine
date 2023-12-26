@@ -1279,6 +1279,9 @@
     <ClInclude Include="TFE_Editor\history.h">
       <Filter>Source\TFE_Editor</Filter>
     </ClInclude>
+    <ClInclude Include="TFE_Editor\LevelEditor\error.h">
+      <Filter>Source\TFE_Editor\LevelEditor</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">

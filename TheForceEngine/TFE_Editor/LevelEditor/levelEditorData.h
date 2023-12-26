@@ -168,6 +168,8 @@ namespace LevelEditor
 	};
 
 	bool loadLevelFromAsset(TFE_Editor::Asset* asset);
+	bool saveLevel();
+	bool exportLevel();
 	void sectorToPolygon(EditorSector* sector);
 	void polygonToSector(EditorSector* sector);
 
@@ -191,4 +193,6 @@ namespace LevelEditor
 	// Helpers
 	bool aabbOverlap3d(const Vec3f* aabb0, const Vec3f* aabb1);
 	bool aabbOverlap2d(const Vec3f* aabb0, const Vec3f* aabb1);
+	bool pointInsideAABB3d(const Vec3f* aabb, const Vec3f* pt);
+	bool pointInsideAABB2d(const Vec3f* aabb, const Vec3f* pt);
 }

@@ -334,6 +334,7 @@ namespace FileUtil
 		{
 			outPath[0] = 0;
 			strncpy(outPath, srcPath, lastDot);
+			outPath[lastDot] = 0;
 		}
 		else
 		{

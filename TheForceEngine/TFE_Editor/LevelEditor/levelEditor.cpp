@@ -408,6 +408,26 @@ namespace LevelEditor
 		return s;
 	}
 
+	bool lineSegmentsIntersect(Vec2f a0, Vec2f a1, Vec2f b0, Vec2f b1)
+	{
+		const Vec2f b = { a1.x - a0.x, a1.z - a0.z };
+		const Vec2f d = { b1.x - b0.x, b1.z - b0.z };
+		const f32 denom = b.x*d.z - b.z*d.x;	// cross product.
+		// Lines are parallel if denom == 0.0
+		if (fabsf(denom) < FLT_EPSILON) { return false; }
+		const f32 scale = 1.0f / denom;
+
+		Vec2f c = { b0.x - a0.x, b0.z - a0.z };
+		f32 s = (c.x*d.z - c.z*d.x) * scale;
+		if (s < 0.0f || s > 1.0f) { return false; }
+
+		f32 t = (c.x*b.z - c.z*b.x) * scale;
+		if (t < 0.0f || t > 1.0f) { return false; }
+
+		// Intersection = a0 + s*b;
+		return true;
+	}
+
 	s32 findClosestWallInSector(const EditorSector* sector, const Vec2f* pos, f32 maxDistSq, f32* minDistToWallSq)
 	{
 		const u32 count = (u32)sector->walls.size();
@@ -2968,7 +2988,46 @@ namespace LevelEditor
 		}
 	}
 
-	void merge_addAdjoinSectors(SectorList& sectorList)
+	bool wallOverlapsAABB(const Vec2f& v0, const Vec2f& v1, const f32* yRange, const Vec3f* bounds)
+	{
+		const Vec3f boundsWall[] = 
+		{
+			{ std::min(v0.x, v1.x), yRange[0], std::min(v0.z, v1.z) },
+			{ std::max(v0.x, v1.x), yRange[1], std::max(v0.z, v1.z) },
+		};
+		// Early-out (false) if the bounds do not overlap.
+		if (!aabbOverlap3d(bounds, boundsWall))
+		{
+			return false;
+		}
+		// Early-out (true) if either wall vertex is inside the 2D bounds (note y has already been checked above).
+		const Vec3f pt0 = { v0.x, 0.0f, v0.z };
+		const Vec3f pt1 = { v1.x, 0.0f, v1.z };
+		if (pointInsideAABB2d(bounds, &pt0)) { return true; }
+		if (pointInsideAABB2d(bounds, &pt1)) { return true; }
+		// Finally check if the wall intersects the AABB.
+		const Vec2f aabbVtx[] =
+		{
+			{bounds[0].x, bounds[0].z},
+			{bounds[1].x, bounds[0].z},
+			{bounds[1].x, bounds[1].z},
+			{bounds[0].x, bounds[1].z}
+		};
+		// If the wall edge intersects any aabb edge, than they overlap.
+		for (s32 i = 0; i < 4; i++)
+		{
+			const s32 a = i, b = (i + 1) & 3;
+			if (lineSegmentsIntersect(v0, v1, aabbVtx[a], aabbVtx[b]))
+			{
+				return true;
+			}
+		}
+		// If there are no intersections and the wall vertices are not inside the aabb, then they do
+		// not overlap.
+		return false;
+	}
+
+	void merge_addAdjoinSectors(SectorList& sectorList, const Vec3f* bounds)
 	{
 		s_searchKey++;
 
@@ -2986,12 +3045,19 @@ namespace LevelEditor
 			EditorSector* sector = sectorList[s]; // Directly access the vector since it may be resized.
 			const s32 wallCount = (s32)sector->walls.size();
 			EditorWall* wall = sector->walls.data();
+			const f32 yBounds[] = { std::min(sector->floorHeight, sector->ceilHeight), std::max(sector->floorHeight, sector->ceilHeight) };
 			for (s32 w = 0; w < wallCount; w++, wall++)
 			{
 				if (wall->adjoinId < 0) { continue; }
 				EditorSector* next = &s_level.sectors[wall->adjoinId];
 				if (next->searchKey != s_searchKey)
 				{
+					// Check to see if the adjoin is inside the bounds.
+					if (!wallOverlapsAABB(sector->vtx[wall->idx[0]], sector->vtx[wall->idx[1]], yBounds, bounds))
+					{
+						continue;
+					}
+
 					next->searchKey = s_searchKey;
 					sectorList.push_back(next);
 				}
@@ -3035,7 +3101,7 @@ namespace LevelEditor
 			return;
 		}
 		// Add adjoined sectors to the overlap list.
-		merge_addAdjoinSectors(sectorList);
+		merge_addAdjoinSectors(sectorList, bounds);
 
 		// Split the new sector by the existing sectors...
 		const s32 overlapCount = (s32)sectorList.size();
@@ -3830,7 +3896,7 @@ namespace LevelEditor
 			if (!projectActive) { disableNextItem(); }
 			if (ImGui::MenuItem("Save", "Ctrl+S", (bool*)NULL))
 			{
-				// Save the current state of the level to disk.
+				saveLevel();
 			}
 			if (ImGui::MenuItem("Snapshot", "Ctrl+N", (bool*)NULL))
 			{

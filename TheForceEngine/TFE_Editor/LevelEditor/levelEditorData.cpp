@@ -1,5 +1,6 @@
 #include "levelEditorData.h"
 #include "selection.h"
+#include "error.h"
 #include <TFE_Editor/history.h>
 #include <TFE_Editor/errorMessages.h>
 #include <TFE_Editor/editorConfig.h>
@@ -54,12 +55,18 @@ namespace LevelEditor
 
 	extern AssetList s_levelTextureList;
 	extern void edit_clearSelections();
+	bool loadFromTFL(const char* name);
 
 	enum Constants
 	{
 		LevVersionMin = 15,
 		LevVersionMax = 21,
 		LevVersion_Layers_WallLight = 21,
+	};
+	enum LevelEditorFormat
+	{
+		LEF_MinVersion = 1,
+		LEF_CurVersion = 1,
 	};
 
 	AssetHandle loadTexture(const char* bmTextureName)
@@ -68,10 +75,19 @@ namespace LevelEditor
 		if (!texAsset) { return NULL_ASSET; }
 		return AssetBrowser::loadAssetData(texAsset);
 	}
-
+		
 	bool loadLevelFromAsset(Asset* asset)
 	{
 		EditorLevel* level = &s_level;
+		char slotName[256];
+		FileUtil::stripExtension(asset->name.c_str(), slotName);
+
+		// First check to see if there is a "tfl" version of the level.
+		if (loadFromTFL(slotName))
+		{
+			return true;
+		}
+		level->slot = slotName;
 
 		s_fileData.clear();
 		if (asset->archive)
@@ -379,6 +395,175 @@ namespace LevelEditor
 		}
 
 		return true;
+	}
+
+	bool loadFromTFL(const char* name)
+	{
+		// If there is no project, then the TFL can't exist.
+		Project* project = project_get();
+		if (!project)
+		{
+			return false;
+		}
+		char filePath[TFE_MAX_PATH];
+		sprintf(filePath, "%s/%s.tfl", project->path, name);
+
+		// Then try to open it based on the path, if it fails load the LEV file.
+		FileStream file;
+		if (!file.open(filePath, FileStream::MODE_READ))
+		{
+			return false;
+		}
+
+		// Check the version.
+		u32 version;
+		file.read(&version);
+		if (version < LEF_MinVersion || version > LEF_CurVersion)
+		{
+			file.close();
+			return false;
+		}
+
+		// Load the level.
+		file.read(&s_level.name);
+		file.read(&s_level.slot);
+		file.read(&s_level.palette);
+		file.readBuffer(&s_level.featureSet, sizeof(TFE_Editor::FeatureSet));
+		file.readBuffer(&s_level.parallax, sizeof(Vec2f));
+		file.readBuffer(&s_level.bounds, sizeof(Vec3f) * 2);
+		file.readBuffer(&s_level.layerRange, sizeof(s32) * 2);
+
+		// Textures.
+		u32 textureCount;
+		file.read(&textureCount);
+		s_level.textures.resize(textureCount);
+		LevelTextureAsset* tex = s_level.textures.data();
+		for (u32 i = 0; i < textureCount; i++)
+		{
+			file.read(&tex[i].name);
+			tex[i].handle = loadTexture(tex[i].name.c_str());
+		}
+
+		// Sectors.
+		u32 sectorCount;
+		file.read(&sectorCount);
+		s_level.sectors.resize(sectorCount);
+		EditorSector* sector = s_level.sectors.data();
+		for (u32 i = 0; i < sectorCount; i++, sector++)
+		{
+			file.read(&sector->id);
+			file.read(&sector->name);
+			file.readBuffer(&sector->floorTex, sizeof(LevelTexture));
+			file.readBuffer(&sector->ceilTex, sizeof(LevelTexture));
+			file.read(&sector->floorHeight);
+			file.read(&sector->ceilHeight);
+			file.read(&sector->secHeight);
+			file.read(&sector->ambient);
+			file.read(sector->flags, 3);
+
+			u32 vtxCount;
+			file.read(&vtxCount);
+			sector->vtx.resize(vtxCount);
+			file.readBuffer(sector->vtx.data(), sizeof(Vec2f), vtxCount);
+
+			u32 wallCount;
+			file.read(&wallCount);
+			sector->walls.resize(wallCount);
+			file.readBuffer(sector->walls.data(), sizeof(EditorWall), wallCount);
+
+			file.readBuffer(sector->bounds, sizeof(Vec3f), 2);
+			file.read(&sector->layer);
+			sector->searchKey = 0;
+
+			sectorToPolygon(sector);
+		}
+		file.close();
+
+		return true;
+	}
+		
+	// Save in the binary editor format.
+	bool saveLevel()
+	{
+		Project* project = project_get();
+		if (!project)
+		{
+			LE_ERROR("Cannot save if no project is open.");
+			return false;
+		}
+
+		char filePath[TFE_MAX_PATH];
+		sprintf(filePath, "%s/%s.tfl", project->path, s_level.slot.c_str());
+		LE_INFO("Saving level to '%s'", filePath);
+
+		FileStream file;
+		if (!file.open(filePath, FileStream::MODE_WRITE))
+		{
+			LE_ERROR("Cannot open '%s' for writing.", filePath);
+			return false;
+		}
+
+		// Version.
+		const u32 version = LEF_CurVersion;
+		file.write(&version);
+
+		// Level data.
+		file.write(&s_level.name);
+		file.write(&s_level.slot);
+		file.write(&s_level.palette);
+		file.writeBuffer(&s_level.featureSet, sizeof(TFE_Editor::FeatureSet));
+		file.writeBuffer(&s_level.parallax, sizeof(Vec2f));
+		file.writeBuffer(&s_level.bounds, sizeof(Vec3f) * 2);
+		file.writeBuffer(&s_level.layerRange, sizeof(s32) * 2);
+
+		// Textures.
+		const u32 textureCount = (u32)s_level.textures.size();
+		file.write(&textureCount);
+		LevelTextureAsset* tex = s_level.textures.data();
+		for (u32 i = 0; i < textureCount; i++)
+		{
+			file.write(&tex[i].name);
+		}
+
+		// Sectors.
+		const u32 sectorCount = (u32)s_level.sectors.size();
+		file.write(&sectorCount);
+		EditorSector* sector = s_level.sectors.data();
+		for (u32 i = 0; i < sectorCount; i++, sector++)
+		{
+			file.write(&sector->id);
+			file.write(&sector->name);
+			file.writeBuffer(&sector->floorTex, sizeof(LevelTexture));
+			file.writeBuffer(&sector->ceilTex, sizeof(LevelTexture));
+			file.write(&sector->floorHeight);
+			file.write(&sector->ceilHeight);
+			file.write(&sector->secHeight);
+			file.write(&sector->ambient);
+			file.write(sector->flags, 3);
+
+			u32 vtxCount = (u32)sector->vtx.size();
+			file.write(&vtxCount);
+			file.writeBuffer(sector->vtx.data(), sizeof(Vec2f), vtxCount);
+
+			u32 wallCount = (u32)sector->walls.size();
+			file.write(&wallCount);
+			file.writeBuffer(sector->walls.data(), sizeof(EditorWall), wallCount);
+
+			file.writeBuffer(sector->bounds, sizeof(Vec3f), 2);
+			file.write(&sector->layer);
+			// Polygon is derived on load.
+			// Searchkey is reset on load.
+		}
+		file.close();
+
+		LE_INFO("Save Complete");
+		return true;
+	}
+
+	// Export the level to the game format.
+	bool exportLevel()
+	{
+		return false;
 	}
 
 	EditorTexture* getTexture(s32 index)
@@ -828,6 +1013,19 @@ namespace LevelEditor
 
 		return hitInfo->hitSectorId >= 0;
 	}
+	
+	bool pointInsideAABB3d(const Vec3f* aabb, const Vec3f* pt)
+	{
+		return (pt->x >= aabb[0].x && pt->x <= aabb[1].x &&
+			pt->y >= aabb[0].y && pt->y <= aabb[1].y &&
+			pt->z >= aabb[0].z && pt->z <= aabb[1].z);
+	}
+
+	bool pointInsideAABB2d(const Vec3f* aabb, const Vec3f* pt)
+	{
+		return (pt->x >= aabb[0].x && pt->x <= aabb[1].x &&
+			pt->z >= aabb[0].z && pt->z <= aabb[1].z);
+	}
 
 	bool aabbOverlap3d(const Vec3f* aabb0, const Vec3f* aabb1)
 	{
@@ -906,7 +1104,7 @@ namespace LevelEditor
 		EditorSector* sector = s_level.sectors.data();
 		for (s32 i = 0; i < count; i++, sector++)
 		{
-			if (includeNeighborHeights && aabbOverlap2d(sector->bounds, bounds))
+			/*if (includeNeighborHeights && aabbOverlap2d(sector->bounds, bounds))
 			{
 				f32 yBounds[] = { sector->bounds[0].y, sector->bounds[1].y };
 
@@ -928,7 +1126,7 @@ namespace LevelEditor
 				}
 				result->push_back(sector);
 			}
-			else if (aabbOverlap3d(sector->bounds, bounds))
+			else */if (aabbOverlap3d(sector->bounds, bounds))
 			{
 				result->push_back(sector);
 			}

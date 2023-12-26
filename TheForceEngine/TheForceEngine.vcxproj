@@ -461,6 +461,7 @@ echo ^)";
     <ClInclude Include="TFE_Editor\history.h" />
     <ClInclude Include="TFE_Editor\LevelEditor\browser.h" />
     <ClInclude Include="TFE_Editor\LevelEditor\camera.h" />
+    <ClInclude Include="TFE_Editor\LevelEditor\error.h" />
     <ClInclude Include="TFE_Editor\LevelEditor\infoPanel.h" />
     <ClInclude Include="TFE_Editor\LevelEditor\levelEditor.h" />
     <ClInclude Include="TFE_Editor\LevelEditor\levelEditorData.h" />
