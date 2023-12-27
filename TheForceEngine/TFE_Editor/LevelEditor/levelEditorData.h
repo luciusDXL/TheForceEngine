@@ -189,7 +189,7 @@ namespace LevelEditor
 	// Get all sectors that have bounds that contain the point.
 	bool getOverlappingSectorsPt(const Vec3f* pos, SectorList* result);
 	// Get all sectors that have bounds that overlap the input bounds.
-	bool getOverlappingSectorsBounds(const Vec3f bounds[2], SectorList* result, bool includeNeighborHeights = false);
+	bool getOverlappingSectorsBounds(const Vec3f bounds[2], SectorList* result);
 	// Helpers
 	bool aabbOverlap3d(const Vec3f* aabb0, const Vec3f* aabb1);
 	bool aabbOverlap2d(const Vec3f* aabb0, const Vec3f* aabb1);

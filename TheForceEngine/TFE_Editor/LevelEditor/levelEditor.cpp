@@ -3096,7 +3096,7 @@ namespace LevelEditor
 		bounds[1].x += eps;
 		bounds[1].z += eps;
 		SectorList sectorList;
-		if (!getOverlappingSectorsBounds(bounds, &sectorList, true))
+		if (!getOverlappingSectorsBounds(bounds, &sectorList))
 		{
 			return;
 		}

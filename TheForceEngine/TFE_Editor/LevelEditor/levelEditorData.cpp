@@ -1095,7 +1095,7 @@ namespace LevelEditor
 		return !result->empty();
 	}
 	   
-	bool getOverlappingSectorsBounds(const Vec3f bounds[2], SectorList* result, bool includeNeighborHeights)
+	bool getOverlappingSectorsBounds(const Vec3f bounds[2], SectorList* result)
 	{
 		if (!bounds || !result) { return false; }
 
@@ -1104,29 +1104,7 @@ namespace LevelEditor
 		EditorSector* sector = s_level.sectors.data();
 		for (s32 i = 0; i < count; i++, sector++)
 		{
-			/*if (includeNeighborHeights && aabbOverlap2d(sector->bounds, bounds))
-			{
-				f32 yBounds[] = { sector->bounds[0].y, sector->bounds[1].y };
-
-				const s32 wallCount = (s32)sector->walls.size();
-				const EditorWall* wall = sector->walls.data();
-				for (s32 w = 0; w < wallCount; w++, wall++)
-				{
-					if (wall->adjoinId < 0) { continue; }
-					EditorSector* next = &s_level.sectors[wall->adjoinId];
-					yBounds[0] = std::min(yBounds[0], next->bounds[0].y);
-					yBounds[1] = std::max(yBounds[1], next->bounds[1].y);
-				}
-
-				// Y
-				if (yBounds[0] > bounds[1].y || yBounds[1] < bounds[0].y ||
-					bounds[0].y > yBounds[1] || bounds[1].y < yBounds[0])
-				{
-					continue;
-				}
-				result->push_back(sector);
-			}
-			else */if (aabbOverlap3d(sector->bounds, bounds))
+			if (aabbOverlap3d(sector->bounds, bounds))
 			{
 				result->push_back(sector);
 			}
