@@ -973,7 +973,7 @@ namespace LevelEditor
 			}
 		}
 
-		triDraw3d_draw(&s_camera, s_gridSize, 0.0f);
+		triDraw3d_draw(&s_camera, (f32)s_viewportSize.x, (f32)s_viewportSize.z, s_gridSize, 0.0f);
 		lineDraw3d_drawLines(&s_camera, false, false);
 	}
 
@@ -1100,13 +1100,17 @@ namespace LevelEditor
 					// Bottom
 					if (next->floorHeight > sector->floorHeight)
 					{
+						bool sky = (sector->flags[0] & SEC_FLAGS1_PIT) != 0 &&
+							       (next->flags[0] & SEC_FLAGS1_EXT_FLOOR_ADJ) != 0;
+
 						const f32 botHeight = next->floorHeight - sector->floorHeight;
 						Vec3f corners[] = { {v0.x, next->floorHeight,   v0.z},
 											{v1.x, sector->floorHeight, v1.z} };
 						if (s_sectorDrawMode == SDM_TEXTURED_FLOOR || s_sectorDrawMode == SDM_TEXTURED_CEIL)
 						{
-							const EditorTexture* tex = calculateTextureCoords(wall, &wall->tex[WP_BOT], wallLengthTexels, botHeight, flipHorz, uvCorners);
-							TFE_RenderShared::triDraw3d_addQuadTextured(TRIMODE_OPAQUE, corners, uvCorners, wallColor, tex->frames[0]);
+							const LevelTexture* texPtr = sky ? &sector->floorTex : &wall->tex[WP_BOT];
+							const EditorTexture* tex = calculateTextureCoords(wall, texPtr, wallLengthTexels, botHeight, flipHorz, uvCorners);
+							TFE_RenderShared::triDraw3d_addQuadTextured(TRIMODE_OPAQUE, corners, uvCorners, wallColor, tex->frames[0], sky);
 						}
 						else
 						{
@@ -1124,14 +1128,18 @@ namespace LevelEditor
 					// Top
 					if (next->ceilHeight < sector->ceilHeight)
 					{
+						bool sky = (sector->flags[0] & SEC_FLAGS1_EXTERIOR) != 0 &&
+							       (next->flags[0] & SEC_FLAGS1_EXT_ADJ) != 0;
+
 						const f32 topHeight = sector->ceilHeight - next->ceilHeight;
 						Vec3f corners[] = { {v0.x, sector->ceilHeight, v0.z},
 										    {v1.x, next->ceilHeight,   v1.z} };
 
 						if (s_sectorDrawMode == SDM_TEXTURED_FLOOR || s_sectorDrawMode == SDM_TEXTURED_CEIL)
 						{
-							const EditorTexture* tex = calculateTextureCoords(wall, &wall->tex[WP_TOP], wallLengthTexels, topHeight, flipHorz, uvCorners);
-							TFE_RenderShared::triDraw3d_addQuadTextured(TRIMODE_OPAQUE, corners, uvCorners, wallColor, tex ? tex->frames[0] : nullptr);
+							const LevelTexture* texPtr = sky ? &sector->ceilTex : &wall->tex[WP_TOP];
+							const EditorTexture* tex = calculateTextureCoords(wall, texPtr, wallLengthTexels, topHeight, flipHorz, uvCorners);
+							TFE_RenderShared::triDraw3d_addQuadTextured(TRIMODE_OPAQUE, corners, uvCorners, wallColor, tex ? tex->frames[0] : nullptr, sky);
 						}
 						else
 						{
@@ -1196,7 +1204,8 @@ namespace LevelEditor
 			{
 				if (s_sectorDrawMode == SDM_TEXTURED_FLOOR || s_sectorDrawMode == SDM_TEXTURED_CEIL)
 				{
-					triDraw3d_addTextured(TRIMODE_OPAQUE, idxCount, vtxCount, vtxDataFlr, uvFlr, sector->poly.triIdx.data(), c_sectorTexClr[colorIndex], false, floorTex->frames[0], showGridOnFlats);
+					bool sky = (sector->flags[0] & SEC_FLAGS1_PIT) != 0;
+					triDraw3d_addTextured(TRIMODE_OPAQUE, idxCount, vtxCount, vtxDataFlr, uvFlr, sector->poly.triIdx.data(), c_sectorTexClr[colorIndex], false, floorTex->frames[0], showGridOnFlats, sky);
 				}
 				else if (s_sectorDrawMode == SDM_LIGHTING)
 				{
@@ -1211,7 +1220,8 @@ namespace LevelEditor
 			{
 				if (s_sectorDrawMode == SDM_TEXTURED_FLOOR || s_sectorDrawMode == SDM_TEXTURED_CEIL)
 				{
-					triDraw3d_addTextured(TRIMODE_OPAQUE, idxCount, vtxCount, vtxDataCeil, uvCeil, sector->poly.triIdx.data(), c_sectorTexClr[colorIndex], true, ceilTex->frames[0], showGridOnFlats);
+					bool sky = (sector->flags[0] & SEC_FLAGS1_EXTERIOR) != 0;
+					triDraw3d_addTextured(TRIMODE_OPAQUE, idxCount, vtxCount, vtxDataCeil, uvCeil, sector->poly.triIdx.data(), c_sectorTexClr[colorIndex], true, ceilTex->frames[0], showGridOnFlats, sky);
 				}
 				else if (s_sectorDrawMode == SDM_LIGHTING)
 				{
@@ -1232,7 +1242,7 @@ namespace LevelEditor
 			drawBox(&s_cursor3d, size, 3.0f, 0x80ff8020);
 		}
 
-		TFE_RenderShared::triDraw3d_draw(&s_camera, s_gridSize, s_gridOpacity);
+		TFE_RenderShared::triDraw3d_draw(&s_camera, (f32)s_viewportSize.x, (f32)s_viewportSize.z, s_gridSize, s_gridOpacity);
 		TFE_RenderShared::lineDraw3d_drawLines(&s_camera, true, false);
 
 		renderHighlighted3d();

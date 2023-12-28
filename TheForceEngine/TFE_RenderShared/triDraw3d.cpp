@@ -3,6 +3,7 @@
 #include <TFE_RenderBackend/vertexBuffer.h>
 #include <TFE_RenderBackend/indexBuffer.h>
 #include <TFE_System/system.h>
+#include <TFE_Jedi/Math/core_math.h>
 #include <assert.h>
 #include <vector>
 
@@ -50,6 +51,8 @@ namespace TFE_RenderShared
 		s32 svCameraProj = -1;
 		s32 svGridScaleOpacity = -1;
 		s32 svIsTextured = -1;
+		s32 skyParam0Id = -1;
+		s32 skyParam1Id = -1;
 	};
 	static ShaderState s_shaderState[TRIMODE_COUNT];
 
@@ -69,7 +72,8 @@ namespace TFE_RenderShared
 
 	static DrawMode s_lastDrawMode = TRIMODE_COUNT;
 
-	bool canMergeDraws(DrawMode mode, TextureGpu* texture, bool showGrid = true);
+	bool canMergeDraws(DrawMode mode, TextureGpu* texture, u32 drawFlags = TFLAG_NONE);
+	u32 setDrawFlags(bool showGrid, bool sky);
 
 	bool tri3d_loadTextureVariant(DrawMode mode, u32 defineCount, ShaderDefine* defines)
 	{
@@ -84,7 +88,9 @@ namespace TFE_RenderShared
 		s_shaderState[mode].svCameraView = s_shader[mode].getVariableId("CameraView");
 		s_shaderState[mode].svCameraProj = s_shader[mode].getVariableId("CameraProj");
 		s_shaderState[mode].svGridScaleOpacity = s_shader[mode].getVariableId("GridScaleOpacity");
-		s_shaderState[mode].svIsTextured = s_shader[mode].getVariableId("isTextured");
+		s_shaderState[mode].svIsTextured = s_shader[mode].getVariableId("isTexturedSky");
+		s_shaderState[mode].skyParam0Id = s_shader[mode].getVariableId("SkyParam0");
+		s_shaderState[mode].skyParam1Id = s_shader[mode].getVariableId("SkyParam1");
 		if (s_shaderState[mode].svCameraPos < 0 || s_shaderState[mode].svCameraView < 0 || s_shaderState[mode].svCameraProj < 0)
 		{
 			return false;
@@ -173,17 +179,15 @@ namespace TFE_RenderShared
 		return draw;
 	}
 
-	bool canMergeDraws(DrawMode mode, TextureGpu* texture, bool showGrid)
+	bool canMergeDraws(DrawMode mode, TextureGpu* texture, u32 drawFlags)
 	{
-		bool canMerge = (s_triDrawCount[mode] > 0 && s_triDraw[mode][s_triDrawCount[mode] - 1].texture == texture && mode == s_lastDrawMode);
-		// Grid settings.
-		if (canMerge && showGrid && (s_triDraw[mode][s_triDrawCount[mode] - 1].drawFlags & TFLAG_NO_GRID)) { canMerge = false; }
-		else if (canMerge && !showGrid && !(s_triDraw[mode][s_triDrawCount[mode] - 1].drawFlags & TFLAG_NO_GRID)) { canMerge = false; }
+		const bool canMerge = (s_triDrawCount[mode] > 0 && s_triDraw[mode][s_triDrawCount[mode] - 1].texture == texture && mode == s_lastDrawMode) &&
+			s_triDraw[mode][s_triDrawCount[mode] - 1].drawFlags == drawFlags;
 		s_lastDrawMode = mode;
 		return canMerge;
 	}
 		
-	void triDraw3d_addQuadTextured(DrawMode pass, Vec3f* corners, const Vec2f* uvCorners, const u32 color, TextureGpu* texture)
+	void triDraw3d_addQuadTextured(DrawMode pass, Vec3f* corners, const Vec2f* uvCorners, const u32 color, TextureGpu* texture, bool sky)
 	{
 		if (!s_vertices) { return; }
 		const s32 idxOffset = s_idxCount;
@@ -199,6 +203,7 @@ namespace TFE_RenderShared
 		}
 
 		// New draw call or add to the existing call?
+		u32 drawFlags = setDrawFlags(true, sky);
 		if (canMergeDraws(pass, texture))
 		{
 			// Append to the previous draw call.
@@ -218,7 +223,7 @@ namespace TFE_RenderShared
 				draw->idxOffset = idxOffset;
 				draw->vtxCount = 4;
 				draw->idxCount = 6;
-				draw->drawFlags = TFLAG_NONE;
+				draw->drawFlags = drawFlags;
 			}
 			else
 			{
@@ -264,8 +269,8 @@ namespace TFE_RenderShared
 		s_vtxCount += 4;
 		s_idxCount += 6;
 	}
-
-	void triDraw3d_addTextured(DrawMode pass, u32 idxCount, u32 vtxCount, const Vec3f* vertices, const Vec2f* uv, const s32* indices, const u32 color, bool invSide, TextureGpu* texture, bool showGrid)
+		
+	void triDraw3d_addTextured(DrawMode pass, u32 idxCount, u32 vtxCount, const Vec3f* vertices, const Vec2f* uv, const s32* indices, const u32 color, bool invSide, TextureGpu* texture, bool showGrid, bool sky)
 	{
 		if (!s_vertices) { return; }
 		const s32 idxOffset = s_idxCount;
@@ -278,7 +283,8 @@ namespace TFE_RenderShared
 		}
 
 		// New draw call or add to the existing call?
-		if (canMergeDraws(pass, texture, showGrid))
+		u32 drawFlags = setDrawFlags(showGrid, sky);
+		if (canMergeDraws(pass, texture, drawFlags))
 		{
 			// Append to the previous draw call.
 			s_triDraw[pass][s_triDrawCount[pass] - 1].vtxCount += vtxCount;
@@ -297,7 +303,7 @@ namespace TFE_RenderShared
 				draw->idxOffset = idxOffset;
 				draw->vtxCount = vtxCount;
 				draw->idxCount = idxCount;
-				draw->drawFlags = showGrid ? TFLAG_NONE : TFLAG_NO_GRID;
+				draw->drawFlags = drawFlags;
 			}
 			else
 			{
@@ -428,7 +434,8 @@ namespace TFE_RenderShared
 		}
 
 		// New draw call or add to the existing call?
-		if (canMergeDraws(pass, nullptr, showGrid))
+		u32 drawFlags = setDrawFlags(showGrid, false);
+		if (canMergeDraws(pass, nullptr, drawFlags))
 		{
 			// Append to the previous draw call.
 			s_triDraw[pass][s_triDrawCount[pass] - 1].vtxCount += vtxCount;
@@ -447,7 +454,7 @@ namespace TFE_RenderShared
 				draw->idxOffset = idxOffset;
 				draw->vtxCount = vtxCount;
 				draw->idxCount = idxCount;
-				draw->drawFlags = showGrid ? TFLAG_NONE : TFLAG_NO_GRID;
+				draw->drawFlags = drawFlags;
 			}
 			else
 			{
@@ -486,7 +493,7 @@ namespace TFE_RenderShared
 		s_idxCount += idxCount;
 	}
 
-	void triDraw3d_draw(const Camera3d* camera, f32 gridScale, f32 gridOpacity)
+	void triDraw3d_draw(const Camera3d* camera, f32 width, f32 height, f32 gridScale, f32 gridOpacity)
 	{
 		if (s_vtxCount < 1 || s_idxCount < 1) { return; }
 
@@ -499,6 +506,37 @@ namespace TFE_RenderShared
 
 		// Enable blending.
 		TFE_RenderState::setBlendMode(BLEND_ONE, BLEND_ONE_MINUS_SRC_ALPHA);
+
+		// Sky settings.
+		// Compute the camera yaw from the camera direction and rotate it 90 degrees.
+		// This generates a value from 0 to 1.
+		Vec3f dir = { camera->viewMtx.m2.x, camera->viewMtx.m2.y, camera->viewMtx.m2.z };
+		f32 cameraYaw = fmodf(-atan2f(dir.z, dir.x) / (2.0f*PI) + 0.25f, 1.0f);
+		cameraYaw = cameraYaw < 0.0f ? cameraYaw + 1.0f : cameraYaw;
+		f32 cameraPitch = asinf(dir.y);
+
+		DisplayInfo info;
+		TFE_RenderBackend::getDisplayInfo(&info);
+
+		// TODO: Make this adjustable.
+		f32 parallax[] = { 1024.0f, 1024.0f };
+		const f32 oneOverTwoPi = 1.0f / 6.283185f;
+		const f32 rad45 = 0.785398f;	// 45 degrees in radians.
+		const f32 skyParam0[4] =
+		{
+			cameraYaw * parallax[0],
+			TFE_Jedi::clamp(cameraPitch, -rad45, rad45) * parallax[1] * oneOverTwoPi,
+			parallax[0] * oneOverTwoPi,
+			200.0f / height,
+		};
+		const f32 aspectScale = 3.0f / 4.0f;
+		const f32 nearPlaneHalfLen = aspectScale * (width / height);
+		f32 skyParam1[4] =
+		{
+		   -nearPlaneHalfLen,
+		    nearPlaneHalfLen * 2.0f / width,
+			1.0f, 1.0f
+		};
 
 		bool blendEnable[] = { false, true };
 		for (s32 i = 0; i < TRIMODE_COUNT; i++)
@@ -520,29 +558,36 @@ namespace TFE_RenderShared
 			s_indexBuffer.bind();
 
 			TFE_RenderState::setStateEnable(blendEnable[i], STATE_BLEND);
-
+			s_shader[i].setVariable(s_shaderState[i].skyParam0Id, SVT_VEC4, skyParam0);
+			
 			// Draw.
 			s32 isTexPrev = -1;
 			bool prevGrid = true;
 			for (u32 t = 0; t < s_triDrawCount[i]; t++)
 			{
 				Tri3dDraw* draw = &s_triDraw[i][t];
-				s32 isTextured = draw->texture ? 1 : 0;
+				s32 isTexturedSky[] = { draw->texture ? 1 : 0, (draw->drawFlags & TFLAG_SKY) ? 1 : 0 };
 				bool showGrid = !(draw->drawFlags & TFLAG_NO_GRID);
-				s_shader[i].setVariable(s_shaderState[i].svIsTextured, SVT_ISCALAR, &isTextured);
-				if (isTextured)
+				if (isTexturedSky[1])
+				{
+					skyParam1[2] = 1.0f / f32(draw->texture->getWidth());
+					skyParam1[3] = 1.0f / f32(draw->texture->getHeight());
+					s_shader[i].setVariable(s_shaderState[i].skyParam1Id, SVT_VEC4, skyParam1);
+				}
+				s_shader[i].setVariable(s_shaderState[i].svIsTextured, SVT_IVEC2, isTexturedSky);
+				if (isTexturedSky[0])
 				{
 					draw->texture->bind(0);
-					if (isTexPrev != isTextured)
+					if (isTexPrev != isTexturedSky[0])
 					{
 						s_shader[i].setVariable(s_shaderState[i].svGridScaleOpacity, SVT_VEC2, showGrid ? gridScaleOpacityTex : gridScaleOpacityNone);
 					}
 				}
-				else if (isTexPrev != isTextured || prevGrid != showGrid)
+				else if (isTexPrev != isTexturedSky[0] || prevGrid != showGrid)
 				{
 					s_shader[i].setVariable(s_shaderState[i].svGridScaleOpacity, SVT_VEC2, showGrid ? gridScaleOpacity : gridScaleOpacityNone);
 				}
-				isTexPrev = isTextured;
+				isTexPrev = isTexturedSky[0];
 				prevGrid = showGrid;
 
 				TFE_RenderBackend::drawIndexedTriangles(draw->idxCount / 3, sizeof(u32), draw->idxOffset);
@@ -560,5 +605,13 @@ namespace TFE_RenderShared
 		{
 			s_triDrawCount[i] = 0;
 		}
+	}
+
+	u32 setDrawFlags(bool showGrid, bool sky)
+	{
+		u32 drawFlags = 0;
+		if (!showGrid) { drawFlags |= TFLAG_NO_GRID; }
+		if (sky) { drawFlags |= TFLAG_SKY; }
+		return drawFlags;
 	}
 }

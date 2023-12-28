@@ -8,21 +8,51 @@ in vec3 Frag_Pos;
 out vec4 Out_Color;
 
 uniform sampler2D image;
-uniform int isTextured;
+uniform ivec2 isTexturedSky;
 uniform vec2 GridScaleOpacity;
+uniform vec4 SkyParam0;	// xOffset, yOffset, xScale, yScale
+uniform vec4 SkyParam1;	// atan(xScale, xOffset), 1.0/texWidth, 1.0/texHeight
+
+// For now just stick with the vanilla projection.
+vec2 calculateSkyProjection(vec2 texOffset)
+{
+	vec2 uv = vec2(0.0);
+
+	// dir = offset + x|y * scale
+	// where x = arcTan(offset + xPixel * scale)
+	// and   y = yPixel
+	vec2 xy  = vec2(atan(SkyParam1.x + gl_FragCoord.x*SkyParam1.y), gl_FragCoord.y);
+	vec2 dir = SkyParam0.xy + xy*SkyParam0.zw;
+	uv.x =  (dir.x + texOffset.x);
+	uv.y = -(dir.y + texOffset.y);
+
+	return uv * SkyParam1.zw;
+}
 
 void main()
 {
 	vec4 outColor = Frag_Color;
 	float gridOpacityMod = 1.0;
-	if (int(isTextured) == int(1))
+	if (isTexturedSky.x == int(1))
 	{
-		vec4 texColor = texture(image, Frag_Uv2);
-	#ifdef TRANS
-		outColor *= texColor;
-	#else
-		outColor.rgb *= texColor.rgb;
-	#endif
+		vec2 uv = Frag_Uv2;
+		if (isTexturedSky.y == int(1))
+		{
+			uv = calculateSkyProjection(vec2(0.0)); 
+		}
+		vec4 texColor = texture(image, uv);
+		if (isTexturedSky.y == int(1))	// Sky is fullbright.
+		{
+			outColor = texColor;
+		}
+		else
+		{
+		#ifdef TRANS
+			outColor *= texColor;
+		#else
+			outColor.rgb *= texColor.rgb;
+		#endif
+		}
 
 		// Make the grid more translucent on darker surfaces.
 		// On bright surfaces it stays about the same.
