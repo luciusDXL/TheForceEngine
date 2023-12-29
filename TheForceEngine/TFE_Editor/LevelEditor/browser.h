@@ -10,8 +10,14 @@
 
 namespace LevelEditor
 {
+	enum BrowseMode
+	{
+		BROWSE_TEXTURE,
+		BROWSE_ENTITY,
+	};
+
 	void browserBegin(s32 offset);
-	void drawBrowser();
+	void drawBrowser(BrowseMode mode = BROWSE_TEXTURE);
 	void browserEnd();
 	void browserScrollToSelection();
 }

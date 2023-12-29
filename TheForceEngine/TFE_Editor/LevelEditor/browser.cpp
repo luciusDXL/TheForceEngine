@@ -1,12 +1,18 @@
 #include "browser.h"
+#include "entity.h"
+#include "error.h"
+#include "levelEditor.h"
 #include "infoPanel.h"
 #include "sharedState.h"
 #include <TFE_Editor/editor.h>
 #include <TFE_Editor/errorMessages.h>
+#include <TFE_Editor/AssetBrowser/assetBrowser.h>
 #include <TFE_Editor/EditorAsset/editorTexture.h>
 #include <TFE_Editor/EditorAsset/editorFrame.h>
 #include <TFE_Editor/EditorAsset/editorSprite.h>
+#include <TFE_FileSystem/fileutil.h>
 #include <TFE_System/system.h>
+#include <TFE_System/parser.h>
 #include <TFE_System/math.h>
 #include <TFE_Input/input.h>
 
@@ -40,6 +46,7 @@ namespace LevelEditor
 	static s32 s_focusOnRow = -1;
 
 	void browseTextures();
+	void browseEntities();
 	
 	void browserBegin(s32 offset)
 	{
@@ -61,10 +68,18 @@ namespace LevelEditor
 		ImGui::End();
 	}
 
-	void drawBrowser()
+	void drawBrowser(BrowseMode mode)
 	{
 		browserBegin(infoPanelGetHeight());
-		browseTextures();
+		switch (mode)
+		{
+			case BROWSE_TEXTURE:
+				browseTextures();
+				break;
+			case BROWSE_ENTITY:
+				browseEntities();
+				break;
+		}
 		browserEnd();
 	}
 	
@@ -260,6 +275,69 @@ namespace LevelEditor
 					ImGui::SameLine();
 				}
 				ImGui::NewLine();
+			}
+		}
+		ImGui::EndChild();
+	}
+
+	void browseEntities()
+	{
+		// Do sort stuff later....
+
+		const s32 count = (s32)s_entityList.size();
+		const u32 padding = 8;
+		s32 selectedIndex = s_selectedTexture;
+
+		ImGui::BeginChild("##EntityList");
+		{
+			const u32 idBase = 0x100100;
+			for (s32 i = 0, x = 0; i < count; i++)
+			{
+				s32 index = i;
+				Entity* entity = &s_entityList[index];
+
+				f32 du = fabsf(entity->st[1].x - entity->st[0].x);
+				f32 dv = fabsf(entity->st[1].z - entity->st[0].z);
+				void* ptr = TFE_RenderBackend::getGpuPtr(entity->image);
+
+				u32 w = 64, h = 64;
+				if (du > dv)
+				{
+					w = 64;
+					h = u32(64.0f * dv / du);
+				}
+				else if (du < dv)
+				{
+					h = 64;
+					w = u32(64.0f * du / dv);
+				}
+
+				if (x + w + padding >= 400)
+				{
+					ImGui::NewLine();
+					x = 0;
+				}
+				x += w + padding;
+
+				bool isSelected = selectedIndex == index;
+				if (isSelected)
+				{
+					ImGui::PushStyleColor(ImGuiCol_Button, { 1.0f, 1.0f, 0.3f, 1.0f });
+				}
+
+				ImGui::PushID(idBase + i);
+				if (ImGui::ImageButton(ptr, ImVec2(f32(w), f32(h)), ImVec2(entity->uv[0].x, entity->uv[0].z), ImVec2(entity->uv[1].x, entity->uv[1].z), 2))
+				{
+					s_selectedTexture = index;
+				}
+				ImGui::PopID();
+				setTooltip("%s", entity->name.c_str());
+
+				if (isSelected)
+				{
+					ImGui::PopStyleColor();
+				}
+				ImGui::SameLine();
 			}
 		}
 		ImGui::EndChild();

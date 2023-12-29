@@ -1,6 +1,7 @@
 #include "levelEditor.h"
 #include "levelEditorData.h"
 #include "levelEditorHistory.h"
+#include "entity.h"
 #include "selection.h"
 #include "infoPanel.h"
 #include "browser.h"
@@ -209,8 +210,7 @@ namespace LevelEditor
 	Vec3f viewportCoordToWorldDir3d(Vec2i vCoord);
 	Vec2i worldPos2dToMap(const Vec2f& worldPos);
 	bool worldPosToViewportCoord(Vec3f worldPos, Vec2f* screenPos);
-	TextureGpu* loadGpuImage(const char* path);
-
+	
 	void selectFromSingleVertex(EditorSector* root, s32 featureIndex, bool clearList);
 	void selectOverlappingVertices(EditorSector* root, s32 featureIndex, const Vec2f* rootVtx, bool addToSelection, bool addToVtxList=false);
 	void toggleVertexGroupInclusion(EditorSector* sector, s32 featureId);
@@ -263,6 +263,7 @@ namespace LevelEditor
 		infoPanelAddMsg(LE_MSG_INFO, "Loaded level '%s'", s_level.name.c_str());
 
 		loadPaletteAndColormap();
+		loadEntityData();
 
 		viewport_init();
 		viewport_update((s32)UI_SCALE(480) + 16, (s32)UI_SCALE(68) + 18);
@@ -4329,7 +4330,7 @@ namespace LevelEditor
 		drawInfoPanel();
 
 		// Browser
-		drawBrowser();
+		drawBrowser(s_editMode == LEDIT_ENTITY ? BROWSE_ENTITY : BROWSE_TEXTURE);
 
 		// Main viewport view.
 		levelEditWinBegin();

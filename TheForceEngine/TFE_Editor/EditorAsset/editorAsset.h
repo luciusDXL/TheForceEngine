@@ -77,6 +77,7 @@ namespace TFE_Editor
 	typedef std::vector<Asset> AssetList;
 		
 	AssetHandle loadAssetData(AssetType type, Archive* archive, const AssetColorData* colorData, const char* name);
+	AssetHandle loadAssetData(const Asset* asset);
 	void  reloadAssetData(AssetHandle handle, Archive* archive, const AssetColorData* colorData);
 	void  freeAssetData(AssetHandle handle);
 	void* getAssetData(AssetHandle handle);
