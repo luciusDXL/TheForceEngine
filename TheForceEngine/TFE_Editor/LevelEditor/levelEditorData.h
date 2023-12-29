@@ -167,9 +167,21 @@ namespace LevelEditor
 		f32 dist;
 	};
 
+	struct StartPoint
+	{
+		Vec3f pos;
+		f32 yaw;
+		f32 pitch;
+		EditorSector* sector;
+	};
+
 	bool loadLevelFromAsset(TFE_Editor::Asset* asset);
+	TFE_Editor::AssetHandle loadTexture(const char* bmTextureName);
+	TFE_Editor::AssetHandle loadPalette(const char* paletteName);
+	TFE_Editor::AssetHandle loadColormap(const char* colormapName);
+	
 	bool saveLevel();
-	bool exportLevel();
+	bool exportLevel(const char* path, const char* name, const StartPoint* start);
 	void sectorToPolygon(EditorSector* sector);
 	void polygonToSector(EditorSector* sector);
 

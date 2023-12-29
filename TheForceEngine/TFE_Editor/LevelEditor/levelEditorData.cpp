@@ -1,6 +1,7 @@
 #include "levelEditorData.h"
 #include "selection.h"
 #include "error.h"
+#include "shell.h"
 #include <TFE_Editor/history.h>
 #include <TFE_Editor/errorMessages.h>
 #include <TFE_Editor/editorConfig.h>
@@ -15,6 +16,8 @@
 #include <TFE_Editor/AssetBrowser/assetBrowser.h>
 #include <TFE_Jedi/Level/rwall.h>
 #include <TFE_Jedi/Level/rsector.h>
+#include <TFE_Jedi/Level/rtexture.h>
+#include <TFE_Jedi/Level/levelData.h>
 #include <TFE_Asset/imageAsset.h>
 #include <TFE_DarkForces/mission.h>
 #include <TFE_Input/input.h>
@@ -39,6 +42,14 @@
 #include <map>
 
 using namespace TFE_Editor;
+using namespace TFE_Jedi;
+
+namespace TFE_DarkForces
+{
+	extern char s_colormapName[TFE_MAX_PATH];
+	extern u8* s_levelColorMap;
+	extern void mission_loadColormap();
+}
 
 namespace LevelEditor
 {
@@ -74,6 +85,20 @@ namespace LevelEditor
 		Asset* texAsset = AssetBrowser::findAsset(bmTextureName, TYPE_TEXTURE);
 		if (!texAsset) { return NULL_ASSET; }
 		return AssetBrowser::loadAssetData(texAsset);
+	}
+		
+	AssetHandle loadPalette(const char* paletteName)
+	{
+		Asset* palAsset = AssetBrowser::findAsset(paletteName, TYPE_PALETTE);
+		if (!palAsset) { return NULL_ASSET; }
+		return AssetBrowser::loadAssetData(palAsset);
+	}
+
+	AssetHandle loadColormap(const char* colormapName)
+	{
+		Asset* colormapAsset = AssetBrowser::findAsset(colormapName, TYPE_COLORMAP);
+		if (!colormapAsset) { return NULL_ASSET; }
+		return AssetBrowser::loadAssetData(colormapAsset);
 	}
 		
 	bool loadLevelFromAsset(Asset* asset)
@@ -561,9 +586,311 @@ namespace LevelEditor
 	}
 
 	// Export the level to the game format.
-	bool exportLevel()
+	#define WRITE_LINE(...) \
+		sprintf(buffer, __VA_ARGS__); \
+		file.writeBuffer(buffer, (u32)strlen(buffer));
+	#define NEW_LINE() file.writeBuffer(newLine, (u32)strlen(newLine))
+
+	bool exportDfLevel(const char* levFile)
 	{
-		return false;
+		FileStream file;
+		if (!file.open(levFile, FileStream::MODE_WRITE))
+		{
+			return false;
+		}
+
+		char newLine[256];
+		strcpy(newLine, "\r\n");
+
+		char buffer[256];
+		WRITE_LINE("%s", "LEV 2.1\r\n");
+		WRITE_LINE("LEVELNAME %s\r\n", s_level.name.c_str());
+		WRITE_LINE("PALETTE %s\r\n", s_level.palette.c_str());
+		WRITE_LINE("%s", "MUSIC surfin.GMD\r\n");
+		WRITE_LINE("%s", "PARALLAX 1024.0 1024.0\r\n");
+		NEW_LINE();
+
+		const s32 textureCount = (s32)s_level.textures.size();
+		WRITE_LINE("TEXTURES %d\r\n", textureCount);
+		const LevelTextureAsset* tex = s_level.textures.data();
+		for (s32 i = 0; i < textureCount; i++, tex++)
+		{
+			tex->name.c_str();
+			WRITE_LINE("  TEXTURE: %s\t\t#  %d\r\n", tex->name.c_str(), i);
+		}
+		NEW_LINE();
+
+		const s32 sectorCount = (s32)s_level.sectors.size();
+		WRITE_LINE("NUMSECTORS %d\r\n", sectorCount);
+		NEW_LINE();
+		NEW_LINE();
+
+		const EditorSector* sector = s_level.sectors.data();
+		for (s32 i = 0; i < sectorCount; i++, sector++)
+		{
+			WRITE_LINE("SECTOR %d\r\n", sector->id);
+
+			if (sector->name.empty()) { WRITE_LINE("  NAME\r\n"); }
+			else { WRITE_LINE("  NAME\t%s\r\n", sector->name.c_str()); }
+
+			WRITE_LINE("  AMBIENT\t%d\r\n", (s32)sector->ambient);
+			WRITE_LINE("  FLOOR TEXTURE\t%d\t%0.2f\t%0.2f\t%d\r\n", sector->floorTex.texIndex, sector->floorTex.offset.x, sector->floorTex.offset.z, 2);
+			WRITE_LINE("  FLOOR ALTITUDE\t%0.2f\r\n", -sector->floorHeight);
+			WRITE_LINE("  CEILING TEXTURE\t%d\t%0.2f\t%0.2f\t%d\r\n", sector->ceilTex.texIndex, sector->ceilTex.offset.x, sector->ceilTex.offset.z, 2);
+			WRITE_LINE("  CEILING ALTITUDE\t%0.2f\r\n", -sector->ceilHeight);
+			WRITE_LINE("  SECOND ALTITUDE\t%0.2f\r\n", -sector->secHeight);
+			WRITE_LINE("  FLAGS %u %u %u\r\n", sector->flags[0], sector->flags[1], sector->flags[2]);
+			WRITE_LINE("  LAYER %d\r\n", sector->layer);
+			NEW_LINE();
+
+			// Vertices.
+			s32 vtxCount = (s32)sector->vtx.size();
+			WRITE_LINE("  VERTICES %05d\r\n", vtxCount);
+			const Vec2f* vtx = sector->vtx.data();
+			for (s32 v = 0; v < vtxCount; v++, vtx++)
+			{
+				WRITE_LINE("    X: %0.2f\tZ: %0.2f\t#  %d\r\n", vtx->x, vtx->z, v);
+			}
+			NEW_LINE();
+
+			// Walls
+			s32 wallCount = (s32)sector->walls.size();
+			WRITE_LINE("  WALLS %d\r\n", wallCount);
+			const EditorWall* wall = sector->walls.data();
+			for (s32 w = 0; w < wallCount; w++, wall++)
+			{
+				WRITE_LINE("    WALL LEFT:\t%d  RIGHT:\t%d  MID:\t%d\t%0.2f\t%0.2f\t%d  TOP:\t%d\t%0.2f\t%0.2f\t%d  BOT:\t%d\t%0.2f\t%0.2f\t%d  "
+					"SIGN:\t%d\t%0.2f\t%0.2f  ADJOIN:\t%d  MIRROR:\t%d  WALK:\t%d  FLAGS: %d %d %d  LIGHT: %d\r\n", 
+					wall->idx[0], wall->idx[1],
+					wall->tex[WP_MID].texIndex, wall->tex[WP_MID].offset.x, wall->tex[WP_MID].offset.z, 0,
+					wall->tex[WP_TOP].texIndex, wall->tex[WP_TOP].offset.x, wall->tex[WP_TOP].offset.z, 0,
+					wall->tex[WP_BOT].texIndex, wall->tex[WP_BOT].offset.x, wall->tex[WP_BOT].offset.z, 0,
+					wall->tex[WP_SIGN].texIndex, wall->tex[WP_SIGN].offset.x, wall->tex[WP_SIGN].offset.z,
+					wall->adjoinId, wall->mirrorId, wall->adjoinId, wall->flags[0], wall->flags[1], wall->flags[2], wall->wallLight);
+			}
+			NEW_LINE();
+		}
+
+		file.close();
+		return true;
+	}
+
+	bool exportDfObj(const char* oFile, const StartPoint* start)
+	{
+		// For now require the start point.
+		if (!start) { return false; }
+
+		FileStream file;
+		if (!file.open(oFile, FileStream::MODE_WRITE))
+		{
+			return false;
+		}
+
+		char newLine[256];
+		strcpy(newLine, "\r\n");
+
+		char buffer[256];
+		WRITE_LINE("%s", "O 1.1\r\n");
+		NEW_LINE();
+
+		WRITE_LINE("LEVELNAME %s\r\n", s_level.name.c_str());
+		NEW_LINE();
+
+		WRITE_LINE("PODS %d\r\n", 0);
+		NEW_LINE();
+
+		WRITE_LINE("SPRS %d\r\n", 0);
+		NEW_LINE();
+
+		WRITE_LINE("FMES %d\r\n", 0);
+		NEW_LINE();
+
+		WRITE_LINE("SOUNDS %d\r\n", 0);
+		NEW_LINE();
+
+		// For now just put in a start point.
+		const f32 radToDeg = 360.0f / (2.0f * PI);
+		const f32 yaw   = fmodf(start->yaw * radToDeg + 180.0f, 360.0f);
+		const f32 pitch = start->pitch * radToDeg;
+		const f32 y = std::max(start->sector->floorHeight, start->pos.y - 5.8f);
+
+		WRITE_LINE("OBJECTS %d\r\n", 1);
+		WRITE_LINE("    CLASS: SPIRIT     DATA: 0   X: %0.2f Y: %0.2f Z: %0.2f PCH: %0.2f   YAW: %0.2f ROL: 0.00   DIFF: 1\r\n", start->pos.x, -y, start->pos.z, pitch, yaw);
+		WRITE_LINE("    SEQ\r\n");
+		WRITE_LINE("        LOGIC:     PLAYER\r\n");
+		WRITE_LINE("        EYE:       TRUE\r\n");
+		WRITE_LINE("    SEQEND\r\n");
+		NEW_LINE();
+
+		file.close();
+		return true;
+	}
+
+	bool exportDfInf(const char* infFile)
+	{
+		FileStream file;
+		if (!file.open(infFile, FileStream::MODE_WRITE))
+		{
+			return false;
+		}
+
+		char newLine[256];
+		strcpy(newLine, "\r\n");
+
+		char buffer[256];
+		WRITE_LINE("%s", "INF 1.0\r\n");
+		NEW_LINE();
+
+		WRITE_LINE("LEVELNAME %s\r\n", s_level.name.c_str());
+		WRITE_LINE("items %d\r\n", 0);
+		NEW_LINE();
+
+		file.close();
+		return true;
+	}
+
+	// TODO: Factor this code out.
+	// Gob Stuff
+#pragma pack(push)
+#pragma pack(1)
+	struct GobHeader
+	{
+		char GOB_MAGIC[4];
+		u32 MASTERX;	// offset to GOB_Index_t
+	};
+
+	struct GobEntry
+	{
+		u32 IX;		// offset to the start of the file.
+		u32 LEN;		// length of the file.
+		char NAME[13];	// file name.
+	};
+
+	struct GobIndex
+	{
+		u32 MASTERN;	// num files
+		GobEntry* entries;
+	};
+#pragma pack(pop)
+	static std::vector<GobEntry> s_directory;
+	static std::vector<u8> s_workBuffer;
+
+	u32 getFileLength(const char* path)
+	{
+		FileStream file;
+		u32 len = 0;
+		if (file.open(path, FileStream::MODE_READ))
+		{
+			len = (u32)file.getSize();
+			file.close();
+		}
+		return len;
+	}
+
+	bool writeGob(const char* path, FileList& fileList)
+	{
+		if (!path || fileList.empty()) { return false; }
+
+		FILE* gob = fopen(path, "wb");
+		if (!gob) { return false; }
+
+		GobHeader header = { 0 };
+		header.GOB_MAGIC[0] = 'G';
+		header.GOB_MAGIC[1] = 'O';
+		header.GOB_MAGIC[2] = 'B';
+		header.GOB_MAGIC[3] = '\n';
+		header.MASTERX = sizeof(GobHeader);
+
+		// Fill out the directory.
+		u32 fileCount = (u32)fileList.size();
+		s_directory.resize(fileCount);
+		GobEntry* entry = s_directory.data();
+		for (u32 i = 0; i < fileCount; i++, entry++)
+		{
+			// Otherwise read from the passed in fileList.
+			entry->LEN = getFileLength(fileList[i].c_str());
+
+			char name[256];
+			FileUtil::getFileNameFromPath(fileList[i].c_str(), name, true);
+			strcpy(entry->NAME, name);
+
+			entry->IX = header.MASTERX;
+			header.MASTERX += entry->LEN;
+		}
+
+		// Write the header and file count.
+		fwrite(&header, sizeof(GobHeader), 1, gob);
+
+		// Write the files.
+		entry = s_directory.data();
+		for (u32 i = 0; i < fileCount; i++, entry++)
+		{
+			fseek(gob, entry->IX, SEEK_SET);
+
+			// Write the files in fileList.
+			FileStream file;
+			file.open(fileList[i].c_str(), FileStream::MODE_READ);
+			u32 len = (u32)file.getSize();
+			s_workBuffer.resize(len);
+			file.readBuffer(s_workBuffer.data(), len);
+			file.close();
+
+			assert(len == entry->LEN);
+			fwrite(s_workBuffer.data(), len, 1, gob);
+		}
+
+		// Write the directory.
+		fseek(gob, header.MASTERX, SEEK_SET);
+		fwrite(&fileCount, sizeof(u32), 1, gob);
+		fwrite(s_directory.data(), sizeof(GobEntry), fileCount, gob);
+
+		fclose(gob);
+		return true;
+	}
+
+	// Hack test path for now.
+	static const char* s_testPath = "D:/dev/TheForceEngine/TheForceEngine/Games/Dark Forces";
+	static const char* s_testAppPath = "D:/dev/TheForceEngine/Build/TheForceEngine.exe";
+
+	bool exportLevel(const char* path, const char* name, const StartPoint* start)
+	{
+		char levFile[TFE_MAX_PATH];
+		char infFile[TFE_MAX_PATH];
+		char objFile[TFE_MAX_PATH];
+		sprintf(levFile, "%s/%s.LEV", path, name);
+		sprintf(infFile, "%s/%s.INF", path, name);
+		sprintf(objFile, "%s/%s.O", path, name);
+
+		if (!exportDfLevel(levFile)) { return false; }
+		if (!exportDfInf(infFile)) { return false; }
+		if (!exportDfObj(objFile, start)) { return false; }
+
+		// Build a file list for the gob writer.
+		FileList fileList;
+		fileList.push_back(levFile);
+		fileList.push_back(infFile);
+		fileList.push_back(objFile);
+
+		char gobPath[TFE_MAX_PATH];
+		sprintf(gobPath, "%s/TFE_TEST.GOB", s_testPath);
+		writeGob(gobPath, fileList);
+
+		// Now run "TFE"
+		// Get the app directory and GOB name.
+		char appDir[1024], gobName[256];
+		FileUtil::getFilePath(s_testAppPath, appDir);
+		FileUtil::getFileNameFromPath(gobPath, gobName, true);
+
+		// Build the Commandline.
+		char cmdLine[1024];
+		sprintf(cmdLine, "-gDark -skip_load_delay -u%s -c0 -l%s", gobName, s_level.slot.c_str());
+
+		// Run the test app (TFE, etc.), this will block until finished.
+		osShellExecute(s_testAppPath, appDir, cmdLine, true);
+		// Then cleanup by deleting the test GOB.
+		FileUtil::deleteFile(gobPath);
+		
+		return true;
 	}
 
 	EditorTexture* getTexture(s32 index)

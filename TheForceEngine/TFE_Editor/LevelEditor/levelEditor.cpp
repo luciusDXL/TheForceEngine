@@ -202,6 +202,7 @@ namespace LevelEditor
 	void resetZoom();
 	bool isUiActive();
 	bool isViewportElementHovered();
+	void play();
 	Vec3f moveAlongRail(Vec3f dir);
 	Vec2f mouseCoordToWorldPos2d(s32 mx, s32 my);
 	Vec3f mouseCoordToWorldDir3d(s32 mx, s32 my);
@@ -237,6 +238,15 @@ namespace LevelEditor
 	////////////////////////////////////////////////////////
 	// Public API
 	////////////////////////////////////////////////////////
+	void loadPaletteAndColormap()
+	{
+		AssetHandle palHandle = loadPalette(s_level.palette.c_str());
+		char colormapName[256];
+		sprintf(colormapName, "%s.CMP", s_level.slot.c_str());
+		AssetHandle colormapHandle = loadColormap(colormapName);
+		infoPanelAddMsg(LE_MSG_INFO, "Palette: '%s', Colormap: '%s'", s_level.palette.c_str(), colormapName);
+	}
+
 	bool init(Asset* asset)
 	{
 		// Reset output messages.
@@ -251,6 +261,8 @@ namespace LevelEditor
 			return false;
 		}
 		infoPanelAddMsg(LE_MSG_INFO, "Loaded level '%s'", s_level.name.c_str());
+
+		loadPaletteAndColormap();
 
 		viewport_init();
 		viewport_update((s32)UI_SCALE(480) + 16, (s32)UI_SCALE(68) + 18);
@@ -2613,6 +2625,20 @@ namespace LevelEditor
 		return areColinear && !vtxEqual(&points[newPoints[0]&255], &points[newPoints[1]&255]);
 	}
 
+	bool canCreateNewAdjoin(const EditorWall* wall, const EditorSector* sector)
+	{
+		bool canAdjoin = true;
+		if (wall->adjoinId >= 0 && wall->mirrorId >= 0)
+		{
+			// This is still valid *IF* the passage is blocked.
+			const EditorSector* next = &s_level.sectors[wall->adjoinId];
+			const f32 top = min(sector->ceilHeight, next->ceilHeight);
+			const f32 bot = max(sector->floorHeight, next->floorHeight);
+			canAdjoin = (top - bot) <= 0.0f;
+		}
+		return canAdjoin;
+	}
+
 	void mergeAdjoins(EditorSector* sector0)
 	{
 		const s32 levelSectorCount = (s32)s_level.sectors.size();
@@ -2652,7 +2678,7 @@ namespace LevelEditor
 			bool wallLoop = true;
 			for (s32 w0 = 0; w0 < wallCount0 && wallLoop; w0++, wall0++)
 			{
-				if (wall0->adjoinId >= 0 && wall0->mirrorId >= 0) { continue; }
+				if (!canCreateNewAdjoin(wall0, sector0)) { continue; }
 				const Vec2f* v0 = &sector0->vtx[wall0->idx[0]];
 				const Vec2f* v1 = &sector0->vtx[wall0->idx[1]];
 
@@ -2666,7 +2692,7 @@ namespace LevelEditor
 
 					for (s32 w1 = 0; w1 < wallCount1 && !foundMirror; w1++, wall1++)
 					{
-						if (wall1->adjoinId >= 0 && wall1->mirrorId >= 0) { continue; }
+						if (!canCreateNewAdjoin(wall1, sector1)) { continue; }
 						const Vec2f* v2 = &sector1->vtx[wall1->idx[0]];
 						const Vec2f* v3 = &sector1->vtx[wall1->idx[1]];
 
@@ -4216,7 +4242,7 @@ namespace LevelEditor
 			void* gpuPtr = TFE_RenderBackend::getGpuPtr(s_editCtrlToolbarData);
 			if (drawToolbarButton(gpuPtr, 0, false, toolbarTooltips[0]))
 			{
-				// Play
+				play();
 			}
 			ImGui::SameLine(0.0f, 32.0f);
 
@@ -6169,6 +6195,24 @@ namespace LevelEditor
 			edit_autoAlign(s_featureHovered.sector->id, s_featureHovered.featureIndex, s_featureHovered.part);
 			cmd_addAutoAlign(s_featureHovered.sector->id, s_featureHovered.featureIndex, s_featureHovered.part);
 		}
+	}
+
+	void play()
+	{
+		StartPoint start = {};
+		start.pos = s_camera.pos;
+		start.yaw = s_camera.yaw;
+		start.pitch = s_camera.pitch;
+		start.sector = findSector3d(start.pos, s_curLayer);
+		if (!start.sector)
+		{
+			infoPanelAddMsg(LE_MSG_ERROR, "Cannot test level, camera must be inside of a sector.");
+			return;
+		}
+
+		char exportPath[TFE_MAX_PATH];
+		getTempDirectory(exportPath);
+		exportLevel(exportPath, s_level.slot.c_str(), &start);
 	}
 	
 	void copyToClipboard(const char* str)

@@ -31,6 +31,7 @@ namespace TFE_Settings
 	static TFE_Settings_Hud s_hudSettings = {};
 	static TFE_Settings_Sound s_soundSettings = {};
 	static TFE_Settings_System s_systemSettings = {};
+	static TFE_Settings_Temp s_tempSettings = {};
 	static TFE_Settings_A11y s_a11ySettings = {};
 	static TFE_Game s_game = {};
 	static TFE_Settings_Game s_gameSettings = {};
@@ -280,6 +281,11 @@ namespace TFE_Settings
 	{
 		return &s_systemSettings;
 	}	
+
+	TFE_Settings_Temp* getTempSettings()
+	{
+		return &s_tempSettings;
+	}
 	
 	TFE_Settings_A11y* getA11ySettings()
 	{

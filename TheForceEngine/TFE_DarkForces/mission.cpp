@@ -396,7 +396,7 @@ namespace TFE_DarkForces
 				time_pause(JFALSE);
 				mission_createDisplay();
 				displayLoadingScreen();
-				task_yield(MIN_LOAD_TIME);
+				task_yield(TFE_Settings::getTempSettings()->skipLoadDelay ? 0 : MIN_LOAD_TIME);
 
 				s_prevTick = s_curTick;
 				s_playerTick = s_curTick;

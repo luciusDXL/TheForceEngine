@@ -35,6 +35,13 @@ static const char* c_tfeSkyModeStrings[] =
 	"Cylinder",		// SKYMODE_CYLINDER
 };
 
+// Special temporary settings, which are not serialized.
+struct TFE_Settings_Temp
+{
+	bool skipLoadDelay = false;
+	bool forceFullscreen = false;
+};
+
 struct TFE_Settings_Window
 {
 	s32 x = 0;
@@ -255,6 +262,7 @@ namespace TFE_Settings
 	TFE_Settings_Hud* getHudSettings();
 	TFE_Settings_Sound* getSoundSettings();
 	TFE_Settings_System* getSystemSettings();
+	TFE_Settings_Temp* getTempSettings();
 	TFE_Game* getGame();
 	TFE_GameHeader* getGameHeader(const char* gameName);
 	TFE_Settings_Game* getGameSettings();

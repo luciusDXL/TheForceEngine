@@ -250,7 +250,7 @@ bool sdlInit()
 	if (code != 0) { return false; }
 
 	TFE_Settings_Window* windowSettings = TFE_Settings::getWindowSettings();
-	bool fullscreen    = windowSettings->fullscreen;
+	bool fullscreen    = windowSettings->fullscreen || TFE_Settings::getTempSettings()->forceFullscreen;
 	s_displayWidth     = windowSettings->width;
 	s_displayHeight    = windowSettings->height;
 	s_baseWindowWidth  = windowSettings->baseWidth;
@@ -615,7 +615,11 @@ int main(int argc, char* argv[])
 	
 	// Setup the GPU Device and Window.
 	u32 windowFlags = 0;
-	if (windowSettings->fullscreen) { TFE_System::logWrite(LOG_MSG, "Display", "Fullscreen enabled."); windowFlags |= WINFLAG_FULLSCREEN; }
+	if (windowSettings->fullscreen || TFE_Settings::getTempSettings()->forceFullscreen)
+	{
+		TFE_System::logWrite(LOG_MSG, "Display", "Fullscreen enabled.");
+		windowFlags |= WINFLAG_FULLSCREEN;
+	}
 	if (graphics->vsync) { TFE_System::logWrite(LOG_MSG, "Display", "Vertical Sync enabled."); windowFlags |= WINFLAG_VSYNC; }
 	
 	WindowState windowState =
@@ -957,6 +961,14 @@ void parseOption(const char* name, const std::vector<const char*>& values, bool 
 			// -noaudio
 			s_nullAudioDevice = true;
 		}
+		else if (strcasecmp(name, "fullscreen") == 0)
+		{
+			TFE_Settings::getTempSettings()->forceFullscreen = true;
+		}
+		else if (strcasecmp(name, "skip_load_delay") == 0)
+		{
+			TFE_Settings::getTempSettings()->skipLoadDelay = true;
+		}
 	}
 	else  // long names use the more traditional style of arguments which allow for multiple values.
 	{
@@ -974,6 +986,14 @@ void parseOption(const char* name, const std::vector<const char*>& values, bool 
 		{
 			// --noaudio
 			s_nullAudioDevice = true;
+		}
+		else if (strcasecmp(name, "fullscreen") == 0)
+		{
+			TFE_Settings::getTempSettings()->forceFullscreen = true;
+		}
+		else if (strcasecmp(name, "skip_load_delay") == 0)
+		{
+			TFE_Settings::getTempSettings()->skipLoadDelay = true;
 		}
 	}
 }
