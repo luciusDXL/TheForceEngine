@@ -9,6 +9,7 @@
 #include <TFE_System/types.h>
 #include <TFE_RenderBackend/renderBackend.h>
 #include <vector>
+#include <string>
 
 namespace LevelEditor
 {
