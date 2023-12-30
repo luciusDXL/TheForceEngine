@@ -77,7 +77,8 @@ namespace LevelEditor
 	enum LevelEditorFormat
 	{
 		LEF_MinVersion = 1,
-		LEF_CurVersion = 1,
+		LEF_EntityV1   = 2,
+		LEF_CurVersion = 2,
 	};
 
 	AssetHandle loadTexture(const char* bmTextureName)
@@ -498,11 +499,31 @@ namespace LevelEditor
 
 			file.readBuffer(sector->bounds, sizeof(Vec3f), 2);
 			file.read(&sector->layer);
-			sector->searchKey = 0;
 
+			if (version >= LEF_EntityV1)
+			{
+				s32 objCount;
+				file.read(&objCount);
+				sector->obj.resize(objCount);
+
+				EditorObject* obj = sector->obj.data();
+				for (s32 o = 0; o < objCount; o++, obj++)
+				{
+					file.read(&obj->entityId);
+					file.read(&obj->angle);
+					file.readBuffer(&obj->pos, sizeof(Vec3f));
+				}
+			}
+
+			sector->searchKey = 0;
 			sectorToPolygon(sector);
 		}
 		file.close();
+
+		if (version >= LEF_EntityV1)
+		{
+
+		}
 
 		return true;
 	}
@@ -578,6 +599,17 @@ namespace LevelEditor
 			file.write(&sector->layer);
 			// Polygon is derived on load.
 			// Searchkey is reset on load.
+
+			// LEF_EntityV1
+			s32 objCount = (s32)sector->obj.size();
+			file.write(&objCount);
+			EditorObject* obj = sector->obj.data();
+			for (s32 o = 0; o < objCount; o++, obj++)
+			{
+				file.write(&obj->entityId);
+				file.write(&obj->angle);
+				file.writeBuffer(&obj->pos, sizeof(Vec3f));
+			}
 		}
 		file.close();
 
@@ -675,6 +707,24 @@ namespace LevelEditor
 		return true;
 	}
 
+	s32 addObjAsset(const std::string& name, std::vector<std::string>& list)
+	{
+		// Does it already exist?
+		const size_t count = list.size();
+		const std::string* data = list.data();
+		for (size_t i = 0; i < count; i++, data++)
+		{
+			if (strcasecmp(name.c_str(), data->c_str()) == 0)
+			{
+				return s32(i);
+			}
+		}
+
+		s32 newId = (s32)list.size();
+		list.push_back(name);
+		return newId;
+	}
+
 	bool exportDfObj(const char* oFile, const StartPoint* start)
 	{
 		// For now require the start point.
@@ -693,16 +743,58 @@ namespace LevelEditor
 		WRITE_LINE("%s", "O 1.1\r\n");
 		NEW_LINE();
 
+		std::vector<std::string> pods;
+		std::vector<std::string> sprites;
+		std::vector<std::string> frames;
+		std::vector<const EditorObject*> objList;
+		std::vector<s32> objData;
+		const s32 sectorCount = (s32)s_level.sectors.size();
+		const EditorSector* sector = s_level.sectors.data();
+		s32 startPointId = -1;
+		for (s32 s = 0; s < sectorCount; s++, sector++)
+		{
+			const s32 objCount = (s32)sector->obj.size();
+			const EditorObject* obj = sector->obj.data();
+			for (s32 o = 0; o < objCount; o++, obj++)
+			{
+				const Entity* entity = &s_entityList[obj->entityId];
+
+				objList.push_back(obj);
+				s32 dataIndex = 0;
+				// TODO: Handle other types.
+				if (entity->type == ETYPE_FRAME || entity->type == ETYPE_SPRITE)
+				{
+					dataIndex = addObjAsset(entity->assetName, entity->type == ETYPE_FRAME ? frames : sprites);
+				}
+				else if (entity->type == ETYPE_SPIRIT)
+				{
+					startPointId = o;
+				}
+				objData.push_back(dataIndex);
+			}
+		}
+
 		WRITE_LINE("LEVELNAME %s\r\n", s_level.name.c_str());
 		NEW_LINE();
 
-		WRITE_LINE("PODS %d\r\n", 0);
+		const s32 podCount = (s32)pods.size();
+		WRITE_LINE("PODS %d\r\n", podCount);
 		NEW_LINE();
 
-		WRITE_LINE("SPRS %d\r\n", 0);
+		const s32 spriteCount = (s32)sprites.size();
+		WRITE_LINE("SPRS %d\r\n", spriteCount);
+		for (s32 i = 0; i < spriteCount; i++)
+		{
+			WRITE_LINE("    SPR: %s\r\n", sprites[i].c_str());
+		}
 		NEW_LINE();
 
-		WRITE_LINE("FMES %d\r\n", 0);
+		const s32 frameCount = (s32)frames.size();
+		WRITE_LINE("FMES %d\r\n", frameCount);
+		for (s32 i = 0; i < frameCount; i++)
+		{
+			WRITE_LINE("    FME: %s\r\n", frames[i].c_str());
+		}
 		NEW_LINE();
 
 		WRITE_LINE("SOUNDS %d\r\n", 0);
@@ -714,12 +806,73 @@ namespace LevelEditor
 		const f32 pitch = start->pitch * radToDeg;
 		const f32 y = std::max(start->sector->floorHeight, start->pos.y - 5.8f);
 
-		WRITE_LINE("OBJECTS %d\r\n", 1);
-		WRITE_LINE("    CLASS: SPIRIT     DATA: 0   X: %0.2f Y: %0.2f Z: %0.2f PCH: %0.2f   YAW: %0.2f ROL: 0.00   DIFF: 1\r\n", start->pos.x, -y, start->pos.z, pitch, yaw);
-		WRITE_LINE("    SEQ\r\n");
-		WRITE_LINE("        LOGIC:     PLAYER\r\n");
-		WRITE_LINE("        EYE:       TRUE\r\n");
-		WRITE_LINE("    SEQEND\r\n");
+		s32 objCount = (s32)objList.size();
+		s32 finalObjCount = objCount;
+		if (startPointId < 0) { finalObjCount++; }
+
+		WRITE_LINE("OBJECTS %d\r\n", finalObjCount);
+
+		// Add the start point if needed.
+		if (startPointId < 0)
+		{
+			WRITE_LINE("    CLASS: SPIRIT     DATA: 0   X: %0.2f Y: %0.2f Z: %0.2f PCH: %0.2f   YAW: %0.2f ROL: 0.00   DIFF: 1\r\n", start->pos.x, -y, start->pos.z, pitch, yaw);
+			WRITE_LINE("        SEQ\r\n");
+			WRITE_LINE("            LOGIC:     PLAYER\r\n");
+			WRITE_LINE("            EYE:       TRUE\r\n");
+			WRITE_LINE("        SEQEND\r\n");
+		}
+
+		for (s32 i = 0; i < objCount; i++)
+		{
+			const EditorObject* obj = objList[i];
+			const Entity* entity = &s_entityList[obj->entityId];
+			const f32 objYaw = fmodf(obj->angle * radToDeg, 360.0f);
+			const s32 logicCount = (s32)entity->logic.size();
+
+			switch (entity->type)
+			{
+				case ETYPE_SPIRIT:
+				{
+					WRITE_LINE("    CLASS: SPIRIT     DATA: 0   X: %0.2f Y: %0.2f Z: %0.2f PCH: %0.2f   YAW: %0.2f ROL: 0.00   DIFF: 1\r\n", start->pos.x, -y, start->pos.z, pitch, yaw);
+					WRITE_LINE("        SEQ\r\n");
+					WRITE_LINE("            LOGIC:     PLAYER\r\n");
+					WRITE_LINE("            EYE:       TRUE\r\n");
+					WRITE_LINE("        SEQEND\r\n");
+				} break;
+				case ETYPE_SAFE:
+				{
+					WRITE_LINE("    CLASS: SAFE     DATA: 0   X: %0.2f Y: %0.2f Z: %0.2f PCH: %0.2f   YAW: %0.2f ROL: 0.00   DIFF: 1\r\n", obj->pos.x, -obj->pos.y, obj->pos.z, 0.0f, objYaw);
+				} break;
+				case ETYPE_FRAME:
+				{
+					WRITE_LINE("    CLASS: FRAME     DATA: %d   X: %0.2f Y: %0.2f Z: %0.2f PCH: %0.2f   YAW: %0.2f ROL: 0.00   DIFF: 1\r\n", objData[i], obj->pos.x, -obj->pos.y, obj->pos.z, 0.0f, objYaw);
+					if (logicCount > 0)
+					{
+						WRITE_LINE("        SEQ\r\n");
+						for (s32 l = 0; l < logicCount; l++)
+						{
+							WRITE_LINE("            LOGIC:     %s\r\n", entity->logic[l].c_str());
+						}
+						// TODO: Variables.
+						WRITE_LINE("        SEQEND\r\n");
+					}
+				} break;
+				case ETYPE_SPRITE:
+				{
+					WRITE_LINE("    CLASS: SPRITE     DATA: %d   X: %0.2f Y: %0.2f Z: %0.2f PCH: %0.2f   YAW: %0.2f ROL: 0.00   DIFF: 1\r\n", objData[i], obj->pos.x, -obj->pos.y, obj->pos.z, 0.0f, objYaw);
+					if (logicCount > 0)
+					{
+						WRITE_LINE("        SEQ\r\n");
+						for (s32 l = 0; l < logicCount; l++)
+						{
+							WRITE_LINE("            LOGIC:     %s\r\n", entity->logic[l].c_str());
+						}
+						// TODO: Variables.
+						WRITE_LINE("        SEQEND\r\n");
+					}
+				} break;
+			}
+		}
 		NEW_LINE();
 
 		file.close();
@@ -1143,9 +1296,36 @@ namespace LevelEditor
 		wall->tex[WP_SIGN].offset.x = uOffset + std::max(0.0f, (wallLen - signTex->width/8.0f)*0.5f);
 		wall->tex[WP_SIGN].offset.z = -std::max(0.0f, partHeight - signTex->height/8.0f) * 0.5f;
 	}
+
+	bool rayAABBIntersection(const Ray* ray, const Vec3f* bounds, f32* hitDist)
+	{
+		const f32 ix = fabsf(ray->dir.x) > FLT_EPSILON ? 1.0f/ray->dir.x : FLT_MAX;
+		const f32 iy = fabsf(ray->dir.y) > FLT_EPSILON ? 1.0f/ray->dir.y : FLT_MAX;
+		const f32 iz = fabsf(ray->dir.z) > FLT_EPSILON ? 1.0f/ray->dir.z : FLT_MAX;
+
+		const f32 tx1 = (bounds[0].x - ray->origin.x) * ix;
+		const f32 tx2 = (bounds[1].x - ray->origin.x) * ix;
+		const f32 ty1 = (bounds[0].y - ray->origin.y) * iy;
+		const f32 ty2 = (bounds[1].y - ray->origin.y) * iy;
+		const f32 tz1 = (bounds[0].z - ray->origin.z) * iz;
+		const f32 tz2 = (bounds[1].z - ray->origin.z) * iz;
+
+		f32 tmin = -FLT_MAX;
+		tmin = max(tmin, min(tx1, tx2));
+		tmin = max(tmin, min(ty1, ty2));
+		tmin = max(tmin, min(tz1, tz2));
+
+		f32 tmax = FLT_MAX;
+		tmax = min(tmax, max(tx1, tx2));
+		tmax = min(tmax, max(ty1, ty2));
+		tmax = min(tmax, max(tz1, tz2));
+
+		*hitDist = tmin;
+		return tmax >= tmin && tmax >= 0.0f;
+	}
 		
 	// Return true if a hit is found.
-	bool traceRay(const Ray* ray, RayHitInfo* hitInfo, bool flipFaces, bool canHitSigns)
+	bool traceRay(const Ray* ray, RayHitInfo* hitInfo, bool flipFaces, bool canHitSigns, bool canHitObjects)
 	{
 		const EditorLevel* level = &s_level;
 		if (level->sectors.empty()) { return false; }
@@ -1161,6 +1341,7 @@ namespace LevelEditor
 		f32 overallClosestHit = FLT_MAX;
 		hitInfo->hitSectorId = -1;
 		hitInfo->hitWallId = -1;
+		hitInfo->hitObjId = -1;
 		hitInfo->hitPart = HP_MID;
 		hitInfo->hitPos = { 0 };
 		hitInfo->dist = FLT_MAX;
@@ -1179,6 +1360,7 @@ namespace LevelEditor
 			const Vec2f* vtx = sector->vtx.data();
 			f32 closestHit = FLT_MAX;
 			s32 closestWallId = -1;
+			bool rayInSector = false;
 			for (u32 w = 0; w < wallCount; w++, wall++)
 			{
 				const Vec2f* v0 = &vtx[wall->idx[0]];
@@ -1207,6 +1389,7 @@ namespace LevelEditor
 								closestWallId = w;
 							}
 						}
+						rayInSector = true;
 					}
 				}
 			}
@@ -1247,6 +1430,7 @@ namespace LevelEditor
 					overallClosestHit = closestHit;
 					hitInfo->hitSectorId = sector->id;
 					hitInfo->hitWallId = closestWallId;
+					hitInfo->hitObjId = -1;
 					hitInfo->hitPart = HP_SIGN;
 					hitInfo->hitPos = hitPoint;
 					hitInfo->dist = closestHit;
@@ -1260,6 +1444,7 @@ namespace LevelEditor
 						overallClosestHit = closestHit;
 						hitInfo->hitSectorId = sector->id;
 						hitInfo->hitWallId = closestWallId;
+						hitInfo->hitObjId = -1;
 						hitInfo->hitPart = hitPoint.y <= next->floorHeight ? HP_BOT : HP_TOP;
 						hitInfo->hitPos = hitPoint;
 						hitInfo->dist = closestHit;
@@ -1269,6 +1454,7 @@ namespace LevelEditor
 						overallClosestHit = closestHit;
 						hitInfo->hitSectorId = sector->id;
 						hitInfo->hitWallId = closestWallId;
+						hitInfo->hitObjId = -1;
 						hitInfo->hitPart = HP_MID;
 						hitInfo->hitPos = hitPoint;
 						hitInfo->dist = closestHit;
@@ -1280,6 +1466,7 @@ namespace LevelEditor
 					overallClosestHit = closestHit;
 					hitInfo->hitSectorId = sector->id;
 					hitInfo->hitWallId = closestWallId;
+					hitInfo->hitObjId = -1;
 					hitInfo->hitPart = HP_MID;
 					hitInfo->hitPos = hitPoint;
 					hitInfo->dist = closestHit;
@@ -1308,9 +1495,11 @@ namespace LevelEditor
 						overallClosestHit = sqrtf(distSq);
 						hitInfo->hitSectorId = sector->id;
 						hitInfo->hitWallId = -1;
+						hitInfo->hitObjId = -1;
 						hitInfo->hitPart = HP_FLOOR;
 						hitInfo->hitPos = hitPoint;
 						hitInfo->dist = overallClosestHit;
+						rayInSector = true;
 					}
 				}
 			}
@@ -1327,15 +1516,50 @@ namespace LevelEditor
 						overallClosestHit = sqrtf(distSq);
 						hitInfo->hitSectorId = sector->id;
 						hitInfo->hitWallId = -1;
+						hitInfo->hitObjId = -1;
 						hitInfo->hitPart = HP_CEIL;
 						hitInfo->hitPos = hitPoint;
 						hitInfo->dist = overallClosestHit;
+						rayInSector = true;
 					}
 				}
 			}
 
 			// Objects
-			// TODO
+			if (rayInSector && canHitObjects)
+			{
+				const s32 objCount = (s32)sector->obj.size();
+				const EditorObject* obj = sector->obj.data();
+				for (s32 o = 0; o < objCount; o++, obj++)
+				{
+					const Entity* entity = &s_entityList[obj->entityId];
+					Vec3f pos = obj->pos;
+
+					// If the entity is on the floor, make sure it doesn't stick through it for editor selection.
+					if (entity->type != ETYPE_SPIRIT && entity->type != ETYPE_SAFE)
+					{
+						f32 offset = -(entity->offset.y + fabsf(entity->st[1].z - entity->st[0].z)) * 0.1f;
+						if (fabsf(pos.y - sector->floorHeight) < 0.5f) { offset = max(0.0f, offset); }
+						pos.y += offset;
+					}
+					const f32 width = entity->size.x * 0.5f;
+					const f32 height = entity->size.z;
+					const Vec3f bounds[2] = { {pos.x - width, pos.y, pos.z - width}, {pos.x + width, pos.y + height, pos.z + width} };
+					f32 dist;
+					if (rayAABBIntersection(ray, bounds, &dist))
+					{
+						if (dist < overallClosestHit)
+						{
+							overallClosestHit = dist;
+							hitInfo->hitSectorId = sector->id;
+							hitInfo->hitWallId = -1;
+							hitInfo->dist = overallClosestHit;
+							hitInfo->hitObjId = o;
+							hitInfo->hitPos = { ray->origin.x + ray->dir.x*dist, ray->origin.y + ray->dir.y*dist, ray->origin.z + ray->dir.z*dist };
+						}
+					}
+				}
+			}
 		}
 
 		return hitInfo->hitSectorId >= 0;
@@ -1563,8 +1787,10 @@ namespace LevelEditor
 			writeData(sector->flags, sizeof(u32) * 3);
 			writeU32((u32)sector->vtx.size());
 			writeU32((u32)sector->walls.size());
+			writeU32((u32)sector->obj.size());
 			writeData(sector->vtx.data(), u32(sizeof(Vec2f) * sector->vtx.size()));
 			writeData(sector->walls.data(), u32(sizeof(EditorWall) * sector->walls.size()));
+			writeData(sector->obj.data(), u32(sizeof(EditorObject) * sector->obj.size()));
 		}
 	}
 		
@@ -1608,11 +1834,14 @@ namespace LevelEditor
 
 				u32 vtxCount = readU32();
 				u32 wallCount = readU32();
+				u32 objCount = readU32();
 				sector->vtx.resize(vtxCount);
 				sector->walls.resize(wallCount);
+				sector->obj.resize(objCount);
 
 				readData(sector->vtx.data(), u32(sizeof(Vec2f) * vtxCount));
 				readData(sector->walls.data(), u32(sizeof(EditorWall) * wallCount));
+				readData(sector->obj.data(), u32(sizeof(EditorObject) * objCount));
 
 				// Compute derived data.
 				sectorToPolygon(sector);

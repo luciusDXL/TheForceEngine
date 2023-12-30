@@ -119,6 +119,7 @@ namespace LevelEditor
 					{
 						s_entityList.push_back({});
 						curEntity = &s_entityList.back();
+						curEntity->id = s32(s_entityList.size()) - 1;
 						curEntity->name = tokens[1];
 					} break;
 					case EKEY_CLASS:
@@ -143,7 +144,7 @@ namespace LevelEditor
 					} break;
 					case EKEY_ASSET_OFFSET_Y:
 					{
-						// TODO
+						curEntity->offsetAdj.y += strtof(tokens[1].c_str(), &endPtr);
 					} break;
 					case EKEY_ASSET2:
 					{
@@ -208,6 +209,9 @@ namespace LevelEditor
 
 				entity->image = loadGpuImage(pngPath);
 				entity->st[1] = { (f32)entity->image->getWidth(), (f32)entity->image->getHeight() };
+
+				entity->size.x = 4.0f;
+				entity->size.z = 4.0f;
 			}
 			else if (entity->type == ETYPE_FRAME)
 			{
@@ -225,6 +229,12 @@ namespace LevelEditor
 					entity->uv[0].z = 1.0f;
 					entity->uv[1].z = 0.0f;
 					entity->st[1] = { (f32)entity->image->getWidth(), (f32)entity->image->getHeight() };
+
+					entity->size.x = frame->worldWidth;
+					entity->size.z = frame->worldHeight;
+
+					// Handle the offset.
+					entity->offset = { frame->offsetX + entity->offsetAdj.x, frame->offsetY + entity->offsetAdj.y, 0.0f };
 				}
 			}
 			else if (entity->type == ETYPE_SPRITE)
@@ -258,7 +268,11 @@ namespace LevelEditor
 					entity->st[0] = { (f32)cell->u, (f32)cell->v };
 					entity->st[1] = { f32(cell->u + cell->w), f32(cell->v + cell->h) };
 
+					entity->size.x = frame->widthWS;
+					entity->size.z = frame->heightWS;
+
 					// Handle the offset.
+					entity->offset = { (f32)frame->offsetX + entity->offsetAdj.x, (f32)frame->offsetY + entity->offsetAdj.y, 0.0f };
 				#if 0
 					s32 texW = cell->w;
 					s32 texH = cell->h;

@@ -7,6 +7,7 @@
 // to "play" the game as intended.
 //////////////////////////////////////////////////////////////////////
 #include <TFE_System/types.h>
+#include "entity.h"
 #include <TFE_Editor/EditorAsset/editorAsset.h>
 #include <TFE_Editor/EditorAsset/editorTexture.h>
 #include <TFE_Editor/editorProject.h>
@@ -110,6 +111,7 @@ namespace LevelEditor
 		// Geometry
 		std::vector<Vec2f> vtx;
 		std::vector<EditorWall> walls;
+		std::vector<EditorObject> obj;
 
 		// Bounds
 		Vec3f bounds[2];
@@ -159,8 +161,8 @@ namespace LevelEditor
 		// What was hit.
 		s32 hitSectorId;
 		s32 hitWallId;
+		s32 hitObjId;
 		HitPart hitPart;
-		// TODO: hitObj
 
 		// Actual hit position.
 		Vec3f hitPos;
@@ -197,7 +199,7 @@ namespace LevelEditor
 
 	// Spatial Queries
 	s32  findSector2d(s32 layer, const Vec2f* pos);
-	bool traceRay(const Ray* ray, RayHitInfo* hitInfo, bool flipFaces, bool canHitSigns);
+	bool traceRay(const Ray* ray, RayHitInfo* hitInfo, bool flipFaces, bool canHitSigns, bool canHitObjects = false);
 	// Get all sectors that have bounds that contain the point.
 	bool getOverlappingSectorsPt(const Vec3f* pos, SectorList* result);
 	// Get all sectors that have bounds that overlap the input bounds.

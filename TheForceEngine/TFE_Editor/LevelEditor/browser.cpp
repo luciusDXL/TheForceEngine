@@ -286,7 +286,7 @@ namespace LevelEditor
 
 		const s32 count = (s32)s_entityList.size();
 		const u32 padding = 8;
-		s32 selectedIndex = s_selectedTexture;
+		s32 selectedIndex = s_selectedEntity;
 
 		ImGui::BeginChild("##EntityList");
 		{
@@ -328,7 +328,7 @@ namespace LevelEditor
 				ImGui::PushID(idBase + i);
 				if (ImGui::ImageButton(ptr, ImVec2(f32(w), f32(h)), ImVec2(entity->uv[0].x, entity->uv[0].z), ImVec2(entity->uv[1].x, entity->uv[1].z), 2))
 				{
-					s_selectedTexture = index;
+					s_selectedEntity = index;
 				}
 				ImGui::PopID();
 				setTooltip("%s", entity->name.c_str());

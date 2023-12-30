@@ -109,7 +109,7 @@ namespace TFE_Sprite_Jedi
 		return asset;
 	}
 
-	JediFrame* loadFrameFromMemory(const u8* data, size_t size)
+	JediFrame* loadFrameFromMemory(const u8* data, size_t size, bool transformOffsets)
 	{
 		// Determine ahead of time how much we need to allocate.
 		const WaxFrame* base_frame = (WaxFrame*)data;
@@ -133,8 +133,11 @@ namespace TFE_Sprite_Jedi
 
 		const s32 offsetX = -intToFixed16(frame->offsetX);
 		const s32 offsetY = intToFixed16(cell->sizeY) + intToFixed16(frame->offsetY);
-		frame->offsetX = div16(offsetX, SPRITE_SCALE_FIXED);
-		frame->offsetY = div16(offsetY, SPRITE_SCALE_FIXED);
+		if (transformOffsets)
+		{
+			frame->offsetX = div16(offsetX, SPRITE_SCALE_FIXED);
+			frame->offsetY = div16(offsetY, SPRITE_SCALE_FIXED);
+		}
 
 		if (cell->compressed == 1)
 		{

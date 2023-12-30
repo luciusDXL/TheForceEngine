@@ -61,11 +61,19 @@ namespace LevelEditor
 		VCOLOR_SELECTED = 0xff4a76ff,
 		VCOLOR_HOV_AND_SEL = 0xff94ec8f,
 	};
+	enum EntityColor
+	{
+		ECOLOR_NORM = 0xffae8653,
+		ECOLOR_HOVERED = 0xffffff20,
+		ECOLOR_SELECTED = 0xff4a76ff,
+		ECOLOR_HOV_AND_SEL = 0xff94ec8f,
+	};
 
 	static const SectorColor c_sectorPolyClr[] = { SCOLOR_POLY_NORM, SCOLOR_POLY_HOVERED, SCOLOR_POLY_SELECTED };
 	static const SectorColor c_sectorLineClr[] = { SCOLOR_LINE_NORM, SCOLOR_LINE_HOVERED, SCOLOR_LINE_SELECTED };
 	static const SectorColor c_sectorLineClrAdjoin[] = { SCOLOR_LINE_NORM_ADJ, SCOLOR_LINE_HOVERED_ADJ, SCOLOR_LINE_SELECTED_ADJ };
 	static const VertexColor c_vertexClr[] = { VCOLOR_NORM, VCOLOR_HOVERED, VCOLOR_SELECTED, VCOLOR_HOV_AND_SEL };
+	static const EntityColor c_entityClr[] = { ECOLOR_NORM, ECOLOR_HOVERED, ECOLOR_SELECTED, ECOLOR_HOV_AND_SEL };
 
 	#define AMBIENT(x) (u32)(x * 255/31) | ((x * 255/31)<<8) | ((x * 255/31)<<16) | (0xff << 24)
 	static const u32 c_sectorTexClr[] =
@@ -105,6 +113,7 @@ namespace LevelEditor
 	void drawWall2d(const EditorSector* sector, const EditorWall* wall, f32 extraScale, Highlight highlight, bool drawNormal = false);
 	void renderSectorVertices2d();
 	void drawBox(const Vec3f* center, f32 side, f32 lineWidth, u32 color);
+	void drawBounds(const Vec3f* center, Vec3f size, f32 lineWidth, u32 color);
 	void drawSolidBox(const Vec3f* center, f32 side, u32 color);
 	void drawSectorShape2D();
 	void drawWallLines3D_Highlighted(const EditorSector* sector, const EditorSector* next, const EditorWall* wall, f32 width, Highlight highlight, bool halfAlpha, bool showSign = false);
@@ -992,6 +1001,85 @@ namespace LevelEditor
 		}
 	}
 
+	void drawEntity(const EditorSector* sector, const EditorObject* obj, s32 id, u32 objColor, const Vec3f& cameraRgtXZ)
+	{
+		const Entity* entity = &s_entityList[obj->entityId];
+		const Vec3f pos = obj->pos;
+
+		f32 width = entity->size.x * 0.5f;
+		f32 height = entity->size.z;
+		f32 y = pos.y;
+		if (entity->type != ETYPE_SPIRIT && entity->type != ETYPE_SAFE)
+		{
+			f32 offset = -(entity->offset.y + fabsf(entity->st[1].z - entity->st[0].z)) * 0.1f;
+			// If the entity is on the floor, make sure it doesn't stick through it for editor visualization.
+			if (fabsf(pos.y - sector->floorHeight) < 0.5f) { offset = max(0.0f, offset); }
+			y = pos.y + offset;
+		}
+
+		Vec3f corners[] =
+		{
+			{ pos.x - width * cameraRgtXZ.x, y + height, pos.z - width * cameraRgtXZ.z },
+			{ pos.x + width * cameraRgtXZ.x, y + height, pos.z + width * cameraRgtXZ.z },
+			{ pos.x + width * cameraRgtXZ.x, y,          pos.z + width * cameraRgtXZ.z },
+			{ pos.x - width * cameraRgtXZ.x, y,          pos.z - width * cameraRgtXZ.z }
+		};
+		Vec2f uv[] =
+		{
+			{ entity->uv[0].x, entity->uv[0].z },
+			{ entity->uv[1].x, entity->uv[0].z },
+			{ entity->uv[1].x, entity->uv[1].z },
+			{ entity->uv[0].x, entity->uv[1].z }
+		};
+		s32 idx[] = { 0, 1, 2, 0, 2, 3 };
+		triDraw3d_addTextured(TRIMODE_BLEND, 6, 4, corners, uv, idx, objColor, false, entity->image, false, false);
+
+		if (s_editMode == LEDIT_ENTITY)
+		{
+			// Draw bounds.
+			Vec3f center = { pos.x, y + height * 0.5f, pos.z };
+			Vec3f size = { width*2.0f, height, width*2.0f };
+
+			Highlight hl = HL_NONE;
+			if (s_featureCur.isObject && sector == s_featureCur.sector && s_featureCur.featureIndex == id)
+			{
+				hl = HL_SELECTED;
+			}
+			if (s_featureHovered.isObject && sector == s_featureHovered.sector && s_featureHovered.featureIndex == id)
+			{
+				hl = HL_HOVERED;
+			}
+			drawBounds(&center, size, 3.0f, c_entityClr[hl]);
+
+			// Draw direction arrows if it has a facing.
+			f32 angle = obj->angle;
+			Vec3f dir = { sinf(angle), 0.0f, cosf(angle) };
+			Vec3f N = { -dir.z, 0.0f, dir.x };
+
+			// Find vertices for the arrow shape.
+			f32 yArrow = y;
+			if (fabsf(pos.y - sector->floorHeight) < 0.5f) { yArrow = sector->floorHeight; }
+			else if (fabsf(pos.y - sector->ceilHeight) < 0.5f) { yArrow = sector->ceilHeight; }
+
+			const f32 D = width + 1.0f;
+			const f32 S = 1.0f;
+			const f32 T = 1.0f;
+
+			Vec3f endPt = { pos.x + dir.x*D, yArrow, pos.z + dir.z*D };
+			Vec3f base = { endPt.x - dir.x*T, yArrow, endPt.z - dir.z*T };
+			Vec3f A = { base.x + N.x*S, yArrow, base.z + N.z*S };
+			Vec3f B = { base.x - N.x*S, yArrow, base.z - N.z*S };
+
+			Vec3f dirLines[] =
+			{
+				{ endPt.x, yArrow, endPt.z }, A,
+				{ endPt.x, yArrow, endPt.z }, B,
+			};
+			u32 colors[] = { 0xffff2020, 0xffff2020, 0xffff2020, 0xffff2020 };
+			lineDraw3d_addLines(2, 3.0f, dirLines, colors);
+		}
+	}
+
 	void renderLevel3D()
 	{
 		// Prepare for drawing.
@@ -1003,6 +1091,15 @@ namespace LevelEditor
 			drawGrid3D(false);
 		}
 
+		Vec3f cameraDirXZ = { s_camera.viewMtx.m2.x, 0.0f, s_camera.viewMtx.m2.z };
+		TFE_Math::normalize(&cameraDirXZ);
+		Vec3f cameraRgtXZ = { -cameraDirXZ.z, 0.0f, cameraDirXZ.x };
+
+		const EditorObject* visObj[1024];
+		const EditorSector* visObjSector[1024];
+		s32 visObjId[1024];
+		s32 visObjCount = 0;
+
 		const f32 width = 2.5f;
 		const size_t count = s_level.sectors.size();
 		const EditorSector* sector = s_level.sectors.data();
@@ -1010,6 +1107,17 @@ namespace LevelEditor
 		{
 			// Skip other layers unless all layers is enabled.
 			if (sector->layer != s_curLayer && !(s_editFlags & LEF_SHOW_ALL_LAYERS)) { continue; }
+
+			// Add objects...
+			// TODO: Frustum and distance culling.
+			const s32 objCount = (s32)sector->obj.size();
+			const EditorObject* obj = sector->obj.data();
+			for (s32 o = 0; o < objCount && visObjCount < 1024; o++, obj++)
+			{
+				visObjSector[visObjCount] = sector;
+				visObjId[visObjCount] = o;
+				visObj[visObjCount++] = obj;
+			}
 
 			Highlight highlight = HL_NONE;
 
@@ -1232,6 +1340,13 @@ namespace LevelEditor
 					triDraw3d_addColored(TRIMODE_OPAQUE, idxCount, vtxCount, vtxDataCeil, sector->poly.triIdx.data(), floorColor, true, showGridOnFlats);
 				}
 			}
+		}
+
+		// Draw objects.
+		u32 objColor = s_editMode == LEDIT_ENTITY ? 0xffffffff : 0x80ffffff;
+		for (s32 o = 0; o < visObjCount; o++)
+		{
+			drawEntity(visObjSector[o], visObj[o], visObjId[o], objColor, cameraRgtXZ);
 		}
 
 		// Draw the 3D cursor.
@@ -1545,6 +1660,37 @@ namespace LevelEditor
 			{center->x + w, center->y - w, center->z - w}, {center->x + w, center->y + w, center->z - w},
 			{center->x + w, center->y - w, center->z + w}, {center->x + w, center->y + w, center->z + w},
 			{center->x - w, center->y - w, center->z + w}, {center->x - w, center->y + w, center->z + w},
+		};
+		u32 colors[12];
+		for (u32 i = 0; i < 12; i++)
+		{
+			colors[i] = color;
+		}
+
+		lineDraw3d_addLines(12, lineWidth, lines, colors);
+	}
+
+	void drawBounds(const Vec3f* center, Vec3f size, f32 lineWidth, u32 color)
+	{
+		const f32 w = size.x * 0.5f;
+		const f32 h = size.y * 0.5f;
+		const f32 d = size.z * 0.5f;
+		const Vec3f lines[] =
+		{
+			{center->x - w, center->y - h, center->z - d}, {center->x + w, center->y - h, center->z - d},
+			{center->x + w, center->y - h, center->z - d}, {center->x + w, center->y - h, center->z + d},
+			{center->x + w, center->y - h, center->z + d}, {center->x - w, center->y - h, center->z + d},
+			{center->x - w, center->y - h, center->z + d}, {center->x - w, center->y - h, center->z - d},
+
+			{center->x - w, center->y + h, center->z - d}, {center->x + w, center->y + h, center->z - d},
+			{center->x + w, center->y + h, center->z - d}, {center->x + w, center->y + h, center->z + d},
+			{center->x + w, center->y + h, center->z + d}, {center->x - w, center->y + h, center->z + d},
+			{center->x - w, center->y + h, center->z + d}, {center->x - w, center->y + h, center->z - d},
+
+			{center->x - w, center->y - h, center->z - d}, {center->x - w, center->y + h, center->z - d},
+			{center->x + w, center->y - h, center->z - d}, {center->x + w, center->y + h, center->z - d},
+			{center->x + w, center->y - h, center->z + d}, {center->x + w, center->y + h, center->z + d},
+			{center->x - w, center->y - h, center->z + d}, {center->x - w, center->y + h, center->z + d},
 		};
 		u32 colors[12];
 		for (u32 i = 0; i < 12; i++)

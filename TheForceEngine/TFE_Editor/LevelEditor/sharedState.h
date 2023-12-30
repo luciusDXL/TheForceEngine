@@ -24,6 +24,7 @@ namespace LevelEditor
 		EditorSector* sector = nullptr;
 		EditorSector* prevSector = nullptr;
 		s32 featureIndex = -1;
+		bool isObject = false;
 		HitPart part = HP_NONE;
 	};
 		
@@ -42,6 +43,7 @@ namespace LevelEditor
 	extern Vec3f s_curVtxPos;
 
 	extern s32 s_selectedTexture;
+	extern s32 s_selectedEntity;
 	extern u32 s_gridFlags;
 	extern f32 s_gridHeight;
 

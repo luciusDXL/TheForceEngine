@@ -82,6 +82,7 @@ namespace LevelEditor
 
 	struct Entity
 	{
+		s32 id;
 		std::string name;
 		std::string assetName;
 		EntityType type = ETYPE_UNKNOWN;
@@ -91,11 +92,20 @@ namespace LevelEditor
 		TextureGpu* image = nullptr;
 		Vec2f uv[2] = { {0.0f, 0.0f}, {1.0f,  1.0f} };
 		Vec2f st[2] = { {0.0f, 0.0f}, {64.0f, 64.0f} };
+		Vec2f size = { 1.0f, 1.0f };
 
 		Vec3f bounds[2] = { 0 };
 		Vec3f offset = { 0 };
+		Vec3f offsetAdj = { 0 };
 	};
 	extern std::vector<Entity> s_entityList;
+
+	struct EditorObject
+	{
+		s32 entityId;
+		Vec3f pos;
+		f32 angle;
+	};
 
 	bool loadEntityData();
 }

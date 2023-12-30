@@ -105,6 +105,9 @@ namespace LevelEditor
 	// Texture
 	s32 s_selectedTexture = -1;
 	Vec2f s_copiedTextureOffset = { 0 };
+
+	// Entity
+	s32 s_selectedEntity = -1;
 		
 	// Search
 	u32 s_searchKey = 0;
@@ -145,6 +148,8 @@ namespace LevelEditor
 	static Vec2f s_moveStartPos;
 	static Vec2f s_moveStartPos1;
 	static Vec2f s_moveTotalDelta;
+	static Vec3f s_moveStartPos3d;
+	static Vec3f s_moveBasePos3d;
 
 	static char s_layerMem[4 * 31];
 	static char* s_layerStr[31];
@@ -162,7 +167,7 @@ namespace LevelEditor
 	static Feature s_featureTex = {};
 	static Vec2f s_texNormal, s_texTangent;
 
-	static s32 s_gridIndex = 4;
+	static s32 s_gridIndex = 7;
 	static f32 c_gridSizeMap[] =
 	{
 		0.0f, 0.015625f, 0.03125f, 0.0625f, 0.125f, 0.25f, 0.5f, 1.0f, 2.0f, 4.0f, 8.0f, 16.0f, 32.0f, 64.0f
@@ -267,7 +272,7 @@ namespace LevelEditor
 
 		viewport_init();
 		viewport_update((s32)UI_SCALE(480) + 16, (s32)UI_SCALE(68) + 18);
-		s_gridIndex = 4;
+		s_gridIndex = 7;
 		s_gridSize = c_gridSizeMap[s_gridIndex];
 
 		s_editCtrlToolbarData = loadGpuImage("UI_Images/EditCtrl_32x6.png");
@@ -318,6 +323,7 @@ namespace LevelEditor
 		s_doubleClick = false;
 		s_singleClick = false;
 		s_selectedTexture = -1;
+		s_selectedEntity = -1;
 		s_copiedTextureOffset = { 0 };
 
 		AssetBrowser::getLevelTextures(s_levelTextureList, asset->name.c_str());
@@ -363,12 +369,13 @@ namespace LevelEditor
 
 	bool isPointInsideSector3d(EditorSector* sector, Vec3f pos, s32 layer)
 	{
+		const f32 eps = 0.0001f;
 		// The layers need to match.
 		if (sector->layer != layer) { return false; }
 		// The point has to be within the bounding box.
-		if (pos.x < sector->bounds[0].x || pos.x > sector->bounds[1].x ||
-			pos.y < sector->bounds[0].y || pos.y > sector->bounds[1].y ||
-			pos.z < sector->bounds[0].z || pos.z > sector->bounds[1].z)
+		if (pos.x < sector->bounds[0].x-eps || pos.x > sector->bounds[1].x+eps ||
+			pos.y < sector->bounds[0].y-eps || pos.y > sector->bounds[1].y+eps ||
+			pos.z < sector->bounds[0].z-eps || pos.z > sector->bounds[1].z+eps)
 		{
 			return false;
 		}
@@ -3609,6 +3616,217 @@ namespace LevelEditor
 		}
  	}
 
+	void addEntityToSector(EditorSector* sector, Entity* entity, Vec3f* hitPos)
+	{
+		EditorObject obj;
+		obj.entityId = entity->id;
+		obj.angle = 0.0f;
+		obj.pos = *hitPos;
+		sector->obj.push_back(obj);
+	}
+
+	void deleteObject(EditorSector* sector, s32 index)
+	{
+		if (!sector || index < 0 || index >= sector->obj.size()) { return; }
+		s32 count = (s32)sector->obj.size();
+		for (s32 i = index; i < count - 1; i++)
+		{
+			sector->obj[i] = sector->obj[i + 1];
+		}
+		sector->obj.pop_back();
+	}
+
+	void handleEntityEdit(RayHitInfo* hitInfo)
+	{
+		// TODO: Hotkeys.
+		bool placeEntity = TFE_Input::keyPressed(KEY_INSERT);
+		bool moveAlongX = TFE_Input::keyDown(KEY_X);
+		bool moveAlongY = TFE_Input::keyDown(KEY_Y);
+		bool moveAlongZ = TFE_Input::keyDown(KEY_Z);
+		const s32 layer = (s_editFlags & LEF_SHOW_ALL_LAYERS) ? LAYER_ANY : s_curLayer;
+		
+		EditorSector* hoverSector = nullptr;
+		if (s_view == EDIT_VIEW_2D) // Get the hover sector in 2D.
+		{
+			hoverSector = s_featureHovered.sector;
+		}
+		else // Or the hit sector in 3D.
+		{
+			hoverSector = hitInfo->hitSectorId < 0 ? nullptr : &s_level.sectors[hitInfo->hitSectorId];
+
+			// See if we can select an object.
+			RayHitInfo hitInfoObj;
+			const Ray ray = { s_camera.pos, s_rayDir, 1000.0f, layer };
+			const bool rayHit = traceRay(&ray, &hitInfoObj, false, false, true/*canHitObjects*/);
+			if (rayHit && hitInfoObj.dist < hitInfo->dist && hitInfoObj.hitObjId >= 0)
+			{
+				s_featureHovered.featureIndex = hitInfoObj.hitObjId;
+				s_featureHovered.sector = &s_level.sectors[hitInfoObj.hitSectorId];
+				s_featureHovered.prevSector = nullptr;
+				s_featureHovered.isObject = true;
+			}
+		}
+
+		if (placeEntity && hoverSector && s_selectedEntity >= 0 && s_selectedEntity < (s32)s_entityList.size())
+		{
+			Vec3f pos = s_cursor3d;
+			snapToGrid(&pos);
+
+			// Clamp to the sector floor/ceiling.
+			pos.y = max(hoverSector->floorHeight, pos.y);
+			pos.y = min(hoverSector->ceilHeight,  pos.y);
+			addEntityToSector(hoverSector, &s_entityList[s_selectedEntity], &pos);
+		}
+		else if (s_singleClick && s_featureHovered.isObject && s_featureHovered.sector && s_featureHovered.featureIndex >= 0)
+		{
+			s_featureCur = s_featureHovered;
+
+			EditorObject* obj = &s_featureCur.sector->obj[s_featureCur.featureIndex];
+			s_editMove = true;
+			s_moveBasePos3d = obj->pos;
+
+			f32 gridHeight = s_gridHeight;
+			s_gridHeight = obj->pos.y;
+			s_cursor3d = rayGridPlaneHit(s_camera.pos, s_rayDir);
+			s_gridHeight = gridHeight;
+			s_moveStartPos3d = s_cursor3d;
+		}
+		else if (TFE_Input::mouseDown(MBUTTON_LEFT))
+		{
+			if (s_editMove && s_featureCur.isObject && s_featureCur.sector && s_featureCur.featureIndex >= 0)
+			{
+				EditorObject* obj = &s_featureCur.sector->obj[s_featureCur.featureIndex];
+
+				f32 gridHeight = s_gridHeight;
+				s_gridHeight = obj->pos.y;
+				s_cursor3d = rayGridPlaneHit(s_camera.pos, s_rayDir);
+				s_gridHeight = gridHeight;
+
+				if (moveAlongY)
+				{
+					s_curVtxPos = s_moveStartPos3d;
+					f32 yNew = moveAlongRail({ 0.0f, 1.0f, 0.0f }).y;
+
+					obj->pos.y = s_moveBasePos3d.y + (yNew - s_moveStartPos3d.y);
+					snapToGrid(&obj->pos.y);
+				}
+				else if (obj->pos.x != s_cursor3d.x || obj->pos.y != s_cursor3d.y || obj->pos.z != s_cursor3d.z)
+				{
+					Vec3f prevPos = obj->pos;
+					EditorSector* prevSector = s_featureCur.sector;
+
+					if (moveAlongX)
+					{
+						obj->pos.x = (s_cursor3d.x - s_moveStartPos3d.x) + s_moveBasePos3d.x;
+					}
+					else if (moveAlongZ)
+					{
+						obj->pos.z = (s_cursor3d.z - s_moveStartPos3d.z) + s_moveBasePos3d.z;
+					}
+					else
+					{
+						obj->pos.x = (s_cursor3d.x - s_moveStartPos3d.x) + s_moveBasePos3d.x;
+						obj->pos.z = (s_cursor3d.z - s_moveStartPos3d.z) + s_moveBasePos3d.z;
+					}
+					snapToGrid(&obj->pos);
+
+					if (!isPointInsideSector3d(s_featureCur.sector, obj->pos, layer))
+					{
+						EditorObject objCopy = *obj;
+						deleteObject(s_featureCur.sector, s_featureCur.featureIndex);
+						s_featureHovered = {};
+
+						EditorSector* newSector = findSector3d(objCopy.pos, layer);
+						if (newSector)
+						{
+							s_featureCur.featureIndex = (s32)newSector->obj.size();
+							s_featureCur.sector = newSector;
+							newSector->obj.push_back(objCopy);
+						}
+						else
+						{
+							// Try the floor.
+							Vec3f testPos = { objCopy.pos.x, objCopy.pos.y + 4.0f, objCopy.pos.z };
+							newSector = findSector3d(testPos, layer);
+							if (newSector)
+							{
+								s_featureCur.featureIndex = (s32)newSector->obj.size();
+								s_featureCur.sector = newSector;
+								objCopy.pos.y = newSector->floorHeight;
+								newSector->obj.push_back(objCopy);
+							}
+							// Try the ceiling.
+							if (!newSector)
+							{
+								testPos.y = objCopy.pos.y - 4.0f;
+								newSector = findSector3d(testPos, layer);
+								if (newSector)
+								{
+									s_featureCur.featureIndex = (s32)newSector->obj.size();
+									s_featureCur.sector = newSector;
+									objCopy.pos.y = newSector->ceilHeight;
+									newSector->obj.push_back(objCopy);
+								}
+							}
+							// Otherwise just abort.
+							if (!newSector)
+							{
+								objCopy.pos = prevPos;
+								s_featureCur.featureIndex = (s32)prevSector->obj.size();
+								s_featureCur.sector = prevSector;
+								prevSector->obj.push_back(objCopy);
+							}
+						}
+					}
+				}
+
+				if (s_featureCur.isObject && s_featureCur.sector && s_featureCur.featureIndex >= 0)
+				{
+					obj = &s_featureCur.sector->obj[s_featureCur.featureIndex];
+					obj->pos.y = max(s_featureCur.sector->floorHeight, obj->pos.y);
+					obj->pos.y = min(s_featureCur.sector->ceilHeight,  obj->pos.y);
+				}
+			}
+			else
+			{
+				s_editMove = false;
+			}
+		}
+		else
+		{
+			s_editMove = false;
+		}
+
+		s32 dx, dy;
+		TFE_Input::getMouseWheel(&dx, &dy);
+		bool del = TFE_Input::keyPressed(KEY_DELETE);
+
+		if (dy && s_featureCur.isObject && s_featureCur.sector && s_featureCur.featureIndex >= 0)
+		{
+			EditorObject* obj = &s_featureCur.sector->obj[s_featureCur.featureIndex];
+			obj->angle += f32(dy) * 2.0f*PI / 32.0f;
+		}
+		if (del)
+		{
+			bool deleted = false;
+			if (s_featureCur.isObject && s_featureCur.sector && s_featureCur.featureIndex >= 0)
+			{
+				deleteObject(s_featureCur.sector, s_featureCur.featureIndex);
+				deleted = true;
+			}
+			else if (s_featureHovered.isObject && s_featureHovered.sector && s_featureHovered.featureIndex >= 0)
+			{
+				deleteObject(s_featureHovered.sector, s_featureHovered.featureIndex);
+				deleted = true;
+			}
+			if (deleted)
+			{
+				s_featureHovered = {};
+				s_featureCur = {};
+			}
+		}
+	}
+
 	Vec2f getTextureOffset(EditorSector* sector, HitPart part, s32 index)
 	{
 		Vec2f offset = { 0 };
@@ -3880,6 +4098,11 @@ namespace LevelEditor
 			if (s_editMode == LEDIT_DRAW)
 			{
 				handleSectorDraw(&hitInfo);
+				return;
+			}
+			else if (s_editMode == LEDIT_ENTITY)
+			{
+				handleEntityEdit(&hitInfo);
 				return;
 			}
 			
