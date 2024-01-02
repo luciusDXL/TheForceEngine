@@ -6,6 +6,7 @@
 #include "infoPanel.h"
 #include "browser.h"
 #include "camera.h"
+#include "error.h"
 #include "sharedState.h"
 #include <TFE_FrontEndUI/frontEndUi.h>
 #include <TFE_Editor/AssetBrowser/assetBrowser.h>
@@ -120,7 +121,10 @@ namespace LevelEditor
 	// Sector Drawing
 	const f32 c_defaultSectorHeight = 16.0f;
 
+	ExtrudePlane s_extrudePlane;
+
 	bool s_drawStarted = false;
+	bool s_extrudeEnabled = false;
 	bool s_gridMoveStart = false;
 	DrawMode s_drawMode;
 	f32 s_drawHeight[2];
@@ -239,6 +243,9 @@ namespace LevelEditor
 	bool copyFromClipboard(char* str);
 	void applySurfaceTextures();
 	void selectSimilarWalls(EditorSector* rootSector, s32 wallIndex, HitPart part, bool autoAlign=false);
+
+	extern Vec3f extrudePoint2dTo3d(const Vec2f pt2d);
+	extern Vec3f extrudePoint2dTo3d(const Vec2f pt2d, f32 height);
 	
 	////////////////////////////////////////////////////////
 	// Public API
@@ -3349,6 +3356,204 @@ namespace LevelEditor
 		cmd_addCreateSectorFromShape(s_drawHeight, (s32)s_shape.size(), s_shape.data());
 		edit_createSectorFromShape(s_drawHeight, (s32)s_shape.size(), s_shape.data());
 	}
+		
+	s32 extrudeSectorFromRect()
+	{
+		const Project* proj = project_get();
+		const bool dualAdjoinSupported = proj->featureSet != FSET_VANILLA || proj->game != Game_Dark_Forces;
+
+		s_drawStarted = false;
+		s_extrudeEnabled = false;
+		s32 nextWallId = -1;
+
+		const f32 minDelta = 1.0f / 64.0f;
+
+		// Extrude away - create a new sector.
+		if (s_drawHeight[1] > 0.0f)
+		{
+			// Does the wall already have an ajoin?
+			if (s_extrudePlane.wall->adjoinId >= 0 && !dualAdjoinSupported)
+			{
+				LE_ERROR("Cannot complete operation:");
+				LE_ERROR("  Dual adjoins are not supported using this FeatureSet.");
+				return -1;
+			}
+			const f32 floorHeight = std::min(s_shape[0].z, s_shape[1].z) + s_extrudePlane.origin.y;
+			const f32 ceilHeight = std::max(s_shape[0].z, s_shape[1].z) + s_extrudePlane.origin.y;
+			const f32 x0 = std::min(s_shape[0].x, s_shape[1].x);
+			const f32 x1 = std::max(s_shape[0].x, s_shape[1].x);
+			const f32 d = s_drawHeight[1];
+			if (fabsf(ceilHeight - floorHeight) >= minDelta && fabsf(x1 - x0) >= minDelta)
+			{
+				// Build the sector shape.
+				EditorSector newSector;
+				const f32 heights[] = { floorHeight, ceilHeight };
+				createNewSector(&newSector, heights);
+				// Copy from the sector being extruded from.
+				newSector.floorTex = s_extrudePlane.sector->floorTex;
+				newSector.ceilTex = s_extrudePlane.sector->ceilTex;
+				newSector.ambient = s_extrudePlane.sector->ambient;
+								
+				s32 count = 4;
+				newSector.vtx.resize(count);
+				newSector.walls.resize(count);
+				const Vec3f rect[] =
+				{
+					extrudePoint2dTo3d({x0, 0.0f}, s_drawHeight[0]),
+					extrudePoint2dTo3d({x0, 0.0f}, s_drawHeight[1]),
+					extrudePoint2dTo3d({x1, 0.0f}, s_drawHeight[1]),
+					extrudePoint2dTo3d({x1, 0.0f}, s_drawHeight[0])
+				};
+
+				Vec2f* outVtx = newSector.vtx.data();
+				for (s32 v = 0; v < count; v++)
+				{
+					outVtx[v] = { rect[v].x, rect[v].z };
+				}
+
+				EditorWall* wall = newSector.walls.data();
+				for (s32 w = 0; w < count; w++, wall++)
+				{
+					const s32 a = w;
+					const s32 b = (w + 1) % count;
+
+					*wall = {};
+					wall->idx[0] = a;
+					wall->idx[1] = b;
+
+					// Copy from the wall being extruded from.
+					wall->tex[WP_MID].texIndex = s_extrudePlane.wall->tex[WP_MID].texIndex;
+					wall->tex[WP_TOP].texIndex = s_extrudePlane.wall->tex[WP_MID].texIndex;
+					wall->tex[WP_BOT].texIndex = s_extrudePlane.wall->tex[WP_MID].texIndex;
+				}
+
+				// Split the wall if needed.
+				s32 extrudeSectorId = s_extrudePlane.sector->id;
+				s32 extrudeWallId = ((intptr_t)s_extrudePlane.wall - (intptr_t)s_extrudePlane.sector->walls.data()) / sizeof(EditorWall);
+				nextWallId = extrudeWallId;
+				if (x0 > 0.0f)
+				{
+					if (edit_splitWall(extrudeSectorId, extrudeWallId, { rect[0].x, rect[0].z }))
+					{
+						extrudeWallId++;
+						nextWallId++;
+					}
+				}
+				if (x1 < s_extrudePlane.ext.x)
+				{
+					if (edit_splitWall(extrudeSectorId, extrudeWallId, { rect[3].x, rect[3].z }))
+					{
+						nextWallId++;
+					}
+				}
+				
+				// Link wall 3 to the wall extruded from.
+				wall = &newSector.walls.back();
+				wall->adjoinId = extrudeSectorId;
+				wall->mirrorId = extrudeWallId;
+
+				EditorWall* exWall = &s_level.sectors[extrudeSectorId].walls[extrudeWallId];
+				exWall->adjoinId = (s32)s_level.sectors.size();
+				exWall->mirrorId = count - 1;
+
+				s_level.sectors.push_back(newSector);
+				sectorToPolygon(&s_level.sectors.back());
+
+				mergeAdjoins(&s_level.sectors.back());
+
+				s_featureHovered = {};
+				selection_clear();
+			}
+		}
+		// Extrude inward - adjust the current sector.
+		else if (s_drawHeight[1] < 0.0f)
+		{
+		}
+
+		return nextWallId;
+	}
+
+	void addSplitToExtrude(std::vector<f32>& splits, f32 x)
+	{
+		// Does it already exist?
+		s32 count = (s32)splits.size();
+		f32* splitList = splits.data();
+		for (s32 i = 0; i < count; i++)
+		{
+			if (splitList[i] == x)
+			{
+				return;
+			}
+		}
+		splits.push_back(x);
+	}
+
+	std::vector<Vec2f> s_testShape;
+
+	void getExtrudeHeightExtends(f32 x, Vec2f* ext)
+	{
+		*ext = { FLT_MAX, -FLT_MAX };
+
+		const s32 vtxCount = (s32)s_testShape.size();
+		const Vec2f* vtx = s_testShape.data();
+		for (s32 v = 0; v < vtxCount; v++)
+		{
+			const Vec2f* v0 = &vtx[v];
+			const Vec2f* v1 = &vtx[(v + 1) % vtxCount];
+			// Only check edges with a horizontal component.
+			if (v0->x == v1->x) { continue; }
+
+			const f32 u = (x - v0->x) / (v1->x - v0->x);
+			if (u < -FLT_EPSILON || u > 1.0f + FLT_EPSILON)
+			{
+				continue;
+			}
+
+			const f32 z = v0->z + u * (v1->z - v0->z);
+			ext->x = min(ext->x, z);
+			ext->z = max(ext->z, z);
+		}
+	}
+
+	void extrudeSectorFromShape()
+	{
+		s_drawStarted = false;
+		s_extrudeEnabled = false;
+
+		// Split the shape into multiple components.
+		const s32 vtxCount = (s32)s_shape.size();
+		std::vector<f32> splits;
+
+		// Add the splits.
+		for (s32 v = 0; v < vtxCount; v++)
+		{
+			addSplitToExtrude(splits, s_shape[v].x);
+		}
+		// Sort them from lowest to higest.
+		std::sort(splits.begin(), splits.end());
+		// Then find the height extends of each split.
+		s32 extrudeSectorId = s_extrudePlane.sector->id;
+		s32 extrudeWallId = ((intptr_t)s_extrudePlane.wall - (intptr_t)s_extrudePlane.sector->walls.data()) / sizeof(EditorWall);
+
+		s_testShape = s_shape;
+		s_shape.resize(2);
+		const s32 splitCount = (s32)splits.size();
+		for (s32 i = 0; i < splitCount - 1; i++)
+		{
+			Vec2f ext;
+			f32 xHalf = (splits[i] + splits[i + 1]) * 0.5f;
+			getExtrudeHeightExtends(xHalf, &ext);
+			if (ext.x < FLT_MAX && ext.z > -FLT_MAX)
+			{
+				s_shape[0] = { splits[i], ext.x };
+				s_shape[1] = { splits[i+1], ext.z };
+				s_extrudePlane.sector = &s_level.sectors[extrudeSectorId];
+				s_extrudePlane.wall = &s_extrudePlane.sector->walls[extrudeWallId];
+
+				extrudeWallId = extrudeSectorFromRect();
+			}
+		}
+	}
 
 	void removeLastShapePoint()
 	{
@@ -3413,6 +3618,253 @@ namespace LevelEditor
 		return true;
 	}
 		
+	void handleSectorExtrude(RayHitInfo* hitInfo)
+	{
+		const Project* project = project_get();
+		const bool allowSlopes = project->featureSet != FSET_VANILLA || project->game != Game_Dark_Forces;
+
+		EditorSector* hoverSector = nullptr;
+		EditorWall* hoverWall = nullptr;
+
+		// Get the hover sector in 2D.
+		if (!s_drawStarted)
+		{
+			if (s_view == EDIT_VIEW_2D)
+			{
+				hoverSector = s_featureHovered.sector;
+				hoverWall = (s_featureHovered.part != HP_NONE && s_featureHovered.featureIndex >= 0) ?
+					&hoverSector->walls[s_featureHovered.featureIndex] : nullptr;
+			}
+			else if (hitInfo->hitSectorId >= 0 && hitInfo->hitWallId >= 0) // Or the hit sector in 3D.
+			{
+				hoverSector = &s_level.sectors[hitInfo->hitSectorId];
+				hoverWall = hitInfo->hitWallId < 0 ? nullptr : &hoverSector->walls[hitInfo->hitWallId];
+			}
+			if (!hoverSector || !hoverWall) { return; }
+		}
+
+		// Snap the cursor to the grid.
+		Vec2f onGrid = { s_cursor3d.x, s_cursor3d.z };
+
+		const f32 maxLineDist = 0.5f * s_gridSize;
+		Vec2f newPos;
+		FeatureId featureId;
+		if (snapToLine(onGrid, maxLineDist, newPos, featureId))
+		{
+			s32 wallIndex;
+			EditorSector* sector = unpackFeatureId(featureId, &wallIndex);
+
+			// Snap the result to the surface grid.
+			Vec3f snapPos = { newPos.x, s_gridHeight, newPos.z };
+			snapToSurfaceGrid(sector, &sector->walls[wallIndex], snapPos);
+			onGrid = { snapPos.x, snapPos.z };
+		}
+		else
+		{
+			snapToGrid(&onGrid);
+		}
+
+		s_cursor3d.x = onGrid.x;
+		s_cursor3d.z = onGrid.z;
+		snapToGrid(&s_cursor3d.y);
+
+		// Project the shape onto the polygon.
+		if (s_view == EDIT_VIEW_3D && s_drawStarted)
+		{
+			// Project using the extrude plane.
+			const Vec3f offset = { s_cursor3d.x - s_extrudePlane.origin.x, s_cursor3d.y - s_extrudePlane.origin.y, s_cursor3d.z - s_extrudePlane.origin.z };
+			onGrid.x = offset.x*s_extrudePlane.S.x + offset.y*s_extrudePlane.S.y + offset.z*s_extrudePlane.S.z;
+			onGrid.z = offset.x*s_extrudePlane.T.x + offset.y*s_extrudePlane.T.y + offset.z*s_extrudePlane.T.z;
+
+			// Clamp.
+			onGrid.x = max(0.0f, min(s_extrudePlane.ext.x, onGrid.x));
+			onGrid.z = max(0.0f, min(s_extrudePlane.ext.z, onGrid.z));
+		}
+
+		if (!s_drawStarted && s_singleClick)
+		{
+			s_extrudeEnabled = true;
+			s_drawStarted = true;
+
+			s_extrudePlane.sector = hoverSector;
+			s_extrudePlane.wall = hoverWall;
+
+			const Vec2f* p0 = &hoverSector->vtx[hoverWall->idx[0]];
+			const Vec2f* p1 = &hoverSector->vtx[hoverWall->idx[1]];
+
+			s_extrudePlane.origin = { p0->x, hoverSector->floorHeight, p0->z };
+			const Vec3f S = { p1->x - p0->x, 0.0f, p1->z - p0->z };
+			const Vec3f T = { 0.0f, 1.0f, 0.0f };
+			const Vec3f N = { -(p1->z - p0->z), 0.0f, p1->x - p0->x };
+
+			s_extrudePlane.ext.x = TFE_Math::distance(p0, p1);
+			s_extrudePlane.ext.z = hoverSector->ceilHeight - hoverSector->floorHeight;
+
+			s_extrudePlane.S = TFE_Math::normalize(&S);
+			s_extrudePlane.N = TFE_Math::normalize(&N);
+			s_extrudePlane.T = T;
+
+			// Project using the extrude plane.
+			const Vec3f offset = { s_cursor3d.x - s_extrudePlane.origin.x, s_cursor3d.y - s_extrudePlane.origin.y, s_cursor3d.z - s_extrudePlane.origin.z };
+			onGrid.x = offset.x*s_extrudePlane.S.x + offset.y*s_extrudePlane.S.y + offset.z*s_extrudePlane.S.z;
+			onGrid.z = offset.x*s_extrudePlane.T.x + offset.y*s_extrudePlane.T.y + offset.z*s_extrudePlane.T.z;
+
+			s_drawMode = TFE_Input::keyModDown(KEYMOD_SHIFT) ? DMODE_RECT : DMODE_SHAPE;
+			s_drawHeight[0] = 0.0f;
+			s_drawHeight[1] = 0.0f;
+			s_drawCurPos = onGrid;
+			
+			s_shape.clear();
+			if (s_drawMode == DMODE_RECT)
+			{
+				s_shape.resize(2);
+				s_shape[0] = onGrid;
+				s_shape[1] = onGrid;
+			}
+			else
+			{
+				s_shape.push_back(onGrid);
+			}
+		}
+		else if (s_drawStarted)
+		{
+			s_drawCurPos = onGrid;
+			if (s_drawMode == DMODE_RECT)
+			{
+				s_shape[1] = onGrid;
+				if (!TFE_Input::mouseDown(MouseButton::MBUTTON_LEFT))
+				{
+					if (s_view == EDIT_VIEW_3D)
+					{
+						s_drawMode = DMODE_RECT_VERT;
+						s_curVtxPos = s_cursor3d;
+					}
+					else
+					{
+						s_drawHeight[1] = s_drawHeight[0] + c_defaultSectorHeight;
+						createSectorFromRect();
+					}
+				}
+			}
+			else if (s_drawMode == DMODE_SHAPE)
+			{
+				if (s_singleClick)
+				{
+					if (vtxEqual(&onGrid, &s_shape[0]))
+					{
+						if (s_shape.size() >= 3)
+						{
+							// Need to form a polygon.
+							if (s_view == EDIT_VIEW_3D)
+							{
+								s_drawMode = DMODE_SHAPE_VERT;
+								s_curVtxPos = s_cursor3d;
+								shapeToPolygon((s32)s_shape.size(), s_shape.data(), s_shapePolygon);
+							}
+							else
+							{
+								s_drawHeight[1] = s_drawHeight[0] + c_defaultSectorHeight;
+								createSectorFromShape();
+							}
+						}
+						else
+						{
+							s_drawStarted = false;
+							s_extrudeEnabled = false;
+						}
+					}
+					else
+					{
+						// Make sure the vertex hasn't already been placed.
+						const s32 count = (s32)s_shape.size();
+						const Vec2f* vtx = s_shape.data();
+						bool vtxExists = false;
+						for (s32 i = 0; i < count; i++, vtx++)
+						{
+							if (vtxEqual(vtx, &onGrid))
+							{
+								vtxExists = true;
+								break;
+							}
+						}
+
+						if (!vtxExists)
+						{
+							vtx = count > 0 ? &s_shape.back() : nullptr;
+							const bool error = !allowSlopes && vtx && onGrid.x != vtx->x && onGrid.z != vtx->z;
+							if (error)
+							{
+								LE_ERROR("Cannot complete operation:");
+								LE_ERROR("  Slopes are not supported using this feature set.");
+							}
+							else
+							{
+								s_shape.push_back(onGrid);
+							}
+						}
+					}
+				}
+				else if (TFE_Input::keyPressed(KEY_BACKSPACE))
+				{
+					removeLastShapePoint();
+				}
+				else if (TFE_Input::keyPressed(KEY_RETURN) || s_doubleClick)
+				{
+					if (s_shape.size() >= 3)
+					{
+						if (s_view == EDIT_VIEW_3D)
+						{
+							s_drawMode = DMODE_SHAPE_VERT;
+							s_curVtxPos = s_cursor3d;
+							shapeToPolygon((s32)s_shape.size(), s_shape.data(), s_shapePolygon);
+						}
+						else
+						{
+							s_drawHeight[1] = s_drawHeight[0] + c_defaultSectorHeight;
+							createSectorFromShape();
+						}
+					}
+					else
+					{
+						// Accept the entire wall, which is a quad.
+						if (s_shape.size() <= 1)
+						{
+							s_shape.resize(2);
+							s_shape[0] = { 0.0f, 0.0f };
+							s_shape[1] = { s_extrudePlane.ext.x, s_extrudePlane.ext.z };
+							s_drawMode = DMODE_RECT_VERT;
+							s_curVtxPos = s_cursor3d;
+						}
+						else
+						{
+							s_drawStarted = false;
+							s_extrudeEnabled = false;
+						}
+					}
+				}
+			}
+			else if (s_drawMode == DMODE_RECT_VERT || s_drawMode == DMODE_SHAPE_VERT)
+			{
+				if (TFE_Input::keyPressed(KEY_BACKSPACE) && s_drawMode == DMODE_SHAPE_VERT)
+				{
+					s_drawMode = DMODE_SHAPE;
+					s_drawHeight[1] = s_drawHeight[0];
+					removeLastShapePoint();
+				}
+				else if (s_singleClick)
+				{
+					if (s_drawMode == DMODE_SHAPE_VERT) { extrudeSectorFromShape(); }
+					else { extrudeSectorFromRect(); }
+				}
+
+				const Vec3f worldPos = moveAlongRail(s_extrudePlane.N);
+				const Vec3f offset = { worldPos.x - s_cursor3d.x, worldPos.y - s_cursor3d.y, worldPos.z - s_cursor3d.z };
+				s_drawHeight[1] = offset.x*s_extrudePlane.N.x + offset.y*s_extrudePlane.N.y + offset.z*s_extrudePlane.N.z;
+				snapToGrid(&s_drawHeight[1]);
+			}
+		}
+	}
+		
 	void handleSectorDraw(RayHitInfo* hitInfo)
 	{
 		EditorSector* hoverSector = nullptr;
@@ -3453,7 +3905,7 @@ namespace LevelEditor
 
 		// Hot Key
 		const bool heightMove = TFE_Input::keyDown(KEY_H);
-
+		
 		// Two ways to draw: rectangle (shift + left click and drag, escape to cancel), shape (left click to start, backspace to go back one point, escape to cancel)
 		if (s_gridMoveStart)
 		{
@@ -3949,6 +4401,10 @@ namespace LevelEditor
 			}
 		}
 
+		// 2D extrude - hover over line, left click and drag.
+		// 3D extrude - hover over wall, left click to add points (or shift to drag a box), double-click to just extrude the full wall.
+		const bool extrude = (TFE_Input::keyModDown(KEYMOD_CTRL) || s_extrudeEnabled) && s_editMode == LEDIT_DRAW;
+
 		if (s_view == EDIT_VIEW_2D)
 		{
 			cameraControl2d(mx, my);
@@ -3980,7 +4436,8 @@ namespace LevelEditor
 
 			if (s_editMode == LEDIT_DRAW)
 			{
-				handleSectorDraw(nullptr/*2d so no ray hit info*/);
+				if (extrude) { handleSectorExtrude(nullptr/*2d so no ray hit info*/); }
+				else { handleSectorDraw(nullptr/*2d so no ray hit info*/); }
 				return;
 			}
 				
@@ -4097,7 +4554,8 @@ namespace LevelEditor
 
 			if (s_editMode == LEDIT_DRAW)
 			{
-				handleSectorDraw(&hitInfo);
+				if (extrude) { handleSectorExtrude(&hitInfo); }
+				else { handleSectorDraw(&hitInfo); }
 				return;
 			}
 			else if (s_editMode == LEDIT_ENTITY)
@@ -4747,8 +5205,14 @@ namespace LevelEditor
 							}
 							else if (s_view == EDIT_VIEW_3D)
 							{
+								Vec3f worldPos = { cen[i].x, s_gridHeight, cen[i].z };
+								if (s_extrudeEnabled)
+								{
+									worldPos = extrudePoint2dTo3d(cen[i], s_drawHeight[0]);
+								}
+
 								Vec2f screenPos;
-								if (worldPosToViewportCoord({ cen[i].x, s_gridHeight, cen[i].z }, &screenPos))
+								if (worldPosToViewportCoord(worldPos, &screenPos))
 								{
 									drawViewportInfo(i, { (s32)screenPos.x, (s32)screenPos.z }, info, -16.0f + offs[i].x - textOffset, -16.0f + offs[i].z);
 								}
@@ -4776,8 +5240,18 @@ namespace LevelEditor
 							}
 							else if (s_view == EDIT_VIEW_3D)
 							{
+								Vec3f worldPos = { (v0->x + v1->x)*0.5f, s_gridHeight, (v0->z + v1->z)*0.5f };
+								if (s_extrudeEnabled)
+								{
+									Vec3f w0 = extrudePoint2dTo3d(*v0, s_drawHeight[0]);
+									Vec3f w1 = extrudePoint2dTo3d(*v1, s_drawHeight[0]);
+									worldPos.x = (w0.x + w1.x)*0.5f;
+									worldPos.y = (w0.y + w1.y)*0.5f;
+									worldPos.z = (w0.z + w1.z)*0.5f;
+								}
+
 								Vec2f screenPos;
-								if (worldPosToViewportCoord({ (v0->x + v1->x)*0.5f, s_gridHeight, (v0->z+v1->z)*0.5f }, &screenPos))
+								if (worldPosToViewportCoord(worldPos, &screenPos))
 								{
 									screenPos.x += mapOffset.x;
 									screenPos.z += mapOffset.z;
@@ -4789,6 +5263,11 @@ namespace LevelEditor
 					else if ((s_drawMode == DMODE_RECT_VERT || s_drawMode == DMODE_SHAPE_VERT) && s_view == EDIT_VIEW_3D)
 					{
 						f32 height = (s_drawHeight[0] + s_drawHeight[1]) * 0.5f;
+						if (s_extrudeEnabled)
+						{
+							height = s_curVtxPos.y;
+						}
+
 						Vec3f pos = { s_curVtxPos.x, height, s_curVtxPos.z };
 
 						Vec2f screenPos;
@@ -4976,6 +5455,12 @@ namespace LevelEditor
 	{
 		const f32 eps = 0.00001f;
 		return fabsf(a->x - b->x) < eps && fabsf(a->z - b->z) < eps;
+	}
+
+	bool vtxEqual(const Vec3f* a, const Vec3f* b)
+	{
+		const f32 eps = 0.00001f;
+		return fabsf(a->x - b->x) < eps && fabsf(a->y - b->y) < eps && fabsf(a->z - b->z) < eps;
 	}
 
 	void selectOverlappingVertices(EditorSector* root, s32 featureIndex, const Vec2f* rootVtx, bool addToSelection, bool addToVtxList/*=false*/)

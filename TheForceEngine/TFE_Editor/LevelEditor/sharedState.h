@@ -27,6 +27,17 @@ namespace LevelEditor
 		bool isObject = false;
 		HitPart part = HP_NONE;
 	};
+	struct ExtrudePlane
+	{
+		Vec3f origin;
+		Vec3f S;
+		Vec3f T;
+		Vec3f N;
+
+		Vec2f ext;
+		EditorSector* sector;
+		EditorWall* wall;
+	};
 		
 	extern EditorLevel s_level;
 	extern TFE_Editor::AssetList s_levelTextureList;
@@ -52,6 +63,9 @@ namespace LevelEditor
 	extern Vec3f s_viewDir;
 	extern Vec3f s_viewRight;
 	extern Vec3f s_cursor3d;
+
+	// Drawing
+	extern ExtrudePlane s_extrudePlane;
 
 	// Search
 	extern u32 s_searchKey;

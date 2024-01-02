@@ -658,6 +658,7 @@ namespace LevelEditor
 
 	// Temp
 	extern bool s_drawStarted;
+	extern bool s_extrudeEnabled;
 	extern DrawMode s_drawMode;
 	extern f32 s_drawHeight[2];
 	extern std::vector<Vec2f> s_shape;
@@ -670,7 +671,6 @@ namespace LevelEditor
 		f32 width = 1.5f;
 		if (s_drawStarted && s_drawMode == DMODE_RECT)
 		{
-			//transVtx[v] = { vtxData->x * s_viewportTrans2d.x + s_viewportTrans2d.y, vtxData->z * s_viewportTrans2d.z + s_viewportTrans2d.w };
 			Vec2f vtx[] =
 			{
 				{ s_shape[0].x * s_viewportTrans2d.x + s_viewportTrans2d.y, s_shape[0].z * s_viewportTrans2d.z + s_viewportTrans2d.w },
@@ -722,6 +722,179 @@ namespace LevelEditor
 		TFE_RenderShared::lineDraw2d_addLine(1.5f, &vtx[1], cursorColor);
 		TFE_RenderShared::lineDraw2d_addLine(1.5f, &vtx[2], cursorColor);
 		TFE_RenderShared::lineDraw2d_addLine(1.5f, &vtx[3], cursorColor);
+	}
+	
+	Vec3f extrudePoint2dTo3d(const Vec2f pt2d)
+	{
+		const Vec3f& S = s_extrudePlane.S;
+		const Vec3f& T = s_extrudePlane.T;
+		const Vec3f& origin = s_extrudePlane.origin;
+		const Vec3f pt3d =
+		{
+			origin.x + pt2d.x*S.x + pt2d.z*T.x,
+			origin.y + pt2d.x*S.y + pt2d.z*T.y,
+			origin.z + pt2d.x*S.z + pt2d.z*T.z
+		};
+		return pt3d;
+	}
+
+	Vec3f extrudePoint2dTo3d(const Vec2f pt2d, f32 height)
+	{
+		const Vec3f& S = s_extrudePlane.S;
+		const Vec3f& T = s_extrudePlane.T;
+		const Vec3f& N = s_extrudePlane.N;
+		const Vec3f& origin = s_extrudePlane.origin;
+		const Vec3f pt3d =
+		{
+			origin.x + pt2d.x*S.x + pt2d.z*T.x + height*N.x,
+			origin.y + pt2d.x*S.y + pt2d.z*T.y + height*N.y,
+			origin.z + pt2d.x*S.z + pt2d.z*T.z + height*N.z
+		};
+		return pt3d;
+	}
+
+	void drawExtrudeShape3D()
+	{
+		const u32 color = 0xffffffff;
+		const u32 colorError = 0xff2020ff;
+		const Project* project = project_get();
+		const bool allowSlopes = project->featureSet != FSET_VANILLA || project->game != Game_Dark_Forces;
+
+		if (s_drawStarted && s_drawMode == DMODE_RECT)
+		{
+			const Vec3f p0 = extrudePoint2dTo3d(s_shape[0]);
+			const Vec3f p1 = extrudePoint2dTo3d(s_shape[1]);
+
+			Vec3f vtx[] =
+			{
+				{ p0.x, p0.y, p0.z },
+				{ p1.x, p0.y, p1.z },
+				{ p1.x, p1.y, p1.z },
+				{ p0.x, p1.y, p0.z },
+				{ p0.x, p0.y, p0.z }
+			};
+			TFE_RenderShared::lineDraw3d_addLine(3.0f, &vtx[0], &color);
+			TFE_RenderShared::lineDraw3d_addLine(3.0f, &vtx[1], &color);
+			TFE_RenderShared::lineDraw3d_addLine(3.0f, &vtx[2], &color);
+			TFE_RenderShared::lineDraw3d_addLine(3.0f, &vtx[3], &color);
+		}
+		else if (s_drawStarted && s_drawMode == DMODE_RECT_VERT)
+		{
+			const Vec2f vtx[] =
+			{
+				{ s_shape[0].x, s_shape[0].z },
+				{ s_shape[1].x, s_shape[0].z },
+				{ s_shape[1].x, s_shape[1].z },
+				{ s_shape[0].x, s_shape[1].z }
+			};
+
+			for (s32 v = 0; v < 4; v++)
+			{
+				const s32 a = v;
+				const s32 b = (v + 1) & 3;
+				// Base
+				const Vec3f base[] =
+				{
+					extrudePoint2dTo3d(vtx[a], s_drawHeight[0]),
+					extrudePoint2dTo3d(vtx[b], s_drawHeight[0]),
+				};
+				TFE_RenderShared::lineDraw3d_addLine(3.0f, base, &color);
+				// Top
+				const Vec3f top[] =
+				{
+					extrudePoint2dTo3d(vtx[a], s_drawHeight[1]),
+					extrudePoint2dTo3d(vtx[b], s_drawHeight[1]),
+				};
+				TFE_RenderShared::lineDraw3d_addLine(3.0f, top, &color);
+				// Edge
+				const Vec3f edge[] =
+				{
+					extrudePoint2dTo3d(vtx[a], s_drawHeight[0]),
+					extrudePoint2dTo3d(vtx[a], s_drawHeight[1]),
+				};
+				TFE_RenderShared::lineDraw3d_addLine(3.0f, edge, &color);
+			}
+
+			// Draw solid bottom.
+			const Vec3f p0 = extrudePoint2dTo3d(s_shape[0], s_drawHeight[0]);
+			const Vec3f p1 = extrudePoint2dTo3d(s_shape[1], s_drawHeight[0]);
+			const Vec3f baseVtx[4] =
+			{
+				{ p0.x, p0.y, p0.z },
+				{ p1.x, p0.y, p1.z },
+				{ p1.x, p1.y, p1.z },
+				{ p0.x, p1.y, p0.z }
+			};
+			const s32 idx[6] =
+			{
+				0, 1, 2,
+				0, 2, 3
+			};
+			triDraw3d_addColored(TRIMODE_BLEND, 6, 4, baseVtx, idx, SCOLOR_POLY_NORM, false);
+		}
+		else if (s_drawStarted && s_drawMode == DMODE_SHAPE)
+		{
+			const s32 vtxCount = (s32)s_shape.size();
+			const Vec2f* vtx = s_shape.data();
+			for (s32 v = 0; v < vtxCount - 1; v++)
+			{
+				const Vec3f lineVtx[] =
+				{
+					extrudePoint2dTo3d(vtx[v]),
+					extrudePoint2dTo3d(vtx[v + 1])
+				};
+				const bool error = !allowSlopes && vtx[v].x != vtx[v+1].x && vtx[v].z != vtx[v+1].z;
+				TFE_RenderShared::lineDraw3d_addLine(3.0f, lineVtx, error ? &colorError : &color);
+			}
+			// Draw from the last vertex to curPos.
+			const Vec3f lineVtx[] =
+			{
+				extrudePoint2dTo3d(vtx[vtxCount-1]),
+				extrudePoint2dTo3d(s_drawCurPos)
+			};
+			const bool error = !allowSlopes && vtx[vtxCount-1].x != s_drawCurPos.x && vtx[vtxCount-1].z != s_drawCurPos.z;
+			TFE_RenderShared::lineDraw3d_addLine(3.0f, lineVtx, error ? &colorError : &color);
+		}
+		else if (s_drawStarted && s_drawMode == DMODE_SHAPE_VERT)
+		{
+			const s32 vtxCount = (s32)s_shape.size();
+			const Vec2f* vtx = s_shape.data();
+			for (s32 v = 0; v < vtxCount; v++)
+			{
+				const s32 a = v;
+				const s32 b = (v + 1) % vtxCount;
+				// Draw the faces.
+				const Vec3f lineVtx0[] =
+				{
+					extrudePoint2dTo3d(vtx[a], s_drawHeight[0]),
+					extrudePoint2dTo3d(vtx[b], s_drawHeight[0])
+				};
+				const Vec3f lineVtx1[] =
+				{
+					extrudePoint2dTo3d(vtx[a], s_drawHeight[1]),
+					extrudePoint2dTo3d(vtx[b], s_drawHeight[1])
+				};
+				TFE_RenderShared::lineDraw3d_addLine(3.0f, lineVtx0, &color);
+				TFE_RenderShared::lineDraw3d_addLine(3.0f, lineVtx1, &color);
+				// Draw the edges.
+				const Vec3f lineVtxEdge[] =
+				{
+					extrudePoint2dTo3d(vtx[a], s_drawHeight[0]),
+					extrudePoint2dTo3d(vtx[a], s_drawHeight[1])
+				};
+				TFE_RenderShared::lineDraw3d_addLine(3.0f, lineVtxEdge, &color);
+			}
+			// Draw the polygon
+			const s32 triVtxCount = (s32)s_shapePolygon.triVtx.size();
+			const Vec2f* triVtx = s_shapePolygon.triVtx.data();
+			s_bufferVec3.resize(triVtxCount);
+			Vec3f* flatVtx = s_bufferVec3.data();
+			for (size_t v = 0; v < triVtxCount; v++)
+			{
+				flatVtx[v] = extrudePoint2dTo3d(triVtx[v], s_drawHeight[0]);
+			}
+			triDraw3d_addColored(TRIMODE_BLEND, (u32)s_shapePolygon.triIdx.size(), (u32)triVtxCount, flatVtx, s_shapePolygon.triIdx.data(), SCOLOR_POLY_NORM, false);
+		}
 	}
 
 	void drawSectorShape3D()
@@ -945,7 +1118,14 @@ namespace LevelEditor
 
 		if (s_editMode == LEDIT_DRAW)
 		{
-			drawSectorShape3D();
+			if (s_extrudeEnabled)
+			{
+				drawExtrudeShape3D();
+			}
+			else
+			{
+				drawSectorShape3D();
+			}
 		}
 		else if (s_editMode == LEDIT_SECTOR)
 		{
