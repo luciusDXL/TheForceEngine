@@ -12,23 +12,27 @@ The Post-processing pipeline was implemented, including a bloom effect that can 
 
 ## True Color Support
 *Finished*<br>
-True color support was implemented with options for colormap blending, full true-color rendering, and texture filtering.
+True-color support was implemented with options for colormap blending, full true-color rendering, and texture filtering.
 
-## Tools
+## Level Editor
 ### Estimated Release: Early 2024
-These releases focus on getting the tools working again with the reverse-engineered code. This will include basic functionality like importing, exporting, viewing, and editing assets. This will include a built-in level editor that will initially support Dark Forces but will eventually include Outlaws and Outlaws asset types.
+Built-in **level editor** for Dark Forces that can be used to make complete levels with goals, INF support, editable entities, and everything else needed. Support for **Outlaws** levels will be coming later.
+
+## Asset Editor
+### Estimated Release: Early 2024
+Finish the Asset Browser, started in 2023. In addition to the formats currently supported, support will be added for formats needed for cutscenes, and UI. And finally new assets - such as HD assets and voxels.
 
 ## HD Asset Support
 ### Estimated Release: Early 2024
 With the tools in place, the plan is to support higher resolution and true-color assets. This includes textures, already includes models (3DO limits were removed previously as an option), and 44.1kHz audio (wave files).
 
 ## Voxels
-### Estimated Release: Early 2024
+### Estimated Release: Early to Mid 2024
 Quite some time ago now, I implemented an experimental voxel renderer that integrated seamlessly with the Jedi classic renderer. However, there were some loose ends to deal with, such as not supporting the full VOX format and dealing with some palette issues. This release will integrate that code with the main branch and add support for replacing objects with their voxel counterpart.
 
 ## Dynamic Lighting
-### Estimated Release: Early 2024
-Dynamic light was implemented in a branch along with true color rendering. But it needs to be cleaned up and some tweaks need to be made for release. This will include shadows, the ability to attach lights to objects/frames, and shadows.
+### Estimated Release: Early to Mid 2024
+Dynamic light was implemented in a branch along with true color rendering. But it needs to be cleaned up and some tweaks need to be made for release. This will include shadows, and the ability to attach lights to objects/frames.
 
 ## Towards Version 2.0
 ### Estimated Release: Late 2024
