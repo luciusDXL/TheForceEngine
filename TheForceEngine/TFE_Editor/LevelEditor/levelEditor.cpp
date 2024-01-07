@@ -392,18 +392,44 @@ namespace LevelEditor
 		return inside;
 	}
 
+	static std::vector<EditorSector*> s_pHoverSectors;
+
+	bool sortHoveredSectors(EditorSector* a, EditorSector* b)
+	{
+		if (a->floorHeight > b->floorHeight) { return true; }
+		else if (a->floorHeight == b->floorHeight)
+		{
+			// 2D area.
+			f32 areaA = (a->bounds[1].x - a->bounds[0].x) * (a->bounds[1].z - a->bounds[0].z);
+			f32 areaB = (b->bounds[1].x - b->bounds[0].x) * (b->bounds[1].z - b->bounds[0].z);
+			return areaA < areaB;
+		}
+		return false;
+	}
+
 	EditorSector* findSector2d(Vec2f pos, s32 layer)
 	{
 		const size_t sectorCount = s_level.sectors.size();
 		EditorSector* sector = s_level.sectors.data();
+		s_pHoverSectors.clear();
 		for (size_t s = 0; s < sectorCount; s++, sector++)
 		{
 			if (isPointInsideSector2d(sector, pos, layer))
 			{
-				return sector;
+				// Gather all of the potentially selected sectors in a list.
+				s_pHoverSectors.push_back(sector);
 			}
 		}
-		return nullptr;
+		if (s_pHoverSectors.empty()) { return nullptr; }
+		
+		// Then sort:
+		// 1. floor height.
+		// 2. approximate area (if the floor height is the same).
+		std::sort(s_pHoverSectors.begin(), s_pHoverSectors.end(), sortHoveredSectors);
+
+		// Finally select the beginning.
+		// Note we may walk forward if stepping through the selection.
+		return s_pHoverSectors[0];
 	}
 
 	EditorSector* findSector3d(Vec3f pos, s32 layer)
@@ -4093,7 +4119,7 @@ namespace LevelEditor
 		// TODO: Hotkeys.
 		bool placeEntity = TFE_Input::keyPressed(KEY_INSERT);
 		bool moveAlongX = TFE_Input::keyDown(KEY_X);
-		bool moveAlongY = TFE_Input::keyDown(KEY_Y);
+		bool moveAlongY = TFE_Input::keyDown(KEY_Y) && s_view != EDIT_VIEW_2D;
 		bool moveAlongZ = TFE_Input::keyDown(KEY_Z);
 		const s32 layer = (s_editFlags & LEF_SHOW_ALL_LAYERS) ? LAYER_ANY : s_curLayer;
 		
@@ -4101,6 +4127,48 @@ namespace LevelEditor
 		if (s_view == EDIT_VIEW_2D) // Get the hover sector in 2D.
 		{
 			hoverSector = s_featureHovered.sector;
+			s_featureHovered = {};
+
+			f32 maxY = -FLT_MAX;
+			s32 maxObjId = -1;
+
+			// TODO: This isn't very efficient, but for now loop through all of the sectors.
+			const s32 sectorCount = (s32)s_level.sectors.size();
+			EditorSector* sector = s_level.sectors.data();
+			EditorSector* objSector = nullptr;
+			for (s32 s = 0; s < sectorCount; s++, sector++)
+			{
+				// Check for objects.
+				// Must be inside the range and pick the highest top
+				// in order to duplicate the 3D behavior.
+				const s32 objCount = (s32)sector->obj.size();
+				const EditorObject* obj = sector->obj.data();
+				for (s32 i = 0; i < objCount; i++, obj++)
+				{
+					const Entity* entity = &s_entityList[obj->entityId];
+					const f32 dx = fabsf(obj->pos.x - s_cursor3d.x);
+					const f32 dz = fabsf(obj->pos.z - s_cursor3d.z);
+					const f32 w = entity->size.x * 0.5f;
+					if (dx <= w && dz <= w)
+					{
+						const f32 yTop = obj->pos.y + entity->size.z;
+						if (yTop > maxY)
+						{
+							maxObjId = i;
+							maxY = yTop;
+							objSector = sector;
+						}
+					}
+				}
+
+				if (maxObjId >= 0)
+				{
+					s_featureHovered.featureIndex = maxObjId;
+					s_featureHovered.sector = objSector;
+					s_featureHovered.prevSector = nullptr;
+					s_featureHovered.isObject = true;
+				}
+			}
 		}
 		else // Or the hit sector in 3D.
 		{
@@ -4112,6 +4180,8 @@ namespace LevelEditor
 			const bool rayHit = traceRay(&ray, &hitInfoObj, false, false, true/*canHitObjects*/);
 			if (rayHit && hitInfoObj.dist < hitInfo->dist && hitInfoObj.hitObjId >= 0)
 			{
+				s_cursor3d = hitInfoObj.hitPos;
+
 				s_featureHovered.featureIndex = hitInfoObj.hitObjId;
 				s_featureHovered.sector = &s_level.sectors[hitInfoObj.hitSectorId];
 				s_featureHovered.prevSector = nullptr;
@@ -4124,9 +4194,17 @@ namespace LevelEditor
 			Vec3f pos = s_cursor3d;
 			snapToGrid(&pos);
 
-			// Clamp to the sector floor/ceiling.
-			pos.y = max(hoverSector->floorHeight, pos.y);
-			pos.y = min(hoverSector->ceilHeight,  pos.y);
+			if (s_view == EDIT_VIEW_2D)
+			{
+				// Place on the floor.
+				pos.y = hoverSector->floorHeight;
+			}
+			else
+			{
+				// Clamp to the sector floor/ceiling.
+				pos.y = max(hoverSector->floorHeight, pos.y);
+				pos.y = min(hoverSector->ceilHeight,  pos.y);
+			}
 			addEntityToSector(hoverSector, &s_entityList[s_selectedEntity], &pos);
 		}
 		else if (s_singleClick && s_featureHovered.isObject && s_featureHovered.sector && s_featureHovered.featureIndex >= 0)
@@ -4137,10 +4215,17 @@ namespace LevelEditor
 			s_editMove = true;
 			s_moveBasePos3d = obj->pos;
 
-			f32 gridHeight = s_gridHeight;
-			s_gridHeight = obj->pos.y;
-			s_cursor3d = rayGridPlaneHit(s_camera.pos, s_rayDir);
-			s_gridHeight = gridHeight;
+			if (s_view == EDIT_VIEW_2D)
+			{
+				s_cursor3d.y = obj->pos.y;
+			}
+			else
+			{
+				f32 gridHeight = s_gridHeight;
+				s_gridHeight = obj->pos.y;
+				s_cursor3d = rayGridPlaneHit(s_camera.pos, s_rayDir);
+				s_gridHeight = gridHeight;
+			}
 			s_moveStartPos3d = s_cursor3d;
 		}
 		else if (TFE_Input::mouseDown(MBUTTON_LEFT))
@@ -4148,11 +4233,17 @@ namespace LevelEditor
 			if (s_editMove && s_featureCur.isObject && s_featureCur.sector && s_featureCur.featureIndex >= 0)
 			{
 				EditorObject* obj = &s_featureCur.sector->obj[s_featureCur.featureIndex];
-
-				f32 gridHeight = s_gridHeight;
-				s_gridHeight = obj->pos.y;
-				s_cursor3d = rayGridPlaneHit(s_camera.pos, s_rayDir);
-				s_gridHeight = gridHeight;
+				if (s_view == EDIT_VIEW_2D)
+				{
+					s_cursor3d.y = obj->pos.y;
+				}
+				else
+				{
+					f32 gridHeight = s_gridHeight;
+					s_gridHeight = obj->pos.y;
+					s_cursor3d = rayGridPlaneHit(s_camera.pos, s_rayDir);
+					s_gridHeight = gridHeight;
+				}
 
 				if (moveAlongY)
 				{
@@ -4253,11 +4344,23 @@ namespace LevelEditor
 		TFE_Input::getMouseWheel(&dx, &dy);
 		bool del = TFE_Input::keyPressed(KEY_DELETE);
 
-		if (dy && s_featureCur.isObject && s_featureCur.sector && s_featureCur.featureIndex >= 0)
+		if (dy)
 		{
-			EditorObject* obj = &s_featureCur.sector->obj[s_featureCur.featureIndex];
-			obj->angle += f32(dy) * 2.0f*PI / 32.0f;
+			EditorObject* obj = nullptr;
+			if (dy && s_featureCur.isObject && s_featureCur.sector && s_featureCur.featureIndex >= 0)
+			{
+				obj = &s_featureCur.sector->obj[s_featureCur.featureIndex];
+			}
+			else if (dy && s_featureHovered.isObject && s_featureHovered.sector && s_featureHovered.featureIndex >= 0)
+			{
+				obj = &s_featureHovered.sector->obj[s_featureHovered.featureIndex];
+			}
+			if (obj)
+			{
+				obj->angle += f32(dy) * 2.0f*PI / 32.0f;
+			}
 		}
+
 		if (del)
 		{
 			bool deleted = false;
@@ -4413,19 +4516,8 @@ namespace LevelEditor
 			Vec2f worldPos = mouseCoordToWorldPos2d(mx, my);
 			s_cursor3d = { worldPos.x, 0.0f, worldPos.z };
 
-			// First check to see if the current hovered sector is still valid.
-			if (s_featureHovered.sector)
-			{
-				if (!isPointInsideSector2d(s_featureHovered.sector, worldPos, s_curLayer))
-				{
-					s_featureHovered.sector = nullptr;
-				}
-			}
-			// If not, then try to find one.
-			if (!s_featureHovered.sector)
-			{
-				s_featureHovered.sector = findSector2d(worldPos, s_curLayer);
-			}
+			// Always check for the hovered sector, since sectors can overlap.
+			s_featureHovered.sector = findSector2d(worldPos, s_curLayer);
 			s_featureHovered.featureIndex = -1;
 
 			// TODO: Move to central hotkey list.
@@ -4438,6 +4530,11 @@ namespace LevelEditor
 			{
 				if (extrude) { handleSectorExtrude(nullptr/*2d so no ray hit info*/); }
 				else { handleSectorDraw(nullptr/*2d so no ray hit info*/); }
+				return;
+			}
+			else if (s_editMode == LEDIT_ENTITY)
+			{
+				handleEntityEdit(nullptr/*2d so no ray hit info*/);
 				return;
 			}
 				
@@ -4876,6 +4973,21 @@ namespace LevelEditor
 			}
 		}
 	}
+
+	f32 getEntityLabelPos(const Vec3f pos, const Entity* entity, const EditorSector* sector)
+	{
+		f32 height = entity->size.z;
+		f32 y = pos.y;
+		if (entity->type != ETYPE_SPIRIT && entity->type != ETYPE_SAFE)
+		{
+			f32 offset = -(entity->offset.y + fabsf(entity->st[1].z - entity->st[0].z)) * 0.1f;
+			// If the entity is on the floor, make sure it doesn't stick through it for editor visualization.
+			if (fabsf(pos.y - sector->floorHeight) < 0.5f) { offset = max(0.0f, offset); }
+			y = pos.y + offset;
+		}
+		y += entity->size.z;
+		return y;
+	}
 			
 	void update()
 	{
@@ -5164,7 +5276,45 @@ namespace LevelEditor
 						}
 					}
 				}
-				else if (s_editMode == LEDIT_DRAW && s_drawStarted)
+				else if (s_editMode == LEDIT_ENTITY)
+				{
+					const EditorSector* sector = s_featureHovered.sector;
+					if (sector && s_featureHovered.featureIndex >= 0 && s_featureHovered.isObject)
+					{
+						const EditorObject* obj = &sector->obj[s_featureHovered.featureIndex];
+						const Entity* entity = &s_entityList[obj->entityId];
+
+						bool showInfo = true;
+						Vec2i mapPos;
+						if (s_view == EDIT_VIEW_2D)
+						{
+							Vec2f labelPos = { obj->pos.x, obj->pos.z + entity->size.x*0.5f };
+							Vec2i screenPos = worldPos2dToMap(labelPos);
+
+							s32 textOffset = (s32)floorf(ImGui::CalcTextSize(entity->name.c_str()).x * 0.5f);
+							mapPos = { screenPos.x - textOffset, screenPos.z - 40 };
+						}
+						else if (s_view == EDIT_VIEW_3D)
+						{
+							Vec3f labelPos = { obj->pos.x, getEntityLabelPos(obj->pos, entity, sector), obj->pos.z };
+							Vec2f screenPos;
+							if (worldPosToViewportCoord(labelPos, &screenPos))
+							{
+								f32 textOffset = floorf(ImGui::CalcTextSize(entity->name.c_str()).x * 0.5f);
+								mapPos = { s32(screenPos.x - textOffset), s32(screenPos.z) - 40 };
+							}
+							else
+							{
+								showInfo = false;
+							}
+						}
+						if (showInfo)
+						{
+							drawViewportInfo(0, mapPos, entity->name.c_str(), 0, 0);
+						}
+					}
+				}
+ 				else if (s_editMode == LEDIT_DRAW && s_drawStarted)
 				{
 					if (s_drawMode == DMODE_RECT)
 					{

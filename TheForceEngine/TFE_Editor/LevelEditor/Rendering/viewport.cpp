@@ -66,7 +66,7 @@ namespace LevelEditor
 		ECOLOR_NORM = 0xffae8653,
 		ECOLOR_HOVERED = 0xffffff20,
 		ECOLOR_SELECTED = 0xff4a76ff,
-		ECOLOR_HOV_AND_SEL = 0xff94ec8f,
+		ECOLOR_HOV_AND_SEL = 0xff00ffff,
 	};
 
 	static const SectorColor c_sectorPolyClr[] = { SCOLOR_POLY_NORM, SCOLOR_POLY_HOVERED, SCOLOR_POLY_SELECTED };
@@ -111,9 +111,11 @@ namespace LevelEditor
 	void drawVertex2d(const Vec2f* pos, f32 scale, Highlight highlight);
 	void drawVertex2d(const EditorSector* sector, s32 id, f32 extraScale, Highlight highlight);
 	void drawWall2d(const EditorSector* sector, const EditorWall* wall, f32 extraScale, Highlight highlight, bool drawNormal = false);
+	void drawEntity2d(const EditorSector* sector, const EditorObject* obj, s32 id, u32 objColor);
 	void renderSectorVertices2d();
 	void drawBox(const Vec3f* center, f32 side, f32 lineWidth, u32 color);
 	void drawBounds(const Vec3f* center, Vec3f size, f32 lineWidth, u32 color);
+	void drawBounds2d(const Vec2f* center, Vec2f size, f32 lineWidth, u32 color, u32 fillColor);
 	void drawSolidBox(const Vec3f* center, f32 side, u32 color);
 	void drawSectorShape2D();
 	void drawWallLines3D_Highlighted(const EditorSector* sector, const EditorSector* next, const EditorWall* wall, f32 width, Highlight highlight, bool halfAlpha, bool showSign = false);
@@ -198,7 +200,7 @@ namespace LevelEditor
 		{
 			renderSectorWalls2d(s_level.layerRange[0], s_curLayer - 1);
 		}
-
+				
 		// Draw pre-grid polygons
 		renderSectorPreGrid();
 
@@ -209,8 +211,30 @@ namespace LevelEditor
 			grid2d_blitToScreen(s_gridOpacity);
 		}
 
+		const EditorObject* visObj[1024];
+		const EditorSector* visObjSector[1024];
+		s32 visObjId[1024];
+		s32 visObjCount = 0;
+
 		// Draw the current layer.
 		renderSectorWalls2d(s_curLayer, s_curLayer);
+
+		// Gather objects
+		const size_t count = s_level.sectors.size();
+		const EditorSector* sector = s_level.sectors.data();
+		for (size_t s = 0; s < count; s++, sector++)
+		{
+			if (sector->layer < s_curLayer || sector->layer > s_curLayer) { continue; }
+			// TODO: Cull
+			const s32 objCount = sector->obj.size();
+			const EditorObject* obj = sector->obj.data();
+			for (s32 o = 0; o < objCount; o++, obj++)
+			{
+				visObjId[visObjCount] = o;
+				visObjSector[visObjCount] = sector;
+				visObj[visObjCount++] = &sector->obj[o];
+			}
+		}
 
 		// Draw the hovered and selected sectors.
 		// Note they intentionally overlap if s_featureHovered.sector == s_featureCur.sector.
@@ -279,6 +303,13 @@ namespace LevelEditor
 		if (s_editMode == LEDIT_DRAW)
 		{
 			drawSectorShape2D();
+		}
+
+		// Draw objects.
+		u32 objColor = s_editMode == LEDIT_ENTITY ? 0xffffffff : 0x80ffffff;
+		for (s32 o = 0; o < visObjCount; o++)
+		{
+			drawEntity2d(visObjSector[o], visObj[o], visObjId[o], objColor);
 		}
 		
 		// Draw drag select, if active.
@@ -1180,8 +1211,8 @@ namespace LevelEditor
 			grid3d_draw(s_gridSize, opacity, s_gridHeight);
 		}
 	}
-
-	void drawEntity(const EditorSector* sector, const EditorObject* obj, s32 id, u32 objColor, const Vec3f& cameraRgtXZ)
+		
+	void drawEntity3D(const EditorSector* sector, const EditorObject* obj, s32 id, u32 objColor, const Vec3f& cameraRgtXZ)
 	{
 		const Entity* entity = &s_entityList[obj->entityId];
 		const Vec3f pos = obj->pos;
@@ -1227,7 +1258,7 @@ namespace LevelEditor
 			}
 			if (s_featureHovered.isObject && sector == s_featureHovered.sector && s_featureHovered.featureIndex == id)
 			{
-				hl = HL_HOVERED;
+				hl = (hl == HL_SELECTED) ? Highlight(HL_SELECTED + 1) : HL_HOVERED;
 			}
 			drawBounds(&center, size, 3.0f, c_entityClr[hl]);
 
@@ -1526,7 +1557,7 @@ namespace LevelEditor
 		u32 objColor = s_editMode == LEDIT_ENTITY ? 0xffffffff : 0x80ffffff;
 		for (s32 o = 0; o < visObjCount; o++)
 		{
-			drawEntity(visObjSector[o], visObj[o], visObjId[o], objColor, cameraRgtXZ);
+			drawEntity3D(visObjSector[o], visObj[o], visObjId[o], objColor, cameraRgtXZ);
 		}
 
 		// Draw the 3D cursor.
@@ -1696,15 +1727,138 @@ namespace LevelEditor
 		}
 	}
 
-	void renderSectorPreGrid()
+	void drawEntity2d(const EditorSector* sector, const EditorObject* obj, s32 id, u32 objColor)
 	{
-		if (s_sectorDrawMode != SDM_TEXTURED_FLOOR && s_sectorDrawMode != SDM_TEXTURED_CEIL && s_sectorDrawMode != SDM_LIGHTING) { return; }
+		const Entity* entity = &s_entityList[obj->entityId];
+		const Vec3f pos = obj->pos;
 
+		f32 width = entity->size.x * 0.5f;
+
+		f32 dx = fabsf(entity->st[1].x - entity->st[0].x);
+		f32 dz = fabsf(entity->st[1].z - entity->st[0].z);
+		f32 wI = width, hI = width;
+		if (dx > dz)
+		{
+			hI *= dz / dx;
+		}
+		else if (dz > dx)
+		{
+			wI *= dx / dz;
+		}
+
+		Vec2f corners[] =
+		{
+			{ (pos.x - width) * s_viewportTrans2d.x + s_viewportTrans2d.y, (pos.z - width) * s_viewportTrans2d.z + s_viewportTrans2d.w },
+			{ (pos.x + width) * s_viewportTrans2d.x + s_viewportTrans2d.y, (pos.z - width) * s_viewportTrans2d.z + s_viewportTrans2d.w },
+			{ (pos.x + width) * s_viewportTrans2d.x + s_viewportTrans2d.y, (pos.z + width) * s_viewportTrans2d.z + s_viewportTrans2d.w },
+			{ (pos.x - width) * s_viewportTrans2d.x + s_viewportTrans2d.y, (pos.z + width) * s_viewportTrans2d.z + s_viewportTrans2d.w }
+		};
+		Vec2f cornersImage[] =
+		{
+			{ (pos.x - wI) * s_viewportTrans2d.x + s_viewportTrans2d.y, (pos.z - hI) * s_viewportTrans2d.z + s_viewportTrans2d.w },
+			{ (pos.x + wI) * s_viewportTrans2d.x + s_viewportTrans2d.y, (pos.z - hI) * s_viewportTrans2d.z + s_viewportTrans2d.w },
+			{ (pos.x + wI) * s_viewportTrans2d.x + s_viewportTrans2d.y, (pos.z + hI) * s_viewportTrans2d.z + s_viewportTrans2d.w },
+			{ (pos.x - wI) * s_viewportTrans2d.x + s_viewportTrans2d.y, (pos.z + hI) * s_viewportTrans2d.z + s_viewportTrans2d.w }
+		};
+		Vec2f uv[] =
+		{
+			{ entity->uv[0].x, entity->uv[1].z },
+			{ entity->uv[1].x, entity->uv[1].z },
+			{ entity->uv[1].x, entity->uv[0].z },
+			{ entity->uv[0].x, entity->uv[0].z }
+		};
+		s32 idx[] = { 0, 1, 2, 0, 2, 3 };
+				
+		if (s_editMode == LEDIT_ENTITY)
+		{
+			// Draw bounds.
+			Vec2f center = { pos.x, pos.z };
+			Vec2f size = { width*2.0f, width*2.0f };
+
+			Highlight hl = HL_NONE;
+			if (s_featureCur.isObject && sector == s_featureCur.sector && s_featureCur.featureIndex == id)
+			{
+				hl = HL_SELECTED;
+			}
+			if (s_featureHovered.isObject && sector == s_featureHovered.sector && s_featureHovered.featureIndex == id)
+			{
+				hl = (hl == HL_SELECTED) ? Highlight(HL_SELECTED+1) : HL_HOVERED;
+			}
+			drawBounds2d(&center, size, 1.5f, c_entityClr[hl], 0x80403020);
+			triDraw2D_addTextured(6, 4, cornersImage, uv, idx, objColor, entity->image);
+
+			// Draw direction arrows if it has a facing.
+			f32 angle = obj->angle;
+			Vec2f dir = { sinf(angle), cosf(angle) };
+			Vec2f N = { -dir.z, dir.x };
+
+			// Find vertices for the arrow shape.
+			const f32 D = width*0.9f;
+			const f32 S = min(0.5f, width);
+			const f32 T = min(0.5f, width);
+
+			Vec2f endPt = { pos.x + dir.x*D, pos.z + dir.z*D };
+			Vec2f base = { endPt.x - dir.x*T, endPt.z - dir.z*T };
+			Vec2f A = { base.x + N.x*S, base.z + N.z*S };
+			Vec2f B = { base.x - N.x*S, base.z - N.z*S };
+
+			A.x = A.x * s_viewportTrans2d.x + s_viewportTrans2d.y;
+			A.z = A.z * s_viewportTrans2d.z + s_viewportTrans2d.w;
+			B.x = B.x * s_viewportTrans2d.x + s_viewportTrans2d.y;
+			B.z = B.z * s_viewportTrans2d.z + s_viewportTrans2d.w;
+			endPt.x = endPt.x * s_viewportTrans2d.x + s_viewportTrans2d.y;
+			endPt.z = endPt.z * s_viewportTrans2d.z + s_viewportTrans2d.w;
+
+			Vec2f dirLines[] =
+			{
+				{ endPt.x, endPt.z }, A,
+				{ endPt.x, endPt.z }, B,
+			};
+
+			u32 colorsBg[] = { 0xff402020, 0xff402020, 0xff402020, 0xff402020 };
+			lineDraw2d_addLines(2, 2.5f, dirLines, colorsBg);
+
+			u32 colors[] = { 0xffff6060, 0xffff6060, 0xffff6060, 0xffff6060 };
+			lineDraw2d_addLines(2, 1.5f, dirLines, colors);
+		}
+		else
+		{
+			triDraw2D_addTextured(6, 4, cornersImage, uv, idx, objColor, entity->image);
+		}
+	}
+
+	static std::vector<const EditorSector*> s_sortedSectors;
+	bool sortSectorByHeight(const EditorSector* a, const EditorSector* b)
+	{
+		return a->floorHeight < b->floorHeight;
+	}
+
+	void sortSectorPolygons(s32 layer)
+	{
+		s_sortedSectors.clear();
 		const size_t count = s_level.sectors.size();
 		const EditorSector* sector = s_level.sectors.data();
 		for (size_t s = 0; s < count; s++, sector++)
 		{
-			if (sector->layer != s_curLayer) { continue; }
+			if (sector->layer != layer) { continue; }
+			s_sortedSectors.push_back(sector);
+		}
+		std::sort(s_sortedSectors.begin(), s_sortedSectors.end(), sortSectorByHeight);
+	}
+
+	void renderSectorPreGrid()
+	{
+		if (s_sectorDrawMode != SDM_TEXTURED_FLOOR && s_sectorDrawMode != SDM_TEXTURED_CEIL && s_sectorDrawMode != SDM_LIGHTING) { return; }
+
+		// Sort polygons.
+		sortSectorPolygons(s_curLayer);
+
+		// Draw them bottom to top.
+		const size_t count = s_sortedSectors.size();
+		const EditorSector* const* sectorList = s_sortedSectors.data();
+		for (size_t s = 0; s < count; s++)
+		{
+			const EditorSector* sector = sectorList[s];
 			const u32 colorIndex = (s_editFlags & LEF_FULLBRIGHT) && s_sectorDrawMode != SDM_LIGHTING ? 31 : sector->ambient;
 
 			if (s_sectorDrawMode == SDM_LIGHTING)
@@ -1724,7 +1878,7 @@ namespace LevelEditor
 		TFE_RenderShared::triDraw2d_draw();
 		TFE_RenderShared::triDraw2d_begin(s_viewportSize.x, s_viewportSize.z);
 	}
-
+	
 	void renderSectorWalls2d(s32 layerStart, s32 layerEnd)
 	{
 		if (layerEnd < layerStart) { return; }
@@ -1735,7 +1889,6 @@ namespace LevelEditor
 		{
 			if (sector->layer < layerStart || sector->layer > layerEnd) { continue; }
 			if ((sector == s_featureHovered.sector || sector == s_featureCur.sector) && s_editMode == LEDIT_SECTOR) { continue; }
-
 			drawSector2d(sector, HL_NONE);
 		}
 	}
@@ -1879,5 +2032,37 @@ namespace LevelEditor
 		}
 
 		lineDraw3d_addLines(12, lineWidth, lines, colors);
+	}
+
+	void drawBounds2d(const Vec2f* center, Vec2f size, f32 lineWidth, u32 color, u32 fillColor)
+	{
+		const f32 w = size.x * 0.5f;
+		const f32 d = size.z * 0.5f;
+		const f32 x0 = (center->x - w)*s_viewportTrans2d.x + s_viewportTrans2d.y;
+		const f32 x1 = (center->x + w)*s_viewportTrans2d.x + s_viewportTrans2d.y;
+		const f32 z0 = (center->z - w)*s_viewportTrans2d.z + s_viewportTrans2d.w;
+		const f32 z1 = (center->z + w)*s_viewportTrans2d.z + s_viewportTrans2d.w;
+
+		const Vec2f lines[] =
+		{
+			{x0, z0}, {x1, z0},
+			{x1, z0}, {x1, z1},
+			{x1, z1}, {x0, z1},
+			{x0, z1}, {x0, z0},
+		};
+		u32 colors[8];
+		for (u32 i = 0; i < 8; i++)
+		{
+			colors[i] = color;
+		}
+
+		lineDraw2d_addLines(4, lineWidth, lines, colors);
+
+		if (fillColor)
+		{
+			Vec2f vtx[] = { lines[0], lines[2], lines[4], lines[6] };
+			s32 idx[6] = { 0, 1, 2, 0, 2, 3 };
+			triDraw2d_addColored(6, 4, vtx, idx, fillColor);
+		}
 	}
 }
