@@ -8,11 +8,10 @@
 //////////////////////////////////////////////////////////////////////
 #include <TFE_System/types.h>
 #include <TFE_Editor/EditorAsset/editorAsset.h>
+#include <TFE_Editor/LevelEditor/Rendering/viewport.h>
 
 namespace LevelEditor
 {
-	enum EditorView;
-
 	enum LeMsgType
 	{
 		LE_MSG_INFO = 0,
