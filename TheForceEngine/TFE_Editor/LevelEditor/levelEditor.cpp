@@ -343,6 +343,8 @@ namespace LevelEditor
 		levHistory_init();
 		levHistory_createSnapshot("Imported Level");
 
+		infoPanelClearFeatures();
+
 		TFE_RenderShared::init(false);
 		return true;
 	}
@@ -3303,6 +3305,7 @@ namespace LevelEditor
 
 		s_featureHovered = {};
 		selection_clear();
+		infoPanelClearFeatures();
 	}
 				
 	void edit_createSectorFromShape(const f32* heights, s32 vertexCount, const Vec2f* vtx)
@@ -3369,6 +3372,7 @@ namespace LevelEditor
 
 		s_featureHovered = {};
 		selection_clear();
+		infoPanelClearFeatures();
 	}
 
 	void createSectorFromRect()
@@ -3489,6 +3493,7 @@ namespace LevelEditor
 
 				s_featureHovered = {};
 				selection_clear();
+				infoPanelClearFeatures();
 			}
 		}
 		// Extrude inward - adjust the current sector.
@@ -5120,7 +5125,7 @@ namespace LevelEditor
 		toolbarEnd();
 
 		// Info Panel
-		drawInfoPanel();
+		drawInfoPanel(s_view);
 
 		// Browser
 		drawBrowser(s_editMode == LEDIT_ENTITY ? BROWSE_ENTITY : BROWSE_TEXTURE);

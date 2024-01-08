@@ -11,6 +11,8 @@
 
 namespace LevelEditor
 {
+	enum EditorView;
+
 	enum LeMsgType
 	{
 		LE_MSG_INFO = 0,
@@ -27,7 +29,7 @@ namespace LevelEditor
 	};
 
 	void infoToolBegin(s32 height);
-	void drawInfoPanel();
+	void drawInfoPanel(EditorView view);
 	void infoToolEnd();
 
 	// Output messages
@@ -35,5 +37,6 @@ namespace LevelEditor
 	void infoPanelAddMsg(LeMsgType type, const char* msg, ...);
 	void infoPanelSetMsgFilter(u32 filter=LFILTER_DEFAULT);
 
+	void infoPanelClearFeatures();
 	s32 infoPanelGetHeight();
 }

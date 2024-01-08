@@ -5,9 +5,11 @@
 #include "sharedState.h"
 #include "selection.h"
 #include <TFE_Input/input.h>
+#include <TFE_Editor/editor.h>
 #include <TFE_Editor/errorMessages.h>
 #include <TFE_Editor/editorConfig.h>
 #include <TFE_Editor/EditorAsset/editorTexture.h>
+#include <TFE_Editor/LevelEditor/Rendering/viewport.h>
 #include <TFE_Jedi/Level/rwall.h>
 #include <TFE_Jedi/Level/rsector.h>
 #include <TFE_System/math.h>
@@ -22,6 +24,21 @@ using namespace TFE_Editor;
 
 namespace LevelEditor
 {
+	enum InfoTab
+	{
+		TAB_INFO = 0,
+		TAB_ITEM,
+		TAB_GROUPS,
+		TAB_COUNT
+	};
+	const char* c_infoTabs[TAB_COUNT] = { "Info", "Item", "Groups" };
+	const char* c_infoToolTips[TAB_COUNT] =
+	{
+		"Level Info.\nManual grid height setting.\nMessage, warning, and error output.",
+		"Hovered or selected item property editor,\nblank when no item (sector, wall, object) is selected.",
+		"Editor groups, used to group sectors - \nwhich can be used to hide or lock them, \ncolor code them or set whether they are exported.",
+	};
+
 	struct LeMessage
 	{
 		LeMsgType type;
@@ -32,7 +49,14 @@ namespace LevelEditor
 	static f32 s_infoWith;
 	static s32 s_infoHeight;
 	static Vec2f s_infoPos;
-		
+	static InfoTab s_infoTab = TAB_INFO;
+
+	static Feature s_prevVertexFeature = {};
+	static Feature s_prevWallFeature = {};
+	static Feature s_prevSectorFeature = {};
+	static Feature s_prevObjectFeature = {};
+	static bool s_wallShownLast = false;
+
 	void infoPanelClearMessages()
 	{
 		s_outputMsg.clear();
@@ -53,10 +77,65 @@ namespace LevelEditor
 	{
 		s_outputFilter = filter;
 	}
+
+	void infoPanelClearFeatures()
+	{
+		s_prevVertexFeature = {};
+		s_prevWallFeature = {};
+		s_prevSectorFeature = {};
+		s_prevObjectFeature = {};
+		s_wallShownLast = false;
+	}
 		
 	s32 infoPanelGetHeight()
 	{
 		return s_infoHeight;
+	}
+			
+	void setTabColor(bool isSelected)
+	{
+		if (isSelected)
+		{
+			ImGui::PushStyleColor(ImGuiCol_Button, { 0.0f, 0.25f, 0.5f, 1.0f });
+			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, { 0.0f, 0.25f, 0.5f, 1.0f });
+		}
+		else
+		{
+			ImGui::PushStyleColor(ImGuiCol_Button, { 0.25f, 0.25f, 0.25f, 1.0f });
+			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, { 0.5f, 0.5f, 0.5f, 1.0f });
+		}
+		// The active color must match to avoid flickering.
+		ImGui::PushStyleColor(ImGuiCol_ButtonActive, { 0.0f, 0.5f, 1.0f, 1.0f });
+	}
+
+	void restoreTabColor()
+	{
+		ImGui::PopStyleColor(3);
+	}
+
+	s32 handleTabs(s32 curTab, s32 offsetX, s32 offsetY, s32 count, const char** names, const char** tooltips)
+	{
+		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, { 4.0f, 1.0f });
+		ImGui::SetCursorPosX(ImGui::GetCursorPosX() + (f32)offsetX);
+		ImGui::SetCursorPosY(ImGui::GetCursorPosY() + (f32)offsetY);
+		
+		for (s32 i = 0; i < count; i++)
+		{
+			setTabColor(curTab == i);
+			if (ImGui::Button(names[i], { 100.0f, 18.0f }))
+			{
+				curTab = i;
+			}
+			setTooltip("%s", tooltips[i]);
+			restoreTabColor();
+			if (i < count - 1)
+			{
+				ImGui::SameLine(0.0f, 2.0f);
+			}
+		}
+		ImGui::PopStyleVar(1);
+
+		return curTab;
 	}
 
 	void infoToolBegin(s32 height)
@@ -72,9 +151,13 @@ namespace LevelEditor
 		ImGui::SetWindowPos("Info Panel", { s_infoPos.x, s_infoPos.z });
 		ImGui::SetWindowSize("Info Panel", { s_infoWith, f32(height) });
 		ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize
-			| ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoBringToFrontOnFocus;
+			| ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoTitleBar;
 
 		ImGui::Begin("Info Panel", &infoTool, window_flags); ImGui::SameLine();
+		s_infoTab = (InfoTab)handleTabs(s_infoTab, -12, -4, TAB_COUNT, c_infoTabs, c_infoToolTips);
+
+		ImGui::SetCursorPosY(ImGui::GetCursorPosY() - 4);
+		ImGui::Separator();
 	}
 
 	void infoPanelMap()
@@ -162,6 +245,33 @@ namespace LevelEditor
 		return ((lostFocusX || retOrTabPressed) && hadFocusX) ||
 			   ((lostFocusZ || retOrTabPressed) && hadFocusZ);
 	}
+		
+	void getPrevVertexFeature(EditorSector*& sector, s32& index)
+	{
+		// Make sure the previous selection is still valid.
+		bool selectionInvalid = !s_prevVertexFeature.sector || s_prevVertexFeature.featureIndex < 0;
+		if (s_prevVertexFeature.sector && s_prevVertexFeature.featureIndex >= (s32)s_prevVertexFeature.sector->vtx.size())
+		{
+			selectionInvalid = true;
+		}
+
+		if (selectionInvalid)
+		{
+			s_prevVertexFeature.sector = s_level.sectors.empty() ? nullptr : &s_level.sectors[0];
+			if (s_prevVertexFeature.sector)
+			{
+				s_prevVertexFeature.featureIndex = 0;
+			}
+		}
+		sector = s_prevVertexFeature.sector;
+		index = s_prevVertexFeature.featureIndex;
+	}
+
+	void setPrevVertexFeature(EditorSector* sector, s32 index)
+	{
+		s_prevVertexFeature.sector = sector;
+		s_prevVertexFeature.featureIndex = index;
+	}
 	
 	void infoPanelVertex()
 	{
@@ -176,7 +286,14 @@ namespace LevelEditor
 			sector = (s_featureCur.featureIndex >= 0) ? s_featureCur.sector : s_featureHovered.sector;
 			index = s_featureCur.featureIndex >= 0 ? s_featureCur.featureIndex : s_featureHovered.featureIndex;
 		}
+
+		// If there is no selected vertex, just show vertex 0...
+		if (index < 0 || !sector)
+		{
+			getPrevVertexFeature(sector, index);
+		}
 		if (index < 0 || !sector) { return; }
+		setPrevVertexFeature(sector, index);
 
 		Vec2f* vtx = sector->vtx.data() + index;
 		if (s_selectionList.size() > 1)
@@ -247,14 +364,44 @@ namespace LevelEditor
 		ImGui::InputFloat(labelId, value, 0.0f, 0.0f, "%.2f");
 		ImGui::PopItemWidth();
 	}
+		
+	void getPrevWallFeature(EditorSector*& sector, s32& index)
+	{
+		// Make sure the previous selection is still valid.
+		bool selectionInvalid = !s_prevWallFeature.sector || s_prevWallFeature.featureIndex < 0;
+		if (s_prevWallFeature.sector && s_prevWallFeature.featureIndex >= (s32)s_prevWallFeature.sector->walls.size())
+		{
+			selectionInvalid = true;
+		}
+
+		if (selectionInvalid)
+		{
+			s_prevWallFeature.sector = s_level.sectors.empty() ? nullptr : &s_level.sectors[0];
+			if (s_prevWallFeature.sector)
+			{
+				s_prevWallFeature.featureIndex = 0;
+			}
+		}
+		sector = s_prevWallFeature.sector;
+		index = s_prevWallFeature.featureIndex;
+	}
+
+	void setPrevWallFeature(EditorSector* sector, s32 index)
+	{
+		s_prevWallFeature.sector = sector;
+		s_prevWallFeature.featureIndex = index;
+	}
 
 	void infoPanelWall()
 	{
 		s32 wallId;
 		EditorSector* sector;
-		if (s_featureCur.featureIndex >= 0) { sector = s_featureCur.sector; wallId = s_featureCur.featureIndex; }
-		else if (s_featureHovered.featureIndex >= 0) { sector = s_featureHovered.sector; wallId = s_featureHovered.featureIndex; }
-		else { return; }
+		if (s_featureCur.featureIndex >= 0 && s_featureCur.sector) { sector = s_featureCur.sector; wallId = s_featureCur.featureIndex; }
+		else if (s_featureHovered.featureIndex >= 0 && s_featureHovered.sector) { sector = s_featureHovered.sector; wallId = s_featureHovered.featureIndex; }
+		else { getPrevWallFeature(sector, wallId); }
+		if (!sector || wallId < 0) { return; }
+		setPrevWallFeature(sector, wallId);
+		s_wallShownLast = true;
 
 		bool insertTexture = s_selectedTexture >= 0 && TFE_Input::keyPressed(KEY_T);
 		bool removeTexture = TFE_Input::mousePressed(MBUTTON_RIGHT);
@@ -485,6 +632,22 @@ namespace LevelEditor
 			ImGui::EndChild();
 		}
 	}
+		
+	void getPrevSectorFeature(EditorSector*& sector)
+	{
+		// Make sure the previous selection is still valid.
+		bool selectionInvalid = !s_prevSectorFeature.sector;
+		if (selectionInvalid)
+		{
+			s_prevSectorFeature.sector = s_level.sectors.empty() ? nullptr : &s_level.sectors[0];
+		}
+		sector = s_prevSectorFeature.sector;
+	}
+
+	void setPrevSectorFeature(EditorSector* sector)
+	{
+		s_prevSectorFeature.sector = sector;
+	}
 
 	void infoPanelSector()
 	{
@@ -496,6 +659,11 @@ namespace LevelEditor
 		}
 
 		EditorSector* sector = s_featureCur.sector ? s_featureCur.sector : s_featureHovered.sector;
+		if (!sector) {	getPrevSectorFeature(sector); }
+		if (!sector) { return; }
+		setPrevSectorFeature(sector);
+		s_wallShownLast = false;
+
 		ImGui::Text("Sector ID: %d      Wall Count: %u", sector->id, (u32)sector->walls.size());
 		ImGui::Separator();
 
@@ -656,39 +824,86 @@ namespace LevelEditor
 		}
 		ImGui::EndChild();
 	}
+
+	void getPrevObjectFeature(EditorSector*& sector, s32& index)
+	{
+		// Make sure the previous selection is still valid.
+		bool selectionInvalid = !s_prevObjectFeature.sector || s_prevObjectFeature.featureIndex < 0;
+		if (s_prevObjectFeature.sector && s_prevObjectFeature.featureIndex >= (s32)s_prevObjectFeature.sector->obj.size())
+		{
+			selectionInvalid = true;
+		}
+
+		if (selectionInvalid)
+		{
+			s_prevObjectFeature.sector = s_level.sectors.empty() ? nullptr : &s_level.sectors[0];
+			s_prevObjectFeature.featureIndex = s_prevObjectFeature.sector->obj.empty() ? -1 : 0;
+		}
+		sector = s_prevObjectFeature.sector;
+		index = s_prevObjectFeature.featureIndex;
+	}
+
+	void setPrevObjectFeature(EditorSector* sector, s32 index)
+	{
+		s_prevObjectFeature.sector = sector;
+		s_prevObjectFeature.featureIndex = index;
+	}
+
+	void infoPanelObject()
+	{
+		EditorSector* sector = s_featureCur.sector ? s_featureCur.sector : s_featureHovered.sector;
+		s32 objIndex = s_featureCur.sector ? s_featureCur.featureIndex : s_featureHovered.featureIndex;
+		EditorObject* obj = sector && objIndex >= 0 ? &sector->obj[objIndex] : nullptr;
+
+		if (!sector || objIndex < 0) { getPrevObjectFeature(sector, objIndex); }
+		if (!sector || objIndex < 0) { return; }
+		setPrevObjectFeature(sector, objIndex);
+
+		ImGui::Text("STUB");
+		ImGui::Text("Sector ID: %d, Object Index: %d", sector->id, objIndex);
+	}
 		
-	void drawInfoPanel()
+	void drawInfoPanel(EditorView view)
 	{
 		// Draw the info bars.
 		s_infoHeight = 486 + 44;
-
 		infoToolBegin(s_infoHeight);
 		{
-			if (s_editMode == LEDIT_VERTEX && (s_featureHovered.featureIndex >= 0 || s_featureCur.featureIndex >= 0 || !s_selectionList.empty()))
+			if (s_infoTab == TAB_ITEM)
 			{
-				infoPanelVertex();
-			}
-			else if (s_editMode == LEDIT_WALL || s_editMode == LEDIT_SECTOR)
-			{
-				// Prioritize selected wall, selected sector, hovered wall, hovered sector.
-				// Allow sector views in wall mode, but NOT wall views in sector mode.
-				const bool curFeatureIsFlat = s_featureCur.part == HP_FLOOR || s_featureCur.part == HP_CEIL;
-				const bool hoverFeatureIsFlat = s_featureHovered.part == HP_FLOOR || s_featureHovered.part == HP_CEIL;
+				if (s_editMode == LEDIT_VERTEX)
+				{
+					infoPanelVertex();
+				}
+				else if (s_editMode == LEDIT_WALL || s_editMode == LEDIT_SECTOR)
+				{
+					const bool is2d = view == EDIT_VIEW_2D;
+					const bool showWall = s_editMode == LEDIT_WALL && (is2d || s_wallShownLast);
 
-				if (s_editMode == LEDIT_WALL && s_featureCur.featureIndex >= 0 && !curFeatureIsFlat) { infoPanelWall(); }
-				else if (s_featureCur.sector) { infoPanelSector(); }
-				else if (s_editMode == LEDIT_WALL && s_featureHovered.featureIndex >= 0 && !hoverFeatureIsFlat) { infoPanelWall(); }
-				else if (s_featureHovered.sector) { infoPanelSector(); }
-				else { infoPanelMap(); }
+					// Prioritize selected wall, selected sector, hovered wall, hovered sector.
+					// Allow sector views in wall mode, but NOT wall views in sector mode.
+					const bool curFeatureIsFlat = s_featureCur.part == HP_FLOOR || s_featureCur.part == HP_CEIL;
+					const bool hoverFeatureIsFlat = s_featureHovered.part == HP_FLOOR || s_featureHovered.part == HP_CEIL;
+
+					if (s_editMode == LEDIT_WALL && s_featureCur.featureIndex >= 0 && !curFeatureIsFlat) { infoPanelWall(); }
+					else if (s_featureCur.sector) { infoPanelSector(); }
+					else if (s_editMode == LEDIT_WALL && s_featureHovered.featureIndex >= 0 && !hoverFeatureIsFlat) { infoPanelWall(); }
+					else if (s_featureHovered.sector) { infoPanelSector(); }
+					else if (showWall) { infoPanelWall(); }
+					else { infoPanelSector(); }
+				}
+				else if (s_editMode == LEDIT_ENTITY)
+				{
+					infoPanelObject();
+				}
 			}
-			// TODO
-			//else if (s_hoveredEntity >= 0 || s_selectedEntity >= 0)
-			//{
-			//	infoPanelEntity();
-			//}
-			else
+			else if (s_infoTab == TAB_INFO)
 			{
 				infoPanelMap();
+			}
+			else if (s_infoTab == TAB_GROUPS)
+			{
+				// TODO
 			}
 		}
 		infoToolEnd();
