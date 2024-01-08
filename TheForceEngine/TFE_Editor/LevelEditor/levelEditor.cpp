@@ -4105,6 +4105,7 @@ namespace LevelEditor
 		obj.entityId = entity->id;
 		obj.angle = 0.0f;
 		obj.pos = *hitPos;
+		obj.diff = 1;	// default
 		sector->obj.push_back(obj);
 	}
 

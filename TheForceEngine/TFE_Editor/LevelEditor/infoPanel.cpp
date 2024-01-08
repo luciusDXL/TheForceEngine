@@ -825,6 +825,14 @@ namespace LevelEditor
 		ImGui::EndChild();
 	}
 
+	Entity s_objEntity = {};
+	EditorObject* s_prevObj = nullptr;
+
+	bool hasObjectSelectionChanged(EditorSector* sector, s32 index)
+	{
+		return s_prevObjectFeature.sector != sector || s_prevObjectFeature.featureIndex != index;
+	}
+
 	void getPrevObjectFeature(EditorSector*& sector, s32& index)
 	{
 		// Make sure the previous selection is still valid.
@@ -832,6 +840,7 @@ namespace LevelEditor
 		if (s_prevObjectFeature.sector && s_prevObjectFeature.featureIndex >= (s32)s_prevObjectFeature.sector->obj.size())
 		{
 			selectionInvalid = true;
+			s_objEntity = {};
 		}
 
 		if (selectionInvalid)
@@ -849,18 +858,181 @@ namespace LevelEditor
 		s_prevObjectFeature.featureIndex = index;
 	}
 
+	static const char* c_entityClassName[] =
+	{
+		"Spirit", // ETYPE_SPIRIT = 0,
+		"Safe",   // ETYPE_SAFE,
+		"Sprite", // ETYPE_SPRITE,
+		"Frame",  // ETYPE_FRAME,
+		"3D",     // ETYPE_3D,
+	};
+
+	static const char* c_objDifficulty[] =
+	{
+		"Easy, Medium, Hard",	//  0
+		"Easy, Medium",         // -2
+		"Easy",                 // -1
+		"Medium, Hard",         // 2
+		"Hard"                  // 3
+	};
+	static const s32 c_objDiffValue[] =
+	{
+		1, -2, -1, 2, 3
+	};
+	static const s32 c_objDiffStart = -3;
+	static const s32 c_objDiffToIndex[] =
+	{
+		0, 1, 2, 0, 0, 3, 4
+	};
+
 	void infoPanelObject()
 	{
 		EditorSector* sector = s_featureCur.sector ? s_featureCur.sector : s_featureHovered.sector;
 		s32 objIndex = s_featureCur.sector ? s_featureCur.featureIndex : s_featureHovered.featureIndex;
 		EditorObject* obj = sector && objIndex >= 0 ? &sector->obj[objIndex] : nullptr;
 
-		if (!sector || objIndex < 0) { getPrevObjectFeature(sector, objIndex); }
-		if (!sector || objIndex < 0) { return; }
+		if (!sector || objIndex < 0)
+		{
+			getPrevObjectFeature(sector, objIndex);
+			obj = sector && objIndex >= 0 ? &sector->obj[objIndex] : nullptr;
+		}
+		if (!sector || objIndex < 0 || !obj) { return; }
+
+		if (hasObjectSelectionChanged(sector, objIndex))
+		{
+			s_objEntity = {};
+		}
 		setPrevObjectFeature(sector, objIndex);
 
-		ImGui::Text("STUB");
+		if (s_objEntity.id < 0)
+		{
+			s_objEntity = s_entityList[obj->entityId];
+		}
+
 		ImGui::Text("Sector ID: %d, Object Index: %d", sector->id, objIndex);
+		ImGui::Separator();
+		// Entity Name
+		ImGui::Text("%s", "Name"); ImGui::SameLine(0.0f, 17.0f);
+		char name[256];
+		strcpy(name, s_objEntity.name.c_str());
+		if (ImGui::InputText("##NameInput", name, 256))
+		{
+			s_objEntity.name = name;
+		}
+		// Entity Class/Type
+		s32 classId = s_objEntity.type;
+		ImGui::Text("%s", "Class"); ImGui::SameLine(0.0f, 8.0f);
+		ImGui::SetNextItemWidth(96.0f);
+		if (ImGui::Combo("##Class", (s32*)&classId, c_entityClassName, ETYPE_COUNT))
+		{
+			s_objEntity.type = EntityType(classId);
+		}
+		// Entity Asset
+		ImGui::Text("%s", "Asset"); ImGui::SameLine(0.0f, 8.0f);
+		char assetName[256];
+		strcpy(assetName, s_objEntity.assetName.c_str());
+		if (ImGui::InputText("##AssetName", assetName, 256))
+		{
+			s_objEntity.assetName = assetName;
+		}
+		ImGui::SameLine(0.0f, 8.0f);
+		if (ImGui::Button("Browse"))
+		{
+			// TODO
+		}
+		ImGui::Separator();
+
+		ImGui::Text("%s", "Position"); ImGui::SameLine(0.0f, 8.0f);
+		ImGui::InputFloat3("##Position", &obj->pos.x);
+
+		ImGui::Text("%s", "Angle"); ImGui::SameLine(0.0f, 32.0f);
+		ImGui::SetNextItemWidth(206.0f);
+		ImGui::SliderAngle("##Angle", &obj->angle, 0.0f); ImGui::SameLine(0.0f, 4.0f);
+		ImGui::SetNextItemWidth(96.0f);
+		f32 angle = obj->angle * 180.0f / PI;
+		if (ImGui::InputFloat("##AngleEdit", &angle))
+		{
+			obj->angle = angle * PI / 180.0f;
+		}
+		// TODO: If 3D set pitch and roll here...
+
+		// Difficulty.
+		ImGui::Text("%s", "Difficulty"); ImGui::SameLine(0.0f, 8.0f);
+		s32 index = c_objDiffToIndex[obj->diff - c_objDiffStart];
+		ImGui::SetNextItemWidth(256.0f);
+		if (ImGui::Combo("##DiffCombo", (s32*)&index, c_objDifficulty, TFE_ARRAYSIZE(c_objDifficulty)))
+		{
+			obj->diff = c_objDiffValue[index];
+		}
+		ImGui::Separator();
+
+		const s32 listWidth = (s32)s_infoWith - 32;
+
+		// Logics
+		static s32 logicSel = -1;
+		ImGui::Text("%s", "Logics");
+		ImGui::BeginChild("##LogicList", { (f32)min(listWidth, 400), 64 }, true);
+		{
+			s32 count = (s32)s_objEntity.logic.size();
+			std::string* list = s_objEntity.logic.data();
+			for (s32 i = 0; i < count; i++)
+			{
+				char name[256];
+				sprintf(name, "%s##%d", list[i].c_str(), i);
+				bool sel = logicSel == i;
+				ImGui::Selectable(name, &sel);
+				if (sel) { logicSel = i; }
+				else if (logicSel == i) { logicSel = -1; }
+			}
+		}
+		ImGui::EndChild();
+		if (ImGui::Button("Add"))
+		{
+		}
+		ImGui::SameLine(0.0f, 8.0f);
+		if (ImGui::Button("Remove"))
+		{
+		}
+
+		ImGui::Separator();
+		
+		// Variables
+		static s32 varSel = -1;
+		ImGui::Text("%s", "Variables");
+		ImGui::BeginChild("##VariableList", { (f32)min(listWidth, 400), 96 }, true);
+		{
+			s32 count = (s32)s_objEntity.var.size();
+			EntityVar* list = s_objEntity.var.data();
+			for (s32 i = 0; i < count; i++)
+			{
+				char name[256];
+				sprintf(name, "%s##%d", getEntityVarStr(list[i].def.id), i);
+				bool sel = varSel == i;
+				ImGui::Selectable(name, &sel);
+				if (sel) { varSel = i; }
+				else if (varSel == i) { varSel = -1; }
+			}
+		}
+		ImGui::EndChild();
+		if (ImGui::Button("Add"))
+		{
+		}
+		ImGui::SameLine(0.0f, 8.0f);
+		if (ImGui::Button("Remove"))
+		{
+		}
+		ImGui::Separator();
+
+		// Buttons.
+		if (ImGui::Button("Add to Entity Def"))
+		{
+			// TODO
+		}
+		ImGui::SameLine(0.0f, 8.0f);
+		if (ImGui::Button("Reset"))
+		{
+			// TODO
+		}
 	}
 		
 	void drawInfoPanel(EditorView view)

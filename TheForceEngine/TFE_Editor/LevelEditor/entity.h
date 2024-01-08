@@ -82,7 +82,7 @@ namespace LevelEditor
 
 	struct Entity
 	{
-		s32 id;
+		s32 id = -1;
 		std::string name;
 		std::string assetName;
 		EntityType type = ETYPE_UNKNOWN;
@@ -105,7 +105,9 @@ namespace LevelEditor
 		s32 entityId;
 		Vec3f pos;
 		f32 angle;
+		s32 diff;
 	};
 
 	bool loadEntityData();
+	const char* getEntityVarStr(EntityVarId varId);
 }

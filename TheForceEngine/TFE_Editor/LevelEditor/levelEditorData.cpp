@@ -78,7 +78,8 @@ namespace LevelEditor
 	{
 		LEF_MinVersion = 1,
 		LEF_EntityV1   = 2,
-		LEF_CurVersion = 2,
+		LEF_EntityV2   = 3,
+		LEF_CurVersion = 3,
 	};
 
 	AssetHandle loadTexture(const char* bmTextureName)
@@ -511,6 +512,11 @@ namespace LevelEditor
 				{
 					file.read(&obj->entityId);
 					file.read(&obj->angle);
+					obj->diff = 1; // default
+					if (version >= LEF_EntityV2)
+					{
+						file.read(&obj->diff);
+					}
 					file.readBuffer(&obj->pos, sizeof(Vec3f));
 				}
 			}
@@ -519,11 +525,6 @@ namespace LevelEditor
 			sectorToPolygon(sector);
 		}
 		file.close();
-
-		if (version >= LEF_EntityV1)
-		{
-
-		}
 
 		return true;
 	}
@@ -608,6 +609,7 @@ namespace LevelEditor
 			{
 				file.write(&obj->entityId);
 				file.write(&obj->angle);
+				file.write(&obj->diff);
 				file.writeBuffer(&obj->pos, sizeof(Vec3f));
 			}
 		}
@@ -833,7 +835,7 @@ namespace LevelEditor
 			{
 				case ETYPE_SPIRIT:
 				{
-					WRITE_LINE("    CLASS: SPIRIT     DATA: 0   X: %0.2f Y: %0.2f Z: %0.2f PCH: %0.2f   YAW: %0.2f ROL: 0.00   DIFF: 1\r\n", start->pos.x, -y, start->pos.z, pitch, yaw);
+					WRITE_LINE("    CLASS: SPIRIT     DATA: 0   X: %0.2f Y: %0.2f Z: %0.2f PCH: %0.2f   YAW: %0.2f ROL: 0.00   DIFF: %d\r\n", start->pos.x, -y, start->pos.z, pitch, yaw, obj->diff);
 					WRITE_LINE("        SEQ\r\n");
 					WRITE_LINE("            LOGIC:     PLAYER\r\n");
 					WRITE_LINE("            EYE:       TRUE\r\n");
@@ -841,11 +843,11 @@ namespace LevelEditor
 				} break;
 				case ETYPE_SAFE:
 				{
-					WRITE_LINE("    CLASS: SAFE     DATA: 0   X: %0.2f Y: %0.2f Z: %0.2f PCH: %0.2f   YAW: %0.2f ROL: 0.00   DIFF: 1\r\n", obj->pos.x, -obj->pos.y, obj->pos.z, 0.0f, objYaw);
+					WRITE_LINE("    CLASS: SAFE     DATA: 0   X: %0.2f Y: %0.2f Z: %0.2f PCH: %0.2f   YAW: %0.2f ROL: 0.00   DIFF: %d\r\n", obj->pos.x, -obj->pos.y, obj->pos.z, 0.0f, objYaw, obj->diff);
 				} break;
 				case ETYPE_FRAME:
 				{
-					WRITE_LINE("    CLASS: FRAME     DATA: %d   X: %0.2f Y: %0.2f Z: %0.2f PCH: %0.2f   YAW: %0.2f ROL: 0.00   DIFF: 1\r\n", objData[i], obj->pos.x, -obj->pos.y, obj->pos.z, 0.0f, objYaw);
+					WRITE_LINE("    CLASS: FRAME     DATA: %d   X: %0.2f Y: %0.2f Z: %0.2f PCH: %0.2f   YAW: %0.2f ROL: 0.00   DIFF: %d\r\n", objData[i], obj->pos.x, -obj->pos.y, obj->pos.z, 0.0f, objYaw, obj->diff);
 					if (logicCount > 0)
 					{
 						WRITE_LINE("        SEQ\r\n");
@@ -859,7 +861,7 @@ namespace LevelEditor
 				} break;
 				case ETYPE_SPRITE:
 				{
-					WRITE_LINE("    CLASS: SPRITE     DATA: %d   X: %0.2f Y: %0.2f Z: %0.2f PCH: %0.2f   YAW: %0.2f ROL: 0.00   DIFF: 1\r\n", objData[i], obj->pos.x, -obj->pos.y, obj->pos.z, 0.0f, objYaw);
+					WRITE_LINE("    CLASS: SPRITE     DATA: %d   X: %0.2f Y: %0.2f Z: %0.2f PCH: %0.2f   YAW: %0.2f ROL: 0.00   DIFF: %d\r\n", objData[i], obj->pos.x, -obj->pos.y, obj->pos.z, 0.0f, objYaw, obj->diff);
 					if (logicCount > 0)
 					{
 						WRITE_LINE("        SEQ\r\n");

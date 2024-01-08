@@ -50,6 +50,13 @@ namespace LevelEditor
 		"3D",     // ETYPE_3D
 	};
 
+	const char* c_entityVarStr[EVARID_COUNT] =
+	{
+		"Eye",    // EVARID_EYE
+		"Radius", // EVARID_RADIUS
+		"Height", // EVARID_HEIGHT
+	};
+
 	std::vector<Entity> s_entityList;
 	std::vector<u8> s_fileData;
 
@@ -75,6 +82,12 @@ namespace LevelEditor
 			}
 		}
 		return ETYPE_UNKNOWN;
+	}
+
+	const char* getEntityVarStr(EntityVarId varId)
+	{
+		if (varId >= EVARID_COUNT) { return ""; }
+		return c_entityVarStr[varId];
 	}
 
 	bool loadEntityData()
