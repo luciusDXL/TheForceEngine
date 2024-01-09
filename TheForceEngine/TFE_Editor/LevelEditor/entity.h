@@ -13,24 +13,6 @@
 
 namespace LevelEditor
 {
-	enum EntityKey
-	{
-		EKEY_ENTITY = 0,
-		EKEY_CLASS,
-		EKEY_LOGIC,
-		EKEY_ICON,
-		EKEY_PLACEMENT,
-		EKEY_ASSET,
-		EKEY_ASSET_OFFSET_Y,
-		EKEY_ASSET2,
-		EKEY_ASSET2_OFFSET_Y,
-		EKEY_EYE,
-		EKEY_RADIUS,
-		EKEY_HEIGHT,
-		EKEY_COUNT,
-		EKEY_UNKNOWN = EKEY_COUNT
-	};
-
 	enum EntityType
 	{
 		ETYPE_SPIRIT = 0,
@@ -98,7 +80,31 @@ namespace LevelEditor
 		Vec3f offset = { 0 };
 		Vec3f offsetAdj = { 0 };
 	};
+
+	enum LogicVarType
+	{
+		VAR_TYPE_STD = 0,
+		VAR_TYPE_DEFAULT,
+		VAR_TYPE_REQUIRED,
+		VAR_TYPE_COUNT
+	};
+
+	struct LogicVar
+	{
+		s32 varId;
+		LogicVarType type;
+	};
+
+	struct LogicDef
+	{
+		s32 id;
+		std::string name;
+		std::string tooltip;
+		// TODO
+	};
+
 	extern std::vector<Entity> s_entityList;
+	extern std::vector<LogicDef> s_logicDefList;
 
 	struct EditorObject
 	{
@@ -109,5 +115,6 @@ namespace LevelEditor
 	};
 
 	bool loadEntityData();
+	bool loadLogicData();
 	const char* getEntityVarStr(EntityVarId varId);
 }

@@ -276,6 +276,7 @@ namespace LevelEditor
 
 		loadPaletteAndColormap();
 		loadEntityData();
+		loadLogicData();
 
 		viewport_init();
 		viewport_update((s32)UI_SCALE(480) + 16, (s32)UI_SCALE(68) + 18);

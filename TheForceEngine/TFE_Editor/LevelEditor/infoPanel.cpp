@@ -990,6 +990,23 @@ namespace LevelEditor
 		{
 		}
 		ImGui::SameLine(0.0f, 8.0f);
+		static s32 _logicIndex = 0;
+		ImGui::SetNextItemWidth(128.0f);
+		if (ImGui::BeginCombo("##LogicCombo", s_logicDefList[_logicIndex].name.c_str()))
+		{
+			s32 count = (s32)s_logicDefList.size() - 1;
+			for (s32 i = 0; i < count; i++)
+			{
+				if (ImGui::Selectable(s_logicDefList[i].name.c_str(), i == _logicIndex))
+				{
+					_logicIndex = i;
+				}
+				setTooltip(s_logicDefList[i].tooltip.c_str());
+			}
+			ImGui::EndCombo();
+		}
+
+		ImGui::SameLine(0.0f, 16.0f);
 		if (ImGui::Button("Remove"))
 		{
 		}

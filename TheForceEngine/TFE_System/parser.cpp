@@ -25,7 +25,7 @@ namespace
 	}
 }
 
-TFE_Parser::TFE_Parser() : m_buffer(nullptr), m_bufferLen(0u), m_enableBlockComments(false), m_blockComment(false), m_enableColorSeperator(false), m_convertToUppercase(false) {}
+TFE_Parser::TFE_Parser() : m_buffer(nullptr), m_bufferLen(0u), m_enableBlockComments(false), m_blockComment(false), m_enableColonSeperator(false), m_convertToUppercase(false) {}
 TFE_Parser::~TFE_Parser() {}
 
 void TFE_Parser::init(const char* buffer, size_t len)
@@ -43,7 +43,7 @@ void TFE_Parser::enableBlockComments()
 // Enable : as a seperator but do not remove it.
 void TFE_Parser::enableColonSeperator()
 {
-	m_enableColorSeperator = true;
+	m_enableColonSeperator = true;
 }
 
 // Add a string representing a comment, such as ";" "#" "//"
@@ -203,20 +203,16 @@ void TFE_Parser::tokenizeLine(const char* line, TokenList& tokens)
 			{
 				tokens.push_back(curToken);
 			}
-
 			curTokenPos = 0;
 			curToken[0] = 0;
 		}
-		else if (!inQuote && m_enableColorSeperator && line[c] == ':')
+		else if (!inQuote && m_enableColonSeperator && line[c] == ':')
 		{
-			curToken[curTokenPos++] = line[c];
-
 			curToken[curTokenPos] = 0;
 			if (curTokenPos)
 			{
 				tokens.push_back(curToken);
 			}
-
 			curTokenPos = 0;
 			curToken[0] = 0;
 		}

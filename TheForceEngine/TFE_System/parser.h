@@ -42,7 +42,7 @@ private:
 	TokenList m_commentStrings;
 	bool m_enableBlockComments;
 	bool m_blockComment;
-	bool m_enableColorSeperator;
+	bool m_enableColonSeperator;
 	bool m_convertToUppercase;
 
 private:

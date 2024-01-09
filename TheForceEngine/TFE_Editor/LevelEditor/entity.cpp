@@ -25,6 +25,35 @@ using namespace TFE_Editor;
 
 namespace LevelEditor
 {
+	enum EntityKey
+	{
+		EKEY_ENTITY = 0,
+		EKEY_CLASS,
+		EKEY_LOGIC,
+		EKEY_ICON,
+		EKEY_PLACEMENT,
+		EKEY_ASSET,
+		EKEY_ASSET_OFFSET_Y,
+		EKEY_ASSET2,
+		EKEY_ASSET2_OFFSET_Y,
+		EKEY_EYE,
+		EKEY_RADIUS,
+		EKEY_HEIGHT,
+		EKEY_COUNT,
+		EKEY_UNKNOWN = EKEY_COUNT
+	};
+
+	enum LogicKey
+	{
+		LKEY_LOGIC = 0,
+		LKEY_TOOLTIP,
+		LKEY_VAR,
+		LKEY_DEFVAR,
+		LKEY_REQVAR,
+		LKEY_COUNT,
+		LKEY_UNKNOWN = LKEY_COUNT
+	};
+
 	const char* c_entityKeyStr[EKEY_COUNT] =
 	{
 		"Entity",          // EKEY_ENTITY
@@ -39,6 +68,15 @@ namespace LevelEditor
 		"Eye",             // EKEY_EYE
 		"Radius",          // EKEY_RADIUS
 		"Height",          // EKEY_HEIGHT
+	};
+
+	const char* c_logicKeyStr[LKEY_COUNT] =
+	{
+		"Logic",   // LKEY_LOGIC
+		"Tooltip", // LKEY_TOOLTIP
+		"Var",     // LKEY_VAR
+		"DefVar",  // LKEY_DEFVAR
+		"ReqVar",  // LKEY_REQVAR
 	};
 
 	const char* c_entityTypeStr[ETYPE_COUNT] =
@@ -58,6 +96,7 @@ namespace LevelEditor
 	};
 
 	std::vector<Entity> s_entityList;
+	std::vector<LogicDef> s_logicDefList;
 	std::vector<u8> s_fileData;
 
 	EntityKey getEntityKey(const char* key)
@@ -70,6 +109,18 @@ namespace LevelEditor
 			}
 		}
 		return EKEY_UNKNOWN;
+	}
+
+	LogicKey getLogicKey(const char* key)
+	{
+		for (s32 k = 0; k < LKEY_COUNT; k++)
+		{
+			if (strcasecmp(c_logicKeyStr[k], key) == 0)
+			{
+				return LogicKey(k);
+			}
+		}
+		return LKEY_UNKNOWN;
 	}
 
 	EntityType getEntityType(const char* type)
@@ -114,6 +165,7 @@ namespace LevelEditor
 		size_t bufferPos = 0;
 		parser.init((char*)s_fileData.data(), s_fileData.size());
 		parser.addCommentString("#");
+		parser.enableColonSeperator();
 
 		const char* line;
 		char* endPtr = nullptr;
@@ -307,6 +359,98 @@ namespace LevelEditor
 			{
 				// TODO: other types, like 3D.
 			}
+		}
+
+		return true;
+	}
+	
+	bool loadLogicData()
+	{
+		s_logicDefList.clear();
+
+		char logicDefPath[TFE_MAX_PATH];
+		const char* progPath = TFE_Paths::getPath(TFE_PathType::PATH_PROGRAM);
+		sprintf(logicDefPath, "%sEditorDef/LogicDef.ini", progPath);
+		FileUtil::fixupPath(logicDefPath);
+
+		FileStream file;
+		if (!file.open(logicDefPath, FileStream::MODE_READ))
+		{
+			LE_ERROR("Cannot open Logic Definitions - '%s'.", logicDefPath);
+			return false;
+		}
+		size_t len = file.getSize();
+		s_fileData.resize(len);
+		file.readBuffer(s_fileData.data(), (u32)len);
+		file.close();
+
+		TFE_Parser parser;
+		size_t bufferPos = 0;
+		parser.init((char*)s_fileData.data(), s_fileData.size());
+		parser.addCommentString("#");
+		parser.enableColonSeperator();
+
+		const char* line;
+		char* endPtr = nullptr;
+		LogicDef* curLogic = nullptr;
+		TokenList tokens;
+		line = parser.readLine(bufferPos);
+		while (line)
+		{
+			parser.tokenizeLine(line, tokens);
+			if (tokens.size() >= 2)
+			{
+				LogicKey key = getLogicKey(tokens[0].c_str());
+				switch (key)
+				{
+					case LKEY_LOGIC:
+					{
+						s_logicDefList.push_back({});
+						curLogic = &s_logicDefList.back();
+						curLogic->id = s32(s_logicDefList.size()) - 1;
+						curLogic->name = tokens[1];
+					} break;
+					case LKEY_TOOLTIP:
+					{
+						// Fix-up \n
+						char fixup[512];
+						const s32 len = (s32)tokens[1].length();
+						const char* src = tokens[1].c_str();
+						s32 outLen = 0;
+						for (s32 i = 0; i < len; i++)
+						{
+							if (src[i] != '\\' || src[i+1] != 'n')
+							{
+								fixup[outLen++] = src[i];
+							}
+							else
+							{
+								fixup[outLen++] = '\n';
+								i++;
+							}
+						}
+						fixup[outLen] = 0;
+						curLogic->tooltip = fixup;
+					} break;
+					case LKEY_VAR:
+					{
+						// TODO
+					} break;
+					case LKEY_DEFVAR:
+					{
+						// TODO
+					} break;
+					case LKEY_REQVAR:
+					{
+						// TODO
+					} break;
+					default:
+					{
+						LE_WARNING("Invalid key '%s' in LogicDef.ini", tokens[0].c_str());
+					}
+				}
+			}
+			line = parser.readLine(bufferPos);
 		}
 
 		return true;
