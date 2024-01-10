@@ -174,10 +174,24 @@ namespace LevelEditor
 		return ETYPE_UNKNOWN;
 	}
 
-	const char* getEntityVarStr(EntityVarId varId)
+	const char* getEntityVarName(s32 id)
 	{
-		if (varId >= EVARID_COUNT) { return ""; }
-		return c_entityVarStr[varId];
+		if (id < 0 || id >= (s32)s_varDefList.size()) { return ""; }
+		return s_varDefList[id].name.c_str();
+	}
+
+	s32 getVariableId(const char* varName)
+	{
+		const s32 count = (s32)s_varDefList.size();
+		const EntityVarDef* varDef = s_varDefList.data();
+		for (s32 v = 0; v < count; v++, varDef++)
+		{
+			if (strcasecmp(varDef->name.c_str(), varName) == 0)
+			{
+				return v;
+			}
+		}
+		return -1;
 	}
 
 	bool loadEntityData(const char* localDir)
@@ -261,24 +275,21 @@ namespace LevelEditor
 					case EKEY_EYE:
 					{
 						EntityVar var;
-						var.def.id = EVARID_EYE;
-						var.def.type = EVARTYPE_BOOL;
+						var.defId = getVariableId("Eye");
 						var.value.bValue = strcasecmp(tokens[1].c_str(), "true") == 0;
 						curEntity->var.push_back(var);
 					} break;
 					case EKEY_RADIUS:
 					{
 						EntityVar var;
-						var.def.id = EVARID_RADIUS;
-						var.def.type = EVARTYPE_FLOAT;
+						var.defId = getVariableId("Radius");
 						var.value.fValue = strtof(tokens[1].c_str(), &endPtr);
 						curEntity->var.push_back(var);
 					} break;
 					case EKEY_HEIGHT:
 					{
 						EntityVar var;
-						var.def.id = EVARID_HEIGHT;
-						var.def.type = EVARTYPE_FLOAT;
+						var.defId = getVariableId("Height");
 						var.value.fValue = strtof(tokens[1].c_str(), &endPtr);
 						curEntity->var.push_back(var);
 					} break;
@@ -377,21 +388,6 @@ namespace LevelEditor
 
 					// Handle the offset.
 					entity->offset = { (f32)frame->offsetX + entity->offsetAdj.x, (f32)frame->offsetY + entity->offsetAdj.y, 0.0f };
-				#if 0
-					s32 texW = cell->w;
-					s32 texH = cell->h;
-					s32 scale = max(1, min(4, s32(w) / (sprite->rect[2] - sprite->rect[0])));
-					texW *= scale;
-					texH *= scale;
-
-					ImVec2 cursor = ImGui::GetCursorPos();
-					cursor.x += f32((frame->offsetX - sprite->rect[0]) * scale);
-					cursor.y += f32((frame->offsetY - sprite->rect[1]) * scale);
-					ImGui::SetCursorPos(cursor);
-
-					ImGui::Image(TFE_RenderBackend::getGpuPtr(sprite->texGpu),
-						ImVec2((f32)texW, (f32)texH), ImVec2(u0, v0), ImVec2(u1, v1));
-				#endif
 				}
 			}
 			else
@@ -473,16 +469,15 @@ namespace LevelEditor
 					} break;
 					case LKEY_VAR:
 					{
-						// TODO
-						// curLogic->var.push_back({});
+						curLogic->var.push_back({ getVariableId(tokens[1].c_str()), VAR_TYPE_STD });
 					} break;
 					case LKEY_DEFVAR:
 					{
-						// TODO
+						curLogic->var.push_back({ getVariableId(tokens[1].c_str()), VAR_TYPE_DEFAULT });
 					} break;
 					case LKEY_REQVAR:
 					{
-						// TODO
+						curLogic->var.push_back({ getVariableId(tokens[1].c_str()), VAR_TYPE_REQUIRED });
 					} break;
 					default:
 					{

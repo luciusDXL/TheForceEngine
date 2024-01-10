@@ -82,7 +82,7 @@ namespace LevelEditor
 		
 	struct EntityVar
 	{
-		EntityVarDef def;
+		s32 defId;
 		EntityVarValue value;
 	};
 
@@ -142,5 +142,5 @@ namespace LevelEditor
 	bool loadEntityData(const char* localDir);
 	bool loadVariableData(const char* localDir);
 	bool loadLogicData(const char* localDir);
-	const char* getEntityVarStr(EntityVarId varId);
+	const char* getEntityVarName(s32 id);
 }

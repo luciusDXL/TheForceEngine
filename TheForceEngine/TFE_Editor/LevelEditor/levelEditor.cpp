@@ -278,8 +278,8 @@ namespace LevelEditor
 
 		// TODO: Handle different games...
 		const char* gameLocalDir = "DarkForces";
-		loadEntityData(gameLocalDir);
 		loadVariableData(gameLocalDir);
+		loadEntityData(gameLocalDir);
 		loadLogicData(gameLocalDir);
 		
 		viewport_init();
