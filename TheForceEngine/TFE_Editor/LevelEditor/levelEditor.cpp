@@ -275,9 +275,13 @@ namespace LevelEditor
 		infoPanelAddMsg(LE_MSG_INFO, "Loaded level '%s'", s_level.name.c_str());
 
 		loadPaletteAndColormap();
-		loadEntityData();
-		loadLogicData();
 
+		// TODO: Handle different games...
+		const char* gameLocalDir = "DarkForces";
+		loadEntityData(gameLocalDir);
+		loadVariableData(gameLocalDir);
+		loadLogicData(gameLocalDir);
+		
 		viewport_init();
 		viewport_update((s32)UI_SCALE(480) + 16, (s32)UI_SCALE(68) + 18);
 		s_gridIndex = 7;

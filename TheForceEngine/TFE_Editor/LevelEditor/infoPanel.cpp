@@ -1018,17 +1018,19 @@ namespace LevelEditor
 		ImGui::Text("%s", "Variables");
 		ImGui::BeginChild("##VariableList", { (f32)min(listWidth, 400), 96 }, true);
 		{
+		#if 0
 			s32 count = (s32)s_objEntity.var.size();
 			EntityVar* list = s_objEntity.var.data();
 			for (s32 i = 0; i < count; i++)
 			{
 				char name[256];
-				sprintf(name, "%s##%d", getEntityVarStr(list[i].def.id), i);
+				sprintf(name, "%s##%d", getEntityVarStr(list[i].def.id, i);
 				bool sel = varSel == i;
 				ImGui::Selectable(name, &sel);
 				if (sel) { varSel = i; }
 				else if (varSel == i) { varSel = -1; }
 			}
+		#endif
 		}
 		ImGui::EndChild();
 		if (ImGui::Button("Add"))

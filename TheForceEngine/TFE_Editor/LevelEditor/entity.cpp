@@ -54,6 +54,20 @@ namespace LevelEditor
 		LKEY_UNKNOWN = LKEY_COUNT
 	};
 
+	enum VarKey
+	{
+		VKEY_VAR = 0,
+		VKEY_TYPE,
+		VKEY_DEFAULT,
+		VKEY_DEFAULT1,
+		VKEY_FLAG,
+		VKEY_VALUE,
+		VKEY_NAME0,
+		VKEY_NAME1,
+		VKEY_COUNT,
+		VKEY_UNKNOWN = VKEY_COUNT
+	};
+
 	const char* c_entityKeyStr[EKEY_COUNT] =
 	{
 		"Entity",          // EKEY_ENTITY
@@ -79,6 +93,18 @@ namespace LevelEditor
 		"ReqVar",  // LKEY_REQVAR
 	};
 
+	const char* c_varKeyStr[VKEY_COUNT] = 
+	{
+		"Var",      // VKEY_VAR
+		"Type",     // VKEY_TYPE
+		"Default",  // VKEY_DEFAULT
+		"Default1", // VKEY_DEFAULT1
+		"Flag",     // VKEY_FLAG
+		"Value",    // VKEY_VALUE
+		"Name0",    // VKEY_NAME0
+		"Name1"     // VKEY_NAME1
+	};
+
 	const char* c_entityTypeStr[ETYPE_COUNT] =
 	{
 		"Spirit", // ETYPE_SPIRIT
@@ -97,6 +123,7 @@ namespace LevelEditor
 
 	std::vector<Entity> s_entityList;
 	std::vector<LogicDef> s_logicDefList;
+	std::vector<EntityVarDef> s_varDefList;
 	std::vector<u8> s_fileData;
 
 	EntityKey getEntityKey(const char* key)
@@ -123,6 +150,18 @@ namespace LevelEditor
 		return LKEY_UNKNOWN;
 	}
 
+	VarKey getVarKey(const char* key)
+	{
+		for (s32 k = 0; k < VKEY_COUNT; k++)
+		{
+			if (strcasecmp(c_varKeyStr[k], key) == 0)
+			{
+				return VarKey(k);
+			}
+		}
+		return VKEY_UNKNOWN;
+	}
+
 	EntityType getEntityType(const char* type)
 	{
 		for (s32 t = 0; t < ETYPE_COUNT; t++)
@@ -141,13 +180,13 @@ namespace LevelEditor
 		return c_entityVarStr[varId];
 	}
 
-	bool loadEntityData()
+	bool loadEntityData(const char* localDir)
 	{
 		s_entityList.clear();
 
 		char entityDefPath[TFE_MAX_PATH];
 		const char* progPath = TFE_Paths::getPath(TFE_PathType::PATH_PROGRAM);
-		sprintf(entityDefPath, "%sEditorDef/EntityDef.ini", progPath);
+		sprintf(entityDefPath, "%sEditorDef/%s/EntityDef.ini", progPath, localDir);
 		FileUtil::fixupPath(entityDefPath);
 
 		FileStream file;
@@ -364,13 +403,13 @@ namespace LevelEditor
 		return true;
 	}
 	
-	bool loadLogicData()
+	bool loadLogicData(const char* localDir)
 	{
 		s_logicDefList.clear();
 
 		char logicDefPath[TFE_MAX_PATH];
 		const char* progPath = TFE_Paths::getPath(TFE_PathType::PATH_PROGRAM);
-		sprintf(logicDefPath, "%sEditorDef/LogicDef.ini", progPath);
+		sprintf(logicDefPath, "%sEditorDef/%s/LogicDef.ini", progPath, localDir);
 		FileUtil::fixupPath(logicDefPath);
 
 		FileStream file;
@@ -412,7 +451,7 @@ namespace LevelEditor
 					} break;
 					case LKEY_TOOLTIP:
 					{
-						// Fix-up \n
+						// Fix-up line-endings.
 						char fixup[512];
 						const s32 len = (s32)tokens[1].length();
 						const char* src = tokens[1].c_str();
@@ -435,6 +474,7 @@ namespace LevelEditor
 					case LKEY_VAR:
 					{
 						// TODO
+						// curLogic->var.push_back({});
 					} break;
 					case LKEY_DEFVAR:
 					{
@@ -448,6 +488,164 @@ namespace LevelEditor
 					{
 						LE_WARNING("Invalid key '%s' in LogicDef.ini", tokens[0].c_str());
 					}
+				}
+			}
+			line = parser.readLine(bufferPos);
+		}
+
+		return true;
+	}
+
+	bool loadVariableData(const char* localDir)
+	{
+		s_varDefList.clear();
+
+		char varDefPath[TFE_MAX_PATH];
+		const char* progPath = TFE_Paths::getPath(TFE_PathType::PATH_PROGRAM);
+		sprintf(varDefPath, "%sEditorDef/%s/VarDef.ini", progPath, localDir);
+		FileUtil::fixupPath(varDefPath);
+
+		FileStream file;
+		if (!file.open(varDefPath, FileStream::MODE_READ))
+		{
+			LE_ERROR("Cannot open Variable Definitions - '%s'.", varDefPath);
+			return false;
+		}
+		size_t len = file.getSize();
+		s_fileData.resize(len);
+		file.readBuffer(s_fileData.data(), (u32)len);
+		file.close();
+
+		TFE_Parser parser;
+		size_t bufferPos = 0;
+		parser.init((char*)s_fileData.data(), s_fileData.size());
+		parser.addCommentString("#");
+		parser.enableColonSeperator();
+
+		const char* line;
+		char* endPtr = nullptr;
+		EntityVarDef* curVar = nullptr;
+		TokenList tokens;
+		line = parser.readLine(bufferPos);
+		while (line)
+		{
+			parser.tokenizeLine(line, tokens);
+			if (tokens.size() >= 2)
+			{
+				VarKey key = getVarKey(tokens[0].c_str());
+				switch (key)
+				{
+					case VKEY_VAR:
+					{
+						s_varDefList.push_back({});
+						curVar = &s_varDefList.back();
+						curVar->id = s32(s_varDefList.size()) - 1;
+						curVar->name = tokens[1];
+					} break;
+					case VKEY_TYPE:
+					{
+						const char* typeStr = tokens[1].c_str();
+						curVar->defValue.iValue = 0;
+						curVar->defValue1.iValue = 0;
+						if (strcasecmp(typeStr, "Bool") == 0)
+						{
+							curVar->type = EVARTYPE_BOOL;
+						}
+						else if (strcasecmp(typeStr, "Int") == 0)
+						{
+							curVar->type = EVARTYPE_INT;
+						}
+						else if (strcasecmp(typeStr, "Float") == 0)
+						{
+							curVar->type = EVARTYPE_FLOAT;
+						}
+						else if (strcasecmp(typeStr, "Flags") == 0)
+						{
+							curVar->type = EVARTYPE_FLAGS;
+						}
+						else if (strcasecmp(typeStr, "StringList") == 0)
+						{
+							curVar->type = EVARTYPE_STRING_LIST;
+						}
+						else if (strcasecmp(typeStr, "InputStringPair") == 0)
+						{
+							curVar->type = EVARTYPE_INPUT_STRING_PAIR;
+						}
+						else
+						{
+							curVar->type = EVARTYPE_BOOL; // Just assume bool.
+							LE_WARNING("Variable Parsing Error: Unknown variable type '%s'", typeStr);
+						}
+					} break;
+					case VKEY_DEFAULT:
+					{
+						const char* valueStr = tokens[1].c_str();
+						switch (curVar->type)
+						{
+							case EVARTYPE_BOOL:
+							{
+								curVar->defValue.bValue = strcasecmp(valueStr, "True") == 0 || strcasecmp(valueStr, "1") == 0;
+							} break;
+							case EVARTYPE_FLOAT:
+							{
+								curVar->defValue.fValue = strtof(valueStr, &endPtr);
+							} break;
+							case EVARTYPE_INT:
+							case EVARTYPE_FLAGS:
+							{
+								curVar->defValue.iValue = strtol(valueStr, &endPtr, 10);
+							} break;
+							case EVARTYPE_STRING_LIST:
+							{
+								curVar->defValue.sValue = valueStr;
+							} break;
+							case EVARTYPE_INPUT_STRING_PAIR:
+							{
+								curVar->defValue.sValue = valueStr;
+							} break;
+						}
+					} break;
+					case VKEY_DEFAULT1:
+					{
+						const char* valueStr = tokens[1].c_str();
+						switch (curVar->type)
+						{
+							case EVARTYPE_INPUT_STRING_PAIR:
+							{
+								curVar->defValue1.sValue = valueStr;
+							} break;
+						}
+					} break;
+					case VKEY_FLAG:
+					{
+						if (tokens.size() >= 3)
+						{
+							curVar->flags.push_back({ tokens[1], strtol(tokens[2].c_str(), &endPtr, 10) });
+						}
+						else
+						{
+							LE_WARNING("Variable Parsing Error: Invalid 'Flag' format, it should be 'Flag: \"FlagName\", FlagIntValue' : '%s'", line);
+						}
+					} break;
+					case VKEY_VALUE:
+					{
+						if (curVar->type == EVARTYPE_STRING_LIST)
+						{
+							curVar->strList.push_back(tokens[1]);
+						}
+						else
+						{
+							LE_WARNING("Variable Parsing Error: Invalid use of 'Value', it is only valid for the 'StringList' type: '%s'", line);
+						}
+					} break;
+					case VKEY_NAME0:
+					{
+						curVar->name0 = tokens[1];
+					} break;
+					case VKEY_NAME1:
+					{
+						curVar->name1 = tokens[1];
+					} break;
 				}
 			}
 			line = parser.readLine(bufferPos);

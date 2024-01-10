@@ -37,13 +37,16 @@ namespace LevelEditor
 		EVARTYPE_BOOL = 0,
 		EVARTYPE_FLOAT,
 		EVARTYPE_INT,
+		EVARTYPE_FLAGS,
+		EVARTYPE_STRING_LIST,
+		EVARTYPE_INPUT_STRING_PAIR,
 		EVARTYPE_COUNT
 	};
 
-	struct EntityVarDef
+	struct EntityVarFlag
 	{
-		EntityVarId id;
-		EntityVarType type;
+		std::string name;
+		s32 value;
 	};
 
 	struct EntityVarValue
@@ -54,8 +57,29 @@ namespace LevelEditor
 			f32  fValue;
 			s32  iValue;
 		};
+		std::string sValue;
+		std::string sValue1;	// Used when a "stringpair" is needed.
 	};
 
+	struct EntityVarDef
+	{
+		s32 id;
+		std::string name;
+		EntityVarType type;
+		// Only used if type = EVARTYPE_FLAGS
+		// Stored Value Type = int (index)
+		std::vector<EntityVarFlag> flags;
+		// Only used if type = EVARTYPE_STRING_LIST
+		// Stored Value Type = string
+		std::vector<std::string> strList;
+		// Names, used for inputs.
+		std::string name0;
+		std::string name1;
+		// Default value.
+		EntityVarValue defValue;
+		EntityVarValue defValue1;
+	};
+		
 	struct EntityVar
 	{
 		EntityVarDef def;
@@ -100,11 +124,12 @@ namespace LevelEditor
 		s32 id;
 		std::string name;
 		std::string tooltip;
-		// TODO
+		std::vector<LogicVar> var;
 	};
 
 	extern std::vector<Entity> s_entityList;
 	extern std::vector<LogicDef> s_logicDefList;
+	extern std::vector<EntityVarDef> s_varDefList;
 
 	struct EditorObject
 	{
@@ -114,7 +139,8 @@ namespace LevelEditor
 		s32 diff;
 	};
 
-	bool loadEntityData();
-	bool loadLogicData();
+	bool loadEntityData(const char* localDir);
+	bool loadVariableData(const char* localDir);
+	bool loadLogicData(const char* localDir);
 	const char* getEntityVarStr(EntityVarId varId);
 }
