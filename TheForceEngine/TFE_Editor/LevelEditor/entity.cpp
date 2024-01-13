@@ -319,6 +319,7 @@ namespace LevelEditor
 		const char* line;
 		char* endPtr = nullptr;
 		Entity* curEntity = nullptr;
+		std::vector<EntityVar>* varList = nullptr;
 		TokenList tokens;
 		line = parser.readLine(bufferPos);
 		while (line)
@@ -335,6 +336,7 @@ namespace LevelEditor
 						curEntity = &s_entityList.back();
 						curEntity->id = s32(s_entityList.size()) - 1;
 						curEntity->name = tokens[1];
+						varList = &curEntity->var;
 					} break;
 					case EKEY_CLASS:
 					{
@@ -345,6 +347,7 @@ namespace LevelEditor
 						EntityLogic newLogic = {};
 						newLogic.name = tokens[1];
 						curEntity->logic.push_back(newLogic);
+						varList = &curEntity->logic.back().var;
 					} break;
 					case EKEY_ICON:
 					{
@@ -375,21 +378,21 @@ namespace LevelEditor
 						EntityVar var;
 						var.defId = getVariableId("Eye");
 						var.value.bValue = strcasecmp(tokens[1].c_str(), "true") == 0;
-						curEntity->var.push_back(var);
+						varList->push_back(var);
 					} break;
 					case EKEY_RADIUS:
 					{
 						EntityVar var;
 						var.defId = getVariableId("Radius");
 						var.value.fValue = strtof(tokens[1].c_str(), &endPtr);
-						curEntity->var.push_back(var);
+						varList->push_back(var);
 					} break;
 					case EKEY_HEIGHT:
 					{
 						EntityVar var;
 						var.defId = getVariableId("Height");
 						var.value.fValue = strtof(tokens[1].c_str(), &endPtr);
-						curEntity->var.push_back(var);
+						varList->push_back(var);
 					} break;
 					case EKEY_UNKNOWN:
 					default:
