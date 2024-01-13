@@ -31,14 +31,8 @@ namespace LevelEditor
 		EKEY_CLASS,
 		EKEY_LOGIC,
 		EKEY_ICON,
-		EKEY_PLACEMENT,
 		EKEY_ASSET,
 		EKEY_ASSET_OFFSET_Y,
-		EKEY_ASSET2,
-		EKEY_ASSET2_OFFSET_Y,
-		EKEY_EYE,
-		EKEY_RADIUS,
-		EKEY_HEIGHT,
 		EKEY_COUNT,
 		EKEY_UNKNOWN = EKEY_COUNT
 	};
@@ -74,14 +68,8 @@ namespace LevelEditor
 		"Class",           // EKEY_CLASS
 		"Logic",           // EKEY_LOGIC
 		"Icon",            // EKEY_ICON
-		"Placement",       // EKEY_PLACEMENT
 		"Asset",           // EKEY_ASSET
 		"Asset_Offset_Y",  // EKEY_ASSET_OFFSET_Y
-		"Asset2",          // EKEY_ASSET2
-		"Asset2_Offset_Y", // EKEY_ASSET2_OFFSET_Y
-		"Eye",             // EKEY_EYE
-		"Radius",          // EKEY_RADIUS
-		"Height",          // EKEY_HEIGHT
 	};
 
 	const char* c_logicKeyStr[LKEY_COUNT] =
@@ -126,6 +114,20 @@ namespace LevelEditor
 	std::vector<EntityVarDef> s_varDefList;
 	std::vector<u8> s_fileData;
 	s32 s_customEntityStart = 0;
+
+	s32 getEntityVariableId(const char* key)
+	{
+		const s32 count = (s32)s_varDefList.size();
+		const EntityVarDef* def = s_varDefList.data();
+		for (s32 i = 0; i < count; i++, def++)
+		{
+			if (strcasecmp(def->name.c_str(), key) == 0)
+			{
+				return i;
+			}
+		}
+		return -1;
+	}
 
 	EntityKey getEntityKey(const char* key)
 	{
@@ -327,83 +329,86 @@ namespace LevelEditor
 			parser.tokenizeLine(line, tokens);
 			if (tokens.size() >= 2)
 			{
-				EntityKey key = getEntityKey(tokens[0].c_str());
-				switch (key)
+				const s32 varId = getEntityVariableId(tokens[0].c_str());
+				if (varId >= 0)
 				{
-					case EKEY_ENTITY:
+					const EntityVarDef* def = &s_varDefList[varId];
+					const char* valueStr = tokens[1].c_str();
+					const char* valueStr1 = tokens.size() >= 3 ? tokens[2].c_str() : "";
+
+					EntityVar var = {};
+					var.defId = varId;
+					switch (def->type)
 					{
-						s_entityList.push_back({});
-						curEntity = &s_entityList.back();
-						curEntity->id = s32(s_entityList.size()) - 1;
-						curEntity->name = tokens[1];
-						varList = &curEntity->var;
-					} break;
-					case EKEY_CLASS:
+						case EVARTYPE_BOOL:
+						{
+							var.value.bValue = strcasecmp(valueStr, "True") == 0 || strcasecmp(valueStr, "1") == 0;
+						} break;
+						case EVARTYPE_FLOAT:
+						{
+							var.value.fValue = strtof(valueStr, &endPtr);
+						} break;
+						case EVARTYPE_INT:
+						case EVARTYPE_FLAGS:
+						{
+							var.value.iValue = strtol(valueStr, &endPtr, 10);
+						} break;
+						case EVARTYPE_STRING_LIST:
+						{
+							var.value.sValue = valueStr;
+						} break;
+						case EVARTYPE_INPUT_STRING_PAIR:
+						{
+							var.value.sValue = valueStr;
+							var.value.sValue1 = valueStr1;
+						} break;
+					}
+					varList->push_back(var);
+				}
+				else
+				{
+					EntityKey key = getEntityKey(tokens[0].c_str());
+					switch (key)
 					{
-						curEntity->type = getEntityType(tokens[1].c_str());
-					} break;
-					case EKEY_LOGIC:
-					{
-						EntityLogic newLogic = {};
-						newLogic.name = tokens[1];
-						curEntity->logic.push_back(newLogic);
-						varList = &curEntity->logic.back().var;
-					} break;
-					case EKEY_ICON:
-					{
-						curEntity->assetName = tokens[1];
-					} break;
-					case EKEY_PLACEMENT:
-					{
-						// TODO
-					} break;
-					case EKEY_ASSET:
-					{
-						curEntity->assetName = tokens[1];
-					} break;
-					case EKEY_ASSET_OFFSET_Y:
-					{
-						curEntity->offsetAdj.y += strtof(tokens[1].c_str(), &endPtr);
-					} break;
-					case EKEY_ASSET2:
-					{
-						// TODO
-					} break;
-					case EKEY_ASSET2_OFFSET_Y:
-					{
-						// TODO
-					} break;
-					case EKEY_EYE:
-					{
-						EntityVar var;
-						var.defId = getVariableId("Eye");
-						var.value.bValue = strcasecmp(tokens[1].c_str(), "true") == 0;
-						varList->push_back(var);
-					} break;
-					case EKEY_RADIUS:
-					{
-						EntityVar var;
-						var.defId = getVariableId("Radius");
-						var.value.fValue = strtof(tokens[1].c_str(), &endPtr);
-						varList->push_back(var);
-					} break;
-					case EKEY_HEIGHT:
-					{
-						EntityVar var;
-						var.defId = getVariableId("Height");
-						var.value.fValue = strtof(tokens[1].c_str(), &endPtr);
-						varList->push_back(var);
-					} break;
-					case EKEY_UNKNOWN:
-					default:
-					{
-						LE_WARNING("Invalid Entity Key '%s'.", tokens[0].c_str());
+						case EKEY_ENTITY:
+						{
+							s_entityList.push_back({});
+							curEntity = &s_entityList.back();
+							curEntity->id = s32(s_entityList.size()) - 1;
+							curEntity->name = tokens[1];
+							varList = &curEntity->var;
+						} break;
+						case EKEY_CLASS:
+						{
+							curEntity->type = getEntityType(tokens[1].c_str());
+						} break;
+						case EKEY_LOGIC:
+						{
+							EntityLogic newLogic = {};
+							newLogic.name = tokens[1];
+							curEntity->logic.push_back(newLogic);
+							varList = &curEntity->logic.back().var;
+						} break;
+						case EKEY_ICON:
+						case EKEY_ASSET:
+						{
+							curEntity->assetName = tokens[1];
+						} break;
+						case EKEY_ASSET_OFFSET_Y:
+						{
+							curEntity->offsetAdj.y += strtof(tokens[1].c_str(), &endPtr);
+						} break;
+						case EKEY_UNKNOWN:
+						default:
+						{
+							LE_WARNING("Invalid Entity Key '%s'.", tokens[0].c_str());
+						}
 					}
 				}
 			}
 			else
 			{
-				LE_WARNING("Invalid Key-Value pair '%s'.", line);
+				LE_WARNING("Invalid key/value pair '%s'.", line);
 			}
 
 			line = parser.readLine(bufferPos);
@@ -510,6 +515,7 @@ namespace LevelEditor
 			}
 			line = parser.readLine(bufferPos);
 		}
+		LE_INFO("Loaded %d logic definitions from '%s'.", (s32)s_logicDefList.size(), logicDefPath);
 
 		return true;
 	}
@@ -682,6 +688,7 @@ namespace LevelEditor
 			}
 			line = parser.readLine(bufferPos);
 		}
+		LE_INFO("Loaded %d variable definitions from '%s'.", (s32)s_varDefList.size(), varDefPath);
 
 		return true;
 	}
