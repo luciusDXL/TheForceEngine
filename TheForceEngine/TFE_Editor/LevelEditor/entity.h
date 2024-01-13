@@ -86,13 +86,19 @@ namespace LevelEditor
 		EntityVarValue value;
 	};
 
+	struct EntityLogic
+	{
+		std::string name;
+		std::vector<EntityVar> var;
+	};
+
 	struct Entity
 	{
 		s32 id = -1;
 		std::string name;
 		std::string assetName;
 		EntityType type = ETYPE_UNKNOWN;
-		std::vector<std::string> logic;
+		std::vector<EntityLogic> logic;
 		std::vector<EntityVar> var;
 
 		TextureGpu* image = nullptr;
@@ -130,6 +136,7 @@ namespace LevelEditor
 	extern std::vector<Entity> s_entityList;
 	extern std::vector<LogicDef> s_logicDefList;
 	extern std::vector<EntityVarDef> s_varDefList;
+	extern s32 s_customEntityStart;
 
 	struct EditorObject
 	{
@@ -140,7 +147,12 @@ namespace LevelEditor
 	};
 
 	bool loadEntityData(const char* localDir);
+	bool loadSingleEntityData(Entity* entity);
 	bool loadVariableData(const char* localDir);
 	bool loadLogicData(const char* localDir);
+
 	const char* getEntityVarName(s32 id);
+	EntityVarDef* getEntityVar(s32 id);
+
+	s32 getLogicId(const char* name);
 }

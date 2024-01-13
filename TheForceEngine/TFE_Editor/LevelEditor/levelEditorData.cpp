@@ -53,6 +53,8 @@ namespace TFE_DarkForces
 
 namespace LevelEditor
 {
+	const char* c_newLine = "\r\n";
+
 	static std::vector<u8> s_fileData;
 	static u32* s_palette = nullptr;
 	static s32 s_palIndex = 0;
@@ -623,7 +625,7 @@ namespace LevelEditor
 	#define WRITE_LINE(...) \
 		sprintf(buffer, __VA_ARGS__); \
 		file.writeBuffer(buffer, (u32)strlen(buffer));
-	#define NEW_LINE() file.writeBuffer(newLine, (u32)strlen(newLine))
+	#define NEW_LINE() file.writeBuffer(c_newLine, (u32)strlen(c_newLine))
 
 	bool exportDfLevel(const char* levFile)
 	{
@@ -632,9 +634,6 @@ namespace LevelEditor
 		{
 			return false;
 		}
-
-		char newLine[256];
-		strcpy(newLine, "\r\n");
 
 		char buffer[256];
 		WRITE_LINE("%s", "LEV 2.1\r\n");
@@ -727,6 +726,91 @@ namespace LevelEditor
 		return newId;
 	}
 
+	void writeVariables(const std::vector<EntityVar>& var, FileStream& file, char* buffer)
+	{
+		s32 varCount = (s32)var.size();
+		// Variables.
+		for (s32 v = 0; v < varCount; v++)
+		{
+			const EntityVarDef* def = getEntityVar(var[v].defId);
+			if (strcasecmp(def->name.c_str(), "GenType") == 0)
+			{
+				continue;
+			}
+			switch (def->type)
+			{
+				case EVARTYPE_BOOL:
+				{
+					// If the bool doesn't match the "default" value - then don't write it at all.
+					if (var[v].value.bValue == def->defValue.bValue)
+					{
+						WRITE_LINE("            %s:     %s\r\n", def->name.c_str(), var[v].value.bValue ? "TRUE" : "FALSE");
+					}
+				} break;
+				case EVARTYPE_FLOAT:
+				{
+					WRITE_LINE("            %s:     %f\r\n", def->name.c_str(), var[v].value.fValue);
+				} break;
+				case EVARTYPE_INT:
+				case EVARTYPE_FLAGS:
+				{
+					WRITE_LINE("            %s:     %d\r\n", def->name.c_str(), var[v].value.iValue);
+				} break;
+				case EVARTYPE_STRING_LIST:
+				{
+					WRITE_LINE("            %s:     %s\r\n", def->name.c_str(), var[v].value.sValue.c_str());
+				} break;
+				case EVARTYPE_INPUT_STRING_PAIR:
+				{
+					if (!var[v].value.sValue.empty())
+					{
+						WRITE_LINE("            %s:     %s %s\r\n", def->name.c_str(), var[v].value.sValue.c_str(), var[v].value.sValue1.c_str());
+					}
+				} break;
+			}
+		}
+	}
+
+	void writeObjSequence(const EditorObject* obj, const Entity* entity, FileStream& file)
+	{
+		char buffer[256];
+		if (entity->logic.empty() && entity->var.empty()) { return; }
+
+		WRITE_LINE("        SEQ\r\n");
+		const s32 logicCount = (s32)entity->logic.size();
+		if (logicCount)
+		{
+			for (s32 l = 0; l < logicCount; l++)
+			{
+				const std::vector<EntityVar>& var = entity->logic[l].var;
+				const s32 varCount = (s32)var.size();
+
+				if (strcasecmp(entity->logic[l].name.c_str(), "generator") == 0)
+				{
+					for (s32 v = 0; v < varCount; v++)
+					{
+						if (strcasecmp(getEntityVarName(var[v].defId), "GenType") == 0)
+						{
+							WRITE_LINE("            LOGIC:     %s %s\r\n", entity->logic[l].name.c_str(), var[v].value.sValue.c_str());
+							break;
+						}
+					}
+				}
+				else
+				{
+					WRITE_LINE("            LOGIC:     %s\r\n", entity->logic[l].name.c_str());
+				}
+				// Write logic variables.
+				writeVariables(var, file, buffer);
+			}
+		}
+		else if (!entity->var.empty())
+		{
+			writeVariables(entity->var, file, buffer);
+		}
+		WRITE_LINE("        SEQEND\r\n");
+	}
+	
 	bool exportDfObj(const char* oFile, const StartPoint* start)
 	{
 		// For now require the start point.
@@ -737,9 +821,6 @@ namespace LevelEditor
 		{
 			return false;
 		}
-
-		char newLine[256];
-		strcpy(newLine, "\r\n");
 
 		char buffer[256];
 		WRITE_LINE("%s", "O 1.1\r\n");
@@ -770,7 +851,15 @@ namespace LevelEditor
 				}
 				else if (entity->type == ETYPE_SPIRIT)
 				{
-					startPointId = o;
+					const s32 logicCount = (s32)entity->logic.size();
+					for (s32 i = 0; i < logicCount; i++)
+					{
+						if (strcasecmp(entity->logic[i].name.c_str(), "Player") == 0)
+						{
+							startPointId = o;
+							break;
+						}
+					}
 				}
 				objData.push_back(dataIndex);
 			}
@@ -835,43 +924,34 @@ namespace LevelEditor
 			{
 				case ETYPE_SPIRIT:
 				{
-					WRITE_LINE("    CLASS: SPIRIT     DATA: 0   X: %0.2f Y: %0.2f Z: %0.2f PCH: %0.2f   YAW: %0.2f ROL: 0.00   DIFF: %d\r\n", start->pos.x, -y, start->pos.z, pitch, yaw, obj->diff);
-					WRITE_LINE("        SEQ\r\n");
-					WRITE_LINE("            LOGIC:     PLAYER\r\n");
-					WRITE_LINE("            EYE:       TRUE\r\n");
-					WRITE_LINE("        SEQEND\r\n");
+					if (i == startPointId)
+					{
+						WRITE_LINE("    CLASS: SPIRIT     DATA: 0   X: %0.2f Y: %0.2f Z: %0.2f PCH: %0.2f   YAW: %0.2f ROL: 0.00   DIFF: %d\r\n", start->pos.x, -y, start->pos.z, pitch, yaw, obj->diff);
+						WRITE_LINE("        SEQ\r\n");
+						WRITE_LINE("            LOGIC:     PLAYER\r\n");
+						WRITE_LINE("            EYE:       TRUE\r\n");
+						WRITE_LINE("        SEQEND\r\n");
+					}
+					else
+					{
+						WRITE_LINE("    CLASS: SPIRIT     DATA: 0   X: %0.2f Y: %0.2f Z: %0.2f PCH: %0.2f   YAW: %0.2f ROL: 0.00   DIFF: %d\r\n", obj->pos.x, -obj->pos.y, obj->pos.z, 0.0f, objYaw, obj->diff);
+						writeObjSequence(obj, entity, file);
+					}
 				} break;
 				case ETYPE_SAFE:
 				{
 					WRITE_LINE("    CLASS: SAFE     DATA: 0   X: %0.2f Y: %0.2f Z: %0.2f PCH: %0.2f   YAW: %0.2f ROL: 0.00   DIFF: %d\r\n", obj->pos.x, -obj->pos.y, obj->pos.z, 0.0f, objYaw, obj->diff);
+					writeObjSequence(obj, entity, file);
 				} break;
 				case ETYPE_FRAME:
 				{
 					WRITE_LINE("    CLASS: FRAME     DATA: %d   X: %0.2f Y: %0.2f Z: %0.2f PCH: %0.2f   YAW: %0.2f ROL: 0.00   DIFF: %d\r\n", objData[i], obj->pos.x, -obj->pos.y, obj->pos.z, 0.0f, objYaw, obj->diff);
-					if (logicCount > 0)
-					{
-						WRITE_LINE("        SEQ\r\n");
-						for (s32 l = 0; l < logicCount; l++)
-						{
-							WRITE_LINE("            LOGIC:     %s\r\n", entity->logic[l].c_str());
-						}
-						// TODO: Variables.
-						WRITE_LINE("        SEQEND\r\n");
-					}
+					writeObjSequence(obj, entity, file);
 				} break;
 				case ETYPE_SPRITE:
 				{
 					WRITE_LINE("    CLASS: SPRITE     DATA: %d   X: %0.2f Y: %0.2f Z: %0.2f PCH: %0.2f   YAW: %0.2f ROL: 0.00   DIFF: %d\r\n", objData[i], obj->pos.x, -obj->pos.y, obj->pos.z, 0.0f, objYaw, obj->diff);
-					if (logicCount > 0)
-					{
-						WRITE_LINE("        SEQ\r\n");
-						for (s32 l = 0; l < logicCount; l++)
-						{
-							WRITE_LINE("            LOGIC:     %s\r\n", entity->logic[l].c_str());
-						}
-						// TODO: Variables.
-						WRITE_LINE("        SEQEND\r\n");
-					}
+					writeObjSequence(obj, entity, file);
 				} break;
 			}
 		}
@@ -888,9 +968,6 @@ namespace LevelEditor
 		{
 			return false;
 		}
-
-		char newLine[256];
-		strcpy(newLine, "\r\n");
 
 		char buffer[256];
 		WRITE_LINE("%s", "INF 1.0\r\n");

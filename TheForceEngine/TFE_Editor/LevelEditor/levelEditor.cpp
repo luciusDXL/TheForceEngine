@@ -281,6 +281,7 @@ namespace LevelEditor
 		loadVariableData(gameLocalDir);
 		loadEntityData(gameLocalDir);
 		loadLogicData(gameLocalDir);
+		clearEntityChanges();
 		
 		viewport_init();
 		viewport_update((s32)UI_SCALE(480) + 16, (s32)UI_SCALE(68) + 18);
@@ -5047,6 +5048,7 @@ namespace LevelEditor
 			void* gpuPtr = TFE_RenderBackend::getGpuPtr(s_editCtrlToolbarData);
 			if (drawToolbarButton(gpuPtr, 0, false, toolbarTooltips[0]))
 			{
+				commitCurEntityChanges();
 				play();
 			}
 			ImGui::SameLine(0.0f, 32.0f);
@@ -5062,6 +5064,7 @@ namespace LevelEditor
 					s_featureHovered = {};
 					s_featureTex = {};
 					selection_clear();
+					commitCurEntityChanges();
 				}
 				ImGui::SameLine();
 			}

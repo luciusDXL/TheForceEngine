@@ -125,6 +125,7 @@ namespace LevelEditor
 			if (ImGui::Button(names[i], { 100.0f, 18.0f }))
 			{
 				curTab = i;
+				commitCurEntityChanges();
 			}
 			setTooltip("%s", tooltips[i]);
 			restoreTabColor();
@@ -884,6 +885,201 @@ namespace LevelEditor
 	{
 		0, 1, 2, 0, 0, 3, 4
 	};
+	static s32 s_logicIndex = 0;
+	static s32 s_varIndex = 0;
+	static s32 s_logicSelect = -1;
+		
+	bool varListsMatch(const std::vector<EntityVar>& list0, const std::vector<EntityVar>& list1)
+	{
+		if (list0.size() != list1.size()) { return false; }
+		const s32 count = (s32)list0.size();
+		const EntityVar* var0 = list0.data();
+		const EntityVar* var1 = list1.data();
+		for (s32 i = 0; i < count; i++, var0++, var1++)
+		{
+			if (var0->defId != var1->defId) { return false; }
+			const EntityVarDef* def = &s_varDefList[var0->defId];
+			switch (def->type)
+			{
+				case EVARTYPE_BOOL:
+				{
+					if (var0->value.bValue != var1->value.bValue) { return false; }
+				} break;
+				case EVARTYPE_FLOAT:
+				{
+					if (var0->value.fValue != var1->value.fValue) { return false; }
+				} break;
+				case EVARTYPE_INT:
+				case EVARTYPE_FLAGS:
+				{
+					if (var0->value.iValue != var1->value.iValue) { return false; }
+				} break;
+				case EVARTYPE_STRING_LIST:
+				{
+					if (strcasecmp(var0->value.sValue.c_str(), var1->value.sValue.c_str()) != 0) { return false; }
+				} break;
+				case EVARTYPE_INPUT_STRING_PAIR:
+				{
+					if (strcasecmp(var0->value.sValue.c_str(), var1->value.sValue.c_str()) != 0) { return false; }
+					if (strcasecmp(var0->value.sValue1.c_str(), var1->value.sValue1.c_str()) != 0) { return false; }
+				} break;
+			}
+		}
+		return true;
+	}
+
+	bool logicListsMatch(const std::vector<EntityLogic>& list0, const std::vector<EntityLogic>& list1)
+	{
+		if (list0.size() != list1.size()) { return false; }
+		const s32 count = (s32)list0.size();
+		const EntityLogic* logic0 = list0.data();
+		const EntityLogic* logic1 = list1.data();
+		for (s32 i = 0; i < count; i++, logic0++, logic1++)
+		{
+			if (strcasecmp(logic0->name.c_str(), logic1->name.c_str()) != 0)
+			{
+				return false;
+			}
+			if (!varListsMatch(logic0->var, logic1->var))
+			{
+				return false;
+			}
+		}
+		return true;
+	}
+
+	void commitEntityChanges(EditorSector* sector, s32 objIndex, const Entity* newEntityDef)
+	{
+		// 1. Has the entity data actually changed? If not, then just leave it alone.
+		EditorObject* obj = &sector->obj[objIndex];
+		const Entity* curEntity = &s_entityList[obj->entityId];
+		if (newEntityDef->name == curEntity->name && newEntityDef->assetName == curEntity->assetName && newEntityDef->type == curEntity->type &&
+			logicListsMatch(newEntityDef->logic, curEntity->logic) && varListsMatch(newEntityDef->var, curEntity->var))
+		{
+			return;
+		}
+
+		// 2. Search through existing entities and see if this already exists.
+		const s32 count = (s32)s_entityList.size();
+		const Entity* entity = s_entityList.data();
+		s32 entityIndex = -1;
+		for (s32 e = 0; e < count; e++, entity++)
+		{
+			if (newEntityDef->name == entity->name && newEntityDef->assetName == entity->assetName && newEntityDef->type == entity->type &&
+				logicListsMatch(newEntityDef->logic, entity->logic) && varListsMatch(newEntityDef->var, entity->var))
+			{
+				entityIndex = e;
+				break;
+			}
+		}
+		if (entityIndex >= 0)
+		{
+			obj->entityId = entityIndex;
+			return;
+		}
+
+		// 3. Create a new entity.
+		obj->entityId = (s32)s_entityList.size();
+		s_entityList.push_back(*newEntityDef);
+		loadSingleEntityData(&s_entityList.back());
+	}
+
+	void clearEntityChanges()
+	{
+		s_prevObjectFeature.sector = nullptr;
+		s_prevObjectFeature.featureIndex = -1;
+		s_objEntity = {};
+	}
+
+	void commitCurEntityChanges()
+	{
+		if (!s_prevObjectFeature.sector || s_prevObjectFeature.featureIndex < 0 ||
+			s_prevObjectFeature.featureIndex >= (s32)s_prevObjectFeature.sector->obj.size() || s_objEntity.id < 0)
+		{
+			s_objEntity = {};
+			return;
+		}
+
+		commitEntityChanges(s_prevObjectFeature.sector, s_prevObjectFeature.featureIndex, &s_objEntity);
+		s_objEntity = {};
+	}
+
+	void addVariableToList(s32 varId, s32* varList, s32& varCount)
+	{
+		for (s32 v = 0; v < varCount; v++)
+		{
+			if (varList[v] == varId) { return; }
+		}
+		varList[varCount++] = varId;
+	}
+
+	void addLogicVariables(const std::string& logicName, s32* varList, s32& varCount)
+	{
+		if (logicName.empty())
+		{
+			// Add common variables.
+			const LogicDef* def = &s_logicDefList.back();
+			const s32 commonCount = (s32)def->var.size();
+			const LogicVar* var = def->var.data();
+			for (s32 v = 0; v < commonCount; v++, var++)
+			{
+				addVariableToList(var->varId, varList, varCount);
+			}
+			return;
+		}
+
+		const s32 id = getLogicId(logicName.c_str());
+		if (id < 0) { return; }
+		const LogicDef* def = &s_logicDefList[id];
+		const s32 count = (s32)def->var.size();
+
+		// If there are no variables, use the defaults.
+		if (count <= 0)
+		{
+			addLogicVariables("", varList, varCount);
+			return;
+		}
+
+		const LogicVar* var = def->var.data();
+		for (s32 v = 0; v < count; v++, var++)
+		{
+			addVariableToList(var->varId, varList, varCount);
+		}
+	}
+
+	void addAllLogicVariables(s32* varList, s32& varCount)
+	{
+		// Add variables for each logic.
+		s32 count = (s32)s_objEntity.logic.size();
+		EntityLogic* list = s_objEntity.logic.data();
+		for (s32 i = 0; i < count; i++)
+		{
+			addLogicVariables(list[i].name, varList, varCount);
+		}
+		// Finally add common variables.
+		const LogicDef* def = &s_logicDefList.back();
+		const s32 commonCount = (s32)def->var.size();
+		const LogicVar* var = def->var.data();
+		for (s32 v = 0; v < commonCount; v++, var++)
+		{
+			addVariableToList(var->varId, varList, varCount);
+		}
+	}
+
+	s32 getStringListIndex(const std::string& sValue, const std::vector<std::string>& strList)
+	{
+		const char* src = sValue.c_str();
+		const s32 count = (s32)strList.size();
+		const std::string* list = strList.data();
+		for (s32 i = 0; i < count; i++, list++)
+		{
+			if (strcasecmp(src, list->c_str()) == 0)
+			{
+				return i;
+			}
+		}
+		return -1;
+	}
 
 	void infoPanelObject()
 	{
@@ -900,7 +1096,7 @@ namespace LevelEditor
 
 		if (hasObjectSelectionChanged(sector, objIndex))
 		{
-			s_objEntity = {};
+			commitCurEntityChanges();
 		}
 		setPrevObjectFeature(sector, objIndex);
 
@@ -915,10 +1111,12 @@ namespace LevelEditor
 		ImGui::Text("%s", "Name"); ImGui::SameLine(0.0f, 17.0f);
 		char name[256];
 		strcpy(name, s_objEntity.name.c_str());
+		ImGui::SetNextItemWidth(196.0f);
 		if (ImGui::InputText("##NameInput", name, 256))
 		{
 			s_objEntity.name = name;
 		}
+		ImGui::SameLine(0.0f, 16.0f);
 		// Entity Class/Type
 		s32 classId = s_objEntity.type;
 		ImGui::Text("%s", "Class"); ImGui::SameLine(0.0f, 8.0f);
@@ -969,37 +1167,67 @@ namespace LevelEditor
 		const s32 listWidth = (s32)s_infoWith - 32;
 
 		// Logics
-		static s32 logicSel = -1;
+		if (s_logicSelect >= (s32)s_objEntity.logic.size())
+		{
+			s_logicSelect = -1;
+		}
+		// Always select one of the them, if there are any to select.
+		if (s_logicSelect < 0 && !s_objEntity.logic.empty())
+		{
+			s_logicSelect = 0;
+		}
+
 		ImGui::Text("%s", "Logics");
 		ImGui::BeginChild("##LogicList", { (f32)min(listWidth, 400), 64 }, true);
 		{
 			s32 count = (s32)s_objEntity.logic.size();
-			std::string* list = s_objEntity.logic.data();
+			EntityLogic* list = s_objEntity.logic.data();
 			for (s32 i = 0; i < count; i++)
 			{
 				char name[256];
-				sprintf(name, "%s##%d", list[i].c_str(), i);
-				bool sel = logicSel == i;
+				sprintf(name, "%s##%d", list[i].name.c_str(), i);
+				bool sel = s_logicSelect == i;
 				ImGui::Selectable(name, &sel);
-				if (sel) { logicSel = i; }
-				else if (logicSel == i) { logicSel = -1; }
+				if (sel) { s_logicSelect = i; }
+				else if (s_logicSelect == i) { s_logicSelect = -1; }
 			}
 		}
 		ImGui::EndChild();
 		if (ImGui::Button("Add"))
 		{
+			LogicDef* def = &s_logicDefList[s_logicIndex];
+			EntityLogic newLogic = {};
+			newLogic.name = def->name;
+			s_objEntity.logic.push_back(newLogic);
+
+			EntityLogic* logic = &s_objEntity.logic.back();
+
+			// Add Variables automatically.
+			const s32 varCount = (s32)def->var.size();
+			const LogicVar* var = def->var.data();
+			for (s32 v = 0; v < varCount; v++, var++)
+			{
+				const EntityVarDef* varDef = &s_varDefList[var->varId];
+				if (var->type == VAR_TYPE_DEFAULT || var->type == VAR_TYPE_REQUIRED)
+				{
+					EntityVar newVar;
+					newVar.defId = var->varId;
+					newVar.value = varDef->defValue;
+					logic->var.push_back(newVar);
+				}
+			}
 		}
+
 		ImGui::SameLine(0.0f, 8.0f);
-		static s32 _logicIndex = 0;
 		ImGui::SetNextItemWidth(128.0f);
-		if (ImGui::BeginCombo("##LogicCombo", s_logicDefList[_logicIndex].name.c_str()))
+		if (ImGui::BeginCombo("##LogicCombo", s_logicDefList[s_logicIndex].name.c_str()))
 		{
 			s32 count = (s32)s_logicDefList.size() - 1;
 			for (s32 i = 0; i < count; i++)
 			{
-				if (ImGui::Selectable(s_logicDefList[i].name.c_str(), i == _logicIndex))
+				if (ImGui::Selectable(s_logicDefList[i].name.c_str(), i == s_logicIndex))
 				{
-					_logicIndex = i;
+					s_logicIndex = i;
 				}
 				setTooltip(s_logicDefList[i].tooltip.c_str());
 			}
@@ -1007,36 +1235,137 @@ namespace LevelEditor
 		}
 
 		ImGui::SameLine(0.0f, 16.0f);
-		if (ImGui::Button("Remove"))
+		if (ImGui::Button("Remove") && s_logicSelect >= 0)
 		{
+			s32 count = (s32)s_objEntity.logic.size();
+			for (s32 i = s_logicSelect; i < count - 1; i++)
+			{
+				s_objEntity.logic[i] = s_objEntity.logic[i + 1];
+			}
+			s_objEntity.logic.pop_back();
+			s_logicSelect = -1;
 		}
 
 		ImGui::Separator();
 		
 		// Variables
 		static s32 varSel = -1;
-		ImGui::Text("%s", "Variables");
-		ImGui::BeginChild("##VariableList", { (f32)min(listWidth, 400), 96 }, true);
+
+		// Select the variable list.
+		std::vector<EntityVar>* varList = &s_objEntity.var;
+		if (s_logicSelect >= 0 && s_logicSelect < (s32)s_objEntity.logic.size())
 		{
-			s32 count = (s32)s_objEntity.var.size();
-			EntityVar* list = s_objEntity.var.data();
+			varList = &s_objEntity.logic[s_logicSelect].var;
+		}
+
+		ImGui::Text("%s", "Variables");
+		ImGui::BeginChild("##VariableList", { (f32)min(listWidth, 400), /*96*/140 }, true);
+		{
+			s32 count = (s32)varList->size();
+			EntityVar* list = varList->data();
 			for (s32 i = 0; i < count; i++)
 			{
+				EntityVarDef* def = getEntityVar(list[i].defId);
+
 				char name[256];
-				sprintf(name, "%s##%d", getEntityVarName(list[i].defId), i);
+				sprintf(name, "%s##%d", def->name.c_str(), i);
 				bool sel = varSel == i;
-				ImGui::Selectable(name, &sel);
+				ImGui::Selectable(name, &sel, 0, { 100.0f,0.0f });
 				if (sel) { varSel = i; }
 				else if (varSel == i) { varSel = -1; }
+
+				ImGui::SameLine(0.0f, 8.0f);
+				switch (def->type)
+				{
+					case EVARTYPE_BOOL:
+					{
+						sprintf(name, "##VarBool%d", i);
+						ImGui::Checkbox(name, &list[i].value.bValue);
+					} break;
+					case EVARTYPE_FLOAT:
+					{
+						sprintf(name, "##VarFloat%d", i);
+						ImGui::InputFloat(name, &list[i].value.fValue);
+					} break;
+					case EVARTYPE_INT:
+					{
+						sprintf(name, "##VarInt%d", i);
+						ImGui::InputInt(name, &list[i].value.iValue);
+					} break;
+					case EVARTYPE_FLAGS:
+					{
+					} break;
+					case EVARTYPE_STRING_LIST:
+					{
+						const s32 index = getStringListIndex(list[i].value.sValue, def->strList);
+						sprintf(name, "##VarCombo%d", i);
+						if (ImGui::BeginCombo(name, list[i].value.sValue.c_str()))
+						{
+							const s32 listCount = (s32)def->strList.size();
+							for (s32 s = 0; s < listCount; s++)
+							{
+								if (ImGui::Selectable(def->strList[s].c_str(), s == index))
+								{
+									list[i].value.sValue = def->strList[s];
+								}
+							}
+							ImGui::EndCombo();
+						}
+					} break;
+					case EVARTYPE_INPUT_STRING_PAIR:
+					{
+					} break;
+				}
 			}
 		}
 		ImGui::EndChild();
-		if (ImGui::Button("Add"))
+
+		s32 varComboList[256];
+		s32 varComboCount = 0;
+		if (s_logicSelect >= 0 && s_logicSelect < (s32)s_objEntity.logic.size())
 		{
+			addLogicVariables(s_objEntity.logic[s_logicSelect].name, varComboList, varComboCount);
+		}
+		else
+		{
+			addLogicVariables("", varComboList, varComboCount);
+		}
+
+		if (ImGui::Button("Add##Variable") && s_varIndex >= 0 && s_varIndex < varComboCount)
+		{
+			EntityVar var;
+			var.defId = varComboList[s_varIndex];
+			var.value = s_varDefList[var.defId].defValue;
+			varList->push_back(var);
 		}
 		ImGui::SameLine(0.0f, 8.0f);
-		if (ImGui::Button("Remove"))
+		ImGui::SetNextItemWidth(128.0f);
+
+		if (s_varIndex < 0 || s_varIndex >= varComboCount) { s_varIndex = 0; }
+
+		if (ImGui::BeginCombo("##VarCombo", varComboCount ? s_varDefList[varComboList[s_varIndex]].name.c_str() : ""))
 		{
+			for (s32 i = 0; i < varComboCount; i++)
+			{
+				if (ImGui::Selectable(s_varDefList[varComboList[i]].name.c_str(), i == s_varIndex))
+				{
+					s_varIndex = i;
+				}
+				// setTooltip(s_varDefList[varList[s_varIndex]].tooltip.c_str());
+			}
+			ImGui::EndCombo();
+		}
+
+		ImGui::SameLine(0.0f, 16.0f);
+		if (ImGui::Button("Remove##Variable") && varSel >= 0 && varSel < (s32)varList->size())
+		{
+			s32 count = (s32)varList->size();
+			for (s32 i = varSel; i < count - 1; i++)
+			{
+				(*varList)[i] = (*varList)[i + 1];
+			}
+			varList->pop_back();
+			varSel = -1;
 		}
 		ImGui::Separator();
 
@@ -1046,9 +1375,14 @@ namespace LevelEditor
 			// TODO
 		}
 		ImGui::SameLine(0.0f, 8.0f);
+		if (ImGui::Button("Commit"))
+		{
+			commitCurEntityChanges();
+		}
+		ImGui::SameLine(0.0f, 8.0f);
 		if (ImGui::Button("Reset"))
 		{
-			// TODO
+			s_objEntity = {};
 		}
 	}
 		

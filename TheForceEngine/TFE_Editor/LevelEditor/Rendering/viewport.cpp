@@ -1303,7 +1303,7 @@ namespace LevelEditor
 		}
 
 		Vec3f cameraDirXZ = { s_camera.viewMtx.m2.x, 0.0f, s_camera.viewMtx.m2.z };
-		TFE_Math::normalize(&cameraDirXZ);
+		cameraDirXZ = TFE_Math::normalize(&cameraDirXZ);
 		Vec3f cameraRgtXZ = { -cameraDirXZ.z, 0.0f, cameraDirXZ.x };
 
 		const EditorObject* visObj[1024];

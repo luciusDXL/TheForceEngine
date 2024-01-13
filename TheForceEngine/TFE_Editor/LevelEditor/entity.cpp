@@ -125,6 +125,7 @@ namespace LevelEditor
 	std::vector<LogicDef> s_logicDefList;
 	std::vector<EntityVarDef> s_varDefList;
 	std::vector<u8> s_fileData;
+	s32 s_customEntityStart = 0;
 
 	EntityKey getEntityKey(const char* key)
 	{
@@ -180,6 +181,12 @@ namespace LevelEditor
 		return s_varDefList[id].name.c_str();
 	}
 
+	EntityVarDef* getEntityVar(s32 id)
+	{
+		if (id < 0 || id >= (s32)s_varDefList.size()) { return nullptr; }
+		return &s_varDefList[id];
+	}
+
 	s32 getVariableId(const char* varName)
 	{
 		const s32 count = (s32)s_varDefList.size();
@@ -194,9 +201,98 @@ namespace LevelEditor
 		return -1;
 	}
 
+	bool loadSingleEntityData(Entity* entity)
+	{
+		const char* progPath = TFE_Paths::getPath(TFE_PathType::PATH_PROGRAM);
+
+		// First figure out the display asset.
+		if (entity->type == ETYPE_SPIRIT || entity->type == ETYPE_SAFE)
+		{
+			// Load as a PNG.
+			char pngPath[TFE_MAX_PATH];
+			sprintf(pngPath, "%sUI_Images/%s", progPath, entity->assetName.c_str());
+			FileUtil::fixupPath(pngPath);
+
+			entity->image = loadGpuImage(pngPath);
+			entity->st[1] = { (f32)entity->image->getWidth(), (f32)entity->image->getHeight() };
+
+			entity->size.x = 4.0f;
+			entity->size.z = 4.0f;
+		}
+		else if (entity->type == ETYPE_FRAME)
+		{
+			// Load a texture from the frame.
+			Asset* asset = AssetBrowser::findAsset(entity->assetName.c_str(), TYPE_FRAME);
+			if (asset)
+			{
+				if (!asset->handle)
+				{
+					asset->handle = AssetBrowser::loadAssetData(asset);
+				}
+
+				EditorFrame* frame = (EditorFrame*)getAssetData(asset->handle);
+				entity->image = frame->texGpu;
+				entity->uv[0].z = 1.0f;
+				entity->uv[1].z = 0.0f;
+				entity->st[1] = { (f32)entity->image->getWidth(), (f32)entity->image->getHeight() };
+
+				entity->size.x = frame->worldWidth;
+				entity->size.z = frame->worldHeight;
+
+				// Handle the offset.
+				entity->offset = { frame->offsetX + entity->offsetAdj.x, frame->offsetY + entity->offsetAdj.y, 0.0f };
+			}
+		}
+		else if (entity->type == ETYPE_SPRITE)
+		{
+			// Load a texture from the wax.
+			Asset* asset = AssetBrowser::findAsset(entity->assetName.c_str(), TYPE_SPRITE);
+			if (asset)
+			{
+				if (!asset->handle)
+				{
+					asset->handle = AssetBrowser::loadAssetData(asset);
+				}
+
+				EditorSprite* sprite = (EditorSprite*)getAssetData(asset->handle);
+				entity->image = sprite->texGpu;
+
+				// Get the actual cell...
+				s32 frameIndex = sprite->anim[0].views[0].frameIndex[0];
+				SpriteFrame* frame = &sprite->frame[frameIndex];
+				SpriteCell* cell = &sprite->cell[frame->cellIndex];
+
+				f32 u0 = f32(cell->u) / (f32)sprite->texGpu->getWidth();
+				f32 v1 = f32(cell->v) / (f32)sprite->texGpu->getHeight();
+				f32 u1 = f32(cell->u + cell->w) / (f32)sprite->texGpu->getWidth();
+				f32 v0 = f32(cell->v + cell->h) / (f32)sprite->texGpu->getHeight();
+				if (frame->flip) { std::swap(u0, u1); }
+
+				entity->uv[0] = { u0, v0 };
+				entity->uv[1] = { u1, v1 };
+
+				entity->st[0] = { (f32)cell->u, (f32)cell->v };
+				entity->st[1] = { f32(cell->u + cell->w), f32(cell->v + cell->h) };
+
+				entity->size.x = frame->widthWS;
+				entity->size.z = frame->heightWS;
+
+				// Handle the offset.
+				entity->offset = { (f32)frame->offsetX + entity->offsetAdj.x, (f32)frame->offsetY + entity->offsetAdj.y, 0.0f };
+			}
+		}
+		else
+		{
+			// TODO: other types, like 3D.
+		}
+
+		return true;
+	}
+
 	bool loadEntityData(const char* localDir)
 	{
 		s_entityList.clear();
+		s_customEntityStart = 0;
 
 		char entityDefPath[TFE_MAX_PATH];
 		const char* progPath = TFE_Paths::getPath(TFE_PathType::PATH_PROGRAM);
@@ -246,7 +342,9 @@ namespace LevelEditor
 					} break;
 					case EKEY_LOGIC:
 					{
-						curEntity->logic.push_back(tokens[1]);
+						EntityLogic newLogic = {};
+						newLogic.name = tokens[1];
+						curEntity->logic.push_back(newLogic);
 					} break;
 					case EKEY_ICON:
 					{
@@ -314,87 +412,9 @@ namespace LevelEditor
 		Entity* entity = s_entityList.data();
 		for (s32 i = 0; i < count; i++, entity++)
 		{
-			// First figure out the display asset.
-			if (entity->type == ETYPE_SPIRIT || entity->type == ETYPE_SAFE)
-			{
-				// Load as a PNG.
-				char pngPath[TFE_MAX_PATH];
-				sprintf(pngPath, "%sUI_Images/%s", progPath, entity->assetName.c_str());
-				FileUtil::fixupPath(pngPath);
-
-				entity->image = loadGpuImage(pngPath);
-				entity->st[1] = { (f32)entity->image->getWidth(), (f32)entity->image->getHeight() };
-
-				entity->size.x = 4.0f;
-				entity->size.z = 4.0f;
-			}
-			else if (entity->type == ETYPE_FRAME)
-			{
-				// Load a texture from the frame.
-				Asset* asset = AssetBrowser::findAsset(entity->assetName.c_str(), TYPE_FRAME);
-				if (asset)
-				{
-					if (!asset->handle)
-					{
-						asset->handle = AssetBrowser::loadAssetData(asset);
-					}
-
-					EditorFrame* frame = (EditorFrame*)getAssetData(asset->handle);
-					entity->image = frame->texGpu;
-					entity->uv[0].z = 1.0f;
-					entity->uv[1].z = 0.0f;
-					entity->st[1] = { (f32)entity->image->getWidth(), (f32)entity->image->getHeight() };
-
-					entity->size.x = frame->worldWidth;
-					entity->size.z = frame->worldHeight;
-
-					// Handle the offset.
-					entity->offset = { frame->offsetX + entity->offsetAdj.x, frame->offsetY + entity->offsetAdj.y, 0.0f };
-				}
-			}
-			else if (entity->type == ETYPE_SPRITE)
-			{
-				// Load a texture from the wax.
-				Asset* asset = AssetBrowser::findAsset(entity->assetName.c_str(), TYPE_SPRITE);
-				if (asset)
-				{
-					if (!asset->handle)
-					{
-						asset->handle = AssetBrowser::loadAssetData(asset);
-					}
-
-					EditorSprite* sprite = (EditorSprite*)getAssetData(asset->handle);
-					entity->image = sprite->texGpu;
-
-					// Get the actual cell...
-					s32 frameIndex = sprite->anim[0].views[0].frameIndex[0];
-					SpriteFrame* frame = &sprite->frame[frameIndex];
-					SpriteCell* cell = &sprite->cell[frame->cellIndex];
-
-					f32 u0 = f32(cell->u) / (f32)sprite->texGpu->getWidth();
-					f32 v1 = f32(cell->v) / (f32)sprite->texGpu->getHeight();
-					f32 u1 = f32(cell->u + cell->w) / (f32)sprite->texGpu->getWidth();
-					f32 v0 = f32(cell->v + cell->h) / (f32)sprite->texGpu->getHeight();
-					if (frame->flip) { std::swap(u0, u1); }
-
-					entity->uv[0] = { u0, v0 };
-					entity->uv[1] = { u1, v1 };
-
-					entity->st[0] = { (f32)cell->u, (f32)cell->v };
-					entity->st[1] = { f32(cell->u + cell->w), f32(cell->v + cell->h) };
-
-					entity->size.x = frame->widthWS;
-					entity->size.z = frame->heightWS;
-
-					// Handle the offset.
-					entity->offset = { (f32)frame->offsetX + entity->offsetAdj.x, (f32)frame->offsetY + entity->offsetAdj.y, 0.0f };
-				}
-			}
-			else
-			{
-				// TODO: other types, like 3D.
-			}
+			loadSingleEntityData(entity);
 		}
+		s_customEntityStart = (s32)s_entityList.size();
 
 		return true;
 	}
@@ -489,6 +509,20 @@ namespace LevelEditor
 		}
 
 		return true;
+	}
+
+	s32 getLogicId(const char* name)
+	{
+		const s32 count = (s32)s_logicDefList.size();
+		const LogicDef* def = s_logicDefList.data();
+		for (s32 i = 0; i < count; i++, def++)
+		{
+			if (strcasecmp(def->name.c_str(), name) == 0)
+			{
+				return def->id;
+			}
+		}
+		return -1;
 	}
 
 	bool loadVariableData(const char* localDir)

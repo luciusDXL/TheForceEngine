@@ -47,8 +47,6 @@ namespace TFE_DarkForces
 	char s_objSeqArg5[256];
 	s32  s_objSeqArgCount;
 
-	Logic* obj_setEnemyLogic(SecObject* obj, KEYWORD logicId, LogicSetupFunc* setupFunc);
-
 	void obj_addLogic(SecObject* obj, Logic* logic, LogicType type, Task* task, LogicCleanupFunc cleanupFunc)
 	{
 		if (!obj->logic)
@@ -136,6 +134,7 @@ namespace TFE_DarkForces
 				else if (logicId == KW_ANIM)	// Animated Sprites Logic.
 				{
 					newLogic = obj_setSpriteAnim(obj);
+					setupFunc = nullptr;
 				}
 				else if (logicId == KW_UPDATE)	// "Update" logic is usually used for rotating 3D objects, like the Death Star.
 				{
@@ -143,7 +142,7 @@ namespace TFE_DarkForces
 				}
 				else if (logicId >= KW_TROOP && logicId <= KW_SCENERY)	// Enemies, explosives barrels, land mines, and scenery.
 				{
-					newLogic = obj_setEnemyLogic(obj, logicId, &setupFunc);
+					newLogic = obj_setEnemyLogic(obj, logicId);
 				}
 				else if (logicId == KW_KEY)         // Vue animation logic.
 				{
@@ -186,9 +185,10 @@ namespace TFE_DarkForces
 		return JTRUE;
 	}
 
-	Logic* obj_setEnemyLogic(SecObject* obj, KEYWORD logicId, LogicSetupFunc* setupFunc)
+	Logic* obj_setEnemyLogic(SecObject* obj, KEYWORD logicId)
 	{
 		obj->flags |= OBJ_FLAG_AIM;
+		LogicSetupFunc* setupFunc = nullptr;
 
 		switch (logicId)
 		{
@@ -379,7 +379,7 @@ namespace TFE_DarkForces
 		sector_addObject(sector, spawn);
 
 		sprite_setData(spawn, wax);
-		obj_setEnemyLogic(spawn, type, nullptr);
+		obj_setEnemyLogic(spawn, type);
 
 		return spawn;
 	}

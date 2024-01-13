@@ -38,4 +38,7 @@ namespace LevelEditor
 
 	void infoPanelClearFeatures();
 	s32 infoPanelGetHeight();
+
+	void clearEntityChanges();
+	void commitCurEntityChanges();
 }

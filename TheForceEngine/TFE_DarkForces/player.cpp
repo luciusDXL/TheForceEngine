@@ -220,7 +220,7 @@ namespace TFE_DarkForces
 	SecObject* s_playerEye = nullptr;
 	vec3_fixed s_eyePos = { 0 };	// s_camX, s_camY, s_camZ in the DOS code.
 	angle14_32 s_pitch = 0, s_yaw = 0, s_roll = 0;
-	u32 s_playerEyeFlags = 4;
+	u32 s_playerEyeFlags = OBJ_FLAG_NEEDS_TRANSFORM;
 	Tick s_playerTick;
 	Tick s_prevPlayerTick;
 	Tick s_nextShieldDmgTick;
@@ -652,8 +652,8 @@ namespace TFE_DarkForces
 		player_setupCamera();
 
 		s_playerEye->flags |= OBJ_FLAG_EYE;
-		s_playerEyeFlags = s_playerEye->flags & 4;
-		s_playerEye->flags &= ~4;
+		s_playerEyeFlags = s_playerEye->flags & OBJ_FLAG_NEEDS_TRANSFORM;
+		s_playerEye->flags &= ~OBJ_FLAG_NEEDS_TRANSFORM;
 
 		s_eyePos.x = s_playerEye->posWS.x;
 		s_eyePos.y = s_playerEye->posWS.y;
