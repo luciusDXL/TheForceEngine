@@ -53,7 +53,6 @@ namespace LevelEditor
 		VKEY_VAR = 0,
 		VKEY_TYPE,
 		VKEY_DEFAULT,
-		VKEY_DEFAULT1,
 		VKEY_FLAG,
 		VKEY_VALUE,
 		VKEY_NAME0,
@@ -86,7 +85,6 @@ namespace LevelEditor
 		"Var",      // VKEY_VAR
 		"Type",     // VKEY_TYPE
 		"Default",  // VKEY_DEFAULT
-		"Default1", // VKEY_DEFAULT1
 		"Flag",     // VKEY_FLAG
 		"Value",    // VKEY_VALUE
 		"Name0",    // VKEY_NAME0
@@ -114,6 +112,8 @@ namespace LevelEditor
 	std::vector<EntityVarDef> s_varDefList;
 	std::vector<u8> s_fileData;
 	s32 s_customEntityStart = 0;
+
+	void parseValue(const TokenList& tokens, EntityVarType type, EntityVarValue* value);
 
 	s32 getEntityVariableId(const char* key)
 	{
@@ -338,31 +338,7 @@ namespace LevelEditor
 
 					EntityVar var = {};
 					var.defId = varId;
-					switch (def->type)
-					{
-						case EVARTYPE_BOOL:
-						{
-							var.value.bValue = strcasecmp(valueStr, "True") == 0 || strcasecmp(valueStr, "1") == 0;
-						} break;
-						case EVARTYPE_FLOAT:
-						{
-							var.value.fValue = strtof(valueStr, &endPtr);
-						} break;
-						case EVARTYPE_INT:
-						case EVARTYPE_FLAGS:
-						{
-							var.value.iValue = strtol(valueStr, &endPtr, 10);
-						} break;
-						case EVARTYPE_STRING_LIST:
-						{
-							var.value.sValue = valueStr;
-						} break;
-						case EVARTYPE_INPUT_STRING_PAIR:
-						{
-							var.value.sValue = valueStr;
-							var.value.sValue1 = valueStr1;
-						} break;
-					}
+					parseValue(tokens, def->type, &var.value);
 					varList->push_back(var);
 				}
 				else
@@ -533,7 +509,7 @@ namespace LevelEditor
 		}
 		return -1;
 	}
-
+	
 	bool loadVariableData(const char* localDir)
 	{
 		s_varDefList.clear();
@@ -617,42 +593,7 @@ namespace LevelEditor
 					} break;
 					case VKEY_DEFAULT:
 					{
-						const char* valueStr = tokens[1].c_str();
-						switch (curVar->type)
-						{
-							case EVARTYPE_BOOL:
-							{
-								curVar->defValue.bValue = strcasecmp(valueStr, "True") == 0 || strcasecmp(valueStr, "1") == 0;
-							} break;
-							case EVARTYPE_FLOAT:
-							{
-								curVar->defValue.fValue = strtof(valueStr, &endPtr);
-							} break;
-							case EVARTYPE_INT:
-							case EVARTYPE_FLAGS:
-							{
-								curVar->defValue.iValue = strtol(valueStr, &endPtr, 10);
-							} break;
-							case EVARTYPE_STRING_LIST:
-							{
-								curVar->defValue.sValue = valueStr;
-							} break;
-							case EVARTYPE_INPUT_STRING_PAIR:
-							{
-								curVar->defValue.sValue = valueStr;
-							} break;
-						}
-					} break;
-					case VKEY_DEFAULT1:
-					{
-						const char* valueStr = tokens[1].c_str();
-						switch (curVar->type)
-						{
-							case EVARTYPE_INPUT_STRING_PAIR:
-							{
-								curVar->defValue1.sValue = valueStr;
-							} break;
-						}
+						parseValue(tokens, curVar->type, &curVar->defValue);
 					} break;
 					case VKEY_FLAG:
 					{
@@ -691,5 +632,37 @@ namespace LevelEditor
 		LE_INFO("Loaded %d variable definitions from '%s'.", (s32)s_varDefList.size(), varDefPath);
 
 		return true;
+	}
+
+	void parseValue(const TokenList& tokens, EntityVarType type, EntityVarValue* value)
+	{
+		char* endPtr = nullptr;
+		const char* valueStr = tokens[1].c_str();
+		const char* valueStr1 = tokens.size() >= 3 ? tokens[2].c_str() : "";
+		switch (type)
+		{
+			case EVARTYPE_BOOL:
+			{
+				value->bValue = strcasecmp(valueStr, "True") == 0 || strcasecmp(valueStr, "1") == 0;
+			} break;
+			case EVARTYPE_FLOAT:
+			{
+				value->fValue = strtof(valueStr, &endPtr);
+			} break;
+			case EVARTYPE_INT:
+			case EVARTYPE_FLAGS:
+			{
+				value->iValue = strtol(valueStr, &endPtr, 10);
+			} break;
+			case EVARTYPE_STRING_LIST:
+			{
+				value->sValue = valueStr;
+			} break;
+			case EVARTYPE_INPUT_STRING_PAIR:
+			{
+				value->sValue = valueStr;
+				value->sValue1 = valueStr1;
+			} break;
+		}
 	}
 }
