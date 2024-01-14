@@ -267,6 +267,15 @@ namespace LevelEditor
 
 		// Cleanup any existing level data.
 		destroy();
+
+		// Load definitions.
+		// TODO: Handle different games...
+		const char* gameLocalDir = "DarkForces";
+		loadVariableData(gameLocalDir);
+		loadEntityData(gameLocalDir);
+		loadLogicData(gameLocalDir);
+		clearEntityChanges();
+
 		// Load the new level.
 		if (!loadLevelFromAsset(asset))
 		{
@@ -275,14 +284,7 @@ namespace LevelEditor
 		infoPanelAddMsg(LE_MSG_INFO, "Loaded level '%s'", s_level.name.c_str());
 
 		loadPaletteAndColormap();
-
-		// TODO: Handle different games...
-		const char* gameLocalDir = "DarkForces";
-		loadVariableData(gameLocalDir);
-		loadEntityData(gameLocalDir);
-		loadLogicData(gameLocalDir);
-		clearEntityChanges();
-		
+						
 		viewport_init();
 		viewport_update((s32)UI_SCALE(480) + 16, (s32)UI_SCALE(68) + 18);
 		s_gridIndex = 7;
@@ -4108,7 +4110,7 @@ namespace LevelEditor
 	void addEntityToSector(EditorSector* sector, Entity* entity, Vec3f* hitPos)
 	{
 		EditorObject obj;
-		obj.entityId = entity->id;
+		obj.entityId = addEntityToLevel(entity);
 		obj.angle = 0.0f;
 		obj.pos = *hitPos;
 		obj.diff = 1;	// default
@@ -4157,7 +4159,7 @@ namespace LevelEditor
 				const EditorObject* obj = sector->obj.data();
 				for (s32 i = 0; i < objCount; i++, obj++)
 				{
-					const Entity* entity = &s_entityList[obj->entityId];
+					const Entity* entity = &s_level.entities[obj->entityId];
 					const f32 dx = fabsf(obj->pos.x - s_cursor3d.x);
 					const f32 dz = fabsf(obj->pos.z - s_cursor3d.z);
 					const f32 w = entity->size.x * 0.5f;
@@ -4201,7 +4203,7 @@ namespace LevelEditor
 			}
 		}
 
-		if (placeEntity && hoverSector && s_selectedEntity >= 0 && s_selectedEntity < (s32)s_entityList.size())
+		if (placeEntity && hoverSector && s_selectedEntity >= 0 && s_selectedEntity < (s32)s_entityDefList.size())
 		{
 			Vec3f pos = s_cursor3d;
 			snapToGrid(&pos);
@@ -4217,7 +4219,7 @@ namespace LevelEditor
 				pos.y = max(hoverSector->floorHeight, pos.y);
 				pos.y = min(hoverSector->ceilHeight,  pos.y);
 			}
-			addEntityToSector(hoverSector, &s_entityList[s_selectedEntity], &pos);
+			addEntityToSector(hoverSector, &s_entityDefList[s_selectedEntity], &pos);
 		}
 		else if (s_singleClick && s_featureHovered.isObject && s_featureHovered.sector && s_featureHovered.featureIndex >= 0)
 		{
@@ -5296,7 +5298,7 @@ namespace LevelEditor
 					if (sector && s_featureHovered.featureIndex >= 0 && s_featureHovered.isObject)
 					{
 						const EditorObject* obj = &sector->obj[s_featureHovered.featureIndex];
-						const Entity* entity = &s_entityList[obj->entityId];
+						const Entity* entity = &s_level.entities[obj->entityId];
 
 						bool showInfo = true;
 						Vec2i mapPos;

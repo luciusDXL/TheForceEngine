@@ -7,6 +7,7 @@
 // to "play" the game as intended.
 //////////////////////////////////////////////////////////////////////
 #include <TFE_System/types.h>
+#include <TFE_FileSystem/filestream.h>
 #include <TFE_RenderBackend/renderBackend.h>
 #include <vector>
 #include <string>
@@ -40,7 +41,8 @@ namespace LevelEditor
 		EVARTYPE_FLAGS,
 		EVARTYPE_STRING_LIST,
 		EVARTYPE_INPUT_STRING_PAIR,
-		EVARTYPE_COUNT
+		EVARTYPE_COUNT,
+		EVARTYPE_UNKNOWN = EVARTYPE_COUNT
 	};
 
 	struct EntityVarFlag
@@ -63,9 +65,9 @@ namespace LevelEditor
 
 	struct EntityVarDef
 	{
-		s32 id;
+		s32 id = -1;
 		std::string name;
-		EntityVarType type;
+		EntityVarType type = EVARTYPE_UNKNOWN;
 		// Only used if type = EVARTYPE_FLAGS
 		// Stored Value Type = int (index)
 		std::vector<EntityVarFlag> flags;
@@ -133,7 +135,9 @@ namespace LevelEditor
 		std::vector<LogicVar> var;
 	};
 
-	extern std::vector<Entity> s_entityList;
+	extern std::vector<Entity> s_entityDefList;
+	extern std::vector<Entity> s_projEntityDefList;
+
 	extern std::vector<LogicDef> s_logicDefList;
 	extern std::vector<EntityVarDef> s_varDefList;
 	extern s32 s_customEntityStart;
@@ -151,8 +155,14 @@ namespace LevelEditor
 	bool loadVariableData(const char* localDir);
 	bool loadLogicData(const char* localDir);
 
+	bool writeEntityDataToString(const Entity* entity, char* buffer, size_t bufferSize);
+	bool writeEntityDataBinary(const Entity* entity, FileStream* file);
+	bool readEntityDataBinary(FileStream* file, Entity* entity);
+
 	const char* getEntityVarName(s32 id);
 	EntityVarDef* getEntityVar(s32 id);
+
+	bool entityDefsEqual(const Entity* e0, const Entity* e1);
 
 	s32 getLogicId(const char* name);
 }

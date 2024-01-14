@@ -81,7 +81,8 @@ namespace LevelEditor
 		LEF_MinVersion = 1,
 		LEF_EntityV1   = 2,
 		LEF_EntityV2   = 3,
-		LEF_CurVersion = 3,
+		LEF_EntityList = 4,
+		LEF_CurVersion = 4,
 	};
 
 	AssetHandle loadTexture(const char* bmTextureName)
@@ -426,6 +427,28 @@ namespace LevelEditor
 		return true;
 	}
 
+	// Adds an entity definition to the list of level entities are returns an index.
+	// Returns -1 on error.
+	s32 addEntityToLevel(const Entity* newEntity)
+	{
+		if (!newEntity) { return -1; }
+
+		const s32 count = (s32)s_level.entities.size();
+		const Entity* entity = s_level.entities.data();
+		for (s32 i = 0; i < count; i++, entity++)
+		{
+			if (entityDefsEqual(newEntity, entity))
+			{
+				return i;
+			}
+		}
+
+		s32 index = (s32)s_level.entities.size();
+		s_level.entities.push_back(*newEntity);
+
+		return index;
+	}
+
 	bool loadFromTFL(const char* name)
 	{
 		// If there is no project, then the TFL can't exist.
@@ -526,6 +549,31 @@ namespace LevelEditor
 			sector->searchKey = 0;
 			sectorToPolygon(sector);
 		}
+
+		// Entity Definitions.
+		if (version >= LEF_EntityList)
+		{
+			s32 entityCount = 0;
+			file.read(&entityCount);
+			s_level.entities.resize(entityCount);
+			Entity* entity = s_level.entities.data();
+			for (s32 i = 0; i < entityCount; i++, entity++)
+			{
+				readEntityDataBinary(&file, entity);
+				loadSingleEntityData(entity);
+			}
+		}
+		else
+		{
+			// Clear out entities since the order changed in the def file.
+			// Levels should no longer be sensitive to such changes.
+			sector = s_level.sectors.data();
+			for (u32 i = 0; i < sectorCount; i++, sector++)
+			{
+				sector->obj.clear();
+			}
+		}
+
 		file.close();
 
 		return true;
@@ -615,6 +663,18 @@ namespace LevelEditor
 				file.writeBuffer(&obj->pos, sizeof(Vec3f));
 			}
 		}
+
+		// Entity Definitions.
+		// version >= LEF_EntityList
+		const s32 entityCount = (s32)s_level.entities.size();
+		file.write(&entityCount);
+
+		const Entity* entity = s_level.entities.data();
+		for (s32 i = 0; i < entityCount; i++, entity++)
+		{
+			writeEntityDataBinary(entity, &file);
+		}
+
 		file.close();
 
 		LE_INFO("Save Complete");
@@ -840,7 +900,7 @@ namespace LevelEditor
 			const EditorObject* obj = sector->obj.data();
 			for (s32 o = 0; o < objCount; o++, obj++)
 			{
-				const Entity* entity = &s_entityList[obj->entityId];
+				const Entity* entity = &s_level.entities[obj->entityId];
 
 				objList.push_back(obj);
 				s32 dataIndex = 0;
@@ -916,7 +976,7 @@ namespace LevelEditor
 		for (s32 i = 0; i < objCount; i++)
 		{
 			const EditorObject* obj = objList[i];
-			const Entity* entity = &s_entityList[obj->entityId];
+			const Entity* entity = &s_level.entities[obj->entityId];
 			const f32 objYaw = fmodf(obj->angle * radToDeg, 360.0f);
 			const s32 logicCount = (s32)entity->logic.size();
 
@@ -1611,7 +1671,7 @@ namespace LevelEditor
 				const EditorObject* obj = sector->obj.data();
 				for (s32 o = 0; o < objCount; o++, obj++)
 				{
-					const Entity* entity = &s_entityList[obj->entityId];
+					const Entity* entity = &s_level.entities[obj->entityId];
 					Vec3f pos = obj->pos;
 
 					// If the entity is on the floor, make sure it doesn't stick through it for editor selection.

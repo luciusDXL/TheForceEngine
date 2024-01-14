@@ -107,7 +107,9 @@ namespace LevelEditor
 		"Height", // EVARID_HEIGHT
 	};
 
-	std::vector<Entity> s_entityList;
+	std::vector<Entity> s_entityDefList;		// Editor provided entity list.
+	std::vector<Entity> s_projEntityDefList;	// Project custom entity list.
+
 	std::vector<LogicDef> s_logicDefList;
 	std::vector<EntityVarDef> s_varDefList;
 	std::vector<u8> s_fileData;
@@ -291,9 +293,266 @@ namespace LevelEditor
 		return true;
 	}
 
+	void writeVariableValue(const EntityVar* var, const EntityVarDef* def, char* varBuffer)
+	{
+		varBuffer[0] = 0;
+		switch (def->type)
+		{
+			case EVARTYPE_BOOL:
+			{
+				sprintf(varBuffer, "%s", var->value.bValue ? "True" : "False");
+			} break;
+			case EVARTYPE_FLOAT:
+			{
+				sprintf(varBuffer, "%f", var->value.fValue);
+			} break;
+			case EVARTYPE_INT:
+			case EVARTYPE_FLAGS:
+			{
+				sprintf(varBuffer, "%d", var->value.iValue);
+			} break;
+			case EVARTYPE_STRING_LIST:
+			{
+				sprintf(varBuffer, "\"%s\"", var->value.sValue.c_str());
+			} break;
+			case EVARTYPE_INPUT_STRING_PAIR:
+			{
+				sprintf(varBuffer, "\"%s\" \"%s\"", var->value.sValue.c_str(), var->value.sValue1.c_str());
+			} break;
+		}
+	}
+
+	// Copy text into a buffer, validating that there is enough room first.
+	bool writeToBuffer(const char* srcBuffer, char* buffer, size_t bufferSize)
+	{
+		const size_t srcLen = strlen(srcBuffer);
+		const size_t dstLen = strlen(buffer);
+		if (dstLen + srcLen >= bufferSize)
+		{
+			return false;
+		}
+		strcat(buffer, srcBuffer);
+		return true;
+	}
+
+	bool writeVariablesToString(const std::vector<EntityVar>* varList, char* buffer, size_t bufferSize)
+	{
+		char fmtBuffer[256];
+		char varBuffer[256];
+
+		const s32 varCount = (s32)varList->size();
+		const EntityVar* var = varList->data();
+		for (s32 v = 0; v < varCount; v++, var++)
+		{
+			const EntityVarDef* def = &s_varDefList[var->defId];
+			writeVariableValue(var, def, varBuffer);
+
+			sprintf(fmtBuffer, "\t%s: %s\r\n", def->name.c_str(), varBuffer);
+			if (!writeToBuffer(fmtBuffer, buffer, bufferSize)) { return false; }
+		}
+		return true;
+	}
+
+	// Write entity data out to a text buffer.
+	bool writeEntityDataToString(const Entity* entity, char* buffer, size_t bufferSize)
+	{
+		char fmtBuffer[256];
+		sprintf(fmtBuffer, "Entity: \"%s\"\r\n", entity->name.c_str());
+		if (!writeToBuffer(fmtBuffer, buffer, bufferSize)) { return false; }
+
+		sprintf(fmtBuffer, "\tClass: \"%s\"\r\n", c_entityTypeStr[entity->type]);
+		if (!writeToBuffer(fmtBuffer, buffer, bufferSize)) { return false; }
+
+		const s32 logicCount = (s32)entity->logic.size();
+		const s32 varCount = (s32)entity->var.size();
+		if (logicCount > 0)
+		{
+			const EntityLogic* logic = entity->logic.data();
+			for (s32 l = 0; l < logicCount; l++, logic++)
+			{
+				sprintf(fmtBuffer, "\tLogic: \"%s\"\r\n", logic->name.c_str());
+				if (!writeToBuffer(fmtBuffer, buffer, bufferSize)) { return false; }
+				if (!writeVariablesToString(&logic->var, buffer, bufferSize)) { return false; }
+			}
+		}
+		else if (varCount > 0)
+		{
+			if (!writeVariablesToString(&entity->var, buffer, bufferSize)) { return false; }
+		}
+
+		if (entity->type < ETYPE_SPRITE)
+		{
+			sprintf(fmtBuffer, "\tIcon: \"%s\"\r\n", entity->assetName.c_str());
+			if (!writeToBuffer(fmtBuffer, buffer, bufferSize)) { return false; }
+		}
+		else
+		{
+			sprintf(fmtBuffer, "\tAsset: \"%s\"\r\n", entity->assetName.c_str());
+			if (!writeToBuffer(fmtBuffer, buffer, bufferSize)) { return false; }
+		}
+
+		if (entity->offsetAdj.y != 0.0f)
+		{
+			sprintf(fmtBuffer, "\tAsset_Offset_Y: %f\r\n", entity->offsetAdj.y);
+			if (!writeToBuffer(fmtBuffer, buffer, bufferSize)) { return false; }
+		}
+
+		return true;
+	}
+
+	void writeVariableValueBinary(const EntityVar* var, FileStream* file)
+	{
+		const EntityVarDef* def = &s_varDefList[var->defId];
+		switch (def->type)
+		{
+			case EVARTYPE_BOOL:
+			{
+				const s32 bValue = var->value.bValue ? 1 : 0;
+				file->write(&bValue);
+			} break;
+			case EVARTYPE_FLOAT:
+			{
+				file->write(&var->value.fValue);
+			} break;
+			case EVARTYPE_INT:
+			case EVARTYPE_FLAGS:
+			{
+				file->write(&var->value.iValue);
+			} break;
+			case EVARTYPE_STRING_LIST:
+			{
+				file->write(&var->value.sValue);
+			} break;
+			case EVARTYPE_INPUT_STRING_PAIR:
+			{
+				file->write(&var->value.sValue);
+				file->write(&var->value.sValue1);
+			} break;
+		}
+	}
+
+	void readVariableValueBinary(EntityVar* var, FileStream* file)
+	{
+		const EntityVarDef* def = &s_varDefList[var->defId];
+		// Clear out the values.
+		var->value.iValue = 0;
+		var->value.sValue = "";
+		var->value.sValue1 = "";
+		switch (def->type)
+		{
+			case EVARTYPE_BOOL:
+			{
+				s32 bValue = 0;
+				file->read(&bValue);
+				var->value.bValue = bValue != 0;
+			} break;
+			case EVARTYPE_FLOAT:
+			{
+				file->read(&var->value.fValue);
+			} break;
+			case EVARTYPE_INT:
+			case EVARTYPE_FLAGS:
+			{
+				file->read(&var->value.iValue);
+			} break;
+			case EVARTYPE_STRING_LIST:
+			{
+				file->read(&var->value.sValue);
+			} break;
+			case EVARTYPE_INPUT_STRING_PAIR:
+			{
+				file->read(&var->value.sValue);
+				file->read(&var->value.sValue1);
+			} break;
+		}
+	}
+
+	// Write entity data out to a binary buffer.
+	bool writeEntityVarListBinary(const std::vector<EntityVar>* varList, FileStream* file)
+	{
+		if (!varList || !file) { return false; }
+
+		const s32 varCount = (s32)varList->size();
+		file->write(&varCount);
+
+		const EntityVar* var = varList->data();
+		for (s32 i = 0; i < varCount; i++, var++)
+		{
+			file->write(&var->defId);
+			writeVariableValueBinary(var, file);
+		}
+		return true;
+	}
+
+	bool readEntityVarListBinary(std::vector<EntityVar>* varList, FileStream* file)
+	{
+		if (!varList || !file) { return false; }
+
+		s32 varCount = 0;
+		file->read(&varCount);
+		varList->resize(varCount);
+
+		EntityVar* var = varList->data();
+		for (s32 i = 0; i < varCount; i++, var++)
+		{
+			file->read(&var->defId);
+			readVariableValueBinary(var, file);
+		}
+		return true;
+	}
+
+	bool writeEntityDataBinary(const Entity* entity, FileStream* file)
+	{
+		file->write(&entity->name);
+		s32 type = s32(entity->type);
+		file->write(&type);
+		file->write(&entity->assetName);
+		file->writeBuffer(&entity->offsetAdj, sizeof(Vec3f));
+
+		const s32 logicCount = (s32)entity->logic.size();
+		file->write(&logicCount);
+		
+		const EntityLogic* logic = entity->logic.data();
+		for (s32 i = 0; i < logicCount; i++, logic++)
+		{
+			file->write(&logic->name);
+			writeEntityVarListBinary(&logic->var, file);
+		}
+
+		writeEntityVarListBinary(&entity->var, file);
+		return true;
+	}
+
+	// Read entity data from a binary buffer.
+	// Once all entities are loaded, call loadSingleEntityData(entity) for each one
+	// to load asset data.
+	bool readEntityDataBinary(FileStream* file, Entity* entity)
+	{
+		*entity = {};
+		file->read(&entity->name);
+		s32 type = 0;
+		file->read(&type);
+		entity->type = EntityType(type);
+		file->read(&entity->assetName);
+		file->readBuffer(&entity->offsetAdj, sizeof(Vec3f));
+
+		s32 logicCount = 0;
+		file->read(&logicCount);
+		entity->logic.resize(logicCount);
+		EntityLogic* logic = entity->logic.data();
+		for (s32 i = 0; i < logicCount; i++, logic++)
+		{
+			file->read(&logic->name);
+			readEntityVarListBinary(&logic->var, file);
+		}
+
+		readEntityVarListBinary(&entity->var, file);
+		return true;
+	}
+
 	bool loadEntityData(const char* localDir)
 	{
-		s_entityList.clear();
+		s_entityDefList.clear();
 		s_customEntityStart = 0;
 
 		char entityDefPath[TFE_MAX_PATH];
@@ -348,9 +607,9 @@ namespace LevelEditor
 					{
 						case EKEY_ENTITY:
 						{
-							s_entityList.push_back({});
-							curEntity = &s_entityList.back();
-							curEntity->id = s32(s_entityList.size()) - 1;
+							s_entityDefList.push_back({});
+							curEntity = &s_entityDefList.back();
+							curEntity->id = s32(s_entityDefList.size()) - 1;
 							curEntity->name = tokens[1];
 							varList = &curEntity->var;
 						} break;
@@ -389,16 +648,16 @@ namespace LevelEditor
 
 			line = parser.readLine(bufferPos);
 		}
-		LE_INFO("Loaded %d entity definitions from '%s'.", (s32)s_entityList.size(), entityDefPath);
+		LE_INFO("Loaded %d entity definitions from '%s'.", (s32)s_entityDefList.size(), entityDefPath);
 
 		// Now that the definitions are loaded, get the actual data...
-		const s32 count = (s32)s_entityList.size();
-		Entity* entity = s_entityList.data();
+		const s32 count = (s32)s_entityDefList.size();
+		Entity* entity = s_entityDefList.data();
 		for (s32 i = 0; i < count; i++, entity++)
 		{
 			loadSingleEntityData(entity);
 		}
-		s_customEntityStart = (s32)s_entityList.size();
+		s_customEntityStart = (s32)s_entityDefList.size();
 
 		return true;
 	}
@@ -664,5 +923,70 @@ namespace LevelEditor
 				value->sValue1 = valueStr1;
 			} break;
 		}
+	}
+
+	bool varListsMatch(const std::vector<EntityVar>& list0, const std::vector<EntityVar>& list1)
+	{
+		if (list0.size() != list1.size()) { return false; }
+		const s32 count = (s32)list0.size();
+		const EntityVar* var0 = list0.data();
+		const EntityVar* var1 = list1.data();
+		for (s32 i = 0; i < count; i++, var0++, var1++)
+		{
+			if (var0->defId != var1->defId) { return false; }
+			const EntityVarDef* def = &s_varDefList[var0->defId];
+			switch (def->type)
+			{
+			case EVARTYPE_BOOL:
+			{
+				if (var0->value.bValue != var1->value.bValue) { return false; }
+			} break;
+			case EVARTYPE_FLOAT:
+			{
+				if (var0->value.fValue != var1->value.fValue) { return false; }
+			} break;
+			case EVARTYPE_INT:
+			case EVARTYPE_FLAGS:
+			{
+				if (var0->value.iValue != var1->value.iValue) { return false; }
+			} break;
+			case EVARTYPE_STRING_LIST:
+			{
+				if (strcasecmp(var0->value.sValue.c_str(), var1->value.sValue.c_str()) != 0) { return false; }
+			} break;
+			case EVARTYPE_INPUT_STRING_PAIR:
+			{
+				if (strcasecmp(var0->value.sValue.c_str(), var1->value.sValue.c_str()) != 0) { return false; }
+				if (strcasecmp(var0->value.sValue1.c_str(), var1->value.sValue1.c_str()) != 0) { return false; }
+			} break;
+			}
+		}
+		return true;
+	}
+
+	bool logicListsMatch(const std::vector<EntityLogic>& list0, const std::vector<EntityLogic>& list1)
+	{
+		if (list0.size() != list1.size()) { return false; }
+		const s32 count = (s32)list0.size();
+		const EntityLogic* logic0 = list0.data();
+		const EntityLogic* logic1 = list1.data();
+		for (s32 i = 0; i < count; i++, logic0++, logic1++)
+		{
+			if (strcasecmp(logic0->name.c_str(), logic1->name.c_str()) != 0)
+			{
+				return false;
+			}
+			if (!varListsMatch(logic0->var, logic1->var))
+			{
+				return false;
+			}
+		}
+		return true;
+	}
+
+	bool entityDefsEqual(const Entity* e0, const Entity* e1)
+	{
+		return (e0->name == e1->name && e0->assetName == e1->assetName && e0->type == e1->type &&
+			logicListsMatch(e0->logic, e1->logic) && varListsMatch(e0->var, e1->var));
 	}
 }

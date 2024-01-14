@@ -284,7 +284,7 @@ namespace LevelEditor
 	{
 		// Do sort stuff later....
 
-		const s32 count = (s32)s_entityList.size();
+		const s32 count = (s32)s_entityDefList.size();
 		const u32 padding = 8;
 		s32 selectedIndex = s_selectedEntity;
 
@@ -294,7 +294,7 @@ namespace LevelEditor
 			for (s32 i = 0, x = 0; i < count; i++)
 			{
 				s32 index = i;
-				Entity* entity = &s_entityList[index];
+				Entity* entity = &s_entityDefList[index];
 
 				f32 du = fabsf(entity->st[1].x - entity->st[0].x);
 				f32 dv = fabsf(entity->st[1].z - entity->st[0].z);

@@ -1214,7 +1214,7 @@ namespace LevelEditor
 		
 	void drawEntity3D(const EditorSector* sector, const EditorObject* obj, s32 id, u32 objColor, const Vec3f& cameraRgtXZ)
 	{
-		const Entity* entity = &s_entityList[obj->entityId];
+		const Entity* entity = &s_level.entities[obj->entityId];
 		const Vec3f pos = obj->pos;
 
 		f32 width = entity->size.x * 0.5f;
@@ -1729,7 +1729,7 @@ namespace LevelEditor
 
 	void drawEntity2d(const EditorSector* sector, const EditorObject* obj, s32 id, u32 objColor)
 	{
-		const Entity* entity = &s_entityList[obj->entityId];
+		const Entity* entity = &s_level.entities[obj->entityId];
 		const Vec3f pos = obj->pos;
 
 		f32 width = entity->size.x * 0.5f;

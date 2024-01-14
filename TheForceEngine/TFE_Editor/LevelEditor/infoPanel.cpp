@@ -86,12 +86,12 @@ namespace LevelEditor
 		s_prevObjectFeature = {};
 		s_wallShownLast = false;
 	}
-		
+
 	s32 infoPanelGetHeight()
 	{
 		return s_infoHeight;
 	}
-			
+
 	void setTabColor(bool isSelected)
 	{
 		if (isSelected)
@@ -118,7 +118,7 @@ namespace LevelEditor
 		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, { 4.0f, 1.0f });
 		ImGui::SetCursorPosX(ImGui::GetCursorPosX() + (f32)offsetX);
 		ImGui::SetCursorPosY(ImGui::GetCursorPosY() + (f32)offsetY);
-		
+
 		for (s32 i = 0; i < count; i++)
 		{
 			setTabColor(curTab == i);
@@ -191,7 +191,7 @@ namespace LevelEditor
 
 		ImVec2 pos = ImGui::GetCursorPos();
 		ImGui::SetNextWindowSize({ s_infoWith, s_infoHeight - pos.y });
-		ImGui::SetNextWindowPos({s_infoPos.x, pos.y + s_infoPos.z});
+		ImGui::SetNextWindowPos({ s_infoPos.x, pos.y + s_infoPos.z });
 		ImGui::Begin("Output##MapInfo", nullptr, window_flags);
 		const size_t count = s_outputMsg.size();
 		const LeMessage* msg = s_outputMsg.data();
@@ -244,9 +244,9 @@ namespace LevelEditor
 		// Enter/Return is pressed.
 		bool retOrTabPressed = TFE_Input::keyPressed(KEY_RETURN) || TFE_Input::keyPressed(KEY_TAB);
 		return ((lostFocusX || retOrTabPressed) && hadFocusX) ||
-			   ((lostFocusZ || retOrTabPressed) && hadFocusZ);
+			((lostFocusZ || retOrTabPressed) && hadFocusZ);
 	}
-		
+
 	void getPrevVertexFeature(EditorSector*& sector, s32& index)
 	{
 		// Make sure the previous selection is still valid.
@@ -273,7 +273,7 @@ namespace LevelEditor
 		s_prevVertexFeature.sector = sector;
 		s_prevVertexFeature.featureIndex = index;
 	}
-	
+
 	void infoPanelVertex()
 	{
 		s32 index = -1;
@@ -365,7 +365,7 @@ namespace LevelEditor
 		ImGui::InputFloat(labelId, value, 0.0f, 0.0f, "%.2f");
 		ImGui::PopItemWidth();
 	}
-		
+
 	void getPrevWallFeature(EditorSector*& sector, s32& index)
 	{
 		// Make sure the previous selection is still valid.
@@ -490,7 +490,7 @@ namespace LevelEditor
 		const f32 aspectSgn[] = { sgnTex ? f32(sgnTex->width) * sgnScale : 1.0f, sgnTex ? f32(sgnTex->height) * sgnScale : 1.0f };
 
 		ImGui::ImageButton(midTex ? TFE_RenderBackend::getGpuPtr(midTex->frames[0]) : nullptr, { 128.0f * aspectMid[0], 128.0f * aspectMid[1] }, { 0.0f, 1.0f }, { 1.0f, 0.0f });
-		if (texIndex>=0 && ImGui::IsItemHovered())
+		if (texIndex >= 0 && ImGui::IsItemHovered())
 		{
 			FeatureId id = createFeatureId(sector, wallId, HP_MID);
 			edit_setTexture(1, &id, texIndex);
@@ -499,7 +499,7 @@ namespace LevelEditor
 
 		ImGui::SameLine(texCol);
 		ImGui::ImageButton(sgnTex ? TFE_RenderBackend::getGpuPtr(sgnTex->frames[0]) : nullptr, { 128.0f * aspectSgn[0], 128.0f * aspectSgn[1] }, { 0.0f, 1.0f }, { 1.0f, 0.0f });
-		if (texIndex>=0 && ImGui::IsItemHovered())
+		if (texIndex >= 0 && ImGui::IsItemHovered())
 		{
 			FeatureId id = createFeatureId(sector, wallId, HP_SIGN);
 			edit_setTexture(1, &id, texIndex);
@@ -534,7 +534,7 @@ namespace LevelEditor
 			const f32 aspectBot[] = { botTex ? f32(botTex->width) * botScale : 1.0f, botTex ? f32(botTex->height) * botScale : 1.0f };
 
 			ImGui::ImageButton(topTex ? TFE_RenderBackend::getGpuPtr(topTex->frames[0]) : nullptr, { 128.0f * aspectTop[0], 128.0f * aspectTop[1] }, { 0.0f, 1.0f }, { 1.0f, 0.0f });
-			if (texIndex>=0 && ImGui::IsItemHovered())
+			if (texIndex >= 0 && ImGui::IsItemHovered())
 			{
 				FeatureId id = createFeatureId(sector, wallId, HP_TOP);
 				edit_setTexture(1, &id, texIndex);
@@ -543,7 +543,7 @@ namespace LevelEditor
 
 			ImGui::SameLine(texCol);
 			ImGui::ImageButton(botTex ? TFE_RenderBackend::getGpuPtr(botTex->frames[0]) : nullptr, { 128.0f * aspectBot[0], 128.0f * aspectBot[1] }, { 0.0f, 1.0f }, { 1.0f, 0.0f });
-			if (texIndex>=0 && ImGui::IsItemHovered())
+			if (texIndex >= 0 && ImGui::IsItemHovered())
 			{
 				FeatureId id = createFeatureId(sector, wallId, HP_BOT);
 				edit_setTexture(1, &id, texIndex);
@@ -561,7 +561,7 @@ namespace LevelEditor
 		// Sign buttons.
 		ImVec2 signLeft = { imageLeft0.x + texCol - 8.0f, imageLeft0.y + 2.0f };
 		ImGui::SetNextWindowPos(signLeft);
-		ImGui::BeginChild("##SignOptions", {32, 48});
+		ImGui::BeginChild("##SignOptions", { 32, 48 });
 		{
 			if (ImGui::Button("X") && wall->tex[HP_SIGN].texIndex >= 0)
 			{
@@ -587,7 +587,7 @@ namespace LevelEditor
 		// Texture Offsets
 		DisplayInfo displayInfo;
 		TFE_RenderBackend::getDisplayInfo(&displayInfo);
-				
+
 		// Set 0
 		ImVec2 offsetLeft = { imageLeft0.x + texCol + 8.0f + 16.0f, imageLeft0.y + 8.0f };
 		ImVec2 offsetSize = { displayInfo.width - (imageLeft0.x + texCol + 16.0f - 32.0f), 128.0f };
@@ -633,7 +633,7 @@ namespace LevelEditor
 			ImGui::EndChild();
 		}
 	}
-		
+
 	void getPrevSectorFeature(EditorSector*& sector)
 	{
 		// Make sure the previous selection is still valid.
@@ -660,7 +660,7 @@ namespace LevelEditor
 		}
 
 		EditorSector* sector = s_featureCur.sector ? s_featureCur.sector : s_featureHovered.sector;
-		if (!sector) {	getPrevSectorFeature(sector); }
+		if (!sector) { getPrevSectorFeature(sector); }
 		if (!sector) { return; }
 		setPrevSectorFeature(sector);
 		s_wallShownLast = false;
@@ -755,7 +755,7 @@ namespace LevelEditor
 
 		// Textures
 		EditorTexture* floorTex = getTexture(sector->floorTex.texIndex);
-		EditorTexture* ceilTex  = getTexture(sector->ceilTex.texIndex);
+		EditorTexture* ceilTex = getTexture(sector->ceilTex.texIndex);
 
 		void* floorPtr = floorTex ? TFE_RenderBackend::getGpuPtr(floorTex->frames[0]) : nullptr;
 		void* ceilPtr = ceilTex ? TFE_RenderBackend::getGpuPtr(ceilTex->frames[0]) : nullptr;
@@ -773,7 +773,7 @@ namespace LevelEditor
 
 		ImGui::ImageButton(floorPtr, { 128.0f * aspectFloor[0], 128.0f * aspectFloor[1] }, { 0.0f, 1.0f }, { 1.0f, 0.0f });
 		if (texIndex >= 0 && ImGui::IsItemHovered())
-		{ 
+		{
 			FeatureId id = createFeatureId(sector, 0, HP_FLOOR);
 			edit_setTexture(1, &id, texIndex);
 			cmd_addSetTexture(1, &id, texIndex, nullptr);
@@ -888,85 +888,24 @@ namespace LevelEditor
 	static s32 s_logicIndex = 0;
 	static s32 s_varIndex = 0;
 	static s32 s_logicSelect = -1;
-		
-	bool varListsMatch(const std::vector<EntityVar>& list0, const std::vector<EntityVar>& list1)
-	{
-		if (list0.size() != list1.size()) { return false; }
-		const s32 count = (s32)list0.size();
-		const EntityVar* var0 = list0.data();
-		const EntityVar* var1 = list1.data();
-		for (s32 i = 0; i < count; i++, var0++, var1++)
-		{
-			if (var0->defId != var1->defId) { return false; }
-			const EntityVarDef* def = &s_varDefList[var0->defId];
-			switch (def->type)
-			{
-				case EVARTYPE_BOOL:
-				{
-					if (var0->value.bValue != var1->value.bValue) { return false; }
-				} break;
-				case EVARTYPE_FLOAT:
-				{
-					if (var0->value.fValue != var1->value.fValue) { return false; }
-				} break;
-				case EVARTYPE_INT:
-				case EVARTYPE_FLAGS:
-				{
-					if (var0->value.iValue != var1->value.iValue) { return false; }
-				} break;
-				case EVARTYPE_STRING_LIST:
-				{
-					if (strcasecmp(var0->value.sValue.c_str(), var1->value.sValue.c_str()) != 0) { return false; }
-				} break;
-				case EVARTYPE_INPUT_STRING_PAIR:
-				{
-					if (strcasecmp(var0->value.sValue.c_str(), var1->value.sValue.c_str()) != 0) { return false; }
-					if (strcasecmp(var0->value.sValue1.c_str(), var1->value.sValue1.c_str()) != 0) { return false; }
-				} break;
-			}
-		}
-		return true;
-	}
-
-	bool logicListsMatch(const std::vector<EntityLogic>& list0, const std::vector<EntityLogic>& list1)
-	{
-		if (list0.size() != list1.size()) { return false; }
-		const s32 count = (s32)list0.size();
-		const EntityLogic* logic0 = list0.data();
-		const EntityLogic* logic1 = list1.data();
-		for (s32 i = 0; i < count; i++, logic0++, logic1++)
-		{
-			if (strcasecmp(logic0->name.c_str(), logic1->name.c_str()) != 0)
-			{
-				return false;
-			}
-			if (!varListsMatch(logic0->var, logic1->var))
-			{
-				return false;
-			}
-		}
-		return true;
-	}
-
+	
 	void commitEntityChanges(EditorSector* sector, s32 objIndex, const Entity* newEntityDef)
 	{
 		// 1. Has the entity data actually changed? If not, then just leave it alone.
 		EditorObject* obj = &sector->obj[objIndex];
-		const Entity* curEntity = &s_entityList[obj->entityId];
-		if (newEntityDef->name == curEntity->name && newEntityDef->assetName == curEntity->assetName && newEntityDef->type == curEntity->type &&
-			logicListsMatch(newEntityDef->logic, curEntity->logic) && varListsMatch(newEntityDef->var, curEntity->var))
+		const Entity* curEntity = &s_level.entities[obj->entityId];
+		if (entityDefsEqual(newEntityDef, curEntity))
 		{
 			return;
 		}
 
 		// 2. Search through existing entities and see if this already exists.
-		const s32 count = (s32)s_entityList.size();
-		const Entity* entity = s_entityList.data();
+		const s32 count = (s32)s_level.entities.size();
+		const Entity* entity = s_level.entities.data();
 		s32 entityIndex = -1;
 		for (s32 e = 0; e < count; e++, entity++)
 		{
-			if (newEntityDef->name == entity->name && newEntityDef->assetName == entity->assetName && newEntityDef->type == entity->type &&
-				logicListsMatch(newEntityDef->logic, entity->logic) && varListsMatch(newEntityDef->var, entity->var))
+			if (entityDefsEqual(newEntityDef, entity))
 			{
 				entityIndex = e;
 				break;
@@ -979,9 +918,9 @@ namespace LevelEditor
 		}
 
 		// 3. Create a new entity.
-		obj->entityId = (s32)s_entityList.size();
-		s_entityList.push_back(*newEntityDef);
-		loadSingleEntityData(&s_entityList.back());
+		obj->entityId = (s32)s_level.entities.size();
+		s_level.entities.push_back(*newEntityDef);
+		loadSingleEntityData(&s_level.entities.back());
 	}
 
 	void clearEntityChanges()
@@ -1102,7 +1041,7 @@ namespace LevelEditor
 
 		if (s_objEntity.id < 0)
 		{
-			s_objEntity = s_entityList[obj->entityId];
+			s_objEntity = s_level.entities[obj->entityId];
 		}
 
 		ImGui::Text("Sector ID: %d, Object Index: %d", sector->id, objIndex);

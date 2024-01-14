@@ -142,6 +142,9 @@ namespace LevelEditor
 		// Sector data.
 		std::vector<EditorSector> sectors;
 
+		// Entity data.
+		std::vector<Entity> entities;
+
 		// Level bounds.
 		Vec3f bounds[2] = { 0 };
 		s32 layerRange[2] = { 0 };
@@ -186,6 +189,8 @@ namespace LevelEditor
 	bool exportLevel(const char* path, const char* name, const StartPoint* start);
 	void sectorToPolygon(EditorSector* sector);
 	void polygonToSector(EditorSector* sector);
+
+	s32 addEntityToLevel(const Entity* newEntity);
 
 	TFE_Editor::EditorTexture* getTexture(s32 index);
 	s32 getTextureIndex(const char* name);
