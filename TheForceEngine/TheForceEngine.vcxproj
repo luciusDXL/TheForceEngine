@@ -650,6 +650,7 @@ echo ^)";
     <ClInclude Include="TFE_RenderShared\camera3d.h" />
     <ClInclude Include="TFE_RenderShared\lineDraw2d.h" />
     <ClInclude Include="TFE_RenderShared\lineDraw3d.h" />
+    <ClInclude Include="TFE_RenderShared\modelDraw.h" />
     <ClInclude Include="TFE_RenderShared\quadDraw2d.h" />
     <ClInclude Include="TFE_RenderShared\texturePacker.h" />
     <ClInclude Include="TFE_RenderShared\triDraw2d.h" />
@@ -968,6 +969,7 @@ echo ^)";
     <ClCompile Include="TFE_RenderBackend\Win32OpenGL\vertexBuffer.cpp" />
     <ClCompile Include="TFE_RenderShared\lineDraw2d.cpp" />
     <ClCompile Include="TFE_RenderShared\lineDraw3d.cpp" />
+    <ClCompile Include="TFE_RenderShared\modelDraw.cpp" />
     <ClCompile Include="TFE_RenderShared\quadDraw2d.cpp" />
     <ClCompile Include="TFE_RenderShared\texturePacker.cpp" />
     <ClCompile Include="TFE_RenderShared\triDraw2d.cpp" />
@@ -1051,6 +1053,8 @@ echo ^)";
     <None Include="Shaders\line3d.vert" />
     <None Include="Shaders\line3d_debug.frag" />
     <None Include="Shaders\line3d_debug.vert" />
+    <None Include="Shaders\mdl3d.frag" />
+    <None Include="Shaders\mdl3d.vert" />
     <None Include="Shaders\overlay.frag" />
     <None Include="Shaders\overlay.vert" />
     <None Include="Shaders\quad2d.frag" />

@@ -1288,6 +1288,9 @@
     <ClInclude Include="TFE_Editor\LevelEditor\entity.h">
       <Filter>Source\TFE_Editor\LevelEditor</Filter>
     </ClInclude>
+    <ClInclude Include="TFE_RenderShared\modelDraw.h">
+      <Filter>Source\TFE_RenderShared</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -2208,6 +2211,9 @@
     <ClCompile Include="TFE_Editor\LevelEditor\entity.cpp">
       <Filter>Source\TFE_Editor\LevelEditor</Filter>
     </ClCompile>
+    <ClCompile Include="TFE_RenderShared\modelDraw.cpp">
+      <Filter>Source\TFE_RenderShared</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="TheForceEngine.rc">
@@ -2407,6 +2413,12 @@
       <Filter>Source\Shaders</Filter>
     </None>
     <None Include="Shaders\tri3dWall.vert">
+      <Filter>Source\Shaders</Filter>
+    </None>
+    <None Include="Shaders\mdl3d.vert">
+      <Filter>Source\Shaders</Filter>
+    </None>
+    <None Include="Shaders\mdl3d.frag">
       <Filter>Source\Shaders</Filter>
     </None>
   </ItemGroup>

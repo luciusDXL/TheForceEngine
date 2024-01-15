@@ -15,6 +15,7 @@
 #include <TFE_RenderShared/lineDraw2d.h>
 #include <TFE_RenderShared/triDraw2d.h>
 #include <TFE_RenderShared/triDraw3d.h>
+#include <TFE_RenderShared/modelDraw.h>
 #include <TFE_System/system.h>
 #include <TFE_RenderBackend/renderBackend.h>
 
@@ -115,6 +116,7 @@ namespace LevelEditor
 	void renderSectorVertices2d();
 	void drawBox(const Vec3f* center, f32 side, f32 lineWidth, u32 color);
 	void drawBounds(const Vec3f* center, Vec3f size, f32 lineWidth, u32 color);
+	void drawOBB(const Vec3f* bounds, const Mat3* mtx, const Vec3f* pos, f32 lineWidth, u32 color);
 	void drawBounds2d(const Vec2f* center, Vec2f size, f32 lineWidth, u32 color, u32 fillColor);
 	void drawSolidBox(const Vec3f* center, f32 side, u32 color);
 	void drawSectorShape2D();
@@ -126,6 +128,7 @@ namespace LevelEditor
 		grid2d_init();
 		tri2d_init();
 		tri3d_init();
+		modelDraw_init();
 		grid3d_init();
 		TFE_RenderShared::line3d_init();
 	}
@@ -136,6 +139,7 @@ namespace LevelEditor
 		grid2d_destroy();
 		tri2d_destroy();
 		tri3d_destroy();
+		modelDraw_destroy();
 		grid3d_destroy();
 		TFE_RenderShared::line3d_destroy();
 		s_viewportRt = 0;
@@ -226,7 +230,7 @@ namespace LevelEditor
 		{
 			if (sector->layer < s_curLayer || sector->layer > s_curLayer) { continue; }
 			// TODO: Cull
-			const s32 objCount = sector->obj.size();
+			const s32 objCount = (s32)sector->obj.size();
 			const EditorObject* obj = sector->obj.data();
 			for (s32 o = 0; o < objCount; o++, obj++)
 			{
@@ -1211,7 +1215,7 @@ namespace LevelEditor
 			grid3d_draw(s_gridSize, opacity, s_gridHeight);
 		}
 	}
-		
+			
 	void drawEntity3D(const EditorSector* sector, const EditorObject* obj, s32 id, u32 objColor, const Vec3f& cameraRgtXZ)
 	{
 		const Entity* entity = &s_level.entities[obj->entityId];
@@ -1228,29 +1232,44 @@ namespace LevelEditor
 			y = pos.y + offset;
 		}
 
-		Vec3f corners[] =
+		if (entity->obj3d)
 		{
-			{ pos.x - width * cameraRgtXZ.x, y + height, pos.z - width * cameraRgtXZ.z },
-			{ pos.x + width * cameraRgtXZ.x, y + height, pos.z + width * cameraRgtXZ.z },
-			{ pos.x + width * cameraRgtXZ.x, y,          pos.z + width * cameraRgtXZ.z },
-			{ pos.x - width * cameraRgtXZ.x, y,          pos.z - width * cameraRgtXZ.z }
-		};
-		Vec2f uv[] =
+			EditorObj3D* obj3d = entity->obj3d;
+			const f32 alpha = ((objColor >> 24) & 255) / 255.0f;
+			modelDraw_addModel(&obj3d->vtxGpu, &obj3d->idxGpu, pos, obj->transform, { 1.0f, 1.0f, 1.0f, alpha });
+
+			const s32 mtlCount = (s32)obj3d->mtl.size();
+			const EditorMaterial* mtl = obj3d->mtl.data();
+			for (s32 m = 0; m < mtlCount; m++, mtl++)
+			{
+				ModelDrawMode mode;
+				// for now just do colored or texture uv.
+				mode = mtl->texture ? MDLMODE_TEX_UV : MDLMODE_COLORED;
+				modelDraw_addMaterial(mode, mtl->idxStart, mtl->idxCount, mtl->texture);
+			}
+		}
+		else
 		{
-			{ entity->uv[0].x, entity->uv[0].z },
-			{ entity->uv[1].x, entity->uv[0].z },
-			{ entity->uv[1].x, entity->uv[1].z },
-			{ entity->uv[0].x, entity->uv[1].z }
-		};
-		s32 idx[] = { 0, 1, 2, 0, 2, 3 };
-		triDraw3d_addTextured(TRIMODE_BLEND, 6, 4, corners, uv, idx, objColor, false, entity->image, false, false);
+			Vec3f corners[] =
+			{
+				{ pos.x - width * cameraRgtXZ.x, y + height, pos.z - width * cameraRgtXZ.z },
+				{ pos.x + width * cameraRgtXZ.x, y + height, pos.z + width * cameraRgtXZ.z },
+				{ pos.x + width * cameraRgtXZ.x, y,          pos.z + width * cameraRgtXZ.z },
+				{ pos.x - width * cameraRgtXZ.x, y,          pos.z - width * cameraRgtXZ.z }
+			};
+			Vec2f uv[] =
+			{
+				{ entity->uv[0].x, entity->uv[0].z },
+				{ entity->uv[1].x, entity->uv[0].z },
+				{ entity->uv[1].x, entity->uv[1].z },
+				{ entity->uv[0].x, entity->uv[1].z }
+			};
+			s32 idx[] = { 0, 1, 2, 0, 2, 3 };
+			triDraw3d_addTextured(TRIMODE_BLEND, 6, 4, corners, uv, idx, objColor, false, entity->image, false, false);
+		}
 
 		if (s_editMode == LEDIT_ENTITY)
 		{
-			// Draw bounds.
-			Vec3f center = { pos.x, y + height * 0.5f, pos.z };
-			Vec3f size = { width*2.0f, height, width*2.0f };
-
 			Highlight hl = HL_NONE;
 			if (s_featureCur.isObject && sector == s_featureCur.sector && s_featureCur.featureIndex == id)
 			{
@@ -1260,7 +1279,18 @@ namespace LevelEditor
 			{
 				hl = (hl == HL_SELECTED) ? Highlight(HL_SELECTED + 1) : HL_HOVERED;
 			}
-			drawBounds(&center, size, 3.0f, c_entityClr[hl]);
+
+			// Draw bounds.
+			if (entity->obj3d)
+			{
+				drawOBB(entity->obj3d->bounds, &obj->transform, &obj->pos, 3.0f, c_entityClr[hl]);
+			}
+			else
+			{
+				Vec3f center = { pos.x, y + height * 0.5f, pos.z };
+				Vec3f size = { width*2.0f, height, width*2.0f };
+				drawBounds(&center, size, 3.0f, c_entityClr[hl]);
+			}
 
 			// Draw direction arrows if it has a facing.
 			f32 angle = obj->angle;
@@ -1296,6 +1326,7 @@ namespace LevelEditor
 		// Prepare for drawing.
 		TFE_RenderShared::lineDraw3d_begin(s_viewportSize.x, s_viewportSize.z);
 		TFE_RenderShared::triDraw3d_begin();
+		TFE_RenderShared::modelDraw_begin();
 
 		if (!(s_gridFlags & GFLAG_OVER))
 		{
@@ -1569,8 +1600,9 @@ namespace LevelEditor
 		}
 
 		TFE_RenderShared::triDraw3d_draw(&s_camera, (f32)s_viewportSize.x, (f32)s_viewportSize.z, s_gridSize, s_gridOpacity);
+		TFE_RenderShared::modelDraw_draw(&s_camera, (f32)s_viewportSize.x, (f32)s_viewportSize.z);
 		TFE_RenderShared::lineDraw3d_drawLines(&s_camera, true, false);
-
+		
 		renderHighlighted3d();
 
 		// Draw drag select, if active.
@@ -1727,11 +1759,17 @@ namespace LevelEditor
 		}
 	}
 
-	void drawEntity2d(const EditorSector* sector, const EditorObject* obj, s32 id, u32 objColor)
+#if 0
+	void drawModel2d(const Entity* entity, const Vec3f pos)
 	{
-		const Entity* entity = &s_level.entities[obj->entityId];
-		const Vec3f pos = obj->pos;
+		if (!entity->obj3d) { return; }
 
+		triDraw2D_addTextured(6, 4, cornersImage, uv, idx, objColor, entity->image);
+	}
+#endif
+
+	void drawSprite2d(const Entity* entity, const Vec3f pos, u32 objColor)
+	{
 		f32 width = entity->size.x * 0.5f;
 
 		f32 dx = fabsf(entity->st[1].x - entity->st[0].x);
@@ -1746,13 +1784,6 @@ namespace LevelEditor
 			wI *= dx / dz;
 		}
 
-		Vec2f corners[] =
-		{
-			{ (pos.x - width) * s_viewportTrans2d.x + s_viewportTrans2d.y, (pos.z - width) * s_viewportTrans2d.z + s_viewportTrans2d.w },
-			{ (pos.x + width) * s_viewportTrans2d.x + s_viewportTrans2d.y, (pos.z - width) * s_viewportTrans2d.z + s_viewportTrans2d.w },
-			{ (pos.x + width) * s_viewportTrans2d.x + s_viewportTrans2d.y, (pos.z + width) * s_viewportTrans2d.z + s_viewportTrans2d.w },
-			{ (pos.x - width) * s_viewportTrans2d.x + s_viewportTrans2d.y, (pos.z + width) * s_viewportTrans2d.z + s_viewportTrans2d.w }
-		};
 		Vec2f cornersImage[] =
 		{
 			{ (pos.x - wI) * s_viewportTrans2d.x + s_viewportTrans2d.y, (pos.z - hI) * s_viewportTrans2d.z + s_viewportTrans2d.w },
@@ -1768,6 +1799,15 @@ namespace LevelEditor
 			{ entity->uv[0].x, entity->uv[0].z }
 		};
 		s32 idx[] = { 0, 1, 2, 0, 2, 3 };
+
+		triDraw2D_addTextured(6, 4, cornersImage, uv, idx, objColor, entity->image);
+	}
+
+	void drawEntity2d(const EditorSector* sector, const EditorObject* obj, s32 id, u32 objColor)
+	{
+		const Entity* entity = &s_level.entities[obj->entityId];
+		const Vec3f pos = obj->pos;
+		const f32 width = entity->size.x * 0.5f;
 				
 		if (s_editMode == LEDIT_ENTITY)
 		{
@@ -1785,7 +1825,7 @@ namespace LevelEditor
 				hl = (hl == HL_SELECTED) ? Highlight(HL_SELECTED+1) : HL_HOVERED;
 			}
 			drawBounds2d(&center, size, 1.5f, c_entityClr[hl], 0x80403020);
-			triDraw2D_addTextured(6, 4, cornersImage, uv, idx, objColor, entity->image);
+			drawSprite2d(entity, pos, objColor);
 
 			// Draw direction arrows if it has a facing.
 			f32 angle = obj->angle;
@@ -1823,7 +1863,7 @@ namespace LevelEditor
 		}
 		else
 		{
-			triDraw2D_addTextured(6, 4, cornersImage, uv, idx, objColor, entity->image);
+			drawSprite2d(entity, pos, objColor);
 		}
 	}
 
@@ -2032,6 +2072,54 @@ namespace LevelEditor
 		}
 
 		lineDraw3d_addLines(12, lineWidth, lines, colors);
+	}
+
+	void drawOBB(const Vec3f* bounds, const Mat3* mtx, const Vec3f* pos, f32 lineWidth, u32 color)
+	{
+		const Vec3f vtxLocal[8] =
+		{
+			{ bounds[0].x, bounds[0].y, bounds[0].z },
+			{ bounds[1].x, bounds[0].y, bounds[0].z },
+			{ bounds[1].x, bounds[0].y, bounds[1].z },
+			{ bounds[0].x, bounds[0].y, bounds[1].z },
+
+			{ bounds[0].x, bounds[1].y, bounds[0].z },
+			{ bounds[1].x, bounds[1].y, bounds[0].z },
+			{ bounds[1].x, bounds[1].y, bounds[1].z },
+			{ bounds[0].x, bounds[1].y, bounds[1].z },
+		};
+		Vec3f vtxWorld[10];
+		for (s32 v = 0; v < 4; v++)
+		{
+			vtxWorld[v].x = vtxLocal[v].x * mtx->m0.x + vtxLocal[v].y * mtx->m0.y + vtxLocal[v].z * mtx->m0.z + pos->x;
+			vtxWorld[v].y = vtxLocal[v].x * mtx->m1.x + vtxLocal[v].y * mtx->m1.y + vtxLocal[v].z * mtx->m1.z + pos->y;
+			vtxWorld[v].z = vtxLocal[v].x * mtx->m2.x + vtxLocal[v].y * mtx->m2.y + vtxLocal[v].z * mtx->m2.z + pos->z;
+		}
+		vtxWorld[4] = vtxWorld[0];
+		for (s32 i = 0; i < 4; i++)
+		{
+			lineDraw3d_addLine(lineWidth, &vtxWorld[i], &color);
+		}
+		
+		for (s32 v = 4; v < 8; v++)
+		{
+			vtxWorld[v].x = vtxLocal[v].x * mtx->m0.x + vtxLocal[v].y * mtx->m0.y + vtxLocal[v].z * mtx->m0.z + pos->x;
+			vtxWorld[v].y = vtxLocal[v].x * mtx->m1.x + vtxLocal[v].y * mtx->m1.y + vtxLocal[v].z * mtx->m1.z + pos->y;
+			vtxWorld[v].z = vtxLocal[v].x * mtx->m2.x + vtxLocal[v].y * mtx->m2.y + vtxLocal[v].z * mtx->m2.z + pos->z;
+		}
+		vtxWorld[8] = vtxWorld[4];
+		for (s32 i = 0; i < 4; i++)
+		{
+			lineDraw3d_addLine(lineWidth, &vtxWorld[i+4], &color);
+		}
+
+		Vec3f vertLine[2];
+		for (s32 i = 0; i < 4; i++)
+		{
+			vertLine[0] = vtxWorld[i];
+			vertLine[1] = vtxWorld[i+4];
+			lineDraw3d_addLine(lineWidth, vertLine, &color);
+		}
 	}
 
 	void drawBounds2d(const Vec2f* center, Vec2f size, f32 lineWidth, u32 color, u32 fillColor)

@@ -3467,7 +3467,7 @@ namespace LevelEditor
 
 				// Split the wall if needed.
 				s32 extrudeSectorId = s_extrudePlane.sector->id;
-				s32 extrudeWallId = ((intptr_t)s_extrudePlane.wall - (intptr_t)s_extrudePlane.sector->walls.data()) / sizeof(EditorWall);
+				s32 extrudeWallId = (s32)((intptr_t)s_extrudePlane.wall - (intptr_t)s_extrudePlane.sector->walls.data()) / sizeof(EditorWall);
 				nextWallId = extrudeWallId;
 				if (x0 > 0.0f)
 				{
@@ -3572,7 +3572,7 @@ namespace LevelEditor
 		std::sort(splits.begin(), splits.end());
 		// Then find the height extends of each split.
 		s32 extrudeSectorId = s_extrudePlane.sector->id;
-		s32 extrudeWallId = ((intptr_t)s_extrudePlane.wall - (intptr_t)s_extrudePlane.sector->walls.data()) / sizeof(EditorWall);
+		s32 extrudeWallId = (s32)((intptr_t)s_extrudePlane.wall - (intptr_t)s_extrudePlane.sector->walls.data()) / sizeof(EditorWall);
 
 		s_testShape = s_shape;
 		s_shape.resize(2);

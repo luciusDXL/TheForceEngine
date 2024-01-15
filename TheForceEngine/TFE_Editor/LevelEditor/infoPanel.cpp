@@ -1091,7 +1091,27 @@ namespace LevelEditor
 		{
 			obj->angle = angle * PI / 180.0f;
 		}
-		// TODO: If 3D set pitch and roll here...
+		
+		// Show pitch and roll.
+		if (s_objEntity.type == ETYPE_3D)
+		{
+			f32 pitch = obj->pitch * 180.0f / PI;
+			f32 roll  = obj->roll  * 180.0f / PI;
+
+			ImGui::Text("%s", "Pitch"); ImGui::SameLine(0.0f, 32.0f);
+			ImGui::SetNextItemWidth(128.0f);
+			if (ImGui::InputFloat("##PitchEdit", &pitch))
+			{
+				obj->pitch = pitch * PI / 180.0f;
+			}
+			ImGui::SameLine(0.0f, 32.0f);
+			ImGui::Text("%s", "Roll"); ImGui::SameLine(0.0f, 8.0f);
+			ImGui::SetNextItemWidth(128.0f);
+			if (ImGui::InputFloat("##RollEdit", &roll))
+			{
+				obj->roll = roll * PI / 180.0f;
+			}
+		}
 
 		// Difficulty.
 		ImGui::Text("%s", "Difficulty"); ImGui::SameLine(0.0f, 8.0f);
@@ -1197,8 +1217,9 @@ namespace LevelEditor
 			varList = &s_objEntity.logic[s_logicSelect].var;
 		}
 
+		const f32 varListHeight = s_objEntity.type == ETYPE_3D ? 114.0f : 140.0f;
 		ImGui::Text("%s", "Variables");
-		ImGui::BeginChild("##VariableList", { (f32)min(listWidth, 400), /*96*/140 }, true);
+		ImGui::BeginChild("##VariableList", { (f32)min(listWidth, 400), varListHeight }, true);
 		{
 			s32 count = (s32)varList->size();
 			EntityVar* list = varList->data();

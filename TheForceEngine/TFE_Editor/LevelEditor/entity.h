@@ -10,6 +10,7 @@
 #include <TFE_System/parser.h>
 #include <TFE_FileSystem/filestream.h>
 #include <TFE_RenderBackend/renderBackend.h>
+#include <TFE_Editor/EditorAsset/editorObj3D.h>
 #include <vector>
 #include <string>
 
@@ -94,7 +95,7 @@ namespace LevelEditor
 		std::string name;
 		std::vector<EntityVar> var;
 	};
-
+		
 	struct Entity
 	{
 		s32 id = -1;
@@ -104,11 +105,16 @@ namespace LevelEditor
 		std::vector<EntityLogic> logic;
 		std::vector<EntityVar> var;
 
+		// Sprite
 		TextureGpu* image = nullptr;
 		Vec2f uv[2] = { {0.0f, 0.0f}, {1.0f,  1.0f} };
 		Vec2f st[2] = { {0.0f, 0.0f}, {64.0f, 64.0f} };
 		Vec2f size = { 1.0f, 1.0f };
+				
+		// 3D object.
+		TFE_Editor::EditorObj3D* obj3d = nullptr;
 
+		// Bounds and offsets.
 		Vec3f bounds[2] = { 0 };
 		Vec3f offset = { 0 };
 		Vec3f offsetAdj = { 0 };
@@ -148,7 +154,11 @@ namespace LevelEditor
 		s32 entityId;
 		Vec3f pos;
 		f32 angle;
+		f32 pitch, roll;
 		s32 diff;
+
+		// Derived (don't save).
+		Mat3 transform;
 	};
 
 	bool loadEntityData(const char* localDir);

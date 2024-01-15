@@ -79,7 +79,7 @@ void VertexBuffer::update(const void* buffer, size_t size)
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
-void VertexBuffer::bind()
+void VertexBuffer::bind() const
 {
 	glBindBuffer(GL_ARRAY_BUFFER, m_gpuHandle);
 	for (u32 i = 0; i < m_attrCount; i++)
@@ -89,7 +89,7 @@ void VertexBuffer::bind()
 	}
 }
 
-void VertexBuffer::unbind()
+void VertexBuffer::unbind() const
 {
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	for (u32 i = 0; i < m_attrCount; i++)

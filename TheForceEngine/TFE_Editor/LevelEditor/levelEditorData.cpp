@@ -83,7 +83,8 @@ namespace LevelEditor
 		LEF_EntityV1   = 2,
 		LEF_EntityV2   = 3,
 		LEF_EntityList = 4,
-		LEF_CurVersion = 4,
+		LEF_EntityV3   = 5,
+		LEF_CurVersion = 5,
 	};
 
 	EditorSector* findSectorDf(const Vec3f pos);
@@ -227,6 +228,32 @@ namespace LevelEditor
 		{
 			name[i] = tolower(name[i]);
 		}
+	}
+
+	// Matches the DF calculation.
+	void compute3x3Rotation(Mat3* transform, f32 yaw, f32 pitch, f32 roll)
+	{
+		const f32 sinYaw = sinf(yaw);
+		const f32 cosYaw = cosf(yaw);
+		const f32 sinPch = sinf(pitch);
+		const f32 cosPch = cosf(pitch);
+		const f32 sinRol = sinf(roll);
+		const f32 cosRol = cosf(roll);
+
+		const f32 sRol_sPitch = sinRol * sinPch;
+		const f32 cRol_sPitch = cosRol * sinPch;
+
+		transform->data[0] = cosRol * cosYaw + sRol_sPitch * sinYaw;
+		transform->data[1] = -sinRol * cosYaw + cRol_sPitch * sinYaw;
+		transform->data[2] = cosPch * sinYaw;
+
+		transform->data[3] = cosPch * sinRol;
+		transform->data[4] = cosRol * cosPch;
+		transform->data[5] = -sinPch;
+
+		transform->data[6] = -cosRol * sinYaw + sRol_sPitch * cosYaw;
+		transform->data[7] = sinRol * sinYaw + cRol_sPitch * cosYaw;
+		transform->data[8] = cosPch * cosYaw;
 	}
 
 	bool loadLevelObjFromAsset(Asset* asset)
@@ -376,10 +403,11 @@ namespace LevelEditor
 						sector->obj.push_back({});
 						EditorObject* obj = &sector->obj.back();
 						obj->pos = pos;
-						obj->angle = yaw * PI / 180.0f;
 						obj->diff = objDiff;
-						//obj.pitch = pch;
-						//obj.roll = rol;
+						obj->angle = yaw * PI / 180.0f;
+						obj->pitch = pch * PI / 180.0f;
+						obj->roll  = rol * PI / 180.0f;
+						compute3x3Rotation(&obj->transform, obj->angle, obj->pitch, obj->roll);
 
 						Entity objEntity = {};
 
@@ -396,7 +424,6 @@ namespace LevelEditor
 									char name[256];
 									entityNameFromAssetName(objEntity.assetName.c_str(), name);
 									objEntity.name = name;
-									// obj3d_computeTransform(obj);
 								}
 							} break;
 							case KW_SPRITE:
@@ -905,6 +932,17 @@ namespace LevelEditor
 				{
 					file.read(&obj->entityId);
 					file.read(&obj->angle);
+
+					// Defaults
+					obj->pitch = 0.0f;
+					obj->roll = 0.0f;
+					if (version >= LEF_EntityV3)
+					{
+						file.read(&obj->pitch);
+						file.read(&obj->roll);
+					}
+					compute3x3Rotation(&obj->transform, obj->angle, obj->pitch, obj->roll);
+
 					obj->diff = 1; // default
 					if (version >= LEF_EntityV2)
 					{
@@ -1027,6 +1065,8 @@ namespace LevelEditor
 			{
 				file.write(&obj->entityId);
 				file.write(&obj->angle);
+				file.write(&obj->pitch);
+				file.write(&obj->roll);
 				file.write(&obj->diff);
 				file.writeBuffer(&obj->pos, sizeof(Vec3f));
 			}
@@ -1270,12 +1310,13 @@ namespace LevelEditor
 			{
 				const Entity* entity = &s_level.entities[obj->entityId];
 
+				s32 index = (s32)objList.size();
 				objList.push_back(obj);
 				s32 dataIndex = 0;
 				// TODO: Handle other types.
-				if (entity->type == ETYPE_FRAME || entity->type == ETYPE_SPRITE)
+				if (entity->type == ETYPE_FRAME || entity->type == ETYPE_SPRITE || entity->type == ETYPE_3D)
 				{
-					dataIndex = addObjAsset(entity->assetName, entity->type == ETYPE_FRAME ? frames : sprites);
+					dataIndex = addObjAsset(entity->assetName, entity->type == ETYPE_FRAME ? frames : entity->type == ETYPE_SPRITE ? sprites : pods);
 				}
 				else if (entity->type == ETYPE_SPIRIT)
 				{
@@ -1284,7 +1325,7 @@ namespace LevelEditor
 					{
 						if (strcasecmp(entity->logic[i].name.c_str(), "Player") == 0)
 						{
-							startPointId = o;
+							startPointId = index;
 							break;
 						}
 					}
@@ -1298,6 +1339,10 @@ namespace LevelEditor
 
 		const s32 podCount = (s32)pods.size();
 		WRITE_LINE("PODS %d\r\n", podCount);
+		for (s32 i = 0; i < podCount; i++)
+		{
+			WRITE_LINE("    POD: %s\r\n", pods[i].c_str());
+		}
 		NEW_LINE();
 
 		const s32 spriteCount = (s32)sprites.size();
@@ -1346,6 +1391,8 @@ namespace LevelEditor
 			const EditorObject* obj = objList[i];
 			const Entity* entity = &s_level.entities[obj->entityId];
 			const f32 objYaw = fmodf(obj->angle * radToDeg, 360.0f);
+			const f32 objPitch = fmodf(obj->pitch * radToDeg, 360.0f);
+			const f32 objRoll = fmodf(obj->roll * radToDeg, 360.0f);
 			const s32 logicCount = (s32)entity->logic.size();
 
 			switch (entity->type)
@@ -1362,23 +1409,28 @@ namespace LevelEditor
 					}
 					else
 					{
-						WRITE_LINE("    CLASS: SPIRIT     DATA: 0   X: %0.2f Y: %0.2f Z: %0.2f PCH: %0.2f   YAW: %0.2f ROL: 0.00   DIFF: %d\r\n", obj->pos.x, -obj->pos.y, obj->pos.z, 0.0f, objYaw, obj->diff);
+						WRITE_LINE("    CLASS: SPIRIT     DATA: 0   X: %0.2f Y: %0.2f Z: %0.2f PCH: %0.2f   YAW: %0.2f ROL: %0.2f   DIFF: %d\r\n", obj->pos.x, -obj->pos.y, obj->pos.z, objPitch, objYaw, objRoll, obj->diff);
 						writeObjSequence(obj, entity, file);
 					}
 				} break;
 				case ETYPE_SAFE:
 				{
-					WRITE_LINE("    CLASS: SAFE     DATA: 0   X: %0.2f Y: %0.2f Z: %0.2f PCH: %0.2f   YAW: %0.2f ROL: 0.00   DIFF: %d\r\n", obj->pos.x, -obj->pos.y, obj->pos.z, 0.0f, objYaw, obj->diff);
+					WRITE_LINE("    CLASS: SAFE     DATA: 0   X: %0.2f Y: %0.2f Z: %0.2f PCH: %0.2f   YAW: %0.2f ROL: %0.2f   DIFF: %d\r\n", obj->pos.x, -obj->pos.y, obj->pos.z, objPitch, objYaw, objRoll, obj->diff);
 					writeObjSequence(obj, entity, file);
 				} break;
 				case ETYPE_FRAME:
 				{
-					WRITE_LINE("    CLASS: FRAME     DATA: %d   X: %0.2f Y: %0.2f Z: %0.2f PCH: %0.2f   YAW: %0.2f ROL: 0.00   DIFF: %d\r\n", objData[i], obj->pos.x, -obj->pos.y, obj->pos.z, 0.0f, objYaw, obj->diff);
+					WRITE_LINE("    CLASS: FRAME     DATA: %d   X: %0.2f Y: %0.2f Z: %0.2f PCH: %0.2f   YAW: %0.2f ROL: %0.2f   DIFF: %d\r\n", objData[i], obj->pos.x, -obj->pos.y, obj->pos.z, objPitch, objYaw, objRoll, obj->diff);
 					writeObjSequence(obj, entity, file);
 				} break;
 				case ETYPE_SPRITE:
 				{
-					WRITE_LINE("    CLASS: SPRITE     DATA: %d   X: %0.2f Y: %0.2f Z: %0.2f PCH: %0.2f   YAW: %0.2f ROL: 0.00   DIFF: %d\r\n", objData[i], obj->pos.x, -obj->pos.y, obj->pos.z, 0.0f, objYaw, obj->diff);
+					WRITE_LINE("    CLASS: SPRITE     DATA: %d   X: %0.2f Y: %0.2f Z: %0.2f PCH: %0.2f   YAW: %0.2f ROL: %0.2f   DIFF: %d\r\n", objData[i], obj->pos.x, -obj->pos.y, obj->pos.z, objPitch, objYaw, objRoll, obj->diff);
+					writeObjSequence(obj, entity, file);
+				} break;
+				case ETYPE_3D:
+				{
+					WRITE_LINE("    CLASS: 3D     DATA: %d   X: %0.2f Y: %0.2f Z: %0.2f PCH: %0.2f   YAW: %0.2f ROL: %0.2f   DIFF: %d\r\n", objData[i], obj->pos.x, -obj->pos.y, obj->pos.z, objPitch, objYaw, objRoll, obj->diff);
 					writeObjSequence(obj, entity, file);
 				} break;
 			}
@@ -2394,7 +2446,7 @@ namespace LevelEditor
 		s32 sectorUnitArea = 0;
 		s32 prevSectorUnitArea = INT_MAX;
 
-		for (u32 i = 0; i < count; i++, sector++)
+		for (s32 i = 0; i < count; i++, sector++)
 		{
 			if (pos.y <= sector->ceilHeight && pos.y >= sector->floorHeight)
 			{

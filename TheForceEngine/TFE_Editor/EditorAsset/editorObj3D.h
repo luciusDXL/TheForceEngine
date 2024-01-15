@@ -8,15 +8,43 @@
 //////////////////////////////////////////////////////////////////////
 #include <TFE_System/types.h>
 #include <TFE_Archive/archive.h>
+#include <TFE_Asset/modelAsset_jedi.h>
 #include <TFE_RenderBackend/renderBackend.h>
+#include <TFE_RenderBackend/vertexBuffer.h>
+#include <TFE_RenderBackend/indexBuffer.h>
 
 namespace TFE_Editor
 {
+	struct EditorVertex
+	{
+		Vec3f pos = { 0 };
+		Vec2f uv = { 0 };
+		u32 color = 0xffffffff;
+	};
+
+	struct EditorMaterial
+	{
+		TextureGpu* texture = nullptr;	// null = solid color.
+		bool flatProj = false;
+		u32 idxStart = 0;
+		u32 idxCount = 0;
+	};
+
 	struct EditorObj3D
 	{
 		TextureGpu* thumbnail = nullptr;
 		char name[64] = "";
+
+		std::vector<EditorVertex> vtx;
+		std::vector<u32> idx;
+		std::vector<EditorMaterial> mtl;
+
+		Vec3f bounds[2] = { 0 };
+
+		VertexBuffer vtxGpu = {};
+		IndexBuffer idxGpu = {};
 	};
+
 	enum Obj3DSourceType
 	{
 		OBJ3D_3DO,

@@ -50,8 +50,8 @@ public:
 	void destroy();
 
 	void update(const void* buffer, size_t size);
-	void bind();
-	void unbind();
+	void bind() const;
+	void unbind() const;
 
 	inline u32 getHandle() const { return m_gpuHandle; }
 

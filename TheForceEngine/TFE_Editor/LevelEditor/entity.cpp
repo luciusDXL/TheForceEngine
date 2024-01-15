@@ -285,9 +285,22 @@ namespace LevelEditor
 				entity->offset = { (f32)frame->offsetX + entity->offsetAdj.x, (f32)frame->offsetY + entity->offsetAdj.y, 0.0f };
 			}
 		}
+		else if (entity->type == ETYPE_3D)
+		{
+			// Load a texture from the wax.
+			Asset* asset = AssetBrowser::findAsset(entity->assetName.c_str(), TYPE_3DOBJ);
+			if (asset)
+			{
+				if (!asset->handle)
+				{
+					asset->handle = AssetBrowser::loadAssetData(asset);
+				}
+				entity->obj3d = (EditorObj3D*)getAssetData(asset->handle);
+			}
+		}
 		else
 		{
-			// TODO: other types, like 3D.
+			// TODO: other types.
 		}
 
 		return true;
