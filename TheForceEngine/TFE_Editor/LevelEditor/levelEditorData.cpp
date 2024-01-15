@@ -1,5 +1,6 @@
 #include "levelEditorData.h"
 #include "selection.h"
+#include "entity.h"
 #include "error.h"
 #include "shell.h"
 #include <TFE_Editor/history.h>
@@ -85,6 +86,8 @@ namespace LevelEditor
 		LEF_CurVersion = 4,
 	};
 
+	EditorSector* findSectorDf(const Vec3f pos);
+
 	AssetHandle loadTexture(const char* bmTextureName)
 	{
 		Asset* texAsset = AssetBrowser::findAsset(bmTextureName, TYPE_TEXTURE);
@@ -104,6 +107,370 @@ namespace LevelEditor
 		Asset* colormapAsset = AssetBrowser::findAsset(colormapName, TYPE_COLORMAP);
 		if (!colormapAsset) { return NULL_ASSET; }
 		return AssetBrowser::loadAssetData(colormapAsset);
+	}
+
+	bool editor_objectParseSeq(Entity* entity, TFE_Parser* parser, size_t* bufferPos)
+	{
+		const char* line = parser->readLine(*bufferPos);
+		if (!line || !strstr(line, "SEQ"))
+		{
+			return false;
+		}
+
+		EntityLogic* newLogic = nullptr;
+		char objSeqArg0[256], objSeqArg1[256], objSeqArg2[256], objSeqArg3[256], objSeqArg4[256], objSeqArg5[256];
+		while (1)
+		{
+			line = parser->readLine(*bufferPos);
+			if (!line) { return false; }
+
+			objSeqArg2[0] = 0;
+			s32 objSeqArgCount = sscanf(line, " %s %s %s %s %s %s", objSeqArg0, objSeqArg1, objSeqArg2, objSeqArg3, objSeqArg4, objSeqArg5);
+			KEYWORD key = getKeywordIndex(objSeqArg0);
+			if (key == KW_TYPE || key == KW_LOGIC)
+			{
+				entity->logic.push_back({});
+				newLogic = &entity->logic.back();
+
+				KEYWORD logicId = getKeywordIndex(objSeqArg1);
+				if (logicId == KW_PLAYER)  // Player Logic.
+				{
+					newLogic->name = s_logicDefList[0].name;
+				}
+				else if (logicId == KW_ANIM)	// Animated Sprites Logic.
+				{
+					newLogic->name = s_logicDefList[1].name;
+				}
+				else if (logicId == KW_UPDATE)	// "Update" logic is usually used for rotating 3D objects, like the Death Star.
+				{
+					newLogic->name = s_logicDefList[2].name;
+				}
+				else if (logicId >= KW_TROOP && logicId <= KW_SCENERY)	// Enemies, explosives barrels, land mines, and scenery.
+				{
+					newLogic->name = s_logicDefList[3 + logicId - KW_TROOP].name;
+				}
+				else if (logicId == KW_KEY)         // Vue animation logic.
+				{
+					newLogic->name = "Key"; // 38
+				}
+				else if (logicId == KW_GENERATOR)	// Enemy generator, used for in-level enemy spawning.
+				{
+					newLogic->name = "Generator"; // 39
+				}
+				else if (logicId == KW_DISPATCH)
+				{
+					newLogic->name = "Dispatch"; // 40
+				}
+				else if ((logicId >= KW_BATTERY && logicId <= KW_AUTOGUN) || logicId == KW_ITEM)
+				{
+					if (logicId >= KW_BATTERY && logicId <= KW_AUTOGUN)
+					{
+						strcpy(objSeqArg2, objSeqArg1);
+					}
+					size_t len = strlen(objSeqArg2);
+					for (size_t i = 1; i < len; i++)
+					{
+						objSeqArg2[i] = tolower(objSeqArg2[i]);
+					}
+					newLogic->name = objSeqArg2;
+				}
+			}
+			else if (key == KW_SEQEND)
+			{
+				return true;
+			}
+			else // Variable?
+			{
+				char varName[256];
+				strcpy(varName, objSeqArg0);
+				s32 len = (s32)strlen(varName);
+				while (varName[len - 1] == ':')
+				{
+					varName[len - 1] = 0;
+					len--;
+				}
+
+				const s32 varId = getVariableId(varName);
+				if (varId >= 0)
+				{
+					const EntityVarDef* def = getEntityVar(varId);
+					EntityVar* var = nullptr;
+					if (newLogic)
+					{
+						newLogic->var.push_back({});
+						var = &newLogic->var.back();
+					}
+					else
+					{
+						entity->var.push_back({});
+						var = &entity->var.back();
+					}
+					var->defId = varId;
+					
+					TokenList tokens;
+					tokens.push_back(varName);
+					tokens.push_back(objSeqArg1);
+					tokens.push_back(objSeqArg2);
+					parseValue(tokens, def->type, &var->value);
+				}
+			}
+		}
+
+		return true;
+	}
+
+	void entityNameFromAssetName(const char* assetName, char* name)
+	{
+		FileUtil::stripExtension(assetName, name);
+		size_t len = strlen(name);
+		for (size_t i = 1; i < len; i++)
+		{
+			name[i] = tolower(name[i]);
+		}
+	}
+
+	bool loadLevelObjFromAsset(Asset* asset)
+	{
+		char objFile[TFE_MAX_PATH];
+		s_fileData.clear();
+		if (asset->archive)
+		{
+			FileUtil::replaceExtension(asset->name.c_str(), "O", objFile);
+
+			if (asset->archive->openFile(objFile))
+			{
+				const size_t len = asset->archive->getFileLength();
+				s_fileData.resize(len);
+				asset->archive->readFile(s_fileData.data(), len);
+				asset->archive->closeFile();
+			}
+		}
+		else
+		{
+			FileUtil::replaceExtension(asset->filePath.c_str(), "O", objFile);
+
+			FileStream file;
+			if (file.open(objFile, Stream::MODE_READ))
+			{
+				const size_t len = file.getSize();
+				s_fileData.resize(len);
+				file.readBuffer(s_fileData.data(), (u32)len);
+				file.close();
+			}
+		}
+
+		if (s_fileData.empty()) { return false; }
+		TFE_Parser parser;
+		size_t bufferPos = 0;
+		parser.init((char*)s_fileData.data(), s_fileData.size());
+		parser.addCommentString("#");
+		parser.convertToUpperCase(true);
+
+		const char* line;
+		line = parser.readLine(bufferPos);
+		s32 versionMajor, versionMinor;
+		if (sscanf(line, "O %d.%d", &versionMajor, &versionMinor) != 2)
+		{
+			LE_WARNING("Cannot open existing DF level object file '%s'", objFile);
+			return false;
+		}
+
+		std::vector<std::string> pods;
+		std::vector<std::string> sprites;
+		std::vector<std::string> frames;
+		std::vector<std::string> sounds;
+		s32 podCount = 0;
+		s32 spriteCount = 0;
+		s32 frameCount = 0;
+		s32 soundCount = 0;
+		s32 objectCount = 0;
+
+		while (line = parser.readLine(bufferPos))
+		{
+			if (sscanf(line, "PODS %d", &podCount) == 1)
+			{
+				pods.reserve(podCount);
+				for (s32 p = 0; p < podCount; p++)
+				{
+					line = parser.readLine(bufferPos);
+					if (line)
+					{
+						char podName[32] = "default.3do";
+						sscanf(line, " POD: %s ", podName);
+						pods.push_back(podName);
+					}
+				}
+			}
+			else if (sscanf(line, "SPRS %d", &spriteCount) == 1)
+			{
+				sprites.reserve(spriteCount);
+				for (s32 s = 0; s < spriteCount; s++)
+				{
+					line = parser.readLine(bufferPos);
+					if (line)
+					{
+						char spriteName[32] = "default.wax";
+						sscanf(line, " SPR: %s ", spriteName);
+						sprites.push_back(spriteName);
+					}
+				}
+			}
+			else if (sscanf(line, "FMES %d", &frameCount) == 1)
+			{
+				frames.reserve(frameCount);
+				for (s32 f = 0; f < frameCount; f++)
+				{
+					line = parser.readLine(bufferPos);
+					if (line)
+					{
+						char frameName[32] = "default.fme";
+						sscanf(line, " FME: %s ", frameName);
+						frames.push_back(frameName);
+					}
+				}
+			}
+			else if (sscanf(line, "SOUNDS %d", &soundCount) == 1)
+			{
+				sounds.reserve(soundCount);
+				for (s32 s = 0; s < soundCount; s++)
+				{
+					line = parser.readLine(bufferPos);
+					if (line)
+					{
+						char soundName[32] = "";
+						sscanf(line, " SOUND: %s ", soundName);
+						sounds.push_back(soundName);
+					}
+				}
+			}
+			else if (sscanf(line, "OBJECTS %d", &objectCount) == 1)
+			{
+				bool readNextLine = true;
+				for (s32 objIndex = 0; objIndex < objectCount;)
+				{
+					if (readNextLine)
+					{
+						line = parser.readLine(bufferPos);
+						if (!line) { break; }
+					}
+					else
+					{
+						readNextLine = true;
+					}
+
+					s32 objDiff = 0;
+					s32 dataIndex = 0;
+					f32 x, y, z, pch, yaw, rol;
+					char objClass[32];
+
+					if (sscanf(line, " CLASS: %s DATA: %d X: %f Y: %f Z: %f PCH: %f YAW: %f ROL: %f DIFF: %d", objClass, &dataIndex, &x, &y, &z, &pch, &yaw, &rol, &objDiff) > 5)
+					{
+						objIndex++;
+						Vec3f pos = { x, -y, z };
+						EditorSector* sector = findSectorDf(pos);
+						if (!sector)
+						{
+							continue;
+						}
+
+						sector->obj.push_back({});
+						EditorObject* obj = &sector->obj.back();
+						obj->pos = pos;
+						obj->angle = yaw * PI / 180.0f;
+						obj->diff = objDiff;
+						//obj.pitch = pch;
+						//obj.roll = rol;
+
+						Entity objEntity = {};
+
+						KEYWORD classType = getKeywordIndex(objClass);
+						switch (classType)
+						{
+							case KW_3D:
+							{
+								if (podCount)
+								{
+									objEntity.type = ETYPE_3D;
+									objEntity.assetName = pods[dataIndex];
+
+									char name[256];
+									entityNameFromAssetName(objEntity.assetName.c_str(), name);
+									objEntity.name = name;
+									// obj3d_computeTransform(obj);
+								}
+							} break;
+							case KW_SPRITE:
+							{
+								if (spriteCount)
+								{
+									objEntity.type = ETYPE_SPRITE;
+									objEntity.assetName = sprites[dataIndex];
+									
+									char name[256];
+									entityNameFromAssetName(objEntity.assetName.c_str(), name);
+									objEntity.name = name;
+								}
+							} break;
+							case KW_FRAME:
+							{
+								if (frameCount)
+								{
+									objEntity.type = ETYPE_FRAME;
+									objEntity.assetName = frames[dataIndex];
+
+									char name[256];
+									entityNameFromAssetName(objEntity.assetName.c_str(), name);
+									objEntity.name = name;
+								}
+							} break;
+							case KW_SPIRIT:
+							{
+								objEntity.name = "Spirit";
+								objEntity.type = ETYPE_SPIRIT;
+								objEntity.assetName = "SpiritObject.png";
+							} break;
+							case KW_SOUND:
+							{
+								//objEntity.type = ETYPE_SOUND;
+								//objEntity.assetName = "SpiritObject.png";
+							} break;
+							case KW_SAFE:
+							{
+								objEntity.name = "Safe";
+								objEntity.type = ETYPE_SAFE;
+								objEntity.assetName = "SafeObject.png";
+							} break;
+						}
+
+						// Invalid or unknown object or object type, just discard.
+						if (objEntity.type == ETYPE_UNKNOWN)
+						{
+							sector->obj.pop_back();
+							continue;
+						}
+
+						readNextLine = editor_objectParseSeq(&objEntity, &parser, &bufferPos);
+
+						// Does this entity exist as a loaded definition? If so, take that name.
+						const s32 editorDefId = getEntityDefId(&objEntity);
+						if (editorDefId >= 0)
+						{
+							objEntity = s_entityDefList[editorDefId];
+						}
+						obj->entityId = addEntityToLevel(&objEntity);
+					}
+				}
+			}
+		}
+
+		const s32 entityCount = (s32)s_level.entities.size();
+		Entity* entity = s_level.entities.data();
+		for (s32 i = 0; i < entityCount; i++, entity++)
+		{
+			loadSingleEntityData(entity);
+		}
+
+		return true;
 	}
 		
 	bool loadLevelFromAsset(Asset* asset)
@@ -423,6 +790,7 @@ namespace LevelEditor
 
 			sectorToPolygon(sector);
 		}
+		loadLevelObjFromAsset(asset);
 
 		return true;
 	}
@@ -2015,5 +2383,43 @@ namespace LevelEditor
 		// For now until the way snapshot memory is handled is refactored, to avoid duplicate code that will be removed later.
 		// TODO: Handle edit state properly here too.
 		edit_clearSelections();
+	}
+
+	// Find a sector based on DF rules.
+	EditorSector* findSectorDf(const Vec3f pos)
+	{
+		const s32 count = (s32)s_level.sectors.size();
+		EditorSector* sector = s_level.sectors.data();
+		EditorSector* foundSector = nullptr;
+		s32 sectorUnitArea = 0;
+		s32 prevSectorUnitArea = INT_MAX;
+
+		for (u32 i = 0; i < count; i++, sector++)
+		{
+			if (pos.y <= sector->ceilHeight && pos.y >= sector->floorHeight)
+			{
+				const f32 sectorMaxX = sector->bounds[1].x;
+				const f32 sectorMinX = sector->bounds[0].x;
+				const f32 sectorMaxZ = sector->bounds[1].z;
+				const f32 sectorMinZ = sector->bounds[0].z;
+
+				const s32 dxInt = (s32)floorf(sectorMaxX - sectorMinX) + 1;
+				const s32 dzInt = (s32)floorf(sectorMaxZ - sectorMinZ) + 1;
+				sectorUnitArea = dzInt * dxInt;
+
+				s32 insideBounds = 0;
+				if (pos.x >= sectorMinX && pos.x <= sectorMaxX && pos.z >= sectorMinZ && pos.z <= sectorMaxZ)
+				{
+					// pick the containing sector with the smallest area.
+					if (sectorUnitArea < prevSectorUnitArea && TFE_Polygon::pointInsidePolygon(&sector->poly, { pos.x, pos.z }))
+					{
+						prevSectorUnitArea = sectorUnitArea;
+						foundSector = sector;
+					}
+				}
+			}
+		}
+
+		return foundSector;
 	}
 }

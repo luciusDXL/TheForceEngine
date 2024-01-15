@@ -80,7 +80,7 @@ namespace LevelEditor
 		"ReqVar",  // LKEY_REQVAR
 	};
 
-	const char* c_varKeyStr[VKEY_COUNT] = 
+	const char* c_varKeyStr[VKEY_COUNT] =
 	{
 		"Var",      // VKEY_VAR
 		"Type",     // VKEY_TYPE
@@ -511,7 +511,7 @@ namespace LevelEditor
 
 		const s32 logicCount = (s32)entity->logic.size();
 		file->write(&logicCount);
-		
+
 		const EntityLogic* logic = entity->logic.data();
 		for (s32 i = 0; i < logicCount; i++, logic++)
 		{
@@ -661,7 +661,7 @@ namespace LevelEditor
 
 		return true;
 	}
-	
+
 	bool loadLogicData(const char* localDir)
 	{
 		s_logicDefList.clear();
@@ -717,7 +717,7 @@ namespace LevelEditor
 						s32 outLen = 0;
 						for (s32 i = 0; i < len; i++)
 						{
-							if (src[i] != '\\' || src[i+1] != 'n')
+							if (src[i] != '\\' || src[i + 1] != 'n')
 							{
 								fixup[outLen++] = src[i];
 							}
@@ -768,7 +768,7 @@ namespace LevelEditor
 		}
 		return -1;
 	}
-	
+
 	bool loadVariableData(const char* localDir)
 	{
 		s_varDefList.clear();
@@ -937,28 +937,28 @@ namespace LevelEditor
 			const EntityVarDef* def = &s_varDefList[var0->defId];
 			switch (def->type)
 			{
-			case EVARTYPE_BOOL:
-			{
-				if (var0->value.bValue != var1->value.bValue) { return false; }
-			} break;
-			case EVARTYPE_FLOAT:
-			{
-				if (var0->value.fValue != var1->value.fValue) { return false; }
-			} break;
-			case EVARTYPE_INT:
-			case EVARTYPE_FLAGS:
-			{
-				if (var0->value.iValue != var1->value.iValue) { return false; }
-			} break;
-			case EVARTYPE_STRING_LIST:
-			{
-				if (strcasecmp(var0->value.sValue.c_str(), var1->value.sValue.c_str()) != 0) { return false; }
-			} break;
-			case EVARTYPE_INPUT_STRING_PAIR:
-			{
-				if (strcasecmp(var0->value.sValue.c_str(), var1->value.sValue.c_str()) != 0) { return false; }
-				if (strcasecmp(var0->value.sValue1.c_str(), var1->value.sValue1.c_str()) != 0) { return false; }
-			} break;
+				case EVARTYPE_BOOL:
+				{
+					if (var0->value.bValue != var1->value.bValue) { return false; }
+				} break;
+				case EVARTYPE_FLOAT:
+				{
+					if (var0->value.fValue != var1->value.fValue) { return false; }
+				} break;
+				case EVARTYPE_INT:
+				case EVARTYPE_FLAGS:
+				{
+					if (var0->value.iValue != var1->value.iValue) { return false; }
+				} break;
+				case EVARTYPE_STRING_LIST:
+				{
+					if (strcasecmp(var0->value.sValue.c_str(), var1->value.sValue.c_str()) != 0) { return false; }
+				} break;
+				case EVARTYPE_INPUT_STRING_PAIR:
+				{
+					if (strcasecmp(var0->value.sValue.c_str(), var1->value.sValue.c_str()) != 0) { return false; }
+					if (strcasecmp(var0->value.sValue1.c_str(), var1->value.sValue1.c_str()) != 0) { return false; }
+				} break;
 			}
 		}
 		return true;
@@ -988,5 +988,25 @@ namespace LevelEditor
 	{
 		return (e0->name == e1->name && e0->assetName == e1->assetName && e0->type == e1->type &&
 			logicListsMatch(e0->logic, e1->logic) && varListsMatch(e0->var, e1->var));
+	}
+
+	bool entityDefsEqualIgnoreName(const Entity* e0, const Entity* e1)
+	{
+		return (e0->assetName == e1->assetName && e0->type == e1->type &&
+			logicListsMatch(e0->logic, e1->logic) && varListsMatch(e0->var, e1->var));
+	}
+
+	s32 getEntityDefId(const Entity* srcEntity)
+	{
+		const s32 count = (s32)s_entityDefList.size();
+		const Entity* entity = s_entityDefList.data();
+		for (s32 i = 0; i < count; i++, entity++)
+		{
+			if (entityDefsEqualIgnoreName(entity, srcEntity))
+			{
+				return i;
+			}
+		}
+		return -1;
 	}
 }

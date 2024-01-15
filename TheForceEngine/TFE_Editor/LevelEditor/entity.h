@@ -7,6 +7,7 @@
 // to "play" the game as intended.
 //////////////////////////////////////////////////////////////////////
 #include <TFE_System/types.h>
+#include <TFE_System/parser.h>
 #include <TFE_FileSystem/filestream.h>
 #include <TFE_RenderBackend/renderBackend.h>
 #include <vector>
@@ -162,7 +163,14 @@ namespace LevelEditor
 	const char* getEntityVarName(s32 id);
 	EntityVarDef* getEntityVar(s32 id);
 
+	s32 getVariableId(const char* varName);
+	EntityVarDef* getEntityVar(s32 id);
+
+	void parseValue(const TokenList& tokens, EntityVarType type, EntityVarValue* value);
+
 	bool entityDefsEqual(const Entity* e0, const Entity* e1);
+	bool entityDefsEqualIgnoreName(const Entity* e0, const Entity* e1);
+	s32 getEntityDefId(const Entity* entity);
 
 	s32 getLogicId(const char* name);
 }
