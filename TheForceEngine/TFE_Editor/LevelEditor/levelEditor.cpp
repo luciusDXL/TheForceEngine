@@ -4992,14 +4992,21 @@ namespace LevelEditor
 	{
 		f32 height = entity->size.z;
 		f32 y = pos.y;
-		if (entity->type != ETYPE_SPIRIT && entity->type != ETYPE_SAFE)
+		if (entity->type == ETYPE_3D)
+		{
+			y = pos.y + entity->obj3d->bounds[1].y;
+		}
+		else if (entity->type != ETYPE_SPIRIT && entity->type != ETYPE_SAFE)
 		{
 			f32 offset = -(entity->offset.y + fabsf(entity->st[1].z - entity->st[0].z)) * 0.1f;
 			// If the entity is on the floor, make sure it doesn't stick through it for editor visualization.
 			if (fabsf(pos.y - sector->floorHeight) < 0.5f) { offset = max(0.0f, offset); }
 			y = pos.y + offset;
 		}
-		y += entity->size.z;
+		if (entity->type != ETYPE_3D)
+		{
+			y += entity->size.z;
+		}
 		return y;
 	}
 			

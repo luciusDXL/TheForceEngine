@@ -1082,14 +1082,21 @@ namespace LevelEditor
 		ImGui::Text("%s", "Position"); ImGui::SameLine(0.0f, 8.0f);
 		ImGui::InputFloat3("##Position", &obj->pos.x);
 
+		bool orientAdjusted = false;
 		ImGui::Text("%s", "Angle"); ImGui::SameLine(0.0f, 32.0f);
 		ImGui::SetNextItemWidth(206.0f);
-		ImGui::SliderAngle("##Angle", &obj->angle, 0.0f); ImGui::SameLine(0.0f, 4.0f);
+		if (ImGui::SliderAngle("##Angle", &obj->angle, 0.0f))
+		{
+			orientAdjusted = true;
+		}
+		ImGui::SameLine(0.0f, 4.0f);
 		ImGui::SetNextItemWidth(96.0f);
+
 		f32 angle = obj->angle * 180.0f / PI;
 		if (ImGui::InputFloat("##AngleEdit", &angle))
 		{
 			obj->angle = angle * PI / 180.0f;
+			orientAdjusted = true;
 		}
 		
 		// Show pitch and roll.
@@ -1103,6 +1110,7 @@ namespace LevelEditor
 			if (ImGui::InputFloat("##PitchEdit", &pitch))
 			{
 				obj->pitch = pitch * PI / 180.0f;
+				orientAdjusted = true;
 			}
 			ImGui::SameLine(0.0f, 32.0f);
 			ImGui::Text("%s", "Roll"); ImGui::SameLine(0.0f, 8.0f);
@@ -1110,6 +1118,12 @@ namespace LevelEditor
 			if (ImGui::InputFloat("##RollEdit", &roll))
 			{
 				obj->roll = roll * PI / 180.0f;
+				orientAdjusted = true;
+			}
+
+			if (orientAdjusted)
+			{
+				compute3x3Rotation(&obj->transform, obj->angle, obj->pitch, obj->roll);
 			}
 		}
 
