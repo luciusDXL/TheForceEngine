@@ -22,6 +22,10 @@ void main()
 			uv.xy = (Frag_Pos.xz - texOffset) / vec2(-8.0, 8.0);
 		}
 		outColor = texture(image, uv);
+		if (outColor.a < 0.1)
+		{
+			discard;
+		}
 	}
     Out_Color = outColor * tint;
 }
