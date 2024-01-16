@@ -44,9 +44,28 @@ namespace LevelEditor
 	static BrowseSort s_browseSort = BSORT_NAME;
 	static FilteredAssetList s_filteredList;
 	static s32 s_focusOnRow = -1;
+	static TextureGpu* s_icon3d = nullptr;
 
 	void browseTextures();
 	void browseEntities();
+		
+	void browserLoadIcons()
+	{
+		const char* progPath = TFE_Paths::getPath(TFE_PathType::PATH_PROGRAM);
+
+		// Load as a PNG.
+		char pngPath[TFE_MAX_PATH];
+		sprintf(pngPath, "%sUI_Images/%s", progPath, "Obj-3d-Icon.png");
+		FileUtil::fixupPath(pngPath);
+
+		s_icon3d = loadGpuImage(pngPath);
+	}
+
+	void browserFreeIcons()
+	{
+		TFE_RenderBackend::freeTexture(s_icon3d);
+		s_icon3d = nullptr;
+	}
 	
 	void browserBegin(s32 offset)
 	{
@@ -296,20 +315,28 @@ namespace LevelEditor
 				s32 index = i;
 				Entity* entity = &s_entityDefList[index];
 
-				f32 du = fabsf(entity->st[1].x - entity->st[0].x);
-				f32 dv = fabsf(entity->st[1].z - entity->st[0].z);
-				void* ptr = entity->image ? TFE_RenderBackend::getGpuPtr(entity->image) : nullptr;
-
+				void* ptr = nullptr;
 				u32 w = 64, h = 64;
-				if (du > dv)
+				if (!entity->image && entity->type == ETYPE_3D)
 				{
-					w = 64;
-					h = u32(64.0f * dv / du);
+					ptr = (void*)s_icon3d ? TFE_RenderBackend::getGpuPtr(s_icon3d) : nullptr;
 				}
-				else if (du < dv)
+				else
 				{
-					h = 64;
-					w = u32(64.0f * du / dv);
+					f32 du = fabsf(entity->st[1].x - entity->st[0].x);
+					f32 dv = fabsf(entity->st[1].z - entity->st[0].z);
+					ptr = entity->image ? TFE_RenderBackend::getGpuPtr(entity->image) : nullptr;
+
+					if (du > dv)
+					{
+						w = 64;
+						h = u32(64.0f * dv / du);
+					}
+					else if (du < dv)
+					{
+						h = 64;
+						w = u32(64.0f * du / dv);
+					}
 				}
 
 				if (x + w + padding >= 400)

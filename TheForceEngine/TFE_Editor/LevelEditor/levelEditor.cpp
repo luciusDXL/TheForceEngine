@@ -274,6 +274,7 @@ namespace LevelEditor
 		loadVariableData(gameLocalDir);
 		loadEntityData(gameLocalDir);
 		loadLogicData(gameLocalDir);
+		browserLoadIcons();
 		clearEntityChanges();
 
 		// Load the new level.
@@ -369,6 +370,7 @@ namespace LevelEditor
 		s_boolToolbarData = nullptr;
 
 		levHistory_destroy();
+		browserFreeIcons();
 	}
 
 	bool isPointInsideSector2d(EditorSector* sector, Vec2f pos, s32 layer)

@@ -20,4 +20,7 @@ namespace LevelEditor
 	void drawBrowser(BrowseMode mode = BROWSE_TEXTURE);
 	void browserEnd();
 	void browserScrollToSelection();
+
+	void browserLoadIcons();
+	void browserFreeIcons();
 }
