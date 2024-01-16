@@ -4358,7 +4358,7 @@ namespace LevelEditor
 		TFE_Input::getMouseWheel(&dx, &dy);
 		bool del = TFE_Input::keyPressed(KEY_DELETE);
 
-		if (dy)
+		if (dy && TFE_Input::keyModDown(KEYMOD_CTRL))
 		{
 			EditorObject* obj = nullptr;
 			if (dy && s_featureCur.isObject && s_featureCur.sector && s_featureCur.featureIndex >= 0)
@@ -4372,6 +4372,10 @@ namespace LevelEditor
 			if (obj)
 			{
 				obj->angle += f32(dy) * 2.0f*PI / 32.0f;
+				if (s_level.entities[obj->entityId].obj3d)
+				{
+					compute3x3Rotation(&obj->transform, obj->angle, obj->pitch, obj->roll);
+				}
 			}
 		}
 
@@ -6166,7 +6170,7 @@ namespace LevelEditor
 
 		s32 dx, dy;
 		TFE_Input::getMouseWheel(&dx, &dy);
-		if (dy != 0)
+		if (dy != 0 && !TFE_Input::keyModDown(KEYMOD_CTRL))
 		{
 			// We want to zoom into the mouse position.
 			s32 relX = s32(mx - s_editWinMapCorner.x);
