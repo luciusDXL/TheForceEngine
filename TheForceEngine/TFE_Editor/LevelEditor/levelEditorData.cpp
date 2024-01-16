@@ -840,6 +840,7 @@ namespace LevelEditor
 
 		s32 index = (s32)s_level.entities.size();
 		s_level.entities.push_back(*newEntity);
+		s_level.entities.back().id = index;
 
 		return index;
 	}
@@ -967,6 +968,7 @@ namespace LevelEditor
 			{
 				readEntityDataBinary(&file, entity);
 				loadSingleEntityData(entity);
+				entity->id = i;
 			}
 		}
 		else
