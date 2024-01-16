@@ -4136,6 +4136,17 @@ namespace LevelEditor
 		sector->obj.pop_back();
 	}
 
+	bool pointInsideOBB2d(const Vec2f pt, const Vec3f* bounds, const Vec3f* pos, const Mat3* mtx)
+	{
+		// Transform the origin, relative to the position.
+		Vec3f relOrigin = { pt.x - pos->x, 0.0f, pt.z - pos->z };
+		Vec3f localPt;
+		localPt.x = relOrigin.x * mtx->m0.x + relOrigin.y * mtx->m1.x + relOrigin.z * mtx->m2.x;
+		localPt.z = relOrigin.x * mtx->m0.z + relOrigin.y * mtx->m1.z + relOrigin.z * mtx->m2.z;
+
+		return localPt.x >= bounds[0].x && localPt.x <= bounds[1].x && localPt.z >= bounds[0].z && localPt.z <= bounds[1].z;
+	}
+
 	void handleEntityEdit(RayHitInfo* hitInfo)
 	{
 		// TODO: Hotkeys.
@@ -4168,18 +4179,29 @@ namespace LevelEditor
 				for (s32 i = 0; i < objCount; i++, obj++)
 				{
 					const Entity* entity = &s_level.entities[obj->entityId];
-					const f32 dx = fabsf(obj->pos.x - s_cursor3d.x);
-					const f32 dz = fabsf(obj->pos.z - s_cursor3d.z);
-					const f32 w = entity->size.x * 0.5f;
-					if (dx <= w && dz <= w)
+
+					bool cursorInside = false;
+					f32 yTop = 0.0f;
+					if (entity->type == ETYPE_3D)
 					{
-						const f32 yTop = obj->pos.y + entity->size.z;
-						if (yTop > maxY)
-						{
-							maxObjId = i;
-							maxY = yTop;
-							objSector = sector;
-						}
+						cursorInside = pointInsideOBB2d({ s_cursor3d.x, s_cursor3d.z }, entity->obj3d->bounds, &obj->pos, &obj->transform);
+						yTop = obj->pos.y + entity->obj3d->bounds[1].y;
+					}
+					else
+					{
+						const f32 dx = fabsf(obj->pos.x - s_cursor3d.x);
+						const f32 dz = fabsf(obj->pos.z - s_cursor3d.z);
+						const f32 w = entity->size.x * 0.5f;
+
+						cursorInside = dx <= w && dz <= w;
+						yTop = obj->pos.y + entity->size.z;
+					}
+
+					if (cursorInside && yTop > maxY)
+					{
+						maxObjId = i;
+						maxY = yTop;
+						objSector = sector;
 					}
 				}
 
