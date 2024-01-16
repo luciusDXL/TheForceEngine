@@ -139,7 +139,7 @@ namespace TFE_RenderShared
 		TFE_RenderState::setStateEnable(true, STATE_DEPTH_WRITE | STATE_CULLING);
 		TFE_RenderState::setStateEnable(true, STATE_DEPTH_TEST);
 		TFE_RenderState::setDepthFunction(CMP_LEQUAL);
-		TFE_RenderState::setBlendMode(BLEND_ONE, BLEND_ONE_MINUS_SRC_ALPHA);
+		TFE_RenderState::setBlendMode(BLEND_SRC_ALPHA, BLEND_ONE_MINUS_SRC_ALPHA);
 
 		s_shader.bind();
 		s_shader.setVariable(s_shaderState.svCameraPos, SVT_VEC3, camera->pos.m);

@@ -298,7 +298,7 @@ namespace LevelEditor
 
 				f32 du = fabsf(entity->st[1].x - entity->st[0].x);
 				f32 dv = fabsf(entity->st[1].z - entity->st[0].z);
-				void* ptr = TFE_RenderBackend::getGpuPtr(entity->image);
+				void* ptr = entity->image ? TFE_RenderBackend::getGpuPtr(entity->image) : nullptr;
 
 				u32 w = 64, h = 64;
 				if (du > dv)

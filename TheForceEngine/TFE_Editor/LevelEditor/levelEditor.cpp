@@ -4112,8 +4112,14 @@ namespace LevelEditor
 		EditorObject obj;
 		obj.entityId = addEntityToLevel(entity);
 		obj.angle = 0.0f;
+		obj.pitch = 0.0f;
+		obj.roll = 0.0f;
 		obj.pos = *hitPos;
 		obj.diff = 1;	// default
+		obj.transform = { 0 };
+		obj.transform.m0.x = 1.0f;
+		obj.transform.m1.y = 1.0f;
+		obj.transform.m2.z = 1.0f;
 		sector->obj.push_back(obj);
 	}
 
