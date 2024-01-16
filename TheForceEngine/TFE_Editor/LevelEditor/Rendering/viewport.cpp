@@ -1236,7 +1236,8 @@ namespace LevelEditor
 		{
 			EditorObj3D* obj3d = entity->obj3d;
 			const f32 alpha = ((objColor >> 24) & 255) / 255.0f;
-			modelDraw_addModel(&obj3d->vtxGpu, &obj3d->idxGpu, pos, obj->transform, { 1.0f, 1.0f, 1.0f, alpha });
+			const f32 ambient = (s_editFlags & LEF_FULLBRIGHT) ? 1.0f : sector->ambient / 31.0f;
+			modelDraw_addModel(&obj3d->vtxGpu, &obj3d->idxGpu, pos, obj->transform, { ambient, ambient, ambient, alpha });
 
 			const s32 mtlCount = (s32)obj3d->mtl.size();
 			const EditorMaterial* mtl = obj3d->mtl.data();
@@ -1245,7 +1246,14 @@ namespace LevelEditor
 				ModelDrawMode mode;
 				// for now just do colored or texture uv.
 				mode = mtl->texture ? MDLMODE_TEX_UV : MDLMODE_COLORED;
-				modelDraw_addMaterial(mode, mtl->idxStart, mtl->idxCount, mtl->texture);
+				TexProjection proj = { 0 };
+				if (mtl->flatProj && mtl->texture)
+				{
+					mode = MDLMODE_TEX_PROJ;
+					proj.offset = s_camera.pos.y >= obj->pos.y ? sector->floorTex.offset : sector->ceilTex.offset;
+				}
+
+				modelDraw_addMaterial(mode, mtl->idxStart, mtl->idxCount, mtl->texture, proj);
 			}
 		}
 		else

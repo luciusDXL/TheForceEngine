@@ -4,6 +4,7 @@ in vec3 Frag_Pos;
 out vec4 Out_Color;
 
 uniform sampler2D image;
+uniform vec3 CameraPos;
 uniform ivec2 isTexturedProj;
 uniform vec4 texProj;
 uniform vec2 texOffset;
@@ -17,7 +18,8 @@ void main()
 		vec2 uv = Frag_Uv;
 		if (isTexturedProj.y == int(1))
 		{
-			// TODO: uv projection.
+			// Simple intersection for the editor.
+			uv.xy = (Frag_Pos.xz - texOffset) / vec2(-8.0, 8.0);
 		}
 		outColor = texture(image, uv);
 	}
