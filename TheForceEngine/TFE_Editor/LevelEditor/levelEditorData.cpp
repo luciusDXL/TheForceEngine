@@ -1882,6 +1882,26 @@ namespace LevelEditor
 		*hitDist = tmin;
 		return tmax >= tmin && tmax >= 0.0f;
 	}
+
+	bool rayOBBIntersection(const Ray* ray, const Vec3f* bounds, const Vec3f* pos, const Mat3* mtx, f32* hitDist)
+	{
+		// Transform the ray into AABB space using the inverse transform matrix.
+		// For an affine transform, this is simply the transpose. Note: this will break with non-uniform scale.
+		Ray aabbRay;
+				
+		// Transform the origin, relative to the position.
+		Vec3f relOrigin = { ray->origin.x - pos->x, ray->origin.y - pos->y, ray->origin.z - pos->z };
+		aabbRay.origin.x = relOrigin.x * mtx->m0.x + relOrigin.y * mtx->m1.x + relOrigin.z * mtx->m2.x;
+		aabbRay.origin.y = relOrigin.x * mtx->m0.y + relOrigin.y * mtx->m1.y + relOrigin.z * mtx->m2.y;
+		aabbRay.origin.z = relOrigin.x * mtx->m0.z + relOrigin.y * mtx->m1.z + relOrigin.z * mtx->m2.z;
+		// Transform the direction.
+		aabbRay.dir.x = ray->dir.x * mtx->m0.x + ray->dir.y * mtx->m1.x + ray->dir.z * mtx->m2.x;
+		aabbRay.dir.y = ray->dir.x * mtx->m0.y + ray->dir.y * mtx->m1.y + ray->dir.z * mtx->m2.y;
+		aabbRay.dir.z = ray->dir.x * mtx->m0.z + ray->dir.y * mtx->m1.z + ray->dir.z * mtx->m2.z;
+		aabbRay.dir = TFE_Math::normalize(&aabbRay.dir);
+
+		return rayAABBIntersection(&aabbRay, bounds, hitDist);
+	}
 		
 	// Return true if a hit is found.
 	bool traceRay(const Ray* ray, RayHitInfo* hitInfo, bool flipFaces, bool canHitSigns, bool canHitObjects)
@@ -2094,28 +2114,35 @@ namespace LevelEditor
 					const Entity* entity = &s_level.entities[obj->entityId];
 					Vec3f pos = obj->pos;
 
-					// If the entity is on the floor, make sure it doesn't stick through it for editor selection.
-					if (entity->type != ETYPE_SPIRIT && entity->type != ETYPE_SAFE)
-					{
-						f32 offset = -(entity->offset.y + fabsf(entity->st[1].z - entity->st[0].z)) * 0.1f;
-						if (fabsf(pos.y - sector->floorHeight) < 0.5f) { offset = max(0.0f, offset); }
-						pos.y += offset;
-					}
-					const f32 width = entity->size.x * 0.5f;
-					const f32 height = entity->size.z;
-					const Vec3f bounds[2] = { {pos.x - width, pos.y, pos.z - width}, {pos.x + width, pos.y + height, pos.z + width} };
 					f32 dist;
-					if (rayAABBIntersection(ray, bounds, &dist))
+					bool hitBounds = false;
+					if (entity->type == ETYPE_3D)
 					{
-						if (dist < overallClosestHit)
+						hitBounds = rayOBBIntersection(ray, entity->obj3d->bounds, &pos, &obj->transform, &dist);
+					}
+					else
+					{
+						// If the entity is on the floor, make sure it doesn't stick through it for editor selection.
+						if (entity->type != ETYPE_SPIRIT && entity->type != ETYPE_SAFE)
 						{
-							overallClosestHit = dist;
-							hitInfo->hitSectorId = sector->id;
-							hitInfo->hitWallId = -1;
-							hitInfo->dist = overallClosestHit;
-							hitInfo->hitObjId = o;
-							hitInfo->hitPos = { ray->origin.x + ray->dir.x*dist, ray->origin.y + ray->dir.y*dist, ray->origin.z + ray->dir.z*dist };
+							f32 offset = -(entity->offset.y + fabsf(entity->st[1].z - entity->st[0].z)) * 0.1f;
+							if (fabsf(pos.y - sector->floorHeight) < 0.5f) { offset = max(0.0f, offset); }
+							pos.y += offset;
 						}
+						const f32 width = entity->size.x * 0.5f;
+						const f32 height = entity->size.z;
+						const Vec3f bounds[2] = { {pos.x - width, pos.y, pos.z - width}, {pos.x + width, pos.y + height, pos.z + width} };
+						hitBounds = rayAABBIntersection(ray, bounds, &dist);
+					}
+
+					if (hitBounds && dist < overallClosestHit)
+					{
+						overallClosestHit = dist;
+						hitInfo->hitSectorId = sector->id;
+						hitInfo->hitWallId = -1;
+						hitInfo->dist = overallClosestHit;
+						hitInfo->hitObjId = o;
+						hitInfo->hitPos = { ray->origin.x + ray->dir.x*dist, ray->origin.y + ray->dir.y*dist, ray->origin.z + ray->dir.z*dist };
 					}
 				}
 			}

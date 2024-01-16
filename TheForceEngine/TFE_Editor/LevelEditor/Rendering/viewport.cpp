@@ -1293,31 +1293,35 @@ namespace LevelEditor
 			}
 
 			// Draw direction arrows if it has a facing.
-			f32 angle = obj->angle;
-			Vec3f dir = { sinf(angle), 0.0f, cosf(angle) };
-			Vec3f N = { -dir.z, 0.0f, dir.x };
-
-			// Find vertices for the arrow shape.
-			f32 yArrow = y;
-			if (fabsf(pos.y - sector->floorHeight) < 0.5f) { yArrow = sector->floorHeight; }
-			else if (fabsf(pos.y - sector->ceilHeight) < 0.5f) { yArrow = sector->ceilHeight; }
-
-			const f32 D = width + 1.0f;
-			const f32 S = 1.0f;
-			const f32 T = 1.0f;
-
-			Vec3f endPt = { pos.x + dir.x*D, yArrow, pos.z + dir.z*D };
-			Vec3f base = { endPt.x - dir.x*T, yArrow, endPt.z - dir.z*T };
-			Vec3f A = { base.x + N.x*S, yArrow, base.z + N.z*S };
-			Vec3f B = { base.x - N.x*S, yArrow, base.z - N.z*S };
-
-			Vec3f dirLines[] =
+			// Do not draw the arrow if this is a 3D object.
+			if (!entity->obj3d)
 			{
-				{ endPt.x, yArrow, endPt.z }, A,
-				{ endPt.x, yArrow, endPt.z }, B,
-			};
-			u32 colors[] = { 0xffff2020, 0xffff2020, 0xffff2020, 0xffff2020 };
-			lineDraw3d_addLines(2, 3.0f, dirLines, colors);
+				f32 angle = obj->angle;
+				Vec3f dir = { sinf(angle), 0.0f, cosf(angle) };
+				Vec3f N = { -dir.z, 0.0f, dir.x };
+
+				// Find vertices for the arrow shape.
+				f32 yArrow = y;
+				if (fabsf(pos.y - sector->floorHeight) < 0.5f) { yArrow = sector->floorHeight; }
+				else if (fabsf(pos.y - sector->ceilHeight) < 0.5f) { yArrow = sector->ceilHeight; }
+
+				const f32 D = width + 1.0f;
+				const f32 S = 1.0f;
+				const f32 T = 1.0f;
+
+				Vec3f endPt = { pos.x + dir.x*D, yArrow, pos.z + dir.z*D };
+				Vec3f base = { endPt.x - dir.x*T, yArrow, endPt.z - dir.z*T };
+				Vec3f A = { base.x + N.x*S, yArrow, base.z + N.z*S };
+				Vec3f B = { base.x - N.x*S, yArrow, base.z - N.z*S };
+
+				Vec3f dirLines[] =
+				{
+					{ endPt.x, yArrow, endPt.z }, A,
+					{ endPt.x, yArrow, endPt.z }, B,
+				};
+				u32 colors[] = { 0xffff2020, 0xffff2020, 0xffff2020, 0xffff2020 };
+				lineDraw3d_addLines(2, 3.0f, dirLines, colors);
+			}
 		}
 	}
 
