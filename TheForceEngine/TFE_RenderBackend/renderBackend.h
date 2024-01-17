@@ -147,6 +147,8 @@ namespace TFE_RenderBackend
 	void unbindRenderTarget();
 	const TextureGpu* getRenderTargetTexture(RenderTargetHandle rtHandle);
 	void getRenderTargetDim(RenderTargetHandle rtHandle, u32* width, u32* height);
+	void setViewport(s32 x, s32 y, s32 w, s32 h);
+	void setScissorRect(bool enable, s32 x = 0, s32 y = 0, s32 w = 0, s32 h = 0);
 	   
 	// Create a GPU version of a texture, assumes RGBA8 and returns a GPU handle.
 	TextureGpu* createTexture(u32 width, u32 height, const u32* data, MagFilter magFilter = MAG_FILTER_NONE);

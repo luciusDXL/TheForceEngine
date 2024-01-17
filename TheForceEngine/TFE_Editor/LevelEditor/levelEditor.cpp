@@ -11,6 +11,7 @@
 #include <TFE_FrontEndUI/frontEndUi.h>
 #include <TFE_Editor/AssetBrowser/assetBrowser.h>
 #include <TFE_Asset/imageAsset.h>
+#include <TFE_Editor/EditorAsset/editor3dThumbnails.h>
 #include <TFE_Editor/LevelEditor/Rendering/viewport.h>
 #include <TFE_Editor/errorMessages.h>
 #include <TFE_Editor/editorConfig.h>
@@ -287,6 +288,8 @@ namespace LevelEditor
 		loadPaletteAndColormap();
 						
 		viewport_init();
+		thumbnail_init(64);
+
 		viewport_update((s32)UI_SCALE(480) + 16, (s32)UI_SCALE(68) + 18);
 		s_gridIndex = 7;
 		s_gridSize = c_gridSizeMap[s_gridIndex];
@@ -362,6 +365,7 @@ namespace LevelEditor
 	{
 		s_level.sectors.clear();
 		viewport_destroy();
+		thumbnail_destroy();
 		TFE_RenderShared::destroy();
 
 		TFE_RenderBackend::freeTexture(s_editCtrlToolbarData);
@@ -5064,6 +5068,9 @@ namespace LevelEditor
 		{
 			s_showAllLabels = !s_showAllLabels;
 		}
+
+		// Update thumbnails.
+		thumbnail_update();
 
 		viewport_update((s32)UI_SCALE(480) + 16, (s32)UI_SCALE(68) + 18);
 		viewport_render(s_view);

@@ -693,4 +693,30 @@ namespace TFE_Editor
 		if (index >= s_obj3DList.size()) { return nullptr; }
 		return s_obj3DList[index];
 	}
+
+	// Matches the DF calculation.
+	void compute3x3Rotation(Mat3* transform, f32 yaw, f32 pitch, f32 roll)
+	{
+		const f32 sinYaw = sinf(yaw);
+		const f32 cosYaw = cosf(yaw);
+		const f32 sinPch = sinf(pitch);
+		const f32 cosPch = cosf(pitch);
+		const f32 sinRol = sinf(roll);
+		const f32 cosRol = cosf(roll);
+
+		const f32 sRol_sPitch = sinRol * sinPch;
+		const f32 cRol_sPitch = cosRol * sinPch;
+
+		transform->data[0] = cosRol * cosYaw + sRol_sPitch * sinYaw;
+		transform->data[1] = -sinRol * cosYaw + cRol_sPitch * sinYaw;
+		transform->data[2] = cosPch * sinYaw;
+
+		transform->data[3] = cosPch * sinRol;
+		transform->data[4] = cosRol * cosPch;
+		transform->data[5] = -sinPch;
+
+		transform->data[6] = -cosRol * sinYaw + sRol_sPitch * cosYaw;
+		transform->data[7] = sinRol * sinYaw + cRol_sPitch * cosYaw;
+		transform->data[8] = cosPch * cosYaw;
+	}
 }

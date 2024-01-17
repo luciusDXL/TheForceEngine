@@ -446,6 +446,7 @@ echo ^)";
     <ClInclude Include="TFE_DarkForces\weaponFireFunc.h" />
     <ClInclude Include="TFE_Editor\AssetBrowser\assetBrowser.h" />
     <ClInclude Include="TFE_Editor\editor.h" />
+    <ClInclude Include="TFE_Editor\EditorAsset\editor3dThumbnails.h" />
     <ClInclude Include="TFE_Editor\EditorAsset\editorAsset.h" />
     <ClInclude Include="TFE_Editor\EditorAsset\editorColormap.h" />
     <ClInclude Include="TFE_Editor\EditorAsset\editorFrame.h" />
@@ -796,6 +797,7 @@ echo ^)";
     <ClCompile Include="TFE_DarkForces\weaponFireFunc.cpp" />
     <ClCompile Include="TFE_Editor\AssetBrowser\assetBrowser.cpp" />
     <ClCompile Include="TFE_Editor\editor.cpp" />
+    <ClCompile Include="TFE_Editor\EditorAsset\editor3dThumbnails.cpp" />
     <ClCompile Include="TFE_Editor\EditorAsset\editorAsset.cpp" />
     <ClCompile Include="TFE_Editor\EditorAsset\editorColormap.cpp" />
     <ClCompile Include="TFE_Editor\EditorAsset\editorFrame.cpp" />

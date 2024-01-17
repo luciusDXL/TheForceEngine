@@ -132,12 +132,12 @@ namespace TFE_RenderShared
 		draw->proj = proj;
 	}
 
-	bool modelDraw_draw(const Camera3d* camera, f32 width, f32 height)
+	bool modelDraw_draw(const Camera3d* camera, f32 width, f32 height, bool enableCulling)
 	{
 		if (s_cmdBuffer.empty()) { return true; }
 
-		TFE_RenderState::setStateEnable(true, STATE_DEPTH_WRITE | STATE_CULLING);
-		TFE_RenderState::setStateEnable(true, STATE_DEPTH_TEST);
+		TFE_RenderState::setStateEnable(true, STATE_DEPTH_WRITE | STATE_DEPTH_TEST);
+		TFE_RenderState::setStateEnable(enableCulling, STATE_CULLING);
 		TFE_RenderState::setDepthFunction(CMP_LEQUAL);
 		TFE_RenderState::setBlendMode(BLEND_SRC_ALPHA, BLEND_ONE_MINUS_SRC_ALPHA);
 

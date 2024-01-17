@@ -755,6 +755,24 @@ namespace TFE_RenderBackend
 		}
 	}
 
+	void setViewport(s32 x, s32 y, s32 w, s32 h)
+	{
+		glViewport(x, y, w, h);
+	}
+
+	void setScissorRect(bool enable, s32 x, s32 y, s32 w, s32 h)
+	{
+		if (enable)
+		{
+			glScissor(x, y, w, h);
+			glEnable(GL_SCISSOR_TEST);
+		}
+		else
+		{
+			glDisable(GL_SCISSOR_TEST);
+		}
+	}
+
 	const TextureGpu* getRenderTargetTexture(RenderTargetHandle rtHandle)
 	{
 		RenderTarget* renderTarget = (RenderTarget*)rtHandle;

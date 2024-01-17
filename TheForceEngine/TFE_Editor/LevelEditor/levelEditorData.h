@@ -214,6 +214,4 @@ namespace LevelEditor
 	bool aabbOverlap2d(const Vec3f* aabb0, const Vec3f* aabb1);
 	bool pointInsideAABB3d(const Vec3f* aabb, const Vec3f* pt);
 	bool pointInsideAABB2d(const Vec3f* aabb, const Vec3f* pt);
-
-	void compute3x3Rotation(Mat3* transform, f32 yaw, f32 pitch, f32 roll);
 }

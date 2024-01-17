@@ -56,4 +56,5 @@ namespace TFE_Editor
 
 	EditorObj3D* getObj3DData(u32 index);
 	s32 loadEditorObj3D(Obj3DSourceType type, Archive* archive, const char* filename, const u32* palette, s32 palIndex, s32 id = -1);
+	void compute3x3Rotation(Mat3* transform, f32 yaw, f32 pitch, f32 roll);
 }

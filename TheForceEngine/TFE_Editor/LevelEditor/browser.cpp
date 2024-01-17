@@ -10,6 +10,7 @@
 #include <TFE_Editor/EditorAsset/editorTexture.h>
 #include <TFE_Editor/EditorAsset/editorFrame.h>
 #include <TFE_Editor/EditorAsset/editorSprite.h>
+#include <TFE_Editor/EditorAsset/editor3dThumbnails.h>
 #include <TFE_FileSystem/fileutil.h>
 #include <TFE_System/system.h>
 #include <TFE_System/parser.h>
@@ -302,7 +303,6 @@ namespace LevelEditor
 	void browseEntities()
 	{
 		// Do sort stuff later....
-
 		const s32 count = (s32)s_entityDefList.size();
 		const u32 padding = 8;
 		s32 selectedIndex = s_selectedEntity;
@@ -314,12 +314,15 @@ namespace LevelEditor
 			{
 				s32 index = i;
 				Entity* entity = &s_entityDefList[index];
+				bool isSelected = selectedIndex == index;
 
 				void* ptr = nullptr;
 				u32 w = 64, h = 64;
+				Vec2f uv0, uv1;
 				if (!entity->image && entity->type == ETYPE_3D)
 				{
-					ptr = (void*)s_icon3d ? TFE_RenderBackend::getGpuPtr(s_icon3d) : nullptr;
+					const TextureGpu* thumbnail = getThumbnail(entity->obj3d, &uv0, &uv1, false);
+					ptr = thumbnail ? TFE_RenderBackend::getGpuPtr(thumbnail) : nullptr;
 				}
 				else
 				{
@@ -337,6 +340,9 @@ namespace LevelEditor
 						h = 64;
 						w = u32(64.0f * du / dv);
 					}
+
+					uv0 = entity->uv[0];
+					uv1 = entity->uv[1];
 				}
 
 				if (x + w + padding >= 400)
@@ -346,14 +352,13 @@ namespace LevelEditor
 				}
 				x += w + padding;
 
-				bool isSelected = selectedIndex == index;
 				if (isSelected)
 				{
 					ImGui::PushStyleColor(ImGuiCol_Button, { 1.0f, 1.0f, 0.3f, 1.0f });
 				}
 
 				ImGui::PushID(idBase + i);
-				if (ImGui::ImageButton(ptr, ImVec2(f32(w), f32(h)), ImVec2(entity->uv[0].x, entity->uv[0].z), ImVec2(entity->uv[1].x, entity->uv[1].z), 2))
+				if (ImGui::ImageButton(ptr, ImVec2(f32(w), f32(h)), ImVec2(uv0.x, uv0.z), ImVec2(uv1.x, uv1.z), 2))
 				{
 					s_selectedEntity = index;
 				}

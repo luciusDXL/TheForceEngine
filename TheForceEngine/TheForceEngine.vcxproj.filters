@@ -1291,6 +1291,9 @@
     <ClInclude Include="TFE_RenderShared\modelDraw.h">
       <Filter>Source\TFE_RenderShared</Filter>
     </ClInclude>
+    <ClInclude Include="TFE_Editor\EditorAsset\editor3dThumbnails.h">
+      <Filter>Source\TFE_Editor\EditorAsset</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -2213,6 +2216,9 @@
     </ClCompile>
     <ClCompile Include="TFE_RenderShared\modelDraw.cpp">
       <Filter>Source\TFE_RenderShared</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Editor\EditorAsset\editor3dThumbnails.cpp">
+      <Filter>Source\TFE_Editor\EditorAsset</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
