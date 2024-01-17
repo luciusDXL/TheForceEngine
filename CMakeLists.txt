@@ -86,6 +86,7 @@ if(LINUX)
 	execute_process(COMMAND ln -sf ${CMAKE_SOURCE_DIR}/TheForceEngine/SoundFonts)
 	execute_process(COMMAND ln -sf ${CMAKE_SOURCE_DIR}/TheForceEngine/UI_Images)
 	execute_process(COMMAND ln -sf ${CMAKE_SOURCE_DIR}/TheForceEngine/UI_Text)
+	execute_process(COMMAND ln -sf ${CMAKE_SOURCE_DIR}/TheForceEngine/EditorDef)
 	include(CreateGitVersionH.cmake)
 	create_git_version_h()
 endif()
@@ -130,6 +131,7 @@ install(DIRECTORY
 	"${CMAKE_CURRENT_SOURCE_DIR}/TheForceEngine/Documentation"
 	"${CMAKE_CURRENT_SOURCE_DIR}/TheForceEngine/UI_Text"
 	"${CMAKE_CURRENT_SOURCE_DIR}/TheForceEngine/UI_Images"
+	"${CMAKE_CURRENT_SOURCE_DIR}/TheForceEngine/EditorDef"
 	"${CMAKE_CURRENT_SOURCE_DIR}/TheForceEngine/Shaders"
 	"${CMAKE_CURRENT_SOURCE_DIR}/TheForceEngine/SoundFonts"
 	"${CMAKE_CURRENT_SOURCE_DIR}/TheForceEngine/Fonts"
