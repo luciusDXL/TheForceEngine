@@ -4532,7 +4532,7 @@ namespace LevelEditor
 		
 	void updateWindowControls()
 	{
-		if (isUiActive()) { return; }
+		if (isUiActive() || isPopupOpen()) { return; }
 
 		s32 mx, my;
 		TFE_Input::getMousePos(&mx, &my);
@@ -5056,17 +5056,20 @@ namespace LevelEditor
 		updateWindowControls();
 
 		// Hotkeys...
-		if (TFE_Input::keyPressed(KEY_Z) && TFE_Input::keyModDown(KEYMOD_CTRL))
+		if (!isPopupOpen())
 		{
-			levHistory_undo();
-		}
-		else if (TFE_Input::keyPressed(KEY_Y) && TFE_Input::keyModDown(KEYMOD_CTRL))
-		{
-			levHistory_redo();
-		}
-		if (TFE_Input::keyPressed(KEY_TAB))
-		{
-			s_showAllLabels = !s_showAllLabels;
+			if (TFE_Input::keyPressed(KEY_Z) && TFE_Input::keyModDown(KEYMOD_CTRL))
+			{
+				levHistory_undo();
+			}
+			else if (TFE_Input::keyPressed(KEY_Y) && TFE_Input::keyModDown(KEYMOD_CTRL))
+			{
+				levHistory_redo();
+			}
+			if (TFE_Input::keyPressed(KEY_TAB))
+			{
+				s_showAllLabels = !s_showAllLabels;
+			}
 		}
 
 		// Update thumbnails.
@@ -5203,7 +5206,7 @@ namespace LevelEditor
 			TFE_Input::getMousePos(&mx, &my);
 			const bool editWinHovered = mx >= s_editWinPos.x && mx < s_editWinPos.x + s_editWinSize.x && my >= s_editWinPos.z && my < s_editWinPos.z + s_editWinSize.z;
 
-			if (!getMenuActive() && !isUiActive())
+			if (!getMenuActive() && !isUiActive() && !isPopupOpen())
 			{
 				const ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize
 					| ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoNav | ImGuiWindowFlags_AlwaysAutoResize;
@@ -6479,7 +6482,7 @@ namespace LevelEditor
 
 		s32 mx, my;
 		TFE_Input::getMousePos(&mx, &my);
-		if (mx >= s_editWinPos.x && mx < s_editWinPos.x + s_editWinSize.x && my >= s_editWinPos.z && my < s_editWinPos.z + s_editWinSize.z && !getMenuActive() && !isUiActive())
+		if (!isPopupOpen() && mx >= s_editWinPos.x && mx < s_editWinPos.x + s_editWinSize.x && my >= s_editWinPos.z && my < s_editWinPos.z + s_editWinSize.z && !getMenuActive() && !isUiActive())
 		{
 			if (s_view == EDIT_VIEW_2D)
 			{

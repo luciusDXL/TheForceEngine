@@ -112,6 +112,11 @@ namespace TFE_Editor
 		return finished;
 	}
 
+	bool isPopupOpen()
+	{
+		return s_editorPopup != POPUP_NONE;
+	}
+
 	void handlePopupBegin()
 	{
 		if (s_editorPopup == POPUP_NONE) { return; }

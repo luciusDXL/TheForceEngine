@@ -364,7 +364,7 @@ namespace LevelEditor
 		compute2dCamera(camera);
 
 		// Submit.
-		TFE_RenderShared::modelDraw_draw(&camera, s_viewportSize.x, s_viewportSize.z);
+		TFE_RenderShared::modelDraw_draw(&camera, s_viewportSize.x, s_viewportSize.z, false);
 		TFE_RenderShared::triDraw2d_draw();
 		TFE_RenderShared::lineDraw2d_drawLines();
 	}
