@@ -144,7 +144,7 @@ namespace LevelEditor
 	static f32 s_zoom = c_defaultZoom;
 	static bool s_gravity = false;
 	static bool s_showAllLabels = false;
-	static bool s_uiActive = false;
+	static bool s_modalUiActive = false;
 	static bool s_singleClick = false;
 	static bool s_doubleClick = false;
 	static f64 s_lastClickTime = 0.0;
@@ -211,7 +211,7 @@ namespace LevelEditor
 	void cameraControl2d(s32 mx, s32 my);
 	void cameraControl3d(s32 mx, s32 my);
 	void resetZoom();
-	bool isUiActive();
+	bool isUiModal();
 	bool isViewportElementHovered();
 	void play();
 	Vec3f moveAlongRail(Vec3f dir);
@@ -527,9 +527,9 @@ namespace LevelEditor
 		return closestId;
 	}
 
-	bool isUiActive()
+	bool isUiModal()
 	{
-		return getMenuActive() || s_uiActive;
+		return getMenuActive() || s_modalUiActive || isPopupOpen();
 	}
 
 	bool isViewportElementHovered()
@@ -4532,7 +4532,7 @@ namespace LevelEditor
 		
 	void updateWindowControls()
 	{
-		if (isUiActive() || isPopupOpen()) { return; }
+		if (isUiModal()) { return; }
 
 		s32 mx, my;
 		TFE_Input::getMousePos(&mx, &my);
@@ -5056,7 +5056,7 @@ namespace LevelEditor
 		updateWindowControls();
 
 		// Hotkeys...
-		if (!isPopupOpen())
+		if (!isUiModal())
 		{
 			if (TFE_Input::keyPressed(KEY_Z) && TFE_Input::keyModDown(KEYMOD_CTRL))
 			{
@@ -5079,7 +5079,7 @@ namespace LevelEditor
 		viewport_render(s_view);
 
 		// Toolbar
-		s_uiActive = false;
+		s_modalUiActive = false;
 		toolbarBegin();
 		{
 			const char* toolbarTooltips[]=
@@ -5138,7 +5138,7 @@ namespace LevelEditor
 			ImGui::PushItemWidth(64.0f);
 			if (ImGui::BeginCombo("Grid Size", c_gridSizes[s_gridIndex]))
 			{
-				s_uiActive = true;
+				s_modalUiActive = true;
 				for (int n = 0; n < TFE_ARRAYSIZE(c_gridSizes); n++)
 				{
 					if (ImGui::Selectable(c_gridSizes[n], n == s_gridIndex))
@@ -5161,7 +5161,7 @@ namespace LevelEditor
 			bool showAllLayers = (s_editFlags & LEF_SHOW_ALL_LAYERS) != 0;
 			if (ImGui::BeginCombo("Layer", showAllLayers ? "All" : s_layerStr[layerIndex + minLayerIndex]))
 			{
-				s_uiActive = true;
+				s_modalUiActive = true;
 				for (int n = 0; n < count; n++)
 				{
 					if (ImGui::Selectable(s_layerStr[n + minLayerIndex], n == layerIndex))
@@ -5206,7 +5206,7 @@ namespace LevelEditor
 			TFE_Input::getMousePos(&mx, &my);
 			const bool editWinHovered = mx >= s_editWinPos.x && mx < s_editWinPos.x + s_editWinSize.x && my >= s_editWinPos.z && my < s_editWinPos.z + s_editWinSize.z;
 
-			if (!getMenuActive() && !isUiActive() && !isPopupOpen())
+			if (!isUiModal())
 			{
 				const ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize
 					| ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoNav | ImGuiWindowFlags_AlwaysAutoResize;
@@ -5540,7 +5540,7 @@ namespace LevelEditor
 				}
 
 				// Display Grid Info
-				if (s_view == EDIT_VIEW_2D && (s_editFlags & LEF_SHOW_GRID) && !isUiActive() && !isViewportElementHovered())
+				if (s_view == EDIT_VIEW_2D && (s_editFlags & LEF_SHOW_GRID) && !isUiModal() && !isViewportElementHovered())
 				{
 					Vec2f worldPos = mouseCoordToWorldPos2d(mx, my);
 					Vec2f snappedPos;
@@ -6482,7 +6482,7 @@ namespace LevelEditor
 
 		s32 mx, my;
 		TFE_Input::getMousePos(&mx, &my);
-		if (!isPopupOpen() && mx >= s_editWinPos.x && mx < s_editWinPos.x + s_editWinSize.x && my >= s_editWinPos.z && my < s_editWinPos.z + s_editWinSize.z && !getMenuActive() && !isUiActive())
+		if (!isUiModal() && mx >= s_editWinPos.x && mx < s_editWinPos.x + s_editWinSize.x && my >= s_editWinPos.z && my < s_editWinPos.z + s_editWinSize.z)
 		{
 			if (s_view == EDIT_VIEW_2D)
 			{
