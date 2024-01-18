@@ -957,8 +957,8 @@ namespace AssetBrowser
 		ImGui::SetNextWindowSize({ winWidth, winHeight });
 		if (ImGui::BeginPopupModal("Browse", &active, window_flags))
 		{
-			ImGui::BeginChild(0x303, { width, height }, ImGuiWindowFlags_NoBackground);
-			drawAssetList(width, height);
+			ImGui::BeginChild(0x303, { width, height }, true);
+			drawAssetList((s32)width, (s32)height);
 			ImGui::EndChild();
 
 			if (ImGui::Button("Select"))

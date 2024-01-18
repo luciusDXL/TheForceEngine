@@ -8,6 +8,8 @@ void main()
     Out_Color = Frag_Color;
 	if (int(isTextured) == int(1))
 	{
-		Out_Color *= texture(image, Frag_Uv);
+		vec4 texColor = texture(image, Frag_Uv);
+		Out_Color *= texColor;
+		Out_Color.rgb *= texColor.a;
 	}
 }

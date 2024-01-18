@@ -218,7 +218,14 @@ namespace LevelEditor
 			FileUtil::fixupPath(pngPath);
 
 			entity->image = loadGpuImage(pngPath);
-			entity->st[1] = { (f32)entity->image->getWidth(), (f32)entity->image->getHeight() };
+			if (entity->image)
+			{
+				entity->st[1] = { (f32)entity->image->getWidth(), (f32)entity->image->getHeight() };
+			}
+			else
+			{
+				entity->st[1] = entity->st[0];
+			}
 
 			entity->size.x = 4.0f;
 			entity->size.z = 4.0f;
