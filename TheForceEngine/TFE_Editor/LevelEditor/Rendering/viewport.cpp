@@ -1599,7 +1599,7 @@ namespace LevelEditor
 				if (s_sectorDrawMode == SDM_TEXTURED_FLOOR || s_sectorDrawMode == SDM_TEXTURED_CEIL)
 				{
 					bool sky = (sector->flags[0] & SEC_FLAGS1_PIT) != 0;
-					triDraw3d_addTextured(TRIMODE_OPAQUE, idxCount, vtxCount, vtxDataFlr, uvFlr, sector->poly.triIdx.data(), c_sectorTexClr[colorIndex], false, floorTex->frames[0], showGridOnFlats, sky);
+					triDraw3d_addTextured(TRIMODE_OPAQUE, idxCount, vtxCount, vtxDataFlr, uvFlr, sector->poly.triIdx.data(), c_sectorTexClr[colorIndex], false, floorTex ? floorTex->frames[0] : nullptr, showGridOnFlats, sky);
 				}
 				else if (s_sectorDrawMode == SDM_LIGHTING)
 				{
@@ -1615,7 +1615,7 @@ namespace LevelEditor
 				if (s_sectorDrawMode == SDM_TEXTURED_FLOOR || s_sectorDrawMode == SDM_TEXTURED_CEIL)
 				{
 					bool sky = (sector->flags[0] & SEC_FLAGS1_EXTERIOR) != 0;
-					triDraw3d_addTextured(TRIMODE_OPAQUE, idxCount, vtxCount, vtxDataCeil, uvCeil, sector->poly.triIdx.data(), c_sectorTexClr[colorIndex], true, ceilTex->frames[0], showGridOnFlats, sky);
+					triDraw3d_addTextured(TRIMODE_OPAQUE, idxCount, vtxCount, vtxDataCeil, uvCeil, sector->poly.triIdx.data(), c_sectorTexClr[colorIndex], true, ceilTex ? ceilTex->frames[0]: nullptr, showGridOnFlats, sky);
 				}
 				else if (s_sectorDrawMode == SDM_LIGHTING)
 				{

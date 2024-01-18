@@ -560,6 +560,7 @@ namespace TFE_Editor
 
 				s32 texTriangleCount;
 				s32 texQuadCount;
+				const s32 uvCount = (s32)vtxUv.size();
 				if (sscanf(line, " TEXTURE TRIANGLES %d", &texTriangleCount) == 1)
 				{
 					while (1)
@@ -573,6 +574,10 @@ namespace TFE_Editor
 							nextLine = false;
 							break;
 						}
+						// Handle bad data.
+						a = std::min(a, uvCount-1);
+						b = std::min(b, uvCount-1);
+						c = std::min(c, uvCount-1);
 
 						polyList[curPolyIndex].uv[0] = vtxUv[a];
 						polyList[curPolyIndex].uv[1] = vtxUv[b];
@@ -594,6 +599,12 @@ namespace TFE_Editor
 							nextLine = false;
 							break;
 						}
+						// Handle bad data.
+						a = std::min(a, uvCount-1);
+						b = std::min(b, uvCount-1);
+						c = std::min(c, uvCount-1);
+						d = std::min(d, uvCount-1);
+
 						polyList[curPolyIndex].uv[0] = vtxUv[a];
 						polyList[curPolyIndex].uv[1] = vtxUv[b];
 						polyList[curPolyIndex].uv[2] = vtxUv[c];
