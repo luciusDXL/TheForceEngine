@@ -5047,6 +5047,26 @@ namespace LevelEditor
 		}
 		return y;
 	}
+
+	// TODO: Move all hotkeys here?
+	// TODO: Allow hotkey binding.
+	void handleHotkeys()
+	{
+		if (isUiModal()) { return; }
+
+		if (TFE_Input::keyPressed(KEY_Z) && TFE_Input::keyModDown(KEYMOD_CTRL))
+		{
+			levHistory_undo();
+		}
+		else if (TFE_Input::keyPressed(KEY_Y) && TFE_Input::keyModDown(KEYMOD_CTRL))
+		{
+			levHistory_redo();
+		}
+		if (TFE_Input::keyPressed(KEY_TAB))
+		{
+			s_showAllLabels = !s_showAllLabels;
+		}
+	}
 			
 	void update()
 	{
@@ -5054,27 +5074,9 @@ namespace LevelEditor
 
 		pushFont(TFE_Editor::FONT_SMALL);
 		updateWindowControls();
+		handleHotkeys();
 
-		// Hotkeys...
-		if (!isUiModal())
-		{
-			if (TFE_Input::keyPressed(KEY_Z) && TFE_Input::keyModDown(KEYMOD_CTRL))
-			{
-				levHistory_undo();
-			}
-			else if (TFE_Input::keyPressed(KEY_Y) && TFE_Input::keyModDown(KEYMOD_CTRL))
-			{
-				levHistory_redo();
-			}
-			if (TFE_Input::keyPressed(KEY_TAB))
-			{
-				s_showAllLabels = !s_showAllLabels;
-			}
-		}
-
-		// Update thumbnails.
 		thumbnail_update();
-
 		viewport_update((s32)UI_SCALE(480) + 16, (s32)UI_SCALE(68) + 18);
 		viewport_render(s_view);
 
