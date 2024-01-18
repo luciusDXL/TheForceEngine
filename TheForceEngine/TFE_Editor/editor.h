@@ -47,6 +47,7 @@ namespace TFE_Editor
 		POPUP_NEW_PROJECT,
 		POPUP_EDIT_PROJECT,
 		POPUP_NEW_LEVEL,
+		POPUP_BROWSE,
 		POPUP_COUNT
 	};
 
@@ -61,7 +62,7 @@ namespace TFE_Editor
 	void popFont();
 
 	void showMessageBox(const char* type, const char* msg, ...);
-	void openEditorPopup(EditorPopup popup);
+	void openEditorPopup(EditorPopup popup, u32 userData = 0, void* userPtr = nullptr);
 	void listSelection(const char* labelText, const char** listValues, size_t listLen, s32* index, s32 comboOffset=96, s32 comboWidth=0);
 	void setTooltip(const char* msg, ...);
 

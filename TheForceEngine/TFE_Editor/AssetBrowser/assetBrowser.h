@@ -20,9 +20,12 @@ namespace AssetBrowser
 	void selectAll();
 	void selectNone();
 	void invertSelection();
+	const char* getSelectedAssetName();
 
 	bool showOnlyModLevels();
 	void rebuildAssets();
+
+	bool popup(TFE_Editor::AssetType type, const char* selectName);
 
 	TFE_Editor::Asset* findAsset(const char* name, TFE_Editor::AssetType type);
 	TFE_Editor::AssetHandle loadAssetData(const TFE_Editor::Asset* asset);

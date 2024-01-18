@@ -8,6 +8,7 @@
 #include <TFE_Editor/editor.h>
 #include <TFE_Editor/errorMessages.h>
 #include <TFE_Editor/editorConfig.h>
+#include <TFE_Editor/AssetBrowser/assetBrowser.h>
 #include <TFE_Editor/EditorAsset/editorTexture.h>
 #include <TFE_Editor/LevelEditor/Rendering/viewport.h>
 #include <TFE_Jedi/Level/rwall.h>
@@ -1020,6 +1021,8 @@ namespace LevelEditor
 		return -1;
 	}
 
+	static bool s_browsing = false;
+
 	void infoPanelObject()
 	{
 		EditorSector* sector = s_featureCur.sector ? s_featureCur.sector : s_featureHovered.sector;
@@ -1042,6 +1045,16 @@ namespace LevelEditor
 		if (s_objEntity.id < 0)
 		{
 			s_objEntity = s_level.entities[obj->entityId];
+		}
+
+		if (s_browsing && !isPopupOpen())
+		{
+			s_browsing = false;
+			const char* newAssetName = AssetBrowser::getSelectedAssetName();
+			if (newAssetName)
+			{
+				s_objEntity.assetName = newAssetName;
+			}
 		}
 
 		ImGui::Text("Sector ID: %d, Object Index: %d", sector->id, objIndex);
@@ -1075,7 +1088,24 @@ namespace LevelEditor
 		ImGui::SameLine(0.0f, 8.0f);
 		if (ImGui::Button("Browse"))
 		{
-			// TODO
+			AssetType assetType = TYPE_NOT_SET;
+			if (s_objEntity.type == ETYPE_SPRITE)
+			{
+				assetType = TYPE_SPRITE;
+			}
+			else if (s_objEntity.type == ETYPE_FRAME)
+			{
+				assetType = TYPE_FRAME;
+			}
+			else if (s_objEntity.type == ETYPE_3D)
+			{
+				assetType = TYPE_3DOBJ;
+			}
+			if (assetType != TYPE_NOT_SET)
+			{
+				openEditorPopup(TFE_Editor::POPUP_BROWSE, u32(assetType), (void*)s_objEntity.assetName.c_str());
+				s_browsing = true;
+			}
 		}
 		ImGui::Separator();
 

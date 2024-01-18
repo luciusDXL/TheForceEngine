@@ -48,6 +48,8 @@ namespace TFE_Editor
 	static AssetType s_editorAssetType = TYPE_NOT_SET;
 	static EditorMode s_editorMode = EDIT_ASSET_BROWSER;
 	static EditorPopup s_editorPopup = POPUP_NONE;
+	static u32 s_editorPopupUserData = 0;
+	static void* s_editorPopupUserPtr = nullptr;
 	static bool s_exitEditor = false;
 	static bool s_configView = false;
 	static WorkBuffer s_workBuffer;
@@ -143,6 +145,10 @@ namespace TFE_Editor
 			{
 				ImGui::OpenPopup("New Level");
 			} break;
+			case POPUP_BROWSE:
+			{
+				ImGui::OpenPopup("Browse");
+			} break;
 		}
 	}
 
@@ -195,6 +201,14 @@ namespace TFE_Editor
 			case POPUP_NEW_LEVEL:
 			{
 				if (level_newLevelUi())
+				{
+					ImGui::CloseCurrentPopup();
+					s_editorPopup = POPUP_NONE;
+				}
+			} break;
+			case POPUP_BROWSE:
+			{
+				if (AssetBrowser::popup(AssetType(s_editorPopupUserData), (char*)s_editorPopupUserPtr))
 				{
 					ImGui::CloseCurrentPopup();
 					s_editorPopup = POPUP_NONE;
@@ -322,10 +336,6 @@ namespace TFE_Editor
 		const ImVec4 titleColor = getTextColor(project->active ? TEXTCLR_TITLE_ACTIVE : TEXTCLR_TITLE_INACTIVE);
 		ImGui::SameLine(f32((winWidth - titleWidth)/2));
 		ImGui::TextColored(titleColor, title);
-	}
-
-	void openEditorPopup()
-	{
 	}
 
 	void menu()
@@ -544,9 +554,11 @@ namespace TFE_Editor
 		sprintf(s_msgBox.id, "%s##MessageBox", type);
 	}
 
-	void openEditorPopup(EditorPopup popup)
+	void openEditorPopup(EditorPopup popup, u32 userData, void* userPtr)
 	{
 		s_editorPopup = popup;
+		s_editorPopupUserData = userData;
+		s_editorPopupUserPtr = userPtr;
 	}
 		
 	ArchiveType getArchiveType(const char* filename)
