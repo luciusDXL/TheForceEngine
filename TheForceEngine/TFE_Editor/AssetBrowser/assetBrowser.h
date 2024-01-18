@@ -25,7 +25,8 @@ namespace AssetBrowser
 	bool showOnlyModLevels();
 	void rebuildAssets();
 
-	bool popup(TFE_Editor::AssetType type, const char* selectName);
+	void initPopup(TFE_Editor::AssetType type, const char* selectName);
+	bool popup();
 
 	TFE_Editor::Asset* findAsset(const char* name, TFE_Editor::AssetType type);
 	TFE_Editor::AssetHandle loadAssetData(const TFE_Editor::Asset* asset);

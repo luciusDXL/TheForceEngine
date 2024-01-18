@@ -930,23 +930,23 @@ namespace AssetBrowser
 		const Asset* projAsset = s_projectAssetList[s_viewInfo.type].data();
 		return projAsset[s_selected[0]].name.c_str();
 	}
-	
-	bool popup(AssetType type, const char* selectName)
+
+	void initPopup(TFE_Editor::AssetType type, const char* selectName)
 	{
-		if (type != s_viewInfo.type)
-		{
-			s_viewInfo.type = type;
-			s_viewInfo.assetFilter[0] = 0;
-			s_viewInfo.filterLen = 0;
-			s_selected.clear();
-			s_hovered = -1;
-			s_selectRange[0] = -1;
-			s_selectRange[1] = -1;
+		s_viewInfo.type = type;
+		s_viewInfo.assetFilter[0] = 0;
+		s_viewInfo.filterLen = 0;
+		s_selected.clear();
+		s_hovered = -1;
+		s_selectRange[0] = -1;
+		s_selectRange[1] = -1;
 
-			updateAssetList();
-			selectByAssetName(selectName);
-		}
-
+		updateAssetList();
+		selectByAssetName(selectName);
+	}
+	
+	bool popup()
+	{
 		f32 winWidth = 1044.0f;
 		f32 winHeight = 700.0f;
 		f32 width = 1024.0f;

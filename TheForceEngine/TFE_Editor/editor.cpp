@@ -208,7 +208,7 @@ namespace TFE_Editor
 			} break;
 			case POPUP_BROWSE:
 			{
-				if (AssetBrowser::popup(AssetType(s_editorPopupUserData), (char*)s_editorPopupUserPtr))
+				if (AssetBrowser::popup())
 				{
 					ImGui::CloseCurrentPopup();
 					s_editorPopup = POPUP_NONE;
@@ -559,6 +559,15 @@ namespace TFE_Editor
 		s_editorPopup = popup;
 		s_editorPopupUserData = userData;
 		s_editorPopupUserPtr = userPtr;
+
+		// Initialization if needed.
+		switch (popup)
+		{
+			case POPUP_BROWSE:
+			{
+				AssetBrowser::initPopup(AssetType(userData), (char*)userPtr);
+			} break;
+		}
 	}
 		
 	ArchiveType getArchiveType(const char* filename)
