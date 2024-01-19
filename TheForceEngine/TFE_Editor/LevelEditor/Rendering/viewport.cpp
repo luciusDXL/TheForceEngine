@@ -129,7 +129,6 @@ namespace LevelEditor
 		grid2d_init();
 		tri2d_init();
 		tri3d_init();
-		modelDraw_init();
 		grid3d_init();
 		TFE_RenderShared::line3d_init();
 	}
@@ -140,7 +139,6 @@ namespace LevelEditor
 		grid2d_destroy();
 		tri2d_destroy();
 		tri3d_destroy();
-		modelDraw_destroy();
 		grid3d_destroy();
 		TFE_RenderShared::line3d_destroy();
 		s_viewportRt = 0;
@@ -364,7 +362,7 @@ namespace LevelEditor
 		compute2dCamera(camera);
 
 		// Submit.
-		TFE_RenderShared::modelDraw_draw(&camera, s_viewportSize.x, s_viewportSize.z, false);
+		TFE_RenderShared::modelDraw_draw(&camera, (f32)s_viewportSize.x, (f32)s_viewportSize.z, false);
 		TFE_RenderShared::triDraw2d_draw();
 		TFE_RenderShared::lineDraw2d_drawLines();
 	}

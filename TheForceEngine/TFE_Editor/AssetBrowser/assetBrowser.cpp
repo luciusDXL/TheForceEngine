@@ -5,6 +5,7 @@
 #include <TFE_Editor/editorProject.h>
 #include <TFE_Editor/editorResources.h>
 #include <TFE_Editor/editor.h>
+#include <TFE_Editor/EditorAsset/editor3dThumbnails.h>
 #include <TFE_Editor/EditorAsset/editorAsset.h>
 #include <TFE_Editor/EditorAsset/editorTexture.h>
 #include <TFE_Editor/EditorAsset/editorFrame.h>
@@ -697,7 +698,7 @@ namespace AssetBrowser
 					s32 offsetX = 0, offsetY = 0;
 					s32 width = s_editorConfig.thumbnailSize, height = s_editorConfig.thumbnailSize;
 
-					TextureGpu* textureGpu = nullptr;
+					const TextureGpu* textureGpu = nullptr;
 					f32 u0 = 0.0f, v0 = 1.0f;
 					f32 u1 = 1.0f, v1 = 0.0f;
 					if (s_viewAssetList[a].type == TYPE_TEXTURE || s_viewAssetList[a].type == TYPE_PALETTE)
@@ -767,21 +768,12 @@ namespace AssetBrowser
 					else if (s_viewAssetList[a].type == TYPE_3DOBJ)
 					{
 						EditorObj3D* obj3D = (EditorObj3D*)getAssetData(s_viewAssetList[a].handle);
-						textureGpu = obj3D ? obj3D->thumbnail : nullptr;
-						if (textureGpu)
-						{
-							// Preserve the image aspect ratio.
-							if (textureGpu->getWidth() >= textureGpu->getHeight())
-							{
-								height = textureGpu->getHeight() * s_editorConfig.thumbnailSize / textureGpu->getWidth();
-								offsetY = (width - height) / 2;
-							}
-							else
-							{
-								width = textureGpu->getWidth() * s_editorConfig.thumbnailSize / textureGpu->getHeight();
-								offsetX = (height - width) / 2;
-							}
-						}
+						Vec2f uv0, uv1;
+						textureGpu = obj3D ? getThumbnail(obj3D, &uv0, &uv1, false) : nullptr;
+						u0 = uv0.x;
+						u1 = uv1.x;
+						v0 = uv0.z;
+						v1 = uv1.z;
 					}
 					else if (s_viewAssetList[a].type == TYPE_LEVEL)
 					{

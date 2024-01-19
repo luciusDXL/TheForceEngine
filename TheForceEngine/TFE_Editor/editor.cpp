@@ -3,12 +3,15 @@
 #include "editorLevel.h"
 #include "editorResources.h"
 #include "editorProject.h"
+
 #include <TFE_Settings/settings.h>
 #include <TFE_Editor/AssetBrowser/assetBrowser.h>
 #include <TFE_Editor/LevelEditor/levelEditor.h>
 #include <TFE_Editor/EditorAsset/editorAsset.h>
+#include <TFE_Editor/EditorAsset/editor3dThumbnails.h>
 #include <TFE_Input/input.h>
 #include <TFE_RenderBackend/renderBackend.h>
+#include <TFE_RenderShared/modelDraw.h>
 #include <TFE_System/system.h>
 #include <TFE_FileSystem/fileutil.h>
 #include <TFE_FileSystem/paths.h>
@@ -81,12 +84,16 @@ namespace TFE_Editor
 		loadFonts();
 		loadConfig();
 		AssetBrowser::init();
+		TFE_RenderShared::modelDraw_init();
+		thumbnail_init(64);
 		s_msgBox = {};
 	}
 
 	void disable()
 	{
 		AssetBrowser::destroy();
+		thumbnail_destroy();
+		TFE_RenderShared::modelDraw_destroy();
 	}
 
 	bool messageBoxUi()
@@ -238,6 +245,8 @@ namespace TFE_Editor
 
 	bool update(bool consoleOpen)
 	{
+		thumbnail_update();
+
 		TFE_RenderBackend::clearWindow();
 
 		updateTooltips();
