@@ -4676,7 +4676,19 @@ namespace LevelEditor
 				RayHitInfo hitInfo;
 				if (traceRay(&ray, &hitInfo, false, false))
 				{
-					f32 newY = s_level.sectors[hitInfo.hitSectorId].floorHeight + 5.8f;
+					EditorSector* colSector = &s_level.sectors[hitInfo.hitSectorId];
+					f32 floorHeight = colSector->floorHeight;
+					if (colSector->secHeight < 0) { floorHeight += colSector->secHeight; }
+					else if (colSector->secHeight > 0)
+					{
+						f32 secHeight = colSector->floorHeight + colSector->secHeight;
+						if (ray.origin.y > secHeight - 1.0f)
+						{
+							floorHeight = secHeight;
+						}
+					}
+
+					f32 newY = floorHeight + 5.8f;
 					f32 blendFactor = std::min(1.0f, (f32)TFE_System::getDeltaTime() * 10.0f);
 					s_camera.pos.y = newY * blendFactor + s_camera.pos.y * (1.0f - blendFactor);
 				}
