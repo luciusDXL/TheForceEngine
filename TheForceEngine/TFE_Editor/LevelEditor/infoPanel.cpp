@@ -1023,6 +1023,20 @@ namespace LevelEditor
 
 	static bool s_browsing = false;
 
+	const Entity* getFirstEntityOfType(EntityType type)
+	{
+		const s32 count = (s32)s_entityDefList.size();
+		const Entity* entity = s_entityDefList.data();
+		for (s32 i = 0; i < count; i++, entity++)
+		{
+			if (entity->type == type)
+			{
+				return entity;
+			}
+		}
+		return nullptr;
+	}
+
 	void infoPanelObject()
 	{
 		EditorSector* sector = s_featureCur.sector ? s_featureCur.sector : s_featureHovered.sector;
@@ -1073,9 +1087,22 @@ namespace LevelEditor
 		s32 classId = s_objEntity.type;
 		ImGui::Text("%s", "Class"); ImGui::SameLine(0.0f, 8.0f);
 		ImGui::SetNextItemWidth(96.0f);
+
+		EntityType prev = s_objEntity.type;
 		if (ImGui::Combo("##Class", (s32*)&classId, c_entityClassName, ETYPE_COUNT))
 		{
 			s_objEntity.type = EntityType(classId);
+			// We need a default asset if the class type has changed, since the current asset will not work.
+			if (prev != s_objEntity.type)
+			{
+				// So just search for the first entity in the template list of that type and use that asset.
+				const Entity* defEntity = getFirstEntityOfType(s_objEntity.type);
+				assert(defEntity);
+				if (defEntity)
+				{
+					s_objEntity.assetName = defEntity->assetName;
+				}
+			}
 		}
 		// Entity Asset
 		ImGui::Text("%s", "Asset"); ImGui::SameLine(0.0f, 8.0f);
