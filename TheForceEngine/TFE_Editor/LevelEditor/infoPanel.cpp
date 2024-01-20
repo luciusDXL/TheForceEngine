@@ -890,6 +890,20 @@ namespace LevelEditor
 	static s32 s_logicIndex = 0;
 	static s32 s_varIndex = 0;
 	static s32 s_logicSelect = -1;
+
+	bool doesEntityExistInProject(const Entity* newEntityDef)
+	{
+		const s32 count = (s32)s_projEntityDefList.size();
+		const Entity* entity = s_projEntityDefList.data();
+		for (s32 e = 0; e < count; e++, entity++)
+		{
+			if (entityDefsEqual(newEntityDef, entity))
+			{
+				return true;
+			}
+		}
+		return false;
+	}
 	
 	void commitEntityChanges(EditorSector* sector, s32 objIndex, const Entity* newEntityDef)
 	{
@@ -1431,7 +1445,13 @@ namespace LevelEditor
 		ImGui::SameLine(0.0f, 8.0f);
 		if (ImGui::Button("Add to Entity Def"))
 		{
-			// TODO
+			s_objEntity.categories |= 1;	// custom.
+			if (!doesEntityExistInProject(&s_objEntity))
+			{
+				s_projEntityDefList.push_back(s_objEntity);
+				s_entityDefList.push_back(s_objEntity);
+				saveProjectEntityList();
+			}
 		}
 		ImGui::SameLine(0.0f, 8.0f);
 		if (ImGui::Button("Commit"))

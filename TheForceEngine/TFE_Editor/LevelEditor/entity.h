@@ -169,7 +169,7 @@ namespace LevelEditor
 		Mat3 transform;
 	};
 
-	bool loadEntityData(const char* localDir);
+	bool loadEntityData(const char* localDir, bool projectList = false);
 	bool loadSingleEntityData(Entity* entity);
 	bool loadVariableData(const char* localDir);
 	bool loadLogicData(const char* localDir);
@@ -177,6 +177,8 @@ namespace LevelEditor
 	bool writeEntityDataToString(const Entity* entity, char* buffer, size_t bufferSize);
 	bool writeEntityDataBinary(const Entity* entity, FileStream* file);
 	bool readEntityDataBinary(FileStream* file, Entity* entity, s32 version);
+
+	void saveProjectEntityList();
 
 	const char* getEntityVarName(s32 id);
 	EntityVarDef* getEntityVar(s32 id);

@@ -272,8 +272,17 @@ namespace LevelEditor
 		// TODO: Handle different games...
 		const char* gameLocalDir = "DarkForces";
 		loadVariableData(gameLocalDir);
-		loadEntityData(gameLocalDir);
+		loadEntityData(gameLocalDir, false);
 		loadLogicData(gameLocalDir);
+
+		Project* project = project_get();
+		if (project && project->active)
+		{
+			char projEntityDataPath[TFE_MAX_PATH];
+			sprintf(projEntityDataPath, "%s/%s.ini", project->path, "CustomEntityDef");
+			loadEntityData(projEntityDataPath, true);
+		}
+
 		browserLoadIcons();
 		clearEntityChanges();
 

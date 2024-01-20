@@ -5,6 +5,7 @@
 #include "sharedState.h"
 #include <TFE_Editor/editor.h>
 #include <TFE_Editor/errorMessages.h>
+#include <TFE_Editor/editorConfig.h>
 #include <TFE_Editor/AssetBrowser/assetBrowser.h>
 #include <TFE_Editor/EditorAsset/editorTexture.h>
 #include <TFE_Editor/EditorAsset/editorFrame.h>
@@ -381,6 +382,8 @@ namespace LevelEditor
 	bool writeEntityDataToString(const Entity* entity, char* buffer, size_t bufferSize)
 	{
 		char fmtBuffer[256];
+		buffer[0] = 0;
+
 		sprintf(fmtBuffer, "Entity: \"%s\"\r\n", entity->name.c_str());
 		if (!writeToBuffer(fmtBuffer, buffer, bufferSize)) { return false; }
 
@@ -605,6 +608,57 @@ namespace LevelEditor
 		return true;
 	}
 
+	void saveProjectEntityList()
+	{
+		if (s_projEntityDefList.empty()) { return; }
+
+		char projEntityDataPath[TFE_MAX_PATH];
+		Project* project = project_get();
+		if (project && project->active)
+		{
+			sprintf(projEntityDataPath, "%s/%s.ini", project->path, "CustomEntityDef");
+		}
+		else
+		{
+			// Temp: Save to editor temp directory.
+			if (FileUtil::directoryExits(s_editorConfig.exportPath))
+			{
+				char path[TFE_MAX_PATH];
+				strcpy(path, s_editorConfig.exportPath);
+				size_t len = strlen(path);
+				if (path[len - 1] != '/' && path[len - 1] != '\\')
+				{
+					path[len] = '/';
+					path[len + 1] = 0;
+				}
+				FileUtil::fixupPath(path);
+				sprintf(projEntityDataPath, "%s%s.ini", path, "CustomEntityDef");
+			}
+
+			//return;
+		}
+
+		FileStream file;
+		if (!file.open(projEntityDataPath, FileStream::MODE_WRITE))
+		{
+			return;
+		}
+
+		char buffer[4096];
+		const s32 count = (s32)s_projEntityDefList.size();
+		const Entity* entity = s_projEntityDefList.data();
+		for (s32 i = 0; i < count; i++, entity++)
+		{
+			if (writeEntityDataToString(entity, buffer, 4096))
+			{
+				file.writeBuffer(buffer, strlen(buffer));
+				file.writeBuffer("\r\n", strlen("\r\n"));
+			}
+		}
+
+		file.close();
+	}
+
 	s32 getCategoryFlag(const char* name)
 	{
 		const s32 count = (s32)s_categoryList.size();
@@ -619,20 +673,32 @@ namespace LevelEditor
 		return 0;
 	}
 
-	bool loadEntityData(const char* localDir)
+	bool loadEntityData(const char* localDir, bool projectList)
 	{
-		s_entityDefList.clear();
-		s_categoryList.clear();
-		
+		std::vector<Entity>* entityDefList = nullptr;
 		char entityDefPath[TFE_MAX_PATH];
-		const char* progPath = TFE_Paths::getPath(TFE_PathType::PATH_PROGRAM);
-		sprintf(entityDefPath, "%sEditorDef/%s/EntityDef.ini", progPath, localDir);
+		if (projectList)
+		{
+			s_projEntityDefList.clear();
+			entityDefList = &s_projEntityDefList;
+			strcpy(entityDefPath, localDir);
+		}
+		else
+		{
+			s_entityDefList.clear();
+			s_categoryList.clear();
+			entityDefList = &s_entityDefList;
+
+			const char* progPath = TFE_Paths::getPath(TFE_PathType::PATH_PROGRAM);
+			sprintf(entityDefPath, "%sEditorDef/%s/EntityDef.ini", progPath, localDir);
+		}
+		assert(entityDefList);
 		FileUtil::fixupPath(entityDefPath);
 
 		FileStream file;
 		if (!file.open(entityDefPath, FileStream::MODE_READ))
 		{
-			LE_ERROR("Cannot open Entity Definitions - '%s'.", entityDefPath);
+			if (!projectList) { LE_ERROR("Cannot open Entity Definitions - '%s'.", entityDefPath); }
 			return false;
 		}
 		size_t len = file.getSize();
@@ -677,9 +743,9 @@ namespace LevelEditor
 					{
 						case EKEY_ENTITY:
 						{
-							s_entityDefList.push_back({});
-							curEntity = &s_entityDefList.back();
-							curEntity->id = s32(s_entityDefList.size()) - 1;
+							entityDefList->push_back({});
+							curEntity = &entityDefList->back();
+							curEntity->id = s32(entityDefList->size()) - 1;
 							curEntity->name = tokens[1];
 							curEntity->categories = 0;
 							varList = &curEntity->var;
@@ -752,14 +818,28 @@ namespace LevelEditor
 
 			line = parser.readLine(bufferPos);
 		}
-		LE_INFO("Loaded %d entity definitions from '%s'.", (s32)s_entityDefList.size(), entityDefPath);
+		LE_INFO("Loaded %d entity definitions from '%s'.", (s32)entityDefList->size(), entityDefPath);
 
 		// Now that the definitions are loaded, get the actual data...
-		const s32 count = (s32)s_entityDefList.size();
-		Entity* entity = s_entityDefList.data();
+		const s32 count = (s32)entityDefList->size();
+		Entity* entity = entityDefList->data();
 		for (s32 i = 0; i < count; i++, entity++)
 		{
 			loadSingleEntityData(entity);
+		}
+
+		// If this is the project list, append it to the master list to simply the code.
+		if (projectList)
+		{
+			const s32 dstCount = (s32)s_entityDefList.size();
+			const s32 srcCount = (s32)s_projEntityDefList.size();
+			Entity* src = s_projEntityDefList.data();
+			for (s32 i = 0; i < srcCount; i++, src++)
+			{
+				// Make sure to add the "custom" category.
+				src->categories |= 1;
+				s_entityDefList.push_back(*src);
+			}
 		}
 
 		return true;
