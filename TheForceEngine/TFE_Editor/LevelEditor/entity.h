@@ -95,6 +95,12 @@ namespace LevelEditor
 		std::string name;
 		std::vector<EntityVar> var;
 	};
+
+	struct SpriteView
+	{
+		Vec2f uv[2] = { {0.0f, 0.0f}, {1.0f,  1.0f} };
+		Vec2f st[2] = { {0.0f, 0.0f}, {64.0f, 64.0f} };
+	};
 		
 	struct Entity
 	{
@@ -108,6 +114,7 @@ namespace LevelEditor
 
 		// Sprite
 		TextureGpu* image = nullptr;
+		std::vector<SpriteView> views;	// optional sprite views.
 		Vec2f uv[2] = { {0.0f, 0.0f}, {1.0f,  1.0f} };
 		Vec2f st[2] = { {0.0f, 0.0f}, {64.0f, 64.0f} };
 		Vec2f size = { 1.0f, 1.0f };

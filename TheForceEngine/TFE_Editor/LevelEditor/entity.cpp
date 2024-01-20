@@ -210,6 +210,33 @@ namespace LevelEditor
 		return -1;
 	}
 
+	SpriteFrame* getUvDataForSpriteView(EditorSprite* sprite, s32 viewIndex, Vec2f* uv, Vec2f* st, Vec2f* size)
+	{
+		assert(!sprite->anim.empty());
+		s32 frameIndex = sprite->anim[0].views[viewIndex].frameIndex[0];
+		SpriteFrame* frame = &sprite->frame[frameIndex];
+		SpriteCell* cell = &sprite->cell[frame->cellIndex];
+
+		f32 u0 = f32(cell->u) / (f32)sprite->texGpu->getWidth();
+		f32 v1 = f32(cell->v) / (f32)sprite->texGpu->getHeight();
+		f32 u1 = f32(cell->u + cell->w) / (f32)sprite->texGpu->getWidth();
+		f32 v0 = f32(cell->v + cell->h) / (f32)sprite->texGpu->getHeight();
+		if (frame->flip) { std::swap(u0, u1); }
+
+		uv[0] = { u0, v0 };
+		uv[1] = { u1, v1 };
+
+		st[0] = { (f32)cell->u, (f32)cell->v };
+		st[1] = { f32(cell->u + cell->w), f32(cell->v + cell->h) };
+
+		if (size)
+		{
+			size->x = frame->widthWS;
+			size->z = frame->heightWS;
+		}
+		return frame;
+	}
+
 	bool loadSingleEntityData(Entity* entity)
 	{
 		const char* progPath = TFE_Paths::getPath(TFE_PathType::PATH_PROGRAM);
@@ -272,26 +299,17 @@ namespace LevelEditor
 
 				EditorSprite* sprite = (EditorSprite*)getAssetData(asset->handle);
 				entity->image = sprite->texGpu;
-
+								
 				// Get the actual cell...
-				s32 frameIndex = sprite->anim[0].views[0].frameIndex[0];
-				SpriteFrame* frame = &sprite->frame[frameIndex];
-				SpriteCell* cell = &sprite->cell[frame->cellIndex];
+				SpriteFrame* frame = getUvDataForSpriteView(sprite, 0, entity->uv, entity->st, &entity->size);
 
-				f32 u0 = f32(cell->u) / (f32)sprite->texGpu->getWidth();
-				f32 v1 = f32(cell->v) / (f32)sprite->texGpu->getHeight();
-				f32 u1 = f32(cell->u + cell->w) / (f32)sprite->texGpu->getWidth();
-				f32 v0 = f32(cell->v + cell->h) / (f32)sprite->texGpu->getHeight();
-				if (frame->flip) { std::swap(u0, u1); }
-
-				entity->uv[0] = { u0, v0 };
-				entity->uv[1] = { u1, v1 };
-
-				entity->st[0] = { (f32)cell->u, (f32)cell->v };
-				entity->st[1] = { f32(cell->u + cell->w), f32(cell->v + cell->h) };
-
-				entity->size.x = frame->widthWS;
-				entity->size.z = frame->heightWS;
+				// Entity views.
+				entity->views.resize(32);
+				SpriteView* view = entity->views.data();
+				for (s32 i = 0; i < 32; i++, view++)
+				{
+					getUvDataForSpriteView(sprite, i, view->uv, view->st, nullptr);
+				}
 
 				// Handle the offset.
 				entity->offset = { (f32)frame->offsetX + entity->offsetAdj.x, (f32)frame->offsetY + entity->offsetAdj.y, 0.0f };
@@ -616,11 +634,12 @@ namespace LevelEditor
 		Project* project = project_get();
 		if (project && project->active)
 		{
+			// Save the custom templates to the project directory.
 			sprintf(projEntityDataPath, "%s/%s.ini", project->path, "CustomEntityDef");
 		}
 		else
 		{
-			// Temp: Save to editor temp directory.
+			// Save the custom templates to the editor export path, if it exists.
 			if (FileUtil::directoryExits(s_editorConfig.exportPath))
 			{
 				char path[TFE_MAX_PATH];
@@ -634,8 +653,6 @@ namespace LevelEditor
 				FileUtil::fixupPath(path);
 				sprintf(projEntityDataPath, "%s%s.ini", path, "CustomEntityDef");
 			}
-
-			//return;
 		}
 
 		FileStream file;
@@ -1201,14 +1218,14 @@ namespace LevelEditor
 
 	bool entityDefsEqual(const Entity* e0, const Entity* e1)
 	{
-		return (e0->name == e1->name && e0->assetName == e1->assetName && e0->type == e1->type &&
+		return (strcasecmp(e0->name.c_str(), e1->name.c_str()) == 0 && strcasecmp(e0->assetName.c_str(), e1->assetName.c_str()) && e0->type == e1->type &&
 			logicListsMatch(e0->logic, e1->logic) && varListsMatch(e0->var, e1->var) && e0->categories == e1->categories);
 	}
 
 	bool entityDefsEqualIgnoreName(const Entity* e0, const Entity* e1)
 	{
-		return (e0->assetName == e1->assetName && e0->type == e1->type &&
-			logicListsMatch(e0->logic, e1->logic) && varListsMatch(e0->var, e1->var) && e0->categories == e1->categories);
+		return (strcasecmp(e0->assetName.c_str(), e1->assetName.c_str()) == 0 && e0->type == e1->type &&
+			logicListsMatch(e0->logic, e1->logic) && varListsMatch(e0->var, e1->var));
 	}
 
 	s32 getEntityDefId(const Entity* srcEntity)

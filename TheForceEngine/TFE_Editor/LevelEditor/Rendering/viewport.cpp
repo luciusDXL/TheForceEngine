@@ -1271,7 +1271,7 @@ namespace LevelEditor
 		const Entity* entity = &s_level.entities[obj->entityId];
 		const Vec3f pos = obj->pos;
 
-		f32 width = entity->size.x * 0.5f;
+		f32 width  = entity->size.x * 0.5f;
 		f32 height = entity->size.z;
 		f32 y = pos.y;
 		if (entity->type != ETYPE_SPIRIT && entity->type != ETYPE_SAFE)
@@ -1288,6 +1288,26 @@ namespace LevelEditor
 		}
 		else
 		{
+			const Vec2f* srcUv = entity->uv;
+			if (entity->views.size() >= 32)
+			{
+				// Which direction?
+				f32 dir = fmodf(obj->angle / (2.0f * PI), 1.0f);
+				if (dir < 0.0f) { dir += 1.0f; }
+
+				f32 angleDiff = fmodf((s_camera.yaw - obj->angle) / (2.0f * PI), 1.0f);
+				if (angleDiff < 0.0f) { angleDiff += 1.0f; }
+
+				const s32 viewIndex = 31 - (s32(angleDiff * 32.0f) & 31);
+				assert(viewIndex >= 0 && viewIndex < 32);
+
+				const SpriteView* view = &entity->views[viewIndex];
+				srcUv = view->uv;
+
+				// Adjust the width.
+				width *= (view->st[1].x - view->st[0].x) / (entity->views[0].st[1].x - entity->views[0].st[0].x);
+			}
+
 			Vec3f corners[] =
 			{
 				{ pos.x - width * cameraRgtXZ.x, y + height, pos.z - width * cameraRgtXZ.z },
@@ -1297,10 +1317,10 @@ namespace LevelEditor
 			};
 			Vec2f uv[] =
 			{
-				{ entity->uv[0].x, entity->uv[0].z },
-				{ entity->uv[1].x, entity->uv[0].z },
-				{ entity->uv[1].x, entity->uv[1].z },
-				{ entity->uv[0].x, entity->uv[1].z }
+				{ srcUv[0].x, srcUv[0].z },
+				{ srcUv[1].x, srcUv[0].z },
+				{ srcUv[1].x, srcUv[1].z },
+				{ srcUv[0].x, srcUv[1].z }
 			};
 			s32 idx[] = { 0, 1, 2, 0, 2, 3 };
 			triDraw3d_addTextured(TRIMODE_BLEND, 6, 4, corners, uv, idx, objColor, false, entity->image, false, false);
@@ -1801,21 +1821,27 @@ namespace LevelEditor
 		}
 	}
 
-#if 0
-	void drawModel2d(const Entity* entity, const Vec3f pos)
-	{
-		if (!entity->obj3d) { return; }
-
-		triDraw2D_addTextured(6, 4, cornersImage, uv, idx, objColor, entity->image);
-	}
-#endif
-
-	void drawSprite2d(const Entity* entity, const Vec3f pos, u32 objColor)
+	void drawSprite2d(const Entity* entity, f32 angle, const Vec3f pos, u32 objColor)
 	{
 		f32 width = entity->size.x * 0.5f;
 
-		f32 dx = fabsf(entity->st[1].x - entity->st[0].x);
-		f32 dz = fabsf(entity->st[1].z - entity->st[0].z);
+		const Vec2f* srcUv = entity->uv;
+		const Vec2f* srcSt = entity->st;
+		if (entity->views.size() >= 32)
+		{
+			// Which direction?
+			f32 dir = fmodf(angle/(2.0f * PI), 1.0f);
+			if (dir < 0.0f) { dir += 1.0f; }
+
+			const s32 viewIndex = s32(dir * 32.0f + 16.0f) & 31;
+			assert(viewIndex >= 0 && viewIndex < 32);
+
+			srcUv = entity->views[viewIndex].uv;
+			srcSt = entity->views[viewIndex].st;
+		}
+
+		f32 dx = fabsf(srcSt[1].x - srcSt[0].x);
+		f32 dz = fabsf(srcSt[1].z - srcSt[0].z);
 		f32 wI = width, hI = width;
 		if (dx > dz)
 		{
@@ -1835,10 +1861,10 @@ namespace LevelEditor
 		};
 		Vec2f uv[] =
 		{
-			{ entity->uv[0].x, entity->uv[1].z },
-			{ entity->uv[1].x, entity->uv[1].z },
-			{ entity->uv[1].x, entity->uv[0].z },
-			{ entity->uv[0].x, entity->uv[0].z }
+			{ srcUv[0].x, srcUv[1].z },
+			{ srcUv[1].x, srcUv[1].z },
+			{ srcUv[1].x, srcUv[0].z },
+			{ srcUv[0].x, srcUv[0].z }
 		};
 		s32 idx[] = { 0, 1, 2, 0, 2, 3 };
 
@@ -1887,7 +1913,7 @@ namespace LevelEditor
 					hl = (hl == HL_SELECTED) ? Highlight(HL_SELECTED + 1) : HL_HOVERED;
 				}
 				drawBounds2d(&center, size, 1.5f, c_entityClr[hl], 0x80403020);
-				drawSprite2d(entity, pos, objColor);
+				drawSprite2d(entity, obj->angle, pos, objColor);
 
 				// Draw direction arrows if it has a facing.
 				f32 angle = obj->angle;
@@ -1930,7 +1956,7 @@ namespace LevelEditor
 		}
 		else
 		{
-			drawSprite2d(entity, pos, objColor);
+			drawSprite2d(entity, obj->angle, pos, objColor);
 		}
 	}
 
