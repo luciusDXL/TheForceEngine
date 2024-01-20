@@ -99,6 +99,7 @@ namespace LevelEditor
 	struct Entity
 	{
 		s32 id = -1;
+		s32 categories = 0;
 		std::string name;
 		std::string assetName;
 		EntityType type = ETYPE_UNKNOWN;
@@ -142,12 +143,19 @@ namespace LevelEditor
 		std::vector<LogicVar> var;
 	};
 
+	struct Category
+	{
+		s32 flag = 0;
+		std::string name;
+		std::string tooltip;
+	};
+
 	extern std::vector<Entity> s_entityDefList;
 	extern std::vector<Entity> s_projEntityDefList;
 
 	extern std::vector<LogicDef> s_logicDefList;
 	extern std::vector<EntityVarDef> s_varDefList;
-	extern s32 s_customEntityStart;
+	extern std::vector<Category> s_categoryList;
 
 	struct EditorObject
 	{
@@ -168,7 +176,7 @@ namespace LevelEditor
 
 	bool writeEntityDataToString(const Entity* entity, char* buffer, size_t bufferSize);
 	bool writeEntityDataBinary(const Entity* entity, FileStream* file);
-	bool readEntityDataBinary(FileStream* file, Entity* entity);
+	bool readEntityDataBinary(FileStream* file, Entity* entity, s32 version);
 
 	const char* getEntityVarName(s32 id);
 	EntityVarDef* getEntityVar(s32 id);

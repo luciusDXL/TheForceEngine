@@ -57,6 +57,7 @@ namespace LevelEditor
 	static Feature s_prevSectorFeature = {};
 	static Feature s_prevObjectFeature = {};
 	static bool s_wallShownLast = false;
+	static s32 s_prevCategoryFlags = 0;
 
 	void infoPanelClearMessages()
 	{
@@ -848,7 +849,7 @@ namespace LevelEditor
 		if (selectionInvalid)
 		{
 			s_prevObjectFeature.sector = s_level.sectors.empty() ? nullptr : &s_level.sectors[0];
-			s_prevObjectFeature.featureIndex = s_prevObjectFeature.sector->obj.empty() ? -1 : 0;
+			s_prevObjectFeature.featureIndex = !s_prevObjectFeature.sector || s_prevObjectFeature.sector->obj.empty() ? -1 : 0;
 		}
 		sector = s_prevObjectFeature.sector;
 		index = s_prevObjectFeature.featureIndex;
@@ -1305,7 +1306,7 @@ namespace LevelEditor
 				if (sel) { varSel = i; }
 				else if (varSel == i) { varSel = -1; }
 
-				ImGui::SameLine(0.0f, 8.0f);
+				if (def->type != EVARTYPE_FLAGS) { ImGui::SameLine(0.0f, 8.0f); }
 				switch (def->type)
 				{
 					case EVARTYPE_BOOL:
@@ -1325,6 +1326,13 @@ namespace LevelEditor
 					} break;
 					case EVARTYPE_FLAGS:
 					{
+						const s32 flagCount = (s32)def->flags.size();
+						const EntityVarFlag* flag = def->flags.data();
+						for (s32 f = 0; f < flagCount; f++, flag++)
+						{
+							ImGui::CheckboxFlags(flag->name.c_str(), (u32*)&list[i].value.iValue, (u32)flag->value);
+							if (f < flagCount - 1) { ImGui::SameLine(0.0f, 12.0f); }
+						}
 					} break;
 					case EVARTYPE_STRING_LIST:
 					{
@@ -1345,6 +1353,20 @@ namespace LevelEditor
 					} break;
 					case EVARTYPE_INPUT_STRING_PAIR:
 					{
+						char pair1[256], pair2[256];
+						strcpy(pair1, list[i].value.sValue.c_str());
+						strcpy(pair2, list[i].value.sValue1.c_str());
+						ImGui::SetNextItemWidth(128.0f);
+						if (ImGui::InputText("###Pair1", pair1, 256))
+						{
+							list[i].value.sValue = pair1;
+						}
+						ImGui::SameLine(0.0f, 8.0f);
+						ImGui::SetNextItemWidth(128.0f);
+						if (ImGui::InputText("###Pair2", pair2, 256))
+						{
+							list[i].value.sValue1 = pair2;
+						}
 					} break;
 				}
 			}
@@ -1401,6 +1423,12 @@ namespace LevelEditor
 		ImGui::Separator();
 
 		// Buttons.
+		if (ImGui::Button("Category"))
+		{
+			openEditorPopup(TFE_Editor::POPUP_CATEGORY);
+			s_prevCategoryFlags = s_objEntity.categories;
+		}
+		ImGui::SameLine(0.0f, 8.0f);
 		if (ImGui::Button("Add to Entity Def"))
 		{
 			// TODO
@@ -1466,5 +1494,52 @@ namespace LevelEditor
 	void infoToolEnd()
 	{
 		ImGui::End();
+	}
+
+	bool categoryPopupUI()
+	{
+		f32 winWidth = 600.0f;
+		f32 winHeight = 146.0f;
+
+		pushFont(TFE_Editor::FONT_SMALL);
+
+		bool active = true;
+		ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoResize;
+		ImGui::SetNextWindowSize({ winWidth, winHeight });
+		if (ImGui::BeginPopupModal("Category", &active, window_flags))
+		{
+			//s_objEntity;
+			s32 count = (s32)s_categoryList.size();
+			const Category* cat = s_categoryList.data() + 1;
+			for (s32 i = 1; i < count; i++, cat++)
+			{
+				const s32 flag = 1 << i;
+				ImGui::CheckboxFlags(cat->name.c_str(), (u32*)&s_objEntity.categories, (u32)flag);
+
+				s32 rowIdx = (i & 3);
+				if (rowIdx != 0 && i < count - 1)
+				{
+					ImGui::SameLine(150.0f * rowIdx, 0.0f);
+				}
+			}
+
+			ImGui::Separator();
+
+			if (ImGui::Button("Confirm"))
+			{
+				active = false;
+			}
+			ImGui::SameLine(0.0f, 32.0f);
+			if (ImGui::Button("Cancel"))
+			{
+				s_objEntity.categories = s_prevCategoryFlags;
+				active = false;
+			}
+			ImGui::EndPopup();
+		}
+
+		popFont();
+
+		return !active;
 	}
 }

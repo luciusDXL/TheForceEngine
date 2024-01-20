@@ -77,16 +77,7 @@ namespace LevelEditor
 		LevVersionMax = 21,
 		LevVersion_Layers_WallLight = 21,
 	};
-	enum LevelEditorFormat
-	{
-		LEF_MinVersion = 1,
-		LEF_EntityV1   = 2,
-		LEF_EntityV2   = 3,
-		LEF_EntityList = 4,
-		LEF_EntityV3   = 5,
-		LEF_CurVersion = 5,
-	};
-
+	
 	EditorSector* findSectorDf(const Vec3f pos);
 
 	AssetHandle loadTexture(const char* bmTextureName)
@@ -940,7 +931,7 @@ namespace LevelEditor
 			Entity* entity = s_level.entities.data();
 			for (s32 i = 0; i < entityCount; i++, entity++)
 			{
-				readEntityDataBinary(&file, entity);
+				readEntityDataBinary(&file, entity, version);
 				loadSingleEntityData(entity);
 				entity->id = i;
 			}
@@ -1202,13 +1193,13 @@ namespace LevelEditor
 				} break;
 				case EVARTYPE_STRING_LIST:
 				{
-					WRITE_LINE("            %s:     %s\r\n", def->name.c_str(), var[v].value.sValue.c_str());
+					WRITE_LINE("            %s:     \"%s\"\r\n", def->name.c_str(), var[v].value.sValue.c_str());
 				} break;
 				case EVARTYPE_INPUT_STRING_PAIR:
 				{
 					if (!var[v].value.sValue.empty())
 					{
-						WRITE_LINE("            %s:     %s %s\r\n", def->name.c_str(), var[v].value.sValue.c_str(), var[v].value.sValue1.c_str());
+						WRITE_LINE("            %s:     \"%s\" \"%s\"\r\n", def->name.c_str(), var[v].value.sValue.c_str(), var[v].value.sValue1.c_str());
 					}
 				} break;
 			}

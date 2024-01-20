@@ -7,6 +7,7 @@
 #include <TFE_Settings/settings.h>
 #include <TFE_Editor/AssetBrowser/assetBrowser.h>
 #include <TFE_Editor/LevelEditor/levelEditor.h>
+#include <TFE_Editor/LevelEditor/infoPanel.h>
 #include <TFE_Editor/EditorAsset/editorAsset.h>
 #include <TFE_Editor/EditorAsset/editor3dThumbnails.h>
 #include <TFE_Input/input.h>
@@ -156,6 +157,10 @@ namespace TFE_Editor
 			{
 				ImGui::OpenPopup("Browse");
 			} break;
+			case POPUP_CATEGORY:
+			{
+				ImGui::OpenPopup("Category");
+			} break;
 		}
 	}
 
@@ -216,6 +221,14 @@ namespace TFE_Editor
 			case POPUP_BROWSE:
 			{
 				if (AssetBrowser::popup())
+				{
+					ImGui::CloseCurrentPopup();
+					s_editorPopup = POPUP_NONE;
+				}
+			} break;
+			case POPUP_CATEGORY:
+			{
+				if (LevelEditor::categoryPopupUI())
 				{
 					ImGui::CloseCurrentPopup();
 					s_editorPopup = POPUP_NONE;

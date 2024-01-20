@@ -16,6 +16,17 @@
 
 namespace LevelEditor
 {
+	enum LevelEditorFormat
+	{
+		LEF_MinVersion = 1,
+		LEF_EntityV1   = 2,
+		LEF_EntityV2   = 3,
+		LEF_EntityList = 4,
+		LEF_EntityV3   = 5,
+		LEF_EntityV4   = 6,
+		LEF_CurVersion = 6,
+	};
+
 	enum LevelEditMode
 	{
 		LEDIT_DRAW = 1,

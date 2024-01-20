@@ -31,6 +31,8 @@ namespace LevelEditor
 	void drawInfoPanel(EditorView view);
 	void infoToolEnd();
 
+	bool categoryPopupUI();
+
 	// Output messages
 	void infoPanelClearMessages();
 	void infoPanelAddMsg(LeMsgType type, const char* msg, ...);

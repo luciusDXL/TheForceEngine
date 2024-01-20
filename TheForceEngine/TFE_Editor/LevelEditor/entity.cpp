@@ -33,6 +33,8 @@ namespace LevelEditor
 		EKEY_ICON,
 		EKEY_ASSET,
 		EKEY_ASSET_OFFSET_Y,
+		EKEY_CATEGORY,
+		EKEY_TOOLTIP,
 		EKEY_COUNT,
 		EKEY_UNKNOWN = EKEY_COUNT
 	};
@@ -69,6 +71,8 @@ namespace LevelEditor
 		"Icon",            // EKEY_ICON
 		"Asset",           // EKEY_ASSET
 		"Asset_Offset_Y",  // EKEY_ASSET_OFFSET_Y
+		"Category",        // EKEY_CATEGORY
+		"Tooltip",         // EKEY_TOOLTIP
 	};
 
 	const char* c_logicKeyStr[LKEY_COUNT] =
@@ -112,8 +116,8 @@ namespace LevelEditor
 
 	std::vector<LogicDef> s_logicDefList;
 	std::vector<EntityVarDef> s_varDefList;
+	std::vector<Category> s_categoryList;
 	std::vector<u8> s_fileData;
-	s32 s_customEntityStart = 0;
 
 	void parseValue(const TokenList& tokens, EntityVarType type, EntityVarValue* value);
 
@@ -417,6 +421,29 @@ namespace LevelEditor
 			if (!writeToBuffer(fmtBuffer, buffer, bufferSize)) { return false; }
 		}
 
+		if (entity->categories)
+		{
+			//Category: Special
+			const s32 catCount = (s32)s_categoryList.size();
+			char catList[1024] = "";
+			s32 catFlags = entity->categories;
+			bool firstCat = true;
+			for (s32 i = 0; i < catCount; i++)
+			{
+				if (catFlags & (1 << i))
+				{
+					if (!firstCat)
+					{
+						strcpy(catList, ", ");
+					}
+					firstCat = false;
+					strcpy(catList, s_categoryList[i].name.c_str());
+				}
+			}
+			sprintf(fmtBuffer, "\tCategory: %s\r\n", catList);
+			if (!writeToBuffer(fmtBuffer, buffer, bufferSize)) { return false; }
+		}
+
 		return true;
 	}
 
@@ -526,6 +553,10 @@ namespace LevelEditor
 		file->write(&entity->name);
 		s32 type = s32(entity->type);
 		file->write(&type);
+
+		// LEF_EntityV4
+		file->write(&entity->categories);
+
 		file->write(&entity->assetName);
 		file->writeBuffer(&entity->offsetAdj, sizeof(Vec3f));
 
@@ -546,13 +577,17 @@ namespace LevelEditor
 	// Read entity data from a binary buffer.
 	// Once all entities are loaded, call loadSingleEntityData(entity) for each one
 	// to load asset data.
-	bool readEntityDataBinary(FileStream* file, Entity* entity)
+	bool readEntityDataBinary(FileStream* file, Entity* entity, s32 version)
 	{
 		*entity = {};
 		file->read(&entity->name);
 		s32 type = 0;
 		file->read(&type);
 		entity->type = EntityType(type);
+		if (version >= LEF_EntityV4)
+		{
+			file->read(&entity->categories);
+		}
 		file->read(&entity->assetName);
 		file->readBuffer(&entity->offsetAdj, sizeof(Vec3f));
 
@@ -570,11 +605,25 @@ namespace LevelEditor
 		return true;
 	}
 
+	s32 getCategoryFlag(const char* name)
+	{
+		const s32 count = (s32)s_categoryList.size();
+		const Category* cat = s_categoryList.data();
+		for (s32 i = 0; i < count; i++, cat++)
+		{
+			if (strcasecmp(name, cat->name.c_str()) == 0)
+			{
+				return 1 << i;
+			}
+		}
+		return 0;
+	}
+
 	bool loadEntityData(const char* localDir)
 	{
 		s_entityDefList.clear();
-		s_customEntityStart = 0;
-
+		s_categoryList.clear();
+		
 		char entityDefPath[TFE_MAX_PATH];
 		const char* progPath = TFE_Paths::getPath(TFE_PathType::PATH_PROGRAM);
 		sprintf(entityDefPath, "%sEditorDef/%s/EntityDef.ini", progPath, localDir);
@@ -600,6 +649,7 @@ namespace LevelEditor
 		const char* line;
 		char* endPtr = nullptr;
 		Entity* curEntity = nullptr;
+		Category* curCat = nullptr;
 		std::vector<EntityVar>* varList = nullptr;
 		TokenList tokens;
 		line = parser.readLine(bufferPos);
@@ -631,6 +681,7 @@ namespace LevelEditor
 							curEntity = &s_entityDefList.back();
 							curEntity->id = s32(s_entityDefList.size()) - 1;
 							curEntity->name = tokens[1];
+							curEntity->categories = 0;
 							varList = &curEntity->var;
 						} break;
 						case EKEY_CLASS:
@@ -652,6 +703,39 @@ namespace LevelEditor
 						case EKEY_ASSET_OFFSET_Y:
 						{
 							curEntity->offsetAdj.y += strtof(tokens[1].c_str(), &endPtr);
+						} break;
+						case EKEY_CATEGORY:
+						{
+							if (!curEntity)
+							{
+								// New category.
+								s32 index = (s32)s_categoryList.size();
+								s_categoryList.push_back({});
+								curCat = &s_categoryList.back();
+
+								curCat->flag = 1 << index;
+								curCat->name = tokens[1];
+								curCat->tooltip = "";
+							}
+							else
+							{
+								// Category list for the current entity.
+								s32 catCount = (s32)tokens.size() - 1;
+								s32 catFlags = 0;
+								for (s32 c = 0; c < catCount; c++)
+								{
+									catFlags |= getCategoryFlag(tokens[c + 1].c_str());
+								}
+								curEntity->categories = catFlags;
+							}
+						} break;
+						case EKEY_TOOLTIP:
+						{
+							if (!curEntity && curCat)
+							{
+								// Category tooltip.
+								curCat->tooltip = tokens[1];
+							}
 						} break;
 						case EKEY_UNKNOWN:
 						default:
@@ -677,7 +761,6 @@ namespace LevelEditor
 		{
 			loadSingleEntityData(entity);
 		}
-		s_customEntityStart = (s32)s_entityDefList.size();
 
 		return true;
 	}
@@ -913,6 +996,35 @@ namespace LevelEditor
 		return true;
 	}
 
+	void removeQuotes(const char* src, char* dst)
+	{
+		s32 firstNonQuote = -1;
+		s32 lastNonQuote = -1;
+		const size_t len = strlen(src);
+		for (size_t i = 0; i < len; i++)
+		{
+			if (firstNonQuote < 0 && src[i] != '\"')
+			{
+				firstNonQuote = s32(i);
+				lastNonQuote = firstNonQuote;
+			}
+			else if (src[i] != '\"')
+			{
+				lastNonQuote = s32(i);
+			}
+		}
+		if (firstNonQuote < 0 || lastNonQuote < firstNonQuote)
+		{
+			dst[0] = 0;
+			return;
+		}
+		for (s32 i = firstNonQuote; i <= lastNonQuote; i++)
+		{
+			dst[i - firstNonQuote] = src[i];
+		}
+		dst[lastNonQuote-firstNonQuote+1] = 0;
+	}
+
 	void parseValue(const TokenList& tokens, EntityVarType type, EntityVarValue* value)
 	{
 		char* endPtr = nullptr;
@@ -940,7 +1052,10 @@ namespace LevelEditor
 			case EVARTYPE_INPUT_STRING_PAIR:
 			{
 				value->sValue = valueStr;
-				value->sValue1 = valueStr1;
+
+				char fixedStr1[256];
+				removeQuotes(valueStr1, fixedStr1);
+				value->sValue1 = fixedStr1;
 			} break;
 		}
 	}

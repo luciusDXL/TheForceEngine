@@ -39,12 +39,21 @@ namespace LevelEditor
 		"Used",     // BSORT_USED
 	};
 
+	struct FilteredEntity
+	{
+		Entity* entity;
+		s32 index;
+	};
+
 	typedef std::vector<Asset*> FilteredAssetList;
+	typedef std::vector<FilteredEntity> FilteredEntityList;
 
 	static char s_filter[32] = "";
 	static BrowseSort s_browseSort = BSORT_NAME;
 	static FilteredAssetList s_filteredList;
+	static FilteredEntityList s_filteredEntityList;
 	static s32 s_focusOnRow = -1;
+	static s32 s_entityCategory = -1;
 	static TextureGpu* s_icon3d = nullptr;
 
 	void browseTextures();
@@ -300,10 +309,55 @@ namespace LevelEditor
 		ImGui::EndChild();
 	}
 
+	void updateEntityFilter()
+	{
+		s_filteredEntityList.clear();
+		const u32 flag = s_entityCategory < 0 ? 0xffffffff : 1u << u32(s_entityCategory);
+		const s32 count = s_entityDefList.size();
+		Entity* entity = s_entityDefList.data();
+		for (s32 i = 0; i < count; i++, entity++)
+		{
+			if (flag == 0xffffffff || (entity->categories & flag))
+			{
+				s_filteredEntityList.push_back({entity, i});
+			}
+		}
+	}
+
 	void browseEntities()
 	{
 		// Do sort stuff later....
-		const s32 count = (s32)s_entityDefList.size();
+		ImGui::Text("Category: ");
+		ImGui::SameLine(0.0f, 8.0f);
+		ImGui::SetNextItemWidth(128.0f);
+		s32 prevCategory = s_entityCategory;
+		if (ImGui::BeginCombo("##EntityCategory", s_entityCategory < 0 ? "All" : s_categoryList[s_entityCategory].name.c_str()))
+		{
+			s32 count = (s32)s_categoryList.size() + 1;
+			for (s32 i = 0; i < count; i++)
+			{
+				const char* name = "All";
+				if (i > 0)
+				{
+					name = s_categoryList[i - 1].name.c_str();
+				}
+
+				if (ImGui::Selectable(name, i-1 == s_entityCategory))
+				{
+					s_entityCategory = i-1;
+				}
+				setTooltip(i == 0 ? "Show all categories." : s_categoryList[i - 1].tooltip.c_str());
+			}
+			ImGui::EndCombo();
+		}
+		setTooltip("Select a category to filter by.");
+		ImGui::Separator();
+		if (s_entityCategory != prevCategory || s_filteredEntityList.empty())
+		{
+			updateEntityFilter();
+		}
+
+		const s32 count = (s32)s_filteredEntityList.size();
 		const u32 padding = 8;
 		s32 selectedIndex = s_selectedEntity;
 
@@ -312,8 +366,8 @@ namespace LevelEditor
 			const u32 idBase = 0x100100;
 			for (s32 i = 0, x = 0; i < count; i++)
 			{
-				s32 index = i;
-				Entity* entity = &s_entityDefList[index];
+				s32 index = s_filteredEntityList[i].index;
+				Entity* entity = s_filteredEntityList[i].entity;
 				bool isSelected = selectedIndex == index;
 
 				void* ptr = nullptr;
