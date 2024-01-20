@@ -1122,13 +1122,13 @@ namespace LevelEditor
 	bool entityDefsEqual(const Entity* e0, const Entity* e1)
 	{
 		return (e0->name == e1->name && e0->assetName == e1->assetName && e0->type == e1->type &&
-			logicListsMatch(e0->logic, e1->logic) && varListsMatch(e0->var, e1->var));
+			logicListsMatch(e0->logic, e1->logic) && varListsMatch(e0->var, e1->var) && e0->categories == e1->categories);
 	}
 
 	bool entityDefsEqualIgnoreName(const Entity* e0, const Entity* e1)
 	{
 		return (e0->assetName == e1->assetName && e0->type == e1->type &&
-			logicListsMatch(e0->logic, e1->logic) && varListsMatch(e0->var, e1->var));
+			logicListsMatch(e0->logic, e1->logic) && varListsMatch(e0->var, e1->var) && e0->categories == e1->categories);
 	}
 
 	s32 getEntityDefId(const Entity* srcEntity)
