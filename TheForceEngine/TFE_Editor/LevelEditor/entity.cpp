@@ -118,7 +118,6 @@ namespace LevelEditor
 	std::vector<LogicDef> s_logicDefList;
 	std::vector<EntityVarDef> s_varDefList;
 	std::vector<Category> s_categoryList;
-	std::vector<u8> s_fileData;
 
 	void parseValue(const TokenList& tokens, EntityVarType type, EntityVarValue* value);
 

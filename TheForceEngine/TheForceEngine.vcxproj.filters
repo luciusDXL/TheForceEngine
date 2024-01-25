@@ -1294,6 +1294,9 @@
     <ClInclude Include="TFE_Editor\EditorAsset\editor3dThumbnails.h">
       <Filter>Source\TFE_Editor\EditorAsset</Filter>
     </ClInclude>
+    <ClInclude Include="TFE_Editor\LevelEditor\levelEditorInf.h">
+      <Filter>Source\TFE_Editor\LevelEditor</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -2219,6 +2222,9 @@
     </ClCompile>
     <ClCompile Include="TFE_Editor\EditorAsset\editor3dThumbnails.cpp">
       <Filter>Source\TFE_Editor\EditorAsset</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Editor\LevelEditor\levelEditorInf.cpp">
+      <Filter>Source\TFE_Editor\LevelEditor</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

@@ -8,6 +8,7 @@
 #include <TFE_Editor/AssetBrowser/assetBrowser.h>
 #include <TFE_Editor/LevelEditor/levelEditor.h>
 #include <TFE_Editor/LevelEditor/infoPanel.h>
+#include <TFE_Editor/LevelEditor/levelEditorInf.h>
 #include <TFE_Editor/EditorAsset/editorAsset.h>
 #include <TFE_Editor/EditorAsset/editor3dThumbnails.h>
 #include <TFE_Input/input.h>
@@ -161,6 +162,10 @@ namespace TFE_Editor
 			{
 				ImGui::OpenPopup("Category");
 			} break;
+			case POPUP_SECTOR_INF:
+			{
+				ImGui::OpenPopup("Sector INF");
+			} break;
 		}
 	}
 
@@ -229,6 +234,14 @@ namespace TFE_Editor
 			case POPUP_CATEGORY:
 			{
 				if (LevelEditor::categoryPopupUI())
+				{
+					ImGui::CloseCurrentPopup();
+					s_editorPopup = POPUP_NONE;
+				}
+			} break;
+			case POPUP_SECTOR_INF:
+			{
+				if (LevelEditor::editor_infSectorEdit())
 				{
 					ImGui::CloseCurrentPopup();
 					s_editorPopup = POPUP_NONE;
@@ -588,6 +601,10 @@ namespace TFE_Editor
 			case POPUP_BROWSE:
 			{
 				AssetBrowser::initPopup(AssetType(userData), (char*)userPtr);
+			} break;
+			case POPUP_SECTOR_INF:
+			{
+				LevelEditor::editor_infSectorEditBegin((char*)userPtr);
 			} break;
 		}
 	}

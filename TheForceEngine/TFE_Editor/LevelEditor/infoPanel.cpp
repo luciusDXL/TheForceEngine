@@ -429,6 +429,12 @@ namespace LevelEditor
 		ImGui::LabelText("##SectorMirror", "Mirror"); ImGui::SameLine(240);
 		infoIntInput("##SectorMirrorInput", 96, &wall->mirrorId);
 
+		ImGui::SameLine(0.0f, 20.0f);
+		if (ImGui::Button("Edit INF"))
+		{
+			// TODO
+		}
+
 		s32 light = wall->wallLight;
 		ImGui::LabelText("##SectorLight", "Light Adjustment"); ImGui::SameLine(148.0f);
 		infoIntInput("##SectorLightInput", 96, &light);
@@ -681,6 +687,11 @@ namespace LevelEditor
 			sector->name = sectorName;
 		}
 		ImGui::PopItemWidth();
+		ImGui::SameLine(0.0f, 20.0f);
+		if (ImGui::Button("Edit INF"))
+		{
+			TFE_Editor::openEditorPopup(POPUP_SECTOR_INF, 0, sector->name.empty() ? nullptr : (void*)sector->name.c_str());
+		}
 
 		// Layer and Ambient
 		s32 layer = sector->layer;
@@ -1515,7 +1526,7 @@ namespace LevelEditor
 	{
 		ImGui::End();
 	}
-
+		
 	bool categoryPopupUI()
 	{
 		f32 winWidth = 600.0f;

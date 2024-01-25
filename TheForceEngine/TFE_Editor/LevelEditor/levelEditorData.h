@@ -225,4 +225,6 @@ namespace LevelEditor
 	bool aabbOverlap2d(const Vec3f* aabb0, const Vec3f* aabb1);
 	bool pointInsideAABB3d(const Vec3f* aabb, const Vec3f* pt);
 	bool pointInsideAABB2d(const Vec3f* aabb, const Vec3f* pt);
+
+	extern std::vector<u8> s_fileData;
 }

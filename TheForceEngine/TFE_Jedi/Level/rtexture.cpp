@@ -231,6 +231,7 @@ namespace TFE_Jedi
 
 		TextureData* texture = (TextureData*)region_alloc(s_texState.memoryRegion, sizeof(TextureData));
 		const u8* data = s_buffer.data();
+		const u8* end = data + size;
 		const u8* fheader = data;
 		data += 3;
 
@@ -277,6 +278,7 @@ namespace TFE_Jedi
 
 				const u32* columns = (u32*)data;
 				data += sizeof(u32) * texture->width;
+				assert(data <= end);
 
 				if (texture->compressed == 1)
 				{
@@ -305,10 +307,12 @@ namespace TFE_Jedi
 				texture->image = (u8*)region_alloc(s_texState.memoryRegion, texture->dataSize);
 				memcpy(texture->image, data, texture->dataSize);
 				data += texture->dataSize;
+				assert(data <= end);
 
 				texture->columns = (u32*)region_alloc(s_texState.memoryRegion, texture->width * sizeof(u32));
 				memcpy(texture->columns, data, texture->width * sizeof(u32));
 				data += texture->width * sizeof(u32);
+				assert(data <= end);
 			}
 		}
 		else
@@ -317,14 +321,17 @@ namespace TFE_Jedi
 			// Datasize, ignored.
 			data += 4;
 			texture->columns = nullptr;
+			assert(data <= end);
 
 			// Padding, ignored.
 			data += 12;
+			assert(data <= end);
 
 			// Allocate and read the BM image.
 			texture->image = (u8*)region_alloc(s_texState.memoryRegion, texture->dataSize);
 			memcpy(texture->image, data, texture->dataSize);
 			data += texture->dataSize;
+			assert(data <= end);
 		}
 
 		// Add the texture to the level texture cache if appropriate.
@@ -489,6 +496,7 @@ namespace TFE_Jedi
 		assert(anim->frameList);
 
 		const u8* base = tex->image + 2;
+		const s64 imageBase = s64(tex->image);
 		for (s32 i = 0; i < anim->count; i++)
 		{
 			const TextureData* frame = (TextureData*)(base + textureOffsets[i]);
@@ -502,8 +510,14 @@ namespace TFE_Jedi
 
 			// Allocate an image buffer since everything no longer fits nicely.
 			outFrames[i].image = (u8*)level_alloc(outFrames[i].width * outFrames[i].height);
-			memcpy(outFrames[i].image, (u8*)frame + 0x1c, outFrames[i].width * outFrames[i].height);
-
+			memset(outFrames[i].image, 0, outFrames[i].width * outFrames[i].height);
+			
+			// Verify that we don't read past the end of the buffer.
+			const s64 curOffset = s64((u8*)frame + 0x1c - imageBase);
+			const s64 maxSize = tex->dataSize - curOffset;
+			const s64 sizeToCopy = min(maxSize, outFrames[i].width * outFrames[i].height);
+			memcpy(outFrames[i].image, (u8*)frame + 0x1c, sizeToCopy);
+			
 			// We have to make sure the structure offsets line up with DOS...
 			outFrames[i].flags = *((u8*)frame + 0x18);
 			outFrames[i].compressed = *((u8*)frame + 0x19);

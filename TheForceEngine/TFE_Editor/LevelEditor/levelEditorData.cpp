@@ -3,6 +3,7 @@
 #include "entity.h"
 #include "error.h"
 #include "shell.h"
+#include "levelEditorInf.h"
 #include <TFE_Editor/history.h>
 #include <TFE_Editor/errorMessages.h>
 #include <TFE_Editor/editorConfig.h>
@@ -56,7 +57,7 @@ namespace LevelEditor
 {
 	const char* c_newLine = "\r\n";
 
-	static std::vector<u8> s_fileData;
+	std::vector<u8> s_fileData;
 	static u32* s_palette = nullptr;
 	static s32 s_palIndex = 0;
 
@@ -471,6 +472,11 @@ namespace LevelEditor
 		char slotName[256];
 		FileUtil::stripExtension(asset->name.c_str(), slotName);
 
+		// Clear the INF data.
+		s_levelInf.elevator.clear();
+		s_levelInf.teleport.clear();
+		s_levelInf.trigger.clear();
+
 		// First check to see if there is a "tfl" version of the level.
 		if (loadFromTFL(slotName))
 		{
@@ -783,6 +789,7 @@ namespace LevelEditor
 			sectorToPolygon(sector);
 		}
 		loadLevelObjFromAsset(asset);
+		loadLevelInfFromAsset(asset);
 
 		return true;
 	}

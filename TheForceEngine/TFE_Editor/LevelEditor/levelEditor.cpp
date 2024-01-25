@@ -4916,6 +4916,12 @@ namespace LevelEditor
 			}
 			ImGui::EndMenu();
 		}
+		if (ImGui::BeginMenu("INF"))
+		{
+			// TODO
+
+			ImGui::EndMenu();
+		}
 
 		return menuActive;
 	}
