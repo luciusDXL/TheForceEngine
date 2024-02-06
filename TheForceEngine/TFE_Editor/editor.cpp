@@ -4,6 +4,7 @@
 #include "editorResources.h"
 #include "editorProject.h"
 
+#include <TFE_Asset/imageAsset.h>
 #include <TFE_Settings/settings.h>
 #include <TFE_Editor/AssetBrowser/assetBrowser.h>
 #include <TFE_Editor/LevelEditor/levelEditor.h>
@@ -47,6 +48,9 @@ namespace TFE_Editor
 	};
 
 	static std::vector<RecentProject> s_recents;
+
+	static s32 s_uid = 0;
+	static char s_uidBuffer[256];
 	
 	static bool s_showPerf = true;
 	static bool s_showEditor = true;
@@ -68,10 +72,14 @@ namespace TFE_Editor
 	static Vec2i s_prevMousePos = { 0 };
 	static const f64 c_tooltipDelay = 0.2;
 	static bool s_canShowTooltips = false;
+
+	static TextureGpu* s_iconAtlas = nullptr;
 	
 	void menu();
 	void loadFonts();
 	void updateTooltips();
+	bool loadIcons();
+	void freeIcons();
 
 	WorkBuffer& getWorkBuffer()
 	{
@@ -84,6 +92,7 @@ namespace TFE_Editor
 		s_editorMode = EDIT_ASSET_BROWSER;
 		s_exitEditor = false;
 		loadFonts();
+		loadIcons();
 		loadConfig();
 		AssetBrowser::init();
 		TFE_RenderShared::modelDraw_init();
@@ -96,6 +105,84 @@ namespace TFE_Editor
 		AssetBrowser::destroy();
 		thumbnail_destroy();
 		TFE_RenderShared::modelDraw_destroy();
+		freeIcons();
+	}
+		
+	bool loadIcons()
+	{
+		s_iconAtlas = loadGpuImage("UI_Images/IconAtlas.png");
+		return s_iconAtlas != nullptr;
+	}
+
+	void freeIcons()
+	{
+		TFE_RenderBackend::freeTexture(s_iconAtlas);
+		s_iconAtlas = nullptr;
+	}
+		
+	bool iconButton(IconId icon, const char* tooltip/*=nullptr*/, bool highlight/*=false*/, const f32* tint/*=nullptr*/)
+	{
+		void* gpuPtr = TFE_RenderBackend::getGpuPtr(s_iconAtlas);
+		const s32 x = s32(icon) & 7;
+		const s32 y = s32(icon) >> 3;
+
+		const f32 imageScale = 1.0f / 272.0f;
+		const f32 x0 = f32(x) * 34.0f + 1.0f;
+		const f32 x1 = x0 + 32.0f;
+		const f32 y0 = f32(y) * 34.0f + 1.0f;
+		const f32 y1 = y0 + 32.0f;
+		const ImVec4 tintColor = tint ? ImVec4(tint[0], tint[1], tint[2], tint[3]) : ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
+		const ImVec4 bgColor = ImVec4(0, 0, 0, highlight ? 0.75f : 0.25f);
+		const s32 padding = 1;
+
+		// A unique ID formed from: icon + instance*ICON_COUNT + ptr&0xffffffff
+		const s32 id = s_uid + s32(size_t(s_iconAtlas));
+		const ImVec2 size = ImVec2(32, 32);
+		s_uid++;
+			
+		ImGui::PushID(id);
+		bool res = ImGui::ImageButton(gpuPtr, size, ImVec2(x0*imageScale, y0*imageScale),
+			ImVec2(x1*imageScale, y1*imageScale), padding, bgColor, tintColor);
+		if (tooltip) { setTooltip(tooltip); }
+		ImGui::PopID();
+
+		return res;
+	}
+
+	bool iconButtonInline(IconId icon, const char* tooltip/*=nullptr*/, const f32* tint/*=nullptr*/, bool small/*=false*/)
+	{
+		void* gpuPtr = TFE_RenderBackend::getGpuPtr(s_iconAtlas);
+		const s32 x = s32(icon) & 7;
+		const s32 y = s32(icon) >> 3;
+
+		const f32 imageScale = 1.0f / 272.0f;
+		const f32 x0 = f32(x) * 34.0f + 1.0f;
+		const f32 x1 = x0 + 32.0f;
+		const f32 y0 = f32(y) * 34.0f + 1.0f;
+		const f32 y1 = y0 + 32.0f;
+		const ImVec4 tintColor  = tint ? ImVec4(tint[0], tint[1], tint[2], tint[3]) : ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
+		const ImVec4 tintColor2 = tint ? ImVec4(tint[0]*2.0f, tint[1]*2.0f, tint[2]*2.0f, tint[3]) : ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
+		const ImVec4 bgColor = ImVec4(0, 0, 0, 0);
+		const s32 padding = 0;
+
+		// A unique ID formed from: icon + instance*ICON_COUNT + ptr&0xffffffff
+		const s32 id = s_uid + s32(size_t(s_iconAtlas));
+		const ImVec2 size = small ? ImVec2(24, 24) : ImVec2(32, 32);
+		s_uid++;
+
+		ImGui::PushStyleColor(ImGuiCol_Button, { 0,0,0,0 });
+		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, { 0,0,0,0 });
+		ImGui::PushStyleColor(ImGuiCol_ButtonActive, { 0,0,0,0 });
+		ImGui::SetCursorPosY(ImGui::GetCursorPosY() - 2.0f);
+
+		ImGui::PushID(id);
+		bool res = ImGui::ImageButtonDualTint(gpuPtr, size, ImVec2(x0*imageScale, y0*imageScale),
+			ImVec2(x1*imageScale, y1*imageScale), padding, bgColor, tintColor, tintColor2);
+		if (tooltip) { setTooltip(tooltip); }
+		ImGui::PopID();
+		ImGui::PopStyleColor(3);
+
+		return res;
 	}
 
 	bool messageBoxUi()
@@ -271,6 +358,7 @@ namespace TFE_Editor
 
 	bool update(bool consoleOpen)
 	{
+		editor_clearUid();
 		thumbnail_update();
 
 		TFE_RenderBackend::clearWindow();
@@ -604,7 +692,7 @@ namespace TFE_Editor
 			} break;
 			case POPUP_SECTOR_INF:
 			{
-				LevelEditor::editor_infSectorEditBegin((char*)userPtr);
+				LevelEditor::editor_infEditBegin((char*)userPtr, userData == 0xffffffff ? -1 : userData);
 			} break;
 		}
 	}
@@ -789,5 +877,49 @@ namespace TFE_Editor
 			if (tolower(str[i]) != tolower(filter[i])) { return false; }
 		}
 		return true;
+	}
+
+	TextureGpu* loadGpuImage(const char* path)
+	{
+		char imagePath[TFE_MAX_PATH];
+		strcpy(imagePath, path);
+		if (!TFE_Paths::mapSystemPath(imagePath))
+		{
+			memset(imagePath, 0, TFE_MAX_PATH);
+			TFE_Paths::appendPath(TFE_PathType::PATH_PROGRAM, path, imagePath, TFE_MAX_PATH);
+			FileUtil::fixupPath(imagePath);
+		}
+
+		TextureGpu* gpuImage = nullptr;
+		SDL_Surface* image = TFE_Image::get(path);
+		if (image)
+		{
+			gpuImage = TFE_RenderBackend::createTexture(image->w, image->h, (u32*)image->pixels, MAG_FILTER_LINEAR);
+		}
+		return gpuImage;
+	}
+				
+	void editor_clearUid()
+	{
+		s_uid = 0;
+	}
+
+	const char* editor_getUniqueLabel(const char* label)
+	{
+		sprintf(s_uidBuffer, "%s##%d", label, s_uid);
+		s_uid++;
+		return s_uidBuffer;
+	}
+
+	s32 editor_getUniqueId()
+	{
+		s32 id = s_uid;
+		s_uid++;
+		return id;
+	}
+
+	bool editor_button(const char* label)
+	{
+		return ImGui::Button(editor_getUniqueLabel(label));
 	}
 }

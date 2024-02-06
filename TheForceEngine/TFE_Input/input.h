@@ -57,6 +57,7 @@ namespace TFE_Input
 	bool mousePressed(MouseButton button);
 	bool relativeModeEnabled();
 	void clearKeyPressed(KeyboardCode key);
+	void clearMouseButtonPressed(MouseButton btn);
 	void clearAccumulatedMouseMove();
 	// Buffered Input
 	const char* getBufferedText();

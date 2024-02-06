@@ -44,7 +44,6 @@ namespace LevelEditor
 	bool menu();
 
 	void selectNone();
-	TextureGpu* loadGpuImage(const char* path);
 
 	// Shared Edit Commands
 	void edit_moveVertices(s32 count, const FeatureId* vtxIds, Vec2f delta);

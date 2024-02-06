@@ -56,6 +56,14 @@ namespace LevelEditor
 	Editor_LevelInf s_levelInf;
 	static char s_infArg0[256], s_infArg1[256], s_infArg2[256], s_infArg3[256], s_infArg4[256], s_infArgExtra[256];
 
+	const char* c_elevStopCmdName[] =
+	{
+		"Message", // ISC_MESSAGE
+		"Adjoin",  // ISC_ADJOIN
+		"Texture", // ISC_TEXTURE
+		"Page"     // ISC_PAGE
+	};
+
 	const char* c_infElevTypeName[] =
 	{
 		// Special, "high level" elevators.
@@ -211,13 +219,31 @@ namespace LevelEditor
 		return (Editor_InfElevator*)data;
 	}
 
+	const Editor_InfElevator* getElevFromClassData(const Editor_InfClass* data)
+	{
+		if (data->classId != IIC_ELEVATOR) { return nullptr; }
+		return (Editor_InfElevator*)data;
+	}
+
 	Editor_InfTrigger* getTriggerFromClassData(Editor_InfClass* data)
 	{
 		if (data->classId != IIC_TRIGGER) { return nullptr; }
 		return (Editor_InfTrigger*)data;
 	}
 
+	const Editor_InfTrigger* getSectorTriggerFromClassData(const Editor_InfClass* data)
+	{
+		if (data->classId != IIC_TRIGGER) { return nullptr; }
+		return (Editor_InfTrigger*)data;
+	}
+
 	Editor_InfTeleporter* getTeleportFromClassData(Editor_InfClass* data)
+	{
+		if (data->classId != IIC_TELEPORTER) { return nullptr; }
+		return (Editor_InfTeleporter*)data;
+	}
+
+	const Editor_InfTeleporter* getTeleportFromClassData(const Editor_InfClass* data)
 	{
 		if (data->classId != IIC_TELEPORTER) { return nullptr; }
 		return (Editor_InfTeleporter*)data;
@@ -304,6 +330,61 @@ namespace LevelEditor
 					*type = IMT_TRIGGER;
 				}
 		}
+	}
+
+	// TODO: Share code.
+	void parseTarget(Editor_InfMessage* msg, char* arg)
+	{
+		char* endPtr = nullptr;
+		msg->targetWall = -1;
+
+		// There should be a variant of strstr() that returns a non-constant pointer, but in Visual Studio it is always constant.
+		char* parenOpen = (char*)strstr(arg, "(");
+		// This message targets a wall rather than a whole sector.
+		if (parenOpen)
+		{
+			*parenOpen = 0;
+			parenOpen++;
+
+			char* parenClose = (char*)strstr(arg, ")");
+			// This should never be true and this doesn't seem to be hit at runtime.
+			// I wonder if this was meant to be { char* parenClose = (char*)strstr(parenOpen, ")"); } - which would make more sense.
+			// Or it could have been check *before* the location at ")" was set to 0 above.
+			if (parenClose)
+			{
+				*parenClose = 0;
+			}
+			// Finally parse the integer and set the wall index.
+			msg->targetWall = strtol(parenOpen, &endPtr, 10);
+		}
+		msg->targetSector = arg;
+	}
+
+	void parseTarget(Editor_InfClient* client, char* arg)
+	{
+		char* endPtr = nullptr;
+		client->targetWall = -1;
+
+		// There should be a variant of strstr() that returns a non-constant pointer, but in Visual Studio it is always constant.
+		char* parenOpen = (char*)strstr(arg, "(");
+		// This message targets a wall rather than a whole sector.
+		if (parenOpen)
+		{
+			*parenOpen = 0;
+			parenOpen++;
+
+			char* parenClose = (char*)strstr(arg, ")");
+			// This should never be true and this doesn't seem to be hit at runtime.
+			// I wonder if this was meant to be { char* parenClose = (char*)strstr(parenOpen, ")"); } - which would make more sense.
+			// Or it could have been check *before* the location at ")" was set to 0 above.
+			if (parenClose)
+			{
+				*parenClose = 0;
+			}
+			// Finally parse the integer and set the wall index.
+			client->targetWall = strtol(parenOpen, &endPtr, 10);
+		}
+		client->targetSector = arg;
 	}
 
 	bool editor_parseElevatorCommand(s32 argCount, KEYWORD action, bool seqEnd, Editor_InfElevator* elev, s32& addon)
@@ -437,28 +518,7 @@ namespace LevelEditor
 				{
 					stop->msg.push_back({});
 					Editor_InfMessage* msg = &stop->msg.back();
-					msg->targetWall = -1;
-
-					// There should be a variant of strstr() that returns a non-constant pointer, but in Visual Studio it is always constant.
-					char* parenOpen = (char*)strstr(s_infArg1, "(");
-					// This message targets a wall rather than a whole sector.
-					if (parenOpen)
-					{
-						*parenOpen = 0;
-						parenOpen++;
-
-						char* parenClose = (char*)strstr(s_infArg1, ")");
-						// This should never be true and this doesn't seem to be hit at runtime.
-						// I wonder if this was meant to be { char* parenClose = (char*)strstr(parenOpen, ")"); } - which would make more sense.
-						// Or it could have been check *before* the location at ")" was set to 0 above.
-						if (parenClose)
-						{
-							*parenClose = 0;
-						}
-						// Finally parse the integer and set the wall index.
-						msg->targetWall = strtol(parenOpen, &endPtr, 10);
-					}
-					msg->targetSector = s_infArg1;
+					parseTarget(msg, s_infArg1);
 					msg->type = IMT_TRIGGER;
 					msg->eventFlags = INF_EVENT_NONE;
 
@@ -561,6 +621,7 @@ namespace LevelEditor
 					stop->page = s_infArg1;
 				}
 				elev->overrideSet |= IEO_STOPS;
+				stop->overrideSet |= ISO_PAGE;
 			} break;
 			case KW_SEQEND:
 			{
@@ -697,22 +758,304 @@ namespace LevelEditor
 
 	bool parseSectorTrigger(TFE_Parser& parser, size_t& bufferPos, s32 argCount, const char* itemName, Editor_InfItem* item)
 	{
-		// stuff.
-		parser.readLine(bufferPos);
+		EditorSector* itemSector = findSector(itemName);
+		if (!itemSector)
+		{
+			parser.readLine(bufferPos);
+			return false;
+		}
+
+		Editor_InfTrigger* trigger = allocTrigger(item);
+		trigger->overrideSet = ITO_NONE;
+		trigger->type = ITRIGGER_SECTOR;
+
+		bool seqEnd = false;
+		char* endPtr = nullptr;
+		while (!seqEnd)
+		{
+			const char* line = parser.readLine(bufferPos);
+			if (!line) { break; }
+			// There is another class in this sequence, exit out.
+			if (strstr(line, "CLASS")) { break; }
+
+			char id[256];
+			s32 argCount = sscanf(line, " %s %s %s %s %s", id, s_infArg0, s_infArg1, s_infArg2, s_infArg3);
+			KEYWORD itemId = getKeywordIndex(id);
+			assert(itemId != KW_UNKNOWN);
+			switch (itemId)
+			{
+				case KW_CLIENT:
+				{
+					Editor_InfClient client = {};
+					parseTarget(&client, s_infArg0);
+					if (argCount > 2)
+					{
+						client.eventMask = strtoul(s_infArg1, &endPtr, 10);
+					}
+					trigger->clients.push_back(client);
+				} break;
+				case KW_MASTER:
+				{
+					trigger->master = false;
+					trigger->overrideSet |= ITO_MASTER;
+				} break;
+				case KW_TEXT:
+				{
+					if (s_infArg0[0] >= '0' && s_infArg0[0] <= '9')
+					{
+						trigger->textId = strtoul(s_infArg0, &endPtr, 10);
+						trigger->overrideSet |= ITO_TEXT;
+					}
+				} break;
+				case KW_MESSAGE:
+				{
+					trigger->overrideSet |= ITO_MSG;
+					editor_parseMessage(&trigger->cmd, &trigger->arg[0], &trigger->arg[1], nullptr, s_infArg0, s_infArg1, s_infArg2, false);
+				} break;
+				case KW_EVENT_MASK:
+				{
+					trigger->overrideSet |= ITO_EVENT_MASK;
+					if (s_infArg0[0] == '*')
+					{
+						trigger->eventMask = INF_EVENT_ANY;
+					}
+					else
+					{
+						trigger->eventMask = strtoul(s_infArg0, &endPtr, 10);
+					}
+				} break;
+				case KW_ENTITY_MASK:
+				case KW_OBJECT_MASK:
+				{
+					trigger->overrideSet |= ITO_ENTITY_MASK;
+					if (s_infArg0[0] == '*')
+					{
+						trigger->entityMask = INF_ENTITY_ANY;
+					}
+					else
+					{
+						trigger->entityMask = strtoul(s_infArg0, &endPtr, 10);
+					}
+				} break;
+				case KW_EVENT:
+				{
+					trigger->overrideSet |= ITO_EVENT;
+					trigger->event = strtoul(s_infArg0, &endPtr, 10);
+				} break;
+				case KW_SEQEND:
+				{
+					// The sequence for this item has completed (no more classes).
+					seqEnd = true;
+				} break;
+			}
+		} // while (!seqEnd)
 		return true;
 	}
 
 	bool parseLineTrigger(TFE_Parser& parser, size_t& bufferPos, s32 argCount, const char* itemName, s32 wallNum, Editor_InfItem* item)
 	{
-		// stuff.
-		parser.readLine(bufferPos);
+		EditorSector* itemSector = findSector(itemName);
+		if (!itemSector)
+		{
+			parser.readLine(bufferPos);
+			return false;
+		}
+		if (wallNum < 0 || wallNum >= itemSector->walls.size())
+		{
+			parser.readLine(bufferPos);
+			return false;
+		}
+
+		Editor_InfTrigger* trigger = allocTrigger(item);
+		trigger->overrideSet = ITO_NONE;
+
+		KEYWORD typeId = getKeywordIndex(s_infArg0);
+		assert(typeId == KW_TRIGGER);
+
+		trigger->type = ITRIGGER_WALL;
+		if (argCount > 2)
+		{
+			KEYWORD subTypeId = getKeywordIndex(s_infArg1);
+			switch (subTypeId)
+			{
+				case KW_SWITCH1:
+				{
+					trigger->type = ITRIGGER_SWITCH1;
+				} break;
+				case KW_TOGGLE:
+				{
+					trigger->type = ITRIGGER_TOGGLE;
+				} break;
+				case KW_SINGLE:
+				{
+					trigger->type = ITRIGGER_SINGLE;
+				} break;
+				case KW_STANDARD:
+				default:
+				{
+					trigger->type = ITRIGGER_WALL;
+				}
+			}
+		}
+
+		// Trigger parameters
+		const char* line;
+		char* endPtr = nullptr;
+		bool seqEnd = false;
+		while (!seqEnd)
+		{
+			line = parser.readLine(bufferPos);
+			if (!line || strstr(line, "CLASS"))
+			{
+				break;
+			}
+
+			char id[256];
+			argCount = sscanf(line, " %s %s %s %s %s", id, s_infArg0, s_infArg1, s_infArg2, s_infArg3);
+			KEYWORD itemId = getKeywordIndex(id);
+			if (itemId == KW_UNKNOWN)
+			{
+				LE_WARNING("Unknown trigger parameter - '%s'.", id);
+			}
+			switch (itemId)
+			{
+				case KW_SEQEND:
+				{
+					seqEnd = true;
+				} break;
+				case KW_CLIENT:
+				{
+					Editor_InfClient client = {};
+					parseTarget(&client, s_infArg0);
+					if (argCount > 2)
+					{
+						client.eventMask = strtoul(s_infArg1, &endPtr, 10);
+					}
+					trigger->clients.push_back(client);
+				} break;
+				case KW_EVENT_MASK:
+				{
+					trigger->overrideSet |= ITO_EVENT_MASK;
+					if (s_infArg0[0] == '*')
+					{
+						trigger->eventMask = INF_EVENT_ANY;
+					}
+					else
+					{
+						trigger->eventMask = strtoul(s_infArg0, &endPtr, 10);
+					}
+				} break;
+				case KW_MASTER:
+				{
+					trigger->master = false;
+					trigger->overrideSet |= ITO_MASTER;
+				} break;
+				case KW_TEXT:
+				{
+					if (s_infArg0[0] >= '0' && s_infArg0[0] <= '9')
+					{
+						trigger->textId = strtoul(s_infArg0, &endPtr, 10);
+						trigger->overrideSet |= ITO_TEXT;
+					}
+				} break;
+				case KW_ENTITY_MASK:
+				case KW_OBJECT_MASK:
+				{
+					trigger->overrideSet |= ITO_ENTITY_MASK;
+					if (s_infArg0[0] == '*')
+					{
+						trigger->entityMask = INF_ENTITY_ANY;
+					}
+					else
+					{
+						trigger->entityMask = strtoul(s_infArg0, &endPtr, 10);
+					}
+				} break;
+				case KW_EVENT:
+				{
+					trigger->overrideSet |= ITO_EVENT;
+					trigger->event = strtoul(s_infArg0, &endPtr, 10);
+				} break;
+				case KW_SOUND_COLON:
+				{
+					// Not ascii
+					if (s_infArg0[0] < '0' || s_infArg0[0] > '9')
+					{
+						trigger->overrideSet |= ITO_SOUND;
+						trigger->sound = s_infArg0;
+					}
+				} break;
+				case KW_MESSAGE:
+				{
+					trigger->overrideSet |= ITO_MSG;
+					editor_parseMessage(&trigger->cmd, &trigger->arg[0], &trigger->arg[1], nullptr, s_infArg0, s_infArg1, s_infArg2, false);
+				} break;
+			}  // switch (itemId)
+		}  // while (!seqEnd)
+
 		return true;
 	}
 
 	bool parseTeleport(TFE_Parser& parser, size_t& bufferPos, const char* itemName, Editor_InfItem* item)
 	{
-		// stuff.
-		parser.readLine(bufferPos);
+		EditorSector* itemSector = findSector(itemName);
+		if (!itemSector)
+		{
+			parser.readLine(bufferPos);
+			return false;
+		}
+
+		Editor_InfTeleporter* teleporter = allocTeleporter(item);
+		KEYWORD itemSubclass = getKeywordIndex(s_infArg1);
+		// Special classes - these map to the 11 core elevator types but have special defaults and/or automatically setup stops.
+		if (itemSubclass == KW_BASIC)
+		{
+			teleporter->type = TELEPORT_BASIC;
+		}
+		else if (itemSubclass == KW_CHUTE)
+		{
+			teleporter->type = TELEPORT_CHUTE;
+		}
+		else
+		{
+			// Invalid type.
+			return false;
+		}
+
+		// Loop through trigger parameters.
+		const char* line;
+		bool seqEnd = false;
+		while (!seqEnd)
+		{
+			line = parser.readLine(bufferPos);
+			// There is another class in this sequence, so we are done with the trigger.
+			if (!line || strstr(line, "CLASS"))
+			{
+				break;
+			}
+
+			char name[256];
+			sscanf(line, " %s %s %s %s %s", name, s_infArg0, s_infArg1, s_infArg2, s_infArg3);
+			KEYWORD kw = getKeywordIndex(name);
+
+			if (kw == KW_TARGET)  // Target:
+			{
+				teleporter->target = s_infArg0;
+			}
+			else if (kw == KW_MOVE)  // Move:
+			{
+				char* endPtr;
+				teleporter->dstPos.x = strtof(s_infArg0, &endPtr);
+				teleporter->dstPos.y = strtof(s_infArg1, &endPtr);
+				teleporter->dstPos.z = strtof(s_infArg2, &endPtr);
+				teleporter->dstAngle = strtof(s_infArg3, &endPtr);
+			}
+			else if (kw == KW_SEQEND)
+			{
+				seqEnd = true;
+				break;
+			}
+		}
 		return true;
 	}
 
@@ -837,6 +1180,8 @@ namespace LevelEditor
 			{
 				case KW_LEVEL:
 				{
+					infItem->wallNum = -1;
+
 					line = parser.readLine(bufferPos);
 					if (line && strstr(line, "SEQ"))
 					{
@@ -861,6 +1206,8 @@ namespace LevelEditor
 				} break;
 				case KW_SECTOR:
 				{
+					infItem->wallNum = -1;
+
 					line = parser.readLine(bufferPos);
 					if (!line || !strstr(line, "SEQ"))
 					{
@@ -940,27 +1287,49 @@ namespace LevelEditor
 		return true;
 	}
 
-	EditorSector* s_infSector = nullptr;
-	Editor_InfItem* s_infItem = nullptr;
-
-	void editor_infSectorEditBegin(const char* sectorName)
+	enum InfEditorMode
 	{
-		s_infSector = nullptr;
-		s_infItem = nullptr;
+		INF_MODE_UI = 0,
+		INF_MODE_CODE,
+		INF_MODE_COUNT
+	};
+
+	struct InfEditor
+	{
+		InfEditorMode mode = INF_MODE_UI;
+		EditorSector* sector = nullptr;
+		Editor_InfItem* item = nullptr;
+		s32 itemWallIndex = -1;
+
+		s32 comboClassIndex    =  0;
+		s32 comboElevTypeIndex =  0;
+		s32 comboElevVarIndex  =  0;
+		s32 comboElevAddContentIndex = 0;
+		s32 comboElevCmdIndex = 0;
+		s32 curClassIndex      = -1;
+		s32 curPropIndex       = -1;
+		s32 curContentIndex    = -1;
+		s32 curStopCmdIndex    = -1;
+	};
+	static InfEditor s_infEditor = {};
+
+	void editor_infEditBegin(const char* sectorName, s32 wallIndex)
+	{
+		s_infEditor = {};
 		if (!sectorName || strlen(sectorName) < 1)
 		{
 			return;
 		}
+		s_infEditor.itemWallIndex = wallIndex;
 
 		const s32 count = (s32)s_level.sectors.size();
 		EditorSector* sector = s_level.sectors.data();
 		for (s32 i = 0; i < count; i++, sector++)
 		{
 			if (sector->name.empty()) { continue; }
-
 			if (strcasecmp(sectorName, sector->name.c_str()) == 0)
 			{
-				s_infSector = sector;
+				s_infEditor.sector = sector;
 				break;
 			}
 		}
@@ -969,9 +1338,9 @@ namespace LevelEditor
 		Editor_InfItem* item = s_levelInf.item.data();
 		for (s32 i = 0; i < itemCount; i++, item++)
 		{
-			if (strcasecmp(sectorName, item->name.c_str()) == 0)
+			if (strcasecmp(sectorName, item->name.c_str()) == 0 && wallIndex == item->wallNum)
 			{
-				s_infItem = item;
+				s_infEditor.item = item;
 				break;
 			}
 		}
@@ -999,7 +1368,7 @@ namespace LevelEditor
 		"Angle",		//IEV_ANGLE
 		"Flags",		//IEV_FLAGS
 		"Key",			//IEV_KEY0
-		"Key1 (Addon)",	//IEV_KEY1
+		"Key1",	        //IEV_KEY1
 		"Center",		//IEV_DIR
 		"Sound 1",		//IEV_SOUND0
 		"Sound 2",		//IEV_SOUND1
@@ -1039,10 +1408,10 @@ namespace LevelEditor
 
 	const u32 c_infEntityMaskFlags[] =
 	{
-		INF_ENTITY_ENEMY,
-		INF_ENTITY_WEAPON,
-		INF_ENTITY_SMART_OBJ,
-		INF_ENTITY_PLAYER,
+		u32(INF_ENTITY_ENEMY),
+		u32(INF_ENTITY_WEAPON),
+		u32(INF_ENTITY_SMART_OBJ),
+		u32(INF_ENTITY_PLAYER),
 	};
 
 	const char* c_infStopDelayTypeName[] =
@@ -1054,13 +1423,30 @@ namespace LevelEditor
 		"Prev (Buggy)", // SDELAY_PREV_VALUE,
 	};
 
-	static s32 s_infClassSelIndex = 0;
-	static s32 s_infElevTypeIndex = 0;
-	static s32 s_infElevVarIndex = 0;
-	static s32 s_infElevVarSelectIndex = -1;
-	static s32 s_stopSelected[256] = { 0 };
+	const char* c_editorInfMessageTypeName[] =
+	{
+		"Next_Stop",	// IMT_NEXT_STOP,
+		"Prev_Stop",	// IMT_PREV_STOP,
+		"Goto_Stop",	// IMT_GOTO_STOP,
+		"Master_On",	// IMT_MASTER_ON,
+		"Master_Off",	// IMT_MASTER_OFF,
+		"Set_Bits",		// IMT_SET_BITS,
+		"Clear_Bits",	// IMT_CLEAR_BITS,
+		"Complete",		// IMT_COMPLETE,
+		"Lights",		// IMT_LIGHTS,
+		"M_Trigger",	// IMT_TRIGGER,
+		"Done",			// IMT_DONE,
+		"Wakeup",		// IMT_WAKEUP,
+	};
+		
+	const ImVec4 colorKeywordOuterSel = { 0.453f, 0.918f, 1.00f, 1.0f };
+	const ImVec4 colorKeywordOuter = { 0.302f, 0.612f, 0.84f, 1.0f };
+	const ImVec4 colorKeywordInner = { 0.306f, 0.788f, 0.69f, 1.0f };
 
-	#define SELECT(x) s_infElevVarSelectIndex = (s_infElevVarSelectIndex == x) ? -1 : x;
+	const ImVec4 colorInnerHeaderBase = { 0.98f, 0.49f, 0.26f, 1.0f };
+	const ImVec4 colorInnerHeader = { colorInnerHeaderBase.x, colorInnerHeaderBase.y, colorInnerHeaderBase.z, 0.31f };
+	const ImVec4 colorInnerHeaderActive = { colorInnerHeaderBase.x, colorInnerHeaderBase.y, colorInnerHeaderBase.z, 0.80f };
+	const ImVec4 colorInnerHeaderHovered = { colorInnerHeaderBase.x, colorInnerHeaderBase.y, colorInnerHeaderBase.z, 0.60f };
 
 	u32 countBits(u32 bits)
 	{
@@ -1073,11 +1459,1230 @@ namespace LevelEditor
 		return count;
 	}
 
+	void editor_infSelectEditClass(s32 id)
+	{
+		if (id != s_infEditor.curClassIndex)
+		{
+			s_infEditor.curPropIndex = -1;
+			s_infEditor.curContentIndex = -1;
+			s_infEditor.curStopCmdIndex = -1;
+		}
+		s_infEditor.curClassIndex = id;
+	}
+
+	void editor_infPropertySelectable(Editor_InfElevatorVar var, s32 classIndex)
+	{
+		bool sel = classIndex == s_infEditor.curClassIndex ? s_infEditor.curPropIndex == var : false;
+		ImGui::PushStyleColor(ImGuiCol_Text, colorKeywordInner);
+
+		char buffer[256];
+		sprintf(buffer, "%s:", c_infElevVarName[var]);
+		if (ImGui::Selectable(buffer, sel, 0, { 100.0f, 0.0f }))
+		{
+			editor_infSelectEditClass(classIndex);
+			s_infEditor.curPropIndex = sel ? -1 : var;
+		}
+		ImGui::PopStyleColor();
+		ImGui::SameLine(0.0f, 8.0f);
+	}
+
+	f32 computeChildHeight(const Editor_InfClass* data, s32 contentSel, bool curClass, f32* propHeight, f32* contentHeight)
+	{
+		f32 height = 600.0f;
+		switch (data->classId)
+		{
+			case IIC_ELEVATOR:
+			{
+				const Editor_InfElevator* elev = getElevFromClassData(data);
+				assert(elev);
+
+				*propHeight = 26.0f * countBits(elev->overrideSet & IEO_VAR_MASK) + 16;
+				// Expand if flags are selected.
+				if (curClass && (s_infEditor.curPropIndex == IEV_FLAGS || s_infEditor.curPropIndex == IEV_ENTITY_MASK)) { *propHeight += 26.0f; }
+				else if (curClass && s_infEditor.curPropIndex == IEV_EVENT_MASK) { *propHeight += 26.0f * 3.0f; }
+
+				const s32 stopCount = (s32)elev->stops.size();
+				const s32 slaveCount = (s32)elev->slaves.size();
+				*contentHeight = 26.0f * f32(stopCount) + 16;
+				// Now count the number of stop messages, etc.
+				const Editor_InfStop* stop = elev->stops.data();
+				for (s32 s = 0; s < stopCount; s++, stop++)
+				{
+					*contentHeight += 26.0f * f32(stop->msg.size());
+					*contentHeight += 26.0f * f32(stop->adjoinCmd.size());
+					*contentHeight += 26.0f * f32(stop->textureCmd.size());
+					*contentHeight += (stop->overrideSet & ISO_PAGE) ? 26.0f : 0.0f;
+				}
+				*contentHeight += 26.0f * f32(slaveCount);
+				if (contentSel >= 0 && contentSel < (s32)elev->stops.size() && curClass)
+				{
+					// Room for buttons.
+					*contentHeight += 26.0f;
+				}
+
+				height = 140.0f + (*propHeight) + (*contentHeight);
+			} break;
+			case IIC_TRIGGER:
+			{
+			} break;
+			case IIC_TELEPORTER:
+			{
+			} break;
+		}
+		return height;
+	}
+
+	void editor_infSelectElevType(Editor_InfElevator* elev)
+	{
+		ImGui::SetNextItemWidth(180.0f);
+		ImGui::SetCursorPosY(ImGui::GetCursorPosY() - 2);
+		if (ImGui::BeginCombo(editor_getUniqueLabel(""), c_infElevTypeName[elev->type]))
+		{
+			s32 count = (s32)TFE_ARRAYSIZE(c_infElevTypeName);
+			for (s32 t = 0; t < count; t++)
+			{
+				if (ImGui::Selectable(c_infElevTypeName[t], t == s_infEditor.comboElevTypeIndex))
+				{
+					elev->type = Editor_InfElevType(t);
+				}
+				//setTooltip(c_infClassName[i].tooltip.c_str());
+			}
+			ImGui::EndCombo();
+		}
+	}
+
+	void editor_infEditElevProperties(Editor_InfElevator* elev, f32 propHeight, s32 itemClassIndex, const f32* btnTint)
+	{
+		ImGui::Text("%s", "Properties");
+		if (elev->overrideSet & IEO_VAR_MASK)
+		{
+			ImGui::BeginChild(editor_getUniqueLabel(""), { 0.0f, propHeight }, true);
+			{
+				const u32 overrides = elev->overrideSet;
+				if (overrides & IEO_START)
+				{
+					editor_infPropertySelectable(IEV_START, itemClassIndex);
+
+					ImGui::SetNextItemWidth(128.0f);
+					ImGui::InputInt(editor_getUniqueLabel(""), &elev->start);
+				}
+				if (overrides & IEO_SPEED)
+				{
+					editor_infPropertySelectable(IEV_SPEED, itemClassIndex);
+
+					ImGui::SetNextItemWidth(128.0f);
+					ImGui::InputFloat(editor_getUniqueLabel(""), &elev->speed, 0.1f, 1.0f, 3);
+				}
+				if (overrides & IEO_MASTER)
+				{
+					editor_infPropertySelectable(IEV_MASTER, itemClassIndex);
+					ImGui::Checkbox(editor_getUniqueLabel(""), &elev->master);
+				}
+				if (overrides & IEO_ANGLE)
+				{
+					editor_infPropertySelectable(IEV_ANGLE, itemClassIndex);
+
+					ImGui::SetNextItemWidth(128.0f);
+					ImGui::SliderAngle(editor_getUniqueLabel(""), &elev->angle);
+					ImGui::SameLine(0.0f, 8.0f);
+					ImGui::SetNextItemWidth(128.0f);
+					f32 angle = elev->angle * 180.0f / PI;
+					if (ImGui::InputFloat(editor_getUniqueLabel(""), &angle, 0.1f, 1.0f, 3))
+					{
+						elev->angle = angle * PI / 180.0f;
+					}
+
+					ImGui::SameLine(0.0f, 8.0f);
+					if (iconButtonInline(ICON_SELECT, "Select points to form the angle from the viewport.", btnTint, true))
+					{
+						// TODO
+					}
+				}
+				if (overrides & IEO_FLAGS)
+				{
+					editor_infPropertySelectable(IEV_FLAGS, itemClassIndex);
+
+					ImGui::SetNextItemWidth(128.0f);
+					ImGui::InputUInt(editor_getUniqueLabel(""), &elev->flags);
+					if (s_infEditor.curPropIndex == IEV_FLAGS)
+					{
+						for (s32 i = 0; i < TFE_ARRAYSIZE(c_infElevFlagNames); i++)
+						{
+							if (i != 0) { ImGui::SameLine(0.0f, 8.0f); }
+							ImGui::CheckboxFlags(editor_getUniqueLabel(c_infElevFlagNames[i]), &elev->flags, 1 << i);
+						}
+					}
+				}
+				if (overrides & IEO_KEY0)
+				{
+					editor_infPropertySelectable(IEV_KEY0, itemClassIndex);
+
+					s32 keyIndex = elev->key[0] - KeyItem::KEY_RED;
+					ImGui::SetNextItemWidth(128.0f);
+					if (ImGui::Combo(editor_getUniqueLabel(""), &keyIndex, c_infKeyNames, TFE_ARRAYSIZE(c_infKeyNames)))
+					{
+						elev->key[0] = KeyItem(keyIndex + KeyItem::KEY_RED);
+					}
+
+				}
+				if (overrides & IEO_KEY1)
+				{
+					editor_infPropertySelectable(IEV_KEY1, itemClassIndex);
+
+					s32 keyIndex = elev->key[1] - KeyItem::KEY_RED;
+					ImGui::SetNextItemWidth(128.0f);
+					if (ImGui::Combo(editor_getUniqueLabel(""), &keyIndex, c_infKeyNames, TFE_ARRAYSIZE(c_infKeyNames)))
+					{
+						elev->key[1] = KeyItem(keyIndex + KeyItem::KEY_RED);
+					}
+				}
+				if (overrides & IEO_DIR)
+				{
+					editor_infPropertySelectable(IEV_DIR, itemClassIndex);
+
+					ImGui::SetNextItemWidth(160.0f);
+					ImGui::InputFloat2(editor_getUniqueLabel(""), elev->dirOrCenter.m, 3);
+
+					ImGui::SameLine(0.0f, 8.0f);
+					if (iconButtonInline(ICON_SELECT, "Select position in viewport.", btnTint, true))
+					{
+						// TODO
+					}
+					ImGui::SameLine(0.0f, 8.0f);
+					ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 2.0f);
+					if (iconButtonInline(ICON_BOX_CENTER, "Select sector in viewport and use its center.", btnTint, true))
+					{
+						// TODO
+					}
+					ImGui::SameLine(0.0f, 8.0f);
+					ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 2.0f);
+					if (iconButtonInline(ICON_CIRCLE_PLUS, "Calculate the center from current sector and slaves.", btnTint, true))
+					{
+						// TODO
+					}
+				}
+				if (overrides & IEO_SOUND0)
+				{
+					editor_infPropertySelectable(IEV_SOUND0, itemClassIndex);
+
+					char soundBuffer[256];
+					strcpy(soundBuffer, elev->sounds[0].c_str());
+
+					ImGui::SetNextItemWidth(160.0f);
+					if (ImGui::InputText(editor_getUniqueLabel(""), soundBuffer, 256))
+					{
+						elev->sounds[0] = soundBuffer;
+					}
+
+					ImGui::SameLine(0.0f, 8.0f);
+					if (editor_button("Browse"))
+					{
+						// TODO
+					}
+				}
+				if (overrides & IEO_SOUND1)
+				{
+					editor_infPropertySelectable(IEV_SOUND1, itemClassIndex);
+
+					char soundBuffer[256];
+					strcpy(soundBuffer, elev->sounds[1].c_str());
+
+					ImGui::SetNextItemWidth(160.0f);
+					if (ImGui::InputText(editor_getUniqueLabel(""), soundBuffer, 256))
+					{
+						elev->sounds[1] = soundBuffer;
+					}
+
+					ImGui::SameLine(0.0f, 8.0f);
+					if (editor_button("Browse"))
+					{
+						// TODO
+					}
+				}
+				if (overrides & IEO_SOUND2)
+				{
+					editor_infPropertySelectable(IEV_SOUND2, itemClassIndex);
+
+					char soundBuffer[256];
+					strcpy(soundBuffer, elev->sounds[2].c_str());
+
+					ImGui::SetNextItemWidth(160.0f);
+					if (ImGui::InputText(editor_getUniqueLabel(""), soundBuffer, 256))
+					{
+						elev->sounds[2] = soundBuffer;
+					}
+
+					ImGui::SameLine(0.0f, 8.0f);
+					if (editor_button("Browse"))
+					{
+						// TODO
+					}
+				}
+				if (overrides & IEO_EVENT_MASK)
+				{
+					editor_infPropertySelectable(IEV_EVENT_MASK, itemClassIndex);
+
+					ImGui::SetNextItemWidth(128.0f);
+					ImGui::InputInt(editor_getUniqueLabel(""), &elev->eventMask);
+
+					if (s_infEditor.curPropIndex == IEV_EVENT_MASK)
+					{
+						for (s32 i = 0; i < TFE_ARRAYSIZE(c_infEventMaskNames); i++)
+						{
+							if ((i % 4) != 0) { ImGui::SameLine(200.0f * (i % 4), 0.0f); }
+							ImGui::CheckboxFlags(editor_getUniqueLabel(c_infEventMaskNames[i]), (u32*)&elev->eventMask, 1 << i);
+						}
+					}
+				}
+				if (overrides & IEO_ENTITY_MASK)
+				{
+					editor_infPropertySelectable(IEV_ENTITY_MASK, itemClassIndex);
+
+					ImGui::SetNextItemWidth(128.0f);
+					ImGui::InputInt(editor_getUniqueLabel(""), &elev->entityMask);
+
+					if (s_infEditor.curPropIndex == IEV_ENTITY_MASK)
+					{
+						for (s32 i = 0; i < TFE_ARRAYSIZE(c_infEntityMaskNames); i++)
+						{
+							if ((i % 4) != 0) { ImGui::SameLine(200.0f * (i % 4), 0.0f); }
+							ImGui::CheckboxFlags(editor_getUniqueLabel(c_infEntityMaskNames[i]), (u32*)&elev->entityMask, c_infEntityMaskFlags[i]);
+						}
+					}
+				}
+			}
+			ImGui::EndChild();
+		}
+	}
+
+	void editor_infAddOrRemoveElevProperty(Editor_InfElevator* elev, s32 itemClassIndex)
+	{
+		if (editor_button("+"))
+		{
+			if (s_infEditor.comboElevVarIndex >= 0)
+			{
+				elev->overrideSet |= (1 << s_infEditor.comboElevVarIndex);
+				if (s_infEditor.comboElevVarIndex == IEV_KEY0)
+				{
+					elev->key[0] = KEY_RED;
+				}
+				else if (s_infEditor.comboElevVarIndex == IEV_KEY1)
+				{
+					elev->key[1] = KEY_RED;
+				}
+			}
+			editor_infSelectEditClass(itemClassIndex);
+		}
+		setTooltip("Add a new property.");
+		ImGui::SameLine(0.0f, 4.0f);
+		if (editor_button("-"))
+		{
+			if (s_infEditor.curPropIndex >= 0)
+			{
+				elev->overrideSet &= ~(1 << s_infEditor.curPropIndex);
+				if (s_infEditor.comboElevVarIndex == IEV_KEY0)
+				{
+					elev->key[0] = KEY_NONE;
+				}
+				else if (s_infEditor.comboElevVarIndex == IEV_KEY1)
+				{
+					elev->key[1] = KEY_NONE;
+				}
+			}
+			editor_infSelectEditClass(itemClassIndex);
+			s_infEditor.curPropIndex = -1;
+		}
+		setTooltip("Remove the selected property.");
+
+		ImGui::SameLine(0.0f, 16.0f);
+		ImGui::SetNextItemWidth(128.0f);
+		if (ImGui::BeginCombo(editor_getUniqueLabel(""), c_infElevVarName[s_infEditor.comboElevVarIndex]))
+		{
+			s32 count = (s32)TFE_ARRAYSIZE(c_infElevVarName);
+			for (s32 i = 0; i < count; i++)
+			{
+				if (ImGui::Selectable(c_infElevVarName[i], i == s_infEditor.comboElevVarIndex))
+				{
+					s_infEditor.comboElevVarIndex = i;
+				}
+				//setTooltip(c_infClassName[i].tooltip.c_str());
+			}
+			ImGui::EndCombo();
+			editor_infSelectEditClass(itemClassIndex);
+		}
+		setTooltip("Property to add.");
+	}
+		
+	void editor_infAddOrRemoveStopCmd(Editor_InfElevator* elev, Editor_InfStop* stop, s32 itemClassIndex)
+	{
+		ImGui::Text("    "); ImGui::SameLine(0.0f, 0.0f);
+		if (editor_button("+"))
+		{
+			switch (s_infEditor.comboElevCmdIndex)
+			{
+				case ISC_MESSAGE:
+				{
+					stop->msg.push_back({});
+				} break;
+				case ISC_ADJOIN:
+				{
+					stop->adjoinCmd.push_back({});
+				} break;
+				case ISC_TEXTURE:
+				{
+					stop->textureCmd.push_back({});
+				} break;
+				case ISC_PAGE:
+				{
+					stop->page = {};
+					stop->overrideSet |= ISO_PAGE;
+				} break;
+			}
+		}
+		setTooltip("Add a new command to the selected stop.");
+		ImGui::SameLine(0.0f, 4.0f);
+		if (editor_button("-") && s_infEditor.curStopCmdIndex >= 0)
+		{
+			const s32 msgCount    = (s32)stop->msg.size();
+			const s32 adjoinCount = (s32)stop->adjoinCmd.size();
+			const s32 texCount    = (s32)stop->textureCmd.size();
+
+			s32 index = -1;
+			s32 cmdIndexOffset = 0;
+			if (index < 0 && s_infEditor.curStopCmdIndex < msgCount + cmdIndexOffset)
+			{
+				index = s_infEditor.curStopCmdIndex - cmdIndexOffset;
+				for (s32 i = index; i < msgCount - 1; i++)
+				{
+					stop->msg[i] = stop->msg[i + 1];
+				}
+				stop->msg.pop_back();
+				s_infEditor.curStopCmdIndex = -1;
+			}
+			cmdIndexOffset += msgCount;
+
+			if (index < 0 && s_infEditor.curStopCmdIndex < adjoinCount + cmdIndexOffset)
+			{
+				index = s_infEditor.curStopCmdIndex - cmdIndexOffset;
+				for (s32 i = index; i < adjoinCount - 1; i++)
+				{
+					stop->adjoinCmd[i] = stop->adjoinCmd[i + 1];
+				}
+				stop->adjoinCmd.pop_back();
+				s_infEditor.curStopCmdIndex = -1;
+			}
+			cmdIndexOffset += (s32)stop->adjoinCmd.size();
+
+			if (index < 0 && s_infEditor.curStopCmdIndex < (s32)stop->textureCmd.size() + cmdIndexOffset)
+			{
+				index = s_infEditor.curStopCmdIndex - cmdIndexOffset;
+				for (s32 i = index; i < texCount - 1; i++)
+				{
+					stop->textureCmd[i] = stop->textureCmd[i + 1];
+				}
+				stop->textureCmd.pop_back();
+				s_infEditor.curStopCmdIndex = -1;
+			}
+			cmdIndexOffset += (s32)stop->textureCmd.size();
+
+			if (index < 0 && s_infEditor.curStopCmdIndex <= cmdIndexOffset)
+			{
+				stop->page = {};
+				stop->overrideSet &= ~ISO_PAGE;
+				index = 0;
+			}
+		}
+		setTooltip("Remove the selected command from the stop.");
+		ImGui::SameLine(0.0f, 16.0f);
+
+		ImGui::SetNextItemWidth(128.0f);
+		ImGui::Combo(editor_getUniqueLabel(""), &s_infEditor.comboElevCmdIndex, c_elevStopCmdName, TFE_ARRAYSIZE(c_elevStopCmdName));
+		setTooltip("Type of stop command to add.");
+	}
+
+	void editor_infAddOrRemoveElevStopOrSlave(Editor_InfElevator* elev, s32 itemClassIndex)
+	{
+		if (editor_button("+"))
+		{
+			if (s_infEditor.comboElevAddContentIndex == 0)
+			{
+				// insert a stop after the selected stop.
+				Editor_InfStop newStop = {};
+				if (s_infEditor.curContentIndex >= 0 && s_infEditor.curContentIndex < elev->stops.size())
+				{
+					newStop.value = elev->stops[s_infEditor.curContentIndex].value + 1.0f;
+					elev->stops.insert(elev->stops.begin() + s_infEditor.curContentIndex + 1, newStop);
+				}
+				else
+				{
+					elev->stops.push_back(newStop);
+				}
+			}
+			else if (s_infEditor.comboElevAddContentIndex == 1)
+			{
+				// insert a slave.
+				Editor_InfSlave newSlave = {};
+				const s32 stopCount = (s32)elev->stops.size();
+				const s32 slaveCount = (s32)elev->slaves.size();
+				if (s_infEditor.curContentIndex >= stopCount && s_infEditor.curContentIndex < stopCount + slaveCount)
+				{
+					elev->slaves.insert(elev->slaves.begin() + s_infEditor.curContentIndex - stopCount + 1, newSlave);
+				}
+				else
+				{
+					elev->slaves.push_back(newSlave);
+				}
+			}
+			editor_infSelectEditClass(itemClassIndex);
+		}
+		setTooltip("Add a new stop or slave.");
+		ImGui::SameLine(0.0f, 4.0f);
+		if (editor_button("-"))
+		{
+			const s32 stopCount = (s32)elev->stops.size();
+			const s32 slaveCount = (s32)elev->slaves.size();
+			if (s_infEditor.curContentIndex >= 0 && s_infEditor.curContentIndex < stopCount)
+			{
+				for (s32 s = s_infEditor.curContentIndex; s < stopCount - 1; s++)
+				{
+					elev->stops[s] = elev->stops[s + 1];
+				}
+				elev->stops.pop_back();
+				s_infEditor.curContentIndex = -1;
+				s_infEditor.curStopCmdIndex = -1;
+			}
+			else if (s_infEditor.curContentIndex >= stopCount && s_infEditor.curContentIndex < stopCount + slaveCount)
+			{
+				for (s32 s = s_infEditor.curContentIndex - stopCount; s < slaveCount - 1; s++)
+				{
+					elev->slaves[s] = elev->slaves[s + 1];
+				}
+				elev->slaves.pop_back();
+				s_infEditor.curContentIndex = -1;
+				s_infEditor.curStopCmdIndex = -1;
+			}
+			editor_infSelectEditClass(itemClassIndex);
+		}
+		setTooltip("Remove the selected elevator item.");
+		ImGui::SameLine(0.0f, 16.0f);
+
+		const char* c_elevAddTypes[] = { "Stop", "Slave" };
+		ImGui::SetNextItemWidth(128.0f);
+		ImGui::Combo(editor_getUniqueLabel(""), &s_infEditor.comboElevAddContentIndex, c_elevAddTypes, TFE_ARRAYSIZE(c_elevAddTypes));
+		setTooltip("Type of elevator item to add - Stop or Slave.");
+	}
+
+	void editor_stopCmdSelectable(Editor_InfElevator* elev, Editor_InfStop* stop, s32 itemClassIndex, s32 cmdIndex, const char* label)
+	{
+		ImGui::PushStyleColor(ImGuiCol_Text, colorKeywordInner);
+		ImGui::PushStyleColor(ImGuiCol_Header, colorInnerHeader);
+		ImGui::PushStyleColor(ImGuiCol_HeaderActive, colorInnerHeaderActive);
+		ImGui::PushStyleColor(ImGuiCol_HeaderHovered, colorInnerHeaderHovered);
+		const s32 stopId = TFE_ARRAYPOS(stop, elev->stops.data());
+		bool sel = s_infEditor.curClassIndex == itemClassIndex && s_infEditor.curContentIndex == stopId && s_infEditor.curStopCmdIndex == cmdIndex;
+		ImGui::Text("    "); ImGui::SameLine(0.0f, 0.0f);
+		if (ImGui::Selectable(editor_getUniqueLabel(label), sel, 0, { 80.0f, 0.0f }))
+		{
+			editor_infSelectEditClass(itemClassIndex);
+			s_infEditor.curStopCmdIndex = sel ? -1 : cmdIndex;
+			s_infEditor.curContentIndex = stopId;
+		}
+		ImGui::PopStyleColor(4);
+		ImGui::SameLine(0.0f, 8.0f);
+	}
+
+	void editor_infEditElevStops(Editor_InfElevator* elev, f32 contentHeight, s32 itemClassIndex, const f32* btnTint)
+	{
+		char buffer[256];
+		const s32 stopCount = (s32)elev->stops.size();
+		if (!stopCount) { return; }
+		Editor_InfStop* stop = elev->stops.data();
+		for (s32 s = 0; s < stopCount; s++, stop++)
+		{
+			///////////////////////////////
+			// Stop
+			///////////////////////////////
+			sprintf(buffer, "Stop: %d", s);
+			ImGui::PushStyleColor(ImGuiCol_Text, colorKeywordOuter);
+			bool sel = s_infEditor.curClassIndex == itemClassIndex && s_infEditor.curContentIndex == s;
+			if (ImGui::Selectable(editor_getUniqueLabel(buffer), sel, 0, { 80.0f, 0.0f }))
+			{
+				editor_infSelectEditClass(itemClassIndex);
+				s_infEditor.curContentIndex = sel ? -1 : s;
+				s_infEditor.curStopCmdIndex = -1;
+				// Update select.
+				sel = s_infEditor.curClassIndex == itemClassIndex && s_infEditor.curContentIndex == s;
+			}
+			ImGui::PopStyleColor();
+			ImGui::SameLine(0.0f, 16.0f);
+			ImGui::Text("Value:");
+			ImGui::SameLine(0.0f, 8.0f);
+
+			ImGui::SetNextItemWidth(128.0f);
+			if (stop->fromSectorFloor.empty())
+			{
+				// TODO: How to turn into a string?
+				ImGui::InputFloat(editor_getUniqueLabel(""), &stop->value, 0.1f, 1.0f, 3);
+			}
+			else
+			{
+				// TODO: How to turn into a number?
+				char nameBuffer[256];
+				strcpy(nameBuffer, stop->fromSectorFloor.c_str());
+				if (ImGui::InputText(editor_getUniqueLabel(""), nameBuffer, 256))
+				{
+					stop->fromSectorFloor = nameBuffer;
+				}
+			}
+			ImGui::SameLine(0.0f, 16.0f);
+
+			ImGui::Text("Relative:");
+			ImGui::SameLine(0.0f, 8.0f);
+			ImGui::Checkbox(editor_getUniqueLabel(""), &stop->relative);
+			ImGui::SameLine(0.0f, 16.0f);
+
+			ImGui::Text("Delay Type:");
+			ImGui::SameLine(0.0f, 8.0f);
+			ImGui::SetNextItemWidth(100.0f);
+			if (ImGui::BeginCombo(editor_getUniqueLabel(""), c_infStopDelayTypeName[stop->delayType]))
+			{
+				s32 count = (s32)TFE_ARRAYSIZE(c_infStopDelayTypeName);
+				for (s32 c = 0; c < count; c++)
+				{
+					if (ImGui::Selectable(editor_getUniqueLabel(c_infStopDelayTypeName[c]), c == stop->delayType))
+					{
+						stop->delayType = Editor_InfStopDelayType(c);
+					}
+					//setTooltip(c_infClassName[i].tooltip.c_str());
+				}
+				ImGui::EndCombo();
+			}
+
+			// Only show the delay time if needed.
+			if (stop->delayType == SDELAY_SECONDS)
+			{
+				ImGui::SameLine(0.0f, 16.0f);
+				ImGui::Text("Delay:");
+				ImGui::SameLine(0.0f, 8.0f);
+				ImGui::SetNextItemWidth(128.0f);
+				ImGui::InputFloat(editor_getUniqueLabel(""), &stop->delay, 0.1f, 1.0f, 3);
+			}
+
+			///////////////////////////////
+			// Commands.
+			///////////////////////////////
+			s32 cmdIndexOffset = 0;
+			const s32 msgCount = (s32)stop->msg.size();
+			Editor_InfMessage* msg = stop->msg.data();
+			char targetBuffer[256];
+			for (s32 m = 0; m < msgCount; m++, msg++)
+			{
+				editor_stopCmdSelectable(elev, stop, itemClassIndex, m + cmdIndexOffset, "Message:");
+
+				ImGui::Text("Target"); ImGui::SameLine(0.0f, 8.0f);
+				if (msg->targetWall >= 0) { sprintf(targetBuffer, "%s(%d)", msg->targetSector.c_str(), msg->targetWall); }
+				else { strcpy(targetBuffer, msg->targetSector.c_str()); }
+				ImGui::SetNextItemWidth(128.0f);
+				if (ImGui::InputText(editor_getUniqueLabel(""), targetBuffer, 256))
+				{
+					parseTarget(msg, targetBuffer);
+				}
+
+				ImGui::SameLine(0.0f, 8.0f);
+				if (iconButtonInline(ICON_SELECT, "Select target sector or wall in the viewport.", btnTint, true))
+				{
+					// TODO
+				}
+
+				ImGui::SameLine(0.0f, 16.0f);
+				ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 2);
+				ImGui::Text("Type"); ImGui::SameLine(0.0f, 8.0f);
+				ImGui::SetNextItemWidth(128.0f);
+				ImGui::Combo(editor_getUniqueLabel(""), (s32*)&msg->type, c_editorInfMessageTypeName, IMT_COUNT);
+
+				switch (msg->type)
+				{
+					// 0-args
+					case IMT_NEXT_STOP:
+					case IMT_PREV_STOP:
+					case IMT_MASTER_ON:
+					case IMT_MASTER_OFF:
+					case IMT_LIGHTS:
+					case IMT_TRIGGER:
+					case IMT_DONE:
+					case IMT_WAKEUP:
+					{
+						// Nothing
+					} break;
+					// 1-arg
+					case IMT_GOTO_STOP:
+					case IMT_COMPLETE:
+					{
+						ImGui::SameLine(0.0f, 16.0f);
+						ImGui::Text(msg->type == IMT_GOTO_STOP ? "Stop ID" : "Goal ID"); ImGui::SameLine(0.0f, 8.0f);
+
+						ImGui::SetNextItemWidth(128.0f);
+						ImGui::InputUInt(editor_getUniqueLabel(""), &msg->arg[0]);
+					} break;
+					// 2-args
+					case IMT_SET_BITS:
+					case IMT_CLEAR_BITS:
+					{
+						ImGui::SameLine(0.0f, 16.0f);
+
+						ImGui::Text("Flags"); ImGui::SameLine(0.0f, 8.0f);
+						ImGui::SetNextItemWidth(48.0f);
+						s32 flag = min(2, max(0, (s32)msg->arg[0] - 1));
+						const char* flagNames[] = { "1", "2", "3" };
+						if (ImGui::Combo(editor_getUniqueLabel(""), &flag, flagNames, TFE_ARRAYSIZE(flagNames)))
+						{
+							msg->arg[0] = flag + 1;
+						}
+
+						ImGui::SameLine(0.0f, 16.0f);
+						ImGui::Text("Bit"); ImGui::SameLine(0.0f, 8.0f);
+						ImGui::SetNextItemWidth(128.0f);
+						ImGui::InputUInt(editor_getUniqueLabel(""), &msg->arg[1]);
+
+						// TODO: Handle showing checkboxes if selected.
+					} break;
+				}
+				ImGui::SetCursorPosY(ImGui::GetCursorPosY() - 2);
+			}
+			cmdIndexOffset += msgCount;
+
+			const s32 adjoinCount = (s32)stop->adjoinCmd.size();
+			Editor_InfAdjoinCmd* cmd = stop->adjoinCmd.data();
+			for (s32 c = 0; c < adjoinCount; c++, cmd++)
+			{
+				editor_stopCmdSelectable(elev, stop, itemClassIndex, c + cmdIndexOffset, "Adjoin:");
+
+				ImGui::Text("Sector 1"); ImGui::SameLine(0.0f, 8.0f);
+				strcpy(targetBuffer, cmd->sector0.c_str());
+				ImGui::SetNextItemWidth(128.0f);
+				if (ImGui::InputText(editor_getUniqueLabel(""), targetBuffer, 256))
+				{
+					cmd->sector0 = targetBuffer;
+				}
+				ImGui::SameLine(0.0f, 8.0f);
+				ImGui::SetNextItemWidth(80.0f);
+				ImGui::InputInt(editor_getUniqueLabel(""), &cmd->wallIndex0);
+				ImGui::SameLine(0.0f, 8.0f);
+				if (iconButtonInline(ICON_SELECT, "Select wall to adjoin in the viewport.", btnTint, true))
+				{
+					// TODO
+				}
+
+				ImGui::SameLine(0.0f, 16.0f);
+				ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 2);
+
+				ImGui::Text("Sector 2"); ImGui::SameLine(0.0f, 8.0f);
+				strcpy(targetBuffer, cmd->sector1.c_str());
+				ImGui::SetNextItemWidth(128.0f);
+				if (ImGui::InputText(editor_getUniqueLabel(""), targetBuffer, 256))
+				{
+					cmd->sector1 = targetBuffer;
+				}
+				ImGui::SameLine(0.0f, 8.0f);
+				ImGui::SetNextItemWidth(80.0f);
+				ImGui::InputInt(editor_getUniqueLabel(""), &cmd->wallIndex1);
+				ImGui::SameLine(0.0f, 8.0f);
+				if (iconButtonInline(ICON_SELECT, "Select wall to adjoin in the viewport.", btnTint, true))
+				{
+					// TODO
+				}
+			}
+			cmdIndexOffset += adjoinCount;
+
+			const s32 texCount = (s32)stop->textureCmd.size();
+			Editor_InfTextureCmd* texCmd = stop->textureCmd.data();
+			for (s32 t = 0; t < texCount; t++, texCmd++)
+			{
+				editor_stopCmdSelectable(elev, stop, itemClassIndex, t + cmdIndexOffset, "Texture:");
+
+				ImGui::Text("Donor Sector"); ImGui::SameLine(0.0f, 8.0f);
+				strcpy(targetBuffer, texCmd->donorSector.c_str());
+				ImGui::SetNextItemWidth(128.0f);
+				if (ImGui::InputText(editor_getUniqueLabel(""), targetBuffer, 256))
+				{
+					texCmd->donorSector = targetBuffer;
+				}
+				ImGui::SameLine(0.0f, 8.0f);
+				if (iconButtonInline(ICON_SELECT, "Select donor sector in the viewport.", btnTint, true))
+				{
+					// TODO
+				}
+
+				ImGui::SameLine(0.0f, 16.0f);
+				ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 2);
+				ImGui::Text("From Ceiling"); ImGui::SameLine(0.0f, 8.0f);
+				ImGui::Checkbox(editor_getUniqueLabel(""), &texCmd->fromCeiling);
+			}
+			cmdIndexOffset += texCount;
+
+			if (stop->overrideSet & ISO_PAGE)
+			{
+				editor_stopCmdSelectable(elev, stop, itemClassIndex, cmdIndexOffset, "Page:");
+
+				strcpy(targetBuffer, stop->page.c_str());
+				ImGui::SetNextItemWidth(128.0f);
+				if (ImGui::InputText(editor_getUniqueLabel(""), targetBuffer, 256))
+				{
+					stop->page = targetBuffer;
+				}
+
+				ImGui::SameLine(0.0f, 8.0f);
+				if (editor_button("Browse"))
+				{
+					// TODO
+				}
+			}
+
+			// Show buttons to add new commands inline.
+			if (sel)
+			{
+				editor_infAddOrRemoveStopCmd(elev, stop, itemClassIndex);
+			}
+		}
+	}
+
+	void editor_infEditElevSlaves(Editor_InfElevator* elev, f32 contentHeight, s32 itemClassIndex, const f32* btnTint)
+	{
+		const s32 slaveCount = (s32)elev->slaves.size();
+		const s32 stopCount = (s32)elev->stops.size();
+		if (!slaveCount) { return; }
+
+		Editor_InfSlave* slave = elev->slaves.data();
+		char nameBuffer[256];
+		for (s32 s = 0; s < slaveCount; s++, slave++)
+		{
+			ImGui::PushStyleColor(ImGuiCol_Text, colorKeywordOuter);
+			bool sel = s_infEditor.curClassIndex == itemClassIndex && s_infEditor.curContentIndex == s + stopCount;
+			if (ImGui::Selectable(editor_getUniqueLabel("Slave:"), sel, 0, { 80.0f, 0.0f }))
+			{
+				editor_infSelectEditClass(itemClassIndex);
+				s_infEditor.curContentIndex = sel ? -1 : s + stopCount;
+				s_infEditor.curStopCmdIndex = -1;
+			}
+			ImGui::PopStyleColor();
+
+			ImGui::SameLine(0.0f, 16.0f);
+			ImGui::Text("Sector"); ImGui::SameLine(0.0f, 8.0f);
+			ImGui::SetNextItemWidth(128.0f);
+			strcpy(nameBuffer, slave->name.c_str());
+			if (ImGui::InputText(editor_getUniqueLabel(""), nameBuffer, 256))
+			{
+				slave->name = nameBuffer;
+			}
+			ImGui::SameLine(0.0f, 8.0f);
+			if (iconButtonInline(ICON_SELECT, "Select the slave sector in the viewport.", btnTint, true))
+			{
+				// TODO
+			}
+			// Reset the cursor Y position so that controls line up after icon buttons.
+			// This must be done after "same line" since it modifies the y position.
+			ImGui::SameLine(0.0f, 16.0f);
+			ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 2.0f);
+
+			ImGui::Text("Angle Offset"); ImGui::SameLine(0.0f, 8.0f);
+			ImGui::SetNextItemWidth(128.0f);
+			ImGui::InputFloat(editor_getUniqueLabel(""), &slave->angleOffset);
+
+			// Avoid adding extra spacing due to inline icon buttons.
+			ImGui::SetCursorPosY(ImGui::GetCursorPosY() - 2.0f);
+		}
+	}
+
+	void editor_infSectorEdit_UI()
+	{
+		const f32 tint[] = { 103.0f / 255.0f, 122.0f / 255.0f, 139.0f / 255.0f, 1.0f };
+
+		s32 deleteIndex = -1;
+		const s32 count = (s32)s_infEditor.item->classData.size();
+		Editor_InfClass** dataList = s_infEditor.item->classData.data();
+		for (s32 i = 0; i < count; i++)
+		{
+			Editor_InfClass* data = dataList[i];
+			f32 propHeight = 0.0f, contentHeight = 0.0f;
+			f32 childHeight = computeChildHeight(data, s_infEditor.curContentIndex, s_infEditor.curClassIndex == i, &propHeight, &contentHeight);
+
+			if (ImGui::BeginChild(editor_getUniqueLabel(""), { 0, childHeight }, true))
+			{
+				// Class label.
+				ImGui::TextColored(i == s_infEditor.curClassIndex ? colorKeywordOuterSel : colorKeywordOuter, "Class:");
+				ImGui::SameLine(0.0f, 8.0f);
+
+				switch (data->classId)
+				{
+					case IIC_ELEVATOR:
+					{
+						// Class name.
+						ImGui::TextColored(colorKeywordInner, "Elevator");
+						ImGui::SameLine(0.0f, 8.0f);
+
+						// Class data.
+						Editor_InfElevator* elev = getElevFromClassData(data);
+						assert(elev);
+						// Elevator Type.
+						editor_infSelectElevType(elev);
+
+						// Properties.
+						editor_infEditElevProperties(elev, propHeight, i, tint);
+						editor_infAddOrRemoveElevProperty(elev, i);
+						ImGui::Separator();
+
+						// Content - stops and slaves.
+						if (!elev->stops.empty() || !elev->slaves.empty())
+						{
+							const s32 stopCount = (s32)elev->stops.size();
+							const s32 slaveCount = (s32)elev->slaves.size();
+							if (stopCount && slaveCount) { ImGui::Text("Stops: %d    Slaves: %d", stopCount, slaveCount); }
+							else if (stopCount)  { ImGui::Text("Stops: %d", stopCount); }
+							else if (slaveCount) { ImGui::Text("Slaves: %d", slaveCount); }
+							ImGui::BeginChild(editor_getUniqueLabel(""), { 0.0f, contentHeight }, true);
+							{
+								// Edit Stops.
+								editor_infEditElevStops(elev, contentHeight, i, tint);
+								// Edit Slaves.
+								editor_infEditElevSlaves(elev, contentHeight, i, tint);
+							}
+							ImGui::EndChild();
+						}
+						editor_infAddOrRemoveElevStopOrSlave(elev, i);
+					} break;
+					case IIC_TRIGGER:
+					{
+						// Class name.
+						ImGui::TextColored(colorKeywordInner, "Trigger");
+						ImGui::SameLine(0.0f, 8.0f);
+
+						// Class data.
+						Editor_InfTrigger* trigger = getTriggerFromClassData(data);
+						assert(trigger);
+					} break;
+					case IIC_TELEPORTER:
+					{
+						// Class name.
+						ImGui::TextColored(colorKeywordInner, "Teleporter");
+						ImGui::SameLine(0.0f, 8.0f);
+					} break;
+				}
+			}
+			ImGui::EndChild();
+		}
+
+		if (deleteIndex >= 0 && deleteIndex < count)
+		{
+			switch (s_infEditor.item->classData[deleteIndex]->classId)
+			{
+				case IIC_ELEVATOR:
+				{
+					Editor_InfElevator* elev = getElevFromClassData(s_infEditor.item->classData[deleteIndex]);
+					assert(elev);
+					freeElevator(elev);
+				} break;
+				case IIC_TRIGGER:
+				{
+					Editor_InfTrigger* trigger = getTriggerFromClassData(s_infEditor.item->classData[deleteIndex]);
+					assert(trigger);
+					freeTrigger(trigger);
+				} break;
+				case IIC_TELEPORTER:
+				{
+					Editor_InfTeleporter* teleporter = getTeleportFromClassData(s_infEditor.item->classData[deleteIndex]);
+					assert(teleporter);
+					freeTeleporter(teleporter);
+				} break;
+			}
+
+			for (s32 i = deleteIndex; i < count - 1; i++)
+			{
+				s_infEditor.item->classData[i] = s_infEditor.item->classData[i + 1];
+			}
+			s_infEditor.item->classData.pop_back();
+		}
+	}
+
+	char s_floatToStrBuffer[256];
+	char s_floatToStrBuffer1[256];
+	const char* infFloatToString(f32 value, s32 index = 0);
+
+	const char* infFloatToString(f32 value, s32 index)
+	{
+		char* outStr = index == 0 ? s_floatToStrBuffer : s_floatToStrBuffer1;
+		const f32 eps = 0.0001f;
+		// Integer value.
+		if (fabsf(floorf(value) - value) < eps)
+		{
+			sprintf(outStr, "%d", s32(value));
+		}
+		// Is it a single digit?
+		else if (fabsf(floorf(value * 10.0f) * 0.1f - value) < eps)
+		{
+			sprintf(outStr, "%0.1f", value);
+		}
+		// Two digits.
+		else if (fabsf(floorf(value * 100.0f) * 0.01f - value) < eps)
+		{
+			sprintf(outStr, "%0.2f", value);
+		}
+		// Three digits.
+		else
+		{
+			sprintf(outStr, "%0.3f", value);
+		}
+		return outStr;
+	}
+
+	void editor_InfSectorEdit_Code()
+	{
+		const s32 count = (s32)s_infEditor.item->classData.size();
+		Editor_InfClass** dataList = s_infEditor.item->classData.data();
+		for (s32 i = 0; i < count; i++)
+		{
+			if (i > 0)
+			{
+				ImGui::NewLine();
+			}
+
+			Editor_InfClass* data = dataList[i];
+			switch (data->classId)
+			{
+				case IIC_ELEVATOR:
+				{
+					Editor_InfElevator* elev = getElevFromClassData(data);
+
+					// Class
+					ImGui::TextColored(colorKeywordOuter, "Class:"); ImGui::SameLine(0.0f, 8.0f);
+					ImGui::TextColored(colorKeywordInner, "Elevator"); ImGui::SameLine(0.0f, 8.0f);
+					ImGui::Text(c_infElevTypeName[elev->type]);
+
+					const char* tab = "    ";
+
+					// Properties.
+					const u32 overrides = elev->overrideSet;
+					if (overrides & IEO_START)
+					{
+						ImGui::Text("%s", tab); ImGui::SameLine(0.0f, 0.0f);
+						ImGui::TextColored(colorKeywordInner, "Start:"); ImGui::SameLine(0.0f, 8.0f);
+						ImGui::Text("%d", elev->start);
+					}
+					if (overrides & IEO_SPEED)
+					{
+						ImGui::Text("%s", tab); ImGui::SameLine(0.0f, 0.0f);
+						ImGui::TextColored(colorKeywordInner, "Speed:"); ImGui::SameLine(0.0f, 8.0f);
+						ImGui::Text("%s", infFloatToString(elev->speed));
+					}
+					if ((overrides & IEO_MASTER) && !elev->master)
+					{
+						ImGui::Text("%s", tab); ImGui::SameLine(0.0f, 0.0f);
+						ImGui::TextColored(colorKeywordInner, "Master:"); ImGui::SameLine(0.0f, 8.0f);
+						ImGui::Text("Off");
+					}
+					if (overrides & IEO_ANGLE)
+					{
+						f32 angle = elev->angle * 180.0f / PI;
+						ImGui::Text("%s", tab); ImGui::SameLine(0.0f, 0.0f);
+						ImGui::TextColored(colorKeywordInner, "Angle:"); ImGui::SameLine(0.0f, 8.0f);
+						ImGui::Text("%s", infFloatToString(angle));
+					}
+					if (overrides & IEO_FLAGS)
+					{
+						ImGui::Text("%s", tab); ImGui::SameLine(0.0f, 0.0f);
+						ImGui::TextColored(colorKeywordInner, "Flags:"); ImGui::SameLine(0.0f, 8.0f);
+						ImGui::Text("%d", elev->flags);
+					}
+					if (overrides & IEO_KEY0)
+					{
+						if (elev->type == IET_DOOR_MID)
+						{
+							ImGui::Text("%s", tab); ImGui::SameLine(0.0f, 0.0f);
+							ImGui::TextColored(colorKeywordInner, "Addon:"); ImGui::SameLine(0.0f, 8.0f);
+							ImGui::Text("%d", 0);
+						}
+						ImGui::Text("%s", tab); ImGui::SameLine(0.0f, 0.0f);
+						ImGui::TextColored(colorKeywordInner, "Key:"); ImGui::SameLine(0.0f, 8.0f);
+						ImGui::Text("%s", c_infKeyNames[elev->key[0] - KeyItem::KEY_RED]);
+					}
+					if (overrides & IEO_KEY1)
+					{
+						if (elev->type == IET_DOOR_MID)
+						{
+							ImGui::Text("%s", tab); ImGui::SameLine(0.0f, 0.0f);
+							ImGui::TextColored(colorKeywordInner, "Addon:"); ImGui::SameLine(0.0f, 8.0f);
+							ImGui::Text("%d", 1);
+							ImGui::Text("%s", tab); ImGui::SameLine(0.0f, 0.0f);
+							ImGui::TextColored(colorKeywordInner, "Key:"); ImGui::SameLine(0.0f, 8.0f);
+							ImGui::Text("%s", c_infKeyNames[elev->key[1] - KeyItem::KEY_RED]);
+						}
+					}
+					if (overrides & IEO_DIR)
+					{
+						ImGui::Text("%s", tab); ImGui::SameLine(0.0f, 0.0f);
+						ImGui::TextColored(colorKeywordInner, "Center:"); ImGui::SameLine(0.0f, 8.0f);
+						ImGui::Text("%s %s", infFloatToString(elev->dirOrCenter.x), infFloatToString(elev->dirOrCenter.z, 1));
+					}
+					if (overrides & IEO_SOUND0)
+					{
+						ImGui::Text("%s", tab); ImGui::SameLine(0.0f, 0.0f);
+						ImGui::TextColored(colorKeywordInner, "Sound:"); ImGui::SameLine(0.0f, 8.0f);
+						ImGui::Text("%d %s", 1, elev->sounds[0].c_str());
+					}
+					if (overrides & IEO_SOUND1)
+					{
+						ImGui::Text("%s", tab); ImGui::SameLine(0.0f, 0.0f);
+						ImGui::TextColored(colorKeywordInner, "Sound:"); ImGui::SameLine(0.0f, 8.0f);
+						ImGui::Text("%d %s", 2, elev->sounds[1].c_str());
+					}
+					if (overrides & IEO_SOUND2)
+					{
+						ImGui::Text("%s", tab); ImGui::SameLine(0.0f, 0.0f);
+						ImGui::TextColored(colorKeywordInner, "Sound:"); ImGui::SameLine(0.0f, 8.0f);
+						ImGui::Text("%d %s", 3, elev->sounds[2].c_str());
+					}
+					if (overrides & IEO_EVENT_MASK)
+					{
+						ImGui::Text("%s", tab); ImGui::SameLine(0.0f, 0.0f);
+						ImGui::TextColored(colorKeywordInner, "Event_Mask:"); ImGui::SameLine(0.0f, 8.0f);
+						ImGui::Text("%d", elev->eventMask);
+					}
+					if (overrides & IEO_ENTITY_MASK)
+					{
+						ImGui::Text("%s", tab); ImGui::SameLine(0.0f, 0.0f);
+						ImGui::TextColored(colorKeywordInner, "Entity_Mask:"); ImGui::SameLine(0.0f, 8.0f);
+						ImGui::Text("%d", elev->entityMask);
+					}
+
+					const s32 stopCount = (s32)elev->stops.size();
+					const Editor_InfStop* stop = elev->stops.data();
+					for (s32 s = 0; s < stopCount; s++, stop++)
+					{
+						ImGui::Text("%s", tab); ImGui::SameLine(0.0f, 0.0f);
+						ImGui::TextColored(colorKeywordOuter, "Stop:"); ImGui::SameLine(0.0f, 8.0f);
+						if (!stop->fromSectorFloor.empty())
+						{
+							ImGui::Text("%s", stop->fromSectorFloor.c_str()); ImGui::SameLine(0.0f, 8.0f);
+						}
+						else if (stop->relative)
+						{
+							ImGui::Text("@%s", infFloatToString(stop->value)); ImGui::SameLine(0.0f, 8.0f);
+						}
+						else
+						{
+							ImGui::Text("%s", infFloatToString(stop->value)); ImGui::SameLine(0.0f, 8.0f);
+						}
+
+						if (stop->delayType == SDELAY_SECONDS)
+						{
+							ImGui::Text("%s", infFloatToString(stop->delay));
+						}
+						else if (stop->delayType == SDELAY_HOLD)
+						{
+							ImGui::Text("%s", "hold");
+						}
+						else if (stop->delayType == SDELAY_COMPLETE)
+						{
+							ImGui::Text("%s", "complete");
+						}
+						else if (stop->delayType == SDELAY_TERMINATE)
+						{
+							ImGui::Text("%s", "terminate");
+						}
+						else
+						{
+							ImGui::Text("%s", "prev");
+						}
+
+						// Stop commands.
+						const s32 msgCount = (s32)stop->msg.size();
+						const Editor_InfMessage* msg = stop->msg.data();
+						for (s32 m = 0; m < msgCount; m++, msg++)
+						{
+							ImGui::Text("%s%s", tab, tab); ImGui::SameLine(0.0f, 0.0f);
+							ImGui::TextColored(colorKeywordInner, "Message:"); ImGui::SameLine(0.0f, 8.0f);
+							ImGui::Text("%d", s); ImGui::SameLine(0.0f, 8.0f);
+							if (msg->targetWall >= 0)
+							{
+								ImGui::Text("%s(%d)", msg->targetSector.c_str(), msg->targetWall); ImGui::SameLine(0.0f, 8.0f);
+							}
+							else
+							{
+								ImGui::Text("%s", msg->targetSector.c_str()); ImGui::SameLine(0.0f, 8.0f);
+							}
+							ImGui::Text("%s", c_editorInfMessageTypeName[msg->type]);
+
+							if (msg->type == IMT_GOTO_STOP || msg->type == IMT_COMPLETE)
+							{
+								ImGui::SameLine(0.0f, 8.0f);
+								ImGui::Text("%u", msg->arg[0]);
+							}
+							else if (msg->type == IMT_SET_BITS || msg->type == IMT_CLEAR_BITS)
+							{
+								ImGui::SameLine(0.0f, 8.0f);
+								ImGui::Text("%u %u", msg->arg[0], msg->arg[1]);
+							}
+						}
+
+						const s32 adjoinCount = (s32)stop->adjoinCmd.size();
+						const Editor_InfAdjoinCmd* adjoinCmd = stop->adjoinCmd.data();
+						for (s32 a = 0; a < adjoinCount; a++, adjoinCmd++)
+						{
+							ImGui::Text("%s%s", tab, tab); ImGui::SameLine(0.0f, 0.0f);
+							ImGui::TextColored(colorKeywordInner, "Adjoin:"); ImGui::SameLine(0.0f, 8.0f);
+							ImGui::Text("%d", s); ImGui::SameLine(0.0f, 8.0f);
+							ImGui::Text("%s %d %s %d", adjoinCmd->sector0.c_str(), adjoinCmd->wallIndex0, adjoinCmd->sector1.c_str(), adjoinCmd->wallIndex1);
+						}
+
+						const s32 texCount = (s32)stop->textureCmd.size();
+						const Editor_InfTextureCmd* texCmd = stop->textureCmd.data();
+						for (s32 t = 0; t < texCount; t++, texCmd++)
+						{
+							ImGui::Text("%s%s", tab, tab); ImGui::SameLine(0.0f, 0.0f);
+							ImGui::TextColored(colorKeywordInner, "Texture:"); ImGui::SameLine(0.0f, 8.0f);
+							ImGui::Text("%d", s); ImGui::SameLine(0.0f, 8.0f);
+							ImGui::Text("%s %s", texCmd->fromCeiling ? "C" : "F", texCmd->donorSector.c_str());
+						}
+
+						if (stop->overrideSet & ISO_PAGE)
+						{
+							ImGui::Text("%s%s", tab, tab); ImGui::SameLine(0.0f, 0.0f);
+							ImGui::TextColored(colorKeywordInner, "Page:"); ImGui::SameLine(0.0f, 8.0f);
+							ImGui::Text("%d", s); ImGui::SameLine(0.0f, 8.0f);
+							ImGui::Text("%s", stop->page.c_str());
+						}
+					}
+
+					const s32 slaveCount = (s32)elev->slaves.size();
+					const Editor_InfSlave* slave = elev->slaves.data();
+					for (s32 s = 0; s < slaveCount; s++, slave++)
+					{
+						ImGui::Text("%s", tab); ImGui::SameLine(0.0f, 0.0f);
+						ImGui::TextColored(colorKeywordOuter, "Slave:"); ImGui::SameLine(0.0f, 8.0f);
+						ImGui::Text("%s", slave->name.c_str());
+						if (slave->angleOffset != 0.0f)
+						{
+							ImGui::SameLine(0.0f, 8.0f);
+							ImGui::Text("%s", infFloatToString(slave->angleOffset));
+						}
+					}
+				} break;
+				case IIC_TRIGGER:
+				{
+				} break;
+				case IIC_TELEPORTER:
+				{
+				} break;
+			}
+		}
+	}
+
 	bool editor_infSectorEdit()
 	{
-		f32 winWidth = 900.0f;
-		f32 winHeight = 900.0f;
-
+		DisplayInfo info;
+		TFE_RenderBackend::getDisplayInfo(&info);
+		const f32 winWidth  = min(940.0f, (f32)info.width - 16);
+		const f32 winHeight = (f32)info.height - 16;
+				
 		pushFont(TFE_Editor::FONT_SMALL);
 
 		bool active = true;
@@ -1085,484 +2690,90 @@ namespace LevelEditor
 		ImGui::SetNextWindowSize({ winWidth, winHeight });
 		if (ImGui::BeginPopupModal("Sector INF", &active, window_flags))
 		{
-			if (!s_infSector)
+			if (!s_infEditor.sector)
 			{
 				ImGui::TextColored({ 1.0f, 0.2f, 0.2f, 1.0f }, "Sectors with INF functionality must have names.\nPlease name the sector and try again.");
 			}
-			else if (!s_infItem)
+			else if (!s_infEditor.item)
 			{
 				if (ImGui::Button("Create INF Item"))
 				{
 					s_levelInf.item.push_back({});
-					s_infItem = &s_levelInf.item.back();
-					s_infItem->name = s_infSector->name;
-					s_infItem->wallNum = -1;
+					s_infEditor.item = &s_levelInf.item.back();
+					s_infEditor.item->name = s_infEditor.sector->name;
+					s_infEditor.item->wallNum = -1;
 				}
 			}
-			else if (s_infItem)
+			else if (s_infEditor.item)
 			{
 				// Display it for now.
-				ImGui::Text("Item: %s, Sector ID: %d", s_infItem->name.c_str(), s_infSector->id);
+				ImGui::Text("Item: %s, Sector ID: %d", s_infEditor.item->name.c_str(), s_infEditor.sector->id);
 				ImGui::Separator();
 
-				if (ImGui::Button("+Add Class"))
+				if (editor_button("+"))
 				{
-					if (s_infClassSelIndex == IIC_ELEVATOR)
+					if (s_infEditor.comboClassIndex == IIC_ELEVATOR)
 					{
-						Editor_InfElevator* newElev = allocElev(s_infItem);
-						if (newElev)
-						{
-							newElev->type = Editor_InfElevType(s_infElevTypeIndex);
-						}
+						allocElev(s_infEditor.item);
 					}
-					else if (s_infClassSelIndex == IIC_TRIGGER)
+					else if (s_infEditor.comboClassIndex == IIC_TRIGGER)
 					{
 						// TODO
 					}
-					else if (s_infClassSelIndex == IIC_TELEPORTER)
+					else if (s_infEditor.comboClassIndex == IIC_TELEPORTER)
 					{
 						// TODO
 					}
 				}
-				ImGui::SameLine(0.0f, 32.0f);
+				ImGui::SameLine(0.0f, 4.0f);
+				if (editor_button("-"))
+				{
+					// TODO
+				}
+				ImGui::SameLine(0.0f, 16.0f);
 				ImGui::SetNextItemWidth(128.0f);
-				if (ImGui::BeginCombo("##SectorClassCombo", c_infClassName[s_infClassSelIndex]))
+				if (ImGui::BeginCombo("##SectorClassCombo", c_infClassName[s_infEditor.comboClassIndex]))
 				{
 					s32 count = (s32)TFE_ARRAYSIZE(c_infClassName);
 					for (s32 i = 0; i < count; i++)
 					{
-						if (ImGui::Selectable(c_infClassName[i], i == s_infClassSelIndex))
+						if (ImGui::Selectable(c_infClassName[i], i == s_infEditor.comboClassIndex))
 						{
-							s_infClassSelIndex = i;
+							s_infEditor.comboClassIndex = i;
 						}
 						//setTooltip(c_infClassName[i].tooltip.c_str());
 					}
 					ImGui::EndCombo();
 				}
-				if (s_infClassSelIndex == IIC_ELEVATOR)
-				{
-					ImGui::SameLine(0.0f, 8.0f);
-					ImGui::SetNextItemWidth(160.0f);
 
-					if (ImGui::BeginCombo("##SectorTypeCombo", c_infElevTypeName[s_infElevTypeIndex]))
+				ImGui::SameLine(winWidth - 128.0f);
+				ImGui::SetNextItemWidth(128.0f);
+				if (ImGui::Button(s_infEditor.mode == INF_MODE_UI ? "INF Code" : "INF UI"))
+				{
+					if (s_infEditor.mode == INF_MODE_UI)
 					{
-						s32 count = (s32)TFE_ARRAYSIZE(c_infElevTypeName);
-						for (s32 i = 0; i < count; i++)
-						{
-							if (ImGui::Selectable(c_infElevTypeName[i], i == s_infElevTypeIndex))
-							{
-								s_infElevTypeIndex = i;
-							}
-							//setTooltip(c_infClassName[i].tooltip.c_str());
-						}
-						ImGui::EndCombo();
+						// TODO: Generate code.
+						s_infEditor.mode = INF_MODE_CODE;
+					}
+					else
+					{
+						s_infEditor.mode = INF_MODE_UI;
 					}
 				}
+
 				ImGui::Separator();
 
-				if (ImGui::BeginChild(0x4040404, { 0, 0 }, false))
+				if (ImGui::BeginChild(editor_getUniqueLabel(""), { 0, 0 }, false))
 				{
-					s32 deleteIndex = -1;
-
-					const s32 count = s_infItem->classData.size();
-					Editor_InfClass** dataList = s_infItem->classData.data();
-					char buffer[256];
-					for (s32 i = 0; i < count; i++)
+					if (s_infEditor.mode == INF_MODE_UI)
 					{
-						if (ImGui::BeginChild(0x303 + i, { 0, 600 }, true))
-						{
-							Editor_InfClass* data = dataList[i];
-							switch (data->classId)
-							{
-								case IIC_ELEVATOR:
-								{
-									Editor_InfElevator* elev = getElevFromClassData(data);
-									assert(elev);
-
-									ImGui::TextColored({ 0.2f, 1.0f, 0.2f, 1.0f }, "Class: Elevator %s", c_infElevTypeName[elev->type]);
-									ImGui::SameLine(0.0f, 16.0f);
-									if (ImGui::Button("-Delete"))
-									{
-										deleteIndex = i;
-										break;
-									}
-
-									sprintf(buffer, "##VariableList%d", i);
-									ImGui::Text("%s", "Variables");
-									if (elev->overrideSet & IEO_VAR_MASK)
-									{
-										f32 varHeight = 26.0f * countBits(elev->overrideSet & IEO_VAR_MASK) + 16;
-										// Expand if flags are selected.
-										if (s_infElevVarSelectIndex == IEV_FLAGS || s_infElevVarSelectIndex == IEV_ENTITY_MASK) { varHeight += 26.0f; }
-										else if (s_infElevVarSelectIndex == IEV_EVENT_MASK) { varHeight += 26.0f * 3.0f; }
-
-										ImGui::BeginChild(buffer, { 0.0f, varHeight }, true);
-										{
-											const u32 overrides = elev->overrideSet;
-											if (overrides & IEO_START)
-											{
-												bool sel = s_infElevVarSelectIndex == IEV_START;
-												if (ImGui::Selectable("Start:", &sel, 0, { 100.0f, 0.0f }))
-												{
-													SELECT(IEV_START);
-												}
-												ImGui::SameLine(0.0f, 8.0f);
-												ImGui::SetNextItemWidth(128.0f);
-												ImGui::InputInt("##Start", &elev->start);
-											}
-											if (overrides & IEO_SPEED)
-											{
-												bool sel = s_infElevVarSelectIndex == IEV_SPEED;
-												if (ImGui::Selectable("Speed:", &sel, 0, { 100.0f, 0.0f }))
-												{
-													SELECT(IEV_SPEED);
-												}
-												ImGui::SameLine(0.0f, 8.0f);
-												ImGui::SetNextItemWidth(128.0f);
-												ImGui::InputFloat("##Speed", &elev->speed, 0.1f, 1.0f, 3);
-											}
-											if (overrides & IEO_MASTER)
-											{
-												bool sel = s_infElevVarSelectIndex == IEV_MASTER;
-												if (ImGui::Selectable("Master:", &sel, 0, { 100.0f, 0.0f }))
-												{
-													SELECT(IEV_MASTER);
-												}
-												ImGui::SameLine(0.0f, 8.0f);
-												ImGui::Checkbox("##Master", &elev->master);
-											}
-											if (overrides & IEO_ANGLE)
-											{
-												bool sel = s_infElevVarSelectIndex == IEV_ANGLE;
-												if (ImGui::Selectable("Angle:", &sel, 0, { 100.0f, 0.0f }))
-												{
-													SELECT(IEV_ANGLE);
-												}
-												ImGui::SameLine(0.0f, 8.0f);
-												ImGui::SetNextItemWidth(128.0f);
-												ImGui::SliderAngle("##AngleSlider", &elev->angle);
-												ImGui::SameLine(0.0f, 8.0f);
-												ImGui::SetNextItemWidth(128.0f);
-												f32 angle = elev->angle * 180.0f / PI;
-												if (ImGui::InputFloat("##Angle", &angle, 0.1f, 1.0f, 3))
-												{
-													elev->angle = angle * PI / 180.0f;
-												}
-											}
-											if (overrides & IEO_FLAGS)
-											{
-												bool sel = s_infElevVarSelectIndex == IEV_FLAGS;
-												if (ImGui::Selectable("Flags:", &sel, 0, { 100.0f, 0.0f }))
-												{
-													SELECT(IEV_FLAGS);
-												}
-												ImGui::SameLine(0.0f, 8.0f);
-												ImGui::SetNextItemWidth(128.0f);
-												ImGui::InputUInt("##FlagsTextInput", &elev->flags);
-												if (s_infElevVarSelectIndex == IEV_FLAGS)
-												{
-													for (s32 i = 0; i < TFE_ARRAYSIZE(c_infElevFlagNames); i++)
-													{
-														if (i != 0) { ImGui::SameLine(0.0f, 8.0f); }
-														ImGui::CheckboxFlags(c_infElevFlagNames[i], &elev->flags, 1 << i);
-													}
-												}
-											}
-											if (overrides & IEO_KEY0)
-											{
-												bool sel = s_infElevVarSelectIndex == IEV_KEY0;
-												if (ImGui::Selectable("Key:", &sel, 0, { 100.0f, 0.0f }))
-												{
-													SELECT(IEV_KEY0);
-												}
-												ImGui::SameLine(0.0f, 8.0f);
-												s32 keyIndex = elev->key[0] - KeyItem::KEY_RED;
-												sprintf(buffer, "###KeyVar%d", i);
-												ImGui::SetNextItemWidth(128.0f);
-												if (ImGui::Combo(buffer, &keyIndex, c_infKeyNames, TFE_ARRAYSIZE(c_infKeyNames)))
-												{
-													elev->key[0] = KeyItem(keyIndex + KeyItem::KEY_RED);
-												}
-
-											}
-											if (overrides & IEO_KEY1)
-											{
-												bool sel = s_infElevVarSelectIndex == IEV_KEY1;
-												if (ImGui::Selectable("Key 1 (Addon):", &sel, 0, { 100.0f, 0.0f }))
-												{
-													SELECT(IEV_KEY1);
-												}
-												ImGui::SameLine(0.0f, 8.0f);
-												s32 keyIndex = elev->key[1] == 0 ? 0 : elev->key[1] - KeyItem::KEY_RED + 1;
-												sprintf(buffer, "###KeyVar_1_%d", i);
-												ImGui::SetNextItemWidth(128.0f);
-												if (ImGui::Combo(buffer, &keyIndex, c_infKeyNames, TFE_ARRAYSIZE(c_infKeyNames)))
-												{
-													if (keyIndex == 0) { elev->key[1] = KeyItem::KEY_NONE; }
-													else
-													{
-														elev->key[1] = KeyItem(keyIndex + KeyItem::KEY_RED - 1);
-													}
-												}
-											}
-											if (overrides & IEO_DIR)
-											{
-												bool sel = s_infElevVarSelectIndex == IEV_DIR;
-												if (ImGui::Selectable("Center:", &sel, 0, { 100.0f, 0.0f }))
-												{
-													SELECT(IEV_DIR);
-												}
-												ImGui::SameLine(0.0f, 8.0f);
-												sprintf(buffer, "###DirVar%d", i);
-												ImGui::SetNextItemWidth(160.0f);
-												ImGui::InputFloat2(buffer, elev->dirOrCenter.m, 3);
-											}
-											if (overrides & IEO_SOUND0)
-											{
-												bool sel = s_infElevVarSelectIndex == IEV_SOUND0;
-												if (ImGui::Selectable("Sound 1:", &sel, 0, { 100.0f, 0.0f }))
-												{
-													SELECT(IEV_SOUND0);
-												}
-												ImGui::SameLine(0.0f, 8.0f);
-												char soundBuffer[256];
-												strcpy(soundBuffer, elev->sounds[0].c_str());
-
-												sprintf(buffer, "###Sound1_%d", i);
-												ImGui::SetNextItemWidth(160.0f);
-												if (ImGui::InputText(buffer, soundBuffer, 256))
-												{
-													elev->sounds[0] = soundBuffer;
-												}
-											}
-											if (overrides & IEO_SOUND1)
-											{
-												bool sel = s_infElevVarSelectIndex == IEV_SOUND1;
-												if (ImGui::Selectable("Sound 2:", &sel, 0, { 100.0f, 0.0f }))
-												{
-													SELECT(IEV_SOUND1);
-												}
-												ImGui::SameLine(0.0f, 8.0f);
-												char soundBuffer[256];
-												strcpy(soundBuffer, elev->sounds[1].c_str());
-
-												sprintf(buffer, "###Sound2_%d", i);
-												ImGui::SetNextItemWidth(160.0f);
-												if (ImGui::InputText(buffer, soundBuffer, 256))
-												{
-													elev->sounds[1] = soundBuffer;
-												}
-											}
-											if (overrides & IEO_SOUND2)
-											{
-												bool sel = s_infElevVarSelectIndex == IEV_SOUND2;
-												if (ImGui::Selectable("Sound 3:", &sel, 0, { 100.0f, 0.0f }))
-												{
-													SELECT(IEV_SOUND2);
-												}
-												ImGui::SameLine(0.0f, 8.0f);
-												char soundBuffer[256];
-												strcpy(soundBuffer, elev->sounds[2].c_str());
-
-												sprintf(buffer, "###Sound3_%d", i);
-												ImGui::SetNextItemWidth(160.0f);
-												if (ImGui::InputText(buffer, soundBuffer, 256))
-												{
-													elev->sounds[2] = soundBuffer;
-												}
-											}
-											if (overrides & IEO_EVENT_MASK)
-											{
-												bool sel = s_infElevVarSelectIndex == IEV_EVENT_MASK;
-												if (ImGui::Selectable("Event_Mask:", &sel, 0, { 100.0f, 0.0f }))
-												{
-													SELECT(IEV_EVENT_MASK);
-												}
-												ImGui::SameLine(0.0f, 8.0f);
-
-												ImGui::SetNextItemWidth(128.0f);
-												ImGui::InputInt("##EventMaskTextInput", &elev->eventMask);
-
-												if (s_infElevVarSelectIndex == IEV_EVENT_MASK)
-												{
-													for (s32 i = 0; i < TFE_ARRAYSIZE(c_infEventMaskNames); i++)
-													{
-														if ((i % 4) != 0) { ImGui::SameLine(200.0f * (i % 4), 0.0f); }
-														ImGui::CheckboxFlags(c_infEventMaskNames[i], (u32*)&elev->eventMask, 1 << i);
-													}
-												}
-											}
-											if (overrides & IEO_ENTITY_MASK)
-											{
-												bool sel = s_infElevVarSelectIndex == IEV_ENTITY_MASK;
-												if (ImGui::Selectable("Entity_Mask:", &sel, 0, { 100.0f, 0.0f }))
-												{
-													SELECT(IEV_ENTITY_MASK);
-												}
-												ImGui::SameLine(0.0f, 8.0f);
-
-												ImGui::SetNextItemWidth(128.0f);
-												ImGui::InputInt("##EntityMaskTextInput", &elev->entityMask);
-
-												if (s_infElevVarSelectIndex == IEV_ENTITY_MASK)
-												{
-													for (s32 i = 0; i < TFE_ARRAYSIZE(c_infEntityMaskNames); i++)
-													{
-														if ((i % 4) != 0) { ImGui::SameLine(200.0f * (i % 4), 0.0f); }
-														ImGui::CheckboxFlags(c_infEntityMaskNames[i], (u32*)&elev->entityMask, c_infEntityMaskFlags[i]);
-													}
-												}
-											}
-										}
-										ImGui::EndChild();
-									}
-
-									if (ImGui::Button("+Add Variable"))
-									{
-										if (s_infElevVarIndex >= 0)
-										{
-											elev->overrideSet |= (1 << s_infElevVarIndex);
-										}
-									}
-
-									ImGui::SameLine(0.0f, 16.0f);
-									ImGui::SetNextItemWidth(128.0f);
-									if (ImGui::BeginCombo("##ElevatorVariableCombo", c_infElevVarName[s_infElevVarIndex]))
-									{
-										s32 count = (s32)TFE_ARRAYSIZE(c_infElevVarName);
-										for (s32 i = 0; i < count; i++)
-										{
-											if (ImGui::Selectable(c_infElevVarName[i], i == s_infElevVarIndex))
-											{
-												s_infElevVarIndex = i;
-											}
-											//setTooltip(c_infClassName[i].tooltip.c_str());
-										}
-										ImGui::EndCombo();
-									}
-
-									ImGui::SameLine(0.0f, 32.0f);
-									if (ImGui::Button("-Remove Variable"))
-									{
-										if (s_infElevVarSelectIndex >= 0)
-										{
-											elev->overrideSet &= ~(1 << s_infElevVarSelectIndex);
-										}
-										s_infElevVarSelectIndex = -1;
-									}
-
-									if (elev->overrideSet & IEO_SLAVES)
-									{
-									}
-
-									ImGui::Separator();
-
-									if (elev->overrideSet & IEO_STOPS)
-									{
-										const s32 stopCount = (s32)elev->stops.size();
-										ImGui::Text("Stops: %d", stopCount);
-										sprintf(buffer, "##Stops%d", i);
-										ImGui::BeginChild(buffer, { 0.0f, 140.0f }, true);
-										{
-											Editor_InfStop* stop = elev->stops.data();
-											for (s32 s = 0; s < stopCount; s++, stop++)
-											{
-												sprintf(buffer, "Stop: %d##List%d", s, i);
-												if (ImGui::Selectable(buffer, s == s_stopSelected[i], 0, { 80.0f, 0.0f }))
-												{
-													s_stopSelected[i] = s;
-												}
-												ImGui::SameLine(0.0f, 16.0f);
-												ImGui::Text("Value:");
-												ImGui::SameLine(0.0f, 8.0f);
-
-												sprintf(buffer, "###StopValue%d_%d", i, s);
-												ImGui::SetNextItemWidth(128.0f);
-												ImGui::InputFloat(buffer, &stop->value, 0.1f, 1.0f, 3);
-												ImGui::SameLine(0.0f, 16.0f);
-
-												sprintf(buffer, "###StopValueRel%d_%d", i, s);
-												ImGui::Text("Relative:");
-												ImGui::SameLine(0.0f, 8.0f);
-												ImGui::Checkbox(buffer, &stop->relative);
-												ImGui::SameLine(0.0f, 16.0f);
-
-												ImGui::Text("Delay Type:");
-												ImGui::SameLine(0.0f, 8.0f);
-												ImGui::SetNextItemWidth(100.0f);
-												sprintf(buffer, "###StopDelayType%d_%d", i, s);
-												if (ImGui::BeginCombo(buffer, c_infStopDelayTypeName[stop->delayType]))
-												{
-													s32 count = (s32)TFE_ARRAYSIZE(c_infStopDelayTypeName);
-													for (s32 c = 0; c < count; c++)
-													{
-														if (ImGui::Selectable(c_infStopDelayTypeName[c], c == stop->delayType))
-														{
-															stop->delayType = Editor_InfStopDelayType(c);
-														}
-														//setTooltip(c_infClassName[i].tooltip.c_str());
-													}
-													ImGui::EndCombo();
-												}
-												ImGui::SameLine(0.0f, 16.0f);
-
-												ImGui::Text("Delay:");
-												ImGui::SameLine(0.0f, 8.0f);
-												sprintf(buffer, "###StopDelay%d_%d", i, s);
-												ImGui::SetNextItemWidth(128.0f);
-												ImGui::InputFloat(buffer, &stop->delay, 0.1f, 1.0f, 3);
-
-
-											}
-										}
-										ImGui::EndChild();
-									}
-
-								} break;
-								case IIC_TRIGGER:
-								{
-									ImGui::TextColored({ 0.2f, 1.0f, 0.2f, 1.0f }, "Class: Trigger");
-								} break;
-								case IIC_TELEPORTER:
-								{
-									ImGui::TextColored({ 0.2f, 1.0f, 0.2f, 1.0f }, "Class: Teleporter");
-								} break;
-							}
-						}
-						ImGui::EndChild();
+						editor_infSectorEdit_UI();
+					}
+					else
+					{
+						editor_InfSectorEdit_Code();
 					}
 					ImGui::EndChild();
-
-					if (deleteIndex >= 0 && deleteIndex < count)
-					{
-						switch (s_infItem->classData[deleteIndex]->classId)
-						{
-							case IIC_ELEVATOR:
-							{
-								Editor_InfElevator* elev = getElevFromClassData(s_infItem->classData[deleteIndex]);
-								assert(elev);
-								freeElevator(elev);
-							} break;
-							case IIC_TRIGGER:
-							{
-								Editor_InfTrigger* trigger = getTriggerFromClassData(s_infItem->classData[deleteIndex]);
-								assert(trigger);
-								freeTrigger(trigger);
-							} break;
-							case IIC_TELEPORTER:
-							{
-								Editor_InfTeleporter* teleporter = getTeleportFromClassData(s_infItem->classData[deleteIndex]);
-								assert(teleporter);
-								freeTeleporter(teleporter);
-							} break;
-						}
-
-						for (s32 i = deleteIndex; i < count - 1; i++)
-						{
-							s_infItem->classData[i] = s_infItem->classData[i + 1];
-						}
-						s_infItem->classData.pop_back();
-					}
 				}
 			}
 			else

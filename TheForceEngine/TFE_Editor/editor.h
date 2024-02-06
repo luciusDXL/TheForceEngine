@@ -8,6 +8,7 @@
 //////////////////////////////////////////////////////////////////////
 #include <TFE_System/types.h>
 #include <TFE_Archive/archive.h>
+#include <TFE_RenderBackend/renderBackend.h>
 #include <TFE_Game/igame.h>
 #include <vector>
 
@@ -53,6 +54,41 @@ namespace TFE_Editor
 		POPUP_COUNT
 	};
 
+	enum IconId
+	{
+		ICON_SELECT = 0,
+		ICON_BOX_CENTER,
+		ICON_CURVE,
+		ICON_BLANK1,		// Blank spot.
+		ICON_EYE,
+		ICON_EYE_CLOSED,
+		ICON_UNLOCKED,
+		ICON_LOCKED,
+		ICON_CIRCLE,
+		ICON_CIRCLE_DOT,
+		ICON_CIRCLE_QUESTION,
+		ICON_CIRCLE_X,
+		ICON_CIRCLE_BAN,
+		ICON_CIRCLE_PLUS,
+		ICON_BLANK2,
+		ICON_PLAY,
+		ICON_DRAW,
+		ICON_VERTICES,
+		ICON_EDGES,
+		ICON_CUBE,
+		ICON_ENTITY,
+		ICON_MOVE,
+		ICON_ROTATE,
+		ICON_SCALE,
+		ICON_EYE_DROPPER,
+		ICON_IMAGE,
+		ICON_MINUS,
+		ICON_PLUS,
+		ICON_MINUS_SMALL,
+		ICON_PLUS_SMALL,
+		ICON_COUNT
+	};
+
 	#define LIST_SELECT(label, arr, index) listSelection(label, arr, IM_ARRAYSIZE(arr), (s32*)&index)
 		
 	void enable();
@@ -67,6 +103,20 @@ namespace TFE_Editor
 	void openEditorPopup(EditorPopup popup, u32 userData = 0, void* userPtr = nullptr);
 	void listSelection(const char* labelText, const char** listValues, size_t listLen, s32* index, s32 comboOffset=96, s32 comboWidth=0);
 	void setTooltip(const char* msg, ...);
+	// icon: Icon from IconId, which icon to display.
+	// inst: if there are multiple icons of the same type visible, which index. This is used to differentiate between multiple buttons with the same icon.
+	// tooltip: optional tooltip when hovering over the button.
+	// highlight: whether the button is highlighted even when not pressed or moused over.
+	// tint: optional tint applied to the image.
+	bool iconButton(IconId icon, const char* tooltip = nullptr, bool highlight = false, const f32* tint = nullptr);
+	bool iconButtonInline(IconId icon, const char* tooltip=nullptr, const f32* tint=nullptr, bool small=false);
+
+	void editor_clearUid();
+	const char* editor_getUniqueLabel(const char* label);
+	s32 editor_getUniqueId();
+	bool editor_button(const char* label);
+
+	TextureGpu* loadGpuImage(const char* path);
 
 	void enableAssetEditor(Asset* asset);
 	void disableAssetEditor();

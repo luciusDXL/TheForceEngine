@@ -66,8 +66,9 @@ namespace LevelEditor
 		// Elevator only
 		IMT_DONE,
 		IMT_WAKEUP,
+		IMT_COUNT,
 	};
-
+		
 	enum Editor_InfStopDelayType : u32
 	{
 		SDELAY_SECONDS = 0,
@@ -115,10 +116,33 @@ namespace LevelEditor
 		IEO_VAR_MASK    = IEO_SLAVES - 1
 	};
 
+	enum Editor_InfTriggerOverride : u32
+	{
+		ITO_NONE = 0,
+		ITO_CMD = FLAG_BIT(0),
+		ITO_SOUND = FLAG_BIT(1),
+		ITO_MASTER = FLAG_BIT(2),
+		ITO_TEXT = FLAG_BIT(3),
+		ITO_MSG = FLAG_BIT(4),
+		ITO_EVENT_MASK = FLAG_BIT(5),
+		ITO_ENTITY_MASK = FLAG_BIT(6),
+		ITO_EVENT = FLAG_BIT(7),
+	};
+
 	enum Editor_InfStopOverride : u32
 	{
 		ISO_NONE  = 0,
 		ISO_DELAY = FLAG_BIT(0),
+		ISO_PAGE  = FLAG_BIT(1),
+	};
+
+	enum Editor_InfStopCmd
+	{
+		ISC_MESSAGE = 0,
+		ISC_ADJOIN,
+		ISC_TEXTURE,
+		ISC_PAGE,
+		ISC_COUNT
 	};
 
 	struct Editor_InfClass
@@ -180,6 +204,13 @@ namespace LevelEditor
 		std::string page;
 	};
 
+	struct Editor_InfClient
+	{
+		std::string targetSector;
+		s32 targetWall = -1;
+		u32 eventMask = 0xffffffff;
+	};
+
 	// Specific classes.
 	struct Editor_InfElevator
 	{
@@ -204,23 +235,40 @@ namespace LevelEditor
 	struct Editor_InfTrigger
 	{
 		Editor_InfItemClass classId = IIC_TRIGGER;
+		TriggerType type;
+		u32 overrideSet = ITO_NONE;
+		std::vector<Editor_InfClient> clients;
+				
+		Editor_InfMessageType cmd = IMT_TRIGGER;
+		u32 arg[2] = { 0 };
+
+		std::string sound;  // Ignored with sector triggers.
+		bool master = true;	// "MASTER:"
+		u32  textId = 0;	// "TEXT:"
+		s32  eventMask = INF_EVENT_ANY;				// InfEventMask
+		s32  entityMask = INF_ENTITY_ANY;			// InfEntityMask
+		u32  event = 0;
 	};
 
 	struct Editor_InfTeleporter
 	{
 		Editor_InfItemClass classId = IIC_TELEPORTER;
+		TeleportType type = TELEPORT_BASIC;
+		std::string target;
+		Vec3f dstPos = { 0 };
+		f32 dstAngle = 0.0f;
 	};
 
 	struct Editor_LevelInf
 	{
 		std::vector<Editor_InfItem> item;
-		std::vector<Editor_InfElevator*>   elevator;
-		std::vector<Editor_InfTrigger*>    trigger;
-		std::vector<Editor_InfTeleporter*> teleport;
+		std::vector<Editor_InfElevator*>      elevator;
+		std::vector<Editor_InfTrigger*>       trigger;
+		std::vector<Editor_InfTeleporter*>    teleport;
 	};
 	extern Editor_LevelInf s_levelInf;
 
 	bool loadLevelInfFromAsset(TFE_Editor::Asset* asset);
-	void editor_infSectorEditBegin(const char* sectorName);
+	void editor_infEditBegin(const char* sectorName, s32 wallIndex = -1);
 	bool editor_infSectorEdit();
 }

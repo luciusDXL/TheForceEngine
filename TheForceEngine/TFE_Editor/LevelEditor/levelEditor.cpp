@@ -79,6 +79,13 @@ namespace LevelEditor
 		EDGE1 = (1 << 8)
 	};
 
+	enum ContextMenu
+	{
+		CONTEXTMENU_NONE = 0,
+		CONTEXTMENU_VIEWPORT
+	};
+	ContextMenu s_contextMenu = CONTEXTMENU_NONE;
+
 	static WallMoveMode s_wallMoveMode = WMM_NORMAL;
 
 	// The TFE Level Editor format is different than the base format and contains extra 
@@ -146,7 +153,15 @@ namespace LevelEditor
 	static bool s_modalUiActive = false;
 	static bool s_singleClick = false;
 	static bool s_doubleClick = false;
+	static bool s_rightClick = false;
 	static f64 s_lastClickTime = 0.0;
+
+	// Right click.
+	static f64 c_rightClickThreshold = 0.5;
+	static s32 c_rightClickMoveThreshold = 1;
+	static f64 s_lastRightClick = 0.0;
+	static bool s_rightPressed = false;
+	static Vec2i s_rightMousePos = { 0 };
 
 	static bool s_moveStarted = false;
 	static Vec2f s_moveStartPos;
@@ -193,8 +208,6 @@ namespace LevelEditor
 		"32",
 		"64",
 	};
-
-	static TextureGpu* s_editCtrlToolbarData = nullptr;
 	static TextureGpu* s_boolToolbarData = nullptr;
 
 	////////////////////////////////////////////////////////
@@ -301,15 +314,6 @@ namespace LevelEditor
 		s_gridIndex = 7;
 		s_gridSize = c_gridSizeMap[s_gridIndex];
 
-		s_editCtrlToolbarData = loadGpuImage("UI_Images/EditCtrl_32x6.png");
-		if (s_editCtrlToolbarData)
-		{
-			infoPanelAddMsg(LE_MSG_INFO, "Loaded toolbar images 'UI_Images/EditCtrl_32x6.png'");
-		}
-		else
-		{
-			infoPanelAddMsg(LE_MSG_ERROR, "Failed to load toolbar images 'UI_Images/EditCtrl_32x6.png'");
-		}
 		s_boolToolbarData = loadGpuImage("UI_Images/Boolean_32x3.png");
 		if (s_boolToolbarData)
 		{
@@ -348,6 +352,7 @@ namespace LevelEditor
 		s_showAllLabels = false;
 		s_doubleClick = false;
 		s_singleClick = false;
+		s_rightClick = false;
 		s_selectedTexture = -1;
 		s_selectedEntity = -1;
 		s_copiedTextureOffset = { 0 };
@@ -374,9 +379,7 @@ namespace LevelEditor
 		viewport_destroy();
 		TFE_RenderShared::destroy();
 
-		TFE_RenderBackend::freeTexture(s_editCtrlToolbarData);
 		TFE_RenderBackend::freeTexture(s_boolToolbarData);
-		s_editCtrlToolbarData = nullptr;
 		s_boolToolbarData = nullptr;
 
 		levHistory_destroy();
@@ -5030,14 +5033,17 @@ namespace LevelEditor
 		mapPos.z += s32(mapOffset.z);
 		if (mapOffset_) { *mapOffset_ = mapOffset; }
 	}
-
+		
 	void handleMouseClick()
 	{
 		s_doubleClick = false;
 		s_singleClick = false;
+		s_rightClick = false;
+		const f64 curTime = TFE_System::getTime();
+
+		// Single/double click (left).
 		if (TFE_Input::mousePressed(MBUTTON_LEFT))
 		{
-			f64 curTime = TFE_System::getTime();
 			if (curTime - s_lastClickTime < c_doubleClickThreshold)
 			{
 				s_doubleClick = true;
@@ -5047,6 +5053,41 @@ namespace LevelEditor
 				s_lastClickTime = curTime;
 				s_singleClick = true;
 			}
+		}
+
+		// Right-click.
+		if (s_contextMenu != CONTEXTMENU_NONE)
+		{
+			s_rightPressed = false;
+			s_rightClick = false;
+			s_lastRightClick = 0.0;
+			return;
+		}
+
+		const bool rightPressed = TFE_Input::mousePressed(MBUTTON_RIGHT);
+		const bool rightDown = TFE_Input::mouseDown(MBUTTON_RIGHT);
+
+		if (rightPressed)
+		{
+			s_lastRightClick = curTime;
+			s_rightPressed = true;
+			TFE_Input::getMousePos(&s_rightMousePos.x, &s_rightMousePos.z);
+		}
+		else if (!rightDown && curTime - s_lastRightClick < c_rightClickThreshold && s_rightPressed)
+		{
+			Vec2i curMousePos;
+			TFE_Input::getMousePos(&curMousePos.x, &curMousePos.z);
+
+			const Vec2i delta = { curMousePos.x - s_rightMousePos.x, curMousePos.z - s_rightMousePos.z };
+			if (::abs(delta.x) < c_rightClickMoveThreshold && ::abs(delta.z) < c_rightClickMoveThreshold)
+			{
+				s_rightClick = true;
+			}
+		}
+		if (!rightDown)
+		{
+			s_rightPressed = false;
+			s_lastRightClick = 0.0;
 		}
 	}
 
@@ -5091,12 +5132,137 @@ namespace LevelEditor
 			s_showAllLabels = !s_showAllLabels;
 		}
 	}
-			
+		
+	bool copyableItemHoveredOrSelected()
+	{
+		if (s_editMode == LEDIT_SECTOR)
+		{
+			return s_featureHovered.sector || s_featureCur.sector || !s_selectionList.empty();
+		}
+		else if (s_editMode == LEDIT_WALL)
+		{
+			return (s_featureHovered.sector && (s_featureHovered.part == HP_CEIL || s_featureHovered.part == HP_FLOOR)) ||
+				(s_featureCur.sector && (s_featureCur.part == HP_CEIL || s_featureCur.part == HP_FLOOR));// || selectionHasSectors();
+		}
+		else if (s_editMode == LEDIT_ENTITY)
+		{
+			return (s_featureHovered.sector && s_featureHovered.featureIndex >= 0 && s_featureHovered.isObject) ||
+				(s_featureCur.sector && s_featureCur.featureIndex >= 0 && s_featureCur.isObject);
+		}
+		return false;
+	}
+
+	bool itemHoveredOrSelected()
+	{
+		if (s_editMode == LEDIT_SECTOR)
+		{
+			return s_featureHovered.sector || s_featureCur.sector || !s_selectionList.empty();
+		}
+		else if (s_editMode == LEDIT_WALL)
+		{
+			return (s_featureHovered.sector && (s_featureHovered.featureIndex >= 0 || s_featureHovered.part == HP_CEIL || s_featureHovered.part == HP_FLOOR)) ||
+				(s_featureCur.sector && (s_featureCur.featureIndex >= 0 || s_featureCur.part == HP_CEIL || s_featureCur.part == HP_FLOOR));
+		}
+		else if (s_editMode == LEDIT_VERTEX)
+		{
+			return (s_featureHovered.sector && s_featureHovered.featureIndex >= 0) || (s_featureCur.sector && s_featureCur.featureIndex >= 0) ||
+				!s_selectionList.empty();
+		}
+		else if (s_editMode == LEDIT_ENTITY)
+		{
+			return (s_featureHovered.sector && s_featureHovered.featureIndex >= 0 && s_featureHovered.isObject) ||
+				(s_featureCur.sector && s_featureCur.featureIndex >= 0 && s_featureCur.isObject);
+		}
+		return false;
+	}
+
+	void openViewportContextWindow()
+	{
+		s_contextMenu = CONTEXTMENU_VIEWPORT;
+		s_modalUiActive = true;
+	}
+
+	void updateContextWindow()
+	{
+		const bool escapePressed = TFE_Input::keyPressed(KEY_ESCAPE);
+		if (s_contextMenu == CONTEXTMENU_NONE || s_editMode == LEDIT_DRAW || escapePressed)
+		{
+			// "Eat" the escape key to avoid accidentally de-selecting a group.
+			if (escapePressed && s_contextMenu != CONTEXTMENU_NONE && s_editMode != LEDIT_DRAW)
+			{
+				TFE_Input::clearKeyPressed(KEY_ESCAPE);
+			}
+			// Clear out the context menu.
+			s_contextMenu = CONTEXTMENU_NONE;
+			s_modalUiActive = false;
+			return;
+		}
+
+		bool closeMenu = false;
+		const u32 flags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_AlwaysAutoResize;
+		ImGui::SetNextWindowPos({(f32)s_rightMousePos.x, (f32)s_rightMousePos.z});
+		bool open = true;
+		if (ImGui::Begin("##ContextMenuFrame", &open, flags))
+		{
+			if (copyableItemHoveredOrSelected())
+			{
+				if (ImGui::MenuItem("Cut", "Ctrl+X", (bool*)NULL))
+				{
+					// TODO
+					closeMenu = true;
+				}
+				if (ImGui::MenuItem("Copy", "Ctrl+C", (bool*)NULL))
+				{
+					// TODO
+					closeMenu = true;
+				}
+				if (ImGui::MenuItem("Duplicate", "Ctrl+D", (bool*)NULL))
+				{
+					// TODO
+					closeMenu = true;
+				}
+			}
+			if (itemHoveredOrSelected())
+			{
+				if (ImGui::MenuItem("Delete", "Del", (bool*)NULL))
+				{
+					// TODO
+					closeMenu = true;
+				}
+			}
+			if (ImGui::MenuItem("Paste", "Ctrl+V", (bool*)NULL))
+			{
+				// TODO
+				closeMenu = true;
+			}
+		}
+		ImGui::End();
+
+		// Close the context menu on left-click, right-click, and menu item selection.
+		if (TFE_Input::mousePressed(MBUTTON_LEFT) || TFE_Input::mousePressed(MBUTTON_RIGHT) || closeMenu)
+		{
+			// Clear the context menu and modal UI.
+			s_contextMenu = CONTEXTMENU_NONE;
+			s_modalUiActive = false;
+			// Clear mouse clicks.
+			s_singleClick = false;
+			s_doubleClick = false;
+			s_rightClick = false;
+			// "Eat" the left click to avoid click-through.
+			// Note right-click is intentionally not treated this way to make camera movement/rotation after context menu
+			// feel better.
+			TFE_Input::clearMouseButtonPressed(MBUTTON_LEFT);
+			// Clear out accumulated mouse move that happened while the menu was open.
+			TFE_Input::clearAccumulatedMouseMove();
+		}
+	}
+
 	void update()
 	{
 		handleMouseClick();
-
+		
 		pushFont(TFE_Editor::FONT_SMALL);
+		updateContextWindow();
 		updateWindowControls();
 		handleHotkeys();
 
@@ -5104,7 +5270,7 @@ namespace LevelEditor
 		viewport_render(s_view);
 
 		// Toolbar
-		s_modalUiActive = false;
+		s_modalUiActive = s_contextMenu != CONTEXTMENU_NONE;
 		toolbarBegin();
 		{
 			const char* toolbarTooltips[]=
@@ -5122,9 +5288,8 @@ namespace LevelEditor
 				"Merge sectors",
 				"Subtract sectors"
 			};
-
-			void* gpuPtr = TFE_RenderBackend::getGpuPtr(s_editCtrlToolbarData);
-			if (drawToolbarButton(gpuPtr, 0, false, toolbarTooltips[0]))
+			const IconId c_toolbarIcon[] = { ICON_PLAY, ICON_DRAW, ICON_VERTICES, ICON_EDGES, ICON_CUBE, ICON_ENTITY };
+			if (iconButton(c_toolbarIcon[0], toolbarTooltips[0], false))
 			{
 				commitCurEntityChanges();
 				play();
@@ -5133,7 +5298,7 @@ namespace LevelEditor
 
 			for (u32 i = 1; i < 6; i++)
 			{
-				if (drawToolbarButton(gpuPtr, i, i == s_editMode, toolbarTooltips[i]))
+				if (iconButton(c_toolbarIcon[i], toolbarTooltips[i], i == s_editMode))
 				{
 					s_editMode = LevelEditMode(i);
 					s_editMove = false;
@@ -5149,7 +5314,7 @@ namespace LevelEditor
 
 			// CSG Toolbar.
 			ImGui::SameLine(0.0f, 32.0f);
-			gpuPtr = TFE_RenderBackend::getGpuPtr(s_boolToolbarData);
+			void* gpuPtr = TFE_RenderBackend::getGpuPtr(s_boolToolbarData);
 			for (u32 i = 0; i < 3; i++)
 			{
 				if (drawToolbarBooleanButton(gpuPtr, i, i == s_boolMode, csgTooltips[i]))
@@ -5236,8 +5401,12 @@ namespace LevelEditor
 				const ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize
 					| ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoNav | ImGuiWindowFlags_AlwaysAutoResize;
 
+				if (s_rightClick && editWinHovered)
+				{
+					openViewportContextWindow();
+				}
 				// Display vertex info.
-				if (s_featureHovered.sector && s_featureHovered.featureIndex >= 0 && editWinHovered && s_editMode == LEDIT_VERTEX)
+				else if (s_featureHovered.sector && s_featureHovered.featureIndex >= 0 && editWinHovered && s_editMode == LEDIT_VERTEX)
 				{
 					// Give the "world space" vertex position, get back to the pixel position for the UI.
 					const Vec2f vtx = s_featureHovered.sector->vtx[s_featureHovered.featureIndex];
@@ -6522,26 +6691,6 @@ namespace LevelEditor
 		}
 
 		ImGui::EndChild();
-	}
-
-	TextureGpu* loadGpuImage(const char* path)
-	{
-		char imagePath[TFE_MAX_PATH];
-		strcpy(imagePath, path);
-		if (!TFE_Paths::mapSystemPath(imagePath))
-		{
-			memset(imagePath, 0, TFE_MAX_PATH);
-			TFE_Paths::appendPath(TFE_PathType::PATH_PROGRAM, path, imagePath, TFE_MAX_PATH);
-			FileUtil::fixupPath(imagePath);
-		}
-
-		TextureGpu* gpuImage = nullptr;
-		SDL_Surface* image = TFE_Image::get(path);
-		if (image)
-		{
-			gpuImage = TFE_RenderBackend::createTexture(image->w, image->h, (u32*)image->pixels, MAG_FILTER_LINEAR);
-		}
-		return gpuImage;
 	}
 
 	void moveFeatures(const Vec3f& newPos)

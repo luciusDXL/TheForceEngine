@@ -229,6 +229,12 @@ namespace TFE_Input
 		s_keyPressed[key] = 0;
 		s_keyPressedRepeat[key] = 0;
 	}
+
+	void clearMouseButtonPressed(MouseButton btn)
+	{
+		s_mouseDown[btn] = 0;
+		s_mousePressed[btn] = 0;
+	}
 		
 	KeyboardCode getKeyPressed()
 	{
