@@ -92,6 +92,21 @@ namespace LevelEditor
 		"Change_Wall_Light",	// IET_CHANGE_WALL_LIGHT
 	};
 
+	const char* c_infTriggerTypeName[] =
+	{
+		"Standard", // ITRIGGER_WALL
+		"Sector",   // ITRIGGER_SECTOR,
+		"Switch1",  // ITRIGGER_SWITCH1,
+		"Toggle",   // ITRIGGER_TOGGLE,
+		"Single",   // ITRIGGER_SINGLE
+	};
+
+	const char* c_infTeleporterTypeName[] =
+	{
+		"Basic",   // TELEPORT_BASIC
+		"Chute",   // TELEPORT_CHUTE,
+	};
+
 	void editor_infInit()
 	{
 		s_levelInf.item.clear();
@@ -237,13 +252,13 @@ namespace LevelEditor
 		return (Editor_InfTrigger*)data;
 	}
 
-	Editor_InfTeleporter* getTeleportFromClassData(Editor_InfClass* data)
+	Editor_InfTeleporter* getTeleporterFromClassData(Editor_InfClass* data)
 	{
 		if (data->classId != IIC_TELEPORTER) { return nullptr; }
 		return (Editor_InfTeleporter*)data;
 	}
 
-	const Editor_InfTeleporter* getTeleportFromClassData(const Editor_InfClass* data)
+	const Editor_InfTeleporter* getTeleporterFromClassData(const Editor_InfClass* data)
 	{
 		if (data->classId != IIC_TELEPORTER) { return nullptr; }
 		return (Editor_InfTeleporter*)data;
@@ -2293,7 +2308,7 @@ namespace LevelEditor
 		}
 	}
 
-	void editor_infSectorEdit_UI()
+	void editor_infEdit_UI()
 	{
 		const f32 tint[] = { 103.0f / 255.0f, 122.0f / 255.0f, 139.0f / 255.0f, 1.0f };
 
@@ -2389,7 +2404,7 @@ namespace LevelEditor
 				} break;
 				case IIC_TELEPORTER:
 				{
-					Editor_InfTeleporter* teleporter = getTeleportFromClassData(s_infEditor.item->classData[deleteIndex]);
+					Editor_InfTeleporter* teleporter = getTeleporterFromClassData(s_infEditor.item->classData[deleteIndex]);
 					assert(teleporter);
 					freeTeleporter(teleporter);
 				} break;
@@ -2434,8 +2449,9 @@ namespace LevelEditor
 		return outStr;
 	}
 
-	void editor_InfSectorEdit_Code()
+	void editor_InfEdit_Code()
 	{
+		const char* tab = "    ";
 		const s32 count = (s32)s_infEditor.item->classData.size();
 		Editor_InfClass** dataList = s_infEditor.item->classData.data();
 		for (s32 i = 0; i < count; i++)
@@ -2456,8 +2472,6 @@ namespace LevelEditor
 					ImGui::TextColored(colorKeywordOuter, "Class:"); ImGui::SameLine(0.0f, 8.0f);
 					ImGui::TextColored(colorKeywordInner, "Elevator"); ImGui::SameLine(0.0f, 8.0f);
 					ImGui::Text(c_infElevTypeName[elev->type]);
-
-					const char* tab = "    ";
 
 					// Properties.
 					const u32 overrides = elev->overrideSet;
@@ -2668,15 +2682,125 @@ namespace LevelEditor
 				} break;
 				case IIC_TRIGGER:
 				{
+					Editor_InfTrigger* trigger = getTriggerFromClassData(data);
+
+					// Class
+					ImGui::TextColored(colorKeywordOuter, "Class:"); ImGui::SameLine(0.0f, 8.0f);
+					ImGui::TextColored(colorKeywordInner, "Trigger");
+					if (trigger->type != ITRIGGER_SECTOR)
+					{
+						ImGui::SameLine(0.0f, 8.0f);
+						ImGui::Text(c_infTriggerTypeName[trigger->type]);
+					}
+
+					const u32 overrides = trigger->overrideSet;
+					if ((overrides & ITO_SOUND) && trigger->type != ITRIGGER_SECTOR)
+					{
+						ImGui::Text("%s", tab); ImGui::SameLine(0.0f, 0.0f);
+						ImGui::TextColored(colorKeywordInner, "Sound:"); ImGui::SameLine(0.0f, 8.0f);
+						ImGui::Text("%s", trigger->sound.c_str());
+					}
+					if ((overrides & ITO_MASTER) && !trigger->master)
+					{
+						ImGui::Text("%s", tab); ImGui::SameLine(0.0f, 0.0f);
+						ImGui::TextColored(colorKeywordInner, "Master:"); ImGui::SameLine(0.0f, 8.0f);
+						ImGui::Text("Off");
+					}
+					if (overrides & ITO_TEXT)
+					{
+						ImGui::Text("%s", tab); ImGui::SameLine(0.0f, 0.0f);
+						ImGui::TextColored(colorKeywordInner, "Text:"); ImGui::SameLine(0.0f, 8.0f);
+						ImGui::Text("%u", trigger->textId);
+					}
+					if (overrides & ITO_EVENT_MASK)
+					{
+						ImGui::Text("%s", tab); ImGui::SameLine(0.0f, 0.0f);
+						ImGui::TextColored(colorKeywordInner, "Event_Mask:"); ImGui::SameLine(0.0f, 8.0f);
+						ImGui::Text("%d", trigger->eventMask);
+					}
+					if (overrides & ITO_ENTITY_MASK)
+					{
+						ImGui::Text("%s", tab); ImGui::SameLine(0.0f, 0.0f);
+						ImGui::TextColored(colorKeywordInner, "Entity_Mask:"); ImGui::SameLine(0.0f, 8.0f);
+						ImGui::Text("%d", trigger->entityMask);
+					}
+					if (overrides & ITO_EVENT)
+					{
+						ImGui::Text("%s", tab); ImGui::SameLine(0.0f, 0.0f);
+						ImGui::TextColored(colorKeywordInner, "Event:"); ImGui::SameLine(0.0f, 8.0f);
+						ImGui::Text("%u", trigger->event);
+					}
+					if (overrides & ITO_MSG)
+					{
+						ImGui::Text("%s", tab); ImGui::SameLine(0.0f, 0.0f);
+						ImGui::TextColored(colorKeywordInner, "Message:"); ImGui::SameLine(0.0f, 8.0f);
+						ImGui::Text("%s", c_editorInfMessageTypeName[trigger->cmd]);
+
+						if (trigger->cmd == IMT_GOTO_STOP || trigger->cmd == IMT_COMPLETE)
+						{
+							ImGui::SameLine(0.0f, 8.0f);
+							ImGui::Text("%u", trigger->arg[0]);
+						}
+						else if (trigger->cmd == IMT_SET_BITS || trigger->cmd == IMT_CLEAR_BITS)
+						{
+							ImGui::SameLine(0.0f, 8.0f);
+							ImGui::Text("%u %u", trigger->arg[0], trigger->arg[1]);
+						}
+					}
+					const s32 clientCount = (s32)trigger->clients.size();
+					const Editor_InfClient* client = trigger->clients.data();
+					for (s32 c = 0; c < clientCount; c++, client++)
+					{
+						ImGui::Text("%s", tab); ImGui::SameLine(0.0f, 0.0f);
+						ImGui::TextColored(colorKeywordInner, "Client:"); ImGui::SameLine(0.0f, 8.0f);
+						if (client->targetWall >= 0)
+						{
+							ImGui::Text("%s(%d)", client->targetSector.c_str(), client->targetWall);
+						}
+						else
+						{
+							ImGui::Text("%s", client->targetSector.c_str());
+						}
+						if (client->eventMask != INF_EVENT_ANY)
+						{
+							ImGui::SameLine(0.0f, 8.0f);
+							ImGui::Text("%u", client->eventMask);
+						}
+					}
 				} break;
 				case IIC_TELEPORTER:
 				{
+					Editor_InfTeleporter* teleporter = getTeleporterFromClassData(data);
+
+					// Class
+					ImGui::TextColored(colorKeywordOuter, "Class:"); ImGui::SameLine(0.0f, 8.0f);
+					ImGui::TextColored(colorKeywordInner, "Teleporter"); ImGui::SameLine(0.0f, 8.0f);
+					ImGui::Text(c_infTeleporterTypeName[teleporter->type]);
+
+					// Target
+					ImGui::Text("%s", tab); ImGui::SameLine(0.0f, 0.0f);
+					ImGui::TextColored(colorKeywordInner, "Target:"); ImGui::SameLine(0.0f, 8.0f);
+					ImGui::Text("%s", teleporter->target.c_str());
+
+					// Position/angle.
+					if (teleporter->type == TELEPORT_BASIC)
+					{
+						ImGui::Text("%s", tab); ImGui::SameLine(0.0f, 0.0f);
+						ImGui::TextColored(colorKeywordInner, "Move:"); ImGui::SameLine(0.0f, 8.0f);
+
+						char posX[256], posY[256], posZ[256], angle[256];
+						strcpy(posX, infFloatToString(teleporter->dstPos.x));
+						strcpy(posY, infFloatToString(teleporter->dstPos.y));
+						strcpy(posZ, infFloatToString(teleporter->dstPos.z));
+						strcpy(angle, infFloatToString(teleporter->dstAngle));
+						ImGui::Text("%s %s %s %s", posX, posY, posZ, angle);
+					}
 				} break;
 			}
 		}
 	}
 
-	bool editor_infSectorEdit()
+	bool editor_infEdit()
 	{
 		DisplayInfo info;
 		TFE_RenderBackend::getDisplayInfo(&info);
@@ -2688,7 +2812,7 @@ namespace LevelEditor
 		bool active = true;
 		ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoResize;
 		ImGui::SetNextWindowSize({ winWidth, winHeight });
-		if (ImGui::BeginPopupModal("Sector INF", &active, window_flags))
+		if (ImGui::BeginPopupModal("Edit INF", &active, window_flags))
 		{
 			if (!s_infEditor.sector)
 			{
@@ -2701,49 +2825,70 @@ namespace LevelEditor
 					s_levelInf.item.push_back({});
 					s_infEditor.item = &s_levelInf.item.back();
 					s_infEditor.item->name = s_infEditor.sector->name;
-					s_infEditor.item->wallNum = -1;
+					s_infEditor.item->wallNum = s_infEditor.itemWallIndex;
 				}
 			}
 			else if (s_infEditor.item)
 			{
 				// Display it for now.
-				ImGui::Text("Item: %s, Sector ID: %d", s_infEditor.item->name.c_str(), s_infEditor.sector->id);
-				ImGui::Separator();
+				if (s_infEditor.itemWallIndex < 0)
+				{
+					ImGui::Text("Item: %s, Sector ID: %d", s_infEditor.item->name.c_str(), s_infEditor.sector->id);
+					ImGui::Separator();
 
-				if (editor_button("+"))
-				{
-					if (s_infEditor.comboClassIndex == IIC_ELEVATOR)
+					if (editor_button("+"))
 					{
-						allocElev(s_infEditor.item);
-					}
-					else if (s_infEditor.comboClassIndex == IIC_TRIGGER)
-					{
-						// TODO
-					}
-					else if (s_infEditor.comboClassIndex == IIC_TELEPORTER)
-					{
-						// TODO
-					}
-				}
-				ImGui::SameLine(0.0f, 4.0f);
-				if (editor_button("-"))
-				{
-					// TODO
-				}
-				ImGui::SameLine(0.0f, 16.0f);
-				ImGui::SetNextItemWidth(128.0f);
-				if (ImGui::BeginCombo("##SectorClassCombo", c_infClassName[s_infEditor.comboClassIndex]))
-				{
-					s32 count = (s32)TFE_ARRAYSIZE(c_infClassName);
-					for (s32 i = 0; i < count; i++)
-					{
-						if (ImGui::Selectable(c_infClassName[i], i == s_infEditor.comboClassIndex))
+						if (s_infEditor.comboClassIndex == IIC_ELEVATOR)
 						{
-							s_infEditor.comboClassIndex = i;
+							allocElev(s_infEditor.item);
 						}
-						//setTooltip(c_infClassName[i].tooltip.c_str());
+						else if (s_infEditor.comboClassIndex == IIC_TRIGGER)
+						{
+							// TODO
+						}
+						else if (s_infEditor.comboClassIndex == IIC_TELEPORTER)
+						{
+							// TODO
+						}
 					}
-					ImGui::EndCombo();
+					ImGui::SameLine(0.0f, 4.0f);
+					if (editor_button("-"))
+					{
+						// TODO
+					}
+					ImGui::SameLine(0.0f, 16.0f);
+					ImGui::SetNextItemWidth(128.0f);
+					if (ImGui::BeginCombo("##SectorClassCombo", c_infClassName[s_infEditor.comboClassIndex]))
+					{
+						s32 count = (s32)TFE_ARRAYSIZE(c_infClassName);
+						for (s32 i = 0; i < count; i++)
+						{
+							if (ImGui::Selectable(c_infClassName[i], i == s_infEditor.comboClassIndex))
+							{
+								s_infEditor.comboClassIndex = i;
+							}
+							//setTooltip(c_infClassName[i].tooltip.c_str());
+						}
+						ImGui::EndCombo();
+					}
+				}
+				else
+				{
+					ImGui::Text("Item: %s, Sector ID: %d, Wall ID: %d", s_infEditor.item->name.c_str(), s_infEditor.sector->id, s_infEditor.itemWallIndex);
+					ImGui::Separator();
+
+					// No combobox here since only one option is available - trigger.
+					if (editor_button("+"))
+					{
+						Editor_InfTrigger* trigger = allocTrigger(s_infEditor.item);
+						trigger->overrideSet = ITO_NONE;
+						trigger->type = ITRIGGER_WALL;
+					}
+					ImGui::SameLine(0.0f, 4.0f);
+					if (editor_button("-"))
+					{
+						// TODO
+					}
 				}
 
 				ImGui::SameLine(winWidth - 128.0f);
@@ -2767,11 +2912,11 @@ namespace LevelEditor
 				{
 					if (s_infEditor.mode == INF_MODE_UI)
 					{
-						editor_infSectorEdit_UI();
+						editor_infEdit_UI();
 					}
 					else
 					{
-						editor_InfSectorEdit_Code();
+						editor_InfEdit_Code();
 					}
 					ImGui::EndChild();
 				}

@@ -6004,10 +6004,19 @@ namespace LevelEditor
 		if (selection_doesFeatureExist(id))
 		{
 			selection_remove(id);
+
+			if (s_featureCur.sector == sector && s_featureCur.featureIndex == featureIndex && s_featureCur.part == (HitPart)part)
+			{
+				s_featureCur = {};
+			}
 		}
 		else
 		{
 			selection_add(id);
+			s_featureCur = {};
+			s_featureCur.featureIndex = featureIndex;
+			s_featureCur.sector = sector;
+			s_featureCur.part = (HitPart)part;
 		}
 	}
 

@@ -432,7 +432,7 @@ namespace LevelEditor
 		ImGui::SameLine(0.0f, 20.0f);
 		if (ImGui::Button("Edit INF"))
 		{
-			// TODO
+			TFE_Editor::openEditorPopup(POPUP_EDIT_INF, wallId, sector->name.empty() ? nullptr : (void*)sector->name.c_str());
 		}
 
 		s32 light = wall->wallLight;
@@ -690,7 +690,7 @@ namespace LevelEditor
 		ImGui::SameLine(0.0f, 20.0f);
 		if (ImGui::Button("Edit INF"))
 		{
-			TFE_Editor::openEditorPopup(POPUP_SECTOR_INF, 0xffffffff, sector->name.empty() ? nullptr : (void*)sector->name.c_str());
+			TFE_Editor::openEditorPopup(POPUP_EDIT_INF, 0xffffffff, sector->name.empty() ? nullptr : (void*)sector->name.c_str());
 		}
 
 		// Layer and Ambient

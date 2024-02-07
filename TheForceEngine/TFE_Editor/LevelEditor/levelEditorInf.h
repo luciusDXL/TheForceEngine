@@ -208,7 +208,7 @@ namespace LevelEditor
 	{
 		std::string targetSector;
 		s32 targetWall = -1;
-		u32 eventMask = 0xffffffff;
+		s32 eventMask = INF_EVENT_ANY;
 	};
 
 	// Specific classes.
@@ -270,5 +270,5 @@ namespace LevelEditor
 
 	bool loadLevelInfFromAsset(TFE_Editor::Asset* asset);
 	void editor_infEditBegin(const char* sectorName, s32 wallIndex = -1);
-	bool editor_infSectorEdit();
+	bool editor_infEdit();
 }

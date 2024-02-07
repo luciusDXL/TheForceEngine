@@ -249,9 +249,9 @@ namespace TFE_Editor
 			{
 				ImGui::OpenPopup("Category");
 			} break;
-			case POPUP_SECTOR_INF:
+			case POPUP_EDIT_INF:
 			{
-				ImGui::OpenPopup("Sector INF");
+				ImGui::OpenPopup("Edit INF");
 			} break;
 		}
 	}
@@ -326,9 +326,9 @@ namespace TFE_Editor
 					s_editorPopup = POPUP_NONE;
 				}
 			} break;
-			case POPUP_SECTOR_INF:
+			case POPUP_EDIT_INF:
 			{
-				if (LevelEditor::editor_infSectorEdit())
+				if (LevelEditor::editor_infEdit())
 				{
 					ImGui::CloseCurrentPopup();
 					s_editorPopup = POPUP_NONE;
@@ -690,7 +690,7 @@ namespace TFE_Editor
 			{
 				AssetBrowser::initPopup(AssetType(userData), (char*)userPtr);
 			} break;
-			case POPUP_SECTOR_INF:
+			case POPUP_EDIT_INF:
 			{
 				LevelEditor::editor_infEditBegin((char*)userPtr, userData == 0xffffffff ? -1 : userData);
 			} break;
