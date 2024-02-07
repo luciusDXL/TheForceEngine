@@ -1206,7 +1206,7 @@ namespace LevelEditor
 				{
 					if (!var[v].value.sValue.empty())
 					{
-						WRITE_LINE("            %s:     \"%s\" \"%s\"\r\n", def->name.c_str(), var[v].value.sValue.c_str(), var[v].value.sValue1.c_str());
+						WRITE_LINE("            %s:     %s \"%s\"\r\n", def->name.c_str(), var[v].value.sValue.c_str(), var[v].value.sValue1.c_str());
 					}
 				} break;
 			}
@@ -1428,9 +1428,52 @@ namespace LevelEditor
 		NEW_LINE();
 
 		WRITE_LINE("LEVELNAME %s\r\n", s_level.name.c_str());
-		WRITE_LINE("items %d\r\n", 0);
-		NEW_LINE();
+		WRITE_LINE("items %d\r\n", (s32)s_levelInf.item.size());
 
+		if (s_levelInf.item.empty())
+		{
+			NEW_LINE();
+			file.close();
+			return true;
+		}
+
+		const char* tab = "    ";
+		char curTab[256] = "";
+		// Write out INF items.
+		const s32 itemCount = (s32)s_levelInf.item.size();
+		const Editor_InfItem* item = s_levelInf.item.data();
+
+		char seqStart[256], seqEnd[256];
+		sprintf(seqStart, "%s%sseq\r\n", tab, tab);
+		sprintf(seqEnd, "%s%sseqend\r\n", tab, tab);
+
+		for (s32 s = 0; s < itemCount; s++, item++)
+		{
+			char buffer[256];
+			strcpy(curTab, tab);
+
+			if (item->wallNum < 0)
+			{
+				WRITE_LINE("%sitem: sector%sname: %s\r\n", curTab, tab, item->name.c_str());
+			}
+			else
+			{
+				WRITE_LINE("%sitem: line%sname: %s%snum: %d\r\n", curTab, tab, item->name.c_str(), tab, item->wallNum);
+			}
+
+			strcat(curTab, tab);
+			WRITE_LINE(seqStart);
+			{
+				strcat(curTab, tab);
+
+				char itemBuffer[1024] = "";
+				editor_writeInfItem(itemBuffer, item, curTab);
+				file.writeBuffer(itemBuffer, (u32)strlen(itemBuffer));
+			}
+			WRITE_LINE(seqEnd);
+		}
+
+		NEW_LINE();
 		file.close();
 		return true;
 	}

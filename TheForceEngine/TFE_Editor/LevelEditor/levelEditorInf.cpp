@@ -246,7 +246,7 @@ namespace LevelEditor
 		return (Editor_InfTrigger*)data;
 	}
 
-	const Editor_InfTrigger* getSectorTriggerFromClassData(const Editor_InfClass* data)
+	const Editor_InfTrigger* getTriggerFromClassData(const Editor_InfClass* data)
 	{
 		if (data->classId != IIC_TRIGGER) { return nullptr; }
 		return (Editor_InfTrigger*)data;
@@ -2449,6 +2449,403 @@ namespace LevelEditor
 		return outStr;
 	}
 
+	void appendToBuffer(char* outStr, const char* str)
+	{
+		strcat(outStr, str);
+		strcat(outStr, "\r\n");
+	}
+
+	void editor_writeInfItem(char* outStr, const Editor_InfItem* item, const char* curTab)
+	{
+		const char* tab = "    ";
+		const s32 count = (s32)item->classData.size();
+		const Editor_InfClass* const* dataList = item->classData.data();
+		char buffer[256];
+		for (s32 i = 0; i < count; i++)
+		{
+			const Editor_InfClass* data = dataList[i];
+			switch (data->classId)
+			{
+				case IIC_ELEVATOR:
+				{
+					const Editor_InfElevator* elev = getElevFromClassData(data);
+
+					// Class
+					sprintf(buffer, "%sClass: Elevator %s", curTab, c_infElevTypeName[elev->type]);
+					appendToBuffer(outStr, buffer);
+
+					// Properties.
+					const u32 overrides = elev->overrideSet;
+					if (overrides & IEO_START)
+					{
+						sprintf(buffer, "%s%sStart: %d", curTab, tab, elev->start);
+						appendToBuffer(outStr, buffer);
+					}
+					if (overrides & IEO_SPEED)
+					{
+						sprintf(buffer, "%s%sSpeed: %s", curTab, tab, infFloatToString(elev->speed));
+						appendToBuffer(outStr, buffer);
+					}
+					if ((overrides & IEO_MASTER) && !elev->master)
+					{
+						sprintf(buffer, "%s%sMaster: Off", curTab, tab);
+						appendToBuffer(outStr, buffer);
+					}
+					if (overrides & IEO_ANGLE)
+					{
+						f32 angle = elev->angle * 180.0f / PI;
+						sprintf(buffer, "%s%sAngle: %s", curTab, tab, infFloatToString(angle));
+						appendToBuffer(outStr, buffer);
+					}
+					if (overrides & IEO_FLAGS)
+					{
+						sprintf(buffer, "%s%sFlags: %d", curTab, tab, elev->flags);
+						appendToBuffer(outStr, buffer);
+					}
+					if (overrides & IEO_KEY0)
+					{
+						if (elev->type == IET_DOOR_MID)
+						{
+							sprintf(buffer, "%s%sAddon: 0", curTab, tab);
+							appendToBuffer(outStr, buffer);
+						}
+						sprintf(buffer, "%s%sKey: %s", curTab, tab, c_infKeyNames[elev->key[0] - KeyItem::KEY_RED]);
+						appendToBuffer(outStr, buffer);
+					}
+					if (overrides & IEO_KEY1)
+					{
+						if (elev->type == IET_DOOR_MID)
+						{
+							sprintf(buffer, "%s%sAddon: 1", curTab, tab);
+							appendToBuffer(outStr, buffer);
+
+							sprintf(buffer, "%s%sKey: %s", curTab, tab, c_infKeyNames[elev->key[1] - KeyItem::KEY_RED]);
+							appendToBuffer(outStr, buffer);
+						}
+					}
+					if (overrides & IEO_DIR)
+					{
+						sprintf(buffer, "%s%sCenter: %s %s", curTab, tab, infFloatToString(elev->dirOrCenter.x), infFloatToString(elev->dirOrCenter.z, 1));
+						appendToBuffer(outStr, buffer);
+					}
+					if (overrides & IEO_SOUND0)
+					{
+						char soundName[256];
+						if (elev->sounds[0].empty() || strcasecmp(elev->sounds[0].c_str(), "none") == 0)
+						{
+							strcpy(soundName, "0");
+						}
+						else
+						{
+							strcpy(soundName, elev->sounds[0].c_str());
+						}
+
+						sprintf(buffer, "%s%sSound: %d %s", curTab, tab, 1, soundName);
+						appendToBuffer(outStr, buffer);
+					}
+					if (overrides & IEO_SOUND1)
+					{
+						char soundName[256];
+						if (elev->sounds[1].empty() || strcasecmp(elev->sounds[1].c_str(), "none") == 0)
+						{
+							strcpy(soundName, "0");
+						}
+						else
+						{
+							strcpy(soundName, elev->sounds[1].c_str());
+						}
+
+						sprintf(buffer, "%s%sSound: %d %s", curTab, tab, 2, soundName);
+						appendToBuffer(outStr, buffer);
+					}
+					if (overrides & IEO_SOUND2)
+					{
+						char soundName[256];
+						if (elev->sounds[2].empty() || strcasecmp(elev->sounds[2].c_str(), "none") == 0)
+						{
+							strcpy(soundName, "0");
+						}
+						else
+						{
+							strcpy(soundName, elev->sounds[2].c_str());
+						}
+
+						sprintf(buffer, "%s%sSound: %d %s", curTab, tab, 3, soundName);
+						appendToBuffer(outStr, buffer);
+					}
+					if (overrides & IEO_EVENT_MASK)
+					{
+						if (elev->eventMask == -1)
+						{
+							sprintf(buffer, "%s%sEvent_Mask: *", curTab, tab);
+						}
+						else
+						{
+							sprintf(buffer, "%s%sEvent_Mask: %d", curTab, tab, elev->eventMask);
+						}
+						appendToBuffer(outStr, buffer);
+					}
+					if (overrides & IEO_ENTITY_MASK)
+					{
+						if (elev->entityMask == -1)
+						{
+							sprintf(buffer, "%s%sEntity_Mask: *", curTab, tab);
+						}
+						else
+						{
+							sprintf(buffer, "%s%sEntity_Mask: %d", curTab, tab, elev->entityMask);
+						}
+						appendToBuffer(outStr, buffer);
+					}
+
+					const s32 stopCount = (s32)elev->stops.size();
+					const Editor_InfStop* stop = elev->stops.data();
+					for (s32 s = 0; s < stopCount; s++, stop++)
+					{
+						char value[256];
+						if (!stop->fromSectorFloor.empty())
+						{
+							strcpy(value, stop->fromSectorFloor.c_str());
+						}
+						else if (stop->relative)
+						{
+							sprintf(value, "@%s", infFloatToString(stop->value));
+						}
+						else
+						{
+							sprintf(value, "%s", infFloatToString(stop->value));
+						}
+
+						char delay[256];
+						if (stop->delayType == SDELAY_SECONDS)
+						{
+							sprintf(delay, "%s", infFloatToString(stop->delay));
+						}
+						else if (stop->delayType == SDELAY_HOLD)
+						{
+							sprintf(delay, "%s", "hold");
+						}
+						else if (stop->delayType == SDELAY_COMPLETE)
+						{
+							sprintf(delay, "%s", "complete");
+						}
+						else if (stop->delayType == SDELAY_TERMINATE)
+						{
+							sprintf(delay, "%s", "terminate");
+						}
+						else
+						{
+							sprintf(delay, "%s", "prev");
+						}
+
+						sprintf(buffer, "%s%sStop:%s%s %s", curTab, tab, tab, value, delay);
+						appendToBuffer(outStr, buffer);
+
+						// Stop commands.
+						const s32 msgCount = (s32)stop->msg.size();
+						const Editor_InfMessage* msg = stop->msg.data();
+						for (s32 m = 0; m < msgCount; m++, msg++)
+						{
+							char target[256];
+							if (msg->targetWall >= 0)
+							{
+								sprintf(target, "%s(%d)", msg->targetSector.c_str(), msg->targetWall); ImGui::SameLine(0.0f, 8.0f);
+							}
+							else
+							{
+								sprintf(target, "%s", msg->targetSector.c_str()); ImGui::SameLine(0.0f, 8.0f);
+							}
+
+							char typeArgs[256] = "";
+							if (msg->type == IMT_GOTO_STOP || msg->type == IMT_COMPLETE)
+							{
+								sprintf(typeArgs, "%u", msg->arg[0]);
+							}
+							else if (msg->type == IMT_SET_BITS || msg->type == IMT_CLEAR_BITS)
+							{
+								sprintf(typeArgs, "%u %u", msg->arg[0], msg->arg[1]);
+							}
+
+							sprintf(buffer, "%s%s%sMessage: %d %s %s %s", curTab, tab, tab, s, target, c_editorInfMessageTypeName[msg->type], typeArgs);
+							appendToBuffer(outStr, buffer);
+						}
+
+						const s32 adjoinCount = (s32)stop->adjoinCmd.size();
+						const Editor_InfAdjoinCmd* adjoinCmd = stop->adjoinCmd.data();
+						for (s32 a = 0; a < adjoinCount; a++, adjoinCmd++)
+						{
+							sprintf(buffer, "%s%s%sAdjoin: %d %s %d %s %d", curTab, tab, tab, s,
+								adjoinCmd->sector0.c_str(), adjoinCmd->wallIndex0, adjoinCmd->sector1.c_str(), adjoinCmd->wallIndex1);
+							appendToBuffer(outStr, buffer);
+						}
+
+						const s32 texCount = (s32)stop->textureCmd.size();
+						const Editor_InfTextureCmd* texCmd = stop->textureCmd.data();
+						for (s32 t = 0; t < texCount; t++, texCmd++)
+						{
+							sprintf(buffer, "%s%s%sTexture: %d %s %s", curTab, tab, tab, s, texCmd->fromCeiling ? "C" : "F", texCmd->donorSector.c_str());
+							appendToBuffer(outStr, buffer);
+						}
+
+						if (stop->overrideSet & ISO_PAGE)
+						{
+							sprintf(buffer, "%s%s%sPage: %d %s", curTab, tab, tab, s, stop->page.c_str());
+							appendToBuffer(outStr, buffer);
+						}
+					}
+
+					const s32 slaveCount = (s32)elev->slaves.size();
+					const Editor_InfSlave* slave = elev->slaves.data();
+					for (s32 s = 0; s < slaveCount; s++, slave++)
+					{
+						if (slave->angleOffset != 0.0f)
+						{
+							sprintf(buffer, "%s%sSlave: %s", curTab, tab, slave->name.c_str());
+						}
+						else
+						{
+							sprintf(buffer, "%s%sSlave: %s %s", curTab, tab, slave->name.c_str(), infFloatToString(slave->angleOffset));
+						}
+						appendToBuffer(outStr, buffer);
+					}
+				} break;
+				case IIC_TRIGGER:
+				{
+					const Editor_InfTrigger* trigger = getTriggerFromClassData(data);
+
+					// Class
+					if (trigger->type != ITRIGGER_SECTOR)
+					{
+						sprintf(buffer, "%sClass: Trigger %s", curTab, c_infTriggerTypeName[trigger->type]);
+					}
+					else
+					{
+						sprintf(buffer, "%sClass: Trigger", curTab);
+					}
+					appendToBuffer(outStr, buffer);
+
+					const u32 overrides = trigger->overrideSet;
+					if ((overrides & ITO_SOUND) && trigger->type != ITRIGGER_SECTOR)
+					{
+						sprintf(buffer, "%s%sSound: %s", curTab, tab, trigger->sound.c_str());
+						appendToBuffer(outStr, buffer);
+					}
+					if ((overrides & ITO_MASTER) && !trigger->master)
+					{
+						sprintf(buffer, "%s%sMaster: Off", curTab, tab);
+						appendToBuffer(outStr, buffer);
+					}
+					if (overrides & ITO_TEXT)
+					{
+						sprintf(buffer, "%s%sText: %u", curTab, tab, trigger->textId);
+						appendToBuffer(outStr, buffer);
+					}
+					if (overrides & ITO_EVENT_MASK)
+					{
+						if (trigger->eventMask == -1)
+						{
+							sprintf(buffer, "%s%sEvent_Mask: *", curTab, tab);
+						}
+						else
+						{
+							sprintf(buffer, "%s%sEvent_Mask: %d", curTab, tab, trigger->eventMask);
+						}
+						appendToBuffer(outStr, buffer);
+					}
+					if (overrides & ITO_ENTITY_MASK)
+					{
+						if (trigger->entityMask == -1)
+						{
+							sprintf(buffer, "%s%sEntity_Mask: *", curTab, tab);
+						}
+						else
+						{
+							sprintf(buffer, "%s%sEntity_Mask: %d", curTab, tab, trigger->entityMask);
+						}
+						appendToBuffer(outStr, buffer);
+					}
+					if (overrides & ITO_EVENT)
+					{
+						sprintf(buffer, "%s%sEvent: %u", curTab, tab, trigger->event);
+						appendToBuffer(outStr, buffer);
+					}
+					if (overrides & ITO_MSG)
+					{
+						if (trigger->cmd == IMT_GOTO_STOP || trigger->cmd == IMT_COMPLETE || trigger->cmd == IMT_SET_BITS || trigger->cmd == IMT_CLEAR_BITS)
+						{
+							char args[256] = "";
+							if (trigger->cmd == IMT_GOTO_STOP || trigger->cmd == IMT_COMPLETE)
+							{
+								sprintf(args, "%u", trigger->arg[0]);
+							}
+							else if (trigger->cmd == IMT_SET_BITS || trigger->cmd == IMT_CLEAR_BITS)
+							{
+								sprintf(args, "%u %u", trigger->arg[0], trigger->arg[1]);
+							}
+							sprintf(buffer, "%s%sMessage: %s %s", curTab, tab, c_editorInfMessageTypeName[trigger->cmd], args);
+						}
+						else
+						{
+							sprintf(buffer, "%s%sMessage: %s", curTab, tab, c_editorInfMessageTypeName[trigger->cmd]);
+						}
+						appendToBuffer(outStr, buffer);
+					}
+					const s32 clientCount = (s32)trigger->clients.size();
+					const Editor_InfClient* client = trigger->clients.data();
+					for (s32 c = 0; c < clientCount; c++, client++)
+					{
+						ImGui::Text("%s", tab); ImGui::SameLine(0.0f, 0.0f);
+						ImGui::TextColored(colorKeywordInner, "Client:"); ImGui::SameLine(0.0f, 8.0f);
+						char target[256];
+						if (client->targetWall >= 0)
+						{
+							sprintf(target, "%s(%d)", client->targetSector.c_str(), client->targetWall);
+						}
+						else
+						{
+							sprintf(target, "%s", client->targetSector.c_str());
+						}
+
+						if (client->eventMask != INF_EVENT_ANY)
+						{
+							sprintf(buffer, "%s%sClient: %s %u", curTab, tab, target, client->eventMask);
+						}
+						else
+						{
+							sprintf(buffer, "%s%sClient: %s", curTab, tab, target);
+						}
+						appendToBuffer(outStr, buffer);
+					}
+				} break;
+				case IIC_TELEPORTER:
+				{
+					const Editor_InfTeleporter* teleporter = getTeleporterFromClassData(data);
+
+					// Class
+					sprintf(buffer, "%sClass: Teleporter %s", curTab, c_infTeleporterTypeName[teleporter->type]);
+					appendToBuffer(outStr, buffer);
+
+					// Target
+					sprintf(buffer, "%s%sTarget: %s", curTab, tab, teleporter->target.c_str());
+					appendToBuffer(outStr, buffer);
+
+					// Position/angle.
+					if (teleporter->type == TELEPORT_BASIC)
+					{
+						char posX[256], posY[256], posZ[256], angle[256];
+						strcpy(posX, infFloatToString(teleporter->dstPos.x));
+						strcpy(posY, infFloatToString(teleporter->dstPos.y));
+						strcpy(posZ, infFloatToString(teleporter->dstPos.z));
+						strcpy(angle, infFloatToString(teleporter->dstAngle));
+
+						sprintf(buffer, "%s%sMove: %s %s %s %s", curTab, tab, posX, posY, posZ, angle);
+						appendToBuffer(outStr, buffer);
+					}
+				} break;
+			}
+		}
+	}
+		
 	void editor_InfEdit_Code()
 	{
 		const char* tab = "    ";
