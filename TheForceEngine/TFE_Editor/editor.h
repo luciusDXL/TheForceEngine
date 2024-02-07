@@ -137,6 +137,7 @@ namespace TFE_Editor
 	
 	ImVec4 getTextColor(EditorTextColor color);
 	bool getMenuActive();
-
 	bool isPopupOpen();
+
+	Vec2i getEditorVersion();
 }

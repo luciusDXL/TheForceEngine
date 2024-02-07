@@ -47,6 +47,7 @@ namespace TFE_Editor
 		char msg[TFE_MAX_PATH * 2] = "";
 	};
 
+	static Vec2i s_editorVersion = { 0, 50 };
 	static std::vector<RecentProject> s_recents;
 
 	static s32 s_uid = 0;
@@ -84,6 +85,11 @@ namespace TFE_Editor
 	WorkBuffer& getWorkBuffer()
 	{
 		return s_workBuffer;
+	}
+
+	Vec2i getEditorVersion()
+	{
+		return s_editorVersion;
 	}
 
 	void enable()

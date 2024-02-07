@@ -272,5 +272,5 @@ namespace LevelEditor
 	void editor_infEditBegin(const char* sectorName, s32 wallIndex = -1);
 	bool editor_infEdit();
 
-	void editor_writeInfItem(char* outStr, const Editor_InfItem* item, const char* curTab);
+	void editor_writeInfItem(std::string& outStr, const Editor_InfItem* item, const char* curTab);
 }

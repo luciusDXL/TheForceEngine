@@ -864,7 +864,7 @@ namespace LevelEditor
 				} break;
 			}
 		} // while (!seqEnd)
-		return true;
+		return seqEnd;
 	}
 
 	bool parseLineTrigger(TFE_Parser& parser, size_t& bufferPos, s32 argCount, const char* itemName, s32 wallNum, Editor_InfItem* item)
@@ -1008,7 +1008,7 @@ namespace LevelEditor
 			}  // switch (itemId)
 		}  // while (!seqEnd)
 
-		return true;
+		return seqEnd;
 	}
 
 	bool parseTeleport(TFE_Parser& parser, size_t& bufferPos, const char* itemName, Editor_InfItem* item)
@@ -2449,13 +2449,13 @@ namespace LevelEditor
 		return outStr;
 	}
 
-	void appendToBuffer(char* outStr, const char* str)
+	void appendToBuffer(std::string& outStr, const char* str)
 	{
-		strcat(outStr, str);
-		strcat(outStr, "\r\n");
+		outStr += str;
+		outStr += "\r\n";
 	}
 
-	void editor_writeInfItem(char* outStr, const Editor_InfItem* item, const char* curTab)
+	void editor_writeInfItem(std::string& outStr, const Editor_InfItem* item, const char* curTab)
 	{
 		const char* tab = "    ";
 		const s32 count = (s32)item->classData.size();
