@@ -1597,6 +1597,10 @@ namespace LevelEditor
 			} break;
 			case IIC_TELEPORTER:
 			{
+				const Editor_InfTeleporter* teleporter = getTeleporterFromClassData(data);
+				assert(teleporter);
+
+				height = 16.0f + 26.0f * (2.0f + (teleporter->type == TELEPORT_BASIC ? 1.0f : 0.0f));
 			} break;
 		}
 		return height;
@@ -1636,6 +1640,25 @@ namespace LevelEditor
 				if (ImGui::Selectable(c_selectableTriggerTypes[t], t == s_infEditor.comboElevTypeIndex))
 				{
 					trigger->type = t == 0 ? TriggerType(t) : TriggerType(t+1);
+				}
+				//setTooltip(c_infClassName[i].tooltip.c_str());
+			}
+			ImGui::EndCombo();
+		}
+	}
+
+	void editor_infSelectTelelporterType(Editor_InfTeleporter* teleporter)
+	{
+		ImGui::SetNextItemWidth(180.0f);
+		ImGui::SetCursorPosY(ImGui::GetCursorPosY() - 2);
+		if (ImGui::BeginCombo(editor_getUniqueLabel(""), c_infTeleporterTypeName[teleporter->type]))
+		{
+			s32 count = (s32)TFE_ARRAYSIZE(c_infTeleporterTypeName);
+			for (s32 t = 0; t < count; t++)
+			{
+				if (ImGui::Selectable(c_infTeleporterTypeName[t], t == s_infEditor.comboElevTypeIndex))
+				{
+					teleporter->type = TeleportType(t);
 				}
 				//setTooltip(c_infClassName[i].tooltip.c_str());
 			}
@@ -2758,7 +2781,57 @@ namespace LevelEditor
 					{
 						// Class name.
 						ImGui::TextColored(colorKeywordInner, "Teleporter");
+
+						// Class data.
+						Editor_InfTeleporter* teleporter = getTeleporterFromClassData(data);
+						assert(teleporter);
+
+						// Type
 						ImGui::SameLine(0.0f, 8.0f);
+						editor_infSelectTelelporterType(teleporter);
+
+						// Target
+						ImGui::Text("Target"); ImGui::SameLine(0.0f, 8.0f);
+						ImGui::SetNextItemWidth(128.0f);
+						char nameBuffer[256];
+						strcpy(nameBuffer, teleporter->target.c_str());
+						if (ImGui::InputText(editor_getUniqueLabel(""), nameBuffer, 256))
+						{
+							teleporter->target = nameBuffer;
+						}
+						ImGui::SameLine(0.0f, 8.0f);
+						if (iconButtonInline(ICON_SELECT, "Select the target sector in the viewport.", tint, true))
+						{
+							// TODO
+						}
+
+						if (teleporter->type == TELEPORT_BASIC)
+						{
+							ImGui::Text("Move"); ImGui::SameLine(0.0f, 8.0f);
+							// Position
+							ImGui::SetNextItemWidth(128.0f * 3.0f);
+							ImGui::InputFloat3(editor_getUniqueLabel(""), &teleporter->dstPos.x, 3);
+							ImGui::SameLine(0.0f, 8.0f);
+							if (iconButtonInline(ICON_SELECT, "Select target position in the viewport.", tint, true))
+							{
+								// TODO
+							}
+
+							// Angle
+							ImGui::SameLine(0.0f, 16.0f);
+							ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 2.0f);
+							ImGui::Text("Angle"); ImGui::SameLine(0.0f, 8.0f);
+							f32 angleRad = teleporter->dstAngle * PI / 180.0f;
+							ImGui::SetNextItemWidth(128.0f);
+							if (ImGui::SliderAngle(editor_getUniqueLabel(""), &angleRad))
+							{
+								teleporter->dstAngle = angleRad * 180.0f / PI;
+							}
+
+							ImGui::SameLine(0.0f, 8.0f);
+							ImGui::SetNextItemWidth(128.0f);
+							ImGui::InputFloat(editor_getUniqueLabel(""), &teleporter->dstAngle, 0.1f, 1.0f, 3);
+						}
 					} break;
 				}
 			}
@@ -3620,11 +3693,13 @@ namespace LevelEditor
 						}
 						else if (s_infEditor.comboClassIndex == IIC_TRIGGER)
 						{
-							// TODO
+							Editor_InfTrigger* trigger = allocTrigger(s_infEditor.item);
+							trigger->overrideSet = ITO_NONE;
+							trigger->type = ITRIGGER_SECTOR;
 						}
 						else if (s_infEditor.comboClassIndex == IIC_TELEPORTER)
 						{
-							// TODO
+							allocTeleporter(s_infEditor.item);
 						}
 					}
 					ImGui::SameLine(0.0f, 4.0f);
