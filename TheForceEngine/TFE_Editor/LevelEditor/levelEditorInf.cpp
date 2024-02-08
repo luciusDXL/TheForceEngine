@@ -107,6 +107,22 @@ namespace LevelEditor
 		"Chute",   // TELEPORT_CHUTE,
 	};
 
+	const char* c_selectableTriggerTypes[] =
+	{
+		"Standard", // ITRIGGER_WALL
+		"Switch1",  // ITRIGGER_SWITCH1,
+		"Toggle",   // ITRIGGER_TOGGLE,
+		"Single",   // ITRIGGER_SINGLE
+	};
+
+	const TriggerType c_selectableTriggerTypeId[] =
+	{
+		ITRIGGER_WALL,
+		ITRIGGER_SWITCH1,
+		ITRIGGER_TOGGLE,
+		ITRIGGER_SINGLE
+	};
+
 	void editor_infInit()
 	{
 		s_levelInf.item.clear();
@@ -1392,6 +1408,17 @@ namespace LevelEditor
 		"Entity_Mask",	//IEV_ENTITY_MASK
 	};
 
+	const char* c_infTriggerVarName[] =
+	{
+		"Sound",
+		"Master",
+		"Text",
+		"Event_Mask",
+		"Entity_Mask",
+		"Event",
+		"Message",
+	};
+
 	const char* c_infKeyNames[] =
 	{
 		"Red",
@@ -1501,6 +1528,22 @@ namespace LevelEditor
 		ImGui::SameLine(0.0f, 8.0f);
 	}
 
+	void editor_infPropertySelectable(Editor_InfTriggerVar var, s32 classIndex)
+	{
+		bool sel = classIndex == s_infEditor.curClassIndex ? s_infEditor.curPropIndex == var : false;
+		ImGui::PushStyleColor(ImGuiCol_Text, colorKeywordInner);
+
+		char buffer[256];
+		sprintf(buffer, "%s:", c_infTriggerVarName[var]);
+		if (ImGui::Selectable(buffer, sel, 0, { 100.0f, 0.0f }))
+		{
+			editor_infSelectEditClass(classIndex);
+			s_infEditor.curPropIndex = sel ? -1 : var;
+		}
+		ImGui::PopStyleColor();
+		ImGui::SameLine(0.0f, 8.0f);
+	}
+
 	f32 computeChildHeight(const Editor_InfClass* data, s32 contentSel, bool curClass, f32* propHeight, f32* contentHeight)
 	{
 		f32 height = 600.0f;
@@ -1539,6 +1582,18 @@ namespace LevelEditor
 			} break;
 			case IIC_TRIGGER:
 			{
+				const Editor_InfTrigger* trigger = getTriggerFromClassData(data);
+				assert(trigger);
+
+				*propHeight = 26.0f * countBits(trigger->overrideSet & ITO_VAR_MASK) + 16;
+				// Expand if flags are selected.
+				if (curClass && s_infEditor.curPropIndex == ITV_ENTITY_MASK) { *propHeight += 26.0f; }
+				else if (curClass && (s_infEditor.curPropIndex == ITV_EVENT_MASK || s_infEditor.curPropIndex == ITV_EVENT)) { *propHeight += 26.0f * 3.0f; }
+
+				const s32 clientCount = (s32)trigger->clients.size();
+				*contentHeight = 16.0f + 26.0f * clientCount;
+
+				height = 140.0f + (*propHeight) + (*contentHeight);
 			} break;
 			case IIC_TELEPORTER:
 			{
@@ -1559,6 +1614,28 @@ namespace LevelEditor
 				if (ImGui::Selectable(c_infElevTypeName[t], t == s_infEditor.comboElevTypeIndex))
 				{
 					elev->type = Editor_InfElevType(t);
+				}
+				//setTooltip(c_infClassName[i].tooltip.c_str());
+			}
+			ImGui::EndCombo();
+		}
+	}
+		
+	void editor_infSelectTriggerType(Editor_InfTrigger* trigger)
+	{
+		if (trigger->type == ITRIGGER_SECTOR) { return; }
+
+		ImGui::SetNextItemWidth(180.0f);
+		ImGui::SetCursorPosY(ImGui::GetCursorPosY() - 2);
+		s32 index = trigger->type == ITRIGGER_WALL ? trigger->type : trigger->type - 1;
+		if (ImGui::BeginCombo(editor_getUniqueLabel(""), c_selectableTriggerTypes[index]))
+		{
+			s32 count = (s32)TFE_ARRAYSIZE(c_selectableTriggerTypes);
+			for (s32 t = 0; t < count; t++)
+			{
+				if (ImGui::Selectable(c_selectableTriggerTypes[t], t == s_infEditor.comboElevTypeIndex))
+				{
+					trigger->type = t == 0 ? TriggerType(t) : TriggerType(t+1);
 				}
 				//setTooltip(c_infClassName[i].tooltip.c_str());
 			}
@@ -1740,7 +1817,7 @@ namespace LevelEditor
 					ImGui::SetNextItemWidth(128.0f);
 					ImGui::InputInt(editor_getUniqueLabel(""), &elev->eventMask);
 
-					if (s_infEditor.curPropIndex == IEV_EVENT_MASK)
+					if (s_infEditor.curPropIndex == IEV_EVENT_MASK && s_infEditor.curClassIndex == itemClassIndex)
 					{
 						for (s32 i = 0; i < TFE_ARRAYSIZE(c_infEventMaskNames); i++)
 						{
@@ -1756,13 +1833,155 @@ namespace LevelEditor
 					ImGui::SetNextItemWidth(128.0f);
 					ImGui::InputInt(editor_getUniqueLabel(""), &elev->entityMask);
 
-					if (s_infEditor.curPropIndex == IEV_ENTITY_MASK)
+					if (s_infEditor.curPropIndex == IEV_ENTITY_MASK && s_infEditor.curClassIndex == itemClassIndex)
 					{
 						for (s32 i = 0; i < TFE_ARRAYSIZE(c_infEntityMaskNames); i++)
 						{
 							if ((i % 4) != 0) { ImGui::SameLine(200.0f * (i % 4), 0.0f); }
 							ImGui::CheckboxFlags(editor_getUniqueLabel(c_infEntityMaskNames[i]), (u32*)&elev->entityMask, c_infEntityMaskFlags[i]);
 						}
+					}
+				}
+			}
+			ImGui::EndChild();
+		}
+	}
+
+	void editor_infEditTriggerProperties(Editor_InfTrigger* trigger, f32 propHeight, s32 itemClassIndex, const f32* btnTint)
+	{
+		ImGui::Text("%s", "Properties");
+		if (trigger->overrideSet & ITO_VAR_MASK)
+		{
+			ImGui::BeginChild(editor_getUniqueLabel(""), { 0.0f, propHeight }, true);
+			{
+				const u32 overrides = trigger->overrideSet;
+				if (overrides & ITO_SOUND)
+				{
+					editor_infPropertySelectable(ITV_SOUND, itemClassIndex);
+
+					char soundBuffer[256];
+					strcpy(soundBuffer, trigger->sound.c_str());
+					ImGui::SetNextItemWidth(160.0f);
+					if (ImGui::InputText(editor_getUniqueLabel(""), soundBuffer, 256))
+					{
+						trigger->sound = soundBuffer;
+					}
+					ImGui::SameLine(0.0f, 8.0f);
+					if (editor_button("Browse"))
+					{
+						// TODO
+					}
+				}
+				if (overrides & ITO_MASTER)
+				{
+					editor_infPropertySelectable(ITV_MASTER, itemClassIndex);
+					ImGui::Checkbox(editor_getUniqueLabel(""), &trigger->master);
+				}
+				if (overrides & ITO_TEXT)
+				{
+					editor_infPropertySelectable(ITV_TEXT, itemClassIndex);
+					ImGui::InputUInt(editor_getUniqueLabel(""), &trigger->textId);
+				}
+				if (overrides & ITO_EVENT_MASK)
+				{
+					editor_infPropertySelectable(ITV_EVENT_MASK, itemClassIndex);
+
+					ImGui::SetNextItemWidth(128.0f);
+					ImGui::InputInt(editor_getUniqueLabel(""), &trigger->eventMask);
+
+					if (s_infEditor.curPropIndex == ITV_EVENT_MASK && s_infEditor.curClassIndex == itemClassIndex)
+					{
+						for (s32 i = 0; i < TFE_ARRAYSIZE(c_infEventMaskNames); i++)
+						{
+							if ((i % 4) != 0) { ImGui::SameLine(200.0f * (i % 4), 0.0f); }
+							ImGui::CheckboxFlags(editor_getUniqueLabel(c_infEventMaskNames[i]), (u32*)&trigger->eventMask, 1 << i);
+						}
+					}
+				}
+				if (overrides & ITO_ENTITY_MASK)
+				{
+					editor_infPropertySelectable(ITV_ENTITY_MASK, itemClassIndex);
+
+					ImGui::SetNextItemWidth(128.0f);
+					ImGui::InputInt(editor_getUniqueLabel(""), &trigger->entityMask);
+
+					if (s_infEditor.curPropIndex == IEV_ENTITY_MASK && s_infEditor.curClassIndex == itemClassIndex)
+					{
+						for (s32 i = 0; i < TFE_ARRAYSIZE(c_infEntityMaskNames); i++)
+						{
+							if ((i % 4) != 0) { ImGui::SameLine(200.0f * (i % 4), 0.0f); }
+							ImGui::CheckboxFlags(editor_getUniqueLabel(c_infEntityMaskNames[i]), (u32*)&trigger->entityMask, c_infEntityMaskFlags[i]);
+						}
+					}
+				}
+				if (overrides & ITO_EVENT)
+				{
+					editor_infPropertySelectable(ITV_EVENT, itemClassIndex);
+
+					ImGui::SetNextItemWidth(128.0f);
+					ImGui::InputInt(editor_getUniqueLabel(""), &trigger->eventMask);
+
+					if (s_infEditor.curPropIndex == ITV_EVENT && s_infEditor.curClassIndex == itemClassIndex)
+					{
+						for (s32 i = 0; i < TFE_ARRAYSIZE(c_infEventMaskNames); i++)
+						{
+							if ((i % 4) != 0) { ImGui::SameLine(200.0f * (i % 4), 0.0f); }
+							ImGui::CheckboxFlags(editor_getUniqueLabel(c_infEventMaskNames[i]), (u32*)&trigger->eventMask, 1 << i);
+						}
+					}
+				}
+				if (overrides & ITO_MSG)
+				{
+					editor_infPropertySelectable(ITV_MSG, itemClassIndex);
+
+					// Note that "DONE" and "WAKEUP" are not available for triggers
+					ImGui::SetNextItemWidth(128.0f);
+					ImGui::Combo(editor_getUniqueLabel(""), (s32*)&trigger->cmd, c_editorInfMessageTypeName, IMT_TRIGGER+1);
+
+					switch (trigger->cmd)
+					{
+						// 0-args
+						case IMT_NEXT_STOP:
+						case IMT_PREV_STOP:
+						case IMT_MASTER_ON:
+						case IMT_MASTER_OFF:
+						case IMT_LIGHTS:
+						case IMT_TRIGGER:
+						{
+							// Nothing
+						} break;
+						// 1-arg
+						case IMT_GOTO_STOP:
+						case IMT_COMPLETE:
+						{
+							ImGui::SameLine(0.0f, 16.0f);
+							ImGui::Text(trigger->cmd == IMT_GOTO_STOP ? "Stop ID" : "Goal ID"); ImGui::SameLine(0.0f, 8.0f);
+
+							ImGui::SetNextItemWidth(128.0f);
+							ImGui::InputUInt(editor_getUniqueLabel(""), &trigger->arg[0]);
+						} break;
+						// 2-args
+						case IMT_SET_BITS:
+						case IMT_CLEAR_BITS:
+						{
+							ImGui::SameLine(0.0f, 16.0f);
+
+							ImGui::Text("Flags"); ImGui::SameLine(0.0f, 8.0f);
+							ImGui::SetNextItemWidth(48.0f);
+							s32 flag = min(2, max(0, (s32)trigger->arg[0] - 1));
+							const char* flagNames[] = { "1", "2", "3" };
+							if (ImGui::Combo(editor_getUniqueLabel(""), &flag, flagNames, TFE_ARRAYSIZE(flagNames)))
+							{
+								trigger->arg[0] = flag + 1;
+							}
+
+							ImGui::SameLine(0.0f, 16.0f);
+							ImGui::Text("Bit"); ImGui::SameLine(0.0f, 8.0f);
+							ImGui::SetNextItemWidth(128.0f);
+							ImGui::InputUInt(editor_getUniqueLabel(""), &trigger->arg[1]);
+
+							// TODO: Handle showing checkboxes if selected.
+						} break;
 					}
 				}
 			}
@@ -1817,6 +2036,50 @@ namespace LevelEditor
 			for (s32 i = 0; i < count; i++)
 			{
 				if (ImGui::Selectable(c_infElevVarName[i], i == s_infEditor.comboElevVarIndex))
+				{
+					s_infEditor.comboElevVarIndex = i;
+				}
+				//setTooltip(c_infClassName[i].tooltip.c_str());
+			}
+			ImGui::EndCombo();
+			editor_infSelectEditClass(itemClassIndex);
+		}
+		setTooltip("Property to add.");
+	}
+
+	void editor_infAddOrRemoveTriggerProperty(Editor_InfTrigger* trigger, s32 itemClassIndex)
+	{
+		if (editor_button("+"))
+		{
+			if (s_infEditor.comboElevVarIndex >= 0)
+			{
+				trigger->overrideSet |= (1 << s_infEditor.comboElevVarIndex);
+			}
+			editor_infSelectEditClass(itemClassIndex);
+		}
+		setTooltip("Add a new property.");
+		ImGui::SameLine(0.0f, 4.0f);
+		if (editor_button("-"))
+		{
+			if (s_infEditor.curPropIndex >= 0)
+			{
+				trigger->overrideSet &= ~(1 << s_infEditor.curPropIndex);
+			}
+			editor_infSelectEditClass(itemClassIndex);
+			s_infEditor.curPropIndex = -1;
+		}
+		setTooltip("Remove the selected property.");
+
+		ImGui::SameLine(0.0f, 16.0f);
+		ImGui::SetNextItemWidth(128.0f);
+		s32 startIndex = trigger->type == ITRIGGER_SECTOR ? 1 : 0;
+		s_infEditor.comboElevVarIndex = max(startIndex, s_infEditor.comboElevVarIndex);
+		if (ImGui::BeginCombo(editor_getUniqueLabel(""), c_infTriggerVarName[s_infEditor.comboElevVarIndex]))
+		{
+			s32 count = (s32)TFE_ARRAYSIZE(c_infTriggerVarName);
+			for (s32 i = startIndex; i < count; i++)
+			{
+				if (ImGui::Selectable(c_infTriggerVarName[i], i == s_infEditor.comboElevVarIndex))
 				{
 					s_infEditor.comboElevVarIndex = i;
 				}
@@ -1985,6 +2248,41 @@ namespace LevelEditor
 		ImGui::SetNextItemWidth(128.0f);
 		ImGui::Combo(editor_getUniqueLabel(""), &s_infEditor.comboElevAddContentIndex, c_elevAddTypes, TFE_ARRAYSIZE(c_elevAddTypes));
 		setTooltip("Type of elevator item to add - Stop or Slave.");
+	}
+
+	void editor_infAddOrRemoveTriggerClient(Editor_InfTrigger* trigger, s32 itemClassIndex)
+	{
+		if (editor_button("+"))
+		{
+			// insert a client after the selected client.
+			if (s_infEditor.curContentIndex >= 0 && s_infEditor.curContentIndex < trigger->clients.size())
+			{
+				trigger->clients.insert(trigger->clients.begin() + s_infEditor.curContentIndex + 1, {});
+			}
+			else
+			{
+				trigger->clients.push_back({});
+			}
+			editor_infSelectEditClass(itemClassIndex);
+		}
+		setTooltip("Add a new client.");
+		ImGui::SameLine(0.0f, 4.0f);
+		if (editor_button("-"))
+		{
+			const s32 clientCount = (s32)trigger->clients.size();
+			if (s_infEditor.curContentIndex >= 0 && s_infEditor.curContentIndex < clientCount)
+			{
+				for (s32 s = s_infEditor.curContentIndex; s < clientCount - 1; s++)
+				{
+					trigger->clients[s] = trigger->clients[s + 1];
+				}
+				trigger->clients.pop_back();
+				s_infEditor.curContentIndex = -1;
+				s_infEditor.curStopCmdIndex = -1;
+			}
+			editor_infSelectEditClass(itemClassIndex);
+		}
+		setTooltip("Remove the selected client.");
 	}
 
 	void editor_stopCmdSelectable(Editor_InfElevator* elev, Editor_InfStop* stop, s32 itemClassIndex, s32 cmdIndex, const char* label)
@@ -2261,6 +2559,59 @@ namespace LevelEditor
 		}
 	}
 
+	void editor_infEditTriggerClients(Editor_InfTrigger* trigger, f32 contentHeight, s32 itemClassIndex, const f32* btnTint)
+	{
+		const s32 clientCount = (s32)trigger->clients.size();
+		if (!clientCount) { return; }
+
+		Editor_InfClient* client = trigger->clients.data();
+		char nameBuffer[256];
+		for (s32 c = 0; c < clientCount; c++, client++)
+		{
+			ImGui::PushStyleColor(ImGuiCol_Text, colorKeywordOuter);
+			bool sel = s_infEditor.curClassIndex == itemClassIndex && s_infEditor.curContentIndex == c;
+			if (ImGui::Selectable(editor_getUniqueLabel("Client:"), sel, 0, { 80.0f, 0.0f }))
+			{
+				editor_infSelectEditClass(itemClassIndex);
+				s_infEditor.curContentIndex = sel ? -1 : c;
+				s_infEditor.curStopCmdIndex = -1;
+			}
+			ImGui::PopStyleColor();
+
+			ImGui::SameLine(0.0f, 16.0f);
+			ImGui::Text("Target"); ImGui::SameLine(0.0f, 8.0f);
+			ImGui::SetNextItemWidth(128.0f);
+			if (client->targetWall >= 0)
+			{
+				sprintf(nameBuffer, "%s(%d)", client->targetSector.c_str(), client->targetWall);
+			}
+			else
+			{
+				strcpy(nameBuffer, client->targetSector.c_str());
+			}
+			if (ImGui::InputText(editor_getUniqueLabel(""), nameBuffer, 256))
+			{
+				parseTarget(client, nameBuffer);
+			}
+			ImGui::SameLine(0.0f, 8.0f);
+			if (iconButtonInline(ICON_SELECT, "Select the client sector or wall in the viewport.", btnTint, true))
+			{
+				// TODO
+			}
+			// Reset the cursor Y position so that controls line up after icon buttons.
+			// This must be done after "same line" since it modifies the y position.
+			ImGui::SameLine(0.0f, 16.0f);
+			ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 2.0f);
+
+			ImGui::Text("Event_Mask"); ImGui::SameLine(0.0f, 8.0f);
+			ImGui::SetNextItemWidth(128.0f);
+			ImGui::InputInt(editor_getUniqueLabel(""), &client->eventMask);
+
+			// Avoid adding extra spacing due to inline icon buttons.
+			ImGui::SetCursorPosY(ImGui::GetCursorPosY() - 2.0f);
+		}
+	}
+
 	void editor_infEditElevSlaves(Editor_InfElevator* elev, f32 contentHeight, s32 itemClassIndex, const f32* btnTint)
 	{
 		const s32 slaveCount = (s32)elev->slaves.size();
@@ -2369,11 +2720,39 @@ namespace LevelEditor
 					{
 						// Class name.
 						ImGui::TextColored(colorKeywordInner, "Trigger");
-						ImGui::SameLine(0.0f, 8.0f);
 
 						// Class data.
 						Editor_InfTrigger* trigger = getTriggerFromClassData(data);
 						assert(trigger);
+						
+						// Type selection.
+						if (s_infEditor.itemWallIndex >= 0)
+						{
+							ImGui::SameLine(0.0f, 8.0f);
+							editor_infSelectTriggerType(trigger);
+						}
+
+						// Properties.
+						editor_infEditTriggerProperties(trigger, propHeight, i, tint);
+						editor_infAddOrRemoveTriggerProperty(trigger, i);
+						ImGui::Separator();
+
+						// Content - clients.
+						if (!trigger->clients.empty())
+						{
+							const s32 clientCount = (s32)trigger->clients.size();
+							ImGui::Text("Clients: %d", clientCount);
+							ImGui::BeginChild(editor_getUniqueLabel(""), { 0.0f, contentHeight }, true);
+							{
+								editor_infEditTriggerClients(trigger, contentHeight, i, tint);
+							}
+							ImGui::EndChild();
+						}
+						else
+						{
+							ImGui::Text("Clients");
+						}
+						editor_infAddOrRemoveTriggerClient(trigger, i);
 					} break;
 					case IIC_TELEPORTER:
 					{

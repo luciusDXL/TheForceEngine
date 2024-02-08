@@ -118,15 +118,26 @@ namespace LevelEditor
 
 	enum Editor_InfTriggerOverride : u32
 	{
-		ITO_NONE = 0,
-		ITO_CMD = FLAG_BIT(0),
-		ITO_SOUND = FLAG_BIT(1),
-		ITO_MASTER = FLAG_BIT(2),
-		ITO_TEXT = FLAG_BIT(3),
-		ITO_MSG = FLAG_BIT(4),
-		ITO_EVENT_MASK = FLAG_BIT(5),
-		ITO_ENTITY_MASK = FLAG_BIT(6),
-		ITO_EVENT = FLAG_BIT(7),
+		ITO_NONE        = 0,
+		ITO_SOUND       = FLAG_BIT(0),
+		ITO_MASTER      = FLAG_BIT(1),
+		ITO_TEXT        = FLAG_BIT(2),
+		ITO_EVENT_MASK  = FLAG_BIT(3),
+		ITO_ENTITY_MASK = FLAG_BIT(4),
+		ITO_EVENT       = FLAG_BIT(5),
+		ITO_MSG         = FLAG_BIT(6),
+		ITO_VAR_MASK    = (ITO_MSG << 1) - 1
+	};
+
+	enum Editor_InfTriggerVar : u32
+	{
+		ITV_SOUND = 0,
+		ITV_MASTER,
+		ITV_TEXT,
+		ITV_EVENT_MASK,
+		ITV_ENTITY_MASK,
+		ITV_EVENT,
+		ITV_MSG,
 	};
 
 	enum Editor_InfStopOverride : u32
