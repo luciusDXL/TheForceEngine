@@ -24,7 +24,8 @@ namespace LevelEditor
 		LEF_EntityList = 4,
 		LEF_EntityV3   = 5,
 		LEF_EntityV4   = 6,
-		LEF_CurVersion = 6,
+		LEF_InfV1      = 7,
+		LEF_CurVersion = 7,
 	};
 
 	enum LevelEditMode
