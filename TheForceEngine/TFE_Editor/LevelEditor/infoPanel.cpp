@@ -403,6 +403,15 @@ namespace LevelEditor
 		else if (s_featureHovered.featureIndex >= 0 && s_featureHovered.sector) { sector = s_featureHovered.sector; wallId = s_featureHovered.featureIndex; }
 		else { getPrevWallFeature(sector, wallId); }
 		if (!sector || wallId < 0) { return; }
+
+		EditorSector* prevSector;
+		s32 prevWallId;
+		getPrevWallFeature(prevSector, prevWallId);
+		if (prevSector != sector || prevWallId != wallId)
+		{
+			ImGui::SetWindowFocus(NULL);
+		}
+
 		setPrevWallFeature(sector, wallId);
 		s_wallShownLast = true;
 
@@ -670,6 +679,15 @@ namespace LevelEditor
 		EditorSector* sector = s_featureCur.sector ? s_featureCur.sector : s_featureHovered.sector;
 		if (!sector) { getPrevSectorFeature(sector); }
 		if (!sector) { return; }
+
+		// Keep text input from one sector from bleeding into the next.
+		EditorSector* prev;
+		getPrevSectorFeature(prev);
+		if (prev != sector)
+		{
+			ImGui::SetWindowFocus(NULL);
+		}
+
 		setPrevSectorFeature(sector);
 		s_wallShownLast = false;
 
@@ -678,11 +696,13 @@ namespace LevelEditor
 
 		// Sector Name (optional, used by INF)
 		char sectorName[64];
+		char inputName[256];
 		strcpy(sectorName, sector->name.c_str());
+		sprintf(inputName, "##NameSector%d", sector->id);
 
 		infoLabel("##NameLabel", "Name", 32);
 		ImGui::PushItemWidth(240.0f);
-		if (ImGui::InputText("##NameSector", sectorName, getSectorNameLimit()))
+		if (ImGui::InputText(inputName, sectorName, getSectorNameLimit()))
 		{
 			sector->name = sectorName;
 		}
@@ -1078,6 +1098,7 @@ namespace LevelEditor
 
 		if (hasObjectSelectionChanged(sector, objIndex))
 		{
+			ImGui::SetWindowFocus(NULL);
 			commitCurEntityChanges();
 		}
 		setPrevObjectFeature(sector, objIndex);
@@ -1104,7 +1125,10 @@ namespace LevelEditor
 		char name[256];
 		strcpy(name, s_objEntity.name.c_str());
 		ImGui::SetNextItemWidth(196.0f);
-		if (ImGui::InputText("##NameInput", name, 256))
+
+		char inputName[256];
+		sprintf(inputName, "##NameInput_%d_%d", sector->id, objIndex);
+		if (ImGui::InputText(inputName, name, 256))
 		{
 			s_objEntity.name = name;
 		}
