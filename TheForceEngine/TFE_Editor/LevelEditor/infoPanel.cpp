@@ -682,7 +682,7 @@ namespace LevelEditor
 
 		infoLabel("##NameLabel", "Name", 32);
 		ImGui::PushItemWidth(240.0f);
-		if (ImGui::InputText("##NameSector", sectorName, 64))
+		if (ImGui::InputText("##NameSector", sectorName, getSectorNameLimit()))
 		{
 			sector->name = sectorName;
 		}

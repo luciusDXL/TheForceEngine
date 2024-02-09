@@ -977,6 +977,7 @@ namespace LevelEditor
 			{
 				Editor_InfElevator* elev = new Editor_InfElevator();
 				s_levelInf.elevator[i] = elev;
+				elev->classId = IIC_ELEVATOR;
 
 				s32 stopCount, slaveCount;
 				file.read((u32*)&elev->type);
@@ -1118,6 +1119,7 @@ namespace LevelEditor
 			{
 				Editor_InfTrigger* trigger = new Editor_InfTrigger();
 				s_levelInf.trigger[i] = trigger;
+				trigger->classId = IIC_TRIGGER;
 
 				s32 clientCount;
 				file.read(&clientCount);
@@ -1175,6 +1177,7 @@ namespace LevelEditor
 			{
 				Editor_InfTeleporter* teleporter = new Editor_InfTeleporter();
 				s_levelInf.teleport[i] = teleporter;
+				teleporter->classId = IIC_TELEPORTER;
 
 				u32 type;
 				file.read(&type);

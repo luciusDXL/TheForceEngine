@@ -44,6 +44,7 @@ namespace LevelEditor
 	bool menu();
 
 	void selectNone();
+	s32 getSectorNameLimit();
 
 	// Shared Edit Commands
 	void edit_moveVertices(s32 count, const FeatureId* vtxIds, Vec2f delta);

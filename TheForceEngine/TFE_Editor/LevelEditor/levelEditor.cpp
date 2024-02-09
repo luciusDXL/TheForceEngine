@@ -57,6 +57,7 @@ namespace LevelEditor
 	const f32 c_defaultYaw = PI;
 	const f32 c_defaultCameraHeight = 6.0f;
 	const f64 c_doubleClickThreshold = 0.25f;
+	const s32 c_vanillaDarkForcesNameLimit = 16;
 
 	struct VertexWallGroup
 	{
@@ -4933,6 +4934,11 @@ namespace LevelEditor
 	{
 		s_featureCur = {};
 		selection_clear();
+	}
+
+	s32 getSectorNameLimit()
+	{
+		return c_vanillaDarkForcesNameLimit;
 	}
 		
 	void drawViewportInfo(s32 index, Vec2i mapPos, const char* info, f32 xOffset, f32 yOffset, f32 alpha)
