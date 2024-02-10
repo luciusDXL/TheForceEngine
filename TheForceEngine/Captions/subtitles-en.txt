@@ -159,7 +159,7 @@ m01mma01 "Thank you commander, for responding at such short notice. The Empire h
 m01mma02 "Five days ago the Empire attacked one of our secret bases in the city of Talay."
 m01mma03 "Tak Base was destroyed within minutes. Many innocent people in the surrounding city, as well as the Rebel staff, were killed. Intelligence thinks this may be an act of retaliation for the destruction of the Death Star." 12.5
 m01reb01 "This is Tak Base to anybody out there. Please, we're under Imperial attack! They're everywhere! There was no warning at all!"
-m01reb02 "Total devastation! They broke through our shields... they broke through our shields
+m01reb02 "Total devastation! They broke through our shields... they broke through our shields!"
 distress "This is Tak Base to anybody out there. Please, we're under Imperial attack! [Distortion] They're ev... no warn... ...otal devastation. They broke through our shields... they broke through our shields! [static]"
 m01kyl02 "Interesting... this looks like it could be a normal Imperial attack... except for those sounds."
 m01mma04 "Very perceptive commander. I know you understand that all we discuss here is classified." 5.0
