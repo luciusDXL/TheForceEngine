@@ -37,6 +37,15 @@ namespace LevelEditor
 		LWIN_VIEW_SETTINGS = FLAG_BIT(1),
 	};
 
+	enum SelectMode
+	{
+		SELECTMODE_NONE = 0,
+		SELECTMODE_SECTOR,
+		SELECTMODE_WALL,
+		SELECTMODE_SECTOR_OR_WALL,
+		SELECTMODE_COUNT
+	};
+
 	bool init(TFE_Editor::Asset* asset);
 	void destroy();
 
@@ -45,6 +54,9 @@ namespace LevelEditor
 
 	void selectNone();
 	s32 getSectorNameLimit();
+
+	void setSelectMode(SelectMode mode = SELECTMODE_NONE);
+	SelectMode getSelectMode();
 
 	// Shared Edit Commands
 	void edit_moveVertices(s32 count, const FeatureId* vtxIds, Vec2f delta);

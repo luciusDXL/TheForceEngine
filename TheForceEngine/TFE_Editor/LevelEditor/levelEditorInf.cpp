@@ -56,6 +56,51 @@ namespace LevelEditor
 	Editor_LevelInf s_levelInf;
 	static char s_infArg0[256], s_infArg1[256], s_infArg2[256], s_infArg3[256], s_infArg4[256], s_infArgExtra[256];
 
+	enum SelectionType
+	{
+		SELTYPE_TRIGGER_CLIENT = 0,
+		SELTYPE_ELEV_SLAVE,
+		SELTYPE_ELEV_MSG_TARGET,
+		SELTYPE_ELEV_ADJOIN0,
+		SELTYPE_ELEV_ADJOIN1,
+		SELTYPE_ELEV_DONOR_SECTOR,
+		SELTYPE_TELEPORT_TARGET,
+	};
+
+	enum InfEditorMode
+	{
+		INF_MODE_UI = 0,
+		INF_MODE_CODE,
+		INF_MODE_COUNT
+	};
+
+	struct InfEditor
+	{
+		InfEditorMode mode = INF_MODE_UI;
+		EditorSector* sector = nullptr;
+		Editor_InfItem* item = nullptr;
+		s32 itemWallIndex = -1;
+
+		s32 comboClassIndex = 0;
+		s32 comboElevTypeIndex = 0;
+		s32 comboElevVarIndex = 0;
+		s32 comboElevAddContentIndex = 0;
+		s32 comboElevCmdIndex = 0;
+		s32 curClassIndex = -1;
+		s32 curPropIndex = -1;
+		s32 curContentIndex = -1;
+		s32 curStopCmdIndex = -1;
+	};
+	
+	struct InfEditorState
+	{
+		Editor_InfClass* editClass;
+		InfEditor editorState;
+		SelectionType type;
+		s32 index0;
+		s32 index1;
+	};
+	
 	const char* c_elevStopCmdName[] =
 	{
 		"Message", // ISC_MESSAGE
@@ -122,6 +167,10 @@ namespace LevelEditor
 		ITRIGGER_TOGGLE,
 		ITRIGGER_SINGLE
 	};
+
+	static InfEditor s_infEditor = {};
+	static InfEditorState s_infEditorState;
+	void editor_selectViewportFeature(Editor_InfClass* editClass, SelectMode mode, SelectionType type, s32 index0 = -1, s32 index1 = -1);
 
 	void editor_infInit()
 	{
@@ -1317,33 +1366,7 @@ namespace LevelEditor
 
 		return true;
 	}
-
-	enum InfEditorMode
-	{
-		INF_MODE_UI = 0,
-		INF_MODE_CODE,
-		INF_MODE_COUNT
-	};
-
-	struct InfEditor
-	{
-		InfEditorMode mode = INF_MODE_UI;
-		EditorSector* sector = nullptr;
-		Editor_InfItem* item = nullptr;
-		s32 itemWallIndex = -1;
-
-		s32 comboClassIndex    =  0;
-		s32 comboElevTypeIndex =  0;
-		s32 comboElevVarIndex  =  0;
-		s32 comboElevAddContentIndex = 0;
-		s32 comboElevCmdIndex = 0;
-		s32 curClassIndex      = -1;
-		s32 curPropIndex       = -1;
-		s32 curContentIndex    = -1;
-		s32 curStopCmdIndex    = -1;
-	};
-	static InfEditor s_infEditor = {};
-
+		
 	void editor_infEditBegin(const char* sectorName, s32 wallIndex)
 	{
 		s_infEditor = {};
@@ -2427,7 +2450,7 @@ namespace LevelEditor
 				ImGui::SameLine(0.0f, 8.0f);
 				if (iconButtonInline(ICON_SELECT, "Select target sector or wall in the viewport.", btnTint, true))
 				{
-					// TODO
+					editor_selectViewportFeature((Editor_InfClass*)elev, SELECTMODE_SECTOR_OR_WALL, SELTYPE_ELEV_MSG_TARGET, s, m);
 				}
 
 				ImGui::SameLine(0.0f, 16.0f);
@@ -2506,7 +2529,7 @@ namespace LevelEditor
 				ImGui::SameLine(0.0f, 8.0f);
 				if (iconButtonInline(ICON_SELECT, "Select wall to adjoin in the viewport.", btnTint, true))
 				{
-					// TODO
+					editor_selectViewportFeature((Editor_InfClass*)elev, SELECTMODE_WALL, SELTYPE_ELEV_ADJOIN0, s, c);
 				}
 
 				ImGui::SameLine(0.0f, 16.0f);
@@ -2525,7 +2548,7 @@ namespace LevelEditor
 				ImGui::SameLine(0.0f, 8.0f);
 				if (iconButtonInline(ICON_SELECT, "Select wall to adjoin in the viewport.", btnTint, true))
 				{
-					// TODO
+					editor_selectViewportFeature((Editor_InfClass*)elev, SELECTMODE_WALL, SELTYPE_ELEV_ADJOIN1, s, c);
 				}
 			}
 			cmdIndexOffset += adjoinCount;
@@ -2546,7 +2569,7 @@ namespace LevelEditor
 				ImGui::SameLine(0.0f, 8.0f);
 				if (iconButtonInline(ICON_SELECT, "Select donor sector in the viewport.", btnTint, true))
 				{
-					// TODO
+					editor_selectViewportFeature((Editor_InfClass*)elev, SELECTMODE_SECTOR, SELTYPE_ELEV_DONOR_SECTOR, s, t);
 				}
 
 				ImGui::SameLine(0.0f, 16.0f);
@@ -2580,6 +2603,76 @@ namespace LevelEditor
 				editor_infAddOrRemoveStopCmd(elev, stop, itemClassIndex);
 			}
 		}
+	}
+		
+	void editor_selectViewportFeature(Editor_InfClass* editClass, SelectMode mode, SelectionType type, s32 index0, s32 index1)
+	{
+		// Save Inf Editor State.
+		s_infEditorState.editClass = editClass;
+		s_infEditorState.editorState = s_infEditor;
+		s_infEditorState.type = type;
+		s_infEditorState.index0 = index0;
+		s_infEditorState.index1 = index1;
+
+		// Set special selection mode (aka nothing else works).
+		hidePopup();
+		setSelectMode(mode);
+	}
+
+	void editor_handleSelection(EditorSector* sector, s32 wallIndex/* = -1*/)
+	{
+		// Restore Inf Editor State.
+		s_infEditor = s_infEditorState.editorState;
+
+		// Set the client name.
+		if (s_infEditorState.editClass->classId == IIC_TRIGGER)
+		{
+			Editor_InfTrigger* trigger = getTriggerFromClassData(s_infEditorState.editClass);
+			if (s_infEditorState.type == SELTYPE_TRIGGER_CLIENT)
+			{
+				trigger->clients[s_infEditorState.index0].targetSector = sector->name;
+				trigger->clients[s_infEditorState.index0].targetWall = wallIndex;
+			}
+		}
+		else if (s_infEditorState.editClass->classId == IIC_ELEVATOR)
+		{
+			Editor_InfElevator* elev = getElevFromClassData(s_infEditorState.editClass);
+			if (s_infEditorState.type == SELTYPE_ELEV_SLAVE)
+			{
+				elev->slaves[s_infEditorState.index0].name = sector->name;
+			}
+			else if (s_infEditorState.type == SELTYPE_ELEV_MSG_TARGET)
+			{
+				elev->stops[s_infEditorState.index0].msg[s_infEditorState.index1].targetSector = sector->name;
+				elev->stops[s_infEditorState.index0].msg[s_infEditorState.index1].targetWall = wallIndex;
+			}
+			else if (s_infEditorState.type == SELTYPE_ELEV_ADJOIN0)
+			{
+				elev->stops[s_infEditorState.index0].adjoinCmd[s_infEditorState.index1].sector0 = sector->name;
+				elev->stops[s_infEditorState.index0].adjoinCmd[s_infEditorState.index1].wallIndex0 = wallIndex;
+			}
+			else if (s_infEditorState.type == SELTYPE_ELEV_ADJOIN1)
+			{
+				elev->stops[s_infEditorState.index0].adjoinCmd[s_infEditorState.index1].sector1 = sector->name;
+				elev->stops[s_infEditorState.index0].adjoinCmd[s_infEditorState.index1].wallIndex1 = wallIndex;
+			}
+			else if (s_infEditorState.type == SELTYPE_ELEV_DONOR_SECTOR)
+			{
+				elev->stops[s_infEditorState.index0].textureCmd[s_infEditorState.index1].donorSector = sector->name;
+			}
+		}
+		else if (s_infEditorState.editClass->classId == IIC_TELEPORTER)
+		{
+			Editor_InfTeleporter* teleporter = getTeleporterFromClassData(s_infEditorState.editClass);
+			if (s_infEditorState.type == SELTYPE_TELEPORT_TARGET)
+			{
+				teleporter->target = sector->name;
+			}
+		}
+
+		// Restore the popup.
+		showPopup();
+		setSelectMode(SELECTMODE_NONE);
 	}
 
 	void editor_infEditTriggerClients(Editor_InfTrigger* trigger, f32 contentHeight, s32 itemClassIndex, const f32* btnTint)
@@ -2619,7 +2712,7 @@ namespace LevelEditor
 			ImGui::SameLine(0.0f, 8.0f);
 			if (iconButtonInline(ICON_SELECT, "Select the client sector or wall in the viewport.", btnTint, true))
 			{
-				// TODO
+				editor_selectViewportFeature((Editor_InfClass*)trigger, SELECTMODE_SECTOR_OR_WALL, SELTYPE_TRIGGER_CLIENT, c);
 			}
 			// Reset the cursor Y position so that controls line up after icon buttons.
 			// This must be done after "same line" since it modifies the y position.
@@ -2666,7 +2759,7 @@ namespace LevelEditor
 			ImGui::SameLine(0.0f, 8.0f);
 			if (iconButtonInline(ICON_SELECT, "Select the slave sector in the viewport.", btnTint, true))
 			{
-				// TODO
+				editor_selectViewportFeature((Editor_InfClass*)elev, SELECTMODE_SECTOR, SELTYPE_ELEV_SLAVE, s);
 			}
 			// Reset the cursor Y position so that controls line up after icon buttons.
 			// This must be done after "same line" since it modifies the y position.
@@ -2802,7 +2895,7 @@ namespace LevelEditor
 						ImGui::SameLine(0.0f, 8.0f);
 						if (iconButtonInline(ICON_SELECT, "Select the target sector in the viewport.", tint, true))
 						{
-							// TODO
+							editor_selectViewportFeature((Editor_InfClass*)teleporter, SELECTMODE_SECTOR, SELTYPE_TELEPORT_TARGET);
 						}
 
 						if (teleporter->type == TELEPORT_BASIC)

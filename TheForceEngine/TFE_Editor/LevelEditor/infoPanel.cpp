@@ -1508,11 +1508,13 @@ namespace LevelEditor
 		
 	void drawInfoPanel(EditorView view)
 	{
+		bool show = getSelectMode() == SELECTMODE_NONE;
+
 		// Draw the info bars.
 		s_infoHeight = 486 + 44;
 		infoToolBegin(s_infoHeight);
 		{
-			if (s_infoTab == TAB_ITEM)
+			if (s_infoTab == TAB_ITEM && show)
 			{
 				if (s_editMode == LEDIT_VERTEX)
 				{
@@ -1540,11 +1542,11 @@ namespace LevelEditor
 					infoPanelObject();
 				}
 			}
-			else if (s_infoTab == TAB_INFO)
+			else if (s_infoTab == TAB_INFO && show)
 			{
 				infoPanelMap();
 			}
-			else if (s_infoTab == TAB_GROUPS)
+			else if (s_infoTab == TAB_GROUPS && show)
 			{
 				// TODO
 			}

@@ -287,4 +287,6 @@ namespace LevelEditor
 
 	void editor_loadInfBinary(FileStream& file, u32 version);
 	void editor_saveInfBinary(FileStream& file);
+
+	void editor_handleSelection(EditorSector* sector, s32 wallIndex = -1);
 }

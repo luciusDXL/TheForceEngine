@@ -1,6 +1,7 @@
 #include "levelEditor.h"
 #include "levelEditorData.h"
 #include "levelEditorHistory.h"
+#include "levelEditorInf.h"
 #include "entity.h"
 #include "selection.h"
 #include "infoPanel.h"
@@ -186,6 +187,7 @@ namespace LevelEditor
 	static bool s_texMoveSign = false;
 	static Feature s_featureTex = {};
 	static Vec2f s_texNormal, s_texTangent;
+	static SelectMode s_selectMode = SELECTMODE_NONE;
 
 	static s32 s_gridIndex = 7;
 	static f32 c_gridSizeMap[] =
@@ -257,6 +259,8 @@ namespace LevelEditor
 	bool copyFromClipboard(char* str);
 	void applySurfaceTextures();
 	void selectSimilarWalls(EditorSector* rootSector, s32 wallIndex, HitPart part, bool autoAlign=false);
+
+	void handleSelectMode(EditorSector* sector, s32 wallIndex);
 
 	extern Vec3f extrudePoint2dTo3d(const Vec2f pt2d);
 	extern Vec3f extrudePoint2dTo3d(const Vec2f pt2d, f32 height);
@@ -1047,6 +1051,8 @@ namespace LevelEditor
 
 					if (canChangeSelection)
 					{
+						handleSelectMode(s_featureHovered.sector, -1);
+
 						s_featureCur.sector = s_featureHovered.sector;
 						s_featureCur.featureIndex = s_featureHovered.featureIndex;
 						s_curVtxPos = s_hoveredVtxPos;
@@ -2276,6 +2282,9 @@ namespace LevelEditor
 					bool doesItemExist = selection_doesFeatureExist(id);
 					if (s_selectionList.size() <= 1 || doesItemExist)
 					{
+						handleSelectMode(s_featureHovered.sector,
+							(s_featureHovered.part == HP_FLOOR || s_featureHovered.part == HP_CEIL) ? -1 : s_featureHovered.featureIndex);
+
 						s_featureCur.sector = s_featureHovered.sector;
 						s_featureCur.featureIndex = s_featureHovered.featureIndex;
 						s_featureCur.part = s_featureHovered.part;
@@ -2396,6 +2405,7 @@ namespace LevelEditor
 
 		if (s_singleClick)
 		{
+			handleSelectMode(s_featureHovered.sector, -1);
 			s_featureCur.sector = s_featureHovered.sector;
 			s_featureCur.featureIndex = 0;
 			adjustGridHeight(s_featureCur.sector);
@@ -4940,6 +4950,74 @@ namespace LevelEditor
 	{
 		return c_vanillaDarkForcesNameLimit;
 	}
+
+	struct SelectSaveState
+	{
+		LevelEditMode editMode;
+		u32 editFlags;
+		u32 lwinOpen;
+		s32 curLayer;
+
+		Feature featureHovered;
+		Feature featureCur;
+		Feature featureCurWall;
+
+		SelectionList selectionList;
+	};
+	static SelectSaveState s_selectSaveState;
+	static bool s_selectSaveStateSaved = false;
+		
+	void setSelectMode(SelectMode mode)
+	{
+		s_selectMode = mode;
+		if (s_selectMode != SELECTMODE_NONE)
+		{
+			// Save select state.
+			s_selectSaveState.editMode = s_editMode;
+			s_selectSaveState.editFlags = s_editFlags;
+			s_selectSaveState.lwinOpen = s_lwinOpen;
+			s_selectSaveState.curLayer = s_curLayer;
+			s_selectSaveState.featureHovered = s_featureHovered;
+			s_selectSaveState.featureCur = s_featureCur;
+			s_selectSaveState.featureCurWall = s_featureCurWall;
+			s_selectSaveState.selectionList = s_selectionList;
+			s_selectSaveStateSaved = true;
+
+			s_selectionList.clear();
+			s_featureHovered = {};
+			s_featureCur = {};
+			s_featureCurWall = {};
+		}
+		else if (s_selectSaveStateSaved)
+		{
+			s_editMode = s_selectSaveState.editMode;
+			s_editFlags = s_selectSaveState.editFlags;
+			s_lwinOpen = s_selectSaveState.lwinOpen;
+			s_curLayer = s_selectSaveState.curLayer;
+			s_featureHovered = s_selectSaveState.featureHovered;
+			s_featureCur = s_selectSaveState.featureCur;
+			s_featureCurWall = s_selectSaveState.featureCurWall;
+			s_selectionList = s_selectSaveState.selectionList;
+			s_selectSaveStateSaved = false;
+		}
+	}
+
+	SelectMode getSelectMode()
+	{
+		return s_selectMode;
+	}
+
+	void handleSelectMode(EditorSector* sector, s32 wallIndex)
+	{
+		if (sector && wallIndex < 0 && (s_selectMode == SELECTMODE_SECTOR || s_selectMode == SELECTMODE_SECTOR_OR_WALL))
+		{
+			editor_handleSelection(sector);
+		}
+		else if (sector && wallIndex >= 0 && (s_selectMode == SELECTMODE_WALL || s_selectMode == SELECTMODE_SECTOR_OR_WALL))
+		{
+			editor_handleSelection(sector, wallIndex);
+		}
+	}
 		
 	void drawViewportInfo(s32 index, Vec2i mapPos, const char* info, f32 xOffset, f32 yOffset, f32 alpha)
 	{
@@ -6020,6 +6098,7 @@ namespace LevelEditor
 		{
 			selection_add(id);
 			s_featureCur = {};
+			handleSelectMode(s_featureHovered.sector, s_featureHovered.featureIndex);
 			s_featureCur.featureIndex = featureIndex;
 			s_featureCur.sector = sector;
 			s_featureCur.part = (HitPart)part;

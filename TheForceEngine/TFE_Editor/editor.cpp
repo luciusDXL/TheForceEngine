@@ -58,6 +58,7 @@ namespace TFE_Editor
 	static AssetType s_editorAssetType = TYPE_NOT_SET;
 	static EditorMode s_editorMode = EDIT_ASSET_BROWSER;
 	static EditorPopup s_editorPopup = POPUP_NONE;
+	static bool s_hidePopup = false;
 	static u32 s_editorPopupUserData = 0;
 	static void* s_editorPopupUserPtr = nullptr;
 	static bool s_exitEditor = false;
@@ -218,12 +219,12 @@ namespace TFE_Editor
 
 	bool isPopupOpen()
 	{
-		return s_editorPopup != POPUP_NONE;
+		return s_editorPopup != POPUP_NONE && !s_hidePopup;
 	}
 
 	void handlePopupBegin()
 	{
-		if (s_editorPopup == POPUP_NONE) { return; }
+		if (s_editorPopup == POPUP_NONE || s_hidePopup) { return; }
 		switch (s_editorPopup)
 		{
 			case POPUP_MSG_BOX:
@@ -264,7 +265,7 @@ namespace TFE_Editor
 
 	void handlePopupEnd()
 	{
-		if (s_editorPopup == POPUP_NONE) { return; }
+		if (s_editorPopup == POPUP_NONE || s_hidePopup) { return; }
 
 		switch (s_editorPopup)
 		{
@@ -683,8 +684,20 @@ namespace TFE_Editor
 		sprintf(s_msgBox.id, "%s##MessageBox", type);
 	}
 
+	void hidePopup()
+	{
+		s_hidePopup = true;
+	}
+
+	void showPopup()
+	{
+		s_hidePopup = false;
+	}
+
 	void openEditorPopup(EditorPopup popup, u32 userData, void* userPtr)
 	{
+		if (s_hidePopup) { return; }
+
 		s_editorPopup = popup;
 		s_editorPopupUserData = userData;
 		s_editorPopupUserPtr = userPtr;
