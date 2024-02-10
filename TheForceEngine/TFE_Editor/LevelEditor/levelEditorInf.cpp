@@ -3785,4 +3785,547 @@ namespace LevelEditor
 
 		return !active;
 	}
+
+	void editor_loadInfBinary(FileStream& file, u32 version)
+	{
+		if (version < LEF_InfV1) { return; }
+
+		s32 itemCount, elevCount, trigCount, teleCount;
+		file.read(&itemCount);
+		file.read(&elevCount);
+		file.read(&trigCount);
+		file.read(&teleCount);
+
+		s_levelInf.item.resize(itemCount);
+		s_levelInf.elevator.resize(elevCount);
+		s_levelInf.trigger.resize(trigCount);
+		s_levelInf.teleport.resize(teleCount);
+
+		// First write the elevators, triggers, and teleporters so items can reference them.
+		for (s32 i = 0; i < elevCount; i++)
+		{
+			Editor_InfElevator* elev = new Editor_InfElevator();
+			s_levelInf.elevator[i] = elev;
+			elev->classId = IIC_ELEVATOR;
+
+			s32 stopCount, slaveCount;
+			file.read((u32*)&elev->type);
+			file.read(&elev->overrideSet);
+			file.read(&stopCount);
+			file.read(&slaveCount);
+
+			elev->stops.resize(stopCount);
+			elev->slaves.resize(slaveCount);
+
+			// Properties.
+			if (elev->overrideSet & IEO_START)
+			{
+				file.read(&elev->start);
+			}
+			if (elev->overrideSet & IEO_SPEED)
+			{
+				file.read(&elev->speed);
+			}
+			if (elev->overrideSet & IEO_ANGLE)
+			{
+				file.read(&elev->angle);
+			}
+			if (elev->overrideSet & IEO_FLAGS)
+			{
+				file.read(&elev->flags);
+			}
+			if (elev->overrideSet & IEO_KEY0)
+			{
+				u32 key;
+				file.read(&key);
+				elev->key[0] = KeyItem(key);
+			}
+			if (elev->overrideSet & IEO_KEY1)
+			{
+				u32 key;
+				file.read(&key);
+				elev->key[1] = KeyItem(key);
+			}
+			if (elev->overrideSet & IEO_DIR)
+			{
+				file.readBuffer(&elev->dirOrCenter, sizeof(Vec2f));
+			}
+			if (elev->overrideSet & IEO_SOUND0)
+			{
+				file.read(&elev->sounds[0]);
+			}
+			if (elev->overrideSet & IEO_SOUND1)
+			{
+				file.read(&elev->sounds[1]);
+			}
+			if (elev->overrideSet & IEO_SOUND2)
+			{
+				file.read(&elev->sounds[2]);
+			}
+			if (elev->overrideSet & IEO_MASTER)
+			{
+				s32 master;
+				file.read(&master);
+				elev->master = master != 0;
+			}
+			if (elev->overrideSet & IEO_EVENT_MASK)
+			{
+				file.read(&elev->eventMask);
+			}
+			if (elev->overrideSet & IEO_ENTITY_MASK)
+			{
+				file.read(&elev->entityMask);
+			}
+
+			// Stops
+			Editor_InfStop* stop = elev->stops.data();
+			for (s32 s = 0; s < stopCount; s++, stop++)
+			{
+				s32 adjoinCount, texCount, msgCount;
+				file.read(&adjoinCount);
+				file.read(&texCount);
+				file.read(&msgCount);
+				stop->adjoinCmd.resize(adjoinCount);
+				stop->textureCmd.resize(texCount);
+				stop->msg.resize(msgCount);
+
+				file.read(&stop->overrideSet);
+				s32 rel;
+				file.read(&rel);
+				stop->relative = rel != 0;
+				file.read(&stop->value);
+				file.read(&stop->fromSectorFloor);
+
+				u32 delayType;
+				file.read(&delayType);
+				stop->delayType = Editor_InfStopDelayType(delayType);
+
+				file.read(&stop->delay);
+				file.read(&stop->page);
+
+				Editor_InfAdjoinCmd* adjoinCmd = stop->adjoinCmd.data();
+				for (s32 a = 0; a < adjoinCount; a++, adjoinCmd++)
+				{
+					file.read(&adjoinCmd->sector0);
+					file.read(&adjoinCmd->sector1);
+					file.read(&adjoinCmd->wallIndex0);
+					file.read(&adjoinCmd->wallIndex1);
+				}
+
+				Editor_InfTextureCmd* texCmd = stop->textureCmd.data();
+				for (s32 t = 0; t < texCount; t++, texCmd++)
+				{
+					file.read(&texCmd->donorSector);
+					s32 fromCeil;
+					file.read(&fromCeil);
+					texCmd->fromCeiling = fromCeil != 0;
+				}
+
+				Editor_InfMessage* msg = stop->msg.data();
+				for (s32 m = 0; m < msgCount; m++, msg++)
+				{
+					file.read(&msg->targetSector);
+					file.read(&msg->targetWall);
+					u32 type;
+					file.read(&type);
+					msg->type = Editor_InfMessageType(type);
+
+					file.read(&msg->eventFlags);
+					file.read(msg->arg, 2);
+				}
+			}
+
+			// Slaves
+			Editor_InfSlave* slave = elev->slaves.data();
+			for (s32 s = 0; s < slaveCount; s++, slave++)
+			{
+				file.read(&slave->name);
+				file.read(&slave->angleOffset);
+			}
+		}
+
+		for (s32 i = 0; i < trigCount; i++)
+		{
+			Editor_InfTrigger* trigger = new Editor_InfTrigger();
+			s_levelInf.trigger[i] = trigger;
+			trigger->classId = IIC_TRIGGER;
+
+			s32 clientCount;
+			file.read(&clientCount);
+			trigger->clients.resize(clientCount);
+
+			u32 type;
+			file.read(&type);
+			trigger->type = TriggerType(type);
+
+			file.read(&trigger->overrideSet);
+			if (trigger->overrideSet & ITO_MSG)
+			{
+				u32 cmd;
+				file.read(&cmd);
+				file.read(trigger->arg, 2);
+				trigger->cmd = Editor_InfMessageType(cmd);
+			}
+			if (trigger->overrideSet & ITO_SOUND)
+			{
+				file.read(&trigger->sound);
+			}
+			if (trigger->overrideSet & ITO_MASTER)
+			{
+				s32 master;
+				file.read(&master);
+				trigger->master = master != 0;
+			}
+			if (trigger->overrideSet & ITO_TEXT)
+			{
+				file.read(&trigger->textId);
+			}
+			if (trigger->overrideSet & ITO_EVENT_MASK)
+			{
+				file.read(&trigger->eventMask);
+			}
+			if (trigger->overrideSet & ITO_ENTITY_MASK)
+			{
+				file.read(&trigger->entityMask);
+			}
+			if (trigger->overrideSet & ITO_EVENT)
+			{
+				file.read(&trigger->event);
+			}
+
+			Editor_InfClient* client = trigger->clients.data();
+			for (s32 c = 0; c < clientCount; c++, client++)
+			{
+				file.read(&client->targetSector);
+				file.read(&client->targetWall);
+				file.read(&client->eventMask);
+			}
+		}
+
+		for (s32 i = 0; i < teleCount; i++)
+		{
+			Editor_InfTeleporter* teleporter = new Editor_InfTeleporter();
+			s_levelInf.teleport[i] = teleporter;
+			teleporter->classId = IIC_TELEPORTER;
+
+			u32 type;
+			file.read(&type);
+			teleporter->type = TeleportType(type);
+
+			file.read(&teleporter->target);
+			if (teleporter->type == TELEPORT_BASIC)
+			{
+				file.readBuffer(&teleporter->dstPos, sizeof(Vec3f));
+				file.read(&teleporter->dstAngle);
+			}
+		}
+
+		// Then read the items.
+		Editor_InfItem* item = s_levelInf.item.data();
+		for (s32 i = 0; i < itemCount; i++, item++)
+		{
+			s32 classCount;
+			file.read(&classCount);
+			item->classData.resize(classCount);
+
+			file.read(&item->name);
+			file.read(&item->wallNum);
+
+			for (s32 c = 0; c < classCount; c++)
+			{
+				u32 id;
+				s32 index;
+				file.read(&id);
+				file.read(&index);
+				assert(index >= 0);
+
+				if (id == IIC_ELEVATOR)
+				{
+					item->classData[c] = (Editor_InfClass*)s_levelInf.elevator[index];
+				}
+				else if (id == IIC_TRIGGER)
+				{
+					item->classData[c] = (Editor_InfClass*)s_levelInf.trigger[index];
+				}
+				else if (id == IIC_TELEPORTER)
+				{
+					item->classData[c] = (Editor_InfClass*)s_levelInf.teleport[index];
+				}
+			}
+		}
+	}
+
+	s32 getClassIndex(Editor_InfItemClass classId, const void* classPtr)
+	{
+		s32 index = -1;
+		if (classId == IIC_ELEVATOR)
+		{
+			const s32 count = (s32)s_levelInf.elevator.size();
+			const Editor_InfElevator* const* list = s_levelInf.elevator.data();
+			for (s32 i = 0; i < count; i++)
+			{
+				if (classPtr == list[i])
+				{
+					index = i;
+					break;
+				}
+			}
+		}
+		else if (classId == IIC_TRIGGER)
+		{
+			const s32 count = (s32)s_levelInf.trigger.size();
+			const Editor_InfTrigger* const* list = s_levelInf.trigger.data();
+			for (s32 i = 0; i < count; i++)
+			{
+				if (classPtr == list[i])
+				{
+					index = i;
+					break;
+				}
+			}
+		}
+		else if (classId == IIC_TELEPORTER)
+		{
+			const s32 count = (s32)s_levelInf.teleport.size();
+			const Editor_InfTeleporter* const* list = s_levelInf.teleport.data();
+			for (s32 i = 0; i < count; i++)
+			{
+				if (classPtr == list[i])
+				{
+					index = i;
+					break;
+				}
+			}
+		}
+		assert(index >= 0);
+		return index;
+	}
+
+	void editor_saveInfBinary(FileStream& file)
+	{
+		// version >= LEF_InfV1
+		const s32 itemCount = (s32)s_levelInf.item.size();
+		const s32 elevCount = (s32)s_levelInf.elevator.size();
+		const s32 trigCount = (s32)s_levelInf.trigger.size();
+		const s32 teleCount = (s32)s_levelInf.teleport.size();
+		file.write(&itemCount);
+		file.write(&elevCount);
+		file.write(&trigCount);
+		file.write(&teleCount);
+		// First write the elevators, triggers, and teleporters so items can reference them.
+		const Editor_InfElevator* const* elevList = s_levelInf.elevator.data();
+		for (s32 i = 0; i < elevCount; i++)
+		{
+			const Editor_InfElevator* elev = elevList[i];
+			const s32 stopCount = (s32)elev->stops.size();
+			const s32 slaveCount = (s32)elev->slaves.size();
+
+			file.write((u32*)&elev->type);
+			file.write(&elev->overrideSet);
+			file.write(&stopCount);
+			file.write(&slaveCount);
+
+			// Properties.
+			if (elev->overrideSet & IEO_START)
+			{
+				file.write(&elev->start);
+			}
+			if (elev->overrideSet & IEO_SPEED)
+			{
+				file.write(&elev->speed);
+			}
+			if (elev->overrideSet & IEO_ANGLE)
+			{
+				file.write(&elev->angle);
+			}
+			if (elev->overrideSet & IEO_FLAGS)
+			{
+				file.write(&elev->flags);
+			}
+			if (elev->overrideSet & IEO_KEY0)
+			{
+				u32 key = elev->key[0];
+				file.write(&key);
+			}
+			if (elev->overrideSet & IEO_KEY1)
+			{
+				u32 key = elev->key[1];
+				file.write(&key);
+			}
+			if (elev->overrideSet & IEO_DIR)
+			{
+				file.writeBuffer(&elev->dirOrCenter, sizeof(Vec2f));
+			}
+			if (elev->overrideSet & IEO_SOUND0)
+			{
+				file.write(&elev->sounds[0]);
+			}
+			if (elev->overrideSet & IEO_SOUND1)
+			{
+				file.write(&elev->sounds[1]);
+			}
+			if (elev->overrideSet & IEO_SOUND2)
+			{
+				file.write(&elev->sounds[2]);
+			}
+			if (elev->overrideSet & IEO_MASTER)
+			{
+				s32 master = elev->master ? 1 : 0;
+				file.write(&master);
+			}
+			if (elev->overrideSet & IEO_EVENT_MASK)
+			{
+				file.write(&elev->eventMask);
+			}
+			if (elev->overrideSet & IEO_ENTITY_MASK)
+			{
+				file.write(&elev->entityMask);
+			}
+
+			// Stops
+			const Editor_InfStop* stop = elev->stops.data();
+			for (s32 s = 0; s < stopCount; s++, stop++)
+			{
+				const s32 adjoinCount = (s32)stop->adjoinCmd.size();
+				const s32 texCount = (s32)stop->textureCmd.size();
+				const s32 msgCount = (s32)stop->msg.size();
+				file.write(&adjoinCount);
+				file.write(&texCount);
+				file.write(&msgCount);
+
+				file.write(&stop->overrideSet);
+				s32 rel = stop->relative ? 1 : 0;
+				file.write(&rel);
+				file.write(&stop->value);
+				file.write(&stop->fromSectorFloor);
+
+				const u32 delayType = stop->delayType;
+				file.write(&delayType);
+				file.write(&stop->delay);
+				file.write(&stop->page);
+
+				const Editor_InfAdjoinCmd* adjoinCmd = stop->adjoinCmd.data();
+				for (s32 a = 0; a < adjoinCount; a++, adjoinCmd++)
+				{
+					file.write(&adjoinCmd->sector0);
+					file.write(&adjoinCmd->sector1);
+					file.write(&adjoinCmd->wallIndex0);
+					file.write(&adjoinCmd->wallIndex1);
+				}
+
+				const Editor_InfTextureCmd* texCmd = stop->textureCmd.data();
+				for (s32 t = 0; t < texCount; t++, texCmd++)
+				{
+					file.write(&texCmd->donorSector);
+					s32 fromCeil = texCmd->fromCeiling ? 1 : 0;
+					file.write(&fromCeil);
+				}
+
+				const Editor_InfMessage* msg = stop->msg.data();
+				for (s32 m = 0; m < msgCount; m++, msg++)
+				{
+					file.write(&msg->targetSector);
+					file.write(&msg->targetWall);
+					const u32 type = msg->type;
+					file.write(&type);
+					file.write(&msg->eventFlags);
+					file.write(msg->arg, 2);
+				}
+			}
+
+			// Slaves
+			const Editor_InfSlave* slave = elev->slaves.data();
+			for (s32 s = 0; s < slaveCount; s++, slave++)
+			{
+				file.write(&slave->name);
+				file.write(&slave->angleOffset);
+			}
+		}
+
+		const Editor_InfTrigger* const* triggerList = s_levelInf.trigger.data();
+		for (s32 i = 0; i < trigCount; i++)
+		{
+			const Editor_InfTrigger* trigger = triggerList[i];
+			const s32 clientCount = (s32)trigger->clients.size();
+			file.write(&clientCount);
+
+			const u32 type = trigger->type;
+			file.write(&type);
+			file.write(&trigger->overrideSet);
+			if (trigger->overrideSet & ITO_MSG)
+			{
+				const u32 cmd = trigger->cmd;
+				file.write(&cmd);
+				file.write(trigger->arg, 2);
+			}
+			if (trigger->overrideSet & ITO_SOUND)
+			{
+				file.write(&trigger->sound);
+			}
+			if (trigger->overrideSet & ITO_MASTER)
+			{
+				s32 master = trigger->master ? 1 : 0;
+				file.write(&master);
+			}
+			if (trigger->overrideSet & ITO_TEXT)
+			{
+				file.write(&trigger->textId);
+			}
+			if (trigger->overrideSet & ITO_EVENT_MASK)
+			{
+				file.write(&trigger->eventMask);
+			}
+			if (trigger->overrideSet & ITO_ENTITY_MASK)
+			{
+				file.write(&trigger->entityMask);
+			}
+			if (trigger->overrideSet & ITO_EVENT)
+			{
+				file.write(&trigger->event);
+			}
+
+			const Editor_InfClient* client = trigger->clients.data();
+			for (s32 c = 0; c < clientCount; c++, client++)
+			{
+				file.write(&client->targetSector);
+				file.write(&client->targetWall);
+				file.write(&client->eventMask);
+			}
+		}
+
+		const Editor_InfTeleporter* const* teleporterList = s_levelInf.teleport.data();
+		for (s32 i = 0; i < teleCount; i++)
+		{
+			const Editor_InfTeleporter* teleporter = teleporterList[i];
+			const u32 type = teleporter->type;
+			file.write(&type);
+			file.write(&teleporter->target);
+			if (teleporter->type == TELEPORT_BASIC)
+			{
+				file.writeBuffer(&teleporter->dstPos, sizeof(Vec3f));
+				file.write(&teleporter->dstAngle);
+			}
+		}
+
+		// Then write the items.
+		const Editor_InfItem* item = s_levelInf.item.data();
+		for (s32 i = 0; i < itemCount; i++, item++)
+		{
+			const s32 classCount = (s32)item->classData.size();
+			file.write(&classCount);
+			file.write(&item->name);
+			file.write(&item->wallNum);
+
+			const Editor_InfClass* const* classList = item->classData.data();
+			for (s32 c = 0; c < classCount; c++)
+			{
+				const Editor_InfClass* classPtr = classList[c];
+				const u32 id = classPtr->classId;
+				file.write(&id);
+
+				const s32 index = getClassIndex(classPtr->classId, classPtr);
+				file.write(&index);
+			}
+		}
+	}
 }

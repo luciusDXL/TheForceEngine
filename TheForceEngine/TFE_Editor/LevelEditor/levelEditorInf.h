@@ -284,4 +284,7 @@ namespace LevelEditor
 	bool editor_infEdit();
 
 	void editor_writeInfItem(std::string& outStr, const Editor_InfItem* item, const char* curTab);
+
+	void editor_loadInfBinary(FileStream& file, u32 version);
+	void editor_saveInfBinary(FileStream& file);
 }

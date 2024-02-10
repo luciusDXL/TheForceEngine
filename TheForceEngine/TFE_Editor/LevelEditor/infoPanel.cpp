@@ -702,11 +702,17 @@ namespace LevelEditor
 
 		infoLabel("##NameLabel", "Name", 32);
 		ImGui::PushItemWidth(240.0f);
+
+		// Turn the name red if it matches another sector.
+		s32 otherNameId = findSectorByName(sectorName, sector->id);
+		if (otherNameId >= 0) { ImGui::PushStyleColor(ImGuiCol_Text, {1.0f, 0.2f, 0.2f, 1.0f}); }
 		if (ImGui::InputText(inputName, sectorName, getSectorNameLimit()))
 		{
 			sector->name = sectorName;
 		}
 		ImGui::PopItemWidth();
+		if (otherNameId >= 0) { ImGui::PopStyleColor(); }
+
 		ImGui::SameLine(0.0f, 20.0f);
 		if (ImGui::Button("Edit INF"))
 		{
