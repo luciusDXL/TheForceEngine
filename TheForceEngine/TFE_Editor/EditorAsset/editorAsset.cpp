@@ -71,6 +71,10 @@ namespace TFE_Editor
 			{
 				index = loadEditorLevelPreview(LEV_LEV, archive, name);
 			} break;
+			case TYPE_SOUND:
+			{
+				index = loadEditorSound(SOUND_VOC, archive, name);
+			} break;
 			default:
 			{
 				TFE_System::logWrite(LOG_WARNING, "Editor", "Asset data loading not implemented, or bad type: %d", type);
@@ -106,8 +110,9 @@ namespace TFE_Editor
 			case TYPE_PALETTE:
 			case TYPE_3DOBJ:
 			case TYPE_LEVEL:
+			case TYPE_SOUND:
 			{
-				// This doesn't make sense for palettes/colormaps, so do nothing.
+				// This doesn't make sense for these asset types, so do nothing.
 			} break;
 			case TYPE_FRAME:
 			{
@@ -163,6 +168,10 @@ namespace TFE_Editor
 			{
 				data = getLevelPreviewData(index);
 			} break;
+			case TYPE_SOUND:
+			{
+				data = getSoundData(index);
+			} break;
 			default:
 			{
 				TFE_System::logWrite(LOG_WARNING, "Editor", "Asset data loading not implemented, or bad type: %d", type);
@@ -176,6 +185,7 @@ namespace TFE_Editor
 		freeCachedTextures();
 		freeCachedFrames();
 		freeCachedSprites();
+		freeCachedSounds();
 		freeCachedObj3D();
 		freeCachedLevelPreview();
 		s_assetsLoaded.clear();

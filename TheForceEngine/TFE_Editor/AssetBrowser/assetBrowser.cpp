@@ -1440,6 +1440,10 @@ namespace AssetBrowser
 		{
 			return TYPE_LEVEL;
 		}
+		else if (strcasecmp(ext, "VOC") == 0)
+		{
+			return TYPE_SOUND;
+		}
 		return TYPE_COUNT;
 	}
 
@@ -1961,6 +1965,17 @@ namespace AssetBrowser
 				s_viewAssetList.push_back(asset);
 			}
 		}
+		else if (s_viewInfo.type == TYPE_SOUND)
+		{
+			const u32 count = (u32)s_projectAssetList[TYPE_SOUND].size();
+			const Asset* projAsset = s_projectAssetList[TYPE_SOUND].data();
+			for (u32 i = 0; i < count; i++, projAsset++)
+			{
+				const char* name = projAsset->name.c_str();
+				if (!editorFilter(name)) { continue; }
+				loadAsset(projAsset);
+			}
+		}
 	}
 
 	void writeGpuTextureAsPng(TextureGpu* tex, const char* writePath)
@@ -1992,6 +2007,7 @@ namespace AssetBrowser
 		const char* assetSubPath[] =
 		{
 			"Textures",    // TYPE_TEXTURE
+			"Sounds",	   // TYPE_SOUND
 			"Sprites",     // TYPE_SPRITE
 			"Frames",      // TYPE_FRAME
 			"Models",      // TYPE_3DOBJ

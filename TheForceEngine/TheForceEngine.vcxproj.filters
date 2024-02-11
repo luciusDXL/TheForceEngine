@@ -1297,6 +1297,9 @@
     <ClInclude Include="TFE_Editor\LevelEditor\levelEditorInf.h">
       <Filter>Source\TFE_Editor\LevelEditor</Filter>
     </ClInclude>
+    <ClInclude Include="TFE_Editor\EditorAsset\editorSound.h">
+      <Filter>Source\TFE_Editor\EditorAsset</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -2225,6 +2228,9 @@
     </ClCompile>
     <ClCompile Include="TFE_Editor\LevelEditor\levelEditorInf.cpp">
       <Filter>Source\TFE_Editor\LevelEditor</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Editor\EditorAsset\editorSound.cpp">
+      <Filter>Source\TFE_Editor\EditorAsset</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

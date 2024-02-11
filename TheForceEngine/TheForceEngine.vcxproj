@@ -452,6 +452,7 @@ echo ^)";
     <ClInclude Include="TFE_Editor\EditorAsset\editorFrame.h" />
     <ClInclude Include="TFE_Editor\EditorAsset\editorLevelPreview.h" />
     <ClInclude Include="TFE_Editor\EditorAsset\editorObj3D.h" />
+    <ClInclude Include="TFE_Editor\EditorAsset\editorSound.h" />
     <ClInclude Include="TFE_Editor\EditorAsset\editorSprite.h" />
     <ClInclude Include="TFE_Editor\EditorAsset\editorTexture.h" />
     <ClInclude Include="TFE_Editor\editorConfig.h" />
@@ -804,6 +805,7 @@ echo ^)";
     <ClCompile Include="TFE_Editor\EditorAsset\editorFrame.cpp" />
     <ClCompile Include="TFE_Editor\EditorAsset\editorLevelPreview.cpp" />
     <ClCompile Include="TFE_Editor\EditorAsset\editorObj3D.cpp" />
+    <ClCompile Include="TFE_Editor\EditorAsset\editorSound.cpp" />
     <ClCompile Include="TFE_Editor\EditorAsset\editorSprite.cpp" />
     <ClCompile Include="TFE_Editor\EditorAsset\editorTexture.cpp" />
     <ClCompile Include="TFE_Editor\editorConfig.cpp" />
