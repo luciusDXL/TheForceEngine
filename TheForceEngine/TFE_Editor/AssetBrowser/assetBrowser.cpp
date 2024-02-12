@@ -1814,6 +1814,11 @@ namespace AssetBrowser
 		return false;
 	}
 
+	const TFE_Editor::AssetList& getAssetList(AssetType type)
+	{
+		return s_projectAssetList[type];
+	}
+
 	void getLevelTextures(AssetList& list, const char* levelName)
 	{
 		list.clear();

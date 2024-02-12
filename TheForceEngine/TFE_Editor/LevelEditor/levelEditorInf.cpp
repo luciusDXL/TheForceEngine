@@ -100,7 +100,18 @@ namespace LevelEditor
 		s32 index0;
 		s32 index1;
 	};
-	
+
+	struct OverlayAssetList
+	{
+		bool active = false;
+		s32 id = -1;
+		ImVec2 pos = { 0, 0 };
+		s32 listCount = 0;
+		s32 lastHovered = -1;
+		const TFE_Editor::Asset* assetList = nullptr;
+		char buffer[256] = "";
+	};
+		
 	const char* c_elevStopCmdName[] =
 	{
 		"Message", // ISC_MESSAGE
@@ -170,6 +181,8 @@ namespace LevelEditor
 
 	static InfEditor s_infEditor = {};
 	static InfEditorState s_infEditorState;
+	static OverlayAssetList s_overlayList = {};
+
 	void editor_selectViewportFeature(Editor_InfClass* editClass, SelectMode mode, SelectionType type, s32 index0 = -1, s32 index1 = -1);
 
 	void editor_infInit()
@@ -178,6 +191,7 @@ namespace LevelEditor
 		s_levelInf.elevator.clear();
 		s_levelInf.trigger.clear();
 		s_levelInf.teleport.clear();
+		s_overlayList = {};
 	}
 
 	void editor_infDestroy()
@@ -1689,8 +1703,113 @@ namespace LevelEditor
 		}
 	}
 
+	const char* getSoundName(const TFE_Editor::Asset* asset)
+	{
+		return asset->name.c_str();
+	}
+		
+	bool editor_beginList()
+	{
+		ImGuiWindowFlags flags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize |
+			ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_ChildWindow;
+		const char* label = editor_getUniqueLabel("");
+		ImGui::OpenPopup(label);
+		return ImGui::BeginPopup(label, flags);
+	}
+
+	void editor_endList()
+	{
+		ImGui::EndPopup();
+	}
+
+	bool strInStrNoCase(const char* srcStr, const char* findStr)
+	{
+		const s32 lenSrc  = (s32)strlen(srcStr);
+		const s32 lenFind = (s32)strlen(findStr);
+		if (lenSrc < lenFind) { return false; }
+		const s32 end = lenSrc - lenFind + 1;
+		char f0 = tolower(findStr[0]);
+		for (s32 i = 0; i < end; i++)
+		{
+			// Check the first letter and early out if they don't match.
+			if (tolower(srcStr[i]) != f0) { continue; }
+			// Otherwise check the full "find" string.
+			if (strncasecmp(&srcStr[i], findStr, lenFind) == 0)
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+
+	void editor_handleOverlayList()
+	{
+		if (!s_overlayList.active || s_overlayList.id < 0) { return; }
+		s_overlayList.lastHovered = -1;
+
+		ImGui::SetNextWindowPos(s_overlayList.pos);
+		ImGui::SetNextWindowSize(ImVec2(200, 400));
+		if (editor_beginList())
+		{
+			const size_t lenInput = strlen(s_overlayList.buffer);
+			for (s32 i = 0; i < s_overlayList.listCount; i++)
+			{
+				// Does it match the name.
+				const char* soundName = getSoundName(&s_overlayList.assetList[i]);
+				const size_t lenSound = strlen(soundName);
+				if (lenSound < lenInput || (lenInput && !strInStrNoCase(soundName, s_overlayList.buffer))) { continue; }
+				
+				// Add to the list.
+				ImGui::Selectable(soundName);
+				if (ImGui::IsItemHovered())
+				{
+					s_overlayList.lastHovered = i;
+				}
+			}
+		}
+		editor_endList();
+	}
+
+	bool editor_assetEditComboBox(s32 id, char* inputBuffer, size_t inputBufferSize, s32 listCount, const TFE_Editor::Asset* assetList)
+	{
+		// Text Input.
+		ImVec2 pos = ImGui::GetWindowPos();
+		pos.x += ImGui::GetCursorPosX();
+		pos.y += ImGui::GetCursorPosY();
+		bool update = ImGui::InputText(editor_getUniqueLabel(""), inputBuffer, inputBufferSize);
+
+		if (ImGui::IsItemActive())
+		{
+			pos.y += 26;
+			s_overlayList.id = id;
+			s_overlayList.active = true;
+			s_overlayList.lastHovered = -1;
+			s_overlayList.pos = pos;
+			s_overlayList.listCount = listCount;
+			s_overlayList.assetList = assetList;
+			strcpy(s_overlayList.buffer, inputBuffer);
+		}
+		else if (s_overlayList.id == id && s_overlayList.active)
+		{
+			//ImGui::CloseCurrentPopup();
+			if (s_overlayList.lastHovered >= 0)
+			{
+				strcpy(inputBuffer, getSoundName(&s_overlayList.assetList[s_overlayList.lastHovered]));
+				update = true;
+			}
+			s_overlayList.active = false;
+			s_overlayList.id = -1;
+		}
+
+		return update;
+	}
+
 	void editor_infEditElevProperties(Editor_InfElevator* elev, f32 propHeight, s32 itemClassIndex, const f32* btnTint)
 	{
+		const TFE_Editor::AssetList& soundList = AssetBrowser::getAssetList(TYPE_SOUND);
+		const s32 soundCount = (s32)soundList.size();
+		const TFE_Editor::Asset* soundAssets = soundList.data();
+
 		ImGui::Text("%s", "Properties");
 		if (elev->overrideSet & IEO_VAR_MASK)
 		{
@@ -1807,15 +1926,9 @@ namespace LevelEditor
 					strcpy(soundBuffer, elev->sounds[0].c_str());
 
 					ImGui::SetNextItemWidth(160.0f);
-					if (ImGui::InputText(editor_getUniqueLabel(""), soundBuffer, 256))
+					if (editor_assetEditComboBox(0, soundBuffer, 256, soundCount, soundAssets))
 					{
 						elev->sounds[0] = soundBuffer;
-					}
-
-					ImGui::SameLine(0.0f, 8.0f);
-					if (editor_button("Browse"))
-					{
-						// TODO
 					}
 				}
 				if (overrides & IEO_SOUND1)
@@ -1826,15 +1939,9 @@ namespace LevelEditor
 					strcpy(soundBuffer, elev->sounds[1].c_str());
 
 					ImGui::SetNextItemWidth(160.0f);
-					if (ImGui::InputText(editor_getUniqueLabel(""), soundBuffer, 256))
+					if (editor_assetEditComboBox(1, soundBuffer, 256, soundCount, soundAssets))
 					{
 						elev->sounds[1] = soundBuffer;
-					}
-
-					ImGui::SameLine(0.0f, 8.0f);
-					if (editor_button("Browse"))
-					{
-						// TODO
 					}
 				}
 				if (overrides & IEO_SOUND2)
@@ -1845,15 +1952,9 @@ namespace LevelEditor
 					strcpy(soundBuffer, elev->sounds[2].c_str());
 
 					ImGui::SetNextItemWidth(160.0f);
-					if (ImGui::InputText(editor_getUniqueLabel(""), soundBuffer, 256))
+					if (editor_assetEditComboBox(2, soundBuffer, 256, soundCount, soundAssets))
 					{
 						elev->sounds[2] = soundBuffer;
-					}
-
-					ImGui::SameLine(0.0f, 8.0f);
-					if (editor_button("Browse"))
-					{
-						// TODO
 					}
 				}
 				if (overrides & IEO_EVENT_MASK)
@@ -1895,6 +1996,10 @@ namespace LevelEditor
 
 	void editor_infEditTriggerProperties(Editor_InfTrigger* trigger, f32 propHeight, s32 itemClassIndex, const f32* btnTint)
 	{
+		const TFE_Editor::AssetList& soundList = AssetBrowser::getAssetList(TYPE_SOUND);
+		const s32 soundCount = (s32)soundList.size();
+		const TFE_Editor::Asset* soundAssets = soundList.data();
+
 		ImGui::Text("%s", "Properties");
 		if (trigger->overrideSet & ITO_VAR_MASK)
 		{
@@ -1908,14 +2013,9 @@ namespace LevelEditor
 					char soundBuffer[256];
 					strcpy(soundBuffer, trigger->sound.c_str());
 					ImGui::SetNextItemWidth(160.0f);
-					if (ImGui::InputText(editor_getUniqueLabel(""), soundBuffer, 256))
+					if (editor_assetEditComboBox(3, soundBuffer, 256, soundCount, soundAssets))
 					{
 						trigger->sound = soundBuffer;
-					}
-					ImGui::SameLine(0.0f, 8.0f);
-					if (editor_button("Browse"))
-					{
-						// TODO
 					}
 				}
 				if (overrides & ITO_MASTER)
@@ -2352,6 +2452,10 @@ namespace LevelEditor
 
 	void editor_infEditElevStops(Editor_InfElevator* elev, f32 contentHeight, s32 itemClassIndex, const f32* btnTint)
 	{
+		const TFE_Editor::AssetList& soundList = AssetBrowser::getAssetList(TYPE_SOUND);
+		const s32 soundCount = (s32)soundList.size();
+		const TFE_Editor::Asset* soundAssets = soundList.data();
+
 		char buffer[256];
 		const s32 stopCount = (s32)elev->stops.size();
 		if (!stopCount) { return; }
@@ -2585,15 +2689,9 @@ namespace LevelEditor
 
 				strcpy(targetBuffer, stop->page.c_str());
 				ImGui::SetNextItemWidth(128.0f);
-				if (ImGui::InputText(editor_getUniqueLabel(""), targetBuffer, 256))
+				if (editor_assetEditComboBox(4, targetBuffer, 256, soundCount, soundAssets))
 				{
 					stop->page = targetBuffer;
-				}
-
-				ImGui::SameLine(0.0f, 8.0f);
-				if (editor_button("Browse"))
-				{
-					// TODO
 				}
 			}
 
@@ -2961,6 +3059,8 @@ namespace LevelEditor
 			}
 			s_infEditor.item->classData.pop_back();
 		}
+
+		editor_handleOverlayList();
 	}
 
 	char s_floatToStrBuffer[256];
