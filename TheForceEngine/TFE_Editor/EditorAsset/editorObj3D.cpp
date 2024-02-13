@@ -164,7 +164,8 @@ namespace TFE_Editor
 			return -1;
 		}
 		WorkBuffer& buffer = getWorkBuffer();
-		buffer.resize(len);
+		buffer.resize(len+1);
+		memset(buffer.data(), 0, len+1);
 		archive->readFile(buffer.data(), len);
 		archive->closeFile();
 
@@ -200,7 +201,7 @@ namespace TFE_Editor
 
 		line = parser.readLine(bufferPos, true);
 		if (!line) { return false; }
-		char name3do[32];
+		char name3do[256];
 		if (sscanf(line, "3DONAME %s", name3do) != 1)
 		{
 			TFE_System::logWrite(LOG_ERROR, "Object3D_Load", "'%s' has no valid 3DONAME.", line);

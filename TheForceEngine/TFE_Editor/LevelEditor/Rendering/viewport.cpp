@@ -1751,7 +1751,7 @@ namespace LevelEditor
 				transVtx[v] = { vtxData->x * s_viewportTrans2d.x + s_viewportTrans2d.y, vtxData->z * s_viewportTrans2d.z + s_viewportTrans2d.w };
 				uv[v] = { (vtxData->x - offset.x) / 8.0f, (vtxData->z - offset.z) / 8.0f };
 			}
-			triDraw2D_addTextured((u32)idxCount, (u32)vtxCount, transVtx, uv, idxData, color, tex->frames[0]);
+			triDraw2D_addTextured((u32)idxCount, (u32)vtxCount, transVtx, uv, idxData, color, tex ? tex->frames[0] : nullptr);
 		}
 	}
 

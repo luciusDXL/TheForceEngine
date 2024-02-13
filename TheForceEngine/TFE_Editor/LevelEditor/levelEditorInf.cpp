@@ -713,9 +713,9 @@ namespace LevelEditor
 				if (stop)
 				{
 					stop->page = s_infArg1;
+					elev->overrideSet |= IEO_STOPS;
+					stop->overrideSet |= ISO_PAGE;
 				}
-				elev->overrideSet |= IEO_STOPS;
-				stop->overrideSet |= ISO_PAGE;
 			} break;
 			case KW_SEQEND:
 			{
