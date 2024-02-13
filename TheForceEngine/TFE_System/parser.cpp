@@ -1,6 +1,7 @@
 #include <cstring>
 
 #include "parser.h"
+#include <assert.h>
 #include <algorithm>
 
 namespace
@@ -129,6 +130,7 @@ const char* TFE_Parser::readLine(size_t& bufferPos, bool skipLeadingWhitespace, 
 					{
 						s_line[linePos++] = m_buffer[i];
 					}
+					assert(linePos <= 4096);
 				}
 			}
 		}
