@@ -43,11 +43,12 @@ namespace TFE_A11Y {
 	// Functions
 	///////////////////////////////////////////
 
-	// Initialize the A11y system.
+	// Initialize the A11y system. 
 	void init();
 
-	// Initialize the caption system. Only call this if the current status is CC_NOT_LOADED.
-	void initCaptions();
+	// Refresh the list of caption and font files, and reload the current caption file
+	// (if any is loaded).
+	void refreshFiles();
 
 	// Fonts
 	FilePathList getFontFiles();
