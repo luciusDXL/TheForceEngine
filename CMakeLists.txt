@@ -155,4 +155,7 @@ if(LINUX)
 	install(
 		FILES "${CMAKE_CURRENT_SOURCE_DIR}/TheForceEngine/TheForceEngine.png" DESTINATION "${TFE_ICONDIR}/256x256/apps"
 	)
+	install(
+		FILES "${CMAKE_CURRENT_SOURCE_DIR}/TheForceEngine/TheForceEngine.metainfo.xml" DESTINATION "share/metainfo"
+	)
 endif()

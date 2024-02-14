@@ -2852,7 +2852,7 @@ namespace TFE_FrontEndUI
 		// Check status, and init the caption system if necessary.
 		if (TFE_A11Y::getCaptionSystemStatus() == TFE_A11Y::CC_NOT_LOADED) 
 		{
-			TFE_A11Y::initCaptions(); 
+			TFE_A11Y::refreshFiles();
 		}
 		if (TFE_A11Y::getCaptionSystemStatus() == TFE_A11Y::CC_ERROR)
 		{
@@ -2880,6 +2880,12 @@ namespace TFE_FrontEndUI
 		{
 			TFE_A11Y::setPendingFont(currentFontPath);
 		}
+
+		if (ImGui::Button("Refresh caption/font files"))
+		{
+			TFE_A11Y::refreshFiles();
+		}
+		Tooltip("Reimport caption and font files. Use if you add, remove, or modify caption or font files in a TFE directory while TFE is running. Please wait a moment for files to refresh.");
 
 		// CUTSCENES -----------------------------------------
 		ImGui::Dummy(ImVec2(0.0f, 10.0f));
