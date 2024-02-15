@@ -64,7 +64,10 @@ namespace LevelEditor
 		SELTYPE_ELEV_ADJOIN0,
 		SELTYPE_ELEV_ADJOIN1,
 		SELTYPE_ELEV_DONOR_SECTOR,
+		SELTYPE_ELEV_SECTOR_CENTER,
+		SELTYPE_ELEV_POSITION,
 		SELTYPE_TELEPORT_TARGET,
+		SELTYPE_TELEPORT_POSITION,
 	};
 
 	enum InfEditorMode
@@ -1989,19 +1992,35 @@ namespace LevelEditor
 					ImGui::SameLine(0.0f, 8.0f);
 					if (iconButtonInline(ICON_SELECT, "Select position in viewport.", btnTint, true))
 					{
-						// TODO
+						editor_selectViewportFeature((Editor_InfClass*)elev, SELECTMODE_POSITION, SELTYPE_ELEV_POSITION, 0);
 					}
 					ImGui::SameLine(0.0f, 8.0f);
 					ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 2.0f);
 					if (iconButtonInline(ICON_BOX_CENTER, "Select sector in viewport and use its center.", btnTint, true))
 					{
-						// TODO
+						editor_selectViewportFeature((Editor_InfClass*)elev, SELECTMODE_SECTOR, SELTYPE_ELEV_SECTOR_CENTER, 0, 0);
 					}
 					ImGui::SameLine(0.0f, 8.0f);
 					ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 2.0f);
 					if (iconButtonInline(ICON_CIRCLE_PLUS, "Calculate the center from current sector and slaves.", btnTint, true))
 					{
-						// TODO
+						Vec2f bounds[2];
+						bounds[0] = { s_infEditor.sector->bounds[0].x, s_infEditor.sector->bounds[0].z };
+						bounds[1] = { s_infEditor.sector->bounds[1].x, s_infEditor.sector->bounds[1].z };
+						const s32 slaveCount = (s32)elev->slaves.size();
+						const Editor_InfSlave* slave = elev->slaves.data();
+						for (s32 s = 0; s < slaveCount; s++, slave++)
+						{
+							const s32 id = findSectorByName(slave->name.c_str());
+							if (id < 0) { continue; }
+							const EditorSector* slaveSector = &s_level.sectors[id];
+							bounds[0].x = min(bounds[0].x, slaveSector->bounds[0].x);
+							bounds[0].z = min(bounds[0].z, slaveSector->bounds[0].z);
+							bounds[1].x = max(bounds[1].x, slaveSector->bounds[1].x);
+							bounds[1].z = max(bounds[1].z, slaveSector->bounds[1].z);
+						}
+						elev->dirOrCenter.x = (bounds[0].x + bounds[1].x) * 0.5f;
+						elev->dirOrCenter.z = (bounds[0].z + bounds[1].z) * 0.5f;
 					}
 				}
 				if (overrides & IEO_SOUND0)
@@ -2848,6 +2867,33 @@ namespace LevelEditor
 		setSelectMode(mode);
 	}
 
+	void editor_handleSelection(Vec3f pos)
+	{
+		// Restore Inf Editor State.
+		s_infEditor = s_infEditorState.editorState;
+
+		if (s_infEditorState.editClass->classId == IIC_ELEVATOR)
+		{
+			Editor_InfElevator* elev = getElevFromClassData(s_infEditorState.editClass);
+			if (s_infEditorState.type == SELTYPE_ELEV_POSITION)
+			{
+				elev->dirOrCenter = { pos.x, pos.z };
+			}
+		}
+		else if (s_infEditorState.editClass->classId == IIC_TELEPORTER)
+		{
+			Editor_InfTeleporter* teleporter = getTeleporterFromClassData(s_infEditorState.editClass);
+			if (s_infEditorState.type == SELTYPE_TELEPORT_POSITION)
+			{
+				teleporter->dstPos = pos;
+			}
+		}
+
+		// Restore the popup.
+		showPopup();
+		setSelectMode(SELECTMODE_NONE);
+	}
+
 	void editor_handleSelection(EditorSector* sector, s32 wallIndex/* = -1*/)
 	{
 		// Restore Inf Editor State.
@@ -2888,6 +2934,11 @@ namespace LevelEditor
 			else if (s_infEditorState.type == SELTYPE_ELEV_DONOR_SECTOR)
 			{
 				elev->stops[s_infEditorState.index0].textureCmd[s_infEditorState.index1].donorSector = sector->name;
+			}
+			else if (s_infEditorState.type == SELTYPE_ELEV_SECTOR_CENTER)
+			{
+				elev->dirOrCenter.x = (sector->bounds[0].x + sector->bounds[1].x) * 0.5f;
+				elev->dirOrCenter.z = (sector->bounds[0].z + sector->bounds[1].z) * 0.5f;
 			}
 		}
 		else if (s_infEditorState.editClass->classId == IIC_TELEPORTER)
@@ -3136,7 +3187,7 @@ namespace LevelEditor
 							ImGui::SameLine(0.0f, 8.0f);
 							if (iconButtonInline(ICON_SELECT, "Select target position in the viewport.", tint, true))
 							{
-								// TODO
+								editor_selectViewportFeature((Editor_InfClass*)teleporter, SELECTMODE_POSITION, SELTYPE_TELEPORT_POSITION, 0);
 							}
 
 							// Angle

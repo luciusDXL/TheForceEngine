@@ -289,4 +289,5 @@ namespace LevelEditor
 	void editor_saveInfBinary(FileStream& file);
 
 	void editor_handleSelection(EditorSector* sector, s32 wallIndex = -1);
+	void editor_handleSelection(Vec3f pos);
 }

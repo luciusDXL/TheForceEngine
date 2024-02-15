@@ -260,8 +260,9 @@ namespace LevelEditor
 	void applySurfaceTextures();
 	void selectSimilarWalls(EditorSector* rootSector, s32 wallIndex, HitPart part, bool autoAlign=false);
 
+	void handleSelectMode(Vec3f pos);
 	void handleSelectMode(EditorSector* sector, s32 wallIndex);
-
+	
 	extern Vec3f extrudePoint2dTo3d(const Vec2f pt2d);
 	extern Vec3f extrudePoint2dTo3d(const Vec2f pt2d, f32 height);
 	
@@ -4587,17 +4588,22 @@ namespace LevelEditor
 			// Selection
 			Vec2f worldPos = mouseCoordToWorldPos2d(mx, my);
 			s_cursor3d = { worldPos.x, 0.0f, worldPos.z };
-
+			
 			// Always check for the hovered sector, since sectors can overlap.
 			s_featureHovered.sector = findSector2d(worldPos, s_curLayer);
 			s_featureHovered.featureIndex = -1;
+
+			if (s_singleClick)
+			{
+				handleSelectMode({ s_cursor3d.x, s_featureHovered.sector ? s_featureHovered.sector->floorHeight : 0.0f, s_cursor3d.z });
+			}
 
 			// TODO: Move to central hotkey list.
 			if (s_featureHovered.sector && TFE_Input::keyModDown(KEYMOD_CTRL) && TFE_Input::keyPressed(KEY_G))
 			{
 				adjustGridHeight(s_featureHovered.sector);
 			}
-
+						
 			if (s_editMode == LEDIT_DRAW)
 			{
 				if (extrude) { handleSectorExtrude(nullptr/*2d so no ray hit info*/); }
@@ -4731,6 +4737,11 @@ namespace LevelEditor
 			if ((s_gridFlags & GFLAG_OVER) && hitInfo.hitWallId < 0)
 			{
 				s_cursor3d = rayGridPlaneHit(s_camera.pos, s_rayDir);
+			}
+
+			if (s_singleClick)
+			{
+				handleSelectMode(s_cursor3d);
 			}
 
 			if (s_editMode == LEDIT_DRAW)
@@ -5005,6 +5016,17 @@ namespace LevelEditor
 	SelectMode getSelectMode()
 	{
 		return s_selectMode;
+	}
+
+	void handleSelectMode(Vec3f pos)
+	{
+		if (s_selectMode == SELECTMODE_POSITION)
+		{
+			Vec2f posXZ = { pos.x, pos.z };
+			snapToGrid(&posXZ);
+			
+			editor_handleSelection({ posXZ.x, pos.y, posXZ.z });
+		}
 	}
 
 	void handleSelectMode(EditorSector* sector, s32 wallIndex)
