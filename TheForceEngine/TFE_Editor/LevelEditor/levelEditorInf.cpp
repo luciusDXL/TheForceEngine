@@ -1992,13 +1992,13 @@ namespace LevelEditor
 					ImGui::SameLine(0.0f, 8.0f);
 					if (iconButtonInline(ICON_SELECT, "Select position in viewport.", btnTint, true))
 					{
-						editor_selectViewportFeature((Editor_InfClass*)elev, SELECTMODE_POSITION, SELTYPE_ELEV_POSITION, 0);
+						editor_selectViewportFeature((Editor_InfClass*)elev, SELECTMODE_POSITION, SELTYPE_ELEV_POSITION);
 					}
 					ImGui::SameLine(0.0f, 8.0f);
 					ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 2.0f);
 					if (iconButtonInline(ICON_BOX_CENTER, "Select sector in viewport and use its center.", btnTint, true))
 					{
-						editor_selectViewportFeature((Editor_InfClass*)elev, SELECTMODE_SECTOR, SELTYPE_ELEV_SECTOR_CENTER, 0, 0);
+						editor_selectViewportFeature((Editor_InfClass*)elev, SELECTMODE_SECTOR, SELTYPE_ELEV_SECTOR_CENTER);
 					}
 					ImGui::SameLine(0.0f, 8.0f);
 					ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 2.0f);
@@ -3187,7 +3187,7 @@ namespace LevelEditor
 							ImGui::SameLine(0.0f, 8.0f);
 							if (iconButtonInline(ICON_SELECT, "Select target position in the viewport.", tint, true))
 							{
-								editor_selectViewportFeature((Editor_InfClass*)teleporter, SELECTMODE_POSITION, SELTYPE_TELEPORT_POSITION, 0);
+								editor_selectViewportFeature((Editor_InfClass*)teleporter, SELECTMODE_POSITION, SELTYPE_TELEPORT_POSITION);
 							}
 
 							// Angle
