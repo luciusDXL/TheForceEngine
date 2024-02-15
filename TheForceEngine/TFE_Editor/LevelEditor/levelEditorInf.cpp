@@ -171,6 +171,56 @@ namespace LevelEditor
 		"Single",   // ITRIGGER_SINGLE
 	};
 
+	const char* c_infWallFlags1Names[] =
+	{
+		"Mask Wall",
+		"Illum Sign",
+		"Horz Flip Tex",
+		"Change WallLight",
+		"Tex Anchored",
+		"Wall Morphs",
+		"Scroll Top Tex",
+		"Scroll Mid Tex",
+		"Scroll Bottom",
+		"Scroll Sign",
+		"Hide On Map",
+		"Show On Map",
+		"Sign Anchored",
+		"Damage Wall",
+		"Show As Ledge",
+		"Show As Door",
+	};
+	const char* c_infWallFlags3Names[] =
+	{
+		"Always Walk",
+		"Solid Wall",
+		"Player Walk Only",
+		"Cannot Shoot Thru",
+	};
+	const char* c_infSectorFlag1Names[] =
+	{
+		"Exterior",
+		"Door",
+		"Mag Seal",
+		"Ext Ceil Adj",
+		"Ice Floor",
+		"Snow Floor",
+		"Exploding Wall",
+		"Pit",
+		"Ext Floor Adj",
+		"Crushing",
+		"No Walls",
+		"Low Damage",
+		"High Damage",
+		"No Smart Obj",
+		"Smart Obj",
+		"Subsector (Internal)",
+		"Safe Sector",
+		"Rendered (Internal)",
+		"Player (Internal)",
+		"Secret",
+	};
+
 	const TriggerType c_selectableTriggerTypeId[] =
 	{
 		ITRIGGER_WALL,
@@ -1565,7 +1615,7 @@ namespace LevelEditor
 		ImGui::SameLine(0.0f, 8.0f);
 	}
 
-	void editor_infPropertySelectable(Editor_InfTriggerVar var, s32 classIndex)
+	bool editor_infPropertySelectable(Editor_InfTriggerVar var, s32 classIndex)
 	{
 		bool sel = classIndex == s_infEditor.curClassIndex ? s_infEditor.curPropIndex == var : false;
 		ImGui::PushStyleColor(ImGuiCol_Text, colorKeywordInner);
@@ -1579,6 +1629,23 @@ namespace LevelEditor
 		}
 		ImGui::PopStyleColor();
 		ImGui::SameLine(0.0f, 8.0f);
+
+		return sel;
+	}
+
+	f32 computeSetOrClearBitsHeight(bool isWall, const u32* arg)
+	{
+		size_t rowCount = 0;
+		if (isWall)
+		{
+			if (arg[0] <= 1) { rowCount = (TFE_ARRAYSIZE(c_infWallFlags1Names) + 3) >> 2; }
+			else if (arg[0] == 3) { rowCount = (TFE_ARRAYSIZE(c_infWallFlags3Names) + 3) >> 2; }
+		}
+		else if (arg[0] <= 1)
+		{
+			rowCount = (TFE_ARRAYSIZE(c_infSectorFlag1Names) + 3) >> 2;
+		}
+		return 26.0f * f32(rowCount);
 	}
 
 	f32 computeChildHeight(const Editor_InfClass* data, s32 contentSel, bool curClass, f32* propHeight, f32* contentHeight)
@@ -1613,6 +1680,17 @@ namespace LevelEditor
 				{
 					// Room for buttons.
 					*contentHeight += 26.0f;
+
+					// Which stop command is selected if any?
+					if (s_infEditor.curStopCmdIndex >= 0 && s_infEditor.curStopCmdIndex < elev->stops[contentSel].msg.size())
+					{
+						// Handle selected messages with set_bits or clear_bits set.
+						const Editor_InfMessage* msg = &elev->stops[contentSel].msg[s_infEditor.curStopCmdIndex];
+						if (msg->type == IMT_SET_BITS || msg->type == IMT_CLEAR_BITS)
+						{
+							*contentHeight += computeSetOrClearBitsHeight(msg->targetWall >= 0, msg->arg);
+						}
+					}
 				}
 
 				height = 140.0f + (*propHeight) + (*contentHeight);
@@ -1629,6 +1707,14 @@ namespace LevelEditor
 
 				const s32 clientCount = (s32)trigger->clients.size();
 				*contentHeight = 16.0f + 26.0f * clientCount;
+
+				if (clientCount)
+				{
+					if (curClass && s_infEditor.curPropIndex == ITV_MSG && (trigger->cmd == IMT_SET_BITS || trigger->cmd == IMT_CLEAR_BITS))
+					{
+						*propHeight += computeSetOrClearBitsHeight(trigger->clients[0].targetWall >= 0, trigger->arg);
+					}
+				}
 
 				height = 140.0f + (*propHeight) + (*contentHeight);
 			} break;
@@ -1994,6 +2080,40 @@ namespace LevelEditor
 		}
 	}
 
+	void setOrClearBitsCheckboxes(bool wallTarget, u32* arg)
+	{
+		if (wallTarget)
+		{
+			if (arg[0] == 1)
+			{
+				for (s32 i = 0; i < TFE_ARRAYSIZE(c_infWallFlags1Names); i++)
+				{
+					if ((i % 4) != 0) { ImGui::SameLine(200.0f * (i % 4), 0.0f); }
+					ImGui::CheckboxFlags(editor_getUniqueLabel(c_infWallFlags1Names[i]), (u32*)&arg[1], 1 << i);
+				}
+			}
+			else if (arg[0] == 3)
+			{
+				for (s32 i = 0; i < TFE_ARRAYSIZE(c_infWallFlags3Names); i++)
+				{
+					if ((i % 4) != 0) { ImGui::SameLine(200.0f * (i % 4), 0.0f); }
+					ImGui::CheckboxFlags(editor_getUniqueLabel(c_infWallFlags3Names[i]), (u32*)&arg[1], 1 << i);
+				}
+			}
+		}
+		else  // Sector
+		{
+			if (arg[0] == 1)
+			{
+				for (s32 i = 0; i < TFE_ARRAYSIZE(c_infSectorFlag1Names); i++)
+				{
+					if ((i % 4) != 0) { ImGui::SameLine(200.0f * (i % 4), 0.0f); }
+					ImGui::CheckboxFlags(editor_getUniqueLabel(c_infSectorFlag1Names[i]), (u32*)&arg[1], 1 << i);
+				}
+			}
+		}
+	}
+
 	void editor_infEditTriggerProperties(Editor_InfTrigger* trigger, f32 propHeight, s32 itemClassIndex, const f32* btnTint)
 	{
 		const TFE_Editor::AssetList& soundList = AssetBrowser::getAssetList(TYPE_SOUND);
@@ -2078,7 +2198,7 @@ namespace LevelEditor
 				}
 				if (overrides & ITO_MSG)
 				{
-					editor_infPropertySelectable(ITV_MSG, itemClassIndex);
+					bool sel = editor_infPropertySelectable(ITV_MSG, itemClassIndex);
 
 					// Note that "DONE" and "WAKEUP" are not available for triggers
 					ImGui::SetNextItemWidth(128.0f);
@@ -2114,6 +2234,7 @@ namespace LevelEditor
 
 							ImGui::Text("Flags"); ImGui::SameLine(0.0f, 8.0f);
 							ImGui::SetNextItemWidth(48.0f);
+							trigger->arg[0] = min(3u, max(1u, trigger->arg[0]));
 							s32 flag = min(2, max(0, (s32)trigger->arg[0] - 1));
 							const char* flagNames[] = { "1", "2", "3" };
 							if (ImGui::Combo(editor_getUniqueLabel(""), &flag, flagNames, TFE_ARRAYSIZE(flagNames)))
@@ -2126,7 +2247,11 @@ namespace LevelEditor
 							ImGui::SetNextItemWidth(128.0f);
 							ImGui::InputUInt(editor_getUniqueLabel(""), &trigger->arg[1]);
 
-							// TODO: Handle showing checkboxes if selected.
+							// Handle showing checkboxes if selected.
+							if (sel && !trigger->clients.empty())
+							{
+								setOrClearBitsCheckboxes(trigger->clients[0].targetWall >= 0, trigger->arg);
+							}
 						} break;
 					}
 				}
@@ -2431,7 +2556,7 @@ namespace LevelEditor
 		setTooltip("Remove the selected client.");
 	}
 
-	void editor_stopCmdSelectable(Editor_InfElevator* elev, Editor_InfStop* stop, s32 itemClassIndex, s32 cmdIndex, const char* label)
+	bool editor_stopCmdSelectable(Editor_InfElevator* elev, Editor_InfStop* stop, s32 itemClassIndex, s32 cmdIndex, const char* label)
 	{
 		ImGui::PushStyleColor(ImGuiCol_Text, colorKeywordInner);
 		ImGui::PushStyleColor(ImGuiCol_Header, colorInnerHeader);
@@ -2448,6 +2573,7 @@ namespace LevelEditor
 		}
 		ImGui::PopStyleColor(4);
 		ImGui::SameLine(0.0f, 8.0f);
+		return sel;
 	}
 
 	void editor_infEditElevStops(Editor_InfElevator* elev, f32 contentHeight, s32 itemClassIndex, const f32* btnTint)
@@ -2540,7 +2666,7 @@ namespace LevelEditor
 			char targetBuffer[256];
 			for (s32 m = 0; m < msgCount; m++, msg++)
 			{
-				editor_stopCmdSelectable(elev, stop, itemClassIndex, m + cmdIndexOffset, "Message:");
+				bool cmdSelected = editor_stopCmdSelectable(elev, stop, itemClassIndex, m + cmdIndexOffset, "Message:");
 
 				ImGui::Text("Target"); ImGui::SameLine(0.0f, 8.0f);
 				if (msg->targetWall >= 0) { sprintf(targetBuffer, "%s(%d)", msg->targetSector.c_str(), msg->targetWall); }
@@ -2595,6 +2721,7 @@ namespace LevelEditor
 
 						ImGui::Text("Flags"); ImGui::SameLine(0.0f, 8.0f);
 						ImGui::SetNextItemWidth(48.0f);
+						msg->arg[0] = min(3u, max(msg->arg[0], 1u));
 						s32 flag = min(2, max(0, (s32)msg->arg[0] - 1));
 						const char* flagNames[] = { "1", "2", "3" };
 						if (ImGui::Combo(editor_getUniqueLabel(""), &flag, flagNames, TFE_ARRAYSIZE(flagNames)))
@@ -2607,7 +2734,11 @@ namespace LevelEditor
 						ImGui::SetNextItemWidth(128.0f);
 						ImGui::InputUInt(editor_getUniqueLabel(""), &msg->arg[1]);
 
-						// TODO: Handle showing checkboxes if selected.
+						// Handle showing checkboxes if selected.
+						if (cmdSelected)
+						{
+							setOrClearBitsCheckboxes(msg->targetWall >= 0, msg->arg);
+						}
 					} break;
 				}
 				ImGui::SetCursorPosY(ImGui::GetCursorPosY() - 2);
