@@ -694,6 +694,11 @@ namespace TFE_Editor
 		s_hidePopup = false;
 	}
 
+	EditorPopup getCurrentPopup()
+	{
+		return s_editorPopup;
+	}
+
 	void openEditorPopup(EditorPopup popup, u32 userData, void* userPtr)
 	{
 		if (s_hidePopup) { return; }

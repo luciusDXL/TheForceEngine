@@ -2,10 +2,12 @@
 #include "grid2d.h"
 #include "grid3d.h"
 #include <TFE_System/math.h>
+#include <TFE_Editor/editor.h>
 #include <TFE_Editor/LevelEditor/levelEditor.h>
 #include <TFE_Editor/LevelEditor/levelEditorData.h>
 #include <TFE_Editor/LevelEditor/sharedState.h>
 #include <TFE_Editor/LevelEditor/selection.h>
+#include <TFE_Editor/LevelEditor/levelEditorInf.h>
 #include <TFE_Editor/EditorAsset/editorTexture.h>
 #include <TFE_Jedi/Level/rwall.h>
 #include <TFE_Jedi/Level/rsector.h>
@@ -217,7 +219,7 @@ namespace LevelEditor
 		TFE_RenderShared::lineDraw2d_begin(s_viewportSize.x, s_viewportSize.z);
 		TFE_RenderShared::triDraw2d_begin(s_viewportSize.x, s_viewportSize.z);
 		TFE_RenderShared::modelDraw_begin();
-
+				
 		// Draw lower layers, if enabled.
 		if (s_editFlags & LEF_SHOW_LOWER_LAYERS)
 		{
@@ -365,6 +367,45 @@ namespace LevelEditor
 		TFE_RenderShared::modelDraw_draw(&camera, (f32)s_viewportSize.x, (f32)s_viewportSize.z, false);
 		TFE_RenderShared::triDraw2d_draw();
 		TFE_RenderShared::lineDraw2d_drawLines();
+
+		// Determine is special controls need to be drawn.
+		const EditorPopup popup = getCurrentPopup();
+		if (popup == POPUP_EDIT_INF)
+		{
+			Editor_InfVpControl ctrl;
+			editor_infGetViewportControl(&ctrl);
+			switch (ctrl.type)
+			{
+				case InfVpControl_Center:
+				case InfVpControl_TargetPos3d:
+				{
+					f32 width = 1.5f;
+					f32 step = 5.0f / s_viewportTrans2d.x;
+					Vec2f cen = { ctrl.cen.x, ctrl.cen.z };
+					Vec2f p0 = { cen.x - step, cen.z - step };
+					Vec2f p1 = { cen.x + step, cen.z + step };
+					Vec2f p2 = { cen.x + step, cen.z - step };
+					Vec2f p3 = { cen.x - step, cen.z + step };
+					Vec2f vtx[] =
+					{
+						{ p0.x * s_viewportTrans2d.x + s_viewportTrans2d.y, p0.z * s_viewportTrans2d.z + s_viewportTrans2d.w },
+						{ p1.x * s_viewportTrans2d.x + s_viewportTrans2d.y, p1.z * s_viewportTrans2d.z + s_viewportTrans2d.w },
+
+						{ p2.x * s_viewportTrans2d.x + s_viewportTrans2d.y, p2.z * s_viewportTrans2d.z + s_viewportTrans2d.w },
+						{ p3.x * s_viewportTrans2d.x + s_viewportTrans2d.y, p3.z * s_viewportTrans2d.z + s_viewportTrans2d.w },
+					};
+
+					// Draw lines through the center point.
+					u32 clr[2] = { SCOLOR_LINE_SELECTED, SCOLOR_LINE_SELECTED };
+
+					TFE_RenderShared::lineDraw2d_begin(s_viewportSize.x, s_viewportSize.z);
+					TFE_RenderShared::lineDraw2d_addLine(width, &vtx[0], clr);
+					TFE_RenderShared::lineDraw2d_addLine(width, &vtx[2], clr);
+					TFE_RenderShared::lineDraw2d_drawLines();
+				} break;
+				// TODO: Other cases.
+			}
+		}
 	}
 
 	void renderCoordinateAxis()

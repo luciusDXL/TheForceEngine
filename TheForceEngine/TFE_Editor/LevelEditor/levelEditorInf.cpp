@@ -56,6 +56,11 @@ namespace LevelEditor
 	Editor_LevelInf s_levelInf;
 	static char s_infArg0[256], s_infArg1[256], s_infArg2[256], s_infArg3[256], s_infArg4[256], s_infArgExtra[256];
 
+	enum InfEditorConst
+	{
+		POPUP_RESTORE_COUNT = 3,
+	};
+
 	enum SelectionType
 	{
 		SELTYPE_TRIGGER_CLIENT = 0,
@@ -235,6 +240,9 @@ namespace LevelEditor
 	static InfEditor s_infEditor = {};
 	static InfEditorState s_infEditorState;
 	static OverlayAssetList s_overlayList = {};
+
+	static ImVec2 s_popupPos;
+	static s32 s_restorePos = 0;
 
 	void editor_selectViewportFeature(Editor_InfClass* editClass, SelectMode mode, SelectionType type, s32 index0 = -1, s32 index1 = -1);
 
@@ -2892,6 +2900,7 @@ namespace LevelEditor
 		// Restore the popup.
 		showPopup();
 		setSelectMode(SELECTMODE_NONE);
+		s_restorePos = POPUP_RESTORE_COUNT;
 	}
 
 	void editor_handleSelection(EditorSector* sector, s32 wallIndex/* = -1*/)
@@ -2953,6 +2962,7 @@ namespace LevelEditor
 		// Restore the popup.
 		showPopup();
 		setSelectMode(SELECTMODE_NONE);
+		s_restorePos = POPUP_RESTORE_COUNT;
 	}
 
 	void editor_infEditTriggerClients(Editor_InfTrigger* trigger, f32 contentHeight, s32 itemClassIndex, const f32* btnTint)
@@ -4023,7 +4033,7 @@ namespace LevelEditor
 			}
 		}
 	}
-
+		
 	bool editor_infEdit()
 	{
 		DisplayInfo info;
@@ -4036,8 +4046,17 @@ namespace LevelEditor
 		bool active = true;
 		ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoResize;
 		ImGui::SetNextWindowSize({ winWidth, winHeight });
+		if (s_restorePos > 0)
+		{
+			// Restore the popup position, otherwise it will move back to the default after being hidden.
+			ImGui::SetNextWindowPos(s_popupPos);
+		}
 		if (ImGui::BeginPopupModal("Edit INF", &active, window_flags))
 		{
+			// Popups need multiple frames to "accept" the new position due to the way the imGui window position logic works.
+			if (s_restorePos > 0) { s_restorePos--; }
+			else { s_popupPos = ImGui::GetWindowPos(); }
+
 			if (!s_infEditor.sector)
 			{
 				ImGui::TextColored({ 1.0f, 0.2f, 0.2f, 1.0f }, "Sectors with INF functionality must have names.\nPlease name the sector and try again.");
@@ -4700,6 +4719,44 @@ namespace LevelEditor
 
 				const s32 index = getClassIndex(classPtr->classId, classPtr);
 				file.write(&index);
+			}
+		}
+	}
+
+	void editor_infGetViewportControl(Editor_InfVpControl* ctrl)
+	{
+		ctrl->type = InfVpControl_None;
+		const s32 classIndex = max(0, s_infEditor.curClassIndex);
+
+		const Editor_InfClass* classData = s_infEditor.item->classData[classIndex];
+		if (classData->classId == IIC_ELEVATOR)
+		{
+			const Editor_InfElevator* elev = getElevFromClassData(classData);
+			if (elev->type == IET_MORPH_SPIN1 || elev->type == IET_MORPH_SPIN2 || elev->type == IET_ROTATE_WALL)
+			{
+				ctrl->type = InfVpControl_Center;
+				ctrl->cen = { elev->dirOrCenter.x, s_infEditor.sector->floorHeight, elev->dirOrCenter.z };
+			}
+			else if (elev->type == IET_MORPH_MOVE1 || elev->type == IET_MORPH_MOVE2 || elev->type == IET_MOVE_WALL)
+			{
+				// TODO - angle
+			}
+			else if (elev->type == IET_SCROLL_FLOOR || elev->type == IET_SCROLL_CEILING)
+			{
+				// TODO - direction XZ
+			}
+			else if (elev->type == IET_SCROLL_WALL)
+			{
+				// TODO - direction XY on wall.
+			}
+		}
+		else if (classData->classId == IIC_TELEPORTER)
+		{
+			const Editor_InfTeleporter* teleporter = getTeleporterFromClassData(classData);
+			if (teleporter->type == TELEPORT_BASIC)
+			{
+				ctrl->type = InfVpControl_TargetPos3d;
+				ctrl->cen = teleporter->dstPos;
 			}
 		}
 	}

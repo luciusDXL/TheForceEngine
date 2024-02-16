@@ -21,7 +21,7 @@ namespace LevelEditor
 		IIC_TRIGGER,	// "Trigger"
 		IIC_TELEPORTER,	// "Teleporter"
 	};
-
+		
 	enum Editor_InfElevType : u32
 	{
 		// Special, "high level" elevators.
@@ -277,6 +277,24 @@ namespace LevelEditor
 		std::vector<Editor_InfTrigger*>       trigger;
 		std::vector<Editor_InfTeleporter*>    teleport;
 	};
+
+	enum InfVpControlType
+	{
+		InfVpControl_None = 0,
+		InfVpControl_Center,	// Show the center.
+		InfVpControl_Angle,
+		InfVpControl_Dir,
+		InfVpControl_TargetPos3d,
+		InfVpControl_Count
+	};
+
+	struct Editor_InfVpControl
+	{
+		InfVpControlType type;
+		Vec3f cen;			// center -or- arrow start.
+		Vec3f dir;			// direction derived from angle -or- direction on wall.
+	};
+
 	extern Editor_LevelInf s_levelInf;
 
 	bool loadLevelInfFromAsset(TFE_Editor::Asset* asset);
@@ -290,4 +308,6 @@ namespace LevelEditor
 
 	void editor_handleSelection(EditorSector* sector, s32 wallIndex = -1);
 	void editor_handleSelection(Vec3f pos);
+
+	void editor_infGetViewportControl(Editor_InfVpControl* ctrl);
 }

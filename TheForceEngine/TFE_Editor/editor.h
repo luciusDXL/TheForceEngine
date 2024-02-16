@@ -103,6 +103,7 @@ namespace TFE_Editor
 	void openEditorPopup(EditorPopup popup, u32 userData = 0, void* userPtr = nullptr);
 	void hidePopup();
 	void showPopup();
+	EditorPopup getCurrentPopup();
 	void listSelection(const char* labelText, const char** listValues, size_t listLen, s32* index, s32 comboOffset=96, s32 comboWidth=0);
 	void setTooltip(const char* msg, ...);
 	// icon: Icon from IconId, which icon to display.
