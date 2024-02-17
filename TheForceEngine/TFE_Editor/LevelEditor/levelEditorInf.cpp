@@ -4726,8 +4726,9 @@ namespace LevelEditor
 	void editor_infGetViewportControl(Editor_InfVpControl* ctrl)
 	{
 		ctrl->type = InfVpControl_None;
-		const s32 classIndex = max(0, s_infEditor.curClassIndex);
+		if (!s_infEditor.item || s_infEditor.item->classData.empty()) { return; }
 
+		const s32 classIndex = max(0, s_infEditor.curClassIndex);
 		const Editor_InfClass* classData = s_infEditor.item->classData[classIndex];
 		if (classData->classId == IIC_ELEVATOR)
 		{
@@ -4737,17 +4738,20 @@ namespace LevelEditor
 				ctrl->type = InfVpControl_Center;
 				ctrl->cen = { elev->dirOrCenter.x, s_infEditor.sector->floorHeight, elev->dirOrCenter.z };
 			}
-			else if (elev->type == IET_MORPH_MOVE1 || elev->type == IET_MORPH_MOVE2 || elev->type == IET_MOVE_WALL)
+			else if (elev->type == IET_MORPH_MOVE1 || elev->type == IET_MORPH_MOVE2 || elev->type == IET_MOVE_WALL || 
+				     elev->type == IET_SCROLL_FLOOR || elev->type == IET_SCROLL_CEILING)
 			{
-				// TODO - angle
-			}
-			else if (elev->type == IET_SCROLL_FLOOR || elev->type == IET_SCROLL_CEILING)
-			{
-				// TODO - direction XZ
+				ctrl->type = InfVpControl_AngleXZ;
+				ctrl->cen.x = (s_infEditor.sector->bounds[0].x + s_infEditor.sector->bounds[1].x) * 0.5f;
+				ctrl->cen.y = s_infEditor.sector->floorHeight;
+				ctrl->cen.z = (s_infEditor.sector->bounds[0].z + s_infEditor.sector->bounds[1].z) * 0.5f;
+				ctrl->dir = { sinf(elev->angle), 0.0f, cosf(elev->angle) };
 			}
 			else if (elev->type == IET_SCROLL_WALL)
 			{
-				// TODO - direction XY on wall.
+				ctrl->type = InfVpControl_AngleXY;
+				// TODO: Find a wall to put it on.
+				// Based on the wall, build a position and direction.
 			}
 		}
 		else if (classData->classId == IIC_TELEPORTER)

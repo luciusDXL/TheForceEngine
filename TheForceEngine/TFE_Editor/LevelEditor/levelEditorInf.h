@@ -282,8 +282,8 @@ namespace LevelEditor
 	{
 		InfVpControl_None = 0,
 		InfVpControl_Center,	// Show the center.
-		InfVpControl_Angle,
-		InfVpControl_Dir,
+		InfVpControl_AngleXZ,
+		InfVpControl_AngleXY,
 		InfVpControl_TargetPos3d,
 		InfVpControl_Count
 	};

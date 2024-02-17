@@ -124,6 +124,8 @@ namespace LevelEditor
 	void drawSolidBox(const Vec3f* center, f32 side, u32 color);
 	void drawSectorShape2D();
 	void drawWallLines3D_Highlighted(const EditorSector* sector, const EditorSector* next, const EditorWall* wall, f32 width, Highlight highlight, bool halfAlpha, bool showSign = false);
+	void drawPosition2d(f32 width, Vec2f pos, u32 color);
+	void drawArrow2d(f32 width, f32 lenInPixels, Vec2f pos, Vec2f dir, u32 color);
 	bool computeSignCorners(const EditorSector* sector, const EditorWall* wall, Vec3f* corners);
 
 	void viewport_init()
@@ -211,7 +213,7 @@ namespace LevelEditor
 		camera.projMtx.m2.w = 0.0f;
 		camera.projMtx.m3.w = 1.0f;
 	}
-
+		
 	void renderLevel2D()
 	{
 		// Prepare for drawing.
@@ -379,31 +381,21 @@ namespace LevelEditor
 				case InfVpControl_Center:
 				case InfVpControl_TargetPos3d:
 				{
-					f32 width = 1.5f;
-					f32 step = 5.0f / s_viewportTrans2d.x;
-					Vec2f cen = { ctrl.cen.x, ctrl.cen.z };
-					Vec2f p0 = { cen.x - step, cen.z - step };
-					Vec2f p1 = { cen.x + step, cen.z + step };
-					Vec2f p2 = { cen.x + step, cen.z - step };
-					Vec2f p3 = { cen.x - step, cen.z + step };
-					Vec2f vtx[] =
-					{
-						{ p0.x * s_viewportTrans2d.x + s_viewportTrans2d.y, p0.z * s_viewportTrans2d.z + s_viewportTrans2d.w },
-						{ p1.x * s_viewportTrans2d.x + s_viewportTrans2d.y, p1.z * s_viewportTrans2d.z + s_viewportTrans2d.w },
-
-						{ p2.x * s_viewportTrans2d.x + s_viewportTrans2d.y, p2.z * s_viewportTrans2d.z + s_viewportTrans2d.w },
-						{ p3.x * s_viewportTrans2d.x + s_viewportTrans2d.y, p3.z * s_viewportTrans2d.z + s_viewportTrans2d.w },
-					};
-
-					// Draw lines through the center point.
-					u32 clr[2] = { SCOLOR_LINE_SELECTED, SCOLOR_LINE_SELECTED };
-
 					TFE_RenderShared::lineDraw2d_begin(s_viewportSize.x, s_viewportSize.z);
-					TFE_RenderShared::lineDraw2d_addLine(width, &vtx[0], clr);
-					TFE_RenderShared::lineDraw2d_addLine(width, &vtx[2], clr);
+					{
+						drawPosition2d(1.5f, { ctrl.cen.x, ctrl.cen.z }, SCOLOR_LINE_SELECTED);
+					}
 					TFE_RenderShared::lineDraw2d_drawLines();
 				} break;
-				// TODO: Other cases.
+				case InfVpControl_AngleXZ:
+				{
+					TFE_RenderShared::lineDraw2d_begin(s_viewportSize.x, s_viewportSize.z);
+					{
+						drawArrow2d(1.5f, 32.0f, { ctrl.cen.x, ctrl.cen.z }, { ctrl.dir.x, ctrl.dir.z }, SCOLOR_LINE_SELECTED);
+					}
+					TFE_RenderShared::lineDraw2d_drawLines();
+				} break;
+				// InfVpControl_AngleXY isn't visible in 2D.
 			}
 		}
 	}
@@ -2340,5 +2332,57 @@ namespace LevelEditor
 			vertLine[1] = vtxWorld2d[i + 4];
 			lineDraw2d_addLine(lineWidth, vertLine, colors);
 		}
+	}
+		
+	void drawPosition2d(f32 width, Vec2f pos, u32 color)
+	{
+		f32 step = 5.0f / s_viewportTrans2d.x;
+		Vec2f p0 = { pos.x - step, pos.z - step };
+		Vec2f p1 = { pos.x + step, pos.z + step };
+		Vec2f p2 = { pos.x + step, pos.z - step };
+		Vec2f p3 = { pos.x - step, pos.z + step };
+		Vec2f vtx[] =
+		{
+			{ p0.x * s_viewportTrans2d.x + s_viewportTrans2d.y, p0.z * s_viewportTrans2d.z + s_viewportTrans2d.w },
+			{ p1.x * s_viewportTrans2d.x + s_viewportTrans2d.y, p1.z * s_viewportTrans2d.z + s_viewportTrans2d.w },
+
+			{ p2.x * s_viewportTrans2d.x + s_viewportTrans2d.y, p2.z * s_viewportTrans2d.z + s_viewportTrans2d.w },
+			{ p3.x * s_viewportTrans2d.x + s_viewportTrans2d.y, p3.z * s_viewportTrans2d.z + s_viewportTrans2d.w },
+		};
+
+		// Draw lines through the center point.
+		const u32 clr[] = { color, color };
+		TFE_RenderShared::lineDraw2d_addLine(width, &vtx[0], clr);
+		TFE_RenderShared::lineDraw2d_addLine(width, &vtx[2], clr);
+	}
+
+	void drawArrow2d(f32 width, f32 lenInPixels, Vec2f pos, Vec2f dir, u32 color)
+	{
+		f32 step = lenInPixels / s_viewportTrans2d.x;
+		f32 partStep = step * 0.25f;
+		Vec2f tan = { -dir.z, dir.x };
+
+		Vec2f p0 = { pos.x, pos.z };
+		Vec2f p1 = { p0.x + dir.x*step, p0.z + dir.z*step };
+		Vec2f p2 = { p1.x - dir.x*partStep - tan.x*partStep, p1.z - dir.z*partStep - tan.z*partStep };
+		Vec2f p3 = { p1.x - dir.x*partStep + tan.x*partStep, p1.z - dir.z*partStep + tan.z*partStep };
+
+		Vec2f vtx[] =
+		{
+			{ p0.x * s_viewportTrans2d.x + s_viewportTrans2d.y, p0.z * s_viewportTrans2d.z + s_viewportTrans2d.w },
+			{ p1.x * s_viewportTrans2d.x + s_viewportTrans2d.y, p1.z * s_viewportTrans2d.z + s_viewportTrans2d.w },
+
+			{ p1.x * s_viewportTrans2d.x + s_viewportTrans2d.y, p1.z * s_viewportTrans2d.z + s_viewportTrans2d.w },
+			{ p2.x * s_viewportTrans2d.x + s_viewportTrans2d.y, p2.z * s_viewportTrans2d.z + s_viewportTrans2d.w },
+
+			{ p1.x * s_viewportTrans2d.x + s_viewportTrans2d.y, p1.z * s_viewportTrans2d.z + s_viewportTrans2d.w },
+			{ p3.x * s_viewportTrans2d.x + s_viewportTrans2d.y, p3.z * s_viewportTrans2d.z + s_viewportTrans2d.w },
+		};
+
+		// Draw lines through the center point.
+		const u32 clr[] = { color, color };
+		TFE_RenderShared::lineDraw2d_addLine(width, &vtx[0], clr);
+		TFE_RenderShared::lineDraw2d_addLine(width, &vtx[2], clr);
+		TFE_RenderShared::lineDraw2d_addLine(width, &vtx[4], clr);
 	}
 }
