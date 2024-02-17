@@ -4750,6 +4750,7 @@ namespace LevelEditor
 			else if (elev->type == IET_SCROLL_WALL)
 			{
 				ctrl->type = InfVpControl_AngleXY;
+				ctrl->dir = { sinf(elev->angle), cosf(elev->angle), 0.0f };
 				// TODO: Find a wall to put it on.
 				// Based on the wall, build a position and direction.
 			}

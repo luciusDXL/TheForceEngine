@@ -71,6 +71,10 @@ namespace LevelEditor
 		ECOLOR_SELECTED = 0xff4a76ff,
 		ECOLOR_HOV_AND_SEL = 0xff00ffff,
 	};
+	enum InfColor
+	{
+		INF_COLOR_EDIT_HELPER = 0xffc000ff,
+	};
 
 	static const SectorColor c_sectorPolyClr[] = { SCOLOR_POLY_NORM, SCOLOR_POLY_HOVERED, SCOLOR_POLY_SELECTED };
 	static const SectorColor c_sectorLineClr[] = { SCOLOR_LINE_NORM, SCOLOR_LINE_HOVERED, SCOLOR_LINE_SELECTED };
@@ -126,6 +130,8 @@ namespace LevelEditor
 	void drawWallLines3D_Highlighted(const EditorSector* sector, const EditorSector* next, const EditorWall* wall, f32 width, Highlight highlight, bool halfAlpha, bool showSign = false);
 	void drawPosition2d(f32 width, Vec2f pos, u32 color);
 	void drawArrow2d(f32 width, f32 lenInPixels, Vec2f pos, Vec2f dir, u32 color);
+	void drawPosition3d(f32 width, Vec3f pos, u32 color);
+	void drawArrow3d(f32 width, f32 lenInPixels, Vec3f pos, Vec3f dir, u32 color);
 	bool computeSignCorners(const EditorSector* sector, const EditorWall* wall, Vec3f* corners);
 
 	void viewport_init()
@@ -383,7 +389,7 @@ namespace LevelEditor
 				{
 					TFE_RenderShared::lineDraw2d_begin(s_viewportSize.x, s_viewportSize.z);
 					{
-						drawPosition2d(1.5f, { ctrl.cen.x, ctrl.cen.z }, SCOLOR_LINE_SELECTED);
+						drawPosition2d(1.5f, { ctrl.cen.x, ctrl.cen.z }, INF_COLOR_EDIT_HELPER);
 					}
 					TFE_RenderShared::lineDraw2d_drawLines();
 				} break;
@@ -391,7 +397,7 @@ namespace LevelEditor
 				{
 					TFE_RenderShared::lineDraw2d_begin(s_viewportSize.x, s_viewportSize.z);
 					{
-						drawArrow2d(1.5f, 32.0f, { ctrl.cen.x, ctrl.cen.z }, { ctrl.dir.x, ctrl.dir.z }, SCOLOR_LINE_SELECTED);
+						drawArrow2d(1.5f, 32.0f, { ctrl.cen.x, ctrl.cen.z }, { ctrl.dir.x, ctrl.dir.z }, INF_COLOR_EDIT_HELPER);
 					}
 					TFE_RenderShared::lineDraw2d_drawLines();
 				} break;
@@ -1732,6 +1738,38 @@ namespace LevelEditor
 		{
 			drawGrid3D(true);
 		}
+
+		// Determine is special controls need to be drawn.
+		const EditorPopup popup = getCurrentPopup();
+		if (popup == POPUP_EDIT_INF)
+		{
+			Editor_InfVpControl ctrl;
+			editor_infGetViewportControl(&ctrl);
+			switch (ctrl.type)
+			{
+				case InfVpControl_Center:
+				case InfVpControl_TargetPos3d:
+				{
+					TFE_RenderShared::lineDraw3d_begin(s_viewportSize.x, s_viewportSize.z);
+					{
+						drawPosition3d(3.0f, ctrl.cen, INF_COLOR_EDIT_HELPER);
+					}
+					TFE_RenderShared::lineDraw3d_drawLines(&s_camera, false, false);
+					} break;
+				case InfVpControl_AngleXZ:
+				{
+					TFE_RenderShared::lineDraw3d_begin(s_viewportSize.x, s_viewportSize.z);
+					{
+						drawArrow3d(3.0f, 0.1f, ctrl.cen, ctrl.dir, INF_COLOR_EDIT_HELPER);
+					}
+					TFE_RenderShared::lineDraw3d_drawLines(&s_camera, false, false);
+				} break;
+				case InfVpControl_AngleXY:
+				{
+					// TODO
+				} break;
+			}
+		}
 	}
 		
 	void renderLevel3DGame()
@@ -2384,5 +2422,56 @@ namespace LevelEditor
 		TFE_RenderShared::lineDraw2d_addLine(width, &vtx[0], clr);
 		TFE_RenderShared::lineDraw2d_addLine(width, &vtx[2], clr);
 		TFE_RenderShared::lineDraw2d_addLine(width, &vtx[4], clr);
+	}
+		
+	void drawPosition3d(f32 width, Vec3f pos, u32 color)
+	{
+		Vec3f offset = { pos.x - s_camera.pos.x, pos.y - s_camera.pos.y, pos.z - s_camera.pos.z };
+		f32 dist = sqrtf(offset.x*offset.x + offset.y*offset.y + offset.z*offset.z);
+		f32 scale = dist;
+
+		f32 step = 0.02f*scale;
+		Vec3f p0 = { pos.x - step, pos.y, pos.z - step };
+		Vec3f p1 = { pos.x + step, pos.y, pos.z + step };
+		Vec3f p2 = { pos.x + step, pos.y, pos.z - step };
+		Vec3f p3 = { pos.x - step, pos.y, pos.z + step };
+		Vec3f vtx[] =
+		{
+			p0, p1,
+			p2, p3,
+		};
+
+		// Draw lines through the center point.
+		const u32 clr[] = { color, color };
+		TFE_RenderShared::lineDraw3d_addLine(width, &vtx[0], clr);
+		TFE_RenderShared::lineDraw3d_addLine(width, &vtx[2], clr);
+	}
+
+	void drawArrow3d(f32 width, f32 lenInPixels, Vec3f pos, Vec3f dir, u32 color)
+	{
+		Vec3f offset = { pos.x - s_camera.pos.x, pos.y - s_camera.pos.y, pos.z - s_camera.pos.z };
+		f32 dist = sqrtf(offset.x*offset.x + offset.y*offset.y + offset.z*offset.z);
+
+		f32 step = lenInPixels * dist;
+		f32 partStep = step * 0.25f;
+		Vec3f tan = { -dir.z, 0.0f, dir.x };
+
+		Vec3f p0 = pos;
+		Vec3f p1 = { p0.x + dir.x*step, p0.y + dir.y*step, p0.z + dir.z*step };
+		Vec3f p2 = { p1.x - dir.x*partStep - tan.x*partStep, p1.y - dir.y*partStep - tan.y*partStep, p1.z - dir.z*partStep - tan.z*partStep };
+		Vec3f p3 = { p1.x - dir.x*partStep + tan.x*partStep, p1.y - dir.y*partStep + tan.y*partStep, p1.z - dir.z*partStep + tan.z*partStep };
+
+		Vec3f vtx[] =
+		{
+			p0, p1,
+			p1, p2,
+			p1, p3
+		};
+
+		// Draw lines through the center point.
+		const u32 clr[] = { color, color };
+		TFE_RenderShared::lineDraw3d_addLine(width, &vtx[0], clr);
+		TFE_RenderShared::lineDraw3d_addLine(width, &vtx[2], clr);
+		TFE_RenderShared::lineDraw3d_addLine(width, &vtx[4], clr);
 	}
 }
