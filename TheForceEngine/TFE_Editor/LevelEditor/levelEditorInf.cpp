@@ -4051,6 +4051,11 @@ namespace LevelEditor
 			// Restore the popup position, otherwise it will move back to the default after being hidden.
 			ImGui::SetNextWindowPos(s_popupPos);
 		}
+
+		// Reduce the white-out effect for the INF editor since the background visuals can be important.
+		ImGui::PushStyleColor(ImGuiCol_NavWindowingDimBg, { 0.80f, 0.80f, 0.80f, 0.10f });
+		ImGui::PushStyleColor(ImGuiCol_ModalWindowDimBg, { 0.80f, 0.80f, 0.80f, 0.15f });
+
 		if (ImGui::BeginPopupModal("Edit INF", &active, window_flags))
 		{
 			// Popups need multiple frames to "accept" the new position due to the way the imGui window position logic works.
@@ -4166,15 +4171,11 @@ namespace LevelEditor
 					ImGui::EndChild();
 				}
 			}
-			else
-			{
-				// Create new.
-				ImGui::Text("Stub... create new INF item.");
-			}
 
 			ImGui::EndPopup();
 		}
 
+		ImGui::PopStyleColor(2);
 		popFont();
 
 		return !active;
