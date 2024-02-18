@@ -98,6 +98,10 @@ namespace LevelEditor
 		s32 curPropIndex = -1;
 		s32 curContentIndex = -1;
 		s32 curStopCmdIndex = -1;
+
+		bool showAnim = false;
+		bool playAnim = false;
+		f32 time = 0.0f;
 	};
 	
 	struct InfEditorState
@@ -119,7 +123,19 @@ namespace LevelEditor
 		const TFE_Editor::Asset* assetList = nullptr;
 		char buffer[256] = "";
 	};
-		
+
+	struct InfSectorMod
+	{
+		Editor_InfItem* item = nullptr;
+		EditorSector* sector = nullptr;
+		Editor_InfElevator* elev = nullptr;
+		s32 stopIndex = -1;
+		f32 time = -1.0f;
+
+		EditorSector prevState = {};
+		std::vector<EditorSector> mirrorState;
+	};
+
 	const char* c_elevStopCmdName[] =
 	{
 		"Message", // ISC_MESSAGE
@@ -244,7 +260,15 @@ namespace LevelEditor
 	static ImVec2 s_popupPos;
 	static s32 s_restorePos = 0;
 
+	// Animation
+	static InfSectorMod s_sectorMod = {};
+	static std::vector<f32> s_relTime;
+	static std::vector<f32> s_stopValue;
+	static std::vector<EditorSector*> s_sectorsToFixup;
+
 	void editor_selectViewportFeature(Editor_InfClass* editClass, SelectMode mode, SelectionType type, s32 index0 = -1, s32 index1 = -1);
+	void modifySectorGeometry(Editor_InfItem* item = nullptr, EditorSector* sector = nullptr, Editor_InfElevator* elev = nullptr, s32 stopIndex = -1);
+	void modifySectorGeometryTime(Editor_InfItem* item = nullptr, EditorSector* sector = nullptr, Editor_InfElevator* elev = nullptr, f32 time = -1.0f);
 
 	void editor_infInit()
 	{
@@ -1475,6 +1499,11 @@ namespace LevelEditor
 		}
 	}
 
+	void editor_infEditEnd()
+	{
+		modifySectorGeometry();
+	}
+
 	const char* c_infElevFlagNames[] =
 	{
 		"Move Floor",         // INF_EFLAG_MOVE_FLOOR = FLAG_BIT(0),	// Move on floor.
@@ -1705,6 +1734,8 @@ namespace LevelEditor
 				}
 
 				height = 140.0f + (*propHeight) + (*contentHeight);
+				// Add space for the slider.
+				height += 26.0f;
 			} break;
 			case IIC_TRIGGER:
 			{
@@ -3070,6 +3101,7 @@ namespace LevelEditor
 		const f32 tint[] = { 103.0f / 255.0f, 122.0f / 255.0f, 139.0f / 255.0f, 1.0f };
 
 		s32 deleteIndex = -1;
+		bool modifiedSector = false;
 		const s32 count = (s32)s_infEditor.item->classData.size();
 		Editor_InfClass** dataList = s_infEditor.item->classData.data();
 		for (s32 i = 0; i < count; i++)
@@ -3121,6 +3153,52 @@ namespace LevelEditor
 							ImGui::EndChild();
 						}
 						editor_infAddOrRemoveElevStopOrSlave(elev, i);
+
+						// A stop is selected.
+						if (!s_infEditor.showAnim)
+						{
+							if (s_infEditor.curClassIndex == i && s_infEditor.curContentIndex >= 0 && s_infEditor.curContentIndex < elev->stops.size())
+							{
+								modifySectorGeometry(s_infEditor.item, s_infEditor.sector, elev, s_infEditor.curContentIndex);
+								modifiedSector = true;
+							}
+							else
+							{
+								modifySectorGeometry();
+							}
+						}
+
+						// Time slider.
+						ImGui::Text("Show Animation"); ImGui::SameLine(0.0f, 8.0f);
+						if (ImGui::Checkbox(editor_getUniqueLabel(""), &s_infEditor.showAnim))
+						{
+							s_infEditor.curClassIndex = i;
+							s_infEditor.playAnim = false;
+							s_infEditor.time = 0.0f;
+						}
+						if (s_infEditor.showAnim)
+						{
+							if (elev->stops.empty() && elev->type != IET_DOOR && elev->type != IET_DOOR_INV && elev->type != IET_DOOR_MID && elev->type != IET_BASIC_AUTO)
+							{
+								ImGui::SameLine(0.0f, 16.0f);
+								if (iconButtonInline(ICON_PLAY, "Play the animation continuously.", nullptr, true))
+								{
+									s_infEditor.playAnim = !s_infEditor.playAnim;
+									s_infEditor.time = 0.0f;
+								}
+								else if (s_infEditor.playAnim)
+								{
+									s_infEditor.time += (f32)TFE_System::getDeltaTime();
+								}
+							}
+
+							ImGui::SameLine(0.0f, 16.0f);
+							ImGui::SetNextItemWidth(256.0f);
+							ImGui::SliderFloat(editor_getUniqueLabel(""), &s_infEditor.time, 0.0f, 1.0f);
+							modifySectorGeometryTime(s_infEditor.item, s_infEditor.sector, elev, s_infEditor.time);
+							s_infEditor.curClassIndex = i;
+							modifiedSector = true;
+						}
 					} break;
 					case IIC_TRIGGER:
 					{
@@ -3253,6 +3331,11 @@ namespace LevelEditor
 		}
 
 		editor_handleOverlayList();
+
+		if (!modifiedSector)
+		{
+			modifySectorGeometry();
+		}
 	}
 
 	char s_floatToStrBuffer[256];
@@ -3685,6 +3768,8 @@ namespace LevelEditor
 		
 	void editor_InfEdit_Code()
 	{
+		modifySectorGeometry();
+
 		const char* tab = "    ";
 		const s32 count = (s32)s_infEditor.item->classData.size();
 		Editor_InfClass** dataList = s_infEditor.item->classData.data();
@@ -4173,6 +4258,11 @@ namespace LevelEditor
 			}
 
 			ImGui::EndPopup();
+		}
+
+		if (!active)
+		{
+			modifySectorGeometry();
 		}
 
 		ImGui::PopStyleColor(2);
@@ -4833,5 +4923,589 @@ namespace LevelEditor
 				ctrl->cen = teleporter->dstPos;
 			}
 		}
+	}
+
+	bool canBeRelative(Editor_InfElevType type)
+	{
+		return type == IET_BASIC || type == IET_BASIC_AUTO || type == IET_INV || type == IET_DOOR || type == IET_DOOR_INV || type == IET_DOOR_MID ||
+			IET_MOVE_CEILING || IET_MOVE_FLOOR || IET_MOVE_FC;
+	}
+
+	f32 getValue(Editor_InfStop* stop, EditorSector* sector, Editor_InfElevType elevType)
+	{
+		f32 value = stop->value;
+		if (!stop->fromSectorFloor.empty())
+		{
+			s32 sectorId = findSectorByName(stop->fromSectorFloor.c_str());
+			if (sectorId >= 0)
+			{
+				value = s_level.sectors[sectorId].floorHeight;
+			}
+		}
+		else if (stop->relative && canBeRelative(elevType))
+		{
+			value += sector->floorHeight;
+		}
+		return value;
+	}
+
+	EditorWall* getMirrorWall(EditorWall* wall)
+	{
+		return (wall->adjoinId >= 0 && wall->mirrorId >= 0) ? &s_level.sectors[wall->adjoinId].walls[wall->mirrorId] : nullptr;
+	}
+
+	const EditorWall* getMirrorWall(const EditorWall* wall)
+	{
+		return (wall->adjoinId >= 0 && wall->mirrorId >= 0) ? &s_level.sectors[wall->adjoinId].walls[wall->mirrorId] : nullptr;
+	}
+
+	void addSectorToModState(EditorSector* sector)
+	{
+		if (!sector || s_sectorMod.prevState.id == sector->id) { return; }
+		const s32 count = (s32)s_sectorMod.mirrorState.size();
+		EditorSector* mirrorSector = s_sectorMod.mirrorState.data();
+		for (s32 i = 0; i < count; i++, mirrorSector++)
+		{
+			if (mirrorSector->id == sector->id) { return; }
+		}
+		s_sectorMod.mirrorState.push_back(*sector);
+	}
+
+	const EditorSector* getSourceSector(s32 id)
+	{
+		if (id < 0) { return nullptr; }
+		const s32 count = (s32)s_sectorMod.mirrorState.size();
+		const EditorSector* mirrorSector = s_sectorMod.mirrorState.data();
+		for (s32 i = 0; i < count; i++, mirrorSector++)
+		{
+			if (mirrorSector->id == id) { return mirrorSector; }
+		}
+		return nullptr;
+	}
+
+	void addMirrorWallsToMirrorState(Editor_InfElevator* elev, EditorSector* sector)
+	{
+		// Add appropriate mirrors as well.
+		if (elev->type == IET_MORPH_MOVE1 || elev->type == IET_MORPH_MOVE2 || elev->type == IET_MOVE_WALL ||
+			elev->type == IET_MORPH_SPIN1 || elev->type == IET_MORPH_SPIN2 || elev->type == IET_ROTATE_WALL)
+		{
+			const s32 wallCount = (s32)sector->walls.size();
+			const EditorWall* wall = sector->walls.data();
+			for (s32 w = 0; w < wallCount; w++, wall++)
+			{
+				if (!(wall->flags[0] & WF1_WALL_MORPHS)) { continue; }
+				const EditorWall* mirror = getMirrorWall(wall);
+				if (mirror && (mirror->flags[0] & WF1_WALL_MORPHS))
+				{
+					addSectorToModState(&s_level.sectors[wall->adjoinId]);
+				}
+			}
+		}
+	}
+
+	void addToFixupSectors(EditorSector* sector)
+	{
+		const s32 count = (s32)s_sectorsToFixup.size();
+		EditorSector** list = s_sectorsToFixup.data();
+		for (s32 i = 0; i < count; i++)
+		{
+			if (list[i] == sector) { return; }
+		}
+		s_sectorsToFixup.push_back(sector);
+	}
+
+	void fixupSectors()
+	{
+		const s32 count = (s32)s_sectorsToFixup.size();
+		EditorSector** list = s_sectorsToFixup.data();
+		for (s32 i = 0; i < count; i++)
+		{
+			sectorToPolygon(list[i]);
+		}
+	}
+
+	void moveWalls(Editor_InfElevator* elev, EditorSector* sector, const EditorSector* srcSector, f32 value)
+	{
+		Vec2f dir = { sinf(elev->angle), cosf(elev->angle) };
+		const s32 wallCount = (s32)sector->walls.size();
+		EditorWall* wall = sector->walls.data();
+		for (s32 w = 0; w < wallCount; w++, wall++)
+		{
+			if (!(wall->flags[0] & WF1_WALL_MORPHS)) { continue; }
+
+			const Vec2f* src = &srcSector->vtx[wall->idx[0]];
+			Vec2f* v0 = &sector->vtx[wall->idx[0]];
+
+			v0->x = src->x + value * dir.x;
+			v0->z = src->z + value * dir.z;
+
+			EditorWall* mirror = getMirrorWall(wall);
+			if (mirror && (mirror->flags[0] & WF1_WALL_MORPHS))
+			{
+				const EditorSector* srcSector = getSourceSector(wall->adjoinId);
+				EditorSector* dstSector = &s_level.sectors[wall->adjoinId];
+				src = &srcSector->vtx[mirror->idx[0]];
+				v0 = &dstSector->vtx[mirror->idx[0]];
+
+				v0->x = src->x + value * dir.x;
+				v0->z = src->z + value * dir.z;
+
+				addToFixupSectors(dstSector);
+			}
+		}
+		sectorToPolygon(sector);
+	}
+
+	void rotateWalls(Editor_InfElevator* elev, EditorSector* sector, const EditorSector* srcSector, f32 value)
+	{
+		const s32 wallCount = (s32)sector->walls.size();
+		EditorWall* wall = sector->walls.data();
+		const f32 angle = value * PI / 180.0f;
+		const f32 ca = cosf(angle);
+		const f32 sa = sinf(angle);
+
+		for (s32 w = 0; w < wallCount; w++, wall++)
+		{
+			if (!(wall->flags[0] & WF1_WALL_MORPHS)) { continue; }
+
+			const Vec2f* src = &srcSector->vtx[wall->idx[0]];
+			Vec2f* v0 = &sector->vtx[wall->idx[0]];
+
+			const f32 xc = src->x - elev->center.x;
+			const f32 zc = src->z - elev->center.z;
+
+			v0->x = xc * ca - zc * sa + elev->center.x;
+			v0->z = xc * sa + zc * ca + elev->center.z;
+
+			EditorWall* mirror = getMirrorWall(wall);
+			if (mirror && (mirror->flags[0] & WF1_WALL_MORPHS))
+			{
+				const EditorSector* srcSector = getSourceSector(wall->adjoinId);
+				EditorSector* dstSector = &s_level.sectors[wall->adjoinId];
+				src = &srcSector->vtx[mirror->idx[0]];
+				v0 = &dstSector->vtx[mirror->idx[0]];
+
+				const f32 xc = src->x - elev->center.x;
+				const f32 zc = src->z - elev->center.z;
+
+				v0->x = xc * ca - zc * sa + elev->center.x;
+				v0->z = xc * sa + zc * ca + elev->center.z;
+
+				addToFixupSectors(dstSector);
+			}
+		}
+		addToFixupSectors(sector);
+	}
+
+	void scrollWalls(Editor_InfElevator* elev, EditorSector* sector, const EditorSector* srcSector, f32 value)
+	{
+		const u32 scrollFlags = WF1_SCROLL_SIGN_TEX | WF1_SCROLL_BOT_TEX | WF1_SCROLL_MID_TEX | WF1_SCROLL_TOP_TEX;
+		const s32 wallCount = (s32)sector->walls.size();
+		const Vec2f dir = { sinf(elev->angle), cosf(elev->angle) };
+		const EditorWall* srcWall = srcSector->walls.data();
+		EditorWall* wall = sector->walls.data();
+		value /= 8.0f;
+		for (s32 w = 0; w < wallCount; w++, wall++, srcWall++)
+		{
+			if (wall->flags[0] & scrollFlags)
+			{
+				if (wall->flags[0] & WF1_SCROLL_TOP_TEX)
+				{
+					wall->tex[HP_TOP].offset.x = srcWall->tex[HP_TOP].offset.x + value * dir.x;
+					wall->tex[HP_TOP].offset.z = srcWall->tex[HP_TOP].offset.z + value * dir.z;
+				}
+				if (wall->flags[0] & WF1_SCROLL_MID_TEX)
+				{
+					wall->tex[HP_MID].offset.x = srcWall->tex[HP_MID].offset.x + value * dir.x;
+					wall->tex[HP_MID].offset.z = srcWall->tex[HP_MID].offset.z + value * dir.z;
+				}
+				if (wall->flags[0] & WF1_SCROLL_BOT_TEX)
+				{
+					wall->tex[HP_BOT].offset.x = srcWall->tex[HP_BOT].offset.x + value * dir.x;
+					wall->tex[HP_BOT].offset.z = srcWall->tex[HP_BOT].offset.z + value * dir.z;
+				}
+				if (wall->flags[0] & WF1_SCROLL_SIGN_TEX)
+				{
+					wall->tex[HP_SIGN].offset.x = srcWall->tex[HP_SIGN].offset.x + value * dir.x;
+					wall->tex[HP_SIGN].offset.z = srcWall->tex[HP_SIGN].offset.z + value * dir.z;
+				}
+			}
+		}
+	}
+
+	void applySectorElevValue(EditorSector* sector, Editor_InfElevator* elev, f32 value)
+	{
+		// Apply the value based on the elevator type.
+		const f32 baseFloorHeight = sector->floorHeight;
+		const s32 mirrorCount = (s32)s_sectorMod.mirrorState.size();
+		const EditorSector* mirrorSector;
+		switch (elev->type)
+		{
+			case IET_BASIC_AUTO:
+			case IET_DOOR:
+			case IET_DOOR_INV:
+			case IET_DOOR_MID:
+			{
+				// These have built-in stops, so nothing to select.
+				// TODO: Be able to select the stops or have an "open/close" option.
+			} break;
+			case IET_INV:
+			case IET_MOVE_CEILING:
+			{
+				f32 delta = value - sector->ceilHeight;
+				sector->ceilHeight = value;
+
+				mirrorSector = s_sectorMod.mirrorState.data();
+				for (s32 m = 0; m < mirrorCount; m++, mirrorSector++)
+				{
+					EditorSector* dstSector = &s_level.sectors[mirrorSector->id];
+					dstSector->ceilHeight += delta;
+				}
+			} break;
+			case IET_BASIC:
+			case IET_MOVE_FLOOR:
+			{
+				f32 delta = value - sector->floorHeight;
+				sector->floorHeight = value;
+
+				mirrorSector = s_sectorMod.mirrorState.data();
+				for (s32 m = 0; m < mirrorCount; m++, mirrorSector++)
+				{
+					EditorSector* dstSector = &s_level.sectors[mirrorSector->id];
+					dstSector->floorHeight += delta;
+				}
+			} break;
+			case IET_MOVE_FC:
+			{
+				sector->floorHeight = value;
+				const f32 delta = sector->floorHeight - baseFloorHeight;
+				sector->ceilHeight += delta;
+
+				mirrorSector = s_sectorMod.mirrorState.data();
+				for (s32 m = 0; m < mirrorCount; m++, mirrorSector++)
+				{
+					EditorSector* dstSector = &s_level.sectors[mirrorSector->id];
+					dstSector->floorHeight += delta;
+					dstSector->ceilHeight += delta;
+				}
+			} break;
+			case IET_MOVE_OFFSET:
+			{
+				// TODO
+			} break;
+			case IET_MORPH_MOVE1:
+			case IET_MORPH_MOVE2:
+			case IET_MOVE_WALL:
+			{
+				moveWalls(elev, sector, &s_sectorMod.prevState, value);
+
+				const s32 slaveCount = (s32)elev->slaves.size();
+				const Editor_InfSlave* slave = elev->slaves.data();
+				for (s32 s = 0; s < slaveCount; s++, slave++)
+				{
+					s32 sectorId = findSectorByName(slave->name.c_str());
+					if (sectorId >= 0)
+					{
+						moveWalls(elev, &s_level.sectors[sectorId], getSourceSector(sectorId), value);
+					}
+				}
+			} break;
+			case IET_MORPH_SPIN1:
+			case IET_MORPH_SPIN2:
+			case IET_ROTATE_WALL:
+			{
+				rotateWalls(elev, sector, &s_sectorMod.prevState, value);
+
+				const s32 slaveCount = (s32)elev->slaves.size();
+				const Editor_InfSlave* slave = elev->slaves.data();
+				for (s32 s = 0; s < slaveCount; s++, slave++)
+				{
+					s32 sectorId = findSectorByName(slave->name.c_str());
+					if (sectorId >= 0)
+					{
+						rotateWalls(elev, &s_level.sectors[sectorId], getSourceSector(sectorId), value + slave->angleOffset);
+					}
+				}
+			} break;
+			case IET_SCROLL_WALL:
+			{
+				scrollWalls(elev, sector, &s_sectorMod.prevState, value);
+
+				const s32 slaveCount = (s32)elev->slaves.size();
+				const Editor_InfSlave* slave = elev->slaves.data();
+				for (s32 s = 0; s < slaveCount; s++, slave++)
+				{
+					s32 sectorId = findSectorByName(slave->name.c_str());
+					if (sectorId >= 0)
+					{
+						scrollWalls(elev, &s_level.sectors[sectorId], getSourceSector(sectorId), value);
+					}
+				}
+			} break;
+			case IET_SCROLL_FLOOR:
+			{
+				// TODO
+			} break;
+			case IET_SCROLL_CEILING:
+			{
+				// TODO
+			} break;
+			case IET_CHANGE_LIGHT:
+			{
+				sector->ambient = u32(value) & 31;
+
+				const s32 slaveCount = (s32)elev->slaves.size();
+				const Editor_InfSlave* slave = elev->slaves.data();
+				for (s32 s = 0; s < slaveCount; s++, slave++)
+				{
+					s32 sectorId = findSectorByName(slave->name.c_str());
+					if (sectorId >= 0)
+					{
+						s_level.sectors[sectorId].ambient = u32(value) & 31;
+					}
+				}
+			} break;
+			case IET_CHANGE_WALL_LIGHT:
+			{
+				const s32 wallCount = (s32)sector->walls.size();
+				EditorWall* wall = sector->walls.data();
+				for (s32 w = 0; w < wallCount; w++, wall++)
+				{
+					if (!(wall->flags[0] & WF1_CHANGE_WALL_LIGHT)) { continue; }
+					wall->wallLight = s32(value) & 31;
+				}
+
+				const s32 slaveCount = (s32)elev->slaves.size();
+				const Editor_InfSlave* slave = elev->slaves.data();
+				for (s32 s = 0; s < slaveCount; s++, slave++)
+				{
+					s32 sectorId = findSectorByName(slave->name.c_str());
+					if (sectorId >= 0)
+					{
+						EditorSector* slaveSector = &s_level.sectors[sectorId];
+						const s32 slaveWallCount = (s32)slaveSector->walls.size();
+						wall = slaveSector->walls.data();
+						for (s32 w = 0; w < slaveWallCount; w++, wall++)
+						{
+							if (!(wall->flags[0] & WF1_CHANGE_WALL_LIGHT)) { continue; }
+							wall->wallLight = s32(value) & 31;
+						}
+					}
+				}
+			} break;
+		}
+	}
+		
+	void modifySectorGeometryTime(Editor_InfItem* item, EditorSector* sector, Editor_InfElevator* elev, f32 time)
+	{
+		if (item == s_sectorMod.item && sector == s_sectorMod.sector && elev == s_sectorMod.elev && time == s_sectorMod.time)
+		{
+			return;
+		}
+
+		// Revert the previous item.
+		if (s_sectorMod.sector && (item != s_sectorMod.item || sector != s_sectorMod.sector || elev != s_sectorMod.elev))
+		{
+			*s_sectorMod.sector = s_sectorMod.prevState;
+			sectorToPolygon(s_sectorMod.sector);
+
+			const s32 mirrorStateCount = (s32)s_sectorMod.mirrorState.size();
+			const EditorSector* mirrorSector = s_sectorMod.mirrorState.data();
+			for (s32 s = 0; s < mirrorStateCount; s++, mirrorSector++)
+			{
+				s_level.sectors[mirrorSector->id] = *mirrorSector;
+				sectorToPolygon(&s_level.sectors[mirrorSector->id]);
+			}
+		}
+				
+		if (sector && (item != s_sectorMod.item || sector != s_sectorMod.sector || elev != s_sectorMod.elev))
+		{
+			s_sectorMod.prevState = *sector;
+			s_sectorMod.mirrorState.clear();
+			addMirrorWallsToMirrorState(elev, sector);
+
+			const s32 slaveCount = (s32)elev->slaves.size();
+			if (slaveCount > 0)
+			{
+				for (s32 s = 0; s < slaveCount; s++)
+				{
+					s32 sectorId = findSectorByName(elev->slaves[s].name.c_str());
+					if (sectorId >= 0)
+					{
+						EditorSector* slaveSector = &s_level.sectors[sectorId];
+						addSectorToModState(slaveSector);
+						addMirrorWallsToMirrorState(elev, slaveSector);
+					}
+				}
+			}
+		}
+		else if (!sector)
+		{
+			s_sectorMod.prevState = {};
+			s_sectorMod.mirrorState.clear();
+			return;
+		}
+
+		// Copy over the new data.
+		s_sectorMod.item = item;
+		s_sectorMod.sector = sector;
+		s_sectorMod.elev = elev;
+		s_sectorMod.stopIndex = -1;
+		s_sectorMod.time = time;
+		s_sectorsToFixup.clear();
+
+		f32 value;
+		if (!elev->stops.empty())
+		{
+			const s32 stopCount = (s32)elev->stops.size();
+			Editor_InfStop* stop = elev->stops.data();
+
+			f32 totalTime = 0.0f;
+			f32 prevValue = 0.0f;
+			s_relTime.clear();
+			s_stopValue.clear();
+			for (s32 s = 0; s < stopCount; s++, stop++)
+			{
+				f32 curValue = getValue(stop, sector, elev->type);
+				if (s > 0)
+				{
+					f32 delta = fabsf(curValue - prevValue);
+					totalTime += delta;
+				}
+				s_relTime.push_back(totalTime);
+				s_stopValue.push_back(curValue);
+				prevValue = curValue;
+			}
+
+			f32 stopT = max(0.0f, min(1.0f, time)) * totalTime;
+			f32* relT = s_relTime.data();
+			f32* stopValue = s_stopValue.data();
+			s32 stop0 = 0, stop1 = 0;
+			f32 value0 = 0.0f, value1 = 0.0f;
+			f32 blend = 0.0f;
+
+			bool useInterpolation = true;
+			if ((elev->overrideSet & IEO_SPEED) && elev->speed == 0.0f)
+			{
+				useInterpolation = false;
+			}
+
+			for (s32 s = 0; s < stopCount - 1; s++)
+			{
+				if ((stopT >= relT[s] && stopT <= relT[s+1]) || s == stopCount - 1)
+				{
+					if (useInterpolation)
+					{
+						value0 = stopValue[s];
+						value1 = stopValue[s + 1];
+
+						const f32 denom = relT[s + 1] - relT[s];
+						blend = max(0.0f, min(1.0f, fabsf(denom) > FLT_EPSILON ? (stopT - relT[s]) / denom : 0.5f));
+						value = value0 + blend * (value1 - value0);
+					}
+					else
+					{
+						value = stopValue[s];
+					}
+					break;
+				}
+			}
+		}
+		else  // Continuous
+		{
+			f32 speed = 8.0f;
+			if (elev->overrideSet & IEO_SPEED)
+			{
+				speed = elev->speed;
+			}
+			else
+			{
+				if (elev->type == IET_MORPH_MOVE1 || elev->type == IET_MORPH_MOVE2 || elev->type == IET_MOVE_WALL)
+				{
+					speed = 15.0f;
+				}
+				else if (elev->type == IET_MORPH_SPIN1 || elev->type == IET_MORPH_SPIN2 || elev->type == IET_ROTATE_WALL)
+				{
+					speed = 22.5f;
+				}
+				else if (elev->type == IET_SCROLL_CEILING || elev->type == IET_SCROLL_FLOOR || elev->type == IET_SCROLL_WALL)
+				{
+					speed = 4.0f;
+				}
+				else if (elev->type == IET_CHANGE_LIGHT || elev->type == IET_CHANGE_WALL_LIGHT)
+				{
+					speed = 32.0f;
+				}
+			}
+			value = elev->speed * time;
+		}
+
+		applySectorElevValue(sector, elev, value);
+		fixupSectors();
+	}
+			
+	void modifySectorGeometry(Editor_InfItem* item, EditorSector* sector, Editor_InfElevator* elev, s32 stopIndex)
+	{
+		if (item == s_sectorMod.item && sector == s_sectorMod.sector && elev == s_sectorMod.elev && stopIndex == s_sectorMod.stopIndex)
+		{
+			return;
+		}
+
+		// Revert the previous item.
+		if (s_sectorMod.sector && (item != s_sectorMod.item || sector != s_sectorMod.sector || elev != s_sectorMod.elev))
+		{
+			*s_sectorMod.sector = s_sectorMod.prevState;
+			sectorToPolygon(s_sectorMod.sector);
+
+			const s32 mirrorStateCount = (s32)s_sectorMod.mirrorState.size();
+			const EditorSector* mirrorSector = s_sectorMod.mirrorState.data();
+			for (s32 s = 0; s < mirrorStateCount; s++, mirrorSector++)
+			{
+				s_level.sectors[mirrorSector->id] = *mirrorSector;
+				sectorToPolygon(&s_level.sectors[mirrorSector->id]);
+			}
+		}
+
+		// Save the current state if it is different.
+		if (sector && (item != s_sectorMod.item || sector != s_sectorMod.sector || elev != s_sectorMod.elev))
+		{
+			s_sectorMod.prevState = *sector;
+			s_sectorMod.mirrorState.clear();
+			addMirrorWallsToMirrorState(elev, sector);
+
+			const s32 slaveCount = (s32)elev->slaves.size();
+			if (slaveCount > 0)
+			{
+				for (s32 s = 0; s < slaveCount; s++)
+				{
+					s32 sectorId = findSectorByName(elev->slaves[s].name.c_str());
+					if (sectorId >= 0)
+					{
+						EditorSector* slaveSector = &s_level.sectors[sectorId];
+						addSectorToModState(slaveSector);
+						addMirrorWallsToMirrorState(elev, slaveSector);
+					}
+				}
+			}
+		}
+		else if (!sector)
+		{
+			s_sectorMod.prevState = {};
+			s_sectorMod.mirrorState.clear();
+		}
+
+		// Copy over the new data.
+		s_sectorMod.item = item;
+		s_sectorMod.sector = sector;
+		s_sectorMod.elev = elev;
+		s_sectorMod.stopIndex = stopIndex;
+		s_sectorMod.time = -1.0f;
+		s_sectorsToFixup.clear();
+		if (!sector || elev->stops.empty() || stopIndex < 0) { return; }
+
+		// Get the value from the stop or sector.
+		const f32 value = getValue(&elev->stops[stopIndex], sector, elev->type);
+		applySectorElevValue(sector, elev, value);
+		fixupSectors();
 	}
 }

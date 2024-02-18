@@ -337,6 +337,7 @@ namespace TFE_Editor
 			{
 				if (LevelEditor::editor_infEdit())
 				{
+					LevelEditor::editor_infEditEnd();
 					ImGui::CloseCurrentPopup();
 					s_editorPopup = POPUP_NONE;
 				}
@@ -351,6 +352,10 @@ namespace TFE_Editor
 				if (s_editorPopup == POPUP_CONFIG)
 				{
 					saveConfig();
+				}
+				else if (s_editorPopup == POPUP_EDIT_INF)
+				{
+					LevelEditor::editor_infEditEnd();
 				}
 
 				s_editorPopup = POPUP_NONE;

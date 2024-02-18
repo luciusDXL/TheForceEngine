@@ -300,6 +300,7 @@ namespace LevelEditor
 
 	bool loadLevelInfFromAsset(TFE_Editor::Asset* asset);
 	void editor_infEditBegin(const char* sectorName, s32 wallIndex = -1);
+	void editor_infEditEnd();
 	bool editor_infEdit();
 
 	void editor_writeInfItem(std::string& outStr, const Editor_InfItem* item, const char* curTab);
