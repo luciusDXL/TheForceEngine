@@ -718,8 +718,8 @@ namespace LevelEditor
 			{
 				const f32 centerX = strtof(s_infArg0, &endPtr);
 				const f32 centerZ = strtof(s_infArg1, &endPtr);
-				elev->dirOrCenter = { centerX, centerZ };
-				elev->overrideSet |= IEO_DIR;
+				elev->center = { centerX, centerZ };
+				elev->overrideSet |= IEO_CENTER;
 			} break;
 			case KW_KEY_COLON:
 			{
@@ -1498,7 +1498,7 @@ namespace LevelEditor
 		"Flags",		//IEV_FLAGS
 		"Key",			//IEV_KEY0
 		"Key1",	        //IEV_KEY1
-		"Center",		//IEV_DIR
+		"Center",		//IEV_CENTER
 		"Sound 1",		//IEV_SOUND0
 		"Sound 2",		//IEV_SOUND1
 		"Sound 3",		//IEV_SOUND2
@@ -1990,12 +1990,12 @@ namespace LevelEditor
 						elev->key[1] = KeyItem(keyIndex + KeyItem::KEY_RED);
 					}
 				}
-				if (overrides & IEO_DIR)
+				if (overrides & IEO_CENTER)
 				{
-					editor_infPropertySelectable(IEV_DIR, itemClassIndex);
+					editor_infPropertySelectable(IEV_CENTER, itemClassIndex);
 
 					ImGui::SetNextItemWidth(160.0f);
-					ImGui::InputFloat2(editor_getUniqueLabel(""), elev->dirOrCenter.m, 3);
+					ImGui::InputFloat2(editor_getUniqueLabel(""), elev->center.m, 3);
 
 					ImGui::SameLine(0.0f, 8.0f);
 					if (iconButtonInline(ICON_SELECT, "Select position in viewport.", btnTint, true))
@@ -2027,8 +2027,8 @@ namespace LevelEditor
 							bounds[1].x = max(bounds[1].x, slaveSector->bounds[1].x);
 							bounds[1].z = max(bounds[1].z, slaveSector->bounds[1].z);
 						}
-						elev->dirOrCenter.x = (bounds[0].x + bounds[1].x) * 0.5f;
-						elev->dirOrCenter.z = (bounds[0].z + bounds[1].z) * 0.5f;
+						elev->center.x = (bounds[0].x + bounds[1].x) * 0.5f;
+						elev->center.z = (bounds[0].z + bounds[1].z) * 0.5f;
 					}
 				}
 				if (overrides & IEO_SOUND0)
@@ -2885,7 +2885,7 @@ namespace LevelEditor
 			Editor_InfElevator* elev = getElevFromClassData(s_infEditorState.editClass);
 			if (s_infEditorState.type == SELTYPE_ELEV_POSITION)
 			{
-				elev->dirOrCenter = { pos.x, pos.z };
+				elev->center = { pos.x, pos.z };
 			}
 		}
 		else if (s_infEditorState.editClass->classId == IIC_TELEPORTER)
@@ -2946,8 +2946,8 @@ namespace LevelEditor
 			}
 			else if (s_infEditorState.type == SELTYPE_ELEV_SECTOR_CENTER)
 			{
-				elev->dirOrCenter.x = (sector->bounds[0].x + sector->bounds[1].x) * 0.5f;
-				elev->dirOrCenter.z = (sector->bounds[0].z + sector->bounds[1].z) * 0.5f;
+				elev->center.x = (sector->bounds[0].x + sector->bounds[1].x) * 0.5f;
+				elev->center.z = (sector->bounds[0].z + sector->bounds[1].z) * 0.5f;
 			}
 		}
 		else if (s_infEditorState.editClass->classId == IIC_TELEPORTER)
@@ -3360,9 +3360,9 @@ namespace LevelEditor
 							appendToBuffer(outStr, buffer);
 						}
 					}
-					if (overrides & IEO_DIR)
+					if (overrides & IEO_CENTER)
 					{
-						sprintf(buffer, "%s%sCenter: %s %s", curTab, tab, infFloatToString(elev->dirOrCenter.x), infFloatToString(elev->dirOrCenter.z, 1));
+						sprintf(buffer, "%s%sCenter: %s %s", curTab, tab, infFloatToString(elev->center.x), infFloatToString(elev->center.z, 1));
 						appendToBuffer(outStr, buffer);
 					}
 					if (overrides & IEO_SOUND0)
@@ -3764,11 +3764,11 @@ namespace LevelEditor
 							ImGui::Text("%s", c_infKeyNames[elev->key[1] - KeyItem::KEY_RED]);
 						}
 					}
-					if (overrides & IEO_DIR)
+					if (overrides & IEO_CENTER)
 					{
 						ImGui::Text("%s", tab); ImGui::SameLine(0.0f, 0.0f);
 						ImGui::TextColored(colorKeywordInner, "Center:"); ImGui::SameLine(0.0f, 8.0f);
-						ImGui::Text("%s %s", infFloatToString(elev->dirOrCenter.x), infFloatToString(elev->dirOrCenter.z, 1));
+						ImGui::Text("%s %s", infFloatToString(elev->center.x), infFloatToString(elev->center.z, 1));
 					}
 					if (overrides & IEO_SOUND0)
 					{
@@ -4240,9 +4240,9 @@ namespace LevelEditor
 				file.read(&key);
 				elev->key[1] = KeyItem(key);
 			}
-			if (elev->overrideSet & IEO_DIR)
+			if (elev->overrideSet & IEO_CENTER)
 			{
-				file.readBuffer(&elev->dirOrCenter, sizeof(Vec2f));
+				file.readBuffer(&elev->center, sizeof(Vec2f));
 			}
 			if (elev->overrideSet & IEO_SOUND0)
 			{
@@ -4546,9 +4546,9 @@ namespace LevelEditor
 				u32 key = elev->key[1];
 				file.write(&key);
 			}
-			if (elev->overrideSet & IEO_DIR)
+			if (elev->overrideSet & IEO_CENTER)
 			{
-				file.writeBuffer(&elev->dirOrCenter, sizeof(Vec2f));
+				file.writeBuffer(&elev->center, sizeof(Vec2f));
 			}
 			if (elev->overrideSet & IEO_SOUND0)
 			{
@@ -4736,7 +4736,7 @@ namespace LevelEditor
 			if (elev->type == IET_MORPH_SPIN1 || elev->type == IET_MORPH_SPIN2 || elev->type == IET_ROTATE_WALL)
 			{
 				ctrl->type = InfVpControl_Center;
-				ctrl->cen = { elev->dirOrCenter.x, s_infEditor.sector->floorHeight, elev->dirOrCenter.z };
+				ctrl->cen = { elev->center.x, s_infEditor.sector->floorHeight, elev->center.z };
 			}
 			else if (elev->type == IET_MORPH_MOVE1 || elev->type == IET_MORPH_MOVE2 || elev->type == IET_MOVE_WALL || 
 				     elev->type == IET_SCROLL_FLOOR || elev->type == IET_SCROLL_CEILING)

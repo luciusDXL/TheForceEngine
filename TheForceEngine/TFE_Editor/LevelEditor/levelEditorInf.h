@@ -87,7 +87,7 @@ namespace LevelEditor
 		IEV_FLAGS,
 		IEV_KEY0,
 		IEV_KEY1,
-		IEV_DIR,
+		IEV_CENTER,
 		IEV_SOUND0,
 		IEV_SOUND1,
 		IEV_SOUND2,
@@ -105,7 +105,7 @@ namespace LevelEditor
 		IEO_FLAGS		= FLAG_BIT(4),
 		IEO_KEY0		= FLAG_BIT(5),
 		IEO_KEY1		= FLAG_BIT(6),
-		IEO_DIR			= FLAG_BIT(7),
+		IEO_CENTER      = FLAG_BIT(7),
 		IEO_SOUND0		= FLAG_BIT(8),
 		IEO_SOUND1		= FLAG_BIT(9),
 		IEO_SOUND2		= FLAG_BIT(10),
@@ -234,7 +234,7 @@ namespace LevelEditor
 		f32 angle = 0.0f;							// "ANGLE:"
 		u32 flags = 0;								// "FLAGS:"	-- InfElevatorFlags
 		KeyItem key[2] = { KEY_NONE, KEY_NONE };	// "KEY:"	-- Second entry used for door_mid, addon
-		Vec2f dirOrCenter = { 0 };					// "CENTER:"
+		Vec2f center = { 0 };						// "CENTER:"
 		std::string sounds[3];						// "none" or "0" for no sound.
 		bool master = true;							// "MASTER:"
 		s32 eventMask = INF_EVENT_ANY;				// InfEventMask
