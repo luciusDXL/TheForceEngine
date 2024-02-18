@@ -293,6 +293,7 @@ namespace LevelEditor
 		InfVpControlType type;
 		Vec3f cen;			// center -or- arrow start.
 		Vec3f dir;			// direction derived from angle -or- direction on wall.
+		Vec3f nrm;			// face normal.
 	};
 
 	extern Editor_LevelInf s_levelInf;

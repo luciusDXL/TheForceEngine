@@ -4749,10 +4749,78 @@ namespace LevelEditor
 			}
 			else if (elev->type == IET_SCROLL_WALL)
 			{
-				ctrl->type = InfVpControl_AngleXY;
-				ctrl->dir = { sinf(elev->angle), cosf(elev->angle), 0.0f };
 				// TODO: Find a wall to put it on.
 				// Based on the wall, build a position and direction.
+				s32 bestFitWall = -1;
+				f32 bestFitWallLenSq = 0.0f;
+				f32 bestFitWallHeight = 0.0f;
+				Vec3f vtx[2] = { 0 };
+				s32 count = (s32)s_infEditor.sector->walls.size();
+				EditorWall* wall = s_infEditor.sector->walls.data();
+				for (s32 w = 0; w < count; w++, wall++)
+				{
+					if (!(wall->flags[0] & (WF1_SCROLL_BOT_TEX | WF1_SCROLL_MID_TEX | WF1_SCROLL_TOP_TEX)))
+					{
+						continue;
+					}
+					const f32 dx = s_infEditor.sector->vtx[wall->idx[1]].x - s_infEditor.sector->vtx[wall->idx[0]].x;
+					const f32 dz = s_infEditor.sector->vtx[wall->idx[1]].z - s_infEditor.sector->vtx[wall->idx[0]].z;
+					const f32 lenSq = dx * dx + dz * dz;
+
+					if ((wall->flags[0] & WF1_SCROLL_BOT_TEX) && wall->adjoinId >= 0)
+					{
+						EditorSector* next = &s_level.sectors[wall->adjoinId];
+						const f32 height = next->floorHeight - s_infEditor.sector->floorHeight;
+						if (height > 0.0f && height >= bestFitWallHeight && lenSq > bestFitWallLenSq)
+						{
+							bestFitWallHeight = height;
+							bestFitWallLenSq = lenSq;
+							bestFitWall = w;
+
+							vtx[0] = { s_infEditor.sector->vtx[wall->idx[0]].x, (next->floorHeight + s_infEditor.sector->floorHeight)*0.5f, s_infEditor.sector->vtx[wall->idx[0]].z };
+							vtx[1] = { s_infEditor.sector->vtx[wall->idx[1]].x, vtx[0].y, s_infEditor.sector->vtx[wall->idx[1]].z };
+						}
+					}
+					if ((wall->flags[0] & WF1_SCROLL_TOP_TEX) && wall->adjoinId >= 0)
+					{
+						EditorSector* next = &s_level.sectors[wall->adjoinId];
+						const f32 height = s_infEditor.sector->ceilHeight - next->ceilHeight;
+						if (height > 0.0f && height >= bestFitWallHeight && lenSq > bestFitWallLenSq)
+						{
+							bestFitWallHeight = height;
+							bestFitWallLenSq = lenSq;
+							bestFitWall = w;
+
+							vtx[0] = { s_infEditor.sector->vtx[wall->idx[0]].x, (s_infEditor.sector->ceilHeight + next->ceilHeight)*0.5f, s_infEditor.sector->vtx[wall->idx[0]].z };
+							vtx[1] = { s_infEditor.sector->vtx[wall->idx[1]].x, vtx[0].y, s_infEditor.sector->vtx[wall->idx[1]].z };
+						}
+					}
+					if (wall->flags[0] & WF1_SCROLL_MID_TEX)
+					{
+						const f32 height = s_infEditor.sector->ceilHeight - s_infEditor.sector->floorHeight;
+						if (height > 0.0f && height >= bestFitWallHeight && lenSq > bestFitWallLenSq)
+						{
+							bestFitWallHeight = height;
+							bestFitWallLenSq = lenSq;
+							bestFitWall = w;
+
+							vtx[0] = { s_infEditor.sector->vtx[wall->idx[0]].x, (s_infEditor.sector->ceilHeight + s_infEditor.sector->floorHeight)*0.5f, s_infEditor.sector->vtx[wall->idx[0]].z };
+							vtx[1] = { s_infEditor.sector->vtx[wall->idx[1]].x, vtx[0].y, s_infEditor.sector->vtx[wall->idx[1]].z };
+						}
+					}
+				}
+				if (bestFitWall >= 0)
+				{
+					ctrl->type = InfVpControl_AngleXY;
+					ctrl->cen = { (vtx[0].x + vtx[1].x) * 0.5f, vtx[0].y, (vtx[0].z + vtx[1].z) * 0.5f };
+
+					Vec2f dir = { vtx[1].x - vtx[0].x, vtx[1].z - vtx[0].z };
+					dir = TFE_Math::normalize(&dir);
+					f32 xzScale = sinf(elev->angle);
+
+					ctrl->dir = { dir.x*xzScale, -cosf(elev->angle), dir.z*xzScale };
+					ctrl->nrm = { -dir.z, 0.0f, dir.x };
+				}
 			}
 		}
 		else if (classData->classId == IIC_TELEPORTER)

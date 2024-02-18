@@ -131,7 +131,7 @@ namespace LevelEditor
 	void drawPosition2d(f32 width, Vec2f pos, u32 color);
 	void drawArrow2d(f32 width, f32 lenInPixels, Vec2f pos, Vec2f dir, u32 color);
 	void drawPosition3d(f32 width, Vec3f pos, u32 color);
-	void drawArrow3d(f32 width, f32 lenInPixels, Vec3f pos, Vec3f dir, u32 color);
+	void drawArrow3d(f32 width, f32 lenInPixels, Vec3f pos, Vec3f dir, Vec3f nrm, u32 color);
 	bool computeSignCorners(const EditorSector* sector, const EditorWall* wall, Vec3f* corners);
 
 	void viewport_init()
@@ -1755,18 +1755,22 @@ namespace LevelEditor
 						drawPosition3d(3.0f, ctrl.cen, INF_COLOR_EDIT_HELPER);
 					}
 					TFE_RenderShared::lineDraw3d_drawLines(&s_camera, false, false);
-					} break;
+				} break;
 				case InfVpControl_AngleXZ:
 				{
 					TFE_RenderShared::lineDraw3d_begin(s_viewportSize.x, s_viewportSize.z);
 					{
-						drawArrow3d(3.0f, 0.1f, ctrl.cen, ctrl.dir, INF_COLOR_EDIT_HELPER);
+						drawArrow3d(3.0f, 0.1f, ctrl.cen, ctrl.dir, {0.0f, 1.0f, 0.0f}, INF_COLOR_EDIT_HELPER);
 					}
 					TFE_RenderShared::lineDraw3d_drawLines(&s_camera, false, false);
 				} break;
 				case InfVpControl_AngleXY:
 				{
-					// TODO
+					TFE_RenderShared::lineDraw3d_begin(s_viewportSize.x, s_viewportSize.z);
+					{
+						drawArrow3d(3.0f, 0.1f, ctrl.cen, ctrl.dir, ctrl.nrm, INF_COLOR_EDIT_HELPER);
+					}
+					TFE_RenderShared::lineDraw3d_drawLines(&s_camera, false, false);
 				} break;
 			}
 		}
@@ -2447,14 +2451,16 @@ namespace LevelEditor
 		TFE_RenderShared::lineDraw3d_addLine(width, &vtx[2], clr);
 	}
 
-	void drawArrow3d(f32 width, f32 lenInPixels, Vec3f pos, Vec3f dir, u32 color)
+	void drawArrow3d(f32 width, f32 lenInPixels, Vec3f pos, Vec3f dir, Vec3f nrm, u32 color)
 	{
 		Vec3f offset = { pos.x - s_camera.pos.x, pos.y - s_camera.pos.y, pos.z - s_camera.pos.z };
 		f32 dist = sqrtf(offset.x*offset.x + offset.y*offset.y + offset.z*offset.z);
 
 		f32 step = lenInPixels * dist;
 		f32 partStep = step * 0.25f;
-		Vec3f tan = { -dir.z, 0.0f, dir.x };
+
+		Vec3f tan = TFE_Math::cross(&dir, &nrm);
+		tan = TFE_Math::normalize(&tan);
 
 		Vec3f p0 = pos;
 		Vec3f p1 = { p0.x + dir.x*step, p0.y + dir.y*step, p0.z + dir.z*step };
