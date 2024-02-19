@@ -5133,6 +5133,20 @@ namespace LevelEditor
 		}
 	}
 
+	void scrollFloor(Editor_InfElevator* elev, EditorSector* sector, const EditorSector* srcSector, f32 value)
+	{
+		Vec2f dir = { sinf(elev->angle), cosf(elev->angle) };
+		sector->floorTex.offset.x = srcSector->floorTex.offset.x + value * dir.x;
+		sector->floorTex.offset.z = srcSector->floorTex.offset.z + value * dir.z;
+	}
+
+	void scrollCeiling(Editor_InfElevator* elev, EditorSector* sector, const EditorSector* srcSector, f32 value)
+	{
+		Vec2f dir = { sinf(elev->angle), cosf(elev->angle) };
+		sector->ceilTex.offset.x = srcSector->ceilTex.offset.x + value * dir.x;
+		sector->ceilTex.offset.z = srcSector->ceilTex.offset.z + value * dir.z;
+	}
+
 	void applySectorElevValue(EditorSector* sector, Editor_InfElevator* elev, f32 value)
 	{
 		// Apply the value based on the elevator type.
@@ -5244,11 +5258,33 @@ namespace LevelEditor
 			} break;
 			case IET_SCROLL_FLOOR:
 			{
-				// TODO
+				scrollFloor(elev, sector, &s_sectorMod.prevState, value);
+
+				const s32 slaveCount = (s32)elev->slaves.size();
+				const Editor_InfSlave* slave = elev->slaves.data();
+				for (s32 s = 0; s < slaveCount; s++, slave++)
+				{
+					s32 sectorId = findSectorByName(slave->name.c_str());
+					if (sectorId >= 0)
+					{
+						scrollFloor(elev, &s_level.sectors[sectorId], getSourceSector(sectorId), value);
+					}
+				}
 			} break;
 			case IET_SCROLL_CEILING:
 			{
-				// TODO
+				scrollCeiling(elev, sector, &s_sectorMod.prevState, value);
+
+				const s32 slaveCount = (s32)elev->slaves.size();
+				const Editor_InfSlave* slave = elev->slaves.data();
+				for (s32 s = 0; s < slaveCount; s++, slave++)
+				{
+					s32 sectorId = findSectorByName(slave->name.c_str());
+					if (sectorId >= 0)
+					{
+						scrollCeiling(elev, &s_level.sectors[sectorId], getSourceSector(sectorId), value);
+					}
+				}
 			} break;
 			case IET_CHANGE_LIGHT:
 			{
