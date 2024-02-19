@@ -71,6 +71,7 @@ namespace LevelEditor
 		SELTYPE_ELEV_DONOR_SECTOR,
 		SELTYPE_ELEV_SECTOR_CENTER,
 		SELTYPE_ELEV_POSITION,
+		SELTYPE_ELEV_ANGLE,
 		SELTYPE_TELEPORT_TARGET,
 		SELTYPE_TELEPORT_POSITION,
 	};
@@ -1978,9 +1979,9 @@ namespace LevelEditor
 					}
 
 					ImGui::SameLine(0.0f, 8.0f);
-					if (iconButtonInline(ICON_SELECT, "Select points to form the angle from the viewport.", btnTint, true))
+					if (iconButtonInline(ICON_SELECT, "Select a wall aligned with the direction of movement from the viewport.", btnTint, true))
 					{
-						// TODO
+						editor_selectViewportFeature((Editor_InfClass*)elev, SELECTMODE_WALL, SELTYPE_ELEV_ANGLE);
 					}
 				}
 				if (overrides & IEO_FLAGS)
@@ -2980,6 +2981,13 @@ namespace LevelEditor
 				elev->center.x = (sector->bounds[0].x + sector->bounds[1].x) * 0.5f;
 				elev->center.z = (sector->bounds[0].z + sector->bounds[1].z) * 0.5f;
 			}
+			else if (s_infEditorState.type == SELTYPE_ELEV_ANGLE && wallIndex >= 0)
+			{
+				const EditorWall* wall = &sector->walls[wallIndex];
+				const Vec2f* v0 = &sector->vtx[wall->idx[0]];
+				const Vec2f* v1 = &sector->vtx[wall->idx[1]];
+				elev->angle = 2.0f * PI * vec2ToAngle(v1->x - v0->x, v1->z - v0->z) / 16384.0f;
+			}
 		}
 		else if (s_infEditorState.editClass->classId == IIC_TELEPORTER)
 		{
@@ -3180,8 +3188,11 @@ namespace LevelEditor
 						{
 							if (elev->stops.empty() && elev->type != IET_DOOR && elev->type != IET_DOOR_INV && elev->type != IET_DOOR_MID && elev->type != IET_BASIC_AUTO)
 							{
+								const char* tooltip = s_infEditor.playAnim ? "Stop the elevator animation and reset." : "Play the animation continuously.";
+								const IconId icon = s_infEditor.playAnim ? ICON_STOP : ICON_PLAY;
+
 								ImGui::SameLine(0.0f, 16.0f);
-								if (iconButtonInline(ICON_PLAY, "Play the animation continuously.", nullptr, true))
+								if (iconButtonInline(icon, tooltip, nullptr, true))
 								{
 									s_infEditor.playAnim = !s_infEditor.playAnim;
 									s_infEditor.time = 0.0f;
