@@ -55,7 +55,13 @@ namespace TFE_RenderShared
 			defines[0].value = "1";
 			defineCount++;
 		}
-
+	#if 0
+		// Dashed lines.
+		defines[defineCount].name = "OPT_DASHED_LINE";
+		defines[defineCount].value = "1";
+		defineCount++;
+	#endif
+		
 		if (!s_shader.load("Shaders/line2d.vert", "Shaders/line2d.frag", defineCount, defines, SHADER_VER_STD))
 		{
 			return false;

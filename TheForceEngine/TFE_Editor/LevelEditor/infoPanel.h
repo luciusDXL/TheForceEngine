@@ -37,6 +37,7 @@ namespace LevelEditor
 	void infoPanelClearMessages();
 	void infoPanelAddMsg(LeMsgType type, const char* msg, ...);
 	void infoPanelSetMsgFilter(u32 filter=LFILTER_DEFAULT);
+	s32 infoPanelOutput(s32 width);
 
 	void infoPanelClearFeatures();
 	s32 infoPanelGetHeight();

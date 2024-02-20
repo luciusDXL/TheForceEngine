@@ -22,6 +22,12 @@ void main()
     float dFxy = 1.5 * max(dFx, dFy);
     float alpha = smoothstep(0.0, -dFxy, dist-Frag_Width) * Frag_Color.a;
 
+#ifdef OPT_DASHED_LINE
+	float L = length(t * dir);
+	float fade = smoothstep(0.45, 0.5, fract(L*0.1));
+	alpha *= fade;
+#endif
+
     Out_Color.rgb = Frag_Color.rgb * alpha;
     Out_Color.a = alpha;
 

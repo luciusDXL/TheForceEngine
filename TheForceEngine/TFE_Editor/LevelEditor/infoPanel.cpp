@@ -29,16 +29,16 @@ namespace LevelEditor
 	{
 		TAB_INFO = 0,
 		TAB_ITEM,
-		TAB_GROUPS,
 		TAB_COUNT
 	};
-	const char* c_infoTabs[TAB_COUNT] = { "Info", "Item", "Groups" };
+	const char* c_infoTabs[TAB_COUNT] = { "Info", "Item" };
 	const char* c_infoToolTips[TAB_COUNT] =
 	{
 		"Level Info.\nManual grid height setting.\nMessage, warning, and error output.",
 		"Hovered or selected item property editor,\nblank when no item (sector, wall, object) is selected.",
-		"Editor groups, used to group sectors - \nwhich can be used to hide or lock them, \ncolor code them or set whether they are exported.",
 	};
+	const ImVec4 tabSelColor = { 0.25f, 0.75f, 1.0f, 1.0f };
+	const ImVec4 tabStdColor = { 1.0f, 1.0f, 1.0f, 0.5f };
 
 	struct LeMessage
 	{
@@ -47,10 +47,15 @@ namespace LevelEditor
 	};
 	static std::vector<LeMessage> s_outputMsg;
 	static u32 s_outputFilter = LFILTER_DEFAULT;
+	static s32 s_outputTabSel = 0;
 	static f32 s_infoWith;
 	static s32 s_infoHeight;
 	static Vec2f s_infoPos;
 	static InfoTab s_infoTab = TAB_INFO;
+
+	static s32 s_outputHeight = 26 * 5;
+	static s32 s_outputPrevHeight = 26 * 5;
+	static bool s_collapsed = false;
 
 	static Feature s_prevVertexFeature = {};
 	static Feature s_prevWallFeature = {};
@@ -58,7 +63,7 @@ namespace LevelEditor
 	static Feature s_prevObjectFeature = {};
 	static bool s_wallShownLast = false;
 	static s32 s_prevCategoryFlags = 0;
-
+		
 	void infoPanelClearMessages()
 	{
 		s_outputMsg.clear();
@@ -162,6 +167,108 @@ namespace LevelEditor
 		ImGui::SetCursorPosY(ImGui::GetCursorPosY() - 4);
 		ImGui::Separator();
 	}
+	
+	bool mouseInsideItem()
+	{
+		ImVec2 mousePos = ImGui::GetMousePos();
+		ImVec2 minCoord = ImGui::GetItemRectMin();
+		ImVec2 maxCoord = ImGui::GetItemRectMax();
+
+		return mousePos.x >= minCoord.x && mousePos.x < maxCoord.x && mousePos.y >= minCoord.y && mousePos.y < maxCoord.y;
+	}
+
+	s32 infoPanelOutput(s32 width)
+	{
+		s32 height = s_outputHeight;
+
+		DisplayInfo info;
+		TFE_RenderBackend::getDisplayInfo(&info);
+
+		ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoFocusOnAppearing;
+		ImGui::SetNextWindowPos({ 0.0f, f32(info.height - height + 1) });
+		ImGui::SetNextWindowSize({ f32(width), f32(height) });
+
+		ImGui::PushStyleColor(ImGuiCol_TitleBgActive, ImGui::GetStyleColorVec4(ImGuiCol_TitleBg));
+		if (ImGui::Begin("Output##MapInfo", nullptr, window_flags))
+		{
+			bool restoreHeight = s_collapsed;
+			s_collapsed = false;
+
+			const size_t count = s_outputMsg.size();
+			const LeMessage* msg = s_outputMsg.data();
+			const ImVec4 c_typeColor[] = { {1.0f, 1.0f, 1.0f, 0.7f}, {1.0f, 1.0f, 0.25f, 1.0f}, {1.0f, 0.25f, 0.25f, 1.0f} };
+
+			for (size_t i = 0; i < count; i++, msg++)
+			{
+				u32 typeFlag = 1 << msg->type;
+				if (!(typeFlag & s_outputFilter)) { continue; }
+
+				ImGui::TextColored(c_typeColor[msg->type], "%s", msg->msg.c_str());
+			}
+
+			if (restoreHeight)
+			{
+				s_outputHeight = s_outputPrevHeight;
+			}
+			else
+			{
+				s_outputPrevHeight = s_outputHeight;
+				s_outputHeight = max(26 * 3, (s32)ImGui::GetWindowSize().y);
+			}
+		}
+		else
+		{
+			s_outputHeight = 26;
+			s_collapsed = true;
+		}
+		ImGui::End();
+
+		if (!s_collapsed)
+		{
+			const bool mousePressed = TFE_Input::mousePressed(MBUTTON_LEFT);
+			
+			ImGuiWindowFlags window_flags_tab = ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoTitleBar |
+				ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_Tooltip;
+			ImGui::SetNextWindowPos({ 128.0f, f32(info.height - height + 1) });
+			if (ImGui::Begin("##MapInfoTab", nullptr, window_flags_tab))
+			{
+				ImGui::SetCursorPosY(ImGui::GetCursorPosY() - 4);
+				ImGui::PushStyleColor(ImGuiCol_Text, s_outputTabSel == 0 ? tabSelColor : tabStdColor);
+				ImGui::Text("All");
+				ImGui::PopStyleColor();
+				if (mouseInsideItem() && mousePressed)
+				{
+					s_outputTabSel = 0;
+					s_outputFilter = LFILTER_DEFAULT;
+				}
+				
+				ImGui::SameLine(0.0f, 16.0f);
+				ImGui::PushStyleColor(ImGuiCol_Text, s_outputTabSel == 1 ? tabSelColor : tabStdColor);
+				ImGui::Text("Warnings");
+				ImGui::PopStyleColor();
+				if (mouseInsideItem() && mousePressed)
+				{
+					s_outputTabSel = 1;
+					s_outputFilter = LFILTER_WARNING;
+				}
+
+				ImGui::SameLine(0.0f, 16.0f);
+				ImGui::PushStyleColor(ImGuiCol_Text, s_outputTabSel == 2 ? tabSelColor : tabStdColor);
+				ImGui::Text("Errors");
+				ImGui::PopStyleColor();
+				if (mouseInsideItem() && mousePressed)
+				{
+					s_outputTabSel = 2;
+					s_outputFilter = LFILTER_ERROR;
+				}
+			}
+			ImGui::End();
+		}
+
+		ImGui::PopStyleColor();
+
+		return s_outputHeight;
+	}
 
 	void infoPanelMap()
 	{
@@ -181,31 +288,15 @@ namespace LevelEditor
 		ImGui::SameLine(128.0f);
 		ImGui::SetNextItemWidth(196.0f);
 		ImGui::InputFloat("##GridHeight", &s_gridHeight, 0.0f, 0.0f, "%0.2f", ImGuiInputTextFlags_CharsDecimal);
-		ImGui::Separator();
-
-		// Display messages here?
-		ImGui::CheckboxFlags("Info", &s_outputFilter, LFILTER_INFO); ImGui::SameLine(0.0f, 32.0f);
-		ImGui::CheckboxFlags("Warnings", &s_outputFilter, LFILTER_WARNING); ImGui::SameLine(0.0f, 32.0f);
-		ImGui::CheckboxFlags("Errors", &s_outputFilter, LFILTER_ERROR);
-
+			
 		ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize
 			| ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoFocusOnAppearing;
 
 		ImVec2 pos = ImGui::GetCursorPos();
 		ImGui::SetNextWindowSize({ s_infoWith, s_infoHeight - pos.y });
 		ImGui::SetNextWindowPos({ s_infoPos.x, pos.y + s_infoPos.z });
-		ImGui::Begin("Output##MapInfo", nullptr, window_flags);
-		const size_t count = s_outputMsg.size();
-		const LeMessage* msg = s_outputMsg.data();
-		const ImVec4 c_typeColor[] = { {1.0f, 1.0f, 1.0f, 0.7f}, {1.0f, 1.0f, 0.25f, 1.0f}, {1.0f, 0.25f, 0.25f, 1.0f} };
-
-		for (size_t i = 0; i < count; i++, msg++)
-		{
-			u32 typeFlag = 1 << msg->type;
-			if (!(typeFlag & s_outputFilter)) { continue; }
-
-			ImGui::TextColored(c_typeColor[msg->type], "%s", msg->msg.c_str());
-		}
+		ImGui::Begin("Groups##MapInfo", nullptr, window_flags);
+		// TODO
 		ImGui::End();
 	}
 
@@ -1545,10 +1636,6 @@ namespace LevelEditor
 			else if (s_infoTab == TAB_INFO && show)
 			{
 				infoPanelMap();
-			}
-			else if (s_infoTab == TAB_GROUPS && show)
-			{
-				// TODO
 			}
 		}
 		infoToolEnd();

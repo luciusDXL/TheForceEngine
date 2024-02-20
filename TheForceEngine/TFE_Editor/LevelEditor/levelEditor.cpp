@@ -88,7 +88,9 @@ namespace LevelEditor
 	};
 	ContextMenu s_contextMenu = CONTEXTMENU_NONE;
 
+	static Asset* s_levelAsset = nullptr;
 	static WallMoveMode s_wallMoveMode = WMM_NORMAL;
+	static s32 s_outputHeight = 26*6;
 
 	// The TFE Level Editor format is different than the base format and contains extra 
 	// metadata, etc.
@@ -280,6 +282,8 @@ namespace LevelEditor
 
 	bool init(Asset* asset)
 	{
+		s_levelAsset = asset;
+
 		// Reset output messages.
 		infoPanelClearMessages();
 		infoPanelSetMsgFilter();
@@ -4798,9 +4802,17 @@ namespace LevelEditor
 			{
 				saveLevel();
 			}
-			if (ImGui::MenuItem("Snapshot", "Ctrl+N", (bool*)NULL))
+			if (ImGui::MenuItem("Reload", "Ctrl+R", (bool*)NULL))
+			{
+				loadLevelFromAsset(s_levelAsset);
+			}
+			if (ImGui::MenuItem("Save Snapshot", "Ctrl+N", (bool*)NULL))
 			{
 				// Bring up a pop-up where the snapshot can be named.
+			}
+			if (ImGui::MenuItem("Load Snapshot", "Ctrl+L", (bool*)NULL))
+			{
+				// Bring up a pop-up where the desired named snapshot can be found.
 			}
 			if (!projectActive) { enableNextItem(); }
 
@@ -4808,6 +4820,35 @@ namespace LevelEditor
 			{
 				// TODO: If the level has changed, pop up a warning and allow the level to be saved.
 				disableAssetEditor();
+			}
+			ImGui::Separator();
+			if (ImGui::MenuItem("Test Options", NULL, (bool*)NULL))
+			{
+				// TODO
+			}
+			ImGui::Separator();
+			if (ImGui::MenuItem("INF Items", NULL, (bool*)NULL))
+			{
+				// TODO
+			}
+			disableNextItem(); // TODO
+			if (ImGui::MenuItem("Goals", NULL, (bool*)NULL))
+			{
+				// TODO
+			}
+			if (ImGui::MenuItem("Mission Briefing", NULL, (bool*)NULL))
+			{
+				// TODO
+			}
+			enableNextItem(); // End TODO
+			ImGui::Separator();
+			if (ImGui::MenuItem("Find Sector", NULL, (bool*)NULL))
+			{
+				// TODO
+			}
+			if (ImGui::MenuItem("Find/Replace Texture", NULL, (bool*)NULL))
+			{
+				// TODO
 			}
 			ImGui::Separator();
 			// TODO: Add GOTO option (to go to a sector or other object).
@@ -4939,12 +4980,6 @@ namespace LevelEditor
 			if (ImGui::MenuItem("View Settings", NULL, (s_lwinOpen & LWIN_VIEW_SETTINGS) != 0))
 			{
 			}
-			ImGui::EndMenu();
-		}
-		if (ImGui::BeginMenu("INF"))
-		{
-			// TODO
-
 			ImGui::EndMenu();
 		}
 
@@ -5363,6 +5398,11 @@ namespace LevelEditor
 		}
 	}
 
+	void updateOutput()
+	{
+		s_outputHeight = infoPanelOutput(s_viewportSize.x + 16);
+	}
+
 	void update()
 	{
 		handleMouseClick();
@@ -5371,8 +5411,9 @@ namespace LevelEditor
 		updateContextWindow();
 		updateWindowControls();
 		handleHotkeys();
+		updateOutput();
 
-		viewport_update((s32)UI_SCALE(480) + 16, (s32)UI_SCALE(68) + 18);
+		viewport_update((s32)UI_SCALE(480) + 16, (s32)UI_SCALE(68) + 18 + s_outputHeight);
 		viewport_render(s_view);
 
 		// Toolbar
@@ -6689,7 +6730,7 @@ namespace LevelEditor
 
 		DisplayInfo displayInfo;
 		TFE_RenderBackend::getDisplayInfo(&displayInfo);
-		s_editWinSize = { (s32)displayInfo.width - (s32)UI_SCALE(480), (s32)displayInfo.height - (s32)UI_SCALE(68) };
+		s_editWinSize = { (s32)displayInfo.width - (s32)UI_SCALE(480), (s32)displayInfo.height - (s32)UI_SCALE(68) - s_outputHeight };
 
 		ImGui::SetWindowPos("LevelEditWin", { (f32)s_editWinPos.x, (f32)s_editWinPos.z });
 		ImGui::SetWindowSize("LevelEditWin", { (f32)s_editWinSize.x, (f32)s_editWinSize.z });
