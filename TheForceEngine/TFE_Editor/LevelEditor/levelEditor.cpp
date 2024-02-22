@@ -614,6 +614,7 @@ namespace LevelEditor
 			for (size_t s = 0; s < sectorCount; s++, sector++)
 			{
 				if (s_curLayer != sector->layer && s_curLayer != LAYER_ANY) { continue; }
+				if (!sector_isInteractable(sector)) { continue; }
 				if (!aabbOverlap2d(sector->bounds, aabb)) { continue; }
 
 				const size_t wallCount = sector->walls.size();
@@ -720,6 +721,7 @@ namespace LevelEditor
 			for (size_t s = 0; s < sectorCount; s++, sector++)
 			{
 				if (layer != sector->layer && layer != LAYER_ANY) { continue; }
+				if (!sector_isInteractable(sector)) { continue; }
 
 				// For now, do them all...
 				const size_t wallCount = sector->walls.size();
@@ -798,6 +800,7 @@ namespace LevelEditor
 			for (size_t s = 0; s < sectorCount; s++, sector++)
 			{
 				if (s_curLayer != sector->layer && s_curLayer != LAYER_ANY) { continue; }
+				if (!sector_isInteractable(sector)) { continue; }
 				if (!aabbOverlap2d(sector->bounds, aabb)) { continue; }
 
 				const size_t vtxCount = sector->vtx.size();
@@ -899,6 +902,7 @@ namespace LevelEditor
 			for (size_t s = 0; s < sectorCount; s++, sector++)
 			{
 				if (layer != sector->layer && layer != LAYER_ANY) { continue; }
+				if (!sector_isInteractable(sector)) { continue; }
 
 				// For now, do them all...
 				const size_t vtxCount = sector->vtx.size();
@@ -4207,6 +4211,8 @@ namespace LevelEditor
 			EditorSector* objSector = nullptr;
 			for (s32 s = 0; s < sectorCount; s++, sector++)
 			{
+				if (!sector_isInteractable(sector)) { continue; }
+
 				// Check for objects.
 				// Must be inside the range and pick the highest top
 				// in order to duplicate the 3D behavior.
@@ -4637,6 +4643,11 @@ namespace LevelEditor
 				// Keep track of the last vertex hovered sector and use it if no hovered sector is active to
 				// make selecting vertices less fiddly.
 				EditorSector* hoveredSector = s_featureHovered.sector ? s_featureHovered.sector : s_featureHovered.prevSector;
+				if (hoveredSector && !sector_isInteractable(hoveredSector))
+				{
+					hoveredSector = nullptr;
+					s_featureHovered = {};
+				}
 
 				// See if we are close enough to "hover" a vertex
 				s_featureHovered.featureIndex = -1;
@@ -4682,6 +4693,11 @@ namespace LevelEditor
 				EditorSector* hoverSector = s_featureHovered.sector ? s_featureHovered.sector : s_featureHovered.prevSector;
 				checkForWallHit2d(worldPos, s_featureHovered.sector, s_featureHovered.featureIndex, s_featureHovered.part, hoverSector);
 				if (s_featureHovered.sector) { s_featureHovered.prevSector = s_featureHovered.sector; }
+				if (hoverSector && !sector_isInteractable(hoverSector))
+				{
+					hoverSector = nullptr;
+					s_featureHovered = {};
+				}
 
 				handleMouseControlWall(worldPos);
 			}

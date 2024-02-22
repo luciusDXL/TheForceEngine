@@ -41,6 +41,7 @@ namespace LevelEditor
 		HL_NONE = 0,
 		HL_HOVERED,
 		HL_SELECTED,
+		HL_LOCKED,
 		HL_COUNT
 	};
 
@@ -57,6 +58,10 @@ namespace LevelEditor
 		SCOLOR_LINE_NORM_ADJ     = 0xff808080,
 		SCOLOR_LINE_HOVERED_ADJ  = 0xffa0a060,
 		SCOLOR_LINE_SELECTED_ADJ = 0xff0060a0,
+
+		SCOLOR_LOCKED = 0xff202020,
+		SCOLOR_LOCKED_VTX = 0xff404040,
+		SCOLOR_LOCKED_TEXTURE = 0xffb06060,
 	};
 	enum VertexColor
 	{
@@ -77,11 +82,11 @@ namespace LevelEditor
 		INF_COLOR_EDIT_HELPER = 0xffc000ff,
 	};
 
-	static const SectorColor c_sectorPolyClr[] = { SCOLOR_POLY_NORM, SCOLOR_POLY_HOVERED, SCOLOR_POLY_SELECTED };
-	static const SectorColor c_sectorLineClr[] = { SCOLOR_LINE_NORM, SCOLOR_LINE_HOVERED, SCOLOR_LINE_SELECTED };
-	static const SectorColor c_sectorLineClrAdjoin[] = { SCOLOR_LINE_NORM_ADJ, SCOLOR_LINE_HOVERED_ADJ, SCOLOR_LINE_SELECTED_ADJ };
-	static const VertexColor c_vertexClr[] = { VCOLOR_NORM, VCOLOR_HOVERED, VCOLOR_SELECTED, VCOLOR_HOV_AND_SEL };
-	static const EntityColor c_entityClr[] = { ECOLOR_NORM, ECOLOR_HOVERED, ECOLOR_SELECTED, ECOLOR_HOV_AND_SEL };
+	static const SectorColor c_sectorPolyClr[] = { SCOLOR_POLY_NORM, SCOLOR_POLY_HOVERED, SCOLOR_POLY_SELECTED, SCOLOR_LOCKED };
+	static const SectorColor c_sectorLineClr[] = { SCOLOR_LINE_NORM, SCOLOR_LINE_HOVERED, SCOLOR_LINE_SELECTED, SCOLOR_LOCKED_VTX };
+	static const SectorColor c_sectorLineClrAdjoin[] = { SCOLOR_LINE_NORM_ADJ, SCOLOR_LINE_HOVERED_ADJ, SCOLOR_LINE_SELECTED_ADJ, SCOLOR_LOCKED };
+	static const VertexColor c_vertexClr[] = { VCOLOR_NORM, VCOLOR_HOVERED, VCOLOR_SELECTED, VCOLOR_HOV_AND_SEL, (VertexColor)SCOLOR_LOCKED };
+	static const EntityColor c_entityClr[] = { ECOLOR_NORM, ECOLOR_HOVERED, ECOLOR_SELECTED, ECOLOR_HOV_AND_SEL, (EntityColor)SCOLOR_LOCKED };
 
 	#define AMBIENT(x) (u32)(x * 255/31) | ((x * 255/31)<<8) | ((x * 255/31)<<16) | (0xff << 24)
 	static const u32 c_sectorTexClr[] =
@@ -119,7 +124,7 @@ namespace LevelEditor
 	void drawVertex2d(const Vec2f* pos, f32 scale, Highlight highlight);
 	void drawVertex2d(const EditorSector* sector, s32 id, f32 extraScale, Highlight highlight);
 	void drawWall2d(const EditorSector* sector, const EditorWall* wall, f32 extraScale, Highlight highlight, bool drawNormal = false);
-	void drawEntity2d(const EditorSector* sector, const EditorObject* obj, s32 id, u32 objColor);
+	void drawEntity2d(const EditorSector* sector, const EditorObject* obj, s32 id, u32 objColor, bool drawEntityBounds);
 	void renderSectorVertices2d();
 	void drawBox(const Vec3f* center, f32 side, f32 lineWidth, u32 color);
 	void drawBounds(const Vec3f* center, Vec3f size, f32 lineWidth, u32 color);
@@ -341,10 +346,12 @@ namespace LevelEditor
 		}
 
 		// Draw objects.
-		u32 objColor = s_editMode == LEDIT_ENTITY ? 0xffffffff : 0x80ffffff;
 		for (s32 o = 0; o < visObjCount; o++)
 		{
-			drawEntity2d(visObjSector[o], visObj[o], visObjId[o], objColor);
+			bool locked = sector_isLocked((EditorSector*)visObjSector[o]);
+			u32 objColor = (s_editMode == LEDIT_ENTITY && !locked) ? 0xffffffff : 0x80ffffff;
+
+			drawEntity2d(visObjSector[o], visObj[o], visObjId[o], objColor, !locked);
 		}
 		
 		// Draw drag select, if active.
@@ -1307,7 +1314,7 @@ namespace LevelEditor
 		}
 	}
 			
-	void drawEntity3D(const EditorSector* sector, const EditorObject* obj, s32 id, u32 objColor, const Vec3f& cameraRgtXZ)
+	void drawEntity3D(const EditorSector* sector, const EditorObject* obj, s32 id, u32 objColor, const Vec3f& cameraRgtXZ, bool drawEntityBounds)
 	{
 		const Entity* entity = &s_level.entities[obj->entityId];
 		const Vec3f pos = obj->pos;
@@ -1367,7 +1374,7 @@ namespace LevelEditor
 			triDraw3d_addTextured(TRIMODE_BLEND, 6, 4, corners, uv, idx, objColor, false, entity->image, false, false);
 		}
 
-		if (s_editMode == LEDIT_ENTITY)
+		if (s_editMode == LEDIT_ENTITY && drawEntityBounds)
 		{
 			Highlight hl = HL_NONE;
 			if (s_featureCur.isObject && sector == s_featureCur.sector && s_featureCur.featureIndex == id)
@@ -1465,7 +1472,7 @@ namespace LevelEditor
 				visObj[visObjCount++] = obj;
 			}
 
-			Highlight highlight = HL_NONE;
+			Highlight highlight = sector_isLocked(sector) ? HL_LOCKED : HL_NONE;
 
 			// Sector lighting.
 			const u32 colorIndex = (s_editFlags & LEF_FULLBRIGHT) && s_sectorDrawMode != SDM_LIGHTING ? 31 : sector->ambient;
@@ -1505,11 +1512,15 @@ namespace LevelEditor
 				}
 
 				u32 wallColor = 0xff1a0f0d;
-				if (s_sectorDrawMode != SDM_WIREFRAME)
+				if (sector_isLocked(sector))
+				{
+					wallColor = (s_sectorDrawMode == SDM_TEXTURED_FLOOR || s_sectorDrawMode == SDM_TEXTURED_CEIL) ? SCOLOR_LOCKED_TEXTURE : SCOLOR_LOCKED;
+				}
+				else if (s_sectorDrawMode != SDM_WIREFRAME)
 				{
 					wallColor = c_sectorTexClr[wallColorIndex];
 				}
-								
+												
 				// Wall Parts
 				const Vec2f wallOffset = { v1.x - v0.x, v1.z - v0.z };
 				const f32 wallLengthTexels = sqrtf(wallOffset.x*wallOffset.x + wallOffset.z*wallOffset.z) * 8.0f;
@@ -1621,6 +1632,15 @@ namespace LevelEditor
 
 			// Draw the floor and ceiling.
 			u32 floorColor = 0xff402020;
+			if (sector_isLocked(sector))
+			{
+				floorColor = (s_sectorDrawMode == SDM_TEXTURED_FLOOR || s_sectorDrawMode == SDM_TEXTURED_CEIL) ? SCOLOR_LOCKED_TEXTURE : SCOLOR_LOCKED;
+			}
+			else if (s_sectorDrawMode == SDM_TEXTURED_FLOOR || s_sectorDrawMode == SDM_TEXTURED_CEIL || s_sectorDrawMode == SDM_LIGHTING)
+			{
+				floorColor = c_sectorTexClr[colorIndex];
+			}
+
 			const u32 idxCount = (u32)sector->poly.triIdx.size();
 			const u32 vtxCount = (u32)sector->poly.triVtx.size();
 			const Vec2f* triVtx = sector->poly.triVtx.data();
@@ -1659,11 +1679,11 @@ namespace LevelEditor
 				if (s_sectorDrawMode == SDM_TEXTURED_FLOOR || s_sectorDrawMode == SDM_TEXTURED_CEIL)
 				{
 					bool sky = (sector->flags[0] & SEC_FLAGS1_PIT) != 0;
-					triDraw3d_addTextured(TRIMODE_OPAQUE, idxCount, vtxCount, vtxDataFlr, uvFlr, sector->poly.triIdx.data(), c_sectorTexClr[colorIndex], false, floorTex ? floorTex->frames[0] : nullptr, showGridOnFlats, sky);
+					triDraw3d_addTextured(TRIMODE_OPAQUE, idxCount, vtxCount, vtxDataFlr, uvFlr, sector->poly.triIdx.data(), floorColor, false, floorTex ? floorTex->frames[0] : nullptr, showGridOnFlats, sky);
 				}
 				else if (s_sectorDrawMode == SDM_LIGHTING)
 				{
-					triDraw3d_addColored(TRIMODE_OPAQUE, idxCount, vtxCount, vtxDataFlr, sector->poly.triIdx.data(), c_sectorTexClr[colorIndex], false, showGridOnFlats);
+					triDraw3d_addColored(TRIMODE_OPAQUE, idxCount, vtxCount, vtxDataFlr, sector->poly.triIdx.data(), floorColor, false, showGridOnFlats);
 				}
 				else
 				{
@@ -1675,11 +1695,11 @@ namespace LevelEditor
 				if (s_sectorDrawMode == SDM_TEXTURED_FLOOR || s_sectorDrawMode == SDM_TEXTURED_CEIL)
 				{
 					bool sky = (sector->flags[0] & SEC_FLAGS1_EXTERIOR) != 0;
-					triDraw3d_addTextured(TRIMODE_OPAQUE, idxCount, vtxCount, vtxDataCeil, uvCeil, sector->poly.triIdx.data(), c_sectorTexClr[colorIndex], true, ceilTex ? ceilTex->frames[0]: nullptr, showGridOnFlats, sky);
+					triDraw3d_addTextured(TRIMODE_OPAQUE, idxCount, vtxCount, vtxDataCeil, uvCeil, sector->poly.triIdx.data(), floorColor, true, ceilTex ? ceilTex->frames[0]: nullptr, showGridOnFlats, sky);
 				}
 				else if (s_sectorDrawMode == SDM_LIGHTING)
 				{
-					triDraw3d_addColored(TRIMODE_OPAQUE, idxCount, vtxCount, vtxDataCeil, sector->poly.triIdx.data(), c_sectorTexClr[colorIndex], true, showGridOnFlats);
+					triDraw3d_addColored(TRIMODE_OPAQUE, idxCount, vtxCount, vtxDataCeil, sector->poly.triIdx.data(), floorColor, true, showGridOnFlats);
 				}
 				else
 				{
@@ -1689,10 +1709,11 @@ namespace LevelEditor
 		}
 
 		// Draw objects.
-		u32 objColor = s_editMode == LEDIT_ENTITY ? 0xffffffff : 0x80ffffff;
 		for (s32 o = 0; o < visObjCount; o++)
 		{
-			drawEntity3D(visObjSector[o], visObj[o], visObjId[o], objColor, cameraRgtXZ);
+			bool locked = sector_isLocked((EditorSector*)visObjSector[o]);
+			u32 objColor = (s_editMode == LEDIT_ENTITY && !locked) ? 0xffffffff : 0x80ffffff;
+			drawEntity3D(visObjSector[o], visObj[o], visObjId[o], objColor, cameraRgtXZ, !locked);
 		}
 
 		// Draw the 3D cursor.
@@ -1876,9 +1897,12 @@ namespace LevelEditor
 		// Draw a background polygon to help sectors stand out a bit.
 		if (sector->layer == s_curLayer)
 		{
-			if (s_sectorDrawMode == SDM_WIREFRAME || highlight != HL_NONE)
+			if (s_sectorDrawMode == SDM_WIREFRAME || (highlight != HL_NONE && highlight != HL_LOCKED))
 			{
-				renderSectorPolygon2d(&sector->poly, c_sectorPolyClr[highlight]);
+				u32 color = c_sectorPolyClr[highlight];
+				if (highlight == HL_LOCKED) { color &= 0x00ffffff; color |= 0x60000000; }
+
+				renderSectorPolygon2d(&sector->poly, color);
 			}
 		}
 
@@ -1949,13 +1973,13 @@ namespace LevelEditor
 		triDraw2D_addTextured(6, 4, cornersImage, uv, idx, objColor, entity->image);
 	}
 		
-	void drawEntity2d(const EditorSector* sector, const EditorObject* obj, s32 id, u32 objColor)
+	void drawEntity2d(const EditorSector* sector, const EditorObject* obj, s32 id, u32 objColor, bool drawEntityBounds)
 	{
 		const Entity* entity = &s_level.entities[obj->entityId];
 		const Vec3f pos = obj->pos;
 		const f32 width = entity->size.x * 0.5f;
 				
-		if (s_editMode == LEDIT_ENTITY)
+		if (s_editMode == LEDIT_ENTITY && drawEntityBounds)
 		{
 			if (entity->type == ETYPE_3D)
 			{
@@ -2072,20 +2096,28 @@ namespace LevelEditor
 		for (size_t s = 0; s < count; s++)
 		{
 			EditorSector* sector = sectorList[s];
+			bool locked = sector_isLocked(sector);
 			
 			const u32 colorIndex = (s_editFlags & LEF_FULLBRIGHT) && s_sectorDrawMode != SDM_LIGHTING ? 31 : sector->ambient;
+			u32 color = c_sectorTexClr[colorIndex];
+			if (locked)
+			{
+				color = s_sectorDrawMode == SDM_LIGHTING ? SCOLOR_LOCKED : SCOLOR_LOCKED_TEXTURE;
+				color &= 0x00ffffff;
+				color |= 0x60000000;
+			}
 
 			if (s_sectorDrawMode == SDM_LIGHTING)
 			{
-				renderSectorPolygon2d(&sector->poly, c_sectorTexClr[colorIndex]);
+				renderSectorPolygon2d(&sector->poly, color);
 			}
 			else if (s_sectorDrawMode == SDM_TEXTURED_FLOOR)
 			{
-				renderTexturedSectorPolygon2d(&sector->poly, c_sectorTexClr[colorIndex], getTexture(sector->floorTex.texIndex), sector->floorTex.offset);
+				renderTexturedSectorPolygon2d(&sector->poly, color, getTexture(sector->floorTex.texIndex), sector->floorTex.offset);
 			}
 			else if (s_sectorDrawMode == SDM_TEXTURED_CEIL)
 			{
-				renderTexturedSectorPolygon2d(&sector->poly, c_sectorTexClr[colorIndex], getTexture(sector->ceilTex.texIndex), sector->ceilTex.offset);
+				renderTexturedSectorPolygon2d(&sector->poly, color, getTexture(sector->ceilTex.texIndex), sector->ceilTex.offset);
 			}
 		}
 
@@ -2105,13 +2137,13 @@ namespace LevelEditor
 			if (sector_isHidden(sector)) { continue; }
 
 			if ((sector == s_featureHovered.sector || sector == s_featureCur.sector) && s_editMode == LEDIT_SECTOR) { continue; }
-			drawSector2d(sector, HL_NONE);
+			drawSector2d(sector, sector_isLocked(sector) ? HL_LOCKED : HL_NONE);
 		}
 	}
 
 	void drawVertex2d(const Vec2f* pos, f32 scale, Highlight highlight)
 	{
-		u32 color = c_vertexClr[highlight];
+		u32 color = highlight == HL_LOCKED ? SCOLOR_LOCKED_VTX : c_vertexClr[highlight];
 		u32 colors[] = { color, color };
 
 		const Vec2f p0 = { pos->x * s_viewportTrans2d.x + s_viewportTrans2d.y, pos->z * s_viewportTrans2d.z + s_viewportTrans2d.w };
@@ -2159,7 +2191,7 @@ namespace LevelEditor
 				{
 					continue;
 				}
-				drawVertex2d(vtx, scale, HL_NONE);
+				drawVertex2d(vtx, scale, sector_isLocked(sector) ? HL_LOCKED : HL_NONE);
 			}
 		}
 	}
