@@ -51,6 +51,7 @@ namespace TFE_Editor
 		POPUP_BROWSE,
 		POPUP_CATEGORY,
 		POPUP_EDIT_INF,
+		POPUP_GROUP_NAME,
 		POPUP_COUNT
 	};
 
@@ -143,4 +144,5 @@ namespace TFE_Editor
 	bool isPopupOpen();
 
 	Vec2i getEditorVersion();
+	bool mouseInsideItem();
 }

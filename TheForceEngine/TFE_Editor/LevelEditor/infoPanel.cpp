@@ -2,6 +2,7 @@
 #include "levelEditorData.h"
 #include "levelEditorHistory.h"
 #include "infoPanel.h"
+#include "groups.h"
 #include "sharedState.h"
 #include "selection.h"
 #include <TFE_Input/input.h>
@@ -167,16 +168,7 @@ namespace LevelEditor
 		ImGui::SetCursorPosY(ImGui::GetCursorPosY() - 4);
 		ImGui::Separator();
 	}
-	
-	bool mouseInsideItem()
-	{
-		ImVec2 mousePos = ImGui::GetMousePos();
-		ImVec2 minCoord = ImGui::GetItemRectMin();
-		ImVec2 maxCoord = ImGui::GetItemRectMax();
-
-		return mousePos.x >= minCoord.x && mousePos.x < maxCoord.x && mousePos.y >= minCoord.y && mousePos.y < maxCoord.y;
-	}
-
+		
 	s32 infoPanelOutput(s32 width)
 	{
 		s32 height = s_outputHeight;
@@ -270,8 +262,23 @@ namespace LevelEditor
 		return s_outputHeight;
 	}
 
+	void clearGroupSelection(Group* group)
+	{
+		// Clear the selection since some of it may be made non-interactable.
+		selection_clear();
+		if (s_featureCur.sector && s_featureCur.sector->groupId == group->id)
+		{
+			s_featureCur = {};
+		}
+		if (s_featureHovered.sector && s_featureHovered.sector->groupId == group->id)
+		{
+			s_featureHovered = {};
+		}
+	}
+
 	void infoPanelMap()
 	{
+		const f32 iconBtnTint[] = { 103.0f / 255.0f, 122.0f / 255.0f, 139.0f / 255.0f, 1.0f };
 		char name[64];
 		strcpy(name, s_level.name.c_str());
 
@@ -293,11 +300,110 @@ namespace LevelEditor
 			| ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoFocusOnAppearing;
 
 		ImVec2 pos = ImGui::GetCursorPos();
-		ImGui::SetNextWindowSize({ s_infoWith, s_infoHeight - pos.y });
+		ImGui::SetNextWindowSize({ s_infoWith, s_infoHeight - pos.y - 43 });
 		ImGui::SetNextWindowPos({ s_infoPos.x, pos.y + s_infoPos.z });
+		ImGui::PushStyleColor(ImGuiCol_TitleBgActive, ImGui::GetStyleColorVec4(ImGuiCol_TitleBg));
 		ImGui::Begin("Groups##MapInfo", nullptr, window_flags);
-		// TODO
+		{
+			s32 groupCount = (s32)s_groups.size();
+			Group* group = s_groups.data();
+			for (s32 i = 0; i < groupCount; i++, group++)
+			{
+				if (ImGui::Selectable(editor_getUniqueLabel(group->name.c_str()), s_groupCurrent == i, 0, ImVec2(264, 0)))
+				{
+					s_groupCurrent = i;
+				}
+				
+				ImGui::SameLine(0.0f, 60.0f);
+				if (iconButtonInline((group->flags & GRP_EXCLUDE) ? ICON_CIRCLE_BAN : ICON_CIRCLE, "Exclude group from export.", iconBtnTint, true))
+				{
+					if (group->flags & GRP_EXCLUDE) { group->flags &= ~GRP_EXCLUDE; }
+					else { group->flags |= GRP_EXCLUDE; }
+				}
+
+				ImGui::SameLine(0.0f, 8.0f);
+				ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 2);
+				if (iconButtonInline((group->flags & GRP_HIDDEN) ? ICON_EYE_CLOSED : ICON_EYE, "Hide or show the group.", iconBtnTint, true))
+				{
+					if (group->flags & GRP_HIDDEN) { group->flags &= ~GRP_HIDDEN; }
+					else { group->flags |= GRP_HIDDEN; }
+					clearGroupSelection(group);
+				}
+
+				ImGui::SameLine(0.0f, 8.0f);
+				if (iconButtonInline((group->flags & GRP_LOCKED) ? ICON_LOCKED : ICON_UNLOCKED, "Lock or unlock the group for editing.", iconBtnTint, true))
+				{
+					if (group->flags & GRP_LOCKED) { group->flags &= ~GRP_LOCKED; }
+					else { group->flags |= GRP_LOCKED; }
+					clearGroupSelection(group);
+				}
+
+				ImGui::SameLine(0.0f, 8.0f);
+				ImGui::ColorEdit3(editor_getUniqueLabel(""), group->color.m, ImGuiColorEditFlags_NoLabel | ImGuiColorEditFlags_NoInputs);
+
+				ImGui::SetCursorPosY(ImGui::GetCursorPosY() - 2);
+
+				ImGui::Separator();
+				ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 2);
+			}
+		}
 		ImGui::End();
+		ImGui::PopStyleColor();
+
+		bool isDisabled = false;
+		ImGui::SetCursorPosY(pos.y + s_infoPos.z + s_infoHeight - pos.y - 52);
+		if (ImGui::Button("Add"))
+		{
+			groups_clearName();
+			openEditorPopup(TFE_Editor::POPUP_GROUP_NAME);
+		}
+		ImGui::SameLine(0.0f, 8.0f);
+
+		if (s_groupCurrent == 0)
+		{
+			disableNextItem();
+			isDisabled = true;
+		}
+		if (ImGui::Button("Remove"))
+		{
+			groups_remove(s_groupCurrent);
+		}
+
+		ImGui::SameLine(0.0f, 8.0f);
+
+		if (s_groupCurrent == 1 && !isDisabled)
+		{
+			disableNextItem();
+			isDisabled = true;
+		}
+		if (ImGui::ArrowButton("##MoveUp", ImGuiDir_Up))
+		{
+			groups_moveUp(s_groupCurrent);
+		}
+
+		ImGui::SameLine(0.0f, 8.0f);
+
+		if (s_groupCurrent == 0 || s_groupCurrent == (s32)s_groups.size() - 1)
+		{
+			if (!isDisabled)
+			{
+				disableNextItem();
+			}
+			isDisabled = true;
+		}
+		else if (isDisabled)
+		{
+			enableNextItem();
+			isDisabled = false;
+		}
+		if (ImGui::ArrowButton("##MoveDown", ImGuiDir_Down))
+		{
+			groups_moveDown(s_groupCurrent);
+		}
+		if (isDisabled)
+		{
+			enableNextItem();
+		}
 	}
 
 	// Manually created Vec2 control, so that the value is only updated when an input loses focus

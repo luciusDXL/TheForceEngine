@@ -8,6 +8,7 @@
 //////////////////////////////////////////////////////////////////////
 #include <TFE_System/types.h>
 #include "entity.h"
+#include "groups.h"
 #include <TFE_Editor/EditorAsset/editorAsset.h>
 #include <TFE_Editor/EditorAsset/editorTexture.h>
 #include <TFE_Editor/editorProject.h>
@@ -25,7 +26,8 @@ namespace LevelEditor
 		LEF_EntityV3   = 5,
 		LEF_EntityV4   = 6,
 		LEF_InfV1      = 7,
-		LEF_CurVersion = 7,
+		LEF_Groups     = 8,
+		LEF_CurVersion = 8,
 	};
 
 	enum LevelEditMode
@@ -108,6 +110,8 @@ namespace LevelEditor
 	struct EditorSector
 	{
 		s32 id = 0;
+		u32 groupId = 0;
+		u32 groupIndex = 0;
 		std::string name;	// may be empty.
 
 		LevelTexture floorTex = {};
@@ -227,6 +231,41 @@ namespace LevelEditor
 	bool aabbOverlap2d(const Vec3f* aabb0, const Vec3f* aabb1);
 	bool pointInsideAABB3d(const Vec3f* aabb, const Vec3f* pt);
 	bool pointInsideAABB2d(const Vec3f* aabb, const Vec3f* pt);
+
+	// Groups
+	inline Group* sector_getGroup(EditorSector* sector)
+	{
+		Group* group = groups_getByIndex(sector->groupIndex);
+		if (!group || group->id != sector->groupId)
+		{
+			group = groups_getById(sector->groupId);
+			sector->groupIndex = group->index;
+		}
+		assert(group);
+		return group;
+	}
+
+	inline bool sector_isHidden(EditorSector* sector)
+	{
+		return (sector_getGroup(sector)->flags & GRP_HIDDEN) != 0;
+	}
+
+	inline bool sector_isLocked(EditorSector* sector)
+	{
+		return (sector_getGroup(sector)->flags & GRP_LOCKED) != 0;
+	}
+
+	inline bool sector_isInteractable(EditorSector* sector)
+	{
+		const Group* group = sector_getGroup(sector);
+		return !(group->flags & GRP_HIDDEN) && !(group->flags & GRP_LOCKED);
+	}
+
+	inline bool sector_excludeFromExport(EditorSector* sector)
+	{
+		const Group* group = sector_getGroup(sector);
+		return (group->flags & GRP_EXCLUDE) != 0;
+	}
 
 	extern std::vector<u8> s_fileData;
 }

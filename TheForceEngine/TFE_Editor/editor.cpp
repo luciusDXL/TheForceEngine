@@ -10,6 +10,7 @@
 #include <TFE_Editor/LevelEditor/levelEditor.h>
 #include <TFE_Editor/LevelEditor/infoPanel.h>
 #include <TFE_Editor/LevelEditor/levelEditorInf.h>
+#include <TFE_Editor/LevelEditor/groups.h>
 #include <TFE_Editor/EditorAsset/editorAsset.h>
 #include <TFE_Editor/EditorAsset/editor3dThumbnails.h>
 #include <TFE_Input/input.h>
@@ -260,6 +261,10 @@ namespace TFE_Editor
 			{
 				ImGui::OpenPopup("Edit INF");
 			} break;
+			case POPUP_GROUP_NAME:
+			{
+				ImGui::OpenPopup("Choose Name");
+			} break;
 		}
 	}
 
@@ -338,6 +343,14 @@ namespace TFE_Editor
 				if (LevelEditor::editor_infEdit())
 				{
 					LevelEditor::editor_infEditEnd();
+					ImGui::CloseCurrentPopup();
+					s_editorPopup = POPUP_NONE;
+				}
+			} break;
+			case POPUP_GROUP_NAME:
+			{
+				if (LevelEditor::groups_chooseName())
+				{
 					ImGui::CloseCurrentPopup();
 					s_editorPopup = POPUP_NONE;
 				}
@@ -950,5 +963,14 @@ namespace TFE_Editor
 	bool editor_button(const char* label)
 	{
 		return ImGui::Button(editor_getUniqueLabel(label));
+	}
+
+	bool mouseInsideItem()
+	{
+		ImVec2 mousePos = ImGui::GetMousePos();
+		ImVec2 minCoord = ImGui::GetItemRectMin();
+		ImVec2 maxCoord = ImGui::GetItemRectMax();
+
+		return mousePos.x >= minCoord.x && mousePos.x < maxCoord.x && mousePos.y >= minCoord.y && mousePos.y < maxCoord.y;
 	}
 }

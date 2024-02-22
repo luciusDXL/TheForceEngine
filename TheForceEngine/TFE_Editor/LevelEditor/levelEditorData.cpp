@@ -615,10 +615,12 @@ namespace LevelEditor
 		}
 		level->sectors.resize(sectorCount);
 
+		u32 mainId = groups_getMainId();
 		EditorSector* sector = level->sectors.data();
 		for (s32 i = 0; i < sectorCount; i++, sector++)
 		{
 			*sector = {};
+			sector->groupId = mainId;
 
 			// Sector ID and Name
 			line = parser.readLine(bufferPos);
@@ -869,6 +871,10 @@ namespace LevelEditor
 			tex[i].handle = loadTexture(tex[i].name.c_str());
 		}
 
+		// Setup initial groups so the main ID is accessible.
+		groups_init();
+		const u32 mainGroupId = groups_getMainId();
+
 		// Sectors.
 		u32 sectorCount;
 		file.read(&sectorCount);
@@ -877,6 +883,15 @@ namespace LevelEditor
 		for (u32 i = 0; i < sectorCount; i++, sector++)
 		{
 			file.read(&sector->id);
+			if (version >= LEF_Groups)
+			{
+				file.read(&sector->groupId);
+			}
+			else
+			{
+				sector->groupId = mainGroupId;
+			}
+
 			file.read(&sector->name);
 			file.readBuffer(&sector->floorTex, sizeof(LevelTexture));
 			file.readBuffer(&sector->ceilTex, sizeof(LevelTexture));
@@ -960,6 +975,7 @@ namespace LevelEditor
 		}
 		// Handle INF
 		editor_loadInfBinary(file, version);
+		groups_loadBinary(file, version);
 
 		file.close();
 
@@ -1016,6 +1032,7 @@ namespace LevelEditor
 		for (u32 i = 0; i < sectorCount; i++, sector++)
 		{
 			file.write(&sector->id);
+			file.write(&sector->groupId);
 			file.write(&sector->name);
 			file.writeBuffer(&sector->floorTex, sizeof(LevelTexture));
 			file.writeBuffer(&sector->ceilTex, sizeof(LevelTexture));
@@ -1065,6 +1082,7 @@ namespace LevelEditor
 		}
 		// Handle INF
 		editor_saveInfBinary(file);
+		groups_saveBinary(file);
 
 		file.close();
 
@@ -1968,10 +1986,10 @@ namespace LevelEditor
 	// Return true if a hit is found.
 	bool traceRay(const Ray* ray, RayHitInfo* hitInfo, bool flipFaces, bool canHitSigns, bool canHitObjects)
 	{
-		const EditorLevel* level = &s_level;
+		EditorLevel* level = &s_level;
 		if (level->sectors.empty()) { return false; }
 		const s32 sectorCount = (s32)level->sectors.size();
-		const EditorSector* sector = level->sectors.data();
+		EditorSector* sector = level->sectors.data();
 
 		f32 maxDist  = ray->maxDist;
 		Vec3f origin = ray->origin;
@@ -1991,6 +2009,9 @@ namespace LevelEditor
 		for (s32 s = 0; s < sectorCount; s++, sector++)
 		{
 			if (ray->layer != LAYER_ANY && ray->layer != sector->layer) { continue; }
+
+			// Make sure the sector is in a visible/unlocked group.
+			if (!sector_isInteractable(sector)) { continue; }
 
 			// Check the bounds.
 			//if (!rayHitAABB(ray, sector->bounds)) { continue; }

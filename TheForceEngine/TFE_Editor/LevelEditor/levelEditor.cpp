@@ -3,6 +3,7 @@
 #include "levelEditorHistory.h"
 #include "levelEditorInf.h"
 #include "entity.h"
+#include "groups.h"
 #include "selection.h"
 #include "infoPanel.h"
 #include "browser.h"
@@ -297,6 +298,7 @@ namespace LevelEditor
 		loadVariableData(gameLocalDir);
 		loadEntityData(gameLocalDir, false);
 		loadLogicData(gameLocalDir);
+		groups_init();
 
 		Project* project = project_get();
 		if (project && project->active)
@@ -449,6 +451,8 @@ namespace LevelEditor
 		s_pHoverSectors.clear();
 		for (size_t s = 0; s < sectorCount; s++, sector++)
 		{
+			// Make sure the sector is in a visible/unlocked group.
+			if (!sector_isInteractable(sector)) { continue; }
 			if (isPointInsideSector2d(sector, pos, layer))
 			{
 				// Gather all of the potentially selected sectors in a list.
@@ -3337,6 +3341,7 @@ namespace LevelEditor
 			insertSubSector(4, sectors, &newSector);
 		}
 
+		newSector.groupId = groups_getCurrentId();
 		s_level.sectors.push_back(newSector);
 		sectorToPolygon(&s_level.sectors.back());
 
@@ -3405,6 +3410,7 @@ namespace LevelEditor
 			insertSubSector((s32)s_workList.size(), sectors, &newSector);
 		}
 		
+		newSector.groupId = groups_getCurrentId();
 		s_level.sectors.push_back(newSector);
 		sectorToPolygon(&s_level.sectors.back());
 		mergeAdjoins(&s_level.sectors.back());
@@ -3525,6 +3531,7 @@ namespace LevelEditor
 				exWall->adjoinId = (s32)s_level.sectors.size();
 				exWall->mirrorId = count - 1;
 
+				newSector.groupId = groups_getCurrentId();
 				s_level.sectors.push_back(newSector);
 				sectorToPolygon(&s_level.sectors.back());
 
@@ -5273,6 +5280,37 @@ namespace LevelEditor
 			s_showAllLabels = !s_showAllLabels;
 		}
 	}
+
+	EditorSector* sectorHoveredOrSelected()
+	{
+		EditorSector* sector = nullptr;
+		if (s_editMode == LEDIT_SECTOR)
+		{
+			sector = s_featureCur.sector;
+			if (!sector && !s_selectionList.empty())
+			{
+				FeatureId featureId = s_selectionList[0];
+				s32 featureIndex, part;
+				sector = unpackFeatureId(featureId, &featureIndex, &part);
+			}
+			if (!sector)
+			{
+				sector = s_featureHovered.sector;
+			}
+		}
+		else if (s_editMode == LEDIT_WALL)
+		{
+			if (s_featureCur.sector && (s_featureCur.part == HP_CEIL || s_featureCur.part == HP_FLOOR))
+			{
+				sector = s_featureCur.sector;
+			}
+			else if (s_featureHovered.sector && (s_featureHovered.part == HP_CEIL || s_featureHovered.part == HP_FLOOR))
+			{
+				sector = s_featureHovered.sector;
+			}
+		}
+		return sector;
+	}
 		
 	bool copyableItemHoveredOrSelected()
 	{
@@ -5343,21 +5381,36 @@ namespace LevelEditor
 		const u32 flags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_AlwaysAutoResize;
 		ImGui::SetNextWindowPos({(f32)s_rightMousePos.x, (f32)s_rightMousePos.z});
 		bool open = true;
+		bool leftClick = TFE_Input::mousePressed(MBUTTON_LEFT);
 		if (ImGui::Begin("##ContextMenuFrame", &open, flags))
 		{
+			EditorSector* curSector = sectorHoveredOrSelected();
+			if (curSector)
+			{
+				ImGui::MenuItem("Add To Current Group", NULL, (bool*)NULL);
+				if (leftClick && mouseInsideItem())
+				{
+					curSector->groupId = groups_getCurrentId();
+					closeMenu = true;
+				}
+				ImGui::Separator();
+			}
 			if (copyableItemHoveredOrSelected())
 			{
-				if (ImGui::MenuItem("Cut", "Ctrl+X", (bool*)NULL))
+				ImGui::MenuItem("Cut", "Ctrl+X", (bool*)NULL);
+				if (leftClick && mouseInsideItem())
 				{
 					// TODO
 					closeMenu = true;
 				}
-				if (ImGui::MenuItem("Copy", "Ctrl+C", (bool*)NULL))
+				ImGui::MenuItem("Copy", "Ctrl+C", (bool*)NULL);
+				if (leftClick && mouseInsideItem())
 				{
 					// TODO
 					closeMenu = true;
 				}
-				if (ImGui::MenuItem("Duplicate", "Ctrl+D", (bool*)NULL))
+				ImGui::MenuItem("Duplicate", "Ctrl+D", (bool*)NULL);
+				if (leftClick && mouseInsideItem())
 				{
 					// TODO
 					closeMenu = true;
@@ -5365,13 +5418,15 @@ namespace LevelEditor
 			}
 			if (itemHoveredOrSelected())
 			{
-				if (ImGui::MenuItem("Delete", "Del", (bool*)NULL))
+				ImGui::MenuItem("Delete", "Del", (bool*)NULL);
+				if (leftClick && mouseInsideItem())
 				{
 					// TODO
 					closeMenu = true;
 				}
 			}
-			if (ImGui::MenuItem("Paste", "Ctrl+V", (bool*)NULL))
+			ImGui::MenuItem("Paste", "Ctrl+V", (bool*)NULL);
+			if (leftClick && mouseInsideItem())
 			{
 				// TODO
 				closeMenu = true;
@@ -5380,7 +5435,7 @@ namespace LevelEditor
 		ImGui::End();
 
 		// Close the context menu on left-click, right-click, and menu item selection.
-		if (TFE_Input::mousePressed(MBUTTON_LEFT) || TFE_Input::mousePressed(MBUTTON_RIGHT) || closeMenu)
+		if (leftClick || TFE_Input::mousePressed(MBUTTON_RIGHT) || closeMenu)
 		{
 			// Clear the context menu and modal UI.
 			s_contextMenu = CONTEXTMENU_NONE;

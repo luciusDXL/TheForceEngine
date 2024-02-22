@@ -8,6 +8,7 @@
 #include <TFE_Editor/LevelEditor/sharedState.h>
 #include <TFE_Editor/LevelEditor/selection.h>
 #include <TFE_Editor/LevelEditor/levelEditorInf.h>
+#include <TFE_Editor/LevelEditor/groups.h>
 #include <TFE_Editor/EditorAsset/editorTexture.h>
 #include <TFE_Jedi/Level/rwall.h>
 #include <TFE_Jedi/Level/rsector.h>
@@ -254,10 +255,11 @@ namespace LevelEditor
 
 		// Gather objects
 		const size_t count = s_level.sectors.size();
-		const EditorSector* sector = s_level.sectors.data();
+		EditorSector* sector = s_level.sectors.data();
 		for (size_t s = 0; s < count; s++, sector++)
 		{
 			if (sector->layer < s_curLayer || sector->layer > s_curLayer) { continue; }
+			if (sector_isHidden(sector)) { continue; }
 			// TODO: Cull
 			const s32 objCount = (s32)sector->obj.size();
 			const EditorObject* obj = sector->obj.data();
@@ -1445,11 +1447,12 @@ namespace LevelEditor
 
 		const f32 width = 2.5f;
 		const size_t count = s_level.sectors.size();
-		const EditorSector* sector = s_level.sectors.data();
+		EditorSector* sector = s_level.sectors.data();
 		for (size_t s = 0; s < count; s++, sector++)
 		{
 			// Skip other layers unless all layers is enabled.
 			if (sector->layer != s_curLayer && !(s_editFlags & LEF_SHOW_ALL_LAYERS)) { continue; }
+			if (sector_isHidden(sector)) { continue; }
 
 			// Add objects...
 			// TODO: Frustum and distance culling.
@@ -2035,7 +2038,7 @@ namespace LevelEditor
 		}
 	}
 
-	static std::vector<const EditorSector*> s_sortedSectors;
+	static std::vector<EditorSector*> s_sortedSectors;
 	bool sortSectorByHeight(const EditorSector* a, const EditorSector* b)
 	{
 		return a->floorHeight < b->floorHeight;
@@ -2045,10 +2048,12 @@ namespace LevelEditor
 	{
 		s_sortedSectors.clear();
 		const size_t count = s_level.sectors.size();
-		const EditorSector* sector = s_level.sectors.data();
+		EditorSector* sector = s_level.sectors.data();
 		for (size_t s = 0; s < count; s++, sector++)
 		{
 			if (sector->layer != layer) { continue; }
+			if (sector_isHidden(sector)) { continue; }
+
 			s_sortedSectors.push_back(sector);
 		}
 		std::sort(s_sortedSectors.begin(), s_sortedSectors.end(), sortSectorByHeight);
@@ -2063,10 +2068,11 @@ namespace LevelEditor
 
 		// Draw them bottom to top.
 		const size_t count = s_sortedSectors.size();
-		const EditorSector* const* sectorList = s_sortedSectors.data();
+		EditorSector** sectorList = s_sortedSectors.data();
 		for (size_t s = 0; s < count; s++)
 		{
-			const EditorSector* sector = sectorList[s];
+			EditorSector* sector = sectorList[s];
+			
 			const u32 colorIndex = (s_editFlags & LEF_FULLBRIGHT) && s_sectorDrawMode != SDM_LIGHTING ? 31 : sector->ambient;
 
 			if (s_sectorDrawMode == SDM_LIGHTING)
@@ -2090,12 +2096,14 @@ namespace LevelEditor
 	void renderSectorWalls2d(s32 layerStart, s32 layerEnd)
 	{
 		if (layerEnd < layerStart) { return; }
-
+		
 		const size_t count = s_level.sectors.size();
-		const EditorSector* sector = s_level.sectors.data();
+		EditorSector* sector = s_level.sectors.data();
 		for (size_t s = 0; s < count; s++, sector++)
 		{
 			if (sector->layer < layerStart || sector->layer > layerEnd) { continue; }
+			if (sector_isHidden(sector)) { continue; }
+
 			if ((sector == s_featureHovered.sector || sector == s_featureCur.sector) && s_editMode == LEDIT_SECTOR) { continue; }
 			drawSector2d(sector, HL_NONE);
 		}
@@ -2127,7 +2135,7 @@ namespace LevelEditor
 		const f32 scale = std::min(1.0f, 1.0f / s_zoom2d) * c_vertexSize * extraScale;
 		drawVertex2d(pos, scale, highlight);
 	}
-
+		
 	void renderSectorVertices2d()
 	{
 		const u32 color[4] = { 0xffae8653, 0xffae8653, 0xff51331a, 0xff51331a };
@@ -2135,10 +2143,11 @@ namespace LevelEditor
 		const f32 scale = std::min(1.0f, 1.0f/s_zoom2d) * c_vertexSize;
 
 		const size_t sectorCount = s_level.sectors.size();
-		const EditorSector* sector = s_level.sectors.data();
+		EditorSector* sector = s_level.sectors.data();
 		for (size_t s = 0; s < sectorCount; s++, sector++)
 		{
 			if (sector->layer != s_curLayer) { continue; }
+			if (sector_isHidden(sector)) { continue; }
 
 			const size_t vtxCount = sector->vtx.size();
 			const Vec2f* vtx = sector->vtx.data();
