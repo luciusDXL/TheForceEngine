@@ -59,7 +59,7 @@ namespace TFE_RenderBackend
 	static bool s_useRenderTarget = false;
 	static bool s_bloomEnable = false;
 	static DisplayMode s_displayMode;
-	static f32 s_clearColor[4] = { 0.0f };
+	static f32 s_clearColor[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
 	static u32 s_rtWidth, s_rtHeight;
 
 	static Blit* s_postEffectBlit;
@@ -161,7 +161,7 @@ namespace TFE_RenderBackend
 		s_bloomMerge = new BloomMerge();
 		s_bloomMerge->init();
 		
-		glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 		glClearDepth(0.0f);
 
 		s_palette = new DynamicTexture();
