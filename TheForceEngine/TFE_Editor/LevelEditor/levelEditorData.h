@@ -267,5 +267,14 @@ namespace LevelEditor
 		return (group->flags & GRP_EXCLUDE) != 0;
 	}
 
+	inline u32 sector_getGroupColor(EditorSector* sector)
+	{
+		const Group* group = sector_getGroup(sector);
+		const u32 r = u32(group->color.x * 255.0f);
+		const u32 g = u32(group->color.y * 255.0f);
+		const u32 b = u32(group->color.z * 255.0f);
+		return (0x80 << 24) | (b << 16) | (g << 8) | (r);
+	}
+
 	extern std::vector<u8> s_fileData;
 }

@@ -25,6 +25,7 @@ namespace LevelEditor
 		SDM_LIGHTING,
 		SDM_TEXTURED_FLOOR,
 		SDM_TEXTURED_CEIL,
+		SDM_GROUP_COLOR,
 		SDM_COUNT
 	};
 

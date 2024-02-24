@@ -4983,17 +4983,21 @@ namespace LevelEditor
 			{
 				s_sectorDrawMode = SDM_LIGHTING;
 			}
-			if (ImGui::MenuItem("Textured (Floor)", "Ctrl+F3", s_sectorDrawMode == SDM_TEXTURED_FLOOR))
+			if (ImGui::MenuItem("Group Color", "Ctrl+F3", s_sectorDrawMode == SDM_GROUP_COLOR))
+			{
+				s_sectorDrawMode = SDM_GROUP_COLOR;
+			}
+			if (ImGui::MenuItem("Textured (Floor)", "Ctrl+F4", s_sectorDrawMode == SDM_TEXTURED_FLOOR))
 			{
 				s_sectorDrawMode = SDM_TEXTURED_FLOOR;
 			}
-			if (ImGui::MenuItem("Textured (Ceiling)", "Ctrl+F4", s_sectorDrawMode == SDM_TEXTURED_CEIL))
+			if (ImGui::MenuItem("Textured (Ceiling)", "Ctrl+F5", s_sectorDrawMode == SDM_TEXTURED_CEIL))
 			{
 				s_sectorDrawMode = SDM_TEXTURED_CEIL;
 			}
 			ImGui::Separator();
 			bool fullbright = (s_editFlags & LEF_FULLBRIGHT) != 0;
-			if (ImGui::MenuItem("Fullbright", "Ctrl+F5", fullbright))
+			if (ImGui::MenuItem("Fullbright", "Ctrl+F6", fullbright))
 			{
 				fullbright = !fullbright;
 				if (fullbright) { s_editFlags |= LEF_FULLBRIGHT; }

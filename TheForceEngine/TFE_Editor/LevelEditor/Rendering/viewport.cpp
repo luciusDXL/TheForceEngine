@@ -1516,6 +1516,10 @@ namespace LevelEditor
 				{
 					wallColor = (s_sectorDrawMode == SDM_TEXTURED_FLOOR || s_sectorDrawMode == SDM_TEXTURED_CEIL) ? SCOLOR_LOCKED_TEXTURE : SCOLOR_LOCKED;
 				}
+				else if (s_sectorDrawMode == SDM_GROUP_COLOR)
+				{
+					wallColor = sector_getGroupColor(sector);
+				}
 				else if (s_sectorDrawMode != SDM_WIREFRAME)
 				{
 					wallColor = c_sectorTexClr[wallColorIndex];
@@ -1635,6 +1639,10 @@ namespace LevelEditor
 			if (sector_isLocked(sector))
 			{
 				floorColor = (s_sectorDrawMode == SDM_TEXTURED_FLOOR || s_sectorDrawMode == SDM_TEXTURED_CEIL) ? SCOLOR_LOCKED_TEXTURE : SCOLOR_LOCKED;
+			}
+			else if (s_sectorDrawMode == SDM_GROUP_COLOR)
+			{
+				floorColor = sector_getGroupColor(sector);
 			}
 			else if (s_sectorDrawMode == SDM_TEXTURED_FLOOR || s_sectorDrawMode == SDM_TEXTURED_CEIL || s_sectorDrawMode == SDM_LIGHTING)
 			{
@@ -1897,7 +1905,12 @@ namespace LevelEditor
 		// Draw a background polygon to help sectors stand out a bit.
 		if (sector->layer == s_curLayer)
 		{
-			if (s_sectorDrawMode == SDM_WIREFRAME || (highlight != HL_NONE && highlight != HL_LOCKED))
+			if (s_sectorDrawMode == SDM_GROUP_COLOR)
+			{
+				const u32 color = sector_getGroupColor((EditorSector*)sector);
+				renderSectorPolygon2d(&sector->poly, color);
+			}
+			else if (s_sectorDrawMode == SDM_WIREFRAME || (highlight != HL_NONE && highlight != HL_LOCKED))
 			{
 				u32 color = c_sectorPolyClr[highlight];
 				if (highlight == HL_LOCKED) { color &= 0x00ffffff; color |= 0x60000000; }
