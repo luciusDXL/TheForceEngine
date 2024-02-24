@@ -1140,14 +1140,31 @@ namespace LevelEditor
 		NEW_LINE();
 
 		const s32 sectorCount = (s32)s_level.sectors.size();
-		WRITE_LINE("NUMSECTORS %d\r\n", sectorCount);
+		s32 writeSectorCount = 0;
+		EditorSector* sector = s_level.sectors.data();
+
+		std::vector<s32> writeSectorId;
+		writeSectorId.resize(sectorCount);
+		for (s32 i = 0; i < sectorCount; i++, sector++)
+		{
+			if (sector_excludeFromExport(sector))
+			{
+				writeSectorId[i] = -1;
+				continue;
+			}
+			writeSectorId[i] = writeSectorCount;
+			writeSectorCount++;
+		}
+
+		WRITE_LINE("NUMSECTORS %d\r\n", writeSectorCount);
 		NEW_LINE();
 		NEW_LINE();
 
-		const EditorSector* sector = s_level.sectors.data();
+		sector = s_level.sectors.data();
 		for (s32 i = 0; i < sectorCount; i++, sector++)
 		{
-			WRITE_LINE("SECTOR %d\r\n", sector->id);
+			if (sector_excludeFromExport(sector)) { continue; }
+			WRITE_LINE("SECTOR %d\r\n", writeSectorId[i]);
 
 			if (sector->name.empty()) { WRITE_LINE("  NAME\r\n"); }
 			else { WRITE_LINE("  NAME\t%s\r\n", sector->name.c_str()); }
@@ -1178,6 +1195,16 @@ namespace LevelEditor
 			const EditorWall* wall = sector->walls.data();
 			for (s32 w = 0; w < wallCount; w++, wall++)
 			{
+				s32 adjoinId = wall->adjoinId >= 0 ? writeSectorId[wall->adjoinId] : -1;
+				s32 mirrorId = wall->mirrorId;
+				// If adjoined sectors are not exported, then remove the adjoin to avoid crashes.
+				if (wall->adjoinId >= 0 && sector_excludeFromExport(&s_level.sectors[wall->adjoinId]))
+				{
+					adjoinId = -1;
+					mirrorId = -1;
+				}
+				assert((mirrorId >= 0 && adjoinId >= 0) || (mirrorId < 0 && adjoinId < 0));
+
 				WRITE_LINE("    WALL LEFT:\t%d  RIGHT:\t%d  MID:\t%d\t%0.2f\t%0.2f\t%d  TOP:\t%d\t%0.2f\t%0.2f\t%d  BOT:\t%d\t%0.2f\t%0.2f\t%d  "
 					"SIGN:\t%d\t%0.2f\t%0.2f  ADJOIN:\t%d  MIRROR:\t%d  WALK:\t%d  FLAGS: %d %d %d  LIGHT: %d\r\n", 
 					wall->idx[0], wall->idx[1],
@@ -1185,7 +1212,7 @@ namespace LevelEditor
 					wall->tex[WP_TOP].texIndex, wall->tex[WP_TOP].offset.x, wall->tex[WP_TOP].offset.z, 0,
 					wall->tex[WP_BOT].texIndex, wall->tex[WP_BOT].offset.x, wall->tex[WP_BOT].offset.z, 0,
 					wall->tex[WP_SIGN].texIndex, wall->tex[WP_SIGN].offset.x, wall->tex[WP_SIGN].offset.z,
-					wall->adjoinId, wall->mirrorId, wall->adjoinId, wall->flags[0], wall->flags[1], wall->flags[2], wall->wallLight);
+					adjoinId, mirrorId, adjoinId, wall->flags[0], wall->flags[1], wall->flags[2], wall->wallLight);
 			}
 			NEW_LINE();
 		}
@@ -1319,10 +1346,12 @@ namespace LevelEditor
 		std::vector<const EditorObject*> objList;
 		std::vector<s32> objData;
 		const s32 sectorCount = (s32)s_level.sectors.size();
-		const EditorSector* sector = s_level.sectors.data();
+		EditorSector* sector = s_level.sectors.data();
 		s32 startPointId = -1;
 		for (s32 s = 0; s < sectorCount; s++, sector++)
 		{
+			if (sector_excludeFromExport(sector)) { continue; }
+
 			const s32 objCount = (s32)sector->obj.size();
 			const EditorObject* obj = sector->obj.data();
 			for (s32 o = 0; o < objCount; o++, obj++)
@@ -1474,7 +1503,17 @@ namespace LevelEditor
 		NEW_LINE();
 
 		WRITE_LINE("LEVELNAME %s\r\n", s_level.name.c_str());
-		WRITE_LINE("items %d\r\n", (s32)s_levelInf.item.size());
+
+		const s32 itemCount = (s32)s_levelInf.item.size();
+		Editor_InfItem* item = s_levelInf.item.data();
+		s32 itemWriteCount = 0;
+		for (s32 i = 0; i < itemCount; i++, item++)
+		{
+			const s32 id = findSectorByName(item->name.c_str());
+			if (id >= 0 && sector_excludeFromExport(&s_level.sectors[id])) { continue; }
+			itemWriteCount++;
+		}
+		WRITE_LINE("items %d\r\n", itemWriteCount);
 
 		if (s_levelInf.item.empty())
 		{
@@ -1486,16 +1525,17 @@ namespace LevelEditor
 		const char* tab = "    ";
 		char curTab[256] = "";
 		// Write out INF items.
-		const s32 itemCount = (s32)s_levelInf.item.size();
-		const Editor_InfItem* item = s_levelInf.item.data();
-
 		char seqStart[256], seqEnd[256];
 		sprintf(seqStart, "%s%sseq\r\n", tab, tab);
 		sprintf(seqEnd, "%s%sseqend\r\n", tab, tab);
 
 		std::string itemBuffer;
+		item = s_levelInf.item.data();
 		for (s32 s = 0; s < itemCount; s++, item++)
 		{
+			const s32 id = findSectorByName(item->name.c_str());
+			if (id >= 0 && sector_excludeFromExport(&s_level.sectors[id])) { continue; }
+
 			char buffer[256];
 			strcpy(curTab, tab);
 
