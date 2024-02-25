@@ -302,6 +302,7 @@ namespace LevelEditor
 	void editor_infEditBegin(const char* sectorName, s32 wallIndex = -1);
 	void editor_infEditEnd();
 	bool editor_infEdit();
+	Editor_InfItem* editor_getInfItem(const char* sectorName, s32 wallIndex);
 
 	void editor_writeInfItem(std::string& outStr, const Editor_InfItem* item, const char* curTab);
 
@@ -312,4 +313,8 @@ namespace LevelEditor
 	void editor_handleSelection(Vec3f pos);
 
 	void editor_infGetViewportControl(Editor_InfVpControl* ctrl);
+
+	const Editor_InfElevator* getElevFromClassData(const Editor_InfClass* data);
+	const Editor_InfTrigger* getTriggerFromClassData(const Editor_InfClass* data);
+	const Editor_InfTeleporter* getTeleporterFromClassData(const Editor_InfClass* data);
 }

@@ -82,6 +82,10 @@ namespace LevelEditor
 		INF_COLOR_EDIT_HELPER = 0xffc000ff,
 	};
 
+	const u32 c_connectMsgColor = 0xc0ff80ff;
+	const u32 c_connectClientColor = 0xc080ff80;
+	const u32 c_connectTargetColor = 0xc080ffff;
+
 	static const SectorColor c_sectorPolyClr[] = { SCOLOR_POLY_NORM, SCOLOR_POLY_HOVERED, SCOLOR_POLY_SELECTED, SCOLOR_LOCKED };
 	static const SectorColor c_sectorLineClr[] = { SCOLOR_LINE_NORM, SCOLOR_LINE_HOVERED, SCOLOR_LINE_SELECTED, SCOLOR_LOCKED_VTX };
 	static const SectorColor c_sectorLineClrAdjoin[] = { SCOLOR_LINE_NORM_ADJ, SCOLOR_LINE_HOVERED_ADJ, SCOLOR_LINE_SELECTED_ADJ, SCOLOR_LOCKED };
@@ -136,8 +140,10 @@ namespace LevelEditor
 	void drawWallLines3D_Highlighted(const EditorSector* sector, const EditorSector* next, const EditorWall* wall, f32 width, Highlight highlight, bool halfAlpha, bool showSign = false);
 	void drawPosition2d(f32 width, Vec2f pos, u32 color);
 	void drawArrow2d(f32 width, f32 lenInPixels, Vec2f pos, Vec2f dir, u32 color);
+	void drawArrow2d_Segment(f32 width, f32 lenInPixels, Vec2f pos0, Vec2f pos1, u32 color);
 	void drawPosition3d(f32 width, Vec3f pos, u32 color);
 	void drawArrow3d(f32 width, f32 lenInPixels, Vec3f pos, Vec3f dir, Vec3f nrm, u32 color);
+	void drawArrow3d_Segment(f32 width, f32 lenInPixels, Vec3f pos0, Vec3f pos1, Vec3f nrm, u32 color);
 	bool computeSignCorners(const EditorSector* sector, const EditorWall* wall, Vec3f* corners);
 
 	void viewport_init()
@@ -412,6 +418,143 @@ namespace LevelEditor
 				} break;
 				// InfVpControl_AngleXY isn't visible in 2D.
 			}
+		}
+		else if ((s_editMode == LevelEditMode::LEDIT_SECTOR || s_editMode == LevelEditMode::LEDIT_WALL) && s_selectionList.size() <= 1)
+		{
+			// Handle drawing INF debugging helpers.
+			const Feature feature = s_featureCur.sector ? s_featureCur : s_featureHovered;
+			const EditorSector* sector = feature.sector;
+			if (!sector) { return; }
+
+			const bool isWall = feature.part == HP_MID || feature.part == HP_TOP || feature.part == HP_BOT || feature.part == HP_SIGN;
+
+			TFE_RenderShared::lineDraw2d_begin(s_viewportSize.x, s_viewportSize.z);
+			Editor_InfItem* item = editor_getInfItem(sector->name.c_str(), isWall ? feature.featureIndex : -1);
+			if (item)
+			{
+				const s32 classCount = (s32)item->classData.size();
+				const Editor_InfClass* const* classList = item->classData.data();
+				for (s32 i = 0; i < classCount; i++)
+				{
+					const Editor_InfClass* classData = classList[i];
+					switch (classData->classId)
+					{
+						case IIC_ELEVATOR:
+						{
+							Vec2f startPoint = {};
+							startPoint.x = (sector->bounds[0].x + sector->bounds[1].x) * 0.5f;
+							startPoint.z = (sector->bounds[0].z + sector->bounds[1].z) * 0.5f;
+
+							const Editor_InfElevator* elev = getElevFromClassData(classData);
+							// Elevators interact with other items (sectors/walls) via stop messages.
+							const s32 stopCount = (s32)elev->stops.size();
+							const Editor_InfStop* stop = elev->stops.data();
+							for (s32 s = 0; s < stopCount; s++, stop++)
+							{
+								const s32 msgCount = (s32)stop->msg.size();
+								const Editor_InfMessage* msg = stop->msg.data();
+								for (s32 m = 0; m < msgCount; m++, msg++)
+								{
+									const char* targetSectorName = msg->targetSector.c_str();
+									const s32 targetWall = msg->targetWall;
+									const s32 id = findSectorByName(targetSectorName);
+									const EditorSector* targetSector = id >= 0 ? &s_level.sectors[id] : nullptr;
+									if (!targetSector) { continue; }
+
+									Vec2f endPoint = { 0 };
+									if (targetWall < 0)
+									{
+										endPoint.x = (targetSector->bounds[0].x + targetSector->bounds[1].x) * 0.5f;
+										endPoint.z = (targetSector->bounds[0].z + targetSector->bounds[1].z) * 0.5f;
+									}
+									else
+									{
+										const EditorWall* wall = &targetSector->walls[targetWall];
+										const Vec2f* v0 = &targetSector->vtx[wall->idx[0]];
+										const Vec2f* v1 = &targetSector->vtx[wall->idx[1]];
+										endPoint.x = (v0->x + v1->x) * 0.5f;
+										endPoint.z = (v0->z + v1->z) * 0.5f;
+									}
+
+									drawArrow2d_Segment(1.5f, 32.0f, startPoint, endPoint, c_connectMsgColor);
+								}
+							}
+						} break;
+						case IIC_TRIGGER:
+						{
+							const Editor_InfTrigger* trigger = getTriggerFromClassData(classData);
+							// Triggers interact with other items (sectors/walls) via clients.
+							Vec2f startPoint = {};
+							if (item->wallNum >= 0)
+							{
+								const EditorWall* wall = &sector->walls[item->wallNum];
+								const Vec2f* v0 = &sector->vtx[wall->idx[0]];
+								const Vec2f* v1 = &sector->vtx[wall->idx[1]];
+								startPoint.x = (v0->x + v1->x) * 0.5f;
+								startPoint.z = (v0->z + v1->z) * 0.5f;
+							}
+							else
+							{
+								startPoint.x = (sector->bounds[0].x + sector->bounds[1].x) * 0.5f;
+								startPoint.z = (sector->bounds[0].z + sector->bounds[1].z) * 0.5f;
+							}
+
+							const s32 clientCount = (s32)trigger->clients.size();
+							const Editor_InfClient* client = trigger->clients.data();
+							for (s32 c = 0; c < clientCount; c++, client++)
+							{
+								const char* targetSectorName = client->targetSector.c_str();
+								const s32 targetWall = client->targetWall;
+								const s32 id = findSectorByName(targetSectorName);
+								const EditorSector* targetSector = id >= 0 ? &s_level.sectors[id] : nullptr;
+								if (!targetSector) { continue; }
+
+								Vec2f endPoint = { 0 };
+								if (targetWall < 0)
+								{
+									endPoint.x = (targetSector->bounds[0].x + targetSector->bounds[1].x) * 0.5f;
+									endPoint.z = (targetSector->bounds[0].z + targetSector->bounds[1].z) * 0.5f;
+								}
+								else
+								{
+									const EditorWall* wall = &targetSector->walls[targetWall];
+									const Vec2f* v0 = &targetSector->vtx[wall->idx[0]];
+									const Vec2f* v1 = &targetSector->vtx[wall->idx[1]];
+									endPoint.x = (v0->x + v1->x) * 0.5f;
+									endPoint.z = (v0->z + v1->z) * 0.5f;
+								}
+
+								drawArrow2d_Segment(1.5f, 32.0f, startPoint, endPoint, c_connectClientColor);
+							}
+						} break;
+						case IIC_TELEPORTER:
+						{
+							Vec2f startPoint = {};
+							startPoint.x = (sector->bounds[0].x + sector->bounds[1].x) * 0.5f;
+							startPoint.z = (sector->bounds[0].z + sector->bounds[1].z) * 0.5f;
+
+							const Editor_InfTeleporter* teleporter = getTeleporterFromClassData(classData);
+							const s32 id = findSectorByName(teleporter->target.c_str());
+							const EditorSector* targetSector = id >= 0 ? &s_level.sectors[id] : nullptr;
+
+							// Teleport interact with other items (sectors) by way of target sector.
+							Vec2f endPoint = { 0 };
+							if (teleporter->type == TELEPORT_BASIC)
+							{
+								endPoint = { teleporter->dstPos.x, teleporter->dstPos.z };
+							}
+							else if (targetSector)
+							{
+								endPoint.x = (targetSector->bounds[0].x + targetSector->bounds[1].x) * 0.5f;
+								endPoint.z = (targetSector->bounds[0].z + targetSector->bounds[1].z) * 0.5f;
+							}
+
+							drawArrow2d_Segment(1.5f, 32.0f, startPoint, endPoint, c_connectTargetColor);
+						} break;
+					}
+				}
+			}
+			TFE_RenderShared::lineDraw2d_drawLines();
 		}
 	}
 
@@ -1806,6 +1949,155 @@ namespace LevelEditor
 				} break;
 			}
 		}
+		else if ((s_editMode == LevelEditMode::LEDIT_SECTOR || s_editMode == LevelEditMode::LEDIT_WALL) && s_selectionList.size() <= 1)
+		{
+			// Handle drawing INF debugging helpers.
+			const Feature feature = s_featureCur.sector ? s_featureCur : s_featureHovered;
+			const EditorSector* sector = feature.sector;
+			if (!sector) { return; }
+
+			const bool isWall = feature.part == HP_MID || feature.part == HP_TOP || feature.part == HP_BOT || feature.part == HP_SIGN;
+
+			TFE_RenderShared::lineDraw3d_begin(s_viewportSize.x, s_viewportSize.z);
+			Editor_InfItem* item = editor_getInfItem(sector->name.c_str(), isWall ? feature.featureIndex : -1);
+			if (item)
+			{
+				const s32 classCount = (s32)item->classData.size();
+				const Editor_InfClass* const* classList = item->classData.data();
+				for (s32 i = 0; i < classCount; i++)
+				{
+					const Editor_InfClass* classData = classList[i];
+					switch (classData->classId)
+					{
+						case IIC_ELEVATOR:
+						{
+							Vec3f startPoint = {};
+							startPoint.x = (sector->bounds[0].x + sector->bounds[1].x) * 0.5f;
+							startPoint.y = (sector->bounds[0].y + sector->bounds[1].y) * 0.5f;
+							startPoint.z = (sector->bounds[0].z + sector->bounds[1].z) * 0.5f;
+
+							const Editor_InfElevator* elev = getElevFromClassData(classData);
+							// Elevators interact with other items (sectors/walls) via stop messages.
+							const s32 stopCount = (s32)elev->stops.size();
+							const Editor_InfStop* stop = elev->stops.data();
+							for (s32 s = 0; s < stopCount; s++, stop++)
+							{
+								const s32 msgCount = (s32)stop->msg.size();
+								const Editor_InfMessage* msg = stop->msg.data();
+								for (s32 m = 0; m < msgCount; m++, msg++)
+								{
+									const char* targetSectorName = msg->targetSector.c_str();
+									const s32 targetWall = msg->targetWall;
+									const s32 id = findSectorByName(targetSectorName);
+									const EditorSector* targetSector = id >= 0 ? &s_level.sectors[id] : nullptr;
+									if (!targetSector) { continue; }
+
+									Vec3f endPoint = { 0 };
+									if (targetWall < 0)
+									{
+										endPoint.x = (targetSector->bounds[0].x + targetSector->bounds[1].x) * 0.5f;
+										endPoint.y = (targetSector->bounds[0].y + targetSector->bounds[1].y) * 0.5f;
+										endPoint.z = (targetSector->bounds[0].z + targetSector->bounds[1].z) * 0.5f;
+									}
+									else
+									{
+										const EditorWall* wall = &targetSector->walls[targetWall];
+										const Vec2f* v0 = &targetSector->vtx[wall->idx[0]];
+										const Vec2f* v1 = &targetSector->vtx[wall->idx[1]];
+										endPoint.x = (v0->x + v1->x) * 0.5f;
+										endPoint.y = (targetSector->bounds[0].y + targetSector->bounds[1].y) * 0.5f;
+										endPoint.z = (v0->z + v1->z) * 0.5f;
+									}
+
+									const Vec3f nrm = s_camera.viewMtx.m2;
+									drawArrow3d_Segment(3.0f, 0.16f, startPoint, endPoint, nrm, c_connectMsgColor);
+								}
+							}
+						} break;
+						case IIC_TRIGGER:
+						{
+							const Editor_InfTrigger* trigger = getTriggerFromClassData(classData);
+							// Triggers interact with other items (sectors/walls) via clients.
+							Vec3f startPoint = {};
+							if (item->wallNum >= 0)
+							{
+								const EditorWall* wall = &sector->walls[item->wallNum];
+								const Vec2f* v0 = &sector->vtx[wall->idx[0]];
+								const Vec2f* v1 = &sector->vtx[wall->idx[1]];
+								startPoint.x = (v0->x + v1->x) * 0.5f;
+								startPoint.y = (sector->bounds[0].y + sector->bounds[1].y) * 0.5f;
+								startPoint.z = (v0->z + v1->z) * 0.5f;
+							}
+							else
+							{
+								startPoint.x = (sector->bounds[0].x + sector->bounds[1].x) * 0.5f;
+								startPoint.y = (sector->bounds[0].y + sector->bounds[1].y) * 0.5f;
+								startPoint.z = (sector->bounds[0].z + sector->bounds[1].z) * 0.5f;
+							}
+
+							const s32 clientCount = (s32)trigger->clients.size();
+							const Editor_InfClient* client = trigger->clients.data();
+							for (s32 c = 0; c < clientCount; c++, client++)
+							{
+								const char* targetSectorName = client->targetSector.c_str();
+								const s32 targetWall = client->targetWall;
+								const s32 id = findSectorByName(targetSectorName);
+								const EditorSector* targetSector = id >= 0 ? &s_level.sectors[id] : nullptr;
+								if (!targetSector) { continue; }
+
+								Vec3f endPoint = { 0 };
+								if (targetWall < 0)
+								{
+									endPoint.x = (targetSector->bounds[0].x + targetSector->bounds[1].x) * 0.5f;
+									endPoint.y = (targetSector->bounds[0].y + targetSector->bounds[1].y) * 0.5f;
+									endPoint.z = (targetSector->bounds[0].z + targetSector->bounds[1].z) * 0.5f;
+								}
+								else
+								{
+									const EditorWall* wall = &targetSector->walls[targetWall];
+									const Vec2f* v0 = &targetSector->vtx[wall->idx[0]];
+									const Vec2f* v1 = &targetSector->vtx[wall->idx[1]];
+									endPoint.x = (v0->x + v1->x) * 0.5f;
+									endPoint.y = (targetSector->bounds[0].y + targetSector->bounds[1].y) * 0.5f;
+									endPoint.z = (v0->z + v1->z) * 0.5f;
+								}
+
+								const Vec3f nrm = s_camera.viewMtx.m2;
+								drawArrow3d_Segment(3.0f, 0.16f, startPoint, endPoint, nrm, c_connectClientColor);
+							}
+						} break;
+						case IIC_TELEPORTER:
+						{
+							Vec3f startPoint = {};
+							startPoint.x = (sector->bounds[0].x + sector->bounds[1].x) * 0.5f;
+							startPoint.y = (sector->bounds[0].y + sector->bounds[1].y) * 0.5f;
+							startPoint.z = (sector->bounds[0].z + sector->bounds[1].z) * 0.5f;
+
+							const Editor_InfTeleporter* teleporter = getTeleporterFromClassData(classData);
+							const s32 id = findSectorByName(teleporter->target.c_str());
+							const EditorSector* targetSector = id >= 0 ? &s_level.sectors[id] : nullptr;
+
+							// Teleport interact with other items (sectors) by way of target sector.
+							Vec3f endPoint = { 0 };
+							if (teleporter->type == TELEPORT_BASIC)
+							{
+								endPoint = teleporter->dstPos;
+							}
+							else if (targetSector)
+							{
+								endPoint.x = (targetSector->bounds[0].x + targetSector->bounds[1].x) * 0.5f;
+								endPoint.y = (targetSector->bounds[0].y + targetSector->bounds[1].y) * 0.5f;
+								endPoint.z = (targetSector->bounds[0].z + targetSector->bounds[1].z) * 0.5f;
+							}
+
+							const Vec3f nrm = s_camera.viewMtx.m2;
+							drawArrow3d_Segment(3.0f, 0.16f, startPoint, endPoint, nrm, c_connectTargetColor);
+						} break;
+					}
+				}
+			}
+			TFE_RenderShared::lineDraw3d_drawLines(&s_camera, false, false);
+		}
 	}
 		
 	void renderLevel3DGame()
@@ -2481,6 +2773,39 @@ namespace LevelEditor
 		TFE_RenderShared::lineDraw2d_addLine(width, &vtx[2], clr);
 		TFE_RenderShared::lineDraw2d_addLine(width, &vtx[4], clr);
 	}
+
+	void drawArrow2d_Segment(f32 width, f32 lenInPixels, Vec2f pos0, Vec2f pos1, u32 color)
+	{
+		f32 step = lenInPixels / s_viewportTrans2d.x;
+		f32 partStep = step * 0.25f;
+
+		Vec2f dir = { pos1.x - pos0.x, pos1.z - pos0.z };
+		dir = TFE_Math::normalize(&dir);
+		Vec2f tan = { -dir.z, dir.x };
+
+		Vec2f p0 = pos0;
+		Vec2f p1 = pos1;
+		Vec2f p2 = { p1.x - dir.x*partStep - tan.x*partStep, p1.z - dir.z*partStep - tan.z*partStep };
+		Vec2f p3 = { p1.x - dir.x*partStep + tan.x*partStep, p1.z - dir.z*partStep + tan.z*partStep };
+
+		Vec2f vtx[] =
+		{
+			{ p0.x * s_viewportTrans2d.x + s_viewportTrans2d.y, p0.z * s_viewportTrans2d.z + s_viewportTrans2d.w },
+			{ p1.x * s_viewportTrans2d.x + s_viewportTrans2d.y, p1.z * s_viewportTrans2d.z + s_viewportTrans2d.w },
+
+			{ p1.x * s_viewportTrans2d.x + s_viewportTrans2d.y, p1.z * s_viewportTrans2d.z + s_viewportTrans2d.w },
+			{ p2.x * s_viewportTrans2d.x + s_viewportTrans2d.y, p2.z * s_viewportTrans2d.z + s_viewportTrans2d.w },
+
+			{ p1.x * s_viewportTrans2d.x + s_viewportTrans2d.y, p1.z * s_viewportTrans2d.z + s_viewportTrans2d.w },
+			{ p3.x * s_viewportTrans2d.x + s_viewportTrans2d.y, p3.z * s_viewportTrans2d.z + s_viewportTrans2d.w },
+		};
+
+		// Draw lines through the center point.
+		const u32 clr[] = { color, color };
+		TFE_RenderShared::lineDraw2d_addLine(width, &vtx[0], clr);
+		TFE_RenderShared::lineDraw2d_addLine(width, &vtx[2], clr);
+		TFE_RenderShared::lineDraw2d_addLine(width, &vtx[4], clr);
+	}
 		
 	void drawPosition3d(f32 width, Vec3f pos, u32 color)
 	{
@@ -2518,6 +2843,39 @@ namespace LevelEditor
 
 		Vec3f p0 = pos;
 		Vec3f p1 = { p0.x + dir.x*step, p0.y + dir.y*step, p0.z + dir.z*step };
+		Vec3f p2 = { p1.x - dir.x*partStep - tan.x*partStep, p1.y - dir.y*partStep - tan.y*partStep, p1.z - dir.z*partStep - tan.z*partStep };
+		Vec3f p3 = { p1.x - dir.x*partStep + tan.x*partStep, p1.y - dir.y*partStep + tan.y*partStep, p1.z - dir.z*partStep + tan.z*partStep };
+
+		Vec3f vtx[] =
+		{
+			p0, p1,
+			p1, p2,
+			p1, p3
+		};
+
+		// Draw lines through the center point.
+		const u32 clr[] = { color, color };
+		TFE_RenderShared::lineDraw3d_addLine(width, &vtx[0], clr);
+		TFE_RenderShared::lineDraw3d_addLine(width, &vtx[2], clr);
+		TFE_RenderShared::lineDraw3d_addLine(width, &vtx[4], clr);
+	}
+
+	void drawArrow3d_Segment(f32 width, f32 lenInPixels, Vec3f pos0, Vec3f pos1, Vec3f nrm, u32 color)
+	{
+		Vec3f offset = { pos0.x - s_camera.pos.x, pos0.y - s_camera.pos.y, pos0.z - s_camera.pos.z };
+		f32 dist = sqrtf(offset.x*offset.x + offset.y*offset.y + offset.z*offset.z);
+
+		f32 step = lenInPixels * dist;
+		f32 partStep = step * 0.25f;
+
+		Vec3f dir = { pos1.x - pos0.x, pos1.y - pos0.y, pos1.z - pos0.z };
+		dir = TFE_Math::normalize(&dir);
+
+		Vec3f tan = TFE_Math::cross(&dir, &nrm);
+		tan = TFE_Math::normalize(&tan);
+
+		Vec3f p0 = pos0;
+		Vec3f p1 = pos1;
 		Vec3f p2 = { p1.x - dir.x*partStep - tan.x*partStep, p1.y - dir.y*partStep - tan.y*partStep, p1.z - dir.z*partStep - tan.z*partStep };
 		Vec3f p3 = { p1.x - dir.x*partStep + tan.x*partStep, p1.y - dir.y*partStep + tan.y*partStep, p1.z - dir.z*partStep + tan.z*partStep };
 

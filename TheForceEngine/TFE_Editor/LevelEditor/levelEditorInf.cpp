@@ -392,7 +392,7 @@ namespace LevelEditor
 		}
 		s_levelInf.teleport.pop_back();
 	}
-
+		
 	Editor_InfElevator* getElevFromClassData(Editor_InfClass* data)
 	{
 		if (data->classId != IIC_ELEVATOR) { return nullptr; }
@@ -1465,6 +1465,21 @@ namespace LevelEditor
 		}
 
 		return true;
+	}
+
+	Editor_InfItem* editor_getInfItem(const char* sectorName, s32 wallIndex)
+	{
+		const s32 itemCount = (s32)s_levelInf.item.size();
+		Editor_InfItem* item = s_levelInf.item.data();
+		for (s32 i = 0; i < itemCount; i++, item++)
+		{
+			if (strcasecmp(sectorName, item->name.c_str()) == 0 && wallIndex == item->wallNum)
+			{
+				return item;
+				break;
+			}
+		}
+		return nullptr;
 	}
 		
 	void editor_infEditBegin(const char* sectorName, s32 wallIndex)
