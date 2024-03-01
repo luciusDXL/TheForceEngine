@@ -109,6 +109,15 @@ namespace TFE_RenderBackend
 		//Sets all functions available
 		glewExperimental = GL_TRUE;
 		const GLenum err = glewInit();
+	#if defined(GLEW_ERROR_NO_GLX_DISPLAY) && !defined(_WIN32)
+		if (err == GLEW_ERROR_NO_GLX_DISPLAY &&
+			strcmp(SDL_GetCurrentVideoDriver(), "wayland") == 0)
+		{
+			// workaround for GLEW on Wayland
+			// see https://github.com/nigels-com/glew/issues/172
+		}
+		else
+	#endif
 		if (err != GLEW_OK)
 		{
 			printf("Failed to initialize GLEW");
