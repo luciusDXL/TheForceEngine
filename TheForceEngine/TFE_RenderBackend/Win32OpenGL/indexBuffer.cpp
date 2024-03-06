@@ -41,13 +41,13 @@ void IndexBuffer::update(const void* buffer, size_t size)
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 }
 
-u32 IndexBuffer::bind()
+u32 IndexBuffer::bind() const
 {
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_gpuHandle);
 	return m_stride == 4 ? GL_UNSIGNED_INT : GL_UNSIGNED_SHORT;
 }
 
-void IndexBuffer::unbind()
+void IndexBuffer::unbind() const
 {
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 }

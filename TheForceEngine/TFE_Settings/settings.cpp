@@ -31,6 +31,7 @@ namespace TFE_Settings
 	static TFE_Settings_Hud s_hudSettings = {};
 	static TFE_Settings_Sound s_soundSettings = {};
 	static TFE_Settings_System s_systemSettings = {};
+	static TFE_Settings_Temp s_tempSettings = {};
 	static TFE_Settings_A11y s_a11ySettings = {};
 	static TFE_Game s_game = {};
 	static TFE_Settings_Game s_gameSettings = {};
@@ -280,6 +281,11 @@ namespace TFE_Settings
 	{
 		return &s_systemSettings;
 	}	
+
+	TFE_Settings_Temp* getTempSettings()
+	{
+		return &s_tempSettings;
+	}
 	
 	TFE_Settings_A11y* getA11ySettings()
 	{
@@ -427,6 +433,7 @@ namespace TFE_Settings
 		
 		writeKeyValue_Bool(settings, "enableHeadwave", s_a11ySettings.enableHeadwave);
 		writeKeyValue_Bool(settings, "disableScreenFlashes", s_a11ySettings.disableScreenFlashes);
+		writeKeyValue_Bool(settings, "disablePlayerWeaponLighting", s_a11ySettings.disablePlayerWeaponLighting);
 	}
 
 	void writeGameSettings(FileStream& settings)
@@ -940,6 +947,10 @@ namespace TFE_Settings
 		else if (strcasecmp("disableScreenFlashes", key) == 0)
 		{
 			s_a11ySettings.disableScreenFlashes = parseBool(value);
+		}
+		else if (strcasecmp("disablePlayerWeaponLighting", key) == 0)
+		{
+			s_a11ySettings.disablePlayerWeaponLighting = parseBool(value);
 		}
 	}
 

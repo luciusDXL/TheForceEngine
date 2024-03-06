@@ -177,6 +177,11 @@ namespace TFE_Profiler
 	void frameBegin()
 	{
 		std::swap(s_readBuffer, s_writeBuffer);
+		// Validate buffer indices.
+		assert(s_readBuffer < ZONE_BUFFER_COUNT && s_writeBuffer < ZONE_BUFFER_COUNT && s_readBuffer != s_writeBuffer);
+		s_readBuffer  %= ZONE_BUFFER_COUNT;
+		s_writeBuffer %= ZONE_BUFFER_COUNT;
+
 		s_level = 0;
 		s_maxLevel = 0;
 		s_roots.clear();

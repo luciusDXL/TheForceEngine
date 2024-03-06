@@ -171,8 +171,6 @@ namespace TFE_DarkForces
 	static JBool s_playerSecFire = JFALSE;
 	static JBool s_playerJumping = JFALSE;
 	static JBool s_playerInWater = JFALSE;
-	static JBool s_limitStepHeight = JTRUE;
-	static JBool s_smallModeEnabled = JFALSE;
 	JBool s_aiActive = JTRUE;
 	// Currently playing sound effects.
 	static SoundEffectId s_crushSoundId = 0;
@@ -209,6 +207,8 @@ namespace TFE_DarkForces
 	JBool s_superCharge   = JFALSE;
 	JBool s_superChargeHud= JFALSE;
 	JBool s_playerSecMoved = JFALSE;
+	JBool s_limitStepHeight = JTRUE;
+	JBool s_smallModeEnabled = JFALSE;
 	JBool s_flyMode = JFALSE;
 	JBool s_noclip = JFALSE;
 	JBool s_oneHitKillEnabled = JFALSE;
@@ -220,7 +220,7 @@ namespace TFE_DarkForces
 	SecObject* s_playerEye = nullptr;
 	vec3_fixed s_eyePos = { 0 };	// s_camX, s_camY, s_camZ in the DOS code.
 	angle14_32 s_pitch = 0, s_yaw = 0, s_roll = 0;
-	u32 s_playerEyeFlags = 4;
+	u32 s_playerEyeFlags = OBJ_FLAG_NEEDS_TRANSFORM;
 	Tick s_playerTick;
 	Tick s_prevPlayerTick;
 	Tick s_nextShieldDmgTick;
@@ -652,8 +652,8 @@ namespace TFE_DarkForces
 		player_setupCamera();
 
 		s_playerEye->flags |= OBJ_FLAG_EYE;
-		s_playerEyeFlags = s_playerEye->flags & 4;
-		s_playerEye->flags &= ~4;
+		s_playerEyeFlags = s_playerEye->flags & OBJ_FLAG_NEEDS_TRANSFORM;
+		s_playerEye->flags &= ~OBJ_FLAG_NEEDS_TRANSFORM;
 
 		s_eyePos.x = s_playerEye->posWS.x;
 		s_eyePos.y = s_playerEye->posWS.y;
@@ -853,7 +853,7 @@ namespace TFE_DarkForces
 		}
 	}
 
-	void cheat_enableNoheightCheck()
+	void cheat_toggleHeightCheck()
 	{
 		s_limitStepHeight = ~s_limitStepHeight;
 		hud_sendTextMessage(700);
@@ -972,6 +972,13 @@ namespace TFE_DarkForces
 			const char* msg = TFE_System::getMessage(TFE_MSG_SUBLIFE);
 			if (msg) { hud_sendTextMessage(msg, 1); }
 		}
+	}
+	
+	void cheat_maxLives()
+	{
+		s_lifeCount = 9;
+		const char* msg = TFE_System::getMessage(TFE_MSG_CAT);
+		if (msg) { hud_sendTextMessage(msg, 1); }
 	}
 
 	void cheat_die()
@@ -2229,7 +2236,15 @@ namespace TFE_DarkForces
 				headlamp = floor16(mul16(batteryPower, FIXED(64)));
 				headlamp = min(MAX_LIGHT_LEVEL, headlamp);
 			}
-			s32 atten = max(headlamp, s_weaponLight + s_levelAtten);
+			s32 atten;
+			if (TFE_Settings::getA11ySettings()->disablePlayerWeaponLighting)
+			{
+				atten = max(headlamp, s_levelAtten);
+			}
+			else
+			{
+				atten = max(headlamp, s_weaponLight + s_levelAtten);
+			}
 			s_baseAtten = atten;
 			if (s_nightvisionActive)
 			{

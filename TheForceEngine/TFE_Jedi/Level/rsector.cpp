@@ -67,30 +67,33 @@ namespace TFE_Jedi
 
 				RWall* mirror = wall->mirrorWall;
 				RSector* mSector = mirror->sector;
-				fixed16_16 mFloorHeight = mSector->floorHeight;
-				fixed16_16 mCeilHeight = mSector->ceilingHeight;
-				assert(mSector == wall->nextSector);
+				if (mSector)
+				{
+					fixed16_16 mFloorHeight = mSector->floorHeight;
+					fixed16_16 mCeilHeight = mSector->ceilingHeight;
+					assert(mSector == wall->nextSector);
 
-				//wall->drawFlags = WDF_MIDDLE;
-				mirror->drawFlags = WDF_MIDDLE;
+					//wall->drawFlags = WDF_MIDDLE;
+					mirror->drawFlags = WDF_MIDDLE;
 
-				if (wCeilHeight < mCeilHeight)
-				{
-					wall->drawFlags |= WDF_TOP;
+					if (wCeilHeight < mCeilHeight)
+					{
+						wall->drawFlags |= WDF_TOP;
+					}
+					if (wFloorHeight > mFloorHeight)
+					{
+						wall->drawFlags |= WDF_BOT;
+					}
+					if (mCeilHeight < wCeilHeight)
+					{
+						mirror->drawFlags |= WDF_TOP;
+					}
+					if (mFloorHeight > wFloorHeight)
+					{
+						mirror->drawFlags |= WDF_BOT;
+					}
+					wall_computeTexelHeights(wall->mirrorWall);
 				}
-				if (wFloorHeight > mFloorHeight)
-				{
-					wall->drawFlags |= WDF_BOT;
-				}
-				if (mCeilHeight < wCeilHeight)
-				{
-					mirror->drawFlags |= WDF_TOP;
-				}
-				if (mFloorHeight > wFloorHeight)
-				{
-					mirror->drawFlags |= WDF_BOT;
-				}
-				wall_computeTexelHeights(wall->mirrorWall);
 			}
 			wall_computeTexelHeights(wall);
 		}

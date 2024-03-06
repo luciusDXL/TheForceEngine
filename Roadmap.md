@@ -1,59 +1,39 @@
-# Roadmap
+## Version 1.0 Release [Released]
+### Release: December 19, 2022
+With this release, TFE is a complete replacement for DosBox for most players. This release includes the perspective-correct GPU renderer. This milestone has been successfully reached.
 
-This roadmap has been completely rewritten based on current progress and changes that naturally occur during a long term project. A lot of this is from a recent blog post, but I will be updating it over time and want to have a single place for the information. A few of the entries have estimated release dates, which are subject to change. In-between releases are, obviously, expected to fall in-between the dates but are not estimated. Substantial work towards version 2.0 (Outlaws support) is expected to begin in early 2022 but it is too early to make any meaningful time estimates, though as described in that section, I do expect version 2.0 to be completed much faster than version 1.0.
+## Linux Support
+*Finished*<br>
+Basic Linux support has been completed, though Flatpaks and other distribution methods still need to be done.
 
-- [x] [Core Game Loop Release](#core-game-loop-release)
-- [ ] [Bug Fixes](#bug-fixes)
-- [x] [UI and Mission Briefings](#ui-and-mission-briefings)
-- [x] [Sound](#sound)
-- [ ] [Version 1.0 Release](#version-10-release) - _In Progress_
-- [ ] [Voxels](#voxels)
-- [ ] [Mac and Linux Support](#mac-and-linux-support)
-- [ ] [Tools and Level Editor](#tools)
+## Post Processing and Bloom
+*Finished*<br>
+The Post-processing pipeline was implemented, including a bloom effect that can be adjusted to taste.
 
-_These releases are too broad and will be clarified as the project gets closer_
-* [Towards Version 2.0](#towards-version-20)
+## True Color Support
+*Finished*<br>
+True-color support was implemented with options for colormap blending, full true-color rendering, and texture filtering.
 
-You can view the short-term progress here: [Progress Tracker](https://theforceengine.github.io/ProgressTracker.html)
+## Level Editor
+### Estimated Release: Early 2024
+Built-in **level editor** for Dark Forces that can be used to make complete levels with goals, INF support, editable entities, and everything else needed. Support for **Outlaws** levels will be coming later.
 
-# Core Game Loop Release
-### Released November 18, 2021
-The Core Game Loop release is still the next planned release. While it has taken longer than I originally planned for, as you can see above it is getting close to the finish line. This release will include saving and loading Dark Forces save game data (meaning your current saves will work), creating and deleting agents, proper saved progression through the game, proper visuals using the reverse-engineered classic renderer, pickups, items, all weapons working correctly, accurate player control, physics and collision detection, accurate level interactivity (INF), full enemy AI, palette effects from picking up objects and getting hurt, all items - such as the gasmask - working correctly, Vue animations, basic controller support, key and button rebinding, mouse and controller sensitivity adjustment.
+## Asset Editor
+### Estimated Release: Early 2024
+Finish the Asset Browser, started in 2023. In addition to the formats currently supported, support will be added for formats needed for cutscenes, and UI. And finally new assets - such as HD assets and voxels.
 
-The editors will be temporarily off-line, due to the complete refactor of the code base to properly use the reverse-engineered code. However, they will come back in a future release (see below).
+## HD Asset Support
+### Estimated Release: Early 2024
+With the tools in place, the plan is to support higher resolution and true-color assets. This includes textures, already includes models (3DO limits were removed previously as an option), and 44.1kHz audio (wave files).
 
-Note, however, with all of this being made available at once there will inevitably be bugs and issues. I consider this to be an Alpha release - since it is not yet feature complete. Missing elements will include: cutscenes, mission briefings, some in-game UI (PDA), iMuse, and there will be some sound inaccuracies.
-
-# Bug Fixes
-There will be plenty of bugs to fix, so this is a placeholder here. This probably won’t be a big release by itself - instead it will be a bunch of smaller “point” releases. This will likely continue as the next releases are being worked on.
-
-# UI and Mission Briefings
-### Released December 5, 2021
-The next major system will be the in-game UI, especially useful when looking at mission objectives and key codes using the PDA. Once the UI and mission briefings are in place, the game is technically fully playable.
-
-# Sound
-### Released May 18, 2022
-This release will implement the correct sound falloff and 3D effects and finally fully implement the iMuse system. Note that the iMuse system has been completed and work on other sound elements is in progress.
-
-# Version 1.0 Release
-### Estimated Release: Late July 2022
-With this release, TFE will be a complete replacement for DosBox. This release will also include the perspective-correct GPU renderer.
-
-# Voxels
-### Estimated Release: August 2022
+## Voxels
+### Estimated Release: Early to Mid 2024
 Quite some time ago now, I implemented an experimental voxel renderer that integrated seamlessly with the Jedi classic renderer. However, there were some loose ends to deal with, such as not supporting the full VOX format and dealing with some palette issues. This release will integrate that code with the main branch and add support for replacing objects with their voxel counterpart.
 
-# Tools
-### Estimated Release: September 2022
-The focus of this release is to get the tools working again with the reverse-engineered code. This will include basic functionality like importing and exporting assets, viewing them, etc. and the first release of the full level editor. It might still be missing some planned features, but as of this release it should be fully usable for building real levels and mods.
+## Dynamic Lighting
+### Estimated Release: Early to Mid 2024
+Dynamic light was implemented in a branch along with true color rendering. But it needs to be cleaned up and some tweaks need to be made for release. This will include shadows, and the ability to attach lights to objects/frames.
 
-# Mac and Linux Support
-### Estimated Release: November 2022
-With this release, TFE will gain initial support on Mac and Linux. While the code more or less compiles on Linux (or is pretty close), there is more work to make sure it works well. And the Mac requires its own treatment and testing.
-
-# Towards Version 2.0
-Once version 1.0 is released, I plan on beginning the process of adding Outlaws support to TFE. I don’t yet have any real way of making any time estimates beyond this point, but I expect the reverse-engineering process to proceed at a much quicker rate for Outlaws for several reasons:
-
-* I have become a lot faster at the process by going through the process of reverse-engineering Dark Forces.
-* Outlaws was built from the Dark Forces code base, and shares the same engine. This means a lot of the structures will be the same or substaintally similar.
-* I have a better sense of how to organize the process and reduce re-work and refactoring time.
+## Towards Version 2.0
+### Estimated Release: Late 2024
+Outlaws support has already begun on the back end and I have a pretty clear understanding of the renderer and other aspects of the game. Once the level editor supports Dark Forces and is useable, I plan on adding support for Outlaws assets and Outlaws levels. From there, I will start implementing proper support with iterative releases throughout the year.

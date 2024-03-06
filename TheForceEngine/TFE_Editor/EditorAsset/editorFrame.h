@@ -19,6 +19,8 @@ namespace TFE_Editor
 		u32  height = 0;
 		f32  worldWidth = 0.0f;
 		f32  worldHeight = 0.0f;
+		f32  offsetX = 0.0f;
+		f32  offsetY = 0.0f;
 		u8   paletteIndex = 0;
 		u8   lightLevel = 32;
 		u8   pad[2];

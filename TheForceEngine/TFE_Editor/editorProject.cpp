@@ -281,8 +281,8 @@ namespace TFE_Editor
 				if (succeeded)
 				{
 					if (newProject) { resources_clear(); }
-					project_save();
 					s_curProject.active = true;
+					project_save();
 				}
 				finished = true;
 			}

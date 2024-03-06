@@ -71,10 +71,11 @@ namespace TFE_DarkForces
 		const char* fileData = parser.readLine(bufferPos);
 
 		s32 index = 0;
+		s32 sequence = 0;
 		char name[80];
+
 		while (fileData)
 		{
-			s32 sequence;
 			if (sscanf(fileData, "SEQUENCE: %d", &sequence) == 1)
 			{
 				index = 0;

@@ -59,7 +59,7 @@ namespace TFE_RenderBackend
 	static bool s_useRenderTarget = false;
 	static bool s_bloomEnable = false;
 	static DisplayMode s_displayMode;
-	static f32 s_clearColor[4] = { 0.0f };
+	static f32 s_clearColor[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
 	static u32 s_rtWidth, s_rtHeight;
 
 	static Blit* s_postEffectBlit;
@@ -109,6 +109,15 @@ namespace TFE_RenderBackend
 		//Sets all functions available
 		glewExperimental = GL_TRUE;
 		const GLenum err = glewInit();
+	#if defined(GLEW_ERROR_NO_GLX_DISPLAY) && !defined(_WIN32)
+		if (err == GLEW_ERROR_NO_GLX_DISPLAY &&
+			strcmp(SDL_GetCurrentVideoDriver(), "wayland") == 0)
+		{
+			// workaround for GLEW on Wayland
+			// see https://github.com/nigels-com/glew/issues/172
+		}
+		else
+	#endif
 		if (err != GLEW_OK)
 		{
 			printf("Failed to initialize GLEW");
@@ -161,7 +170,7 @@ namespace TFE_RenderBackend
 		s_bloomMerge = new BloomMerge();
 		s_bloomMerge->init();
 		
-		glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 		glClearDepth(0.0f);
 
 		s_palette = new DynamicTexture();
@@ -752,6 +761,24 @@ namespace TFE_RenderBackend
 		{
 			RenderTarget::copyBackbufferToTarget(s_copyTarget);
 			s_copyTarget = nullptr;
+		}
+	}
+
+	void setViewport(s32 x, s32 y, s32 w, s32 h)
+	{
+		glViewport(x, y, w, h);
+	}
+
+	void setScissorRect(bool enable, s32 x, s32 y, s32 w, s32 h)
+	{
+		if (enable)
+		{
+			glScissor(x, y, w, h);
+			glEnable(GL_SCISSOR_TEST);
+		}
+		else
+		{
+			glDisable(GL_SCISSOR_TEST);
 		}
 	}
 

@@ -273,7 +273,7 @@ namespace TFE_Jedi
 				*texBase = tex;
 
 				// Setup an animated texture.
-				if (tex->uvWidth == BM_ANIMATED_TEXTURE)
+				if (tex->uvWidth == BM_ANIMATED_TEXTURE && !tex->animSetup)
 				{
 					bitmap_setupAnimatedTexture(texture, i);
 				}

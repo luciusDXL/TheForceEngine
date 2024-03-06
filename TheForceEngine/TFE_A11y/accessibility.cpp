@@ -24,6 +24,14 @@ namespace TFE_A11Y  // a11y is industry slang for accessibility
 	///////////////////////////////////////////
 	// Forward Declarations
 	///////////////////////////////////////////
+	
+	// Clear the list of caption and font files. Note that this does not unload fonts
+	// from ImGui (IIRC it's not practical to do so).
+	void clearFiles();
+	// Find caption and font files.
+	void findFiles();
+	// Get all font file names from the Fonts directories; we will use this to populate the
+	// dropdown in the Accessibility settings menu.
 	void findFontFiles();
 	bool isFontLoaded();
 	void loadDefaultFont(bool clearAtlas);
@@ -45,6 +53,7 @@ namespace TFE_A11Y  // a11y is industry slang for accessibility
 	///////////////////////////////////////////
 	// Constants
 	///////////////////////////////////////////
+
 	const char* DEFAULT_FONT = "Fonts/NotoSans-Regular.ttf";
 	const f32 MAX_CAPTION_WIDTH = 1200;
 	const f32 LINE_PADDING = 5;
@@ -64,6 +73,7 @@ namespace TFE_A11Y  // a11y is industry slang for accessibility
 	///////////////////////////////////////////
 	// Static vars
 	///////////////////////////////////////////
+
 	static A11yStatus s_captionsStatus = CC_NOT_LOADED;
 	static FilePathList s_captionFileList;
 	static FilePathList s_fontFileList;
@@ -91,17 +101,36 @@ namespace TFE_A11Y  // a11y is industry slang for accessibility
 	{
 		if (TFE_Settings::getA11ySettings()->captionSystemEnabled())
 		{
-			initCaptions();
+			assert(s_captionsStatus == CC_NOT_LOADED);
+
+			TFE_System::logWrite(LOG_MSG, "a11y", "Initializing caption system...");
+			CCMD("showCaption", enqueueCaption, 1, "Display a test caption. Example: showCaption \"Hello, world\"");
+			findFiles();
+		}
+		CVAR_BOOL(s_logSFXNames, "d_logSFXNames", CVFLAG_DO_NOT_SERIALIZE, "If enabled, log the name of each sound effect that plays.");
+	}
+	
+	void refreshFiles()
+	{
+		if (TFE_Settings::getA11ySettings()->captionSystemEnabled())
+		{
+			clearFiles();
+			findFiles();
 		}
 	}
 
-	void initCaptions()
+	void clearFiles()
 	{
-		TFE_System::logWrite(LOG_MSG, "a11y", "Initializing caption system...");
+		s_captionFileList.clear();
+		s_fontFileList.clear();
+		s_currentCaptionFile = FilePath();
+		s_currentFontFile = FilePath();
+		s_captionsStatus = CC_NOT_LOADED;
+	}
 
+	void findFiles()
+	{
 		assert(s_captionsStatus == CC_NOT_LOADED);
-		CCMD("showCaption", enqueueCaption, 1, "Display a test caption. Example: showCaption \"Hello, world\"");
-		CVAR_BOOL(s_logSFXNames, "d_logSFXNames", CVFLAG_DO_NOT_SERIALIZE, "If enabled, log the name of each sound effect that plays.");
 
 		findCaptionFiles();
 		findFontFiles();
@@ -366,6 +395,7 @@ namespace TFE_A11Y  // a11y is industry slang for accessibility
 		};
 
 		s_captionsStatus = CC_LOADED;
+		s_captionsStream.close();
 		free(s_captionsBuffer);
 	}
 

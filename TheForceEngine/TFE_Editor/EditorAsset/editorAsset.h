@@ -11,6 +11,7 @@
 #include <TFE_Game/igame.h>
 #include "editorColormap.h"
 #include "editorFrame.h"
+#include "editorSound.h"
 #include "editorSprite.h"
 #include "editorTexture.h"
 #include "editorObj3D.h"
@@ -22,6 +23,7 @@ namespace TFE_Editor
 	enum AssetType : s32
 	{
 		TYPE_TEXTURE = 0,
+		TYPE_SOUND,
 		TYPE_SPRITE,
 		TYPE_FRAME,
 		TYPE_3DOBJ,
@@ -45,6 +47,7 @@ namespace TFE_Editor
 	static const char* c_assetType[] =
 	{
 		"Texture",    // TYPE_TEXTURE
+		"Sound",	  // TYPE_SOUND
 		"Sprite",     // TYPE_SPRITE
 		"Frame",      // TYPE_FRAME
 		"3D Object",  // TYPE_3DOBJ
@@ -77,6 +80,7 @@ namespace TFE_Editor
 	typedef std::vector<Asset> AssetList;
 		
 	AssetHandle loadAssetData(AssetType type, Archive* archive, const AssetColorData* colorData, const char* name);
+	AssetHandle loadAssetData(const Asset* asset);
 	void  reloadAssetData(AssetHandle handle, Archive* archive, const AssetColorData* colorData);
 	void  freeAssetData(AssetHandle handle);
 	void* getAssetData(AssetHandle handle);

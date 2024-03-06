@@ -109,7 +109,7 @@ namespace TFE_DarkForces
 				if (dist >= gen->minDist && dist <= gen->maxDist && !actor_canSeeObject(spawn, s_playerObject))
 				{
 					sprite_setData(spawn, gen->wax);
-					obj_setEnemyLogic(spawn, gen->type, nullptr);
+					obj_setEnemyLogic(spawn, gen->type);
 					Logic** head = (Logic**)allocator_getHead_noIterUpdate((Allocator*)spawn->logic);
 					ActorDispatch* actorLogic = *((ActorDispatch**)head);
 

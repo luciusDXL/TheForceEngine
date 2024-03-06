@@ -1,10 +1,17 @@
 #include "levelEditor.h"
 #include "levelEditorData.h"
+#include "levelEditorHistory.h"
 #include "infoPanel.h"
+#include "groups.h"
 #include "sharedState.h"
+#include "selection.h"
+#include <TFE_Input/input.h>
+#include <TFE_Editor/editor.h>
 #include <TFE_Editor/errorMessages.h>
 #include <TFE_Editor/editorConfig.h>
+#include <TFE_Editor/AssetBrowser/assetBrowser.h>
 #include <TFE_Editor/EditorAsset/editorTexture.h>
+#include <TFE_Editor/LevelEditor/Rendering/viewport.h>
 #include <TFE_Jedi/Level/rwall.h>
 #include <TFE_Jedi/Level/rsector.h>
 #include <TFE_System/math.h>
@@ -19,6 +26,21 @@ using namespace TFE_Editor;
 
 namespace LevelEditor
 {
+	enum InfoTab
+	{
+		TAB_INFO = 0,
+		TAB_ITEM,
+		TAB_COUNT
+	};
+	const char* c_infoTabs[TAB_COUNT] = { "Info", "Item" };
+	const char* c_infoToolTips[TAB_COUNT] =
+	{
+		"Level Info.\nManual grid height setting.\nMessage, warning, and error output.",
+		"Hovered or selected item property editor,\nblank when no item (sector, wall, object) is selected.",
+	};
+	const ImVec4 tabSelColor = { 0.25f, 0.75f, 1.0f, 1.0f };
+	const ImVec4 tabStdColor = { 1.0f, 1.0f, 1.0f, 0.5f };
+
 	struct LeMessage
 	{
 		LeMsgType type;
@@ -26,9 +48,22 @@ namespace LevelEditor
 	};
 	static std::vector<LeMessage> s_outputMsg;
 	static u32 s_outputFilter = LFILTER_DEFAULT;
+	static s32 s_outputTabSel = 0;
 	static f32 s_infoWith;
 	static s32 s_infoHeight;
 	static Vec2f s_infoPos;
+	static InfoTab s_infoTab = TAB_INFO;
+
+	static s32 s_outputHeight = 26 * 5;
+	static s32 s_outputPrevHeight = 26 * 5;
+	static bool s_collapsed = false;
+
+	static Feature s_prevVertexFeature = {};
+	static Feature s_prevWallFeature = {};
+	static Feature s_prevSectorFeature = {};
+	static Feature s_prevObjectFeature = {};
+	static bool s_wallShownLast = false;
+	static s32 s_prevCategoryFlags = 0;
 		
 	void infoPanelClearMessages()
 	{
@@ -50,10 +85,66 @@ namespace LevelEditor
 	{
 		s_outputFilter = filter;
 	}
-		
+
+	void infoPanelClearFeatures()
+	{
+		s_prevVertexFeature = {};
+		s_prevWallFeature = {};
+		s_prevSectorFeature = {};
+		s_prevObjectFeature = {};
+		s_wallShownLast = false;
+	}
+
 	s32 infoPanelGetHeight()
 	{
 		return s_infoHeight;
+	}
+
+	void setTabColor(bool isSelected)
+	{
+		if (isSelected)
+		{
+			ImGui::PushStyleColor(ImGuiCol_Button, { 0.0f, 0.25f, 0.5f, 1.0f });
+			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, { 0.0f, 0.25f, 0.5f, 1.0f });
+		}
+		else
+		{
+			ImGui::PushStyleColor(ImGuiCol_Button, { 0.25f, 0.25f, 0.25f, 1.0f });
+			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, { 0.5f, 0.5f, 0.5f, 1.0f });
+		}
+		// The active color must match to avoid flickering.
+		ImGui::PushStyleColor(ImGuiCol_ButtonActive, { 0.0f, 0.5f, 1.0f, 1.0f });
+	}
+
+	void restoreTabColor()
+	{
+		ImGui::PopStyleColor(3);
+	}
+
+	s32 handleTabs(s32 curTab, s32 offsetX, s32 offsetY, s32 count, const char** names, const char** tooltips)
+	{
+		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, { 4.0f, 1.0f });
+		ImGui::SetCursorPosX(ImGui::GetCursorPosX() + (f32)offsetX);
+		ImGui::SetCursorPosY(ImGui::GetCursorPosY() + (f32)offsetY);
+
+		for (s32 i = 0; i < count; i++)
+		{
+			setTabColor(curTab == i);
+			if (ImGui::Button(names[i], { 100.0f, 18.0f }))
+			{
+				curTab = i;
+				commitCurEntityChanges();
+			}
+			setTooltip("%s", tooltips[i]);
+			restoreTabColor();
+			if (i < count - 1)
+			{
+				ImGui::SameLine(0.0f, 2.0f);
+			}
+		}
+		ImGui::PopStyleVar(1);
+
+		return curTab;
 	}
 
 	void infoToolBegin(s32 height)
@@ -69,13 +160,125 @@ namespace LevelEditor
 		ImGui::SetWindowPos("Info Panel", { s_infoPos.x, s_infoPos.z });
 		ImGui::SetWindowSize("Info Panel", { s_infoWith, f32(height) });
 		ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize
-			| ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoBringToFrontOnFocus;
+			| ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoTitleBar;
 
 		ImGui::Begin("Info Panel", &infoTool, window_flags); ImGui::SameLine();
+		s_infoTab = (InfoTab)handleTabs(s_infoTab, -12, -4, TAB_COUNT, c_infoTabs, c_infoToolTips);
+
+		ImGui::SetCursorPosY(ImGui::GetCursorPosY() - 4);
+		ImGui::Separator();
+	}
+		
+	s32 infoPanelOutput(s32 width)
+	{
+		s32 height = s_outputHeight;
+
+		DisplayInfo info;
+		TFE_RenderBackend::getDisplayInfo(&info);
+
+		ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoFocusOnAppearing;
+		ImGui::SetNextWindowPos({ 0.0f, f32(info.height - height + 1) });
+		ImGui::SetNextWindowSize({ f32(width), f32(height) });
+
+		ImGui::PushStyleColor(ImGuiCol_TitleBgActive, ImGui::GetStyleColorVec4(ImGuiCol_TitleBg));
+		if (ImGui::Begin("Output##MapInfo", nullptr, window_flags))
+		{
+			bool restoreHeight = s_collapsed;
+			s_collapsed = false;
+
+			const size_t count = s_outputMsg.size();
+			const LeMessage* msg = s_outputMsg.data();
+			const ImVec4 c_typeColor[] = { {1.0f, 1.0f, 1.0f, 0.7f}, {1.0f, 1.0f, 0.25f, 1.0f}, {1.0f, 0.25f, 0.25f, 1.0f} };
+
+			for (size_t i = 0; i < count; i++, msg++)
+			{
+				u32 typeFlag = 1 << msg->type;
+				if (!(typeFlag & s_outputFilter)) { continue; }
+
+				ImGui::TextColored(c_typeColor[msg->type], "%s", msg->msg.c_str());
+			}
+
+			if (restoreHeight)
+			{
+				s_outputHeight = s_outputPrevHeight;
+			}
+			else
+			{
+				s_outputPrevHeight = s_outputHeight;
+				s_outputHeight = max(26 * 3, (s32)ImGui::GetWindowSize().y);
+			}
+		}
+		else
+		{
+			s_outputHeight = 26;
+			s_collapsed = true;
+		}
+		ImGui::End();
+
+		if (!s_collapsed)
+		{
+			const bool mousePressed = TFE_Input::mousePressed(MBUTTON_LEFT);
+			
+			ImGuiWindowFlags window_flags_tab = ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoTitleBar |
+				ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_Tooltip;
+			ImGui::SetNextWindowPos({ 128.0f, f32(info.height - height + 1) });
+			if (ImGui::Begin("##MapInfoTab", nullptr, window_flags_tab))
+			{
+				ImGui::SetCursorPosY(ImGui::GetCursorPosY() - 4);
+				ImGui::PushStyleColor(ImGuiCol_Text, s_outputTabSel == 0 ? tabSelColor : tabStdColor);
+				ImGui::Text("All");
+				ImGui::PopStyleColor();
+				if (mouseInsideItem() && mousePressed)
+				{
+					s_outputTabSel = 0;
+					s_outputFilter = LFILTER_DEFAULT;
+				}
+				
+				ImGui::SameLine(0.0f, 16.0f);
+				ImGui::PushStyleColor(ImGuiCol_Text, s_outputTabSel == 1 ? tabSelColor : tabStdColor);
+				ImGui::Text("Warnings");
+				ImGui::PopStyleColor();
+				if (mouseInsideItem() && mousePressed)
+				{
+					s_outputTabSel = 1;
+					s_outputFilter = LFILTER_WARNING;
+				}
+
+				ImGui::SameLine(0.0f, 16.0f);
+				ImGui::PushStyleColor(ImGuiCol_Text, s_outputTabSel == 2 ? tabSelColor : tabStdColor);
+				ImGui::Text("Errors");
+				ImGui::PopStyleColor();
+				if (mouseInsideItem() && mousePressed)
+				{
+					s_outputTabSel = 2;
+					s_outputFilter = LFILTER_ERROR;
+				}
+			}
+			ImGui::End();
+		}
+
+		ImGui::PopStyleColor();
+
+		return s_outputHeight;
+	}
+
+	void clearGroupSelection(Group* group)
+	{
+		// Clear the selection since some of it may be made non-interactable.
+		selection_clear();
+		if (s_featureCur.sector && s_featureCur.sector->groupId == group->id)
+		{
+			s_featureCur = {};
+		}
+		if (s_featureHovered.sector && s_featureHovered.sector->groupId == group->id)
+		{
+			s_featureHovered = {};
+		}
 	}
 
 	void infoPanelMap()
 	{
+		const f32 iconBtnTint[] = { 103.0f / 255.0f, 122.0f / 255.0f, 139.0f / 255.0f, 1.0f };
 		char name[64];
 		strcpy(name, s_level.name.c_str());
 
@@ -88,48 +291,219 @@ namespace LevelEditor
 		ImGui::Text("Bounds: (%0.3f, %0.3f, %0.3f)\n        (%0.3f, %0.3f, %0.3f)", s_level.bounds[0].x, s_level.bounds[0].y, s_level.bounds[0].z,
 			s_level.bounds[1].x, s_level.bounds[1].y, s_level.bounds[1].z);
 		ImGui::Text("Layer Range: [%d, %d]", s_level.layerRange[0], s_level.layerRange[1]);
-		ImGui::Separator();
-		//ImGui::LabelText("##GridLabel", "Grid Height");
-		//ImGui::SetNextItemWidth(196.0f);
-		//ImGui::InputFloat("##GridHeight", &s_gridHeight, 0.0f, 0.0f, "%0.2f", ImGuiInputTextFlags_CharsDecimal);
-		//ImGui::Checkbox("Grid Auto Adjust", &s_gridAutoAdjust);
-		//ImGui::Checkbox("Show Grid When Camera Is Inside a Sector", &s_showGridInSector);
-
-		// Display messages here?
-		ImGui::CheckboxFlags("Info", &s_outputFilter, LFILTER_INFO); ImGui::SameLine(0.0f, 32.0f);
-		ImGui::CheckboxFlags("Warnings", &s_outputFilter, LFILTER_WARNING); ImGui::SameLine(0.0f, 32.0f);
-		ImGui::CheckboxFlags("Errors", &s_outputFilter, LFILTER_ERROR);
-
+		ImGui::LabelText("##GridLabel", "Grid Height");
+		ImGui::SameLine(128.0f);
+		ImGui::SetNextItemWidth(196.0f);
+		ImGui::InputFloat("##GridHeight", &s_gridHeight, 0.0f, 0.0f, "%0.2f", ImGuiInputTextFlags_CharsDecimal);
+			
 		ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize
 			| ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoFocusOnAppearing;
 
 		ImVec2 pos = ImGui::GetCursorPos();
-		ImGui::SetNextWindowSize({ s_infoWith, s_infoHeight - pos.y });
-		ImGui::SetNextWindowPos({s_infoPos.x, pos.y + s_infoPos.z});
-		ImGui::Begin("Output##MapInfo", nullptr, window_flags);
-		const size_t count = s_outputMsg.size();
-		const LeMessage* msg = s_outputMsg.data();
-		const ImVec4 c_typeColor[] = { {1.0f, 1.0f, 1.0f, 0.7f}, {1.0f, 1.0f, 0.25f, 1.0f}, {1.0f, 0.25f, 0.25f, 1.0f} };
-
-		for (size_t i = 0; i < count; i++, msg++)
+		ImGui::SetNextWindowSize({ s_infoWith, s_infoHeight - pos.y - 43 });
+		ImGui::SetNextWindowPos({ s_infoPos.x, pos.y + s_infoPos.z });
+		ImGui::PushStyleColor(ImGuiCol_TitleBgActive, ImGui::GetStyleColorVec4(ImGuiCol_TitleBg));
+		ImGui::Begin("Groups##MapInfo", nullptr, window_flags);
 		{
-			u32 typeFlag = 1 << msg->type;
-			if (!(typeFlag & s_outputFilter)) { continue; }
+			s32 groupCount = (s32)s_groups.size();
+			Group* group = s_groups.data();
+			for (s32 i = 0; i < groupCount; i++, group++)
+			{
+				if (ImGui::Selectable(editor_getUniqueLabel(group->name.c_str()), s_groupCurrent == i, 0, ImVec2(264, 0)))
+				{
+					s_groupCurrent = i;
+				}
+				
+				ImGui::SameLine(0.0f, 60.0f);
+				if (iconButtonInline((group->flags & GRP_EXCLUDE) ? ICON_CIRCLE_BAN : ICON_CIRCLE, "Exclude group from export.", iconBtnTint, true))
+				{
+					if (group->flags & GRP_EXCLUDE) { group->flags &= ~GRP_EXCLUDE; }
+					else { group->flags |= GRP_EXCLUDE; }
+				}
 
-			ImGui::TextColored(c_typeColor[msg->type], "%s", msg->msg.c_str());
+				ImGui::SameLine(0.0f, 8.0f);
+				ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 2);
+				if (iconButtonInline((group->flags & GRP_HIDDEN) ? ICON_EYE_CLOSED : ICON_EYE, "Hide or show the group.", iconBtnTint, true))
+				{
+					if (group->flags & GRP_HIDDEN) { group->flags &= ~GRP_HIDDEN; }
+					else { group->flags |= GRP_HIDDEN; }
+					clearGroupSelection(group);
+				}
+
+				ImGui::SameLine(0.0f, 8.0f);
+				if (iconButtonInline((group->flags & GRP_LOCKED) ? ICON_LOCKED : ICON_UNLOCKED, "Lock or unlock the group for editing.", iconBtnTint, true))
+				{
+					if (group->flags & GRP_LOCKED) { group->flags &= ~GRP_LOCKED; }
+					else { group->flags |= GRP_LOCKED; }
+					clearGroupSelection(group);
+				}
+
+				ImGui::SameLine(0.0f, 8.0f);
+				ImGui::ColorEdit3(editor_getUniqueLabel(""), group->color.m, ImGuiColorEditFlags_NoLabel | ImGuiColorEditFlags_NoInputs);
+
+				ImGui::SetCursorPosY(ImGui::GetCursorPosY() - 2);
+
+				ImGui::Separator();
+				ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 2);
+			}
 		}
 		ImGui::End();
+		ImGui::PopStyleColor();
+
+		bool isDisabled = false;
+		ImGui::SetCursorPosY(pos.y + s_infoPos.z + s_infoHeight - pos.y - 52);
+		if (ImGui::Button("Add"))
+		{
+			groups_clearName();
+			openEditorPopup(TFE_Editor::POPUP_GROUP_NAME);
+		}
+		ImGui::SameLine(0.0f, 8.0f);
+
+		if (s_groupCurrent == 0)
+		{
+			disableNextItem();
+			isDisabled = true;
+		}
+		if (ImGui::Button("Remove"))
+		{
+			groups_remove(s_groupCurrent);
+		}
+
+		ImGui::SameLine(0.0f, 8.0f);
+
+		if (s_groupCurrent == 1 && !isDisabled)
+		{
+			disableNextItem();
+			isDisabled = true;
+		}
+		if (ImGui::ArrowButton("##MoveUp", ImGuiDir_Up))
+		{
+			groups_moveUp(s_groupCurrent);
+		}
+
+		ImGui::SameLine(0.0f, 8.0f);
+
+		if (s_groupCurrent == 0 || s_groupCurrent == (s32)s_groups.size() - 1)
+		{
+			if (!isDisabled)
+			{
+				disableNextItem();
+			}
+			isDisabled = true;
+		}
+		else if (isDisabled)
+		{
+			enableNextItem();
+			isDisabled = false;
+		}
+		if (ImGui::ArrowButton("##MoveDown", ImGuiDir_Down))
+		{
+			groups_moveDown(s_groupCurrent);
+		}
+		if (isDisabled)
+		{
+			enableNextItem();
+		}
+	}
+
+	// Manually created Vec2 control, so that the value is only updated when an input loses focus
+	// or Return is pressed. This avoids vertices or other elements jittering as values are added, and
+	// avoids many useless undo commands being created.
+	// Return true if the value should be updated.
+	bool inputVec2f(const char* id, Vec2f* value)
+	{
+		char id0[256], id1[256];
+		sprintf(id0, "%sX", id);
+		sprintf(id1, "%sZ", id);
+
+		bool hadFocusX = false, hadFocusZ = false;
+		Vec2f prevPos = *value;
+		ImGui::PushItemWidth(98.0f);
+		if (ImGui::InputFloat(id0, &value->x, NULL, NULL, "%0.6f", ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_NoUndoRedo))
+		{
+			if (value->x != prevPos.x)
+			{
+				hadFocusX = true;
+			}
+		}
+		bool lostFocusX = !ImGui::IsItemFocused() && !ImGui::IsItemHovered() && !ImGui::IsItemActive();
+
+		ImGui::SameLine();
+		ImGui::PushItemWidth(98.0f);
+		if (ImGui::InputFloat(id1, &value->z, NULL, NULL, "%0.6f", ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_NoUndoRedo))
+		{
+			if (value->z != prevPos.z)
+			{
+				hadFocusZ = true;
+			}
+		}
+		bool lostFocusZ = !ImGui::IsItemFocused() && !ImGui::IsItemHovered() && !ImGui::IsItemActive();
+
+		// Only update the value and add the edit when the input loses focus (clicking away or on another control) or
+		// Enter/Return is pressed.
+		bool retOrTabPressed = TFE_Input::keyPressed(KEY_RETURN) || TFE_Input::keyPressed(KEY_TAB);
+		return ((lostFocusX || retOrTabPressed) && hadFocusX) ||
+			((lostFocusZ || retOrTabPressed) && hadFocusZ);
+	}
+
+	void getPrevVertexFeature(EditorSector*& sector, s32& index)
+	{
+		// Make sure the previous selection is still valid.
+		bool selectionInvalid = !s_prevVertexFeature.sector || s_prevVertexFeature.featureIndex < 0;
+		if (s_prevVertexFeature.sector && s_prevVertexFeature.featureIndex >= (s32)s_prevVertexFeature.sector->vtx.size())
+		{
+			selectionInvalid = true;
+		}
+
+		if (selectionInvalid)
+		{
+			s_prevVertexFeature.sector = s_level.sectors.empty() ? nullptr : &s_level.sectors[0];
+			if (s_prevVertexFeature.sector)
+			{
+				s_prevVertexFeature.featureIndex = 0;
+			}
+		}
+		sector = s_prevVertexFeature.sector;
+		index = s_prevVertexFeature.featureIndex;
+	}
+
+	void setPrevVertexFeature(EditorSector* sector, s32 index)
+	{
+		s_prevVertexFeature.sector = sector;
+		s_prevVertexFeature.featureIndex = index;
 	}
 
 	void infoPanelVertex()
 	{
-		EditorSector* sector = (s_selectedVtxId >= 0) ? s_selectedVtxSector : s_hoveredVtxSector;
-		s32 index = s_selectedVtxId >= 0 ? s_selectedVtxId : s_hoveredVtxId;
+		s32 index = -1;
+		EditorSector* sector = nullptr;
+		if (s_featureCur.featureIndex < 0 && s_featureHovered.featureIndex < 0 && !s_selectionList.empty())
+		{
+			sector = unpackFeatureId(s_selectionList[0], &index);
+		}
+		else
+		{
+			sector = (s_featureCur.featureIndex >= 0) ? s_featureCur.sector : s_featureHovered.sector;
+			index = s_featureCur.featureIndex >= 0 ? s_featureCur.featureIndex : s_featureHovered.featureIndex;
+		}
+
+		// If there is no selected vertex, just show vertex 0...
+		if (index < 0 || !sector)
+		{
+			getPrevVertexFeature(sector, index);
+		}
 		if (index < 0 || !sector) { return; }
+		setPrevVertexFeature(sector, index);
 
 		Vec2f* vtx = sector->vtx.data() + index;
-
-		ImGui::Text("Vertex %d of Sector %d", index, sector->id);
+		if (s_selectionList.size() > 1)
+		{
+			ImGui::Text("Multiple vertices selected, enter a movement delta.");
+		}
+		else
+		{
+			ImGui::Text("Vertex %d of Sector %d", index, sector->id);
+		}
 
 		ImGui::NewLine();
 		ImGui::PushItemWidth(UI_SCALE(80));
@@ -137,8 +511,28 @@ namespace LevelEditor
 		ImGui::PopItemWidth();
 
 		ImGui::SameLine();
-		ImGui::PushItemWidth(196.0f);
-		ImGui::InputFloat2("##VertexPosition", &vtx->x, "%0.3f", ImGuiInputTextFlags_CharsDecimal);
+		Vec2f curPos = { 0 };
+		if (s_selectionList.size() <= 1)
+		{
+			curPos = *vtx;
+		}
+
+		Vec2f prevPos = curPos;
+		if (inputVec2f("##VertexPosition", &curPos))
+		{
+			if (s_selectionList.size() <= 1) // Move the single vertex.
+			{
+				const FeatureId id = createFeatureId(sector, index, 0, false);
+				cmd_addSetVertex(id, curPos);
+				edit_setVertexPos(id, curPos);
+			}
+			else  // Move the whole group.
+			{
+				const Vec2f delta = { curPos.x - prevPos.x, curPos.z - prevPos.z };
+				cmd_addMoveVertices((s32)s_selectionList.size(), s_selectionList.data(), delta);
+				edit_moveVertices((s32)s_selectionList.size(), s_selectionList.data(), delta);
+			}
+		}
 		ImGui::PopItemWidth();
 	}
 
@@ -171,13 +565,60 @@ namespace LevelEditor
 		ImGui::PopItemWidth();
 	}
 
+	void getPrevWallFeature(EditorSector*& sector, s32& index)
+	{
+		// Make sure the previous selection is still valid.
+		bool selectionInvalid = !s_prevWallFeature.sector || s_prevWallFeature.featureIndex < 0;
+		if (s_prevWallFeature.sector && s_prevWallFeature.featureIndex >= (s32)s_prevWallFeature.sector->walls.size())
+		{
+			selectionInvalid = true;
+		}
+
+		if (selectionInvalid)
+		{
+			s_prevWallFeature.sector = s_level.sectors.empty() ? nullptr : &s_level.sectors[0];
+			if (s_prevWallFeature.sector)
+			{
+				s_prevWallFeature.featureIndex = 0;
+			}
+		}
+		sector = s_prevWallFeature.sector;
+		index = s_prevWallFeature.featureIndex;
+	}
+
+	void setPrevWallFeature(EditorSector* sector, s32 index)
+	{
+		s_prevWallFeature.sector = sector;
+		s_prevWallFeature.featureIndex = index;
+	}
+
 	void infoPanelWall()
 	{
 		s32 wallId;
 		EditorSector* sector;
-		if (s_selectedWallId >= 0) { sector = s_selectedWallSector; wallId = s_selectedWallId; }
-		else if (s_hoveredWallId >= 0) { sector = s_hoveredWallSector; wallId = s_hoveredWallId; }
-		else { return; }
+		if (s_featureCur.featureIndex >= 0 && s_featureCur.sector) { sector = s_featureCur.sector; wallId = s_featureCur.featureIndex; }
+		else if (s_featureHovered.featureIndex >= 0 && s_featureHovered.sector) { sector = s_featureHovered.sector; wallId = s_featureHovered.featureIndex; }
+		else { getPrevWallFeature(sector, wallId); }
+		if (!sector || wallId < 0) { return; }
+
+		EditorSector* prevSector;
+		s32 prevWallId;
+		getPrevWallFeature(prevSector, prevWallId);
+		if (prevSector != sector || prevWallId != wallId)
+		{
+			ImGui::SetWindowFocus(NULL);
+		}
+
+		setPrevWallFeature(sector, wallId);
+		s_wallShownLast = true;
+
+		bool insertTexture = s_selectedTexture >= 0 && TFE_Input::keyPressed(KEY_T);
+		bool removeTexture = TFE_Input::mousePressed(MBUTTON_RIGHT);
+		s32 texIndex = -1;
+		if (insertTexture)
+		{
+			texIndex = s_selectedTexture;
+		}
 
 		EditorWall* wall = sector->walls.data() + wallId;
 		Vec2f* vertices = sector->vtx.data();
@@ -193,6 +634,12 @@ namespace LevelEditor
 
 		ImGui::LabelText("##SectorMirror", "Mirror"); ImGui::SameLine(240);
 		infoIntInput("##SectorMirrorInput", 96, &wall->mirrorId);
+
+		ImGui::SameLine(0.0f, 20.0f);
+		if (ImGui::Button("Edit INF"))
+		{
+			TFE_Editor::openEditorPopup(POPUP_EDIT_INF, wallId, sector->name.empty() ? nullptr : (void*)sector->name.c_str());
+		}
 
 		s32 light = wall->wallLight;
 		ImGui::LabelText("##SectorLight", "Light Adjustment"); ImGui::SameLine(148.0f);
@@ -240,10 +687,10 @@ namespace LevelEditor
 
 		ImGui::Separator();
 
-		EditorTexture* midTex = (EditorTexture*)getAssetData(wall->tex[WP_MID].handle);
-		EditorTexture* topTex = (EditorTexture*)getAssetData(wall->tex[WP_TOP].handle);
-		EditorTexture* botTex = (EditorTexture*)getAssetData(wall->tex[WP_BOT].handle);
-		EditorTexture* sgnTex = (EditorTexture*)getAssetData(wall->tex[WP_SIGN].handle);
+		EditorTexture* midTex = getTexture(wall->tex[WP_MID].texIndex);
+		EditorTexture* topTex = getTexture(wall->tex[WP_TOP].texIndex);
+		EditorTexture* botTex = getTexture(wall->tex[WP_BOT].texIndex);
+		EditorTexture* sgnTex = getTexture(wall->tex[WP_SIGN].texIndex);
 
 		const f32 texCol = 150.0f;
 		// Labels
@@ -256,9 +703,29 @@ namespace LevelEditor
 		const f32 aspectMid[] = { midTex ? f32(midTex->width) * midScale : 1.0f, midTex ? f32(midTex->height) * midScale : 1.0f };
 		const f32 aspectSgn[] = { sgnTex ? f32(sgnTex->width) * sgnScale : 1.0f, sgnTex ? f32(sgnTex->height) * sgnScale : 1.0f };
 
-		ImGui::ImageButton(midTex ? TFE_RenderBackend::getGpuPtr(midTex->frames[0]) : nullptr, { 128.0f * aspectMid[0], 128.0f * aspectMid[1] });
+		ImGui::ImageButton(midTex ? TFE_RenderBackend::getGpuPtr(midTex->frames[0]) : nullptr, { 128.0f * aspectMid[0], 128.0f * aspectMid[1] }, { 0.0f, 1.0f }, { 1.0f, 0.0f });
+		if (texIndex >= 0 && ImGui::IsItemHovered())
+		{
+			FeatureId id = createFeatureId(sector, wallId, HP_MID);
+			edit_setTexture(1, &id, texIndex);
+			cmd_addSetTexture(1, &id, texIndex, nullptr);
+		}
+
 		ImGui::SameLine(texCol);
-		ImGui::ImageButton(sgnTex ? TFE_RenderBackend::getGpuPtr(sgnTex->frames[0]) : nullptr, { 128.0f * aspectSgn[0], 128.0f * aspectSgn[1] });
+		ImGui::ImageButton(sgnTex ? TFE_RenderBackend::getGpuPtr(sgnTex->frames[0]) : nullptr, { 128.0f * aspectSgn[0], 128.0f * aspectSgn[1] }, { 0.0f, 1.0f }, { 1.0f, 0.0f });
+		if (texIndex >= 0 && ImGui::IsItemHovered())
+		{
+			FeatureId id = createFeatureId(sector, wallId, HP_SIGN);
+			edit_setTexture(1, &id, texIndex);
+			cmd_addSetTexture(1, &id, texIndex, nullptr);
+		}
+		else if (removeTexture && ImGui::IsItemHovered())
+		{
+			FeatureId id = createFeatureId(sector, wallId, HP_SIGN);
+			edit_clearTexture(1, &id);
+			cmd_addClearTexture(1, &id);
+		}
+
 		const ImVec2 imageLeft0 = ImGui::GetItemRectMin();
 		const ImVec2 imageRight0 = ImGui::GetItemRectMax();
 
@@ -280,9 +747,23 @@ namespace LevelEditor
 			const f32 aspectTop[] = { topTex ? f32(topTex->width) * topScale : 1.0f, topTex ? f32(topTex->height) * topScale : 1.0f };
 			const f32 aspectBot[] = { botTex ? f32(botTex->width) * botScale : 1.0f, botTex ? f32(botTex->height) * botScale : 1.0f };
 
-			ImGui::ImageButton(topTex ? TFE_RenderBackend::getGpuPtr(topTex->frames[0]) : nullptr, { 128.0f * aspectTop[0], 128.0f * aspectTop[1] });
+			ImGui::ImageButton(topTex ? TFE_RenderBackend::getGpuPtr(topTex->frames[0]) : nullptr, { 128.0f * aspectTop[0], 128.0f * aspectTop[1] }, { 0.0f, 1.0f }, { 1.0f, 0.0f });
+			if (texIndex >= 0 && ImGui::IsItemHovered())
+			{
+				FeatureId id = createFeatureId(sector, wallId, HP_TOP);
+				edit_setTexture(1, &id, texIndex);
+				cmd_addSetTexture(1, &id, texIndex, nullptr);
+			}
+
 			ImGui::SameLine(texCol);
-			ImGui::ImageButton(botTex ? TFE_RenderBackend::getGpuPtr(botTex->frames[0]) : nullptr, { 128.0f * aspectBot[0], 128.0f * aspectBot[1] });
+			ImGui::ImageButton(botTex ? TFE_RenderBackend::getGpuPtr(botTex->frames[0]) : nullptr, { 128.0f * aspectBot[0], 128.0f * aspectBot[1] }, { 0.0f, 1.0f }, { 1.0f, 0.0f });
+			if (texIndex >= 0 && ImGui::IsItemHovered())
+			{
+				FeatureId id = createFeatureId(sector, wallId, HP_BOT);
+				edit_setTexture(1, &id, texIndex);
+				cmd_addSetTexture(1, &id, texIndex, nullptr);
+			}
+
 			imageLeft1 = ImGui::GetItemRectMin();
 			imageRight1 = ImGui::GetItemRectMax();
 
@@ -291,27 +772,53 @@ namespace LevelEditor
 			ImGui::Text("%s", botTex ? botTex->name : "NONE");
 		}
 
+		// Sign buttons.
+		ImVec2 signLeft = { imageLeft0.x + texCol - 8.0f, imageLeft0.y + 2.0f };
+		ImGui::SetNextWindowPos(signLeft);
+		ImGui::BeginChild("##SignOptions", { 32, 48 });
+		{
+			if (ImGui::Button("X") && wall->tex[HP_SIGN].texIndex >= 0)
+			{
+				FeatureId id = createFeatureId(sector, wallId, HP_SIGN);
+				edit_clearTexture(1, &id);
+				cmd_addClearTexture(1, &id);
+			}
+			if (ImGui::Button("C") && wall->tex[HP_SIGN].texIndex >= 0)
+			{
+				Vec2f prevOffset = wall->tex[HP_SIGN].offset;
+				centerSignOnSurface(sector, wall);
+				Vec2f delta = { wall->tex[HP_SIGN].offset.x - prevOffset.x, wall->tex[HP_SIGN].offset.z - prevOffset.z };
+
+				if (delta.x || delta.z)
+				{
+					FeatureId id = createFeatureId(sector, wallId, HP_SIGN);
+					cmd_addMoveTexture(1, &id, delta);
+				}
+			}
+		}
+		ImGui::EndChild();
+
 		// Texture Offsets
 		DisplayInfo displayInfo;
 		TFE_RenderBackend::getDisplayInfo(&displayInfo);
 
 		// Set 0
-		ImVec2 offsetLeft = { imageLeft0.x + texCol + 8.0f, imageLeft0.y + 8.0f };
-		ImVec2 offsetSize = { displayInfo.width - (imageLeft0.x + texCol + 16.0f), 128.0f };
+		ImVec2 offsetLeft = { imageLeft0.x + texCol + 8.0f + 16.0f, imageLeft0.y + 8.0f };
+		ImVec2 offsetSize = { displayInfo.width - (imageLeft0.x + texCol + 16.0f - 32.0f), 128.0f };
 		ImGui::SetNextWindowPos(offsetLeft);
 		// A child window is used here in order to place the controls in the desired position - to the right of the image buttons.
 		ImGui::BeginChild("##TextureOffsets0Wall", offsetSize);
 		{
 			ImGui::Text("Mid Offset");
-			ImGui::PushItemWidth(128.0f);
-			ImGui::InputFloat2("##MidOffsetInput", &wall->tex[WP_MID].offset.x, "%.2f");
+			ImGui::PushItemWidth(136.0f);
+			ImGui::InputFloat2("##MidOffsetInput", &wall->tex[WP_MID].offset.x, "%.3f");
 			ImGui::PopItemWidth();
 
 			ImGui::NewLine();
 
 			ImGui::Text("Sign Offset");
-			ImGui::PushItemWidth(128.0f);
-			ImGui::InputFloat2("##SignOffsetInput", &wall->tex[WP_SIGN].offset.x, "%.2f");
+			ImGui::PushItemWidth(136.0f);
+			ImGui::InputFloat2("##SignOffsetInput", &wall->tex[WP_SIGN].offset.x, "%.3f");
 			ImGui::PopItemWidth();
 		}
 		ImGui::EndChild();
@@ -326,38 +833,88 @@ namespace LevelEditor
 			ImGui::BeginChild("##TextureOffsets1Wall", offsetSize);
 			{
 				ImGui::Text("Top Offset");
-				ImGui::PushItemWidth(128.0f);
-				ImGui::InputFloat2("##TopOffsetInput", &wall->tex[WP_TOP].offset.x, "%.2f");
+				ImGui::PushItemWidth(136.0f);
+				ImGui::InputFloat2("##TopOffsetInput", &wall->tex[WP_TOP].offset.x, "%.3f");
 				ImGui::PopItemWidth();
 
 				ImGui::NewLine();
 
 				ImGui::Text("Bottom Offset");
-				ImGui::PushItemWidth(128.0f);
-				ImGui::InputFloat2("##BotOffsetInput", &wall->tex[WP_BOT].offset.x, "%.2f");
+				ImGui::PushItemWidth(136.0f);
+				ImGui::InputFloat2("##BotOffsetInput", &wall->tex[WP_BOT].offset.x, "%.3f");
 				ImGui::PopItemWidth();
 			}
 			ImGui::EndChild();
 		}
 	}
 
+	void getPrevSectorFeature(EditorSector*& sector)
+	{
+		// Make sure the previous selection is still valid.
+		bool selectionInvalid = !s_prevSectorFeature.sector;
+		if (selectionInvalid)
+		{
+			s_prevSectorFeature.sector = s_level.sectors.empty() ? nullptr : &s_level.sectors[0];
+		}
+		sector = s_prevSectorFeature.sector;
+	}
+
+	void setPrevSectorFeature(EditorSector* sector)
+	{
+		s_prevSectorFeature.sector = sector;
+	}
+
 	void infoPanelSector()
 	{
-		EditorSector* sector = s_selectedSector ? s_selectedSector : s_hoveredSector;
+		bool insertTexture = s_selectedTexture >= 0 && TFE_Input::keyPressed(KEY_T);
+		s32 texIndex = -1;
+		if (insertTexture)
+		{
+			texIndex = s_selectedTexture;
+		}
+
+		EditorSector* sector = s_featureCur.sector ? s_featureCur.sector : s_featureHovered.sector;
+		if (!sector) { getPrevSectorFeature(sector); }
+		if (!sector) { return; }
+
+		// Keep text input from one sector from bleeding into the next.
+		EditorSector* prev;
+		getPrevSectorFeature(prev);
+		if (prev != sector)
+		{
+			ImGui::SetWindowFocus(NULL);
+		}
+
+		setPrevSectorFeature(sector);
+		s_wallShownLast = false;
+
 		ImGui::Text("Sector ID: %d      Wall Count: %u", sector->id, (u32)sector->walls.size());
 		ImGui::Separator();
 
 		// Sector Name (optional, used by INF)
 		char sectorName[64];
+		char inputName[256];
 		strcpy(sectorName, sector->name.c_str());
+		sprintf(inputName, "##NameSector%d", sector->id);
 
 		infoLabel("##NameLabel", "Name", 32);
 		ImGui::PushItemWidth(240.0f);
-		if (ImGui::InputText("##NameSector", sectorName, 64))
+
+		// Turn the name red if it matches another sector.
+		s32 otherNameId = findSectorByName(sectorName, sector->id);
+		if (otherNameId >= 0) { ImGui::PushStyleColor(ImGuiCol_Text, {1.0f, 0.2f, 0.2f, 1.0f}); }
+		if (ImGui::InputText(inputName, sectorName, getSectorNameLimit()))
 		{
 			sector->name = sectorName;
 		}
 		ImGui::PopItemWidth();
+		if (otherNameId >= 0) { ImGui::PopStyleColor(); }
+
+		ImGui::SameLine(0.0f, 20.0f);
+		if (ImGui::Button("Edit INF"))
+		{
+			TFE_Editor::openEditorPopup(POPUP_EDIT_INF, 0xffffffff, sector->name.empty() ? nullptr : (void*)sector->name.c_str());
+		}
 
 		// Layer and Ambient
 		s32 layer = sector->layer;
@@ -433,8 +990,8 @@ namespace LevelEditor
 		ImGui::Separator();
 
 		// Textures
-		EditorTexture* floorTex = (EditorTexture*)getAssetData(sector->floorTex.handle);
-		EditorTexture* ceilTex  = (EditorTexture*)getAssetData(sector->ceilTex.handle);
+		EditorTexture* floorTex = getTexture(sector->floorTex.texIndex);
+		EditorTexture* ceilTex = getTexture(sector->ceilTex.texIndex);
 
 		void* floorPtr = floorTex ? TFE_RenderBackend::getGpuPtr(floorTex->frames[0]) : nullptr;
 		void* ceilPtr = ceilTex ? TFE_RenderBackend::getGpuPtr(ceilTex->frames[0]) : nullptr;
@@ -451,8 +1008,22 @@ namespace LevelEditor
 		const f32 aspectCeil[] = { ceilTex ? f32(ceilTex->width) * ceilScale : 1.0f, ceilTex ? f32(ceilTex->height) * ceilScale : 1.0f };
 
 		ImGui::ImageButton(floorPtr, { 128.0f * aspectFloor[0], 128.0f * aspectFloor[1] }, { 0.0f, 1.0f }, { 1.0f, 0.0f });
+		if (texIndex >= 0 && ImGui::IsItemHovered())
+		{
+			FeatureId id = createFeatureId(sector, 0, HP_FLOOR);
+			edit_setTexture(1, &id, texIndex);
+			cmd_addSetTexture(1, &id, texIndex, nullptr);
+		}
+
 		ImGui::SameLine(texCol);
 		ImGui::ImageButton(ceilPtr, { 128.0f * aspectCeil[0], 128.0f * aspectCeil[1] }, { 0.0f, 1.0f }, { 1.0f, 0.0f });
+		if (texIndex >= 0 && ImGui::IsItemHovered())
+		{
+			FeatureId id = createFeatureId(sector, 0, HP_CEIL);
+			edit_setTexture(1, &id, texIndex);
+			cmd_addSetTexture(1, &id, texIndex, nullptr);
+		}
+
 		const ImVec2 imageLeft = ImGui::GetItemRectMin();
 		const ImVec2 imageRight = ImGui::GetItemRectMax();
 
@@ -477,47 +1048,698 @@ namespace LevelEditor
 		ImGui::BeginChild("##TextureOffsetsSector", offsetSize);
 		{
 			ImGui::Text("Floor Offset");
-			ImGui::PushItemWidth(128.0f);
-			ImGui::InputFloat2("##FloorOffsetInput", &sector->floorTex.offset.x, "%.2f");
+			ImGui::PushItemWidth(136.0f);
+			ImGui::InputFloat2("##FloorOffsetInput", &sector->floorTex.offset.x, "%.3f");
 			ImGui::PopItemWidth();
 
 			ImGui::NewLine();
 
 			ImGui::Text("Ceil Offset");
-			ImGui::PushItemWidth(128.0f);
-			ImGui::InputFloat2("##CeilOffsetInput", &sector->ceilTex.offset.x, "%.2f");
+			ImGui::PushItemWidth(136.0f);
+			ImGui::InputFloat2("##CeilOffsetInput", &sector->ceilTex.offset.x, "%.3f");
 			ImGui::PopItemWidth();
 		}
 		ImGui::EndChild();
 	}
-		
-	void drawInfoPanel()
+
+	Entity s_objEntity = {};
+	EditorObject* s_prevObj = nullptr;
+
+	bool hasObjectSelectionChanged(EditorSector* sector, s32 index)
 	{
+		return s_prevObjectFeature.sector != sector || s_prevObjectFeature.featureIndex != index;
+	}
+
+	void getPrevObjectFeature(EditorSector*& sector, s32& index)
+	{
+		// Make sure the previous selection is still valid.
+		bool selectionInvalid = !s_prevObjectFeature.sector || s_prevObjectFeature.featureIndex < 0;
+		if (s_prevObjectFeature.sector && s_prevObjectFeature.featureIndex >= (s32)s_prevObjectFeature.sector->obj.size())
+		{
+			selectionInvalid = true;
+			s_objEntity = {};
+		}
+
+		if (selectionInvalid)
+		{
+			s_prevObjectFeature.sector = s_level.sectors.empty() ? nullptr : &s_level.sectors[0];
+			s_prevObjectFeature.featureIndex = !s_prevObjectFeature.sector || s_prevObjectFeature.sector->obj.empty() ? -1 : 0;
+		}
+		sector = s_prevObjectFeature.sector;
+		index = s_prevObjectFeature.featureIndex;
+	}
+
+	void setPrevObjectFeature(EditorSector* sector, s32 index)
+	{
+		s_prevObjectFeature.sector = sector;
+		s_prevObjectFeature.featureIndex = index;
+	}
+
+	static const char* c_entityClassName[] =
+	{
+		"Spirit", // ETYPE_SPIRIT = 0,
+		"Safe",   // ETYPE_SAFE,
+		"Sprite", // ETYPE_SPRITE,
+		"Frame",  // ETYPE_FRAME,
+		"3D",     // ETYPE_3D,
+	};
+
+	static const char* c_objDifficulty[] =
+	{
+		"Easy, Medium, Hard",	//  0
+		"Easy, Medium",         // -2
+		"Easy",                 // -1
+		"Medium, Hard",         // 2
+		"Hard"                  // 3
+	};
+	static const s32 c_objDiffValue[] =
+	{
+		1, -2, -1, 2, 3
+	};
+	static const s32 c_objDiffStart = -3;
+	static const s32 c_objDiffToIndex[] =
+	{
+		0, 1, 2, 0, 0, 3, 4
+	};
+	static s32 s_logicIndex = 0;
+	static s32 s_varIndex = 0;
+	static s32 s_logicSelect = -1;
+
+	bool doesEntityExistInProject(const Entity* newEntityDef)
+	{
+		const s32 count = (s32)s_projEntityDefList.size();
+		const Entity* entity = s_projEntityDefList.data();
+		for (s32 e = 0; e < count; e++, entity++)
+		{
+			if (entityDefsEqual(newEntityDef, entity))
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+	
+	void commitEntityChanges(EditorSector* sector, s32 objIndex, const Entity* newEntityDef)
+	{
+		// 1. Has the entity data actually changed? If not, then just leave it alone.
+		EditorObject* obj = &sector->obj[objIndex];
+		const Entity* curEntity = &s_level.entities[obj->entityId];
+		if (entityDefsEqual(newEntityDef, curEntity))
+		{
+			return;
+		}
+
+		// 2. Search through existing entities and see if this already exists.
+		const s32 count = (s32)s_level.entities.size();
+		const Entity* entity = s_level.entities.data();
+		s32 entityIndex = -1;
+		for (s32 e = 0; e < count; e++, entity++)
+		{
+			if (entityDefsEqual(newEntityDef, entity))
+			{
+				entityIndex = e;
+				break;
+			}
+		}
+		if (entityIndex >= 0)
+		{
+			obj->entityId = entityIndex;
+			return;
+		}
+
+		// 3. Create a new entity.
+		obj->entityId = (s32)s_level.entities.size();
+		s_level.entities.push_back(*newEntityDef);
+		loadSingleEntityData(&s_level.entities.back());
+	}
+
+	void clearEntityChanges()
+	{
+		s_prevObjectFeature.sector = nullptr;
+		s_prevObjectFeature.featureIndex = -1;
+		s_objEntity = {};
+	}
+
+	void commitCurEntityChanges()
+	{
+		if (!s_prevObjectFeature.sector || s_prevObjectFeature.featureIndex < 0 ||
+			s_prevObjectFeature.featureIndex >= (s32)s_prevObjectFeature.sector->obj.size() || s_objEntity.id < 0)
+		{
+			s_objEntity = {};
+			return;
+		}
+
+		commitEntityChanges(s_prevObjectFeature.sector, s_prevObjectFeature.featureIndex, &s_objEntity);
+		s_objEntity = {};
+	}
+
+	void addVariableToList(s32 varId, s32* varList, s32& varCount)
+	{
+		for (s32 v = 0; v < varCount; v++)
+		{
+			if (varList[v] == varId) { return; }
+		}
+		varList[varCount++] = varId;
+	}
+
+	void addLogicVariables(const std::string& logicName, s32* varList, s32& varCount)
+	{
+		if (logicName.empty())
+		{
+			// Add common variables.
+			const LogicDef* def = &s_logicDefList.back();
+			const s32 commonCount = (s32)def->var.size();
+			const LogicVar* var = def->var.data();
+			for (s32 v = 0; v < commonCount; v++, var++)
+			{
+				addVariableToList(var->varId, varList, varCount);
+			}
+			return;
+		}
+
+		const s32 id = getLogicId(logicName.c_str());
+		if (id < 0) { return; }
+		const LogicDef* def = &s_logicDefList[id];
+		const s32 count = (s32)def->var.size();
+
+		// If there are no variables, use the defaults.
+		if (count <= 0)
+		{
+			addLogicVariables("", varList, varCount);
+			return;
+		}
+
+		const LogicVar* var = def->var.data();
+		for (s32 v = 0; v < count; v++, var++)
+		{
+			addVariableToList(var->varId, varList, varCount);
+		}
+	}
+
+	void addAllLogicVariables(s32* varList, s32& varCount)
+	{
+		// Add variables for each logic.
+		s32 count = (s32)s_objEntity.logic.size();
+		EntityLogic* list = s_objEntity.logic.data();
+		for (s32 i = 0; i < count; i++)
+		{
+			addLogicVariables(list[i].name, varList, varCount);
+		}
+		// Finally add common variables.
+		const LogicDef* def = &s_logicDefList.back();
+		const s32 commonCount = (s32)def->var.size();
+		const LogicVar* var = def->var.data();
+		for (s32 v = 0; v < commonCount; v++, var++)
+		{
+			addVariableToList(var->varId, varList, varCount);
+		}
+	}
+
+	s32 getStringListIndex(const std::string& sValue, const std::vector<std::string>& strList)
+	{
+		const char* src = sValue.c_str();
+		const s32 count = (s32)strList.size();
+		const std::string* list = strList.data();
+		for (s32 i = 0; i < count; i++, list++)
+		{
+			if (strcasecmp(src, list->c_str()) == 0)
+			{
+				return i;
+			}
+		}
+		return -1;
+	}
+
+	static bool s_browsing = false;
+
+	const Entity* getFirstEntityOfType(EntityType type)
+	{
+		const s32 count = (s32)s_entityDefList.size();
+		const Entity* entity = s_entityDefList.data();
+		for (s32 i = 0; i < count; i++, entity++)
+		{
+			if (entity->type == type)
+			{
+				return entity;
+			}
+		}
+		return nullptr;
+	}
+
+	void infoPanelObject()
+	{
+		EditorSector* sector = s_featureCur.sector ? s_featureCur.sector : s_featureHovered.sector;
+		s32 objIndex = s_featureCur.sector ? s_featureCur.featureIndex : s_featureHovered.featureIndex;
+		EditorObject* obj = sector && objIndex >= 0 ? &sector->obj[objIndex] : nullptr;
+
+		if (!sector || objIndex < 0)
+		{
+			getPrevObjectFeature(sector, objIndex);
+			obj = sector && objIndex >= 0 ? &sector->obj[objIndex] : nullptr;
+		}
+		if (!sector || objIndex < 0 || !obj) { return; }
+
+		if (hasObjectSelectionChanged(sector, objIndex))
+		{
+			ImGui::SetWindowFocus(NULL);
+			commitCurEntityChanges();
+		}
+		setPrevObjectFeature(sector, objIndex);
+
+		if (s_objEntity.id < 0)
+		{
+			s_objEntity = s_level.entities[obj->entityId];
+		}
+
+		if (s_browsing && !isPopupOpen())
+		{
+			s_browsing = false;
+			const char* newAssetName = AssetBrowser::getSelectedAssetName();
+			if (newAssetName)
+			{
+				s_objEntity.assetName = newAssetName;
+			}
+		}
+
+		ImGui::Text("Sector ID: %d, Object Index: %d", sector->id, objIndex);
+		ImGui::Separator();
+		// Entity Name
+		ImGui::Text("%s", "Name"); ImGui::SameLine(0.0f, 17.0f);
+		char name[256];
+		strcpy(name, s_objEntity.name.c_str());
+		ImGui::SetNextItemWidth(196.0f);
+
+		char inputName[256];
+		sprintf(inputName, "##NameInput_%d_%d", sector->id, objIndex);
+		if (ImGui::InputText(inputName, name, 256))
+		{
+			s_objEntity.name = name;
+		}
+		ImGui::SameLine(0.0f, 16.0f);
+		// Entity Class/Type
+		s32 classId = s_objEntity.type;
+		ImGui::Text("%s", "Class"); ImGui::SameLine(0.0f, 8.0f);
+		ImGui::SetNextItemWidth(96.0f);
+
+		EntityType prev = s_objEntity.type;
+		if (ImGui::Combo("##Class", (s32*)&classId, c_entityClassName, ETYPE_COUNT))
+		{
+			s_objEntity.type = EntityType(classId);
+			// We need a default asset if the class type has changed, since the current asset will not work.
+			if (prev != s_objEntity.type)
+			{
+				// So just search for the first entity in the template list of that type and use that asset.
+				const Entity* defEntity = getFirstEntityOfType(s_objEntity.type);
+				assert(defEntity);
+				if (defEntity)
+				{
+					s_objEntity.assetName = defEntity->assetName;
+				}
+			}
+		}
+		// Entity Asset
+		ImGui::Text("%s", "Asset"); ImGui::SameLine(0.0f, 8.0f);
+		char assetName[256];
+		strcpy(assetName, s_objEntity.assetName.c_str());
+		if (ImGui::InputText("##AssetName", assetName, 256))
+		{
+			s_objEntity.assetName = assetName;
+		}
+		ImGui::SameLine(0.0f, 8.0f);
+		if (ImGui::Button("Browse"))
+		{
+			AssetType assetType = TYPE_NOT_SET;
+			if (s_objEntity.type == ETYPE_SPRITE)
+			{
+				assetType = TYPE_SPRITE;
+			}
+			else if (s_objEntity.type == ETYPE_FRAME)
+			{
+				assetType = TYPE_FRAME;
+			}
+			else if (s_objEntity.type == ETYPE_3D)
+			{
+				assetType = TYPE_3DOBJ;
+			}
+			if (assetType != TYPE_NOT_SET)
+			{
+				openEditorPopup(TFE_Editor::POPUP_BROWSE, u32(assetType), (void*)s_objEntity.assetName.c_str());
+				s_browsing = true;
+			}
+		}
+		ImGui::Separator();
+
+		ImGui::Text("%s", "Position"); ImGui::SameLine(0.0f, 8.0f);
+		ImGui::InputFloat3("##Position", &obj->pos.x);
+
+		bool orientAdjusted = false;
+		ImGui::Text("%s", "Angle"); ImGui::SameLine(0.0f, 32.0f);
+		ImGui::SetNextItemWidth(206.0f);
+		if (ImGui::SliderAngle("##Angle", &obj->angle, 0.0f))
+		{
+			orientAdjusted = true;
+		}
+		ImGui::SameLine(0.0f, 4.0f);
+		ImGui::SetNextItemWidth(96.0f);
+
+		f32 angle = obj->angle * 180.0f / PI;
+		if (ImGui::InputFloat("##AngleEdit", &angle))
+		{
+			obj->angle = angle * PI / 180.0f;
+			orientAdjusted = true;
+		}
+		
+		// Show pitch and roll.
+		if (s_objEntity.type == ETYPE_3D)
+		{
+			f32 pitch = obj->pitch * 180.0f / PI;
+			f32 roll  = obj->roll  * 180.0f / PI;
+
+			ImGui::Text("%s", "Pitch"); ImGui::SameLine(0.0f, 32.0f);
+			ImGui::SetNextItemWidth(128.0f);
+			if (ImGui::InputFloat("##PitchEdit", &pitch))
+			{
+				obj->pitch = pitch * PI / 180.0f;
+				orientAdjusted = true;
+			}
+			ImGui::SameLine(0.0f, 32.0f);
+			ImGui::Text("%s", "Roll"); ImGui::SameLine(0.0f, 8.0f);
+			ImGui::SetNextItemWidth(128.0f);
+			if (ImGui::InputFloat("##RollEdit", &roll))
+			{
+				obj->roll = roll * PI / 180.0f;
+				orientAdjusted = true;
+			}
+
+			if (orientAdjusted)
+			{
+				compute3x3Rotation(&obj->transform, obj->angle, obj->pitch, obj->roll);
+			}
+		}
+
+		// Difficulty.
+		ImGui::Text("%s", "Difficulty"); ImGui::SameLine(0.0f, 8.0f);
+		s32 index = c_objDiffToIndex[obj->diff - c_objDiffStart];
+		ImGui::SetNextItemWidth(256.0f);
+		if (ImGui::Combo("##DiffCombo", (s32*)&index, c_objDifficulty, TFE_ARRAYSIZE(c_objDifficulty)))
+		{
+			obj->diff = c_objDiffValue[index];
+		}
+		ImGui::Separator();
+
+		const s32 listWidth = (s32)s_infoWith - 32;
+
+		// Logics
+		if (s_logicSelect >= (s32)s_objEntity.logic.size())
+		{
+			s_logicSelect = -1;
+		}
+		// Always select one of the them, if there are any to select.
+		if (s_logicSelect < 0 && !s_objEntity.logic.empty())
+		{
+			s_logicSelect = 0;
+		}
+
+		ImGui::Text("%s", "Logics");
+		ImGui::BeginChild("##LogicList", { (f32)min(listWidth, 400), 64 }, true);
+		{
+			s32 count = (s32)s_objEntity.logic.size();
+			EntityLogic* list = s_objEntity.logic.data();
+			for (s32 i = 0; i < count; i++)
+			{
+				char name[256];
+				sprintf(name, "%s##%d", list[i].name.c_str(), i);
+				bool sel = s_logicSelect == i;
+				ImGui::Selectable(name, &sel);
+				if (sel) { s_logicSelect = i; }
+				else if (s_logicSelect == i) { s_logicSelect = -1; }
+			}
+		}
+		ImGui::EndChild();
+		if (ImGui::Button("Add"))
+		{
+			LogicDef* def = &s_logicDefList[s_logicIndex];
+			EntityLogic newLogic = {};
+			newLogic.name = def->name;
+			s_objEntity.logic.push_back(newLogic);
+
+			EntityLogic* logic = &s_objEntity.logic.back();
+
+			// Add Variables automatically.
+			const s32 varCount = (s32)def->var.size();
+			const LogicVar* var = def->var.data();
+			for (s32 v = 0; v < varCount; v++, var++)
+			{
+				const EntityVarDef* varDef = &s_varDefList[var->varId];
+				if (var->type == VAR_TYPE_DEFAULT || var->type == VAR_TYPE_REQUIRED)
+				{
+					EntityVar newVar;
+					newVar.defId = var->varId;
+					newVar.value = varDef->defValue;
+					logic->var.push_back(newVar);
+				}
+			}
+		}
+
+		ImGui::SameLine(0.0f, 8.0f);
+		ImGui::SetNextItemWidth(128.0f);
+		if (ImGui::BeginCombo("##LogicCombo", s_logicDefList[s_logicIndex].name.c_str()))
+		{
+			s32 count = (s32)s_logicDefList.size() - 1;
+			for (s32 i = 0; i < count; i++)
+			{
+				if (ImGui::Selectable(s_logicDefList[i].name.c_str(), i == s_logicIndex))
+				{
+					s_logicIndex = i;
+				}
+				setTooltip(s_logicDefList[i].tooltip.c_str());
+			}
+			ImGui::EndCombo();
+		}
+
+		ImGui::SameLine(0.0f, 16.0f);
+		if (ImGui::Button("Remove") && s_logicSelect >= 0)
+		{
+			s32 count = (s32)s_objEntity.logic.size();
+			for (s32 i = s_logicSelect; i < count - 1; i++)
+			{
+				s_objEntity.logic[i] = s_objEntity.logic[i + 1];
+			}
+			s_objEntity.logic.pop_back();
+			s_logicSelect = -1;
+		}
+
+		ImGui::Separator();
+		
+		// Variables
+		static s32 varSel = -1;
+
+		// Select the variable list.
+		std::vector<EntityVar>* varList = &s_objEntity.var;
+		if (s_logicSelect >= 0 && s_logicSelect < (s32)s_objEntity.logic.size())
+		{
+			varList = &s_objEntity.logic[s_logicSelect].var;
+		}
+
+		const f32 varListHeight = s_objEntity.type == ETYPE_3D ? 114.0f : 140.0f;
+		ImGui::Text("%s", "Variables");
+		ImGui::BeginChild("##VariableList", { (f32)min(listWidth, 400), varListHeight }, true);
+		{
+			s32 count = (s32)varList->size();
+			EntityVar* list = varList->data();
+			for (s32 i = 0; i < count; i++)
+			{
+				EntityVarDef* def = getEntityVar(list[i].defId);
+
+				char name[256];
+				sprintf(name, "%s##%d", def->name.c_str(), i);
+				bool sel = varSel == i;
+				ImGui::Selectable(name, &sel, 0, { 100.0f,0.0f });
+				if (sel) { varSel = i; }
+				else if (varSel == i) { varSel = -1; }
+
+				if (def->type != EVARTYPE_FLAGS) { ImGui::SameLine(0.0f, 8.0f); }
+				switch (def->type)
+				{
+					case EVARTYPE_BOOL:
+					{
+						sprintf(name, "##VarBool%d", i);
+						ImGui::Checkbox(name, &list[i].value.bValue);
+					} break;
+					case EVARTYPE_FLOAT:
+					{
+						sprintf(name, "##VarFloat%d", i);
+						ImGui::InputFloat(name, &list[i].value.fValue);
+					} break;
+					case EVARTYPE_INT:
+					{
+						sprintf(name, "##VarInt%d", i);
+						ImGui::InputInt(name, &list[i].value.iValue);
+					} break;
+					case EVARTYPE_FLAGS:
+					{
+						const s32 flagCount = (s32)def->flags.size();
+						const EntityVarFlag* flag = def->flags.data();
+						for (s32 f = 0; f < flagCount; f++, flag++)
+						{
+							ImGui::CheckboxFlags(flag->name.c_str(), (u32*)&list[i].value.iValue, (u32)flag->value);
+							if (f < flagCount - 1) { ImGui::SameLine(0.0f, 12.0f); }
+						}
+					} break;
+					case EVARTYPE_STRING_LIST:
+					{
+						const s32 index = getStringListIndex(list[i].value.sValue, def->strList);
+						sprintf(name, "##VarCombo%d", i);
+						if (ImGui::BeginCombo(name, list[i].value.sValue.c_str()))
+						{
+							const s32 listCount = (s32)def->strList.size();
+							for (s32 s = 0; s < listCount; s++)
+							{
+								if (ImGui::Selectable(def->strList[s].c_str(), s == index))
+								{
+									list[i].value.sValue = def->strList[s];
+								}
+							}
+							ImGui::EndCombo();
+						}
+					} break;
+					case EVARTYPE_INPUT_STRING_PAIR:
+					{
+						char pair1[256], pair2[256];
+						strcpy(pair1, list[i].value.sValue.c_str());
+						strcpy(pair2, list[i].value.sValue1.c_str());
+						ImGui::SetNextItemWidth(128.0f);
+						if (ImGui::InputText("###Pair1", pair1, 256))
+						{
+							list[i].value.sValue = pair1;
+						}
+						ImGui::SameLine(0.0f, 8.0f);
+						ImGui::SetNextItemWidth(128.0f);
+						if (ImGui::InputText("###Pair2", pair2, 256))
+						{
+							list[i].value.sValue1 = pair2;
+						}
+					} break;
+				}
+			}
+		}
+		ImGui::EndChild();
+
+		s32 varComboList[256];
+		s32 varComboCount = 0;
+		if (s_logicSelect >= 0 && s_logicSelect < (s32)s_objEntity.logic.size())
+		{
+			addLogicVariables(s_objEntity.logic[s_logicSelect].name, varComboList, varComboCount);
+		}
+		else
+		{
+			addLogicVariables("", varComboList, varComboCount);
+		}
+
+		if (ImGui::Button("Add##Variable") && s_varIndex >= 0 && s_varIndex < varComboCount)
+		{
+			EntityVar var;
+			var.defId = varComboList[s_varIndex];
+			var.value = s_varDefList[var.defId].defValue;
+			varList->push_back(var);
+		}
+		ImGui::SameLine(0.0f, 8.0f);
+		ImGui::SetNextItemWidth(128.0f);
+
+		if (s_varIndex < 0 || s_varIndex >= varComboCount) { s_varIndex = 0; }
+
+		if (ImGui::BeginCombo("##VarCombo", varComboCount ? s_varDefList[varComboList[s_varIndex]].name.c_str() : ""))
+		{
+			for (s32 i = 0; i < varComboCount; i++)
+			{
+				if (ImGui::Selectable(s_varDefList[varComboList[i]].name.c_str(), i == s_varIndex))
+				{
+					s_varIndex = i;
+				}
+				// setTooltip(s_varDefList[varList[s_varIndex]].tooltip.c_str());
+			}
+			ImGui::EndCombo();
+		}
+
+		ImGui::SameLine(0.0f, 16.0f);
+		if (ImGui::Button("Remove##Variable") && varSel >= 0 && varSel < (s32)varList->size())
+		{
+			s32 count = (s32)varList->size();
+			for (s32 i = varSel; i < count - 1; i++)
+			{
+				(*varList)[i] = (*varList)[i + 1];
+			}
+			varList->pop_back();
+			varSel = -1;
+		}
+		ImGui::Separator();
+
+		// Buttons.
+		if (ImGui::Button("Category"))
+		{
+			openEditorPopup(TFE_Editor::POPUP_CATEGORY);
+			s_prevCategoryFlags = s_objEntity.categories;
+		}
+		ImGui::SameLine(0.0f, 8.0f);
+		if (ImGui::Button("Add to Entity Def"))
+		{
+			s_objEntity.categories |= 1;	// custom.
+			if (!doesEntityExistInProject(&s_objEntity))
+			{
+				s_projEntityDefList.push_back(s_objEntity);
+				s_entityDefList.push_back(s_objEntity);
+				saveProjectEntityList();
+			}
+		}
+		ImGui::SameLine(0.0f, 8.0f);
+		if (ImGui::Button("Commit"))
+		{
+			commitCurEntityChanges();
+		}
+		ImGui::SameLine(0.0f, 8.0f);
+		if (ImGui::Button("Reset"))
+		{
+			s_objEntity = {};
+		}
+	}
+		
+	void drawInfoPanel(EditorView view)
+	{
+		bool show = getSelectMode() == SELECTMODE_NONE;
+
 		// Draw the info bars.
 		s_infoHeight = 486 + 44;
-
 		infoToolBegin(s_infoHeight);
 		{
-			if (s_editMode == LEDIT_VERTEX && (s_hoveredVtxId >= 0 || s_selectedVtxId >= 0))
+			if (s_infoTab == TAB_ITEM && show)
 			{
-				infoPanelVertex();
+				if (s_editMode == LEDIT_VERTEX)
+				{
+					infoPanelVertex();
+				}
+				else if (s_editMode == LEDIT_WALL || s_editMode == LEDIT_SECTOR)
+				{
+					const bool is2d = view == EDIT_VIEW_2D;
+					const bool showWall = s_editMode == LEDIT_WALL && (is2d || s_wallShownLast);
+
+					// Prioritize selected wall, selected sector, hovered wall, hovered sector.
+					// Allow sector views in wall mode, but NOT wall views in sector mode.
+					const bool curFeatureIsFlat = s_featureCur.part == HP_FLOOR || s_featureCur.part == HP_CEIL;
+					const bool hoverFeatureIsFlat = s_featureHovered.part == HP_FLOOR || s_featureHovered.part == HP_CEIL;
+
+					if (s_editMode == LEDIT_WALL && s_featureCur.featureIndex >= 0 && !curFeatureIsFlat) { infoPanelWall(); }
+					else if (s_featureCur.sector) { infoPanelSector(); }
+					else if (s_editMode == LEDIT_WALL && s_featureHovered.featureIndex >= 0 && !hoverFeatureIsFlat) { infoPanelWall(); }
+					else if (s_featureHovered.sector) { infoPanelSector(); }
+					else if (showWall) { infoPanelWall(); }
+					else { infoPanelSector(); }
+				}
+				else if (s_editMode == LEDIT_ENTITY)
+				{
+					infoPanelObject();
+				}
 			}
-			else if (s_editMode == LEDIT_WALL || s_editMode == LEDIT_SECTOR)
-			{
-				// Prioritize selected wall, selected sector, hovered wall, hovered sector.
-				// Allow sector views in wall mode, but NOT wall views in sector mode.
-				if (s_editMode == LEDIT_WALL && s_selectedWallId >= 0) { infoPanelWall(); }
-				else if (s_selectedSector) { infoPanelSector(); }
-				else if (s_editMode == LEDIT_WALL && s_hoveredWallId >= 0) { infoPanelWall(); }
-				else if (s_hoveredSector) { infoPanelSector(); }
-				else { infoPanelMap(); }
-			}
-			// TODO
-			//else if (s_hoveredEntity >= 0 || s_selectedEntity >= 0)
-			//{
-			//	infoPanelEntity();
-			//}
-			else
+			else if (s_infoTab == TAB_INFO && show)
 			{
 				infoPanelMap();
 			}
@@ -528,5 +1750,52 @@ namespace LevelEditor
 	void infoToolEnd()
 	{
 		ImGui::End();
+	}
+		
+	bool categoryPopupUI()
+	{
+		f32 winWidth = 600.0f;
+		f32 winHeight = 146.0f;
+
+		pushFont(TFE_Editor::FONT_SMALL);
+
+		bool active = true;
+		ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoResize;
+		ImGui::SetNextWindowSize({ winWidth, winHeight });
+		if (ImGui::BeginPopupModal("Category", &active, window_flags))
+		{
+			//s_objEntity;
+			s32 count = (s32)s_categoryList.size();
+			const Category* cat = s_categoryList.data() + 1;
+			for (s32 i = 1; i < count; i++, cat++)
+			{
+				const s32 flag = 1 << i;
+				ImGui::CheckboxFlags(cat->name.c_str(), (u32*)&s_objEntity.categories, (u32)flag);
+
+				s32 rowIdx = (i & 3);
+				if (rowIdx != 0 && i < count - 1)
+				{
+					ImGui::SameLine(150.0f * rowIdx, 0.0f);
+				}
+			}
+
+			ImGui::Separator();
+
+			if (ImGui::Button("Confirm"))
+			{
+				active = false;
+			}
+			ImGui::SameLine(0.0f, 32.0f);
+			if (ImGui::Button("Cancel"))
+			{
+				s_objEntity.categories = s_prevCategoryFlags;
+				active = false;
+			}
+			ImGui::EndPopup();
+		}
+
+		popFont();
+
+		return !active;
 	}
 }

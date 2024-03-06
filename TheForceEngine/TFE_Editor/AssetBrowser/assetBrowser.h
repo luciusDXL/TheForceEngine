@@ -20,11 +20,16 @@ namespace AssetBrowser
 	void selectAll();
 	void selectNone();
 	void invertSelection();
+	const char* getSelectedAssetName();
 
 	bool showOnlyModLevels();
 	void rebuildAssets();
 
+	void initPopup(TFE_Editor::AssetType type, const char* selectName);
+	bool popup();
+
 	TFE_Editor::Asset* findAsset(const char* name, TFE_Editor::AssetType type);
 	TFE_Editor::AssetHandle loadAssetData(const TFE_Editor::Asset* asset);
 	void getLevelTextures(TFE_Editor::AssetList& list, const char* levelName);
+	const TFE_Editor::AssetList& getAssetList(TFE_Editor::AssetType type);
 }

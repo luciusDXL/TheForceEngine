@@ -71,7 +71,7 @@ namespace TFE_Editor
 
 		if (type == FRAME_FME)
 		{
-			JediFrame* frameData = TFE_Sprite_Jedi::loadFrameFromMemory(buffer.data(), len);
+			WaxFrame* frameData = TFE_Sprite_Jedi::loadFrameFromMemory(buffer.data(), len, false);
 			if (!frameData)
 			{
 				return -1;
@@ -109,6 +109,8 @@ namespace TFE_Editor
 			s_frameList[id].height = cell->sizeY;
 			s_frameList[id].worldWidth = fixed16ToFloat(frameData->widthWS);
 			s_frameList[id].worldHeight = fixed16ToFloat(frameData->heightWS);
+			s_frameList[id].offsetX = (f32)frameData->offsetX;
+			s_frameList[id].offsetY = (f32)frameData->offsetY;
 			strcpy(s_frameList[id].name, filename);
 			s_frameList[id].paletteIndex = palIndex;
 			s_frameList[id].lightLevel = 32;

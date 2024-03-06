@@ -3,12 +3,19 @@
 #include "editorLevel.h"
 #include "editorResources.h"
 #include "editorProject.h"
+
+#include <TFE_Asset/imageAsset.h>
 #include <TFE_Settings/settings.h>
 #include <TFE_Editor/AssetBrowser/assetBrowser.h>
 #include <TFE_Editor/LevelEditor/levelEditor.h>
+#include <TFE_Editor/LevelEditor/infoPanel.h>
+#include <TFE_Editor/LevelEditor/levelEditorInf.h>
+#include <TFE_Editor/LevelEditor/groups.h>
 #include <TFE_Editor/EditorAsset/editorAsset.h>
+#include <TFE_Editor/EditorAsset/editor3dThumbnails.h>
 #include <TFE_Input/input.h>
 #include <TFE_RenderBackend/renderBackend.h>
+#include <TFE_RenderShared/modelDraw.h>
 #include <TFE_System/system.h>
 #include <TFE_FileSystem/fileutil.h>
 #include <TFE_FileSystem/paths.h>
@@ -41,13 +48,20 @@ namespace TFE_Editor
 		char msg[TFE_MAX_PATH * 2] = "";
 	};
 
+	static Vec2i s_editorVersion = { 0, 50 };
 	static std::vector<RecentProject> s_recents;
+
+	static s32 s_uid = 0;
+	static char s_uidBuffer[256];
 	
 	static bool s_showPerf = true;
 	static bool s_showEditor = true;
 	static AssetType s_editorAssetType = TYPE_NOT_SET;
 	static EditorMode s_editorMode = EDIT_ASSET_BROWSER;
 	static EditorPopup s_editorPopup = POPUP_NONE;
+	static bool s_hidePopup = false;
+	static u32 s_editorPopupUserData = 0;
+	static void* s_editorPopupUserPtr = nullptr;
 	static bool s_exitEditor = false;
 	static bool s_configView = false;
 	static WorkBuffer s_workBuffer;
@@ -56,13 +70,28 @@ namespace TFE_Editor
 	static bool s_menuActive = false;
 	static MessageBox s_msgBox = {};
 	static ImFont* s_fonts[FONT_COUNT * FONT_SIZE_COUNT] = { 0 };
+
+	static f64 s_tooltipTime = 0.0;
+	static Vec2i s_prevMousePos = { 0 };
+	static const f64 c_tooltipDelay = 0.2;
+	static bool s_canShowTooltips = false;
+
+	static TextureGpu* s_iconAtlas = nullptr;
 	
 	void menu();
 	void loadFonts();
+	void updateTooltips();
+	bool loadIcons();
+	void freeIcons();
 
 	WorkBuffer& getWorkBuffer()
 	{
 		return s_workBuffer;
+	}
+
+	Vec2i getEditorVersion()
+	{
+		return s_editorVersion;
 	}
 
 	void enable()
@@ -71,14 +100,97 @@ namespace TFE_Editor
 		s_editorMode = EDIT_ASSET_BROWSER;
 		s_exitEditor = false;
 		loadFonts();
+		loadIcons();
 		loadConfig();
 		AssetBrowser::init();
+		TFE_RenderShared::modelDraw_init();
+		thumbnail_init(64);
 		s_msgBox = {};
 	}
 
 	void disable()
 	{
 		AssetBrowser::destroy();
+		thumbnail_destroy();
+		TFE_RenderShared::modelDraw_destroy();
+		freeIcons();
+	}
+		
+	bool loadIcons()
+	{
+		s_iconAtlas = loadGpuImage("UI_Images/IconAtlas.png");
+		return s_iconAtlas != nullptr;
+	}
+
+	void freeIcons()
+	{
+		TFE_RenderBackend::freeTexture(s_iconAtlas);
+		s_iconAtlas = nullptr;
+	}
+		
+	bool iconButton(IconId icon, const char* tooltip/*=nullptr*/, bool highlight/*=false*/, const f32* tint/*=nullptr*/)
+	{
+		void* gpuPtr = TFE_RenderBackend::getGpuPtr(s_iconAtlas);
+		const s32 x = s32(icon) & 7;
+		const s32 y = s32(icon) >> 3;
+
+		const f32 imageScale = 1.0f / 272.0f;
+		const f32 x0 = f32(x) * 34.0f + 1.0f;
+		const f32 x1 = x0 + 32.0f;
+		const f32 y0 = f32(y) * 34.0f + 1.0f;
+		const f32 y1 = y0 + 32.0f;
+		const ImVec4 tintColor = tint ? ImVec4(tint[0], tint[1], tint[2], tint[3]) : ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
+		const ImVec4 bgColor = ImVec4(0, 0, 0, highlight ? 0.75f : 0.25f);
+		const s32 padding = 1;
+
+		// A unique ID formed from: icon + instance*ICON_COUNT + ptr&0xffffffff
+		const s32 id = s_uid + s32(size_t(s_iconAtlas));
+		const ImVec2 size = ImVec2(32, 32);
+		s_uid++;
+			
+		ImGui::PushID(id);
+		bool res = ImGui::ImageButton(gpuPtr, size, ImVec2(x0*imageScale, y0*imageScale),
+			ImVec2(x1*imageScale, y1*imageScale), padding, bgColor, tintColor);
+		if (tooltip) { setTooltip(tooltip); }
+		ImGui::PopID();
+
+		return res;
+	}
+
+	bool iconButtonInline(IconId icon, const char* tooltip/*=nullptr*/, const f32* tint/*=nullptr*/, bool small/*=false*/)
+	{
+		void* gpuPtr = TFE_RenderBackend::getGpuPtr(s_iconAtlas);
+		const s32 x = s32(icon) & 7;
+		const s32 y = s32(icon) >> 3;
+
+		const f32 imageScale = 1.0f / 272.0f;
+		const f32 x0 = f32(x) * 34.0f + 1.0f;
+		const f32 x1 = x0 + 32.0f;
+		const f32 y0 = f32(y) * 34.0f + 1.0f;
+		const f32 y1 = y0 + 32.0f;
+		const ImVec4 tintColor  = tint ? ImVec4(tint[0], tint[1], tint[2], tint[3]) : ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
+		const ImVec4 tintColor2 = tint ? ImVec4(tint[0]*2.0f, tint[1]*2.0f, tint[2]*2.0f, tint[3]) : ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
+		const ImVec4 bgColor = ImVec4(0, 0, 0, 0);
+		const s32 padding = 0;
+
+		// A unique ID formed from: icon + instance*ICON_COUNT + ptr&0xffffffff
+		const s32 id = s_uid + s32(size_t(s_iconAtlas));
+		const ImVec2 size = small ? ImVec2(24, 24) : ImVec2(32, 32);
+		s_uid++;
+
+		ImGui::PushStyleColor(ImGuiCol_Button, { 0,0,0,0 });
+		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, { 0,0,0,0 });
+		ImGui::PushStyleColor(ImGuiCol_ButtonActive, { 0,0,0,0 });
+		ImGui::SetCursorPosY(ImGui::GetCursorPosY() - 2.0f);
+
+		ImGui::PushID(id);
+		bool res = ImGui::ImageButtonDualTint(gpuPtr, size, ImVec2(x0*imageScale, y0*imageScale),
+			ImVec2(x1*imageScale, y1*imageScale), padding, bgColor, tintColor, tintColor2);
+		if (tooltip) { setTooltip(tooltip); }
+		ImGui::PopID();
+		ImGui::PopStyleColor(3);
+
+		return res;
 	}
 
 	bool messageBoxUi()
@@ -106,9 +218,14 @@ namespace TFE_Editor
 		return finished;
 	}
 
+	bool isPopupOpen()
+	{
+		return s_editorPopup != POPUP_NONE && !s_hidePopup;
+	}
+
 	void handlePopupBegin()
 	{
-		if (s_editorPopup == POPUP_NONE) { return; }
+		if (s_editorPopup == POPUP_NONE || s_hidePopup) { return; }
 		switch (s_editorPopup)
 		{
 			case POPUP_MSG_BOX:
@@ -132,12 +249,28 @@ namespace TFE_Editor
 			{
 				ImGui::OpenPopup("New Level");
 			} break;
+			case POPUP_BROWSE:
+			{
+				ImGui::OpenPopup("Browse");
+			} break;
+			case POPUP_CATEGORY:
+			{
+				ImGui::OpenPopup("Category");
+			} break;
+			case POPUP_EDIT_INF:
+			{
+				ImGui::OpenPopup("Edit INF");
+			} break;
+			case POPUP_GROUP_NAME:
+			{
+				ImGui::OpenPopup("Choose Name");
+			} break;
 		}
 	}
 
 	void handlePopupEnd()
 	{
-		if (s_editorPopup == POPUP_NONE) { return; }
+		if (s_editorPopup == POPUP_NONE || s_hidePopup) { return; }
 
 		switch (s_editorPopup)
 		{
@@ -189,6 +322,39 @@ namespace TFE_Editor
 					s_editorPopup = POPUP_NONE;
 				}
 			} break;
+			case POPUP_BROWSE:
+			{
+				if (AssetBrowser::popup())
+				{
+					ImGui::CloseCurrentPopup();
+					s_editorPopup = POPUP_NONE;
+				}
+			} break;
+			case POPUP_CATEGORY:
+			{
+				if (LevelEditor::categoryPopupUI())
+				{
+					ImGui::CloseCurrentPopup();
+					s_editorPopup = POPUP_NONE;
+				}
+			} break;
+			case POPUP_EDIT_INF:
+			{
+				if (LevelEditor::editor_infEdit())
+				{
+					LevelEditor::editor_infEditEnd();
+					ImGui::CloseCurrentPopup();
+					s_editorPopup = POPUP_NONE;
+				}
+			} break;
+			case POPUP_GROUP_NAME:
+			{
+				if (LevelEditor::groups_chooseName())
+				{
+					ImGui::CloseCurrentPopup();
+					s_editorPopup = POPUP_NONE;
+				}
+			} break;
 		}
 
 		if (TFE_Input::keyPressed(KEY_ESCAPE))
@@ -199,6 +365,10 @@ namespace TFE_Editor
 				if (s_editorPopup == POPUP_CONFIG)
 				{
 					saveConfig();
+				}
+				else if (s_editorPopup == POPUP_EDIT_INF)
+				{
+					LevelEditor::editor_infEditEnd();
 				}
 
 				s_editorPopup = POPUP_NONE;
@@ -213,8 +383,12 @@ namespace TFE_Editor
 
 	bool update(bool consoleOpen)
 	{
+		editor_clearUid();
+		thumbnail_update();
+
 		TFE_RenderBackend::clearWindow();
 
+		updateTooltips();
 		handlePopupBegin();
 		menu();
 
@@ -312,10 +486,6 @@ namespace TFE_Editor
 		ImGui::TextColored(titleColor, title);
 	}
 
-	void openEditorPopup()
-	{
-	}
-
 	void menu()
 	{
 		pushFont(FONT_SMALL);
@@ -374,6 +544,13 @@ namespace TFE_Editor
 					if (s_editorMode == EDIT_ASSET_BROWSER)
 					{
 						AssetBrowser::selectNone();
+					}
+					else if (s_editorMode == EDIT_ASSET)
+					{
+						if (s_editorAssetType == TYPE_LEVEL)
+						{
+							LevelEditor::selectNone();
+						}
 					}
 				}
 				if (ImGui::MenuItem("Invert Selection", NULL, (bool*)NULL))
@@ -525,9 +702,41 @@ namespace TFE_Editor
 		sprintf(s_msgBox.id, "%s##MessageBox", type);
 	}
 
-	void openEditorPopup(EditorPopup popup)
+	void hidePopup()
 	{
+		s_hidePopup = true;
+	}
+
+	void showPopup()
+	{
+		s_hidePopup = false;
+	}
+
+	EditorPopup getCurrentPopup()
+	{
+		return s_editorPopup;
+	}
+
+	void openEditorPopup(EditorPopup popup, u32 userData, void* userPtr)
+	{
+		if (s_hidePopup) { return; }
+
 		s_editorPopup = popup;
+		s_editorPopupUserData = userData;
+		s_editorPopupUserPtr = userPtr;
+
+		// Initialization if needed.
+		switch (popup)
+		{
+			case POPUP_BROWSE:
+			{
+				AssetBrowser::initPopup(AssetType(userData), (char*)userPtr);
+			} break;
+			case POPUP_EDIT_INF:
+			{
+				LevelEditor::editor_infEditBegin((char*)userPtr, userData == 0xffffffff ? -1 : userData);
+			} break;
+		}
 	}
 		
 	ArchiveType getArchiveType(const char* filename)
@@ -669,5 +878,99 @@ namespace TFE_Editor
 	void disableAssetEditor()
 	{
 		s_editorMode = EDIT_ASSET_BROWSER;
+	}
+
+	void updateTooltips()
+	{
+		Vec2i mouse;
+		TFE_Input::getMousePos(&mouse.x, &mouse.z);
+		bool mouseStationary = mouse.x == s_prevMousePos.x && mouse.z == s_prevMousePos.z;
+		s_canShowTooltips = mouseStationary && s_tooltipTime >= c_tooltipDelay;
+		if (mouseStationary)
+		{
+			s_tooltipTime += TFE_System::getDeltaTime();
+		}
+		else
+		{
+			s_tooltipTime = 0.0;
+		}
+		s_prevMousePos = mouse;
+	}
+
+	void setTooltip(const char* msg, ...)
+	{
+		if (!ImGui::IsItemHovered() || !s_canShowTooltips) { return; }
+
+		char fullStr[TFE_MAX_PATH];
+		va_list arg;
+		va_start(arg, msg);
+		vsprintf(fullStr, msg, arg);
+		va_end(arg);
+
+		ImGui::SetTooltip("%s", fullStr);
+	}
+
+	// Return true if 'str' matches the 'filter', taking into account special symbols.
+	bool editorStringFilter(const char* str, const char* filter, size_t filterLength)
+	{
+		for (size_t i = 0; i < filterLength; i++)
+		{
+			if (filter[i] == '?') { continue; }
+			if (tolower(str[i]) != tolower(filter[i])) { return false; }
+		}
+		return true;
+	}
+
+	TextureGpu* loadGpuImage(const char* path)
+	{
+		char imagePath[TFE_MAX_PATH];
+		strcpy(imagePath, path);
+		if (!TFE_Paths::mapSystemPath(imagePath))
+		{
+			memset(imagePath, 0, TFE_MAX_PATH);
+			TFE_Paths::appendPath(TFE_PathType::PATH_PROGRAM, path, imagePath, TFE_MAX_PATH);
+			FileUtil::fixupPath(imagePath);
+		}
+
+		TextureGpu* gpuImage = nullptr;
+		SDL_Surface* image = TFE_Image::get(path);
+		if (image)
+		{
+			gpuImage = TFE_RenderBackend::createTexture(image->w, image->h, (u32*)image->pixels, MAG_FILTER_LINEAR);
+		}
+		return gpuImage;
+	}
+				
+	void editor_clearUid()
+	{
+		s_uid = 0;
+	}
+
+	const char* editor_getUniqueLabel(const char* label)
+	{
+		sprintf(s_uidBuffer, "%s##%d", label, s_uid);
+		s_uid++;
+		return s_uidBuffer;
+	}
+
+	s32 editor_getUniqueId()
+	{
+		s32 id = s_uid;
+		s_uid++;
+		return id;
+	}
+
+	bool editor_button(const char* label)
+	{
+		return ImGui::Button(editor_getUniqueLabel(label));
+	}
+
+	bool mouseInsideItem()
+	{
+		ImVec2 mousePos = ImGui::GetMousePos();
+		ImVec2 minCoord = ImGui::GetItemRectMin();
+		ImVec2 maxCoord = ImGui::GetItemRectMax();
+
+		return mousePos.x >= minCoord.x && mousePos.x < maxCoord.x && mousePos.y >= minCoord.y && mousePos.y < maxCoord.y;
 	}
 }

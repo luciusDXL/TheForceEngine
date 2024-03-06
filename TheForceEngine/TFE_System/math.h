@@ -141,6 +141,11 @@ namespace TFE_Math
 		return { a->y*b->z - a->z*b->y, a->z*b->x - a->x*b->z, a->x*b->y - a->y*b->x };
 	}
 
+	inline f32 planeDist(const Vec4f* plane, const Vec3f* pos)
+	{
+		return plane->x*pos->x + plane->y*pos->y + plane->z*pos->z + plane->w;
+	}
+
 	Mat3 computeViewMatrix(const Vec3f* lookDir, const Vec3f* upDir);
 	Mat3 transpose(const Mat3& mtx);
 	Mat4 transpose4(Mat4 mtx);
@@ -153,4 +158,8 @@ namespace TFE_Math
 
 	bool lineSegmentIntersect(const Vec2f* a0, const Vec2f* a1, const Vec2f* b0, const Vec2f* b1, f32* s, f32* t);
 	bool lineYPlaneIntersect(const Vec3f* p0, const Vec3f* p1, f32 planeHeight, Vec3f* hitPoint);
+
+	// Closest point between two lines (p0, p1) and (p2, p3).
+	// Returns false if no closest point can be found.
+	bool closestPointBetweenLines(const Vec3f* p1, const Vec3f* p2, const Vec3f* p3, const Vec3f* p4, f32* u, f32* v);
 }

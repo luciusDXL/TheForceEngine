@@ -14,4 +14,6 @@ void main()
 	View_Pos = Frag_Pos * CameraView;
 	View_Up = vec3(CameraView[0].y, CameraView[1].y, CameraView[2].y);
     gl_Position = vec4(View_Pos, 1.0) * CameraProj;
+	// Z-Bias to show over geometry.
+	gl_Position.z -= 0.0005;
 }

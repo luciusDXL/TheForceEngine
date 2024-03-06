@@ -1842,7 +1842,10 @@ namespace TFE_Jedi
 				data += midi_getVariableLengthValue(&data);
 			}
 			// Length of message in "ticks"
-			s_midiTickDelta += midi_getVariableLengthValue(&data);
+			if (!s_midiTrackEnd)  // Avoid reading past the end of the buffer.
+			{
+				s_midiTickDelta += midi_getVariableLengthValue(&data);
+			}
 		}
 	}
 

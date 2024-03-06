@@ -6,7 +6,6 @@
 #include <TFE_Audio/audioSystem.h>
 #include <TFE_Audio/midiPlayer.h>
 #include <TFE_Audio/midiDevice.h>
-#include <TFE_DarkForces/config.h>
 #include <TFE_Game/igame.h>
 #include <TFE_Game/reticle.h>
 #include <TFE_Game/saveSystem.h>
@@ -32,6 +31,9 @@
 #include <TFE_DarkForces/mission.h>
 #include <TFE_DarkForces/gameMusic.h>
 #include <TFE_Jedi/Renderer/jediRenderer.h>
+#include <TFE_DarkForces/config.h>
+#include <TFE_DarkForces/player.h>
+#include <TFE_DarkForces/hud.h>
 
 #include <climits>
 
@@ -242,6 +244,7 @@ namespace TFE_FrontEndUI
 
 	void configAbout();
 	void configGame();
+	void configDarkForcesCheats();
 	void configSave();
 	void configLoad();
 	void configInput();
@@ -258,6 +261,7 @@ namespace TFE_FrontEndUI
 
 	void configSaveLoadBegin(bool save);
 	void renderBackground();
+	void Tooltip(const char* text);
 	void setSettingsTemplate(SettingsTemplate temp);
 
 	void menuItem_Start();
@@ -1229,6 +1233,116 @@ namespace TFE_FrontEndUI
 
 			if (ImGui::Button("OK", ImVec2(120, 0))) { ImGui::CloseCurrentPopup(); }
 			ImGui::EndPopup();
+		}
+
+		ImGui::Spacing();
+		ImGui::PushFont(s_versionFont);
+		ImGui::LabelText("##ConfigLabel", "Cheats");
+		ImGui::PopFont();
+		const TFE_Game* game = TFE_Settings::getGame();
+		if (game->id == Game_Dark_Forces && s_menuRetState == APP_STATE_GAME)
+		{ 
+			configDarkForcesCheats(); 
+		}
+		else
+		{
+			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(.75f, .75f, .75f, 1.0f));
+			ImGui::LabelText("##ConfigLabel", "Cheats are only available while the game is running");
+			ImGui::PopStyleColor();
+		}
+	}
+
+	void configDarkForcesCheats()
+	{
+		bool invincibility = TFE_DarkForces::s_invincibility;
+		if (ImGui::Checkbox("Invinciblity (LAIMLAME)", &invincibility))
+		{
+			TFE_DarkForces::cheat_godMode();
+		}
+		bool aiActive = ~TFE_DarkForces::s_aiActive;
+		if (ImGui::Checkbox("Disable AI (LAREDLITE)", &aiActive))
+		{
+			TFE_DarkForces::cheat_pauseAI();
+		}
+		bool heightCheckDisabled = ~TFE_DarkForces::s_limitStepHeight;
+		if (ImGui::Checkbox("Disable height check (LAPOGO)", &heightCheckDisabled))
+		{
+			TFE_DarkForces::cheat_toggleHeightCheck();
+		}
+
+		bool smallMode = TFE_DarkForces::s_smallModeEnabled;
+		if (ImGui::Checkbox("Small mode (LABUG)", &smallMode))
+		{
+			TFE_DarkForces::cheat_bugMode();
+		}
+		Tooltip("Allows the player to fit through narrow gaps.");
+
+		bool data = TFE_DarkForces::s_showData;
+		if (ImGui::Checkbox("Show coordinates (LADATA)", &data))
+		{
+			TFE_DarkForces::cheat_toggleData();
+		}
+
+		bool fly = TFE_DarkForces::s_flyMode;
+		if (ImGui::Checkbox("Fly (LAFLY)", &fly))
+		{
+			TFE_DarkForces::cheat_fly();
+		}
+
+		bool noclip = TFE_DarkForces::s_noclip;
+		if (ImGui::Checkbox("Noclip (LANOCLIP)", &noclip))
+		{
+			TFE_DarkForces::cheat_noclip();
+		}
+		Tooltip("Allows the player to move through walls.");
+
+		bool oneHitKill = TFE_DarkForces::s_oneHitKillEnabled;
+		if (ImGui::Checkbox("One-hit kill (LAIMDEATH)", &oneHitKill))
+		{
+			TFE_DarkForces::cheat_oneHitKill();
+		}
+		Tooltip("Direct attacks kill any enemy in one hit (does not apply to explosions).");
+
+		bool hardcore = TFE_DarkForces::s_instaDeathEnabled;
+		if (ImGui::Checkbox("Instant death (LAHARDCORE)", &hardcore))
+		{
+			TFE_DarkForces::cheat_instaDeath();
+		}
+		Tooltip("Player dies in one hit from projectiles and explosions.");
+
+		if (ImGui::Button("Reveal full map (LACDS)"))
+		{
+			TFE_DarkForces::cheat_revealMap();
+		}	
+		if (ImGui::Button("Grant supercharge (LARANDY)"))
+		{
+			TFE_DarkForces::cheat_supercharge();
+		}	
+		if (ImGui::Button("Grant all weapons/max health (LAPOSTAL)"))
+		{
+			TFE_DarkForces::cheat_postal();
+		}
+		if (ImGui::Button("Grant full health/ammo (LAMAXOUT)"))
+		{
+			TFE_DarkForces::cheat_maxout();
+		}
+		if (ImGui::Button("Grant items (LAUNLOCK)"))
+		{
+			TFE_DarkForces::cheat_unlock();
+		}
+		Tooltip("Grant mission-critical items such as keycards.");
+
+		if (ImGui::Button("Add 1 life (LAADDLIFE)"))
+		{
+			TFE_DarkForces::cheat_addLife();
+		}
+		if (ImGui::Button("Subtract 1 life (LASUBLIFE)"))
+		{
+			TFE_DarkForces::cheat_subLife();
+		}
+		if (ImGui::Button("Max lives (LACAT)"))
+		{
+			TFE_DarkForces::cheat_maxLives();
 		}
 	}
 
@@ -2738,7 +2852,7 @@ namespace TFE_FrontEndUI
 		// Check status, and init the caption system if necessary.
 		if (TFE_A11Y::getCaptionSystemStatus() == TFE_A11Y::CC_NOT_LOADED) 
 		{
-			TFE_A11Y::initCaptions(); 
+			TFE_A11Y::refreshFiles();
 		}
 		if (TFE_A11Y::getCaptionSystemStatus() == TFE_A11Y::CC_ERROR)
 		{
@@ -2766,6 +2880,12 @@ namespace TFE_FrontEndUI
 		{
 			TFE_A11Y::setPendingFont(currentFontPath);
 		}
+
+		if (ImGui::Button("Refresh caption/font files"))
+		{
+			TFE_A11Y::refreshFiles();
+		}
+		Tooltip("Reimport caption and font files. Use if you add, remove, or modify caption or font files in a TFE directory while TFE is running. Please wait a moment for files to refresh.");
 
 		// CUTSCENES -----------------------------------------
 		ImGui::Dummy(ImVec2(0.0f, 10.0f));
@@ -2816,9 +2936,12 @@ namespace TFE_FrontEndUI
 		ImGui::Dummy(ImVec2(0.0f, 10.0f));
 		ImGui::Separator();
 		ImGui::PushFont(s_dialogFont);
-		ImGui::LabelText("##ConfigLabel5", "Misc");
+		ImGui::LabelText("##ConfigLabel5", "Photosensitivity");
 		ImGui::PopFont();
 		ImGui::Checkbox("Disable screen flashes", &a11ySettings->disableScreenFlashes);
+		Tooltip("Disable screen flashes when taking damage or collecting powerups.");
+		ImGui::Checkbox("Disable weapon lighting", &a11ySettings->disablePlayerWeaponLighting);
+		Tooltip("Disable illumination around the player caused by firing weapons.");
 	}
 
 	void pickCurrentResolution()
@@ -2951,6 +3074,18 @@ namespace TFE_FrontEndUI
 		{
 			TFE_Settings_Graphics* graphics = TFE_Settings::getGraphicsSettings();
 			TFE_DarkForces::mission_render(graphics->rendererIndex);
+		}
+	}
+
+	void Tooltip(const char* text)
+	{
+		if (ImGui::IsItemHovered())
+		{
+			ImGui::BeginTooltip();
+			ImGui::PushTextWrapPos(450.0f);
+			ImGui::TextUnformatted(text);
+			ImGui::PopTextWrapPos();
+			ImGui::EndTooltip();
 		}
 	}
 
