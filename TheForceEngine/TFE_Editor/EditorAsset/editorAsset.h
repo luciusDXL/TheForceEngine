@@ -29,6 +29,9 @@ namespace TFE_Editor
 		TYPE_3DOBJ,
 		TYPE_LEVEL,
 		TYPE_PALETTE,
+		TYPE_EXT_FRAME,
+		TYPE_EXT_WAX,
+		TYPE_EXT_TEXTURE,
 		TYPE_COLORMAP,
 		TYPE_COUNT,
 		TYPE_NOT_SET = TYPE_COUNT
@@ -53,6 +56,9 @@ namespace TFE_Editor
 		"3D Object",  // TYPE_3DOBJ
 		"Level",      // TYPE_LEVEL
 		"Palette",    // TYPE_PALETTE
+		"HD Frame",	  // TYPE_EXT_FRAME
+		"HD Sprite",  // TYPE_EXT_WAX
+		"HD Texture", // TYPE_EXT_TEXTURE
 	};
 
 	typedef u64 AssetHandle;

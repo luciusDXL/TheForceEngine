@@ -760,7 +760,7 @@ namespace TFE_DarkForces
 
 	TextureData* loadWeaponTexture(const char* texName)
 	{
-		TextureData* weaponTex = bitmap_load(texName, 0, POOL_GAME);
+		TextureData* weaponTex = bitmap_load(texName, 1, POOL_GAME);
 		if (!weaponTex)
 		{
 			TFE_System::logWrite(LOG_ERROR, "Weapon", "Weapon_Startup: %s NOT FOUND.", texName);

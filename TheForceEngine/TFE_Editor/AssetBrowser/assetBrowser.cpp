@@ -353,41 +353,44 @@ namespace AssetBrowser
 				ImGui::Separator();
 			}
 
-			if (asset->type == TYPE_TEXTURE)
+			if (asset->type == TYPE_TEXTURE || asset->type == TYPE_EXT_TEXTURE)
 			{
 				EditorTexture* tex = (EditorTexture*)getAssetData(asset->handle);
 
 				ImGui::LabelText("##Size", "Size: %d x %d", tex->width, tex->height);
 
 				bool reloadRequired = false;
-				s32 newPaletteIndex = tex->paletteIndex;
-				listSelectionPalette("Palette", s_palettes, &newPaletteIndex);
-				if (newPaletteIndex != tex->paletteIndex)
+				if (asset->type == TYPE_TEXTURE)
 				{
-					reloadRequired = true;
-				}
+					s32 newPaletteIndex = tex->paletteIndex;
+					listSelectionPalette("Palette", s_palettes, &newPaletteIndex);
+					if (newPaletteIndex != tex->paletteIndex)
+					{
+						reloadRequired = true;
+					}
 
-				s32 newLightLevel = tex->lightLevel;
-				if (s_palettes[newPaletteIndex].hasColormap)
-				{
-					ImGui::SliderInt("Light Level", &newLightLevel, 0, 32);
-				}
-				else
-				{
-					newLightLevel = 32;
-				}
-				if (newLightLevel != tex->lightLevel)
-				{
-					reloadRequired = true;
-				}
+					s32 newLightLevel = tex->lightLevel;
+					if (s_palettes[newPaletteIndex].hasColormap)
+					{
+						ImGui::SliderInt("Light Level", &newLightLevel, 0, 32);
+					}
+					else
+					{
+						newLightLevel = 32;
+					}
+					if (newLightLevel != tex->lightLevel)
+					{
+						reloadRequired = true;
+					}
 
-				if (reloadRequired)
-				{
-					// Make sure the frame isn't reset when reloading the texture.
-					s32 curFrame = tex->curFrame;
-					reloadAsset(asset, newPaletteIndex, newLightLevel);
-					tex = (EditorTexture*)getAssetData(asset->handle);
-					tex->curFrame = curFrame;
+					if (reloadRequired)
+					{
+						// Make sure the frame isn't reset when reloading the texture.
+						s32 curFrame = tex->curFrame;
+						reloadAsset(asset, newPaletteIndex, newLightLevel);
+						tex = (EditorTexture*)getAssetData(asset->handle);
+						tex->curFrame = curFrame;
+					}
 				}
 
 				ImGui::LabelText("##Frames", "Frame Count: %d", tex->frameCount);
@@ -701,7 +704,7 @@ namespace AssetBrowser
 					const TextureGpu* textureGpu = nullptr;
 					f32 u0 = 0.0f, v0 = 1.0f;
 					f32 u1 = 1.0f, v1 = 0.0f;
-					if (s_viewAssetList[a].type == TYPE_TEXTURE || s_viewAssetList[a].type == TYPE_PALETTE)
+					if (s_viewAssetList[a].type == TYPE_TEXTURE || s_viewAssetList[a].type == TYPE_EXT_TEXTURE || s_viewAssetList[a].type == TYPE_PALETTE)
 					{
 						EditorTexture* tex = (EditorTexture*)getAssetData(s_viewAssetList[a].handle);
 						textureGpu = tex ? tex->frames[0] : nullptr;
@@ -1198,7 +1201,6 @@ namespace AssetBrowser
 		s_assetsNeedProcess = false;
 		s_levelAssets.clear();
 
-		WorkBuffer& buffer = getWorkBuffer();
 		const u32 count = (u32)s_projectAssetList[TYPE_PALETTE].size();
 
 		// First search for palettes.
@@ -1209,6 +1211,7 @@ namespace AssetBrowser
 		}
 
 		// Then for levels.
+		WorkBuffer buffer;
 		const u32 levelCount = (u32)s_projectAssetList[TYPE_LEVEL].size();
 		projAsset = s_projectAssetList[TYPE_LEVEL].data();
 		for (u32 f = 0; f < levelCount; f++, projAsset++)
@@ -1443,6 +1446,19 @@ namespace AssetBrowser
 		else if (strcasecmp(ext, "VOC") == 0)
 		{
 			return TYPE_SOUND;
+		}
+		// Extended formats (used by the DF Remaster)
+		else if (strcasecmp(ext, "fxx") == 0)
+		{
+			return TYPE_EXT_FRAME;
+		}
+		else if (strcasecmp(ext, "wxx") == 0)
+		{
+			return TYPE_EXT_WAX;
+		}
+		else if (strcasecmp(ext, "raw") == 0)
+		{
+			return TYPE_EXT_TEXTURE;
 		}
 		return TYPE_COUNT;
 	}
@@ -1868,6 +1884,17 @@ namespace AssetBrowser
 				loadAsset(projAsset);
 			}
 		}
+		else if (s_viewInfo.type == TYPE_EXT_TEXTURE)
+		{
+			const u32 count = (u32)s_projectAssetList[TYPE_EXT_TEXTURE].size();
+			const Asset* projAsset = s_projectAssetList[TYPE_EXT_TEXTURE].data();
+			for (u32 i = 0; i < count; i++, projAsset++)
+			{
+				const char* name = projAsset->name.c_str();
+				if (!editorFilter(name) || !isLevelTexture(name)) { continue; }
+				loadAsset(projAsset);
+			}
+		}
 		else if (s_viewInfo.type == TYPE_FRAME)
 		{
 			const u32 count = (u32)s_projectAssetList[TYPE_FRAME].size();
@@ -2038,7 +2065,7 @@ namespace AssetBrowser
 			if (!archive) { continue; }
 			if (!archive->openFile(asset->name.c_str())) { continue;}
 
-			WorkBuffer& buffer = getWorkBuffer();
+			WorkBuffer buffer;
 			size_t len = archive->getFileLength();
 			buffer.resize(len);
 			archive->readFile(buffer.data(), len);

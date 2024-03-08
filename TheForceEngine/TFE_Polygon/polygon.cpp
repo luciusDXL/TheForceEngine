@@ -1,5 +1,6 @@
 #include "polygon.h"
 #include "math.h"
+#include "clipper.hpp"
 #include <TFE_System/math.h>
 #include <TFE_System/system.h>
 #include <assert.h>
@@ -46,6 +47,8 @@ namespace TFE_Polygon
 	static std::vector<TriEdge> s_edges;
 	static std::vector<Edge> s_constraints;
 	static Vec2f s_coordCenter;
+	   
+	static ClipperLib::Clipper* s_clipper = nullptr;
 
 	void deleteTriangle(Triangle* tri);
 
@@ -767,5 +770,640 @@ namespace TFE_Polygon
 		}
 
 		return true;
+	}
+
+	bool addEdgeToBPoly(Vec2f v0, Vec2f v1, f32 uOffset, s32 wallIndex, BPolygon* poly)
+	{
+		// Discard degenerate edges.
+		if (vtxEqual(&v0, &v1))
+		{
+			return false;
+		}
+
+		BEdge newEdge = {};
+		newEdge.v0 = v0;
+		newEdge.v1 = v1;
+		newEdge.u0 = uOffset;
+		newEdge.u1 = uOffset + TFE_Math::distance(&v0, &v1) * 8.0f;
+		newEdge.srcWallIndex = wallIndex;
+
+		const s32 newEdgeIndex = (s32)poly->edges.size();
+		const s32 edgeCount = (s32)poly->edges.size();
+		BEdge* edge = poly->edges.data();
+		for (s32 e = 0; e < edgeCount; e++, edge++)
+		{
+			if (vtxEqual(&v1, &edge->v0))
+			{
+				newEdge.nextEdge = e;
+				edge->prevEdge = newEdgeIndex;
+			}
+			if (vtxEqual(&v0, &edge->v1))
+			{
+				newEdge.prevEdge = e;
+				edge->nextEdge = newEdgeIndex;
+			}
+		}
+
+		poly->edges.push_back(newEdge);
+		return true;
+	}
+
+	struct Intersection
+	{
+		Vec2f vI;
+		f32 u;
+		f32 v;
+		s32 eS;
+		s32 eC;
+		s32 id;
+	};
+
+	struct IntersectionClip
+	{
+		s32 eC;
+		std::vector<Intersection> it;
+	};
+
+	bool sortByU(Intersection& a, Intersection& b)
+	{
+		return a.u < b.u;
+	}
+
+	struct Contour
+	{
+		bool clockwise = true;
+		bool outsideClip = false;
+		std::vector<Vec2f> vtx;
+	};
+
+	bool buildContour(const BEdge* startEdge, const std::vector<BEdge>& edgesList, std::vector<s32>& remEdges, Contour* outContour)
+	{
+		if (!outContour) { return false; }
+		outContour->vtx.clear();
+
+		Vec2f startPt = startEdge->v0;
+		s32 nextEdge = startEdge->nextEdge;
+		outContour->vtx.push_back(startPt);
+		// Loop until the end or we are back at the start.
+		while (!remEdges.empty())
+		{
+			const BEdge* edge = &edgesList[nextEdge];
+			if (vtxEqual(&edge->v0, &startPt))
+			{
+				// Vertex with 3+ edges intersecting.
+				break;
+			}
+			outContour->vtx.push_back(edge->v0);
+
+			// Erase the remaining edge.
+			const s32 remEdgeCount = (s32)remEdges.size();
+			const s32* remIdx = remEdges.data();
+			for (s32 i = 0; i < remEdgeCount; i++)
+			{
+				if (remIdx[i] == nextEdge)
+				{
+					remEdges.erase(remEdges.begin() + i);
+					break;
+				}
+			}
+			nextEdge = edge->nextEdge;
+
+			// Reached the end.
+			if (vtxEqual(&edge->v1, &startPt))
+			{
+				break;
+			}
+		}
+
+		// No valid contour.
+		if (outContour->vtx.empty())
+		{
+			return false;
+		}
+
+		// Next determine the winding order.
+		const f32 area = TFE_Polygon::signedArea((s32)outContour->vtx.size(), outContour->vtx.data());
+		outContour->clockwise = (area >= 0.0f);
+		outContour->outsideClip = false;
+		return true;
+	}
+
+	void buildPathsFromContours(const std::vector<Contour>& contourList, ClipperLib::Paths* paths)
+	{
+		const f64 precision = 65536.0;
+		const s32 contourCount = (s32)contourList.size();
+		const Contour* contour = contourList.data();
+
+		paths->resize(contourCount);
+		ClipperLib::Path* path = paths->data();
+		for (s32 i = 0; i < contourCount; i++, contour++, path++)
+		{
+			const s32 vtxCount = (s32)contour->vtx.size();
+			const Vec2f* vtx = contour->vtx.data();
+
+			path->resize(vtxCount);
+			ClipperLib::IntPoint* pOut = path->data();
+			for (s32 v = 0; v < vtxCount; v++, vtx++, pOut++)
+			{
+				pOut->X = ClipperLib::cInt((f64)vtx->x * precision);
+				pOut->Y = ClipperLib::cInt((f64)vtx->z * precision);
+			}
+		}
+	}
+
+	void buildContoursFromPaths(const ClipperLib::Paths& paths, s32 outsideClipCount, std::vector<Contour>* contourList)
+	{
+		const f64 precision = 1.0 / 65536.0;
+		const s32 contourCount = (s32)paths.size();
+		const ClipperLib::Path* path = paths.data();
+
+		contourList->resize(contourCount);
+		Contour* contour = contourList->data();
+		for (s32 i = 0; i < contourCount; i++, contour++, path++)
+		{
+			const s32 vtxCount = (s32)path->size();
+			const ClipperLib::IntPoint* srcVtx = path->data();
+
+			contour->vtx.resize(vtxCount);
+			Vec2f* dstVtx = contour->vtx.data();
+
+			for (s32 v = 0; v < vtxCount; v++, srcVtx++, dstVtx++)
+			{
+				dstVtx->x = f32((f64)srcVtx->X * precision);
+				dstVtx->z = f32((f64)srcVtx->Y * precision);
+			}
+
+			// Next determine the winding order.
+			const f32 area = TFE_Polygon::signedArea(vtxCount, contour->vtx.data());
+			contour->clockwise = (area >= 0.0f);
+			contour->outsideClip = i < outsideClipCount;
+		}
+	}
+
+	void buildContoursFromPolygon(const BPolygon* poly, std::vector<Contour>* contours)
+	{
+		// Assume clockwise for the exterior contour, counter-clockwise for holes.
+		// Copy the edges, so they can be removed after processing.
+		const std::vector<BEdge>& edges = poly->edges;
+		std::vector<s32> remEdges;
+
+		const s32 edgeCount = (s32)edges.size();
+		remEdges.resize(edgeCount);
+		for (s32 i = 0; i < edgeCount; i++) { remEdges[i] = i; }
+
+		while (!remEdges.empty())
+		{
+			Contour contour = {};
+			s32 startEdgeIndex = remEdges.front();
+			remEdges.erase(remEdges.begin());
+
+			if (!buildContour(&edges[startEdgeIndex], edges, remEdges, &contour))
+			{
+				break;
+			}
+			const size_t index = contours->size();
+			contours->push_back(contour);
+			// Make sure the exterior edge is first, followed by holes.
+			if (contour.clockwise && index != 0)
+			{
+				std::swap(contours->front(), contours->back());
+			}
+		}
+	}
+		
+	void clipInit()
+	{
+		s_clipper = new ClipperLib::Clipper(ClipperLib::ioPreserveCollinear | ClipperLib::ioReverseSolution);
+	}
+
+	void clipDestroy()
+	{
+		delete s_clipper;
+		s_clipper = nullptr;
+	}
+
+	bool addEdgeIntersectionsToPoly(BPolygon* subject, const BPolygon* clip)
+	{
+		BPolygon tmp = {};
+
+		const s32 subjEdgeCount = (s32)subject->edges.size();
+		const BEdge* sEdge = subject->edges.data();
+		std::vector<Intersection> interSrc;
+
+		bool hasIntersections = false;
+		for (s32 eS = 0; eS < subjEdgeCount; eS++, sEdge++)
+		{
+			interSrc.clear();
+			s32 itrId = 0;
+
+			const s32 clipEdgeCount = (s32)clip->edges.size();
+			const BEdge* cEdge = clip->edges.data();
+			for (s32 eC = 0; eC < clipEdgeCount; eC++, cEdge++)
+			{
+				Vec2f vI;
+				f32 u, v;
+				if (lineSegmentsIntersect(sEdge->v0, sEdge->v1, cEdge->v0, cEdge->v1, &vI, &u, &v))
+				{
+					// Handle floating point precision - treat intersection values close enough to 0 or 1 as if it is *exactly* 0 or 1.
+					if (u < FLT_EPSILON) { u = 0.0f; vI = sEdge->v0; }
+					else if (u > 1.0f - FLT_EPSILON) { u = 1.0f; vI = sEdge->v1; }
+					assert(std::isfinite(u));
+
+					if (v < FLT_EPSILON) { v = 0.0f; }
+					else if (v > 1.0f - FLT_EPSILON) { v = 1.0f; }
+					assert(std::isfinite(v));
+
+					// Make sure the intersection is on the interior of the *subject* edge.
+					if (u > 0.0f && u < 1.0f)
+					{
+						// Store intersections affecting 'eS'.
+						interSrc.push_back({ vI, u, v, eS, eC, itrId });
+						itrId++;
+					}
+				}
+			}
+
+			const s32 iCount = (s32)interSrc.size();
+			if (iCount)
+			{
+				// Subject edge is clipped, put clipped segments into the new subject polygon in
+				// the correct sorted order.
+				std::sort(interSrc.begin(), interSrc.end(), sortByU);
+				Intersection* inter = interSrc.data();
+				Vec2f v0 = sEdge->v0;
+				f32 u0 = 0.0f;
+				for (s32 i = 0; i < iCount; i++, inter++)
+				{
+					addEdgeToBPoly(v0, inter->vI, u0, sEdge->srcWallIndex, &tmp);
+					v0 = inter->vI;
+					u0 = sEdge->u0 + inter->u*(sEdge->u1 - sEdge->u0);
+				}
+				// Insert the final edge.
+				addEdgeToBPoly(v0, sEdge->v1, u0, sEdge->srcWallIndex, &tmp);
+				hasIntersections = true;
+			}
+			else
+			{
+				// Subject edge is not clipped, put the full segment into the subject polygon.
+				addEdgeToBPoly(sEdge->v0, sEdge->v1, sEdge->u0, sEdge->srcWallIndex, &tmp);
+			}
+		}
+
+		if (hasIntersections)
+		{
+			*subject = tmp;
+		}
+		return hasIntersections;
+	}
+		
+	// Returns the number of polygons outside of the clip area.
+	void clipPolygons(const BPolygon* subject, const BPolygon* clip, std::vector<BPolygon>& outPoly, BoolMode boolMode)
+	{
+		s32 polysOutsideOfClip = 0;
+
+		std::vector<Contour> subjContours;
+		std::vector<Contour> clipContours;
+		buildContoursFromPolygon(subject, &subjContours);
+		buildContoursFromPolygon(clip, &clipContours);
+
+		ClipperLib::Paths subjPaths, clipPaths;
+		buildPathsFromContours(subjContours, &subjPaths);
+		buildPathsFromContours(clipContours, &clipPaths);
+
+		s_clipper->Clear();
+		s_clipper->AddPaths(subjPaths, ClipperLib::ptSubject, true);
+		s_clipper->AddPaths(clipPaths, ClipperLib::ptClip, true);
+
+		outPoly.clear();
+		std::vector<BPolygon> firstPassPoly;
+		ClipperLib::Paths solution;
+
+		// We always want the difference in order to get the new edges.
+		bool result = s_clipper->Execute(ClipperLib::ctDifference, solution, ClipperLib::pftNonZero);
+		if (!result) { return; }
+		polysOutsideOfClip = (s32)solution.size();
+
+		if (boolMode == BMODE_MERGE)
+		{
+			s_clipper->Clear();
+			s_clipper->AddPaths(subjPaths, ClipperLib::ptSubject, true);
+			s_clipper->AddPaths(clipPaths, ClipperLib::ptClip, true);
+
+			// Intersection - intersection part between clip polygon and original polygon.
+			ClipperLib::Paths solution2;
+			result = s_clipper->Execute(ClipperLib::ctIntersection, solution2, ClipperLib::pftNonZero);
+			if (!result) { return; }
+
+			// Merge solutions.
+			solution.insert(solution.end(), solution2.begin(), solution2.end());
+		}
+		if (solution.empty()) { return; }
+
+		// Process the solution.
+		// Build contours and determine winding.
+		std::vector<Contour> results;
+		buildContoursFromPaths(solution, polysOutsideOfClip, &results);
+		if (results.empty()) { return; }
+
+		// Outer polygons
+		const s32 outCount = (s32)results.size();
+		Contour* contour = results.data();
+		std::vector<s32> outPolyIndex;
+		for (s32 i = 0; i < outCount; i++, contour++)
+		{
+			// Skip holes for the first pass.
+			if (!contour->clockwise) { continue; }
+			outPolyIndex.push_back(i);
+
+			BPolygon poly = {};
+
+			const s32 vtxCount = (s32)contour->vtx.size();
+			const Vec2f* vtx = contour->vtx.data();
+
+			poly.edges.resize(vtxCount);
+			BEdge* edge = poly.edges.data();
+
+			for (s32 v = 0; v < vtxCount; v++, edge++)
+			{
+				s32 next = (v + 1) % vtxCount;
+
+				*edge = {};
+				edge->v0 = vtx[v];
+				edge->v1 = vtx[next];
+				// For now.
+				edge->srcWallIndex = 0;
+				edge->u0 = 0.0f;
+			}
+			poly.outsideClipRegion = contour->outsideClip;
+
+			firstPassPoly.push_back(poly);
+		}
+
+		// Insert holes.
+		const s32 outerPolyCount = (s32)firstPassPoly.size();
+
+		// Create polygon for point in poly tests.
+		// TODO: Remove BPolygon entirely?
+		std::vector<Polygon> polys;
+		polys.resize(outerPolyCount);
+		Polygon* polyData = polys.data();
+		for (s32 p = 0; p < outerPolyCount; p++, polyData++)
+		{
+			Contour& contour = results[outPolyIndex[p]];
+			const s32 vtxCount = (s32)contour.vtx.size();
+			polyData->vtx = contour.vtx;
+			polyData->edge.resize(vtxCount);
+			for (s32 e = 0; e < vtxCount; e++)
+			{
+				polyData->edge[e].i0 = e;
+				polyData->edge[e].i1 = (e + 1) % vtxCount;
+			}
+		}
+
+		contour = results.data();
+		for (s32 i = 0; i < outCount; i++, contour++)
+		{
+			// Skip outer polygons for the second pass...
+			if (contour->clockwise) { continue; }
+
+			const s32 vtxCount = (s32)contour->vtx.size();
+			const Vec2f* vtx = contour->vtx.data();
+
+			// Which parent does the hole belong to?
+			BPolygon* parent = nullptr;
+			BPolygon* outerPoly = firstPassPoly.data();
+			for (s32 v = 0; v < vtxCount && !parent; v++)
+			{
+				for (s32 p = 0; p < outerPolyCount; p++)
+				{
+					if (TFE_Polygon::pointInsidePolygon(&polys[p], vtx[v]))
+					{
+						parent = &outerPoly[p];
+						break;
+					}
+				}
+			}
+			assert(parent);
+
+			s32 startIndex = (s32)parent->edges.size();
+			parent->edges.resize(vtxCount + startIndex);
+			BEdge* edge = parent->edges.data() + startIndex;
+
+			for (s32 v = 0; v < vtxCount; v++, edge++)
+			{
+				s32 next = (v + 1) % vtxCount;
+
+				*edge = {};
+				edge->v0 = vtx[v];
+				edge->v1 = vtx[next];
+				// For now.
+				edge->srcWallIndex = 0;
+				edge->u0 = 0.0f;
+			}
+		}
+
+		// Insert intersections with the clip polygon.
+		const BPolygon* srcPoly = firstPassPoly.data();
+		outPoly.resize(outerPolyCount);
+		BPolygon* dstPoly = outPoly.data();
+		std::vector<Intersection> interSrc;
+		for (s32 i = 0; i < outerPolyCount; i++, srcPoly++, dstPoly++)
+		{
+			const s32 subjEdgeCount = (s32)srcPoly->edges.size();
+			const BEdge* sEdge = srcPoly->edges.data();
+
+			*dstPoly = {};
+			dstPoly->outsideClipRegion = srcPoly->outsideClipRegion;
+
+			for (s32 eS = 0; eS < subjEdgeCount; eS++, sEdge++)
+			{
+				interSrc.clear();
+				s32 itrId = 0;
+
+				const s32 clipEdgeCount = (s32)clip->edges.size();
+				const BEdge* cEdge = clip->edges.data();
+				for (s32 eC = 0; eC < clipEdgeCount; eC++, cEdge++)
+				{
+					Vec2f vI;
+					f32 u, v;
+					if (lineSegmentsIntersect(sEdge->v0, sEdge->v1, cEdge->v0, cEdge->v1, &vI, &u, &v))
+					{
+						// Handle floating point precision - treat intersection values close enough to 0 or 1 as if it is *exactly* 0 or 1.
+						if (u < FLT_EPSILON) { u = 0.0f; vI = sEdge->v0; }
+						else if (u > 1.0f - FLT_EPSILON) { u = 1.0f; vI = sEdge->v1; }
+						assert(std::isfinite(u));
+
+						if (v < FLT_EPSILON) { v = 0.0f; }
+						else if (v > 1.0f - FLT_EPSILON) { v = 1.0f; }
+						assert(std::isfinite(v));
+
+						// Make sure the intersection is on the interior of the *subject* edge.
+						if (u > 0.0f && u < 1.0f)
+						{
+							// Store intersections affecting 'eS'.
+							interSrc.push_back({ vI, u, v, eS, eC, itrId });
+							itrId++;
+						}
+					}
+				}
+
+				const s32 iCount = (s32)interSrc.size();
+				if (iCount)
+				{
+					// Subject edge is clipped, put clipped segments into the new subject polygon in
+					// the correct sorted order.
+					std::sort(interSrc.begin(), interSrc.end(), sortByU);
+					Intersection* inter = interSrc.data();
+					Vec2f v0 = sEdge->v0;
+					f32 u0 = 0.0f;
+					for (s32 i = 0; i < iCount; i++, inter++)
+					{
+						addEdgeToBPoly(v0, inter->vI, u0, sEdge->srcWallIndex, dstPoly);
+						v0 = inter->vI;
+						u0 = sEdge->u0 + inter->u*(sEdge->u1 - sEdge->u0);
+					}
+					// Insert the final edge.
+					addEdgeToBPoly(v0, sEdge->v1, u0, sEdge->srcWallIndex, dstPoly);
+				}
+				else
+				{
+					// Subject edge is not clipped, put the full segment into the subject polygon.
+					addEdgeToBPoly(sEdge->v0, sEdge->v1, sEdge->u0, sEdge->srcWallIndex, dstPoly);
+				}
+			}
+		}
+
+		if (boolMode == BMODE_MERGE)
+		{
+			// Clip polygons *inside* the original clip polygon with those *outside*
+			BPolygon* srcPoly = outPoly.data();
+			for (s32 i = 0; i < outerPolyCount; i++)
+			{
+				if (srcPoly[i].outsideClipRegion) { continue; }
+				for (s32 j = 0; j < outerPolyCount; j++)
+				{
+					if (i == j || !srcPoly[j].outsideClipRegion) { continue; }
+
+					BPolygon tmpPoly = {};
+					tmpPoly.outsideClipRegion = srcPoly[i].outsideClipRegion;
+
+					const s32 subjEdgeCount = (s32)srcPoly[i].edges.size();
+					const BEdge* sEdge = srcPoly[i].edges.data();
+					for (s32 eS = 0; eS < subjEdgeCount; eS++, sEdge++)
+					{
+						interSrc.clear();
+						s32 itrId = 0;
+
+						const s32 clipEdgeCount = (s32)srcPoly[j].edges.size();
+						const BEdge* cEdge = srcPoly[j].edges.data();
+						for (s32 eC = 0; eC < clipEdgeCount; eC++, cEdge++)
+						{
+							Vec2f vI;
+							f32 u, v;
+							if (lineSegmentsIntersect(sEdge->v0, sEdge->v1, cEdge->v0, cEdge->v1, &vI, &u, &v))
+							{
+								// Handle floating point precision - treat intersection values close enough to 0 or 1 as if it is *exactly* 0 or 1.
+								if (u < FLT_EPSILON) { u = 0.0f; vI = sEdge->v0; }
+								else if (u > 1.0f - FLT_EPSILON) { u = 1.0f; vI = sEdge->v1; }
+								assert(std::isfinite(u));
+
+								if (v < FLT_EPSILON) { v = 0.0f; }
+								else if (v > 1.0f - FLT_EPSILON) { v = 1.0f; }
+								assert(std::isfinite(v));
+
+								// Make sure the intersection is on the interior of the *subject* edge.
+								if (u > 0.0f && u < 1.0f)
+								{
+									// Store intersections affecting 'eS'.
+									interSrc.push_back({ vI, u, v, eS, eC, itrId });
+									itrId++;
+								}
+							}
+						}
+
+						const s32 iCount = (s32)interSrc.size();
+						if (iCount)
+						{
+							// Subject edge is clipped, put clipped segments into the new subject polygon in
+							// the correct sorted order.
+							std::sort(interSrc.begin(), interSrc.end(), sortByU);
+							Intersection* inter = interSrc.data();
+							Vec2f v0 = sEdge->v0;
+							f32 u0 = 0.0f;
+							for (s32 i = 0; i < iCount; i++, inter++)
+							{
+								addEdgeToBPoly(v0, inter->vI, u0, sEdge->srcWallIndex, &tmpPoly);
+								v0 = inter->vI;
+								u0 = sEdge->u0 + inter->u*(sEdge->u1 - sEdge->u0);
+							}
+							// Insert the final edge.
+							addEdgeToBPoly(v0, sEdge->v1, u0, sEdge->srcWallIndex, &tmpPoly);
+						}
+						else
+						{
+							// Subject edge is not clipped, put the full segment into the subject polygon.
+							addEdgeToBPoly(sEdge->v0, sEdge->v1, sEdge->u0, sEdge->srcWallIndex, &tmpPoly);
+						}
+					}
+
+					srcPoly[i] = tmpPoly;
+				}
+			}
+		}
+	}
+
+	// Find the closest point to p2 on line segment p0 -> p1 as a parametric value on the segment.
+	// Fills in point with the point itself.
+	f32 closestPointOnLineSegment(Vec2f p0, Vec2f p1, Vec2f p2, Vec2f* point)
+	{
+		const Vec2f r = { p2.x - p0.x, p2.z - p0.z };
+		const Vec2f d = { p1.x - p0.x, p1.z - p0.z };
+		const f32 denom = d.x * d.x + d.z * d.z;
+		if (fabsf(denom) < FLT_EPSILON) { return 0.0f; }
+
+		const f32 s = std::max(0.0f, std::min(1.0f, (r.x * d.x + r.z * d.z) / denom));
+		point->x = p0.x + s * d.x;
+		point->z = p0.z + s * d.z;
+		return s;
+	}
+
+	bool lineSegmentsIntersect(Vec2f a0, Vec2f a1, Vec2f b0, Vec2f b1, Vec2f* vI, f32* u, f32* v)
+	{
+		const Vec2f b = { a1.x - a0.x, a1.z - a0.z };
+		const Vec2f d = { b1.x - b0.x, b1.z - b0.z };
+		const f32 denom = b.x*d.z - b.z*d.x;	// cross product.
+		// Lines are parallel if denom == 0.0
+		if (fabsf(denom) < FLT_EPSILON) { return false; }
+		const f32 scale = 1.0f / denom;
+
+		Vec2f c = { b0.x - a0.x, b0.z - a0.z };
+		f32 s = (c.x*d.z - c.z*d.x) * scale;
+		if (s < 0.0f || s > 1.0f) { return false; }
+
+		f32 t = (c.x*b.z - c.z*b.x) * scale;
+		if (t < 0.0f || t > 1.0f) { return false; }
+
+		if (vI)
+		{
+			vI->x = a0.x + s * b.x;
+			vI->z = a0.z + s * b.z;
+		}
+		if (u) { *u = s; }
+		if (v) { *v = t; }
+
+		// Intersection = a0 + s*b;
+		return true;
+	}
+		
+	bool vtxEqual(const Vec2f* a, const Vec2f* b)
+	{
+		//const f32 eps = 0.00001f;
+		return fabsf(a->x - b->x) < eps && fabsf(a->z - b->z) < eps;
+	}
+
+	bool vtxEqual(const Vec3f* a, const Vec3f* b)
+	{
+		//const f32 eps = 0.00001f;
+		return fabsf(a->x - b->x) < eps && fabsf(a->y - b->y) < eps && fabsf(a->z - b->z) < eps;
 	}
 }

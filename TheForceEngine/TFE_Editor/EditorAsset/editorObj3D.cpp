@@ -163,7 +163,7 @@ namespace TFE_Editor
 			archive->closeFile();
 			return -1;
 		}
-		WorkBuffer& buffer = getWorkBuffer();
+		WorkBuffer buffer;
 		buffer.resize(len+1);
 		memset(buffer.data(), 0, len+1);
 		archive->readFile(buffer.data(), len);
@@ -680,8 +680,8 @@ namespace TFE_Editor
 		// Compute the final bounds.
 		const EditorVertex* vtx = out3d->vtx.data();
 		vertexCount = (s32)out3d->vtx.size();
-		out3d->bounds[0] = vtx[0].pos;
-		out3d->bounds[1] = vtx[0].pos;
+		out3d->bounds[0] = { FLT_MAX, FLT_MAX, FLT_MAX };
+		out3d->bounds[1] = { -FLT_MAX, -FLT_MAX, -FLT_MAX };
 		for (s32 v = 1; v < vertexCount; v++)
 		{
 			out3d->bounds[0].x = std::min(out3d->bounds[0].x, vtx[v].pos.x);

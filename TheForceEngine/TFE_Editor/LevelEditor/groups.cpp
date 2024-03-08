@@ -120,6 +120,11 @@ namespace LevelEditor
 		}
 	}
 
+	bool groups_isIdValid(s32 id)
+	{
+		return groups_getById(id) != nullptr;
+	}
+
 	u32 groups_getMainId()
 	{
 		assert(!s_groups.empty());

@@ -39,15 +39,7 @@ namespace LevelEditor
 		LEDIT_SECTOR,
 		LEDIT_ENTITY
 	};
-
-	enum BoolMode
-	{
-		BMODE_SET = 0,
-		BMODE_MERGE,
-		BMODE_SUBTRACT,
-		BMODE_COUNT
-	};
-
+		
 	enum DrawMode
 	{
 		DMODE_RECT = 0,
