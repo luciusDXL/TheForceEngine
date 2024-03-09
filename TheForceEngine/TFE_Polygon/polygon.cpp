@@ -973,7 +973,7 @@ namespace TFE_Polygon
 		
 	void clipInit()
 	{
-		s_clipper = new ClipperLib::Clipper(ClipperLib::ioPreserveCollinear | ClipperLib::ioReverseSolution);
+		s_clipper = new ClipperLib::Clipper(ClipperLib::ioPreserveCollinear | ClipperLib::ioReverseSolution | ClipperLib::ioStrictlySimple);
 	}
 
 	void clipDestroy()

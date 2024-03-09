@@ -4192,18 +4192,8 @@ namespace LevelEditor
 		// Get the hover sector in 2D.
 		if (!s_drawStarted)
 		{
-			if (s_view == EDIT_VIEW_2D)
-			{
-				hoverSector = s_featureHovered.sector;
-				hoverWall = (s_featureHovered.part != HP_NONE && s_featureHovered.featureIndex >= 0) ?
-					&hoverSector->walls[s_featureHovered.featureIndex] : nullptr;
-			}
-			else if (hitInfo->hitSectorId >= 0 && hitInfo->hitWallId >= 0) // Or the hit sector in 3D.
-			{
-				hoverSector = &s_level.sectors[hitInfo->hitSectorId];
-				hoverWall = hitInfo->hitWallId < 0 ? nullptr : &hoverSector->walls[hitInfo->hitWallId];
-			}
-			if (!hoverSector || !hoverWall) { return; }
+			s_extrudeEnabled = false;
+			return;
 		}
 
 		// Snap the cursor to the grid.
@@ -4605,16 +4595,62 @@ namespace LevelEditor
 			if (hoverSector && !(s_gridFlags & GFLAG_OVER))
 			{
 				s_gridHeight = hoverSector->floorHeight;
-				if (s_view == EDIT_VIEW_3D && fabsf(s_cursor3d.y - hoverSector->ceilHeight) < FLT_EPSILON)
+				if (s_view == EDIT_VIEW_3D)
 				{
-					s_gridHeight = hoverSector->ceilHeight;
+					if (fabsf(s_cursor3d.y - hoverSector->floorHeight) < FLT_EPSILON)
+					{
+						s_gridHeight = hoverSector->floorHeight;
+					}
+					else if (fabsf(s_cursor3d.y - hoverSector->ceilHeight) < FLT_EPSILON)
+					{
+						s_gridHeight = hoverSector->ceilHeight;
+					}
+					else if (hitInfo->hitPart == HP_BOT || hitInfo->hitPart == HP_TOP || hitInfo->hitPart == HP_MID)
+					{
+						s_extrudeEnabled = true;
+						
+						// Extrude from wall.
+						s_extrudePlane.sector = hoverSector;
+						s_extrudePlane.wall = &hoverSector->walls[hitInfo->hitWallId];
+
+						const Vec2f* p0 = &hoverSector->vtx[s_extrudePlane.wall->idx[0]];
+						const Vec2f* p1 = &hoverSector->vtx[s_extrudePlane.wall->idx[1]];
+
+						s_extrudePlane.origin = { p0->x, hoverSector->floorHeight, p0->z };
+						const Vec3f S = { p1->x - p0->x, 0.0f, p1->z - p0->z };
+						const Vec3f T = { 0.0f, 1.0f, 0.0f };
+						const Vec3f N = { -(p1->z - p0->z), 0.0f, p1->x - p0->x };
+
+						s_extrudePlane.ext.x = TFE_Math::distance(p0, p1);
+						s_extrudePlane.ext.z = hoverSector->ceilHeight - hoverSector->floorHeight;
+
+						s_extrudePlane.S = TFE_Math::normalize(&S);
+						s_extrudePlane.N = TFE_Math::normalize(&N);
+						s_extrudePlane.T = T;
+
+						// Project using the extrude plane.
+						Vec3f wallPos = s_cursor3d;
+						snapToSurfaceGrid(hoverSector, s_extrudePlane.wall, wallPos);
+
+						const Vec3f offset = { wallPos.x - s_extrudePlane.origin.x, wallPos.y - s_extrudePlane.origin.y, wallPos.z - s_extrudePlane.origin.z };
+						onGrid.x = offset.x*s_extrudePlane.S.x + offset.y*s_extrudePlane.S.y + offset.z*s_extrudePlane.S.z;
+						onGrid.z = offset.x*s_extrudePlane.T.x + offset.y*s_extrudePlane.T.y + offset.z*s_extrudePlane.T.z;
+					}
 				}
 			}
 
 			s_drawStarted = true;
 			s_drawMode = TFE_Input::keyModDown(KEYMOD_SHIFT) ? DMODE_RECT : DMODE_SHAPE;
-			s_drawHeight[0] = s_gridHeight;
-			s_drawHeight[1] = s_gridHeight;
+			if (s_extrudeEnabled)
+			{
+				s_drawHeight[0] = 0.0f;
+				s_drawHeight[1] = 0.0f;
+			}
+			else
+			{
+				s_drawHeight[0] = s_gridHeight;
+				s_drawHeight[1] = s_gridHeight;
+			}
 			s_drawCurPos = onGrid;
 
 			s_shape.clear();
@@ -5082,7 +5118,7 @@ namespace LevelEditor
 
 		// 2D extrude - hover over line, left click and drag.
 		// 3D extrude - hover over wall, left click to add points (or shift to drag a box), double-click to just extrude the full wall.
-		const bool extrude = (TFE_Input::keyModDown(KEYMOD_CTRL) || s_extrudeEnabled) && s_editMode == LEDIT_DRAW;
+		const bool extrude = s_extrudeEnabled && s_editMode == LEDIT_DRAW;
 
 		if (s_view == EDIT_VIEW_2D)
 		{
