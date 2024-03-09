@@ -3369,12 +3369,13 @@ namespace LevelEditor
 
 		// Re-use the existing sector.
 		// Rebuild the sector.
+		sector->walls.clear();
 		sector->vtx.clear();
 
 		const s32 edgeCount = (s32)poly.edges.size();
 		const BEdge* edge = poly.edges.data();
 		std::vector<AdjoinFix> wallsToFix;
-		sector->walls.resize(edgeCount);
+		sector->walls.reserve(edgeCount);
 		bool inputWalls = !curWalls.empty();
 		bool hasSectors = !s_level.sectors.empty();
 		for (s32 e = 0; e < edgeCount; e++, edge++)
@@ -3392,6 +3393,11 @@ namespace LevelEditor
 			}
 			wall.idx[0] = insertVertexIntoSector(sector, edge->v0);
 			wall.idx[1] = insertVertexIntoSector(sector, edge->v1);
+			// Avoid placing denegerate walls.
+			if (wall.idx[0] == wall.idx[1])
+			{
+				continue;
+			}
 
 			wall.adjoinId = -1;
 			wall.mirrorId = -1;
@@ -3400,7 +3406,7 @@ namespace LevelEditor
 			wall.tex[WP_TOP].offset.x += edge->u0;
 			wall.tex[WP_BOT].offset.x += edge->u0;
 
-			sector->walls[e] = wall;
+			sector->walls.push_back(wall);
 		}
 	}
 
@@ -3556,12 +3562,14 @@ namespace LevelEditor
 				// The group has to be interactible.
 				if (!sector_isInteractable(sector)) { continue; }
 
-				if (fabsf(heights[0] - sector->floorHeight) < FLT_EPSILON && TFE_Polygon::pointInsidePolygon(&sector->poly, vtx[firstVertex]))
+				bool onFloor = fabsf(heights[0] - sector->floorHeight) < FLT_EPSILON;
+				bool onCeil  = fabsf(heights[0] - sector->ceilHeight) < FLT_EPSILON;
+				if ((onFloor || onCeil) && TFE_Polygon::pointInsidePolygon(&sector->poly, vtx[firstVertex]))
 				{
 					// This is a sub-sector, so adjust the heights accordingly.
-					heightFlags = HFLAG_SET_FLOOR;
-					clipFloorHeight = heights[1];
-					clipCeilHeight = sector->ceilHeight;
+					heightFlags = onFloor ? HFLAG_SET_FLOOR : HFLAG_SET_CEIL;
+					clipFloorHeight = onFloor ? heights[1] : sector->floorHeight;
+					clipCeilHeight = onFloor ? sector->ceilHeight : heights[1];
 
 					// Expand the bounds.
 					shapeBounds[0].y = min(shapeBounds[0].y, min(sector->floorHeight, sector->ceilHeight));
@@ -3885,34 +3893,25 @@ namespace LevelEditor
 	void edit_createSectorFromShape(const f32* heights, s32 vertexCount, const Vec2f* vtx)
 	{
 		s_drawStarted = false;
-		bool hasSectors = !s_level.sectors.empty();
-
-		EditorSector newSector = {};
-		createNewSector(&newSector, heights);
-
-		newSector.vtx.resize(vertexCount);
-		newSector.walls.resize(vertexCount);
 
 		const f32 area = TFE_Polygon::signedArea(vertexCount, vtx);
-		Vec2f* outVtx = newSector.vtx.data();
-		if (area >= 0.0f)
+		s32 firstVertex = 0;
+		// Make sure the shape has the correct winding order.
+		if (area < 0.0f)
 		{
-			// If area is positive, than the polygon winding is clockwise, which is what we want.
-			for (s32 v = 0; v < vertexCount; v++)
-			{
-				outVtx[v] = vtx[v];
-			}
-		}
-		else
-		{
+			std::vector<Vec2f> outVtxList;
+			outVtxList.resize(vertexCount);
+			Vec2f* outVtx = outVtxList.data();
 			// If area is negative, than the polygon winding is counter-clockwise, so read the vertices in reverse-order.
 			for (s32 v = 0; v < vertexCount; v++)
 			{
 				outVtx[v] = vtx[vertexCount - v - 1];
 			}
+			firstVertex = vertexCount - 1;
+			s_shape = outVtxList;
 		}
 
-		edit_insertShape(heights, s_boolMode, 0);
+		edit_insertShape(heights, s_boolMode, firstVertex);
 
 		s_featureHovered = {};
 		selection_clear();
@@ -4493,7 +4492,7 @@ namespace LevelEditor
 				s_shape[1] = onGrid;
 				if (!TFE_Input::mouseDown(MouseButton::MBUTTON_LEFT))
 				{
-					if (s_view == EDIT_VIEW_3D)
+					if (s_view == EDIT_VIEW_3D && s_boolMode != BMODE_SUBTRACT)
 					{
 						s_drawMode = DMODE_RECT_VERT;
 						s_curVtxPos = { onGrid.x, s_gridHeight, onGrid.z };
@@ -4514,7 +4513,7 @@ namespace LevelEditor
 						if (s_shape.size() >= 3)
 						{
 							// Need to form a polygon.
-							if (s_view == EDIT_VIEW_3D)
+							if (s_view == EDIT_VIEW_3D && s_boolMode != BMODE_SUBTRACT)
 							{
 								s_drawMode = DMODE_SHAPE_VERT;
 								s_curVtxPos = { onGrid.x, s_gridHeight, onGrid.z };
@@ -4559,7 +4558,7 @@ namespace LevelEditor
 				{
 					if (s_shape.size() >= 3)
 					{
-						if (s_view == EDIT_VIEW_3D)
+						if (s_view == EDIT_VIEW_3D && s_boolMode != BMODE_SUBTRACT)
 						{
 							s_drawMode = DMODE_SHAPE_VERT;
 							s_curVtxPos = { onGrid.x, s_gridHeight, onGrid.z };
@@ -4606,6 +4605,10 @@ namespace LevelEditor
 			if (hoverSector && !(s_gridFlags & GFLAG_OVER))
 			{
 				s_gridHeight = hoverSector->floorHeight;
+				if (s_view == EDIT_VIEW_3D && fabsf(s_cursor3d.y - hoverSector->ceilHeight) < FLT_EPSILON)
+				{
+					s_gridHeight = hoverSector->ceilHeight;
+				}
 			}
 
 			s_drawStarted = true;
