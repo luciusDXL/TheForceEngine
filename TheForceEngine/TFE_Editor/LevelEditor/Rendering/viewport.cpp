@@ -1627,8 +1627,8 @@ namespace LevelEditor
 
 			// Draw lines.
 			const size_t wallCount = sector->walls.size();
-			const EditorWall* wall = sector->walls.data();
 			const Vec2f* vtx = sector->vtx.data();
+			EditorWall* wall = sector->walls.data();
 			for (size_t w = 0; w < wallCount; w++, wall++)
 			{
 				// Skip hovered or selected walls.
@@ -1720,7 +1720,11 @@ namespace LevelEditor
 											{v1.x, sector->floorHeight, v1.z} };
 						if (s_sectorDrawMode == SDM_TEXTURED_FLOOR || s_sectorDrawMode == SDM_TEXTURED_CEIL)
 						{
-							const LevelTexture* texPtr = sky ? &sector->floorTex : &wall->tex[WP_BOT];
+							LevelTexture* texPtr = sky ? &sector->floorTex : &wall->tex[WP_BOT];
+							if (texPtr->texIndex < 0)
+							{
+								texPtr->texIndex = getTextureIndex("DEFAULT.BM");
+							}
 							const EditorTexture* tex = calculateTextureCoords(wall, texPtr, wallLengthTexels, botHeight, flipHorz, uvCorners);
 							TFE_RenderShared::triDraw3d_addQuadTextured(TRIMODE_OPAQUE, corners, uvCorners, wallColor, tex->frames[0], sky);
 						}

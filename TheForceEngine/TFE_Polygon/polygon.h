@@ -63,6 +63,7 @@ namespace TFE_Polygon
 	void clipDestroy();
 	void clipPolygons(const BPolygon* subject, const BPolygon* clip, std::vector<BPolygon>& outPoly, BoolMode boolMode);
 	bool addEdgeIntersectionsToPoly(BPolygon* subject, const BPolygon* clip);
+	void cleanUpShape(std::vector<Vec2f>& shape);
 	bool addEdgeToBPoly(Vec2f v0, Vec2f v1, f32 uOffset, s32 wallIndex, BPolygon* poly);
 
 	bool lineSegmentsIntersect(Vec2f a0, Vec2f a1, Vec2f b0, Vec2f b1, Vec2f* vI = nullptr, f32* u = nullptr, f32* v = nullptr);

@@ -69,8 +69,8 @@ namespace LevelEditor
 	void edit_deleteVertex(s32 sectorId, s32 vertexIndex);
 	void edit_deleteSector(s32 sectorId);
 	void edit_clearSelections();
-	void edit_createSectorFromRect(const f32* heights, const Vec2f* vtx);
-	void edit_createSectorFromShape(const f32* heights, s32 vertexCount, const Vec2f* vtx);
+	void edit_createSectorFromRect(const f32* heights, const Vec2f* vtx, bool allowSubsectorExtrude=true);
+	void edit_createSectorFromShape(const f32* heights, s32 vertexCount, const Vec2f* vtx, bool allowSubsectorExtrude=true);
 	void edit_moveTexture(s32 count, const FeatureId* featureList, Vec2f delta);
 	void edit_setTexture(s32 count, const FeatureId* feature, s32 texIndex, Vec2f* offset = nullptr);
 	void edit_clearTexture(s32 count, const FeatureId* feature);

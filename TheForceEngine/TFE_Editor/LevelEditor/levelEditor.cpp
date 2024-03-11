@@ -183,6 +183,7 @@ namespace LevelEditor
 	static Vec2f s_wallNrm;
 	static Vec2f s_wallTan;
 	static Vec3f s_prevPos = { 0 };
+	static s32 s_newWallTexOverride = -1;
 
 	// Texture Alignment
 	static bool s_startTexMove = false;
@@ -265,6 +266,8 @@ namespace LevelEditor
 
 	void handleSelectMode(Vec3f pos);
 	void handleSelectMode(EditorSector* sector, s32 wallIndex);
+
+	s32 getDefaultTextureIndex(WallPart part);
 
 #if EDITOR_TEXT_PROMPTS == 1
 	void handleTextPrompts();
@@ -1090,6 +1093,22 @@ namespace LevelEditor
 		EditorWall* srcWall = &sector->walls[wallIndex];
 		const s32 idx[3] = { srcWall->idx[0], newIdx, srcWall->idx[1] };
 
+		// Compute the u offset.
+		Vec2f v0 = sector->vtx[srcWall->idx[0]];
+		Vec2f v1 = sector->vtx[srcWall->idx[1]];
+		Vec2f dir = { v1.x - v0.x, v1.z - v0.z };
+		f32 len = sqrtf(dir.x*dir.x + dir.z*dir.z);
+		f32 uSplit = 0.0f;
+		if (fabsf(dir.x) >= fabsf(dir.z))
+		{
+			uSplit = (newPos.x - v0.x) / dir.x;
+		}
+		else
+		{
+			uSplit = (newPos.z - v0.z) / dir.z;
+		}
+		uSplit *= len;
+
 		// Copy wall attributes (textures, flags, etc.).
 		EditorWall newWall = *srcWall;
 		// Then setup indices.
@@ -1097,6 +1116,13 @@ namespace LevelEditor
 		srcWall->idx[1] = idx[1];
 		newWall.idx[0] = idx[1];
 		newWall.idx[1] = idx[2];
+		for (s32 i = 0; i < WP_COUNT; i++)
+		{
+			if (newWall.tex[i].texIndex >= 0)
+			{
+				newWall.tex[i].offset.x += uSplit;
+			}
+		}
 
 		// Insert the new wall right after the wall being split.
 		// This makes the process a bit more complicated, but keeps things clean.
@@ -3359,6 +3385,163 @@ namespace LevelEditor
 		return vtxCount;
 	}
 
+	// Used to restore clipped/split wall attributes.
+	struct SourceWall
+	{
+		LevelTexture tex[WP_COUNT] = {};
+		Vec2f vtx[2];
+		Vec2f dir;
+		Vec2f rcpDelta;
+		f32 len;
+		f32 floorHeight;
+		u32 flags[3] = { 0 };
+		s32 wallLight = 0;
+	};
+	static std::vector<SourceWall> s_sourceWallList;
+
+	void clearSourceList()
+	{
+		s_sourceWallList.clear();
+	}
+
+	void addWallToSourceList(const EditorSector* sector, const EditorWall* wall)
+	{
+		SourceWall swall;
+		for (s32 i = 0; i < WP_COUNT; i++) { swall.tex[i] = wall->tex[i]; }
+		for (s32 i = 0; i < 3; i++) { swall.flags[i] = wall->flags[i]; }
+		swall.vtx[0] = sector->vtx[wall->idx[0]];
+		swall.vtx[1] = sector->vtx[wall->idx[1]];
+		swall.wallLight = wall->wallLight;
+
+		swall.dir = { swall.vtx[1].x - swall.vtx[0].x, swall.vtx[1].z - swall.vtx[0].z };
+		swall.rcpDelta.x = fabsf(swall.dir.x) > FLT_EPSILON ? 1.0f / swall.dir.x : 1.0f;
+		swall.rcpDelta.z = fabsf(swall.dir.z) > FLT_EPSILON ? 1.0f / swall.dir.z : 1.0f;
+		swall.len = sqrtf(swall.dir.x*swall.dir.x + swall.dir.z*swall.dir.z);
+		swall.dir = TFE_Math::normalize(&swall.dir);
+
+		swall.floorHeight = sector->floorHeight;
+
+		s_sourceWallList.push_back(swall);
+	}
+
+	void mapWallToSourceList(const EditorSector* sector, EditorWall* wall)
+	{
+		if (s_sourceWallList.empty()) { return; }
+
+		const Vec2f v0 = sector->vtx[wall->idx[0]];
+		const Vec2f v1 = sector->vtx[wall->idx[1]];
+		Vec2f dir = { v1.x - v0.x, v1.z - v0.z };
+		dir = TFE_Math::normalize(&dir);
+
+		const f32 eps = 0.001f;
+		const s32 count = (s32)s_sourceWallList.size();
+		const SourceWall* swall = s_sourceWallList.data();
+		s32 singleTouch = -1;
+		for (s32 i = 0; i < count; i++, swall++)
+		{
+			// The direction has to match.
+			if (dir.x*swall->dir.x + dir.z*swall->dir.z < 1.0f - eps)
+			{
+				continue;
+			}
+
+			f32 u, v;
+			if (fabsf(dir.x) >= fabsf(dir.z))
+			{
+				u = (v0.x - swall->vtx[0].x) * swall->rcpDelta.x;
+				v = (v1.x - swall->vtx[0].x) * swall->rcpDelta.x;
+			}
+			else
+			{
+				u = (v0.z - swall->vtx[0].z) * swall->rcpDelta.z;
+				v = (v1.z - swall->vtx[0].z) * swall->rcpDelta.z;
+			}
+
+			// Verify that the closest point is close enough.
+			Vec2f uPt = { swall->vtx[0].x + u * (swall->vtx[1].x - swall->vtx[0].x), swall->vtx[0].z + u * (swall->vtx[1].z - swall->vtx[0].z) };
+			Vec2f offset = { uPt.x - v0.x, uPt.z - v0.z };
+			if (offset.x*offset.x + offset.z*offset.z > eps)
+			{
+				continue;
+			}
+
+			f32 absU = fabsf(u);
+			f32 absV = fabsf(v);
+			if (absU < eps) { u = 0.0f; }
+			if (absV < eps) { v = 0.0f; }
+
+			absU = fabsf(1.0f - u);
+			absV = fabsf(1.0f - v);
+			if (absU < eps) { u = 1.0f; }
+			if (absV < eps) { v = 1.0f; }
+
+			if (u < 0.0f || v < 0.0f || u > 1.0f || v > 1.0f)
+			{
+				// Handle adjacent walls as well.
+				if ((u >= 0.0f && u <= 1.0f) || (v >= 0.0f && v <= 1.0f))
+				{
+					singleTouch = i;
+				}
+				continue;
+			}
+
+			// Found a match!
+			for (s32 i = 0; i < WP_COUNT; i++) { wall->tex[i] = swall->tex[i]; }
+			for (s32 i = 0; i < 3; i++) { wall->flags[i] = swall->flags[i]; }
+			wall->wallLight = swall->wallLight;
+
+			// Only the first wall will keep the sign...
+			if (swall->tex[WP_SIGN].texIndex >= 0 && u > 0.0f && v > 0.0f)
+			{
+				wall->tex[WP_SIGN].texIndex = -1;
+				wall->tex[WP_SIGN].offset = { 0 };
+			}
+
+			// Handle texture offsets.
+			const f32 uSplit = u * swall->len;
+			const f32 vSplit = swall->floorHeight - sector->floorHeight;
+			for (s32 i = 0; i < WP_COUNT; i++)
+			{
+				if (i == WP_SIGN || wall->tex[i].texIndex < 0) { continue; }
+				wall->tex[i].offset.x += uSplit;
+				wall->tex[i].offset.z += vSplit;
+			}
+			return;
+		}
+
+		if (s_newWallTexOverride >= 0)
+		{
+			for (s32 i = 0; i < WP_COUNT; i++)
+			{
+				if (i != WP_SIGN)
+				{
+					wall->tex[i].texIndex = s_newWallTexOverride;
+				}
+			}
+		}
+		else
+		{
+			// Copy the texture from the touching wall.
+			if (singleTouch >= 0)
+			{
+				swall = s_sourceWallList.data() + singleTouch;
+			}
+			// Or just give up and use the first wall in the list.
+			else
+			{
+				swall = s_sourceWallList.data();
+			}
+
+			for (s32 i = 0; i < WP_COUNT; i++)
+			{
+				if (i != WP_SIGN)
+				{
+					wall->tex[i] = swall->tex[i];
+				}
+			}
+		}
+	}
+
 	void updateSectorFromPolygon(EditorSector* sector, const std::vector<EditorWall>& curWalls, const BPolygon& poly)
 	{
 		struct AdjoinFix
@@ -3381,16 +3564,10 @@ namespace LevelEditor
 		for (s32 e = 0; e < edgeCount; e++, edge++)
 		{
 			EditorWall wall = {};
-			if (inputWalls && edge->srcWallIndex >= 0)
-			{
-				wall = curWalls[edge->srcWallIndex];
-			}
-			else
-			{
-				wall.tex[WP_MID].texIndex = hasSectors ? s_level.sectors[0].walls[0].tex[WP_MID].texIndex : getTextureIndex("DEFAULT.BM");
-				wall.tex[WP_TOP].texIndex = wall.tex[WP_MID].texIndex;
-				wall.tex[WP_BOT].texIndex = wall.tex[WP_MID].texIndex;
-			}
+			wall.tex[WP_MID].texIndex = getDefaultTextureIndex(WP_MID);
+			wall.tex[WP_TOP].texIndex = getDefaultTextureIndex(WP_TOP);
+			wall.tex[WP_BOT].texIndex = getDefaultTextureIndex(WP_BOT);
+
 			wall.idx[0] = insertVertexIntoSector(sector, edge->v0);
 			wall.idx[1] = insertVertexIntoSector(sector, edge->v1);
 			// Avoid placing denegerate walls.
@@ -3401,10 +3578,7 @@ namespace LevelEditor
 
 			wall.adjoinId = -1;
 			wall.mirrorId = -1;
-
-			wall.tex[WP_MID].offset.x += edge->u0;
-			wall.tex[WP_TOP].offset.x += edge->u0;
-			wall.tex[WP_BOT].offset.x += edge->u0;
+			mapWallToSourceList(sector, &wall);
 
 			sector->walls.push_back(wall);
 		}
@@ -3465,11 +3639,12 @@ namespace LevelEditor
 		newSector->groupId = groups_getCurrentId();
 		newSector->groupIndex = 0;
 	}
-
+				
 	// Merge a shape into the existing sectors.
-	void edit_insertShape(const f32* heights, BoolMode mode, s32 firstVertex)
+	void edit_insertShape(const f32* heights, BoolMode mode, s32 firstVertex, bool allowSubsectorExtrude)
 	{
 		bool hasSectors = !s_level.sectors.empty();
+		clearSourceList();
 
 		u32 heightFlags = s_view == EDIT_VIEW_3D ? HFLAG_DEFAULT : HFLAG_NONE;
 		f32 clipFloorHeight = min(heights[0], heights[1]);
@@ -3477,7 +3652,7 @@ namespace LevelEditor
 		
 		// Reserve extra sectors to avoid pointer issues...
 		// TODO: This isn't great.
-		s_level.sectors.reserve(s_level.sectors.capacity() + 64);
+		s_level.sectors.reserve(s_level.sectors.size() + 256);
 
 		// In this mode, no sector intersections are required. Simply create the sector
 		// and then fixup adjoins with existing sectors.
@@ -3502,9 +3677,9 @@ namespace LevelEditor
 				wall->idx[1] = b;
 
 				// Just copy for now...
-				wall->tex[WP_MID].texIndex = hasSectors ? s_level.sectors[0].walls[0].tex[WP_MID].texIndex : getTextureIndex("DEFAULT.BM");
-				wall->tex[WP_TOP].texIndex = wall->tex[WP_MID].texIndex;
-				wall->tex[WP_BOT].texIndex = wall->tex[WP_MID].texIndex;
+				wall->tex[WP_MID].texIndex = getDefaultTextureIndex(WP_MID);
+				wall->tex[WP_TOP].texIndex = getDefaultTextureIndex(WP_TOP);
+				wall->tex[WP_BOT].texIndex = getDefaultTextureIndex(WP_BOT);
 			}
 
 			newSector.groupId = groups_getCurrentId();
@@ -3549,7 +3724,7 @@ namespace LevelEditor
 		EditorSector* sector = nullptr;
 
 		// 2a. Check to see if the first vertex is inside of a sector and on the floor.
-		if (s_view == EDIT_VIEW_3D && s_boolMode == BMODE_MERGE)
+		if (s_view == EDIT_VIEW_3D && s_boolMode == BMODE_MERGE && allowSubsectorExtrude)
 		{
 			// TODO: Better spatial queries to avoid looping over everything...
 			// TODO: Factor out so the rendering can be altered accordingly...
@@ -3592,10 +3767,19 @@ namespace LevelEditor
 			// Polygons have to overlap.
 			if (!polyOverlap(&shapePoly, &sector->poly)) { continue; }
 
+			// Insert walls for future reference.
+			const s32 wallCount = (s32)sector->walls.size();
+			EditorWall* wall = sector->walls.data();
+			for (s32 w = 0; w < wallCount; w++, wall++)
+			{
+				addWallToSourceList(sector, wall);
+			}
+
+			// Add to the list of candidates.
 			candidates.push_back(sector);
 		}
 
-		// 3. Intersect the source polygon with the candidates, splitting up the source polygon as needed.
+		// 3. Intersect the shape polygon with the candidates.
 		//    a. If the mode is subtract, then the source polygon does *not* need to be split.
 		const s32 candidateCount = (s32)candidates.size();
 		EditorSector** candidateList = candidates.data();
@@ -3847,7 +4031,7 @@ namespace LevelEditor
 		}
 	}
 		
-	void edit_createSectorFromRect(const f32* heights, const Vec2f* vtx)
+	void edit_createSectorFromRect(const f32* heights, const Vec2f* vtx, bool allowSubsectorExtrude)
 	{
 		s_drawStarted = false;
 		bool hasSectors = !s_level.sectors.empty();
@@ -3883,14 +4067,14 @@ namespace LevelEditor
 			outVtx[v] = rect[v];
 		}
 
-		edit_insertShape(heights, s_boolMode, firstVertex);
+		edit_insertShape(heights, s_boolMode, firstVertex, allowSubsectorExtrude);
 
 		s_featureHovered = {};
 		selection_clear();
 		infoPanelClearFeatures();
 	}
 				
-	void edit_createSectorFromShape(const f32* heights, s32 vertexCount, const Vec2f* vtx)
+	void edit_createSectorFromShape(const f32* heights, s32 vertexCount, const Vec2f* vtx, bool allowSubsectorExtrude)
 	{
 		s_drawStarted = false;
 
@@ -3910,14 +4094,15 @@ namespace LevelEditor
 			firstVertex = vertexCount - 1;
 			s_shape = outVtxList;
 		}
+		//TFE_Polygon::cleanUpShape(s_shape);
 
-		edit_insertShape(heights, s_boolMode, firstVertex);
+		edit_insertShape(heights, s_boolMode, firstVertex, allowSubsectorExtrude);
 
 		s_featureHovered = {};
 		selection_clear();
 		infoPanelClearFeatures();
 	}
-				
+						
 	s32 extrudeSectorFromRect()
 	{
 		const Project* proj = project_get();
@@ -3928,19 +4113,30 @@ namespace LevelEditor
 		s32 nextWallId = -1;
 
 		const f32 minDelta = 1.0f / 64.0f;
-
+		EditorSector* sector = &s_level.sectors[s_extrudePlane.sectorId];
+		assert(s_extrudePlane.sectorId >= 0 && s_extrudePlane.sectorId < (s32)s_level.sectors.size());
+		
 		// Extrude away - create a new sector.
 		if (s_drawHeight[1] > 0.0f)
 		{
+			EditorWall* extrudeWall = &sector->walls[s_extrudePlane.wallId];
+			assert(s_extrudePlane.wallId >= 0 && s_extrudePlane.wallId < (s32)sector->walls.size());
+
+			const f32 floorHeight = std::min(s_shape[0].z, s_shape[1].z) + s_extrudePlane.origin.y;
+			const f32 ceilHeight = std::max(s_shape[0].z, s_shape[1].z) + s_extrudePlane.origin.y;
+
+			// When extruding inward, copy the mid-texture to the top and bottom.
+			extrudeWall->tex[WP_BOT] = extrudeWall->tex[WP_MID];
+			extrudeWall->tex[WP_TOP] = extrudeWall->tex[WP_MID];
+			extrudeWall->tex[WP_TOP].offset.z += (ceilHeight - sector->floorHeight);
+
 			// Does the wall already have an ajoin?
-			if (s_extrudePlane.wall->adjoinId >= 0 && !dualAdjoinSupported)
+			if (extrudeWall->adjoinId >= 0 && !dualAdjoinSupported)
 			{
 				LE_ERROR("Cannot complete operation:");
 				LE_ERROR("  Dual adjoins are not supported using this FeatureSet.");
 				return -1;
 			}
-			const f32 floorHeight = std::min(s_shape[0].z, s_shape[1].z) + s_extrudePlane.origin.y;
-			const f32 ceilHeight = std::max(s_shape[0].z, s_shape[1].z) + s_extrudePlane.origin.y;
 			const f32 x0 = std::min(s_shape[0].x, s_shape[1].x);
 			const f32 x1 = std::max(s_shape[0].x, s_shape[1].x);
 			const f32 d = s_drawHeight[1];
@@ -3951,10 +4147,10 @@ namespace LevelEditor
 				const f32 heights[] = { floorHeight, ceilHeight };
 				createNewSector(&newSector, heights);
 				// Copy from the sector being extruded from.
-				newSector.floorTex = s_extrudePlane.sector->floorTex;
-				newSector.ceilTex = s_extrudePlane.sector->ceilTex;
-				newSector.ambient = s_extrudePlane.sector->ambient;
-								
+				newSector.floorTex = sector->floorTex;
+				newSector.ceilTex = sector->ceilTex;
+				newSector.ambient = sector->ambient;
+
 				s32 count = 4;
 				newSector.vtx.resize(count);
 				newSector.walls.resize(count);
@@ -3983,14 +4179,16 @@ namespace LevelEditor
 					wall->idx[1] = b;
 
 					// Copy from the wall being extruded from.
-					wall->tex[WP_MID].texIndex = s_extrudePlane.wall->tex[WP_MID].texIndex;
-					wall->tex[WP_TOP].texIndex = s_extrudePlane.wall->tex[WP_MID].texIndex;
-					wall->tex[WP_BOT].texIndex = s_extrudePlane.wall->tex[WP_MID].texIndex;
+					s32 texIndex = extrudeWall->tex[WP_MID].texIndex;
+					if (texIndex < 0) { texIndex = getTextureIndex("DEFAULT.BM"); }
+					wall->tex[WP_MID].texIndex = texIndex;
+					wall->tex[WP_TOP].texIndex = texIndex;
+					wall->tex[WP_BOT].texIndex = texIndex;
 				}
 
 				// Split the wall if needed.
-				s32 extrudeSectorId = s_extrudePlane.sector->id;
-				s32 extrudeWallId = (s32)((intptr_t)s_extrudePlane.wall - (intptr_t)s_extrudePlane.sector->walls.data()) / sizeof(EditorWall);
+				s32 extrudeSectorId = s_extrudePlane.sectorId;
+				s32 extrudeWallId = s_extrudePlane.wallId;
 				nextWallId = extrudeWallId;
 				if (x0 > 0.0f)
 				{
@@ -4031,6 +4229,70 @@ namespace LevelEditor
 		// Extrude inward - adjust the current sector.
 		else if (s_drawHeight[1] < 0.0f)
 		{
+			const f32 floorHeight = std::min(s_shape[0].z, s_shape[1].z) + s_extrudePlane.origin.y;
+			const f32 ceilHeight = std::max(s_shape[0].z, s_shape[1].z) + s_extrudePlane.origin.y;
+			const f32 x0 = std::min(s_shape[0].x, s_shape[1].x);
+			const f32 x1 = std::max(s_shape[0].x, s_shape[1].x);
+			const f32 d = -s_drawHeight[1];
+
+			EditorWall* extrudeWall = s_extrudePlane.wallId >= 0 ? &sector->walls[s_extrudePlane.wallId] : nullptr;
+			if (extrudeWall && extrudeWall->tex[WP_MID].texIndex >= 0)
+			{
+				s_newWallTexOverride = extrudeWall->tex[WP_MID].texIndex;
+				if (extrudeWall->adjoinId >= 0)
+				{
+					if (floorHeight == sector->floorHeight && extrudeWall->tex[WP_BOT].texIndex >= 0)
+					{
+						s_newWallTexOverride = extrudeWall->tex[WP_BOT].texIndex;
+					}
+					else if (ceilHeight == sector->ceilHeight && extrudeWall->tex[WP_TOP].texIndex >= 0)
+					{
+						s_newWallTexOverride = extrudeWall->tex[WP_TOP].texIndex;
+					}
+				}
+			}
+
+			if (!dualAdjoinSupported && floorHeight != sector->floorHeight && ceilHeight != sector->ceilHeight)
+			{
+				LE_ERROR("Cannot complete operation:");
+				LE_ERROR("  Dual adjoins are not supported using this FeatureSet.");
+				return -1;
+			}
+
+			if (fabsf(ceilHeight - floorHeight) >= minDelta && fabsf(x1 - x0) >= minDelta)
+			{
+				s32 count = 4;
+				s_shape.resize(count);
+				const Vec3f rect[] =
+				{
+					extrudePoint2dTo3d({x0, 0.0f}, s_drawHeight[0]),
+					extrudePoint2dTo3d({x0, 0.0f}, s_drawHeight[1]),
+					extrudePoint2dTo3d({x1, 0.0f}, s_drawHeight[1]),
+					extrudePoint2dTo3d({x1, 0.0f}, s_drawHeight[0])
+				};
+
+				Vec2f* outVtx = s_shape.data();
+				for (s32 v = 0; v < count; v++)
+				{
+					outVtx[v] = { rect[v].x, rect[v].z };
+				}
+
+				// Merge
+				f32 heights[2];
+				if (floorHeight == sector->floorHeight)
+				{
+					heights[0] = ceilHeight;
+					heights[1] = sector->ceilHeight;
+				}
+				else if (ceilHeight == sector->ceilHeight)
+				{
+					heights[0] = sector->floorHeight;
+					heights[1] = floorHeight;
+				}
+
+				edit_createSectorFromShape(heights, 4, outVtx, false);
+			}
+			s_newWallTexOverride = -1;
 		}
 
 		return nextWallId;
@@ -4082,7 +4344,7 @@ namespace LevelEditor
 	{
 		s_drawStarted = false;
 		s_extrudeEnabled = false;
-
+				
 		// Split the shape into multiple components.
 		const s32 vtxCount = (s32)s_shape.size();
 		std::vector<f32> splits;
@@ -4095,8 +4357,8 @@ namespace LevelEditor
 		// Sort them from lowest to higest.
 		std::sort(splits.begin(), splits.end());
 		// Then find the height extends of each split.
-		s32 extrudeSectorId = s_extrudePlane.sector->id;
-		s32 extrudeWallId = (s32)((intptr_t)s_extrudePlane.wall - (intptr_t)s_extrudePlane.sector->walls.data()) / sizeof(EditorWall);
+		s32 extrudeSectorId = s_extrudePlane.sectorId;
+		s32 extrudeWallId = s_extrudePlane.wallId;
 
 		s_testShape = s_shape;
 		s_shape.resize(2);
@@ -4110,8 +4372,8 @@ namespace LevelEditor
 			{
 				s_shape[0] = { splits[i], ext.x };
 				s_shape[1] = { splits[i+1], ext.z };
-				s_extrudePlane.sector = &s_level.sectors[extrudeSectorId];
-				s_extrudePlane.wall = &s_extrudePlane.sector->walls[extrudeWallId];
+				s_extrudePlane.sectorId = extrudeSectorId;
+				s_extrudePlane.wallId = extrudeWallId;
 
 				extrudeWallId = extrudeSectorFromRect();
 			}
@@ -4234,52 +4496,7 @@ namespace LevelEditor
 			onGrid.z = max(0.0f, min(s_extrudePlane.ext.z, onGrid.z));
 		}
 
-		if (!s_drawStarted && s_singleClick)
-		{
-			s_extrudeEnabled = true;
-			s_drawStarted = true;
-
-			s_extrudePlane.sector = hoverSector;
-			s_extrudePlane.wall = hoverWall;
-
-			const Vec2f* p0 = &hoverSector->vtx[hoverWall->idx[0]];
-			const Vec2f* p1 = &hoverSector->vtx[hoverWall->idx[1]];
-
-			s_extrudePlane.origin = { p0->x, hoverSector->floorHeight, p0->z };
-			const Vec3f S = { p1->x - p0->x, 0.0f, p1->z - p0->z };
-			const Vec3f T = { 0.0f, 1.0f, 0.0f };
-			const Vec3f N = { -(p1->z - p0->z), 0.0f, p1->x - p0->x };
-
-			s_extrudePlane.ext.x = TFE_Math::distance(p0, p1);
-			s_extrudePlane.ext.z = hoverSector->ceilHeight - hoverSector->floorHeight;
-
-			s_extrudePlane.S = TFE_Math::normalize(&S);
-			s_extrudePlane.N = TFE_Math::normalize(&N);
-			s_extrudePlane.T = T;
-
-			// Project using the extrude plane.
-			const Vec3f offset = { s_cursor3d.x - s_extrudePlane.origin.x, s_cursor3d.y - s_extrudePlane.origin.y, s_cursor3d.z - s_extrudePlane.origin.z };
-			onGrid.x = offset.x*s_extrudePlane.S.x + offset.y*s_extrudePlane.S.y + offset.z*s_extrudePlane.S.z;
-			onGrid.z = offset.x*s_extrudePlane.T.x + offset.y*s_extrudePlane.T.y + offset.z*s_extrudePlane.T.z;
-
-			s_drawMode = TFE_Input::keyModDown(KEYMOD_SHIFT) ? DMODE_RECT : DMODE_SHAPE;
-			s_drawHeight[0] = 0.0f;
-			s_drawHeight[1] = 0.0f;
-			s_drawCurPos = onGrid;
-			
-			s_shape.clear();
-			if (s_drawMode == DMODE_RECT)
-			{
-				s_shape.resize(2);
-				s_shape[0] = onGrid;
-				s_shape[1] = onGrid;
-			}
-			else
-			{
-				s_shape.push_back(onGrid);
-			}
-		}
-		else if (s_drawStarted)
+		if (s_drawStarted)
 		{
 			s_drawCurPos = onGrid;
 			if (s_drawMode == DMODE_RECT)
@@ -4605,16 +4822,17 @@ namespace LevelEditor
 					{
 						s_gridHeight = hoverSector->ceilHeight;
 					}
-					else if (hitInfo->hitPart == HP_BOT || hitInfo->hitPart == HP_TOP || hitInfo->hitPart == HP_MID)
+					else if (hitInfo->hitWallId >= 0 && (hitInfo->hitPart == HP_BOT || hitInfo->hitPart == HP_TOP || hitInfo->hitPart == HP_MID))
 					{
 						s_extrudeEnabled = true;
 						
 						// Extrude from wall.
-						s_extrudePlane.sector = hoverSector;
-						s_extrudePlane.wall = &hoverSector->walls[hitInfo->hitWallId];
+						s_extrudePlane.sectorId = hoverSector->id;
+						s_extrudePlane.wallId = hitInfo->hitWallId;
 
-						const Vec2f* p0 = &hoverSector->vtx[s_extrudePlane.wall->idx[0]];
-						const Vec2f* p1 = &hoverSector->vtx[s_extrudePlane.wall->idx[1]];
+						EditorWall* hitWall = &hoverSector->walls[hitInfo->hitWallId];
+						const Vec2f* p0 = &hoverSector->vtx[hitWall->idx[0]];
+						const Vec2f* p1 = &hoverSector->vtx[hitWall->idx[1]];
 
 						s_extrudePlane.origin = { p0->x, hoverSector->floorHeight, p0->z };
 						const Vec3f S = { p1->x - p0->x, 0.0f, p1->z - p0->z };
@@ -4630,7 +4848,7 @@ namespace LevelEditor
 
 						// Project using the extrude plane.
 						Vec3f wallPos = s_cursor3d;
-						snapToSurfaceGrid(hoverSector, s_extrudePlane.wall, wallPos);
+						snapToSurfaceGrid(hoverSector, hitWall, wallPos);
 
 						const Vec3f offset = { wallPos.x - s_extrudePlane.origin.x, wallPos.y - s_extrudePlane.origin.y, wallPos.z - s_extrudePlane.origin.z };
 						onGrid.x = offset.x*s_extrudePlane.S.x + offset.y*s_extrudePlane.S.y + offset.z*s_extrudePlane.S.z;
@@ -8185,6 +8403,26 @@ namespace LevelEditor
 			SDL_free(text);
 		}
 		return hasText;
+	}
+
+	s32 getDefaultTextureIndex(WallPart part)
+	{
+		s32 index = getTextureIndex("DEFAULT.BM");
+		const s32 count = (s32)s_level.sectors.size();
+		const EditorSector* sector = s_level.sectors.data();
+		for (s32 i = 0; i < count; i++, sector++)
+		{
+			if (!sector->walls.empty())
+			{
+				const s32 newIndex = sector->walls[0].tex[part].texIndex;
+				if (newIndex >= 0)
+				{
+					index = newIndex;
+					break;
+				}
+			}
+		}
+		return index;
 	}
 
 	/////////////////////////////////////////////////////

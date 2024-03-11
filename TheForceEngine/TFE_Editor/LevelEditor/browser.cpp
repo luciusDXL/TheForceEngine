@@ -313,7 +313,7 @@ namespace LevelEditor
 	{
 		s_filteredEntityList.clear();
 		const u32 flag = s_entityCategory < 0 ? 0xffffffff : 1u << u32(s_entityCategory);
-		const s32 count = s_entityDefList.size();
+		const s32 count = (s32)s_entityDefList.size();
 		Entity* entity = s_entityDefList.data();
 		for (s32 i = 0; i < count; i++, entity++)
 		{

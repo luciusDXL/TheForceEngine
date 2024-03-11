@@ -911,6 +911,21 @@ namespace TFE_Polygon
 		}
 	}
 
+	void buildPathFromShape(const std::vector<Vec2f>& shape, ClipperLib::Path& outPath)
+	{
+		const f64 precision = 65536.0;
+		const s32 vtxCount = (s32)shape.size();
+		const Vec2f* vtx = shape.data();
+
+		outPath.resize(shape.size());
+		ClipperLib::IntPoint* outVtx = outPath.data();
+		for (s32 v = 0; v < vtxCount; v++, vtx++, outVtx++)
+		{
+			outVtx->X = ClipperLib::cInt((f64)vtx->x * precision);
+			outVtx->Y = ClipperLib::cInt((f64)vtx->z * precision);
+		}
+	}
+		
 	void buildContoursFromPaths(const ClipperLib::Paths& paths, s32 outsideClipCount, std::vector<Contour>* contourList)
 	{
 		const f64 precision = 1.0 / 65536.0;
@@ -937,6 +952,22 @@ namespace TFE_Polygon
 			const f32 area = TFE_Polygon::signedArea(vtxCount, contour->vtx.data());
 			contour->clockwise = (area >= 0.0f);
 			contour->outsideClip = i < outsideClipCount;
+		}
+	}
+
+	void buildShapeFromPath(const ClipperLib::Path& path, std::vector<Vec2f>& outShape)
+	{
+		const f64 precision = 1.0 / 65536.0;
+		const s32 vtxCount = (s32)path.size();
+		const ClipperLib::IntPoint* vtx = path.data();
+
+		outShape.resize(vtxCount);
+		Vec2f* outVtx = outShape.data();
+
+		for (s32 v = 0; v < vtxCount; v++, vtx++, outVtx++)
+		{
+			outVtx->x = f32((f64)vtx->X * precision);
+			outVtx->z = f32((f64)vtx->Y * precision);
 		}
 	}
 
@@ -1055,6 +1086,32 @@ namespace TFE_Polygon
 		}
 		return hasIntersections;
 	}
+
+	// Make sure a drawn shape is clean and not self-intersecting.
+	void cleanUpShape(std::vector<Vec2f>& shape)
+	{
+		ClipperLib::Path path;
+		ClipperLib::Paths outPath;
+		buildPathFromShape(shape, path);
+		ClipperLib::SimplifyPolygon(path, outPath);
+
+		if (!outPath.empty())
+		{
+			buildShapeFromPath(outPath[0], shape);
+		}
+	}
+
+	void removeDegeneratePaths(ClipperLib::Paths& paths)
+	{
+		const s32 count = (s32)paths.size();
+		for (s32 i = count - 1; i >= 0; i--)
+		{
+			if (fabs(ClipperLib::Area(paths[i])) < 1.0)
+			{
+				paths.erase(paths.begin() + i);
+			}
+		}
+	}
 		
 	// Returns the number of polygons outside of the clip area.
 	void clipPolygons(const BPolygon* subject, const BPolygon* clip, std::vector<BPolygon>& outPoly, BoolMode boolMode)
@@ -1078,9 +1135,14 @@ namespace TFE_Polygon
 		std::vector<BPolygon> firstPassPoly;
 		ClipperLib::Paths solution;
 
+		// TODO: Remove zero-area polygons.
 		// We always want the difference in order to get the new edges.
 		bool result = s_clipper->Execute(ClipperLib::ctDifference, solution, ClipperLib::pftNonZero);
-		if (!result) { return; }
+		if (!result)
+		{ 
+			return;
+		}
+		removeDegeneratePaths(solution);
 		polysOutsideOfClip = (s32)solution.size();
 
 		if (boolMode == BMODE_MERGE)
@@ -1092,7 +1154,11 @@ namespace TFE_Polygon
 			// Intersection - intersection part between clip polygon and original polygon.
 			ClipperLib::Paths solution2;
 			result = s_clipper->Execute(ClipperLib::ctIntersection, solution2, ClipperLib::pftNonZero);
-			if (!result) { return; }
+			if (!result)
+			{
+				return;
+			}
+			removeDegeneratePaths(solution2);
 
 			// Merge solutions.
 			solution.insert(solution.end(), solution2.begin(), solution2.end());

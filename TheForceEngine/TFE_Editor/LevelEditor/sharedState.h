@@ -35,8 +35,8 @@ namespace LevelEditor
 		Vec3f N;
 
 		Vec2f ext;
-		EditorSector* sector;
-		EditorWall* wall;
+		s32 sectorId;
+		s32 wallId;
 	};
 		
 	extern EditorLevel s_level;
