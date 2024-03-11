@@ -5048,7 +5048,8 @@ namespace LevelEditor
 			else
 			{
 				f32 gridHeight = s_gridHeight;
-				s_gridHeight = obj->pos.y;
+				s_gridHeight = s_cursor3d.y;
+
 				s_cursor3d = rayGridPlaneHit(s_camera.pos, s_rayDir);
 				s_gridHeight = gridHeight;
 			}
@@ -5066,7 +5067,8 @@ namespace LevelEditor
 				else
 				{
 					f32 gridHeight = s_gridHeight;
-					s_gridHeight = obj->pos.y;
+					s_gridHeight = s_moveStartPos3d.y;
+
 					s_cursor3d = rayGridPlaneHit(s_camera.pos, s_rayDir);
 					s_gridHeight = gridHeight;
 				}
@@ -5076,10 +5078,24 @@ namespace LevelEditor
 					s_curVtxPos = s_moveStartPos3d;
 					f32 yNew = moveAlongRail({ 0.0f, 1.0f, 0.0f }).y;
 
+					f32 yPrev = obj->pos.y;
 					obj->pos.y = s_moveBasePos3d.y + (yNew - s_moveStartPos3d.y);
+					f32 yDelta = obj->pos.y - yPrev;
 					snapToGrid(&obj->pos.y);
+
+					if (s_view == EDIT_VIEW_3D)
+					{
+						Vec3f rail[] = { obj->pos, { obj->pos.x, obj->pos.y + 1.0f, obj->pos.z},
+							{ obj->pos.x, obj->pos.y - 1.0f, obj->pos.z } };
+						Vec3f moveDir = { 0.0f, yDelta, 0.0f };
+						moveDir = TFE_Math::normalize(&moveDir);
+						viewport_setRail(rail, 2, &moveDir);
+
+						s_moveStartPos3d.x = s_curVtxPos.x;
+						s_moveStartPos3d.z = s_curVtxPos.z;
+					}
 				}
-				else if (obj->pos.x != s_cursor3d.x || obj->pos.y != s_cursor3d.y || obj->pos.z != s_cursor3d.z)
+				else if (s_moveStartPos3d.x != s_cursor3d.x || s_moveStartPos3d.z != s_cursor3d.z)
 				{
 					Vec3f prevPos = obj->pos;
 					EditorSector* prevSector = s_featureCur.sector;
@@ -5097,7 +5113,17 @@ namespace LevelEditor
 						obj->pos.x = (s_cursor3d.x - s_moveStartPos3d.x) + s_moveBasePos3d.x;
 						obj->pos.z = (s_cursor3d.z - s_moveStartPos3d.z) + s_moveBasePos3d.z;
 					}
+					Vec3f moveDir = { obj->pos.x - prevPos.x, 0.0f, obj->pos.z - prevPos.z };
 					snapToGrid(&obj->pos);
+
+					if (s_view == EDIT_VIEW_3D)
+					{
+						Vec3f boxPos = { obj->pos.x, s_cursor3d.y, obj->pos.z };
+						Vec3f rail[] = { boxPos, { boxPos.x + 1.0f, boxPos.y, boxPos.z}, { boxPos.x, boxPos.y, boxPos.z + 1.0f },
+							{ boxPos.x - 1.0f, boxPos.y, boxPos.z}, { boxPos.x, boxPos.y, boxPos.z - 1.0f } };
+						moveDir = TFE_Math::normalize(&moveDir);
+						viewport_setRail(rail, 4, &moveDir);
+					}
 
 					if (!isPointInsideSector3d(s_featureCur.sector, obj->pos, layer))
 					{
