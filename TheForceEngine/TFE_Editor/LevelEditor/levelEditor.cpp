@@ -4628,7 +4628,7 @@ namespace LevelEditor
 				}
 
 				const Vec3f worldPos = moveAlongRail(s_extrudePlane.N);
-				const Vec3f offset = { worldPos.x - s_cursor3d.x, worldPos.y - s_cursor3d.y, worldPos.z - s_cursor3d.z };
+				const Vec3f offset = { worldPos.x - s_curVtxPos.x, worldPos.y - s_curVtxPos.y, worldPos.z - s_curVtxPos.z };
 				s_drawHeight[1] = offset.x*s_extrudePlane.N.x + offset.y*s_extrudePlane.N.y + offset.z*s_extrudePlane.N.z;
 				snapToGrid(&s_drawHeight[1]);
 			}
@@ -5455,6 +5455,8 @@ namespace LevelEditor
 		}
 		else if (s_view == EDIT_VIEW_3D)
 		{
+			viewport_clearRail();
+
 			cameraControl3d(mx, my);
 			s_featureHovered = {};
 			s32 layer = (s_editFlags & LEF_SHOW_ALL_LAYERS) ? LAYER_ANY : s_curLayer;
@@ -7075,6 +7077,22 @@ namespace LevelEditor
 		{
 			const f32 s = (yHeight - s_camera.pos.y) / s_rayDir.y;
 			worldPos = { s_camera.pos.x + s*s_rayDir.x, s_camera.pos.y + s*s_rayDir.y, s_camera.pos.z + s* s_rayDir.z };
+			
+			Vec3f rail[] = { worldPos, { worldPos.x + 1.0f, worldPos.y, worldPos.z }, { worldPos.x, worldPos.y, worldPos.z + 1.0f },
+						   { worldPos.x - 1.0f, worldPos.y, worldPos.z }, { worldPos.x, worldPos.y, worldPos.z - 1.0f } };
+
+			Vec3f moveDir = { worldPos.x - s_prevPos.x, worldPos.y - s_prevPos.y, worldPos.z - s_prevPos.z };
+			if (moveDir.x*moveDir.x + moveDir.y*moveDir.y + moveDir.z*moveDir.z > 0.0001f)
+			{
+				moveDir = TFE_Math::normalize(&moveDir);
+				viewport_setRail(rail, 4, &moveDir);
+			}
+			else
+			{
+				viewport_setRail(rail, 4);
+			}
+
+			s_prevPos = worldPos;
 		}
 		return worldPos;
 	}
@@ -7095,15 +7113,35 @@ namespace LevelEditor
 
 		f32 railInt, cameraInt;
 		Vec3f worldPos;
+		Vec3f delta = { 0 };
 		if (TFE_Math::closestPointBetweenLines(&rail[0], &rail[1], &cameraRay[0], &cameraRay[1], &railInt, &cameraInt))
 		{
 			worldPos = { rail[0].x + railInt * (rail[1].x - rail[0].x), rail[0].y + railInt * (rail[1].y - rail[0].y), rail[0].z + railInt * (rail[1].z - rail[0].z) };
+			delta = { worldPos.x - s_prevPos.x, worldPos.y - s_prevPos.y, worldPos.z - s_prevPos.z };
 			s_prevPos = worldPos;
 		}
 		else  // If the closest point on lines is unresolvable (parallel lines, etc.) - then just don't move.
 		{
 			worldPos = s_prevPos;
 		}
+
+		f32 visCurY = fabsf(dir.y) > 0.75f ? s_cursor3d.y : s_curVtxPos.y;
+		Vec3f railVis[] =
+		{
+			{ s_curVtxPos.x, visCurY, s_curVtxPos.z },
+			{ s_curVtxPos.x + dir.x, visCurY + dir.y, s_curVtxPos.z + dir.z },
+			{ s_curVtxPos.x - dir.x, visCurY - dir.y, s_curVtxPos.z - dir.z },
+		};
+		if (delta.x*delta.x + delta.y*delta.y + delta.z*delta.z > 0.0001f)
+		{
+			delta = TFE_Math::normalize(&delta);
+			viewport_setRail(railVis, 2, &delta);
+		}
+		else
+		{
+			viewport_setRail(railVis, 2);
+		}
+
 		return worldPos;
 	}
 

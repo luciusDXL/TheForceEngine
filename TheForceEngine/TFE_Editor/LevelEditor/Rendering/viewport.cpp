@@ -82,6 +82,7 @@ namespace LevelEditor
 		INF_COLOR_EDIT_HELPER = 0xffc000ff,
 	};
 
+
 	const u32 c_connectMsgColor = 0xc0ff80ff;
 	const u32 c_connectClientColor = 0xc080ff80;
 	const u32 c_connectTargetColor = 0xc080ffff;
@@ -105,6 +106,18 @@ namespace LevelEditor
 		AMBIENT(28), AMBIENT(29), AMBIENT(30), AMBIENT(31)
 	};
 
+	struct Rail
+	{
+		bool active = false;
+		bool hasMoveDir = false;
+		bool wasActive = false;
+		s32 dirCount = 0;
+		f32 moveFade = 0.0f;
+		Vec3f origin = { 0 };
+		Vec3f moveDir = { 0 };
+		Vec3f dir[4] = { 0 };
+	};
+
 	static RenderTargetHandle s_viewportRt = 0;
 	static std::vector<Vec2f> s_transformedVtx;
 	static std::vector<Vec2f> s_bufferVec2;
@@ -118,6 +131,8 @@ namespace LevelEditor
 	f32 s_gridSize = 0.0625f;
 	f32 s_zoom2d = 0.25f;			// current zoom level in 2D.
 	f32 s_gridHeight = 0.0f;
+
+	Rail s_rail = {};
 
 	void renderLevel2D();
 	void renderLevel3D();
@@ -197,6 +212,54 @@ namespace LevelEditor
 	const TextureGpu* viewport_getTexture()
 	{
 		return TFE_RenderBackend::getRenderTargetTexture(s_viewportRt);
+	}
+		
+	void viewport_clearRail()
+	{
+		s_rail.wasActive = false;
+		if (s_rail.moveFade == 0.0f)
+		{
+			s_rail.active = false;
+			s_rail.dirCount = 0;
+		}
+	}
+
+	void viewport_setRail(const Vec3f* rail, s32 dirCount, Vec3f* moveDir)
+	{
+		s_rail.active = true;
+		s_rail.dirCount = dirCount;
+		s_rail.origin = rail[0];
+		for (s32 i = 0; i < dirCount; i++)
+		{
+			s_rail.dir[i] = { rail[1+i].x - rail[0].x, rail[1+i].y - rail[0].y, rail[1+i].z - rail[0].z };
+			s_rail.dir[i] = TFE_Math::normalize(&s_rail.dir[i]);
+		}
+
+		if (moveDir && fabsf(moveDir->x) + fabsf(moveDir->y) + fabsf(moveDir->z) < FLT_EPSILON)
+		{
+			moveDir = nullptr;
+		}
+
+		s_rail.hasMoveDir = moveDir != nullptr;
+		s_rail.wasActive = true;
+		if (moveDir)
+		{
+			s_rail.moveDir = *moveDir;
+			s_rail.moveFade = 0.25f;
+		}
+	}
+
+	void viewport_updateRail()
+	{
+		if (s_rail.moveFade > 0.0f)
+		{
+			s_rail.moveFade = std::max(0.0f, s_rail.moveFade - (f32)TFE_System::getDeltaTime());
+		}
+		if (s_rail.moveFade == 0.0f && !s_rail.wasActive)
+		{
+			s_rail.active = false;
+			s_rail.dirCount = 0;
+		}
 	}
 
 	//////////////////////////////////////////
@@ -1574,8 +1637,63 @@ namespace LevelEditor
 		}
 	}
 
+	u32 getDirColor(Vec3f dir, f32 alpha, Vec3f* alignDir, f32 fade)
+	{
+		const Vec3f colorDir[] =
+		{
+			{ 1.0f, 0.0f, 0.0f },
+			{ 0.0f, 1.0f, 0.0f },
+			{ 0.0f, 0.0f, 1.0f },
+			{-1.0f, 0.0f, 0.0f },
+			{ 0.0f,-1.0f, 0.0f },
+			{ 0.0f, 0.0f,-1.0f }
+		};
+		const Vec3f colorAlign = { 1.0f, 1.0f, 0.0f };
+		const Vec3f color[] =
+		{
+			// Positive
+			{ 1.0f, 0.0f, 0.0f },
+			{ 0.0f, 1.0f, 0.0f },
+			{ 0.0f, 0.0f, 1.0f },
+			// Negative
+			{ 1.00f, 0.25f, 0.25f },
+			{ 0.50f, 1.00f, 0.50f },
+			{ 0.25f, 0.25f, 1.00f }
+		};
+
+		f32 sum = 0.0f;
+		Vec3f colorSum = { 0 };
+		for (s32 i = 0; i < TFE_ARRAYSIZE(colorDir); i++)
+		{
+			f32 w = std::max(0.0f, colorDir[i].x*dir.x + colorDir[i].y*dir.y + colorDir[i].z*dir.z);
+			colorSum.x += w * color[i].x;
+			colorSum.y += w * color[i].y;
+			colorSum.z += w * color[i].z;
+			sum += w;
+		}
+		if (sum > 0.0f)
+		{
+			f32 scale = 1.0f / sum;
+			colorSum.x *= scale;
+			colorSum.y *= scale;
+			colorSum.z *= scale;
+		}
+
+		if (alignDir)
+		{
+			f32 alignWeight = fade * std::max(0.0f, dir.x*alignDir->x + dir.y*alignDir->y + dir.z*alignDir->z);
+			colorSum.x = colorSum.x + alignWeight * (colorAlign.x - colorSum.x);
+			colorSum.y = colorSum.y + alignWeight * (colorAlign.y - colorSum.y);
+			colorSum.z = colorSum.z + alignWeight * (colorAlign.z - colorSum.z);
+		}
+
+		return u32(colorSum.x * 255.0f) | (u32(colorSum.y * 255.0f) << 8) | (u32(colorSum.z * 255.0f) << 16) | (u32(alpha * 255.0f) << 24);
+	}
+
 	void renderLevel3D()
 	{
+		viewport_updateRail();
+
 		// Prepare for drawing.
 		TFE_RenderShared::lineDraw3d_begin(s_viewportSize.x, s_viewportSize.z);
 		TFE_RenderShared::triDraw3d_begin();
@@ -1884,6 +2002,20 @@ namespace LevelEditor
 		TFE_RenderShared::lineDraw3d_drawLines(&s_camera, true, false);
 		
 		renderHighlighted3d();
+
+		// Movement "rail", if active.
+		if (s_rail.active && s_rail.dirCount > 0)
+		{
+			// For now just draw an arrow.
+			TFE_RenderShared::lineDraw3d_begin(s_viewportSize.x, s_viewportSize.z);
+			Vec3f* alignDir = (s_rail.hasMoveDir || s_rail.moveFade > 0.0f) ? &s_rail.moveDir : nullptr;
+			for (s32 i = 0; i < s_rail.dirCount; i++)
+			{
+				u32 color = getDirColor(s_rail.dir[i], 0.75f, alignDir, std::min(1.0f, s_rail.moveFade * 4.0f));
+				drawArrow3d(3.0f, 0.1f, s_rail.origin, s_rail.dir[i], s_camera.viewMtx.m2, color);
+			}
+			TFE_RenderShared::lineDraw3d_drawLines(&s_camera, false, false);
+		}
 
 		// Draw drag select, if active.
 		if (s_dragSelect.active)

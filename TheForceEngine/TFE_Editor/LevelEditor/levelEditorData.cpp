@@ -1203,6 +1203,10 @@ namespace LevelEditor
 					adjoinId = -1;
 					mirrorId = -1;
 				}
+				if (adjoinId < 0)
+				{
+					mirrorId = -1;
+				}
 				assert((mirrorId >= 0 && adjoinId >= 0) || (mirrorId < 0 && adjoinId < 0));
 
 				WRITE_LINE("    WALL LEFT:\t%d  RIGHT:\t%d  MID:\t%d\t%0.2f\t%0.2f\t%d  TOP:\t%d\t%0.2f\t%0.2f\t%d  BOT:\t%d\t%0.2f\t%0.2f\t%d  "
