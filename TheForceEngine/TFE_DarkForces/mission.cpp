@@ -35,6 +35,7 @@
 #include <TFE_FrontEndUI/console.h>
 #include <TFE_Settings/settings.h>
 #include <TFE_System/system.h>
+#include <TFE_System/tfeMessage.h>
 #include <TFE_Input/inputMapping.h>
 
 using namespace TFE_Jedi;
@@ -195,6 +196,7 @@ namespace TFE_DarkForces
 	CHEAT_CMD(LADIE);
 	CHEAT_CMD(LAIMDEATH);
 	CHEAT_CMD(LAHARDCORE);
+	CHEAT_CMD(LABRIGHT);
 
 	void console_spawnEnemy(const ConsoleArgList& args)
 	{
@@ -366,7 +368,8 @@ namespace TFE_DarkForces
 			console_LACAT,
 			console_LADIE,
 			console_LAIMDEATH,
-			console_LAHARDCORE
+			console_LAHARDCORE,
+			console_LABRIGHT
 		};
 
 		CCMD("cheat", console_cheat, 1, "Enter a Dark Forces cheat code as a string, example: cheat lacds");
@@ -1046,6 +1049,13 @@ namespace TFE_DarkForces
 		hud_toggleDataDisplay();
 	}
 
+	void cheat_toggleFullBright()
+	{
+		const char* msg = TFE_System::getMessage(TFE_MSG_FULLBRIGHT);
+		if (msg) { hud_sendTextMessage(msg, 1); }
+		s_fullBright = ~s_fullBright;
+	}
+
 	void executeCheat(CheatID cheatID)
 	{
 		if (cheatID == CHEAT_NONE)
@@ -1199,6 +1209,10 @@ namespace TFE_DarkForces
 			case CHEAT_LAHARDCORE:
 			{
 				cheat_instaDeath();
+			} break;
+			case CHEAT_LABRIGHT:
+			{
+				cheat_toggleFullBright();
 			} break;
 		}
 	}

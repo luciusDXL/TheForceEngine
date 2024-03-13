@@ -10,3 +10,4 @@
 "Goodbye."              // TFE_MSG_DIE
 "One-Hit Kill Toggle."  // TFE_MSG_ONEHITKILL
 "Hardcore Mode Toggle." // TFE_MSG_HARDCORE
+"Full-Bright Toggle."   // TFE_MSG_FULLBRIGHT

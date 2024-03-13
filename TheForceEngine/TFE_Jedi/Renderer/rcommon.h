@@ -78,6 +78,7 @@ namespace TFE_Jedi
 	extern s32 s_lightCount;	// Number of directional lights that affect 3D objects.
 
 	extern JBool s_flatLighting;
+	extern JBool s_fullBright;	// Used by LABRIGHT (full-bright) cheat
 
 	// Limits
 	extern s32 s_maxSegCount;

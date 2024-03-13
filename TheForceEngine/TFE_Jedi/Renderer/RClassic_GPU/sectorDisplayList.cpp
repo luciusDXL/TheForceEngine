@@ -371,8 +371,11 @@ namespace TFE_Jedi
 		bool stretchToTop = false;
 
 		Vec4f pos = { wallSeg->v0.x, wallSeg->v0.z, wallSeg->v1.x, wallSeg->v1.z };
-		const Vec4ui data = {  nextId/*partId | nextSector*/, (u32)curSector->index/*sectorId*/,
+		Vec4ui data = {  nextId/*partId | nextSector*/, (u32)curSector->index/*sectorId*/,
 				    		   wallLight | portalInfo, 0u/*textureId*/ };
+
+		// TFE fullbright cheat (LABRIGHT); if enabled, add fullbright flag to the flags field:
+		if (s_fullBright) data.x |= SPARTID_FULLBRIGHT;
 
 		if (nextSector)
 		{
