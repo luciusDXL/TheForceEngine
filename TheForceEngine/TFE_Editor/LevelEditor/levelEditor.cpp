@@ -3336,6 +3336,7 @@ namespace LevelEditor
 		}
 		// Any segment of A intersect segment of B.
 		// This is O(N*M), where N = edgeCountA, M = edgeCountB.
+		const f32 eps = 1e-3f;
 		const Edge* edgeA = polyA->edge.data();
 		for (s32 eA = 0; eA < edgeCountA; eA++, edgeA++)
 		{
@@ -3348,7 +3349,7 @@ namespace LevelEditor
 				Vec2f vB1 = vtxB[edgeB->i1];
 
 				Vec2f vI;
-				if (TFE_Polygon::lineSegmentsIntersect(vA0, vA1, vB0, vB1, &vI))
+				if (TFE_Polygon::lineSegmentsIntersect(vA0, vA1, vB0, vB1, &vI, nullptr, nullptr, eps))
 				{
 					return true;
 				}
@@ -3424,9 +3425,9 @@ namespace LevelEditor
 		s_sourceWallList.push_back(swall);
 	}
 
-	void mapWallToSourceList(const EditorSector* sector, EditorWall* wall)
+	bool mapWallToSourceList(const EditorSector* sector, EditorWall* wall)
 	{
-		if (s_sourceWallList.empty()) { return; }
+		if (s_sourceWallList.empty()) { return false; }
 
 		const Vec2f v0 = sector->vtx[wall->idx[0]];
 		const Vec2f v1 = sector->vtx[wall->idx[1]];
@@ -3506,7 +3507,7 @@ namespace LevelEditor
 				wall->tex[i].offset.x += uSplit;
 				wall->tex[i].offset.z += vSplit;
 			}
-			return;
+			return true;
 		}
 
 		if (s_newWallTexOverride >= 0)
@@ -3540,34 +3541,20 @@ namespace LevelEditor
 				}
 			}
 		}
+		return true;
 	}
 
-	void updateSectorFromPolygon(EditorSector* sector, const std::vector<EditorWall>& curWalls, const BPolygon& poly)
+	void updateSectorFromPolygon(EditorSector* sector, const BPolygon& poly)
 	{
-		struct AdjoinFix
-		{
-			s32 wallIndex;
-			s32 adjoinId;
-		};
-
-		// Re-use the existing sector.
-		// Rebuild the sector.
 		sector->walls.clear();
 		sector->vtx.clear();
 
 		const s32 edgeCount = (s32)poly.edges.size();
 		const BEdge* edge = poly.edges.data();
-		std::vector<AdjoinFix> wallsToFix;
 		sector->walls.reserve(edgeCount);
-		bool inputWalls = !curWalls.empty();
-		bool hasSectors = !s_level.sectors.empty();
 		for (s32 e = 0; e < edgeCount; e++, edge++)
 		{
 			EditorWall wall = {};
-			wall.tex[WP_MID].texIndex = getDefaultTextureIndex(WP_MID);
-			wall.tex[WP_TOP].texIndex = getDefaultTextureIndex(WP_TOP);
-			wall.tex[WP_BOT].texIndex = getDefaultTextureIndex(WP_BOT);
-
 			wall.idx[0] = insertVertexIntoSector(sector, edge->v0);
 			wall.idx[1] = insertVertexIntoSector(sector, edge->v1);
 			// Avoid placing denegerate walls.
@@ -3576,10 +3563,12 @@ namespace LevelEditor
 				continue;
 			}
 
-			wall.adjoinId = -1;
-			wall.mirrorId = -1;
-			mapWallToSourceList(sector, &wall);
-
+			if (!mapWallToSourceList(sector, &wall))
+			{
+				wall.tex[WP_MID].texIndex = getDefaultTextureIndex(WP_MID);
+				wall.tex[WP_TOP].texIndex = getDefaultTextureIndex(WP_TOP);
+				wall.tex[WP_BOT].texIndex = getDefaultTextureIndex(WP_BOT);
+			}
 			sector->walls.push_back(wall);
 		}
 	}
@@ -3619,6 +3608,17 @@ namespace LevelEditor
 		HFLAG_DEFAULT   = HFLAG_SET_FLOOR | HFLAG_SET_CEIL,
 	};
 
+	struct ExactIntersect
+	{
+		f32 u;
+		Vec2f v;
+	};
+
+	bool sortByU(ExactIntersect& a, ExactIntersect& b)
+	{
+		return a.u < b.u;
+	}
+
 	void handleClipInteriorPolygons(s32 candidateCount, const BPolygon* candidateList, u32 heightFlags, f32 clipFloor, f32 clipCeil, EditorSector* newSector, BPolygon* outPoly)
 	{
 		// Add intersections from all candidate polygons.
@@ -3638,6 +3638,63 @@ namespace LevelEditor
 		// This is a new sector, so add to the current group.
 		newSector->groupId = groups_getCurrentId();
 		newSector->groupIndex = 0;
+	}
+
+	// Add vertices from shape that touch the polygon edges to those edges to avoid precision issues when clipping.
+	void addTouchingVertsToPolygon(const s32 shapeVtxCount, const Vec2f* shapeVtx, BPolygon* cpoly)
+	{
+		BPolygon tmp = {};
+		s32 edgeCount = (s32)cpoly->edges.size();
+		bool hasIntersections = false;
+
+		std::vector<ExactIntersect> eit;
+		BEdge* cedge = cpoly->edges.data();
+		for (s32 e = 0; e < edgeCount; e++, cedge++)
+		{
+			Vec2f v0 = cedge->v0;
+			Vec2f v1 = cedge->v1;
+
+			eit.clear();
+			for (s32 v = 0; v < shapeVtxCount; v++)
+			{
+				Vec2f v2 = shapeVtx[v + 0];
+				Vec2f v3 = shapeVtx[(v + 1) % shapeVtxCount];
+
+				Vec2f vI;
+				f32 s, t;
+				if (TFE_Polygon::lineSegmentsIntersect(v0, v1, v2, v3, &vI, &s, &t))
+				{
+					if (s > 0.0f && s < 1.0f && (t < 0.001f || t > 1.0f - 0.001f))
+					{
+						vI = t < 0.001f ? v2 : v3;
+						hasIntersections = true;
+						eit.push_back({ s, vI });
+					}
+				}
+			}
+
+			if (!eit.empty())
+			{
+				std::sort(eit.begin(), eit.end(), sortByU);
+				const s32 iCount = (s32)eit.size();
+				ExactIntersect* it = eit.data();
+				for (s32 i = 0; i < iCount; i++, it++)
+				{
+					TFE_Polygon::addEdgeToBPoly(v0, it->v, &tmp);
+					v0 = it->v;
+				}
+				// Insert the final edge.
+				TFE_Polygon::addEdgeToBPoly(v0, v1, &tmp);
+			}
+			else
+			{
+				TFE_Polygon::addEdgeToBPoly(v0, v1, &tmp);
+			}
+		}
+		if (hasIntersections)
+		{
+			*cpoly = tmp;
+		}
 	}
 				
 	// Merge a shape into the existing sectors.
@@ -3715,7 +3772,7 @@ namespace LevelEditor
 		BPolygon shapePolyClip = {};
 		for (s32 i = 0; i < vtxCount; i++)
 		{
-			TFE_Polygon::addEdgeToBPoly(vtx[i], vtx[(i + 1) % vtxCount], 0.0f, i, &shapePolyClip);
+			TFE_Polygon::addEdgeToBPoly(vtx[i], vtx[(i + 1) % vtxCount], &shapePolyClip);
 		}
 
 		// 2. check for overlap candidates.
@@ -3728,7 +3785,6 @@ namespace LevelEditor
 		{
 			// TODO: Better spatial queries to avoid looping over everything...
 			// TODO: Factor out so the rendering can be altered accordingly...
-			// TODO: Support drawing on the ceiling...
 			sector = s_level.sectors.data();
 			for (s32 s = 0; s < sectorCount; s++, sector++)
 			{
@@ -3739,7 +3795,7 @@ namespace LevelEditor
 
 				bool onFloor = fabsf(heights[0] - sector->floorHeight) < FLT_EPSILON;
 				bool onCeil  = fabsf(heights[0] - sector->ceilHeight) < FLT_EPSILON;
-				if ((onFloor || onCeil) && TFE_Polygon::pointInsidePolygon(&sector->poly, vtx[firstVertex]))
+				if ((onFloor || onCeil) && (TFE_Polygon::pointInsidePolygon(&sector->poly, vtx[firstVertex]) || TFE_Polygon::pointOnPolygonEdge(&sector->poly, vtx[firstVertex]) >= 0))
 				{
 					// This is a sub-sector, so adjust the heights accordingly.
 					heightFlags = onFloor ? HFLAG_SET_FLOOR : HFLAG_SET_CEIL;
@@ -3753,6 +3809,15 @@ namespace LevelEditor
 				}
 			}
 		}
+
+		// 2a. Expand the bounds slightly to avoid precision issues.
+		const f32 expand = 0.01f;
+		shapeBounds[0].x -= expand;
+		shapeBounds[0].y -= expand;
+		shapeBounds[0].z -= expand;
+		shapeBounds[1].x += expand;
+		shapeBounds[1].y += expand;
+		shapeBounds[1].z += expand;
 
 		// 2b. Then add potentially overlapping sectors.
 		sector = s_level.sectors.data();
@@ -3800,11 +3865,24 @@ namespace LevelEditor
 				{
 					addToAdjoinFixupList(wall->adjoinId, adjoinSectorsToFix);
 					EditorSector* next = &s_level.sectors[wall->adjoinId];
-					assert(wall->mirrorId < (s32)next->walls.size());
 					if (wall->mirrorId < (s32)next->walls.size())
 					{
 						next->walls[wall->mirrorId].adjoinId = -1;
 						next->walls[wall->mirrorId].mirrorId = -1;
+					}
+					else
+					{
+						// Invalid mirror, clear out all matching walls.
+						const s32 wallCountNext = (s32)next->walls.size();
+						EditorWall* wallNext = next->walls.data();
+						for (s32 w2 = 0; w2 < wallCountNext; w2++, wallNext++)
+						{
+							if (wallNext->adjoinId == candidate->id)
+							{
+								wallNext->adjoinId = -1;
+								wallNext->mirrorId = -1;
+							}
+						}
 					}
 					wall->adjoinId = -1;
 					wall->mirrorId = -1;
@@ -3814,7 +3892,6 @@ namespace LevelEditor
 
 		std::vector<BPolygon> clipPolyList[2];
 		std::vector<BPolygon> candidatePoly;
-		std::vector<EditorWall> wallsForNewSectors;
 		EditorSector sectorToCopy = {};
 		sectorToCopy.groupId = groups_getCurrentId();
 		sectorToCopy.groupIndex = 0;
@@ -3823,6 +3900,9 @@ namespace LevelEditor
 		clipPolyList[curClipRead].push_back(shapePolyClip);
 
 		// Build the candidate polygons.
+		const s32 shapeVtxCount = (s32)s_shape.size();
+		const Vec2f* shapeVtx = s_shape.data();
+
 		std::vector<BPolygon> cpolyList;
 		cpolyList.resize(candidateCount);
 		for (s32 s = 0; s < candidateCount; s++)
@@ -3838,8 +3918,12 @@ namespace LevelEditor
 			const Vec2f* cvtx = candidate->vtx.data();
 			for (s32 w = 0; w < wallCount; w++, wall++)
 			{
-				TFE_Polygon::addEdgeToBPoly(cvtx[wall->idx[0]], cvtx[wall->idx[1]], 0.0f, w, cpoly);
+				TFE_Polygon::addEdgeToBPoly(cvtx[wall->idx[0]], cvtx[wall->idx[1]], cpoly);
 			}
+
+			// Insert vertices where the shape polygon touches or nearly touches the candidate edges.
+			// This is to make sure that points on sloped edges are handled properly.
+			addTouchingVertsToPolygon(shapeVtxCount, shapeVtx, cpoly);
 		}
 
 		// Clip the candidate polygons with the clip polygon based on draw mode.
@@ -3860,7 +3944,7 @@ namespace LevelEditor
 			{
 				// Re-use the existing sector for the first result.
 				std::vector<EditorWall> walls = candidate->walls;
-				updateSectorFromPolygon(candidate, walls, outPoly[0]);
+				updateSectorFromPolygon(candidate, outPoly[0]);
 				sectorToPolygon(candidate);
 				addToAdjoinFixupList(candidate->id, adjoinSectorsToFix);
 
@@ -3887,14 +3971,13 @@ namespace LevelEditor
 					EditorSector* newPtr = &s_level.sectors.back();
 					addToAdjoinFixupList(newPtr->id, adjoinSectorsToFix);
 
-					updateSectorFromPolygon(newPtr, walls, outPoly[p]);
+					updateSectorFromPolygon(newPtr, outPoly[p]);
 					sectorToPolygon(newPtr);
 				}
 
 				candidatePoly.insert(candidatePoly.end(), outPoly.begin(), outPoly.end());
-				if (wallsForNewSectors.empty())
+				if (sectorToCopy.id == 0)
 				{
-					wallsForNewSectors = walls;
 					sectorToCopy = *candidate;
 				}
 			}
@@ -3910,9 +3993,13 @@ namespace LevelEditor
 		{
 			if (outPolyCount)
 			{
+				std::vector<Vec2f> insertionPt;
+
 				BPolygon* poly = candidatePoly.data();
 				for (s32 p = 0; p < outPolyCount; p++, poly++)
 				{
+					TFE_Polygon::buildInsertionPointList(poly, &insertionPt);
+
 					s32 clipCount = (s32)clipPolyList[curClipRead].size();
 					BPolygon* clipPoly = clipPolyList[curClipRead].data();
 
@@ -3929,10 +4016,16 @@ namespace LevelEditor
 					std::swap(curClipRead, curClipWrite);
 				}
 
-				// Final result.
+				// Insert shared vertices.
 				s32 clipCount = (s32)clipPolyList[curClipRead].size();
-				BPolygon* clipPoly = clipPolyList[curClipRead].data();
+				if (clipCount > 0)
+				{
+					TFE_Polygon::insertPointsIntoPolygons(insertionPt, &clipPolyList[curClipRead]);
+				}
 
+				// Final result.
+				BPolygon* clipPoly = clipPolyList[curClipRead].data();
+								
 				// Create new sectors for the rest.
 				for (s32 p = 0; p < clipCount; p++)
 				{
@@ -3956,7 +4049,7 @@ namespace LevelEditor
 					EditorSector* newPtr = &s_level.sectors.back();
 					addToAdjoinFixupList(newPtr->id, adjoinSectorsToFix);
 
-					updateSectorFromPolygon(newPtr, wallsForNewSectors, clipPoly[p]);
+					updateSectorFromPolygon(newPtr, clipPoly[p]);
 					sectorToPolygon(newPtr);
 				}
 			}
@@ -3970,7 +4063,7 @@ namespace LevelEditor
 				EditorSector* newPtr = &s_level.sectors.back();
 				addToAdjoinFixupList(newPtr->id, adjoinSectorsToFix);
 
-				updateSectorFromPolygon(newPtr, wallsForNewSectors, shapePolyClip);
+				updateSectorFromPolygon(newPtr, shapePolyClip);
 				sectorToPolygon(newPtr);
 			}
 		}
@@ -4266,9 +4359,9 @@ namespace LevelEditor
 				const Vec3f rect[] =
 				{
 					extrudePoint2dTo3d({x0, 0.0f}, s_drawHeight[0]),
-					extrudePoint2dTo3d({x0, 0.0f}, s_drawHeight[1]),
+					extrudePoint2dTo3d({x1, 0.0f}, s_drawHeight[0]),
 					extrudePoint2dTo3d({x1, 0.0f}, s_drawHeight[1]),
-					extrudePoint2dTo3d({x1, 0.0f}, s_drawHeight[0])
+					extrudePoint2dTo3d({x0, 0.0f}, s_drawHeight[1])
 				};
 
 				Vec2f* outVtx = s_shape.data();
@@ -4279,7 +4372,14 @@ namespace LevelEditor
 
 				// Merge
 				f32 heights[2];
-				if (floorHeight == sector->floorHeight)
+				bool forceSubtract = false;
+				if (floorHeight == sector->floorHeight && ceilHeight == sector->ceilHeight)
+				{
+					heights[0] = sector->floorHeight;
+					heights[1] = sector->ceilHeight;
+					forceSubtract = true;
+				}
+				else if (floorHeight == sector->floorHeight)
 				{
 					heights[0] = ceilHeight;
 					heights[1] = sector->ceilHeight;
@@ -4290,7 +4390,10 @@ namespace LevelEditor
 					heights[1] = floorHeight;
 				}
 
+				BoolMode boolMode = s_boolMode;
+				s_boolMode = forceSubtract ? BMODE_SUBTRACT : boolMode;
 				edit_createSectorFromShape(heights, 4, outVtx, false);
+				s_boolMode = boolMode;
 			}
 			s_newWallTexOverride = -1;
 		}
@@ -4398,7 +4501,7 @@ namespace LevelEditor
 	{
 		Vec3f pos3d = { pos.x, s_gridHeight, pos.z };
 		SectorList sectorList;
-		if (!getOverlappingSectorsPt(&pos3d, &sectorList))
+		if (!getOverlappingSectorsPt(&pos3d, s_curLayer, &sectorList, 0.5f))
 		{
 			return false;
 		}
@@ -4421,6 +4524,8 @@ namespace LevelEditor
 				const Vec2f* v1 = &vtx[wall->idx[1]];
 				Vec2f pointOnSeg;
 				f32 s = TFE_Polygon::closestPointOnLineSegment(*v0, *v1, pos, &pointOnSeg);
+
+				// Higher weighting for vertices?
 
 				const Vec2f diff = { pointOnSeg.x - pos.x, pointOnSeg.z - pos.z };
 				const f32 distSq = diff.x*diff.x + diff.z*diff.z;
@@ -4648,7 +4753,22 @@ namespace LevelEditor
 		{
 			hoverSector = hitInfo->hitSectorId < 0 ? nullptr : &s_level.sectors[hitInfo->hitSectorId];
 		}
-		
+				
+		if (s_view == EDIT_VIEW_3D && s_drawStarted && !s_extrudeEnabled)
+		{
+			// Get the closest point on the grid.
+			if ((s_camera.pos.y > s_gridHeight && s_cursor3d.y <= s_gridHeight) ||
+				(s_camera.pos.y < s_gridHeight && s_cursor3d.y >= s_gridHeight))
+			{
+				f32 u = (s_gridHeight - s_camera.pos.y) / (s_cursor3d.y - s_camera.pos.y);
+				assert(fabsf(s_camera.pos.y + u * (s_cursor3d.y - s_camera.pos.y) - s_gridHeight) < 0.001f);
+
+				s_cursor3d.x = s_camera.pos.x + u * (s_cursor3d.x - s_camera.pos.x);
+				s_cursor3d.y = s_gridHeight;
+				s_cursor3d.z = s_camera.pos.z + u * (s_cursor3d.z - s_camera.pos.z);
+			}
+		}
+
 		// Snap the cursor to the grid.
 		Vec2f onGrid = { s_cursor3d.x, s_cursor3d.z };
 

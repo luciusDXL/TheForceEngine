@@ -215,7 +215,7 @@ namespace LevelEditor
 	s32  findSector2d(s32 layer, const Vec2f* pos);
 	bool traceRay(const Ray* ray, RayHitInfo* hitInfo, bool flipFaces, bool canHitSigns, bool canHitObjects = false);
 	// Get all sectors that have bounds that contain the point.
-	bool getOverlappingSectorsPt(const Vec3f* pos, SectorList* result);
+	bool getOverlappingSectorsPt(const Vec3f* pos, s32 curLayer, SectorList* result, f32 padding = 0.0f);
 	// Get all sectors that have bounds that overlap the input bounds.
 	bool getOverlappingSectorsBounds(const Vec3f bounds[2], SectorList* result);
 	// Helpers

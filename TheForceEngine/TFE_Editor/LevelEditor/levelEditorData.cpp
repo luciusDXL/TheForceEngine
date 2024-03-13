@@ -2338,7 +2338,7 @@ namespace LevelEditor
 	}
 
 	// TODO: Spatial data structure to handle cases where there are 10k, 100k, etc. sectors.
-	bool getOverlappingSectorsPt(const Vec3f* pos, SectorList* result)
+	bool getOverlappingSectorsPt(const Vec3f* pos, s32 curLayer, SectorList* result, f32 padding)
 	{
 		if (!pos || !result) { return false; }
 
@@ -2347,15 +2347,22 @@ namespace LevelEditor
 		EditorSector* sector = s_level.sectors.data();
 		for (s32 i = 0; i < count; i++, sector++)
 		{
-			if (pos->x < sector->bounds[0].x || pos->x > sector->bounds[1].x ||
-				pos->y < sector->bounds[0].y || pos->y > sector->bounds[1].y ||
-				pos->z < sector->bounds[0].z || pos->z > sector->bounds[1].z)
+			// It has to be on a visible layer.
+			if (sector->layer != LAYER_ANY && sector->layer != curLayer) { continue; }
+			// The group has to be interactible.
+			if (!sector_isInteractable(sector)) { continue; }
+			// The position has to be within the bounds of the sector.
+			// TODO: Increase the bounds range?
+			if (pos->x < sector->bounds[0].x-padding || pos->x > sector->bounds[1].x+padding ||
+				pos->y < sector->bounds[0].y-padding || pos->y > sector->bounds[1].y+padding ||
+				pos->z < sector->bounds[0].z-padding || pos->z > sector->bounds[1].z+padding)
 			{
 				continue;
 			}
+			// Add the sector as a potential result.
 			result->push_back(sector);
 		}
-
+		// Are there any potential results?
 		return !result->empty();
 	}
 	   

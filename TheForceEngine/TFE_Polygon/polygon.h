@@ -39,13 +39,8 @@ struct BEdge
 {
 	Vec2f v0 = { 0 };
 	Vec2f v1 = { 0 };
-	f32 u0 = 0.0f;
-	f32 u1 = 0.0f;
 	s32 nextEdge = -1;
 	s32 prevEdge = -1;
-	s32 nextMirrorEdge = -1;
-	s32 prevMirrorEdge = -1;
-	s32 srcWallIndex = -1;
 };
 
 struct BPolygon
@@ -58,15 +53,19 @@ namespace TFE_Polygon
 {
 	bool computeTriangulation(Polygon* poly, u32 debug=PDBG_NONE);
 	bool pointInsidePolygon(const Polygon* poly, Vec2f p);
+	// Return edge index or -1 if point not on an edge.
+	s32  pointOnPolygonEdge(const Polygon* poly, Vec2f p);
 
 	void clipInit();
 	void clipDestroy();
 	void clipPolygons(const BPolygon* subject, const BPolygon* clip, std::vector<BPolygon>& outPoly, BoolMode boolMode);
+	void insertPointsIntoPolygons(const std::vector<Vec2f>& insertionPt, std::vector<BPolygon>* poly);
 	bool addEdgeIntersectionsToPoly(BPolygon* subject, const BPolygon* clip);
 	void cleanUpShape(std::vector<Vec2f>& shape);
-	bool addEdgeToBPoly(Vec2f v0, Vec2f v1, f32 uOffset, s32 wallIndex, BPolygon* poly);
+	bool addEdgeToBPoly(Vec2f v0, Vec2f v1, BPolygon* poly);
+	void buildInsertionPointList(const BPolygon* poly, std::vector<Vec2f>* insertionPt);
 
-	bool lineSegmentsIntersect(Vec2f a0, Vec2f a1, Vec2f b0, Vec2f b1, Vec2f* vI = nullptr, f32* u = nullptr, f32* v = nullptr);
+	bool lineSegmentsIntersect(Vec2f a0, Vec2f a1, Vec2f b0, Vec2f b1, Vec2f* vI = nullptr, f32* u = nullptr, f32* v = nullptr, f32 sEps = 0.0f);
 	f32 closestPointOnLineSegment(Vec2f p0, Vec2f p1, Vec2f p2, Vec2f* point);
 
 	bool vtxEqual(const Vec2f* a, const Vec2f* b);
