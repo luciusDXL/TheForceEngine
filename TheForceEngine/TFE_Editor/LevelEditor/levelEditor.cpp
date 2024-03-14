@@ -59,9 +59,10 @@ namespace LevelEditor
 	const f32 c_defaultZoom = 0.25f;
 	const f32 c_defaultYaw = PI;
 	const f32 c_defaultCameraHeight = 6.0f;
+	const f32 c_relativeVtxSnapScale = 0.125f;
 	const f64 c_doubleClickThreshold = 0.25f;
 	const s32 c_vanillaDarkForcesNameLimit = 16;
-
+	
 	struct VertexWallGroup
 	{
 		EditorSector* sector;
@@ -4214,7 +4215,14 @@ namespace LevelEditor
 		{
 			EditorWall* extrudeWall = &sector->walls[s_extrudePlane.wallId];
 			assert(s_extrudePlane.wallId >= 0 && s_extrudePlane.wallId < (s32)sector->walls.size());
-
+												
+			// Does the wall already have an ajoin?
+			if (extrudeWall->adjoinId >= 0 && !dualAdjoinSupported)
+			{
+				LE_ERROR("Cannot complete operation:");
+				LE_ERROR("  Dual adjoins are not supported using this FeatureSet.");
+				return -1;
+			}
 			const f32 floorHeight = std::min(s_shape[0].z, s_shape[1].z) + s_extrudePlane.origin.y;
 			const f32 ceilHeight = std::max(s_shape[0].z, s_shape[1].z) + s_extrudePlane.origin.y;
 
@@ -4223,13 +4231,6 @@ namespace LevelEditor
 			extrudeWall->tex[WP_TOP] = extrudeWall->tex[WP_MID];
 			extrudeWall->tex[WP_TOP].offset.z += (ceilHeight - sector->floorHeight);
 
-			// Does the wall already have an ajoin?
-			if (extrudeWall->adjoinId >= 0 && !dualAdjoinSupported)
-			{
-				LE_ERROR("Cannot complete operation:");
-				LE_ERROR("  Dual adjoins are not supported using this FeatureSet.");
-				return -1;
-			}
 			const f32 x0 = std::min(s_shape[0].x, s_shape[1].x);
 			const f32 x1 = std::max(s_shape[0].x, s_shape[1].x);
 			const f32 d = s_drawHeight[1];
@@ -4327,8 +4328,9 @@ namespace LevelEditor
 			const f32 x0 = std::min(s_shape[0].x, s_shape[1].x);
 			const f32 x1 = std::max(s_shape[0].x, s_shape[1].x);
 			const f32 d = -s_drawHeight[1];
+			nextWallId = s_extrudePlane.wallId;
 
-			EditorWall* extrudeWall = s_extrudePlane.wallId >= 0 ? &sector->walls[s_extrudePlane.wallId] : nullptr;
+			EditorWall* extrudeWall = s_extrudePlane.wallId >= 0 && s_extrudePlane.wallId < (s32)sector->walls.size() ? &sector->walls[s_extrudePlane.wallId] : nullptr;
 			if (extrudeWall && extrudeWall->tex[WP_MID].texIndex >= 0)
 			{
 				s_newWallTexOverride = extrudeWall->tex[WP_MID].texIndex;
@@ -4466,7 +4468,7 @@ namespace LevelEditor
 		s_testShape = s_shape;
 		s_shape.resize(2);
 		const s32 splitCount = (s32)splits.size();
-		for (s32 i = 0; i < splitCount - 1; i++)
+		for (s32 i = 0; i < splitCount - 1 && extrudeWallId >= 0; i++)
 		{
 			Vec2f ext;
 			f32 xHalf = (splits[i] + splits[i + 1]) * 0.5f;
@@ -4496,27 +4498,57 @@ namespace LevelEditor
 			s_drawStarted = false;
 		}
 	}
-
-	bool snapToLine(Vec2f& pos, f32 maxDist, Vec2f& newPos, FeatureId& snappedFeature)
+		
+	bool snapToLine2d(Vec2f& pos, f32 maxDist, Vec2f& newPos, FeatureId& snappedFeature)
 	{
-		Vec3f pos3d = { pos.x, s_gridHeight, pos.z };
 		SectorList sectorList;
+		Vec3f pos3d = { pos.x, s_gridHeight, pos.z };
 		if (!getOverlappingSectorsPt(&pos3d, s_curLayer, &sectorList, 0.5f))
 		{
 			return false;
 		}
 
 		const s32 count = (s32)sectorList.size();
+		if (count < 1)
+		{
+			return false;
+		}
+
 		EditorSector** list = sectorList.data();
-		f32 closestDistSq = FLT_MAX;
-		Vec2f closestPt = pos;
-		FeatureId closestFeature = FeatureId(0);
+		EditorSector* closestSector = nullptr;
+
+		// Higher weighting to vertices.
+		f32 closestDistSqVtx  = FLT_MAX;
+		f32 closestDistSqWall = FLT_MAX;
+		EditorSector* closestSectorVtx = nullptr;
+		EditorSector* closestSectorWall = nullptr;
+		f32 maxDistSq = maxDist * maxDist;
+		s32 vtxIndex = -1;
+		s32 wallIndex = -1;
+		
+		Vec2f closestPtVtx;
+		Vec2f closestPtWall;
+
 		for (s32 i = 0; i < count; i++)
 		{
 			EditorSector* sector = list[i];
 			const s32 wallCount = (s32)sector->walls.size();
+			const s32 vtxCount = (s32)sector->vtx.size();
 			const EditorWall* wall = sector->walls.data();
 			const Vec2f* vtx = sector->vtx.data();
+
+			for (s32 v = 0; v < vtxCount; v++)
+			{
+				Vec2f offset = { pos.x - vtx[v].x, pos.z - vtx[v].z };
+				f32 distSq = offset.x*offset.x + offset.z*offset.z;
+				if (distSq < closestDistSqVtx && distSq < maxDistSq)
+				{
+					closestDistSqVtx = distSq;
+					vtxIndex = v;
+					closestSectorVtx = sector;
+					closestPtVtx = vtx[v];
+				}
+			}
 
 			for (s32 w = 0; w < wallCount; w++, wall++)
 			{
@@ -4525,26 +4557,200 @@ namespace LevelEditor
 				Vec2f pointOnSeg;
 				f32 s = TFE_Polygon::closestPointOnLineSegment(*v0, *v1, pos, &pointOnSeg);
 
-				// Higher weighting for vertices?
-
 				const Vec2f diff = { pointOnSeg.x - pos.x, pointOnSeg.z - pos.z };
 				const f32 distSq = diff.x*diff.x + diff.z*diff.z;
-				if (distSq < closestDistSq)
+				if (distSq < closestDistSqWall && distSq < maxDistSq)
 				{
-					closestDistSq = distSq;
-					closestPt = pointOnSeg;
-					closestFeature = createFeatureId(sector, w);
+					closestDistSqWall = distSq;
+					wallIndex = w;
+					closestSectorWall = sector;
+					closestPtWall = pointOnSeg;
 				}
 			}
 		}
 
-		if (closestDistSq > maxDist*maxDist)
+		if (vtxIndex >= 0 && (wallIndex < 0 || closestDistSqVtx <= closestDistSqWall || closestDistSqVtx < maxDistSq * c_relativeVtxSnapScale))
+		{
+			newPos = closestPtVtx;
+			snappedFeature = createFeatureId(closestSectorVtx, vtxIndex, 1);
+		}
+		else if (wallIndex >= 0)
+		{
+			newPos = closestPtWall;
+			snappedFeature = createFeatureId(closestSectorWall, wallIndex, 0);
+		}
+
+		return vtxIndex >= 0 || wallIndex >= 0;
+	}
+
+	bool snapToLine3d(Vec3f& pos3d, f32 maxDist, f32 maxCamDist, Vec2f& newPos, FeatureId& snappedFeature, f32* outDistSq, f32* outCameraDistSq)
+	{
+		SectorList sectorList;
+		if (!getOverlappingSectorsPt(&pos3d, s_curLayer, &sectorList, 0.5f))
 		{
 			return false;
 		}
 
-		newPos = closestPt;
-		snappedFeature = closestFeature;
+		const s32 count = (s32)sectorList.size();
+		if (count < 1)
+		{
+			return false;
+		}
+
+		EditorSector** list = sectorList.data();
+		EditorSector* closestSector = nullptr;
+
+		// Higher weighting to vertices.
+		f32 closestDistSqVtx = FLT_MAX;
+		f32 closestDistSqWall = FLT_MAX;
+		EditorSector* closestSectorVtx = nullptr;
+		EditorSector* closestSectorWall = nullptr;
+		f32 maxDistSq = maxDist * maxDist;
+		f32 maxCamDistSq = maxCamDist * maxCamDist;
+		s32 vtxIndex = -1;
+		s32 wallIndex = -1;
+
+		Vec2f closestPtVtx;
+		Vec2f closestPtWall;
+		f32 camDistSqVtx = FLT_MAX;
+		f32 camDistSqWall = FLT_MAX;
+
+		for (s32 i = 0; i < count; i++)
+		{
+			EditorSector* sector = list[i];
+			const s32 wallCount = (s32)sector->walls.size();
+			const s32 vtxCount = (s32)sector->vtx.size();
+			const EditorWall* wall = sector->walls.data();
+			const Vec2f* vtx = sector->vtx.data();
+
+			for (s32 v = 0; v < vtxCount; v++)
+			{
+				const Vec2f offset = { pos3d.x - vtx[v].x, pos3d.z - vtx[v].z };
+				const f32 distSq = offset.x*offset.x + offset.z*offset.z;
+
+				const Vec3f camOffset = { s_camera.pos.x - vtx[v].x, s_camera.pos.y - sector->floorHeight, s_camera.pos.z - vtx[v].z };
+				const f32 camDistSq = camOffset.x*camOffset.x + camOffset.y*camOffset.y + camOffset.z*camOffset.z;
+
+				if (distSq < closestDistSqVtx && distSq < maxDistSq && camDistSq < maxCamDistSq)
+				{
+					closestDistSqVtx = distSq;
+					camDistSqVtx = camDistSq;
+					vtxIndex = v;
+					closestSectorVtx = sector;
+					closestPtVtx = vtx[v];
+				}
+			}
+
+			for (s32 w = 0; w < wallCount; w++, wall++)
+			{
+				const Vec2f* v0 = &vtx[wall->idx[0]];
+				const Vec2f* v1 = &vtx[wall->idx[1]];
+				Vec2f pointOnSeg;
+				f32 s = TFE_Polygon::closestPointOnLineSegment(*v0, *v1, { pos3d.x, pos3d.z }, &pointOnSeg);
+
+				const Vec2f diff = { pointOnSeg.x - pos3d.x, pointOnSeg.z - pos3d.z };
+				const f32 distSq = diff.x*diff.x + diff.z*diff.z;
+
+				const Vec3f camOffset = { s_camera.pos.x - pointOnSeg.x, s_camera.pos.y - sector->floorHeight, s_camera.pos.z - pointOnSeg.z };
+				const f32 camDistSq = camOffset.x*camOffset.x + camOffset.y*camOffset.y + camOffset.z*camOffset.z;
+
+				if (distSq < closestDistSqWall && distSq < maxDistSq && camDistSq < maxCamDistSq)
+				{
+					closestDistSqWall = distSq;
+					camDistSqWall = camDistSq;
+					wallIndex = w;
+					closestSectorWall = sector;
+					closestPtWall = pointOnSeg;
+				}
+			}
+		}
+
+		if (vtxIndex >= 0 && (wallIndex < 0 || closestDistSqVtx <= closestDistSqWall || closestDistSqVtx < maxDistSq * c_relativeVtxSnapScale))
+		{
+			newPos = closestPtVtx;
+			snappedFeature = createFeatureId(closestSectorVtx, vtxIndex, 1);
+
+			if (outDistSq) { *outDistSq = closestDistSqVtx; }
+			if (outCameraDistSq) { *outCameraDistSq = camDistSqVtx; }
+		}
+		else if (wallIndex >= 0)
+		{
+			newPos = closestPtWall;
+			snappedFeature = createFeatureId(closestSectorWall, wallIndex, 0);
+
+			if (outDistSq) { *outDistSq = closestDistSqWall; }
+			if (outCameraDistSq) { *outCameraDistSq = camDistSqWall; }
+		}
+
+		return vtxIndex >= 0 || wallIndex >= 0;
+	}
+
+	bool gridCursorIntersection(Vec3f* pos)
+	{
+		if ((s_camera.pos.y > s_gridHeight && s_cursor3d.y < s_camera.pos.y) ||
+			(s_camera.pos.y < s_gridHeight && s_cursor3d.y > s_camera.pos.y))
+		{
+			f32 u = (s_gridHeight - s_camera.pos.y) / (s_cursor3d.y - s_camera.pos.y);
+			assert(fabsf(s_camera.pos.y + u * (s_cursor3d.y - s_camera.pos.y) - s_gridHeight) < 0.001f);
+
+			pos->x = s_camera.pos.x + u * (s_cursor3d.x - s_camera.pos.x);
+			pos->y = s_gridHeight;
+			pos->z = s_camera.pos.z + u * (s_cursor3d.z - s_camera.pos.z);
+			return true;
+		}
+		return false;
+	}
+
+	bool snapToLine(Vec2f& pos, f32 maxDist, Vec2f& newPos, FeatureId& snappedFeature)
+	{
+		if (s_view == EDIT_VIEW_2D)
+		{
+			return snapToLine2d(pos, maxDist, newPos, snappedFeature);
+		}
+		else
+		{
+			Vec2f _newPos[2];
+			FeatureId _snappedFeature[2];
+			f32 distSq[2], camDistSq[2];
+			s32 foundCount = 0;
+
+			// Current cursor position.
+			if (snapToLine3d(s_cursor3d, maxDist, 25.0f, _newPos[foundCount], _snappedFeature[foundCount], &distSq[foundCount], &camDistSq[foundCount]))
+			{
+				foundCount++;
+			}
+
+			// Position on grid.
+			Vec3f testPos;
+			if (gridCursorIntersection(&testPos))
+			{
+				if (testPos.y != s_cursor3d.y && snapToLine3d(testPos, maxDist, 25.0f, _newPos[foundCount], _snappedFeature[foundCount], &distSq[foundCount], &camDistSq[foundCount]))
+				{
+					foundCount++;
+				}
+			}
+			if (!foundCount) { return false; }
+
+			if (foundCount == 1)
+			{
+				newPos = _newPos[0];
+				snappedFeature = _snappedFeature[0];
+			}
+			else
+			{
+				// Which the closer of the two to the camera.
+				if (camDistSq[0] <= camDistSq[1])
+				{
+					newPos = _newPos[0];
+					snappedFeature = _snappedFeature[0];
+				}
+				else
+				{
+					newPos = _newPos[1];
+					snappedFeature = _snappedFeature[1];
+				}
+			}
+		}
 		return true;
 	}
 		
@@ -4753,21 +4959,6 @@ namespace LevelEditor
 		{
 			hoverSector = hitInfo->hitSectorId < 0 ? nullptr : &s_level.sectors[hitInfo->hitSectorId];
 		}
-				
-		if (s_view == EDIT_VIEW_3D && s_drawStarted && !s_extrudeEnabled)
-		{
-			// Get the closest point on the grid.
-			if ((s_camera.pos.y > s_gridHeight && s_cursor3d.y <= s_gridHeight) ||
-				(s_camera.pos.y < s_gridHeight && s_cursor3d.y >= s_gridHeight))
-			{
-				f32 u = (s_gridHeight - s_camera.pos.y) / (s_cursor3d.y - s_camera.pos.y);
-				assert(fabsf(s_camera.pos.y + u * (s_cursor3d.y - s_camera.pos.y) - s_gridHeight) < 0.001f);
-
-				s_cursor3d.x = s_camera.pos.x + u * (s_cursor3d.x - s_camera.pos.x);
-				s_cursor3d.y = s_gridHeight;
-				s_cursor3d.z = s_camera.pos.z + u * (s_cursor3d.z - s_camera.pos.z);
-			}
-		}
 
 		// Snap the cursor to the grid.
 		Vec2f onGrid = { s_cursor3d.x, s_cursor3d.z };
@@ -4777,16 +4968,36 @@ namespace LevelEditor
 		FeatureId featureId;
 		if (snapToLine(onGrid, maxLineDist, newPos, featureId))
 		{
-			s32 wallIndex;
-			EditorSector* sector = unpackFeatureId(featureId, &wallIndex);
+			s32 index;
+			s32 type;
+			EditorSector* sector = unpackFeatureId(featureId, &index, &type);
 
 			// Snap the result to the surface grid.
-			Vec3f snapPos = { newPos.x, s_gridHeight, newPos.z };
-			snapToSurfaceGrid(sector, &sector->walls[wallIndex], snapPos);
-			onGrid = { snapPos.x, snapPos.z };
+			if (type == 0)
+			{
+				Vec3f snapPos = { newPos.x, s_gridHeight, newPos.z };
+				snapToSurfaceGrid(sector, &sector->walls[index], snapPos);
+				onGrid = { snapPos.x, snapPos.z };
+			}
+			else if (type == 1)
+			{
+				onGrid = newPos;
+			}
+			s_cursor3d.y = sector->floorHeight;
+		}
+		else if (s_view == EDIT_VIEW_2D)
+		{
+			snapToGrid(&onGrid);
 		}
 		else
 		{
+			// snap to the closer: 3d cursor position or grid intersection.
+			Vec3f posOnGrid;
+			if (gridCursorIntersection(&posOnGrid) && s_drawStarted)
+			{
+				s_cursor3d = posOnGrid;
+				onGrid = { s_cursor3d.x, s_cursor3d.z };
+			}
 			snapToGrid(&onGrid);
 		}
 
