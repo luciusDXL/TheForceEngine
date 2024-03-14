@@ -3697,6 +3697,39 @@ namespace LevelEditor
 			*cpoly = tmp;
 		}
 	}
+
+	bool isShapeSubsector(const EditorSector* sector, s32 firstVertex)
+	{
+		const s32 vtxCount = (s32)s_shape.size();
+		const Vec2f* vtx = s_shape.data();
+		bool firstInside = TFE_Polygon::pointInsidePolygon(&sector->poly, vtx[firstVertex]);
+		bool firstOnEdge = TFE_Polygon::pointOnPolygonEdge(&sector->poly, vtx[firstVertex]) >= 0;
+		// Early out
+		if (!firstInside && !firstOnEdge) { return false; }
+		if (firstInside && !firstOnEdge)  { return true;  }
+
+		// The shape is a subsector _if_
+		//   * Any shape vertex is inside the sector but *not* on the edge.
+		//   * All shape vertices are on the edges.
+		bool allOnEdges = true;
+		for (s32 v = 0; v < vtxCount; v++)
+		{
+			bool inside = TFE_Polygon::pointInsidePolygon(&sector->poly, vtx[v]);
+			bool onEdge = TFE_Polygon::pointOnPolygonEdge(&sector->poly, vtx[v]) >= 0;
+
+			// If not on an edge but inside.
+			if (!onEdge)
+			{
+				allOnEdges = false;
+				if (inside)
+				{
+					return true;
+				}
+			}
+		}
+		// All vertices are on edges.
+		return allOnEdges;
+	}
 				
 	// Merge a shape into the existing sectors.
 	void edit_insertShape(const f32* heights, BoolMode mode, s32 firstVertex, bool allowSubsectorExtrude)
@@ -3796,7 +3829,7 @@ namespace LevelEditor
 
 				bool onFloor = fabsf(heights[0] - sector->floorHeight) < FLT_EPSILON;
 				bool onCeil  = fabsf(heights[0] - sector->ceilHeight) < FLT_EPSILON;
-				if ((onFloor || onCeil) && (TFE_Polygon::pointInsidePolygon(&sector->poly, vtx[firstVertex]) || TFE_Polygon::pointOnPolygonEdge(&sector->poly, vtx[firstVertex]) >= 0))
+				if ((onFloor || onCeil) && isShapeSubsector(sector, firstVertex))
 				{
 					// This is a sub-sector, so adjust the heights accordingly.
 					heightFlags = onFloor ? HFLAG_SET_FLOOR : HFLAG_SET_CEIL;
@@ -4983,7 +5016,11 @@ namespace LevelEditor
 			{
 				onGrid = newPos;
 			}
-			s_cursor3d.y = sector->floorHeight;
+			// Snap to the grid if drawing has already started.
+			if (s_drawStarted)
+			{
+				s_cursor3d.y = s_gridHeight;
+			}
 		}
 		else if (s_view == EDIT_VIEW_2D)
 		{
