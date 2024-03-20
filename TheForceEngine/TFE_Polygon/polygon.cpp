@@ -39,6 +39,8 @@ namespace TFE_Polygon
 	};
 
 	const f32 eps = 1e-3f;
+	const f64 c_toFixed = 65536.0;
+	const f64 c_fromFixed = 1.0 / 65536.0;
 
 	static bool s_init = false;
 	static std::vector<Vec2f> s_vertices;
@@ -847,12 +849,6 @@ namespace TFE_Polygon
 		s32 id;
 	};
 
-	struct IntersectionClip
-	{
-		s32 eC;
-		std::vector<Intersection> it;
-	};
-
 	bool sortByU(Intersection& a, Intersection& b)
 	{
 		return a.u < b.u;
@@ -923,10 +919,10 @@ namespace TFE_Polygon
 		outContour->outsideClip = false;
 		return true;
 	}
-
+		
 	void buildPathsFromContours(const std::vector<Contour>& contourList, ClipperLib::Paths* paths)
 	{
-		const f64 precision = 65536.0;
+		const f64 precision = c_toFixed;
 		const s32 contourCount = (s32)contourList.size();
 		const Contour* contour = contourList.data();
 
@@ -949,7 +945,7 @@ namespace TFE_Polygon
 
 	void buildPathFromShape(const std::vector<Vec2f>& shape, ClipperLib::Path& outPath)
 	{
-		const f64 precision = 65536.0;
+		const f64 precision = c_toFixed;
 		const s32 vtxCount = (s32)shape.size();
 		const Vec2f* vtx = shape.data();
 
@@ -964,7 +960,7 @@ namespace TFE_Polygon
 		
 	void buildContoursFromPaths(const ClipperLib::Paths& paths, s32 outsideClipCount, std::vector<Contour>* contourList)
 	{
-		const f64 precision = 1.0 / 65536.0;
+		const f64 precision = c_fromFixed;
 		const s32 contourCount = (s32)paths.size();
 		const ClipperLib::Path* path = paths.data();
 
@@ -993,7 +989,7 @@ namespace TFE_Polygon
 
 	void buildShapeFromPath(const ClipperLib::Path& path, std::vector<Vec2f>& outShape)
 	{
-		const f64 precision = 1.0 / 65536.0;
+		const f64 precision = c_fromFixed;
 		const s32 vtxCount = (s32)path.size();
 		const ClipperLib::IntPoint* vtx = path.data();
 
@@ -1083,7 +1079,7 @@ namespace TFE_Polygon
 					assert(std::isfinite(v));
 
 					// Make sure the intersection is on the interior of the *subject* edge.
-					if (u > 0.0f && u < 1.0f)
+					if (u > 0.0f && u < 1.0f && !TFE_Polygon::vtxEqual(&sEdge->v0, &vI) && !TFE_Polygon::vtxEqual(&sEdge->v1, &vI))
 					{
 						// Store intersections affecting 'eS'.
 						interSrc.push_back({ vI, u, v, eS, eC, itrId });
@@ -1204,7 +1200,7 @@ namespace TFE_Polygon
 				{
 					Vec2f vI;
 					f32 u = closestPointOnLineSegment(sEdge->v0, sEdge->v1, insertVtx[i], &vI);
-					if (u < eps || u > 1.0f - eps)
+					if (u < FLT_EPSILON || u > 1.0f - FLT_EPSILON)
 					{
 						continue;
 					}
@@ -1261,17 +1257,7 @@ namespace TFE_Polygon
 
 		// Store all of the points in one list to be re-inserted.
 		std::vector<Vec2f> insertionPt;
-		const s32 subContourCount = (s32)subjContours.size();
-		const Contour* ct = subjContours.data();
-		for (s32 i = 0; i < subContourCount; i++, ct++)
-		{
-			const s32 vtxCount = (s32)ct->vtx.size();
-			const Vec2f* vtx = ct->vtx.data();
-			for (s32 v = 0; v < vtxCount; v++)
-			{
-				insertionPt.push_back(vtx[v]);
-			}
-		}
+		buildInsertionPointList(subject, &insertionPt);
 
 		// Build Paths.
 		ClipperLib::Paths subjPaths, clipPaths;
@@ -1283,16 +1269,15 @@ namespace TFE_Polygon
 		s_clipper->AddPaths(clipPaths, ClipperLib::ptClip, true);
 
 		outPoly.clear();
-		std::vector<BPolygon> firstPassPoly;
-		ClipperLib::Paths solution;
-
-		// TODO: Remove zero-area polygons.
+		
 		// We always want the difference in order to get the new edges.
+		ClipperLib::Paths solution;
 		bool result = s_clipper->Execute(ClipperLib::ctDifference, solution, ClipperLib::pftNonZero);
 		if (!result)
 		{ 
 			return;
 		}
+		ClipperLib::CleanPolygons(solution, 1.2f);
 		removeDegeneratePaths(solution);
 		polysOutsideOfClip = (s32)solution.size();
 
@@ -1309,6 +1294,7 @@ namespace TFE_Polygon
 			{
 				return;
 			}
+			ClipperLib::CleanPolygons(solution2, 1.2f);
 			removeDegeneratePaths(solution2);
 
 			// Merge solutions.
@@ -1323,6 +1309,7 @@ namespace TFE_Polygon
 		if (results.empty()) { return; }
 
 		// Outer polygons
+		std::vector<BPolygon> firstPassPoly;
 		const s32 outCount = (s32)results.size();
 		Contour* contour = results.data();
 		std::vector<s32> outPolyIndex;
@@ -1423,7 +1410,7 @@ namespace TFE_Polygon
 			const s32 subjEdgeCount = (s32)srcPoly->edges.size();
 			const BEdge* sEdge = srcPoly->edges.data();
 
-			*dstPoly = {};
+			dstPoly->edges.clear();
 			dstPoly->outsideClipRegion = srcPoly->outsideClipRegion;
 
 			for (s32 eS = 0; eS < subjEdgeCount; eS++, sEdge++)
@@ -1485,6 +1472,7 @@ namespace TFE_Polygon
 		if (boolMode == BMODE_MERGE)
 		{
 			// Clip polygons *inside* the original clip polygon with those *outside*
+			BPolygon tmpPoly = {};
 			BPolygon* srcPoly = outPoly.data();
 			for (s32 i = 0; i < outerPolyCount; i++)
 			{
@@ -1493,7 +1481,7 @@ namespace TFE_Polygon
 				{
 					if (i == j || !srcPoly[j].outsideClipRegion) { continue; }
 
-					BPolygon tmpPoly = {};
+					tmpPoly.edges.clear();
 					tmpPoly.outsideClipRegion = srcPoly[i].outsideClipRegion;
 
 					const s32 subjEdgeCount = (s32)srcPoly[i].edges.size();
@@ -1579,11 +1567,14 @@ namespace TFE_Polygon
 
 	bool lineSegmentsIntersect(Vec2f a0, Vec2f a1, Vec2f b0, Vec2f b1, Vec2f* vI, f32* u, f32* v, f32 sEps/* = 0.0f*/)
 	{
+		const f32 tEps = 0.001f;
+		const f32 dEps = 0.001f;
+
 		const Vec2f b = { a1.x - a0.x, a1.z - a0.z };
 		const Vec2f d = { b1.x - b0.x, b1.z - b0.z };
 		const f32 denom = b.x*d.z - b.z*d.x;	// cross product.
 		// Lines are parallel if denom == 0.0
-		if (fabsf(denom) < FLT_EPSILON) { return false; }
+		if (fabsf(denom) < dEps) { return false; }
 		const f32 scale = 1.0f / denom;
 
 		Vec2f c = { b0.x - a0.x, b0.z - a0.z };
@@ -1591,7 +1582,7 @@ namespace TFE_Polygon
 		if (s < -sEps || s > 1.0f + sEps) { return false; }
 
 		f32 t = (c.x*b.z - c.z*b.x) * scale;
-		if (t < -eps || t > 1.0f + eps) { return false; }
+		if (t < -tEps || t > 1.0f + tEps) { return false; }
 
 		if (vI)
 		{
