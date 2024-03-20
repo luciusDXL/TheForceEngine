@@ -16,6 +16,4 @@ namespace LevelEditor
 	void grid3d_destroy();
 
 	void grid3d_draw(f32 gridScale, f32 gridOpacity, f32 height);
-
-	f32  grid3d_getGrid(s32 layer);
 }
