@@ -1,4 +1,5 @@
 #include "viewport.h"
+#include "grid.h"
 #include "grid2d.h"
 #include "grid3d.h"
 #include <TFE_System/math.h>
@@ -128,9 +129,7 @@ namespace LevelEditor
 	Vec3f s_viewportPos = { 0 };
 	Vec4f s_viewportTrans2d = { 0 };
 	f32 s_gridOpacity = 0.5f;
-	f32 s_gridSize = 0.0625f;
 	f32 s_zoom2d = 0.25f;			// current zoom level in 2D.
-	f32 s_gridHeight = 0.0f;
 
 	Rail s_rail = {};
 
@@ -315,7 +314,7 @@ namespace LevelEditor
 		// Draw the grid layer.
 		if (s_editFlags & LEF_SHOW_GRID)
 		{
-			grid2d_computeScale(s_viewportSize, s_gridSize, s_zoom2d, s_viewportPos);
+			grid2d_computeScale(s_viewportSize, s_grid.size, s_zoom2d, s_viewportPos);
 			grid2d_blitToScreen(s_gridOpacity);
 		}
 
@@ -1475,22 +1474,22 @@ namespace LevelEditor
 			}
 		}
 
-		triDraw3d_draw(&s_camera, (f32)s_viewportSize.x, (f32)s_viewportSize.z, s_gridSize, 0.0f);
+		triDraw3d_draw(&s_camera, (f32)s_viewportSize.x, (f32)s_viewportSize.z, s_grid.size, 0.0f);
 		lineDraw3d_drawLines(&s_camera, false, false);
 	}
 
 	void drawGrid3D(bool gridOver)
 	{
 		f32 opacity = gridOver ? 1.5f * s_gridOpacity : s_gridOpacity;
-		if (s_camera.pos.y >= s_gridHeight)
+		if (s_camera.pos.y >= s_grid.height)
 		{
-			grid3d_draw(s_gridSize, opacity, s_gridHeight);
+			grid3d_draw(s_grid.size, opacity, s_grid.height);
 			renderCoordinateAxis();
 		}
 		else
 		{
 			renderCoordinateAxis();
-			grid3d_draw(s_gridSize, opacity, s_gridHeight);
+			grid3d_draw(s_grid.size, opacity, s_grid.height);
 		}
 	}
 
@@ -1997,7 +1996,7 @@ namespace LevelEditor
 			drawBox(&s_cursor3d, size, 3.0f, 0x80ff8020);
 		}
 
-		TFE_RenderShared::triDraw3d_draw(&s_camera, (f32)s_viewportSize.x, (f32)s_viewportSize.z, s_gridSize, s_gridOpacity);
+		TFE_RenderShared::triDraw3d_draw(&s_camera, (f32)s_viewportSize.x, (f32)s_viewportSize.z, s_grid.size, s_gridOpacity);
 		TFE_RenderShared::modelDraw_draw(&s_camera, (f32)s_viewportSize.x, (f32)s_viewportSize.z);
 		TFE_RenderShared::lineDraw3d_drawLines(&s_camera, true, false);
 		

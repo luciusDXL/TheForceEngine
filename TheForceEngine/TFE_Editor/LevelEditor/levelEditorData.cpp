@@ -4,6 +4,7 @@
 #include "error.h"
 #include "shell.h"
 #include "levelEditorInf.h"
+#include "sharedState.h"
 #include <TFE_Editor/history.h>
 #include <TFE_Editor/errorMessages.h>
 #include <TFE_Editor/editorConfig.h>
@@ -481,6 +482,12 @@ namespace LevelEditor
 		s_levelInf.elevator.clear();
 		s_levelInf.teleport.clear();
 		s_levelInf.trigger.clear();
+
+		// Clear selection state.
+		selection_clear();
+		s_featureHovered = {};
+		s_featureCur = {};
+		s_featureTex = {};
 
 		// First check to see if there is a "tfl" version of the level.
 		if (loadFromTFL(slotName))

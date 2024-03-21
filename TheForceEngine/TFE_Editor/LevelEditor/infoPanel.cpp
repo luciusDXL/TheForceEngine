@@ -12,6 +12,7 @@
 #include <TFE_Editor/AssetBrowser/assetBrowser.h>
 #include <TFE_Editor/EditorAsset/editorTexture.h>
 #include <TFE_Editor/LevelEditor/Rendering/viewport.h>
+#include <TFE_Editor/LevelEditor/Rendering/grid.h>
 #include <TFE_Jedi/Level/rwall.h>
 #include <TFE_Jedi/Level/rsector.h>
 #include <TFE_System/math.h>
@@ -294,7 +295,7 @@ namespace LevelEditor
 		ImGui::LabelText("##GridLabel", "Grid Height");
 		ImGui::SameLine(128.0f);
 		ImGui::SetNextItemWidth(196.0f);
-		ImGui::InputFloat("##GridHeight", &s_gridHeight, 0.0f, 0.0f, "%0.2f", ImGuiInputTextFlags_CharsDecimal);
+		ImGui::InputFloat("##GridHeight", &s_grid.height, 0.0f, 0.0f, "%0.2f", ImGuiInputTextFlags_CharsDecimal);
 			
 		ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize
 			| ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoFocusOnAppearing;

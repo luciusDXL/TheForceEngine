@@ -49,6 +49,7 @@ namespace LevelEditor
 	extern Feature s_featureHovered;
 	extern Feature s_featureCur;
 	extern Feature s_featureCurWall;
+	extern Feature s_featureTex;
 
 	extern Vec3f s_hoveredVtxPos;
 	extern Vec3f s_curVtxPos;
@@ -56,7 +57,6 @@ namespace LevelEditor
 	extern s32 s_selectedTexture;
 	extern s32 s_selectedEntity;
 	extern u32 s_gridFlags;
-	extern f32 s_gridHeight;
 
 	// Camera
 	extern Camera3d s_camera;
