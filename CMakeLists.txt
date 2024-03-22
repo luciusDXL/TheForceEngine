@@ -150,12 +150,12 @@ install(DIRECTORY
 # Linux .desktop files
 if(LINUX)
 	install(
-		FILES "${CMAKE_CURRENT_SOURCE_DIR}/TheForceEngine/TheForceEngine.desktop" DESTINATION "share/applications"
+		FILES "${CMAKE_CURRENT_SOURCE_DIR}/TheForceEngine/io.github.theforceengine.tfe.desktop" DESTINATION "share/applications"
 	)
 	install(
-		FILES "${CMAKE_CURRENT_SOURCE_DIR}/TheForceEngine/TheForceEngine.png" DESTINATION "${TFE_ICONDIR}/256x256/apps"
+		FILES "${CMAKE_CURRENT_SOURCE_DIR}/TheForceEngine/io.github.theforceengine.tfe.png" DESTINATION "${TFE_ICONDIR}/256x256/apps"
 	)
 	install(
-		FILES "${CMAKE_CURRENT_SOURCE_DIR}/TheForceEngine/TheForceEngine.metainfo.xml" DESTINATION "share/metainfo"
+		FILES "${CMAKE_CURRENT_SOURCE_DIR}/TheForceEngine/io.github.theforceengine.tfe.metainfo.xml" DESTINATION "share/metainfo"
 	)
 endif()

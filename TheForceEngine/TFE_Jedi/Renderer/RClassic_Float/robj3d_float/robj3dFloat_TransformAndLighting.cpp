@@ -89,7 +89,7 @@ namespace RClassic_Float
 		for (s32 i = 0; i < vertexCount; i++, normal++, vertex++, outShading++)
 		{
 			f32 intensity = 0.0f;
-			if (s_sectorAmbient >= 31)
+			if (s_sectorAmbient >= 31 || s_fullBright) // s_fullBright is for TFE cheat LABRIGHT.
 			{
 				intensity = VSHADE_MAX_INTENSITY_FLT;
 			}

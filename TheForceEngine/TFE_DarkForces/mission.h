@@ -44,6 +44,7 @@ namespace TFE_DarkForces
 	void cheat_revealMap();
 	void cheat_supercharge();
 	void cheat_toggleData();
+	void cheat_toggleFullBright();
 	
 	extern JBool s_gamePaused;
 	extern GameMissionMode s_missionMode;

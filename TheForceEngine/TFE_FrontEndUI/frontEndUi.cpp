@@ -31,6 +31,7 @@
 #include <TFE_DarkForces/mission.h>
 #include <TFE_DarkForces/gameMusic.h>
 #include <TFE_Jedi/Renderer/jediRenderer.h>
+#include <TFE_Jedi/Renderer/rcommon.h>
 #include <TFE_DarkForces/config.h>
 #include <TFE_DarkForces/player.h>
 #include <TFE_DarkForces/hud.h>
@@ -1287,6 +1288,12 @@ namespace TFE_FrontEndUI
 		if (ImGui::Checkbox("Fly (LAFLY)", &fly))
 		{
 			TFE_DarkForces::cheat_fly();
+		}
+			
+		bool fullBright = TFE_Jedi::s_fullBright;
+		if (ImGui::Checkbox("Full-Bright (LABRIGHT)", &fullBright))
+		{
+			TFE_DarkForces::cheat_toggleFullBright();
 		}
 
 		bool noclip = TFE_DarkForces::s_noclip;
