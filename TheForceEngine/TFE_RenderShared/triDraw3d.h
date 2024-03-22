@@ -6,6 +6,7 @@
 #include <TFE_System/types.h>
 #include <TFE_RenderBackend/renderBackend.h>
 #include "camera3d.h"
+#include "gridDef.h"
 
 namespace TFE_RenderShared
 {
@@ -27,7 +28,7 @@ namespace TFE_RenderShared
 	void tri3d_destroy();
 
 	// Quads converted to triangles.
-	void triDraw3d_begin();
+	void triDraw3d_begin(const Grid* gridDef = nullptr);
 	void triDraw3d_addQuadColored(DrawMode pass, Vec3f* corners, const u32 color);
 	void triDraw3d_addColored(DrawMode pass, u32 idxCount, u32 vtxCount, const Vec3f* vertices, const s32* indices, const u32 color, bool invSide, bool showGrid = true);
 

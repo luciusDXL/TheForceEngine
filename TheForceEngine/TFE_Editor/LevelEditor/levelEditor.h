@@ -61,6 +61,8 @@ namespace LevelEditor
 	void setSelectMode(SelectMode mode = SELECTMODE_NONE);
 	SelectMode getSelectMode();
 
+	void getGridOrientedRect(const Vec2f p0, const Vec2f p1, Vec2f* rect);
+
 	// Shared Edit Commands
 	void edit_moveVertices(s32 count, const FeatureId* vtxIds, Vec2f delta);
 	void edit_moveFlats(s32 count, const FeatureId* flatIds, f32 delta);

@@ -203,6 +203,9 @@
     <Filter Include="Source\TFE_Editor\LevelEditor\Rendering">
       <UniqueIdentifier>{8e854a2b-4fb2-4f86-875a-daf00ab6b35a}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\TFE_Editor\LevelEditor\Scripting">
+      <UniqueIdentifier>{edd9ea1a-0570-4524-a9d7-f703a2c09cad}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="main.h">
@@ -1303,6 +1306,21 @@
     <ClInclude Include="TFE_Editor\LevelEditor\groups.h">
       <Filter>Source\TFE_Editor\LevelEditor</Filter>
     </ClInclude>
+    <ClInclude Include="TFE_Editor\LevelEditor\Scripting\levelEditorScripts.h">
+      <Filter>Source\TFE_Editor\LevelEditor\Scripting</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Editor\LevelEditor\Scripting\levelEditScript_system.h">
+      <Filter>Source\TFE_Editor\LevelEditor\Scripting</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Editor\LevelEditor\Scripting\levelEditScript_level.h">
+      <Filter>Source\TFE_Editor\LevelEditor\Scripting</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Editor\LevelEditor\Rendering\grid.h">
+      <Filter>Source\TFE_Editor\LevelEditor\Rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_RenderShared\gridDef.h">
+      <Filter>Source\TFE_RenderShared</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -2237,6 +2255,18 @@
     </ClCompile>
     <ClCompile Include="TFE_Editor\LevelEditor\groups.cpp">
       <Filter>Source\TFE_Editor\LevelEditor</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Editor\LevelEditor\Scripting\levelEditorScripts.cpp">
+      <Filter>Source\TFE_Editor\LevelEditor\Scripting</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Editor\LevelEditor\Scripting\levelEditScript_system.cpp">
+      <Filter>Source\TFE_Editor\LevelEditor\Scripting</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Editor\LevelEditor\Scripting\levelEditScript_level.cpp">
+      <Filter>Source\TFE_Editor\LevelEditor\Scripting</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Editor\LevelEditor\Rendering\grid.cpp">
+      <Filter>Source\TFE_Editor\LevelEditor\Rendering</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

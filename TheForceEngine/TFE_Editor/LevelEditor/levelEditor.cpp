@@ -4253,17 +4253,32 @@ namespace LevelEditor
 		bool hasSectors = !s_level.sectors.empty();
 
 		const Vec2f* shapeVtx = vtx;
-		Vec2f corners[2];
-		corners[0] = { std::max(shapeVtx[0].x, shapeVtx[1].x), std::min(shapeVtx[0].z, shapeVtx[1].z) };
-		corners[1] = { std::min(shapeVtx[0].x, shapeVtx[1].x), std::max(shapeVtx[0].z, shapeVtx[1].z) };
+
+		Vec2f g[2];
+		g[0] = posToGrid(shapeVtx[0]);
+		g[1] = posToGrid(shapeVtx[1]);
+
+		Vec2f gridCorner[4];
+		gridCorner[0] = g[0];
+		gridCorner[1] = { g[1].x, g[0].z };
+		gridCorner[2] = { g[1].x, g[1].z };
+		gridCorner[3] = { g[0].x, g[1].z };
 
 		Vec2f rect[] =
 		{
-			{ corners[0].x, corners[0].z },
-			{ corners[1].x, corners[0].z },
-			{ corners[1].x, corners[1].z },
-			{ corners[0].x, corners[1].z },
+			gridToPos(gridCorner[0]),
+			gridToPos(gridCorner[1]),
+			gridToPos(gridCorner[2]),
+			gridToPos(gridCorner[3])
 		};
+
+		// Invert the order if the signed area is negative.
+		const f32 area = TFE_Polygon::signedArea(4, rect);
+		if (area < 0.0f)
+		{
+			std::swap(rect[0], rect[3]);
+			std::swap(rect[1], rect[2]);
+		}
 
 		// Which is first?
 		s32 firstVertex = 0;
@@ -6602,6 +6617,7 @@ namespace LevelEditor
 			if (ImGui::MenuItem("Reset", ""))
 			{
 				s_gridFlags = GFLAG_NONE;
+				resetGrid();
 			}
 			ImGui::Separator();
 			if (ImGui::MenuItem("Show Over Sectors", "", s_gridFlags & GFLAG_OVER))
@@ -6612,6 +6628,13 @@ namespace LevelEditor
 			ImGui::Separator();
 			if (ImGui::MenuItem("Align To Edge", ""))
 			{
+				// If an edge is selected.
+				if (s_featureCur.part != HP_FLOOR && s_featureCur.part != HP_CEIL && s_featureCur.featureIndex >= 0 && s_featureCur.sector && !s_featureCur.isObject)
+				{
+					const Vec2f* vtx = s_featureCur.sector->vtx.data();
+					const EditorWall* wall = &s_featureCur.sector->walls[s_featureCur.featureIndex];
+					alignGridToEdge(vtx[wall->idx[0]], vtx[wall->idx[1]]);
+				}
 			}
 
 			ImGui::EndMenu();
@@ -7495,20 +7518,41 @@ namespace LevelEditor
 				{
 					if (s_drawMode == DMODE_RECT)
 					{
-						f32 x0 = std::max(s_shape[0].x, s_shape[1].x);
-						f32 x1 = std::min(s_shape[0].x, s_shape[1].x);
-						f32 z0 = std::max(s_shape[0].z, s_shape[1].z);
-						f32 z1 = std::min(s_shape[0].z, s_shape[1].z);
+						Vec2f cen[2];
+						f32 width, height;
 
-						f32 width  = fabsf(x1 - x0);
-						f32 height = fabsf(z1 - z0);
-						f32 midX = (x0 + x1) * 0.5f;
-						f32 midZ = (z0 + z1) * 0.5f;
-						const Vec2f cen[] =
+						// Get the rect size, taking into account the grid.
+						// Note that the behavior is different if extrude is enabled -
+						// since in that case the rect is *already* in "grid space".
+						if (s_extrudeEnabled)
 						{
-							{ midX, z0 },
-							{ x0, midZ },
-						};
+							const f32 x0 = std::max(s_shape[0].x, s_shape[1].x);
+							const f32 x1 = std::min(s_shape[0].x, s_shape[1].x);
+							const f32 z0 = std::max(s_shape[0].z, s_shape[1].z);
+							const f32 z1 = std::min(s_shape[0].z, s_shape[1].z);
+							const f32 midX = (x0 + x1) * 0.5f;
+							const f32 midZ = (z0 + z1) * 0.5f;
+							
+							width  = fabsf(x1 - x0);
+							height = fabsf(z1 - z0);
+							cen[0] = { midX, z0 },
+							cen[1] = { x0, midZ };
+						}
+						else
+						{
+							const Vec2f g[] = { posToGrid(s_shape[0]), posToGrid(s_shape[1]) };
+
+							Vec2f vtx[4];
+							getGridOrientedRect(s_shape[0], s_shape[1], vtx);
+
+							width  = fabsf(g[1].x - g[0].x);
+							height = fabsf(g[1].z - g[0].z);
+							cen[0] = { (vtx[0].x + vtx[1].x) * 0.5f, (vtx[0].z + vtx[1].z) * 0.5f };
+							cen[1] = { (vtx[1].x + vtx[2].x) * 0.5f, (vtx[1].z + vtx[2].z) * 0.5f };
+						}
+
+						// Once we have the rect sizes and edge center positions,
+						// draw the length labels.
 						const Vec2i mapPos[] =
 						{
 							worldPos2dToMap(cen[0]),
@@ -9345,6 +9389,22 @@ namespace LevelEditor
 			}
 		}
 		return index;
+	}
+
+	void getGridOrientedRect(const Vec2f p0, const Vec2f p1, Vec2f* rect)
+	{
+		const Vec2f g[] = { posToGrid(p0), posToGrid(p1) };
+		const Vec2f gridCorner[] =
+		{
+			{ g[0].x, g[0].z },
+			{ g[1].x, g[0].z },
+			{ g[1].x, g[1].z },
+			{ g[0].x, g[1].z }
+		};
+		rect[0] = gridToPos(gridCorner[0]);
+		rect[1] = gridToPos(gridCorner[1]);
+		rect[2] = gridToPos(gridCorner[2]);
+		rect[3] = gridToPos(gridCorner[3]);
 	}
 
 	/////////////////////////////////////////////////////

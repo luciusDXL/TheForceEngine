@@ -13,12 +13,10 @@ namespace LevelEditor
 			
 	void resetGrid()
 	{
-		s_grid.origin = { 0 };
-		s_grid.axis[0] = { 1.0f, 0.0f };
-		s_grid.axis[1] = { 0.0f, 1.0f };
+		resetGrid(s_grid);
 	}
 
-	void alignToEdge(Vec2f v0, Vec2f v1)
+	void alignGridToEdge(Vec2f v0, Vec2f v1)
 	{
 		const Vec2f xAxis = { v1.x - v0.x, v1.z - v0.z };
 		s_grid.origin = v0;
@@ -28,46 +26,22 @@ namespace LevelEditor
 
 	Vec2f posToGrid(Vec2f pos)
 	{
-		const Vec2f offset = { pos.x - s_grid.origin.x, pos.z - s_grid.origin.z };
-		const Vec2f gridPos =
-		{
-			offset.x * s_grid.axis[0].x + offset.z * s_grid.axis[0].z,
-			offset.x * s_grid.axis[1].x + offset.z * s_grid.axis[1].z
-		};
-		return gridPos;
+		return posToGrid(s_grid, pos);
 	}
 
 	Vec3f posToGrid(Vec3f pos)
 	{
-		const Vec2f offset = { pos.x - s_grid.origin.x, pos.z - s_grid.origin.z };
-		const Vec3f gridPos =
-		{
-			offset.x * s_grid.axis[0].x + offset.z * s_grid.axis[0].z,
-			pos.y,
-			offset.x * s_grid.axis[1].x + offset.z * s_grid.axis[1].z
-		};
-		return gridPos;
+		return posToGrid(s_grid, pos);
 	}
 
 	Vec2f gridToPos(Vec2f gridPos)
 	{
-		const Vec2f pos =
-		{
-			gridPos.x * s_grid.axis[0].x + gridPos.z * s_grid.axis[1].x + s_grid.origin.x,
-			gridPos.x * s_grid.axis[0].z + gridPos.z * s_grid.axis[1].z + s_grid.origin.z,
-		};
-		return pos;
+		return gridToPos(s_grid, gridPos);
 	}
 
 	Vec3f gridToPos(Vec3f gridPos)
 	{
-		const Vec3f pos =
-		{
-			gridPos.x * s_grid.axis[0].x + gridPos.z * s_grid.axis[1].x + s_grid.origin.x,
-			gridPos.y,
-			gridPos.x * s_grid.axis[0].z + gridPos.z * s_grid.axis[1].z + s_grid.origin.z,
-		};
-		return pos;
+		return gridToPos(s_grid, gridPos);
 	}
 
 	void snapToGrid(f32* value)
@@ -98,8 +72,10 @@ namespace LevelEditor
 	{
 		if (!TFE_Input::keyModDown(KEYMOD_ALT) && s_grid.size != 0.0f)
 		{
-			pos->x = floorf(pos->x / s_grid.size + 0.5f) * s_grid.size;
-			pos->z = floorf(pos->z / s_grid.size + 0.5f) * s_grid.size;
+			Vec2f gpos = posToGrid(*pos);
+			gpos.x = floorf(gpos.x / s_grid.size + 0.5f) * s_grid.size;
+			gpos.z = floorf(gpos.z / s_grid.size + 0.5f) * s_grid.size;
+			*pos = gridToPos(gpos);
 		}
 		else  // Snap to the finest grid.
 		{
@@ -112,8 +88,13 @@ namespace LevelEditor
 	{
 		if (!TFE_Input::keyModDown(KEYMOD_ALT) && s_grid.size != 0.0f)
 		{
-			pos->x = floorf(pos->x / s_grid.size + 0.5f) * s_grid.size;
-			pos->z = floorf(pos->z / s_grid.size + 0.5f) * s_grid.size;
+			Vec2f posXZ = { pos->x, pos->z };
+			Vec2f gpos = posToGrid(posXZ);
+			gpos.x = floorf(gpos.x / s_grid.size + 0.5f) * s_grid.size;
+			gpos.z = floorf(gpos.z / s_grid.size + 0.5f) * s_grid.size;
+			posXZ = gridToPos(gpos);
+			pos->x = posXZ.x;
+			pos->z = posXZ.z;
 		}
 		else  // Snap to the finest grid.
 		{
@@ -129,6 +110,10 @@ namespace LevelEditor
 
 		Vec2f g0 = posToGrid(*v0);
 		Vec2f g1 = posToGrid(*v1);
+		Vec3f gpos = posToGrid(pos);
+		// Snap.
+		gpos.x = floorf(gpos.x / s_grid.size + 0.5f) * s_grid.size;
+		gpos.z = floorf(gpos.z / s_grid.size + 0.5f) * s_grid.size;
 
 		// Determine which projection we are using (XY or ZY).
 		// This should match the way grids are rendered on surfaces.
@@ -137,39 +122,43 @@ namespace LevelEditor
 		f32 s;
 		if (dx >= dz)  // X-intersect with line segment.
 		{
-			snapToGrid(&pos.x);
-			s = (pos.x - v0->x) / (v1->x - v0->x);
+			s = (gpos.x - g0.x) / (g1.x - g0.x);
 		}
 		else  // Z-intersect with line segment.
 		{
-			snapToGrid(&pos.z);
-			s = (pos.z - v0->z) / (v1->z - v0->z);
+			s = (gpos.z - g0.z) / (g1.z - g0.z);
 		}
 		pos = { v0->x + s * (v1->x - v0->x), pos.y, v0->z + s * (v1->z - v0->z) };
-		snapToGrid(&pos.y);
+		snapToGridY(&pos.y);
 	}
 
 	f32 snapToEdgeGrid(Vec2f v0, Vec2f v1, Vec2f& pos)
 	{
+		Vec2f g0 = posToGrid(v0);
+		Vec2f g1 = posToGrid(v1);
+		Vec2f gpos = posToGrid(pos);
+		// Snap.
+		gpos.x = floorf(gpos.x / s_grid.size + 0.5f) * s_grid.size;
+		gpos.z = floorf(gpos.z / s_grid.size + 0.5f) * s_grid.size;
+
 		// Determine which projection we are using (XY or ZY).
 		// This should match the way grids are rendered on surfaces.
-		const f32 dx = fabsf(v1.x - v0.x);
-		const f32 dz = fabsf(v1.z - v0.z);
+		const f32 dx = fabsf(g1.x - g0.x);
+		const f32 dz = fabsf(g1.z - g0.z);
 		f32 s;
 		if (dx >= dz)  // X-intersect with line segment.
 		{
-			snapToGrid(&pos.x);
-			s = (pos.x - v0.x) / (v1.x - v0.x);
+			s = (gpos.x - g0.x) / (g1.x - g0.x);
 		}
 		else  // Z-intersect with line segment.
 		{
-			snapToGrid(&pos.z);
-			s = (pos.z - v0.z) / (v1.z - v0.z);
+			s = (gpos.z - g0.z) / (g1.z - g0.z);
 		}
 		pos = { v0.x + s * (v1.x - v0.x), v0.z + s * (v1.z - v0.z) };
 		return s;
 	}
 
+    // TODO: Fix for rotated grid.
 	f32 snapAlongPath(const Vec2f& startPos, const Vec2f& path, const Vec2f& moveStart, f32 pathOffset)
 	{
 		f32 dX = FLT_MAX, dZ = FLT_MAX;

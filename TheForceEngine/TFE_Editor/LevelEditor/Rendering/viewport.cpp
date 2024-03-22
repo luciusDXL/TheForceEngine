@@ -976,20 +976,23 @@ namespace LevelEditor
 	extern std::vector<Vec2f> s_shape;
 	extern Vec2f s_drawCurPos;
 	extern Polygon s_shapePolygon;
-
+		
 	void drawSectorShape2D()
 	{
 		u32 color[] = { 0xffffffff, 0xffffffff };
 		f32 width = 1.5f;
 		if (s_drawStarted && s_drawMode == DMODE_RECT)
 		{
+			Vec2f p[4];
+			getGridOrientedRect(s_shape[0], s_shape[1], p);
+
 			Vec2f vtx[] =
 			{
-				{ s_shape[0].x * s_viewportTrans2d.x + s_viewportTrans2d.y, s_shape[0].z * s_viewportTrans2d.z + s_viewportTrans2d.w },
-				{ s_shape[1].x * s_viewportTrans2d.x + s_viewportTrans2d.y, s_shape[0].z * s_viewportTrans2d.z + s_viewportTrans2d.w },
-				{ s_shape[1].x * s_viewportTrans2d.x + s_viewportTrans2d.y, s_shape[1].z * s_viewportTrans2d.z + s_viewportTrans2d.w },
-				{ s_shape[0].x * s_viewportTrans2d.x + s_viewportTrans2d.y, s_shape[1].z * s_viewportTrans2d.z + s_viewportTrans2d.w },
-				{ s_shape[0].x * s_viewportTrans2d.x + s_viewportTrans2d.y, s_shape[0].z * s_viewportTrans2d.z + s_viewportTrans2d.w }
+				{ p[0].x * s_viewportTrans2d.x + s_viewportTrans2d.y, p[0].z * s_viewportTrans2d.z + s_viewportTrans2d.w },
+				{ p[1].x * s_viewportTrans2d.x + s_viewportTrans2d.y, p[1].z * s_viewportTrans2d.z + s_viewportTrans2d.w },
+				{ p[2].x * s_viewportTrans2d.x + s_viewportTrans2d.y, p[2].z * s_viewportTrans2d.z + s_viewportTrans2d.w },
+				{ p[3].x * s_viewportTrans2d.x + s_viewportTrans2d.y, p[3].z * s_viewportTrans2d.z + s_viewportTrans2d.w },
+				{ p[0].x * s_viewportTrans2d.x + s_viewportTrans2d.y, p[0].z * s_viewportTrans2d.z + s_viewportTrans2d.w }
 			};
 			TFE_RenderShared::lineDraw2d_addLine(width, &vtx[0], color);
 			TFE_RenderShared::lineDraw2d_addLine(width, &vtx[1], color);
@@ -1214,14 +1217,17 @@ namespace LevelEditor
 		u32 color = 0xffffffff;
 		if (s_drawStarted && s_drawMode == DMODE_RECT)
 		{
+			Vec2f rect[4];
+			getGridOrientedRect(s_shape[0], s_shape[1], rect);
+
 			// Draw the rect on the grid itself.
 			Vec3f vtx[] =
 			{
-				{ s_shape[0].x, s_drawHeight[0], s_shape[0].z },
-				{ s_shape[1].x, s_drawHeight[0], s_shape[0].z },
-				{ s_shape[1].x, s_drawHeight[0], s_shape[1].z },
-				{ s_shape[0].x, s_drawHeight[0], s_shape[1].z },
-				{ s_shape[0].x, s_drawHeight[0], s_shape[0].z }
+				{ rect[0].x, s_drawHeight[0], rect[0].z },
+				{ rect[1].x, s_drawHeight[0], rect[1].z },
+				{ rect[2].x, s_drawHeight[0], rect[2].z },
+				{ rect[3].x, s_drawHeight[0], rect[3].z },
+				{ rect[0].x, s_drawHeight[0], rect[0].z }
 			};
 			TFE_RenderShared::lineDraw3d_addLine(3.0f, &vtx[0], &color);
 			TFE_RenderShared::lineDraw3d_addLine(3.0f, &vtx[1], &color);
@@ -1230,13 +1236,8 @@ namespace LevelEditor
 		}
 		else if (s_drawStarted && s_drawMode == DMODE_RECT_VERT)
 		{
-			const Vec2f vtx[] =
-			{
-				{ s_shape[0].x, s_shape[0].z },
-				{ s_shape[1].x, s_shape[0].z },
-				{ s_shape[1].x, s_shape[1].z },
-				{ s_shape[0].x, s_shape[1].z }
-			};
+			Vec2f vtx[4];
+			getGridOrientedRect(s_shape[0], s_shape[1], vtx);
 
 			for (s32 v = 0; v < 4; v++)
 			{
@@ -1271,10 +1272,10 @@ namespace LevelEditor
 			// Draw solid bottom.
 			Vec3f baseVtx[4] =
 			{
-				{ s_shape[0].x, s_drawHeight[0], s_shape[0].z },
-				{ s_shape[1].x, s_drawHeight[0], s_shape[0].z },
-				{ s_shape[1].x, s_drawHeight[0], s_shape[1].z },
-				{ s_shape[0].x, s_drawHeight[0], s_shape[1].z }
+				{ vtx[0].x, s_drawHeight[0], vtx[0].z },
+				{ vtx[1].x, s_drawHeight[0], vtx[1].z },
+				{ vtx[2].x, s_drawHeight[0], vtx[2].z },
+				{ vtx[3].x, s_drawHeight[0], vtx[3].z }
 			};
 			s32 idx[6]=
 			{
@@ -1426,7 +1427,7 @@ namespace LevelEditor
 	void renderHighlighted3d()
 	{
 		lineDraw3d_begin(s_viewportSize.x, s_viewportSize.z);
-		triDraw3d_begin();
+		triDraw3d_begin(&s_grid);
 
 		if (s_editMode == LEDIT_DRAW)
 		{
@@ -1695,7 +1696,7 @@ namespace LevelEditor
 
 		// Prepare for drawing.
 		TFE_RenderShared::lineDraw3d_begin(s_viewportSize.x, s_viewportSize.z);
-		TFE_RenderShared::triDraw3d_begin();
+		TFE_RenderShared::triDraw3d_begin(&s_grid);
 		TFE_RenderShared::modelDraw_begin();
 
 		if (!(s_gridFlags & GFLAG_OVER))

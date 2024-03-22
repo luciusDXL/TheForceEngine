@@ -9,20 +9,15 @@
 
 #include <TFE_System/types.h>
 #include <TFE_Editor/LevelEditor/levelEditorData.h>
+#include <TFE_RenderShared/gridDef.h>
 
 namespace LevelEditor
 {
-	struct Grid
-	{
-		Vec2f origin = { 0 };
-		Vec2f axis[2] = { {1.0f, 0.0f}, {0.0f, 1.0f} };
-		f32 size = 1.0f;
-		f32 height = 0.0f;
-	};
 	extern Grid s_grid;
 
 	void resetGrid();
-	void alignToEdge(Vec2f v0, Vec2f v1);
+	void alignGridToEdge(Vec2f v0, Vec2f v1);
+
 	Vec2f posToGrid(Vec2f pos);
 	Vec3f posToGrid(Vec3f pos);
 	Vec2f gridToPos(Vec2f gridPos);
