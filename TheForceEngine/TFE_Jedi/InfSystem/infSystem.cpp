@@ -3467,7 +3467,7 @@ namespace TFE_Jedi
 	fixed16_16 infUpdate_moveWall(InfElevator* elev, fixed16_16 delta)
 	{
 		// First attempt to move walls in the sector.
-		if (!sector_moveWalls(elev->sector, delta, elev->dirOrCenter.x, elev->dirOrCenter.z, elev->flags))
+		if (!sector_canMoveWalls(elev->sector, delta, elev->dirOrCenter.x, elev->dirOrCenter.z, elev->flags))
 		{
 			return elev->iValue;
 		}
@@ -3476,7 +3476,7 @@ namespace TFE_Jedi
 		Slave* child = (Slave*)allocator_getHead(elev->slaves);
 		while (child)
 		{
-			sector_moveWalls(child->sector, delta, elev->dirOrCenter.x, elev->dirOrCenter.z, elev->flags);
+			sector_canMoveWalls(child->sector, delta, elev->dirOrCenter.x, elev->dirOrCenter.z, elev->flags);
 			child = (Slave*)allocator_getNext(elev->slaves);
 		}
 

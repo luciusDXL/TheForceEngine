@@ -142,7 +142,7 @@ namespace TFE_Jedi
 	void sector_computeBounds(RSector* sector);
 
 	fixed16_16 sector_getMaxObjectHeight(RSector* sector);
-	JBool sector_moveWalls(RSector* sector, fixed16_16 delta, fixed16_16 dirX, fixed16_16 dirZ, u32 flags);
+	JBool sector_canMoveWalls(RSector* sector, fixed16_16 delta, fixed16_16 dirX, fixed16_16 dirZ, u32 flags);
 	void  sector_changeWallLight(RSector* sector, fixed16_16 delta);
 	void  sector_scrollWalls(RSector* sector, fixed16_16 offsetX, fixed16_16 offsetZ);
 
