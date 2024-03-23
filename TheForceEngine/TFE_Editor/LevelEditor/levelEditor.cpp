@@ -266,6 +266,7 @@ namespace LevelEditor
 	void handleSelectMode(EditorSector* sector, s32 wallIndex);
 		
 	s32 getDefaultTextureIndex(WallPart part);
+	bool isInIntList(s32 value, std::vector<s32>* list);
 
 #if EDITOR_TEXT_PROMPTS == 1
 	void handleTextPrompts();
@@ -4213,6 +4214,186 @@ namespace LevelEditor
 			}
 		}
 	}
+
+	struct EditorWallRaw
+	{
+		LevelTexture tex[WP_COUNT] = {};
+
+		Vec2f vtx[2] = { 0 };
+		s32 adjoinId = -1;
+		s32 mirrorId = -1;
+
+		u32 flags[3] = { 0 };
+		s32 wallLight = 0;
+	};
+
+	bool addWallToList(const Vec2f* vtx, const EditorWall* wall, std::vector<EditorWallRaw>* wallList)
+	{
+		const Vec2f v0 = vtx[wall->idx[0]];
+		const Vec2f v1 = vtx[wall->idx[1]];
+
+		const s32 wallCount = (s32)wallList->size();
+		EditorWallRaw* wallRaw = wallList->data();
+		s32 prevWall = -1, nextWall = -1;
+		for (s32 w = 0; w < wallCount; w++, wallRaw++)
+		{
+			if (TFE_Polygon::vtxEqual(&wallRaw->vtx[0], &v0) && TFE_Polygon::vtxEqual(&wallRaw->vtx[1], &v1))
+			{
+				return false;
+			}
+			if (TFE_Polygon::vtxEqual(&wallRaw->vtx[1], &v0))
+			{
+				prevWall = w;
+			}
+			if (TFE_Polygon::vtxEqual(&wallRaw->vtx[0], &v1))
+			{
+				nextWall = w;
+			}
+		}
+
+		s32 id = (s32)wallList->size();
+		EditorWallRaw newWall = { 0 };
+		for (s32 i = 0; i < 3; i++)
+		{
+			newWall.flags[i] = wall->flags[i];
+		}
+		for (s32 i = 0; i < WP_COUNT; i++)
+		{
+			newWall.tex[i] = wall->tex[i];
+		}
+		newWall.wallLight = wall->wallLight;
+		newWall.vtx[0] = v0;
+		newWall.vtx[1] = v1;
+		newWall.adjoinId = wall->adjoinId;
+		newWall.mirrorId = wall->mirrorId;
+		
+		if (prevWall >= 0)
+		{
+			wallList->insert(wallList->begin() + prevWall + 1, newWall);
+		}
+		else if (nextWall >= 0)
+		{
+			wallList->insert(wallList->begin() + nextWall, newWall);
+		}
+		else
+		{
+			wallList->push_back(newWall);
+		}
+		return true;
+	}
+
+	void edit_joinSectors()
+	{
+		std::vector<s32> selectedSectors;
+
+		// We must be in the wall (in 3D) or sector mode.
+		bool canSelectSectors = (s_editMode == LEDIT_WALL && s_view == EDIT_VIEW_3D) || s_editMode == LEDIT_SECTOR;
+		if (!canSelectSectors) { return; }
+
+		// At least two sectors must be selected.
+		const s32 count = (s32)s_selectionList.size();
+		if (count < 2) { return; }
+
+		const FeatureId* feature = s_selectionList.data();
+		for (s32 i = 0; i < count; i++)
+		{
+			s32 index;
+			HitPart part;
+			EditorSector* sector = unpackFeatureId(feature[i], &index, (s32*)&part);
+			if (part == HP_FLOOR || part == HP_CEIL || s_editMode == LEDIT_SECTOR)
+			{
+				selectedSectors.push_back(sector->id);
+			}
+		}
+		// Re-check to make sure we have at least two sectors.
+		const s32 sectorCount = (s32)selectedSectors.size();
+		if (sectorCount < 1) { return; }
+
+		std::sort(selectedSectors.begin() + 1, selectedSectors.end());
+		const s32* indices = selectedSectors.data();
+		// 1. Record all of the walls we are keeping.
+		std::vector<EditorWallRaw> wallsToKeep;
+		for (s32 s = 0; s < sectorCount; s++)
+		{
+			EditorSector* sector = &s_level.sectors[indices[s]];
+			const s32 wallCount = (s32)sector->walls.size();
+			EditorWall* wall = sector->walls.data();
+
+			for (s32 w = 0; w < wallCount; w++, wall++)
+			{
+				if (wall->adjoinId < 0 || !isInIntList(wall->adjoinId, &selectedSectors))
+				{
+					if (!addWallToList(sector->vtx.data(), wall, &wallsToKeep))
+					{
+						if (wall->adjoinId >= 0 && wall->mirrorId >= 0)
+						{
+							EditorSector* next = &s_level.sectors[wall->adjoinId];
+							if (wall->mirrorId < (s32)next->walls.size())
+							{
+								next->walls[wall->mirrorId].adjoinId = -1;
+								next->walls[wall->mirrorId].mirrorId = -1;
+							}
+						}
+					}
+				}
+			}
+		}
+
+		// 2. Recreate the sector walls and vertices.
+		const s32 primaryId = indices[0];
+		const s32 wallCount = (s32)wallsToKeep.size();
+		EditorSector* sector = &s_level.sectors[primaryId];
+		sector->walls.resize(wallCount);
+		sector->vtx.clear();
+
+		EditorWall* wall = sector->walls.data();
+		const EditorWallRaw* wallSrc = wallsToKeep.data();
+		for (s32 w = 0; w < wallCount; w++, wall++, wallSrc++)
+		{
+			wall->idx[0] = insertVertexIntoSector(sector, wallSrc->vtx[0]);
+			wall->idx[1] = insertVertexIntoSector(sector, wallSrc->vtx[1]);
+			for (s32 i = 0; i < 3; i++)
+			{
+				wall->flags[i] = wallSrc->flags[i];
+			}
+			for (s32 i = 0; i < WP_COUNT; i++)
+			{
+				wall->tex[i] = wallSrc->tex[i];
+			}
+			wall->wallLight = wallSrc->wallLight;
+
+			if (wallSrc->adjoinId < 0)
+			{
+				wall->adjoinId = -1;
+				wall->mirrorId = -1;
+			}
+			else
+			{
+				EditorSector* next = &s_level.sectors[wallSrc->adjoinId];
+				if (wallSrc->mirrorId >= 0 && wallSrc->mirrorId < (s32)next->walls.size())
+				{
+					// Update the mirrored wall's mirror and adjoinId.
+					next->walls[wallSrc->mirrorId].adjoinId = primaryId;
+					next->walls[wallSrc->mirrorId].mirrorId = w;
+					wall->adjoinId = wallSrc->adjoinId;
+					wall->mirrorId = wallSrc->mirrorId;
+				}
+				else
+				{
+					// ERROR
+					wall->adjoinId = -1;
+					wall->mirrorId = -1;
+				}
+			}
+		}
+		sectorToPolygon(sector);
+
+		// 3. Delete the extra sectors, note we don't delete sector[0]
+		for (s32 s = sectorCount - 1; s > 0; s--)
+		{
+			edit_deleteSector(indices[s]);
+		}
+	}
 				
 	// Merge a shape into the existing sectors.
 	void edit_insertShape(const f32* heights, BoolMode mode, s32 firstVertex, bool allowSubsectorExtrude)
@@ -5211,6 +5392,20 @@ namespace LevelEditor
 	};
 	typedef std::vector<const PathEdge*> EdgePath;
 	std::vector<PathEdge> s_adjacencyMap;
+
+	bool isInIntList(s32 value, std::vector<s32>* list)
+	{
+		const s32 count = (s32)list->size();
+		const s32* values = list->data();
+		for (s32 i = 0; i < count; i++)
+		{
+			if (value == values[i])
+			{
+				return true;
+			}
+		}
+		return false;
+	}
 
 	void insertIntoIntList(s32 value, std::vector<s32>* list)
 	{
@@ -6407,14 +6602,6 @@ namespace LevelEditor
 
 			// Texture alignment.
 			handleTextureAlignment();
-
-			// DEBUG
-		#if 0
-			if (s_featureCur.sector && TFE_Input::keyPressed(KEY_T))
-			{
-				TFE_Polygon::computeTriangulation(&s_featureCur.sector->poly);
-			}
-		#endif
 		}
 		else if (s_view == EDIT_VIEW_3D)
 		{
@@ -6574,6 +6761,10 @@ namespace LevelEditor
 			}
 			enableNextItem(); // End TODO
 			ImGui::Separator();
+			if (ImGui::MenuItem("Join Sectors", NULL, (bool*)NULL))
+			{
+				edit_joinSectors();
+			}
 			if (ImGui::MenuItem("Find Sector", NULL, (bool*)NULL))
 			{
 				// TODO
