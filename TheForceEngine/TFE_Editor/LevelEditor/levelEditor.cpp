@@ -46,6 +46,7 @@
 #include <SDL.h>
 
 #include <TFE_Ui/imGUI/imgui.h>
+#include <limits.h>
 #include <algorithm>
 #include <vector>
 #include <string>
