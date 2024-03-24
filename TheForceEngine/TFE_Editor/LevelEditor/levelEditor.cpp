@@ -149,6 +149,7 @@ namespace LevelEditor
 	std::vector<Vec2f> s_shape;
 	Vec2f s_drawCurPos;
 	Polygon s_shapePolygon;
+	static std::vector<EditorSector*> s_sortedHoverSectors;
 
 	static bool s_editMove = false;
 	static SectorList s_workList;
@@ -408,40 +409,7 @@ namespace LevelEditor
 		levHistory_destroy();
 		browserFreeIcons();
 	}
-
-	bool isPointInsideSector2d(EditorSector* sector, Vec2f pos, s32 layer)
-	{
-		// The layers need to match.
-		if (sector->layer != layer) { return false; }
-		// The point has to be within the bounding box.
-		if (pos.x < sector->bounds[0].x || pos.x > sector->bounds[1].x ||
-			pos.z < sector->bounds[0].z || pos.z > sector->bounds[1].z)
-		{
-			return false;
-		}
-		return TFE_Polygon::pointInsidePolygon(&sector->poly, pos);
-	}
-
-	bool isPointInsideSector3d(EditorSector* sector, Vec3f pos, s32 layer)
-	{
-		const f32 eps = 0.0001f;
-		// The layers need to match.
-		if (sector->layer != layer) { return false; }
-		// The point has to be within the bounding box.
-		if (pos.x < sector->bounds[0].x-eps || pos.x > sector->bounds[1].x+eps ||
-			pos.y < sector->bounds[0].y-eps || pos.y > sector->bounds[1].y+eps ||
-			pos.z < sector->bounds[0].z-eps || pos.z > sector->bounds[1].z+eps)
-		{
-			return false;
-		}
-		// Jitter the z position if needed.
-		bool inside = TFE_Polygon::pointInsidePolygon(&sector->poly, { pos.x, pos.z });
-		if (!inside) { inside = TFE_Polygon::pointInsidePolygon(&sector->poly, { pos.x, pos.z + 0.0001f }); }
-		return inside;
-	}
-
-	static std::vector<EditorSector*> s_pHoverSectors;
-
+			
 	bool sortHoveredSectors(EditorSector* a, EditorSector* b)
 	{
 		if (a->floorHeight > b->floorHeight) { return true; }
@@ -459,7 +427,7 @@ namespace LevelEditor
 	{
 		const size_t sectorCount = s_level.sectors.size();
 		EditorSector* sector = s_level.sectors.data();
-		s_pHoverSectors.clear();
+		s_sortedHoverSectors.clear();
 		for (size_t s = 0; s < sectorCount; s++, sector++)
 		{
 			// Make sure the sector is in a visible/unlocked group.
@@ -467,19 +435,19 @@ namespace LevelEditor
 			if (isPointInsideSector2d(sector, pos, layer))
 			{
 				// Gather all of the potentially selected sectors in a list.
-				s_pHoverSectors.push_back(sector);
+				s_sortedHoverSectors.push_back(sector);
 			}
 		}
-		if (s_pHoverSectors.empty()) { return nullptr; }
+		if (s_sortedHoverSectors.empty()) { return nullptr; }
 		
 		// Then sort:
 		// 1. floor height.
 		// 2. approximate area (if the floor height is the same).
-		std::sort(s_pHoverSectors.begin(), s_pHoverSectors.end(), sortHoveredSectors);
+		std::sort(s_sortedHoverSectors.begin(), s_sortedHoverSectors.end(), sortHoveredSectors);
 
 		// Finally select the beginning.
 		// Note we may walk forward if stepping through the selection.
-		return s_pHoverSectors[0];
+		return s_sortedHoverSectors[0];
 	}
 
 	EditorSector* findSector3d(Vec3f pos, s32 layer)
@@ -495,36 +463,6 @@ namespace LevelEditor
 		}
 		return nullptr;
 	}
-	
-	s32 findClosestWallInSector(const EditorSector* sector, const Vec2f* pos, f32 maxDistSq, f32* minDistToWallSq)
-	{
-		const u32 count = (u32)sector->walls.size();
-		f32 minDistSq = FLT_MAX;
-		s32 closestId = -1;
-		const EditorWall* walls = sector->walls.data();
-		const Vec2f* vertices = sector->vtx.data();
-		for (u32 w = 0; w < count; w++)
-		{
-			const Vec2f* v0 = &vertices[walls[w].idx[0]];
-			const Vec2f* v1 = &vertices[walls[w].idx[1]];
-
-			Vec2f pointOnSeg;
-			TFE_Polygon::closestPointOnLineSegment(*v0, *v1, *pos, &pointOnSeg);
-			const Vec2f diff = { pointOnSeg.x - pos->x, pointOnSeg.z - pos->z };
-			const f32 distSq = diff.x*diff.x + diff.z*diff.z;
-
-			if (distSq < maxDistSq && distSq < minDistSq && (!minDistToWallSq || distSq < *minDistToWallSq))
-			{
-				minDistSq = distSq;
-				closestId = s32(w);
-			}
-		}
-		if (minDistToWallSq)
-		{
-			*minDistToWallSq = std::min(*minDistToWallSq, minDistSq);
-		}
-		return closestId;
-	}
 
 	bool isUiModal()
 	{
@@ -535,21 +473,7 @@ namespace LevelEditor
 	{
 		return s_featureHovered.featureIndex >= 0 || s_featureCur.featureIndex >= 0;
 	}
-
-	Vec3f rayGridPlaneHit(const Vec3f& origin, const Vec3f& rayDir)
-	{
-		Vec3f hit = { 0 };
-		if (fabsf(rayDir.y) < FLT_EPSILON) { return hit; }
-
-		f32 s = (s_grid.height - origin.y) / rayDir.y;
-		if (s <= 0) { return hit; }
-
-		hit.x = origin.x + s * rayDir.x;
-		hit.y = origin.y + s * rayDir.y;
-		hit.z = origin.z + s * rayDir.z;
-		return hit;
-	}
-
+	
 	void adjustGridHeight(EditorSector* sector)
 	{
 		if (!sector) { return; }
@@ -2961,9 +2885,8 @@ namespace LevelEditor
 			if (!wallFound)
 			{
 				// Make sure the wall is actually inside the sector...
-				const f32 eps = 0.0001f;
-				bool v0Inside = isPointInsideSector2d(splitSector, v0, s_curLayer) || isPointInsideSector2d(splitSector, { v0.x, v0.z + eps }, s_curLayer);
-				bool v1Inside = isPointInsideSector2d(splitSector, v1, s_curLayer) || isPointInsideSector2d(splitSector, { v1.x, v1.z + eps }, s_curLayer);
+				const bool v0Inside = isPointInsideSector2d(splitSector, v0, s_curLayer);
+				const bool v1Inside = isPointInsideSector2d(splitSector, v1, s_curLayer);
 				if (v0Inside && v1Inside)
 				{
 					s32 i0 = getVertexIndex(splitSector, &v1);

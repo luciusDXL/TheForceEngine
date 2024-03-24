@@ -185,4 +185,18 @@ namespace LevelEditor
 		}
 		return offset;
 	}
+
+	Vec3f rayGridPlaneHit(const Vec3f& origin, const Vec3f& rayDir)
+	{
+		Vec3f hit = { 0 };
+		if (fabsf(rayDir.y) < FLT_EPSILON) { return hit; }
+
+		f32 s = (s_grid.height - origin.y) / rayDir.y;
+		if (s <= 0.0f) { return hit; }
+
+		hit.x = origin.x + s * rayDir.x;
+		hit.y = origin.y + s * rayDir.y;
+		hit.z = origin.z + s * rayDir.z;
+		return hit;
+	}
 }

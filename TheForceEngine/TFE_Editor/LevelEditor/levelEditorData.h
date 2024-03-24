@@ -223,6 +223,9 @@ namespace LevelEditor
 	bool aabbOverlap2d(const Vec3f* aabb0, const Vec3f* aabb1);
 	bool pointInsideAABB3d(const Vec3f* aabb, const Vec3f* pt);
 	bool pointInsideAABB2d(const Vec3f* aabb, const Vec3f* pt);
+	bool isPointInsideSector2d(EditorSector* sector, Vec2f pos, s32 layer);
+	bool isPointInsideSector3d(EditorSector* sector, Vec3f pos, s32 layer);
+	s32 findClosestWallInSector(const EditorSector* sector, const Vec2f* pos, f32 maxDistSq, f32* minDistToWallSq);
 
 	// Groups
 	inline Group* sector_getGroup(EditorSector* sector)
