@@ -65,6 +65,8 @@ namespace LevelEditor
 	static Feature s_prevObjectFeature = {};
 	static bool s_wallShownLast = false;
 	static s32 s_prevCategoryFlags = 0;
+
+	static bool s_scrollToBottom = false;
 		
 	void infoPanelClearMessages()
 	{
@@ -80,11 +82,13 @@ namespace LevelEditor
 		va_end(arg);
 
 		s_outputMsg.push_back({ type, fullStr });
+		s_scrollToBottom = true;
 	}
 
 	void infoPanelSetMsgFilter(u32 filter/*LFILTER_DEFAULT*/)
 	{
 		s_outputFilter = filter;
+		s_scrollToBottom = true;
 	}
 
 	void infoPanelClearFeatures()
@@ -190,7 +194,7 @@ namespace LevelEditor
 			const size_t count = s_outputMsg.size();
 			const LeMessage* msg = s_outputMsg.data();
 			const ImVec4 c_typeColor[] = { {1.0f, 1.0f, 1.0f, 0.7f}, {1.0f, 1.0f, 0.25f, 1.0f}, {1.0f, 0.25f, 0.25f, 1.0f} };
-
+						
 			for (size_t i = 0; i < count; i++, msg++)
 			{
 				u32 typeFlag = 1 << msg->type;
@@ -207,6 +211,12 @@ namespace LevelEditor
 			{
 				s_outputPrevHeight = s_outputHeight;
 				s_outputHeight = max(26 * 3, (s32)ImGui::GetWindowSize().y);
+			}
+
+			if (s_scrollToBottom)
+			{
+				ImGui::SetScrollHere(0.999f);
+				s_scrollToBottom = false;
 			}
 		}
 		else

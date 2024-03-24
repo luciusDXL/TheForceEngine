@@ -4354,12 +4354,20 @@ namespace LevelEditor
 
 		// We must be in the wall (in 3D) or sector mode.
 		bool canSelectSectors = (s_editMode == LEDIT_WALL && s_view == EDIT_VIEW_3D) || s_editMode == LEDIT_SECTOR;
-		if (!canSelectSectors) { return; }
+		if (!canSelectSectors)
+		{
+			LE_WARNING("Clean Sector(s) - no sectors selected.");
+			return;
+		}
 
 		// At least one sector must be selected.
 		// If only one is selected, this will act as a "clean" - removing degenerate walls, re-ordering, etc.
 		const s32 count = (s32)s_selectionList.size();
-		if (count < 1) { return; }
+		if (count < 1)
+		{
+			LE_WARNING("Clean Sector(s) - no sectors selected.");
+			return;
+		}
 
 		const FeatureId* feature = s_selectionList.data();
 		for (s32 i = 0; i < count; i++)
@@ -4374,7 +4382,11 @@ namespace LevelEditor
 		}
 		// Re-check to make sure we have at least two sectors.
 		const s32 sectorCount = (s32)selectedSectors.size();
-		if (sectorCount < 1) { return; }
+		if (sectorCount < 1)
+		{
+			LE_WARNING("Clean Sector(s) - no sectors selected.");
+			return;
+		}
 
 		const s32* indices = selectedSectors.data();
 		for (s32 s = 0; s < sectorCount; s++)
@@ -4442,9 +4454,9 @@ namespace LevelEditor
 					}
 					else
 					{
-						// ERROR
 						wall->adjoinId = -1;
 						wall->mirrorId = -1;
+						LE_ERROR("Clean Sector(s) - invalid mirrorId in sector %d, wall %d.", sector->id, w);
 					}
 				}
 			}
@@ -4458,12 +4470,20 @@ namespace LevelEditor
 
 		// We must be in the wall (in 3D) or sector mode.
 		bool canSelectSectors = (s_editMode == LEDIT_WALL && s_view == EDIT_VIEW_3D) || s_editMode == LEDIT_SECTOR;
-		if (!canSelectSectors) { return; }
+		if (!canSelectSectors)
+		{
+			LE_WARNING("Join Sectors - no sectors selected.");
+			return;
+		}
 
 		// At least one sector must be selected.
 		// If only one is selected, this will act as a "clean" - removing degenerate walls, re-ordering, etc.
 		const s32 count = (s32)s_selectionList.size();
-		if (count < 2) { return; }
+		if (count < 2)
+		{
+			LE_WARNING("Join Sectors - at least two(2) sectors need to be selected.");
+			return;
+		}
 
 		const FeatureId* feature = s_selectionList.data();
 		for (s32 i = 0; i < count; i++)
@@ -4478,7 +4498,11 @@ namespace LevelEditor
 		}
 		// Re-check to make sure we have at least two sectors.
 		const s32 sectorCount = (s32)selectedSectors.size();
-		if (sectorCount < 2) { return; }
+		if (sectorCount < 2)
+		{
+			LE_WARNING("Join Sectors - at least two(2) sectors need to be selected.");
+			return;
+		}
 
 		std::sort(selectedSectors.begin() + 1, selectedSectors.end());
 		const s32* indices = selectedSectors.data();
@@ -4551,9 +4575,9 @@ namespace LevelEditor
 				}
 				else
 				{
-					// ERROR
 					wall->adjoinId = -1;
 					wall->mirrorId = -1;
+					LE_ERROR("Join Sectors - invalid mirrorId in sector %d, wall %d.", sector->id, w);
 				}
 			}
 		}
