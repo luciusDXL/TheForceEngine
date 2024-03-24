@@ -4348,7 +4348,7 @@ namespace LevelEditor
 		return true;
 	}
 
-	void edit_joinSectors()
+	void edit_cleanSectors()
 	{
 		std::vector<s32> selectedSectors;
 
@@ -4375,6 +4375,110 @@ namespace LevelEditor
 		// Re-check to make sure we have at least two sectors.
 		const s32 sectorCount = (s32)selectedSectors.size();
 		if (sectorCount < 1) { return; }
+
+		const s32* indices = selectedSectors.data();
+		for (s32 s = 0; s < sectorCount; s++)
+		{
+			EditorSector* sector = &s_level.sectors[indices[s]];
+			
+			// 1. Record all of the walls we are keeping.
+			std::vector<EditorWallRaw> wallsToKeep;
+			{
+				const s32 wallCount = (s32)sector->walls.size();
+				EditorWall* wall = sector->walls.data();
+				for (s32 w = 0; w < wallCount; w++, wall++)
+				{
+					if (!addWallToList(sector->vtx.data(), wall, &wallsToKeep))
+					{
+						if (wall->adjoinId >= 0 && wall->mirrorId >= 0)
+						{
+							EditorSector* next = &s_level.sectors[wall->adjoinId];
+							if (wall->mirrorId < (s32)next->walls.size())
+							{
+								next->walls[wall->mirrorId].adjoinId = -1;
+								next->walls[wall->mirrorId].mirrorId = -1;
+							}
+						}
+					}
+				}
+			}
+
+			// 2. Recreate the sector walls and vertices.
+			const s32 wallCount = (s32)wallsToKeep.size();
+			sector->walls.resize(wallCount);
+			sector->vtx.clear();
+
+			EditorWall* wall = sector->walls.data();
+			const EditorWallRaw* wallSrc = wallsToKeep.data();
+			for (s32 w = 0; w < wallCount; w++, wall++, wallSrc++)
+			{
+				wall->idx[0] = insertVertexIntoSector(sector, wallSrc->vtx[0]);
+				wall->idx[1] = insertVertexIntoSector(sector, wallSrc->vtx[1]);
+				for (s32 i = 0; i < 3; i++)
+				{
+					wall->flags[i] = wallSrc->flags[i];
+				}
+				for (s32 i = 0; i < WP_COUNT; i++)
+				{
+					wall->tex[i] = wallSrc->tex[i];
+				}
+				wall->wallLight = wallSrc->wallLight;
+
+				if (wallSrc->adjoinId < 0)
+				{
+					wall->adjoinId = -1;
+					wall->mirrorId = -1;
+				}
+				else
+				{
+					EditorSector* next = &s_level.sectors[wallSrc->adjoinId];
+					if (wallSrc->mirrorId >= 0 && wallSrc->mirrorId < (s32)next->walls.size())
+					{
+						// Update the mirrored wall's mirror and adjoinId.
+						next->walls[wallSrc->mirrorId].adjoinId = sector->id;
+						next->walls[wallSrc->mirrorId].mirrorId = w;
+						wall->adjoinId = wallSrc->adjoinId;
+						wall->mirrorId = wallSrc->mirrorId;
+					}
+					else
+					{
+						// ERROR
+						wall->adjoinId = -1;
+						wall->mirrorId = -1;
+					}
+				}
+			}
+			sectorToPolygon(sector);
+		}
+	}
+
+	void edit_joinSectors()
+	{
+		std::vector<s32> selectedSectors;
+
+		// We must be in the wall (in 3D) or sector mode.
+		bool canSelectSectors = (s_editMode == LEDIT_WALL && s_view == EDIT_VIEW_3D) || s_editMode == LEDIT_SECTOR;
+		if (!canSelectSectors) { return; }
+
+		// At least one sector must be selected.
+		// If only one is selected, this will act as a "clean" - removing degenerate walls, re-ordering, etc.
+		const s32 count = (s32)s_selectionList.size();
+		if (count < 2) { return; }
+
+		const FeatureId* feature = s_selectionList.data();
+		for (s32 i = 0; i < count; i++)
+		{
+			s32 index;
+			HitPart part;
+			EditorSector* sector = unpackFeatureId(feature[i], &index, (s32*)&part);
+			if (part == HP_FLOOR || part == HP_CEIL || s_editMode == LEDIT_SECTOR)
+			{
+				selectedSectors.push_back(sector->id);
+			}
+		}
+		// Re-check to make sure we have at least two sectors.
+		const s32 sectorCount = (s32)selectedSectors.size();
+		if (sectorCount < 2) { return; }
 
 		std::sort(selectedSectors.begin() + 1, selectedSectors.end());
 		const s32* indices = selectedSectors.data();
@@ -6828,9 +6932,13 @@ namespace LevelEditor
 			}
 			enableNextItem(); // End TODO
 			ImGui::Separator();
-			if (ImGui::MenuItem("Clean or Join Sector(s)", NULL, (bool*)NULL))
+			if (ImGui::MenuItem("Join Sectors", NULL, (bool*)NULL))
 			{
 				edit_joinSectors();
+			}
+			if (ImGui::MenuItem("Clean Sector(s)", NULL, (bool*)NULL))
+			{
+				edit_cleanSectors();
 			}
 			if (ImGui::MenuItem("Find Sector", NULL, (bool*)NULL))
 			{
