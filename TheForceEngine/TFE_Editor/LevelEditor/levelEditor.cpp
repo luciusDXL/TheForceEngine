@@ -4231,7 +4231,13 @@ namespace LevelEditor
 	{
 		const Vec2f v0 = vtx[wall->idx[0]];
 		const Vec2f v1 = vtx[wall->idx[1]];
+		// Remove degenerate walls.
+		if (TFE_Polygon::vtxEqual(&v0, &v1))
+		{
+			return false;
+		}
 
+		// Determine if the wall is already included and what its previous and next connections are.
 		const s32 wallCount = (s32)wallList->size();
 		EditorWallRaw* wallRaw = wallList->data();
 		s32 prevWall = -1, nextWall = -1;
@@ -4251,6 +4257,7 @@ namespace LevelEditor
 			}
 		}
 
+		// Create a new wall but copy the parameters from the source wall.
 		s32 id = (s32)wallList->size();
 		EditorWallRaw newWall = { 0 };
 		for (s32 i = 0; i < 3; i++)
@@ -4267,16 +4274,75 @@ namespace LevelEditor
 		newWall.adjoinId = wall->adjoinId;
 		newWall.mirrorId = wall->mirrorId;
 		
+		// Determine where to place the wall.
 		if (prevWall >= 0)
 		{
+			// Insert the new wall after the previous connection.
 			wallList->insert(wallList->begin() + prevWall + 1, newWall);
+			// If the next wall is *before* the previous wall and the new wall connects the two loops together,
+			// then resort so everything is in the correct order.
+			const s32 loopLen = prevWall + 2 - nextWall;	// curIndex = prevWall + 1, len = curIndex - nextWall + 1
+			if (nextWall >= 0 && nextWall < prevWall && loopLen < (s32)wallList->size())
+			{
+				// Capture the next loop.
+				std::vector<EditorWallRaw> nextLoop;
+				std::vector<s32> nextLoopIdx;
+				EditorWallRaw* edge = &(*wallList)[nextWall];
+				while (edge)
+				{
+					nextLoop.push_back(*edge);
+					nextLoopIdx.push_back(nextWall);
+					if (nextWall == (s32)wallList->size() - 1 || !TFE_Polygon::vtxEqual(&edge->vtx[1], &(edge + 1)->vtx[0]))
+					{
+						break;
+					}
+					edge++;
+					nextWall++;
+				}
+
+				// Delete the next loop.
+				const s32 nextLoopCount = (s32)nextLoop.size();
+				const s32* list = nextLoopIdx.data();
+				for (s32 i = nextLoopCount - 1; i >= 0; i--)
+				{
+					wallList->erase(wallList->begin() + list[i]);
+				}
+
+				// Finally re-insert the next loop again after the previous loop or at the end.
+				const s32 newWallCount = (s32)wallList->size();
+				wallRaw = wallList->data();
+				const Vec2f* v0 = &nextLoop[0].vtx[0];
+				s32 insertIdx = -1;
+				for (s32 w = 0; w < newWallCount; w++, wallRaw++)
+				{
+					if (TFE_Polygon::vtxEqual(&wallRaw->vtx[1], v0))
+					{
+						// +1 = insert *after*.
+						insertIdx = w + 1;
+						break;
+					}
+				}
+				if (insertIdx < 0)
+				{
+					// This can happen when there are "islands" - such as holes.
+					// In this case, simply append the loop at the end.
+					insertIdx = (s32)wallList->size();
+				}
+
+				for (s32 i = 0; i < nextLoopCount; i++)
+				{
+					wallList->insert(wallList->begin() + insertIdx + i, nextLoop[i]);
+				}
+			}
 		}
 		else if (nextWall >= 0)
 		{
+			// Insert the wall *before* the next connection.
 			wallList->insert(wallList->begin() + nextWall, newWall);
 		}
 		else
 		{
+			// Insert the wall at the end (no connections).
 			wallList->push_back(newWall);
 		}
 		return true;
@@ -4290,9 +4356,10 @@ namespace LevelEditor
 		bool canSelectSectors = (s_editMode == LEDIT_WALL && s_view == EDIT_VIEW_3D) || s_editMode == LEDIT_SECTOR;
 		if (!canSelectSectors) { return; }
 
-		// At least two sectors must be selected.
+		// At least one sector must be selected.
+		// If only one is selected, this will act as a "clean" - removing degenerate walls, re-ordering, etc.
 		const s32 count = (s32)s_selectionList.size();
-		if (count < 2) { return; }
+		if (count < 1) { return; }
 
 		const FeatureId* feature = s_selectionList.data();
 		for (s32 i = 0; i < count; i++)
@@ -6761,7 +6828,7 @@ namespace LevelEditor
 			}
 			enableNextItem(); // End TODO
 			ImGui::Separator();
-			if (ImGui::MenuItem("Join Sectors", NULL, (bool*)NULL))
+			if (ImGui::MenuItem("Clean or Join Sector(s)", NULL, (bool*)NULL))
 			{
 				edit_joinSectors();
 			}
