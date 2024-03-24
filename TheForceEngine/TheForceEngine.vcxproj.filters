@@ -1321,6 +1321,9 @@
     <ClInclude Include="TFE_RenderShared\gridDef.h">
       <Filter>Source\TFE_RenderShared</Filter>
     </ClInclude>
+    <ClInclude Include="TFE_Editor\LevelEditor\lighting.h">
+      <Filter>Source\TFE_Editor\LevelEditor</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -2267,6 +2270,9 @@
     </ClCompile>
     <ClCompile Include="TFE_Editor\LevelEditor\Rendering\grid.cpp">
       <Filter>Source\TFE_Editor\LevelEditor\Rendering</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Editor\LevelEditor\lighting.cpp">
+      <Filter>Source\TFE_Editor\LevelEditor</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

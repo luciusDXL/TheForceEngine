@@ -11,6 +11,7 @@
 #include <TFE_Editor/LevelEditor/infoPanel.h>
 #include <TFE_Editor/LevelEditor/levelEditorInf.h>
 #include <TFE_Editor/LevelEditor/groups.h>
+#include <TFE_Editor/LevelEditor/lighting.h>
 #include <TFE_Editor/EditorAsset/editorAsset.h>
 #include <TFE_Editor/EditorAsset/editor3dThumbnails.h>
 #include <TFE_Input/input.h>

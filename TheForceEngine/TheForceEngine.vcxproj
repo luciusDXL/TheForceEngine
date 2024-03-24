@@ -471,6 +471,7 @@ echo ^)";
     <ClInclude Include="TFE_Editor\LevelEditor\levelEditorData.h" />
     <ClInclude Include="TFE_Editor\LevelEditor\levelEditorHistory.h" />
     <ClInclude Include="TFE_Editor\LevelEditor\levelEditorInf.h" />
+    <ClInclude Include="TFE_Editor\LevelEditor\lighting.h" />
     <ClInclude Include="TFE_Editor\LevelEditor\Rendering\grid.h" />
     <ClInclude Include="TFE_Editor\LevelEditor\Rendering\grid2d.h" />
     <ClInclude Include="TFE_Editor\LevelEditor\Rendering\grid3d.h" />
@@ -829,6 +830,7 @@ echo ^)";
     <ClCompile Include="TFE_Editor\LevelEditor\levelEditorData.cpp" />
     <ClCompile Include="TFE_Editor\LevelEditor\levelEditorHistory.cpp" />
     <ClCompile Include="TFE_Editor\LevelEditor\levelEditorInf.cpp" />
+    <ClCompile Include="TFE_Editor\LevelEditor\lighting.cpp" />
     <ClCompile Include="TFE_Editor\LevelEditor\Rendering\grid.cpp" />
     <ClCompile Include="TFE_Editor\LevelEditor\Rendering\grid2d.cpp" />
     <ClCompile Include="TFE_Editor\LevelEditor\Rendering\grid3d.cpp" />

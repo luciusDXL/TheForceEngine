@@ -2,6 +2,7 @@
 #include "levelEditorData.h"
 #include "levelEditorHistory.h"
 #include "levelEditorInf.h"
+#include "lighting.h"
 #include "entity.h"
 #include "groups.h"
 #include "selection.h"
@@ -46,7 +47,7 @@
 #include <SDL.h>
 
 #include <TFE_Ui/imGUI/imgui.h>
-#include <limits.h>
+#include <climits>
 #include <algorithm>
 #include <vector>
 #include <string>
@@ -287,7 +288,7 @@ namespace LevelEditor
 		char colormapName[256];
 		sprintf(colormapName, "%s.CMP", s_level.slot.c_str());
 		AssetHandle colormapHandle = loadColormap(colormapName);
-		infoPanelAddMsg(LE_MSG_INFO, "Palette: '%s', Colormap: '%s'", s_level.palette.c_str(), colormapName);
+		LE_INFO("Palette: '%s', Colormap: '%s'", s_level.palette.c_str(), colormapName);
 	}
 
 	bool init(Asset* asset)
@@ -325,7 +326,7 @@ namespace LevelEditor
 		{
 			return false;
 		}
-		infoPanelAddMsg(LE_MSG_INFO, "Loaded level '%s'", s_level.name.c_str());
+		LE_INFO("Loaded level '%s'", s_level.name.c_str());
 
 		loadPaletteAndColormap();
 						
@@ -338,11 +339,11 @@ namespace LevelEditor
 		s_boolToolbarData = loadGpuImage("UI_Images/Boolean_32x3.png");
 		if (s_boolToolbarData)
 		{
-			infoPanelAddMsg(LE_MSG_INFO, "Loaded toolbar images 'UI_Images/Boolean_32x3.png'");
+			LE_INFO("Loaded toolbar images 'UI_Images/Boolean_32x3.png'");
 		}
 		else
 		{
-			infoPanelAddMsg(LE_MSG_ERROR, "Failed to load toolbar images 'UI_Images/Boolean_32x3.png'");
+			LE_ERROR("Failed to load toolbar images 'UI_Images/Boolean_32x3.png'");
 		}
 
 		u32 idx = 0;
@@ -6811,8 +6812,8 @@ namespace LevelEditor
 			if (TFE_Input::keyPressed(KEY_G) && !TFE_Input::keyModDown(KEYMOD_CTRL))
 			{
 				s_gravity = !s_gravity;
-				if (s_gravity) { infoPanelAddMsg(LE_MSG_INFO, "Gravity Enabled."); }
-				else { infoPanelAddMsg(LE_MSG_INFO, "Gravity Disabled."); }
+				if (s_gravity) { LE_INFO("Gravity Enabled."); }
+				else { LE_INFO("Gravity Disabled."); }
 			}
 			if (s_gravity)
 			{
@@ -9631,113 +9632,13 @@ namespace LevelEditor
 		start.sector = findSector3d(start.pos, s_curLayer);
 		if (!start.sector)
 		{
-			infoPanelAddMsg(LE_MSG_ERROR, "Cannot test level, camera must be inside of a sector.");
+			LE_ERROR("Cannot test level, camera must be inside of a sector.");
 			return;
 		}
 
 		char exportPath[TFE_MAX_PATH];
 		getTempDirectory(exportPath);
 		exportLevel(exportPath, s_level.slot.c_str(), &start);
-	}
-
-	static f32 s_wallLightAngle = 0.78539816339744830962f;	// 45 degrees.
-	static s32 s_wallLightRange[] = { -8, 8 };
-	static bool s_wallBacklighting = true;
-	static bool s_wallLightingScale = true;
-
-	bool levelLighting()
-	{
-		pushFont(TFE_Editor::FONT_SMALL);
-		bool active = true;
-		ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysAutoResize;
-
-		bool applyLighting = false;
-		bool cancel = false;
-		if (ImGui::BeginPopupModal("Level Lighting", &active, window_flags))
-		{
-			ImGui::Text("Directional Wall Lighting");
-			ImGui::NewLine();
-
-			ImGui::Text("Light Angle");
-			ImGui::SetNextItemWidth(256.0f);
-			ImGui::SameLine(0.0f, 8.0f);
-			ImGui::SliderAngle("##Light Angle", &s_wallLightAngle);
-
-			ImGui::Text("Wall Light Range");
-			ImGui::SetNextItemWidth(256.0f);
-			ImGui::SameLine(0.0f, 8.0f);
-			ImGui::SliderInt2("##Light Range", s_wallLightRange, -16, 16);
-			if (s_wallLightRange[0] > s_wallLightRange[1]) { s_wallLightRange[0] = s_wallLightRange[1]; }
-
-			ImGui::Text("Enable Wrap Lighting");
-			ImGui::SameLine(0.0f, 8.0f);
-			ImGui::Checkbox("##Wraplighting", &s_wallBacklighting);
-
-			ImGui::Text("Scale with Sector Ambient");
-			ImGui::SameLine(0.0f, 8.0f);
-			ImGui::Checkbox("##ScaleAmbient", &s_wallLightingScale);
-
-			ImGui::Separator();
-
-			if (ImGui::Button("Apply"))
-			{
-				applyLighting = true;
-			}
-			ImGui::SameLine(0.0f, 8.0f);
-			if (ImGui::Button("Cancel"))
-			{
-				cancel = true;
-			}
-			ImGui::EndPopup();
-		}
-		popFont();
-
-		if (applyLighting)
-		{
-			Vec2f dir = { sinf(s_wallLightAngle), cosf(s_wallLightAngle) };
-			f32 minOffset = (f32)s_wallLightRange[0];
-			f32 maxOffset = (f32)s_wallLightRange[1];
-			f32 delta = maxOffset - minOffset;
-
-			const s32 sectorCount = (s32)s_level.sectors.size();
-			EditorSector* sector = s_level.sectors.data();
-			for (s32 s = 0; s < sectorCount; s++, sector++)
-			{
-				if (s_curLayer != sector->layer && s_curLayer != LAYER_ANY) { continue; }
-				if (!sector_isInteractable(sector)) { continue; }
-
-				const f32 ambientScale = min(1.0f, sector->ambient / 30.0f);
-				const s32 wallCount = (s32)sector->walls.size();
-				const Vec2f* vtx = sector->vtx.data();
-				EditorWall* wall = sector->walls.data();
-				for (s32 w = 0; w < wallCount; w++, wall++)
-				{
-					Vec2f v0 = vtx[wall->idx[0]];
-					Vec2f v1 = vtx[wall->idx[1]];
-					Vec2f nrm = { -(v1.z - v0.z), v1.x - v0.x };
-					nrm = TFE_Math::normalize(&nrm);
-
-					f32 dp = dir.x*nrm.x + dir.z*nrm.z;
-					if (s_wallBacklighting)
-					{
-						dp = max(0.0f, min(1.0f, dp * 0.5f + 0.5f));
-					}
-					else
-					{
-						dp = max(0.0f, min(1.0f, dp));
-					}
-					
-					f32 offset = minOffset + dp * delta;
-					if (s_wallLightingScale)
-					{
-						offset *= ambientScale;
-					}
-
-					wall->wallLight = s32(offset);
-				}
-			}
-		}
-		return !active || applyLighting || cancel;
 	}
 	
 	void copyToClipboard(const char* str)
