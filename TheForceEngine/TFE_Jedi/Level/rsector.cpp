@@ -29,7 +29,7 @@ namespace TFE_Jedi
 	void sector_computeWallDirAndLength(RWall* wall);
 	void sector_moveWallVertex(RWall* wall, fixed16_16 offsetX, fixed16_16 offsetZ);
 	JBool sector_objOverlapsWall(RWall* wall, SecObject* obj, s32* objSide);
-	JBool sector_canWallMove(RWall* wall, fixed16_16 offsetX, fixed16_16 offsetZ);
+	JBool sector_isWallBlockedByPlayer(RWall* wall, fixed16_16 offsetX, fixed16_16 offsetZ);
 	void sector_moveObjects(RSector* sector, u32 flags, fixed16_16 offsetX, fixed16_16 offsetZ);
 
 	f32 isLeft(Vec2f p0, Vec2f p1, Vec2f p2);
@@ -241,12 +241,12 @@ namespace TFE_Jedi
 		{
 			if (wall->flags1 & WF1_WALL_MORPHS)
 			{
-				sectorBlocked |= sector_canWallMove(wall, offsetX, offsetZ);
+				sectorBlocked |= sector_isWallBlockedByPlayer(wall, offsetX, offsetZ);
 
 				RWall* mirror = wall->mirrorWall;
 				if (mirror && (mirror->flags1 & WF1_WALL_MORPHS))
 				{
-					sectorBlocked |= sector_canWallMove(mirror, offsetX, offsetZ);
+					sectorBlocked |= sector_isWallBlockedByPlayer(mirror, offsetX, offsetZ);
 				}
 			}
 		}
@@ -1167,7 +1167,7 @@ namespace TFE_Jedi
 	}
 
 	// returns 0 if the wall is free to move, else non-zero.
-	JBool sector_canWallMove(RWall* wall, fixed16_16 offsetX, fixed16_16 offsetZ)
+	JBool sector_isWallBlockedByPlayer(RWall* wall, fixed16_16 offsetX, fixed16_16 offsetZ)
 	{
 		// Test the initial position, the code assumes there is no collision at this point.
 		s32 objSide0 = 0;
