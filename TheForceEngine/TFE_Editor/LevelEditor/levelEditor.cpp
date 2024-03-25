@@ -4216,6 +4216,24 @@ namespace LevelEditor
 		return true;
 	}
 
+	s32 findMatchingMirror(EditorSector* sector, EditorSector* next, Vec2f v0, Vec2f v1)
+	{
+		// Find the correct mirror.
+		EditorWall* wallnext = next->walls.data();
+		const s32 nextWallCount = (s32)next->walls.size();
+		for (s32 n = 0; n < nextWallCount; n++, wallnext++)
+		{
+			const Vec2f n0 = next->vtx[wallnext->idx[0]];
+			const Vec2f n1 = next->vtx[wallnext->idx[1]];
+			if (TFE_Polygon::vtxEqual(&v0, &n1) && TFE_Polygon::vtxEqual(&v1, &n0))
+			{
+				// Update the mirrored wall's mirror and adjoinId.
+				return n;
+			}
+		}
+		return -1;
+	}
+
 	void cleanSectors(const std::vector<s32>& selectedSectors)
 	{
 		// Re-check to make sure we have at least two sectors.
@@ -4282,12 +4300,11 @@ namespace LevelEditor
 				else
 				{
 					EditorSector* next = &s_level.sectors[wallSrc->adjoinId];
-					const s32 nextWallCount = (s32)next->walls.size();
-					if (wallSrc->mirrorId >= 0 && wallSrc->mirrorId < nextWallCount)
+					const Vec2f v0 = wallSrc->vtx[0];
+					const Vec2f v1 = wallSrc->vtx[1];
+					if (wallSrc->mirrorId >= 0 && wallSrc->mirrorId < (s32)next->walls.size())
 					{
 						// Does the mirror match?
-						const Vec2f v0  = wallSrc->vtx[0];
-						const Vec2f v1  = wallSrc->vtx[1];
 						const Vec2f nv0 = next->vtx[next->walls[wallSrc->mirrorId].idx[0]];
 						const Vec2f nv1 = next->vtx[next->walls[wallSrc->mirrorId].idx[1]];
 						if (TFE_Polygon::vtxEqual(&v0, &nv1) && TFE_Polygon::vtxEqual(&v1, &nv0))
@@ -4300,26 +4317,19 @@ namespace LevelEditor
 						}
 						else
 						{
-							// Find the correct mirror.
-							EditorWall* wallnext = next->walls.data();
-							bool foundMatch = false;
-							for (s32 n = 0; n < nextWallCount; n++, wallnext++)
+							// If not, try to find the matching mirror.
+							const s32 matchId = findMatchingMirror(sector, next, v0, v1);
+							if (matchId >= 0)
 							{
-								const Vec2f n0 = next->vtx[wallnext->idx[0]];
-								const Vec2f n1 = next->vtx[wallnext->idx[1]];
-								if (TFE_Polygon::vtxEqual(&v0, &n1) && TFE_Polygon::vtxEqual(&v1, &n0))
-								{
-									// Update the mirrored wall's mirror and adjoinId.
-									wallnext->adjoinId = sector->id;
-									wallnext->mirrorId = w;
-									wall->adjoinId = wallSrc->adjoinId;
-									wall->mirrorId = n;
-									foundMatch = true;
-									break;
-								}
+								// Update the mirrored wall's mirror and adjoinId.
+								next->walls[matchId].adjoinId = sector->id;
+								next->walls[matchId].mirrorId = w;
+								wall->adjoinId = wallSrc->adjoinId;
+								wall->mirrorId = matchId;
 							}
-							if (!foundMatch)
+							else
 							{
+								// If that fails, clear out the adjoin.
 								wall->adjoinId = -1;
 								wall->mirrorId = -1;
 							}
@@ -4327,9 +4337,22 @@ namespace LevelEditor
 					}
 					else
 					{
-						wall->adjoinId = -1;
-						wall->mirrorId = -1;
-						LE_ERROR("Clean Sector(s) - invalid mirrorId in sector %d, wall %d.", sector->id, w);
+						const s32 matchId = findMatchingMirror(sector, next, v0, v1);
+						if (matchId >= 0)
+						{
+							// Update the mirrored wall's mirror and adjoinId.
+							next->walls[matchId].adjoinId = sector->id;
+							next->walls[matchId].mirrorId = w;
+							wall->adjoinId = wallSrc->adjoinId;
+							wall->mirrorId = matchId;
+						}
+						else
+						{
+							// If that fails, clear out the adjoin.
+							wall->adjoinId = -1;
+							wall->mirrorId = -1;
+							LE_ERROR("Clean Sector(s) - invalid mirrorId in sector %d, wall %d.", sector->id, w);
+						}
 					}
 				}
 			}
