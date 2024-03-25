@@ -276,6 +276,7 @@ namespace LevelEditor
 #endif
 
 	void edit_insertShape(const f32* heights, BoolMode mode, s32 firstVertex, bool allowSubsectorExtrude);
+	void cleanSectors(const std::vector<s32>& selectedSectors);
 	
 	extern Vec3f extrudePoint2dTo3d(const Vec2f pt2d);
 	extern Vec3f extrudePoint2dTo3d(const Vec2f pt2d, f32 height);
@@ -1327,15 +1328,11 @@ namespace LevelEditor
 		for (s32 i = 0; i < count; i++)
 		{
 			EditorSector* sector = list[i];
-			// For now just look at vertex count, later remove degenerates?
-			if (sector->vtx.size() >= 3) { continue; }
 
 			// *TODO*
 			// Is the sector degenerate (aka, has no area)?
-			
-			// *TODO*
-			// Go through the walls, we need to delete any mirrors - but only if this is a sub-sector.
-
+			if (sector->vtx.size() >= 3) { continue; }
+						
 			// Get the ID and then erase it from the level.
 			s32 delId = sector->id;
 			s_level.sectors.erase(s_level.sectors.begin() + delId);
@@ -1477,99 +1474,45 @@ namespace LevelEditor
 		for (s32 i = 0; i < wallGroupCount; i++, group++)
 		{
 			EditorSector* sector = group->sector;
-			// Gather sectors to later re-generate adjoins.
 			if (sector->searchKey != s_searchKey)
 			{
 				sector->searchKey = s_searchKey;
 				s_sectorChangeList.push_back(sector);
-
-				// Add adjoined sectors as well.
-				const s32 wallCount = (s32)sector->walls.size();
-				EditorWall* wall = sector->walls.data();
-				for (s32 w = 0; w < wallCount; w++, wall++)
-				{
-					EditorSector* next = wall->adjoinId < 0 ? nullptr : &s_level.sectors[wall->adjoinId];
-					if (next && next->searchKey != s_searchKey)
-					{
-						next->searchKey = s_searchKey;
-						s_sectorChangeList.push_back(next);
-					}
-				}
 			}
 
-			// Merge walls in group.
-			if (group->leftWall >= 0 && group->rightWall >= 0)
+			EditorWall* left  = group->leftWall  >= 0 ? &sector->walls[group->leftWall]  : nullptr;
+			EditorWall* right = group->rightWall >= 0 ? &sector->walls[group->rightWall] : nullptr;
+			if (left && right)
 			{
-				EditorWall* left  = &sector->walls[group->leftWall];
-				EditorWall* right = &sector->walls[group->rightWall];
+				// Merge the left and right walls.
 				left->idx[1] = right->idx[1];
-								
-				// Erase adjoins, these will be fixed up later.
-				if (left->adjoinId >= 0)
-				{
-					const s32 mirrorId = getMirrorId(sector, group->leftWall);
-					EditorSector* next = &s_level.sectors[left->adjoinId];
-					if (mirrorId >= 0 && mirrorId < (s32)next->walls.size())
-					{
-						next->walls[mirrorId].adjoinId = -1;
-						next->walls[mirrorId].mirrorId = -1;
-					}
-				}
-				if (right->adjoinId >= 0 && right->mirrorId >= 0)
-				{
-					const s32 mirrorId = getMirrorId(sector, group->rightWall);
-					EditorSector* next = &s_level.sectors[right->adjoinId];
-					if (mirrorId >= 0 && mirrorId < (s32)next->walls.size())
-					{
-						next->walls[mirrorId].adjoinId = -1;
-						next->walls[mirrorId].mirrorId = -1;
-					}
-				}
-				left->adjoinId = -1;
-				left->mirrorId = -1;
-
-				sector->walls.erase(sector->walls.begin() + group->rightWall);
+				// Make the right wall degenerate - this will be removed during the "clean" pass.
+				right->idx[0] = right->idx[1];
 			}
-			else if (group->leftWall >= 0)
+			else if (left)
 			{
-				EditorWall* left = &sector->walls[group->leftWall];
-				if (left->adjoinId >= 0)
-				{
-					const s32 mirrorId = getMirrorId(sector, group->leftWall);
-					EditorSector* next = &s_level.sectors[left->adjoinId];
-					if (mirrorId >= 0 && mirrorId < (s32)next->walls.size())
-					{
-						next->walls[mirrorId].adjoinId = -1;
-						next->walls[mirrorId].mirrorId = -1;
-					}
-				}
-				sector->walls.erase(sector->walls.begin() + group->leftWall);
+				// Make the wall degenerate - this will be removed during the "clean" pass.
+				left->idx[1] = left->idx[0];
 			}
-			else if (group->rightWall >= 0)
+			else if (right)
 			{
-				EditorWall* right = &sector->walls[group->rightWall];
-				if (right->adjoinId >= 0)
-				{
-					const s32 mirrorId = getMirrorId(sector, group->rightWall);
-					EditorSector* next = &s_level.sectors[right->adjoinId];
-					if (mirrorId >= 0 && mirrorId < (s32)next->walls.size())
-					{
-						next->walls[mirrorId].adjoinId = -1;
-						next->walls[mirrorId].mirrorId = -1;
-					}
-				}
-				sector->walls.erase(sector->walls.begin() + group->rightWall);
+				// Make the wall degenerate - this will be removed during the "clean" pass.
+				right->idx[1] = right->idx[0];
 			}
-
-			deleteVertex(sector, group->vertexIndex);
-			sectorToPolygon(sector);
 		}
+
+		// Clean sectors - this will remove collapsed walls and clean up the sectors.
+		std::vector<s32> selectedSectors;
+		const s32 count = (s32)s_sectorChangeList.size();
+		EditorSector** sectorList = s_sectorChangeList.data();
+		for (s32 i = 0; i < count; i++)
+		{
+			selectedSectors.push_back(sectorList[i]->id);
+		}
+		cleanSectors(selectedSectors);
 
 		// Remove any invalid sectors.
 		deleteInvalidSectors(s_sectorChangeList);
-
-		// Then find adjoins.
-		findAdjoinsInList(s_sectorChangeList);
 
 		// When deleting features, we need to clear out the selections.
 		edit_clearSelections();
@@ -4273,38 +4216,8 @@ namespace LevelEditor
 		return true;
 	}
 
-	void edit_cleanSectors()
+	void cleanSectors(const std::vector<s32>& selectedSectors)
 	{
-		std::vector<s32> selectedSectors;
-
-		// We must be in the wall (in 3D) or sector mode.
-		bool canSelectSectors = (s_editMode == LEDIT_WALL && s_view == EDIT_VIEW_3D) || s_editMode == LEDIT_SECTOR;
-		if (!canSelectSectors)
-		{
-			LE_WARNING("Clean Sector(s) - no sectors selected.");
-			return;
-		}
-
-		// At least one sector must be selected.
-		// If only one is selected, this will act as a "clean" - removing degenerate walls, re-ordering, etc.
-		const s32 count = (s32)s_selectionList.size();
-		if (count < 1)
-		{
-			LE_WARNING("Clean Sector(s) - no sectors selected.");
-			return;
-		}
-
-		const FeatureId* feature = s_selectionList.data();
-		for (s32 i = 0; i < count; i++)
-		{
-			s32 index;
-			HitPart part;
-			EditorSector* sector = unpackFeatureId(feature[i], &index, (s32*)&part);
-			if (part == HP_FLOOR || part == HP_CEIL || s_editMode == LEDIT_SECTOR)
-			{
-				selectedSectors.push_back(sector->id);
-			}
-		}
 		// Re-check to make sure we have at least two sectors.
 		const s32 sectorCount = (s32)selectedSectors.size();
 		if (sectorCount < 1)
@@ -4317,7 +4230,7 @@ namespace LevelEditor
 		for (s32 s = 0; s < sectorCount; s++)
 		{
 			EditorSector* sector = &s_level.sectors[indices[s]];
-			
+
 			// 1. Record all of the walls we are keeping.
 			std::vector<EditorWallRaw> wallsToKeep;
 			{
@@ -4369,13 +4282,48 @@ namespace LevelEditor
 				else
 				{
 					EditorSector* next = &s_level.sectors[wallSrc->adjoinId];
-					if (wallSrc->mirrorId >= 0 && wallSrc->mirrorId < (s32)next->walls.size())
+					const s32 nextWallCount = (s32)next->walls.size();
+					if (wallSrc->mirrorId >= 0 && wallSrc->mirrorId < nextWallCount)
 					{
-						// Update the mirrored wall's mirror and adjoinId.
-						next->walls[wallSrc->mirrorId].adjoinId = sector->id;
-						next->walls[wallSrc->mirrorId].mirrorId = w;
-						wall->adjoinId = wallSrc->adjoinId;
-						wall->mirrorId = wallSrc->mirrorId;
+						// Does the mirror match?
+						const Vec2f v0  = wallSrc->vtx[0];
+						const Vec2f v1  = wallSrc->vtx[1];
+						const Vec2f nv0 = next->vtx[next->walls[wallSrc->mirrorId].idx[0]];
+						const Vec2f nv1 = next->vtx[next->walls[wallSrc->mirrorId].idx[1]];
+						if (TFE_Polygon::vtxEqual(&v0, &nv1) && TFE_Polygon::vtxEqual(&v1, &nv0))
+						{
+							// Update the mirrored wall's mirror and adjoinId.
+							next->walls[wallSrc->mirrorId].adjoinId = sector->id;
+							next->walls[wallSrc->mirrorId].mirrorId = w;
+							wall->adjoinId = wallSrc->adjoinId;
+							wall->mirrorId = wallSrc->mirrorId;
+						}
+						else
+						{
+							// Find the correct mirror.
+							EditorWall* wallnext = next->walls.data();
+							bool foundMatch = false;
+							for (s32 n = 0; n < nextWallCount; n++, wallnext++)
+							{
+								const Vec2f n0 = next->vtx[wallnext->idx[0]];
+								const Vec2f n1 = next->vtx[wallnext->idx[1]];
+								if (TFE_Polygon::vtxEqual(&v0, &n1) && TFE_Polygon::vtxEqual(&v1, &n0))
+								{
+									// Update the mirrored wall's mirror and adjoinId.
+									wallnext->adjoinId = sector->id;
+									wallnext->mirrorId = w;
+									wall->adjoinId = wallSrc->adjoinId;
+									wall->mirrorId = n;
+									foundMatch = true;
+									break;
+								}
+							}
+							if (!foundMatch)
+							{
+								wall->adjoinId = -1;
+								wall->mirrorId = -1;
+							}
+						}
 					}
 					else
 					{
@@ -4387,6 +4335,42 @@ namespace LevelEditor
 			}
 			sectorToPolygon(sector);
 		}
+	}
+
+	void edit_cleanSectors()
+	{
+		std::vector<s32> selectedSectors;
+
+		// We must be in the wall (in 3D) or sector mode.
+		bool canSelectSectors = (s_editMode == LEDIT_WALL && s_view == EDIT_VIEW_3D) || s_editMode == LEDIT_SECTOR;
+		if (!canSelectSectors)
+		{
+			LE_WARNING("Clean Sector(s) - no sectors selected.");
+			return;
+		}
+
+		// At least one sector must be selected.
+		// If only one is selected, this will act as a "clean" - removing degenerate walls, re-ordering, etc.
+		const s32 count = (s32)s_selectionList.size();
+		if (count < 1)
+		{
+			LE_WARNING("Clean Sector(s) - no sectors selected.");
+			return;
+		}
+
+		const FeatureId* feature = s_selectionList.data();
+		for (s32 i = 0; i < count; i++)
+		{
+			s32 index;
+			HitPart part;
+			EditorSector* sector = unpackFeatureId(feature[i], &index, (s32*)&part);
+			if (part == HP_FLOOR || part == HP_CEIL || s_editMode == LEDIT_SECTOR)
+			{
+				selectedSectors.push_back(sector->id);
+			}
+		}
+
+		cleanSectors(selectedSectors);
 	}
 
 	void edit_joinSectors()
