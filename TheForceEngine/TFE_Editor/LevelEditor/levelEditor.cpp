@@ -4070,7 +4070,7 @@ namespace LevelEditor
 		// Fix-up adjoins.
 		fixupSectorAdjoins(adjoinSectorsToFix);
 
-		// Delete any sectors - note this should only happen in the SUBTRACT mode.
+		// Delete any sectors - note this should only happen in the SUBTRACT mode unless degenerate sectors are found.
 		if (!deleteId.empty())
 		{
 			std::sort(deleteId.begin(), deleteId.end());
@@ -6190,13 +6190,10 @@ namespace LevelEditor
 
 	void deleteObject(EditorSector* sector, s32 index)
 	{
-		if (!sector || index < 0 || index >= sector->obj.size()) { return; }
-		s32 count = (s32)sector->obj.size();
-		for (s32 i = index; i < count - 1; i++)
+		if (sector && index >= 0 && index < (s32)sector->obj.size())
 		{
-			sector->obj[i] = sector->obj[i + 1];
+			sector->obj.erase(sector->obj.begin() + index);
 		}
-		sector->obj.pop_back();
 	}
 
 	bool pointInsideOBB2d(const Vec2f pt, const Vec3f* bounds, const Vec3f* pos, const Mat3* mtx)
