@@ -1243,6 +1243,34 @@ namespace TFE_Polygon
 			}
 		}
 	}
+
+	bool isPolygonDegenerate(BPolygon* poly)
+	{
+		if (poly->edges.size() < 3) { return true; }
+		const f32 eps = 0.1f;
+		const s32 edgeCount = poly->edges.size();
+		BEdge* edge = poly->edges.data();
+		f32 twiceArea = 0.0f;
+		for (s32 e = 0; e < edgeCount; e++, edge++)
+		{
+			twiceArea += (edge->v1.x - edge->v0.x) * (edge->v1.z + edge->v0.z);
+		}
+		return twiceArea < eps;
+	}
+
+	void removeDegeneratePolygons(std::vector<BPolygon>* polyList)
+	{
+		if (polyList->empty()) { return; }
+		const s32 count = (s32)polyList->size();
+		for (s32 i = count - 1; i >= 0; i--)
+		{
+			BPolygon* poly = &(*polyList)[i];
+			if (isPolygonDegenerate(poly))
+			{
+				polyList->erase(polyList->begin() + i);
+			}
+		}
+	}
 		
 	// Returns the number of polygons outside of the clip area.
 	void clipPolygons(const BPolygon* subject, const BPolygon* clip, std::vector<BPolygon>& outPoly, BoolMode boolMode)
@@ -1548,6 +1576,8 @@ namespace TFE_Polygon
 
 		// Insert interior points removed during clipping.
 		insertPointsIntoPolygons(insertionPt, &outPoly);
+		// Remove degenerate polygons that can sometimes make it through.
+		removeDegeneratePolygons(&outPoly);
 	}
 
 	// Find the closest point to p2 on line segment p0 -> p1 as a parametric value on the segment.

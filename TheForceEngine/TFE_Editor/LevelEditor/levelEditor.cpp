@@ -4236,7 +4236,7 @@ namespace LevelEditor
 
 	void cleanSectors(const std::vector<s32>& selectedSectors)
 	{
-		// Re-check to make sure we have at least two sectors.
+		// Re-check to make sure we have at least one sector.
 		const s32 sectorCount = (s32)selectedSectors.size();
 		if (sectorCount < 1)
 		{

@@ -73,12 +73,27 @@ namespace TFE_Polygon
 
 	inline f32 signedArea(s32 count, const Vec2f* vtx)
 	{
-		f32 sum = 0.0f;
+		f32 twiceArea = 0.0f;
 		for (s32 v = 0; v < count; v++)
 		{
 			s32 a = v, b = (v + 1) % count;
-			sum += (vtx[b].x - vtx[a].x) * (vtx[b].z + vtx[a].z);
+			twiceArea += (vtx[b].x - vtx[a].x) * (vtx[b].z + vtx[a].z);
 		}
-		return sum * 0.5f;
+		return twiceArea * 0.5f;
+	}
+
+	inline f32 signedArea(const Polygon& poly)
+	{
+		const s32 edgeCount = (s32)poly.edge.size();
+		const Edge* edge = poly.edge.data();
+		const Vec2f* vtx = poly.vtx.data();
+		f32 twiceArea = 0.0f;
+		for (s32 e = 0; e < edgeCount; e++, edge++)
+		{
+			const Vec2f v0 = vtx[edge->i0];
+			const Vec2f v1 = vtx[edge->i1];
+			twiceArea += (v1.x - v0.x) * (v1.z + v0.z);
+		}
+		return twiceArea * 0.5f;
 	}
 }
