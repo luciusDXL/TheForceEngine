@@ -6193,6 +6193,7 @@ namespace LevelEditor
 		if (sector && index >= 0 && index < (s32)sector->obj.size())
 		{
 			sector->obj.erase(sector->obj.begin() + index);
+			clearEntityChanges();
 		}
 	}
 
