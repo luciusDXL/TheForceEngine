@@ -1143,6 +1143,12 @@ namespace TFE_FrontEndUI
 			gameSettings->df_autorun = autorun;
 		}
 
+		bool crouchToggle = gameSettings->df_crouchToggle;
+		if (ImGui::Checkbox("Crouch Toggle", &crouchToggle))
+		{
+			gameSettings->df_crouchToggle = crouchToggle;
+		}
+
 		bool bobaFettFacePlayer = gameSettings->df_bobaFettFacePlayer;
 		if (ImGui::Checkbox("Boba Fett Face Player Fix", &bobaFettFacePlayer))
 		{

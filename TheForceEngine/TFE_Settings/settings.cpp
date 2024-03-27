@@ -459,6 +459,7 @@ namespace TFE_Settings
 				writeKeyValue_Bool(settings, "enableAutoaim", s_gameSettings.df_enableAutoaim);
 				writeKeyValue_Bool(settings, "showSecretFoundMsg", s_gameSettings.df_showSecretFoundMsg);
 				writeKeyValue_Bool(settings, "autorun", s_gameSettings.df_autorun);
+				writeKeyValue_Bool(settings, "crouchToggle", s_gameSettings.df_crouchToggle);
 				writeKeyValue_Bool(settings, "ignoreInfLimit", s_gameSettings.df_ignoreInfLimit);
 				writeKeyValue_Int(settings, "pitchLimit", s_gameSettings.df_pitchLimit);
 			}
@@ -1021,6 +1022,10 @@ namespace TFE_Settings
 		else if (strcasecmp("autorun", key) == 0)
 		{
 			s_gameSettings.df_autorun = parseBool(value);
+		}
+		else if (strcasecmp("crouchToggle", key) == 0)
+		{
+			s_gameSettings.df_crouchToggle = parseBool(value);
 		}
 		else if (strcasecmp("ignoreInfLimit", key) == 0)
 		{
