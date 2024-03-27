@@ -1381,11 +1381,11 @@ namespace TFE_DarkForces
 				}
 			}
 
-			if (inputMapping_getActionState(IADF_CYCLEWPN_PREV))
+			if (inputMapping_getActionState(IADF_CYCLEWPN_PREV) == STATE_PRESSED)
 			{
 				player_cycleWeapons(-1);
 			}
-			else if (inputMapping_getActionState(IADF_CYCLEWPN_NEXT))
+			else if (inputMapping_getActionState(IADF_CYCLEWPN_NEXT) == STATE_PRESSED)
 			{
 				player_cycleWeapons(1);
 			}
