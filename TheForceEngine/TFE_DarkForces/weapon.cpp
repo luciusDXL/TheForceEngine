@@ -162,6 +162,12 @@ namespace TFE_DarkForces
 			SERIALIZE(SaveVersionInit, s_curPlayerWeapon->yWaveOffset, 0);
 			SERIALIZE(SaveVersionInit, s_curPlayerWeapon->xOffset, 0);
 			SERIALIZE(SaveVersionInit, s_curPlayerWeapon->yOffset, 0);
+
+			// Reset the frame for now.
+			if (serialization_getMode() == SMODE_READ)
+			{
+				s_curPlayerWeapon->frame = 0;
+			}
 		}
 	}
 
