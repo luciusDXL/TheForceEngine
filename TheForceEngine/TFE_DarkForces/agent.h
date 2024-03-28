@@ -54,7 +54,7 @@ namespace TFE_DarkForces
 	void  agent_levelEndTask();
 
 	JBool agent_readConfigData(FileStream* file, s32 agentId, LevelSaveData* saveData);
-	JBool agent_writeAgentConfigData(FileStream* file, s32 agentId, const LevelSaveData* saveData);
+	JBool agent_writeAgentConfigData(FileStream* file, s32 agentId, LevelSaveData* saveData);
 	void  agent_readSavedDataForLevel(s32 agentId, s32 levelIndex);
 	void  agent_saveLevelCompletion(u8 diff, s32 levelIndex);
 	s32   agent_saveInventory(s32 agentId, s32 nextLevel);
