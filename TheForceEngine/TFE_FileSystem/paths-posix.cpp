@@ -33,6 +33,14 @@ namespace TFE_Paths
 		s_paths[pathType] = path;
 	}
 
+	void activatePortableMode()
+	{
+		s_paths[PATH_PROGRAM_DATA] = s_paths[PATH_PROGRAM];
+		std::string docsPath = std::string(s_paths[PATH_PROGRAM]) + "UserDocs/";
+		FileUtil::makeDirectory(docsPath.c_str());
+		s_paths[PATH_USER_DOCUMENTS] = docsPath;
+	}
+
 
 	// Where to store TFE settings, saves, screenshots.
 	// If the envvar "TFE_DATA_HOME" is set, and it is
