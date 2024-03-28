@@ -834,13 +834,6 @@ namespace TFE_Jedi
 			{
 				shader->setVariable(s_shaderInputs[s].textureSettings, SVT_USCALAR, &s_textureSettings);
 			}
-
-			if (s == MGPU_SHADER_TRANS && s_shaderSettings.trueColor)
-			{
-				// Alpha blending...
-				TFE_RenderState::setStateEnable(true, STATE_BLEND);
-				TFE_RenderState::setBlendMode(BLEND_ONE, BLEND_ONE_MINUS_SRC_ALPHA);
-			}
 			
 			// Draw items in the current draw list (draw lists are bucketed by shader).
 			for (size_t i = 0; i < listCount; i++)
@@ -863,12 +856,6 @@ namespace TFE_Jedi
 				{
 					s_drawnObj[s_drawnObjCount++] = (SecObject*)drawItem->obj;
 				}
-			}
-
-			if (s == MGPU_SHADER_TRANS && s_shaderSettings.trueColor)
-			{
-				// Alpha blending...
-				TFE_RenderState::setStateEnable(false, STATE_BLEND);
 			}
 		}
 

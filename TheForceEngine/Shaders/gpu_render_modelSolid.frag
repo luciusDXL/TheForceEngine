@@ -79,7 +79,7 @@ void main()
 
 		#ifdef MODEL_TRANSPARENT_PASS
 			#ifdef OPT_TRUE_COLOR
-				if (baseColor.a < 0.01) { discard; }
+				if (baseColor.a < 0.48) { discard; }
 			#else
 				if (baseColor < 0.5) { discard; }
 			#endif

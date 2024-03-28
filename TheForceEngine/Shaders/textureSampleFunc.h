@@ -465,7 +465,7 @@ vec4 getMaterialColor(float baseColor)
 #ifdef OPT_TRUE_COLOR
 bool discardPixel(vec4 color, float mask)
 {
-	return color.a < 0.01 && mask < 1.0;
+	return color.a < 0.48 && mask < 1.0;
 }
 #else
 bool discardPixel(float color, float mask)

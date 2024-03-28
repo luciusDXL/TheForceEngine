@@ -1828,13 +1828,6 @@ namespace TFE_Jedi
 
 		TFE_RenderState::setStateEnable(true, STATE_DEPTH_WRITE | STATE_DEPTH_TEST);
 		TFE_RenderState::setDepthFunction(CMP_LEQUAL);
-
-		// Alpha blending...
-		if (s_shaderSettings.trueColor && pass == SECTOR_PASS_TRANS)
-		{
-			TFE_RenderState::setStateEnable(true, STATE_BLEND);
-			TFE_RenderState::setBlendMode(BLEND_ONE, BLEND_ONE_MINUS_SRC_ALPHA);
-		}
 				
 		Shader* shader = &s_wallShader[pass];
 		shader->bind();
@@ -1939,12 +1932,6 @@ namespace TFE_Jedi
 		{
 			textures->setFilter(MagFilter::MAG_FILTER_NONE, MinFilter::MIN_FILTER_NONE, true);
 		}
-
-		// Alpha blending...
-		if (s_shaderSettings.trueColor && pass == SECTOR_PASS_TRANS)
-		{
-			TFE_RenderState::setStateEnable(false, STATE_BLEND);
-		}
 	}
 
 	void drawSprites()
@@ -1954,15 +1941,6 @@ namespace TFE_Jedi
 		// For some reason depth test is required to write, so set the comparison function to always instead.
 		TFE_RenderState::setStateEnable(true,  STATE_DEPTH_WRITE | STATE_DEPTH_TEST);
 		TFE_RenderState::setDepthFunction(CMP_ALWAYS);
-
-		// Alpha blending...
-	#if 0  // Disable for now.
-		if (s_shaderSettings.trueColor)
-		{
-			TFE_RenderState::setStateEnable(true, STATE_BLEND);
-			TFE_RenderState::setBlendMode(BLEND_ONE, BLEND_ONE_MINUS_SRC_ALPHA);
-		}
-	#endif
 
 		s_spriteShader.bind();
 		s_indexBuffer.bind();
@@ -2031,12 +2009,6 @@ namespace TFE_Jedi
 		if (settings->useBilinear)
 		{
 			textures->setFilter(MagFilter::MAG_FILTER_NONE, MinFilter::MIN_FILTER_NONE, true);
-		}
-
-		// Alpha blending...
-		if (s_shaderSettings.trueColor)
-		{
-			TFE_RenderState::setStateEnable(false, STATE_BLEND);
 		}
 	}
 
