@@ -251,7 +251,7 @@ namespace TFE_Jedi
 		{
 			vdispFlags |= VDISP_GPU_COLOR_CONVERT;
 		}
-		if (graphics->widescreen && (width != 320 || height != 200))
+		if (graphics->widescreen && (width != 320 || height != 200) && (width != 640 || height != 480))
 		{
 			vdispFlags |= VDISP_WIDESCREEN;
 		}

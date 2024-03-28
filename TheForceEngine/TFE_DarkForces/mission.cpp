@@ -206,7 +206,7 @@ namespace TFE_DarkForces
 
 	void mission_createDisplay()
 	{
-		vfb_setResolution(320, 200);
+		vfb_setResolution(s_loadScreen->width, s_loadScreen->height);
 		s_framebuffer = vfb_getCpuBuffer();
 	}
 

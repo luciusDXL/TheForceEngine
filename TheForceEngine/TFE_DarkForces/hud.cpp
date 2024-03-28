@@ -373,7 +373,9 @@ namespace TFE_DarkForces
 		{
 			hud_setupToggleAnim1(JTRUE);
 		}
-		offscreenBuffer_drawTexture(s_cachedHudRight, s_hudLightOff, 19, 0);
+		u16 hudWidth = s_hudStatusL->width; // should be 76(dos) or 76*2 = 152(mac)
+		u16 hudDoubled = hudWidth == 76 ? 0 : 1;
+		offscreenBuffer_drawTexture(s_cachedHudRight, s_hudLightOff, 19 << hudDoubled, 0);
 	}
 		
 	void hud_drawMessage(u8* framebuffer)
@@ -471,6 +473,9 @@ namespace TFE_DarkForces
 			hudScaleY = floatToFixed16(fixed16ToFloat(yScale) * hudSettings->scale);
 		}
 
+		u16 hudWidth = s_hudStatusL->width; // should be 76(dos) or 76*2 = 152(mac)
+		u16 hudDoubled = hudWidth == 76 ? 0 : 1;
+
 		fixed16_16 x0, x1;
 		if (hudSettings->hudPos == TFE_HUDPOS_4_3)
 		{
@@ -479,7 +484,7 @@ namespace TFE_DarkForces
 		}
 		else
 		{
-			x0 = intToFixed16(dispWidth) - mul16(intToFixed16(s_cachedHudRight->width - 1), hudScaleX);
+			x0 = intToFixed16(dispWidth) - (mul16(intToFixed16(s_cachedHudRight->width - 1), hudScaleX) >> hudDoubled);
 			x1 = 0;
 		}
 		x0 -= intToFixed16(hudSettings->pixelOffset[0]);
@@ -490,13 +495,13 @@ namespace TFE_DarkForces
 		y0 += intToFixed16(hudSettings->pixelOffset[2]);
 		y1 += intToFixed16(hudSettings->pixelOffset[2]);
 
-		screenGPU_blitTextureScaled(s_hudStatusR, nullptr, x0, y0, hudScaleX, hudScaleY, 255);
-		screenGPU_blitTextureScaled(s_hudStatusL, nullptr, x1, y1, hudScaleX, hudScaleY, 255);
+		screenGPU_blitTextureScaled(s_hudStatusR, nullptr, x0, y0, hudScaleX >> hudDoubled, hudScaleY >> hudDoubled, 255);
+		screenGPU_blitTextureScaled(s_hudStatusL, nullptr, x1, y1, hudScaleX >> hudDoubled, hudScaleY >> hudDoubled, 255);
 		if ((hudSettings->hudPos == TFE_HUDPOS_4_3 || hudSettings->pixelOffset[0] > 0 || hudSettings->pixelOffset[1] > 0) && 
 			s_hudCapLeft && s_hudCapRight)
 		{
 			screenGPU_blitTextureScaled(s_hudCapLeft,  nullptr, x1 - mul16(intToFixed16(s_hudCapLeft->width - 1), hudScaleX), y1, hudScaleX, hudScaleY, 31);
-			screenGPU_blitTextureScaled(s_hudCapRight, nullptr, x0 + mul16(intToFixed16(s_hudStatusR->width), hudScaleX), y1, hudScaleX, hudScaleY, 31);
+			screenGPU_blitTextureScaled(s_hudCapRight, nullptr, x0 + mul16(intToFixed16(s_hudStatusR->width >> hudDoubled), hudScaleX), y1, hudScaleX, hudScaleY, 31);
 		}
 
 		// Energy
@@ -525,10 +530,10 @@ namespace TFE_DarkForces
 		{
 			char lifeCountStr[8];
 			sprintf(lifeCountStr, "%1d", lifeCount);
-
+			// box starts at x=104, y=52
 			fixed16_16 xPos = mul16(intToFixed16(52), hudScaleX) + x1;
 			fixed16_16 yPos = mul16(intToFixed16(26), hudScaleY) + y1;
-			hud_drawStringGpu(s_hudHealthFont, xPos, yPos, hudScaleX, hudScaleY, lifeCountStr);
+			hud_drawStringGpu(s_hudHealthFont, xPos, yPos, hudScaleX >> hudDoubled, hudScaleY >> hudDoubled, lifeCountStr);
 			
 			s_rightHudShow = 4;
 		}
@@ -538,11 +543,11 @@ namespace TFE_DarkForces
 			fixed16_16 yPos = y0;
 			if (s_headlampActive)
 			{
-				screenGPU_blitTextureScaled(s_hudLightOn, nullptr, xPos, yPos, hudScaleX, hudScaleY, 31);
+				screenGPU_blitTextureScaled(s_hudLightOn, nullptr, xPos, yPos, hudScaleX >> hudDoubled, hudScaleY >> hudDoubled, 31);
 			}
 			else
 			{
-				screenGPU_blitTextureScaled(s_hudLightOff, nullptr, xPos, yPos, hudScaleX, hudScaleY, 31);
+				screenGPU_blitTextureScaled(s_hudLightOff, nullptr, xPos, yPos, hudScaleX >> hudDoubled, hudScaleY >> hudDoubled, 31);
 			}
 			s_rightHudShow = 4;
 		}
@@ -595,7 +600,7 @@ namespace TFE_DarkForces
 
 			fixed16_16 xPos = mul16(intToFixed16(15), hudScaleX) + x1;
 			fixed16_16 yPos = mul16(intToFixed16(26), hudScaleY) + y1;
-			hud_drawStringGpu(s_hudShieldFont, xPos, yPos, hudScaleX, hudScaleY, shieldStr);
+			hud_drawStringGpu(s_hudShieldFont, xPos, yPos, hudScaleX >> hudDoubled, hudScaleY >> hudDoubled, shieldStr);
 		}
 		// Health
 		{
@@ -614,7 +619,7 @@ namespace TFE_DarkForces
 			sprintf(healthStr, "%03d", health);
 			fixed16_16 xPos = mul16(intToFixed16(33), hudScaleX) + x1;
 			fixed16_16 yPos = mul16(intToFixed16(26), hudScaleY) + y1;
-			hud_drawStringGpu(s_hudHealthFont, xPos, yPos, hudScaleX, hudScaleY, healthStr);
+			hud_drawStringGpu(s_hudHealthFont, xPos, yPos, hudScaleX >> hudDoubled, hudScaleY >> hudDoubled, healthStr);
 
 			s_leftHudShow = 4;
 		}
@@ -659,13 +664,13 @@ namespace TFE_DarkForces
 			}
 			fixed16_16 xPos = mul16(intToFixed16(12), hudScaleX) + x0;
 			fixed16_16 yPos = mul16(intToFixed16(21), hudScaleY) + y0;
-			hud_drawStringGpu(s_superChargeHud ? s_hudSuperAmmoFont : s_hudMainAmmoFont, xPos, yPos, hudScaleX, hudScaleY, str);
+			hud_drawStringGpu(s_superChargeHud ? s_hudSuperAmmoFont : s_hudMainAmmoFont, xPos, yPos, hudScaleX >> hudDoubled, hudScaleY >> hudDoubled, str);
 
 			// Draw a colored quad to hide single-pixel "leaking" from beneath.
 			xPos = mul16(intToFixed16(25), hudScaleX) + x0;
 			yPos = mul16(intToFixed16(12), hudScaleY) + y0;
-			fixed16_16 quadWidth  = mul16(intToFixed16(11), hudScaleX);
-			fixed16_16 quadHeight = mul16(intToFixed16(7),  hudScaleY);
+			fixed16_16 quadWidth  = mul16(intToFixed16(11), hudScaleX >> hudDoubled);
+			fixed16_16 quadHeight = mul16(intToFixed16(7),  hudScaleY >> hudDoubled);
 
 			screenGPU_drawColoredQuad(xPos, yPos, xPos + quadWidth, yPos + quadHeight, 0);
 
@@ -677,7 +682,7 @@ namespace TFE_DarkForces
 			{
 				sprintf(str, "%02d", ammo1);
 			}
-			hud_drawStringGpu(s_hudShieldFont, xPos, yPos, hudScaleX, hudScaleY, str);
+			hud_drawStringGpu(s_hudShieldFont, xPos, yPos, hudScaleX >> hudDoubled, hudScaleY >> hudDoubled, str);
 
 			s_rightHudShow = 4;
 		}
@@ -762,6 +767,9 @@ namespace TFE_DarkForces
 		// Go ahead and just update the HUD every frame, there are already checks to see if each item changed.
 		//if (s_leftHudShow || s_rightHudShow)
 		{
+			u16 hudWidth = s_hudStatusL->width; // should be 76(dos) or 76*2 = 152(mac)
+			u16 hudDoubled = hudWidth == 76 ? 0 : 1;
+
 			fixed16_16 batteryPower = TFE_Jedi::abs(s_batteryPower * 100);
 			s32 percent = round16(batteryPower >> 1);
 			if (s_prevBatteryPower != percent)  // True when energy ticks down.
@@ -792,7 +800,7 @@ namespace TFE_DarkForces
 
 				char lifeCountStr[8];
 				sprintf(lifeCountStr, "%1d", lifeCount);
-				hud_drawString(s_cachedHudLeft, s_hudHealthFont, 52, 26, lifeCountStr);
+				hud_drawString(s_cachedHudLeft, s_hudHealthFont, 52 << hudDoubled, 26 << hudDoubled, lifeCountStr);
 
 				s_rightHudShow = 4;
 			}
@@ -801,11 +809,11 @@ namespace TFE_DarkForces
 				s_prevHeadlampActive = s_headlampActive;
 				if (s_headlampActive)
 				{
-					offscreenBuffer_drawTexture(s_cachedHudRight, s_hudLightOn, 19, 0);
+					offscreenBuffer_drawTexture(s_cachedHudRight, s_hudLightOn, 19 << hudDoubled, 0);
 				}
 				else
 				{
-					offscreenBuffer_drawTexture(s_cachedHudRight, s_hudLightOff, 19, 0);
+					offscreenBuffer_drawTexture(s_cachedHudRight, s_hudLightOff, 19 << hudDoubled, 0);
 				}
 				s_rightHudShow = 4;
 			}
@@ -858,7 +866,7 @@ namespace TFE_DarkForces
 					sprintf(shieldStr, "%03d", shields);
 				}
 				s_prevShields = shields;
-				hud_drawString(s_cachedHudLeft, s_hudShieldFont, 15, 26, shieldStr);
+				hud_drawString(s_cachedHudLeft, s_hudShieldFont, 15 << hudDoubled, 26 << hudDoubled, shieldStr);
 			}
 
 			s32 health = s_playerInfo.health;
@@ -876,7 +884,7 @@ namespace TFE_DarkForces
 
 				char healthStr[32];
 				sprintf(healthStr, "%03d", health);
-				hud_drawString(s_cachedHudLeft, s_hudHealthFont, 33, 26, healthStr);
+				hud_drawString(s_cachedHudLeft, s_hudHealthFont, 33 << hudDoubled, 26 << hudDoubled, healthStr);
 
 				s_leftHudShow = 4;
 			}
@@ -919,7 +927,7 @@ namespace TFE_DarkForces
 				{
 					sprintf(str, "%03d", ammo0);
 				}
-				hud_drawString(s_cachedHudRight, s_superChargeHud ? s_hudSuperAmmoFont : s_hudMainAmmoFont, 12, 21, str);
+				hud_drawString(s_cachedHudRight, s_superChargeHud ? s_hudSuperAmmoFont : s_hudMainAmmoFont, 12 << hudDoubled, 21 << hudDoubled, str);
 
 				if (ammo1 < 0)
 				{
@@ -929,7 +937,7 @@ namespace TFE_DarkForces
 				{
 					sprintf(str, "%02d", ammo1);
 				}
-				hud_drawString(s_cachedHudRight, s_hudShieldFont, 25, 12, str);
+				hud_drawString(s_cachedHudRight, s_hudShieldFont, 25 << hudDoubled, 12 << hudDoubled, str);
 
 				s_rightHudShow = 4;
 				s_prevPrimaryAmmo = ammo0;
@@ -976,9 +984,11 @@ namespace TFE_DarkForces
 		vfb_getResolution(&dispWidth, &dispHeight);
 		if (dispWidth == 320 && dispHeight == 200)
 		{
+			u16 hudHeight = s_hudStatusL->height; // should be 40(dos) or 80(mac)
+			u16 hudOffset = hudHeight - 40;
 			// The original 320x200 code.
-			hud_drawElementToScreen(s_cachedHudRight, screenRect, 260, c_hudVertAnimTable[s_rightHudVertAnim], framebuffer);
-			hud_drawElementToScreen(s_cachedHudLeft,  screenRect,   0, c_hudVertAnimTable[s_leftHudVertAnim],  framebuffer);
+			hud_drawElementToScreen(s_cachedHudRight, screenRect, 320-s_cachedHudRight->width, c_hudVertAnimTable[s_rightHudVertAnim] - hudOffset, framebuffer);
+			hud_drawElementToScreen(s_cachedHudLeft,  screenRect,   0, c_hudVertAnimTable[s_leftHudVertAnim] - hudOffset,  framebuffer);
 		}
 		else
 		{
