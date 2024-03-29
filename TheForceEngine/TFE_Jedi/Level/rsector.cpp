@@ -13,6 +13,7 @@
 #include <TFE_Jedi/Collision/collision.h>
 #include <TFE_Jedi/InfSystem/infSystem.h>
 #include <TFE_Jedi/InfSystem/message.h>
+#include <TFE_Settings/settings.h>
 // TODO: Find a better way to handle this.
 #include <TFE_Jedi/InfSystem/infTypesInternal.h>
 
@@ -1129,13 +1130,17 @@ namespace TFE_Jedi
 		RSector* next = wall->nextSector;
 		if (next)
 		{
-			RSector* sector = wall->sector;
-			if (sector->floorHeight >= obj->posWS.y)
+			TFE_Settings_Game* gameSettings = TFE_Settings::getGameSettings();
+			if (!gameSettings->df_solidWallFlagFix || !(wall->flags3 & WF3_SOLID_WALL || wall->mirrorWall->flags3 & WF3_SOLID_WALL))
 			{
-				fixed16_16 objTop = obj->posWS.y - obj->worldHeight;
-				if (sector->ceilingHeight < objTop)
+				RSector* sector = wall->sector;
+				if (sector->floorHeight >= obj->posWS.y)
 				{
-					return JFALSE;
+					fixed16_16 objTop = obj->posWS.y - obj->worldHeight;
+					if (sector->ceilingHeight < objTop)
+					{
+						return JFALSE;
+					}
 				}
 			}
 		}
