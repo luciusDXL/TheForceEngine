@@ -205,7 +205,7 @@ struct TFE_Settings_Game
 	bool df_autorun = false;			// Run by default instead of walk.
 	bool df_crouchToggle = false;		// Use toggle instead of hold for crouch.
 	bool df_ignoreInfLimit = true;		// Ignore the vanilla INF limit.
-	bool df_solidWallFlagFix = false;	// Solid wall flag is enforced for collision with moving walls.
+	bool df_solidWallFlagFix = true;	// Solid wall flag is enforced for collision with moving walls.
 	PitchLimit df_pitchLimit  = PITCH_VANILLA_PLUS;
 };
 
