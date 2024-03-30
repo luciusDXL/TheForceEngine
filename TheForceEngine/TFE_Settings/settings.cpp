@@ -463,6 +463,7 @@ namespace TFE_Settings
 				writeKeyValue_Bool(settings, "ignoreInfLimit", s_gameSettings.df_ignoreInfLimit);
 				writeKeyValue_Bool(settings, "stepSecondAlt", s_gameSettings.df_stepSecondAlt);
 				writeKeyValue_Int(settings, "pitchLimit", s_gameSettings.df_pitchLimit);
+				writeKeyValue_Bool(settings, "solidWallFlagFix", s_gameSettings.df_solidWallFlagFix);
 			}
 		}
 	}
@@ -1039,6 +1040,10 @@ namespace TFE_Settings
 		else if (strcasecmp("pitchLimit", key) == 0)
 		{
 			s_gameSettings.df_pitchLimit = PitchLimit(parseInt(value));
+		}
+		else if (strcasecmp("solidWallFlagFix", key) == 0)
+		{
+			s_gameSettings.df_solidWallFlagFix = parseBool(value);
 		}
 	}
 

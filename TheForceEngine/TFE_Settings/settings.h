@@ -206,6 +206,7 @@ struct TFE_Settings_Game
 	bool df_crouchToggle = false;		// Use toggle instead of hold for crouch.
 	bool df_ignoreInfLimit = true;		// Ignore the vanilla INF limit.
 	bool df_stepSecondAlt = false;		// Allow the player to step up onto second heights, similar to the way normal stairs work.
+	bool df_solidWallFlagFix = true;	// Solid wall flag is enforced for collision with moving walls.
 	PitchLimit df_pitchLimit  = PITCH_VANILLA_PLUS;
 };
 

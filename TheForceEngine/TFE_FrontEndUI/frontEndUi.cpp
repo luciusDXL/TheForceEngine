@@ -1173,6 +1173,12 @@ namespace TFE_FrontEndUI
 			gameSettings->df_stepSecondAlt = stepSecondAlt;
 		}
 
+		bool solidWallFlagFix = gameSettings->df_solidWallFlagFix;
+		if (ImGui::Checkbox("Enforce solid wall flag for moving walls", &solidWallFlagFix))
+		{
+			gameSettings->df_solidWallFlagFix = solidWallFlagFix;
+		}
+
 		if (s_drawNoGameDataMsg)
 		{
 			ImGui::Separator();
@@ -3129,6 +3135,7 @@ namespace TFE_FrontEndUI
 				gameSettings->df_bobaFettFacePlayer = true;
 				gameSettings->df_smoothVUEs = true;
 				gameSettings->df_pitchLimit = (temp == TEMPLATE_MODERN) ? PITCH_MAXIMUM : PITCH_VANILLA_PLUS;
+				gameSettings->df_solidWallFlagFix = true;
 				// Graphics
 				graphicsSettings->rendererIndex = RENDERER_HARDWARE;
 				graphicsSettings->skyMode = SKYMODE_CYLINDER;
@@ -3177,6 +3184,7 @@ namespace TFE_FrontEndUI
 				gameSettings->df_showSecretFoundMsg = false;
 				gameSettings->df_bobaFettFacePlayer = false;
 				gameSettings->df_smoothVUEs = false;
+				gameSettings->df_solidWallFlagFix = false;
 				// Graphics
 				graphicsSettings->rendererIndex = RENDERER_SOFTWARE;
 				graphicsSettings->widescreen = false;
