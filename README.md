@@ -83,3 +83,11 @@ __sudo make install__
 
 ##### Launch
 * Start the Engine by clicking on the __"The Force Engine"__ Desktop icon or by running  __"theforceengine"__ in a shell.
+
+## Packaging
+TFE comes with the build‑in “[AdjustableHud](TheForceEngine/Mods/TFE/AdjustableHud)” mod. Package maintainers may wish and are encouraged to package “AdjustableHud” into a separate *required* or *recommended* package.
+
+By default TFE builds and installs with the “AdjustableHud” mod. If you do not want to install the “AdjustableHud” mod, for example when building separate packages, configure the CMake build with the `-DENABLE_ADJUSTABLEHUD_MOD=OFF` option. If you want to install the “AdjustableHud” mod only use the `-DENABLE_TFE=OFF` option.
+
+### Freedesktop
+On freedesktop compliant systems package maintainers are encouraged to use the provided [AppStream meta data file](TheForceEngine/io.github.theforceengine.tfe.Mod.AdjustableHud.metadata.xml) when packing the “AdjustableHud” mod into a separate package.

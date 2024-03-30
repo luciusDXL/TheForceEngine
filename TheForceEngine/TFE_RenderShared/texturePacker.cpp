@@ -467,6 +467,7 @@ namespace TFE_Jedi
 		if (s_texturePacker->trueColor)
 		{
 			const u32* pal = getPalette(texData->palIndex);
+			// TODO: For some levels this should be 30.
 			const u8* remap = &TFE_DarkForces::s_levelColorMap[31 << 8];
 			const u8* remapHalf = &TFE_DarkForces::s_levelColorMap[16 << 8];
 
@@ -476,15 +477,15 @@ namespace TFE_Jedi
 			u32* output = (u32*)getWritePointer(s_currentPage, node->rect.x, node->rect.y, 0);
 			for (s32 y = 0; y < texData->height+paddingY; y++, output += s_texturePacker->width)
 			{
-				s32 ySrc = (y - offsetY) % texData->height;
+				s32 ySrc = texData->height ? (y - offsetY) % texData->height : 0;
 				if (ySrc < 0) { ySrc += texData->height; }
 
 				for (s32 x = 0; x < texData->width+paddingX; x++)
 				{
-					s32 xSrc = (x - offsetX) % texData->width;
+					s32 xSrc = texData->width ? (x - offsetX) % texData->width : 0;
 					if (xSrc < 0) { xSrc += texData->width; }
 
-					u8 palIndex = srcImage[xSrc*texData->height + ySrc];
+					u8 palIndex = srcImage ? srcImage[xSrc*texData->height + ySrc] : 0;
 					if (texData->flags & INDEXED)
 					{
 						output[x] = palIndex == 0 ? 0u : pal[palIndex];

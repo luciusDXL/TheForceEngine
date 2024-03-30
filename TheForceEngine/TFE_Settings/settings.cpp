@@ -182,8 +182,20 @@ namespace TFE_Settings
 			// Next try looking through the registry.
 			if (!pathValid)
 			{
-				pathValid = WindowsRegistry::getSteamPathFromRegistry(c_steamProductId[gameId], c_steamLocalPath[gameId], c_steamLocalSubPath[gameId], c_validationFile[gameId], s_gameSettings.header[gameId].sourcePath);
+				// Remaster - search here first so that new assets are readily available.
+				pathValid = WindowsRegistry::getSteamPathFromRegistry(c_steamRemasterProductId[gameId], c_steamRemasterLocalPath[gameId], c_steamRemasterLocalSubPath[gameId], c_validationFile[gameId], s_gameSettings.header[gameId].sourcePath);
+				// Remaster on GOG.
+				if (!pathValid)
+				{
+					pathValid = WindowsRegistry::getGogPathFromRegistry(c_gogRemasterProductId[gameId], c_validationFile[gameId], s_gameSettings.header[gameId].sourcePath);
+				}
 
+				// Then try the vanilla version on Steam.
+				if (!pathValid)
+				{
+					pathValid = WindowsRegistry::getSteamPathFromRegistry(c_steamProductId[gameId], c_steamLocalPath[gameId], c_steamLocalSubPath[gameId], c_validationFile[gameId], s_gameSettings.header[gameId].sourcePath);
+				}
+				// And the vanilla version on GOG.
 				if (!pathValid)
 				{
 					pathValid = WindowsRegistry::getGogPathFromRegistry(c_gogProductId[gameId], c_validationFile[gameId], s_gameSettings.header[gameId].sourcePath);
@@ -193,8 +205,14 @@ namespace TFE_Settings
 #ifdef __linux__
 			if (!pathValid)
 			{
-				pathValid = LinuxSteam::getSteamPath(c_steamProductId[gameId], c_steamLocalSubPath[gameId],
-								     c_validationFile[gameId], s_gameSettings.header[gameId].sourcePath);
+				pathValid = LinuxSteam::getSteamPath(c_steamRemasterProductId[gameId], c_steamRemasterLocalPath[gameId],
+					c_validationFile[gameId], s_gameSettings.header[gameId].sourcePath);
+
+				if (!pathValid)
+				{
+					pathValid = LinuxSteam::getSteamPath(c_steamProductId[gameId], c_steamLocalSubPath[gameId],
+						c_validationFile[gameId], s_gameSettings.header[gameId].sourcePath);
+				}
 			}
 #endif
 			// If the registry approach fails, just try looking in the various hardcoded paths.
@@ -460,8 +478,11 @@ namespace TFE_Settings
 				writeKeyValue_Bool(settings, "enableAutoaim", s_gameSettings.df_enableAutoaim);
 				writeKeyValue_Bool(settings, "showSecretFoundMsg", s_gameSettings.df_showSecretFoundMsg);
 				writeKeyValue_Bool(settings, "autorun", s_gameSettings.df_autorun);
+				writeKeyValue_Bool(settings, "crouchToggle", s_gameSettings.df_crouchToggle);
 				writeKeyValue_Bool(settings, "ignoreInfLimit", s_gameSettings.df_ignoreInfLimit);
+				writeKeyValue_Bool(settings, "stepSecondAlt", s_gameSettings.df_stepSecondAlt);
 				writeKeyValue_Int(settings, "pitchLimit", s_gameSettings.df_pitchLimit);
+				writeKeyValue_Bool(settings, "solidWallFlagFix", s_gameSettings.df_solidWallFlagFix);
 			}
 		}
 	}
@@ -1027,13 +1048,25 @@ namespace TFE_Settings
 		{
 			s_gameSettings.df_autorun = parseBool(value);
 		}
+		else if (strcasecmp("crouchToggle", key) == 0)
+		{
+			s_gameSettings.df_crouchToggle = parseBool(value);
+		}
 		else if (strcasecmp("ignoreInfLimit", key) == 0)
 		{
 			s_gameSettings.df_ignoreInfLimit = parseBool(value);
 		}
+		else if (strcasecmp("stepSecondAlt", key) == 0)
+		{
+			s_gameSettings.df_stepSecondAlt = parseBool(value);
+		}
 		else if (strcasecmp("pitchLimit", key) == 0)
 		{
 			s_gameSettings.df_pitchLimit = PitchLimit(parseInt(value));
+		}
+		else if (strcasecmp("solidWallFlagFix", key) == 0)
+		{
+			s_gameSettings.df_solidWallFlagFix = parseBool(value);
 		}
 	}
 

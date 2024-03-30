@@ -71,6 +71,7 @@ namespace TFE_RenderShared
 	static u32 s_triDrawCapacity[TRIMODE_COUNT];
 
 	static DrawMode s_lastDrawMode = TRIMODE_COUNT;
+	static Grid s_gridDef = {};
 
 	bool canMergeDraws(DrawMode mode, TextureGpu* texture, u32 drawFlags = TFLAG_NONE);
 	u32 setDrawFlags(bool showGrid, bool sky);
@@ -146,11 +147,19 @@ namespace TFE_RenderShared
 		}
 	}
 	
-	void triDraw3d_begin()
+	void triDraw3d_begin(const Grid* gridDef)
 	{
 		s_idxCount = 0;
 		s_vtxCount = 0;
 		s_lastDrawMode = TRIMODE_COUNT;
+		if (gridDef)
+		{
+			s_gridDef = *gridDef;
+		}
+		else
+		{
+			s_gridDef = {};
+		}
 		for (s32 i = 0; i < TRIMODE_COUNT; i++)
 		{
 			s_triDrawCount[i] = 0;
@@ -193,8 +202,14 @@ namespace TFE_RenderShared
 		const s32 idxOffset = s_idxCount;
 		const s32 vtxOffset = s_vtxCount;
 
-		const f32 dx = fabsf(corners[1].x - corners[0].x);
-		const f32 dz = fabsf(corners[1].z - corners[0].z);
+		// Compute the corners in grid-space.
+		Vec3f gridCorners[] =
+		{
+			posToGrid(s_gridDef, corners[0]),
+			posToGrid(s_gridDef, corners[1])
+		};
+		const f32 dx = fabsf(gridCorners[1].x - gridCorners[0].x);
+		const f32 dz = fabsf(gridCorners[1].z - gridCorners[0].z);
 
 		// Do we have enough room for the vertices and indices?
 		if (s_vtxCount + 4 > VTX3D_MAX || s_idxCount + 6 > IDX3D_MAX)
@@ -236,25 +251,25 @@ namespace TFE_RenderShared
 
 		outVert[0].pos = { corners[0].x, corners[0].y, corners[0].z };
 		outVert[0].uv = { 0.0f, 0.0f };
-		outVert[0].uv1 = { (dx >= dz) ? corners[0].x : corners[0].z, corners[0].y };
+		outVert[0].uv1 = { (dx >= dz) ? gridCorners[0].x : gridCorners[0].z, gridCorners[0].y };
 		outVert[0].uv2 = { uvCorners[0].x, uvCorners[0].z };
 		outVert[0].color = color;
 
 		outVert[1].pos = { corners[1].x, corners[0].y, corners[1].z };
 		outVert[1].uv = { 1.0f, 0.0f };
-		outVert[1].uv1 = { (dx >= dz) ? corners[1].x : corners[1].z, corners[0].y };
+		outVert[1].uv1 = { (dx >= dz) ? gridCorners[1].x : gridCorners[1].z, gridCorners[0].y };
 		outVert[1].uv2 = { uvCorners[1].x, uvCorners[0].z };
 		outVert[1].color = color;
 
 		outVert[2].pos = { corners[1].x, corners[1].y, corners[1].z };
 		outVert[2].uv = { 1.0f, 1.0f };
-		outVert[2].uv1 = { (dx >= dz) ? corners[1].x : corners[1].z, corners[1].y };
+		outVert[2].uv1 = { (dx >= dz) ? gridCorners[1].x : gridCorners[1].z, gridCorners[1].y };
 		outVert[2].uv2 = { uvCorners[1].x, uvCorners[1].z };
 		outVert[2].color = color;
 
 		outVert[3].pos = { corners[0].x, corners[1].y, corners[0].z };
 		outVert[3].uv = { 0.0f, 1.0f };
-		outVert[3].uv1 = { (dx >= dz) ? corners[0].x : corners[0].z, corners[1].y };
+		outVert[3].uv1 = { (dx >= dz) ? gridCorners[0].x : gridCorners[0].z, gridCorners[1].y };
 		outVert[3].uv2 = { uvCorners[0].x, uvCorners[1].z };
 		outVert[3].color = color;
 
@@ -281,6 +296,8 @@ namespace TFE_RenderShared
 		{
 			return;
 		}
+
+		// TODO: Compute the grid vertices here.
 
 		// New draw call or add to the existing call?
 		u32 drawFlags = setDrawFlags(showGrid, sky);
@@ -316,9 +333,11 @@ namespace TFE_RenderShared
 
 		for (u32 v = 0; v < vtxCount; v++)
 		{
+			const Vec2f posXZ = { vertices[v].x, vertices[v].z };
+
 			outVert[v].pos = vertices[v];
 			outVert[v].uv = { 0.5f, 0.5f };
-			outVert[v].uv1 = { outVert[v].pos.x, outVert[v].pos.z };
+			outVert[v].uv1 = posToGrid(s_gridDef, posXZ);
 			outVert[v].uv2 = uv[v];
 			outVert[v].color = color;
 		}
@@ -349,8 +368,14 @@ namespace TFE_RenderShared
 		const s32 idxOffset = s_idxCount;
 		const s32 vtxOffset = s_vtxCount;
 
-		const f32 dx = fabsf(corners[1].x - corners[0].x);
-		const f32 dz = fabsf(corners[1].z - corners[0].z);
+		// Compute the corners in grid-space.
+		Vec3f gridCorners[] =
+		{
+			posToGrid(s_gridDef, corners[0]),
+			posToGrid(s_gridDef, corners[1])
+		};
+		const f32 dx = fabsf(gridCorners[1].x - gridCorners[0].x);
+		const f32 dz = fabsf(gridCorners[1].z - gridCorners[0].z);
 
 		// Do we have enough room for the vertices and indices?
 		if (s_vtxCount + 4 > VTX3D_MAX || s_idxCount + 6 > IDX3D_MAX)
@@ -391,22 +416,22 @@ namespace TFE_RenderShared
 
 		outVert[0].pos = { corners[0].x, corners[0].y, corners[0].z };
 		outVert[0].uv = { 0.0f, 0.0f };
-		outVert[0].uv1 = { (dx >= dz) ? corners[0].x : corners[0].z, corners[0].y };
+		outVert[0].uv1 = { (dx >= dz) ? gridCorners[0].x : gridCorners[0].z, gridCorners[0].y };
 		outVert[0].color = color;
 
 		outVert[1].pos = { corners[1].x, corners[0].y, corners[1].z };
 		outVert[1].uv = { 1.0f, 0.0f };
-		outVert[1].uv1 = { (dx >= dz) ? corners[1].x : corners[1].z, corners[0].y };
+		outVert[1].uv1 = { (dx >= dz) ? gridCorners[1].x : gridCorners[1].z, gridCorners[0].y };
 		outVert[1].color = color;
 
 		outVert[2].pos = { corners[1].x, corners[1].y, corners[1].z };
 		outVert[2].uv = { 1.0f, 1.0f };
-		outVert[2].uv1 = { (dx >= dz) ? corners[1].x : corners[1].z, corners[1].y };
+		outVert[2].uv1 = { (dx >= dz) ? gridCorners[1].x : gridCorners[1].z, gridCorners[1].y };
 		outVert[2].color = color;
 
 		outVert[3].pos = { corners[0].x, corners[1].y, corners[0].z };
 		outVert[3].uv = { 0.0f, 1.0f };
-		outVert[3].uv1 = { (dx >= dz) ? corners[0].x : corners[0].z, corners[1].y };
+		outVert[3].uv1 = { (dx >= dz) ? gridCorners[0].x : gridCorners[0].z, gridCorners[1].y };
 		outVert[3].color = color;
 
 		outIdx[0] = vtxOffset + 0;
@@ -467,9 +492,11 @@ namespace TFE_RenderShared
 
 		for (u32 v = 0; v < vtxCount; v++)
 		{
+			const Vec2f posXZ = { vertices[v].x, vertices[v].z };
+
 			outVert[v].pos = vertices[v];
 			outVert[v].uv = { 0.5f, 0.5f };
-			outVert[v].uv1 = { outVert[v].pos.x, outVert[v].pos.z };
+			outVert[v].uv1 = posToGrid(s_gridDef, posXZ);
 			outVert[v].color = color;
 		}
 

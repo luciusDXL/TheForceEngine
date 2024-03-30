@@ -36,11 +36,13 @@ namespace LevelEditor
 	const TextureGpu* viewport_getTexture();
 	void viewport_update(s32 resvWidth, s32 resvHeight);
 
+	void viewport_clearRail();
+	void viewport_setRail(const Vec3f* rail, s32 dirCount = 1, Vec3f* moveDir = nullptr);
+
 	extern SectorDrawMode s_sectorDrawMode;
 	extern Vec2i s_viewportSize;
 	extern Vec3f s_viewportPos;
 	extern Vec4f s_viewportTrans2d;
 	extern f32 s_gridOpacity;
-	extern f32 s_gridSize;
 	extern f32 s_zoom2d;
 }

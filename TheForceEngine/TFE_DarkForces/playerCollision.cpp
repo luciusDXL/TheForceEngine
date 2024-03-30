@@ -9,6 +9,7 @@
 #include <TFE_Jedi/Level/robject.h>
 #include <TFE_Jedi/InfSystem/infSystem.h>
 #include <TFE_FrontEndUI/console.h>
+#include <TFE_Settings/settings.h>
 // Internal types need to be included in this case.
 #include <TFE_Jedi/InfSystem/infTypesInternal.h>
 #include <TFE_Jedi/Collision/collision.h>
@@ -246,7 +247,8 @@ namespace TFE_DarkForces
 
 		// Allows the player to "climb" second heights when jumping.
 		// Note that always setting the offset will allow players to climb second heights when not jumping as well.
-		fixed16_16 secHeightOffset = yVel < 0 ? COL_SEC_HEIGHT_OFFSET : 0;
+		const bool canStepOnSecondAlt = TFE_Settings::getGameSettings()->df_stepSecondAlt;
+		fixed16_16 secHeightOffset = (yVel < 0 || canStepOnSecondAlt) ? COL_SEC_HEIGHT_OFFSET : 0;
 
 		if (sector->secHeight < 0 && s_colDstPosY > sector->colSecHeight + secHeightOffset)
 		{

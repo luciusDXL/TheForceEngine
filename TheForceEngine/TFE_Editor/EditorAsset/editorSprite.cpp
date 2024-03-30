@@ -160,28 +160,35 @@ namespace TFE_Editor
 						outAnim.views[v].frameIndex[f] = (s32)outSprite->frame.size();
 
 						WaxFrame* frame = WAX_FramePtr(wax, view, f);
-						WaxCell* cell = WAX_CellPtr(wax, frame);
+						WaxCell* cell = frame ? WAX_CellPtr(wax, frame) : nullptr;
 
 						s32 id = -1;
-						if (!findWaxCellInMap(cell, id))
+						if (cell && !findWaxCellInMap(cell, id))
 						{
 							id = (s32)s_waxDataList.size();
 							insertWaxCellIntoMap(cell, id);
 						}
+						else if (!cell)
+						{
+							id = 0;
+						}
 
-						SpriteFrame outFrame;
+						SpriteFrame outFrame = { 0 };
 						outFrame.cellIndex = id;
-						outFrame.flip = frame->flip;
-						outFrame.offsetX =  frame->offsetX;
-						outFrame.offsetY =  frame->offsetY;
-						outFrame.widthWS  = fixed16ToFloat(frame->widthWS);
-						outFrame.heightWS = fixed16ToFloat(frame->heightWS);
+						outFrame.flip = frame ? frame->flip : 0;
+						outFrame.offsetX = frame ? frame->offsetX : 0;
+						outFrame.offsetY = frame ? frame->offsetY : 0;
+						outFrame.widthWS  = frame ? fixed16ToFloat(frame->widthWS) : 0;
+						outFrame.heightWS = frame ? fixed16ToFloat(frame->heightWS) : 0;
 						outSprite->frame.push_back(outFrame);
 
-						outSprite->rect[0] = min(outSprite->rect[0], frame->offsetX);
-						outSprite->rect[1] = min(outSprite->rect[1], frame->offsetY);
-						outSprite->rect[2] = max(outSprite->rect[2], frame->offsetX + cell->sizeX);
-						outSprite->rect[3] = max(outSprite->rect[3], frame->offsetY + cell->sizeY);
+						if (frame)
+						{
+							outSprite->rect[0] = min(outSprite->rect[0], frame->offsetX);
+							outSprite->rect[1] = min(outSprite->rect[1], frame->offsetY);
+							outSprite->rect[2] = max(outSprite->rect[2], frame->offsetX + cell->sizeX);
+							outSprite->rect[3] = max(outSprite->rect[3], frame->offsetY + cell->sizeY);
+						}
 					}
 				}
 				outSprite->anim.push_back(outAnim);

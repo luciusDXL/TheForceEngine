@@ -380,10 +380,6 @@ namespace TFE_Sprite_Jedi
 					dstAnim->frameCount = frameCount;
 					assert(frameCount);
 				}
-				else
-				{
-					assert(frameCount == dstAnim->frameCount);
-				}
 			}
 		}
 		asset->animCount = animIdx;

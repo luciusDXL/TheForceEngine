@@ -6,5 +6,5 @@
 
 namespace TFE_ForceScript
 {
-	void registerSystemFunctions(void* engine);
+	void registerSystemFunctions(void* engine_);
 }  // TFE_ForceScript

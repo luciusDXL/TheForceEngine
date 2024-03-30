@@ -493,6 +493,7 @@ namespace TFE_Jedi
 		anim->frameList = (TextureData**)level_alloc(sizeof(TextureData**) * anim->count);
 		// Allocate frame memory here since load-in-place does not work because structure size changes.
 		TextureData* outFrames = (TextureData*)level_alloc(sizeof(TextureData) * anim->count);
+		memset(outFrames, 0, sizeof(TextureData) * anim->count);
 		assert(anim->frameList);
 
 		const u8* base = tex->image + 2;
@@ -515,7 +516,7 @@ namespace TFE_Jedi
 			// Verify that we don't read past the end of the buffer.
 			const s64 curOffset = s64((u8*)frame + 0x1c - imageBase);
 			const s64 maxSize = tex->dataSize - curOffset;
-			const s64 sizeToCopy = min(maxSize, outFrames[i].width * outFrames[i].height);
+			const s64 sizeToCopy = max(0, min(maxSize, outFrames[i].width * outFrames[i].height));
 			memcpy(outFrames[i].image, (u8*)frame + 0x1c, sizeToCopy);
 			
 			// We have to make sure the structure offsets line up with DOS...

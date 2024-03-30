@@ -202,7 +202,7 @@ namespace TFE_ForceScript
 		{
 			// The function couldn't be found. Instruct the script writer
 			// to include the expected function in the script.
-			TFE_System::logWrite(LOG_ERROR, "Script", "The script must have the function 'void main()'. Please add it and try again.\n");
+			TFE_System::logWrite(LOG_ERROR, "Script", "The script must have the function '%s'. Please add it and try again.\n", funcName);
 			return nullptr;
 		}
 		return func;
@@ -255,7 +255,7 @@ namespace TFE_ForceScript
 		const char* c_testScript =
 			"void main()\n"
 			"{\n"
-			"	system_print(\"Hello world\");\n"
+			"	system_printToLog(\"Hello world\");\n"
 			"}\n";
 
 		ModuleHandle mod = createModule("Test", "Test.as", c_testScript);

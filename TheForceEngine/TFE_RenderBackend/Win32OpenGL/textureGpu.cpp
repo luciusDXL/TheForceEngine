@@ -3,6 +3,7 @@
 #include <TFE_Settings/settings.h>
 #include "openGL_Caps.h"
 #include <GL/glew.h>
+#include <algorithm>
 #include <vector>
 #include <assert.h>
 
@@ -191,18 +192,20 @@ void TextureGpu::setFilter(MagFilter magFilter, MinFilter minFilter, bool isArra
 	glTexParameteri(isArray ? GL_TEXTURE_2D_ARRAY : GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, magFilter == MAG_FILTER_LINEAR ? GL_LINEAR : GL_NEAREST);
 	if (minFilter == MIN_FILTER_MIPMAP && m_mipCount > 1)
 	{
-		glTexParameteri(isArray ? GL_TEXTURE_2D_ARRAY : GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-		glTexParameteri(isArray ? GL_TEXTURE_2D_ARRAY : GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, (s32)m_mipCount-1);
-		glTexParameteri(isArray ? GL_TEXTURE_2D_ARRAY : GL_TEXTURE_2D, GL_TEXTURE_MAX_LOD, (s32)m_mipCount-1);
+		const f32 ani = std::min(16.0f, OpenGL_Caps::getAnisotropyFromQuality(TFE_Settings::getGraphicsSettings()->anisotropyQuality));
+		// Anisotropic filters read further into the mipchain than trilinear, so we have to factor that in and modify the maximum LOD to compensate.
+		const f32 maxLodBias = (ani - 1.0f) * 0.2f;
 
-		const f32 ani = OpenGL_Caps::getAnisotropyFromQuality(TFE_Settings::getGraphicsSettings()->anisotropyQuality);
+		glTexParameteri(isArray ? GL_TEXTURE_2D_ARRAY : GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+		glTexParameteri(isArray ? GL_TEXTURE_2D_ARRAY : GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, (s32)m_mipCount - 1);
+		glTexParameterf(isArray ? GL_TEXTURE_2D_ARRAY : GL_TEXTURE_2D, GL_TEXTURE_MAX_LOD, max(0.0f, (f32)m_mipCount - 1.0f - maxLodBias));
 		glTexParameterf(isArray ? GL_TEXTURE_2D_ARRAY : GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY, ani);
 	}
 	else
 	{
 		glTexParameteri(isArray ? GL_TEXTURE_2D_ARRAY : GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, minFilter == MIN_FILTER_NONE ? GL_NEAREST : GL_LINEAR);
 		glTexParameteri(isArray ? GL_TEXTURE_2D_ARRAY : GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0);
-		glTexParameteri(isArray ? GL_TEXTURE_2D_ARRAY : GL_TEXTURE_2D, GL_TEXTURE_MAX_LOD, 0);
+		glTexParameterf(isArray ? GL_TEXTURE_2D_ARRAY : GL_TEXTURE_2D, GL_TEXTURE_MAX_LOD, 0.0f);
 		glTexParameterf(isArray ? GL_TEXTURE_2D_ARRAY : GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY, 1.0f);
 	}
 }

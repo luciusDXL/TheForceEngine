@@ -13,6 +13,7 @@
 #include <TFE_Jedi/Collision/collision.h>
 #include <TFE_Jedi/InfSystem/infSystem.h>
 #include <TFE_Jedi/InfSystem/message.h>
+#include <TFE_Settings/settings.h>
 // TODO: Find a better way to handle this.
 #include <TFE_Jedi/InfSystem/infTypesInternal.h>
 
@@ -29,7 +30,7 @@ namespace TFE_Jedi
 	void sector_computeWallDirAndLength(RWall* wall);
 	void sector_moveWallVertex(RWall* wall, fixed16_16 offsetX, fixed16_16 offsetZ);
 	JBool sector_objOverlapsWall(RWall* wall, SecObject* obj, s32* objSide);
-	JBool sector_canWallMove(RWall* wall, fixed16_16 offsetX, fixed16_16 offsetZ);
+	JBool sector_movingWallCollidesWithPlayer(RWall* wall, fixed16_16 offsetX, fixed16_16 offsetZ);
 	void sector_moveObjects(RSector* sector, u32 flags, fixed16_16 offsetX, fixed16_16 offsetZ);
 
 	f32 isLeft(Vec2f p0, Vec2f p1, Vec2f p2);
@@ -229,29 +230,29 @@ namespace TFE_Jedi
 		return maxObjHeight;
 	}
 			
-	JBool sector_moveWalls(RSector* sector, fixed16_16 delta, fixed16_16 dirX, fixed16_16 dirZ, u32 flags)
+	JBool sector_canMoveWalls(RSector* sector, fixed16_16 delta, fixed16_16 dirX, fixed16_16 dirZ, u32 flags)
 	{
 		fixed16_16 offsetX = mul16(delta, dirX);
 		fixed16_16 offsetZ = mul16(delta, dirZ);
 
-		JBool sectorBlocked = JFALSE;
+		JBool playerCollides = JFALSE;
 		s32 wallCount = sector->wallCount;
 		RWall* wall = sector->walls;
-		for (s32 i = 0; i < wallCount && !sectorBlocked; i++, wall++)
+		for (s32 i = 0; i < wallCount && !playerCollides; i++, wall++)
 		{
 			if (wall->flags1 & WF1_WALL_MORPHS)
 			{
-				sectorBlocked |= sector_canWallMove(wall, offsetX, offsetZ);
+				playerCollides |= sector_movingWallCollidesWithPlayer(wall, offsetX, offsetZ);
 
 				RWall* mirror = wall->mirrorWall;
 				if (mirror && (mirror->flags1 & WF1_WALL_MORPHS))
 				{
-					sectorBlocked |= sector_canWallMove(mirror, offsetX, offsetZ);
+					playerCollides |= sector_movingWallCollidesWithPlayer(mirror, offsetX, offsetZ);
 				}
 			}
 		}
 
-		if (!sectorBlocked)
+		if (!playerCollides)
 		{
 			sector->dirtyFlags |= SDF_VERTICES;
 
@@ -273,7 +274,7 @@ namespace TFE_Jedi
 			sector_computeBounds(sector);
 		}
 
-		return ~sectorBlocked;
+		return ~playerCollides;
 	}
 
 	void sector_changeWallLight(RSector* sector, fixed16_16 delta)
@@ -1129,13 +1130,17 @@ namespace TFE_Jedi
 		RSector* next = wall->nextSector;
 		if (next)
 		{
-			RSector* sector = wall->sector;
-			if (sector->floorHeight >= obj->posWS.y)
+			TFE_Settings_Game* gameSettings = TFE_Settings::getGameSettings();
+			if (!gameSettings->df_solidWallFlagFix || !(wall->flags3 & WF3_SOLID_WALL || wall->mirrorWall->flags3 & WF3_SOLID_WALL))
 			{
-				fixed16_16 objTop = obj->posWS.y - obj->worldHeight;
-				if (sector->ceilingHeight < objTop)
+				RSector* sector = wall->sector;
+				if (sector->floorHeight >= obj->posWS.y)
 				{
-					return JFALSE;
+					fixed16_16 objTop = obj->posWS.y - obj->worldHeight;
+					if (sector->ceilingHeight < objTop)
+					{
+						return JFALSE;
+					}
 				}
 			}
 		}
@@ -1167,7 +1172,7 @@ namespace TFE_Jedi
 	}
 
 	// returns 0 if the wall is free to move, else non-zero.
-	JBool sector_canWallMove(RWall* wall, fixed16_16 offsetX, fixed16_16 offsetZ)
+	JBool sector_movingWallCollidesWithPlayer(RWall* wall, fixed16_16 offsetX, fixed16_16 offsetZ)
 	{
 		// Test the initial position, the code assumes there is no collision at this point.
 		s32 objSide0 = 0;

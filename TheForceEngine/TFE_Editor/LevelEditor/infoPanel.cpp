@@ -12,6 +12,7 @@
 #include <TFE_Editor/AssetBrowser/assetBrowser.h>
 #include <TFE_Editor/EditorAsset/editorTexture.h>
 #include <TFE_Editor/LevelEditor/Rendering/viewport.h>
+#include <TFE_Editor/LevelEditor/Rendering/grid.h>
 #include <TFE_Jedi/Level/rwall.h>
 #include <TFE_Jedi/Level/rsector.h>
 #include <TFE_System/math.h>
@@ -64,6 +65,8 @@ namespace LevelEditor
 	static Feature s_prevObjectFeature = {};
 	static bool s_wallShownLast = false;
 	static s32 s_prevCategoryFlags = 0;
+
+	static bool s_scrollToBottom = false;
 		
 	void infoPanelClearMessages()
 	{
@@ -79,11 +82,13 @@ namespace LevelEditor
 		va_end(arg);
 
 		s_outputMsg.push_back({ type, fullStr });
+		s_scrollToBottom = true;
 	}
 
 	void infoPanelSetMsgFilter(u32 filter/*LFILTER_DEFAULT*/)
 	{
 		s_outputFilter = filter;
+		s_scrollToBottom = true;
 	}
 
 	void infoPanelClearFeatures()
@@ -189,7 +194,7 @@ namespace LevelEditor
 			const size_t count = s_outputMsg.size();
 			const LeMessage* msg = s_outputMsg.data();
 			const ImVec4 c_typeColor[] = { {1.0f, 1.0f, 1.0f, 0.7f}, {1.0f, 1.0f, 0.25f, 1.0f}, {1.0f, 0.25f, 0.25f, 1.0f} };
-
+						
 			for (size_t i = 0; i < count; i++, msg++)
 			{
 				u32 typeFlag = 1 << msg->type;
@@ -206,6 +211,12 @@ namespace LevelEditor
 			{
 				s_outputPrevHeight = s_outputHeight;
 				s_outputHeight = max(26 * 3, (s32)ImGui::GetWindowSize().y);
+			}
+
+			if (s_scrollToBottom)
+			{
+				ImGui::SetScrollHere(0.999f);
+				s_scrollToBottom = false;
 			}
 		}
 		else
@@ -294,7 +305,7 @@ namespace LevelEditor
 		ImGui::LabelText("##GridLabel", "Grid Height");
 		ImGui::SameLine(128.0f);
 		ImGui::SetNextItemWidth(196.0f);
-		ImGui::InputFloat("##GridHeight", &s_gridHeight, 0.0f, 0.0f, "%0.2f", ImGuiInputTextFlags_CharsDecimal);
+		ImGui::InputFloat("##GridHeight", &s_grid.height, 0.0f, 0.0f, "%0.2f", ImGuiInputTextFlags_CharsDecimal);
 			
 		ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize
 			| ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoFocusOnAppearing;

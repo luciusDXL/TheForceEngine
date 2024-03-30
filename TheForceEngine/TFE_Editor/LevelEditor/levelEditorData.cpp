@@ -4,6 +4,7 @@
 #include "error.h"
 #include "shell.h"
 #include "levelEditorInf.h"
+#include "sharedState.h"
 #include <TFE_Editor/history.h>
 #include <TFE_Editor/errorMessages.h>
 #include <TFE_Editor/editorConfig.h>
@@ -481,6 +482,12 @@ namespace LevelEditor
 		s_levelInf.elevator.clear();
 		s_levelInf.teleport.clear();
 		s_levelInf.trigger.clear();
+
+		// Clear selection state.
+		selection_clear();
+		s_featureHovered = {};
+		s_featureCur = {};
+		s_featureTex = {};
 
 		// First check to see if there is a "tfl" version of the level.
 		if (loadFromTFL(slotName))
@@ -1201,6 +1208,10 @@ namespace LevelEditor
 				if (wall->adjoinId >= 0 && sector_excludeFromExport(&s_level.sectors[wall->adjoinId]))
 				{
 					adjoinId = -1;
+					mirrorId = -1;
+				}
+				if (adjoinId < 0)
+				{
 					mirrorId = -1;
 				}
 				assert((mirrorId >= 0 && adjoinId >= 0) || (mirrorId < 0 && adjoinId < 0));
@@ -2333,8 +2344,73 @@ namespace LevelEditor
 		return true;
 	}
 
+	bool isPointInsideSector2d(EditorSector* sector, Vec2f pos, s32 layer)
+	{
+		const f32 eps = 0.0001f;
+		// The layers need to match.
+		if (sector->layer != layer) { return false; }
+		// The point has to be within the bounding box.
+		if (pos.x < sector->bounds[0].x - eps || pos.x > sector->bounds[1].x + eps ||
+			pos.z < sector->bounds[0].z - eps || pos.z > sector->bounds[1].z + eps)
+		{
+			return false;
+		}
+		// Jitter the z position if needed.
+		bool inside = TFE_Polygon::pointInsidePolygon(&sector->poly, pos);
+		if (!inside) { inside = TFE_Polygon::pointInsidePolygon(&sector->poly, { pos.x, pos.z + eps }); }
+		return inside;
+	}
+
+	bool isPointInsideSector3d(EditorSector* sector, Vec3f pos, s32 layer)
+	{
+		const f32 eps = 0.0001f;
+		// The layers need to match.
+		if (sector->layer != layer) { return false; }
+		// The point has to be within the bounding box.
+		if (pos.x < sector->bounds[0].x - eps || pos.x > sector->bounds[1].x + eps ||
+			pos.y < sector->bounds[0].y - eps || pos.y > sector->bounds[1].y + eps ||
+			pos.z < sector->bounds[0].z - eps || pos.z > sector->bounds[1].z + eps)
+		{
+			return false;
+		}
+		// Jitter the z position if needed.
+		bool inside = TFE_Polygon::pointInsidePolygon(&sector->poly, { pos.x, pos.z });
+		if (!inside) { inside = TFE_Polygon::pointInsidePolygon(&sector->poly, { pos.x, pos.z + eps }); }
+		return inside;
+	}
+
+	s32 findClosestWallInSector(const EditorSector* sector, const Vec2f* pos, f32 maxDistSq, f32* minDistToWallSq)
+	{
+		const u32 count = (u32)sector->walls.size();
+		f32 minDistSq = FLT_MAX;
+		s32 closestId = -1;
+		const EditorWall* walls = sector->walls.data();
+		const Vec2f* vertices = sector->vtx.data();
+		for (u32 w = 0; w < count; w++)
+		{
+			const Vec2f* v0 = &vertices[walls[w].idx[0]];
+			const Vec2f* v1 = &vertices[walls[w].idx[1]];
+
+			Vec2f pointOnSeg;
+			TFE_Polygon::closestPointOnLineSegment(*v0, *v1, *pos, &pointOnSeg);
+			const Vec2f diff = { pointOnSeg.x - pos->x, pointOnSeg.z - pos->z };
+			const f32 distSq = diff.x*diff.x + diff.z*diff.z;
+
+			if (distSq < maxDistSq && distSq < minDistSq && (!minDistToWallSq || distSq < *minDistToWallSq))
+			{
+				minDistSq = distSq;
+				closestId = s32(w);
+			}
+		}
+		if (minDistToWallSq)
+		{
+			*minDistToWallSq = std::min(*minDistToWallSq, minDistSq);
+		}
+		return closestId;
+	}
+
 	// TODO: Spatial data structure to handle cases where there are 10k, 100k, etc. sectors.
-	bool getOverlappingSectorsPt(const Vec3f* pos, SectorList* result)
+	bool getOverlappingSectorsPt(const Vec3f* pos, s32 curLayer, SectorList* result, f32 padding)
 	{
 		if (!pos || !result) { return false; }
 
@@ -2343,15 +2419,22 @@ namespace LevelEditor
 		EditorSector* sector = s_level.sectors.data();
 		for (s32 i = 0; i < count; i++, sector++)
 		{
-			if (pos->x < sector->bounds[0].x || pos->x > sector->bounds[1].x ||
-				pos->y < sector->bounds[0].y || pos->y > sector->bounds[1].y ||
-				pos->z < sector->bounds[0].z || pos->z > sector->bounds[1].z)
+			// It has to be on a visible layer.
+			if (sector->layer != LAYER_ANY && sector->layer != curLayer) { continue; }
+			// The group has to be interactible.
+			if (!sector_isInteractable(sector)) { continue; }
+			// The position has to be within the bounds of the sector.
+			// TODO: Increase the bounds range?
+			if (pos->x < sector->bounds[0].x-padding || pos->x > sector->bounds[1].x+padding ||
+				pos->y < sector->bounds[0].y-padding || pos->y > sector->bounds[1].y+padding ||
+				pos->z < sector->bounds[0].z-padding || pos->z > sector->bounds[1].z+padding)
 			{
 				continue;
 			}
+			// Add the sector as a potential result.
 			result->push_back(sector);
 		}
-
+		// Are there any potential results?
 		return !result->empty();
 	}
 	   

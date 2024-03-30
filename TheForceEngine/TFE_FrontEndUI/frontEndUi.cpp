@@ -31,6 +31,7 @@
 #include <TFE_DarkForces/mission.h>
 #include <TFE_DarkForces/gameMusic.h>
 #include <TFE_Jedi/Renderer/jediRenderer.h>
+#include <TFE_Jedi/Renderer/rcommon.h>
 #include <TFE_DarkForces/config.h>
 #include <TFE_DarkForces/player.h>
 #include <TFE_DarkForces/hud.h>
@@ -1155,6 +1156,12 @@ namespace TFE_FrontEndUI
 			gameSettings->df_autorun = autorun;
 		}
 
+		bool crouchToggle = gameSettings->df_crouchToggle;
+		if (ImGui::Checkbox("Crouch Toggle", &crouchToggle))
+		{
+			gameSettings->df_crouchToggle = crouchToggle;
+		}
+
 		bool bobaFettFacePlayer = gameSettings->df_bobaFettFacePlayer;
 		if (ImGui::Checkbox("Boba Fett Face Player Fix", &bobaFettFacePlayer))
 		{
@@ -1171,6 +1178,18 @@ namespace TFE_FrontEndUI
 		if (ImGui::Checkbox("Remove INF Item Limit (requires restart)", &ignoreInfLimit))
 		{
 			gameSettings->df_ignoreInfLimit = ignoreInfLimit;
+		}
+
+		bool stepSecondAlt = gameSettings->df_stepSecondAlt;
+		if (ImGui::Checkbox("Allow the player to step up onto second heights, similar to normal stairs.", &stepSecondAlt))
+		{
+			gameSettings->df_stepSecondAlt = stepSecondAlt;
+		}
+
+		bool solidWallFlagFix = gameSettings->df_solidWallFlagFix;
+		if (ImGui::Checkbox("Enforce solid wall flag for moving walls", &solidWallFlagFix))
+		{
+			gameSettings->df_solidWallFlagFix = solidWallFlagFix;
 		}
 
 		if (s_drawNoGameDataMsg)
@@ -1300,6 +1319,12 @@ namespace TFE_FrontEndUI
 		if (ImGui::Checkbox("Fly (LAFLY)", &fly))
 		{
 			TFE_DarkForces::cheat_fly();
+		}
+			
+		bool fullBright = TFE_Jedi::s_fullBright;
+		if (ImGui::Checkbox("Full-Bright (LABRIGHT)", &fullBright))
+		{
+			TFE_DarkForces::cheat_toggleFullBright();
 		}
 
 		bool noclip = TFE_DarkForces::s_noclip;
@@ -3206,6 +3231,7 @@ namespace TFE_FrontEndUI
 				gameSettings->df_bobaFettFacePlayer = true;
 				gameSettings->df_smoothVUEs = true;
 				gameSettings->df_pitchLimit = (temp == TEMPLATE_MODERN) ? PITCH_MAXIMUM : PITCH_VANILLA_PLUS;
+				gameSettings->df_solidWallFlagFix = true;
 				// Graphics
 				graphicsSettings->rendererIndex = RENDERER_HARDWARE;
 				graphicsSettings->skyMode = SKYMODE_CYLINDER;
@@ -3254,6 +3280,7 @@ namespace TFE_FrontEndUI
 				gameSettings->df_showSecretFoundMsg = false;
 				gameSettings->df_bobaFettFacePlayer = false;
 				gameSettings->df_smoothVUEs = false;
+				gameSettings->df_solidWallFlagFix = false;
 				// Graphics
 				graphicsSettings->rendererIndex = RENDERER_SOFTWARE;
 				graphicsSettings->widescreen = false;

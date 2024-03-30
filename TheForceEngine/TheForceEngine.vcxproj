@@ -471,9 +471,14 @@ echo ^)";
     <ClInclude Include="TFE_Editor\LevelEditor\levelEditorData.h" />
     <ClInclude Include="TFE_Editor\LevelEditor\levelEditorHistory.h" />
     <ClInclude Include="TFE_Editor\LevelEditor\levelEditorInf.h" />
+    <ClInclude Include="TFE_Editor\LevelEditor\lighting.h" />
+    <ClInclude Include="TFE_Editor\LevelEditor\Rendering\grid.h" />
     <ClInclude Include="TFE_Editor\LevelEditor\Rendering\grid2d.h" />
     <ClInclude Include="TFE_Editor\LevelEditor\Rendering\grid3d.h" />
     <ClInclude Include="TFE_Editor\LevelEditor\Rendering\viewport.h" />
+    <ClInclude Include="TFE_Editor\LevelEditor\Scripting\levelEditorScripts.h" />
+    <ClInclude Include="TFE_Editor\LevelEditor\Scripting\levelEditScript_level.h" />
+    <ClInclude Include="TFE_Editor\LevelEditor\Scripting\levelEditScript_system.h" />
     <ClInclude Include="TFE_Editor\LevelEditor\selection.h" />
     <ClInclude Include="TFE_Editor\LevelEditor\sharedState.h" />
     <ClInclude Include="TFE_Editor\LevelEditor\shell.h" />
@@ -652,6 +657,7 @@ echo ^)";
     <ClInclude Include="TFE_RenderBackend\Win32OpenGL\renderTarget.h" />
     <ClInclude Include="TFE_RenderBackend\Win32OpenGL\screenCapture.h" />
     <ClInclude Include="TFE_RenderShared\camera3d.h" />
+    <ClInclude Include="TFE_RenderShared\gridDef.h" />
     <ClInclude Include="TFE_RenderShared\lineDraw2d.h" />
     <ClInclude Include="TFE_RenderShared\lineDraw3d.h" />
     <ClInclude Include="TFE_RenderShared\modelDraw.h" />
@@ -824,9 +830,14 @@ echo ^)";
     <ClCompile Include="TFE_Editor\LevelEditor\levelEditorData.cpp" />
     <ClCompile Include="TFE_Editor\LevelEditor\levelEditorHistory.cpp" />
     <ClCompile Include="TFE_Editor\LevelEditor\levelEditorInf.cpp" />
+    <ClCompile Include="TFE_Editor\LevelEditor\lighting.cpp" />
+    <ClCompile Include="TFE_Editor\LevelEditor\Rendering\grid.cpp" />
     <ClCompile Include="TFE_Editor\LevelEditor\Rendering\grid2d.cpp" />
     <ClCompile Include="TFE_Editor\LevelEditor\Rendering\grid3d.cpp" />
     <ClCompile Include="TFE_Editor\LevelEditor\Rendering\viewport.cpp" />
+    <ClCompile Include="TFE_Editor\LevelEditor\Scripting\levelEditorScripts.cpp" />
+    <ClCompile Include="TFE_Editor\LevelEditor\Scripting\levelEditScript_level.cpp" />
+    <ClCompile Include="TFE_Editor\LevelEditor\Scripting\levelEditScript_system.cpp" />
     <ClCompile Include="TFE_Editor\LevelEditor\selection.cpp" />
     <ClCompile Include="TFE_Editor\LevelEditor\shell.cpp" />
     <ClCompile Include="TFE_FileSystem\filestream.cpp" />

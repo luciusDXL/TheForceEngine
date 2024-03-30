@@ -75,6 +75,7 @@ namespace TFE_Jedi
 	s32 s_sectorAmbientFraction;
 	s32 s_lightCount = 3;
 	JBool s_flatLighting = JFALSE;
+	JBool s_fullBright = JFALSE;
 
 	// Limits
 	s32 s_maxSegCount = MAX_SEG;

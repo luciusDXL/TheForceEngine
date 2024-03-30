@@ -51,6 +51,10 @@ namespace TFE_Editor
 			{
 				index = loadEditorTexture(TEX_BM, archive, name, colorData->palette, colorData->palIndex);
 			} break;
+			case TYPE_EXT_TEXTURE:
+			{
+				index = loadEditorTexture(TEX_RAW, archive, name, nullptr, 0);
+			} break;
 			case TYPE_PALETTE:
 			{
 				index = loadPaletteAsTexture(archive, name, colorData->colormap);
@@ -111,6 +115,9 @@ namespace TFE_Editor
 			case TYPE_3DOBJ:
 			case TYPE_LEVEL:
 			case TYPE_SOUND:
+			case TYPE_EXT_TEXTURE:
+			case TYPE_EXT_FRAME:
+			case TYPE_EXT_WAX:
 			{
 				// This doesn't make sense for these asset types, so do nothing.
 			} break;
@@ -148,6 +155,7 @@ namespace TFE_Editor
 		switch (type)
 		{
 			case TYPE_TEXTURE:
+			case TYPE_EXT_TEXTURE:
 			case TYPE_PALETTE:
 			{
 				data = getTextureData(index);

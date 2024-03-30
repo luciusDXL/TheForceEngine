@@ -11,11 +11,13 @@
 #include <TFE_Editor/LevelEditor/infoPanel.h>
 #include <TFE_Editor/LevelEditor/levelEditorInf.h>
 #include <TFE_Editor/LevelEditor/groups.h>
+#include <TFE_Editor/LevelEditor/lighting.h>
 #include <TFE_Editor/EditorAsset/editorAsset.h>
 #include <TFE_Editor/EditorAsset/editor3dThumbnails.h>
 #include <TFE_Input/input.h>
 #include <TFE_RenderBackend/renderBackend.h>
 #include <TFE_RenderShared/modelDraw.h>
+#include <TFE_Polygon/polygon.h>
 #include <TFE_System/system.h>
 #include <TFE_FileSystem/fileutil.h>
 #include <TFE_FileSystem/paths.h>
@@ -70,6 +72,7 @@ namespace TFE_Editor
 	static bool s_menuActive = false;
 	static MessageBox s_msgBox = {};
 	static ImFont* s_fonts[FONT_COUNT * FONT_SIZE_COUNT] = { 0 };
+	static ImFont* s_fontLarge = nullptr;
 
 	static f64 s_tooltipTime = 0.0;
 	static Vec2i s_prevMousePos = { 0 };
@@ -105,6 +108,7 @@ namespace TFE_Editor
 		AssetBrowser::init();
 		TFE_RenderShared::modelDraw_init();
 		thumbnail_init(64);
+		TFE_Polygon::clipInit();
 		s_msgBox = {};
 	}
 
@@ -114,6 +118,7 @@ namespace TFE_Editor
 		thumbnail_destroy();
 		TFE_RenderShared::modelDraw_destroy();
 		freeIcons();
+		TFE_Polygon::clipDestroy();
 	}
 		
 	bool loadIcons()
@@ -265,6 +270,10 @@ namespace TFE_Editor
 			{
 				ImGui::OpenPopup("Choose Name");
 			} break;
+			case POPUP_LIGHTING:
+			{
+				ImGui::OpenPopup("Level Lighting");
+			} break;
 		}
 	}
 
@@ -350,6 +359,14 @@ namespace TFE_Editor
 			case POPUP_GROUP_NAME:
 			{
 				if (LevelEditor::groups_chooseName())
+				{
+					ImGui::CloseCurrentPopup();
+					s_editorPopup = POPUP_NONE;
+				}
+			} break;
+			case POPUP_LIGHTING:
+			{
+				if (LevelEditor::levelLighting())
 				{
 					ImGui::CloseCurrentPopup();
 					s_editorPopup = POPUP_NONE;
@@ -674,14 +691,22 @@ namespace TFE_Editor
 		fontSmall[2] = io.Fonts->AddFontFromFileTTF(fontPath, 16 * 150 / 100);
 		fontSmall[3] = io.Fonts->AddFontFromFileTTF(fontPath, 16 * 175 / 100);
 		fontSmall[4] = io.Fonts->AddFontFromFileTTF(fontPath, 16 * 200 / 100);
+		s_fontLarge = io.Fonts->AddFontFromFileTTF(fontPath, 48);
 		TFE_Ui::invalidateFontAtlas();
 	}
 		
 	void pushFont(FontType type)
 	{
-		const s32 index = fontScaleToIndex(s_editorConfig.fontScale);
-		ImFont** fonts = &s_fonts[type * FONT_SIZE_COUNT];
-		ImGui::PushFont(fonts[index]);
+		if (type == FONT_LARGE)
+		{
+			ImGui::PushFont(s_fontLarge);
+		}
+		else
+		{
+			const s32 index = fontScaleToIndex(s_editorConfig.fontScale);
+			ImFont** fonts = &s_fonts[type * FONT_SIZE_COUNT];
+			ImGui::PushFont(fonts[index]);
+		}
 	}
 
 	void popFont()

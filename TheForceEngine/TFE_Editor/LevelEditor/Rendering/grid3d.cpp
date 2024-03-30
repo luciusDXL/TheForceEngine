@@ -1,4 +1,5 @@
 #include "grid3d.h"
+#include "grid.h"
 #include <TFE_Editor/LevelEditor/sharedState.h>
 #include <TFE_RenderBackend/shader.h>
 #include <TFE_RenderBackend/vertexBuffer.h>
@@ -24,6 +25,8 @@ namespace LevelEditor
 	static s32 s_svCameraProj = -1;
 	static s32 s_svGridOpacity = -1;
 	static s32 s_svGridHeight = -1;
+	static s32 s_svGridAxis = -1;
+	static s32 s_svGridOrigin = -1;
 
 	bool grid3d_init()
 	{
@@ -37,6 +40,8 @@ namespace LevelEditor
 		s_svCameraProj = s_shader.getVariableId("CameraProj");
 		s_svGridOpacity = s_shader.getVariableId("GridOpacitySubGrid");
 		s_svGridHeight = s_shader.getVariableId("GridHeight");
+		s_svGridAxis = s_shader.getVariableId("GridAxis");
+		s_svGridOrigin = s_shader.getVariableId("GridOrigin");
 		if (s_svCameraPos < 0 || s_svCameraView < 0 || s_svCameraProj < 0)
 		{
 			return false;
@@ -89,6 +94,11 @@ namespace LevelEditor
 		s_shader.setVariable(s_svCameraProj, SVT_MAT4x4, s_camera.projMtx.data);
 		s_shader.setVariable(s_svGridOpacity, SVT_VEC3, gridOpacitySubGrid);
 		s_shader.setVariable(s_svGridHeight, SVT_SCALAR, &height);
+
+		const f32 gridAxis[] = { s_grid.axis[0].x, s_grid.axis[0].z, s_grid.axis[1].x, s_grid.axis[1].z };
+		const f32 gridOrigin[] = { s_grid.origin.x, s_grid.origin.z };
+		s_shader.setVariable(s_svGridAxis, SVT_VEC4, gridAxis);
+		s_shader.setVariable(s_svGridOrigin, SVT_VEC2, gridOrigin);
 
 		// Bind vertex/index buffers and setup attributes for BlitVert
 		s_vertexBuffer.bind();

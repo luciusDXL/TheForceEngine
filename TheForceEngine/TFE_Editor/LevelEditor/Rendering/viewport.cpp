@@ -1,4 +1,5 @@
 #include "viewport.h"
+#include "grid.h"
 #include "grid2d.h"
 #include "grid3d.h"
 #include <TFE_System/math.h>
@@ -82,6 +83,7 @@ namespace LevelEditor
 		INF_COLOR_EDIT_HELPER = 0xffc000ff,
 	};
 
+
 	const u32 c_connectMsgColor = 0xc0ff80ff;
 	const u32 c_connectClientColor = 0xc080ff80;
 	const u32 c_connectTargetColor = 0xc080ffff;
@@ -105,6 +107,18 @@ namespace LevelEditor
 		AMBIENT(28), AMBIENT(29), AMBIENT(30), AMBIENT(31)
 	};
 
+	struct Rail
+	{
+		bool active = false;
+		bool hasMoveDir = false;
+		bool wasActive = false;
+		s32 dirCount = 0;
+		f32 moveFade = 0.0f;
+		Vec3f origin = { 0 };
+		Vec3f moveDir = { 0 };
+		Vec3f dir[4] = { 0 };
+	};
+
 	static RenderTargetHandle s_viewportRt = 0;
 	static std::vector<Vec2f> s_transformedVtx;
 	static std::vector<Vec2f> s_bufferVec2;
@@ -115,9 +129,9 @@ namespace LevelEditor
 	Vec3f s_viewportPos = { 0 };
 	Vec4f s_viewportTrans2d = { 0 };
 	f32 s_gridOpacity = 0.5f;
-	f32 s_gridSize = 0.0625f;
 	f32 s_zoom2d = 0.25f;			// current zoom level in 2D.
-	f32 s_gridHeight = 0.0f;
+
+	Rail s_rail = {};
 
 	void renderLevel2D();
 	void renderLevel3D();
@@ -198,6 +212,54 @@ namespace LevelEditor
 	{
 		return TFE_RenderBackend::getRenderTargetTexture(s_viewportRt);
 	}
+		
+	void viewport_clearRail()
+	{
+		s_rail.wasActive = false;
+		if (s_rail.moveFade == 0.0f)
+		{
+			s_rail.active = false;
+			s_rail.dirCount = 0;
+		}
+	}
+
+	void viewport_setRail(const Vec3f* rail, s32 dirCount, Vec3f* moveDir)
+	{
+		s_rail.active = true;
+		s_rail.dirCount = dirCount;
+		s_rail.origin = rail[0];
+		for (s32 i = 0; i < dirCount; i++)
+		{
+			s_rail.dir[i] = { rail[1+i].x - rail[0].x, rail[1+i].y - rail[0].y, rail[1+i].z - rail[0].z };
+			s_rail.dir[i] = TFE_Math::normalize(&s_rail.dir[i]);
+		}
+
+		if (moveDir && fabsf(moveDir->x) + fabsf(moveDir->y) + fabsf(moveDir->z) < FLT_EPSILON)
+		{
+			moveDir = nullptr;
+		}
+
+		s_rail.hasMoveDir = moveDir != nullptr;
+		s_rail.wasActive = true;
+		if (moveDir)
+		{
+			s_rail.moveDir = *moveDir;
+			s_rail.moveFade = 0.25f;
+		}
+	}
+
+	void viewport_updateRail()
+	{
+		if (s_rail.moveFade > 0.0f)
+		{
+			s_rail.moveFade = std::max(0.0f, s_rail.moveFade - (f32)TFE_System::getDeltaTime());
+		}
+		if (s_rail.moveFade == 0.0f && !s_rail.wasActive)
+		{
+			s_rail.active = false;
+			s_rail.dirCount = 0;
+		}
+	}
 
 	//////////////////////////////////////////
 	// Internal
@@ -252,7 +314,7 @@ namespace LevelEditor
 		// Draw the grid layer.
 		if (s_editFlags & LEF_SHOW_GRID)
 		{
-			grid2d_computeScale(s_viewportSize, s_gridSize, s_zoom2d, s_viewportPos);
+			grid2d_computeScale(s_viewportSize, s_grid.size, s_zoom2d, s_viewportPos);
 			grid2d_blitToScreen(s_gridOpacity);
 		}
 
@@ -914,20 +976,23 @@ namespace LevelEditor
 	extern std::vector<Vec2f> s_shape;
 	extern Vec2f s_drawCurPos;
 	extern Polygon s_shapePolygon;
-
+		
 	void drawSectorShape2D()
 	{
 		u32 color[] = { 0xffffffff, 0xffffffff };
 		f32 width = 1.5f;
 		if (s_drawStarted && s_drawMode == DMODE_RECT)
 		{
+			Vec2f p[4];
+			getGridOrientedRect(s_shape[0], s_shape[1], p);
+
 			Vec2f vtx[] =
 			{
-				{ s_shape[0].x * s_viewportTrans2d.x + s_viewportTrans2d.y, s_shape[0].z * s_viewportTrans2d.z + s_viewportTrans2d.w },
-				{ s_shape[1].x * s_viewportTrans2d.x + s_viewportTrans2d.y, s_shape[0].z * s_viewportTrans2d.z + s_viewportTrans2d.w },
-				{ s_shape[1].x * s_viewportTrans2d.x + s_viewportTrans2d.y, s_shape[1].z * s_viewportTrans2d.z + s_viewportTrans2d.w },
-				{ s_shape[0].x * s_viewportTrans2d.x + s_viewportTrans2d.y, s_shape[1].z * s_viewportTrans2d.z + s_viewportTrans2d.w },
-				{ s_shape[0].x * s_viewportTrans2d.x + s_viewportTrans2d.y, s_shape[0].z * s_viewportTrans2d.z + s_viewportTrans2d.w }
+				{ p[0].x * s_viewportTrans2d.x + s_viewportTrans2d.y, p[0].z * s_viewportTrans2d.z + s_viewportTrans2d.w },
+				{ p[1].x * s_viewportTrans2d.x + s_viewportTrans2d.y, p[1].z * s_viewportTrans2d.z + s_viewportTrans2d.w },
+				{ p[2].x * s_viewportTrans2d.x + s_viewportTrans2d.y, p[2].z * s_viewportTrans2d.z + s_viewportTrans2d.w },
+				{ p[3].x * s_viewportTrans2d.x + s_viewportTrans2d.y, p[3].z * s_viewportTrans2d.z + s_viewportTrans2d.w },
+				{ p[0].x * s_viewportTrans2d.x + s_viewportTrans2d.y, p[0].z * s_viewportTrans2d.z + s_viewportTrans2d.w }
 			};
 			TFE_RenderShared::lineDraw2d_addLine(width, &vtx[0], color);
 			TFE_RenderShared::lineDraw2d_addLine(width, &vtx[1], color);
@@ -1152,14 +1217,17 @@ namespace LevelEditor
 		u32 color = 0xffffffff;
 		if (s_drawStarted && s_drawMode == DMODE_RECT)
 		{
+			Vec2f rect[4];
+			getGridOrientedRect(s_shape[0], s_shape[1], rect);
+
 			// Draw the rect on the grid itself.
 			Vec3f vtx[] =
 			{
-				{ s_shape[0].x, s_drawHeight[0], s_shape[0].z },
-				{ s_shape[1].x, s_drawHeight[0], s_shape[0].z },
-				{ s_shape[1].x, s_drawHeight[0], s_shape[1].z },
-				{ s_shape[0].x, s_drawHeight[0], s_shape[1].z },
-				{ s_shape[0].x, s_drawHeight[0], s_shape[0].z }
+				{ rect[0].x, s_drawHeight[0], rect[0].z },
+				{ rect[1].x, s_drawHeight[0], rect[1].z },
+				{ rect[2].x, s_drawHeight[0], rect[2].z },
+				{ rect[3].x, s_drawHeight[0], rect[3].z },
+				{ rect[0].x, s_drawHeight[0], rect[0].z }
 			};
 			TFE_RenderShared::lineDraw3d_addLine(3.0f, &vtx[0], &color);
 			TFE_RenderShared::lineDraw3d_addLine(3.0f, &vtx[1], &color);
@@ -1168,13 +1236,8 @@ namespace LevelEditor
 		}
 		else if (s_drawStarted && s_drawMode == DMODE_RECT_VERT)
 		{
-			const Vec2f vtx[] =
-			{
-				{ s_shape[0].x, s_shape[0].z },
-				{ s_shape[1].x, s_shape[0].z },
-				{ s_shape[1].x, s_shape[1].z },
-				{ s_shape[0].x, s_shape[1].z }
-			};
+			Vec2f vtx[4];
+			getGridOrientedRect(s_shape[0], s_shape[1], vtx);
 
 			for (s32 v = 0; v < 4; v++)
 			{
@@ -1209,10 +1272,10 @@ namespace LevelEditor
 			// Draw solid bottom.
 			Vec3f baseVtx[4] =
 			{
-				{ s_shape[0].x, s_drawHeight[0], s_shape[0].z },
-				{ s_shape[1].x, s_drawHeight[0], s_shape[0].z },
-				{ s_shape[1].x, s_drawHeight[0], s_shape[1].z },
-				{ s_shape[0].x, s_drawHeight[0], s_shape[1].z }
+				{ vtx[0].x, s_drawHeight[0], vtx[0].z },
+				{ vtx[1].x, s_drawHeight[0], vtx[1].z },
+				{ vtx[2].x, s_drawHeight[0], vtx[2].z },
+				{ vtx[3].x, s_drawHeight[0], vtx[3].z }
 			};
 			s32 idx[6]=
 			{
@@ -1364,7 +1427,7 @@ namespace LevelEditor
 	void renderHighlighted3d()
 	{
 		lineDraw3d_begin(s_viewportSize.x, s_viewportSize.z);
-		triDraw3d_begin();
+		triDraw3d_begin(&s_grid);
 
 		if (s_editMode == LEDIT_DRAW)
 		{
@@ -1412,22 +1475,22 @@ namespace LevelEditor
 			}
 		}
 
-		triDraw3d_draw(&s_camera, (f32)s_viewportSize.x, (f32)s_viewportSize.z, s_gridSize, 0.0f);
+		triDraw3d_draw(&s_camera, (f32)s_viewportSize.x, (f32)s_viewportSize.z, s_grid.size, 0.0f);
 		lineDraw3d_drawLines(&s_camera, false, false);
 	}
 
 	void drawGrid3D(bool gridOver)
 	{
 		f32 opacity = gridOver ? 1.5f * s_gridOpacity : s_gridOpacity;
-		if (s_camera.pos.y >= s_gridHeight)
+		if (s_camera.pos.y >= s_grid.height)
 		{
-			grid3d_draw(s_gridSize, opacity, s_gridHeight);
+			grid3d_draw(s_grid.size, opacity, s_grid.height);
 			renderCoordinateAxis();
 		}
 		else
 		{
 			renderCoordinateAxis();
-			grid3d_draw(s_gridSize, opacity, s_gridHeight);
+			grid3d_draw(s_grid.size, opacity, s_grid.height);
 		}
 	}
 
@@ -1574,11 +1637,66 @@ namespace LevelEditor
 		}
 	}
 
+	u32 getDirColor(Vec3f dir, f32 alpha, Vec3f* alignDir, f32 fade)
+	{
+		const Vec3f colorDir[] =
+		{
+			{ 1.0f, 0.0f, 0.0f },
+			{ 0.0f, 1.0f, 0.0f },
+			{ 0.0f, 0.0f, 1.0f },
+			{-1.0f, 0.0f, 0.0f },
+			{ 0.0f,-1.0f, 0.0f },
+			{ 0.0f, 0.0f,-1.0f }
+		};
+		const Vec3f colorAlign = { 1.0f, 1.0f, 0.0f };
+		const Vec3f color[] =
+		{
+			// Positive
+			{ 1.0f, 0.0f, 0.0f },
+			{ 0.0f, 1.0f, 0.0f },
+			{ 0.0f, 0.0f, 1.0f },
+			// Negative
+			{ 1.00f, 0.25f, 0.25f },
+			{ 0.50f, 1.00f, 0.50f },
+			{ 0.25f, 0.25f, 1.00f }
+		};
+
+		f32 sum = 0.0f;
+		Vec3f colorSum = { 0 };
+		for (s32 i = 0; i < TFE_ARRAYSIZE(colorDir); i++)
+		{
+			f32 w = std::max(0.0f, colorDir[i].x*dir.x + colorDir[i].y*dir.y + colorDir[i].z*dir.z);
+			colorSum.x += w * color[i].x;
+			colorSum.y += w * color[i].y;
+			colorSum.z += w * color[i].z;
+			sum += w;
+		}
+		if (sum > 0.0f)
+		{
+			f32 scale = 1.0f / sum;
+			colorSum.x *= scale;
+			colorSum.y *= scale;
+			colorSum.z *= scale;
+		}
+
+		if (alignDir)
+		{
+			f32 alignWeight = fade * std::max(0.0f, dir.x*alignDir->x + dir.y*alignDir->y + dir.z*alignDir->z);
+			colorSum.x = colorSum.x + alignWeight * (colorAlign.x - colorSum.x);
+			colorSum.y = colorSum.y + alignWeight * (colorAlign.y - colorSum.y);
+			colorSum.z = colorSum.z + alignWeight * (colorAlign.z - colorSum.z);
+		}
+
+		return u32(colorSum.x * 255.0f) | (u32(colorSum.y * 255.0f) << 8) | (u32(colorSum.z * 255.0f) << 16) | (u32(alpha * 255.0f) << 24);
+	}
+
 	void renderLevel3D()
 	{
+		viewport_updateRail();
+
 		// Prepare for drawing.
 		TFE_RenderShared::lineDraw3d_begin(s_viewportSize.x, s_viewportSize.z);
-		TFE_RenderShared::triDraw3d_begin();
+		TFE_RenderShared::triDraw3d_begin(&s_grid);
 		TFE_RenderShared::modelDraw_begin();
 
 		if (!(s_gridFlags & GFLAG_OVER))
@@ -1627,8 +1745,8 @@ namespace LevelEditor
 
 			// Draw lines.
 			const size_t wallCount = sector->walls.size();
-			const EditorWall* wall = sector->walls.data();
 			const Vec2f* vtx = sector->vtx.data();
+			EditorWall* wall = sector->walls.data();
 			for (size_t w = 0; w < wallCount; w++, wall++)
 			{
 				// Skip hovered or selected walls.
@@ -1720,7 +1838,11 @@ namespace LevelEditor
 											{v1.x, sector->floorHeight, v1.z} };
 						if (s_sectorDrawMode == SDM_TEXTURED_FLOOR || s_sectorDrawMode == SDM_TEXTURED_CEIL)
 						{
-							const LevelTexture* texPtr = sky ? &sector->floorTex : &wall->tex[WP_BOT];
+							LevelTexture* texPtr = sky ? &sector->floorTex : &wall->tex[WP_BOT];
+							if (texPtr->texIndex < 0)
+							{
+								texPtr->texIndex = getTextureIndex("DEFAULT.BM");
+							}
 							const EditorTexture* tex = calculateTextureCoords(wall, texPtr, wallLengthTexels, botHeight, flipHorz, uvCorners);
 							TFE_RenderShared::triDraw3d_addQuadTextured(TRIMODE_OPAQUE, corners, uvCorners, wallColor, tex->frames[0], sky);
 						}
@@ -1875,11 +1997,25 @@ namespace LevelEditor
 			drawBox(&s_cursor3d, size, 3.0f, 0x80ff8020);
 		}
 
-		TFE_RenderShared::triDraw3d_draw(&s_camera, (f32)s_viewportSize.x, (f32)s_viewportSize.z, s_gridSize, s_gridOpacity);
+		TFE_RenderShared::triDraw3d_draw(&s_camera, (f32)s_viewportSize.x, (f32)s_viewportSize.z, s_grid.size, s_gridOpacity);
 		TFE_RenderShared::modelDraw_draw(&s_camera, (f32)s_viewportSize.x, (f32)s_viewportSize.z);
 		TFE_RenderShared::lineDraw3d_drawLines(&s_camera, true, false);
 		
 		renderHighlighted3d();
+
+		// Movement "rail", if active.
+		if (s_rail.active && s_rail.dirCount > 0)
+		{
+			// For now just draw an arrow.
+			TFE_RenderShared::lineDraw3d_begin(s_viewportSize.x, s_viewportSize.z);
+			Vec3f* alignDir = (s_rail.hasMoveDir || s_rail.moveFade > 0.0f) ? &s_rail.moveDir : nullptr;
+			for (s32 i = 0; i < s_rail.dirCount; i++)
+			{
+				u32 color = getDirColor(s_rail.dir[i], 0.75f, alignDir, std::min(1.0f, s_rail.moveFade * 4.0f));
+				drawArrow3d(3.0f, 0.1f, s_rail.origin, s_rail.dir[i], s_camera.viewMtx.m2, color);
+			}
+			TFE_RenderShared::lineDraw3d_drawLines(&s_camera, false, false);
+		}
 
 		// Draw drag select, if active.
 		if (s_dragSelect.active)

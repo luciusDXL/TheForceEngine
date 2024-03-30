@@ -1043,7 +1043,7 @@ namespace TFE_DarkForces
 	///////////////////////////////////////////
 	TextureData* hud_loadTexture(const char* texFile)
 	{
-		TextureData* hudTex = bitmap_load(texFile, 0, POOL_GAME);
+		TextureData* hudTex = bitmap_load(texFile, 1, POOL_GAME);
 		if (!hudTex)
 		{
 			TFE_System::logWrite(LOG_ERROR, "HUD", "Cannot load texture '%s'", texFile);

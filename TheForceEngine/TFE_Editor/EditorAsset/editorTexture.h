@@ -29,6 +29,7 @@ namespace TFE_Editor
 	{
 		TEX_BM = 0,
 		TEX_PCX,
+		TEX_RAW,
 		TEX_COUNT
 	};
 		

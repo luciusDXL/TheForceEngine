@@ -39,15 +39,7 @@ namespace LevelEditor
 		LEDIT_SECTOR,
 		LEDIT_ENTITY
 	};
-
-	enum BoolMode
-	{
-		BMODE_SET = 0,
-		BMODE_MERGE,
-		BMODE_SUBTRACT,
-		BMODE_COUNT
-	};
-
+		
 	enum DrawMode
 	{
 		DMODE_RECT = 0,
@@ -223,7 +215,7 @@ namespace LevelEditor
 	s32  findSector2d(s32 layer, const Vec2f* pos);
 	bool traceRay(const Ray* ray, RayHitInfo* hitInfo, bool flipFaces, bool canHitSigns, bool canHitObjects = false);
 	// Get all sectors that have bounds that contain the point.
-	bool getOverlappingSectorsPt(const Vec3f* pos, SectorList* result);
+	bool getOverlappingSectorsPt(const Vec3f* pos, s32 curLayer, SectorList* result, f32 padding = 0.0f);
 	// Get all sectors that have bounds that overlap the input bounds.
 	bool getOverlappingSectorsBounds(const Vec3f bounds[2], SectorList* result);
 	// Helpers
@@ -231,6 +223,9 @@ namespace LevelEditor
 	bool aabbOverlap2d(const Vec3f* aabb0, const Vec3f* aabb1);
 	bool pointInsideAABB3d(const Vec3f* aabb, const Vec3f* pt);
 	bool pointInsideAABB2d(const Vec3f* aabb, const Vec3f* pt);
+	bool isPointInsideSector2d(EditorSector* sector, Vec2f pos, s32 layer);
+	bool isPointInsideSector3d(EditorSector* sector, Vec3f pos, s32 layer);
+	s32 findClosestWallInSector(const EditorSector* sector, const Vec2f* pos, f32 maxDistSq, f32* minDistToWallSq);
 
 	// Groups
 	inline Group* sector_getGroup(EditorSector* sector)

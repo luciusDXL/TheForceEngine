@@ -91,3 +91,6 @@ The core system module, this covers the logging system, thread management, non-g
 
 ### TFE_UI
 The low-level UI system used by TFE for the System UI. This is built on top of imGUI, which is also included. This adds extra support such as markdown and file dialogs.
+
+### Mods
+The directory where mods go. Each mod must be placed in a separate sub‑directory.

@@ -28,6 +28,7 @@ namespace TFE_Editor
 	enum FontType
 	{
 		FONT_SMALL = 0,
+		FONT_LARGE,
 		FONT_COUNT,
 	};
 
@@ -52,6 +53,7 @@ namespace TFE_Editor
 		POPUP_CATEGORY,
 		POPUP_EDIT_INF,
 		POPUP_GROUP_NAME,
+		POPUP_LIGHTING,
 		POPUP_COUNT
 	};
 

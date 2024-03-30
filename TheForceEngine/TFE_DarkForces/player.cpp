@@ -259,6 +259,8 @@ namespace TFE_DarkForces
 	s32 s_jumpScale = 0;
 	s32 s_playerSlow = 0;
 	s32 s_onMovingSurface = 0;
+	// Other
+	s32 s_playerCrouch = 0;
 			   
 	///////////////////////////////////////////
 	// Forward Declarations
@@ -497,6 +499,7 @@ namespace TFE_DarkForces
 		s_playerSlow  = 0;
 		s_onMovingSurface = 0;
 		s_reviveTick = 0;
+		s_playerCrouch = 0;
 
 		s_playerVelX   = 0;
 		s_playerUpVel  = 0;
@@ -1391,10 +1394,20 @@ namespace TFE_DarkForces
 			}
 		}
 
-		s32 crouch = inputMapping_getActionState(IADF_CROUCH) ? 1 : 0;
+		if (settings->df_crouchToggle)	// TFE: Optional feature.
+		{
+			if (inputMapping_getActionState(IADF_CROUCH) == STATE_PRESSED)
+			{
+				s_playerCrouch = !s_playerCrouch;
+			}
+		}
+		else
+		{
+			s_playerCrouch = inputMapping_getActionState(IADF_CROUCH) ? 1 : 0;
+		}
 		if (s_flyMode)
 		{
-			if ((!s_onFloor || s_noclip) && crouch)
+			if ((!s_onFloor || s_noclip) && s_playerCrouch)
 			{
 				fixed16_16 speed = -(PLAYER_JUMP_IMPULSE << s_jumpScale);
 				s_playerUpVel = speed;
@@ -1408,7 +1421,7 @@ namespace TFE_DarkForces
 			s_playerCrouchSpd = 0;
 		}
 
-		if (s_onFloor & crouch)
+		if (s_onFloor & s_playerCrouch)
 		{
 			fixed16_16 speed = PLAYER_CROUCH_SPEED;
 			speed <<= s_playerRun;			// this will be '1' if running.
@@ -2915,6 +2928,7 @@ namespace TFE_DarkForces
 		SERIALIZE(ObjState_FlyModeAdded, s_flyMode, JFALSE);
 		SERIALIZE(ObjState_OneHitCheats, s_oneHitKillEnabled, JFALSE);
 		SERIALIZE(ObjState_OneHitCheats, s_instaDeathEnabled, JFALSE);
+		SERIALIZE(ObjState_CrouchToggle, s_playerCrouch, 0);
 
 		s32 invSavedSize = 0;
 		if (serialization_getMode() == SMODE_WRITE && s_playerInvSaved)

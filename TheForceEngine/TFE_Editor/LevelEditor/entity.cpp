@@ -667,8 +667,8 @@ namespace LevelEditor
 		{
 			if (writeEntityDataToString(entity, buffer, 4096))
 			{
-				file.writeBuffer(buffer, strlen(buffer));
-				file.writeBuffer("\r\n", strlen("\r\n"));
+				file.writeBuffer(buffer, (u32)strlen(buffer));
+				file.writeBuffer("\r\n", (u32)strlen("\r\n"));
 			}
 		}
 

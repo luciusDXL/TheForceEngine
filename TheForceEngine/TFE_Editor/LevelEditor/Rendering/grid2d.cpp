@@ -1,4 +1,5 @@
 #include "grid2d.h"
+#include "grid.h"
 #include <TFE_RenderBackend/shader.h>
 #include <TFE_RenderBackend/vertexBuffer.h>
 #include <TFE_RenderBackend/indexBuffer.h>
@@ -19,6 +20,7 @@ namespace LevelEditor
 	static VertexBuffer s_vertexBuffer;
 	static IndexBuffer s_indexBuffer;
 	static s32 s_svScaleOffset = -1;
+	static s32 s_svGridAxis    = -1;
 	static s32 s_svGridOpacity = -1;
 
 	bool grid2d_init()
@@ -29,6 +31,7 @@ namespace LevelEditor
 		}
 
 		s_svScaleOffset = s_shader.getVariableId("ScaleOffset");
+		s_svGridAxis    = s_shader.getVariableId("GridAxis");
 		s_svGridOpacity = s_shader.getVariableId("GridOpacitySubGrid");
 		if (s_svScaleOffset < 0)
 		{
@@ -129,9 +132,12 @@ namespace LevelEditor
 
 		s_shader.bind();
 		// Bind Uniforms & Textures.
-		const f32 scaleOffset[] = { s_gridScale.scale.x, s_gridScale.scale.z, s_gridScale.offset.x, s_gridScale.offset.z };
+		const f32 scaleOffset[] = { s_gridScale.scale.x, s_gridScale.scale.z,
+			s_gridScale.offset.x - s_grid.origin.x/s_gridScale.baseGridScale, s_gridScale.offset.z + s_grid.origin.z/s_gridScale.baseGridScale };
+		const f32 gridAxis[] = { s_grid.axis[0].x, -s_grid.axis[0].z, s_grid.axis[1].x, -s_grid.axis[1].z };
 		const f32 gridOpacitySubGrid[] = { gridOpacity * fadeMain, gridOpacity * fadeSub, std::max(0.02f, gridOpacity * fadeSub2) };
 		s_shader.setVariable(s_svScaleOffset, SVT_VEC4, scaleOffset);
+		s_shader.setVariable(s_svGridAxis,    SVT_VEC4, gridAxis);
 		s_shader.setVariable(s_svGridOpacity, SVT_VEC3, gridOpacitySubGrid);
 
 		// Bind vertex/index buffers and setup attributes for BlitVert

@@ -205,7 +205,10 @@ struct TFE_Settings_Game
 	bool df_enableAutoaim      = true;  // Set to true to enable autoaim, false to disable.
 	bool df_showSecretFoundMsg = true;  // Show a message when the player finds a secret.
 	bool df_autorun = false;			// Run by default instead of walk.
+	bool df_crouchToggle = false;		// Use toggle instead of hold for crouch.
 	bool df_ignoreInfLimit = true;		// Ignore the vanilla INF limit.
+	bool df_stepSecondAlt = false;		// Allow the player to step up onto second heights, similar to the way normal stairs work.
+	bool df_solidWallFlagFix = true;	// Solid wall flag is enforced for collision with moving walls.
 	PitchLimit df_pitchLimit  = PITCH_VANILLA_PLUS;
 };
 

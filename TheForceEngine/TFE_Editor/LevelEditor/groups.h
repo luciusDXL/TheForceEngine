@@ -44,7 +44,8 @@ namespace LevelEditor
 
 	void groups_clearName();
 	bool groups_chooseName();
-	
+		
+	bool groups_isIdValid(s32 id);
 	u32 groups_getMainId();
 	u32 groups_getCurrentId();
 	Group* groups_getById(u32 id);

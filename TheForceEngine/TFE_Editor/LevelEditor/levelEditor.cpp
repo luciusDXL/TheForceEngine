@@ -2,6 +2,7 @@
 #include "levelEditorData.h"
 #include "levelEditorHistory.h"
 #include "levelEditorInf.h"
+#include "lighting.h"
 #include "entity.h"
 #include "groups.h"
 #include "selection.h"
@@ -24,6 +25,7 @@
 #include <TFE_Editor/EditorAsset/editorTexture.h>
 #include <TFE_Editor/EditorAsset/editorFrame.h>
 #include <TFE_Editor/EditorAsset/editorSprite.h>
+#include <TFE_Editor/LevelEditor/Rendering/grid.h>
 #include <TFE_Editor/LevelEditor/Rendering/grid2d.h>
 #include <TFE_Input/input.h>
 #include <TFE_RenderBackend/renderBackend.h>
@@ -45,6 +47,7 @@
 #include <SDL.h>
 
 #include <TFE_Ui/imGUI/imgui.h>
+#include <climits>
 #include <algorithm>
 #include <vector>
 #include <string>
@@ -52,15 +55,17 @@
 
 using namespace TFE_Editor;
 #define SHOW_EDITOR_FPS 0
+#define EDITOR_TEXT_PROMPTS 0
 
 namespace LevelEditor
 {
 	const f32 c_defaultZoom = 0.25f;
 	const f32 c_defaultYaw = PI;
 	const f32 c_defaultCameraHeight = 6.0f;
+	const f32 c_relativeVtxSnapScale = 0.125f;
 	const f64 c_doubleClickThreshold = 0.25f;
 	const s32 c_vanillaDarkForcesNameLimit = 16;
-
+	
 	struct VertexWallGroup
 	{
 		EditorSector* sector;
@@ -110,6 +115,7 @@ namespace LevelEditor
 	Feature s_featureHovered = {};
 	Feature s_featureCur = {};
 	Feature s_featureCurWall = {};	// used to access wall data in other modes.
+	Feature s_featureTex = {};
 
 	// Vertex
 	Vec3f s_hoveredVtxPos;
@@ -143,6 +149,7 @@ namespace LevelEditor
 	std::vector<Vec2f> s_shape;
 	Vec2f s_drawCurPos;
 	Polygon s_shapePolygon;
+	static std::vector<EditorSector*> s_sortedHoverSectors;
 
 	static bool s_editMove = false;
 	static SectorList s_workList;
@@ -182,13 +189,13 @@ namespace LevelEditor
 	static Vec2f s_wallNrm;
 	static Vec2f s_wallTan;
 	static Vec3f s_prevPos = { 0 };
+	static s32 s_newWallTexOverride = -1;
 
 	// Texture Alignment
 	static bool s_startTexMove = false;
 	static Vec3f s_startTexPos;
 	static Vec2f s_startTexOffset;
 	static bool s_texMoveSign = false;
-	static Feature s_featureTex = {};
 	static Vec2f s_texNormal, s_texTangent;
 	static SelectMode s_selectMode = SELECTMODE_NONE;
 
@@ -244,15 +251,10 @@ namespace LevelEditor
 	void toggleVertexGroupInclusion(EditorSector* sector, s32 featureId);
 	void toggleWallGroupInclusion(EditorSector* sector, s32 featureIndex, s32 part);
 	void gatherVerticesFromWallSelection();
-	bool vtxEqual(const Vec2f* a, const Vec2f* b);
 	void moveFeatures(const Vec3f& newPos);
 	void handleVertexInsert(Vec2f worldPos);
 	void handleTextureAlignment();
 
-	void snapToGrid(f32* value);
-	void snapToGrid(Vec2f* pos);
-	void snapToGrid(Vec3f* pos);
-	void snapToSurfaceGrid(EditorSector* sector, EditorWall* wall, Vec3f& pos);
 	void snapSignToCursor(EditorSector* sector, EditorWall* wall, s32 signTexIndex, Vec2f* signOffset);
 
 	void drawViewportInfo(s32 index, Vec2i mapPos, const char* info, f32 xOffset, f32 yOffset, f32 alpha=1.0f);
@@ -265,6 +267,16 @@ namespace LevelEditor
 
 	void handleSelectMode(Vec3f pos);
 	void handleSelectMode(EditorSector* sector, s32 wallIndex);
+		
+	s32 getDefaultTextureIndex(WallPart part);
+	bool isInIntList(s32 value, std::vector<s32>* list);
+
+#if EDITOR_TEXT_PROMPTS == 1
+	void handleTextPrompts();
+#endif
+
+	void edit_insertShape(const f32* heights, BoolMode mode, s32 firstVertex, bool allowSubsectorExtrude);
+	void cleanSectors(const std::vector<s32>& selectedSectors);
 	
 	extern Vec3f extrudePoint2dTo3d(const Vec2f pt2d);
 	extern Vec3f extrudePoint2dTo3d(const Vec2f pt2d, f32 height);
@@ -278,7 +290,7 @@ namespace LevelEditor
 		char colormapName[256];
 		sprintf(colormapName, "%s.CMP", s_level.slot.c_str());
 		AssetHandle colormapHandle = loadColormap(colormapName);
-		infoPanelAddMsg(LE_MSG_INFO, "Palette: '%s', Colormap: '%s'", s_level.palette.c_str(), colormapName);
+		LE_INFO("Palette: '%s', Colormap: '%s'", s_level.palette.c_str(), colormapName);
 	}
 
 	bool init(Asset* asset)
@@ -316,7 +328,7 @@ namespace LevelEditor
 		{
 			return false;
 		}
-		infoPanelAddMsg(LE_MSG_INFO, "Loaded level '%s'", s_level.name.c_str());
+		LE_INFO("Loaded level '%s'", s_level.name.c_str());
 
 		loadPaletteAndColormap();
 						
@@ -324,16 +336,16 @@ namespace LevelEditor
 		
 		viewport_update((s32)UI_SCALE(480) + 16, (s32)UI_SCALE(68) + 18);
 		s_gridIndex = 7;
-		s_gridSize = c_gridSizeMap[s_gridIndex];
+		s_grid.size = c_gridSizeMap[s_gridIndex];
 
 		s_boolToolbarData = loadGpuImage("UI_Images/Boolean_32x3.png");
 		if (s_boolToolbarData)
 		{
-			infoPanelAddMsg(LE_MSG_INFO, "Loaded toolbar images 'UI_Images/Boolean_32x3.png'");
+			LE_INFO("Loaded toolbar images 'UI_Images/Boolean_32x3.png'");
 		}
 		else
 		{
-			infoPanelAddMsg(LE_MSG_ERROR, "Failed to load toolbar images 'UI_Images/Boolean_32x3.png'");
+			LE_ERROR("Failed to load toolbar images 'UI_Images/Boolean_32x3.png'");
 		}
 
 		u32 idx = 0;
@@ -375,6 +387,7 @@ namespace LevelEditor
 		s_camera.yaw = c_defaultYaw;
 		computeCameraTransform();
 		s_cursor3d = { 0 };
+		resetGrid();
 
 		levHistory_init();
 		levHistory_createSnapshot("Imported Level");
@@ -397,40 +410,7 @@ namespace LevelEditor
 		levHistory_destroy();
 		browserFreeIcons();
 	}
-
-	bool isPointInsideSector2d(EditorSector* sector, Vec2f pos, s32 layer)
-	{
-		// The layers need to match.
-		if (sector->layer != layer) { return false; }
-		// The point has to be within the bounding box.
-		if (pos.x < sector->bounds[0].x || pos.x > sector->bounds[1].x ||
-			pos.z < sector->bounds[0].z || pos.z > sector->bounds[1].z)
-		{
-			return false;
-		}
-		return TFE_Polygon::pointInsidePolygon(&sector->poly, pos);
-	}
-
-	bool isPointInsideSector3d(EditorSector* sector, Vec3f pos, s32 layer)
-	{
-		const f32 eps = 0.0001f;
-		// The layers need to match.
-		if (sector->layer != layer) { return false; }
-		// The point has to be within the bounding box.
-		if (pos.x < sector->bounds[0].x-eps || pos.x > sector->bounds[1].x+eps ||
-			pos.y < sector->bounds[0].y-eps || pos.y > sector->bounds[1].y+eps ||
-			pos.z < sector->bounds[0].z-eps || pos.z > sector->bounds[1].z+eps)
-		{
-			return false;
-		}
-		// Jitter the z position if needed.
-		bool inside = TFE_Polygon::pointInsidePolygon(&sector->poly, { pos.x, pos.z });
-		if (!inside) { inside = TFE_Polygon::pointInsidePolygon(&sector->poly, { pos.x, pos.z + 0.0001f }); }
-		return inside;
-	}
-
-	static std::vector<EditorSector*> s_pHoverSectors;
-
+			
 	bool sortHoveredSectors(EditorSector* a, EditorSector* b)
 	{
 		if (a->floorHeight > b->floorHeight) { return true; }
@@ -448,7 +428,7 @@ namespace LevelEditor
 	{
 		const size_t sectorCount = s_level.sectors.size();
 		EditorSector* sector = s_level.sectors.data();
-		s_pHoverSectors.clear();
+		s_sortedHoverSectors.clear();
 		for (size_t s = 0; s < sectorCount; s++, sector++)
 		{
 			// Make sure the sector is in a visible/unlocked group.
@@ -456,19 +436,19 @@ namespace LevelEditor
 			if (isPointInsideSector2d(sector, pos, layer))
 			{
 				// Gather all of the potentially selected sectors in a list.
-				s_pHoverSectors.push_back(sector);
+				s_sortedHoverSectors.push_back(sector);
 			}
 		}
-		if (s_pHoverSectors.empty()) { return nullptr; }
+		if (s_sortedHoverSectors.empty()) { return nullptr; }
 		
 		// Then sort:
 		// 1. floor height.
 		// 2. approximate area (if the floor height is the same).
-		std::sort(s_pHoverSectors.begin(), s_pHoverSectors.end(), sortHoveredSectors);
+		std::sort(s_sortedHoverSectors.begin(), s_sortedHoverSectors.end(), sortHoveredSectors);
 
 		// Finally select the beginning.
 		// Note we may walk forward if stepping through the selection.
-		return s_pHoverSectors[0];
+		return s_sortedHoverSectors[0];
 	}
 
 	EditorSector* findSector3d(Vec3f pos, s32 layer)
@@ -485,71 +465,6 @@ namespace LevelEditor
 		return nullptr;
 	}
 
-	// Find the closest point to p2 on line segment p0 -> p1 as a parametric value on the segment.
-	// Fills in point with the point itself.
-	f32 closestPointOnLineSegment(Vec2f p0, Vec2f p1, Vec2f p2, Vec2f* point)
-	{
-		const Vec2f r = { p2.x - p0.x, p2.z - p0.z };
-		const Vec2f d = { p1.x - p0.x, p1.z - p0.z };
-		const f32 denom = d.x * d.x + d.z * d.z;
-		if (fabsf(denom) < FLT_EPSILON) { return 0.0f; }
-
-		const f32 s = std::max(0.0f, std::min(1.0f, (r.x * d.x + r.z * d.z) / denom));
-		point->x = p0.x + s * d.x;
-		point->z = p0.z + s * d.z;
-		return s;
-	}
-
-	bool lineSegmentsIntersect(Vec2f a0, Vec2f a1, Vec2f b0, Vec2f b1)
-	{
-		const Vec2f b = { a1.x - a0.x, a1.z - a0.z };
-		const Vec2f d = { b1.x - b0.x, b1.z - b0.z };
-		const f32 denom = b.x*d.z - b.z*d.x;	// cross product.
-		// Lines are parallel if denom == 0.0
-		if (fabsf(denom) < FLT_EPSILON) { return false; }
-		const f32 scale = 1.0f / denom;
-
-		Vec2f c = { b0.x - a0.x, b0.z - a0.z };
-		f32 s = (c.x*d.z - c.z*d.x) * scale;
-		if (s < 0.0f || s > 1.0f) { return false; }
-
-		f32 t = (c.x*b.z - c.z*b.x) * scale;
-		if (t < 0.0f || t > 1.0f) { return false; }
-
-		// Intersection = a0 + s*b;
-		return true;
-	}
-
-	s32 findClosestWallInSector(const EditorSector* sector, const Vec2f* pos, f32 maxDistSq, f32* minDistToWallSq)
-	{
-		const u32 count = (u32)sector->walls.size();
-		f32 minDistSq = FLT_MAX;
-		s32 closestId = -1;
-		const EditorWall* walls = sector->walls.data();
-		const Vec2f* vertices = sector->vtx.data();
-		for (u32 w = 0; w < count; w++)
-		{
-			const Vec2f* v0 = &vertices[walls[w].idx[0]];
-			const Vec2f* v1 = &vertices[walls[w].idx[1]];
-
-			Vec2f pointOnSeg;
-			closestPointOnLineSegment(*v0, *v1, *pos, &pointOnSeg);
-			const Vec2f diff = { pointOnSeg.x - pos->x, pointOnSeg.z - pos->z };
-			const f32 distSq = diff.x*diff.x + diff.z*diff.z;
-
-			if (distSq < maxDistSq && distSq < minDistSq && (!minDistToWallSq || distSq < *minDistToWallSq))
-			{
-				minDistSq = distSq;
-				closestId = s32(w);
-			}
-		}
-		if (minDistToWallSq)
-		{
-			*minDistToWallSq = std::min(*minDistToWallSq, minDistSq);
-		}
-		return closestId;
-	}
-
 	bool isUiModal()
 	{
 		return getMenuActive() || s_modalUiActive || isPopupOpen();
@@ -559,25 +474,11 @@ namespace LevelEditor
 	{
 		return s_featureHovered.featureIndex >= 0 || s_featureCur.featureIndex >= 0;
 	}
-
-	Vec3f rayGridPlaneHit(const Vec3f& origin, const Vec3f& rayDir)
-	{
-		Vec3f hit = { 0 };
-		if (fabsf(rayDir.y) < FLT_EPSILON) { return hit; }
-
-		f32 s = (s_gridHeight - origin.y) / rayDir.y;
-		if (s <= 0) { return hit; }
-
-		hit.x = origin.x + s * rayDir.x;
-		hit.y = origin.y + s * rayDir.y;
-		hit.z = origin.z + s * rayDir.z;
-		return hit;
-	}
-
+	
 	void adjustGridHeight(EditorSector* sector)
 	{
 		if (!sector) { return; }
-		s_gridHeight = sector->floorHeight;
+		s_grid.height = sector->floorHeight;
 	}
 	
 	void wallComputeDragSelect()
@@ -983,7 +884,7 @@ namespace LevelEditor
 		for (size_t i = 1; i < count; i++)
 		{
 			EditorSector* featureSector = unpackFeatureId(list[i], &featureIndex);
-			if (!vtxEqual(vtx, &featureSector->vtx[featureIndex]))
+			if (!TFE_Polygon::vtxEqual(vtx, &featureSector->vtx[featureIndex]))
 			{
 				return false;
 			}
@@ -1121,6 +1022,22 @@ namespace LevelEditor
 		EditorWall* srcWall = &sector->walls[wallIndex];
 		const s32 idx[3] = { srcWall->idx[0], newIdx, srcWall->idx[1] };
 
+		// Compute the u offset.
+		Vec2f v0 = sector->vtx[srcWall->idx[0]];
+		Vec2f v1 = sector->vtx[srcWall->idx[1]];
+		Vec2f dir = { v1.x - v0.x, v1.z - v0.z };
+		f32 len = sqrtf(dir.x*dir.x + dir.z*dir.z);
+		f32 uSplit = 0.0f;
+		if (fabsf(dir.x) >= fabsf(dir.z))
+		{
+			uSplit = (newPos.x - v0.x) / dir.x;
+		}
+		else
+		{
+			uSplit = (newPos.z - v0.z) / dir.z;
+		}
+		uSplit *= len;
+
 		// Copy wall attributes (textures, flags, etc.).
 		EditorWall newWall = *srcWall;
 		// Then setup indices.
@@ -1128,6 +1045,13 @@ namespace LevelEditor
 		srcWall->idx[1] = idx[1];
 		newWall.idx[0] = idx[1];
 		newWall.idx[1] = idx[2];
+		for (s32 i = 0; i < WP_COUNT; i++)
+		{
+			if (newWall.tex[i].texIndex >= 0)
+			{
+				newWall.tex[i].offset.x += uSplit;
+			}
+		}
 
 		// Insert the new wall right after the wall being split.
 		// This makes the process a bit more complicated, but keeps things clean.
@@ -1232,7 +1156,7 @@ namespace LevelEditor
 		const Vec2f* vtx = sector->vtx.data();
 		for (size_t v = 0; v < vtxCount; v++)
 		{
-			if (vtxEqual(&newPos, &vtx[v]))
+			if (TFE_Polygon::vtxEqual(&newPos, &vtx[v]))
 			{
 				return false;
 			}
@@ -1336,13 +1260,13 @@ namespace LevelEditor
 			for (s32 w = 0; w < wallCount; w++, wall++)
 			{
 				s32 i = -1;
-				if (vtxEqual(rootVtx, &sector->vtx[wall->idx[0]]))
+				if (TFE_Polygon::vtxEqual(rootVtx, &sector->vtx[wall->idx[0]]))
 				{
 					i = 0;
 					rightIdx = w;
 					vtxId = wall->idx[0];
 				}
-				else if (vtxEqual(rootVtx, &sector->vtx[wall->idx[1]]))
+				else if (TFE_Polygon::vtxEqual(rootVtx, &sector->vtx[wall->idx[1]]))
 				{
 					i = 1;
 					leftIdx = w;
@@ -1404,15 +1328,11 @@ namespace LevelEditor
 		for (s32 i = 0; i < count; i++)
 		{
 			EditorSector* sector = list[i];
-			// For now just look at vertex count, later remove degenerates?
-			if (sector->vtx.size() >= 3) { continue; }
 
 			// *TODO*
 			// Is the sector degenerate (aka, has no area)?
-			
-			// *TODO*
-			// Go through the walls, we need to delete any mirrors - but only if this is a sub-sector.
-
+			if (sector->vtx.size() >= 3) { continue; }
+						
 			// Get the ID and then erase it from the level.
 			s32 delId = sector->id;
 			s_level.sectors.erase(s_level.sectors.begin() + delId);
@@ -1491,7 +1411,7 @@ namespace LevelEditor
 						const Vec2f* v2 = &sector1->vtx[wall1->idx[0]];
 						const Vec2f* v3 = &sector1->vtx[wall1->idx[1]];
 
-						if (vtxEqual(v0, v3) && vtxEqual(v1, v2))
+						if (TFE_Polygon::vtxEqual(v0, v3) && TFE_Polygon::vtxEqual(v1, v2))
 						{
 							// Found an adjoin!
 							wall0->adjoinId = sector1->id;
@@ -1501,7 +1421,7 @@ namespace LevelEditor
 							// For now, assume one adjoin per wall.
 							foundMirror = true;
 						}
-						else if (vtxEqual(v0, v2) && vtxEqual(v1, v3))
+						else if (TFE_Polygon::vtxEqual(v0, v2) && TFE_Polygon::vtxEqual(v1, v3))
 						{
 							assert(0);
 						}
@@ -1528,7 +1448,7 @@ namespace LevelEditor
 			const Vec2f* v2 = &next->vtx[wall->idx[0]];
 			const Vec2f* v3 = &next->vtx[wall->idx[1]];
 
-			if ((vtxEqual(v0, v3) && vtxEqual(v1, v2)) || (vtxEqual(v0, v2) && vtxEqual(v1, v3)))
+			if ((TFE_Polygon::vtxEqual(v0, v3) && TFE_Polygon::vtxEqual(v1, v2)) || (TFE_Polygon::vtxEqual(v0, v2) && TFE_Polygon::vtxEqual(v1, v3)))
 			{
 				return w;
 			}
@@ -1554,99 +1474,45 @@ namespace LevelEditor
 		for (s32 i = 0; i < wallGroupCount; i++, group++)
 		{
 			EditorSector* sector = group->sector;
-			// Gather sectors to later re-generate adjoins.
 			if (sector->searchKey != s_searchKey)
 			{
 				sector->searchKey = s_searchKey;
 				s_sectorChangeList.push_back(sector);
-
-				// Add adjoined sectors as well.
-				const s32 wallCount = (s32)sector->walls.size();
-				EditorWall* wall = sector->walls.data();
-				for (s32 w = 0; w < wallCount; w++, wall++)
-				{
-					EditorSector* next = wall->adjoinId < 0 ? nullptr : &s_level.sectors[wall->adjoinId];
-					if (next && next->searchKey != s_searchKey)
-					{
-						next->searchKey = s_searchKey;
-						s_sectorChangeList.push_back(next);
-					}
-				}
 			}
 
-			// Merge walls in group.
-			if (group->leftWall >= 0 && group->rightWall >= 0)
+			EditorWall* left  = group->leftWall  >= 0 ? &sector->walls[group->leftWall]  : nullptr;
+			EditorWall* right = group->rightWall >= 0 ? &sector->walls[group->rightWall] : nullptr;
+			if (left && right)
 			{
-				EditorWall* left  = &sector->walls[group->leftWall];
-				EditorWall* right = &sector->walls[group->rightWall];
+				// Merge the left and right walls.
 				left->idx[1] = right->idx[1];
-								
-				// Erase adjoins, these will be fixed up later.
-				if (left->adjoinId >= 0)
-				{
-					const s32 mirrorId = getMirrorId(sector, group->leftWall);
-					EditorSector* next = &s_level.sectors[left->adjoinId];
-					if (mirrorId >= 0 && mirrorId < (s32)next->walls.size())
-					{
-						next->walls[mirrorId].adjoinId = -1;
-						next->walls[mirrorId].mirrorId = -1;
-					}
-				}
-				if (right->adjoinId >= 0 && right->mirrorId >= 0)
-				{
-					const s32 mirrorId = getMirrorId(sector, group->rightWall);
-					EditorSector* next = &s_level.sectors[right->adjoinId];
-					if (mirrorId >= 0 && mirrorId < (s32)next->walls.size())
-					{
-						next->walls[mirrorId].adjoinId = -1;
-						next->walls[mirrorId].mirrorId = -1;
-					}
-				}
-				left->adjoinId = -1;
-				left->mirrorId = -1;
-
-				sector->walls.erase(sector->walls.begin() + group->rightWall);
+				// Make the right wall degenerate - this will be removed during the "clean" pass.
+				right->idx[0] = right->idx[1];
 			}
-			else if (group->leftWall >= 0)
+			else if (left)
 			{
-				EditorWall* left = &sector->walls[group->leftWall];
-				if (left->adjoinId >= 0)
-				{
-					const s32 mirrorId = getMirrorId(sector, group->leftWall);
-					EditorSector* next = &s_level.sectors[left->adjoinId];
-					if (mirrorId >= 0 && mirrorId < (s32)next->walls.size())
-					{
-						next->walls[mirrorId].adjoinId = -1;
-						next->walls[mirrorId].mirrorId = -1;
-					}
-				}
-				sector->walls.erase(sector->walls.begin() + group->leftWall);
+				// Make the wall degenerate - this will be removed during the "clean" pass.
+				left->idx[1] = left->idx[0];
 			}
-			else if (group->rightWall >= 0)
+			else if (right)
 			{
-				EditorWall* right = &sector->walls[group->rightWall];
-				if (right->adjoinId >= 0)
-				{
-					const s32 mirrorId = getMirrorId(sector, group->rightWall);
-					EditorSector* next = &s_level.sectors[right->adjoinId];
-					if (mirrorId >= 0 && mirrorId < (s32)next->walls.size())
-					{
-						next->walls[mirrorId].adjoinId = -1;
-						next->walls[mirrorId].mirrorId = -1;
-					}
-				}
-				sector->walls.erase(sector->walls.begin() + group->rightWall);
+				// Make the wall degenerate - this will be removed during the "clean" pass.
+				right->idx[1] = right->idx[0];
 			}
-
-			deleteVertex(sector, group->vertexIndex);
-			sectorToPolygon(sector);
 		}
+
+		// Clean sectors - this will remove collapsed walls and clean up the sectors.
+		std::vector<s32> selectedSectors;
+		const s32 count = (s32)s_sectorChangeList.size();
+		EditorSector** sectorList = s_sectorChangeList.data();
+		for (s32 i = 0; i < count; i++)
+		{
+			selectedSectors.push_back(sectorList[i]->id);
+		}
+		cleanSectors(selectedSectors);
 
 		// Remove any invalid sectors.
 		deleteInvalidSectors(s_sectorChangeList);
-
-		// Then find adjoins.
-		findAdjoinsInList(s_sectorChangeList);
 
 		// When deleting features, we need to clear out the selections.
 		edit_clearSelections();
@@ -1710,7 +1576,7 @@ namespace LevelEditor
 		const bool mouseDown = TFE_Input::mouseDown(MouseButton::MBUTTON_LEFT);
 		// TODO: Hotkeys.
 		const bool insertVtx = TFE_Input::keyPressed(KEY_INSERT);
-		const bool snapToGridEnabled = !TFE_Input::keyModDown(KEYMOD_ALT) && s_gridSize > 0.0f;
+		const bool snapToGridEnabled = !TFE_Input::keyModDown(KEYMOD_ALT) && s_grid.size > 0.0f;
 
 		// Early out.
 		if (!insertVtx || s_editMove || mouseDown || mousePressed) { return; }
@@ -1737,24 +1603,10 @@ namespace LevelEditor
 		Vec2f v1 = sector->vtx[wall->idx[1]];
 		Vec2f newPos = v0;
 
-		f32 s = closestPointOnLineSegment(v0, v1, worldPos, &newPos);
+		f32 s = TFE_Polygon::closestPointOnLineSegment(v0, v1, worldPos, &newPos);
 		if (snapToGridEnabled)
 		{
-			// Determine which projection we are using (XY or ZY).
-			// This should match the way grids are rendered on surfaces.
-			const f32 dx = fabsf(v1.x - v0.x);
-			const f32 dz = fabsf(v1.z - v0.z);
-			if (dx >= dz)  // X-intersect with line segment.
-			{
-				snapToGrid(&newPos.x);
-				s = (newPos.x - v0.x) / (v1.x - v0.x);
-			}
-			else  // Z-intersect with line segment.
-			{
-				snapToGrid(&newPos.z);
-				s = (newPos.z - v0.z) / (v1.z - v0.z);
-			}
-			newPos = { v0.x + s * (v1.x - v0.x), v0.z + s * (v1.z - v0.z) };
+			s = snapToEdgeGrid(v0, v1, newPos);
 		}
 
 		if (s > FLT_EPSILON && s < 1.0f - FLT_EPSILON)
@@ -2645,6 +2497,8 @@ namespace LevelEditor
 		sector->ceilHeight  = std::max(heights[0], heights[1]);
 		sector->ambient = 20;
 		sector->layer   = s_curLayer;
+		sector->groupId = s_groupCurrent;
+		sector->groupIndex = 0;
 	}
 		
 	bool edgesColinear(const Vec2f* points, s32& newPointCount, s32* newPoints)
@@ -2654,35 +2508,35 @@ namespace LevelEditor
 		
 		// Is v0 or v1 on v2->v3?
 		Vec2f point;
-		f32 s = closestPointOnLineSegment(points[2], points[3], points[0], &point);
-		if (s > -eps && s < 1.0f + eps && vtxEqual(&points[0], &point)) { newPoints[newPointCount++] = 0 | EDGE1; }
+		f32 s = TFE_Polygon::closestPointOnLineSegment(points[2], points[3], points[0], &point);
+		if (s > -eps && s < 1.0f + eps && TFE_Polygon::vtxEqual(&points[0], &point)) { newPoints[newPointCount++] = 0 | EDGE1; }
 
-		s = closestPointOnLineSegment(points[2], points[3], points[1], &point);
-		if (s > -eps && s < 1.0f + eps && vtxEqual(&points[1], &point)) { newPoints[newPointCount++] = 1 | EDGE1; }
+		s = TFE_Polygon::closestPointOnLineSegment(points[2], points[3], points[1], &point);
+		if (s > -eps && s < 1.0f + eps && TFE_Polygon::vtxEqual(&points[1], &point)) { newPoints[newPointCount++] = 1 | EDGE1; }
 		
 		// Is v2 or v3 on v0->v1?
-		s = closestPointOnLineSegment(points[0], points[1], points[2], &point);
-		if (s > -eps && s < 1.0f + eps && vtxEqual(&points[2], &point)) { newPoints[newPointCount++] = 2 | EDGE0; }
+		s = TFE_Polygon::closestPointOnLineSegment(points[0], points[1], points[2], &point);
+		if (s > -eps && s < 1.0f + eps && TFE_Polygon::vtxEqual(&points[2], &point)) { newPoints[newPointCount++] = 2 | EDGE0; }
 
-		s = closestPointOnLineSegment(points[0], points[1], points[3], &point);
-		if (s > -eps && s < 1.0f + eps && vtxEqual(&points[3], &point)) { newPoints[newPointCount++] = 3 | EDGE0; }
+		s = TFE_Polygon::closestPointOnLineSegment(points[0], points[1], points[3], &point);
+		if (s > -eps && s < 1.0f + eps && TFE_Polygon::vtxEqual(&points[3], &point)) { newPoints[newPointCount++] = 3 | EDGE0; }
 
 		const bool areColinear = newPointCount >= 2;
 		if (newPointCount > 2)
 		{
 			s32 p0 = newPoints[0] & 255, p1 = newPoints[1] & 255, p2 = newPoints[2] & 255;
 			s32 d0 = -1, d1 = -1;
-			if (vtxEqual(&points[p0], &points[p1]))
+			if (TFE_Polygon::vtxEqual(&points[p0], &points[p1]))
 			{
 				d0 = 0;
 				d1 = 1;
 			}
-			else if (vtxEqual(&points[p0], &points[p2]))
+			else if (TFE_Polygon::vtxEqual(&points[p0], &points[p2]))
 			{
 				d0 = 0;
 				d1 = 2;
 			}
-			else if (vtxEqual(&points[p1], &points[p2]))
+			else if (TFE_Polygon::vtxEqual(&points[p1], &points[p2]))
 			{
 				d0 = 1;
 				d1 = 2;
@@ -2699,8 +2553,8 @@ namespace LevelEditor
 				s32 discard = d0;
 				if (edge0 != edge1)
 				{
-					if ((edge1 == 0 && (vtxEqual(&points[p11], &points[0]) || vtxEqual(&points[p11], &points[1]))) ||
-					    (edge1 == 1 && (vtxEqual(&points[p11], &points[2]) || vtxEqual(&points[p11], &points[3]))))
+					if ((edge1 == 0 && (TFE_Polygon::vtxEqual(&points[p11], &points[0]) || TFE_Polygon::vtxEqual(&points[p11], &points[1]))) ||
+					    (edge1 == 1 && (TFE_Polygon::vtxEqual(&points[p11], &points[2]) || TFE_Polygon::vtxEqual(&points[p11], &points[3]))))
 					{
 						discard = d1;
 					}
@@ -2712,7 +2566,7 @@ namespace LevelEditor
 				newPointCount--;
 			}
 		}
-		return areColinear && !vtxEqual(&points[newPoints[0]&255], &points[newPoints[1]&255]);
+		return areColinear && !TFE_Polygon::vtxEqual(&points[newPoints[0]&255], &points[newPoints[1]&255]);
 	}
 
 	bool canCreateNewAdjoin(const EditorWall* wall, const EditorSector* sector)
@@ -2787,7 +2641,7 @@ namespace LevelEditor
 						const Vec2f* v3 = &sector1->vtx[wall1->idx[1]];
 
 						// Do the vertices match exactly?
-						if (vtxEqual(v0, v3) && vtxEqual(v1, v2))
+						if (TFE_Polygon::vtxEqual(v0, v3) && TFE_Polygon::vtxEqual(v1, v2))
 						{
 							// Found an adjoin!
 							wall0->adjoinId = sector1->id;
@@ -2891,7 +2745,7 @@ namespace LevelEditor
 		const Vec2f* vtx = sector->vtx.data();
 		for (s32 v = 0; v < count; v++, vtx++)
 		{
-			if (vtxEqual(vtx, newVtx))
+			if (TFE_Polygon::vtxEqual(vtx, newVtx))
 			{
 				return v;
 			}
@@ -2920,7 +2774,7 @@ namespace LevelEditor
 				// Add a check for intersection...
 				// For now just check for point touching.
 				Vec2f pt0;
-				closestPointOnLineSegment(v2, v3, v0, &pt0);
+				TFE_Polygon::closestPointOnLineSegment(v2, v3, v0, &pt0);
 				Vec2f offs0 = { v0.x - pt0.x, v0.z - pt0.z };
 				EditorWall* outWalls[2];
 				if (offs0.x*offs0.x + offs0.z*offs0.z < 0.0001f)
@@ -2959,8 +2813,8 @@ namespace LevelEditor
 				Vec2f v2 = vtx[wall->idx[0]];
 				Vec2f v3 = vtx[wall->idx[1]];
 
-				bool matchSameOrder = vtxEqual(&v0, &v2) && vtxEqual(&v1, &v3);
-				bool matchOppOrder  = vtxEqual(&v0, &v3) && vtxEqual(&v1, &v2);
+				bool matchSameOrder = TFE_Polygon::vtxEqual(&v0, &v2) && TFE_Polygon::vtxEqual(&v1, &v3);
+				bool matchOppOrder  = TFE_Polygon::vtxEqual(&v0, &v3) && TFE_Polygon::vtxEqual(&v1, &v2);
 				if (matchSameOrder || matchOppOrder)
 				{
 					// Clear out the adjoin.
@@ -2974,9 +2828,8 @@ namespace LevelEditor
 			if (!wallFound)
 			{
 				// Make sure the wall is actually inside the sector...
-				const f32 eps = 0.0001f;
-				bool v0Inside = isPointInsideSector2d(splitSector, v0, s_curLayer) || isPointInsideSector2d(splitSector, { v0.x, v0.z + eps }, s_curLayer);
-				bool v1Inside = isPointInsideSector2d(splitSector, v1, s_curLayer) || isPointInsideSector2d(splitSector, { v1.x, v1.z + eps }, s_curLayer);
+				const bool v0Inside = isPointInsideSector2d(splitSector, v0, s_curLayer);
+				const bool v1Inside = isPointInsideSector2d(splitSector, v1, s_curLayer);
 				if (v0Inside && v1Inside)
 				{
 					s32 i0 = getVertexIndex(splitSector, &v1);
@@ -3018,7 +2871,7 @@ namespace LevelEditor
 					Vec2f v2 = vtx[wall->idx[0]];
 					Vec2f v3 = vtx[wall->idx[1]];
 
-					bool matchSameOrder = vtxEqual(&v0, &v2) && vtxEqual(&v1, &v3);
+					bool matchSameOrder = TFE_Polygon::vtxEqual(&v0, &v2) && TFE_Polygon::vtxEqual(&v1, &v3);
 					if (matchSameOrder)
 					{
 						// The new sector is gaining the edge, it needs to be removed from the splitSector.
@@ -3088,8 +2941,8 @@ namespace LevelEditor
 				Vec2f v2 = vtx[wall->idx[0]];
 				Vec2f v3 = vtx[wall->idx[1]];
 
-				bool matchSameOrder = vtxEqual(&v0, &v2) && vtxEqual(&v1, &v3);
-				bool matchOppOrder = vtxEqual(&v0, &v3) && vtxEqual(&v1, &v2);
+				bool matchSameOrder = TFE_Polygon::vtxEqual(&v0, &v2) && TFE_Polygon::vtxEqual(&v1, &v3);
+				bool matchOppOrder = TFE_Polygon::vtxEqual(&v0, &v3) && TFE_Polygon::vtxEqual(&v1, &v2);
 				assert(!matchSameOrder || !delSameDirWalls);
 				if (matchOppOrder)
 				{
@@ -3133,7 +2986,7 @@ namespace LevelEditor
 		for (s32 i = 0; i < 4; i++)
 		{
 			const s32 a = i, b = (i + 1) & 3;
-			if (lineSegmentsIntersect(v0, v1, aabbVtx[a], aabbVtx[b]))
+			if (TFE_Polygon::lineSegmentsIntersect(v0, v1, aabbVtx[a], aabbVtx[b]))
 			{
 				return true;
 			}
@@ -3286,142 +3139,80 @@ namespace LevelEditor
 		newSector->flags[2] = parent->flags[2];
 		newSector->ambient  = parent->ambient;
 	}
-		
-	void edit_createSectorFromRect(const f32* heights, const Vec2f* vtx)
+
+	void edit_buildShapePolygon(s32 vtxCount, const Vec2f* vtx, Polygon* poly)
 	{
-		s_drawStarted = false;
-		bool hasSectors = !s_level.sectors.empty();
+		poly->edge.resize(vtxCount);
+		poly->vtx.resize(vtxCount);
 
-		EditorSector newSector;
-		createNewSector(&newSector, heights);
+		poly->bounds[0] = { FLT_MAX,  FLT_MAX };
+		poly->bounds[1] = { -FLT_MAX, -FLT_MAX };
 
-		s32 count = 4;
-		newSector.vtx.resize(count);
-		newSector.walls.resize(count);
-
-		const Vec2f* shapeVtx = vtx;
-		Vec2f corners[2];
-		corners[0] = { std::max(shapeVtx[0].x, shapeVtx[1].x), std::min(shapeVtx[0].z, shapeVtx[1].z) };
-		corners[1] = { std::min(shapeVtx[0].x, shapeVtx[1].x), std::max(shapeVtx[0].z, shapeVtx[1].z) };
-
-		Vec2f rect[] =
+		for (s32 v = 0; v < vtxCount; v++)
 		{
-			{ corners[0].x, corners[0].z },
-			{ corners[1].x, corners[0].z },
-			{ corners[1].x, corners[1].z },
-			{ corners[0].x, corners[1].z },
-		};
+			poly->vtx[v] = vtx[v];
+			poly->bounds[0].x = std::min(poly->bounds[0].x, vtx->x);
+			poly->bounds[0].z = std::min(poly->bounds[0].z, vtx->z);
+			poly->bounds[1].x = std::max(poly->bounds[1].x, vtx->x);
+			poly->bounds[1].z = std::max(poly->bounds[1].z, vtx->z);
 
-		Vec2f* outVtx = newSector.vtx.data();
-		for (s32 v = 0; v < count; v++)
-		{
-			outVtx[v] = rect[v];
+			poly->edge[v] = { v, (v + 1) % vtxCount };
 		}
 
-		// Handle sub-sectors.
-		EditorSector* sectors[4];
-		bool subSector = isSubSector(4, outVtx, s_gridHeight, sectors) && !(s_gridFlags & GFLAG_OVER);
-
-		EditorWall* wall = newSector.walls.data();
-		for (s32 w = 0; w < count; w++, wall++)
-		{
-			s32 a = w;
-			s32 b = (w + 1) % count;
-
-			*wall = {};
-			wall->idx[0] = a;
-			wall->idx[1] = b;
-
-			// Just copy for now...
-			wall->tex[WP_MID].texIndex = hasSectors ? s_level.sectors[0].walls[0].tex[WP_MID].texIndex : getTextureIndex("DEFAULT.BM");
-			wall->tex[WP_TOP].texIndex = wall->tex[WP_MID].texIndex;
-			wall->tex[WP_BOT].texIndex = wall->tex[WP_MID].texIndex;
-		}
-
-		// Then we can treat this is a sub-sector of any overlapping sectors.
-		// For now only handle single sector case, and assume no wall overlaps.
-		if (subSector && s_boolMode == BMODE_MERGE)
-		{
-			insertSubSector(4, sectors, &newSector);
-		}
-
-		newSector.groupId = groups_getCurrentId();
-		s_level.sectors.push_back(newSector);
-		sectorToPolygon(&s_level.sectors.back());
-
-		mergeAdjoins(&s_level.sectors.back());
-
-		s_featureHovered = {};
-		selection_clear();
-		infoPanelClearFeatures();
+		// Clear out cached triangle data.
+		poly->triVtx.clear();
+		poly->triIdx.clear();
+		// Generate the polygon.
+		TFE_Polygon::computeTriangulation(poly);
 	}
-				
-	void edit_createSectorFromShape(const f32* heights, s32 vertexCount, const Vec2f* vtx)
+
+	bool polyOverlap(Polygon* polyA, Polygon* polyB)
 	{
-		s_drawStarted = false;
-		bool hasSectors = !s_level.sectors.empty();
-
-		EditorSector newSector = {};
-		createNewSector(&newSector, heights);
-
-		newSector.vtx.resize(vertexCount);
-		newSector.walls.resize(vertexCount);
-
-		const f32 area = TFE_Polygon::signedArea(vertexCount, vtx);
-		Vec2f* outVtx = newSector.vtx.data();
-		if (area >= 0.0f)
+		const s32 vtxCountA = (s32)polyA->vtx.size();
+		const s32 vtxCountB = (s32)polyB->vtx.size();
+		const s32 edgeCountA = (s32)polyA->edge.size();
+		const s32 edgeCountB = (s32)polyB->edge.size();
+		const Vec2f* vtxA = polyA->vtx.data();
+		const Vec2f* vtxB = polyB->vtx.data();
+		// Any vertex of A inside B?
+		for (s32 v = 0; v < vtxCountA; v++)
 		{
-			// If area is positive, than the polygon winding is clockwise, which is what we want.
-			for (s32 v = 0; v < vertexCount; v++)
+			if (TFE_Polygon::pointInsidePolygon(polyB, vtxA[v]))
 			{
-				outVtx[v] = vtx[v];
+				return true;
 			}
 		}
-		else
+		// Any vertex of B inside A?
+		for (s32 v = 0; v < vtxCountB; v++)
 		{
-			// If area is negative, than the polygon winding is counter-clockwise, so read the vertices in reverse-order.
-			for (s32 v = 0; v < vertexCount; v++)
+			if (TFE_Polygon::pointInsidePolygon(polyA, vtxB[v]))
 			{
-				outVtx[v] = vtx[vertexCount - v - 1];
+				return true;
+			}
+		}
+		// Any segment of A intersect segment of B.
+		// This is O(N*M), where N = edgeCountA, M = edgeCountB.
+		const f32 eps = 1e-3f;
+		const Edge* edgeA = polyA->edge.data();
+		for (s32 eA = 0; eA < edgeCountA; eA++, edgeA++)
+		{
+			Vec2f vA0 = vtxA[edgeA->i0];
+			Vec2f vA1 = vtxA[edgeA->i1];
+			const Edge* edgeB = polyB->edge.data();
+			for (s32 eB = 0; eB < edgeCountB; eB++, edgeB++)
+			{
+				Vec2f vB0 = vtxB[edgeB->i0];
+				Vec2f vB1 = vtxB[edgeB->i1];
+
+				Vec2f vI;
+				if (TFE_Polygon::lineSegmentsIntersect(vA0, vA1, vB0, vB1, &vI, nullptr, nullptr, eps))
+				{
+					return true;
+				}
 			}
 		}
 
-		// Handle sub-sectors.
-		s_workList.resize(vertexCount);
-		EditorSector** sectors = s_workList.data();
-		bool subSector = isSubSector(vertexCount, outVtx, s_gridHeight, sectors) && !(s_gridFlags & GFLAG_OVER);
-
-		EditorWall* wall = newSector.walls.data();
-		for (s32 w = 0; w < vertexCount; w++, wall++)
-		{
-			s32 a = w;
-			s32 b = (w + 1) % vertexCount;
-
-			*wall = {};
-			wall->idx[0] = a;
-			wall->idx[1] = b;
-
-			// Just copy for now...
-			wall->tex[WP_MID].texIndex = hasSectors ? s_level.sectors[0].walls[0].tex[WP_MID].texIndex : getTextureIndex("DEFAULT.BM");
-			wall->tex[WP_TOP].texIndex = wall->tex[WP_MID].texIndex;
-			wall->tex[WP_BOT].texIndex = wall->tex[WP_MID].texIndex;
-		}
-
-		// Then we can treat this is a sub-sector of any overlapping sectors.
-		// For now only handle single sector case, and assume no wall overlaps.
-		if (subSector)
-		{
-			insertSubSector((s32)s_workList.size(), sectors, &newSector);
-		}
-		
-		newSector.groupId = groups_getCurrentId();
-		s_level.sectors.push_back(newSector);
-		sectorToPolygon(&s_level.sectors.back());
-		mergeAdjoins(&s_level.sectors.back());
-
-		s_featureHovered = {};
-		selection_clear();
-		infoPanelClearFeatures();
+		return false;
 	}
 
 	void createSectorFromRect()
@@ -3429,13 +3220,1428 @@ namespace LevelEditor
 		cmd_addCreateSectorFromRect(s_drawHeight, s_shape.data());
 		edit_createSectorFromRect(s_drawHeight, s_shape.data());
 	}
-		
+
 	void createSectorFromShape()
 	{
 		cmd_addCreateSectorFromShape(s_drawHeight, (s32)s_shape.size(), s_shape.data());
 		edit_createSectorFromShape(s_drawHeight, (s32)s_shape.size(), s_shape.data());
 	}
+
+	s32 insertVertexIntoSector(EditorSector* sector, Vec2f newVtx)
+	{
+		const s32 vtxCount = (s32)sector->vtx.size();
+		const Vec2f* vtx = sector->vtx.data();
+		for (s32 v = 0; v < vtxCount; v++, vtx++)
+		{
+			if (TFE_Polygon::vtxEqual(vtx, &newVtx))
+			{
+				return v;
+			}
+		}
+		sector->vtx.push_back(newVtx);
+		return vtxCount;
+	}
+
+	// Used to restore clipped/split wall attributes.
+	struct SourceWall
+	{
+		LevelTexture tex[WP_COUNT] = {};
+		Vec2f vtx[2];
+		Vec2f dir;
+		Vec2f rcpDelta;
+		f32 len;
+		f32 floorHeight;
+		u32 flags[3] = { 0 };
+		s32 wallLight = 0;
+	};
+	static std::vector<SourceWall> s_sourceWallList;
+
+	void clearSourceList()
+	{
+		s_sourceWallList.clear();
+	}
+
+	void addWallToSourceList(const EditorSector* sector, const EditorWall* wall)
+	{
+		SourceWall swall;
+		for (s32 i = 0; i < WP_COUNT; i++) { swall.tex[i] = wall->tex[i]; }
+		for (s32 i = 0; i < 3; i++) { swall.flags[i] = wall->flags[i]; }
+		swall.vtx[0] = sector->vtx[wall->idx[0]];
+		swall.vtx[1] = sector->vtx[wall->idx[1]];
+		swall.wallLight = wall->wallLight;
+
+		swall.dir = { swall.vtx[1].x - swall.vtx[0].x, swall.vtx[1].z - swall.vtx[0].z };
+		swall.rcpDelta.x = fabsf(swall.dir.x) > FLT_EPSILON ? 1.0f / swall.dir.x : 1.0f;
+		swall.rcpDelta.z = fabsf(swall.dir.z) > FLT_EPSILON ? 1.0f / swall.dir.z : 1.0f;
+		swall.len = sqrtf(swall.dir.x*swall.dir.x + swall.dir.z*swall.dir.z);
+		swall.dir = TFE_Math::normalize(&swall.dir);
+
+		swall.floorHeight = sector->floorHeight;
+
+		s_sourceWallList.push_back(swall);
+	}
+
+	bool mapWallToSourceList(const EditorSector* sector, EditorWall* wall)
+	{
+		if (s_sourceWallList.empty()) { return false; }
+
+		const Vec2f v0 = sector->vtx[wall->idx[0]];
+		const Vec2f v1 = sector->vtx[wall->idx[1]];
+		Vec2f dir = { v1.x - v0.x, v1.z - v0.z };
+		dir = TFE_Math::normalize(&dir);
+
+		const f32 eps = 0.001f;
+		const s32 count = (s32)s_sourceWallList.size();
+		const SourceWall* swall = s_sourceWallList.data();
+		s32 singleTouch = -1;
+		for (s32 i = 0; i < count; i++, swall++)
+		{
+			// The direction has to match.
+			if (dir.x*swall->dir.x + dir.z*swall->dir.z < 1.0f - eps)
+			{
+				continue;
+			}
+
+			f32 u, v;
+			if (fabsf(dir.x) >= fabsf(dir.z))
+			{
+				u = (v0.x - swall->vtx[0].x) * swall->rcpDelta.x;
+				v = (v1.x - swall->vtx[0].x) * swall->rcpDelta.x;
+			}
+			else
+			{
+				u = (v0.z - swall->vtx[0].z) * swall->rcpDelta.z;
+				v = (v1.z - swall->vtx[0].z) * swall->rcpDelta.z;
+			}
+
+			// Verify that the closest point is close enough.
+			Vec2f uPt = { swall->vtx[0].x + u * (swall->vtx[1].x - swall->vtx[0].x), swall->vtx[0].z + u * (swall->vtx[1].z - swall->vtx[0].z) };
+			Vec2f offset = { uPt.x - v0.x, uPt.z - v0.z };
+			if (offset.x*offset.x + offset.z*offset.z > eps)
+			{
+				continue;
+			}
+
+			f32 absU = fabsf(u);
+			f32 absV = fabsf(v);
+			if (absU < eps) { u = 0.0f; }
+			if (absV < eps) { v = 0.0f; }
+
+			absU = fabsf(1.0f - u);
+			absV = fabsf(1.0f - v);
+			if (absU < eps) { u = 1.0f; }
+			if (absV < eps) { v = 1.0f; }
+
+			if (u < 0.0f || v < 0.0f || u > 1.0f || v > 1.0f)
+			{
+				// Handle adjacent walls as well.
+				if ((u >= 0.0f && u <= 1.0f) || (v >= 0.0f && v <= 1.0f))
+				{
+					singleTouch = i;
+				}
+				continue;
+			}
+
+			// Found a match!
+			for (s32 i = 0; i < WP_COUNT; i++) { wall->tex[i] = swall->tex[i]; }
+			for (s32 i = 0; i < 3; i++) { wall->flags[i] = swall->flags[i]; }
+			wall->wallLight = swall->wallLight;
+
+			// Only the first wall will keep the sign...
+			if (swall->tex[WP_SIGN].texIndex >= 0 && u > 0.0f && v > 0.0f)
+			{
+				wall->tex[WP_SIGN].texIndex = -1;
+				wall->tex[WP_SIGN].offset = { 0 };
+			}
+
+			// Handle texture offsets.
+			const f32 uSplit = u * swall->len;
+			const f32 vSplit = swall->floorHeight - sector->floorHeight;
+			for (s32 i = 0; i < WP_COUNT; i++)
+			{
+				if (i == WP_SIGN || wall->tex[i].texIndex < 0) { continue; }
+				wall->tex[i].offset.x += uSplit;
+				wall->tex[i].offset.z += vSplit;
+			}
+			return true;
+		}
+
+		if (s_newWallTexOverride >= 0)
+		{
+			for (s32 i = 0; i < WP_COUNT; i++)
+			{
+				if (i != WP_SIGN)
+				{
+					wall->tex[i].texIndex = s_newWallTexOverride;
+				}
+			}
+		}
+		else
+		{
+			// Copy the texture from the touching wall.
+			if (singleTouch >= 0)
+			{
+				swall = s_sourceWallList.data() + singleTouch;
+			}
+			// Or just give up and use the first wall in the list.
+			else
+			{
+				swall = s_sourceWallList.data();
+			}
+
+			for (s32 i = 0; i < WP_COUNT; i++)
+			{
+				if (i != WP_SIGN)
+				{
+					wall->tex[i] = swall->tex[i];
+				}
+			}
+		}
+		return true;
+	}
+
+	void updateSectorFromPolygon(EditorSector* sector, const BPolygon& poly)
+	{
+		sector->walls.clear();
+		sector->vtx.clear();
+
+		const s32 edgeCount = (s32)poly.edges.size();
+		const BEdge* edge = poly.edges.data();
+		sector->walls.reserve(edgeCount);
+		for (s32 e = 0; e < edgeCount; e++, edge++)
+		{
+			EditorWall wall = {};
+			wall.idx[0] = insertVertexIntoSector(sector, edge->v0);
+			wall.idx[1] = insertVertexIntoSector(sector, edge->v1);
+			// Avoid placing denegerate walls.
+			if (wall.idx[0] == wall.idx[1])
+			{
+				continue;
+			}
+
+			if (!mapWallToSourceList(sector, &wall))
+			{
+				wall.tex[WP_MID].texIndex = getDefaultTextureIndex(WP_MID);
+				wall.tex[WP_TOP].texIndex = getDefaultTextureIndex(WP_TOP);
+				wall.tex[WP_BOT].texIndex = getDefaultTextureIndex(WP_BOT);
+			}
+			sector->walls.push_back(wall);
+		}
+	}
+
+	void copySectorForSplit(const EditorSector* src, EditorSector* dst)
+	{
+		dst->groupId = src->groupId;
+		dst->groupIndex = src->groupIndex;
+		dst->floorHeight = src->floorHeight;
+		dst->ceilHeight = src->ceilHeight;
+		dst->secHeight = src->secHeight;
+		dst->floorTex = src->floorTex;
+		dst->ceilTex = src->ceilTex;
+		dst->ambient = src->ambient;
+		dst->flags[0] = src->flags[0];
+		dst->flags[1] = src->flags[1];
+		dst->flags[2] = src->flags[2];
+		dst->layer = src->layer;
+	}
+
+	void addToAdjoinFixupList(s32 id, std::vector<s32>& adjoinSectorsToFix)
+	{
+		const s32 count = (s32)adjoinSectorsToFix.size();
+		const s32* idList = adjoinSectorsToFix.data();
+		for (s32 i = 0; i < count; i++)
+		{
+			if (idList[i] == id) { return; }
+		}
+		adjoinSectorsToFix.push_back(id);
+	}
+
+	enum HeightFlags
+	{
+		HFLAG_NONE = 0,
+		HFLAG_SET_FLOOR = FLAG_BIT(0),
+		HFLAG_SET_CEIL  = FLAG_BIT(1),
+		HFLAG_DEFAULT   = HFLAG_SET_FLOOR | HFLAG_SET_CEIL,
+	};
+
+	struct ExactIntersect
+	{
+		f32 u;
+		Vec2f v;
+	};
+
+	bool sortByU(ExactIntersect& a, ExactIntersect& b)
+	{
+		return a.u < b.u;
+	}
+
+	void handleClipInteriorPolygons(s32 candidateCount, const BPolygon* candidateList, u32 heightFlags, f32 clipFloor, f32 clipCeil, EditorSector* newSector, BPolygon* outPoly)
+	{
+		// Add intersections from all candidate polygons.
+		for (s32 i = 0; i < candidateCount; i++)
+		{
+			TFE_Polygon::addEdgeIntersectionsToPoly(outPoly, &candidateList[i]);
+		}
+		// Set the floor and ceiling height based on flags.
+		if (heightFlags & HFLAG_SET_FLOOR)
+		{
+			newSector->floorHeight = clipFloor;
+		}
+		if (heightFlags & HFLAG_SET_CEIL)
+		{
+			newSector->ceilHeight = clipCeil;
+		}
+		// This is a new sector, so add to the current group.
+		newSector->groupId = groups_getCurrentId();
+		newSector->groupIndex = 0;
+	}
+
+	// Add vertices from shape that touch the polygon edges to those edges to avoid precision issues when clipping.
+	void addTouchingVertsToPolygon(const s32 shapeVtxCount, const Vec2f* shapeVtx, BPolygon* cpoly)
+	{
+		BPolygon tmp = {};
+		s32 edgeCount = (s32)cpoly->edges.size();
+		bool hasIntersections = false;
+
+		std::vector<ExactIntersect> eit;
+		BEdge* cedge = cpoly->edges.data();
+		for (s32 e = 0; e < edgeCount; e++, cedge++)
+		{
+			Vec2f v0 = cedge->v0;
+			Vec2f v1 = cedge->v1;
+
+			eit.clear();
+			for (s32 v = 0; v < shapeVtxCount; v++)
+			{
+				Vec2f v2 = shapeVtx[v + 0];
+				Vec2f v3 = shapeVtx[(v + 1) % shapeVtxCount];
+
+				Vec2f vI;
+				f32 s, t;
+				if (TFE_Polygon::lineSegmentsIntersect(v0, v1, v2, v3, &vI, &s, &t))
+				{
+					if (s > 0.0f && s < 1.0f && (t < 0.001f || t > 1.0f - 0.001f))
+					{
+						vI = t < 0.001f ? v2 : v3;
+						hasIntersections = true;
+						eit.push_back({ s, vI });
+					}
+				}
+			}
+
+			if (!eit.empty())
+			{
+				std::sort(eit.begin(), eit.end(), sortByU);
+				const s32 iCount = (s32)eit.size();
+				ExactIntersect* it = eit.data();
+				for (s32 i = 0; i < iCount; i++, it++)
+				{
+					TFE_Polygon::addEdgeToBPoly(v0, it->v, &tmp);
+					v0 = it->v;
+				}
+				// Insert the final edge.
+				TFE_Polygon::addEdgeToBPoly(v0, v1, &tmp);
+			}
+			else
+			{
+				TFE_Polygon::addEdgeToBPoly(v0, v1, &tmp);
+			}
+		}
+		if (hasIntersections)
+		{
+			*cpoly = tmp;
+		}
+	}
+
+	bool isShapeSubsector(const EditorSector* sector, s32 firstVertex)
+	{
+		const s32 vtxCount = (s32)s_shape.size();
+		const Vec2f* vtx = s_shape.data();
+		bool firstInside = TFE_Polygon::pointInsidePolygon(&sector->poly, vtx[firstVertex]);
+		bool firstOnEdge = TFE_Polygon::pointOnPolygonEdge(&sector->poly, vtx[firstVertex]) >= 0;
+		// Early out
+		if (!firstInside && !firstOnEdge) { return false; }
+		if (firstInside && !firstOnEdge)  { return true;  }
+
+		// The shape is a subsector _if_
+		//   * Any shape vertex is inside the sector but *not* on the edge.
+		//   * All shape vertices are on the edges.
+		bool allOnEdges = true;
+		for (s32 v = 0; v < vtxCount; v++)
+		{
+			bool inside = TFE_Polygon::pointInsidePolygon(&sector->poly, vtx[v]);
+			bool onEdge = TFE_Polygon::pointOnPolygonEdge(&sector->poly, vtx[v]) >= 0;
+
+			// If not on an edge but inside.
+			if (!onEdge)
+			{
+				allOnEdges = false;
+				if (inside)
+				{
+					return true;
+				}
+			}
+		}
+		// All vertices are on edges.
+		return allOnEdges;
+	}
+
+	bool findShapeOverlapCandidates(const f32* heights, bool allowSubsectorExtrude, s32 firstVertex,
+		Polygon* shapePoly, std::vector<EditorSector*>* candidates, Vec3f* shapeBounds, u32* heightFlags, f32* clipFloorHeight, f32* clipCeilHeight)
+	{
+		// Rules: 
+		// * layers have to match, unless all layers are visible.
+		// * heights have to overlap, no merging with sectors out of range.
+		// * sector bounds needs to overlap.
+
+		// 1. compute the bounds.
+		const s32 vtxCount = (s32)s_shape.size();
+		const Vec2f* vtx = s_shape.data();
+		shapeBounds[0] = { vtx[0].x, min(heights[0], heights[1]), vtx[0].z };
+		shapeBounds[1] = { vtx[0].x, max(heights[0], heights[1]), vtx[0].z };
+		for (s32 v = 1; v < vtxCount; v++)
+		{
+			shapeBounds[0].x = min(shapeBounds[0].x, vtx[v].x);
+			shapeBounds[0].z = min(shapeBounds[0].z, vtx[v].z);
+
+			shapeBounds[1].x = max(shapeBounds[1].x, vtx[v].x);
+			shapeBounds[1].z = max(shapeBounds[1].z, vtx[v].z);
+		}
+
+		// Convert the shape to a polygon.
+		shapeToPolygon(vtxCount, s_shape.data(), *shapePoly);
+
+		// 2a. Check to see if this is a sub-sector and if so adjust the heights, flags, and bounds.
+		const s32 sectorCount = (s32)s_level.sectors.size();
+		EditorSector* sector = nullptr;
+		if (s_view == EDIT_VIEW_3D && s_boolMode == BMODE_MERGE && allowSubsectorExtrude)
+		{
+			// TODO: Better spatial queries to avoid looping over everything...
+			// TODO: Factor out so the rendering can be altered accordingly...
+			sector = s_level.sectors.data();
+			for (s32 s = 0; s < sectorCount; s++, sector++)
+			{
+				// The layers have to match.
+				if (!(s_editFlags & LEF_SHOW_ALL_LAYERS) && s_curLayer != sector->layer) { continue; }
+				// The group has to be interactible.
+				if (!sector_isInteractable(sector)) { continue; }
+
+				const bool onFloor = fabsf(heights[0] - sector->floorHeight) < FLT_EPSILON;
+				const bool onCeil = fabsf(heights[0] - sector->ceilHeight) < FLT_EPSILON;
+				if ((onFloor || onCeil) && isShapeSubsector(sector, firstVertex))
+				{
+					// This is a sub-sector, so adjust the heights accordingly.
+					*heightFlags = onFloor ? HFLAG_SET_FLOOR : HFLAG_SET_CEIL;
+					*clipFloorHeight = onFloor ? heights[1] : sector->floorHeight;
+					*clipCeilHeight = onFloor ? sector->ceilHeight : heights[1];
+
+					// Expand the bounds.
+					shapeBounds[0].y = min(shapeBounds[0].y, min(sector->floorHeight, sector->ceilHeight));
+					shapeBounds[1].y = max(shapeBounds[1].y, max(sector->floorHeight, sector->ceilHeight));
+					break;
+				}
+			}
+		}
+
+		// 2b. Expand the bounds slightly to avoid precision issues.
+		const f32 expand = 0.01f;
+		shapeBounds[0].x -= expand;
+		shapeBounds[0].y -= expand;
+		shapeBounds[0].z -= expand;
+		shapeBounds[1].x += expand;
+		shapeBounds[1].y += expand;
+		shapeBounds[1].z += expand;
+
+		// 2c. Then add potentially overlapping sectors.
+		sector = s_level.sectors.data();
+		candidates->clear();
+		for (s32 s = 0; s < sectorCount; s++, sector++)
+		{
+			// The layers have to match.
+			if (!(s_editFlags & LEF_SHOW_ALL_LAYERS) && s_curLayer != sector->layer) { continue; }
+			// The group has to be interactible.
+			if (!sector_isInteractable(sector)) { continue; }
+			// The bounds have to overlap.
+			if (!aabbOverlap3d(shapeBounds, sector->bounds)) { continue; }
+			// Polygons have to overlap.
+			if (!polyOverlap(shapePoly, &sector->poly)) { continue; }
+
+			// Insert walls for future reference.
+			const s32 wallCount = (s32)sector->walls.size();
+			EditorWall* wall = sector->walls.data();
+			for (s32 w = 0; w < wallCount; w++, wall++)
+			{
+				addWallToSourceList(sector, wall);
+			}
+
+			// Add to the list of candidates.
+			candidates->push_back(sector);
+		}
+		return !candidates->empty();
+	}
+
+	void fixupSectorAdjoins(std::vector<s32>& adjoinSectorsToFix)
+	{
+		if (adjoinSectorsToFix.empty())
+		{
+			return;
+		}
+
+		// Fix-up adjoins.
+		const s32 adjoinListCount = (s32)adjoinSectorsToFix.size();
+		const s32* adjoinListId = adjoinSectorsToFix.data();
+		for (s32 i = 0; i < adjoinListCount; i++)
+		{
+			EditorSector* src = &s_level.sectors[adjoinListId[i]];
+			const s32 wallCountSrc = (s32)src->walls.size();
+			const Vec2f* vtxSrc = src->vtx.data();
+			EditorWall* wallSrc = src->walls.data();
+			for (s32 w0 = 0; w0 < wallCountSrc; w0++, wallSrc++)
+			{
+				if (wallSrc->adjoinId >= 0) { continue; }
+				const Vec2f v0 = vtxSrc[wallSrc->idx[0]];
+				const Vec2f v1 = vtxSrc[wallSrc->idx[1]];
+
+				for (s32 j = 0; j < adjoinListCount; j++)
+				{
+					if (i == j) { continue; }
+					EditorSector* dst = &s_level.sectors[adjoinListId[j]];
+					const s32 wallCountDst = (s32)dst->walls.size();
+					Vec2f* vtxDst = dst->vtx.data();
+					EditorWall* wallDst = dst->walls.data();
+					for (s32 w1 = 0; w1 < wallCountDst; w1++, wallDst++)
+					{
+						if (wallDst->adjoinId >= 0) { continue; }
+						const Vec2f v2 = vtxDst[wallDst->idx[0]];
+						const Vec2f v3 = vtxDst[wallDst->idx[1]];
+						if (TFE_Polygon::vtxEqual(&v0, &v3) && TFE_Polygon::vtxEqual(&v1, &v2))
+						{
+							// Make sure the vertices are *exactly* the same.
+							vtxDst[wallDst->idx[0]] = v1;
+							vtxDst[wallDst->idx[1]] = v0;
+
+							wallSrc->adjoinId = dst->id;
+							wallSrc->mirrorId = w1;
+							wallDst->adjoinId = src->id;
+							wallDst->mirrorId = w0;
+							break;
+						}
+					}
+				}
+			}
+		}
+	}
+
+	void insertIndependentSector(const f32* heights, std::vector<EditorSector*>& candidates)
+	{
+		EditorSector newSector;
+		createNewSector(&newSector, heights);
+
+		s32 shapeCount = (s32)s_shape.size();
+		newSector.vtx.resize(shapeCount);
+		newSector.walls.resize(shapeCount);
+		memcpy(newSector.vtx.data(), s_shape.data(), sizeof(Vec2f) * shapeCount);
+
+		EditorWall* wall = newSector.walls.data();
+		for (s32 w = 0; w < shapeCount; w++, wall++)
+		{
+			s32 a = w;
+			s32 b = (w + 1) % shapeCount;
+
+			*wall = {};
+			wall->idx[0] = a;
+			wall->idx[1] = b;
+
+			// Defaults.
+			wall->tex[WP_MID].texIndex = getDefaultTextureIndex(WP_MID);
+			wall->tex[WP_TOP].texIndex = getDefaultTextureIndex(WP_TOP);
+			wall->tex[WP_BOT].texIndex = getDefaultTextureIndex(WP_BOT);
+		}
+
+		newSector.groupId = groups_getCurrentId();
+		newSector.groupIndex = 0;
+		s_level.sectors.push_back(newSector);
+
+		EditorSector* newSectorLvl = &s_level.sectors.back();
+		sectorToPolygon(newSectorLvl);
+
+		// Deal with adjoins - note for this mode, edges have to match - new vertices are *NOT* inserted.
+		std::vector<s32> adjoinSectorsToFix;
+		addToAdjoinFixupList(newSectorLvl->id, adjoinSectorsToFix);
+		const s32 overlapCount = (s32)candidates.size();
+		const EditorSector* const* candidateList = candidates.data();
+		for (s32 i = 0; i < overlapCount; i++)
+		{
+			addToAdjoinFixupList(candidateList[i]->id, adjoinSectorsToFix);
+		}
+		fixupSectorAdjoins(adjoinSectorsToFix);
+
+		// Now if the sector was adjoined to anything else, copy its attributes.
+		const s32 newWallCount = (s32)newSectorLvl->walls.size();
+		EditorWall* newWall = newSectorLvl->walls.data();
+		EditorSector* next = nullptr;
+		for (s32 w = 0; w < newWallCount; w++, newWall++)
+		{
+			if (newWall->adjoinId >= 0 && newWall->mirrorId >= 0)
+			{
+				next = &s_level.sectors[newWall->adjoinId];
+				break;
+			}
+		}
+
+		if (next && !next->walls.empty())
+		{
+			// Find a source wall that is *not* an adjoin.
+			// If they are all adjoins, we'll just use the last wall.
+			const s32 nextWallCount = (s32)next->walls.size();
+			const EditorWall* srcWall = next->walls.data();
+			for (s32 w = 0; w < nextWallCount; w++, srcWall++)
+			{
+				if (srcWall->adjoinId < 0)
+				{
+					break;
+				}
+			}
+
+			// Now apply the textures to the other walls.
+			newWall = newSectorLvl->walls.data();
+			for (s32 w = 0; w < newWallCount; w++, newWall++)
+			{
+				for (s32 i = 0; i < WP_COUNT; i++)
+				{
+					if (i != WP_SIGN)
+					{
+						newWall->tex[i] = srcWall->tex[i];
+					}
+				}
+			}
+
+			// Finally apply the sector flags and textures.
+			for (s32 i = 0; i < 3; i++)
+			{
+				newSectorLvl->flags[i] = next->flags[i];
+			}
+			newSectorLvl->ambient = next->ambient;
+			newSectorLvl->floorTex = next->floorTex;
+			newSectorLvl->ceilTex = next->ceilTex;
+			if (s_view == EDIT_VIEW_2D)
+			{
+				newSectorLvl->floorHeight = next->floorHeight;
+				newSectorLvl->ceilHeight = next->ceilHeight;
+			}
+		}
+	}
+
+	void insertShapeWithBoolean(const f32* heights, std::vector<EditorSector*>& candidates, u32 heightFlags, f32 clipFloorHeight, f32 clipCeilHeight)
+	{
+		// The shape polygon may be split up during clipping.
+		BPolygon shapePolyClip = {};
+		const s32 vtxCount = (s32)s_shape.size();
+		const Vec2f* vtx = s_shape.data();
+		for (s32 i = 0; i < vtxCount; i++)
+		{
+			TFE_Polygon::addEdgeToBPoly(vtx[i], vtx[(i + 1) % vtxCount], &shapePolyClip);
+		}
+
+		//  Intersect the shape polygon with the candidates.
+		//    a. If the mode is subtract, then the source polygon does *not* need to be split.
+		std::vector<s32> adjoinSectorsToFix;
+		const s32 candidateCount = (s32)candidates.size();
+		EditorSector** candidateList = candidates.data();
+		std::vector<BPolygon> outPoly;
+		std::vector<s32> deleteId;
+
+		// Mark and clear adjoins
+		for (s32 s = 0; s < candidateCount; s++)
+		{
+			EditorSector* candidate = candidateList[s];
+			const s32 wallCount = (s32)candidate->walls.size();
+			EditorWall* wall = candidate->walls.data();
+
+			for (s32 w = 0; w < wallCount; w++, wall++)
+			{
+				if (wall->adjoinId >= 0 && wall->mirrorId >= 0)
+				{
+					addToAdjoinFixupList(wall->adjoinId, adjoinSectorsToFix);
+					EditorSector* next = &s_level.sectors[wall->adjoinId];
+					if (wall->mirrorId < (s32)next->walls.size())
+					{
+						next->walls[wall->mirrorId].adjoinId = -1;
+						next->walls[wall->mirrorId].mirrorId = -1;
+					}
+					else
+					{
+						// Invalid mirror, clear out all matching walls.
+						const s32 wallCountNext = (s32)next->walls.size();
+						EditorWall* wallNext = next->walls.data();
+						for (s32 w2 = 0; w2 < wallCountNext; w2++, wallNext++)
+						{
+							if (wallNext->adjoinId == candidate->id)
+							{
+								wallNext->adjoinId = -1;
+								wallNext->mirrorId = -1;
+							}
+						}
+					}
+					wall->adjoinId = -1;
+					wall->mirrorId = -1;
+				}
+			}
+		}
+
+		std::vector<BPolygon> clipPolyList[2];
+		std::vector<BPolygon> candidatePoly;
+		EditorSector sectorToCopy = {};
+		sectorToCopy.groupId = groups_getCurrentId();
+		sectorToCopy.groupIndex = 0;
+		s32 curClipRead = 0;
+		s32 curClipWrite = 1;
+		clipPolyList[curClipRead].push_back(shapePolyClip);
+
+		// Build the candidate polygons.
+		const s32 shapeVtxCount = (s32)s_shape.size();
+		const Vec2f* shapeVtx = s_shape.data();
+
+		std::vector<BPolygon> cpolyList;
+		cpolyList.resize(candidateCount);
+		for (s32 s = 0; s < candidateCount; s++)
+		{
+			EditorSector* candidate = candidateList[s];
+			const s32 wallCount = (s32)candidate->walls.size();
+			EditorWall* wall = candidate->walls.data();
+
+			BPolygon* cpoly = &cpolyList[s];
+			*cpoly = {};
+
+			wall = candidate->walls.data();
+			const Vec2f* cvtx = candidate->vtx.data();
+			for (s32 w = 0; w < wallCount; w++, wall++)
+			{
+				TFE_Polygon::addEdgeToBPoly(cvtx[wall->idx[0]], cvtx[wall->idx[1]], cpoly);
+			}
+
+			// Insert vertices where the shape polygon touches or nearly touches the candidate edges.
+			// This is to make sure that points on sloped edges are handled properly.
+			addTouchingVertsToPolygon(shapeVtxCount, shapeVtx, cpoly);
+		}
+
+		// Clip the candidate polygons with the clip polygon based on draw mode.
+		for (s32 s = 0; s < candidateCount; s++)
+		{
+			EditorSector* candidate = candidateList[s];
+			const s32 wallCount = (s32)candidate->walls.size();
+			EditorWall* wall = candidate->walls.data();
+			BPolygon* cpoly = &cpolyList[s];
+
+			// * Clip the shape polygons to the bpolygon.
+			outPoly.clear();
+			TFE_Polygon::clipPolygons(cpoly, &shapePolyClip, outPoly, s_boolMode);
+
+			// Then create sectors for each outPoly.
+			const s32 outPolyCount = (s32)outPoly.size();
+			if (outPolyCount >= 1)
+			{
+				// Re-use the existing sector for the first result.
+				std::vector<EditorWall> walls = candidate->walls;
+				updateSectorFromPolygon(candidate, outPoly[0]);
+				sectorToPolygon(candidate);
+				addToAdjoinFixupList(candidate->id, adjoinSectorsToFix);
+
+				// Handle clip-interior polygons.
+				if (!outPoly[0].outsideClipRegion)
+				{
+					handleClipInteriorPolygons(candidateCount, cpolyList.data(), heightFlags, clipFloorHeight, clipCeilHeight, candidate, &outPoly[0]);
+				}
+
+				// Create new sectors for the rest.
+				for (s32 p = 1; p < outPolyCount; p++)
+				{
+					EditorSector newSector = {};
+					newSector.id = (s32)s_level.sectors.size();
+					copySectorForSplit(candidate, &newSector);
+
+					// Handle clip-interior polygons.
+					if (!outPoly[p].outsideClipRegion)
+					{
+						handleClipInteriorPolygons(candidateCount, cpolyList.data(), heightFlags, clipFloorHeight, clipCeilHeight, &newSector, &outPoly[p]);
+					}
+
+					s_level.sectors.push_back(newSector);
+					EditorSector* newPtr = &s_level.sectors.back();
+					addToAdjoinFixupList(newPtr->id, adjoinSectorsToFix);
+
+					updateSectorFromPolygon(newPtr, outPoly[p]);
+					sectorToPolygon(newPtr);
+				}
+
+				candidatePoly.insert(candidatePoly.end(), outPoly.begin(), outPoly.end());
+				if (sectorToCopy.id == 0)
+				{
+					sectorToCopy = *candidate;
+				}
+			}
+			else
+			{
+				deleteId.push_back(candidate->id);
+			}
+		}
+
+		// * Then, if MERGE, adjust the clip polygons.
+		s32 outPolyCount = (s32)candidatePoly.size();
+		if (s_boolMode == BMODE_MERGE)
+		{
+			if (outPolyCount)
+			{
+				std::vector<Vec2f> insertionPt;
+
+				BPolygon* poly = candidatePoly.data();
+				for (s32 p = 0; p < outPolyCount; p++, poly++)
+				{
+					TFE_Polygon::buildInsertionPointList(poly, &insertionPt);
+
+					s32 clipCount = (s32)clipPolyList[curClipRead].size();
+					BPolygon* clipPoly = clipPolyList[curClipRead].data();
+
+					std::vector<BPolygon>& clipWrite = clipPolyList[curClipWrite];
+					clipWrite.clear();
+
+					for (s32 c = 0; c < clipCount; c++, clipPoly++)
+					{
+						std::vector<BPolygon> clipOut;
+						TFE_Polygon::clipPolygons(clipPoly, poly, clipOut, BMODE_SUBTRACT);
+						clipWrite.insert(clipWrite.end(), clipOut.begin(), clipOut.end());
+					}
+
+					std::swap(curClipRead, curClipWrite);
+				}
+
+				// Insert shared vertices.
+				s32 clipCount = (s32)clipPolyList[curClipRead].size();
+				if (clipCount > 0)
+				{
+					TFE_Polygon::insertPointsIntoPolygons(insertionPt, &clipPolyList[curClipRead]);
+				}
+
+				// Final result.
+				BPolygon* clipPoly = clipPolyList[curClipRead].data();
+
+				// Create new sectors for the rest.
+				for (s32 p = 0; p < clipCount; p++)
+				{
+					EditorSector newSector = {};
+					newSector.id = (s32)s_level.sectors.size();
+					copySectorForSplit(&sectorToCopy, &newSector);
+
+					if (heightFlags & HFLAG_SET_FLOOR)
+					{
+						newSector.floorHeight = clipFloorHeight;
+					}
+					if (heightFlags & HFLAG_SET_CEIL)
+					{
+						newSector.ceilHeight = clipCeilHeight;
+					}
+					newSector.groupId = groups_getCurrentId();
+					newSector.groupIndex = 0;
+					assert(groups_isIdValid(newSector.groupId));
+
+					s_level.sectors.push_back(newSector);
+					EditorSector* newPtr = &s_level.sectors.back();
+					addToAdjoinFixupList(newPtr->id, adjoinSectorsToFix);
+
+					updateSectorFromPolygon(newPtr, clipPoly[p]);
+					sectorToPolygon(newPtr);
+				}
+			}
+			else  // Nothing to clip against, just accept it as-is...
+			{
+				EditorSector newSector;
+				createNewSector(&newSector, heights);
+				assert(groups_isIdValid(newSector.groupId));
+
+				s_level.sectors.push_back(newSector);
+				EditorSector* newPtr = &s_level.sectors.back();
+				addToAdjoinFixupList(newPtr->id, adjoinSectorsToFix);
+
+				updateSectorFromPolygon(newPtr, shapePolyClip);
+				sectorToPolygon(newPtr);
+			}
+		}
+
+		// Fix-up adjoins.
+		fixupSectorAdjoins(adjoinSectorsToFix);
+
+		// Delete any sectors - note this should only happen in the SUBTRACT mode unless degenerate sectors are found.
+		if (!deleteId.empty())
+		{
+			std::sort(deleteId.begin(), deleteId.end());
+			const s32 deleteCount = (s32)deleteId.size();
+			const s32* idToDel = deleteId.data();
+			for (s32 i = deleteCount - 1; i >= 0; i--)
+			{
+				edit_deleteSector(idToDel[i]);
+			}
+		}
+	}
+
+	struct EditorWallRaw
+	{
+		LevelTexture tex[WP_COUNT] = {};
+
+		Vec2f vtx[2] = { 0 };
+		s32 adjoinId = -1;
+		s32 mirrorId = -1;
+
+		u32 flags[3] = { 0 };
+		s32 wallLight = 0;
+	};
+
+	bool addWallToList(const Vec2f* vtx, const EditorWall* wall, std::vector<EditorWallRaw>* wallList)
+	{
+		const Vec2f v0 = vtx[wall->idx[0]];
+		const Vec2f v1 = vtx[wall->idx[1]];
+		// Remove degenerate walls.
+		if (TFE_Polygon::vtxEqual(&v0, &v1))
+		{
+			return false;
+		}
+
+		// Determine if the wall is already included and what its previous and next connections are.
+		const s32 wallCount = (s32)wallList->size();
+		EditorWallRaw* wallRaw = wallList->data();
+		s32 prevWall = -1, nextWall = -1;
+		for (s32 w = 0; w < wallCount; w++, wallRaw++)
+		{
+			if (TFE_Polygon::vtxEqual(&wallRaw->vtx[0], &v0) && TFE_Polygon::vtxEqual(&wallRaw->vtx[1], &v1))
+			{
+				return false;
+			}
+			if (TFE_Polygon::vtxEqual(&wallRaw->vtx[1], &v0))
+			{
+				prevWall = w;
+			}
+			if (TFE_Polygon::vtxEqual(&wallRaw->vtx[0], &v1))
+			{
+				nextWall = w;
+			}
+		}
+
+		// Create a new wall but copy the parameters from the source wall.
+		s32 id = (s32)wallList->size();
+		EditorWallRaw newWall = { 0 };
+		for (s32 i = 0; i < 3; i++)
+		{
+			newWall.flags[i] = wall->flags[i];
+		}
+		for (s32 i = 0; i < WP_COUNT; i++)
+		{
+			newWall.tex[i] = wall->tex[i];
+		}
+		newWall.wallLight = wall->wallLight;
+		newWall.vtx[0] = v0;
+		newWall.vtx[1] = v1;
+		newWall.adjoinId = wall->adjoinId;
+		newWall.mirrorId = wall->mirrorId;
 		
+		// Determine where to place the wall.
+		if (prevWall >= 0)
+		{
+			// Insert the new wall after the previous connection.
+			wallList->insert(wallList->begin() + prevWall + 1, newWall);
+			// If the next wall is *before* the previous wall and the new wall connects the two loops together,
+			// then resort so everything is in the correct order.
+			const s32 loopLen = prevWall + 2 - nextWall;	// curIndex = prevWall + 1, len = curIndex - nextWall + 1
+			if (nextWall >= 0 && nextWall < prevWall && loopLen < (s32)wallList->size())
+			{
+				// Capture the next loop.
+				std::vector<EditorWallRaw> nextLoop;
+				std::vector<s32> nextLoopIdx;
+				EditorWallRaw* edge = &(*wallList)[nextWall];
+				while (edge)
+				{
+					nextLoop.push_back(*edge);
+					nextLoopIdx.push_back(nextWall);
+					if (nextWall == (s32)wallList->size() - 1 || !TFE_Polygon::vtxEqual(&edge->vtx[1], &(edge + 1)->vtx[0]))
+					{
+						break;
+					}
+					edge++;
+					nextWall++;
+				}
+
+				// Delete the next loop.
+				const s32 nextLoopCount = (s32)nextLoop.size();
+				const s32* list = nextLoopIdx.data();
+				for (s32 i = nextLoopCount - 1; i >= 0; i--)
+				{
+					wallList->erase(wallList->begin() + list[i]);
+				}
+
+				// Finally re-insert the next loop again after the previous loop or at the end.
+				const s32 newWallCount = (s32)wallList->size();
+				wallRaw = wallList->data();
+				const Vec2f* v0 = &nextLoop[0].vtx[0];
+				s32 insertIdx = -1;
+				for (s32 w = 0; w < newWallCount; w++, wallRaw++)
+				{
+					if (TFE_Polygon::vtxEqual(&wallRaw->vtx[1], v0))
+					{
+						// +1 = insert *after*.
+						insertIdx = w + 1;
+						break;
+					}
+				}
+				if (insertIdx < 0)
+				{
+					// This can happen when there are "islands" - such as holes.
+					// In this case, simply append the loop at the end.
+					insertIdx = (s32)wallList->size();
+				}
+
+				for (s32 i = 0; i < nextLoopCount; i++)
+				{
+					wallList->insert(wallList->begin() + insertIdx + i, nextLoop[i]);
+				}
+			}
+		}
+		else if (nextWall >= 0)
+		{
+			// Insert the wall *before* the next connection.
+			wallList->insert(wallList->begin() + nextWall, newWall);
+		}
+		else
+		{
+			// Insert the wall at the end (no connections).
+			wallList->push_back(newWall);
+		}
+		return true;
+	}
+
+	s32 findMatchingMirror(EditorSector* sector, EditorSector* next, Vec2f v0, Vec2f v1)
+	{
+		// Find the correct mirror.
+		EditorWall* wallnext = next->walls.data();
+		const s32 nextWallCount = (s32)next->walls.size();
+		for (s32 n = 0; n < nextWallCount; n++, wallnext++)
+		{
+			const Vec2f n0 = next->vtx[wallnext->idx[0]];
+			const Vec2f n1 = next->vtx[wallnext->idx[1]];
+			if (TFE_Polygon::vtxEqual(&v0, &n1) && TFE_Polygon::vtxEqual(&v1, &n0))
+			{
+				// Update the mirrored wall's mirror and adjoinId.
+				return n;
+			}
+		}
+		return -1;
+	}
+
+	void cleanSectors(const std::vector<s32>& selectedSectors)
+	{
+		// Re-check to make sure we have at least one sector.
+		const s32 sectorCount = (s32)selectedSectors.size();
+		if (sectorCount < 1)
+		{
+			LE_WARNING("Clean Sector(s) - no sectors selected.");
+			return;
+		}
+
+		const s32* indices = selectedSectors.data();
+		for (s32 s = 0; s < sectorCount; s++)
+		{
+			EditorSector* sector = &s_level.sectors[indices[s]];
+
+			// 1. Record all of the walls we are keeping.
+			std::vector<EditorWallRaw> wallsToKeep;
+			{
+				const s32 wallCount = (s32)sector->walls.size();
+				EditorWall* wall = sector->walls.data();
+				for (s32 w = 0; w < wallCount; w++, wall++)
+				{
+					if (!addWallToList(sector->vtx.data(), wall, &wallsToKeep))
+					{
+						if (wall->adjoinId >= 0 && wall->mirrorId >= 0)
+						{
+							EditorSector* next = &s_level.sectors[wall->adjoinId];
+							if (wall->mirrorId < (s32)next->walls.size())
+							{
+								next->walls[wall->mirrorId].adjoinId = -1;
+								next->walls[wall->mirrorId].mirrorId = -1;
+							}
+						}
+					}
+				}
+			}
+
+			// 2. Recreate the sector walls and vertices.
+			const s32 wallCount = (s32)wallsToKeep.size();
+			sector->walls.resize(wallCount);
+			sector->vtx.clear();
+
+			EditorWall* wall = sector->walls.data();
+			const EditorWallRaw* wallSrc = wallsToKeep.data();
+			for (s32 w = 0; w < wallCount; w++, wall++, wallSrc++)
+			{
+				wall->idx[0] = insertVertexIntoSector(sector, wallSrc->vtx[0]);
+				wall->idx[1] = insertVertexIntoSector(sector, wallSrc->vtx[1]);
+				for (s32 i = 0; i < 3; i++)
+				{
+					wall->flags[i] = wallSrc->flags[i];
+				}
+				for (s32 i = 0; i < WP_COUNT; i++)
+				{
+					wall->tex[i] = wallSrc->tex[i];
+				}
+				wall->wallLight = wallSrc->wallLight;
+
+				if (wallSrc->adjoinId < 0)
+				{
+					wall->adjoinId = -1;
+					wall->mirrorId = -1;
+				}
+				else
+				{
+					EditorSector* next = &s_level.sectors[wallSrc->adjoinId];
+					const Vec2f v0 = wallSrc->vtx[0];
+					const Vec2f v1 = wallSrc->vtx[1];
+					if (wallSrc->mirrorId >= 0 && wallSrc->mirrorId < (s32)next->walls.size())
+					{
+						// Does the mirror match?
+						const Vec2f nv0 = next->vtx[next->walls[wallSrc->mirrorId].idx[0]];
+						const Vec2f nv1 = next->vtx[next->walls[wallSrc->mirrorId].idx[1]];
+						if (TFE_Polygon::vtxEqual(&v0, &nv1) && TFE_Polygon::vtxEqual(&v1, &nv0))
+						{
+							// Update the mirrored wall's mirror and adjoinId.
+							next->walls[wallSrc->mirrorId].adjoinId = sector->id;
+							next->walls[wallSrc->mirrorId].mirrorId = w;
+							wall->adjoinId = wallSrc->adjoinId;
+							wall->mirrorId = wallSrc->mirrorId;
+						}
+						else
+						{
+							// If not, try to find the matching mirror.
+							const s32 matchId = findMatchingMirror(sector, next, v0, v1);
+							if (matchId >= 0)
+							{
+								// Update the mirrored wall's mirror and adjoinId.
+								next->walls[matchId].adjoinId = sector->id;
+								next->walls[matchId].mirrorId = w;
+								wall->adjoinId = wallSrc->adjoinId;
+								wall->mirrorId = matchId;
+							}
+							else
+							{
+								// If that fails, clear out the adjoin.
+								wall->adjoinId = -1;
+								wall->mirrorId = -1;
+							}
+						}
+					}
+					else
+					{
+						const s32 matchId = findMatchingMirror(sector, next, v0, v1);
+						if (matchId >= 0)
+						{
+							// Update the mirrored wall's mirror and adjoinId.
+							next->walls[matchId].adjoinId = sector->id;
+							next->walls[matchId].mirrorId = w;
+							wall->adjoinId = wallSrc->adjoinId;
+							wall->mirrorId = matchId;
+						}
+						else
+						{
+							// If that fails, clear out the adjoin.
+							wall->adjoinId = -1;
+							wall->mirrorId = -1;
+							LE_ERROR("Clean Sector(s) - invalid mirrorId in sector %d, wall %d.", sector->id, w);
+						}
+					}
+				}
+			}
+			sectorToPolygon(sector);
+		}
+	}
+
+	void edit_cleanSectors()
+	{
+		std::vector<s32> selectedSectors;
+
+		// We must be in the wall (in 3D) or sector mode.
+		bool canSelectSectors = (s_editMode == LEDIT_WALL && s_view == EDIT_VIEW_3D) || s_editMode == LEDIT_SECTOR;
+		if (!canSelectSectors)
+		{
+			LE_WARNING("Clean Sector(s) - no sectors selected.");
+			return;
+		}
+
+		// At least one sector must be selected.
+		// If only one is selected, this will act as a "clean" - removing degenerate walls, re-ordering, etc.
+		const s32 count = (s32)s_selectionList.size();
+		if (count < 1)
+		{
+			LE_WARNING("Clean Sector(s) - no sectors selected.");
+			return;
+		}
+
+		const FeatureId* feature = s_selectionList.data();
+		for (s32 i = 0; i < count; i++)
+		{
+			s32 index;
+			HitPart part;
+			EditorSector* sector = unpackFeatureId(feature[i], &index, (s32*)&part);
+			if (part == HP_FLOOR || part == HP_CEIL || s_editMode == LEDIT_SECTOR)
+			{
+				selectedSectors.push_back(sector->id);
+			}
+		}
+
+		cleanSectors(selectedSectors);
+	}
+
+	void edit_joinSectors()
+	{
+		std::vector<s32> selectedSectors;
+
+		// We must be in the wall (in 3D) or sector mode.
+		bool canSelectSectors = (s_editMode == LEDIT_WALL && s_view == EDIT_VIEW_3D) || s_editMode == LEDIT_SECTOR;
+		if (!canSelectSectors)
+		{
+			LE_WARNING("Join Sectors - no sectors selected.");
+			return;
+		}
+
+		// At least one sector must be selected.
+		// If only one is selected, this will act as a "clean" - removing degenerate walls, re-ordering, etc.
+		const s32 count = (s32)s_selectionList.size();
+		if (count < 2)
+		{
+			LE_WARNING("Join Sectors - at least two(2) sectors need to be selected.");
+			return;
+		}
+
+		const FeatureId* feature = s_selectionList.data();
+		for (s32 i = 0; i < count; i++)
+		{
+			s32 index;
+			HitPart part;
+			EditorSector* sector = unpackFeatureId(feature[i], &index, (s32*)&part);
+			if (part == HP_FLOOR || part == HP_CEIL || s_editMode == LEDIT_SECTOR)
+			{
+				selectedSectors.push_back(sector->id);
+			}
+		}
+		// Re-check to make sure we have at least two sectors.
+		const s32 sectorCount = (s32)selectedSectors.size();
+		if (sectorCount < 2)
+		{
+			LE_WARNING("Join Sectors - at least two(2) sectors need to be selected.");
+			return;
+		}
+
+		std::sort(selectedSectors.begin() + 1, selectedSectors.end());
+		const s32* indices = selectedSectors.data();
+		// 1. Record all of the walls we are keeping.
+		std::vector<EditorWallRaw> wallsToKeep;
+		for (s32 s = 0; s < sectorCount; s++)
+		{
+			EditorSector* sector = &s_level.sectors[indices[s]];
+			const s32 wallCount = (s32)sector->walls.size();
+			EditorWall* wall = sector->walls.data();
+
+			for (s32 w = 0; w < wallCount; w++, wall++)
+			{
+				if (wall->adjoinId < 0 || !isInIntList(wall->adjoinId, &selectedSectors))
+				{
+					if (!addWallToList(sector->vtx.data(), wall, &wallsToKeep))
+					{
+						if (wall->adjoinId >= 0 && wall->mirrorId >= 0)
+						{
+							EditorSector* next = &s_level.sectors[wall->adjoinId];
+							if (wall->mirrorId < (s32)next->walls.size())
+							{
+								next->walls[wall->mirrorId].adjoinId = -1;
+								next->walls[wall->mirrorId].mirrorId = -1;
+							}
+						}
+					}
+				}
+			}
+		}
+
+		// 2. Recreate the sector walls and vertices.
+		const s32 primaryId = indices[0];
+		const s32 wallCount = (s32)wallsToKeep.size();
+		EditorSector* sector = &s_level.sectors[primaryId];
+		sector->walls.resize(wallCount);
+		sector->vtx.clear();
+
+		EditorWall* wall = sector->walls.data();
+		const EditorWallRaw* wallSrc = wallsToKeep.data();
+		for (s32 w = 0; w < wallCount; w++, wall++, wallSrc++)
+		{
+			wall->idx[0] = insertVertexIntoSector(sector, wallSrc->vtx[0]);
+			wall->idx[1] = insertVertexIntoSector(sector, wallSrc->vtx[1]);
+			for (s32 i = 0; i < 3; i++)
+			{
+				wall->flags[i] = wallSrc->flags[i];
+			}
+			for (s32 i = 0; i < WP_COUNT; i++)
+			{
+				wall->tex[i] = wallSrc->tex[i];
+			}
+			wall->wallLight = wallSrc->wallLight;
+
+			if (wallSrc->adjoinId < 0)
+			{
+				wall->adjoinId = -1;
+				wall->mirrorId = -1;
+			}
+			else
+			{
+				EditorSector* next = &s_level.sectors[wallSrc->adjoinId];
+				if (wallSrc->mirrorId >= 0 && wallSrc->mirrorId < (s32)next->walls.size())
+				{
+					// Update the mirrored wall's mirror and adjoinId.
+					next->walls[wallSrc->mirrorId].adjoinId = primaryId;
+					next->walls[wallSrc->mirrorId].mirrorId = w;
+					wall->adjoinId = wallSrc->adjoinId;
+					wall->mirrorId = wallSrc->mirrorId;
+				}
+				else
+				{
+					wall->adjoinId = -1;
+					wall->mirrorId = -1;
+					LE_ERROR("Join Sectors - invalid mirrorId in sector %d, wall %d.", sector->id, w);
+				}
+			}
+		}
+		sectorToPolygon(sector);
+
+		// 3. Delete the extra sectors, note we don't delete sector[0]
+		for (s32 s = sectorCount - 1; s > 0; s--)
+		{
+			edit_deleteSector(indices[s]);
+		}
+	}
+				
+	// Merge a shape into the existing sectors.
+	void edit_insertShape(const f32* heights, BoolMode mode, s32 firstVertex, bool allowSubsectorExtrude)
+	{
+		bool hasSectors = !s_level.sectors.empty();
+		clearSourceList();
+
+		u32 heightFlags = s_view == EDIT_VIEW_3D ? HFLAG_DEFAULT : HFLAG_NONE;
+		f32 clipFloorHeight = min(heights[0], heights[1]);
+		f32 clipCeilHeight  = max(heights[0], heights[1]);
+		
+		// Reserve extra sectors to avoid pointer issues...
+		// TODO: This isn't great - this is here to avoid pointers changing during this process.
+		s_level.sectors.reserve(s_level.sectors.size() + 256);
+
+		// Find overlap candidates.
+		Polygon shapePoly;
+		Vec3f shapeBounds[2];
+		std::vector<EditorSector*> candidates;
+		findShapeOverlapCandidates(heights, allowSubsectorExtrude && mode != BMODE_SET, firstVertex,
+			&shapePoly, &candidates, shapeBounds, &heightFlags, &clipFloorHeight, &clipCeilHeight);
+
+		if (mode == BMODE_SET)
+		{
+			// In this mode, no sector intersections are required. Simply create the sector
+			// and then fixup adjoins with existing sectors.
+			insertIndependentSector(heights, candidates);
+		}
+		else
+		{
+			insertShapeWithBoolean(heights, candidates, heightFlags, clipFloorHeight, clipCeilHeight);
+		}
+	}
+		
+	void edit_createSectorFromRect(const f32* heights, const Vec2f* vtx, bool allowSubsectorExtrude)
+	{
+		s_drawStarted = false;
+		bool hasSectors = !s_level.sectors.empty();
+
+		const Vec2f* shapeVtx = vtx;
+
+		Vec2f g[2];
+		g[0] = posToGrid(shapeVtx[0]);
+		g[1] = posToGrid(shapeVtx[1]);
+
+		Vec2f gridCorner[4];
+		gridCorner[0] = g[0];
+		gridCorner[1] = { g[1].x, g[0].z };
+		gridCorner[2] = { g[1].x, g[1].z };
+		gridCorner[3] = { g[0].x, g[1].z };
+
+		Vec2f rect[] =
+		{
+			gridToPos(gridCorner[0]),
+			gridToPos(gridCorner[1]),
+			gridToPos(gridCorner[2]),
+			gridToPos(gridCorner[3])
+		};
+
+		// Invert the order if the signed area is negative.
+		const f32 area = TFE_Polygon::signedArea(4, rect);
+		if (area < 0.0f)
+		{
+			std::swap(rect[0], rect[3]);
+			std::swap(rect[1], rect[2]);
+		}
+
+		// Which is first?
+		s32 firstVertex = 0;
+		for (s32 i = 0; i < 4; i++)
+		{
+			if (TFE_Polygon::vtxEqual(&rect[i], &shapeVtx[0]))
+			{
+				firstVertex = i;
+				break;
+			}
+		}
+
+		s_shape.resize(4);
+		Vec2f* outVtx = s_shape.data();
+		for (s32 v = 0; v < 4; v++)
+		{
+			outVtx[v] = rect[v];
+		}
+
+		edit_insertShape(heights, s_boolMode, firstVertex, allowSubsectorExtrude);
+
+		s_featureHovered = {};
+		selection_clear();
+		infoPanelClearFeatures();
+	}
+				
+	void edit_createSectorFromShape(const f32* heights, s32 vertexCount, const Vec2f* vtx, bool allowSubsectorExtrude)
+	{
+		s_drawStarted = false;
+
+		const f32 area = TFE_Polygon::signedArea(vertexCount, vtx);
+		s32 firstVertex = 0;
+		// Make sure the shape has the correct winding order.
+		if (area < 0.0f)
+		{
+			std::vector<Vec2f> outVtxList;
+			outVtxList.resize(vertexCount);
+			Vec2f* outVtx = outVtxList.data();
+			// If area is negative, than the polygon winding is counter-clockwise, so read the vertices in reverse-order.
+			for (s32 v = 0; v < vertexCount; v++)
+			{
+				outVtx[v] = vtx[vertexCount - v - 1];
+			}
+			firstVertex = vertexCount - 1;
+			s_shape = outVtxList;
+		}
+		//TFE_Polygon::cleanUpShape(s_shape);
+
+		edit_insertShape(heights, s_boolMode, firstVertex, allowSubsectorExtrude);
+
+		s_featureHovered = {};
+		selection_clear();
+		infoPanelClearFeatures();
+	}
+						
 	s32 extrudeSectorFromRect()
 	{
 		const Project* proj = project_get();
@@ -3446,12 +4652,17 @@ namespace LevelEditor
 		s32 nextWallId = -1;
 
 		const f32 minDelta = 1.0f / 64.0f;
-
+		EditorSector* sector = &s_level.sectors[s_extrudePlane.sectorId];
+		assert(s_extrudePlane.sectorId >= 0 && s_extrudePlane.sectorId < (s32)s_level.sectors.size());
+		
 		// Extrude away - create a new sector.
 		if (s_drawHeight[1] > 0.0f)
 		{
+			EditorWall* extrudeWall = &sector->walls[s_extrudePlane.wallId];
+			assert(s_extrudePlane.wallId >= 0 && s_extrudePlane.wallId < (s32)sector->walls.size());
+												
 			// Does the wall already have an ajoin?
-			if (s_extrudePlane.wall->adjoinId >= 0 && !dualAdjoinSupported)
+			if (extrudeWall->adjoinId >= 0 && !dualAdjoinSupported)
 			{
 				LE_ERROR("Cannot complete operation:");
 				LE_ERROR("  Dual adjoins are not supported using this FeatureSet.");
@@ -3459,6 +4670,12 @@ namespace LevelEditor
 			}
 			const f32 floorHeight = std::min(s_shape[0].z, s_shape[1].z) + s_extrudePlane.origin.y;
 			const f32 ceilHeight = std::max(s_shape[0].z, s_shape[1].z) + s_extrudePlane.origin.y;
+
+			// When extruding inward, copy the mid-texture to the top and bottom.
+			extrudeWall->tex[WP_BOT] = extrudeWall->tex[WP_MID];
+			extrudeWall->tex[WP_TOP] = extrudeWall->tex[WP_MID];
+			extrudeWall->tex[WP_TOP].offset.z += (ceilHeight - sector->floorHeight);
+
 			const f32 x0 = std::min(s_shape[0].x, s_shape[1].x);
 			const f32 x1 = std::max(s_shape[0].x, s_shape[1].x);
 			const f32 d = s_drawHeight[1];
@@ -3469,10 +4686,10 @@ namespace LevelEditor
 				const f32 heights[] = { floorHeight, ceilHeight };
 				createNewSector(&newSector, heights);
 				// Copy from the sector being extruded from.
-				newSector.floorTex = s_extrudePlane.sector->floorTex;
-				newSector.ceilTex = s_extrudePlane.sector->ceilTex;
-				newSector.ambient = s_extrudePlane.sector->ambient;
-								
+				newSector.floorTex = sector->floorTex;
+				newSector.ceilTex = sector->ceilTex;
+				newSector.ambient = sector->ambient;
+
 				s32 count = 4;
 				newSector.vtx.resize(count);
 				newSector.walls.resize(count);
@@ -3501,14 +4718,16 @@ namespace LevelEditor
 					wall->idx[1] = b;
 
 					// Copy from the wall being extruded from.
-					wall->tex[WP_MID].texIndex = s_extrudePlane.wall->tex[WP_MID].texIndex;
-					wall->tex[WP_TOP].texIndex = s_extrudePlane.wall->tex[WP_MID].texIndex;
-					wall->tex[WP_BOT].texIndex = s_extrudePlane.wall->tex[WP_MID].texIndex;
+					s32 texIndex = extrudeWall->tex[WP_MID].texIndex;
+					if (texIndex < 0) { texIndex = getTextureIndex("DEFAULT.BM"); }
+					wall->tex[WP_MID].texIndex = texIndex;
+					wall->tex[WP_TOP].texIndex = texIndex;
+					wall->tex[WP_BOT].texIndex = texIndex;
 				}
 
 				// Split the wall if needed.
-				s32 extrudeSectorId = s_extrudePlane.sector->id;
-				s32 extrudeWallId = (s32)((intptr_t)s_extrudePlane.wall - (intptr_t)s_extrudePlane.sector->walls.data()) / sizeof(EditorWall);
+				s32 extrudeSectorId = s_extrudePlane.sectorId;
+				s32 extrudeWallId = s_extrudePlane.wallId;
 				nextWallId = extrudeWallId;
 				if (x0 > 0.0f)
 				{
@@ -3549,6 +4768,81 @@ namespace LevelEditor
 		// Extrude inward - adjust the current sector.
 		else if (s_drawHeight[1] < 0.0f)
 		{
+			const f32 floorHeight = std::min(s_shape[0].z, s_shape[1].z) + s_extrudePlane.origin.y;
+			const f32 ceilHeight = std::max(s_shape[0].z, s_shape[1].z) + s_extrudePlane.origin.y;
+			const f32 x0 = std::min(s_shape[0].x, s_shape[1].x);
+			const f32 x1 = std::max(s_shape[0].x, s_shape[1].x);
+			const f32 d = -s_drawHeight[1];
+			nextWallId = s_extrudePlane.wallId;
+
+			EditorWall* extrudeWall = s_extrudePlane.wallId >= 0 && s_extrudePlane.wallId < (s32)sector->walls.size() ? &sector->walls[s_extrudePlane.wallId] : nullptr;
+			if (extrudeWall && extrudeWall->tex[WP_MID].texIndex >= 0)
+			{
+				s_newWallTexOverride = extrudeWall->tex[WP_MID].texIndex;
+				if (extrudeWall->adjoinId >= 0)
+				{
+					if (floorHeight == sector->floorHeight && extrudeWall->tex[WP_BOT].texIndex >= 0)
+					{
+						s_newWallTexOverride = extrudeWall->tex[WP_BOT].texIndex;
+					}
+					else if (ceilHeight == sector->ceilHeight && extrudeWall->tex[WP_TOP].texIndex >= 0)
+					{
+						s_newWallTexOverride = extrudeWall->tex[WP_TOP].texIndex;
+					}
+				}
+			}
+
+			if (!dualAdjoinSupported && floorHeight != sector->floorHeight && ceilHeight != sector->ceilHeight)
+			{
+				LE_ERROR("Cannot complete operation:");
+				LE_ERROR("  Dual adjoins are not supported using this FeatureSet.");
+				return -1;
+			}
+
+			if (fabsf(ceilHeight - floorHeight) >= minDelta && fabsf(x1 - x0) >= minDelta)
+			{
+				s32 count = 4;
+				s_shape.resize(count);
+				const Vec3f rect[] =
+				{
+					extrudePoint2dTo3d({x0, 0.0f}, s_drawHeight[0]),
+					extrudePoint2dTo3d({x1, 0.0f}, s_drawHeight[0]),
+					extrudePoint2dTo3d({x1, 0.0f}, s_drawHeight[1]),
+					extrudePoint2dTo3d({x0, 0.0f}, s_drawHeight[1])
+				};
+
+				Vec2f* outVtx = s_shape.data();
+				for (s32 v = 0; v < count; v++)
+				{
+					outVtx[v] = { rect[v].x, rect[v].z };
+				}
+
+				// Merge
+				f32 heights[2];
+				bool forceSubtract = false;
+				if (floorHeight == sector->floorHeight && ceilHeight == sector->ceilHeight)
+				{
+					heights[0] = sector->floorHeight;
+					heights[1] = sector->ceilHeight;
+					forceSubtract = true;
+				}
+				else if (floorHeight == sector->floorHeight)
+				{
+					heights[0] = ceilHeight;
+					heights[1] = sector->ceilHeight;
+				}
+				else if (ceilHeight == sector->ceilHeight)
+				{
+					heights[0] = sector->floorHeight;
+					heights[1] = floorHeight;
+				}
+
+				BoolMode boolMode = s_boolMode;
+				s_boolMode = forceSubtract ? BMODE_SUBTRACT : boolMode;
+				edit_createSectorFromShape(heights, 4, outVtx, false);
+				s_boolMode = boolMode;
+			}
+			s_newWallTexOverride = -1;
 		}
 
 		return nextWallId;
@@ -3600,7 +4894,7 @@ namespace LevelEditor
 	{
 		s_drawStarted = false;
 		s_extrudeEnabled = false;
-
+				
 		// Split the shape into multiple components.
 		const s32 vtxCount = (s32)s_shape.size();
 		std::vector<f32> splits;
@@ -3613,13 +4907,13 @@ namespace LevelEditor
 		// Sort them from lowest to higest.
 		std::sort(splits.begin(), splits.end());
 		// Then find the height extends of each split.
-		s32 extrudeSectorId = s_extrudePlane.sector->id;
-		s32 extrudeWallId = (s32)((intptr_t)s_extrudePlane.wall - (intptr_t)s_extrudePlane.sector->walls.data()) / sizeof(EditorWall);
+		s32 extrudeSectorId = s_extrudePlane.sectorId;
+		s32 extrudeWallId = s_extrudePlane.wallId;
 
 		s_testShape = s_shape;
 		s_shape.resize(2);
 		const s32 splitCount = (s32)splits.size();
-		for (s32 i = 0; i < splitCount - 1; i++)
+		for (s32 i = 0; i < splitCount - 1 && extrudeWallId >= 0; i++)
 		{
 			Vec2f ext;
 			f32 xHalf = (splits[i] + splits[i + 1]) * 0.5f;
@@ -3628,8 +4922,8 @@ namespace LevelEditor
 			{
 				s_shape[0] = { splits[i], ext.x };
 				s_shape[1] = { splits[i+1], ext.z };
-				s_extrudePlane.sector = &s_level.sectors[extrudeSectorId];
-				s_extrudePlane.wall = &s_extrudePlane.sector->walls[extrudeWallId];
+				s_extrudePlane.sectorId = extrudeSectorId;
+				s_extrudePlane.wallId = extrudeWallId;
 
 				extrudeWallId = extrudeSectorFromRect();
 			}
@@ -3649,53 +4943,259 @@ namespace LevelEditor
 			s_drawStarted = false;
 		}
 	}
-
-	bool snapToLine(Vec2f& pos, f32 maxDist, Vec2f& newPos, FeatureId& snappedFeature)
+		
+	bool snapToLine2d(Vec2f& pos, f32 maxDist, Vec2f& newPos, FeatureId& snappedFeature)
 	{
-		Vec3f pos3d = { pos.x, s_gridHeight, pos.z };
 		SectorList sectorList;
-		if (!getOverlappingSectorsPt(&pos3d, &sectorList))
+		Vec3f pos3d = { pos.x, s_grid.height, pos.z };
+		if (!getOverlappingSectorsPt(&pos3d, s_curLayer, &sectorList, 0.5f))
 		{
 			return false;
 		}
 
 		const s32 count = (s32)sectorList.size();
+		if (count < 1)
+		{
+			return false;
+		}
+
 		EditorSector** list = sectorList.data();
-		f32 closestDistSq = FLT_MAX;
-		Vec2f closestPt = pos;
-		FeatureId closestFeature = FeatureId(0);
+		EditorSector* closestSector = nullptr;
+
+		// Higher weighting to vertices.
+		f32 closestDistSqVtx  = FLT_MAX;
+		f32 closestDistSqWall = FLT_MAX;
+		EditorSector* closestSectorVtx = nullptr;
+		EditorSector* closestSectorWall = nullptr;
+		f32 maxDistSq = maxDist * maxDist;
+		s32 vtxIndex = -1;
+		s32 wallIndex = -1;
+		
+		Vec2f closestPtVtx;
+		Vec2f closestPtWall;
+
 		for (s32 i = 0; i < count; i++)
 		{
 			EditorSector* sector = list[i];
 			const s32 wallCount = (s32)sector->walls.size();
+			const s32 vtxCount = (s32)sector->vtx.size();
 			const EditorWall* wall = sector->walls.data();
 			const Vec2f* vtx = sector->vtx.data();
+
+			for (s32 v = 0; v < vtxCount; v++)
+			{
+				Vec2f offset = { pos.x - vtx[v].x, pos.z - vtx[v].z };
+				f32 distSq = offset.x*offset.x + offset.z*offset.z;
+				if (distSq < closestDistSqVtx && distSq < maxDistSq)
+				{
+					closestDistSqVtx = distSq;
+					vtxIndex = v;
+					closestSectorVtx = sector;
+					closestPtVtx = vtx[v];
+				}
+			}
 
 			for (s32 w = 0; w < wallCount; w++, wall++)
 			{
 				const Vec2f* v0 = &vtx[wall->idx[0]];
 				const Vec2f* v1 = &vtx[wall->idx[1]];
 				Vec2f pointOnSeg;
-				f32 s = closestPointOnLineSegment(*v0, *v1, pos, &pointOnSeg);
+				f32 s = TFE_Polygon::closestPointOnLineSegment(*v0, *v1, pos, &pointOnSeg);
 
 				const Vec2f diff = { pointOnSeg.x - pos.x, pointOnSeg.z - pos.z };
 				const f32 distSq = diff.x*diff.x + diff.z*diff.z;
-				if (distSq < closestDistSq)
+				if (distSq < closestDistSqWall && distSq < maxDistSq)
 				{
-					closestDistSq = distSq;
-					closestPt = pointOnSeg;
-					closestFeature = createFeatureId(sector, w);
+					closestDistSqWall = distSq;
+					wallIndex = w;
+					closestSectorWall = sector;
+					closestPtWall = pointOnSeg;
 				}
 			}
 		}
 
-		if (closestDistSq > maxDist*maxDist)
+		if (vtxIndex >= 0 && (wallIndex < 0 || closestDistSqVtx <= closestDistSqWall || closestDistSqVtx < maxDistSq * c_relativeVtxSnapScale))
+		{
+			newPos = closestPtVtx;
+			snappedFeature = createFeatureId(closestSectorVtx, vtxIndex, 1);
+		}
+		else if (wallIndex >= 0)
+		{
+			newPos = closestPtWall;
+			snappedFeature = createFeatureId(closestSectorWall, wallIndex, 0);
+		}
+
+		return vtxIndex >= 0 || wallIndex >= 0;
+	}
+
+	bool snapToLine3d(Vec3f& pos3d, f32 maxDist, f32 maxCamDist, Vec2f& newPos, FeatureId& snappedFeature, f32* outDistSq, f32* outCameraDistSq)
+	{
+		SectorList sectorList;
+		if (!getOverlappingSectorsPt(&pos3d, s_curLayer, &sectorList, 0.5f))
 		{
 			return false;
 		}
 
-		newPos = closestPt;
-		snappedFeature = closestFeature;
+		const s32 count = (s32)sectorList.size();
+		if (count < 1)
+		{
+			return false;
+		}
+
+		EditorSector** list = sectorList.data();
+		EditorSector* closestSector = nullptr;
+
+		// Higher weighting to vertices.
+		f32 closestDistSqVtx = FLT_MAX;
+		f32 closestDistSqWall = FLT_MAX;
+		EditorSector* closestSectorVtx = nullptr;
+		EditorSector* closestSectorWall = nullptr;
+		f32 maxDistSq = maxDist * maxDist;
+		f32 maxCamDistSq = maxCamDist * maxCamDist;
+		s32 vtxIndex = -1;
+		s32 wallIndex = -1;
+
+		Vec2f closestPtVtx;
+		Vec2f closestPtWall;
+		f32 camDistSqVtx = FLT_MAX;
+		f32 camDistSqWall = FLT_MAX;
+
+		for (s32 i = 0; i < count; i++)
+		{
+			EditorSector* sector = list[i];
+			const s32 wallCount = (s32)sector->walls.size();
+			const s32 vtxCount = (s32)sector->vtx.size();
+			const EditorWall* wall = sector->walls.data();
+			const Vec2f* vtx = sector->vtx.data();
+
+			for (s32 v = 0; v < vtxCount; v++)
+			{
+				const Vec2f offset = { pos3d.x - vtx[v].x, pos3d.z - vtx[v].z };
+				const f32 distSq = offset.x*offset.x + offset.z*offset.z;
+
+				const Vec3f camOffset = { s_camera.pos.x - vtx[v].x, s_camera.pos.y - sector->floorHeight, s_camera.pos.z - vtx[v].z };
+				const f32 camDistSq = camOffset.x*camOffset.x + camOffset.y*camOffset.y + camOffset.z*camOffset.z;
+
+				if (distSq < closestDistSqVtx && distSq < maxDistSq && camDistSq < maxCamDistSq)
+				{
+					closestDistSqVtx = distSq;
+					camDistSqVtx = camDistSq;
+					vtxIndex = v;
+					closestSectorVtx = sector;
+					closestPtVtx = vtx[v];
+				}
+			}
+
+			for (s32 w = 0; w < wallCount; w++, wall++)
+			{
+				const Vec2f* v0 = &vtx[wall->idx[0]];
+				const Vec2f* v1 = &vtx[wall->idx[1]];
+				Vec2f pointOnSeg;
+				f32 s = TFE_Polygon::closestPointOnLineSegment(*v0, *v1, { pos3d.x, pos3d.z }, &pointOnSeg);
+
+				const Vec2f diff = { pointOnSeg.x - pos3d.x, pointOnSeg.z - pos3d.z };
+				const f32 distSq = diff.x*diff.x + diff.z*diff.z;
+
+				const Vec3f camOffset = { s_camera.pos.x - pointOnSeg.x, s_camera.pos.y - sector->floorHeight, s_camera.pos.z - pointOnSeg.z };
+				const f32 camDistSq = camOffset.x*camOffset.x + camOffset.y*camOffset.y + camOffset.z*camOffset.z;
+
+				if (distSq < closestDistSqWall && distSq < maxDistSq && camDistSq < maxCamDistSq)
+				{
+					closestDistSqWall = distSq;
+					camDistSqWall = camDistSq;
+					wallIndex = w;
+					closestSectorWall = sector;
+					closestPtWall = pointOnSeg;
+				}
+			}
+		}
+
+		if (vtxIndex >= 0 && (wallIndex < 0 || closestDistSqVtx <= closestDistSqWall || closestDistSqVtx < maxDistSq * c_relativeVtxSnapScale))
+		{
+			newPos = closestPtVtx;
+			snappedFeature = createFeatureId(closestSectorVtx, vtxIndex, 1);
+
+			if (outDistSq) { *outDistSq = closestDistSqVtx; }
+			if (outCameraDistSq) { *outCameraDistSq = camDistSqVtx; }
+		}
+		else if (wallIndex >= 0)
+		{
+			newPos = closestPtWall;
+			snappedFeature = createFeatureId(closestSectorWall, wallIndex, 0);
+
+			if (outDistSq) { *outDistSq = closestDistSqWall; }
+			if (outCameraDistSq) { *outCameraDistSq = camDistSqWall; }
+		}
+
+		return vtxIndex >= 0 || wallIndex >= 0;
+	}
+
+	bool gridCursorIntersection(Vec3f* pos)
+	{
+		if ((s_camera.pos.y > s_grid.height && s_cursor3d.y < s_camera.pos.y) ||
+			(s_camera.pos.y < s_grid.height && s_cursor3d.y > s_camera.pos.y))
+		{
+			f32 u = (s_grid.height - s_camera.pos.y) / (s_cursor3d.y - s_camera.pos.y);
+			assert(fabsf(s_camera.pos.y + u * (s_cursor3d.y - s_camera.pos.y) - s_grid.height) < 0.001f);
+
+			pos->x = s_camera.pos.x + u * (s_cursor3d.x - s_camera.pos.x);
+			pos->y = s_grid.height;
+			pos->z = s_camera.pos.z + u * (s_cursor3d.z - s_camera.pos.z);
+			return true;
+		}
+		return false;
+	}
+
+	bool snapToLine(Vec2f& pos, f32 maxDist, Vec2f& newPos, FeatureId& snappedFeature)
+	{
+		if (s_view == EDIT_VIEW_2D)
+		{
+			return snapToLine2d(pos, maxDist, newPos, snappedFeature);
+		}
+		else
+		{
+			Vec2f _newPos[2];
+			FeatureId _snappedFeature[2];
+			f32 distSq[2], camDistSq[2];
+			s32 foundCount = 0;
+
+			// Current cursor position.
+			if (snapToLine3d(s_cursor3d, maxDist, 25.0f, _newPos[foundCount], _snappedFeature[foundCount], &distSq[foundCount], &camDistSq[foundCount]))
+			{
+				foundCount++;
+			}
+
+			// Position on grid.
+			Vec3f testPos;
+			if (gridCursorIntersection(&testPos))
+			{
+				if (testPos.y != s_cursor3d.y && snapToLine3d(testPos, maxDist, 25.0f, _newPos[foundCount], _snappedFeature[foundCount], &distSq[foundCount], &camDistSq[foundCount]))
+				{
+					foundCount++;
+				}
+			}
+			if (!foundCount) { return false; }
+
+			if (foundCount == 1)
+			{
+				newPos = _newPos[0];
+				snappedFeature = _snappedFeature[0];
+			}
+			else
+			{
+				// Which the closer of the two to the camera.
+				if (camDistSq[0] <= camDistSq[1])
+				{
+					newPos = _newPos[0];
+					snappedFeature = _snappedFeature[0];
+				}
+				else
+				{
+					newPos = _newPos[1];
+					snappedFeature = _snappedFeature[1];
+				}
+			}
+		}
 		return true;
 	}
 		
@@ -3710,24 +5210,14 @@ namespace LevelEditor
 		// Get the hover sector in 2D.
 		if (!s_drawStarted)
 		{
-			if (s_view == EDIT_VIEW_2D)
-			{
-				hoverSector = s_featureHovered.sector;
-				hoverWall = (s_featureHovered.part != HP_NONE && s_featureHovered.featureIndex >= 0) ?
-					&hoverSector->walls[s_featureHovered.featureIndex] : nullptr;
-			}
-			else if (hitInfo->hitSectorId >= 0 && hitInfo->hitWallId >= 0) // Or the hit sector in 3D.
-			{
-				hoverSector = &s_level.sectors[hitInfo->hitSectorId];
-				hoverWall = hitInfo->hitWallId < 0 ? nullptr : &hoverSector->walls[hitInfo->hitWallId];
-			}
-			if (!hoverSector || !hoverWall) { return; }
+			s_extrudeEnabled = false;
+			return;
 		}
 
 		// Snap the cursor to the grid.
 		Vec2f onGrid = { s_cursor3d.x, s_cursor3d.z };
 
-		const f32 maxLineDist = 0.5f * s_gridSize;
+		const f32 maxLineDist = 0.5f * s_grid.size;
 		Vec2f newPos;
 		FeatureId featureId;
 		if (snapToLine(onGrid, maxLineDist, newPos, featureId))
@@ -3736,7 +5226,7 @@ namespace LevelEditor
 			EditorSector* sector = unpackFeatureId(featureId, &wallIndex);
 
 			// Snap the result to the surface grid.
-			Vec3f snapPos = { newPos.x, s_gridHeight, newPos.z };
+			Vec3f snapPos = { newPos.x, s_grid.height, newPos.z };
 			snapToSurfaceGrid(sector, &sector->walls[wallIndex], snapPos);
 			onGrid = { snapPos.x, snapPos.z };
 		}
@@ -3747,7 +5237,7 @@ namespace LevelEditor
 
 		s_cursor3d.x = onGrid.x;
 		s_cursor3d.z = onGrid.z;
-		snapToGrid(&s_cursor3d.y);
+		snapToGridY(&s_cursor3d.y);
 
 		// Project the shape onto the polygon.
 		if (s_view == EDIT_VIEW_3D && s_drawStarted)
@@ -3762,52 +5252,7 @@ namespace LevelEditor
 			onGrid.z = max(0.0f, min(s_extrudePlane.ext.z, onGrid.z));
 		}
 
-		if (!s_drawStarted && s_singleClick)
-		{
-			s_extrudeEnabled = true;
-			s_drawStarted = true;
-
-			s_extrudePlane.sector = hoverSector;
-			s_extrudePlane.wall = hoverWall;
-
-			const Vec2f* p0 = &hoverSector->vtx[hoverWall->idx[0]];
-			const Vec2f* p1 = &hoverSector->vtx[hoverWall->idx[1]];
-
-			s_extrudePlane.origin = { p0->x, hoverSector->floorHeight, p0->z };
-			const Vec3f S = { p1->x - p0->x, 0.0f, p1->z - p0->z };
-			const Vec3f T = { 0.0f, 1.0f, 0.0f };
-			const Vec3f N = { -(p1->z - p0->z), 0.0f, p1->x - p0->x };
-
-			s_extrudePlane.ext.x = TFE_Math::distance(p0, p1);
-			s_extrudePlane.ext.z = hoverSector->ceilHeight - hoverSector->floorHeight;
-
-			s_extrudePlane.S = TFE_Math::normalize(&S);
-			s_extrudePlane.N = TFE_Math::normalize(&N);
-			s_extrudePlane.T = T;
-
-			// Project using the extrude plane.
-			const Vec3f offset = { s_cursor3d.x - s_extrudePlane.origin.x, s_cursor3d.y - s_extrudePlane.origin.y, s_cursor3d.z - s_extrudePlane.origin.z };
-			onGrid.x = offset.x*s_extrudePlane.S.x + offset.y*s_extrudePlane.S.y + offset.z*s_extrudePlane.S.z;
-			onGrid.z = offset.x*s_extrudePlane.T.x + offset.y*s_extrudePlane.T.y + offset.z*s_extrudePlane.T.z;
-
-			s_drawMode = TFE_Input::keyModDown(KEYMOD_SHIFT) ? DMODE_RECT : DMODE_SHAPE;
-			s_drawHeight[0] = 0.0f;
-			s_drawHeight[1] = 0.0f;
-			s_drawCurPos = onGrid;
-			
-			s_shape.clear();
-			if (s_drawMode == DMODE_RECT)
-			{
-				s_shape.resize(2);
-				s_shape[0] = onGrid;
-				s_shape[1] = onGrid;
-			}
-			else
-			{
-				s_shape.push_back(onGrid);
-			}
-		}
-		else if (s_drawStarted)
+		if (s_drawStarted)
 		{
 			s_drawCurPos = onGrid;
 			if (s_drawMode == DMODE_RECT)
@@ -3831,7 +5276,7 @@ namespace LevelEditor
 			{
 				if (s_singleClick)
 				{
-					if (vtxEqual(&onGrid, &s_shape[0]))
+					if (TFE_Polygon::vtxEqual(&onGrid, &s_shape[0]))
 					{
 						if (s_shape.size() >= 3)
 						{
@@ -3862,7 +5307,7 @@ namespace LevelEditor
 						bool vtxExists = false;
 						for (s32 i = 0; i < count; i++, vtx++)
 						{
-							if (vtxEqual(vtx, &onGrid))
+							if (TFE_Polygon::vtxEqual(vtx, &onGrid))
 							{
 								vtxExists = true;
 								break;
@@ -3939,10 +5384,511 @@ namespace LevelEditor
 				}
 
 				const Vec3f worldPos = moveAlongRail(s_extrudePlane.N);
-				const Vec3f offset = { worldPos.x - s_cursor3d.x, worldPos.y - s_cursor3d.y, worldPos.z - s_cursor3d.z };
+				const Vec3f offset = { worldPos.x - s_curVtxPos.x, worldPos.y - s_curVtxPos.y, worldPos.z - s_curVtxPos.z };
 				s_drawHeight[1] = offset.x*s_extrudePlane.N.x + offset.y*s_extrudePlane.N.y + offset.z*s_extrudePlane.N.z;
-				snapToGrid(&s_drawHeight[1]);
+				snapToGridY(&s_drawHeight[1]);
 			}
+		}
+	}
+
+	s32 findNextEdge(s32 wallCount, const EditorWall* walls, s32 idxToFind, s32 side)
+	{
+		for (s32 w = 0; w < wallCount; w++)
+		{
+			if (walls[w].idx[side] == idxToFind)
+			{
+				return w;
+			}
+		}
+		return -1;
+	}
+
+	void insertEdgesIntoShape(s32 count, const s32* edgeIndices, const EditorSector* sector)
+	{
+		const Vec2f* vtx = sector->vtx.data();
+		const EditorWall* walls = sector->walls.data();
+
+		s32 start = -1;
+		s32 i0 = -1;
+		// edgeIndices[0] <-> s_shape[0]
+		if (TFE_Polygon::vtxEqual(&s_shape[0], &vtx[walls[edgeIndices[0]].idx[0]]))
+		{
+			start = 0;
+			i0 = 1;
+		}
+		else if (TFE_Polygon::vtxEqual(&s_shape[0], &vtx[walls[edgeIndices[0]].idx[1]]))
+		{
+			start = 0;
+			i0 = 0;
+		}
+		// edgeIndices[1] <-> s_shape[0]
+		else if (TFE_Polygon::vtxEqual(&s_shape[0], &vtx[walls[edgeIndices[count-1]].idx[0]]))
+		{
+			start = count - 1;
+			i0 = 1;
+		}
+		else if (TFE_Polygon::vtxEqual(&s_shape[0], &vtx[walls[edgeIndices[count-1]].idx[1]]))
+		{
+			start = count - 1;
+			i0 = 0;
+		}
+		// Can't find it...
+		if (start < 0 || i0 < 0)
+		{
+			return;
+		}
+
+		s32 countToAdd = 0;
+		Vec2f vtxToAdd[64];
+		if (start == 0)
+		{
+			for (s32 i = start; i < count - 1; i++)
+			{
+				vtxToAdd[countToAdd++] = vtx[walls[edgeIndices[i]].idx[i0]];
+			}
+		}
+		else
+		{
+			for (s32 i = start; i > 0; i--)
+			{
+				vtxToAdd[countToAdd++] = vtx[walls[edgeIndices[i]].idx[i0]];
+			}
+		}
+
+		for (s32 i = countToAdd - 1; i >= 0; i--)
+		{
+			s_shape.push_back(vtxToAdd[i]);
+		}
+	}
+
+	// Add all edges encountered as: [start, end)
+	// dir = 1 or -1 (clockwise and counterclockwise).
+	s32 walkEdges(const EditorSector* sector, s32 startEdge, s32 endEdge, s32* edges, s32 dir)
+	{
+		const s32 wallCount = (s32)sector->walls.size();
+		const Vec2f* vtx = sector->vtx.data();
+		const EditorWall* walls = sector->walls.data();
+
+		const EditorWall* curWall = &walls[startEdge];
+		const s32 i = dir > 0 ? 1 : 0;
+		const s32 side = dir > 0 ? 0 : 1;
+		s32 count = 0;
+		s32 nextEdge = startEdge;
+
+		// Do not include the first edge in the solution when walking backwards.
+		if (dir == 1)
+		{
+			edges[count++] = nextEdge;
+		}
+		while (nextEdge != endEdge && count < 64)
+		{
+			nextEdge = findNextEdge(wallCount, walls, curWall->idx[i], side);
+			if (nextEdge < 0)
+			{
+				return -1;
+			}
+			else if (nextEdge == endEdge && dir < 1)
+			{
+				break;
+			}
+
+			edges[count++] = nextEdge;
+			curWall = &walls[nextEdge];
+		}
+		return count >= 64 ? -1 : count;
+	}
+
+	// Form a path between each open end using edges on the map.
+	// Edges come from potentially overlapping sectors (in 2D + same layer + interactible group).
+	// Since we don't care about the source sectors, the clipper will deal with that,
+	// we can just add all of the edges to test in a bucket and build up an adjacency map.
+	struct PathEdge
+	{
+		Vec2f v0 = { 0 };
+		Vec2f v1 = { 0 };
+		s32 index = 0;
+		// Each edge may link to multiple edges along a specific direction.
+		std::vector<s32> nextEdge;
+		std::vector<s32> prevEdge;
+	};
+
+	struct EdgeMatch
+	{
+		PathEdge* edge;
+		f32 u;
+	};
+	typedef std::vector<const PathEdge*> EdgePath;
+	std::vector<PathEdge> s_adjacencyMap;
+
+	bool isInIntList(s32 value, std::vector<s32>* list)
+	{
+		const s32 count = (s32)list->size();
+		const s32* values = list->data();
+		for (s32 i = 0; i < count; i++)
+		{
+			if (value == values[i])
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+
+	void insertIntoIntList(s32 value, std::vector<s32>* list)
+	{
+		const s32 count = (s32)list->size();
+		const s32* values = list->data();
+		for (s32 i = 0; i < count; i++)
+		{
+			if (value == values[i])
+			{
+				return;
+			}
+		}
+		list->push_back(value);
+	}
+
+	void addEdgeToAdjacencyMap(Vec2f v0, Vec2f v1)
+	{
+		const s32 count = (s32)s_adjacencyMap.size();
+		PathEdge* edge = s_adjacencyMap.data();
+				
+		// Verify it isn't in the list already and add to any edges.
+		for (s32 e = 0; e < count; e++, edge++)
+		{
+			if (TFE_Polygon::vtxEqual(&v0, &edge->v0) && TFE_Polygon::vtxEqual(&v1, &edge->v1))
+			{
+				// This edge is already in the map.
+				return;
+			}
+		}
+
+		// Setup new edge
+		PathEdge newEdge = {};
+		newEdge.v0 = v0;
+		newEdge.v1 = v1;
+		newEdge.index = count;
+
+		// Find any connections.
+		edge = s_adjacencyMap.data();
+		for (s32 e = 0; e < count; e++, edge++)
+		{
+			if (TFE_Polygon::vtxEqual(&v0, &edge->v1))
+			{
+				insertIntoIntList(newEdge.index, &edge->nextEdge);
+				insertIntoIntList(e, &newEdge.prevEdge);
+			}
+			else if (TFE_Polygon::vtxEqual(&v1, &edge->v0))
+			{
+				insertIntoIntList(newEdge.index, &edge->prevEdge);
+				insertIntoIntList(e, &newEdge.nextEdge);
+			}
+		}
+
+		// Insert.
+		s_adjacencyMap.push_back(newEdge);
+	}
+
+	void buildAdjacencyMap()
+	{
+		// 1. compute the bounds.
+		const s32 vtxCount = (s32)s_shape.size();
+		const Vec2f* vtx = s_shape.data();
+		Vec3f shapeBounds[2];
+		shapeBounds[0] = { vtx[0].x, 0.0f, vtx[0].z };
+		shapeBounds[1] = { vtx[0].x, 0.0f, vtx[0].z };
+		for (s32 v = 1; v < vtxCount; v++)
+		{
+			shapeBounds[0].x = min(shapeBounds[0].x, vtx[v].x);
+			shapeBounds[0].z = min(shapeBounds[0].z, vtx[v].z);
+			shapeBounds[1].x = max(shapeBounds[1].x, vtx[v].x);
+			shapeBounds[1].z = max(shapeBounds[1].z, vtx[v].z);
+		}
+		f32 extend = 0.01f;
+		shapeBounds[0].x -= extend;
+		shapeBounds[0].z -= extend;
+		shapeBounds[1].x += extend;
+		shapeBounds[1].z += extend;
+
+		// 2. Add sector edges to the map.
+		const s32 sectorCount = (s32)s_level.sectors.size();
+		EditorSector* sector = s_level.sectors.data();
+		s_adjacencyMap.clear();
+		for (s32 s = 0; s < sectorCount; s++, sector++)
+		{
+			// The layers have to match.
+			if (!(s_editFlags & LEF_SHOW_ALL_LAYERS) && s_curLayer != sector->layer) { continue; }
+			// The group has to be interactible.
+			if (!sector_isInteractable(sector)) { continue; }
+			// The bounds have to overlap.
+			if (!aabbOverlap2d(shapeBounds, sector->bounds)) { continue; }
+
+			// Add the walls to the map.
+			const s32 wallCount = (s32)sector->walls.size();
+			const EditorWall* wall = sector->walls.data();
+			const Vec2f* vtx = sector->vtx.data();
+			for (s32 w = 0; w < wallCount; w++, wall++)
+			{
+				const Vec2f v0 = vtx[wall->idx[0]];
+				const Vec2f v1 = vtx[wall->idx[1]];
+				addEdgeToAdjacencyMap(v0, v1);
+			}
+		}
+	}
+		
+	bool whichEdges(const Vec2f vtx, std::vector<EdgeMatch>* edgeList)
+	{
+		const f32 eps = 0.001f;
+
+		edgeList->clear();
+		const s32 count = (s32)s_adjacencyMap.size();
+		PathEdge* edge = s_adjacencyMap.data();
+		for (s32 i = 0; i < count; i++, edge++)
+		{
+			if (TFE_Polygon::vtxEqual(&vtx, &edge->v0))
+			{
+				edgeList->push_back({ edge, 0.0f });
+			}
+			else if (TFE_Polygon::vtxEqual(&vtx, &edge->v1))
+			{
+				edgeList->push_back({ edge, 1.0f });
+			}
+			else
+			{
+				Vec2f vI;
+				const f32 u = TFE_Polygon::closestPointOnLineSegment(edge->v0, edge->v1, vtx, &vI);
+				if (u < FLT_EPSILON || u > 1.0f - FLT_EPSILON)
+				{
+					continue;
+				}
+
+				const Vec2f offset = { vI.x - vtx.x, vI.z - vtx.z };
+				const f32 distSq = offset.x*offset.x + offset.z*offset.z;
+				if (distSq < eps)
+				{
+					edgeList->push_back({ edge, u });
+				}
+			}
+		}
+		return !edgeList->empty();
+	}
+
+	struct SearchNode
+	{
+		s32 distToStart;
+		s32 edgeIndex;
+		s32 prevIndex;
+	};
+
+	s32 findMinimumDistInQueue(std::vector<SearchNode*>& queue)
+	{
+		const s32 count = (s32)queue.size();
+		const SearchNode* const* nodeList = queue.data();
+		s32 minDist = INT_MAX;
+		s32 minNode = -1;
+		for (s32 i = 0; i < count; i++)
+		{
+			const SearchNode* node = nodeList[i];
+			if (node->distToStart < minDist)
+			{
+				minNode = i;
+				minDist = node->distToStart;
+			}
+		}
+		return minNode;
+	}
+
+	// Dijkstra
+	s32 findEdgePath(EdgeMatch* e0, EdgeMatch* e1, s32 dir, EdgePath* path)
+	{
+		const s32 count = (s32)s_adjacencyMap.size();
+		std::vector<SearchNode> nodes;
+		std::vector<SearchNode*> queue;
+		nodes.resize(count);
+
+		// Initialize nodes.
+		SearchNode* nodeList = nodes.data();
+		PathEdge* edge = s_adjacencyMap.data();
+		for (s32 i = 0; i < count; i++, edge++)
+		{
+			SearchNode* node = &nodeList[i];
+			if (edge == e0->edge)
+			{
+				*node = { 0, i, -1 };
+			}
+			else
+			{
+				*node = { INT_MAX, i, -1 };
+			}
+			queue.push_back(node);
+		}
+
+		// Process the Queue until all nodes are visited.
+		while (!queue.empty())
+		{
+			const s32 indexInQueue = findMinimumDistInQueue(queue);
+			if (indexInQueue < 0)
+			{
+				break;
+			}
+
+			SearchNode* node = queue[indexInQueue];
+			PathEdge* edge = &s_adjacencyMap[node->edgeIndex];
+			queue.erase(queue.begin() + indexInQueue);
+
+			// Which direction?
+			const s32 count = (dir == 1) ? (s32)edge->nextEdge.size() : (s32)edge->prevEdge.size();
+			const s32* edgeIndex = (dir == 1) ? edge->nextEdge.data() : edge->prevEdge.data();
+
+			// Update the distance to source values for all connections going in the correct direction (if any).
+			const s32 nextDist = node->distToStart + 1;
+			const s32 prevIndex = node->edgeIndex;
+			for (s32 i = 0; i < count; i++)
+			{
+				PathEdge* next = &s_adjacencyMap[edgeIndex[i]];
+				SearchNode* nextNode = &nodeList[next->index];
+				if (nextDist < nextNode->distToStart)
+				{
+					nextNode->distToStart = nextDist;
+					nextNode->prevIndex = prevIndex;
+				}
+			}
+		}
+
+		// Finally go to the target and walk backwards to build the path.
+		path->clear();
+		PathEdge* curEdge = e1->edge;
+		PathEdge* startEdge = e0->edge;
+		while (curEdge != startEdge)
+		{
+			path->push_back(curEdge);
+
+			SearchNode* node = &nodeList[curEdge->index];
+			// There is no path from the end back to the start.
+			if (node->prevIndex < 0) 
+			{
+				return 0;
+			}
+			curEdge = &s_adjacencyMap[node->prevIndex];
+		}
+		// Something went wrong - we still couldn't find our way back...
+		if (curEdge != startEdge)
+		{
+			return 0;
+		}
+		path->push_back(startEdge);
+		return (s32)path->size();
+	}
+
+	void handlePartialShape()
+	{
+		s32 count = (s32)s_shape.size();
+		Vec2f* shapeVtx = s_shape.data();
+		// Nothing to work with.
+		if (count < 1) { return; }
+
+		// If the end points are equal than something went wrong.
+		Vec2f v0 = shapeVtx[0];
+		Vec2f v1 = shapeVtx[count - 1];
+		if (TFE_Polygon::vtxEqual(&v0, &v1))
+		{
+			return;
+		}
+
+		// Build the adjacency map for path finding.
+		buildAdjacencyMap();
+
+		// Find possible edges.
+		std::vector<EdgeMatch> edgeList0;
+		std::vector<EdgeMatch> edgeList1;
+		if (!whichEdges(v0, &edgeList0) || !whichEdges(v1, &edgeList1))
+		{
+			// No edges found.
+			return;
+		}
+
+		// Are they both on the same edge?
+		const s32 edgeCount0 = (s32)edgeList0.size();
+		const s32 edgeCount1 = (s32)edgeList1.size();
+		EdgeMatch* edge0 = edgeList0.data();
+		for (s32 e0 = 0; e0 < edgeCount0; e0++, edge0++)
+		{
+			EdgeMatch* edge1 = edgeList1.data();
+			for (s32 e1 = 0; e1 < edgeCount1; e1++, edge1++)
+			{
+				if (edge0->edge == edge1->edge)
+				{
+					// Both points are on the same edge, so the straight line connection is correct.
+					return;
+				}
+			}
+		}
+
+		// Finally search from a valid path from edgeList0 -> edgeList1
+		edge0 = edgeList0.data();
+		EdgePath curPath;
+		EdgePath shortestPath;
+		s32 shortestLen = INT_MAX;
+		Vec2f newVtx[32];
+		s32 newVtxCount = 0;
+		const f32 eps = 0.001f;
+		for (s32 e0 = 0; e0 < edgeCount0; e0++, edge0++)
+		{
+			EdgeMatch* edge1 = edgeList1.data();
+			for (s32 e1 = 0; e1 < edgeCount1; e1++, edge1++)
+			{
+				s32 pathLen = findEdgePath(edge0, edge1, 1, &curPath);
+				if (pathLen > 0 && pathLen < shortestLen && pathLen <= 32)
+				{
+					shortestPath = curPath;
+					shortestLen = pathLen;
+
+					newVtxCount = 0;
+					if (edge1->u > eps)
+					{
+						newVtx[newVtxCount++] = edge1->edge->v0;
+					}
+					for (s32 p = 1; p < pathLen - 1; p++)
+					{
+						newVtx[newVtxCount++] = curPath[p]->v0;
+					}
+					if (edge0->u <= eps)
+					{
+						newVtx[newVtxCount++] = edge0->edge->v0;
+					}
+				}
+				pathLen = findEdgePath(edge0, edge1, 0, &curPath);
+				if (pathLen > 0 && pathLen < shortestLen && pathLen <= 32)
+				{
+					shortestPath = curPath;
+					shortestLen = pathLen;
+
+					newVtxCount = 0;
+					if (edge1->u < 1.0f-eps)
+					{
+						newVtx[newVtxCount++] = edge1->edge->v1;
+					}
+					for (s32 p = 1; p < pathLen - 1; p++)
+					{
+						newVtx[newVtxCount++] = curPath[p]->v1;
+					}
+					if (edge0->u >= 1.0f-eps)
+					{
+						newVtx[newVtxCount++] = edge0->edge->v1;
+					}
+				}
+			}
+		}
+		// No path found.
+		if (shortestPath.empty())
+		{
+			return;
+		}
+
+		// Now insert the path into the shape.
+		for (s32 i = 0; i < newVtxCount; i++)
+		{
+			s_shape.push_back(newVtx[i]);
 		}
 	}
 		
@@ -3959,25 +5905,49 @@ namespace LevelEditor
 		{
 			hoverSector = hitInfo->hitSectorId < 0 ? nullptr : &s_level.sectors[hitInfo->hitSectorId];
 		}
-		
+
 		// Snap the cursor to the grid.
 		Vec2f onGrid = { s_cursor3d.x, s_cursor3d.z };
 
-		const f32 maxLineDist = 0.5f * s_gridSize;
+		const f32 maxLineDist = 0.5f * s_grid.size;
 		Vec2f newPos;
 		FeatureId featureId;
 		if (snapToLine(onGrid, maxLineDist, newPos, featureId))
 		{
-			s32 wallIndex;
-			EditorSector* sector = unpackFeatureId(featureId, &wallIndex);
+			s32 index;
+			s32 type;
+			EditorSector* sector = unpackFeatureId(featureId, &index, &type);
 
 			// Snap the result to the surface grid.
-			Vec3f snapPos = { newPos.x, s_gridHeight, newPos.z };
-			snapToSurfaceGrid(sector, &sector->walls[wallIndex], snapPos);
-			onGrid = { snapPos.x, snapPos.z };
+			if (type == 0)
+			{
+				Vec3f snapPos = { newPos.x, s_grid.height, newPos.z };
+				snapToSurfaceGrid(sector, &sector->walls[index], snapPos);
+				onGrid = { snapPos.x, snapPos.z };
+			}
+			else if (type == 1)
+			{
+				onGrid = newPos;
+			}
+			// Snap to the grid if drawing has already started.
+			if (s_drawStarted)
+			{
+				s_cursor3d.y = s_grid.height;
+			}
+		}
+		else if (s_view == EDIT_VIEW_2D)
+		{
+			snapToGrid(&onGrid);
 		}
 		else
 		{
+			// snap to the closer: 3d cursor position or grid intersection.
+			Vec3f posOnGrid;
+			if (gridCursorIntersection(&posOnGrid) && s_drawStarted)
+			{
+				s_cursor3d = posOnGrid;
+				onGrid = { s_cursor3d.x, s_cursor3d.z };
+			}
 			snapToGrid(&onGrid);
 		}
 
@@ -3998,8 +5968,8 @@ namespace LevelEditor
 			{
 				Vec3f worldPos = moveAlongRail({ 0.0f, 1.0f, 0.0f });
 				f32 yValue = worldPos.y;
-				snapToGrid(&yValue);
-				s_gridHeight = yValue;
+				snapToGridY(&yValue);
+				s_grid.height = yValue;
 			}
 		}
 		else if (s_drawStarted)
@@ -4010,10 +5980,10 @@ namespace LevelEditor
 				s_shape[1] = onGrid;
 				if (!TFE_Input::mouseDown(MouseButton::MBUTTON_LEFT))
 				{
-					if (s_view == EDIT_VIEW_3D)
+					if (s_view == EDIT_VIEW_3D && s_boolMode != BMODE_SUBTRACT)
 					{
 						s_drawMode = DMODE_RECT_VERT;
-						s_curVtxPos = { onGrid.x, s_gridHeight, onGrid.z };
+						s_curVtxPos = { onGrid.x, s_grid.height, onGrid.z };
 					}
 					else
 					{
@@ -4026,15 +5996,15 @@ namespace LevelEditor
 			{
 				if (s_singleClick)
 				{
-					if (vtxEqual(&onGrid, &s_shape[0]))
+					if (TFE_Polygon::vtxEqual(&onGrid, &s_shape[0]))
 					{
 						if (s_shape.size() >= 3)
 						{
 							// Need to form a polygon.
-							if (s_view == EDIT_VIEW_3D)
+							if (s_view == EDIT_VIEW_3D && s_boolMode != BMODE_SUBTRACT)
 							{
 								s_drawMode = DMODE_SHAPE_VERT;
-								s_curVtxPos = { onGrid.x, s_gridHeight, onGrid.z };
+								s_curVtxPos = { onGrid.x, s_grid.height, onGrid.z };
 								shapeToPolygon((s32)s_shape.size(), s_shape.data(), s_shapePolygon);
 							}
 							else
@@ -4056,7 +6026,7 @@ namespace LevelEditor
 						bool vtxExists = false;
 						for (s32 i = 0; i < count; i++, vtx++)
 						{
-							if (vtxEqual(vtx, &onGrid))
+							if (TFE_Polygon::vtxEqual(vtx, &onGrid))
 							{
 								vtxExists = true;
 								break;
@@ -4074,12 +6044,14 @@ namespace LevelEditor
 				}
 				else if (TFE_Input::keyPressed(KEY_RETURN) || s_doubleClick)
 				{
+					// Try to handle as a partial shape, if it fails the shape will be unmodified.
+					handlePartialShape();
 					if (s_shape.size() >= 3)
 					{
-						if (s_view == EDIT_VIEW_3D)
+						if (s_view == EDIT_VIEW_3D && s_boolMode != BMODE_SUBTRACT)
 						{
 							s_drawMode = DMODE_SHAPE_VERT;
-							s_curVtxPos = { onGrid.x, s_gridHeight, onGrid.z };
+							s_curVtxPos = { onGrid.x, s_grid.height, onGrid.z };
 							shapeToPolygon((s32)s_shape.size(), s_shape.data(), s_shapePolygon);
 						}
 						else
@@ -4110,25 +6082,76 @@ namespace LevelEditor
 
 				Vec3f worldPos = moveAlongRail({ 0.0f, 1.0f, 0.0f });
 				s_drawHeight[1] = worldPos.y;
-				snapToGrid(&s_drawHeight[1]);
+				snapToGridY(&s_drawHeight[1]);
 			}
 		}
 		else if (heightMove && s_singleClick)
 		{
 			s_gridMoveStart = true;
-			s_curVtxPos = { onGrid.x, s_gridHeight, onGrid.z };
+			s_curVtxPos = { onGrid.x, s_grid.height, onGrid.z };
 		}
 		else if (s_singleClick)
 		{
 			if (hoverSector && !(s_gridFlags & GFLAG_OVER))
 			{
-				s_gridHeight = hoverSector->floorHeight;
+				s_grid.height = hoverSector->floorHeight;
+				if (s_view == EDIT_VIEW_3D)
+				{
+					if (fabsf(s_cursor3d.y - hoverSector->floorHeight) < FLT_EPSILON)
+					{
+						s_grid.height = hoverSector->floorHeight;
+					}
+					else if (fabsf(s_cursor3d.y - hoverSector->ceilHeight) < FLT_EPSILON)
+					{
+						s_grid.height = hoverSector->ceilHeight;
+					}
+					else if (hitInfo->hitWallId >= 0 && (hitInfo->hitPart == HP_BOT || hitInfo->hitPart == HP_TOP || hitInfo->hitPart == HP_MID))
+					{
+						s_extrudeEnabled = true;
+						
+						// Extrude from wall.
+						s_extrudePlane.sectorId = hoverSector->id;
+						s_extrudePlane.wallId = hitInfo->hitWallId;
+
+						EditorWall* hitWall = &hoverSector->walls[hitInfo->hitWallId];
+						const Vec2f* p0 = &hoverSector->vtx[hitWall->idx[0]];
+						const Vec2f* p1 = &hoverSector->vtx[hitWall->idx[1]];
+
+						s_extrudePlane.origin = { p0->x, hoverSector->floorHeight, p0->z };
+						const Vec3f S = { p1->x - p0->x, 0.0f, p1->z - p0->z };
+						const Vec3f T = { 0.0f, 1.0f, 0.0f };
+						const Vec3f N = { -(p1->z - p0->z), 0.0f, p1->x - p0->x };
+
+						s_extrudePlane.ext.x = TFE_Math::distance(p0, p1);
+						s_extrudePlane.ext.z = hoverSector->ceilHeight - hoverSector->floorHeight;
+
+						s_extrudePlane.S = TFE_Math::normalize(&S);
+						s_extrudePlane.N = TFE_Math::normalize(&N);
+						s_extrudePlane.T = T;
+
+						// Project using the extrude plane.
+						Vec3f wallPos = s_cursor3d;
+						snapToSurfaceGrid(hoverSector, hitWall, wallPos);
+
+						const Vec3f offset = { wallPos.x - s_extrudePlane.origin.x, wallPos.y - s_extrudePlane.origin.y, wallPos.z - s_extrudePlane.origin.z };
+						onGrid.x = offset.x*s_extrudePlane.S.x + offset.y*s_extrudePlane.S.y + offset.z*s_extrudePlane.S.z;
+						onGrid.z = offset.x*s_extrudePlane.T.x + offset.y*s_extrudePlane.T.y + offset.z*s_extrudePlane.T.z;
+					}
+				}
 			}
 
 			s_drawStarted = true;
 			s_drawMode = TFE_Input::keyModDown(KEYMOD_SHIFT) ? DMODE_RECT : DMODE_SHAPE;
-			s_drawHeight[0] = s_gridHeight;
-			s_drawHeight[1] = s_gridHeight;
+			if (s_extrudeEnabled)
+			{
+				s_drawHeight[0] = 0.0f;
+				s_drawHeight[1] = 0.0f;
+			}
+			else
+			{
+				s_drawHeight[0] = s_grid.height;
+				s_drawHeight[1] = s_grid.height;
+			}
 			s_drawCurPos = onGrid;
 
 			s_shape.clear();
@@ -4167,13 +6190,11 @@ namespace LevelEditor
 
 	void deleteObject(EditorSector* sector, s32 index)
 	{
-		if (!sector || index < 0 || index >= sector->obj.size()) { return; }
-		s32 count = (s32)sector->obj.size();
-		for (s32 i = index; i < count - 1; i++)
+		if (sector && index >= 0 && index < (s32)sector->obj.size())
 		{
-			sector->obj[i] = sector->obj[i + 1];
+			sector->obj.erase(sector->obj.begin() + index);
+			clearEntityChanges();
 		}
-		sector->obj.pop_back();
 	}
 
 	bool pointInsideOBB2d(const Vec2f pt, const Vec3f* bounds, const Vec3f* pos, const Mat3* mtx)
@@ -4307,10 +6328,11 @@ namespace LevelEditor
 			}
 			else
 			{
-				f32 gridHeight = s_gridHeight;
-				s_gridHeight = obj->pos.y;
+				f32 gridHeight = s_grid.height;
+				s_grid.height = s_cursor3d.y;
+
 				s_cursor3d = rayGridPlaneHit(s_camera.pos, s_rayDir);
-				s_gridHeight = gridHeight;
+				s_grid.height = gridHeight;
 			}
 			s_moveStartPos3d = s_cursor3d;
 		}
@@ -4325,10 +6347,11 @@ namespace LevelEditor
 				}
 				else
 				{
-					f32 gridHeight = s_gridHeight;
-					s_gridHeight = obj->pos.y;
+					f32 gridHeight = s_grid.height;
+					s_grid.height = s_moveStartPos3d.y;
+
 					s_cursor3d = rayGridPlaneHit(s_camera.pos, s_rayDir);
-					s_gridHeight = gridHeight;
+					s_grid.height = gridHeight;
 				}
 
 				if (moveAlongY)
@@ -4336,10 +6359,24 @@ namespace LevelEditor
 					s_curVtxPos = s_moveStartPos3d;
 					f32 yNew = moveAlongRail({ 0.0f, 1.0f, 0.0f }).y;
 
+					f32 yPrev = obj->pos.y;
 					obj->pos.y = s_moveBasePos3d.y + (yNew - s_moveStartPos3d.y);
-					snapToGrid(&obj->pos.y);
+					f32 yDelta = obj->pos.y - yPrev;
+					snapToGridY(&obj->pos.y);
+
+					if (s_view == EDIT_VIEW_3D)
+					{
+						Vec3f rail[] = { obj->pos, { obj->pos.x, obj->pos.y + 1.0f, obj->pos.z},
+							{ obj->pos.x, obj->pos.y - 1.0f, obj->pos.z } };
+						Vec3f moveDir = { 0.0f, yDelta, 0.0f };
+						moveDir = TFE_Math::normalize(&moveDir);
+						viewport_setRail(rail, 2, &moveDir);
+
+						s_moveStartPos3d.x = s_curVtxPos.x;
+						s_moveStartPos3d.z = s_curVtxPos.z;
+					}
 				}
-				else if (obj->pos.x != s_cursor3d.x || obj->pos.y != s_cursor3d.y || obj->pos.z != s_cursor3d.z)
+				else if (s_moveStartPos3d.x != s_cursor3d.x || s_moveStartPos3d.z != s_cursor3d.z)
 				{
 					Vec3f prevPos = obj->pos;
 					EditorSector* prevSector = s_featureCur.sector;
@@ -4357,7 +6394,17 @@ namespace LevelEditor
 						obj->pos.x = (s_cursor3d.x - s_moveStartPos3d.x) + s_moveBasePos3d.x;
 						obj->pos.z = (s_cursor3d.z - s_moveStartPos3d.z) + s_moveBasePos3d.z;
 					}
+					Vec3f moveDir = { obj->pos.x - prevPos.x, 0.0f, obj->pos.z - prevPos.z };
 					snapToGrid(&obj->pos);
+
+					if (s_view == EDIT_VIEW_3D)
+					{
+						Vec3f boxPos = { obj->pos.x, s_cursor3d.y, obj->pos.z };
+						Vec3f rail[] = { boxPos, { boxPos.x + 1.0f, boxPos.y, boxPos.z}, { boxPos.x, boxPos.y, boxPos.z + 1.0f },
+							{ boxPos.x - 1.0f, boxPos.y, boxPos.z}, { boxPos.x, boxPos.y, boxPos.z - 1.0f } };
+						moveDir = TFE_Math::normalize(&moveDir);
+						viewport_setRail(rail, 4, &moveDir);
+					}
 
 					if (!isPointInsideSector3d(s_featureCur.sector, obj->pos, layer))
 					{
@@ -4543,31 +6590,7 @@ namespace LevelEditor
 			wall->tex[WP_SIGN].offset.z += delta.z;
 		}
 	}
-
-	void snapToSurfaceGrid(EditorSector* sector, EditorWall* wall, Vec3f& pos)
-	{
-		const Vec2f* v0 = &sector->vtx[wall->idx[0]];
-		const Vec2f* v1 = &sector->vtx[wall->idx[1]];
-
-		// Determine which projection we are using (XY or ZY).
-		// This should match the way grids are rendered on surfaces.
-		const f32 dx = fabsf(v1->x - v0->x);
-		const f32 dz = fabsf(v1->z - v0->z);
-		f32 s;
-		if (dx >= dz)  // X-intersect with line segment.
-		{
-			snapToGrid(&pos.x);
-			s = (pos.x - v0->x) / (v1->x - v0->x);
-		}
-		else  // Z-intersect with line segment.
-		{
-			snapToGrid(&pos.z);
-			s = (pos.z - v0->z) / (v1->z - v0->z);
-		}
-		pos = { v0->x + s * (v1->x - v0->x), pos.y, v0->z + s * (v1->z - v0->z) };
-		snapToGrid(&pos.y);
-	}
-		
+				
 	void updateWindowControls()
 	{
 		if (isUiModal()) { return; }
@@ -4596,7 +6619,7 @@ namespace LevelEditor
 
 		// 2D extrude - hover over line, left click and drag.
 		// 3D extrude - hover over wall, left click to add points (or shift to drag a box), double-click to just extrude the full wall.
-		const bool extrude = (TFE_Input::keyModDown(KEYMOD_CTRL) || s_extrudeEnabled) && s_editMode == LEDIT_DRAW;
+		const bool extrude = s_extrudeEnabled && s_editMode == LEDIT_DRAW;
 
 		if (s_view == EDIT_VIEW_2D)
 		{
@@ -4704,17 +6727,11 @@ namespace LevelEditor
 
 			// Texture alignment.
 			handleTextureAlignment();
-
-			// DEBUG
-		#if 0
-			if (s_featureCur.sector && TFE_Input::keyPressed(KEY_T))
-			{
-				TFE_Polygon::computeTriangulation(&s_featureCur.sector->poly);
-			}
-		#endif
 		}
 		else if (s_view == EDIT_VIEW_3D)
 		{
+			viewport_clearRail();
+
 			cameraControl3d(mx, my);
 			s_featureHovered = {};
 			s32 layer = (s_editFlags & LEF_SHOW_ALL_LAYERS) ? LAYER_ANY : s_curLayer;
@@ -4723,8 +6740,8 @@ namespace LevelEditor
 			if (TFE_Input::keyPressed(KEY_G) && !TFE_Input::keyModDown(KEYMOD_CTRL))
 			{
 				s_gravity = !s_gravity;
-				if (s_gravity) { infoPanelAddMsg(LE_MSG_INFO, "Gravity Enabled."); }
-				else { infoPanelAddMsg(LE_MSG_INFO, "Gravity Disabled."); }
+				if (s_gravity) { LE_INFO("Gravity Enabled."); }
+				else { LE_INFO("Gravity Disabled."); }
 			}
 			if (s_gravity)
 			{
@@ -4850,6 +6867,10 @@ namespace LevelEditor
 				// TODO
 			}
 			ImGui::Separator();
+			if (ImGui::MenuItem("Lighting", NULL, (bool*)NULL))
+			{
+				openEditorPopup(POPUP_LIGHTING);
+			}
 			if (ImGui::MenuItem("INF Items", NULL, (bool*)NULL))
 			{
 				// TODO
@@ -4865,6 +6886,14 @@ namespace LevelEditor
 			}
 			enableNextItem(); // End TODO
 			ImGui::Separator();
+			if (ImGui::MenuItem("Join Sectors", NULL, (bool*)NULL))
+			{
+				edit_joinSectors();
+			}
+			if (ImGui::MenuItem("Clean Sector(s)", NULL, (bool*)NULL))
+			{
+				edit_cleanSectors();
+			}
 			if (ImGui::MenuItem("Find Sector", NULL, (bool*)NULL))
 			{
 				// TODO
@@ -4908,6 +6937,7 @@ namespace LevelEditor
 			if (ImGui::MenuItem("Reset", ""))
 			{
 				s_gridFlags = GFLAG_NONE;
+				resetGrid();
 			}
 			ImGui::Separator();
 			if (ImGui::MenuItem("Show Over Sectors", "", s_gridFlags & GFLAG_OVER))
@@ -4918,6 +6948,13 @@ namespace LevelEditor
 			ImGui::Separator();
 			if (ImGui::MenuItem("Align To Edge", ""))
 			{
+				// If an edge is selected.
+				if (s_featureCur.part != HP_FLOOR && s_featureCur.part != HP_CEIL && s_featureCur.featureIndex >= 0 && s_featureCur.sector && !s_featureCur.isObject)
+				{
+					const Vec2f* vtx = s_featureCur.sector->vtx.data();
+					const EditorWall* wall = &s_featureCur.sector->walls[s_featureCur.featureIndex];
+					alignGridToEdge(vtx[wall->idx[0]], vtx[wall->idx[1]]);
+				}
 			}
 
 			ImGui::EndMenu();
@@ -5136,7 +7173,7 @@ namespace LevelEditor
 
 	void floatToString(f32 value, char* str)
 	{
-		const f32 valueOnGrid = s_gridSize != 0.0f ? floorf(value/s_gridSize) * s_gridSize : 1.0f;
+		const f32 valueOnGrid = s_grid.size != 0.0f ? floorf(value/s_grid.size) * s_grid.size : 1.0f;
 		const f32 eps = 0.00001f;
 
 		if (fabsf(floorf(value)-value) < eps)
@@ -5144,10 +7181,10 @@ namespace LevelEditor
 			// Integer value.
 			sprintf(str, "%d", s32(value));
 		}
-		else if (s_gridSize < 1.0f && s_gridSize > 0.0f && fabsf(valueOnGrid - value) < eps)
+		else if (s_grid.size < 1.0f && s_grid.size > 0.0f && fabsf(valueOnGrid - value) < eps)
 		{
 			// Fractional grid-aligned value, show as a fraction so its easier to see the value in terms of grid cells.
-			s32 den = s32(1.0f / s_gridSize);
+			s32 den = s32(1.0f / s_grid.size);
 			if (value >= 1.0f)
 			{
 				sprintf(str, "%d %d/%d", s32(value), s32(value * (f32)den)&(den - 1), den);
@@ -5556,7 +7593,7 @@ namespace LevelEditor
 					if (ImGui::Selectable(c_gridSizes[n], n == s_gridIndex))
 					{
 						s_gridIndex = n;
-						s_gridSize = c_gridSizeMap[s_gridIndex];
+						s_grid.size = c_gridSizeMap[s_gridIndex];
 					}
 				}
 				ImGui::EndCombo();
@@ -5801,20 +7838,41 @@ namespace LevelEditor
 				{
 					if (s_drawMode == DMODE_RECT)
 					{
-						f32 x0 = std::max(s_shape[0].x, s_shape[1].x);
-						f32 x1 = std::min(s_shape[0].x, s_shape[1].x);
-						f32 z0 = std::max(s_shape[0].z, s_shape[1].z);
-						f32 z1 = std::min(s_shape[0].z, s_shape[1].z);
+						Vec2f cen[2];
+						f32 width, height;
 
-						f32 width  = fabsf(x1 - x0);
-						f32 height = fabsf(z1 - z0);
-						f32 midX = (x0 + x1) * 0.5f;
-						f32 midZ = (z0 + z1) * 0.5f;
-						const Vec2f cen[] =
+						// Get the rect size, taking into account the grid.
+						// Note that the behavior is different if extrude is enabled -
+						// since in that case the rect is *already* in "grid space".
+						if (s_extrudeEnabled)
 						{
-							{ midX, z0 },
-							{ x0, midZ },
-						};
+							const f32 x0 = std::max(s_shape[0].x, s_shape[1].x);
+							const f32 x1 = std::min(s_shape[0].x, s_shape[1].x);
+							const f32 z0 = std::max(s_shape[0].z, s_shape[1].z);
+							const f32 z1 = std::min(s_shape[0].z, s_shape[1].z);
+							const f32 midX = (x0 + x1) * 0.5f;
+							const f32 midZ = (z0 + z1) * 0.5f;
+							
+							width  = fabsf(x1 - x0);
+							height = fabsf(z1 - z0);
+							cen[0] = { midX, z0 },
+							cen[1] = { x0, midZ };
+						}
+						else
+						{
+							const Vec2f g[] = { posToGrid(s_shape[0]), posToGrid(s_shape[1]) };
+
+							Vec2f vtx[4];
+							getGridOrientedRect(s_shape[0], s_shape[1], vtx);
+
+							width  = fabsf(g[1].x - g[0].x);
+							height = fabsf(g[1].z - g[0].z);
+							cen[0] = { (vtx[0].x + vtx[1].x) * 0.5f, (vtx[0].z + vtx[1].z) * 0.5f };
+							cen[1] = { (vtx[1].x + vtx[2].x) * 0.5f, (vtx[1].z + vtx[2].z) * 0.5f };
+						}
+
+						// Once we have the rect sizes and edge center positions,
+						// draw the length labels.
 						const Vec2i mapPos[] =
 						{
 							worldPos2dToMap(cen[0]),
@@ -5838,7 +7896,7 @@ namespace LevelEditor
 							}
 							else if (s_view == EDIT_VIEW_3D)
 							{
-								Vec3f worldPos = { cen[i].x, s_gridHeight, cen[i].z };
+								Vec3f worldPos = { cen[i].x, s_grid.height, cen[i].z };
 								if (s_extrudeEnabled)
 								{
 									worldPos = extrudePoint2dTo3d(cen[i], s_drawHeight[0]);
@@ -5873,7 +7931,7 @@ namespace LevelEditor
 							}
 							else if (s_view == EDIT_VIEW_3D)
 							{
-								Vec3f worldPos = { (v0->x + v1->x)*0.5f, s_gridHeight, (v0->z + v1->z)*0.5f };
+								Vec3f worldPos = { (v0->x + v1->x)*0.5f, s_grid.height, (v0->z + v1->z)*0.5f };
 								if (s_extrudeEnabled)
 								{
 									Vec3f w0 = extrudePoint2dTo3d(*v0, s_drawHeight[0]);
@@ -6015,6 +8073,10 @@ namespace LevelEditor
 		levelEditWinEnd();
 		popFont();
 
+	#if EDITOR_TEXT_PROMPTS == 1
+		handleTextPrompts();
+	#endif
+
 	#if SHOW_EDITOR_FPS == 1
 		TFE_FrontEndUI::drawFps(1800);
 	#endif
@@ -6043,59 +8105,7 @@ namespace LevelEditor
 		s_viewportPos.x += (worldPos.x - newWorldPos.x);
 		s_viewportPos.z += (worldPos.z - newWorldPos.z);
 	}
-		
-	void snapToGrid(f32* value)
-	{
-		if (!TFE_Input::keyModDown(KEYMOD_ALT) && s_gridSize != 0.0f)
-		{
-			*value = floorf((*value) / s_gridSize + 0.5f) * s_gridSize;
-		}
-		else  // Snap to the finest grid.
-		{
-			*value = floorf((*value) * 65536.0f + 0.5f) / 65536.0f;
-		}
-	}
-
-	void snapToGrid(Vec2f* pos)
-	{
-		if (!TFE_Input::keyModDown(KEYMOD_ALT) && s_gridSize != 0.0f)
-		{
-			pos->x = floorf(pos->x / s_gridSize + 0.5f) * s_gridSize;
-			pos->z = floorf(pos->z / s_gridSize + 0.5f) * s_gridSize;
-		}
-		else  // Snap to the finest grid.
-		{
-			pos->x = floorf(pos->x * 65536.0f + 0.5f) / 65536.0f;
-			pos->z = floorf(pos->z * 65536.0f + 0.5f) / 65536.0f;
-		}
-	}
-
-	void snapToGrid(Vec3f* pos)
-	{
-		if (!TFE_Input::keyModDown(KEYMOD_ALT) && s_gridSize != 0.0f)
-		{
-			pos->x = floorf(pos->x / s_gridSize + 0.5f) * s_gridSize;
-			pos->z = floorf(pos->z / s_gridSize + 0.5f) * s_gridSize;
-		}
-		else  // Snap to the finest grid.
-		{
-			pos->x = floorf(pos->x * 65536.0f + 0.5f) / 65536.0f;
-			pos->z = floorf(pos->z * 65536.0f + 0.5f) / 65536.0f;
-		}
-	}
-	
-	bool vtxEqual(const Vec2f* a, const Vec2f* b)
-	{
-		const f32 eps = 0.00001f;
-		return fabsf(a->x - b->x) < eps && fabsf(a->z - b->z) < eps;
-	}
-
-	bool vtxEqual(const Vec3f* a, const Vec3f* b)
-	{
-		const f32 eps = 0.00001f;
-		return fabsf(a->x - b->x) < eps && fabsf(a->y - b->y) < eps && fabsf(a->z - b->z) < eps;
-	}
-
+			
 	void selectOverlappingVertices(EditorSector* root, s32 featureIndex, const Vec2f* rootVtx, bool addToSelection, bool addToVtxList/*=false*/)
 	{
 		s_searchKey++;
@@ -6131,11 +8141,11 @@ namespace LevelEditor
 			for (size_t w = 0; w < wallCount; w++, wall++)
 			{
 				s32 idx = -1;
-				if (vtxEqual(rootVtx, &sector->vtx[wall->idx[0]]))
+				if (TFE_Polygon::vtxEqual(rootVtx, &sector->vtx[wall->idx[0]]))
 				{
 					idx = 0;
 				}
-				else if (vtxEqual(rootVtx, &sector->vtx[wall->idx[1]]))
+				else if (TFE_Polygon::vtxEqual(rootVtx, &sector->vtx[wall->idx[1]]))
 				{
 					idx = 1;
 				}
@@ -6184,12 +8194,15 @@ namespace LevelEditor
 			if (wall->adjoinId >= 0 && wall->mirrorId >= 0)
 			{
 				EditorSector* nextSector = &s_level.sectors[wall->adjoinId];
-				EditorWall* mirror = &nextSector->walls[wall->mirrorId];
+				EditorWall* mirror = wall->mirrorId < (s32)nextSector->walls.size() ? &nextSector->walls[wall->mirrorId] : nullptr;
 
-				FeatureId v2 = createFeatureId(nextSector, mirror->idx[0]);
-				FeatureId v3 = createFeatureId(nextSector, mirror->idx[1]);
-				vtxSelection_add(v2);
-				vtxSelection_add(v3);
+				if (mirror)
+				{
+					FeatureId v2 = createFeatureId(nextSector, mirror->idx[0]);
+					FeatureId v3 = createFeatureId(nextSector, mirror->idx[1]);
+					vtxSelection_add(v2);
+					vtxSelection_add(v3);
+				}
 			}
 		}
 
@@ -6258,7 +8271,7 @@ namespace LevelEditor
 				s32 _featureIndex;
 				EditorSector* featureSector = unpackFeatureId(list[i], &_featureIndex);
 
-				if (vtxEqual(vtx, &featureSector->vtx[_featureIndex]))
+				if (TFE_Polygon::vtxEqual(vtx, &featureSector->vtx[_featureIndex]))
 				{
 					selection_remove(list[i]);
 				}
@@ -6339,6 +8352,22 @@ namespace LevelEditor
 		{
 			const f32 s = (yHeight - s_camera.pos.y) / s_rayDir.y;
 			worldPos = { s_camera.pos.x + s*s_rayDir.x, s_camera.pos.y + s*s_rayDir.y, s_camera.pos.z + s* s_rayDir.z };
+			
+			Vec3f rail[] = { worldPos, { worldPos.x + 1.0f, worldPos.y, worldPos.z }, { worldPos.x, worldPos.y, worldPos.z + 1.0f },
+						   { worldPos.x - 1.0f, worldPos.y, worldPos.z }, { worldPos.x, worldPos.y, worldPos.z - 1.0f } };
+
+			Vec3f moveDir = { worldPos.x - s_prevPos.x, worldPos.y - s_prevPos.y, worldPos.z - s_prevPos.z };
+			if (moveDir.x*moveDir.x + moveDir.y*moveDir.y + moveDir.z*moveDir.z > 0.0001f)
+			{
+				moveDir = TFE_Math::normalize(&moveDir);
+				viewport_setRail(rail, 4, &moveDir);
+			}
+			else
+			{
+				viewport_setRail(rail, 4);
+			}
+
+			s_prevPos = worldPos;
 		}
 		return worldPos;
 	}
@@ -6359,15 +8388,35 @@ namespace LevelEditor
 
 		f32 railInt, cameraInt;
 		Vec3f worldPos;
+		Vec3f delta = { 0 };
 		if (TFE_Math::closestPointBetweenLines(&rail[0], &rail[1], &cameraRay[0], &cameraRay[1], &railInt, &cameraInt))
 		{
 			worldPos = { rail[0].x + railInt * (rail[1].x - rail[0].x), rail[0].y + railInt * (rail[1].y - rail[0].y), rail[0].z + railInt * (rail[1].z - rail[0].z) };
+			delta = { worldPos.x - s_prevPos.x, worldPos.y - s_prevPos.y, worldPos.z - s_prevPos.z };
 			s_prevPos = worldPos;
 		}
 		else  // If the closest point on lines is unresolvable (parallel lines, etc.) - then just don't move.
 		{
 			worldPos = s_prevPos;
 		}
+
+		f32 visCurY = fabsf(dir.y) > 0.75f ? s_cursor3d.y : s_curVtxPos.y;
+		Vec3f railVis[] =
+		{
+			{ s_curVtxPos.x, visCurY, s_curVtxPos.z },
+			{ s_curVtxPos.x + dir.x, visCurY + dir.y, s_curVtxPos.z + dir.z },
+			{ s_curVtxPos.x - dir.x, visCurY - dir.y, s_curVtxPos.z - dir.z },
+		};
+		if (delta.x*delta.x + delta.y*delta.y + delta.z*delta.z > 0.0001f)
+		{
+			delta = TFE_Math::normalize(&delta);
+			viewport_setRail(railVis, 2, &delta);
+		}
+		else
+		{
+			viewport_setRail(railVis, 2);
+		}
+
 		return worldPos;
 	}
 
@@ -6441,7 +8490,7 @@ namespace LevelEditor
 		Vec3f worldPos = moveAlongRail({ 0.0f, 1.0f, 0.0f });
 		f32 y = worldPos.y;
 
-		snapToGrid(&y);
+		snapToGridY(&y);
 		f32 heightDelta;
 		if (s_featureCur.part == HP_FLOOR)
 		{
@@ -6454,33 +8503,6 @@ namespace LevelEditor
 
 		s_moveTotalDelta.x = y - s_moveStartPos.x;
 		edit_moveFlats((s32)s_selectionList.size(), s_selectionList.data(), heightDelta);
-	}
-
-	f32 snapAlongPath(const Vec2f& startPos, const Vec2f& path, f32 pathOffset)
-	{
-		f32 dX = FLT_MAX, dZ = FLT_MAX;
-		f32 offset = FLT_MAX;
-		if (fabsf(path.x) > FLT_EPSILON)
-		{
-			f32 nextPos = s_moveStartPos.x + path.x * pathOffset;
-			snapToGrid(&nextPos);
-			dX = (nextPos - s_moveStartPos.x) / path.x;
-		}
-		if (fabsf(path.z) > FLT_EPSILON)
-		{
-			f32 nextPos = s_moveStartPos.z + path.z * pathOffset;
-			snapToGrid(&nextPos);
-			dZ = (nextPos - s_moveStartPos.z) / path.z;
-		}
-		if (dX < FLT_MAX && fabsf(dX - pathOffset) < fabsf(dZ - pathOffset))
-		{
-			offset = dX;
-		}
-		else if (dZ < FLT_MAX)
-		{
-			offset = dZ;
-		}
-		return offset;
 	}
 		
 	void moveWall(Vec3f worldPos)
@@ -6578,8 +8600,8 @@ namespace LevelEditor
 			if (!TFE_Input::keyModDown(KEYMOD_ALT))
 			{
 				// Find the snap point along the path from vertex 0 and vertex 1.
-				f32 v0Offset = snapAlongPath(s_moveStartPos, moveDir, nrmOffset);
-				f32 v1Offset = snapAlongPath(s_moveStartPos1, moveDir, nrmOffset);
+				f32 v0Offset = snapAlongPath(s_moveStartPos, moveDir, s_moveStartPos, nrmOffset);
+				f32 v1Offset = snapAlongPath(s_moveStartPos1, moveDir, s_moveStartPos, nrmOffset);
 
 				// Finally determine which snap to take (whichever is the smallest).
 				if (v0Offset < FLT_MAX && fabsf(v0Offset - nrmOffset) < fabsf(v1Offset - nrmOffset))
@@ -7538,7 +9560,7 @@ namespace LevelEditor
 		start.sector = findSector3d(start.pos, s_curLayer);
 		if (!start.sector)
 		{
-			infoPanelAddMsg(LE_MSG_ERROR, "Cannot test level, camera must be inside of a sector.");
+			LE_ERROR("Cannot test level, camera must be inside of a sector.");
 			return;
 		}
 
@@ -7568,4 +9590,211 @@ namespace LevelEditor
 		}
 		return hasText;
 	}
+
+	s32 getDefaultTextureIndex(WallPart part)
+	{
+		s32 index = getTextureIndex("DEFAULT.BM");
+		const s32 count = (s32)s_level.sectors.size();
+		const EditorSector* sector = s_level.sectors.data();
+		for (s32 i = 0; i < count; i++, sector++)
+		{
+			if (!sector->walls.empty())
+			{
+				const s32 newIndex = sector->walls[0].tex[part].texIndex;
+				if (newIndex >= 0)
+				{
+					index = newIndex;
+					break;
+				}
+			}
+		}
+		return index;
+	}
+
+	void getGridOrientedRect(const Vec2f p0, const Vec2f p1, Vec2f* rect)
+	{
+		const Vec2f g[] = { posToGrid(p0), posToGrid(p1) };
+		const Vec2f gridCorner[] =
+		{
+			{ g[0].x, g[0].z },
+			{ g[1].x, g[0].z },
+			{ g[1].x, g[1].z },
+			{ g[0].x, g[1].z }
+		};
+		rect[0] = gridToPos(gridCorner[0]);
+		rect[1] = gridToPos(gridCorner[1]);
+		rect[2] = gridToPos(gridCorner[2]);
+		rect[3] = gridToPos(gridCorner[3]);
+	}
+
+	/////////////////////////////////////////////////////
+	// Tutorial/Update UI helpers.
+	/////////////////////////////////////////////////////
+#if EDITOR_TEXT_PROMPTS == 1
+	const f32 c_textPromptDt[] =
+	{
+		0.5f,	// TXT_STATE_ANIM_ON
+		10.0f,	// TXT_STATE_ON_SCREEN
+		0.25f,	// TXT_STATE_ANIM_OFF
+	};
+	const f32 c_textPromptWidth = 1024.0f;
+	const f32 c_textPromptHeight = 256.0f;
+	const f32 c_textPromptY = 386.0f;
+
+	enum TextPromptAnimState
+	{
+		TXT_STATE_ANIM_ON = 0,
+		TXT_STATE_ON_SCREEN,
+		TXT_STATE_ANIM_OFF,
+		TXT_STATE_COUNT
+	};
+
+	struct TextPromptAnim
+	{
+		f32 curAlpha = 0.0f;
+		f32 animParam = 0.0f;
+		s32 promptId = -1;
+		TextPromptAnimState state = TXT_STATE_ANIM_ON;
+	};
+
+	struct TextPrompt
+	{
+		std::string text;
+		Vec4f color;
+	};
+	std::vector<TextPrompt> s_textPrompts;
+	TextPromptAnim s_textPromptAnim = {};
+	bool s_textPromptInit = false;
+
+	f32 smoothstep(f32 x)
+	{
+		return x * x * (3.0f - 2.0f*x);
+	}
+
+	s32 addTextPrompt(std::string text, Vec4f color)
+	{
+		s32 id = (s32)s_textPrompts.size();
+		s_textPrompts.push_back({ text, color });
+		return id;
+	}
+
+	void beginTextPrompt(s32 id)
+	{
+		s_textPromptAnim = {};
+		s_textPromptAnim.promptId = id;
+	}
+
+	void updateTextPrompt()
+	{
+		if (s_textPromptAnim.promptId < 0) { return; }
+		s_textPromptAnim.animParam += TFE_System::getDeltaTime();
+		if (s_textPromptAnim.animParam >= c_textPromptDt[s_textPromptAnim.state])
+		{
+			s_textPromptAnim.animParam = 0.0f;
+			s_textPromptAnim.state = TextPromptAnimState(s_textPromptAnim.state + 1);
+			if (s_textPromptAnim.state == TXT_STATE_COUNT)
+			{
+				s_textPromptAnim.promptId = -1;
+				return;
+			}
+		}
+
+		DisplayInfo displayInfo;
+		TFE_RenderBackend::getDisplayInfo(&displayInfo);
+
+		f32 y = displayInfo.height - c_textPromptY;
+		if (s_textPromptAnim.state == TXT_STATE_ANIM_ON)
+		{
+			y = displayInfo.height - c_textPromptY * smoothstep(s_textPromptAnim.animParam / c_textPromptDt[TXT_STATE_ANIM_ON]);
+		}
+		else if (s_textPromptAnim.state == TXT_STATE_ANIM_OFF)
+		{
+			y = displayInfo.height - c_textPromptY * smoothstep(1.0f - s_textPromptAnim.animParam / c_textPromptDt[TXT_STATE_ANIM_OFF]);
+		}
+
+		ImVec2 pos = { (s_viewportSize.x - c_textPromptWidth)*0.5f, y };
+
+		u32 flags = ImGuiWindowFlags_NoNav | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoInputs;
+		ImGui::SetNextWindowSize({ c_textPromptWidth, c_textPromptHeight });
+		ImGui::SetNextWindowPos(pos);
+		pushFont(TFE_Editor::FONT_LARGE);
+		ImGui::Begin("##Prompt", NULL, flags);
+
+		ImVec2 size = ImGui::CalcTextSize(s_textPrompts[s_textPromptAnim.promptId].text.c_str());
+		ImGui::SetCursorPosX((c_textPromptWidth  - size.x) * 0.5f);
+		ImGui::SetCursorPosY((c_textPromptHeight - size.y) * 0.5f);
+
+		const ImVec4 color = { s_textPrompts[s_textPromptAnim.promptId].color.x, s_textPrompts[s_textPromptAnim.promptId].color.y,
+			s_textPrompts[s_textPromptAnim.promptId].color.z, s_textPrompts[s_textPromptAnim.promptId].color.w };
+		ImGui::TextColored(color, s_textPrompts[s_textPromptAnim.promptId].text.c_str());
+
+		ImGui::End();
+		popFont();
+	}
+
+	// Initialize for tutorials, etc.
+	// For now just hack int.
+	void textPromptInit()
+	{
+		const char* textPrompts[] =
+		{
+			/*1*/ "Independent draw mode allows sectors\n"
+				  "to be drawn that overlap with\n"
+			      "existing sectors in 3 dimensions\n"
+			      "without merging.",
+			/*2*/ "Merge draw mode merges drawn shapes\n"
+			      "with existing sectors, splitting them\n"
+			      "as needed. But merging only occurs if\n"
+			      "they overlap in X, Y and Z.",
+			/*3*/ "Subtract draw mode removes regions of\n"
+			      "sectors that overlap with the drawn\n"
+			      "shape. This enables fast clipping and\n"
+			      "speeds up drawing columns and voids.",
+			/*4*/ "In the 3D view, you can draw on the\n"
+			      "floor and extrude sub-sectors. You\n"
+			      "can also draw outside the current\n"
+			      "sector or cross sector boundaries.",
+			/*5*/ "When drawing sectors in 3D, the first\n"
+			      "vertex drawn determines which sector\n"
+			      "to reference (if any).",
+			/*6*/ "It is also possible to draw directly\n"
+			      "on the walls and push or pull to\n"
+			      "extrude new sectors.",
+			/*7*/ "To help add more contrast to walls\n"
+			      "you can apply directional lighting\n"
+			      "that modifies the wall light offset\n"
+			      "based on the wall normal.",
+			/*8*/ "Groups act like editor-only layers\n"
+			      "allowing groups to be hidden, locked\n"
+			      "or removed from export.",
+			/*9*/ "Each group has a name and color,\n"
+			      "making them a great way to help\n"
+				  "organize the level.",
+			/*0*/ "",
+		};
+		for (s32 i = 0; i < TFE_ARRAYSIZE(textPrompts); i++)
+		{
+			addTextPrompt(textPrompts[i], {0.8f, 1.0f, 1.0f, 1.0f});
+		}
+	}
+
+	void handleTextPrompts()
+	{
+		if (!s_textPromptInit)
+		{
+			textPromptInit();
+			s_textPromptInit = true;
+		}
+
+		KeyboardCode key = TFE_Input::getKeyPressed();
+		if (key >= KEY_1 && key <= KEY_0)
+		{
+			s32 index = key - KEY_1;
+			s_textPromptAnim = {};
+			s_textPromptAnim.promptId = index;
+		}
+
+		updateTextPrompt();
+	}
+#endif
 }

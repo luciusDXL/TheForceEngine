@@ -5,6 +5,7 @@
 #include <TFE_DarkForces/mission.h>
 #include <TFE_System/system.h>
 #include <TFE_Archive/archive.h>
+#include <TFE_FileSystem/fileutil.h>
 #include <TFE_Jedi/Level/rtexture.h>
 #include <TFE_Jedi/Renderer/rcommon.h>
 #include <algorithm>
@@ -16,6 +17,7 @@ namespace TFE_Editor
 {
 	typedef std::vector<EditorTexture> TextureList;
 	static TextureList s_textureList;
+	static std::vector<u8> s_rawBuffer;
 
 	void freeTexture(const char* name)
 	{
@@ -57,6 +59,20 @@ namespace TFE_Editor
 		return index;
 	}
 
+	s32 getTextureIndexByName(const char* name)
+	{
+		const size_t count = s_textureList.size();
+		const EditorTexture* texture = s_textureList.data();
+		for (size_t i = 0; i < count; i++, texture++)
+		{
+			if (strcasecmp(texture->name, name) == 0)
+			{
+				return s32(i);
+			}
+		}
+		return -1;
+	}
+		
 	TextureGpu* loadBmFrame(u32 width, u32 height, const u8* image, const u32* palette)
 	{
 		buildIdentityTable();
@@ -74,6 +90,20 @@ namespace TFE_Editor
 				u8 palIndex = column[y];
 				imageBuffer[y*width + x] = palette[s_remapTable[palIndex]];
 			}
+		}
+		return TFE_RenderBackend::createTexture(width, height, imageBuffer);
+	}
+
+	TextureGpu* loadRawFrame(u32 width, u32 height, const u32* image)
+	{
+		s_rawBuffer.resize(width * height * 4);
+		u32* imageBuffer = (u32*)s_rawBuffer.data();
+		memset(imageBuffer, 0, width * height * 4);
+		const u32* srcImage = image;
+
+		for (u32 y = 0; y < height; y++)
+		{
+			memcpy(&imageBuffer[y*width], &srcImage[(height - y - 1)*width], width * 4);
 		}
 		return TFE_RenderBackend::createTexture(width, height, imageBuffer);
 	}
@@ -169,6 +199,35 @@ namespace TFE_Editor
 			}
 			if (texData) { free(texData->image); }
 			free(texData);
+		}
+		else if (type == TEX_RAW)
+		{
+			char baseFilename[TFE_MAX_PATH];
+			FileUtil::replaceExtension(filename, "bm", baseFilename);
+			s32 baseIndex = getTextureIndexByName(baseFilename);
+			if (baseIndex >= 0)
+			{
+				s32 width  = s_textureList[baseIndex].width * 2;
+				s32 height = s_textureList[baseIndex].height * 2;
+				s32 frameCount = s_textureList[baseIndex].frameCount;
+
+				// Raw image data.
+				u32* data = (u32*)buffer.data();
+
+				if (id < 0) { id = allocateTexture(filename); }
+				s_textureList[id].width  = width;
+				s_textureList[id].height = height;
+				s_textureList[id].frameCount = frameCount;
+				s_textureList[id].frames.resize(frameCount);
+				for (s32 i = 0; i < frameCount; i++)
+				{
+					s_textureList[id].frames[i] = loadRawFrame(width, height, data);
+					data += width * height;
+				}
+				strcpy(s_textureList[id].name, filename);
+				s_textureList[id].paletteIndex = palIndex;
+				s_textureList[id].lightLevel = 32;
+			}
 		}
 		return id;
 	}
