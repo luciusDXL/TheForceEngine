@@ -182,8 +182,20 @@ namespace TFE_Settings
 			// Next try looking through the registry.
 			if (!pathValid)
 			{
-				pathValid = WindowsRegistry::getSteamPathFromRegistry(c_steamProductId[gameId], c_steamLocalPath[gameId], c_steamLocalSubPath[gameId], c_validationFile[gameId], s_gameSettings.header[gameId].sourcePath);
+				// Remaster - search here first so that new assets are readily available.
+				pathValid = WindowsRegistry::getSteamPathFromRegistry(c_steamRemasterProductId[gameId], c_steamRemasterLocalPath[gameId], c_steamRemasterLocalSubPath[gameId], c_validationFile[gameId], s_gameSettings.header[gameId].sourcePath);
+				// Remaster on GOG.
+				if (!pathValid)
+				{
+					pathValid = WindowsRegistry::getGogPathFromRegistry(c_gogRemasterProductId[gameId], c_validationFile[gameId], s_gameSettings.header[gameId].sourcePath);
+				}
 
+				// Then try the vanilla version on Steam.
+				if (!pathValid)
+				{
+					pathValid = WindowsRegistry::getSteamPathFromRegistry(c_steamProductId[gameId], c_steamLocalPath[gameId], c_steamLocalSubPath[gameId], c_validationFile[gameId], s_gameSettings.header[gameId].sourcePath);
+				}
+				// And the vanilla version on GOG.
 				if (!pathValid)
 				{
 					pathValid = WindowsRegistry::getGogPathFromRegistry(c_gogProductId[gameId], c_validationFile[gameId], s_gameSettings.header[gameId].sourcePath);
@@ -193,8 +205,14 @@ namespace TFE_Settings
 #ifdef __linux__
 			if (!pathValid)
 			{
-				pathValid = LinuxSteam::getSteamPath(c_steamProductId[gameId], c_steamLocalSubPath[gameId],
-								     c_validationFile[gameId], s_gameSettings.header[gameId].sourcePath);
+				pathValid = LinuxSteam::getSteamPath(c_steamRemasterProductId[gameId], c_steamRemasterLocalPath[gameId],
+					c_validationFile[gameId], s_gameSettings.header[gameId].sourcePath);
+
+				if (!pathValid)
+				{
+					pathValid = LinuxSteam::getSteamPath(c_steamProductId[gameId], c_steamLocalSubPath[gameId],
+						c_validationFile[gameId], s_gameSettings.header[gameId].sourcePath);
+				}
 			}
 #endif
 			// If the registry approach fails, just try looking in the various hardcoded paths.
