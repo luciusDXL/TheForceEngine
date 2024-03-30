@@ -27,6 +27,7 @@
 #include <TFE_Ui/ui.h>
 #include <TFE_Ui/markdown.h>
 #include <TFE_Ui/imGUI/imgui.h>
+#include <TFE_System/utf8.h>
 // Game
 #include <TFE_DarkForces/mission.h>
 #include <TFE_DarkForces/gameMusic.h>
@@ -1025,7 +1026,7 @@ namespace TFE_FrontEndUI
 
 		if (s_aboutDisplayStr) { TFE_Markdown::draw(s_aboutDisplayStr); }
 	}
-
+	
 	void configGame()
 	{
 		TFE_GameHeader* darkForces = TFE_Settings::getGameHeader("Dark Forces");
@@ -1052,8 +1053,12 @@ namespace TFE_FrontEndUI
 		}
 
 		ImGui::Text("Dark Forces:"); ImGui::SameLine(100*s_uiScale);
-		if (ImGui::InputText("##DarkForcesSource", darkForces->sourcePath, 1024))
+		char utf8Path[TFE_MAX_PATH];
+		convertExtendedAsciiToUtf8(darkForces->sourcePath, utf8Path);
+		if (ImGui::InputText("##DarkForcesSource", utf8Path, 1024))
 		{
+			convertUtf8ToExtendedAscii(utf8Path, darkForces->sourcePath);
+
 			char testFile[TFE_MAX_PATH];
 			char testPath[TFE_MAX_PATH];
 			strcpy(testPath, darkForces->sourcePath);
@@ -1081,8 +1086,10 @@ namespace TFE_FrontEndUI
 		}
 
 		ImGui::Text("Outlaws:"); ImGui::SameLine(100*s_uiScale);
+		convertExtendedAsciiToUtf8(outlaws->sourcePath, utf8Path);
 		if (ImGui::InputText("##OutlawsSource", outlaws->sourcePath, 1024))
 		{
+			convertUtf8ToExtendedAscii(utf8Path, outlaws->sourcePath);
 			// TODO
 		}
 		ImGui::SameLine();
@@ -1208,7 +1215,7 @@ namespace TFE_FrontEndUI
 			FileResult res = TFE_Ui::openFileDialog(games[browseWinOpen], DEFAULT_PATH, filters[browseWinOpen]);
 			if (!res.empty() && !res[0].empty())
 			{
-				strcpy(exePath, res[0].c_str());
+				convertUtf8ToExtendedAscii(res[0].c_str(), exePath);
 				FileUtil::getFilePath(exePath, filePath);
 				FileUtil::fixupPath(filePath);
 

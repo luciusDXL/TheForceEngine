@@ -1324,6 +1324,9 @@
     <ClInclude Include="TFE_Editor\LevelEditor\lighting.h">
       <Filter>Source\TFE_Editor\LevelEditor</Filter>
     </ClInclude>
+    <ClInclude Include="TFE_System\utf8.h">
+      <Filter>Source\TFE_System</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -2273,6 +2276,9 @@
     </ClCompile>
     <ClCompile Include="TFE_Editor\LevelEditor\lighting.cpp">
       <Filter>Source\TFE_Editor\LevelEditor</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_System\utf8.cpp">
+      <Filter>Source\TFE_System</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

@@ -678,6 +678,7 @@ echo ^)";
     <ClInclude Include="TFE_System\system.h" />
     <ClInclude Include="TFE_System\tfeMessage.h" />
     <ClInclude Include="TFE_System\types.h" />
+    <ClInclude Include="TFE_System\utf8.h" />
     <ClInclude Include="TFE_Ui\imGUI\Dirent\dirent.h" />
     <ClInclude Include="TFE_Ui\imGUI\imconfig.h" />
     <ClInclude Include="TFE_Ui\imGUI\imgui.h" />
@@ -1005,6 +1006,7 @@ echo ^)";
     <ClCompile Include="TFE_System\profiler.cpp" />
     <ClCompile Include="TFE_System\system.cpp" />
     <ClCompile Include="TFE_System\tfeMessage.cpp" />
+    <ClCompile Include="TFE_System\utf8.cpp" />
     <ClCompile Include="TFE_Ui\imGUI\imgui.cpp" />
     <ClCompile Include="TFE_Ui\imGUI\imgui_demo.cpp" />
     <ClCompile Include="TFE_Ui\imGUI\imgui_draw.cpp" />
