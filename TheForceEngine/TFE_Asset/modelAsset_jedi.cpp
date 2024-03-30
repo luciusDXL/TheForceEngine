@@ -644,7 +644,15 @@ namespace TFE_Model_Jedi
 
 					if (strcasecmp(shading, "FLAT") == 0)
 					{
-						polygon->shading = PSHADE_FLAT;
+						if (TFE_Settings::getGraphicsSettings()->forceGouraudShading)
+						{
+							polygon->shading = PSHADE_GOURAUD;
+							model->flags |= MFLAG_VERTEX_LIT;
+						}
+						else
+						{
+							polygon->shading = PSHADE_FLAT;
+						}
 					}
 					else if (strcasecmp(shading, "VERTEX") == 0)
 					{
@@ -653,7 +661,15 @@ namespace TFE_Model_Jedi
 					}
 					else if (strcasecmp(shading, "TEXTURE") == 0)
 					{
-						polygon->shading = PSHADE_TEXTURE;
+						if (TFE_Settings::getGraphicsSettings()->forceGouraudShading)
+						{
+							polygon->shading = PSHADE_GOURAUD_TEXTURE;
+							model->flags |= MFLAG_VERTEX_LIT;
+						}
+						else
+						{
+							polygon->shading = PSHADE_TEXTURE;
+						}
 					}
 					else if (strcasecmp(shading, "GOURAUD") == 0)
 					{
@@ -716,7 +732,15 @@ namespace TFE_Model_Jedi
 
 					if (strcasecmp(shading, "FLAT") == 0)
 					{
-						polygon->shading = PSHADE_FLAT;
+						if (TFE_Settings::getGraphicsSettings()->forceGouraudShading)
+						{
+							polygon->shading = PSHADE_GOURAUD;
+							model->flags |= MFLAG_VERTEX_LIT;
+						}
+						else
+						{
+							polygon->shading = PSHADE_FLAT;
+						}
 					}
 					else if (strcasecmp(shading, "VERTEX") == 0)
 					{
@@ -725,7 +749,15 @@ namespace TFE_Model_Jedi
 					}
 					else if (strcasecmp(shading, "TEXTURE") == 0)
 					{
-						polygon->shading = PSHADE_TEXTURE;
+						if (TFE_Settings::getGraphicsSettings()->forceGouraudShading)
+						{
+							polygon->shading = PSHADE_GOURAUD_TEXTURE;
+							model->flags |= MFLAG_VERTEX_LIT;
+						}
+						else
+						{
+							polygon->shading = PSHADE_TEXTURE;
+						}
 					}
 					else if (strcasecmp(shading, "GOURAUD") == 0)
 					{
