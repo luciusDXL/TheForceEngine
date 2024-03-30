@@ -3028,7 +3028,12 @@ namespace TFE_FrontEndUI
 		Tooltip("Use gouraud shading for all 3DO models.");
 
 		bool wasOverrideEnabled = graphicsSettings->overrideLighting;
-		ImGui::Checkbox("Override 3DO Lighting", &graphicsSettings->overrideLighting);
+		if (graphicsSettings->rendererIndex != 0)
+		{
+			ImGui::TextWrapped("Lighting controls are only available with the software renderer.");
+			return;
+		}
+		ImGui::Checkbox("Override 3DO Lighting (Software Renderer Only)", &graphicsSettings->overrideLighting);
 		Tooltip("If selected, 3DO lighting will be controlled manually from this screen, rather than using engine/map defaults. This setting is not saved.");
 
 		if (!graphicsSettings->overrideLighting) 
