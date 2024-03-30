@@ -1168,7 +1168,7 @@ namespace TFE_FrontEndUI
 		}
 
 		bool stepSecondAlt = gameSettings->df_stepSecondAlt;
-		if (ImGui::Checkbox("Step up onto second altitudes (such as 3D object steps in Harkov 2024).", &stepSecondAlt))
+		if (ImGui::Checkbox("Allow the player to step up onto second heights, similar to normal stairs.", &stepSecondAlt))
 		{
 			gameSettings->df_stepSecondAlt = stepSecondAlt;
 		}
