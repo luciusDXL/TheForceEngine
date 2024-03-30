@@ -461,6 +461,7 @@ namespace TFE_Settings
 				writeKeyValue_Bool(settings, "autorun", s_gameSettings.df_autorun);
 				writeKeyValue_Bool(settings, "crouchToggle", s_gameSettings.df_crouchToggle);
 				writeKeyValue_Bool(settings, "ignoreInfLimit", s_gameSettings.df_ignoreInfLimit);
+				writeKeyValue_Bool(settings, "stepSecondAlt", s_gameSettings.df_stepSecondAlt);
 				writeKeyValue_Int(settings, "pitchLimit", s_gameSettings.df_pitchLimit);
 			}
 		}
@@ -1030,6 +1031,10 @@ namespace TFE_Settings
 		else if (strcasecmp("ignoreInfLimit", key) == 0)
 		{
 			s_gameSettings.df_ignoreInfLimit = parseBool(value);
+		}
+		else if (strcasecmp("stepSecondAlt", key) == 0)
+		{
+			s_gameSettings.df_stepSecondAlt = parseBool(value);
 		}
 		else if (strcasecmp("pitchLimit", key) == 0)
 		{

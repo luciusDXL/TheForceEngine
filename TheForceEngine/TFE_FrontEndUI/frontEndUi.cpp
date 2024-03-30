@@ -1167,6 +1167,12 @@ namespace TFE_FrontEndUI
 			gameSettings->df_ignoreInfLimit = ignoreInfLimit;
 		}
 
+		bool stepSecondAlt = gameSettings->df_stepSecondAlt;
+		if (ImGui::Checkbox("Step up onto second altitudes (such as 3D object steps in Harkov 2024).", &stepSecondAlt))
+		{
+			gameSettings->df_stepSecondAlt = stepSecondAlt;
+		}
+
 		if (s_drawNoGameDataMsg)
 		{
 			ImGui::Separator();
