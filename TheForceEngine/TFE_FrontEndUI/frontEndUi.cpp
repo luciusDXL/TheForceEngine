@@ -72,7 +72,7 @@ namespace TFE_FrontEndUI
 		CONFIG_SOUND,
 		CONFIG_SYSTEM,
 		CONFIG_A11Y,
-		CONFIG_LIGHTING,
+		CONFIG_DEVELOPER,
 		CONFIG_COUNT,
 	};
 
@@ -99,8 +99,8 @@ namespace TFE_FrontEndUI
 		"Hud",
 		"Sound",
 		"System",
-		"Accessibility (beta)",
-		"Lighting"
+		"Accessibility",
+		"Developer"
 	};
 
 	static const Vec2i c_resolutionDim[] =
@@ -258,7 +258,7 @@ namespace TFE_FrontEndUI
 	void DrawLabelledIntSlider(float labelWidth, float valueWidth, const char* label, const char* tag, int* value, int min, int max);
 	void DrawLabelledFloatSlider(float labelWidth, float valueWidth, const char* label, const char* tag, float* value, float min, float max);
 	void configA11y(s32 tabWidth, u32 height);
-	void configLighting();
+	void configDeveloper();
 	void pickCurrentResolution();
 	void manual();
 	void credits();
@@ -859,9 +859,9 @@ namespace TFE_FrontEndUI
 				TFE_Settings::writeToDisk();
 				inputMapping_serialize();
 			}
-			if (ImGui::Button("Lighting", sideBarButtonSize))
+			if (ImGui::Button("Developer", sideBarButtonSize))
 			{
-				s_configTab = CONFIG_LIGHTING;
+				s_configTab = CONFIG_DEVELOPER;
 				TFE_Settings::writeToDisk();
 				inputMapping_serialize();
 			}
@@ -892,13 +892,9 @@ namespace TFE_FrontEndUI
 
 			// Adjust the width based on tab.
 			s32 tabWidth = w - s32(160*s_uiScale);
-			if (s_configTab >= CONFIG_INPUT && s_configTab < CONFIG_SYSTEM || s_configTab == CONFIG_A11Y)
+			if (s_configTab >= CONFIG_INPUT && s_configTab < CONFIG_SYSTEM || s_configTab == CONFIG_A11Y || s_configTab == CONFIG_DEVELOPER)
 			{
 				tabWidth = s32(414*s_uiScale);
-			}
-			else if (s_configTab == CONFIG_LIGHTING) // Narrower so that more of the scene is visible.
-			{
-				tabWidth = s32(290*s_uiScale);
 			}
 
 			// Avoid annoying scrollbars...
@@ -948,8 +944,8 @@ namespace TFE_FrontEndUI
 			case CONFIG_A11Y:
 				configA11y(tabWidth, h);
 				break;
-			case CONFIG_LIGHTING:
-				configLighting();
+			case CONFIG_DEVELOPER:
+				configDeveloper();
 				break;
 			};
 			renderBackground();
@@ -2990,13 +2986,13 @@ namespace TFE_FrontEndUI
 	}
 
 	////////////////////////////////////////////////////////////////
-	// Lighting controls
+	// Developer controls
 	////////////////////////////////////////////////////////////////
 
 	void drawLightControls(s32 index) 
 	{
 		f32 labelW = 80 * s_uiScale;
-		f32 valueW = 200 * s_uiScale - 10;
+		f32 valueW = 260 * s_uiScale - 10;
 		string label1 = "Light " + to_string(index);
 		string tag2 = "##LB" + to_string(index);
 		string tag3 = "##LVS" + to_string(index);
@@ -3020,8 +3016,12 @@ namespace TFE_FrontEndUI
 		RClassic_Float::s_cameraLight[2].lightWS = { 1.0f, 0.0f, 0.0f };
 	}
 
-	void configLighting() 
+	void configDeveloper() 
 	{
+		ImGui::PushFont(s_dialogFont);
+		ImGui::LabelText("##ConfigLabel", "Lighting");
+		ImGui::PopFont();
+
 		TFE_Settings_Graphics* graphicsSettings = TFE_Settings::getGraphicsSettings();
 
 		ImGui::Checkbox("Force Gouraud Shading (Restart Required)", &graphicsSettings->forceGouraudShading);
@@ -3039,7 +3039,6 @@ namespace TFE_FrontEndUI
 
 		ImGui::Dummy(ImVec2(0.0f, 10.0f)); // Makes some empty space.
 		ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.75f, 0.75f, 0, 1.0f));
-		ImGui::TextWrapped("Note: these lighting settings only affect gouraud-shaded 3DOs.");
 		ImGui::PopStyleColor();
 
 		drawLightControls(0);
