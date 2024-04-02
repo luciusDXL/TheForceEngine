@@ -22,6 +22,19 @@ using namespace TFE_Jedi;
 
 namespace LevelEditor
 {
+	enum EntityEditAction
+	{
+		ENT_NONE = 0,
+		ENT_PLACE = FLAG_BIT(0),
+		ENT_MOVE_X = FLAG_BIT(1),
+		ENT_MOVE_Y = FLAG_BIT(2),
+		ENT_MOVE_Z = FLAG_BIT(3),
+		ENT_DELETE = FLAG_BIT(4),
+		ENT_ROTATE = FLAG_BIT(5),
+	};
+	static u32 s_entityEditActions = ENT_NONE;
+	static s32 s_rotationDelta = 0;
+
 	static Vec3f s_moveBasePos3d = { 0 };
 	static Vec3f s_moveStartPos3d = { 0 };
 
@@ -51,14 +64,30 @@ namespace LevelEditor
 		obj.transform.m2.z = 1.0f;
 		sector->obj.push_back(obj);
 	}
+		
+	void updateEntityEditHotkeys()
+	{
+		s_entityEditActions = ENT_NONE;
+		// TODO: Factor out hotkeys
+		if (TFE_Input::keyPressed(KEY_INSERT))  { s_entityEditActions |= ENT_PLACE; }
+		if (TFE_Input::keyDown(KEY_X))          { s_entityEditActions |= ENT_MOVE_X; }
+		if (TFE_Input::keyDown(KEY_Y) && s_view != EDIT_VIEW_2D) { s_entityEditActions |= ENT_MOVE_Y; }
+		if (TFE_Input::keyDown(KEY_Z))          { s_entityEditActions |= ENT_MOVE_Z; }
+		if (TFE_Input::keyPressed(KEY_DELETE))  { s_entityEditActions |= ENT_DELETE; }
+		if (TFE_Input::keyModDown(KEYMOD_CTRL)) { s_entityEditActions |= ENT_ROTATE; }
+
+		s32 dummy;
+		TFE_Input::getMouseWheel(&dummy, &s_rotationDelta);
+	}
+
+	bool getEntityEditAction(u32 action)
+	{
+		return (s_entityEditActions & action) != 0u;
+	}
 
 	void handleEntityEdit(RayHitInfo* hitInfo, const Vec3f& rayDir)
 	{
-		// TODO: Hotkeys.
-		bool placeEntity = TFE_Input::keyPressed(KEY_INSERT);
-		bool moveAlongX = TFE_Input::keyDown(KEY_X);
-		bool moveAlongY = TFE_Input::keyDown(KEY_Y) && s_view != EDIT_VIEW_2D;
-		bool moveAlongZ = TFE_Input::keyDown(KEY_Z);
+		updateEntityEditHotkeys();
 		const s32 layer = (s_editFlags & LEF_SHOW_ALL_LAYERS) ? LAYER_ANY : s_curLayer;
 
 		EditorSector* hoverSector = nullptr;
@@ -140,7 +169,7 @@ namespace LevelEditor
 			}
 		}
 
-		if (placeEntity && hoverSector && s_selectedEntity >= 0 && s_selectedEntity < (s32)s_entityDefList.size())
+		if (getEntityEditAction(ENT_PLACE) && hoverSector && s_selectedEntity >= 0 && s_selectedEntity < (s32)s_entityDefList.size())
 		{
 			Vec3f pos = s_cursor3d;
 			snapToGrid(&pos);
@@ -180,7 +209,7 @@ namespace LevelEditor
 			}
 			s_moveStartPos3d = s_cursor3d;
 		}
-		else if (TFE_Input::mouseDown(MBUTTON_LEFT))
+		else if (s_leftMouseDown)
 		{
 			if (s_editMove && s_featureCur.isObject && s_featureCur.sector && s_featureCur.featureIndex >= 0)
 			{
@@ -198,7 +227,7 @@ namespace LevelEditor
 					s_grid.height = gridHeight;
 				}
 
-				if (moveAlongY)
+				if (getEntityEditAction(ENT_MOVE_Y))
 				{
 					s_curVtxPos = s_moveStartPos3d;
 					f32 yNew = moveAlongRail({ 0.0f, 1.0f, 0.0f }).y;
@@ -225,11 +254,11 @@ namespace LevelEditor
 					Vec3f prevPos = obj->pos;
 					EditorSector* prevSector = s_featureCur.sector;
 
-					if (moveAlongX)
+					if (getEntityEditAction(ENT_MOVE_X))
 					{
 						obj->pos.x = (s_cursor3d.x - s_moveStartPos3d.x) + s_moveBasePos3d.x;
 					}
-					else if (moveAlongZ)
+					else if (getEntityEditAction(ENT_MOVE_Z))
 					{
 						obj->pos.z = (s_cursor3d.z - s_moveStartPos3d.z) + s_moveBasePos3d.z;
 					}
@@ -316,25 +345,21 @@ namespace LevelEditor
 		{
 			s_editMove = false;
 		}
-
-		s32 dx, dy;
-		TFE_Input::getMouseWheel(&dx, &dy);
-		bool del = TFE_Input::keyPressed(KEY_DELETE);
-
-		if (dy && TFE_Input::keyModDown(KEYMOD_CTRL))
+	
+		if (s_rotationDelta != 0 && getEntityEditAction(ENT_ROTATE))
 		{
 			EditorObject* obj = nullptr;
-			if (dy && s_featureCur.isObject && s_featureCur.sector && s_featureCur.featureIndex >= 0)
+			if (s_featureCur.isObject && s_featureCur.sector && s_featureCur.featureIndex >= 0)
 			{
 				obj = &s_featureCur.sector->obj[s_featureCur.featureIndex];
 			}
-			else if (dy && s_featureHovered.isObject && s_featureHovered.sector && s_featureHovered.featureIndex >= 0)
+			else if (s_featureHovered.isObject && s_featureHovered.sector && s_featureHovered.featureIndex >= 0)
 			{
 				obj = &s_featureHovered.sector->obj[s_featureHovered.featureIndex];
 			}
 			if (obj)
 			{
-				obj->angle += f32(dy) * 2.0f*PI / 32.0f;
+				obj->angle += f32(s_rotationDelta) * 2.0f*PI / 32.0f;
 				if (s_level.entities[obj->entityId].obj3d)
 				{
 					compute3x3Rotation(&obj->transform, obj->angle, obj->pitch, obj->roll);
@@ -342,7 +367,7 @@ namespace LevelEditor
 			}
 		}
 
-		if (del)
+		if (getEntityEditAction(ENT_DELETE))
 		{
 			bool deleted = false;
 			if (s_featureCur.isObject && s_featureCur.sector && s_featureCur.featureIndex >= 0)
