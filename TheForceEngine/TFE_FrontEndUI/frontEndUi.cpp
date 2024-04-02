@@ -27,6 +27,7 @@
 #include <TFE_Ui/ui.h>
 #include <TFE_Ui/markdown.h>
 #include <TFE_Ui/imGUI/imgui.h>
+#include <TFE_Ui/imGUI/imgui_internal.h>
 #include <TFE_System/utf8.h>
 // Game
 #include <TFE_DarkForces/mission.h>
@@ -65,6 +66,7 @@ namespace TFE_FrontEndUI
 	{
 		CONFIG_ABOUT = 0,
 		CONFIG_GAME,
+		CONFIG_ENHANCEMENTS,
 		CONFIG_SAVE,
 		CONFIG_LOAD,
 		CONFIG_INPUT,
@@ -92,6 +94,7 @@ namespace TFE_FrontEndUI
 	{
 		"About",
 		"Game Settings",
+		"Enhancements",
 		"Save",
 		"Load",
 		"Input",
@@ -247,6 +250,7 @@ namespace TFE_FrontEndUI
 	void configAbout();
 	void configGame();
 	void configDarkForcesCheats();
+	void configEnhancements();
 	void configSave();
 	void configLoad();
 	void configInput();
@@ -807,6 +811,12 @@ namespace TFE_FrontEndUI
 				TFE_Settings::writeToDisk();
 				inputMapping_serialize();
 			}
+			if (ImGui::Button("Enhancements", sideBarButtonSize))
+			{
+				s_configTab = CONFIG_ENHANCEMENTS;
+				TFE_Settings::writeToDisk();
+				inputMapping_serialize();
+			}
 			if (ImGui::Button("Save", sideBarButtonSize))
 			{
 				s_configTab = CONFIG_SAVE;
@@ -911,6 +921,9 @@ namespace TFE_FrontEndUI
 				break;
 			case CONFIG_GAME:
 				configGame();
+				break;
+			case CONFIG_ENHANCEMENTS:
+				configEnhancements();
 				break;
 			case CONFIG_SAVE:
 				configSave();
@@ -1375,6 +1388,86 @@ namespace TFE_FrontEndUI
 		if (ImGui::Button("Max lives (LACAT)"))
 		{
 			TFE_DarkForces::cheat_maxLives();
+		}
+	}
+
+	void configEnhancements()
+	{
+		s32 browseWinOpen = -1;
+
+		//////////////////////////////////////////////////////
+		// Source Game Data
+		//////////////////////////////////////////////////////
+		TFE_GameHeader* darkForces = TFE_Settings::getGameHeader("Dark Forces");
+		ImGui::PushFont(s_dialogFont);
+		ImGui::LabelText("##ConfigLabel", "Enhanced Assets");
+		ImGui::PopFont();
+
+		// Try to open 'enhanced.gob'.
+		bool enhancedGobExists = false;
+		char testFile[TFE_MAX_PATH];
+		sprintf(testFile, "%senhanced.gob", darkForces->sourcePath);
+		if (FileUtil::exists(testFile))
+		{
+			enhancedGobExists = true;
+		}
+
+		if (enhancedGobExists)
+		{
+			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.25f, 1.0f, 0.25f, 1.0f));
+			ImGui::TextWrapped("Enhanced.gob found.");
+			ImGui::PopStyleColor();
+		}
+		else
+		{
+			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.25f, 0.25f, 1.0f));
+			ImGui::TextWrapped("Enhanced.gob should be in the same directory as the source data if enhanced assets are desired.");
+			ImGui::PopStyleColor();
+		}
+		ImGui::Spacing();
+
+		ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 1.0f, 0.25f, 1.0f));
+		ImGui::TextWrapped("Note: HD Assets are only used if 'True Color' is enabled in the Graphics panel.\n"
+			               "To enable True Color select 'GPU / OpenGL' as the Renderer,\n"
+			               "and 'True Color' as the Color Mode.");
+		ImGui::PopStyleColor();
+		ImGui::Spacing();
+
+		bool useHdTextures = false;
+		bool updateTextures = false;
+		if (!enhancedGobExists)
+		{
+			ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
+			ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.5f);
+		}
+		
+		if (ImGui::Checkbox("Use HD Textures", &useHdTextures))
+		{
+			// TODO
+			updateTextures = true;
+		}
+		bool useHdSprites = false;
+		if (ImGui::Checkbox("Use HD Sprite", &useHdSprites))
+		{
+			// TODO
+			updateTextures = true;
+		}
+		bool useHdHUD = false;
+		if (ImGui::Checkbox("Use HD HUD", &useHdHUD))
+		{
+			// TODO
+			updateTextures = true;
+		}
+
+		if (!enhancedGobExists)
+		{
+			ImGui::PopItemFlag();
+			ImGui::PopStyleVar();
+		}
+
+		if (updateTextures)
+		{
+			// TODO: Update the texture system, similar to changing color modes.
 		}
 	}
 
