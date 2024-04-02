@@ -4531,6 +4531,10 @@ namespace LevelEditor
 		u32 heightFlags = s_view == EDIT_VIEW_3D ? HFLAG_DEFAULT : HFLAG_NONE;
 		f32 clipFloorHeight = min(heights[0], heights[1]);
 		f32 clipCeilHeight  = max(heights[0], heights[1]);
+		if (clipFloorHeight == clipCeilHeight)
+		{
+			heightFlags = HFLAG_NONE;
+		}
 		
 		// Reserve extra sectors to avoid pointer issues...
 		// TODO: This isn't great - this is here to avoid pointers changing during this process.
@@ -5889,6 +5893,11 @@ namespace LevelEditor
 		for (s32 i = 0; i < newVtxCount; i++)
 		{
 			s_shape.push_back(newVtx[i]);
+		}
+		// Sometimes we get the first vertex again.
+		if (TFE_Polygon::vtxEqual(&newVtx[newVtxCount - 1], &s_shape[0]))
+		{
+			s_shape.pop_back();
 		}
 	}
 		

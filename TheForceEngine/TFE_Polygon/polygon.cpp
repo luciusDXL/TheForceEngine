@@ -409,6 +409,11 @@ namespace TFE_Polygon
 
 	bool pointInsidePolygon(const Polygon* poly, Vec2f p)
 	{
+		if (p.x < poly->bounds[0].x + eps || p.x > poly->bounds[1].x - eps || p.z < poly->bounds[0].z + eps || p.z > poly->bounds[1].z - eps)
+		{
+			return false;
+		}
+
 		const s32 edgeCount = (s32)poly->edge.size();
 		const Edge* edge = poly->edge.data();
 		const Edge* last = &edge[edgeCount - 1];
@@ -1248,7 +1253,7 @@ namespace TFE_Polygon
 	{
 		if (poly->edges.size() < 3) { return true; }
 		const f32 eps = 0.1f;
-		const s32 edgeCount = poly->edges.size();
+		const s32 edgeCount = (s32)poly->edges.size();
 		BEdge* edge = poly->edges.data();
 		f32 twiceArea = 0.0f;
 		for (s32 e = 0; e < edgeCount; e++, edge++)
@@ -1412,7 +1417,8 @@ namespace TFE_Polygon
 					}
 				}
 			}
-			assert(parent);
+			// This hole has no parent so diregard.
+			if (!parent) { continue; }
 
 			s32 startIndex = (s32)parent->edges.size();
 			parent->edges.resize(vtxCount + startIndex);
@@ -1587,7 +1593,11 @@ namespace TFE_Polygon
 		const Vec2f r = { p2.x - p0.x, p2.z - p0.z };
 		const Vec2f d = { p1.x - p0.x, p1.z - p0.z };
 		const f32 denom = d.x * d.x + d.z * d.z;
-		if (fabsf(denom) < FLT_EPSILON) { return 0.0f; }
+		if (fabsf(denom) < FLT_EPSILON)
+		{
+			*point = p0;
+			return 0.0f;
+		}
 
 		const f32 s = std::max(0.0f, std::min(1.0f, (r.x * d.x + r.z * d.z) / denom));
 		point->x = p0.x + s * d.x;
