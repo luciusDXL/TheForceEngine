@@ -9,16 +9,10 @@
 
 #include <TFE_System/types.h>
 #include <TFE_RenderBackend/textureGpu.h>
+#include <TFE_Editor/LevelEditor/sharedState.h>
 
 namespace LevelEditor
 {
-	enum EditorView
-	{
-		EDIT_VIEW_2D = 0,
-		EDIT_VIEW_3D,
-		EDIT_VIEW_3D_GAME,
-		EDIT_VIEW_PLAY,
-	};
 	enum SectorDrawMode
 	{
 		SDM_WIREFRAME = 0,

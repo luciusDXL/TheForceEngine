@@ -1327,6 +1327,15 @@
     <ClInclude Include="TFE_System\utf8.h">
       <Filter>Source\TFE_System</Filter>
     </ClInclude>
+    <ClInclude Include="TFE_Editor\LevelEditor\editEntity.h">
+      <Filter>Source\TFE_Editor\LevelEditor</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Editor\LevelEditor\hotkeys.h">
+      <Filter>Source\TFE_Editor\LevelEditor</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Editor\LevelEditor\contextMenu.h">
+      <Filter>Source\TFE_Editor\LevelEditor</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -2279,6 +2288,15 @@
     </ClCompile>
     <ClCompile Include="TFE_System\utf8.cpp">
       <Filter>Source\TFE_System</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Editor\LevelEditor\editEntity.cpp">
+      <Filter>Source\TFE_Editor\LevelEditor</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Editor\LevelEditor\hotkeys.cpp">
+      <Filter>Source\TFE_Editor\LevelEditor</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Editor\LevelEditor\contextMenu.cpp">
+      <Filter>Source\TFE_Editor\LevelEditor</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

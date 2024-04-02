@@ -19,6 +19,14 @@ namespace LevelEditor
 		GFLAG_NONE = 0,
 		GFLAG_OVER = FLAG_BIT(0),
 	};
+	enum EditorView
+	{
+		EDIT_VIEW_2D = 0,
+		EDIT_VIEW_3D,
+		EDIT_VIEW_3D_GAME,
+		EDIT_VIEW_PLAY,
+	};
+
 	struct Feature
 	{
 		EditorSector* sector = nullptr;
@@ -57,6 +65,7 @@ namespace LevelEditor
 	extern s32 s_selectedTexture;
 	extern s32 s_selectedEntity;
 	extern u32 s_gridFlags;
+	extern bool s_editMove;
 
 	// Camera
 	extern Camera3d s_camera;
@@ -69,4 +78,7 @@ namespace LevelEditor
 
 	// Search
 	extern u32 s_searchKey;
+
+	// View
+	extern EditorView s_view;
 }
