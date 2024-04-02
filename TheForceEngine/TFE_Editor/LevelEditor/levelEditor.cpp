@@ -225,7 +225,6 @@ namespace LevelEditor
 	void cameraControl2d(s32 mx, s32 my);
 	void cameraControl3d(s32 mx, s32 my);
 	void resetZoom();
-	bool isUiModal();
 	bool isViewportElementHovered();
 	void play();
 	Vec2f mouseCoordToWorldPos2d(s32 mx, s32 my);
@@ -6936,21 +6935,17 @@ namespace LevelEditor
 		return y;
 	}
 
-	// TODO: Move all hotkeys here?
-	// TODO: Allow hotkey binding.
-	void handleHotkeys()
+	void handleEditorActions()
 	{
-		if (isUiModal()) { return; }
-
-		if (TFE_Input::keyPressed(KEY_Z) && TFE_Input::keyModDown(KEYMOD_CTRL))
+		if (getEditAction(ACTION_UNDO))
 		{
 			levHistory_undo();
 		}
-		else if (TFE_Input::keyPressed(KEY_Y) && TFE_Input::keyModDown(KEYMOD_CTRL))
+		else if (getEditAction(ACTION_REDO))
 		{
 			levHistory_redo();
 		}
-		if (TFE_Input::keyPressed(KEY_TAB))
+		if (getEditAction(ACTION_SHOW_ALL_LABELS))
 		{
 			s_showAllLabels = !s_showAllLabels;
 		}
@@ -7135,12 +7130,12 @@ namespace LevelEditor
 
 	void update()
 	{
-		handleMouseClick();
+		handleHotkeys();
 		
 		pushFont(TFE_Editor::FONT_SMALL);
 		updateContextWindow();
 		updateWindowControls();
-		handleHotkeys();
+		handleEditorActions();
 		updateOutput();
 
 		viewport_update((s32)UI_SCALE(480) + 16, (s32)UI_SCALE(68) + 18 + s_outputHeight);

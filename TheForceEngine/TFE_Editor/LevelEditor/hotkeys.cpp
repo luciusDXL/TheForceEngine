@@ -1,5 +1,7 @@
 #include "hotkeys.h"
 #include "contextMenu.h"
+#include "levelEditor.h"
+#include <TFE_Editor/LevelEditor/Rendering/viewport.h>
 #include <TFE_Input/input.h>
 #include <TFE_System/system.h>
 
@@ -11,7 +13,7 @@ namespace LevelEditor
 	const f64 c_doubleClickThreshold = 0.25f;
 	const f64 c_rightClickThreshold = 0.5;
 	const s32 c_rightClickMoveThreshold = 1;
-
+	
 	// General
 	bool s_singleClick = false;
 	bool s_doubleClick = false;
@@ -21,6 +23,10 @@ namespace LevelEditor
 	// Right click.
 	bool s_rightPressed = false;
 	Vec2i s_rightMousePos = { 0 };
+
+	// Entity
+	u32 s_editActions = ACTION_NONE;
+	s32 s_rotationDelta = 0;
 
 	void handleMouseClick()
 	{
@@ -82,6 +88,54 @@ namespace LevelEditor
 		{
 			s_rightPressed = false;
 			s_lastRightClick = 0.0;
+		}
+	}
+
+	void updateGeneralHotkeys()
+	{
+		if (TFE_Input::keyPressed(KEY_Z) && TFE_Input::keyModDown(KEYMOD_CTRL))
+		{
+			s_editActions = ACTION_UNDO;
+		}
+		else if (TFE_Input::keyPressed(KEY_Y) && TFE_Input::keyModDown(KEYMOD_CTRL))
+		{
+			s_editActions = ACTION_REDO;
+		}
+		if (TFE_Input::keyPressed(KEY_TAB))
+		{
+			s_editActions = ACTION_SHOW_ALL_LABELS;
+		}
+	}
+
+	void updateEntityEditHotkeys()
+	{
+		if (TFE_Input::keyPressed(KEY_INSERT)) { s_editActions = ACTION_PLACE; }
+		if (TFE_Input::keyPressed(KEY_DELETE)) { s_editActions = ACTION_DELETE; }
+
+		if (TFE_Input::keyDown(KEY_X)) { s_editActions |= ACTION_MOVE_X; }
+		if (TFE_Input::keyDown(KEY_Y) && s_view != EDIT_VIEW_2D) { s_editActions |= ACTION_MOVE_Y; }
+		if (TFE_Input::keyDown(KEY_Z)) { s_editActions |= ACTION_MOVE_Z; }
+		if (TFE_Input::keyModDown(KEYMOD_CTRL)) { s_editActions |= ACTION_ROTATE; }
+
+		s32 dummy;
+		TFE_Input::getMouseWheel(&dummy, &s_rotationDelta);
+	}
+
+	bool getEditAction(u32 action)
+	{
+		return (s_editActions & action) != 0u;
+	}
+
+	void handleHotkeys()
+	{
+		s_editActions = ACTION_NONE;
+		handleMouseClick();
+		if (isUiModal()) { return; }
+
+		updateGeneralHotkeys();
+		if (s_editMode == LEDIT_ENTITY)
+		{
+			updateEntityEditHotkeys();
 		}
 	}
 }

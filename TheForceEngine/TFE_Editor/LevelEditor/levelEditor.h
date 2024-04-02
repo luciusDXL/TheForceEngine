@@ -81,4 +81,5 @@ namespace LevelEditor
 
 	Vec3f moveAlongRail(Vec3f dir);
 	EditorSector* findSector3d(Vec3f pos, s32 layer);
+	bool isUiModal();
 }
