@@ -166,8 +166,9 @@ namespace LevelEditor
 	static bool s_singleClick = false;
 	static bool s_doubleClick = false;
 	static bool s_rightClick = false;
+	static bool s_leftMouseDown = false;
 	static f64 s_lastClickTime = 0.0;
-
+	   
 	// Right click.
 	static f64 c_rightClickThreshold = 0.5;
 	static s32 c_rightClickMoveThreshold = 1;
@@ -175,6 +176,12 @@ namespace LevelEditor
 	static bool s_rightPressed = false;
 	static Vec2i s_rightMousePos = { 0 };
 
+	// Handle initial mouse movement before feature movement or snapping.
+	static const s32 c_moveThreshold = 3;
+	static bool s_canMoveFeature = false;
+	static Vec2i s_moveInitPos = { 0 };
+	
+	// General movement.
 	static bool s_moveStarted = false;
 	static Vec2f s_moveStartPos;
 	static Vec2f s_moveStartPos1;
@@ -6630,6 +6637,22 @@ namespace LevelEditor
 		// 3D extrude - hover over wall, left click to add points (or shift to drag a box), double-click to just extrude the full wall.
 		const bool extrude = s_extrudeEnabled && s_editMode == LEDIT_DRAW;
 
+		// General movement handling - only allow movement once the mouse has moved a certain distance initially so that
+		// it is possible to select features off the grid without them snapping to the grid.
+		if (s_singleClick)
+		{
+			s_moveInitPos = { mx, my };
+			s_canMoveFeature = false;
+		}
+		else if (s_leftMouseDown)
+		{
+			const Vec2i delta = { ::abs(mx - s_moveInitPos.x), ::abs(my - s_moveInitPos.z) };
+			if (delta.x > c_moveThreshold || delta.z > c_moveThreshold)
+			{
+				s_canMoveFeature = true;
+			}
+		}
+
 		if (s_view == EDIT_VIEW_2D)
 		{
 			cameraControl2d(mx, my);
@@ -7253,6 +7276,7 @@ namespace LevelEditor
 		s_doubleClick = false;
 		s_singleClick = false;
 		s_rightClick = false;
+		s_leftMouseDown = false;
 		const f64 curTime = TFE_System::getTime();
 
 		// Single/double click (left).
@@ -7267,6 +7291,11 @@ namespace LevelEditor
 				s_lastClickTime = curTime;
 				s_singleClick = true;
 			}
+		}
+
+		if (TFE_Input::mouseDown(MBUTTON_LEFT))
+		{
+			s_leftMouseDown = true;
 		}
 
 		// Right-click.
@@ -8962,13 +8991,19 @@ namespace LevelEditor
 		{
 			if (s_featureCur.featureIndex >= 0 && s_featureCur.sector && TFE_Input::mouseDown(MBUTTON_LEFT) && !TFE_Input::keyModDown(KEYMOD_CTRL) && !TFE_Input::keyModDown(KEYMOD_SHIFT))
 			{
-				moveVertex({ newPos.x, newPos.z });
+				if (s_canMoveFeature)
+				{
+					moveVertex({ newPos.x, newPos.z });
+				}
 			}
 			else if (s_featureCur.featureIndex >= 0 && s_featureCur.sector && s_moveStarted)
 			{
 				s_editMove = false;
 				s_moveStarted = false;
-				cmd_addMoveVertices((s32)s_selectionList.size(), s_selectionList.data(), s_moveTotalDelta);
+				if (s_canMoveFeature)
+				{
+					cmd_addMoveVertices((s32)s_selectionList.size(), s_selectionList.data(), s_moveTotalDelta);
+				}
 			}
 			else
 			{
@@ -8980,13 +9015,10 @@ namespace LevelEditor
 		{
 			if (s_featureCur.featureIndex >= 0 && s_featureCur.sector && TFE_Input::mouseDown(MBUTTON_LEFT) && !TFE_Input::keyModDown(KEYMOD_CTRL) && !TFE_Input::keyModDown(KEYMOD_SHIFT))
 			{
-				if (s_featureCur.part == HP_FLOOR || s_featureCur.part == HP_CEIL)
+				if (s_canMoveFeature)
 				{
-					moveFlat();
-				}
-				else
-				{
-					moveWall(newPos);
+					if (s_featureCur.part == HP_FLOOR || s_featureCur.part == HP_CEIL) { moveFlat(); }
+					else { moveWall(newPos); }
 				}
 			}
 			else if (s_featureCur.featureIndex >= 0 && s_featureCur.sector && s_moveStarted)
@@ -8994,13 +9026,16 @@ namespace LevelEditor
 				s_editMove = false;
 				s_moveStarted = false;
 
-				if (s_featureCur.part == HP_FLOOR || s_featureCur.part == HP_CEIL)
+				if (s_canMoveFeature)
 				{
-					cmd_addMoveFlats((s32)s_selectionList.size(), s_selectionList.data(), s_moveTotalDelta.x);
-				}
-				else // Re-use the move vertices command, but with the name LName_MoveWall.
-				{
-					cmd_addMoveVertices((s32)s_vertexList.size(), s_vertexList.data(), s_moveTotalDelta, LName_MoveWall);
+					if (s_featureCur.part == HP_FLOOR || s_featureCur.part == HP_CEIL)
+					{
+						cmd_addMoveFlats((s32)s_selectionList.size(), s_selectionList.data(), s_moveTotalDelta.x);
+					}
+					else // Re-use the move vertices command, but with the name LName_MoveWall.
+					{
+						cmd_addMoveVertices((s32)s_vertexList.size(), s_vertexList.data(), s_moveTotalDelta, LName_MoveWall);
+					}
 				}
 			}
 			else
