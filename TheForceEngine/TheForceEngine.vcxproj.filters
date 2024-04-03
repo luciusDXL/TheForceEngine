@@ -1336,6 +1336,9 @@
     <ClInclude Include="TFE_Editor\LevelEditor\contextMenu.h">
       <Filter>Source\TFE_Editor\LevelEditor</Filter>
     </ClInclude>
+    <ClInclude Include="TFE_Editor\LevelEditor\editGeometry.h">
+      <Filter>Source\TFE_Editor\LevelEditor</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -2296,6 +2299,9 @@
       <Filter>Source\TFE_Editor\LevelEditor</Filter>
     </ClCompile>
     <ClCompile Include="TFE_Editor\LevelEditor\contextMenu.cpp">
+      <Filter>Source\TFE_Editor\LevelEditor</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Editor\LevelEditor\editGeometry.cpp">
       <Filter>Source\TFE_Editor\LevelEditor</Filter>
     </ClCompile>
   </ItemGroup>

@@ -79,7 +79,7 @@ namespace LevelEditor
 	void edit_autoAlign(s32 sectorId, s32 wallIndex, HitPart part);
 	void edit_deleteObject(EditorSector* sector, s32 index);
 
+	s32 getDefaultTextureIndex(WallPart part);
 	Vec3f moveAlongRail(Vec3f dir);
-	EditorSector* findSector3d(Vec3f pos, s32 layer);
 	bool isUiModal();
 }

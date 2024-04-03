@@ -212,6 +212,21 @@ namespace TFE_Polygon
 		addTriangle(v0, v1, v2);
 	}
 
+	void computePolygonBounds(Polygon* poly)
+	{
+		const s32 count = (s32)poly->vtx.size();
+		const Vec2f* vtx = poly->vtx.data();
+		poly->bounds[0] = vtx[0];
+		poly->bounds[1] = vtx[0];
+		for (s32 v = 1; v < count; v++)
+		{
+			poly->bounds[0].x = std::min(poly->bounds[0].x, vtx[v].x);
+			poly->bounds[0].z = std::min(poly->bounds[0].z, vtx[v].z);
+			poly->bounds[1].x = std::max(poly->bounds[1].x, vtx[v].x);
+			poly->bounds[1].z = std::max(poly->bounds[1].z, vtx[v].z);
+		}
+	}
+
 	void addEdge(s32 i0, s32 i1)
 	{
 		const size_t count = s_edges.size();
@@ -1392,6 +1407,7 @@ namespace TFE_Polygon
 				polyData->edge[e].i0 = e;
 				polyData->edge[e].i1 = (e + 1) % vtxCount;
 			}
+			computePolygonBounds(polyData);
 		}
 
 		contour = results.data();
@@ -1418,7 +1434,10 @@ namespace TFE_Polygon
 				}
 			}
 			// This hole has no parent so diregard.
-			if (!parent) { continue; }
+			if (!parent)
+			{
+				continue;
+			}
 
 			s32 startIndex = (s32)parent->edges.size();
 			parent->edges.resize(vtxCount + startIndex);

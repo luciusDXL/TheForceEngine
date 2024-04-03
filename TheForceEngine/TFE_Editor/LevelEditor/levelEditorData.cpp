@@ -2379,6 +2379,20 @@ namespace LevelEditor
 		return inside;
 	}
 
+	EditorSector* findSector3d(Vec3f pos, s32 layer)
+	{
+		const size_t sectorCount = s_level.sectors.size();
+		EditorSector* sector = s_level.sectors.data();
+		for (size_t s = 0; s < sectorCount; s++, sector++)
+		{
+			if (isPointInsideSector3d(sector, pos, layer))
+			{
+				return sector;
+			}
+		}
+		return nullptr;
+	}
+
 	s32 findClosestWallInSector(const EditorSector* sector, const Vec2f* pos, f32 maxDistSq, f32* minDistToWallSq)
 	{
 		const u32 count = (u32)sector->walls.size();

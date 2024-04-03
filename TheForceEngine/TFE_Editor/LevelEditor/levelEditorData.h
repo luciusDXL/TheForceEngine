@@ -226,6 +226,7 @@ namespace LevelEditor
 	bool isPointInsideSector2d(EditorSector* sector, Vec2f pos, s32 layer);
 	bool isPointInsideSector3d(EditorSector* sector, Vec3f pos, s32 layer);
 	s32 findClosestWallInSector(const EditorSector* sector, const Vec2f* pos, f32 maxDistSq, f32* minDistToWallSq);
+	EditorSector* findSector3d(Vec3f pos, s32 layer);
 
 	// Groups
 	inline Group* sector_getGroup(EditorSector* sector)

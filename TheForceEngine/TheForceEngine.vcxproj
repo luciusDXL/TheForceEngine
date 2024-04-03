@@ -465,6 +465,7 @@ echo ^)";
     <ClInclude Include="TFE_Editor\LevelEditor\camera.h" />
     <ClInclude Include="TFE_Editor\LevelEditor\contextMenu.h" />
     <ClInclude Include="TFE_Editor\LevelEditor\editEntity.h" />
+    <ClInclude Include="TFE_Editor\LevelEditor\editGeometry.h" />
     <ClInclude Include="TFE_Editor\LevelEditor\entity.h" />
     <ClInclude Include="TFE_Editor\LevelEditor\error.h" />
     <ClInclude Include="TFE_Editor\LevelEditor\groups.h" />
@@ -829,6 +830,7 @@ echo ^)";
     <ClCompile Include="TFE_Editor\LevelEditor\camera.cpp" />
     <ClCompile Include="TFE_Editor\LevelEditor\contextMenu.cpp" />
     <ClCompile Include="TFE_Editor\LevelEditor\editEntity.cpp" />
+    <ClCompile Include="TFE_Editor\LevelEditor\editGeometry.cpp" />
     <ClCompile Include="TFE_Editor\LevelEditor\entity.cpp" />
     <ClCompile Include="TFE_Editor\LevelEditor\groups.cpp" />
     <ClCompile Include="TFE_Editor\LevelEditor\hotkeys.cpp" />

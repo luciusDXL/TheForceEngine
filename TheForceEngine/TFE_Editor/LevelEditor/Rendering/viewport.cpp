@@ -4,6 +4,7 @@
 #include "grid3d.h"
 #include <TFE_System/math.h>
 #include <TFE_Editor/editor.h>
+#include <TFE_Editor/LevelEditor/editGeometry.h>
 #include <TFE_Editor/LevelEditor/levelEditor.h>
 #include <TFE_Editor/LevelEditor/levelEditorData.h>
 #include <TFE_Editor/LevelEditor/sharedState.h>
@@ -967,24 +968,15 @@ namespace LevelEditor
 			}
 		}
 	}
-
-	// Temp
-	extern bool s_drawStarted;
-	extern bool s_extrudeEnabled;
-	extern DrawMode s_drawMode;
-	extern f32 s_drawHeight[2];
-	extern std::vector<Vec2f> s_shape;
-	extern Vec2f s_drawCurPos;
-	extern Polygon s_shapePolygon;
 		
 	void drawSectorShape2D()
 	{
 		u32 color[] = { 0xffffffff, 0xffffffff };
 		f32 width = 1.5f;
-		if (s_drawStarted && s_drawMode == DMODE_RECT)
+		if (s_geoEdit.drawStarted && s_geoEdit.drawMode == DMODE_RECT)
 		{
 			Vec2f p[4];
-			getGridOrientedRect(s_shape[0], s_shape[1], p);
+			getGridOrientedRect(s_geoEdit.shape[0], s_geoEdit.shape[1], p);
 
 			Vec2f vtx[] =
 			{
@@ -999,10 +991,10 @@ namespace LevelEditor
 			TFE_RenderShared::lineDraw2d_addLine(width, &vtx[2], color);
 			TFE_RenderShared::lineDraw2d_addLine(width, &vtx[3], color);
 		}
-		else if (s_drawStarted && s_drawMode == DMODE_SHAPE)
+		else if (s_geoEdit.drawStarted && s_geoEdit.drawMode == DMODE_SHAPE)
 		{
-			const s32 vtxCount = (s32)s_shape.size();
-			const Vec2f* vtx = s_shape.data();
+			const s32 vtxCount = (s32)s_geoEdit.shape.size();
+			const Vec2f* vtx = s_geoEdit.shape.data();
 			for (s32 v = 0; v < vtxCount - 1; v++)
 			{
 				const Vec2f lineVtx[] =
@@ -1016,7 +1008,7 @@ namespace LevelEditor
 			const Vec2f lineVtx[] =
 			{
 				{vtx[vtxCount - 1].x * s_viewportTrans2d.x + s_viewportTrans2d.y, vtx[vtxCount - 1].z * s_viewportTrans2d.z + s_viewportTrans2d.w},
-			    {s_drawCurPos.x * s_viewportTrans2d.x + s_viewportTrans2d.y,  s_drawCurPos.z * s_viewportTrans2d.z + s_viewportTrans2d.w}
+			    {s_geoEdit.drawCurPos.x * s_viewportTrans2d.x + s_viewportTrans2d.y,  s_geoEdit.drawCurPos.z * s_viewportTrans2d.z + s_viewportTrans2d.w}
 			};
 			TFE_RenderShared::lineDraw2d_addLine(width, lineVtx, color);
 		}
@@ -1024,7 +1016,7 @@ namespace LevelEditor
 		// Draw the cursor.
 		const u32 cursorColor[] = { 0x80ff8020, 0x80ff8020 };
 		const f32 scale = std::min(1.0f, 1.0f / s_zoom2d) * c_vertexSize;
-		const Vec2f p0 = { s_drawCurPos.x * s_viewportTrans2d.x + s_viewportTrans2d.y, s_drawCurPos.z * s_viewportTrans2d.z + s_viewportTrans2d.w };
+		const Vec2f p0 = { s_geoEdit.drawCurPos.x * s_viewportTrans2d.x + s_viewportTrans2d.y, s_geoEdit.drawCurPos.z * s_viewportTrans2d.z + s_viewportTrans2d.w };
 		const Vec2f vtx[] =
 		{
 			{ p0.x - scale, p0.z - scale },
@@ -1039,35 +1031,6 @@ namespace LevelEditor
 		TFE_RenderShared::lineDraw2d_addLine(1.5f, &vtx[3], cursorColor);
 	}
 	
-	Vec3f extrudePoint2dTo3d(const Vec2f pt2d)
-	{
-		const Vec3f& S = s_extrudePlane.S;
-		const Vec3f& T = s_extrudePlane.T;
-		const Vec3f& origin = s_extrudePlane.origin;
-		const Vec3f pt3d =
-		{
-			origin.x + pt2d.x*S.x + pt2d.z*T.x,
-			origin.y + pt2d.x*S.y + pt2d.z*T.y,
-			origin.z + pt2d.x*S.z + pt2d.z*T.z
-		};
-		return pt3d;
-	}
-
-	Vec3f extrudePoint2dTo3d(const Vec2f pt2d, f32 height)
-	{
-		const Vec3f& S = s_extrudePlane.S;
-		const Vec3f& T = s_extrudePlane.T;
-		const Vec3f& N = s_extrudePlane.N;
-		const Vec3f& origin = s_extrudePlane.origin;
-		const Vec3f pt3d =
-		{
-			origin.x + pt2d.x*S.x + pt2d.z*T.x + height*N.x,
-			origin.y + pt2d.x*S.y + pt2d.z*T.y + height*N.y,
-			origin.z + pt2d.x*S.z + pt2d.z*T.z + height*N.z
-		};
-		return pt3d;
-	}
-
 	void drawExtrudeShape3D()
 	{
 		const u32 color = 0xffffffff;
@@ -1075,10 +1038,10 @@ namespace LevelEditor
 		const Project* project = project_get();
 		const bool allowSlopes = project->featureSet != FSET_VANILLA || project->game != Game_Dark_Forces;
 
-		if (s_drawStarted && s_drawMode == DMODE_RECT)
+		if (s_geoEdit.drawStarted && s_geoEdit.drawMode == DMODE_RECT)
 		{
-			const Vec3f p0 = extrudePoint2dTo3d(s_shape[0]);
-			const Vec3f p1 = extrudePoint2dTo3d(s_shape[1]);
+			const Vec3f p0 = extrudePoint2dTo3d(s_geoEdit.shape[0]);
+			const Vec3f p1 = extrudePoint2dTo3d(s_geoEdit.shape[1]);
 
 			Vec3f vtx[] =
 			{
@@ -1093,14 +1056,14 @@ namespace LevelEditor
 			TFE_RenderShared::lineDraw3d_addLine(3.0f, &vtx[2], &color);
 			TFE_RenderShared::lineDraw3d_addLine(3.0f, &vtx[3], &color);
 		}
-		else if (s_drawStarted && s_drawMode == DMODE_RECT_VERT)
+		else if (s_geoEdit.drawStarted && s_geoEdit.drawMode == DMODE_RECT_VERT)
 		{
 			const Vec2f vtx[] =
 			{
-				{ s_shape[0].x, s_shape[0].z },
-				{ s_shape[1].x, s_shape[0].z },
-				{ s_shape[1].x, s_shape[1].z },
-				{ s_shape[0].x, s_shape[1].z }
+				{ s_geoEdit.shape[0].x, s_geoEdit.shape[0].z },
+				{ s_geoEdit.shape[1].x, s_geoEdit.shape[0].z },
+				{ s_geoEdit.shape[1].x, s_geoEdit.shape[1].z },
+				{ s_geoEdit.shape[0].x, s_geoEdit.shape[1].z }
 			};
 
 			for (s32 v = 0; v < 4; v++)
@@ -1110,29 +1073,29 @@ namespace LevelEditor
 				// Base
 				const Vec3f base[] =
 				{
-					extrudePoint2dTo3d(vtx[a], s_drawHeight[0]),
-					extrudePoint2dTo3d(vtx[b], s_drawHeight[0]),
+					extrudePoint2dTo3d(vtx[a], s_geoEdit.drawHeight[0]),
+					extrudePoint2dTo3d(vtx[b], s_geoEdit.drawHeight[0]),
 				};
 				TFE_RenderShared::lineDraw3d_addLine(3.0f, base, &color);
 				// Top
 				const Vec3f top[] =
 				{
-					extrudePoint2dTo3d(vtx[a], s_drawHeight[1]),
-					extrudePoint2dTo3d(vtx[b], s_drawHeight[1]),
+					extrudePoint2dTo3d(vtx[a], s_geoEdit.drawHeight[1]),
+					extrudePoint2dTo3d(vtx[b], s_geoEdit.drawHeight[1]),
 				};
 				TFE_RenderShared::lineDraw3d_addLine(3.0f, top, &color);
 				// Edge
 				const Vec3f edge[] =
 				{
-					extrudePoint2dTo3d(vtx[a], s_drawHeight[0]),
-					extrudePoint2dTo3d(vtx[a], s_drawHeight[1]),
+					extrudePoint2dTo3d(vtx[a], s_geoEdit.drawHeight[0]),
+					extrudePoint2dTo3d(vtx[a], s_geoEdit.drawHeight[1]),
 				};
 				TFE_RenderShared::lineDraw3d_addLine(3.0f, edge, &color);
 			}
 
 			// Draw solid bottom.
-			const Vec3f p0 = extrudePoint2dTo3d(s_shape[0], s_drawHeight[0]);
-			const Vec3f p1 = extrudePoint2dTo3d(s_shape[1], s_drawHeight[0]);
+			const Vec3f p0 = extrudePoint2dTo3d(s_geoEdit.shape[0], s_geoEdit.drawHeight[0]);
+			const Vec3f p1 = extrudePoint2dTo3d(s_geoEdit.shape[1], s_geoEdit.drawHeight[0]);
 			const Vec3f baseVtx[4] =
 			{
 				{ p0.x, p0.y, p0.z },
@@ -1147,10 +1110,10 @@ namespace LevelEditor
 			};
 			triDraw3d_addColored(TRIMODE_BLEND, 6, 4, baseVtx, idx, SCOLOR_POLY_NORM, false);
 		}
-		else if (s_drawStarted && s_drawMode == DMODE_SHAPE)
+		else if (s_geoEdit.drawStarted && s_geoEdit.drawMode == DMODE_SHAPE)
 		{
-			const s32 vtxCount = (s32)s_shape.size();
-			const Vec2f* vtx = s_shape.data();
+			const s32 vtxCount = (s32)s_geoEdit.shape.size();
+			const Vec2f* vtx = s_geoEdit.shape.data();
 			for (s32 v = 0; v < vtxCount - 1; v++)
 			{
 				const Vec3f lineVtx[] =
@@ -1165,15 +1128,15 @@ namespace LevelEditor
 			const Vec3f lineVtx[] =
 			{
 				extrudePoint2dTo3d(vtx[vtxCount-1]),
-				extrudePoint2dTo3d(s_drawCurPos)
+				extrudePoint2dTo3d(s_geoEdit.drawCurPos)
 			};
-			const bool error = !allowSlopes && vtx[vtxCount-1].x != s_drawCurPos.x && vtx[vtxCount-1].z != s_drawCurPos.z;
+			const bool error = !allowSlopes && vtx[vtxCount-1].x != s_geoEdit.drawCurPos.x && vtx[vtxCount-1].z != s_geoEdit.drawCurPos.z;
 			TFE_RenderShared::lineDraw3d_addLine(3.0f, lineVtx, error ? &colorError : &color);
 		}
-		else if (s_drawStarted && s_drawMode == DMODE_SHAPE_VERT)
+		else if (s_geoEdit.drawStarted && s_geoEdit.drawMode == DMODE_SHAPE_VERT)
 		{
-			const s32 vtxCount = (s32)s_shape.size();
-			const Vec2f* vtx = s_shape.data();
+			const s32 vtxCount = (s32)s_geoEdit.shape.size();
+			const Vec2f* vtx = s_geoEdit.shape.data();
 			for (s32 v = 0; v < vtxCount; v++)
 			{
 				const s32 a = v;
@@ -1181,63 +1144,63 @@ namespace LevelEditor
 				// Draw the faces.
 				const Vec3f lineVtx0[] =
 				{
-					extrudePoint2dTo3d(vtx[a], s_drawHeight[0]),
-					extrudePoint2dTo3d(vtx[b], s_drawHeight[0])
+					extrudePoint2dTo3d(vtx[a], s_geoEdit.drawHeight[0]),
+					extrudePoint2dTo3d(vtx[b], s_geoEdit.drawHeight[0])
 				};
 				const Vec3f lineVtx1[] =
 				{
-					extrudePoint2dTo3d(vtx[a], s_drawHeight[1]),
-					extrudePoint2dTo3d(vtx[b], s_drawHeight[1])
+					extrudePoint2dTo3d(vtx[a], s_geoEdit.drawHeight[1]),
+					extrudePoint2dTo3d(vtx[b], s_geoEdit.drawHeight[1])
 				};
 				TFE_RenderShared::lineDraw3d_addLine(3.0f, lineVtx0, &color);
 				TFE_RenderShared::lineDraw3d_addLine(3.0f, lineVtx1, &color);
 				// Draw the edges.
 				const Vec3f lineVtxEdge[] =
 				{
-					extrudePoint2dTo3d(vtx[a], s_drawHeight[0]),
-					extrudePoint2dTo3d(vtx[a], s_drawHeight[1])
+					extrudePoint2dTo3d(vtx[a], s_geoEdit.drawHeight[0]),
+					extrudePoint2dTo3d(vtx[a], s_geoEdit.drawHeight[1])
 				};
 				TFE_RenderShared::lineDraw3d_addLine(3.0f, lineVtxEdge, &color);
 			}
 			// Draw the polygon
-			const s32 triVtxCount = (s32)s_shapePolygon.triVtx.size();
-			const Vec2f* triVtx = s_shapePolygon.triVtx.data();
+			const s32 triVtxCount = (s32)s_geoEdit.shapePolygon.triVtx.size();
+			const Vec2f* triVtx = s_geoEdit.shapePolygon.triVtx.data();
 			s_bufferVec3.resize(triVtxCount);
 			Vec3f* flatVtx = s_bufferVec3.data();
 			for (size_t v = 0; v < triVtxCount; v++)
 			{
-				flatVtx[v] = extrudePoint2dTo3d(triVtx[v], s_drawHeight[0]);
+				flatVtx[v] = extrudePoint2dTo3d(triVtx[v], s_geoEdit.drawHeight[0]);
 			}
-			triDraw3d_addColored(TRIMODE_BLEND, (u32)s_shapePolygon.triIdx.size(), (u32)triVtxCount, flatVtx, s_shapePolygon.triIdx.data(), SCOLOR_POLY_NORM, false);
+			triDraw3d_addColored(TRIMODE_BLEND, (u32)s_geoEdit.shapePolygon.triIdx.size(), (u32)triVtxCount, flatVtx, s_geoEdit.shapePolygon.triIdx.data(), SCOLOR_POLY_NORM, false);
 		}
 	}
 
 	void drawSectorShape3D()
 	{
 		u32 color = 0xffffffff;
-		if (s_drawStarted && s_drawMode == DMODE_RECT)
+		if (s_geoEdit.drawStarted && s_geoEdit.drawMode == DMODE_RECT)
 		{
 			Vec2f rect[4];
-			getGridOrientedRect(s_shape[0], s_shape[1], rect);
+			getGridOrientedRect(s_geoEdit.shape[0], s_geoEdit.shape[1], rect);
 
 			// Draw the rect on the grid itself.
 			Vec3f vtx[] =
 			{
-				{ rect[0].x, s_drawHeight[0], rect[0].z },
-				{ rect[1].x, s_drawHeight[0], rect[1].z },
-				{ rect[2].x, s_drawHeight[0], rect[2].z },
-				{ rect[3].x, s_drawHeight[0], rect[3].z },
-				{ rect[0].x, s_drawHeight[0], rect[0].z }
+				{ rect[0].x, s_geoEdit.drawHeight[0], rect[0].z },
+				{ rect[1].x, s_geoEdit.drawHeight[0], rect[1].z },
+				{ rect[2].x, s_geoEdit.drawHeight[0], rect[2].z },
+				{ rect[3].x, s_geoEdit.drawHeight[0], rect[3].z },
+				{ rect[0].x, s_geoEdit.drawHeight[0], rect[0].z }
 			};
 			TFE_RenderShared::lineDraw3d_addLine(3.0f, &vtx[0], &color);
 			TFE_RenderShared::lineDraw3d_addLine(3.0f, &vtx[1], &color);
 			TFE_RenderShared::lineDraw3d_addLine(3.0f, &vtx[2], &color);
 			TFE_RenderShared::lineDraw3d_addLine(3.0f, &vtx[3], &color);
 		}
-		else if (s_drawStarted && s_drawMode == DMODE_RECT_VERT)
+		else if (s_geoEdit.drawStarted && s_geoEdit.drawMode == DMODE_RECT_VERT)
 		{
 			Vec2f vtx[4];
-			getGridOrientedRect(s_shape[0], s_shape[1], vtx);
+			getGridOrientedRect(s_geoEdit.shape[0], s_geoEdit.shape[1], vtx);
 
 			for (s32 v = 0; v < 4; v++)
 			{
@@ -1247,24 +1210,24 @@ namespace LevelEditor
 				// Floor
 				const Vec3f floor[] =
 				{
-					{ vtx[a].x, s_drawHeight[0], vtx[a].z },
-					{ vtx[b].x, s_drawHeight[0], vtx[b].z },
+					{ vtx[a].x, s_geoEdit.drawHeight[0], vtx[a].z },
+					{ vtx[b].x, s_geoEdit.drawHeight[0], vtx[b].z },
 				};
 				TFE_RenderShared::lineDraw3d_addLine(3.0f, floor, &color);
 
 				// Ceiling
 				const Vec3f ceil[] =
 				{
-					{ vtx[a].x, s_drawHeight[1], vtx[a].z },
-					{ vtx[b].x, s_drawHeight[1], vtx[b].z },
+					{ vtx[a].x, s_geoEdit.drawHeight[1], vtx[a].z },
+					{ vtx[b].x, s_geoEdit.drawHeight[1], vtx[b].z },
 				};
 				TFE_RenderShared::lineDraw3d_addLine(3.0f, ceil, &color);
 
 				// Edge
 				const Vec3f edge[] =
 				{
-					{ vtx[a].x, s_drawHeight[0], vtx[a].z },
-					{ vtx[a].x, s_drawHeight[1], vtx[a].z },
+					{ vtx[a].x, s_geoEdit.drawHeight[0], vtx[a].z },
+					{ vtx[a].x, s_geoEdit.drawHeight[1], vtx[a].z },
 				};
 				TFE_RenderShared::lineDraw3d_addLine(3.0f, edge, &color);
 			}
@@ -1272,10 +1235,10 @@ namespace LevelEditor
 			// Draw solid bottom.
 			Vec3f baseVtx[4] =
 			{
-				{ vtx[0].x, s_drawHeight[0], vtx[0].z },
-				{ vtx[1].x, s_drawHeight[0], vtx[1].z },
-				{ vtx[2].x, s_drawHeight[0], vtx[2].z },
-				{ vtx[3].x, s_drawHeight[0], vtx[3].z }
+				{ vtx[0].x, s_geoEdit.drawHeight[0], vtx[0].z },
+				{ vtx[1].x, s_geoEdit.drawHeight[0], vtx[1].z },
+				{ vtx[2].x, s_geoEdit.drawHeight[0], vtx[2].z },
+				{ vtx[3].x, s_geoEdit.drawHeight[0], vtx[3].z }
 			};
 			s32 idx[6]=
 			{
@@ -1284,50 +1247,50 @@ namespace LevelEditor
 			};
 			triDraw3d_addColored(TRIMODE_BLEND, 6, 4, baseVtx, idx, SCOLOR_POLY_NORM, false);
 		}
-		else if (s_drawStarted && s_drawMode == DMODE_SHAPE)
+		else if (s_geoEdit.drawStarted && s_geoEdit.drawMode == DMODE_SHAPE)
 		{
-			const s32 vtxCount = (s32)s_shape.size();
-			const Vec2f* vtx = s_shape.data();
+			const s32 vtxCount = (s32)s_geoEdit.shape.size();
+			const Vec2f* vtx = s_geoEdit.shape.data();
 			for (s32 v = 0; v < vtxCount - 1; v++)
 			{
-				const Vec3f lineVtx[] = { {vtx[v].x, s_drawHeight[0], vtx[v].z}, {vtx[v+1].x, s_drawHeight[0], vtx[v+1].z} };
+				const Vec3f lineVtx[] = { {vtx[v].x, s_geoEdit.drawHeight[0], vtx[v].z}, {vtx[v+1].x, s_geoEdit.drawHeight[0], vtx[v+1].z} };
 				TFE_RenderShared::lineDraw3d_addLine(3.0f, lineVtx, &color);
 			}
 			// Draw from the last vertex to curPos.
-			const Vec3f lineVtx[] = { {vtx[vtxCount-1].x, s_drawHeight[0], vtx[vtxCount-1].z}, {s_drawCurPos.x, s_drawHeight[0], s_drawCurPos.z} };
+			const Vec3f lineVtx[] = { {vtx[vtxCount-1].x, s_geoEdit.drawHeight[0], vtx[vtxCount-1].z}, {s_geoEdit.drawCurPos.x, s_geoEdit.drawHeight[0], s_geoEdit.drawCurPos.z} };
 			TFE_RenderShared::lineDraw3d_addLine(3.0f, lineVtx, &color);
 		}
-		else if (s_drawStarted && s_drawMode == DMODE_SHAPE_VERT)
+		else if (s_geoEdit.drawStarted && s_geoEdit.drawMode == DMODE_SHAPE_VERT)
 		{
-			const s32 vtxCount = (s32)s_shape.size();
-			const Vec2f* vtx = s_shape.data();
+			const s32 vtxCount = (s32)s_geoEdit.shape.size();
+			const Vec2f* vtx = s_geoEdit.shape.data();
 			for (s32 v = 0; v < vtxCount; v++)
 			{
 				s32 a = v;
 				s32 b = (v + 1) % vtxCount;
 
 				// Draw the faces.
-				const Vec3f lineVtx0[] = { {vtx[a].x, s_drawHeight[0], vtx[a].z}, {vtx[b].x, s_drawHeight[0], vtx[b].z} };
-				const Vec3f lineVtx1[] = { {vtx[a].x, s_drawHeight[1], vtx[a].z}, {vtx[b].x, s_drawHeight[1], vtx[b].z} };
+				const Vec3f lineVtx0[] = { {vtx[a].x, s_geoEdit.drawHeight[0], vtx[a].z}, {vtx[b].x, s_geoEdit.drawHeight[0], vtx[b].z} };
+				const Vec3f lineVtx1[] = { {vtx[a].x, s_geoEdit.drawHeight[1], vtx[a].z}, {vtx[b].x, s_geoEdit.drawHeight[1], vtx[b].z} };
 				TFE_RenderShared::lineDraw3d_addLine(3.0f, lineVtx0, &color);
 				TFE_RenderShared::lineDraw3d_addLine(3.0f, lineVtx1, &color);
 
 				// Draw the edges.
-				const Vec3f lineVtxEdge[] = { {vtx[a].x, s_drawHeight[0], vtx[a].z}, {vtx[a].x, s_drawHeight[1], vtx[a].z} };
+				const Vec3f lineVtxEdge[] = { {vtx[a].x, s_geoEdit.drawHeight[0], vtx[a].z}, {vtx[a].x, s_geoEdit.drawHeight[1], vtx[a].z} };
 				TFE_RenderShared::lineDraw3d_addLine(3.0f, lineVtxEdge, &color);
 			}
 			// Draw the polygon
-			const s32 triVtxCount = (s32)s_shapePolygon.triVtx.size();
-			const Vec2f* triVtx = s_shapePolygon.triVtx.data();
+			const s32 triVtxCount = (s32)s_geoEdit.shapePolygon.triVtx.size();
+			const Vec2f* triVtx = s_geoEdit.shapePolygon.triVtx.data();
 
 			s_bufferVec3.resize(triVtxCount);
 			Vec3f* flatVtx = s_bufferVec3.data();
 
 			for (size_t v = 0; v < triVtxCount; v++)
 			{
-				flatVtx[v] = { triVtx[v].x, s_drawHeight[0], triVtx[v].z };
+				flatVtx[v] = { triVtx[v].x, s_geoEdit.drawHeight[0], triVtx[v].z };
 			}
-			triDraw3d_addColored(TRIMODE_BLEND, (u32)s_shapePolygon.triIdx.size(), (u32)triVtxCount, flatVtx, s_shapePolygon.triIdx.data(), SCOLOR_POLY_NORM, false);
+			triDraw3d_addColored(TRIMODE_BLEND, (u32)s_geoEdit.shapePolygon.triIdx.size(), (u32)triVtxCount, flatVtx, s_geoEdit.shapePolygon.triIdx.data(), SCOLOR_POLY_NORM, false);
 		}
 	}
 
@@ -1431,7 +1394,7 @@ namespace LevelEditor
 
 		if (s_editMode == LEDIT_DRAW)
 		{
-			if (s_extrudeEnabled)
+			if (s_geoEdit.extrudeEnabled)
 			{
 				drawExtrudeShape3D();
 			}

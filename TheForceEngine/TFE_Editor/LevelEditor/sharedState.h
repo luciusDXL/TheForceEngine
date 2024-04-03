@@ -73,9 +73,6 @@ namespace LevelEditor
 	extern Vec3f s_viewRight;
 	extern Vec3f s_cursor3d;
 
-	// Drawing
-	extern ExtrudePlane s_extrudePlane;
-
 	// Search
 	extern u32 s_searchKey;
 
