@@ -57,5 +57,4 @@ namespace LevelEditor
 	void createSectorFromRect();
 	void createSectorFromShape();
 	s32 insertVertexIntoSector(EditorSector* sector, Vec2f newVtx);
-	bool snapToLine(Vec2f& pos, f32 maxDist, Vec2f& newPos, FeatureId& snappedFeature);
 }

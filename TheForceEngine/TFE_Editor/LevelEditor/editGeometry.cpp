@@ -52,6 +52,7 @@ namespace LevelEditor
 	GeometryEdit s_geoEdit = {};
 
 	void handlePartialShape();
+	bool snapToLine(Vec2f& pos, f32 maxDist, Vec2f& newPos, FeatureId& snappedFeature);
 
 	bool snapToLine2d(Vec2f& pos, f32 maxDist, Vec2f& newPos, FeatureId& snappedFeature)
 	{
