@@ -15,6 +15,7 @@
 #include <TFE_Input/input.h>
 
 #include <TFE_Ui/imGUI/imgui.h>
+#include <climits>
 #include <algorithm>
 #include <vector>
 #include <string>
