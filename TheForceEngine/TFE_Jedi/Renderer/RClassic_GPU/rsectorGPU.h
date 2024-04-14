@@ -26,6 +26,7 @@ namespace TFE_Jedi
 		void subrendererChanged() override;
 
 		void flushCache();
+		void flushTextureCache();
 
 		static TextureGpu* getColormap();
 

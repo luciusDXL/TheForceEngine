@@ -130,6 +130,7 @@ namespace TFE_Jedi
 
 	static bool s_trueColor = false;
 	static bool s_mipmapping = false;
+	static bool s_forceTextureUpdate = false;
 
 	struct ShaderSettings
 	{
@@ -268,6 +269,11 @@ namespace TFE_Jedi
 	void TFE_Sectors_GPU::flushCache()
 	{
 		s_flushCache = JTRUE;
+	}
+
+	void TFE_Sectors_GPU::flushTextureCache()
+	{
+		s_forceTextureUpdate = true;
 	}
 
 	s32 getColormapWhiterampColor(s32 invLightLevel)
@@ -992,10 +998,11 @@ namespace TFE_Jedi
 				}
 			}
 			bool useMips = s_trueColor && TFE_Settings::getGraphicsSettings()->useMipmapping;
-			if (s_trueColor != (TFE_Settings::getGraphicsSettings()->colorMode == COLORMODE_TRUE_COLOR) || s_mipmapping != useMips)
+			if (s_trueColor != (TFE_Settings::getGraphicsSettings()->colorMode == COLORMODE_TRUE_COLOR) || s_mipmapping != useMips || s_forceTextureUpdate)
 			{
 				s_trueColor = (TFE_Settings::getGraphicsSettings()->colorMode == COLORMODE_TRUE_COLOR);
 				s_mipmapping = s_trueColor && TFE_Settings::getGraphicsSettings()->useMipmapping;
+				s_forceTextureUpdate = false;
 				// Load textures into GPU memory.
 				if (texturepacker_getGlobal())
 				{

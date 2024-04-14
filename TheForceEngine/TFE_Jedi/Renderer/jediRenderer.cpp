@@ -242,7 +242,7 @@ namespace TFE_Jedi
 		s_clearCachedTextures = true;
 	}
 				
-	JBool render_setResolution()
+	JBool render_setResolution(bool forceTextureUpdate)
 	{
 		TFE_Settings_Graphics* graphics = TFE_Settings::getGraphicsSettings();
 		DisplayInfo info;
@@ -266,7 +266,7 @@ namespace TFE_Jedi
 
 		TFE_SubRenderer subRenderer = s_rendererType == RENDERER_HARDWARE ? TSR_CLASSIC_GPU : (width == 320 && height == 200) ? TSR_CLASSIC_FIXED : TSR_CLASSIC_FLOAT;
 		vfb_setMode(subRenderer == TSR_CLASSIC_GPU ? VFB_RENDER_TRAGET : VFB_TEXTURE);
-		bool updateTexturePacking = false;
+		bool updateTexturePacking = forceTextureUpdate;
 		bool enableMips = s_trueColor && graphics->useMipmapping;
 		if (s_trueColor != (graphics->colorMode == COLORMODE_TRUE_COLOR))
 		{
@@ -320,6 +320,15 @@ namespace TFE_Jedi
 		}
 		else
 		{
+			if (forceTextureUpdate)
+			{
+				TFE_Sectors_GPU* sectorRendererGpu = (TFE_Sectors_GPU*)renderer_getSectorRenderer(TSR_CLASSIC_GPU);
+				if (sectorRendererGpu)
+				{
+					sectorRendererGpu->flushTextureCache();
+				}
+			}
+
 			if (!s_sectorRenderer)
 			{
 				TFE_Sectors_GPU* sectorRendererGpu = (TFE_Sectors_GPU*)renderer_getSectorRenderer(TSR_CLASSIC_GPU);

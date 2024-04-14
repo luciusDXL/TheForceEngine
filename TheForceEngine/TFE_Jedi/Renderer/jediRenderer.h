@@ -72,7 +72,7 @@ namespace TFE_Jedi
 	void beginRender();
 	void endRender();
 
-	JBool render_setResolution();
+	JBool render_setResolution(bool forceUpdate = false);
 	void render_clearCachedTextures();
 	void renderer_setVisionEffect(s32 effect);
 	void renderer_setupCameraLight(JBool flatShading, JBool headlamp);

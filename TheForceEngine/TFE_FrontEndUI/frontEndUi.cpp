@@ -66,12 +66,12 @@ namespace TFE_FrontEndUI
 	{
 		CONFIG_ABOUT = 0,
 		CONFIG_GAME,
-		CONFIG_ENHANCEMENTS,
 		CONFIG_SAVE,
 		CONFIG_LOAD,
 		CONFIG_INPUT,
 		CONFIG_GRAPHICS,
 		CONFIG_HUD,
+		CONFIG_ENHANCEMENTS,
 		CONFIG_SOUND,
 		CONFIG_SYSTEM,
 		CONFIG_A11Y,
@@ -94,12 +94,12 @@ namespace TFE_FrontEndUI
 	{
 		"About",
 		"Game Settings",
-		"Enhancements",
 		"Save",
 		"Load",
 		"Input",
 		"Graphics",
 		"Hud",
+		"Enhancements",
 		"Sound",
 		"System",
 		"Accessibility (beta)"
@@ -250,7 +250,7 @@ namespace TFE_FrontEndUI
 	void configAbout();
 	void configGame();
 	void configDarkForcesCheats();
-	void configEnhancements();
+	bool configEnhancements();
 	void configSave();
 	void configLoad();
 	void configInput();
@@ -266,7 +266,7 @@ namespace TFE_FrontEndUI
 	void credits();
 
 	void configSaveLoadBegin(bool save);
-	void renderBackground();
+	void renderBackground(bool forceTextureUpdate = false);
 	void Tooltip(const char* text);
 	void setSettingsTemplate(SettingsTemplate temp);
 
@@ -914,6 +914,7 @@ namespace TFE_FrontEndUI
 			ImGui::LabelText("##ConfigLabel", "%s", c_configLabels[s_configTab]);
 			ImGui::PopFont();
 			ImGui::Separator();
+			bool forceTextureUpdate = false;
 			switch (s_configTab)
 			{
 			case CONFIG_ABOUT:
@@ -923,7 +924,7 @@ namespace TFE_FrontEndUI
 				configGame();
 				break;
 			case CONFIG_ENHANCEMENTS:
-				configEnhancements();
+				forceTextureUpdate = configEnhancements();
 				break;
 			case CONFIG_SAVE:
 				configSave();
@@ -950,7 +951,7 @@ namespace TFE_FrontEndUI
 				configA11y(tabWidth, h);
 				break;
 			};
-			renderBackground();
+			renderBackground(forceTextureUpdate);
 
 			ImGui::End();
 		}
@@ -1391,9 +1392,10 @@ namespace TFE_FrontEndUI
 		}
 	}
 
-	void configEnhancements()
+	bool configEnhancements()
 	{
 		s32 browseWinOpen = -1;
+		bool forceTextureUpdate = false;
 
 		//////////////////////////////////////////////////////
 		// Source Game Data
@@ -1427,9 +1429,10 @@ namespace TFE_FrontEndUI
 		ImGui::Spacing();
 
 		ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 1.0f, 0.25f, 1.0f));
-		ImGui::TextWrapped("Note: HD Assets are only used if 'True Color' is enabled in the Graphics panel.\n"
-			               "To enable True Color select 'GPU / OpenGL' as the Renderer,\n"
-			               "and 'True Color' as the Color Mode.");
+		ImGui::TextWrapped("Note: HD Assets are only used if 'True Color' is enabled\n"
+						   "in the Graphics panel. To enable True Color select \n"
+						   "'GPU / OpenGL' as the Renderer, and 'True Color' as the\n"
+						   "Color Mode.");
 		ImGui::PopStyleColor();
 		ImGui::Spacing();
 
@@ -1444,24 +1447,23 @@ namespace TFE_FrontEndUI
 			enhancements->enableHdHud = false;
 		}
 
-		bool updateTextures = false;
 		bool useHdTextures = enhancements->enableHdTextures;
 		if (ImGui::Checkbox("Use HD Textures", &useHdTextures))
 		{
 			enhancements->enableHdTextures = useHdTextures;
-			updateTextures = true;
+			forceTextureUpdate = true;
 		}
 		bool useHdSprites = enhancements->enableHdSprites;
 		if (ImGui::Checkbox("Use HD Sprite", &useHdSprites))
 		{
 			enhancements->enableHdSprites = useHdSprites;
-			updateTextures = true;
+			forceTextureUpdate = true;
 		}
 		bool useHdHUD = enhancements->enableHdHud;
 		if (ImGui::Checkbox("Use HD HUD", &useHdHUD))
 		{
 			enhancements->enableHdHud = useHdHUD;
-			updateTextures = true;
+			forceTextureUpdate = true;
 		}
 
 		if (!enhancedGobExists)
@@ -1469,11 +1471,7 @@ namespace TFE_FrontEndUI
 			ImGui::PopItemFlag();
 			ImGui::PopStyleVar();
 		}
-
-		if (updateTextures)
-		{
-			// TODO: Update the texture system, similar to changing color modes.
-		}
+		return forceTextureUpdate;
 	}
 
 	///////////////////////////////////////////////////////////////////////////////
@@ -3198,12 +3196,12 @@ namespace TFE_FrontEndUI
 		s_drawNoGameDataMsg = false;
 	}
 
-	void renderBackground()
+	void renderBackground(bool forceTextureUpdate)
 	{
 		if (s_menuRetState != APP_STATE_MENU)
 		{
 			TFE_Settings_Graphics* graphics = TFE_Settings::getGraphicsSettings();
-			TFE_DarkForces::mission_render(graphics->rendererIndex);
+			TFE_DarkForces::mission_render(graphics->rendererIndex, forceTextureUpdate);
 		}
 	}
 

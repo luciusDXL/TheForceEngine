@@ -35,7 +35,7 @@ namespace TFE_DarkForces
 	void disableCleats();
 	void disableNightvision();
 
-	void mission_render(s32 rendererIndex = 0);
+	void mission_render(s32 rendererIndex = 0, bool forceTextureUpdate = false);
 
 	void mission_setupTasks();
 	void mission_serialize(Stream* stream);
