@@ -453,12 +453,14 @@ namespace TFE_Jedi
 		return 1.0;
 	}
 
-	void packNode(const TextureNode* node, const TextureData* texData, Vec4i* tableEntry, s32 paddingX, s32 paddingY, s32 mipCount)
+	// TODO: Per-level color matching for HD assets.
+	void packNode(const TextureNode* node, const TextureData* texData, Vec4i* tableEntry, s32 paddingX, s32 paddingY, s32 mipCount, const TextureData* hdSrc, s32 frameIndex)
 	{
 		// Copy the texture into place.
 		s32 offsetX = paddingX / 2;
 		s32 offsetY = paddingY / 2;
-		const u8* srcImage = texData->image;
+		const u8* srcImage = hdSrc && hdSrc->hdAssetData ? hdSrc->hdAssetData : texData->image;
+		const s32 scaleFactor = hdSrc && hdSrc->hdAssetData ? hdSrc->scaleFactor : 1;
 
 		Vec3f halfTint = { 1.0f, 1.0f, 1.0f };
 		s32 grayScaleCount = 0;
@@ -466,91 +468,126 @@ namespace TFE_Jedi
 		s32 totalCount = 0;
 		if (s_texturePacker->trueColor)
 		{
-			const u32* pal = getPalette(texData->palIndex);
-			// TODO: For some levels this should be 30.
-			const u8* remap = &TFE_DarkForces::s_levelColorMap[31 << 8];
-			const u8* remapHalf = &TFE_DarkForces::s_levelColorMap[16 << 8];
-
-			f64 accum[3] = { 0.0 };
-			f64 accumCount = 0.0;
-
 			u32* output = (u32*)getWritePointer(s_currentPage, node->rect.x, node->rect.y, 0);
-			for (s32 y = 0; y < texData->height+paddingY; y++, output += s_texturePacker->width)
+			if (hdSrc && hdSrc->hdAssetData)
 			{
-				s32 ySrc = texData->height ? (y - offsetY) % texData->height : 0;
-				if (ySrc < 0) { ySrc += texData->height; }
+				s32 w = texData->width * scaleFactor;
+				s32 h = texData->height * scaleFactor;
+				srcImage += frameIndex * (w * h * 4);
 
-				for (s32 x = 0; x < texData->width+paddingX; x++)
+				for (s32 y = 0; y < h + paddingY; y++, output += s_texturePacker->width)
 				{
-					s32 xSrc = texData->width ? (x - offsetX) % texData->width : 0;
-					if (xSrc < 0) { xSrc += texData->width; }
+					s32 ySrc = h ? (y - offsetY) % h : 0;
+					if (ySrc < 0) { ySrc += h; }
 
-					u8 palIndex = srcImage ? srcImage[xSrc*texData->height + ySrc] : 0;
-					if (texData->flags & INDEXED)
+					for (s32 x = 0; x < w + paddingX; x++)
 					{
-						output[x] = palIndex == 0 ? 0u : pal[palIndex];
-						if (palIndex >= s_colorIndexStart && palIndex < s_colorIndexStart + COLOR_INDEX_COUNT)
-						{
-							s32 index = palIndex - s_colorIndexStart;
-							// set it half way inside the buckets.
-							s32 alpha = 128 + index * 16 + 8;
-							output[x] &= 0x00ffffff;
-							output[x] |= (alpha << 24);
-						}
-					}
-					else if (texData->flags & ALWAYS_FULLBRIGHT)
-					{
-						output[x] = palIndex == 0 ? 0u : pal[palIndex];
-					}
-					else
-					{
-						output[x] = palIndex == 0 ? 0u : pal[remap[palIndex]];
-						f32 sat = getSaturation(output[x]);
-						if (sat < c_satLimit)
-						{
-							grayScaleCount++;
-						}
-						totalCount++;
-						
-						// Also figure out the average multiplier.
-						u32 halfValue = palIndex == 0 ? 0u : pal[remapHalf[palIndex]];
-						accumCount += addMultiplier(output[x], halfValue, accum);
+						s32 xSrc = w ? (x - offsetX) % w : 0;
+						if (xSrc < 0) { xSrc += w; }
 
-						sat = getSaturation(halfValue);
-						if (sat < c_satLimit)
+						output[x] = srcImage ? ((u32*)srcImage)[ySrc*w + xSrc] : 0;
+						// Fix-up the alpha.
+						u32 alpha = output[x] >> 24u;
+						if (alpha == 0xff)
 						{
-							grayScaleCountHalf++;
+							alpha = 0x7f;
 						}
-					}
-
-					if (!(texData->flags & INDEXED))
-					{
-						handleAlpha8Bit(palIndex, &output[x]);
+						else if (alpha > 0)
+						{
+							alpha = 0xff;
+						}
+						output[x] &= 0x00ffffff;
+						output[x] |= (alpha << 24);
 					}
 				}
 			}
-
-			if (accumCount > 0.0)
+			else
 			{
-				// Try to guess at which textures have areas that should not be tinted.
-				if (grayScaleCount > totalCount / 4 && grayScaleCountHalf > 3 * totalCount / 8)
-				{
-					halfTint = { 1.0f, 1.0f, 1.0f };
-				}
-				else
-				{
-					const f64 scale = 1.0 / max(accum[0], max(accum[1], accum[2]));
-					accum[0] *= scale;
-					accum[1] *= scale;
-					accum[2] *= scale;
+				const u32* pal = getPalette(texData->palIndex);
+				// TODO: For some levels this should be 30.
+				const u8* remap = &TFE_DarkForces::s_levelColorMap[31 << 8];
+				const u8* remapHalf = &TFE_DarkForces::s_levelColorMap[16 << 8];
 
-					halfTint = { f32(accum[0]), f32(accum[1]), f32(accum[2]) };
+				f64 accum[3] = { 0.0 };
+				f64 accumCount = 0.0;
+
+				for (s32 y = 0; y < texData->height + paddingY; y++, output += s_texturePacker->width)
+				{
+					s32 ySrc = texData->height ? (y - offsetY) % texData->height : 0;
+					if (ySrc < 0) { ySrc += texData->height; }
+
+					for (s32 x = 0; x < texData->width + paddingX; x++)
+					{
+						s32 xSrc = texData->width ? (x - offsetX) % texData->width : 0;
+						if (xSrc < 0) { xSrc += texData->width; }
+
+						u8 palIndex = srcImage ? srcImage[xSrc*texData->height + ySrc] : 0;
+						if (texData->flags & INDEXED)
+						{
+							output[x] = palIndex == 0 ? 0u : pal[palIndex];
+							if (palIndex >= s_colorIndexStart && palIndex < s_colorIndexStart + COLOR_INDEX_COUNT)
+							{
+								s32 index = palIndex - s_colorIndexStart;
+								// set it half way inside the buckets.
+								s32 alpha = 128 + index * 16 + 8;
+								output[x] &= 0x00ffffff;
+								output[x] |= (alpha << 24);
+							}
+						}
+						else if (texData->flags & ALWAYS_FULLBRIGHT)
+						{
+							output[x] = palIndex == 0 ? 0u : pal[palIndex];
+						}
+						else
+						{
+							output[x] = palIndex == 0 ? 0u : pal[remap[palIndex]];
+							f32 sat = getSaturation(output[x]);
+							if (sat < c_satLimit)
+							{
+								grayScaleCount++;
+							}
+							totalCount++;
+
+							// Also figure out the average multiplier.
+							u32 halfValue = palIndex == 0 ? 0u : pal[remapHalf[palIndex]];
+							accumCount += addMultiplier(output[x], halfValue, accum);
+
+							sat = getSaturation(halfValue);
+							if (sat < c_satLimit)
+							{
+								grayScaleCountHalf++;
+							}
+						}
+
+						if (!(texData->flags & INDEXED))
+						{
+							handleAlpha8Bit(palIndex, &output[x]);
+						}
+					}
+				}
+
+				if (accumCount > 0.0)
+				{
+					// Try to guess at which textures have areas that should not be tinted.
+					if (grayScaleCount > totalCount / 4 && grayScaleCountHalf > 3 * totalCount / 8)
+					{
+						halfTint = { 1.0f, 1.0f, 1.0f };
+					}
+					else
+					{
+						const f64 scale = 1.0 / max(accum[0], max(accum[1], accum[2]));
+						accum[0] *= scale;
+						accum[1] *= scale;
+						accum[2] *= scale;
+
+						halfTint = { f32(accum[0]), f32(accum[1]), f32(accum[2]) };
+					}
 				}
 			}
 
 			u32* source = (u32*)getWritePointer(s_currentPage, node->rect.x, node->rect.y, 0);
-			u32 w = texData->width  + paddingX;
-			u32 h = texData->height + paddingY;
+			u32 w = texData->width  * scaleFactor + paddingX;
+			u32 h = texData->height * scaleFactor + paddingY;
 			u32 stride = s_texturePacker->width;
 			for (s32 m = 1; m < mipCount; m++)
 			{
@@ -579,11 +616,12 @@ namespace TFE_Jedi
 		// Copy the mapping into the texture table.
 		tableEntry->x = (s32)node->rect.x + offsetX;
 		tableEntry->y = (s32)node->rect.y + offsetY;
-		tableEntry->z = (s32)texData->width;
-		tableEntry->w = (s32)texData->height;
+		tableEntry->z = (s32)texData->width  * scaleFactor;
+		tableEntry->w = (s32)texData->height * scaleFactor;
 
 		// Page the page index into the x offset.
 		tableEntry->x |= (s_currentPage << 12);
+		tableEntry->y |= (scaleFactor << 12);
 
 		// Half color tint packed.
 		s32 r = s32(halfTint.x * 255.0);
@@ -638,7 +676,9 @@ namespace TFE_Jedi
 		tableEntry->w = (s32)texData->height;
 
 		// Page the page index into the x offset.
+		s32 scaleFactor = 1;
 		tableEntry->x |= (s_currentPage << 12);
+		tableEntry->y |= (scaleFactor << 12);
 	}
 		
 	void packNodeCell(const TextureNode* node, const void* basePtr, const WaxCell* cell, Vec4i* tableEntry, s32 paddingX, s32 paddingY)
@@ -728,7 +768,9 @@ namespace TFE_Jedi
 		tableEntry->w = (s32)cell->sizeY;
 
 		// Page the page index into the x offset.
+		s32 scaleFactor = 1;
 		tableEntry->x |= (s_currentPage << 12);
+		tableEntry->y |= (scaleFactor << 12);
 	}
 
 	bool isTextureInMap(TextureData* tex)
@@ -758,10 +800,14 @@ namespace TFE_Jedi
 		return ((w >> 2) & 1) == 1;
 	}
 
-	void getTexturePadding(s32& paddingX, s32& paddingY, TextureData* tex)
+	void getTexturePadding(s32& paddingX, s32& paddingY, s32 scale, TextureData* tex)
 	{
 		paddingX = (s_texturePacker->trueColor) ? FILTER_PADDING : 0;
 		paddingY = paddingX;
+
+		const s32 w = tex->width  * scale;
+		const s32 h = tex->height * scale;
+
 		if (s_texturePacker->mipCount > 1 && (tex->flags & ENABLE_MIP_MAPS))
 		{
 			paddingX = s_texturePacker->mipPadding;
@@ -769,54 +815,58 @@ namespace TFE_Jedi
 
 			// No point in all the extra padding if the texture is smaller than the
 			// padding itself.
-			if (tex->width < paddingX)
+			if (w < paddingX)
 			{
-				paddingX = tex->width;
+				paddingX = w;
 			}
-			if (tex->height < paddingY)
+			if (h < paddingY)
 			{
-				paddingY = tex->height;
+				paddingY = h;
 			}
 		}
 		// Handle the case where the texture takes up an entire axis, padding is not possible and not required in that case.
-		if (tex->width >= s_texturePacker->width)
+		if (w >= s_texturePacker->width)
 		{
 			paddingX = 0;
 		}
-		if (tex->height >= s_texturePacker->height)
+		if (h >= s_texturePacker->height)
 		{
 			paddingY = 0;
 		}
 
 		// Make sure textures are large enough with padding, so mipmapping can work correctly.
-		s32 tw = tex->width  + paddingX;
-		s32 th = tex->height + paddingY;
+		s32 tw = w + paddingX;
+		s32 th = h + paddingY;
 		if (s_texturePacker->mipCount > 1 && (tex->flags & ENABLE_MIP_MAPS) && (tw < SMALL_TEX || th < SMALL_TEX))
 		{
-			if (tw < SMALL_TEX) { paddingX = SMALL_TEX - tex->width;  }
-			if (th < SMALL_TEX) { paddingY = SMALL_TEX - tex->height; }
+			if (tw < SMALL_TEX) { paddingX = SMALL_TEX - w; }
+			if (th < SMALL_TEX) { paddingY = SMALL_TEX - h; }
 		}
 	}
 
-	bool insertTexture(TextureData* tex)
+	bool insertTexture(TextureData* tex, bool packHdTextures, TextureData* baseFrame, s32 frameIndex)
 	{
 		if (!tex || isTextureInMap(tex)) { return true; }
 
-		s32 paddingX, paddingY;
-		getTexturePadding(paddingX, paddingY, tex);
+		const s32 scale = packHdTextures ? baseFrame->scaleFactor : 1;
+		const s32 w = tex->width  * scale;
+		const s32 h = tex->height * scale;
 
-		TextureNode* node = insertNode(s_root, tex, tex->width + paddingX, tex->height + paddingY);
+		s32 paddingX, paddingY;
+		getTexturePadding(paddingX, paddingY, scale, tex);
+
+		TextureNode* node = insertNode(s_root, tex, w + paddingX, h + paddingY);
 		if (!node)
 		{
 			return false;
 		}
 
-		s_totalTexels += tex->width * tex->height;
+		s_totalTexels += w * h;
 		insertTextureIntoMap(tex, s_texturePacker->texturesPacked);
 
 		assert(node->tex == tex && s_texturePacker->texturesPacked < MAX_TEXTURE_COUNT);
 		tex->textureId = s_texturePacker->texturesPacked;
-		packNode(node, tex, &s_texturePacker->textureTable[s_texturePacker->texturesPacked], paddingX, paddingY, (tex->flags & ENABLE_MIP_MAPS) ? s_texturePacker->mipCount : 1);
+		packNode(node, tex, &s_texturePacker->textureTable[s_texturePacker->texturesPacked], paddingX, paddingY, (tex->flags & ENABLE_MIP_MAPS) ? s_texturePacker->mipCount : 1, packHdTextures ? baseFrame : nullptr, frameIndex);
 		s_texturePacker->texturesPacked++;
 		return true;
 	}
@@ -864,12 +914,12 @@ namespace TFE_Jedi
 		return true;
 	}
 
-	bool insertAnimatedTextureFrames(AnimatedTexture* animTex)
+	bool insertAnimatedTextureFrames(AnimatedTexture* animTex, bool packHdTextures)
 	{
 		if (!animTex) { return true; }
 		for (s32 f = 0; f < animTex->count; f++)
 		{
-			if (!insertTexture(animTex->frameList[f]))
+			if (!insertTexture(animTex->frameList[f], packHdTextures, animTex->baseFrame, f))
 			{
 				return false;
 			}
@@ -1013,6 +1063,8 @@ namespace TFE_Jedi
 		if (!getList) { return 0; }
 		s_assetPool = pool;
 
+		const bool packHdTextures = TFE_Settings::getEnhancementsSettings()->enableHdTextures && s_texturePacker->trueColor;
+
 		// Get textures.
 		s_texInfoPool.clear();
 		if (getList(s_texInfoPool, pool))
@@ -1031,15 +1083,28 @@ namespace TFE_Jedi
 						{
 							AnimatedTexture* animTex = (AnimatedTexture*)list[i].texData->image;
 							list[i].sortKey = animTex->frameList[0]->width + animTex->frameList[0]->height;
+							if (packHdTextures && animTex->baseFrame->hdAssetData)
+							{
+								list[i].sortKey *= (animTex->baseFrame->scaleFactor * animTex->baseFrame->scaleFactor);
+							}
 						}
 						else
 						{
 							list[i].sortKey = list[i].texData->width * list[i].texData->height;
+							if (list[i].type == TEXINFO_DF_TEXTURE_DATA && packHdTextures && list[i].texData->hdAssetData)
+							{
+								list[i].sortKey *= (list[i].texData->scaleFactor * list[i].texData->scaleFactor);
+							}
 						}
 					} break;
 					case TEXINFO_DF_ANIM_TEX:
 					{
 						list[i].sortKey = list[i].animTex->frameList[0]->width * list[i].animTex->frameList[0]->height;
+						// Account for texture scaling.
+						if (packHdTextures && list[i].animTex->baseFrame->hdAssetData)
+						{
+							list[i].sortKey *= (list[i].animTex->baseFrame->scaleFactor * list[i].animTex->baseFrame->scaleFactor);
+						}
 					} break;
 					case TEXINFO_DF_WAX_CELL:
 					{
@@ -1099,14 +1164,14 @@ namespace TFE_Jedi
 							if (unpackedList[i]->texData->uvWidth == BM_ANIMATED_TEXTURE)
 							{
 								AnimatedTexture* animTex = (AnimatedTexture*)unpackedList[i]->texData->image;
-								if (!insertAnimatedTextureFrames(animTex))
+								if (!insertAnimatedTextureFrames(animTex, packHdTextures))
 								{
 									s_unpackedTextures[s_unpackedBuffer].push_back(unpackedList[i]);
 								}
 							}
 							else
 							{
-								if (!insertTexture(unpackedList[i]->texData))
+								if (!insertTexture(unpackedList[i]->texData, packHdTextures, unpackedList[i]->texData, 0))
 								{
 									s_unpackedTextures[s_unpackedBuffer].push_back(unpackedList[i]);
 								}
@@ -1121,7 +1186,7 @@ namespace TFE_Jedi
 						} break;
 						case TEXINFO_DF_ANIM_TEX:
 						{
-							if (!insertAnimatedTextureFrames(unpackedList[i]->animTex))
+							if (!insertAnimatedTextureFrames(unpackedList[i]->animTex, packHdTextures))
 							{
 								s_unpackedTextures[s_unpackedBuffer].push_back(unpackedList[i]);
 							}

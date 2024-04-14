@@ -64,6 +64,10 @@ struct TextureData
 	s32 animIndex = -1;
 	s32 frameIdx = 0;
 	void* animPtr = nullptr;
+
+	// HD Texture replacements.
+	s32 scaleFactor = 1;			// Fill with scale factor.
+	u8* hdAssetData = nullptr;		// True color asset data, size = width * height * scaleFactor * scaleFactor
 };
 #pragma pack(pop)
 

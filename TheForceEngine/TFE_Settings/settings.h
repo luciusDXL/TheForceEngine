@@ -102,6 +102,13 @@ struct TFE_Settings_Graphics
 	s32  skyMode = SKYMODE_CYLINDER;
 };
 
+struct TFE_Settings_Enhancements
+{
+	bool enableHdTextures = false;
+	bool enableHdSprites = false;
+	bool enableHdHud = false;
+};
+
 enum TFE_HudScale
 {
 	TFE_HUDSCALE_PROPORTIONAL = 0,
@@ -262,6 +269,7 @@ namespace TFE_Settings
 	// Get and set settings.
 	TFE_Settings_Window* getWindowSettings();
 	TFE_Settings_Graphics* getGraphicsSettings();
+	TFE_Settings_Enhancements* getEnhancementsSettings();
 	TFE_Settings_Hud* getHudSettings();
 	TFE_Settings_Sound* getSoundSettings();
 	TFE_Settings_System* getSystemSettings();

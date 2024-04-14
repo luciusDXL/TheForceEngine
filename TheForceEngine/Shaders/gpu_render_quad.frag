@@ -53,10 +53,18 @@ flat in vec4 Frag_TextureId_Color;
 		return color;
 	}
 
+	vec2 scaleUv(vec2 uv, int data)
+	{
+		float scale = max(1.0, float(data >> 12));
+		uv *= scale;
+		return uv;
+	}
+
 	vec4 sampleTextureClamp(int id, vec2 uv)
 	{
 		ivec4 sampleData = texelFetch(TextureTable, id);
 		ivec3 iuv;
+		uv = scaleUv(uv, sampleData.y);
 		iuv.xy = ivec2(uv);
 		iuv.z = 0;
 

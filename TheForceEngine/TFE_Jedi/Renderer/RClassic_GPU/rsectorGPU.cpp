@@ -1150,8 +1150,11 @@ namespace TFE_Jedi
 		while (segment && s_wallSegGenerated < s_maxWallSeg)
 		{
 			// DEBUG
-			debug_addQuad(segment->v0, segment->v1, segment->seg->y0, segment->seg->y1,
-				          segment->seg->portalY0, segment->seg->portalY1, segment->seg->portal);
+			if (s_enableDebug)
+			{
+				debug_addQuad(segment->v0, segment->v1, segment->seg->y0, segment->seg->y1,
+					segment->seg->portalY0, segment->seg->portalY1, segment->seg->portal);
+			}
 
 			sdisplayList_addSegment(curSector, &s_cachedSectors[curSector->index], segment, forceTreatAsSolid);
 			s_wallSegGenerated++;

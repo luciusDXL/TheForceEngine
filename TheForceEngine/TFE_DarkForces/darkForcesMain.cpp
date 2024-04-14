@@ -73,6 +73,11 @@ namespace TFE_DarkForces
 		"SPRITES.GOB",
 	};
 
+	static const char* c_optionalGobFileNames[] =
+	{
+		"enhanced.gob",
+	};
+
 	enum GameConstants
 	{
 		MAX_MOD_LFD = 16,
@@ -1120,6 +1125,20 @@ namespace TFE_DarkForces
 			else
 			{
 				TFE_System::logWrite(LOG_ERROR, "Dark Forces Main", "Cannot find required game data - '%s'.", c_gobFileNames[i]);
+			}
+		}
+		// Optional gobs
+		for (s32 i = 0; i < TFE_ARRAYSIZE(c_optionalGobFileNames); i++)
+		{
+			FilePath archivePath;
+			if (TFE_Paths::getFilePath(c_optionalGobFileNames[i], &archivePath))
+			{
+				assert(archivePath.path[0] != 0);
+				Archive* archive = Archive::getArchive(ARCHIVE_GOB, c_optionalGobFileNames[i], archivePath.path);
+				if (archive)
+				{
+					TFE_Paths::addLocalArchive(archive);
+				}
 			}
 		}
 	}

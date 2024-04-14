@@ -1433,29 +1433,34 @@ namespace TFE_FrontEndUI
 		ImGui::PopStyleColor();
 		ImGui::Spacing();
 
-		bool useHdTextures = false;
-		bool updateTextures = false;
+		TFE_Settings_Enhancements* enhancements = TFE_Settings::getEnhancementsSettings();
 		if (!enhancedGobExists)
 		{
 			ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
 			ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.5f);
+
+			enhancements->enableHdTextures = false;
+			enhancements->enableHdSprites = false;
+			enhancements->enableHdHud = false;
 		}
-		
+
+		bool updateTextures = false;
+		bool useHdTextures = enhancements->enableHdTextures;
 		if (ImGui::Checkbox("Use HD Textures", &useHdTextures))
 		{
-			// TODO
+			enhancements->enableHdTextures = useHdTextures;
 			updateTextures = true;
 		}
-		bool useHdSprites = false;
+		bool useHdSprites = enhancements->enableHdSprites;
 		if (ImGui::Checkbox("Use HD Sprite", &useHdSprites))
 		{
-			// TODO
+			enhancements->enableHdSprites = useHdSprites;
 			updateTextures = true;
 		}
-		bool useHdHUD = false;
+		bool useHdHUD = enhancements->enableHdHud;
 		if (ImGui::Checkbox("Use HD HUD", &useHdHUD))
 		{
-			// TODO
+			enhancements->enableHdHud = useHdHUD;
 			updateTextures = true;
 		}
 

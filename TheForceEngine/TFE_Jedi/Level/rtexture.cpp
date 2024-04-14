@@ -5,6 +5,7 @@
 #include <TFE_System/system.h>
 #include <TFE_Archive/archive.h>
 #include <TFE_Asset/assetSystem.h>
+#include <TFE_FileSystem/fileutil.h>
 #include <TFE_FileSystem/paths.h>
 #include <TFE_FileSystem/filestream.h>
 #include <TFE_Jedi/Task/task.h>
@@ -202,6 +203,71 @@ namespace TFE_Jedi
 		return list;
 	}
 
+	void bitmap_loadHD(const char* name, TextureData* texData, s32 scaleFactor, AssetPool pool)
+	{
+		char hdPath[TFE_MAX_PATH];
+		FileUtil::replaceExtension(name, "raw", hdPath);
+
+		texData->scaleFactor = 1;
+		texData->hdAssetData = nullptr;
+		// If the file doesn't exist, just return - there is no HD asset.
+		FilePath filepath;
+		if (!TFE_Paths::getFilePath(hdPath, &filepath))
+		{
+			return;
+		}
+		FileStream file;
+		if (!file.open(&filepath, Stream::MODE_READ))
+		{
+			return;
+		}
+
+		// Load the raw data from disk.
+		size_t size = file.getSize();
+		s_buffer.resize(size);
+		file.readBuffer(s_buffer.data(), (u32)size);
+		file.close();
+
+		// Process the data based on the base texture.
+		s32 width  = texData->width  * scaleFactor;
+		s32 height = texData->height * scaleFactor;
+		s32 frameCount = 1;
+		if (texData->uvWidth == BM_ANIMATED_TEXTURE)
+		{
+			const u8* base = texData->image + 2;
+			const u32* textureOffsets = (u32*)base;
+			const TextureData* frame0 = (TextureData*)(base + textureOffsets[0]);
+
+			width  = frame0->width  * scaleFactor;
+			height = frame0->height * scaleFactor;
+			frameCount = texData->uvHeight;
+		}
+
+		const s32 hdFrameSize = width * height * 4;
+		// Verify this is a valid texture.
+		if (size < hdFrameSize * frameCount)
+		{
+			return;
+		}
+
+		// Process the HD data.
+		texData->scaleFactor = scaleFactor;
+		texData->hdAssetData = (u8*)region_alloc(s_texState.memoryRegion, hdFrameSize * frameCount);
+		memset(texData->hdAssetData, 0, hdFrameSize * frameCount);
+		
+		u8* dstData = texData->hdAssetData;
+		const u8* srcData = s_buffer.data();
+		for (s32 i = 0; i < frameCount; i++)
+		{
+			for (u32 y = 0; y < height; y++)
+			{
+				memcpy(&dstData[y*width*4], &srcData[(height - y - 1)*width*4], width * 4);
+			}
+			dstData += hdFrameSize;
+			srcData += hdFrameSize;
+		}
+	}
+
 	TextureData* bitmap_load(const char* name, u32 decompress, AssetPool pool, bool addToCache)
 	{
 		// TFE: Keep track of per-level texture state for serialization.
@@ -345,6 +411,8 @@ namespace TFE_Jedi
 		texture->animIndex = -1;
 		texture->frameIdx = -1;
 		texture->animPtr = nullptr;
+
+		bitmap_loadHD(name, texture, 2, pool);
 
 		return texture;
 	}

@@ -28,6 +28,7 @@ namespace TFE_Settings
 	static char s_settingsPath[TFE_MAX_PATH];
 	static TFE_Settings_Window s_windowSettings = {};
 	static TFE_Settings_Graphics s_graphicsSettings = {};
+	static TFE_Settings_Enhancements s_enhancementsSettings = {};
 	static TFE_Settings_Hud s_hudSettings = {};
 	static TFE_Settings_Sound s_soundSettings = {};
 	static TFE_Settings_System s_systemSettings = {};
@@ -41,6 +42,7 @@ namespace TFE_Settings
 	{
 		SECTION_WINDOW = 0,
 		SECTION_GRAPHICS,
+		SECTION_ENHANCEMENTS,
 		SECTION_HUD,
 		SECTION_SOUND,
 		SECTION_SYSTEM,
@@ -58,6 +60,7 @@ namespace TFE_Settings
 	{
 		"Window",
 		"Graphics",
+		"Enhancements",
 		"Hud",
 		"Sound",
 		"System",
@@ -74,6 +77,7 @@ namespace TFE_Settings
 	// Write
 	void writeWindowSettings(FileStream& settings);
 	void writeGraphicsSettings(FileStream& settings);
+	void writeEnhancementsSettings(FileStream& settings);
 	void writeHudSettings(FileStream& settings);
 	void writeSoundSettings(FileStream& settings);
 	void writeSystemSettings(FileStream& settings);
@@ -87,6 +91,7 @@ namespace TFE_Settings
 	void parseIniFile(const char* buffer, size_t len);
 	void parseWindowSettings(const char* key, const char* value);
 	void parseGraphicsSettings(const char* key, const char* value);
+	void parseEnhancementsSettings(const char* key, const char* value);
 	void parseHudSettings(const char* key, const char* value);
 	void parseSoundSettings(const char* key, const char* value);
 	void parseSystemSettings(const char* key, const char* value);
@@ -96,7 +101,7 @@ namespace TFE_Settings
 	void parseOutlawsSettings(const char* key, const char* value);
 	void parseCVars(const char* key, const char* value);
 	void checkGameData();
-		
+
 	//////////////////////////////////////////////////////////////////////////////////
 	// Implementation
 	//////////////////////////////////////////////////////////////////////////////////
@@ -260,6 +265,7 @@ namespace TFE_Settings
 		{
 			writeWindowSettings(settings);
 			writeGraphicsSettings(settings);
+			writeEnhancementsSettings(settings);
 			writeHudSettings(settings);
 			writeSoundSettings(settings);
 			writeSystemSettings(settings);
@@ -285,6 +291,11 @@ namespace TFE_Settings
 		return &s_graphicsSettings;
 	}
 
+	TFE_Settings_Enhancements* getEnhancementsSettings()
+	{
+		return &s_enhancementsSettings;
+	}
+
 	TFE_Settings_Hud* getHudSettings()
 	{
 		return &s_hudSettings;
@@ -298,13 +309,13 @@ namespace TFE_Settings
 	TFE_Settings_System* getSystemSettings()
 	{
 		return &s_systemSettings;
-	}	
+	}
 
 	TFE_Settings_Temp* getTempSettings()
 	{
 		return &s_tempSettings;
 	}
-	
+
 	TFE_Settings_A11y* getA11ySettings()
 	{
 		return &s_a11ySettings;
@@ -348,9 +359,9 @@ namespace TFE_Settings
 	void writeGraphicsSettings(FileStream& settings)
 	{
 		writeHeader(settings, c_sectionNames[SECTION_GRAPHICS]);
-		writeKeyValue_Int(settings, "gameWidth",  s_graphicsSettings.gameResolution.x);
+		writeKeyValue_Int(settings, "gameWidth", s_graphicsSettings.gameResolution.x);
 		writeKeyValue_Int(settings, "gameHeight", s_graphicsSettings.gameResolution.z);
-		writeKeyValue_Int(settings, "fov",        s_graphicsSettings.fov);
+		writeKeyValue_Int(settings, "fov", s_graphicsSettings.fov);
 		writeKeyValue_Bool(settings, "widescreen", s_graphicsSettings.widescreen);
 		writeKeyValue_Bool(settings, "asyncFramebuffer", s_graphicsSettings.asyncFramebuffer);
 		writeKeyValue_Bool(settings, "gpuColorConvert", s_graphicsSettings.gpuColorConvert);
@@ -362,7 +373,7 @@ namespace TFE_Settings
 		writeKeyValue_Bool(settings, "3doNormalFix", s_graphicsSettings.fix3doNormalOverflow);
 		writeKeyValue_Bool(settings, "ignore3doLimits", s_graphicsSettings.ignore3doLimits);
 		writeKeyValue_Bool(settings, "ditheredBilinear", s_graphicsSettings.ditheredBilinear);
-		
+
 		writeKeyValue_Bool(settings, "useBilinear", s_graphicsSettings.useBilinear);
 		writeKeyValue_Bool(settings, "useMipmapping", s_graphicsSettings.useMipmapping);
 		writeKeyValue_Float(settings, "bilinearSharpness", s_graphicsSettings.bilinearSharpness);
@@ -373,14 +384,14 @@ namespace TFE_Settings
 		writeKeyValue_Float(settings, "contrast", s_graphicsSettings.contrast);
 		writeKeyValue_Float(settings, "saturation", s_graphicsSettings.saturation);
 		writeKeyValue_Float(settings, "gamma", s_graphicsSettings.gamma);
-				
-		writeKeyValue_Bool(settings, "reticleEnable",   s_graphicsSettings.reticleEnable);
-		writeKeyValue_Int(settings,  "reticleIndex",    s_graphicsSettings.reticleIndex);
-		writeKeyValue_Float(settings, "reticleRed",     s_graphicsSettings.reticleRed);
-		writeKeyValue_Float(settings, "reticleGreen",   s_graphicsSettings.reticleGreen);
-		writeKeyValue_Float(settings, "reticleBlue",    s_graphicsSettings.reticleBlue);
+
+		writeKeyValue_Bool(settings, "reticleEnable", s_graphicsSettings.reticleEnable);
+		writeKeyValue_Int(settings, "reticleIndex", s_graphicsSettings.reticleIndex);
+		writeKeyValue_Float(settings, "reticleRed", s_graphicsSettings.reticleRed);
+		writeKeyValue_Float(settings, "reticleGreen", s_graphicsSettings.reticleGreen);
+		writeKeyValue_Float(settings, "reticleBlue", s_graphicsSettings.reticleBlue);
 		writeKeyValue_Float(settings, "reticleOpacity", s_graphicsSettings.reticleOpacity);
-		writeKeyValue_Float(settings, "reticleScale",   s_graphicsSettings.reticleScale);
+		writeKeyValue_Float(settings, "reticleScale", s_graphicsSettings.reticleScale);
 
 		writeKeyValue_Bool(settings, "bloomEnabled", s_graphicsSettings.bloomEnabled);
 		writeKeyValue_Float(settings, "bloomStrength", s_graphicsSettings.bloomStrength);
@@ -390,7 +401,15 @@ namespace TFE_Settings
 		writeKeyValue_Int(settings, "colorMode", s_graphicsSettings.colorMode);
 		writeKeyValue_Int(settings, "skyMode", s_graphicsSettings.skyMode);
 	}
-		
+
+	void writeEnhancementsSettings(FileStream& settings)
+	{
+		writeHeader(settings, c_sectionNames[SECTION_ENHANCEMENTS]);
+		writeKeyValue_Int(settings, "hdTextures", s_enhancementsSettings.enableHdTextures);
+		writeKeyValue_Int(settings, "hdSprites", s_enhancementsSettings.enableHdSprites);
+		writeKeyValue_Int(settings, "hdHud", s_enhancementsSettings.enableHdHud);
+	}
+
 	void writeHudSettings(FileStream& settings)
 	{
 		writeHeader(settings, c_sectionNames[SECTION_HUD]);
@@ -420,7 +439,7 @@ namespace TFE_Settings
 	void writeSystemSettings(FileStream& settings)
 	{
 		writeHeader(settings, c_sectionNames[SECTION_SYSTEM]);
-		writeKeyValue_Bool(settings, "gameExitsToMenu",   s_systemSettings.gameQuitExitsToMenu);
+		writeKeyValue_Bool(settings, "gameExitsToMenu", s_systemSettings.gameQuitExitsToMenu);
 		writeKeyValue_Bool(settings, "returnToModLoader", s_systemSettings.returnToModLoader);
 		writeKeyValue_Float(settings, "gifRecordingFramerate", s_systemSettings.gifRecordingFramerate);
 	}
@@ -448,7 +467,7 @@ namespace TFE_Settings
 		writeKeyValue_Int(settings, "gameplayMaxTextLines", s_a11ySettings.gameplayMaxTextLines);
 		writeKeyValue_Float(settings, "gameplayTextSpeed", s_a11ySettings.gameplayTextSpeed);
 		writeKeyValue_Int(settings, "gameplayCaptionMinVolume", s_a11ySettings.gameplayCaptionMinVolume);
-		
+
 		writeKeyValue_Bool(settings, "enableHeadwave", s_a11ySettings.enableHeadwave);
 		writeKeyValue_Bool(settings, "disableScreenFlashes", s_a11ySettings.disableScreenFlashes);
 		writeKeyValue_Bool(settings, "disablePlayerWeaponLighting", s_a11ySettings.disablePlayerWeaponLighting);
@@ -573,6 +592,9 @@ namespace TFE_Settings
 					break;
 				case SECTION_GRAPHICS:
 					parseGraphicsSettings(tokens[0].c_str(), tokens[1].c_str());
+					break;
+				case SECTION_ENHANCEMENTS:
+					parseEnhancementsSettings(tokens[0].c_str(), tokens[1].c_str());
 					break;
 				case SECTION_HUD:
 					parseHudSettings(tokens[0].c_str(), tokens[1].c_str());
@@ -782,6 +804,22 @@ namespace TFE_Settings
 		else if (strcasecmp("skyMode", key) == 0)
 		{
 			s_graphicsSettings.skyMode = SkyMode(parseInt(value));
+		}
+	}
+
+	void parseEnhancementsSettings(const char* key, const char* value)
+	{
+		if (strcasecmp("hdTextures", key) == 0)
+		{
+			s_enhancementsSettings.enableHdTextures = parseBool(value);
+		}
+		else if (strcasecmp("hdSprites", key) == 0)
+		{
+			s_enhancementsSettings.enableHdSprites = parseBool(value);
+		}
+		else if (strcasecmp("hdHud", key) == 0)
+		{
+			s_enhancementsSettings.enableHdHud = parseBool(value);
 		}
 	}
 

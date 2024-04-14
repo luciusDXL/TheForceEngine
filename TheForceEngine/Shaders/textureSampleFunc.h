@@ -110,10 +110,19 @@ vec3 getHalfTint(ivec2 packedColor)
 	return tint;
 }
 
+vec2 scaleUv(vec2 uv, int data)
+{
+	float scale = float(data >> 12);
+	uv *= scale;
+	return uv;
+}
+
 vec4 sampleTexture(int id, vec2 uv)
 {
 	ivec4 sampleData = texelFetch(TextureTable, id);
 	sampleData.zw &= ivec2(32767);
+
+	uv = scaleUv(uv, sampleData.y);
 
 	vec2 baseUv = uv;
 	uv = bilinearSharpness(uv, TexSamplingParam.x);
@@ -136,6 +145,8 @@ vec4 sampleTexture(int id, vec2 uv, bool sky, bool flip, bool applyFlatWarp, out
 	ivec4 sampleData = texelFetch(TextureTable, id);
 	tint = TextureSettings == 0u ? vec3(1.0) : getHalfTint(sampleData.zw);
 	sampleData.zw &= ivec2(32767);
+
+	uv = scaleUv(uv, sampleData.y);
 
 	vec2 baseUv = uv;
 	uv = bilinearSharpness(uv, TexSamplingParam.x);
@@ -195,6 +206,7 @@ vec4 sampleTextureClamp(int id, vec2 uv)
 	ivec4 sampleData = texelFetch(TextureTable, id);
 	sampleData.zw &= ivec2(32767);
 
+	uv = scaleUv(uv, sampleData.y);
 	uv = bilinearSharpness(uv, TexSamplingParam.x);
 
 	vec3 uv3 = vec3(uv, 0.0);
@@ -208,6 +220,8 @@ vec4 sampleTextureClamp(int id, vec2 uv, bool opaque)
 {
 	ivec4 sampleData = texelFetch(TextureTable, id);
 	sampleData.zw &= ivec2(32767);
+
+	uv = scaleUv(uv, sampleData.y);
 
 	vec2 baseUv = uv;
 	uv = bilinearSharpness(uv, TexSamplingParam.x);
