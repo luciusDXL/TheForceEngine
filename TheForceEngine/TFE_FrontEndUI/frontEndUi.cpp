@@ -1437,7 +1437,8 @@ namespace TFE_FrontEndUI
 		ImGui::Spacing();
 
 		TFE_Settings_Enhancements* enhancements = TFE_Settings::getEnhancementsSettings();
-		if (!enhancedGobExists)
+		TFE_Settings_Graphics* graphics = TFE_Settings::getGraphicsSettings();
+		if (!enhancedGobExists || graphics->colorMode != COLORMODE_TRUE_COLOR)
 		{
 			ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
 			ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.5f);
@@ -1466,7 +1467,7 @@ namespace TFE_FrontEndUI
 			forceTextureUpdate = true;
 		}
 
-		if (!enhancedGobExists)
+		if (!enhancedGobExists || graphics->colorMode != COLORMODE_TRUE_COLOR)
 		{
 			ImGui::PopItemFlag();
 			ImGui::PopStyleVar();
