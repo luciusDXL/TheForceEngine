@@ -71,6 +71,7 @@ namespace TFE_DarkForces
 		"SOUNDS.GOB",
 		"TEXTURES.GOB",
 		"SPRITES.GOB",
+		"WEAPONS.GOB", // Mac data has weapons in here instead of textures
 	};
 
 	static const char* c_optionalGobFileNames[] =
@@ -1082,6 +1083,8 @@ namespace TFE_DarkForces
 		TFE_Paths::addLocalSearchPath("");
 		TFE_Paths::addLocalSearchPath("LFD/");
 		// Dark Forces also adds C:/ and C:/LFD but TFE won't be doing that for obvious reasons...
+		TFE_Paths::addLocalSearchPath("Cutscenes/");
+		// mac data has LFDs in Cutscenes folder
 		
 		// Add some extra directories, if they exist.
 		// Obviously these were not in the original code.
@@ -1124,7 +1127,12 @@ namespace TFE_DarkForces
 			}
 			else
 			{
-				TFE_System::logWrite(LOG_ERROR, "Dark Forces Main", "Cannot find required game data - '%s'.", c_gobFileNames[i]);
+				if (strcmp(c_gobFileNames[i],"WEAPONS.GOB") == 0) {
+					TFE_System::logWrite(LOG_WARNING, "Dark Forces Main", "Cannot find required mac game data - '%s'.", c_gobFileNames[i]);
+				}
+				else {
+					TFE_System::logWrite(LOG_ERROR, "Dark Forces Main", "Cannot find required game data - '%s'.", c_gobFileNames[i]);
+				}
 			}
 		}
 		// Optional gobs
