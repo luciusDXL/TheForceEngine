@@ -402,14 +402,14 @@ namespace TFE_Model_Jedi
 		const char* buffer = parser.readLine(bufferPos, true);
 		if (!buffer) { return false; }
 
-		f32 version;
-		if (sscanf(buffer, "3DO %f", &version) != 1)
+		s32 versionMajor, versionMinor;
+		if (sscanf(buffer, "3DO %d.%d", &versionMajor, &versionMinor) != 2)
 		{
 			TFE_System::logWrite(LOG_ERROR, "Object3D_Load", "'%s' has no valid name.", name);
 			assert(0);
 			return false;
 		}
-		if (version < 1.2f)
+		if (versionMajor < 1 || (versionMajor == 1 && versionMinor < 2))
 		{
 			TFE_System::logWrite(LOG_ERROR, "Object3D_Load", "'%s' has inavlid version", name);
 			assert(0);

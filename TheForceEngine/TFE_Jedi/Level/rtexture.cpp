@@ -3,6 +3,7 @@
 #include "rtexture.h"
 #include <TFE_Game/igame.h>
 #include <TFE_System/system.h>
+#include <TFE_System/endian.h>
 #include <TFE_Archive/archive.h>
 #include <TFE_Asset/assetSystem.h>
 #include <TFE_FileSystem/fileutil.h>
@@ -61,21 +62,21 @@ namespace TFE_Jedi
 	{
 		s16 res = *((s16*)data);
 		data += 2;
-		return res;
+		return TFE_Endian::le16_to_cpu(res);
 	}
 
 	u16 readUShort(const u8*& data)
 	{
 		u16 res = *((u16*)data);
 		data += 2;
-		return res;
+		return TFE_Endian::le16_to_cpu(res);
 	}
 
 	s32 readInt(const u8*& data)
 	{
 		s32 res = *((s32*)data);
 		data += 4;
-		return res;
+		return TFE_Endian::le32_to_cpu(res);
 	}
 
 	void bitmap_setupAnimationTask()
@@ -351,7 +352,7 @@ namespace TFE_Jedi
 					u8* dst = texture->image;
 					for (s32 i = 0; i < texture->width; i++, dst += texture->height)
 					{
-						const u8* src = &inBuffer[columns[i]];
+						const u8* src = &inBuffer[TFE_Endian::le32_to_cpu(columns[i])];
 						decompressColumn_Type1(src, dst, texture->height);
 					}
 				}
@@ -360,7 +361,7 @@ namespace TFE_Jedi
 					u8* dst = texture->image;
 					for (s32 i = 0; i < texture->width; i++, dst += texture->height)
 					{
-						const u8* src = &inBuffer[columns[i]];
+						const u8* src = &inBuffer[TFE_Endian::le32_to_cpu(columns[i])];
 						decompressColumn_Type2(src, dst, texture->height);
 					}
 				}
@@ -568,11 +569,15 @@ namespace TFE_Jedi
 		const s64 imageBase = s64(tex->image);
 		for (s32 i = 0; i < anim->count; i++)
 		{
-			const TextureData* frame = (TextureData*)(base + textureOffsets[i]);
+			const TextureData* frame = (TextureData*)(base + TFE_Endian::le32_to_cpu(textureOffsets[i]));
 			outFrames[i] = *frame;
-
+			outFrames[i].width = TFE_Endian::le16_to_cpu(outFrames[i].width);
+			outFrames[i].height = TFE_Endian::le16_to_cpu(outFrames[i].height);
+			outFrames[i].uvWidth = TFE_Endian::le16_to_cpu(outFrames[i].uvWidth);
+			outFrames[i].uvHeight = TFE_Endian::le16_to_cpu(outFrames[i].uvHeight);
+			
 			// Somehow this doesn't crash in DOS...
-			if (frame->width >= 16384 || frame->height >= 16384)
+			if (outFrames[i].width >= 16384 || outFrames[i].height >= 16384)
 			{
 				outFrames[i] = outFrames[0];
 			}
