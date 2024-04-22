@@ -453,163 +453,344 @@ namespace TFE_Jedi
 		return 1.0;
 	}
 
-	// TODO: Per-level color matching for HD assets.
-	void packNode(const TextureNode* node, const TextureData* texData, Vec4i* tableEntry, s32 paddingX, s32 paddingY, s32 mipCount, const TextureData* hdSrc, s32 frameIndex)
+	f64 addMultiplierHd(u32 cFull, const f64* cHdAveColor, f64* accum)
 	{
-		// Copy the texture into place.
-		s32 offsetX = paddingX / 2;
-		s32 offsetY = paddingY / 2;
-		const u8* srcImage = hdSrc && hdSrc->hdAssetData ? hdSrc->hdAssetData : texData->image;
-		const s32 scaleFactor = hdSrc && hdSrc->hdAssetData ? hdSrc->scaleFactor : 1;
+		if ((cFull & 0x00ffffff) == 0) { return 0.0; }
 
-		Vec3f halfTint = { 1.0f, 1.0f, 1.0f };
+		u32 r = cFull & 0xff;
+		u32 g = (cFull >> 8) & 0xff;
+		u32 b = (cFull >> 16) & 0xff;
+
+		f64 scale = 1.0 / 255.0;
+		f64 rFull = f64(r) * scale;
+		f64 gFull = f64(g) * scale;
+		f64 bFull = f64(b) * scale;
+		f64 rHd = cHdAveColor[0];
+		f64 gHd = cHdAveColor[1];
+		f64 bHd = cHdAveColor[2];
+
+		f64 mR = rFull > FLT_EPSILON ? rHd / rFull : -1.0;
+		f64 mG = gFull > FLT_EPSILON ? gHd / gFull : -1.0;
+		f64 mB = bFull > FLT_EPSILON ? bHd / bFull : -1.0;
+
+		accum[0] += mR > FLT_EPSILON ? mR : 0.0;
+		accum[1] += mG > FLT_EPSILON ? mG : 0.0;
+		accum[2] += mB > FLT_EPSILON ? mB : 0.0;
+		return 1.0;
+	}
+
+	void getAverageColorHd(const u32* srcImageHd, s32 x, s32 y, s32 stride, s32 scaleFactor, f64* aveColor)
+	{
+		s32 pixelCount = scaleFactor * scaleFactor;
+		s32 startIndex = y * stride + x;
+		aveColor[0] = 0;
+		aveColor[1] = 0;
+		aveColor[2] = 0;
+
+		const f64 scale = 1.0 / 255.0;
+		for (s32 i = 0; i < pixelCount; i++)
+		{
+			const s32 index = (i / scaleFactor) * stride + (i % scaleFactor) + startIndex;
+			aveColor[0] += f64(srcImageHd[index] & 0xff) * scale;
+			aveColor[1] += f64((srcImageHd[index] >> 8) & 0xff) * scale;
+			aveColor[2] += f64((srcImageHd[index] >> 16) & 0xff) * scale;
+		}
+		const f64 rcpCount = 1.0 / f64(pixelCount);
+		aveColor[0] *= rcpCount;
+		aveColor[1] *= rcpCount;
+		aveColor[2] *= rcpCount;
+	}
+
+	// TODO: This isn't working, it has been shelved until the rest of the support is in for HD assets.
+	Vec3f colorMatch(const TextureData* texData, const TextureData* hdSrc, const u32* srcImageHd)
+	{
+		Vec3f colorScale = { 1.0f, 1.0f, 1.0f };
+
+		const u8* srcImage = texData->image;
+		const s32 scaleFactor = max(1, hdSrc->scaleFactor);
+		if (!srcImage || !srcImageHd || (texData->flags & INDEXED) || (texData->flags & ALWAYS_FULLBRIGHT)) { return colorScale; }
+		
+		const u32* pal = getPalette(texData->palIndex);
+		// TODO: For some levels this should be 30.
+		const u8* remap = &TFE_DarkForces::s_levelColorMap[31 << 8];
+		const u8* remapHalf = &TFE_DarkForces::s_levelColorMap[16 << 8];
+		const s32 wHd = texData->width  * scaleFactor;
+		const s32 hHd = texData->height * scaleFactor;
+						
+		f64 accum[3] = { 0.0 };
+		f64 accumCount = 0.0;
 		s32 grayScaleCount = 0;
 		s32 grayScaleCountHalf = 0;
 		s32 totalCount = 0;
-		if (s_texturePacker->trueColor)
+		for (s32 y = 0; y < texData->height; y++)
 		{
-			u32* output = (u32*)getWritePointer(s_currentPage, node->rect.x, node->rect.y, 0);
-			if (hdSrc && hdSrc->hdAssetData)
+			for (s32 x = 0; x < texData->width; x++)
 			{
-				s32 w = texData->width * scaleFactor;
-				s32 h = texData->height * scaleFactor;
-				srcImage += frameIndex * (w * h * 4);
+				f64 aveColor[3];
+				getAverageColorHd(srcImageHd, x, y, wHd, scaleFactor, aveColor);
 
-				for (s32 y = 0; y < h + paddingY; y++, output += s_texturePacker->width)
+				u8 palIndex = srcImage[x*texData->height + y];
+				u32 color = palIndex == 0 ? 0u : pal[remap[palIndex]];
+				f32 sat = getSaturation(color);
+				if (sat < c_satLimit)
 				{
-					s32 ySrc = h ? (y - offsetY) % h : 0;
-					if (ySrc < 0) { ySrc += h; }
+					grayScaleCount++;
+				}
+				totalCount++;
 
-					for (s32 x = 0; x < w + paddingX; x++)
-					{
-						s32 xSrc = w ? (x - offsetX) % w : 0;
-						if (xSrc < 0) { xSrc += w; }
+				// Also figure out the average multiplier.
+				u32 halfValue = palIndex == 0 ? 0u : pal[remapHalf[palIndex]];
+				accumCount += addMultiplierHd(color, aveColor, accum);
 
-						output[x] = srcImage ? ((u32*)srcImage)[ySrc*w + xSrc] : 0;
-						// Fix-up the alpha.
-						u32 alpha = output[x] >> 24u;
-						if (alpha == 0xff)
-						{
-							alpha = 0x7f;
-						}
-						else if (alpha > 0)
-						{
-							alpha = 0xff;
-						}
-						output[x] &= 0x00ffffff;
-						output[x] |= (alpha << 24);
-					}
+				sat = getSaturation(halfValue);
+				if (sat < c_satLimit)
+				{
+					grayScaleCountHalf++;
 				}
 			}
-			else
+		}
+
+		if (accumCount > 0.0)
+		{
+			// Try to guess at which textures have areas that should not be tinted.
+			//if (grayScaleCount <= totalCount / 4 || grayScaleCountHalf <= 3 * totalCount / 8)
 			{
-				const u32* pal = getPalette(texData->palIndex);
-				// TODO: For some levels this should be 30.
-				const u8* remap = &TFE_DarkForces::s_levelColorMap[31 << 8];
-				const u8* remapHalf = &TFE_DarkForces::s_levelColorMap[16 << 8];
+				const f64 scale = 1.0 / max(accum[0], max(accum[1], accum[2]));
+				accum[0] *= scale;
+				accum[1] *= scale;
+				accum[2] *= scale;
 
-				f64 accum[3] = { 0.0 };
-				f64 accumCount = 0.0;
-
-				for (s32 y = 0; y < texData->height + paddingY; y++, output += s_texturePacker->width)
-				{
-					s32 ySrc = texData->height ? (y - offsetY) % texData->height : 0;
-					if (ySrc < 0) { ySrc += texData->height; }
-
-					for (s32 x = 0; x < texData->width + paddingX; x++)
-					{
-						s32 xSrc = texData->width ? (x - offsetX) % texData->width : 0;
-						if (xSrc < 0) { xSrc += texData->width; }
-
-						u8 palIndex = srcImage ? srcImage[xSrc*texData->height + ySrc] : 0;
-						if (texData->flags & INDEXED)
-						{
-							output[x] = palIndex == 0 ? 0u : pal[palIndex];
-							if (palIndex >= s_colorIndexStart && palIndex < s_colorIndexStart + COLOR_INDEX_COUNT)
-							{
-								s32 index = palIndex - s_colorIndexStart;
-								// set it half way inside the buckets.
-								s32 alpha = 128 + index * 16 + 8;
-								output[x] &= 0x00ffffff;
-								output[x] |= (alpha << 24);
-							}
-						}
-						else if (texData->flags & ALWAYS_FULLBRIGHT)
-						{
-							output[x] = palIndex == 0 ? 0u : pal[palIndex];
-						}
-						else
-						{
-							output[x] = palIndex == 0 ? 0u : pal[remap[palIndex]];
-							f32 sat = getSaturation(output[x]);
-							if (sat < c_satLimit)
-							{
-								grayScaleCount++;
-							}
-							totalCount++;
-
-							// Also figure out the average multiplier.
-							u32 halfValue = palIndex == 0 ? 0u : pal[remapHalf[palIndex]];
-							accumCount += addMultiplier(output[x], halfValue, accum);
-
-							sat = getSaturation(halfValue);
-							if (sat < c_satLimit)
-							{
-								grayScaleCountHalf++;
-							}
-						}
-
-						if (!(texData->flags & INDEXED))
-						{
-							handleAlpha8Bit(palIndex, &output[x]);
-						}
-					}
-				}
-
-				if (accumCount > 0.0)
-				{
-					// Try to guess at which textures have areas that should not be tinted.
-					if (grayScaleCount > totalCount / 4 && grayScaleCountHalf > 3 * totalCount / 8)
-					{
-						halfTint = { 1.0f, 1.0f, 1.0f };
-					}
-					else
-					{
-						const f64 scale = 1.0 / max(accum[0], max(accum[1], accum[2]));
-						accum[0] *= scale;
-						accum[1] *= scale;
-						accum[2] *= scale;
-
-						halfTint = { f32(accum[0]), f32(accum[1]), f32(accum[2]) };
-					}
-				}
+				colorScale = { f32(accum[0]), f32(accum[1]), f32(accum[2]) };
 			}
+		}
+		return colorScale;
+	}
 
-			u32* source = (u32*)getWritePointer(s_currentPage, node->rect.x, node->rect.y, 0);
-			u32 w = texData->width  * scaleFactor + paddingX;
-			u32 h = texData->height * scaleFactor + paddingY;
-			u32 stride = s_texturePacker->width;
-			for (s32 m = 1; m < mipCount; m++)
+	u32 scaleColor(u32 inColor, Vec3f colorScale)
+	{
+		const f32 r = f32(inColor & 0xff) * colorScale.x;
+		const f32 g = f32((inColor >> 8) & 0xff) * colorScale.y;
+		const f32 b = f32((inColor >> 16) & 0xff) * colorScale.z;
+
+		const u32 ir = min(u32(r), 255u);
+		const u32 ig = min(u32(g), 255u);
+		const u32 ib = min(u32(b), 255u);
+		return (inColor & 0xff000000) | (ir) | (ig << 8) | (ib << 16);
+	}
+
+	// Fixup the alpha/emissive encoding to match TFE expectations.
+	// TODO: Add an option to enable variable emissive instead of all or nothing.
+	u32 fixupAlphaForHdTexture(u32 color)
+	{
+		u32 alpha = color >> 24u;
+		if (alpha == 0xffu)
+		{
+			alpha = 0x7fu;
+		}
+		else if (alpha > 0u)
+		{
+			alpha = 0xffu;
+		}
+		color &= 0x00ffffffu;
+		color |= (alpha << 24u);
+		return color;
+	}
+
+	void copyHdTrueColorTexture(const TextureData* texData, s32 scaleFactor, const u32* srcImageHd, s32 frameIndex, s32 paddingX, s32 paddingY, s32 offsetX, s32 offsetY, u32* output)
+	{
+		// TODO: Optional color matching between the HD texture and original to help
+		// make levels like Gromas Mines look correct.
+		const s32 w = texData->width  * scaleFactor;
+		const s32 h = texData->height * scaleFactor;
+		const s32 srcPixels = w * h;
+		const s32 dstStrideInTexels = s_texturePacker->width;
+		if (srcImageHd && w > 0 && h > 0)
+		{
+			srcImageHd += frameIndex * srcPixels;
+			// TODO:
+			//Vec3f colorScale = colorMatch(texData, hdSrc, (u32*)srcImage);
+
+			for (s32 y = 0; y < h + paddingY; y++, output += dstStrideInTexels)
 			{
-				output = (u32*)getWritePointer(s_currentPage, node->rect.x, node->rect.y, m);
-				generateMipmap(source, output, w, h, stride);
-
-				stride >>= 1;
-				w >>= 1;
-				h >>= 1;
-				source = output;
+				const s32 ySrc = (y - offsetY + h) % h;
+				for (s32 x = 0; x < w + paddingX; x++)
+				{
+					const s32 xSrc = (x - offsetX + w) % w;
+					output[x] = srcImageHd[ySrc*w + xSrc];
+					// TODO:
+					//output[x] = scaleColor(output[x], colorScale);
+					output[x] = fixupAlphaForHdTexture(output[x]);
+				}
 			}
 		}
 		else
 		{
-			u8* output = getWritePointer(s_currentPage, node->rect.x, node->rect.y, 0);
-			for (s32 y = 0; y < texData->height; y++, output += s_texturePacker->width)
+			const s32 srcStride = w * 4;
+			for (s32 y = 0; y < h + paddingY; y++, output += dstStrideInTexels)
 			{
-				for (s32 x = 0; x < texData->width; x++)
+				memset(output, 0, srcStride);
+			}
+		}
+	}
+
+	void copy8BitToTrueColorTexture(const TextureData* texData, const u8* srcImage, s32 paddingX, s32 paddingY, s32 offsetX, s32 offsetY, u32* output, Vec3f& halfTint)
+	{
+		const s32 w = texData->width;
+		const s32 h = texData->height;
+		const s32 dstStrideInTexels = s_texturePacker->width;
+		const u32* pal = getPalette(texData->palIndex);
+		// TODO: For some levels this should be 30.
+		const u8* remap = &TFE_DarkForces::s_levelColorMap[31 << 8];
+		const u8* remapHalf = &TFE_DarkForces::s_levelColorMap[16 << 8];
+
+		f64 accum[3] = { 0.0 };
+		f64 accumCount = 0.0;
+		s32 grayScaleCount = 0;
+		s32 grayScaleCountHalf = 0;
+		s32 totalCount = 0;
+
+		if (srcImage && w > 0 && h > 0)
+		{
+			for (s32 y = 0; y < texData->height + paddingY; y++, output += dstStrideInTexels)
+			{
+				const s32 ySrc = (y - offsetY + h) % h;
+				for (s32 x = 0; x < texData->width + paddingX; x++)
 				{
-					output[x] = srcImage[x*texData->height + y];
+					const s32 xSrc = (x - offsetX + w) % w;
+
+					u8 palIndex = srcImage ? srcImage[xSrc*texData->height + ySrc] : 0;
+					if (texData->flags & INDEXED)
+					{
+						output[x] = palIndex == 0 ? 0u : pal[palIndex];
+						if (palIndex >= s_colorIndexStart && palIndex < s_colorIndexStart + COLOR_INDEX_COUNT)
+						{
+							s32 index = palIndex - s_colorIndexStart;
+							// set it half way inside the buckets.
+							s32 alpha = 128 + index * 16 + 8;
+							output[x] &= 0x00ffffff;
+							output[x] |= (alpha << 24);
+						}
+					}
+					else if (texData->flags & ALWAYS_FULLBRIGHT)
+					{
+						output[x] = palIndex == 0 ? 0u : pal[palIndex];
+					}
+					else
+					{
+						output[x] = palIndex == 0 ? 0u : pal[remap[palIndex]];
+						f32 sat = getSaturation(output[x]);
+						if (sat < c_satLimit)
+						{
+							grayScaleCount++;
+						}
+						totalCount++;
+
+						// Also figure out the average multiplier.
+						u32 halfValue = palIndex == 0 ? 0u : pal[remapHalf[palIndex]];
+						accumCount += addMultiplier(output[x], halfValue, accum);
+
+						sat = getSaturation(halfValue);
+						if (sat < c_satLimit)
+						{
+							grayScaleCountHalf++;
+						}
+					}
+
+					if (!(texData->flags & INDEXED))
+					{
+						handleAlpha8Bit(palIndex, &output[x]);
+					}
 				}
 			}
+		}
+		else
+		{
+			const s32 srcStride = w * 4;
+			for (s32 y = 0; y < h + paddingY; y++, output += dstStrideInTexels)
+			{
+				memset(output, 0, srcStride);
+			}
+		}
+
+		if (accumCount > 0.0)
+		{
+			// Try to guess at which textures have areas that should not be tinted.
+			if (grayScaleCount > totalCount / 4 && grayScaleCountHalf > 3 * totalCount / 8)
+			{
+				halfTint = { 1.0f, 1.0f, 1.0f };
+			}
+			else
+			{
+				const f64 scale = 1.0 / max(accum[0], max(accum[1], accum[2]));
+				accum[0] *= scale;
+				accum[1] *= scale;
+				accum[2] *= scale;
+
+				halfTint = { f32(accum[0]), f32(accum[1]), f32(accum[2]) };
+			}
+		}
+	}
+
+	void generateTrueColorMips(const TextureNode* node, const TextureData* texData, s32 scaleFactor, s32 paddingX, s32 paddingY, s32 mipCount, u32* output)
+	{
+		const u32* source = (u32*)getWritePointer(s_currentPage, node->rect.x, node->rect.y, 0);
+		u32 w = texData->width  * scaleFactor + paddingX;
+		u32 h = texData->height * scaleFactor + paddingY;
+		u32 stride = s_texturePacker->width;
+		for (s32 m = 1; m < mipCount; m++)
+		{
+			output = (u32*)getWritePointer(s_currentPage, node->rect.x, node->rect.y, m);
+			generateMipmap(source, output, w, h, stride);
+
+			stride >>= 1;
+			w >>= 1;
+			h >>= 1;
+			source = output;
+		}
+	}
+
+	void copy8BitTo8BitTexture(const TextureData* texData, const u8* srcImage, u8* output)
+	{
+		const s32 outStride = s_texturePacker->width;
+		const s32 w = texData->width;
+		const s32 h = texData->height;
+		for (s32 y = 0; y < h; y++, output += outStride)
+		{
+			for (s32 x = 0; x < w; x++)
+			{
+				output[x] = srcImage[x*h + y];
+			}
+		}
+	}
+
+	void packNode(const TextureNode* node, const TextureData* texData, Vec4i* tableEntry, s32 paddingX, s32 paddingY, s32 mipCount, const TextureData* hdSrc, s32 frameIndex)
+	{
+		// Copy the texture into place.
+		const s32 offsetX = paddingX / 2;
+		const s32 offsetY = paddingY / 2;
+		const bool isHdTex = hdSrc && hdSrc->hdAssetData;
+		const u8* srcImage = isHdTex ? hdSrc->hdAssetData : texData->image;
+		const s32 scaleFactor = isHdTex ? hdSrc->scaleFactor : 1;
+
+		Vec3f halfTint = { 1.0f, 1.0f, 1.0f };
+		if (s_texturePacker->trueColor)
+		{
+			u32* output = (u32*)getWritePointer(s_currentPage, node->rect.x, node->rect.y, 0);
+			if (isHdTex)
+			{
+				const u32* srcImageHd = (u32*)srcImage;
+				copyHdTrueColorTexture(texData, scaleFactor, srcImageHd, frameIndex, paddingX, paddingY, offsetX, offsetY, output);
+			}
+			else
+			{
+				copy8BitToTrueColorTexture(texData, srcImage, paddingX, paddingY, offsetX, offsetY, output, halfTint);
+			}
+			generateTrueColorMips(node, texData, scaleFactor, paddingX, paddingY, mipCount, output);
+		}
+		else
+		{
+			u8* output = getWritePointer(s_currentPage, node->rect.x, node->rect.y, 0);
+			copy8BitTo8BitTexture(texData, srcImage, output);
 		}
 		s_usedTexels += texData->width * texData->height;
 
@@ -624,9 +805,9 @@ namespace TFE_Jedi
 		tableEntry->y |= (scaleFactor << 12);
 
 		// Half color tint packed.
-		s32 r = s32(halfTint.x * 255.0);
-		s32 g = s32(halfTint.y * 255.0);
-		s32 b = s32(halfTint.z * 255.0);
+		const s32 r = s32(halfTint.x * 255.0);
+		const s32 g = s32(halfTint.y * 255.0);
+		const s32 b = s32(halfTint.z * 255.0);
 		tableEntry->z |= ((r << 15) | (g << 23));
 		tableEntry->w |= (b << 15);
 	}
