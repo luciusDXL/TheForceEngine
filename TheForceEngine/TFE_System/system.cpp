@@ -227,23 +227,10 @@ namespace TFE_System
 		return false;
 	}
 
-#ifdef _WIN32
 	void sleep(u32 sleepDeltaMS)
 	{
-		Sleep(sleepDeltaMS);
+		SDL_Delay(sleepDeltaMS);
 	}
-#elif defined __linux__
-	void sleep(u32 sleepDeltaMS)
-	{
-		struct timespec ts = {0, 0};
-		while (sleepDeltaMS >= 1000) {
-			ts.tv_sec += 1;
-			sleepDeltaMS -= 1000;
-		}
-		ts.tv_nsec = sleepDeltaMS * 1000000;
-		nanosleep(&ts, NULL);
-	}
-#endif
 
 	void postQuitMessage()
 	{
