@@ -862,15 +862,19 @@ namespace TFE_Jedi
 		tableEntry->y |= (scaleFactor << 12);
 	}
 		
-	void packNodeCell(const TextureNode* node, const void* basePtr, const WaxCell* cell, Vec4i* tableEntry, s32 paddingX, s32 paddingY)
+	void packNodeCell(const TextureNode* node, const void* basePtr, const WaxCell* cell, const HdWax* hdWax, Vec4i* tableEntry, s32 paddingX, s32 paddingY)
 	{
 		// Copy the texture into place.
 		s32 offsetX = paddingX / 2;
 		s32 offsetY = paddingY / 2;
 
-		const s32 compressed = cell->compressed;
-		u8* imageData = (u8*)cell + sizeof(WaxCell);
+		const s32 compressed = hdWax ? 0 : cell->compressed;
+		u8* imageData = hdWax ? (u8*)hdWax->cells[cell->id].data : (u8*)cell + sizeof(WaxCell);
 		u8* image = (compressed == 1) ? imageData + (cell->sizeX * sizeof(u32)) : imageData;
+
+		s32 scaleFactor = hdWax ? 2 : 1;	// TODO: Hardcoded.
+		s32 w = cell->sizeX * scaleFactor;
+		s32 h = cell->sizeY * scaleFactor;
 		
 		u8 columnWorkBuffer[WAX_DECOMPRESS_SIZE];
 		const u32* columnOffset = (u32*)((u8*)basePtr + cell->columnOffset);
@@ -881,14 +885,25 @@ namespace TFE_Jedi
 
 			u32* output = (u32*)getWritePointer(s_currentPage, node->rect.x, node->rect.y, 0);
 
-			for (s32 x = 0; x < cell->sizeX + paddingX; x++)
+			for (s32 x = 0; x < w + paddingX; x++)
 			{
 				const s32 xSrc = x - offsetX;
-				if (xSrc < 0 || xSrc >= cell->sizeX)
+				if (xSrc < 0 || xSrc >= w)
 				{
-					for (s32 y = 0; y < cell->sizeY + paddingY; y++)
+					for (s32 y = 0; y < h + paddingY; y++)
 					{
 						output[y*s_texturePacker->width + x] = 0;
+					}
+				}
+				else if (hdWax)
+				{
+					u32* imageDataHd = (u32*)imageData;
+					for (s32 y = 0; y < h + paddingY; y++)
+					{
+						const s32 ySrc = y - offsetY;
+						const bool outside = ySrc < 0 || ySrc >= h;
+						const u32 outAddr = y * s_texturePacker->width + x;
+						output[outAddr] = outside ? 0 : fixupAlphaForHdTexture(imageDataHd[(h-ySrc-1)*w + w-xSrc-1]);
 					}
 				}
 				else
@@ -901,10 +916,10 @@ namespace TFE_Jedi
 						column = columnWorkBuffer;
 					}
 
-					for (s32 y = 0; y < cell->sizeY + paddingY; y++)
+					for (s32 y = 0; y < h + paddingY; y++)
 					{
 						const s32 ySrc = y - offsetY;
-						bool outside = ySrc < 0 || ySrc >= cell->sizeY;
+						bool outside = ySrc < 0 || ySrc >= h;
 						const u8 palIndex = (outside || column[ySrc] == 0) ? 0u : column[ySrc];
 						const u32 addr = y * s_texturePacker->width + x;
 						if (s_assetPool == POOL_LEVEL)
@@ -924,32 +939,31 @@ namespace TFE_Jedi
 		else
 		{
 			u8* output = getWritePointer(s_currentPage, node->rect.x, node->rect.y, 0);
-			for (s32 x = 0; x < cell->sizeX; x++)
+			for (s32 x = 0; x < w; x++)
 			{
 				u8* column = (u8*)image + columnOffset[x];
 				if (compressed)
 				{
 					const u8* colPtr = (u8*)cell + columnOffset[x];
-					sprite_decompressColumn(colPtr, columnWorkBuffer, cell->sizeY);
+					sprite_decompressColumn(colPtr, columnWorkBuffer, h);
 					column = columnWorkBuffer;
 				}
 
-				for (s32 y = 0; y < cell->sizeY; y++)
+				for (s32 y = 0; y < h; y++)
 				{
 					output[y*s_texturePacker->width + x] = column[y];
 				}
 			}
 		}
-		s_usedTexels += cell->sizeX * cell->sizeY;
+		s_usedTexels += w * h;
 
 		// Copy the mapping into the texture table.
 		tableEntry->x = (s32)node->rect.x + offsetX;
 		tableEntry->y = (s32)node->rect.y + offsetY;
-		tableEntry->z = (s32)cell->sizeX;
-		tableEntry->w = (s32)cell->sizeY;
+		tableEntry->z = (s32)w;
+		tableEntry->w = (s32)h;
 
 		// Page the page index into the x offset.
-		s32 scaleFactor = 1;
 		tableEntry->x |= (s_currentPage << 12);
 		tableEntry->y |= (scaleFactor << 12);
 	}
@@ -1072,25 +1086,30 @@ namespace TFE_Jedi
 		return true;
 	}
 
-	bool insertWaxFrame(void* basePtr, WaxFrame* frame)
+	bool insertWaxFrame(void* basePtr, WaxFrame* frame, bool packHdSprites)
 	{
 		if (!basePtr || !frame) { return true; }
 		WaxCell* cell = WAX_CellPtr(basePtr, frame);
 		if (!cell || isWaxCellInMap(cell)) { return true; }
+
+		const HdWax* hdWax = packHdSprites ? TFE_Sprite_Jedi::getHdWaxData(basePtr) : nullptr;
+		const s32 scale = hdWax ? 2 : 1;	// TODO: still hardcoded.
+		const s32 w = cell->sizeX * scale;
+		const s32 h = cell->sizeY * scale;
 		
 		s32 padding = (s_texturePacker->trueColor) ? FILTER_PADDING : 0;
-		TextureNode* node = insertNode(s_root, cell, cell->sizeX + padding, cell->sizeY + padding);
+		TextureNode* node = insertNode(s_root, cell, w + padding, h + padding);
 		if (!node)
 		{
 			return false;
 		}
 
-		s_totalTexels += cell->sizeX * cell->sizeY;
+		s_totalTexels += w * h;
 		insertWaxCellIntoMap(cell, s_texturePacker->texturesPacked);
 
 		assert(node->tex == cell && s_texturePacker->texturesPacked < MAX_TEXTURE_COUNT);
 		cell->textureId = s_texturePacker->texturesPacked;
-		packNodeCell(node, basePtr, cell, &s_texturePacker->textureTable[s_texturePacker->texturesPacked], padding, padding);
+		packNodeCell(node, basePtr, cell, hdWax, &s_texturePacker->textureTable[s_texturePacker->texturesPacked], padding, padding);
 		s_texturePacker->texturesPacked++;
 		return true;
 	}
@@ -1245,6 +1264,7 @@ namespace TFE_Jedi
 		s_assetPool = pool;
 
 		const bool packHdTextures = TFE_Settings::getEnhancementsSettings()->enableHdTextures && s_texturePacker->trueColor;
+		const bool packHdSprites  = TFE_Settings::getEnhancementsSettings()->enableHdSprites && s_texturePacker->trueColor;
 
 		// Get textures.
 		s_texInfoPool.clear();
@@ -1291,6 +1311,15 @@ namespace TFE_Jedi
 					{
 						WaxCell* cell = list[i].frame ? WAX_CellPtr(list[i].basePtr, list[i].frame) : nullptr;
 						list[i].sortKey = cell ? cell->sizeX * cell->sizeY : 0;
+						if (packHdSprites && cell)
+						{
+							const HdWax* hdWax = TFE_Sprite_Jedi::getHdWaxData(list[i].basePtr);
+							if (hdWax)
+							{
+								// TODO: Hardcoded.
+								list[i].sortKey *= 4;
+							}
+						}
 					} break;
 				}
 			}
@@ -1374,7 +1403,7 @@ namespace TFE_Jedi
 						} break;
 						case TEXINFO_DF_WAX_CELL:
 						{
-							if (!insertWaxFrame(unpackedList[i]->basePtr, unpackedList[i]->frame))
+							if (!insertWaxFrame(unpackedList[i]->basePtr, unpackedList[i]->frame, packHdSprites))
 							{
 								s_unpackedTextures[s_unpackedBuffer].push_back(unpackedList[i]);
 							}

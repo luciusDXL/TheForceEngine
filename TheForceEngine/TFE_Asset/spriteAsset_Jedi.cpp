@@ -3,6 +3,7 @@
 #include "spriteAsset_Jedi.h"
 #include <TFE_System/system.h>
 #include <TFE_FileSystem/filestream.h>
+#include <TFE_FileSystem/fileutil.h>
 #include <TFE_FileSystem/paths.h>
 #include <TFE_Asset/assetSystem.h>
 #include <TFE_Jedi/Math/core_math.h>
@@ -21,19 +22,69 @@ using namespace TFE_Jedi;
 
 namespace TFE_Sprite_Jedi
 {
+	enum
+	{
+		PoolDataOffset = 7,
+	};
+
 	typedef std::map<std::string, JediFrame*> FrameMap;
 	typedef std::map<std::string, JediWax*> SpriteMap;
+	typedef std::map<const void*, const HdWax*> HdSpriteMap;
 	typedef std::vector<JediFrame*> FrameList;
 	typedef std::vector<JediWax*> SpriteList;
+	typedef std::vector<HdWax*> HdSpriteList;
 	typedef std::vector<std::string> NameList;
 
-	static FrameMap   s_frames[POOL_COUNT];
-	static SpriteMap  s_sprites[POOL_COUNT];
-	static FrameList  s_frameList[POOL_COUNT];
-	static SpriteList s_spriteList[POOL_COUNT];
-	static NameList   s_frameNames[POOL_COUNT];
-	static NameList   s_spriteNames[POOL_COUNT];
+	static FrameMap    s_frames[POOL_COUNT];
+	static SpriteMap   s_sprites[POOL_COUNT];
+	static HdSpriteMap s_hdSprites[POOL_COUNT];
+	static FrameList   s_frameList[POOL_COUNT];
+	static SpriteList  s_spriteList[POOL_COUNT];
+	static HdSpriteList s_hdSpriteList[POOL_COUNT];
+	static NameList    s_frameNames[POOL_COUNT];
+	static NameList    s_spriteNames[POOL_COUNT];
 	static std::vector<u8> s_buffer;
+
+	bool loadFrameHd(const char* name, const JediFrame* frame, AssetPool pool, HdWax* hdWax)
+	{
+		char hdPath[TFE_MAX_PATH];
+		FileUtil::replaceExtension(name, "fxx", hdPath);
+
+		// If the file doesn't exist, just return - there is no HD asset.
+		FilePath filepath;
+		if (!TFE_Paths::getFilePath(hdPath, &filepath))
+		{
+			return false;
+		}
+		FileStream file;
+		if (!file.open(&filepath, Stream::MODE_READ))
+		{
+			return false;
+		}
+
+		// Load the raw data from disk.
+		size_t fileSize = file.getSize();
+		s_buffer.resize(fileSize);
+		file.readBuffer(s_buffer.data(), (u32)fileSize);
+		file.close();
+
+		const u8* data = s_buffer.data();
+		const s32 entryCount = *((s32*)data); data += 4;
+		assert(entryCount == 1);
+
+		hdWax->entryCount = 1;
+		hdWax->cells = (HdWaxCell*)malloc(sizeof(HdWaxCell));
+		hdWax->cells[0].pixelCount = *((u32*)data); data += 4 * entryCount;
+		hdWax->cells[0].id = 0;
+
+		// Image data.
+		const u32 size = sizeof(u32) * hdWax->cells[0].pixelCount;
+		hdWax->cells[0].data = (u32*)malloc(size);
+		memcpy(hdWax->cells[0].data, data, size);
+		data += size;
+
+		return true;
+	}
 
 	JediFrame* getFrame(const char* name, AssetPool pool)
 	{
@@ -75,12 +126,14 @@ namespace TFE_Sprite_Jedi
 
 		WaxFrame* frame = asset;
 		WaxCell* cell = WAX_CellPtr(asset, frame);
+		frame->pool = pool;
+		cell->id = 0;
 
 		// After load, the frame data has to be fixed up before rendering.
 		// frame sizes remain in fixed point.
 		frame->widthWS  = div16(intToFixed16(cell->sizeX), SPRITE_SCALE_FIXED);
 		frame->heightWS = div16(intToFixed16(cell->sizeY), SPRITE_SCALE_FIXED);
-
+		
 		const s32 offsetX = -intToFixed16(frame->offsetX);
 		const s32 offsetY =  intToFixed16(cell->sizeY) + intToFixed16(frame->offsetY);
 		frame->offsetX = div16(offsetX, SPRITE_SCALE_FIXED);
@@ -106,6 +159,19 @@ namespace TFE_Sprite_Jedi
 		s_frames[pool][name] = asset;
 		s_frameList[pool].push_back(asset);
 		s_frameNames[pool].push_back(name);
+
+		// HD Version
+		HdWax* hdWax = (HdWax*)malloc(sizeof(HdWax));
+		if (loadFrameHd(name, asset, pool, hdWax))
+		{
+			s_hdSpriteList[pool].push_back(hdWax);
+			s_hdSprites[pool][asset] = hdWax;
+		}
+		else
+		{
+			free(hdWax);
+		}
+
 		return asset;
 	}
 
@@ -235,6 +301,51 @@ namespace TFE_Sprite_Jedi
 		}
 	}
 		
+	bool loadWaxHd(const char* name, const JediWax* wax, AssetPool pool, HdWax* hdWax)
+	{
+		char hdPath[TFE_MAX_PATH];
+		FileUtil::replaceExtension(name, "wxx", hdPath);
+
+		// If the file doesn't exist, just return - there is no HD asset.
+		FilePath filepath;
+		if (!TFE_Paths::getFilePath(hdPath, &filepath))
+		{
+			return false;
+		}
+		FileStream file;
+		if (!file.open(&filepath, Stream::MODE_READ))
+		{
+			return false;
+		}
+
+		// Load the raw data from disk.
+		size_t size = file.getSize();
+		s_buffer.resize(size);
+		file.readBuffer(s_buffer.data(), (u32)size);
+		file.close();
+
+		const u8* data = s_buffer.data();
+		const s32 entryCount = *((s32*)data); data += 4;
+
+		hdWax->entryCount = entryCount;
+		hdWax->cells = (HdWaxCell*)malloc(sizeof(HdWaxCell) * entryCount);
+		// Image data size x entryCount.
+		for (s32 i = 0; i < entryCount; i++)
+		{
+			hdWax->cells[i].pixelCount = *((u32*)data); data += 4;
+			hdWax->cells[i].id = i;
+		}
+		// Image data.
+		for (s32 i = 0; i < entryCount; i++)
+		{
+			const u32 size = sizeof(u32) * hdWax->cells[i].pixelCount;
+			hdWax->cells[i].data = (u32*)malloc(size);
+			memcpy(hdWax->cells[i].data, data, size);
+			data += size;
+		}
+		return true;
+	}
+
 	JediWax* getWax(const char* name, AssetPool pool)
 	{
 		SpriteMap::iterator iSprite = s_sprites[pool].find(name);
@@ -259,8 +370,8 @@ namespace TFE_Sprite_Jedi
 		file.readBuffer(s_buffer.data(), u32(len));
 		file.close();
 
-		const u8* data = s_buffer.data();
-		const Wax* srcWax = (Wax*)data;
+		u8* data = s_buffer.data();
+		Wax* srcWax = (Wax*)data;
 		
 		// every animation is filled out until the end, so no animations = no wax.
 		if (!srcWax->animOffsets[0])
@@ -270,11 +381,12 @@ namespace TFE_Sprite_Jedi
 		s_cellOffsets.clear();
 
 		// First determine the size to allocate (note that this will overallocate a bit because cells are shared).
+		u32 cellId = 0;
 		u32 sizeToAlloc = sizeof(JediWax) + (u32)s_buffer.size();
 		const s32* animOffset = srcWax->animOffsets;
 		for (s32 animIdx = 0; animIdx < 32 && animOffset[animIdx]; animIdx++)
 		{
-			WaxAnim* anim = (WaxAnim*)(data + animOffset[animIdx]);
+			const WaxAnim* anim = (WaxAnim*)(data + animOffset[animIdx]);
 			const s32* viewOffsets = anim->viewOffsets;
 			for (s32 v = 0; v < 32; v++)
 			{
@@ -282,11 +394,17 @@ namespace TFE_Sprite_Jedi
 				const s32* frameOffset = view->frameOffsets;
 				for (s32 f = 0; f < 32 && frameOffset[f]; f++)
 				{
-					const WaxFrame* frame = (WaxFrame*)(data + frameOffset[f]);
-					const WaxCell* cell = frame->cellOffset ? (WaxCell*)(data + frame->cellOffset) : nullptr;
-					if (cell && cell->compressed == 0 && isUniqueCell(frame->cellOffset))
+					WaxFrame* frame = (WaxFrame*)(data + frameOffset[f]);
+					WaxCell* cell = frame->cellOffset ? (WaxCell*)(data + frame->cellOffset) : nullptr;
+					bool unique = cell && isUniqueCell(frame->cellOffset);
+					if (unique && cell->compressed == 0)
 					{
 						sizeToAlloc += cell->sizeX * sizeof(u32);
+					}
+					if (unique)
+					{
+						cell->id = cellId;
+						cellId++;
 					}
 				}
 			}
@@ -383,11 +501,38 @@ namespace TFE_Sprite_Jedi
 			}
 		}
 		asset->animCount = animIdx;
+		asset->pool = u32(pool);
 
 		s_sprites[pool][name] = asset;
 		s_spriteList[pool].push_back(asset);
 		s_spriteNames[pool].push_back(name);
+
+		// HD Version
+		HdWax* hdWax = (HdWax*)malloc(sizeof(HdWax));
+		if (loadWaxHd(name, asset, pool, hdWax))
+		{
+			s_hdSpriteList[pool].push_back(hdWax);
+			s_hdSprites[pool][asset] = hdWax;
+		}
+		else
+		{
+			free(hdWax);
+		}
+
 		return asset;
+	}
+		
+	const HdWax* getHdWaxData(const void* srcData)
+	{
+		const s32* srcData32 = (s32*)srcData;
+		const u32 pool = srcData32[PoolDataOffset];
+
+		HdSpriteMap::const_iterator iSprite = s_hdSprites[pool].find(srcData);
+		if (iSprite != s_hdSprites[pool].end())
+		{
+			return iSprite->second;
+		}
+		return nullptr;
 	}
 
 	JediWax* loadWaxFromMemory(const u8* data, size_t size, bool transformOffsets)
@@ -564,6 +709,19 @@ namespace TFE_Sprite_Jedi
 		s_sprites[pool].clear();
 		s_spriteList[pool].clear();
 		s_spriteNames[pool].clear();
+
+		const size_t hdWaxCount = s_hdSpriteList[pool].size();
+		HdWax** hdWaxList = s_hdSpriteList[pool].data();
+		for (size_t i = 0; i < waxCount; i++)
+		{
+			for (s32 e = 0; e < hdWaxList[i]->entryCount; e++)
+			{
+				free(hdWaxList[i]->cells[e].data);
+			}
+			free(hdWaxList[i]);
+		}
+		s_hdSpriteList[pool].clear();
+		s_hdSprites[pool].clear();
 	}
 
 	void freeAll()
