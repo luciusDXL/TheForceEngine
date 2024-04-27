@@ -42,6 +42,67 @@ namespace TFE_DarkForces
 		HUD_MSG_SHORT_DUR =  436,	// 3 seconds
 	};
 
+	enum HudScaleId
+	{
+		HudScale_StatusL = 0,
+		HudScale_StatusR,
+		HudScale_AmoNumFnt,
+		HudScale_SuperWepFnt,
+		HudScale_ArmNumFnt,
+		HudScale_HelNumFnt,
+		HudScale_HudFnt,
+		HudScale_Count
+	};
+	s32 s_hudScaleFactors[HudScale_Count];
+
+	enum HudTextureIndexed
+	{
+		HudTex_StatusL = 0,
+		HudTex_StatusR,
+		HudTex_StatusL_Hd,
+		HudTex_StatusR_Hd,
+		HudTex_Count
+	};
+	enum HudFont
+	{
+		HudFont_Main = 0,
+		HudFont_Main_Hd,
+
+		HudFont_Ammo,
+		HudFont_Super,
+		HudFont_Shield,
+		HudFont_Health,
+		HudFont_Ammo_Hd,
+		HudFont_Super_Hd,
+		HudFont_Shield_Hd,
+		HudFont_Health_Hd,
+		HudFont_Count
+	};
+	static TextureData* s_texIndex[HudTex_Count] = { 0 };
+	static Font* s_fontList[HudFont_Count] = { 0 };
+
+	static const char* c_texIndexedName[HudTex_Count] =
+	{
+		"StatusLf.bm",
+		"StatusRt.bm",
+		"StatusLf2.bm",
+		"StatusRt2.bm"
+	};
+	static const char* c_fontName[HudFont_Count] =
+	{
+		"glowing.fnt",
+		"glowing2.fnt",
+
+		"AmoNum.fnt",
+		"SuperWep.fnt",
+		"ArmNum.fnt",
+		"HelNum.fnt",
+		"AmoNum2.fnt",
+		"SuperWep2.fnt",
+		"ArmNum2.fnt",
+		"HelNum2.fnt",
+	};
+
 	static const s32 c_hudVertAnimTable[] =
 	{
 		160, 170, 185, 200,
@@ -114,7 +175,7 @@ namespace TFE_DarkForces
 	///////////////////////////////////////////
 	// Forward Declarations
 	///////////////////////////////////////////
-	TextureData* hud_loadTexture(const char* texFile);
+	TextureData* hud_loadTexture(const char* texFile, bool optional=false);
 	Font* hud_loadFont(const char* fontFile);
 	void copyIntoPalette(u8* dst, u8* src, s32 count, s32 mode);
 	void getCameraXZ(fixed16_16* x, fixed16_16* z);
@@ -197,17 +258,53 @@ namespace TFE_DarkForces
 		}
 	}
 
-	bool hud_getTextures(TextureInfoList& texList, AssetPool pool)
+	bool hud_reloadTextures()
 	{
-		// First load the fonts.
-		hud_addFont(texList, s_hudFont);
-		hud_addFont(texList, s_hudMainAmmoFont);
-		hud_addFont(texList, s_hudSuperAmmoFont);
-		hud_addFont(texList, s_hudShieldFont);
-		hud_addFont(texList, s_hudHealthFont);
-		return true;
+		const bool enableHdHud = TFE_Settings::getEnhancementsSettings()->enableHdHud && TFE_Settings::getGraphicsSettings()->colorMode == COLORMODE_TRUE_COLOR &&
+			TFE_Settings::getGraphicsSettings()->rendererIndex == RENDERER_HARDWARE;
+
+		for (s32 i = 0; i < HudScale_Count; i++)
+		{
+			// TODO: Hardcoded.
+			s_hudScaleFactors[i] = enableHdHud ? 2 : 1;
+		}
+
+		// Hud Font
+		s_hudFont = enableHdHud && s_fontList[HudFont_Main_Hd] ? s_fontList[HudFont_Main_Hd] : s_fontList[HudFont_Main];
+		if (s_hudFont == s_fontList[HudFont_Main]) { s_hudScaleFactors[HudScale_HudFnt] = 1; }
+
+		// Hud
+		s_hudStatusL = enableHdHud && s_texIndex[HudTex_StatusL_Hd] ? s_texIndex[HudTex_StatusL_Hd] : s_texIndex[HudTex_StatusL];
+		s_hudStatusR = enableHdHud && s_texIndex[HudTex_StatusR_Hd] ? s_texIndex[HudTex_StatusR_Hd] : s_texIndex[HudTex_StatusR];
+		if (s_hudStatusL == s_texIndex[HudTex_StatusL]) { s_hudScaleFactors[HudScale_StatusL] = 1; }
+		if (s_hudStatusR == s_texIndex[HudTex_StatusR]) { s_hudScaleFactors[HudScale_StatusR] = 1; }
+
+		s_hudMainAmmoFont = enableHdHud && s_fontList[HudFont_Ammo_Hd] ? s_fontList[HudFont_Ammo_Hd] : s_fontList[HudFont_Ammo];
+		s_hudSuperAmmoFont = enableHdHud && s_fontList[HudFont_Super_Hd] ? s_fontList[HudFont_Super_Hd] : s_fontList[HudFont_Super];
+		s_hudShieldFont = enableHdHud && s_fontList[HudFont_Shield_Hd] ? s_fontList[HudFont_Shield_Hd] : s_fontList[HudFont_Shield];
+		s_hudHealthFont = enableHdHud && s_fontList[HudFont_Health_Hd] ? s_fontList[HudFont_Health_Hd] : s_fontList[HudFont_Health];
+		if (s_hudMainAmmoFont == s_fontList[HudFont_Ammo]) { s_hudScaleFactors[HudScale_AmoNumFnt] = 1; }
+		if (s_hudSuperAmmoFont == s_fontList[HudFont_Super]) { s_hudScaleFactors[HudScale_SuperWepFnt] = 1; }
+		if (s_hudShieldFont == s_fontList[HudFont_Shield]) { s_hudScaleFactors[HudScale_ArmNumFnt] = 1; }
+		if (s_hudHealthFont == s_fontList[HudFont_Health]) { s_hudScaleFactors[HudScale_HelNumFnt] = 1; }
+
+		return enableHdHud;
 	}
 
+	bool hud_getTextures(TextureInfoList& texList, AssetPool pool)
+	{
+		hud_reloadTextures();
+		for (s32 i = 0; i < HudFont_Count; i++)
+		{
+			if (s_fontList[i])
+			{
+				hud_addFont(texList, s_fontList[i]);
+			}
+		}
+
+		return true;
+	}
+		
 	void hud_loadGameMessages()
 	{
 		s_hudMessages.count = 0;
@@ -220,9 +317,28 @@ namespace TFE_DarkForces
 		}
 		s_hudMessage[0] = 0;
 		s_hudFont = nullptr;
-		if (TFE_Paths::getFilePath("glowing.fnt", &filePath))
+
+		const bool enableHdHud = TFE_Settings::getEnhancementsSettings()->enableHdHud && TFE_Settings::getGraphicsSettings()->colorMode == COLORMODE_TRUE_COLOR &&
+			TFE_Settings::getGraphicsSettings()->rendererIndex == RENDERER_HARDWARE;
+
+		if (TFE_Paths::getFilePath(c_fontName[HudFont_Main], &filePath))
 		{
-			s_hudFont = font_load(&filePath);
+			s_fontList[HudFont_Main] = font_load(&filePath);
+		}
+		if (TFE_Paths::getFilePath(c_fontName[HudFont_Main_Hd], &filePath))
+		{
+			s_fontList[HudFont_Main_Hd] = font_load(&filePath);
+		}
+
+		if (enableHdHud && s_fontList[HudFont_Main_Hd])
+		{
+			s_hudScaleFactors[HudScale_HudFnt] = 2;
+			s_hudFont = s_fontList[HudFont_Main_Hd];
+		}
+		else
+		{
+			s_hudScaleFactors[HudScale_HudFnt] = 1;
+			s_hudFont = s_fontList[HudFont_Main];
 		}
 
 		// TFE
@@ -236,21 +352,49 @@ namespace TFE_DarkForces
 		s_cachedHudLeft = nullptr;
 		s_cachedHudRight = nullptr;
 	}
-		
+				
 	void hud_loadGraphics()
 	{
-		s_hudStatusL       = hud_loadTexture("StatusLf.bm");
-		s_hudStatusR       = hud_loadTexture("StatusRt.bm");
+		const bool enableHdHud = TFE_Settings::getEnhancementsSettings()->enableHdHud && TFE_Settings::getGraphicsSettings()->colorMode == COLORMODE_TRUE_COLOR && 
+			TFE_Settings::getGraphicsSettings()->rendererIndex == RENDERER_HARDWARE;
+		for (s32 i = HudFont_Ammo; i < HudScale_Count; i++)
+		{
+			// TODO: Hardcoded.
+			s_hudScaleFactors[i] = enableHdHud ? 2 : 1;
+		}
+
+		// We need to load the possible HD textures as well as the regular textures.
+		// It is ok if they don't exist.
+		for (s32 i = 0; i < HudTex_Count; i++)
+		{
+			s_texIndex[i] = hud_loadTexture(c_texIndexedName[i], i >= HudTex_StatusL_Hd);
+			if (s_texIndex[i])
+			{
+				s_texIndex[i]->flags |= INDEXED;
+			}
+		}
+
+		s_hudStatusL = enableHdHud && s_texIndex[HudTex_StatusL_Hd] ? s_texIndex[HudTex_StatusL_Hd] : s_texIndex[HudTex_StatusL];
+		s_hudStatusR = enableHdHud && s_texIndex[HudTex_StatusR_Hd] ? s_texIndex[HudTex_StatusR_Hd] : s_texIndex[HudTex_StatusR];
+		if (s_hudStatusL == s_texIndex[HudTex_StatusL]) { s_hudScaleFactors[HudScale_StatusL] = 1; }
+		if (s_hudStatusR == s_texIndex[HudTex_StatusR]) { s_hudScaleFactors[HudScale_StatusR] = 1; }
+
 		s_hudLightOn       = hud_loadTexture("lighton.bm");
 		s_hudLightOff      = hud_loadTexture("lightoff.bm");
-		s_hudMainAmmoFont  = hud_loadFont("AmoNum.fnt");
-		s_hudSuperAmmoFont = hud_loadFont("SuperWep.fnt");
-		s_hudShieldFont    = hud_loadFont("ArmNum.fnt");
-		s_hudHealthFont    = hud_loadFont("HelNum.fnt");
 
-		// TFE: Setup the HUD status textures as indexed.
-		s_hudStatusL->flags |= INDEXED;
-		s_hudStatusR->flags |= INDEXED;
+		for (s32 i = HudFont_Ammo; i < HudFont_Count; i++)
+		{
+			s_fontList[i] = hud_loadFont(c_fontName[i]);
+		}
+		s_hudMainAmmoFont  = enableHdHud && s_fontList[HudFont_Ammo_Hd]   ? s_fontList[HudFont_Ammo_Hd]   : s_fontList[HudFont_Ammo];
+		s_hudSuperAmmoFont = enableHdHud && s_fontList[HudFont_Super_Hd]  ? s_fontList[HudFont_Super_Hd]  : s_fontList[HudFont_Super];
+		s_hudShieldFont    = enableHdHud && s_fontList[HudFont_Shield_Hd] ? s_fontList[HudFont_Shield_Hd] : s_fontList[HudFont_Shield];
+		s_hudHealthFont    = enableHdHud && s_fontList[HudFont_Health_Hd] ? s_fontList[HudFont_Health_Hd] : s_fontList[HudFont_Health];
+		if (s_hudMainAmmoFont  == s_fontList[HudFont_Ammo])   { s_hudScaleFactors[HudScale_AmoNumFnt] = 1; }
+		if (s_hudSuperAmmoFont == s_fontList[HudFont_Super])  { s_hudScaleFactors[HudScale_SuperWepFnt] = 1; }
+		if (s_hudShieldFont    == s_fontList[HudFont_Shield]) { s_hudScaleFactors[HudScale_ArmNumFnt] = 1; }
+		if (s_hudHealthFont    == s_fontList[HudFont_Health]) { s_hudScaleFactors[HudScale_HelNumFnt] = 1; }
+
 		// Set the index range in the texture packer, so HUD status textures are properly setup for true-color indexing.
 		texturepacker_setIndexStart(HUD_COLORS_START);
 
@@ -270,19 +414,19 @@ namespace TFE_DarkForces
 		if (!canDrawHud) { return; }
 
 		// Create offscreen buffers for the HUD elements.
-		s_cachedHudLeft  = createOffScreenBuffer(s_hudStatusL->width, s_hudStatusL->height, OBF_TRANS);
-		s_cachedHudRight = createOffScreenBuffer(s_hudStatusR->width, s_hudStatusR->height, OBF_TRANS);
+		s_cachedHudLeft  = createOffScreenBuffer(s_texIndex[HudTex_StatusL]->width, s_texIndex[HudTex_StatusL]->height, OBF_TRANS);
+		s_cachedHudRight = createOffScreenBuffer(s_texIndex[HudTex_StatusR]->width, s_texIndex[HudTex_StatusR]->height, OBF_TRANS);
 		// Clear the buffer images to transparent (0).
 		offscreenBuffer_clearImage(s_cachedHudLeft,  0/*clear_color*/);
 		offscreenBuffer_clearImage(s_cachedHudRight, 0/*clear_color*/);
 
 		if (s_hudStatusL)
 		{
-			offscreenBuffer_drawTexture(s_cachedHudLeft, s_hudStatusL, 0, 0);
+			offscreenBuffer_drawTexture(s_cachedHudLeft, s_texIndex[HudTex_StatusL], 0, 0);
 		}
 		if (s_hudStatusR)
 		{
-			offscreenBuffer_drawTexture(s_cachedHudRight, s_hudStatusR, 0, 0);
+			offscreenBuffer_drawTexture(s_cachedHudRight, s_texIndex[HudTex_StatusR], 0, 0);
 		}
 
 		#if TFE_CONVERT_CAPS
@@ -470,7 +614,7 @@ namespace TFE_DarkForces
 			hudScaleX = floatToFixed16(fixed16ToFloat(xScale) * hudSettings->scale);
 			hudScaleY = floatToFixed16(fixed16ToFloat(yScale) * hudSettings->scale);
 		}
-
+		
 		fixed16_16 x0, x1;
 		if (hudSettings->hudPos == TFE_HUDPOS_4_3)
 		{
@@ -479,7 +623,7 @@ namespace TFE_DarkForces
 		}
 		else
 		{
-			x0 = intToFixed16(dispWidth) - mul16(intToFixed16(s_cachedHudRight->width - 1), hudScaleX);
+			x0 = intToFixed16(dispWidth) - mul16(intToFixed16(s_hudStatusR->width/s_hudScaleFactors[HudScale_StatusR] - 1), hudScaleX);
 			x1 = 0;
 		}
 		x0 -= intToFixed16(hudSettings->pixelOffset[0]);
@@ -490,8 +634,8 @@ namespace TFE_DarkForces
 		y0 += intToFixed16(hudSettings->pixelOffset[2]);
 		y1 += intToFixed16(hudSettings->pixelOffset[2]);
 
-		screenGPU_blitTextureScaled(s_hudStatusR, nullptr, x0, y0, hudScaleX, hudScaleY, 255);
-		screenGPU_blitTextureScaled(s_hudStatusL, nullptr, x1, y1, hudScaleX, hudScaleY, 255);
+		screenGPU_blitTextureScaled(s_hudStatusR, nullptr, x0, y0, hudScaleX/s_hudScaleFactors[HudScale_StatusR], hudScaleY/s_hudScaleFactors[HudScale_StatusR], 255);
+		screenGPU_blitTextureScaled(s_hudStatusL, nullptr, x1, y1, hudScaleX/s_hudScaleFactors[HudScale_StatusL], hudScaleY/s_hudScaleFactors[HudScale_StatusL], 255);
 		if ((hudSettings->hudPos == TFE_HUDPOS_4_3 || hudSettings->pixelOffset[0] > 0 || hudSettings->pixelOffset[1] > 0) && 
 			s_hudCapLeft && s_hudCapRight)
 		{
@@ -528,7 +672,8 @@ namespace TFE_DarkForces
 
 			fixed16_16 xPos = mul16(intToFixed16(52), hudScaleX) + x1;
 			fixed16_16 yPos = mul16(intToFixed16(26), hudScaleY) + y1;
-			hud_drawStringGpu(s_hudHealthFont, xPos, yPos, hudScaleX, hudScaleY, lifeCountStr);
+			s32 fntScale = s_hudScaleFactors[HudScale_HelNumFnt];
+			hud_drawStringGpu(s_hudHealthFont, xPos, yPos, hudScaleX/fntScale, hudScaleY/fntScale, lifeCountStr);
 			
 			s_rightHudShow = 4;
 		}
@@ -595,7 +740,8 @@ namespace TFE_DarkForces
 
 			fixed16_16 xPos = mul16(intToFixed16(15), hudScaleX) + x1;
 			fixed16_16 yPos = mul16(intToFixed16(26), hudScaleY) + y1;
-			hud_drawStringGpu(s_hudShieldFont, xPos, yPos, hudScaleX, hudScaleY, shieldStr);
+			s32 fntScale = s_hudScaleFactors[HudScale_ArmNumFnt];
+			hud_drawStringGpu(s_hudShieldFont, xPos, yPos, hudScaleX/fntScale, hudScaleY/fntScale, shieldStr);
 		}
 		// Health
 		{
@@ -614,7 +760,8 @@ namespace TFE_DarkForces
 			sprintf(healthStr, "%03d", health);
 			fixed16_16 xPos = mul16(intToFixed16(33), hudScaleX) + x1;
 			fixed16_16 yPos = mul16(intToFixed16(26), hudScaleY) + y1;
-			hud_drawStringGpu(s_hudHealthFont, xPos, yPos, hudScaleX, hudScaleY, healthStr);
+			s32 fntScale = s_hudScaleFactors[HudScale_HelNumFnt];
+			hud_drawStringGpu(s_hudHealthFont, xPos, yPos, hudScaleX/fntScale, hudScaleY/fntScale, healthStr);
 
 			s_leftHudShow = 4;
 		}
@@ -659,7 +806,8 @@ namespace TFE_DarkForces
 			}
 			fixed16_16 xPos = mul16(intToFixed16(12), hudScaleX) + x0;
 			fixed16_16 yPos = mul16(intToFixed16(21), hudScaleY) + y0;
-			hud_drawStringGpu(s_superChargeHud ? s_hudSuperAmmoFont : s_hudMainAmmoFont, xPos, yPos, hudScaleX, hudScaleY, str);
+			s32 fntScale = s_superChargeHud ? s_hudScaleFactors[HudScale_SuperWepFnt] : s_hudScaleFactors[HudScale_AmoNumFnt];
+			hud_drawStringGpu(s_superChargeHud ? s_hudSuperAmmoFont : s_hudMainAmmoFont, xPos, yPos, hudScaleX/fntScale, hudScaleY/fntScale, str);
 
 			// Draw a colored quad to hide single-pixel "leaking" from beneath.
 			xPos = mul16(intToFixed16(25), hudScaleX) + x0;
@@ -677,7 +825,8 @@ namespace TFE_DarkForces
 			{
 				sprintf(str, "%02d", ammo1);
 			}
-			hud_drawStringGpu(s_hudShieldFont, xPos, yPos, hudScaleX, hudScaleY, str);
+			s32 fntScale2 = s_hudScaleFactors[HudScale_ArmNumFnt];
+			hud_drawStringGpu(s_hudShieldFont, xPos, yPos, hudScaleX/fntScale2, hudScaleY/fntScale2, str);
 
 			s_rightHudShow = 4;
 		}
@@ -735,6 +884,15 @@ namespace TFE_DarkForces
 	{
 		// Handle the case where the HUD has not been loaded.
 		if (!s_hudStatusL || !s_hudStatusR) { return; }
+
+		// Fix-up textures/fonts on change.
+		const bool enableHdHud = TFE_Settings::getEnhancementsSettings()->enableHdHud && TFE_Settings::getGraphicsSettings()->colorMode == COLORMODE_TRUE_COLOR &&
+			TFE_Settings::getGraphicsSettings()->rendererIndex == RENDERER_HARDWARE;
+		if ((s_hudStatusL == s_texIndex[HudTex_StatusL_Hd] && TFE_Settings::getGraphicsSettings()->rendererIndex != RENDERER_HARDWARE) ||
+			(enableHdHud && s_hudStatusL == s_texIndex[HudTex_StatusL] && s_texIndex[HudTex_StatusL_Hd]))
+		{
+			hud_reloadTextures();
+		}
 
 		ScreenRect* screenRect = vfb_getScreenRect(VFB_RECT_UI);
 
@@ -1041,10 +1199,10 @@ namespace TFE_DarkForces
 	///////////////////////////////////////////
 	// Internal Implementation
 	///////////////////////////////////////////
-	TextureData* hud_loadTexture(const char* texFile)
+	TextureData* hud_loadTexture(const char* texFile, bool optional)
 	{
 		TextureData* hudTex = bitmap_load(texFile, 1, POOL_GAME);
-		if (!hudTex)
+		if (!hudTex && !optional)
 		{
 			TFE_System::logWrite(LOG_ERROR, "HUD", "Cannot load texture '%s'", texFile);
 		}
@@ -1116,13 +1274,17 @@ namespace TFE_DarkForces
 		}
 		else
 		{
+			s32 fntScale = s_hudScaleFactors[HudScale_HudFnt];
 			fixed16_16 xScale = vfb_getXScale();
 			fixed16_16 yScale = vfb_getYScale();
+
+			xScale /= fntScale;
+			yScale /= fntScale;
 
 			fixed16_16 xf = mul16(intToFixed16(x), xScale);
 			fixed16_16 yf = mul16(intToFixed16(y), yScale);
 			fixed16_16 x0 = xf;
-
+						
 			fixed16_16 fWidth = mul16(intToFixed16(font->width), xScale);
 			for (u8 c = *msg; c != 0;)
 			{
