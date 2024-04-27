@@ -1281,7 +1281,9 @@ namespace TFE_Settings
 			const cJSON* curElem = root->child;
 			for (; curElem; curElem = curElem->next)
 			{
-				if (curElem->string && strcasecmp(curElem->string, "TFE_OVERRIDES") == 0 && cJSON_IsObject(curElem))
+				if (!curElem->string) { continue; }
+
+				if (strcasecmp(curElem->string, "TFE_OVERRIDES") == 0 && cJSON_IsObject(curElem))
 				{
 					const cJSON* iter = curElem->child;
 					for (; iter; iter = iter->next)
@@ -1290,7 +1292,7 @@ namespace TFE_Settings
 						parseTfeOverride(modSettings, iter);
 					}
 				}
-				else if (curElem->string && strstr(curElem->string, ".LEV") && cJSON_IsObject(curElem))
+				else if (strstr(curElem->string, ".LEV") && cJSON_IsObject(curElem))
 				{
 					ModHdIgnoreList ignoreList;
 					// Copy the level name.
