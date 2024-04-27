@@ -259,6 +259,34 @@ struct TFE_Settings_A11y
 	bool disablePlayerWeaponLighting = false;
 };
 
+enum ModSettingOverride
+{
+	MSO_NOT_SET = 0,
+	MSO_TRUE,
+	MSO_FALSE,
+	MSO_COUNT
+};
+
+struct ModHdIgnoreList
+{
+	std::string levName;
+	std::vector<std::string> bmIgnoreList;
+	std::vector<std::string> fmeIgnoreList;
+	std::vector<std::string> waxIgnoreList;
+};
+
+struct TFE_ModSettings
+{
+	ModSettingOverride ignoreInfLimits   = MSO_NOT_SET;
+	ModSettingOverride stepSecondAlt     = MSO_NOT_SET;
+	ModSettingOverride solidWallFlagFix  = MSO_NOT_SET;
+	ModSettingOverride extendAjoinLimits = MSO_NOT_SET;
+	ModSettingOverride ignore3doLimits   = MSO_NOT_SET;
+	ModSettingOverride normalFix3do      = MSO_NOT_SET;
+
+	std::vector<ModHdIgnoreList> ignoreList;
+};
+
 namespace TFE_Settings
 {
 	bool init(bool& firstRun);
@@ -278,7 +306,10 @@ namespace TFE_Settings
 	TFE_GameHeader* getGameHeader(const char* gameName);
 	TFE_Settings_Game* getGameSettings();
 	TFE_Settings_A11y* getA11ySettings();
+	TFE_ModSettings* getModSettings();
 
 	bool validatePath(const char* path, const char* sentinel);
 	void autodetectGamePaths();
+	void clearModSettings();
+	void loadCustomModSettings();
 }

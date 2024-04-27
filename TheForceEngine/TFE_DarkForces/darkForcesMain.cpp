@@ -31,6 +31,7 @@
 #include <TFE_Game/reticle.h>
 #include <TFE_Input/inputMapping.h>
 #include <TFE_Memory/memoryRegion.h>
+#include <TFE_Settings/settings.h>
 #include <TFE_System/system.h>
 #include <TFE_System/tfeMessage.h>
 #include <TFE_FileSystem/paths.h>
@@ -77,7 +78,7 @@ namespace TFE_DarkForces
 	{
 		"enhanced.gob",
 	};
-
+	
 	enum GameConstants
 	{
 		MAX_MOD_LFD = 16,
@@ -806,6 +807,7 @@ namespace TFE_DarkForces
 	void processCommandLineArgs(s32 argCount, const char* argv[], char* startLevel)
 	{
 		s_sharedState.customGobName[0] = 0;
+		TFE_Settings::clearModSettings();
 
 		for (s32 i = 0; i < argCount; i++)
 		{
@@ -1063,6 +1065,8 @@ namespace TFE_DarkForces
 				}
 			}
 		}
+
+		TFE_Settings::loadCustomModSettings();
 	}
 
 	s32 loadLocalMessages()

@@ -4,6 +4,7 @@
 #include <TFE_FileSystem/fileutil.h>
 #include <TFE_FileSystem/paths.h>
 #include <TFE_FrontEndUI/console.h>
+#include <TFE_System/cJSON.h>
 #include <TFE_System/parser.h>
 #include <TFE_System/system.h>
 #include <assert.h>
@@ -36,6 +37,7 @@ namespace TFE_Settings
 	static TFE_Settings_A11y s_a11ySettings = {};
 	static TFE_Game s_game = {};
 	static TFE_Settings_Game s_gameSettings = {};
+	static TFE_ModSettings s_modSettings = {};
 	static std::vector<char> s_iniBuffer;
 
 	enum SectionID
@@ -319,6 +321,16 @@ namespace TFE_Settings
 	TFE_Settings_A11y* getA11ySettings()
 	{
 		return &s_a11ySettings;
+	}
+
+	TFE_ModSettings* getModSettings()
+	{
+		return &s_modSettings;
+	}
+
+	void clearModSettings()
+	{
+		s_modSettings = {};
 	}
 
 	TFE_Game* getGame()
@@ -1157,5 +1169,127 @@ namespace TFE_Settings
 		file.close();
 
 		return valid;
+	}
+
+	// Mod Settings/Overrides.
+	bool parseJSonBool(const cJSON* item)
+	{
+		bool value = false;  // default
+		if (cJSON_IsString(item))
+		{
+			value = strcasecmp(item->valuestring, "true") == 0;
+		}
+		else if (cJSON_IsBool(item))
+		{
+			value = cJSON_IsTrue(item);
+		}
+		return value;
+	}
+
+	void parseTfeOverride(TFE_ModSettings* modSettings, const cJSON* tfeOverride)
+	{
+		if (!tfeOverride || !tfeOverride->string) { return; }
+
+		if (strcasecmp(tfeOverride->string, "ignoreInfLimit") == 0)
+		{
+			modSettings->ignoreInfLimits = parseJSonBool(tfeOverride) ? MSO_TRUE : MSO_FALSE;
+		}
+		else if (strcasecmp(tfeOverride->string, "stepSecondAlt") == 0)
+		{
+			modSettings->stepSecondAlt = parseJSonBool(tfeOverride) ? MSO_TRUE : MSO_FALSE;
+		}
+		else if (strcasecmp(tfeOverride->string, "solidWallFlagFix") == 0)
+		{
+			modSettings->solidWallFlagFix = parseJSonBool(tfeOverride) ? MSO_TRUE : MSO_FALSE;
+		}
+		else if (strcasecmp(tfeOverride->string, "extendAjoinLimits") == 0)
+		{
+			modSettings->extendAjoinLimits = parseJSonBool(tfeOverride) ? MSO_TRUE : MSO_FALSE;
+		}
+		else if (strcasecmp(tfeOverride->string, "ignore3doLimits") == 0)
+		{
+			modSettings->ignore3doLimits = parseJSonBool(tfeOverride) ? MSO_TRUE : MSO_FALSE;
+		}
+		else if (strcasecmp(tfeOverride->string, "3doNormalFix") == 0)
+		{
+			modSettings->normalFix3do = parseJSonBool(tfeOverride) ? MSO_TRUE : MSO_FALSE;
+		}
+	}
+
+	void parseJsonStringArray(const cJSON* item, std::vector<std::string>& stringList)
+	{
+		stringList.clear();
+		const cJSON* iter = item->child;
+		for (; iter; iter = iter->next)
+		{
+			if (cJSON_IsString(iter))
+			{
+				stringList.push_back(iter->valuestring);
+			}
+		}
+	}
+
+	void loadCustomModSettings()
+	{
+		// Reset mod settings and overrides.
+		TFE_Settings::clearModSettings();
+		TFE_ModSettings* modSettings = TFE_Settings::getModSettings();
+
+		FilePath filePath;
+		if (!TFE_Paths::getFilePath("MOD_CONF.txt", &filePath)) { return; }
+		FileStream file;
+		if (!file.open(&filePath, FileStream::MODE_READ)) { return; }
+
+		size_t size = file.getSize();
+		char* data = (char*)malloc(size + 1);
+		if (!data) { return; }
+		file.readBuffer(data, size);
+		data[size] = 0;
+		file.close();
+
+		cJSON* root = cJSON_Parse(data);
+		if (root)
+		{
+			const cJSON* curElem = root->child;
+			for (; curElem; curElem = curElem->next)
+			{
+				if (curElem->string && strcasecmp(curElem->string, "TFE_OVERRIDES") == 0)
+				{
+					// This should be an array of elements.
+					const cJSON* iter = curElem->child;
+					for (; iter; iter = iter->next)
+					{
+						// This should be an object of format { "OverrideName", bool }
+						parseTfeOverride(modSettings, iter->child);
+					}
+				}
+				else if (curElem->string && strstr(curElem->string, ".LEV") && cJSON_IsObject(curElem))
+				{
+					ModHdIgnoreList ignoreList;
+					// Copy the level name.
+					ignoreList.levName = curElem->string;
+					// Loop through object items and read the individual ignore lists.
+					const cJSON* iter = curElem->child;
+					for (; iter; iter = iter->next)
+					{
+						if (strcasecmp(iter->string, "BM") == 0)
+						{
+							parseJsonStringArray(iter, ignoreList.bmIgnoreList);
+						}
+						else if (strcasecmp(iter->string, "FME") == 0)
+						{
+							parseJsonStringArray(iter, ignoreList.fmeIgnoreList);
+						}
+						else if (strcasecmp(iter->string, "WAX") == 0)
+						{
+							parseJsonStringArray(iter, ignoreList.waxIgnoreList);
+						}
+					}
+					modSettings->ignoreList.push_back(ignoreList);
+				}
+			}
+			cJSON_Delete(root);
+		}
+		free(data);
 	}
 }

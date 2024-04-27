@@ -112,3 +112,6 @@ Angelscript
 
   * [https://github.com/notnullnotvoid/msf_gif](https://github.com/notnullnotvoid/msf_gif)
   * License: MIT
+
+  * [https://github.com/DaveGamble/cJSON](https://github.com/DaveGamble/cJSON)
+  * License: MIT

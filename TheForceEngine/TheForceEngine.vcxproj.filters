@@ -1339,6 +1339,9 @@
     <ClInclude Include="TFE_Editor\LevelEditor\editGeometry.h">
       <Filter>Source\TFE_Editor\LevelEditor</Filter>
     </ClInclude>
+    <ClInclude Include="TFE_System\cJSON.h">
+      <Filter>Source\TFE_System</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -2303,6 +2306,9 @@
     </ClCompile>
     <ClCompile Include="TFE_Editor\LevelEditor\editGeometry.cpp">
       <Filter>Source\TFE_Editor\LevelEditor</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_System\cJSON.c">
+      <Filter>Source\TFE_System</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
