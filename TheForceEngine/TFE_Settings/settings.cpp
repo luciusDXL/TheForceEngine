@@ -1171,7 +1171,9 @@ namespace TFE_Settings
 		return valid;
 	}
 
+	//////////////////////////////////////////////////
 	// Mod Settings/Overrides.
+	//////////////////////////////////////////////////
 	bool parseJSonBool(const cJSON* item)
 	{
 		bool value = false;  // default
@@ -1236,14 +1238,14 @@ namespace TFE_Settings
 		TFE_ModSettings* modSettings = TFE_Settings::getModSettings();
 
 		FilePath filePath;
-		if (!TFE_Paths::getFilePath("MOD_CONF.txt", &filePath)) { return; }
 		FileStream file;
+		if (!TFE_Paths::getFilePath("MOD_CONF.txt", &filePath)) { return; }
 		if (!file.open(&filePath, FileStream::MODE_READ)) { return; }
 
-		size_t size = file.getSize();
+		const size_t size = file.getSize();
 		char* data = (char*)malloc(size + 1);
 		if (!data) { return; }
-		file.readBuffer(data, size);
+		file.readBuffer(data, (u32)size);
 		data[size] = 0;
 		file.close();
 
@@ -1259,8 +1261,8 @@ namespace TFE_Settings
 					const cJSON* iter = curElem->child;
 					for (; iter; iter = iter->next)
 					{
-						// This should be an object of format { "OverrideName", bool }
-						parseTfeOverride(modSettings, iter->child);
+						// These are standard objects { name, bool }.
+						parseTfeOverride(modSettings, iter);
 					}
 				}
 				else if (curElem->string && strstr(curElem->string, ".LEV") && cJSON_IsObject(curElem))
