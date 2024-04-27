@@ -1174,16 +1174,20 @@ namespace TFE_Settings
 	//////////////////////////////////////////////////
 	// Mod Settings/Overrides.
 	//////////////////////////////////////////////////
-	bool parseJSonBool(const cJSON* item)
+	ModSettingOverride parseJSonBoolToOverride(const cJSON* item)
 	{
-		bool value = false;  // default
+		ModSettingOverride value = MSO_NOT_SET;  // default
 		if (cJSON_IsString(item))
 		{
-			value = strcasecmp(item->valuestring, "true") == 0;
+			value = (strcasecmp(item->valuestring, "true") == 0) ? MSO_TRUE : MSO_FALSE;
 		}
 		else if (cJSON_IsBool(item))
 		{
-			value = cJSON_IsTrue(item);
+			value = cJSON_IsTrue(item) ? MSO_TRUE : MSO_FALSE;
+		}
+		else
+		{
+			TFE_System::logWrite(LOG_WARNING, "MOD_CONF", "Override '%s' is an invalid type and should be a bool. Ignoring override.", item->string);
 		}
 		return value;
 	}
@@ -1194,39 +1198,55 @@ namespace TFE_Settings
 
 		if (strcasecmp(tfeOverride->string, "ignoreInfLimit") == 0)
 		{
-			modSettings->ignoreInfLimits = parseJSonBool(tfeOverride) ? MSO_TRUE : MSO_FALSE;
+			modSettings->ignoreInfLimits = parseJSonBoolToOverride(tfeOverride);
 		}
 		else if (strcasecmp(tfeOverride->string, "stepSecondAlt") == 0)
 		{
-			modSettings->stepSecondAlt = parseJSonBool(tfeOverride) ? MSO_TRUE : MSO_FALSE;
+			modSettings->stepSecondAlt = parseJSonBoolToOverride(tfeOverride);
 		}
 		else if (strcasecmp(tfeOverride->string, "solidWallFlagFix") == 0)
 		{
-			modSettings->solidWallFlagFix = parseJSonBool(tfeOverride) ? MSO_TRUE : MSO_FALSE;
+			modSettings->solidWallFlagFix = parseJSonBoolToOverride(tfeOverride);
 		}
 		else if (strcasecmp(tfeOverride->string, "extendAjoinLimits") == 0)
 		{
-			modSettings->extendAjoinLimits = parseJSonBool(tfeOverride) ? MSO_TRUE : MSO_FALSE;
+			modSettings->extendAjoinLimits = parseJSonBoolToOverride(tfeOverride);
 		}
 		else if (strcasecmp(tfeOverride->string, "ignore3doLimits") == 0)
 		{
-			modSettings->ignore3doLimits = parseJSonBool(tfeOverride) ? MSO_TRUE : MSO_FALSE;
+			modSettings->ignore3doLimits = parseJSonBoolToOverride(tfeOverride);
 		}
 		else if (strcasecmp(tfeOverride->string, "3doNormalFix") == 0)
 		{
-			modSettings->normalFix3do = parseJSonBool(tfeOverride) ? MSO_TRUE : MSO_FALSE;
+			modSettings->normalFix3do = parseJSonBoolToOverride(tfeOverride);
 		}
 	}
 
 	void parseJsonStringArray(const cJSON* item, std::vector<std::string>& stringList)
 	{
 		stringList.clear();
+		if (!cJSON_IsArray(item))
+		{
+			TFE_System::logWrite(LOG_WARNING, "MOD_CONF", "Item '%s' is an invalid type, it should be an array of strings. Skipping.",
+				item->string);
+			return;
+		}
+
 		const cJSON* iter = item->child;
+		if (!iter)
+		{
+			TFE_System::logWrite(LOG_WARNING, "MOD_CONF", "String array '%s' is empty.", item->string);
+		}
+
 		for (; iter; iter = iter->next)
 		{
 			if (cJSON_IsString(iter))
 			{
 				stringList.push_back(iter->valuestring);
+			}
+			else
+			{
+				TFE_System::logWrite(LOG_WARNING, "MOD_CONF", "Invalid type found in string array %s, ignoring.", item->string);
 			}
 		}
 	}
@@ -1242,9 +1262,15 @@ namespace TFE_Settings
 		if (!TFE_Paths::getFilePath("MOD_CONF.txt", &filePath)) { return; }
 		if (!file.open(&filePath, FileStream::MODE_READ)) { return; }
 
+		TFE_System::logWrite(LOG_MSG, "MOD_CONF", "Parsing MOD_CONF.txt for custom mod.");
+
 		const size_t size = file.getSize();
 		char* data = (char*)malloc(size + 1);
-		if (!data) { return; }
+		if (!data || size == 0)
+		{
+			TFE_System::logWrite(LOG_ERROR, "MOD_CONF", "MOD_CONF.txt found but is %u bytes in size and cannot be read.", size);
+			return;
+		}
 		file.readBuffer(data, (u32)size);
 		data[size] = 0;
 		file.close();
@@ -1255,13 +1281,12 @@ namespace TFE_Settings
 			const cJSON* curElem = root->child;
 			for (; curElem; curElem = curElem->next)
 			{
-				if (curElem->string && strcasecmp(curElem->string, "TFE_OVERRIDES") == 0)
+				if (curElem->string && strcasecmp(curElem->string, "TFE_OVERRIDES") == 0 && cJSON_IsObject(curElem))
 				{
-					// This should be an array of elements.
 					const cJSON* iter = curElem->child;
 					for (; iter; iter = iter->next)
 					{
-						// These are standard objects { name, bool }.
+						// These should be key-value pairs { name, value }.
 						parseTfeOverride(modSettings, iter);
 					}
 				}
@@ -1272,8 +1297,19 @@ namespace TFE_Settings
 					ignoreList.levName = curElem->string;
 					// Loop through object items and read the individual ignore lists.
 					const cJSON* iter = curElem->child;
+					if (!iter)
+					{
+						TFE_System::logWrite(LOG_WARNING, "MOD_CONF", "Level overrides '%s' is empty, skipping.", ignoreList.levName);
+					}
+
 					for (; iter; iter = iter->next)
 					{
+						if (!iter->string)
+						{
+							TFE_System::logWrite(LOG_WARNING, "MOD_CONF", "Level override for '%s' has no name, skipping.", ignoreList.levName);
+							continue;
+						}
+
 						if (strcasecmp(iter->string, "BM") == 0)
 						{
 							parseJsonStringArray(iter, ignoreList.bmIgnoreList);
@@ -1291,6 +1327,18 @@ namespace TFE_Settings
 				}
 			}
 			cJSON_Delete(root);
+		}
+		else
+		{
+			const char* error = cJSON_GetErrorPtr();
+			if (error)
+			{
+				TFE_System::logWrite(LOG_ERROR, "MOD_CONF", "Failed to parse MOD_CONF.txt before\n%s", error);
+			}
+			else
+			{
+				TFE_System::logWrite(LOG_ERROR, "MOD_CONF", "Failed to parse MOD_CONF.txt");
+			}
 		}
 		free(data);
 	}
