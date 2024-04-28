@@ -11,4 +11,5 @@
 namespace LevelEditor
 {
 	void computeCameraTransform();
+	void computeLookAt(Vec3f target, f32& yaw, f32& pitch);
 }

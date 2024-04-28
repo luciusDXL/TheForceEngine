@@ -238,6 +238,9 @@ namespace LevelEditor
 
 	void edit_insertShape(const f32* heights, BoolMode mode, s32 firstVertex, bool allowSubsectorExtrude);
 	void cleanSectors(const std::vector<s32>& selectedSectors);
+
+	void updateViewportScroll();
+	f32 smoothstep(f32 edge0, f32 edge1, f32 x);
 	
 	////////////////////////////////////////////////////////
 	// Public API
@@ -3906,6 +3909,7 @@ namespace LevelEditor
 
 	void update()
 	{
+		updateViewportScroll();
 		handleHotkeys();
 		
 		pushFont(TFE_Editor::FONT_SMALL);
@@ -6022,6 +6026,158 @@ namespace LevelEditor
 		rect[3] = gridToPos(gridCorner[3]);
 	}
 
+	///////////////////////////////////////////////
+	// Viewport scrolling
+	///////////////////////////////////////////////
+	enum ViewportScrollMode
+	{
+		VSCROLL_2D = 0,
+		VSCROLL_3D,
+	};
+
+	const f32 c_scrollEps = 0.001f;
+	const f32 c_scrollMinScpeed = 128.0f;
+	const f32 c_scrollAngularSpd = 3.0f;
+	
+	static ViewportScrollMode s_viewScrollMode;
+	static bool s_scrollView = false;
+	static Vec2f s_scrollSrc;
+	static Vec2f s_scrollTarget;
+	static Vec2f s_scrollDelta;
+
+	// 3d/camera
+	static Vec3f s_scrollSrc3d;
+	static Vec3f s_scrollTarget3d;
+	static Vec3f s_scrollDelta3d;
+	static Vec2f s_scrollSrcAngles;
+	static Vec2f s_scrollDstAngles;
+
+	static f32 s_scrollLen;
+	static f32 s_scrollPos;
+	static f32 s_scrollAngle;
+	static f32 s_scrollSpeed;
+
+	void setViewportScrollTarget2d(Vec2f target, f32 speed)
+	{
+		// Don't bother if already there.
+		Vec2f delta = { target.x - s_viewportPos.x, target.z - s_viewportPos.z };
+		if (fabsf(delta.x) < c_scrollEps && fabsf(delta.z) < c_scrollEps)
+		{
+			return;
+		}
+		// Setup the scroll.
+		s_scrollTarget = target;
+		s_scrollSrc = { s_viewportPos.x, s_viewportPos.z };
+		s_scrollLen = sqrtf(delta.x*delta.x + delta.z*delta.z);
+		s_scrollDelta = delta;
+		s_scrollPos = 0.0f;
+		s_scrollSpeed = speed == 0.0f ? max(c_scrollMinScpeed, s_scrollLen) : speed;
+		s_scrollView = true;
+		s_viewScrollMode = VSCROLL_2D;
+	}
+
+	void setViewportScrollTarget3d(Vec3f target, f32 targetYaw, f32 targetPitch, f32 speed)
+	{
+		// Don't bother if already there.
+		const Vec3f delta = { target.x - s_camera.pos.x, target.y - s_camera.pos.y, target.z - s_camera.pos.z };
+		const Vec2f deltaAng = { targetYaw - s_camera.yaw, targetPitch - s_camera.pitch };
+		if (fabsf(delta.x) < c_scrollEps && fabsf(delta.y) < c_scrollEps && fabsf(delta.z) < c_scrollEps &&
+			fabsf(deltaAng.x) < c_scrollEps && fabsf(deltaAng.z) < c_scrollEps)
+		{
+			return;
+		}
+		// Setup the scroll.
+		s_scrollTarget3d = target;
+		s_scrollSrc3d = s_camera.pos;
+		s_scrollLen = sqrtf(delta.x*delta.x + delta.y*delta.y + delta.z*delta.z);
+		s_scrollDelta3d = delta;
+		s_scrollPos = 0.0f;
+		s_scrollSpeed = speed == 0.0f ? max(c_scrollMinScpeed, s_scrollLen) : speed;
+
+		s_scrollSrcAngles = { fmodf(s_camera.yaw + 2.0f*PI, 2.0f*PI), s_camera.pitch };
+		s_scrollDstAngles = { targetYaw, targetPitch };
+		s_scrollAngle = 0.0f;
+
+		// Shortest angle.
+		if (s_scrollDstAngles.x - s_scrollSrcAngles.x > PI)
+		{
+			s_scrollDstAngles.x -= 2.0f*PI;
+		}
+		else if (s_scrollDstAngles.x - s_scrollSrcAngles.x < -PI)
+		{
+			s_scrollDstAngles.x += 2.0f*PI;
+		}
+		
+		s_scrollView = true;
+		s_viewScrollMode = VSCROLL_3D;
+	}
+
+	void updateViewportScroll()
+	{
+		if (!s_scrollView) { return; }
+
+		if (s_viewScrollMode == VSCROLL_2D)
+		{
+			s_scrollPos += s_scrollSpeed * (f32)TFE_System::getDeltaTime();
+			if (s_scrollPos >= s_scrollLen)
+			{
+				s_viewportPos.x = s_scrollTarget.x;
+				s_viewportPos.z = s_scrollTarget.z;
+				s_scrollView = false;
+			}
+			else
+			{
+				const f32 scale = smoothstep(0.0f, s_scrollLen, s_scrollPos);
+				s_viewportPos.x = s_scrollSrc.x + s_scrollDelta.x * scale;
+				s_viewportPos.z = s_scrollSrc.z + s_scrollDelta.z * scale;
+			}
+		}
+		else if (s_viewScrollMode == VSCROLL_3D)
+		{
+			// First the angles.
+			f32 dt = (f32)TFE_System::getDeltaTime();
+			if (s_scrollAngle < 1.0f)
+			{
+				s_scrollAngle += c_scrollAngularSpd * dt;
+				if (s_scrollAngle >= 1.0f)
+				{
+					s_scrollAngle = 1.0f;
+					s_camera.yaw = s_scrollDstAngles.x;
+					s_camera.pitch = s_scrollDstAngles.z;
+				}
+				else
+				{
+					const f32 blend = smoothstep(0.0f, 1.0f, s_scrollAngle);
+					s_camera.yaw   = s_scrollSrcAngles.x * (1.0f - blend) + s_scrollDstAngles.x * blend;
+					s_camera.pitch = s_scrollSrcAngles.z * (1.0f - blend) + s_scrollDstAngles.z * blend;
+				}
+			}
+			else
+			{
+				s_scrollPos += s_scrollSpeed * dt;
+				if (s_scrollPos >= s_scrollLen)
+				{
+					s_camera.pos = s_scrollTarget3d;
+					s_scrollView = false;
+				}
+				else
+				{
+					const f32 scale = smoothstep(0.0f, s_scrollLen, s_scrollPos);
+					s_camera.pos.x = s_scrollSrc3d.x + s_scrollDelta3d.x * scale;
+					s_camera.pos.y = s_scrollSrc3d.y + s_scrollDelta3d.y * scale;
+					s_camera.pos.z = s_scrollSrc3d.z + s_scrollDelta3d.z * scale;
+				}
+			}
+			computeCameraTransform();
+		}
+	}
+
+	f32 smoothstep(f32 edge0, f32 edge1, f32 x)
+	{
+		x = clamp((x - edge0) / (edge1 - edge0), 0.0f, 1.0f);
+		return x * x * (3.0f - 2.0f*x);
+	}
+
 	/////////////////////////////////////////////////////
 	// Tutorial/Update UI helpers.
 	/////////////////////////////////////////////////////
@@ -6060,12 +6216,7 @@ namespace LevelEditor
 	std::vector<TextPrompt> s_textPrompts;
 	TextPromptAnim s_textPromptAnim = {};
 	bool s_textPromptInit = false;
-
-	f32 smoothstep(f32 x)
-	{
-		return x * x * (3.0f - 2.0f*x);
-	}
-
+		
 	s32 addTextPrompt(std::string text, Vec4f color)
 	{
 		s32 id = (s32)s_textPrompts.size();
@@ -6100,11 +6251,11 @@ namespace LevelEditor
 		f32 y = displayInfo.height - c_textPromptY;
 		if (s_textPromptAnim.state == TXT_STATE_ANIM_ON)
 		{
-			y = displayInfo.height - c_textPromptY * smoothstep(s_textPromptAnim.animParam / c_textPromptDt[TXT_STATE_ANIM_ON]);
+			y = displayInfo.height - c_textPromptY * smoothstep(0.0f, 1.0f, s_textPromptAnim.animParam / c_textPromptDt[TXT_STATE_ANIM_ON]);
 		}
 		else if (s_textPromptAnim.state == TXT_STATE_ANIM_OFF)
 		{
-			y = displayInfo.height - c_textPromptY * smoothstep(1.0f - s_textPromptAnim.animParam / c_textPromptDt[TXT_STATE_ANIM_OFF]);
+			y = displayInfo.height - c_textPromptY * smoothstep(0.0f, 1.0f, 1.0f - s_textPromptAnim.animParam / c_textPromptDt[TXT_STATE_ANIM_OFF]);
 		}
 
 		ImVec2 pos = { (s_viewportSize.x - c_textPromptWidth)*0.5f, y };

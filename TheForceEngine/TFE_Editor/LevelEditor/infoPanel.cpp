@@ -1,6 +1,7 @@
 #include "levelEditor.h"
 #include "levelEditorData.h"
 #include "levelEditorHistory.h"
+#include "camera.h"
 #include "infoPanel.h"
 #include "groups.h"
 #include "sharedState.h"
@@ -65,6 +66,8 @@ namespace LevelEditor
 	static Feature s_prevObjectFeature = {};
 	static bool s_wallShownLast = false;
 	static s32 s_prevCategoryFlags = 0;
+
+	static s32 s_groupOpen = -1;
 
 	static bool s_scrollToBottom = false;
 		
@@ -287,6 +290,101 @@ namespace LevelEditor
 		}
 	}
 
+	const ImVec4 c_colorGroupSectorBase = { 0.98f, 0.49f, 0.26f, 1.0f };
+	const ImVec4 c_colorGroupSector = { c_colorGroupSectorBase.x, c_colorGroupSectorBase.y, c_colorGroupSectorBase.z, 0.80f };
+	const ImVec4 c_colorGroupSectorActive = { c_colorGroupSectorBase.x, c_colorGroupSectorBase.y, c_colorGroupSectorBase.z, 0.60f };
+	const ImVec4 c_colorGroupSectorHover = { c_colorGroupSectorBase.x, c_colorGroupSectorBase.y, c_colorGroupSectorBase.z, 0.31f };
+
+	void listNamedSectorsInGroup(Group* group)
+	{
+		const s32 count = (s32)s_level.sectors.size();
+		const s32 groupId = group->id;
+		const f32 x = ImGui::GetCursorPosX();
+		EditorSector* sector = s_level.sectors.data();
+		ImGui::PushStyleColor(ImGuiCol_Text, { 1.0f, 1.0f, 1.0f, 0.6f });
+		ImGui::PushStyleColor(ImGuiCol_Header, c_colorGroupSector);
+		ImGui::PushStyleColor(ImGuiCol_HeaderActive, c_colorGroupSectorActive);
+		ImGui::PushStyleColor(ImGuiCol_HeaderHovered, c_colorGroupSectorHover);
+		for (s32 i = 0; i < count; i++, sector++)
+		{
+			if (sector->groupId != groupId || sector->name.empty())
+			{
+				continue;
+			}
+			ImGui::SetCursorPosX(x + 32.0f);
+			if (ImGui::Selectable(sector->name.c_str(), s_featureCur.sector == sector))
+			{
+				// Clear the selection, select the sector.
+				selection_clear();
+				s_featureCur = {};
+				s_featureHovered = {};
+				s_featureCur.sector = sector;
+
+				// Set the edit mode to "Sector"
+				s_editMode = LEDIT_SECTOR;
+
+				// Set the correct layer.
+				if (!(s_editFlags & LEF_SHOW_ALL_LAYERS))
+				{
+					s_curLayer = sector->layer;
+				}
+				// Center the view on the sector.
+				if (s_view == EDIT_VIEW_2D)
+				{
+					const Vec2f mapPos =
+					{
+						 (sector->bounds[0].x + sector->bounds[1].x) * 0.5f,
+						-(sector->bounds[0].z + sector->bounds[1].z) * 0.5f
+					};
+					const Vec2f target =
+					{
+						mapPos.x - (s_viewportSize.x / 2) * s_zoom2d,
+						mapPos.z - (s_viewportSize.z / 2) * s_zoom2d
+					};
+					setViewportScrollTarget2d(target);
+				}
+				else if (s_view == EDIT_VIEW_3D)
+				{
+					// Compute the look at angles.
+					const Vec3f mapPos =
+					{
+						(sector->bounds[0].x + sector->bounds[1].x) * 0.5f,
+						(sector->bounds[0].y + sector->bounds[1].y) * 0.5f,
+						(sector->bounds[0].z + sector->bounds[1].z) * 0.5f
+					};
+					f32 targetYaw, targetPitch;
+					computeLookAt(mapPos, targetYaw, targetPitch);
+
+					// Then move closer if needed.
+					Vec3f cornerDelta = { sector->bounds[1].x - mapPos.x, sector->bounds[1].y - mapPos.y, sector->bounds[1].z - mapPos.z };
+					f32 radius = sqrtf(cornerDelta.x*cornerDelta.x + cornerDelta.y*cornerDelta.y + cornerDelta.z*cornerDelta.z);
+					f32 d = max(20.0f, radius * 2.0f);
+
+					Vec3f posDelta = { mapPos.x - s_camera.pos.x, mapPos.y - s_camera.pos.y, mapPos.z - s_camera.pos.z };
+					f32 dist = sqrtf(posDelta.x*posDelta.x + posDelta.y*posDelta.y + posDelta.z*posDelta.z);
+
+					if (dist > d)
+					{
+						const f32 scale = (dist - d) / dist;
+						const Vec3f targetPos =
+						{
+							s_camera.pos.x + posDelta.x * scale,
+							s_camera.pos.y + posDelta.y * scale,
+							s_camera.pos.z + posDelta.z * scale
+						};
+						setViewportScrollTarget3d(targetPos, targetYaw, targetPitch);
+					}
+					else
+					{
+						setViewportScrollTarget3d(s_camera.pos, targetYaw, targetPitch);
+					}
+				}
+			}
+		}
+		ImGui::PopStyleColor(4);
+		ImGui::SetCursorPosX(x);
+	}
+
 	void infoPanelMap()
 	{
 		const f32 iconBtnTint[] = { 103.0f / 255.0f, 122.0f / 255.0f, 139.0f / 255.0f, 1.0f };
@@ -320,12 +418,19 @@ namespace LevelEditor
 			Group* group = s_groups.data();
 			for (s32 i = 0; i < groupCount; i++, group++)
 			{
+				ImGui::SetCursorPosY(ImGui::GetCursorPosY() - 4);
+				if (iconButtonInline(s_groupOpen == i ? ICON_MINUS_SMALL : ICON_PLUS_SMALL, "Show named sectors in group.", iconBtnTint, true))
+				{
+					s_groupOpen = (s_groupOpen == i) ? -1 : i;
+				}
+				ImGui::SameLine(0.0f, 8.0f);
+				ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 4);
 				if (ImGui::Selectable(editor_getUniqueLabel(group->name.c_str()), s_groupCurrent == i, 0, ImVec2(264, 0)))
 				{
 					s_groupCurrent = i;
 				}
 				
-				ImGui::SameLine(0.0f, 60.0f);
+				ImGui::SameLine(0.0f, 36.0f);
 				if (iconButtonInline((group->flags & GRP_EXCLUDE) ? ICON_CIRCLE_BAN : ICON_CIRCLE, "Exclude group from export.", iconBtnTint, true))
 				{
 					if (group->flags & GRP_EXCLUDE) { group->flags &= ~GRP_EXCLUDE; }
@@ -353,6 +458,11 @@ namespace LevelEditor
 				ImGui::ColorEdit3(editor_getUniqueLabel(""), group->color.m, ImGuiColorEditFlags_NoLabel | ImGuiColorEditFlags_NoInputs);
 
 				ImGui::SetCursorPosY(ImGui::GetCursorPosY() - 2);
+
+				if (s_groupOpen == i)
+				{
+					listNamedSectorsInGroup(group);
+				}
 
 				ImGui::Separator();
 				ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 2);

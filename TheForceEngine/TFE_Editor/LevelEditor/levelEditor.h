@@ -63,6 +63,9 @@ namespace LevelEditor
 
 	void getGridOrientedRect(const Vec2f p0, const Vec2f p1, Vec2f* rect);
 
+	void setViewportScrollTarget2d(Vec2f target, f32 speed = 0.0f);
+	void setViewportScrollTarget3d(Vec3f target, f32 targetYaw, f32 targetPitch, f32 speed = 0.0f);
+
 	// Shared Edit Commands
 	void edit_moveVertices(s32 count, const FeatureId* vtxIds, Vec2f delta);
 	void edit_moveFlats(s32 count, const FeatureId* flatIds, f32 delta);
