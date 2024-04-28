@@ -308,6 +308,14 @@ namespace TFE_Settings
 	TFE_Settings_A11y* getA11ySettings();
 	TFE_ModSettings* getModSettings();
 
+	// Settings factoring in mod overrides.
+	bool ignoreInfLimits();
+	bool stepSecondAlt();
+	bool soidWallFlagFix();
+	bool extendAdjoinLimits();
+	bool ignore3doLimits();
+	bool normalFix3do();
+
 	bool validatePath(const char* path, const char* sentinel);
 	void autodetectGamePaths();
 	void clearModSettings();

@@ -247,7 +247,7 @@ namespace TFE_DarkForces
 
 		// Allows the player to "climb" second heights when jumping.
 		// Note that always setting the offset will allow players to climb second heights when not jumping as well.
-		const bool canStepOnSecondAlt = TFE_Settings::getGameSettings()->df_stepSecondAlt;
+		const bool canStepOnSecondAlt = TFE_Settings::stepSecondAlt();
 		fixed16_16 secHeightOffset = (yVel < 0 || canStepOnSecondAlt) ? COL_SEC_HEIGHT_OFFSET : 0;
 
 		if (sector->secHeight < 0 && s_colDstPosY > sector->colSecHeight + secHeightOffset)

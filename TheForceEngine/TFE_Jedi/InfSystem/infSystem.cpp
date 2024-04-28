@@ -1278,7 +1278,7 @@ namespace TFE_Jedi
 		}
 
 		// Verify that we are under or are ignoring the limit.
-		if (!TFE_Settings::getGameSettings()->df_ignoreInfLimit)
+		if (!TFE_Settings::ignoreInfLimits())
 		{
 			if (itemCount > MAX_INF_ITEMS)
 			{

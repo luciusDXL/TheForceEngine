@@ -152,7 +152,7 @@ namespace TFE_Jedi
 
 	void renderer_setLimits()
 	{
-		if (TFE_Settings::getGraphicsSettings()->extendAjoinLimits)
+		if (TFE_Settings::extendAdjoinLimits())
 		{
 			s_maxSegCount = MAX_SEG_EXT;
 			s_maxAdjoinSegCount = MAX_ADJOIN_SEG_EXT;

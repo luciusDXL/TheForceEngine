@@ -1154,6 +1154,60 @@ namespace TFE_Settings
 		}
 	}
 
+	bool ignoreInfLimits()
+	{
+		if (s_modSettings.ignoreInfLimits != MSO_NOT_SET)
+		{
+			return s_modSettings.ignoreInfLimits == MSO_TRUE ? true : false;
+		}
+		return s_gameSettings.df_ignoreInfLimit;
+	}
+
+	bool stepSecondAlt()
+	{
+		if (s_modSettings.stepSecondAlt != MSO_NOT_SET)
+		{
+			return s_modSettings.stepSecondAlt == MSO_TRUE ? true : false;
+		}
+		return s_gameSettings.df_stepSecondAlt;
+	}
+
+	bool soidWallFlagFix()
+	{
+		if (s_modSettings.solidWallFlagFix != MSO_NOT_SET)
+		{
+			return s_modSettings.solidWallFlagFix == MSO_TRUE ? true : false;
+		}
+		return s_gameSettings.df_solidWallFlagFix;
+	}
+
+	bool extendAdjoinLimits()
+	{
+		if (s_modSettings.extendAjoinLimits != MSO_NOT_SET)
+		{
+			return s_modSettings.extendAjoinLimits == MSO_TRUE ? true : false;
+		}
+		return s_graphicsSettings.extendAjoinLimits;
+	}
+
+	bool ignore3doLimits()
+	{
+		if (s_modSettings.ignore3doLimits != MSO_NOT_SET)
+		{
+			return s_modSettings.ignore3doLimits == MSO_TRUE ? true : false;
+		}
+		return s_graphicsSettings.ignore3doLimits;
+	}
+
+	bool normalFix3do()
+	{
+		if (s_modSettings.normalFix3do != MSO_NOT_SET)
+		{
+			return s_modSettings.normalFix3do == MSO_TRUE ? true : false;
+		}
+		return s_graphicsSettings.fix3doNormalOverflow;
+	}
+
 	bool validatePath(const char* path, const char* sentinel)
 	{
 		if (!FileUtil::directoryExits(path)) { return false; }

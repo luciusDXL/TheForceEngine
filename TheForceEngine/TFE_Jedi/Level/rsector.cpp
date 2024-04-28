@@ -1131,7 +1131,7 @@ namespace TFE_Jedi
 		if (next)
 		{
 			TFE_Settings_Game* gameSettings = TFE_Settings::getGameSettings();
-			if (!gameSettings->df_solidWallFlagFix || !(wall->flags3 & WF3_SOLID_WALL || wall->mirrorWall->flags3 & WF3_SOLID_WALL))
+			if (!TFE_Settings::soidWallFlagFix() || !(wall->flags3 & WF3_SOLID_WALL || wall->mirrorWall->flags3 & WF3_SOLID_WALL))
 			{
 				RSector* sector = wall->sector;
 				if (sector->floorHeight >= obj->posWS.y)
