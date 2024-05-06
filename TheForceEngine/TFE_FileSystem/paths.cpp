@@ -37,6 +37,16 @@ namespace TFE_Paths
 		s_paths[pathType] = path;
 	}
 
+	void activatePortableMode()
+	{
+		s_paths[PATH_PROGRAM_DATA] = s_paths[PATH_PROGRAM];
+		char docspath[TFE_MAX_PATH];
+		sprintf(docspath, "%s", s_paths[PATH_PROGRAM].c_str());
+		PathAppend(docspath, "UserDocs/");
+		FileUtil::makeDirectory(docspath);
+		s_paths[PATH_USER_DOCUMENTS] = docspath;
+	}
+
 	bool setProgramDataPath(const char* append)
 	{
 #ifdef _WIN32
