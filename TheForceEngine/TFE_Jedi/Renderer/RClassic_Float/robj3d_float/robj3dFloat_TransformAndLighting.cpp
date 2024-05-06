@@ -1,6 +1,7 @@
 #include <TFE_System/profiler.h>
 #include <TFE_Jedi/Level/robject.h>
 #include <TFE_Jedi/Math/core_math.h>
+#include <TFE_Settings/settings.h>
 #include "robj3dFloat_TransformAndLighting.h"
 #include "../rclassicFloatSharedState.h"
 #include "../rlightingFloat.h"
@@ -84,12 +85,19 @@ namespace RClassic_Float
 		
 	void robj3d_shadeVertices(s32 vertexCount, f32* outShading, const vec3_float* vertices, const vec3_float* normals)
 	{
+		TFE_Settings_Graphics* graphicsSettings = TFE_Settings::getGraphicsSettings();
+		bool overrideLighting = graphicsSettings->overrideLighting;
+		s32 sectorAmbient = (overrideLighting ? 0 : s_sectorAmbient);
+		f32 sectorAmbientFraction = (overrideLighting) ? 1 : fixed16ToFloat(s_sectorAmbientFraction);
+		s32 worldAmbient = (overrideLighting ? 0 : s_worldAmbient);
+		s32 scaledAmbient = (overrideLighting ? 0 : s_scaledAmbient);
+
 		const vec3_float* normal = normals;
 		const vec3_float* vertex = vertices;
 		for (s32 i = 0; i < vertexCount; i++, normal++, vertex++, outShading++)
 		{
 			f32 intensity = 0.0f;
-			if (s_sectorAmbient >= 31 || s_fullBright) // s_fullBright is for TFE cheat LABRIGHT.
+			if (sectorAmbient >= MAX_LIGHT_LEVEL || s_fullBright) // s_fullBright is for TFE cheat LABRIGHT.
 			{
 				intensity = VSHADE_MAX_INTENSITY_FLT;
 			}
@@ -116,23 +124,23 @@ namespace RClassic_Float
 						lightIntensity += (I * sourceIntensity);
 					}
 				}
-				intensity += lightIntensity * fixed16ToFloat(s_sectorAmbientFraction);
+				intensity += lightIntensity * sectorAmbientFraction;
 
 				// Distance falloff
 				const f32 z = max(0.0f, vertex->z);
 				if (s_worldAmbient < 31 || s_cameraLightSource)
 				{
 					s32 depthScaled = min(s32(z * 4.0f), 127);
-					s32 lightSource = MAX_LIGHT_LEVEL - (s_lightSourceRamp[depthScaled] + s_worldAmbient);
+					s32 lightSource = MAX_LIGHT_LEVEL - (s_lightSourceRamp[depthScaled] + worldAmbient);
 					if (lightSource > 0)
 					{
 						intensity += f32(lightSource);
 					}
 				}
-				intensity = max(intensity, f32(s_sectorAmbient));
+				intensity = max(intensity, f32(sectorAmbient));
 
 				const s32 falloff = s32(z / 16.0f) + s32(z / 32.0f);		// depth * 3/32
-				intensity = max(intensity - f32(falloff), f32(s_scaledAmbient));
+				intensity = max(intensity - f32(falloff), f32(scaledAmbient));
 				intensity = clamp(intensity, 0.0f, VSHADE_MAX_INTENSITY_FLT);
 			}
 			*outShading = intensity;

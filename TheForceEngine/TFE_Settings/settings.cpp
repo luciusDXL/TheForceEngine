@@ -412,6 +412,7 @@ namespace TFE_Settings
 		writeKeyValue_Int(settings, "renderer", s_graphicsSettings.rendererIndex);
 		writeKeyValue_Int(settings, "colorMode", s_graphicsSettings.colorMode);
 		writeKeyValue_Int(settings, "skyMode", s_graphicsSettings.skyMode);
+		writeKeyValue_Bool(settings, "forceGouraud", s_graphicsSettings.forceGouraudShading);
 	}
 
 	void writeEnhancementsSettings(FileStream& settings)
@@ -816,6 +817,10 @@ namespace TFE_Settings
 		else if (strcasecmp("skyMode", key) == 0)
 		{
 			s_graphicsSettings.skyMode = SkyMode(parseInt(value));
+		}
+		else if (strcasecmp("forceGouraud", key) == 0)
+		{
+			s_graphicsSettings.forceGouraudShading = parseBool(value);
 		}
 	}
 
