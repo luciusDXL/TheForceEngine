@@ -712,7 +712,7 @@ namespace TFE_Sprite_Jedi
 
 		const size_t hdWaxCount = s_hdSpriteList[pool].size();
 		HdWax** hdWaxList = s_hdSpriteList[pool].data();
-		for (size_t i = 0; i < waxCount; i++)
+		for (size_t i = 0; i < hdWaxCount; i++)
 		{
 			for (s32 e = 0; e < hdWaxList[i]->entryCount; e++)
 			{
