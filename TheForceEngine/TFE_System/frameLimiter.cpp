@@ -1,4 +1,6 @@
 #include <TFE_System/frameLimiter.h>
+#include <SDL.h>
+#include <limits>
 
 namespace TFE_System
 {
@@ -52,11 +54,20 @@ namespace TFE_System
 			const f64 beginSec = TFE_System::convertFromTicksToSeconds(s_beginTicks);
 			f64 curSec = TFE_System::convertFromTicksToSeconds(curTick);
 			f64 dt = curSec - beginSec;
-			while (dt < s_limitDelta)
-			{
-				// Give other threads a time slice.
-				TFE_System::sleep(1);
-				// Update delta time.
+			// To avoid a busy waiting scenario we pause for the
+			// remaining frame time unless an event occurs in which
+			// case we proccess it immediately.
+			if (dt < s_limitDelta) {
+				auto timeout = (s_limitDelta - dt) * 1000;
+				if (!std::isfinite(timeout))
+				{
+					timeout = std::numeric_limits<decltype(timeout)>::max();
+				}
+				if (timeout > std::numeric_limits<Uint32>::max())
+				{
+					timeout = std::numeric_limits<Uint32>::max();
+				}
+				SDL_WaitEventTimeout(NULL, timeout);
 				curTick = TFE_System::getCurrentTimeInTicks();
 				curSec = TFE_System::convertFromTicksToSeconds(curTick);
 				dt = curSec - beginSec;
