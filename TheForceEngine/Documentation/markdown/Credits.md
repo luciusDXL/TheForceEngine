@@ -68,10 +68,6 @@ SDL 2.0.x
   * [https://www.libsdl.org/](https://www.libsdl.org/)
   * License: ZLIB
 
-GLEW
-  * [https://github.com/nigels-com/glew](https://github.com/nigels-com/glew)
-  * License: Modified BSD license
-
 **UI**
 imGUI
   * [https://github.com/ocornut/imgui](https://github.com/ocornut/imgui)

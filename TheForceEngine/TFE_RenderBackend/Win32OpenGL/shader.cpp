@@ -5,7 +5,9 @@
 #include <TFE_FileSystem/filestream.h>
 #include <TFE_FileSystem/paths.h>
 #include <TFE_RenderBackend/renderBackend.h>
-#include <GL/glew.h>
+#define GL_GLEXT_PROTOTYPES
+#include <GL/gl.h>
+#include <GL/glext.h>
 #include <assert.h>
 #include <vector>
 #include <string>

@@ -696,9 +696,6 @@ echo ^)";
     <ClInclude Include="TFE_Ui\markdown.h" />
     <ClInclude Include="TFE_Ui\portable-file-dialogs.h" />
     <ClInclude Include="TFE_Ui\ui.h" />
-    <ClInclude Include="glew\include\GL\glew.h" />
-    <ClInclude Include="glew\include\GL\glxew.h" />
-    <ClInclude Include="glew\include\GL\wglew.h" />
     <ClInclude Include="main.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="targetver.h" />

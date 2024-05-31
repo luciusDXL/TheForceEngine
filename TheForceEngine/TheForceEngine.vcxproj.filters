@@ -217,15 +217,6 @@
     <ClInclude Include="targetver.h">
       <Filter>Source</Filter>
     </ClInclude>
-    <ClInclude Include="glew\include\GL\glew.h">
-      <Filter>Source\glew\include\GL</Filter>
-    </ClInclude>
-    <ClInclude Include="glew\include\GL\glxew.h">
-      <Filter>Source\glew\include\GL</Filter>
-    </ClInclude>
-    <ClInclude Include="glew\include\GL\wglew.h">
-      <Filter>Source\glew\include\GL</Filter>
-    </ClInclude>
     <ClInclude Include="TFE_System\types.h">
       <Filter>Source\TFE_System</Filter>
     </ClInclude>

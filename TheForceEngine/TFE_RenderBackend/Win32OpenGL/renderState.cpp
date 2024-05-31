@@ -1,7 +1,7 @@
 #include <TFE_RenderBackend/renderState.h>
 #include <TFE_System/system.h>
 #include <TFE_RenderBackend/renderBackend.h>
-#include <GL/glew.h>
+#include <GL/gl.h>
 #include <vector>
 
 namespace TFE_RenderState

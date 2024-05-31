@@ -14,7 +14,7 @@
 #include "renderTarget.h"
 #include "screenCapture.h"
 #include <SDL.h>
-#include <GL/glew.h>
+#include <GL/gl.h>
 #include <stdio.h>
 #include <assert.h>
 #include <algorithm>
@@ -105,24 +105,6 @@ namespace TFE_RenderBackend
 		//swap buffer at the monitors rate
 		SDL_GL_SetSwapInterval((state.flags & WINFLAG_VSYNC) ? 1 : 0);
 
-		//GLEW is an OpenGL Loading Library used to reach GL functions
-		//Sets all functions available
-		glewExperimental = GL_TRUE;
-		const GLenum err = glewInit();
-	#if defined(GLEW_ERROR_NO_GLX_DISPLAY) && !defined(_WIN32)
-		if (err == GLEW_ERROR_NO_GLX_DISPLAY &&
-			strcmp(SDL_GetCurrentVideoDriver(), "wayland") == 0)
-		{
-			// workaround for GLEW on Wayland
-			// see https://github.com/nigels-com/glew/issues/172
-		}
-		else
-	#endif
-		if (err != GLEW_OK)
-		{
-			printf("Failed to initialize GLEW");
-			return nullptr;
-		}
 		OpenGL_Caps::queryCapabilities();
 		TFE_System::logWrite(LOG_MSG, "RenderBackend", "OpenGL Device Tier: %d", OpenGL_Caps::getDeviceTier());
 

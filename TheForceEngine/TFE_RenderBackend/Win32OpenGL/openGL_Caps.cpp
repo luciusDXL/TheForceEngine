@@ -1,7 +1,10 @@
 #include "openGL_Caps.h"
-#include <GL/glew.h>
-#include <assert.h>
+#define GL_GLEXT_PROTOTYPES
+#include <GL/gl.h>
+#include <GL/glext.h>
+#include <SDL2/SDL_video.h>
 #include <algorithm>
+#include <cstring>
 
 enum CapabilityFlags
 {
@@ -19,7 +22,7 @@ enum CapabilityFlags
 namespace OpenGL_Caps
 {
 	static u32 m_supportFlags = 0;
-	static u32 m_deviceTier = 0;
+	static u32 m_deviceTier = DEV_TIER_0;
 	static s32 m_textureBufferMaxSize = 0;
 	static f32 m_maxAnisotropy = 1.0f;
 
@@ -30,33 +33,44 @@ namespace OpenGL_Caps
 
 	void queryCapabilities()
 	{
+		GLint gl_maj = 0, gl_min = 0;
+
 		m_supportFlags = 0;
-		if (GLEW_ARB_pixel_buffer_object)  { m_supportFlags |= CAP_PBO; }
-		if (GLEW_ARB_vertex_buffer_object) { m_supportFlags |= CAP_VBO; }
-		if (GLEW_ARB_framebuffer_object)   { m_supportFlags |= CAP_FBO; }
-		if (GLEW_ARB_uniform_buffer_object){ m_supportFlags |= CAP_UBO; }
-		if (GLEW_ARB_pixel_buffer_object)  { m_supportFlags |= CAP_NON_POW_2; }
-		if (GLEW_EXT_texture_array)        { m_supportFlags |= CAP_TEXTURE_ARRAY; }
+		m_deviceTier = DEV_TIER_0;
+		glGetIntegerv(GL_MAJOR_VERSION, &gl_maj);
+		glGetIntegerv(GL_MINOR_VERSION, &gl_min);
+
+		if (SDL_GL_ExtensionSupported("GL_ARB_pixel_buffer_object"))
+			m_supportFlags |= CAP_PBO | CAP_NON_POW_2;
+		if (SDL_GL_ExtensionSupported("GL_ARB_vertex_buffer_object"))
+			m_supportFlags |= CAP_VBO;
+		if (SDL_GL_ExtensionSupported("GL_ARB_framebuffer_object"))
+			m_supportFlags |= CAP_FBO;
+		if (SDL_GL_ExtensionSupported("GL_ARB_uniform_buffer_object"))
+			m_supportFlags |= CAP_UBO;
+		if (SDL_GL_ExtensionSupported("GL_EXT_texture_array"))
+			m_supportFlags |= CAP_TEXTURE_ARRAY;
 
 		// Get texture buffer maximum size.
 		glGetIntegerv(GL_MAX_TEXTURE_BUFFER_SIZE, &m_textureBufferMaxSize);
 		glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY, &m_maxAnisotropy);
 
-		if (GLEW_VERSION_4_5 && m_textureBufferMaxSize >= GLSPEC_MAX_TEXTURE_BUFFER_SIZE_MIN)
+		// clear any pending errors.
+		(void)glGetError();
+
+		if ((gl_maj >= 4) && (gl_min >= 5) &&
+		    (m_textureBufferMaxSize >= GLSPEC_MAX_TEXTURE_BUFFER_SIZE_MIN))
 		{
 			m_deviceTier = DEV_TIER_3;
 		}
-		else if (GLEW_VERSION_3_3 && (m_supportFlags&CAP_3_3_FULL) == CAP_3_3_FULL && m_textureBufferMaxSize >= GLSPEC_MAX_TEXTURE_BUFFER_SIZE_MIN)
+		else if (((m_supportFlags & CAP_3_3_FULL) == CAP_3_3_FULL) &&
+			 (m_textureBufferMaxSize >= GLSPEC_MAX_TEXTURE_BUFFER_SIZE_MIN))
 		{
 			m_deviceTier = DEV_TIER_2;
 		}
-		else if (GLEW_VERSION_2_1 && (m_supportFlags&CAP_2_1_FULL) == CAP_2_1_FULL)
+		else if ((m_supportFlags & CAP_2_1_FULL) == CAP_2_1_FULL)
 		{
 			m_deviceTier = DEV_TIER_1;
-		}
-		else
-		{
-			m_deviceTier = DEV_TIER_0;
 		}
 	}
 

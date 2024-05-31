@@ -2,7 +2,9 @@
 #include <TFE_System/system.h>
 #include <TFE_Settings/settings.h>
 #include "openGL_Caps.h"
-#include <GL/glew.h>
+#define GL_GLEXT_PROTOTYPES
+#include <GL/gl.h>
+#include <GL/glext.h>
 #include <algorithm>
 #include <vector>
 #include <assert.h>

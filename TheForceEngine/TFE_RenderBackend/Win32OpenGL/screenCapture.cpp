@@ -6,7 +6,9 @@
 #include <TFE_System/system.h>
 #include <TFE_Asset/imageAsset.h>	// For image saving, this should be refactored...
 #include <TFE_Asset/gifWriter.h>
-#include <GL/glew.h>
+#define GL_GLEXT_PROTOTYPES
+#include <GL/gl.h>
+#include <GL/glext.h>
 #include <assert.h>
 #include <TFE_Settings/settings.h>
 

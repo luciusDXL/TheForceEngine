@@ -1,7 +1,9 @@
 #include "renderTarget.h"
 #include <TFE_RenderBackend/renderState.h>
 #include <TFE_RenderBackend/renderBackend.h>
-#include <GL/glew.h>
+#define GL_GLEXT_PROTOTYPES
+#include <GL/gl.h>
+#include <GL/glext.h>
 #include <assert.h>
 
 namespace

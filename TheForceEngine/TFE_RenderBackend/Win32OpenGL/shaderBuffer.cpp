@@ -1,5 +1,7 @@
 #include <TFE_RenderBackend/shaderBuffer.h>
-#include <GL/glew.h>
+#define GL_GLEXT_PROTOTYPES
+#include <GL/gl.h>
+#include <GL/glext.h>
 #include <memory.h>
 #include "openGL_Caps.h"
 
