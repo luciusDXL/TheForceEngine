@@ -10,7 +10,7 @@ struct Allocator;
 namespace TFE_Jedi
 {
 	// Create and free an allocator.
-	Allocator* allocator_create(s32 allocSize, MemoryRegion* region = nullptr);
+	Allocator* allocator_create(s32 allocSize);
 	void allocator_free(Allocator* alloc);
 	bool allocator_validate(Allocator* alloc);
 

@@ -65,7 +65,7 @@ namespace TFE_DarkForces
 	void sound_open(MemoryRegion* memRegion)
 	{
 		sound_state = {};
-		sound_state.gameSoundList = allocator_create(sizeof(GameSound), s_gameRegion);
+		sound_state.gameSoundList = allocator_create(sizeof(GameSound));
 		ImInitialize(memRegion);
 		
 		TFE_Settings_Sound* sound = TFE_Settings::getSoundSettings();
