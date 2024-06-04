@@ -194,6 +194,8 @@ namespace TFE_DarkForces
 			for (s32 i = 0; i < frameCount; i++)
 			{
 				VueFrame* frame = (VueFrame*)allocator_newItem(vueLogic->frames);
+				if (!frame)
+					return;
 				SERIALIZE(ObjState_InitVersion, (*frame), { 0 });
 			}
 		}
@@ -222,6 +224,8 @@ namespace TFE_DarkForces
 					y1 = -y1;
 					y2 = -y2;
 					VueFrame* frame = (VueFrame*)allocator_newItem(vueList);
+					if (!frame)
+						return;
 					frame->offset.x = floatToFixed16(x1);
 					frame->offset.y = floatToFixed16(y1);
 					frame->offset.z = floatToFixed16(z1);
@@ -262,6 +266,8 @@ namespace TFE_DarkForces
 			mtx1[8] = 1;
 
 			VueFrame* frame = (VueFrame*)allocator_newItem(vueList);
+			if (!frame)
+				return;
 			frame->flags = VFRAME_FIRST;
 
 			while (1)
@@ -281,6 +287,8 @@ namespace TFE_DarkForces
 					if (transformName[0] == '*' || strcasecmp(name, transformName) == 0)
 					{
 						frame = (VueFrame*)allocator_newItem(vueList);
+						if (!frame)
+							return;
 
 						// Rotation/Scale matrix.
 						fixed16_16 frameMtx[9];
@@ -627,6 +635,8 @@ namespace TFE_DarkForces
 							const fixed16_16 MAX_INTERP_DISTANCE = FIXED(2500); // FIXED(50 * 50)
 
 							if (!local(interpolatedFrame)) { local(interpolatedFrame) = (VueFrame*)allocator_newItem(local(vue)->frames); }
+							if (!local(interpolatedFrame))
+								return;
 							if (local(frame) && local(current) && local(previous))
 							{
 								const fixed16_16 dist = fixedSquaredDistance(local(current)->offset, local(previous)->offset);

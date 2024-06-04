@@ -177,6 +177,8 @@ namespace TFE_DarkForces
 	ActorDispatch* actor_createDispatch(SecObject* obj, LogicSetupFunc* setupFunc)
 	{
 		ActorDispatch* dispatch = (ActorDispatch*)allocator_newItem(s_istate.actorDispatch);
+		if (!dispatch)
+			return nullptr;
 		memset(dispatch->modules, 0, sizeof(ActorModule*) * 6);
 
 		dispatch->moveMod = nullptr;
