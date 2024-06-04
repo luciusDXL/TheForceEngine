@@ -197,6 +197,8 @@ namespace TFE_DarkForces
 		if (data)
 		{
 			sound = (GameSound*)allocator_newItem(sound_state.gameSoundList);
+			if (!sound)
+				return NULL_SOUND;
 			sound->id = (SoundSourceId)sound;
 			sound->time = s_curTick;
 			sound->data = data;

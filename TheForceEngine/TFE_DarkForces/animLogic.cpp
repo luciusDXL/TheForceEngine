@@ -114,6 +114,8 @@ namespace TFE_DarkForces
 		}
 
 		SpriteAnimLogic* anim = (SpriteAnimLogic*)allocator_newItem(s_spriteAnimList);
+		if (!anim)
+			return nullptr;
 		const WaxAnim* waxAnim = WAX_AnimPtr(obj->wax, 0);
 
 		obj_addLogic(obj, (Logic*)anim, LOGIC_ANIM, s_spriteAnimTask, spriteAnimLogicCleanupFunc);
@@ -153,10 +155,14 @@ namespace TFE_DarkForces
 			if (!s_spriteAnimList)
 			{
 				s_spriteAnimList = allocator_create(sizeof(SpriteAnimLogic));
+				if (!s_spriteAnimList)
+					return;
 			}
 			task_makeActive(s_spriteAnimTask);
 
 			anim = (SpriteAnimLogic*)allocator_newItem(s_spriteAnimList);
+			if (!anim)
+				return;
 			logic = (Logic*)anim;
 		}
 		SERIALIZE(ObjState_InitVersion, anim->firstFrame, 0);
