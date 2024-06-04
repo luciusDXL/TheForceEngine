@@ -79,7 +79,7 @@ namespace TFE_Jedi
 		Frustum  frustum;
 		RWall*   wall;
 	};
-	struct ShaderInputs
+	struct ShaderInputsGPU
 	{
 		s32 cameraPosId;
 		s32 cameraViewId;
@@ -107,7 +107,7 @@ namespace TFE_Jedi
 	static ShaderBuffer s_wallGpuBuffer;
 	static Shader s_spriteShader;
 	static Shader s_wallShader[SECTOR_PASS_COUNT];
-	static ShaderInputs s_shaderInputs[SECTOR_PASS_COUNT + 1];
+	static ShaderInputsGPU s_shaderInputs[SECTOR_PASS_COUNT + 1];
 	static ShaderSkyInputs s_shaderSkyInputs[SECTOR_PASS_COUNT];
 	static s32 s_cameraRightId;
 
@@ -132,7 +132,7 @@ namespace TFE_Jedi
 	static bool s_mipmapping = false;
 	static bool s_forceTextureUpdate = false;
 
-	struct ShaderSettings
+	struct ShaderSettingsSGPU
 	{
 		SkyMode skyMode = SKYMODE_CYLINDER;
 		bool colormapInterp = false;
@@ -141,7 +141,7 @@ namespace TFE_Jedi
 		bool trueColor = false;
 	};
 
-	static ShaderSettings s_shaderSettings = {};
+	static ShaderSettingsSGPU s_shaderSettings = {};
 	static RSector* s_clipSector;
 	static Vec3f s_clipObjPos;
 
@@ -1832,7 +1832,7 @@ namespace TFE_Jedi
 		TexturePacker* texturePacker = texturepacker_getGlobal();
 		const TextureGpu* palette  = TFE_RenderBackend::getPaletteTexture();
 		const TextureGpu* textures = texturePacker->texture;
-		const ShaderInputs* inputs = &s_shaderInputs[pass];
+		const ShaderInputsGPU* inputs = &s_shaderInputs[pass];
 		const ShaderSkyInputs* skyInputs = &s_shaderSkyInputs[pass];
 		const ShaderBuffer* textureTable = &texturePacker->textureTableGPU;
 

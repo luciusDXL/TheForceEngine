@@ -17,7 +17,7 @@ namespace TFE_LevelObjects
 
 	bool parseObjects();
 	ObjectClass getObjectClass(const char* name);
-	LogicType getLogicType(const char* name);
+	AssetLogicType getLogicType(const char* name);
 
 	bool load(const char* name)
 	{
@@ -112,7 +112,7 @@ namespace TFE_LevelObjects
 
 			// Logics
 			const u32 logicCount = (u32)obj->logics.size();
-			const Logic* logic = obj->logics.data();
+			const AssetLogic* logic = obj->logics.data();
 			bool isScenery = false;
 			for (u32 l = 0; l < logicCount; l++, logic++)
 			{
@@ -193,7 +193,7 @@ namespace TFE_LevelObjects
 		u32 objectIndex = 0;
 		u32 podIndex=0, sprIndex=0, fmeIndex=0, sndIndex=0;
 		LevelObject* object = nullptr;
-		Logic* logic = nullptr;
+		AssetLogic* logic = nullptr;
 		EnemyGenerator* generator = nullptr;
 		bool sequence = false;
 		while (bufferPos < len)
@@ -453,13 +453,13 @@ namespace TFE_LevelObjects
 		return CLASS_INAVLID;
 	}
 
-	LogicType getLogicType(const char* name)
+	AssetLogicType getLogicType(const char* name)
 	{
 		for (u32 i = 0; i < LOGIC_COUNT; i++)
 		{
 			if (strcasecmp(name, c_logicName[i]) == 0)
 			{
-				return LogicType(i);
+				return AssetLogicType(i);
 			}
 		}
 		assert(0);
