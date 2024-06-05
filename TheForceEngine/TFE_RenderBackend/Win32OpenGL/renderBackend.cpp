@@ -255,6 +255,7 @@ namespace TFE_RenderBackend
 
 		TFE_ZONE_BEGIN(swapGpu, "GPU Swap Buffers");
 		// Update the window.
+		glFinish();
 		SDL_GL_SwapWindow((SDL_Window*)m_window);
 		TFE_ZONE_END(swapGpu);
 
