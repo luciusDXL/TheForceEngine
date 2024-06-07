@@ -60,7 +60,7 @@ namespace TFE_Editor
 				s_resChanged = true;
 			}
 
-			if (ImGui::ListBoxHeader("##ResourceList", ImVec2(UI_SCALE(480), UI_SCALE(200))))
+			if (ImGui::BeginListBox("##ResourceList", ImVec2(UI_SCALE(480), UI_SCALE(200))))
 			{
 				const size_t count = s_extResources.size();
 				const EditorResource* res = s_extResources.data();
@@ -72,7 +72,7 @@ namespace TFE_Editor
 						s_curResource = s32(i);
 					}
 				}
-				ImGui::ListBoxFooter();
+				ImGui::EndListBox();
 			}
 
 			if (ImGui::Button("Add Archive"))

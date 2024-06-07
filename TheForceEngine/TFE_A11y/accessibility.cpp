@@ -12,7 +12,6 @@
 #include <TFE_System/parser.h>
 #include <TFE_System/system.h>
 #include <TFE_Ui/imGUI/imgui.h>
-#include <TFE_Ui/imGUI/imgui_impl_sdl.h>
 #include <TFE_Ui/imGUI/imgui_impl_opengl3.h>
 #include <TFE_Ui/ui.h>
 
