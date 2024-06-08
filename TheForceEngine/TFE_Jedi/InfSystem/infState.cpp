@@ -111,6 +111,8 @@ namespace TFE_Jedi
 					linkSector->infLink = allocator_create(sizeof(InfLink));
 				}
 				elevLink = (InfLink*)allocator_newItem(linkSector->infLink);
+				if (!elevLink)
+					return;
 			}
 		}
 		if (elevLink)
@@ -152,6 +154,8 @@ namespace TFE_Jedi
 			for (s32 s = 0; s < stopCount; s++)
 			{
 				Stop* stop = (Stop*)allocator_newItem(elev->stops);
+				if (!stop)
+					return;
 				inf_serializeStop(stream, stop);
 			}
 
@@ -190,6 +194,8 @@ namespace TFE_Jedi
 			for (s32 s = 0; s < slaveCount; s++)
 			{
 				Slave* slave = (Slave*)allocator_newItem(elev->slaves);
+				if (!slave)
+					return;
 				inf_serializeSlave(stream, slave);
 			}
 		}
@@ -280,6 +286,8 @@ namespace TFE_Jedi
 				}
 				Allocator* parent = linkSector->infLink;
 				InfLink* link = (InfLink*)allocator_newItem(parent);
+				if (!link)
+					return;
 				inf_serializeLink(stream, link, parent);
 			}
 		}
@@ -379,6 +387,8 @@ namespace TFE_Jedi
 				}
 				parent = parentSector->infLink;
 				link = (InfLink*)allocator_newItem(parentSector->infLink);
+				if (!link)
+					return;
 			}
 			else if (parentSector && parentWallIndex >= 0)
 			{
@@ -390,6 +400,8 @@ namespace TFE_Jedi
 				parent = wall->infLink;
 				triggerWall = wall;
 				link = (InfLink*)allocator_newItem(wall->infLink);
+				if (!link)
+					return;
 			}
 			trigger->link = link;
 		}
@@ -420,6 +432,8 @@ namespace TFE_Jedi
 			for (s32 i = 0; i < targetCount; i++)
 			{
 				TriggerTarget* target = (TriggerTarget*)allocator_newItem(trigger->targets);
+				if (!target)
+					return;
 				inf_serializeTarget(stream, target);
 			}
 		}
@@ -512,6 +526,8 @@ namespace TFE_Jedi
 			for (s32 i = 0; i < elevCount; i++)
 			{
 				InfElevator* elev = (InfElevator*)allocator_newItem(s_infSerState.infElevators);
+				if (!elev)
+					return;
 				inf_serializeElevator(stream, elev);
 			}
 		}
@@ -533,6 +549,8 @@ namespace TFE_Jedi
 			for (s32 i = 0; i < teleCount; i++)
 			{
 				Teleport* teleport = (Teleport*)allocator_newItem(s_infSerState.infTeleports);
+				if (!teleport)
+					return;
 				inf_serializeTeleport(stream, teleport);
 			}
 		}
@@ -554,6 +572,8 @@ namespace TFE_Jedi
 			for (s32 i = 0; i < trigCount; i++)
 			{
 				InfTrigger* trigger = (InfTrigger*)allocator_newItem(s_infSerState.infTriggers);
+				if (!trigger)
+					return;
 				inf_serializeTrigger(stream, trigger);
 			}
 		}
@@ -658,6 +678,8 @@ namespace TFE_Jedi
 			for (s32 m = 0; m < msgCount; m++)
 			{
 				InfMessage* msg = (InfMessage*)allocator_newItem(stop->messages);
+				if (!msg)
+					return;
 				inf_serializeMessage(stream, msg);
 			}
 		}
@@ -686,6 +708,8 @@ namespace TFE_Jedi
 			for (s32 a = 0; a < adjCount; a++)
 			{
 				AdjoinCmd* adjCmd = (AdjoinCmd*)allocator_newItem(stop->adjoinCmds);
+				if (!adjCmd)
+					return;
 				inf_serializeAdjoin(stream, stop, adjCmd);
 			}
 		}

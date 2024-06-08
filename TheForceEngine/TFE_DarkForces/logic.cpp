@@ -55,6 +55,8 @@ namespace TFE_DarkForces
 		}
 
 		Logic** logicItem = (Logic**)allocator_newItem((Allocator*)obj->logic);
+		if (!logicItem)
+			return;
 		*logicItem = logic;
 		logic->obj = obj;
 		logic->type = type;

@@ -54,12 +54,12 @@ namespace TFE_Jedi
 	static u32 s_scrQuadsWidth;
 	static u32 s_scrQuadsHeight;
 
-	struct ShaderSettings
+	struct ShaderSettingsSDGPU
 	{
 		bool bloom = false;
 		bool trueColor = false;
 	};
-	static ShaderSettings s_shaderSettings = {};
+	static ShaderSettingsSDGPU s_shaderSettings = {};
 
 	enum Constants
 	{

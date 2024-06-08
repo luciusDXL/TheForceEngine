@@ -4,7 +4,7 @@
 //////////////////////////////////////////////////////////////////////
 #include <TFE_System/types.h>
 
-enum LogicType
+enum AssetLogicType
 {
 	// Player
 	LOGIC_PLAYER,		//  Player controlled object

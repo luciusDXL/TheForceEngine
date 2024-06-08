@@ -44,7 +44,7 @@ namespace TFE_RenderShared
 	};
 	static const u32 c_tri3dAttrCount = TFE_ARRAYSIZE(c_tri3dAttrMapping);
 
-	struct ShaderState
+	struct ShaderStateTRIDRAW
 	{
 		s32 svCameraPos = -1;
 		s32 svCameraView = -1;
@@ -54,7 +54,7 @@ namespace TFE_RenderShared
 		s32 skyParam0Id = -1;
 		s32 skyParam1Id = -1;
 	};
-	static ShaderState s_shaderState[TRIMODE_COUNT];
+	static ShaderStateTRIDRAW s_shaderState[TRIMODE_COUNT];
 
 	static Shader s_shader[TRIMODE_COUNT];
 	static VertexBuffer s_vertexBuffer;

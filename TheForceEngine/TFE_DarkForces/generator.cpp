@@ -133,6 +133,8 @@ namespace TFE_DarkForces
 					}
 
 					SecObject** entityPtr = (SecObject**)allocator_newItem(gen->entities);
+					if (!entityPtr)
+						return;
 					*entityPtr = spawn;
 					actor_removeRandomCorpse();
 				}
@@ -330,6 +332,8 @@ namespace TFE_DarkForces
 				if (entityId < 0) { continue; }
 
 				SecObject** entityPtr = (SecObject**)allocator_newItem(gen->entities);
+				if (!entityPtr)
+					return;
 				*entityPtr = objData_getObjectBySerializationId_NoValidation(entityId);
 			}
 		}

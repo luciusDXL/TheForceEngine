@@ -227,6 +227,8 @@ namespace TFE_Jedi
 					if (!logic) { continue; }
 
 					Logic** logicItem = (Logic**)allocator_newItem((Allocator*)obj->logic);
+					if (!logicItem)
+						return;
 					logic->parent = logicItem;
 					logic->obj = obj;
 					*logicItem = logic;

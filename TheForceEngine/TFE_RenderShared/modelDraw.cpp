@@ -37,7 +37,7 @@ namespace TFE_RenderShared
 		TexProjection proj;
 	};
 	
-	struct ShaderState
+	struct ShaderStateMDRAW
 	{
 		s32 svCameraPos = -1;
 		s32 svCameraView = -1;
@@ -51,7 +51,7 @@ namespace TFE_RenderShared
 	};
 
 	static std::vector<u8> s_cmdBuffer;
-	static ShaderState s_shaderState;
+	static ShaderStateMDRAW s_shaderState;
 	static Shader s_shader;
 
 	bool modelDraw_loadShader(u32 defineCount, ShaderDefine* defines)

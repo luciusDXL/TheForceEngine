@@ -102,7 +102,7 @@ namespace TFE_Jedi
 
 	static ModelShaderSettings s_shaderSettings = {};
 
-	struct ShaderInputs
+	struct ShaderInputsMGPU
 	{
 		s32 cameraPosId;
 		s32 cameraViewId;
@@ -119,7 +119,7 @@ namespace TFE_Jedi
 		s32 palFxFlash;
 		s32 textureSettings;
 	};
-	static ShaderInputs s_shaderInputs[MGPU_SHADER_COUNT];
+	static ShaderInputsMGPU s_shaderInputs[MGPU_SHADER_COUNT];
 	static std::vector<ModelDraw> s_modelDrawList[MGPU_SHADER_COUNT];
 
 	extern Mat3  s_cameraMtx;

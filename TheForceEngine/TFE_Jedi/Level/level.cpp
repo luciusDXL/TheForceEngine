@@ -691,6 +691,8 @@ namespace TFE_Jedi
 			s_levelIntState.ambientSoundTask = createSubTask("AmbientSound", ambientSoundTaskFunc);
 		}
 		AmbientSound* ambientSound = (AmbientSound*)allocator_newItem(s_levelState.ambientSounds);
+		if (!ambientSound)
+			return;
 		ambientSound->soundId = soundId;
 		ambientSound->instanceId = 0;
 		ambientSound->pos = pos;
@@ -958,6 +960,8 @@ namespace TFE_Jedi
 									s_levelState.safeLoc = allocator_create(sizeof(Safe));
 								}
 								Safe* safe = (Safe*)allocator_newItem(s_levelState.safeLoc);
+								if (!safe)
+									return JFALSE;
 								safe->sector = sector;
 								safe->x = obj->posWS.x;
 								safe->z = obj->posWS.z;
@@ -986,6 +990,8 @@ namespace TFE_Jedi
 									s_levelState.safeLoc = allocator_create(sizeof(Safe));
 								}
 								Safe* safe = (Safe*)allocator_newItem(s_levelState.safeLoc);
+								if (!safe)
+									return JFALSE;
 								safe->sector = obj->sector;
 								safe->x = obj->posWS.x;
 								safe->z = obj->posWS.z;

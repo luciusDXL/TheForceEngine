@@ -193,6 +193,8 @@ namespace TFE_Jedi
 				for (s32 s = 0; s < safeCount; s++)
 				{
 					Safe* safe = (Safe*)allocator_newItem(s_levelState.safeLoc);
+					if (!safe)
+						return;
 					level_serializeSafe(stream, safe);
 				}
 			}
@@ -206,6 +208,8 @@ namespace TFE_Jedi
 				for (s32 s = 0; s < ambientSoundCount; s++)
 				{
 					AmbientSound* sound = (AmbientSound*)allocator_newItem(s_levelState.ambientSounds);
+					if (!sound)
+						return;
 					level_serializeAmbientSound(stream, sound);
 				}
 				if (!s_levelIntState.ambientSoundTask)
