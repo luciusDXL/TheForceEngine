@@ -298,6 +298,8 @@ bool sdlInit()
 	s_monitorWidth  = mode.w;
 	s_monitorHeight = mode.h;
 
+	SDL_SetHint(SDL_HINT_APP_NAME, "The Force Engine");
+
 	return true;
 }
 
