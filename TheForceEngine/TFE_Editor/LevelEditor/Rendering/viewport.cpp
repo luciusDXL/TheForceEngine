@@ -2547,7 +2547,7 @@ namespace LevelEditor
 
 	void drawVertex2d(const Vec2f* pos, f32 scale, Highlight highlight)
 	{
-		u32 color = highlight == HL_LOCKED ? SCOLOR_LOCKED_VTX : c_vertexClr[highlight];
+		u32 color = highlight == HL_LOCKED ? (u32)SCOLOR_LOCKED_VTX : c_vertexClr[highlight];
 		u32 colors[] = { color, color };
 
 		const Vec2f p0 = { pos->x * s_viewportTrans2d.x + s_viewportTrans2d.y, pos->z * s_viewportTrans2d.z + s_viewportTrans2d.w };

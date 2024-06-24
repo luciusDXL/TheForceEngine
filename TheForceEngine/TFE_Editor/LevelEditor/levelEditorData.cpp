@@ -555,7 +555,7 @@ namespace LevelEditor
 			return false;
 		}
 		// Fixup the palette, strip any path.
-		char filename[256];
+		char filename[TFE_MAX_PATH];
 		FileUtil::getFileNameFromPath(readBuffer, filename, true);
 		level->palette = filename;
 
@@ -1560,7 +1560,7 @@ namespace LevelEditor
 			}
 
 			strcat(curTab, tab);
-			WRITE_LINE(seqStart);
+			WRITE_LINE("%s", seqStart);
 			{
 				strcat(curTab, tab);
 
@@ -1568,7 +1568,7 @@ namespace LevelEditor
 				editor_writeInfItem(itemBuffer, item, curTab);
 				file.writeBuffer(itemBuffer.c_str(), (u32)strlen(itemBuffer.c_str()));
 			}
-			WRITE_LINE(seqEnd);
+			WRITE_LINE("%s", seqEnd);
 		}
 
 		NEW_LINE();
@@ -1637,7 +1637,7 @@ namespace LevelEditor
 			// Otherwise read from the passed in fileList.
 			entry->LEN = getFileLength(fileList[i].c_str());
 
-			char name[256];
+			char name[TFE_MAX_PATH];
 			FileUtil::getFileNameFromPath(fileList[i].c_str(), name, true);
 			strcpy(entry->NAME, name);
 
@@ -1704,7 +1704,7 @@ namespace LevelEditor
 
 		// Now run "TFE"
 		// Get the app directory and GOB name.
-		char appDir[1024], gobName[256];
+		char appDir[TFE_MAX_PATH], gobName[TFE_MAX_PATH];
 		FileUtil::getFilePath(s_testAppPath, appDir);
 		FileUtil::getFileNameFromPath(gobPath, gobName, true);
 

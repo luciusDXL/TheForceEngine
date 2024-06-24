@@ -162,7 +162,6 @@ namespace FileUtil
 	{
 		const char *c;
 
-		memset(extension, 0, TFE_MAX_PATH);
 		c = strrchr(filename, '.');
 		if (c) {
 			strcpy(extension, c + 1);
