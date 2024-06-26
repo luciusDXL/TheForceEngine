@@ -9,8 +9,8 @@
 #include <TFE_Ui/markdown.h>
 #include <TFE_System/parser.h>
 
-#include <TFE_Ui/imGUI/imgui.h>
 #include <algorithm>
+#include <cassert>
 
 namespace TFE_Console
 {

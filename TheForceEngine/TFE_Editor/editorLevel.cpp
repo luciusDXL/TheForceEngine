@@ -14,7 +14,6 @@
 #include <TFE_Archive/archive.h>
 #include <TFE_Ui/ui.h>
 
-#include <TFE_Ui/imGUI/imgui.h>
 #include <algorithm>
 
 namespace TFE_Editor
@@ -98,12 +97,11 @@ namespace TFE_Editor
 		f32 width = std::min((f32)info.width - 64.0f, UI_SCALE(512));
 		f32 height = std::min((f32)info.height - 64.0f, 32.0f + UI_SCALE(96));
 
-		bool active = true;
 		bool finished = false;
 		ImGui::SetWindowSize("New Level", { width, height });
 		ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoResize;
 
-		if (ImGui::BeginPopupModal("New Level", &active, window_flags))
+		if (ImGui::BeginPopupModal("New Level", nullptr, window_flags))
 		{
 			ImGui::Text("Name"); ImGui::SameLine();
 			ImGui::InputText("##NameLevel", s_newLevel.name, TFE_ARRAYSIZE(s_newLevel.name));
@@ -124,12 +122,11 @@ namespace TFE_Editor
 			{
 				finished = true;
 			}
+			if (finished)
+			{
+				ImGui::CloseCurrentPopup();
+			}
 			ImGui::EndPopup();
-		}
-
-		if (!active)
-		{
-			finished = true;
 		}
 		popFont();
 

@@ -13,7 +13,6 @@
 #include <TFE_Archive/archive.h>
 #include <TFE_Ui/ui.h>
 
-#include <TFE_Ui/imGUI/imgui.h>
 #include <algorithm>
 
 namespace TFE_Editor
@@ -194,12 +193,11 @@ namespace TFE_Editor
 		f32 width  = std::min((f32)info.width - 64.0f, UI_SCALE(900));
 		f32 height = std::min((f32)info.height - 64.0f, 70.0f + UI_SCALE(600));
 
-		bool active = true;
 		bool finished = false;
 		ImGui::SetWindowSize("Project", { width, height });
 		ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoResize;
 
-		if (ImGui::BeginPopupModal("Project", &active, window_flags))
+		if (ImGui::BeginPopupModal("Project", nullptr, window_flags))
 		{
 			f32 labelWidth = ImGui::CalcTextSize("Description").x + ImGui::GetFontSize();
 
@@ -293,11 +291,6 @@ namespace TFE_Editor
 				finished = true;
 			}
 			ImGui::EndPopup();
-		}
-
-		if (!active)
-		{
-			finished = true;
 		}
 		popFont();
 

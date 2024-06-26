@@ -13,8 +13,6 @@
 #include <TFE_Archive/archive.h>
 #include <TFE_Ui/ui.h>
 
-#include <TFE_Ui/imGUI/imgui.h>
-
 namespace TFE_Editor
 {
 	static std::vector<EditorResource> s_baseResources;
@@ -47,20 +45,19 @@ namespace TFE_Editor
 		pushFont(TFE_Editor::FONT_SMALL);
 		s32 menuHeight = 6 + (s32)ImGui::GetFontSize();
 
-		bool active = true;
 		bool finished = false;
 		f32 winWidth = UI_SCALE(550);
 		ImGui::SetWindowSize("Editor Resources", { winWidth, 70.0f + UI_SCALE(260) });
 		ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoResize;
 
-		if (ImGui::BeginPopupModal("Editor Resources", &active, window_flags))
+		if (ImGui::BeginPopupModal("Editor Resources", nullptr, window_flags))
 		{
 			if (ImGui::Checkbox("Ignore Vanilla Assets", &s_ignoreVanilla))
 			{
 				s_resChanged = true;
 			}
 
-			if (ImGui::ListBoxHeader("##ResourceList", ImVec2(UI_SCALE(480), UI_SCALE(200))))
+			if (ImGui::BeginListBox("##ResourceList", ImVec2(UI_SCALE(480), UI_SCALE(200))))
 			{
 				const size_t count = s_extResources.size();
 				const EditorResource* res = s_extResources.data();
@@ -72,7 +69,7 @@ namespace TFE_Editor
 						s_curResource = s32(i);
 					}
 				}
-				ImGui::ListBoxFooter();
+				ImGui::EndListBox();
 			}
 
 			if (ImGui::Button("Add Archive"))
@@ -142,10 +139,6 @@ namespace TFE_Editor
 		}
 		popFont();
 
-		if (!active)
-		{
-			finished = true;
-		}
 		if (finished)
 		{
 			project_save();

@@ -7,7 +7,6 @@
 #include <TFE_Editor/EditorAsset/editorFrame.h>
 #include <TFE_Editor/EditorAsset/editorSprite.h>
 
-#include <TFE_Ui/imGUI/imgui.h>
 #include <algorithm>
 #include <vector>
 #include <string>
