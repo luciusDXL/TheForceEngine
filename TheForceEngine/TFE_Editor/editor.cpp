@@ -176,7 +176,6 @@ namespace TFE_Editor
 		const ImVec4 tintColor  = tint ? ImVec4(tint[0], tint[1], tint[2], tint[3]) : ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
 		const ImVec4 tintColor2 = tint ? ImVec4(tint[0]*2.0f, tint[1]*2.0f, tint[2]*2.0f, tint[3]) : ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
 		const ImVec4 bgColor = ImVec4(0, 0, 0, 0);
-		const s32 padding = 0;
 
 		// A unique ID formed from: icon + instance*ICON_COUNT + ptr&0xffffffff
 		const s32 id = s_uid + s32(size_t(s_iconAtlas));
@@ -190,7 +189,7 @@ namespace TFE_Editor
 
 		ImGui::PushID(id);
 		bool res = ImGui::ImageButtonDualTint(gpuPtr, size, ImVec2(x0*imageScale, y0*imageScale),
-			ImVec2(x1*imageScale, y1*imageScale), padding, bgColor, tintColor, tintColor2);
+			ImVec2(x1*imageScale, y1*imageScale), bgColor, tintColor, tintColor2);
 		if (tooltip) { setTooltip(tooltip); }
 		ImGui::PopID();
 		ImGui::PopStyleColor(3);
@@ -500,7 +499,7 @@ namespace TFE_Editor
 
 		const ImVec4 titleColor = getTextColor(project->active ? TEXTCLR_TITLE_ACTIVE : TEXTCLR_TITLE_INACTIVE);
 		ImGui::SameLine(f32((winWidth - titleWidth)/2));
-		ImGui::TextColored(titleColor, title);
+		ImGui::TextColored(titleColor, "%s", title);
 	}
 
 	void menu()

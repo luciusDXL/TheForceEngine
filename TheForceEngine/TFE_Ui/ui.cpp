@@ -3,7 +3,7 @@
 #include <TFE_FileSystem/fileutil.h>
 
 #include "imGUI/imgui.h"
-#include "imGUI/imgui_impl_sdl.h"
+#include "imGUI/imgui_impl_sdl2.h"
 #include "imGUI/imgui_impl_opengl3.h"
 #include "portable-file-dialogs.h"
 #include "markdown.h"
@@ -13,7 +13,6 @@
 namespace TFE_Ui
 {
 const char* glsl_version = "#version 130";
-SDL_Window* s_window = nullptr;
 static s32 s_uiScale = 100;
 
 bool init(void* window, void* context, s32 uiScale)
@@ -31,8 +30,7 @@ bool init(void* window, void* context, s32 uiScale)
 	ImGui::StyleColorsDark();
 
 	// Setup Platform/Renderer bindings
-	s_window = (SDL_Window*)window;
-	ImGui_ImplSDL2_InitForOpenGL(s_window, context);
+	ImGui_ImplSDL2_InitForOpenGL((SDL_Window *)window, context);
 	ImGui_ImplOpenGL3_Init(glsl_version);
 
 	// Set the default font (13 px)
@@ -89,7 +87,7 @@ void setUiInput(const void* inputEvent)
 void begin()
 {
 	ImGui_ImplOpenGL3_NewFrame();
-	ImGui_ImplSDL2_NewFrame(s_window);
+	ImGui_ImplSDL2_NewFrame();
 	ImGui::NewFrame();
 }
 
