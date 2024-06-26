@@ -42,12 +42,11 @@ namespace LevelEditor
 	bool groups_chooseName()
 	{
 		pushFont(TFE_Editor::FONT_SMALL);
-		bool active = true;
 		ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysAutoResize;
 
 		bool create = false;
 		bool cancel = false;
-		if (ImGui::BeginPopupModal("Choose Name", &active, window_flags))
+		if (ImGui::BeginPopupModal("Choose Name", nullptr, window_flags))
 		{
 			ImGui::Text("Choose Name");
 			ImGui::SameLine(0.0f, 8.0f);
@@ -71,7 +70,7 @@ namespace LevelEditor
 		{
 			groups_add(s_nameInput, s_groupCurrent);
 		}
-		return !active || create || cancel;
+		return create || cancel;
 	}
 		
 	void groups_init()

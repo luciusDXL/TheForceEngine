@@ -12,8 +12,6 @@
 #include <TFE_System/parser.h>
 #include <TFE_System/system.h>
 #include <TFE_Ui/imGUI/imgui.h>
-#include <TFE_Ui/imGUI/imgui_impl_sdl.h>
-#include <TFE_Ui/imGUI/imgui_impl_opengl3.h>
 #include <TFE_Ui/ui.h>
 
 using namespace std::chrono;
@@ -184,7 +182,7 @@ namespace TFE_A11Y  // a11y is industry slang for accessibility
 		// Try to load the previously selected font.
 		string lastFontPath = TFE_Settings::getA11ySettings()->lastFontPath;
 
-		if (lastFontPath, ImGui::GetIO().Fonts->Locked)	{ setPendingFont(lastFontPath);	} 
+		if (!lastFontPath.empty() && ImGui::GetIO().Fonts->Locked)	{ setPendingFont(lastFontPath);	}
 		else { tryLoadFont(lastFontPath, false); }
 	}
 
@@ -243,7 +241,7 @@ namespace TFE_A11Y  // a11y is industry slang for accessibility
 			s_fontMap[path] = s_currentCaptionFont;
 			// If we're loading a new font after the game first initializes, we'll need to clear the 
 			// ImGui font atlas so that it is automatically regenerated at the start of the next frame.
-			if (clearAtlas) { ImGui_ImplOpenGL3_DestroyFontsTexture(); }
+			if (clearAtlas) { TFE_Ui::invalidateFontAtlas(); }
 		}
 		assert(s_currentCaptionFont != nullptr);
 

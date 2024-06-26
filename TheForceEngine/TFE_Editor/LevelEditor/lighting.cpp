@@ -17,12 +17,11 @@ namespace LevelEditor
 	bool levelLighting()
 	{
 		TFE_Editor::pushFont(TFE_Editor::FONT_SMALL);
-		bool active = true;
 		ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysAutoResize;
 
 		bool applyLighting = false;
 		bool cancel = false;
-		if (ImGui::BeginPopupModal("Level Lighting", &active, window_flags))
+		if (ImGui::BeginPopupModal("Level Lighting", nullptr, window_flags))
 		{
 			ImGui::Text("Directional Wall Lighting");
 			ImGui::NewLine();
@@ -52,8 +51,8 @@ namespace LevelEditor
 			{
 				applyLighting = true;
 			}
-			ImGui::SameLine(0.0f, 8.0f);
-			if (ImGui::Button("Cancel"))
+			ImGui::SameLine();
+			if (ImGui::Button("Close"))
 			{
 				cancel = true;
 			}
@@ -106,6 +105,6 @@ namespace LevelEditor
 				}
 			}
 		}
-		return !active || applyLighting || cancel;
+		return applyLighting || cancel;
 	}
 }  // namespace LevelEditor

@@ -11,6 +11,7 @@
 
 #include <TFE_Ui/imGUI/imgui.h>
 #include <algorithm>
+#include <cassert>
 
 namespace TFE_Console
 {
