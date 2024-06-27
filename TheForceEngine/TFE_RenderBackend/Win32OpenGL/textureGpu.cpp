@@ -2,7 +2,7 @@
 #include <TFE_System/system.h>
 #include <TFE_Settings/settings.h>
 #include "openGL_Caps.h"
-#include <GL/glew.h>
+#include "gl.h"
 #include <algorithm>
 #include <vector>
 #include <assert.h>
@@ -146,13 +146,15 @@ bool TextureGpu::createWithData(u32 width, u32 height, const void* buffer, MagFi
 	glBindTexture(GL_TEXTURE_2D, m_gpuHandle);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, buffer);
 	
-	f32 maxAniso = 1.0f;
-	glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &maxAniso);
+	f32 maxAniso = OpenGL_Caps::getMaxAnisotropy();
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, magFilter == MAG_FILTER_NONE ? GL_NEAREST : GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY, maxAniso);
+	if (OpenGL_Caps::supportsAniso())  // GL_EXT_texture_filter_anisotropic
+	{
+		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY, maxAniso);
+	}
 
 	glGenerateMipmap(GL_TEXTURE_2D);
 	glBindTexture(GL_TEXTURE_2D, 0);
@@ -199,14 +201,20 @@ void TextureGpu::setFilter(MagFilter magFilter, MinFilter minFilter, bool isArra
 		glTexParameteri(isArray ? GL_TEXTURE_2D_ARRAY : GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 		glTexParameteri(isArray ? GL_TEXTURE_2D_ARRAY : GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, (s32)m_mipCount - 1);
 		glTexParameterf(isArray ? GL_TEXTURE_2D_ARRAY : GL_TEXTURE_2D, GL_TEXTURE_MAX_LOD, max(0.0f, (f32)m_mipCount - 1.0f - maxLodBias));
-		glTexParameterf(isArray ? GL_TEXTURE_2D_ARRAY : GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY, ani);
+		if (OpenGL_Caps::supportsAniso())  // GL_EXT_texture_filter_anisotropic
+		{
+			glTexParameterf(isArray ? GL_TEXTURE_2D_ARRAY : GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY, ani);
+		}
 	}
 	else
 	{
 		glTexParameteri(isArray ? GL_TEXTURE_2D_ARRAY : GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, minFilter == MIN_FILTER_NONE ? GL_NEAREST : GL_LINEAR);
 		glTexParameteri(isArray ? GL_TEXTURE_2D_ARRAY : GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0);
 		glTexParameterf(isArray ? GL_TEXTURE_2D_ARRAY : GL_TEXTURE_2D, GL_TEXTURE_MAX_LOD, 0.0f);
-		glTexParameterf(isArray ? GL_TEXTURE_2D_ARRAY : GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY, 1.0f);
+		if (OpenGL_Caps::supportsAniso()) // GL_EXT_texture_filter_anisotropic
+		{
+			glTexParameterf(isArray ? GL_TEXTURE_2D_ARRAY : GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY, 1.0f);
+		}
 	}
 }
 
