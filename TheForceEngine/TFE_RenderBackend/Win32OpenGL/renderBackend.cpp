@@ -14,7 +14,7 @@
 #include "renderTarget.h"
 #include "screenCapture.h"
 #include <SDL.h>
-#include <GL/glew.h>
+#include "gl.h"
 #include <stdio.h>
 #include <assert.h>
 #include <algorithm>
@@ -70,6 +70,18 @@ namespace TFE_RenderBackend
 
 	void drawVirtualDisplay();
 	void setupPostEffectChain(bool useDynamicTexture, bool useBloom);
+
+	static void printGLInfo(void)
+	{
+		const char* gl_ver = (const char *)glGetString(GL_VERSION);
+		if (!gl_ver || glGetError() != GL_NO_ERROR)
+		{
+			TFE_System::logWrite(LOG_ERROR, "RenderBackend", "cannot get GL Version!");
+			return;
+		}
+		const char* gl_ren = (const char *)glGetString(GL_RENDERER);
+		TFE_System::logWrite(LOG_MSG, "RenderBackend", "GL Info: %s, %s", gl_ver, gl_ren);
+	}
 		
 	SDL_Window* createWindow(const WindowState& state)
 	{
@@ -99,32 +111,46 @@ namespace TFE_RenderBackend
 		}
 
 		SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, true);
+
+		TFE_System::logWrite(LOG_MSG, "RenderBackend", "SDL Videodriver: %s", SDL_GetCurrentVideoDriver());
 		SDL_Window* window = SDL_CreateWindow(state.name, x, y, state.width, state.height, windowFlags);
+		if (!window)
+		{
+			TFE_System::logWrite(LOG_ERROR, "RenderBackend", "SDL_CreateWindow() failed: %s", SDL_GetError());
+			return nullptr;
+		}
+
 		SDL_GLContext context = SDL_GL_CreateContext(window);
+		if (!context)
+		{
+			SDL_DestroyWindow(window);
+			TFE_System::logWrite(LOG_ERROR, "RenderBackend", "SDL_GL_CreateContext() failed: %s", SDL_GetError());
+			return nullptr;
+		}
+
+		int glver = gladLoadGL((GLADloadfunc)SDL_GL_GetProcAddress);
+		if (glver == 0)
+		{
+			TFE_System::logWrite(LOG_ERROR, "RenderBackend", "cannot initialize GLAD");
+			SDL_GL_DeleteContext(context);
+			SDL_DestroyWindow(window);
+			return nullptr;
+		}
+
+		OpenGL_Caps::queryCapabilities();
+		printGLInfo();
+		int tier = OpenGL_Caps::getDeviceTier();
+		TFE_System::logWrite(LOG_MSG, "RenderBackend", "OpenGL Device Tier: %d", tier);
+		if (tier < 2)
+		{
+			TFE_System::logWrite(LOG_ERROR, "RenderBackend", "Insufficient GL capabilities!");
+			SDL_GL_DeleteContext(context);
+			SDL_DestroyWindow(window);
+			return nullptr;
+		}
 
 		//swap buffer at the monitors rate
 		SDL_GL_SetSwapInterval((state.flags & WINFLAG_VSYNC) ? 1 : 0);
-
-		//GLEW is an OpenGL Loading Library used to reach GL functions
-		//Sets all functions available
-		glewExperimental = GL_TRUE;
-		const GLenum err = glewInit();
-	#if defined(GLEW_ERROR_NO_GLX_DISPLAY) && !defined(_WIN32)
-		if (err == GLEW_ERROR_NO_GLX_DISPLAY &&
-			strcmp(SDL_GetCurrentVideoDriver(), "wayland") == 0)
-		{
-			// workaround for GLEW on Wayland
-			// see https://github.com/nigels-com/glew/issues/172
-		}
-		else
-	#endif
-		if (err != GLEW_OK)
-		{
-			printf("Failed to initialize GLEW");
-			return nullptr;
-		}
-		OpenGL_Caps::queryCapabilities();
-		TFE_System::logWrite(LOG_MSG, "RenderBackend", "OpenGL Device Tier: %d", OpenGL_Caps::getDeviceTier());
 
 		MonitorInfo monitorInfo;
 		getDisplayMonitorInfo(displayIndex, &monitorInfo);
@@ -151,9 +177,12 @@ namespace TFE_RenderBackend
 	{
 		m_window = createWindow(state);
 		m_windowState = state;
+		if (!m_window)
+			return false;
 
 		if (!TFE_PostProcess::init())
 		{
+			SDL_DestroyWindow((SDL_Window *)m_window);
 			return false;
 		}
 		// TODO: Move effect creation into post effect system.
@@ -181,7 +210,7 @@ namespace TFE_RenderBackend
 
 		TFE_RenderState::clear();
 
-		return m_window != nullptr;
+		return true;
 	}
 
 	void destroy()

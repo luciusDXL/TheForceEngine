@@ -5,7 +5,7 @@
 #include <TFE_FileSystem/filestream.h>
 #include <TFE_FileSystem/paths.h>
 #include <TFE_RenderBackend/renderBackend.h>
-#include <GL/glew.h>
+#include "gl.h"
 #include <assert.h>
 #include <vector>
 #include <string>

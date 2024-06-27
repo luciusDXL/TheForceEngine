@@ -8,7 +8,6 @@
 #include "portable-file-dialogs.h"
 #include "markdown.h"
 #include <SDL.h>
-#include <GL/glew.h>
 
 namespace TFE_Ui
 {
