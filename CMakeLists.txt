@@ -61,15 +61,10 @@ if(ENABLE_TFE)
 		find_package(Threads REQUIRED)
 		find_package(SDL2 2.0.20 REQUIRED)
 		pkg_check_modules(SDL2_IMAGE REQUIRED SDL2_image)
-		pkg_check_modules(GLEW REQUIRED glew)
-		set(OpenGL_GL_PREFERENCE GLVND)
-		find_package(OpenGL REQUIRED)
 		target_include_directories(tfe PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 		target_include_directories(tfe PRIVATE ${SDL2_INCLUDE_DIRS})
 		target_include_directories(tfe PRIVATE ${SDL2_IMAGE_INCLUDE_DIRS})
 		target_link_libraries(tfe PRIVATE
-					${OPENGL_LIBRARIES}
-					${GLEW_LIBRARIES}
 					${SDL2_LIBRARIES}
 					${SDL2_IMAGE_LIBRARIES}
 		)

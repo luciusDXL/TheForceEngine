@@ -7,7 +7,7 @@ Program entry point, manages initialization and OS main loop.
 Support data includes:
 * Documentation
 * Fonts
-* Libraries / GLEW
+* Libraries
 * SDL 2
 * Shaders
 * SoundFonts (later)

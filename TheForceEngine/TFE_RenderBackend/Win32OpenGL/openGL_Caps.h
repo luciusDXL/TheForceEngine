@@ -22,6 +22,7 @@ namespace OpenGL_Caps
 	bool supportsFbo();
 	bool supportsNonPow2Textures();
 	bool supportsTextureArrays();
+	bool supportsAniso();
 
 	bool deviceSupportsGpuBlit();
 	bool deviceSupportsGpuColorConversion();

@@ -3,7 +3,7 @@
 #include "../dynamicTexture.h"
 #include "openGL_Caps.h"
 #include <TFE_System/system.h>
-#include <GL/glew.h>
+#include "gl.h"
 #include <assert.h>
 
 std::vector<u8> DynamicTexture::s_tempBuffer;

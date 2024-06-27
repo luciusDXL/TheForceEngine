@@ -1,5 +1,5 @@
 #include <TFE_RenderBackend/vertexBuffer.h>
-#include <GL/glew.h>
+#include "gl.h"
 #include <memory.h>
 
 static const GLenum c_glType[] =
