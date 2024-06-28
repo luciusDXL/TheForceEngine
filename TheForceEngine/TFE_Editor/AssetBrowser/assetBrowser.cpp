@@ -1263,7 +1263,7 @@ namespace AssetBrowser
 						continue;
 					}
 					// Fixup the palette, strip any path.
-					char paletteName[256];
+					char paletteName[TFE_MAX_PATH];
 					FileUtil::getFileNameFromPath(readBuffer, paletteName, true);
 					paletteId = getPaletteId(paletteName);
 					if (paletteId < 0) { paletteId = 0; }

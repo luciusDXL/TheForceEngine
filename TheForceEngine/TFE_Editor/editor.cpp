@@ -817,7 +817,7 @@ namespace TFE_Editor
 		
 	void addToRecents(const char* path)
 	{
-		char name[256];
+		char name[TFE_MAX_PATH];
 		FileUtil::getFileNameFromPath(path, name);
 
 		// Does it already exist?
@@ -958,7 +958,7 @@ namespace TFE_Editor
 		}
 
 		TextureGpu* gpuImage = nullptr;
-		SDL_Surface* image = TFE_Image::get(path);
+		SDL_Surface* image = TFE_Image::get(imagePath);
 		if (image)
 		{
 			gpuImage = TFE_RenderBackend::createTexture(image->w, image->h, (u32*)image->pixels, MAG_FILTER_LINEAR);

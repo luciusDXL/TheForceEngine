@@ -238,16 +238,12 @@ namespace LevelEditor
 
 	bool loadSingleEntityData(Entity* entity)
 	{
-		const char* progPath = TFE_Paths::getPath(TFE_PathType::PATH_PROGRAM);
-
 		// First figure out the display asset.
 		if (entity->type == ETYPE_SPIRIT || entity->type == ETYPE_SAFE)
 		{
 			// Load as a PNG.
 			char pngPath[TFE_MAX_PATH];
-			sprintf(pngPath, "%sUI_Images/%s", progPath, entity->assetName.c_str());
-			FileUtil::fixupPath(pngPath);
-
+			sprintf(pngPath, "UI_Images/%s", entity->assetName.c_str());
 			entity->image = loadGpuImage(pngPath);
 			if (entity->image)
 			{
@@ -1057,7 +1053,8 @@ namespace LevelEditor
 					{
 						if (tokens.size() >= 3)
 						{
-							curVar->flags.push_back({ tokens[1], strtol(tokens[2].c_str(), &endPtr, 10) });
+							s32 val = strtol(tokens[2].c_str(), &endPtr, 10);
+							curVar->flags.push_back({ tokens[1], val });
 						}
 						else
 						{

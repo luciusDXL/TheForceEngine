@@ -61,14 +61,8 @@ namespace LevelEditor
 		
 	void browserLoadIcons()
 	{
-		const char* progPath = TFE_Paths::getPath(TFE_PathType::PATH_PROGRAM);
-
 		// Load as a PNG.
-		char pngPath[TFE_MAX_PATH];
-		sprintf(pngPath, "%sUI_Images/%s", progPath, "Obj-3d-Icon.png");
-		FileUtil::fixupPath(pngPath);
-
-		s_icon3d = loadGpuImage(pngPath);
+		s_icon3d = loadGpuImage("UI_Images/Obj-3d-Icon.png");
 	}
 
 	void browserFreeIcons()
