@@ -175,9 +175,12 @@ namespace TFE_RenderBackend
 	{
 		m_window = createWindow(state);
 		m_windowState = state;
+		if (!m_window)
+			return false;
 
 		if (!TFE_PostProcess::init())
 		{
+			SDL_DestroyWindow((SDL_Window *)m_window);
 			return false;
 		}
 		// TODO: Move effect creation into post effect system.
@@ -205,7 +208,7 @@ namespace TFE_RenderBackend
 
 		TFE_RenderState::clear();
 
-		return m_window != nullptr;
+		return true;
 	}
 
 	void destroy()
