@@ -1,7 +1,7 @@
 #include "renderTarget.h"
 #include <TFE_RenderBackend/renderState.h>
 #include <TFE_RenderBackend/renderBackend.h>
-#include <GL/glew.h>
+#include "gl.h"
 #include <assert.h>
 
 namespace

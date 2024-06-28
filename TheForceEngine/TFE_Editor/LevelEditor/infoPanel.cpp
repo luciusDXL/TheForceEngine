@@ -215,7 +215,7 @@ namespace LevelEditor
 
 			if (s_scrollToBottom)
 			{
-				ImGui::SetScrollHere(0.999f);
+				ImGui::SetScrollHereY(0.999f);
 				s_scrollToBottom = false;
 			}
 		}
@@ -430,7 +430,7 @@ namespace LevelEditor
 		bool hadFocusX = false, hadFocusZ = false;
 		Vec2f prevPos = *value;
 		ImGui::PushItemWidth(98.0f);
-		if (ImGui::InputFloat(id0, &value->x, NULL, NULL, "%0.6f", ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_NoUndoRedo))
+		if (ImGui::InputFloat(id0, &value->x, 0.0, 0.0, "%0.6f", ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_NoUndoRedo))
 		{
 			if (value->x != prevPos.x)
 			{
@@ -441,7 +441,7 @@ namespace LevelEditor
 
 		ImGui::SameLine();
 		ImGui::PushItemWidth(98.0f);
-		if (ImGui::InputFloat(id1, &value->z, NULL, NULL, "%0.6f", ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_NoUndoRedo))
+		if (ImGui::InputFloat(id1, &value->z, 0.0, 0.0, "%0.6f", ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_NoUndoRedo))
 		{
 			if (value->z != prevPos.z)
 			{
@@ -550,7 +550,7 @@ namespace LevelEditor
 	void infoLabel(const char* labelId, const char* labelText, u32 width)
 	{
 		ImGui::PushItemWidth(f32(width));
-		ImGui::LabelText(labelId, labelText);
+		ImGui::LabelText(labelId, "%s", labelText);
 		ImGui::PopItemWidth();
 		ImGui::SameLine();
 	}

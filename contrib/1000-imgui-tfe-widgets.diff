@@ -1,0 +1,122 @@
+Delta patch to add the custom widgets used by TFE to a
+pristine imgui source tree.
+
+diffed against imgui-1.90.8 on 26-june-2024.
+
+--- a/imgui_widgets.cpp	2024-06-26 21:25:31.859485079 +0200
++++ b/imgui_widgets.cpp	2024-06-26 21:24:19.120853001 +0200
+@@ -1091,6 +1091,79 @@ bool ImGui::ImageButton(const char* str_
+     return ImageButtonEx(window->GetID(str_id), user_texture_id, image_size, uv0, uv1, bg_col, tint_col);
+ }
+ 
++// Copy of ImageButtonEx with different Texture for hovered/left alone
++bool ImGui::ImageAnimButton(ImTextureID texture_id, ImTextureID texture_id2, const ImVec2& image_size, const ImVec2& uv0, const ImVec2& uv1, const ImVec2& uv2, const ImVec2& uv3, const ImVec4& bg_col, const ImVec4& tint_col)
++{
++    ImGuiContext& g = *GImGui;
++    ImGuiWindow* window = GetCurrentWindow();
++    if (window->SkipItems)
++        return false;
++
++    const ImVec2 padding = g.Style.FramePadding;
++    const ImRect bb(window->DC.CursorPos, window->DC.CursorPos + image_size + padding * 2.0f);
++    ItemSize(bb);
++
++    // use the texture_id as Identifier.
++    PushID((void *)texture_id);
++    const ImGuiID id = window->GetID("#image");
++    PopID();
++
++    if (!ItemAdd(bb, id))
++        return false;
++
++    bool hovered, held;
++    bool pressed = ButtonBehavior(bb, id, &hovered, &held, 0);
++
++    // Render
++    const ImU32 col = GetColorU32((held && hovered) ? ImGuiCol_ButtonActive : hovered ? ImGuiCol_ButtonHovered : ImGuiCol_Button);
++    if (bg_col.w > 0.0f)
++        window->DrawList->AddRectFilled(bb.Min + padding, bb.Max - padding, GetColorU32(bg_col));
++
++    if (hovered)
++        window->DrawList->AddImage(texture_id2, bb.Min + padding, bb.Max - padding, uv0, uv1, GetColorU32(tint_col));
++    else
++        window->DrawList->AddImage(texture_id, bb.Min + padding, bb.Max - padding, uv0, uv1, GetColorU32(tint_col));
++
++    return pressed;
++}
++
++bool ImGui::ImageButtonDualTint(ImTextureID user_texture_id, const ImVec2& image_size, const ImVec2& uv0, const ImVec2& uv1, const ImVec4& bg_col, const ImVec4& tint_col, const ImVec4& tint_col2)
++{
++    ImGuiContext& g = *GImGui;
++    ImGuiWindow* window = GetCurrentWindow();
++    if (window->SkipItems)
++        return false;
++
++    const ImVec2 padding = g.Style.FramePadding;
++    const ImRect bb(window->DC.CursorPos, window->DC.CursorPos + image_size + padding * 2.0f);
++    ItemSize(bb);
++
++    // use the texture_id as Identifier.
++    PushID((void *)user_texture_id);
++    const ImGuiID id = window->GetID("#image");
++    PopID();
++
++    if (!ItemAdd(bb, id))
++        return false;
++
++    bool hovered, held;
++    bool pressed = ButtonBehavior(bb, id, &hovered, &held, 0);
++
++    // Render
++    const ImU32 col = GetColorU32((held && hovered) ? ImGuiCol_ButtonActive : hovered ? ImGuiCol_ButtonHovered : ImGuiCol_Button);
++    RenderNavHighlight(bb, id);
++    RenderFrame(bb.Min, bb.Max, col, true, ImClamp((float)ImMin(padding.x, padding.y), 0.0f, g.Style.FrameRounding));
++    if (bg_col.w > 0.0f)
++        window->DrawList->AddRectFilled(bb.Min + padding, bb.Max - padding, GetColorU32(bg_col));
++    if (hovered)
++        window->DrawList->AddImage(user_texture_id, bb.Min + padding, bb.Max - padding, uv0, uv1, GetColorU32(tint_col2));
++    else
++        window->DrawList->AddImage(user_texture_id, bb.Min + padding, bb.Max - padding, uv0, uv1, GetColorU32(tint_col));
++
++    return pressed;
++}
++
++
+ #ifndef IMGUI_DISABLE_OBSOLETE_FUNCTIONS
+ // Legacy API obsoleted in 1.89. Two differences with new ImageButton()
+ // - new ImageButton() requires an explicit 'const char* str_id'    Old ImageButton() used opaque imTextureId (created issue with: multiple buttons with same image, transient texture id values, opaque computation of ID)
+@@ -3647,6 +3720,13 @@ bool ImGui::InputInt(const char* label,
+     return InputScalar(label, ImGuiDataType_S32, (void*)v, (void*)(step > 0 ? &step : NULL), (void*)(step_fast > 0 ? &step_fast : NULL), format, flags);
+ }
+ 
++bool ImGui::InputUInt(const char* label, unsigned int* v, int step, int step_fast, ImGuiInputTextFlags flags)
++{
++    // Hexadecimal input provided as a convenience but the flag name is awkward. Typically you'd use InputText() to parse your own data, if you want to handle prefixes.
++    const char* format = (flags & ImGuiInputTextFlags_CharsHexadecimal) ? "%08X" : "%u";
++    return InputScalar(label, ImGuiDataType_U32, (void*)v, (void*)(step > 0 ? &step : NULL), (void*)(step_fast > 0 ? &step_fast : NULL), format, flags);
++}
++
+ bool ImGui::InputInt2(const char* label, int v[2], ImGuiInputTextFlags flags)
+ {
+     return InputScalarN(label, ImGuiDataType_S32, v, 2, NULL, NULL, "%d", flags);
+--- a/imgui.h	2024-06-26 21:25:31.854484967 +0200
++++ b/imgui.h	2024-06-26 21:24:19.116852911 +0200
+@@ -549,6 +549,10 @@ namespace ImGui
+     // - Note that Image() may add +2.0f to provided size if a border is visible, ImageButton() adds style.FramePadding*2.0f to provided size.
+     IMGUI_API void          Image(ImTextureID user_texture_id, const ImVec2& image_size, const ImVec2& uv0 = ImVec2(0, 0), const ImVec2& uv1 = ImVec2(1, 1), const ImVec4& tint_col = ImVec4(1, 1, 1, 1), const ImVec4& border_col = ImVec4(0, 0, 0, 0));
+     IMGUI_API bool          ImageButton(const char* str_id, ImTextureID user_texture_id, const ImVec2& image_size, const ImVec2& uv0 = ImVec2(0, 0), const ImVec2& uv1 = ImVec2(1, 1), const ImVec4& bg_col = ImVec4(0, 0, 0, 0), const ImVec4& tint_col = ImVec4(1, 1, 1, 1));
++    // TFE Extensions
++    IMGUI_API bool	    	ImageAnimButton(ImTextureID texture_id, ImTextureID texture_id2, const ImVec2& image_size, const ImVec2& uv0 = ImVec2(0, 0), const ImVec2& uv1 = ImVec2(1, 1), const ImVec2& uv2 = ImVec2(0, 0), const ImVec2& uv3 = ImVec2(1, 1), const ImVec4& bg_col = ImVec4(0, 0, 0, 0), const ImVec4& tint_col = ImVec4(1, 1, 1, 1));
++    IMGUI_API bool	    	ImageButtonDualTint(ImTextureID user_texture_id, const ImVec2& image_size, const ImVec2& uv0 = ImVec2(0, 0), const ImVec2& uv1 = ImVec2(1, 1), const ImVec4& bg_col = ImVec4(0, 0, 0, 0), const ImVec4& tint_col = ImVec4(1, 1, 1, 1), const ImVec4& tint_col2 = ImVec4(1, 1, 1, 1));
++    // TFE Extenstions
+ 
+     // Widgets: Combo Box (Dropdown)
+     // - The BeginCombo()/EndCombo() api allows you to manage your contents and selection state however you want it, by creating e.g. Selectable() items.
+@@ -616,6 +620,7 @@ namespace ImGui
+     IMGUI_API bool          InputFloat3(const char* label, float v[3], const char* format = "%.3f", ImGuiInputTextFlags flags = 0);
+     IMGUI_API bool          InputFloat4(const char* label, float v[4], const char* format = "%.3f", ImGuiInputTextFlags flags = 0);
+     IMGUI_API bool          InputInt(const char* label, int* v, int step = 1, int step_fast = 100, ImGuiInputTextFlags flags = 0);
++        IMGUI_API bool          InputUInt(const char* label, unsigned int* v, int step = 1, int step_fast = 100, ImGuiInputTextFlags flags = 0);
+     IMGUI_API bool          InputInt2(const char* label, int v[2], ImGuiInputTextFlags flags = 0);
+     IMGUI_API bool          InputInt3(const char* label, int v[3], ImGuiInputTextFlags flags = 0);
+     IMGUI_API bool          InputInt4(const char* label, int v[4], ImGuiInputTextFlags flags = 0);

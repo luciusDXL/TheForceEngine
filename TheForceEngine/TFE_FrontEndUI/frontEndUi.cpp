@@ -713,7 +713,7 @@ namespace TFE_FrontEndUI
 					if (s_menuItemselected[i] == menuItem_Editor)
 					{
 						ImGui::ImageAnimButton(s_buttonNormal[i].image, s_buttonSelected[i].image, textSize,
-							ImVec2(0, 0), ImVec2(1, 1), ImVec2(0, 0), ImVec2(1, 1), -1, ImVec4(0, 0, 0, 0), ImVec4(0.25f, 0.25f, 0.25f, 1.0f));
+							ImVec2(0, 0), ImVec2(1, 1), ImVec2(0, 0), ImVec2(1, 1), ImVec4(0, 0, 0, 0), ImVec4(0.25f, 0.25f, 0.25f, 1.0f));
 					}
 					else
 				#endif
@@ -2676,7 +2676,7 @@ namespace TFE_FrontEndUI
 		ImGui::SetNextItemWidth(196*s_uiScale);
 		ImGui::SliderFloat("Scale", &hud->scale, 0.0f, 15.0f, "%.2f"); ImGui::SameLine(0.0f, 32.0f*s_uiScale);
 		ImGui::SetNextItemWidth(128 * s_uiScale);
-		ImGui::InputFloat("##HudScaleText", &hud->scale, 0.01f, 0.1f, 2);
+		ImGui::InputFloat("##HudScaleText", &hud->scale, 0.01f, 0.1f, "%.3f", ImGuiInputTextFlags_CharsHexadecimal);
 
 		ImGui::SetNextItemWidth(196*s_uiScale);
 		ImGui::SliderInt("Offset Lt", &hud->pixelOffset[0], -512, 512); ImGui::SameLine(0.0f, 3.0f*s_uiScale);

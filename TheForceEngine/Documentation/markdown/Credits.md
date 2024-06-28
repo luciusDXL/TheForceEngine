@@ -68,9 +68,9 @@ SDL 2.0.x
   * [https://www.libsdl.org/](https://www.libsdl.org/)
   * License: ZLIB
 
-GLEW
-  * [https://github.com/nigels-com/glew](https://github.com/nigels-com/glew)
-  * License: Modified BSD license
+GLAD
+  * [https://gen.glad.sh](https://gen.glad.sh)
+  * License: MIT
 
 **UI**
 imGUI
