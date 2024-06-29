@@ -97,15 +97,18 @@ namespace TFE_Audio
 	u32 SystemMidiDevice::getOutputCount()
 	{
 		m_outputs.clear();
-		m_outputs.push_back("(Disabled)");
 		if (m_midiout)
 		{
 			u32 count = m_midiout->getPortCount();
+
+			m_outputs.push_back(count ? "Disabled" : "Disabled: no ports found");
 
 			for (u32 i = 0; i < count; i++)
 			{
 				m_outputs.push_back(m_midiout->getPortName(i));
 			}
+		} else {
+			m_outputs.push_back("Disabled: internal MIDI error");
 		}
 		return (u32)m_outputs.size();
 	}
