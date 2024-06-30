@@ -338,17 +338,17 @@ namespace TFE_Jedi
 	}
 
 	// Size_t
-	inline size_t min(size_t a, size_t b)
+	inline u64 min(u64 a, u64 b)
 	{
 		return a < b ? a : b;
 	}
 
-	inline size_t max(size_t a, size_t b)
+	inline u64 max(u64 a, u64 b)
 	{
 		return a > b ? a : b;
 	}
 
-	inline size_t clamp(size_t x, size_t a, size_t b)
+	inline u64 clamp(u64 x, u64 a, u64 b)
 	{
 		return min(max(x, a), b);
 	}
