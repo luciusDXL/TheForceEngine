@@ -24,6 +24,7 @@ namespace TFE_Editor
 	static s32 s_curResource = -1;
 	static GameID s_gameId = Game_Dark_Forces;
 	static char s_selectPath[TFE_MAX_PATH] = "";
+	static u32 s_FileDialog = 0;
 
 	// Dark Forces default game resources.
 	// TODO: Make definitions external?
@@ -35,10 +36,10 @@ namespace TFE_Editor
 		"SPRITES.GOB",
 	};
 	// Archive filters.
-	const std::vector<std::string> filters[] =
+	const std::vector<std::string> filters =
 	{
-		{ "GOB Archive", "*.GOB *.gob", "Zip", "*.ZIP *.zip" },  // Game_Dark_Forces
-		{ "LAB Archive", "*.LAB *.lab", "Zip", "*.ZIP *.zip" },  // Game_Outlaws
+		".gob,.zip",  // Game_Dark_Forces
+		".lab,.zip",  // Game_Outlaws
 	};
 	
 	// TODO: Add drag and drop functionality.
@@ -74,47 +75,20 @@ namespace TFE_Editor
 				ImGui::EndListBox();
 			}
 
-			if (ImGui::Button("Add Archive"))
+			if (ImGui::Button("Add Archive") && (!s_FileDialog))
 			{
-				FileResult res = TFE_Ui::openFileDialog("Open Archive", s_selectPath, filters[s_gameId]);
-				if (!res.empty())
-				{
-					EditorResource eRes;
-					eRes.type = RES_ARCHIVE;
-					const char* filepath = res[0].c_str();
-					FileUtil::getFileNameFromPath(filepath, eRes.name, true);
-
-					char ext[16];
-					FileUtil::getFileExtension(filepath, ext);
-
-					eRes.archive = nullptr;
-					if (strcasecmp(ext, "GOB") == 0)
-					{
-						eRes.archive = Archive::getArchive(ARCHIVE_GOB, eRes.name, filepath);
-					}
-					else if (strcasecmp(ext, "ZIP") == 0)
-					{
-						eRes.archive = Archive::getArchive(ARCHIVE_ZIP, eRes.name, filepath);
-					}
-					s_extResources.push_back(eRes);
-				}
-
-				s_resChanged = true;
+				const std::string s = filters[s_gameId];
+				TFE_Ui::openFileDialog("Open Archive", s_selectPath, s.c_str());
+				s_FileDialog = 1;
 			}
+
 			ImGui::SameLine();
-			if (ImGui::Button("Add Directory"))
+			if (ImGui::Button("Add Directory") && (!s_FileDialog))
 			{
-				FileResult res = TFE_Ui::directorySelectDialog("Path", s_selectPath);
-				if (!res.empty())
-				{
-					EditorResource eRes;
-					eRes.type = RES_DIRECTORY;
-					FileUtil::getFileNameFromPath(res[0].c_str(), eRes.name, true);
-					strcpy(eRes.path, res[0].c_str());
-					s_extResources.push_back(eRes);
-				}
-				s_resChanged = true;
+				TFE_Ui::directorySelectDialog("Path", s_selectPath);
+				s_FileDialog = 2;
 			}
+
 			ImGui::SameLine();
 			if (ImGui::Button("Remove Resource"))
 			{
@@ -138,6 +112,56 @@ namespace TFE_Editor
 				finished = true;
 			}
 			ImGui::EndPopup();
+
+			if (s_FileDialog)
+			{
+				FileResult res;
+				bool b = TFE_Ui::renderFileDialog(res);
+				if (b)
+				{
+					if (s_FileDialog == 1)
+					{
+						if (!res.empty())
+						{
+							EditorResource eRes;
+							eRes.type = RES_ARCHIVE;
+							const char* filepath = res[0].c_str();
+							FileUtil::getFileNameFromPath(filepath, eRes.name, true);
+
+							char ext[16];
+							FileUtil::getFileExtension(filepath, ext);
+
+							eRes.archive = nullptr;
+							if (strcasecmp(ext, "GOB") == 0)
+							{
+								eRes.archive = Archive::getArchive(ARCHIVE_GOB, eRes.name, filepath);
+							}
+							else if (strcasecmp(ext, "ZIP") == 0)
+							{
+								eRes.archive = Archive::getArchive(ARCHIVE_ZIP, eRes.name, filepath);
+							}
+							s_extResources.push_back(eRes);
+						}
+
+						s_resChanged = true;
+
+					}
+					else if (s_FileDialog == 2)
+					{
+						if (!res.empty())
+						{
+							EditorResource eRes;
+							eRes.type = RES_DIRECTORY;
+							FileUtil::getFileNameFromPath(res[0].c_str(), eRes.name, true);
+							strcpy(eRes.path, res[0].c_str());
+							s_extResources.push_back(eRes);
+						}
+						s_resChanged = true;
+					}
+
+					s_FileDialog = 0;
+				}
+			}
 		}
 		popFont();
 
