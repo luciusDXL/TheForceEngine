@@ -25,6 +25,11 @@ if(CMAKE_BUILD_TYPE STREQUAL "Release")
 	check_cxx_compiler_flag("-ftrivial-auto-var-init=zero" COMPILER_ENABLE_AUTOZERO)
 endif()
 
+# disable Clangs excessive warnings about unhandled switch values
+if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-switch")	
+endif()
+
 if (UNIX AND NOT APPLE)
 	set(LINUX ON)
 elseif (UNIX AND APPLE)
