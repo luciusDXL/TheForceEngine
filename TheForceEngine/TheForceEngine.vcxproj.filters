@@ -26,7 +26,7 @@
     <Filter Include="Source\TFE_Archive">
       <UniqueIdentifier>{7f0b8e84-1b30-41dc-8dd1-3af94a588ff1}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source\TFE_Ui\imGUI\Dirent">
+    <Filter Include="Source\TFE_Ui\imGUI\dirent">
       <UniqueIdentifier>{50e6eea5-e12a-4e74-87f9-de96ae5de258}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\TFE_Asset">
@@ -262,8 +262,8 @@
     <ClInclude Include="TFE_Archive\gobArchive.h">
       <Filter>Source\TFE_Archive</Filter>
     </ClInclude>
-    <ClInclude Include="TFE_Ui\imGUI\Dirent\dirent.h">
-      <Filter>Source\TFE_Ui\imGUI\Dirent</Filter>
+    <ClInclude Include="TFE_Ui\imGUI\dirent\dirent.h">
+      <Filter>Source\TFE_Ui\imGUI\dirent</Filter>
     </ClInclude>
     <ClInclude Include="TFE_Archive\lfdArchive.h">
       <Filter>Source\TFE_Archive</Filter>

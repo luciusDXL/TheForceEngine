@@ -36,9 +36,8 @@ namespace TFE_Ui
 
 	void invalidateFontAtlas();
 
-	// File dialogs use OS based dialogs in order to provide all of the features that users expect.
-	// These do NOT use imGUI so they may clash visually with the rest of the UI but that is a small price to pay for robustness.
-	FileResult openFileDialog(const char* title, const char* initPath, std::vector<std::string> const &filters = { "All Files", "*" }, bool multiSelect = false);
-	FileResult directorySelectDialog(const char* title, const char* initPath, bool forceInitPath = false);
-	FileResult saveFileDialog(const char* title, const char* initPath, std::vector<std::string> filters = { "All Files", "*" }, bool forceOverwrite = false);
+	void openFileDialog(const char* title, const char* initPath, const char* filters = ".*", bool multiSelect = false);
+	void saveFileDialog(const char* title, const char* initPath, const char* filters = ".*", bool forceOverwrite = false);
+	void directorySelectDialog(const char* title, const char* initPath, bool forceInitPath = false);
+	bool renderFileDialog(FileResult& inOutPath);
 }
