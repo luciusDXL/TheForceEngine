@@ -472,31 +472,31 @@ namespace TFE_DarkForces
 			if (!strncmp(ptr, "boss ", 5) && (s_oldState == MUS_STATE_BOSS))
 			{
 				ptr += 5;
-				while (buf[i++] = readNumber(&ptr));
+				while (0 != (buf[i++] = readNumber(&ptr)));
 				return buf[0] ? buf : nullptr;
 			}
 			if (!strncmp(ptr, "fight ", 6) && (s_oldState == MUS_STATE_FIGHT))
 			{
 				ptr += 6;
-				while (buf[i++] = readNumber(&ptr));
+				while (0 != (buf[i++] = readNumber(&ptr)));
 				return buf[0] ? buf : nullptr;
 			}
 			if (!strncmp(ptr, "engage ", 7) && (s_oldState == MUS_STATE_ENGAGE))
 			{
 				ptr += 7;
-				while (buf[i++] = readNumber(&ptr));
+				while (0 != (buf[i++] = readNumber(&ptr)));
 				return buf[0] ? buf : nullptr;
 			}
 			if (!strncmp(ptr, "stalk ", 6) && (s_oldState == MUS_STATE_STALK))
 			{
 				ptr += 6;
-				while (buf[i++] = readNumber(&ptr));
+				while (0 != (buf[i++] = readNumber(&ptr)));
 				return buf[0] ? buf : nullptr;
 			}
 			if (!strncmp(ptr, "explore ", 8) && (s_oldState == MUS_STATE_EXPLORE))
 			{
 				ptr += 8;
-				while (buf[i++] = readNumber(&ptr));
+				while (0 != (buf[i++] = readNumber(&ptr)));
 				return buf[0] ? buf : nullptr;
 			}
 		}
@@ -506,31 +506,31 @@ namespace TFE_DarkForces
 			{
 				ptr += 5;
 				ptr += strlen("trans ");
-				while (buf[i++] = readNumber(&ptr));
+				while (0 != (buf[i++] = readNumber(&ptr)));
 				return buf[0] ? buf : nullptr;
 			}
 			if (!strncmp(ptr, "fight ", 6) && (s_currentState == MUS_STATE_FIGHT))
 			{
 				ptr += 6;
-				while (buf[i++] = readNumber(&ptr));
+				while (0 != (buf[i++] = readNumber(&ptr)));
 				return buf[0] ? buf : nullptr;
 			}
 			if (!strncmp(ptr, "engage ", 7) && (s_currentState == MUS_STATE_ENGAGE))
 			{
 				ptr += 7;
-				while (buf[i++] = readNumber(&ptr));
+				while (0 != (buf[i++] = readNumber(&ptr)));
 				return buf[0] ? buf : nullptr;
 			}
 			if (!strncmp(ptr, "stalk ", 6) && (s_currentState == MUS_STATE_STALK))
 			{
 				ptr += 6;
-				while (buf[i++] = readNumber(&ptr));
+				while (0 != (buf[i++] = readNumber(&ptr)));
 				return buf[0] ? buf : nullptr;
 			}
 			if (!strncmp(ptr, "explore ", 8) && (s_currentState == MUS_STATE_EXPLORE))
 			{
 				ptr += 8;
-				while (buf[i++] = readNumber(&ptr));
+				while (0 != (buf[i++] = readNumber(&ptr)));
 				return buf[0] ? buf : nullptr;
 			}
 		}

@@ -284,7 +284,7 @@ namespace LevelEditor
 		s32 soundCount = 0;
 		s32 objectCount = 0;
 
-		while (line = parser.readLine(bufferPos))
+		while ((line = parser.readLine(bufferPos)) != nullptr)
 		{
 			if (sscanf(line, "PODS %d", &podCount) == 1)
 			{
