@@ -737,7 +737,7 @@ namespace TFE_Jedi
 
 	s32 audioWriteToDriver(f32 systemVolume)
 	{
-		if (!s_audioOut)
+		if (s_audioOutSize < 1)
 		{
 			return imInvalidSound;
 		}
