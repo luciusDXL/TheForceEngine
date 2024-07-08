@@ -7,7 +7,7 @@
 #include <TFE_System/system.h>
 #include <vector>
 
-#define LINE_MAX 65536
+#define MAX_LINES 65536
 
 namespace TFE_RenderShared
 {
@@ -88,9 +88,9 @@ namespace TFE_RenderShared
 
 		// Create buffers
 		// Create vertex and index buffers.
-		u32* indices = new u32[6 * LINE_MAX];
+		u32* indices = new u32[6 * MAX_LINES];
 		u32* outIndices = indices;
-		for (u32 i = 0; i < LINE_MAX; i++, outIndices += 6)
+		for (u32 i = 0; i < MAX_LINES; i++, outIndices += 6)
 		{
 			outIndices[0] = i * 4 + 0;
 			outIndices[1] = i * 4 + 1;
@@ -100,10 +100,10 @@ namespace TFE_RenderShared
 			outIndices[4] = i * 4 + 2;
 			outIndices[5] = i * 4 + 3;
 		}
-		s_vertices = new LineVertex[4 * LINE_MAX];
+		s_vertices = new LineVertex[4 * MAX_LINES];
 
-		s_vertexBuffer.create(4 * LINE_MAX, sizeof(LineVertex), c_lineAttrCount, c_lineAttrMapping, true);
-		s_indexBuffer.create(6 * LINE_MAX, sizeof(u32), false, indices);
+		s_vertexBuffer.create(4 * MAX_LINES, sizeof(LineVertex), c_lineAttrCount, c_lineAttrMapping, true);
+		s_indexBuffer.create(6 * MAX_LINES, sizeof(u32), false, indices);
 
 		delete[] indices;
 		s_lineCount = 0;
@@ -134,7 +134,7 @@ namespace TFE_RenderShared
 	void lineDraw2d_addLines(u32 count, f32 width, const Vec2f* lines, const u32* lineColors)
 	{
 		LineVertex* vert = &s_vertices[s_lineCount * 4];
-		for (u32 i = 0; i < count && s_lineCount < LINE_MAX; i++, lines += 2, lineColors += 2, vert += 4)
+		for (u32 i = 0; i < count && s_lineCount < MAX_LINES; i++, lines += 2, lineColors += 2, vert += 4)
 		{
 			s_lineCount++;
 
