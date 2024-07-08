@@ -1355,14 +1355,14 @@ namespace TFE_Settings
 					const cJSON* iter = curElem->child;
 					if (!iter)
 					{
-						TFE_System::logWrite(LOG_WARNING, "MOD_CONF", "Level overrides '%s' is empty, skipping.", ignoreList.levName);
+						TFE_System::logWrite(LOG_WARNING, "MOD_CONF", "Level overrides '%s' is empty, skipping.", ignoreList.levName.c_str());
 					}
 
 					for (; iter; iter = iter->next)
 					{
 						if (!iter->string)
 						{
-							TFE_System::logWrite(LOG_WARNING, "MOD_CONF", "Level override for '%s' has no name, skipping.", ignoreList.levName);
+							TFE_System::logWrite(LOG_WARNING, "MOD_CONF", "Level override for '%s' has no name, skipping.", ignoreList.levName.c_str());
 							continue;
 						}
 
