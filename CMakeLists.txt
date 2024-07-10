@@ -62,12 +62,13 @@ if(ENABLE_TFE)
 	if(UNIX)
 		find_package(PkgConfig REQUIRED)
 		find_package(SDL2 2.0.20 REQUIRED)
-		find_package(SDL2_Image REQUIRED)
+		pkg_check_modules(SDL2_IMAGE REQUIRED SDL2_image)
 		pkg_check_modules(GLEW REQUIRED glew)
 		target_include_directories(tfe PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 		target_include_directories(tfe PRIVATE ${SDL2_INCLUDE_DIRS})
 		target_include_directories(tfe PRIVATE ${SDL2_IMAGE_INCLUDE_DIRS})
-		target_link_libraries(tfe PRIVATE SDL2::SDL2main SDL2::SDL2 SDL2_image::SDL2_image
+		target_link_libraries(tfe PRIVATE SDL2::SDL2main SDL2::SDL2
+					${SDL2_IMAGE_LIBRARIES}
 					${GLEW_LIBRARIES}
 		)
 
