@@ -80,11 +80,11 @@ struct MemoryRegion
 {
 	char name[32];
 	MemoryBlock** memBlocks;
-	size_t blockArrCapacity;
+	u64 blockArrCapacity;
 
-	size_t blockCount;
-	size_t blockSize;
-	size_t maxBlocks;
+	u64 blockCount;
+	u64 blockSize;
+	u64 maxBlocks;
 };
 
 static_assert(sizeof(RegionAllocHeader) == 16, "RegionAllocHeader is the wrong size.");
@@ -98,7 +98,7 @@ namespace TFE_Memory
 	static const u32 c_relativeOffsetMask = (1u << c_relativeBlockShift) - 1u;
 
 	void freeSlot(RegionAllocHeader* alloc, RegionAllocHeader* next, MemoryBlock* block);
-	size_t alloc_align(size_t baseSize);
+	u64 alloc_align(u64 baseSize);
 	s32  getBinFromSize(u32 size);
 	bool allocateNewBlock(MemoryRegion* region);
 	void removeHeaderFromFreelist(MemoryBlock* block, RegionAllocHeader* header);
@@ -137,7 +137,7 @@ namespace TFE_Memory
 		}
 	}
 
-	MemoryRegion* region_create(const char* name, size_t blockSize, size_t maxSize)
+	MemoryRegion* region_create(const char* name, u64 blockSize, u64 maxSize)
 	{
 		assert(name);
 		if (!name || !blockSize) { return nullptr; }
@@ -206,8 +206,8 @@ namespace TFE_Memory
 		if (header->size - size >= MIN_SPLIT_SIZE)
 		{
 			// Split.
-			size_t split0 = size;
-			size_t split1 = header->size - split0;
+			u64 split0 = size;
+			u64 split1 = header->size - split0;
 			RegionAllocHeader* next = (RegionAllocHeader*)((u8*)header + split0);
 
 			// Cleanup the free list.
@@ -231,7 +231,7 @@ namespace TFE_Memory
 		return (u8*)header + sizeof(RegionAllocHeader);
 	}
 
-	void* region_alloc(MemoryRegion* region, size_t size)
+	void* region_alloc(MemoryRegion* region, u64 size)
 	{
 		assert(region);
 		if (size == 0) { return nullptr; }
@@ -283,7 +283,7 @@ namespace TFE_Memory
 		return nullptr;
 	}
 
-	void* region_realloc(MemoryRegion* region, void* ptr, size_t size)
+	void* region_realloc(MemoryRegion* region, void* ptr, u64 size)
 	{
 		assert(region);
 		if (!ptr) { return region_alloc(region, size); }
@@ -336,8 +336,8 @@ namespace TFE_Memory
 					if (header->size - size >= MIN_SPLIT_SIZE)
 					{
 						// Split.
-						size_t split0 = size;
-						size_t split1 = header->size - split0;
+						u64 split0 = size;
+						u64 split1 = header->size - split0;
 						RegionAllocHeader* next = (RegionAllocHeader*)((u8*)header + split0);
 
 						// Reset the header.
@@ -408,9 +408,9 @@ namespace TFE_Memory
 		}
 	}
 		
-	size_t region_getMemoryUsed(MemoryRegion* region)
+	u64 region_getMemoryUsed(MemoryRegion* region)
 	{
-		size_t used = 0;
+		u64 used = 0;
 		for (s32 i = 0; i < region->blockCount; i++)
 		{
 			used += (region->blockSize - region->memBlocks[i]->sizeFree);
@@ -418,13 +418,13 @@ namespace TFE_Memory
 		return used;
 	}
 
-	void region_getBlockInfo(MemoryRegion* region, size_t* blockCount, size_t* blockSize)
+	void region_getBlockInfo(MemoryRegion* region, u64* blockCount, u64* blockSize)
 	{
 		*blockCount = region->blockCount;
 		*blockSize = region->blockSize;
 	}
 
-	size_t region_getMemoryCapacity(MemoryRegion* region)
+	u64 region_getMemoryCapacity(MemoryRegion* region)
 	{
 		return region->blockCount * region->blockSize;
 	}
@@ -539,7 +539,7 @@ namespace TFE_Memory
 			return nullptr;
 		}
 
-		size_t blockAllocStart = 0;
+		u64 blockAllocStart = 0;
 		file->readBuffer(region->name, 32);
 		if (region->blockArrCapacity == 0)
 		{
@@ -551,7 +551,7 @@ namespace TFE_Memory
 		}
 		else
 		{
-			size_t blockArrCapacity, blockCount, blockSize, maxBlocks;
+			u64 blockArrCapacity, blockCount, blockSize, maxBlocks;
 			file->read(&blockArrCapacity);
 			file->read(&blockCount);
 			file->read(&blockSize);
@@ -669,7 +669,7 @@ namespace TFE_Memory
 		insertBlockIntoFreelist(block, alloc);
 	}
 
-	size_t alloc_align(size_t baseSize)
+	u64 alloc_align(u64 baseSize)
 	{
 		return (baseSize + ALIGNMENT - 1) & ~(ALIGNMENT - 1);
 	}
@@ -771,7 +771,7 @@ namespace TFE_Memory
 			return false;
 		}
 
-		size_t blockIndex = region->blockCount;
+		u64 blockIndex = region->blockCount;
 		assert(blockIndex < region->blockArrCapacity);
 		region->memBlocks[blockIndex] = (MemoryBlock*)malloc(sizeof(MemoryBlock) + region->blockSize);
 		if (!region->memBlocks[blockIndex])
@@ -799,12 +799,12 @@ namespace TFE_Memory
 	// Malloc = 0.005514 sec.
 	// Region = 0.000991 sec.
 	#define ALLOC_COUNT 20000
-	const size_t _testAllocSize[] = { 16, 32, 24, 100, 200, 500, 327, 537, 200, 17, 57, 387, 874, 204, 100, 22 };
+	const u64 _testAllocSize[] = { 16, 32, 24, 100, 200, 500, 327, 537, 200, 17, 57, 387, 874, 204, 100, 22 };
 
 	void region_test()
 	{
 		u64 start = TFE_System::getCurrentTimeInTicks();
-		const size_t mask = TFE_ARRAYSIZE(_testAllocSize) - 1;
+		const u64 mask = TFE_ARRAYSIZE(_testAllocSize) - 1;
 		void* alloc[ALLOC_COUNT];
 		for (s32 i = 0; i < ALLOC_COUNT; i++)
 		{

@@ -15,17 +15,17 @@ typedef u32 RelativePointer;
 
 namespace TFE_Memory
 {
-	MemoryRegion* region_create(const char* name, size_t blockSize, size_t maxSize = 0u);
+	MemoryRegion* region_create(const char* name, u64 blockSize, u64 maxSize = 0u);
 	void region_clear(MemoryRegion* region);
 	void region_destroy(MemoryRegion* region);
 
-	void* region_alloc(MemoryRegion* region, size_t size);
-	void* region_realloc(MemoryRegion* region, void* ptr, size_t size);
+	void* region_alloc(MemoryRegion* region, u64 size);
+	void* region_realloc(MemoryRegion* region, void* ptr, u64 size);
 	void  region_free(MemoryRegion* region, void* ptr);
 
-	size_t region_getMemoryUsed(MemoryRegion* region);
-	size_t region_getMemoryCapacity(MemoryRegion* region);
-	void region_getBlockInfo(MemoryRegion* region, size_t* blockCount, size_t* blockSize);
+	u64 region_getMemoryUsed(MemoryRegion* region);
+	u64 region_getMemoryCapacity(MemoryRegion* region);
+	void region_getBlockInfo(MemoryRegion* region, u64* blockCount, u64* blockSize);
 
 	RelativePointer region_getRelativePointer(MemoryRegion* region, void* ptr);
 	void* region_getRealPointer(MemoryRegion* region, RelativePointer ptr);

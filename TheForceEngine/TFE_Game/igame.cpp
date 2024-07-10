@@ -17,7 +17,7 @@ MemoryRegion* s_levelRegion = nullptr;
 void displayMemoryUsage(const ConsoleArgList& args)
 {
 	char res[256];
-	size_t blockCount, blockSize;
+	u64 blockCount, blockSize;
 	region_getBlockInfo(s_gameRegion, &blockCount, &blockSize);
 	TFE_Console::addToHistory("-------------------------------------------------------------------");
 	TFE_Console::addToHistory("Region   | Memory Used | Current Capacity | Block Count | BlockSize");
