@@ -1012,6 +1012,8 @@ namespace TFE_Jedi
 					texturepacker_pack(level_getObjectTextures, POOL_LEVEL);
 					texturepacker_commit();
 				}
+				// Reload models.
+				model_loadGpuModels();
 			}
 			s_gpuFrame++;
 		}

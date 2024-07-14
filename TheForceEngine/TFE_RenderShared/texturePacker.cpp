@@ -769,7 +769,7 @@ namespace TFE_Jedi
 		const s32 offsetX = paddingX / 2;
 		const s32 offsetY = paddingY / 2;
 		const bool isHdTex = hdSrc && hdSrc->hdAssetData;
-		const u8* srcImage = isHdTex ? hdSrc->hdAssetData : texData->image;
+		const u8* srcImage = texData->image;
 		const s32 scaleFactor = isHdTex ? hdSrc->scaleFactor : 1;
 
 		Vec3f halfTint = { 1.0f, 1.0f, 1.0f };
@@ -778,7 +778,7 @@ namespace TFE_Jedi
 			u32* output = (u32*)getWritePointer(s_currentPage, node->rect.x, node->rect.y, 0);
 			if (isHdTex)
 			{
-				const u32* srcImageHd = (u32*)srcImage;
+				const u32* srcImageHd = (u32*)hdSrc->hdAssetData;
 				copyHdTrueColorTexture(texData, scaleFactor, srcImageHd, frameIndex, paddingX, paddingY, offsetX, offsetY, output);
 			}
 			else

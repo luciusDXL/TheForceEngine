@@ -252,7 +252,7 @@ namespace TFE_Jedi
 
 		const s32 hdFrameSize = width * height * 4;
 		// Verify this is a valid texture.
-		if (size < hdFrameSize * frameCount)
+		if (size != hdFrameSize * frameCount)
 		{
 			return;
 		}
@@ -303,6 +303,8 @@ namespace TFE_Jedi
 		file.close();
 
 		TextureData* texture = (TextureData*)region_alloc(s_texState.memoryRegion, sizeof(TextureData));
+		memset(texture, 0, sizeof(TextureData));
+
 		const u8* data = s_buffer.data();
 		const u8* end = data + size;
 		const u8* fheader = data;
@@ -329,8 +331,10 @@ namespace TFE_Jedi
 		texture->logSizeY = readByte(data);
 		texture->compressed = readByte(data);
 		texture->palIndex = 1;
-		texture->animSetup = 0;
-
+		texture->animIndex = -1;
+		texture->frameIdx = -1;
+		texture->animPtr = nullptr;
+		
 		texture->flags &= OPACITY_MASK;
 		// value is ignored.
 		data++;
@@ -415,12 +419,7 @@ namespace TFE_Jedi
 			s_textureTable[pool][name] = index;
 		}
 
-		texture->animIndex = -1;
-		texture->frameIdx = -1;
-		texture->animPtr = nullptr;
-
 		bitmap_loadHD(name, texture, 2, pool);
-
 		return texture;
 	}
 
