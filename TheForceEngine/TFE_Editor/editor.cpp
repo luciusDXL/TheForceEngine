@@ -998,4 +998,33 @@ namespace TFE_Editor
 
 		return mousePos.x >= minCoord.x && mousePos.x < maxCoord.x && mousePos.y >= minCoord.y && mousePos.y < maxCoord.y;
 	}
+
+	void sublist_begin(Sublist& subList, f32 tabSize, f32 itemWidth)
+	{
+		const ImVec4 c_colorSublistBase = { 0.98f, 0.49f, 0.26f, 1.0f };
+		const ImVec4 c_colorSublistItem = { c_colorSublistBase.x, c_colorSublistBase.y, c_colorSublistBase.z, 0.80f };
+		const ImVec4 c_colorSublistItemActive = { c_colorSublistBase.x, c_colorSublistBase.y, c_colorSublistBase.z, 0.60f };
+		const ImVec4 c_colorSublistItemHover = { c_colorSublistBase.x, c_colorSublistBase.y, c_colorSublistBase.z, 0.31f };
+
+		ImGui::PushStyleColor(ImGuiCol_Text, { 1.0f, 1.0f, 1.0f, 0.6f });
+		ImGui::PushStyleColor(ImGuiCol_Header, c_colorSublistItem);
+		ImGui::PushStyleColor(ImGuiCol_HeaderActive, c_colorSublistItemActive);
+		ImGui::PushStyleColor(ImGuiCol_HeaderHovered, c_colorSublistItemHover);
+
+		subList.xOrigin = ImGui::GetCursorPosX();
+		subList.tabSize = tabSize;
+		subList.width = itemWidth;
+	}
+
+	bool sublist_item(const Sublist& subList, const char* name, bool selected)
+	{
+		ImGui::SetCursorPosX(subList.xOrigin + subList.tabSize);
+		return ImGui::Selectable(name, selected, 0, { subList.width, 0.0f });
+	}
+
+	void sublist_end(const Sublist& subList)
+	{
+		ImGui::PopStyleColor(4);
+		ImGui::SetCursorPosX(subList.xOrigin);
+	}
 }

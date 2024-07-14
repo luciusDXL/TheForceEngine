@@ -25,6 +25,13 @@ namespace TFE_Editor
 		std::string path;
 	};
 
+	struct Sublist
+	{
+		f32 xOrigin;
+		f32 tabSize;
+		f32 width;
+	};
+
 	enum FontType
 	{
 		FONT_SMALL = 0,
@@ -116,6 +123,11 @@ namespace TFE_Editor
 	// tint: optional tint applied to the image.
 	bool iconButton(IconId icon, const char* tooltip = nullptr, bool highlight = false, const f32* tint = nullptr);
 	bool iconButtonInline(IconId icon, const char* tooltip=nullptr, const f32* tint=nullptr, bool small=false);
+
+	// List of selectables inside of another list.
+	void sublist_begin(Sublist& subList, f32 tabSize, f32 itemWidth);
+	bool sublist_item(const Sublist& subList, const char* name, bool selected);
+	void sublist_end(const Sublist& subList);
 
 	void editor_clearUid();
 	const char* editor_getUniqueLabel(const char* label);

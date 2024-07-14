@@ -289,30 +289,22 @@ namespace LevelEditor
 			s_featureHovered = {};
 		}
 	}
-
-	const ImVec4 c_colorGroupSectorBase = { 0.98f, 0.49f, 0.26f, 1.0f };
-	const ImVec4 c_colorGroupSector = { c_colorGroupSectorBase.x, c_colorGroupSectorBase.y, c_colorGroupSectorBase.z, 0.80f };
-	const ImVec4 c_colorGroupSectorActive = { c_colorGroupSectorBase.x, c_colorGroupSectorBase.y, c_colorGroupSectorBase.z, 0.60f };
-	const ImVec4 c_colorGroupSectorHover = { c_colorGroupSectorBase.x, c_colorGroupSectorBase.y, c_colorGroupSectorBase.z, 0.31f };
-
+		
 	void listNamedSectorsInGroup(Group* group)
 	{
 		const s32 count = (s32)s_level.sectors.size();
 		const s32 groupId = group->id;
-		const f32 x = ImGui::GetCursorPosX();
 		EditorSector* sector = s_level.sectors.data();
-		ImGui::PushStyleColor(ImGuiCol_Text, { 1.0f, 1.0f, 1.0f, 0.6f });
-		ImGui::PushStyleColor(ImGuiCol_Header, c_colorGroupSector);
-		ImGui::PushStyleColor(ImGuiCol_HeaderActive, c_colorGroupSectorActive);
-		ImGui::PushStyleColor(ImGuiCol_HeaderHovered, c_colorGroupSectorHover);
+
+		Sublist sublist;
+		sublist_begin(sublist, 32.0f/*tabSize*/, 256.0f/*itemWidth*/);
 		for (s32 i = 0; i < count; i++, sector++)
 		{
 			if (sector->groupId != groupId || sector->name.empty())
 			{
 				continue;
 			}
-			ImGui::SetCursorPosX(x + 32.0f);
-			if (ImGui::Selectable(sector->name.c_str(), s_featureCur.sector == sector))
+			if (sublist_item(sublist, sector->name.c_str(), s_featureCur.sector == sector))
 			{
 				// Clear the selection, select the sector.
 				selection_clear();
@@ -381,8 +373,7 @@ namespace LevelEditor
 				}
 			}
 		}
-		ImGui::PopStyleColor(4);
-		ImGui::SetCursorPosX(x);
+		sublist_end(sublist);
 	}
 
 	void infoPanelMap()
