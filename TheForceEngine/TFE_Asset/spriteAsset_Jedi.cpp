@@ -45,7 +45,7 @@ namespace TFE_Sprite_Jedi
 	static NameList    s_spriteNames[POOL_COUNT];
 	static std::vector<u8> s_buffer;
 
-	bool loadFrameHd(const char* name, const JediFrame* frame, AssetPool pool, HdWax* hdWax)
+	bool loadFrameHd(const char* name, const JediFrame* frame, AssetPool pool, HdWax* hdWax, const WaxCell* cell)
 	{
 		char hdPath[TFE_MAX_PATH];
 		FileUtil::replaceExtension(name, "fxx", hdPath);
@@ -74,8 +74,19 @@ namespace TFE_Sprite_Jedi
 
 		hdWax->entryCount = 1;
 		hdWax->cells = (HdWaxCell*)malloc(sizeof(HdWaxCell));
+		assert(hdWax->cells);
+
 		hdWax->cells[0].pixelCount = *((u32*)data); data += 4 * entryCount;
 		hdWax->cells[0].id = 0;
+
+		// Verify that the pixel count is double the original.
+		const s32 targetPixelCount = cell->sizeX * cell->sizeY * 4;
+		if (targetPixelCount != hdWax->cells[0].pixelCount)
+		{
+			free(hdWax->cells);
+			hdWax->cells = nullptr;
+			return false;
+		}
 
 		// Image data.
 		const u32 size = sizeof(u32) * hdWax->cells[0].pixelCount;
@@ -162,7 +173,7 @@ namespace TFE_Sprite_Jedi
 
 		// HD Version
 		HdWax* hdWax = (HdWax*)malloc(sizeof(HdWax));
-		if (loadFrameHd(name, asset, pool, hdWax))
+		if (loadFrameHd(name, asset, pool, hdWax, cell))
 		{
 			s_hdSpriteList[pool].push_back(hdWax);
 			s_hdSprites[pool][asset] = hdWax;
@@ -326,14 +337,32 @@ namespace TFE_Sprite_Jedi
 
 		const u8* data = s_buffer.data();
 		const s32 entryCount = *((s32*)data); data += 4;
+		assert(entryCount > 0);
+
+		// Verify that the number of cells is correct.
+		if (entryCount != (s32)s_cellOffsets.size())
+		{
+			return false;
+		}
 
 		hdWax->entryCount = entryCount;
 		hdWax->cells = (HdWaxCell*)malloc(sizeof(HdWaxCell) * entryCount);
+		assert(hdWax->cells);
 		// Image data size x entryCount.
 		for (s32 i = 0; i < entryCount; i++)
 		{
 			hdWax->cells[i].pixelCount = *((u32*)data); data += 4;
 			hdWax->cells[i].id = i;
+
+			// Verify that the sizes match expectations.
+			WaxCell* cell = (WaxCell*)((u8*)wax + s_cellOffsets[i]);
+			s32 targetPixelCount = 4 * cell->sizeX * cell->sizeY;
+			if (targetPixelCount != hdWax->cells[i].pixelCount)
+			{
+				free(hdWax->cells);
+				hdWax->cells = nullptr;
+				return false;
+			}
 		}
 		// Image data.
 		for (s32 i = 0; i < entryCount; i++)
@@ -712,12 +741,13 @@ namespace TFE_Sprite_Jedi
 
 		const size_t hdWaxCount = s_hdSpriteList[pool].size();
 		HdWax** hdWaxList = s_hdSpriteList[pool].data();
-		for (size_t i = 0; i < waxCount; i++)
+		for (size_t i = 0; i < hdWaxCount; i++)
 		{
 			for (s32 e = 0; e < hdWaxList[i]->entryCount; e++)
 			{
 				free(hdWaxList[i]->cells[e].data);
 			}
+			free(hdWaxList[i]->cells);
 			free(hdWaxList[i]);
 		}
 		s_hdSpriteList[pool].clear();
