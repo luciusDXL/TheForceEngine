@@ -1318,7 +1318,7 @@ namespace TFE_Jedi
 					line = parser.readLine(bufferPos);
 					if (line && strstr(line, "SEQ"))
 					{
-						while (line = parser.readLine(bufferPos))
+						while (nullptr != (line = parser.readLine(bufferPos)))
 						{
 							char itemName[256];
 							s32 argCount = sscanf(line, " %s %s %s %s %s %s %s", itemName, s_infArg0, s_infArg1, s_infArg2, s_infArg3, s_infArgExtra, s_infArgExtra);

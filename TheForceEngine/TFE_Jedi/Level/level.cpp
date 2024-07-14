@@ -749,7 +749,7 @@ namespace TFE_Jedi
 			return false;
 		}
 
-		while (line = parser.readLine(bufferPos))
+		while (nullptr != (line = parser.readLine(bufferPos)))
 		{
 			if (sscanf(line, "PODS %d", &s_levelIntState.podCount) == 1)
 			{

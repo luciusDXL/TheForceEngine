@@ -259,7 +259,7 @@ namespace TFE_Jedi
 			std::ptrdiff_t offset = (std::ptrdiff_t(texData) - std::ptrdiff_t(s_levelState.textures)) / (std::ptrdiff_t)sizeof(TextureData**);
 			if ((*texData)->animIndex >= 0)
 			{
-				const u8 frameIndex = (*texData)->frameIdx < 0 ? 0xfff : (u8)(*texData)->frameIdx;
+				const u8 frameIndex = (*texData)->frameIdx < 0 ? 0xff : (u8)(*texData)->frameIdx;
 				texIndex = LEVTEX_TYPE_ANM | (frameIndex << 4) | ((u32)(*texData)->animIndex << 12u);
 			}
 			else

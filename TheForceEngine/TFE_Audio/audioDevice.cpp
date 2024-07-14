@@ -17,7 +17,7 @@ namespace TFE_AudioDevice
 	{
 		s32 d = SDL_GetNumAudioDevices(0);
 		s_outputDeviceList.clear();
-		s_outputDeviceList.push_back({"<autoselect>", 0});
+		s_outputDeviceList.push_back({"System Default", 0});
 		for (s32 i = 0; i < d; i++)
 		{
 			const char* dn = SDL_GetAudioDeviceName(i, 0);
