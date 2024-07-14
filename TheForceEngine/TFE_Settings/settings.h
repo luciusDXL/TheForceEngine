@@ -267,6 +267,14 @@ enum ModSettingOverride
 	MSO_COUNT
 };
 
+enum HdAssetType
+{
+	HD_ASSET_TYPE_BM = 0,
+	HD_ASSET_TYPE_FME,
+	HD_ASSET_TYPE_WAX,
+	HD_ASSET_TYPE_COUNT
+};
+
 struct ModHdIgnoreList
 {
 	std::string levName;
@@ -307,6 +315,10 @@ namespace TFE_Settings
 	TFE_Settings_Game* getGameSettings();
 	TFE_Settings_A11y* getA11ySettings();
 	TFE_ModSettings* getModSettings();
+
+	// Helper functions.
+	void setLevelName(const char* levelName);
+	bool isHdAssetValid(const char* assetName, HdAssetType type);
 
 	// Settings factoring in mod overrides.
 	bool ignoreInfLimits();

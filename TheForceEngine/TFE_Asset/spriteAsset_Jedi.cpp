@@ -9,6 +9,7 @@
 #include <TFE_Jedi/Math/core_math.h>
 #include <TFE_Jedi/Level/robject.h>
 #include <TFE_Jedi/Serialization/serialization.h>
+#include <TFE_Settings/settings.h>
 // TODO: dependency on JediRenderer, this should be refactored...
 #include <TFE_Jedi/Renderer/rlimits.h>
 //
@@ -172,17 +173,24 @@ namespace TFE_Sprite_Jedi
 		s_frameNames[pool].push_back(name);
 
 		// HD Version
-		HdWax* hdWax = (HdWax*)malloc(sizeof(HdWax));
-		if (loadFrameHd(name, asset, pool, hdWax, cell))
+		bool canUseHdAsset = true;
+		if (pool == POOL_LEVEL && !TFE_Settings::isHdAssetValid(name, HD_ASSET_TYPE_FME))
 		{
-			s_hdSpriteList[pool].push_back(hdWax);
-			s_hdSprites[pool][asset] = hdWax;
+			canUseHdAsset = false;
 		}
-		else
+		if (canUseHdAsset)
 		{
-			free(hdWax);
+			HdWax* hdWax = (HdWax*)malloc(sizeof(HdWax));
+			if (loadFrameHd(name, asset, pool, hdWax, cell))
+			{
+				s_hdSpriteList[pool].push_back(hdWax);
+				s_hdSprites[pool][asset] = hdWax;
+			}
+			else
+			{
+				free(hdWax);
+			}
 		}
-
 		return asset;
 	}
 
@@ -536,16 +544,25 @@ namespace TFE_Sprite_Jedi
 		s_spriteList[pool].push_back(asset);
 		s_spriteNames[pool].push_back(name);
 
-		// HD Version
-		HdWax* hdWax = (HdWax*)malloc(sizeof(HdWax));
-		if (loadWaxHd(name, asset, pool, hdWax))
+		bool canUseHdAsset = true;
+		if (pool == POOL_LEVEL && !TFE_Settings::isHdAssetValid(name, HD_ASSET_TYPE_WAX))
 		{
-			s_hdSpriteList[pool].push_back(hdWax);
-			s_hdSprites[pool][asset] = hdWax;
+			canUseHdAsset = false;
 		}
-		else
+
+		// HD Version
+		if (canUseHdAsset)
 		{
-			free(hdWax);
+			HdWax* hdWax = (HdWax*)malloc(sizeof(HdWax));
+			if (loadWaxHd(name, asset, pool, hdWax))
+			{
+				s_hdSpriteList[pool].push_back(hdWax);
+				s_hdSprites[pool][asset] = hdWax;
+			}
+			else
+			{
+				free(hdWax);
+			}
 		}
 
 		return asset;

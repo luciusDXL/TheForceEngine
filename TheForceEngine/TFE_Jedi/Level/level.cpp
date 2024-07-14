@@ -17,6 +17,7 @@
 #include <TFE_FileSystem/paths.h>
 #include <TFE_System/parser.h>
 #include <TFE_System/system.h>
+#include <TFE_Settings/settings.h>
 
 #include <TFE_Jedi/InfSystem/infSystem.h>
 #include <TFE_Jedi/InfSystem/infTypesInternal.h>
@@ -63,6 +64,9 @@ namespace TFE_Jedi
 			s_levelState.complete[COMPL_TRIG][i] = JFALSE;
 			s_levelState.complete[COMPL_ITEM][i] = JFALSE;
 		}
+
+		// Settings helper
+		TFE_Settings::setLevelName(levelName);
 
 		if (!level_loadGeometry(levelName)) { return JFALSE; }
 		level_loadObjects(levelName, difficulty);

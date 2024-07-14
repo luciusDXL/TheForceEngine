@@ -11,6 +11,7 @@
 #include <TFE_Jedi/Task/task.h>
 #include <TFE_Jedi/Serialization/serialization.h>
 #include <TFE_System/math.h>
+#include <TFE_Settings/settings.h>
 #include <unordered_map>
 
 using namespace TFE_DarkForces;
@@ -205,11 +206,17 @@ namespace TFE_Jedi
 
 	void bitmap_loadHD(const char* name, TextureData* texData, s32 scaleFactor, AssetPool pool)
 	{
+		texData->scaleFactor = 1;
+		texData->hdAssetData = nullptr;
+		// Verify that the HD texture *can* be loaded first.
+		if (pool == POOL_LEVEL && !TFE_Settings::isHdAssetValid(name, HD_ASSET_TYPE_BM))
+		{
+			return;
+		}
+
 		char hdPath[TFE_MAX_PATH];
 		FileUtil::replaceExtension(name, "raw", hdPath);
 
-		texData->scaleFactor = 1;
-		texData->hdAssetData = nullptr;
 		// If the file doesn't exist, just return - there is no HD asset.
 		FilePath filepath;
 		if (!TFE_Paths::getFilePath(hdPath, &filepath))

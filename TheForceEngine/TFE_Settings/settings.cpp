@@ -1172,6 +1172,66 @@ namespace TFE_Settings
 	}
 
 	////////////////////////////////////////////////////////////////////////////
+	// Helper functions to determine valid HD assets.
+	////////////////////////////////////////////////////////////////////////////
+	static char s_levelName[TFE_MAX_PATH];
+	
+	void setLevelName(const char* levelName)
+	{
+		if (!levelName) { return; }
+		strcpy(s_levelName, levelName);
+		strcat(s_levelName, ".LEV");
+	}
+
+	bool isHdAssetValid(const char* assetName, HdAssetType type)
+	{
+		bool valid = true;
+
+		const size_t listCount = s_modSettings.ignoreList.size();
+		const ModHdIgnoreList* list = s_modSettings.ignoreList.data();
+		for (size_t l = 0; l < listCount; l++)
+		{
+			if (strcasecmp(list[l].levName.c_str(), s_levelName) != 0)
+			{
+				continue;
+			}
+			size_t ignoreListCount = 0;
+			const std::string* ignoreList = nullptr;
+
+			switch (type)
+			{
+				case HD_ASSET_TYPE_BM:
+				{
+					ignoreListCount = list[l].bmIgnoreList.size();
+					ignoreList = list[l].bmIgnoreList.data();
+				} break;
+				case HD_ASSET_TYPE_FME:
+				{
+					ignoreListCount = list[l].fmeIgnoreList.size();
+					ignoreList = list[l].fmeIgnoreList.data();
+				} break;
+				case HD_ASSET_TYPE_WAX:
+				{
+					ignoreListCount = list[l].waxIgnoreList.size();
+					ignoreList = list[l].waxIgnoreList.data();
+				} break;
+			}
+
+			for (size_t i = 0; i < ignoreListCount; i++)
+			{
+				if (strcasecmp(ignoreList[i].c_str(), assetName) == 0)
+				{
+					valid = false;
+					break;
+				}
+			}
+			break;
+		}
+
+		return valid;
+	}
+
+	////////////////////////////////////////////////////////////////////////////
 	// Handle overrides from MOD_CONF.txt
 	// By default overrides are not set (MSO_NOT_SET), in which case the user
 	// settings are used.
