@@ -1154,6 +1154,28 @@ namespace TFE_Settings
 		}
 	}
 
+	bool validatePath(const char* path, const char* sentinel)
+	{
+		if (!FileUtil::directoryExits(path)) { return false; }
+
+		char sentinelPath[TFE_MAX_PATH];
+		sprintf(sentinelPath, "%s%s", path, sentinel);
+		FileStream file;
+		if (!file.open(sentinelPath, Stream::MODE_READ))
+		{
+			return false;
+		}
+		bool valid = file.getSize() > 1;
+		file.close();
+
+		return valid;
+	}
+
+	////////////////////////////////////////////////////////////////////////////
+	// Handle overrides from MOD_CONF.txt
+	// By default overrides are not set (MSO_NOT_SET), in which case the user
+	// settings are used.
+	////////////////////////////////////////////////////////////////////////////
 	bool ignoreInfLimits()
 	{
 		if (s_modSettings.ignoreInfLimits != MSO_NOT_SET)
@@ -1207,24 +1229,7 @@ namespace TFE_Settings
 		}
 		return s_graphicsSettings.fix3doNormalOverflow;
 	}
-
-	bool validatePath(const char* path, const char* sentinel)
-	{
-		if (!FileUtil::directoryExits(path)) { return false; }
-
-		char sentinelPath[TFE_MAX_PATH];
-		sprintf(sentinelPath, "%s%s", path, sentinel);
-		FileStream file;
-		if (!file.open(sentinelPath, Stream::MODE_READ))
-		{
-			return false;
-		}
-		bool valid = file.getSize() > 1;
-		file.close();
-
-		return valid;
-	}
-
+		
 	//////////////////////////////////////////////////
 	// Mod Settings/Overrides.
 	//////////////////////////////////////////////////
