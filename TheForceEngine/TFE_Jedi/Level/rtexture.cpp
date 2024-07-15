@@ -47,6 +47,8 @@ namespace TFE_Jedi
 	static TextureList  s_textureList[POOL_COUNT];
 	static TextureTable s_textureTable[POOL_COUNT];
 
+	static std::vector<std::string> s_coreAchiveNames;
+
 	void decompressColumn_Type1(const u8* src, u8* dst, s32 pixelCount);
 	void decompressColumn_Type2(const u8* src, u8* dst, s32 pixelCount);
 	void textureAnimationTaskFunc(MessageType msg);
@@ -275,6 +277,34 @@ namespace TFE_Jedi
 		}
 	}
 
+	void bitmap_setCoreArchives(const char** coreArchives, s32 count)
+	{
+		if (!coreArchives || count < 1) { return; }
+
+		s_coreAchiveNames.resize(count + 1);
+		for (s32 i = 0; i < count; i++)
+		{
+			s_coreAchiveNames[i] = coreArchives[i];
+		}
+		s_coreAchiveNames[count] = "enhanced.gob";
+	}
+
+	bool isAssetCustom(const char* archiveName)
+	{
+		if (!archiveName) { true; }
+
+		const s32 count = (s32)s_coreAchiveNames.size();
+		const std::string* names = s_coreAchiveNames.data();
+		for (s32 i = 0; i < count; i++)
+		{
+			if (strcasecmp(names[i].c_str(), archiveName) == 0)
+			{
+				return false;
+			}
+		}
+		return true;
+	}
+
 	TextureData* bitmap_load(const char* name, u32 decompress, AssetPool pool, bool addToCache)
 	{
 		// TFE: Keep track of per-level texture state for serialization.
@@ -419,7 +449,32 @@ namespace TFE_Jedi
 			s_textureTable[pool][name] = index;
 		}
 
-		bitmap_loadHD(name, texture, 2, pool);
+		// Determine if a texture is "custom" or not, custom textures do not use HD Assets.
+		bool isCustomAsset = false;
+		if (filepath.archive)
+		{
+			const char* path = filepath.archive->getPath();
+			// Memory archive, from a zip file.
+			if (!path || path[0] == 0)
+			{
+				isCustomAsset = true;
+			}
+			// Regular archive path.
+			else
+			{
+				isCustomAsset = isAssetCustom(filepath.archive->getName());
+			}
+		}
+		if (!isCustomAsset)
+		{
+			bitmap_loadHD(name, texture, 2, pool);
+		}
+		else
+		{
+			texture->scaleFactor = 1;
+			texture->hdAssetData = nullptr;
+		}
+
 		return texture;
 	}
 

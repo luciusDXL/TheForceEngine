@@ -44,6 +44,8 @@ public:
 	const char* getPath() const { return m_archivePath; }
 	ArchiveType getType() const { return m_type; }
 
+	void setName(const char* name) { strcpy(m_name, name); }
+
 	// File Access
 	virtual bool openFile(const char *file) = 0;
 	virtual bool openFile(u32 index) = 0;

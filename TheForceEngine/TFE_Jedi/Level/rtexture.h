@@ -121,4 +121,6 @@ namespace TFE_Jedi
 
 	void bitmap_writeOpaque(const char* filePath, u16 width, u16 height, u8* image);
 	void bitmap_writeTransparent(const char* filePath, u16 width, u16 height, u8* image);
+
+	void bitmap_setCoreArchives(const char** coreArchives, s32 count);
 }

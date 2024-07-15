@@ -289,6 +289,8 @@ namespace TFE_DarkForces
 		char startLevel[TFE_MAX_PATH] = "";
 		bitmap_setAllocator(s_gameRegion);
 
+		bitmap_setCoreArchives(c_gobFileNames, TFE_ARRAYSIZE(c_gobFileNames));
+
 		printGameInfo();
 		buildSearchPaths();
 		processCommandLineArgs(argCount, argv, startLevel);
@@ -948,6 +950,7 @@ namespace TFE_DarkForces
 						zipArchive.closeFile();
 
 						GobMemoryArchive* gobArchive = new GobMemoryArchive();
+						gobArchive->setName(zipArchive.getFileName(gobIndex));
 						gobArchive->open(buffer, bufferLen);
 						TFE_Paths::addLocalArchive(gobArchive);
 					}
