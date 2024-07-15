@@ -546,6 +546,7 @@ namespace TFE_FrontEndUI
 			ImGui::SetCursorPos(ImVec2(cursor.x + 328*uiScale, cursor.y + 30*uiScale));
 			ImGui::BeginChild("###Mod Info Text", ImVec2(f32(infoWidth - 344*uiScale), f32(infoHeight - 68*uiScale)), true, ImGuiWindowFlags_NoBringToFrontOnFocus);
 			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 1.0f, 1.0f, 0.75f));
+			// TODO: Modify imGUI to make the internal "temp" text buffer at least as large as the input text.
 			ImGui::TextWrapped("%s", s_filteredMods[s_selectedMod]->text.c_str());
 			ImGui::PopStyleColor();
 			ImGui::EndChild();
