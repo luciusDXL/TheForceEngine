@@ -1,5 +1,6 @@
 #pragma once
 #include <cstdio>
+#include <cstring>
 
 #include <TFE_System/types.h>
 #include <TFE_FileSystem/paths.h>
