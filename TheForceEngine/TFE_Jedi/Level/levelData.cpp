@@ -25,7 +25,8 @@ namespace TFE_Jedi
 	enum LevelStateVersion : u32
 	{
 		LevelState_InitVersion = 1,
-		LevelState_CurVersion = LevelState_InitVersion,
+		LevelState_VAdjoin = 2,
+		LevelState_CurVersion = LevelState_VAdjoin,
 	};
 	enum LevelTextureType : u32
 	{
@@ -369,6 +370,7 @@ namespace TFE_Jedi
 		SERIALIZE(LevelState_InitVersion, sector->layer, 0);
 		SERIALIZE(LevelState_InitVersion, sector->boundsMin, def);
 		SERIALIZE(LevelState_InitVersion, sector->boundsMax, def);
+		serialization_serializeSectorPtr(stream, LevelState_VAdjoin, sector->vadjoin);
 
 		// dirty flags will be set on deserialization.
 		if (serialization_getMode() == SMODE_READ)

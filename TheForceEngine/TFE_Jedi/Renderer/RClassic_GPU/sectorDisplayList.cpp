@@ -146,6 +146,11 @@ namespace TFE_Jedi
 		s_displayCurrentPortalId = 0;
 	}
 
+	void sdisplayList_resetCurrentPortal()
+	{
+		s_displayCurrentPortalId = 0;
+	}
+
 	void sdisplayList_finish()
 	{
 		for (s32 i = 0; i < SECTOR_PASS_COUNT; i++)
@@ -348,7 +353,7 @@ namespace TFE_Jedi
 	* Textures (unique) - 16384  (because of texture packer)
 	* Sectors - 4M               (because of nextId, 0xfffffc00 = no sector)
 	**********************************/
-	void sdisplayList_addSegment(RSector* curSector, GPUCachedSector* cached, SegmentClipped* wallSeg, bool forceTreatAsSolid)
+	void sdisplayList_addSegment(RSector* curSector, GPUCachedSector* cached, SegmentClipped* wallSeg, bool forceTreatAsSolid, bool drawFloor, bool drawCeil)
 	{
 		s32 wallId = wallSeg->seg->id;
 		RWall* srcWall = &curSector->walls[wallId];
@@ -572,16 +577,22 @@ namespace TFE_Jedi
 		}
 
 		// Floor
-		addDisplayListItem(pos, {data.x | SPARTID_FLOOR | floorSkyFlags, data.y, data.z,
-			curSector->floorTex && *curSector->floorTex ? (*curSector->floorTex)->textureId : 0u }, SECTOR_PASS_OPAQUE);
-		addDisplayListItem(pos, { data.x | SPARTID_FLOOR_CAP | floorSkyFlags, data.y, data.z,
-			curSector->floorTex && *curSector->floorTex ? (*curSector->floorTex)->textureId : 0u }, SECTOR_PASS_OPAQUE);
+		if (drawFloor)
+		{
+			addDisplayListItem(pos, { data.x | SPARTID_FLOOR | floorSkyFlags, data.y, data.z,
+				curSector->floorTex && *curSector->floorTex ? (*curSector->floorTex)->textureId : 0u }, SECTOR_PASS_OPAQUE);
+			addDisplayListItem(pos, { data.x | SPARTID_FLOOR_CAP | floorSkyFlags, data.y, data.z,
+				curSector->floorTex && *curSector->floorTex ? (*curSector->floorTex)->textureId : 0u }, SECTOR_PASS_OPAQUE);
+		}
 
 		// Ceiling
-		addDisplayListItem(pos, { data.x | SPARTID_CEILING | ceilSkyFlags, data.y, data.z,
-			curSector->ceilTex && *curSector->ceilTex ? (*curSector->ceilTex)->textureId : 0u }, SECTOR_PASS_OPAQUE);
-		addDisplayListItem(pos, { data.x | SPARTID_CEIL_CAP | ceilSkyFlags, data.y, data.z,
-			curSector->ceilTex && *curSector->ceilTex ? (*curSector->ceilTex)->textureId : 0u }, SECTOR_PASS_OPAQUE);
+		if (drawCeil)
+		{
+			addDisplayListItem(pos, { data.x | SPARTID_CEILING | ceilSkyFlags, data.y, data.z,
+				curSector->ceilTex && *curSector->ceilTex ? (*curSector->ceilTex)->textureId : 0u }, SECTOR_PASS_OPAQUE);
+			addDisplayListItem(pos, { data.x | SPARTID_CEIL_CAP | ceilSkyFlags, data.y, data.z,
+				curSector->ceilTex && *curSector->ceilTex ? (*curSector->ceilTex)->textureId : 0u }, SECTOR_PASS_OPAQUE);
+		}
 	}
 
 	s32 sdisplayList_getSize(SectorPass passId)

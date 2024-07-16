@@ -51,6 +51,7 @@ namespace TFE_Jedi
 		sector->objectCapacity = 0;
 		sector->verticesWS = nullptr;
 		sector->verticesVS = nullptr;
+		sector->vadjoin = nullptr;
 		sector->self = sector;
 	}
 

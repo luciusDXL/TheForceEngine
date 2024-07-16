@@ -132,6 +132,8 @@ struct RSector
 
 	// Added for TFE, to support floating point and GPU sub-renderers.
 	u32 dirtyFlags;
+	// TFE: Vertical Adjoins.
+	RSector* vadjoin;
 };
 
 namespace TFE_Jedi

@@ -1029,6 +1029,22 @@ namespace TFE_Jedi
 			{
 				msgAddr = message_getAddress(s_infArg0);
 				inf_setTeleportTarget(teleport, msgAddr->sector);
+
+				// TFE: Vertical adjoins
+				if (teleport->type == TELEPORT_CHUTE && msgAddr->sector)
+				{
+					RSector* targetSector = msgAddr->sector;
+					if (sector->floorHeight < targetSector->floorHeight && sector != targetSector)
+					{
+						sector->vadjoin = targetSector;
+						targetSector->vadjoin = sector;
+
+						// Adjust the floor and ceiling to match up...
+						fixed16_16 ave = (sector->floorHeight + targetSector->ceilingHeight) / 2;
+						sector->floorHeight = ave;
+						targetSector->ceilingHeight = ave;
+					}
+				}
 			}
 			else if (kw == KW_MOVE)
 			{

@@ -1154,6 +1154,20 @@ namespace TFE_Jedi
 		}
 		sbuffer_mergeSegments();
 
+		// Determine whether to draw the floor and/or ceiling.
+		bool drawFloor = true, drawCeil = true;
+		if (curSector->vadjoin)
+		{
+			if (curSector->floorHeight < curSector->vadjoin->floorHeight)
+			{
+				drawFloor = false;
+			}
+			else
+			{
+				drawCeil = false;
+			}
+		}
+
 		// Build the display list.
 		SegmentClipped* segment = sbuffer_get();
 		while (segment && s_wallSegGenerated < s_maxWallSeg)
@@ -1165,7 +1179,7 @@ namespace TFE_Jedi
 					segment->seg->portalY0, segment->seg->portalY1, segment->seg->portal);
 			}
 
-			sdisplayList_addSegment(curSector, &s_cachedSectors[curSector->index], segment, forceTreatAsSolid);
+			sdisplayList_addSegment(curSector, &s_cachedSectors[curSector->index], segment, forceTreatAsSolid, drawFloor, drawCeil);
 			s_wallSegGenerated++;
 			segment = segment->next;
 		}
@@ -1672,8 +1686,26 @@ namespace TFE_Jedi
 			}
 		}
 	}
+
+	enum { MAX_VADJOIN = 16 };
+	static RSector* s_vadjoinSector[MAX_VADJOIN];
+	static s32 s_vadjoinCount = 0;
+
+	void addVAdjoin(RSector* vadjoin)
+	{
+		if (s_vadjoinCount >= MAX_VADJOIN) { return; }
+
+		for (s32 i = 0; i < s_vadjoinCount; i++)
+		{
+			if (s_vadjoinSector[i] == vadjoin)
+			{
+				return;
+			}
+		}
+		s_vadjoinSector[s_vadjoinCount++] = vadjoin;
+	}
 		
-	void traverseSector(RSector* curSector, RSector* prevSector, RWall* portalWall, s32 prevPortalId, s32& level, u32& uploadFlags, Vec2f p0, Vec2f p1)
+	void traverseSector(RSector* curSector, RSector* prevSector, RWall* portalWall, s32 prevPortalId, s32& level, u32& uploadFlags, Vec2f p0, Vec2f p1, bool canUseVadjoin)
 	{
 		if (level > MAX_ADJOIN_DEPTH_EXT)
 		{
@@ -1704,6 +1736,12 @@ namespace TFE_Jedi
 		// Determine which objects are visible and add them.
 		addSectorObjects(curSector, prevSector, s_displayCurrentPortalId, prevPortalId);
 
+		// Add vertical adjoins.
+		if (curSector->vadjoin && canUseVadjoin)
+		{
+			addVAdjoin(curSector->vadjoin);
+		}
+
 		// Traverse through visible portals.
 		s32 parentPortalId = s_displayCurrentPortalId;
 
@@ -1722,7 +1760,7 @@ namespace TFE_Jedi
 			if (sdisplayList_addPortal(corner0, corner1, parentPortalId))
 			{
 				portal->wall->drawFrame = s_gpuFrame;
-				traverseSector(portal->next, curSector, portal->wall, parentPortalId, level, uploadFlags, portal->v0, portal->v1);
+				traverseSector(portal->next, curSector, portal->wall, parentPortalId, level, uploadFlags, portal->v0, portal->v1, canUseVadjoin);
 				portal->wall->drawFrame = 0;
 			}
 
@@ -1761,14 +1799,29 @@ namespace TFE_Jedi
 			s_cameraDirXZ.z = 0.0f;
 		}
 
+		s_vadjoinCount = 0;
 		sdisplayList_clear();
 		sprdisplayList_clear();
 		model_drawListClear();
 		objectPortalPlanes_clear();
 
 		updateCachedSector(sector, uploadFlags);
-		traverseSector(sector, nullptr, nullptr, 0, level, uploadFlags, startView[0], startView[1]);
+		traverseSector(sector, nullptr, nullptr, 0, level, uploadFlags, startView[0], startView[1], true);
 		frustum_pop();
+
+		// Test - vertical adjoins.
+		// TODO: Track vadjoin portals.
+		// This means that each view of a vadjoin must be tracked and traversed.
+		for (s32 i = 0; i < s_vadjoinCount; i++)
+		{
+			//s_gpuFrame++;
+			level = 0;
+			frustum_buildFromCamera();
+			sdisplayList_resetCurrentPortal();
+			updateCachedSector(s_vadjoinSector[i], uploadFlags);
+			traverseSector(s_vadjoinSector[i], nullptr, nullptr, 0, level, uploadFlags, startView[0], startView[1], false);
+			frustum_pop();
+		}
 
 		// Fixup the transparencies if using bilinear filtering.
 		const TFE_Settings_Graphics* graphics = TFE_Settings::getGraphicsSettings();
