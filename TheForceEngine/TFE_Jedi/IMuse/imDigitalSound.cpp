@@ -486,9 +486,12 @@ namespace TFE_Jedi
 			{
 				return imFail;
 			}
-			else if (id == 1)	// found the next useful chunk.
+			else if ((id == 1) || (id == 2))	// found the next useful chunk.
 			{
-				s32 chunkSize = (chunkData[0] | (chunkData[1] << 8) | (chunkData[2] << 16)) - 2;
+				s32 chunkSize = (chunkData[0] | (chunkData[1] << 8) | (chunkData[2] << 16));
+				if (id == 1)
+					chunkSize -= 2;
+					
 				chunkData += 5;
 
 				data->chunkSize = chunkSize;
@@ -501,7 +504,7 @@ namespace TFE_Jedi
 					}
 				}
 
-				data->offset += 6;
+				data->offset += (id == 1) ? 6 : 4;
 				if (data->chunkIndex)
 				{
 					IM_LOG_ERR("data->chunkIndex should be 0 in Dark Forces, it is: %d.", data->chunkIndex);
@@ -538,19 +541,23 @@ namespace TFE_Jedi
 			{
 				if (chunkData[0] != 'r' || chunkData[1] != 'e' || chunkData[2] != 'a')
 				{
-					IM_LOG_ERR("ERR: Illegal chunk in sound %lu...", data->sound->soundId);
+					IM_LOG_ERR("ERR: Not a valid VOC sound %lu...", data->sound->soundId);
 					return imFail;
 				}
 				data->offset += 26;
 				if (data->chunkIndex)
 				{
 					IM_LOG_ERR("data->chunkIndex should be 0 in Dark Forces, it is: %d.", data->chunkIndex);
-					assert(0);
+					return imFail;
 				}
 			}
 			else
 			{
-				IM_LOG_ERR("ERR: Illegal chunk in sound %lu...", data->sound->soundId);
+				// dont warn on silence (3) and ascii text (5)
+				if ((id != 3) && (id != 5))
+				{
+					IM_LOG_ERR("ERR: Illegal chunk %d in sound %lu...", id, data->sound->soundId);
+				}
 				return imFail;
 			}
 		}
