@@ -50,7 +50,7 @@ include(GNUInstallDirs)
 
 ## Options
 option(ENABLE_TFE "Enable building “The Force Engine”" ON)
-option(DISABLE_SYSMIDI "Disable System-MIDI Output" OFF)
+option(ENABLE_SYSMIDI "Enable System-MIDI Output if RTMidi is available" ON)
 option(ENABLE_EDITOR "Enable TFE Editor" OFF)
 option(ENABLE_FORCE_SCRIPT "Enable Force Script" OFF)
 option(ENABLE_ADJUSTABLEHUD_MOD "Install the build‑in “AdjustableHud mod” with TFE" ON)
@@ -72,11 +72,6 @@ if(ENABLE_TFE)
 					${GLEW_LIBRARIES}
 		)
 
-		if(NOT DISABLE_SYSMIDI)
-			pkg_check_modules(RTMIDI REQUIRED rtmidi>=5.0.0)
-			target_link_libraries(tfe PRIVATE ${RTMIDI_LIBRARIES})
-		endif()
-
 		# set up build directory to be able to run TFE immediately: symlink
 		# the necessary support file directories into the build env.
 		execute_process(COMMAND ln -sf ${CMAKE_SOURCE_DIR}/TheForceEngine/Captions)
@@ -97,8 +92,15 @@ if(ENABLE_TFE)
 		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ftrivial-auto-var-init=zero")
 	endif()
 
-	if(DISABLE_SYSMIDI)
-		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DNOSYSMIDI")
+	if(ENABLE_SYSMIDI)
+		pkg_check_modules(RTMIDI rtmidi>=5.0.0)
+		if(RTMIDI_FOUND)
+			add_definitions("-DBUILD_SYSMIDI")
+			target_link_libraries(tfe PRIVATE ${RTMIDI_LIBRARIES})
+		else()
+			set(ENABLE_SYSMIDI 0)
+			message(STATUS "System MIDI Disabled")
+		endif()
 	endif()
 	if(ENABLE_EDITOR)
 		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DBUILD_EDITOR")
