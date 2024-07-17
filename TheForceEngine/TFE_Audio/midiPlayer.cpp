@@ -1,7 +1,7 @@
 #include "midiPlayer.h"
 #include "midiDevice.h"
 #include "audioDevice.h"
-#ifndef NOSYSMIDI
+#ifdef BUILD_SYSMIDI
 #include "systemMidiDevice.h"
 #endif
 #include <SDL_mutex.h>
@@ -91,7 +91,7 @@ namespace TFE_MidiPlayer
 	{
 		"SF2 Synthesized Midi", // MIDI_TYPE_SF2
 		"OPL3 Synthesized Midi",// MIDI_TYPE_OPL3
-#ifndef NOSYSMIDI
+#ifdef BUILD_SYSMIDI
 		"System Midi",		// MIDI_TYPE_SYSTEM
 #endif
 	};
@@ -541,7 +541,7 @@ namespace TFE_MidiPlayer
 
 		switch (type)
 		{
-#ifndef NOSYSMIDI
+#ifdef BUILD_SYSMIDI
 			case MIDI_TYPE_SYSTEM:
 				s_midiDevice = new SystemMidiDevice();
 				break;
