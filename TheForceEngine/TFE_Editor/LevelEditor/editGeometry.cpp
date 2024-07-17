@@ -726,7 +726,7 @@ namespace LevelEditor
 		sector->ceilHeight = std::max(heights[0], heights[1]);
 		sector->ambient = 20;
 		sector->layer = s_curLayer;
-		sector->groupId = s_groupCurrent;
+		sector->groupId = groups_getCurrentId();
 		sector->groupIndex = 0;
 	}
 
