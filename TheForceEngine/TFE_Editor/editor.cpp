@@ -29,6 +29,9 @@
 
 namespace TFE_Editor
 {
+	// Set to 1 to enable
+	#define ENABLE_LEVEL_EDITOR 0
+
 	enum EditorMode
 	{
 		EDIT_ASSET_BROWSER = 0,
@@ -890,9 +893,13 @@ namespace TFE_Editor
 		// TODO: Other asset editors.
 		if (asset->type == TYPE_LEVEL)
 		{
+		#if ENABLE_LEVEL_EDITOR
 			s_editorMode = EDIT_ASSET;
 			s_editorAssetType = asset->type;
 			LevelEditor::init(asset);
+		#else
+			showMessageBox("Warning", "The level editor is disabled and\nwill be enabled in the upcoming\nlevel editor release.");
+		#endif
 		}
 		else
 		{
