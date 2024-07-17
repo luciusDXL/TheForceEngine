@@ -6,7 +6,7 @@ enum MidiDeviceType
 {
 	MIDI_TYPE_SF2 = 0,	// Use the Sound Font 2 (SF2) midi synthesizer.
 	MIDI_TYPE_OPL3,		// Use OPL3 emulation (like DosBox).
-#ifndef NOSYSMIDI
+#ifdef BUILD_SYSMIDI
 	MIDI_TYPE_SYSTEM,	// System midi device (hardware, midi server, GM midi on Windows).
 #endif
 	MIDI_TYPE_COUNT,

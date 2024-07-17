@@ -58,6 +58,8 @@ This can be overridden by defining the `TFE_DATA_HOME` environment variable.
 * [SDL2-image](https://github.com/libsdl-org/SDL_image) Version 2.6.3
 * [GLEW](http://glew.sourceforge.net/) 2.2.0
 * OpenGL 3.3 capable driver (latest [Mesa 3D](https://www.mesa3d.org) or Nvidia proprietary driver recommended)
+
+### Optional Libraries
 * [RtMidi](https://www.music.mcgill.ca/~gary/rtmidi/) 5.0.0 or higher for external MIDI synthesizer support
 
 ### Building from Source
