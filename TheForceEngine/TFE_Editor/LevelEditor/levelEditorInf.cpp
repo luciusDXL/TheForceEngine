@@ -1959,7 +1959,7 @@ namespace LevelEditor
 		ImGui::Text("%s", "Properties");
 		if (elev->overrideSet & IEO_VAR_MASK)
 		{
-			ImGui::BeginChild(editor_getUniqueLabel(""), { 0.0f, propHeight }, true);
+			ImGui::BeginChild(editor_getUniqueLabel(""), { 0.0f, propHeight }, ImGuiChildFlags_Border);
 			{
 				const u32 overrides = elev->overrideSet;
 				if (overrides & IEO_START)
@@ -2199,7 +2199,7 @@ namespace LevelEditor
 		ImGui::Text("%s", "Properties");
 		if (trigger->overrideSet & ITO_VAR_MASK)
 		{
-			ImGui::BeginChild(editor_getUniqueLabel(""), { 0.0f, propHeight }, true);
+			ImGui::BeginChild(editor_getUniqueLabel(""), { 0.0f, propHeight }, ImGuiChildFlags_Border);
 			{
 				const u32 overrides = trigger->overrideSet;
 				if (overrides & ITO_SOUND)
@@ -3135,7 +3135,7 @@ namespace LevelEditor
 			f32 propHeight = 0.0f, contentHeight = 0.0f;
 			f32 childHeight = computeChildHeight(data, s_infEditor.curContentIndex, s_infEditor.curClassIndex == i, &propHeight, &contentHeight);
 
-			if (ImGui::BeginChild(editor_getUniqueLabel(""), { 0, childHeight }, true))
+			if (ImGui::BeginChild(editor_getUniqueLabel(""), { 0, childHeight }, ImGuiChildFlags_Border))
 			{
 				// Class label.
 				ImGui::TextColored(i == s_infEditor.curClassIndex ? colorKeywordOuterSel : colorKeywordOuter, "Class:");
@@ -3168,7 +3168,7 @@ namespace LevelEditor
 							if (stopCount && slaveCount) { ImGui::Text("Stops: %d    Slaves: %d", stopCount, slaveCount); }
 							else if (stopCount)  { ImGui::Text("Stops: %d", stopCount); }
 							else if (slaveCount) { ImGui::Text("Slaves: %d", slaveCount); }
-							ImGui::BeginChild(editor_getUniqueLabel(""), { 0.0f, contentHeight }, true);
+							ImGui::BeginChild(editor_getUniqueLabel(""), { 0.0f, contentHeight }, ImGuiChildFlags_Border);
 							{
 								// Edit Stops.
 								editor_infEditElevStops(elev, contentHeight, i, tint);
@@ -3256,7 +3256,7 @@ namespace LevelEditor
 						{
 							const s32 clientCount = (s32)trigger->clients.size();
 							ImGui::Text("Clients: %d", clientCount);
-							ImGui::BeginChild(editor_getUniqueLabel(""), { 0.0f, contentHeight }, true);
+							ImGui::BeginChild(editor_getUniqueLabel(""), { 0.0f, contentHeight }, ImGuiChildFlags_Border);
 							{
 								editor_infEditTriggerClients(trigger, contentHeight, i, tint);
 							}
@@ -4273,7 +4273,7 @@ namespace LevelEditor
 
 				ImGui::Separator();
 
-				if (ImGui::BeginChild(editor_getUniqueLabel(""), { 0, 0 }, false))
+				if (ImGui::BeginChild(editor_getUniqueLabel(""), { 0, 0 }))
 				{
 					if (s_infEditor.mode == INF_MODE_UI)
 					{

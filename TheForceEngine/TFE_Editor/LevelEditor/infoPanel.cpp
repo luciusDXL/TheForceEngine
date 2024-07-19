@@ -133,10 +133,11 @@ namespace LevelEditor
 	{
 		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, { 4.0f, 1.0f });
 		ImGui::SetCursorPosX(ImGui::GetCursorPosX() + (f32)offsetX);
-		ImGui::SetCursorPosY(ImGui::GetCursorPosY() + (f32)offsetY);
 
 		for (s32 i = 0; i < count; i++)
 		{
+			ImGui::SetCursorPosY(ImGui::GetCursorPosY() + (f32)offsetY);
+
 			setTabColor(curTab == i);
 			if (ImGui::Button(names[i], { 100.0f, 18.0f }))
 			{
@@ -383,7 +384,7 @@ namespace LevelEditor
 		strcpy(name, s_level.name.c_str());
 
 		ImGui::Text("Level Name:"); ImGui::SameLine();
-		if (ImGui::InputText("", name, 64))
+		if (ImGui::InputText("##InputLevelName", name, 64))
 		{
 			s_level.name = name;
 		}
@@ -1573,7 +1574,7 @@ namespace LevelEditor
 		}
 
 		ImGui::Text("%s", "Logics");
-		ImGui::BeginChild("##LogicList", { (f32)min(listWidth, 400), 64 }, true);
+		ImGui::BeginChild("##LogicList", { (f32)min(listWidth, 400), 64 }, ImGuiChildFlags_Border);
 		{
 			s32 count = (s32)s_objEntity.logic.size();
 			EntityLogic* list = s_objEntity.logic.data();
@@ -1655,7 +1656,7 @@ namespace LevelEditor
 
 		const f32 varListHeight = s_objEntity.type == ETYPE_3D ? 114.0f : 140.0f;
 		ImGui::Text("%s", "Variables");
-		ImGui::BeginChild("##VariableList", { (f32)min(listWidth, 400), varListHeight }, true);
+		ImGui::BeginChild("##VariableList", { (f32)min(listWidth, 400), varListHeight }, ImGuiChildFlags_Border);
 		{
 			s32 count = (s32)varList->size();
 			EntityVar* list = varList->data();

@@ -3602,7 +3602,7 @@ namespace LevelEditor
 		size.y += 16.0f;
 
 		const ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize
-			| ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoNav | ImGuiWindowFlags_AlwaysAutoResize;
+			| ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoNav;
 
 		ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 7.0f);
 		// TODO: Tweak padding (and size)?
@@ -3613,7 +3613,7 @@ namespace LevelEditor
 		ImGui::PushStyleColor(ImGuiCol_Border, { 0.43f, 0.43f, 0.50f, 0.25f*alpha });
 
 		ImGui::SetNextWindowPos({ (f32)mapPos.x + xOffset, (f32)mapPos.z + yOffset });
-		if (ImGui::BeginChild(id, size, true, window_flags))
+		if (ImGui::BeginChild(id, size, ImGuiChildFlags_AutoResizeX | ImGuiChildFlags_AutoResizeY, window_flags))
 		{
 			ImGui::Text("%s", info);
 		}
@@ -5318,7 +5318,7 @@ namespace LevelEditor
 			| ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoBackground;
 
 		ImGui::SetNextWindowPos({ pos.x, pos.y + 24.0f });
-		ImGui::BeginChild("MsgPanel", { 280.0f, 20.0f }, false, window_flags);
+		ImGui::BeginChild("MsgPanel", { 280.0f, 20.0f }, 0, window_flags);
 
 		s32 mx, my;
 		TFE_Input::getMousePos(&mx, &my);

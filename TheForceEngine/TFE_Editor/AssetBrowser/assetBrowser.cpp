@@ -695,7 +695,7 @@ namespace AssetBrowser
 				ImGui::SetCursorPos(cursor);
 
 				ImGui::PushStyleColor(ImGuiCol_Border, getBorderColor(a));
-				if (ImGui::BeginChild(buttonLabel, ImVec2(f32(itemWidth), f32(itemHeight)), true, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoScrollWithMouse))
+				if (ImGui::BeginChild(buttonLabel, ImVec2(f32(itemWidth), f32(itemHeight)), ImGuiChildFlags_Border, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoScrollWithMouse))
 				{
 					s32 offsetX = 0, offsetY = 0;
 					s32 width = s_editorConfig.thumbnailSize, height = s_editorConfig.thumbnailSize;
@@ -951,7 +951,7 @@ namespace AssetBrowser
 		ImGui::SetNextWindowSize({ winWidth, winHeight });
 		if (ImGui::BeginPopupModal("Browse", &active, window_flags))
 		{
-			ImGui::BeginChild(0x303, { width, height }, true);
+			ImGui::BeginChild(0x303, { width, height }, ImGuiChildFlags_Border);
 			drawAssetList((s32)width, (s32)height);
 			ImGui::EndChild();
 
