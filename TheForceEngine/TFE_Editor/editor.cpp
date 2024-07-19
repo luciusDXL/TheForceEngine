@@ -27,7 +27,7 @@
 namespace TFE_Editor
 {
 	// Set to 1 to enable
-	#define ENABLE_LEVEL_EDITOR 0
+	#define ENABLE_LEVEL_EDITOR 1
 
 	enum EditorMode
 	{
