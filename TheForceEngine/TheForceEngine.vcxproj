@@ -688,8 +688,9 @@ echo ^)";
     <ClInclude Include="TFE_Ui\imGUI\imconfig.h" />
     <ClInclude Include="TFE_Ui\imGUI\imgui.h" />
     <ClInclude Include="TFE_Ui\imGUI\imgui_impl_opengl3.h" />
-    <ClInclude Include="TFE_Ui\imGUI\imgui_impl_sdl.h" />
+    <ClInclude Include="TFE_Ui\imGUI\imgui_impl_sdl2.h" />
     <ClInclude Include="TFE_Ui\imGUI\imgui_internal.h" />
+    <ClInclude Include="TFE_Ui\imGUI\imgui_tfe_widgets.h" />
     <ClInclude Include="TFE_Ui\imGUI\imstb_rectpack.h" />
     <ClInclude Include="TFE_Ui\imGUI\imstb_textedit.h" />
     <ClInclude Include="TFE_Ui\imGUI\imstb_truetype.h" />
@@ -1021,7 +1022,9 @@ echo ^)";
     <ClCompile Include="TFE_Ui\imGUI\imgui_demo.cpp" />
     <ClCompile Include="TFE_Ui\imGUI\imgui_draw.cpp" />
     <ClCompile Include="TFE_Ui\imGUI\imgui_impl_opengl3.cpp" />
-    <ClCompile Include="TFE_Ui\imGUI\imgui_impl_sdl.cpp" />
+    <ClCompile Include="TFE_Ui\imGUI\imgui_impl_sdl2.cpp" />
+    <ClCompile Include="TFE_Ui\imGUI\imgui_tables.cpp" />
+    <ClCompile Include="TFE_Ui\imGUI\imgui_tfe_widgets.cpp" />
     <ClCompile Include="TFE_Ui\imGUI\imgui_widgets.cpp" />
     <ClCompile Include="TFE_Ui\markdown.cpp" />
     <ClCompile Include="TFE_Ui\ui.cpp" />

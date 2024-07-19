@@ -244,9 +244,6 @@
     <ClInclude Include="TFE_Ui\imGUI\imgui_impl_opengl3.h">
       <Filter>Source\TFE_Ui\imGUI</Filter>
     </ClInclude>
-    <ClInclude Include="TFE_Ui\imGUI\imgui_impl_sdl.h">
-      <Filter>Source\TFE_Ui\imGUI</Filter>
-    </ClInclude>
     <ClInclude Include="TFE_Ui\imGUI\imgui_internal.h">
       <Filter>Source\TFE_Ui\imGUI</Filter>
     </ClInclude>
@@ -1342,6 +1339,12 @@
     <ClInclude Include="TFE_System\cJSON.h">
       <Filter>Source\TFE_System</Filter>
     </ClInclude>
+    <ClInclude Include="TFE_Ui\imGUI\imgui_impl_sdl2.h">
+      <Filter>Source\TFE_Ui\imGUI</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Ui\imGUI\imgui_tfe_widgets.h">
+      <Filter>Source\TFE_Ui\imGUI</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -1363,9 +1366,6 @@
       <Filter>Source\TFE_Ui\imGUI</Filter>
     </ClCompile>
     <ClCompile Include="TFE_Ui\imGUI\imgui_impl_opengl3.cpp">
-      <Filter>Source\TFE_Ui\imGUI</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_Ui\imGUI\imgui_impl_sdl.cpp">
       <Filter>Source\TFE_Ui\imGUI</Filter>
     </ClCompile>
     <ClCompile Include="TFE_Ui\imGUI\imgui_widgets.cpp">
@@ -2309,6 +2309,15 @@
     </ClCompile>
     <ClCompile Include="TFE_System\cJSON.c">
       <Filter>Source\TFE_System</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Ui\imGUI\imgui_impl_sdl2.cpp">
+      <Filter>Source\TFE_Ui\imGUI</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Ui\imGUI\imgui_tfe_widgets.cpp">
+      <Filter>Source\TFE_Ui\imGUI</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Ui\imGUI\imgui_tables.cpp">
+      <Filter>Source\TFE_Ui\imGUI</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
