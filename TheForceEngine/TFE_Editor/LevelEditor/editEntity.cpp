@@ -10,7 +10,6 @@
 #include <TFE_Editor/errorMessages.h>
 #include <TFE_Editor/editor.h>
 
-#include <TFE_Ui/imGUI/imgui.h>
 #include <algorithm>
 #include <vector>
 #include <string>

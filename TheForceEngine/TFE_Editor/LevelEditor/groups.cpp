@@ -5,8 +5,8 @@
 #include <TFE_Jedi/Math/core_math.h>
 #include <TFE_Editor/errorMessages.h>
 #include <TFE_Editor/editor.h>
+#include <TFE_Ui/ui.h>
 
-#include <TFE_Ui/imGUI/imgui.h>
 #include <algorithm>
 #include <vector>
 #include <string>
@@ -42,12 +42,11 @@ namespace LevelEditor
 	bool groups_chooseName()
 	{
 		pushFont(TFE_Editor::FONT_SMALL);
-		bool active = true;
 		ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysAutoResize;
 
 		bool create = false;
 		bool cancel = false;
-		if (ImGui::BeginPopupModal("Choose Name", &active, window_flags))
+		if (ImGui::BeginPopupModal("Choose Name", nullptr, window_flags))
 		{
 			ImGui::Text("Choose Name");
 			ImGui::SameLine(0.0f, 8.0f);
@@ -57,11 +56,13 @@ namespace LevelEditor
 			if (ImGui::Button("Create Group"))
 			{
 				create = true;
+				ImGui::CloseCurrentPopup();
 			}
 			ImGui::SameLine(0.0f, 8.0f);
 			if (ImGui::Button("Cancel"))
 			{
 				cancel = true;
+				ImGui::CloseCurrentPopup();
 			}
 			ImGui::EndPopup();
 		}
@@ -71,7 +72,7 @@ namespace LevelEditor
 		{
 			groups_add(s_nameInput, s_groupCurrent);
 		}
-		return !active || create || cancel;
+		return create || cancel;
 	}
 		
 	void groups_init()

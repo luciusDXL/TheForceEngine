@@ -13,7 +13,6 @@
 #include <TFE_DarkForces/mission.h>
 #include <TFE_Jedi/Renderer/jediRenderer.h>
 
-#include <TFE_Ui/imGUI/imgui.h>
 #include <algorithm>
 
 namespace TFE_FrontEndUI

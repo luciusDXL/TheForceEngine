@@ -19,7 +19,6 @@
 #include <TFE_Asset/imageAsset.h>
 #include <TFE_Ui/ui.h>
 #include <TFE_Ui/markdown.h>
-#include <TFE_Ui/imGUI/imgui.h>
 // Game
 #include <TFE_DarkForces/mission.h>
 #include <TFE_Jedi/Renderer/jediRenderer.h>
@@ -267,16 +266,16 @@ namespace TFE_FrontEndUI
 				{
 					drawList->AddImageRounded(TFE_RenderBackend::getGpuPtr(s_filteredMods[i]->image.texture), ImVec2((f32(x) * 268 + 16 - 2)*uiScale, yScrolled - 2*uiScale),
 						ImVec2((f32(x) * 268 + 16 + 256 + 2)*uiScale, yScrolled + (192 + 2)*uiScale), ImVec2(0.0f, s_filteredMods[i]->invertImage ? 1.0f : 0.0f),
-						ImVec2(1.0f, s_filteredMods[i]->invertImage ? 0.0f : 1.0f), 0xffffffff, 8.0f, ImDrawCornerFlags_All);
+						ImVec2(1.0f, s_filteredMods[i]->invertImage ? 0.0f : 1.0f), 0xffffffff, 8.0f, ImDrawFlags_RoundCornersAll);
 					drawList->AddImageRounded(getGradientTexture(), ImVec2((f32(x) * 268 + 16 - 2)*uiScale, yScrolled - 2*uiScale),
 						ImVec2((f32(x) * 268 + 16 + 256 + 2)*uiScale, yScrolled + (192 + 2)*uiScale), ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f),
-						0x40ffb080, 8.0f, ImDrawCornerFlags_All);
+						0x40ffb080, 8.0f, ImDrawFlags_RoundCornersAll);
 				}
 				else
 				{
 					drawList->AddImageRounded(TFE_RenderBackend::getGpuPtr(s_filteredMods[i]->image.texture), ImVec2((f32(x) * 268 + 16)*uiScale, yScrolled),
 						ImVec2((f32(x) * 268 + 16 + 256)*uiScale, yScrolled + 192*uiScale), ImVec2(0.0f, s_filteredMods[i]->invertImage ? 1.0f : 0.0f),
-						ImVec2(1.0f, s_filteredMods[i]->invertImage ? 0.0f : 1.0f), 0xffffffff, 8.0f, ImDrawCornerFlags_All);
+						ImVec2(1.0f, s_filteredMods[i]->invertImage ? 0.0f : 1.0f), 0xffffffff, 8.0f, ImDrawFlags_RoundCornersAll);
 				}
 
 				ImGui::SetCursorPos(ImVec2((f32(x) * 268 + 20)*uiScale, y + 192*uiScale));
@@ -497,11 +496,11 @@ namespace TFE_FrontEndUI
 
 			const u32 window_flags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoSavedSettings;
 			ImGui::SetCursorPos(ImVec2(10*uiScale, 10*uiScale));
-			ImGui::Begin("Mod Info", &open, ImVec2(f32(infoWidth), f32(infoHeight)), 1.0f, window_flags);
+			ImGui::Begin("Mod Info", &open, /*ImVec2(f32(infoWidth), f32(infoHeight)), 1.0f,*/ window_flags);
 			ImDrawList* drawList = ImGui::GetWindowDrawList();
 			ImVec2 cursor = ImGui::GetCursorPos();
 			drawList->AddImageRounded(TFE_RenderBackend::getGpuPtr(s_filteredMods[s_selectedMod]->image.texture), ImVec2(cursor.x + 64, cursor.y + 64), ImVec2(cursor.x + 64 + 320*uiScale, cursor.y + 64 + 200*uiScale),
-				ImVec2(0.0f, s_filteredMods[s_selectedMod]->invertImage ? 1.0f : 0.0f), ImVec2(1.0f, s_filteredMods[s_selectedMod]->invertImage ? 0.0f : 1.0f), 0xffffffff, 8.0f, ImDrawCornerFlags_All);
+				ImVec2(0.0f, s_filteredMods[s_selectedMod]->invertImage ? 1.0f : 0.0f), ImVec2(1.0f, s_filteredMods[s_selectedMod]->invertImage ? 0.0f : 1.0f), 0xffffffff, 8.0f, ImDrawFlags_RoundCornersAll);
 
 			ImGui::PushFont(getDialogFont());
 			ImGui::SetCursorPosX(cursor.x + (320 + 70)*uiScale);
@@ -551,7 +550,7 @@ namespace TFE_FrontEndUI
 			ImGui::PopStyleColor();
 			ImGui::EndChild();
 
-			if (!ImGui::IsRootWindowOrAnyChildFocused())
+			if (!ImGui::IsWindowFocused(ImGuiFocusedFlags_ChildWindows | ImGuiFocusedFlags_RootWindow))
 			{
 				open = false;
 			}

@@ -43,7 +43,6 @@
 #include <TFE_Ui/ui.h>
 #include <SDL.h>
 
-#include <TFE_Ui/imGUI/imgui.h>
 #include <algorithm>
 #include <vector>
 #include <string>
@@ -1975,7 +1974,7 @@ namespace LevelEditor
 					editor_infPropertySelectable(IEV_SPEED, itemClassIndex);
 
 					ImGui::SetNextItemWidth(128.0f);
-					ImGui::InputFloat(editor_getUniqueLabel(""), &elev->speed, 0.1f, 1.0f, 3);
+					ImGui::InputFloat(editor_getUniqueLabel(""), &elev->speed, 0.1f, 1.0f, "%.3f", ImGuiInputTextFlags_CharsDecimal);
 				}
 				if (overrides & IEO_MASTER)
 				{
@@ -1991,7 +1990,7 @@ namespace LevelEditor
 					ImGui::SameLine(0.0f, 8.0f);
 					ImGui::SetNextItemWidth(128.0f);
 					f32 angle = elev->angle * 180.0f / PI;
-					if (ImGui::InputFloat(editor_getUniqueLabel(""), &angle, 0.1f, 1.0f, 3))
+					if (ImGui::InputFloat(editor_getUniqueLabel(""), &angle, 0.1f, 1.0f, "%.3f", ImGuiInputTextFlags_CharsDecimal))
 					{
 						elev->angle = angle * PI / 180.0f;
 					}
@@ -2045,7 +2044,7 @@ namespace LevelEditor
 					editor_infPropertySelectable(IEV_CENTER, itemClassIndex);
 
 					ImGui::SetNextItemWidth(160.0f);
-					ImGui::InputFloat2(editor_getUniqueLabel(""), elev->center.m, 3);
+					ImGui::InputFloat2(editor_getUniqueLabel(""), elev->center.m, "%.3f", ImGuiInputTextFlags_CharsDecimal);
 
 					ImGui::SameLine(0.0f, 8.0f);
 					if (iconButtonInline(ICON_SELECT, "Select position in viewport.", btnTint, true))
@@ -2688,7 +2687,7 @@ namespace LevelEditor
 			if (stop->fromSectorFloor.empty())
 			{
 				// TODO: How to turn into a string?
-				ImGui::InputFloat(editor_getUniqueLabel(""), &stop->value, 0.1f, 1.0f, 3);
+				ImGui::InputFloat(editor_getUniqueLabel(""), &stop->value, 0.1f, 1.0f, "%.3f", ImGuiInputTextFlags_CharsDecimal);
 			}
 			else
 			{
@@ -2731,7 +2730,7 @@ namespace LevelEditor
 				ImGui::Text("Delay:");
 				ImGui::SameLine(0.0f, 8.0f);
 				ImGui::SetNextItemWidth(128.0f);
-				ImGui::InputFloat(editor_getUniqueLabel(""), &stop->delay, 0.1f, 1.0f, 3);
+				ImGui::InputFloat(editor_getUniqueLabel(""), &stop->delay, 0.1f, 1.0f, "%.3f", ImGuiInputTextFlags_CharsDecimal);
 			}
 
 			///////////////////////////////
@@ -3302,7 +3301,7 @@ namespace LevelEditor
 							ImGui::Text("Move"); ImGui::SameLine(0.0f, 8.0f);
 							// Position
 							ImGui::SetNextItemWidth(128.0f * 3.0f);
-							ImGui::InputFloat3(editor_getUniqueLabel(""), &teleporter->dstPos.x, 3);
+							ImGui::InputFloat3(editor_getUniqueLabel(""), &teleporter->dstPos.x);
 							ImGui::SameLine(0.0f, 8.0f);
 							if (iconButtonInline(ICON_SELECT, "Select target position in the viewport.", tint, true))
 							{
@@ -3322,7 +3321,7 @@ namespace LevelEditor
 
 							ImGui::SameLine(0.0f, 8.0f);
 							ImGui::SetNextItemWidth(128.0f);
-							ImGui::InputFloat(editor_getUniqueLabel(""), &teleporter->dstAngle, 0.1f, 1.0f, 3);
+							ImGui::InputFloat(editor_getUniqueLabel(""), &teleporter->dstAngle, 0.1f, 1.0f, "%.3f", ImGuiInputTextFlags_CharsDecimal);
 						}
 					} break;
 				}
@@ -3821,7 +3820,7 @@ namespace LevelEditor
 					// Class
 					ImGui::TextColored(colorKeywordOuter, "Class:"); ImGui::SameLine(0.0f, 8.0f);
 					ImGui::TextColored(colorKeywordInner, "Elevator"); ImGui::SameLine(0.0f, 8.0f);
-					ImGui::Text(c_infElevTypeName[elev->type]);
+					ImGui::Text("%s", c_infElevTypeName[elev->type]);
 
 					// Properties.
 					const u32 overrides = elev->overrideSet;
@@ -4040,7 +4039,7 @@ namespace LevelEditor
 					if (trigger->type != ITRIGGER_SECTOR)
 					{
 						ImGui::SameLine(0.0f, 8.0f);
-						ImGui::Text(c_infTriggerTypeName[trigger->type]);
+						ImGui::Text("%s", c_infTriggerTypeName[trigger->type]);
 					}
 
 					const u32 overrides = trigger->overrideSet;
@@ -4125,7 +4124,7 @@ namespace LevelEditor
 					// Class
 					ImGui::TextColored(colorKeywordOuter, "Class:"); ImGui::SameLine(0.0f, 8.0f);
 					ImGui::TextColored(colorKeywordInner, "Teleporter"); ImGui::SameLine(0.0f, 8.0f);
-					ImGui::Text(c_infTeleporterTypeName[teleporter->type]);
+					ImGui::Text("%s", c_infTeleporterTypeName[teleporter->type]);
 
 					// Target
 					ImGui::Text("%s", tab); ImGui::SameLine(0.0f, 0.0f);
@@ -4172,7 +4171,7 @@ namespace LevelEditor
 		ImGui::PushStyleColor(ImGuiCol_NavWindowingDimBg, { 0.80f, 0.80f, 0.80f, 0.10f });
 		ImGui::PushStyleColor(ImGuiCol_ModalWindowDimBg, { 0.80f, 0.80f, 0.80f, 0.15f });
 
-		if (ImGui::BeginPopupModal("Edit INF", &active, window_flags))
+		if (ImGui::BeginPopupModal("Edit INF", nullptr, window_flags))
 		{
 			// Popups need multiple frames to "accept" the new position due to the way the imGui window position logic works.
 			if (s_restorePos > 0) { s_restorePos--; }
@@ -4286,6 +4285,13 @@ namespace LevelEditor
 					}
 					ImGui::EndChild();
 				}
+
+			}
+
+			if (ImGui::Button("Close"))
+			{
+				active = false;
+				ImGui::CloseCurrentPopup();
 			}
 
 			ImGui::EndPopup();

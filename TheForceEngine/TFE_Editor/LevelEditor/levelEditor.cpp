@@ -50,7 +50,6 @@
 #include <TFE_Ui/ui.h>
 #include <SDL.h>
 
-#include <TFE_Ui/imGUI/imgui.h>
 #include <climits>
 #include <algorithm>
 #include <vector>

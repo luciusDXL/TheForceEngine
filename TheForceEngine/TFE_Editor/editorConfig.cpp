@@ -10,8 +10,6 @@
 #include <TFE_Archive/archive.h>
 #include <TFE_Ui/ui.h>
 
-#include <TFE_Ui/imGUI/imgui.h>
-
 namespace TFE_Editor
 {
 	static bool s_configLoaded = false;
@@ -171,12 +169,11 @@ namespace TFE_Editor
 		pushFont(TFE_Editor::FONT_SMALL);
 		s32 menuHeight = 6 + (s32)ImGui::GetFontSize();
 
-		bool active = true;
 		bool finished = false;
 		ImGui::SetWindowSize("Editor Config", { UI_SCALE(550), 70.0f + UI_SCALE(100) });
 		ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoResize;
 
-		if (ImGui::BeginPopupModal("Editor Config", &active, window_flags))
+		if (ImGui::BeginPopupModal("Editor Config", nullptr, window_flags))
 		{
 			s32 browseWinOpen = -1;
 			ImGui::Text("Editor Path:"); ImGui::SameLine(UI_SCALE(120));
@@ -203,6 +200,14 @@ namespace TFE_Editor
 			{
 				saveConfig();
 				finished = true;
+				ImGui::CloseCurrentPopup();
+			}
+
+			ImGui::SameLine();
+			if (ImGui::Button("Close"))
+			{
+				finished = true;
+				ImGui::CloseCurrentPopup();
 			}
 
 			// File dialogs...
@@ -227,11 +232,6 @@ namespace TFE_Editor
 		}
 		popFont();
 
-		if (!active)
-		{
-			finished = true;
-			saveConfig();
-		}
 		return finished;
 	}
 		

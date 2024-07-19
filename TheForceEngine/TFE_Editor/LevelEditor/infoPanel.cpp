@@ -17,8 +17,8 @@
 #include <TFE_Jedi/Level/rwall.h>
 #include <TFE_Jedi/Level/rsector.h>
 #include <TFE_System/math.h>
+#include <TFE_Ui/ui.h>
 
-#include <TFE_Ui/imGUI/imgui.h>
 #include <algorithm>
 #include <vector>
 #include <string>
@@ -218,7 +218,7 @@ namespace LevelEditor
 
 			if (s_scrollToBottom)
 			{
-				ImGui::SetScrollHere(0.999f);
+				ImGui::SetScrollHereY(0.999f);
 				s_scrollToBottom = false;
 			}
 		}
@@ -531,7 +531,7 @@ namespace LevelEditor
 		bool hadFocusX = false, hadFocusZ = false;
 		Vec2f prevPos = *value;
 		ImGui::PushItemWidth(98.0f);
-		if (ImGui::InputFloat(id0, &value->x, NULL, NULL, "%0.6f", ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_NoUndoRedo))
+		if (ImGui::InputFloat(id0, &value->x, 0.0, 0.0, "%0.6f", ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_NoUndoRedo))
 		{
 			if (value->x != prevPos.x)
 			{
@@ -542,7 +542,7 @@ namespace LevelEditor
 
 		ImGui::SameLine();
 		ImGui::PushItemWidth(98.0f);
-		if (ImGui::InputFloat(id1, &value->z, NULL, NULL, "%0.6f", ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_NoUndoRedo))
+		if (ImGui::InputFloat(id1, &value->z, 0.0, 0.0, "%0.6f", ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_NoUndoRedo))
 		{
 			if (value->z != prevPos.z)
 			{
@@ -651,7 +651,7 @@ namespace LevelEditor
 	void infoLabel(const char* labelId, const char* labelText, u32 width)
 	{
 		ImGui::PushItemWidth(f32(width));
-		ImGui::LabelText(labelId, labelText);
+		ImGui::LabelText(labelId, "%s", labelText);
 		ImGui::PopItemWidth();
 		ImGui::SameLine();
 	}
@@ -1868,13 +1868,12 @@ namespace LevelEditor
 	{
 		f32 winWidth = 600.0f;
 		f32 winHeight = 146.0f;
-
+		bool btn = false;
 		pushFont(TFE_Editor::FONT_SMALL);
 
-		bool active = true;
 		ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoResize;
 		ImGui::SetNextWindowSize({ winWidth, winHeight });
-		if (ImGui::BeginPopupModal("Category", &active, window_flags))
+		if (ImGui::BeginPopupModal("Category", nullptr, window_flags))
 		{
 			//s_objEntity;
 			s32 count = (s32)s_categoryList.size();
@@ -1895,19 +1894,21 @@ namespace LevelEditor
 
 			if (ImGui::Button("Confirm"))
 			{
-				active = false;
+				btn = true;
+				ImGui::CloseCurrentPopup();
 			}
 			ImGui::SameLine(0.0f, 32.0f);
 			if (ImGui::Button("Cancel"))
 			{
+				btn = true;
 				s_objEntity.categories = s_prevCategoryFlags;
-				active = false;
+				ImGui::CloseCurrentPopup();
 			}
 			ImGui::EndPopup();
 		}
 
 		popFont();
 
-		return !active;
+		return btn;
 	}
 }

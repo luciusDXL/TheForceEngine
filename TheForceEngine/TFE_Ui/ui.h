@@ -10,6 +10,10 @@
 #include <vector>
 #include <string>
 
+#include "imGUI/imgui.h"
+#include "imGUI/imgui_internal.h"
+#include "imGUI/imgui_tfe_widgets.h"
+
 #if _WIN32
 #define DEFAULT_PATH "C:\\"
 #else
