@@ -280,7 +280,7 @@ namespace TFE_Settings
 			return true;
 		}
 		char msgBuffer[4096];
-		sprintf(msgBuffer, "Cannot write 'settings.ini' to '%s',\nmost likely Documents/ has been set to read-only or has been added as a Controlled Folder if running on Windows\n https://www.tenforums.com/tutorials/87858-add-protected-folders-controlled-folder-access-windows-10-a.html", s_settingsPath);
+		sprintf(msgBuffer, "Cannot write 'settings.ini' to '%s',\nmost likely Documents/ has been set to read-only, is located on One-Drive (currently not supported), or has been added as a Controlled Folder if running on Windows.\n https://www.tenforums.com/tutorials/87858-add-protected-folders-controlled-folder-access-windows-10-a.html", s_settingsPath);
 		TFE_System::postErrorMessageBox(msgBuffer, "Permissions Error");
 		return false;
 	}
