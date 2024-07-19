@@ -52,7 +52,7 @@ namespace LevelEditor
 				applyLighting = true;
 			}
 			ImGui::SameLine();
-			if (ImGui::Button("Close"))
+			if (ImGui::Button("Cancel"))
 			{
 				cancel = true;
 			}

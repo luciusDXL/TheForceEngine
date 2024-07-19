@@ -1896,18 +1896,15 @@ namespace LevelEditor
 			if (ImGui::Button("Confirm"))
 			{
 				btn = true;
-				ImGui::CloseCurrentPopup();
 			}
 			ImGui::SameLine(0.0f, 32.0f);
 			if (ImGui::Button("Cancel"))
 			{
 				btn = true;
 				s_objEntity.categories = s_prevCategoryFlags;
-				ImGui::CloseCurrentPopup();
 			}
 			ImGui::EndPopup();
 		}
-
 		popFont();
 
 		return btn;

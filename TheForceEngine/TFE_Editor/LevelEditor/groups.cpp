@@ -56,13 +56,11 @@ namespace LevelEditor
 			if (ImGui::Button("Create Group"))
 			{
 				create = true;
-				ImGui::CloseCurrentPopup();
 			}
 			ImGui::SameLine(0.0f, 8.0f);
 			if (ImGui::Button("Cancel"))
 			{
 				cancel = true;
-				ImGui::CloseCurrentPopup();
 			}
 			ImGui::EndPopup();
 		}

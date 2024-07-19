@@ -3605,8 +3605,6 @@ namespace LevelEditor
 			| ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoNav;
 
 		ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 7.0f);
-		// TODO: Tweak padding (and size)?
-		//ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, { 4.0f, 4.0f });
 
 		ImGui::PushStyleColor(ImGuiCol_Text, { 0.8f, 0.9f, 1.0f, 0.5f*alpha });
 		ImGui::PushStyleColor(ImGuiCol_ChildBg, { 0.06f, 0.06f, 0.06f, 0.94f*0.75f*alpha });

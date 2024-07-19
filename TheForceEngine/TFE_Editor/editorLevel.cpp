@@ -122,10 +122,6 @@ namespace TFE_Editor
 			{
 				finished = true;
 			}
-			if (finished)
-			{
-				ImGui::CloseCurrentPopup();
-			}
 			ImGui::EndPopup();
 		}
 		popFont();

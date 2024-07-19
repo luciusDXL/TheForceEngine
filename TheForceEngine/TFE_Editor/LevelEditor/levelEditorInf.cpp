@@ -4171,7 +4171,8 @@ namespace LevelEditor
 		ImGui::PushStyleColor(ImGuiCol_NavWindowingDimBg, { 0.80f, 0.80f, 0.80f, 0.10f });
 		ImGui::PushStyleColor(ImGuiCol_ModalWindowDimBg, { 0.80f, 0.80f, 0.80f, 0.15f });
 
-		if (ImGui::BeginPopupModal("Edit INF", nullptr, window_flags))
+		bool wasPopupOpen = ImGui::IsPopupOpen("Edit INF");
+		if (ImGui::BeginPopupModal("Edit INF", &active, window_flags))
 		{
 			// Popups need multiple frames to "accept" the new position due to the way the imGui window position logic works.
 			if (s_restorePos > 0) { s_restorePos--; }
@@ -4287,14 +4288,12 @@ namespace LevelEditor
 				}
 
 			}
-
-			if (ImGui::Button("Close"))
-			{
-				active = false;
-				ImGui::CloseCurrentPopup();
-			}
-
 			ImGui::EndPopup();
+		}
+		else if (!wasPopupOpen)
+		{
+			// The popup wasn't active before calling, so leave as active.
+			active = true;
 		}
 
 		if (!active)
