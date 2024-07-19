@@ -1213,7 +1213,7 @@ namespace LevelEditor
 
 	bool entityDefsEqual(const Entity* e0, const Entity* e1)
 	{
-		return (strcasecmp(e0->name.c_str(), e1->name.c_str()) == 0 && strcasecmp(e0->assetName.c_str(), e1->assetName.c_str()) && e0->type == e1->type &&
+		return (strcasecmp(e0->name.c_str(), e1->name.c_str()) == 0 && strcasecmp(e0->assetName.c_str(), e1->assetName.c_str()) == 0 && e0->type == e1->type &&
 			logicListsMatch(e0->logic, e1->logic) && varListsMatch(e0->var, e1->var) && e0->categories == e1->categories);
 	}
 

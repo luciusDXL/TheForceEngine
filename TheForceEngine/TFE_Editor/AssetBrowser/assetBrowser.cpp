@@ -946,10 +946,10 @@ namespace AssetBrowser
 		f32 width = 1024.0f;
 		f32 height = 640.0f;
 
-		bool active = true;
+		bool exitPopup = false;
 		ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoResize;
 		ImGui::SetNextWindowSize({ winWidth, winHeight });
-		if (ImGui::BeginPopupModal("Browse", &active, window_flags))
+		if (ImGui::BeginPopupModal("Browse", nullptr, window_flags))
 		{
 			ImGui::BeginChild(0x303, { width, height }, ImGuiChildFlags_Border);
 			drawAssetList((s32)width, (s32)height);
@@ -957,17 +957,17 @@ namespace AssetBrowser
 
 			if (ImGui::Button("Select"))
 			{
-				active = false;
+				exitPopup = true;
 			}
 			ImGui::SameLine(0.0f, 32.0f);
 			if (ImGui::Button("Cancel"))
 			{
 				s_selected.clear();
-				active = false;
+				exitPopup = true;
 			}
 			ImGui::EndPopup();
 		}
-		return !active;
+		return exitPopup;
 	}
 
 	void update()
