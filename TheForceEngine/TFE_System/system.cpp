@@ -227,6 +227,15 @@ namespace TFE_System
 		return false;
 	}
 
+	void postErrorMessageBox(const char* msg, const char* title)
+	{
+		TFE_System::logWrite(LOG_ERROR, title, msg);
+#ifdef _WIN32
+		// Output to a popup message box.
+		MessageBoxA(NULL, (LPCSTR)msg, (LPCSTR)title, MB_OK | MB_ICONERROR | MB_SYSTEMMODAL);
+#endif
+	}
+
 	void sleep(u32 sleepDeltaMS)
 	{
 		SDL_Delay(sleepDeltaMS);

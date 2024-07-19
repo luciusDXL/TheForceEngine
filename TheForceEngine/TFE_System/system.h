@@ -64,6 +64,7 @@ namespace TFE_System
 
 	// System
 	bool osShellExecute(const char* pathToExe, const char* exeDir, const char* param, bool waitForCompletion);
+	void postErrorMessageBox(const char* msg, const char* title);
 	void sleep(u32 sleepDeltaMS);
 
 	void postQuitMessage();
