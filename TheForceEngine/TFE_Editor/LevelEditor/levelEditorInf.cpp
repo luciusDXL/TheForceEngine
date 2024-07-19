@@ -1709,6 +1709,7 @@ namespace LevelEditor
 	f32 computeChildHeight(const Editor_InfClass* data, s32 contentSel, bool curClass, f32* propHeight, f32* contentHeight)
 	{
 		f32 height = 600.0f;
+		const f32 elemHeight = 26.0f;
 		switch (data->classId)
 		{
 			case IIC_ELEVATOR:
@@ -1716,28 +1717,28 @@ namespace LevelEditor
 				const Editor_InfElevator* elev = getElevFromClassData(data);
 				assert(elev);
 
-				*propHeight = 26.0f * countBits(elev->overrideSet & IEO_VAR_MASK) + 16;
+				*propHeight = elemHeight * countBits(elev->overrideSet & IEO_VAR_MASK) + 16;
 				// Expand if flags are selected.
-				if (curClass && (s_infEditor.curPropIndex == IEV_FLAGS || s_infEditor.curPropIndex == IEV_ENTITY_MASK)) { *propHeight += 26.0f; }
-				else if (curClass && s_infEditor.curPropIndex == IEV_EVENT_MASK) { *propHeight += 26.0f * 3.0f; }
+				if (curClass && (s_infEditor.curPropIndex == IEV_FLAGS || s_infEditor.curPropIndex == IEV_ENTITY_MASK)) { *propHeight += elemHeight; }
+				else if (curClass && s_infEditor.curPropIndex == IEV_EVENT_MASK) { *propHeight += elemHeight * 3.0f; }
 
 				const s32 stopCount = (s32)elev->stops.size();
 				const s32 slaveCount = (s32)elev->slaves.size();
-				*contentHeight = 26.0f * f32(stopCount) + 16;
+				*contentHeight = elemHeight * f32(stopCount) + 16;
 				// Now count the number of stop messages, etc.
 				const Editor_InfStop* stop = elev->stops.data();
 				for (s32 s = 0; s < stopCount; s++, stop++)
 				{
-					*contentHeight += 26.0f * f32(stop->msg.size());
-					*contentHeight += 26.0f * f32(stop->adjoinCmd.size());
-					*contentHeight += 26.0f * f32(stop->textureCmd.size());
-					*contentHeight += (stop->overrideSet & ISO_PAGE) ? 26.0f : 0.0f;
+					*contentHeight += elemHeight * f32(stop->msg.size());
+					*contentHeight += elemHeight * f32(stop->adjoinCmd.size());
+					*contentHeight += elemHeight * f32(stop->textureCmd.size());
+					*contentHeight += (stop->overrideSet & ISO_PAGE) ? elemHeight : 0.0f;
 				}
-				*contentHeight += 26.0f * f32(slaveCount);
+				*contentHeight += elemHeight * f32(slaveCount);
 				if (contentSel >= 0 && contentSel < (s32)elev->stops.size() && curClass)
 				{
 					// Room for buttons.
-					*contentHeight += 26.0f;
+					*contentHeight += elemHeight;
 
 					// Which stop command is selected if any?
 					if (s_infEditor.curStopCmdIndex >= 0 && s_infEditor.curStopCmdIndex < elev->stops[contentSel].msg.size())
@@ -1753,20 +1754,20 @@ namespace LevelEditor
 
 				height = 140.0f + (*propHeight) + (*contentHeight);
 				// Add space for the slider.
-				height += 26.0f;
+				height += elemHeight;
 			} break;
 			case IIC_TRIGGER:
 			{
 				const Editor_InfTrigger* trigger = getTriggerFromClassData(data);
 				assert(trigger);
 
-				*propHeight = 26.0f * countBits(trigger->overrideSet & ITO_VAR_MASK) + 16;
+				*propHeight = elemHeight * countBits(trigger->overrideSet & ITO_VAR_MASK) + 16;
 				// Expand if flags are selected.
-				if (curClass && s_infEditor.curPropIndex == ITV_ENTITY_MASK) { *propHeight += 26.0f; }
-				else if (curClass && (s_infEditor.curPropIndex == ITV_EVENT_MASK || s_infEditor.curPropIndex == ITV_EVENT)) { *propHeight += 26.0f * 3.0f; }
+				if (curClass && s_infEditor.curPropIndex == ITV_ENTITY_MASK) { *propHeight += elemHeight; }
+				else if (curClass && (s_infEditor.curPropIndex == ITV_EVENT_MASK || s_infEditor.curPropIndex == ITV_EVENT)) { *propHeight += elemHeight * 3.0f; }
 
 				const s32 clientCount = (s32)trigger->clients.size();
-				*contentHeight = 16.0f + 26.0f * clientCount;
+				*contentHeight = 16.0f + elemHeight * clientCount;
 
 				if (clientCount)
 				{
@@ -1783,7 +1784,7 @@ namespace LevelEditor
 				const Editor_InfTeleporter* teleporter = getTeleporterFromClassData(data);
 				assert(teleporter);
 
-				height = 16.0f + 26.0f * (2.0f + (teleporter->type == TELEPORT_BASIC ? 1.0f : 0.0f));
+				height = 16.0f + elemHeight * (2.0f + (teleporter->type == TELEPORT_BASIC ? 1.0f : 0.0f));
 			} break;
 		}
 		return height;
@@ -2896,7 +2897,7 @@ namespace LevelEditor
 
 				strcpy(targetBuffer, stop->page.c_str());
 				ImGui::SetNextItemWidth(128.0f);
-				if (editor_assetEditComboBox(4, targetBuffer, 256, soundCount, soundAssets))
+				if (editor_assetEditComboBox(4 + s, targetBuffer, 256, soundCount, soundAssets))
 				{
 					stop->page = targetBuffer;
 				}
