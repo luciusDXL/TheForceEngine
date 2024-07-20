@@ -65,6 +65,30 @@ namespace TFE_Paths
 		return false;
 	}
 
+	bool insertString(char* text, const char* newFragment, const char* pattern)
+	{
+		if (!text || !newFragment || !pattern)
+		{
+			return false;
+		}
+
+		char* loc = strstr(text, pattern);
+		if (!loc)
+		{
+			return false;
+		}
+
+		char workStr[TFE_MAX_PATH];
+		strncpy(workStr, text, size_t(loc - text));
+		workStr[size_t(loc - text)] = 0;
+
+		strcat(workStr, newFragment);
+		strcat(workStr, text + size_t(loc - text));
+		strcpy(text, workStr);
+
+		return true;
+	}
+
 	bool setUserDocumentsPath(const char* append)
 	{
 #ifdef _WIN32
@@ -79,16 +103,28 @@ namespace TFE_Paths
 			s_paths[PATH_USER_DOCUMENTS] = path;
 			s_paths[PATH_USER_DOCUMENTS] += "\\";
 
-			FileUtil::makeDirectory(path);
-			return true;
+			if (FileUtil::makeDirectory(path))
+			{
+				return true;
+			}
+			else
+			{
+				// Try OneDrive.
+				insertString(path, "OneDrive\\", "Documents");
+				if (FileUtil::makeDirectory(path))
+				{
+					s_paths[PATH_USER_DOCUMENTS] = path;
+					s_paths[PATH_USER_DOCUMENTS] += "\\";
+
+					return true;
+				}
+			}
 		}
-		else
-		{
-			// If getting the documents folder fails, then revert back to using
-			// the program path if possible.
-			s_paths[PATH_USER_DOCUMENTS] = s_paths[PATH_PROGRAM];
-			return !s_paths[PATH_PROGRAM].empty();
-		}
+
+		// If getting the documents folder fails, then revert back to using
+		// the program path if possible.
+		s_paths[PATH_USER_DOCUMENTS] = s_paths[PATH_PROGRAM];
+		return !s_paths[PATH_PROGRAM].empty();
 #endif
 		return false;
 	}
