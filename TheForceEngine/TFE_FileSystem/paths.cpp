@@ -89,9 +89,29 @@ namespace TFE_Paths
 		return true;
 	}
 
+	bool isPortableInstall()
+	{
+		// Support "Portable" methods as well.
+		char portableSettingsPath[TFE_MAX_PATH];
+		TFE_Paths::appendPath(PATH_PROGRAM, "settings.ini", portableSettingsPath);
+		if (FileUtil::exists(portableSettingsPath))
+		{
+			return true;
+		}
+		return false;
+	}
+
 	bool setUserDocumentsPath(const char* append)
 	{
 #ifdef _WIN32
+		// Support "Portable" methods as well.
+		if (isPortableInstall())
+		{
+			s_paths[PATH_USER_DOCUMENTS] = s_paths[PATH_PROGRAM];
+			return !s_paths[PATH_USER_DOCUMENTS].empty();
+		}
+
+		// Otherwise attempt to use the Windows User "Documents/" directory.
 		char path[TFE_MAX_PATH];
 		// Get path for each computer, non-user specific and non-roaming data.
 		if (SUCCEEDED(SHGetFolderPath(NULL, CSIDL_MYDOCUMENTS, NULL, 0, path)))

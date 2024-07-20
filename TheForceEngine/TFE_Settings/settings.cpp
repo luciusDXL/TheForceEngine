@@ -76,6 +76,8 @@ namespace TFE_Settings
 	//////////////////////////////////////////////////////////////////////////////////
 	// Forward Declarations
 	//////////////////////////////////////////////////////////////////////////////////
+	bool settingsFileEmpty();
+
 	// Write
 	void writeWindowSettings(FileStream& settings);
 	void writeGraphicsSettings(FileStream& settings);
@@ -120,11 +122,14 @@ namespace TFE_Settings
 		TFE_Paths::appendPath(PATH_USER_DOCUMENTS, "settings.ini", s_settingsPath);
 		if (FileUtil::exists(s_settingsPath))
 		{
-			firstRun = false;
+			// This is still the first run if the settings.ini file is empty.
+			firstRun = settingsFileEmpty();
+
 			if (readFromDisk())
 			{
 				return true;
 			}
+			firstRun = false;
 			TFE_System::logWrite(LOG_WARNING, "Settings", "Cannot parse 'settings.ini' - recreating it.");
 		}
 
@@ -239,6 +244,18 @@ namespace TFE_Settings
 			}
 		}
 		writeToDisk();
+	}
+
+	bool settingsFileEmpty()
+	{
+		bool isEmpty = true;
+		FileStream settings;
+		if (settings.open(s_settingsPath, Stream::MODE_READ))
+		{
+			isEmpty = settings.getSize() == 0u;
+			settings.close();
+		}
+		return isEmpty;
 	}
 
 	bool readFromDisk()
