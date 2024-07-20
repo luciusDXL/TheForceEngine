@@ -1,6 +1,7 @@
 #include "hotkeys.h"
 #include "contextMenu.h"
 #include "levelEditor.h"
+#include "editGeometry.h"
 #include <TFE_Editor/LevelEditor/Rendering/viewport.h>
 #include <TFE_Input/input.h>
 #include <TFE_System/system.h>
@@ -26,6 +27,7 @@ namespace LevelEditor
 
 	// Entity
 	u32 s_editActions = ACTION_NONE;
+	u32 s_drawActions = DRAW_ACTION_NONE;
 	s32 s_rotationDelta = 0;
 
 	void handleMouseClick()
@@ -121,6 +123,39 @@ namespace LevelEditor
 		TFE_Input::getMouseWheel(&dummy, &s_rotationDelta);
 	}
 
+	void updateDrawModeHotkeys()
+	{
+		if (TFE_Input::keyModDown(KeyModifier::KEYMOD_SHIFT))
+		{
+			s_drawActions = DRAW_ACTION_CURVE;
+		}
+		if (TFE_Input::keyPressed(KEY_BACKSPACE))
+		{
+			s_drawActions = DRAW_ACTION_CANCEL;
+		}
+		else if (TFE_Input::keyPressed(KEY_RETURN))
+		{
+			s_drawActions = DRAW_ACTION_FINISH;
+		}
+
+		if (s_geoEdit.drawMode == DMODE_CURVE_CONTROL)
+		{
+			s32 delta = getCurveSegDelta();
+			if (TFE_Input::keyPressedWithRepeat(KEY_LEFTBRACKET))
+			{
+				setCurveSegDelta(delta - 1);
+			}
+			else if (TFE_Input::keyPressedWithRepeat(KEY_RIGHTBRACKET))
+			{
+				setCurveSegDelta(delta + 1);
+			}
+			else if (TFE_Input::keyPressed(KEY_BACKSLASH))
+			{
+				setCurveSegDelta();
+			}
+		}
+	}
+
 	bool getEditAction(u32 action)
 	{
 		return (s_editActions & action) != 0u;
@@ -129,6 +164,7 @@ namespace LevelEditor
 	void handleHotkeys()
 	{
 		s_editActions = ACTION_NONE;
+		s_drawActions = DRAW_ACTION_NONE;
 		handleMouseClick();
 		if (isUiModal()) { return; }
 
@@ -136,6 +172,10 @@ namespace LevelEditor
 		if (s_editMode == LEDIT_ENTITY)
 		{
 			updateEntityEditHotkeys();
+		}
+		else if (s_editMode == LEDIT_DRAW)
+		{
+			updateDrawModeHotkeys();
 		}
 	}
 }

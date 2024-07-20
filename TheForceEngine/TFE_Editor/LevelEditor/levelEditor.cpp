@@ -3915,8 +3915,14 @@ namespace LevelEditor
 		handleEditorActions();
 		updateOutput();
 
+		u32 viewportRenderFlags = 0u;
+		if (s_drawActions & DRAW_ACTION_CURVE)
+		{
+			viewportRenderFlags |= VRF_CURVE_MOD;
+		}
+
 		viewport_update((s32)UI_SCALE(480) + 16, (s32)UI_SCALE(68) + 18 + s_outputHeight);
-		viewport_render(s_view);
+		viewport_render(s_view, viewportRenderFlags);
 
 		// Toolbar
 		s_modalUiActive = s_contextMenu != CONTEXTMENU_NONE;

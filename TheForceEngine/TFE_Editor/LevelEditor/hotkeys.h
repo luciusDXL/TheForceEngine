@@ -29,6 +29,15 @@ namespace LevelEditor
 		ACTION_SHOW_ALL_LABELS = FLAG_BIT(8),
 	};
 
+	// Draw
+	enum DrawActionFlag
+	{
+		DRAW_ACTION_NONE = 0,
+		DRAW_ACTION_CURVE = FLAG_BIT(0),
+		DRAW_ACTION_CANCEL = FLAG_BIT(1),
+		DRAW_ACTION_FINISH = FLAG_BIT(2),
+	};
+
 	// General
 	extern bool s_singleClick;
 	extern bool s_doubleClick;
@@ -41,6 +50,7 @@ namespace LevelEditor
 
 	// Editor Hotkey Actions.
 	extern u32 s_editActions;
+	extern u32 s_drawActions;
 	extern s32 s_rotationDelta;
 
 	void handleHotkeys();

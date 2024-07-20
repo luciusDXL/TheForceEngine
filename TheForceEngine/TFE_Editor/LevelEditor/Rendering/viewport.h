@@ -23,10 +23,16 @@ namespace LevelEditor
 		SDM_COUNT
 	};
 
+	enum ViewportRenderFlags
+	{
+		VRF_NONE = 0,
+		VRF_CURVE_MOD = FLAG_BIT(0),
+	};
+
 	void viewport_init();
 	void viewport_destroy();
 
-	void viewport_render(EditorView view);
+	void viewport_render(EditorView view, u32 flags = VRF_NONE);
 	const TextureGpu* viewport_getTexture();
 	void viewport_update(s32 resvWidth, s32 resvHeight);
 

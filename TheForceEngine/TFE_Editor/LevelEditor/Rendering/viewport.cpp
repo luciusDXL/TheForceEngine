@@ -131,6 +131,7 @@ namespace LevelEditor
 	Vec4f s_viewportTrans2d = { 0 };
 	f32 s_gridOpacity = 0.5f;
 	f32 s_zoom2d = 0.25f;			// current zoom level in 2D.
+	u32 s_viewportRenderFlags = VRF_NONE;
 
 	Rail s_rail = {};
 
@@ -181,9 +182,10 @@ namespace LevelEditor
 		s_viewportRt = 0;
 	}
 
-	void viewport_render(EditorView view)
+	void viewport_render(EditorView view, u32 flags)
 	{
 		if (!s_viewportRt) { return; }
+		s_viewportRenderFlags = flags;
 
 		const f32 clearColor[] = { 0.05f, 0.06f, 0.1f, 1.0f };
 		TFE_RenderBackend::bindRenderTarget(s_viewportRt);
@@ -972,6 +974,8 @@ namespace LevelEditor
 	void drawSectorShape2D()
 	{
 		u32 color[] = { 0xffffffff, 0xffffffff };
+		u32 colorDark[] = { 0x80ffffff, 0x80ffffff };
+		u32 curveColor[] = { 0xffff00ff, 0xffff00ff };
 		f32 width = 1.5f;
 		if (s_geoEdit.drawStarted && s_geoEdit.drawMode == DMODE_RECT)
 		{
@@ -1010,7 +1014,38 @@ namespace LevelEditor
 				{vtx[vtxCount - 1].x * s_viewportTrans2d.x + s_viewportTrans2d.y, vtx[vtxCount - 1].z * s_viewportTrans2d.z + s_viewportTrans2d.w},
 			    {s_geoEdit.drawCurPos.x * s_viewportTrans2d.x + s_viewportTrans2d.y,  s_geoEdit.drawCurPos.z * s_viewportTrans2d.z + s_viewportTrans2d.w}
 			};
-			TFE_RenderShared::lineDraw2d_addLine(width, lineVtx, color);
+			TFE_RenderShared::lineDraw2d_addLine(width, lineVtx, (s_viewportRenderFlags & VRF_CURVE_MOD) ? curveColor : color);
+		}
+		else if (s_geoEdit.drawStarted && s_geoEdit.drawMode == DMODE_CURVE_CONTROL)
+		{
+			// Base shape.
+			const s32 vtxCount = (s32)s_geoEdit.shape.size();
+			const Vec2f* vtx = s_geoEdit.shape.data();
+			for (s32 v = 0; v < vtxCount - 1; v++)
+			{
+				const Vec2f lineVtx[] =
+				{
+					{ vtx[v].x * s_viewportTrans2d.x + s_viewportTrans2d.y, vtx[v].z * s_viewportTrans2d.z + s_viewportTrans2d.w },
+					{ vtx[v + 1].x * s_viewportTrans2d.x + s_viewportTrans2d.y, vtx[v + 1].z * s_viewportTrans2d.z + s_viewportTrans2d.w }
+				};
+				TFE_RenderShared::lineDraw2d_addLine(width, lineVtx, v == vtxCount - 2 ? colorDark : color);
+			}
+			// Curve.
+			std::vector<Vec2f> curve;
+			curve.push_back(vtx[vtxCount - 2]);
+			buildCurve(vtx[vtxCount - 2], vtx[vtxCount - 1], s_geoEdit.drawCurPos, &curve);
+
+			const s32 vtxCountCurve = (s32)curve.size();
+			const Vec2f* vtxCurve = curve.data();
+			for (s32 v = 0; v < vtxCountCurve - 1; v++)
+			{
+				const Vec2f lineVtx[] =
+				{
+					{ vtxCurve[v].x * s_viewportTrans2d.x + s_viewportTrans2d.y, vtxCurve[v].z * s_viewportTrans2d.z + s_viewportTrans2d.w },
+					{ vtxCurve[v + 1].x * s_viewportTrans2d.x + s_viewportTrans2d.y, vtxCurve[v + 1].z * s_viewportTrans2d.z + s_viewportTrans2d.w }
+				};
+				TFE_RenderShared::lineDraw2d_addLine(width, lineVtx, curveColor);
+			}
 		}
 
 		// Draw the cursor.
@@ -1178,6 +1213,8 @@ namespace LevelEditor
 	void drawSectorShape3D()
 	{
 		u32 color = 0xffffffff;
+		u32 colorDark = 0x80ffffff;
+		u32 curveColor = 0xffff00ff;
 		if (s_geoEdit.drawStarted && s_geoEdit.drawMode == DMODE_RECT)
 		{
 			Vec2f rect[4];
@@ -1258,7 +1295,30 @@ namespace LevelEditor
 			}
 			// Draw from the last vertex to curPos.
 			const Vec3f lineVtx[] = { {vtx[vtxCount-1].x, s_geoEdit.drawHeight[0], vtx[vtxCount-1].z}, {s_geoEdit.drawCurPos.x, s_geoEdit.drawHeight[0], s_geoEdit.drawCurPos.z} };
-			TFE_RenderShared::lineDraw3d_addLine(3.0f, lineVtx, &color);
+			TFE_RenderShared::lineDraw3d_addLine(3.0f, lineVtx, (s_viewportRenderFlags & VRF_CURVE_MOD) ? &curveColor : &color);
+		}
+		else if (s_geoEdit.drawStarted && s_geoEdit.drawMode == DMODE_CURVE_CONTROL)
+		{
+			// Base shape.
+			const s32 vtxCount = (s32)s_geoEdit.shape.size();
+			const Vec2f* vtx = s_geoEdit.shape.data();
+			for (s32 v = 0; v < vtxCount - 1; v++)
+			{
+				const Vec3f lineVtx[] = { {vtx[v].x, s_geoEdit.drawHeight[0], vtx[v].z}, {vtx[v + 1].x, s_geoEdit.drawHeight[0], vtx[v + 1].z} };
+				TFE_RenderShared::lineDraw3d_addLine(3.0f, lineVtx, (v == vtxCount - 2) ? &colorDark : &color);
+			}
+			// Curve.
+			std::vector<Vec2f> curve;
+			curve.push_back(vtx[vtxCount - 2]);
+			buildCurve(vtx[vtxCount - 2], vtx[vtxCount - 1], s_geoEdit.drawCurPos, &curve);
+
+			const s32 vtxCountCurve = (s32)curve.size();
+			const Vec2f* vtxCurve = curve.data();
+			for (s32 v = 0; v < vtxCountCurve - 1; v++)
+			{
+				const Vec3f lineVtx[] = { {vtxCurve[v].x, s_geoEdit.drawHeight[0], vtxCurve[v].z}, {vtxCurve[v + 1].x, s_geoEdit.drawHeight[0], vtxCurve[v + 1].z} };
+				TFE_RenderShared::lineDraw3d_addLine(3.0f, lineVtx, &curveColor);
+			}
 		}
 		else if (s_geoEdit.drawStarted && s_geoEdit.drawMode == DMODE_SHAPE_VERT)
 		{

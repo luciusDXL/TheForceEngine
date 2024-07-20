@@ -45,6 +45,7 @@ namespace LevelEditor
 	};
 	static std::vector<SourceWall> s_sourceWallList;
 	static s32 s_newWallTexOverride = -1;
+	static s32 s_curveSegDelta = 0;
 
 	/////////////////////////////////////////////////////
 	// Shared Variables
@@ -2054,11 +2055,11 @@ namespace LevelEditor
 						}
 					}
 				}
-				else if (TFE_Input::keyPressed(KEY_BACKSPACE))
+				else if (s_drawActions & DRAW_ACTION_CANCEL)
 				{
 					removeLastShapePoint();
 				}
-				else if (TFE_Input::keyPressed(KEY_RETURN) || s_doubleClick)
+				else if ((s_drawActions & DRAW_ACTION_FINISH) || s_doubleClick)
 				{
 					if (s_geoEdit.shape.size() >= 3)
 					{
@@ -2095,7 +2096,7 @@ namespace LevelEditor
 			}
 			else if (s_geoEdit.drawMode == DMODE_RECT_VERT || s_geoEdit.drawMode == DMODE_SHAPE_VERT)
 			{
-				if (TFE_Input::keyPressed(KEY_BACKSPACE) && s_geoEdit.drawMode == DMODE_SHAPE_VERT)
+				if ((s_drawActions & DRAW_ACTION_CANCEL) && s_geoEdit.drawMode == DMODE_SHAPE_VERT)
 				{
 					s_geoEdit.drawMode = DMODE_SHAPE;
 					s_geoEdit.drawHeight[1] = s_geoEdit.drawHeight[0];
@@ -2118,6 +2119,90 @@ namespace LevelEditor
 	void editGeometry_init()
 	{
 		s_geoEdit = {};
+	}
+
+	s32 getCurveSegDelta()
+	{
+		return s_curveSegDelta;
+	}
+
+	void setCurveSegDelta(s32 newDelta)
+	{
+		s_curveSegDelta = newDelta;
+	}
+
+	void buildCurve(const Vec2f& a, const Vec2f& b, const Vec2f& c, std::vector<Vec2f>* curve)
+	{
+		const f32 Ax = a.x - c.x;
+		const f32 Az = a.z - c.z;
+		const f32 Bx = b.x - c.x;
+		const f32 Bz = b.z - c.z;
+
+		// 1. Get the approximate length.
+		Vec2f lastPoint = a;
+		f32 distSoFar = 0.0f;
+		f32 t = 0.1f;
+		for (s32 i = 1; i < 10; i++, t += 0.1f)
+		{
+			const Vec2f p0 = { c.x + (1.0f - t)*Ax, c.z + (1.0f - t)*Az };
+			const Vec2f p1 = { c.x + t * Bx, c.z + t * Bz };
+			const Vec2f p = { p0.x + t * (p1.x - p0.x), p0.z + t * (p1.z - p0.z) };
+
+			f32 dx = p.x - lastPoint.x;
+			f32 dz = p.z - lastPoint.z;
+			distSoFar += sqrtf(dx * dx + dz * dz);
+			lastPoint = p;
+		}
+		f32 dx = b.x - lastPoint.x;
+		f32 dz = b.z - lastPoint.z;
+		distSoFar += sqrtf(dx * dx + dz * dz);
+
+		// 2. Determine the number of segments from the length.
+		const f32 c_segLength = 2.0f;
+		s32 segCount = max(s32(distSoFar / c_segLength) + s_curveSegDelta, 2);
+
+		// 3. Determine the delta.
+		f32 dt = 1.0f / f32(segCount);
+
+		// 4. Generate the curve.
+
+		// Skip the first point - already encoded.
+		// curve->push_back(a);
+
+		t = dt;
+		for (s32 i = 1; i < segCount; i++, t += dt)
+		{
+			const Vec2f p0 = { c.x + (1.0f - t)*Ax, c.z + (1.0f - t)*Az };
+			const Vec2f p1 = { c.x + t*Bx, c.z + t*Bz };
+			const Vec2f p  = { p0.x + t*(p1.x - p0.x), p0.z + t*(p1.z - p0.z) };
+			curve->push_back(p);
+		}
+
+		curve->push_back(b);
+	}
+
+	void finishSectorDraw(Vec2f onGrid, bool handlePartial)
+	{
+		// Try to handle as a partial shape, if it fails the shape will be unmodified.
+		if (handlePartial) { handlePartialShape(); }
+		if (s_geoEdit.shape.size() >= 3)
+		{
+			if (s_view == EDIT_VIEW_3D && s_geoEdit.boolMode != BMODE_SUBTRACT)
+			{
+				s_geoEdit.drawMode = DMODE_SHAPE_VERT;
+				s_curVtxPos = { onGrid.x, s_grid.height, onGrid.z };
+				shapeToPolygon((s32)s_geoEdit.shape.size(), s_geoEdit.shape.data(), s_geoEdit.shapePolygon);
+			}
+			else
+			{
+				s_geoEdit.drawHeight[1] = s_geoEdit.drawHeight[0] + c_defaultSectorHeight;
+				createSectorFromShape();
+			}
+		}
+		else
+		{
+			s_geoEdit.drawStarted = false;
+		}
 	}
 
 	void handleSectorDraw(RayHitInfo* hitInfo)
@@ -2224,26 +2309,25 @@ namespace LevelEditor
 			{
 				if (s_singleClick)
 				{
+					if (s_drawActions & DRAW_ACTION_CURVE)
+					{
+						// New mode: place control point.
+						s_geoEdit.drawMode = DMODE_CURVE_CONTROL;
+						// Compute the starting control point position.
+						s_geoEdit.controlPoint.x = (onGrid.x + s_geoEdit.shape.back().x) * 0.5f;
+						s_geoEdit.controlPoint.z = (onGrid.z + s_geoEdit.shape.back().z) * 0.5f;
+					}
+
 					if (TFE_Polygon::vtxEqual(&onGrid, &s_geoEdit.shape[0]))
 					{
-						if (s_geoEdit.shape.size() >= 3)
+						s_geoEdit.shapeComplete = true;
+						if (s_geoEdit.drawMode == DMODE_SHAPE)
 						{
-							// Need to form a polygon.
-							if (s_view == EDIT_VIEW_3D && s_geoEdit.boolMode != BMODE_SUBTRACT)
-							{
-								s_geoEdit.drawMode = DMODE_SHAPE_VERT;
-								s_curVtxPos = { onGrid.x, s_grid.height, onGrid.z };
-								shapeToPolygon((s32)s_geoEdit.shape.size(), s_geoEdit.shape.data(), s_geoEdit.shapePolygon);
-							}
-							else
-							{
-								s_geoEdit.drawHeight[1] = s_geoEdit.drawHeight[0] + c_defaultSectorHeight;
-								createSectorFromShape();
-							}
+							finishSectorDraw(onGrid, false);
 						}
-						else
+						else if (s_geoEdit.drawMode == DMODE_CURVE_CONTROL)
 						{
-							s_geoEdit.drawStarted = false;
+							s_geoEdit.shape.push_back(onGrid);
 						}
 					}
 					else
@@ -2266,37 +2350,61 @@ namespace LevelEditor
 						}
 					}
 				}
-				else if (TFE_Input::keyPressed(KEY_BACKSPACE))
+				else if (s_drawActions & DRAW_ACTION_CANCEL)
 				{
 					removeLastShapePoint();
 				}
-				else if (TFE_Input::keyPressed(KEY_RETURN) || s_doubleClick)
+				else if ((s_drawActions & DRAW_ACTION_FINISH) || s_doubleClick)
 				{
-					// Try to handle as a partial shape, if it fails the shape will be unmodified.
-					handlePartialShape();
-					if (s_geoEdit.shape.size() >= 3)
+					finishSectorDraw(onGrid, true);
+				}
+			}
+			else if (s_geoEdit.drawMode == DMODE_CURVE_CONTROL)
+			{
+				s_geoEdit.controlPoint = onGrid;
+
+				// Click to finalize the curve.
+				if (s_drawActions & DRAW_ACTION_CANCEL)
+				{
+					s_geoEdit.drawMode = DMODE_SHAPE;
+					removeLastShapePoint();
+				}
+				else if ((s_drawActions & DRAW_ACTION_FINISH) || s_doubleClick)
+				{
+					s32 vtxCount = (s32)s_geoEdit.shape.size();
+					std::vector<Vec2f> curve;
+
+					Vec2f lastPoint = s_geoEdit.shape[vtxCount - 1];
+					buildCurve(s_geoEdit.shape[vtxCount - 2], lastPoint, s_geoEdit.controlPoint, &curve);
+					s_geoEdit.shape.pop_back();
+					s_geoEdit.shape.insert(s_geoEdit.shape.end(), curve.begin(), curve.end());
+					
+					finishSectorDraw(lastPoint, true);
+				}
+				else if (s_singleClick)
+				{
+					s32 vtxCount = (s32)s_geoEdit.shape.size();
+					std::vector<Vec2f> curve;
+					buildCurve(s_geoEdit.shape[vtxCount-2], s_geoEdit.shape[vtxCount - 1], s_geoEdit.controlPoint, &curve);
+					// Remove the last point since it is being replaced by the curve.
+					s_geoEdit.shape.pop_back();
+					// Insert the curve.
+					s_geoEdit.shape.insert(s_geoEdit.shape.end(), curve.begin(), curve.end());
+					// Change back to shape draw mode.
+					s_geoEdit.drawMode = DMODE_SHAPE;
+					// If the last point and first point is the same, the shape is complete and we're done drawing it.
+					if (s_geoEdit.shapeComplete)
 					{
-						if (s_view == EDIT_VIEW_3D && s_geoEdit.boolMode != BMODE_SUBTRACT)
-						{
-							s_geoEdit.drawMode = DMODE_SHAPE_VERT;
-							s_curVtxPos = { onGrid.x, s_grid.height, onGrid.z };
-							shapeToPolygon((s32)s_geoEdit.shape.size(), s_geoEdit.shape.data(), s_geoEdit.shapePolygon);
-						}
-						else
-						{
-							s_geoEdit.drawHeight[1] = s_geoEdit.drawHeight[0] + c_defaultSectorHeight;
-							createSectorFromShape();
-						}
-					}
-					else
-					{
-						s_geoEdit.drawStarted = false;
+						// Remove the last vertex, since it is a duplicate of the first.
+						s_geoEdit.shape.pop_back();
+						// Finish.
+						finishSectorDraw(onGrid, false);
 					}
 				}
 			}
 			else if (s_geoEdit.drawMode == DMODE_RECT_VERT || s_geoEdit.drawMode == DMODE_SHAPE_VERT)
 			{
-				if (TFE_Input::keyPressed(KEY_BACKSPACE) && s_geoEdit.drawMode == DMODE_SHAPE_VERT)
+				if ((s_drawActions & DRAW_ACTION_CANCEL) && s_geoEdit.drawMode == DMODE_SHAPE_VERT)
 				{
 					s_geoEdit.drawMode = DMODE_SHAPE;
 					s_geoEdit.drawHeight[1] = s_geoEdit.drawHeight[0];
@@ -2369,6 +2477,7 @@ namespace LevelEditor
 			}
 
 			s_geoEdit.drawStarted = true;
+			s_geoEdit.shapeComplete = false;
 			s_geoEdit.drawMode = TFE_Input::keyModDown(KEYMOD_SHIFT) ? DMODE_RECT : DMODE_SHAPE;
 			if (s_geoEdit.extrudeEnabled)
 			{
@@ -2396,7 +2505,7 @@ namespace LevelEditor
 		}
 		else
 		{
-		s_geoEdit.drawCurPos = onGrid;
+			s_geoEdit.drawCurPos = onGrid;
 		}
 	}
 		

@@ -39,7 +39,9 @@ namespace LevelEditor
 		bool drawStarted = false;
 		DrawMode drawMode = DMODE_RECT;
 		Vec2f drawCurPos = { 0 };
+		Vec2f controlPoint = { 0 };
 		f32 drawHeight[2] = { 0 };
+		bool shapeComplete = false;
 		// Grid Move
 		bool gridMoveStart = false;
 		BoolMode boolMode = BMODE_MERGE;
@@ -57,4 +59,8 @@ namespace LevelEditor
 	void createSectorFromRect();
 	void createSectorFromShape();
 	s32 insertVertexIntoSector(EditorSector* sector, Vec2f newVtx);
+
+	void buildCurve(const Vec2f& a, const Vec2f& b, const Vec2f& c, std::vector<Vec2f>* curve);
+	s32  getCurveSegDelta();
+	void setCurveSegDelta(s32 newDelta = 0);
 }
