@@ -975,6 +975,7 @@ namespace LevelEditor
 	{
 		u32 color[] = { 0xffffffff, 0xffffffff };
 		u32 colorDark[] = { 0x80ffffff, 0x80ffffff };
+		u32 colorDarkOrange[] = { 0x8000a5ff, 0x8000a5ff };
 		u32 curveColor[] = { 0xffff00ff, 0xffff00ff };
 		f32 width = 1.5f;
 		if (s_geoEdit.drawStarted && s_geoEdit.drawMode == DMODE_RECT)
@@ -1029,6 +1030,22 @@ namespace LevelEditor
 					{ vtx[v + 1].x * s_viewportTrans2d.x + s_viewportTrans2d.y, vtx[v + 1].z * s_viewportTrans2d.z + s_viewportTrans2d.w }
 				};
 				TFE_RenderShared::lineDraw2d_addLine(width, lineVtx, v == vtxCount - 2 ? colorDark : color);
+			}
+			// Support triangle.
+			{
+				const Vec2f lineVtx0[] =
+				{
+					{ vtx[vtxCount - 2].x * s_viewportTrans2d.x + s_viewportTrans2d.y, vtx[vtxCount - 2].z * s_viewportTrans2d.z + s_viewportTrans2d.w },
+					{ s_geoEdit.drawCurPos.x * s_viewportTrans2d.x + s_viewportTrans2d.y, s_geoEdit.drawCurPos.z * s_viewportTrans2d.z + s_viewportTrans2d.w }
+				};
+				TFE_RenderShared::lineDraw2d_addLine(width, lineVtx0, colorDarkOrange);
+
+				const Vec2f lineVtx1[] =
+				{
+					{ vtx[vtxCount - 1].x * s_viewportTrans2d.x + s_viewportTrans2d.y, vtx[vtxCount - 1].z * s_viewportTrans2d.z + s_viewportTrans2d.w },
+					{ s_geoEdit.drawCurPos.x * s_viewportTrans2d.x + s_viewportTrans2d.y, s_geoEdit.drawCurPos.z * s_viewportTrans2d.z + s_viewportTrans2d.w }
+				};
+				TFE_RenderShared::lineDraw2d_addLine(width, lineVtx1, colorDarkOrange);
 			}
 			// Curve.
 			std::vector<Vec2f> curve;
@@ -1214,6 +1231,7 @@ namespace LevelEditor
 	{
 		u32 color = 0xffffffff;
 		u32 colorDark = 0x80ffffff;
+		u32 colorDarkOrange = 0x8000a5ff;
 		u32 curveColor = 0xffff00ff;
 		if (s_geoEdit.drawStarted && s_geoEdit.drawMode == DMODE_RECT)
 		{
@@ -1306,6 +1324,13 @@ namespace LevelEditor
 			{
 				const Vec3f lineVtx[] = { {vtx[v].x, s_geoEdit.drawHeight[0], vtx[v].z}, {vtx[v + 1].x, s_geoEdit.drawHeight[0], vtx[v + 1].z} };
 				TFE_RenderShared::lineDraw3d_addLine(3.0f, lineVtx, (v == vtxCount - 2) ? &colorDark : &color);
+			}
+			// Support triangle.
+			{
+				const Vec3f lineVtx0[] = { {vtx[vtxCount - 2].x, s_geoEdit.drawHeight[0], vtx[vtxCount - 2].z}, {s_geoEdit.drawCurPos.x, s_geoEdit.drawHeight[0], s_geoEdit.drawCurPos.z} };
+				const Vec3f lineVtx1[] = { {vtx[vtxCount - 1].x, s_geoEdit.drawHeight[0], vtx[vtxCount - 1].z}, {s_geoEdit.drawCurPos.x, s_geoEdit.drawHeight[0], s_geoEdit.drawCurPos.z} };
+				TFE_RenderShared::lineDraw3d_addLine(3.0f, lineVtx0, &colorDarkOrange);
+				TFE_RenderShared::lineDraw3d_addLine(3.0f, lineVtx1, &colorDarkOrange);
 			}
 			// Curve.
 			std::vector<Vec2f> curve;
