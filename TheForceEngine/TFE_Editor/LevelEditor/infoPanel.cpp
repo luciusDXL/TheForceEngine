@@ -429,7 +429,7 @@ namespace LevelEditor
 					else { group->flags |= GRP_EXCLUDE; }
 				}
 
-				ImGui::SameLine(0.0f, 8.0f);
+				ImGui::SameLine(0.0f, 0.0f);
 				ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 2);
 				if (iconButtonInline((group->flags & GRP_HIDDEN) ? ICON_EYE_CLOSED : ICON_EYE, "Hide or show the group.", iconBtnTint, true))
 				{
@@ -438,7 +438,7 @@ namespace LevelEditor
 					clearGroupSelection(group);
 				}
 
-				ImGui::SameLine(0.0f, 8.0f);
+				ImGui::SameLine(0.0f, 0.0f);
 				if (iconButtonInline((group->flags & GRP_LOCKED) ? ICON_LOCKED : ICON_UNLOCKED, "Lock or unlock the group for editing.", iconBtnTint, true))
 				{
 					if (group->flags & GRP_LOCKED) { group->flags &= ~GRP_LOCKED; }
@@ -446,7 +446,7 @@ namespace LevelEditor
 					clearGroupSelection(group);
 				}
 
-				ImGui::SameLine(0.0f, 8.0f);
+				ImGui::SameLine(0.0f, 0.0f);
 				ImGui::ColorEdit3(editor_getUniqueLabel(""), group->color.m, ImGuiColorEditFlags_NoLabel | ImGuiColorEditFlags_NoInputs);
 
 				ImGui::SetCursorPosY(ImGui::GetCursorPosY() - 2);

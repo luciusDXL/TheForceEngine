@@ -3314,15 +3314,15 @@ namespace LevelEditor
 				disableAssetEditor();
 			}
 			ImGui::Separator();
+			if (ImGui::MenuItem("User Preferences", NULL, (bool*)NULL))
+			{
+				// TODO
+			}
 			if (ImGui::MenuItem("Test Options", NULL, (bool*)NULL))
 			{
 				// TODO
 			}
 			ImGui::Separator();
-			if (ImGui::MenuItem("Lighting", NULL, (bool*)NULL))
-			{
-				openEditorPopup(POPUP_LIGHTING);
-			}
 			if (ImGui::MenuItem("INF Items", NULL, (bool*)NULL))
 			{
 				// TODO
@@ -3338,24 +3338,6 @@ namespace LevelEditor
 			}
 			enableNextItem(); // End TODO
 			ImGui::Separator();
-			if (ImGui::MenuItem("Join Sectors", NULL, (bool*)NULL))
-			{
-				edit_joinSectors();
-			}
-			if (ImGui::MenuItem("Clean Sector(s)", NULL, (bool*)NULL))
-			{
-				edit_cleanSectors();
-			}
-			if (ImGui::MenuItem("Find Sector", NULL, (bool*)NULL))
-			{
-				// TODO
-			}
-			if (ImGui::MenuItem("Find/Replace Texture", NULL, (bool*)NULL))
-			{
-				// TODO
-			}
-			ImGui::Separator();
-			// TODO: Add GOTO option (to go to a sector or other object).
 			if (ImGui::MenuItem("Undo", "Ctrl+Z", (bool*)NULL))
 			{
 			}
@@ -3380,6 +3362,31 @@ namespace LevelEditor
 			}
 			if (ImGui::MenuItem("Delete", "Del", (bool*)NULL))
 			{
+			}
+			ImGui::EndMenu();
+		}
+		if (ImGui::BeginMenu("Tools"))
+		{
+			menuActive = true;
+			if (ImGui::MenuItem("Lighting", NULL, (bool*)NULL))
+			{
+				openEditorPopup(POPUP_LIGHTING);
+			}
+			if (ImGui::MenuItem("Join Sectors", NULL, (bool*)NULL))
+			{
+				edit_joinSectors();
+			}
+			if (ImGui::MenuItem("Clean Sector(s)", NULL, (bool*)NULL))
+			{
+				edit_cleanSectors();
+			}
+			if (ImGui::MenuItem("Find Sector", NULL, (bool*)NULL))
+			{
+				// TODO
+			}
+			if (ImGui::MenuItem("Find/Replace Texture", NULL, (bool*)NULL))
+			{
+				// TODO
 			}
 			ImGui::EndMenu();
 		}
