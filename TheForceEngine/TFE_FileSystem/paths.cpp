@@ -111,11 +111,11 @@ namespace TFE_Paths
 			{
 				// Try OneDrive.
 				insertString(path, "OneDrive\\", "Documents");
+				s_paths[PATH_USER_DOCUMENTS] = path;
+				s_paths[PATH_USER_DOCUMENTS] += "\\";
+
 				if (FileUtil::makeDirectory(path))
 				{
-					s_paths[PATH_USER_DOCUMENTS] = path;
-					s_paths[PATH_USER_DOCUMENTS] += "\\";
-
 					return true;
 				}
 			}
