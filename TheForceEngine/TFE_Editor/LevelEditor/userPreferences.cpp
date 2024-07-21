@@ -29,10 +29,9 @@ namespace LevelEditor
 	};
 	static PreferencesTab s_prefTab = PTAB_INTERFACE;
 
-	void commitCurChanges(void)
-	{
-	}
-
+	void commitCurChanges(void);
+	void optionSliderEditFloat(const char* name, const char* precision, f32* value, f32 minValue, f32 maxValue, f32 step);
+		
 	bool userPreferences()
 	{
 		TFE_Editor::pushFont(TFE_Editor::FONT_SMALL);
@@ -54,12 +53,7 @@ namespace LevelEditor
 				} break;
 				case PTAB_EDITING:
 				{
-					ImGui::SetNextItemWidth(160);
-					ImGui::LabelText("##Label", "Curve Segment Size"); ImGui::SameLine();
-					ImGui::SliderFloat("##Curve Segment Size", &TFE_Editor::s_editorConfig.curve_segmentSize, 0.1f, 100.0f, "%.2f");
-					ImGui::SameLine();
-					ImGui::SetNextItemWidth(128);
-					ImGui::InputFloat("##CurveSegmentSizeInput", &TFE_Editor::s_editorConfig.curve_segmentSize, 0.1f, 1.0f, "%.2f");
+					optionSliderEditFloat("Curve Segment Size", "%.2f", &TFE_Editor::s_editorConfig.curve_segmentSize, 0.1f, 100.0f, 0.1f);
 				} break;
 				case PTAB_INPUT:
 				{
@@ -88,5 +82,25 @@ namespace LevelEditor
 		TFE_Editor::popFont();
 
 		return applyChanges || cancel;
+	}
+
+	void commitCurChanges(void)
+	{
+	}
+
+	void optionSliderEditFloat(const char* name, const char* precision, f32* value, f32 minValue, f32 maxValue, f32 step)
+	{
+		ImGui::SetNextItemWidth(160);
+		ImGui::LabelText("##Label", name); ImGui::SameLine();
+
+		char labelSlider[256];
+		char labelInput[256];
+		sprintf(labelSlider, "##%s_Slider", name);
+		sprintf(labelInput, "##%s_Input", name);
+
+		ImGui::SliderFloat(labelSlider, value, minValue, maxValue, precision);
+		ImGui::SameLine();
+		ImGui::SetNextItemWidth(128);
+		ImGui::InputFloat(labelInput, value, step, 10.0f * step, precision);
 	}
 }  // namespace LevelEditor
