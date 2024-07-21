@@ -111,6 +111,9 @@ namespace TFE_Editor
 		TFE_IniParser::writeKeyValue_Int(configFile, "FontScale",     s_editorConfig.fontScale);
 		TFE_IniParser::writeKeyValue_Int(configFile, "ThumbnailSize", s_editorConfig.thumbnailSize);
 
+		// Level Editor
+		TFE_IniParser::writeKeyValue_Float(configFile, "Curve_SegmentSize", s_editorConfig.curve_segmentSize);
+
 		// Recent files.
 		std::vector<RecentProject>* recentProjects = getRecentProjects();
 		if (recentProjects && !recentProjects->empty())
@@ -265,6 +268,10 @@ namespace TFE_Editor
 		else if (strcasecmp(key, "ThumbnailSize") == 0)
 		{
 			s_editorConfig.thumbnailSize = TFE_IniParser::parseInt(value);
+		}
+		else if (strcasecmp(key, "Curve_SegmentSize") == 0)
+		{
+			s_editorConfig.curve_segmentSize = TFE_IniParser::parseFloat(value);
 		}
 		else if (strncasecmp(key, "Recent", strlen("Recent")) == 0)
 		{

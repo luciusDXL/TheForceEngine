@@ -1,6 +1,7 @@
 #include "levelEditor.h"
 #include "levelEditorData.h"
 #include "levelEditorHistory.h"
+#include "tabControl.h"
 #include "camera.h"
 #include "infoPanel.h"
 #include "groups.h"
@@ -108,54 +109,6 @@ namespace LevelEditor
 		return s_infoHeight;
 	}
 
-	void setTabColor(bool isSelected)
-	{
-		if (isSelected)
-		{
-			ImGui::PushStyleColor(ImGuiCol_Button, { 0.0f, 0.25f, 0.5f, 1.0f });
-			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, { 0.0f, 0.25f, 0.5f, 1.0f });
-		}
-		else
-		{
-			ImGui::PushStyleColor(ImGuiCol_Button, { 0.25f, 0.25f, 0.25f, 1.0f });
-			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, { 0.5f, 0.5f, 0.5f, 1.0f });
-		}
-		// The active color must match to avoid flickering.
-		ImGui::PushStyleColor(ImGuiCol_ButtonActive, { 0.0f, 0.5f, 1.0f, 1.0f });
-	}
-
-	void restoreTabColor()
-	{
-		ImGui::PopStyleColor(3);
-	}
-
-	s32 handleTabs(s32 curTab, s32 offsetX, s32 offsetY, s32 count, const char** names, const char** tooltips)
-	{
-		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, { 4.0f, 1.0f });
-		ImGui::SetCursorPosX(ImGui::GetCursorPosX() + (f32)offsetX);
-
-		for (s32 i = 0; i < count; i++)
-		{
-			ImGui::SetCursorPosY(ImGui::GetCursorPosY() + (f32)offsetY);
-
-			setTabColor(curTab == i);
-			if (ImGui::Button(names[i], { 100.0f, 18.0f }))
-			{
-				curTab = i;
-				commitCurEntityChanges();
-			}
-			setTooltip("%s", tooltips[i]);
-			restoreTabColor();
-			if (i < count - 1)
-			{
-				ImGui::SameLine(0.0f, 2.0f);
-			}
-		}
-		ImGui::PopStyleVar(1);
-
-		return curTab;
-	}
-
 	void infoToolBegin(s32 height)
 	{
 		bool infoTool = true;
@@ -172,7 +125,7 @@ namespace LevelEditor
 			| ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoTitleBar;
 
 		ImGui::Begin("Info Panel", &infoTool, window_flags); ImGui::SameLine();
-		s_infoTab = (InfoTab)handleTabs(s_infoTab, -12, -4, TAB_COUNT, c_infoTabs, c_infoToolTips);
+		s_infoTab = (InfoTab)handleTabs(s_infoTab, -12, -4, TAB_COUNT, c_infoTabs, c_infoToolTips, commitCurEntityChanges);
 
 		ImGui::SetCursorPosY(ImGui::GetCursorPosY() - 4);
 		ImGui::Separator();
@@ -1293,7 +1246,7 @@ namespace LevelEditor
 		s_objEntity = {};
 	}
 
-	void commitCurEntityChanges()
+	void commitCurEntityChanges(void)
 	{
 		if (!s_prevObjectFeature.sector || s_prevObjectFeature.featureIndex < 0 ||
 			s_prevObjectFeature.featureIndex >= (s32)s_prevObjectFeature.sector->obj.size() || s_objEntity.id < 0)

@@ -3316,7 +3316,7 @@ namespace LevelEditor
 			ImGui::Separator();
 			if (ImGui::MenuItem("User Preferences", NULL, (bool*)NULL))
 			{
-				// TODO
+				openEditorPopup(POPUP_LEV_USER_PREF);
 			}
 			if (ImGui::MenuItem("Test Options", NULL, (bool*)NULL))
 			{

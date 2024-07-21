@@ -1345,6 +1345,12 @@
     <ClInclude Include="TFE_Ui\imGUI\imgui_tfe_widgets.h">
       <Filter>Source\TFE_Ui\imGUI</Filter>
     </ClInclude>
+    <ClInclude Include="TFE_Editor\LevelEditor\userPreferences.h">
+      <Filter>Source\TFE_Editor\LevelEditor</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Editor\LevelEditor\tabControl.h">
+      <Filter>Source\TFE_Editor\LevelEditor</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -2318,6 +2324,12 @@
     </ClCompile>
     <ClCompile Include="TFE_Ui\imGUI\imgui_tables.cpp">
       <Filter>Source\TFE_Ui\imGUI</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Editor\LevelEditor\userPreferences.cpp">
+      <Filter>Source\TFE_Editor\LevelEditor</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Editor\LevelEditor\tabControl.cpp">
+      <Filter>Source\TFE_Editor\LevelEditor</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

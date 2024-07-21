@@ -20,6 +20,8 @@ namespace TFE_Editor
 		char exportPath[TFE_MAX_PATH] = "";
 		s32 fontScale = 100;
 		s32 thumbnailSize = 64;
+		// Level editor
+		f32 curve_segmentSize = 2.0f;
 	};
 	enum EditorFontConst
 	{

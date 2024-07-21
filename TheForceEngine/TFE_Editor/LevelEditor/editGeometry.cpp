@@ -11,6 +11,7 @@
 #include <TFE_Jedi/Math/core_math.h>
 #include <TFE_Editor/errorMessages.h>
 #include <TFE_Editor/editor.h>
+#include <TFE_Editor/editorConfig.h>
 #include <TFE_Editor/LevelEditor/Rendering/grid.h>
 #include <TFE_Input/input.h>
 
@@ -2158,8 +2159,7 @@ namespace LevelEditor
 		distSoFar += sqrtf(dx * dx + dz * dz);
 
 		// 2. Determine the number of segments from the length.
-		const f32 c_segLength = 2.0f;
-		s32 segCount = max(s32(distSoFar / c_segLength) + s_curveSegDelta, 2);
+		s32 segCount = max(s32(distSoFar / s_editorConfig.curve_segmentSize) + s_curveSegDelta, 2);
 
 		// 3. Determine the delta.
 		f32 dt = 1.0f / f32(segCount);

@@ -273,6 +273,10 @@ namespace TFE_Editor
 			{
 				ImGui::OpenPopup("Level Lighting");
 			} break;
+			case POPUP_LEV_USER_PREF:
+			{
+				ImGui::OpenPopup("User Preferences");
+			} break;
 		}
 	}
 
@@ -366,6 +370,14 @@ namespace TFE_Editor
 			case POPUP_LIGHTING:
 			{
 				if (LevelEditor::levelLighting())
+				{
+					ImGui::CloseCurrentPopup();
+					s_editorPopup = POPUP_NONE;
+				}
+			} break;
+			case POPUP_LEV_USER_PREF:
+			{
+				if (LevelEditor::userPreferences())
 				{
 					ImGui::CloseCurrentPopup();
 					s_editorPopup = POPUP_NONE;
