@@ -291,7 +291,7 @@ namespace TFE_Jedi
 
 	bool isAssetCustom(const char* archiveName)
 	{
-		if (!archiveName) { true; }
+		if (!archiveName) { return true; }
 
 		const s32 count = (s32)s_coreAchiveNames.size();
 		const std::string* names = s_coreAchiveNames.data();
