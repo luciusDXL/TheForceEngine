@@ -289,6 +289,8 @@ namespace TFE_Jedi
 		s_coreAchiveNames[count] = "enhanced.gob";
 	}
 
+	// This only checks a few names (5 I think) but is still doing a bunch of string compares.
+	// TODO: Add a "core archive" flag to the archives themselves.
 	bool isAssetCustom(const char* archiveName)
 	{
 		if (!archiveName) { return true; }

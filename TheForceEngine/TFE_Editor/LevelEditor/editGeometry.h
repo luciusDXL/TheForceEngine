@@ -63,4 +63,6 @@ namespace LevelEditor
 	void buildCurve(const Vec2f& a, const Vec2f& b, const Vec2f& c, std::vector<Vec2f>* curve);
 	s32  getCurveSegDelta();
 	void setCurveSegDelta(s32 newDelta = 0);
+
+	void evaluateQuadraticBezier(const Vec2f& a, const Vec2f& b, const Vec2f& c, f32 t, Vec2f* pos, Vec2f* nrm);
 }

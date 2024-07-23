@@ -55,6 +55,7 @@ namespace LevelEditor
 
 	void handlePartialShape();
 	bool snapToLine(Vec2f& pos, f32 maxDist, Vec2f& newPos, FeatureId& snappedFeature);
+	Vec2f evaluateQuadraticBezier(const Vec2f& ac, const Vec2f& bc, const Vec2f& c, f32 t);
 
 	bool snapToLine2d(Vec2f& pos, f32 maxDist, Vec2f& newPos, FeatureId& snappedFeature)
 	{
@@ -2131,13 +2132,11 @@ namespace LevelEditor
 	{
 		s_curveSegDelta = newDelta;
 	}
-
+		
 	void buildCurve(const Vec2f& a, const Vec2f& b, const Vec2f& c, std::vector<Vec2f>* curve)
 	{
-		const f32 Ax = a.x - c.x;
-		const f32 Az = a.z - c.z;
-		const f32 Bx = b.x - c.x;
-		const f32 Bz = b.z - c.z;
+		const Vec2f ac = { a.x - c.x, a.z - c.z };
+		const Vec2f bc = { b.x - c.x, b.z - c.z };
 
 		// 1. Get the approximate length.
 		Vec2f lastPoint = a;
@@ -2145,12 +2144,9 @@ namespace LevelEditor
 		f32 t = 0.1f;
 		for (s32 i = 1; i < 10; i++, t += 0.1f)
 		{
-			const Vec2f p0 = { c.x + (1.0f - t)*Ax, c.z + (1.0f - t)*Az };
-			const Vec2f p1 = { c.x + t * Bx, c.z + t * Bz };
-			const Vec2f p = { p0.x + t * (p1.x - p0.x), p0.z + t * (p1.z - p0.z) };
-
-			f32 dx = p.x - lastPoint.x;
-			f32 dz = p.z - lastPoint.z;
+			const Vec2f p = evaluateQuadraticBezier(ac, bc, c, t);
+			const f32 dx = p.x - lastPoint.x;
+			const f32 dz = p.z - lastPoint.z;
 			distSoFar += sqrtf(dx * dx + dz * dz);
 			lastPoint = p;
 		}
@@ -2172,9 +2168,7 @@ namespace LevelEditor
 		t = dt;
 		for (s32 i = 1; i < segCount; i++, t += dt)
 		{
-			const Vec2f p0 = { c.x + (1.0f - t)*Ax, c.z + (1.0f - t)*Az };
-			const Vec2f p1 = { c.x + t*Bx, c.z + t*Bz };
-			const Vec2f p  = { p0.x + t*(p1.x - p0.x), p0.z + t*(p1.z - p0.z) };
+			const Vec2f p = evaluateQuadraticBezier(ac, bc, c, t);
 			curve->push_back(p);
 		}
 
@@ -2918,5 +2912,34 @@ namespace LevelEditor
 		{
 			s_geoEdit.shape.pop_back();
 		}
+	}
+
+	// Evaluate the Quadratic Bezier curve with end-points at (a, b) and center (c) at (t).
+	// pos is required, normal is optional.
+	void evaluateQuadraticBezier(const Vec2f& a, const Vec2f& b, const Vec2f& c, f32 t, Vec2f* pos, Vec2f* nrm)
+	{
+		if (!pos) { return; }
+
+		const f32 t0 = t, t1 = 1.0f - t;
+		const Vec2f p0 = { c.x + t1 * (a.x - c.x), c.z + t1 * (a.z - c.z) };
+		const Vec2f p1 = { c.x + t0 * (b.x - c.x), c.z + t0 * (b.z - c.z) };
+		// Tangent line is (p0, p1), Normal is perpendicular ("perp product").
+		if (nrm)
+		{
+			const Vec2f n = { -(p1.z - p0.z), (p1.x - p0.x) };
+			*nrm = TFE_Math::normalize(&n);
+		}
+		*pos = { p0.x + t * (p1.x - p0.x), p0.z + t * (p1.z - p0.z) };
+	}
+
+	// Evaluate the Quadratic Bezier curve with end-points at (a, b) and center (c) at (t)
+	// where ac = a - c; bc = b - c.
+	// Returns the position.
+	Vec2f evaluateQuadraticBezier(const Vec2f& ac, const Vec2f& bc, const Vec2f& c, f32 t)
+	{
+		const f32 t0 = t, t1 = 1.0f - t;
+		const Vec2f p0 = { c.x + t1 * ac.x, c.z + t1 * ac.z };
+		const Vec2f p1 = { c.x + t0 * bc.x, c.z + t0 * bc.z };
+		return { p0.x + t * (p1.x - p0.x), p0.z + t * (p1.z - p0.z) };
 	}
 }
