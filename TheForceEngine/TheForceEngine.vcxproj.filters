@@ -1336,6 +1336,9 @@
     <ClInclude Include="TFE_Editor\LevelEditor\note.h">
       <Filter>Source\TFE_Editor\LevelEditor</Filter>
     </ClInclude>
+    <ClInclude Include="TFE_RenderBackend\Win32OpenGL\gl.h">
+      <Filter>Source\TFE_RenderBackend\Win32OpenGL</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -2318,6 +2321,9 @@
     </ClCompile>
     <ClCompile Include="TFE_Editor\LevelEditor\note.cpp">
       <Filter>Source\TFE_Editor\LevelEditor</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_RenderBackend\Win32OpenGL\glad.c">
+      <Filter>Source\TFE_RenderBackend\Win32OpenGL</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
