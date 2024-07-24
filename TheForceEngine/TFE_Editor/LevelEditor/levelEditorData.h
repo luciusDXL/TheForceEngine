@@ -9,6 +9,7 @@
 #include <TFE_System/types.h>
 #include "entity.h"
 #include "groups.h"
+#include "note.h"
 #include <TFE_Editor/EditorAsset/editorAsset.h>
 #include <TFE_Editor/EditorAsset/editorTexture.h>
 #include <TFE_Editor/editorProject.h>
@@ -27,7 +28,8 @@ namespace LevelEditor
 		LEF_EntityV4   = 6,
 		LEF_InfV1      = 7,
 		LEF_Groups     = 8,
-		LEF_CurVersion = 8,
+		LEF_LevelNotes =10,
+		LEF_CurVersion =10,
 	};
 
 	enum LevelEditMode
@@ -37,7 +39,10 @@ namespace LevelEditor
 		LEDIT_VERTEX,	// vertex only
 		LEDIT_WALL,		// wall only in 2D, wall + floor/ceiling in 3D
 		LEDIT_SECTOR,
-		LEDIT_ENTITY
+		LEDIT_ENTITY,
+		// Special
+		LEDIT_GUIDELINES,
+		LEDIT_NOTES,
 	};
 		
 	enum DrawMode
@@ -154,6 +159,9 @@ namespace LevelEditor
 		// Entity data.
 		std::vector<Entity> entities;
 
+		// Level Notes.
+		std::vector<LevelNote> notes;
+
 		// Level bounds.
 		Vec3f bounds[2] = { 0 };
 		s32 layerRange[2] = { 0 };
@@ -200,6 +208,7 @@ namespace LevelEditor
 	void polygonToSector(EditorSector* sector);
 
 	s32 addEntityToLevel(const Entity* newEntity);
+	s32 addLevelNoteToLevel(const LevelNote* newNote);
 
 	TFE_Editor::EditorTexture* getTexture(s32 index);
 	s32 getTextureIndex(const char* name);
@@ -229,6 +238,8 @@ namespace LevelEditor
 	s32 findClosestWallInSector(const EditorSector* sector, const Vec2f* pos, f32 maxDistSq, f32* minDistToWallSq);
 	EditorSector* findSector3d(Vec3f pos, s32 layer);
 
+	bool rayAABBIntersection(const Ray* ray, const Vec3f* bounds, f32* hitDist);
+		
 	// Groups
 	inline Group* sector_getGroup(EditorSector* sector)
 	{
@@ -271,6 +282,24 @@ namespace LevelEditor
 		const u32 g = u32(group->color.y * 255.0f);
 		const u32 b = u32(group->color.z * 255.0f);
 		return (0x80 << 24) | (b << 16) | (g << 8) | (r);
+	}
+
+	inline Group* levelNote_getGroup(LevelNote* note)
+	{
+		Group* group = groups_getByIndex(note->groupIndex);
+		if (!group || group->id != note->groupId)
+		{
+			group = groups_getById(note->groupId);
+			note->groupIndex = group->index;
+		}
+		assert(group);
+		return group;
+	}
+
+	inline bool levelNote_isInteractable(LevelNote* note)
+	{
+		const Group* group = levelNote_getGroup(note);
+		return !(group->flags & GRP_HIDDEN) && !(group->flags & GRP_LOCKED);
 	}
 
 	extern std::vector<u8> s_fileData;

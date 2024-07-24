@@ -119,8 +119,11 @@ namespace LevelEditor
 		if (TFE_Input::keyDown(KEY_Z)) { s_editActions |= ACTION_MOVE_Z; }
 		if (TFE_Input::keyModDown(KEYMOD_CTRL)) { s_editActions |= ACTION_ROTATE; }
 
-		s32 dummy;
-		TFE_Input::getMouseWheel(&dummy, &s_rotationDelta);
+		if (s_editMode == LEDIT_ENTITY)
+		{
+			s32 dummy;
+			TFE_Input::getMouseWheel(&dummy, &s_rotationDelta);
+		}
 	}
 
 	void updateDrawModeHotkeys()
@@ -169,7 +172,7 @@ namespace LevelEditor
 		if (isUiModal()) { return; }
 
 		updateGeneralHotkeys();
-		if (s_editMode == LEDIT_ENTITY)
+		if (s_editMode == LEDIT_ENTITY || s_editMode == LEDIT_NOTES)
 		{
 			updateEntityEditHotkeys();
 		}

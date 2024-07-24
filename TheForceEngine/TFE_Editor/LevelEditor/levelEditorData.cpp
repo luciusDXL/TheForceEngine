@@ -488,6 +488,9 @@ namespace LevelEditor
 		s_featureCur = {};
 		s_featureTex = {};
 
+		// Clear notes.
+		s_level.notes.clear();
+
 		// First check to see if there is a "tfl" version of the level.
 		if (loadFromTFL(slotName))
 		{
@@ -830,6 +833,15 @@ namespace LevelEditor
 		return index;
 	}
 
+	s32 addLevelNoteToLevel(const LevelNote* newNote)
+	{
+		if (!newNote) { return -1; }
+
+		s32 index = (s32)s_level.notes.size();
+		s_level.notes.push_back(*newNote);
+		return index;
+	}
+
 	bool loadFromTFL(const char* name)
 	{
 		// If there is no project, then the TFL can't exist.
@@ -983,6 +995,26 @@ namespace LevelEditor
 		editor_loadInfBinary(file, version);
 		groups_loadBinary(file, version);
 
+		s_level.notes.clear();
+		if (version >= LEF_LevelNotes)
+		{
+			s32 levelNoteCount;
+			file.read(&levelNoteCount);
+			s_level.notes.resize(levelNoteCount);
+
+			LevelNote* note = s_level.notes.data();
+			for (s32 i = 0; i < levelNoteCount; i++, note++)
+			{
+				file.read(&note->flags);
+				file.read(&note->groupId);
+				file.read(note->pos.m, 3);
+				file.read(note->fade.m, 2);
+				file.read(&note->iconColor);
+				file.read(&note->textColor);
+				file.read(&note->note);
+			}
+		}
+
 		file.close();
 
 		return true;
@@ -1089,6 +1121,22 @@ namespace LevelEditor
 		// Handle INF
 		editor_saveInfBinary(file);
 		groups_saveBinary(file);
+
+		// version >= LEF_LevelNotes
+		const s32 levelNoteCount = (s32)s_level.notes.size();
+		file.write(&levelNoteCount);
+
+		const LevelNote* note = s_level.notes.data();
+		for (s32 i = 0; i < levelNoteCount; i++, note++)
+		{
+			file.write(&note->flags);
+			file.write(&note->groupId);
+			file.write(note->pos.m, 3);
+			file.write(note->fade.m, 2);
+			file.write(&note->iconColor);
+			file.write(&note->textColor);
+			file.write(&note->note);
+		}
 
 		file.close();
 

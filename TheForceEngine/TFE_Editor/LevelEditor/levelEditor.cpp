@@ -15,6 +15,7 @@
 #include "sharedState.h"
 #include "editEntity.h"
 #include "editGeometry.h"
+#include "editNotes.h"
 #include <TFE_FrontEndUI/frontEndUi.h>
 #include <TFE_Editor/AssetBrowser/assetBrowser.h>
 #include <TFE_Asset/imageAsset.h>
@@ -218,7 +219,7 @@ namespace LevelEditor
 
 	void snapSignToCursor(EditorSector* sector, EditorWall* wall, s32 signTexIndex, Vec2f* signOffset);
 
-	void drawViewportInfo(s32 index, Vec2i mapPos, const char* info, f32 xOffset, f32 yOffset, f32 alpha=1.0f);
+	void drawViewportInfo(s32 index, Vec2i mapPos, const char* info, f32 xOffset, f32 yOffset, f32 alpha=1.0f, u32 overrideColor=0u);
 	void getWallLengthText(const Vec2f* v0, const Vec2f* v1, char* text, Vec2i& mapPos, s32 index = -1, Vec2f* mapOffset = nullptr);
 
 	void copyToClipboard(const char* str);
@@ -2955,6 +2956,14 @@ namespace LevelEditor
 		}
 	}
 
+	void edit_deleteLevelNote(s32 index)
+	{
+		if (index >= 0 && index < (s32)s_level.notes.size())
+		{
+			s_level.notes.erase(s_level.notes.begin() + index);
+		}
+	}
+
 	Vec2f getTextureOffset(EditorSector* sector, HitPart part, s32 index)
 	{
 		Vec2f offset = { 0 };
@@ -3095,6 +3104,12 @@ namespace LevelEditor
 			{
 				adjustGridHeight(s_featureHovered.sector);
 			}
+
+			handleLevelNoteEdit(nullptr/*2d so no ray hit info*/, s_rayDir);
+			if (s_editMode == LEDIT_NOTES)
+			{
+				return;
+			}
 						
 			if (s_editMode == LEDIT_DRAW)
 			{
@@ -3107,7 +3122,7 @@ namespace LevelEditor
 				handleEntityEdit(nullptr/*2d so no ray hit info*/, s_rayDir);
 				return;
 			}
-				
+										
 			if (s_editMode == LEDIT_SECTOR)
 			{
 				handleMouseControlSector();
@@ -3240,6 +3255,12 @@ namespace LevelEditor
 				handleSelectMode(s_cursor3d);
 			}
 
+			handleLevelNoteEdit(&hitInfo, s_rayDir);
+			if (s_editMode == LEDIT_NOTES)
+			{
+				return;
+			}
+
 			if (s_editMode == LEDIT_DRAW)
 			{
 				if (extrude) { handleSectorExtrude(&hitInfo); }
@@ -3251,7 +3272,7 @@ namespace LevelEditor
 				handleEntityEdit(&hitInfo, s_rayDir);
 				return;
 			}
-			
+									
 			// Trace a ray through the mouse cursor.
 			if (rayHit)
 			{
@@ -3599,7 +3620,7 @@ namespace LevelEditor
 		}
 	}
 		
-	void drawViewportInfo(s32 index, Vec2i mapPos, const char* info, f32 xOffset, f32 yOffset, f32 alpha)
+	void drawViewportInfo(s32 index, Vec2i mapPos, const char* info, f32 xOffset, f32 yOffset, f32 alpha, u32 overrideColor)
 	{
 		char id[256];
 		sprintf(id, "##ViewportInfo%d", index);
@@ -3613,7 +3634,20 @@ namespace LevelEditor
 
 		ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 7.0f);
 
-		ImGui::PushStyleColor(ImGuiCol_Text, { 0.8f, 0.9f, 1.0f, 0.5f*alpha });
+		if (overrideColor)
+		{
+			u32 a = (overrideColor >> 24u) & 0xff;
+			u32 b = (overrideColor >> 16u) & 0xff;
+			u32 g = (overrideColor >>  8u) & 0xff;
+			u32 r = (overrideColor) & 0xff;
+			const f32 scale = 1.0f / 255.0f;
+
+			ImGui::PushStyleColor(ImGuiCol_Text, { f32(r)*scale, f32(g)*scale, f32(b)*scale, f32(a)*scale*alpha });
+		}
+		else
+		{
+			ImGui::PushStyleColor(ImGuiCol_Text, { 0.8f, 0.9f, 1.0f, 0.5f*alpha });
+		}
 		ImGui::PushStyleColor(ImGuiCol_ChildBg, { 0.06f, 0.06f, 0.06f, 0.94f*0.75f*alpha });
 		ImGui::PushStyleColor(ImGuiCol_Border, { 0.43f, 0.43f, 0.50f, 0.25f*alpha });
 
@@ -3911,6 +3945,18 @@ namespace LevelEditor
 		s_outputHeight = infoPanelOutput(s_viewportSize.x + 16);
 	}
 
+	void setEditMode(LevelEditMode mode)
+	{
+		s_editMode = mode;
+		s_editMove = false;
+		s_startTexMove = false;
+		s_featureCur = {};
+		s_featureHovered = {};
+		s_featureTex = {};
+		selection_clear();
+		commitCurEntityChanges();
+	}
+
 	void update()
 	{
 		updateViewportScroll();
@@ -3942,7 +3988,9 @@ namespace LevelEditor
 				"Vertex mode",
 				"Wall/Surface mode",
 				"Sector mode",
-				"Entity mode"
+				"Entity mode",
+				"Guideline draw mode",
+				"Note placement",
 			};
 			const char* csgTooltips[] =
 			{
@@ -3950,7 +3998,7 @@ namespace LevelEditor
 				"Merge sectors",
 				"Subtract sectors"
 			};
-			const IconId c_toolbarIcon[] = { ICON_PLAY, ICON_DRAW, ICON_VERTICES, ICON_EDGES, ICON_CUBE, ICON_ENTITY };
+			const IconId c_toolbarIcon[] = { ICON_PLAY, ICON_DRAW, ICON_VERTICES, ICON_EDGES, ICON_CUBE, ICON_ENTITY, ICON_GUIDELINES, ICON_NOTES };
 			if (iconButton(c_toolbarIcon[0], toolbarTooltips[0], false))
 			{
 				commitCurEntityChanges();
@@ -3958,18 +4006,25 @@ namespace LevelEditor
 			}
 			ImGui::SameLine(0.0f, 32.0f);
 
+			// Guidelines and Notes.
+			for (u32 i = 0; i < 2; i++)
+			{
+				LevelEditMode mode = LevelEditMode(i + LEDIT_GUIDELINES);
+				if (iconButton(c_toolbarIcon[mode], toolbarTooltips[mode], mode == s_editMode))
+				{
+					setEditMode(mode);
+				}
+				ImGui::SameLine();
+			}
+			ImGui::SameLine(0.0f, 32.0f);
+
+			// Level Data.
 			for (u32 i = 1; i < 6; i++)
 			{
-				if (iconButton(c_toolbarIcon[i], toolbarTooltips[i], i == s_editMode))
+				LevelEditMode mode = LevelEditMode(i);
+				if (iconButton(c_toolbarIcon[mode], toolbarTooltips[mode], mode == s_editMode))
 				{
-					s_editMode = LevelEditMode(i);
-					s_editMove = false;
-					s_startTexMove = false;
-					s_featureCur = {};
-					s_featureHovered = {};
-					s_featureTex = {};
-					selection_clear();
-					commitCurEntityChanges();
+					setEditMode(mode);
 				}
 				ImGui::SameLine();
 			}
@@ -4412,6 +4467,59 @@ namespace LevelEditor
 						if (showInfo)
 						{
 							drawViewportInfo(i, mapPos, sector->name.c_str(), 0, 0);
+						}
+					}
+				}
+
+				// Level Notes
+				{
+					const s32 count = (s32)s_level.notes.size();
+					LevelNote* note = s_level.notes.data();
+					for (s32 i = 0; i < count; i++, note++)
+					{
+						Group* group = levelNote_getGroup(note);
+						if (group->flags & GRP_HIDDEN) { continue; }
+						if ((note->flags & LNF_2D_ONLY) && s_view != EDIT_VIEW_2D) { continue; }
+						if (!(note->flags & LNF_TEXT_ALWAYS_SHOW) && s_hoveredLevelNote != i) { continue; }
+
+						Vec2i mapPos;
+						bool showInfo = true;
+						f32 alpha = 1.0f;
+						if (s_view == EDIT_VIEW_2D)
+						{
+							Vec2f center = { note->pos.x + c_levelNoteRadius * 1.25f, note->pos.z };
+
+							mapPos = worldPos2dToMap(center);
+							mapPos.z -= 16;
+						}
+						else if (s_view == EDIT_VIEW_3D)
+						{
+							Vec3f cameraRgt = { s_camera.viewMtx.m0.x,  s_camera.viewMtx.m0.y, s_camera.viewMtx.m0.z };
+							Vec3f center = { note->pos.x + cameraRgt.x * c_levelNoteRadius * 1.25f, note->pos.y, note->pos.z + cameraRgt.z * c_levelNoteRadius * 1.25f };
+							Vec2f screenPos;
+							if (worldPosToViewportCoord(center, &screenPos))
+							{
+								mapPos = { s32(screenPos.x), s32(screenPos.z) };
+							}
+							else
+							{
+								showInfo = false;
+							}
+
+							if (!(note->flags & LNF_3D_NO_FADE))
+							{
+								Vec3f offset = { note->pos.x - s_camera.pos.x, note->pos.y - s_camera.pos.y, note->pos.z - s_camera.pos.z };
+								f32 distSq = offset.x*offset.x + offset.y*offset.y + offset.z*offset.z;
+								if (distSq > note->fade.z*note->fade.z)
+								{
+									continue;
+								}
+								alpha = clamp(1.0f - (sqrt(distSq) - note->fade.x) / (note->fade.z - note->fade.x), 0.0f, 1.0f);
+							}
+						}
+						if (showInfo)
+						{
+							drawViewportInfo(i, mapPos, note->note.c_str(), 0, 0, alpha, note->textColor);
 						}
 					}
 				}
@@ -5418,6 +5526,7 @@ namespace LevelEditor
 		s_featureCurWall = {};
 		s_featureHovered = {};
 		s_featureTex = {};
+		clearLevelNoteSelection();
 	}
 
 	static Vec2f s_texDelta = { 0 };

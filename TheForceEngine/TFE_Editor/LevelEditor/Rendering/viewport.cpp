@@ -145,6 +145,7 @@ namespace LevelEditor
 	void drawVertex2d(const EditorSector* sector, s32 id, f32 extraScale, Highlight highlight);
 	void drawWall2d(const EditorSector* sector, const EditorWall* wall, f32 extraScale, Highlight highlight, bool drawNormal = false);
 	void drawEntity2d(const EditorSector* sector, const EditorObject* obj, s32 id, u32 objColor, bool drawEntityBounds);
+	void drawNoteIcon2d(LevelNote* note, s32 id, u32 objColor);
 	void renderSectorVertices2d();
 	void drawBox(const Vec3f* center, f32 side, f32 lineWidth, u32 color);
 	void drawBounds(const Vec3f* center, Vec3f size, f32 lineWidth, u32 color);
@@ -160,6 +161,7 @@ namespace LevelEditor
 	void drawPosition3d(f32 width, Vec3f pos, u32 color);
 	void drawArrow3d(f32 width, f32 lenInPixels, Vec3f pos, Vec3f dir, Vec3f nrm, u32 color);
 	void drawArrow3d_Segment(f32 width, f32 lenInPixels, Vec3f pos0, Vec3f pos1, Vec3f nrm, u32 color);
+	void drawNoteIcon3d(LevelNote* note, s32 id, u32 objColor, const Vec3f& cameraRgt, const Vec3f& cameraUp);
 	bool computeSignCorners(const EditorSector* sector, const EditorWall* wall, Vec3f* corners);
 
 	void viewport_init()
@@ -423,6 +425,19 @@ namespace LevelEditor
 			u32 objColor = (s_editMode == LEDIT_ENTITY && !locked) ? 0xffffffff : 0x80ffffff;
 
 			drawEntity2d(visObjSector[o], visObj[o], visObjId[o], objColor, !locked);
+		}
+
+		// Draw level notes.
+		const s32 levelNoteCount = (s32)s_level.notes.size();
+		LevelNote* note = s_level.notes.data();
+		for (s32 o = 0; o < levelNoteCount; o++, note++)
+		{
+			Group* group = levelNote_getGroup(note);
+			if (group->flags & GRP_HIDDEN) { continue; }
+
+			bool locked = (group->flags & GRP_LOCKED) != 0u;
+			u32 objColor = locked ? 0x80ffffff : note->iconColor;
+			drawNoteIcon2d(note, o, objColor);
 		}
 		
 		// Draw drag select, if active.
@@ -1523,6 +1538,23 @@ namespace LevelEditor
 			}
 		}
 
+		// Draw level notes so the borders show up on top.
+		Vec3f cameraRgt = { s_camera.viewMtx.m0.x, s_camera.viewMtx.m0.y, s_camera.viewMtx.m0.z };
+		Vec3f cameraUp = { s_camera.viewMtx.m1.x, s_camera.viewMtx.m1.y, s_camera.viewMtx.m1.z };
+
+		const s32 noteCount = (s32)s_level.notes.size();
+		LevelNote* note = s_level.notes.data();
+		for (s32 o = 0; o < noteCount; o++, note++)
+		{
+			if (note->flags & LNF_2D_ONLY) { continue; }
+			Group* group = levelNote_getGroup(note);
+			if (group->flags & GRP_HIDDEN) { continue; }
+
+			bool locked = (group->flags & GRP_LOCKED);
+			u32 objColor = (!locked) ? note->iconColor : 0x80ffffff;
+			drawNoteIcon3d(note, o, objColor, cameraRgt, cameraUp);
+		}
+
 		triDraw3d_draw(&s_camera, (f32)s_viewportSize.x, (f32)s_viewportSize.z, s_grid.size, 0.0f);
 		lineDraw3d_drawLines(&s_camera, false, false);
 	}
@@ -1565,6 +1597,77 @@ namespace LevelEditor
 			}
 
 			modelDraw_addMaterial(mode, mtl->idxStart, mtl->idxCount, mtl->texture, proj);
+		}
+	}
+
+	u32 fadeAlpha(f32 fade, u32 color)
+	{
+		if (fade >= 1.0f) { return color; }
+		f32 alpha = f32(color >> 24u) * fade;
+		color &= 0x00ffffff;
+		color |= (u32(alpha) << 24u);
+		return color;
+	}
+
+	void drawNoteIcon3d(LevelNote* note, s32 id, u32 objColor, const Vec3f& cameraRgt, const Vec3f& cameraUp)
+	{
+		const Vec3f pos = note->pos;
+		const f32 width = c_levelNoteRadius;
+				
+		f32 fade = 1.0f;
+		if (!(note->flags & LNF_3D_NO_FADE))
+		{
+			Vec3f cameraDelta = { note->pos.x - s_camera.pos.x, note->pos.y - s_camera.pos.y, note->pos.z - s_camera.pos.z };
+			f32 distSq = cameraDelta.x*cameraDelta.x + cameraDelta.y*cameraDelta.y + cameraDelta.z*cameraDelta.z;
+			if (distSq >= note->fade.z*note->fade.z)
+			{
+				return;
+			}
+
+			const f32 dist = sqrtf(distSq);
+			fade = clamp(1.0f - (dist - note->fade.x) / (note->fade.z - note->fade.x), 0.0f, 1.0f);
+		}
+
+		u32 borderColor = fadeAlpha(fade, objColor);
+		if (s_curLevelNote == id)
+		{
+			borderColor = c_noteColors[s_hoveredLevelNote == id ? 2 : 1];
+		}
+		else if (s_hoveredLevelNote == id)
+		{
+			borderColor = c_noteColors[0];
+		}
+		objColor = fadeAlpha(fade, objColor);
+
+		const Vec3f deltaX = { width * cameraRgt.x, width * cameraRgt.y, width * cameraRgt.z };
+		const Vec3f deltaY = { width * cameraUp.x,  width * cameraUp.y,  width * cameraUp.z };
+		const f32 x0 = -1.0f, x1 = 1.0f;
+		const f32 y0 = -1.0f, y1 = 1.0f;
+		const Vec3f corners[] =
+		{
+			{ pos.x + x0*deltaX.x + y1*deltaY.x, pos.y + y1*deltaY.y + x0*deltaX.y, pos.z + x0*deltaX.z + y1*deltaY.z },
+			{ pos.x + x1*deltaX.x + y1*deltaY.x, pos.y + y1*deltaY.y + x1*deltaX.y, pos.z + x1*deltaX.z + y1*deltaY.z },
+			{ pos.x + x1*deltaX.x + y0*deltaY.x, pos.y + y0*deltaY.y + x1*deltaX.y, pos.z + x1*deltaX.z + y0*deltaY.z },
+			{ pos.x + x0*deltaX.x + y0*deltaY.x, pos.y + y0*deltaY.y + x0*deltaX.y, pos.z + x0*deltaX.z + y0*deltaY.z },
+			// Repeat the first corner again for line drawing later.
+			{ pos.x + x0*deltaX.x + y1*deltaY.x, pos.y + y1*deltaY.y + x0*deltaX.y, pos.z + x0*deltaX.z + y1*deltaY.z }
+		};
+		const f32 cellSize = 34.0f / 272.0f;
+		const f32 u0 = 7.0f*cellSize, u1 = u0 + cellSize;
+		const f32 v0 = 3.0f*cellSize, v1 = v0 + cellSize;
+		const Vec2f uv[] =
+		{
+			{ u0, v1 },
+			{ u1, v1 },
+			{ u1, v0 },
+			{ u0, v0 }
+		};
+		s32 idx[] = { 0, 1, 2, 0, 2, 3 };
+		triDraw3d_addTextured(TRIMODE_BLEND, 6, 4, corners, uv, idx, objColor, false, TFE_Editor::getIconAtlas(), false, false);
+
+		for (s32 i = 0; i < 4; i++)
+		{
+			lineDraw3d_addLine(3.0f, &corners[i], &borderColor);
 		}
 	}
 			
@@ -1755,7 +1858,7 @@ namespace LevelEditor
 		Vec3f cameraDirXZ = { s_camera.viewMtx.m2.x, 0.0f, s_camera.viewMtx.m2.z };
 		cameraDirXZ = TFE_Math::normalize(&cameraDirXZ);
 		Vec3f cameraRgtXZ = { -cameraDirXZ.z, 0.0f, cameraDirXZ.x };
-
+				
 		const EditorObject* visObj[1024];
 		const EditorSector* visObjSector[1024];
 		s32 visObjId[1024];
@@ -2036,7 +2139,7 @@ namespace LevelEditor
 			u32 objColor = (s_editMode == LEDIT_ENTITY && !locked) ? 0xffffffff : 0x80ffffff;
 			drawEntity3D(visObjSector[o], visObj[o], visObjId[o], objColor, cameraRgtXZ, !locked);
 		}
-
+				
 		// Draw the 3D cursor.
 		{
 			const f32 distFromCam = TFE_Math::distance(&s_cursor3d, &s_camera.pos);
@@ -2050,7 +2153,7 @@ namespace LevelEditor
 		TFE_RenderShared::lineDraw3d_drawLines(&s_camera, true, false);
 		
 		renderHighlighted3d();
-
+				
 		// Movement "rail", if active.
 		if (s_rail.active && s_rail.dirCount > 0)
 		{
@@ -2460,6 +2563,47 @@ namespace LevelEditor
 		s32 idx[] = { 0, 1, 2, 0, 2, 3 };
 
 		triDraw2D_addTextured(6, 4, cornersImage, uv, idx, objColor, entity->image);
+	}
+
+	void drawNoteIcon2d(LevelNote* note, s32 id, u32 objColor)
+	{
+		const Vec3f pos = note->pos;
+		const f32 width = c_levelNoteRadius;
+
+		u32 borderColor = objColor;
+		if (s_curLevelNote == id)
+		{
+			borderColor = c_noteColors[s_hoveredLevelNote == id ? 2 : 1];
+		}
+		else if (s_hoveredLevelNote == id)
+		{
+			borderColor = c_noteColors[0];
+		}
+
+		Vec2f center = { pos.x, pos.z };
+		Vec2f size = { width*2.0f, width*2.0f };
+		drawBounds2d(&center, size, 1.5f, borderColor, 0);
+
+		Vec2f cornersImage[] =
+		{
+			{ (pos.x - width) * s_viewportTrans2d.x + s_viewportTrans2d.y, (pos.z - width) * s_viewportTrans2d.z + s_viewportTrans2d.w },
+			{ (pos.x + width) * s_viewportTrans2d.x + s_viewportTrans2d.y, (pos.z - width) * s_viewportTrans2d.z + s_viewportTrans2d.w },
+			{ (pos.x + width) * s_viewportTrans2d.x + s_viewportTrans2d.y, (pos.z + width) * s_viewportTrans2d.z + s_viewportTrans2d.w },
+			{ (pos.x - width) * s_viewportTrans2d.x + s_viewportTrans2d.y, (pos.z + width) * s_viewportTrans2d.z + s_viewportTrans2d.w }
+		};
+
+		const f32 cellSize = 34.0f / 272.0f;
+		const f32 u0 = 7.0f*cellSize, u1 = u0 + cellSize;
+		const f32 v0 = 3.0f*cellSize, v1 = v0 + cellSize;
+		const Vec2f uv[] =
+		{
+			{ u0, v1 },
+			{ u1, v1 },
+			{ u1, v0 },
+			{ u0, v0 }
+		};
+		const s32 idx[] = { 0, 1, 2, 0, 2, 3 };
+		triDraw2D_addTextured(6, 4, cornersImage, uv, idx, objColor, TFE_Editor::getIconAtlas());
 	}
 		
 	void drawEntity2d(const EditorSector* sector, const EditorObject* obj, s32 id, u32 objColor, bool drawEntityBounds)

@@ -1351,6 +1351,12 @@
     <ClInclude Include="TFE_Editor\LevelEditor\tabControl.h">
       <Filter>Source\TFE_Editor\LevelEditor</Filter>
     </ClInclude>
+    <ClInclude Include="TFE_Editor\LevelEditor\editNotes.h">
+      <Filter>Source\TFE_Editor\LevelEditor</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Editor\LevelEditor\note.h">
+      <Filter>Source\TFE_Editor\LevelEditor</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -2329,6 +2335,12 @@
       <Filter>Source\TFE_Editor\LevelEditor</Filter>
     </ClCompile>
     <ClCompile Include="TFE_Editor\LevelEditor\tabControl.cpp">
+      <Filter>Source\TFE_Editor\LevelEditor</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Editor\LevelEditor\editNotes.cpp">
+      <Filter>Source\TFE_Editor\LevelEditor</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Editor\LevelEditor\note.cpp">
       <Filter>Source\TFE_Editor\LevelEditor</Filter>
     </ClCompile>
   </ItemGroup>

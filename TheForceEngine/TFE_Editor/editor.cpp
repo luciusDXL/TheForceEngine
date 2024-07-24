@@ -97,6 +97,11 @@ namespace TFE_Editor
 		return s_editorVersion;
 	}
 
+	TextureGpu* getIconAtlas()
+	{
+		return s_iconAtlas;
+	}
+
 	void enable()
 	{
 		// Ui begin/render is called so we have a "UI Frame" in which to setup UI state.

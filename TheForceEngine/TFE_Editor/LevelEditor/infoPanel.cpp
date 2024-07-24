@@ -1768,6 +1768,70 @@ namespace LevelEditor
 			s_objEntity = {};
 		}
 	}
+
+	Vec4f packedColorToVec4(u32 color)
+	{
+		const f32 scale = 1.0f / 255.0f;
+		const f32 a = f32((color >> 24u) & 0xffu) * scale;
+		const f32 b = f32((color >> 16u) & 0xffu) * scale;
+		const f32 g = f32((color >>  8u) & 0xffu) * scale;
+		const f32 r = f32((color       ) & 0xffu) * scale;
+
+		return { r, g, b, a };
+	}
+
+	u32 colorVec4ToPacked(Vec4f color)
+	{
+		u32 a = u32(color.w * 255.0f);
+		u32 r = u32(color.x * 255.0f);
+		u32 g = u32(color.y * 255.0f);
+		u32 b = u32(color.z * 255.0f);
+
+		return r | (g << 8u) | (b << 16u) | (a << 24u);
+	}
+
+	void infoPanelNote()
+	{
+		s32 id = s_curLevelNote >= 0 ? s_curLevelNote : s_hoveredLevelNote;
+		if (id < 0) { return; }
+				
+		LevelNote* note = &s_level.notes[id];
+		char tmpBuffer[4096];
+		strcpy(tmpBuffer, note->note.c_str());
+
+		ImGui::CheckboxFlags("2D Only", &note->flags, LNF_2D_ONLY); ImGui::SameLine();
+		ImGui::CheckboxFlags("No Fade in 3D", &note->flags, LNF_3D_NO_FADE); ImGui::SameLine();
+		ImGui::CheckboxFlags("Always Show Text", &note->flags, LNF_TEXT_ALWAYS_SHOW);
+		ImGui::Spacing();
+		ImGui::SetNextItemWidth(128.0f);
+		ImGui::LabelText("##Label", "Start Fade (3D)"); ImGui::SameLine();
+		ImGui::SetNextItemWidth(128.0f);
+		ImGui::InputFloat("##StartFade", &note->fade.x, 1.0f, 10.0f, "%.1f");
+		ImGui::SetNextItemWidth(128.0f);
+		ImGui::LabelText("##Label", "End Fade (3D)"); ImGui::SameLine();
+		ImGui::SetNextItemWidth(128.0f);
+		ImGui::InputFloat("##EndFade", &note->fade.z, 1.0f, 10.0f, "%.1f");
+		ImGui::Separator();
+		ImGui::SetNextItemWidth(128.0f);
+		ImGui::LabelText("##Label", "Icon Color"); ImGui::SameLine();
+		Vec4f iconColor = packedColorToVec4(note->iconColor);
+		if (ImGui::ColorEdit4(editor_getUniqueLabel(""), iconColor.m, ImGuiColorEditFlags_NoLabel | ImGuiColorEditFlags_NoInputs))
+		{
+			note->iconColor = colorVec4ToPacked(iconColor);
+		}
+		ImGui::SetNextItemWidth(128.0f);
+		ImGui::LabelText("##Label", "Text Color"); ImGui::SameLine();
+		Vec4f textColor = packedColorToVec4(note->textColor);
+		if (ImGui::ColorEdit4(editor_getUniqueLabel(""), textColor.m, ImGuiColorEditFlags_NoLabel | ImGuiColorEditFlags_NoInputs))
+		{
+			note->textColor = colorVec4ToPacked(textColor);
+		}
+		ImGui::Separator();
+		if (ImGui::InputTextMultiline("##TextBox", tmpBuffer, 4096, { 0.0f, 256.0f }))
+		{
+			note->note = tmpBuffer;
+		}
+	}
 		
 	void drawInfoPanel(EditorView view)
 	{
@@ -1803,6 +1867,10 @@ namespace LevelEditor
 				else if (s_editMode == LEDIT_ENTITY)
 				{
 					infoPanelObject();
+				}
+				else if (s_editMode == LEDIT_NOTES)
+				{
+					infoPanelNote();
 				}
 			}
 			else if (s_infoTab == TAB_INFO && show)

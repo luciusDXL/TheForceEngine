@@ -97,6 +97,8 @@ namespace TFE_Editor
 		ICON_PLUS,
 		ICON_MINUS_SMALL,
 		ICON_PLUS_SMALL,
+		ICON_GUIDELINES,
+		ICON_NOTES,
 		ICON_COUNT
 	};
 
@@ -106,6 +108,7 @@ namespace TFE_Editor
 	void disable();
 	bool update(bool consoleOpen = false);
 	bool render();
+	TextureGpu* getIconAtlas();
 
 	void pushFont(FontType type);
 	void popFont();

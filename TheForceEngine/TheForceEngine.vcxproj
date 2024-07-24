@@ -466,6 +466,7 @@ echo ^)";
     <ClInclude Include="TFE_Editor\LevelEditor\contextMenu.h" />
     <ClInclude Include="TFE_Editor\LevelEditor\editEntity.h" />
     <ClInclude Include="TFE_Editor\LevelEditor\editGeometry.h" />
+    <ClInclude Include="TFE_Editor\LevelEditor\editNotes.h" />
     <ClInclude Include="TFE_Editor\LevelEditor\entity.h" />
     <ClInclude Include="TFE_Editor\LevelEditor\error.h" />
     <ClInclude Include="TFE_Editor\LevelEditor\groups.h" />
@@ -476,6 +477,7 @@ echo ^)";
     <ClInclude Include="TFE_Editor\LevelEditor\levelEditorHistory.h" />
     <ClInclude Include="TFE_Editor\LevelEditor\levelEditorInf.h" />
     <ClInclude Include="TFE_Editor\LevelEditor\lighting.h" />
+    <ClInclude Include="TFE_Editor\LevelEditor\note.h" />
     <ClInclude Include="TFE_Editor\LevelEditor\Rendering\grid.h" />
     <ClInclude Include="TFE_Editor\LevelEditor\Rendering\grid2d.h" />
     <ClInclude Include="TFE_Editor\LevelEditor\Rendering\grid3d.h" />
@@ -835,6 +837,7 @@ echo ^)";
     <ClCompile Include="TFE_Editor\LevelEditor\contextMenu.cpp" />
     <ClCompile Include="TFE_Editor\LevelEditor\editEntity.cpp" />
     <ClCompile Include="TFE_Editor\LevelEditor\editGeometry.cpp" />
+    <ClCompile Include="TFE_Editor\LevelEditor\editNotes.cpp" />
     <ClCompile Include="TFE_Editor\LevelEditor\entity.cpp" />
     <ClCompile Include="TFE_Editor\LevelEditor\groups.cpp" />
     <ClCompile Include="TFE_Editor\LevelEditor\hotkeys.cpp" />
@@ -844,6 +847,7 @@ echo ^)";
     <ClCompile Include="TFE_Editor\LevelEditor\levelEditorHistory.cpp" />
     <ClCompile Include="TFE_Editor\LevelEditor\levelEditorInf.cpp" />
     <ClCompile Include="TFE_Editor\LevelEditor\lighting.cpp" />
+    <ClCompile Include="TFE_Editor\LevelEditor\note.cpp" />
     <ClCompile Include="TFE_Editor\LevelEditor\Rendering\grid.cpp" />
     <ClCompile Include="TFE_Editor\LevelEditor\Rendering\grid2d.cpp" />
     <ClCompile Include="TFE_Editor\LevelEditor\Rendering\grid3d.cpp" />
