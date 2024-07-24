@@ -8,18 +8,6 @@
     <Filter Include="Source">
       <UniqueIdentifier>{e4bc45f2-bc7c-4cea-bb69-be1fabdac498}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source\glew">
-      <UniqueIdentifier>{1228fb2e-d026-4eee-81f6-0d7df8c63143}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\glew\include">
-      <UniqueIdentifier>{b38077d4-3376-4bb4-ad37-f702496170b2}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\glew\src">
-      <UniqueIdentifier>{890e91d0-5f1b-4e50-bc46-c1e0a808a2ab}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\glew\include\GL">
-      <UniqueIdentifier>{1a85b53b-2818-4bf6-8676-6001bcaeb370}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source\TFE_System">
       <UniqueIdentifier>{ebf71e02-80ad-4702-a373-012052d406bc}</UniqueIdentifier>
     </Filter>
@@ -216,15 +204,6 @@
     </ClInclude>
     <ClInclude Include="targetver.h">
       <Filter>Source</Filter>
-    </ClInclude>
-    <ClInclude Include="glew\include\GL\glew.h">
-      <Filter>Source\glew\include\GL</Filter>
-    </ClInclude>
-    <ClInclude Include="glew\include\GL\glxew.h">
-      <Filter>Source\glew\include\GL</Filter>
-    </ClInclude>
-    <ClInclude Include="glew\include\GL\wglew.h">
-      <Filter>Source\glew\include\GL</Filter>
     </ClInclude>
     <ClInclude Include="TFE_System\types.h">
       <Filter>Source\TFE_System</Filter>
@@ -1361,9 +1340,6 @@
   <ItemGroup>
     <ClCompile Include="main.cpp">
       <Filter>Source</Filter>
-    </ClCompile>
-    <ClCompile Include="glew\src\glew.c">
-      <Filter>Source\glew\src</Filter>
     </ClCompile>
     <ClCompile Include="TFE_Input\input.cpp">
       <Filter>Source\TFE_Input</Filter>
