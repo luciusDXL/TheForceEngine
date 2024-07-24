@@ -88,9 +88,7 @@
     <category>Shooter</category>
     <category>ActionGame</category>
   </categories>
-  <releases>
-    <release version="1.09.540" date="2023-09-30"/>
-  </releases>
+  <releases type="external" url="https://raw.githubusercontent.com/flathub/io.github.theforceengine.tfe/master/io.github.theforceengine.tfe.releases.xml" />
   <content_rating type="oars-1.1">
     <content_attribute id="violence-fantasy">intense</content_attribute>
   </content_rating>
