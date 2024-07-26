@@ -30,9 +30,13 @@ namespace TFE_RenderShared
 	};
 	static const u32 c_lineAttrCount = TFE_ARRAYSIZE(c_lineAttrMapping);
 
-	static s32 s_svScaleOffset = -1;
-
-	static Shader s_shader;
+	struct Line2dShaderParam
+	{
+		Shader shader;
+		s32 scaleOffset = -1;
+	};
+	static Line2dShaderParam s_shaderParam[LINE_DRAW_COUNT];
+		
 	static VertexBuffer s_vertexBuffer;
 	static IndexBuffer  s_indexBuffer;
 
@@ -42,10 +46,11 @@ namespace TFE_RenderShared
 	static ShaderSettings s_shaderSettings = {};
 	static bool s_allowBloom = true;
 	static bool s_line2d_init = false;
+	static LineDrawMode s_lineDrawMode2d = LINE_DRAW_SOLID;
 
 	static u32 s_width, s_height;
 	   
-	bool loadShader()
+	bool loadShaders()
 	{
 		ShaderDefine defines[2] = {};
 		u32 defineCount = 0;
@@ -55,22 +60,31 @@ namespace TFE_RenderShared
 			defines[0].value = "1";
 			defineCount++;
 		}
-	#if 0
+		
+		if (!s_shaderParam[LINE_DRAW_SOLID].shader.load("Shaders/line2d.vert", "Shaders/line2d.frag", defineCount, defines, SHADER_VER_STD))
+		{
+			return false;
+		}
+		s_shaderParam[LINE_DRAW_SOLID].scaleOffset = s_shaderParam[LINE_DRAW_SOLID].shader.getVariableId("ScaleOffset");
+		if (s_shaderParam[LINE_DRAW_SOLID].scaleOffset < 0)
+		{
+			return false;
+		}
+
 		// Dashed lines.
 		defines[defineCount].name = "OPT_DASHED_LINE";
 		defines[defineCount].value = "1";
 		defineCount++;
-	#endif
-		
-		if (!s_shader.load("Shaders/line2d.vert", "Shaders/line2d.frag", defineCount, defines, SHADER_VER_STD))
+		if (!s_shaderParam[LINE_DRAW_DASHED].shader.load("Shaders/line2d.vert", "Shaders/line2d.frag", defineCount, defines, SHADER_VER_STD))
 		{
 			return false;
 		}
-		s_svScaleOffset = s_shader.getVariableId("ScaleOffset");
-		if (s_svScaleOffset < 0)
+		s_shaderParam[LINE_DRAW_DASHED].scaleOffset = s_shaderParam[LINE_DRAW_DASHED].shader.getVariableId("ScaleOffset");
+		if (s_shaderParam[LINE_DRAW_DASHED].scaleOffset < 0)
 		{
 			return false;
 		}
+
 		return true;
 	}
 
@@ -80,7 +94,7 @@ namespace TFE_RenderShared
 		if (s_line2d_init) { return true; }
 
 		s_shaderSettings.bloom = s_allowBloom && TFE_Settings::getGraphicsSettings()->bloomEnabled;
-		if (!loadShader())
+		if (!loadShaders())
 		{
 			return false;
 		}
@@ -118,10 +132,18 @@ namespace TFE_RenderShared
 		delete[] s_vertices;
 		s_vertices = nullptr;
 
-		s_shader.destroy();
+		for (s32 i = 0; i < LINE_DRAW_COUNT; i++)
+		{
+			s_shaderParam[i].shader.destroy();
+		}
 		s_shaderSettings = {};
 
 		s_line2d_init = false;
+	}
+
+	void lineDraw2d_setLineDrawMode(LineDrawMode mode/* = LINE_DRAW_SOLID*/)
+	{
+		s_lineDrawMode2d = mode;
 	}
 	
 	void lineDraw2d_begin(u32 width, u32 height)
@@ -209,7 +231,7 @@ namespace TFE_RenderShared
 		if (bloomEnabled != s_shaderSettings.bloom)
 		{
 			s_shaderSettings.bloom = bloomEnabled;
-			loadShader();
+			loadShaders();
 		}
 
 		s_vertexBuffer.update(s_vertices, s_lineCount * 4 * sizeof(LineVertex));
@@ -225,10 +247,11 @@ namespace TFE_RenderShared
 		TFE_RenderState::setStateEnable(true, STATE_BLEND);
 		TFE_RenderState::setBlendMode(BLEND_ONE, BLEND_ONE_MINUS_SRC_ALPHA);
 
-		s_shader.bind();
+		Line2dShaderParam& shaderParam = s_shaderParam[s_lineDrawMode2d];
+		shaderParam.shader.bind();
 		// Bind Uniforms & Textures.
 		const f32 scaleOffset[] = { scaleX, scaleY, offsetX, offsetY };
-		s_shader.setVariable(s_svScaleOffset, SVT_VEC4, scaleOffset);
+		shaderParam.shader.setVariable(shaderParam.scaleOffset, SVT_VEC4, scaleOffset);
 
 		// Bind vertex/index buffers and setup attributes for BlitVert
 		s_vertexBuffer.bind();
@@ -238,7 +261,7 @@ namespace TFE_RenderShared
 		TFE_RenderBackend::drawIndexedTriangles(s_lineCount * 2, sizeof(u32));
 
 		// Cleanup.
-		s_shader.unbind();
+		shaderParam.shader.unbind();
 		s_vertexBuffer.unbind();
 		s_indexBuffer.unbind();
 

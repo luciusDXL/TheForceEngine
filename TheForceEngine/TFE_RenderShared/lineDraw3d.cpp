@@ -30,43 +30,65 @@ namespace TFE_RenderShared
 	};
 	static const u32 c_line3dAttrCount = TFE_ARRAYSIZE(c_line3dAttrMapping);
 
-	static s32 s_svCameraPos = -1;
-	static s32 s_svCameraView = -1;
-	static s32 s_svCameraProj = -1;
-	static s32 s_svScreenSize = -1;
-
-	static Shader s_shader;
+	struct Line3dShaderParam
+	{
+		Shader shader;
+		s32 cameraPos = -1;
+		s32 cameraView = -1;
+		s32 cameraProj = -1;
+		s32 screenSize = -1;
+	};
+	static Line3dShaderParam s_shaderParam[LINE_DRAW_COUNT];
 	static VertexBuffer s_vertexBuffer;
 	static IndexBuffer  s_indexBuffer;
 
 	static Line3dVertex* s_vertices = nullptr;
 	static u32 s_lineCount;
+	static LineDrawMode s_lineDrawMode3d = LINE_DRAW_SOLID;
 
 	static bool s_line3d_init = false;
 	static Vec2f s_screenSize;
 	static f32 s_pixelScale;
 	   
-	bool line3d_loadShader()
+	bool line3d_loadShaders()
 	{
-		if (!s_shader.load("Shaders/line3d.vert", "Shaders/line3d.frag"))
+		if (!s_shaderParam[LINE_DRAW_SOLID].shader.load("Shaders/line3d.vert", "Shaders/line3d.frag"))
 		{
 			return false;
 		}
-		s_svCameraPos  = s_shader.getVariableId("CameraPos");
-		s_svCameraView = s_shader.getVariableId("CameraView");
-		s_svCameraProj = s_shader.getVariableId("CameraProj");
-		s_svScreenSize = s_shader.getVariableId("ScreenSize");
-		if (s_svCameraPos < 0 || s_svCameraView < 0 || s_svCameraProj < 0 || s_svScreenSize < 0)
+		s_shaderParam[LINE_DRAW_SOLID].cameraPos  = s_shaderParam[LINE_DRAW_SOLID].shader.getVariableId("CameraPos");
+		s_shaderParam[LINE_DRAW_SOLID].cameraView = s_shaderParam[LINE_DRAW_SOLID].shader.getVariableId("CameraView");
+		s_shaderParam[LINE_DRAW_SOLID].cameraProj = s_shaderParam[LINE_DRAW_SOLID].shader.getVariableId("CameraProj");
+		s_shaderParam[LINE_DRAW_SOLID].screenSize = s_shaderParam[LINE_DRAW_SOLID].shader.getVariableId("ScreenSize");
+		if (s_shaderParam[LINE_DRAW_SOLID].cameraPos < 0 || s_shaderParam[LINE_DRAW_SOLID].cameraView < 0 ||
+			s_shaderParam[LINE_DRAW_SOLID].cameraProj < 0 || s_shaderParam[LINE_DRAW_SOLID].screenSize < 0)
 		{
 			return false;
 		}
+
+		s32 defineCount = 1;
+		ShaderDefine define = { "OPT_DASHED_LINE", "1" };
+		if (!s_shaderParam[LINE_DRAW_DASHED].shader.load("Shaders/line3d.vert", "Shaders/line3d.frag", defineCount, &define))
+		{
+			return false;
+		}
+		s_shaderParam[LINE_DRAW_DASHED].cameraPos = s_shaderParam[LINE_DRAW_DASHED].shader.getVariableId("CameraPos");
+		s_shaderParam[LINE_DRAW_DASHED].cameraView = s_shaderParam[LINE_DRAW_DASHED].shader.getVariableId("CameraView");
+		s_shaderParam[LINE_DRAW_DASHED].cameraProj = s_shaderParam[LINE_DRAW_DASHED].shader.getVariableId("CameraProj");
+		s_shaderParam[LINE_DRAW_DASHED].screenSize = s_shaderParam[LINE_DRAW_DASHED].shader.getVariableId("ScreenSize");
+		if (s_shaderParam[LINE_DRAW_DASHED].cameraPos < 0 || s_shaderParam[LINE_DRAW_DASHED].cameraView < 0 ||
+			s_shaderParam[LINE_DRAW_DASHED].cameraProj < 0 || s_shaderParam[LINE_DRAW_DASHED].screenSize < 0)
+		{
+			return false;
+		}
+
 		return true;
 	}
 
 	bool line3d_init()
 	{
 		if (s_line3d_init) { return true; }
-		if (!line3d_loadShader())
+		if (!line3d_loadShaders())
 		{
 			return false;
 		}
@@ -104,8 +126,16 @@ namespace TFE_RenderShared
 		delete[] s_vertices;
 		s_vertices = nullptr;
 
-		s_shader.destroy();
+		for (s32 i = 0; i < LINE_DRAW_COUNT; i++)
+		{
+			s_shaderParam[i].shader.destroy();
+		}
 		s_line3d_init = false;
+	}
+
+	void lineDraw3d_setLineDrawMode(LineDrawMode mode/* = LINE_DRAW_SOLID*/)
+	{
+		s_lineDrawMode3d = mode;
 	}
 	
 	void lineDraw3d_begin(s32 width, s32 height)
@@ -153,12 +183,13 @@ namespace TFE_RenderShared
 		TFE_RenderState::setStateEnable(true, STATE_BLEND);
 		TFE_RenderState::setBlendMode(BLEND_ONE, BLEND_ONE_MINUS_SRC_ALPHA);
 
-		s_shader.bind();
+		Line3dShaderParam& shaderParam = s_shaderParam[s_lineDrawMode3d];
+		shaderParam.shader.bind();
 		// Bind Uniforms & Textures.
-		s_shader.setVariable(s_svCameraPos, SVT_VEC3, camera->pos.m);
-		s_shader.setVariable(s_svCameraView, SVT_MAT3x3, camera->viewMtx.data);
-		s_shader.setVariable(s_svCameraProj, SVT_MAT4x4, camera->projMtx.data);
-		s_shader.setVariable(s_svScreenSize, SVT_VEC2, s_screenSize.m);
+		shaderParam.shader.setVariable(shaderParam.cameraPos, SVT_VEC3, camera->pos.m);
+		shaderParam.shader.setVariable(shaderParam.cameraView, SVT_MAT3x3, camera->viewMtx.data);
+		shaderParam.shader.setVariable(shaderParam.cameraProj, SVT_MAT4x4, camera->projMtx.data);
+		shaderParam.shader.setVariable(shaderParam.screenSize, SVT_VEC2, s_screenSize.m);
 
 		// Bind vertex/index buffers and setup attributes for BlitVert
 		s_vertexBuffer.bind();
@@ -168,7 +199,7 @@ namespace TFE_RenderShared
 		TFE_RenderBackend::drawIndexedTriangles(s_lineCount * 2, sizeof(u32));
 
 		// Cleanup.
-		s_shader.unbind();
+		shaderParam.shader.unbind();
 		s_vertexBuffer.unbind();
 		s_indexBuffer.unbind();
 		TFE_RenderState::setDepthBias();

@@ -1,0 +1,15 @@
+#pragma once
+//////////////////////////////////////////////////////////////////////
+// GPU 2D antialiased line drawing
+//////////////////////////////////////////////////////////////////////
+#include <TFE_System/types.h>
+
+namespace TFE_RenderShared
+{
+	enum LineDrawMode
+	{
+		LINE_DRAW_SOLID = 0,
+		LINE_DRAW_DASHED,
+		LINE_DRAW_COUNT
+	};
+}

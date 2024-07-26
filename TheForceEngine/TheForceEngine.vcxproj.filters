@@ -1339,6 +1339,9 @@
     <ClInclude Include="TFE_RenderBackend\Win32OpenGL\gl.h">
       <Filter>Source\TFE_RenderBackend\Win32OpenGL</Filter>
     </ClInclude>
+    <ClInclude Include="TFE_RenderShared\lineDrawMode.h">
+      <Filter>Source\TFE_RenderShared</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">

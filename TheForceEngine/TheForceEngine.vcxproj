@@ -669,6 +669,7 @@ echo ^)";
     <ClInclude Include="TFE_RenderShared\gridDef.h" />
     <ClInclude Include="TFE_RenderShared\lineDraw2d.h" />
     <ClInclude Include="TFE_RenderShared\lineDraw3d.h" />
+    <ClInclude Include="TFE_RenderShared\lineDrawMode.h" />
     <ClInclude Include="TFE_RenderShared\modelDraw.h" />
     <ClInclude Include="TFE_RenderShared\quadDraw2d.h" />
     <ClInclude Include="TFE_RenderShared\texturePacker.h" />
