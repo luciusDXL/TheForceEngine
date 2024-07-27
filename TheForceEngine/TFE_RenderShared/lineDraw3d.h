@@ -13,7 +13,7 @@ namespace TFE_RenderShared
 
 	void lineDraw3d_setLineDrawMode(LineDrawMode mode = LINE_DRAW_SOLID);
 
-	void lineDraw3d_begin(s32 width, s32 height);
+	void lineDraw3d_begin(s32 width, s32 height, LineDrawMode mode = LINE_DRAW_SOLID);
 	void lineDraw3d_addLines(u32 count, f32 width, const Vec3f* lines, const u32* lineColors);
 	void lineDraw3d_addLine(f32 width, const Vec3f* vertices, const u32* colors);
 

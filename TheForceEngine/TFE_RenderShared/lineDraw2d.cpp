@@ -146,15 +146,36 @@ namespace TFE_RenderShared
 		s_lineDrawMode2d = mode;
 	}
 	
-	void lineDraw2d_begin(u32 width, u32 height)
+	void lineDraw2d_begin(u32 width, u32 height, LineDrawMode mode/* = LINE_DRAW_SOLID*/)
 	{
 		s_width = width;
 		s_height = height;
 		s_lineCount = 0;
+		s_lineDrawCount = 0;
+		s_lineDrawMode2d = mode;
 	}
 
 	void lineDraw2d_addLines(u32 count, f32 width, const Vec2f* lines, const u32* lineColors)
 	{
+		LineDraw* draw = s_lineDrawCount > 0 ? &s_lineDraw[s_lineDrawCount - 1] : nullptr;
+		if (!draw || draw->mode != s_lineDrawMode2d)
+		{
+			if (s_lineDrawCount >= MAX_LINE_DRAW_CALLS)
+			{
+				return;
+			}
+
+			// New draw call.
+			s_lineDraw[s_lineDrawCount].mode = s_lineDrawMode2d;
+			s_lineDraw[s_lineDrawCount].count = count;
+			s_lineDraw[s_lineDrawCount].offset = s_lineCount;
+			s_lineDrawCount++;
+		}
+		else
+		{
+			draw->count += count;
+		}
+
 		LineVertex* vert = &s_vertices[s_lineCount * 4];
 		for (u32 i = 0; i < count && s_lineCount < MAX_LINES; i++, lines += 2, lineColors += 2, vert += 4)
 		{
@@ -240,6 +261,7 @@ namespace TFE_RenderShared
 		const f32 scaleY = 2.0f / f32(s_height);
 		const f32 offsetX = -1.0f;
 		const f32 offsetY = -1.0f;
+		const f32 scaleOffset[] = { scaleX, scaleY, offsetX, offsetY };
 
 		TFE_RenderState::setStateEnable(false, STATE_CULLING | STATE_DEPTH_TEST | STATE_DEPTH_WRITE);
 
@@ -247,25 +269,27 @@ namespace TFE_RenderShared
 		TFE_RenderState::setStateEnable(true, STATE_BLEND);
 		TFE_RenderState::setBlendMode(BLEND_ONE, BLEND_ONE_MINUS_SRC_ALPHA);
 
-		Line2dShaderParam& shaderParam = s_shaderParam[s_lineDrawMode2d];
-		shaderParam.shader.bind();
-		// Bind Uniforms & Textures.
-		const f32 scaleOffset[] = { scaleX, scaleY, offsetX, offsetY };
-		shaderParam.shader.setVariable(shaderParam.scaleOffset, SVT_VEC4, scaleOffset);
-
-		// Bind vertex/index buffers and setup attributes for BlitVert
+		// Bind vertex and index buffers.
 		s_vertexBuffer.bind();
 		u32 indexSizeType = s_indexBuffer.bind();
 
-		// Draw.
-		TFE_RenderBackend::drawIndexedTriangles(s_lineCount * 2, sizeof(u32));
+		LineDraw* draw = s_lineDraw;
+		for (s32 i = 0; i < s_lineDrawCount; i++, draw++)
+		{
+			Line2dShaderParam& shaderParam = s_shaderParam[draw->mode];
+			shaderParam.shader.bind();
+			shaderParam.shader.setVariable(shaderParam.scaleOffset, SVT_VEC4, scaleOffset);
+			// Draw.
+			TFE_RenderBackend::drawIndexedTriangles(draw->count * 2, sizeof(u32), draw->offset * 6);
+		}
 
 		// Cleanup.
-		shaderParam.shader.unbind();
+		Shader::unbind();
 		s_vertexBuffer.unbind();
 		s_indexBuffer.unbind();
 
 		// Clear
 		s_lineCount = 0;
+		s_lineDrawCount = 0;
 	}
 }

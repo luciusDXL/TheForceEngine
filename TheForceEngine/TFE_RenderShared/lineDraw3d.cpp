@@ -38,13 +38,14 @@ namespace TFE_RenderShared
 		s32 cameraProj = -1;
 		s32 screenSize = -1;
 	};
+
 	static Line3dShaderParam s_shaderParam[LINE_DRAW_COUNT];
 	static VertexBuffer s_vertexBuffer;
 	static IndexBuffer  s_indexBuffer;
 
 	static Line3dVertex* s_vertices = nullptr;
-	static u32 s_lineCount;
 	static LineDrawMode s_lineDrawMode3d = LINE_DRAW_SOLID;
+	static u32 s_lineCount;
 
 	static bool s_line3d_init = false;
 	static Vec2f s_screenSize;
@@ -138,16 +139,37 @@ namespace TFE_RenderShared
 		s_lineDrawMode3d = mode;
 	}
 	
-	void lineDraw3d_begin(s32 width, s32 height)
+	void lineDraw3d_begin(s32 width, s32 height, LineDrawMode mode)
 	{
 		s_screenSize = { f32(width), f32(height) };
 
 		s_lineCount = 0;
+		s_lineDrawCount = 0;
+		s_lineDrawMode3d = mode;
 		s_pixelScale = 1.0f / f32(std::min(width,height));
 	}
 
 	void lineDraw3d_addLines(u32 count, f32 width, const Vec3f* lines, const u32* lineColors)
 	{
+		LineDraw* draw = s_lineDrawCount > 0 ? &s_lineDraw[s_lineDrawCount - 1] : nullptr;
+		if (!draw || draw->mode != s_lineDrawMode3d)
+		{
+			if (s_lineDrawCount >= MAX_LINE_DRAW_CALLS)
+			{
+				return;
+			}
+
+			// New draw call.
+			s_lineDraw[s_lineDrawCount].mode = s_lineDrawMode3d;
+			s_lineDraw[s_lineDrawCount].count = count;
+			s_lineDraw[s_lineDrawCount].offset = s_lineCount;
+			s_lineDrawCount++;
+		}
+		else
+		{
+			draw->count += count;
+		}
+
 		Line3dVertex* vert = &s_vertices[s_lineCount * 4];
 		f32 pixelWidth = width * s_pixelScale;
 		for (u32 i = 0; i < count && s_lineCount < LINE3D_MAX; i++, lines += 2, lineColors++, vert += 4)
@@ -183,28 +205,33 @@ namespace TFE_RenderShared
 		TFE_RenderState::setStateEnable(true, STATE_BLEND);
 		TFE_RenderState::setBlendMode(BLEND_ONE, BLEND_ONE_MINUS_SRC_ALPHA);
 
-		Line3dShaderParam& shaderParam = s_shaderParam[s_lineDrawMode3d];
-		shaderParam.shader.bind();
-		// Bind Uniforms & Textures.
-		shaderParam.shader.setVariable(shaderParam.cameraPos, SVT_VEC3, camera->pos.m);
-		shaderParam.shader.setVariable(shaderParam.cameraView, SVT_MAT3x3, camera->viewMtx.data);
-		shaderParam.shader.setVariable(shaderParam.cameraProj, SVT_MAT4x4, camera->projMtx.data);
-		shaderParam.shader.setVariable(shaderParam.screenSize, SVT_VEC2, s_screenSize.m);
-
 		// Bind vertex/index buffers and setup attributes for BlitVert
 		s_vertexBuffer.bind();
 		s_indexBuffer.bind();
 
-		// Draw.
-		TFE_RenderBackend::drawIndexedTriangles(s_lineCount * 2, sizeof(u32));
+		LineDraw* draw = s_lineDraw;
+		for (s32 i = 0; i < s_lineDrawCount; i++, draw++)
+		{
+			Line3dShaderParam& shaderParam = s_shaderParam[draw->mode];
+			shaderParam.shader.bind();
+			// Bind Uniforms & Textures.
+			shaderParam.shader.setVariable(shaderParam.cameraPos, SVT_VEC3, camera->pos.m);
+			shaderParam.shader.setVariable(shaderParam.cameraView, SVT_MAT3x3, camera->viewMtx.data);
+			shaderParam.shader.setVariable(shaderParam.cameraProj, SVT_MAT4x4, camera->projMtx.data);
+			shaderParam.shader.setVariable(shaderParam.screenSize, SVT_VEC2, s_screenSize.m);
+
+			// Draw.
+			TFE_RenderBackend::drawIndexedTriangles(draw->count * 2, sizeof(u32), draw->offset * 6);
+		}
 
 		// Cleanup.
-		shaderParam.shader.unbind();
+		Shader::unbind();
 		s_vertexBuffer.unbind();
 		s_indexBuffer.unbind();
 		TFE_RenderState::setDepthBias();
 
 		// Clear
 		s_lineCount = 0;
+		s_lineDrawCount = 0;
 	}
 }
