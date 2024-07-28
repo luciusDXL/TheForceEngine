@@ -138,6 +138,16 @@ namespace LevelEditor
 		u32 searchKey = 0;
 	};
 
+	struct GuidelineEdge
+	{
+		s32 idx[3] = { -1, -1, -1 };	// curve if idx[2] >= 0
+	};
+	struct Guideline
+	{
+		std::vector<Vec2f> vtx;
+		std::vector<GuidelineEdge> edge;
+	};
+
 	typedef std::vector<EditorSector*> SectorList;
 
 	struct EditorLevel
@@ -161,6 +171,9 @@ namespace LevelEditor
 
 		// Level Notes.
 		std::vector<LevelNote> notes;
+
+		// Guidelines.
+		std::vector<Guideline> guidelines;
 
 		// Level bounds.
 		Vec3f bounds[2] = { 0 };

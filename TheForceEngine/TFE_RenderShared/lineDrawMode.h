@@ -12,6 +12,7 @@ namespace TFE_RenderShared
 	{
 		LINE_DRAW_SOLID = 0,
 		LINE_DRAW_DASHED,
+		LINE_DRAW_CURVE_DASHED,
 		LINE_DRAW_COUNT
 	};
 

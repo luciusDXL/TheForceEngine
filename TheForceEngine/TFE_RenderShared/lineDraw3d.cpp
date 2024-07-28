@@ -45,7 +45,7 @@ namespace TFE_RenderShared
 
 	static Line3dVertex* s_vertices = nullptr;
 	static LineDrawMode s_lineDrawMode3d = LINE_DRAW_SOLID;
-	static u32 s_lineCount;
+	static u32 s_lineCount3d;
 
 	static bool s_line3d_init = false;
 	static Vec2f s_screenSize;
@@ -115,7 +115,7 @@ namespace TFE_RenderShared
 		s_indexBuffer.create(6 * LINE3D_MAX, sizeof(u32), false, indices);
 
 		delete[] indices;
-		s_lineCount = 0;
+		s_lineCount3d = 0;
 
 		return true;
 	}
@@ -143,7 +143,7 @@ namespace TFE_RenderShared
 	{
 		s_screenSize = { f32(width), f32(height) };
 
-		s_lineCount = 0;
+		s_lineCount3d = 0;
 		s_lineDrawCount = 0;
 		s_lineDrawMode3d = mode;
 		s_pixelScale = 1.0f / f32(std::min(width,height));
@@ -162,7 +162,7 @@ namespace TFE_RenderShared
 			// New draw call.
 			s_lineDraw[s_lineDrawCount].mode = s_lineDrawMode3d;
 			s_lineDraw[s_lineDrawCount].count = count;
-			s_lineDraw[s_lineDrawCount].offset = s_lineCount;
+			s_lineDraw[s_lineDrawCount].offset = s_lineCount3d;
 			s_lineDrawCount++;
 		}
 		else
@@ -170,11 +170,11 @@ namespace TFE_RenderShared
 			draw->count += count;
 		}
 
-		Line3dVertex* vert = &s_vertices[s_lineCount * 4];
+		Line3dVertex* vert = &s_vertices[s_lineCount3d * 4];
 		f32 pixelWidth = width * s_pixelScale;
-		for (u32 i = 0; i < count && s_lineCount < LINE3D_MAX; i++, lines += 2, lineColors++, vert += 4)
+		for (u32 i = 0; i < count && s_lineCount3d < LINE3D_MAX; i++, lines += 2, lineColors++, vert += 4)
 		{
-			s_lineCount++;
+			s_lineCount3d++;
 		
 			for (u32 v = 0; v < 4; v++)
 			{
@@ -193,8 +193,8 @@ namespace TFE_RenderShared
 		
 	void lineDraw3d_drawLines(const Camera3d* camera, bool depthTest, bool useBias)
 	{
-		if (s_lineCount < 1) { return; }
-		s_vertexBuffer.update(s_vertices, s_lineCount * 4 * sizeof(Line3dVertex));
+		if (s_lineCount3d < 1) { return; }
+		s_vertexBuffer.update(s_vertices, s_lineCount3d * 4 * sizeof(Line3dVertex));
 		TFE_RenderState::setDepthBias(0.0f, useBias ? -4.0f : 0.0f);
 
 		TFE_RenderState::setStateEnable(false, STATE_CULLING | STATE_DEPTH_WRITE);
@@ -231,7 +231,7 @@ namespace TFE_RenderShared
 		TFE_RenderState::setDepthBias();
 
 		// Clear
-		s_lineCount = 0;
+		s_lineCount3d = 0;
 		s_lineDrawCount = 0;
 	}
 }

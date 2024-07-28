@@ -6,16 +6,18 @@
 #include <TFE_Settings/settings.h>
 #include <TFE_System/system.h>
 #include <vector>
+#include <algorithm>
 
 #define MAX_LINES 65536
+#define MAX_CURVES 4096
 
 namespace TFE_RenderShared
 {
 	// Vertex Definition
 	struct LineVertex
 	{
-		Vec3f pos;		// 2D position + width.
-		Vec4f uv;		// Line relative position in pixels.
+		Vec4f pos;		// 2D position + width + pad -or- 2D pos + 2D center
+		Vec4f uv;		// Line relative position in pixels -or- 2D a, b control points.
 		u32   color;	// Line color + opacity.
 	};
 	struct ShaderSettings
@@ -24,7 +26,7 @@ namespace TFE_RenderShared
 	};
 	static const AttributeMapping c_lineAttrMapping[]=
 	{
-		{ATTR_POS,   ATYPE_FLOAT, 3, 0, false},
+		{ATTR_POS,   ATYPE_FLOAT, 4, 0, false},
 		{ATTR_UV,    ATYPE_FLOAT, 4, 0, false},
 		{ATTR_COLOR, ATYPE_UINT8, 4, 0, true}
 	};
@@ -38,10 +40,13 @@ namespace TFE_RenderShared
 	static Line2dShaderParam s_shaderParam[LINE_DRAW_COUNT];
 		
 	static VertexBuffer s_vertexBuffer;
+	static VertexBuffer s_curveVertexBuffer;
 	static IndexBuffer  s_indexBuffer;
 
 	static LineVertex* s_vertices = nullptr;
-	static u32 s_lineCount;
+	static LineVertex* s_curveVertices = nullptr;
+	static u32 s_lineCount2d;
+	static u32 s_curveCount2d;
 
 	static ShaderSettings s_shaderSettings = {};
 	static bool s_allowBloom = true;
@@ -52,7 +57,7 @@ namespace TFE_RenderShared
 	   
 	bool loadShaders()
 	{
-		ShaderDefine defines[2] = {};
+		ShaderDefine defines[3] = {};
 		u32 defineCount = 0;
 		if (s_shaderSettings.bloom)
 		{
@@ -81,6 +86,20 @@ namespace TFE_RenderShared
 		}
 		s_shaderParam[LINE_DRAW_DASHED].scaleOffset = s_shaderParam[LINE_DRAW_DASHED].shader.getVariableId("ScaleOffset");
 		if (s_shaderParam[LINE_DRAW_DASHED].scaleOffset < 0)
+		{
+			return false;
+		}
+
+		// Curve + Dashed Lines
+		defines[defineCount].name = "OPT_CURVE";
+		defines[defineCount].value = "1";
+		defineCount++;
+		if (!s_shaderParam[LINE_DRAW_CURVE_DASHED].shader.load("Shaders/line2d.vert", "Shaders/line2d.frag", defineCount, defines, SHADER_VER_STD))
+		{
+			return false;
+		}
+		s_shaderParam[LINE_DRAW_CURVE_DASHED].scaleOffset = s_shaderParam[LINE_DRAW_CURVE_DASHED].shader.getVariableId("ScaleOffset");
+		if (s_shaderParam[LINE_DRAW_CURVE_DASHED].scaleOffset < 0)
 		{
 			return false;
 		}
@@ -115,12 +134,14 @@ namespace TFE_RenderShared
 			outIndices[5] = i * 4 + 3;
 		}
 		s_vertices = new LineVertex[4 * MAX_LINES];
+		s_curveVertices = new LineVertex[4 * MAX_CURVES];
 
 		s_vertexBuffer.create(4 * MAX_LINES, sizeof(LineVertex), c_lineAttrCount, c_lineAttrMapping, true);
+		s_curveVertexBuffer.create(4 * MAX_CURVES, sizeof(LineVertex), c_lineAttrCount, c_lineAttrMapping, true);
 		s_indexBuffer.create(6 * MAX_LINES, sizeof(u32), false, indices);
 
 		delete[] indices;
-		s_lineCount = 0;
+		s_lineCount2d = 0;
 
 		return true;
 	}
@@ -128,9 +149,12 @@ namespace TFE_RenderShared
 	void destroy()
 	{
 		s_vertexBuffer.destroy();
+		s_curveVertexBuffer.destroy();
 		s_indexBuffer.destroy();
 		delete[] s_vertices;
+		delete[] s_curveVertices;
 		s_vertices = nullptr;
+		s_curveVertices = nullptr;
 
 		for (s32 i = 0; i < LINE_DRAW_COUNT; i++)
 		{
@@ -150,10 +174,48 @@ namespace TFE_RenderShared
 	{
 		s_width = width;
 		s_height = height;
-		s_lineCount = 0;
+		s_lineCount2d = 0;
 		s_lineDrawCount = 0;
 		s_lineDrawMode2d = mode;
 	}
+
+	void lineDraw2d_addCurve(const Vec2f* vertices, const u32 color)
+	{
+		if (s_curveCount2d >= MAX_CURVES)
+		{
+			return;
+		}
+
+		LineVertex* vert = &s_curveVertices[s_curveCount2d * 4];
+		s_curveCount2d++;
+		// bounding box.
+		const f32 padding = 2.0f;
+		Vec2f boundsMin = vertices[0];
+		Vec2f boundsMax = vertices[0];
+		for (s32 i = 1; i < 3; i++)
+		{
+			boundsMin.x = std::min(boundsMin.x, vertices[i].x);
+			boundsMin.z = std::min(boundsMin.z, vertices[i].z);
+			boundsMax.x = std::max(boundsMax.x, vertices[i].x);
+			boundsMax.z = std::max(boundsMax.z, vertices[i].z);
+		}
+
+		// bounding box.
+		vert[0].pos = { boundsMin.x - padding, boundsMin.z - padding, vertices[2].x, vertices[2].z };
+		vert[1].pos = { boundsMax.x + padding, boundsMin.z - padding, vertices[2].x, vertices[2].z };
+		vert[2].pos = { boundsMax.x + padding, boundsMax.z + padding, vertices[2].x, vertices[2].z };
+		vert[3].pos = { boundsMin.x - padding, boundsMax.z + padding, vertices[2].x, vertices[2].z };
+
+		// store constant data in vertices to avoid draw calls.
+		for (s32 i = 0; i < 4; i++)
+		{
+			vert[i].uv.x  = vertices[0].x;
+			vert[i].uv.y  = vertices[0].z;
+			vert[i].uv.z  = vertices[1].x;
+			vert[i].uv.w  = vertices[1].z;
+			vert[i].color = color;
+		}
+	}	
 
 	void lineDraw2d_addLines(u32 count, f32 width, const Vec2f* lines, const u32* lineColors)
 	{
@@ -168,7 +230,7 @@ namespace TFE_RenderShared
 			// New draw call.
 			s_lineDraw[s_lineDrawCount].mode = s_lineDrawMode2d;
 			s_lineDraw[s_lineDrawCount].count = count;
-			s_lineDraw[s_lineDrawCount].offset = s_lineCount;
+			s_lineDraw[s_lineDrawCount].offset = s_lineCount2d;
 			s_lineDrawCount++;
 		}
 		else
@@ -176,10 +238,10 @@ namespace TFE_RenderShared
 			draw->count += count;
 		}
 
-		LineVertex* vert = &s_vertices[s_lineCount * 4];
-		for (u32 i = 0; i < count && s_lineCount < MAX_LINES; i++, lines += 2, lineColors += 2, vert += 4)
+		LineVertex* vert = &s_vertices[s_lineCount2d * 4];
+		for (u32 i = 0; i < count && s_lineCount2d < MAX_LINES; i++, lines += 2, lineColors += 2, vert += 4)
 		{
-			s_lineCount++;
+			s_lineCount2d++;
 
 			// Convert to pixels
 			f32 x0 = lines[0].x;
@@ -246,7 +308,7 @@ namespace TFE_RenderShared
 
 	void lineDraw2d_drawLines()
 	{
-		if (s_lineCount < 1) { return; }
+		if (s_lineCount2d < 1 && s_curveCount2d < 1) { return; }
 		// First see if the shader needs to be updated.
 		bool bloomEnabled = s_allowBloom && TFE_Settings::getGraphicsSettings()->bloomEnabled;
 		if (bloomEnabled != s_shaderSettings.bloom)
@@ -255,7 +317,14 @@ namespace TFE_RenderShared
 			loadShaders();
 		}
 
-		s_vertexBuffer.update(s_vertices, s_lineCount * 4 * sizeof(LineVertex));
+		if (s_lineCount2d)
+		{
+			s_vertexBuffer.update(s_vertices, s_lineCount2d * 4 * sizeof(LineVertex));
+		}
+		if (s_curveCount2d)
+		{
+			s_curveVertexBuffer.update(s_curveVertices, s_curveCount2d * 4 * sizeof(LineVertex));
+		}
 
 		const f32 scaleX = 2.0f / f32(s_width);
 		const f32 scaleY = 2.0f / f32(s_height);
@@ -270,26 +339,40 @@ namespace TFE_RenderShared
 		TFE_RenderState::setBlendMode(BLEND_ONE, BLEND_ONE_MINUS_SRC_ALPHA);
 
 		// Bind vertex and index buffers.
-		s_vertexBuffer.bind();
 		u32 indexSizeType = s_indexBuffer.bind();
-
-		LineDraw* draw = s_lineDraw;
-		for (s32 i = 0; i < s_lineDrawCount; i++, draw++)
+		if (s_lineCount2d > 0)
 		{
-			Line2dShaderParam& shaderParam = s_shaderParam[draw->mode];
+			s_vertexBuffer.bind();
+
+			LineDraw* draw = s_lineDraw;
+			for (s32 i = 0; i < s_lineDrawCount; i++, draw++)
+			{
+				Line2dShaderParam& shaderParam = s_shaderParam[draw->mode];
+				shaderParam.shader.bind();
+				shaderParam.shader.setVariable(shaderParam.scaleOffset, SVT_VEC4, scaleOffset);
+				// Draw.
+				TFE_RenderBackend::drawIndexedTriangles(draw->count * 2, sizeof(u32), draw->offset * 6);
+			}
+			s_vertexBuffer.unbind();
+		}
+		if (s_curveCount2d)
+		{
+			s_curveVertexBuffer.bind();
+
+			Line2dShaderParam& shaderParam = s_shaderParam[LINE_DRAW_CURVE_DASHED];
 			shaderParam.shader.bind();
 			shaderParam.shader.setVariable(shaderParam.scaleOffset, SVT_VEC4, scaleOffset);
 			// Draw.
-			TFE_RenderBackend::drawIndexedTriangles(draw->count * 2, sizeof(u32), draw->offset * 6);
+			TFE_RenderBackend::drawIndexedTriangles(s_curveCount2d * 2, sizeof(u32));
 		}
 
 		// Cleanup.
 		Shader::unbind();
-		s_vertexBuffer.unbind();
 		s_indexBuffer.unbind();
 
 		// Clear
-		s_lineCount = 0;
+		s_lineCount2d = 0;
+		s_curveCount2d = 0;
 		s_lineDrawCount = 0;
 	}
 }

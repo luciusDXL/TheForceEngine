@@ -2914,6 +2914,85 @@ namespace LevelEditor
 		}
 	}
 
+	f32 cro(Vec2f a, Vec2f b) { return a.x*b.z - a.z*b.x; }
+	// Computes cos(acos(x)/3), see https://www.shadertoy.com/view/WltSD7
+	f32 cos_acos_3(f32 x)
+	{
+		x = sqrtf(0.5f + 0.5f*x);
+		return x * (x*(x*(x*-0.008972f + 0.039071f) - 0.107074f) + 0.576975f) + 0.5f;
+	}
+
+	// Analytical signed distance from a point to Quadratic Bezier curve,
+	// which requires solving a cubic.
+	f32 signedDistQuadraticBezier(const Vec2f& p0, const Vec2f& p1, const Vec2f& pc, const Vec2f& pos, f32& t)
+	{
+		const Vec2f a = { pc.x - p0.x, pc.z - p0.z };
+		const Vec2f b = { p0.x - 2.0f*pc.x + p1.x, p0.z - 2.0f*pc.z + p1.z };
+		const Vec2f c = { a.x * 2.0f, a.z * 2.0f };
+		const Vec2f d = { p0.x - pos.x, p0.z - pos.z };
+
+		// cubic to be solved.
+		const f32 kk = 1.0f / (b.x*b.x + b.z*b.z);
+		const f32 kx = kk * (a.x*b.x + a.z*b.z);
+		const f32 ky = kk * (2.0f*(a.x*a.x + a.z*a.z) + (d.x*b.x + d.z*b.z)) / 3.0f;
+		const f32 kz = kk * (d.x*a.x + d.z*a.z);
+				
+		const f32 p = ky - kx * kx;
+		const f32 q = kx * (2.0f*kx*kx - 3.0f*ky) + kz;
+		const f32 p3 = p * p * p;
+		const f32 q2 = q * q;
+
+		f32 h = q2 + 4.0f*p3;
+		f32 res = 0.0f, sgn = 0.0f;
+
+		if (h >= 0.0f)
+		{
+			// 1 root.
+			h = sqrtf(h);
+			Vec2f x = { (h - q) * 0.5f, (-h - q) * 0.5f };
+			const f32 pw = 1.0f / 3.0f;
+			t = (f32)sign(x.x) * powf(fabsf(x.x), pw) + (f32)sign(x.z) * powf(fabsf(x.z), pw);
+			// from NinjaKoala - single newton iteration to account for cancellation
+			t -= (t*(t*t + 3.0f*p) + q) / (3.0f*t*t + 3.0f*p);
+			t = clamp(t - kx, 0.0f, 1.0f);
+
+			Vec2f w = { d.x + (c.x + b.x * t)*t, d.z + (c.z + b.z * t)*t };
+			res = w.x*w.x + w.z*w.z;
+			sgn = cro({ c.x + 2.0f*b.x*t, c.z + 2.0f*b.z*t }, w);
+		}
+		else
+		{
+			// 3 roots.
+			const f32 z = sqrtf(-p);
+			const f32 m = cos_acos_3(q / (p*z*2.0f));
+			const f32 n = sqrtf(1.0f - m * m) * sqrtf(3.0f);
+			const f32 t0 = clamp((m + m)*z - kx, 0.0f, 1.0f);
+			const f32 t1 = clamp((-n - m)*z - kx, 0.0f, 1.0f);
+			// t0
+			const Vec2f qx = { d.x + (c.x + b.x*t0)*t0, d.z + (c.z + b.z*t0)*t0 };
+			const f32 dx = qx.x*qx.x + qx.z*qx.z;
+			const f32 sx = cro({ a.x + b.x*t0, a.z + b.z*t0 }, qx);
+			// t1
+			const Vec2f qz = { d.x + (c.x + b.x*t1)*t1, d.z + (c.z + b.z*t1)*t1 };
+			const f32 dz = qz.x*qz.x + qz.z*qz.z;
+			const f32 sz = cro({ a.x + b.x*t1, a.z + b.z*t1 }, qz);
+			// Which one?
+			if (dx < dz)
+			{
+				res = dx;
+				sgn = sx;
+				t = t0;
+			}
+			else
+			{
+				res = dz;
+				sgn = sz;
+				t = t1;
+			}
+		}
+		return sqrtf(res) * sign(sgn);
+	}
+
 	// Evaluate the Quadratic Bezier curve with end-points at (a, b) and center (c) at (t).
 	// pos is required, normal is optional.
 	void evaluateQuadraticBezier(const Vec2f& a, const Vec2f& b, const Vec2f& c, f32 t, Vec2f* pos, Vec2f* nrm)
@@ -2929,7 +3008,7 @@ namespace LevelEditor
 			const Vec2f n = { -(p1.z - p0.z), (p1.x - p0.x) };
 			*nrm = TFE_Math::normalize(&n);
 		}
-		*pos = { p0.x + t * (p1.x - p0.x), p0.z + t * (p1.z - p0.z) };
+		*pos = { p0.x + t*(p1.x - p0.x), p0.z + t*(p1.z - p0.z) };
 	}
 
 	// Evaluate the Quadratic Bezier curve with end-points at (a, b) and center (c) at (t)
