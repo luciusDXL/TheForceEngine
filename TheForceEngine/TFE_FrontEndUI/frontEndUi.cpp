@@ -2511,7 +2511,7 @@ namespace TFE_FrontEndUI
 		}
 		else if (graphics->rendererIndex == 1)
 		{
-			const f32 comboOffset = floorf(170 * s_uiScale);
+			const f32 comboOffset = floorf(140 * s_uiScale);
 
 			// Hardware
 
@@ -2525,8 +2525,8 @@ namespace TFE_FrontEndUI
 			}
 
 			// FOV.
-			ImGui::SetNextItemWidth(196 * s_uiScale);
-			ImGui::SliderInt("FOV", &graphics->fov, 20, 160, "%03d"); ImGui::SameLine(0.0f, 32.0f*s_uiScale);
+			ImGui::SetNextItemWidth(64 * s_uiScale);
+			ImGui::LabelText("##Label", "FOV"); ImGui::SameLine(comboOffset);
 			ImGui::SetNextItemWidth(128 * s_uiScale);
 			ImGui::InputInt("##FOVText", &graphics->fov, 1, 20, ImGuiInputTextFlags_CharsDecimal);
 			graphics->fov = clamp(graphics->fov, 5, 175);
