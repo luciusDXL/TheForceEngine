@@ -9,6 +9,8 @@
 #include <TFE_Ui/ui.h>
 #include <algorithm>
 
+using namespace TFE_Editor;
+
 namespace LevelEditor
 {
 	enum PreferencesTab
@@ -28,13 +30,15 @@ namespace LevelEditor
 		"Theme.\nEditor theme, UI and viewport colors.",
 	};
 	static PreferencesTab s_prefTab = PTAB_INTERFACE;
-
+	
 	void commitCurChanges(void);
+	void sectionHeader(const char* text);
+	void optionCheckbox(const char* name, u32* flags, u32 flagValue, s32 width = 0);
 	void optionSliderEditFloat(const char* name, const char* precision, f32* value, f32 minValue, f32 maxValue, f32 step);
-		
+					
 	bool userPreferences()
 	{
-		TFE_Editor::pushFont(TFE_Editor::FONT_SMALL);
+		pushFont(FONT_SMALL);
 		ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysAutoResize;
 
 		bool applyChanges = false;
@@ -49,11 +53,14 @@ namespace LevelEditor
 			{
 				case PTAB_INTERFACE:
 				{
-					ImGui::LabelText("##Label", "Interface Placeholder");
+					sectionHeader("Viewport Options");
+					optionCheckbox("Hide Level Notes", (u32*)&s_editorConfig.interfaceFlags, PIF_HIDE_NOTES, 140);
+					optionCheckbox("Hide Guidelines", (u32*)&s_editorConfig.interfaceFlags, PIF_HIDE_GUIDELINES, 140);
+					ImGui::Separator();
 				} break;
 				case PTAB_EDITING:
 				{
-					optionSliderEditFloat("Curve Segment Size", "%.2f", &TFE_Editor::s_editorConfig.curve_segmentSize, 0.1f, 100.0f, 0.1f);
+					optionSliderEditFloat("Curve Segment Size", "%.2f", &s_editorConfig.curve_segmentSize, 0.1f, 100.0f, 0.1f);
 				} break;
 				case PTAB_INPUT:
 				{
@@ -68,24 +75,36 @@ namespace LevelEditor
 			ImGui::Separator();
 			if (ImGui::Button("Apply"))
 			{
-				TFE_Editor::saveConfig();
+				saveConfig();
 				applyChanges = true;
 			}
 			ImGui::SameLine();
 			if (ImGui::Button("Cancel"))
 			{
-				TFE_Editor::loadConfig();
+				loadConfig();
 				cancel = true;
 			}
 			ImGui::EndPopup();
 		}
-		TFE_Editor::popFont();
+		popFont();
 
 		return applyChanges || cancel;
 	}
 
 	void commitCurChanges(void)
 	{
+	}
+
+	void sectionHeader(const char* text)
+	{
+		ImGui::TextColored({ 0.306f, 0.788f, 0.69f, 1.0f }, "%s", text);
+	}
+
+	void optionCheckbox(const char* name, u32* flags, u32 flagValue, s32 width)
+	{
+		ImGui::SetNextItemWidth(width ? width : ImGui::CalcTextSize(name).x + 16);
+		ImGui::LabelText("##Label", "%s", name); ImGui::SameLine();
+		ImGui::CheckboxFlags(editor_getUniqueLabel(""), flags, flagValue);
 	}
 
 	void optionSliderEditFloat(const char* name, const char* precision, f32* value, f32 minValue, f32 maxValue, f32 step)

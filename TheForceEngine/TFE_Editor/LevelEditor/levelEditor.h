@@ -66,6 +66,7 @@ namespace LevelEditor
 
 	void setViewportScrollTarget2d(Vec2f target, f32 speed = 0.0f);
 	void setViewportScrollTarget3d(Vec3f target, f32 targetYaw, f32 targetPitch, f32 speed = 0.0f);
+	Vec4f viewportBoundsWS2d(f32 padding = 0.0f);
 
 	// Shared Edit Commands
 	void edit_moveVertices(s32 count, const FeatureId* vtxIds, Vec2f delta);

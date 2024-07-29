@@ -21,6 +21,7 @@ namespace TFE_Editor
 		s32 fontScale = 100;
 		s32 thumbnailSize = 64;
 		// Level editor
+		s32 interfaceFlags = 0;
 		f32 curve_segmentSize = 2.0f;
 	};
 	enum EditorFontConst

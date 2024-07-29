@@ -146,6 +146,7 @@ namespace LevelEditor
 	{
 		std::vector<Vec2f> vtx;
 		std::vector<GuidelineEdge> edge;
+		Vec4f bounds;
 	};
 
 	typedef std::vector<EditorSector*> SectorList;

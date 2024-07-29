@@ -356,7 +356,6 @@ namespace LevelEditor
 		levHistory_createSnapshot("Imported Level");
 
 		infoPanelClearFeatures();
-
 		TFE_RenderShared::init(false);
 		return true;
 	}
@@ -5351,6 +5350,16 @@ namespace LevelEditor
 	void levelEditWinEnd()
 	{
 		ImGui::End();
+	}
+
+	Vec4f viewportBoundsWS2d(f32 padding)
+	{
+		Vec4f bounds = { 0 };
+		bounds.x =  s_viewportPos.x - padding;
+		bounds.w = -s_viewportPos.z + padding;
+		bounds.z =  s_viewportPos.x + s_viewportSize.x * s_zoom2d + padding;
+		bounds.y =-(s_viewportPos.z + s_viewportSize.z * s_zoom2d) - padding;
+		return bounds;
 	}
 
 	// Convert from viewport mouse coordinates to world space 2D position.

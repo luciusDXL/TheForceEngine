@@ -112,6 +112,7 @@ namespace TFE_Editor
 		TFE_IniParser::writeKeyValue_Int(configFile, "ThumbnailSize", s_editorConfig.thumbnailSize);
 
 		// Level Editor
+		TFE_IniParser::writeKeyValue_Int(configFile, "Interface_Flags", s_editorConfig.interfaceFlags);
 		TFE_IniParser::writeKeyValue_Float(configFile, "Curve_SegmentSize", s_editorConfig.curve_segmentSize);
 
 		// Recent files.
@@ -268,6 +269,10 @@ namespace TFE_Editor
 		else if (strcasecmp(key, "ThumbnailSize") == 0)
 		{
 			s_editorConfig.thumbnailSize = TFE_IniParser::parseInt(value);
+		}
+		else if (strcasecmp(key, "Interface_Flags") == 0)
+		{
+			s_editorConfig.interfaceFlags = TFE_IniParser::parseInt(value);
 		}
 		else if (strcasecmp(key, "Curve_SegmentSize") == 0)
 		{

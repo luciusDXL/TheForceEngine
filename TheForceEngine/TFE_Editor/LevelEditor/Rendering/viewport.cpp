@@ -139,6 +139,7 @@ namespace LevelEditor
 	void renderLevel3D();
 	void renderLevel3DGame();
 	void renderSectorWalls2d(s32 layerStart, s32 layerEnd);
+	void renderGuidelines2d(const Vec4f viewportBoundsWS);
 	void renderSectorPreGrid();
 	void drawSector2d(const EditorSector* sector, Highlight highlight);
 	void drawVertex2d(const Vec2f* pos, f32 scale, Highlight highlight);
@@ -306,13 +307,16 @@ namespace LevelEditor
 		TFE_RenderShared::lineDraw2d_begin(s_viewportSize.x, s_viewportSize.z);
 		TFE_RenderShared::triDraw2d_begin(s_viewportSize.x, s_viewportSize.z);
 		TFE_RenderShared::modelDraw_begin();
-				
+
+		// Compute the world space bounds.
+		const Vec4f viewportBoundsWS = viewportBoundsWS2d(1.0f);
+
 		// Draw lower layers, if enabled.
 		if (s_editFlags & LEF_SHOW_LOWER_LAYERS)
 		{
 			renderSectorWalls2d(s_level.layerRange[0], s_curLayer - 1);
 		}
-				
+
 		// Draw pre-grid polygons
 		renderSectorPreGrid();
 
@@ -327,6 +331,9 @@ namespace LevelEditor
 		const EditorSector* visObjSector[1024];
 		s32 visObjId[1024];
 		s32 visObjCount = 0;
+
+		// Draw guidelines.
+		renderGuidelines2d(viewportBoundsWS);
 
 		// Draw the current layer.
 		renderSectorWalls2d(s_curLayer, s_curLayer);
@@ -2756,6 +2763,92 @@ namespace LevelEditor
 
 		TFE_RenderShared::triDraw2d_draw();
 		TFE_RenderShared::triDraw2d_begin(s_viewportSize.x, s_viewportSize.z);
+	}
+
+	// TODO: Move to a shared location.
+	f32 min3(f32 a, f32 b, f32 c)
+	{
+		return std::min(a, std::min(b, c));
+	}
+	f32 max3(f32 a, f32 b, f32 c)
+	{
+		return std::max(a, std::max(b, c));
+	}
+	bool boundsOverlap(Vec4f bounds0, Vec4f bounds1)
+	{
+		return bounds0.x <= bounds1.z && bounds1.x <= bounds0.z && // x intervals overlap
+			   bounds0.y <= bounds1.w && bounds1.y <= bounds0.w;   // y intervals overlap
+	}
+
+	void renderGuidelines2d(const Vec4f viewportBoundsWS)
+	{
+		const u32 colors[] = { 0xc000a5ff, 0xc000a5ff };
+		const size_t count = s_level.guidelines.size();
+		Guideline* guideLine = s_level.guidelines.data();
+		lineDraw2d_setLineDrawMode(LINE_DRAW_DASHED);
+		for (size_t i = 0; i < count; i++, guideLine++)
+		{
+			// Cull the entire guideline set.
+			if (!boundsOverlap(guideLine->bounds, viewportBoundsWS))
+			{
+				continue;
+			}
+
+			const size_t count = guideLine->edge.size();
+			const GuidelineEdge* edge = guideLine->edge.data();
+			const Vec2f* vtx = guideLine->vtx.data();
+			
+			for (size_t e = 0; e < count; e++, edge++)
+			{
+				if (edge->idx[2] >= 0)
+				{
+					const Vec2f* v0 = &vtx[edge->idx[0]];
+					const Vec2f* v1 = &vtx[edge->idx[1]];
+					const Vec2f* c = &vtx[edge->idx[2]];
+					// Then cull the curves as well, since they are expensive to render.
+					const Vec4f curveBounds = { min3(v0->x, v1->x, c->x), min3(v0->z, v1->z, c->z), max3(v0->x, v1->x, c->x), max3(v0->z, v1->z, c->z) };
+					if (!boundsOverlap(curveBounds, viewportBoundsWS))
+					{
+						continue;
+					}
+					// Curve.
+					const Vec2f curveVtx[] =
+					{
+						{ v0->x*s_viewportTrans2d.x + s_viewportTrans2d.y, v0->z * s_viewportTrans2d.z + s_viewportTrans2d.w },
+						{ v1->x*s_viewportTrans2d.x + s_viewportTrans2d.y, v1->z * s_viewportTrans2d.z + s_viewportTrans2d.w },
+						{ c->x*s_viewportTrans2d.x + s_viewportTrans2d.y, c->z * s_viewportTrans2d.z + s_viewportTrans2d.w },
+					};
+					TFE_RenderShared::lineDraw2d_addCurve(curveVtx, colors[0]);
+
+					// Test
+					// Draw a line from the cursor to the closest point on the curve.
+					f32 t;
+					signedDistQuadraticBezier(*v0, *v1, *c, { s_cursor3d.x, s_cursor3d.z }, t);
+					Vec2f onCurve;
+					evaluateQuadraticBezier(*v0, *v1, *c, t, &onCurve, nullptr);
+
+					if (t > 0.0f && t < 1.0f)
+					{
+						Vec2f line[2];
+						line[0] = { s_cursor3d.x * s_viewportTrans2d.x + s_viewportTrans2d.y, s_cursor3d.z * s_viewportTrans2d.z + s_viewportTrans2d.w };
+						line[1] = { onCurve.x * s_viewportTrans2d.x + s_viewportTrans2d.y, onCurve.z * s_viewportTrans2d.z + s_viewportTrans2d.w };
+						const u32 colorLine[] = { 0xc0ffa500, 0xc0ffa500 };
+						TFE_RenderShared::lineDraw2d_addLine(2.0f, line, colorLine);
+					}
+				}
+				else
+				{
+					// Straight line.
+					Vec2f line[2];
+					const Vec2f* v0 = &vtx[edge->idx[0]];
+					const Vec2f* v1 = &vtx[edge->idx[1]];
+					line[0] = { v0->x * s_viewportTrans2d.x + s_viewportTrans2d.y, v0->z * s_viewportTrans2d.z + s_viewportTrans2d.w };
+					line[1] = { v1->x * s_viewportTrans2d.x + s_viewportTrans2d.y, v1->z * s_viewportTrans2d.z + s_viewportTrans2d.w };
+					TFE_RenderShared::lineDraw2d_addLine(2.0f, line, colors);
+				}
+			}
+		}
+		lineDraw2d_setLineDrawMode();
 	}
 	
 	void renderSectorWalls2d(s32 layerStart, s32 layerEnd)
