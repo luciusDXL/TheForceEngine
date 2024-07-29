@@ -64,6 +64,7 @@ namespace LevelEditor
 	s32  getCurveSegDelta();
 	void setCurveSegDelta(s32 newDelta = 0);
 
-	void evaluateQuadraticBezier(const Vec2f& a, const Vec2f& b, const Vec2f& c, f32 t, Vec2f* pos, Vec2f* nrm);
+	void evaluateQuadraticBezier(const Vec2f& a, const Vec2f& b, const Vec2f& c, f32 t, Vec2f* pos, Vec2f* nrm = nullptr);
 	f32  signedDistQuadraticBezier(const Vec2f& p0, const Vec2f& p1, const Vec2f& pc, const Vec2f& pos, f32& t);
+	f32  getQuadraticBezierArcLength(const Vec2f& a, const Vec2f& b, const Vec2f& c, f32 t = 1.0f, s32 maxIterationCount = 8);
 }

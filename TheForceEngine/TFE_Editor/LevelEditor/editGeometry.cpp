@@ -2138,40 +2138,27 @@ namespace LevelEditor
 		const Vec2f ac = { a.x - c.x, a.z - c.z };
 		const Vec2f bc = { b.x - c.x, b.z - c.z };
 
-		// 1. Get the approximate length.
-		Vec2f lastPoint = a;
-		f32 distSoFar = 0.0f;
-		f32 t = 0.1f;
-		for (s32 i = 1; i < 10; i++, t += 0.1f)
-		{
-			const Vec2f p = evaluateQuadraticBezier(ac, bc, c, t);
-			const f32 dx = p.x - lastPoint.x;
-			const f32 dz = p.z - lastPoint.z;
-			distSoFar += sqrtf(dx * dx + dz * dz);
-			lastPoint = p;
-		}
-		f32 dx = b.x - lastPoint.x;
-		f32 dz = b.z - lastPoint.z;
-		distSoFar += sqrtf(dx * dx + dz * dz);
+		// 1. Get the approximate arc length.
+		const f32 arcLen = getQuadraticBezierArcLength(a, b, c);
 
 		// 2. Determine the number of segments from the length.
-		s32 segCount = max(s32(distSoFar / s_editorConfig.curve_segmentSize) + s_curveSegDelta, 2);
+		const s32 segCount = max(s32(arcLen / s_editorConfig.curve_segmentSize) + s_curveSegDelta, 2);
+
+		// TODO: Support even wall lengths versus denser sampling in areas with more change.
+		// Even sampling will be more expensive and approximate, so default to variable sampling.
 
 		// 3. Determine the delta.
-		f32 dt = 1.0f / f32(segCount);
+		const f32 dt = 1.0f / f32(segCount);
 
 		// 4. Generate the curve.
-
 		// Skip the first point - already encoded.
-		// curve->push_back(a);
-
-		t = dt;
+		f32 t = dt;
 		for (s32 i = 1; i < segCount; i++, t += dt)
 		{
 			const Vec2f p = evaluateQuadraticBezier(ac, bc, c, t);
 			curve->push_back(p);
 		}
-
+		// Final point.
 		curve->push_back(b);
 	}
 
@@ -3020,5 +3007,31 @@ namespace LevelEditor
 		const Vec2f p0 = { c.x + t1 * ac.x, c.z + t1 * ac.z };
 		const Vec2f p1 = { c.x + t0 * bc.x, c.z + t0 * bc.z };
 		return { p0.x + t * (p1.x - p0.x), p0.z + t * (p1.z - p0.z) };
+	}
+
+	f32 getQuadraticBezierArcLength(const Vec2f& a, const Vec2f& b, const Vec2f& c, f32 t, s32 maxIterationCount)
+	{
+		// Approximate the total length to the current position.
+		// The stepCount controls the accuracy, higher values = more accurate,
+		// but slower.
+		const s32 stepCount = maxIterationCount;
+		const f32 ds = 1.0f / f32(stepCount);
+
+		Vec2f p0 = a;
+		f32 s = ds;
+		f32 len = 0.0f;
+
+		Vec2f p1 = { 0 };
+		for (s32 i = 0; i < stepCount && s < t; i++, s += ds)
+		{
+			evaluateQuadraticBezier(a, b, c, s, &p1);
+			len += TFE_Math::distance(&p0, &p1);
+			p0 = p1;
+		}
+		// Take the remainder to get to the current position on the curve.
+		evaluateQuadraticBezier(a, b, c, t, &p1);
+		len += TFE_Math::distance(&p0, &p1);
+
+		return len;
 	}
 }

@@ -3392,6 +3392,7 @@ namespace LevelEditor
 			{
 				openEditorPopup(POPUP_LIGHTING);
 			}
+			ImGui::Separator();
 			if (ImGui::MenuItem("Join Sectors", NULL, (bool*)NULL))
 			{
 				edit_joinSectors();
@@ -3400,6 +3401,7 @@ namespace LevelEditor
 			{
 				edit_cleanSectors();
 			}
+			ImGui::Separator();
 			if (ImGui::MenuItem("Find Sector", NULL, (bool*)NULL))
 			{
 				// TODO
@@ -3518,10 +3520,6 @@ namespace LevelEditor
 				fullbright = !fullbright;
 				if (fullbright) { s_editFlags |= LEF_FULLBRIGHT; }
 				else { s_editFlags &= ~LEF_FULLBRIGHT; }
-			}
-			ImGui::Separator();
-			if (ImGui::MenuItem("View Settings", NULL, (s_lwinOpen & LWIN_VIEW_SETTINGS) != 0))
-			{
 			}
 			ImGui::EndMenu();
 		}
