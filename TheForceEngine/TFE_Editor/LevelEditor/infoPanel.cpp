@@ -400,13 +400,17 @@ namespace LevelEditor
 				}
 
 				ImGui::SameLine(0.0f, 0.0f);
+				ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 4);
 				ImGui::ColorEdit3(editor_getUniqueLabel(""), group->color.m, ImGuiColorEditFlags_NoLabel | ImGuiColorEditFlags_NoInputs);
-
-				ImGui::SetCursorPosY(ImGui::GetCursorPosY() - 2);
 
 				if (s_groupOpen == i)
 				{
+					ImGui::SetCursorPosY(ImGui::GetCursorPosY() - 2);
 					listNamedSectorsInGroup(group);
+				}
+				else
+				{
+					ImGui::SetCursorPosY(ImGui::GetCursorPosY() - 8);
 				}
 
 				ImGui::Separator();
