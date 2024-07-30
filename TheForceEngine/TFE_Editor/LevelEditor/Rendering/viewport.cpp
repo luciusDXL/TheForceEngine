@@ -2918,6 +2918,10 @@ namespace LevelEditor
 	void renderGuidelines2d(const Vec4f viewportBoundsWS)
 	{
 		const u32 colors[] = { 0xc000a5ff, 0xc000a5ff };
+		const u32 hovered[] = { 0xffffa500, 0xffffa500 };
+		const u32 selected[] = { 0xff0030ff, 0xff0030ff };
+		const u32 hoveredSelected[] = { 0xffff00ff, 0xffff00ff };
+
 		const size_t count = s_level.guidelines.size();
 		Guideline* guideLine = s_level.guidelines.data();
 		lineDraw2d_setLineDrawMode(LINE_DRAW_DASHED);
@@ -2929,6 +2933,20 @@ namespace LevelEditor
 			const size_t count = guideLine->edge.size();
 			const Vec2f* vtx   = guideLine->vtx.data();
 			const GuidelineEdge* edge = guideLine->edge.data();
+
+			const u32* drawColor = colors;
+			if (s_hoveredGuideline == i && s_curGuideline == i)
+			{
+				drawColor = hoveredSelected;
+			}
+			else if (s_hoveredGuideline == i)
+			{
+				drawColor = hovered;
+			}
+			else if (s_curGuideline == i)
+			{
+				drawColor = selected;
+			}
 
 			for (size_t e = 0; e < count; e++, edge++)
 			{
@@ -2947,7 +2965,7 @@ namespace LevelEditor
 						{ v1->x*s_viewportTrans2d.x + s_viewportTrans2d.y, v1->z * s_viewportTrans2d.z + s_viewportTrans2d.w },
 						{ c->x*s_viewportTrans2d.x + s_viewportTrans2d.y, c->z * s_viewportTrans2d.z + s_viewportTrans2d.w },
 					};
-					TFE_RenderShared::lineDraw2d_addCurve(curveVtx, colors[0]);
+					TFE_RenderShared::lineDraw2d_addCurve(curveVtx, drawColor[0]);
 				}
 				else
 				{
@@ -2960,7 +2978,7 @@ namespace LevelEditor
 						{ v0->x * s_viewportTrans2d.x + s_viewportTrans2d.y, v0->z * s_viewportTrans2d.z + s_viewportTrans2d.w },
 						{ v1->x * s_viewportTrans2d.x + s_viewportTrans2d.y, v1->z * s_viewportTrans2d.z + s_viewportTrans2d.w }
 					};
-					TFE_RenderShared::lineDraw2d_addLine(2.0f, line, colors);
+					TFE_RenderShared::lineDraw2d_addLine(2.0f, line, drawColor);
 				}
 			}
 		}

@@ -41,6 +41,8 @@ namespace LevelEditor
 	/////////////////////////////////////////////////////
 	void createGuidlinesFromRect();
 	void createGuidelinesFromShape();
+	void selectGuideline();
+	void findHoveredGuideline();
 
 	void editGuidelines_init()
 	{
@@ -72,7 +74,7 @@ namespace LevelEditor
 		}
 	}
 
-	void handleGuidelinesDraw(RayHitInfo* hitInfo)
+	void handleGuidelinesEdit(RayHitInfo* hitInfo)
 	{
 		// Snap the cursor to the grid.
 		Vec2f onGrid = { s_cursor3d.x, s_cursor3d.z };
@@ -95,6 +97,12 @@ namespace LevelEditor
 		}
 		s_cursor3d.x = onGrid.x;
 		s_cursor3d.z = onGrid.z;
+
+		s_hoveredGuideline = -1;
+		if (TFE_Input::keyModDown(KeyModifier::KEYMOD_CTRL))
+		{
+			findHoveredGuideline();
+		}
 
 		// Two ways to draw: rectangle (shift + left click and drag, escape to cancel), shape (left click to start, backspace to go back one point, escape to cancel)
 		if (s_editGuidelines.drawStarted)
@@ -218,28 +226,60 @@ namespace LevelEditor
 		}
 		else if (s_singleClick)
 		{
-			s_editGuidelines.drawStarted = true;
-			s_editGuidelines.shapeComplete = false;
-			s_editGuidelines.drawMode = TFE_Input::keyModDown(KEYMOD_SHIFT) ? DMODE_RECT : DMODE_SHAPE;
-			s_editGuidelines.drawCurPos = onGrid;
-
-			s_editGuidelines.guidelines.vtx.clear();
-			s_editGuidelines.guidelines.edge.clear();
-			if (s_editGuidelines.drawMode == DMODE_RECT)
+			if (TFE_Input::keyModDown(KeyModifier::KEYMOD_CTRL))
 			{
-				s_editGuidelines.guidelines.vtx.resize(2);
-				s_editGuidelines.guidelines.vtx[0] = onGrid;
-				s_editGuidelines.guidelines.vtx[1] = onGrid;
+				s_editGuidelines.drawStarted = false;
+				selectGuideline();
 			}
 			else
 			{
-				s_editGuidelines.guidelines.vtx.push_back(onGrid);
+				s_editGuidelines.drawStarted = true;
+				s_editGuidelines.shapeComplete = false;
+				s_editGuidelines.drawMode = TFE_Input::keyModDown(KEYMOD_SHIFT) ? DMODE_RECT : DMODE_SHAPE;
+				s_editGuidelines.drawCurPos = onGrid;
+
+				s_editGuidelines.guidelines.vtx.clear();
+				s_editGuidelines.guidelines.edge.clear();
+				if (s_editGuidelines.drawMode == DMODE_RECT)
+				{
+					s_editGuidelines.guidelines.vtx.resize(2);
+					s_editGuidelines.guidelines.vtx[0] = onGrid;
+					s_editGuidelines.guidelines.vtx[1] = onGrid;
+				}
+				else
+				{
+					s_editGuidelines.guidelines.vtx.push_back(onGrid);
+				}
 			}
 		}
 		else
 		{
 			s_editGuidelines.drawCurPos = onGrid;
 		}
+	}
+
+	void findHoveredGuideline()
+	{
+		const s32 count = (s32)s_level.guidelines.size();
+		const Guideline* guideline = s_level.guidelines.data();
+		for (s32 i = 0; i < count; i++, guideline++)
+		{
+			if (s_cursor3d.x < guideline->bounds.x || s_cursor3d.x > guideline->bounds.z ||
+				s_cursor3d.z < guideline->bounds.y || s_cursor3d.z > guideline->bounds.w)
+			{
+				continue;
+			}
+
+			// for now just accept it.
+			// TODO: Check signed distance and make sure it is close enough (based on zoom).
+			s_hoveredGuideline = i;
+			break;
+		}
+	}
+
+	void selectGuideline()
+	{
+		s_curGuideline = s_hoveredGuideline;
 	}
 
 	void createGuidlinesFromRect()

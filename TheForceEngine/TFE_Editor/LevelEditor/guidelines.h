@@ -8,25 +8,11 @@
 //////////////////////////////////////////////////////////////////////
 #include <TFE_System/types.h>
 #include "levelEditorData.h"
-#include "guidelines.h"
-#include "selection.h"
-#include "sharedState.h"
 
 namespace LevelEditor
 {
-	struct GuidelinesEdit
-	{
-		Guideline guidelines = {};
-		// Draw
-		bool drawStarted = false;
-		bool shapeComplete = false;
-		DrawMode drawMode = DMODE_RECT;
-		Vec2f drawCurPos = { 0 };
-		Vec2f controlPoint = { 0 };
-	};
+	extern s32 s_hoveredGuideline;
+	extern s32 s_curGuideline;
 
-	void editGuidelines_init();
-	void handleGuidelinesEdit(RayHitInfo* hitInfo);
-
-	extern GuidelinesEdit s_editGuidelines;
+	void clearGuidelineSelection();
 }

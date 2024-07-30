@@ -3124,7 +3124,7 @@ namespace LevelEditor
 			}
 			else if (s_editMode == LEDIT_GUIDELINES)
 			{
-				handleGuidelinesDraw(nullptr/*2d so no ray hit info*/);
+				handleGuidelinesEdit(nullptr/*2d so no ray hit info*/);
 				return;
 			}
 			else if (s_editMode == LEDIT_ENTITY)
@@ -5545,6 +5545,7 @@ namespace LevelEditor
 		s_featureHovered = {};
 		s_featureTex = {};
 		clearLevelNoteSelection();
+		clearGuidelineSelection();
 	}
 
 	static Vec2f s_texDelta = { 0 };
