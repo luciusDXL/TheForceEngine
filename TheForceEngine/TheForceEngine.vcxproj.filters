@@ -1345,6 +1345,9 @@
     <ClInclude Include="TFE_Editor\editorMath.h">
       <Filter>Source\TFE_Editor</Filter>
     </ClInclude>
+    <ClInclude Include="TFE_Editor\LevelEditor\editGuidelines.h">
+      <Filter>Source\TFE_Editor\LevelEditor</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -2336,6 +2339,9 @@
     </ClCompile>
     <ClCompile Include="TFE_Editor\editorMath.cpp">
       <Filter>Source\TFE_Editor</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Editor\LevelEditor\editGuidelines.cpp">
+      <Filter>Source\TFE_Editor\LevelEditor</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

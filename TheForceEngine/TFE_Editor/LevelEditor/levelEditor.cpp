@@ -15,6 +15,7 @@
 #include "sharedState.h"
 #include "editEntity.h"
 #include "editGeometry.h"
+#include "editGuidelines.h"
 #include "editNotes.h"
 #include <TFE_FrontEndUI/frontEndUi.h>
 #include <TFE_Editor/AssetBrowser/assetBrowser.h>
@@ -259,6 +260,7 @@ namespace LevelEditor
 		s_levelAsset = asset;
 		// Initialize editors.
 		editGeometry_init();
+		editGuidelines_init();
 
 		// Reset output messages.
 		infoPanelClearMessages();
@@ -3055,6 +3057,10 @@ namespace LevelEditor
 			{
 				s_geoEdit.drawStarted = false;
 			}
+			else if (s_editGuidelines.drawStarted)
+			{
+				s_editGuidelines.drawStarted = false;
+			}
 			else if (!s_startTexMove)
 			{
 				edit_clearSelections();
@@ -3114,6 +3120,11 @@ namespace LevelEditor
 			{
 				if (extrude) { handleSectorExtrude(nullptr/*2d so no ray hit info*/); }
 				else { handleSectorDraw(nullptr/*2d so no ray hit info*/); }
+				return;
+			}
+			else if (s_editMode == LEDIT_GUIDELINES)
+			{
+				handleGuidelinesDraw(nullptr/*2d so no ray hit info*/);
 				return;
 			}
 			else if (s_editMode == LEDIT_ENTITY)

@@ -6,6 +6,7 @@
 #include <TFE_Editor/editor.h>
 #include <TFE_Editor/editorMath.h>
 #include <TFE_Editor/LevelEditor/editGeometry.h>
+#include <TFE_Editor/LevelEditor/editGuidelines.h>
 #include <TFE_Editor/LevelEditor/levelEditor.h>
 #include <TFE_Editor/LevelEditor/levelEditorData.h>
 #include <TFE_Editor/LevelEditor/sharedState.h>
@@ -155,7 +156,9 @@ namespace LevelEditor
 	void drawBounds2d(const Vec2f* center, Vec2f size, f32 lineWidth, u32 color, u32 fillColor);
 	void drawOBB2d(const Vec3f* bounds, const Mat3* mtx, const Vec3f* pos, f32 lineWidth, u32 color);
 	void drawSolidBox(const Vec3f* center, f32 side, u32 color);
+	void drawEditCursor2D(Vec2f* cursorPos);
 	void drawSectorShape2D();
+	void drawGuidelineShape2D();
 	void drawWallLines3D_Highlighted(const EditorSector* sector, const EditorSector* next, const EditorWall* wall, f32 width, Highlight highlight, bool halfAlpha, bool showSign = false);
 	void drawPosition2d(f32 width, Vec2f pos, u32 color);
 	void drawArrow2d(f32 width, f32 lenInPixels, Vec2f pos, Vec2f dir, u32 color);
@@ -424,6 +427,10 @@ namespace LevelEditor
 		if (s_editMode == LEDIT_DRAW)
 		{
 			drawSectorShape2D();
+		}
+		else if (s_editMode == LEDIT_GUIDELINES)
+		{
+			drawGuidelineShape2D();
 		}
 
 		// Draw objects.
@@ -993,7 +1000,7 @@ namespace LevelEditor
 			}
 		}
 	}
-		
+			
 	void drawSectorShape2D()
 	{
 		u32 color[] = { 0xffffffff, 0xffffffff };
@@ -1089,21 +1096,7 @@ namespace LevelEditor
 		}
 
 		// Draw the cursor.
-		const u32 cursorColor[] = { 0x80ff8020, 0x80ff8020 };
-		const f32 scale = std::min(1.0f, 1.0f / s_zoom2d) * c_vertexSize;
-		const Vec2f p0 = { s_geoEdit.drawCurPos.x * s_viewportTrans2d.x + s_viewportTrans2d.y, s_geoEdit.drawCurPos.z * s_viewportTrans2d.z + s_viewportTrans2d.w };
-		const Vec2f vtx[] =
-		{
-			{ p0.x - scale, p0.z - scale },
-			{ p0.x + scale, p0.z - scale },
-			{ p0.x + scale, p0.z + scale },
-			{ p0.x - scale, p0.z + scale },
-			{ p0.x - scale, p0.z - scale },
-		};
-		TFE_RenderShared::lineDraw2d_addLine(1.5f, &vtx[0], cursorColor);
-		TFE_RenderShared::lineDraw2d_addLine(1.5f, &vtx[1], cursorColor);
-		TFE_RenderShared::lineDraw2d_addLine(1.5f, &vtx[2], cursorColor);
-		TFE_RenderShared::lineDraw2d_addLine(1.5f, &vtx[3], cursorColor);
+		drawEditCursor2D(&s_geoEdit.drawCurPos);
 	}
 	
 	void drawExtrudeShape3D()
@@ -2764,6 +2757,162 @@ namespace LevelEditor
 
 		TFE_RenderShared::triDraw2d_draw();
 		TFE_RenderShared::triDraw2d_begin(s_viewportSize.x, s_viewportSize.z);
+	}
+
+	void drawEditCursor2D(Vec2f* cursorPos)
+	{
+		// Draw the cursor.
+		const u32 cursorColor[] = { 0x80ff8020, 0x80ff8020 };
+		const f32 scale = std::min(1.0f, 1.0f / s_zoom2d) * c_vertexSize;
+		const Vec2f p0 = { cursorPos->x * s_viewportTrans2d.x + s_viewportTrans2d.y, cursorPos->z * s_viewportTrans2d.z + s_viewportTrans2d.w };
+		const Vec2f vtx[] =
+		{
+			{ p0.x - scale, p0.z - scale },
+			{ p0.x + scale, p0.z - scale },
+			{ p0.x + scale, p0.z + scale },
+			{ p0.x - scale, p0.z + scale },
+			{ p0.x - scale, p0.z - scale },
+		};
+		TFE_RenderShared::lineDraw2d_addLine(1.5f, &vtx[0], cursorColor);
+		TFE_RenderShared::lineDraw2d_addLine(1.5f, &vtx[1], cursorColor);
+		TFE_RenderShared::lineDraw2d_addLine(1.5f, &vtx[2], cursorColor);
+		TFE_RenderShared::lineDraw2d_addLine(1.5f, &vtx[3], cursorColor);
+	}
+
+	void drawGuidelineShape2D()
+	{
+		TFE_RenderShared::lineDraw2d_setLineDrawMode(LINE_DRAW_DASHED);
+
+		Guideline* guideline = &s_editGuidelines.guidelines;
+		const Vec2f* srcVtx = guideline->vtx.data();
+		const f32 width = 2.0f;
+		const u32 color[] = { 0xc000a5ff, 0xc000a5ff };
+		const u32 curveColor[] = { 0x80a500ff, 0x80a500ff };
+		const u32 colorSupportEdge[] = { 0x80ffffff, 0x80ffffff };
+		if (s_editGuidelines.drawStarted && s_editGuidelines.drawMode == DMODE_RECT)
+		{
+			Vec2f p[4];
+			getGridOrientedRect(srcVtx[0], srcVtx[1], p);
+
+			Vec2f vtx[] =
+			{
+				{ p[0].x * s_viewportTrans2d.x + s_viewportTrans2d.y, p[0].z * s_viewportTrans2d.z + s_viewportTrans2d.w },
+				{ p[1].x * s_viewportTrans2d.x + s_viewportTrans2d.y, p[1].z * s_viewportTrans2d.z + s_viewportTrans2d.w },
+				{ p[2].x * s_viewportTrans2d.x + s_viewportTrans2d.y, p[2].z * s_viewportTrans2d.z + s_viewportTrans2d.w },
+				{ p[3].x * s_viewportTrans2d.x + s_viewportTrans2d.y, p[3].z * s_viewportTrans2d.z + s_viewportTrans2d.w },
+				{ p[0].x * s_viewportTrans2d.x + s_viewportTrans2d.y, p[0].z * s_viewportTrans2d.z + s_viewportTrans2d.w }
+			};
+			TFE_RenderShared::lineDraw2d_addLine(width, &vtx[0], color);
+			TFE_RenderShared::lineDraw2d_addLine(width, &vtx[1], color);
+			TFE_RenderShared::lineDraw2d_addLine(width, &vtx[2], color);
+			TFE_RenderShared::lineDraw2d_addLine(width, &vtx[3], color);
+		}
+		else if (s_editGuidelines.drawStarted && s_editGuidelines.drawMode == DMODE_SHAPE)
+		{
+			const size_t count = guideline->edge.size();
+			const Vec2f* vtx = guideline->vtx.data();
+			const GuidelineEdge* edge = guideline->edge.data();
+
+			for (size_t e = 0; e < count; e++, edge++)
+			{
+				const Vec2f* v0 = &vtx[edge->idx[0]];
+				const Vec2f* v1 = &vtx[edge->idx[1]];
+				if (edge->idx[2] >= 0)
+				{
+					const Vec2f* c = &vtx[edge->idx[2]];
+					// Curve.
+					const Vec2f curveVtx[] =
+					{
+						{ v0->x*s_viewportTrans2d.x + s_viewportTrans2d.y, v0->z * s_viewportTrans2d.z + s_viewportTrans2d.w },
+						{ v1->x*s_viewportTrans2d.x + s_viewportTrans2d.y, v1->z * s_viewportTrans2d.z + s_viewportTrans2d.w },
+						{ c->x*s_viewportTrans2d.x + s_viewportTrans2d.y, c->z * s_viewportTrans2d.z + s_viewportTrans2d.w },
+					};
+					TFE_RenderShared::lineDraw2d_addCurve(curveVtx, color[0]);
+				}
+				else
+				{
+					// Straight line.
+					const Vec2f line[] =
+					{
+						{ v0->x * s_viewportTrans2d.x + s_viewportTrans2d.y, v0->z * s_viewportTrans2d.z + s_viewportTrans2d.w },
+						{ v1->x * s_viewportTrans2d.x + s_viewportTrans2d.y, v1->z * s_viewportTrans2d.z + s_viewportTrans2d.w }
+					};
+					TFE_RenderShared::lineDraw2d_addLine(2.0f, line, color);
+				}
+			}
+			// Draw from the last vertex to curPos.
+			const Vec2f* v0 = guideline->edge.empty() ? &vtx[0] : &vtx[guideline->edge.back().idx[1]];
+			const Vec2f lineVtx[] =
+			{
+				{v0->x * s_viewportTrans2d.x + s_viewportTrans2d.y, v0->z * s_viewportTrans2d.z + s_viewportTrans2d.w},
+				{s_editGuidelines.drawCurPos.x * s_viewportTrans2d.x + s_viewportTrans2d.y,  s_editGuidelines.drawCurPos.z * s_viewportTrans2d.z + s_viewportTrans2d.w}
+			};
+			TFE_RenderShared::lineDraw2d_addLine(width, lineVtx, (s_viewportRenderFlags & VRF_CURVE_MOD) ? curveColor : color);
+		}
+		else if (s_editGuidelines.drawStarted && s_editGuidelines.drawMode == DMODE_CURVE_CONTROL)
+		{
+			const size_t count = guideline->edge.size();
+			const Vec2f* vtx = guideline->vtx.data();
+			const GuidelineEdge* edge = guideline->edge.data();
+
+			for (size_t e = 0; e < count - 1; e++, edge++)
+			{
+				const Vec2f* v0 = &vtx[edge->idx[0]];
+				const Vec2f* v1 = &vtx[edge->idx[1]];
+				if (edge->idx[2] >= 0)
+				{
+					const Vec2f* c = &vtx[edge->idx[2]];
+					// Curve.
+					const Vec2f curveVtx[] =
+					{
+						{ v0->x*s_viewportTrans2d.x + s_viewportTrans2d.y, v0->z * s_viewportTrans2d.z + s_viewportTrans2d.w },
+						{ v1->x*s_viewportTrans2d.x + s_viewportTrans2d.y, v1->z * s_viewportTrans2d.z + s_viewportTrans2d.w },
+						{ c->x*s_viewportTrans2d.x + s_viewportTrans2d.y, c->z * s_viewportTrans2d.z + s_viewportTrans2d.w },
+					};
+					TFE_RenderShared::lineDraw2d_addCurve(curveVtx, color[0]);
+				}
+				else
+				{
+					// Straight line.
+					const Vec2f line[] =
+					{
+						{ v0->x * s_viewportTrans2d.x + s_viewportTrans2d.y, v0->z * s_viewportTrans2d.z + s_viewportTrans2d.w },
+						{ v1->x * s_viewportTrans2d.x + s_viewportTrans2d.y, v1->z * s_viewportTrans2d.z + s_viewportTrans2d.w }
+					};
+					TFE_RenderShared::lineDraw2d_addLine(2.0f, line, color);
+				}
+			}
+			// Support triangle.
+			edge = &guideline->edge.back();
+			{
+				const Vec2f lineVtx0[] =
+				{
+					{ vtx[edge->idx[0]].x * s_viewportTrans2d.x + s_viewportTrans2d.y, vtx[edge->idx[0]].z * s_viewportTrans2d.z + s_viewportTrans2d.w },
+					{ s_editGuidelines.drawCurPos.x * s_viewportTrans2d.x + s_viewportTrans2d.y, s_editGuidelines.drawCurPos.z * s_viewportTrans2d.z + s_viewportTrans2d.w }
+				};
+				TFE_RenderShared::lineDraw2d_addLine(width, lineVtx0, colorSupportEdge);
+
+				const Vec2f lineVtx1[] =
+				{
+					{ vtx[edge->idx[1]].x * s_viewportTrans2d.x + s_viewportTrans2d.y, vtx[edge->idx[1]].z * s_viewportTrans2d.z + s_viewportTrans2d.w },
+					{ s_editGuidelines.drawCurPos.x * s_viewportTrans2d.x + s_viewportTrans2d.y, s_editGuidelines.drawCurPos.z * s_viewportTrans2d.z + s_viewportTrans2d.w }
+				};
+				TFE_RenderShared::lineDraw2d_addLine(width, lineVtx1, colorSupportEdge);
+			}
+			// Curve.
+			const Vec2f* c = &s_editGuidelines.drawCurPos;
+			// Curve.
+			const Vec2f curveVtx[] =
+			{
+				{ vtx[edge->idx[0]].x*s_viewportTrans2d.x + s_viewportTrans2d.y, vtx[edge->idx[0]].z * s_viewportTrans2d.z + s_viewportTrans2d.w },
+				{ vtx[edge->idx[1]].x*s_viewportTrans2d.x + s_viewportTrans2d.y, vtx[edge->idx[1]].z * s_viewportTrans2d.z + s_viewportTrans2d.w },
+				{ c->x*s_viewportTrans2d.x + s_viewportTrans2d.y, c->z * s_viewportTrans2d.z + s_viewportTrans2d.w },
+			};
+			TFE_RenderShared::lineDraw2d_addCurve(curveVtx, curveColor[0]);
+		}
+
+		TFE_RenderShared::lineDraw2d_setLineDrawMode();
+		drawEditCursor2D(&s_editGuidelines.drawCurPos);
 	}
 
 	void renderGuidelines2d(const Vec4f viewportBoundsWS)

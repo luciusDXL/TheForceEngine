@@ -60,6 +60,8 @@ namespace LevelEditor
 	void createSectorFromShape();
 	s32 insertVertexIntoSector(EditorSector* sector, Vec2f newVtx);
 
+	bool gridCursorIntersection(Vec3f* pos);
+
 	void buildCurve(const Vec2f& a, const Vec2f& b, const Vec2f& c, std::vector<Vec2f>* curve);
 	s32  getCurveSegDelta();
 	void setCurveSegDelta(s32 newDelta = 0);

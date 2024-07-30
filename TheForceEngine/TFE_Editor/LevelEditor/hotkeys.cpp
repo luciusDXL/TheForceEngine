@@ -141,7 +141,7 @@ namespace LevelEditor
 			s_drawActions = DRAW_ACTION_FINISH;
 		}
 
-		if (s_geoEdit.drawMode == DMODE_CURVE_CONTROL)
+		if (s_editMode != LEDIT_GUIDELINES && s_geoEdit.drawMode == DMODE_CURVE_CONTROL)
 		{
 			s32 delta = getCurveSegDelta();
 			if (TFE_Input::keyPressedWithRepeat(KEY_LEFTBRACKET))
@@ -176,7 +176,7 @@ namespace LevelEditor
 		{
 			updateEntityEditHotkeys();
 		}
-		else if (s_editMode == LEDIT_DRAW)
+		else if (s_editMode == LEDIT_DRAW || s_editMode == LEDIT_GUIDELINES)
 		{
 			updateDrawModeHotkeys();
 		}
