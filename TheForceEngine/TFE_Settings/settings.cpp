@@ -231,7 +231,7 @@ namespace TFE_Settings
 			if (!pathValid)
 			{
 				// Try various possible locations.
-				const char** locations = c_gameLocations[gameId];
+				const char* const * locations = c_gameLocations[gameId];
 				for (u32 i = 0; i < c_hardcodedPathCount; i++)
 				{
 					if (FileUtil::directoryExits(locations[i]))
