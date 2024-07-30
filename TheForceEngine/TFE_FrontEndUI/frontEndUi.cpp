@@ -35,6 +35,7 @@
 #include <TFE_DarkForces/config.h>
 #include <TFE_DarkForces/player.h>
 #include <TFE_DarkForces/hud.h>
+#include <TFE_Jedi/Renderer/RClassic_Float/rlightingFloat.h>
 
 #include <climits>
 
@@ -73,6 +74,7 @@ namespace TFE_FrontEndUI
 		CONFIG_SOUND,
 		CONFIG_SYSTEM,
 		CONFIG_A11Y,
+		CONFIG_DEVELOPER,
 		CONFIG_COUNT,
 	};
 
@@ -100,7 +102,8 @@ namespace TFE_FrontEndUI
 		"Enhancements",
 		"Sound",
 		"System",
-		"Accessibility (beta)"
+		"Accessibility",
+		"Developer"
 	};
 
 	static const Vec2i c_resolutionDim[] =
@@ -259,6 +262,7 @@ namespace TFE_FrontEndUI
 	void DrawLabelledIntSlider(float labelWidth, float valueWidth, const char* label, const char* tag, int* value, int min, int max);
 	void DrawLabelledFloatSlider(float labelWidth, float valueWidth, const char* label, const char* tag, float* value, float min, float max);
 	void configA11y(s32 tabWidth, u32 height);
+	void configDeveloper();
 	void pickCurrentResolution();
 	void manual();
 	void credits();
@@ -865,6 +869,12 @@ namespace TFE_FrontEndUI
 				TFE_Settings::writeToDisk();
 				inputMapping_serialize();
 			}
+			if (ImGui::Button("Developer", sideBarButtonSize))
+			{
+				s_configTab = CONFIG_DEVELOPER;
+				TFE_Settings::writeToDisk();
+				inputMapping_serialize();
+			}
 			ImGui::Separator();
 			if (ImGui::Button("Return", sideBarButtonSize))
 			{
@@ -890,9 +900,9 @@ namespace TFE_FrontEndUI
 
 			ImGui::End();
 
-			// adjust the width based on tab.
+			// Adjust the width based on tab.
 			s32 tabWidth = w - s32(160*s_uiScale);
-			if (s_configTab >= CONFIG_INPUT && s_configTab < CONFIG_SYSTEM || s_configTab == CONFIG_A11Y)
+			if (s_configTab >= CONFIG_INPUT && s_configTab < CONFIG_SYSTEM || s_configTab == CONFIG_A11Y || s_configTab == CONFIG_DEVELOPER)
 			{
 				tabWidth = s32(414*s_uiScale);
 			}
@@ -947,6 +957,9 @@ namespace TFE_FrontEndUI
 				break;
 			case CONFIG_A11Y:
 				configA11y(tabWidth, h);
+				break;
+			case CONFIG_DEVELOPER:
+				configDeveloper();
 				break;
 			};
 			renderBackground(forceTextureUpdate);
@@ -2913,6 +2926,15 @@ namespace TFE_FrontEndUI
 		ImGui::SetNextItemWidth(valueWidth);
 		ImGui::SliderFloat(tag, value, min, max);
 	}
+
+	void DrawLabelledFloat3Slider(float labelWidth, float valueWidth, const char* label, const char* tag, float* value, float min, float max)
+	{
+		ImGui::SetNextItemWidth(labelWidth);
+		ImGui::LabelText("##ConfigLabel", "%s", label);
+		ImGui::SameLine();
+		ImGui::SetNextItemWidth(valueWidth);
+		ImGui::SliderFloat3(tag, value, min, max);
+	}
 	
 	void DrawLabelledIntSlider(float labelWidth, float valueWidth, const char* label, const char* tag, int* value, int min, int max)
 	{
@@ -2947,7 +2969,26 @@ namespace TFE_FrontEndUI
 		return currentFilePath;	
 	}
 
+	void pickCurrentResolution()
+	{
+		TFE_Settings_Graphics* graphics = TFE_Settings::getGraphicsSettings();
+
+		const size_t count = TFE_ARRAYSIZE(c_resolutionDim);
+		for (size_t i = 0; i < count; i++)
+		{
+			if (graphics->gameResolution.z == c_resolutionDim[i].z)
+			{
+				s_resIndex = s32(i);
+				return;
+			}
+		}
+		s_resIndex = count;
+
+	}
+
+	////////////////////////////////////////////////////////////////
 	// Accessibility
+	////////////////////////////////////////////////////////////////
 	void configA11y(s32 tabWidth, u32 height)
 	{
 		// WINDOW --------------------------------------------
@@ -3015,7 +3056,7 @@ namespace TFE_FrontEndUI
 		Tooltip("Reimport caption and font files. Use if you add, remove, or modify caption or font files in a TFE directory while TFE is running. Please wait a moment for files to refresh.");
 
 		// CUTSCENES -----------------------------------------
-		ImGui::Dummy(ImVec2(0.0f, 10.0f));
+		ImGui::Dummy(ImVec2(0.0f, 10.0f)); // Makes some empty space.
 		ImGui::PushFont(s_versionFont);
 		ImGui::LabelText("##ConfigLabel", "Cutscenes");
 		ImGui::PopFont();
@@ -3071,20 +3112,75 @@ namespace TFE_FrontEndUI
 		Tooltip("Disable illumination around the player caused by firing weapons.");
 	}
 
-	void pickCurrentResolution()
-	{
-		TFE_Settings_Graphics* graphics = TFE_Settings::getGraphicsSettings();
+	////////////////////////////////////////////////////////////////
+	// Developer controls
+	////////////////////////////////////////////////////////////////
 
-		const size_t count = TFE_ARRAYSIZE(c_resolutionDim);
-		for (size_t i = 0; i < count; i++)
+	void drawLightControls(s32 index) 
+	{
+		f32 labelW = 80 * s_uiScale;
+		f32 valueW = 260 * s_uiScale - 10;
+		string label1 = "Light " + to_string(index);
+		string tag2 = "##LB" + to_string(index);
+		string tag3 = "##LVS" + to_string(index);
+		string tag4 = "##LWS" + to_string(index);
+		ImGui::LabelText("##ConfigLabel3", label1.c_str());
+		DrawLabelledFloatSlider(labelW, valueW * 0.5f - 2, "  Brightness", tag2.c_str(), &RClassic_Float::s_cameraLight[index].brightness, 0.0f, 8.0f);
+		Tooltip("Values above 1.0 only affect obliquely lit faces.");
+
+		vec3_float* lightWS = &RClassic_Float::s_cameraLight[index].lightWS;
+		DrawLabelledFloat3Slider(labelW, valueW, "  WS", tag4.c_str(), &lightWS->x, -150, 150);
+		Tooltip("World-space position of the light source.");
+	}
+
+	void resetLighting() 
+	{
+		RClassic_Float::s_cameraLight[0].brightness = 1;
+		RClassic_Float::s_cameraLight[0].lightWS = { 0.0f, 0.0f, 1.0f };
+		RClassic_Float::s_cameraLight[1].brightness = 1;
+		RClassic_Float::s_cameraLight[1].lightWS = { 0.0f, 1.0f, 0.0f };
+		RClassic_Float::s_cameraLight[2].brightness = 1;
+		RClassic_Float::s_cameraLight[2].lightWS = { 1.0f, 0.0f, 0.0f };
+	}
+
+	void configDeveloper() 
+	{
+		ImGui::PushFont(s_dialogFont);
+		ImGui::LabelText("##ConfigLabel", "Lighting");
+		ImGui::PopFont();
+
+		TFE_Settings_Graphics* graphicsSettings = TFE_Settings::getGraphicsSettings();
+
+		ImGui::Checkbox("Force Gouraud Shading (Restart Required)", &graphicsSettings->forceGouraudShading);
+		Tooltip("Use gouraud shading for all 3DO models.");
+
+		bool wasOverrideEnabled = graphicsSettings->overrideLighting;
+		if (graphicsSettings->rendererIndex != 0)
 		{
-			if (graphics->gameResolution.z == c_resolutionDim[i].z)
-			{
-				s_resIndex = s32(i);
-				return;
-			}
+			ImGui::TextWrapped("Lighting controls are only available with the software renderer.");
+			return;
 		}
-		s_resIndex = count;
+		ImGui::Checkbox("Override 3DO Lighting (Software Renderer Only)", &graphicsSettings->overrideLighting);
+		Tooltip("If selected, 3DO lighting will be controlled manually from this screen, rather than using engine/map defaults. This setting is not saved.");
+
+		if (!graphicsSettings->overrideLighting) 
+		{
+			if (wasOverrideEnabled) { resetLighting(); }
+			return; 
+		}
+
+		ImGui::Dummy(ImVec2(0.0f, 10.0f)); // Makes some empty space.
+		ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.75f, 0.75f, 0, 1.0f));
+		ImGui::PopStyleColor();
+
+		drawLightControls(0);
+		drawLightControls(1);
+		drawLightControls(2);
+
+		if (ImGui::Button("Reset")) 
+		{
+			resetLighting();
+		}
 	}
 
 	////////////////////////////////////////////////////////////////
