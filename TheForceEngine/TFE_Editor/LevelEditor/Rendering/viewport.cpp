@@ -4,6 +4,7 @@
 #include "grid3d.h"
 #include <TFE_System/math.h>
 #include <TFE_Editor/editor.h>
+#include <TFE_Editor/editorMath.h>
 #include <TFE_Editor/LevelEditor/editGeometry.h>
 #include <TFE_Editor/LevelEditor/levelEditor.h>
 #include <TFE_Editor/LevelEditor/levelEditorData.h>
@@ -2765,21 +2766,6 @@ namespace LevelEditor
 		TFE_RenderShared::triDraw2d_begin(s_viewportSize.x, s_viewportSize.z);
 	}
 
-	// TODO: Move to a shared location.
-	f32 min3(f32 a, f32 b, f32 c)
-	{
-		return std::min(a, std::min(b, c));
-	}
-	f32 max3(f32 a, f32 b, f32 c)
-	{
-		return std::max(a, std::max(b, c));
-	}
-	bool boundsOverlap(Vec4f bounds0, Vec4f bounds1)
-	{
-		return bounds0.x <= bounds1.z && bounds1.x <= bounds0.z && // x intervals overlap
-			   bounds0.y <= bounds1.w && bounds1.y <= bounds0.w;   // y intervals overlap
-	}
-
 	void renderGuidelines2d(const Vec4f viewportBoundsWS)
 	{
 		const u32 colors[] = { 0xc000a5ff, 0xc000a5ff };
@@ -2789,28 +2775,22 @@ namespace LevelEditor
 		for (size_t i = 0; i < count; i++, guideLine++)
 		{
 			// Cull the entire guideline set.
-			if (!boundsOverlap(guideLine->bounds, viewportBoundsWS))
-			{
-				continue;
-			}
+			if (!boundsOverlap(guideLine->bounds, viewportBoundsWS)) { continue; }
 
 			const size_t count = guideLine->edge.size();
+			const Vec2f* vtx   = guideLine->vtx.data();
 			const GuidelineEdge* edge = guideLine->edge.data();
-			const Vec2f* vtx = guideLine->vtx.data();
-			
+
 			for (size_t e = 0; e < count; e++, edge++)
 			{
+				const Vec2f* v0 = &vtx[edge->idx[0]];
+				const Vec2f* v1 = &vtx[edge->idx[1]];
 				if (edge->idx[2] >= 0)
 				{
-					const Vec2f* v0 = &vtx[edge->idx[0]];
-					const Vec2f* v1 = &vtx[edge->idx[1]];
 					const Vec2f* c = &vtx[edge->idx[2]];
-					// Then cull the curves as well, since they are expensive to render.
+					// Cull the curve if the bounds are outside of the view.
 					const Vec4f curveBounds = { min3(v0->x, v1->x, c->x), min3(v0->z, v1->z, c->z), max3(v0->x, v1->x, c->x), max3(v0->z, v1->z, c->z) };
-					if (!boundsOverlap(curveBounds, viewportBoundsWS))
-					{
-						continue;
-					}
+					if (!boundsOverlap(curveBounds, viewportBoundsWS)) { continue; }
 					// Curve.
 					const Vec2f curveVtx[] =
 					{
@@ -2819,31 +2799,18 @@ namespace LevelEditor
 						{ c->x*s_viewportTrans2d.x + s_viewportTrans2d.y, c->z * s_viewportTrans2d.z + s_viewportTrans2d.w },
 					};
 					TFE_RenderShared::lineDraw2d_addCurve(curveVtx, colors[0]);
-
-					// Test
-					// Draw a line from the cursor to the closest point on the curve.
-					f32 t;
-					signedDistQuadraticBezier(*v0, *v1, *c, { s_cursor3d.x, s_cursor3d.z }, t);
-					Vec2f onCurve;
-					evaluateQuadraticBezier(*v0, *v1, *c, t, &onCurve, nullptr);
-
-					if (t > 0.0f && t < 1.0f)
-					{
-						Vec2f line[2];
-						line[0] = { s_cursor3d.x * s_viewportTrans2d.x + s_viewportTrans2d.y, s_cursor3d.z * s_viewportTrans2d.z + s_viewportTrans2d.w };
-						line[1] = { onCurve.x * s_viewportTrans2d.x + s_viewportTrans2d.y, onCurve.z * s_viewportTrans2d.z + s_viewportTrans2d.w };
-						const u32 colorLine[] = { 0xc0ffa500, 0xc0ffa500 };
-						TFE_RenderShared::lineDraw2d_addLine(2.0f, line, colorLine);
-					}
 				}
 				else
 				{
+					// Cull the line if the bounds are outside of the view.
+					const Vec4f lineBounds = { std::min(v0->x, v1->x), std::min(v0->z, v1->z), std::max(v0->x, v1->x), std::max(v0->z, v1->z) };
+					if (!boundsOverlap(lineBounds, viewportBoundsWS)) { continue; }
 					// Straight line.
-					Vec2f line[2];
-					const Vec2f* v0 = &vtx[edge->idx[0]];
-					const Vec2f* v1 = &vtx[edge->idx[1]];
-					line[0] = { v0->x * s_viewportTrans2d.x + s_viewportTrans2d.y, v0->z * s_viewportTrans2d.z + s_viewportTrans2d.w };
-					line[1] = { v1->x * s_viewportTrans2d.x + s_viewportTrans2d.y, v1->z * s_viewportTrans2d.z + s_viewportTrans2d.w };
+					const Vec2f line[] =
+					{
+						{ v0->x * s_viewportTrans2d.x + s_viewportTrans2d.y, v0->z * s_viewportTrans2d.z + s_viewportTrans2d.w },
+						{ v1->x * s_viewportTrans2d.x + s_viewportTrans2d.y, v1->z * s_viewportTrans2d.z + s_viewportTrans2d.w }
+					};
 					TFE_RenderShared::lineDraw2d_addLine(2.0f, line, colors);
 				}
 			}

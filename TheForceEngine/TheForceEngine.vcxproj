@@ -457,6 +457,7 @@ echo ^)";
     <ClInclude Include="TFE_Editor\EditorAsset\editorTexture.h" />
     <ClInclude Include="TFE_Editor\editorConfig.h" />
     <ClInclude Include="TFE_Editor\editorLevel.h" />
+    <ClInclude Include="TFE_Editor\editorMath.h" />
     <ClInclude Include="TFE_Editor\editorProject.h" />
     <ClInclude Include="TFE_Editor\editorResources.h" />
     <ClInclude Include="TFE_Editor\errorMessages.h" />
@@ -827,6 +828,7 @@ echo ^)";
     <ClCompile Include="TFE_Editor\EditorAsset\editorTexture.cpp" />
     <ClCompile Include="TFE_Editor\editorConfig.cpp" />
     <ClCompile Include="TFE_Editor\editorLevel.cpp" />
+    <ClCompile Include="TFE_Editor\editorMath.cpp" />
     <ClCompile Include="TFE_Editor\editorProject.cpp" />
     <ClCompile Include="TFE_Editor\editorResources.cpp" />
     <ClCompile Include="TFE_Editor\errorMessages.cpp" />
