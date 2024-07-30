@@ -49,6 +49,7 @@
 #ifdef min
 #undef min
 #undef max
+#pragma comment(lib, "SDL2main.lib")
 #endif
 #endif
 
@@ -61,7 +62,6 @@
 #define INSTALL_CRASH_HANDLER 0
 #endif
 
-#pragma comment(lib, "SDL2main.lib")
 using namespace TFE_Input;
 using namespace TFE_A11Y;
 

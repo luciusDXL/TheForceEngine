@@ -71,7 +71,7 @@ namespace TFE_Settings
 		"OUTLAWS.LAB",			// Game_Outlaws
 	};
 
-	static const char* c_darkForcesLocations[] =
+	static const char* const c_darkForcesLocations[] =
 	{
 		// C drive
 		"C:/Program Files (x86)/Steam/steamapps/common/dark forces/Game/",
@@ -88,7 +88,7 @@ namespace TFE_Settings
 		"D:/Program Files (x86)/GOG.com/Star Wars - Dark Forces/",
 		"D:/GOG Games/Star Wars - Dark Forces/",
 	};
-	static const char* c_outlawsLocations[] =
+	static const char* const c_outlawsLocations[] =
 	{
 		// C drive
 		"C:/Program Files (x86)/Steam/steamapps/common/outlaws/",
@@ -103,7 +103,7 @@ namespace TFE_Settings
 	};
 	static const u32 c_hardcodedPathCount = TFE_ARRAYSIZE(c_darkForcesLocations);
 
-	static const char** c_gameLocations[] =
+	static const char* const * c_gameLocations[] =
 	{
 		c_darkForcesLocations,
 		c_outlawsLocations

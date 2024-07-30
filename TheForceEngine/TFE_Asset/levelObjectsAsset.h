@@ -33,7 +33,7 @@ enum Difficulty
 // Will not generate enemies when the player can see the generator.
 struct EnemyGenerator
 {
-	LogicType type;		// type of enemy to be generated.
+	AssetLogicType type;		// type of enemy to be generated.
 	f32 delay;			// time in seconds that needs to pass from the start of a level before the generator starts operating.
 	f32 interval;		// time in seconds between each generation.
 	f32 minDist;		// min/max distance from player when enemy can be generated.
@@ -45,9 +45,9 @@ struct EnemyGenerator
 // For Scripts
 typedef EnemyGenerator GenParam;
 
-struct Logic
+struct AssetLogic
 {
-	LogicType type = LOGIC_INVALID;
+	AssetLogicType type = LOGIC_INVALID;
 	u32 flags      = 0;		// logic specific flags.
 	f32 frameRate  = 0.0f;
 	Vec3f rotation = { 0.0f, 0.0f, 0.0f };
@@ -58,7 +58,7 @@ struct Logic
 	s32 vueAppendId = -1;
 };
 // For scripts
-typedef Logic LogicParam;
+typedef AssetLogic LogicParam;
 
 struct LevelObject
 {
@@ -75,7 +75,7 @@ struct LevelObject
 	f32 height = 0.0f;
 
 	// Logics
-	std::vector<Logic> logics;
+	std::vector<AssetLogic> logics;
 	std::vector<EnemyGenerator> generators;
 };
 

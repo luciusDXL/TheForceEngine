@@ -110,7 +110,7 @@ namespace LevelEditor
 	void optionSliderEditFloat(const char* name, const char* precision, f32* value, f32 minValue, f32 maxValue, f32 step)
 	{
 		ImGui::SetNextItemWidth(160);
-		ImGui::LabelText("##Label", name); ImGui::SameLine();
+		ImGui::LabelText("##Label", "%s", name); ImGui::SameLine();
 
 		char labelSlider[256];
 		char labelInput[256];

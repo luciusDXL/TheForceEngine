@@ -230,7 +230,7 @@ namespace TFE_DarkForces
 	void setInitialLevel(const char* levelName);
 	s32  loadLocalMessages();
 	void buildSearchPaths();
-	void openGobFiles();
+	bool openGobFiles();
 	void gameStartup();
 	void loadAgentAndLevelData();
 	void startNextMode();
@@ -295,7 +295,8 @@ namespace TFE_DarkForces
 		buildSearchPaths();
 		processCommandLineArgs(argCount, argv, startLevel);
 		loadLocalMessages();
-		openGobFiles();
+		if (!openGobFiles())
+			return false;
 
 		// Sound is initialized before the task system.
 		sound_open(s_gameRegion);
@@ -1115,7 +1116,7 @@ namespace TFE_DarkForces
 		TFE_Paths::addAbsoluteSearchPath(path);
 	}
 
-	void openGobFiles()
+	bool openGobFiles()
 	{
 		for (s32 i = 0; i < TFE_ARRAYSIZE(c_gobFileNames); i++)
 		{
@@ -1132,6 +1133,7 @@ namespace TFE_DarkForces
 			else
 			{
 				TFE_System::logWrite(LOG_ERROR, "Dark Forces Main", "Cannot find required game data - '%s'.", c_gobFileNames[i]);
+				return false;
 			}
 		}
 		// Optional gobs
@@ -1148,6 +1150,7 @@ namespace TFE_DarkForces
 				}
 			}
 		}
+		return true;
 	}
 		
 	void loadMapNumFont()

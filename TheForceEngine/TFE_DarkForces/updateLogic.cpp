@@ -81,6 +81,8 @@ namespace TFE_DarkForces
 		if (!s_logicUpdateList)
 		{
 			s_logicUpdateList = allocator_create(sizeof(UpdateLogic));
+			if (!s_logicUpdateList)
+				return nullptr;
 		}
 		if (!s_logicUpdateTask)
 		{
@@ -92,6 +94,8 @@ namespace TFE_DarkForces
 		}
 
 		UpdateLogic* updateLogic = (UpdateLogic*)allocator_newItem(s_logicUpdateList);
+		if (!updateLogic)
+			return nullptr;
 		updateLogic->flags = ULFLAG_ALL;
 		updateLogic->zVel = 0;
 		updateLogic->yVel = 0;
@@ -104,8 +108,12 @@ namespace TFE_DarkForces
 		if (!obj->logic)
 		{
 			obj->logic = allocator_create(sizeof(Logic**));
+			if (!obj->logic)
+				return nullptr;
 		}
 		Logic** logicItem = (Logic**)allocator_newItem((Allocator*)obj->logic);
+		if (!logicItem)
+			return nullptr;
 		*logicItem = (Logic*)updateLogic;
 
 		updateLogic->logic.obj = obj;
