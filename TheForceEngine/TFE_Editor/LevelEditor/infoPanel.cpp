@@ -369,7 +369,7 @@ namespace LevelEditor
 					s_groupOpen = (s_groupOpen == i) ? -1 : i;
 				}
 				ImGui::SameLine(0.0f, 8.0f);
-				ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 4);
+				ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 8);
 				if (ImGui::Selectable(editor_getUniqueLabel(group->name.c_str()), s_groupCurrent == i, 0, ImVec2(264, 0)))
 				{
 					s_groupCurrent = i;
