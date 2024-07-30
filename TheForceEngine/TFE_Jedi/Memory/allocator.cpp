@@ -1,13 +1,13 @@
 #include "allocator.h"
 #include <TFE_System/system.h>
-#include <TFE_Memory/memoryRegion.h>
 #include <TFE_Game/igame.h>
-#include <assert.h>
+#include <cstring>
 
 struct AllocHeader
 {
 	AllocHeader* prev;
 	AllocHeader* next;
+	char data[];		// actual data storage area.
 };
 
 struct Allocator
@@ -26,13 +26,20 @@ struct Allocator
 	AllocHeader* iterPrevSave;
 };
 
+// given an "item" (=allocheader->data), get the "AllocHeader" it belongs to.
+template<class P, class C>C* _AllocHeader_of(P ptr)
+{
+	const size_t off = (size_t)&((reinterpret_cast<C*>(0))->data);
+	return (C*)((char*)ptr - off);
+}
+#define AllocHeader_of(item) _AllocHeader_of<void*, AllocHeader>(item)
+
+// safely get the "AllocHeader->data".
+#define GET_DATA(x) ((x) ? &((x)->data) : nullptr)
+
+
 namespace TFE_Jedi
 {
-	// Note that the invalid pointer value is chosen such that
-	// InvalidPointer + sizeof(AllocHeader) = 0 = null
-	// This is hardcoded in DF, here I calculate it based off of size_t so that it works for both 32-bit and 64-bit code.
-	static const size_t c_invalidPtr = (~size_t(0)) - sizeof(AllocHeader) + 1;
-	#define ALLOC_INVALID_PTR ((AllocHeader*)c_invalidPtr)
 	#define MAX_ALLOC_SIZE (8*1024*1024)  // 8MB
 
 	// Create and free an allocator.
@@ -41,25 +48,18 @@ namespace TFE_Jedi
 		if (allocSize > MAX_ALLOC_SIZE || allocSize <= 0)
 		{
 			TFE_System::logWrite(LOG_ERROR, "Allocator", "Invalid allocator size: %d", allocSize);
-			assert(0);
 			return nullptr;
 		}
-		region = region ? region : s_levelRegion;	// If a null region is passed in, assume we want the level region.
+		region = region ? region : s_levelRegion;       // If a null region is passed in, assume we want the level region.
 		Allocator* res = (Allocator*)TFE_Memory::region_alloc(region, sizeof(Allocator));
 		if (!res)
 		{
 			TFE_System::logWrite(LOG_ERROR, "Allocator", "Could not allocate Allocator.");
-			assert(0);
 			return nullptr;
 		}
+		memset(res, 0, sizeof(Allocator));
 		res->self = res;
 		res->region = region;
-
-		// the original code used special bit patterns to represent invalid pointers.
-		res->head = ALLOC_INVALID_PTR;
-		res->tail = ALLOC_INVALID_PTR;
-		res->iterPrev = ALLOC_INVALID_PTR;
-		res->iter = ALLOC_INVALID_PTR;
 		res->size = allocSize + sizeof(AllocHeader);
 		res->refCount = 0;
 
@@ -77,13 +77,13 @@ namespace TFE_Jedi
 			item = allocator_getNext(alloc);
 		}
 
-		alloc->self = (Allocator*)ALLOC_INVALID_PTR;
+		alloc->self = nullptr;
 		TFE_Memory::region_free(alloc->region, alloc);
 	}
 
 	bool allocator_validate(Allocator* alloc)
 	{
-		return alloc->self == alloc;
+		return alloc ? alloc->self == alloc : false;
 	}
 
 	// Allocate and free individual items.
@@ -95,41 +95,41 @@ namespace TFE_Jedi
 		if (!header)
 		{
 			TFE_System::logWrite(LOG_ERROR, "Allocator", "allocator_newItem - cannot allocate header of size %d", alloc->size);
-			assert(0);
 			return nullptr;
 		}
+		memset(header, 0, alloc->size);
 
-		header->next = ALLOC_INVALID_PTR;
+		header->next = nullptr;
 		header->prev = alloc->tail;
 
-		if (alloc->tail != ALLOC_INVALID_PTR)
+		if (alloc->tail)
 		{
 			alloc->tail->next = header;
 		}
 		alloc->tail = header;
 
-		if (alloc->head == ALLOC_INVALID_PTR)
+		if (alloc->head == nullptr)
 		{
 			alloc->head = header;
 		}
 
-		return ((u8*)header + sizeof(AllocHeader));
+		return GET_DATA(header);
 	}
 
 	void allocator_deleteItem(Allocator* alloc, void* item)
 	{
-		if (!alloc) { return; }
+		if (!alloc || !item) { return; }
 
-		AllocHeader* header = (AllocHeader*)((u8*)item - sizeof(AllocHeader));
-		if (header == ALLOC_INVALID_PTR) { return; }
+		AllocHeader* header = AllocHeader_of(item);
+		if (header == nullptr) { return; }
 
 		AllocHeader* prev = header->prev;
 		AllocHeader* next = header->next;
 
-		if (prev == ALLOC_INVALID_PTR) { alloc->head = next; }
+		if (prev == nullptr) { alloc->head = next; }
 		else { prev->next = next; }
 
-		if (next == ALLOC_INVALID_PTR) { alloc->tail = prev; }
+		if (next == nullptr) { alloc->tail = prev; }
 		else { next->prev = prev; }
 
 		if (alloc->iter == header)
@@ -151,7 +151,7 @@ namespace TFE_Jedi
 
 		s32 count = 0;
 		AllocHeader* header = alloc->head;
-		while (header != ALLOC_INVALID_PTR)
+		while (header)
 		{
 			count++;
 			header = header->next;
@@ -166,7 +166,7 @@ namespace TFE_Jedi
 		s32 index = 0;
 		AllocHeader* iter = alloc->iter;
 		AllocHeader* header = alloc->head;
-		while (header != ALLOC_INVALID_PTR)
+		while (header)
 		{
 			if (header == iter)
 			{
@@ -180,10 +180,12 @@ namespace TFE_Jedi
 
 	void allocator_setPos(Allocator* alloc, s32 pos)
 	{
+		if (!alloc) { return; }
+
 		s32 index = 0;
 		AllocHeader* header = alloc->head;
-		alloc->iter = ALLOC_INVALID_PTR;
-		while (header != ALLOC_INVALID_PTR)
+		alloc->iter = nullptr;
+		while (header)
 		{
 			if (index == pos)
 			{
@@ -202,7 +204,7 @@ namespace TFE_Jedi
 		s32 index = 0;
 		AllocHeader* iterPrev = alloc->iterPrev;
 		AllocHeader* header = alloc->head;
-		while (header != ALLOC_INVALID_PTR)
+		while (header)
 		{
 			if (header == iterPrev)
 			{
@@ -216,9 +218,11 @@ namespace TFE_Jedi
 
 	void allocator_setPrevPos(Allocator* alloc, s32 pos)
 	{
+		if (!alloc) { return; }
+
 		s32 index = 0;
 		AllocHeader* header = alloc->head;
-		while (header != ALLOC_INVALID_PTR)
+		while (header)
 		{
 			if (index == pos)
 			{
@@ -232,13 +236,13 @@ namespace TFE_Jedi
 
 	s32 allocator_getIndex(Allocator* alloc, void* item)
 	{
-		if (!item) { return -1; }
+		if (!item || !alloc) { return -1; }
 
 		AllocHeader* header = alloc->head;
 		s32 index = 0;
-		while (header != ALLOC_INVALID_PTR)
+		while (header)
 		{
-			if ((u8*)item == (u8*)header + sizeof(AllocHeader))
+			if (item == &(header->data))
 			{
 				return index;
 			}
@@ -253,7 +257,7 @@ namespace TFE_Jedi
 		if (!alloc) { return nullptr; }
 
 		AllocHeader* header = alloc->head;
-		while (index > 0 && header != ALLOC_INVALID_PTR)
+		while (index > 0 && header)
 		{
 			index--;
 			header = header->next;
@@ -261,7 +265,7 @@ namespace TFE_Jedi
 
 		alloc->iterPrev = header;
 		alloc->iter = header;
-		return (u8*)header + sizeof(AllocHeader);
+		return GET_DATA(header);
 	}
 
 	// Iteration
@@ -281,12 +285,13 @@ namespace TFE_Jedi
 
 	void* allocator_getIter(Allocator* alloc)
 	{
-		return (u8*)alloc->iter + sizeof(AllocHeader);
+		return alloc ? GET_DATA(alloc->iter) : nullptr;
 	}
 
 	void allocator_setIter(Allocator* alloc, void* iter)
 	{
-		alloc->iter = (AllocHeader*)((u8*)iter - sizeof(AllocHeader));
+		if (alloc && iter)
+			alloc->iter = AllocHeader_of(iter);
 	}
 
 	void* allocator_getHead(Allocator* alloc)
@@ -295,13 +300,13 @@ namespace TFE_Jedi
 
 		alloc->iterPrev = alloc->head;
 		alloc->iter = alloc->head;
-		return (u8*)alloc->iter + sizeof(AllocHeader);
+		return GET_DATA(alloc->iter);
 	}
 
 	void* allocator_getHead_noIterUpdate(Allocator* alloc)
 	{
 		if (!alloc) { return nullptr; }
-		return (u8*)alloc->head + sizeof(AllocHeader);
+		return GET_DATA(alloc->head);
 	}
 
 	void* allocator_getTail(Allocator* alloc)
@@ -311,13 +316,13 @@ namespace TFE_Jedi
 		alloc->iterPrev = alloc->tail;
 		alloc->iter = alloc->tail;
 
-		return (u8*)alloc->tail + sizeof(AllocHeader);
+		return GET_DATA(alloc->tail);
 	}
 
 	void* allocator_getTail_noIterUpdate(Allocator* alloc)
 	{
 		if (!alloc) { return nullptr; }
-		return (u8*)alloc->tail + sizeof(AllocHeader);
+		return GET_DATA(alloc->tail);
 	}
 
 	void* allocator_getNext(Allocator* alloc)
@@ -325,19 +330,19 @@ namespace TFE_Jedi
 		if (!alloc) { return nullptr; }
 
 		AllocHeader* iter = alloc->iter;
-		if (iter != ALLOC_INVALID_PTR)
+		if (iter)
 		{
 			alloc->iter = iter->next;
 			alloc->iterPrev = iter->next;
-			return (u8*)iter->next + sizeof(AllocHeader);
+			return GET_DATA(iter->next);
 		}
 
 		iter = alloc->head;
-		if (iter == ALLOC_INVALID_PTR) { return nullptr; }
+		if (iter == nullptr) { return nullptr; }
 
 		alloc->iter = iter;
 		alloc->iterPrev = iter;
-		return (u8*)iter + sizeof(AllocHeader);
+		return GET_DATA(iter);
 	}
 
 	void* allocator_getPrev(Allocator* alloc)
@@ -345,17 +350,17 @@ namespace TFE_Jedi
 		if (!alloc) { return nullptr; }
 
 		AllocHeader* iterPrev = alloc->iterPrev;
-		if (iterPrev != ALLOC_INVALID_PTR)
+		if (iterPrev)
 		{
 			AllocHeader* prev = iterPrev->prev;
 			alloc->iter = iterPrev->prev;
 			alloc->iterPrev = iterPrev->prev;
-			return (u8*)iterPrev->prev + sizeof(AllocHeader);
+			return GET_DATA(iterPrev->prev);
 		}
 
 		alloc->iter = alloc->tail;
 		alloc->iterPrev = alloc->tail;
-		return (u8*)alloc->tail + sizeof(AllocHeader);
+		return GET_DATA(alloc->tail);
 	}
 
 	// Ref counting.

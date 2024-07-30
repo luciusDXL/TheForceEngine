@@ -245,6 +245,8 @@ namespace TFE_DarkForces
 		if (hitEffectId != HEFFECT_NONE)
 		{
 			HitEffect* effect = (HitEffect*)allocator_newItem(s_hitEffects);
+			if (!effect)
+				return;
 			effect->type = hitEffectId;
 			effect->sector = sector;
 			effect->x = pos.x;
