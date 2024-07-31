@@ -1561,7 +1561,7 @@ namespace AssetBrowser
 	
 	void addDirectoryFiles(const char* path, GameID gameId, AssetSource assetSource)
 	{
-		if (!path) { return; }
+		if (!path || path[0] == 0) { return; }
 		char pathOS[TFE_MAX_PATH];
 		sprintf(pathOS, "%s/", path);
 		FileUtil::fixupPath(pathOS);

@@ -784,7 +784,7 @@ namespace TFE_Editor
 	{
 		ArchiveType type = ARCHIVE_UNKNOWN;
 
-		char ext[16];
+		char ext[TFE_MAX_PATH];
 		FileUtil::getFileExtension(filename, ext);
 		if (strcasecmp(ext, "GOB") == 0)
 		{

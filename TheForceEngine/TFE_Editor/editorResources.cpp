@@ -94,7 +94,10 @@ namespace TFE_Editor
 					{
 						eRes.archive = Archive::getArchive(ARCHIVE_ZIP, eRes.name, filepath);
 					}
-					s_extResources.push_back(eRes);
+					if (eRes.archive)
+					{
+						s_extResources.push_back(eRes);
+					}
 				}
 
 				s_resChanged = true;
@@ -108,8 +111,11 @@ namespace TFE_Editor
 					EditorResource eRes;
 					eRes.type = RES_DIRECTORY;
 					FileUtil::getFileNameFromPath(res[0].c_str(), eRes.name, true);
-					strcpy(eRes.path, res[0].c_str());
-					s_extResources.push_back(eRes);
+					if (!res[0].empty())
+					{
+						strcpy(eRes.path, res[0].c_str());
+						s_extResources.push_back(eRes);
+					}
 				}
 				s_resChanged = true;
 			}
