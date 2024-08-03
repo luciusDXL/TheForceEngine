@@ -5545,7 +5545,7 @@ namespace LevelEditor
 		s_featureHovered = {};
 		s_featureTex = {};
 		clearLevelNoteSelection();
-		clearGuidelineSelection();
+		guideline_clearSelection();
 	}
 
 	static Vec2f s_texDelta = { 0 };

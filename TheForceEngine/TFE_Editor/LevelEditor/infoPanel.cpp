@@ -1,6 +1,7 @@
 #include "levelEditor.h"
 #include "levelEditorData.h"
 #include "levelEditorHistory.h"
+#include "guidelines.h"
 #include "tabControl.h"
 #include "camera.h"
 #include "infoPanel.h"
@@ -1794,6 +1795,93 @@ namespace LevelEditor
 		return r | (g << 8u) | (b << 16u) | (a << 24u);
 	}
 
+	bool optionFloatInput(const char* label, f32* value, f32 step, s32 colWidth = 0, s32 width = 0, const char* prec = "%.3f");
+
+	bool optionFloatInput(const char* label, f32* value, f32 step, s32 colWidth, s32 width, const char* prec)
+	{
+		const f32 textWidth = (colWidth == 0) ? ImGui::CalcTextSize(label).x + 8.0f : f32(colWidth);
+
+		ImGui::SetNextItemWidth(textWidth);
+		ImGui::LabelText("##Label", "%s", label); ImGui::SameLine();
+		if (width) { ImGui::SetNextItemWidth((f32)width); }
+		return ImGui::InputFloat(editor_getUniqueLabel(""), value, step, 10.0f * step, prec);
+	}
+
+	static s32 s_selectedOffset = -1;
+	
+	void infoPanelGuideline()
+	{
+		s32 id = s_curGuideline >= 0 ? s_curGuideline : s_hoveredGuideline;
+		if (id < 0) { return; }
+
+		Guideline* guideline = &s_level.guidelines[id];
+
+		sectionHeader("Settings");
+		f32 checkWidth = ImGui::CalcTextSize("Limit Height Shown").x + 8.0f;
+		optionCheckbox("Limit Height Shown", &guideline->flags, GLFLAG_LIMIT_HEIGHT, checkWidth);
+		optionCheckbox("Disable Snapping", &guideline->flags, GLFLAG_DISABLE_SNAPPING, checkWidth);
+
+		checkWidth = ImGui::CalcTextSize("Disable Closest Point to Path Display").x + 8.0f;
+		optionCheckbox("Disable Closest Point to Path Display", &guideline->flags, GLFLAG_DISABLE_CLOSEST_POINT, checkWidth);
+		ImGui::Separator();
+
+		if ((guideline->flags & GLFLAG_LIMIT_HEIGHT) || !(guideline->flags & GLFLAG_DISABLE_SNAPPING) || !(guideline->flags & GLFLAG_DISABLE_CLOSEST_POINT))
+		{
+			sectionHeader("Values");
+			s32 colWidth = s32(ImGui::CalcTextSize("Min Height Shown").x + 8.0f);
+			if (guideline->flags & GLFLAG_LIMIT_HEIGHT)
+			{
+				optionFloatInput("Min Height Shown", &guideline->minHeight, 0.1f, colWidth, 128, "%.2f");
+				optionFloatInput("Max Height Shown", &guideline->maxHeight, 0.1f, colWidth, 128, "%.2f");
+			}
+			if (!(guideline->flags & GLFLAG_DISABLE_SNAPPING))
+			{
+				optionFloatInput("Max Snap Range", &guideline->maxSnapRange, 0.1f, colWidth, 128, "%.2f");
+			}
+			if (!(guideline->flags & GLFLAG_DISABLE_CLOSEST_POINT))
+			{
+				optionFloatInput("Max Closest Point Display", &guideline->closestPointRange, 0.1f, 0, 128, "%.2f");
+			}
+			ImGui::Separator();
+		}
+
+		sectionHeader("Offsets");
+		s32 itemToRemove = -1;
+		s32 count = (s32)guideline->offsets.size();
+		f32* offsetValue = guideline->offsets.data();
+		guideline->maxOffset = 0.0f;
+		for (s32 i = 0; i < count; i++)
+		{
+			char label[256];
+			sprintf(label, "Offset[%d]", i);
+			optionFloatInput(label, &offsetValue[i], 0.1f, 0, 128, "%.2f");
+			guideline->maxOffset = std::max(guideline->maxOffset, fabsf(offsetValue[i]));
+
+			ImGui::SameLine();
+			if (ImGui::Button(editor_getUniqueLabel("Remove")))
+			{
+				itemToRemove = i;
+			}
+		}
+		guideline_computeBounds(guideline);
+		ImGui::Separator();
+		if (count >= 4) { disableNextItem(); }
+		if (ImGui::Button("Add"))
+		{
+			guideline->offsets.push_back({ 0.0f });
+		}
+		if (count >= 4) { enableNextItem(); }
+
+		if (itemToRemove >= 0 && itemToRemove < count)
+		{
+			for (s32 i = itemToRemove; i < count - 1; i++)
+			{
+				guideline->offsets[i] = guideline->offsets[i + 1];
+			}
+			guideline->offsets.pop_back();
+		}
+	}
+
 	void infoPanelNote()
 	{
 		s32 id = s_curLevelNote >= 0 ? s_curLevelNote : s_hoveredLevelNote;
@@ -1831,7 +1919,7 @@ namespace LevelEditor
 			note->textColor = colorVec4ToPacked(textColor);
 		}
 		ImGui::Separator();
-		if (ImGui::InputTextMultiline("##TextBox", tmpBuffer, 4096, { 0.0f, 256.0f }))
+		if (ImGui::InputTextMultiline("##TextBox", tmpBuffer, 4096, { s_infoWith - 16.0f, 354.0f }))
 		{
 			note->note = tmpBuffer;
 		}
@@ -1875,6 +1963,10 @@ namespace LevelEditor
 				else if (s_editMode == LEDIT_NOTES)
 				{
 					infoPanelNote();
+				}
+				else if (s_editMode == LEDIT_GUIDELINES)
+				{
+					infoPanelGuideline();
 				}
 			}
 			else if (s_infoTab == TAB_INFO && show)

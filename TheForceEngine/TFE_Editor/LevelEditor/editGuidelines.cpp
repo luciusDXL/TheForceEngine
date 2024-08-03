@@ -103,6 +103,17 @@ namespace LevelEditor
 		{
 			findHoveredGuideline();
 		}
+		if (s_editActions & ACTION_DELETE)
+		{
+			if (s_curGuideline >= 0)
+			{
+				guideline_delete(s_curGuideline);
+			}
+			else if (s_hoveredGuideline >= 0)
+			{
+				guideline_delete(s_hoveredGuideline);
+			}
+		}
 
 		// Two ways to draw: rectangle (shift + left click and drag, escape to cancel), shape (left click to start, backspace to go back one point, escape to cancel)
 		if (s_editGuidelines.drawStarted)
@@ -282,6 +293,15 @@ namespace LevelEditor
 		s_curGuideline = s_hoveredGuideline;
 	}
 
+	void setDefaultGuidelineValues(Guideline& guideline)
+	{
+		guideline.closestPointRange = 4.0f * s_grid.size;
+		guideline.maxSnapRange = s_grid.size;
+		guideline.minHeight = s_grid.height;
+		guideline.maxHeight = s_grid.height + 16.0f;
+		guideline.maxOffset = 0.0f;
+	}
+
 	void createGuidlinesFromRect()
 	{
 		s_editGuidelines.drawStarted = false;
@@ -295,14 +315,6 @@ namespace LevelEditor
 		guideline.vtx.resize(4);
 		guideline.edge.resize(4);
 
-		guideline.bounds = { p[0].x, p[0].z, p[0].x, p[0].z };
-		for (s32 v = 1; v < 4; v++)
-		{
-			guideline.bounds.x = std::min(guideline.bounds.x, p[v].x);
-			guideline.bounds.y = std::min(guideline.bounds.y, p[v].z);
-			guideline.bounds.z = std::max(guideline.bounds.z, p[v].x);
-			guideline.bounds.w = std::max(guideline.bounds.w, p[v].z);
-		}
 		guideline.vtx[0] = p[0];
 		guideline.vtx[1] = p[1];
 		guideline.vtx[2] = p[2];
@@ -316,6 +328,8 @@ namespace LevelEditor
 			guideline.edge[e].idx[2] = -1;
 		}
 
+		setDefaultGuidelineValues(guideline);
+		guideline_computeBounds(&guideline);
 		s_level.guidelines.push_back(guideline);
 	}
 
@@ -330,17 +344,8 @@ namespace LevelEditor
 			return;
 		}
 
-		Vec2f* vtx = guideline.vtx.data();
-		const s32 vtxCount = (s32)guideline.vtx.size();
-		guideline.bounds = { vtx[0].x, vtx[0].z, vtx[0].x, vtx[0].z };
-		for (s32 v = 1; v < vtxCount; v++)
-		{
-			guideline.bounds.x = std::min(guideline.bounds.x, vtx[v].x);
-			guideline.bounds.y = std::min(guideline.bounds.y, vtx[v].z);
-			guideline.bounds.z = std::max(guideline.bounds.z, vtx[v].x);
-			guideline.bounds.w = std::max(guideline.bounds.w, vtx[v].z);
-		}
-
+		setDefaultGuidelineValues(guideline);
+		guideline_computeBounds(&guideline);
 		s_level.guidelines.push_back(guideline);
 	}
 }

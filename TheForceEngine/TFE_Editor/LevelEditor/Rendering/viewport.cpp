@@ -2915,12 +2915,84 @@ namespace LevelEditor
 		drawEditCursor2D(&s_editGuidelines.drawCurPos);
 	}
 
+	void drawGuidelineCurve2d(const Vec4f viewportBoundsWS, const Vec2f* vtx, const Guideline* guideline, const GuidelineEdge* edge, const u32* drawColor)
+	{
+		const Vec2f* v0 = &vtx[edge->idx[0]];
+		const Vec2f* v1 = &vtx[edge->idx[1]];
+		const Vec2f* c = &vtx[edge->idx[2]];
+
+		// Cull the curve if the bounds are outside of the view.
+		const f32 maxOffset = guideline->maxOffset;
+		const Vec4f curveBounds = { min3(v0->x, v1->x, c->x)-maxOffset, min3(v0->z, v1->z, c->z)-maxOffset,
+			                        max3(v0->x, v1->x, c->x)+maxOffset, max3(v0->z, v1->z, c->z)+maxOffset };
+		if (!boundsOverlap(curveBounds, viewportBoundsWS)) { return; }
+		// Curve.
+		const Vec2f curveVtx[] =
+		{
+			{ v0->x*s_viewportTrans2d.x + s_viewportTrans2d.y, v0->z * s_viewportTrans2d.z + s_viewportTrans2d.w },
+			{ v1->x*s_viewportTrans2d.x + s_viewportTrans2d.y, v1->z * s_viewportTrans2d.z + s_viewportTrans2d.w },
+			{ c->x*s_viewportTrans2d.x + s_viewportTrans2d.y,  c->z * s_viewportTrans2d.z + s_viewportTrans2d.w },
+		};
+		const s32 count = std::min(4, (s32)guideline->offsets.size());
+		const f32* offsetBase = guideline->offsets.data();
+		f32 offset[4];
+		for (s32 i = 0; i < count; i++)
+		{
+			offset[i] = offsetBase[i] * s_viewportTrans2d.x;
+		}
+		TFE_RenderShared::lineDraw2d_addCurve(curveVtx, drawColor[0], count, offset);
+	}
+
+	void drawGuidelineOffset2d(const Vec4f viewportBoundsWS, const Vec2f* vtx, const GuidelineEdge* edge, u32 drawColor, f32 offset)
+	{
+		const Vec2f* v0 = &vtx[edge->idx[0]];
+		const Vec2f* v1 = &vtx[edge->idx[1]];
+
+		Vec2f p0 = *v0;
+		Vec2f p1 = *v1;
+		if (offset)
+		{
+			Vec2f d = { v1->x - v0->x, v1->z - v0->z };
+			Vec2f n = { -d.z, d.x };
+			n = TFE_Math::normalize(&n);
+
+			p0.x = v0->x + n.x*offset;
+			p0.z = v0->z + n.z*offset;
+			p1.x = v1->x + n.x*offset;
+			p1.z = v1->z + n.z*offset;
+		}
+
+		// Cull the line if the bounds are outside of the view.
+		const Vec4f lineBounds = { std::min(p0.x, p1.x), std::min(p0.z, p1.z), std::max(p0.x, p1.x), std::max(p0.z, p1.z) };
+		if (!boundsOverlap(lineBounds, viewportBoundsWS)) { return; }
+		// Straight line.
+		const Vec2f line[] =
+		{
+			{ p0.x * s_viewportTrans2d.x + s_viewportTrans2d.y, p0.z * s_viewportTrans2d.z + s_viewportTrans2d.w },
+			{ p1.x * s_viewportTrans2d.x + s_viewportTrans2d.y, p1.z * s_viewportTrans2d.z + s_viewportTrans2d.w }
+		};
+		u32 color = drawColor;
+		if (offset != 0.0f)
+		{
+			u32 alpha = color >> 24u;
+			alpha >>= 1; // use the same scale value as the curve shader.
+			color &= 0x00ffffff;
+			color |= (alpha << 24u);
+		}
+		u32 colorList[] = { color, color };
+
+		TFE_RenderShared::lineDraw2d_addLine(2.0f, line, colorList);
+	}
+
 	void renderGuidelines2d(const Vec4f viewportBoundsWS)
 	{
 		const u32 colors[] = { 0xc000a5ff, 0xc000a5ff };
 		const u32 hovered[] = { 0xffffa500, 0xffffa500 };
 		const u32 selected[] = { 0xff0030ff, 0xff0030ff };
 		const u32 hoveredSelected[] = { 0xffff00ff, 0xffff00ff };
+
+		const u32 detail[] = { 0xc0ffa500, 0xc0ffa500 };
+		const Vec4f pointBoundsWS = { s_cursor3d.x, s_cursor3d.z, s_cursor3d.x, s_cursor3d.z };
 
 		const size_t count = s_level.guidelines.size();
 		Guideline* guideLine = s_level.guidelines.data();
@@ -2930,10 +3002,12 @@ namespace LevelEditor
 			// Cull the entire guideline set.
 			if (!boundsOverlap(guideLine->bounds, viewportBoundsWS)) { continue; }
 
-			const size_t count = guideLine->edge.size();
+			const size_t edgeCount = guideLine->edge.size();
 			const Vec2f* vtx   = guideLine->vtx.data();
 			const GuidelineEdge* edge = guideLine->edge.data();
 
+			const size_t offsetCount = guideLine->offsets.size();
+			
 			const u32* drawColor = colors;
 			if (s_hoveredGuideline == i && s_curGuideline == i)
 			{
@@ -2948,39 +3022,47 @@ namespace LevelEditor
 				drawColor = selected;
 			}
 
-			for (size_t e = 0; e < count; e++, edge++)
+			for (size_t e = 0; e < edgeCount; e++, edge++)
 			{
-				const Vec2f* v0 = &vtx[edge->idx[0]];
-				const Vec2f* v1 = &vtx[edge->idx[1]];
-				if (edge->idx[2] >= 0)
+				if (edge->idx[2] >= 0) // Curve.
 				{
-					const Vec2f* c = &vtx[edge->idx[2]];
-					// Cull the curve if the bounds are outside of the view.
-					const Vec4f curveBounds = { min3(v0->x, v1->x, c->x), min3(v0->z, v1->z, c->z), max3(v0->x, v1->x, c->x), max3(v0->z, v1->z, c->z) };
-					if (!boundsOverlap(curveBounds, viewportBoundsWS)) { continue; }
-					// Curve.
-					const Vec2f curveVtx[] =
-					{
-						{ v0->x*s_viewportTrans2d.x + s_viewportTrans2d.y, v0->z * s_viewportTrans2d.z + s_viewportTrans2d.w },
-						{ v1->x*s_viewportTrans2d.x + s_viewportTrans2d.y, v1->z * s_viewportTrans2d.z + s_viewportTrans2d.w },
-						{ c->x*s_viewportTrans2d.x + s_viewportTrans2d.y, c->z * s_viewportTrans2d.z + s_viewportTrans2d.w },
-					};
-					TFE_RenderShared::lineDraw2d_addCurve(curveVtx, drawColor[0]);
+					drawGuidelineCurve2d(viewportBoundsWS, vtx, guideLine, edge, drawColor);
 				}
 				else
 				{
-					// Cull the line if the bounds are outside of the view.
-					const Vec4f lineBounds = { std::min(v0->x, v1->x), std::min(v0->z, v1->z), std::max(v0->x, v1->x), std::max(v0->z, v1->z) };
-					if (!boundsOverlap(lineBounds, viewportBoundsWS)) { continue; }
-					// Straight line.
-					const Vec2f line[] =
+					drawGuidelineOffset2d(viewportBoundsWS, vtx, edge, drawColor[0], 0.0f);
+
+					const f32* offset = guideLine->offsets.data();
+					for (size_t o = 0; o < offsetCount; o++)
 					{
-						{ v0->x * s_viewportTrans2d.x + s_viewportTrans2d.y, v0->z * s_viewportTrans2d.z + s_viewportTrans2d.w },
-						{ v1->x * s_viewportTrans2d.x + s_viewportTrans2d.y, v1->z * s_viewportTrans2d.z + s_viewportTrans2d.w }
-					};
-					TFE_RenderShared::lineDraw2d_addLine(2.0f, line, drawColor);
+						if (offset[o] == 0.0f) { continue; }
+						drawGuidelineOffset2d(viewportBoundsWS, vtx, edge, drawColor[0], offset[o]);
+					}
 				}
 			}
+
+			// Show closest point on guideline.
+			if (guideLine->flags & GLFLAG_DISABLE_CLOSEST_POINT) { continue; }
+			if (!boundsOverlap(guideLine->bounds, pointBoundsWS, guideLine->closestPointRange)) { continue; }
+
+			s32 edgeIndex, offsetIndex;
+			f32 t;
+			Vec2f closestPoint;
+			if (guideline_getClosestPoint(guideLine, { s_cursor3d.x, s_cursor3d.z }, &edgeIndex, &offsetIndex, &t, &closestPoint))
+			{
+				Vec2f offset = { closestPoint.x - s_cursor3d.x, closestPoint.z - s_cursor3d.z };
+				f32 distSq = offset.x*offset.x + offset.z*offset.z;
+				if (distSq <= guideLine->closestPointRange*guideLine->closestPointRange)
+				{
+					Vec2f lineVtx[] =
+					{
+						{ s_cursor3d.x * s_viewportTrans2d.x + s_viewportTrans2d.y, s_cursor3d.z * s_viewportTrans2d.z + s_viewportTrans2d.w },
+						{ closestPoint.x * s_viewportTrans2d.x + s_viewportTrans2d.y, closestPoint.z * s_viewportTrans2d.z + s_viewportTrans2d.w }
+					};
+					lineDraw2d_addLine(2.0f, lineVtx, detail);
+				}
+			}
+
 		}
 		lineDraw2d_setLineDrawMode();
 	}

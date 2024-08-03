@@ -14,5 +14,12 @@ namespace LevelEditor
 	extern s32 s_hoveredGuideline;
 	extern s32 s_curGuideline;
 
-	void clearGuidelineSelection();
+	void guideline_clearSelection();
+	void guideline_delete(s32 id);
+
+	void guideline_computeBounds(Guideline* guideline);
+	bool guideline_getClosestPoint(const Guideline* guideline, const Vec2f& pos, s32* edgeIndex, s32* offsetIndex, f32* t, Vec2f* closestPoint = nullptr);
+	Vec2f guideline_getPosition(const Guideline* guideline, s32 edgeIndex, s32 offsetIndex, f32 t);
+
+	Vec2f snapToGridOrGuidelines2d(Vec2f pos);
 }

@@ -127,6 +127,9 @@ namespace TFE_Editor
 	// tint: optional tint applied to the image.
 	bool iconButton(IconId icon, const char* tooltip = nullptr, bool highlight = false, const f32* tint = nullptr);
 	bool iconButtonInline(IconId icon, const char* tooltip=nullptr, const f32* tint=nullptr, bool small=false);
+	void sectionHeader(const char* text);
+	void optionCheckbox(const char* name, u32* flags, u32 flagValue, s32 width);
+	void optionSliderEditFloat(const char* name, const char* precision, f32* value, f32 minValue, f32 maxValue, f32 step);
 
 	// List of selectables inside of another list.
 	void sublist_begin(Sublist& subList, f32 tabSize, f32 itemWidth);

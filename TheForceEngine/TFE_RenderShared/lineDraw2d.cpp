@@ -18,6 +18,7 @@ namespace TFE_RenderShared
 	{
 		Vec4f pos;		// 2D position + width + pad -or- 2D pos + 2D center
 		Vec4f uv;		// Line relative position in pixels -or- 2D a, b control points.
+		Vec4f uv1;		// Curve offsets.
 		u32   color;	// Line color + opacity.
 	};
 	struct ShaderSettings
@@ -28,6 +29,7 @@ namespace TFE_RenderShared
 	{
 		{ATTR_POS,   ATYPE_FLOAT, 4, 0, false},
 		{ATTR_UV,    ATYPE_FLOAT, 4, 0, false},
+	    {ATTR_UV1,   ATYPE_FLOAT, 4, 0, false},
 		{ATTR_COLOR, ATYPE_UINT8, 4, 0, true}
 	};
 	static const u32 c_lineAttrCount = TFE_ARRAYSIZE(c_lineAttrMapping);
@@ -179,7 +181,7 @@ namespace TFE_RenderShared
 		s_lineDrawMode2d = mode;
 	}
 
-	void lineDraw2d_addCurve(const Vec2f* vertices, const u32 color)
+	void lineDraw2d_addCurve(const Vec2f* vertices, const u32 color, u32 offsetCount, const f32* offsets)
 	{
 		if (s_curveCount2d >= MAX_CURVES)
 		{
@@ -189,7 +191,13 @@ namespace TFE_RenderShared
 		LineVertex* vert = &s_curveVertices[s_curveCount2d * 4];
 		s_curveCount2d++;
 		// bounding box.
-		const f32 padding = 2.0f;
+		f32 maxOffset = 0.0f;
+		for (s32 i = 0; i < offsetCount; i++)
+		{
+			maxOffset = std::max(maxOffset, fabsf(offsets[i]));
+		}
+		const f32 padding = 2.0f + maxOffset;
+
 		Vec2f boundsMin = vertices[0];
 		Vec2f boundsMax = vertices[0];
 		for (s32 i = 1; i < 3; i++)
@@ -206,6 +214,13 @@ namespace TFE_RenderShared
 		vert[2].pos = { boundsMax.x + padding, boundsMax.z + padding, vertices[2].x, vertices[2].z };
 		vert[3].pos = { boundsMin.x - padding, boundsMax.z + padding, vertices[2].x, vertices[2].z };
 
+		// Offsets
+		Vec4f offsetVec = { 0 };
+		for (s32 i = 0; i < offsetCount && i < 4; i++)
+		{
+			offsetVec.m[i] = offsets[i];
+		}
+
 		// store constant data in vertices to avoid draw calls.
 		for (s32 i = 0; i < 4; i++)
 		{
@@ -213,12 +228,18 @@ namespace TFE_RenderShared
 			vert[i].uv.y  = vertices[0].z;
 			vert[i].uv.z  = vertices[1].x;
 			vert[i].uv.w  = vertices[1].z;
+			vert[i].uv1   = offsetVec;
 			vert[i].color = color;
 		}
 	}	
 
 	void lineDraw2d_addLines(u32 count, f32 width, const Vec2f* lines, const u32* lineColors)
 	{
+		if (!s_vertices)
+		{
+			return;
+		}
+
 		LineDraw* draw = s_lineDrawCount > 0 ? &s_lineDraw[s_lineDrawCount - 1] : nullptr;
 		if (!draw || draw->mode != s_lineDrawMode2d)
 		{
@@ -292,6 +313,11 @@ namespace TFE_RenderShared
 			vert[1].uv.y = y0; vert[1].uv.w = y1;
 			vert[2].uv.y = y0; vert[2].uv.w = y1;
 			vert[3].uv.y = y0; vert[3].uv.w = y1;
+
+			vert[0].uv1 = { 0 };
+			vert[1].uv1 = { 0 };
+			vert[2].uv1 = { 0 };
+			vert[3].uv1 = { 0 };
 
 			// Copy the colors.
 			vert[0].color = lineColors[0];

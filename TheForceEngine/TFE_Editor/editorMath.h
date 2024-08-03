@@ -27,9 +27,10 @@ namespace TFE_Editor
 		return a0 <= b1 && b0 <= a1;
 	}
 	// Return true if the 2D bounds (packed as Vec4f) overlap.
-	inline bool boundsOverlap(Vec4f bounds0, Vec4f bounds1)
+	inline bool boundsOverlap(Vec4f bounds0, Vec4f bounds1, f32 padding = 0.0f)
 	{
-		return intervalOverlap(bounds0.x, bounds0.z, bounds1.x, bounds1.z) && // x intervals overlap
-			   intervalOverlap(bounds0.y, bounds0.w, bounds1.y, bounds1.w);   // y intervals overlap
+		// We only need to apply padding to one set of bounds, so pick the first one.
+		return intervalOverlap(bounds0.x - padding, bounds0.z + padding, bounds1.x, bounds1.z) && // x intervals overlap
+			   intervalOverlap(bounds0.y - padding, bounds0.w + padding, bounds1.y, bounds1.w);   // y intervals overlap
 	}
 }

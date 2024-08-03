@@ -202,6 +202,34 @@ namespace TFE_Editor
 		return res;
 	}
 
+	void sectionHeader(const char* text)
+	{
+		ImGui::TextColored({ 0.306f, 0.788f, 0.69f, 1.0f }, "%s", text);
+	}
+		
+	void optionCheckbox(const char* name, u32* flags, u32 flagValue, s32 width)
+	{
+		ImGui::SetNextItemWidth(width ? width : ImGui::CalcTextSize(name).x + 16);
+		ImGui::LabelText("##Label", "%s", name); ImGui::SameLine();
+		ImGui::CheckboxFlags(editor_getUniqueLabel(""), flags, flagValue);
+	}
+
+	void optionSliderEditFloat(const char* name, const char* precision, f32* value, f32 minValue, f32 maxValue, f32 step)
+	{
+		ImGui::SetNextItemWidth(160);
+		ImGui::LabelText("##Label", "%s", name); ImGui::SameLine();
+
+		char labelSlider[256];
+		char labelInput[256];
+		sprintf(labelSlider, "##%s_Slider", name);
+		sprintf(labelInput, "##%s_Input", name);
+
+		ImGui::SliderFloat(labelSlider, value, minValue, maxValue, precision);
+		ImGui::SameLine();
+		ImGui::SetNextItemWidth(128);
+		ImGui::InputFloat(labelInput, value, step, 10.0f * step, precision);
+	}
+
 	bool messageBoxUi()
 	{
 		bool finished = false;

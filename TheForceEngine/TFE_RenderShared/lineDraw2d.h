@@ -15,7 +15,7 @@ namespace TFE_RenderShared
 	void lineDraw2d_begin(u32 width, u32 height, LineDrawMode mode = LINE_DRAW_SOLID);
 	void lineDraw2d_addLines(u32 count, f32 width, const Vec2f* lines, const u32* lineColors);
 	void lineDraw2d_addLine(f32 width, const Vec2f* vertices, const u32* colors);
-	void lineDraw2d_addCurve(const Vec2f* vertices, const u32 color);
+	void lineDraw2d_addCurve(const Vec2f* vertices, const u32 color, u32 offsetCount = 0, const f32* offsets = nullptr);
 
 	void lineDraw2d_drawLines();
 }

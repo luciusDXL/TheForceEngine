@@ -138,15 +138,33 @@ namespace LevelEditor
 		u32 searchKey = 0;
 	};
 
+	enum GuidelineFlags
+	{
+		GLFLAG_NONE = 0,
+		GLFLAG_LIMIT_HEIGHT = FLAG_BIT(0),
+		GLFLAG_DISABLE_SNAPPING = FLAG_BIT(1),
+		GLFLAG_DISABLE_CLOSEST_POINT = FLAG_BIT(2)
+	};
+
 	struct GuidelineEdge
 	{
 		s32 idx[3] = { -1, -1, -1 };	// curve if idx[2] >= 0
 	};
+		
 	struct Guideline
 	{
 		std::vector<Vec2f> vtx;
 		std::vector<GuidelineEdge> edge;
-		Vec4f bounds;
+		Vec4f bounds = { 0 };
+		f32 maxOffset = 0.0f;
+
+		// Settings
+		u32 flags = GLFLAG_NONE;		// GuidelineFlags
+		f32 maxHeight = 0.0f;
+		f32 minHeight = 0.0f;
+		f32 maxSnapRange = 0.0f;		// Set based on the grid at creation time.
+		f32 closestPointRange = 0.0f;	// Set based on the grid at creation time.
+		std::vector<f32> offsets;
 	};
 
 	typedef std::vector<EditorSector*> SectorList;

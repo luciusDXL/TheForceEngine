@@ -7,6 +7,7 @@
 #include "levelEditorHistory.h"
 #include "sharedState.h"
 #include "selection.h"
+#include "guidelines.h"
 #include <TFE_System/math.h>
 #include <TFE_Jedi/Math/core_math.h>
 #include <TFE_Editor/errorMessages.h>
@@ -2231,7 +2232,7 @@ namespace LevelEditor
 		}
 		else if (s_view == EDIT_VIEW_2D)
 		{
-			snapToGrid(&onGrid);
+			onGrid = snapToGridOrGuidelines2d(onGrid);
 		}
 		else
 		{

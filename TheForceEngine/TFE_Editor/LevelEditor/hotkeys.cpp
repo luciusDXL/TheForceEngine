@@ -126,6 +126,12 @@ namespace LevelEditor
 		}
 	}
 
+	void updateGuidelineHotkeys()
+	{
+		if (TFE_Input::keyPressed(KEY_INSERT)) { s_editActions = ACTION_PLACE; }
+		if (TFE_Input::keyPressed(KEY_DELETE)) { s_editActions = ACTION_DELETE; }
+	}
+
 	void updateDrawModeHotkeys()
 	{
 		if (TFE_Input::keyModDown(KeyModifier::KEYMOD_SHIFT))
@@ -179,6 +185,11 @@ namespace LevelEditor
 		else if (s_editMode == LEDIT_DRAW || s_editMode == LEDIT_GUIDELINES)
 		{
 			updateDrawModeHotkeys();
+			// Guideline-only hotkeys.
+			if (s_editMode == LEDIT_GUIDELINES)
+			{
+				updateGuidelineHotkeys();
+			}
 		}
 	}
 }
