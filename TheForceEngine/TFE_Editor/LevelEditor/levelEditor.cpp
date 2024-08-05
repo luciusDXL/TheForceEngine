@@ -4497,7 +4497,7 @@ namespace LevelEditor
 						f32 alpha = 1.0f;
 						if (s_view == EDIT_VIEW_2D)
 						{
-							Vec2f center = { note->pos.x + c_levelNoteRadius * 1.25f, note->pos.z };
+							Vec2f center = { note->pos.x + c_levelNoteRadius2d * 1.25f, note->pos.z };
 
 							mapPos = worldPos2dToMap(center);
 							mapPos.z -= 16;
@@ -4505,7 +4505,7 @@ namespace LevelEditor
 						else if (s_view == EDIT_VIEW_3D)
 						{
 							Vec3f cameraRgt = { s_camera.viewMtx.m0.x,  s_camera.viewMtx.m0.y, s_camera.viewMtx.m0.z };
-							Vec3f center = { note->pos.x + cameraRgt.x * c_levelNoteRadius * 1.25f, note->pos.y, note->pos.z + cameraRgt.z * c_levelNoteRadius * 1.25f };
+							Vec3f center = { note->pos.x + cameraRgt.x * c_levelNoteRadius3d * 1.25f, note->pos.y, note->pos.z + cameraRgt.z * c_levelNoteRadius3d * 1.25f };
 							Vec2f screenPos;
 							if (worldPosToViewportCoord(center, &screenPos))
 							{

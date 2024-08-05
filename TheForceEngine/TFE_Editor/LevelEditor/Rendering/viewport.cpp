@@ -144,6 +144,7 @@ namespace LevelEditor
 	void renderLevel3DGame();
 	void renderSectorWalls2d(s32 layerStart, s32 layerEnd);
 	void renderGuidelines2d(const Vec4f viewportBoundsWS);
+	void renderGuidelines3d();
 	void renderSectorPreGrid();
 	void drawSector2d(const EditorSector* sector, Highlight highlight);
 	void drawVertex2d(const Vec2f* pos, f32 scale, Highlight highlight);
@@ -857,6 +858,184 @@ namespace LevelEditor
 			corners[0] = { v0->x + wallDir.x * ext[0].x - wallNrm.x*zBias, ext[1].z, v0->z + wallDir.z * ext[0].x - wallNrm.z*zBias };
 		}
 		return hasSign;
+	}
+
+	void drawGuidelineCurve3d(const Vec2f* vtx, const Guideline* guideline, const GuidelineEdge* edge, const u32* drawColor)
+	{
+		const Vec2f* v0 = &vtx[edge->idx[0]];
+		const Vec2f* v1 = &vtx[edge->idx[1]];
+		const Vec2f* c = &vtx[edge->idx[2]];
+
+		// Cull the curve if the bounds are outside of the view.
+		const f32 maxOffset = guideline->maxOffset;
+		const Vec4f curveBounds = { min3(v0->x, v1->x, c->x) - maxOffset, min3(v0->z, v1->z, c->z) - maxOffset,
+									max3(v0->x, v1->x, c->x) + maxOffset, max3(v0->z, v1->z, c->z) + maxOffset };
+		// TODO: Culling
+		// Curve.
+		const Vec2f curveVtx[] =
+		{
+			*v0, *v1, *c
+		};
+		const s32 count = std::min(4, (s32)guideline->offsets.size());
+		const f32* offset = guideline->offsets.data();
+		TFE_RenderShared::lineDraw3d_addCurve(curveVtx, s_grid.height, drawColor[0], count, offset);
+	}
+
+	void drawGuidelineOffset3d(const Vec2f* vtx, const GuidelineEdge* edge, u32 drawColor, f32 offset)
+	{
+		const Vec2f* v0 = &vtx[edge->idx[0]];
+		const Vec2f* v1 = &vtx[edge->idx[1]];
+
+		Vec2f p0 = *v0;
+		Vec2f p1 = *v1;
+		if (offset)
+		{
+			Vec2f d = { v1->x - v0->x, v1->z - v0->z };
+			Vec2f n = { -d.z, d.x };
+			n = TFE_Math::normalize(&n);
+
+			p0.x = v0->x + n.x*offset;
+			p0.z = v0->z + n.z*offset;
+			p1.x = v1->x + n.x*offset;
+			p1.z = v1->z + n.z*offset;
+		}
+
+		// Cull the line if the bounds are outside of the view.
+		const Vec4f lineBounds = { std::min(p0.x, p1.x), std::min(p0.z, p1.z), std::max(p0.x, p1.x), std::max(p0.z, p1.z) };
+		// TODO: Cull
+		// Straight line.
+		const Vec3f line[] =
+		{
+			{ p0.x, s_grid.height, p0.z },
+			{ p1.x, s_grid.height, p1.z },
+		};
+		u32 color = drawColor;
+		if (offset != 0.0f)
+		{
+			u32 alpha = color >> 24u;
+			alpha >>= 1; // use the same scale value as the curve shader.
+			color &= 0x00ffffff;
+			color |= (alpha << 24u);
+		}
+		TFE_RenderShared::lineDraw3d_addLine(3.0f, line, &color);
+	}
+
+	void drawPositionKnot3d(f32 width, Vec3f pos, u32 color)
+	{
+		Vec3f offset = { pos.x - s_camera.pos.x, pos.y - s_camera.pos.y, pos.z - s_camera.pos.z };
+		f32 dist = sqrtf(offset.x*offset.x + offset.y*offset.y + offset.z*offset.z);
+		f32 step = 0.005f*dist;
+
+		Vec2f p0 = { pos.x - step, pos.z - step };
+		Vec2f p1 = { pos.x + step, pos.z - step };
+		Vec2f p2 = { pos.x + step, pos.z + step };
+		Vec2f p3 = { pos.x - step, pos.z + step };
+		Vec3f vtx[] =
+		{
+			{ p0.x, pos.y, p0.z },
+			{ p1.x, pos.y, p1.z },
+			{ p2.x, pos.y, p2.z },
+			{ p3.x, pos.y, p3.z },
+			{ p0.x, pos.y, p0.z },
+		};
+
+		// Draw lines through the center point.
+		TFE_RenderShared::lineDraw3d_addLine(width, &vtx[0], &color);
+		TFE_RenderShared::lineDraw3d_addLine(width, &vtx[1], &color);
+		TFE_RenderShared::lineDraw3d_addLine(width, &vtx[2], &color);
+		TFE_RenderShared::lineDraw3d_addLine(width, &vtx[3], &color);
+	}
+
+	// Draw guidelines.
+	void renderGuidelines3d()
+	{
+		if (s_editorConfig.interfaceFlags & PIF_HIDE_GUIDELINES)
+		{
+			return;
+		}
+
+		const u32 colors[] = { 0xc000a5ff, 0xc000a5ff };
+		const u32 hovered[] = { 0xffffa500, 0xffffa500 };
+		const u32 selected[] = { 0xff0030ff, 0xff0030ff };
+		const u32 hoveredSelected[] = { 0xffff00ff, 0xffff00ff };
+
+		const u32 detail[] = { 0xc0ffa500, 0xc0ffa500 };
+		const Vec4f pointBoundsWS = { s_cursor3d.x, s_cursor3d.z, s_cursor3d.x, s_cursor3d.z };
+
+		const size_t count = s_level.guidelines.size();
+		Guideline* guideLine = s_level.guidelines.data();
+		lineDraw3d_setLineDrawMode();
+		for (size_t i = 0; i < count; i++, guideLine++)
+		{
+			// Cull the entire guideline set.
+			// TODO: Culling
+			if (guideLine->flags & GLFLAG_LIMIT_HEIGHT)
+			{
+				if (s_grid.height < guideLine->minHeight || s_grid.height > guideLine->maxHeight)
+				{
+					continue;
+				}
+			}
+
+			const size_t edgeCount = guideLine->edge.size();
+			const Vec2f* vtx = guideLine->vtx.data();
+			const GuidelineEdge* edge = guideLine->edge.data();
+			const size_t offsetCount = guideLine->offsets.size();
+
+			const u32* drawColor = colors;
+			if (s_hoveredGuideline == i && s_curGuideline == i)
+			{
+				drawColor = hoveredSelected;
+			}
+			else if (s_hoveredGuideline == i)
+			{
+				drawColor = hovered;
+			}
+			else if (s_curGuideline == i)
+			{
+				drawColor = selected;
+			}
+
+			for (size_t e = 0; e < edgeCount; e++, edge++)
+			{
+				if (edge->idx[2] >= 0) // Curve.
+				{
+					drawGuidelineCurve3d(vtx, guideLine, edge, drawColor);
+				}
+				else
+				{
+					drawGuidelineOffset3d(vtx, edge, drawColor[0], 0.0f);
+
+					const f32* offset = guideLine->offsets.data();
+					for (size_t o = 0; o < offsetCount; o++)
+					{
+						if (offset[o] == 0.0f) { continue; }
+						drawGuidelineOffset3d(vtx, edge, drawColor[0], offset[o]);
+					}
+				}
+			}
+		}
+		lineDraw3d_setLineDrawMode();
+
+		// Draw guideline knots.
+		guideLine = s_level.guidelines.data();
+		for (size_t g = 0; g < count; g++, guideLine++)
+		{
+			// Cull the entire guideline set.
+			// TODO: Culling.
+			if (guideLine->flags & GLFLAG_DISABLE_SNAPPING) { continue; }  // Don't show knots if snapping is disabled.
+			if ((guideLine->flags & GLFLAG_LIMIT_HEIGHT) && (s_grid.height < guideLine->minHeight || s_grid.height > guideLine->maxHeight))
+			{
+				continue;
+			}
+			const size_t knotCount = guideLine->knots.size();
+			const Vec4f* knot = guideLine->knots.data();
+			for (size_t k = 0; k < knotCount; k++, knot++)
+			{
+				const Vec3f pos = { knot->x, s_grid.height, knot->z };
+				drawPositionKnot3d(2.0f, pos, 0xffffa500);
+			}
+		}
 	}
 
 	void drawWallColor3d_Highlighted(const EditorSector* sector, const Vec2f* vtx, const EditorWall* wall, u32 color, HitPart part)
@@ -1622,7 +1801,7 @@ namespace LevelEditor
 	void drawNoteIcon3d(LevelNote* note, s32 id, u32 objColor, const Vec3f& cameraRgt, const Vec3f& cameraUp)
 	{
 		const Vec3f pos = note->pos;
-		const f32 width = c_levelNoteRadius;
+		const f32 width = c_levelNoteRadius3d;
 				
 		f32 fade = 1.0f;
 		if (!(note->flags & LNF_3D_NO_FADE))
@@ -1868,6 +2047,9 @@ namespace LevelEditor
 		Vec3f cameraDirXZ = { s_camera.viewMtx.m2.x, 0.0f, s_camera.viewMtx.m2.z };
 		cameraDirXZ = TFE_Math::normalize(&cameraDirXZ);
 		Vec3f cameraRgtXZ = { -cameraDirXZ.z, 0.0f, cameraDirXZ.x };
+
+		// Draw guidelines.
+		renderGuidelines3d();
 				
 		const EditorObject* visObj[1024];
 		const EditorSector* visObjSector[1024];
@@ -2578,7 +2760,7 @@ namespace LevelEditor
 	void drawNoteIcon2d(LevelNote* note, s32 id, u32 objColor)
 	{
 		const Vec3f pos = note->pos;
-		const f32 width = c_levelNoteRadius;
+		const f32 width = c_levelNoteRadius2d;
 
 		u32 borderColor = objColor;
 		if (s_curLevelNote == id)

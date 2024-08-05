@@ -45,10 +45,10 @@ namespace LevelEditor
 
 				const f32 dx = fabsf(note->pos.x - s_cursor3d.x);
 				const f32 dz = fabsf(note->pos.z - s_cursor3d.z);
-				const f32 w = c_levelNoteRadius;
+				const f32 w = c_levelNoteRadius2d;
 
 				bool cursorInside = dx <= w && dz <= w;
-				f32 yTop = note->pos.y + c_levelNoteRadius;
+				f32 yTop = note->pos.y + c_levelNoteRadius2d;
 
 				if (cursorInside && yTop > maxY)
 				{
@@ -66,8 +66,8 @@ namespace LevelEditor
 			{
 				if (!levelNote_isInteractable(note)) { continue; }
 
-				const Vec3f bounds[2] = { {note->pos.x - c_levelNoteRadius, note->pos.y - c_levelNoteRadius, note->pos.z - c_levelNoteRadius},
-				                          {note->pos.x + c_levelNoteRadius, note->pos.y + c_levelNoteRadius, note->pos.z + c_levelNoteRadius} };
+				const Vec3f bounds[2] = { {note->pos.x - c_levelNoteRadius3d, note->pos.y - c_levelNoteRadius3d, note->pos.z - c_levelNoteRadius3d},
+				                          {note->pos.x + c_levelNoteRadius3d, note->pos.y + c_levelNoteRadius3d, note->pos.z + c_levelNoteRadius3d} };
 				f32 dist;
 				bool hitBounds = rayAABBIntersection(&ray, bounds, &dist);
 

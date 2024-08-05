@@ -34,7 +34,7 @@ namespace LevelEditor
 
 		// 3D position.
 		Vec3f pos = { 0 };
-		Vec2f fade = { 75.0f, 100.0f };
+		Vec2f fade = { 32.0f, 48.0f };
 
 		u32 iconColor = 0xff80ff80;
 		u32 textColor = 0xffffffff;
@@ -43,7 +43,8 @@ namespace LevelEditor
 		std::string note;
 	};
 
-	extern const f32 c_levelNoteRadius;
+	extern const f32 c_levelNoteRadius2d;
+	extern const f32 c_levelNoteRadius3d;
 	extern const u32 c_noteColors[3];
 	extern s32 s_hoveredLevelNote;
 	extern s32 s_curLevelNote;
