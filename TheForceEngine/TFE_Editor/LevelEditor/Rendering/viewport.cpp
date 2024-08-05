@@ -5,12 +5,14 @@
 #include <TFE_System/math.h>
 #include <TFE_Editor/editor.h>
 #include <TFE_Editor/editorMath.h>
+#include <TFE_Editor/editorConfig.h>
 #include <TFE_Editor/LevelEditor/editGeometry.h>
 #include <TFE_Editor/LevelEditor/editGuidelines.h>
 #include <TFE_Editor/LevelEditor/levelEditor.h>
 #include <TFE_Editor/LevelEditor/levelEditorData.h>
 #include <TFE_Editor/LevelEditor/sharedState.h>
 #include <TFE_Editor/LevelEditor/selection.h>
+#include <TFE_Editor/LevelEditor/userPreferences.h>
 #include <TFE_Editor/LevelEditor/levelEditorInf.h>
 #include <TFE_Editor/LevelEditor/groups.h>
 #include <TFE_Editor/EditorAsset/editorTexture.h>
@@ -161,6 +163,7 @@ namespace LevelEditor
 	void drawGuidelineShape2D();
 	void drawWallLines3D_Highlighted(const EditorSector* sector, const EditorSector* next, const EditorWall* wall, f32 width, Highlight highlight, bool halfAlpha, bool showSign = false);
 	void drawPosition2d(f32 width, Vec2f pos, u32 color);
+	void drawPositionKnot2d(f32 width, Vec2f pos, u32 color);
 	void drawArrow2d(f32 width, f32 lenInPixels, Vec2f pos, Vec2f dir, u32 color);
 	void drawArrow2d_Segment(f32 width, f32 lenInPixels, Vec2f pos0, Vec2f pos1, u32 color);
 	void drawPosition3d(f32 width, Vec3f pos, u32 color);
@@ -443,16 +446,19 @@ namespace LevelEditor
 		}
 
 		// Draw level notes.
-		const s32 levelNoteCount = (s32)s_level.notes.size();
-		LevelNote* note = s_level.notes.data();
-		for (s32 o = 0; o < levelNoteCount; o++, note++)
+		if (!(s_editorConfig.interfaceFlags & PIF_HIDE_NOTES))
 		{
-			Group* group = levelNote_getGroup(note);
-			if (group->flags & GRP_HIDDEN) { continue; }
+			const s32 levelNoteCount = (s32)s_level.notes.size();
+			LevelNote* note = s_level.notes.data();
+			for (s32 o = 0; o < levelNoteCount; o++, note++)
+			{
+				Group* group = levelNote_getGroup(note);
+				if (group->flags & GRP_HIDDEN) { continue; }
 
-			bool locked = (group->flags & GRP_LOCKED) != 0u;
-			u32 objColor = locked ? 0x80ffffff : note->iconColor;
-			drawNoteIcon2d(note, o, objColor);
+				bool locked = (group->flags & GRP_LOCKED) != 0u;
+				u32 objColor = locked ? 0x80ffffff : note->iconColor;
+				drawNoteIcon2d(note, o, objColor);
+			}
 		}
 		
 		// Draw drag select, if active.
@@ -1540,20 +1546,23 @@ namespace LevelEditor
 		}
 
 		// Draw level notes so the borders show up on top.
-		Vec3f cameraRgt = { s_camera.viewMtx.m0.x, s_camera.viewMtx.m0.y, s_camera.viewMtx.m0.z };
-		Vec3f cameraUp = { s_camera.viewMtx.m1.x, s_camera.viewMtx.m1.y, s_camera.viewMtx.m1.z };
-
-		const s32 noteCount = (s32)s_level.notes.size();
-		LevelNote* note = s_level.notes.data();
-		for (s32 o = 0; o < noteCount; o++, note++)
+		if (!(s_editorConfig.interfaceFlags & PIF_HIDE_NOTES))
 		{
-			if (note->flags & LNF_2D_ONLY) { continue; }
-			Group* group = levelNote_getGroup(note);
-			if (group->flags & GRP_HIDDEN) { continue; }
+			Vec3f cameraRgt = { s_camera.viewMtx.m0.x, s_camera.viewMtx.m0.y, s_camera.viewMtx.m0.z };
+			Vec3f cameraUp = { s_camera.viewMtx.m1.x, s_camera.viewMtx.m1.y, s_camera.viewMtx.m1.z };
 
-			bool locked = (group->flags & GRP_LOCKED);
-			u32 objColor = (!locked) ? note->iconColor : 0x80ffffff;
-			drawNoteIcon3d(note, o, objColor, cameraRgt, cameraUp);
+			const s32 noteCount = (s32)s_level.notes.size();
+			LevelNote* note = s_level.notes.data();
+			for (s32 o = 0; o < noteCount; o++, note++)
+			{
+				if (note->flags & LNF_2D_ONLY) { continue; }
+				Group* group = levelNote_getGroup(note);
+				if (group->flags & GRP_HIDDEN) { continue; }
+
+				bool locked = (group->flags & GRP_LOCKED);
+				u32 objColor = (!locked) ? note->iconColor : 0x80ffffff;
+				drawNoteIcon3d(note, o, objColor, cameraRgt, cameraUp);
+			}
 		}
 
 		triDraw3d_draw(&s_camera, (f32)s_viewportSize.x, (f32)s_viewportSize.z, s_grid.size, 0.0f);
@@ -2781,6 +2790,11 @@ namespace LevelEditor
 
 	void drawGuidelineShape2D()
 	{
+		if (s_editorConfig.interfaceFlags & PIF_HIDE_GUIDELINES)
+		{
+			return;
+		}
+
 		TFE_RenderShared::lineDraw2d_setLineDrawMode(LINE_DRAW_DASHED);
 
 		Guideline* guideline = &s_editGuidelines.guidelines;
@@ -2986,6 +3000,11 @@ namespace LevelEditor
 
 	void renderGuidelines2d(const Vec4f viewportBoundsWS)
 	{
+		if (s_editorConfig.interfaceFlags & PIF_HIDE_GUIDELINES)
+		{
+			return;
+		}
+
 		const u32 colors[] = { 0xc000a5ff, 0xc000a5ff };
 		const u32 hovered[] = { 0xffffa500, 0xffffa500 };
 		const u32 selected[] = { 0xff0030ff, 0xff0030ff };
@@ -3001,13 +3020,20 @@ namespace LevelEditor
 		{
 			// Cull the entire guideline set.
 			if (!boundsOverlap(guideLine->bounds, viewportBoundsWS)) { continue; }
+			if (guideLine->flags & GLFLAG_LIMIT_HEIGHT)
+			{
+				if (s_grid.height < guideLine->minHeight || s_grid.height > guideLine->maxHeight)
+				{
+					continue;
+				}
+			}
 
 			const size_t edgeCount = guideLine->edge.size();
-			const Vec2f* vtx   = guideLine->vtx.data();
+			const Vec2f* vtx = guideLine->vtx.data();
 			const GuidelineEdge* edge = guideLine->edge.data();
 
 			const size_t offsetCount = guideLine->offsets.size();
-			
+
 			const u32* drawColor = colors;
 			if (s_hoveredGuideline == i && s_curGuideline == i)
 			{
@@ -3040,31 +3066,28 @@ namespace LevelEditor
 					}
 				}
 			}
-
-			// Show closest point on guideline.
-			if (guideLine->flags & GLFLAG_DISABLE_CLOSEST_POINT) { continue; }
-			if (!boundsOverlap(guideLine->bounds, pointBoundsWS, guideLine->closestPointRange)) { continue; }
-
-			s32 edgeIndex, offsetIndex;
-			f32 t;
-			Vec2f closestPoint;
-			if (guideline_getClosestPoint(guideLine, { s_cursor3d.x, s_cursor3d.z }, &edgeIndex, &offsetIndex, &t, &closestPoint))
-			{
-				Vec2f offset = { closestPoint.x - s_cursor3d.x, closestPoint.z - s_cursor3d.z };
-				f32 distSq = offset.x*offset.x + offset.z*offset.z;
-				if (distSq <= guideLine->closestPointRange*guideLine->closestPointRange)
-				{
-					Vec2f lineVtx[] =
-					{
-						{ s_cursor3d.x * s_viewportTrans2d.x + s_viewportTrans2d.y, s_cursor3d.z * s_viewportTrans2d.z + s_viewportTrans2d.w },
-						{ closestPoint.x * s_viewportTrans2d.x + s_viewportTrans2d.y, closestPoint.z * s_viewportTrans2d.z + s_viewportTrans2d.w }
-					};
-					lineDraw2d_addLine(2.0f, lineVtx, detail);
-				}
-			}
-
 		}
 		lineDraw2d_setLineDrawMode();
+
+		// Draw guideline knots.
+		guideLine = s_level.guidelines.data();
+		for (size_t g = 0; g < count; g++, guideLine++)
+		{
+			// Cull the entire guideline set.
+			if (!boundsOverlap(guideLine->bounds, viewportBoundsWS)) { continue; }
+			if (guideLine->flags & GLFLAG_DISABLE_SNAPPING) { continue; }  // Don't show knots if snapping is disabled.
+			if ((guideLine->flags & GLFLAG_LIMIT_HEIGHT) && (s_grid.height < guideLine->minHeight || s_grid.height > guideLine->maxHeight))
+			{
+				continue;
+			}
+			const size_t knotCount = guideLine->knots.size();
+			const Vec4f* knot = guideLine->knots.data();
+			for (size_t k = 0; k < knotCount; k++, knot++)
+			{
+				const Vec2f pos = { knot->x, knot->z };
+				drawPositionKnot2d(2.0f, pos, 0xffffa500);
+			}
+		}
 	}
 	
 	void renderSectorWalls2d(s32 layerStart, s32 layerEnd)
@@ -3357,6 +3380,30 @@ namespace LevelEditor
 			vertLine[1] = vtxWorld2d[i + 4];
 			lineDraw2d_addLine(lineWidth, vertLine, colors);
 		}
+	}
+
+	void drawPositionKnot2d(f32 width, Vec2f pos, u32 color)
+	{
+		f32 step = 3.0f / s_viewportTrans2d.x;
+		Vec2f p0 = { pos.x - step, pos.z - step };
+		Vec2f p1 = { pos.x + step, pos.z - step };
+		Vec2f p2 = { pos.x + step, pos.z + step };
+		Vec2f p3 = { pos.x - step, pos.z + step };
+		Vec2f vtx[] =
+		{
+			{ p0.x * s_viewportTrans2d.x + s_viewportTrans2d.y, p0.z * s_viewportTrans2d.z + s_viewportTrans2d.w },
+			{ p1.x * s_viewportTrans2d.x + s_viewportTrans2d.y, p1.z * s_viewportTrans2d.z + s_viewportTrans2d.w },
+			{ p2.x * s_viewportTrans2d.x + s_viewportTrans2d.y, p2.z * s_viewportTrans2d.z + s_viewportTrans2d.w },
+			{ p3.x * s_viewportTrans2d.x + s_viewportTrans2d.y, p3.z * s_viewportTrans2d.z + s_viewportTrans2d.w },
+			{ p0.x * s_viewportTrans2d.x + s_viewportTrans2d.y, p0.z * s_viewportTrans2d.z + s_viewportTrans2d.w },
+		};
+
+		// Draw lines through the center point.
+		const u32 clr[] = { color, color };
+		TFE_RenderShared::lineDraw2d_addLine(width, &vtx[0], clr);
+		TFE_RenderShared::lineDraw2d_addLine(width, &vtx[1], clr);
+		TFE_RenderShared::lineDraw2d_addLine(width, &vtx[2], clr);
+		TFE_RenderShared::lineDraw2d_addLine(width, &vtx[3], clr);
 	}
 		
 	void drawPosition2d(f32 width, Vec2f pos, u32 color)

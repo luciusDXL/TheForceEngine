@@ -143,7 +143,6 @@ namespace LevelEditor
 		GLFLAG_NONE = 0,
 		GLFLAG_LIMIT_HEIGHT = FLAG_BIT(0),
 		GLFLAG_DISABLE_SNAPPING = FLAG_BIT(1),
-		GLFLAG_DISABLE_CLOSEST_POINT = FLAG_BIT(2)
 	};
 
 	struct GuidelineEdge
@@ -154,6 +153,9 @@ namespace LevelEditor
 	struct Guideline
 	{
 		std::vector<Vec2f> vtx;
+		// selectable knots on the path/curve, ordered by t value.
+		// (x,z) = position, y = t value, w = edge index.
+		std::vector<Vec4f> knots;
 		std::vector<GuidelineEdge> edge;
 		Vec4f bounds = { 0 };
 		f32 maxOffset = 0.0f;

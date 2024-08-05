@@ -17,6 +17,7 @@
 #include "editGeometry.h"
 #include "editGuidelines.h"
 #include "editNotes.h"
+#include "userPreferences.h"
 #include <TFE_FrontEndUI/frontEndUi.h>
 #include <TFE_Editor/AssetBrowser/assetBrowser.h>
 #include <TFE_Asset/imageAsset.h>
@@ -4480,6 +4481,7 @@ namespace LevelEditor
 				}
 
 				// Level Notes
+				if (!(s_editorConfig.interfaceFlags & PIF_HIDE_NOTES))
 				{
 					const s32 count = (s32)s_level.notes.size();
 					LevelNote* note = s_level.notes.data();
@@ -4845,7 +4847,7 @@ namespace LevelEditor
 		
 	void moveVertex(Vec2f worldPos2d)
 	{
-		snapToGrid(&worldPos2d);
+		worldPos2d = snapToGridOrGuidelines2d(worldPos2d);
 
 		// Overall movement since mousedown, for the history.
 		if (!s_moveStarted)

@@ -3,8 +3,10 @@
 #include "levelEditor.h"
 #include "levelEditorData.h"
 #include "sharedState.h"
+#include <TFE_Editor/editorConfig.h>
 #include <TFE_Editor/LevelEditor/Rendering/viewport.h>
 #include <TFE_Editor/LevelEditor/Rendering/grid.h>
+#include <TFE_Editor/LevelEditor/userPreferences.h>
 #include <TFE_System/math.h>
 #include <TFE_Jedi/Math/core_math.h>
 #include <TFE_Editor/errorMessages.h>
@@ -25,6 +27,11 @@ namespace LevelEditor
 	
 	void handleLevelNoteEdit(RayHitInfo* hitInfo, const Vec3f& rayDir)
 	{
+		if (s_editorConfig.interfaceFlags & PIF_HIDE_NOTES)
+		{
+			return;
+		}
+
 		const s32 levelNoteCount = (s32)s_level.notes.size();
 		LevelNote* note = s_level.notes.data();
 		s_hoveredLevelNote = -1;

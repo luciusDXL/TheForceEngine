@@ -8,6 +8,7 @@
 #include "levelEditorHistory.h"
 #include "sharedState.h"
 #include "selection.h"
+#include "userPreferences.h"
 #include <TFE_System/math.h>
 #include <TFE_Jedi/Math/core_math.h>
 #include <TFE_Editor/errorMessages.h>
@@ -76,6 +77,11 @@ namespace LevelEditor
 
 	void handleGuidelinesEdit(RayHitInfo* hitInfo)
 	{
+		if (s_editorConfig.interfaceFlags & PIF_HIDE_GUIDELINES)
+		{
+			return;
+		}
+
 		// Snap the cursor to the grid.
 		Vec2f onGrid = { s_cursor3d.x, s_cursor3d.z };
 
@@ -330,6 +336,7 @@ namespace LevelEditor
 
 		setDefaultGuidelineValues(guideline);
 		guideline_computeBounds(&guideline);
+		guideline_computeKnots(&guideline);
 		s_level.guidelines.push_back(guideline);
 	}
 
@@ -346,6 +353,7 @@ namespace LevelEditor
 
 		setDefaultGuidelineValues(guideline);
 		guideline_computeBounds(&guideline);
+		guideline_computeKnots(&guideline);
 		s_level.guidelines.push_back(guideline);
 	}
 }

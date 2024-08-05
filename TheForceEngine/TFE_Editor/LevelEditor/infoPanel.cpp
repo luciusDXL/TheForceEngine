@@ -1820,12 +1820,9 @@ namespace LevelEditor
 		f32 checkWidth = ImGui::CalcTextSize("Limit Height Shown").x + 8.0f;
 		optionCheckbox("Limit Height Shown", &guideline->flags, GLFLAG_LIMIT_HEIGHT, checkWidth);
 		optionCheckbox("Disable Snapping", &guideline->flags, GLFLAG_DISABLE_SNAPPING, checkWidth);
-
-		checkWidth = ImGui::CalcTextSize("Disable Closest Point to Path Display").x + 8.0f;
-		optionCheckbox("Disable Closest Point to Path Display", &guideline->flags, GLFLAG_DISABLE_CLOSEST_POINT, checkWidth);
 		ImGui::Separator();
 
-		if ((guideline->flags & GLFLAG_LIMIT_HEIGHT) || !(guideline->flags & GLFLAG_DISABLE_SNAPPING) || !(guideline->flags & GLFLAG_DISABLE_CLOSEST_POINT))
+		if ((guideline->flags & GLFLAG_LIMIT_HEIGHT) || !(guideline->flags & GLFLAG_DISABLE_SNAPPING))
 		{
 			sectionHeader("Values");
 			s32 colWidth = s32(ImGui::CalcTextSize("Min Height Shown").x + 8.0f);
@@ -1837,10 +1834,6 @@ namespace LevelEditor
 			if (!(guideline->flags & GLFLAG_DISABLE_SNAPPING))
 			{
 				optionFloatInput("Max Snap Range", &guideline->maxSnapRange, 0.1f, colWidth, 128, "%.2f");
-			}
-			if (!(guideline->flags & GLFLAG_DISABLE_CLOSEST_POINT))
-			{
-				optionFloatInput("Max Closest Point Display", &guideline->closestPointRange, 0.1f, 0, 128, "%.2f");
 			}
 			ImGui::Separator();
 		}
@@ -1864,6 +1857,7 @@ namespace LevelEditor
 			}
 		}
 		guideline_computeBounds(guideline);
+		guideline_computeKnots(guideline);
 		ImGui::Separator();
 		if (count >= 4) { disableNextItem(); }
 		if (ImGui::Button("Add"))
