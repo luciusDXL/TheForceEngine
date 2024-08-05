@@ -301,7 +301,6 @@ namespace LevelEditor
 
 	void setDefaultGuidelineValues(Guideline& guideline)
 	{
-		guideline.closestPointRange = 4.0f * s_grid.size;
 		guideline.maxSnapRange = s_grid.size;
 		guideline.minHeight = s_grid.height;
 		guideline.maxHeight = s_grid.height + 16.0f;

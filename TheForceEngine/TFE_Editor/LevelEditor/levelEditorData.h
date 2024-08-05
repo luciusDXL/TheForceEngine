@@ -29,7 +29,8 @@ namespace LevelEditor
 		LEF_InfV1      = 7,
 		LEF_Groups     = 8,
 		LEF_LevelNotes =10,
-		LEF_CurVersion =10,
+		LEF_Guidelines =11,
+		LEF_CurVersion =11,
 	};
 
 	enum LevelEditMode
@@ -157,6 +158,7 @@ namespace LevelEditor
 		// (x,z) = position, y = t value, w = edge index.
 		std::vector<Vec4f> knots;
 		std::vector<GuidelineEdge> edge;
+		std::vector<f32> offsets;
 		Vec4f bounds = { 0 };
 		f32 maxOffset = 0.0f;
 
@@ -165,8 +167,6 @@ namespace LevelEditor
 		f32 maxHeight = 0.0f;
 		f32 minHeight = 0.0f;
 		f32 maxSnapRange = 0.0f;		// Set based on the grid at creation time.
-		f32 closestPointRange = 0.0f;	// Set based on the grid at creation time.
-		std::vector<f32> offsets;
 	};
 
 	typedef std::vector<EditorSector*> SectorList;

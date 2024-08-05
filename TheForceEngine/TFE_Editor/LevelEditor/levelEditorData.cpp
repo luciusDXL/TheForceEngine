@@ -1015,6 +1015,47 @@ namespace LevelEditor
 			}
 		}
 
+		s_level.guidelines.clear();
+		if (version >= LEF_Guidelines)
+		{
+			s32 guidelineCount = 0;
+			file.read(&guidelineCount);
+			s_level.guidelines.resize(guidelineCount);
+
+			Guideline* guideline = s_level.guidelines.data();
+			for (s32 i = 0; i < guidelineCount; i++, guideline++)
+			{
+				// Counts
+				s32 vtxCount = 0;
+				s32 knotCount = 0;
+				s32 edgeCount = 0;
+				s32 offsetCount = 0;
+				file.read(&vtxCount);
+				file.read(&knotCount);
+				file.read(&edgeCount);
+				file.read(&offsetCount);
+
+				guideline->vtx.resize(vtxCount);
+				guideline->knots.resize(knotCount);
+				guideline->edge.resize(edgeCount);
+				guideline->offsets.resize(offsetCount);
+
+				// Values
+				if (vtxCount > 0) { file.readBuffer(guideline->vtx.data(), sizeof(Vec2f) * vtxCount); }
+				if (knotCount > 0) { file.readBuffer(guideline->knots.data(), sizeof(Vec4f) * knotCount); }
+				if (edgeCount > 0) { file.readBuffer(guideline->edge.data(), sizeof(GuidelineEdge) * edgeCount); }
+				if (offsetCount > 0) { file.readBuffer(guideline->offsets.data(), sizeof(f32) * offsetCount); }
+
+				// Settings
+				file.read(guideline->bounds.m, 4);
+				file.read(&guideline->maxOffset);
+				file.read(&guideline->flags);
+				file.read(&guideline->maxHeight);
+				file.read(&guideline->minHeight);
+				file.read(&guideline->maxSnapRange);
+			}
+		}
+
 		file.close();
 
 		return true;
@@ -1136,6 +1177,38 @@ namespace LevelEditor
 			file.write(&note->iconColor);
 			file.write(&note->textColor);
 			file.write(&note->note);
+		}
+
+		// version >= LEF_Guidelines
+		const s32 guidelineCount = (s32)s_level.guidelines.size();
+		file.write(&guidelineCount);
+
+		const Guideline* guideline = s_level.guidelines.data();
+		for (s32 i = 0; i < guidelineCount; i++, guideline++)
+		{
+			// Counts
+			s32 vtxCount = (s32)guideline->vtx.size();
+			s32 knotCount = (s32)guideline->knots.size();
+			s32 edgeCount = (s32)guideline->edge.size();
+			s32 offsetCount = (s32)guideline->offsets.size();
+			file.write(&vtxCount);
+			file.write(&knotCount);
+			file.write(&edgeCount);
+			file.write(&offsetCount);
+
+			// Values
+			if (vtxCount > 0) { file.writeBuffer(guideline->vtx.data(), sizeof(Vec2f) * vtxCount); }
+			if (knotCount > 0) { file.writeBuffer(guideline->knots.data(), sizeof(Vec4f) * knotCount); }
+			if (edgeCount > 0) { file.writeBuffer(guideline->edge.data(), sizeof(GuidelineEdge) * edgeCount); }
+			if (offsetCount > 0) { file.writeBuffer(guideline->offsets.data(), sizeof(f32) * offsetCount); }
+
+			// Settings
+			file.write(guideline->bounds.m, 4);
+			file.write(&guideline->maxOffset);
+			file.write(&guideline->flags);
+			file.write(&guideline->maxHeight);
+			file.write(&guideline->minHeight);
+			file.write(&guideline->maxSnapRange);
 		}
 
 		file.close();
