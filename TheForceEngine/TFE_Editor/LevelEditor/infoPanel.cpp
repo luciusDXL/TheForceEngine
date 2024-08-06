@@ -1846,7 +1846,7 @@ namespace LevelEditor
 		for (s32 i = 0; i < count; i++)
 		{
 			char label[256];
-			sprintf(label, "Offset[%d]", i);
+			sprintf(label, "Offset %d", i + 1);
 			optionFloatInput(label, &offsetValue[i], 0.1f, 0, 128, "%.2f");
 			guideline->maxOffset = std::max(guideline->maxOffset, fabsf(offsetValue[i]));
 
@@ -1882,9 +1882,7 @@ namespace LevelEditor
 		if (id < 0) { return; }
 				
 		LevelNote* note = &s_level.notes[id];
-		char tmpBuffer[4096];
-		strcpy(tmpBuffer, note->note.c_str());
-
+		
 		ImGui::CheckboxFlags("2D Only", &note->flags, LNF_2D_ONLY); ImGui::SameLine();
 		ImGui::CheckboxFlags("No Fade in 3D", &note->flags, LNF_3D_NO_FADE); ImGui::SameLine();
 		ImGui::CheckboxFlags("Always Show Text", &note->flags, LNF_TEXT_ALWAYS_SHOW);
@@ -1913,7 +1911,13 @@ namespace LevelEditor
 			note->textColor = colorVec4ToPacked(textColor);
 		}
 		ImGui::Separator();
-		if (ImGui::InputTextMultiline("##TextBox", tmpBuffer, 4096, { s_infoWith - 16.0f, 354.0f }))
+		char textInputId[256];
+		char tmpBuffer[4096];
+		// Key the Input by ID since ImGUI keeps its own copy internally, which can cause issues when changing IDs.
+		sprintf(textInputId, "##TextBox%d", id);
+		strcpy(tmpBuffer, note->note.c_str());
+
+		if (ImGui::InputTextMultiline(textInputId, tmpBuffer, 4096, { s_infoWith - 16.0f, 354.0f }))
 		{
 			note->note = tmpBuffer;
 		}

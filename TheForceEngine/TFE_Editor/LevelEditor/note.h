@@ -1,10 +1,9 @@
 #pragma once
 //////////////////////////////////////////////////////////////////////
-// The Force Engine Editor
-// A system built to view and edit Dark Forces data files.
-// The viewing aspect needs to be put in place at the beginning
-// in order to properly test elements in isolation without having
-// to "play" the game as intended.
+// Level Note
+// Display colored icons and text in 2D and 3D that exist in 3D space.
+// This is only used for the Editor and is not exported or viewable
+// in-game.
 //////////////////////////////////////////////////////////////////////
 #include <TFE_System/types.h>
 #include <TFE_System/parser.h>
