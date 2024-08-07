@@ -102,7 +102,7 @@ namespace TFE_Audio
 		if (m_soundFont)
 		{
 			// Set the SoundFont rendering output mode
-			tsf_set_output(m_soundFont, TSF_STEREO_INTERLEAVED, sampleRate, 0);
+			tsf_set_output(m_soundFont, TSF_STEREO_INTERLEAVED, TSF_INTERP_CUBIC, sampleRate, 0);
 			tsf_set_max_voices(m_soundFont, SFD_MAX_VOICES);
 			// pre-allocate channels, clear programs or set them to the stored values.
 			for (s32 i = 0; i < MIDI_CHANNEL_COUNT; i++)
