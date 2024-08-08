@@ -510,6 +510,7 @@ namespace TFE_DarkForces
 	// Also, later, the TFE based save format will likely change - so importing will be necessary anyway.
 	JBool openDarkPilotConfig(FileStream* file)
 	{
+		bool triedonce = false;
 		assert(file);
 
 		// TFE uses its own local copy of the save game data to avoid corrupting existing data.
@@ -542,6 +543,7 @@ namespace TFE_DarkForces
 				{
 					// Finally generate a new one.
 					TFE_System::logWrite(LOG_WARNING, "DarkForcesMain", "Cannot find 'DARKPILO.CFG' at '%s'. Creating a new file for save data.", sourcePath);
+newpilo:
 					createDarkPilotConfig(documentsPath);
 				}
 			}
@@ -549,6 +551,7 @@ namespace TFE_DarkForces
 		// Then try opening the file.
 		if (!file->open(documentsPath, Stream::MODE_READWRITE))
 		{
+			TFE_System::logWrite(LOG_ERROR, "DarkForcesMain", "cannot open DARKPILO.CFG");
 			return JFALSE;
 		}
 		// Then verify the file.
@@ -560,6 +563,12 @@ namespace TFE_DarkForces
 		}
 		// If it is not correct, then close the file and return false.
 		file->close();
+		if (!triedonce)
+		{
+			TFE_System::logWrite(LOG_ERROR, "DarkForcesMain", "DARKPILO.CFG corrupted; creating new");
+			triedonce = true;
+			goto newpilo;
+		}
 		return JFALSE;
 	}
 }  // namespace TFE_DarkForces
