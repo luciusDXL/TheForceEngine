@@ -43,7 +43,7 @@ out vec4 Out_Color;
 			float offset = Frag_Offsets[i];
 			if (offset == 0.0) { break; }
 
-			float curOffsetAlpha = offsetAlpha * smoothstep(dFxy, 0.0, abs(sd-offset));//smoothstep(0.0, -dFxy, abs(sd-offset)-width);
+			float curOffsetAlpha = offsetAlpha * smoothstep(dFxy, 0.0, abs(sd+offset));
 			// See which alpha we should use.
 			alpha = max(alpha, curOffsetAlpha);
 		}
