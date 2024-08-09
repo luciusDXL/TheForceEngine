@@ -16,6 +16,7 @@
 #include <TFE_Editor/EditorAsset/editorTexture.h>
 #include <TFE_Editor/LevelEditor/Rendering/viewport.h>
 #include <TFE_Editor/LevelEditor/Rendering/grid.h>
+#include <TFE_Editor/LevelEditor/Scripting/levelEditorScripts.h>
 #include <TFE_Jedi/Level/rwall.h>
 #include <TFE_Jedi/Level/rsector.h>
 #include <TFE_System/math.h>
@@ -45,6 +46,10 @@ namespace LevelEditor
 	const ImVec4 tabSelColor = { 0.25f, 0.75f, 1.0f, 1.0f };
 	const ImVec4 tabStdColor = { 1.0f, 1.0f, 1.0f, 0.5f };
 
+	enum TermainlFilter
+	{
+		LFILTER_SCRIPT = (1 << LFILTER_ERROR),
+	};
 	struct LeMessage
 	{
 		LeMsgType type;
@@ -131,6 +136,8 @@ namespace LevelEditor
 		ImGui::SetCursorPosY(ImGui::GetCursorPosY() - 4);
 		ImGui::Separator();
 	}
+
+	static char s_scriptLine[4096] = { 0 };
 		
 	s32 infoPanelOutput(s32 width)
 	{
@@ -159,6 +166,15 @@ namespace LevelEditor
 				if (!(typeFlag & s_outputFilter)) { continue; }
 
 				ImGui::TextColored(c_typeColor[msg->type], "%s", msg->msg.c_str());
+			}
+
+			if (s_outputFilter & LFILTER_SCRIPT)
+			{
+				if (ImGui::InputText("##ScriptInput", s_scriptLine, 4096, ImGuiInputTextFlags_EnterReturnsTrue))
+				{
+					executeLine(s_scriptLine);
+					memset(s_scriptLine, 0, 4096);
+				}
 			}
 
 			if (restoreHeight)
@@ -222,6 +238,18 @@ namespace LevelEditor
 					s_outputTabSel = 2;
 					s_outputFilter = LFILTER_ERROR;
 				}
+
+				ImGui::SameLine(0.0f, 16.0f);
+				ImGui::PushStyleColor(ImGuiCol_Text, (s_outputFilter & LFILTER_SCRIPT) ? tabSelColor : tabStdColor);
+				ImGui::Text("Script");
+				ImGui::PopStyleColor();
+				if (mouseInsideItem() && mousePressed)
+				{
+					if (s_outputFilter & LFILTER_SCRIPT) { s_outputFilter &= ~LFILTER_SCRIPT; }
+					else { s_outputFilter |= LFILTER_SCRIPT; }
+					memset(s_scriptLine, 0, 4096);
+					s_scrollToBottom = true;
+				}
 			}
 			ImGui::End();
 		}
@@ -244,6 +272,75 @@ namespace LevelEditor
 			s_featureHovered = {};
 		}
 	}
+
+	void selectAndScrollToSector(EditorSector* sector)
+	{
+		// Clear the selection, select the sector.
+		selection_clear();
+		s_featureCur = {};
+		s_featureHovered = {};
+		s_featureCur.sector = sector;
+
+		// Set the edit mode to "Sector"
+		s_editMode = LEDIT_SECTOR;
+
+		// Set the correct layer.
+		if (!(s_editFlags & LEF_SHOW_ALL_LAYERS))
+		{
+			s_curLayer = sector->layer;
+		}
+		// Center the view on the sector.
+		if (s_view == EDIT_VIEW_2D)
+		{
+			const Vec2f mapPos =
+			{
+				 (sector->bounds[0].x + sector->bounds[1].x) * 0.5f,
+				-(sector->bounds[0].z + sector->bounds[1].z) * 0.5f
+			};
+			const Vec2f target =
+			{
+				mapPos.x - (s_viewportSize.x / 2) * s_zoom2d,
+				mapPos.z - (s_viewportSize.z / 2) * s_zoom2d
+			};
+			setViewportScrollTarget2d(target);
+		}
+		else if (s_view == EDIT_VIEW_3D)
+		{
+			// Compute the look at angles.
+			const Vec3f mapPos =
+			{
+				(sector->bounds[0].x + sector->bounds[1].x) * 0.5f,
+				(sector->bounds[0].y + sector->bounds[1].y) * 0.5f,
+				(sector->bounds[0].z + sector->bounds[1].z) * 0.5f
+			};
+			f32 targetYaw, targetPitch;
+			computeLookAt(mapPos, targetYaw, targetPitch);
+
+			// Then move closer if needed.
+			Vec3f cornerDelta = { sector->bounds[1].x - mapPos.x, sector->bounds[1].y - mapPos.y, sector->bounds[1].z - mapPos.z };
+			f32 radius = sqrtf(cornerDelta.x*cornerDelta.x + cornerDelta.y*cornerDelta.y + cornerDelta.z*cornerDelta.z);
+			f32 d = max(20.0f, radius * 2.0f);
+
+			Vec3f posDelta = { mapPos.x - s_camera.pos.x, mapPos.y - s_camera.pos.y, mapPos.z - s_camera.pos.z };
+			f32 dist = sqrtf(posDelta.x*posDelta.x + posDelta.y*posDelta.y + posDelta.z*posDelta.z);
+
+			if (dist > d)
+			{
+				const f32 scale = (dist - d) / dist;
+				const Vec3f targetPos =
+				{
+					s_camera.pos.x + posDelta.x * scale,
+					s_camera.pos.y + posDelta.y * scale,
+					s_camera.pos.z + posDelta.z * scale
+				};
+				setViewportScrollTarget3d(targetPos, targetYaw, targetPitch);
+			}
+			else
+			{
+				setViewportScrollTarget3d(s_camera.pos, targetYaw, targetPitch);
+			}
+		}
+	}
 		
 	void listNamedSectorsInGroup(Group* group)
 	{
@@ -261,71 +358,7 @@ namespace LevelEditor
 			}
 			if (sublist_item(sublist, sector->name.c_str(), s_featureCur.sector == sector))
 			{
-				// Clear the selection, select the sector.
-				selection_clear();
-				s_featureCur = {};
-				s_featureHovered = {};
-				s_featureCur.sector = sector;
-
-				// Set the edit mode to "Sector"
-				s_editMode = LEDIT_SECTOR;
-
-				// Set the correct layer.
-				if (!(s_editFlags & LEF_SHOW_ALL_LAYERS))
-				{
-					s_curLayer = sector->layer;
-				}
-				// Center the view on the sector.
-				if (s_view == EDIT_VIEW_2D)
-				{
-					const Vec2f mapPos =
-					{
-						 (sector->bounds[0].x + sector->bounds[1].x) * 0.5f,
-						-(sector->bounds[0].z + sector->bounds[1].z) * 0.5f
-					};
-					const Vec2f target =
-					{
-						mapPos.x - (s_viewportSize.x / 2) * s_zoom2d,
-						mapPos.z - (s_viewportSize.z / 2) * s_zoom2d
-					};
-					setViewportScrollTarget2d(target);
-				}
-				else if (s_view == EDIT_VIEW_3D)
-				{
-					// Compute the look at angles.
-					const Vec3f mapPos =
-					{
-						(sector->bounds[0].x + sector->bounds[1].x) * 0.5f,
-						(sector->bounds[0].y + sector->bounds[1].y) * 0.5f,
-						(sector->bounds[0].z + sector->bounds[1].z) * 0.5f
-					};
-					f32 targetYaw, targetPitch;
-					computeLookAt(mapPos, targetYaw, targetPitch);
-
-					// Then move closer if needed.
-					Vec3f cornerDelta = { sector->bounds[1].x - mapPos.x, sector->bounds[1].y - mapPos.y, sector->bounds[1].z - mapPos.z };
-					f32 radius = sqrtf(cornerDelta.x*cornerDelta.x + cornerDelta.y*cornerDelta.y + cornerDelta.z*cornerDelta.z);
-					f32 d = max(20.0f, radius * 2.0f);
-
-					Vec3f posDelta = { mapPos.x - s_camera.pos.x, mapPos.y - s_camera.pos.y, mapPos.z - s_camera.pos.z };
-					f32 dist = sqrtf(posDelta.x*posDelta.x + posDelta.y*posDelta.y + posDelta.z*posDelta.z);
-
-					if (dist > d)
-					{
-						const f32 scale = (dist - d) / dist;
-						const Vec3f targetPos =
-						{
-							s_camera.pos.x + posDelta.x * scale,
-							s_camera.pos.y + posDelta.y * scale,
-							s_camera.pos.z + posDelta.z * scale
-						};
-						setViewportScrollTarget3d(targetPos, targetYaw, targetPitch);
-					}
-					else
-					{
-						setViewportScrollTarget3d(s_camera.pos, targetYaw, targetPitch);
-					}
-				}
+				
 			}
 		}
 		sublist_end(sublist);

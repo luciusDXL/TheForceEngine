@@ -1207,9 +1207,6 @@
     <ClInclude Include="TFE_ForceScript\Angelscript\angelscript\source\as_variablescope.h">
       <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
     </ClInclude>
-    <ClInclude Include="TFE_ForceScript\script_system.h">
-      <Filter>Source\TFE_ForceScript</Filter>
-    </ClInclude>
     <ClInclude Include="TFE_Editor\LevelEditor\levelEditor.h">
       <Filter>Source\TFE_Editor\LevelEditor</Filter>
     </ClInclude>
@@ -1285,12 +1282,6 @@
     <ClInclude Include="TFE_Editor\LevelEditor\Scripting\levelEditorScripts.h">
       <Filter>Source\TFE_Editor\LevelEditor\Scripting</Filter>
     </ClInclude>
-    <ClInclude Include="TFE_Editor\LevelEditor\Scripting\levelEditScript_system.h">
-      <Filter>Source\TFE_Editor\LevelEditor\Scripting</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_Editor\LevelEditor\Scripting\levelEditScript_level.h">
-      <Filter>Source\TFE_Editor\LevelEditor\Scripting</Filter>
-    </ClInclude>
     <ClInclude Include="TFE_Editor\LevelEditor\Rendering\grid.h">
       <Filter>Source\TFE_Editor\LevelEditor\Rendering</Filter>
     </ClInclude>
@@ -1353,6 +1344,18 @@
     </ClInclude>
     <ClInclude Include="Shaders\curve.h">
       <Filter>Source\Shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Editor\LevelEditor\Scripting\ls_system.h">
+      <Filter>Source\TFE_Editor\LevelEditor\Scripting</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Editor\LevelEditor\Scripting\ls_api.h">
+      <Filter>Source\TFE_Editor\LevelEditor\Scripting</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Editor\LevelEditor\Scripting\ls_level.h">
+      <Filter>Source\TFE_Editor\LevelEditor\Scripting</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\float2.h">
+      <Filter>Source\TFE_ForceScript</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -2217,9 +2220,6 @@
     <ClCompile Include="TFE_ForceScript\Angelscript\angelscript\source\as_variablescope.cpp">
       <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
     </ClCompile>
-    <ClCompile Include="TFE_ForceScript\script_system.cpp">
-      <Filter>Source\TFE_ForceScript</Filter>
-    </ClCompile>
     <ClCompile Include="TFE_Editor\LevelEditor\levelEditor.cpp">
       <Filter>Source\TFE_Editor\LevelEditor</Filter>
     </ClCompile>
@@ -2286,12 +2286,6 @@
     <ClCompile Include="TFE_Editor\LevelEditor\Scripting\levelEditorScripts.cpp">
       <Filter>Source\TFE_Editor\LevelEditor\Scripting</Filter>
     </ClCompile>
-    <ClCompile Include="TFE_Editor\LevelEditor\Scripting\levelEditScript_system.cpp">
-      <Filter>Source\TFE_Editor\LevelEditor\Scripting</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_Editor\LevelEditor\Scripting\levelEditScript_level.cpp">
-      <Filter>Source\TFE_Editor\LevelEditor\Scripting</Filter>
-    </ClCompile>
     <ClCompile Include="TFE_Editor\LevelEditor\Rendering\grid.cpp">
       <Filter>Source\TFE_Editor\LevelEditor\Rendering</Filter>
     </ClCompile>
@@ -2351,6 +2345,15 @@
     </ClCompile>
     <ClCompile Include="TFE_Editor\LevelEditor\guidelines.cpp">
       <Filter>Source\TFE_Editor\LevelEditor</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Editor\LevelEditor\Scripting\ls_system.cpp">
+      <Filter>Source\TFE_Editor\LevelEditor\Scripting</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Editor\LevelEditor\Scripting\ls_level.cpp">
+      <Filter>Source\TFE_Editor\LevelEditor\Scripting</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_ForceScript\float2.cpp">
+      <Filter>Source\TFE_ForceScript</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

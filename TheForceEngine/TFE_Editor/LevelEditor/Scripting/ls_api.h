@@ -9,9 +9,13 @@
 #include <TFE_System/types.h>
 #include <string>
 
+class asIScriptEngine;
+
 namespace LevelEditor
 {
-	void system_print(std::string& msg);
-	void system_printError(std::string& msg);
-	void system_printWarning(std::string& msg);
+	class LS_API
+	{
+	public:
+		virtual bool scriptRegister(asIScriptEngine* engine) = 0;
+	};
 }

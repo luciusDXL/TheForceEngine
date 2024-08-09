@@ -34,6 +34,7 @@
 #include <TFE_Editor/EditorAsset/editorSprite.h>
 #include <TFE_Editor/LevelEditor/Rendering/grid.h>
 #include <TFE_Editor/LevelEditor/Rendering/grid2d.h>
+#include <TFE_Editor/LevelEditor/Scripting/levelEditorScripts.h>
 #include <TFE_Input/input.h>
 #include <TFE_RenderBackend/renderBackend.h>
 #include <TFE_RenderShared/lineDraw2d.h>
@@ -258,6 +259,8 @@ namespace LevelEditor
 
 	bool init(Asset* asset)
 	{
+		registerScriptFunctions();
+
 		s_levelAsset = asset;
 		// Initialize editors.
 		editGeometry_init();
@@ -3278,6 +3281,11 @@ namespace LevelEditor
 				else { handleSectorDraw(&hitInfo); }
 				return;
 			}
+			else if (s_editMode == LEDIT_GUIDELINES)
+			{
+				handleGuidelinesEdit(&hitInfo);
+				return;
+			}
 			else if (s_editMode == LEDIT_ENTITY)
 			{
 				handleEntityEdit(&hitInfo, s_rayDir);
@@ -3968,6 +3976,7 @@ namespace LevelEditor
 
 	void update()
 	{
+		levelScript_update();
 		updateViewportScroll();
 		handleHotkeys();
 		

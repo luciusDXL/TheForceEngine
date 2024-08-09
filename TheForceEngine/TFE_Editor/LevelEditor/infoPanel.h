@@ -44,4 +44,6 @@ namespace LevelEditor
 
 	void clearEntityChanges();
 	void commitCurEntityChanges();
+
+	void selectAndScrollToSector(EditorSector* sector);
 }

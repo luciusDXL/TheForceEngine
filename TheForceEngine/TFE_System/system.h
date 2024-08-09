@@ -8,8 +8,8 @@
 #include "types.h"
 
 #define TFE_MAJOR_VERSION 1
-#define TFE_MINOR_VERSION 9
-#define TFE_BUILD_VERSION 5
+#define TFE_MINOR_VERSION 10
+#define TFE_BUILD_VERSION 0
 
 #if defined(_WIN32) || defined(BUILD_EDITOR)
 #define ENABLE_EDITOR 1

@@ -740,6 +740,12 @@ static bool StringEquals(const std::string& lhs, const std::string& rhs)
 	return lhs == rhs;
 }
 
+static int s_stringObjId = -1;
+int GetStdStringObjectId()
+{
+	return s_stringObjId;
+}
+
 void RegisterStdString_Native(asIScriptEngine *engine)
 {
 	int r = 0;
@@ -752,6 +758,7 @@ void RegisterStdString_Native(asIScriptEngine *engine)
 #else
 	r = engine->RegisterObjectType("string", sizeof(string), asOBJ_VALUE | asOBJ_APP_CLASS_CDAK); assert( r >= 0 );
 #endif
+	s_stringObjId = r;
 
 	r = engine->RegisterStringFactory("string", GetStdStringFactorySingleton());
 

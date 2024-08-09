@@ -1,4 +1,5 @@
 #include "forceScript.h"
+#include "float2.h"
 #include <TFE_System/system.h>
 #include <TFE_FrontEndUI/frontEndUi.h>
 #include <stdint.h>
@@ -7,9 +8,7 @@
 #include <assert.h>
 
 #ifdef ENABLE_FORCE_SCRIPT
-#include "script_system.h"
 
-#define FS_TEST_MEMORY_LOAD 1
 // TFE_ForceScript wraps Anglescript, so these includes should only exist here.
 #include <angelscript.h>
 #include <scriptstdstring/scriptstdstring.h>
@@ -28,8 +27,9 @@ namespace TFE_ForceScript
 	static asIScriptEngine* s_engine = nullptr;
 	static std::vector<ScriptThread> s_scriptThreads;
 	static std::vector<s32> s_freeThreads;
+	ScriptMessageCallback s_msgCallback = nullptr;
 
-	void test();
+	static s32 s_typeId[FSTYPE_COUNT] = { 0 };
 
 	// Script message callback.
 	void messageCallback(const asSMessageInfo* msg, void* param)
@@ -37,6 +37,12 @@ namespace TFE_ForceScript
 		LogWriteType type = LOG_ERROR;
 		if (msg->type == asMSGTYPE_WARNING) { type = LOG_WARNING; }
 		else if (msg->type == asMSGTYPE_INFORMATION) { type = LOG_MSG; }
+
+		if (s_msgCallback)
+		{
+			s_msgCallback(type, msg->section, msg->row, msg->col, msg->message);
+			return;
+		}
 		TFE_System::logWrite(type, "Script", "%s (%d, %d) : %s", msg->section, msg->row, msg->col, msg->message);
 	}
 		
@@ -57,6 +63,11 @@ namespace TFE_ForceScript
 		s_scriptThreads[id].delay = 0.0f;
 	}
 
+	s32 getObjectTypeId(FS_BuiltInType type)
+	{
+		return s_typeId[type];
+	}
+	
 	void init()
 	{
 		// Create the script engine.
@@ -68,16 +79,13 @@ namespace TFE_ForceScript
 
 		// Register std::string as the script string type.
 		RegisterStdString(s_engine);
+		s_typeId[FSTYPE_STRING] = GetStdStringObjectId();
 
 		// Language features.
 		res = s_engine->RegisterGlobalFunction("void yield(float)", asFUNCTION(yield), asCALL_CDECL); assert(res >= 0);
-		// Register core functions.
-		registerSystemFunctions(s_engine);
 
-		// Register editor functions.
-
-		// Temp.
-		test();
+		registerScriptMath_float2(s_engine);
+		s_typeId[FSTYPE_FLOAT2] = getFloat2ObjectId();
 	}
 
 	void destroy()
@@ -89,6 +97,11 @@ namespace TFE_ForceScript
 			s_engine->ShutDownAndRelease();
 			s_engine = nullptr;
 		}
+	}
+
+	void overrideCallback(ScriptMessageCallback callback)
+	{
+		s_msgCallback = callback;
 	}
 
 	void update()
@@ -139,6 +152,11 @@ namespace TFE_ForceScript
 		// Take this opportunity to defrag.
 		s_scriptThreads.clear();
 		s_freeThreads.clear();
+	}
+
+	void* getEngine()
+	{
+		return s_engine;
 	}
 		
 	ModuleHandle createModule(const char* moduleName, const char* filePath)
@@ -247,35 +265,41 @@ namespace TFE_ForceScript
 
 		return id;
 	}
-
-	void test()
-	{
-		// Build a test...
-	#if FS_TEST_MEMORY_LOAD == 1
-		const char* c_testScript =
-			"void main()\n"
-			"{\n"
-			"	system_printToLog(\"Hello world\");\n"
-			"}\n";
-
-		ModuleHandle mod = createModule("Test", "Test.as", c_testScript);
-	#else
-		ModuleHandle mod = createModule("Test", "Scripts/Test/Test.fs");
-	#endif
-		if (mod)
-		{
-			FunctionHandle func = findScriptFunc(mod, "void main()");
-			execFunc(func);
-		}
-	}
 }  // TFE_ForceScript
 
 #else
 
 namespace TFE_ForceScript
 {
-	void init() {} 
+	// Initialize and destroy script system.
+	void init() {}
 	void destroy() {}
+	void overrideCallback(ScriptMessageCallback callback) {}
+	// Run any active script functions.
+	void update() {}
+	// Stop all running script functions.
+	void stopAllFunc() {}
+
+	// Allow other systems to access the underlying engine.
+	void* getEngine() { return nullptr; }
+
+	// Compile module.
+	ModuleHandle createModule(const char* moduleName, const char* sectionName, const char* srcCode) { return nullptr; }
+	ModuleHandle createModule(const char* moduleName, const char* filePath) { return nullptr; }
+	// Find a specific script function in a module.
+	FunctionHandle findScriptFunc(ModuleHandle modHandle, const char* funcName) { return nullptr; }
+
+	// Types
+	s32 getObjectTypeId(FS_BuiltInType type) { return 0; }
+
+	// Execute a script function.
+	// It won't be executed immediately, it will happen on the next TFE_ForceScript update.
+	// ---------------------------------------
+	// Returns -1 on failure or id on success.
+	// Note id is only valid as long as the function is running.
+	s32 execFunc(FunctionHandle funcHandle) { return -1; }
+	// Resume a suspended script function given by id.
+	void resume(s32 id) { return; }
 }
 
 #endif

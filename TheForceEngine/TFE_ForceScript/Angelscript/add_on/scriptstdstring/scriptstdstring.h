@@ -47,6 +47,7 @@ BEGIN_AS_NAMESPACE
 
 void RegisterStdString(asIScriptEngine *engine);
 void RegisterStdStringUtils(asIScriptEngine *engine);
+int GetStdStringObjectId();
 
 END_AS_NAMESPACE
 

@@ -10,5 +10,11 @@
 
 namespace LevelEditor
 {
-	void registerScriptFunctions(void* engine);
+	void registerScriptFunctions();
+
+	void executeLine(const char* line);
+	void runLevelScript(const char* scriptName);
+	void showLevelScript(const char* scriptName);
+
+	void levelScript_update();
 }
