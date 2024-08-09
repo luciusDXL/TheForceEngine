@@ -1188,8 +1188,8 @@ namespace LevelEditor
 		const LevelTextureAsset* tex = s_level.textures.data();
 		for (s32 i = 0; i < textureCount; i++, tex++)
 		{
-			tex->name.c_str();
-			WRITE_LINE("  TEXTURE: %s\t\t#  %d\r\n", tex->name.c_str(), i);
+			const char *c = tex->name.c_str();
+			WRITE_LINE("  TEXTURE: %s\t\t#  %d\r\n", c, i);
 		}
 		NEW_LINE();
 

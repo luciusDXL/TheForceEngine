@@ -89,8 +89,6 @@ This can be overridden by defining the `TFE_DATA_HOME` environment variable.
 
 #### Running TFE
 ##### External application dependencies
-* “[KDialog](https://develop.kde.org/docs/administration/kdialog "Shell scripting with KDE dialogs")” for file dialog on KDE Plasma Desktop Environment.
-* “zenity” for file dialog on all other desktop environments.
 * external MIDI is no longer required but still supported through the “System MIDI” device.
 
 ##### Launch

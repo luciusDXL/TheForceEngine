@@ -5,7 +5,8 @@
 #include "imGUI/imgui.h"
 #include "imGUI/imgui_impl_sdl2.h"
 #include "imGUI/imgui_impl_opengl3.h"
-#include "portable-file-dialogs.h"
+#include "imGUI/ImGuiFileDialog.h"
+#include "IGFDIconFont.h"
 #include "markdown.h"
 #include <SDL.h>
 
@@ -13,10 +14,13 @@ namespace TFE_Ui
 {
 const char* glsl_version = "#version 130";
 static s32 s_uiScale = 100;
+static const ImWchar igfd_icons_ranges[] = {ICON_MIN_IGFD, ICON_MAX_IGFD, 0};
+static ImFont* igfd_font = nullptr;
 
 bool init(void* window, void* context, s32 uiScale)
 {
 	s_uiScale = uiScale;
+	const f32 fontsize = 13 * s_uiScale / 100;
 
 	// Setup Dear ImGui context
 	IMGUI_CHECKVERSION();
@@ -43,18 +47,17 @@ bool init(void* window, void* context, s32 uiScale)
 		char fp[TFE_MAX_PATH];
 		sprintf(fp, "Fonts/DroidSansMono.ttf");
 		TFE_Paths::mapSystemPath(fp);
-		io.Fonts->AddFontFromFileTTF(fp, f32(13 * s_uiScale / 100));
+		io.Fonts->AddFontFromFileTTF(fp, fontsize);
 	}
-	
-	TFE_Markdown::init(f32(16 * s_uiScale / 100));
 
-	// Initialize file dialogs.
-	if (!pfd::settings::available())
-	{
-		// TODO: Log error
-		return false;
-	}
-	
+	// Add Font for ImGuiFileDialog Icons
+	ImFontConfig igfd_icons;
+	igfd_icons.MergeMode  = true;
+	igfd_icons.PixelSnapH = true;
+	igfd_font = io.Fonts->AddFontFromMemoryCompressedBase85TTF(FONT_ICON_BUFFER_NAME_IGFD, fontsize, &igfd_icons, igfd_icons_ranges);
+
+	TFE_Markdown::init(fontsize);
+
 	return true;
 }
 
@@ -110,45 +113,85 @@ void invalidateFontAtlas()
 // This can be a bit of a waste but I'd rather have consistent paths through most of the application
 // and restrict the ugliness to as small an area as possible.
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
-FileResult openFileDialog(const char* title, const char* initPath, std::vector<std::string> const &filters/* = { "All Files", "*" }*/, bool multiSelect/* = false*/)
+static void igfd_init(const char* initPath, IGFD::FileDialogConfig& config)
 {
-	char initPathOS[TFE_MAX_PATH] = "";
-	if (initPath)
-	{
-		FileUtil::convertToOSPath(initPath, initPathOS);
-	}
+	char initPathOS[TFE_MAX_PATH];
 
-	return pfd::open_file(title, initPathOS, filters, multiSelect ? pfd::opt::multiselect : pfd::opt::none).result();
+	memset(initPathOS, 0, TFE_MAX_PATH);
+	if (initPath)
+		FileUtil::convertToOSPath(initPath, initPathOS);
+	else
+		strcpy(initPathOS, ".");
+
+	config.path = initPathOS;
+	config.countSelectionMax = 1;
+	config.flags = ImGuiFileDialogFlags_Default | ImGuiFileDialogFlags_CaseInsensitiveExtentionFiltering | ImGuiFileDialogFlags_DisableThumbnailMode;
 }
 
-FileResult directorySelectDialog(const char* title, const char* initPath, bool forceInitPath/* = false*/)
+static void igfd_open(const char* title, const char* filters, IGFD::FileDialogConfig& config)
 {
-	char initPathOS[TFE_MAX_PATH] = "";
-	if (initPath)
-	{
-		FileUtil::convertToOSPath(initPath, initPathOS);
-	}
-
-	FileResult result;
-	std::string res = pfd::select_folder(title, initPathOS).result();
-	result.push_back(res);
-
-	return result;
+	ImGuiFileDialog::Instance()->OpenDialog("ImGFileDialogKey", title, filters, config);
+	ImGuiFileDialog::Instance()->SetFileStyle(IGFD_FileStyleByTypeDir, "", ImVec4(1.0f, 1.0f, 0.0f, 0.9f), ICON_IGFD_FOLDER);
+	ImGuiFileDialog::Instance()->SetFileStyle(IGFD_FileStyleByTypeFile, "", ImVec4(0.5f, 1.0f, 0.9f, 0.9f), ICON_IGFD_FILE);
 }
 
-FileResult saveFileDialog(const char* title, const char* initPath, std::vector<std::string> filters/* = { "All Files", "*" }*/, bool forceOverwrite/* = false*/)
+void openFileDialog(const char* title, const char* initPath, const char* filters/* = { ".*" }*/, bool multiSelect/* = false*/)
 {
-	char initPathOS[TFE_MAX_PATH] = "";
-	if (initPath)
+	IGFD::FileDialogConfig config;
+
+	igfd_init(initPath, config);
+	config.countSelectionMax = multiSelect ? 0 : 1;
+	config.flags &= ~ImGuiFileDialogFlags_ConfirmOverwrite;
+	config.flags |= ImGuiFileDialogFlags_DisableCreateDirectoryButton;
+	igfd_open(title, filters, config);
+}
+
+void saveFileDialog(const char* title, const char* initPath, const char* filters/* = { ".*" }*/, bool forceOverwrite/* = false*/)
+{
+	IGFD::FileDialogConfig config;
+
+	igfd_init(initPath, config);
+	if (forceOverwrite)
+		config.flags &= ~ImGuiFileDialogFlags_ConfirmOverwrite;
+	else
+		config.flags |= ImGuiFileDialogFlags_ConfirmOverwrite;
+
+	igfd_open(title, filters, config);
+}
+
+void directorySelectDialog(const char* title, const char* initPath, bool forceInitPath/* = false*/)
+{
+	IGFD::FileDialogConfig config;
+
+	igfd_init(initPath, config);
+	igfd_open(title, nullptr, config);
+}
+
+bool renderFileDialog(FileResult& inOutPath)
+{
+	// assume a minimum size of 640x480 pixels, below that interacting
+	// with the dialog becomes a chore.
+	bool done = false;
+
+	if (igfd_font)
+		ImGui::PushFont(igfd_font);
+
+	if (ImGuiFileDialog::Instance()->Display("ImGFileDialogKey", ImGuiWindowFlags_NoCollapse, ImVec2(640, 480)))
 	{
-		FileUtil::convertToOSPath(initPath, initPathOS);
+		if (ImGuiFileDialog::Instance()->IsOk())
+		{
+			std::string filePathName = ImGuiFileDialog::Instance()->GetFilePathName();
+			std::string filePath = ImGuiFileDialog::Instance()->GetCurrentPath() + "/";
+			inOutPath.push_back(filePathName);
+			inOutPath.push_back(filePath);
+		}
+		ImGuiFileDialog::Instance()->Close();
+		done = true;		// dialog was closed.
 	}
+	if (igfd_font)
+		ImGui::PopFont();
 
-	FileResult result;
-	std::string res = pfd::save_file(title, initPathOS, filters, forceOverwrite ? pfd::opt::force_overwrite : pfd::opt::none).result();
-	result.push_back(res);
-
-	return result;
+	return done;
 }
 
-}
+} // namespace TFE_Ui

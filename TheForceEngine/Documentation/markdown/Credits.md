@@ -81,9 +81,9 @@ imGUI Markdown
   * [https://github.com/juliettef/imgui_markdown](https://github.com/juliettef/imgui_markdown)
   * License: ZLIB
 
-Portable File Dialogs
-  * [https://github.com/samhocevar/portable-file-dialogs](https://github.com/samhocevar/portable-file-dialogs)
-  * License: [WTFPL](https://github.com/samhocevar/portable-file-dialogs/blob/master/COPYING)
+ImGuiFileDialog
+  * [https://github.com/aiekick/ImGuiFileDialog](https://github.com/aiekick/ImGuiFileDialog)
+  * License: MIT
 
 Clipper
   * [http://www.angusj.com/delphi/clipper.php](http://www.angusj.com/delphi/clipper.php)

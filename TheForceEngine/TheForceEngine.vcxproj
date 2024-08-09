@@ -693,7 +693,7 @@ echo ^)";
     <ClInclude Include="TFE_System\tfeMessage.h" />
     <ClInclude Include="TFE_System\types.h" />
     <ClInclude Include="TFE_System\utf8.h" />
-    <ClInclude Include="TFE_Ui\imGUI\Dirent\dirent.h" />
+    <ClInclude Include="TFE_Ui\imGUI\dirent\dirent.h" />
     <ClInclude Include="TFE_Ui\imGUI\imconfig.h" />
     <ClInclude Include="TFE_Ui\imGUI\imgui.h" />
     <ClInclude Include="TFE_Ui\imGUI\imgui_impl_opengl3.h" />
