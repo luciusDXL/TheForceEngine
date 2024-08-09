@@ -31,6 +31,11 @@ using namespace TFE_Editor;
 
 namespace LevelEditor
 {
+	enum PanelConst
+	{
+		SCROLL_FALSE = 0,
+		SCROLL_TRUE = 2,
+	};
 	enum InfoTab
 	{
 		TAB_INFO = 0,
@@ -46,10 +51,6 @@ namespace LevelEditor
 	const ImVec4 tabSelColor = { 0.25f, 0.75f, 1.0f, 1.0f };
 	const ImVec4 tabStdColor = { 1.0f, 1.0f, 1.0f, 0.5f };
 
-	enum TermainlFilter
-	{
-		LFILTER_SCRIPT = (1 << LFILTER_ERROR),
-	};
 	struct LeMessage
 	{
 		LeMsgType type;
@@ -75,8 +76,7 @@ namespace LevelEditor
 	static s32 s_prevCategoryFlags = 0;
 
 	static s32 s_groupOpen = -1;
-
-	static bool s_scrollToBottom = false;
+	static s32 s_scrollToBottom = SCROLL_FALSE;
 		
 	void infoPanelClearMessages()
 	{
@@ -92,13 +92,13 @@ namespace LevelEditor
 		va_end(arg);
 
 		s_outputMsg.push_back({ type, fullStr });
-		s_scrollToBottom = true;
+		s_scrollToBottom = SCROLL_TRUE;
 	}
 
 	void infoPanelSetMsgFilter(u32 filter/*LFILTER_DEFAULT*/)
 	{
 		s_outputFilter = filter;
-		s_scrollToBottom = true;
+		s_scrollToBottom = SCROLL_TRUE;
 	}
 
 	void infoPanelClearFeatures()
@@ -138,6 +138,7 @@ namespace LevelEditor
 	}
 
 	static char s_scriptLine[4096] = { 0 };
+	static char s_script[65536] = { 0 };
 		
 	s32 infoPanelOutput(s32 width)
 	{
@@ -158,7 +159,7 @@ namespace LevelEditor
 
 			const size_t count = s_outputMsg.size();
 			const LeMessage* msg = s_outputMsg.data();
-			const ImVec4 c_typeColor[] = { {1.0f, 1.0f, 1.0f, 0.7f}, {1.0f, 1.0f, 0.25f, 1.0f}, {1.0f, 0.25f, 0.25f, 1.0f} };
+			const ImVec4 c_typeColor[] = { {1.0f, 1.0f, 1.0f, 0.7f}, {1.0f, 1.0f, 0.25f, 1.0f}, {1.0f, 0.25f, 0.25f, 1.0f}, {0.5f, 1.0f, 0.5f, 1.0f} };
 						
 			for (size_t i = 0; i < count; i++, msg++)
 			{
@@ -170,10 +171,32 @@ namespace LevelEditor
 
 			if (s_outputFilter & LFILTER_SCRIPT)
 			{
+				// TODO (Alpha-1):
+				// * Script command history, so UP/DOWN works to cycle through previous commands.
+				// * Allocate s_script and s_scriptLine at init-time to avoid bloating the EXE/statics.
+				// * Add "clearHistory" command.
+				// TODO (Alpha-2 or later):
+				// * Syntax coloring.
+				// * Autocomplete.
 				if (ImGui::InputText("##ScriptInput", s_scriptLine, 4096, ImGuiInputTextFlags_EnterReturnsTrue))
 				{
-					executeLine(s_scriptLine);
+					// Add the line to the output messages.
+					infoPanelAddMsg(LE_MSG_SCRIPT, "%s", s_scriptLine);
+					strcat(s_script, s_scriptLine);
 					memset(s_scriptLine, 0, 4096);
+
+					// Only execute the script if Enter is pressed.
+					// If SHIFT+Enter is pressed, add a new line to the script but don't execute yet.
+					if (!TFE_Input::keyModDown(KEYMOD_SHIFT))
+					{
+						executeLine(s_script);
+						memset(s_script, 0, 65536);
+					}
+
+					// Scroll to the bottom and keep focus on the text input after pressing enter.
+					s_scrollToBottom = SCROLL_TRUE;
+					ImGui::FocusItem();
+					ImGui::SetKeyboardFocusHere(-1);
 				}
 			}
 
@@ -187,10 +210,11 @@ namespace LevelEditor
 				s_outputHeight = max(26 * 3, (s32)ImGui::GetWindowSize().y);
 			}
 
-			if (s_scrollToBottom)
+			// An extra frame is needed to handle adding a new item and scrolling to it.
+			if (s_scrollToBottom > SCROLL_FALSE)
 			{
-				ImGui::SetScrollHereY(0.999f);
-				s_scrollToBottom = false;
+				ImGui::SetScrollHereY(1.0f);
+				s_scrollToBottom--;
 			}
 		}
 		else
@@ -248,7 +272,8 @@ namespace LevelEditor
 					if (s_outputFilter & LFILTER_SCRIPT) { s_outputFilter &= ~LFILTER_SCRIPT; }
 					else { s_outputFilter |= LFILTER_SCRIPT; }
 					memset(s_scriptLine, 0, 4096);
-					s_scrollToBottom = true;
+					memset(s_script, 0, 65536);
+					s_scrollToBottom = SCROLL_TRUE;
 				}
 			}
 			ImGui::End();

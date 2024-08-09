@@ -17,6 +17,7 @@ namespace LevelEditor
 		LE_MSG_INFO = 0,
 		LE_MSG_WARNING,
 		LE_MSG_ERROR,
+		LE_MSG_SCRIPT,
 		LE_MSG_COUNT
 	};
 	enum LeMsgFilter
@@ -24,6 +25,7 @@ namespace LevelEditor
 		LFILTER_INFO    = (1 << LE_MSG_INFO),
 		LFILTER_WARNING = (1 << LE_MSG_WARNING),
 		LFILTER_ERROR   = (1 << LE_MSG_ERROR),
+		LFILTER_SCRIPT  = (1 << LE_MSG_SCRIPT),
 		LFILTER_DEFAULT = LFILTER_INFO | LFILTER_WARNING | LFILTER_ERROR
 	};
 
