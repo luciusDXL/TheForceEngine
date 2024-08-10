@@ -1017,49 +1017,6 @@ namespace LevelEditor
 		outWalls[1] = &sector->walls[wallIndex + 1];
 	}
 
-	void fixupWallMirrorsDel(EditorSector* sector, s32 wallIndex)
-	{
-		bool hasWallsPastSplit = wallIndex + 1 < sector->walls.size();
-		if (!hasWallsPastSplit) { return; }
-
-		// Gather sectors that might need to be changed.
-		s_searchKey++;
-		s_sectorChangeList.clear();
-		const size_t wallCount = sector->walls.size();
-		const s32 levelSectorCount = (s32)s_level.sectors.size();
-		EditorWall* wall = sector->walls.data();
-		for (size_t w = 0; w < wallCount; w++, wall++)
-		{
-			if (wall->adjoinId < 0 || wall->adjoinId >= levelSectorCount) { continue; }
-			EditorSector* nextSector = &s_level.sectors[wall->adjoinId];
-			if (nextSector->searchKey != s_searchKey)
-			{
-				nextSector->searchKey = s_searchKey;
-				s_sectorChangeList.push_back(nextSector);
-			}
-		}
-
-		// Loop through potentially effected sectors and adjust mirrors.
-		const size_t sectorCount = s_sectorChangeList.size();
-		EditorSector** sectorList = s_sectorChangeList.data();
-		for (size_t s = 0; s < sectorCount; s++)
-		{
-			EditorSector* matchSector = sectorList[s];
-			if (matchSector == sector) { continue; }
-
-			const size_t wallCount = matchSector->walls.size();
-			EditorWall* wall = matchSector->walls.data();
-			for (size_t w = 0; w < wallCount; w++, wall++)
-			{
-				if (wall->adjoinId != sector->id) { continue; }
-				if (wall->mirrorId > wallIndex)
-				{
-					wall->mirrorId--;
-				}
-			}
-		}
-	}
-
 	void fixupWallMirrors(EditorSector* sector, s32 wallIndex)
 	{
 		bool hasWallsPastSplit = wallIndex + 1 < sector->walls.size();
@@ -2963,9 +2920,17 @@ namespace LevelEditor
 
 	void edit_deleteLevelNote(s32 index)
 	{
-		if (index >= 0 && index < (s32)s_level.notes.size())
+		s32 count = (s32)s_level.notes.size();
+		if (index >= 0 && index < count)
 		{
 			s_level.notes.erase(s_level.notes.begin() + index);
+			count--;
+			// Reset IDs.
+			LevelNote* note = s_level.notes.data();
+			for (s32 i = 0; i < count; i++, note++)
+			{
+				note->id = i;
+			}
 		}
 	}
 

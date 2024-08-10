@@ -26,6 +26,7 @@ namespace LevelEditor
 
 	struct LevelNote
 	{
+		s32 id = 0;
 		// Group & Flags.
 		u32 groupId = 0;
 		u32 groupIndex = 0;

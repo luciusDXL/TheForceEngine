@@ -837,9 +837,10 @@ namespace LevelEditor
 	{
 		if (!newNote) { return -1; }
 
-		s32 index = (s32)s_level.notes.size();
-		s_level.notes.push_back(*newNote);
-		return index;
+		LevelNote note = *newNote;
+		note.id = (s32)s_level.notes.size();
+		s_level.notes.push_back(note);
+		return note.id;
 	}
 
 	bool loadFromTFL(const char* name)
@@ -1005,6 +1006,7 @@ namespace LevelEditor
 			LevelNote* note = s_level.notes.data();
 			for (s32 i = 0; i < levelNoteCount; i++, note++)
 			{
+				note->id = i;
 				file.read(&note->flags);
 				file.read(&note->groupId);
 				file.read(note->pos.m, 3);
