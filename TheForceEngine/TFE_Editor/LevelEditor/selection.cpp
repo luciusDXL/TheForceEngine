@@ -10,8 +10,7 @@ namespace LevelEditor
 	SelectionList s_selectionList;
 	SelectionList s_vertexList;
 	SectorList s_sectorChangeList;
-	DragSelect s_dragSelect = {};
-
+	
 	// Selection
 	void selection_clear(bool clearDragSelect)
 	{

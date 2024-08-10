@@ -1366,6 +1366,9 @@
     <ClInclude Include="TFE_Editor\LevelEditor\featureId.h">
       <Filter>Source\TFE_Editor\LevelEditor</Filter>
     </ClInclude>
+    <ClInclude Include="TFE_Editor\LevelEditor\dragSelect.h">
+      <Filter>Source\TFE_Editor\LevelEditor</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -2371,6 +2374,9 @@
       <Filter>Source\TFE_Editor\LevelEditor\Scripting</Filter>
     </ClCompile>
     <ClCompile Include="TFE_Editor\LevelEditor\featureId.cpp">
+      <Filter>Source\TFE_Editor\LevelEditor</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Editor\LevelEditor\dragSelect.cpp">
       <Filter>Source\TFE_Editor\LevelEditor</Filter>
     </ClCompile>
   </ItemGroup>

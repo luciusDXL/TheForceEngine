@@ -9,37 +9,19 @@
 #include <TFE_System/types.h>
 #include "levelEditorData.h"
 #include "featureId.h"
+#include "dragSelect.h"
 #include <vector>
 
 namespace LevelEditor
 {
 	struct EditorSector;
-
-	enum DragSelectMode
-	{
-		DSEL_SET = 0,
-		DSEL_ADD,
-		DSEL_REM,
-		DSEL_COUNT
-	};
-
-	struct DragSelect
-	{
-		DragSelectMode mode = DSEL_SET;
-		bool active = false;
-		bool moved = false;
-		Vec2i startPos = { 0 };
-		Vec2i curPos = { 0 };
-	};
-
-	// Feature ID
+	
 	typedef std::vector<FeatureId> SelectionList;
 
 	extern SelectionList s_selectionList;
 	extern SelectionList s_vertexList;
 	extern SectorList s_sectorChangeList;
-	extern DragSelect s_dragSelect;
-
+	
 	// Selection
 	void selection_clear(bool clearDragSelect = true);
 	bool selection_add(FeatureId id);
