@@ -887,23 +887,19 @@ namespace LevelEditor
 				s_featureCur.featureIndex = -1;
 				if (s_featureHovered.sector && s_featureHovered.featureIndex >= 0)
 				{
-					FeatureId id = createFeatureId(s_featureHovered.sector, s_featureHovered.featureIndex);
-					bool doesItemExist = selection_doesFeatureExist(id);
-					bool canChangeSelection = true;
+					const FeatureId id = createFeatureId(s_featureHovered.sector, s_featureHovered.featureIndex);
+					const bool doesItemExist = selection_doesFeatureExist(id);
 
-					if (canChangeSelection)
-					{
-						handleSelectMode(s_featureHovered.sector, -1);
+					handleSelectMode(s_featureHovered.sector, -1);
 
-						s_featureCur.sector = s_featureHovered.sector;
-						s_featureCur.featureIndex = s_featureHovered.featureIndex;
-						s_curVtxPos = s_hoveredVtxPos;
-						adjustGridHeight(s_featureCur.sector);
-						s_editMove = true;
+					s_featureCur.sector = s_featureHovered.sector;
+					s_featureCur.featureIndex = s_featureHovered.featureIndex;
+					s_curVtxPos = s_hoveredVtxPos;
+					adjustGridHeight(s_featureCur.sector);
+					s_editMove = true;
 
-						// Clear the selection if this is a new vertex and Ctrl isn't held.
-						selectFromSingleVertex(s_featureCur.sector, s_featureCur.featureIndex, !doesItemExist);
-					}
+					// Clear the selection if this is a new vertex and Ctrl isn't held.
+					selectFromSingleVertex(s_featureCur.sector, s_featureCur.featureIndex, !doesItemExist);
 				}
 				else if (!s_editMove)
 				{
