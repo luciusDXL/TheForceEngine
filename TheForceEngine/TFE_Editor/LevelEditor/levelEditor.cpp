@@ -2023,36 +2023,36 @@ namespace LevelEditor
 				s_featureCur.featureIndex = -1;
 				if (s_featureHovered.sector && s_featureHovered.featureIndex >= 0)
 				{
-					FeatureId id = createFeatureId(s_featureHovered.sector, s_featureHovered.featureIndex, s_featureHovered.part);
-					bool doesItemExist = selection_doesFeatureExist(id);
-					if (s_selectionList.size() <= 1 || doesItemExist)
+					const FeatureId id = createFeatureId(s_featureHovered.sector, s_featureHovered.featureIndex, s_featureHovered.part);
+					const bool doesItemExist = selection_doesFeatureExist(id);
+
+					handleSelectMode(s_featureHovered.sector,
+						(s_featureHovered.part == HP_FLOOR || s_featureHovered.part == HP_CEIL) ? -1 : s_featureHovered.featureIndex);
+
+					s_featureCur.sector = s_featureHovered.sector;
+					s_featureCur.featureIndex = s_featureHovered.featureIndex;
+					s_featureCur.part = s_featureHovered.part;
+					// Set this to the 3D cursor position, so the wall doesn't "pop" when grabbed.
+					s_curVtxPos = s_cursor3d;
+					adjustGridHeight(s_featureCur.sector);
+					s_editMove = true;
+
+					// TODO: Hotkeys...
+					// TODO: Should these just be removed to simplify things a bit?
+					s_wallMoveMode = WMM_FREE;
+					if (TFE_Input::keyDown(KEY_T))
 					{
-						handleSelectMode(s_featureHovered.sector,
-							(s_featureHovered.part == HP_FLOOR || s_featureHovered.part == HP_CEIL) ? -1 : s_featureHovered.featureIndex);
-
-						s_featureCur.sector = s_featureHovered.sector;
-						s_featureCur.featureIndex = s_featureHovered.featureIndex;
-						s_featureCur.part = s_featureHovered.part;
-						// Set this to the 3D cursor position, so the wall doesn't "pop" when grabbed.
-						s_curVtxPos = s_cursor3d;
-						adjustGridHeight(s_featureCur.sector);
-						s_editMove = true;
-
-						// TODO: Hotkeys...
-						s_wallMoveMode = WMM_FREE;
-						if (TFE_Input::keyDown(KEY_T))
-						{
-							s_wallMoveMode = WMM_TANGENT;
-						}
-						else if (TFE_Input::keyDown(KEY_N))
-						{
-							s_wallMoveMode = WMM_NORMAL;
-						}
-
-						if (!doesItemExist) { selection_clear(); }
-						selection_add(id);
-						gatherVerticesFromWallSelection();
+						s_wallMoveMode = WMM_TANGENT;
 					}
+					else if (TFE_Input::keyDown(KEY_N))
+					{
+						s_wallMoveMode = WMM_NORMAL;
+					}
+
+					if (!doesItemExist) { selection_clear(); }
+					selection_add(id);
+					// TODO: Handle with derived sets.
+					gatherVerticesFromWallSelection();
 				}
 				else if (!s_editMove)
 				{
