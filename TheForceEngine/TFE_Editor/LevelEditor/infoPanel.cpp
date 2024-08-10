@@ -57,6 +57,8 @@ namespace LevelEditor
 		std::string msg;
 	};
 	static std::vector<LeMessage> s_outputMsg;
+	static std::vector<std::string> s_scriptCmdHistory;
+	static s32 s_historyPtr = 0;
 	static u32 s_outputFilter = LFILTER_DEFAULT;
 	static s32 s_outputTabSel = 0;
 	static f32 s_infoWith;
@@ -77,6 +79,10 @@ namespace LevelEditor
 
 	static s32 s_groupOpen = -1;
 	static s32 s_scrollToBottom = SCROLL_FALSE;
+
+	static char s_scriptLine[4096] = { 0 };
+	static char s_script[65536] = { 0 };
+	static bool s_allowScriptHistoryCallback = false;
 		
 	void infoPanelClearMessages()
 	{
@@ -136,9 +142,51 @@ namespace LevelEditor
 		ImGui::SetCursorPosY(ImGui::GetCursorPosY() - 4);
 		ImGui::Separator();
 	}
+		
+	s32 outputScriptCmdCallback(ImGuiInputTextCallbackData* data)
+	{
+		if (!s_allowScriptHistoryCallback)
+		{
+			return 0;
+		}
+		s_allowScriptHistoryCallback = false;
 
-	static char s_scriptLine[4096] = { 0 };
-	static char s_script[65536] = { 0 };
+		switch (data->EventFlag)
+		{
+			case ImGuiInputTextFlags_CallbackCompletion:
+			{
+				// TODO in Alpha-2 or later.
+			} break;
+			case ImGuiInputTextFlags_CallbackHistory:
+			{
+				s32 prevHistoryPtr = s_historyPtr;
+				if (data->EventKey == ImGuiKey_UpArrow)
+				{
+					if (s_historyPtr > 0)
+					{
+						s_historyPtr--;
+					}
+				}
+				else if (data->EventKey == ImGuiKey_DownArrow)
+				{
+					if (s_historyPtr < (s32)s_scriptCmdHistory.size())
+					{
+						s_historyPtr++;
+					}
+				}
+
+				if (prevHistoryPtr != s_historyPtr)
+				{
+					data->DeleteChars(0, data->BufTextLen);
+					if (s_historyPtr < (s32)s_scriptCmdHistory.size())
+					{
+						data->InsertChars(0, s_scriptCmdHistory[s_historyPtr].c_str());
+					}
+				}
+			} break;
+		}
+		return 0;
+	}
 		
 	s32 infoPanelOutput(s32 width)
 	{
@@ -171,19 +219,20 @@ namespace LevelEditor
 
 			if (s_outputFilter & LFILTER_SCRIPT)
 			{
-				// TODO (Alpha-1):
-				// * Script command history, so UP/DOWN works to cycle through previous commands.
+				// TODO (Alpha-2 or later):
 				// * Allocate s_script and s_scriptLine at init-time to avoid bloating the EXE/statics.
 				// * Add "clearHistory" command.
-				// TODO (Alpha-2 or later):
 				// * Syntax coloring.
 				// * Autocomplete.
-				if (ImGui::InputText("##ScriptInput", s_scriptLine, 4096, ImGuiInputTextFlags_EnterReturnsTrue))
+				s_allowScriptHistoryCallback = true;  // Avoid issue with repeat keys, only accept one callback call per frame.
+				if (ImGui::InputText("##ScriptInput", s_scriptLine, 4096, ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CallbackHistory, outputScriptCmdCallback))
 				{
 					// Add the line to the output messages.
 					if (s_scriptLine[0] != 0)
 					{
 						infoPanelAddMsg(LE_MSG_SCRIPT, "%s", s_scriptLine);
+						s_scriptCmdHistory.push_back(s_scriptLine);
+						s_historyPtr = (s32)s_scriptCmdHistory.size();
 						strcat(s_script, s_scriptLine);
 						memset(s_scriptLine, 0, 4096);
 					}
