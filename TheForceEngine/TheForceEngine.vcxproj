@@ -472,6 +472,7 @@ echo ^)";
     <ClInclude Include="TFE_Editor\LevelEditor\editNotes.h" />
     <ClInclude Include="TFE_Editor\LevelEditor\entity.h" />
     <ClInclude Include="TFE_Editor\LevelEditor\error.h" />
+    <ClInclude Include="TFE_Editor\LevelEditor\featureId.h" />
     <ClInclude Include="TFE_Editor\LevelEditor\groups.h" />
     <ClInclude Include="TFE_Editor\LevelEditor\guidelines.h" />
     <ClInclude Include="TFE_Editor\LevelEditor\hotkeys.h" />
@@ -847,6 +848,7 @@ echo ^)";
     <ClCompile Include="TFE_Editor\LevelEditor\editGuidelines.cpp" />
     <ClCompile Include="TFE_Editor\LevelEditor\editNotes.cpp" />
     <ClCompile Include="TFE_Editor\LevelEditor\entity.cpp" />
+    <ClCompile Include="TFE_Editor\LevelEditor\featureId.cpp" />
     <ClCompile Include="TFE_Editor\LevelEditor\groups.cpp" />
     <ClCompile Include="TFE_Editor\LevelEditor\guidelines.cpp" />
     <ClCompile Include="TFE_Editor\LevelEditor\hotkeys.cpp" />

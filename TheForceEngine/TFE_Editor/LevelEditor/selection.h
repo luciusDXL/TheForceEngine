@@ -8,6 +8,7 @@
 //////////////////////////////////////////////////////////////////////
 #include <TFE_System/types.h>
 #include "levelEditorData.h"
+#include "featureId.h"
 #include <vector>
 
 namespace LevelEditor
@@ -32,16 +33,12 @@ namespace LevelEditor
 	};
 
 	// Feature ID
-	typedef u64 FeatureId;
 	typedef std::vector<FeatureId> SelectionList;
 
 	extern SelectionList s_selectionList;
 	extern SelectionList s_vertexList;
 	extern SectorList s_sectorChangeList;
 	extern DragSelect s_dragSelect;
-
-	FeatureId createFeatureId(EditorSector* sector, s32 featureIndex, s32 featureData = 0, bool isOverlapped = false);
-	EditorSector* unpackFeatureId(FeatureId id, s32* featureIndex, s32* featureData = nullptr, bool* isOverlapped = nullptr);
 
 	// Selection
 	void selection_clear(bool clearDragSelect = true);
