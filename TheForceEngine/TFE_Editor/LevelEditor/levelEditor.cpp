@@ -82,7 +82,6 @@ namespace LevelEditor
 	enum WallMoveMode
 	{
 		WMM_NORMAL = 0,
-		WMM_TANGENT,
 		WMM_FREE,
 		WMM_COUNT
 	};
@@ -2040,11 +2039,7 @@ namespace LevelEditor
 					// TODO: Hotkeys...
 					// TODO: Should these just be removed to simplify things a bit?
 					s_wallMoveMode = WMM_FREE;
-					if (TFE_Input::keyDown(KEY_T))
-					{
-						s_wallMoveMode = WMM_TANGENT;
-					}
-					else if (TFE_Input::keyDown(KEY_N))
+					if (TFE_Input::keyDown(KEY_N))
 					{
 						s_wallMoveMode = WMM_NORMAL;
 					}
@@ -4998,27 +4993,13 @@ namespace LevelEditor
 		Vec2f startPos = s_moveStartPos;
 		if (s_view == EDIT_VIEW_3D)
 		{
-			if (s_wallMoveMode == WMM_TANGENT)
-			{
-				worldPos = moveAlongRail({ s_wallTan.x, 0.0f, s_wallTan.z });
-				moveDir = s_wallTan;
-				startPos = { s_curVtxPos.x, s_curVtxPos.z };
-			}
-			else if (s_wallMoveMode == WMM_NORMAL)
+			if (s_wallMoveMode == WMM_NORMAL)
 			{
 				worldPos = moveAlongRail({ s_wallNrm.x, 0.0f, s_wallNrm.z });
 			}
 			else
 			{
 				worldPos = moveAlongXZPlane(s_curVtxPos.y);
-			}
-		}
-		else
-		{
-			if (s_wallMoveMode == WMM_TANGENT)
-			{
-				moveDir = s_wallTan;
-				startPos = { s_curVtxPos.x, s_curVtxPos.z };
 			}
 		}
 
