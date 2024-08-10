@@ -1,4 +1,6 @@
 #include "levelEditorScripts.h"
+#include "ls_draw.h"
+#include "ls_selection.h"
 #include "ls_system.h"
 #include "ls_level.h"
 #include <TFE_System/math.h>
@@ -31,6 +33,8 @@ namespace LevelEditor
 
 	bool s_levelScriptRegistered = false;
 	bool s_execFromOutput = false;
+	LS_Draw s_lsDraw;
+	LS_Selection s_lsSelection;
 	LS_System s_lsSystem;
 	LS_Level s_lsLevel;
 
@@ -64,6 +68,8 @@ namespace LevelEditor
 		TFE_ForceScript::overrideCallback(scriptCallback);
 
 		asIScriptEngine* engine = (asIScriptEngine*)TFE_ForceScript::getEngine();
+		s_lsDraw.scriptRegister(engine);
+		s_lsSelection.scriptRegister(engine);
 		s_lsSystem.scriptRegister(engine);
 		s_lsLevel.scriptRegister(engine);
 

@@ -181,10 +181,13 @@ namespace LevelEditor
 				if (ImGui::InputText("##ScriptInput", s_scriptLine, 4096, ImGuiInputTextFlags_EnterReturnsTrue))
 				{
 					// Add the line to the output messages.
-					infoPanelAddMsg(LE_MSG_SCRIPT, "%s", s_scriptLine);
-					strcat(s_script, s_scriptLine);
-					memset(s_scriptLine, 0, 4096);
-
+					if (s_scriptLine[0] != 0)
+					{
+						infoPanelAddMsg(LE_MSG_SCRIPT, "%s", s_scriptLine);
+						strcat(s_script, s_scriptLine);
+						memset(s_scriptLine, 0, 4096);
+					}
+					
 					// Only execute the script if Enter is pressed.
 					// If SHIFT+Enter is pressed, add a new line to the script but don't execute yet.
 					if (!TFE_Input::keyModDown(KEYMOD_SHIFT))

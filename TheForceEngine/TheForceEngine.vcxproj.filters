@@ -1357,6 +1357,12 @@
     <ClInclude Include="TFE_ForceScript\float2.h">
       <Filter>Source\TFE_ForceScript</Filter>
     </ClInclude>
+    <ClInclude Include="TFE_Editor\LevelEditor\Scripting\ls_selection.h">
+      <Filter>Source\TFE_Editor\LevelEditor\Scripting</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Editor\LevelEditor\Scripting\ls_draw.h">
+      <Filter>Source\TFE_Editor\LevelEditor\Scripting</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -2354,6 +2360,12 @@
     </ClCompile>
     <ClCompile Include="TFE_ForceScript\float2.cpp">
       <Filter>Source\TFE_ForceScript</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Editor\LevelEditor\Scripting\ls_selection.cpp">
+      <Filter>Source\TFE_Editor\LevelEditor\Scripting</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Editor\LevelEditor\Scripting\ls_draw.cpp">
+      <Filter>Source\TFE_Editor\LevelEditor\Scripting</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
