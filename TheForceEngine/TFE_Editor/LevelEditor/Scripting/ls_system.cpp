@@ -184,17 +184,17 @@ namespace LevelEditor
 		//------------------------------------
 		// Functions
 		//------------------------------------
-		// Currently support up to 8 arguments + format string.
+		// Currently support up to 10 arguments + format string.
 		// This has to be a static member of the class since it use the GENERIC calling convention, but it is still added as an object method
 		// so the script API follows the desired `system.func()` pattern.
 		res = engine->RegisterObjectMethod("System",
-			"void error(const string &in, ?&in arg0 = 0, ?&in arg1 = 0, ?&in arg2 = 0, ?&in arg3 = 0, ?&in arg4 = 0, ?&in arg5 = 0, ?&in arg6 = 0, ?&in arg7 = 0)",
+			"void error(const string &in, ?&in arg0 = 0, ?&in arg1 = 0, ?&in arg2 = 0, ?&in arg3 = 0, ?&in arg4 = 0, ?&in arg5 = 0, ?&in arg6 = 0, ?&in arg7 = 0, ?&in arg8 = 0, ?&in arg9 = 0)",
 			asFUNCTION(error), asCALL_GENERIC); assert(res >= 0);
 		res = engine->RegisterObjectMethod("System",
-			"void warning(const string &in, ?&in arg0 = 0, ?&in arg1 = 0, ?&in arg2 = 0, ?&in arg3 = 0, ?&in arg4 = 0, ?&in arg5 = 0, ?&in arg6 = 0, ?&in arg7 = 0)",
+			"void warning(const string &in, ?&in arg0 = 0, ?&in arg1 = 0, ?&in arg2 = 0, ?&in arg3 = 0, ?&in arg4 = 0, ?&in arg5 = 0, ?&in arg6 = 0, ?&in arg7 = 0, ?&in arg8 = 0, ?&in arg9 = 0)",
 			asFUNCTION(warning), asCALL_GENERIC); assert(res >= 0);
 		res = engine->RegisterObjectMethod("System",
-			"void print(const string &in, ?&in arg0 = 0, ?&in arg1 = 0, ?&in arg2 = 0, ?&in arg3 = 0, ?&in arg4 = 0, ?&in arg5 = 0, ?&in arg6 = 0, ?&in arg7 = 0)",
+			"void print(const string &in, ?&in arg0 = 0, ?&in arg1 = 0, ?&in arg2 = 0, ?&in arg3 = 0, ?&in arg4 = 0, ?&in arg5 = 0, ?&in arg6 = 0, ?&in arg7 = 0, ?&in arg8 = 0, ?&in arg9 = 0)",
 			asFUNCTION(print), asCALL_GENERIC); assert(res >= 0);
 
 		res = engine->RegisterObjectMethod("System", "void clearOutput()", asMETHOD(LS_System, clearOutput), asCALL_THISCALL);  assert(res >= 0);

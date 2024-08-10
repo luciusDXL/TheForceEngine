@@ -14,13 +14,15 @@ void main()
 	int maxLayer = level.getMaxLayer();
 	float2 parallax = level.getParallax();
 	
-	system.print("==== Level Info ====\n" +
-	             "Name: " + name + "\n" +
-				 "Slot: " + slot + "\n" +
-				 "Sector Count: " + sectorCount + "\n" +
-				 "Entity Count: " + entityCount + "\n" +
-				 "Note Count: " + levelNoteCount + "\n" +
-				 "Guideline Count: " + guidelineCount + "\n" +
-				 "Parallax: " + toString(parallax) + "\n" +
-				 "Layer Range: [" + minLayer + ", " + maxLayer + "]\n");
+	system.print("==== Level Info ====\n"
+	             "Name: {}\n"
+				 "Slot: {}\n"
+				 "Sector Count: {}\n"
+				 "Entity Count: {}\n"
+				 "Note Count: {}\n"
+				 "Guideline Count: {}\n"
+				 "Parallax: {}\n"
+				 "Layer Range: [{}, {}]",
+				 name, slot, sectorCount, entityCount, levelNoteCount,
+				 guidelineCount, parallax, minLayer, maxLayer);
 }
