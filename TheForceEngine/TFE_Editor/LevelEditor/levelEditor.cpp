@@ -823,28 +823,6 @@ namespace LevelEditor
 			}
 		}
 	}
-
-	bool isSingleOverlappedVertex()
-	{
-		const size_t count = s_selectionList.size();
-		if (count <= 1) { return true; }
-
-		const FeatureId* list = s_selectionList.data();
-
-		s32 featureIndex;
-		EditorSector* featureSector = unpackFeatureId(list[0], &featureIndex);
-		const Vec2f* vtx = &featureSector->vtx[featureIndex];
-
-		for (size_t i = 1; i < count; i++)
-		{
-			EditorSector* featureSector = unpackFeatureId(list[i], &featureIndex);
-			if (!TFE_Polygon::vtxEqual(vtx, &featureSector->vtx[featureIndex]))
-			{
-				return false;
-			}
-		}
-		return true;
-	}
 			
 	void handleMouseControlVertex(Vec2f worldPos)
 	{
@@ -912,10 +890,6 @@ namespace LevelEditor
 					FeatureId id = createFeatureId(s_featureHovered.sector, s_featureHovered.featureIndex);
 					bool doesItemExist = selection_doesFeatureExist(id);
 					bool canChangeSelection = true;
-					if (s_selectionList.size() > 1 && !doesItemExist)
-					{
-						canChangeSelection = isSingleOverlappedVertex();
-					}
 
 					if (canChangeSelection)
 					{
@@ -928,8 +902,7 @@ namespace LevelEditor
 						s_editMove = true;
 
 						// Clear the selection if this is a new vertex and Ctrl isn't held.
-						bool clearList = !doesItemExist;
-						selectFromSingleVertex(s_featureCur.sector, s_featureCur.featureIndex, clearList);
+						selectFromSingleVertex(s_featureCur.sector, s_featureCur.featureIndex, !doesItemExist);
 					}
 				}
 				else if (!s_editMove)
@@ -4663,6 +4636,7 @@ namespace LevelEditor
 		}
 	}
 
+	// TODO: This won't be necessary once derived selections work (derive vertex selection from walls).
 	void gatherVerticesFromWallSelection()
 	{
 		const s32 count = (s32)s_selectionList.size();
