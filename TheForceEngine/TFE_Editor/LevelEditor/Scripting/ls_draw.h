@@ -20,6 +20,7 @@ namespace LevelEditor
 	{
 	public:
 		void begin(TFE_ForceScript::float2 pos, f32 scale);
+		void moveForward(f32 dist);
 		// Skip mergeMode for now.
 		// Skip sector draw for now.
 		// Skip push/pop for now.
@@ -31,7 +32,12 @@ namespace LevelEditor
 		bool scriptRegister(asIScriptEngine* engine) override;
 	private:
 		TFE_ForceScript::float2 m_startPos;
+		TFE_ForceScript::float2 m_cursor;
+		TFE_ForceScript::float2 m_stepDir;
 		f32 m_scale;
+		f32 m_angle;
+		f32 m_floorHeight;
+		f32 m_ceilHeight;
 	};
 }
 #endif
