@@ -153,6 +153,7 @@ namespace LevelEditor
 		
 	struct Guideline
 	{
+		s32 id = 0;
 		std::vector<Vec2f> vtx;
 		// selectable knots on the path/curve, ordered by t value.
 		// (x,z) = position, y = t value, w = edge index.

@@ -336,6 +336,7 @@ namespace LevelEditor
 		setDefaultGuidelineValues(guideline);
 		guideline_computeBounds(&guideline);
 		guideline_computeKnots(&guideline);
+		guideline.id = (s32)s_level.guidelines.size();
 		s_level.guidelines.push_back(guideline);
 	}
 
@@ -353,6 +354,7 @@ namespace LevelEditor
 		setDefaultGuidelineValues(guideline);
 		guideline_computeBounds(&guideline);
 		guideline_computeKnots(&guideline);
+		guideline.id = (s32)s_level.guidelines.size();
 		s_level.guidelines.push_back(guideline);
 	}
 }

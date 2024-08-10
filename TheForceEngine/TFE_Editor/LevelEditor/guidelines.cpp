@@ -41,7 +41,7 @@ namespace LevelEditor
 
 	void guideline_delete(s32 id)
 	{
-		const s32 count = (s32)s_level.guidelines.size();
+		s32 count = (s32)s_level.guidelines.size();
 		if (id < 0 || id >= count)
 		{
 			return;
@@ -51,6 +51,14 @@ namespace LevelEditor
 			s_level.guidelines[i] = s_level.guidelines[i + 1];
 		}
 		s_level.guidelines.pop_back();
+
+		// Reset the IDs.
+		count--;
+		for (s32 i = 0; i < count; i++)
+		{
+			s_level.guidelines[i].id = i;
+		}
+
 		guideline_clearSelection();
 	}
 		

@@ -1037,6 +1037,7 @@ namespace LevelEditor
 				file.read(&edgeCount);
 				file.read(&offsetCount);
 
+				guideline->id = i;
 				guideline->vtx.resize(vtxCount);
 				guideline->knots.resize(knotCount);
 				guideline->edge.resize(edgeCount);
