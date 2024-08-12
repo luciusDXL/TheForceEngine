@@ -197,9 +197,12 @@ namespace TFE_MidiPlayer
 	{
 		SDL_LockMutex(s_deviceChangeMutex);
 		{
-			if (!s_midiDevice->selectOutput(output))
+			if (s_midiDevice)
 			{
-				TFE_System::logWrite(LOG_ERROR, "Midi", "Cannot select midi output.");
+				if (!s_midiDevice->selectOutput(output))
+				{
+					TFE_System::logWrite(LOG_ERROR, "Midi", "Cannot select midi output.");
+				}
 			}
 		}
 		SDL_UnlockMutex(s_deviceChangeMutex);
