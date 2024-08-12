@@ -37,7 +37,7 @@ namespace TFE_Polygon
 		Vec2f circle;
 		f32 radiusSq;
 	};
-
+		
 	const f32 eps = 1e-3f;
 	const f64 c_toFixed = 65536.0;
 	const f64 c_fromFixed = 1.0 / 65536.0;
@@ -869,11 +869,6 @@ namespace TFE_Polygon
 		s32 id;
 	};
 
-	bool sortByU(Intersection& a, Intersection& b)
-	{
-		return a.u < b.u;
-	}
-
 	struct Contour
 	{
 		bool clockwise = true;
@@ -881,6 +876,11 @@ namespace TFE_Polygon
 		std::vector<Vec2f> vtx;
 	};
 
+	bool sortByU(Intersection& a, Intersection& b)
+	{
+		return a.u < b.u;
+	}
+			
 	bool buildContour(const BEdge* startEdge, const std::vector<BEdge>& edgesList, std::vector<s32>& remEdges, Contour* outContour)
 	{
 		if (!outContour) { return false; }
@@ -948,17 +948,23 @@ namespace TFE_Polygon
 
 		paths->resize(contourCount);
 		ClipperLib::Path* path = paths->data();
+		const f32 collinearEps = 0.00001f;
 		for (s32 i = 0; i < contourCount; i++, contour++, path++)
 		{
 			const s32 vtxCount = (s32)contour->vtx.size();
 			const Vec2f* vtx = contour->vtx.data();
 
-			path->resize(vtxCount);
-			ClipperLib::IntPoint* pOut = path->data();
-			for (s32 v = 0; v < vtxCount; v++, vtx++, pOut++)
+			path->clear();
+			path->reserve(vtxCount);
+			for (s32 v = 0; v < vtxCount; v++)
 			{
-				pOut->X = ClipperLib::cInt((f64)vtx->x * precision);
-				pOut->Y = ClipperLib::cInt((f64)vtx->z * precision);
+				// Is this a collinear point?
+				const s32 i = (v - 1 + vtxCount) % vtxCount, j = v, k = (v + 1) % vtxCount;
+				const f32 s0 = (vtx[i].z - vtx[j].z) * (vtx[j].x - vtx[k].x);
+				const f32 s1 = (vtx[i].x - vtx[j].x) * (vtx[j].z - vtx[k].z);
+				if (fabsf(s0 - s1) < collinearEps) { continue; }
+				// If not than push it.
+				path->push_back({ClipperLib::cInt((f64)vtx[v].x * precision), ClipperLib::cInt((f64)vtx[v].z * precision)});
 			}
 		}
 	}
@@ -1058,7 +1064,9 @@ namespace TFE_Polygon
 	{
 		// Using ClipperLib::ioPreserveCollinear produces incorrect results, in the form of lines that should be clipped, due to
 		// trying to preserve the collinear points. So we have to handle that by post-processing the results.
-		s_clipper = new ClipperLib::Clipper(ClipperLib::ioReverseSolution | ClipperLib::ioStrictlySimple);
+		// Using ClipperLib::ioStrictlySimple can cause extra vertices to be inserted, causing errors in the process. So instead,
+		// clipping is performed and then simplification occurs afterward.
+		s_clipper = new ClipperLib::Clipper(ClipperLib::ioReverseSolution);
 	}
 
 	void clipDestroy()
@@ -1291,12 +1299,20 @@ namespace TFE_Polygon
 			}
 		}
 	}
+
+	void simplifyPaths(ClipperLib::Paths& paths)
+	{
+		ClipperLib::CleanPolygons(paths, 1.2f);
+		ClipperLib::SimplifyPolygons(paths);
+		ClipperLib::ReversePaths(paths);
+		removeDegeneratePaths(paths);
+	}
 		
 	// Returns the number of polygons outside of the clip area.
 	void clipPolygons(const BPolygon* subject, const BPolygon* clip, std::vector<BPolygon>& outPoly, BoolMode boolMode)
 	{
 		s32 polysOutsideOfClip = 0;
-
+	
 		// Build contours - the outer polygons and interior holes get separate contours.
 		std::vector<Contour> subjContours;
 		std::vector<Contour> clipContours;
@@ -1317,7 +1333,7 @@ namespace TFE_Polygon
 		s_clipper->AddPaths(clipPaths, ClipperLib::ptClip, true);
 
 		outPoly.clear();
-		
+
 		// We always want the difference in order to get the new edges.
 		ClipperLib::Paths solution;
 		bool result = s_clipper->Execute(ClipperLib::ctDifference, solution, ClipperLib::pftNonZero);
@@ -1325,8 +1341,8 @@ namespace TFE_Polygon
 		{ 
 			return;
 		}
-		ClipperLib::CleanPolygons(solution, 1.2f);
-		removeDegeneratePaths(solution);
+		// Strictly simple output is disabled due to bugs it creates, so simplify afterward.
+		simplifyPaths(solution);
 		polysOutsideOfClip = (s32)solution.size();
 
 		if (boolMode == BMODE_MERGE)
@@ -1342,14 +1358,13 @@ namespace TFE_Polygon
 			{
 				return;
 			}
-			ClipperLib::CleanPolygons(solution2, 1.2f);
-			removeDegeneratePaths(solution2);
-
+			// Strictly simple output is disabled due to bugs it creates, so simplify afterward.
+			simplifyPaths(solution2);
 			// Merge solutions.
 			solution.insert(solution.end(), solution2.begin(), solution2.end());
 		}
 		if (solution.empty()) { return; }
-
+				
 		// Process the solution.
 		// Build contours and determine winding.
 		std::vector<Contour> results;
