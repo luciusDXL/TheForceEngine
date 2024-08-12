@@ -704,8 +704,17 @@ int main(int argc, char* argv[])
 		bool enableRelative = TFE_Input::relativeModeEnabled();
 		if (enableRelative != relativeMode)
 		{
-			relativeMode = enableRelative;
-			SDL_SetRelativeMouseMode(relativeMode ? SDL_TRUE : SDL_FALSE);
+			static bool showRelativeErrorOnce = true;
+			const s32 result = SDL_SetRelativeMouseMode(enableRelative ? SDL_TRUE : SDL_FALSE);
+			if (result >= 0)
+			{
+				relativeMode = enableRelative;
+			}
+			else if (showRelativeErrorOnce)
+			{
+				TFE_System::logWrite(LOG_ERROR, "System", "Changing relative mouse mode failed!");
+				showRelativeErrorOnce = false;
+			}
 		}
 
 		// System events

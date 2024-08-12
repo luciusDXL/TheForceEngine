@@ -2808,7 +2808,7 @@ namespace TFE_FrontEndUI
 				TFE_Audio::pause();
 				TFE_MidiPlayer::pauseThread();
 
-				device->selectOutput(curOutput);
+				TFE_MidiPlayer::selectDeviceOutput(curOutput);
 				sound->midiType = (s32)device->getType();
 				sound->midiOutput = device->getActiveOutput();
 

@@ -61,7 +61,8 @@ namespace TFE_MidiPlayer
 
 	static atomic_bool s_runMusicThread;
 	static u8 s_channelSrcVolume[MIDI_CHANNEL_COUNT] = { 0 };
-	static SDL_mutex* s_mutex;
+	static SDL_mutex* s_midiThreadMutex = nullptr;
+	static SDL_mutex* s_deviceChangeMutex = nullptr;
 
 	static MidiDevice* s_midiDevice = nullptr;
 	static MidiCallback s_midiCallback = {};
@@ -101,31 +102,39 @@ namespace TFE_MidiPlayer
 		TFE_System::logWrite(LOG_MSG, "Startup", "TFE_MidiPlayer::init");
 		bool res = false;
 
-		s_mutex = SDL_CreateMutex();
-		if (!s_mutex)
+		s_midiThreadMutex = SDL_CreateMutex();
+		if (!s_midiThreadMutex)
 		{
-			TFE_System::logWrite(LOG_ERROR, "Midi", "cannot initialize SDL mutex");
+			TFE_System::logWrite(LOG_ERROR, "Midi", "cannot initialize SDL midi thread mutex");
 			return false;
 		}
 
-		allocateMidiDevice(type);
-
-		if (s_midiDevice)
+		s_deviceChangeMutex = SDL_CreateMutex();
+		if (!s_deviceChangeMutex)
 		{
-			res = true;
-			if (!s_midiDevice->selectOutput(midiDeviceIndex))
+			TFE_System::logWrite(LOG_ERROR, "Midi", "cannot initialize SDL device change mutex");
+			return false;
+		}
+
+		SDL_LockMutex(s_deviceChangeMutex);
+		{
+			allocateMidiDevice(type);
+			if (s_midiDevice)
 			{
-				if (!s_midiDevice->selectOutput(0))
+				res = true;
+				if (!s_midiDevice->selectOutput(midiDeviceIndex))
 				{
-					TFE_System::logWrite(LOG_ERROR, "Midi", "Cannot load soundfont '%s'.", "SoundFonts/SYNTHGM.sf2");
-					res = false;
+					if (!s_midiDevice->selectOutput(0))
+					{
+						TFE_System::logWrite(LOG_ERROR, "Midi", "Cannot load soundfont '%s'.", "SoundFonts/SYNTHGM.sf2");
+						res = false;
+					}
 				}
 			}
 		}
+		SDL_UnlockMutex(s_deviceChangeMutex);
 
 		s_runMusicThread.store(true);
-
-
 		s_thread = SDL_CreateThread(midiUpdateFunc, "TFE_MidiThread", nullptr);
 		if (!s_thread)
 		{
@@ -145,7 +154,7 @@ namespace TFE_MidiPlayer
 
 	void destroy()
 	{
-		int i;
+		s32 i;
 
 		TFE_System::logWrite(LOG_MSG, "MidiPlayer", "Shutdown");
 		// Destroy the thread before shutting down the Midi Device.
@@ -154,7 +163,8 @@ namespace TFE_MidiPlayer
 
 		delete s_midiDevice;
 
-		SDL_DestroyMutex(s_mutex);
+		SDL_DestroyMutex(s_midiThreadMutex);
+		SDL_DestroyMutex(s_deviceChangeMutex);
 	}
 
 	MidiDevice* getMidiDevice()
@@ -169,14 +179,30 @@ namespace TFE_MidiPlayer
 
 	void setDeviceType(MidiDeviceType type)
 	{
-		allocateMidiDevice(type);
-		if (s_midiDevice)
+		SDL_LockMutex(s_deviceChangeMutex);
 		{
-			if (!s_midiDevice->selectOutput(-1))	// -1 will select the default.
+			allocateMidiDevice(type);
+			if (s_midiDevice)
+			{
+				if (!s_midiDevice->selectOutput(-1))	// -1 will select the default.
+				{
+					TFE_System::logWrite(LOG_ERROR, "Midi", "Cannot select midi output.");
+				}
+			}
+		}
+		SDL_UnlockMutex(s_deviceChangeMutex);
+	}
+
+	void selectDeviceOutput(s32 output)
+	{
+		SDL_LockMutex(s_deviceChangeMutex);
+		{
+			if (!s_midiDevice->selectOutput(output))
 			{
 				TFE_System::logWrite(LOG_ERROR, "Midi", "Cannot select midi output.");
 			}
 		}
+		SDL_UnlockMutex(s_deviceChangeMutex);
 	}
 
 	MidiDeviceType getDeviceType()
@@ -209,14 +235,14 @@ namespace TFE_MidiPlayer
 	//////////////////////////////////////////////////
 	void setVolume(f32 volume)
 	{
-		SDL_LockMutex(s_mutex);
+		SDL_LockMutex(s_midiThreadMutex);
 		MidiCmd* midiCmd = midiAllocCmd();
 		if (midiCmd)
 		{
 			midiCmd->cmd = MIDI_CHANGE_VOL;
 			midiCmd->newVolume = volume;
 		}
-		SDL_UnlockMutex(s_mutex);
+		SDL_UnlockMutex(s_midiThreadMutex);
 	}
 	
 	// Set the length in seconds that a note is allowed to play for in seconds.
@@ -227,59 +253,60 @@ namespace TFE_MidiPlayer
 
 	void pauseThread()
 	{
-		if (!s_tPaused && s_mutex)
+		if (!s_tPaused && s_midiThreadMutex)
 		{
-			SDL_LockMutex(s_mutex);
+			SDL_LockMutex(s_midiThreadMutex);
 			s_tPaused = true;
 		}
 	}
 
 	void resumeThread()
 	{
-		if (s_tPaused && s_mutex)
+		if (s_tPaused && s_midiThreadMutex)
 		{
-			SDL_UnlockMutex(s_mutex);
+			SDL_UnlockMutex(s_midiThreadMutex);
 			s_tPaused = false;
 		}
 	}
 
 	void pause()
 	{
-		SDL_LockMutex(s_mutex);
+		SDL_LockMutex(s_midiThreadMutex);
 		MidiCmd* midiCmd = midiAllocCmd();
 		if (midiCmd)
 		{
 			midiCmd->cmd = MIDI_PAUSE;
 		}
-		SDL_UnlockMutex(s_mutex);
+		SDL_UnlockMutex(s_midiThreadMutex);
 	}
 
 	void resume()
 	{
-		SDL_LockMutex(s_mutex);
+		SDL_LockMutex(s_midiThreadMutex);
 		MidiCmd* midiCmd = midiAllocCmd();
 		if (midiCmd)
 		{
 			midiCmd->cmd = MIDI_RESUME;
 		}
-		SDL_UnlockMutex(s_mutex);
+		SDL_UnlockMutex(s_midiThreadMutex);
 	}
 
 	void stopMidiSound()
 	{
-		SDL_LockMutex(s_mutex);
+		SDL_LockMutex(s_midiThreadMutex);
 		MidiCmd* midiCmd = midiAllocCmd();
 		if (midiCmd)
 		{
 			midiCmd->cmd = MIDI_STOP_NOTES;
 		}
-		SDL_UnlockMutex(s_mutex);
+		SDL_UnlockMutex(s_midiThreadMutex);
 	}
 
 	void synthesizeMidi(f32* buffer, u32 stereoSampleCount, bool updateBuffer)
 	{
 		// In some cases, such as when using the System Midi Device, the midi audio is generated externally so
 		// rendering is not required.
+		SDL_LockMutex(s_deviceChangeMutex);  // Make sure we don't synthesize when the device is being changed.
 		if (s_midiDevice && s_midiDevice->canRender())
 		{
 			// Stereo samples -> actual samples.
@@ -291,23 +318,18 @@ namespace TFE_MidiPlayer
 				s_sampleBufferPtr = s_sampleBuffer.data();
 			}
 
-			SDL_LockMutex(s_mutex);
-			// This is checked again, in case it was immediately changed in another thread; such as when changing midi devices or outputs.
-			if (s_midiDevice && s_midiDevice->canRender())
+			// The midi device takes the number of stereo samples.
+			s_midiDevice->render(s_sampleBufferPtr, stereoSampleCount);
+			// Accumulate midi samples with existing audio samples (from soundFX).
+			if (updateBuffer)
 			{
-				// The midi device takes the number of stereo samples.
-				s_midiDevice->render(s_sampleBufferPtr, stereoSampleCount);
-				// Accumulate midi samples with existing audio samples (from soundFX).
-				if (updateBuffer)
+				for (s32 i = 0; i < linearSampleCount; i++)
 				{
-					for (s32 i = 0; i < linearSampleCount; i++)
-					{
-						buffer[i] += s_sampleBufferPtr[i];
-					}
+					buffer[i] += s_sampleBufferPtr[i];
 				}
 			}
-			SDL_UnlockMutex(s_mutex);
 		}
+		SDL_UnlockMutex(s_deviceChangeMutex);
 	}
 
 	f32 getVolume()
@@ -317,7 +339,7 @@ namespace TFE_MidiPlayer
 
 	void midiSetCallback(void(*callback)(void), f64 timeStep)
 	{
-		SDL_LockMutex(s_mutex);
+		SDL_LockMutex(s_midiThreadMutex);
 		s_midiCallback.callback = callback;
 		s_midiCallback.timeStep = timeStep;
 		s_midiCallback.accumulator = 0.0;
@@ -327,16 +349,16 @@ namespace TFE_MidiPlayer
 			s_channelSrcVolume[i] = CHANNEL_MAX_VOLUME;
 		}
 		changeVolume();
-		SDL_UnlockMutex(s_mutex);
+		SDL_UnlockMutex(s_midiThreadMutex);
 	}
 
 	void midiClearCallback()
 	{
-		SDL_LockMutex(s_mutex);
+		SDL_LockMutex(s_midiThreadMutex);
 		s_midiCallback.callback = nullptr;
 		s_midiCallback.timeStep = 0.0;
 		s_midiCallback.accumulator = 0.0;
-		SDL_UnlockMutex(s_mutex);
+		SDL_UnlockMutex(s_midiThreadMutex);
 	}
 
 	//////////////////////////////////////////////////
@@ -457,7 +479,7 @@ namespace TFE_MidiPlayer
 		f64 dt = 0.0;
 		while (runThread)
 		{
-			SDL_LockMutex(s_mutex);
+			SDL_LockMutex(s_midiThreadMutex);
 						
 			// Read from the command buffer.
 			MidiCmd* midiCmd = s_midiCmdBuffer;
@@ -507,7 +529,7 @@ namespace TFE_MidiPlayer
 				detectHangingNotes();
 			}
 
-			SDL_UnlockMutex(s_mutex);
+			SDL_UnlockMutex(s_midiThreadMutex);
 			runThread = s_runMusicThread.load();
 		};
 		
