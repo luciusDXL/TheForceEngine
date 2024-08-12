@@ -10,7 +10,7 @@ float sqr(float x)
 float computeGrid(inout vec3 curColor, float scale, float lineScale, float gridOpacity)
 {
 	vec2 fUV = fract(Frag_UV.xy * scale);
-    vec2 dFxy = lineScale * abs(vec2(dFdx(Frag_UV.x), dFdy(Frag_UV.y)));
+    vec2 dFxy = lineScale * abs(vec2(length(dFdx(Frag_UV)), length(dFdy(Frag_UV))));
     vec2 opacity = vec2(smoothstep(dFxy.x, 0.0, fUV.x) + smoothstep(1.0 - dFxy.x, 1.0, fUV.x), smoothstep(dFxy.y, 0.0, fUV.y) + smoothstep(1.0 - dFxy.y, 1.0, fUV.y));
     float alpha = sqr(max(opacity.x, opacity.y)) * gridOpacity;
 
@@ -22,7 +22,7 @@ float computeGrid(inout vec3 curColor, float scale, float lineScale, float gridO
 float computeCoordAxis(inout vec3 curColor, float scale, float lineScale)
 {
 	vec2 fUV = Frag_UV.xy * scale;
-	vec2 dFxy = lineScale * abs(vec2(dFdx(Frag_UV.x), dFdy(Frag_UV.y)));
+	vec2 dFxy = lineScale * abs(vec2(length(dFdx(Frag_UV)), length(dFdy(Frag_UV))));
 
 	fUV = abs(fUV);
 	vec2 opacity = vec2(smoothstep(dFxy.x, 0.0, fUV.x), smoothstep(dFxy.y, 0.0, fUV.y));
