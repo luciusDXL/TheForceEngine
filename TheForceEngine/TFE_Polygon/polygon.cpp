@@ -1154,6 +1154,7 @@ namespace TFE_Polygon
 		ClipperLib::Paths outPath;
 		buildPathFromShape(shape, path);
 		ClipperLib::SimplifyPolygon(path, outPath);
+		ClipperLib::ReversePath(path);
 
 		if (!outPath.empty())
 		{

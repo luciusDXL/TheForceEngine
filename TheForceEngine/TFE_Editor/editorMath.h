@@ -33,4 +33,12 @@ namespace TFE_Editor
 		return intervalOverlap(bounds0.x - padding, bounds0.z + padding, bounds1.x, bounds1.z) && // x intervals overlap
 			   intervalOverlap(bounds0.y - padding, bounds0.w + padding, bounds1.y, bounds1.w);   // y intervals overlap
 	}
+	// Return true if the DD bounds (packed as Vec4f) overlap.
+	inline bool boundsOverlap3D(const Vec3f* bounds0, const Vec3f* bounds1, f32 padding = 0.0f)
+	{
+		// We only need to apply padding to one set of bounds, so pick the first one.
+		return intervalOverlap(bounds0[0].x - padding, bounds0[1].x + padding, bounds1[0].x, bounds1[1].x) && // x intervals overlap
+			   intervalOverlap(bounds0[0].y - padding, bounds0[1].y + padding, bounds1[0].y, bounds1[1].y) && // y intervals overlap
+			   intervalOverlap(bounds0[0].z - padding, bounds0[1].z + padding, bounds1[0].z, bounds1[1].z);   // z intervals overlap
+	}
 }

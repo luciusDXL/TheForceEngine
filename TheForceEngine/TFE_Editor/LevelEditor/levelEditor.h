@@ -75,6 +75,8 @@ namespace LevelEditor
 	bool edit_splitWall(s32 sectorId, s32 wallIndex, Vec2f newPos);
 	void edit_deleteVertex(s32 sectorId, s32 vertexIndex);
 	void edit_deleteSector(s32 sectorId);
+	void edit_tryAdjoin(s32 sectorId, s32 wallId, bool exactMatch = false);
+	void edit_removeAdjoin(s32 sectorId, s32 wallId);
 	void edit_clearSelections();
 	void edit_createSectorFromRect(const f32* heights, const Vec2f* vtx, bool allowSubsectorExtrude=true);
 	void edit_createSectorFromShape(const f32* heights, s32 vertexCount, const Vec2f* vtx, bool allowSubsectorExtrude=true);

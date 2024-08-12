@@ -12,6 +12,7 @@
 #include <TFE_Editor/editorProject.h>
 #include <TFE_Editor/editorResources.h>
 #include <TFE_Editor/editor.h>
+#include <TFE_Editor/editorMath.h>
 #include <TFE_Editor/EditorAsset/editorAsset.h>
 #include <TFE_Editor/EditorAsset/editorTexture.h>
 #include <TFE_Editor/EditorAsset/editorFrame.h>
@@ -2580,11 +2581,12 @@ namespace LevelEditor
 		if (!bounds || !result) { return false; }
 
 		result->clear();
+		const f32 padding = 0.1f;
 		const s32 count = (s32)s_level.sectors.size();
 		EditorSector* sector = s_level.sectors.data();
 		for (s32 i = 0; i < count; i++, sector++)
 		{
-			if (aabbOverlap3d(sector->bounds, bounds))
+			if (boundsOverlap3D(sector->bounds, bounds, padding)) // Add padding for sectors that are just touching.
 			{
 				result->push_back(sector);
 			}

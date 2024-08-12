@@ -1449,6 +1449,141 @@ namespace LevelEditor
 		edit_clearSelections();
 	}
 
+	// Try to adjoin wallId of sectorId to a matching wall.
+	// if *exactMatch* is true, than the other wall vertices must match,
+	// otherwise if the walls overlap, vertices will be inserted.
+	void edit_tryAdjoin(s32 sectorId, s32 wallId, bool exactMatch)
+	{
+		if (sectorId < 0 || sectorId >= (s32)s_level.sectors.size() || wallId < 0) { return; }
+		EditorSector* srcSector = &s_level.sectors[sectorId];
+		const Vec3f* srcBounds = srcSector->bounds;
+		const Vec2f* srcVtx = srcSector->vtx.data();
+
+		if (wallId >= (s32)srcSector->walls.size()) { return; }
+		EditorWall* srcWall = &srcSector->walls[wallId];
+		const Vec2f s0 = srcVtx[srcWall->idx[0]];
+		const Vec2f s1 = srcVtx[srcWall->idx[1]];
+
+		SectorList overlaps;
+		getOverlappingSectorsBounds(srcBounds, &overlaps);
+		const s32 sectorCount = (s32)overlaps.size();
+		EditorSector** overlap = overlaps.data();
+
+		const f32 onLineEps = 1e-3f;
+		for (s32 s = 0; s < sectorCount; s++)
+		{
+			EditorSector* conSector = overlap[s];
+			// Cannot connect to the same sector or to a sector part of a hidden or locked group.
+			if (conSector->id == sectorId) { continue; }
+			if (!sector_isInteractable(conSector)) { continue; }
+
+			EditorWall* conWall = conSector->walls.data();
+			const Vec2f* conVtx = conSector->vtx.data();
+			const s32 wallCount = (s32)conSector->walls.size();
+
+			for (s32 w = 0; w < wallCount; w++, conWall++)
+			{
+				const Vec2f t0 = conVtx[conWall->idx[0]];
+				const Vec2f t1 = conVtx[conWall->idx[1]];
+
+				// Walls must have the same vertex positions AND be going in opposite directions.
+				if (TFE_Polygon::vtxEqual(&s0, &t1) && TFE_Polygon::vtxEqual(&s1, &t0))
+				{
+					srcWall->adjoinId = conSector->id;
+					srcWall->mirrorId = w;
+
+					conWall->adjoinId = sectorId;
+					conWall->mirrorId = wallId;
+					// Only one adjoin is possible.
+					return;
+				}
+				else if (!exactMatch)
+				{
+					Vec2f p0, p1;
+					// First assume (s0,s1) is smaller than (t0,t1)
+					{
+						const f32 u = TFE_Polygon::closestPointOnLineSegment(t0, t1, s0, &p0);
+						const f32 v = TFE_Polygon::closestPointOnLineSegment(t0, t1, s1, &p1);
+						if (u >= -FLT_EPSILON && u <= 1.0f + FLT_EPSILON && v >= -FLT_EPSILON && v <= 1.0f + FLT_EPSILON)
+						{
+							// Make sure the closest points are *on* the wall t0 -> t1.
+							const Vec2f offset0 = { p0.x - s0.x, p0.z - s0.z };
+							const Vec2f offset1 = { p1.x - s1.x, p1.z - s1.z };
+							if (offset0.x*offset0.x + offset0.z*offset0.z <= onLineEps && offset1.x*offset1.x + offset1.z*offset1.z <= onLineEps)
+							{
+								// We found a good candidate, so split and add.
+								EditorWall* outWalls[2];
+								s32 wSplit = w;
+								if (v >= FLT_EPSILON)
+								{
+									splitWall(conSector, wSplit, p1, outWalls);
+									wSplit++;
+								}
+								if (u <= 1.0f - FLT_EPSILON)
+								{
+									splitWall(conSector, wSplit, p0, outWalls);
+								}
+								// Then try again, but expecting an exact match.
+								edit_tryAdjoin(sectorId, wallId, true);
+								return;
+							}
+						}
+					}
+					// If that fails, assume (s0,s1) is larger than (t0,t1)
+					{
+						const f32 u = TFE_Polygon::closestPointOnLineSegment(s0, s1, t0, &p0);
+						const f32 v = TFE_Polygon::closestPointOnLineSegment(s0, s1, t1, &p1);
+						if (u >= -FLT_EPSILON && u <= 1.0f + FLT_EPSILON && v >= -FLT_EPSILON && v <= 1.0f + FLT_EPSILON)
+						{
+							// Make sure the closest points are *on* the wall t0 -> t1.
+							const Vec2f offset0 = { p0.x - t0.x, p0.z - t0.z };
+							const Vec2f offset1 = { p1.x - t1.x, p1.z - t1.z };
+							if (offset0.x*offset0.x + offset0.z*offset0.z <= onLineEps && offset1.x*offset1.x + offset1.z*offset1.z <= onLineEps)
+							{
+								// We found a good candidate, so split and add.
+								EditorWall* outWalls[2];
+								s32 wSplit = wallId;
+								if (v >= FLT_EPSILON)
+								{
+									splitWall(srcSector, wSplit, p1, outWalls);
+									wSplit++;
+								}
+								if (u <= 1.0f - FLT_EPSILON)
+								{
+									splitWall(srcSector, wSplit, p0, outWalls);
+								}
+								// Then try again, but expecting an exact match.
+								edit_tryAdjoin(sectorId, wSplit, true);
+								return;
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+	// If the wall is adjoined, remove the adjoin and the mirror.
+	void edit_removeAdjoin(s32 sectorId, s32 wallId)
+	{
+		if (sectorId < 0 || sectorId >= (s32)s_level.sectors.size() || wallId < 0) { return; }
+		EditorSector* sector = &s_level.sectors[sectorId];
+
+		if (wallId >= (s32)sector->walls.size()) { return; }
+		EditorWall* wall = &sector->walls[wallId];
+		if (wall->adjoinId >= 0 && wall->adjoinId < (s32)s_level.sectors.size())
+		{
+			EditorSector* next = &s_level.sectors[wall->adjoinId];
+			if (wall->mirrorId >= 0 && wall->mirrorId < (s32)next->walls.size())
+			{
+				next->walls[wall->mirrorId].adjoinId = -1;
+				next->walls[wall->mirrorId].mirrorId = -1;
+			}
+		}
+		wall->adjoinId = -1;
+		wall->mirrorId = -1;
+	}
+
 	void handleVertexInsert(Vec2f worldPos)
 	{
 		const bool mousePressed = s_singleClick;
@@ -3714,6 +3849,25 @@ namespace LevelEditor
 		}
 	}
 
+	s32 wallHoveredOrSelected(EditorSector*& sector)
+	{
+		s32 wallId = -1;
+		if (s_editMode == LEDIT_WALL)
+		{
+			if (s_featureCur.sector && (s_featureCur.part != HP_CEIL && s_featureCur.part != HP_FLOOR))
+			{
+				sector = s_featureCur.sector;
+				wallId = s_featureCur.featureIndex;
+			}
+			else if (s_featureHovered.sector && (s_featureHovered.part != HP_CEIL && s_featureHovered.part != HP_FLOOR))
+			{
+				sector = s_featureHovered.sector;
+				wallId = s_featureHovered.featureIndex;
+			}
+		}
+		return wallId;
+	}
+
 	EditorSector* sectorHoveredOrSelected()
 	{
 		EditorSector* sector = nullptr;
@@ -3818,7 +3972,31 @@ namespace LevelEditor
 		if (ImGui::Begin("##ContextMenuFrame", &open, flags))
 		{
 			EditorSector* curSector = sectorHoveredOrSelected();
-			if (curSector)
+			EditorSector* wallSector = nullptr;
+			s32 curWallId = wallHoveredOrSelected(wallSector);
+			if (curWallId >= 0)
+			{
+				EditorWall* wall = &wallSector->walls[curWallId];
+				if (wall->adjoinId >= 0)
+				{
+					ImGui::MenuItem("Disconnect (Remove Adjoin)", NULL, (bool*)NULL);
+					if (leftClick && mouseInsideItem())
+					{
+						edit_removeAdjoin(wallSector->id, curWallId);
+						closeMenu = true;
+					}
+				}
+				else
+				{
+					ImGui::MenuItem("Connect (Set Adjoin)", NULL, (bool*)NULL);
+					if (leftClick && mouseInsideItem())
+					{
+						edit_tryAdjoin(wallSector->id, curWallId);
+						closeMenu = true;
+					}
+				}
+			}
+			else if (curSector)
 			{
 				ImGui::MenuItem("Add To Current Group", NULL, (bool*)NULL);
 				if (leftClick && mouseInsideItem())
