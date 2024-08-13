@@ -68,7 +68,7 @@ GetHFAReturnDouble PROC
     ALIGN   4
 GetHFAReturnFloat PROC
     adr     x9, |populateFloats|
-    sub     x9, x9, x2 // x9 -= returnSize; (already 4 bytes per return)
+    sub     x9, x9, x2 ; x9 -= returnSize; (already 4 bytes per return)
     br      x9
 
     str     s3, [x1, #0x4]
@@ -184,7 +184,8 @@ CallARM64Ret128 PROC
     ldr     x20, [sp,#0x10]
     ldp     fp, lr, [sp],#0x20
 
-    ret ; CallARM64Ret128
+    ret
+    ENDP ; CallARM64Ret128
 
     ALIGN   4
 CallARM64RetInMemory PROC
@@ -201,5 +202,6 @@ CallARM64RetInMemory PROC
     ldp     fp, lr, [sp],#0x10
 
     ret ; CallARM64RetInMemory
+    ENDP
 
     END
