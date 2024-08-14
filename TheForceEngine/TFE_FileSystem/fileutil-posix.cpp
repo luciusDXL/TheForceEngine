@@ -192,10 +192,16 @@ namespace FileUtil
 	void copyFile(const char *src, const char *dst)
 	{
 		ssize_t rd, wr;
-		char buf[1024];
+		char buf[1024], *fnd;
 		int s, d;
 
-		s = open(src, O_RDONLY);
+		// assume the source is case-insensitive
+		fnd = findFileObjectNoCase(src, false);
+		if (!fnd)
+			return;
+
+		s = open(fnd, O_RDONLY);
+		free(fnd);
 		if (!s)
 			return;
 		d = open(dst, O_WRONLY | O_CREAT, 00644);
