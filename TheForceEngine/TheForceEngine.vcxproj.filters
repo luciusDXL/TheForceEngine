@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <Filter Include="Resource Files">
@@ -2409,6 +2409,9 @@
     <ClCompile Include="TFE_Editor\historyView.cpp">
       <Filter>Source\TFE_Editor</Filter>
     </ClCompile>
+    <ClCompile Include="TFE_ForceScript\Angelscript\angelscript\source\as_callfunc_arm64.cpp">
+      <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="TheForceEngine.rc">
@@ -2619,6 +2622,9 @@
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="TFE_ForceScript\Angelscript\angelscript\source\as_callfunc_x64_msvc_asm.asm">
+      <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
+    </CustomBuild>
+    <CustomBuild Include="TFE_ForceScript\Angelscript\angelscript\source\as_callfunc_arm64_msvc.asm">
       <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
     </CustomBuild>
   </ItemGroup>
