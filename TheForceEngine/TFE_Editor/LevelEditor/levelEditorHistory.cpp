@@ -6,6 +6,7 @@
 #include <assert.h>
 #include <algorithm>
 #include <cstring>
+#include <cstddef>
 
 using namespace TFE_Editor;
 
