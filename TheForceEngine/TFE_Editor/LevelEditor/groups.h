@@ -37,6 +37,9 @@ namespace LevelEditor
 	void groups_saveBinary(FileStream& file);
 	void groups_swapSectorGroupID(u32 srcId, u32 dstId);
 
+	void groups_loadFromSnapshot();
+	void groups_saveToSnapshot();
+
 	void groups_add(const char* name, s32 index = -1);
 	void groups_remove(s32 index);
 	void groups_moveUp(s32 index);

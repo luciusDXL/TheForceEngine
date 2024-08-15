@@ -501,6 +501,7 @@ echo ^)";
     <ClInclude Include="TFE_Editor\LevelEditor\shell.h" />
     <ClInclude Include="TFE_Editor\LevelEditor\tabControl.h" />
     <ClInclude Include="TFE_Editor\LevelEditor\userPreferences.h" />
+    <ClInclude Include="TFE_Editor\snapshotReaderWriter.h" />
     <ClInclude Include="TFE_FileSystem\filestream.h" />
     <ClInclude Include="TFE_FileSystem\fileutil.h" />
     <ClInclude Include="TFE_FileSystem\memorystream.h" />
@@ -878,6 +879,7 @@ echo ^)";
     <ClCompile Include="TFE_Editor\LevelEditor\shell.cpp" />
     <ClCompile Include="TFE_Editor\LevelEditor\tabControl.cpp" />
     <ClCompile Include="TFE_Editor\LevelEditor\userPreferences.cpp" />
+    <ClCompile Include="TFE_Editor\snapshotReaderWriter.cpp" />
     <ClCompile Include="TFE_FileSystem\filestream.cpp" />
     <ClCompile Include="TFE_FileSystem\fileutil.cpp" />
     <ClCompile Include="TFE_FileSystem\memorystream.cpp" />

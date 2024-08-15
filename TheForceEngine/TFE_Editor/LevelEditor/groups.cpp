@@ -5,6 +5,7 @@
 #include <TFE_Jedi/Math/core_math.h>
 #include <TFE_Editor/errorMessages.h>
 #include <TFE_Editor/editor.h>
+#include <TFE_Editor/snapshotReaderWriter.h>
 #include <TFE_Ui/ui.h>
 
 #include <algorithm>
@@ -79,6 +80,41 @@ namespace LevelEditor
 		s_groups.clear();
 		groups_add("Main");
 		groups_buildIndexMap();
+	}
+		
+	void groups_loadFromSnapshot()
+	{
+		s_groupCurrent = readS32();
+		s_uniqueId = readU32();
+		u32 count = readU32();
+
+		s_groups.resize(count);
+		Group* group = s_groups.data();
+		for (u32 i = 0; i < count; i++, group++)
+		{
+			group->id = readU32();
+			readString(group->name);
+			group->flags = readU32();
+			readData(group->color.m, sizeof(Vec3f) * 3);
+		}
+		groups_buildIndexMap();
+	}
+
+	void groups_saveToSnapshot()
+	{
+		const u32 count = (u32)s_groups.size();
+		writeS32(s_groupCurrent);
+		writeU32(s_uniqueId);
+		writeU32(count);
+
+		const Group* group = s_groups.data();
+		for (u32 i = 0; i < count; i++, group++)
+		{
+			writeU32(group->id);
+			writeString(group->name);
+			writeU32(group->flags);
+			writeData(group->color.m, sizeof(Vec3f) * 3);
+		}
 	}
 
 	void groups_loadBinary(FileStream& file, u32 version)

@@ -5,6 +5,7 @@
 #include "shell.h"
 #include "levelEditorInf.h"
 #include "sharedState.h"
+#include <TFE_Editor/snapshotReaderWriter.h>
 #include <TFE_Editor/history.h>
 #include <TFE_Editor/errorMessages.h>
 #include <TFE_Editor/editorConfig.h>
@@ -64,8 +65,6 @@ namespace LevelEditor
 
 	static s32 s_curSnapshotId = -1;
 	static EditorLevel s_curSnapshot;
-	static SnapshotBuffer* s_buffer = nullptr;
-	static const u8* s_readBuffer;
 
 	EditorLevel s_level = {};
 
@@ -2594,93 +2593,6 @@ namespace LevelEditor
 
 		return !result->empty();
 	}
-	
-	// Note: memcpys() are used to avoid pointer alignment issues.
-	void writeU8(u8 value)
-	{
-		s_buffer->push_back(value);
-	}
-
-	void writeU32(u32 value)
-	{
-		const size_t pos = s_buffer->size();
-		s_buffer->resize(pos + sizeof(u32));
-		memcpy(s_buffer->data() + pos, &value, sizeof(u32));
-	}
-
-	void writeS32(s32 value)
-	{
-		const size_t pos = s_buffer->size();
-		s_buffer->resize(pos + sizeof(s32));
-		memcpy(s_buffer->data() + pos, &value, sizeof(s32));
-	}
-
-	void writeF32(f32 value)
-	{
-		const size_t pos = s_buffer->size();
-		s_buffer->resize(pos + sizeof(f32));
-		memcpy(s_buffer->data() + pos, &value, sizeof(f32));
-	}
-
-	void writeData(const void* srcData, u32 size)
-	{
-		const size_t pos = s_buffer->size();
-		s_buffer->resize(pos + size);
-		memcpy(s_buffer->data() + pos, srcData, size);
-	}
-
-	void writeString(const std::string& str)
-	{
-		writeU32((u32)str.length());
-		writeData(str.data(), (u32)str.length());
-	}
-
-	u8 readU8()
-	{
-		u8 value = *s_readBuffer;
-		s_readBuffer++;
-		return value;
-	}
-
-	u32 readU32()
-	{
-		u32 value;
-		memcpy(&value, s_readBuffer, sizeof(u32));
-		s_readBuffer += sizeof(u32);
-		return value;
-	}
-
-	s32 readS32()
-	{
-		s32 value;
-		memcpy(&value, s_readBuffer, sizeof(s32));
-		s_readBuffer += sizeof(s32);
-		return value;
-	}
-
-	f32 readF32()
-	{
-		f32 value;
-		memcpy(&value, s_readBuffer, sizeof(f32));
-		s_readBuffer += sizeof(f32);
-		return value;
-	}
-
-	void readData(void* dstData, u32 size)
-	{
-		memcpy(dstData, s_readBuffer, size);
-		s_readBuffer += size;
-	}
-
-	void readString(std::string& str)
-	{
-		u32 len = readU32();
-		char strBuffer[1024];
-		readData(strBuffer, len);
-		strBuffer[len] = 0;
-
-		str = strBuffer;
-	}
 
 	void writeEntityVar(const std::vector<EntityVar>& varList)
 	{
@@ -2740,9 +2652,12 @@ namespace LevelEditor
 	void level_createSnapshot(SnapshotBuffer* buffer)
 	{
 		assert(buffer);
+		setSnapshotWriteBuffer(buffer);
+
+		// Serialize the group data.
+		groups_saveToSnapshot();
+
 		// Serialize the level into a buffer.
-		s_buffer = buffer;
-		
 		writeString(s_level.name);
 		writeString(s_level.slot);
 		writeString(s_level.palette);
@@ -2858,8 +2773,12 @@ namespace LevelEditor
 		if (s_curSnapshotId != id)
 		{
 			s_curSnapshotId = id;
+			setSnapshotReadBuffer((u8*)data, size);
 
-			s_readBuffer = (u8*)data;
+			// Load the group data.
+			groups_loadFromSnapshot();
+
+			// Load the level data.
 			readString(s_curSnapshot.name);
 			readString(s_curSnapshot.slot);
 			readString(s_curSnapshot.palette);
