@@ -8,11 +8,14 @@
 //////////////////////////////////////////////////////////////////////
 #include <TFE_System/types.h>
 #include "levelEditorData.h"
+#include <climits> 
 
 namespace LevelEditor
 {
 	struct EditorSector;
 	typedef u64 FeatureId;
+
+	#define FEATUREID_NULL ULLONG_MAX
 
 	enum FeatureIdPacking : u64
 	{

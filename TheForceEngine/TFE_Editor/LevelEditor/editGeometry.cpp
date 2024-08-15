@@ -2109,6 +2109,9 @@ namespace LevelEditor
 				{
 					if (s_geoEdit.drawMode == DMODE_SHAPE_VERT) { extrudeSectorFromShape(); }
 					else { extrudeSectorFromRect(); }
+
+					// TODO: Replace with local sector snapshot.
+					levHistory_createSnapshot("Extrude Sector");
 				}
 
 				const Vec3f worldPos = moveAlongRail(s_geoEdit.extrudePlane.N);
@@ -2493,14 +2496,18 @@ namespace LevelEditor
 		
 	void createSectorFromRect()
 	{
-		cmd_addCreateSectorFromRect(s_geoEdit.drawHeight, s_geoEdit.shape.data());
 		edit_createSectorFromRect(s_geoEdit.drawHeight, s_geoEdit.shape.data());
+
+		// TODO: Replace with local sector snapshot.
+		levHistory_createSnapshot("CreateSector-Rect");
 	}
 
 	void createSectorFromShape()
 	{
-		cmd_addCreateSectorFromShape(s_geoEdit.drawHeight, (s32)s_geoEdit.shape.size(), s_geoEdit.shape.data());
 		edit_createSectorFromShape(s_geoEdit.drawHeight, (s32)s_geoEdit.shape.size(), s_geoEdit.shape.data());
+
+		// TODO: Replace with local sector snapshot.
+		levHistory_createSnapshot("CreateSector-Shape");
 	}
 
 	// Form a path between each open end using edges on the map.

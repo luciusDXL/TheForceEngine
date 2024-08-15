@@ -1369,6 +1369,12 @@
     <ClInclude Include="TFE_Editor\LevelEditor\dragSelect.h">
       <Filter>Source\TFE_Editor\LevelEditor</Filter>
     </ClInclude>
+    <ClInclude Include="TFE_Editor\LevelEditor\selection2.h">
+      <Filter>Source\TFE_Editor\LevelEditor</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Archive\zstdCompression.h">
+      <Filter>Source\TFE_Archive</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -2378,6 +2384,12 @@
     </ClCompile>
     <ClCompile Include="TFE_Editor\LevelEditor\dragSelect.cpp">
       <Filter>Source\TFE_Editor\LevelEditor</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Editor\LevelEditor\selection2.cpp">
+      <Filter>Source\TFE_Editor\LevelEditor</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Archive\zstdCompression.cpp">
+      <Filter>Source\TFE_Archive</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

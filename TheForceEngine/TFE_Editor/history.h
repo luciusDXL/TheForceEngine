@@ -45,12 +45,14 @@ namespace TFE_Editor
 	u8*  history_getPrevCmdBufferData(s32 offset);
 
 	// Get values from the buffer.
+	u8    hBuffer_getU8();
 	s16   hBuffer_getS16();
 	s32   hBuffer_getS32();
 	f32   hBuffer_getF32();
 	u32   hBuffer_getU32();
 	u64   hBuffer_getU64();
 	Vec2f hBuffer_getVec2f();
+	const u8*  hBuffer_getArrayU8(s32 count);
 	const u16* hBuffer_getArrayU16(s32 count);
 	const u32* hBuffer_getArrayU32(s32 count);
 	const u64* hBuffer_getArrayU64(s32 count);
@@ -58,12 +60,14 @@ namespace TFE_Editor
 	const Vec2f* hBuffer_getArrayVec2f(s32 count);
 
 	// Add values to the buffer.
+	void hBuffer_addU8(u8 value);
 	void hBuffer_addS16(s16 value);
 	void hBuffer_addS32(s32 value);
 	void hBuffer_addF32(f32 value);
 	void hBuffer_addU32(u32 value);
 	void hBuffer_addU64(u64 value);
 	void hBuffer_addVec2f(Vec2f value);
+	void hBuffer_addArrayU8(s32 count, const u8* values);
 	void hBuffer_addArrayU16(s32 count, const u16* values);
 	void hBuffer_addArrayU32(s32 count, const u32* values);
 	void hBuffer_addArrayU64(s32 count, const u64* values);

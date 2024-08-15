@@ -35,20 +35,23 @@ namespace LevelEditor
 	void levHistory_undo();
 	void levHistory_redo();
 
-	void captureEditState();
-	void restoreEditState();
-
 	// Commands
-	void cmd_addMoveVertices(s32 count, const FeatureId* vertices, Vec2f delta, LevCommandName name = LName_MoveVertex);
-	void cmd_addSetVertex(FeatureId vertex, Vec2f pos);
-	void cmd_addMoveFlats(s32 count, const FeatureId* flats, f32 delta);
-	void cmd_addInsertVertex(s32 sectorIndex, s32 wallIndex, Vec2f newPos);
-	void cmd_addDeleteVertex(s32 sectorIndex, s32 vertexIndex, LevCommandName name = LName_DeleteVertex);
-	void cmd_addDeleteSector(s32 sectorId);
-	void cmd_addCreateSectorFromRect(const f32* heights, const Vec2f* corners);
-	void cmd_addCreateSectorFromShape(const f32* heights, s32 vertexCount, const Vec2f* vtx);
-	void cmd_addMoveTexture(s32 count, FeatureId* features, Vec2f delta);
-	void cmd_addSetTexture(s32 count, FeatureId* features, s32 texId, Vec2f* offset);
-	void cmd_addClearTexture(s32 count, FeatureId* features);
-	void cmd_addAutoAlign(s32 sectorId, s32 featureIndex, HitPart part);
+	enum SectorAttribId
+	{
+		SEC_ATTRIB_GROUP_ID = 0,
+		SEC_ATTRIB_NAME,
+		SEC_ATTRIB_FLOOR_TEX,
+		SEC_ATTRIB_CEIL_TEX,
+		SEC_ATTRIB_FLOOR_HEIGHT,
+		SEC_ATTRIB_CEIL_HEIGHT,
+		SEC_ATTRIB_SEC_HEIGHT,
+		SEC_ATTRIB_FLAGS1,
+		SEC_ATTRIB_FLAGS2,
+		SEC_ATTRIB_FLAGS3,
+		SEC_ATTRIB_LAYER,
+		SEC_ATTRIB_COUNT
+	};
+
+	void cmd_sectorChangeAttribute(u32 name, s32 count, const FeatureId* list, u32 attribId);
+	void cmd_sectorSetAttribute(u32 name, s32 count, const FeatureId* list, u32 attribId);
 }

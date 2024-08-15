@@ -340,6 +340,7 @@ echo ^)";
     <ClInclude Include="TFE_Archive\zipArchive.h" />
     <ClInclude Include="TFE_Archive\zip\miniz.h" />
     <ClInclude Include="TFE_Archive\zip\zip.h" />
+    <ClInclude Include="TFE_Archive\zstdCompression.h" />
     <ClInclude Include="TFE_Asset\assetSystem.h" />
     <ClInclude Include="TFE_Asset\colormapAsset.h" />
     <ClInclude Include="TFE_Asset\dfKeywords.h" />
@@ -495,6 +496,7 @@ echo ^)";
     <ClInclude Include="TFE_Editor\LevelEditor\Scripting\ls_selection.h" />
     <ClInclude Include="TFE_Editor\LevelEditor\Scripting\ls_system.h" />
     <ClInclude Include="TFE_Editor\LevelEditor\selection.h" />
+    <ClInclude Include="TFE_Editor\LevelEditor\selection2.h" />
     <ClInclude Include="TFE_Editor\LevelEditor\sharedState.h" />
     <ClInclude Include="TFE_Editor\LevelEditor\shell.h" />
     <ClInclude Include="TFE_Editor\LevelEditor\tabControl.h" />
@@ -727,6 +729,7 @@ echo ^)";
     <ClCompile Include="TFE_Archive\lfdArchive.cpp" />
     <ClCompile Include="TFE_Archive\zipArchive.cpp" />
     <ClCompile Include="TFE_Archive\zip\zip.c" />
+    <ClCompile Include="TFE_Archive\zstdCompression.cpp" />
     <ClCompile Include="TFE_Asset\assetSystem.cpp" />
     <ClCompile Include="TFE_Asset\colormapAsset.cpp" />
     <ClCompile Include="TFE_Asset\dfKeywords.cpp" />
@@ -871,6 +874,7 @@ echo ^)";
     <ClCompile Include="TFE_Editor\LevelEditor\Scripting\ls_selection.cpp" />
     <ClCompile Include="TFE_Editor\LevelEditor\Scripting\ls_system.cpp" />
     <ClCompile Include="TFE_Editor\LevelEditor\selection.cpp" />
+    <ClCompile Include="TFE_Editor\LevelEditor\selection2.cpp" />
     <ClCompile Include="TFE_Editor\LevelEditor\shell.cpp" />
     <ClCompile Include="TFE_Editor\LevelEditor\tabControl.cpp" />
     <ClCompile Include="TFE_Editor\LevelEditor\userPreferences.cpp" />

@@ -704,13 +704,13 @@ namespace LevelEditor
 			if (s_selectionList.size() <= 1) // Move the single vertex.
 			{
 				const FeatureId id = createFeatureId(sector, index, 0, false);
-				cmd_addSetVertex(id, curPos);
+				// cmd_addSetVertex(id, curPos);
 				edit_setVertexPos(id, curPos);
 			}
 			else  // Move the whole group.
 			{
 				const Vec2f delta = { curPos.x - prevPos.x, curPos.z - prevPos.z };
-				cmd_addMoveVertices((s32)s_selectionList.size(), s_selectionList.data(), delta);
+				// cmd_addMoveVertices((s32)s_selectionList.size(), s_selectionList.data(), delta);
 				edit_moveVertices((s32)s_selectionList.size(), s_selectionList.data(), delta);
 			}
 		}
@@ -889,7 +889,7 @@ namespace LevelEditor
 		{
 			FeatureId id = createFeatureId(sector, wallId, HP_MID);
 			edit_setTexture(1, &id, texIndex);
-			cmd_addSetTexture(1, &id, texIndex, nullptr);
+			// cmd_addSetTexture(1, &id, texIndex, nullptr);
 		}
 
 		ImGui::SameLine(texCol);
@@ -898,13 +898,13 @@ namespace LevelEditor
 		{
 			FeatureId id = createFeatureId(sector, wallId, HP_SIGN);
 			edit_setTexture(1, &id, texIndex);
-			cmd_addSetTexture(1, &id, texIndex, nullptr);
+			// cmd_addSetTexture(1, &id, texIndex, nullptr);
 		}
 		else if (removeTexture && ImGui::IsItemHovered())
 		{
 			FeatureId id = createFeatureId(sector, wallId, HP_SIGN);
 			edit_clearTexture(1, &id);
-			cmd_addClearTexture(1, &id);
+			// cmd_addClearTexture(1, &id);
 		}
 
 		const ImVec2 imageLeft0 = ImGui::GetItemRectMin();
@@ -933,7 +933,7 @@ namespace LevelEditor
 			{
 				FeatureId id = createFeatureId(sector, wallId, HP_TOP);
 				edit_setTexture(1, &id, texIndex);
-				cmd_addSetTexture(1, &id, texIndex, nullptr);
+				// cmd_addSetTexture(1, &id, texIndex, nullptr);
 			}
 
 			ImGui::SameLine(texCol);
@@ -942,7 +942,7 @@ namespace LevelEditor
 			{
 				FeatureId id = createFeatureId(sector, wallId, HP_BOT);
 				edit_setTexture(1, &id, texIndex);
-				cmd_addSetTexture(1, &id, texIndex, nullptr);
+				// cmd_addSetTexture(1, &id, texIndex, nullptr);
 			}
 
 			imageLeft1 = ImGui::GetItemRectMin();
@@ -962,7 +962,7 @@ namespace LevelEditor
 			{
 				FeatureId id = createFeatureId(sector, wallId, HP_SIGN);
 				edit_clearTexture(1, &id);
-				cmd_addClearTexture(1, &id);
+				// cmd_addClearTexture(1, &id);
 			}
 			if (ImGui::Button("C") && wall->tex[HP_SIGN].texIndex >= 0)
 			{
@@ -973,7 +973,7 @@ namespace LevelEditor
 				if (delta.x || delta.z)
 				{
 					FeatureId id = createFeatureId(sector, wallId, HP_SIGN);
-					cmd_addMoveTexture(1, &id, delta);
+					// cmd_addMoveTexture(1, &id, delta);
 				}
 			}
 		}
@@ -1193,7 +1193,7 @@ namespace LevelEditor
 		{
 			FeatureId id = createFeatureId(sector, 0, HP_FLOOR);
 			edit_setTexture(1, &id, texIndex);
-			cmd_addSetTexture(1, &id, texIndex, nullptr);
+			// cmd_addSetTexture(1, &id, texIndex, nullptr);
 		}
 
 		ImGui::SameLine(texCol);
@@ -1202,7 +1202,7 @@ namespace LevelEditor
 		{
 			FeatureId id = createFeatureId(sector, 0, HP_CEIL);
 			edit_setTexture(1, &id, texIndex);
-			cmd_addSetTexture(1, &id, texIndex, nullptr);
+			// cmd_addSetTexture(1, &id, texIndex, nullptr);
 		}
 
 		const ImVec2 imageLeft = ImGui::GetItemRectMin();

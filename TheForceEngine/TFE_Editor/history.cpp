@@ -1,5 +1,6 @@
 #include "history.h"
 #include "errorMessages.h"
+#include <TFE_Archive/zstdCompression.h>
 #include <assert.h>
 #include <algorithm>
 #include <cstring>
@@ -16,7 +17,7 @@ namespace TFE_Editor
 	{
 		std::string name;
 		u32 uncompressedSize;
-		u32 compressedSize;
+		u32 compressedSize; // if zero, then uncompressed.
 		std::vector<u8> compressedData;
 	};
 
@@ -37,6 +38,7 @@ namespace TFE_Editor
 	std::vector<u32> s_history;
 	std::vector<u8> s_historyBuffer;
 	std::vector<u8> s_snapshotBuffer;
+	std::vector<u8> s_unpackedData;
 
 	u32 s_curPosInHistory = 0;
 	u32 s_curBufferAddr = 0;
@@ -121,12 +123,24 @@ namespace TFE_Editor
 	{
 		Snapshot snapshot = {};
 		snapshot.uncompressedSize = size;
-		// TODO: Compress
-		// For now just pretend and copy the data.
-		snapshot.compressedSize = size;
-		snapshot.compressedData.resize(size);
+
+		bool useUncompressed = true;
+		if (zstd_compress(snapshot.compressedData, (u8*)data, size, 4))
+		{
+			if (snapshot.compressedData.size() < size)
+			{
+				useUncompressed = false;
+				snapshot.compressedSize = (u32)snapshot.compressedData.size();
+			}
+		}
+		if (useUncompressed)
+		{
+			snapshot.compressedSize = size;
+			snapshot.compressedData.resize(size);
+			memcpy(snapshot.compressedData.data(), data, size);
+		}
+
 		snapshot.name = name ? name : "";
-		memcpy(snapshot.compressedData.data(), data, size);
 
 		s32 id = (s32)s_snapShots.size();
 		s_snapShots.push_back(std::move(snapshot));
@@ -138,6 +152,7 @@ namespace TFE_Editor
 		header->parentId = id;
 		header->depth = 0;
 
+		s_curPosInHistory = u16(s_history.size() - 1);
 		return id;
 	}
 
@@ -210,9 +225,18 @@ namespace TFE_Editor
 			if (cmdHeader->cmdId == CMD_SNAPSHOT)
 			{
 				Snapshot* snapshot = &s_snapShots[cmdHeader->parentId];
-				// TODO: decompress data if snapshot ID != cached ID.
-				// For now we aren't compressing so just pass it along...
-				s_snapshotUnpack(cmdHeader->parentId, snapshot->compressedSize, snapshot->compressedData.data());
+				if (snapshot->uncompressedSize > snapshot->compressedSize)
+				{
+					s_unpackedData.resize(snapshot->uncompressedSize);
+					if (zstd_decompress(s_unpackedData.data(), snapshot->uncompressedSize, snapshot->compressedData.data(), snapshot->compressedSize))
+					{
+						s_snapshotUnpack(cmdHeader->parentId, snapshot->uncompressedSize, s_unpackedData.data());
+					}
+				}
+				else
+				{
+					s_snapshotUnpack(cmdHeader->parentId, snapshot->compressedSize, snapshot->compressedData.data());
+				}
 			}
 			else
 			{
@@ -250,6 +274,13 @@ namespace TFE_Editor
 	}
 	
 	// Get values from the buffer.
+	u8 hBuffer_getU8()
+	{
+		u8 value = *((u8*)&s_historyBuffer[s_curBufferAddr]);
+		s_curBufferAddr += sizeof(u8);
+		return value;
+	}
+
 	s16 hBuffer_getS16()
 	{
 		s16 value = *((s16*)&s_historyBuffer[s_curBufferAddr]);
@@ -292,6 +323,13 @@ namespace TFE_Editor
 		return value;
 	}
 
+	const u8* hBuffer_getArrayU8(s32 count)
+	{
+		const u8* values = (u8*)&s_historyBuffer[s_curBufferAddr];
+		s_curBufferAddr += count;
+		return values;
+	}
+
 	const u16* hBuffer_getArrayU16(s32 count)
 	{
 		const u16* values = (u16*)&s_historyBuffer[s_curBufferAddr];
@@ -328,6 +366,15 @@ namespace TFE_Editor
 	}
 
 	// Add values to the buffer.
+	void hBuffer_addU8(u8 value)
+	{
+		u8 dataSize = sizeof(u8);
+		s_historyBuffer.resize(s_curBufferAddr + dataSize);
+
+		*((u8*)&s_historyBuffer[s_curBufferAddr]) = value;
+		s_curBufferAddr += dataSize;
+	}
+
 	void hBuffer_addS16(s16 value)
 	{
 		u16 dataSize = sizeof(s16);
@@ -379,6 +426,16 @@ namespace TFE_Editor
 		s_historyBuffer.resize(s_curBufferAddr + dataSize);
 
 		*((Vec2f*)&s_historyBuffer[s_curBufferAddr]) = value;
+		s_curBufferAddr += dataSize;
+	}
+
+	void hBuffer_addArrayU8(s32 count, const u8* values)
+	{
+		u32 dataSize = count;
+		s_historyBuffer.resize(s_curBufferAddr + dataSize);
+
+		u8* dstValues = (u8*)&s_historyBuffer[s_curBufferAddr];
+		memcpy(dstValues, values, dataSize);
 		s_curBufferAddr += dataSize;
 	}
 

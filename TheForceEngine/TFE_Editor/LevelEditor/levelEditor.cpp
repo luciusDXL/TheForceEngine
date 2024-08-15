@@ -860,7 +860,7 @@ namespace LevelEditor
 			}
 
 			edit_deleteVertex(sectorId, vertexIndex);
-			cmd_addDeleteVertex(sectorId, vertexIndex);
+			// cmd_addDeleteVertex(sectorId, vertexIndex);
 			return;
 		}
 
@@ -1626,7 +1626,7 @@ namespace LevelEditor
 		if (s > FLT_EPSILON && s < 1.0f - FLT_EPSILON)
 		{
 			// Split the wall.
-			cmd_addInsertVertex(sector->id, wallIndex, newPos);
+			// cmd_addInsertVertex(sector->id, wallIndex, newPos);
 			edit_splitWall(sector->id, wallIndex, newPos);
 		}
 	}
@@ -2109,7 +2109,7 @@ namespace LevelEditor
 			if (part == HP_FLOOR || part == HP_CEIL)
 			{
 				edit_deleteSector(sectorId);
-				cmd_addDeleteSector(sectorId);
+				// cmd_addDeleteSector(sectorId);
 			}
 			else if (part == HP_SIGN)
 			{
@@ -2121,7 +2121,7 @@ namespace LevelEditor
 
 					FeatureId id = createFeatureId(featureSector, wallIndex, HP_SIGN);
 					edit_clearTexture(1, &id);
-					cmd_addClearTexture(1, &id);
+					// cmd_addClearTexture(1, &id);
 				}
 			}
 			else
@@ -2130,7 +2130,7 @@ namespace LevelEditor
 				// So re-use the same command, but with the delete wall name.
 				const s32 vertexIndex = s_level.sectors[sectorId].walls[wallIndex].idx[0];
 				edit_deleteVertex(sectorId, vertexIndex);
-				cmd_addDeleteVertex(sectorId, vertexIndex, LName_DeleteWall);
+				// cmd_addDeleteVertex(sectorId, vertexIndex, LName_DeleteWall);
 			}
 			return;
 		}
@@ -2273,7 +2273,7 @@ namespace LevelEditor
 			if (sectorId >= 0)
 			{
 				edit_deleteSector(sectorId);
-				cmd_addDeleteSector(sectorId);
+				// cmd_addDeleteSector(sectorId);
 			}
 			return;
 		}
@@ -5598,7 +5598,7 @@ namespace LevelEditor
 				s_moveStarted = false;
 				if (s_canMoveFeature)
 				{
-					cmd_addMoveVertices((s32)s_selectionList.size(), s_selectionList.data(), s_moveTotalDelta);
+					// cmd_addMoveVertices((s32)s_selectionList.size(), s_selectionList.data(), s_moveTotalDelta);
 				}
 			}
 			else
@@ -5626,11 +5626,11 @@ namespace LevelEditor
 				{
 					if (s_featureCur.part == HP_FLOOR || s_featureCur.part == HP_CEIL)
 					{
-						cmd_addMoveFlats((s32)s_selectionList.size(), s_selectionList.data(), s_moveTotalDelta.x);
+						// cmd_addMoveFlats((s32)s_selectionList.size(), s_selectionList.data(), s_moveTotalDelta.x);
 					}
 					else // Re-use the move vertices command, but with the name LName_MoveWall.
 					{
-						cmd_addMoveVertices((s32)s_vertexList.size(), s_vertexList.data(), s_moveTotalDelta, LName_MoveWall);
+						// cmd_addMoveVertices((s32)s_vertexList.size(), s_vertexList.data(), s_moveTotalDelta, LName_MoveWall);
 					}
 				}
 			}
@@ -5701,11 +5701,11 @@ namespace LevelEditor
 						const s32 count = (s32)s_selectionList.size();
 						if (!count)
 						{
-							cmd_addMoveTexture(1, &id, delta);
+							// cmd_addMoveTexture(1, &id, delta);
 						}
 						else
 						{
-							cmd_addMoveTexture(count, s_selectionList.data(), delta);
+							// cmd_addMoveTexture(count, s_selectionList.data(), delta);
 						}
 					}
 				}
@@ -5753,11 +5753,11 @@ namespace LevelEditor
 					const s32 count = (s32)s_selectionList.size();
 					if (!count)
 					{
-						cmd_addMoveTexture(1, &id, s_texDelta);
+						// cmd_addMoveTexture(1, &id, s_texDelta);
 					}
 					else
 					{
-						cmd_addMoveTexture(count, s_selectionList.data(), s_texDelta);
+						// cmd_addMoveTexture(count, s_selectionList.data(), s_texDelta);
 					}
 
 					s_startTexMove = false;
@@ -5804,11 +5804,11 @@ namespace LevelEditor
 						const s32 count = (s32)s_selectionList.size();
 						if (!count)
 						{
-							cmd_addMoveTexture(1, &id, delta);
+							// cmd_addMoveTexture(1, &id, delta);
 						}
 						else
 						{
-							cmd_addMoveTexture(count, s_selectionList.data(), delta);
+							// cmd_addMoveTexture(count, s_selectionList.data(), delta);
 						}
 					}
 				}
@@ -5933,11 +5933,11 @@ namespace LevelEditor
 						const s32 count = (s32)s_selectionList.size();
 						if (!count)
 						{
-							cmd_addMoveTexture(1, &id, s_texDelta);
+							// cmd_addMoveTexture(1, &id, s_texDelta);
 						}
 						else
 						{
-							cmd_addMoveTexture(count, s_selectionList.data(), s_texDelta);
+							// cmd_addMoveTexture(count, s_selectionList.data(), s_texDelta);
 						}
 					}
 
@@ -6075,7 +6075,7 @@ namespace LevelEditor
 		snapSignToCursor(sector, wall, texIndex, &offset);
 
 		edit_setTexture(1, &id, signIndex, &offset);
-		cmd_addSetTexture(1, &id, signIndex, &offset);
+		// cmd_addSetTexture(1, &id, signIndex, &offset);
 	}
 
 	void applyTextureToSelection(s32 texIndex, Vec2f* offset)
@@ -6089,12 +6089,12 @@ namespace LevelEditor
 			if (doesItemExist)
 			{
 				edit_setTexture(count, s_selectionList.data(), texIndex, offset);
-				cmd_addSetTexture(count, s_selectionList.data(), texIndex, offset);
+				// cmd_addSetTexture(count, s_selectionList.data(), texIndex, offset);
 			}
 			else
 			{
 				edit_setTexture(1, &id, texIndex, offset);
-				cmd_addSetTexture(1, &id, texIndex, offset);
+				// cmd_addSetTexture(1, &id, texIndex, offset);
 			}
 		}
 	}
@@ -6189,7 +6189,7 @@ namespace LevelEditor
 		else if (TFE_Input::keyPressed(KEY_A) && TFE_Input::keyModDown(KEYMOD_CTRL))
 		{
 			edit_autoAlign(s_featureHovered.sector->id, s_featureHovered.featureIndex, s_featureHovered.part);
-			cmd_addAutoAlign(s_featureHovered.sector->id, s_featureHovered.featureIndex, s_featureHovered.part);
+			// cmd_addAutoAlign(s_featureHovered.sector->id, s_featureHovered.featureIndex, s_featureHovered.part);
 		}
 	}
 
