@@ -1,4 +1,5 @@
 #include "snapshotReaderWriter.h"
+#include <cstring>
 
 namespace TFE_Editor
 {
