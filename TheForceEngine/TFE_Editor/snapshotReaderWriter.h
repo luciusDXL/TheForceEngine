@@ -8,6 +8,7 @@
 //////////////////////////////////////////////////////////////////////
 #include <TFE_System/types.h>
 #include <TFE_Editor/history.h>
+#include <string>
 
 namespace TFE_Editor
 {
