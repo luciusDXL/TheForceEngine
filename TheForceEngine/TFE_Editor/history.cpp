@@ -26,7 +26,8 @@ namespace TFE_Editor
 		u16 cmdId;
 		u16 cmdName;
 		u16 parentId;
-		u16 depth;
+		u8  depth;
+		u8  hidden;
 	};
 
 	UnpackSnapshotFunc s_snapshotUnpack = nullptr;
@@ -117,10 +118,21 @@ namespace TFE_Editor
 		s_curBufferAddr = addr + sizeof(CommandHeader);
 		return (CommandHeader*)(s_historyBuffer.data() + addr);
 	}
+
+	void hideRange(s32 rMin, s32 rMax)
+	{
+		for (s32 i = rMin; i < rMax; i++)
+		{
+			CommandHeader* header = hBuffer_getHeader(i);
+			header->hidden = 1;
+		}
+	}
 		
 	// Create new commands and snapshots.
 	s32 history_createSnapshotInternal(u32 size, void* data, const char* name/*=nullptr*/)
 	{
+		u16 parentId = u16(s_curPosInHistory);
+
 		Snapshot snapshot = {};
 		snapshot.uncompressedSize = size;
 
@@ -140,7 +152,14 @@ namespace TFE_Editor
 			memcpy(snapshot.compressedData.data(), data, size);
 		}
 
-		snapshot.name = name ? name : "";
+		if (name)
+		{
+			snapshot.name = name;
+		}
+		else
+		{
+			snapshot.name = "";
+		}
 
 		s32 id = (s32)s_snapShots.size();
 		s_snapShots.push_back(std::move(snapshot));
@@ -149,10 +168,12 @@ namespace TFE_Editor
 		CommandHeader* header = hBuffer_createHeader();
 		header->cmdId = CMD_SNAPSHOT;
 		header->cmdName = 0;
-		header->parentId = id;
+		header->parentId = parentId;
 		header->depth = 0;
+		header->hidden = 0;
 
 		s_curPosInHistory = u16(s_history.size() - 1);
+		hideRange(parentId + 1, s_curPosInHistory);
 		return id;
 	}
 
@@ -187,14 +208,43 @@ namespace TFE_Editor
 		header->cmdName = name;
 		header->parentId = parentId;
 		header->depth = prevHeader->depth + 1;
+		header->hidden = 0;
 		
 		s_curPosInHistory = u16(s_history.size() - 1);
+		hideRange(parentId + 1, s_curPosInHistory);
 		return true;
 	}
 
 	void history_step(s32 count)
 	{
-		s32 pos = std::max(0, std::min((s32)s_history.size() - 1, (s32)s_curPosInHistory + count));
+		if (count == 0) { return; }
+
+		s32 pos = s_curPosInHistory;
+		s32 curParent = pos;
+		if (count < 0 && pos > 0)
+		{
+			CommandHeader* header = hBuffer_getHeader(pos);
+			pos = header->parentId;
+		}
+		else if (count > 0 && pos < (s32)s_history.size() - 1)
+		{
+			pos++;
+			while (pos < s_history.size())
+			{
+				// Search for the next position that is NOT hidden and parentId == s_curPosInHistory
+				CommandHeader* header = hBuffer_getHeader(pos);
+				if (!header->hidden && header->parentId == curParent)
+				{
+					curParent = pos;
+					break;
+				}
+				pos++;
+			}
+		}
+		if (pos == s_curPosInHistory)
+		{
+			return;
+		}
 		history_setPos(pos);
 	}
 
@@ -224,18 +274,19 @@ namespace TFE_Editor
 
 			if (cmdHeader->cmdId == CMD_SNAPSHOT)
 			{
-				Snapshot* snapshot = &s_snapShots[cmdHeader->parentId];
+				const s32 id = cmdList[i];
+				Snapshot* snapshot = &s_snapShots[id];
 				if (snapshot->uncompressedSize > snapshot->compressedSize)
 				{
 					s_unpackedData.resize(snapshot->uncompressedSize);
 					if (zstd_decompress(s_unpackedData.data(), snapshot->uncompressedSize, snapshot->compressedData.data(), snapshot->compressedSize))
 					{
-						s_snapshotUnpack(cmdHeader->parentId, snapshot->uncompressedSize, s_unpackedData.data());
+						s_snapshotUnpack(id, snapshot->uncompressedSize, s_unpackedData.data());
 					}
 				}
 				else
 				{
-					s_snapshotUnpack(cmdHeader->parentId, snapshot->compressedSize, snapshot->compressedData.data());
+					s_snapshotUnpack(id, snapshot->compressedSize, snapshot->compressedData.data());
 				}
 			}
 			else
