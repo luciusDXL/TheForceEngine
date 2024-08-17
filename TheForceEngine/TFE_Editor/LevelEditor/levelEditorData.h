@@ -255,6 +255,9 @@ namespace LevelEditor
 	void level_createSnapshot(TFE_Editor::SnapshotBuffer* buffer);
 	void level_unpackSnapshot(s32 id, u32 size, void* data);
 
+	void level_createSectorSnapshot(TFE_Editor::SnapshotBuffer* buffer, std::vector<s32>& sectorIds);
+	void level_unpackSectorSnapshot(u32 size, void* data);
+
 	// Spatial Queries
 	s32  findSectorByName(const char* name, s32 excludeId = -1);
 	s32  findSector2d(s32 layer, const Vec2f* pos);

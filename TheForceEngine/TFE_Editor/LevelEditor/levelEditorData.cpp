@@ -59,6 +59,23 @@ namespace LevelEditor
 {
 	const char* c_newLine = "\r\n";
 
+	// For history
+	struct UniqueTexture
+	{
+		s32 originalId;
+		s32 newId;
+		std::string name;
+	};
+	struct UniqueEntity
+	{
+		s32 originalId;
+		s32 newId;
+		Entity entity;
+	};
+	std::vector<EditorSector> s_sectorSnapshot;
+	std::vector<UniqueTexture> s_uniqueTextures;
+	std::vector<UniqueEntity> s_uniqueEntities;
+	
 	std::vector<u8> s_fileData;
 	static u32* s_palette = nullptr;
 	static s32 s_palIndex = 0;
@@ -2646,6 +2663,257 @@ namespace LevelEditor
 		{
 			readString(logic->name);
 			readEntityVar(logic->var);
+		}
+	}
+		
+	s32 addUniqueTexture(s32 id, std::vector<UniqueTexture>& uniqueTex)
+	{
+		const s32 count = (s32)uniqueTex.size();
+		UniqueTexture* tex = uniqueTex.data();
+		for (s32 i = 0; i < count; i++, tex++)
+		{
+			if (tex->originalId == id)
+			{
+				return tex->newId;
+			}
+		}
+
+		UniqueTexture newTex;
+		newTex.originalId = id;
+		newTex.newId = (s32)uniqueTex.size();
+		newTex.name = s_level.textures[id].name;
+		uniqueTex.push_back(newTex);
+		return newTex.newId;
+	}
+
+	s32 addUniqueEntity(s32 id, std::vector<UniqueEntity>& uniqueEntity)
+	{
+		const s32 count = (s32)uniqueEntity.size();
+		UniqueEntity* uentity = uniqueEntity.data();
+		for (s32 i = 0; i < count; i++, uentity++)
+		{
+			if (uentity->originalId == id)
+			{
+				return uentity->newId;
+			}
+		}
+
+		UniqueEntity newEntity;
+		newEntity.originalId = id;
+		newEntity.newId = (s32)uniqueEntity.size();
+		newEntity.entity = s_level.entities[id];
+		uniqueEntity.push_back(newEntity);
+		return newEntity.newId;
+	}
+			
+	void level_createSectorSnapshot(SnapshotBuffer* buffer, std::vector<s32>& sectorIds)
+	{
+		setSnapshotWriteBuffer(buffer);
+		// Sort by id from smallest to largest.
+		std::sort(sectorIds.begin(), sectorIds.end());
+		// Get the new sector count, which must be large enough to hold the largest sector ID.
+		u32 newSectorCount = std::max((s32)s_level.sectors.size(), sectorIds.back() + 1);
+		// Extract unique textures and entities.
+		// Create a set of sectors to serialize.
+		const s32 idCount = (s32)sectorIds.size();
+		const s32* idList = sectorIds.data();
+		s_sectorSnapshot.resize(idCount);
+		EditorSector* dstSector = s_sectorSnapshot.data();
+		for (s32 i = 0; i < idCount; i++, dstSector++)
+		{
+			const EditorSector* srcSector = &s_level.sectors[idList[i]];
+			*dstSector = *srcSector;
+			dstSector->floorTex.texIndex = addUniqueTexture(srcSector->floorTex.texIndex, s_uniqueTextures);
+			dstSector->ceilTex.texIndex = addUniqueTexture(srcSector->ceilTex.texIndex, s_uniqueTextures);
+					   
+			// Wall textures.
+			const s32 wallCount = (s32)srcSector->walls.size();
+			const EditorWall* srcWall = srcSector->walls.data();
+			EditorWall* dstWall = dstSector->walls.data();
+			for (s32 w = 0; w < wallCount; w++, srcWall++, dstWall++)
+			{
+				for (s32 t = 0; t < 4; t++)
+				{
+					if (dstWall->tex[t].texIndex < 0) { continue; }
+					dstWall->tex[t].texIndex = addUniqueTexture(srcWall->tex[t].texIndex, s_uniqueTextures);
+				}
+			}
+
+			// Entities.
+			const s32 entityCount = (s32)srcSector->obj.size();
+			const EditorObject* srcEntity = srcSector->obj.data();
+			EditorObject* dstEntity = dstSector->obj.data();
+			for (s32 e = 0; e < entityCount; e++, srcEntity++, dstEntity++)
+			{
+				dstEntity->entityId = addUniqueEntity(srcEntity->entityId, s_uniqueEntities);
+			}
+		}
+
+		const u32 texCount = (u32)s_uniqueTextures.size();
+		const u32 sectorCount = (u32)s_sectorSnapshot.size();
+		const u32 entityCount = (u32)s_uniqueEntities.size();
+		writeU32(newSectorCount);
+		writeU32(texCount);
+		writeU32(sectorCount);
+		writeU32(entityCount);
+
+		// Textures.
+		const UniqueTexture* texture = s_uniqueTextures.data();
+		for (u32 i = 0; i < texCount; i++, texture++)
+		{
+			writeString(texture->name);
+		}
+
+		// Entities.
+		const UniqueEntity* uentity = s_uniqueEntities.data();
+		for (u32 e = 0; e < entityCount; e++, uentity++)
+		{
+			writeS32(uentity->newId);
+			writeS32(uentity->entity.categories);
+			writeString(uentity->entity.name);
+			writeString(uentity->entity.assetName);
+			writeS32((s32)uentity->entity.type);
+
+			writeEntityLogic(uentity->entity.logic);
+			writeEntityVar(uentity->entity.var);
+			writeData(uentity->entity.bounds, sizeof(Vec3f) * 2);
+			writeData(&uentity->entity.offset, sizeof(Vec3f));
+			writeData(&uentity->entity.offsetAdj, sizeof(Vec3f));
+
+			// Sprite and obj data derived from type + assetName
+		}
+
+		// Write sectors.
+		const EditorSector* sector = s_sectorSnapshot.data();
+		for (u32 s = 0; s < sectorCount; s++, sector++)
+		{
+			writeU32(sector->id);
+			writeU32(sector->groupId);
+			writeU32(sector->groupIndex);
+			writeString(sector->name);
+			writeData(&sector->floorTex, sizeof(LevelTexture));
+			writeData(&sector->ceilTex, sizeof(LevelTexture));
+			writeF32(sector->floorHeight);
+			writeF32(sector->ceilHeight);
+			writeF32(sector->secHeight);
+			writeU32(sector->ambient);
+			writeS32(sector->layer);
+			writeData(sector->flags, sizeof(u32) * 3);
+			writeU32((u32)sector->vtx.size());
+			writeU32((u32)sector->walls.size());
+			writeU32((u32)sector->obj.size());
+			writeData(sector->vtx.data(), u32(sizeof(Vec2f) * sector->vtx.size()));
+			writeData(sector->walls.data(), u32(sizeof(EditorWall) * sector->walls.size()));
+			writeData(sector->obj.data(), u32(sizeof(EditorObject) * sector->obj.size()));
+		}
+	}
+
+	void level_unpackSectorSnapshot(u32 size, void* data)
+	{
+		setSnapshotReadBuffer((u8*)data, size);
+		
+		const u32 newSectorCount = readU32();   // Total sectors in level after snapshot.
+		const u32 texCount = readU32();         // Number of unique textures from sectors in snapshot.
+		const u32 sectorCount = readU32();      // Number of sectors *in* snapshot.
+		const u32 entityCount = readU32();      // Number of unique entities from sectors in snapshot.
+
+		// Resize to post-snapshot sector total.
+		s_level.sectors.resize(newSectorCount);
+
+		std::string texName;
+		std::vector<s32> remapTableTex(texCount);
+		for (u32 i = 0; i < texCount; i++)
+		{
+			readString(texName);
+			// Find the name in the texture list.
+			// If it doesn't exist, then add a new texture.
+			remapTableTex[i] = getTextureIndex(texName.c_str());
+		}
+
+		std::vector<s32> remapTableEntity(entityCount);
+		for (u32 e = 0; e < entityCount; e++)
+		{
+			Entity entity;
+			entity.id = readS32();
+			entity.categories = readS32();
+			readString(entity.name);
+			readString(entity.assetName);
+			entity.type = (EntityType)readS32();
+
+			readEntityLogic(entity.logic);
+			readEntityVar(entity.var);
+			readData(entity.bounds, sizeof(Vec3f) * 2);
+			readData(&entity.offset, sizeof(Vec3f));
+			readData(&entity.offsetAdj, sizeof(Vec3f));
+
+			// Search the entity list for a match.
+			// If not, add a new entity.
+			remapTableEntity[e] = addEntityToLevel(&entity);
+		}
+
+		// Sectors.
+		for (u32 s = 0; s < sectorCount; s++)
+		{
+			const u32 id = readU32();
+			assert(id < s_level.sectors.size());
+
+			EditorSector* sector = &s_level.sectors[id];
+			sector->id = id;
+			sector->groupId = readU32();
+			sector->groupIndex = readU32();
+			readString(sector->name);
+			readData(&sector->floorTex, sizeof(LevelTexture));
+			readData(&sector->ceilTex, sizeof(LevelTexture));
+
+			// Fix-up sector textures.
+			if (sector->floorTex.texIndex >= 0)
+			{
+				sector->floorTex.texIndex = remapTableTex[sector->floorTex.texIndex];
+			}
+			if (sector->ceilTex.texIndex >= 0)
+			{
+				sector->ceilTex.texIndex = remapTableTex[sector->ceilTex.texIndex];
+			}
+
+			sector->floorHeight = readF32();
+			sector->ceilHeight = readF32();
+			sector->secHeight = readF32();
+			sector->ambient = readU32();
+			sector->layer = readS32();
+			readData(sector->flags, sizeof(u32) * 3);
+
+			const u32 vtxCount = readU32();
+			const u32 wallCount = readU32();
+			const u32 objCount = readU32();
+			sector->vtx.resize(vtxCount);
+			sector->walls.resize(wallCount);
+			sector->obj.resize(objCount);
+
+			readData(sector->vtx.data(), u32(sizeof(Vec2f) * vtxCount));
+			readData(sector->walls.data(), u32(sizeof(EditorWall) * wallCount));
+			readData(sector->obj.data(), u32(sizeof(EditorObject) * objCount));
+
+			// Fix up wall textures.
+			EditorWall* wall = sector->walls.data();
+			for (u32 i = 0; i < wallCount; i++, wall++)
+			{
+				for (s32 t = 0; t < WP_COUNT; t++)
+				{
+					if (wall->tex[t].texIndex < 0) { continue; }
+					wall->tex[t].texIndex = remapTableTex[wall->tex[t].texIndex];
+				}
+			}
+
+			// Fix up objects.
+			EditorObject* obj = sector->obj.data();
+			for (u32 i = 0; i < objCount; i++, obj++)
+			{
+				if (obj->entityId < 0) { continue; }
+				obj->entityId = remapTableEntity[obj->entityId];
+			}
+
+			// Build the sector polygon for the editor.
+			sectorToPolygon(sector);
 		}
 	}
 		

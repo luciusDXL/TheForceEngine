@@ -879,11 +879,22 @@ namespace LevelEditor
 		}
 	}
 
-	void insertIndependentSector(const f32* heights, std::vector<EditorSector*>& candidates)
+	void addSectorToList(s32 id, std::vector<s32>& list)
+	{
+		const s32 count = (s32)list.size();
+		const s32* ids = list.data();
+		for (s32 i = 0; i < count; i++)
+		{
+			if (ids[i] == id) { return; }
+		}
+		list.push_back(id);
+	}
+
+	void insertIndependentSector(const f32* heights, std::vector<EditorSector*>& candidates, std::vector<s32>& changedSectors)
 	{
 		EditorSector newSector;
 		createNewSector(&newSector, heights);
-
+				
 		s32 shapeCount = (s32)s_geoEdit.shape.size();
 		newSector.vtx.resize(shapeCount);
 		newSector.walls.resize(shapeCount);
@@ -908,9 +919,10 @@ namespace LevelEditor
 		newSector.groupId = groups_getCurrentId();
 		newSector.groupIndex = 0;
 		s_level.sectors.push_back(newSector);
-
+		
 		EditorSector* newSectorLvl = &s_level.sectors.back();
 		sectorToPolygon(newSectorLvl);
+		addSectorToList(newSectorLvl->id, changedSectors);
 
 		// Deal with adjoins - note for this mode, edges have to match - new vertices are *NOT* inserted.
 		std::vector<s32> adjoinSectorsToFix;
@@ -920,6 +932,7 @@ namespace LevelEditor
 		for (s32 i = 0; i < overlapCount; i++)
 		{
 			addToAdjoinFixupList(candidateList[i]->id, adjoinSectorsToFix);
+			addSectorToList(candidateList[i]->id, changedSectors);
 		}
 		fixupSectorAdjoins(adjoinSectorsToFix);
 
@@ -979,7 +992,7 @@ namespace LevelEditor
 		}
 	}
 
-	void insertShapeWithBoolean(const f32* heights, std::vector<EditorSector*>& candidates, u32 heightFlags, f32 clipFloorHeight, f32 clipCeilHeight)
+	bool insertShapeWithBoolean(const f32* heights, std::vector<EditorSector*>& candidates, u32 heightFlags, f32 clipFloorHeight, f32 clipCeilHeight, std::vector<s32>& changedSectors)
 	{
 		// The shape polygon may be split up during clipping.
 		BPolygon shapePolyClip = {};
@@ -1004,6 +1017,8 @@ namespace LevelEditor
 			EditorSector* candidate = candidateList[s];
 			const s32 wallCount = (s32)candidate->walls.size();
 			EditorWall* wall = candidate->walls.data();
+
+			addSectorToList(candidate->id, changedSectors);
 
 			for (s32 w = 0; w < wallCount; w++, wall++)
 			{
@@ -1106,7 +1121,7 @@ namespace LevelEditor
 					EditorSector newSector = {};
 					newSector.id = (s32)s_level.sectors.size();
 					copySectorForSplit(candidate, &newSector);
-
+					
 					// Handle clip-interior polygons.
 					if (!outPoly[p].outsideClipRegion)
 					{
@@ -1116,6 +1131,7 @@ namespace LevelEditor
 					s_level.sectors.push_back(newSector);
 					EditorSector* newPtr = &s_level.sectors.back();
 					addToAdjoinFixupList(newPtr->id, adjoinSectorsToFix);
+					addSectorToList(newPtr->id, changedSectors);
 
 					updateSectorFromPolygon(newPtr, outPoly[p]);
 					sectorToPolygon(newPtr);
@@ -1194,6 +1210,7 @@ namespace LevelEditor
 					s_level.sectors.push_back(newSector);
 					EditorSector* newPtr = &s_level.sectors.back();
 					addToAdjoinFixupList(newPtr->id, adjoinSectorsToFix);
+					addSectorToList(newPtr->id, changedSectors);
 
 					updateSectorFromPolygon(newPtr, clipPoly[p]);
 					sectorToPolygon(newPtr);
@@ -1208,6 +1225,7 @@ namespace LevelEditor
 				s_level.sectors.push_back(newSector);
 				EditorSector* newPtr = &s_level.sectors.back();
 				addToAdjoinFixupList(newPtr->id, adjoinSectorsToFix);
+				addSectorToList(newPtr->id, changedSectors);
 
 				updateSectorFromPolygon(newPtr, shapePolyClip);
 				sectorToPolygon(newPtr);
@@ -1218,7 +1236,8 @@ namespace LevelEditor
 		fixupSectorAdjoins(adjoinSectorsToFix);
 
 		// Delete any sectors - note this should only happen in the SUBTRACT mode unless degenerate sectors are found.
-		if (!deleteId.empty())
+		bool sectorsDeleted = !deleteId.empty();
+		if (sectorsDeleted)
 		{
 			std::sort(deleteId.begin(), deleteId.end());
 			const s32 deleteCount = (s32)deleteId.size();
@@ -1228,13 +1247,15 @@ namespace LevelEditor
 				edit_deleteSector(idToDel[i]);
 			}
 		}
+		return sectorsDeleted;
 	}
 
 	// Merge a shape into the existing sectors.
-	void edit_insertShape(const f32* heights, BoolMode mode, s32 firstVertex, bool allowSubsectorExtrude)
+	bool edit_insertShape(const f32* heights, BoolMode mode, s32 firstVertex, bool allowSubsectorExtrude, std::vector<s32>& changedSectors)
 	{
 		bool hasSectors = !s_level.sectors.empty();
 		clearSourceList();
+		changedSectors.clear();
 
 		u32 heightFlags = s_view == EDIT_VIEW_3D ? HFLAG_DEFAULT : HFLAG_NONE;
 		f32 clipFloorHeight = min(heights[0], heights[1]);
@@ -1255,19 +1276,21 @@ namespace LevelEditor
 		findShapeOverlapCandidates(heights, allowSubsectorExtrude && mode != BMODE_SET, firstVertex,
 			&shapePoly, &candidates, shapeBounds, &heightFlags, &clipFloorHeight, &clipCeilHeight);
 
+		bool sectorsDeleted = false;
 		if (mode == BMODE_SET)
 		{
 			// In this mode, no sector intersections are required. Simply create the sector
 			// and then fixup adjoins with existing sectors.
-			insertIndependentSector(heights, candidates);
+			insertIndependentSector(heights, candidates, changedSectors);
 		}
 		else
 		{
-			insertShapeWithBoolean(heights, candidates, heightFlags, clipFloorHeight, clipCeilHeight);
+			sectorsDeleted = insertShapeWithBoolean(heights, candidates, heightFlags, clipFloorHeight, clipCeilHeight, changedSectors);
 		}
+		return sectorsDeleted;
 	}
 
-	void edit_createSectorFromRect(const f32* heights, const Vec2f* vtx, bool allowSubsectorExtrude)
+	bool edit_createSectorFromRect(const f32* heights, const Vec2f* vtx, bool allowSubsectorExtrude)
 	{
 		s_geoEdit.drawStarted = false;
 		bool hasSectors = !s_level.sectors.empty();
@@ -1318,14 +1341,25 @@ namespace LevelEditor
 			outVtx[v] = rect[v];
 		}
 
-		edit_insertShape(heights, s_geoEdit.boolMode, firstVertex, allowSubsectorExtrude);
+		std::vector<s32> changedSectors;
+		bool sectorsDeleted = edit_insertShape(heights, s_geoEdit.boolMode, firstVertex, allowSubsectorExtrude, changedSectors);
 
 		s_featureHovered = {};
 		selection_clear();
 		infoPanelClearFeatures();
+
+		if (sectorsDeleted)
+		{
+			levHistory_createSnapshot("CreateSector-Rect");
+		}
+		else
+		{
+			cmd_sectorSnapshot(LName_CreateSectorFromRect, changedSectors);
+		}
+		return sectorsDeleted;
 	}
 
-	void edit_createSectorFromShape(const f32* heights, s32 vertexCount, const Vec2f* vtx, bool allowSubsectorExtrude)
+	bool edit_createSectorFromShape(const f32* heights, s32 vertexCount, const Vec2f* vtx, bool allowSubsectorExtrude)
 	{
 		s_geoEdit.drawStarted = false;
 
@@ -1347,11 +1381,22 @@ namespace LevelEditor
 		}
 		//TFE_Polygon::cleanUpShape(s_geoEdit.shape);
 
-		edit_insertShape(heights, s_geoEdit.boolMode, firstVertex, allowSubsectorExtrude);
+		std::vector<s32> changedSectors;
+		bool sectorsDeleted = edit_insertShape(heights, s_geoEdit.boolMode, firstVertex, allowSubsectorExtrude, changedSectors);
 
 		s_featureHovered = {};
 		selection_clear();
 		infoPanelClearFeatures();
+
+		if (sectorsDeleted)
+		{
+			levHistory_createSnapshot("CreateSector-Shape");
+		}
+		else
+		{
+			cmd_sectorSnapshot(LName_CreateSectorFromRect, changedSectors);
+		}
+		return sectorsDeleted;
 	}
 		
 	Vec3f extrudePoint2dTo3d(const Vec2f pt2d)
@@ -2497,17 +2542,11 @@ namespace LevelEditor
 	void createSectorFromRect()
 	{
 		edit_createSectorFromRect(s_geoEdit.drawHeight, s_geoEdit.shape.data());
-
-		// TODO: Replace with local sector snapshot.
-		levHistory_createSnapshot("CreateSector-Rect");
 	}
 
 	void createSectorFromShape()
 	{
 		edit_createSectorFromShape(s_geoEdit.drawHeight, (s32)s_geoEdit.shape.size(), s_geoEdit.shape.data());
-
-		// TODO: Replace with local sector snapshot.
-		levHistory_createSnapshot("CreateSector-Shape");
 	}
 
 	// Form a path between each open end using edges on the map.

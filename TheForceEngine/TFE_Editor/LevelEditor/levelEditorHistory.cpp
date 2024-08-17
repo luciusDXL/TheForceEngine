@@ -2,6 +2,7 @@
 #include "sharedState.h"
 #include <TFE_Editor/LevelEditor/levelEditor.h>
 #include <TFE_Editor/LevelEditor/levelEditorData.h>
+#include <TFE_Archive/zstdCompression.h>
 #include <TFE_System/system.h>
 #include <assert.h>
 #include <algorithm>
@@ -33,6 +34,7 @@ namespace LevelEditor
 	// Used to merge certain commands.
 	static f64 c_mergeThreshold = 1.0;
 	static f64 s_lastMoveTex = 0.0;
+	static TFE_Editor::SnapshotBuffer s_workBuffer[2];
 				
 	// Command Functions
 	void cmd_applySectorSnapshot();
@@ -70,6 +72,7 @@ namespace LevelEditor
 		history_registerName(LName_DeleteSector, "Delete Sector");
 		history_registerName(LName_CreateSectorFromRect, "Create Sector (Rect)");
 		history_registerName(LName_CreateSectorFromShape, "Create Sector (Shape)");
+		history_registerName(LName_ExtrudeSectorFromWall, "Extrude Sectors from Wall");
 		history_registerName(LName_MoveTexture, "Move Texture");
 		history_registerName(LName_SetTexture, "Set Texture");
 		history_registerName(LName_CopyTexture, "Copy Texture");
@@ -143,6 +146,34 @@ namespace LevelEditor
 			hBuffer_addU8(attribId);
 			hBuffer_addS16(attribSize);
 			hBuffer_addArrayU8(attribSize, data);
+		}
+		CMD_END();
+	}
+		
+	void cmd_sectorSnapshot(u32 name, std::vector<s32>& sectorIds)
+	{
+		s_workBuffer[0].clear();
+		s_workBuffer[1].clear();
+		level_createSectorSnapshot(&s_workBuffer[0], sectorIds);
+		if (s_workBuffer[0].empty()) { return; }
+
+		const u32 uncompressedSize = (u32)s_workBuffer[0].size();
+		u32 compressedSize = 0;
+		if (zstd_compress(s_workBuffer[1], s_workBuffer[0].data(), uncompressedSize, 4))
+		{
+			compressedSize = (u32)s_workBuffer[1].size();
+		}
+		// ERROR
+		if (!compressedSize)
+		{
+			return;
+		}
+
+		CMD_BEGIN(LCmd_Sector_Snapshot, name);
+		{
+			hBuffer_addU32(uncompressedSize);
+			hBuffer_addU32(compressedSize);
+			hBuffer_addArrayU8(compressedSize, s_workBuffer[1].data());
 		}
 		CMD_END();
 	}
@@ -270,7 +301,15 @@ namespace LevelEditor
 
 	void cmd_applySectorSnapshot()
 	{
-		// STUB
+		const u32 uncompressedSize = hBuffer_getU32();
+		const u32 compressedSize = hBuffer_getU32();
+		const u8* compressedData = hBuffer_getArrayU8(compressedSize);
+
+		s_workBuffer[0].resize(uncompressedSize);
+		if (zstd_decompress(s_workBuffer[0].data(), uncompressedSize, compressedData, compressedSize))
+		{
+			level_unpackSectorSnapshot(uncompressedSize, s_workBuffer[0].data());
+		}
 	}
 
 	void cmd_applyEntitySnapshot()

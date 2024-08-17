@@ -18,6 +18,7 @@ namespace LevelEditor
 		LName_DeleteSector,
 		LName_CreateSectorFromRect,
 		LName_CreateSectorFromShape,
+		LName_ExtrudeSectorFromWall,
 		LName_MoveTexture,
 		LName_SetTexture,
 		LName_CopyTexture,
@@ -54,4 +55,5 @@ namespace LevelEditor
 
 	void cmd_sectorChangeAttribute(u32 name, s32 count, const FeatureId* list, u32 attribId);
 	void cmd_sectorSetAttribute(u32 name, s32 count, const FeatureId* list, u32 attribId);
+	void cmd_sectorSnapshot(u32 name, std::vector<s32>& sectorIds);
 }
