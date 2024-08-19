@@ -1,4 +1,5 @@
 #include "levelEditorData.h"
+#include "levelDataSnapshot.h"
 #include "selection.h"
 #include "entity.h"
 #include "error.h"
@@ -59,19 +60,6 @@ namespace LevelEditor
 {
 	const char* c_newLine = "\r\n";
 
-	// For history
-	struct UniqueTexture
-	{
-		s32 originalId;
-		s32 newId;
-		std::string name;
-	};
-	struct UniqueEntity
-	{
-		s32 originalId;
-		s32 newId;
-		Entity entity;
-	};
 	std::vector<EditorSector> s_sectorSnapshot;
 	std::vector<UniqueTexture> s_uniqueTextures;
 	std::vector<UniqueEntity> s_uniqueEntities;
@@ -2610,102 +2598,7 @@ namespace LevelEditor
 
 		return !result->empty();
 	}
-
-	void writeEntityVar(const std::vector<EntityVar>& varList)
-	{
-		const s32 varCount = (s32)varList.size();
-		const EntityVar* var = varList.data();
-
-		writeS32(varCount);
-		for (s32 v = 0; v < varCount; v++, var++)
-		{
-			writeS32(var->defId);
-			writeS32(var->value.iValue);
-			writeString(var->value.sValue);
-			writeString(var->value.sValue1);
-		}
-	}
-
-	void writeEntityLogic(const std::vector<EntityLogic>& logicList)
-	{
-		const s32 count = (s32)logicList.size();
-		const EntityLogic* logic = logicList.data();
-		writeS32(count);
-		for (s32 i = 0; i < count; i++, logic++)
-		{
-			writeString(logic->name);
-			writeEntityVar(logic->var);
-		}
-	}
-
-	void readEntityVar(std::vector<EntityVar>& varList)
-	{
-		const s32 varCount = readS32();
-		varList.resize(varCount);
-
-		EntityVar* var = varList.data();
-		for (s32 v = 0; v < varCount; v++, var++)
-		{
-			var->defId = readS32();
-			var->value.iValue = readS32();
-			readString(var->value.sValue);
-			readString(var->value.sValue1);
-		}
-	}
-
-	void readEntityLogic(std::vector<EntityLogic>& logicList)
-	{
-		const s32 count = readS32();
-		logicList.resize(count);
-
-		EntityLogic* logic = logicList.data();
-		for (s32 i = 0; i < count; i++, logic++)
-		{
-			readString(logic->name);
-			readEntityVar(logic->var);
-		}
-	}
-		
-	s32 addUniqueTexture(s32 id, std::vector<UniqueTexture>& uniqueTex)
-	{
-		const s32 count = (s32)uniqueTex.size();
-		UniqueTexture* tex = uniqueTex.data();
-		for (s32 i = 0; i < count; i++, tex++)
-		{
-			if (tex->originalId == id)
-			{
-				return tex->newId;
-			}
-		}
-
-		UniqueTexture newTex;
-		newTex.originalId = id;
-		newTex.newId = (s32)uniqueTex.size();
-		newTex.name = s_level.textures[id].name;
-		uniqueTex.push_back(newTex);
-		return newTex.newId;
-	}
-
-	s32 addUniqueEntity(s32 id, std::vector<UniqueEntity>& uniqueEntity)
-	{
-		const s32 count = (s32)uniqueEntity.size();
-		UniqueEntity* uentity = uniqueEntity.data();
-		for (s32 i = 0; i < count; i++, uentity++)
-		{
-			if (uentity->originalId == id)
-			{
-				return uentity->newId;
-			}
-		}
-
-		UniqueEntity newEntity;
-		newEntity.originalId = id;
-		newEntity.newId = (s32)uniqueEntity.size();
-		newEntity.entity = s_level.entities[id];
-		uniqueEntity.push_back(newEntity);
-		return newEntity.newId;
-	}
-			
+				
 	void level_createSectorSnapshot(SnapshotBuffer* buffer, std::vector<s32>& sectorIds)
 	{
 		setSnapshotWriteBuffer(buffer);
@@ -2725,7 +2618,7 @@ namespace LevelEditor
 			*dstSector = *srcSector;
 			dstSector->floorTex.texIndex = addUniqueTexture(srcSector->floorTex.texIndex, s_uniqueTextures);
 			dstSector->ceilTex.texIndex = addUniqueTexture(srcSector->ceilTex.texIndex, s_uniqueTextures);
-					   
+
 			// Wall textures.
 			const s32 wallCount = (s32)srcSector->walls.size();
 			const EditorWall* srcWall = srcSector->walls.data();
@@ -2765,46 +2658,18 @@ namespace LevelEditor
 		}
 
 		// Entities.
-		const UniqueEntity* uentity = s_uniqueEntities.data();
+		UniqueEntity* uentity = s_uniqueEntities.data();
 		for (u32 e = 0; e < entityCount; e++, uentity++)
 		{
-			writeS32(uentity->newId);
-			writeS32(uentity->entity.categories);
-			writeString(uentity->entity.name);
-			writeString(uentity->entity.assetName);
-			writeS32((s32)uentity->entity.type);
-
-			writeEntityLogic(uentity->entity.logic);
-			writeEntityVar(uentity->entity.var);
-			writeData(uentity->entity.bounds, sizeof(Vec3f) * 2);
-			writeData(&uentity->entity.offset, sizeof(Vec3f));
-			writeData(&uentity->entity.offsetAdj, sizeof(Vec3f));
-
-			// Sprite and obj data derived from type + assetName
+			uentity->entity.id = uentity->newId;
+			writeEntityToSnapshot(&uentity->entity);
 		}
 
 		// Write sectors.
 		const EditorSector* sector = s_sectorSnapshot.data();
 		for (u32 s = 0; s < sectorCount; s++, sector++)
 		{
-			writeU32(sector->id);
-			writeU32(sector->groupId);
-			writeU32(sector->groupIndex);
-			writeString(sector->name);
-			writeData(&sector->floorTex, sizeof(LevelTexture));
-			writeData(&sector->ceilTex, sizeof(LevelTexture));
-			writeF32(sector->floorHeight);
-			writeF32(sector->ceilHeight);
-			writeF32(sector->secHeight);
-			writeU32(sector->ambient);
-			writeS32(sector->layer);
-			writeData(sector->flags, sizeof(u32) * 3);
-			writeU32((u32)sector->vtx.size());
-			writeU32((u32)sector->walls.size());
-			writeU32((u32)sector->obj.size());
-			writeData(sector->vtx.data(), u32(sizeof(Vec2f) * sector->vtx.size()));
-			writeData(sector->walls.data(), u32(sizeof(EditorWall) * sector->walls.size()));
-			writeData(sector->obj.data(), u32(sizeof(EditorObject) * sector->obj.size()));
+			writeSectorToSnapshot(sector);
 		}
 	}
 
@@ -2834,17 +2699,7 @@ namespace LevelEditor
 		for (u32 e = 0; e < entityCount; e++)
 		{
 			Entity entity;
-			entity.id = readS32();
-			entity.categories = readS32();
-			readString(entity.name);
-			readString(entity.assetName);
-			entity.type = (EntityType)readS32();
-
-			readEntityLogic(entity.logic);
-			readEntityVar(entity.var);
-			readData(entity.bounds, sizeof(Vec3f) * 2);
-			readData(&entity.offset, sizeof(Vec3f));
-			readData(&entity.offsetAdj, sizeof(Vec3f));
+			readEntityFromSnapshot(&entity);
 
 			// Search the entity list for a match.
 			// If not, add a new entity.
@@ -2854,16 +2709,12 @@ namespace LevelEditor
 		// Sectors.
 		for (u32 s = 0; s < sectorCount; s++)
 		{
-			const u32 id = readU32();
-			assert(id < s_level.sectors.size());
+			EditorSector tmp;
+			readSectorFromSnapshot(&tmp);
+			assert(tmp.id < s_level.sectors.size());
 
-			EditorSector* sector = &s_level.sectors[id];
-			sector->id = id;
-			sector->groupId = readU32();
-			sector->groupIndex = readU32();
-			readString(sector->name);
-			readData(&sector->floorTex, sizeof(LevelTexture));
-			readData(&sector->ceilTex, sizeof(LevelTexture));
+			EditorSector* sector = &s_level.sectors[tmp.id];
+			*sector = tmp;
 
 			// Fix-up sector textures.
 			if (sector->floorTex.texIndex >= 0)
@@ -2875,25 +2726,8 @@ namespace LevelEditor
 				sector->ceilTex.texIndex = remapTableTex[sector->ceilTex.texIndex];
 			}
 
-			sector->floorHeight = readF32();
-			sector->ceilHeight = readF32();
-			sector->secHeight = readF32();
-			sector->ambient = readU32();
-			sector->layer = readS32();
-			readData(sector->flags, sizeof(u32) * 3);
-
-			const u32 vtxCount = readU32();
-			const u32 wallCount = readU32();
-			const u32 objCount = readU32();
-			sector->vtx.resize(vtxCount);
-			sector->walls.resize(wallCount);
-			sector->obj.resize(objCount);
-
-			readData(sector->vtx.data(), u32(sizeof(Vec2f) * vtxCount));
-			readData(sector->walls.data(), u32(sizeof(EditorWall) * wallCount));
-			readData(sector->obj.data(), u32(sizeof(EditorObject) * objCount));
-
 			// Fix up wall textures.
+			const u32 wallCount = (u32)sector->walls.size();
 			EditorWall* wall = sector->walls.data();
 			for (u32 i = 0; i < wallCount; i++, wall++)
 			{
@@ -2905,6 +2739,7 @@ namespace LevelEditor
 			}
 
 			// Fix up objects.
+			const u32 objCount = (u32)sector->obj.size();
 			EditorObject* obj = sector->obj.data();
 			for (u32 i = 0; i < objCount; i++, obj++)
 			{
@@ -2914,6 +2749,7 @@ namespace LevelEditor
 
 			// Build the sector polygon for the editor.
 			sectorToPolygon(sector);
+			sector->searchKey = 0;
 		}
 	}
 		
@@ -2956,82 +2792,28 @@ namespace LevelEditor
 		const EditorSector* sector = s_level.sectors.data();
 		for (u32 s = 0; s < sectorCount; s++, sector++)
 		{
-			writeU32(sector->id);
-			writeU32(sector->groupId);
-			writeU32(sector->groupIndex);
-			writeString(sector->name);
-			writeData(&sector->floorTex, sizeof(LevelTexture));
-			writeData(&sector->ceilTex, sizeof(LevelTexture));
-			writeF32(sector->floorHeight);
-			writeF32(sector->ceilHeight);
-			writeF32(sector->secHeight);
-			writeU32(sector->ambient);
-			writeS32(sector->layer);
-			writeData(sector->flags, sizeof(u32) * 3);
-			writeU32((u32)sector->vtx.size());
-			writeU32((u32)sector->walls.size());
-			writeU32((u32)sector->obj.size());
-			writeData(sector->vtx.data(), u32(sizeof(Vec2f) * sector->vtx.size()));
-			writeData(sector->walls.data(), u32(sizeof(EditorWall) * sector->walls.size()));
-			writeData(sector->obj.data(), u32(sizeof(EditorObject) * sector->obj.size()));
+			writeSectorToSnapshot(sector);
 		}
 
 		// Entities.
 		const Entity* entity = s_level.entities.data();
 		for (u32 e = 0; e < entityCount; e++, entity++)
 		{
-			writeS32(entity->id);
-			writeS32(entity->categories);
-			writeString(entity->name);
-			writeString(entity->assetName);
-			writeS32((s32)entity->type);
-
-			writeEntityLogic(entity->logic);
-			writeEntityVar(entity->var);
-			writeData(entity->bounds, sizeof(Vec3f) * 2);
-			writeData(&entity->offset, sizeof(Vec3f));
-			writeData(&entity->offsetAdj, sizeof(Vec3f));
-
-			// Sprite and obj data derived from type + assetName
+			writeEntityToSnapshot(entity);
 		}
 
 		// Level Notes.
 		const LevelNote* note = s_level.notes.data();
 		for (u32 n = 0; n < levelNoteCount; n++, note++)
 		{
-			writeS32(note->id);
-			writeU32(note->groupId);
-			writeU32(note->groupIndex);
-			writeU32(note->flags);
-			writeU32(note->iconColor);
-			writeU32(note->textColor);
-
-			writeData(&note->pos, sizeof(Vec3f));
-			writeData(&note->fade, sizeof(Vec2f));
-			writeString(note->note);
+			writeLevelNoteToSnapshot(note);
 		}
 
 		// Guidelines.
 		const Guideline* guideline = s_level.guidelines.data();
 		for (u32 g = 0; g < guidelineCount; g++, guideline++)
 		{
-			const s32 vtxCount = (s32)guideline->vtx.size();
-			const s32 knotCount = (s32)guideline->knots.size();
-			const s32 offsetCount = (s32)guideline->offsets.size();
-
-			writeS32(guideline->id);
-			writeS32(vtxCount);
-			writeS32(knotCount);
-			writeS32(offsetCount);
-
-			writeU32(guideline->flags);
-			writeF32(guideline->maxHeight);
-			writeF32(guideline->minHeight);
-			writeF32(guideline->maxSnapRange);
-
-			writeData(guideline->vtx.data(), sizeof(Vec2f) * vtxCount);
-			writeData(guideline->knots.data(), sizeof(Vec4f) * knotCount);
-			writeData(guideline->offsets.data(), sizeof(f32) * offsetCount);
+			writeGuidelineToSnapshot(guideline);
 		}
 	}
 		
@@ -3072,30 +2854,7 @@ namespace LevelEditor
 			EditorSector* sector = s_curSnapshot.sectors.data();
 			for (u32 s = 0; s < sectorCount; s++, sector++)
 			{
-				sector->id = readU32();
-				sector->groupId = readU32();
-				sector->groupIndex = readU32();
-				readString(sector->name);
-				readData(&sector->floorTex, sizeof(LevelTexture));
-				readData(&sector->ceilTex, sizeof(LevelTexture));
-				sector->floorHeight = readF32();
-				sector->ceilHeight = readF32();
-				sector->secHeight = readF32();
-				sector->ambient = readU32();
-				sector->layer = readS32();
-				readData(sector->flags, sizeof(u32) * 3);
-
-				const u32 vtxCount = readU32();
-				const u32 wallCount = readU32();
-				const u32 objCount = readU32();
-				sector->vtx.resize(vtxCount);
-				sector->walls.resize(wallCount);
-				sector->obj.resize(objCount);
-
-				readData(sector->vtx.data(), u32(sizeof(Vec2f) * sector->vtx.size()));
-				readData(sector->walls.data(), u32(sizeof(EditorWall) * sector->walls.size()));
-				readData(sector->obj.data(), u32(sizeof(EditorObject) * sector->obj.size()));
-
+				readSectorFromSnapshot(sector);
 				// Compute derived data.
 				sectorToPolygon(sector);
 				sector->searchKey = 0;
@@ -3105,18 +2864,7 @@ namespace LevelEditor
 			Entity* entity = s_curSnapshot.entities.data();
 			for (u32 e = 0; e < entityCount; e++, entity++)
 			{
-				entity->id = readS32();
-				entity->categories = readS32();
-				readString(entity->name);
-				readString(entity->assetName);
-				entity->type = (EntityType)readS32();
-
-				readEntityLogic(entity->logic);
-				readEntityVar(entity->var);
-				readData(entity->bounds, sizeof(Vec3f) * 2);
-				readData(&entity->offset, sizeof(Vec3f));
-				readData(&entity->offsetAdj, sizeof(Vec3f));
-
+				readEntityFromSnapshot(entity);
 				// Sprite and obj data derived from type + assetName
 				loadSingleEntityData(entity);
 			}
@@ -3126,16 +2874,7 @@ namespace LevelEditor
 			LevelNote* note = s_curSnapshot.notes.data();
 			for (u32 n = 0; n < levelNoteCount; n++, note++)
 			{
-				note->id = readS32();
-				note->groupId = readU32();
-				note->groupIndex = readU32();
-				note->flags = readU32();
-				note->iconColor = readU32();
-				note->textColor = readU32();
-
-				readData(&note->pos, sizeof(Vec3f));
-				readData(&note->fade, sizeof(Vec2f));
-				readString(note->note);
+				readLevelNoteFromSnapshot(note);
 			}
 
 			// Guidelines.
@@ -3143,22 +2882,7 @@ namespace LevelEditor
 			Guideline* guideline = s_curSnapshot.guidelines.data();
 			for (u32 g = 0; g < guidelineCount; g++, guideline++)
 			{
-				guideline->id = readS32();
-				const s32 vtxCount = readS32();
-				const s32 knotCount = readS32();
-				const s32 offsetCount = readS32();
-				guideline->vtx.resize(vtxCount);
-				guideline->knots.resize(knotCount);
-				guideline->offsets.resize(offsetCount);
-
-				guideline->flags = readU32();
-				guideline->maxHeight = readF32();
-				guideline->minHeight = readF32();
-				guideline->maxSnapRange = readF32();
-
-				readData(guideline->vtx.data(), sizeof(Vec2f) * vtxCount);
-				readData(guideline->knots.data(), sizeof(Vec4f) * knotCount);
-				readData(guideline->offsets.data(), sizeof(f32) * offsetCount);
+				readGuidelineFromSnapshot(guideline);
 			}
 		}
 		// Then copy the snapshot to the level data itself. Its the new state.
