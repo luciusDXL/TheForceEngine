@@ -18,7 +18,6 @@
 
 namespace LevelEditor
 {
-	// For history
 	struct UniqueTexture
 	{
 		s32 originalId;

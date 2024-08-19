@@ -24,6 +24,9 @@
 #include <TFE_Archive/archive.h>
 #include <TFE_Ui/ui.h>
 
+#include <map>
+#include <string>
+
 namespace TFE_Editor
 {
 	// Set to 1 to enable
@@ -79,13 +82,15 @@ namespace TFE_Editor
 	static const f64 c_tooltipDelay = 0.2;
 	static bool s_canShowTooltips = false;
 
+	static std::map<std::string, TextureGpu*> s_gpuImages;
+
 	static TextureGpu* s_iconAtlas = nullptr;
 	
 	void menu();
 	void loadFonts();
 	void updateTooltips();
 	bool loadIcons();
-	void freeIcons();
+	void freeGpuImages();
 
 	WorkBuffer& getWorkBuffer()
 	{
@@ -115,6 +120,7 @@ namespace TFE_Editor
 		thumbnail_init(64);
 		TFE_Polygon::clipInit();
 		s_msgBox = {};
+		s_gpuImages.clear();
 	}
 
 	void disable()
@@ -122,7 +128,7 @@ namespace TFE_Editor
 		AssetBrowser::destroy();
 		thumbnail_destroy();
 		TFE_RenderShared::modelDraw_destroy();
-		freeIcons();
+		freeGpuImages();
 		TFE_Polygon::clipDestroy();
 	}
 		
@@ -132,9 +138,13 @@ namespace TFE_Editor
 		return s_iconAtlas != nullptr;
 	}
 
-	void freeIcons()
+	void freeGpuImages()
 	{
-		TFE_RenderBackend::freeTexture(s_iconAtlas);
+		for (std::map<std::string, TextureGpu*>::iterator iImage = s_gpuImages.begin(); iImage != s_gpuImages.end(); ++iImage)
+		{
+			TFE_RenderBackend::freeTexture(iImage->second);
+		}
+		s_gpuImages.clear();
 		s_iconAtlas = nullptr;
 	}
 		
@@ -993,9 +1003,15 @@ namespace TFE_Editor
 		}
 		return true;
 	}
-
+		
 	TextureGpu* loadGpuImage(const char* path)
 	{
+		std::map<std::string, TextureGpu*>::iterator iImage = s_gpuImages.find(path);
+		if (iImage != s_gpuImages.end())
+		{
+			return iImage->second;
+		}
+
 		char imagePath[TFE_MAX_PATH];
 		strcpy(imagePath, path);
 		if (!TFE_Paths::mapSystemPath(imagePath))
@@ -1010,6 +1026,7 @@ namespace TFE_Editor
 		if (image)
 		{
 			gpuImage = TFE_RenderBackend::createTexture(image->w, image->h, (u32*)image->pixels, MAG_FILTER_LINEAR);
+			s_gpuImages[path] = gpuImage;
 		}
 		return gpuImage;
 	}

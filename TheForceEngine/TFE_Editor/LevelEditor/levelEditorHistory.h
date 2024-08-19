@@ -24,6 +24,8 @@ namespace LevelEditor
 		LName_CopyTexture,
 		LName_ClearTexture,
 		LName_Autoalign,
+		LName_DeleteObject,
+		LName_AddObject,
 		LName_Count
 	};
 
@@ -56,4 +58,5 @@ namespace LevelEditor
 	void cmd_sectorChangeAttribute(u32 name, s32 count, const FeatureId* list, u32 attribId);
 	void cmd_sectorSetAttribute(u32 name, s32 count, const FeatureId* list, u32 attribId);
 	void cmd_sectorSnapshot(u32 name, std::vector<s32>& sectorIds);
+	void cmd_objectListSnapshot(u32 name, s32 sectorId);
 }

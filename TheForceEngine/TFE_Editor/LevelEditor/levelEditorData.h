@@ -253,10 +253,12 @@ namespace LevelEditor
 	void centerSignOnSurface(const EditorSector* sector, EditorWall* wall);
 
 	void level_createSnapshot(TFE_Editor::SnapshotBuffer* buffer);
-	void level_unpackSnapshot(s32 id, u32 size, void* data);
-
 	void level_createSectorSnapshot(TFE_Editor::SnapshotBuffer* buffer, std::vector<s32>& sectorIds);
+	void level_createEntiyListSnapshot(TFE_Editor::SnapshotBuffer* buffer, s32 sectorId);
+
+	void level_unpackSnapshot(s32 id, u32 size, void* data);
 	void level_unpackSectorSnapshot(u32 size, void* data);
+	void level_unpackEntiyListSnapshot(u32 size, void* data);
 
 	// Spatial Queries
 	s32  findSectorByName(const char* name, s32 excludeId = -1);

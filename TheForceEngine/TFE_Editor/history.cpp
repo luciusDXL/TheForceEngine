@@ -1,6 +1,7 @@
 #include "history.h"
 #include "errorMessages.h"
 #include <TFE_Archive/zstdCompression.h>
+#include <TFE_System/system.h>
 #include <assert.h>
 #include <algorithm>
 #include <cstring>
@@ -100,6 +101,13 @@ namespace TFE_Editor
 	u32 hBuffer_pushCommand()
 	{
 		u32 addr = (u32)s_historyBuffer.size();
+		// Make sure the next pointer is 4-byte aligned.
+		if ((addr & 3) != 0)
+		{
+			s_historyBuffer.resize(s_historyBuffer.size() + 4 - (addr & 3));
+			addr = (u32)s_historyBuffer.size();
+			assert((addr & 3) == 0);
+		}
 		s_history.push_back(addr);
 		return addr;
 	}
@@ -121,11 +129,14 @@ namespace TFE_Editor
 
 	void hideRange(s32 rMin, s32 rMax)
 	{
+		// Restore the buffer position afterward.
+		const u32 bufferAddr = s_curBufferAddr;
 		for (s32 i = rMin; i < rMax; i++)
 		{
 			CommandHeader* header = hBuffer_getHeader(i);
 			header->hidden = 1;
 		}
+		s_curBufferAddr = bufferAddr;
 	}
 		
 	// Create new commands and snapshots.
@@ -172,8 +183,10 @@ namespace TFE_Editor
 		header->depth = 0;
 		header->hidden = 0;
 
+		assert(s_history.size() > 0 && parentId >= 0);
 		s_curPosInHistory = u16(s_history.size() - 1);
 		hideRange(parentId + 1, s_curPosInHistory);
+
 		return id;
 	}
 
@@ -188,8 +201,8 @@ namespace TFE_Editor
 	bool history_createCommand(u16 cmd, u16 name)
 	{
 		u16 parentId = u16(s_curPosInHistory);
-		const CommandHeader* prevHeader = hBuffer_getHeader(parentId);
-		if (prevHeader->depth >= CMD_MAX_DEPTH)
+		const CommandHeader prevHeader = *hBuffer_getHeader(parentId);
+		if (prevHeader.depth >= CMD_MAX_DEPTH)
 		{
 			// Callback setup by the client.
 			s_snapshotBuffer.clear();
@@ -207,26 +220,30 @@ namespace TFE_Editor
 		header->cmdId = cmd;
 		header->cmdName = name;
 		header->parentId = parentId;
-		header->depth = prevHeader->depth + 1;
+		header->depth = prevHeader.depth + 1;
 		header->hidden = 0;
 		
+		assert(s_history.size() > 0);
 		s_curPosInHistory = u16(s_history.size() - 1);
 		hideRange(parentId + 1, s_curPosInHistory);
+
 		return true;
 	}
 
 	void history_step(s32 count)
 	{
 		if (count == 0) { return; }
+		if (count < 0 && s_curPosInHistory <= 0) { return; }
+		if (count > 0 && s_curPosInHistory >= (s32)s_history.size() - 1) { return; }
 
 		s32 pos = s_curPosInHistory;
 		s32 curParent = pos;
-		if (count < 0 && pos > 0)
+		if (count < 0)
 		{
 			CommandHeader* header = hBuffer_getHeader(pos);
 			pos = header->parentId;
 		}
-		else if (count > 0 && pos < (s32)s_history.size() - 1)
+		else if (count > 0)
 		{
 			pos++;
 			while (pos < s_history.size())
@@ -241,11 +258,38 @@ namespace TFE_Editor
 				pos++;
 			}
 		}
-		if (pos == s_curPosInHistory)
+		// Double-check...
+		if (pos == s_curPosInHistory || pos < 0 || pos >= (s32)s_history.size())
 		{
 			return;
 		}
 		history_setPos(pos);
+	}
+		
+	HistoryErrorType history_validateCommandHeaders(s32& errorIndex, u32& badValue)
+	{
+		s32 count = (s32)s_history.size();
+		errorIndex = -1;
+		HistoryErrorType errorType = hError_None;
+		for (s32 i = 0; i < count; i++)
+		{
+			const CommandHeader* header = hBuffer_getHeader(i);
+			if (header->cmdId >= s_cmdFunc.size())
+			{
+				errorIndex = i;
+				badValue = header->cmdId;
+				errorType = hError_InvalidCmdId;
+				break;
+			}
+			else if (header->cmdName >= s_cmdName.size())
+			{
+				errorIndex = i;
+				badValue = header->cmdName;
+				errorType = hError_InvalidNameId;
+				break;
+			}
+		}
+		return errorType;
 	}
 
 	void history_setPos(s32 pos)
@@ -261,6 +305,7 @@ namespace TFE_Editor
 
 			const CommandHeader* header = hBuffer_getHeader(pos);
 			if (header->cmdId == CMD_SNAPSHOT) { break; }
+			assert(header->cmdId < s_cmdFunc.size());
 
 			pos = header->parentId;
 		}
@@ -291,7 +336,7 @@ namespace TFE_Editor
 			}
 			else
 			{
-				assert(s_cmdFunc[cmdHeader->cmdId]);
+				assert(cmdHeader->cmdId < s_cmdFunc.size() && s_cmdFunc[cmdHeader->cmdId]);
 				s_cmdFunc[cmdHeader->cmdId]();
 			}
 		}
@@ -327,49 +372,56 @@ namespace TFE_Editor
 	// Get values from the buffer.
 	u8 hBuffer_getU8()
 	{
-		u8 value = *((u8*)&s_historyBuffer[s_curBufferAddr]);
+		u8 value;
+		memcpy(&value, &s_historyBuffer[s_curBufferAddr], sizeof(u8));
 		s_curBufferAddr += sizeof(u8);
 		return value;
 	}
 
 	s16 hBuffer_getS16()
 	{
-		s16 value = *((s16*)&s_historyBuffer[s_curBufferAddr]);
+		s16 value;
+		memcpy(&value, &s_historyBuffer[s_curBufferAddr], sizeof(s16));
 		s_curBufferAddr += sizeof(s16);
 		return value;
 	}
 
 	s32 hBuffer_getS32()
 	{
-		s32 value = *((s32*)&s_historyBuffer[s_curBufferAddr]);
+		s32 value;
+		memcpy(&value, &s_historyBuffer[s_curBufferAddr], sizeof(s32));
 		s_curBufferAddr += sizeof(s32);
 		return value;
 	}
 
 	f32 hBuffer_getF32()
 	{
-		f32 value = *((f32*)&s_historyBuffer[s_curBufferAddr]);
+		f32 value;
+		memcpy(&value, &s_historyBuffer[s_curBufferAddr], sizeof(f32));
 		s_curBufferAddr += sizeof(f32);
 		return value;
 	}
 
 	u32 hBuffer_getU32()
 	{
-		u32 value = *((u32*)&s_historyBuffer[s_curBufferAddr]);
+		u32 value;
+		memcpy(&value, &s_historyBuffer[s_curBufferAddr], sizeof(u32));
 		s_curBufferAddr += sizeof(u32);
 		return value;
 	}
 
 	u64 hBuffer_getU64()
 	{
-		u64 value = *((u64*)&s_historyBuffer[s_curBufferAddr]);
+		u64 value;
+		memcpy(&value, &s_historyBuffer[s_curBufferAddr], sizeof(u64));
 		s_curBufferAddr += sizeof(u64);
 		return value;
 	}
 
 	Vec2f hBuffer_getVec2f()
 	{
-		Vec2f value = *((Vec2f*)&s_historyBuffer[s_curBufferAddr]);
+		Vec2f value;
+		memcpy(&value, &s_historyBuffer[s_curBufferAddr], sizeof(Vec2f));
 		s_curBufferAddr += sizeof(Vec2f);
 		return value;
 	}
@@ -381,48 +433,13 @@ namespace TFE_Editor
 		return values;
 	}
 
-	const u16* hBuffer_getArrayU16(s32 count)
-	{
-		const u16* values = (u16*)&s_historyBuffer[s_curBufferAddr];
-		s_curBufferAddr += count * sizeof(u16);
-		return values;
-	}
-
-	const u32* hBuffer_getArrayU32(s32 count)
-	{
-		const u32* values = (u32*)&s_historyBuffer[s_curBufferAddr];
-		s_curBufferAddr += count * sizeof(u32);
-		return values;
-	}
-
-	const u64* hBuffer_getArrayU64(s32 count)
-	{
-		const u64* values = (u64*)&s_historyBuffer[s_curBufferAddr];
-		s_curBufferAddr += count * sizeof(u64);
-		return values;
-	}
-	
-	const f32* hBuffer_getArrayF32(s32 count)
-	{
-		const f32* values = (f32*)&s_historyBuffer[s_curBufferAddr];
-		s_curBufferAddr += count * sizeof(f32);
-		return values;
-	}
-
-	const Vec2f* hBuffer_getArrayVec2f(s32 count)
-	{
-		const Vec2f* values = (Vec2f*)&s_historyBuffer[s_curBufferAddr];
-		s_curBufferAddr += count * sizeof(Vec2f);
-		return values;
-	}
-
 	// Add values to the buffer.
 	void hBuffer_addU8(u8 value)
 	{
 		u8 dataSize = sizeof(u8);
 		s_historyBuffer.resize(s_curBufferAddr + dataSize);
 
-		*((u8*)&s_historyBuffer[s_curBufferAddr]) = value;
+		memcpy(&s_historyBuffer[s_curBufferAddr], &value, dataSize);
 		s_curBufferAddr += dataSize;
 	}
 
@@ -431,7 +448,7 @@ namespace TFE_Editor
 		u16 dataSize = sizeof(s16);
 		s_historyBuffer.resize(s_curBufferAddr + dataSize);
 
-		*((s16*)&s_historyBuffer[s_curBufferAddr]) = value;
+		memcpy(&s_historyBuffer[s_curBufferAddr], &value, dataSize);
 		s_curBufferAddr += dataSize;
 	}
 
@@ -440,7 +457,7 @@ namespace TFE_Editor
 		u32 dataSize = sizeof(s32);
 		s_historyBuffer.resize(s_curBufferAddr + dataSize);
 
-		*((s32*)&s_historyBuffer[s_curBufferAddr]) = value;
+		memcpy(&s_historyBuffer[s_curBufferAddr], &value, dataSize);
 		s_curBufferAddr += dataSize;
 	}
 
@@ -449,7 +466,7 @@ namespace TFE_Editor
 		u32 dataSize = sizeof(f32);
 		s_historyBuffer.resize(s_curBufferAddr + dataSize);
 
-		*((f32*)&s_historyBuffer[s_curBufferAddr]) = value;
+		memcpy(&s_historyBuffer[s_curBufferAddr], &value, dataSize);
 		s_curBufferAddr += dataSize;
 	}
 
@@ -458,7 +475,7 @@ namespace TFE_Editor
 		u32 dataSize = sizeof(u32);
 		s_historyBuffer.resize(s_curBufferAddr + dataSize);
 
-		*((u32*)&s_historyBuffer[s_curBufferAddr]) = value;
+		memcpy(&s_historyBuffer[s_curBufferAddr], &value, dataSize);
 		s_curBufferAddr += dataSize;
 	}
 
@@ -467,7 +484,7 @@ namespace TFE_Editor
 		u32 dataSize = sizeof(u64);
 		s_historyBuffer.resize(s_curBufferAddr + dataSize);
 
-		*((u64*)&s_historyBuffer[s_curBufferAddr]) = value;
+		memcpy(&s_historyBuffer[s_curBufferAddr], &value, dataSize);
 		s_curBufferAddr += dataSize;
 	}
 
@@ -476,7 +493,7 @@ namespace TFE_Editor
 		u32 dataSize = sizeof(Vec2f);
 		s_historyBuffer.resize(s_curBufferAddr + dataSize);
 
-		*((Vec2f*)&s_historyBuffer[s_curBufferAddr]) = value;
+		memcpy(&s_historyBuffer[s_curBufferAddr], &value, dataSize);
 		s_curBufferAddr += dataSize;
 	}
 
@@ -485,58 +502,7 @@ namespace TFE_Editor
 		u32 dataSize = count;
 		s_historyBuffer.resize(s_curBufferAddr + dataSize);
 
-		u8* dstValues = (u8*)&s_historyBuffer[s_curBufferAddr];
-		memcpy(dstValues, values, dataSize);
-		s_curBufferAddr += dataSize;
-	}
-
-	void hBuffer_addArrayU16(s32 count, const u16* values)
-	{
-		u32 dataSize = count * sizeof(u16);
-		s_historyBuffer.resize(s_curBufferAddr + dataSize);
-
-		u16* dstValues = (u16*)&s_historyBuffer[s_curBufferAddr];
-		memcpy(dstValues, values, dataSize);
-		s_curBufferAddr += dataSize;
-	}
-
-	void hBuffer_addArrayU32(s32 count, const u32* values)
-	{
-		u32 dataSize = count * sizeof(u32);
-		s_historyBuffer.resize(s_curBufferAddr + dataSize);
-
-		u32* dstValues = (u32*)&s_historyBuffer[s_curBufferAddr];
-		memcpy(dstValues, values, dataSize);
-		s_curBufferAddr += dataSize;
-	}
-
-	void hBuffer_addArrayU64(s32 count, const u64* values)
-	{
-		u32 dataSize = count * sizeof(u64);
-		s_historyBuffer.resize(s_curBufferAddr + dataSize);
-
-		u64* dstValues = (u64*)&s_historyBuffer[s_curBufferAddr];
-		memcpy(dstValues, values, dataSize);
-		s_curBufferAddr += dataSize;
-	}
-		
-	void hBuffer_addArrayF32(s32 count, const f32* values)
-	{
-		u32 dataSize = count * sizeof(f32);
-		s_historyBuffer.resize(s_curBufferAddr + dataSize);
-
-		f32* dstValues = (f32*)&s_historyBuffer[s_curBufferAddr];
-		memcpy(dstValues, values, dataSize);
-		s_curBufferAddr += dataSize;
-	}
-
-	void hBuffer_addArrayVec2f(s32 count, const Vec2f* values)
-	{
-		u32 dataSize = count * sizeof(Vec2f);
-		s_historyBuffer.resize(s_curBufferAddr + dataSize);
-
-		Vec2f* dstValues = (Vec2f*)&s_historyBuffer[s_curBufferAddr];
-		memcpy(dstValues, values, dataSize);
+		memcpy(&s_historyBuffer[s_curBufferAddr], values, dataSize);
 		s_curBufferAddr += dataSize;
 	}
 }

@@ -2598,9 +2598,103 @@ namespace LevelEditor
 
 		return !result->empty();
 	}
+
+	// Snapshot of a full entity list.
+	void level_createEntiyListSnapshot(SnapshotBuffer* buffer, s32 sectorId)
+	{
+		s_uniqueEntities.clear();
+		setSnapshotWriteBuffer(buffer);
+
+		const std::vector<EditorObject>* objList = nullptr;
+		if (sectorId >= 0)
+		{
+			objList = &s_level.sectors[sectorId].obj;
+		}
+		else
+		{
+			// TODO: Handle entites outside of a sector.
+			assert(0);
+		}
+
+		const u32 objCount = (u32)objList->size();
+		const EditorObject* srcObj = objList->data();
+
+		std::vector<EditorObject> dstObjList = *objList;
+		EditorObject* dstObject = dstObjList.data();
+		for (u32 e = 0; e < objCount; e++, srcObj++, dstObject++)
+		{
+			dstObject->entityId = addUniqueEntity(srcObj->entityId, s_uniqueEntities);
+		}
+
+		u32 uniqueEntityCount = (u32)s_uniqueEntities.size();
+		writeS32(sectorId);
+		writeU32(uniqueEntityCount);
+		writeU32(objCount);
+
+		// Write unique entities.
+		UniqueEntity* uentity = s_uniqueEntities.data();
+		for (u32 e = 0; e < uniqueEntityCount; e++, uentity++)
+		{
+			uentity->entity.id = uentity->newId;
+			writeEntityToSnapshot(&uentity->entity);
+		}
+
+		// Write objects.
+		writeData(dstObjList.data(), u32(sizeof(EditorObject) * objCount));
+	}
+
+	void level_unpackEntiyListSnapshot(u32 size, void* data)
+	{
+		setSnapshotReadBuffer((u8*)data, size);
+
+		const s32 sectorId = readS32();
+		const u32 entityCount = readU32();      // Number of unique entities from sectors in snapshot.
+		const u32 objCount = readU32();
+
+		std::vector<EditorObject>* objList = nullptr;
+		if (sectorId >= 0)
+		{
+			assert(sectorId < (s32)s_level.sectors.size());
+			objList = &s_level.sectors[sectorId].obj;
+		}
+		else
+		{
+			// TODO: Handle entites outside of a sector.
+			assert(0);
+		}
+
+		std::vector<s32> remapTableEntity(entityCount);
+		for (u32 e = 0; e < entityCount; e++)
+		{
+			Entity entity;
+			readEntityFromSnapshot(&entity);
+
+			// Search the entity list for a match.
+			// If not, add a new entity.
+			const s32 id = addEntityToLevel(&entity);
+			assert(id >= 0);
+
+			loadSingleEntityData(&s_level.entities[id]);
+			remapTableEntity[e] = id;
+		}
+
+		objList->resize(objCount);
+		readData(objList->data(), u32(sizeof(EditorObject) * objCount));
+
+		EditorObject* obj = objList->data();
+		for (u32 i = 0; i < objCount; i++, obj++)
+		{
+			if (obj->entityId < 0) { continue; }
+			assert(obj->entityId < entityCount);
+			obj->entityId = remapTableEntity[obj->entityId];
+		}
+	}
 				
 	void level_createSectorSnapshot(SnapshotBuffer* buffer, std::vector<s32>& sectorIds)
 	{
+		s_uniqueEntities.clear();
+		s_uniqueTextures.clear();
+
 		setSnapshotWriteBuffer(buffer);
 		// Sort by id from smallest to largest.
 		std::sort(sectorIds.begin(), sectorIds.end());
@@ -2704,6 +2798,7 @@ namespace LevelEditor
 			// Search the entity list for a match.
 			// If not, add a new entity.
 			remapTableEntity[e] = addEntityToLevel(&entity);
+			loadSingleEntityData(&entity);
 		}
 
 		// Sectors.

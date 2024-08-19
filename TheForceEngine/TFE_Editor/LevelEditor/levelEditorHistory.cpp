@@ -1,5 +1,6 @@
 #include "levelEditorHistory.h"
 #include "sharedState.h"
+#include <TFE_System/system.h>
 #include <TFE_Editor/LevelEditor/levelEditor.h>
 #include <TFE_Editor/LevelEditor/levelEditorData.h>
 #include <TFE_Archive/zstdCompression.h>
@@ -21,7 +22,7 @@ namespace LevelEditor
 	enum LevCommand
 	{
 		LCmd_Sector_Snapshot = CMD_START,
-		LCmd_Entity_Snapshot,
+		LCmd_ObjList_Snapshot,
 		LCmd_Single_Entity_Snapshot,
 		LCmd_Notes_Snapshot,
 		LCmd_Guidelines_Snapshot,
@@ -38,7 +39,7 @@ namespace LevelEditor
 				
 	// Command Functions
 	void cmd_applySectorSnapshot();
-	void cmd_applyEntitySnapshot();
+	void cmd_applyObjListSnapshot();
 	void cmd_applySingleEntitySnapshot();
 	void cmd_applyNotesSnapshot();
 	void cmd_applyGuidelinesSnapshot();
@@ -54,7 +55,7 @@ namespace LevelEditor
 		history_init(level_unpackSnapshot, level_createSnapshot);
 
 		history_registerCommand(LCmd_Sector_Snapshot, cmd_applySectorSnapshot);
-		history_registerCommand(LCmd_Entity_Snapshot, cmd_applyEntitySnapshot);
+		history_registerCommand(LCmd_ObjList_Snapshot, cmd_applyObjListSnapshot);
 		history_registerCommand(LCmd_Single_Entity_Snapshot, cmd_applySingleEntitySnapshot);
 		history_registerCommand(LCmd_Notes_Snapshot, cmd_applyNotesSnapshot);
 		history_registerCommand(LCmd_Guidelines_Snapshot, cmd_applyGuidelinesSnapshot);
@@ -78,6 +79,8 @@ namespace LevelEditor
 		history_registerName(LName_CopyTexture, "Copy Texture");
 		history_registerName(LName_ClearTexture, "Clear Texture");
 		history_registerName(LName_Autoalign, "Autoalign Textures");
+		history_registerName(LName_DeleteObject, "Delete Object(s)");
+		history_registerName(LName_AddObject, "Added Object(s)");
 
 		s_lastMoveTex = 0.0;
 	}
@@ -127,7 +130,7 @@ namespace LevelEditor
 		CMD_BEGIN(LCmd_Attrib_Change, name);
 		{
 			hBuffer_addS32(count);
-			hBuffer_addArrayU64(count, list);
+			hBuffer_addArrayU8(count * sizeof(FeatureId), (u8*)list);
 			hBuffer_addU8(type);
 			hBuffer_addU8(attribId);
 			hBuffer_addS16(attribSize);
@@ -141,7 +144,7 @@ namespace LevelEditor
 		CMD_BEGIN(LCmd_Attrib_Set, name);
 		{
 			hBuffer_addS32(count);
-			hBuffer_addArrayU64(count, list);
+			hBuffer_addArrayU8(count * sizeof(FeatureId), (u8*)list);
 			hBuffer_addU8(type);
 			hBuffer_addU8(attribId);
 			hBuffer_addS16(attribSize);
@@ -170,6 +173,34 @@ namespace LevelEditor
 		}
 
 		CMD_BEGIN(LCmd_Sector_Snapshot, name);
+		{
+			hBuffer_addU32(uncompressedSize);
+			hBuffer_addU32(compressedSize);
+			hBuffer_addArrayU8(compressedSize, s_workBuffer[1].data());
+		}
+		CMD_END();
+	}
+
+	void cmd_objectListSnapshot(u32 name, s32 sectorId)
+	{
+		s_workBuffer[0].clear();
+		s_workBuffer[1].clear();
+		level_createEntiyListSnapshot(&s_workBuffer[0], sectorId);
+		if (s_workBuffer[0].empty()) { return; }
+
+		const u32 uncompressedSize = (u32)s_workBuffer[0].size();
+		u32 compressedSize = 0;
+		if (zstd_compress(s_workBuffer[1], s_workBuffer[0].data(), uncompressedSize, 4))
+		{
+			compressedSize = (u32)s_workBuffer[1].size();
+		}
+		// ERROR
+		if (!compressedSize)
+		{
+			return;
+		}
+
+		CMD_BEGIN(LCmd_ObjList_Snapshot, name);
 		{
 			hBuffer_addU32(uncompressedSize);
 			hBuffer_addU32(compressedSize);
@@ -312,9 +343,17 @@ namespace LevelEditor
 		}
 	}
 
-	void cmd_applyEntitySnapshot()
+	void cmd_applyObjListSnapshot()
 	{
-		// STUB
+		const u32 uncompressedSize = hBuffer_getU32();
+		const u32 compressedSize = hBuffer_getU32();
+		const u8* compressedData = hBuffer_getArrayU8(compressedSize);
+
+		s_workBuffer[0].resize(uncompressedSize);
+		if (zstd_decompress(s_workBuffer[0].data(), uncompressedSize, compressedData, compressedSize))
+		{
+			level_unpackEntiyListSnapshot(uncompressedSize, s_workBuffer[0].data());
+		}
 	}
 
 	void cmd_applySingleEntitySnapshot()
@@ -340,17 +379,20 @@ namespace LevelEditor
 	void cmd_applyAttribChange()
 	{
 		const s32 count = hBuffer_getS32();
-		const FeatureId* list = (FeatureId*)hBuffer_getArrayU64(count);
+		const u8* featureIdData = hBuffer_getArrayU8(count * sizeof(FeatureId));
 		const u8 type = hBuffer_getU8();
 		const u8 attribId = hBuffer_getU8();
 		const s16 attribSize = hBuffer_getS16();
 		const u8* data = hBuffer_getArrayU8(attribSize * count);
 
+		std::vector<FeatureId> list(count);
+		memcpy(list.data(), featureIdData, count * sizeof(FeatureId));
+
 		switch (type)
 		{
 			case HTYPE_SECTOR:
 			{
-				cmd_sectorApplyChangeAttribute(count, list, attribId, attribSize, data);
+				cmd_sectorApplyChangeAttribute(count, list.data(), attribId, attribSize, data);
 			} break;
 			//...
 		}
@@ -359,17 +401,20 @@ namespace LevelEditor
 	void cmd_applyAttribSet()
 	{
 		const s32 count = hBuffer_getS32();
-		const FeatureId* list = (FeatureId*)hBuffer_getArrayU64(count);
+		const u8* featureIdData = hBuffer_getArrayU8(count * sizeof(FeatureId));
 		const u8 type = hBuffer_getU8();
 		const u8 attribId = hBuffer_getU8();
 		const s16 attribSize = hBuffer_getS16();
 		const u8* data = hBuffer_getArrayU8(attribSize);
 
+		std::vector<FeatureId> list(count);
+		memcpy(list.data(), featureIdData, count * sizeof(FeatureId));
+
 		switch (type)
 		{
 			case HTYPE_SECTOR:
 			{
-				cmd_sectorApplySetAttribute(count, list, attribId, attribSize, data);
+				cmd_sectorApplySetAttribute(count, list.data(), attribId, attribSize, data);
 			} break;
 			//...
 		}

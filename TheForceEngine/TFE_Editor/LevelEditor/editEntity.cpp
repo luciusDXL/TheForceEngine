@@ -2,6 +2,7 @@
 #include "hotkeys.h"
 #include "levelEditor.h"
 #include "levelEditorData.h"
+#include "levelEditorHistory.h"
 #include "sharedState.h"
 #include <TFE_Editor/LevelEditor/Rendering/viewport.h>
 #include <TFE_Editor/LevelEditor/Rendering/grid.h>
@@ -150,6 +151,10 @@ namespace LevelEditor
 				pos.y = min(hoverSector->ceilHeight, pos.y);
 			}
 			addEntityToSector(hoverSector, &s_entityDefList[s_selectedEntity], &pos);
+			if (hoverSector)
+			{
+				cmd_objectListSnapshot(LName_AddObject, hoverSector->id);
+			}
 		}
 		else if (s_singleClick && s_featureHovered.isObject && s_featureHovered.sector && s_featureHovered.featureIndex >= 0)
 		{
@@ -334,20 +339,27 @@ namespace LevelEditor
 		if (getEditAction(ACTION_DELETE))
 		{
 			bool deleted = false;
+			s32 sectorId = -1;
 			if (s_featureCur.isObject && s_featureCur.sector && s_featureCur.featureIndex >= 0)
 			{
 				edit_deleteObject(s_featureCur.sector, s_featureCur.featureIndex);
+				sectorId = s_featureCur.sector->id;
 				deleted = true;
 			}
 			else if (s_featureHovered.isObject && s_featureHovered.sector && s_featureHovered.featureIndex >= 0)
 			{
 				edit_deleteObject(s_featureHovered.sector, s_featureHovered.featureIndex);
+				sectorId = s_featureHovered.sector->id;
 				deleted = true;
 			}
 			if (deleted)
 			{
 				s_featureHovered = {};
 				s_featureCur = {};
+			}
+			if (sectorId >= 0)
+			{
+				cmd_objectListSnapshot(LName_DeleteObject, sectorId);
 			}
 		}
 	}
