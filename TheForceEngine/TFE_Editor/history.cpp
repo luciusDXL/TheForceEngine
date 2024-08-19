@@ -178,7 +178,7 @@ namespace TFE_Editor
 
 		CommandHeader* header = hBuffer_createHeader();
 		header->cmdId = CMD_SNAPSHOT;
-		header->cmdName = 0;
+		header->cmdName = id; // this holds the snapshot ID instead of a name for snapshots (which have their own name).
 		header->parentId = parentId;
 		header->depth = 0;
 		header->hidden = 0;
@@ -207,11 +207,7 @@ namespace TFE_Editor
 			// Callback setup by the client.
 			s_snapshotBuffer.clear();
 			s_snapshotCreate(&s_snapshotBuffer);
-
-			// TODO: Compress
-
-			// Create the snapshot itself.
-			history_createSnapshotInternal((u32)s_snapshotBuffer.size(), s_snapshotBuffer.data(), "");
+			history_createSnapshotInternal((u32)s_snapshotBuffer.size(), s_snapshotBuffer.data(), s_cmdName[name].c_str());
 			// Return false to let the caller know a snapshot was created instead of the command.
 			return false;
 		}
@@ -319,7 +315,7 @@ namespace TFE_Editor
 
 			if (cmdHeader->cmdId == CMD_SNAPSHOT)
 			{
-				const s32 id = cmdList[i];
+				const s32 id = cmdHeader->cmdName;
 				Snapshot* snapshot = &s_snapShots[id];
 				if (snapshot->uncompressedSize > snapshot->compressedSize)
 				{
