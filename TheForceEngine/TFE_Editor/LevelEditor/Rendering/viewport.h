@@ -35,6 +35,7 @@ namespace LevelEditor
 	void viewport_render(EditorView view, u32 flags = VRF_NONE);
 	const TextureGpu* viewport_getTexture();
 	void viewport_update(s32 resvWidth, s32 resvHeight);
+	void viewport_setNoteIcon3dImage(TextureGpu* image);
 
 	void viewport_clearRail();
 	void viewport_setRail(const Vec3f* rail, s32 dirCount = 1, Vec3f* moveDir = nullptr);

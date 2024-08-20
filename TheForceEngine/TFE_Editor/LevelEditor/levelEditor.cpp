@@ -188,6 +188,7 @@ namespace LevelEditor
 		"64",
 	};
 	static TextureGpu* s_boolToolbarData = nullptr;
+	static TextureGpu* s_levelNoteIcon = nullptr;
 
 	////////////////////////////////////////////////////////
 	// Forward Declarations
@@ -316,6 +317,17 @@ namespace LevelEditor
 			LE_ERROR("Failed to load toolbar images 'UI_Images/Boolean_32x3.png'");
 		}
 
+		s_levelNoteIcon = loadGpuImage("UI_Images/LevelNote.png");
+		if (s_levelNoteIcon)
+		{
+			LE_INFO("Loaded level note icon 'UI_Images/LevelNote.png'");
+			viewport_setNoteIcon3dImage(s_levelNoteIcon);
+		}
+		else
+		{
+			LE_ERROR("Failed to load level note icon 'UI_Images/LevelNote.png'");
+		}
+
 		u32 idx = 0;
 		for (s32 i = -15; i < 16; i++, idx += 4)
 		{
@@ -371,8 +383,8 @@ namespace LevelEditor
 		viewport_destroy();
 		TFE_RenderShared::destroy();
 
-		TFE_RenderBackend::freeTexture(s_boolToolbarData);
 		s_boolToolbarData = nullptr;
+		s_levelNoteIcon = nullptr;
 
 		levHistory_destroy();
 		browserFreeIcons();

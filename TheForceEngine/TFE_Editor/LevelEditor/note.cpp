@@ -26,7 +26,7 @@ using namespace TFE_Editor;
 namespace LevelEditor
 {
 	const f32 c_levelNoteRadius2d = 1.0f;
-	const f32 c_levelNoteRadius3d = 0.25f;
+	const f32 c_levelNoteRadius3d = 1.0f;
 	const u32 c_noteColors[3] =
 	{
 		0xffffff80,

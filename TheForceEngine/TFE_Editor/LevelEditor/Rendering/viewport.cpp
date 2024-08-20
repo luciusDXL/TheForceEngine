@@ -138,6 +138,7 @@ namespace LevelEditor
 	u32 s_viewportRenderFlags = VRF_NONE;
 
 	Rail s_rail = {};
+	TextureGpu* s_noteIcon3dImage = nullptr;
 
 	void renderLevel2D();
 	void renderLevel3D();
@@ -220,6 +221,11 @@ namespace LevelEditor
 			TFE_RenderBackend::freeRenderTarget(s_viewportRt);
 			s_viewportRt = TFE_RenderBackend::createRenderTarget(s_viewportSize.x, s_viewportSize.z, true);
 		}
+	}
+
+	void viewport_setNoteIcon3dImage(TextureGpu* image)
+	{
+		s_noteIcon3dImage = image;
 	}
 
 	const TextureGpu* viewport_getTexture()
@@ -1800,6 +1806,8 @@ namespace LevelEditor
 
 	void drawNoteIcon3d(LevelNote* note, s32 id, u32 objColor, const Vec3f& cameraRgt, const Vec3f& cameraUp)
 	{
+		if (!s_noteIcon3dImage) { return; }
+
 		const Vec3f pos = note->pos;
 		const f32 width = c_levelNoteRadius3d;
 				
@@ -1817,7 +1825,7 @@ namespace LevelEditor
 			fade = clamp(1.0f - (dist - note->fade.x) / (note->fade.z - note->fade.x), 0.0f, 1.0f);
 		}
 
-		u32 borderColor = fadeAlpha(fade, objColor);
+		u32 borderColor = 0;// fadeAlpha(fade, objColor);
 		if (s_curLevelNote == id)
 		{
 			borderColor = c_noteColors[s_hoveredLevelNote == id ? 2 : 1];
@@ -1841,9 +1849,8 @@ namespace LevelEditor
 			// Repeat the first corner again for line drawing later.
 			{ pos.x + x0*deltaX.x + y1*deltaY.x, pos.y + y1*deltaY.y + x0*deltaX.y, pos.z + x0*deltaX.z + y1*deltaY.z }
 		};
-		const f32 cellSize = 34.0f / 272.0f;
-		const f32 u0 = 7.0f*cellSize, u1 = u0 + cellSize;
-		const f32 v0 = 3.0f*cellSize, v1 = v0 + cellSize;
+		const f32 u0 = 0.0f, u1 = 1.0f;
+		const f32 v0 = 1.0f, v1 = 0.0f;
 		const Vec2f uv[] =
 		{
 			{ u0, v1 },
@@ -1852,11 +1859,14 @@ namespace LevelEditor
 			{ u0, v0 }
 		};
 		s32 idx[] = { 0, 1, 2, 0, 2, 3 };
-		triDraw3d_addTextured(TRIMODE_BLEND, 6, 4, corners, uv, idx, objColor, false, TFE_Editor::getIconAtlas(), false, false);
+		triDraw3d_addTextured(TRIMODE_BLEND, 6, 4, corners, uv, idx, objColor, false, s_noteIcon3dImage, false, false);
 
-		for (s32 i = 0; i < 4; i++)
+		if (borderColor)
 		{
-			lineDraw3d_addLine(3.0f, &corners[i], &borderColor);
+			for (s32 i = 0; i < 4; i++)
+			{
+				lineDraw3d_addLine(3.0f, &corners[i], &borderColor);
+			}
 		}
 	}
 			
