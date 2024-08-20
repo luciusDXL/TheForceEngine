@@ -1381,6 +1381,9 @@
     <ClInclude Include="TFE_Editor\LevelEditor\levelDataSnapshot.h">
       <Filter>Source\TFE_Editor\LevelEditor</Filter>
     </ClInclude>
+    <ClInclude Include="TFE_Editor\historyView.h">
+      <Filter>Source\TFE_Editor</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -2402,6 +2405,9 @@
     </ClCompile>
     <ClCompile Include="TFE_Editor\LevelEditor\levelDataSnapshot.cpp">
       <Filter>Source\TFE_Editor\LevelEditor</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Editor\historyView.cpp">
+      <Filter>Source\TFE_Editor</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

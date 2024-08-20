@@ -464,6 +464,7 @@ echo ^)";
     <ClInclude Include="TFE_Editor\editorResources.h" />
     <ClInclude Include="TFE_Editor\errorMessages.h" />
     <ClInclude Include="TFE_Editor\history.h" />
+    <ClInclude Include="TFE_Editor\historyView.h" />
     <ClInclude Include="TFE_Editor\LevelEditor\browser.h" />
     <ClInclude Include="TFE_Editor\LevelEditor\camera.h" />
     <ClInclude Include="TFE_Editor\LevelEditor\contextMenu.h" />
@@ -846,6 +847,7 @@ echo ^)";
     <ClCompile Include="TFE_Editor\editorResources.cpp" />
     <ClCompile Include="TFE_Editor\errorMessages.cpp" />
     <ClCompile Include="TFE_Editor\history.cpp" />
+    <ClCompile Include="TFE_Editor\historyView.cpp" />
     <ClCompile Include="TFE_Editor\LevelEditor\browser.cpp" />
     <ClCompile Include="TFE_Editor\LevelEditor\camera.cpp" />
     <ClCompile Include="TFE_Editor\LevelEditor\contextMenu.cpp" />

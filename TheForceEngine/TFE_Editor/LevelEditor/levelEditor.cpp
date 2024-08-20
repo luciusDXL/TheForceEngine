@@ -3444,12 +3444,15 @@ namespace LevelEditor
 			ImGui::Separator();
 			if (ImGui::MenuItem("Undo", "Ctrl+Z", (bool*)NULL))
 			{
+				levHistory_undo();
 			}
 			if (ImGui::MenuItem("Redo", "Ctrl+Y", (bool*)NULL))
 			{
+				levHistory_redo();
 			}
 			if (ImGui::MenuItem("History View", NULL, (s_lwinOpen & LWIN_HISTORY) != 0))
 			{
+				openEditorPopup(POPUP_HISTORY_VIEW);
 			}
 			ImGui::Separator();
 			if (ImGui::MenuItem("Cut", "Ctrl+X", (bool*)NULL))

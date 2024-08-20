@@ -46,12 +46,14 @@ namespace TFE_Editor
 	bool history_createCommand(u16 cmd, u16 name);
 	void history_step(s32 count);
 	void history_setPos(s32 pos);
+	void history_showBranch(s32 pos);
 	s32  history_getPos();
-	s32  history_getSize();
+	u32  history_getSize();
+	u32  history_getItemCount();
+	const char* history_getItemNameAndState(u32 index, u32& parentId, bool& isHidden);
 
 	// Handle merging commands.
 	bool history_canMergeCommand(u16 cmd, u16 name, const void* dataToMatch, u32 matchSize);
-	u8*  history_getPrevCmdBufferData(s32 offset);
 
 	// Get values from the buffer.
 	u8    hBuffer_getU8();

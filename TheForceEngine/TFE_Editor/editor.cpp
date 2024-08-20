@@ -3,6 +3,7 @@
 #include "editorLevel.h"
 #include "editorResources.h"
 #include "editorProject.h"
+#include "historyView.h"
 
 #include <TFE_Asset/imageAsset.h>
 #include <TFE_Settings/settings.h>
@@ -320,6 +321,10 @@ namespace TFE_Editor
 			{
 				ImGui::OpenPopup("User Preferences");
 			} break;
+			case POPUP_HISTORY_VIEW:
+			{
+				ImGui::OpenPopup("History View");
+			} break;
 		}
 	}
 
@@ -421,6 +426,14 @@ namespace TFE_Editor
 			case POPUP_LEV_USER_PREF:
 			{
 				if (LevelEditor::userPreferences())
+				{
+					ImGui::CloseCurrentPopup();
+					s_editorPopup = POPUP_NONE;
+				}
+			} break;
+			case POPUP_HISTORY_VIEW:
+			{
+				if (historyView())
 				{
 					ImGui::CloseCurrentPopup();
 					s_editorPopup = POPUP_NONE;

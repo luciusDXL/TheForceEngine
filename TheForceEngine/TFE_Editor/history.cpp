@@ -40,7 +40,6 @@ namespace TFE_Editor
 	std::vector<u32> s_history;
 	std::vector<u8> s_historyBuffer;
 	std::vector<u8> s_snapshotBuffer;
-	std::vector<u8> s_unpackedData;
 
 	u32 s_curPosInHistory = 0;
 	u32 s_curBufferAddr = 0;
@@ -97,7 +96,7 @@ namespace TFE_Editor
 		}
 		s_cmdName[id] = name;
 	}
-
+		
 	u32 hBuffer_pushCommand()
 	{
 		u32 addr = (u32)s_historyBuffer.size();
@@ -288,6 +287,32 @@ namespace TFE_Editor
 		return errorType;
 	}
 
+	void history_showBranch(s32 pos)
+	{
+		assert(pos >= 0 && pos < (s32)s_history.size());
+		s32 count = (s32)s_history.size();
+
+		// Hide everything to start.
+		for (s32 i = 0; i < count; i++)
+		{
+			CommandHeader* header = hBuffer_getHeader(i);
+			header->hidden = 1;
+		}
+
+		// Then work backwards from the position to the root and unhide.
+		s32 curPos = pos;
+		while (1)
+		{
+			CommandHeader* header = hBuffer_getHeader(curPos);
+			header->hidden = 0;
+			if (curPos == 0)
+			{
+				break;
+			}
+			curPos = header->parentId;
+		}
+	}
+
 	void history_setPos(s32 pos)
 	{
 		assert(pos >= 0 && pos < (s32)s_history.size());
@@ -319,10 +344,10 @@ namespace TFE_Editor
 				Snapshot* snapshot = &s_snapShots[id];
 				if (snapshot->uncompressedSize > snapshot->compressedSize)
 				{
-					s_unpackedData.resize(snapshot->uncompressedSize);
-					if (zstd_decompress(s_unpackedData.data(), snapshot->uncompressedSize, snapshot->compressedData.data(), snapshot->compressedSize))
+					s_snapshotBuffer.resize(snapshot->uncompressedSize);
+					if (zstd_decompress(s_snapshotBuffer.data(), snapshot->uncompressedSize, snapshot->compressedData.data(), snapshot->compressedSize))
 					{
-						s_snapshotUnpack(id, snapshot->uncompressedSize, s_unpackedData.data());
+						s_snapshotUnpack(id, snapshot->uncompressedSize, s_snapshotBuffer.data());
 					}
 				}
 				else
@@ -338,31 +363,64 @@ namespace TFE_Editor
 		}
 	}
 
+	u32 history_getItemCount()
+	{
+		return (u32)s_history.size();
+	}
+
+	const char* history_getItemNameAndState(u32 index, u32& parentId, bool& isHidden)
+	{
+		const char* name = nullptr;
+
+		if (index >= s_history.size()) { return nullptr; }
+		const u32 bufferAddr = s_curBufferAddr;
+		CommandHeader* header = hBuffer_getHeader(index);
+		if (header && header->cmdId == CMD_SNAPSHOT)
+		{
+			name = s_snapShots[header->cmdName].name.c_str();
+		}
+		else if (header)
+		{
+			name = s_cmdName[header->cmdName].c_str();
+		}
+		parentId = header->parentId;
+		isHidden = header->hidden ? true : false;
+		s_curBufferAddr = bufferAddr;
+		return name;
+	}
+
 	s32 history_getPos()
 	{
 		return s_curPosInHistory;
 	}
 
-	s32 history_getSize()
+	u32 history_getSize()
 	{
-		return (s32)s_history.size();
+		const s32 snapshotCount = (s32)s_snapShots.size();
+		const Snapshot* snapshot = s_snapShots.data();
+
+		u32 size = (u32)s_historyBuffer.size();
+		for (s32 i = 0; i < snapshotCount; i++, snapshot++)
+		{
+			size += (u32)snapshot->compressedData.size();
+			size += (u32)snapshot->name.length();
+			size += sizeof(Snapshot);
+		}
+		size += (u32)s_history.size() * sizeof(u32);
+		return size;
 	}
 		
 	bool history_canMergeCommand(u16 cmd, u16 name, const void* dataToMatch, u32 matchSize)
 	{
-		CommandHeader* header = hBuffer_getHeader(s_curPosInHistory - 1);
-		if (header->cmdId != cmd || header->cmdName != name)
+		if (s_history.size() <= 1) { return false; }
+
+		CommandHeader* header = hBuffer_getHeader(s_curPosInHistory);
+		if (header->cmdId == CMD_SNAPSHOT || header->cmdId != cmd || header->cmdName != name)
 		{
 			return false;
 		}
-		const u8* prevCmdData = (u8*)&s_historyBuffer[s_curBufferAddr];
-		return memcmp(dataToMatch, prevCmdData, matchSize) == 0;
-	}
-
-	u8* history_getPrevCmdBufferData(s32 offset)
-	{
-		hBuffer_getHeader(s_curPosInHistory - 1);
-		return (u8*)&s_historyBuffer[s_curBufferAddr + offset];
+		const u8* data = (u8*)header + sizeof(CommandHeader);
+		return memcmp(dataToMatch, data, matchSize) == 0;
 	}
 	
 	// Get values from the buffer.
