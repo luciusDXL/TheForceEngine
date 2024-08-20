@@ -57,6 +57,16 @@ namespace TFE_Editor
 			{
 				exit = true;
 			}
+			ImGui::SameLine(188.0f);
+			if (iconButton(ICON_REMOVE_BEFORE, "Collapse history before selected."))
+			{
+				// Replace selected with a snapshot and then remove all items before.
+			}
+			ImGui::SameLine();
+			if (iconButton(ICON_TRASHCAN, "Collapse history."))
+			{
+				// Remove all items from the history, add a snapshot of the current state.
+			}
 
 			ImGui::EndPopup();
 		}
