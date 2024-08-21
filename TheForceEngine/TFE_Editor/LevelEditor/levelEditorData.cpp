@@ -2911,9 +2911,16 @@ namespace LevelEditor
 			writeGuidelineToSnapshot(guideline);
 		}
 	}
-		
+
 	void level_unpackSnapshot(s32 id, u32 size, void* data)
 	{
+		// Clear the current snapshot ID.
+		if (id < 0)
+		{
+			s_curSnapshotId = -1;
+			return;
+		}
+
 		// Only unpack the snapshot if its not already cached.
 		if (s_curSnapshotId != id)
 		{

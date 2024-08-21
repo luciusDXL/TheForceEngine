@@ -368,6 +368,54 @@ namespace TFE_Editor
 		return (u32)s_history.size();
 	}
 
+	void history_collapse()
+	{
+		const s32 count = (s32)s_history.size();
+		s_historyBuffer.clear();
+		s_history.clear();
+		s_snapShots.clear();
+		s_curBufferAddr = 0;
+		s_curPosInHistory = 0;
+
+		// Clear the previous snapshot index.
+		s_snapshotUnpack(-1, 0, nullptr);
+		// Push the new snapshot.
+		history_createSnapshot("Collapse History");
+	}
+
+	void history_collapseToPos(s32 pos)
+	{
+		// Remove all items from the history *after* pos.
+		const s32 count = (s32)s_history.size();
+		if (pos < 0 || pos >= count - 1)
+		{
+			return;
+		}
+		s32 snapShotMin = 65536;
+		for (s32 i = pos + 1; i < count; i++)
+		{
+			CommandHeader* header = hBuffer_getHeader(i);
+			if (header->cmdId == CMD_SNAPSHOT && header->cmdName < snapShotMin)
+			{
+				snapShotMin = header->cmdName;
+			}
+		}
+
+		// Resize the history buffer.
+		s_historyBuffer.resize(s_history[pos+1]);
+		s_history.resize(pos + 1);
+		s_curBufferAddr = (u32)s_historyBuffer.size();
+		s_curPosInHistory = pos;
+
+		// Then resize the snapshots.
+		if (snapShotMin < 0xffff)
+		{
+			s_snapShots.resize(snapShotMin);
+		}
+		// Clear the previous snapshot index.
+		s_snapshotUnpack(-1, 0, nullptr);
+	}
+
 	const char* history_getItemNameAndState(u32 index, u32& parentId, bool& isHidden)
 	{
 		const char* name = nullptr;

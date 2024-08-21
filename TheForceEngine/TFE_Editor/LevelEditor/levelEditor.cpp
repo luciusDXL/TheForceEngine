@@ -86,6 +86,14 @@ namespace LevelEditor
 		WMM_COUNT
 	};
 
+	enum TransformMode
+	{
+		TRANS_MOVE = 0,
+		TRANS_ROTATE,
+		TRANS_SCALE,
+		TRANS_COUNT
+	};
+
 	static Asset* s_levelAsset = nullptr;
 	static WallMoveMode s_wallMoveMode = WMM_NORMAL;
 	static s32 s_outputHeight = 26*6;
@@ -96,6 +104,7 @@ namespace LevelEditor
 	// If the correct format already exists, though, then it is loaded directly.
 	AssetList s_levelTextureList;
 	LevelEditMode s_editMode = LEDIT_DRAW;
+	TransformMode s_transformMode = TRANS_MOVE;
 
 	u32 s_editFlags = LEF_DEFAULT;
 	u32 s_lwinOpen = LWIN_NONE;
@@ -346,6 +355,7 @@ namespace LevelEditor
 		}
 		s_curLayer = std::min(1, s_level.layerRange[1]);
 
+		s_transformMode = TRANS_MOVE;
 		s_sectorDrawMode = SDM_WIREFRAME;
 		s_gridFlags = GFLAG_NONE;
 		s_featureHovered = {};
@@ -4095,7 +4105,7 @@ namespace LevelEditor
 		selection_clear();
 		commitCurEntityChanges();
 	}
-
+		
 	void update()
 	{
 		levelScript_update();
@@ -4131,6 +4141,9 @@ namespace LevelEditor
 				"Entity mode",
 				"Guideline draw mode",
 				"Note placement",
+				"Move selected",
+				"Rotate selected",
+				"Scale selected"
 			};
 			const char* csgTooltips[] =
 			{
@@ -4138,7 +4151,7 @@ namespace LevelEditor
 				"Merge sectors",
 				"Subtract sectors"
 			};
-			const IconId c_toolbarIcon[] = { ICON_PLAY, ICON_DRAW, ICON_VERTICES, ICON_EDGES, ICON_CUBE, ICON_ENTITY, ICON_GUIDELINES, ICON_NOTES };
+			const IconId c_toolbarIcon[] = { ICON_PLAY, ICON_DRAW, ICON_VERTICES, ICON_EDGES, ICON_CUBE, ICON_ENTITY, ICON_GUIDELINES, ICON_NOTES, ICON_MOVE, ICON_ROTATE, ICON_SCALE };
 			if (iconButton(c_toolbarIcon[0], toolbarTooltips[0], false))
 			{
 				commitCurEntityChanges();
@@ -4177,6 +4190,18 @@ namespace LevelEditor
 				if (drawToolbarBooleanButton(gpuPtr, i, i == s_geoEdit.boolMode, csgTooltips[i]))
 				{
 					s_geoEdit.boolMode = BoolMode(i);
+				}
+				ImGui::SameLine();
+			}
+
+			// Transformations.
+			ImGui::SameLine(0.0f, 32.0f);
+			for (u32 i = 0; i < 3; i++)
+			{
+				s32 xformMode = TransformMode(i + TRANS_MOVE);
+				if (iconButton(c_toolbarIcon[i + 8], toolbarTooltips[i + 8], xformMode == s_transformMode))
+				{
+					s_transformMode = TransformMode(xformMode);
 				}
 				ImGui::SameLine();
 			}

@@ -50,6 +50,8 @@ namespace TFE_Editor
 	s32  history_getPos();
 	u32  history_getSize();
 	u32  history_getItemCount();
+	void history_collapseToPos(s32 pos);
+	void history_collapse();
 	const char* history_getItemNameAndState(u32 index, u32& parentId, bool& isHidden);
 
 	// Handle merging commands.
