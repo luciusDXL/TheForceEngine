@@ -243,8 +243,8 @@ namespace LevelEditor
 
 			if (TFE_Polygon::vtxEqual(&value, &srcValue))
 			{
+				// Keep looking after this, the feature may still be in here...
 				matchId = i;
-				break;
 			}
 		}
 

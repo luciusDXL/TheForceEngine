@@ -26,7 +26,7 @@ namespace LevelEditor
 		*featureIndex = s32((id >> FID_FEATURE_INDEX) & FID_FEATURE_INDEX_MASK);
 		if (featureData)  { *featureData = s32((id >> FID_FEATURE_DATA) & FID_FEATURE_DATA_MASK); }
 		if (isOverlapped) { *isOverlapped = (id & (1ull << FID_OVERLAPPED)) != 0; }
-		// Assume at least one sector.
-		return &s_level.sectors[sectorId];
+		// Handle the case where sectorId is invalid, which may happen for guidelines or level notes.
+		return sectorId < (u32)s_level.sectors.size() ? &s_level.sectors[sectorId] : nullptr;
 	}
 }
