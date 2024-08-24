@@ -30,6 +30,12 @@ namespace LevelEditor
 		FID_COMPARE_MASK = (1ull << 63ull) - 1ull,
 	};
 
-	FeatureId createFeatureId(EditorSector* sector, s32 featureIndex = 0, s32 featureData = 0, bool isOverlapped = false);
+	FeatureId createFeatureId(const EditorSector* sector, s32 featureIndex = 0, s32 featureData = 0, bool isOverlapped = false);
+	FeatureId setIsOverlapped(FeatureId id, bool isOverlapped);
 	EditorSector* unpackFeatureId(FeatureId id, s32* featureIndex = nullptr, s32* featureData = nullptr, bool* isOverlapped = nullptr);
+
+	inline bool featuresEqual(FeatureId a, FeatureId b)
+	{
+		return (a & FID_COMPARE_MASK) == (b & FID_COMPARE_MASK);
+	}
 }

@@ -53,7 +53,8 @@ namespace TFE_Editor
 		s_cmdName.clear();
 		history_clear();
 
-		s_history.reserve(256);					// reserve a history of 256, but much larger values are supported.
+		s_history.reserve(256);					// reserve a history of 256, this may grow 65536.
+		s_snapShots.reserve(256);				// reserve 256 snapshots, though this may grow to 1024.
 		s_historyBuffer.reserve(1024 * 1024);   // reserve 1Mb for the history buffer.
 	}
 
@@ -63,12 +64,18 @@ namespace TFE_Editor
 
 	void history_clear()
 	{
+		// Clear the history, historyBuffer, and snapshots.
 		s_snapShots.clear();
 		s_history.clear();
 		s_historyBuffer.clear();
 		s_curPosInHistory = 0;
 		s_curBufferAddr = 0;
 		s_curSnapshot = 0;
+		// Clear the previous snapshot index.
+		if (s_snapshotUnpack)
+		{
+			s_snapshotUnpack(-1, 0, nullptr);
+		}
 	}
 
 	// Register general commands and names.
@@ -370,15 +377,8 @@ namespace TFE_Editor
 
 	void history_collapse()
 	{
-		const s32 count = (s32)s_history.size();
-		s_historyBuffer.clear();
-		s_history.clear();
-		s_snapShots.clear();
-		s_curBufferAddr = 0;
-		s_curPosInHistory = 0;
-
-		// Clear the previous snapshot index.
-		s_snapshotUnpack(-1, 0, nullptr);
+		// Clear the history.
+		history_clear();
 		// Push the new snapshot.
 		history_createSnapshot("Collapse History");
 	}

@@ -67,18 +67,18 @@ namespace LevelEditor
 	bool selection_hasSelection(SelectionListId id = SEL_CURRENT);
 
 	// Selection interface.
-	bool selection_vertex(SelectAction action, EditorSector* sector, s32 index, u32 flags = 1);
-	bool selection_surface(SelectAction action, EditorSector* sector, s32 index, HitPart part = HP_MID, u32 flags = 1);
-	bool selection_entity(SelectAction action, EditorSector* sector, s32 index, u32 flags = 0);
-	bool selection_sector(SelectAction action, EditorSector* sector, u32 flags = 0);
-	bool selection_guideline(SelectAction action, Guideline* guideline, u32 flags = 0);
-	bool selection_levelNote(SelectAction action, LevelNote* note, u32 flags = 0);
+	bool selection_vertex(SelectAction action, EditorSector* sector, s32 index, u32 flags = SEL_FLAG_INCLUDE_OVERLAPPING);
+	bool selection_surface(SelectAction action, EditorSector* sector, s32 index, HitPart part = HP_MID, u32 flags = SEL_FLAG_INCLUDE_OVERLAPPING);
+	bool selection_entity(SelectAction action, EditorSector* sector, s32 index, u32 flags = SEL_FLAG_NONE);
+	bool selection_sector(SelectAction action, EditorSector* sector, u32 flags = SEL_FLAG_NONE);
+	bool selection_guideline(SelectAction action, Guideline* guideline, u32 flags = SEL_FLAG_NONE);
+	bool selection_levelNote(SelectAction action, LevelNote* note, u32 flags = SEL_FLAG_NONE);
 
 	// Read interface.
-	// Pass in SEL_GET_HOVERED for the index to get the hovered feature (or false is none).
+	// Pass in SEL_GET_HOVERED for the index to get the hovered feature (or false if nothing hovered).
 	u32  selection_getCount(SelectionListId id = SEL_CURRENT);
 	bool selection_getVertex(s32 index, EditorSector*& sector, s32& featureIndex, bool* isOverlapped = 0);
-	bool selection_getSurface(s32 index, EditorSector*& sector, s32& featureIndex, HitPart* part = 0, bool* isOverlapped = 0);
+	bool selection_getSurface(s32 index, EditorSector*& sector, s32& featureIndex, HitPart* part = nullptr, bool* isOverlapped = nullptr);
 	bool selection_getEntity(s32 index, EditorSector*& sector, s32& featureIndex);
 	bool selection_getSector(s32 index, EditorSector*& sector);
 	bool selection_getGuideline(s32 index, Guideline*& guideline);
