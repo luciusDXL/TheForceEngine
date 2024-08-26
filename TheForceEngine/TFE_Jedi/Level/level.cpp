@@ -105,6 +105,14 @@ namespace TFE_Jedi
 				RSector* nextSector = wall->nextSector;
 				if (nextSector)
 				{
+					if (wall->mirror < 0 || wall->mirror >= nextSector->wallCount)
+					{
+						wall->nextSector = nullptr;
+						wall->mirrorWall = nullptr;
+						wall->mirror = -1;
+						continue;
+					}
+
 					RWall* mirror = &nextSector->walls[wall->mirror];
 					wall->mirrorWall = mirror;
 					// Both sides of a mirror should have the same lower flags3 (such as walkability).
