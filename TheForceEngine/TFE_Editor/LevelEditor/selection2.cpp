@@ -118,7 +118,7 @@ namespace LevelEditor
 	bool selection_surface(SelectAction action, EditorSector* sector, s32 index, HitPart part, u32 flags)
 	{
 		if (!sector) { return false; }
-		if (part != HP_FLOOR && part != HP_CEIL && index < 0 || index >= (s32)sector->walls.size()) { return false; }
+		if (part != HP_FLOOR && part != HP_CEIL && (index < 0 || index >= (s32)sector->walls.size())) { return false; }
 
 		const FeatureId id = createFeatureId(sector, index, (s32)part);
 		return selection_featureId(action, id);
@@ -141,12 +141,14 @@ namespace LevelEditor
 
 	bool selection_guideline(SelectAction action, Guideline* guideline, u32 flags)
 	{
+		if (!guideline) { return false; }
 		const FeatureId id = createFeatureId(nullptr, guideline->id);
 		return selection_featureId(action, id);
 	}
 
 	bool selection_levelNote(SelectAction action, LevelNote* note, u32 flags)
 	{
+		if (!note) { return false; }
 		const FeatureId id = createFeatureId(nullptr, note->id);
 		return selection_featureId(action, id);
 	}
@@ -411,7 +413,7 @@ namespace LevelEditor
 		if (wall->adjoinId >= 0 && wall->mirrorId >= 0)
 		{
 			EditorSector* nextSector = &s_level.sectors[wall->adjoinId];
-			EditorWall* mirror = wall->mirrorId < (s32)nextSector->walls.size() ? &nextSector->walls[wall->mirrorId] : nullptr;
+			EditorWall* mirror = (wall->mirrorId >= 0 && wall->mirrorId < (s32)nextSector->walls.size()) ? &nextSector->walls[wall->mirrorId] : nullptr;
 
 			if (mirror)
 			{
@@ -429,19 +431,11 @@ namespace LevelEditor
 		{
 			return;
 		}
-		if (s_currentSelection != SEL_VERTEX)
-		{
-			s_selectionList2[SEL_VERTEX].clear();
-		}
-		if (s_currentSelection != SEL_SURFACE)
-		{
-			s_selectionList2[SEL_SURFACE].clear();
-		}
-		if (s_currentSelection != SEL_SECTOR)
-		{
-			s_selectionList2[SEL_SECTOR].clear();
-		}
-		// There is no derived selection from vertices (for now).
+		// Clear any geometry selection that does not match the current selection.
+		if (s_currentSelection != SEL_VERTEX) { s_selectionList2[SEL_VERTEX].clear(); }
+		if (s_currentSelection != SEL_SURFACE){ s_selectionList2[SEL_SURFACE].clear(); }
+		if (s_currentSelection != SEL_SECTOR) { s_selectionList2[SEL_SECTOR].clear(); }
+		// Setup derived selections.
 		if (s_currentSelection == SEL_VERTEX)
 		{
 			// For now, vertices don't select anything.
