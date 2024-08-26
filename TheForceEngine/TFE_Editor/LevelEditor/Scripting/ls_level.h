@@ -34,6 +34,7 @@ namespace LevelEditor
 		void setName(std::string& name);
 		void setPalette(std::string& name);
 		void findSector(std::string& name);
+		void findSectorById(s32 id);
 		// System
 		bool scriptRegister(asIScriptEngine* engine) override;
 	};

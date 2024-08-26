@@ -94,6 +94,18 @@ namespace LevelEditor
 		}
 	}
 
+	void LS_Level::findSectorById(s32 id)
+	{
+		if (id < 0 || id >= (s32)s_level.sectors.size())
+		{
+			infoPanelAddMsg(LE_MSG_WARNING, "ID %d is out of range.", id);
+		}
+		else
+		{
+			selectAndScrollToSector(&s_level.sectors[id]);
+		}
+	}
+
 	bool LS_Level::scriptRegister(asIScriptEngine* engine)
 	{
 		s32 res = 0;
@@ -169,6 +181,7 @@ namespace LevelEditor
 		res = engine->RegisterObjectMethod("Level", "void setName(const string &in)", asMETHOD(LS_Level, setName), asCALL_THISCALL);  assert(res >= 0);
 		res = engine->RegisterObjectMethod("Level", "void setPalette(const string &in)", asMETHOD(LS_Level, setPalette), asCALL_THISCALL);  assert(res >= 0);
 		res = engine->RegisterObjectMethod("Level", "void findSector(const string &in)", asMETHOD(LS_Level, findSector), asCALL_THISCALL);  assert(res >= 0);
+		res = engine->RegisterObjectMethod("Level", "void findSectorById(int)", asMETHOD(LS_Level, findSectorById), asCALL_THISCALL);  assert(res >= 0);
 		// Script variable.
 		res = engine->RegisterGlobalProperty("Level level", this);  assert(res >= 0);
 		return res >= 0;
