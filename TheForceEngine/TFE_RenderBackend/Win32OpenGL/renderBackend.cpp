@@ -258,7 +258,9 @@ namespace TFE_RenderBackend
 
 	void enableVsync(bool enable)
 	{
-		SDL_GL_SetSwapInterval(enable ? 1 : 0);
+		int ret = SDL_GL_SetSwapInterval(enable ? 1 : 0);
+		if (ret != 0)
+			TFE_System::logWrite(LOG_MSG, "RenderBackend", "SetSwapInterval(%d) failed: %d %s", enable, ret, SDL_GetError());
 	}
 
 	void setClearColor(const f32* color)

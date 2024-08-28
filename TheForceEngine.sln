@@ -1,4 +1,4 @@
-﻿
+
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.28307.705
@@ -7,34 +7,49 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TheForceEngine", "TheForceE
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		BuildForRelease|ARM64 = BuildForRelease|ARM64
 		BuildForRelease|x64 = BuildForRelease|x64
 		BuildForRelease|x86 = BuildForRelease|x86
+		clang_debug|ARM64 = clang_debug|ARM64
 		clang_debug|x64 = clang_debug|x64
 		clang_debug|x86 = clang_debug|x86
+		Debug|ARM64 = Debug|ARM64
 		Debug|x64 = Debug|x64
 		Debug|x86 = Debug|x86
+		Profile|ARM64 = Profile|ARM64
 		Profile|x64 = Profile|x64
 		Profile|x86 = Profile|x86
+		Release|ARM64 = Release|ARM64
 		Release|x64 = Release|x64
 		Release|x86 = Release|x86
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{31CD2991-9EF0-4AA9-AEEB-BA1194D2DAB4}.BuildForRelease|ARM64.ActiveCfg = BuildForRelease|ARM64
+		{31CD2991-9EF0-4AA9-AEEB-BA1194D2DAB4}.BuildForRelease|ARM64.Build.0 = BuildForRelease|ARM64
 		{31CD2991-9EF0-4AA9-AEEB-BA1194D2DAB4}.BuildForRelease|x64.ActiveCfg = BuildForRelease|x64
 		{31CD2991-9EF0-4AA9-AEEB-BA1194D2DAB4}.BuildForRelease|x64.Build.0 = BuildForRelease|x64
 		{31CD2991-9EF0-4AA9-AEEB-BA1194D2DAB4}.BuildForRelease|x86.ActiveCfg = BuildForRelease|Win32
 		{31CD2991-9EF0-4AA9-AEEB-BA1194D2DAB4}.BuildForRelease|x86.Build.0 = BuildForRelease|Win32
+		{31CD2991-9EF0-4AA9-AEEB-BA1194D2DAB4}.clang_debug|ARM64.ActiveCfg = Profile|ARM64
+		{31CD2991-9EF0-4AA9-AEEB-BA1194D2DAB4}.clang_debug|ARM64.Build.0 = Profile|ARM64
 		{31CD2991-9EF0-4AA9-AEEB-BA1194D2DAB4}.clang_debug|x64.ActiveCfg = Release|x64
 		{31CD2991-9EF0-4AA9-AEEB-BA1194D2DAB4}.clang_debug|x64.Build.0 = Release|x64
 		{31CD2991-9EF0-4AA9-AEEB-BA1194D2DAB4}.clang_debug|x86.ActiveCfg = Release|Win32
 		{31CD2991-9EF0-4AA9-AEEB-BA1194D2DAB4}.clang_debug|x86.Build.0 = Release|Win32
+		{31CD2991-9EF0-4AA9-AEEB-BA1194D2DAB4}.Debug|ARM64.ActiveCfg = Debug|ARM64
+		{31CD2991-9EF0-4AA9-AEEB-BA1194D2DAB4}.Debug|ARM64.Build.0 = Debug|ARM64
 		{31CD2991-9EF0-4AA9-AEEB-BA1194D2DAB4}.Debug|x64.ActiveCfg = Debug|x64
 		{31CD2991-9EF0-4AA9-AEEB-BA1194D2DAB4}.Debug|x64.Build.0 = Debug|x64
 		{31CD2991-9EF0-4AA9-AEEB-BA1194D2DAB4}.Debug|x86.ActiveCfg = Debug|Win32
 		{31CD2991-9EF0-4AA9-AEEB-BA1194D2DAB4}.Debug|x86.Build.0 = Debug|Win32
+		{31CD2991-9EF0-4AA9-AEEB-BA1194D2DAB4}.Profile|ARM64.ActiveCfg = Profile|ARM64
+		{31CD2991-9EF0-4AA9-AEEB-BA1194D2DAB4}.Profile|ARM64.Build.0 = Profile|ARM64
 		{31CD2991-9EF0-4AA9-AEEB-BA1194D2DAB4}.Profile|x64.ActiveCfg = Profile|x64
 		{31CD2991-9EF0-4AA9-AEEB-BA1194D2DAB4}.Profile|x64.Build.0 = Profile|x64
 		{31CD2991-9EF0-4AA9-AEEB-BA1194D2DAB4}.Profile|x86.ActiveCfg = Profile|Win32
 		{31CD2991-9EF0-4AA9-AEEB-BA1194D2DAB4}.Profile|x86.Build.0 = Profile|Win32
+		{31CD2991-9EF0-4AA9-AEEB-BA1194D2DAB4}.Release|ARM64.ActiveCfg = Release|ARM64
+		{31CD2991-9EF0-4AA9-AEEB-BA1194D2DAB4}.Release|ARM64.Build.0 = Release|ARM64
 		{31CD2991-9EF0-4AA9-AEEB-BA1194D2DAB4}.Release|x64.ActiveCfg = Release|x64
 		{31CD2991-9EF0-4AA9-AEEB-BA1194D2DAB4}.Release|x64.Build.0 = Release|x64
 		{31CD2991-9EF0-4AA9-AEEB-BA1194D2DAB4}.Release|x86.ActiveCfg = Release|Win32

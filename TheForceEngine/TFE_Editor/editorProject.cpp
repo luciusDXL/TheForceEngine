@@ -38,6 +38,7 @@ namespace TFE_Editor
 	static char s_descrBuffer[MAX_DESCR_LEN];
 	static bool s_createDir = true;
 	static std::string* s_curStringOut = nullptr;
+	static int s_projectFileDialog = 0;
 
 	void parseProjectValue(const char* key, const char* value);
 
@@ -209,12 +210,10 @@ namespace TFE_Editor
 			ImGui::SameLine();
 			if (ImGui::Button("Browse"))
 			{
-				FileResult res = TFE_Ui::directorySelectDialog("Project Path", s_newProject.path);
-				if (!res.empty())
-				{
-					strcpy(s_newProject.path, res[0].c_str());
-				}
+				TFE_Ui::directorySelectDialog("Project Path", s_newProject.path);
+				s_projectFileDialog = 1;
 			}
+
 
 			ImGui::Checkbox("Create Directory for Project", &s_createDir);
 			ImGui::Separator();
@@ -258,8 +257,10 @@ namespace TFE_Editor
 				bool succeeded = true;
 				if (s_createDir && newProject)
 				{
-					sprintf(s_curProject.path, "%s/%s", s_curProject.path, s_curProject.name);
-					FileUtil::fixupPath(s_curProject.path);
+					char tmp[TFE_MAX_PATH];
+					snprintf(tmp, TFE_MAX_PATH - 1, "%s/%s", s_curProject.path, s_curProject.name);
+					FileUtil::fixupPath(tmp);
+					strncpy(s_curProject.path, tmp, TFE_MAX_PATH - 1);
 
 					if (!FileUtil::directoryExits(s_curProject.path))
 					{
@@ -290,9 +291,29 @@ namespace TFE_Editor
 				// Do not create the project.
 				finished = true;
 			}
+
+			// handle any file dialogs.
+			// XXX: must occur before EndPopup() since the file dialog
+			// is a popup itself!
+			if (s_projectFileDialog > 0)
+			{
+				FileResult res;
+				bool b = TFE_Ui::renderFileDialog(res);
+				if (b)
+				{
+					if (!res.empty())
+					{
+						// res[1] is the path
+						strcpy(s_newProject.path, res[1].c_str());
+					}
+					s_projectFileDialog = 0;
+				}
+			}
+
 			ImGui::EndPopup();
 		}
 		popFont();
+
 
 		return finished;
 	}

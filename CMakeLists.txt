@@ -18,13 +18,6 @@ set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-## gcc-12+ and clang-15+ have a feature to automatically zero all variables/members/...
-## this mimics what modern MSVC does.  Enable it for release builds (i.e.
-## when not debugging to not hide any real bugs).
-if(CMAKE_BUILD_TYPE STREQUAL "Release")
-	check_cxx_compiler_flag("-ftrivial-auto-var-init=zero" COMPILER_ENABLE_AUTOZERO)
-endif()
-
 # disable Clangs excessive warnings about unhandled switch values
 if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-switch")	
@@ -83,11 +76,6 @@ if(ENABLE_TFE)
 		execute_process(COMMAND ln -sf ${CMAKE_SOURCE_DIR}/TheForceEngine/EditorDef)
 		include(CreateGitVersionH.cmake)
 		create_git_version_h()
-	endif()
-
-	if(COMPILER_ENABLE_AUTOZERO)
-		message(STATUS "enabled -ftrivial-auto-var-init=zero")
-		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ftrivial-auto-var-init=zero")
 	endif()
 
 	if(ENABLE_SYSMIDI)

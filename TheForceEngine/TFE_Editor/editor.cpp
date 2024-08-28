@@ -72,6 +72,7 @@ namespace TFE_Editor
 	static bool s_configView = false;
 	static WorkBuffer s_workBuffer;
 	static char s_projectPath[TFE_MAX_PATH] = "";
+	static u32 s_fileDialogOpen = 0;
 
 	static bool s_menuActive = false;
 	static MessageBox s_msgBox = {};
@@ -656,14 +657,8 @@ namespace TFE_Editor
 				}
 				if (ImGui::MenuItem("Open", NULL, (bool*)NULL))
 				{
-					FileResult res = TFE_Ui::openFileDialog("Open Project", s_projectPath, { "Project", "*.INI *.ini" });
-					if (!res.empty())
-					{
-						char filePath[TFE_MAX_PATH];
-						strcpy(filePath, res[0].c_str());
-						FileUtil::fixupPath(filePath);
-						project_load(filePath);
-					}
+					TFE_Ui::openFileDialog("Open Project", s_projectPath, ".ini");
+					s_fileDialogOpen = 1;
 				}
 				ImGui::Separator();
 				bool projectActive = project_get()->active;
@@ -714,6 +709,7 @@ namespace TFE_Editor
 				}
 				if (s_recents.empty()) { enableNextItem(); }
 				ImGui::EndMenu();
+
 			}
 			// Allow the current Asset Editor to add its own menus.
 			if (s_editorMode == EDIT_ASSET)
@@ -740,6 +736,24 @@ namespace TFE_Editor
 		endMenuBar();
 
 		popFont();
+
+		// handle any open file dialogs.
+		if (s_fileDialogOpen > 0)
+		{
+			FileResult res;
+			bool bDone = TFE_Ui::renderFileDialog(res);
+			if (bDone)
+			{
+				if (!res.empty())
+				{
+					char filePath[TFE_MAX_PATH];
+					strcpy(filePath, res[0].c_str());
+					FileUtil::fixupPath(filePath);
+					project_load(filePath);
+				}
+				s_fileDialogOpen = 0;
+			}
+		}
 	}
 		
 	void loadFonts()

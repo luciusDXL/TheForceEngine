@@ -201,6 +201,7 @@ namespace TFE_FrontEndUI
 	static bool s_relativeMode;
 	static bool s_canSave = false;
 	static bool s_drawNoGameDataMsg = false;
+	static s32 s_FEFileDialog = 0;
 
 	static UiImage s_logoGpuImage;
 	static UiImage s_titleGpuImage;
@@ -1043,8 +1044,6 @@ namespace TFE_FrontEndUI
 	{
 		TFE_GameHeader* darkForces = TFE_Settings::getGameHeader("Dark Forces");
 		TFE_GameHeader* outlaws = TFE_Settings::getGameHeader("Outlaws");
-
-		s32 browseWinOpen = -1;
 		
 		//////////////////////////////////////////////////////
 		// Source Game Data
@@ -1092,9 +1091,17 @@ namespace TFE_FrontEndUI
 			}
 		}
 		ImGui::SameLine();
-		if (ImGui::Button("Browse##DarkForces"))
+		if (ImGui::Button("Browse##DarkForces") && !s_FEFileDialog)
 		{
-			browseWinOpen = 0;
+			const char *startpath;
+
+			if (FileUtil::directoryExits(darkForces->sourcePath))
+				startpath = darkForces->sourcePath;
+			else
+				startpath = TFE_Paths::getPath(PATH_USER_DOCUMENTS);
+
+			TFE_Ui::openFileDialog("Select DARK.GOB", startpath, ".gob,.exe");
+			s_FEFileDialog = 1; // Dark Forces
 		}
 
 		ImGui::Text("Outlaws:"); ImGui::SameLine(100*s_uiScale);
@@ -1105,9 +1112,17 @@ namespace TFE_FrontEndUI
 			// TODO
 		}
 		ImGui::SameLine();
-		if (ImGui::Button("Browse##Outlaws"))
+		if (ImGui::Button("Browse##Outlaws") && !s_FEFileDialog)
 		{
-			browseWinOpen = 1;
+			const char *startpath;
+
+			if (FileUtil::directoryExits(outlaws->sourcePath))
+				startpath = outlaws->sourcePath;
+			else
+				startpath = TFE_Paths::getPath(PATH_USER_DOCUMENTS);
+
+			TFE_Ui::openFileDialog("Select OUTLAWS.LAB", startpath, ".lab,.exe");
+			s_FEFileDialog = 2; // Outlaws
 		}
 		ImGui::Separator();
 
@@ -1208,59 +1223,61 @@ namespace TFE_FrontEndUI
 			ImGui::PopFont();
 		}
 
-		// File dialogs...
-		if (browseWinOpen >= 0)
+		// handle file picker if need be
+		if (s_FEFileDialog > 0)
 		{
-			char exePath[TFE_MAX_PATH];
 			char filePath[TFE_MAX_PATH];
-			const char* games[]=
-			{
-				"Select DARK.GOB",
-				"Select OUTLAWS.LAB"
-			};
-			const std::vector<std::string> filters[]=
-			{
-				{ "GOB Archive", "*.GOB *.gob", "Executable", "*.EXE *.exe" },
-				{ "LAB Archive", "*.LAB *.lab", "Executable", "*.EXE *.exe" },
-			};
+			FileResult res;
 
-			FileResult res = TFE_Ui::openFileDialog(games[browseWinOpen], DEFAULT_PATH, filters[browseWinOpen]);
-			if (!res.empty() && !res[0].empty())
+			// display the dialog
+			if (TFE_Ui::renderFileDialog(res))
 			{
-				convertUtf8ToExtendedAscii(res[0].c_str(), exePath);
-				FileUtil::getFilePath(exePath, filePath);
-				FileUtil::fixupPath(filePath);
-
-				if (browseWinOpen == 0)
+				if (!res.empty())	// OK was clicked.
 				{
-					// Before accepting this path, verify that some of the required files are here...
-					char testFile[TFE_MAX_PATH];
-					sprintf(testFile, "%sDARK.GOB", filePath);
-					if (FileUtil::exists(testFile))
+					// ensure the whole source path plus subpath + filename fits into
+					// the filename buffers.
+					if (res[1].length() >= (TFE_MAX_PATH - 32))
 					{
-						strcpy(darkForces->sourcePath, filePath);
-						TFE_Paths::setPath(PATH_SOURCE_DATA, darkForces->sourcePath);
+						TFE_System::logWrite(LOG_ERROR, "File Picker", "Data file path too long!");
+						s_FEFileDialog = 0;
+						ImGui::OpenPopup("File Path Too Long");
 					}
 					else
 					{
-						ImGui::OpenPopup("Invalid Source Data");
+						convertUtf8ToExtendedAscii(res[1].c_str(), filePath);
+					}
+					if (s_FEFileDialog == 1)	// DF Path
+					{
+						// Before accepting this path, verify that some of the required files are here...
+						char testFile[TFE_MAX_PATH];
+						snprintf(testFile, TFE_MAX_PATH - 1, "%sDARK.GOB", filePath);
+						if (FileUtil::exists(testFile))
+						{
+							strcpy(darkForces->sourcePath, filePath);
+							TFE_Paths::setPath(PATH_SOURCE_DATA, darkForces->sourcePath);
+						}
+						else
+						{
+							ImGui::OpenPopup("Invalid Source Data");
+						}
+					}
+					else if (s_FEFileDialog == 2)	// Outlaws Path
+					{
+						// Before accepting this path, verify that some of the required files are here...
+						char testFile[TFE_MAX_PATH];
+						snprintf(testFile, TFE_MAX_PATH - 1, "%sOutlaws.lab", filePath);
+						if (FileUtil::exists(testFile))
+						{
+							strcpy(outlaws->sourcePath, filePath);
+							// TFE_Paths::setPath(PATH_SOURCE_DATA, outlaws->sourcePath);
+						}
+						else
+						{
+							ImGui::OpenPopup("Invalid Source Data");
+						}
 					}
 				}
-				else if (browseWinOpen == 1)
-				{
-					// Before accepting this path, verify that some of the required files are here...
-					char testFile[TFE_MAX_PATH];
-					sprintf(testFile, "%sOutlaws.lab", filePath);
-					if (FileUtil::exists(testFile))
-					{
-						strcpy(outlaws->sourcePath, filePath);
-						// TFE_Paths::setPath(PATH_SOURCE_DATA, outlaws->sourcePath);
-					}
-					else
-					{
-						ImGui::OpenPopup("Invalid Source Data");
-					}
-				}
+				s_FEFileDialog = 0;	// can now open another dialog.
 			}
 		}
 
@@ -1272,6 +1289,16 @@ namespace TFE_FrontEndUI
 			if (ImGui::Button("OK", ImVec2(120, 0))) { ImGui::CloseCurrentPopup(); }
 			ImGui::EndPopup();
 		}
+
+		if (ImGui::BeginPopupModal("File Path Too Long", NULL, ImGuiWindowFlags_AlwaysAutoResize))
+		{
+			ImGui::Text("File Path is too long, please reduce");
+			ImGui::Text("the depth of the game data file hierarchy");
+
+			if (ImGui::Button("OK", ImVec2(120, 0))) { ImGui::CloseCurrentPopup(); }
+			ImGui::EndPopup();
+		}
+
 
 		ImGui::Spacing();
 		ImGui::PushFont(s_versionFont);
@@ -1392,7 +1419,6 @@ namespace TFE_FrontEndUI
 
 	bool configEnhancements()
 	{
-		s32 browseWinOpen = -1;
 		bool forceTextureUpdate = false;
 
 		//////////////////////////////////////////////////////

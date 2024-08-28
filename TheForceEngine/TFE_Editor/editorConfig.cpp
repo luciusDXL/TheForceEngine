@@ -15,9 +15,10 @@ namespace TFE_Editor
 	static bool s_configLoaded = false;
 	static bool s_configDefaultsSet = false;
 	EditorConfig s_editorConfig = {};
+	static u32 s_fileDialog = 0;
 
 	void parseValue(const char* key, const char* value);
-	
+
 	bool configSetupRequired()
 	{
 		bool setupRequired = !s_configLoaded;
@@ -179,21 +180,22 @@ namespace TFE_Editor
 
 		if (ImGui::BeginPopupModal("Editor Config", nullptr, window_flags))
 		{
-			s32 browseWinOpen = -1;
 			ImGui::Text("Editor Path:"); ImGui::SameLine(UI_SCALE(120));
 			ImGui::InputText("##EditorPath", s_editorConfig.editorPath, TFE_MAX_PATH);
 			ImGui::SameLine();
-			if (ImGui::Button("Browse##EditorPath"))
+			if (ImGui::Button("Browse##EditorPath") && !s_fileDialog)
 			{
-				browseWinOpen = 0;
+				s_fileDialog = 1;
+				TFE_Ui::directorySelectDialog("Editor Path", s_editorConfig.editorPath);
 			}
 
 			ImGui::Text("Export Path:"); ImGui::SameLine(UI_SCALE(120));
 			ImGui::InputText("##ExportPath", s_editorConfig.exportPath, TFE_MAX_PATH);
 			ImGui::SameLine();
-			if (ImGui::Button("Browse##ExportPath"))
+			if (ImGui::Button("Browse##ExportPath") && !s_fileDialog)
 			{
-				browseWinOpen = 1;
+				s_fileDialog = 2;
+				TFE_Ui::directorySelectDialog("Export Path", s_editorConfig.exportPath);
 			}
 
 			fontScaleControl();
@@ -215,20 +217,24 @@ namespace TFE_Editor
 			}
 
 			// File dialogs...
-			if (browseWinOpen == 0)
+			if (s_fileDialog)
 			{
-				FileResult res = TFE_Ui::directorySelectDialog("Editor Path", s_editorConfig.editorPath);
-				if (!res.empty())
+				FileResult res;
+				bool b = TFE_Ui::renderFileDialog(res);
+				if (b)
 				{
-					strcpy(s_editorConfig.editorPath, res[0].c_str());
-				}
-			}
-			else if (browseWinOpen == 1)
-			{
-				FileResult res = TFE_Ui::directorySelectDialog("Export Path", s_editorConfig.exportPath);
-				if (!res.empty())
-				{
-					strcpy(s_editorConfig.exportPath, res[0].c_str());
+					if (!res.empty())
+					{
+						if (s_fileDialog == 1)
+						{
+							strcpy(s_editorConfig.editorPath, res[0].c_str());
+						}
+						else if (s_fileDialog == 2)
+						{
+							strcpy(s_editorConfig.exportPath, res[0].c_str());
+						}
+					}
+					s_fileDialog = 0;
 				}
 			}
 
