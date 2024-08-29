@@ -98,7 +98,7 @@ namespace TFE_DarkForces
 		"ArmNum.fnt",
 		"HelNum.fnt",
 		"AmoNum2.fnt",
-		"SuperWep2.fnt",
+		"SuperWp2.fnt",
 		"ArmNum2.fnt",
 		"HelNum2.fnt",
 	};
