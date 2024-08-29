@@ -8,7 +8,6 @@
 #include <TFE_DarkForces/hud.h>
 #include <TFE_DarkForces/config.h>
 #include <TFE_Game/reticle.h>
-#include <TFE_Archive/archive.h>
 #include <TFE_Settings/settings.h>
 #include <TFE_Input/inputMapping.h>
 #include <TFE_RenderBackend/renderBackend.h>
@@ -145,14 +144,9 @@ namespace TFE_DarkForces
 		{
 			u8 paletteBuffer[768] = { 0 };
 
-			FilePath filePath;
-			if (!TFE_Paths::getFilePath("MENU.LFD", &filePath)) { return; }
-			Archive* archive = Archive::getArchive(ARCHIVE_LFD, "MENU", filePath.path);
-			TFE_Paths::addLocalArchive(archive);
-				s_emState.escMenuFrameCount = getFramesFromAnim("escmenu.anim", &s_emState.escMenuFrames);
-				s_emState.confirmMenuFrameCount = getFramesFromAnim("yesno.anim", &s_emState.confirmMenuFrames);
-				loadPaletteFromPltt("menu.pltt", paletteBuffer);
-			TFE_Paths::removeLastArchive();
+			s_emState.escMenuFrameCount = getFramesFromAnim("escmenu.anim", &s_emState.escMenuFrames);
+			s_emState.confirmMenuFrameCount = getFramesFromAnim("yesno.anim", &s_emState.confirmMenuFrames);
+			loadPaletteFromPltt("menu.pltt", paletteBuffer);
 
 			// Adjust button ranges since different languages seem to move the menu around for some reason...
 			Vec4i range = getButtonRange(s_emState.escMenuFrames, 0);

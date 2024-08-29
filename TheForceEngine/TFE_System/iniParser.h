@@ -5,7 +5,7 @@
 //////////////////////////////////////////////////////////////////////
 
 #include "types.h"
-#include <TFE_FileSystem/filestream.h>
+#include <TFE_FileSystem/physfswrapper.h>
 #include <vector>
 #include <string>
 
@@ -69,12 +69,12 @@ namespace TFE_IniParser
 	bool parseBool(const char* value);
 	RGBA parseColor(const char* value);
 
-	void writeHeader(FileStream& file, const char* section);
-	void writeComment(FileStream& file, const char* comment);
-	void writeKeyValue_String(FileStream& file, const char* key, const char* value);
-	void writeKeyValue_StringBlock(FileStream& file, const char* key, const char* value);
-	void writeKeyValue_Int(FileStream& file, const char* key, s32 value);
-	void writeKeyValue_Float(FileStream& file, const char* key, f32 value);
-	void writeKeyValue_Bool(FileStream& file, const char* key, bool value);
-	void writeKeyValue_RGBA(FileStream& file, const char* key, RGBA value);
+	void writeHeader(vpFile& file, const char* section);
+	void writeComment(vpFile& file, const char* comment);
+	void writeKeyValue_String(vpFile& file, const char* key, const char* value);
+	void writeKeyValue_StringBlock(vpFile& file, const char* key, const char* value);
+	void writeKeyValue_Int(vpFile& file, const char* key, s32 value);
+	void writeKeyValue_Float(vpFile& file, const char* key, f32 value);
+	void writeKeyValue_Bool(vpFile& file, const char* key, bool value);
+	void writeKeyValue_RGBA(vpFile& file, const char* key, RGBA value);
 }

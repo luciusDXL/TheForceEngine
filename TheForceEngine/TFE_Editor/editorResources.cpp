@@ -7,9 +7,7 @@
 #include <TFE_System/parser.h>
 #include <TFE_System/iniParser.h>
 #include <TFE_Editor/editorProject.h>
-#include <TFE_FileSystem/filestream.h>
-#include <TFE_FileSystem/fileutil.h>
-#include <TFE_FileSystem/paths.h>
+#include <TFE_FileSystem/physfswrapper.h>
 #include <TFE_Archive/archive.h>
 #include <TFE_Ui/ui.h>
 
@@ -113,7 +111,7 @@ namespace TFE_Editor
 
 			if (s_FileDialog)
 			{
-				FileResult res;
+				TFEFileList res;
 				if (TFE_Ui::renderFileDialog(res))
 				{
 					if (res[0].empty())	// cancel
@@ -232,7 +230,7 @@ namespace TFE_Editor
 	};
 	static ArchiveType s_curArchiveType;
 
-	void resources_save(FileStream& outFile)
+	void resources_save(vpFile& outFile)
 	{
 		const s32 count = (s32)s_extResources.size();
 		const EditorResource* res = s_extResources.data();

@@ -7,10 +7,8 @@
 #include <TFE_DarkForces/Landru/lpalette.h>
 #include <TFE_DarkForces/Landru/lcanvas.h>
 #include <TFE_DarkForces/Landru/ldraw.h>
-#include <TFE_Archive/lfdArchive.h>
 #include <TFE_DarkForces/agent.h>
 #include <TFE_DarkForces/util.h>
-#include <TFE_Archive/archive.h>
 #include <TFE_Settings/settings.h>
 #include <TFE_Input/input.h>
 #include <TFE_RenderBackend/renderBackend.h>
@@ -92,20 +90,10 @@ namespace TFE_DarkForces
 		s_briefingOpen = JFALSE;
 		s_skill = skill;
 
-		if (!menu_openResourceArchive(archive))
-		{
-			// Try the dfbrief.lfd file.
-			if (!menu_openResourceArchive("dfbrief.lfd"))
-			{
-				return;
-			}
-		}
-
 		// Mission specific text and images.
 		s_briefActor = lactorDelt_load(mission, &s_briefRect, 0, 0, 0);
 		if (!s_briefActor)
 		{
-			menu_closeResourceArchive();
 			return;
 		}
 
@@ -119,7 +107,6 @@ namespace TFE_DarkForces
 
 		if (!s_menuActor)
 		{
-			menu_closeResourceArchive();
 			s_briefingOpen = JFALSE;
 			s_skill = 1;
 			vfb_forceToBlack();
@@ -151,7 +138,6 @@ namespace TFE_DarkForces
 				lactorAnim_getFrame(s_menuActor, &s_missionTextRect);
 			}
 		}
-		menu_closeResourceArchive();
 		
 		LRect rect;
 		lactor_setTime(s_briefActor, -1, -1);

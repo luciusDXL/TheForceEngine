@@ -37,14 +37,12 @@
 #include <TFE_FileSystem/paths.h>
 #include <TFE_FileSystem/fileutil.h>
 #include <TFE_FileSystem/filestream.h>
+#include <TFE_FileSystem/physfswrapper.h>
 #include <TFE_A11y/accessibility.h>
 #include <TFE_Audio/midiPlayer.h>
 #include <TFE_Audio/audioSystem.h>
 #include <TFE_Asset/modelAsset_jedi.h>
 #include <TFE_Asset/spriteAsset_Jedi.h>
-#include <TFE_Archive/archive.h>
-#include <TFE_Archive/zipArchive.h>
-#include <TFE_Archive/gobMemoryArchive.h>
 #include <TFE_Jedi/Level/rfont.h>
 #include <TFE_Jedi/Level/level.h>
 #include <TFE_Jedi/InfSystem/infSystem.h>
@@ -54,6 +52,7 @@
 #include <TFE_Jedi/IMuse/imuse.h>
 #include <TFE_Jedi/Serialization/serialization.h>
 #include <assert.h>
+#include <physfs.h>
 
 // Add texture callbacks.
 #include <TFE_Jedi/Level/levelTextures.h>
@@ -68,7 +67,6 @@ namespace TFE_DarkForces
 	/////////////////////////////////////////////
 	static const char* c_gobFileNames[] =
 	{
-		"DARK.GOB",
 		"SOUNDS.GOB",
 		"TEXTURES.GOB",
 		"SPRITES.GOB",
@@ -77,13 +75,15 @@ namespace TFE_DarkForces
 	static const char* c_optionalGobFileNames[] =
 	{
 		"enhanced.gob",
+		"extras.gob",
 	};
-	
-	enum GameConstants
+
+	// main game levels (not the ones from a GOB)
+	static const char* c_mainGameGobFileNames[] =
 	{
-		MAX_MOD_LFD = 16,
+		"DARK.GOB",
 	};
-	   
+
 	enum GameState
 	{
 		GSTATE_STARTUP_CUTSCENES = 0,
@@ -219,7 +219,7 @@ namespace TFE_DarkForces
 	};
 	static RunGameState   s_runGameState = {};
 	static SharedGameState s_sharedState = {};
-				
+
 	/////////////////////////////////////////////
 	// Forward Declarations
 	/////////////////////////////////////////////
@@ -229,8 +229,6 @@ namespace TFE_DarkForces
 	void loadCustomGob(const char* gobName);
 	void setInitialLevel(const char* levelName);
 	s32  loadLocalMessages();
-	void buildSearchPaths();
-	bool openGobFiles();
 	void gameStartup();
 	void loadAgentAndLevelData();
 	void startNextMode();
@@ -238,16 +236,267 @@ namespace TFE_DarkForces
 	void pauseLevelSound();
 	void resumeLevelSound();
 
+	// find out if a gob contains the level list
+	static bool gobHasJedilvl(const char *modgob)
+	{
+		// mount over the mod examination area, maybe the mod ZIP already
+		// provides the jedi.lvl and we catch that here.
+		TFEMount m = vpMountVirt(VPATH_TMP, modgob, VPATH_TMP, true, false);
+		if (!m)
+			return false;
+		bool found = vpFileExists(VPATH_TMP, "jedi.lvl", false);
+		vpUnmount(m);
+		return found;
+	}
+
+	/*
+	 * Mount the virtual gamedata tree:
+	 * - First add the DF source (folder or Archive) from real filesystem
+	 * - Now add the contents of all the base resource GOBs which are now accessible from within this tree
+	 * - Add contents of optional extra GOBs from DF Remaster
+	 * - Add the contents of the cutscene LFDs (LFD/ folder)
+	 * - If we load a MOD:
+	 *    - enumerate all the GOB files in the mod
+	 *    - find out whether mod or any of its GOBs provide a "jedi.lvl" file
+	 *    - mount the mod folder/archive at the gametree root, first in the search order.
+	 *    - add the contents of all the MOD GOBs to the gametree root, first in the search order.
+	 *      This way their contents override any existing content from earlier steps.
+	 * - NO JEDI.LVL already found:
+	 *    - add the contents of the standard DARK.GOB level container.
+	 * - Add the contents of all the LFD files at the root level of the gamedata tree,
+	 *    front in the search order.
+	 *    This way any LFD files which are usually overridden by mods (i.e. dfbrief.lfd)
+	 *    have now preference over of the ones from the first step.
+	 */
+	static bool mountGame(const char* srcpath, const char* modpath)
+	{
+		TFEExtList telfd = { "lfd" };
+		TFEExtList tegob = { "gob" };
+		TFEMount m[1024];
+		int j, skipped;
+		bool loaddefgob;
+	
+		j = 0;
+		skipped = 0;
+		loaddefgob = true;		// assume DARK.GOB needs to be loaded
+
+		vpUnmountTree(VPATH_GAME);
+		m[j] = vpMountReal(srcpath, VPATH_GAME);
+		if (!m[j])
+		{
+			TFE_System::logWrite(LOG_ERROR, "DarkForcesMain", "cannot mount game source");
+			return false;
+		} else {
+			TFE_System::logWrite(LOG_MSG, "DarkForcesMain", "mounted %s", srcpath);
+		}
+		++j;
+
+		/*
+		 * MAIN Resource GOBs
+		 */
+		for (auto i : c_gobFileNames)
+		{
+			m[j] = vpMountVirt(VPATH_GAME, i, VPATH_GAME, true, false);
+			if (!m[j])
+			{
+				TFE_System::logWrite(LOG_ERROR, "DarkForcesMain", "cannot mount: %s", i);
+				vpUnmountTree(VPATH_GAME);
+				return false;
+			}
+			else
+			{
+				TFE_System::logWrite(LOG_MSG, "DarkForcesMain", "mounted %s", i);
+			}
+			++j;
+		}
+
+		/*
+		 * the DF Remaster optional GOBs
+		 */
+		for (auto i : c_optionalGobFileNames)
+		{
+			m[j] = vpMountVirt(VPATH_GAME, i, VPATH_GAME, true, false);
+			if (m[j])
+				++j;
+			else
+				++skipped;
+
+			TFE_System::logWrite(LOG_MSG, "DarkForcesMain", m[j] ? "mounted %s" : "skipped %s", i);
+		}
+
+		/*
+		 * Add the contents of all the cutscene LFDs in the DF LFD/ subdir
+		 */
+		TFEFileList tl;
+		if (vpGetFileList(VPATH_GAME, "lfd/", tl, telfd, false))
+		{
+			char buf[32];
+			for (auto i : tl)
+			{
+				sprintf(buf, "LFD/%s", i.c_str());
+				m[j] = vpMountVirt(VPATH_GAME, buf, VPATH_GAME, false, false);
+				TFE_System::logWrite(LOG_MSG, "DarkForcesMain", m[j] ? "mounted %s" : "failed %s", buf);
+				if (m[j])
+					j++;
+			}
+		}
+		else
+		{
+			TFE_System::logWrite(LOG_ERROR, "DarkForcesMain", "unable to enumerate LFD/ contents, aborting");
+			return false;
+		}
+
+		/*
+		 * external MOD
+		 */
+		if (modpath)
+		{
+			TFEFileList goblist, customlist;
+
+			// get a list of GOBs in the archive. LFDs are handled universally later.
+			TFEMount tm = vpMountReal(modpath, VPATH_TMP);
+			if (!tm)
+			{
+				TFE_System::logWrite(LOG_ERROR, "DarkForcesMain", "could not find MOD %s, aborting", modpath);
+				return false;
+			}
+			bool ok1 = vpGetFileList(VPATH_TMP, goblist, tegob);
+
+			if (!ok1)
+			{
+				TFE_System::logWrite(LOG_ERROR, "DarkForcesMain", "MOD %s, unable to enumerate files. aborting", modpath);
+				vpUnmount(tm);
+				return false;
+			}
+
+			// look for a JEDI.LVL file in the mod gobs.
+			bool hasjedilvl = false;
+			for (auto i : goblist)
+			{
+				if (gobHasJedilvl(i.c_str()))
+				{
+					hasjedilvl = true;
+					break;
+				}
+			}
+			// in case no gobs..
+			if (!hasjedilvl)
+				hasjedilvl |= vpFileExists(VPATH_TMP, "jedi.lvl", false);
+
+			vpUnmount(tm);
+			if (hasjedilvl)
+				loaddefgob = false;
+
+			// now mount the mod at the base dir
+			m[j] = vpMountReal(modpath, VPATH_GAME, true);
+			if (!m[j])
+			{
+				TFE_System::logWrite(LOG_ERROR, "DarkForcesMain", "MOD %s, unable to mount, aborting", modpath);
+				return false;
+			}
+			j++;
+
+			customlist.clear();
+			customlist.emplace_back(modpath);
+			for (auto i : goblist)
+			{
+				m[j] = vpMountVirt(VPATH_GAME, i.c_str(), VPATH_GAME, true, true);
+				if (!m[j])
+				{
+					TFE_System::logWrite(LOG_ERROR, "DarkForcesMain", "MOD %s, unable to mount GOB %s", modpath, i.c_str());
+					return false;
+				} else {
+					TFE_System::logWrite(LOG_MSG, "DarkForcesMain", "MOD %s, mounted %s", modpath, i.c_str());
+				}
+				j++;
+
+				// record the GOB as a custom one (i.e. not from base game
+				// and therefore not eligible for DF Remaster asset replacement.
+				char *gobpath = vpToVpath(VPATH_GAME, i.c_str());
+				customlist.emplace_back(gobpath);
+				free(gobpath);
+			}
+			bitmap_setCustomArchives(customlist);
+		}
+
+		/*
+		 * DARK.GOB (main levels)
+		 */
+		if (loaddefgob)
+		{
+			/*
+			 * Main Game Level GOB
+			 */
+			for (auto i : c_mainGameGobFileNames)
+			{
+				m[j] = vpMountVirt(VPATH_GAME, i, VPATH_GAME, true, false);
+				if (m[j]) {
+					TFE_System::logWrite(LOG_MSG, "DarkForcesMain", "mounted %s", i);
+				} else {
+					TFE_System::logWrite(LOG_ERROR, "DarkForcesMain", "could not find %s, aborting", i);
+					return false;
+				}
+				j++;
+			}
+		}
+		
+		/*
+		 * Add all the LFDs in the root folder now,
+		 * since the MODs now override the base game ones (i.e. dfbrief.lfd)
+		 */
+		tl.clear();
+		if (vpGetFileList(VPATH_GAME, tl, telfd))
+		{
+			char buf[32];
+			for (auto i : tl)
+			{
+				m[j] = vpMountVirt(VPATH_GAME, i.c_str(), VPATH_GAME, false, true);
+				TFE_System::logWrite(LOG_MSG, "DarkForcesMain", m[j] ? "mounted %s" : "skipped %s", i.c_str());
+				if (m[j])
+					j++;
+			}
+		} else {
+			TFE_System::logWrite(LOG_ERROR, "DarkForcesMain", "unable to enumerate root LFD files, aborting");
+			return false;
+		}
+
+		/*
+		 * Adjustable HUD
+		 */
+		m[j] = vpMountVirt(VPATH_TFE, "Mods/TFE/AdjustableHud/", VPATH_GAME, true, false);
+		TFE_System::logWrite(LOG_MSG, "DarkForcesMain", m[j] ? "mounted %s" : "skipped %s", "Mods/TFE/AdjustableHud/");
+		j++;
+
+#if 0
+		{	// dump the file listing
+			TFEFileList tl;
+			if (vpGetFileList(VPATH_GAME, tl))
+				for (auto i : tl)
+					printf("=> %s\n", i.c_str());
+		}
+#endif
+		TFE_System::logWrite(LOG_MSG, "DarkForcesMain", "mounted %d, skipped %d optional archives", j, skipped);
+		return true;
+	}
+
+
 	/////////////////////////////////////////////
 	// API
 	/////////////////////////////////////////////
 		
 	// This is the equivalent of the initial part of main() in Dark Forces DOS.
 	// This part loads and sets up the game.
-	bool DarkForces::runGame(s32 argCount, const char* argv[], Stream* stream)
+	bool DarkForces::runGame(s32 argCount, const char* argv[], vpFile* stream)
 	{
 		// TFE: Initially disable the reticle.
 		reticle_enable(false);
+
+		bool ok = mountGame(TFE_Paths::getPath(PATH_SOURCE_DATA), nullptr);
+		if (!ok)
+		{
+			vpUnmountTree(VPATH_GAME);
+			return false;
+		}
 
 		if (!stream)
 		{
@@ -289,14 +538,9 @@ namespace TFE_DarkForces
 		char startLevel[TFE_MAX_PATH] = "";
 		bitmap_setAllocator(s_gameRegion);
 
-		bitmap_setCoreArchives(c_gobFileNames, TFE_ARRAYSIZE(c_gobFileNames));
-
 		printGameInfo();
-		buildSearchPaths();
 		processCommandLineArgs(argCount, argv, startLevel);
 		loadLocalMessages();
-		if (!openGobFiles())
-			return false;
 
 		// Sound is initialized before the task system.
 		sound_open(s_gameRegion);
@@ -354,8 +598,6 @@ namespace TFE_DarkForces
 		bitmap_clearAll();
 		
 		// Clear paths and archives.
-		TFE_Paths::clearSearchPaths();
-		TFE_Paths::clearLocalArchives();
 		task_shutdown();
 
 		// Sound is destroyed after the task system.
@@ -387,6 +629,8 @@ namespace TFE_DarkForces
 		// Reset state.
 		s_sharedState = {};
 		s_runGameState = {};
+
+		vpUnmountTree(VPATH_GAME);
 	}
 
 	void DarkForces::pauseGame(bool pause)
@@ -885,191 +1129,6 @@ namespace TFE_DarkForces
 
 	void loadCustomGob(const char* gobName)
 	{
-		FilePath archivePath;
-		s32 lfdIndex[MAX_MOD_LFD];
-		char lfdName[MAX_MOD_LFD][TFE_MAX_PATH];
-		char briefingName[TFE_MAX_PATH];
-		s32 lfdCount = 0;
-		s32 briefingIndex = -1;
-
-		strcpy(s_sharedState.customGobName, gobName);
-
-		if (TFE_Paths::getFilePath(gobName, &archivePath))
-		{
-			// Is this really a gob?
-			const size_t len = strlen(gobName);
-			const char* ext = &gobName[len - 3];
-			if (strcasecmp(ext, "zip") == 0 || strcasecmp(ext, "pk3") == 0)
-			{
-				// In the case of a zip file, we want to extract the GOB into an in-memory format and use that directly.
-				ZipArchive zipArchive;
-				if (zipArchive.open(archivePath.path))
-				{
-					s32 gobIndex = -1;
-					const u32 count = zipArchive.getFileCount();
-					for (u32 i = 0; i < count; i++)
-					{
-						const char* name = zipArchive.getFileName(i);
-						const size_t nameLen = strlen(name);
-						const char* zext = &name[nameLen - 3];
-						if (strcasecmp(zext, "gob") == 0)
-						{
-							// Avoid MacOS references, they aren't real files.
-							char gobFileName[TFE_MAX_PATH];
-							FileUtil::getFileNameFromPath(name, gobFileName, true);
-							if (gobFileName[0] != '.' || gobFileName[1] != '_')
-							{
-								gobIndex = i;
-							}
-						}
-						else if (strcasecmp(zext, "lfd") == 0 && lfdCount < MAX_MOD_LFD)
-						{
-							if (strstr(name, "brief") || strstr(name, "BRIEF"))
-							{
-								briefingIndex = i;
-							}
-							else
-							{
-								lfdIndex[lfdCount++] = i;
-							}
-						}
-					}
-
-					// If there is only 1 LFD, assume it is mission briefings.
-					if (lfdCount == 1 && briefingIndex < 0)
-					{
-						briefingIndex = lfdIndex[0];
-						lfdCount = 0;
-					}
-
-					if (gobIndex >= 0)
-					{
-						u32 bufferLen = (u32)zipArchive.getFileLength(gobIndex);
-						u8* buffer = (u8*)malloc(bufferLen);
-						zipArchive.openFile(gobIndex);
-						zipArchive.readFile(buffer, bufferLen);
-						zipArchive.closeFile();
-
-						GobMemoryArchive* gobArchive = new GobMemoryArchive();
-						gobArchive->setName(zipArchive.getFileName(gobIndex));
-						gobArchive->open(buffer, bufferLen);
-						TFE_Paths::addLocalArchive(gobArchive);
-					}
-
-					char tempPath[TFE_MAX_PATH];
-					sprintf(tempPath, "%sTemp/", TFE_Paths::getPath(PATH_PROGRAM_DATA));
-					// Extract and copy the briefing.
-					if (briefingIndex >= 0)
-					{
-						u32 bufferLen = (u32)zipArchive.getFileLength(briefingIndex);
-						u8* buffer = (u8*)malloc(bufferLen);
-						zipArchive.openFile(briefingIndex);
-						zipArchive.readFile(buffer, bufferLen);
-						zipArchive.closeFile();
-
-						char lfdPath[TFE_MAX_PATH];
-						sprintf(lfdPath, "%sdfbrief.lfd", tempPath);
-						FileStream file;
-						if (file.open(lfdPath, Stream::MODE_WRITE))
-						{
-							file.writeBuffer(buffer, bufferLen);
-							file.close();
-						}
-						free(buffer);
-
-						TFE_Paths::addSingleFilePath("dfbrief.lfd", lfdPath);
-					}
-					// Extract and copy the LFD.
-					for (s32 i = 0; i < lfdCount; i++)
-					{
-						u32 bufferLen = (u32)zipArchive.getFileLength(lfdIndex[i]);
-						u8* buffer = (u8*)malloc(bufferLen);
-						zipArchive.openFile(lfdIndex[i]);
-						zipArchive.readFile(buffer, bufferLen);
-						zipArchive.closeFile();
-
-						char lfdPath[TFE_MAX_PATH];
-						sprintf(lfdPath, "%scutscenes%d.lfd", tempPath, i);
-						FileStream file;
-						if (file.open(lfdPath, Stream::MODE_WRITE))
-						{
-							file.writeBuffer(buffer, bufferLen);
-							file.close();
-						}
-						free(buffer);
-
-						TFE_Paths::addSingleFilePath(zipArchive.getFileName(lfdIndex[i]), lfdPath);
-					}
-
-					zipArchive.close();
-				}
-			}
-			else
-			{
-				Archive* archive = Archive::getArchive(ARCHIVE_GOB, gobName, archivePath.path);
-				if (archive)
-				{
-					TFE_Paths::addLocalArchive(archive);
-
-					// Handle LFD files.
-					char modPath[TFE_MAX_PATH];
-					FileUtil::getFilePath(archivePath.path, modPath);
-
-					// Look for LFD files.
-					lfdCount = 0;
-					briefingIndex = -1;
-
-					FileList fileList;
-					FileUtil::readDirectory(modPath, "lfd", fileList);
-					const size_t count = fileList.size();
-					const std::string* file = fileList.data();
-															
-					for (size_t i = 0; i < count; i++, file++)
-					{
-						const size_t len = file->length();
-						const char* name = file->c_str();
-
-						if (lfdCount < 16)
-						{
-							if (strstr(name, "brief") || strstr(name, "BRIEF"))
-							{
-								briefingIndex = s32(i);
-								strcpy(briefingName, name);
-							}
-							else if (lfdCount < MAX_MOD_LFD)
-							{
-								strcpy(lfdName[lfdCount], name);
-								lfdCount++;
-							}
-						}
-					}
-
-					// If there is only 1 LFD, assume it is mission briefings.
-					if (lfdCount == 1 && briefingIndex < 0)
-					{
-						strcpy(briefingName, lfdName[0]);
-						briefingIndex = 0;
-						lfdCount = 0;
-					}
-
-					// Extract and copy the briefing.
-					char lfdPath[TFE_MAX_PATH];
-					if (briefingIndex >= 0)
-					{
-						sprintf(lfdPath, "%s%s", modPath, briefingName);
-						TFE_Paths::addSingleFilePath("dfbrief.lfd", lfdPath);
-					}
-
-					// Extract and copy the LFD.
-					for (s32 i = 0; i < lfdCount; i++)
-					{
-						sprintf(lfdPath, "%s%s", modPath, lfdName[i]);
-						TFE_Paths::addSingleFilePath(lfdName[i], lfdPath);
-					}
-				}
-			}
-		}
-
 		TFE_Settings::loadCustomModSettings();
 	}
 
@@ -1080,87 +1139,12 @@ namespace TFE_DarkForces
 			return 1;
 		}
 
-		FilePath path;
-		TFE_Paths::getFilePath("local.msg", &path);
-		return parseMessageFile(&s_sharedState.localMessages, &path, 0);
+		return parseMessageFile(&s_sharedState.localMessages, "local.msg", 0);
 	}
 
-	void buildSearchPaths()
-	{
-		TFE_Paths::addLocalSearchPath("");
-		TFE_Paths::addLocalSearchPath("LFD/");
-		// Dark Forces also adds C:/ and C:/LFD but TFE won't be doing that for obvious reasons...
-		
-		// Add some extra directories, if they exist.
-		// Obviously these were not in the original code.
-		TFE_Paths::addLocalSearchPath("Mods/");
-
-		// Add Mods/ paths to the program data directory and local executable directory.
-		// Note only directories that exist are actually added.
-		const char* programData = TFE_Paths::getPath(PATH_PROGRAM_DATA);
-		const char* programDir = TFE_Paths::getPath(PATH_PROGRAM);
-		char path[TFE_MAX_PATH];
-		
-		sprintf(path, "%sMods/", programData);
-		TFE_Paths::addAbsoluteSearchPath(path);
-
-		sprintf(path, "%s", "Mods/");
-		if (!TFE_Paths::mapSystemPath(path))
-			sprintf(path, "%sMods/", programDir);
-		TFE_Paths::addAbsoluteSearchPath(path);
-
-		// Add the adjustable HUD.
-		sprintf(path, "%s", "Mods/TFE/AdjustableHud");
-		if (!TFE_Paths::mapSystemPath(path))
-			sprintf(path, "%sMods/TFE/AdjustableHud", programDir);
-		TFE_Paths::addAbsoluteSearchPath(path);
-	}
-
-	bool openGobFiles()
-	{
-		for (s32 i = 0; i < TFE_ARRAYSIZE(c_gobFileNames); i++)
-		{
-			FilePath archivePath;
-			if (TFE_Paths::getFilePath(c_gobFileNames[i], &archivePath))
-			{
-				assert(archivePath.path[0] != 0);
-				Archive* archive = Archive::getArchive(ARCHIVE_GOB, c_gobFileNames[i], archivePath.path);
-				if (archive)
-				{
-					TFE_Paths::addLocalArchive(archive);
-				}
-			}
-			else
-			{
-				TFE_System::logWrite(LOG_ERROR, "Dark Forces Main", "Cannot find required game data - '%s'.", c_gobFileNames[i]);
-				return false;
-			}
-		}
-		// Optional gobs
-		for (s32 i = 0; i < TFE_ARRAYSIZE(c_optionalGobFileNames); i++)
-		{
-			FilePath archivePath;
-			if (TFE_Paths::getFilePath(c_optionalGobFileNames[i], &archivePath))
-			{
-				assert(archivePath.path[0] != 0);
-				Archive* archive = Archive::getArchive(ARCHIVE_GOB, c_optionalGobFileNames[i], archivePath.path);
-				if (archive)
-				{
-					TFE_Paths::addLocalArchive(archive);
-				}
-			}
-		}
-		return true;
-	}
-		
 	void loadMapNumFont()
 	{
-		FilePath filePath;
-		s_sharedState.mapNumFont = nullptr;
-		if (TFE_Paths::getFilePath("map-nums.fnt", &filePath))
-		{
-			s_sharedState.mapNumFont = font_load(&filePath);
-		}
+		s_sharedState.mapNumFont = font_load("map-nums.fnt");
 	}
 
 	Font* getMapNumFont()
@@ -1187,10 +1171,8 @@ namespace TFE_DarkForces
 	static void loadLangHotkeys(void)
 	{
 		GameMessages msgs;
-		FilePath fp;
 
-		TFE_Paths::getFilePath("HOTKEYS.MSG", &fp);
-		parseMessageFile(&msgs, &fp, 1);
+		parseMessageFile(&msgs, "HOTKEYS.MSG", 1);
 		parseKey(&msgs, 160, &s_sharedState.langKeys.k_yes,   KEY_Y);
 		parseKey(&msgs, 350, &s_sharedState.langKeys.k_quit,  KEY_Q);
 		parseKey(&msgs, 330, &s_sharedState.langKeys.k_cont,  KEY_R);
@@ -1219,41 +1201,38 @@ namespace TFE_DarkForces
 		weapon_startup();
 		loadLangHotkeys();
 
-		FilePath filePath;
-		TFE_Paths::getFilePath("swfont1.fnt", &filePath);
-		s_sharedState.swFont1 = font_load(&filePath);
+		s_sharedState.swFont1 = font_load("SWFONT1.FNT");
 
 		renderer_setVisionEffect(0);
 		renderer_setupCameraLight(JFALSE, JFALSE);
 
-		s_loadScreen = bitmap_load("wait.bm", 1, POOL_GAME);
-		if (TFE_Paths::getFilePath("wait.pal", &filePath))
+		s_loadScreen = bitmap_load("WAIT.BM", 1, POOL_GAME);
+		vpFile pal(VPATH_GAME, "WAIT.PAL", false);
+		if (pal)
 		{
-			FileStream::readContents(&filePath, s_loadingScreenPal, 768);
+			pal.read(s_loadingScreenPal, 768);
 		}
+		pal.close();
 
 		weapon_enableAutomount(s_config.wpnAutoMount);
-		s_sharedState.screenShotSndSrc = sound_load("scrshot.voc", SOUND_PRIORITY_HIGH0);
+		s_sharedState.screenShotSndSrc = sound_load("SCRSHOT.VOC", SOUND_PRIORITY_HIGH0);
 		sound_setBaseVolume(s_sharedState.screenShotSndSrc, 127);
 	}
 
 	void loadAgentAndLevelData()
 	{
 		agent_loadData();
-		if (!agent_loadLevelList("jedi.lvl"))
+		if (!agent_loadLevelList("JEDI.LVL"))
 		{
 			TFE_System::logWrite(LOG_ERROR, "DarkForcesMain", "Failed to load level list.");
 		}
-		if (!parseBriefingList(&s_sharedState.briefingList, "briefing.lst"))
+		if (!parseBriefingList(&s_sharedState.briefingList, "BRIEFING.LST"))
 		{
 			TFE_System::logWrite(LOG_ERROR, "DarkForcesMain", "Failed to load briefing list.");
 		}
 
-		FilePath filePath;
-		if (TFE_Paths::getFilePath("hotkeys.msg", &filePath))
-		{
-			parseMessageFile(&s_sharedState.hotKeyMessages, &filePath, 1);
-		}
+		parseMessageFile(&s_sharedState.hotKeyMessages, "HOTKEYS.MSG", 1);
+
 		s_sharedState.diskErrorImg = bitmap_load("diskerr.bm", 0, POOL_GAME);
 		if (!s_sharedState.diskErrorImg)
 		{
@@ -1292,7 +1271,7 @@ namespace TFE_DarkForces
 		mission_setupTasks();
 	}
 
-	void serializeLoopState(Stream* stream, DarkForces* game)
+	static void serializeLoopState(vpFile* stream, DarkForces* game)
 	{
 		if (s_sharedState.gameStarted)
 		{
@@ -1327,12 +1306,12 @@ namespace TFE_DarkForces
 		}
 	}
 
-	void serializeVersion(Stream* stream)
+	static void serializeVersion(vpFile* stream)
 	{
 		SERIALIZE_VERSION(SaveVersionInit);
 	}
 
-	bool DarkForces::serializeGameState(Stream* stream, const char* filename, bool writeState)
+	bool DarkForces::serializeGameState(vpFile* stream, const char* filename, bool writeState)
 	{
 		if (!stream) { return false; }
 		if (writeState && filename)
@@ -1389,4 +1368,34 @@ namespace TFE_DarkForces
 		}
 		return true;
 	}
+	
+	bool validateSourceData(const char *path)
+	{
+		fprintf(stderr, ">DF(%s)\n", path);
+		bool ok = false;
+		static const char * const testfiles[] = {
+			"DARK.GOB", "SOUNDS.GOB", "SPRITES.GOB", "TEXTURES.GOB"
+		};
+
+		TFEMount m = vpMountReal(path, VPATH_TMP);
+		if (!m) {
+			ok = false;
+			goto out;
+		}
+
+		ok = true;
+		for (auto i : testfiles)
+		{
+			if (!vpFileExists(VPATH_TMP, i, false))
+			{
+				ok = false;
+				break;
+			}
+		}
+		vpUnmount(m);
+out:
+		fprintf(stderr, "<DF(%s) %d\n", path, ok);
+		return ok;
+	}
+
 }

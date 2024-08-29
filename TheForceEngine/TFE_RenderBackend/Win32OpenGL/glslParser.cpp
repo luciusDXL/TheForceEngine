@@ -1,8 +1,7 @@
 #include <cstring>
 
 #include "glslParser.h"
-#include <TFE_FileSystem/paths.h>
-#include <TFE_FileSystem/filestream.h>
+#include <TFE_FileSystem/physfswrapper.h>
 #include <TFE_RenderBackend/renderState.h>
 #include <TFE_System/system.h>
 #include "gl.h"
@@ -62,19 +61,15 @@ namespace GLSLParser
 
 	bool parseFile(const char* fileName, std::vector<char>& outputBuffer)
 	{
-		char filePath[TFE_MAX_PATH];
-		strcpy(filePath, fileName);
-		if (!TFE_Paths::mapSystemPath(filePath))
-			TFE_Paths::appendPath(PATH_PROGRAM, fileName, filePath);
+		vpFile file(VPATH_TFE, fileName);
+		if (!file)
+			return false;
 
-		FileStream file;
-		if (!file.open(filePath, Stream::MODE_READ)) { return false; }
-
-		const u32 fileSize = (u32)file.getSize();
+		const u32 fileSize = (u32)file.size();
 		std::vector<char> tempBuffer;
 		tempBuffer.resize(fileSize + 1);
 		tempBuffer.data()[fileSize] = 0;
-		file.readBuffer(tempBuffer.data(), fileSize);
+		file.read(tempBuffer.data(), fileSize);
 		file.close();
 
 		parseBuffer(tempBuffer, outputBuffer);

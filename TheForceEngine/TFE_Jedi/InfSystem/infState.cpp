@@ -6,6 +6,7 @@
 #include <TFE_Jedi/Memory/allocator.h>
 #include <TFE_Jedi/Level/level.h>
 #include <TFE_Jedi/Level/levelData.h>
+#include <TFE_Jedi/Level/rtexture.h>
 #include <cstring>
 
 using namespace TFE_DarkForces;
@@ -25,9 +26,9 @@ namespace TFE_Jedi
 	/////////////////////////////////////////////
 	// Forward Declarations
 	/////////////////////////////////////////////
-	void inf_serializeStop(Stream* stream, Stop* stop);
-	void inf_serializeSlave(Stream* stream, Slave* slave);
-	void inf_serializeLink(Stream* stream, InfLink* link, Allocator* parent);
+	void inf_serializeStop(vpFile* stream, Stop* stop);
+	void inf_serializeSlave(vpFile* stream, Slave* slave);
+	void inf_serializeLink(vpFile* stream, InfLink* link, Allocator* parent);
 	void inf_serializeFixupLinks();
 
 	void inf_computeElevValuePointer(InfElevator* elev);
@@ -43,7 +44,7 @@ namespace TFE_Jedi
 		s_infState = { 0 };
 	}
 
-	void inf_serializeElevator(Stream* stream, InfElevator* elev)
+	void inf_serializeElevator(vpFile* stream, InfElevator* elev)
 	{
 		SERIALIZE(InfState_InitVersion, elev->deleted, 0);
 		if (elev->deleted)
@@ -236,7 +237,7 @@ namespace TFE_Jedi
 		SERIALIZE(InfState_InitVersion, elev->prevValue, 0);
 	}
 
-	void inf_serializeTeleport(Stream* stream, Teleport* teleport)
+	void inf_serializeTeleport(vpFile* stream, Teleport* teleport)
 	{
 		const vec3_fixed def = { 0 };
 
@@ -293,7 +294,7 @@ namespace TFE_Jedi
 		}
 	}
 
-	void inf_serializeTarget(Stream* stream, TriggerTarget* target)
+	void inf_serializeTarget(vpFile* stream, TriggerTarget* target)
 	{
 		RSector* targetSector = nullptr;
 		s32 wallIndex = -1;
@@ -330,7 +331,7 @@ namespace TFE_Jedi
 		SERIALIZE(InfState_InitVersion, target->eventMask, 0);
 	}
 
-	void inf_serializeTrigger(Stream* stream, InfTrigger* trigger)
+	void inf_serializeTrigger(vpFile* stream, InfTrigger* trigger)
 	{
 		SERIALIZE(InfState_InitVersion, trigger->deleted, 0);
 		if (trigger->deleted)
@@ -491,7 +492,7 @@ namespace TFE_Jedi
 		SERIALIZE(InfState_InitVersion, trigger->textId, 0);
 	}
 		
-	void inf_serialize(Stream* stream)
+	void inf_serialize(vpFile* stream)
 	{
 		SERIALIZE_VERSION(InfState_CurVersion);
 		
@@ -588,7 +589,7 @@ namespace TFE_Jedi
 	/////////////////////////////////////////////
 	// Internal - Serialize
 	/////////////////////////////////////////////
-	void inf_serializeMessage(Stream* stream, InfMessage* msg)
+	void inf_serializeMessage(vpFile* stream, InfMessage* msg)
 	{
 		RSector* sector = nullptr;
 		s32 wallIndex = -1;
@@ -627,7 +628,7 @@ namespace TFE_Jedi
 		SERIALIZE(InfState_InitVersion, msg->arg2, 0);
 	}
 
-	void inf_serializeAdjoin(Stream* stream, Stop* stop, AdjoinCmd* adjCmd)
+	void inf_serializeAdjoin(vpFile* stream, Stop* stop, AdjoinCmd* adjCmd)
 	{
 		serialization_serializeSectorPtr(stream, InfState_InitVersion, adjCmd->sector0);
 		serialization_serializeSectorPtr(stream, InfState_InitVersion, adjCmd->sector1);
@@ -649,7 +650,7 @@ namespace TFE_Jedi
 		}
 	}
 
-	void inf_serializeStop(Stream* stream, Stop* stop)
+	void inf_serializeStop(vpFile* stream, Stop* stop)
 	{
 		SERIALIZE(InfState_InitVersion, stop->value, 0);
 		SERIALIZE(InfState_InitVersion, stop->delay, 0);
@@ -734,7 +735,7 @@ namespace TFE_Jedi
 		}
 	}
 
-	void inf_serializeSlave(Stream* stream, Slave* slave)
+	void inf_serializeSlave(vpFile* stream, Slave* slave)
 	{
 		serialization_serializeSectorPtr(stream, InfState_InitVersion, slave->sector);
 		SERIALIZE(InfState_InitVersion, slave->value, 0);
@@ -790,7 +791,7 @@ namespace TFE_Jedi
 		}
 	}
 
-	void inf_serializeLink(Stream* stream, InfLink* link, Allocator* parent)
+	void inf_serializeLink(vpFile* stream, InfLink* link, Allocator* parent)
 	{
 		SERIALIZE(InfState_InitVersion, link->type, LTYPE_SECTOR);
 		// Task function is derived from the type.

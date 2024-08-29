@@ -12,5 +12,5 @@ namespace TFE_DarkForces
 	void phaseTwo_exit();
 	void phaseTwo_precache();
 	Logic* phaseTwo_setup(SecObject* obj, LogicSetupFunc* setupFunc);
-	void phaseTwo_serialize(Logic*& logic, SecObject* obj, Stream* stream);
+	void phaseTwo_serialize(Logic*& logic, SecObject* obj, vpFile* stream);
 }  // namespace TFE_DarkForces

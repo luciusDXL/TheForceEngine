@@ -6,6 +6,7 @@
 #include <TFE_System/types.h>
 #include <TFE_Jedi/Math/core_math.h>
 #include <TFE_FileSystem/stream.h>
+#include <TFE_Jedi/Serialization/serialization.h>
 
 namespace TFE_DarkForces
 {
@@ -28,7 +29,7 @@ namespace TFE_DarkForces
 		MAP_MAX                = 14,
 	};
 
-	void automap_serialize(Stream* stream);
+	void automap_serialize(vpFile* stream);
 
 	void automap_computeScreenBounds();
 	void automap_updateMapData(MapUpdateID id);

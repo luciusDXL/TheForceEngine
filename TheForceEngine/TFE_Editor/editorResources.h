@@ -8,7 +8,7 @@
 //////////////////////////////////////////////////////////////////////
 #include <TFE_System/types.h>
 #include <TFE_FileSystem/paths.h>
-#include <TFE_FileSystem/filestream.h>
+#include <TFE_FileSystem/physfswrapper.h>
 #include <TFE_Settings/gameSourceData.h>
 #include <string>
 
@@ -37,7 +37,7 @@ namespace TFE_Editor
 	bool resources_listChanged();
 	bool resources_ignoreVanillaAssets();
 
-	void resources_save(FileStream& outFile);
+	void resources_save(vpFile& outFile);
 	void resources_createExternalEmpty();
 	void resources_parse(const char* key, const char* value);
 

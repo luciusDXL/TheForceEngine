@@ -2,8 +2,7 @@
 #include <TFE_Input/input.h>
 #include <TFE_RenderBackend/renderBackend.h>
 #include <TFE_System/system.h>
-#include <TFE_FileSystem/fileutil.h>
-#include <TFE_FileSystem/paths.h>
+#include <TFE_FileSystem/physfswrapper.h>
 #include <TFE_Archive/archive.h>
 #include <TFE_Ui/ui.h>
 #include <TFE_Ui/markdown.h>
@@ -60,15 +59,20 @@ namespace TFE_Console
 
 	bool init()
 	{
-		char fontpath[TFE_MAX_PATH];
+		char *fontbuf = nullptr;		// freed by ImGUI on shutdown
+		unsigned int fontbufsize = 0;
 		s32 scale = TFE_Ui::getUiScale();
 		s_fontSize = (scale * 20) / 100;
 
-		sprintf(fontpath, "Fonts/DroidSansMono.ttf");
-		TFE_Paths::mapSystemPath(fontpath);
+		vpFile ttf(VPATH_TFE, "Fonts/DroidSansMono.ttf", &fontbuf, &fontbufsize);
+		if (!ttf)
+		{
+			TFE_System::logWrite(LOG_ERROR, "Console", "cannot load font");
+			return false;
+		}
 
 		ImGuiIO& io = ImGui::GetIO();
-		s_consoleFont = io.Fonts->AddFontFromFileTTF(fontpath, (f32)s_fontSize);
+		s_consoleFont = io.Fonts->AddFontFromMemoryTTF(fontbuf, fontbufsize, (f32)s_fontSize);
 		s_height = 0.0f;
 		s_anim = 0.0f;
 		s_historyIndex = -1;

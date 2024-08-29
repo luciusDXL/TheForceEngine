@@ -6,7 +6,6 @@
 #endif
 #include <SDL_mutex.h>
 #include <SDL_thread.h>
-#include <TFE_Asset/gmidAsset.h>
 #include <TFE_System/system.h>
 #include <TFE_Settings/settings.h>
 #include <TFE_FrontEndUI/console.h>

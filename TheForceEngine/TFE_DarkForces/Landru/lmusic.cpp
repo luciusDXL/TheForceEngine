@@ -3,8 +3,7 @@
 #include <TFE_Memory/memoryRegion.h>
 #include <TFE_Game/igame.h>
 #include <TFE_Jedi/IMuse/imuse.h>
-#include <TFE_FileSystem/filestream.h>
-#include <TFE_FileSystem/paths.h>
+#include <TFE_FileSystem/physfswrapper.h>
 #include <TFE_System/parser.h>
 #include <TFE_System/system.h>
 #include <cassert>
@@ -50,16 +49,14 @@ namespace TFE_DarkForces
 		s_curCuePoint = 0;
 		memset(s_sequences, 0, sizeof(Sequence) * SEQUENCE_COUNT * MAX_CUE_POINTS);
 
-		FilePath filePath;
-		FileStream file;
-		if (!TFE_Paths::getFilePath("cutmuse.txt", &filePath)) { return; }
-		if (!file.open(&filePath, Stream::MODE_READ)) { return; }
-
-		size_t size = file.getSize();
+		vpFile file(VPATH_GAME, "cutmuse.txt", false);
+		if (!file)
+			return;
+		size_t size = file.size();
 		char* buffer = (char*)landru_alloc(size);
 		if (!buffer) { return; }
 
-		file.readBuffer(buffer, (u32)size);
+		file.read(buffer, (u32)size);
 		file.close();
 
 		TFE_Parser parser;

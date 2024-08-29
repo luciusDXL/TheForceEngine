@@ -1,19 +1,8 @@
 #include "uiTexture.h"
-#include <TFE_Input/input.h>
 #include <TFE_RenderBackend/renderBackend.h>
 #include <TFE_RenderBackend/textureGpu.h>
-#include <TFE_System/system.h>
-#include <TFE_FileSystem/fileutil.h>
-#include <TFE_FileSystem/paths.h>
-#include <TFE_Archive/archive.h>
-#include <TFE_Ui/ui.h>
-#include <TFE_Ui/markdown.h>
-#include <TFE_System/parser.h>
-
 #include <TFE_DarkForces/mission.h>
 #include <TFE_Jedi/Renderer/jediRenderer.h>
-
-#include <algorithm>
 
 namespace TFE_FrontEndUI
 {

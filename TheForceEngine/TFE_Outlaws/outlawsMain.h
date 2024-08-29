@@ -10,10 +10,12 @@ namespace TFE_Outlaws
 {
 	struct Outlaws : IGame
 	{
-		bool runGame(s32 argCount, const char* argv[], Stream* stream) override;
+		bool runGame(s32 argCount, const char* argv[], vpFile* stream) override;
 		void pauseGame(bool pause) override;
 		void pauseSound(bool pause) override;
 		void restartMusic() override;
 		void exitGame() override;
 	};
+	
+	bool validateSourceData(const char *path);
 }

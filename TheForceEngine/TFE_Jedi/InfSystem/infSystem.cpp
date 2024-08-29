@@ -5,12 +5,10 @@
 #include "message.h"
 #include <TFE_Game/igame.h>
 #include <TFE_Asset/dfKeywords.h>
-#include <TFE_FileSystem/filestream.h>
-#include <TFE_FileSystem/paths.h>
+#include <TFE_FileSystem/physfswrapper.h>
 #include <TFE_DarkForces/hud.h>
 #include <TFE_DarkForces/agent.h>
 #include <TFE_DarkForces/sound.h>
-#include <TFE_FileSystem/paths.h>
 #include <TFE_Jedi/Memory/allocator.h>
 #include <TFE_Jedi/Level/level.h>
 #include <TFE_Jedi/Level/levelData.h>
@@ -1224,21 +1222,16 @@ namespace TFE_Jedi
 		strcpy(levelPath, levelName);
 		strcat(levelPath, ".INF");
 
-		FilePath filePath;
-		if (!TFE_Paths::getFilePath(levelPath, &filePath))
-		{
-			TFE_System::logWrite(LOG_ERROR, "level_loadINF", "Cannot find level INF '%s'.", levelPath);
-			return JFALSE;
-		}
-		FileStream file;
-		if (!file.open(&filePath, Stream::MODE_READ))
+		vpFile file(VPATH_GAME, levelPath, false);
+		if (!file)
 		{
 			TFE_System::logWrite(LOG_ERROR, "level_loadINF", "Cannot open level INF '%s'.", levelPath);
 			return JFALSE;
 		}
-		size_t len = file.getSize();
+		
+		unsigned int len = file.size();
 		s_buffer.resize(len);
-		file.readBuffer(s_buffer.data(), u32(len));
+		file.read(s_buffer.data(), len);
 		file.close();
 
 		TFE_Parser parser;

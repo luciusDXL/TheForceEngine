@@ -1,0 +1,173 @@
+
+The latest PhysicsFS information and releases can be found at:
+  https://icculus.org/physfs/
+
+Building is (ahem) very easy.
+
+
+ALL PLATFORMS:
+
+Please read the text file LICENSE.txt in the root of the source tree.
+ The license is extremely liberal, even to closed-source, commercial
+ applications.
+
+If you've got Doxygen (http://www.doxygen.org/) installed, you can run it
+ without any command line arguments in the root of the source tree to generate
+ the API reference (or build the "docs" target from your build system). This
+ is optional. You can browse the API docs online here:
+
+    https://icculus.org/physfs/docs/
+
+
+
+BUILD IT WITH YOUR OWN PROGRAM:
+
+If you don't care about formal packaging: just add everything in the "src"
+directory to whatever you use to build your program and compile it along with
+everything else, and you're done. It should compile with any reasonable
+ANSI C compiler, should build cleanly even with excessive compiler warnings
+enabled, needs no extra configuration, and allows static linking.
+WinRT and Haiku need C++ compilers for their system APIs, but if you aren't on
+these platforms and don't have a C++ compiler, don't build the .cpp files.
+Likewise: Apple platforms (macOS, iOS, etc) need an Objective-C compiler, but
+if you aren't on these platforms and don't have a Objective-C compiler, don't
+build the .m file. Everything you need is in the .c sources.
+
+If this all worked for your specific project, you can stop reading now.
+
+
+
+Unix:
+
+You will need CMake (https://www.cmake.org/) 2.4 or later installed.
+
+Make a directory, wherever you like. This will be your build directory.
+
+Chdir to your build directory. Run "cmake /where/i/unpacked/physfs" to
+ generate Makefiles. You can then run "ccmake ." and customize the build,
+ but the defaults are probably okay. You can have CMake generate KDevelop
+ or Ninja project files or whatever, if you prefer these.
+
+Run "make". PhysicsFS will now build.
+
+As root, run "make install".
+ If you get sick of the library, run "make uninstall" as root
+ and it will remove all traces of the library from the system paths.
+
+Once you are satisfied, you can delete the build directory.
+
+Primary Unix development is done with GNU/Linux, but PhysicsFS is known to
+ work out of the box with several flavors of Unix. It it doesn't work, patches
+ to get it running can be sent to icculus@icculus.org.
+
+
+Windows:
+
+If building with Cygwin, mingw32, MSYS, or something else that uses the GNU
+ toolchain, follow the Unix instructions, above.
+
+If you want to use Visual Studio, nmake, or the Platform SDK, you will need
+ CMake (https://www.cmake.org/) 2.4 or later installed. Point CMake at the
+ CMakeLists.txt file in the root of the source directory and hit the
+ "Configure" button. After telling it what type of compiler you are targeting
+ (Borland, Visual Studio, etc), CMake will process for while and then give you
+ a list of options you can change (what archivers you want to support, etc).
+ If you aren't sure, the defaults are probably fine. Hit the "Configure"
+ button again, then "OK" once configuration has completed with options that
+ match your liking. Now project files for your favorite programming
+ environment will be generated for you in the directory you specified.
+ Go there and use them to build PhysicsFS.
+
+PhysicsFS will only link directly against system libraries that have existed
+ since Windows NT 3.51. If there's a newer API we want to use, we try to
+ dynamically load it at runtime and fallback to a reasonable behaviour when
+ we can't find it. Note that Windows 98 and later _should_
+ work if you use the Microsoft Layer for Unicode (UNICOWS.DLL) to provide
+ some missing system APIs, but this is no longer tested as of PhysicsFS 2.1.0.
+ PhysicsFS 2.0.x is known to work with Windows 95 without UNICOWS.DLL.
+
+PhysicsFS works on 32-bit and 64-bit Windows. There is no 16-bit Windows
+ support at all. Windows RT is covered below.
+
+
+Windows RT:
+
+Windows RT (Windows Phone, Windows Store, UWP) 8.0 and later are supported.
+Make sure you include both physfs_platform_windows.c _and_
+physfs_platform_winrt.cpp in your build, and that the C++ file has
+"Consume Windows Runtime Extension" set to "Yes" in its Visual Studio
+properties (from the command line, you want to compile this file with the
+"/ZW" compiler switch). CMake can, in theory, generate a project file for
+WinRT if you pick a recent Visual Studio target, choose manual cross-compile
+options, and set the system name to "WindowsPhone" or "WindowsStore" and the
+correct OS version (8.0 or later).
+
+
+PocketPC/WindowsCE:
+
+Support for PocketPC was removed in PhysicsFS 2.1.0. This was known to work
+ in the 1.0 releases, but wasn't tested in 2.0 and later. PhysicsFS should
+ work on modern Windows Phones (see "Windows RT" section).
+
+
+macOS:
+
+You will need CMake (https://www.cmake.org/) 2.4 or later installed.
+
+You can either generate a Unix makefile with CMake, or generate an Xcode
+ project, whichever makes you more comfortable.
+
+PowerPC and Intel Macs should both be supported.
+
+
+MAC OS 8/9 ("Mac OS Classic"):
+
+Classic Mac OS support has been dropped in PhysicsFS 2.0. Apple hasn't updated
+ pre-OSX versions in more than a decade at this point, none of the hardware
+ they've shipped will boot it for almost as many years, and finding
+ developer tools for it is becoming almost impossible. As the switch to Intel
+ hardware has removed the "Classic" emulation environment, it was time to
+ remove support from PhysicsFS. That being said, the PhysicsFS 1.0 branch can
+ still target back to Mac OS 8.5, so you can use that if you need support for
+ this legacy OS. We still very much support modern macOS, though: see above.
+
+
+Emscripten:
+
+Use the "Unix" instructions, above. You can install the Emscripten SDK and use
+ the extras/buildbot-emscripten.sh script to automate this for you.
+
+
+BeOS, Zeta, YellowTab:
+
+BeOS support was dropped in PhysicsFS 2.1.0. Consider installing Haiku, which
+we still support.
+
+
+Haiku:
+
+Use the "Unix" instructions, above.
+
+
+OS/2:
+
+OS/2 is known to work with OpenWatcom and GCC-based compilers. I couldn't get
+an OS/2 port of CMake to generate OpenWatcom project files (although it should
+be able to do that in theory), it should be able to do Unix Makefiles with
+GCC. It might be easier to just compile PhysicsFS along with the rest of
+your project on this platform.
+
+
+
+OTHER PLATFORMS:
+
+Many Unix-like platforms might "just work" with CMake. Some of these platforms
+ are known to have worked at one time, but have not been heavily tested, if
+ tested at all. PhysicsFS is, as far as we know, 64-bit and byteorder clean,
+ and is known to compile on several compilers across many platforms. To
+ implement a new platform or archiver, please read the heavily-commented
+ physfs_internal.h and look at the physfs_platform_* and physfs_archiver_*
+ source files for examples.
+
+--ryan. (icculus@icculus.org)
+

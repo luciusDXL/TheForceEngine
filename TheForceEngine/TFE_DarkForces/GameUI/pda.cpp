@@ -12,11 +12,9 @@
 #include <TFE_DarkForces/automap.h>
 #include <TFE_DarkForces/player.h>
 #include <TFE_DarkForces/hud.h>
-#include <TFE_Archive/lfdArchive.h>
 #include <TFE_DarkForces/agent.h>
 #include <TFE_DarkForces/util.h>
 #include <TFE_Game/reticle.h>
-#include <TFE_Archive/archive.h>
 #include <TFE_Settings/settings.h>
 #include <TFE_Input/input.h>
 #include <TFE_Input/inputMapping.h>
@@ -129,17 +127,12 @@ namespace TFE_DarkForces
 		pauseLevelSound();
 		if (!s_pdaLoaded)
 		{
-			if (!menu_openResourceArchive("dfbrief.lfd"))
-			{
-				return;
-			}
 			LRect rect;
 
 			s_briefing = lactorDelt_load(levelName, &s_pdaRect, 0, 0, 0);
 			s_goalsActor = lactorAnim_load(levelName, &rect, 0, 0, 0);
 			s_weapons  = lactorAnim_load("guns",  &rect, 0, 0, 0);
 			s_items    = lactorAnim_load("items", &rect, 0, 0, 0);
-			menu_closeResourceArchive();
 
 			lactor_setTime(s_goalsActor, -1, -1);
 			lactor_setTime(s_weapons, -1, -1);
@@ -162,10 +155,6 @@ namespace TFE_DarkForces
 			}
 			s_overlayRect = s_pdaRect;
 			
-			if (!menu_openResourceArchive("menu.lfd"))
-			{
-				return;
-			}
 			s_framebuffer = ldraw_getBitmap();
 			lcanvas_getBounds(&s_viewBounds);
 
@@ -173,8 +162,6 @@ namespace TFE_DarkForces
 			s_palette = lpalette_load("menu");
 			lactor_setTime(s_pdaArt, -1, -1);
 			
-			menu_closeResourceArchive();
-
 			s_pdaLoaded = JTRUE;
 		}
 		lpalette_setScreenPal(s_palette);

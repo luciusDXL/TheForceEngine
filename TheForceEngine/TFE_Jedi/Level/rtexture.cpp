@@ -1,13 +1,10 @@
+#include <algorithm>
 #include <cstring>
 
 #include "rtexture.h"
 #include <TFE_Game/igame.h>
 #include <TFE_System/system.h>
-#include <TFE_Archive/archive.h>
-#include <TFE_Asset/assetSystem.h>
-#include <TFE_FileSystem/fileutil.h>
-#include <TFE_FileSystem/paths.h>
-#include <TFE_FileSystem/filestream.h>
+#include <TFE_FileSystem/physfswrapper.h>
 #include <TFE_Jedi/Task/task.h>
 #include <TFE_Jedi/Serialization/serialization.h>
 #include <TFE_System/math.h>
@@ -47,7 +44,7 @@ namespace TFE_Jedi
 	static TextureList  s_textureList[POOL_COUNT];
 	static TextureTable s_textureTable[POOL_COUNT];
 
-	static std::vector<std::string> s_coreAchiveNames;
+	static std::vector<std::string> s_customArchives;
 
 	void decompressColumn_Type1(const u8* src, u8* dst, s32 pixelCount);
 	void decompressColumn_Type2(const u8* src, u8* dst, s32 pixelCount);
@@ -150,7 +147,7 @@ namespace TFE_Jedi
 	}
 
 	// Serialize only level textures.
-	void bitmap_serializeLevelTextures(Stream* stream)
+	void bitmap_serializeLevelTextures(vpFile* stream)
 	{
 		s32 count = 0;
 		LevelTexture* list = nullptr;
@@ -220,21 +217,17 @@ namespace TFE_Jedi
 		FileUtil::replaceExtension(name, "raw", hdPath);
 
 		// If the file doesn't exist, just return - there is no HD asset.
-		FilePath filepath;
-		if (!TFE_Paths::getFilePath(hdPath, &filepath))
-		{
+		if (!vpFileExists(VPATH_GAME, hdPath))
 			return;
-		}
-		FileStream file;
-		if (!file.open(&filepath, Stream::MODE_READ))
-		{
+			
+		vpFile file(VPATH_GAME, hdPath, false);
+		if (!file)
 			return;
-		}
 
 		// Load the raw data from disk.
-		size_t size = file.getSize();
+		unsigned int size = file.size();
 		s_buffer.resize(size);
-		file.readBuffer(s_buffer.data(), (u32)size);
+		file.read(s_buffer.data(), size);
 		file.close();
 
 		// Process the data based on the base texture.
@@ -277,34 +270,11 @@ namespace TFE_Jedi
 		}
 	}
 
-	void bitmap_setCoreArchives(const char** coreArchives, s32 count)
+	// register MOD container + its GOBs as custom assets.
+	void bitmap_setCustomArchives(TFEFileList& modgobs)
 	{
-		if (!coreArchives || count < 1) { return; }
-
-		s_coreAchiveNames.resize(count + 1);
-		for (s32 i = 0; i < count; i++)
-		{
-			s_coreAchiveNames[i] = coreArchives[i];
-		}
-		s_coreAchiveNames[count] = "enhanced.gob";
-	}
-
-	// This only checks a few names (5 I think) but is still doing a bunch of string compares.
-	// TODO: Add a "core archive" flag to the archives themselves.
-	bool isAssetCustom(const char* archiveName)
-	{
-		if (!archiveName) { return true; }
-
-		const s32 count = (s32)s_coreAchiveNames.size();
-		const std::string* names = s_coreAchiveNames.data();
-		for (s32 i = 0; i < count; i++)
-		{
-			if (strcasecmp(names[i].c_str(), archiveName) == 0)
-			{
-				return false;
-			}
-		}
-		return true;
+		s_customArchives.clear();
+		s_customArchives = modgobs;
 	}
 
 	TextureData* bitmap_load(const char* name, u32 decompress, AssetPool pool, bool addToCache)
@@ -317,21 +287,13 @@ namespace TFE_Jedi
 			return s_textureList[pool][iTex->second].texture;
 		}
 
-		FilePath filepath;
-		if (!TFE_Paths::getFilePath(name, &filepath))
-		{
+		vpFile file(VPATH_GAME, name, false);
+		if (!file)
 			return nullptr;
-		}
 
-		FileStream file;
-		if (!file.open(&filepath, Stream::MODE_READ))
-		{
-			return nullptr;
-		}
-
-		size_t size = file.getSize();
+		unsigned int size = file.size();
 		s_buffer.resize(size);
-		file.readBuffer(s_buffer.data(), (u32)size);
+		file.read(s_buffer.data(), size);
 		file.close();
 
 		TextureData* texture = (TextureData*)region_alloc(s_texState.memoryRegion, sizeof(TextureData));
@@ -344,14 +306,14 @@ namespace TFE_Jedi
 
 		if (strncmp((char*)fheader, "BM ", 3))
 		{
-			TFE_System::logWrite(LOG_ERROR, "bitmap_load", "File '%s' is not a valid BM file.", filepath);
+			TFE_System::logWrite(LOG_ERROR, "bitmap_load", "File '%s' is not a valid BM file.", name);
 			return nullptr;
 		}
 
 		u8 version = readByte(data);
 		if (version != DF_BM_VERSION)
 		{
-			TFE_System::logWrite(LOG_ERROR, "bitmap_load", "File '%s' has invalid BM version '%u'.", filepath, version);
+			TFE_System::logWrite(LOG_ERROR, "bitmap_load", "File '%s' has invalid BM version '%u'.", name, version);
 			return nullptr;
 		}
 
@@ -453,20 +415,13 @@ namespace TFE_Jedi
 
 		// Determine if a texture is "custom" or not, custom textures do not use HD Assets.
 		bool isCustomAsset = false;
-		if (filepath.archive)
+		const char* box = vpGetFileContainer(VPATH_GAME, name, false);
+		if (box)
 		{
-			const char* path = filepath.archive->getPath();
-			// Memory archive, from a zip file.
-			if (!path || path[0] == 0)
-			{
-				isCustomAsset = true;
-			}
-			// Regular archive path.
-			else
-			{
-				isCustomAsset = isAssetCustom(filepath.archive->getName());
-			}
+			auto comp = [name](std::string& s){ return (s.find(name) != std::string::npos); };
+			isCustomAsset = (std::find_if(s_customArchives.begin(), s_customArchives.end(), comp) != std::end(s_customArchives));
 		}
+
 		if (!isCustomAsset)
 		{
 			bitmap_loadHD(name, texture, 2, pool);
@@ -717,33 +672,33 @@ namespace TFE_Jedi
 	{
 		const u32 pixelCount = u32(width) * u32(height);
 
-		FileStream bmFile;
-		if (bmFile.open(filePath, Stream::MODE_WRITE))
+		vpFile bmFile;
+		if (bmFile.openwrite(filePath))
 		{
 			char fheader[3] = { 'B', 'M', ' ' };
-			bmFile.writeBuffer(fheader, 3);
+			bmFile.write(fheader, 3);
 
 			u8 version = DF_BM_VERSION;
-			bmFile.write(&version);
+			bmFile.write(version);
 
 			u8 logSizeY = TFE_Math::log2(height);
 			u8 compressed = 0;
 			u8 unused = 0;
-			bmFile.write(&width);
-			bmFile.write(&height);
-			bmFile.write(&width);		// uvWidth
-			bmFile.write(&height);		// uvHeight
-			bmFile.write(&flags);
-			bmFile.write(&logSizeY);
-			bmFile.write(&compressed);
-			bmFile.write(&unused);
-			bmFile.write(&pixelCount);	// dataSize
+			bmFile.write(width);
+			bmFile.write(height);
+			bmFile.write(width);		// uvWidth
+			bmFile.write(height);		// uvHeight
+			bmFile.write(flags);
+			bmFile.write(logSizeY);
+			bmFile.write(compressed);
+			bmFile.write(unused);
+			bmFile.write(pixelCount);	// dataSize
 
 			u8 padding[12] = { 0 };
-			bmFile.writeBuffer(padding, 12);
+			bmFile.write(padding, 12);
 
 			// Image data.
-			bmFile.writeBuffer(image, pixelCount);
+			bmFile.write(image, pixelCount);
 			bmFile.close();
 		}
 	}

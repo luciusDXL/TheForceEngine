@@ -8,6 +8,7 @@
 #include <TFE_Asset/dfKeywords.h>
 #include <TFE_Jedi/Level/rsector.h>
 #include <TFE_Jedi/Level/robject.h>
+#include <TFE_Jedi/Serialization/serialization.h>
 #include "sound.h"
 
 enum HitEffectID
@@ -55,7 +56,7 @@ namespace TFE_DarkForces
 	void hitEffect_clearState();
 
 	// Serialization
-	void hitEffect_serializeTasks(Stream* stream);
+	void hitEffect_serializeTasks(vpFile* stream);
 
 	// Spawn a new hit effect at location (x,y,z) in 'sector'.
 	// The ExcludeObj field is used to avoid effecting a specific object during wakeup or explosions.

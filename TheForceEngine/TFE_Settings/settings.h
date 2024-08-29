@@ -10,7 +10,6 @@
 
 #include <TFE_System/types.h>
 #include <TFE_System/iniParser.h>
-#include <TFE_FileSystem/paths.h>
 #include <TFE_Audio/midiDevice.h>
 #include "gameSourceData.h"
 
@@ -227,7 +226,7 @@ struct TFE_Settings_System
 struct TFE_Settings_A11y
 {
 	string language = "en"; //ISO 639-1 two-letter code
-	string lastFontPath;
+	string lastFontName;
 
 	bool showCutsceneSubtitles; // Voice
 	bool showCutsceneCaptions;  // Descriptive (e.g. "[Mine beeping]", "[Engine roaring]"
@@ -328,7 +327,7 @@ namespace TFE_Settings
 	bool ignore3doLimits();
 	bool normalFix3do();
 
-	bool validatePath(const char* path, const char* sentinel);
+	bool validatePath(const char* path, u32 game);
 	void autodetectGamePaths();
 	void clearModSettings();
 	void loadCustomModSettings();

@@ -266,7 +266,7 @@ namespace TFE_DarkForces
 		s_hitEffectTask = createSubTask("hitEffects", hitEffectTaskFunc);
 	}
 
-	void hitEffect_serializeTasks(Stream* stream)
+	void hitEffect_serializeTasks(vpFile* stream)
 	{
 		u8 hasTask = 0;
 		if (serialization_getMode() == SMODE_WRITE)

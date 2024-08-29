@@ -121,7 +121,7 @@ namespace TFE_DarkForces
 		s_playerWeaponTask = nullptr;
 	}
 
-	void weapon_serialize(Stream* stream)
+	void weapon_serialize(vpFile* stream)
 	{
 		SERIALIZE(SaveVersionInit, s_weaponAnimState, { 0 });
 		SERIALIZE(SaveVersionInit, s_prevWeapon, 0);

@@ -2,7 +2,7 @@
 
 #include "inputMapping.h"
 #include <TFE_Game/igame.h>
-#include <TFE_FileSystem/paths.h>
+#include <TFE_FileSystem/physfswrapper.h>
 #include <assert.h>
 
 namespace TFE_Input
@@ -169,35 +169,29 @@ namespace TFE_Input
 		
 	bool inputMapping_serialize()
 	{
-		const char* path = TFE_Paths::getPath(PATH_USER_DOCUMENTS);
-		char fullPath[TFE_MAX_PATH];
-
-		sprintf(fullPath, "%s%s", path, c_inputRemappingName);
-		FileStream file;
-		if (!file.open(fullPath, Stream::MODE_WRITE))
-		{
+		vpFile file;
+		if (!file.openwrite(c_inputRemappingName))
 			return false;
-		}
 
-		file.writeBuffer(c_inputRemappingHdr, 4);
-		file.write(&c_inputRemappingVersion);
+		file.write(c_inputRemappingHdr, 4);
+		file.write(c_inputRemappingVersion);
 
-		file.write(&s_inputConfig.bindCount);
-		file.write(&s_inputConfig.bindCapacity);
-		file.writeBuffer(s_inputConfig.binds, sizeof(InputBinding), s_inputConfig.bindCount);
+		file.write(s_inputConfig.bindCount);
+		file.write(s_inputConfig.bindCapacity);
+		file.write(s_inputConfig.binds, sizeof(InputBinding) * s_inputConfig.bindCount);
 
-		file.write(&s_inputConfig.controllerFlags);
-		file.writeBuffer(s_inputConfig.axis, sizeof(Axis), AA_COUNT);
-		file.write(s_inputConfig.ctrlSensitivity, 2);
+		file.write(s_inputConfig.controllerFlags);
+		file.write(s_inputConfig.axis, sizeof(Axis) * AA_COUNT);
+		file.write(s_inputConfig.ctrlSensitivity, 2 * sizeof(f32));
 
 		// version: INPUT_ADD_DEADZONE
 		{
-			file.write(s_inputConfig.ctrlDeadzone, 2);
+			file.write(s_inputConfig.ctrlDeadzone, 2 * sizeof(f32));
 		}
 
-		file.write(&s_inputConfig.mouseFlags);
-		file.writeBuffer(&s_inputConfig.mouseMode, sizeof(MouseMode));
-		file.write(s_inputConfig.mouseSensitivity, 2);
+		file.write(s_inputConfig.mouseFlags);
+		file.write(&s_inputConfig.mouseMode, sizeof(MouseMode));
+		file.write(s_inputConfig.mouseSensitivity, 2 * sizeof(f32));
 
 		file.close();
 		return true;
@@ -205,19 +199,14 @@ namespace TFE_Input
 
 	bool inputMapping_restore()
 	{
-		const char* path = TFE_Paths::getPath(PATH_USER_DOCUMENTS);
-		char fullPath[TFE_MAX_PATH];
-
-		sprintf(fullPath, "%s%s", path, c_inputRemappingName);
-		FileStream file;
-		if (!file.open(fullPath, Stream::MODE_READ))
-		{
+		vpFile file(VPATH_TFE, c_inputRemappingName);
+		if (!file)
 			return false;
-		}
 
 		char hdr[4];
 		u32 version;
-		file.readBuffer(hdr, 4);
+
+		file.read(hdr, 4);
 		file.read(&version);
 		if (memcmp(hdr, c_inputRemappingHdr, 4) != 0)
 		{
@@ -225,18 +214,18 @@ namespace TFE_Input
 			return false;
 		}
 
-		file.read(&s_inputConfig.bindCount);
-		file.read(&s_inputConfig.bindCapacity);
+		file.read(&s_inputConfig.bindCount, sizeof(s_inputConfig.bindCount));
+		file.read(&s_inputConfig.bindCapacity, sizeof(s_inputConfig.bindCapacity));
 		s_inputConfig.binds = (InputBinding*)realloc(s_inputConfig.binds, sizeof(InputBinding) * s_inputConfig.bindCapacity);
-		file.readBuffer(s_inputConfig.binds, sizeof(InputBinding), s_inputConfig.bindCount);
+		file.read(s_inputConfig.binds, sizeof(InputBinding) * s_inputConfig.bindCount);
 
-		file.read(&s_inputConfig.controllerFlags);
-		file.readBuffer(s_inputConfig.axis, sizeof(Axis), AA_COUNT);
-		file.read(s_inputConfig.ctrlSensitivity, 2);
+		file.read(&s_inputConfig.controllerFlags, sizeof(s_inputConfig.controllerFlags));
+		file.read(s_inputConfig.axis, sizeof(Axis) * AA_COUNT);
+		file.read(s_inputConfig.ctrlSensitivity, 2 * sizeof(f32));
 
 		if (version >= INPUT_ADD_DEADZONE)
 		{
-			file.read(s_inputConfig.ctrlDeadzone, 2);
+			file.read(s_inputConfig.ctrlDeadzone, 2 * sizeof(f32));
 		}
 		else
 		{
@@ -244,9 +233,9 @@ namespace TFE_Input
 			s_inputConfig.ctrlDeadzone[1] = 0.1f;
 		}
 
-		file.read(&s_inputConfig.mouseFlags);
-		file.readBuffer(&s_inputConfig.mouseMode, sizeof(MouseMode));
-		file.read(s_inputConfig.mouseSensitivity, 2);
+		file.read(&s_inputConfig.mouseFlags, sizeof(s_inputConfig.mouseFlags));
+		file.read(&s_inputConfig.mouseMode, sizeof(MouseMode));
+		file.read(s_inputConfig.mouseSensitivity, 2 * sizeof(f32));
 
 		file.close();
 

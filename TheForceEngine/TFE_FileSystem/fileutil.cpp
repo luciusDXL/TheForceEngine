@@ -13,6 +13,13 @@
 
 namespace FileUtil
 {
+	void getFullPath(const char *file, char *outpath, unsigned int outlen)
+	{
+		if (!outpath)
+			return;
+		(void)GetFullPathNameA(file, PATH_MAX, outpath, NULL);
+	}
+
 	void readDirectory(const char* dir, const char* ext, FileList& fileList)
 	{
 		char searchStr[TFE_MAX_PATH];

@@ -85,3 +85,15 @@ void freeGame(IGame* game)
 	region_clear(s_gameRegion);
 	region_clear(s_levelRegion);
 }
+
+bool game_validateSourceData(GameID id, const char *path)
+{
+	switch (id)
+	{
+	case Game_Dark_Forces:
+		return TFE_DarkForces::validateSourceData(path);
+	case Game_Outlaws:
+		return TFE_Outlaws::validateSourceData(path);
+	}
+	return false;	
+}

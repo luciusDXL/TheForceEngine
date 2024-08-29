@@ -18,5 +18,5 @@ namespace TFE_DarkForces
 	void vue_resetState();
 
 	// Serialization
-	void vueLogic_serialize(Logic*& logic, SecObject* obj, Stream* stream);
+	void vueLogic_serialize(Logic*& logic, SecObject* obj, vpFile* stream);
 }  // namespace TFE_DarkForces

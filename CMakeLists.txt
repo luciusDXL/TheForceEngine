@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.12 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.14 FATAL_ERROR)
 include(CheckCXXCompilerFlag)
 
 set(CMAKE_DISABLE_SOURCE_CHANGES ON)
@@ -40,43 +40,61 @@ else()
         )
 endif()
 include(GNUInstallDirs)
+include(CreateGitVersionH.cmake)
 
+##
 ## Options
+##
 option(ENABLE_TFE "Enable building “The Force Engine”" ON)
 option(ENABLE_SYSMIDI "Enable System-MIDI Output if RTMidi is available" ON)
 option(ENABLE_EDITOR "Enable TFE Editor" OFF)
 option(ENABLE_FORCE_SCRIPT "Enable Force Script" OFF)
 option(ENABLE_ADJUSTABLEHUD_MOD "Install the build‑in “AdjustableHud mod” with TFE" ON)
 
+
+##
+## Setup physfs for static linking
+##
+function(setup_physfs)
+	option(PHYSFS_ARCHIVE_LECARCHIVES "" TRUE)
+	option(PHYSFS_ARCHIVE_GRP "" FALSE)
+	option(PHYSFS_ARCHIVE_WAD "" FALSE)
+	option(PHYSFS_ARCHIVE_CSM "" FALSE)
+	option(PHYSFS_ARCHIVE_HOG "" FALSE)
+	option(PHYSFS_ARCHIVE_MVL "" FALSE)
+	option(PHYSFS_ARCHIVE_QPAK "" FALSE)
+	option(PHYSFS_ARCHIVE_SLB "" FALSE)
+	option(PHYSFS_ARCHIVE_VDF "" FALSE)
+	option(PHYSFS_ARCHIVE_ISO9660 "" FALSE)
+	option(PHYSFS_BUILD_STATIC "" TRUE)
+	option(PHYSFS_BUILD_SHARED "" FALSE)
+	option(PHYSFS_BUILD_TEST "" FALSE)
+	option(PHYSFS_DISABLE_INSTALL "" TRUE)
+	add_subdirectory(extras/physfs)
+	target_include_directories(tfe PRIVATE physfs-static)
+	target_link_libraries(tfe PRIVATE PhysFS::PhysFS-static)
+endfunction()
+
+
+
+##
+## Build
+##
 if(ENABLE_TFE)
 	add_executable(tfe)
-	set_target_properties(tfe PROPERTIES OUTPUT_NAME "theforceengine")
+	set_target_properties(tfe PROPERTIES OUTPUT_NAME "theforceengine.bin")
 
-	if(UNIX)
-		find_package(PkgConfig REQUIRED)
-		find_package(SDL2 2.0.20 REQUIRED)
-		pkg_check_modules(SDL2_IMAGE REQUIRED SDL2_image)
-		target_include_directories(tfe PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
-		target_include_directories(tfe PRIVATE ${SDL2_INCLUDE_DIRS})
-		target_include_directories(tfe PRIVATE ${SDL2_IMAGE_INCLUDE_DIRS})
-		target_link_libraries(tfe PRIVATE SDL2::SDL2main SDL2::SDL2
-					${SDL2_IMAGE_LIBRARIES}
-		)
+	find_package(PkgConfig REQUIRED)
+	find_package(SDL2 2.0.20 REQUIRED)
+	pkg_check_modules(SDL2_IMAGE REQUIRED SDL2_image)
+	target_include_directories(tfe PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
+	target_include_directories(tfe PRIVATE ${SDL2_INCLUDE_DIRS})
+	target_include_directories(tfe PRIVATE ${SDL2_IMAGE_INCLUDE_DIRS})
+	setup_physfs()
+	target_link_libraries(tfe PRIVATE SDL2::SDL2main SDL2::SDL2
+				${SDL2_IMAGE_LIBRARIES}
+	)
 
-		# set up build directory to be able to run TFE immediately: symlink
-		# the necessary support file directories into the build env.
-		execute_process(COMMAND ln -sf ${CMAKE_SOURCE_DIR}/TheForceEngine/Captions)
-		execute_process(COMMAND ln -sf ${CMAKE_SOURCE_DIR}/TheForceEngine/Documentation)
-		execute_process(COMMAND ln -sf ${CMAKE_SOURCE_DIR}/TheForceEngine/Fonts)
-		execute_process(COMMAND ln -sf ${CMAKE_SOURCE_DIR}/TheForceEngine/Mods)
-		execute_process(COMMAND ln -sf ${CMAKE_SOURCE_DIR}/TheForceEngine/Shaders)
-		execute_process(COMMAND ln -sf ${CMAKE_SOURCE_DIR}/TheForceEngine/SoundFonts)
-		execute_process(COMMAND ln -sf ${CMAKE_SOURCE_DIR}/TheForceEngine/UI_Images)
-		execute_process(COMMAND ln -sf ${CMAKE_SOURCE_DIR}/TheForceEngine/UI_Text)
-		execute_process(COMMAND ln -sf ${CMAKE_SOURCE_DIR}/TheForceEngine/EditorDef)
-		include(CreateGitVersionH.cmake)
-		create_git_version_h()
-	endif()
 
 	if(ENABLE_SYSMIDI)
 		pkg_check_modules(RTMIDI rtmidi>=5.0.0)
@@ -90,6 +108,7 @@ if(ENABLE_TFE)
 	endif()
 	if(ENABLE_EDITOR)
 		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DBUILD_EDITOR")
+		set(ENABLE_FORCE_SCRIPT ON)
 	endif()
 	if(ENABLE_FORCE_SCRIPT)
 		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DBUILD_FORCE_SCRIPT")
@@ -100,9 +119,34 @@ if(ENABLE_TFE)
 		target_include_directories(tfe PRIVATE "TheForceEngine/TFE_ForceScript/Angelscript/angelscript/include")
 		target_include_directories(tfe PRIVATE "TheForceEngine/TFE_ForceScript/Angelscript/add_on")
 	endif()
-	target_include_directories(tfe PRIVATE TheForceEngine)
 
+	create_git_version_h()
+
+	target_include_directories(tfe PRIVATE TheForceEngine)
 	add_subdirectory(TheForceEngine/)
+
+	if(UNIX)
+		# set up build directory to be able to run TFE immediately: symlink
+		# the necessary support file directories into the build env.
+		file(CREATE_LINK ${CMAKE_SOURCE_DIR}/TheForceEngine/Captions Captions SYMBOLIC)
+		file(CREATE_LINK ${CMAKE_SOURCE_DIR}/TheForceEngine/Documentation Documentation SYMBOLIC)
+		file(CREATE_LINK ${CMAKE_SOURCE_DIR}/TheForceEngine/Fonts Fonts SYMBOLIC)
+		file(CREATE_LINK ${CMAKE_SOURCE_DIR}/TheForceEngine/Mods Mods SYMBOLIC)
+		file(CREATE_LINK ${CMAKE_SOURCE_DIR}/TheForceEngine/Shaders Shaders SYMBOLIC)
+		file(CREATE_LINK ${CMAKE_SOURCE_DIR}/TheForceEngine/SoundFonts SoundFonts SYMBOLIC)
+		file(CREATE_LINK ${CMAKE_SOURCE_DIR}/TheForceEngine/UI_Images UI_Images SYMBOLIC)
+		file(CREATE_LINK ${CMAKE_SOURCE_DIR}/TheForceEngine/UI_Text UI_Text SYMBOLIC)
+		file(CREATE_LINK ${CMAKE_SOURCE_DIR}/TheForceEngine/EditorDef EditorDef SYMBOLIC)
+#		message(STATUS ${CMAKE_BINARY_DIR})
+#		file(GLOB_RECURSE DATAFILES FOLLOW_SYMLINKS LIST_DIRECTORIES
+#		TRUE "Captions Documentation Fonts Mods Shaders SoundFonts UI_Images UI_Text EditorDef")
+#		message(STATUS "${DATAFILES}")
+#		file(ARCHIVE_CREATE OUTPUT "theforceengine.data" FORMAT zip PATHS "${DATAFILES}")
+	endif()
+
+	add_custom_command(TARGET tfe POST_BUILD COMMAND zip ARGS -r9 ${CMAKE_BINARY_DIR}/theforceengine.data Captions/* Fonts/* Mods/* Shaders/* SoundFonts/* UI_Images/* UI_Text/* Documentation/*)
+	add_custom_command(TARGET tfe POST_BUILD COMMAND cat ARGS theforceengine.bin theforceengine.data > theforceengine COMMAND chmod +x theforceengine)
+
 endif()
 
 ### installation ###
@@ -112,35 +156,6 @@ if(ENABLE_TFE)
 	install(TARGETS tfe
 		RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
 		BUNDLE  DESTINATION "${CMAKE_INSTALL_BINDIR}"
-	)
-
-	# Support data
-	install(DIRECTORY
-		"${CMAKE_CURRENT_SOURCE_DIR}/TheForceEngine/Captions"
-		"${CMAKE_CURRENT_SOURCE_DIR}/TheForceEngine/Documentation"
-		"${CMAKE_CURRENT_SOURCE_DIR}/TheForceEngine/UI_Text"
-		"${CMAKE_CURRENT_SOURCE_DIR}/TheForceEngine/UI_Images"
-		"${CMAKE_CURRENT_SOURCE_DIR}/TheForceEngine/EditorDef"
-		"${CMAKE_CURRENT_SOURCE_DIR}/TheForceEngine/Shaders"
-		"${CMAKE_CURRENT_SOURCE_DIR}/TheForceEngine/SoundFonts"
-		"${CMAKE_CURRENT_SOURCE_DIR}/TheForceEngine/Fonts"
-		DESTINATION "${CMAKE_INSTALL_DATADIR}"
-		    FILE_PERMISSIONS
-		      OWNER_READ OWNER_WRITE
-		      GROUP_READ
-		      WORLD_READ
-		    DIRECTORY_PERMISSIONS
-		      OWNER_READ OWNER_EXECUTE OWNER_WRITE
-		      GROUP_READ GROUP_EXECUTE GROUP_WRITE
-		      WORLD_READ WORLD_EXECUTE
-	)
-	# Always install the “Mods” directory but not always the “AdjustableHud” mod
-	install(DIRECTORY
-		DESTINATION "${CMAKE_INSTALL_DATADIR}/TheForceEngine/Mods"
-		DIRECTORY_PERMISSIONS
-			OWNER_READ OWNER_EXECUTE OWNER_WRITE
-			GROUP_READ GROUP_EXECUTE GROUP_WRITE
-			WORLD_READ WORLD_EXECUTE
 	)
 
 	# Linux .desktop files
@@ -153,17 +168,6 @@ if(ENABLE_TFE)
 		)
 		install(
 			FILES "${CMAKE_CURRENT_SOURCE_DIR}/TheForceEngine/io.github.theforceengine.tfe.metainfo.xml"
-			DESTINATION "share/metainfo"
-		)
-	endif()
-endif()
-
-if(ENABLE_ADJUSTABLEHUD_MOD)
-	add_subdirectory(TheForceEngine/Mods/TFE/AdjustableHud)
-
-	if(LINUX)
-		install(
-			FILES "${CMAKE_CURRENT_SOURCE_DIR}/TheForceEngine/io.github.theforceengine.tfe.Mod.AdjustableHud.metainfo.xml"
 			DESTINATION "share/metainfo"
 		)
 	endif()

@@ -1,16 +1,7 @@
 #include "profilerView.h"
-#include <TFE_Input/input.h>
-#include <TFE_RenderBackend/renderBackend.h>
 #include <TFE_System/system.h>
 #include <TFE_System/profiler.h>
-#include <TFE_FileSystem/fileutil.h>
-#include <TFE_FileSystem/paths.h>
-#include <TFE_Archive/archive.h>
 #include <TFE_Ui/ui.h>
-#include <TFE_Ui/markdown.h>
-#include <TFE_System/parser.h>
-
-#include <algorithm>
 
 namespace TFE_ProfilerView
 {

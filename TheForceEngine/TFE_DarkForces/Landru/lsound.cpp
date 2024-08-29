@@ -4,8 +4,7 @@
 #include <TFE_A11y/accessibility.h>
 #include <TFE_Game/igame.h>
 #include <TFE_Jedi/IMuse/imuse.h>
-#include <TFE_FileSystem/paths.h>
-#include <TFE_FileSystem/filestream.h>
+#include <TFE_FileSystem/physfswrapper.h>
 #include <TFE_System/system.h>
 
 using namespace TFE_Jedi;
@@ -282,39 +281,28 @@ namespace TFE_DarkForces
 
 	u8* readVocFileData(const char* name, u32* sizeOut)
 	{
-		FilePath path;
+		vpFile file;
 		if (strstr(name, ".voc") || strstr(name, ".VOC"))
 		{
-			if (!TFE_Paths::getFilePath(name, &path))
-			{
-				return nullptr;
-			}
+			file.openread(VPATH_GAME, name, false);
 		}
 		else
 		{
 			char fileName[TFE_MAX_PATH];
 			sprintf(fileName, "%s.VOIC", name);	// Prefer the version of a sound from the LFD.
-			if (!TFE_Paths::getFilePath(fileName, &path))
-			{
-				sprintf(fileName, "%s.VOC", name);
-				if (!TFE_Paths::getFilePath(fileName, &path))
-				{
-					return nullptr;
-				}
-			}
+			file.openread(VPATH_GAME, fileName, false);
 		}
-		FileStream file;
-		if (!file.open(&path, Stream::MODE_READ))
+		if (!file)
 		{
 			return nullptr;
 		}
-		u32 size = (u32)file.getSize();
+		unsigned int size = (u32)file.size();
 		u8* data = (u8*)game_alloc(size);
 		if (!data)
 		{
 			return nullptr;
 		}
-		file.readBuffer(data, size);
+		file.read(data, size);
 		file.close();
 
 		if (sizeOut)

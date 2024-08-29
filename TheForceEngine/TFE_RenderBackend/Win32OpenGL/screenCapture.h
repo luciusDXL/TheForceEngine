@@ -22,7 +22,7 @@ public:
 	void update(bool flush = false);
 	void captureFrame(const char* outputPath);
 
-	void captureFrontBufferToMemory(u32* mem);
+	void captureFrontBufferToMemory(char* mem);
 
 	void beginRecording(const char* path);
 	void endRecording();

@@ -112,7 +112,7 @@ static void flipVert32bpp(void* mem, u32 w, u32 h)
 	free(tmpb);
 }
 
-void ScreenCapture::captureFrontBufferToMemory(u32* mem)
+void ScreenCapture::captureFrontBufferToMemory(char* mem)
 {
 	glReadBuffer(GL_FRONT);
 	glReadPixels(0, 0, m_width, m_height, GL_RGBA, GL_UNSIGNED_BYTE, mem);

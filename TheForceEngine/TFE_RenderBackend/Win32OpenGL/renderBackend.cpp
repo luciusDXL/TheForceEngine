@@ -297,7 +297,7 @@ namespace TFE_RenderBackend
 		s_screenCapture->update();
 	}
 
-	void captureScreenToMemory(u32* mem)
+	void captureScreenToMemory(char* mem)
 	{
 		s_screenCapture->captureFrontBufferToMemory(mem);
 	}

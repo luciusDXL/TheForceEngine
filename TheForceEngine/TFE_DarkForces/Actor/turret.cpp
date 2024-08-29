@@ -15,7 +15,6 @@
 #include <TFE_Game/igame.h>
 #include <TFE_Asset/modelAsset_jedi.h>
 #include <TFE_FileSystem/paths.h>
-#include <TFE_FileSystem/filestream.h>
 #include <TFE_Jedi/Memory/list.h>
 #include <TFE_Jedi/Memory/allocator.h>
 #include <TFE_Jedi/Serialization/serialization.h>
@@ -501,7 +500,7 @@ namespace TFE_DarkForces
 		task_free(task);
 	}
 
-	void turret_serialize(Logic*& logic, SecObject* obj, Stream* stream)
+	void turret_serialize(Logic*& logic, SecObject* obj, vpFile* stream)
 	{
 		Turret* turret = nullptr;
 		bool write = serialization_getMode() == SMODE_WRITE;

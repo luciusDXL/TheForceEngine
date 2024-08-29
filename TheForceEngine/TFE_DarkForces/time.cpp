@@ -1,6 +1,5 @@
 #include "time.h"
 #include <TFE_System/system.h>
-#include <TFE_Jedi/Serialization/serialization.h>
 #include <cstring>
 
 using namespace TFE_Jedi;
@@ -14,7 +13,7 @@ namespace TFE_DarkForces
 	fixed16_16 s_frameTicks[13] = { 0 };
 	JBool s_pauseTimeUpdate = JFALSE;
 
-	void time_serialize(Stream* stream)
+	void time_serialize(vpFile* stream)
 	{
 		SERIALIZE(SaveVersionInit, s_curTick, 0);
 		SERIALIZE(SaveVersionInit, s_prevTick, 0);

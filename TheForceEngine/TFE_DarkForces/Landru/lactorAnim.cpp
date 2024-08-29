@@ -4,6 +4,7 @@
 #include "cutscene_film.h"
 #include "lview.h"
 #include "ltimer.h"
+#include <TFE_FileSystem/physfswrapper.h>
 #include <TFE_Game/igame.h>
 #include <assert.h>
 
@@ -81,12 +82,9 @@ namespace TFE_DarkForces
 
 		char animName[32];
 		sprintf(animName, "%s.ANIM", name);
-		FilePath path;
-		if (TFE_Paths::getFilePath(animName, &path))
+		vpFile file(VPATH_GAME, animName, false);
+		if (file)
 		{
-			FileStream file;
-			file.open(&path, Stream::MODE_READ);
-
 			s16 animCount;
 			file.read(&animCount);
 			u8** array = (u8**)landru_alloc(sizeof(u8*) * animCount);
@@ -99,7 +97,7 @@ namespace TFE_DarkForces
 					if (deltaSize <= 0) { array[i] = nullptr; continue; }
 
 					array[i] = (u8*)landru_alloc(deltaSize);
-					file.readBuffer(array[i], deltaSize);
+					file.read(array[i], deltaSize);
 				}
 			}
 			else

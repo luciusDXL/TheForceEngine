@@ -6,6 +6,7 @@
 #include <TFE_System/types.h>
 #include <TFE_Jedi/Math/core_math.h>
 #include <TFE_Jedi/Task/task.h>
+#include <TFE_Jedi/Serialization/serialization.h>
 #include "sound.h"
 
 namespace TFE_Jedi
@@ -95,7 +96,7 @@ namespace TFE_DarkForces
 	void weapon_queueWeaponSwitch(s32 wpnId);
 
 	// Serialization
-	void weapon_serialize(Stream* stream);
+	void weapon_serialize(vpFile* stream);
 
 	extern PlayerWeapon* s_curPlayerWeapon;
 	extern SoundSourceId s_superchargeCountdownSound;

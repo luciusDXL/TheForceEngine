@@ -12,10 +12,8 @@
 #include "lsound.h"
 #include "lview.h"
 #include "ldraw.h"
-#include <TFE_Archive/lfdArchive.h>
 #include <TFE_System/system.h>
-#include <TFE_FileSystem/paths.h>
-#include <TFE_FileSystem/filestream.h>
+#include <TFE_FileSystem/physfswrapper.h>
 #include <TFE_Memory/memoryRegion.h>
 #include <TFE_Jedi/Math/core_math.h>
 #include <TFE_Jedi/Renderer/virtualFramebuffer.h>
@@ -26,8 +24,6 @@ using namespace TFE_Jedi;
 namespace TFE_DarkForces
 {
 	static JBool s_lsystemInit = JFALSE;
-	static LfdArchive s_archive = {};
-	static LfdArchive s_soundFx = {};
 	static MemoryRegion* s_lmem = nullptr;
 	static MemoryRegion* s_lscene = nullptr;
 	MemoryRegion* s_alloc = nullptr;
@@ -60,26 +56,9 @@ namespace TFE_DarkForces
 		lactorAnim_init();
 		lactorCust_init();
 
-		FilePath lfdPath;
-		if (TFE_Paths::getFilePath("menu.lfd", &lfdPath))
-		{
-			s_archive.open(lfdPath.path);
-			TFE_Paths::addLocalArchive(&s_archive);
-
-			// Default font used by in-game UI.
-			lfont_load("font8", 0);
-			lfont_set(0);
-
-			s_archive.close();
-			TFE_Paths::removeLastArchive();
-		}
-
-		FilePath sfxPath;
-		if (TFE_Paths::getFilePath("jedisfx.lfd", &sfxPath))
-		{
-			s_soundFx.open(sfxPath.path);
-			TFE_Paths::addLocalArchive(&s_soundFx);
-		}
+		// Default font used by in-game UI.
+		lfont_load("font8", 0);
+		lfont_set(0);
 	}
 
 	void lsystem_destroy()

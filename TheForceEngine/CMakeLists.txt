@@ -24,3 +24,10 @@ if(ENABLE_FORCE_SCRIPT)
 	add_subdirectory(TFE_ForceScript/)
 endif()
 target_sources(tfe PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/main.cpp")
+
+# pack the support data into a ZIP file
+## XXX: cant feed the GLOB into ARCHIVE_CREATE, stupid cmake
+#file(GLOB_RECURSE DATX RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}"
+#	Captions/* Fonts/* Mods/* Shaders/* SoundFonts/* UI_Images/* UI_Text/*
+#)
+#file(ARCHIVE_CREATE OUTPUT "${CMAKE_BINARY_DIR}/theforceengine.data" FORMAT zip PATHS "${DATX}")

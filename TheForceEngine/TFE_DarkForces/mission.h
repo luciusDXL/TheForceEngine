@@ -9,6 +9,7 @@
 #include <TFE_Jedi/Level/rsector.h>
 #include <TFE_Jedi/Level/robject.h>
 #include <TFE_Jedi/Task/task.h>
+#include <TFE_Jedi/Serialization/serialization.h>
 
 #define CONV_6bitTo8bit(x) (((x)<<2) | ((x)>>4))
 
@@ -38,8 +39,8 @@ namespace TFE_DarkForces
 	void mission_render(s32 rendererIndex = 0, bool forceTextureUpdate = false);
 
 	void mission_setupTasks();
-	void mission_serialize(Stream* stream);
-	void mission_serializeColorMap(Stream* stream);
+	void mission_serialize(vpFile* stream);
+	void mission_serializeColorMap(vpFile* stream);
 
 	void cheat_revealMap();
 	void cheat_supercharge();

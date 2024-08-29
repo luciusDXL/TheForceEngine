@@ -7,14 +7,11 @@
 #include "rwall.h"
 #include "rtexture.h"
 #include <TFE_Game/igame.h>
-#include <TFE_Asset/assetSystem.h>
 #include <TFE_Asset/dfKeywords.h>
 #include <TFE_Asset/modelAsset_jedi.h>
 #include <TFE_Asset/spriteAsset_Jedi.h>
-#include <TFE_Asset/vocAsset.h>
 #include <TFE_DarkForces/sound.h>
-#include <TFE_FileSystem/filestream.h>
-#include <TFE_FileSystem/paths.h>
+#include <TFE_FileSystem/physfswrapper.h>
 #include <TFE_System/parser.h>
 #include <TFE_System/system.h>
 #include <TFE_Settings/settings.h>
@@ -79,14 +76,16 @@ namespace TFE_Jedi
 	void level_loadPalette()
 	{
 		// Palette *IS* loaded from the level file.
-		FilePath filePath;
-		if (TFE_Paths::getFilePath(s_levelState.levelPaletteName, &filePath))
+		if (vpFileExists(VPATH_GAME, s_levelState.levelPaletteName, false))
 		{
-			FileStream::readContents(&filePath, s_levelPalette, 768);
+			vpFile x(VPATH_GAME, s_levelState.levelPaletteName, false);
+			if (x)
+				x.read(s_levelPalette, 768);
 		}
-		else if (TFE_Paths::getFilePath("default.pal", &filePath))
+		else if (vpFileExists(VPATH_GAME, "default.pal", false))
 		{
-			FileStream::readContents(&filePath, s_levelPalette, 768);
+			vpFile x(VPATH_GAME, "default.pal", false);
+				x.read(s_levelPalette, 768);
 		}
 		// The "base palette" is adjusted by the hud colors, which is why it is a copy.
 		memcpy(s_basePalette, s_levelPalette, 768);
@@ -161,21 +160,15 @@ namespace TFE_Jedi
 		strcpy(levelPath, levelName);
 		strcat(levelPath, ".LEV");
 
-		FilePath filePath;
-		if (!TFE_Paths::getFilePath(levelPath, &filePath))
-		{
-			TFE_System::logWrite(LOG_ERROR, "level_loadGeometry", "Cannot find level geometry '%s'.", levelName);
-			return false;
-		}
-		FileStream file;
-		if (!file.open(&filePath, Stream::MODE_READ))
-		{
+		vpFile file(VPATH_GAME, levelPath, false);
+		if (!file) {
 			TFE_System::logWrite(LOG_ERROR, "level_loadGeometry", "Cannot open level geometry '%s'.", levelName);
 			return false;
 		}
-		size_t len = file.getSize();
+
+		unsigned int len = file.size();
 		s_buffer.resize(len);
-		file.readBuffer(s_buffer.data(), u32(len));
+		file.read(s_buffer.data(), len);
 		file.close();
 
 		TFE_Parser parser;
@@ -611,22 +604,15 @@ namespace TFE_Jedi
 		strcpy(levelPath, levelName);
 		strcat(levelPath, ".GOL");
 				
-		FilePath filePath;
-		FileStream file;
-		if (!TFE_Paths::getFilePath(levelPath, &filePath))
-		{
-			TFE_System::logWrite(LOG_ERROR, "level_loadGoals", "Cannot find level goals '%s'.", levelName);
-			return JFALSE;
-		}
-		if (!file.open(&filePath, Stream::MODE_READ))
+		vpFile file(VPATH_GAME, levelPath, false);
+		if (!file)
 		{
 			TFE_System::logWrite(LOG_ERROR, "level_loadGoals", "Cannot open level goals '%s'.", levelName);
 			return JFALSE;
 		}
-
-		size_t len = file.getSize();
+		unsigned int len = file.size();
 		s_buffer.resize(len);
-		file.readBuffer(s_buffer.data(), u32(len));
+		file.read(s_buffer.data(), len);
 		file.close();
 
 		TFE_Parser parser;
@@ -723,22 +709,16 @@ namespace TFE_Jedi
 
 		s32 curDiff = s32(difficulty) + 1;
 
-		FilePath filePath;
-		if (!TFE_Paths::getFilePath(levelPath, &filePath))
-		{
-			TFE_System::logWrite(LOG_ERROR, "Level Load", "Cannot find level objects '%s'.", levelName);
-			return false;
-		}
-		FileStream file;
-		if (!file.open(&filePath, Stream::MODE_READ))
+		vpFile file(VPATH_GAME, levelPath, false);
+		if (!file)
 		{
 			TFE_System::logWrite(LOG_ERROR, "Level Load", "Cannot open level objects '%s'.", levelName);
 			return false;
 		}
-
-		size_t len = file.getSize();
+		
+		unsigned int len = file.size();
 		s_buffer.resize(len);
-		file.readBuffer(s_buffer.data(), u32(len));
+		file.read(s_buffer.data(), len);
 		file.close();
 
 		TFE_Parser parser;

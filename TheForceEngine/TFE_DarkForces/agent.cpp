@@ -7,7 +7,6 @@
 #include "weapon.h"
 #include <TFE_Game/igame.h>
 #include <TFE_FileSystem/fileutil.h>
-#include <TFE_FileSystem/paths.h>
 #include <TFE_System/system.h>
 #include <TFE_System/parser.h>
 #include <TFE_Jedi/Serialization/serialization.h>
@@ -56,7 +55,7 @@ namespace TFE_DarkForces
 		}
 	}
 
-	void agent_serialize(Stream* stream)
+	void agent_serialize(vpFile* stream)
 	{
 		bool write = serialization_getMode() == SMODE_WRITE;
 
@@ -81,7 +80,7 @@ namespace TFE_DarkForces
 		{
 			agent_checkNameLen(agentNameLen);
 		}
-		SERIALIZE_BUF(SaveVersionInit, name, agentNameLen);
+		SERIALIZE_BUF(SaveVersionInit, (char *)name, agentNameLen);
 		name[agentNameLen] = 0;
 
 		// Agent data.
@@ -144,8 +143,8 @@ namespace TFE_DarkForces
 
 	s32 agent_loadData()
 	{
-		FileStream file;
-		if (!openDarkPilotConfig(&file))
+		vpFile* dp = openDarkPilotConfig();
+		if (!dp)
 		{
 			TFE_System::logWrite(LOG_ERROR, "Agent", "Cannot open DarkPilo.cfg");
 			return 0;
@@ -155,14 +154,15 @@ namespace TFE_DarkForces
 		for (s32 i = 0; i < MAX_AGENT_COUNT; i++)
 		{
 			LevelSaveData saveData;
-			if (agent_readConfigData(&file, i, &saveData))
+			if (agent_readConfigData(dp, i, &saveData))
 			{
 				memcpy(&s_agentData[i], &saveData.agentData, sizeof(AgentData));
 				agentReadCount++;
 			}
 		}
 
-		file.close();
+		dp->close();
+		delete dp;
 		return agentReadCount;
 	}
 
@@ -260,8 +260,8 @@ namespace TFE_DarkForces
 
 	void agent_createNewAgent(s32 agentId, AgentData* data, const char* name)
 	{
-		FileStream file;
-		if (!openDarkPilotConfig(&file))
+		vpFile* file = openDarkPilotConfig();
+		if (!file)
 		{
 			TFE_System::logWrite(LOG_ERROR, "Agent", "Cannot open DarkPilo.cfg");
 			return;
@@ -288,26 +288,28 @@ namespace TFE_DarkForces
 		data->selectedMission = 1;
 		memcpy(&saveData.agentData, data, sizeof(AgentData));
 
-		agent_writeAgentConfigData(&file, agentId, &saveData);
-		file.close();
+		agent_writeAgentConfigData(file, agentId, &saveData);
+		file->close();
+		delete file;
 	}
 
 	void agent_writeSavedData(s32 agentId, LevelSaveData* saveData)
 	{
-		FileStream file;
-		if (!openDarkPilotConfig(&file))
+		vpFile* file = openDarkPilotConfig();
+		if (!file)
 		{
 			TFE_System::logWrite(LOG_ERROR, "Agent", "Cannot open DarkPilo.cfg");
 			return;
 		}
-		agent_writeAgentConfigData(&file, agentId, saveData);
-		file.close();
+		agent_writeAgentConfigData(file, agentId, saveData);
+		file->close();
+		delete file;
 	}
 
 	void agent_updateAgentSavedData()
 	{
-		FileStream file;
-		if (!openDarkPilotConfig(&file))
+		vpFile* file = openDarkPilotConfig();
+		if (!file)
 		{
 			TFE_System::logWrite(LOG_ERROR, "Agent", "Cannot open DarkPilo.cfg");
 			return;
@@ -316,27 +318,29 @@ namespace TFE_DarkForces
 		for (s32 i = 0; i < MAX_AGENT_COUNT; i++)
 		{
 			LevelSaveData saveData;
-			agent_readConfigData(&file, i, &saveData);
+			agent_readConfigData(file, i, &saveData);
 
 			// Copy Agent data into saved data.
 			memcpy(&saveData, &s_agentData[i], sizeof(AgentData));
-			agent_writeAgentConfigData(&file, i, &saveData);
+			agent_writeAgentConfigData(file, i, &saveData);
 		}
 
-		file.close();
+		file->close();
+		delete file;
 	}
 
 	s32 agent_saveInventory(s32 agentId, s32 nextLevel)
 	{
 		if (nextLevel > 14) { return 0; }
 
-		FileStream file;
-		if (!openDarkPilotConfig(&file)) { return 0; }
+		vpFile* file = openDarkPilotConfig();
+		if (!file) { return 0; }
 
 		LevelSaveData saveData;
-		if (!agent_readConfigData(&file, agentId, &saveData))
+		if (!agent_readConfigData(file, agentId, &saveData))
 		{
-			file.close();
+			file->close();
+			delete file;
 			return 0;
 		}
 
@@ -344,28 +348,23 @@ namespace TFE_DarkForces
 		s32* ammo = &saveData.ammo[levelIndex * 10];
 		u8* inv = &saveData.inv[levelIndex * 32];
 		player_writeInfo(inv, ammo);
-		s32 written = agent_writeAgentConfigData(&file, agentId, &saveData);
-		file.close();
+		s32 written = agent_writeAgentConfigData(file, agentId, &saveData);
+		file->close();
+		delete file;
 
 		return written;
 	}
 
 	JBool agent_loadLevelList(const char* fileName)
 	{
-		FilePath filePath;
-		if (!TFE_Paths::getFilePath(fileName, &filePath))
-		{
+		vpFile file(VPATH_GAME, fileName, false);
+		if (!file)
 			return JFALSE;
-		}
+
 		char* buffer = nullptr;
-		FileStream file;
-		if (!file.open(&filePath, Stream::MODE_READ))
-		{
-			return JFALSE;
-		}
-		u32 len = (u32)file.getSize();
+		unsigned int len = file.size();
 		buffer = (char*)game_alloc(len+1);
-		file.readBuffer(buffer, len);
+		file.read(buffer, len);
 		file.close();
 		buffer[len] = 0;
 
@@ -421,7 +420,7 @@ namespace TFE_DarkForces
 		return JTRUE;
 	}
 
-	JBool agent_readConfigData(FileStream* file, s32 agentId, LevelSaveData* saveData)
+	JBool agent_readConfigData(vpFile* file, s32 agentId, LevelSaveData* saveData)
 	{
 		const s32 dataSize = (s32)sizeof(LevelSaveData);
 
@@ -430,47 +429,49 @@ namespace TFE_DarkForces
 		{
 			return JFALSE;
 		}
-		if (file->readBuffer(saveData, dataSize) != dataSize)
+		if (file->read(saveData, dataSize) != dataSize)
 		{
 			return JFALSE;
 		}
 		return JTRUE;
 	}
 
-	JBool agent_writeAgentConfigData(FileStream* file, s32 agentId, const LevelSaveData* saveData)
+	JBool agent_writeAgentConfigData(vpFile* file, s32 agentId, const LevelSaveData* saveData)
 	{
 		s32 fileOffset = agentId*sizeof(LevelSaveData) + s_headerSize;
 		if (!file->seek(fileOffset))
 		{
 			return JFALSE;
 		}
-		file->writeBuffer(saveData, sizeof(LevelSaveData));
+		file->write(saveData, sizeof(LevelSaveData));
 		return JTRUE;
 	}
 
 	void agent_readSavedData(s32 agentId, LevelSaveData* levelData)
 	{
-		FileStream file;
-		if (!openDarkPilotConfig(&file))
+		vpFile* file = openDarkPilotConfig();
+		if (!file)
 		{
 			TFE_System::logWrite(LOG_ERROR, "Agent", "Cannot open DarkPilo.cfg");
 			return;
 		}
-		agent_readConfigData(&file, agentId, levelData);
-		file.close();
+		agent_readConfigData(file, agentId, levelData);
+		file->close();
+		delete file;
 	}
 
 	void agent_readSavedDataForLevel(s32 agentId, s32 levelIndex)
 	{
-		FileStream file;
-		if (!openDarkPilotConfig(&file))
+		vpFile* file = openDarkPilotConfig();
+		if (!file)
 		{
 			TFE_System::logWrite(LOG_ERROR, "Agent", "Cannot open DarkPilo.cfg");
 			return;
 		}
 		LevelSaveData levelData;
-		agent_readConfigData(&file, agentId, &levelData);
-		file.close();
+		agent_readConfigData(file, agentId, &levelData);
+		file->close();
+		delete file;
 
 		s32* ammo = &levelData.ammo[(levelIndex - 1) * 10];
 		u8* inv = &levelData.inv[(levelIndex - 1) * 32];
@@ -478,10 +479,10 @@ namespace TFE_DarkForces
 	}
 
 	// Creates a new Dark Pilot config file, which is used for saving.
-	JBool createDarkPilotConfig(const char* path)
+	JBool createDarkPilotConfig(void)
 	{
-		FileStream darkPilot;
-		if (!darkPilot.open(path, Stream::MODE_WRITE))
+		vpFile darkPilot;
+		if (!darkPilot.openwrite("DARKPILO.CFG"))
 		{
 			return JFALSE;
 		}
@@ -492,83 +493,83 @@ namespace TFE_DarkForces
 			0x12,				// version used by Dark Forces.
 			14,					// maximum number of agents.
 		};
-		darkPilot.writeBuffer(&header, s_headerSize);
+		darkPilot.write(&header, s_headerSize);
 		LevelSaveData clearData = { 0 };
 		for (s32 i = 0; i < MAX_AGENT_COUNT; i++)
 		{
-			darkPilot.writeBuffer(&clearData, sizeof(LevelSaveData));
+			darkPilot.write(&clearData, sizeof(LevelSaveData));
 		}
 		darkPilot.close();
 		return JTRUE;
 	}
 		
-	// This function differs slightly from Dark Forces in the following ways:
-	// 1. First it tries to open the CFG file from PATH_PROGRAM_DATA/DarkPilot.cfg
-	// 2. If (1) fails, it will then attempt to copy the file from PATH_SOURCE/DarkPilot.cfg to PATH_PROGRAM_DATA/DarkPilot.cfg
-	// 3. Instead of returning a handle, the caller passes in a FileStream pointer to be filled in.
-	// This is done so that the original data cannot be corrupted by a potentially buggy Alpha build.
-	// Also, later, the TFE based save format will likely change - so importing will be necessary anyway.
-	JBool openDarkPilotConfig(FileStream* file)
+
+	static bool copyDarkpilo(void)
+	{
+		vpFile darkpilo(VPATH_GAME, "DARKPILO.CFG");
+		if (darkpilo)
+		{
+			char *buf = nullptr;
+			unsigned int size;
+			if (!darkpilo.readallocbuffer(&buf, &size))
+				return createDarkPilotConfig() == JTRUE;
+
+			vpFile copiedPilo;
+			copiedPilo.openwrite("DARKPILO.CFG");
+			if (!copiedPilo) {
+				free(buf);
+				return false;
+			}
+			copiedPilo.write(buf, size);
+			copiedPilo.close();
+			darkpilo.close();
+			free(buf);
+		}
+		else
+		{
+			// Finally generate a new one.
+			TFE_System::logWrite(LOG_WARNING, "DarkForcesMain", "Cannot find 'DARKPILO.CFG'. Creating a new file for save data.");
+			return createDarkPilotConfig() == JTRUE;
+		}
+		return true;
+	}
+	vpFile* openDarkPilotConfig(void)
 	{
 		bool triedonce = false;
-		assert(file);
+		vpFile* dp;
 
 		// TFE uses its own local copy of the save game data to avoid corrupting existing data.
 		// If this copy does not exist, then copy it.
-		char documentsPath[TFE_MAX_PATH];
-		char programDataPath[TFE_MAX_PATH];
-		char sourcePath[TFE_MAX_PATH];
-		TFE_Paths::appendPath(PATH_USER_DOCUMENTS, "DARKPILO.CFG", documentsPath);
-		if (!FileUtil::exists(documentsPath))
+		if (!vpFileExists(VPATH_TFE, "DARKPILO.CFG"))
 		{
-			// First check in /ProgramData since that is where the previous version stored it.
-			TFE_Paths::appendPath(PATH_PROGRAM_DATA, "DARKPILO.CFG", programDataPath);
-			if (FileUtil::exists(programDataPath))
-			{
-				TFE_System::logWrite(LOG_WARNING, "DarkForcesMain", "'DARKPILO.CFG' copied from '%s' to '%s', ProgramData/ will no longer be used and can be deleted.",
-					programDataPath, documentsPath);
-				FileUtil::copyFile(programDataPath, documentsPath);
-				// Cleanup after TFE.
-				FileUtil::deleteFile(programDataPath);
-			}
-			else
-			{
-				// Then try the source data path.
-				TFE_Paths::appendPath(PATH_SOURCE_DATA, "DARKPILO.CFG", sourcePath);
-				if (FileUtil::exists(sourcePath))
-				{
-					FileUtil::copyFile(sourcePath, documentsPath);
-				}
-				else
-				{
-					// Finally generate a new one.
-					TFE_System::logWrite(LOG_WARNING, "DarkForcesMain", "Cannot find 'DARKPILO.CFG' at '%s'. Creating a new file for save data.", sourcePath);
-newpilo:
-					createDarkPilotConfig(documentsPath);
-				}
-			}
+			if (!copyDarkpilo())
+				return nullptr;
 		}
-		// Then try opening the file.
-		if (!file->open(documentsPath, Stream::MODE_READWRITE))
+again:
+		dp = new vpFile(VPATH_TFE, "DARKPILO.CFG");
+		if (!dp->ok())
 		{
 			TFE_System::logWrite(LOG_ERROR, "DarkForcesMain", "cannot open DARKPILO.CFG");
-			return JFALSE;
+			return nullptr;
 		}
 		// Then verify the file.
 		PilotConfigHeader header;
-		file->readBuffer(&header, sizeof(PilotConfigHeader));
+		dp->read(&header, sizeof(PilotConfigHeader));
 		if (header.version == 0x12 && header.count == 14 && strncasecmp(header.signature, "PCF", 3) == 0)
 		{
-			return JTRUE;
+			return dp;
 		}
+
 		// If it is not correct, then close the file and return false.
-		file->close();
+		dp->close();
+		delete dp;
+
 		if (!triedonce)
 		{
-			TFE_System::logWrite(LOG_ERROR, "DarkForcesMain", "DARKPILO.CFG corrupted; creating new");
+			createDarkPilotConfig();
 			triedonce = true;
-			goto newpilo;
+			goto again;
 		}
-		return JFALSE;
+		return nullptr;
 	}
 }  // namespace TFE_DarkForces

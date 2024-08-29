@@ -81,7 +81,7 @@ namespace TFE_DarkForces
 	void automap_drawPlayer(s32 layer);
 	void automap_drawSectors();
 
-	void automap_serialize(Stream* stream)
+	void automap_serialize(vpFile* stream)
 	{
 		SERIALIZE(SaveVersionInit, s_screenScale, 0xc000);
 		SERIALIZE(SaveVersionInit, s_scrLeftScaled, 0);

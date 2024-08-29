@@ -2,8 +2,7 @@
 #include <cstring>
 
 #include <TFE_System/system.h>
-#include <TFE_FileSystem/filestream.h>
-#include <TFE_FileSystem/paths.h>
+#include <TFE_FileSystem/physfswrapper.h>
 #include <TFE_FrontEndUI/frontEndUi.h>
 
 #include <assert.h>
@@ -17,7 +16,7 @@
 
 namespace TFE_System
 {
-	static FileStream s_logFile;
+	static vpFile s_logFile;
 	static char s_workStr[32768];
 	static char s_msgStr[32768];
 	static const char* c_typeNames[]=
@@ -30,10 +29,7 @@ namespace TFE_System
 
 	bool logOpen(const char* filename)
 	{
-		char logPath[TFE_MAX_PATH];
-		TFE_Paths::appendPath(PATH_USER_DOCUMENTS, filename, logPath);
-
-		return s_logFile.open(logPath, Stream::MODE_WRITE);
+		return s_logFile.openwrite(filename);
 	}
 
 	void logClose()
@@ -63,7 +59,7 @@ namespace TFE_System
 
 	void logWrite(LogWriteType type, const char* tag, const char* str, ...)
 	{
-		if (type >= LOG_COUNT || !s_logFile.isOpen() || !tag || !str) { return; }
+		if (type >= LOG_COUNT || !tag || !str) { return; }
 
 		//Handle the variable input, "printf" style messages
 		va_list arg;
@@ -80,12 +76,8 @@ namespace TFE_System
 			sprintf(s_workStr, "[%s] %s\r\n", tag, s_msgStr);
 		}
 		//Write to disk
-		s_logFile.writeBuffer(s_workStr, (u32)strlen(s_workStr));
-		//Make sure to flush the file to disk if a crash is likely.
-		//if (type == LOG_ERROR || type == LOG_CRITICAL)
-		{
-			s_logFile.flush();
-		}
+		s_logFile.write(s_workStr, (u32)strlen(s_workStr));
+
 		//Write to the debugger or terminal output.
 		#ifdef _WIN32
 			OutputDebugStringA(s_workStr);

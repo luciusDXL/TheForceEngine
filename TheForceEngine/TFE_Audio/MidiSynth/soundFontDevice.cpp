@@ -1,11 +1,16 @@
 #include "soundFontDevice.h"
 #include <TFE_Audio/midi.h>
-#include <TFE_FileSystem/filestream.h>
+#include <TFE_FileSystem/physfswrapper.h>
+#include <TFE_System/system.h>
 #include <algorithm>
 #include <assert.h>
 
 #define TSF_IMPLEMENTATION
+#define TSF_NO_STDIO
+#define TSF_STATIC
 #include "tsf.h"
+
+static const char * const DEFAULT_SF2_DIR = "SoundFonts/";
 
 namespace TFE_Audio
 {
@@ -26,21 +31,14 @@ namespace TFE_Audio
 
 	u32 SoundFontDevice::getOutputCount()
 	{
-		if (m_outputs.empty())
+		TFEFileList tl;
+		TFEExtList te = { "sf2" };
+		if (vpGetFileList(VPATH_TFE, DEFAULT_SF2_DIR, tl, te))
 		{
-			char dir[TFE_MAX_PATH];
-			const char* programDir = TFE_Paths::getPath(PATH_PROGRAM);
-			sprintf(dir, "%s", "SoundFonts/");
-			if (!TFE_Paths::mapSystemPath(dir))
-				sprintf(dir, "%sSoundFonts/", programDir);
-
-			FileUtil::readDirectory(dir, "sf2", m_outputs);
-			// Remove the extension.
-			for (size_t i = 0; i < m_outputs.size(); i++)
+			m_outputs.clear();
+			for (auto i : tl)
 			{
-				char name[TFE_MAX_PATH];
-				FileUtil::getFileNameFromPath(m_outputs[i].c_str(), name);
-				m_outputs[i] = name;
+				m_outputs.emplace_back(i.substr(0, i.size()-4));
 			}
 		}
 		return (u32)m_outputs.size();
@@ -73,8 +71,8 @@ namespace TFE_Audio
 		bool res = false;
 		if (index != m_outputId)
 		{
-			char outputName[TFE_MAX_PATH];
-			getOutputName(index, outputName, TFE_MAX_PATH);
+			char outputName[128];
+			getOutputName(index, outputName, 128);
 			m_outputId = index;
 
 			exit();
@@ -92,13 +90,19 @@ namespace TFE_Audio
 	{
 		getOutputCount();
 
-		char filePath[TFE_MAX_PATH];
-		const char* programDir = TFE_Paths::getPath(PATH_PROGRAM);
-		sprintf(filePath, "SoundFonts/%s.sf2", soundFont);
-		if (!TFE_Paths::mapSystemPath(filePath))
-			sprintf(filePath, "%sSoundFonts/%s.sf2", programDir, soundFont);
-
-		m_soundFont = tsf_load_filename(filePath);
+		char *sf2buf;
+		unsigned int sf2bufsize;
+		std::string fname = DEFAULT_SF2_DIR;
+		fname.append(soundFont);
+		fname.append(".sf2");
+		vpFile sf2(VPATH_TFE, fname.c_str(), &sf2buf, &sf2bufsize);
+		if (!sf2)
+		{
+			TFE_System::logWrite(LOG_ERROR, "SF2", "Cannot load SF2 File %s", fname.c_str());
+			return false;
+		}
+		m_soundFont = tsf_load_memory(sf2buf, sf2bufsize);
+		free(sf2buf);
 		if (m_soundFont)
 		{
 			// Set the SoundFont rendering output mode

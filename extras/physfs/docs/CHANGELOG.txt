@@ -1,0 +1,11 @@
+
+The changelog is no longer maintained by hand. It made sense to have a single
+ timeline when we were using CVS, but modern revision control tools make this
+ redundant, at best.
+
+If you want a list of changes, updated in real time, just point your web
+ browser here:
+
+    https://github.com/icculus/physfs/commits/
+
+

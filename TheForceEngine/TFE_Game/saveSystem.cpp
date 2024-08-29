@@ -2,8 +2,6 @@
 #include <TFE_Input/inputMapping.h>
 #include <TFE_System/system.h>
 #include <TFE_Settings/gameSourceData.h>
-#include <TFE_FileSystem/fileutil.h>
-
 #include <TFE_RenderBackend/renderBackend.h>
 #include <TFE_Asset/imageAsset.h>
 #include <cassert>
@@ -29,146 +27,195 @@ namespace TFE_SaveSystem
 	static SaveRequest s_req = SF_REQ_NONE;
 	static char s_reqFilename[TFE_MAX_PATH];
 	static char s_reqSavename[TFE_MAX_PATH];
-	static char s_gameSavePath[TFE_MAX_PATH];
+	static char s_gameSavePath[32];
 	static IGame* s_game = nullptr;
 	static s32 s_saveDelay = 0;
 
-	static u32* s_imageBuffer[2] = { nullptr, nullptr };
+	static char* s_imageBuffer[2] = { nullptr, nullptr };
 	static size_t s_imageBufferSize[2] = { 0 };
 
-	void saveHeader(Stream* stream, const char* saveName)
+#define WR(x, y) if (!f.write(x)) return (y);
+#define WRB(x, z, y) if (!f.write(x, z)) return (y);
+	static int saveHeader(vpFile& f, const char* saveName)
 	{
+		u32 pngSize, version;
+		char buf[256];
+		u8 len;
+
 		// Generate a screenshot.
 		DisplayInfo displayInfo;
 		TFE_RenderBackend::getDisplayInfo(&displayInfo);
 		size_t size = displayInfo.width * displayInfo.height * 4;
 		if (size > s_imageBufferSize[0])
 		{
-			s_imageBuffer[0] = (u32*)realloc(s_imageBuffer[0], size);
+			s_imageBuffer[0] = (char *)realloc(s_imageBuffer[0], size);
 			s_imageBufferSize[0] = size;
 		}
 		TFE_RenderBackend::captureScreenToMemory(s_imageBuffer[0]);
 		// Save to memory.
-		u8* png = (u8*)malloc(SAVE_IMAGE_WIDTH * SAVE_IMAGE_HEIGHT * 4);
-		u32 pngSize = 0;
+		char* png = (char *)malloc(SAVE_IMAGE_WIDTH * SAVE_IMAGE_HEIGHT * 4);
 		if (png)
 		{
-			pngSize = (u32)TFE_Image::writeImageToMemory(png, displayInfo.width, displayInfo.height,
+			pngSize = TFE_Image::writeImageToMemory(png, displayInfo.width, displayInfo.height,
 								 SAVE_IMAGE_WIDTH, SAVE_IMAGE_HEIGHT,
 								 s_imageBuffer[0]);
 		}
 		else
 		{
 			pngSize = 0;
-			png = (u8*)s_imageBuffer[0];
+			png = s_imageBuffer[0];
 		}
 
 		// Master version.
-		u32 version = SVER_CUR;
-		stream->write(&version);
+		version = SVER_CUR;
+		WR(version, 1);
 
 		// Save Name.
 		size_t saveNameLen = strlen(saveName);
 		if (saveNameLen > SAVE_MAX_NAME_LEN - 1) { saveNameLen = SAVE_MAX_NAME_LEN - 1; }
-		u8 len = (u8)saveNameLen;
-		stream->write(&len);
-		stream->writeBuffer(saveName, len);
+		len = (u8)saveNameLen;
+		WR(len, 2);
+		WRB(saveName, len, 3);
 
 		// Time and Date of Save.
-		char timeDate[256];
-		TFE_System::getDateTimeString(timeDate);
-		len = (u8)strlen(timeDate);
-		stream->write(&len);
-		stream->writeBuffer(timeDate, len);
+		memset(buf, 0, 256);
+		TFE_System::getDateTimeString(buf);
+		len = (u8)strlen(buf);
+		WR(len, 4);
+		WRB(buf, len, 5);
 
 		// Level Name
-		char levelName[256];
-		s_game->getLevelName(levelName);
-		len = (u8)strlen(levelName);
-		stream->write(&len);
-		stream->writeBuffer(levelName, len);
+		memset(buf, 0, 256);
+		s_game->getLevelName(buf);
+		len = (u8)strlen(buf);
+		WR(len, 6);
+		WRB(buf, len, 7);
 
 		// Mod List
-		char modList[256];
-		s_game->getModList(modList);
-		len = (u8)strlen(modList);
-		stream->write(&len);
-		stream->writeBuffer(modList, len);
+		memset(buf, 0, 256);
+		s_game->getModList(buf);
+		len = (u8)strlen(buf);
+		WR(len, 8);
+		WRB(buf, len, 9);
 
 		// Image.
-		stream->write(&pngSize);
-		stream->writeBuffer(png, pngSize);
+		WR(pngSize, 10);
+		WRB((const void *)png, pngSize, 11);
 		free(png);
-	}
 
-	void loadHeader(Stream* stream, SaveHeader* header, const char* fileName)
+		return 0; // success
+	}
+#undef WRB
+#undef WR
+
+	static int loadHeader(vpFile& f, SaveHeader* header, const char* fileName)
 	{
 		// Master version.
-		u32 version;
-		stream->read(&version);
+		const u32 sz = SAVE_IMAGE_WIDTH * SAVE_IMAGE_HEIGHT * sizeof(u32);
+		u32 version, pngSize;
+		u8 len;
+
+		f.read(&version);
+		if (version > SVER_CUR)
+			return 1;
 
 		// Save Name.
-		u8 len;
-		stream->read(&len);
-		stream->readBuffer(header->saveName, len);
-		header->saveName[len] = 0;
-		// Fix existing invalid save names.
-		header->saveName[SAVE_MAX_NAME_LEN - 1] = 0;
+		f.read(&len);
+		if (len) {
+			f.read(header->saveName, len);
+			header->saveName[len] = 0;
+			// Fix existing invalid save names.
+			header->saveName[SAVE_MAX_NAME_LEN - 1] = 0;
+		} else {
+			strcpy(header->saveName, "(unknown)");
+		}
 
 		// Handle the case when there is no save name.
-		if (header->saveName[0] == 0 || header->saveName[0] == ' ')
+		if (!len || header->saveName[0] == 0 || header->saveName[0] == ' ')
 		{
-			FileUtil::getFileNameFromPath(fileName, header->saveName);
+			strncpy(header->saveName, fileName, SAVE_MAX_NAME_LEN);
 		}
 
 		// Time and Date of Save.
-		stream->read(&len);
-		stream->readBuffer(header->dateTime, len);
-		header->dateTime[len] = 0;
+		f.read(&len, 1);
+		if (len) {
+			f.read(header->dateTime, len);
+			header->dateTime[len] = 0;
+		} else {
+			strcpy(header->dateTime, "(unknown)");
+		}
 
 		// Level Name
-		stream->read(&len);
-		stream->readBuffer(header->levelName, len);
-		header->levelName[len] = 0;
+		f.read(&len);
+		if (len) {
+			f.read(header->levelName, len);
+			header->levelName[len] = 0;
+		} else {
+			strcpy(header->levelName, "(unknown)");
+		}
 
 		// Mod List
-		stream->read(&len);
-		stream->readBuffer(header->modNames, len);
-		header->modNames[len] = 0;
+		f.read(&len);
+		if (len) {
+			f.read(header->modNames, len);
+			header->modNames[len] = 0;
+		} else {
+			memset(header->modNames, 0, sizeof(header->modNames));
+		}
 
 		// Image, re-use buffer 0 for the PNG.
-		u32 pngSize;
-		stream->read(&pngSize);
-		if (pngSize > s_imageBufferSize[0])
-		{
-			s_imageBuffer[0] = (u32*)realloc(s_imageBuffer[0], pngSize);
-			s_imageBufferSize[0] = pngSize;
-		}
-		stream->readBuffer(s_imageBuffer[0], pngSize);
+		f.read(&pngSize);
 
-		SDL_Surface* image;
-		TFE_Image::readImageFromMemory(&image, pngSize, s_imageBuffer[0]);
-		if (image)
+		// cap it at 2MB max in case pngSize got corrupted.
+		if (pngSize > 10 && pngSize < 2048 * 1024)
 		{
-			const u32 sz = SAVE_IMAGE_WIDTH * SAVE_IMAGE_HEIGHT * sizeof(u32);
-			memcpy(header->imageData, image->pixels, sz);
-			TFE_Image::free(image);
+			if (pngSize > s_imageBufferSize[0])
+			{
+				s_imageBuffer[0] = (char *)realloc(s_imageBuffer[0], pngSize);
+				s_imageBufferSize[0] = pngSize;
+			}
+			f.read(s_imageBuffer[0], pngSize);
+
+			SDL_Surface* image;
+			TFE_Image::readImageFromMemory(&image, pngSize, (void *)s_imageBuffer[0]);
+			if (image)
+			{
+				memcpy(header->imageData, image->pixels, sz);
+				TFE_Image::free(image);
+			} else {
+				memset(header->imageData, 0, sz);
+				TFE_System::logWrite(LOG_MSG, "saveSystem", "loadHeader PNG error");
+			}
 		}
+		return 0;
 	}
 
 	void populateSaveDirectory(std::vector<SaveHeader>& dir)
 	{
+		TFEExtList te = { "tfe" };
+		TFEFileList tl;
+
+		bool ok = vpGetFileList(VPATH_TFE, (const char *)s_gameSavePath, tl, te);
+		if (!ok)
+			return;
+
 		dir.clear();
-		FileList fileList;
-		FileUtil::readDirectory(s_gameSavePath, "tfe", fileList);
-		size_t saveCount = fileList.size();
+		size_t saveCount = tl.size();
 		dir.resize(saveCount);
 
-		const std::string* filenames = fileList.data();
+		const std::string* filenames = tl.data();
 		SaveHeader* headers = dir.data();
-		for (size_t i = 0; i < saveCount; i++)
+		for (size_t i = 0, j = 0; i < saveCount; i++)
 		{
-			loadGameHeader(filenames[i].c_str(), &headers[i]);
+			int ok = loadGameHeader(filenames[i].c_str(), &headers[j]);
+			if (ok == 0)
+			{
+				++j;
+			}
+			else
+			{
+				TFE_System::logWrite(LOG_WARNING, "SaveSystem", "Save %s seems corrupt", filenames[i].c_str());
+			}
 		}
 	}
 
@@ -188,50 +235,62 @@ namespace TFE_SaveSystem
 
 	bool saveGame(const char* filename, const char* saveName)
 	{
-		char filePath[TFE_MAX_PATH];
-		sprintf(filePath, "%s%s", s_gameSavePath, filename);
-
+		char filePath[32];
 		bool ret = false;
-		FileStream stream;
-		if (stream.open(filePath, Stream::MODE_WRITE))
+		vpFile savefile;
+
+		sprintf(filePath,"%s%s", s_gameSavePath, filename);
+		if (savefile.openwrite(filePath))
 		{
-			saveHeader(&stream, saveName);
-			ret = s_game->serializeGameState(&stream, filename, true);
-			stream.close();
+			ret = saveHeader(savefile, saveName);
+			if (ret) {
+				TFE_System::logWrite(LOG_ERROR, "SaveSystem", "saveHeader() failed: %d", ret);
+				savefile.close();
+				vpDeleteFile(filePath);
+				return false;
+			}
+			ret = s_game->serializeGameState(&savefile, filename, true);
+			savefile.close();
+			if (!ret) {
+				TFE_System::logWrite(LOG_ERROR, "SaveSystem", "serialization failed");
+				vpDeleteFile(filePath);
+			}
 		}
 		return ret;
 	}
 
 	bool loadGame(const char* filename)
 	{
-		char filePath[TFE_MAX_PATH];
-		sprintf(filePath, "%s%s", s_gameSavePath, filename);
+		char filePath[32];
+		int ret = -1;
 
-		bool ret = false;
-		FileStream stream;
-		if (stream.open(filePath, Stream::MODE_READ))
+		sprintf(filePath, "%s%s", s_gameSavePath, filename);
+		vpFile loadfile(VPATH_TFE, filePath);
+		if (loadfile)
 		{
 			SaveHeader header;
-			loadHeader(&stream, &header, filename);
-			ret = s_game->serializeGameState(&stream, filename, false);
-			stream.close();
+			ret = loadHeader(loadfile, &header, filename);
+			if (ret == 0)
+				ret = s_game->serializeGameState(&loadfile, filename, false) ? 0 : 1;
+			loadfile.close();
 		}
-		return ret;
+		return (ret == 0);
 	}
 
-	bool loadGameHeader(const char* filename, SaveHeader* header)
+	int loadGameHeader(const char* filename, SaveHeader* header)
 	{
-		char filePath[TFE_MAX_PATH];
-		sprintf(filePath, "%s%s", s_gameSavePath, filename);
+		char filePath[32];
+		int ret = -1;
 
-		bool ret = false;
-		FileStream stream;
-		if (stream.open(filePath, Stream::MODE_READ))
+		sprintf(filePath, "%s%s", s_gameSavePath, filename);
+		vpFile savefile(VPATH_TFE, filePath);
+		if (savefile)
 		{
-			loadHeader(&stream, header, filename);
-			strcpy(header->fileName, filename);
-			stream.close();
-			ret = true;
+			ret = loadHeader(savefile, header, filename);
+			if (ret == 0) {
+				strcpy(header->fileName, filename);
+			}
+			savefile.close();
 		}
 		return ret;
 	}
@@ -285,21 +344,8 @@ namespace TFE_SaveSystem
 
 	void setCurrentGame(GameID id)
 	{
-		char relativeBasePath[TFE_MAX_PATH];
-		TFE_Paths::appendPath(PATH_USER_DOCUMENTS, "Saves/", relativeBasePath);
-		if (!FileUtil::directoryExits(s_gameSavePath))
-		{
-			FileUtil::makeDirectory(relativeBasePath);
-		}
-
-		char relativePath[TFE_MAX_PATH];
-		sprintf(relativePath, "Saves/%s/", TFE_Settings::c_gameName[id]);
-
-		TFE_Paths::appendPath(PATH_USER_DOCUMENTS, relativePath, s_gameSavePath);
-		if (!FileUtil::directoryExits(s_gameSavePath))
-		{
-			FileUtil::makeDirectory(s_gameSavePath);
-		}
+		sprintf(s_gameSavePath, "Saves/%s/", TFE_Settings::c_gameName[id]);
+		vpMkdir(s_gameSavePath);
 	}
 		
 	void setCurrentGame(IGame* game)

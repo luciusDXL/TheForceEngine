@@ -2,10 +2,8 @@
 
 #include "spriteAsset_Jedi.h"
 #include <TFE_System/system.h>
-#include <TFE_FileSystem/filestream.h>
+#include <TFE_FileSystem/physfswrapper.h>
 #include <TFE_FileSystem/fileutil.h>
-#include <TFE_FileSystem/paths.h>
-#include <TFE_Asset/assetSystem.h>
 #include <TFE_Jedi/Math/core_math.h>
 #include <TFE_Jedi/Level/robject.h>
 #include <TFE_Jedi/Serialization/serialization.h>
@@ -52,21 +50,13 @@ namespace TFE_Sprite_Jedi
 		FileUtil::replaceExtension(name, "fxx", hdPath);
 
 		// If the file doesn't exist, just return - there is no HD asset.
-		FilePath filepath;
-		if (!TFE_Paths::getFilePath(hdPath, &filepath))
-		{
+		vpFile file(VPATH_GAME, hdPath, false);
+		if (!file)
 			return false;
-		}
-		FileStream file;
-		if (!file.open(&filepath, Stream::MODE_READ))
-		{
-			return false;
-		}
-
 		// Load the raw data from disk.
-		size_t fileSize = file.getSize();
+		unsigned int fileSize = file.size();
 		s_buffer.resize(fileSize);
-		file.readBuffer(s_buffer.data(), (u32)fileSize);
+		file.read(s_buffer.data(), fileSize);
 		file.close();
 
 		const u8* data = s_buffer.data();
@@ -107,19 +97,12 @@ namespace TFE_Sprite_Jedi
 		}
 
 		// It doesn't exist yet, try to load the frame.
-		FilePath filePath;
-		if (!TFE_Paths::getFilePath(name, &filePath))
-		{
+		vpFile file(VPATH_GAME, name, false);
+		if (!file)
 			return nullptr;
-		}
-		FileStream file;
-		if (!file.open(&filePath, Stream::MODE_READ))
-		{
-			return nullptr;
-		}
-		size_t len = file.getSize();
+		unsigned int len = file.size();
 		s_buffer.resize(len);
-		file.readBuffer(s_buffer.data(), u32(len));
+		file.read(s_buffer.data(), len);
 		file.close();
 
 		const u8* data = s_buffer.data();
@@ -258,7 +241,7 @@ namespace TFE_Sprite_Jedi
 		return true;
 	}
 
-	void sprite_serializeSpritesAndFrames(Stream* stream)
+	void sprite_serializeSpritesAndFrames(vpFile* stream)
 	{
 		const bool modeWrite = serialization_getMode() == SMODE_WRITE;
 
@@ -325,22 +308,13 @@ namespace TFE_Sprite_Jedi
 		char hdPath[TFE_MAX_PATH];
 		FileUtil::replaceExtension(name, "wxx", hdPath);
 
-		// If the file doesn't exist, just return - there is no HD asset.
-		FilePath filepath;
-		if (!TFE_Paths::getFilePath(hdPath, &filepath))
-		{
+		vpFile file(VPATH_GAME, hdPath, false);
+		if (!file)
 			return false;
-		}
-		FileStream file;
-		if (!file.open(&filepath, Stream::MODE_READ))
-		{
-			return false;
-		}
 
-		// Load the raw data from disk.
-		size_t size = file.getSize();
+		unsigned int size = file.size();
 		s_buffer.resize(size);
-		file.readBuffer(s_buffer.data(), (u32)size);
+		file.read(s_buffer.data(), size);
 		file.close();
 
 		const u8* data = s_buffer.data();
@@ -392,19 +366,12 @@ namespace TFE_Sprite_Jedi
 		}
 
 		// It doesn't exist yet, try to load the frame.
-		FilePath filePath;
-		if (!TFE_Paths::getFilePath(name, &filePath))
-		{
+		vpFile file(VPATH_GAME, name, false);
+		if (!file)
 			return nullptr;
-		}
-		FileStream file;
-		if (!file.open(&filePath, Stream::MODE_READ))
-		{
-			return nullptr;
-		}
-		size_t len = file.getSize();
+		unsigned int len = file.size();
 		s_buffer.resize(len);
-		file.readBuffer(s_buffer.data(), u32(len));
+		file.read(s_buffer.data(), len);
 		file.close();
 
 		u8* data = s_buffer.data();

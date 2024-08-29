@@ -5,7 +5,6 @@
 // the main game.
 //////////////////////////////////////////////////////////////////////
 #include <TFE_System/types.h>
-#include <TFE_Asset/vocAsset.h>
 #include <TFE_Audio/audioSystem.h>
 #include "lsystem.h"
 

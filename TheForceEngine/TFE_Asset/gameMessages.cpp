@@ -1,7 +1,6 @@
 #include "gameMessages.h"
+#include <TFE_FileSystem/physfswrapper.h>
 #include <TFE_System/system.h>
-#include <TFE_Asset/assetSystem.h>
-#include <TFE_Archive/archive.h>
 #include <TFE_System/parser.h>
 #include <assert.h>
 #include <algorithm>
@@ -11,8 +10,6 @@
 
 namespace TFE_GameMessages
 {
-	static const char* c_defaultGob = "DARK.GOB";
-
 	static bool s_loaded = false;
 	std::map<u32, std::string> s_msgMap;
 	static std::vector<char> s_buffer;
@@ -21,40 +18,44 @@ namespace TFE_GameMessages
 	{
 		if (s_loaded) { return true; }
 
-		if (TFE_AssetSystem::readAssetFromArchive(c_defaultGob, ARCHIVE_GOB, "TEXT.MSG", s_buffer))
+		vpFile file(VPATH_GAME, "TEXT.MSG", false);
+		if (!file)
+			return false;
+		unsigned int len = file.size();
+		s_buffer.resize(len);
+		file.read(s_buffer.data(), len);
+		file.close();
+
+		TFE_Parser parser;
+		parser.init(s_buffer.data(), len);
+		parser.addCommentString("//");
+		parser.addCommentString("#");
+		parser.enableBlockComments();
+
+		size_t bufferPos = 0;
+		while (bufferPos < len)
 		{
-			TFE_Parser parser;
-			size_t len = s_buffer.size();
-			parser.init(s_buffer.data(), len);
-			parser.addCommentString("//");
-			parser.addCommentString("#");
-			parser.enableBlockComments();
+			const char* line = parser.readLine(bufferPos);
+			if (!line) { break; }
+			
+			TokenList tokens;
+			parser.tokenizeLine(line, tokens);
+			if (tokens.size() < 3) { continue; }
+			
+			// Skip until the first token is a number.
+			const char* idStr = tokens[0].c_str();
+			if (idStr[0] < '0' || idStr[0] > '9') { continue; }
 
-			size_t bufferPos = 0;
-			while (bufferPos < len)
-			{
-				const char* line = parser.readLine(bufferPos);
-				if (!line) { break; }
-
-				TokenList tokens;
-				parser.tokenizeLine(line, tokens);
-				if (tokens.size() < 3) { continue; }
-
-				// Skip until the first token is a number.
-				const char* idStr = tokens[0].c_str();
-				if (idStr[0] < '0' || idStr[0] > '9') { continue; }
-
-				// Finally read the line.
-				char* endPtr = nullptr;
-				u32 id = strtoul(idStr, &endPtr, 10);
-				u32 internal = strtoul(tokens[1].c_str(), &endPtr, 10);
+			// Finally read the line.
+			char* endPtr = nullptr;
+			u32 id = strtoul(idStr, &endPtr, 10);
+			u32 internal = strtoul(tokens[1].c_str(), &endPtr, 10);
 				
-				// And then add the message.
-				s_msgMap[id] = tokens[2];
-			};
-			return true;
-		}
-		return false;
+			// And then add the message.
+			s_msgMap[id] = tokens[2];
+		};
+		s_loaded = true;
+		return true;
 	}
 
 	void unload()

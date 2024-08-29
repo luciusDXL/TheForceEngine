@@ -12,7 +12,6 @@
 #include <TFE_Game/igame.h>
 #include <TFE_Asset/modelAsset_jedi.h>
 #include <TFE_FileSystem/paths.h>
-#include <TFE_FileSystem/filestream.h>
 #include <TFE_Jedi/Memory/list.h>
 #include <TFE_Jedi/Memory/allocator.h>
 

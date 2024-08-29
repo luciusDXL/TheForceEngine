@@ -29,7 +29,7 @@ struct IGame;
 
 namespace TFE_FrontEndUI
 {
-	void init();
+	bool init();
 	void initConsole();
 	void shutdown();
 

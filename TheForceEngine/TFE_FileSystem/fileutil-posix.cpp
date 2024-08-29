@@ -421,4 +421,15 @@ namespace FileUtil
 			strcpy(outPath, srcPath);
 		}
 	}
+
+	void getFullPath(const char *file, char *outpath)
+	{
+		if (!outpath)
+			return;
+		char *r = realpath(file, outpath);
+		if (!r) {
+			fprintf(stderr, "getFullPath(%s) errno %d\n", file, errno);
+			memset(outpath, 0, PATH_MAX);
+		}
+	}
 }

@@ -1,0 +1,95 @@
+# Open Watcom makefile to build PhysicsFS for OS/2
+# wmake -f Makefile.os2
+
+LIBNAME = physfs
+VERSION = 3.3.0
+
+LIBFILE = $(LIBNAME).lib
+DLLFILE = $(LIBNAME).dll
+LNKFILE = $(LIBNAME).lnk
+
+TITLENAME = $(LIBNAME) $(VERSION)
+
+SRCS = physfs.c                   &
+       physfs_byteorder.c         &
+       physfs_unicode.c           &
+       physfs_platform_os2.c      &
+       physfs_archiver_dir.c      &
+       physfs_archiver_unpacked.c &
+       physfs_archiver_grp.c      &
+       physfs_archiver_hog.c      &
+       physfs_archiver_7z.c       &
+       physfs_archiver_mvl.c      &
+       physfs_archiver_qpak.c     &
+       physfs_archiver_wad.c      &
+       physfs_archiver_zip.c      &
+       physfs_archiver_slb.c      &
+       physfs_archiver_iso9660.c  &
+       physfs_archiver_csm.c      &
+       physfs_archiver_vdf.c      &
+       physfs_archiver_lec3d.c
+
+
+OBJS = $(SRCS:.c=.obj)
+
+CFLAGS_BASE = -bt=os2 -d0 -q -bm -5s -fp5 -fpi87 -sg -oeatxh -ei -j
+CFLAGS_BASE+= -DNDEBUG
+# warnings:
+CFLAGS_BASE+= -wx
+# newer OpenWatcom versions enable W303 by default
+CFLAGS_BASE+= -wcd=303
+# include paths:
+CFLAGS_BASE+= -I"$(%WATCOM)/h/os2" -I"$(%WATCOM)/h"
+CFLAGS = $(CFLAGS_BASE)
+# to build a dll:
+CFLAGS+= -bd
+
+.extensions:
+.extensions: .lib .dll .obj .c
+
+all: $(DLLFILE) test_physfs.exe
+
+.c: decoders
+.c: examples
+
+$(LIBFILE): $(DLLFILE)
+  @echo * Create library: $@...
+  wlib -b -n -q -c -pa -s -t -zld -ii -io $@ $(DLLFILE)
+
+$(DLLFILE): $(OBJS) $(MODPLIB) $(TIMILIB) $(LNKFILE)
+  @echo * Link: $@
+  wlink @$(LNKFILE)
+
+$(LNKFILE):
+  @%create $@
+  @%append $@ SYSTEM os2v2_dll INITINSTANCE TERMINSTANCE
+  @%append $@ NAME $(LIBNAME)
+  @for %i in ($(OBJS)) do @%append $@ FILE %i
+  @%append $@ OPTION QUIET
+  @%append $@ OPTION DESCRIPTION '@$#icculus org:$(VERSION)$#@PhysicsFS'
+  @%append $@ OPTION MAP=$^&.map
+  @%append $@ OPTION ELIMINATE
+  @%append $@ OPTION MANYAUTODATA
+  @%append $@ OPTION OSNAME='OS/2 and eComStation'
+  @%append $@ OPTION SHOWDEAD
+
+.c.obj:
+  wcc386 $(CFLAGS) -fo=$^@ $<
+
+test_physfs.obj: "../test/test_physfs.c"
+  wcc386 $(CFLAGS_BASE) -fo=$^@ $<
+
+test_physfs.exe: $(LIBFILE) test_physfs.obj
+  @echo * Link: $@
+  wlink SYS os2v2 LIBR {$(LIBFILE)} op q op el F {test_physfs.obj} N test_physfs.exe
+
+clean: .SYMBOLIC
+  @echo * Clean: $(TITLENAME)
+  @if exist *.obj rm *.obj
+  @if exist *.err rm *.err
+  @if exist $(LNKFILE) rm $(LNKFILE)
+distclean: .SYMBOLIC clean
+  @if exist $(DLLFILE) rm $(DLLFILE)
+  @if exist $(LIBFILE) rm $(LIBFILE)
+  @if exist *.map rm *.map
+  @if exist *.exe rm *.exe

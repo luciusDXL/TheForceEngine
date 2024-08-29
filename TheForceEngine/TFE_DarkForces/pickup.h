@@ -39,8 +39,8 @@ namespace TFE_DarkForces
 	void pickupSupercharge();
 
 	// Serialization
-	void pickupLogic_serializeTasks(Stream* stream);
-	void pickupLogic_serialize(Logic*& logic, SecObject* obj, Stream* stream);
+	void pickupLogic_serializeTasks(vpFile* stream);
+	void pickupLogic_serialize(Logic*& logic, SecObject* obj, vpFile* stream);
 	
 	extern u32 s_playerDying;
 	extern Task* s_superchargeTask;

@@ -4,19 +4,21 @@
 //////////////////////////////////////////////////////////////////////
 #include <TFE_System/types.h>
 #include <SDL_image.h>
+#include <TFE_FileSystem/physfswrapper.h>
 
 namespace TFE_Image
 {
 	void init();
 	void shutdown();
 
-	SDL_Surface* get(const char* imagePath);
-	SDL_Surface* loadFromMemory(const u8* buffer, size_t size);
+	SDL_Surface* get(const char* imagePath, TFE_VPATH vpathid = VPATH_NONE);
+	SDL_Surface* loadFromMemory(const void* buffer, size_t size);
 	void free(SDL_Surface* image);
 	void freeAll();
 
-	void writeImage(const char* path, u32 width, u32 height, u32* pixelData);
+	// no vpath here since writing is only allowed at VPATH_TFE */
+	void writeImage(const char* path, u32 width, u32 height, void* pixelData);
 
-	size_t writeImageToMemory(u8* output, u32 srcw, u32 srch, u32 dstw, u32 dsth, const u32* pixelData);
-	void readImageFromMemory(SDL_Surface** output, size_t size, const u32* pixelData);
+	u32 writeImageToMemory(char* output, u32 srcw, u32 srch, u32 dstw, u32 dsth, void* pixelData);
+	void readImageFromMemory(SDL_Surface** output, u32 size, void* pixelData);
 }

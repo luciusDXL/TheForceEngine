@@ -11,7 +11,6 @@
 #include <TFE_System/system.h>
 #include <TFE_Input/input.h>
 #include <TFE_A11y/accessibility.h>
-#include <TFE_Archive/lfdArchive.h>
 #include <TFE_Jedi/Math/core_math.h>
 #include <TFE_Jedi/Renderer/virtualFramebuffer.h>
 #include <TFE_FileSystem/filestream.h>
@@ -121,24 +120,8 @@ namespace TFE_DarkForces
 			lmusic_setSequence(s_playSeq[s_playId].music);
 		}
 
-		Archive* lfd = nullptr;
 		if (s_playSeq[s_playId].id != SCENE_EXIT)
 		{
-			FilePath path;
-			if (!TFE_Paths::getFilePath(s_playSeq[s_playId].archive, &path))
-			{
-				s_scene = SCENE_EXIT;
-				return;
-			}
-			lfd = new LfdArchive();
-			if (!lfd->open(path.path))
-			{
-				delete lfd;
-				s_scene = SCENE_EXIT;
-				return;
-			}
-			TFE_Paths::addLocalArchiveToFront(lfd);
-
 			char name[16];
 			CutsceneState* scene = &s_playSeq[s_playId];
 			strcpy(name, scene->scene);
@@ -161,19 +144,12 @@ namespace TFE_DarkForces
 			s_film = cutsceneFilm_load(name, &rect, 0, 0, 0, cutscene_loadCallback);
 			if (!s_film)
 			{
-				TFE_Paths::removeFirstArchive();
-				delete lfd;
-
 				s_scene = SCENE_EXIT;
 				TFE_System::logWrite(LOG_ERROR, "CutscenePlayer", "Unable to load all items in cutscene '%s'.", name);
 				return;
 			}
 			lview_setUpdateFunc(lcutscenePlayer_endView);
 
-			// Close the archive.
-			TFE_Paths::removeFirstArchive();
-			delete lfd;
-					   			
 			// Text Crawl handling
 			if (sceneId == TEXTCRAWL_SCENE)
 			{

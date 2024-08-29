@@ -10,6 +10,7 @@
 #include <TFE_Jedi/InfSystem/infSystem.h>
 #include <TFE_FrontEndUI/console.h>
 #include <TFE_Settings/settings.h>
+#include <TFE_FileSystem/physfswrapper.h>
 // Internal types need to be included in this case.
 #include <TFE_Jedi/InfSystem/infTypesInternal.h>
 #include <TFE_Jedi/Collision/collision.h>
@@ -772,29 +773,27 @@ namespace TFE_DarkForces
 		if (name)
 		{
 			// Create a folder
-			FileUtil::makeDirectory("Exports");
+			vpMkdir("Exports/");
 
 			char msg[TFE_MAX_PATH];
 			sprintf(msg, "Exported texture to 'Exports/%s'", name);
 			TFE_Console::addToHistory(msg);
 
 			// Write the original BM to the current directory.
-			FilePath path;
-			if (TFE_Paths::getFilePath(name, &path))
+			vpFile file(VPATH_GAME, name);
+			if (file)
 			{
-				// Load the data.
-				FileStream file;
-				if (!file.open(&path, Stream::MODE_READ)) { return; }
-				s_exportBuffer.resize(file.getSize());
-				file.readBuffer(s_exportBuffer.data(), (u32)file.getSize());
+				s_exportBuffer.resize(file.size());
+				file.read(s_exportBuffer.data(), file.size());
 				file.close();
 
 				// Write it out to disk.
 				char outputName[TFE_MAX_PATH];
 				sprintf(outputName, "Exports/%s", name);
-				if (file.open(outputName, Stream::MODE_WRITE))
+				vpFile outfile;
+				if (file.openwrite(outputName))
 				{
-					file.writeBuffer(s_exportBuffer.data(), (u32)s_exportBuffer.size());
+					file.write(s_exportBuffer.data(), s_exportBuffer.size());
 					file.close();
 				}
 			}

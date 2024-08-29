@@ -3,6 +3,7 @@
 
 #include "levelData.h"
 #include "rsector.h"
+#include "rtexture.h"
 #include "rwall.h"
 #include "robjData.h"
 #include <TFE_Game/igame.h>
@@ -36,11 +37,11 @@ namespace TFE_Jedi
 	LevelState s_levelState = {};
 	LevelInternalState s_levelIntState = {};
 	
-	void level_serializeSector(Stream* stream, RSector* sector);
-	void level_serializeSafe(Stream* stream, Safe* safe);
-	void level_serializeAmbientSound(Stream* stream, AmbientSound* sound);
-	void level_serializeWall(Stream* stream, RWall* wall, RSector* sector);
-	void level_serializeTextureList(Stream* stream);
+	void level_serializeSector(vpFile* stream, RSector* sector);
+	void level_serializeSafe(vpFile* stream, Safe* safe);
+	void level_serializeAmbientSound(vpFile* stream, AmbientSound* sound);
+	void level_serializeWall(vpFile* stream, RWall* wall, RSector* sector);
+	void level_serializeTextureList(vpFile* stream);
 
 	/////////////////////////////////////////////
 	// Implementation
@@ -73,7 +74,7 @@ namespace TFE_Jedi
 		}
 	}
 
-	void level_serializePalette(Stream* stream)
+	void level_serializePalette(vpFile* stream)
 	{
 		u8 length = 0;
 		if (serialization_getMode() == SMODE_WRITE)
@@ -105,7 +106,7 @@ namespace TFE_Jedi
 		s_secretsPercent = max(0, min(100, s_secretsPercent));
 	}
 		
-	void level_serialize(Stream* stream)
+	void level_serialize(vpFile* stream)
 	{
 		bool debug = serialization_getMode() == SMODE_WRITE;
 
@@ -228,7 +229,7 @@ namespace TFE_Jedi
 	/////////////////////////////////////////////
 	// Internal - Serialize
 	/////////////////////////////////////////////
-	void level_serializeTextureList(Stream* stream)
+	void level_serializeTextureList(vpFile* stream)
 	{
 		const bool read = serialization_getMode() == SMODE_READ;
 
@@ -255,7 +256,7 @@ namespace TFE_Jedi
 		}
 	}
 		
-	void level_serializeTexturePointer(Stream* stream, TextureData**& texData)
+	void level_serializeTexturePointer(vpFile* stream, TextureData**& texData)
 	{
 		u32 texIndex = 0u;
 		if (serialization_getMode() == SMODE_WRITE && texData && *texData)
@@ -301,7 +302,7 @@ namespace TFE_Jedi
 		}
 	}
 
-	void level_serializeSector(Stream* stream, RSector* sector)
+	void level_serializeSector(vpFile* stream, RSector* sector)
 	{
 		if (serialization_getMode() == SMODE_READ)
 		{
@@ -381,7 +382,7 @@ namespace TFE_Jedi
 		}
 	}
 		
-	void level_serializeSafe(Stream* stream, Safe* safe)
+	void level_serializeSafe(vpFile* stream, Safe* safe)
 	{
 		serialization_serializeSectorPtr(stream, LevelState_InitVersion, safe->sector);
 		SERIALIZE(LevelState_InitVersion, safe->x, 0);
@@ -390,7 +391,7 @@ namespace TFE_Jedi
 		SERIALIZE(LevelState_InitVersion, safe->pad, 0);	// for padding.
 	}
 
-	void level_serializeAmbientSound(Stream* stream, AmbientSound* sound)
+	void level_serializeAmbientSound(vpFile* stream, AmbientSound* sound)
 	{
 		serialization_serializeDfSound(stream, LevelState_InitVersion, &sound->soundId);
 		if (serialization_getMode() == SMODE_READ)
@@ -401,7 +402,7 @@ namespace TFE_Jedi
 		SERIALIZE(LevelState_InitVersion, sound->pos, def);
 	}
 				
-	void level_serializeWall(Stream* stream, RWall* wall, RSector* sector)
+	void level_serializeWall(vpFile* stream, RWall* wall, RSector* sector)
 	{
 		SERIALIZE(LevelState_InitVersion, wall->id, 0);
 		SERIALIZE(LevelState_InitVersion, wall->seen, 0);

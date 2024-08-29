@@ -137,7 +137,7 @@ namespace TFE_DarkForces
 	// TODO: Find a better way of handling the complete task.
 	extern Task* s_hitEffectTask;
 
-	void animLogic_serialize(Logic*& logic, SecObject* obj, Stream* stream)
+	void animLogic_serialize(Logic*& logic, SecObject* obj, vpFile* stream)
 	{
 		SpriteAnimLogic* anim = nullptr;
 		if (serialization_getMode() == SMODE_WRITE)

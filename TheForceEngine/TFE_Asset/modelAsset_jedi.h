@@ -3,7 +3,7 @@
 // Jedi specific structures for 3DOs
 //////////////////////////////////////////////////////////////////////
 #include <TFE_System/types.h>
-#include <TFE_FileSystem/stream.h>
+#include <TFE_FileSystem/physfswrapper.h>
 #include <string>
 #include <vector>
 
@@ -78,5 +78,5 @@ namespace TFE_Model_Jedi
 	bool getModelIndex(JediModel* model, s32* index, AssetPool* pool);
 	JediModel* getModelByIndex(s32 index, AssetPool pool);
 
-	void serializeModels(Stream* stream);
+	void serializeModels(vpFile* stream);
 }

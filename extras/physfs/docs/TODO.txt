@@ -1,0 +1,62 @@
+Stuff that needs to be done and wishlist:
+
+These are in no particular order.
+Some might be dupes, some might be done already, some might be bad ideas.
+
+
+From https://icculus.org/pipermail/physfs/2009-March/000698.html ...
+
+- Write support for various archives. I haven't decided how to do this yet,
+  but I'd like to.
+- Add an API to expose a file's extended attributes to the application?
+- Deprecate PHYSFS_setSaneConfig(). It really should have been in the extras
+  directory.
+- Clean up the sources to match my ever-changing coding style. :)
+
+
+
+From https://icculus.org/pipermail/physfs/2010-January/000826.html ...
+
+- Lua bindings
+
+
+From https://icculus.org/pipermail/physfs/2010-January/000833.html ...
+
+- SWIG bindings
+
+
+
+From old TODO.txt...
+
+- Other archivers: perhaps tar(.gz|.bz2), RPM, ARJ, etc. These are less
+  important, since streaming archives aren't of much value to games (which
+  is why zipfiles are king: random access), but it could have uses for, say,
+  an installer/updater.
+- Do symlinks in zip archiver work when they point to dirs?
+- Enable more warnings?
+- Use __cdecl in physfs.h?
+- Look for FIXMEs (many marked with "!!!" in comments).
+- fscanf and fprintf support in extras dir.
+- Sanity check byte order at runtime.
+- Memory locking?
+- General code audit.
+- Multiple write dirs with mount points?
+
+
+Other stuff I thought of...
+- moar asserts!
+- constify!
+- Does iPhone work?
+- Fix CMake vs Doxygen.
+- Doxygen replacement? (manpages suck.)
+- Fix coding standards to match.
+- See if we can ditch some #include lines...
+- LZMA support in zip archiver?
+- bzip2 support in zip archiver?
+- Reduce the BAIL and GOTO macro use. A lot of these don't add anything.
+- Change the term "search path" to something less confusing.
+
+Probably other stuff. Requests and recommendations are welcome.
+
+// end of TODO.txt ...
+

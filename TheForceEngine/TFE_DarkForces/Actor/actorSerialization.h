@@ -36,24 +36,25 @@
 #include <TFE_System/types.h>
 #include <TFE_DarkForces/logic.h>
 #include <TFE_Jedi/Collision/collision.h>
+#include <TFE_Jedi/Serialization/serialization.h>
 
 namespace TFE_DarkForces
 {
-	void actorDispatch_serialize(Logic*& logic, SecObject* obj, Stream* stream);
+	void actorDispatch_serialize(Logic*& logic, SecObject* obj, vpFile* stream);
 
 	// Helper Functions
-	void actor_serializeObject(Stream* stream, SecObject*& obj);
-	void actor_serializeWall(Stream* stream, RWall*& wall);
-	void actor_serializeCollisionInfo(Stream* stream, CollisionInfo* colInfo);
-	void actor_serializeTarget(Stream* stream, ActorTarget* target);
-	void actor_serializeMovementModule(Stream* stream, ActorModule*& mod, ActorDispatch* dispatch);
-	void actor_serializeAttackModule(Stream* stream, ActorModule*& mod, ActorDispatch* dispatch);
-	void actor_serializeDamageModule(Stream* stream, ActorModule*& mod, ActorDispatch* dispatch);
-	void actor_serializeThinkerModule(Stream* stream, ActorModule*& mod, ActorDispatch* dispatch);
-	void actor_serializeFlyerModule(Stream* stream, ActorModule*& mod, ActorDispatch* dispatch);
-	void actor_serializeFlyerRemoteModule(Stream* stream, ActorModule*& mod, ActorDispatch* dispatch);
+	void actor_serializeObject(vpFile* stream, SecObject*& obj);
+	void actor_serializeWall(vpFile* stream, RWall*& wall);
+	void actor_serializeCollisionInfo(vpFile* stream, CollisionInfo* colInfo);
+	void actor_serializeTarget(vpFile* stream, ActorTarget* target);
+	void actor_serializeMovementModule(vpFile* stream, ActorModule*& mod, ActorDispatch* dispatch);
+	void actor_serializeAttackModule(vpFile* stream, ActorModule*& mod, ActorDispatch* dispatch);
+	void actor_serializeDamageModule(vpFile* stream, ActorModule*& mod, ActorDispatch* dispatch);
+	void actor_serializeThinkerModule(vpFile* stream, ActorModule*& mod, ActorDispatch* dispatch);
+	void actor_serializeFlyerModule(vpFile* stream, ActorModule*& mod, ActorDispatch* dispatch);
+	void actor_serializeFlyerRemoteModule(vpFile* stream, ActorModule*& mod, ActorDispatch* dispatch);
 
-	void actor_serializeTiming(Stream* stream, ActorTiming* timing);
-	void actor_serializeLogicAnim(Stream* stream, LogicAnimation* anim);
-	void actor_serializeMovementModuleBase(Stream* stream, MovementModule* moveMod);
+	void actor_serializeTiming(vpFile* stream, ActorTiming* timing);
+	void actor_serializeLogicAnim(vpFile* stream, LogicAnimation* anim);
+	void actor_serializeMovementModuleBase(vpFile* stream, MovementModule* moveMod);
 }  // namespace TFE_DarkForces

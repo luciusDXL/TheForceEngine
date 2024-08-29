@@ -2,6 +2,7 @@
 
 #include "serialization.h"
 #include <TFE_Jedi/Level/levelData.h>
+#include <TFE_Jedi/Level/rtexture.h>
 #include <TFE_System/system.h>
 
 using namespace TFE_DarkForces;
@@ -17,7 +18,7 @@ namespace TFE_Jedi
 	u32 s_sVersion = 0;
 	SerializationMode s_sMode = SMODE_UNKNOWN;
 		
-	void serialization_serializeDfSound(Stream* stream, u32 version, SoundSourceId* id)
+	void serialization_serializeDfSound(vpFile* stream, u32 version, SoundSourceId* id)
 	{
 		s32 soundDataId = -1;
 		if (s_sMode == SMODE_WRITE)
@@ -31,7 +32,7 @@ namespace TFE_Jedi
 		}
 	}
 
-	void serialization_serializeSectorPtr(Stream* stream, u32 version, RSector*& sector)
+	void serialization_serializeSectorPtr(vpFile* stream, u32 version, RSector*& sector)
 	{
 		s32 sectorIndex = -1;
 		if (s_sMode == SMODE_WRITE && sector)
@@ -53,7 +54,7 @@ namespace TFE_Jedi
 		}
 	}
 		
-	void serialization_serializeAnimatedTexturePtr(Stream* stream, u32 version, AnimatedTexture*& animTex)
+	void serialization_serializeAnimatedTexturePtr(vpFile* stream, u32 version, AnimatedTexture*& animTex)
 	{
 		s32 index = -1;
 		if (s_sMode == SMODE_WRITE && animTex)
@@ -76,7 +77,7 @@ namespace TFE_Jedi
 		}
 	}
 		
-	void serialization_serializeTexturePtr(Stream* stream, u32 version, TextureData*& texture)
+	void serialization_serializeTexturePtr(vpFile* stream, u32 version, TextureData*& texture)
 	{
 		s32 id = -1;
 		if (s_sMode == SMODE_WRITE && texture)
@@ -95,7 +96,7 @@ namespace TFE_Jedi
 		}
 	}
 
-	void serialization_serialize3doPtr(Stream* stream, u32 version, JediModel*& model)
+	void serialization_serialize3doPtr(vpFile* stream, u32 version, JediModel*& model)
 	{
 		s32 id = -1;
 		if (s_sMode == SMODE_WRITE && model)
@@ -114,7 +115,7 @@ namespace TFE_Jedi
 		}
 	}
 
-	void serialization_serializeWaxPtr(Stream* stream, u32 version, JediWax*& wax)
+	void serialization_serializeWaxPtr(vpFile* stream, u32 version, JediWax*& wax)
 	{
 		s32 id = -1;
 		if (s_sMode == SMODE_WRITE && wax)
@@ -133,7 +134,7 @@ namespace TFE_Jedi
 		}
 	}
 
-	void serialization_serializeFramePtr(Stream* stream, u32 version, JediFrame*& frame)
+	void serialization_serializeFramePtr(vpFile* stream, u32 version, JediFrame*& frame)
 	{
 		s32 id = -1;
 		if (s_sMode == SMODE_WRITE && frame)

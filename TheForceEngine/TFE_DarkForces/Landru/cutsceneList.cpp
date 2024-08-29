@@ -4,7 +4,7 @@
 #include <TFE_DarkForces/util.h>
 #include <TFE_Game/igame.h>
 #include <TFE_System/system.h>
-#include <TFE_FileSystem/filestream.h>
+#include <TFE_FileSystem/physfswrapper.h>
 #include <TFE_System/parser.h>
 
 namespace TFE_DarkForces
@@ -25,20 +25,15 @@ namespace TFE_DarkForces
 
 	CutsceneState* cutsceneList_load(const char* filename)
 	{
-		FilePath filePath;
-		if (!TFE_Paths::getFilePath(filename, &filePath))
-		{
+		vpFile file(VPATH_GAME, filename, false);
+		if (!file)
 			return nullptr;
-		}
 
-		FileStream file;
-		if (!file.open(&filePath, Stream::MODE_READ)) { return nullptr; }
-
-		size_t size = file.getSize();
+		size_t size = file.size();
 		s_buffer = (char*)game_realloc(s_buffer, size);
 		if (!s_buffer) { return nullptr; }
 
-		file.readBuffer(s_buffer, (u32)size);
+		file.read(s_buffer, (u32)size);
 		file.close();
 
 		TFE_Parser parser;

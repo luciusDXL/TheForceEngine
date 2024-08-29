@@ -2,6 +2,7 @@
 
 #include "generator.h"
 #include "time.h"
+#include <TFE_FileSystem/physfswrapper.h>
 #include <TFE_Game/igame.h>
 #include <TFE_DarkForces/Actor/actor.h>
 #include <TFE_DarkForces/random.h>
@@ -14,8 +15,6 @@
 #include <TFE_Jedi/Level/rwall.h>
 #include <TFE_Jedi/Collision/collision.h>
 #include <TFE_System/system.h>
-#include <TFE_FileSystem/paths.h>
-#include <TFE_FileSystem/filestream.h>
 #include <TFE_Jedi/Serialization/serialization.h>
 
 using namespace TFE_Jedi;
@@ -277,7 +276,7 @@ namespace TFE_DarkForces
 	}
 
 	// Serialization
-	void generatorLogic_serialize(Logic*& logic, SecObject* obj, Stream* stream)
+	void generatorLogic_serialize(Logic*& logic, SecObject* obj, vpFile* stream)
 	{
 		Generator* gen;
 		if (serialization_getMode() == SMODE_WRITE)

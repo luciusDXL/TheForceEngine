@@ -4,7 +4,7 @@
 // This handles HUD messages, local messages, etc.
 //////////////////////////////////////////////////////////////////////
 #include <TFE_System/types.h>
-#include <TFE_FileSystem/paths.h>
+#include <TFE_FileSystem/physfswrapper.h>
 
 namespace TFE_DarkForces
 {
@@ -21,6 +21,6 @@ namespace TFE_DarkForces
 	};
 
 	void gameMessage_freeBuffer();
-	s32 parseMessageFile(GameMessages* messages, const FilePath* path, s32 mode);
+	s32 parseMessageFile(GameMessages* messages, const char* fn, s32 mode);
 	GameMessage* getGameMessage(GameMessages* messages, s32 msgId);
 }  // TFE_DarkForces

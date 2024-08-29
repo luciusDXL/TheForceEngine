@@ -7,7 +7,7 @@
 #include "util.h"
 #include "player.h"
 #include "weapon.h"
-#include <TFE_FileSystem/paths.h>
+#include <TFE_FileSystem/physfswrapper.h>
 #include <TFE_System/system.h>
 #include <TFE_Settings/settings.h>
 #include <TFE_FrontEndUI/console.h>
@@ -98,7 +98,7 @@ namespace TFE_DarkForces
 		"ArmNum.fnt",
 		"HelNum.fnt",
 		"AmoNum2.fnt",
-		"SuperWep2.fnt",
+		"SuperWp2.fnt",
 		"ArmNum2.fnt",
 		"HelNum2.fnt",
 	};
@@ -310,25 +310,15 @@ namespace TFE_DarkForces
 		s_hudMessages.count = 0;
 		s_hudMessages.msgList = nullptr;
 
-		FilePath filePath;
-		if (TFE_Paths::getFilePath("text.msg", &filePath))
-		{
-			parseMessageFile(&s_hudMessages, &filePath, 1);
-		}
+		parseMessageFile(&s_hudMessages, "TEXT.MSG", 1);
 		s_hudMessage[0] = 0;
 		s_hudFont = nullptr;
 
 		const bool enableHdHud = TFE_Settings::getEnhancementsSettings()->enableHdHud && TFE_Settings::getGraphicsSettings()->colorMode == COLORMODE_TRUE_COLOR &&
 			TFE_Settings::getGraphicsSettings()->rendererIndex == RENDERER_HARDWARE;
 
-		if (TFE_Paths::getFilePath(c_fontName[HudFont_Main], &filePath))
-		{
-			s_fontList[HudFont_Main] = font_load(&filePath);
-		}
-		if (TFE_Paths::getFilePath(c_fontName[HudFont_Main_Hd], &filePath))
-		{
-			s_fontList[HudFont_Main_Hd] = font_load(&filePath);
-		}
+		s_fontList[HudFont_Main] = font_load(c_fontName[HudFont_Main]);
+		s_fontList[HudFont_Main_Hd] = font_load(c_fontName[HudFont_Main_Hd]);
 
 		if (enableHdHud && s_fontList[HudFont_Main_Hd])
 		{
@@ -1211,13 +1201,10 @@ namespace TFE_DarkForces
 
 	Font* hud_loadFont(const char* fontFile)
 	{
-		FilePath filePath;
-		if (TFE_Paths::getFilePath(fontFile, &filePath))
-		{
-			return font_load(&filePath);
-		}
-		TFE_System::logWrite(LOG_ERROR, "HUD", "Cannot load font '%s'", fontFile);
-		return nullptr;
+		Font *f = font_load(fontFile);
+		if (!f)
+			TFE_System::logWrite(LOG_ERROR, "HUD", "Cannot load font '%s'", fontFile);
+		return f;
 	}
 
 	void copyIntoPalette(u8* dst, u8* src, s32 count, s32 mode)
@@ -1453,7 +1440,7 @@ namespace TFE_DarkForces
 		char dstPath[TFE_MAX_PATH];
 		sprintf(srcPath, "%sTFE/AdjustableHud/%s.png", path, name);
 		sprintf(dstPath, "%sTFE/AdjustableHud/%s.bm", path, name);
-
+fprintf(stderr, "hud_convertPngToBM: %s\n", srcPath);
 		Image* srcImage = TFE_Image::get(srcPath);
 		if (!srcImage) { return; }
 
@@ -1502,18 +1489,9 @@ namespace TFE_DarkForces
 		}
 
 		// Load default palette.
-		FilePath filePath;
 		u8 pal[768];
-		if (TFE_Paths::getFilePath("SECBASE.PAL", &filePath))
-		{
-			FileStream::readContents(&filePath, pal, 768);
-		}
-
-		// Next load the true-color images.
-		const char* programDir = TFE_Paths::getPath(PATH_PROGRAM);
-		char programDirModDir[TFE_MAX_PATH];
-		sprintf(programDirModDir, "%sMods/", programDir);
-		TFE_Paths::fixupPathAsDirectory(programDirModDir);
+		vpFile palfile(VPATH_GAME, "SECBASE.PAL", pal, 768, false);
+		palfile.close();
 
 		hud_convertPngToBM(programDirModDir, "HudStatusLeftAddon", colorCount, colors, pal);
 		hud_convertPngToBM(programDirModDir, "HudStatusRightAddon", colorCount, colors, pal);

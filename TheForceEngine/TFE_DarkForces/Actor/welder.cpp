@@ -16,7 +16,6 @@
 #include <TFE_Game/igame.h>
 #include <TFE_Asset/modelAsset_jedi.h>
 #include <TFE_FileSystem/paths.h>
-#include <TFE_FileSystem/filestream.h>
 #include <TFE_Jedi/Memory/list.h>
 #include <TFE_Jedi/Memory/allocator.h>
 #include <TFE_Jedi/Serialization/serialization.h>
@@ -424,7 +423,7 @@ namespace TFE_DarkForces
 		s_welderSpark = nullptr;
 	}
 
-	void welder_serialize(Logic*& logic, SecObject* obj, Stream* stream)
+	void welder_serialize(Logic*& logic, SecObject* obj, vpFile* stream)
 	{
 		Welder* welder = nullptr;
 		bool write = serialization_getMode() == SMODE_WRITE;

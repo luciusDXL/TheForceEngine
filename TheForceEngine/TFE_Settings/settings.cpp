@@ -1,7 +1,9 @@
 #include "settings.h"
 #include "gameSourceData.h"
-#include <TFE_FileSystem/filestream.h>
+#include <TFE_DarkForces/darkForcesMain.h>
+#include <TFE_Outlaws/outlawsMain.h>
 #include <TFE_FileSystem/fileutil.h>
+#include <TFE_FileSystem/filestream.h>
 #include <TFE_FileSystem/paths.h>
 #include <TFE_FrontEndUI/console.h>
 #include <TFE_System/cJSON.h>
@@ -26,7 +28,7 @@ namespace TFE_Settings
 	//////////////////////////////////////////////////////////////////////////////////
 	// Local State
 	//////////////////////////////////////////////////////////////////////////////////
-	static char s_settingsPath[TFE_MAX_PATH];
+	static const char * const s_settingsFile = "settings.ini";
 	static TFE_Settings_Window s_windowSettings = {};
 	static TFE_Settings_Graphics s_graphicsSettings = {};
 	static TFE_Settings_Enhancements s_enhancementsSettings = {};
@@ -79,16 +81,16 @@ namespace TFE_Settings
 	bool settingsFileEmpty();
 
 	// Write
-	void writeWindowSettings(FileStream& settings);
-	void writeGraphicsSettings(FileStream& settings);
-	void writeEnhancementsSettings(FileStream& settings);
-	void writeHudSettings(FileStream& settings);
-	void writeSoundSettings(FileStream& settings);
-	void writeSystemSettings(FileStream& settings);
-	void writeA11ySettings(FileStream& settings);
-	void writeGameSettings(FileStream& settings);
-	void writePerGameSettings(FileStream& settings);
-	void writeCVars(FileStream& settings);
+	void writeWindowSettings(vpFile& settings);
+	void writeGraphicsSettings(vpFile& settings);
+	void writeEnhancementsSettings(vpFile& settings);
+	void writeHudSettings(vpFile& settings);
+	void writeSoundSettings(vpFile& settings);
+	void writeSystemSettings(vpFile& settings);
+	void writeA11ySettings(vpFile& settings);
+	void writeGameSettings(vpFile& settings);
+	void writePerGameSettings(vpFile& settings);
+	void writeCVars(vpFile& settings);
 
 	// Read
 	bool readFromDisk();
@@ -119,8 +121,7 @@ namespace TFE_Settings
 		}
 		strcpy(s_game.game, s_gameSettings.header[0].gameName);
 
-		TFE_Paths::appendPath(PATH_USER_DOCUMENTS, "settings.ini", s_settingsPath);
-		if (FileUtil::exists(s_settingsPath))
+		if (vpFileExists(VPATH_TFE, s_settingsFile, true))
 		{
 			// This is still the first run if the settings.ini file is empty.
 			firstRun = settingsFileEmpty();
@@ -144,52 +145,13 @@ namespace TFE_Settings
 		writeToDisk();
 	}
 
+	/* FIXME: this needs to be trimmed down considerably, or eliminated */
 	void autodetectGamePaths()
 	{
 		for (u32 gameId = 0; gameId < Game_Count; gameId++)
 		{
 			const size_t sourcePathLen = strlen(s_gameSettings.header[gameId].sourcePath);
-			bool pathValid = sourcePathLen && validatePath(s_gameSettings.header[gameId].sourcePath, c_validationFile[gameId]);
-
-			// First check locally, and then check the registry.
-			if (!pathValid && gameId == Game_Dark_Forces)	// Only Dark Forces for now.
-			{
-				// First try the local path.
-				char localPath[TFE_MAX_PATH];
-				TFE_Paths::appendPath(PATH_PROGRAM, "DARK.GOB", localPath);
-
-				FileStream file;
-				if (file.open(localPath, Stream::MODE_READ))
-				{
-					if (file.getSize() > 1)
-					{
-						strcpy(s_gameSettings.header[gameId].sourcePath, TFE_Paths::getPath(PATH_PROGRAM));
-						FileUtil::fixupPath(s_gameSettings.header[gameId].sourcePath);
-						pathValid = true;
-					}
-					file.close();
-				}
-
-				// Then try local/Games/Dark Forces/
-				if (!pathValid)
-				{
-					char gamePath[TFE_MAX_PATH];
-					sprintf(gamePath, "%sGames/Dark Forces/", TFE_Paths::getPath(PATH_PROGRAM));
-					FileUtil::fixupPath(gamePath);
-
-					sprintf(localPath, "%sDARK.GOB", gamePath);
-					if (file.open(localPath, Stream::MODE_READ))
-					{
-						if (file.getSize() > 1)
-						{
-							strcpy(s_gameSettings.header[gameId].sourcePath, gamePath);
-							pathValid = true;
-						}
-						file.close();
-					}
-				}
-			}
-
+			bool pathValid = sourcePathLen && validatePath(s_gameSettings.header[gameId].sourcePath, gameId);
 #ifdef _WIN32
 			// Next try looking through the registry.
 			if (!pathValid)
@@ -249,10 +211,10 @@ namespace TFE_Settings
 	bool settingsFileEmpty()
 	{
 		bool isEmpty = true;
-		FileStream settings;
-		if (settings.open(s_settingsPath, Stream::MODE_READ))
+		vpFile settings(VPATH_TFE, s_settingsFile);
+		if (settings)
 		{
-			isEmpty = settings.getSize() == 0u;
+			isEmpty = (settings.size() < 1);
 			settings.close();
 		}
 		return isEmpty;
@@ -260,13 +222,13 @@ namespace TFE_Settings
 
 	bool readFromDisk()
 	{
-		FileStream settings;
-		if (settings.open(s_settingsPath, Stream::MODE_READ))
+		vpFile settings(VPATH_TFE, s_settingsFile);
+		if (settings)
 		{
-			const size_t len = settings.getSize();
+			const size_t len = settings.size();
 			s_iniBuffer.resize(len + 1);
 			s_iniBuffer[len] = 0;
-			settings.readBuffer(s_iniBuffer.data(), (u32)len);
+			settings.read(s_iniBuffer.data(), len);
 			settings.close();
 
 			parseIniFile(s_iniBuffer.data(), len);
@@ -279,8 +241,9 @@ namespace TFE_Settings
 
 	bool writeToDisk()
 	{
-		FileStream settings;
-		if (settings.open(s_settingsPath, Stream::MODE_WRITE))
+		vpFile settings;
+		settings.openwrite(s_settingsFile);
+		if (settings)
 		{
 			writeWindowSettings(settings);
 			writeGraphicsSettings(settings);
@@ -296,9 +259,11 @@ namespace TFE_Settings
 
 			return true;
 		}
+#ifdef _WIN32
 		char msgBuffer[4096];
-		sprintf(msgBuffer, "Cannot write 'settings.ini' to '%s',\nmost likely Documents/ has been set to read-only, is located on One-Drive (currently not supported), or has been added as a Controlled Folder if running on Windows.\n https://www.tenforums.com/tutorials/87858-add-protected-folders-controlled-folder-access-windows-10-a.html", s_settingsPath);
+		sprintf(msgBuffer, "Cannot write 'settings.ini' to '%s',\nmost likely Documents/ has been set to read-only, is located on One-Drive (currently not supported), or has been added as a Controlled Folder if running on Windows.\n https://www.tenforums.com/tutorials/87858-add-protected-folders-controlled-folder-access-windows-10-a.html", s_settingsFile);
 		TFE_System::postErrorMessageBox(msgBuffer, "Permissions Error");
+#endif
 		return false;
 	}
 
@@ -376,7 +341,7 @@ namespace TFE_Settings
 		return &s_gameSettings;
 	}
 
-	void writeWindowSettings(FileStream& settings)
+	void writeWindowSettings(vpFile& settings)
 	{
 		writeHeader(settings, c_sectionNames[SECTION_WINDOW]);
 		writeKeyValue_Int(settings, "x", s_windowSettings.x);
@@ -388,7 +353,7 @@ namespace TFE_Settings
 		writeKeyValue_Bool(settings, "fullscreen", s_windowSettings.fullscreen);
 	}
 
-	void writeGraphicsSettings(FileStream& settings)
+	void writeGraphicsSettings(vpFile& settings)
 	{
 		writeHeader(settings, c_sectionNames[SECTION_GRAPHICS]);
 		writeKeyValue_Int(settings, "gameWidth", s_graphicsSettings.gameResolution.x);
@@ -434,7 +399,7 @@ namespace TFE_Settings
 		writeKeyValue_Int(settings, "skyMode", s_graphicsSettings.skyMode);
 	}
 
-	void writeEnhancementsSettings(FileStream& settings)
+	void writeEnhancementsSettings(vpFile& settings)
 	{
 		writeHeader(settings, c_sectionNames[SECTION_ENHANCEMENTS]);
 		writeKeyValue_Int(settings, "hdTextures", s_enhancementsSettings.enableHdTextures);
@@ -442,7 +407,7 @@ namespace TFE_Settings
 		writeKeyValue_Int(settings, "hdHud", s_enhancementsSettings.enableHdHud);
 	}
 
-	void writeHudSettings(FileStream& settings)
+	void writeHudSettings(vpFile& settings)
 	{
 		writeHeader(settings, c_sectionNames[SECTION_HUD]);
 		writeKeyValue_String(settings, "hudScale", c_tfeHudScaleStrings[s_hudSettings.hudScale]);
@@ -453,7 +418,7 @@ namespace TFE_Settings
 		writeKeyValue_Int(settings, "pixelOffsetY", s_hudSettings.pixelOffset[2]);
 	}
 
-	void writeSoundSettings(FileStream& settings)
+	void writeSoundSettings(vpFile& settings)
 	{
 		writeHeader(settings, c_sectionNames[SECTION_SOUND]);
 		writeKeyValue_Float(settings, "masterVolume", s_soundSettings.masterVolume);
@@ -468,7 +433,7 @@ namespace TFE_Settings
 		writeKeyValue_Bool(settings, "disableSoundInMenus", s_soundSettings.disableSoundInMenus);
 	}
 
-	void writeSystemSettings(FileStream& settings)
+	void writeSystemSettings(vpFile& settings)
 	{
 		writeHeader(settings, c_sectionNames[SECTION_SYSTEM]);
 		writeKeyValue_Bool(settings, "gameExitsToMenu", s_systemSettings.gameQuitExitsToMenu);
@@ -476,11 +441,11 @@ namespace TFE_Settings
 		writeKeyValue_Float(settings, "gifRecordingFramerate", s_systemSettings.gifRecordingFramerate);
 	}
 
-	void writeA11ySettings(FileStream& settings)
+	void writeA11ySettings(vpFile& settings)
 	{
 		writeHeader(settings, c_sectionNames[SECTION_A11Y]);
 		writeKeyValue_String(settings, "language", s_a11ySettings.language.c_str());
-		writeKeyValue_String(settings, "lastFontPath", s_a11ySettings.lastFontPath.c_str());
+		writeKeyValue_String(settings, "lastFontName", s_a11ySettings.lastFontName.c_str());
 
 		writeKeyValue_Bool(settings, "showCutsceneSubtitles", s_a11ySettings.showCutsceneSubtitles);
 		writeKeyValue_Bool(settings, "showCutsceneCaptions", s_a11ySettings.showCutsceneCaptions);
@@ -505,13 +470,13 @@ namespace TFE_Settings
 		writeKeyValue_Bool(settings, "disablePlayerWeaponLighting", s_a11ySettings.disablePlayerWeaponLighting);
 	}
 
-	void writeGameSettings(FileStream& settings)
+	void writeGameSettings(vpFile& settings)
 	{
 		writeHeader(settings, c_sectionNames[SECTION_GAME]);
 		writeKeyValue_String(settings, "game", s_game.game);
 	}
 
-	void writePerGameSettings(FileStream& settings)
+	void writePerGameSettings(vpFile& settings)
 	{
 		for (u32 i = 0; i < Game_Count; i++)
 		{
@@ -537,7 +502,7 @@ namespace TFE_Settings
 		}
 	}
 
-	void writeCVars(FileStream& settings)
+	void writeCVars(vpFile& settings)
 	{
 		writeHeader(settings, c_sectionNames[SECTION_CVAR]);
 		u32 count = TFE_Console::getCVarCount();
@@ -963,9 +928,9 @@ namespace TFE_Settings
 		{
 			s_a11ySettings.language = value;
 		} 
-		else if (strcasecmp("lastFontPath", key) == 0)
+		else if (strcasecmp("lastFontName", key) == 0)
 		{
-			s_a11ySettings.lastFontPath = value;
+			s_a11ySettings.lastFontName = value;
 		} 
 		else if (strcasecmp("showCutsceneSubtitles", key) == 0)
 		{
@@ -1063,27 +1028,15 @@ namespace TFE_Settings
 		}
 	}
 
-	void appendSlash(char* path)
-	{
-		size_t len = strlen(path);
-		if (len == 0) { return; }
-		if (path[len - 1] == '\\' || path[len - 1] == '/') { return; }
-		
-		path[len] = '/';
-		path[len + 1] = 0;
-	}
-
 	void parseDark_ForcesSettings(const char* key, const char* value)
 	{
 		if (strcasecmp("sourcePath", key) == 0)
 		{
 			strcpy(s_gameSettings.header[Game_Dark_Forces].sourcePath, value);
-			appendSlash(s_gameSettings.header[Game_Dark_Forces].sourcePath);
 		}
 		else if (strcasecmp("emulatorPath", key) == 0)
 		{
 			strcpy(s_gameSettings.header[Game_Dark_Forces].emulatorPath, value);
-			appendSlash(s_gameSettings.header[Game_Dark_Forces].emulatorPath);
 		}
 		else if (strcasecmp("airControl", key) == 0)
 		{
@@ -1140,7 +1093,6 @@ namespace TFE_Settings
 		if (strcasecmp("sourcePath", key) == 0)
 		{
 			strcpy(s_gameSettings.header[Game_Outlaws].sourcePath, value);
-			appendSlash(s_gameSettings.header[Game_Outlaws].sourcePath);
 		}
 	}
 	
@@ -1174,21 +1126,17 @@ namespace TFE_Settings
 		}
 	}
 
-	bool validatePath(const char* path, const char* sentinel)
+	bool validatePath(const char* path, u32 game)
 	{
-		if (!FileUtil::directoryExits(path)) { return false; }
+		bool ret;
 
-		char sentinelPath[TFE_MAX_PATH];
-		sprintf(sentinelPath, "%s%s", path, sentinel);
-		FileStream file;
-		if (!file.open(sentinelPath, Stream::MODE_READ))
-		{
-			return false;
-		}
-		bool valid = file.getSize() > 1;
-		file.close();
-
-		return valid;
+		if (game == Game_Dark_Forces)
+			ret = TFE_DarkForces::validateSourceData(path);
+		else if (game == Game_Outlaws)
+			ret = TFE_Outlaws::validateSourceData(path);
+		else
+			ret = false;
+		return ret;
 	}
 
 	////////////////////////////////////////////////////////////////////////////
@@ -1396,23 +1344,14 @@ namespace TFE_Settings
 		TFE_Settings::clearModSettings();
 		TFE_ModSettings* modSettings = TFE_Settings::getModSettings();
 
-		FilePath filePath;
-		FileStream file;
-		if (!TFE_Paths::getFilePath("MOD_CONF.txt", &filePath)) { return; }
-		if (!file.open(&filePath, FileStream::MODE_READ)) { return; }
+		char *data;
+		unsigned int size;
 
-		TFE_System::logWrite(LOG_MSG, "MOD_CONF", "Parsing MOD_CONF.txt for custom mod.");
-
-		const size_t size = file.getSize();
-		char* data = (char*)malloc(size + 1);
-		if (!data || size == 0)
-		{
-			TFE_System::logWrite(LOG_ERROR, "MOD_CONF", "MOD_CONF.txt found but is %u bytes in size and cannot be read.", size);
+		vpFile file(VPATH_GAME, "MOD_CONF.txt", &data, &size);
+		if (!file)
 			return;
-		}
-		file.readBuffer(data, (u32)size);
+
 		data[size] = 0;
-		file.close();
 
 		cJSON* root = cJSON_Parse(data);
 		if (root)

@@ -6,6 +6,7 @@
 // launching.
 //////////////////////////////////////////////////////////////////////
 
+#include <TFE_FileSystem/physfswrapper.h>
 #include <TFE_System/types.h>
 #include <vector>
 #include <string>
@@ -19,8 +20,6 @@
 #else
 #define DEFAULT_PATH "/tmp"
 #endif
-
-typedef std::vector<std::string> FileResult;
 
 namespace TFE_Ui
 {
@@ -39,5 +38,5 @@ namespace TFE_Ui
 	void openFileDialog(const char* title, const char* initPath, const char* filters = ".*", bool multiSelect = false);
 	void saveFileDialog(const char* title, const char* initPath, const char* filters = ".*", bool forceOverwrite = false);
 	void directorySelectDialog(const char* title, const char* initPath, bool forceInitPath = false);
-	bool renderFileDialog(FileResult& inOutPath);
+	bool renderFileDialog(TFEFileList& inOutPath);
 }

@@ -6,13 +6,11 @@
 #include <TFE_DarkForces/Landru/lsound.h>
 #include <TFE_Settings/settings.h>
 #include <TFE_Game/igame.h>
-#include <TFE_Asset/vocAsset.h>
 #include <TFE_Audio/audioSystem.h>
 #include <TFE_Audio/midiPlayer.h>
 #include <TFE_Jedi/Math/core_math.h>
 #include <TFE_Jedi/IMuse/imuse.h>
 #include <TFE_Jedi/Memory/allocator.h>
-#include <TFE_Jedi/Serialization/serialization.h>
 #include <TFE_DarkForces/time.h>
 #include <TFE_System/system.h>
 
@@ -126,7 +124,7 @@ namespace TFE_DarkForces
 		sound_state.soundLevelStart = allocator_getCount(sound_state.gameSoundList);
 	}
 
-	void sound_serializeLevelSounds(Stream* stream)
+	void sound_serializeLevelSounds(vpFile* stream)
 	{
 		s32 count;
 		if (serialization_getMode() == SMODE_WRITE)

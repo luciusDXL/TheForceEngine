@@ -4,6 +4,7 @@
 // Manages the game while playing levels in first person.
 // This holds one or more players, handles input updates, etc.
 //////////////////////////////////////////////////////////////////////
+#include <TFE_FileSystem/physfswrapper.h>
 #include <TFE_Settings/gameSourceData.h>
 #include <TFE_Memory/memoryRegion.h>
 
@@ -20,13 +21,13 @@ extern MemoryRegion* s_levelRegion;
 
 struct IGame
 {
-	virtual bool runGame(s32 argCount, const char* argv[], Stream* stream) = 0;
+	virtual bool runGame(s32 argCount, const char* argv[], vpFile* stream) = 0;
 	virtual void exitGame() = 0;
 	virtual void pauseGame(bool pause) = 0;
 	virtual void pauseSound(bool pause) = 0;
 	virtual void restartMusic() = 0;
 	virtual void loopGame() {};
-	virtual bool serializeGameState(Stream* stream, const char* filename, bool writeState) { return false; };
+	virtual bool serializeGameState(vpFile* stream, const char* filename, bool writeState) { return false; };
 	virtual bool canSave() { return false; }
 	virtual bool isPaused() { return false; }
 	virtual void getLevelName(char* name) {};
@@ -40,3 +41,4 @@ void   freeGame(IGame* game);
 
 void game_init();
 void game_destroy();
+bool game_validateSourceData(GameID id, const char *path);

@@ -5,7 +5,7 @@
 //////////////////////////////////////////////////////////////////////
 #include <TFE_System/types.h>
 #include <TFE_Jedi/Memory/allocator.h>
-#include <TFE_FileSystem/paths.h>
+#include <TFE_FileSystem/physfswrapper.h>
 #include <TFE_DarkForces/time.h>
 
 struct Font
@@ -22,6 +22,6 @@ struct Font
 
 namespace TFE_Jedi
 {
-	Font* font_load(FilePath* filePath);
+	Font* font_load(const char* fn);
 	s32 font_getStringLength(Font* font, const char *str);
 }

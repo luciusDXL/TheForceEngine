@@ -22,6 +22,7 @@
 #include <TFE_System/system.h>
 #include <TFE_FileSystem/fileutil.h>
 #include <TFE_FileSystem/paths.h>
+#include <TFE_FileSystem/physfswrapper.h>
 #include <TFE_Archive/archive.h>
 #include <TFE_Ui/ui.h>
 
@@ -740,7 +741,7 @@ namespace TFE_Editor
 		// handle any open file dialogs.
 		if (s_fileDialogOpen > 0)
 		{
-			FileResult res;
+			TFEFileList res;
 			bool bDone = TFE_Ui::renderFileDialog(res);
 			if (bDone)
 			{

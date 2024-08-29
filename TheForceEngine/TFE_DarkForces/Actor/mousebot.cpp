@@ -14,7 +14,6 @@
 #include <TFE_Asset/modelAsset_jedi.h>
 #include <TFE_System/system.h>
 #include <TFE_FileSystem/paths.h>
-#include <TFE_FileSystem/filestream.h>
 #include <TFE_Jedi/Memory/list.h>
 #include <TFE_Jedi/Memory/allocator.h>
 #include <TFE_Jedi/Serialization/serialization.h>
@@ -385,7 +384,7 @@ namespace TFE_DarkForces
 		s_mouseBotRes.sound2 = sound_load("eeek-3.voc", SOUND_PRIORITY_MED5);
 	}
 
-	void mousebot_serialize(Logic*& logic, SecObject* obj, Stream* stream)
+	void mousebot_serialize(Logic*& logic, SecObject* obj, vpFile* stream)
 	{
 		MouseBot* mouseBot = nullptr;
 		PhysicsActor* physActor = nullptr;

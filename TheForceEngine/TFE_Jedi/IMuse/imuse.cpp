@@ -5,8 +5,7 @@
 #include <TFE_Memory/memoryRegion.h>
 #include <TFE_Jedi/Math/fixedPoint.h>
 #include <TFE_Jedi/Math/core_math.h>
-#include <TFE_FileSystem/filestream.h>
-#include <TFE_FileSystem/paths.h>
+#include <TFE_FileSystem/physfswrapper.h>
 #include <cstring>
 #include <assert.h>
 #include "imList.h"
@@ -1113,23 +1112,17 @@ namespace TFE_Jedi
 
 	ImSoundId loadMidiFile(char* midiFile)
 	{
-		FilePath filePath;
-		if (!TFE_Paths::getFilePath(midiFile, &filePath))
-		{
-			IM_LOG_ERR("Cannot find midi file '%s'.", midiFile);
-			return IM_NULL_SOUNDID;
-		}
-		FileStream file;
-		if (!file.open(&filePath, Stream::MODE_READ))
-		{
+		assert(s_midiFileCount < IM_MIDI_FILE_COUNT);
+
+		vpFile file(VPATH_GAME, midiFile, false);
+		if (!file) {
 			IM_LOG_ERR("Cannot open midi file '%s'.", midiFile);
 			return IM_NULL_SOUNDID;
 		}
-		assert(s_midiFileCount < IM_MIDI_FILE_COUNT);
 
-		size_t len = file.getSize();
+		unsigned int len = file.size();
 		s_midiFiles[s_midiFileCount] = (u8*)imuse_alloc(len);
-		file.readBuffer(s_midiFiles[s_midiFileCount], u32(len));
+		file.read(s_midiFiles[s_midiFileCount], len);
 		file.close();
 
 		ImSoundId id = ImSoundId(s_midiFileCount | imMidiFlag);

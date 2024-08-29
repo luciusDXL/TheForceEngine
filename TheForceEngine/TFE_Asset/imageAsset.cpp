@@ -1,8 +1,6 @@
 #include "imageAsset.h"
 #include <TFE_System/system.h>
-#include <TFE_Asset/assetSystem.h>
-#include <TFE_Archive/archive.h>
-#include <TFE_FileSystem/memorystream.h>
+#include <TFE_FileSystem/physfswrapper.h>
 #include <assert.h>
 #include <algorithm>
 #include <vector>
@@ -69,7 +67,7 @@ namespace TFE_Image
 		IMG_Quit();
 	}
 
-	SDL_Surface* loadFromMemory(const u8* buffer, size_t size)
+	SDL_Surface* loadFromMemory(const void* buffer, size_t size)
 	{
 		SDL_RWops* memops = SDL_RWFromConstMem(buffer, (s32)size);
 		if (!memops)
@@ -86,7 +84,7 @@ namespace TFE_Image
 		return sdlimg;
 	}
 
-	SDL_Surface* get(const char* imagePath)
+	SDL_Surface* get(const char* imagePath, TFE_VPATH vpathid)
 	{
 		ImageMap::iterator iImage = s_images.find(imagePath);
 		if (iImage != s_images.end())
@@ -94,7 +92,13 @@ namespace TFE_Image
 			return iImage->second;
 		}
 
-		SDL_Surface* sdlimg = IMG_Load(imagePath);
+		SDL_RWops* rw = vpFileOpenRW(imagePath, vpathid, false);
+		if (!rw)
+		{
+			TFE_System::logWrite(LOG_ERROR, "Image", "File %s not found", imagePath);
+			return nullptr;
+		}
+		SDL_Surface* sdlimg = IMG_Load_RW(rw, 1);
 		if (!sdlimg)
 		{
 			TFE_System::logWrite(LOG_ERROR, "Image", "Cannot load image from '%s', error: '%s'", imagePath, SDL_GetError());
@@ -146,10 +150,10 @@ namespace TFE_Image
 	}
 
 	// Return the flipped image in a temporary buffer.
-	u32* flipImage(const u32* srcImage, u32 width, u32 height)
+	static void* flipImage32bpp(const void* srcImage, u32 width, u32 height)
 	{
 		s_buffer.resize(width * height * 4);
-		const u32* srcBuffer = srcImage;
+		const u32* srcBuffer = (const u32 *)srcImage;
 		u32* dstBuffer = (u32*)s_buffer.data();
 		for (u32 y = 0; y < height; y++)
 		{
@@ -158,10 +162,10 @@ namespace TFE_Image
 		return dstBuffer;
 	}
 
-	void writeImage(const char* path, u32 width, u32 height, u32* pixelData)
+	void writeImage(const char* path, u32 width, u32 height, void* pixelData)
 	{
 		// TODO: This seems to be specific to the PBO/capture path, so the flip should really happen there.
-		u32* writeBuffer = flipImage(pixelData, width, height);
+		void* writeBuffer = flipImage32bpp(pixelData, width, height);
 
 		SDL_Surface* surf = SDL_CreateRGBSurfaceFrom(writeBuffer, width, height,
 							     32, width * sizeof(u32), 
@@ -171,7 +175,13 @@ namespace TFE_Image
 			TFE_System::logWrite(LOG_ERROR, "writeImage", "Saving PNG '%s' - cannot allocate surface", path);
 			return;
 		}
-		if (IMG_SavePNG(surf, path) != 0)
+		SDL_RWops* ops = vpOpenWriteRW(path, WMODE_WRITE);
+		if (!ops)
+		{
+			TFE_System::logWrite(LOG_ERROR, "writeImage", "cannot open file %s", path);
+			return;
+		}
+		if (IMG_SavePNG_RW(surf, ops, 1) != 0)
 		{
 			TFE_System::logWrite(LOG_ERROR, "writeImage", "Saving PNG '%s' failed with '%s'", path, SDL_GetError());
 		}
@@ -198,13 +208,13 @@ namespace TFE_Image
 	//////////////////////////////////////////////////////
 	// Code to write and read images from memory.
 	//////////////////////////////////////////////////////
-	size_t writeImageToMemory(u8* output, u32 srcw, u32 srch, u32 dstw,
-				  u32 dsth, const u32* pixelData)
+	u32 writeImageToMemory(char* output, u32 srcw, u32 srch, u32 dstw,
+				  u32 dsth, void* pixelData)
 	{
 		size_t written;
 		int ret;
 
-		SDL_Surface* surf = SDL_CreateRGBSurfaceFrom((void *)pixelData, srcw, srch, 32, srcw * sizeof(u32),
+		SDL_Surface* surf = SDL_CreateRGBSurfaceFrom(pixelData, srcw, srch, 32, srcw * sizeof(u32),
 							     0xFF, 0xFF00, 0xFF0000, 0xFF000000);
 		if (!surf)
 			return 0;
@@ -249,14 +259,12 @@ namespace TFE_Image
 		return written;
 	}
 
-	void readImageFromMemory(SDL_Surface** output, size_t size, const u32* pixelData)
+	void readImageFromMemory(SDL_Surface** output, u32 size, void* pixelData)
 	{
-		SDL_RWops* memops = SDL_RWFromConstMem(pixelData, (s32)size);
-		if (!memops)
-			return;
-
-		SDL_Surface* sdlimg = IMG_Load_RW(memops, 1);
-		if (output)
-			*output = sdlimg;
+		if (output && pixelData) {
+			SDL_RWops* memops = SDL_RWFromConstMem(pixelData, size);
+			if (memops)
+				*output = IMG_Load_RW(memops, 1);
+		}
 	}
 }

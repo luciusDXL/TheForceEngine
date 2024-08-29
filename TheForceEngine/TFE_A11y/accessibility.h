@@ -2,8 +2,7 @@
 #include <string>
 #include <vector>
 #include <TFE_System/system.h>
-#include <TFE_A11y/filePathList.h>
-using std::string;
+#include <TFE_FileSystem/physfswrapper.h>
 
 namespace TFE_A11Y {
 	///////////////////////////////////////////
@@ -26,7 +25,7 @@ namespace TFE_A11Y {
 
 	struct Caption 
 	{
-		string text;
+		std::string text;
 		s64 microsecondsRemaining;
 		CaptionType type;
 		CaptionEnv env;
@@ -35,8 +34,8 @@ namespace TFE_A11Y {
 	///////////////////////////////////////////
 	// Constants
 	///////////////////////////////////////////
-	const string FILE_NAME_START = "subtitles-";
-	const string FILE_NAME_EXT = ".txt";
+	const std::string FILE_NAME_START = "subtitles-";
+	const std::string FILE_NAME_EXT = ".txt";
 	const f32 DEFAULT_LINE_HEIGHT = 20;
 
 	///////////////////////////////////////////
@@ -51,17 +50,17 @@ namespace TFE_A11Y {
 	void refreshFiles();
 
 	// Fonts
-	FilePathList getFontFiles();
-	FilePath getCurrentFontFile();
-	void setPendingFont(const string path);
+	TFEFileList getFontFiles();
+	std::string getCurrentFontFile();
+	void setPendingFont(const std::string path);
 	bool hasPendingFont();
 	void loadPendingFont();
 
 	// Captions
-	FilePathList getCaptionFiles();
-	FilePath getCurrentCaptionFile();
+	TFEFileList getCaptionFiles();
+	std::string getCurrentCaptionFile();
 	A11yStatus getCaptionSystemStatus();
-	void loadCaptions(const string path);
+	void loadCaptions(const std::string path);
 	void clearActiveCaptions();
 	Vec2f drawCaptions();
 	Vec2f drawExampleCaptions();

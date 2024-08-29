@@ -7,8 +7,6 @@
 #include <TFE_DarkForces/util.h>
 #include <TFE_DarkForces/Landru/lcanvas.h>
 #include <TFE_DarkForces/Landru/ldraw.h>
-#include <TFE_Archive/archive.h>
-#include <TFE_Archive/lfdArchive.h>
 #include <TFE_Settings/settings.h>
 #include <TFE_Input/input.h>
 #include <TFE_RenderBackend/renderBackend.h>
@@ -25,8 +23,6 @@ namespace TFE_DarkForces
 	///////////////////////////////////////////
 	// Internal State
 	///////////////////////////////////////////
-	static LfdArchive s_archive;
-
 	Vec2i s_cursorPosAccum;
 	Vec2i s_cursorPos;
 	s32 s_buttonPressed = -1;
@@ -98,28 +94,6 @@ namespace TFE_DarkForces
 	void menu_blitCursor(s32 x, s32 y, u8* framebuffer)
 	{
 		blitDeltaFrame(&s_cursor, x, y, framebuffer);
-	}
-
-	JBool menu_openResourceArchive(const char* name)
-	{
-		FilePath lfdPath;
-		if (!TFE_Paths::getFilePath(name, &lfdPath))
-		{
-			return JFALSE;
-		}
-		// Load the mission briefing text.
-		if (!s_archive.open(lfdPath.path))
-		{
-			return JFALSE;
-		}
-		TFE_Paths::addLocalArchive(&s_archive);
-		return JTRUE;
-	}
-
-	void menu_closeResourceArchive()
-	{
-		s_archive.close();
-		TFE_Paths::removeLastArchive();
 	}
 
 	void menu_blitToScreen(u8* framebuffer/*=nullptr*/, JBool transparent/*=JFALSE*/, JBool swap/*=JTRUE*/)

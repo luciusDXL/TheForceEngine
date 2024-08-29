@@ -1,5 +1,5 @@
 #include <TFE_Input/input.h>
-#include <TFE_FileSystem/filestream.h>
+#include <TFE_FileSystem/physfswrapper.h>
 #include <TFE_System/system.h>
 #include <TFE_System/parser.h>
 #include <memory.h>
@@ -355,22 +355,12 @@ namespace TFE_Input
 
 	bool loadKeyNames(const char* path)
 	{
-		FileStream file;
-		if (!file.open(path, Stream::MODE_READ))
-		{
-			return false;
-		}
+		char *contents;
+		unsigned int len;
 
-		// Read the file into memory.
-		const size_t len = file.getSize();
-		char* contents = new char[len+1];
-		if (!contents)
-		{
-			file.close();
+		vpFile ff(VPATH_TFE, path, &contents, &len);
+		if (!ff)
 			return false;
-		}
-		file.readBuffer(contents, (u32)len);
-		file.close();
 
 		TFE_Parser parser;
 		parser.init(contents, len);
@@ -452,7 +442,7 @@ namespace TFE_Input
 			}
 		};
 
-		delete[] contents;
+		free(contents);
 		return true;
 	}
 

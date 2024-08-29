@@ -9,7 +9,6 @@
 #include <TFE_DarkForces/agent.h>
 #include <TFE_DarkForces/util.h>
 #include <TFE_DarkForces/Landru/lcanvas.h>
-#include <TFE_Archive/archive.h>
 #include <TFE_Settings/settings.h>
 #include <TFE_Input/input.h>
 #include <TFE_RenderBackend/renderBackend.h>
@@ -449,16 +448,10 @@ namespace TFE_DarkForces
 
 	void agentMenu_load(LangHotkeys* langKeys)
 	{
-		FilePath filePath;
-		if (!TFE_Paths::getFilePath("AGENTMNU.LFD", &filePath)) { return; }
-		Archive* archive = Archive::getArchive(ARCHIVE_LFD, "AGENTMNU", filePath.path);
-		TFE_Paths::addLocalArchive(archive);
-
-		loadPaletteFromPltt("agentmnu.pltt", s_menuPalette);
-		s_agentMenuCount = getFramesFromAnim("agentmnu.anim", &s_agentMenuFrames);
-		s_agentDlgCount = getFramesFromAnim("agentdlg.anim", &s_agentDlgFrames);
-		getFrameFromDelt("cursor.delt", &s_cursor);
-		TFE_Paths::removeLastArchive();
+		loadPaletteFromPltt("agentmnu.PLTT", s_menuPalette);
+		s_agentMenuCount = getFramesFromAnim("agentmnu.ANIM", &s_agentMenuFrames);
+		s_agentDlgCount = getFramesFromAnim("agentdlg.ANIM", &s_agentDlgFrames);
+		getFrameFromDelt("cursor.DELT", &s_cursor);
 		
 		s_langKeys = langKeys;
 	}

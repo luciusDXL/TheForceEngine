@@ -17,9 +17,6 @@ namespace TFE_DarkForces
 	void menu_resetCursor();
 	u8*  menu_startupDisplay();
 
-	JBool menu_openResourceArchive(const char* name);
-	void  menu_closeResourceArchive();
-
 	// 'framebuffer' can be passed in to override the default source bitmap.
 	// If null, the Landru bitmap will be used.
 	void menu_blitToScreen(u8* framebuffer = nullptr, JBool transparent = JFALSE, JBool swap = JTRUE);

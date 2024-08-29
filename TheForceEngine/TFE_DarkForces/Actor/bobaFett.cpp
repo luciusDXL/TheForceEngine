@@ -15,7 +15,6 @@
 #include <TFE_Game/igame.h>
 #include <TFE_Asset/modelAsset_jedi.h>
 #include <TFE_FileSystem/paths.h>
-#include <TFE_FileSystem/filestream.h>
 #include <TFE_Jedi/Level/rwall.h>
 #include <TFE_Jedi/Memory/list.h>
 #include <TFE_Jedi/Memory/allocator.h>
@@ -837,7 +836,7 @@ namespace TFE_DarkForces
 		task_free(physicsActor->actorTask);
 	}
 
-	void bobaFett_serialize(Logic*& logic, SecObject* obj, Stream* stream)
+	void bobaFett_serialize(Logic*& logic, SecObject* obj, vpFile* stream)
 	{
 		BobaFett* bobaFett = nullptr;
 		bool write = serialization_getMode() == SMODE_WRITE;

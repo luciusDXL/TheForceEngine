@@ -1,6 +1,7 @@
 #include "lpalette.h"
 #include "lsystem.h"
 #include "lview.h"
+#include <TFE_FileSystem/physfswrapper.h>
 #include <TFE_Game/igame.h>
 #include <TFE_Jedi/Math/core_math.h>
 #include <TFE_Jedi/Renderer/virtualFramebuffer.h>
@@ -182,21 +183,12 @@ namespace TFE_DarkForces
 		char palName[32];
 		sprintf(palName, "%s.PLTT", name);
 
-		FilePath path;
-		if (!TFE_Paths::getFilePath(palName, &path))
-		{
+		vpFile file(VPATH_GAME, palName, false);
+		if (!file)
 			return nullptr;
-		}
-
-		FileStream file;
-		if (!file.open(&path, Stream::MODE_READ))
-		{
-			return nullptr;
-		}
-
-		u32 palSize = (u32)file.getSize();
+		unsigned int palSize = (u32)file.size();
 		u8* data = (u8*)landru_alloc(palSize);
-		file.readBuffer(data, palSize);
+		file.read(data, palSize);
 		file.close();
 
 		s32 index = 0;

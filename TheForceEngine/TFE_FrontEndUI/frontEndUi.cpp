@@ -16,7 +16,6 @@
 #include <TFE_Jedi/IMuse/imuse.h>
 #include <TFE_FileSystem/fileutil.h>
 #include <TFE_FileSystem/paths.h>
-#include <TFE_FileSystem/filestream.h>
 #include <TFE_Archive/archive.h>
 #include <TFE_Settings/settings.h>
 #include <TFE_Asset/imageAsset.h>
@@ -30,12 +29,13 @@
 // Game
 #include <TFE_DarkForces/mission.h>
 #include <TFE_DarkForces/gameMusic.h>
+#include <TFE_DarkForces/darkForcesMain.h>
+#include <TFE_Outlaws/outlawsMain.h>
 #include <TFE_Jedi/Renderer/jediRenderer.h>
 #include <TFE_Jedi/Renderer/rcommon.h>
 #include <TFE_DarkForces/config.h>
 #include <TFE_DarkForces/player.h>
 #include <TFE_DarkForces/hud.h>
-
 #include <climits>
 
 using namespace TFE_Input;
@@ -202,6 +202,7 @@ namespace TFE_FrontEndUI
 	static bool s_canSave = false;
 	static bool s_drawNoGameDataMsg = false;
 	static s32 s_FEFileDialog = 0;
+	static bool DFenhancedGobExists = false;
 
 	static UiImage s_logoGpuImage;
 	static UiImage s_titleGpuImage;
@@ -212,6 +213,8 @@ namespace TFE_FrontEndUI
 
 	static MenuItemSelected s_menuItemselected[8];
 	static const size_t s_menuItemCount = TFE_ARRAYSIZE(s_menuItemselected);
+
+	static ImFontConfig s_fontCfg;
 
 	static IGame* s_game = nullptr;
 
@@ -280,15 +283,7 @@ namespace TFE_FrontEndUI
 
 	bool loadGpuImage(const char* localPath, UiImage* uiImage)
 	{
-		char imagePath[TFE_MAX_PATH];
-		strcpy(imagePath, localPath);
-		if (!TFE_Paths::mapSystemPath(imagePath))
-		{
-			memset(imagePath, 0, TFE_MAX_PATH);
-			TFE_Paths::appendPath(TFE_PathType::PATH_PROGRAM, localPath, imagePath, TFE_MAX_PATH);
-			FileUtil::fixupPath(imagePath);
-		}
-		SDL_Surface* image = TFE_Image::get(imagePath);
+		SDL_Surface* image = TFE_Image::get(localPath, VPATH_TFE);
 		if (image)
 		{
 			TextureGpu* gpuImage = TFE_RenderBackend::createTexture(image->w, image->h, (u32*)image->pixels, MAG_FILTER_LINEAR);
@@ -306,7 +301,7 @@ namespace TFE_FrontEndUI
 		TFE_ProfilerView::init();
 	}
 
-	void init()
+	bool init()
 	{
 		TFE_System::logWrite(LOG_MSG, "Startup", "TFE_FrontEndUI::init");
 		s_appState = APP_STATE_MENU;
@@ -314,30 +309,39 @@ namespace TFE_FrontEndUI
 		s_subUI = FEUI_NONE;
 		s_relativeMode = false;
 		s_drawNoGameDataMsg = false;
-		char fontpath[TFE_MAX_PATH];
 
-		sprintf(fontpath, "%s", "Fonts/DroidSansMono.ttf");
-		TFE_Paths::mapSystemPath(fontpath);
+		char *fontdata = nullptr;
+		unsigned int fontdatasize = 0;
+		vpFile ttf1(VPATH_TFE, "Fonts/DroidSansMono.ttf", &fontdata, &fontdatasize);
+		if (!ttf1) {
+			TFE_System::logWrite(LOG_ERROR, "SystemUI", "Cannot load font: \"Fonts/DroidSansMono.ttf\"");
+			return false;
+		}
 
 		s_uiScale = (f32)TFE_Ui::getUiScale() * 0.01f;
 
 		ImGuiIO& io = ImGui::GetIO();
-		s_menuFont    = io.Fonts->AddFontFromFileTTF(fontpath, floorf(32*s_uiScale + 0.5f));
-		s_versionFont = io.Fonts->AddFontFromFileTTF(fontpath, floorf(16*s_uiScale + 0.5f));
-		s_titleFont   = io.Fonts->AddFontFromFileTTF(fontpath, floorf(48*s_uiScale + 0.5f));
-		s_dialogFont  = io.Fonts->AddFontFromFileTTF(fontpath, floorf(20*s_uiScale + 0.5f));
+		s_fontCfg.FontDataOwnedByAtlas = false;	// indicate to ImGui to not free() the fontdata buffer.
+		s_menuFont    = io.Fonts->AddFontFromMemoryTTF(fontdata, fontdatasize, floorf(32*s_uiScale + 0.5f), &s_fontCfg);
+		s_versionFont = io.Fonts->AddFontFromMemoryTTF(fontdata, fontdatasize, floorf(16*s_uiScale + 0.5f), &s_fontCfg);
+		s_titleFont   = io.Fonts->AddFontFromMemoryTTF(fontdata, fontdatasize, floorf(48*s_uiScale + 0.5f), &s_fontCfg);
+		// no s_fontCfg for last entry so that imgui deletes the buffer "fontdata" for us.
+		s_dialogFont  = io.Fonts->AddFontFromMemoryTTF(fontdata, fontdatasize, floorf(20*s_uiScale + 0.5f));
 
 		if (!loadGpuImage("UI_Images/TFE_TitleLogo.png", &s_logoGpuImage))
 		{
 			TFE_System::logWrite(LOG_ERROR, "SystemUI", "Cannot load TFE logo: \"UI_Images/TFE_TitleLogo.png\"");
+			return false;
 		}
 		if (!loadGpuImage("UI_Images/TFE_TitleText.png", &s_titleGpuImage))
 		{
 			TFE_System::logWrite(LOG_ERROR, "SystemUI", "Cannot load TFE Title: \"UI_Images/TFE_TitleText.png\"");
+			return false;
 		}
 		if (!loadGpuImage("UI_Images/Gradient.png", &s_gradientImage))
 		{
 			TFE_System::logWrite(LOG_ERROR, "SystemUI", "Cannot load TFE Title: \"UI_Images/Gradient.png\"");
+			return false;
 		}
 
 		bool buttonsLoaded = true;
@@ -360,6 +364,7 @@ namespace TFE_FrontEndUI
 		if (!buttonsLoaded)
 		{
 			TFE_System::logWrite(LOG_ERROR, "SystemUI", "Cannot load title screen button images.");
+			return false;
 		}
 				
 		// Setup menu item callbacks
@@ -371,14 +376,26 @@ namespace TFE_FrontEndUI
 		s_menuItemselected[5] = menuItem_Mods;
 		s_menuItemselected[6] = menuItem_Editor;
 		s_menuItemselected[7] = menuItem_Exit;
+
+		// Try to open 'enhanced.gob'.
+		TFE_GameHeader* darkForces = TFE_Settings::getGameHeader("Dark Forces");
+		if (darkForces && darkForces->sourcePath) {
+			TFEMount m = vpMountReal(darkForces->sourcePath, VPATH_TMP);
+			if (m) {
+				DFenhancedGobExists = vpFileExists(VPATH_TMP, "enhanced.gob", false);
+				vpUnmount(m);
+			}
+		}
+
+		return true;
 	}
 
 	void shutdown()
 	{
 		modLoader_cleanupResources();
-		delete[] s_aboutDisplayStr;
-		delete[] s_manualDisplayStr;
-		delete[] s_creditsDisplayStr;
+		free(s_aboutDisplayStr);
+		free(s_manualDisplayStr);
+		free(s_creditsDisplayStr);
 		TFE_Console::destroy();
 		TFE_ProfilerView::destroy();
 
@@ -956,90 +973,35 @@ namespace TFE_FrontEndUI
 		}
 	}
 
-	void manual()
+	static void showMdFile(const char *fn, char **destbuf)
 	{
-		if (!s_manualDisplayStr)
+		if (!*destbuf)
 		{
-			// The document has not been loaded yet.
-			char path[TFE_MAX_PATH];
-			char fileName[TFE_MAX_PATH];
-			strcpy(fileName, "Documentation/markdown/TheForceEngineManual.md");
-			if (!TFE_Paths::mapSystemPath(fileName))
-				TFE_Paths::appendPath(PATH_PROGRAM, fileName, path);
-			else
-				strcpy(path, fileName);
-
-			FileStream file;
-			if (file.open(path, Stream::MODE_READ))
+			unsigned int len;
+			vpFile ff(VPATH_TFE, fn, destbuf, &len);
+			if (ff)
 			{
-				const size_t len = file.getSize();
-				s_manualDisplayStr = new char[len + 1];
-				file.readBuffer(s_manualDisplayStr, (u32)len);
-				s_manualDisplayStr[len] = 0;
-
-				file.close();
+				(*destbuf)[len] = 0;
 			}
 		}
+		if (*destbuf) { TFE_Markdown::draw(*destbuf); }
+	}
 
-		if (s_manualDisplayStr) { TFE_Markdown::draw(s_manualDisplayStr); }
+	void manual()
+	{
+		showMdFile("Documentation/markdown/TheForceEngineManual.md", &s_manualDisplayStr);
 	}
 
 	void credits()
 	{
-		if (!s_creditsDisplayStr)
-		{
-			// The document has not been loaded yet.
-			char path[TFE_MAX_PATH];
-			char fileName[TFE_MAX_PATH];
-			strcpy(fileName, "Documentation/markdown/credits.md");
-			if (!TFE_Paths::mapSystemPath(fileName))
-				TFE_Paths::appendPath(PATH_PROGRAM, fileName, path);
-			else
-				strcpy(path, fileName);
-
-			FileStream file;
-			if (file.open(path, Stream::MODE_READ))
-			{
-				const size_t len = file.getSize();
-				s_creditsDisplayStr = new char[len + 1];
-				file.readBuffer(s_creditsDisplayStr, (u32)len);
-				s_creditsDisplayStr[len] = 0;
-
-				file.close();
-			}
-		}
-
-		if (s_creditsDisplayStr) { TFE_Markdown::draw(s_creditsDisplayStr); }
+		showMdFile("Documentation/markdown/Credits.md", &s_creditsDisplayStr);
 	}
 
 	void configAbout()
 	{
-		if (!s_aboutDisplayStr)
-		{
-			// The document has not been loaded yet.
-			char path[TFE_MAX_PATH];
-			char fileName[TFE_MAX_PATH];
-			strcpy(fileName, "Documentation/markdown/TheForceEngine.md");
-			if (!TFE_Paths::mapSystemPath(fileName))
-				TFE_Paths::appendPath(PATH_PROGRAM, fileName, path);
-			else
-				strcpy(path, fileName);
-
-			FileStream file;
-			if (file.open(path, Stream::MODE_READ))
-			{
-				const size_t len = file.getSize();
-				s_aboutDisplayStr = new char[len + 1];
-				file.readBuffer(s_aboutDisplayStr, (u32)len);
-				s_aboutDisplayStr[len] = 0;
-
-				file.close();
-			}
-		}
-
-		if (s_aboutDisplayStr) { TFE_Markdown::draw(s_aboutDisplayStr); }
+		showMdFile("Documentation/markdown/TheForceEngine.md", &s_aboutDisplayStr);
 	}
-	
+
 	void configGame()
 	{
 		TFE_GameHeader* darkForces = TFE_Settings::getGameHeader("Dark Forces");
@@ -1070,21 +1032,8 @@ namespace TFE_FrontEndUI
 		{
 			convertUtf8ToExtendedAscii(utf8Path, darkForces->sourcePath);
 
-			char testFile[TFE_MAX_PATH];
-			char testPath[TFE_MAX_PATH];
-			strcpy(testPath, darkForces->sourcePath);
-			FileUtil::fixupPath(testPath);
-
-			sprintf(testFile, "%sDARK.GOB", testPath);
-			strcpy(darkForces->sourcePath, testPath);
-			TFE_Paths::setPath(PATH_SOURCE_DATA, testPath);
-
-			if (FileUtil::exists(testFile))
-			{
-				strcpy(darkForces->sourcePath, testPath);
-				TFE_Paths::setPath(PATH_SOURCE_DATA, testPath);
-			}
-			else
+			bool b = TFE_DarkForces::validateSourceData(darkForces->sourcePath);
+			if (!b)
 			{
 				s_drawNoGameDataMsg = true;
 				TFE_Paths::setPath(PATH_SOURCE_DATA, darkForces->sourcePath);
@@ -1100,7 +1049,7 @@ namespace TFE_FrontEndUI
 			else
 				startpath = TFE_Paths::getPath(PATH_USER_DOCUMENTS);
 
-			TFE_Ui::openFileDialog("Select DARK.GOB", startpath, ".gob,.exe");
+			TFE_Ui::openFileDialog("Select DarkForces Path/Archive", startpath, ".gob,.zip");
 			s_FEFileDialog = 1; // Dark Forces
 		}
 
@@ -1109,7 +1058,13 @@ namespace TFE_FrontEndUI
 		if (ImGui::InputText("##OutlawsSource", outlaws->sourcePath, 1024))
 		{
 			convertUtf8ToExtendedAscii(utf8Path, outlaws->sourcePath);
-			// TODO
+
+			bool b = TFE_DarkForces::validateSourceData(darkForces->sourcePath);
+			if (!b)
+			{
+				s_drawNoGameDataMsg = true;
+				TFE_Paths::setPath(PATH_SOURCE_DATA, darkForces->sourcePath);
+			}
 		}
 		ImGui::SameLine();
 		if (ImGui::Button("Browse##Outlaws") && !s_FEFileDialog)
@@ -1121,7 +1076,7 @@ namespace TFE_FrontEndUI
 			else
 				startpath = TFE_Paths::getPath(PATH_USER_DOCUMENTS);
 
-			TFE_Ui::openFileDialog("Select OUTLAWS.LAB", startpath, ".lab,.exe");
+			TFE_Ui::openFileDialog("Select Outlaws Path/Archive", startpath, ".lab,.zip");
 			s_FEFileDialog = 2; // Outlaws
 		}
 		ImGui::Separator();
@@ -1226,8 +1181,8 @@ namespace TFE_FrontEndUI
 		// handle file picker if need be
 		if (s_FEFileDialog > 0)
 		{
-			char filePath[TFE_MAX_PATH];
-			FileResult res;
+			char filePath1[TFE_MAX_PATH], filePath2[TFE_MAX_PATH];
+			TFEFileList res;
 
 			// display the dialog
 			if (TFE_Ui::renderFileDialog(res))
@@ -1236,6 +1191,17 @@ namespace TFE_FrontEndUI
 				{
 					// ensure the whole source path plus subpath + filename fits into
 					// the filename buffers.
+					if (res[0].length() >= (TFE_MAX_PATH - 32))
+					{
+						TFE_System::logWrite(LOG_ERROR, "File Picker", "Data file path too long!");
+						s_FEFileDialog = 0;
+						ImGui::OpenPopup("File Path Too Long");
+					}
+					else
+					{
+						convertUtf8ToExtendedAscii(res[0].c_str(), filePath1);
+					}
+
 					if (res[1].length() >= (TFE_MAX_PATH - 32))
 					{
 						TFE_System::logWrite(LOG_ERROR, "File Picker", "Data file path too long!");
@@ -1244,32 +1210,55 @@ namespace TFE_FrontEndUI
 					}
 					else
 					{
-						convertUtf8ToExtendedAscii(res[1].c_str(), filePath);
+						convertUtf8ToExtendedAscii(res[1].c_str(), filePath2);
 					}
+
 					if (s_FEFileDialog == 1)	// DF Path
 					{
-						// Before accepting this path, verify that some of the required files are here...
-						char testFile[TFE_MAX_PATH];
-						snprintf(testFile, TFE_MAX_PATH - 1, "%sDARK.GOB", filePath);
-						if (FileUtil::exists(testFile))
+						// First test the file, it might be a usable archive,
+						// then test the given path.
+						if (TFE_DarkForces::validateSourceData(filePath1))
 						{
-							strcpy(darkForces->sourcePath, filePath);
+							strcpy(darkForces->sourcePath, filePath1);
 							TFE_Paths::setPath(PATH_SOURCE_DATA, darkForces->sourcePath);
+							TFE_System::logWrite(LOG_MSG,  "File Picker", "Picked DF Archive File");
+
+						}
+						else if (TFE_DarkForces::validateSourceData(filePath2))
+						{
+							strcpy(darkForces->sourcePath, filePath2);
+							TFE_Paths::setPath(PATH_SOURCE_DATA, darkForces->sourcePath);
+							TFE_System::logWrite(LOG_MSG,  "File Picker", "Picked DF Path");
 						}
 						else
 						{
 							ImGui::OpenPopup("Invalid Source Data");
 						}
+
+						// Try to find 'enhanced.gob'.
+						{
+							TFEMount m = vpMountReal(darkForces->sourcePath, VPATH_TMP);
+							if (m) {
+								DFenhancedGobExists = vpFileExists(VPATH_TMP, "enhanced.gob", false);
+								vpUnmount(m);
+							}
+						}
 					}
 					else if (s_FEFileDialog == 2)	// Outlaws Path
 					{
-						// Before accepting this path, verify that some of the required files are here...
-						char testFile[TFE_MAX_PATH];
-						snprintf(testFile, TFE_MAX_PATH - 1, "%sOutlaws.lab", filePath);
-						if (FileUtil::exists(testFile))
+						// First test the file, it might be a usable archive,
+						// then test the given path.
+						if (TFE_Outlaws::validateSourceData(filePath1))
 						{
-							strcpy(outlaws->sourcePath, filePath);
-							// TFE_Paths::setPath(PATH_SOURCE_DATA, outlaws->sourcePath);
+							strcpy(outlaws->sourcePath, filePath1);
+							TFE_System::logWrite(LOG_MSG,  "File Picker", "Picked OL Archive");
+							//TFE_Paths::setPath(PATH_SOURCE_DATA, darkForces->sourcePath);
+						}
+						else if (TFE_Outlaws::validateSourceData(filePath2))
+						{
+							strcpy(outlaws->sourcePath, filePath2);
+							TFE_System::logWrite(LOG_MSG,  "File Picker", "Picked OL Path");
+							//TFE_Paths::setPath(PATH_SOURCE_DATA, darkForces->sourcePath);
 						}
 						else
 						{
@@ -1284,7 +1273,7 @@ namespace TFE_FrontEndUI
 		if (ImGui::BeginPopupModal("Invalid Source Data", NULL, ImGuiWindowFlags_AlwaysAutoResize))
 		{
 			ImGui::Text("Invalid source data path!");
-			ImGui::Text("Please select the source game executable or source asset (GOB or LAB).");
+			ImGui::Text("Please select the source game asset (GOB or LAB) or Archive (ZIP).");
 
 			if (ImGui::Button("OK", ImVec2(120, 0))) { ImGui::CloseCurrentPopup(); }
 			ImGui::EndPopup();
@@ -1429,16 +1418,7 @@ namespace TFE_FrontEndUI
 		ImGui::LabelText("##ConfigLabel", "Enhanced Assets");
 		ImGui::PopFont();
 
-		// Try to open 'enhanced.gob'.
-		bool enhancedGobExists = false;
-		char testFile[TFE_MAX_PATH];
-		sprintf(testFile, "%senhanced.gob", darkForces->sourcePath);
-		if (FileUtil::exists(testFile))
-		{
-			enhancedGobExists = true;
-		}
-
-		if (enhancedGobExists)
+		if (DFenhancedGobExists)
 		{
 			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.25f, 1.0f, 0.25f, 1.0f));
 			ImGui::TextWrapped("Enhanced.gob found.");
@@ -1462,7 +1442,7 @@ namespace TFE_FrontEndUI
 
 		TFE_Settings_Enhancements* enhancements = TFE_Settings::getEnhancementsSettings();
 		TFE_Settings_Graphics* graphics = TFE_Settings::getGraphicsSettings();
-		if (!enhancedGobExists || graphics->colorMode != COLORMODE_TRUE_COLOR)
+		if (!DFenhancedGobExists || graphics->colorMode != COLORMODE_TRUE_COLOR)
 		{
 			ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
 			ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.5f);
@@ -1491,7 +1471,7 @@ namespace TFE_FrontEndUI
 			forceTextureUpdate = true;
 		}
 
-		if (!enhancedGobExists || graphics->colorMode != COLORMODE_TRUE_COLOR)
+		if (!DFenhancedGobExists || graphics->colorMode != COLORMODE_TRUE_COLOR)
 		{
 			ImGui::PopItemFlag();
 			ImGui::PopStyleVar();
@@ -1559,6 +1539,7 @@ namespace TFE_FrontEndUI
 
 	void saveLoadConfirmed(bool isSaving)
 	{
+		fprintf(stderr, " CONFIRMED %s\n", s_fileName);
 		s_saveLoadSetupRequired = true;
 		if (isSaving)
 		{
@@ -1778,12 +1759,12 @@ namespace TFE_FrontEndUI
 				if (save && ImGui::InputText("###SaveNameText", s_newSaveName, TFE_SaveSystem::SAVE_MAX_NAME_LEN, ImGuiInputTextFlags_EnterReturnsTrue))
 				{
 					shouldExit = true;
-					saveLoadConfirmed(save);
+					saveLoadConfirmed(true);
 				}
 				else if (!save && TFE_Input::keyPressed(KEY_RETURN))
 				{
 					shouldExit = true;
-					saveLoadConfirmed(save);
+					saveLoadConfirmed(false);
 				}
 				if (ImGui::Button("OK", ImVec2(120, 0)))
 				{
@@ -2948,30 +2929,6 @@ namespace TFE_FrontEndUI
 		ImGui::SetNextItemWidth(valueWidth);
 		ImGui::SliderInt(tag, value, min, max);
 	}
-	
-	string DrawFileListCombo(const char* tag, string currentFileName, string currentFilePath, TFE_A11Y::FilePathList filePathList)
-	{
-		// We only display the file name in the dropdown, but internally track the full path.
-		if (ImGui::BeginCombo(tag, currentFileName.c_str()))
-		{
-			std::vector<string>* names = filePathList.getFileNames();
-			std::vector<string>* paths = filePathList.getFilePaths();
-
-			for (int n = 0; n < names->size(); n++)
-			{
-				string name = names->at(n);
-				string path = paths->at(n);
-				bool is_selected = (currentFilePath == path);
-				if (ImGui::Selectable(name.c_str(), is_selected)) { currentFilePath = path; }
-				if (is_selected) 
-				{ 
-					ImGui::SetItemDefaultFocus();
-				}
-			}
-			ImGui::EndCombo();
-		}
-		return currentFilePath;	
-	}
 
 	// Accessibility
 	void configA11y(s32 tabWidth, u32 height)
@@ -3014,24 +2971,55 @@ namespace TFE_FrontEndUI
 
 		// Caption file dropdown.
 		ImGui::LabelText("##ConfigLabel", "Subtitle/caption file:");
-		TFE_A11Y::FilePath currentCaptionFile = TFE_A11Y::getCurrentCaptionFile();
-		string currentCaptionFilePath = DrawFileListCombo("##ccfile", currentCaptionFile.name, currentCaptionFile.path, TFE_A11Y::getCaptionFiles());
-		// If user changed the selected caption file, reload captions.
-		if (currentCaptionFilePath != currentCaptionFile.path)
+		TFEFileList tl;
+		char buf1[1024], *pbuf1;
+		int curIdx, prevIdx, cnt;
+		std::string curf;
+
+		memset(buf1, 0, 1024);
+		pbuf1 = buf1;
+		cnt = 0;
+		curf = TFE_A11Y::getCurrentCaptionFile();
+		tl = TFE_A11Y::getCaptionFiles();
+		for (auto i : tl) {
+			strcpy(pbuf1, i.c_str());
+			pbuf1 += strlen(pbuf1) + 1;
+			if (i == curf)
+				curIdx = cnt;
+			++cnt;
+		}
+		prevIdx = curIdx;
+		if (ImGui::Combo("##ccfile", &curIdx, (const char *)buf1, cnt))
 		{
-			TFE_A11Y::clearActiveCaptions();
-			TFE_A11Y::loadCaptions(currentCaptionFilePath);
+			if (prevIdx != curIdx) {
+				TFE_A11Y::clearActiveCaptions();
+				TFE_A11Y::loadCaptions(tl[curIdx]);
+			}
 		}
 		
 		// Font file dropdown.
 		ImGui::LabelText("##ConfigLabel", "Font:");
-		TFE_A11Y::FilePath currentFont = TFE_A11Y::getCurrentFontFile();
-		string currentFontPath = DrawFileListCombo("##fontfile", currentFont.name, currentFont.path, TFE_A11Y::getFontFiles());
-		// If user changed the selected font file, queue the font to load after we finish rendering ImGui
-		// (we can't add new fonts to the ImGui font atlas while ImGui is active).
-		if (currentFontPath != currentFont.path)
+
+		memset(buf1, 0, 1024);
+		pbuf1 = buf1;
+		cnt = 0;
+		curf = TFE_A11Y::getCurrentFontFile();
+		tl = TFE_A11Y::getFontFiles();
+		for (auto i : tl) {
+			strcpy(pbuf1, i.c_str());
+			pbuf1 += strlen(pbuf1) + 1;
+			if (i == curf)
+				curIdx = cnt;
+			++cnt;
+		}
+		prevIdx = curIdx;
+		if (ImGui::Combo("##fontfile", &curIdx, (const char *)buf1, cnt))
 		{
-			TFE_A11Y::setPendingFont(currentFontPath);
+			// If user changed the selected font file, queue the font to load after we finish rendering ImGui
+			// (we can't add new fonts to the ImGui font atlas while ImGui is active).
+			if (curIdx != prevIdx) {
+				TFE_A11Y::setPendingFont(tl[curIdx]);
+			}
 		}
 
 		if (ImGui::Button("Refresh caption/font files"))

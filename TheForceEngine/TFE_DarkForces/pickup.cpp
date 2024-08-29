@@ -953,7 +953,7 @@ namespace TFE_DarkForces
 		}
 	}
 
-	void pickupLogic_serializeTasks(Stream* stream)
+	void pickupLogic_serializeTasks(vpFile* stream)
 	{
 		enum PickupTasks
 		{
@@ -996,7 +996,7 @@ namespace TFE_DarkForces
 		}
 	}
 
-	void pickupLogic_serialize(Logic*& logic, SecObject* obj, Stream* stream)
+	void pickupLogic_serialize(Logic*& logic, SecObject* obj, vpFile* stream)
 	{
 		Pickup* pickup;
 		if (serialization_getMode() == SMODE_WRITE)

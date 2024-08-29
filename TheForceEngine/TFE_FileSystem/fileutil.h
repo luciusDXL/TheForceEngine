@@ -19,6 +19,7 @@ namespace FileUtil
 	void getFileNameFromPath(const char* path, char* name, bool includeExt=false);
 	void getFilePath(const char* filename, char* path);
 	void getFileExtension(const char* filename, char* extension);
+	void getFullPath(const char *file, char *outpath);
 
 	void copyFile(const char* srcFile, const char* dstFile);
 	void deleteFile(const char* srcFile);

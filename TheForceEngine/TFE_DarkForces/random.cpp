@@ -1,5 +1,4 @@
 #include "random.h"
-#include <TFE_Jedi/Serialization/serialization.h>
 
 namespace TFE_DarkForces
 {
@@ -7,7 +6,7 @@ namespace TFE_DarkForces
 	// This should cause the random numbers to match up between TFE and DOS.
 	static u32 s_seed = 0xf444bb3b;
 
-	void random_serialize(Stream* stream)
+	void random_serialize(vpFile* stream)
 	{
 		SERIALIZE(SaveVersionInit, s_seed, 0xf444bb3b);
 	}

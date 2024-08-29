@@ -14,18 +14,18 @@ namespace TFE_DarkForces
 		s_buffer = nullptr;
 	}
 
-	// FileStream and TFE_Parser are used to read the file and parse out lines.
+	// TFE_Parser is used to read the file and parse out lines.
 	// However all other processing matches the original DOS version.
-	s32 parseMessageFile(GameMessages* messages, const FilePath* path, s32 mode)
+	s32 parseMessageFile(GameMessages* messages, const char* fn, s32 mode)
 	{
-		FileStream file;
-		if (!file.open(path, Stream::MODE_READ)) { return 0; }
-
-		size_t size = file.getSize();
+		vpFile file(VPATH_GAME, fn, false);
+		if (!file)
+			return 0;
+		size_t size = file.size();
 		s_buffer = (char*)game_realloc(s_buffer, size);
 		if (!s_buffer) { return 0; }
 
-		file.readBuffer(s_buffer, (u32)size);
+		file.read(s_buffer, (u32)size);
 		file.close();
 
 		TFE_Parser parser;

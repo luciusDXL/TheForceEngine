@@ -12,5 +12,5 @@ namespace TFE_DarkForces
 	void bobaFett_exit();
 	void bobaFett_precache();
 	Logic* bobaFett_setup(SecObject* obj, LogicSetupFunc* setupFunc);
-	void bobaFett_serialize(Logic*& logic, SecObject* obj, Stream* stream);
+	void bobaFett_serialize(Logic*& logic, SecObject* obj, vpFile* stream);
 }  // namespace TFE_DarkForces

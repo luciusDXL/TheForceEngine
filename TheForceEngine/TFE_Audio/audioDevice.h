@@ -1,6 +1,5 @@
 #pragma once
 #include <TFE_System/types.h>
-#include <TFE_FileSystem/paths.h>
 #include "audioOutput.h"
 #include <string>
 #include <SDL_audio.h>

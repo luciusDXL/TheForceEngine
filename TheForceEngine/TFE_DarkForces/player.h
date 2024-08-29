@@ -10,6 +10,7 @@
 #include <TFE_Jedi/Level/robject.h>
 #include <TFE_Jedi/Task/task.h>
 #include <TFE_FileSystem/stream.h>
+#include <TFE_Jedi/Serialization/serialization.h>
 #include "sound.h"
 #include "time.h"
 
@@ -179,5 +180,5 @@ namespace TFE_DarkForces
 	void cheat_instaDeath();
 
 	// Serialization
-	void playerLogic_serialize(Logic*& logic, SecObject* obj, Stream* stream);
+	void playerLogic_serialize(Logic*& logic, SecObject* obj, vpFile* stream);
 }  // namespace TFE_DarkForces

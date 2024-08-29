@@ -13,8 +13,7 @@
 #include <TFE_Jedi/Collision/collision.h>
 #include <TFE_System/math.h>
 #include <TFE_System/system.h>
-#include <TFE_FileSystem/paths.h>
-#include <TFE_FileSystem/filestream.h>
+#include <TFE_FileSystem/physfswrapper.h>
 #include <TFE_Jedi/Serialization/serialization.h>
 #include <TFE_Settings/settings.h>
 
@@ -101,7 +100,7 @@ namespace TFE_DarkForces
 		return (Logic*)vueLogic;
 	}
 
-	void vueLogic_serializeFramePointer(Stream* stream, VueLogic* logic, VueFrame** frame, bool modeWrite, u32 version)
+	void vueLogic_serializeFramePointer(vpFile* stream, VueLogic* logic, VueFrame** frame, bool modeWrite, u32 version)
 	{
 		s32 index = -1;
 		if (modeWrite && logic->frames && *frame)
@@ -115,7 +114,7 @@ namespace TFE_DarkForces
 		}
 	}
 		
-	void vueLogic_serializeTaskLocalMemory(Stream* stream, void* userData, void* mem)
+	void vueLogic_serializeTaskLocalMemory(vpFile* stream, void* userData, void* mem)
 	{
 		VueLogic* self = (VueLogic*)userData;
 		LocalContext* locals = (LocalContext*)mem;
@@ -152,7 +151,7 @@ namespace TFE_DarkForces
 	}
 
 	// Serialization
-	void vueLogic_serialize(Logic*& logic, SecObject* obj, Stream* stream)
+	void vueLogic_serialize(Logic*& logic, SecObject* obj, vpFile* stream)
 	{
 		VueLogic* vueLogic;
 		if (serialization_getMode() == SMODE_WRITE)
@@ -336,25 +335,20 @@ namespace TFE_DarkForces
 		return s_workBuffer;
 	}
 
-	JBool createParserFromFile(FilePath* filePath, TFE_Parser* parser)
+	JBool createParserFromFile(char* fn, TFE_Parser* parser)
 	{
-		assert(filePath && parser);
-
-		FileStream file;
-		size_t size = 0;
-		char* buffer = nullptr;
-		if (file.open(filePath, Stream::MODE_READ))
-		{
-			size = file.getSize();
-			buffer = allocateWorkBuffer(size);
-			file.readBuffer(buffer, (u32)size);
-		}
-		file.close();
-
-		if (!buffer || !size)
-		{
+		assert(fn && parser);
+		
+		vpFile file(VPATH_GAME, fn, false);
+		if (!file)
 			return JFALSE;
-		}
+		unsigned int size = file.size();
+		char* buffer = allocateWorkBuffer(size);
+		if (!buffer)
+			return JFALSE;
+		if (!file.read(buffer, size))
+			return JFALSE;
+		file.close();
 
 		parser->init(buffer, size);
 		parser->addCommentString("//");
@@ -364,14 +358,8 @@ namespace TFE_DarkForces
 
 	Allocator* key_loadVue(char* arg1, char* arg2, s32 isCamera)
 	{
-		FilePath filePath;
-		if (!TFE_Paths::getFilePath(arg1, &filePath))
-		{
-			TFE_System::logWrite(LOG_ERROR, "VUE", "key_loadVue: COULD NOT OPEN.");
-			return nullptr;
-		}
 		TFE_Parser parser;
-		if (!createParserFromFile(&filePath, &parser))
+		if (!createParserFromFile(arg1, &parser))
 		{
 			TFE_System::logWrite(LOG_ERROR, "VUE", "key_loadVue: COULD NOT OPEN.");
 			return nullptr;
@@ -385,14 +373,8 @@ namespace TFE_DarkForces
 
 	Allocator* key_appendVue(char* arg1, char* arg2, Allocator* frames)
 	{
-		FilePath filePath;
-		if (!TFE_Paths::getFilePath(arg1, &filePath))
-		{
-			TFE_System::logWrite(LOG_ERROR, "VUE", "key_appendVue: COULD NOT OPEN.");
-			return frames;
-		}
 		TFE_Parser parser;
-		if (!createParserFromFile(&filePath, &parser))
+		if (!createParserFromFile(arg1, &parser))
 		{
 			TFE_System::logWrite(LOG_ERROR, "VUE", "key_appendVue: COULD NOT OPEN.");
 			return frames;

@@ -13,7 +13,7 @@
 // Required for serialization.
 namespace TFE_DarkForces
 {
-	extern void logic_serialize(Logic*& logic, Stream* stream);
+	extern void logic_serialize(Logic*& logic, vpFile* stream);
 }
 
 namespace TFE_Jedi
@@ -48,7 +48,7 @@ namespace TFE_Jedi
 		}
 	}
 
-	void objData_serializeObject(SecObject* obj, Stream* stream)
+	void objData_serializeObject(SecObject* obj, vpFile* stream)
 	{
 		if (serialization_getMode() == SMODE_READ)
 		{
@@ -125,7 +125,7 @@ namespace TFE_Jedi
 		return (SecObject*)TFE_Memory::chunkedArrayGet(s_objData.objectList, id);
 	}
 		
-	void objData_serialize(Stream* stream)
+	void objData_serialize(vpFile* stream)
 	{
 		SERIALIZE_VERSION(ObjState_CurVersion);
 

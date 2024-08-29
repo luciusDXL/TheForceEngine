@@ -4,7 +4,6 @@
 #include <TFE_System/types.h>
 #include <TFE_System/profiler.h>
 #include <TFE_Memory/memoryRegion.h>
-#include <TFE_Archive/gobArchive.h>
 #include <TFE_Game/igame.h>
 #include <TFE_Game/saveSystem.h>
 #include <TFE_Game/reticle.h>
@@ -22,12 +21,13 @@
 #include <TFE_System/tfeMessage.h>
 #include <TFE_Jedi/Task/task.h>
 #include <TFE_RenderShared/texturePacker.h>
-#include <TFE_Asset/paletteAsset.h>
 #include <TFE_Asset/imageAsset.h>
 #include <TFE_Ui/ui.h>
 #include <TFE_FrontEndUI/frontEndUi.h>
 #include <TFE_FrontEndUI/modLoader.h>
 #include <TFE_A11y/accessibility.h>
+#include <TFE_FileSystem/physfswrapper.h>
+#include <TFE_DarkForces/darkForcesMain.h>
 #include <algorithm>
 #include <cinttypes>
 #include <time.h>
@@ -80,10 +80,10 @@ static s32  s_startupGame = -1;
 static IGame* s_curGame = nullptr;
 static const char* s_loadRequestFilename = nullptr;
 
-void parseOption(const char* name, const std::vector<const char*>& values, bool longName);
-bool validatePath();
+static void parseOption(const char* name, const std::vector<const char*>& values, bool longName);
+static bool validatePath(void);
 
-void handleEvent(SDL_Event& Event)
+static void handleEvent(SDL_Event& Event)
 {
 	TFE_Ui::setUiInput(&Event);
 	TFE_Settings_Window* windowSettings = TFE_Settings::getWindowSettings();
@@ -244,7 +244,7 @@ void handleEvent(SDL_Event& Event)
 	}
 }
 
-bool sdlInit()
+static bool sdlInit()
 {
 	const int code = SDL_Init(SDL_INIT_TIMER | SDL_INIT_VIDEO | SDL_INIT_EVENTS | SDL_INIT_GAMECONTROLLER | SDL_INIT_AUDIO);
 	if (code != 0) { return false; }
@@ -308,7 +308,7 @@ bool sdlInit()
 static AppState s_curState = APP_STATE_UNINIT;
 static bool s_soundPaused = false;
 
-void setAppState(AppState newState, int argc, char* argv[])
+static void setAppState(AppState newState, int argc, char* argv[])
 {
 	const TFE_Settings_Graphics* config = TFE_Settings::getGraphicsSettings();
 
@@ -423,12 +423,12 @@ void setAppState(AppState newState, int argc, char* argv[])
 	s_curState = newState;
 }
 
-bool systemMenuKeyCombo()
+static bool systemMenuKeyCombo()
 {
 	return TFE_System::systemUiRequestPosted() || (inputMapping_getActionState(IAS_SYSTEM_MENU) == STATE_PRESSED);
 }
 
-void parseCommandLine(s32 argc, char* argv[])
+static void parseCommandLine(s32 argc, char* argv[])
 {
 	if (argc < 1) { return; }
 
@@ -471,7 +471,7 @@ void parseCommandLine(s32 argc, char* argv[])
 	}
 }
 
-void generateScreenshotTime()
+static void generateScreenshotTime(void)
 {
 #ifdef _WIN32
 	__time64_t time;
@@ -507,35 +507,97 @@ void generateScreenshotTime()
 	}
 }
 
-bool validatePath()
+static bool validatePath(void)
 {
 	if (!TFE_Paths::hasPath(PATH_SOURCE_DATA)) { return false; }
 
-	char testFile[TFE_MAX_PATH];
 	// if (game->id == Game_Dark_Forces)
 	{
-		// Does DARK.GOB exist?
-		sprintf(testFile, "%s%s", TFE_Paths::getPath(PATH_SOURCE_DATA), "DARK.GOB");
-		if (!FileUtil::exists(testFile))
+		if (!TFE_DarkForces::validateSourceData(TFE_Paths::getPath(PATH_SOURCE_DATA)))
 		{
-			TFE_System::logWrite(LOG_ERROR, "Main", "Invalid game source path: '%s' - '%s' does not exist.", TFE_Paths::getPath(PATH_SOURCE_DATA), testFile);
-			TFE_Paths::setPath(PATH_SOURCE_DATA, "");
-		}
-		else if (!GobArchive::validate(testFile, 130))
-		{
-			TFE_System::logWrite(LOG_ERROR, "Main", "Invalid game source path: '%s' - '%s' GOB is invalid, too few files.", TFE_Paths::getPath(PATH_SOURCE_DATA), testFile);
 			TFE_Paths::setPath(PATH_SOURCE_DATA, "");
 		}
 	}
 	return TFE_Paths::hasPath(PATH_SOURCE_DATA);
 }
 
-int main(int argc, char* argv[])
+static bool checkCreateDir(const char* dir)
 {
-	#if INSTALL_CRASH_HANDLER
-	TFE_CrashHandler::setProcessExceptionHandlers();
-	TFE_CrashHandler::setThreadExceptionHandlers();
-	#endif
+
+	if (!vpMkdir(dir)) {
+		TFE_System::logWrite(LOG_ERROR, "Main", "cannot create \"%s\" dir", dir);
+		return false;
+	}
+	return true;
+}
+
+static void parseOption(const char* name, const std::vector<const char*>& values, bool longName)
+{
+	if (!longName)	// short names use the same style as the originals.
+	{
+		if (name[0] == 'g')		// Directly load a game, skipping the titlescreen.
+		{
+			// -gDARK
+			const char* gameToLoad = &name[1];
+			TFE_System::logWrite(LOG_MSG, "CommandLine", "Game to load: %s", gameToLoad);
+			if (!strcasecmp(gameToLoad, "dark"))
+			{
+				s_startupGame = Game_Dark_Forces;
+			}
+		}
+		else if (strcasecmp(name, "nosound") == 0)
+		{
+			// -noaudio
+			s_nullAudioDevice = true;
+		}
+		else if (strcasecmp(name, "fullscreen") == 0)
+		{
+			TFE_Settings::getTempSettings()->forceFullscreen = true;
+		}
+		else if (strcasecmp(name, "skip_load_delay") == 0)
+		{
+			TFE_Settings::getTempSettings()->skipLoadDelay = true;
+		}
+	}
+	else  // long names use the more traditional style of arguments which allow for multiple values.
+	{
+		if (strcasecmp(name, "game") == 0 && values.size() >= 1)	// Directly load a game, skipping the titlescreen.
+		{
+			// --game DARK
+			const char* gameToLoad = values[0];
+			TFE_System::logWrite(LOG_MSG, "CommandLine", "Game to load: %s", gameToLoad);
+			if (!strcasecmp(gameToLoad, "dark"))
+			{
+				s_startupGame = Game_Dark_Forces;
+			}
+		}
+		else if (strcasecmp(name, "nosound") == 0)
+		{
+			// --noaudio
+			s_nullAudioDevice = true;
+		}
+		else if (strcasecmp(name, "fullscreen") == 0)
+		{
+			TFE_Settings::getTempSettings()->forceFullscreen = true;
+		}
+		else if (strcasecmp(name, "skip_load_delay") == 0)
+		{
+			TFE_Settings::getTempSettings()->skipLoadDelay = true;
+		}
+	}
+}
+
+static int appmain(int argc, char* argv[])
+{
+
+	// create a few directories in the user preferences space
+	vpMkdir("Captions");
+	vpMkdir("Fonts");
+	vpMkdir("Mods");
+	vpMkdir("Saves");
+	vpMkdir("Screenshots");
+	vpMkdir("SoundFonts");
+	vpMkdir("Temp");
 
 	// Paths
 	bool pathsSet = true;
@@ -582,28 +644,13 @@ int main(int argc, char* argv[])
 	TFE_Paths::setPath(PATH_EMULATOR, gameHeader->emulatorPath);
 
 	// Validate the current game path.
-	validatePath();
+	//validatePath();
 
 	TFE_System::logWrite(LOG_MSG, "Paths", "Program Path: \"%s\"",   TFE_Paths::getPath(PATH_PROGRAM));
 	TFE_System::logWrite(LOG_MSG, "Paths", "Program Data: \"%s\"",   TFE_Paths::getPath(PATH_PROGRAM_DATA));
 	TFE_System::logWrite(LOG_MSG, "Paths", "User Documents: \"%s\"", TFE_Paths::getPath(PATH_USER_DOCUMENTS));
 	TFE_System::logWrite(LOG_MSG, "Paths", "Source Data: \"%s\"",    TFE_Paths::getPath(PATH_SOURCE_DATA));
 
-	// Create a screenshot directory
-	char screenshotDir[TFE_MAX_PATH];
-	TFE_Paths::appendPath(TFE_PathType::PATH_USER_DOCUMENTS, "Screenshots/", screenshotDir);
-	if (!FileUtil::directoryExits(screenshotDir))
-	{
-		FileUtil::makeDirectory(screenshotDir);
-	}
-
-	// Create a mods temporary directory.
-	char tempPath[TFE_MAX_PATH];
-	sprintf(tempPath, "%sTemp/", TFE_Paths::getPath(PATH_PROGRAM_DATA));
-	if (!FileUtil::directoryExits(tempPath))
-	{
-		FileUtil::makeDirectory(tempPath);
-	}
 	generateScreenshotTime();
 
 	// Initialize SDL
@@ -616,7 +663,7 @@ int main(int argc, char* argv[])
 	TFE_Settings_Window* windowSettings = TFE_Settings::getWindowSettings();
 	TFE_Settings_Graphics* graphics = TFE_Settings::getGraphicsSettings();
 	TFE_System::init(s_refreshRate, graphics->vsync, c_gitVersion);
-	
+
 	// Setup the GPU Device and Window.
 	u32 windowFlags = 0;
 	if (windowSettings->fullscreen || TFE_Settings::getTempSettings()->forceFullscreen)
@@ -625,7 +672,7 @@ int main(int argc, char* argv[])
 		windowFlags |= WINFLAG_FULLSCREEN;
 	}
 	if (graphics->vsync) { TFE_System::logWrite(LOG_MSG, "Display", "Vertical Sync enabled."); windowFlags |= WINFLAG_VSYNC; }
-	
+
 	WindowState windowState =
 	{
 		"",
@@ -649,8 +696,9 @@ int main(int argc, char* argv[])
 	TFE_Audio::init(s_nullAudioDevice, TFE_Settings::getSoundSettings()->audioDevice);
 	TFE_MidiPlayer::init(TFE_Settings::getSoundSettings()->midiOutput, (MidiDeviceType)TFE_Settings::getSoundSettings()->midiType);
 	TFE_Image::init();
-	TFE_Palette::createDefault256();
-	TFE_FrontEndUI::init();
+	if(!TFE_FrontEndUI::init())
+		return PROGRAM_ERROR;
+
 	game_init();
 	inputMapping_startup();
 	TFE_SaveSystem::init();
@@ -666,11 +714,10 @@ int main(int argc, char* argv[])
 	// Optional Reticle.
 	reticle_init();
 
-	// Test
-	#ifdef ENABLE_FORCE_SCRIPT
+#ifdef ENABLE_FORCE_SCRIPT
 	TFE_ForceScript::init();
-	#endif
-		
+#endif
+
 	// Start up the game and skip the title screen.
 	if (firstRun)
 	{
@@ -700,7 +747,7 @@ int main(int argc, char* argv[])
 	{
 		TFE_FRAME_BEGIN();
 		TFE_System::frameLimiter_begin();
-		
+
 		bool enableRelative = TFE_Input::relativeModeEnabled();
 		if (enableRelative != relativeMode)
 		{
@@ -848,20 +895,20 @@ int main(int argc, char* argv[])
 			}
 		}
 
-		#ifdef ENABLE_FORCE_SCRIPT
-			TFE_ForceScript::update();
-		#endif
+#ifdef ENABLE_FORCE_SCRIPT
+		TFE_ForceScript::update();
+#endif
 
 		const bool isConsoleOpen = TFE_FrontEndUI::isConsoleOpen();
 		bool endInputFrame = true;
 		if (s_curState == APP_STATE_EDITOR)
 		{
-		#if ENABLE_EDITOR == 1
+#if ENABLE_EDITOR == 1
 			if (TFE_Editor::update(isConsoleOpen))
 			{
 				TFE_FrontEndUI::setAppState(APP_STATE_MENU);
 			}
-		#endif
+#endif
 		}
 		else if (s_curState == APP_STATE_GAME)
 		{
@@ -886,7 +933,7 @@ int main(int argc, char* argv[])
 
 		TFE_FrontEndUI::setCurrentGame(s_curGame);
 		TFE_FrontEndUI::draw(s_curState == APP_STATE_MENU || s_curState == APP_STATE_NO_GAME_DATA || s_curState == APP_STATE_SET_DEFAULTS,
-			s_curState == APP_STATE_NO_GAME_DATA, s_curState == APP_STATE_SET_DEFAULTS, drawFps);
+				     s_curState == APP_STATE_NO_GAME_DATA, s_curState == APP_STATE_SET_DEFAULTS, drawFps);
 
 		// Make sure the clear the no game data state if the data becomes valid.
 		if (TFE_FrontEndUI::isNoDataMessageSet() && validatePath())
@@ -895,12 +942,12 @@ int main(int argc, char* argv[])
 		}
 
 		bool swap = s_curState != APP_STATE_EDITOR && (s_curState != APP_STATE_MENU || TFE_FrontEndUI::isConfigMenuOpen());
-	#if ENABLE_EDITOR == 1
+#if ENABLE_EDITOR == 1
 		if (s_curState == APP_STATE_EDITOR)
 		{
 			swap = TFE_Editor::render();
 		}
-	#endif
+#endif
 
 		// Blit the frame to the window and draw UI.
 		TFE_RenderBackend::swap(swap);
@@ -937,7 +984,6 @@ int main(int argc, char* argv[])
 	TFE_Audio::shutdown();
 	TFE_MidiPlayer::destroy();
 	TFE_Image::shutdown();
-	TFE_Palette::freeAll();
 	TFE_RenderBackend::updateSettings();
 	TFE_Settings::shutdown();
 	TFE_Jedi::texturepacker_freeGlobal();
@@ -945,68 +991,54 @@ int main(int argc, char* argv[])
 	TFE_SaveSystem::destroy();
 	SDL_Quit();
 
-	#ifdef ENABLE_FORCE_SCRIPT
+#ifdef ENABLE_FORCE_SCRIPT
 	TFE_ForceScript::destroy();
-	#endif
-		
+#endif
+
 	TFE_System::logWrite(LOG_MSG, "Progam Flow", "The Force Engine Game Loop Ended.");
 	TFE_System::logClose();
 	TFE_System::freeMessages();
 	return PROGRAM_SUCCESS;
 }
 
-void parseOption(const char* name, const std::vector<const char*>& values, bool longName)
+int main(int argc, char* argv[])
 {
-	if (!longName)	// short names use the same style as the originals.
-	{
-		if (name[0] == 'g')		// Directly load a game, skipping the titlescreen.
-		{
-			// -gDARK
-			const char* gameToLoad = &name[1];
-			TFE_System::logWrite(LOG_MSG, "CommandLine", "Game to load: %s", gameToLoad);
-			if (!strcasecmp(gameToLoad, "dark"))
-			{
-				s_startupGame = Game_Dark_Forces;
-			}
+	const char *bp, *up, *fp;
+	int ret;
+	char buf[PATH_MAX];
+
+	printf("The Force Engine %s startup\n", c_gitVersion);
+
+#if INSTALL_CRASH_HANDLER
+	TFE_CrashHandler::setProcessExceptionHandlers();
+	TFE_CrashHandler::setThreadExceptionHandlers();
+#endif
+
+	bp = SDL_GetBasePath();
+	up = SDL_GetPrefPath(""/*luciusDXL*/, "TheForceEngine");
+	fp = FileUtil::exists("settings.ini") ? bp : up;
+
+	/* set up physfs and the application vfs tree */
+	memset(buf, 0, PATH_MAX);
+	FileUtil::getFullPath(argv[0], buf);
+	ret = vpInit(buf, fp);
+	if (ret) {
+		printf("vpInit(%s,%s) error %d\n", buf, fp, ret);
+		memset(buf, 0, PATH_MAX);
+		FileUtil::getFullPath("theforceengine.data", buf);
+		ret = vpInit("theforceengine.data", fp);
+		if (ret) {
+			printf("vpInit(%s,%s) error %d, giving up.\n", bp, fp, ret);
+			return PROGRAM_ERROR;
+		} else {
+			printf("Virtual Path established with %s, %s\n", bp, fp);
 		}
-		else if (strcasecmp(name, "nosound") == 0)
-		{
-			// -noaudio
-			s_nullAudioDevice = true;
-		}
-		else if (strcasecmp(name, "fullscreen") == 0)
-		{
-			TFE_Settings::getTempSettings()->forceFullscreen = true;
-		}
-		else if (strcasecmp(name, "skip_load_delay") == 0)
-		{
-			TFE_Settings::getTempSettings()->skipLoadDelay = true;
-		}
+	} else {
+		printf("Virtual Path established with %s, %s\n", buf, fp);
 	}
-	else  // long names use the more traditional style of arguments which allow for multiple values.
-	{
-		if (strcasecmp(name, "game") == 0 && values.size() >= 1)	// Directly load a game, skipping the titlescreen.
-		{
-			// --game DARK
-			const char* gameToLoad = values[0];
-			TFE_System::logWrite(LOG_MSG, "CommandLine", "Game to load: %s", gameToLoad);
-			if (!strcasecmp(gameToLoad, "dark"))
-			{
-				s_startupGame = Game_Dark_Forces;
-			}
-		}
-		else if (strcasecmp(name, "nosound") == 0)
-		{
-			// --noaudio
-			s_nullAudioDevice = true;
-		}
-		else if (strcasecmp(name, "fullscreen") == 0)
-		{
-			TFE_Settings::getTempSettings()->forceFullscreen = true;
-		}
-		else if (strcasecmp(name, "skip_load_delay") == 0)
-		{
-			TFE_Settings::getTempSettings()->skipLoadDelay = true;
-		}
-	}
+
+	ret = appmain(argc, argv);
+	vpDeinit();
+	printf("The Force Engine %s shutdown\n", c_gitVersion);
+	return ret;
 }

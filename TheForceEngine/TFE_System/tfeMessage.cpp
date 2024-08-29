@@ -1,6 +1,6 @@
 #include "tfeMessage.h"
 #include "parser.h"
-#include <TFE_FileSystem/filestream.h>
+#include <TFE_FileSystem/physfswrapper.h>
 #include <cassert>
 #include <cstring>
 
@@ -29,22 +29,11 @@ namespace TFE_System
 
 	bool loadMessages(const char* path)
 	{
-		FileStream file;
-		if (!file.open(path, Stream::MODE_READ))
-		{
+		char *contents;
+		unsigned int len;
+		vpFile ff(VPATH_TFE, path, &contents, &len);
+		if (!ff)
 			return false;
-		}
-
-		// Read the file into memory.
-		const size_t len = file.getSize();
-		char* contents = new char[len + 1];
-		if (!contents)
-		{
-			file.close();
-			return false;
-		}
-		file.readBuffer(contents, (u32)len);
-		file.close();
 
 		TFE_Parser parser;
 		parser.init(contents, len);
@@ -68,6 +57,7 @@ namespace TFE_System
 			strcpy(s_tfeMessage[index], item);
 			index++;
 		}
+		free(contents);
 		s_messagesLoaded = (index == TFE_MSG_COUNT);
 		assert(s_messagesLoaded);
 		return s_messagesLoaded;

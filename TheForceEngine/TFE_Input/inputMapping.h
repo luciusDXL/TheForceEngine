@@ -3,7 +3,6 @@
 // Input Mapping for supported games.
 //////////////////////////////////////////////////////////////////////
 #include <TFE_System/types.h>
-#include <TFE_FileSystem/paths.h>
 #include <TFE_Input/input.h>
 
 namespace TFE_Input

@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <deque>
 #include <string>
+#include <SDL.h>
 
 namespace FileUtil {
 	extern bool existsNoCase(const char *filename);
@@ -27,8 +28,6 @@ namespace TFE_Paths
 	static std::deque<std::string> s_searchPaths;
 	static std::deque<FileMapping> s_fileMappings;
 	static std::deque<std::string> s_systemPaths;	// TFE Support data paths
-
-	bool isPortableInstall();
 
 	void setPath(TFE_PathType pathType, const char* path)
 	{
@@ -91,11 +90,6 @@ namespace TFE_Paths
 	bool setProgramDataPath(const char *append)
 	{
 		s_systemPaths.push_back(getPath(PATH_PROGRAM));
-		if (isPortableInstall())
-		{
-			s_paths[PATH_PROGRAM_DATA] = s_paths[PATH_PROGRAM];
-			return true;
-		}
 
 		std::string s;
 		s = std::string("/usr/local/share/") + append + "/";
@@ -110,12 +104,6 @@ namespace TFE_Paths
 
 	bool setUserDocumentsPath(const char *append)
 	{
-		if (isPortableInstall())
-		{
-			s_paths[PATH_USER_DOCUMENTS] = s_paths[PATH_PROGRAM];
-			return true;
-		}
-
 		// ensure SetProgramDataPath() was called before
 		assert(!s_paths[PATH_PROGRAM_DATA].empty());
 
@@ -132,11 +120,8 @@ namespace TFE_Paths
 
 	bool setProgramPath(void)
 	{
-		char p[TFE_MAX_PATH];
-		memset(p, 0, TFE_MAX_PATH);
-		FileUtil::getCurrentDirectory(p);
-		s_paths[PATH_PROGRAM] = p;
-		s_paths[PATH_PROGRAM] += "/";
+		char *c = SDL_GetBasePath();
+		s_paths[PATH_PROGRAM] = c;
 		return true;
 	}
 
@@ -342,13 +327,5 @@ namespace TFE_Paths
 
 		// Finally admit defeat.
 		return false;
-	}
-
-	// Return true if we want to use a "portable" install - 
-	// aka all data such as screenshots, settings, etc. are stored in the
-	// TFE directory.
-	bool isPortableInstall()
-	{
-		return FileUtil::exists("settings.ini");
 	}
 }

@@ -24,7 +24,7 @@ enum TaskDelay
 	TASK_SLEEP = 0xffffffff,
 	TASK_NO_DELAY = 0,
 };
-typedef void(*LocalMemorySerCallback)(Stream* stream, void* userData, void* mem);
+typedef void(*LocalMemorySerCallback)(vpFile* stream, void* userData, void* mem);
 
 ////////////////////////////////////////////////////////////////////////
 // Task System API
@@ -41,7 +41,7 @@ namespace TFE_Jedi
 	// If local task function state includes pointers or other non-pod data, a local memory serialization callback
 	// needs to be provided and the state be properly serialized by the client. The callback should properly handle
 	// both saving and loading. See vueLogic_serializeTaskLocalMemory() in TFE_DarkForces/vueLogic.cpp for an example.
-	void task_serializeState(Stream* stream, Task* task, void* userData = nullptr, LocalMemorySerCallback localMemCallback = nullptr);
+	void task_serializeState(vpFile* stream, Task* task, void* userData = nullptr, LocalMemorySerCallback localMemCallback = nullptr);
 
 	Task* task_getCurrent();
 

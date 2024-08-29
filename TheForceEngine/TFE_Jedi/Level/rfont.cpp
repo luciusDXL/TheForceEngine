@@ -4,7 +4,6 @@
 #include "rtexture.h"
 #include <TFE_Game/igame.h>
 #include <TFE_System/system.h>
-#include <TFE_FileSystem/filestream.h>
 
 namespace TFE_Jedi
 {
@@ -36,17 +35,15 @@ namespace TFE_Jedi
 		return len;
 	}
 
-	Font* font_load(FilePath* filePath)
+	Font* font_load(const char* fn)
 	{
-		FileStream file;
-		if (!file.open(filePath, Stream::MODE_READ))
-		{
-			TFE_System::logWrite(LOG_ERROR, "Font", "Failed to open font.");
-			return nullptr;
-		}
-
 		char hdr[4];
-		file.readBuffer(hdr, 3);
+
+		vpFile file(VPATH_GAME, fn);
+		if (!file)
+			return nullptr;
+
+		file.read(hdr, 3);
 		hdr[3] = 0;
 		if (strncmp(hdr, "FNT", 3))
 		{
@@ -74,7 +71,7 @@ namespace TFE_Jedi
 
 		// Unused space.
 		u8 buffer[22];
-		file.readBuffer(buffer, 22);
+		file.read(buffer, 22);
 
 		s32 glyphCount = s32(font->maxChar) - s32(font->minChar) + 1;
 		font->glyphs = (TextureData*)game_alloc(sizeof(TextureData) * glyphCount);
@@ -88,7 +85,7 @@ namespace TFE_Jedi
 
 			s32 pixelCount = width * font->vertSpacing;
 			glyph->image = (u8*)game_alloc(pixelCount);
-			file.readBuffer(glyph->image, pixelCount);
+			file.read(glyph->image, pixelCount);
 
 			glyph->width = width;
 			glyph->height = font->vertSpacing;

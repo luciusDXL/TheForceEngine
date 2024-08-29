@@ -9,6 +9,7 @@
 #include <TFE_System/types.h>
 #include <TFE_Memory/memoryRegion.h>
 #include <TFE_Jedi/Math/core_math.h>
+#include <TFE_FileSystem/physfswrapper.h>
 
 using namespace TFE_Jedi;
 
@@ -61,7 +62,7 @@ namespace TFE_DarkForces
 	void sound_setLevelStart();
 
 	// Serialization
-	void sound_serializeLevelSounds(Stream* stream);
+	void sound_serializeLevelSounds(vpFile* stream);
 
 	// Load a sound source from disk.
 	SoundSourceId sound_load(const char* sound, u32 priority = SOUND_PRIORITY_MED0);

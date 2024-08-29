@@ -118,7 +118,7 @@ namespace TFE_Jedi
 	SecObject* objData_allocFromArray();
 	void objData_freeToArray(SecObject* obj);
 
-	void objData_serialize(Stream* stream);
+	void objData_serialize(vpFile* stream);
 
 	// Used for downstream serialization, to get the object from the serialized object ID.
 	SecObject* objData_getObjectBySerializationId(u32 id);

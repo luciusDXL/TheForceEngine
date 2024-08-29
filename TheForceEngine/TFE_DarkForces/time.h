@@ -6,8 +6,7 @@
 
 #include <TFE_System/types.h>
 #include <TFE_Asset/dfKeywords.h>
-#include <TFE_Jedi/Level/rsector.h>
-#include <TFE_Jedi/Level/robject.h>
+#include <TFE_Jedi/Serialization/serialization.h>
 
 typedef u32 Tick;
 typedef s32 TickSigned;
@@ -53,5 +52,5 @@ namespace TFE_DarkForces
 	void updateTime();
 	void time_pause(JBool pause);
 
-	void time_serialize(Stream* stream);
+	void time_serialize(vpFile* stream);
 }  // namespace TFE_DarkForces

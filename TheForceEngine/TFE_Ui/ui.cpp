@@ -1,5 +1,5 @@
 #include <TFE_Ui/ui.h>
-#include <TFE_FileSystem/paths.h>
+#include <TFE_FileSystem/physfswrapper.h>
 #include <TFE_FileSystem/fileutil.h>
 
 #include "imGUI/imgui.h"
@@ -44,10 +44,13 @@ bool init(void* window, void* context, s32 uiScale)
 	}
 	else
 	{
-		char fp[TFE_MAX_PATH];
-		sprintf(fp, "Fonts/DroidSansMono.ttf");
-		TFE_Paths::mapSystemPath(fp);
-		io.Fonts->AddFontFromFileTTF(fp, fontsize);
+		char *fontdata;
+		unsigned int fontdatasize;
+		vpFile ttf(VPATH_TFE, "Fonts/DroidSansMono.ttf", &fontdata, &fontdatasize);
+		if (ttf)
+			io.Fonts->AddFontFromMemoryTTF(fontdata, fontdatasize, fontsize);
+		else
+			return false;
 	}
 
 	// Add Font for ImGuiFileDialog Icons
@@ -167,7 +170,7 @@ void directorySelectDialog(const char* title, const char* initPath, bool forceIn
 	igfd_open(title, nullptr, config);
 }
 
-bool renderFileDialog(FileResult& inOutPath)
+bool renderFileDialog(TFEFileList& inOutPath)
 {
 	// assume a minimum size of 640x480 pixels, below that interacting
 	// with the dialog becomes a chore.
@@ -182,8 +185,8 @@ bool renderFileDialog(FileResult& inOutPath)
 		{
 			std::string filePathName = ImGuiFileDialog::Instance()->GetFilePathName();
 			std::string filePath = ImGuiFileDialog::Instance()->GetCurrentPath() + "/";
-			inOutPath.push_back(filePathName);
-			inOutPath.push_back(filePath);
+			inOutPath.emplace_back(filePathName);
+			inOutPath.emplace_back(filePath);
 		}
 		ImGuiFileDialog::Instance()->Close();
 		done = true;		// dialog was closed.

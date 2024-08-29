@@ -3,7 +3,7 @@
 #include <TFE_Asset/imageAsset.h>
 #include <TFE_RenderBackend/renderBackend.h>
 #include <TFE_RenderBackend/textureGpu.h>
-#include <TFE_FileSystem/paths.h>
+#include <TFE_FileSystem/physfswrapper.h>
 #include "imGUI/imgui.h"
 #include "imGUI/imgui_markdown.h"
 
@@ -23,6 +23,7 @@ namespace TFE_Markdown
 	typedef std::map<std::string, TextureGpu*> TextureMap;
 	static TextureMap s_textures;
 	static ImFont* s_baseFont;
+	static ImFontConfig s_fontCfg = {};
 
 	static LocalLinkCallback s_localLinkCb = nullptr;
 
@@ -33,25 +34,37 @@ namespace TFE_Markdown
 
 	bool init(f32 baseFontSize)
 	{
-		char fp[TFE_MAX_PATH];
+		char *fb1, *fb2;
+		unsigned int fbs1, fbs2;
+		bool ok;
 
+		vpFile ttf1(VPATH_TFE, "Fonts/DroidSans.ttf");
+		ok = ttf1.readallocbuffer(&fb1, &fbs1);
+		ttf1.close();
+		if (!ok)
+		{
+			return false;
+		}
 		ImGuiIO& io = ImGui::GetIO();
+		s_baseFont = io.Fonts->AddFontFromMemoryTTF(fb1, fbs1, baseFontSize);
 
-		sprintf(fp, "Fonts/DroidSans.ttf");
-		TFE_Paths::mapSystemPath(fp);
-		s_baseFont = io.Fonts->AddFontFromFileTTF(fp, baseFontSize);
+		vpFile ttf2(VPATH_TFE, "Fonts/DroidSans-Bold.ttf");
+		ok = ttf2.readallocbuffer(&fb2, &fbs2);
+		ttf2.close();
+		if (!ok)
+		{
+			return false;
+		}
 
-
-		sprintf(fp, "Fonts/DroidSans-Bold.ttf");
-		TFE_Paths::mapSystemPath(fp);
+		s_fontCfg.FontDataOwnedByAtlas = false;	// indicate to ImGui to not free() the fontdata buffer.
 		// Bold
-		s_mdConfig.boldFont = io.Fonts->AddFontFromFileTTF(fp, baseFontSize);
+		s_mdConfig.boldFont = io.Fonts->AddFontFromMemoryTTF(fb2, fbs2, baseFontSize, &s_fontCfg);
 		// Heading H1
-		s_mdConfig.headingFormats[0].font = io.Fonts->AddFontFromFileTTF(fp, baseFontSize * 2);
+		s_mdConfig.headingFormats[0].font = io.Fonts->AddFontFromMemoryTTF(fb2, fbs2, baseFontSize * 2, &s_fontCfg);
 		// Heading H2
-		s_mdConfig.headingFormats[1].font = io.Fonts->AddFontFromFileTTF(fp, baseFontSize * 5/3);
+		s_mdConfig.headingFormats[1].font = io.Fonts->AddFontFromMemoryTTF(fb2, fbs2, baseFontSize * 5/3, &s_fontCfg);
 		// Heading H3
-		s_mdConfig.headingFormats[2].font = io.Fonts->AddFontFromFileTTF(fp, baseFontSize * 4/3);
+		s_mdConfig.headingFormats[2].font = io.Fonts->AddFontFromMemoryTTF(fb2, fbs2, baseFontSize * 4/3);
 
 		return true;
 	}

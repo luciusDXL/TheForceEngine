@@ -1,11 +1,12 @@
+#include <algorithm>
+#include <cassert>
 #include <cstring>
 #include <chrono>
 #include <map>
+#include <string>
 
 #include "accessibility.h"
-#include <TFE_A11y/filePathList.h>
-#include <TFE_FileSystem/filestream.h>
-#include <TFE_FileSystem/fileutil.h>
+#include <TFE_FileSystem/physfswrapper.h>
 #include <TFE_FrontEndUI/console.h>
 #include <TFE_RenderBackend/renderBackend.h>
 #include <TFE_Settings/settings.h>
@@ -14,7 +15,6 @@
 #include <TFE_Ui/ui.h>
 
 using namespace std::chrono;
-using std::string;
 
 namespace TFE_A11Y  // a11y is industry slang for accessibility
 {
@@ -32,26 +32,28 @@ namespace TFE_A11Y  // a11y is industry slang for accessibility
 	void findFontFiles();
 	bool isFontLoaded();
 	void loadDefaultFont(bool clearAtlas);
-	void tryLoadFont(const string path, bool clearAtlas);
-	void loadFont(const string path, bool clearAtlas);
+	void tryLoadFont(const std::string path, bool clearAtlas);
+	void loadFont(const std::string path, bool clearAtlas);
 	void findCaptionFiles();
-	bool filterCaptionFile(const string fileName);
-	void onFileError(const string path);
+	bool filterCaptionFile(const std::string fileName);
+	void onFileError(const std::string path);
 	void enqueueCaption(const ConsoleArgList& args);
 	Vec2f drawCaptions(std::vector<Caption>* captions);
-	string toUpper(string input);
-	string toLower(string input);
-	string toFileName(string language);
+	std::string toUpper(std::string input);
+	std::string toLower(std::string input);
+	std::string toFileName(std::string language);
 	void loadScreenSize();
 	ImVec2 calcWindowSize(f32* fontScale, CaptionEnv env);
 	s64 secondsToMicroseconds(f32 seconds);
-	s64 calculateDuration(const string text);
+	s64 calculateDuration(const std::string text);
 
 	///////////////////////////////////////////
 	// Constants
 	///////////////////////////////////////////
 
-	const char* DEFAULT_FONT = "Fonts/NotoSans-Regular.ttf";
+	const char* DEFAULT_FONT = "NotoSans-Regular.ttf";
+	const char* DEFAULT_FONT_DIR = "Fonts/";
+	const char* DEFAULT_CAPTIONS_DIR = "Captions/";
 	const f32 MAX_CAPTION_WIDTH = 1200;
 	const f32 LINE_PADDING = 5;
 	// Base duration of a caption
@@ -71,11 +73,11 @@ namespace TFE_A11Y  // a11y is industry slang for accessibility
 	// Static vars
 	///////////////////////////////////////////
 
+	static TFEFileList fl_captions;
+	static TFEFileList fl_fonts;
 	static A11yStatus s_captionsStatus = CC_NOT_LOADED;
-	static FilePathList s_captionFileList;
-	static FilePathList s_fontFileList;
-	static FilePath s_currentCaptionFile;
-	static FilePath s_currentFontFile;
+	static std::string s_currentCaptionFile;
+	static std::string s_currentFontFile;
 	static s64 s_maxDuration = secondsToMicroseconds(10.0f);
 	static DisplayInfo s_display;
 	static u32 s_screenWidth;
@@ -84,15 +86,14 @@ namespace TFE_A11Y  // a11y is industry slang for accessibility
 	static bool s_logSFXNames = false;
 	static system_clock::duration s_lastTime;
 
-	static FileStream s_captionsStream;
 	static char* s_captionsBuffer;
 	static TFE_Parser s_parser;
-	static std::map<string, Caption> s_captionMap;
+	static std::map<std::string, Caption> s_captionMap;
 	static std::vector<Caption> s_activeCaptions;
 	static std::vector<Caption> s_exampleCaptions;
-	static std::map<string, ImFont*> s_fontMap;
+	static std::map<std::string, ImFont*> s_fontMap;
 	static ImFont* s_currentCaptionFont;
-	static string s_pendingFontPath;
+	static std::string s_pendingFontPath;
 
 	void init()
 	{
@@ -118,10 +119,10 @@ namespace TFE_A11Y  // a11y is industry slang for accessibility
 
 	void clearFiles()
 	{
-		s_captionFileList.clear();
-		s_fontFileList.clear();
-		s_currentCaptionFile = FilePath();
-		s_currentFontFile = FilePath();
+		s_currentCaptionFile.clear();
+		s_currentFontFile.clear();
+		fl_fonts.clear();
+		fl_captions.clear();
 		s_captionsStatus = CC_NOT_LOADED;
 	}
 
@@ -138,10 +139,10 @@ namespace TFE_A11Y  // a11y is industry slang for accessibility
 	//////////////////////////////////////////////////////
 
 	// Get the list of all font files we detect in the Fonts directories.
-	FilePathList getFontFiles() { return s_fontFileList; }
+	TFEFileList getFontFiles() { return fl_fonts; }
 
 	// The name and path of the currently selected Font file
-	FilePath getCurrentFontFile() { return s_currentFontFile; }
+	std::string getCurrentFontFile() { return s_currentFontFile; }
 
 	// True if we are waiting to load a font after we render ImGui.
 	bool hasPendingFont() { return !s_pendingFontPath.empty(); }
@@ -163,93 +164,86 @@ namespace TFE_A11Y  // a11y is industry slang for accessibility
 	void findFontFiles()
 	{
 		// First we check the User Documents directory for custom font files added by the user.
-		char docsFontsDir[TFE_MAX_PATH];
-		const char* docsDir = TFE_Paths::getPath(PATH_USER_DOCUMENTS);
-		sprintf(docsFontsDir, "%sFonts/", docsDir);
-		if (!FileUtil::directoryExits(docsFontsDir))
-		{
-			FileUtil::makeDirectory(docsFontsDir);
-		}
-		s_fontFileList.addFiles(docsFontsDir, "ttf", nullptr);
+		TFEFileList tl;
+		TFEExtList te = {"ttf"};
 
-		// Then we check the Program directory for font files that shipped with TFE.
-		char programFontsDir[TFE_MAX_PATH];
-		sprintf(programFontsDir, "Fonts/");
-		TFE_Paths::mapSystemPath(programFontsDir);
-		s_fontFileList.addFiles(programFontsDir, "ttf", nullptr);
+		bool ok = vpGetFileList(VPATH_TFE, DEFAULT_FONT_DIR, tl, te);
+		if (!ok) {
+			TFE_System::logWrite(LOG_ERROR, "A11Y", "cannot enumerate Fonts");
+			return;
+		}
+
+		// insert filenames not yet in the container.
+		auto inscond = [&](std::string newfn) {
+			return (std::find(fl_fonts.begin(), fl_fonts.end(), newfn) == std::end(fl_fonts));
+		};
+		std::copy_if(tl.begin(), tl.end(), std::back_inserter(fl_fonts), inscond);
 
 		// Try to load the previously selected font.
-		string lastFontPath = TFE_Settings::getA11ySettings()->lastFontPath;
-
-		if (!lastFontPath.empty() && ImGui::GetIO().Fonts->Locked)	{ setPendingFont(lastFontPath);	}
-		else { tryLoadFont(lastFontPath, false); }
+		std::string lfn = TFE_Settings::getA11ySettings()->lastFontName;
+		if (!lfn.empty() && ImGui::GetIO().Fonts->Locked) {
+			setPendingFont(lfn);
+		} else {
+			tryLoadFont(lfn, false);
+		}
 	}
 
 	// Specify a font to load after ImGui finishes rendering.
-	void setPendingFont(const string path)
+	void setPendingFont(const std::string name)
 	{
-		s_pendingFontPath = path;
+		s_pendingFontPath = name;
 	}
 
 	void loadDefaultFont(bool clearAtlas)
 	{
-		char fontpath[TFE_MAX_PATH];
-		snprintf(fontpath, TFE_MAX_PATH, "%s", DEFAULT_FONT);
-		TFE_Paths::mapSystemPath(fontpath);
-		loadFont(fontpath, clearAtlas);
+		loadFont(DEFAULT_FONT, clearAtlas);
 	}
 
 	// Try to load the font at the given path. If the font doesn't exist or can't be read,
 	// we automatically fall back to the default font.
-	void tryLoadFont(const string path, bool clearAtlas)
+	void tryLoadFont(const std::string fname, bool clearAtlas)
 	{
-		if (!path.empty() && FileUtil::exists(path.c_str())) 
+		std::string path = DEFAULT_FONT_DIR + fname;
+		if (!fname.empty() && vpFileExists(VPATH_TFE, path.c_str()))
 		{
-			try
-			{
-				loadFont(path, clearAtlas);
-			}
-			catch (...)
-			{
-				TFE_System::logWrite(LOG_ERROR, "a11y", string("Couldn't read font file at " + path
-					+ "; falling back to default font").c_str());
-				loadDefaultFont(clearAtlas);
-			}
+			loadFont(fname, clearAtlas);
 		}
 		else
 		{
-			TFE_System::logWrite(LOG_ERROR, "a11y", string("Couldn't find font file at " + path
-				+ "; falling back to default font").c_str());
+			TFE_System::logWrite(LOG_ERROR, "a11y", "Couldn't find font file at %s; falling back to default font", path.c_str());
 			loadDefaultFont(clearAtlas);
 		}
 	}
 
 	// Load the font at the given path. The font will be added to the ImGui font atlas if it hasn't
 	// been loaded before.
-	void loadFont(const string path, bool clearAtlas)
+	void loadFont(const std::string fname, bool clearAtlas)
 	{
 		ImGuiIO& io = ImGui::GetIO();
 
-		if (s_fontMap.count(path) > 0) // Font has already been loaded.
+		if (s_fontMap.count(fname) > 0) // Font has already been loaded.
 		{ 
-			s_currentCaptionFont = s_fontMap.at(path);	
+			s_currentCaptionFont = s_fontMap.at(fname);
 		} 
 		else // Font hasn't been loaded before.
 		{
-			s_currentCaptionFont = io.Fonts->AddFontFromFileTTF(path.c_str(), 32, nullptr, GetGlyphRanges());
-			s_fontMap[path] = s_currentCaptionFont;
+			char *fbuf;
+			unsigned int fsize;
+			std::string fpath = DEFAULT_FONT_DIR + fname;
+			vpFile ttf(VPATH_TFE, fpath.c_str(), &fbuf, &fsize);
+			if (ttf) {
+				s_currentCaptionFont = io.Fonts->AddFontFromMemoryTTF(fbuf, fsize, 32, nullptr, GetGlyphRanges());
+				s_fontMap[fname] = s_currentCaptionFont;
+			}
+
 			// If we're loading a new font after the game first initializes, we'll need to clear the 
 			// ImGui font atlas so that it is automatically regenerated at the start of the next frame.
 			if (clearAtlas) { TFE_Ui::invalidateFontAtlas(); }
 		}
 		assert(s_currentCaptionFont != nullptr);
 
-		char name[TFE_MAX_PATH];
-		FileUtil::getFileNameFromPath(path.c_str(), name);
-		s_currentFontFile.name = string(name);
-		s_currentFontFile.path = path;
-
-		TFE_Settings::getA11ySettings()->lastFontPath = path;
+		s_currentFontFile = fname;
+		TFE_Settings::getA11ySettings()->lastFontName = fname;
 	}
 
 	void loadPendingFont()
@@ -265,87 +259,75 @@ namespace TFE_A11Y  // a11y is industry slang for accessibility
 	A11yStatus getCaptionSystemStatus() { return s_captionsStatus; }
 
 	// Get the list of all caption files we detect in the Captions directories.
-	FilePathList getCaptionFiles() { return s_captionFileList; }
+	TFEFileList getCaptionFiles() { return fl_captions; }
 
 	// The name and path of the currently selected Caption file
-	FilePath getCurrentCaptionFile() { return s_currentCaptionFile; }
+	std::string getCurrentCaptionFile() { return s_currentCaptionFile; }
 
 	// Get all caption file names from the Captions directories; we will use this to populate the
 	// dropdown in the Accessibility settings menu.
 	void findCaptionFiles()
 	{
-		// First we check the User Documents directory for custom subtitle files added by the user.
-		char docsCaptionsDir[TFE_MAX_PATH];
-		const char* docsDir = TFE_Paths::getPath(PATH_USER_DOCUMENTS);
-		sprintf(docsCaptionsDir, "%sCaptions/", docsDir);
-		if (!FileUtil::directoryExits(docsCaptionsDir))
-		{
-			FileUtil::makeDirectory(docsCaptionsDir);
-		}
-		s_captionFileList.addFiles(docsCaptionsDir, "txt", filterCaptionFile);
+		TFEFileList tl;
+		TFEExtList te = { "txt" };
 
-		// Then we check the Program directory for subtitle files that shipped with TFE.
-		char programCaptionsDir[TFE_MAX_PATH];
-		const char* programDir = TFE_Paths::getPath(PATH_PROGRAM);
-		sprintf(programCaptionsDir, "%s", "Captions/");
-		if (!TFE_Paths::mapSystemPath(programCaptionsDir))
-			sprintf(programCaptionsDir, "%sCaptions/", programDir);
-		s_captionFileList.addFiles(programCaptionsDir, "txt", filterCaptionFile);
+		if (!vpGetFileList(VPATH_TFE, DEFAULT_CAPTIONS_DIR, tl, te)) {
+			TFE_System::logWrite(LOG_ERROR, "A11Y", "cannot enumerate Captions");
+			return;
+		}
+
+		// insert filenames not yet in the container.
+		auto inscond = [&](std::string newfn) {
+				return (std::find(fl_captions.begin(), fl_captions.end(), newfn) == std::end(fl_captions))
+					&& (newfn.find(FILE_NAME_START) != std::string::npos);
+		};
+		std::copy_if(tl.begin(), tl.end(), std::back_inserter(fl_captions), inscond);
 
 		// Try to load captions for the previously selected language.
-		string search = toFileName(TFE_Settings::getA11ySettings()->language);
-		vector<string>* captionFilePaths = s_captionFileList.getFilePaths();
-		for (size_t i = 0; i < captionFilePaths->size(); i++)
-		{
-			string path = captionFilePaths->at(i);
-			if (path.find(search) != string::npos) {
-				loadCaptions(path);
-				break;
-			}
-		}
+		std::string newfn = toFileName(TFE_Settings::getA11ySettings()->language);
+		loadCaptions(newfn);
 
 		// If the language didn't load, default to English.
 		if (s_captionsStatus != CC_LOADED)
 		{
-			string fileName = programCaptionsDir + toFileName("en");
+			std::string fileName = toFileName("en");
 			loadCaptions(fileName);
 		}
 	}
 
-	bool filterCaptionFile(const string fileName)
+	bool filterCaptionFile(const std::string fileName)
 	{
 		return fileName.substr(0, FILE_NAME_START.length()) == FILE_NAME_START;
 	}
 
 	// Load the caption file with the given name and parse the subs/captions from it
-	void loadCaptions(const string path)
+	void loadCaptions(const std::string fname)
 	{
+		char *s_captionsBuffer;
+		unsigned int size;
+
 		s_captionMap.clear();
 
 		// Try to open the file
-		s_currentCaptionFile.path = path;
-		if (!s_captionsStream.open(path.c_str(), Stream::AccessMode::MODE_READ))
+		std::string fpath = DEFAULT_CAPTIONS_DIR + fname;
+		vpFile capfile(VPATH_TFE, fpath.c_str(), &s_captionsBuffer, &size);
+		if (!capfile)
 		{
-			onFileError(path);
+			onFileError(fpath);
 			return;
 		}
 
 		// Parse language name; for example, if file name is "subtitles-de.txt", the language is "de".
 		// The idea is for the language name to be an ISO 639-1 two-letter code, but for now the system
 		// doesn't actually care how long the language name is or whether it's a valid 639-1 code.
-		size_t start = path.find(FILE_NAME_START);
+		size_t start = fname.find(FILE_NAME_START);
 		if (start != string::npos)
 		{
-			s_currentCaptionFile.name = path.substr(start);
-			string language = path.substr(start + FILE_NAME_START.length());
+			s_currentCaptionFile = fname;
+			string language = fname.substr(start + FILE_NAME_START.length());
 			language = language.substr(0, language.length() - FILE_NAME_EXT.length());
 			TFE_Settings::getA11ySettings()->language = language;
 		}
-
-		// Read file into buffer.
-		auto size = (u32)s_captionsStream.getSize();
-		s_captionsBuffer = (char*)malloc(size);
-		s_captionsStream.readBuffer(s_captionsBuffer, size);
 
 		// Init parser (configured to ignore comment lines).
 		s_parser.init(s_captionsBuffer, size);
@@ -387,18 +369,17 @@ namespace TFE_A11Y  // a11y is industry slang for accessibility
 			if (caption.text[0] == '[') { caption.type = CC_EFFECT; }
 			else { caption.type = CC_VOICE; }
 
-			string name = toLower(tokens[0]);
+			std::string name = toLower(tokens[0]);
 			s_captionMap[name] = caption;
 		};
 
-		s_captionsStatus = CC_LOADED;
-		s_captionsStream.close();
+		s_captionsStatus = CC_LOADED;;
 		free(s_captionsBuffer);
 	}
 
-	void onFileError(const string path)
+	void onFileError(const std::string path)
 	{
-		string error = "Couldn't find caption file at " + path;
+		std::string error = "Couldn't find caption file at " + path;
 		TFE_System::logWrite(LOG_ERROR, "a11y", error.c_str());
 		s_captionsStatus = CC_ERROR;
 		// TODO: display an error dialog
@@ -419,7 +400,7 @@ namespace TFE_A11Y  // a11y is industry slang for accessibility
 
 		if (s_logSFXNames) { TFE_System::logWrite(LOG_ERROR, "a11y", name); }
 
-		string nameLower = toLower(name);
+		std::string nameLower = toLower(name);
 
 		if (s_captionMap.count(nameLower))
 		{
@@ -444,8 +425,8 @@ namespace TFE_A11Y  // a11y is industry slang for accessibility
 				assert(fontScale > 0);
 
 				size_t idx = 0;   // Index of current character in string.
-				string line = ""; // Current line of the current chunk.
-				string chunk;
+				std::string line = ""; // Current line of the current chunk.
+				std::string chunk;
 				s32 chunkLineCount = 0;
 				while (idx < caption.text.length())
 				{
@@ -465,7 +446,7 @@ namespace TFE_A11Y  // a11y is industry slang for accessibility
 						{
 							chunk += line.substr(0, spaceIndex) + "\n";
 							idx -= (line.length() - spaceIndex - 1);
-							line = string("");
+							line = std::string("");
 							chunkLineCount++;
 						}
 						else { break; }
@@ -687,7 +668,7 @@ namespace TFE_A11Y  // a11y is industry slang for accessibility
 	///////////////////////////////////////////
 	// Helpers
 	///////////////////////////////////////////
-	string toUpper(string input)
+	std::string toUpper(std::string input)
 	{
 		u8* p = (u8*)input.c_str();
 		while (*p)
@@ -698,7 +679,7 @@ namespace TFE_A11Y  // a11y is industry slang for accessibility
 		return input;
 	}
 
-	string toLower(string input)
+	std::string toLower(std::string input)
 	{
 		u8* p = (u8*)input.c_str();
 		while (*p)
@@ -709,7 +690,7 @@ namespace TFE_A11Y  // a11y is industry slang for accessibility
 		return input;
 	}
 	
-	string toFileName(string language)
+	std::string toFileName(std::string language)
 	{
 		return FILE_NAME_START + language + FILE_NAME_EXT;
 	}
@@ -752,7 +733,7 @@ namespace TFE_A11Y  // a11y is industry slang for accessibility
 		return (s64)(seconds * 1000000);
 	}
 
-	s64 calculateDuration(const string text) {
+	s64 calculateDuration(const std::string text) {
 		return BASE_DURATION_MICROSECONDS + text.length() * MICROSECONDS_PER_CHAR;
 	}
 }

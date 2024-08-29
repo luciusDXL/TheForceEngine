@@ -3,9 +3,7 @@
 #include "modelAsset_jedi.h"
 #include <TFE_System/system.h>
 #include <TFE_Settings/settings.h>
-#include <TFE_Asset/assetSystem.h>
-#include <TFE_FileSystem/filestream.h>
-#include <TFE_FileSystem/paths.h>
+#include <TFE_FileSystem/physfswrapper.h>
 #include <TFE_System/parser.h>
 
 #include <TFE_Jedi/Math/core_math.h>
@@ -178,19 +176,12 @@ namespace TFE_Model_Jedi
 		}
 
 		// It doesn't exist yet, try to load the model.
-		FilePath filePath;
-		if (!TFE_Paths::getFilePath(name, &filePath))
-		{
+		vpFile file(VPATH_GAME, name, false);
+		if (!file)
 			return nullptr;
-		}
-		FileStream file;
-		if (!file.open(&filePath, Stream::MODE_READ))
-		{
-			return nullptr;
-		}
-		size_t len = file.getSize();
+		unsigned int len = file.size();
 		s_buffer.resize(len);
-		file.readBuffer(s_buffer.data(), u32(len));
+		file.read(s_buffer.data(), len);
 		file.close();
 			
 		s_memRegion = (pool == POOL_GAME) ? s_gameRegion : s_levelRegion;
@@ -302,7 +293,7 @@ namespace TFE_Model_Jedi
 		s_modelNames[pool].clear();
 	}
 
-	void serializeModels(Stream* stream)
+	void serializeModels(vpFile* stream)
 	{
 		bool modeWrite = serialization_getMode() == SMODE_WRITE;
 		if (!modeWrite)

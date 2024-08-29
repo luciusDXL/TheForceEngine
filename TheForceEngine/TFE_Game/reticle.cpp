@@ -4,7 +4,7 @@
 #include <TFE_Asset/imageAsset.h>
 #include <TFE_Settings/settings.h>
 #include <TFE_System/system.h>
-#include <TFE_FileSystem/paths.h>
+#include <TFE_FileSystem/physfswrapper.h>
 #include <algorithm>
 #include <cstring>
 
@@ -30,16 +30,10 @@ bool reticle_init()
 {
 	s_settings = TFE_Settings::getGraphicsSettings();
 
-	char imagePath[TFE_MAX_PATH];
-	sprintf(imagePath, "UI_Images/ReticleAtlas.png");
-	if (!TFE_Paths::mapSystemPath(imagePath)) {
-		TFE_Paths::appendPath(TFE_PathType::PATH_PROGRAM, "UI_Images/ReticleAtlas.png", imagePath, TFE_MAX_PATH);
-	}
-
-	SDL_Surface* image = TFE_Image::get(imagePath);
+	SDL_Surface* image = TFE_Image::get("UI_Images/ReticleAtlas.png", VPATH_TFE);
 	if (!image)
 	{
-		TFE_System::logWrite(LOG_ERROR, "Reticle", "Cannot load reticle atlas: '%s'.", imagePath);
+		TFE_System::logWrite(LOG_ERROR, "Reticle", "Cannot load reticle atlas.");
 		return false;
 	}
 

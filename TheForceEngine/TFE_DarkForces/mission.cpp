@@ -16,6 +16,7 @@
 #include <TFE_DarkForces/GameUI/escapeMenu.h>
 #include <TFE_DarkForces/GameUI/pda.h>
 #include <TFE_DarkForces/logic.h>
+#include <TFE_FileSystem/physfswrapper.h>
 #include <TFE_Game/igame.h>
 #include <TFE_Game/reticle.h>
 #include <TFE_Settings/settings.h>
@@ -30,7 +31,6 @@
 #include <TFE_Jedi/Renderer/screenDraw.h>
 #include <TFE_Jedi/Renderer/RClassic_Fixed/rclassicFixed.h>
 #include <TFE_RenderShared/texturePacker.h>
-#include <TFE_Jedi/Serialization/serialization.h>
 #include <TFE_FrontEndUI/frontEndUi.h>
 #include <TFE_FrontEndUI/console.h>
 #include <TFE_Settings/settings.h>
@@ -106,7 +106,7 @@ namespace TFE_DarkForces
 	void setPalette(u8* pal);
 	void blitLoadingScreen();
 	void displayLoadingScreen();
-	u8*  color_loadMap(FilePath* path, u8* lightRamp, u8** basePtr);
+	u8*  color_loadMap(const char* fn, u8* lightRamp, u8** basePtr);
 
 	void setScreenBrightness(fixed16_16 brightness);
 	void setScreenFxLevels(s32 healthFx, s32 shieldFx, s32 flashFx);
@@ -277,20 +277,19 @@ namespace TFE_DarkForces
 
 	void mission_loadColormap()
 	{
-		FilePath filePath;
-		if (TFE_Paths::getFilePath(s_colormapName, &filePath))
+		if (vpFileExists(VPATH_GAME, s_colormapName, false))
 		{
-			s_levelColorMap = color_loadMap(&filePath, s_levelLightRamp, &s_levelColorMapBasePtr);
+			s_levelColorMap = color_loadMap(s_colormapName, s_levelLightRamp, &s_levelColorMapBasePtr);
 		}
-		else if (TFE_Paths::getFilePath("DEFAULT.CMP", &filePath))
+		else if (vpFileExists(VPATH_GAME, "DEFAULT.CMP", false))
 		{
 			TFE_System::logWrite(LOG_WARNING, "mission_startTaskFunc", "USING DEFAULT.CMP");
-			s_levelColorMap = color_loadMap(&filePath, s_levelLightRamp, &s_levelColorMapBasePtr);
+			s_levelColorMap = color_loadMap("DEFAULT.CMP", s_levelLightRamp, &s_levelColorMapBasePtr);
 		}
 		setCurrentColorMap(s_levelColorMap, s_levelLightRamp);
 	}
 
-	void mission_serialize(Stream* stream)
+	void mission_serialize(vpFile* stream)
 	{
 		SERIALIZE(SaveVersionInit, s_palModified, JTRUE);
 		SERIALIZE(SaveVersionInit, s_canChangePal, JTRUE);
@@ -311,7 +310,7 @@ namespace TFE_DarkForces
 		SERIALIZE(SaveVersionInit, s_visionFxEndCountdown, 0);
 	}
 
-	void mission_serializeColorMap(Stream* stream)
+	void mission_serializeColorMap(vpFile* stream)
 	{
 		u8 length = 0;
 		if (serialization_getMode() == SMODE_WRITE)
@@ -884,10 +883,10 @@ namespace TFE_DarkForces
 	}
 
 	// Move to the appropriate place.
-	u8* color_loadMap(FilePath* path, u8* lightRamp, u8** basePtr)
+	u8* color_loadMap(const char *fname, u8* lightRamp, u8** basePtr)
 	{
-		FileStream file;
-		if (!file.open(path, Stream::MODE_READ))
+		vpFile file(VPATH_GAME, fname);
+		if (!file)
 		{
 			TFE_System::logWrite(LOG_ERROR, "color_loadMap", "Error loading color map.");
 			return nullptr;
@@ -903,8 +902,8 @@ namespace TFE_DarkForces
 			colorMap = colorMapBase + 256 - (size_t(colorMap) & 0xff);
 		}
 		// 256 colors * 32 light levels = 8192
-		file.readBuffer(colorMap, 8192);
-		file.readBuffer(lightRamp, LIGHT_SOURCE_LEVELS);
+		file.read(colorMap, 8192);
+		file.read(lightRamp, LIGHT_SOURCE_LEVELS);
 		file.close();
 
 		return colorMap;

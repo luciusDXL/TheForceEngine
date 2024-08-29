@@ -1,0 +1,174 @@
+Maintainer and general codemonkey:
+    Ryan C. Gordon
+
+Tons of win32 help:
+    Adam Gates
+
+More win32 hacking:
+    Gregory S. Read
+
+Fixes for missing current working directories,
+PHYSFS_setSaneConfig() improvements,
+other bugfixes:
+    David Hedbor
+
+Darwin support:
+    Patrick Stein
+
+configure fixes,
+RPM specfile:
+    Edward Rudd
+
+GetLastModTime API,
+other stuff:
+    John R. Hall
+
+Various support, fixes and suggestions:
+    Alexander Pipelka
+
+Russian translation,
+QPAK archiver:
+    Ed Sinjiashvili
+
+French translation:
+    Stéphane Peter
+
+Debian package support:
+    Colin Bayer
+
+"abs-file.h" in "extras" dir:
+    Adam D. Moss
+
+WinCE port and other Win32 patches:
+    Corona688
+
+German translation:
+    Michael Renner
+
+Apple Project Builder support,
+Mac OS X improvements:
+    Eric Wing
+
+iPhone support:
+    Christian Gmeiner
+
+WinRT support:
+    Martin Ahrnbom
+
+HOG archiver,
+MVL archiver:
+    Bradley Bell
+
+MIX archiver:
+    Sebastian Steinhauer
+
+Bug fixes:
+    Tolga Dalman
+
+Initial PHYSFS_mount() work:
+    Philip D. Bober
+
+Brazillian Portuguese translation:
+    Danny Angelo Carminati Grein
+
+Spanish translation:
+    Pedro J. Pérez
+
+MacOS Classic fixes,
+MPW support,
+bug fixes:
+    Chris Taylor
+
+Mingw support,
+General bug fixes:
+    Matze Braun
+
+Haiku support:
+    scott mc
+
+Bug fixes:
+    Jörg Walter
+
+Bug fixes:
+    Olivier Boudeville
+
+Bug fixes:
+    Henk Boom
+
+Build system fixes:
+    Marc Kleine-Budde
+
+Windows .rc file,
+7zip/lzma archiver:
+    Dennis Schridde
+
+OS/2 updates:
+    Dave Yeo
+
+Bug fixes:
+    Patrice Mandin
+
+PHYSFS_stat() API:
+    Christoph Nelles
+    Indy Sams
+
+ISO9660 archiver:
+    Christoph Nelles
+
+Bug fixes:
+    Steven Fuller
+
+Bug fixes:
+    Tolga Dalman
+
+Bug fixes:
+    Frank Becker
+
+Bug fixes:
+    Norfanin
+
+Bug fixes:
+    Evgeny Podjachev
+
+Haiku fixes:
+    Chris Roberts
+
+SLB archiver:
+    Aleksi Nurmi
+
+Bug fixes:
+    Dmitry Marakasov
+
+Bug fixes:
+    Andreas Karlsson
+
+Bug fixes:
+    Michael Bacon
+
+Bug fixes:
+    Xian Nox
+
+Bug fixes:
+    Reto Schneider
+
+pkg-config support:
+    Jonas Kulla
+
+Bug fixes,
+VDF archiver:
+    Francesco Bertolaccini
+
+CMake fixes:
+    Tobias Markus
+
+Bug fixes,
+    Rémi Verschelde
+
+Bug fixes:
+    Rob Loach
+
+Other stuff:
+    Your name here! Patches go to icculus@icculus.org ...
+
+/* end of CREDITS.txt ... */
+

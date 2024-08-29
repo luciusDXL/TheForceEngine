@@ -32,55 +32,56 @@ namespace TFE_IniParser
 	}
 		
 	// Write functions
-	void writeHeader(FileStream& file, const char* section)
+	void writeHeader(vpFile& file, const char* section)
 	{
-		snprintf(s_lineBuffer, LINEBUF_LEN, "[%s]\r\n", section);
-		file.writeBuffer(s_lineBuffer, (u32)strlen(s_lineBuffer));
+		int i = snprintf(s_lineBuffer, LINEBUF_LEN, "[%s]\r\n", section);
+		file.write(s_lineBuffer, i);
 	}
 
-	void writeComment(FileStream& file, const char* comment)
+	void writeComment(vpFile& file, const char* comment)
 	{
-		snprintf(s_lineBuffer, LINEBUF_LEN, ";%s\r\n", comment);
-		file.writeBuffer(s_lineBuffer, (u32)strlen(s_lineBuffer));
+		int i = snprintf(s_lineBuffer, LINEBUF_LEN, ";%s\r\n", comment);
+		file.write(s_lineBuffer, i);
 	}
 
-	void writeKeyValue_String(FileStream& file, const char* key, const char* value)
+	void writeKeyValue_String(vpFile& file, const char* key, const char* value)
 	{
-		snprintf(s_lineBuffer, LINEBUF_LEN, "%s=\"%s\"\r\n", key, value);
-		file.writeBuffer(s_lineBuffer, (u32)strlen(s_lineBuffer));
+		int i = snprintf(s_lineBuffer, LINEBUF_LEN, "%s=\"%s\"\r\n", key, value);
+		file.write(s_lineBuffer, i);
 	}
 
-	void writeKeyValue_StringBlock(FileStream& file, const char* key, const char* value)
+	void writeKeyValue_StringBlock(vpFile& file, const char* key, const char* value)
 	{
-		snprintf(s_lineBuffer, LINEBUF_LEN, "%s {\r\n", key);
-		file.writeBuffer(s_lineBuffer, (u32)strlen(s_lineBuffer));
+		int i = snprintf(s_lineBuffer, LINEBUF_LEN, "%s {\r\n", key);
+		file.write(s_lineBuffer, i);
 		{
-			file.writeBuffer(value, (u32)strlen(value));
+			file.write((char *)value, (u32)strlen(value));
 		}
-		snprintf(s_lineBuffer, LINEBUF_LEN, "\r\n}\r\n");
-		file.writeBuffer(s_lineBuffer, (u32)strlen(s_lineBuffer));
+		i = snprintf(s_lineBuffer, LINEBUF_LEN, "\r\n}\r\n");
+		file.write(s_lineBuffer, i);
 	}
 
-	void writeKeyValue_Int(FileStream& file, const char* key, s32 value)
+	void writeKeyValue_Int(vpFile& file, const char* key, s32 value)
 	{
-		snprintf(s_lineBuffer, LINEBUF_LEN, "%s=%d\r\n", key, value);
-		file.writeBuffer(s_lineBuffer, (u32)strlen(s_lineBuffer));
+		int i = snprintf(s_lineBuffer, LINEBUF_LEN, "%s=%d\r\n", key, value);
+		file.write(s_lineBuffer, i);
 	}
 
-	void writeKeyValue_Float(FileStream& file, const char* key, f32 value)
+	void writeKeyValue_Float(vpFile& file, const char* key, f32 value)
 	{
-		snprintf(s_lineBuffer, LINEBUF_LEN, "%s=%0.3f\r\n", key, value);
-		file.writeBuffer(s_lineBuffer, (u32)strlen(s_lineBuffer));
+		int i = snprintf(s_lineBuffer, LINEBUF_LEN, "%s=%0.3f\r\n", key, value);
+		file.write(s_lineBuffer, i);
 	}
 
-	void writeKeyValue_Bool(FileStream& file, const char* key, bool value)
+	void writeKeyValue_Bool(vpFile& file, const char* key, bool value)
 	{
-		snprintf(s_lineBuffer, LINEBUF_LEN, "%s=%s\r\n", key, value ? "true" : "false");
-		file.writeBuffer(s_lineBuffer, (u32)strlen(s_lineBuffer));
+		int i = snprintf(s_lineBuffer, LINEBUF_LEN, "%s=%s\r\n", key, value ? "true" : "false");
+		file.write(s_lineBuffer, i);
 	}
 
-	void writeKeyValue_RGBA(FileStream& file, const char* key, RGBA value)
+	void writeKeyValue_RGBA(vpFile& file, const char* key, RGBA value)
 	{
 		writeKeyValue_Int(file, key, value.color);
 	}
 }
+

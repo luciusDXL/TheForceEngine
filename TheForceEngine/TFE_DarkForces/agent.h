@@ -4,7 +4,7 @@
 // Agent - handles save game data, level lists, etc.
 //////////////////////////////////////////////////////////////////////
 #include <TFE_System/types.h>
-#include <TFE_FileSystem/filestream.h>
+#include <TFE_FileSystem/physfswrapper.h>
 
 namespace TFE_DarkForces
 {
@@ -46,21 +46,21 @@ namespace TFE_DarkForces
 	};
 #pragma pack(pop)
 
-	void agent_serialize(Stream* stream);
+	void agent_serialize(vpFile* stream);
 	void agent_restartEndLevelTask();
 	s32 agent_loadData();
 	JBool agent_loadLevelList(const char* fileName);
 	void  agent_updateAgentSavedData();
 	void  agent_levelEndTask();
 
-	JBool agent_readConfigData(FileStream* file, s32 agentId, LevelSaveData* saveData);
-	JBool agent_writeAgentConfigData(FileStream* file, s32 agentId, const LevelSaveData* saveData);
+	JBool agent_readConfigData(vpFile* file, s32 agentId, LevelSaveData* saveData);
+	JBool agent_writeAgentConfigData(vpFile* file, s32 agentId, const LevelSaveData* saveData);
 	void  agent_readSavedDataForLevel(s32 agentId, s32 levelIndex);
 	void  agent_saveLevelCompletion(u8 diff, s32 levelIndex);
 	s32   agent_saveInventory(s32 agentId, s32 nextLevel);
 	void  agent_createNewAgent(s32 agentId, AgentData* data, const char* name);
 
-	JBool openDarkPilotConfig(FileStream* file);
+	vpFile* openDarkPilotConfig(void);
 	void  agent_setNextLevelByIndex(s32 index);
 	s32   agent_getLevelIndex();
 	s32   agent_getLevelIndexFromName(const char* name);

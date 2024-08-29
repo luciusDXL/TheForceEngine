@@ -190,7 +190,7 @@ namespace TFE_Jedi
 		return newTask;
 	}
 	
-	void task_serializeState(Stream* stream, Task* task, void* userData, LocalMemorySerCallback localMemCallback)
+	void task_serializeState(vpFile* stream, Task* task, void* userData, LocalMemorySerCallback localMemCallback)
 	{
 		SERIALIZE(SaveVersionInit, task->context.ip[0], 0);
 		SERIALIZE(SaveVersionInit, task->context.stackSize[0], 0);

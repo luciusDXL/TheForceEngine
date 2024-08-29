@@ -9,10 +9,9 @@
 #include "time.h"
 #include <TFE_Game/igame.h>
 #include <TFE_System/system.h>
-#include <TFE_Archive/lfdArchive.h>
 #include <TFE_Jedi/Math/core_math.h>
 #include <TFE_Jedi/Renderer/virtualFramebuffer.h>
-#include <TFE_FileSystem/filestream.h>
+#include <TFE_FileSystem/physfswrapper.h>
 #include <TFE_System/parser.h>
 #include <cstring>
 
@@ -134,7 +133,7 @@ namespace TFE_DarkForces
 		return u32(buffer[3]) | (u32(buffer[2])<<8) | (u32(buffer[1])<<16) | (u32(buffer[0])<<24);
 	}
 
-	JBool cutsceneFilm_loadResources(FileStream* file, u8** array, s16 arraySize)
+	JBool cutsceneFilm_loadResources(vpFile* file, u8** array, s16 arraySize)
 	{
 		for (s32 i = 0; i < arraySize; i++)
 		{
@@ -143,7 +142,7 @@ namespace TFE_DarkForces
 			type = swapEndian(type);
 
 			char name[32];
-			file->readBuffer(name, 8);
+			file->read(name, 8);
 			name[8] = 0;
 
 			u32 size;
@@ -167,7 +166,7 @@ namespace TFE_DarkForces
 			obj->data   = nullptr;
 
 			u8* objData = (u8*)obj + sizeof(FilmObject);
-			file->readBuffer(objData, used);
+			file->read(objData, used);
 			
 			array[i] = (u8*)obj;
 		}
@@ -362,15 +361,12 @@ namespace TFE_DarkForces
 		if (!film) { return nullptr; }
 
 		u8** array = nullptr;
-		FilePath resPath;
 		char filmName[32];
 		sprintf(filmName, "%s.FILM", name);
 
-		if (TFE_Paths::getFilePath(filmName, &resPath))
+		vpFile file(VPATH_GAME, filmName, false);
+		if (file)
 		{
-			FileStream file;
-			file.open(&resPath, Stream::MODE_READ);
-
 			s16 version;
 			s16 cellCount;
 			s16 arraySize;
@@ -386,20 +382,18 @@ namespace TFE_DarkForces
 			}
 
 			array = (u8**)landru_alloc(sizeof(u8*) * arraySize);
+			if (!array)
+				return nullptr;
 			memset(array, 0, sizeof(u8*) * arraySize);
-			if (array)
+			film->array = array;
+			film->arraySize = arraySize;
+			film->curCell = 0;
+			film->cellCount = cellCount;
+			if (!cutsceneFilm_loadResources(&file, film->array, film->arraySize))
 			{
-				film->array = array;
-				film->arraySize = arraySize;
-				film->curCell = 0;
-				film->cellCount = cellCount;
-
-				if (!cutsceneFilm_loadResources(&file, film->array, film->arraySize))
-				{
-					landru_free(film);
-					landru_free(array);
-					film = nullptr;
-				}
+				landru_free(film);
+				landru_free(array);
+				film = nullptr;
 			}
 			file.close();
 

@@ -9,6 +9,7 @@
 #include <TFE_FileSystem/filestream.h>
 #include <TFE_FileSystem/fileutil.h>
 #include <TFE_FileSystem/paths.h>
+#include <TFE_FileSystem/physfswrapper.h>
 #include <TFE_Game/igame.h>
 #include <TFE_Archive/archive.h>
 #include <TFE_Ui/ui.h>
@@ -40,6 +41,8 @@ namespace TFE_Editor
 	static std::string* s_curStringOut = nullptr;
 	static int s_projectFileDialog = 0;
 
+	static TFEMount mnt_edprj = nullptr;
+
 	void parseProjectValue(const char* key, const char* value);
 
 	Project* project_get()
@@ -52,6 +55,8 @@ namespace TFE_Editor
 		s_curProject = {};
 		resources_clear();
 		AssetBrowser::rebuildAssets();
+		vpUnmount(mnt_edprj);
+		mnt_edprj = nullptr;
 	}
 
 	void project_prepareNew()
@@ -73,8 +78,10 @@ namespace TFE_Editor
 		sprintf(projFile, "%s/%s.ini", s_curProject.path, s_curProject.name);
 		FileUtil::fixupPath(projFile);
 
-		FileStream proj;
-		if (!proj.open(projFile, Stream::MODE_WRITE))
+		// FIXME: IMPLEMENT ANOTHER WRITE DIRECTORY IN PHYSFSWRAPPER
+		// THIS HERE IS JUST TO KEEP THE CODE COMPILING.
+		vpFile proj;
+		if (!proj.openwrite(projFile))
 		{
 			return;
 		}
@@ -100,17 +107,26 @@ namespace TFE_Editor
 
 	bool project_load(const char* filepath)
 	{
-		FileStream projectFile;
-		if (!projectFile.open(filepath, Stream::MODE_READ))
+		/* FIXME / TEST ME */
+		if (mnt_edprj) {
+			vpUnmount(mnt_edprj);
+			mnt_edprj = nullptr;
+		}
+		//mnt_edproj = vpMount(VPATH_EDPRJ, path_part_of(filepath));
+		// -> HERE vpFile projectFile(VPATH_EDPRJ, file_part_of(filepath));
+
+		vpFile projectFile(VPATH_EDPRJ, filepath); /* FIXME FIXME */
+		if (!projectFile)
 		{
+			vpUnmount(mnt_edprj);
 			return false;
 		}
 		resources_clear();
 
-		const u32 len = (u32)projectFile.getSize();
+		const u32 len = (u32)projectFile.size();
 		WorkBuffer& buffer = getWorkBuffer();
 		buffer.resize(len);
-		projectFile.readBuffer(buffer.data(), len);
+		projectFile.read(buffer.data(), len);
 		projectFile.close();
 
 		TFE_Parser parser;
@@ -297,7 +313,7 @@ namespace TFE_Editor
 			// is a popup itself!
 			if (s_projectFileDialog > 0)
 			{
-				FileResult res;
+				TFEFileList res;
 				bool b = TFE_Ui::renderFileDialog(res);
 				if (b)
 				{

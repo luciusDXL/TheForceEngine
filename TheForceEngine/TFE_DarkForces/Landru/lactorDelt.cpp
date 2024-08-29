@@ -5,6 +5,7 @@
 #include "lview.h"
 #include "ldraw.h"
 #include "ltimer.h"
+#include <TFE_FileSystem/physfswrapper.h>
 #include <TFE_Game/igame.h>
 #include <assert.h>
 
@@ -70,21 +71,15 @@ namespace TFE_DarkForces
 		char deltName[32];
 		sprintf(deltName, "%s.DELT", name);
 
-		FilePath path;
-		if (!TFE_Paths::getFilePath(deltName, &path))
-		{
+		vpFile file(VPATH_GAME, deltName, false);
+		if (!file)
 			return nullptr;
-		}
-
-		FileStream file;
-		if (!file.open(&path, Stream::MODE_READ))
-		{
-			return nullptr;
-		}
-		u32 deltSize = (u32)file.getSize();
+		unsigned int deltSize = file.size();
 
 		u8* data = (u8*)landru_alloc(deltSize);
-		file.readBuffer(data, deltSize);
+		if (!data)
+			return nullptr;
+		file.read(data, deltSize);
 		file.close();
 
 		LActor* actor = lactor_alloc(0);

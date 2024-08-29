@@ -2,7 +2,7 @@
 #include "util.h"
 #include <TFE_Game/igame.h>
 #include <TFE_System/system.h>
-#include <TFE_FileSystem/filestream.h>
+#include <TFE_FileSystem/physfswrapper.h>
 #include <TFE_System/parser.h>
 #include <cstring>
 
@@ -15,21 +15,18 @@ namespace TFE_DarkForces
 		s_buffer = nullptr;
 	}
 
-	// FileStream and TFE_Parser are used to read the file and parse out lines.
+	// TFE_Parser is used to read the file and parse out lines.
 	// However all other processing matches the original DOS version.
 	s32 parseBriefingList(BriefingList* briefingList, const char* filename)
 	{
-		FilePath path;
-		if (!TFE_Paths::getFilePath(filename, &path)) { return 0; }
-
-		FileStream file;
-		if (!file.open(&path, Stream::MODE_READ)) { return 0; }
-
-		size_t size = file.getSize();
+		vpFile file(VPATH_GAME, filename, false);
+		if (!file)
+			return 0;
+		unsigned int size = file.size();
 		s_buffer = (char*)game_realloc(s_buffer, size);
 		if (!s_buffer) { return 0; }
 
-		file.readBuffer(s_buffer, (u32)size);
+		file.read(s_buffer, (u32)size);
 		file.close();
 
 		TFE_Parser parser;

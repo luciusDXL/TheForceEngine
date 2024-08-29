@@ -6,14 +6,10 @@
 #include "rwall.h"
 #include "rtexture.h"
 #include <TFE_Game/igame.h>
-#include <TFE_Asset/assetSystem.h>
 #include <TFE_Asset/dfKeywords.h>
 #include <TFE_Asset/modelAsset_jedi.h>
 #include <TFE_Asset/spriteAsset_Jedi.h>
-#include <TFE_Asset/vocAsset.h>
 #include <TFE_DarkForces/sound.h>
-#include <TFE_FileSystem/filestream.h>
-#include <TFE_FileSystem/paths.h>
 #include <TFE_System/parser.h>
 #include <TFE_System/system.h>
 

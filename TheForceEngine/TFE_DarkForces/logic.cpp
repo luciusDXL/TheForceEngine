@@ -392,7 +392,7 @@ namespace TFE_DarkForces
 	// its own file at some point.
 	///////////////////////////////////////////////////
 	// Type -> Serialization function tables.
-	typedef void(*LogicSerializationFunc)(Logic*&, SecObject* obj, Stream*);
+	typedef void(*LogicSerializationFunc)(Logic*&, SecObject* obj, vpFile*);
 	LogicSerializationFunc c_serializeFn[] =
 	{
 		actorDispatch_serialize,      // LOGIC_DISPATCH
@@ -415,7 +415,7 @@ namespace TFE_DarkForces
 	};
 
 	// Root serialization functions for Logics.
-	void logic_serialize(Logic*& logic, SecObject* obj, Stream* stream)
+	void logic_serialize(Logic*& logic, SecObject* obj, vpFile* stream)
 	{
 		LogicType type;
 		if (serialization_getMode() == SMODE_WRITE)

@@ -4,9 +4,7 @@
 #include <TFE_System/system.h>
 #include <TFE_System/parser.h>
 #include <TFE_System/iniParser.h>
-#include <TFE_FileSystem/filestream.h>
-#include <TFE_FileSystem/fileutil.h>
-#include <TFE_FileSystem/paths.h>
+#include <TFE_FileSystem/physfswrapper.h>
 #include <TFE_Archive/archive.h>
 #include <TFE_Ui/ui.h>
 
@@ -98,14 +96,9 @@ namespace TFE_Editor
 
 	bool saveConfig()
 	{
-		char editorPath[TFE_MAX_PATH];
-		TFE_Paths::appendPath(PATH_USER_DOCUMENTS, "editor.ini", editorPath);
-
-		FileStream configFile;
-		if (!configFile.open(editorPath, Stream::MODE_WRITE))
-		{
+		vpFile configFile(VPATH_TFE, "editor.ini");
+		if (!configFile)
 			return false;
-		}
 
 		TFE_IniParser::writeKeyValue_String(configFile, "EditorPath", s_editorConfig.editorPath);
 		TFE_IniParser::writeKeyValue_String(configFile, "ExportPath", s_editorConfig.exportPath);
@@ -219,7 +212,7 @@ namespace TFE_Editor
 			// File dialogs...
 			if (s_fileDialog)
 			{
-				FileResult res;
+				TFEFileList res;
 				bool b = TFE_Ui::renderFileDialog(res);
 				if (b)
 				{

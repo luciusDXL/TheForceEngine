@@ -1031,7 +1031,7 @@ namespace TFE_FrontEndUI
 		{
 			char imagePath[TFE_MAX_PATH];
 			sprintf(imagePath, "%s%s", baseDir, imageFileName);
-
+printf("MODLOADER IMAGEPATH: %s\n", imagePath);
 			SDL_Surface* image = TFE_Image::get(imagePath);
 			if (image)
 			{

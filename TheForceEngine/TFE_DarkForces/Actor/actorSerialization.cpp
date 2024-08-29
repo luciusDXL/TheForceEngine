@@ -36,7 +36,7 @@ using namespace TFE_Jedi;
 
 namespace TFE_DarkForces
 {
-	typedef void(*ActorModuleSerializeFn)(Stream*, ActorModule*&, ActorDispatch*);
+	typedef void(*ActorModuleSerializeFn)(vpFile*, ActorModule*&, ActorDispatch*);
 	static const ActorModuleSerializeFn c_moduleSerFn[]=
 	{
 		actor_serializeMovementModule,    // ACTMOD_MOVE
@@ -48,7 +48,7 @@ namespace TFE_DarkForces
 		nullptr,						  // ACTMOD_INVALID
 	};
 	   
-	void actorDispatch_serialize(Logic*& logic, SecObject* obj, Stream* stream)
+	void actorDispatch_serialize(Logic*& logic, SecObject* obj, vpFile* stream)
 	{
 		ActorDispatch* dispatch = nullptr;
 		if (serialization_getMode() == SMODE_WRITE)
@@ -142,7 +142,7 @@ namespace TFE_DarkForces
 		}
 	}
 		
-	void actor_serializeObject(Stream* stream, SecObject*& obj)
+	void actor_serializeObject(vpFile* stream, SecObject*& obj)
 	{
 		s32 objId;
 		if (serialization_getMode() == SMODE_WRITE)
@@ -156,7 +156,7 @@ namespace TFE_DarkForces
 		}
 	}
 
-	void actor_serializeWall(Stream* stream, RWall*& wall)
+	void actor_serializeWall(vpFile* stream, RWall*& wall)
 	{
 		RSector* wallSector = nullptr;
 		s32 wallId = -1;
@@ -177,7 +177,7 @@ namespace TFE_DarkForces
 		}
 	}
 
-	void actor_serializeCollisionInfo(Stream* stream, CollisionInfo* colInfo)
+	void actor_serializeCollisionInfo(vpFile* stream, CollisionInfo* colInfo)
 	{
 		actor_serializeObject(stream, colInfo->obj);
 		actor_serializeObject(stream, colInfo->collidedObj);
@@ -203,7 +203,7 @@ namespace TFE_DarkForces
 		}
 	}
 
-	void actor_serializeTarget(Stream* stream, ActorTarget* target)
+	void actor_serializeTarget(vpFile* stream, ActorTarget* target)
 	{
 		SERIALIZE(SaveVersionInit, target->pos, {0});
 		SERIALIZE(SaveVersionInit, target->pitch, 0);
@@ -220,7 +220,7 @@ namespace TFE_DarkForces
 		}
 	}
 		
-	void actor_serializeTiming(Stream* stream, ActorTiming* timing)
+	void actor_serializeTiming(vpFile* stream, ActorTiming* timing)
 	{
 		SERIALIZE(SaveVersionInit, timing->delay, 0);
 		SERIALIZE(SaveVersionInit, timing->searchDelay, 0);
@@ -230,7 +230,7 @@ namespace TFE_DarkForces
 		SERIALIZE(SaveVersionInit, timing->nextTick, 0);
 	}
 
-	void actor_serializeLogicAnim(Stream* stream, LogicAnimation* anim)
+	void actor_serializeLogicAnim(vpFile* stream, LogicAnimation* anim)
 	{
 		SERIALIZE(SaveVersionInit, anim->frameRate, 0);
 		SERIALIZE(SaveVersionInit, anim->frameCount, 0);
@@ -242,7 +242,7 @@ namespace TFE_DarkForces
 		SERIALIZE(SaveVersionInit, anim->state, STATE_DELAY);
 	}
 
-	void actor_serializeMovementModuleBase(Stream* stream, MovementModule* moveMod)
+	void actor_serializeMovementModuleBase(vpFile* stream, MovementModule* moveMod)
 	{
 		actor_serializeCollisionInfo(stream, &moveMod->physics);
 		actor_serializeTarget(stream, &moveMod->target);
@@ -251,7 +251,7 @@ namespace TFE_DarkForces
 		SERIALIZE(SaveVersionInit, moveMod->collisionFlags, 0);
 	}
 
-	void actor_serializeMovementModule(Stream* stream, ActorModule*& mod, ActorDispatch* dispatch)
+	void actor_serializeMovementModule(vpFile* stream, ActorModule*& mod, ActorDispatch* dispatch)
 	{
 		MovementModule* moveMod;
 		if (serialization_getMode() == SMODE_READ)
@@ -276,7 +276,7 @@ namespace TFE_DarkForces
 		actor_serializeMovementModuleBase(stream, moveMod);
 	}
 
-	void actor_serializeAttackModuleBase(Stream* stream, AttackModule* attackMod, ActorDispatch* dispatch)
+	void actor_serializeAttackModuleBase(vpFile* stream, AttackModule* attackMod, ActorDispatch* dispatch)
 	{
 		actor_serializeTarget(stream, &attackMod->target);
 		actor_serializeTiming(stream, &attackMod->timing);
@@ -295,7 +295,7 @@ namespace TFE_DarkForces
 		SERIALIZE(SaveVersionInit, attackMod->attackFlags, 0);
 	}
 
-	void actor_serializeAttackModule(Stream* stream, ActorModule*& mod, ActorDispatch* dispatch)
+	void actor_serializeAttackModule(vpFile* stream, ActorModule*& mod, ActorDispatch* dispatch)
 	{
 		AttackModule* attackMod = nullptr;
 		s32 funcIdx = 0;
@@ -374,7 +374,7 @@ namespace TFE_DarkForces
 		return c_actorDamageMsgFunc[index];
 	}
 
-	void actor_serializeDamageModule(Stream* stream, ActorModule*& mod, ActorDispatch* dispatch)
+	void actor_serializeDamageModule(vpFile* stream, ActorModule*& mod, ActorDispatch* dispatch)
 	{
 		DamageModule* damageMod = nullptr;
 		s32 dmgFuncIndex = -1, dmgFuncMsgIndex = -1;
@@ -411,7 +411,7 @@ namespace TFE_DarkForces
 		SERIALIZE(SaveVersionInit, damageMod->dieEffect, HEFFECT_CANNON_EXP);
 	}
 		
-	void actor_serializeThinkerModule(Stream* stream, ActorModule*& mod, ActorDispatch* dispatch)
+	void actor_serializeThinkerModule(vpFile* stream, ActorModule*& mod, ActorDispatch* dispatch)
 	{
 		ThinkerModule* thinkerMod;
 		if (serialization_getMode() == SMODE_READ)
@@ -448,7 +448,7 @@ namespace TFE_DarkForces
 		SERIALIZE(SaveVersionInit, thinkerMod->approachVariation, 0);
 	}
 		
-	void actor_serializeFlyerModule(Stream* stream, ActorModule*& mod, ActorDispatch* dispatch)
+	void actor_serializeFlyerModule(vpFile* stream, ActorModule*& mod, ActorDispatch* dispatch)
 	{
 		actor_serializeThinkerModule(stream, mod, dispatch);
 		if (serialization_getMode() == SMODE_READ)
@@ -459,7 +459,7 @@ namespace TFE_DarkForces
 		}
 	}
 
-	void actor_serializeFlyerRemoteModule(Stream* stream, ActorModule*& mod, ActorDispatch* dispatch)
+	void actor_serializeFlyerRemoteModule(vpFile* stream, ActorModule*& mod, ActorDispatch* dispatch)
 	{
 		actor_serializeThinkerModule(stream, mod, dispatch);
 		if (serialization_getMode() == SMODE_READ)

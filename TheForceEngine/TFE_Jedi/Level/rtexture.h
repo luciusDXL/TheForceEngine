@@ -5,7 +5,6 @@
 //////////////////////////////////////////////////////////////////////
 #include <TFE_System/types.h>
 #include <TFE_Jedi/Memory/allocator.h>
-#include <TFE_FileSystem/paths.h>
 #include <TFE_DarkForces/time.h>
 
 struct BM_Header
@@ -117,10 +116,11 @@ namespace TFE_Jedi
 	Allocator* bitmap_getAnimTextureAlloc();
 
 	// Serialization.
-	void bitmap_serializeLevelTextures(Stream* stream);
+	void bitmap_serializeLevelTextures(vpFile* stream);
 
 	void bitmap_writeOpaque(const char* filePath, u16 width, u16 height, u8* image);
 	void bitmap_writeTransparent(const char* filePath, u16 width, u16 height, u8* image);
 
-	void bitmap_setCoreArchives(const char** coreArchives, s32 count);
+	// modnames
+	void bitmap_setCustomArchives(TFEFileList& modnames);
 }

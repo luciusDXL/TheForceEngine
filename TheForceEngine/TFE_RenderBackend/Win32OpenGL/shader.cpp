@@ -2,8 +2,6 @@
 #include <TFE_RenderBackend/shader.h>
 #include <TFE_RenderBackend/vertexBuffer.h>
 #include <TFE_System/system.h>
-#include <TFE_FileSystem/filestream.h>
-#include <TFE_FileSystem/paths.h>
 #include <TFE_RenderBackend/renderBackend.h>
 #include "gl.h"
 #include <assert.h>

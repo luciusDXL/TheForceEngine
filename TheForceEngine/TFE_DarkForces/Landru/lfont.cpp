@@ -4,6 +4,7 @@
 #include "lpalette.h"
 #include "lsystem.h"
 #include "ltimer.h"
+#include <TFE_FileSystem/physfswrapper.h>
 #include <TFE_Game/igame.h>
 #include <TFE_Jedi/Math/core_math.h>
 #include <TFE_Jedi/Renderer/virtualFramebuffer.h>
@@ -150,10 +151,10 @@ namespace TFE_DarkForces
 	{
 		char fontFile[32];
 		sprintf(fontFile, "%s.FONT", name);
-		FilePath fontPath;
-		FileStream file;
-		if (!TFE_Paths::getFilePath(fontFile, &fontPath)) { return JFALSE; }
-		if (!file.open(&fontPath, Stream::MODE_READ)) { return JFALSE; }
+
+		vpFile file(VPATH_GAME, fontFile, false);
+		if (!file)
+			return JFALSE;
 
 		LFont* font = lfont_alloc(id);
 		file.read(&font->firstChar);
@@ -173,15 +174,16 @@ namespace TFE_DarkForces
 		file.read(&font->isColor);
 		
 		font->widthArray = (u8*)landru_alloc(256);
+		if (!font->widthArray)
+			return JFALSE;
 		memset(font->widthArray, 0, 256);
-		if (font->widthArray)
-		{
-			file.readBuffer(font->widthArray + font->firstChar, font->numChars);
-		}
+		file.read(font->widthArray + font->firstChar, font->numChars);
 
 		u32 fontSize = font->charSize * font->numChars;
 		font->data = (u8*)landru_alloc(fontSize);
-		file.readBuffer(font->data, fontSize);
+		if (!font->data)
+			return JFALSE;
+		file.read(font->data, fontSize);
 
 		file.close();
 		return JTRUE;

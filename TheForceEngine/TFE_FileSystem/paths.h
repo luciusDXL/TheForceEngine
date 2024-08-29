@@ -13,7 +13,9 @@ enum TFE_PathType
 };
 
 // Use an extended MAX_PATH, the Windows value is actually too small for some valid paths.
+#ifndef TFE_MAX_PATH
 #define TFE_MAX_PATH 1024
+#endif
 
 class Archive;
 

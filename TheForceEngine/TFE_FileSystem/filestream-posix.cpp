@@ -54,7 +54,7 @@ bool FileStream::open(const char *filename, AccessMode mode)
 	// relative path: try to find in one of the system paths.
 	if (filename[0] != '/')
 		TFE_Paths::mapSystemPath(fn);
-
+fprintf(stderr, "o >%s<\n", fn);
 	// try to open the given filename first; if that fails,
 	// because the filename cannot be found, try to find
 	// a matching filename with different case in the

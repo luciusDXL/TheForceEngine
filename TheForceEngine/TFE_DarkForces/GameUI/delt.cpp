@@ -3,10 +3,10 @@
 
 #include "delt.h"
 #include <TFE_Game/igame.h>
-#include <TFE_FileSystem/paths.h>
-#include <TFE_FileSystem/filestream.h>
+#include <TFE_FileSystem/physfswrapper.h>
 #include <TFE_Jedi/Renderer/virtualFramebuffer.h>
 #include <TFE_Jedi/Renderer/screenDraw.h>
+#include <SDL_endian.h>
 
 namespace TFE_DarkForces
 {
@@ -50,16 +50,13 @@ namespace TFE_DarkForces
 	// This is here for now, until the proper LFD code is handled.
 	JBool loadPaletteFromPltt(const char* name, u8* palette)
 	{
-		FilePath filePath;
-		if (!TFE_Paths::getFilePath(name, &filePath))
-		{
+		vpFile file(VPATH_GAME, name, false);
+		if (!file)
 			return JFALSE;
-		}
-		FileStream file;
-		file.open(&filePath, Stream::MODE_READ);
-		size_t size = file.getSize();
+	
+		unsigned int size = file.size();
 		u8* buffer = getTempBuffer(size);
-		file.readBuffer(buffer, (u32)size);
+		file.read(buffer, size);
 		file.close();
 
 		s32 first = (s32)buffer[0];
@@ -81,19 +78,17 @@ namespace TFE_DarkForces
 
 	u32 getFramesFromAnim(const char* name, DeltFrame** outFrames)
 	{
-		FilePath filePath;
-		if (!TFE_Paths::getFilePath(name, &filePath))
-		{
-			return JFALSE;
-		}
-		FileStream file;
-		file.open(&filePath, Stream::MODE_READ);
-		size_t size = file.getSize();
+		vpFile file(VPATH_GAME, name, true);
+		if (!file)
+			return JFALSE;	// FIXME check again if this is the right return code
+		unsigned int size = file.size();
 		u8* buffer = getTempBuffer(size);
-		file.readBuffer(buffer, (u32)size);
+		if (!buffer)
+			return JFALSE;	// FIXME again
+		file.read(buffer, size);
 		file.close();
 
-		const s16 frameCount = *((s16*)buffer);
+		const s16 frameCount = SDL_SwapLE16(*((s16*)buffer));
 		const u8* frames = buffer + 2;
 
 		*outFrames = (DeltFrame*)game_alloc(sizeof(DeltFrame) * frameCount);
@@ -113,16 +108,12 @@ namespace TFE_DarkForces
 
 	JBool getFrameFromDelt(const char* name, DeltFrame* outFrame)
 	{
-		FilePath filePath;
-		if (!TFE_Paths::getFilePath(name, &filePath))
-		{
+		vpFile file(VPATH_GAME, name, true);
+		if (!file)
 			return JFALSE;
-		}
-		FileStream file;
-		file.open(&filePath, Stream::MODE_READ);
-		size_t size = file.getSize();
+		unsigned int size = file.size();
 		u8* buffer = getTempBuffer(size);
-		file.readBuffer(buffer, (u32)size);
+		file.read(buffer, size);
 		file.close();
 
 		// Then read out the data.

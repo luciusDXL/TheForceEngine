@@ -36,6 +36,7 @@
 #include <TFE_System/types.h>
 #include <TFE_DarkForces/logic.h>
 #include <TFE_Jedi/Collision/collision.h>
+#include <TFE_FileSystem/physfswrapper.h>  // serialization
 
 ///////////////////////////////////////////
 // Constants

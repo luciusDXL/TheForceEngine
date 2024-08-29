@@ -6,8 +6,7 @@
 #include "rwall.h"
 #include "rtexture.h"
 #include <TFE_Game/igame.h>
-#include <TFE_FileSystem/filestream.h>
-#include <TFE_FileSystem/paths.h>
+#include <TFE_FileSystem/physfswrapper.h>
 #include <TFE_System/system.h>
 
 #include <TFE_Jedi/InfSystem/infSystem.h>
@@ -484,19 +483,12 @@ namespace TFE_Jedi
 
 		// Do not warn if an LVB cannot be loaded,
 		// the final game doesn't use LVB files.
-		FilePath filePath;
-		if (!TFE_Paths::getFilePath(levelPath, &filePath))
-		{
+		vpFile file(VPATH_GAME, levelPath, false);
+		if (!file)
 			return false;
-		}
-		FileStream file;
-		if (!file.open(&filePath, Stream::MODE_READ))
-		{
-			return false;
-		}
-		u32 len = (u32)file.getSize();
+		unsigned int len = (u32)file.size();
 		buffer.resize(len);
-		file.readBuffer(buffer.data(), len);
+		file.read(buffer.data(), len);
 		file.close();
 
 		u32 offset = 0u;
