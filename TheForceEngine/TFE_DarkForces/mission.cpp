@@ -563,7 +563,10 @@ namespace TFE_DarkForces
 				else if (s_missionMode == MISSION_MODE_MAIN)
 				{
 					updateScreensize();
-					drawWorld(s_framebuffer, s_playerEye->sector, s_levelColorMap, s_lightSourceRamp);
+					if (s_playerEye)
+					{
+						drawWorld(s_framebuffer, s_playerEye->sector, s_levelColorMap, s_lightSourceRamp);
+					}
 					weapon_draw(s_framebuffer, (DrawRect*)vfb_getScreenRect(VFB_RECT_UI));
 					handleVisionFx();
 				}

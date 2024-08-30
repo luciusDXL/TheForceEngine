@@ -916,7 +916,7 @@ namespace TFE_Jedi
 						{
 							case KW_3D:
 							{
-								if (s_levelIntState.pods)
+								if (s_levelIntState.pods && s_dataIndex >= 0 && s_dataIndex < s_levelIntState.podCount)
 								{
 									sector_addObject(sector, obj);
 									obj3d_setData(obj, s_levelIntState.pods[s_dataIndex]);
@@ -924,32 +924,35 @@ namespace TFE_Jedi
 								}
 								else
 								{
+									TFE_System::logWrite(LOG_ERROR, "Level", "3DO index %d is out of range, count %d", s_dataIndex, s_levelIntState.podCount);
 									freeObject(obj);
 									obj = nullptr;
 								}
 							} break;
 							case KW_SPRITE:
 							{
-								if (s_levelIntState.sprites)
+								if (s_levelIntState.sprites && s_dataIndex >= 0 && s_dataIndex < s_levelIntState.spriteCount)
 								{
 									sector_addObject(sector, obj);
 									sprite_setData(obj, s_levelIntState.sprites[s_dataIndex]);
 								}
 								else
 								{
+									TFE_System::logWrite(LOG_ERROR, "Level", "Sprite index %d is out of range, count %d", s_dataIndex, s_levelIntState.spriteCount);
 									freeObject(obj);
 									obj = nullptr;
 								}
 							} break;
 							case KW_FRAME:
 							{
-								if (s_levelIntState.frames)
+								if (s_levelIntState.frames && s_dataIndex >= 0 && s_dataIndex < s_levelIntState.fmeCount)
 								{
 									sector_addObject(sector, obj);
 									frame_setData(obj, s_levelIntState.frames[s_dataIndex]);
 								}
 								else
 								{
+									TFE_System::logWrite(LOG_ERROR, "Level", "Frame index %d is out of range, count %d", s_dataIndex, s_levelIntState.fmeCount);
 									freeObject(obj);
 									obj = nullptr;
 								}

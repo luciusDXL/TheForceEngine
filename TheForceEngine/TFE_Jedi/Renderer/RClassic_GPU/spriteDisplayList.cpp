@@ -131,6 +131,10 @@ namespace TFE_Jedi
 		}
 
 		const WaxCell* cell = WAX_CellPtr(drawFrame->basePtr, drawFrame->frame);
+		if (!cell)
+		{
+			return;
+		}
 		assert(cell->textureId >= 0 && cell->textureId < 32768);
 
 		s32 flip = drawFrame->frame->flip ? 1 : 0;
