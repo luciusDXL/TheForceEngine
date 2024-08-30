@@ -36,6 +36,15 @@ bool GobMemoryArchive::open(const u8* buffer, size_t size)
 	m_header   = (GobArchive::GOB_Header_t*)readBuffer;
 	readBuffer = m_buffer + m_header->MASTERX;
 
+	// Verify that this is *actually* a GOB file.
+	if (m_header->GOB_MAGIC[0] != 'G' || m_header->GOB_MAGIC[1] != 'O' ||
+		m_header->GOB_MAGIC[2] != 'B')
+	{
+		m_archiveOpen = false;
+		m_buffer = nullptr;
+		return false;
+	}
+
 	m_fileList.MASTERN = *((u32*)readBuffer); readBuffer += sizeof(u32);
 	m_fileList.entries = (GobArchive::GOB_Entry_t*)(readBuffer);
 

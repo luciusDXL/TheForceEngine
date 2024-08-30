@@ -80,7 +80,7 @@ namespace TFE_FrontEndUI
 	void readFromQueue(size_t itemsPerFrame);
 	bool parseNameFromText(const char* textFileName, const char* path, char* name, std::string* fullText);
 	void extractPosterFromImage(const char* baseDir, const char* zipFile, const char* imageFileName, UiTexture* poster);
-	void extractPosterFromMod(const char* baseDir, const char* archiveFileName, UiTexture* poster);
+	bool extractPosterFromMod(const char* baseDir, const char* archiveFileName, UiTexture* poster);
 	void filterMods(bool filterByName, bool sort = true);
 
 	bool sortQueueByName(QueuedRead& a, QueuedRead& b)
@@ -896,7 +896,11 @@ namespace TFE_FrontEndUI
 
 				if (mod.imageFile.empty())
 				{
-					extractPosterFromMod(subDir, mod.gobFiles[0].c_str(), &mod.image);
+					if (!extractPosterFromMod(subDir, mod.gobFiles[0].c_str(), &mod.image))
+					{
+						s_mods.pop_back();
+						continue;
+					}
 					mod.invertImage = true;
 				}
 				else
@@ -975,8 +979,14 @@ namespace TFE_FrontEndUI
 
 					if (jpgFileIndex < 0)
 					{
-						extractPosterFromMod(modPath, mod.gobFiles[0].c_str(), &mod.image);
-						mod.invertImage = true;
+						if (!extractPosterFromMod(modPath, mod.gobFiles[0].c_str(), &mod.image))
+						{
+							s_mods.pop_back();
+						}
+						else
+						{
+							mod.invertImage = true;
+						}
 					}
 					else
 					{
@@ -1043,7 +1053,7 @@ namespace TFE_FrontEndUI
 		}
 	}
 
-	void extractPosterFromMod(const char* baseDir, const char* archiveFileName, UiTexture* poster)
+	bool extractPosterFromMod(const char* baseDir, const char* archiveFileName, UiTexture* poster)
 	{
 		// Extract a "poster", if possible, from the GOB file.
 		// And then save it as a JPG in /ProgramData/TheForceEngine/ModPosters/NAME.jpg
@@ -1057,6 +1067,7 @@ namespace TFE_FrontEndUI
 		const char* archiveExt = &archiveFileName[len - 3];
 		Archive* archiveMod = nullptr;
 		bool archiveIsGob = true;
+		bool validGob = false;
 		if (strcasecmp(archiveExt, "zip") == 0)
 		{
 			archiveIsGob = false;
@@ -1087,12 +1098,18 @@ namespace TFE_FrontEndUI
 					const size_t lengthRead = zipArchive.readFile(buffer, bufferLen);
 					zipArchive.closeFile();
 
+					bool archiveRead = false;
 					if (lengthRead > 0)
 					{
-						gobMemArchive.open(buffer, bufferLen);
-						archiveMod = &gobMemArchive;
+						archiveRead = gobMemArchive.open(buffer, bufferLen);
+						if (archiveRead)
+						{
+							archiveMod = &gobMemArchive;
+							validGob = true;
+						}
 					}
-					else
+					
+					if (!archiveRead)
 					{
 						TFE_System::logWrite(LOG_ERROR, "ModLoader", "Cannot open zip: '%s'", modPath);
 					}
@@ -1104,6 +1121,7 @@ namespace TFE_FrontEndUI
 		else
 		{
 			archiveMod = Archive::getArchive(ARCHIVE_GOB, archiveFileName, modPath);
+			validGob = archiveMod != nullptr;
 		}
 		Archive* archiveTex = Archive::getArchive(ARCHIVE_GOB, "TEXTURES.GOB", srcPathTex);
 		Archive* archiveBase = Archive::getArchive(ARCHIVE_GOB, "DARK.GOB", srcPath);
@@ -1151,5 +1169,7 @@ namespace TFE_FrontEndUI
 		{
 			Archive::freeArchive(archiveMod);
 		}
+
+		return validGob;
 	}
 }
