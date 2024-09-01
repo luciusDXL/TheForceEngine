@@ -427,7 +427,7 @@ namespace LevelEditor
 
 	bool isViewportElementHovered()
 	{
-		return selection_hasHovered() || selection_getCount() > 0;
+		return selection_hasHovered();// || selection_getCount() > 0;
 	}
 	
 	void adjustGridHeight(EditorSector* sector)
@@ -3286,7 +3286,6 @@ namespace LevelEditor
 			selId = SelectionListId(SEL_VERTEX + mode - LEDIT_VERTEX);
 		}
 		selection_setCurrent(selId);
-		selection_clearHovered();
 		
 		s_editMode = mode;
 		s_editMove = false;

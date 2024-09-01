@@ -507,35 +507,35 @@ namespace LevelEditor
 		{
 			case SA_SET:
 			{
-				s_selectionList2[SEL_SURFACE].clear();
-				actionDone = selection_insertFeatureId(s_selectionList2[SEL_SURFACE], id);
+				s_selectionList2[s_currentSelection].clear();
+				actionDone = selection_insertFeatureId(s_selectionList2[s_currentSelection], id);
 				buildDerived = actionDone;
 			} break;
 			case SA_ADD:
 			{
-				actionDone = selection_insertFeatureId(s_selectionList2[SEL_SURFACE], id);
+				actionDone = selection_insertFeatureId(s_selectionList2[s_currentSelection], id);
 				buildDerived = actionDone;
 			} break;
 			case SA_REMOVE:
 			{
-				actionDone = selection_removeFeatureId(s_selectionList2[SEL_SURFACE], id);
+				actionDone = selection_removeFeatureId(s_selectionList2[s_currentSelection], id);
 				buildDerived = actionDone;
 			} break;
 			case SA_TOGGLE:
 			{
-				if (selection_isFeatureIdInSet(s_selectionList2[SEL_SURFACE], id))
+				if (selection_isFeatureIdInSet(s_selectionList2[s_currentSelection], id))
 				{
-					actionDone = selection_removeFeatureId(s_selectionList2[SEL_SURFACE], id);
+					actionDone = selection_removeFeatureId(s_selectionList2[s_currentSelection], id);
 				}
 				else
 				{
-					actionDone = selection_insertFeatureId(s_selectionList2[SEL_SURFACE], id);
+					actionDone = selection_insertFeatureId(s_selectionList2[s_currentSelection], id);
 				}
 				buildDerived = actionDone;
 			} break;
 			case SA_CHECK_INCLUSION:
 			{
-				actionDone = selection_isFeatureIdInSet(s_selectionList2[SEL_SURFACE], id);
+				actionDone = selection_isFeatureIdInSet(s_selectionList2[s_currentSelection], id);
 			} break;
 			case SA_SET_HOVERED:
 			{
@@ -630,7 +630,7 @@ namespace LevelEditor
 
 				const s32 wallCount = (s32)sector->walls.size();
 				const EditorWall* wall = sector->walls.data();
-				for (s32 w = 0; w < wallCount; w++)
+				for (s32 w = 0; w < wallCount; w++, wall++)
 				{
 					FeatureId id = createFeatureId(sector, w, HP_MID);
 					selection_insertFeatureId(s_selectionList2[SEL_SURFACE], id);
