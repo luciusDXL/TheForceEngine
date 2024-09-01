@@ -103,6 +103,11 @@ namespace TFE_Editor
 		}
 		s_cmdName[id] = name;
 	}
+
+	const char* history_getName(u16 id)
+	{
+		return s_cmdName[id].c_str();
+	}
 		
 	u32 hBuffer_pushCommand()
 	{

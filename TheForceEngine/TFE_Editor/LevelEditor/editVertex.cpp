@@ -73,7 +73,7 @@ namespace LevelEditor
 			selection_getVertex(hasFeature ? 0 : SEL_INDEX_HOVERED, sector, vertexIndex);
 			if (sector)
 			{
-				edit_deleteVertex(sector->id, vertexIndex);
+				edit_deleteVertex(sector->id, vertexIndex, LName_DeleteVertex);
 			}
 			return;
 		}
@@ -219,9 +219,16 @@ namespace LevelEditor
 
 		if (s > FLT_EPSILON && s < 1.0f - FLT_EPSILON)
 		{
-			// Split the wall.
-			// cmd_addInsertVertex(sector->id, wallIndex, newPos);
-			edit_splitWall(sector->id, wallIndex, newPos);
+			edit_setWallCapture(true);
+			if (edit_splitWall(sector->id, wallIndex, newPos))
+			{
+				std::vector<s32>* listArr = edit_getWallCaptureList();
+				if (listArr && !listArr->empty())
+				{
+					cmd_sectorSnapshot(LName_InsertVertex, *listArr);
+				}
+			}
+			edit_setWallCapture(false);
 		}
 	}
 		
@@ -310,7 +317,7 @@ namespace LevelEditor
 	}
 	
 	// Delete a vertex.
-	void edit_deleteVertex(s32 sectorId, s32 vertexIndex)
+	void edit_deleteVertex(s32 sectorId, s32 vertexIndex, u32 nameId)
 	{
 		EditorSector* sector = &s_level.sectors[sectorId];
 		const Vec2f* pos = &sector->vtx[vertexIndex];
@@ -369,6 +376,9 @@ namespace LevelEditor
 
 		// When deleting features, we need to clear out the selections.
 		edit_clearSelections();
+
+		// TODO: Use a cheaper method for storing the state...
+		levHistory_createSnapshot(history_getName(nameId));
 	}
 
 	void vertexComputeDragSelect()

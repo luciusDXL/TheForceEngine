@@ -40,6 +40,7 @@ namespace TFE_Editor
 	// Register general commands and names.
 	void history_registerCommand(u16 id, CmdApplyFunc func);
 	void history_registerName(u16 id, const char* name);
+	const char* history_getName(u16 id);
 	
 	// Create new commands and snapshots.
 	void history_createSnapshot(const char* name=nullptr);

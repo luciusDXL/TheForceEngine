@@ -73,7 +73,6 @@ namespace LevelEditor
 	// Shared Edit Commands
 	void edit_moveSelectedFlats(f32 delta);
 	bool edit_splitWall(s32 sectorId, s32 wallIndex, Vec2f newPos);
-	void edit_deleteVertex(s32 sectorId, s32 vertexIndex);
 	void edit_deleteSector(s32 sectorId);
 	void edit_tryAdjoin(s32 sectorId, s32 wallId, bool exactMatch = false);
 	void edit_removeAdjoin(s32 sectorId, s32 wallId);
@@ -98,6 +97,11 @@ namespace LevelEditor
 	// TODO: Move?
 	void checkForWallHit2d(Vec2f& worldPos, EditorSector*& wallSector, s32& wallIndex, HitPart& part, EditorSector* hoverSector);
 	void checkForWallHit3d(RayHitInfo* info, EditorSector*& wallSector, s32& wallIndex, HitPart& part, const EditorSector* hoverSector);
+
+	// Change capture.
+	void edit_setWallCapture(bool capture);
+	void edit_addToWallCapture(s32 id);
+	std::vector<s32>* edit_getWallCaptureList();
 
 	// Grid?
 	void adjustGridHeight(EditorSector* sector);
