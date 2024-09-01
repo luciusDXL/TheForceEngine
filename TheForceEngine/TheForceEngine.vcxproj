@@ -469,10 +469,12 @@ echo ^)";
     <ClInclude Include="TFE_Editor\LevelEditor\camera.h" />
     <ClInclude Include="TFE_Editor\LevelEditor\contextMenu.h" />
     <ClInclude Include="TFE_Editor\LevelEditor\dragSelect.h" />
+    <ClInclude Include="TFE_Editor\LevelEditor\editCommon.h" />
     <ClInclude Include="TFE_Editor\LevelEditor\editEntity.h" />
     <ClInclude Include="TFE_Editor\LevelEditor\editGeometry.h" />
     <ClInclude Include="TFE_Editor\LevelEditor\editGuidelines.h" />
     <ClInclude Include="TFE_Editor\LevelEditor\editNotes.h" />
+    <ClInclude Include="TFE_Editor\LevelEditor\editVertex.h" />
     <ClInclude Include="TFE_Editor\LevelEditor\entity.h" />
     <ClInclude Include="TFE_Editor\LevelEditor\error.h" />
     <ClInclude Include="TFE_Editor\LevelEditor\featureId.h" />
@@ -498,7 +500,6 @@ echo ^)";
     <ClInclude Include="TFE_Editor\LevelEditor\Scripting\ls_selection.h" />
     <ClInclude Include="TFE_Editor\LevelEditor\Scripting\ls_system.h" />
     <ClInclude Include="TFE_Editor\LevelEditor\selection.h" />
-    <ClInclude Include="TFE_Editor\LevelEditor\selection2.h" />
     <ClInclude Include="TFE_Editor\LevelEditor\sharedState.h" />
     <ClInclude Include="TFE_Editor\LevelEditor\shell.h" />
     <ClInclude Include="TFE_Editor\LevelEditor\tabControl.h" />
@@ -852,10 +853,12 @@ echo ^)";
     <ClCompile Include="TFE_Editor\LevelEditor\camera.cpp" />
     <ClCompile Include="TFE_Editor\LevelEditor\contextMenu.cpp" />
     <ClCompile Include="TFE_Editor\LevelEditor\dragSelect.cpp" />
+    <ClCompile Include="TFE_Editor\LevelEditor\editCommon.cpp" />
     <ClCompile Include="TFE_Editor\LevelEditor\editEntity.cpp" />
     <ClCompile Include="TFE_Editor\LevelEditor\editGeometry.cpp" />
     <ClCompile Include="TFE_Editor\LevelEditor\editGuidelines.cpp" />
     <ClCompile Include="TFE_Editor\LevelEditor\editNotes.cpp" />
+    <ClCompile Include="TFE_Editor\LevelEditor\editVertex.cpp" />
     <ClCompile Include="TFE_Editor\LevelEditor\entity.cpp" />
     <ClCompile Include="TFE_Editor\LevelEditor\featureId.cpp" />
     <ClCompile Include="TFE_Editor\LevelEditor\groups.cpp" />
@@ -879,7 +882,6 @@ echo ^)";
     <ClCompile Include="TFE_Editor\LevelEditor\Scripting\ls_selection.cpp" />
     <ClCompile Include="TFE_Editor\LevelEditor\Scripting\ls_system.cpp" />
     <ClCompile Include="TFE_Editor\LevelEditor\selection.cpp" />
-    <ClCompile Include="TFE_Editor\LevelEditor\selection2.cpp" />
     <ClCompile Include="TFE_Editor\LevelEditor\shell.cpp" />
     <ClCompile Include="TFE_Editor\LevelEditor\tabControl.cpp" />
     <ClCompile Include="TFE_Editor\LevelEditor\userPreferences.cpp" />

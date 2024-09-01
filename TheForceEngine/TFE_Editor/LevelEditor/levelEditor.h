@@ -61,6 +61,8 @@ namespace LevelEditor
 
 	void setSelectMode(SelectMode mode = SELECTMODE_NONE);
 	SelectMode getSelectMode();
+	void handleSelectMode(Vec3f pos);
+	void handleSelectMode(EditorSector* sector, s32 wallIndex);
 
 	void getGridOrientedRect(const Vec2f p0, const Vec2f p1, Vec2f* rect);
 
@@ -69,23 +71,36 @@ namespace LevelEditor
 	Vec4f viewportBoundsWS2d(f32 padding = 0.0f);
 
 	// Shared Edit Commands
-	void edit_moveVertices(s32 count, const FeatureId* vtxIds, Vec2f delta);
-	void edit_moveFlats(s32 count, const FeatureId* flatIds, f32 delta);
-	void edit_setVertexPos(FeatureId id, Vec2f pos);
+	void edit_moveSelectedFlats(f32 delta);
 	bool edit_splitWall(s32 sectorId, s32 wallIndex, Vec2f newPos);
 	void edit_deleteVertex(s32 sectorId, s32 vertexIndex);
 	void edit_deleteSector(s32 sectorId);
 	void edit_tryAdjoin(s32 sectorId, s32 wallId, bool exactMatch = false);
 	void edit_removeAdjoin(s32 sectorId, s32 wallId);
-	void edit_clearSelections();
+	void edit_clearSelections(bool endTransform = true);
 	bool edit_createSectorFromRect(const f32* heights, const Vec2f* vtx, bool allowSubsectorExtrude=true);
 	bool edit_createSectorFromShape(const f32* heights, s32 vertexCount, const Vec2f* vtx, bool allowSubsectorExtrude=true);
-	void edit_moveTexture(s32 count, const FeatureId* featureList, Vec2f delta);
+	void edit_moveSelectedTextures(s32 count, const FeatureId* featureList, Vec2f delta);
 	void edit_setTexture(s32 count, const FeatureId* feature, s32 texIndex, Vec2f* offset = nullptr);
 	void edit_clearTexture(s32 count, const FeatureId* feature);
 	void edit_autoAlign(s32 sectorId, s32 wallIndex, HitPart part);
 	void edit_deleteObject(EditorSector* sector, s32 index);
 	void edit_deleteLevelNote(s32 index);
+	void edit_setEditMode(LevelEditMode mode);
+	void edit_cleanSectorList(const std::vector<s32>& selectedSectors);
+	EditorSector* edit_getHoverSector2dAtCursor(s32 layer);
+	Vec3f edit_viewportCoordToWorldDir3d(Vec2i vCoord);
+
+	// Drag Select: TODO Move?
+	void startDragSelect(s32 mx, s32 my, DragSelectMode mode);
+	void updateDragSelect(s32 mx, s32 my);
+
+	// TODO: Move?
+	void checkForWallHit2d(Vec2f& worldPos, EditorSector*& wallSector, s32& wallIndex, HitPart& part, EditorSector* hoverSector);
+	void checkForWallHit3d(RayHitInfo* info, EditorSector*& wallSector, s32& wallIndex, HitPart& part, const EditorSector* hoverSector);
+
+	// Grid?
+	void adjustGridHeight(EditorSector* sector);
 
 	s32 getDefaultTextureIndex(WallPart part);
 	Vec3f moveAlongRail(Vec3f dir);

@@ -1,6 +1,7 @@
 #include "historyView.h"
 #include "editor.h"
 #include "history.h"
+#include <TFE_Editor/LevelEditor/levelEditor.h>
 #include <TFE_Ui/ui.h>
 
 namespace TFE_Editor
@@ -47,6 +48,8 @@ namespace TFE_Editor
 					{
 						history_setPos(i);
 						history_showBranch(i);
+						// TODO: This should clear the selections for the current editor.
+						LevelEditor::edit_clearSelections(false);
 					}
 					if (isHidden) { ImGui::PopStyleColor(); }
 				}
@@ -62,12 +65,16 @@ namespace TFE_Editor
 			{
 				// Replace selected with a snapshot and then remove all items before.
 				history_collapseToPos(history_getPos());
+				// TODO: This should clear the selections for the current editor.
+				LevelEditor::edit_clearSelections(false);
 			}
 			ImGui::SameLine();
 			if (iconButton(ICON_TRASHCAN, "Collapse history."))
 			{
 				// Remove all items from the history, add a snapshot of the current state.
 				history_collapse();
+				// TODO: This should clear the selections for the current editor.
+				LevelEditor::edit_clearSelections(false);
 			}
 
 			ImGui::EndPopup();

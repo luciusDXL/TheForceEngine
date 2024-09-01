@@ -13,9 +13,11 @@
 #include "camera.h"
 #include "error.h"
 #include "sharedState.h"
+#include "editCommon.h"
 #include "editEntity.h"
 #include "editGeometry.h"
 #include "editGuidelines.h"
+#include "editVertex.h"
 #include "editNotes.h"
 #include "userPreferences.h"
 #include <TFE_FrontEndUI/frontEndUi.h>
@@ -62,7 +64,6 @@
 
 using namespace TFE_Editor;
 #define SHOW_EDITOR_FPS 0
-#define EDITOR_TEXT_PROMPTS 0
 
 namespace LevelEditor
 {
@@ -71,14 +72,7 @@ namespace LevelEditor
 	const f32 c_defaultCameraHeight = 6.0f;
 	const f64 c_doubleClickThreshold = 0.25f;
 	const s32 c_vanillaDarkForcesNameLimit = 16;
-	
-	struct VertexWallGroup
-	{
-		EditorSector* sector;
-		s32 vertexIndex;
-		s32 leftWall, rightWall;
-	};
-	
+			
 	enum WallMoveMode
 	{
 		WMM_NORMAL = 0,
@@ -111,10 +105,6 @@ namespace LevelEditor
 	s32 s_curLayer = 0;
 	u32 s_gridFlags = GFLAG_NONE;
 
-	// Unified feature hover/cur
-	Feature s_featureHovered = {};
-	Feature s_featureCur = {};
-	Feature s_featureCurWall = {};	// used to access wall data in other modes.
 	Feature s_featureTex = {};
 
 	// Vertex
@@ -130,8 +120,8 @@ namespace LevelEditor
 		
 	// Search
 	u32 s_searchKey = 0;
-	static std::vector<VertexWallGroup> s_vertexWallGroups;
 	static std::vector<EditorSector*> s_sortedHoverSectors;
+	static std::vector<s32> s_idList;
 
 	bool s_editMove = false;
 	static SectorList s_workList;
@@ -150,12 +140,6 @@ namespace LevelEditor
 	static const s32 c_moveThreshold = 3;
 	static bool s_canMoveFeature = false;
 	static Vec2i s_moveInitPos = { 0 };
-	
-	// General movement.
-	static bool s_moveStarted = false;
-	static Vec2f s_moveStartPos;
-	static Vec2f s_moveStartPos1;
-	static Vec2f s_moveTotalDelta;
 		
 	static char s_layerMem[4 * 31];
 	static char* s_layerStr[31];
@@ -216,17 +200,10 @@ namespace LevelEditor
 	void play();
 	Vec2f mouseCoordToWorldPos2d(s32 mx, s32 my);
 	Vec3f mouseCoordToWorldDir3d(s32 mx, s32 my);
-	Vec3f viewportCoordToWorldDir3d(Vec2i vCoord);
 	Vec2i worldPos2dToMap(const Vec2f& worldPos);
 	bool worldPosToViewportCoord(Vec3f worldPos, Vec2f* screenPos);
 	
-	void selectFromSingleVertex(EditorSector* root, s32 featureIndex, bool clearList);
-	void selectOverlappingVertices(EditorSector* root, s32 featureIndex, const Vec2f* rootVtx, bool addToSelection, bool addToVtxList=false);
-	void toggleVertexGroupInclusion(EditorSector* sector, s32 featureId);
-	void toggleWallGroupInclusion(EditorSector* sector, s32 featureIndex, s32 part);
-	void gatherVerticesFromWallSelection();
 	void moveFeatures(const Vec3f& newPos);
-	void handleVertexInsert(Vec2f worldPos);
 	void handleTextureAlignment();
 
 	void snapSignToCursor(EditorSector* sector, EditorWall* wall, s32 signTexIndex, Vec2f* signOffset);
@@ -244,15 +221,18 @@ namespace LevelEditor
 		
 	bool isInIntList(s32 value, std::vector<s32>* list);
 
-#if EDITOR_TEXT_PROMPTS == 1
-	void handleTextPrompts();
-#endif
-
 	void edit_insertShape(const f32* heights, BoolMode mode, s32 firstVertex, bool allowSubsectorExtrude);
-	void cleanSectors(const std::vector<s32>& selectedSectors);
-
+		
 	void updateViewportScroll();
 	f32 smoothstep(f32 edge0, f32 edge1, f32 x);
+
+	// Map Labels/Info
+	void displayMapVertexInfo();
+	void displayMapWallInfo();
+	void displayMapSectorInfo();
+	void displayMapEntityInfo();
+	void displayMapSectorLabels();
+	void displayMapSectorDrawInfo();
 	
 	////////////////////////////////////////////////////////
 	// Public API
@@ -358,8 +338,8 @@ namespace LevelEditor
 		s_transformMode = TRANS_MOVE;
 		s_sectorDrawMode = SDM_WIREFRAME;
 		s_gridFlags = GFLAG_NONE;
-		s_featureHovered = {};
-		s_featureCur = {};
+		selection_clear();
+		selection_clearHovered();
 		s_featureTex = {};
 		s_editMove = false;
 		s_gravity = false;
@@ -447,7 +427,7 @@ namespace LevelEditor
 
 	bool isViewportElementHovered()
 	{
-		return s_featureHovered.featureIndex >= 0 || s_featureCur.featureIndex >= 0;
+		return selection_hasHovered() || selection_getCount() > 0;
 	}
 	
 	void adjustGridHeight(EditorSector* sector)
@@ -464,10 +444,8 @@ namespace LevelEditor
 		}
 		if (s_dragSelect.mode == DSEL_SET)
 		{
-			selection_clear(false);
+			selection_clear(SEL_GEO, false);
 		}
-		s_featureCur.featureIndex = -1;
-		s_featureCur.sector = nullptr;
 
 		if (s_view == EDIT_VIEW_2D)
 		{
@@ -504,15 +482,7 @@ namespace LevelEditor
 					if (v0->x >= aabb[0].x && v0->x < aabb[1].x && v0->z >= aabb[0].z && v0->z < aabb[1].z &&
 						v1->x >= aabb[0].x && v1->x < aabb[1].x && v1->z >= aabb[0].z && v1->z < aabb[1].z)
 					{
-						FeatureId id = createFeatureId(sector, (s32)w, HP_MID);
-						if (s_dragSelect.mode == DSEL_REM)
-						{
-							selection_remove(id);
-						}
-						else
-						{
-							selection_add(id);
-						}
+						selection_surface(s_dragSelect.mode == DSEL_REM ? SA_REMOVE : SA_ADD, sector, (s32)w);
 					}
 				}
 			}
@@ -526,14 +496,14 @@ namespace LevelEditor
 			const s32 z0 = std::min(s_dragSelect.startPos.z, s_dragSelect.curPos.z);
 			const s32 z1 = std::max(s_dragSelect.startPos.z, s_dragSelect.curPos.z);
 			// Directions to the near-plane frustum corners.
-			const Vec3f d0 = viewportCoordToWorldDir3d({ x0, z0 });
-			const Vec3f d1 = viewportCoordToWorldDir3d({ x1, z0 });
-			const Vec3f d2 = viewportCoordToWorldDir3d({ x1, z1 });
-			const Vec3f d3 = viewportCoordToWorldDir3d({ x0, z1 });
+			const Vec3f d0 = edit_viewportCoordToWorldDir3d({ x0, z0 });
+			const Vec3f d1 = edit_viewportCoordToWorldDir3d({ x1, z0 });
+			const Vec3f d2 = edit_viewportCoordToWorldDir3d({ x1, z1 });
+			const Vec3f d3 = edit_viewportCoordToWorldDir3d({ x0, z1 });
 			// Camera forward vector.
 			const Vec3f fwd = { -s_camera.viewMtx.m2.x, -s_camera.viewMtx.m2.y, -s_camera.viewMtx.m2.z };
 			// Trace forward at the screen center to get the likely focus sector.
-			Vec3f centerViewDir = viewportCoordToWorldDir3d({ s_viewportSize.x / 2, s_viewportSize.z / 2 });
+			Vec3f centerViewDir = edit_viewportCoordToWorldDir3d({ s_viewportSize.x / 2, s_viewportSize.z / 2 });
 			RayHitInfo hitInfo;
 
 			s32 layer = (s_editFlags & LEF_SHOW_ALL_LAYERS) ? LAYER_ANY : s_curLayer;
@@ -632,181 +602,14 @@ namespace LevelEditor
 
 					if (inside)
 					{
-						FeatureId id = createFeatureId(sector, (s32)w, HP_MID);
-						if (s_dragSelect.mode == DSEL_REM) { selection_remove(id); }
-						else { selection_add(id); }
+						selection_surface(s_dragSelect.mode == DSEL_REM ? SA_REMOVE : SA_ADD, sector, (s32)w);
 					}
 				}
 				// TODO: Check the floor and ceiling?
 			}
 		}
 	}
-
-	void vertexComputeDragSelect()
-	{
-		if (s_dragSelect.curPos.x == s_dragSelect.startPos.x && s_dragSelect.curPos.z == s_dragSelect.startPos.z)
-		{
-			return;
-		}
-		if (s_dragSelect.mode == DSEL_SET)
-		{
-			selection_clear(false);
-		}
-		s_featureCur.featureIndex = -1;
-		s_featureCur.sector = nullptr;
-
-		if (s_view == EDIT_VIEW_2D)
-		{
-			// Convert drag select coordinates to world space.
-			// World position from viewport position, relative mouse position and zoom.
-			Vec2f worldPos[2];
-			worldPos[0].x =   s_viewportPos.x + f32(s_dragSelect.curPos.x) * s_zoom2d;
-			worldPos[0].z = -(s_viewportPos.z + f32(s_dragSelect.curPos.z) * s_zoom2d);
-			worldPos[1].x =   s_viewportPos.x + f32(s_dragSelect.startPos.x) * s_zoom2d;
-			worldPos[1].z = -(s_viewportPos.z + f32(s_dragSelect.startPos.z) * s_zoom2d);
-
-			Vec3f aabb[] =
-			{
-				{ std::min(worldPos[0].x, worldPos[1].x), 0.0f, std::min(worldPos[0].z, worldPos[1].z) },
-				{ std::max(worldPos[0].x, worldPos[1].x), 0.0f, std::max(worldPos[0].z, worldPos[1].z) }
-			};
-
-			const size_t sectorCount = s_level.sectors.size();
-			EditorSector* sector = s_level.sectors.data();
-			for (size_t s = 0; s < sectorCount; s++, sector++)
-			{
-				if (s_curLayer != sector->layer && s_curLayer != LAYER_ANY) { continue; }
-				if (!sector_isInteractable(sector)) { continue; }
-				if (!aabbOverlap2d(sector->bounds, aabb)) { continue; }
-
-				const size_t vtxCount = sector->vtx.size();
-				const Vec2f* vtx = sector->vtx.data();
-				for (size_t v = 0; v < vtxCount; v++, vtx++)
-				{
-					if (vtx->x >= aabb[0].x && vtx->x < aabb[1].x && vtx->z >= aabb[0].z && vtx->z < aabb[1].z)
-					{
-						FeatureId id = createFeatureId(sector, (s32)v, 0, false);
-						if (s_dragSelect.mode == DSEL_REM)
-						{
-							selection_remove(id);
-						}
-						else
-						{
-							selection_add(id);
-						}
-					}
-				}
-			}
-		}
-		else if (s_view == EDIT_VIEW_3D)
-		{
-			// In 3D, build a frustum and select point inside the frustum.
-			// The near plane corners of the frustum are derived from the screenspace rectangle.
-			const s32 x0 = std::min(s_dragSelect.startPos.x, s_dragSelect.curPos.x);
-			const s32 x1 = std::max(s_dragSelect.startPos.x, s_dragSelect.curPos.x);
-			const s32 z0 = std::min(s_dragSelect.startPos.z, s_dragSelect.curPos.z);
-			const s32 z1 = std::max(s_dragSelect.startPos.z, s_dragSelect.curPos.z);
-			// Directions to the near-plane frustum corners.
-			const Vec3f d0 = viewportCoordToWorldDir3d({ x0, z0 });
-			const Vec3f d1 = viewportCoordToWorldDir3d({ x1, z0 });
-			const Vec3f d2 = viewportCoordToWorldDir3d({ x1, z1 });
-			const Vec3f d3 = viewportCoordToWorldDir3d({ x0, z1 });
-			// Camera forward vector.
-			const Vec3f fwd = { -s_camera.viewMtx.m2.x, -s_camera.viewMtx.m2.y, -s_camera.viewMtx.m2.z };
-			// Trace forward at the screen center to get the likely focus sector.
-			Vec3f centerViewDir = viewportCoordToWorldDir3d({ s_viewportSize.x / 2, s_viewportSize.z / 2 });
-			RayHitInfo hitInfo;
-
-			s32 layer = (s_editFlags & LEF_SHOW_ALL_LAYERS) ? LAYER_ANY : s_curLayer;
-			Ray ray = { s_camera.pos, centerViewDir, 1000.0f, layer };
-
-			f32 nearDist = 1.0f;
-			f32 farDist = 100.0f;
-			if (traceRay(&ray, &hitInfo, false, false) && hitInfo.hitSectorId >= 0)
-			{
-				EditorSector* hitSector = &s_level.sectors[hitInfo.hitSectorId];
-				Vec3f bbox[] =
-				{
-					{hitSector->bounds[0].x, hitSector->floorHeight, hitSector->bounds[0].z},
-					{hitSector->bounds[1].x, hitSector->floorHeight, hitSector->bounds[0].z},
-					{hitSector->bounds[1].x, hitSector->floorHeight, hitSector->bounds[1].z},
-					{hitSector->bounds[0].x, hitSector->floorHeight, hitSector->bounds[1].z},
-
-					{hitSector->bounds[0].x, hitSector->ceilHeight, hitSector->bounds[0].z},
-					{hitSector->bounds[1].x, hitSector->ceilHeight, hitSector->bounds[0].z},
-					{hitSector->bounds[1].x, hitSector->ceilHeight, hitSector->bounds[1].z},
-					{hitSector->bounds[0].x, hitSector->ceilHeight, hitSector->bounds[1].z},
-				};
-				f32 maxDist = 0.0f;
-				for (s32 i = 0; i < 8; i++)
-				{
-					Vec3f offset = { bbox[i].x - s_camera.pos.x, bbox[i].y - s_camera.pos.y, bbox[i].z - s_camera.pos.z };
-					f32 dist = TFE_Math::dot(&offset, &fwd);
-					if (dist > maxDist)
-					{
-						maxDist = dist;
-					}
-				}
-				if (maxDist > 0.0f) { farDist = maxDist; }
-			}
-			// Build Planes.
-			Vec3f near = { s_camera.pos.x + nearDist*fwd.x, s_camera.pos.y + nearDist*fwd.y, s_camera.pos.z + nearDist*fwd.z };
-			Vec3f far  = { s_camera.pos.x + farDist*fwd.x, s_camera.pos.y + farDist*fwd.y, s_camera.pos.z + farDist*fwd.z };
-						
-			Vec3f left  = TFE_Math::cross(&d3, &d0);
-			Vec3f right = TFE_Math::cross(&d1, &d2);
-			Vec3f top   = TFE_Math::cross(&d0, &d1);
-			Vec3f bot   = TFE_Math::cross(&d2, &d3);
-
-			left  = TFE_Math::normalize(&left);
-			right = TFE_Math::normalize(&right);
-			top   = TFE_Math::normalize(&top);
-			bot   = TFE_Math::normalize(&bot);
-
-			const Vec4f plane[] =
-			{
-				{ -fwd.x, -fwd.y, -fwd.z,  TFE_Math::dot(&fwd, &near) },
-				{  fwd.x,  fwd.y,  fwd.z, -TFE_Math::dot(&fwd, &far) },
-				{ left.x, left.y, left.z, -TFE_Math::dot(&left, &s_camera.pos) },
-				{ right.x, right.y, right.z, -TFE_Math::dot(&right, &s_camera.pos) },
-				{ top.x, top.y, top.z, -TFE_Math::dot(&top, &s_camera.pos) },
-				{ bot.x, bot.y, bot.z, -TFE_Math::dot(&bot, &s_camera.pos) }
-			};
-
-			const size_t sectorCount = s_level.sectors.size();
-			EditorSector* sector = s_level.sectors.data();
-			for (size_t s = 0; s < sectorCount; s++, sector++)
-			{
-				if (layer != sector->layer && layer != LAYER_ANY) { continue; }
-				if (!sector_isInteractable(sector)) { continue; }
-
-				// For now, do them all...
-				const size_t vtxCount = sector->vtx.size();
-				const Vec2f* vtx = sector->vtx.data();
-				for (size_t v = 0; v < vtxCount; v++, vtx++)
-				{
-					bool inside = true;
-					for (s32 p = 0; p < 6; p++)
-					{
-						if (plane[p].x*vtx->x + plane[p].y*sector->floorHeight + plane[p].z*vtx->z + plane[p].w > 0.0f)
-						{
-							inside = false;
-							break;
-						}
-					}
-
-					if (inside)
-					{
-						FeatureId id = createFeatureId(sector, (s32)v, 0, false);
-						if (s_dragSelect.mode == DSEL_REM) { selection_remove(id); }
-						else { selection_add(id); }
-						selectOverlappingVertices(sector, (s32)v, vtx, s_dragSelect.mode != DSEL_REM);
-					}
-				}
-			}
-		}
-	}
-
+	
 	void startDragSelect(s32 mx, s32 my, DragSelectMode mode)
 	{
 		// Drag select start.
@@ -843,118 +646,6 @@ namespace LevelEditor
 				wallComputeDragSelect();
 			}
 		}
-	}
-			
-	void handleMouseControlVertex(Vec2f worldPos)
-	{
-		s32 mx, my;
-		TFE_Input::getMousePos(&mx, &my);
-
-		// Short names to make the logic easier to follow.
-		const bool selAdd    = TFE_Input::keyModDown(KEYMOD_SHIFT);
-		const bool selRem    = TFE_Input::keyModDown(KEYMOD_ALT);
-		const bool selToggle = TFE_Input::keyModDown(KEYMOD_CTRL);
-		const bool selToggleDrag = selAdd && selToggle;
-
-		const bool mousePressed = s_singleClick;
-		const bool mouseDown = TFE_Input::mouseDown(MouseButton::MBUTTON_LEFT);
-
-		const bool del = TFE_Input::keyPressed(KEY_DELETE);
-
-		if (del && (!s_selectionList.empty() || s_featureCur.featureIndex >= 0 || s_featureHovered.featureIndex >= 0))
-		{
-			s32 sectorId, vertexIndex;
-			if (!s_selectionList.empty())
-			{
-				// TODO: Currently, you can only delete one vertex at a time. It should be possible to delete multiple.
-				EditorSector* featureSector = unpackFeatureId(s_selectionList[0], &vertexIndex);
-				sectorId = featureSector->id;
-			}
-			else if (s_featureCur.featureIndex >= 0 && s_featureCur.sector)
-			{
-				sectorId = s_featureCur.sector->id;
-				vertexIndex = s_featureCur.featureIndex;
-			}
-			else if (s_featureHovered.featureIndex >= 0 && s_featureHovered.sector)
-			{
-				sectorId = s_featureHovered.sector->id;
-				vertexIndex = s_featureHovered.featureIndex;
-			}
-
-			edit_deleteVertex(sectorId, vertexIndex);
-			// cmd_addDeleteVertex(sectorId, vertexIndex);
-			return;
-		}
-
-		if (mousePressed)
-		{
-			assert(!s_dragSelect.active);
-			if (!selToggle && (selAdd || selRem))
-			{
-				startDragSelect(mx, my, selAdd ? DSEL_ADD : DSEL_REM);
-			}
-			else if (selToggle)
-			{
-				if (s_featureHovered.sector && s_featureHovered.featureIndex >= 0)
-				{
-					s_editMove = true;
-					adjustGridHeight(s_featureHovered.sector);
-					toggleVertexGroupInclusion(s_featureHovered.sector, s_featureHovered.featureIndex);
-				}
-			}
-			else
-			{
-				s_featureCur.sector = nullptr;
-				s_featureCur.featureIndex = -1;
-				if (s_featureHovered.sector && s_featureHovered.featureIndex >= 0)
-				{
-					const FeatureId id = createFeatureId(s_featureHovered.sector, s_featureHovered.featureIndex);
-					const bool doesItemExist = selection_doesFeatureExist(id);
-
-					handleSelectMode(s_featureHovered.sector, -1);
-
-					s_featureCur.sector = s_featureHovered.sector;
-					s_featureCur.featureIndex = s_featureHovered.featureIndex;
-					s_curVtxPos = s_hoveredVtxPos;
-					adjustGridHeight(s_featureCur.sector);
-					s_editMove = true;
-
-					// Clear the selection if this is a new vertex and Ctrl isn't held.
-					selectFromSingleVertex(s_featureCur.sector, s_featureCur.featureIndex, !doesItemExist);
-				}
-				else if (!s_editMove)
-				{
-					startDragSelect(mx, my, DSEL_SET);
-				}
-			}
-		}
-		else if (mouseDown)
-		{
-			if (!s_dragSelect.active)
-			{
-				if (selToggleDrag && s_featureHovered.sector && s_featureHovered.featureIndex >= 0)
-				{
-					s_editMove = true;
-					adjustGridHeight(s_featureHovered.sector);
-					selectFromSingleVertex(s_featureHovered.sector, s_featureHovered.featureIndex, false);
-				}
-			}
-			// Draw select continue.
-			else if (!selToggle && !s_editMove)
-			{
-				updateDragSelect(mx, my);
-			}
-			else
-			{
-				s_dragSelect.active = false;
-			}
-		}
-		else if (s_dragSelect.active)
-		{
-			s_dragSelect.active = false;
-		}
-
-		handleVertexInsert(worldPos);
 	}
 
 	void splitWall(EditorSector* sector, s32 wallIndex, Vec2f newPos, EditorWall* outWalls[])
@@ -1110,313 +801,6 @@ namespace LevelEditor
 		// Fix-up the sector polygon.
 		sectorToPolygon(sector);
 		return true;
-	}
-		
-	void selectVerticesToDelete(EditorSector* root, s32 featureIndex, const Vec2f* rootVtx)
-	{
-		s_searchKey++;
-
-		// Which walls share the vertex?
-		std::vector<EditorSector*> stack;
-
-		root->searchKey = s_searchKey;
-		{
-			const s32 wallCount = (s32)root->walls.size();
-			EditorWall* wall = root->walls.data();
-			s32 leftIdx = -1, rightIdx = -1;
-			for (s32 w = 0; w < wallCount; w++, wall++)
-			{
-				if (wall->idx[0] == featureIndex || wall->idx[1] == featureIndex)
-				{
-					if (wall->idx[0] == featureIndex) { rightIdx = w; }
-					else { leftIdx = w; }
-
-					if (wall->adjoinId >= 0)
-					{
-						EditorSector* next = &s_level.sectors[wall->adjoinId];
-						if (next->searchKey != s_searchKey)
-						{
-							stack.push_back(next);
-							next->searchKey = s_searchKey;
-						}
-					}
-				}
-			}
-
-			if (leftIdx >= 0 || rightIdx >= 0)
-			{
-				s_vertexWallGroups.push_back({ root, featureIndex, leftIdx, rightIdx });
-			}
-		}
-
-		while (!stack.empty())
-		{
-			EditorSector* sector = stack.back();
-			stack.pop_back();
-
-			const s32 wallCount = (s32)sector->walls.size();
-			EditorWall* wall = sector->walls.data();
-			s32 leftIdx = -1, rightIdx = -1;
-			s32 vtxId = -1;
-			for (s32 w = 0; w < wallCount; w++, wall++)
-			{
-				s32 i = -1;
-				if (TFE_Polygon::vtxEqual(rootVtx, &sector->vtx[wall->idx[0]]))
-				{
-					i = 0;
-					rightIdx = w;
-					vtxId = wall->idx[0];
-				}
-				else if (TFE_Polygon::vtxEqual(rootVtx, &sector->vtx[wall->idx[1]]))
-				{
-					i = 1;
-					leftIdx = w;
-					vtxId = wall->idx[1];
-				}
-
-				if (i >= 0)
-				{
-					// Add the next sector to the stack, if it hasn't already been processed.
-					EditorSector* next = wall->adjoinId < 0 ? nullptr : &s_level.sectors[wall->adjoinId];
-					if (next && next->searchKey != s_searchKey)
-					{
-						stack.push_back(next);
-						next->searchKey = s_searchKey;
-					}
-				}
-			}
-
-			if ((leftIdx >= 0 || rightIdx >= 0) && vtxId >= 0)
-			{
-				s_vertexWallGroups.push_back({ sector, vtxId, leftIdx, rightIdx });
-			}
-		}
-	}
-
-	void deleteVertex(EditorSector* sector, s32 vertexIndex)
-	{
-		// First delete the vertex.
-		sector->vtx.erase(sector->vtx.begin() + vertexIndex);
-
-		// Then fix-up the indices.
-		const s32 wallCount = (s32)sector->walls.size();
-		EditorWall* wall = sector->walls.data();
-		for (s32 w = 0; w < wallCount; w++, wall++)
-		{
-			assert(wall->idx[0] != vertexIndex && wall->idx[1] != vertexIndex);
-			if (wall->idx[0] > vertexIndex) { wall->idx[0]--; }
-			if (wall->idx[1] > vertexIndex) { wall->idx[1]--; }
-		}
-	}
-
-	bool sortBySectorId(EditorSector*& a, EditorSector*& b)
-	{
-		return a->id > b->id;
-	}
-
-	void deleteInvalidSectors(SectorList& list)
-	{
-		// Sort from highest id to lowest.
-		std::sort(list.begin(), list.end(), sortBySectorId);
-
-		// Then loop through the list and delete invalid sectors.
-		//   * Adjoins referencing a deleted sector must be removed.
-		//   * Adjoins referencing sectors by a higher ID must be modified.
-		//   * Deleted sectors must be removed from the list.
-		std::vector<s32> itemsToDelete;
-
-		const s32 count = (s32)list.size();
-		for (s32 i = 0; i < count; i++)
-		{
-			EditorSector* sector = list[i];
-
-			// *TODO*
-			// Is the sector degenerate (aka, has no area)?
-			if (sector->vtx.size() >= 3) { continue; }
-						
-			// Get the ID and then erase it from the level.
-			s32 delId = sector->id;
-			s_level.sectors.erase(s_level.sectors.begin() + delId);
-
-			// Update Sector IDs
-			const s32 levSectorCount = (s32)s_level.sectors.size();
-			sector = s_level.sectors.data() + delId;
-			for (s32 s = delId; s < levSectorCount; s++, sector++)
-			{
-				sector->id--;
-			}
-
-			// Update Adjoins.
-			sector = s_level.sectors.data();
-			for (s32 s = 0; s < levSectorCount; s++, sector++)
-			{
-				const s32 wallCount = (s32)sector->walls.size();
-				EditorWall* wall = sector->walls.data();
-				for (s32 w = 0; w < wallCount; w++, wall++)
-				{
-					if (wall->adjoinId == delId)
-					{
-						// Remove adjoin since the sector no longer exists.
-						wall->adjoinId = -1;
-						wall->mirrorId = -1;
-					}
-					else if (wall->adjoinId > delId)
-					{
-						// All of the sector IDs after delID shifted down by 1.
-						wall->adjoinId--;
-					}
-				}
-			}
-
-			// Add to the erase list.
-			itemsToDelete.push_back(i);
-		}
-
-		// Erase sectors from the list since later fixup is not required.
-		const s32 delCount = (s32)itemsToDelete.size();
-		const s32* delList = itemsToDelete.data();
-		for (s32 i = delCount - 1; i >= 0; i--)
-		{
-			list.erase(list.begin() + delList[i]);
-		}
-	}
-
-	// This is an N^2 operation, the sector list should be as limited as possible.
-	void findAdjoinsInList(SectorList& list)
-	{
-		const s32 sectorCount = (s32)list.size();
-		EditorSector** sectorList = list.data();
-		for (s32 s0 = 0; s0 < sectorCount; s0++)
-		{
-			EditorSector* sector0 = sectorList[s0];
-			const s32 wallCount0 = (s32)sector0->walls.size();
-			EditorWall* wall0 = sector0->walls.data();
-			for (s32 w0 = 0; w0 < wallCount0; w0++, wall0++)
-			{
-				if (wall0->adjoinId >= 0 && wall0->mirrorId >= 0) { continue; }
-				const Vec2f* v0 = &sector0->vtx[wall0->idx[0]];
-				const Vec2f* v1 = &sector0->vtx[wall0->idx[1]];
-
-				// Now check for overlaps in other sectors in the list.
-				bool foundMirror = false;
-				for (s32 s1 = 0; s1 < sectorCount && !foundMirror; s1++)
-				{
-					EditorSector* sector1 = sectorList[s1];
-					if (sector1 == sector0) { continue; }
-
-					const s32 wallCount1 = (s32)sector1->walls.size();
-					EditorWall* wall1 = sector1->walls.data();
-					for (s32 w1 = 0; w1 < wallCount1 && !foundMirror; w1++, wall1++)
-					{
-						if (wall1->adjoinId >= 0 && wall1->mirrorId >= 0) { continue; }
-						const Vec2f* v2 = &sector1->vtx[wall1->idx[0]];
-						const Vec2f* v3 = &sector1->vtx[wall1->idx[1]];
-
-						if (TFE_Polygon::vtxEqual(v0, v3) && TFE_Polygon::vtxEqual(v1, v2))
-						{
-							// Found an adjoin!
-							wall0->adjoinId = sector1->id;
-							wall0->mirrorId = w1;
-							wall1->adjoinId = sector0->id;
-							wall1->mirrorId = w0;
-							// For now, assume one adjoin per wall.
-							foundMirror = true;
-						}
-						else if (TFE_Polygon::vtxEqual(v0, v2) && TFE_Polygon::vtxEqual(v1, v3))
-						{
-							assert(0);
-						}
-					}
-				}
-			}
-		}
-	}
-
-	// Get the proper mirror ID, assuming the existing ID is no longer valid.
-	s32 getMirrorId(EditorSector* sector, s32 wallId)
-	{
-		const EditorWall* curWall = &sector->walls[wallId];
-		const EditorSector* next = curWall->adjoinId < 0 ? nullptr : &s_level.sectors[curWall->adjoinId];
-		if (!next) { return -1; }
-
-		const Vec2f* v0 = &sector->vtx[curWall->idx[0]];
-		const Vec2f* v1 = &sector->vtx[curWall->idx[1]];
-		
-		const s32 wallCount = (s32)next->walls.size();
-		const EditorWall* wall = next->walls.data();
-		for (s32 w = 0; w < wallCount; w++, wall++)
-		{
-			const Vec2f* v2 = &next->vtx[wall->idx[0]];
-			const Vec2f* v3 = &next->vtx[wall->idx[1]];
-
-			if ((TFE_Polygon::vtxEqual(v0, v3) && TFE_Polygon::vtxEqual(v1, v2)) || (TFE_Polygon::vtxEqual(v0, v2) && TFE_Polygon::vtxEqual(v1, v3)))
-			{
-				return w;
-			}
-		}
-		return -1;
-	}
-
-	// Delete a vertex.
-	void edit_deleteVertex(s32 sectorId, s32 vertexIndex)
-	{
-		EditorSector* sector = &s_level.sectors[sectorId];
-		const Vec2f* pos = &sector->vtx[vertexIndex];
-
-		// Gather a list of walls and vertices.
-		s_vertexWallGroups.clear();
-		selectVerticesToDelete(sector, vertexIndex, pos);
-
-		s_searchKey++;
-		s_sectorChangeList.clear();
-				
-		const s32 wallGroupCount = (s32)s_vertexWallGroups.size();
-		VertexWallGroup* group = s_vertexWallGroups.data();
-		for (s32 i = 0; i < wallGroupCount; i++, group++)
-		{
-			EditorSector* sector = group->sector;
-			if (sector->searchKey != s_searchKey)
-			{
-				sector->searchKey = s_searchKey;
-				s_sectorChangeList.push_back(sector);
-			}
-
-			EditorWall* left  = group->leftWall  >= 0 ? &sector->walls[group->leftWall]  : nullptr;
-			EditorWall* right = group->rightWall >= 0 ? &sector->walls[group->rightWall] : nullptr;
-			if (left && right)
-			{
-				// Merge the left and right walls.
-				left->idx[1] = right->idx[1];
-				// Make the right wall degenerate - this will be removed during the "clean" pass.
-				right->idx[0] = right->idx[1];
-			}
-			else if (left)
-			{
-				// Make the wall degenerate - this will be removed during the "clean" pass.
-				left->idx[1] = left->idx[0];
-			}
-			else if (right)
-			{
-				// Make the wall degenerate - this will be removed during the "clean" pass.
-				right->idx[1] = right->idx[0];
-			}
-		}
-
-		// Clean sectors - this will remove collapsed walls and clean up the sectors.
-		std::vector<s32> selectedSectors;
-		const s32 count = (s32)s_sectorChangeList.size();
-		EditorSector** sectorList = s_sectorChangeList.data();
-		for (s32 i = 0; i < count; i++)
-		{
-			selectedSectors.push_back(sectorList[i]->id);
-		}
-		cleanSectors(selectedSectors);
-
-		// Remove any invalid sectors.
-		deleteInvalidSectors(s_sectorChangeList);
-
-		// When deleting features, we need to clear out the selections.
-		edit_clearSelections();
 	}
 
 	void edit_deleteSector(s32 sectorId)
@@ -1606,53 +990,6 @@ namespace LevelEditor
 		wall->mirrorId = -1;
 	}
 
-	void handleVertexInsert(Vec2f worldPos)
-	{
-		const bool mousePressed = s_singleClick;
-		const bool mouseDown = TFE_Input::mouseDown(MouseButton::MBUTTON_LEFT);
-		// TODO: Hotkeys.
-		const bool insertVtx = TFE_Input::keyPressed(KEY_INSERT);
-		const bool snapToGridEnabled = !TFE_Input::keyModDown(KEYMOD_ALT) && s_grid.size > 0.0f;
-
-		// Early out.
-		if (!insertVtx || s_editMove || mouseDown || mousePressed) { return; }
-
-		EditorSector* sector = nullptr;
-		s32 wallIndex = -1;
-		if (s_editMode == LEDIT_WALL && s_featureHovered.part != HP_FLOOR && s_featureHovered.part != HP_CEIL)
-		{
-			sector = s_featureHovered.sector;
-			wallIndex = s_featureHovered.featureIndex;
-		}
-		else if (s_editMode == LEDIT_VERTEX && s_featureCurWall.sector && s_featureCurWall.part != HP_FLOOR && s_featureCurWall.part != HP_CEIL)
-		{
-			// Determine the wall under the cursor.
-			sector = s_featureCurWall.sector;
-			wallIndex = s_featureCurWall.featureIndex;
-		}
-
-		// Return if no wall is found in range.
-		if (!sector || wallIndex < 0) { return; }
-
-		EditorWall* wall = &sector->walls[wallIndex];
-		Vec2f v0 = sector->vtx[wall->idx[0]];
-		Vec2f v1 = sector->vtx[wall->idx[1]];
-		Vec2f newPos = v0;
-
-		f32 s = TFE_Polygon::closestPointOnLineSegment(v0, v1, worldPos, &newPos);
-		if (snapToGridEnabled)
-		{
-			s = snapToEdgeGrid(v0, v1, newPos);
-		}
-
-		if (s > FLT_EPSILON && s < 1.0f - FLT_EPSILON)
-		{
-			// Split the wall.
-			// cmd_addInsertVertex(sector->id, wallIndex, newPos);
-			edit_splitWall(sector->id, wallIndex, newPos);
-		}
-	}
-
 	// We are looking for other flats of the same height, texture, and part.
 	void selectSimilarFlats(EditorSector* rootSector, HitPart part)
 	{
@@ -1671,8 +1008,7 @@ namespace LevelEditor
 			EditorSector* sector = s_sectorChangeList.back();
 			s_sectorChangeList.pop_back();
 
-			FeatureId id = createFeatureId(sector, 0, part);
-			selection_add(id);
+			selection_surface(SA_ADD, sector, 0, part);
 
 			const s32 wallCount = (s32)sector->walls.size();
 			const EditorWall* wall = sector->walls.data();
@@ -1860,8 +1196,7 @@ namespace LevelEditor
 					s32 curTexId = getPartTextureIndex(wall, HP_MID);
 					if (texId < 0 || curTexId == texId)
 					{
-						FeatureId id = createFeatureId(sector, nextIndex, HP_MID);
-						if (!selection_add(id))
+						if (!selection_surface(SA_ADD, sector, nextIndex))
 						{
 							break;
 						}
@@ -1909,8 +1244,7 @@ namespace LevelEditor
 						s32 curTexId = getPartTextureIndex(wall, HP_TOP);
 						if (texId < 0 || curTexId == texId)
 						{
-							FeatureId id = createFeatureId(sector, nextIndex, HP_TOP);
-							if (selection_add(id))
+							if (selection_surface(SA_ADD, sector, nextIndex, HP_TOP))
 							{
 								hasMatch = true;
 								if (texOffset)
@@ -1926,8 +1260,7 @@ namespace LevelEditor
 						s32 curTexId = getPartTextureIndex(wall, HP_BOT);
 						if (texId < 0 || curTexId == texId)
 						{
-							FeatureId id = createFeatureId(sector, nextIndex, HP_BOT);
-							if (selection_add(id))
+							if (selection_surface(SA_ADD, sector, nextIndex, HP_BOT))
 							{
 								hasMatch = true;
 								if (texOffset)
@@ -1943,8 +1276,7 @@ namespace LevelEditor
 						s32 curTexId = getPartTextureIndex(wall, HP_MID);
 						if (texId < 0 || curTexId == texId)
 						{
-							FeatureId id = createFeatureId(sector, nextIndex, HP_MID);
-							if (selection_add(id))
+							if (selection_surface(SA_ADD, sector, nextIndex, HP_MID))
 							{
 								hasMatch = true;
 								if (texOffset)
@@ -1990,16 +1322,16 @@ namespace LevelEditor
 	// Hacky version for now, clean up once it works... (separate selection lists).
 	void edit_autoAlign(s32 sectorId, s32 wallIndex, HitPart part)
 	{
-		EditorSector* rootSector = &s_level.sectors[sectorId];
 		// Save the selection and clear.
-		SelectionList curSelection = s_selectionList;
-		s_selectionList.clear();
+		selection_saveGeoSelections();
+		selection_clear(SEL_GEO);
 
 		// Find similar walls.
+		EditorSector* rootSector = &s_level.sectors[sectorId];
 		selectSimilarWalls(rootSector, wallIndex, part, true);
 
 		// Restore the selection.
-		s_selectionList = curSelection;
+		selection_restoreGeoSelections();
 	}
 		
 	void selectSimilarWalls(EditorSector* rootSector, s32 wallIndex, HitPart part, bool autoAlign/*=false*/)
@@ -2029,8 +1361,7 @@ namespace LevelEditor
 			s32 curTexId = getPartTextureIndex(rootWall, HP_MID);
 			if (texId < 0 || curTexId == texId)
 			{
-				FeatureId id = createFeatureId(rootSector, wallIndex, HP_MID);
-				selection_add(id);
+				selection_surface(SA_ADD, rootSector, wallIndex, HP_MID);
 			}
 		}
 		else
@@ -2041,8 +1372,7 @@ namespace LevelEditor
 				s32 curTexId = getPartTextureIndex(rootWall, HP_TOP);
 				if (texId < 0 || curTexId == texId)
 				{
-					FeatureId id = createFeatureId(rootSector, wallIndex, HP_TOP);
-					selection_add(id);
+					selection_surface(SA_ADD, rootSector, wallIndex, HP_TOP);
 					if (autoAlign) { setPartTextureOffset(rootWall, HP_TOP, { texOffset[1].x, texOffset[1].z + next->ceilHeight - baseHeight }); }
 				}
 			}
@@ -2051,8 +1381,7 @@ namespace LevelEditor
 				s32 curTexId = getPartTextureIndex(rootWall, HP_BOT);
 				if (texId < 0 || curTexId == texId)
 				{
-					FeatureId id = createFeatureId(rootSector, wallIndex, HP_BOT);
-					selection_add(id);
+					selection_surface(SA_ADD, rootSector, wallIndex, HP_BOT);
 					if (autoAlign) { setPartTextureOffset(rootWall, HP_BOT, { texOffset[1].x, texOffset[1].z + rootSector->floorHeight - baseHeight }); }
 				}
 			}
@@ -2061,8 +1390,7 @@ namespace LevelEditor
 				s32 curTexId = getPartTextureIndex(rootWall, HP_MID);
 				if (texId < 0 || curTexId == texId)
 				{
-					FeatureId id = createFeatureId(rootSector, wallIndex, HP_MID);
-					selection_add(id);
+					selection_surface(SA_ADD, rootSector, wallIndex, HP_MID);
 					if (autoAlign) { setPartTextureOffset(rootWall, HP_MID, { texOffset[1].x, texOffset[1].z + rootSector->floorHeight - baseHeight }); }
 				}
 			}
@@ -2101,32 +1429,19 @@ namespace LevelEditor
 		const bool mouseDown = TFE_Input::mouseDown(MouseButton::MBUTTON_LEFT);
 
 		const bool del = TFE_Input::keyPressed(KEY_DELETE);
+		const bool hasHovered = selection_hasHovered();
+		const bool hasFeature = selection_getCount() > 0;
 
-		if (del && (!s_selectionList.empty() || s_featureCur.featureIndex >= 0 || s_featureHovered.featureIndex >= 0))
+		s32 sectorId = -1, wallIndex;
+		HitPart part;
+		EditorSector* featureSector = nullptr;
+		if (del && (hasHovered || hasFeature))
 		{
-			s32 sectorId, wallIndex;
-			HitPart part;
-			EditorSector* featureSector = nullptr;
-			if (!s_selectionList.empty())
+			if (selection_getSurface(hasFeature ? 0 : SEL_INDEX_HOVERED, featureSector, wallIndex, &part))
 			{
-				// TODO: Currently, you can only delete one vertex at a time. It should be possible to delete multiple.
-				featureSector = unpackFeatureId(s_selectionList[0], &wallIndex, (s32*)&part);
 				sectorId = featureSector->id;
 			}
-			else if (s_featureCur.featureIndex >= 0 && s_featureCur.sector)
-			{
-				featureSector = s_featureCur.sector;
-				sectorId = s_featureCur.sector->id;
-				wallIndex = s_featureCur.featureIndex;
-				part = s_featureCur.part;
-			}
-			else if (s_featureHovered.featureIndex >= 0 && s_featureHovered.sector)
-			{
-				featureSector = s_featureHovered.sector;
-				sectorId = s_featureHovered.sector->id;
-				wallIndex = s_featureHovered.featureIndex;
-				part = s_featureHovered.part;
-			}
+			if (sectorId < 0) { return; }
 
 			if (part == HP_FLOOR || part == HP_CEIL)
 			{
@@ -2166,31 +1481,26 @@ namespace LevelEditor
 			}
 			else if (selToggle)
 			{
-				if (s_featureHovered.sector && s_featureHovered.featureIndex >= 0)
+				if (hasHovered && selection_getSurface(SEL_INDEX_HOVERED, featureSector, wallIndex, &part))
 				{
 					s_editMove = true;
-					adjustGridHeight(s_featureHovered.sector);
-					toggleWallGroupInclusion(s_featureHovered.sector, s_featureHovered.featureIndex, s_featureHovered.part);
+					adjustGridHeight(featureSector);
+					selection_surface(SA_TOGGLE, featureSector, wallIndex, part);
 				}
 			}
 			else
 			{
-				s_featureCur.sector = nullptr;
-				s_featureCur.featureIndex = -1;
-				if (s_featureHovered.sector && s_featureHovered.featureIndex >= 0)
+				if (hasHovered && selection_getSurface(SEL_INDEX_HOVERED, featureSector, wallIndex, &part))
 				{
-					const FeatureId id = createFeatureId(s_featureHovered.sector, s_featureHovered.featureIndex, s_featureHovered.part);
-					const bool doesItemExist = selection_doesFeatureExist(id);
+					handleSelectMode(featureSector, (part == HP_FLOOR || part == HP_CEIL) ? -1 : wallIndex);
+					if (!selection_surface(SA_CHECK_INCLUSION, featureSector, wallIndex, part))
+					{
+						selection_surface(SA_SET, featureSector, wallIndex, part);
+					}
 
-					handleSelectMode(s_featureHovered.sector,
-						(s_featureHovered.part == HP_FLOOR || s_featureHovered.part == HP_CEIL) ? -1 : s_featureHovered.featureIndex);
-
-					s_featureCur.sector = s_featureHovered.sector;
-					s_featureCur.featureIndex = s_featureHovered.featureIndex;
-					s_featureCur.part = s_featureHovered.part;
 					// Set this to the 3D cursor position, so the wall doesn't "pop" when grabbed.
 					s_curVtxPos = s_cursor3d;
-					adjustGridHeight(s_featureCur.sector);
+					adjustGridHeight(featureSector);
 					s_editMove = true;
 
 					// TODO: Hotkeys...
@@ -2200,11 +1510,6 @@ namespace LevelEditor
 					{
 						s_wallMoveMode = WMM_NORMAL;
 					}
-
-					if (!doesItemExist) { selection_clear(); }
-					selection_add(id);
-					// TODO: Handle with derived sets.
-					gatherVerticesFromWallSelection();
 				}
 				else if (!s_editMove)
 				{
@@ -2214,21 +1519,19 @@ namespace LevelEditor
 		}
 		else if (s_doubleClick)
 		{
-			s_featureCur.sector = nullptr;
-			s_featureCur.featureIndex = -1;
-			if (s_featureHovered.sector && s_featureHovered.featureIndex >= 0)
+			if (hasHovered && selection_getSurface(SEL_INDEX_HOVERED, featureSector, wallIndex, &part))
 			{
 				if (!TFE_Input::keyModDown(KEYMOD_SHIFT))
 				{
-					s_selectionList.clear();
+					selection_clear(SEL_GEO);
 				}
-				if (s_featureHovered.part == HP_FLOOR || s_featureHovered.part == HP_CEIL)
+				if (part == HP_FLOOR || part == HP_CEIL)
 				{
-					selectSimilarFlats(s_featureHovered.sector, s_featureHovered.part);
+					selectSimilarFlats(featureSector, part);
 				}
 				else
 				{
-					selectSimilarWalls(s_featureHovered.sector, s_featureHovered.featureIndex, s_featureHovered.part);
+					selectSimilarWalls(featureSector, wallIndex, part);
 				}
 			}
 		}
@@ -2236,13 +1539,11 @@ namespace LevelEditor
 		{
 			if (!s_dragSelect.active)
 			{
-				if (selToggleDrag && s_featureHovered.sector && s_featureHovered.featureIndex >= 0)
+				if (selToggleDrag && hasHovered && selection_getSurface(SEL_INDEX_HOVERED, featureSector, wallIndex, &part))
 				{
 					s_editMove = true;
-					adjustGridHeight(s_featureHovered.sector);
-
-					FeatureId id = createFeatureId(s_featureHovered.sector, s_featureHovered.featureIndex, s_featureHovered.part);
-					selection_add(id);
+					adjustGridHeight(featureSector);
+					selection_surface(SA_ADD, featureSector, wallIndex, part);
 				}
 			}
 			// Draw select continue.
@@ -2261,37 +1562,27 @@ namespace LevelEditor
 		}
 
 		// Handle copy and paste.
-		if (s_view == EDIT_VIEW_3D && s_featureHovered.sector && s_featureHovered.featureIndex >= 0)
+		if (s_view == EDIT_VIEW_3D && hasHovered)
 		{
 			applySurfaceTextures();
 		}
-
 		handleVertexInsert(worldPos);
 	}
 
 	void handleMouseControlSector()
 	{
 		const bool del = TFE_Input::keyPressed(KEY_DELETE);
+		const bool hasHovered = selection_hasHovered();
+		const bool hasFeature = selection_getCount() > 0;
 
-		if (del && (!s_selectionList.empty() || s_featureCur.sector || s_featureHovered.sector))
+		EditorSector* sector = nullptr;
+		if (del && (hasHovered || hasFeature))
 		{
 			s32 sectorId = -1;
-			if (!s_selectionList.empty())
+			if (selection_getSector(hasFeature ? 0 : SEL_INDEX_HOVERED, sector))
 			{
-				// TODO: Currently, you can only delete one vertex at a time. It should be possible to delete multiple.
-				s32 index;
-				EditorSector* featureSector = unpackFeatureId(s_selectionList[0], &index);
-				sectorId = featureSector->id;
+				sectorId = sector->id;
 			}
-			else if (s_featureCur.sector)
-			{
-				sectorId = s_featureCur.sector->id;
-			}
-			else if (s_featureHovered.sector)
-			{
-				sectorId = s_featureHovered.sector->id;
-			}
-
 			if (sectorId >= 0)
 			{
 				edit_deleteSector(sectorId);
@@ -2302,18 +1593,16 @@ namespace LevelEditor
 
 		if (s_singleClick)
 		{
-			handleSelectMode(s_featureHovered.sector, -1);
-			s_featureCur.sector = s_featureHovered.sector;
-			s_featureCur.featureIndex = 0;
-			adjustGridHeight(s_featureCur.sector);
-		}
-		if (s_featureHovered.sector)
-		{
-			s_featureHovered.featureIndex = 0;
+			sector = nullptr;
+			if (hasHovered) { selection_getSector(SEL_INDEX_HOVERED, sector); }
+
+			handleSelectMode(sector, -1);
+			selection_sector(SA_SET, sector);
+			adjustGridHeight(sector);
 		}
 
 		// Handle copy and paste.
-		if (s_view == EDIT_VIEW_2D && s_featureHovered.sector)
+		if (s_view == EDIT_VIEW_2D && hasHovered)
 		{
 			applySurfaceTextures();
 		}
@@ -2372,17 +1661,16 @@ namespace LevelEditor
 			}
 		}
 	}
-
+	
 	void handleHoverAndSelection(RayHitInfo* info)
 	{
 		if (info->hitSectorId < 0) { return; }
-		s_featureHovered.sector = &s_level.sectors[info->hitSectorId];
-		s_featureHovered.featureIndex = -1;
+		EditorSector* hoveredSector = &s_level.sectors[info->hitSectorId];
 
 		// TODO: Move to central hotkey list.
-		if (s_featureHovered.sector && TFE_Input::keyModDown(KEYMOD_CTRL) && TFE_Input::keyPressed(KEY_G))
+		if (TFE_Input::keyModDown(KEYMOD_CTRL) && TFE_Input::keyPressed(KEY_G))
 		{
-			adjustGridHeight(s_featureHovered.sector);
+			adjustGridHeight(hoveredSector);
 		}
 
 		//////////////////////////////////////
@@ -2390,6 +1678,7 @@ namespace LevelEditor
 		//////////////////////////////////////
 		if (s_editMode == LEDIT_SECTOR)
 		{
+			selection_sector(SA_SET_HOVERED, hoveredSector);
 			handleMouseControlSector();
 		}
 
@@ -2398,56 +1687,8 @@ namespace LevelEditor
 		//////////////////////////////////////
 		if (s_editMode == LEDIT_VERTEX)
 		{
-			s32 prevId = s_featureHovered.featureIndex;
-			// See if we are close enough to "hover" a vertex
-			s_featureHovered.featureIndex = -1;
-			if (s_featureHovered.sector)
-			{
-				EditorSector* hoveredSector = s_featureHovered.sector;
-
-				const size_t vtxCount = hoveredSector->vtx.size();
-				const Vec2f* vtx = hoveredSector->vtx.data();
-				const Vec3f* refPos = &info->hitPos;
-
-				const f32 distFromCam = TFE_Math::distance(&info->hitPos, &s_camera.pos);
-				const f32 maxDist = distFromCam * 64.0f / f32(s_viewportSize.z);
-				const f32 floor = hoveredSector->floorHeight;
-				const f32 ceil  = hoveredSector->ceilHeight;
-
-				f32 closestDistSq = maxDist * maxDist;
-				s32 closestVtx = -1;
-				HitPart closestPart = HP_FLOOR;
-				Vec3f finalPos;
-				for (size_t v = 0; v < vtxCount; v++)
-				{
-					// Check against the floor and ceiling vertex of each vertex.
-					const Vec3f floorVtx = { vtx[v].x, floor, vtx[v].z };
-					const Vec3f ceilVtx  = { vtx[v].x, ceil,  vtx[v].z };
-					const f32 floorDistSq = TFE_Math::distanceSq(&floorVtx, refPos);
-					const f32 ceilDistSq  = TFE_Math::distanceSq(&ceilVtx,  refPos);
-
-					if (floorDistSq < closestDistSq || ceilDistSq < closestDistSq)
-					{
-						closestDistSq = min(floorDistSq, ceilDistSq);
-						closestPart = floorDistSq <= ceilDistSq ? HP_FLOOR : HP_CEIL;
-						closestVtx = (s32)v;
-						finalPos = floorDistSq <= ceilDistSq ? floorVtx : ceilVtx;
-					}
-				}
-
-				if (closestVtx >= 0)
-				{
-					s_featureHovered.featureIndex = closestVtx;
-					s_hoveredVtxPos = finalPos;
-				}
-
-				// Also check for the overlapping wall and store it in a special feature.
-				// This is used for features such as vertex insertion even when not in wall mode.
-				s_featureCurWall = {};
-				checkForWallHit3d(info, s_featureCurWall.sector, s_featureCurWall.featureIndex, s_featureCurWall.part, hoveredSector);
-			}
-
-			handleMouseControlVertex({ s_cursor3d.x, s_cursor3d.z });
+			findHoveredVertex3d(hoveredSector, info);
+			handleMouseControlVertex({ s_cursor3d.x, s_cursor3d.z }, info);
 		}
 
 		//////////////////////////////////////
@@ -2455,10 +1696,18 @@ namespace LevelEditor
 		//////////////////////////////////////
 		if (s_editMode == LEDIT_WALL)
 		{
-			// See if we are close enough to "hover" a vertex
-			const EditorSector* hoveredSector = s_featureHovered.sector;
-			s_featureHovered.featureIndex = -1;
-			checkForWallHit3d(info, s_featureHovered.sector, s_featureHovered.featureIndex, s_featureHovered.part, hoveredSector);
+			if (info->hitWallId >= 0)
+			{
+				selection_surface(SA_SET_HOVERED, hoveredSector, info->hitWallId, info->hitPart);
+			}
+			else
+			{
+				// See if we are close enough to "hover" a vertex
+				s32 wallIndex = info->hitWallId;
+				HitPart hoveredPart = info->hitPart;
+				checkForWallHit3d(info, hoveredSector, wallIndex, hoveredPart, hoveredSector);
+				selection_surface(SA_SET_HOVERED, hoveredSector, wallIndex, hoveredPart);
+			}
 			handleMouseControlWall({ s_cursor3d.x, s_cursor3d.z });
 		}
 	}
@@ -2635,7 +1884,7 @@ namespace LevelEditor
 		return -1;
 	}
 
-	void cleanSectors(const std::vector<s32>& selectedSectors)
+	void edit_cleanSectorList(const std::vector<s32>& selectedSectors)
 	{
 		// Re-check to make sure we have at least one sector.
 		const s32 sectorCount = (s32)selectedSectors.size();
@@ -2763,8 +2012,6 @@ namespace LevelEditor
 
 	void edit_cleanSectors()
 	{
-		std::vector<s32> selectedSectors;
-
 		// We must be in the wall (in 3D) or sector mode.
 		bool canSelectSectors = (s_editMode == LEDIT_WALL && s_view == EDIT_VIEW_3D) || s_editMode == LEDIT_SECTOR;
 		if (!canSelectSectors)
@@ -2775,26 +2022,23 @@ namespace LevelEditor
 
 		// At least one sector must be selected.
 		// If only one is selected, this will act as a "clean" - removing degenerate walls, re-ordering, etc.
-		const s32 count = (s32)s_selectionList.size();
+		const s32 count = (s32)selection_getCount(SEL_SECTOR);
 		if (count < 1)
 		{
 			LE_WARNING("Clean Sector(s) - no sectors selected.");
 			return;
 		}
 
-		const FeatureId* feature = s_selectionList.data();
+		std::vector<s32> selectedSectors;
 		for (s32 i = 0; i < count; i++)
 		{
-			s32 index;
-			HitPart part;
-			EditorSector* sector = unpackFeatureId(feature[i], &index, (s32*)&part);
-			if (part == HP_FLOOR || part == HP_CEIL || s_editMode == LEDIT_SECTOR)
+			EditorSector* sector = nullptr;
+			if (selection_getSector(i, sector))
 			{
 				selectedSectors.push_back(sector->id);
 			}
 		}
-
-		cleanSectors(selectedSectors);
+		edit_cleanSectorList(selectedSectors);
 	}
 
 	void edit_joinSectors()
@@ -2811,20 +2055,17 @@ namespace LevelEditor
 
 		// At least one sector must be selected.
 		// If only one is selected, this will act as a "clean" - removing degenerate walls, re-ordering, etc.
-		const s32 count = (s32)s_selectionList.size();
+		const s32 count = (s32)selection_getCount(SEL_SECTOR);
 		if (count < 2)
 		{
 			LE_WARNING("Join Sectors - at least two(2) sectors need to be selected.");
 			return;
 		}
 
-		const FeatureId* feature = s_selectionList.data();
 		for (s32 i = 0; i < count; i++)
 		{
-			s32 index;
-			HitPart part;
-			EditorSector* sector = unpackFeatureId(feature[i], &index, (s32*)&part);
-			if (part == HP_FLOOR || part == HP_CEIL || s_editMode == LEDIT_SECTOR)
+			EditorSector* sector = nullptr;
+			if (selection_getSector(i, sector))
 			{
 				selectedSectors.push_back(sector->id);
 			}
@@ -2921,6 +2162,9 @@ namespace LevelEditor
 		{
 			edit_deleteSector(indices[s]);
 		}
+
+		// Clear the selection.
+		selection_clear(SEL_GEO | SEL_ENTITY_BIT);
 	}
 
 	s32 findNextEdge(s32 wallCount, const EditorWall* walls, s32 idxToFind, s32 side)
@@ -3136,7 +2380,7 @@ namespace LevelEditor
 		if (!TFE_Input::relativeModeEnabled() && (mx < s_editWinPos.x || mx >= s_editWinPos.x + s_editWinSize.x || my < s_editWinPos.z || my >= s_editWinPos.z + s_editWinSize.z))
 		{
 			// Nothing is "hovered" if the mouse is not in the window.
-			s_featureHovered = {};
+			selection_clearHovered();
 			return;
 		}
 
@@ -3186,18 +2430,18 @@ namespace LevelEditor
 			s_cursor3d = { worldPos.x, 0.0f, worldPos.z };
 			
 			// Always check for the hovered sector, since sectors can overlap.
-			s_featureHovered.sector = findSector2d(worldPos, s_curLayer);
-			s_featureHovered.featureIndex = -1;
+			selection_clearHovered();
+			EditorSector* hoveredSector = findSector2d(worldPos, s_curLayer);
 
 			if (s_singleClick)
 			{
-				handleSelectMode({ s_cursor3d.x, s_featureHovered.sector ? s_featureHovered.sector->floorHeight : 0.0f, s_cursor3d.z });
+				handleSelectMode({ s_cursor3d.x, hoveredSector ? hoveredSector->floorHeight : 0.0f, s_cursor3d.z });
 			}
 
 			// TODO: Move to central hotkey list.
-			if (s_featureHovered.sector && TFE_Input::keyModDown(KEYMOD_CTRL) && TFE_Input::keyPressed(KEY_G))
+			if (hoveredSector && TFE_Input::keyModDown(KEYMOD_CTRL) && TFE_Input::keyPressed(KEY_G))
 			{
-				adjustGridHeight(s_featureHovered.sector);
+				adjustGridHeight(hoveredSector);
 			}
 
 			handleLevelNoteEdit(nullptr/*2d so no ray hit info*/, s_rayDir);
@@ -3225,70 +2469,30 @@ namespace LevelEditor
 										
 			if (s_editMode == LEDIT_SECTOR)
 			{
+				selection_sector(SA_SET_HOVERED, hoveredSector);
 				handleMouseControlSector();
 			}
 
 			if (s_editMode == LEDIT_VERTEX)
 			{
-				// Keep track of the last vertex hovered sector and use it if no hovered sector is active to
-				// make selecting vertices less fiddly.
-				EditorSector* hoveredSector = s_featureHovered.sector ? s_featureHovered.sector : s_featureHovered.prevSector;
-				if (hoveredSector && !sector_isInteractable(hoveredSector))
-				{
-					hoveredSector = nullptr;
-					s_featureHovered = {};
-				}
-
-				// See if we are close enough to "hover" a vertex
-				s_featureHovered.featureIndex = -1;
-				if (s_featureHovered.sector || s_featureHovered.prevSector)
-				{
-					const size_t vtxCount = hoveredSector->vtx.size();
-					const Vec2f* vtx = hoveredSector->vtx.data();
-
-					f32 closestDistSq = FLT_MAX;
-					s32 closestVtx = -1;
-					for (size_t v = 0; v < vtxCount; v++, vtx++)
-					{
-						Vec2f offset = { worldPos.x - vtx->x, worldPos.z - vtx->z };
-						f32 distSq = offset.x*offset.x + offset.z*offset.z;
-						if (distSq < closestDistSq)
-						{
-							closestDistSq = distSq;
-							closestVtx = (s32)v;
-						}
-					}
-
-					const f32 maxDist = s_zoom2d * 16.0f;
-					if (closestDistSq <= maxDist*maxDist)
-					{
-						s_featureHovered.sector = hoveredSector;
-						s_featureHovered.prevSector = hoveredSector;
-						s_featureHovered.featureIndex = closestVtx;
-					}
-				}
-
-				// Check for the nearest wall as well.
-				checkForWallHit2d(worldPos, s_featureCurWall.sector, s_featureCurWall.featureIndex, s_featureCurWall.part, hoveredSector);
-
-				// Handle mouse control.
+				findHoveredVertex2d(hoveredSector, worldPos);
 				handleMouseControlVertex(worldPos);
 			}
 
 			if (s_editMode == LEDIT_WALL)
 			{
-				// See if we are close enough to "hover" a wall
-				s_featureHovered.featureIndex = -1;
-
-				EditorSector* hoverSector = s_featureHovered.sector ? s_featureHovered.sector : s_featureHovered.prevSector;
-				checkForWallHit2d(worldPos, s_featureHovered.sector, s_featureHovered.featureIndex, s_featureHovered.part, hoverSector);
-				if (s_featureHovered.sector) { s_featureHovered.prevSector = s_featureHovered.sector; }
-				if (hoverSector && !sector_isInteractable(hoverSector))
+				s32 featureIndex = -1;
+				HitPart part = HP_NONE;
+				checkForWallHit2d(worldPos, hoveredSector, featureIndex, part, hoveredSector);
+				if (hoveredSector && !sector_isInteractable(hoveredSector))
 				{
-					hoverSector = nullptr;
-					s_featureHovered = {};
+					hoveredSector = nullptr;
+					selection_clearHovered();
 				}
-
+				else if (hoveredSector && featureIndex >= 0)
+				{
+					selection_surface(SA_SET_HOVERED, hoveredSector, featureIndex, part);
+				}
 				handleMouseControlWall(worldPos);
 			}
 
@@ -3300,7 +2504,7 @@ namespace LevelEditor
 			viewport_clearRail();
 
 			cameraControl3d(mx, my);
-			s_featureHovered = {};
+			selection_clearHovered();
 			s32 layer = (s_editFlags & LEF_SHOW_ALL_LAYERS) ? LAYER_ANY : s_curLayer;
 
 			// TODO: Hotkeys.
@@ -3385,11 +2589,10 @@ namespace LevelEditor
 			}
 			else
 			{
-				s_featureHovered.sector = nullptr;
-
+				selection_clearHovered();
 				if (s_editMode == LEDIT_VERTEX)
 				{
-					handleMouseControlVertex({ s_cursor3d.x, s_cursor3d.z });
+					handleMouseControlVertex({ s_cursor3d.x, s_cursor3d.z }, &hitInfo);
 				}
 				else if (s_editMode == LEDIT_WALL)
 				{
@@ -3397,8 +2600,7 @@ namespace LevelEditor
 				}
 				else if (s_singleClick)
 				{
-					s_featureCur = {};
-					selection_clear();
+					selection_clear(SEL_GEO);
 				}
 			}
 			
@@ -3538,12 +2740,20 @@ namespace LevelEditor
 			ImGui::Separator();
 			if (ImGui::MenuItem("Align To Edge", ""))
 			{
-				// If an edge is selected.
-				if (s_featureCur.part != HP_FLOOR && s_featureCur.part != HP_CEIL && s_featureCur.featureIndex >= 0 && s_featureCur.sector && !s_featureCur.isObject)
+				if (s_editMode == LEDIT_WALL && selection_getCount())
 				{
-					const Vec2f* vtx = s_featureCur.sector->vtx.data();
-					const EditorWall* wall = &s_featureCur.sector->walls[s_featureCur.featureIndex];
-					alignGridToEdge(vtx[wall->idx[0]], vtx[wall->idx[1]]);
+					EditorSector* sector = nullptr;
+					s32 featureIndex = -1;
+					HitPart part = HP_NONE;
+					bool selected = selection_getSurface(0, sector, featureIndex, &part);
+
+					// If an edge is selected.
+					if (selected && part != HP_CEIL && part != HP_FLOOR)
+					{
+						const Vec2f* vtx = sector->vtx.data();
+						const EditorWall* wall = &sector->walls[featureIndex];
+						alignGridToEdge(vtx[wall->idx[0]], vtx[wall->idx[1]]);
+					}
 				}
 			}
 
@@ -3638,8 +2848,8 @@ namespace LevelEditor
 
 	void selectNone()
 	{
-		s_featureCur = {};
 		selection_clear();
+		selection_clearHovered();
 	}
 
 	s32 getSectorNameLimit()
@@ -3653,12 +2863,6 @@ namespace LevelEditor
 		u32 editFlags;
 		u32 lwinOpen;
 		s32 curLayer;
-
-		Feature featureHovered;
-		Feature featureCur;
-		Feature featureCurWall;
-
-		SelectionList selectionList;
 	};
 	static SelectSaveState s_selectSaveState;
 	static bool s_selectSaveStateSaved = false;
@@ -3669,20 +2873,15 @@ namespace LevelEditor
 		if (s_selectMode != SELECTMODE_NONE)
 		{
 			// Save select state.
+			selection_saveGeoSelections();
 			s_selectSaveState.editMode = s_editMode;
 			s_selectSaveState.editFlags = s_editFlags;
 			s_selectSaveState.lwinOpen = s_lwinOpen;
 			s_selectSaveState.curLayer = s_curLayer;
-			s_selectSaveState.featureHovered = s_featureHovered;
-			s_selectSaveState.featureCur = s_featureCur;
-			s_selectSaveState.featureCurWall = s_featureCurWall;
-			s_selectSaveState.selectionList = s_selectionList;
 			s_selectSaveStateSaved = true;
 
-			s_selectionList.clear();
-			s_featureHovered = {};
-			s_featureCur = {};
-			s_featureCurWall = {};
+			selection_clear(SEL_GEO);
+			selection_clearHovered();
 		}
 		else if (s_selectSaveStateSaved)
 		{
@@ -3690,10 +2889,7 @@ namespace LevelEditor
 			s_editFlags = s_selectSaveState.editFlags;
 			s_lwinOpen = s_selectSaveState.lwinOpen;
 			s_curLayer = s_selectSaveState.curLayer;
-			s_featureHovered = s_selectSaveState.featureHovered;
-			s_featureCur = s_selectSaveState.featureCur;
-			s_featureCurWall = s_selectSaveState.featureCurWall;
-			s_selectionList = s_selectSaveState.selectionList;
+			selection_restoreGeoSelections();
 			s_selectSaveStateSaved = false;
 		}
 	}
@@ -3702,7 +2898,7 @@ namespace LevelEditor
 	{
 		return s_selectMode;
 	}
-
+		
 	void handleSelectMode(Vec3f pos)
 	{
 		if (s_selectMode == SELECTMODE_POSITION)
@@ -3879,15 +3075,22 @@ namespace LevelEditor
 		s32 wallId = -1;
 		if (s_editMode == LEDIT_WALL)
 		{
-			if (s_featureCur.sector && (s_featureCur.part != HP_CEIL && s_featureCur.part != HP_FLOOR))
+			EditorSector* curSector = nullptr;
+			EditorSector* hoveredSector = nullptr;
+			s32 curFeatureIndex = -1, hoveredFeatureIndex = -1;
+			HitPart curPart = HP_NONE, hoveredPart = HP_NONE;
+			selection_getSurface(0, curSector, curFeatureIndex, &curPart);
+			selection_getSurface(SEL_INDEX_HOVERED, hoveredSector, hoveredFeatureIndex, &hoveredPart);
+
+			if (curSector && (curPart != HP_CEIL && curPart != HP_FLOOR))
 			{
-				sector = s_featureCur.sector;
-				wallId = s_featureCur.featureIndex;
+				sector = curSector;
+				wallId = curFeatureIndex;
 			}
-			else if (s_featureHovered.sector && (s_featureHovered.part != HP_CEIL && s_featureHovered.part != HP_FLOOR))
+			else if (hoveredSector && (hoveredPart != HP_CEIL && hoveredPart != HP_FLOOR))
 			{
-				sector = s_featureHovered.sector;
-				wallId = s_featureHovered.featureIndex;
+				sector = hoveredSector;
+				wallId = hoveredFeatureIndex;
 			}
 		}
 		return wallId;
@@ -3898,27 +3101,20 @@ namespace LevelEditor
 		EditorSector* sector = nullptr;
 		if (s_editMode == LEDIT_SECTOR)
 		{
-			sector = s_featureCur.sector;
-			if (!sector && !s_selectionList.empty())
-			{
-				FeatureId featureId = s_selectionList[0];
-				s32 featureIndex, part;
-				sector = unpackFeatureId(featureId, &featureIndex, &part);
-			}
-			if (!sector)
-			{
-				sector = s_featureHovered.sector;
-			}
+			// Prefer first item in selection, than hovered.
+			selection_getSector(selection_getCount() > 0 ? 0 : SEL_INDEX_HOVERED, sector);
 		}
 		else if (s_editMode == LEDIT_WALL)
 		{
-			if (s_featureCur.sector && (s_featureCur.part == HP_CEIL || s_featureCur.part == HP_FLOOR))
+			// Prefer first item in selection, than hovered.
+			s32 wallIndex = -1;
+			HitPart part = HP_NONE;
+			selection_getSurface(selection_getCount() > 0 ? 0 : SEL_INDEX_HOVERED, sector, wallIndex, &part);
+
+			// Only accept surfaces that are floors or ceilings.
+			if (part != HP_CEIL && part != HP_FLOOR)
 			{
-				sector = s_featureCur.sector;
-			}
-			else if (s_featureHovered.sector && (s_featureHovered.part == HP_CEIL || s_featureHovered.part == HP_FLOOR))
-			{
-				sector = s_featureHovered.sector;
+				sector = nullptr;
 			}
 		}
 		return sector;
@@ -3926,45 +3122,33 @@ namespace LevelEditor
 		
 	bool copyableItemHoveredOrSelected()
 	{
-		if (s_editMode == LEDIT_SECTOR)
+		if (s_editMode == LEDIT_SECTOR || s_editMode == LEDIT_ENTITY)
 		{
-			return s_featureHovered.sector || s_featureCur.sector || !s_selectionList.empty();
+			return selection_hasHovered() || selection_getCount() > 0;
 		}
+		// Current walls are not copyable, but floor/ceiling surfaces map to sectors.
 		else if (s_editMode == LEDIT_WALL)
 		{
-			return (s_featureHovered.sector && (s_featureHovered.part == HP_CEIL || s_featureHovered.part == HP_FLOOR)) ||
-				(s_featureCur.sector && (s_featureCur.part == HP_CEIL || s_featureCur.part == HP_FLOOR));// || selectionHasSectors();
-		}
-		else if (s_editMode == LEDIT_ENTITY)
-		{
-			return (s_featureHovered.sector && s_featureHovered.featureIndex >= 0 && s_featureHovered.isObject) ||
-				(s_featureCur.sector && s_featureCur.featureIndex >= 0 && s_featureCur.isObject);
+			EditorSector* sector = nullptr;
+			s32 wallIndex = 0;
+			HitPart part = HP_NONE;
+			if (selection_hasHovered())
+			{
+				selection_getSurface(SEL_INDEX_HOVERED, sector, wallIndex, &part);
+				if (sector && (part == HP_CEIL || part == HP_FLOOR)) { return true; }
+			}
+			if (selection_getCount() > 0)
+			{
+				selection_getSurface(0, sector, wallIndex, &part);
+				if (sector && (part == HP_CEIL || part == HP_FLOOR)) { return true; }
+			}
 		}
 		return false;
 	}
 
 	bool itemHoveredOrSelected()
 	{
-		if (s_editMode == LEDIT_SECTOR)
-		{
-			return s_featureHovered.sector || s_featureCur.sector || !s_selectionList.empty();
-		}
-		else if (s_editMode == LEDIT_WALL)
-		{
-			return (s_featureHovered.sector && (s_featureHovered.featureIndex >= 0 || s_featureHovered.part == HP_CEIL || s_featureHovered.part == HP_FLOOR)) ||
-				(s_featureCur.sector && (s_featureCur.featureIndex >= 0 || s_featureCur.part == HP_CEIL || s_featureCur.part == HP_FLOOR));
-		}
-		else if (s_editMode == LEDIT_VERTEX)
-		{
-			return (s_featureHovered.sector && s_featureHovered.featureIndex >= 0) || (s_featureCur.sector && s_featureCur.featureIndex >= 0) ||
-				!s_selectionList.empty();
-		}
-		else if (s_editMode == LEDIT_ENTITY)
-		{
-			return (s_featureHovered.sector && s_featureHovered.featureIndex >= 0 && s_featureHovered.isObject) ||
-				(s_featureCur.sector && s_featureCur.featureIndex >= 0 && s_featureCur.isObject);
-		}
-		return false;
+		return selection_hasHovered() || selection_getCount() > 0;
 	}
 
 	void openViewportContextWindow()
@@ -4093,16 +3277,21 @@ namespace LevelEditor
 	{
 		s_outputHeight = infoPanelOutput(s_viewportSize.x + 16);
 	}
-
-	void setEditMode(LevelEditMode mode)
+	
+	void edit_setEditMode(LevelEditMode mode)
 	{
+		SelectionListId selId = SEL_VERTEX;
+		if (mode >= LEDIT_VERTEX && mode <= LEDIT_NOTES)
+		{
+			selId = SelectionListId(SEL_VERTEX + mode - LEDIT_VERTEX);
+		}
+		selection_setCurrent(selId);
+		selection_clearHovered();
+		
 		s_editMode = mode;
 		s_editMove = false;
 		s_startTexMove = false;
-		s_featureCur = {};
-		s_featureHovered = {};
 		s_featureTex = {};
-		selection_clear();
 		commitCurEntityChanges();
 	}
 		
@@ -4165,7 +3354,7 @@ namespace LevelEditor
 				LevelEditMode mode = LevelEditMode(i + LEDIT_GUIDELINES);
 				if (iconButton(c_toolbarIcon[mode], toolbarTooltips[mode], mode == s_editMode))
 				{
-					setEditMode(mode);
+					edit_setEditMode(mode);
 				}
 				ImGui::SameLine();
 			}
@@ -4177,7 +3366,7 @@ namespace LevelEditor
 				LevelEditMode mode = LevelEditMode(i);
 				if (iconButton(c_toolbarIcon[mode], toolbarTooltips[mode], mode == s_editMode))
 				{
-					setEditMode(mode);
+					edit_setEditMode(mode);
 				}
 				ImGui::SameLine();
 			}
@@ -4277,6 +3466,7 @@ namespace LevelEditor
 			s32 mx, my;
 			TFE_Input::getMousePos(&mx, &my);
 			const bool editWinHovered = mx >= s_editWinPos.x && mx < s_editWinPos.x + s_editWinSize.x && my >= s_editWinPos.z && my < s_editWinPos.z + s_editWinSize.z;
+			const bool hasHovered = selection_hasHovered();
 
 			if (!isUiModal())
 			{
@@ -4287,353 +3477,36 @@ namespace LevelEditor
 				{
 					openViewportContextWindow();
 				}
-				// Display vertex info.
-				else if (s_featureHovered.sector && s_featureHovered.featureIndex >= 0 && editWinHovered && s_editMode == LEDIT_VERTEX)
+				else
 				{
-					// Give the "world space" vertex position, get back to the pixel position for the UI.
-					const Vec2f vtx = s_featureHovered.sector->vtx[s_featureHovered.featureIndex];
-					Vec2i mapPos;
-					bool showInfo = true;
-					if (s_view == EDIT_VIEW_2D)
+					const bool hovered = editWinHovered && hasHovered;
+					switch (s_editMode)
 					{
-						mapPos = worldPos2dToMap(vtx);
-					}
-					else if (s_view == EDIT_VIEW_3D)
-					{
-						// Project the position.
-						Vec2f screenPos;
-						if (worldPosToViewportCoord({ vtx.x, s_featureHovered.sector->floorHeight, vtx.z }, &screenPos))
+						case LEDIT_DRAW:
 						{
-							mapPos = { s32(screenPos.x), s32(screenPos.z) };
-						}
-						else
+							if (s_geoEdit.drawStarted) { displayMapSectorDrawInfo(); }
+						} break;
+						case LEDIT_VERTEX:
 						{
-							showInfo = false;
-						}
-					}
-					
-					if (showInfo)
-					{
-						char x[256], z[256];
-						floatToString(vtx.x, x);
-						floatToString(vtx.z, z);
-
-						char info[256];
-						sprintf(info, "%d: %s, %s", s_featureHovered.featureIndex, x, z);
-
-						drawViewportInfo(0, mapPos, info, -UI_SCALE(20), -UI_SCALE(20) - 16);
+							if (hovered) { displayMapVertexInfo(); }
+						} break;
+						case LEDIT_WALL:
+						{
+							if (hovered) { displayMapWallInfo(); }
+						} break;
+						case LEDIT_SECTOR:
+						{
+							if (!s_showAllLabels && hovered) { displayMapSectorInfo(); }
+						} break;
+						case LEDIT_ENTITY:
+						{
+							if (hovered) { displayMapEntityInfo(); }
+						} break;
 					}
 				}
-				// Display wall info.
-				else if (s_featureHovered.sector && s_featureHovered.featureIndex >= 0 && editWinHovered && s_editMode == LEDIT_WALL)
-				{
-					const EditorWall* wall = &s_featureHovered.sector->walls[s_featureHovered.featureIndex];
-					const Vec2f* v0 = &s_featureHovered.sector->vtx[wall->idx[0]];
-					const Vec2f* v1 = &s_featureHovered.sector->vtx[wall->idx[1]];
-
-					Vec2i mapPos;
-					bool showInfo = true;
-					char lenStr[256];
-					if (s_view == EDIT_VIEW_2D)
-					{
-						getWallLengthText(v0, v1, lenStr, mapPos, s_featureHovered.featureIndex);
-					}
-					else if (s_view == EDIT_VIEW_3D)
-					{
-						if (s_featureHovered.part == HP_FLOOR || s_featureHovered.part == HP_CEIL)
-						{
-							EditorSector* sector = s_featureHovered.sector;
-							Vec3f worldPos = { (sector->bounds[0].x + sector->bounds[1].x) * 0.5f, sector->floorHeight + 1.0f, (sector->bounds[0].z + sector->bounds[1].z) * 0.5f };
-							Vec2f screenPos;
-							if (!s_showAllLabels && !sector->name.empty() && worldPosToViewportCoord(worldPos, &screenPos))
-							{
-								strcpy(lenStr, sector->name.c_str());
-								f32 textOffset = floorf(ImGui::CalcTextSize(lenStr).x * 0.5f);
-								mapPos = { s32(screenPos.x - textOffset), s32(screenPos.z) };
-							}
-							else
-							{
-								showInfo = false;
-							}
-						}
-						else
-						{
-							Vec3f worldPos = { (v0->x + v1->x) * 0.5f, s_featureHovered.sector->floorHeight + 1.0f, (v0->z + v1->z) * 0.5f };
-							Vec2f screenPos;
-							if (worldPosToViewportCoord(worldPos, &screenPos))
-							{
-								mapPos = { s32(screenPos.x), s32(screenPos.z) - 20 };
-								Vec2f offset = { v1->x - v0->x, v1->z - v0->z };
-								f32 len = sqrtf(offset.x*offset.x + offset.z*offset.z);
-
-								char num[256];
-								floatToString(len, num);
-								sprintf(lenStr, "%d: %s", s_featureHovered.featureIndex, num);
-							}
-							else
-							{
-								showInfo = false;
-							}
-						}
-					}
-
-					if (showInfo)
-					{
-						drawViewportInfo(0, mapPos, lenStr, 0, 0);
-					}
-				}
-				// Sector Info.
-				else if (!s_showAllLabels && s_featureHovered.sector && editWinHovered && s_editMode == LEDIT_SECTOR)
-				{
-					const EditorSector* sector = s_featureHovered.sector;
-					if (!sector->name.empty())
-					{
-						bool showInfo = true;
-						Vec2i mapPos;
-						f32 textOffset = floorf(ImGui::CalcTextSize(sector->name.c_str()).x * 0.5f);
-						if (s_view == EDIT_VIEW_2D)
-						{
-							Vec2f center = { (sector->bounds[0].x + sector->bounds[1].x) * 0.5f, (sector->bounds[0].z + sector->bounds[1].z) * 0.5f };
-							
-							mapPos = worldPos2dToMap(center);
-							mapPos.x -= s32(textOffset + 12);
-							mapPos.z -= 16;
-						}
-						else if (s_view == EDIT_VIEW_3D)
-						{
-							Vec3f center = { (sector->bounds[0].x + sector->bounds[1].x) * 0.5f, sector->floorHeight, (sector->bounds[0].z + sector->bounds[1].z) * 0.5f };
-							Vec2f screenPos;
-							if (worldPosToViewportCoord(center, &screenPos))
-							{
-								f32 textOffset = floorf(ImGui::CalcTextSize(sector->name.c_str()).x * 0.5f);
-								mapPos = { s32(screenPos.x - textOffset), s32(screenPos.z) };
-							}
-							else
-							{
-								showInfo = false;
-							}
-						}
-						if (showInfo)
-						{
-							drawViewportInfo(0, mapPos, sector->name.c_str(), 0, 0);
-						}
-					}
-				}
-				else if (s_editMode == LEDIT_ENTITY)
-				{
-					const EditorSector* sector = s_featureHovered.sector;
-					if (sector && s_featureHovered.featureIndex >= 0 && s_featureHovered.isObject)
-					{
-						const EditorObject* obj = &sector->obj[s_featureHovered.featureIndex];
-						const Entity* entity = &s_level.entities[obj->entityId];
-
-						bool showInfo = true;
-						Vec2i mapPos;
-						if (s_view == EDIT_VIEW_2D)
-						{
-							Vec2f labelPos = { obj->pos.x, obj->pos.z + entity->size.x*0.5f };
-							Vec2i screenPos = worldPos2dToMap(labelPos);
-
-							s32 textOffset = (s32)floorf(ImGui::CalcTextSize(entity->name.c_str()).x * 0.5f);
-							mapPos = { screenPos.x - textOffset, screenPos.z - 40 };
-						}
-						else if (s_view == EDIT_VIEW_3D)
-						{
-							Vec3f labelPos = { obj->pos.x, getEntityLabelPos(obj->pos, entity, sector), obj->pos.z };
-							Vec2f screenPos;
-							if (worldPosToViewportCoord(labelPos, &screenPos))
-							{
-								f32 textOffset = floorf(ImGui::CalcTextSize(entity->name.c_str()).x * 0.5f);
-								mapPos = { s32(screenPos.x - textOffset), s32(screenPos.z) - 40 };
-							}
-							else
-							{
-								showInfo = false;
-							}
-						}
-						if (showInfo)
-						{
-							drawViewportInfo(0, mapPos, entity->name.c_str(), 0, 0);
-						}
-					}
-				}
- 				else if (s_editMode == LEDIT_DRAW && s_geoEdit.drawStarted)
-				{
-					if (s_geoEdit.drawMode == DMODE_RECT)
-					{
-						Vec2f cen[2];
-						f32 width, height;
-
-						// Get the rect size, taking into account the grid.
-						// Note that the behavior is different if extrude is enabled -
-						// since in that case the rect is *already* in "grid space".
-						if (s_geoEdit.extrudeEnabled)
-						{
-							const f32 x0 = std::max(s_geoEdit.shape[0].x, s_geoEdit.shape[1].x);
-							const f32 x1 = std::min(s_geoEdit.shape[0].x, s_geoEdit.shape[1].x);
-							const f32 z0 = std::max(s_geoEdit.shape[0].z, s_geoEdit.shape[1].z);
-							const f32 z1 = std::min(s_geoEdit.shape[0].z, s_geoEdit.shape[1].z);
-							const f32 midX = (x0 + x1) * 0.5f;
-							const f32 midZ = (z0 + z1) * 0.5f;
-							
-							width  = fabsf(x1 - x0);
-							height = fabsf(z1 - z0);
-							cen[0] = { midX, z0 },
-							cen[1] = { x0, midZ };
-						}
-						else
-						{
-							const Vec2f g[] = { posToGrid(s_geoEdit.shape[0]), posToGrid(s_geoEdit.shape[1]) };
-
-							Vec2f vtx[4];
-							getGridOrientedRect(s_geoEdit.shape[0], s_geoEdit.shape[1], vtx);
-
-							width  = fabsf(g[1].x - g[0].x);
-							height = fabsf(g[1].z - g[0].z);
-							cen[0] = { (vtx[0].x + vtx[1].x) * 0.5f, (vtx[0].z + vtx[1].z) * 0.5f };
-							cen[1] = { (vtx[1].x + vtx[2].x) * 0.5f, (vtx[1].z + vtx[2].z) * 0.5f };
-						}
-
-						// Once we have the rect sizes and edge center positions,
-						// draw the length labels.
-						const Vec2i mapPos[] =
-						{
-							worldPos2dToMap(cen[0]),
-							worldPos2dToMap(cen[1]),
-						};
-						const f32 len[] = { width, height };
-						const Vec2f offs[] = { {0.0f, -20.0f}, {25.0f, 0.0f} };
-
-						for (s32 i = 0; i < 2; i++)
-						{
-							char info[256];
-							floatToString(len[i], info);
-
-							f32 textOffset = ImGui::CalcTextSize(info).x;
-							if (i == 0) { textOffset = floorf(textOffset * 0.5f); }
-							else if (i == 1) { textOffset = 0.0f; }
-
-							if (s_view == EDIT_VIEW_2D)
-							{
-								drawViewportInfo(i, mapPos[i], info, -16.0f + offs[i].x - textOffset, -16.0f + offs[i].z);
-							}
-							else if (s_view == EDIT_VIEW_3D)
-							{
-								Vec3f worldPos = { cen[i].x, s_grid.height, cen[i].z };
-								if (s_geoEdit.extrudeEnabled)
-								{
-									worldPos = extrudePoint2dTo3d(cen[i], s_geoEdit.drawHeight[0]);
-								}
-
-								Vec2f screenPos;
-								if (worldPosToViewportCoord(worldPos, &screenPos))
-								{
-									drawViewportInfo(i, { (s32)screenPos.x, (s32)screenPos.z }, info, -16.0f + offs[i].x - textOffset, -16.0f + offs[i].z);
-								}
-							}
-						}
-					}
-					else if (s_geoEdit.drawMode == DMODE_SHAPE && !s_geoEdit.shape.empty())
-					{
-						const s32 count = (s32)s_geoEdit.shape.size();
-						const Vec2f* vtx = s_geoEdit.shape.data();
-						// Only show a limited number of wall lengths, otherwise it just turns into noise.
-						for (s32 v = 0; v < count; v++)
-						{
-							const Vec2f* v0 = &vtx[v];
-							const Vec2f* v1 = v+1 < count ? &vtx[v + 1] : &s_geoEdit.drawCurPos;
-
-							char info[256];
-							Vec2i mapPos;
-							Vec2f mapOffset;
-							getWallLengthText(v0, v1, info, mapPos, -1, &mapOffset);
-
-							if (s_view == EDIT_VIEW_2D)
-							{
-								drawViewportInfo(v, mapPos, info, 0, 0);
-							}
-							else if (s_view == EDIT_VIEW_3D)
-							{
-								Vec3f worldPos = { (v0->x + v1->x)*0.5f, s_grid.height, (v0->z + v1->z)*0.5f };
-								if (s_geoEdit.extrudeEnabled)
-								{
-									Vec3f w0 = extrudePoint2dTo3d(*v0, s_geoEdit.drawHeight[0]);
-									Vec3f w1 = extrudePoint2dTo3d(*v1, s_geoEdit.drawHeight[0]);
-									worldPos.x = (w0.x + w1.x)*0.5f;
-									worldPos.y = (w0.y + w1.y)*0.5f;
-									worldPos.z = (w0.z + w1.z)*0.5f;
-								}
-
-								Vec2f screenPos;
-								if (worldPosToViewportCoord(worldPos, &screenPos))
-								{
-									screenPos.x += mapOffset.x;
-									screenPos.z += mapOffset.z;
-									drawViewportInfo(v, { (s32)screenPos.x, (s32)screenPos.z }, info, 0, 0);
-								}
-							}
-						}
-					}
-					else if ((s_geoEdit.drawMode == DMODE_RECT_VERT || s_geoEdit.drawMode == DMODE_SHAPE_VERT) && s_view == EDIT_VIEW_3D)
-					{
-						f32 height = (s_geoEdit.drawHeight[0] + s_geoEdit.drawHeight[1]) * 0.5f;
-						if (s_geoEdit.extrudeEnabled)
-						{
-							height = s_curVtxPos.y;
-						}
-
-						Vec3f pos = { s_curVtxPos.x, height, s_curVtxPos.z };
-
-						Vec2f screenPos;
-						if (worldPosToViewportCoord(pos, &screenPos))
-						{
-							char info[256];
-							floatToString(s_geoEdit.drawHeight[1] - s_geoEdit.drawHeight[0], info);
-							drawViewportInfo(0, { s32(screenPos.x + 20.0f), s32(screenPos.z - 20.0f) }, info, 0, 0);
-						}
-					}
-				}
-
 				if (s_showAllLabels)
 				{
-					const s32 count = (s32)s_level.sectors.size();
-					EditorSector* sector = s_level.sectors.data();
-					s32 layer = ((s_editFlags & LEF_SHOW_ALL_LAYERS) && s_view != EDIT_VIEW_2D) ? LAYER_ANY : s_curLayer;
-					for (s32 i = 0; i < count; i++, sector++)
-					{
-						if (layer != LAYER_ANY && sector->layer != layer) { continue; }
-						if (sector->name.empty()) { continue; }
-
-						Vec2i mapPos;
-						f32 textOffset = floorf(ImGui::CalcTextSize(sector->name.c_str()).x * 0.5f);
-						bool showInfo = true;
-						if (s_view == EDIT_VIEW_2D)
-						{
-							Vec2f center = { (sector->bounds[0].x + sector->bounds[1].x) * 0.5f, (sector->bounds[0].z + sector->bounds[1].z) * 0.5f };
-
-							mapPos = worldPos2dToMap(center);
-							mapPos.x -= s32(textOffset + 12);
-							mapPos.z -= 16;
-						}
-						else if (s_view == EDIT_VIEW_3D)
-						{
-							Vec3f center = { (sector->bounds[0].x + sector->bounds[1].x) * 0.5f, sector->floorHeight, (sector->bounds[0].z + sector->bounds[1].z) * 0.5f };
-							Vec2f screenPos;
-							if (worldPosToViewportCoord(center, &screenPos))
-							{
-								f32 textOffset = floorf(ImGui::CalcTextSize(sector->name.c_str()).x * 0.5f);
-								mapPos = { s32(screenPos.x - textOffset), s32(screenPos.z) };
-							}
-							else
-							{
-								showInfo = false;
-							}
-						}
-						if (showInfo)
-						{
-							drawViewportInfo(i, mapPos, sector->name.c_str(), 0, 0);
-						}
-					}
+					displayMapSectorLabels();
 				}
 
 				// Level Notes
@@ -4750,13 +3623,18 @@ namespace LevelEditor
 		levelEditWinEnd();
 		popFont();
 
-	#if EDITOR_TEXT_PROMPTS == 1
-		handleTextPrompts();
-	#endif
-
 	#if SHOW_EDITOR_FPS == 1
 		TFE_FrontEndUI::drawFps(1800);
 	#endif
+	}
+
+	EditorSector* edit_getHoverSector2dAtCursor(s32 layer)
+	{
+		EditorSector* hoverSector = nullptr;
+		const Vec2f pos2d = { s_cursor3d.x, s_cursor3d.z };
+		const s32 sectorId = findSector2d(layer, &pos2d);
+		if (sectorId >= 0) { hoverSector = &s_level.sectors[sectorId]; }
+		return hoverSector;
 	}
 
 	////////////////////////////////////////////////////////
@@ -4781,245 +3659,6 @@ namespace LevelEditor
 		newWorldPos.z = s_viewportPos.z + f32(relY) * s_zoom2d;
 		s_viewportPos.x += (worldPos.x - newWorldPos.x);
 		s_viewportPos.z += (worldPos.z - newWorldPos.z);
-	}
-			
-	void selectOverlappingVertices(EditorSector* root, s32 featureIndex, const Vec2f* rootVtx, bool addToSelection, bool addToVtxList/*=false*/)
-	{
-		s_searchKey++;
-
-		// Which walls share the vertex?
-		std::vector<EditorSector*> stack;
-
-		root->searchKey = s_searchKey;
-		{
-			const size_t wallCount = root->walls.size();
-			EditorWall* wall = root->walls.data();
-			for (size_t w = 0; w < wallCount; w++, wall++)
-			{
-				if ((wall->idx[0] == featureIndex || wall->idx[1] == featureIndex) && wall->adjoinId >= 0)
-				{
-					EditorSector* next = &s_level.sectors[wall->adjoinId];
-					if (next->searchKey != s_searchKey)
-					{
-						stack.push_back(next);
-						next->searchKey = s_searchKey;
-					}
-				}
-			}
-		}
-
-		while (!stack.empty())
-		{
-			EditorSector* sector = stack.back();
-			stack.pop_back();
-
-			const size_t wallCount = sector->walls.size();
-			EditorWall* wall = sector->walls.data();
-			for (size_t w = 0; w < wallCount; w++, wall++)
-			{
-				s32 idx = -1;
-				if (TFE_Polygon::vtxEqual(rootVtx, &sector->vtx[wall->idx[0]]))
-				{
-					idx = 0;
-				}
-				else if (TFE_Polygon::vtxEqual(rootVtx, &sector->vtx[wall->idx[1]]))
-				{
-					idx = 1;
-				}
-
-				if (idx >= 0)
-				{
-					FeatureId id = createFeatureId(sector, wall->idx[idx], 0, true);
-					if (addToSelection) { addToVtxList ? vtxSelection_add(id) :  selection_add(id); }
-					else { addToVtxList ? vtxSelection_remove(id) : selection_remove(id); }
-
-					// Add the next sector to the stack, if it hasn't already been processed.
-					EditorSector* next = wall->adjoinId < 0 ? nullptr : &s_level.sectors[wall->adjoinId];
-					if (next && next->searchKey != s_searchKey)
-					{
-						stack.push_back(next);
-						next->searchKey = s_searchKey;
-					}
-				}
-			}
-		}
-	}
-
-	// TODO: This won't be necessary once derived selections work (derive vertex selection from walls).
-	void gatherVerticesFromWallSelection()
-	{
-		const s32 count = (s32)s_selectionList.size();
-		const FeatureId* list = s_selectionList.data();
-		vtxSelection_clear();
-
-		for (s32 i = 0; i < count; i++)
-		{
-			s32 featureIndex;
-			HitPart part;
-			EditorSector* sector = unpackFeatureId(list[i], &featureIndex, (s32*)&part);
-			EditorWall* wall = &sector->walls[featureIndex];
-
-			// Skip flats.
-			if (part == HP_FLOOR || part == HP_CEIL) { continue; }
-
-			// Add front face.
-			FeatureId v0 = createFeatureId(sector, wall->idx[0]);
-			FeatureId v1 = createFeatureId(sector, wall->idx[1]);
-			vtxSelection_add(v0);
-			vtxSelection_add(v1);
-
-			// Add mirror (if it exists).
-			if (wall->adjoinId >= 0 && wall->mirrorId >= 0)
-			{
-				EditorSector* nextSector = &s_level.sectors[wall->adjoinId];
-				EditorWall* mirror = wall->mirrorId < (s32)nextSector->walls.size() ? &nextSector->walls[wall->mirrorId] : nullptr;
-
-				if (mirror)
-				{
-					FeatureId v2 = createFeatureId(nextSector, mirror->idx[0]);
-					FeatureId v3 = createFeatureId(nextSector, mirror->idx[1]);
-					vtxSelection_add(v2);
-					vtxSelection_add(v3);
-				}
-			}
-		}
-
-		const s32 vtxCount = (s32)s_vertexList.size();
-		for (s32 v = 0; v < vtxCount; v++)
-		{
-			s32 featureIndex;
-			EditorSector* sector = unpackFeatureId(s_vertexList[v], &featureIndex);
-
-			const Vec2f* rootVtx = &sector->vtx[featureIndex];
-			selectOverlappingVertices(sector, featureIndex, rootVtx, true, /*addToVtxList*/true);
-		}
-	}
-		
-	void selectFromSingleVertex(EditorSector* root, s32 featureIndex, bool clearList)
-	{
-		const Vec2f* rootVtx = &root->vtx[featureIndex];
-		FeatureId rootId = createFeatureId(root, featureIndex, 0, false);
-		if (clearList)
-		{
-			selection_clear();
-			selection_add(rootId);
-		}
-		else if (!selection_add(rootId))
-		{
-			return;
-		}
-		selectOverlappingVertices(root, featureIndex, rootVtx, true);
-	}
-
-	void toggleWallGroupInclusion(EditorSector* sector, s32 featureIndex, s32 part)
-	{
-		FeatureId id = createFeatureId(sector, featureIndex, part);
-		if (selection_doesFeatureExist(id))
-		{
-			selection_remove(id);
-
-			if (s_featureCur.sector == sector && s_featureCur.featureIndex == featureIndex && s_featureCur.part == (HitPart)part)
-			{
-				s_featureCur = {};
-			}
-		}
-		else
-		{
-			selection_add(id);
-			s_featureCur = {};
-			handleSelectMode(s_featureHovered.sector, s_featureHovered.featureIndex);
-			s_featureCur.featureIndex = featureIndex;
-			s_featureCur.sector = sector;
-			s_featureCur.part = (HitPart)part;
-		}
-	}
-
-	void toggleVertexGroupInclusion(EditorSector* sector, s32 featureIndex)
-	{
-		FeatureId id = createFeatureId(sector, featureIndex);
-		if (selection_doesFeatureExist(id))
-		{
-			// Remove, and all matches.
-			const Vec2f* vtx = &sector->vtx[featureIndex];
-			// Remove all features were vertices match...
-			s32 count = (s32)s_selectionList.size();
-			FeatureId* list = s_selectionList.data();
-			for (s32 i = count - 1; i >= 0; i--)
-			{
-				s32 _featureIndex;
-				EditorSector* featureSector = unpackFeatureId(list[i], &_featureIndex);
-
-				if (TFE_Polygon::vtxEqual(vtx, &featureSector->vtx[_featureIndex]))
-				{
-					selection_remove(list[i]);
-				}
-			}
-		}
-		else
-		{
-			// Add
-			selectFromSingleVertex(sector, featureIndex, false);
-		}
-	}
-
-	void edit_setVertexPos(FeatureId id, Vec2f pos)
-	{
-		s32 featureIndex;
-		EditorSector* sector = unpackFeatureId(id, &featureIndex);
-		sector->vtx[featureIndex] = pos;
-
-		sectorToPolygon(sector);
-	}
-
-	void edit_moveVertices(s32 count, const FeatureId* vtxIds, Vec2f delta)
-	{
-		s_searchKey++;
-		s_sectorChangeList.clear();
-
-		for (s32 i = 0; i < count; i++)
-		{
-			s32 featureIndex;
-			EditorSector* sector = unpackFeatureId(vtxIds[i], &featureIndex);
-
-			sector->vtx[featureIndex].x += delta.x;
-			sector->vtx[featureIndex].z += delta.z;
-
-			// Only update a sector once.
-			if (sector->searchKey != s_searchKey)
-			{
-				s_sectorChangeList.push_back(sector);
-				sector->searchKey = s_searchKey;
-			}
-		}
-
-		// Update sectors after changes.
-		const size_t changeCount = s_sectorChangeList.size();
-		EditorSector** list = s_sectorChangeList.data();
-		for (size_t i = 0; i < changeCount; i++)
-		{
-			EditorSector* sector = list[i];
-			sectorToPolygon(sector);
-		}
-	}
-		
-	void moveVertex(Vec2f worldPos2d)
-	{
-		worldPos2d = snapToGridOrGuidelines2d(worldPos2d);
-
-		// Overall movement since mousedown, for the history.
-		if (!s_moveStarted)
-		{
-			s_moveStarted = true;
-			s_moveStartPos = s_featureCur.sector->vtx[s_featureCur.featureIndex];
-		}
-		s_moveTotalDelta = { worldPos2d.x - s_moveStartPos.x, worldPos2d.z - s_moveStartPos.z };
-		
-		// Current movement.
-		const Vec2f delta = { worldPos2d.x - s_featureCur.sector->vtx[s_featureCur.featureIndex].x, worldPos2d.z - s_featureCur.sector->vtx[s_featureCur.featureIndex].z };
-		edit_moveVertices((s32)s_selectionList.size(), s_selectionList.data(), delta);
-
-		s_curVtxPos.x = s_featureCur.sector->vtx[s_featureCur.featureIndex].x;
-		s_curVtxPos.z = s_featureCur.sector->vtx[s_featureCur.featureIndex].z;
 	}
 
 	Vec3f moveAlongXZPlane(f32 yHeight)
@@ -5098,16 +3737,18 @@ namespace LevelEditor
 		return worldPos;
 	}
 
-	void edit_moveFlats(s32 count, const FeatureId* flatIds, f32 delta)
+	void edit_moveSelectedFlats(f32 delta)
 	{
 		s_searchKey++;
 		s_sectorChangeList.clear();
 
+		s32 featureIndex = -1;
+		HitPart part = HP_NONE;
+		EditorSector* sector = nullptr;
+		s32 count = (s32)selection_getCount(SEL_SURFACE);
 		for (s32 i = 0; i < count; i++)
 		{
-			s32 featureIndex;
-			HitPart part;
-			EditorSector* sector = unpackFeatureId(flatIds[i], &featureIndex, (s32*)&part);
+			selection_getSurface(i, sector, featureIndex, &part);
 
 			if (part == HP_FLOOR)
 			{
@@ -5130,9 +3771,7 @@ namespace LevelEditor
 		// However a zero-height sector is valid.
 		for (s32 i = 0; i < count; i++)
 		{
-			s32 featureIndex;
-			HitPart part;
-			EditorSector* sector = unpackFeatureId(flatIds[i], &featureIndex, (s32*)&part);
+			selection_getSurface(i, sector, featureIndex, &part);
 
 			if (part == HP_FLOOR)
 			{
@@ -5156,12 +3795,17 @@ namespace LevelEditor
 		
 	void moveFlat()
 	{
+		EditorSector* sector = nullptr;
+		s32 wallIndex = -1;
+		HitPart part = HP_NONE;
+		selection_getSurface(0, sector, wallIndex, &part);
+		if (!sector) { return; }
+
 		if (!s_moveStarted)
 		{
 			s_moveStarted = true;
-			s_moveStartPos.x = s_featureCur.part == HP_FLOOR ? s_featureCur.sector->floorHeight : s_featureCur.sector->ceilHeight;
+			s_moveStartPos.x = part == HP_FLOOR ? sector->floorHeight : sector->ceilHeight;
 			s_moveStartPos.z = 0.0f;
-			s_moveTotalDelta.x = 0.0f;
 			s_prevPos = s_curVtxPos;
 		}
 
@@ -5170,25 +3814,30 @@ namespace LevelEditor
 
 		snapToGridY(&y);
 		f32 heightDelta;
-		if (s_featureCur.part == HP_FLOOR)
+		if (part == HP_FLOOR)
 		{
-			heightDelta = y - s_featureCur.sector->floorHeight;
+			heightDelta = y - sector->floorHeight;
 		}
 		else
 		{
-			heightDelta = y - s_featureCur.sector->ceilHeight;
+			heightDelta = y - sector->ceilHeight;
 		}
 
-		s_moveTotalDelta.x = y - s_moveStartPos.x;
-		edit_moveFlats((s32)s_selectionList.size(), s_selectionList.data(), heightDelta);
+		edit_moveSelectedFlats(heightDelta);
 	}
 		
 	void moveWall(Vec3f worldPos)
 	{
+		EditorSector* sector = nullptr;
+		s32 wallIndex = -1;
+		HitPart part = HP_NONE;
+		selection_getSurface(0, sector, wallIndex, &part);
+		if (!sector) { return; }
+
 		// Overall movement since mousedown, for the history.
-		const EditorWall* wall = &s_featureCur.sector->walls[s_featureCur.featureIndex];
-		const Vec2f& v0 = s_featureCur.sector->vtx[wall->idx[0]];
-		const Vec2f& v1 = s_featureCur.sector->vtx[wall->idx[1]];
+		const EditorWall* wall = &sector->walls[wallIndex];
+		const Vec2f& v0 = sector->vtx[wall->idx[0]];
+		const Vec2f& v1 = sector->vtx[wall->idx[1]];
 		if (!s_moveStarted)
 		{
 			s_moveStarted = true;
@@ -5252,8 +3901,7 @@ namespace LevelEditor
 			}
 
 			// Move all of the vertices by the offset.
-			s_moveTotalDelta = { v0.x + delta.x - s_moveStartPos.x, v0.z + delta.z - s_moveStartPos.z };
-			edit_moveVertices((u32)s_vertexList.size(), s_vertexList.data(), delta);
+			edit_moveSelectedVertices(delta);
 		}
 		else
 		{
@@ -5280,8 +3928,7 @@ namespace LevelEditor
 
 			// Move all of the vertices by the offset.
 			Vec2f delta = { s_moveStartPos.x + moveDir.x * nrmOffset - v0.x, s_moveStartPos.z + moveDir.z * nrmOffset - v0.z };
-			s_moveTotalDelta = { v0.x + delta.x - s_moveStartPos.x, v0.z + delta.z - s_moveStartPos.z };
-			edit_moveVertices((u32)s_vertexList.size(), s_vertexList.data(), delta);
+			edit_moveSelectedVertices(delta);
 		}
 	}
 	
@@ -5563,7 +4210,7 @@ namespace LevelEditor
 		return true;
 	}
 
-	Vec3f viewportCoordToWorldDir3d(Vec2i vCoord)
+	Vec3f edit_viewportCoordToWorldDir3d(Vec2i vCoord)
 	{
 		const Vec4f posScreen =
 		{
@@ -5587,7 +4234,7 @@ namespace LevelEditor
 	// Convert from viewport mouse coordinates to world space 3D direction.
 	Vec3f mouseCoordToWorldDir3d(s32 mx, s32 my)
 	{
-		return viewportCoordToWorldDir3d({ mx - (s32)s_editWinMapCorner.x, my - (s32)s_editWinMapCorner.z });
+		return edit_viewportCoordToWorldDir3d({ mx - (s32)s_editWinMapCorner.x, my - (s32)s_editWinMapCorner.z });
 	}
 
 	void messagePanel(ImVec2 pos)
@@ -5621,73 +4268,102 @@ namespace LevelEditor
 		ImGui::EndChild();
 	}
 
+	void edit_endMove()
+	{
+		const u32 count = selection_getCount();
+		if (s_editMove && s_moveStarted && count > 0)
+		{
+			s_searchKey++;
+			s_idList.clear();
+			u32 name = 0;
+			switch (s_editMode)
+			{
+				case LEDIT_VERTEX:
+				{
+					EditorSector* sector = nullptr;
+					s32 featureIndex = -1;
+					for (u32 i = 0; i < count; i++)
+					{
+						selection_getVertex(i, sector, featureIndex);
+						if (sector->searchKey != s_searchKey)
+						{
+							sector->searchKey = s_searchKey;
+							s_idList.push_back(sector->id);
+						}
+					}
+					name = LName_MoveVertex;
+				} break;
+				case LEDIT_WALL:
+				{
+					EditorSector* sector = nullptr;
+					s32 featureIndex = -1;
+					for (u32 i = 0; i < count; i++)
+					{
+						selection_getSurface(i, sector, featureIndex);
+						if (sector->searchKey != s_searchKey)
+						{
+							sector->searchKey = s_searchKey;
+							s_idList.push_back(sector->id);
+						}
+					}
+					name = LName_MoveWall;
+				} break;
+			};
+			// Take a snapshot of changed sectors.
+			cmd_sectorSnapshot(name, s_idList);
+		}
+
+		s_editMove = false;
+		s_moveStarted = false;
+	}
+
 	void moveFeatures(const Vec3f& newPos)
 	{
+		const bool hasSelection = selection_getCount() > 0;
 		if (s_editMode == LEDIT_VERTEX)
 		{
-			if (s_featureCur.featureIndex >= 0 && s_featureCur.sector && TFE_Input::mouseDown(MBUTTON_LEFT) && !TFE_Input::keyModDown(KEYMOD_CTRL) && !TFE_Input::keyModDown(KEYMOD_SHIFT))
+			if (hasSelection && TFE_Input::mouseDown(MBUTTON_LEFT) && !TFE_Input::keyModDown(KEYMOD_CTRL) && !TFE_Input::keyModDown(KEYMOD_SHIFT))
 			{
 				if (s_canMoveFeature)
 				{
-					moveVertex({ newPos.x, newPos.z });
-				}
-			}
-			else if (s_featureCur.featureIndex >= 0 && s_featureCur.sector && s_moveStarted)
-			{
-				s_editMove = false;
-				s_moveStarted = false;
-				if (s_canMoveFeature)
-				{
-					// cmd_addMoveVertices((s32)s_selectionList.size(), s_selectionList.data(), s_moveTotalDelta);
+					edit_moveVertices({ newPos.x, newPos.z });
 				}
 			}
 			else
 			{
-				s_editMove = false;
-				s_moveStarted = false;
+				edit_endMove();
 			}
 		}
 		else if (s_editMode == LEDIT_WALL)
 		{
-			if (s_featureCur.featureIndex >= 0 && s_featureCur.sector && TFE_Input::mouseDown(MBUTTON_LEFT) && !TFE_Input::keyModDown(KEYMOD_CTRL) && !TFE_Input::keyModDown(KEYMOD_SHIFT))
-			{
-				if (s_canMoveFeature)
-				{
-					if (s_featureCur.part == HP_FLOOR || s_featureCur.part == HP_CEIL) { moveFlat(); }
-					else { moveWall(newPos); }
-				}
-			}
-			else if (s_featureCur.featureIndex >= 0 && s_featureCur.sector && s_moveStarted)
-			{
-				s_editMove = false;
-				s_moveStarted = false;
+			EditorSector* sector = nullptr;
+			s32 featureIndex = -1;
+			HitPart part = HP_NONE;
+			selection_getSurface(0, sector, featureIndex, &part);
 
+			if (hasSelection && TFE_Input::mouseDown(MBUTTON_LEFT) && !TFE_Input::keyModDown(KEYMOD_CTRL) && !TFE_Input::keyModDown(KEYMOD_SHIFT))
+			{
 				if (s_canMoveFeature)
 				{
-					if (s_featureCur.part == HP_FLOOR || s_featureCur.part == HP_CEIL)
-					{
-						// cmd_addMoveFlats((s32)s_selectionList.size(), s_selectionList.data(), s_moveTotalDelta.x);
-					}
-					else // Re-use the move vertices command, but with the name LName_MoveWall.
-					{
-						// cmd_addMoveVertices((s32)s_vertexList.size(), s_vertexList.data(), s_moveTotalDelta, LName_MoveWall);
-					}
+					if (part == HP_FLOOR || part == HP_CEIL) { moveFlat(); }
+					else { moveWall(newPos); }
 				}
 			}
 			else
 			{
-				s_editMove = false;
-				s_moveStarted = false;
+				edit_endMove();
 			}
 		}
 	}
 
-	void edit_clearSelections()
+	void edit_clearSelections(bool endTransform)
 	{
-		s_selectionList.clear();
-		s_featureCur = {};
-		s_featureCurWall = {};
-		s_featureHovered = {};
+		if (endTransform)
+		{
+			edit_endMove();
+		}
+
+		selection_clear(SEL_ALL);
 		s_featureTex = {};
 		clearLevelNoteSelection();
 		guideline_clearSelection();
@@ -5695,32 +4371,91 @@ namespace LevelEditor
 
 	static Vec2f s_texDelta = { 0 };
 
-	void edit_moveTexture(s32 count, const FeatureId* featureList, Vec2f delta)
+	bool canMoveTexture(HitPart part)
 	{
-		for (s32 i = 0; i < count; i++)
+		// Make sure the surface type is compatible:
+		// Floor <-> Floor; Ceil <-> Ceil; Sign <-> Sign
+		// Mid | Top | Bot <-> Mid | Top | Bot
+		bool canApplyOffset = true;
+		canApplyOffset = canApplyOffset && (s_featureTex.part != HP_FLOOR || part == HP_FLOOR);
+		canApplyOffset = canApplyOffset && (s_featureTex.part != HP_CEIL || part == HP_CEIL);
+		canApplyOffset = canApplyOffset && (s_featureTex.part != HP_SIGN || part == HP_SIGN);
+		// Top/Bottom/Mid
+		canApplyOffset = canApplyOffset && (s_featureTex.part >= HP_SIGN || part < HP_SIGN);
+
+		return canApplyOffset;
+	}
+
+	void edit_moveSelectedTextures(Vec2f delta)
+	{
+		EditorSector* sector = nullptr;
+		s32 featureIndex = -1;
+		HitPart part = HP_NONE;
+
+		const s32 count = (s32)selection_getCount();
+		if (s_editMode == LEDIT_SECTOR)
 		{
-			s32 featureIndex;
-			HitPart part;
-			EditorSector* sector = unpackFeatureId(featureList[i], &featureIndex, (s32*)&part);
-			modifyTextureOffset(sector, part, featureIndex, delta);
+			if (!count && selection_hasHovered())
+			{
+				selection_getSector(SEL_INDEX_HOVERED, sector);
+				modifyTextureOffset(sector, s_featureTex.part, 0, delta);
+			}
+
+			// move the floor or ceiling based on hovered.
+			for (s32 i = 0; i < count; i++)
+			{
+				selection_getSector(i, sector);
+				modifyTextureOffset(sector, s_featureTex.part, 0, delta);
+			}
+		}
+		else if (s_editMode == LEDIT_WALL)
+		{
+			if (!count && selection_hasHovered())
+			{
+				selection_getSurface(SEL_INDEX_HOVERED, sector, featureIndex, &part);
+				if (canMoveTexture(part))
+				{
+					modifyTextureOffset(sector, s_featureTex.part, featureIndex, delta);
+				}
+			}
+
+			for (s32 i = 0; i < count; i++)
+			{
+				selection_getSurface(i, sector, featureIndex, &part);
+				if (canMoveTexture(part))
+				{
+					modifyTextureOffset(sector, part, featureIndex, delta);
+				}
+			}
 		}
 	}
 
+	// TODO: Once "grabbed" - the hovered sector/group should be locked in.
 	void handleTextureAlignment()
 	{
+		bool hasHovered = selection_hasHovered();
+		bool hasFeature = selection_getCount() > 0;
+		bool canMoveTex = hasHovered || s_featureTex.sector;
+
 		// TODO: Remove code duplication between the 2D and 3D versions.
-		if (s_view == EDIT_VIEW_2D && s_editMode == LEDIT_SECTOR && s_featureHovered.sector && (s_sectorDrawMode == SDM_TEXTURED_CEIL || s_sectorDrawMode == SDM_TEXTURED_FLOOR))
+		if (s_view == EDIT_VIEW_2D && s_editMode == LEDIT_SECTOR && canMoveTex && (s_sectorDrawMode == SDM_TEXTURED_CEIL || s_sectorDrawMode == SDM_TEXTURED_FLOOR))
 		{
 			HitPart part = s_sectorDrawMode == SDM_TEXTURED_CEIL ? HP_CEIL : HP_FLOOR;
-			s_featureHovered.part = part;
-			if (s_featureTex.featureIndex >= 0)
+			EditorSector* hovered = nullptr;
+			if (s_featureTex.sector)
 			{
-				s_featureHovered = s_featureTex;
+				hovered = s_featureTex.sector;
+				s_featureTex.part = part;
+			}
+			else
+			{
+				selection_getSector(SEL_INDEX_HOVERED, hovered);
+				s_featureTex.sector = hovered;
+				s_featureTex.part = part;
 			}
 
-			FeatureId id = createFeatureId(s_featureHovered.sector, s_featureHovered.featureIndex, s_featureHovered.part);
-			bool doesItemExist = selection_doesFeatureExist(id);
-			if (s_selectionList.size() <= 1 || doesItemExist)
+			bool doesItemExist = selection_sector(SA_CHECK_INCLUSION, hovered);
+			if (selection_getCount() < 1 || doesItemExist)
 			{
 				Vec2f delta = { 0 };
 
@@ -5737,20 +4472,11 @@ namespace LevelEditor
 
 					if (delta.x || delta.z)
 					{
-						// Add command.
-						const s32 count = (s32)s_selectionList.size();
-						if (!count)
-						{
-							// cmd_addMoveTexture(1, &id, delta);
-						}
-						else
-						{
-							// cmd_addMoveTexture(count, s_selectionList.data(), delta);
-						}
+						// TODO: Add command.
 					}
 				}
 
-				EditorSector* sector = s_featureHovered.sector;
+				EditorSector* sector = hovered;
 				Vec2f cursor = { s_cursor3d.x, s_cursor3d.z };
 
 				if (!s_startTexMove)
@@ -5764,9 +4490,9 @@ namespace LevelEditor
 				{
 					s_startTexMove = true;
 					s_startTexPos = { cursor.x, 0.0f, cursor.z };
-					s_startTexOffset = getTextureOffset(s_featureHovered.sector, part, s_featureHovered.featureIndex);
+					s_startTexOffset = getTextureOffset(hovered, part, 0);
 					snapToGrid(&s_startTexOffset);
-					s_featureTex = s_featureHovered;
+					s_featureTex.sector = hovered;
 					// Cancel out any key-based movement, cannot do both at once.
 					delta = { 0 };
 					s_texDelta = { 0 };
@@ -5783,45 +4509,48 @@ namespace LevelEditor
 					delta.z = offset.z * texScale;
 					s_texDelta = delta;
 
-					Vec2f curOffset = getTextureOffset(s_featureHovered.sector, s_featureHovered.part, s_featureHovered.featureIndex);
+					Vec2f curOffset = getTextureOffset(hovered, part, 0);
 					delta.x = (s_startTexOffset.x + delta.x) - curOffset.x;
 					delta.z = (s_startTexOffset.z + delta.z) - curOffset.z;
-				}
-				else if (!middleMousePressed && !middleMouseDown)
-				{
-					// Add command.
-					const s32 count = (s32)s_selectionList.size();
-					if (!count)
-					{
-						// cmd_addMoveTexture(1, &id, s_texDelta);
-					}
-					else
-					{
-						// cmd_addMoveTexture(count, s_selectionList.data(), s_texDelta);
-					}
-
-					s_startTexMove = false;
-					s_featureTex = {};
 				}
 
 				if (delta.x || delta.z)
 				{
-					const s32 count = (s32)s_selectionList.size();
-					if (!count) { edit_moveTexture(1, &id, delta); }
-					else { edit_moveTexture(count, s_selectionList.data(), delta); }
+					edit_moveSelectedTextures(delta);
 				} // delta.x || delta.z
+
+				if (!middleMousePressed && !middleMouseDown)
+				{
+					// TODO: Add command.
+					s_startTexMove = false;
+					s_featureTex = {};
+				}
+			}
+			else
+			{
+				s_featureTex = {};
 			}
 		}
-		else if (s_view == EDIT_VIEW_3D && s_editMode == LEDIT_WALL && (s_featureHovered.featureIndex >= 0 || s_featureTex.featureIndex >= 0))
+		else if (s_view == EDIT_VIEW_3D && s_editMode == LEDIT_WALL && canMoveTex)
 		{
-			if (s_featureTex.featureIndex >= 0)
+			EditorSector* hovered = nullptr;
+			HitPart part = HP_NONE;
+			s32 featureIndex = -1;
+			if (s_featureTex.sector)
 			{
-				s_featureHovered = s_featureTex;
+				hovered = s_featureTex.sector;
+				part = s_featureTex.part;
+				featureIndex = s_featureTex.featureIndex;
 			}
-
-			FeatureId id = createFeatureId(s_featureHovered.sector, s_featureHovered.featureIndex, s_featureHovered.part);
-			bool doesItemExist = selection_doesFeatureExist(id);
-			if (s_selectionList.size() <= 1 || doesItemExist)
+			else if (selection_getSurface(SEL_INDEX_HOVERED, hovered, featureIndex, &part))
+			{
+				s_featureTex.sector = hovered;
+				s_featureTex.part = part;
+				s_featureTex.featureIndex = featureIndex;
+			}
+			
+			bool doesItemExist = selection_surface(SA_CHECK_INCLUSION, hovered, featureIndex, part);
+			if (selection_getCount() < 1 || doesItemExist)
 			{
 				Vec2f delta = { 0 };
 
@@ -5835,28 +4564,15 @@ namespace LevelEditor
 
 					if (delta.x || delta.z)
 					{
-						if (s_featureHovered.part == HP_SIGN)
+						if (part == HP_SIGN)
 						{
 							delta.x = -delta.x;
 						}
-
-						// Add command.
-						const s32 count = (s32)s_selectionList.size();
-						if (!count)
-						{
-							// cmd_addMoveTexture(1, &id, delta);
-						}
-						else
-						{
-							// cmd_addMoveTexture(count, s_selectionList.data(), delta);
-						}
+						// TODO: Add command.
 					}
 				}
 
-				EditorSector* sector = s_featureHovered.sector;
-				HitPart part = s_featureHovered.part;
 				Vec3f cursor = s_cursor3d;
-
 				if (!s_startTexMove)
 				{
 					if (part == HP_FLOOR || part == HP_CEIL)
@@ -5866,8 +4582,8 @@ namespace LevelEditor
 					// Snap to the surface grid.
 					else
 					{
-						EditorWall* wall = &sector->walls[s_featureHovered.featureIndex];
-						snapToSurfaceGrid(sector, wall, cursor);
+						EditorWall* wall = &hovered->walls[featureIndex];
+						snapToSurfaceGrid(hovered, wall, cursor);
 					}
 				}
 										
@@ -5877,8 +4593,8 @@ namespace LevelEditor
 				{
 					s_startTexMove = true;
 					s_startTexPos = cursor;
-					s_startTexOffset = getTextureOffset(s_featureHovered.sector, s_featureHovered.part, s_featureHovered.featureIndex);
-					s_texMoveSign = s_featureHovered.part == HP_SIGN;
+					s_startTexOffset = getTextureOffset(hovered, part, featureIndex);
+					s_texMoveSign = part == HP_SIGN;
 					if (s_texMoveSign)
 					{
 						// TODO: Revisit sign snapping.
@@ -5892,13 +4608,16 @@ namespace LevelEditor
 					{
 						snapToGrid(&s_startTexOffset);
 					}
-					s_featureTex = s_featureHovered;
+					s_featureTex.sector = hovered;
+					s_featureTex.prevSector = nullptr;
+					s_featureTex.featureIndex = featureIndex;
+					s_featureTex.part = part;
 
 					if (part != HP_FLOOR && part != HP_CEIL)
 					{
-						EditorWall* wall = &sector->walls[s_featureHovered.featureIndex];
-						const Vec2f* v0 = &sector->vtx[wall->idx[0]];
-						const Vec2f* v1 = &sector->vtx[wall->idx[1]];
+						EditorWall* wall = &hovered->walls[featureIndex];
+						const Vec2f* v0 = &hovered->vtx[wall->idx[0]];
+						const Vec2f* v1 = &hovered->vtx[wall->idx[1]];
 						const Vec2f t = { -(v1->x - v0->x), -(v1->z - v0->z) };
 						const Vec2f n = { -(v1->z - v0->z), v1->x - v0->x };
 
@@ -5917,7 +4636,7 @@ namespace LevelEditor
 					if (part == HP_FLOOR || part == HP_CEIL)
 					{
 						// Intersect the ray from the camera, through the plane.
-						f32 planeHeight = (part == HP_FLOOR) ? sector->floorHeight : sector->ceilHeight;
+						f32 planeHeight = (part == HP_FLOOR) ? hovered->floorHeight : hovered->ceilHeight;
 						f32 s = (planeHeight - s_camera.pos.y) / (cursor.y - s_camera.pos.y);
 						cursor.x = s_camera.pos.x + s * (cursor.x - s_camera.pos.x);
 						cursor.z = s_camera.pos.z + s * (cursor.z - s_camera.pos.z);
@@ -5929,7 +4648,7 @@ namespace LevelEditor
 						delta.z = offset.z * texScale;
 						s_texDelta = delta;
 
-						Vec2f curOffset = getTextureOffset(s_featureHovered.sector, s_featureHovered.part, s_featureHovered.featureIndex);
+						Vec2f curOffset = getTextureOffset(hovered, part, featureIndex);
 						delta.x = (s_startTexOffset.x + delta.x) - curOffset.x;
 						delta.z = (s_startTexOffset.z + delta.z) - curOffset.z;
 					}
@@ -5945,15 +4664,15 @@ namespace LevelEditor
 						cursor.y = s_camera.pos.y + t * (cursor.y - s_camera.pos.y);
 						cursor.z = s_camera.pos.z + t * (cursor.z - s_camera.pos.z);
 
-						EditorWall* wall = &sector->walls[s_featureHovered.featureIndex];
-						snapToSurfaceGrid(sector, wall, cursor);
+						EditorWall* wall = &hovered->walls[featureIndex];
+						snapToSurfaceGrid(hovered, wall, cursor);
 						offset = { cursor.x - s_startTexPos.x, cursor.y - s_startTexPos.y, cursor.z - s_startTexPos.z };
 
 						delta.x = (offset.x * s_texTangent.x + offset.z * s_texTangent.z) * texScale;
 						delta.z = -offset.y * texScale;
 						s_texDelta = delta;
 
-						Vec2f curOffset = getTextureOffset(s_featureHovered.sector, s_featureHovered.part, s_featureHovered.featureIndex);
+						Vec2f curOffset = getTextureOffset(hovered, part, featureIndex);
 						if (part == HP_SIGN)
 						{
 							delta.x = -(s_startTexOffset.x + delta.x) - curOffset.x;
@@ -5965,32 +4684,22 @@ namespace LevelEditor
 						delta.z = (s_startTexOffset.z + delta.z) - curOffset.z;
 					}
 				}
-				else if (!middleMousePressed && !middleMouseDown)
+				
+				if (delta.x || delta.z)
 				{
-					// Add command.
-					if (s_startTexMove)
-					{
-						const s32 count = (s32)s_selectionList.size();
-						if (!count)
-						{
-							// cmd_addMoveTexture(1, &id, s_texDelta);
-						}
-						else
-						{
-							// cmd_addMoveTexture(count, s_selectionList.data(), s_texDelta);
-						}
-					}
+					edit_moveSelectedTextures(delta);
+				} // delta.x || delta.z
 
+				if (!middleMousePressed && !middleMouseDown)
+				{
+					// TODO: Add command.
 					s_startTexMove = false;
 					s_featureTex = {};
 				}
-
-				if (delta.x || delta.z)
-				{
-					const s32 count = (s32)s_selectionList.size();
-					if (!count) { edit_moveTexture(1, &id, delta); }
-					else { edit_moveTexture(count, s_selectionList.data(), delta); }
-				} // delta.x || delta.z
+			}
+			else
+			{
+				s_featureTex = {};
 			}
 		}
 		else
@@ -6105,34 +4814,63 @@ namespace LevelEditor
 		if (!signTex) { return; }
 
 		// For now, this only works for hovered features.
-		FeatureId id = createFeatureId(s_featureHovered.sector, s_featureHovered.featureIndex, WP_SIGN);
+		//FeatureId id = createFeatureId(s_featureHovered.sector, s_featureHovered.featureIndex, WP_SIGN);
+		if (!selection_hasHovered() || s_editMode != LEDIT_WALL)
+		{
+			return;
+		}
+		EditorSector* sector;
+		s32 featureIndex;
+		if (!selection_getSurface(SEL_INDEX_HOVERED, sector, featureIndex))
+		{
+			return;
+		}
 		
 		// Center the sign on the mouse cursor.
-		EditorSector* sector = s_featureHovered.sector;
-		EditorWall* wall = &sector->walls[s_featureHovered.featureIndex];
+		EditorWall* wall = &sector->walls[featureIndex];
 
 		Vec2f offset = { 0 };
 		snapSignToCursor(sector, wall, texIndex, &offset);
 
+		FeatureId id = createFeatureId(sector, featureIndex, WP_SIGN);
 		edit_setTexture(1, &id, signIndex, &offset);
 		// cmd_addSetTexture(1, &id, signIndex, &offset);
 	}
 
 	void applyTextureToSelection(s32 texIndex, Vec2f* offset)
 	{
-		FeatureId id = createFeatureId(s_featureHovered.sector, s_featureHovered.featureIndex, s_featureHovered.part);
-		bool doesItemExist = selection_doesFeatureExist(id);
-		const s32 count = (s32)s_selectionList.size();
-		if (count <= 1 || doesItemExist)
+		if (!selection_hasHovered()) { return; }
+
+		bool doesItemExist = false;
+		EditorSector* sector = nullptr;
+		s32 featureIndex = -1;
+		HitPart part = HP_NONE;
+		if (s_editMode == LEDIT_WALL)
 		{
-			s32 index = s_featureHovered.featureIndex;
+			selection_getSurface(SEL_INDEX_HOVERED, sector, featureIndex, &part);
+			doesItemExist = selection_surface(SA_CHECK_INCLUSION, sector, featureIndex, part);
+		}
+		else if (s_editMode == LEDIT_SECTOR)
+		{
+			selection_getSector(SEL_INDEX_HOVERED, sector);
+			doesItemExist = selection_sector(SA_CHECK_INCLUSION, sector);
+		}
+
+		if (selection_getCount() < 1 || doesItemExist)
+		{
 			if (doesItemExist)
 			{
-				edit_setTexture(count, s_selectionList.data(), texIndex, offset);
+				FeatureId* list = nullptr;
+				u32 count = selection_getList(list);
+				if (count && list)
+				{
+					edit_setTexture(count, list, texIndex, offset);
+				}
 				// cmd_addSetTexture(count, s_selectionList.data(), texIndex, offset);
 			}
 			else
 			{
+				FeatureId id = createFeatureId(sector, featureIndex, part);
 				edit_setTexture(1, &id, texIndex, offset);
 				// cmd_addSetTexture(1, &id, texIndex, offset);
 			}
@@ -6141,9 +4879,21 @@ namespace LevelEditor
 
 	void applySurfaceTextures()
 	{
-		EditorSector* sector = s_featureHovered.sector;
-		HitPart part = s_featureHovered.part;
-		s32 index = s_featureHovered.featureIndex;
+		if (!selection_hasHovered()) { return; }
+		EditorSector* sector = nullptr;
+		HitPart part = HP_MID;
+		s32 index = -1;
+		if (s_editMode == LEDIT_WALL)
+		{
+			selection_getSurface(SEL_INDEX_HOVERED, sector, index, &part);
+		}
+		else if (s_editMode == LEDIT_SECTOR)
+		{
+			selection_getSector(SEL_INDEX_HOVERED, sector);
+			part = (s_sectorDrawMode == SDM_TEXTURED_FLOOR) ? HP_FLOOR : HP_CEIL;
+		}
+		if (!sector) { return; }
+
 		if (TFE_Input::keyPressed(KEY_T) && TFE_Input::keyModDown(KEYMOD_CTRL))
 		{
 			const LevelTextureAsset* textureAsset = nullptr;
@@ -6228,7 +4978,7 @@ namespace LevelEditor
 		}
 		else if (TFE_Input::keyPressed(KEY_A) && TFE_Input::keyModDown(KEYMOD_CTRL))
 		{
-			edit_autoAlign(s_featureHovered.sector->id, s_featureHovered.featureIndex, s_featureHovered.part);
+			edit_autoAlign(sector->id, index, part);
 			// cmd_addAutoAlign(s_featureHovered.sector->id, s_featureHovered.featureIndex, s_featureHovered.part);
 		}
 	}
@@ -6462,168 +5212,365 @@ namespace LevelEditor
 	}
 
 	/////////////////////////////////////////////////////
-	// Tutorial/Update UI helpers.
+	// Map Labels / Info
 	/////////////////////////////////////////////////////
-#if EDITOR_TEXT_PROMPTS == 1
-	const f32 c_textPromptDt[] =
+	void displayMapVertexInfo()
 	{
-		0.5f,	// TXT_STATE_ANIM_ON
-		10.0f,	// TXT_STATE_ON_SCREEN
-		0.25f,	// TXT_STATE_ANIM_OFF
-	};
-	const f32 c_textPromptWidth = 1024.0f;
-	const f32 c_textPromptHeight = 256.0f;
-	const f32 c_textPromptY = 386.0f;
+		EditorSector* hoveredSector = nullptr;
+		s32 hoveredFeatureIndex = -1;
+		selection_getVertex(SEL_INDEX_HOVERED, hoveredSector, hoveredFeatureIndex);
 
-	enum TextPromptAnimState
-	{
-		TXT_STATE_ANIM_ON = 0,
-		TXT_STATE_ON_SCREEN,
-		TXT_STATE_ANIM_OFF,
-		TXT_STATE_COUNT
-	};
-
-	struct TextPromptAnim
-	{
-		f32 curAlpha = 0.0f;
-		f32 animParam = 0.0f;
-		s32 promptId = -1;
-		TextPromptAnimState state = TXT_STATE_ANIM_ON;
-	};
-
-	struct TextPrompt
-	{
-		std::string text;
-		Vec4f color;
-	};
-	std::vector<TextPrompt> s_textPrompts;
-	TextPromptAnim s_textPromptAnim = {};
-	bool s_textPromptInit = false;
-		
-	s32 addTextPrompt(std::string text, Vec4f color)
-	{
-		s32 id = (s32)s_textPrompts.size();
-		s_textPrompts.push_back({ text, color });
-		return id;
-	}
-
-	void beginTextPrompt(s32 id)
-	{
-		s_textPromptAnim = {};
-		s_textPromptAnim.promptId = id;
-	}
-
-	void updateTextPrompt()
-	{
-		if (s_textPromptAnim.promptId < 0) { return; }
-		s_textPromptAnim.animParam += TFE_System::getDeltaTime();
-		if (s_textPromptAnim.animParam >= c_textPromptDt[s_textPromptAnim.state])
+		// Give the "world space" vertex position, get back to the pixel position for the UI.
+		const Vec2f vtx = hoveredSector->vtx[hoveredFeatureIndex];
+		Vec2i mapPos;
+		bool showInfo = true;
+		if (s_view == EDIT_VIEW_2D)
 		{
-			s_textPromptAnim.animParam = 0.0f;
-			s_textPromptAnim.state = TextPromptAnimState(s_textPromptAnim.state + 1);
-			if (s_textPromptAnim.state == TXT_STATE_COUNT)
+			mapPos = worldPos2dToMap(vtx);
+		}
+		else if (s_view == EDIT_VIEW_3D)
+		{
+			// Project the position.
+			Vec2f screenPos;
+			if (worldPosToViewportCoord({ vtx.x, hoveredSector->floorHeight, vtx.z }, &screenPos))
 			{
-				s_textPromptAnim.promptId = -1;
-				return;
+				mapPos = { s32(screenPos.x), s32(screenPos.z) };
+			}
+			else
+			{
+				showInfo = false;
 			}
 		}
 
-		DisplayInfo displayInfo;
-		TFE_RenderBackend::getDisplayInfo(&displayInfo);
-
-		f32 y = displayInfo.height - c_textPromptY;
-		if (s_textPromptAnim.state == TXT_STATE_ANIM_ON)
+		if (showInfo)
 		{
-			y = displayInfo.height - c_textPromptY * smoothstep(0.0f, 1.0f, s_textPromptAnim.animParam / c_textPromptDt[TXT_STATE_ANIM_ON]);
+			char x[256], z[256];
+			floatToString(vtx.x, x);
+			floatToString(vtx.z, z);
+
+			char info[256];
+			sprintf(info, "%d: %s, %s", hoveredFeatureIndex, x, z);
+
+			drawViewportInfo(0, mapPos, info, -UI_SCALE(20), -UI_SCALE(20) - 16);
 		}
-		else if (s_textPromptAnim.state == TXT_STATE_ANIM_OFF)
-		{
-			y = displayInfo.height - c_textPromptY * smoothstep(0.0f, 1.0f, 1.0f - s_textPromptAnim.animParam / c_textPromptDt[TXT_STATE_ANIM_OFF]);
-		}
-
-		ImVec2 pos = { (s_viewportSize.x - c_textPromptWidth)*0.5f, y };
-
-		u32 flags = ImGuiWindowFlags_NoNav | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoInputs;
-		ImGui::SetNextWindowSize({ c_textPromptWidth, c_textPromptHeight });
-		ImGui::SetNextWindowPos(pos);
-		pushFont(TFE_Editor::FONT_LARGE);
-		ImGui::Begin("##Prompt", NULL, flags);
-
-		ImVec2 size = ImGui::CalcTextSize(s_textPrompts[s_textPromptAnim.promptId].text.c_str());
-		ImGui::SetCursorPosX((c_textPromptWidth  - size.x) * 0.5f);
-		ImGui::SetCursorPosY((c_textPromptHeight - size.y) * 0.5f);
-
-		const ImVec4 color = { s_textPrompts[s_textPromptAnim.promptId].color.x, s_textPrompts[s_textPromptAnim.promptId].color.y,
-			s_textPrompts[s_textPromptAnim.promptId].color.z, s_textPrompts[s_textPromptAnim.promptId].color.w };
-		ImGui::TextColored(color, s_textPrompts[s_textPromptAnim.promptId].text.c_str());
-
-		ImGui::End();
-		popFont();
 	}
 
-	// Initialize for tutorials, etc.
-	// For now just hack int.
-	void textPromptInit()
+	void displayMapWallInfo()
 	{
-		const char* textPrompts[] =
+		EditorSector* hoveredSector = nullptr;
+		s32 hoveredFeatureIndex = -1;
+		HitPart hoveredPart = HP_NONE;
+		selection_getSurface(SEL_INDEX_HOVERED, hoveredSector, hoveredFeatureIndex, &hoveredPart);
+
+		const EditorWall* wall = &hoveredSector->walls[hoveredFeatureIndex];
+		const Vec2f* v0 = &hoveredSector->vtx[wall->idx[0]];
+		const Vec2f* v1 = &hoveredSector->vtx[wall->idx[1]];
+
+		Vec2i mapPos;
+		bool showInfo = true;
+		char lenStr[256];
+		if (s_view == EDIT_VIEW_2D)
 		{
-			/*1*/ "Independent draw mode allows sectors\n"
-				  "to be drawn that overlap with\n"
-			      "existing sectors in 3 dimensions\n"
-			      "without merging.",
-			/*2*/ "Merge draw mode merges drawn shapes\n"
-			      "with existing sectors, splitting them\n"
-			      "as needed. But merging only occurs if\n"
-			      "they overlap in X, Y and Z.",
-			/*3*/ "Subtract draw mode removes regions of\n"
-			      "sectors that overlap with the drawn\n"
-			      "shape. This enables fast clipping and\n"
-			      "speeds up drawing columns and voids.",
-			/*4*/ "In the 3D view, you can draw on the\n"
-			      "floor and extrude sub-sectors. You\n"
-			      "can also draw outside the current\n"
-			      "sector or cross sector boundaries.",
-			/*5*/ "When drawing sectors in 3D, the first\n"
-			      "vertex drawn determines which sector\n"
-			      "to reference (if any).",
-			/*6*/ "It is also possible to draw directly\n"
-			      "on the walls and push or pull to\n"
-			      "extrude new sectors.",
-			/*7*/ "To help add more contrast to walls\n"
-			      "you can apply directional lighting\n"
-			      "that modifies the wall light offset\n"
-			      "based on the wall normal.",
-			/*8*/ "Groups act like editor-only layers\n"
-			      "allowing groups to be hidden, locked\n"
-			      "or removed from export.",
-			/*9*/ "Each group has a name and color,\n"
-			      "making them a great way to help\n"
-				  "organize the level.",
-			/*0*/ "",
-		};
-		for (s32 i = 0; i < TFE_ARRAYSIZE(textPrompts); i++)
+			getWallLengthText(v0, v1, lenStr, mapPos, hoveredFeatureIndex);
+		}
+		else if (s_view == EDIT_VIEW_3D)
 		{
-			addTextPrompt(textPrompts[i], {0.8f, 1.0f, 1.0f, 1.0f});
+			if (hoveredPart == HP_FLOOR || hoveredPart == HP_CEIL)
+			{
+				EditorSector* sector = hoveredSector;
+				Vec3f worldPos = { (sector->bounds[0].x + sector->bounds[1].x) * 0.5f, sector->floorHeight + 1.0f, (sector->bounds[0].z + sector->bounds[1].z) * 0.5f };
+				Vec2f screenPos;
+				if (!s_showAllLabels && !sector->name.empty() && worldPosToViewportCoord(worldPos, &screenPos))
+				{
+					strcpy(lenStr, sector->name.c_str());
+					f32 textOffset = floorf(ImGui::CalcTextSize(lenStr).x * 0.5f);
+					mapPos = { s32(screenPos.x - textOffset), s32(screenPos.z) };
+				}
+				else
+				{
+					showInfo = false;
+				}
+			}
+			else
+			{
+				Vec3f worldPos = { (v0->x + v1->x) * 0.5f, hoveredSector->floorHeight + 1.0f, (v0->z + v1->z) * 0.5f };
+				Vec2f screenPos;
+				if (worldPosToViewportCoord(worldPos, &screenPos))
+				{
+					mapPos = { s32(screenPos.x), s32(screenPos.z) - 20 };
+					Vec2f offset = { v1->x - v0->x, v1->z - v0->z };
+					f32 len = sqrtf(offset.x*offset.x + offset.z*offset.z);
+
+					char num[256];
+					floatToString(len, num);
+					sprintf(lenStr, "%d: %s", hoveredFeatureIndex, num);
+				}
+				else
+				{
+					showInfo = false;
+				}
+			}
+		}
+
+		if (showInfo)
+		{
+			drawViewportInfo(0, mapPos, lenStr, 0, 0);
 		}
 	}
 
-	void handleTextPrompts()
+	void displayMapSectorInfo()
 	{
-		if (!s_textPromptInit)
+		EditorSector* hoveredSector = nullptr;
+		selection_getSector(SEL_INDEX_HOVERED, hoveredSector);
+		if (!hoveredSector->name.empty())
 		{
-			textPromptInit();
-			s_textPromptInit = true;
-		}
+			bool showInfo = true;
+			Vec2i mapPos;
+			f32 textOffset = floorf(ImGui::CalcTextSize(hoveredSector->name.c_str()).x * 0.5f);
+			if (s_view == EDIT_VIEW_2D)
+			{
+				Vec2f center = { (hoveredSector->bounds[0].x + hoveredSector->bounds[1].x) * 0.5f, (hoveredSector->bounds[0].z + hoveredSector->bounds[1].z) * 0.5f };
 
-		KeyboardCode key = TFE_Input::getKeyPressed();
-		if (key >= KEY_1 && key <= KEY_0)
-		{
-			s32 index = key - KEY_1;
-			s_textPromptAnim = {};
-			s_textPromptAnim.promptId = index;
+				mapPos = worldPos2dToMap(center);
+				mapPos.x -= s32(textOffset + 12);
+				mapPos.z -= 16;
+			}
+			else if (s_view == EDIT_VIEW_3D)
+			{
+				Vec3f center = { (hoveredSector->bounds[0].x + hoveredSector->bounds[1].x) * 0.5f, hoveredSector->floorHeight, (hoveredSector->bounds[0].z + hoveredSector->bounds[1].z) * 0.5f };
+				Vec2f screenPos;
+				if (worldPosToViewportCoord(center, &screenPos))
+				{
+					f32 textOffset = floorf(ImGui::CalcTextSize(hoveredSector->name.c_str()).x * 0.5f);
+					mapPos = { s32(screenPos.x - textOffset), s32(screenPos.z) };
+				}
+				else
+				{
+					showInfo = false;
+				}
+			}
+			if (showInfo)
+			{
+				drawViewportInfo(0, mapPos, hoveredSector->name.c_str(), 0, 0);
+			}
 		}
-
-		updateTextPrompt();
 	}
-#endif
+
+	void displayMapEntityInfo()
+	{
+		EditorSector* hoveredSector = nullptr;
+		s32 hoveredFeatureIndex = -1;
+		selection_getEntity(SEL_INDEX_HOVERED, hoveredSector, hoveredFeatureIndex);
+
+		const EditorObject* obj = &hoveredSector->obj[hoveredFeatureIndex];
+		const Entity* entity = &s_level.entities[obj->entityId];
+
+		bool showInfo = true;
+		Vec2i mapPos;
+		if (s_view == EDIT_VIEW_2D)
+		{
+			Vec2f labelPos = { obj->pos.x, obj->pos.z + entity->size.x*0.5f };
+			Vec2i screenPos = worldPos2dToMap(labelPos);
+
+			s32 textOffset = (s32)floorf(ImGui::CalcTextSize(entity->name.c_str()).x * 0.5f);
+			mapPos = { screenPos.x - textOffset, screenPos.z - 40 };
+		}
+		else if (s_view == EDIT_VIEW_3D)
+		{
+			Vec3f labelPos = { obj->pos.x, getEntityLabelPos(obj->pos, entity, hoveredSector), obj->pos.z };
+			Vec2f screenPos;
+			if (worldPosToViewportCoord(labelPos, &screenPos))
+			{
+				f32 textOffset = floorf(ImGui::CalcTextSize(entity->name.c_str()).x * 0.5f);
+				mapPos = { s32(screenPos.x - textOffset), s32(screenPos.z) - 40 };
+			}
+			else
+			{
+				showInfo = false;
+			}
+		}
+		if (showInfo)
+		{
+			drawViewportInfo(0, mapPos, entity->name.c_str(), 0, 0);
+		}
+	}
+
+	void displayMapSectorLabels()
+	{
+		const s32 count = (s32)s_level.sectors.size();
+		EditorSector* sector = s_level.sectors.data();
+		s32 layer = ((s_editFlags & LEF_SHOW_ALL_LAYERS) && s_view != EDIT_VIEW_2D) ? LAYER_ANY : s_curLayer;
+		for (s32 i = 0; i < count; i++, sector++)
+		{
+			if (layer != LAYER_ANY && sector->layer != layer) { continue; }
+			if (sector->name.empty()) { continue; }
+
+			Vec2i mapPos;
+			f32 textOffset = floorf(ImGui::CalcTextSize(sector->name.c_str()).x * 0.5f);
+			bool showInfo = true;
+			if (s_view == EDIT_VIEW_2D)
+			{
+				Vec2f center = { (sector->bounds[0].x + sector->bounds[1].x) * 0.5f, (sector->bounds[0].z + sector->bounds[1].z) * 0.5f };
+
+				mapPos = worldPos2dToMap(center);
+				mapPos.x -= s32(textOffset + 12);
+				mapPos.z -= 16;
+			}
+			else if (s_view == EDIT_VIEW_3D)
+			{
+				Vec3f center = { (sector->bounds[0].x + sector->bounds[1].x) * 0.5f, sector->floorHeight, (sector->bounds[0].z + sector->bounds[1].z) * 0.5f };
+				Vec2f screenPos;
+				if (worldPosToViewportCoord(center, &screenPos))
+				{
+					f32 textOffset = floorf(ImGui::CalcTextSize(sector->name.c_str()).x * 0.5f);
+					mapPos = { s32(screenPos.x - textOffset), s32(screenPos.z) };
+				}
+				else
+				{
+					showInfo = false;
+				}
+			}
+			if (showInfo)
+			{
+				drawViewportInfo(i, mapPos, sector->name.c_str(), 0, 0);
+			}
+		}
+	}
+
+	void displayMapSectorDrawInfo()
+	{
+		if (s_geoEdit.drawMode == DMODE_RECT)
+		{
+			Vec2f cen[2];
+			f32 width, height;
+
+			// Get the rect size, taking into account the grid.
+			// Note that the behavior is different if extrude is enabled -
+			// since in that case the rect is *already* in "grid space".
+			if (s_geoEdit.extrudeEnabled)
+			{
+				const f32 x0 = std::max(s_geoEdit.shape[0].x, s_geoEdit.shape[1].x);
+				const f32 x1 = std::min(s_geoEdit.shape[0].x, s_geoEdit.shape[1].x);
+				const f32 z0 = std::max(s_geoEdit.shape[0].z, s_geoEdit.shape[1].z);
+				const f32 z1 = std::min(s_geoEdit.shape[0].z, s_geoEdit.shape[1].z);
+				const f32 midX = (x0 + x1) * 0.5f;
+				const f32 midZ = (z0 + z1) * 0.5f;
+
+				width = fabsf(x1 - x0);
+				height = fabsf(z1 - z0);
+				cen[0] = { midX, z0 },
+					cen[1] = { x0, midZ };
+			}
+			else
+			{
+				const Vec2f g[] = { posToGrid(s_geoEdit.shape[0]), posToGrid(s_geoEdit.shape[1]) };
+
+				Vec2f vtx[4];
+				getGridOrientedRect(s_geoEdit.shape[0], s_geoEdit.shape[1], vtx);
+
+				width = fabsf(g[1].x - g[0].x);
+				height = fabsf(g[1].z - g[0].z);
+				cen[0] = { (vtx[0].x + vtx[1].x) * 0.5f, (vtx[0].z + vtx[1].z) * 0.5f };
+				cen[1] = { (vtx[1].x + vtx[2].x) * 0.5f, (vtx[1].z + vtx[2].z) * 0.5f };
+			}
+
+			// Once we have the rect sizes and edge center positions,
+			// draw the length labels.
+			const Vec2i mapPos[] =
+			{
+				worldPos2dToMap(cen[0]),
+				worldPos2dToMap(cen[1]),
+			};
+			const f32 len[] = { width, height };
+			const Vec2f offs[] = { {0.0f, -20.0f}, {25.0f, 0.0f} };
+
+			for (s32 i = 0; i < 2; i++)
+			{
+				char info[256];
+				floatToString(len[i], info);
+
+				f32 textOffset = ImGui::CalcTextSize(info).x;
+				if (i == 0) { textOffset = floorf(textOffset * 0.5f); }
+				else if (i == 1) { textOffset = 0.0f; }
+
+				if (s_view == EDIT_VIEW_2D)
+				{
+					drawViewportInfo(i, mapPos[i], info, -16.0f + offs[i].x - textOffset, -16.0f + offs[i].z);
+				}
+				else if (s_view == EDIT_VIEW_3D)
+				{
+					Vec3f worldPos = { cen[i].x, s_grid.height, cen[i].z };
+					if (s_geoEdit.extrudeEnabled)
+					{
+						worldPos = extrudePoint2dTo3d(cen[i], s_geoEdit.drawHeight[0]);
+					}
+
+					Vec2f screenPos;
+					if (worldPosToViewportCoord(worldPos, &screenPos))
+					{
+						drawViewportInfo(i, { (s32)screenPos.x, (s32)screenPos.z }, info, -16.0f + offs[i].x - textOffset, -16.0f + offs[i].z);
+					}
+				}
+			}
+		}
+		else if (s_geoEdit.drawMode == DMODE_SHAPE && !s_geoEdit.shape.empty())
+		{
+			const s32 count = (s32)s_geoEdit.shape.size();
+			const Vec2f* vtx = s_geoEdit.shape.data();
+			// Only show a limited number of wall lengths, otherwise it just turns into noise.
+			for (s32 v = 0; v < count; v++)
+			{
+				const Vec2f* v0 = &vtx[v];
+				const Vec2f* v1 = v + 1 < count ? &vtx[v + 1] : &s_geoEdit.drawCurPos;
+
+				char info[256];
+				Vec2i mapPos;
+				Vec2f mapOffset;
+				getWallLengthText(v0, v1, info, mapPos, -1, &mapOffset);
+
+				if (s_view == EDIT_VIEW_2D)
+				{
+					drawViewportInfo(v, mapPos, info, 0, 0);
+				}
+				else if (s_view == EDIT_VIEW_3D)
+				{
+					Vec3f worldPos = { (v0->x + v1->x)*0.5f, s_grid.height, (v0->z + v1->z)*0.5f };
+					if (s_geoEdit.extrudeEnabled)
+					{
+						Vec3f w0 = extrudePoint2dTo3d(*v0, s_geoEdit.drawHeight[0]);
+						Vec3f w1 = extrudePoint2dTo3d(*v1, s_geoEdit.drawHeight[0]);
+						worldPos.x = (w0.x + w1.x)*0.5f;
+						worldPos.y = (w0.y + w1.y)*0.5f;
+						worldPos.z = (w0.z + w1.z)*0.5f;
+					}
+
+					Vec2f screenPos;
+					if (worldPosToViewportCoord(worldPos, &screenPos))
+					{
+						screenPos.x += mapOffset.x;
+						screenPos.z += mapOffset.z;
+						drawViewportInfo(v, { (s32)screenPos.x, (s32)screenPos.z }, info, 0, 0);
+					}
+				}
+			}
+		}
+		else if ((s_geoEdit.drawMode == DMODE_RECT_VERT || s_geoEdit.drawMode == DMODE_SHAPE_VERT) && s_view == EDIT_VIEW_3D)
+		{
+			f32 height = (s_geoEdit.drawHeight[0] + s_geoEdit.drawHeight[1]) * 0.5f;
+			if (s_geoEdit.extrudeEnabled)
+			{
+				height = s_curVtxPos.y;
+			}
+
+			Vec3f pos = { s_curVtxPos.x, height, s_curVtxPos.z };
+
+			Vec2f screenPos;
+			if (worldPosToViewportCoord(pos, &screenPos))
+			{
+				char info[256];
+				floatToString(s_geoEdit.drawHeight[1] - s_geoEdit.drawHeight[0], info);
+				drawViewportInfo(0, { s32(screenPos.x + 20.0f), s32(screenPos.z - 20.0f) }, info, 0, 0);
+			}
+		}
+	}
 }

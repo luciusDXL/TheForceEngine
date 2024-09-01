@@ -1,5 +1,6 @@
 #include "levelEditor.h"
 #include "levelEditorData.h"
+#include "editCommon.h"
 #include "selection.h"
 #include "sharedState.h"
 
@@ -7,103 +8,634 @@ using namespace TFE_Editor;
 
 namespace LevelEditor
 {
-	SelectionList s_selectionList;
-	SelectionList s_vertexList;
-	SectorList s_sectorChangeList;
-	
-	// Selection
-	void selection_clear(bool clearDragSelect)
+	SelectionList s_selectionList2[SEL_COUNT];
+	SelectionList s_savedSelections[SEL_GEO_COUNT];
+	SelectionListId s_currentSelection = SEL_VERTEX;
+	FeatureId s_hovered = FEATUREID_NULL;
+
+	bool selection_insertVertex(FeatureId id, Vec2f value, EditorSector* root = nullptr, HitPart part = HP_FLOOR);
+	bool selection_removeVertex(FeatureId id, Vec2f value);
+	bool selection_isVertexInSet(FeatureId id);
+	bool selection_insertFeatureId(SelectionList& list, FeatureId id);
+	bool selection_removeFeatureId(SelectionList& list, FeatureId id);
+	bool selection_isFeatureIdInSet(SelectionList& list, FeatureId id, s32* index = nullptr);
+	bool selection_featureId(SelectAction action, FeatureId id);
+	void selection_buildDerived();
+	FeatureId selection_getFeatureId(s32 index, SelectionListId listId);
+
+	// General Interface
+	void selection_clear(u32 selections, bool clearDragSelect)
 	{
-		s_selectionList.clear();
-		if (clearDragSelect) { s_dragSelect.active = false; }
+		for (s32 i = 0; i < SEL_COUNT; i++)
+		{
+			if ((1 << i) & selections)
+			{
+				s_selectionList2[i].clear();
+			}
+		}
+		if (clearDragSelect)
+		{
+			s_dragSelect.active = false;
+		}
+	}
+
+	void selection_setCurrent(SelectionListId id)
+	{
+		assert(id < SEL_CURRENT);
+		selection_clearHovered();
+		s_currentSelection = id;
+	}
+
+	void selection_clearHovered()
+	{
+		s_hovered = FEATUREID_NULL;
+	}
+
+	bool selection_hasHovered()
+	{
+		return s_hovered != FEATUREID_NULL;
+	}
+
+	bool selection_hasSelection(SelectionListId id)
+	{
+		return !s_selectionList2[id >= SEL_CURRENT ? s_currentSelection : id].empty();
+	}
+
+	void selection_saveGeoSelections()
+	{
+		for (s32 i = 0; i < SEL_GEO_COUNT; i++)
+		{
+			s_savedSelections[i] = s_selectionList2[i];
+		}
+	}
+
+	void selection_restoreGeoSelections()
+	{
+		for (s32 i = 0; i < SEL_GEO_COUNT; i++)
+		{
+			s_selectionList2[i] = s_savedSelections[i];
+			s_savedSelections[i].clear();
+		}
 	}
 		
-	bool selection_doesFeatureExist(FeatureId id)
+	// Selection interface.
+	bool selection_vertex(SelectAction action, EditorSector* sector, s32 index, HitPart part, u32 flags)
 	{
-		const u64 compareValue = u64(id) & FID_COMPARE_MASK;
-		const size_t count = s_selectionList.size();
-		const FeatureId* feature = s_selectionList.data();
-		for (size_t i = 0; i < count; i++, feature++)
+		if (!sector || index < 0 || index >= (s32)sector->vtx.size()) { return false; }
+
+		bool buildDerived = false;
+		bool actionDone = false;
+		FeatureId id = createFeatureId(sector, index, part);
+		switch (action)
 		{
-			if ((u64(*feature) & FID_COMPARE_MASK) == compareValue)
+			case SA_SET:
 			{
+				s_selectionList2[SEL_VERTEX].clear();
+				actionDone = selection_insertVertex(id, sector->vtx[index], sector, part);
+				buildDerived = actionDone;
+			} break;
+			case SA_ADD:
+			{
+				actionDone = selection_insertVertex(id, sector->vtx[index], sector, part);
+				buildDerived = actionDone;
+			} break;
+			case SA_REMOVE:
+			{
+				actionDone = selection_removeVertex(id, sector->vtx[index]);
+				buildDerived = actionDone;
+			} break;
+			case SA_TOGGLE:
+			{
+				if (selection_isVertexInSet(id))
+				{
+					actionDone = selection_removeVertex(id, sector->vtx[index]);
+				}
+				else
+				{
+					actionDone = selection_insertVertex(id, sector->vtx[index], sector, part);
+				}
+				buildDerived = actionDone;
+			} break;
+			case SA_CHECK_INCLUSION:
+			{
+				actionDone = selection_isVertexInSet(id);
+			} break;
+			case SA_SET_HOVERED:
+			{
+				s_hovered = id;
+				actionDone = true;
+			} break;
+		}
+
+		if (buildDerived)
+		{
+			selection_buildDerived();
+		}
+		return actionDone;
+	}
+				
+	bool selection_surface(SelectAction action, EditorSector* sector, s32 index, HitPart part, u32 flags)
+	{
+		if (!sector) { return false; }
+		if (part != HP_FLOOR && part != HP_CEIL && (index < 0 || index >= (s32)sector->walls.size())) { return false; }
+
+		const FeatureId id = createFeatureId(sector, index, (s32)part);
+		return selection_featureId(action, id);
+	}
+
+	bool selection_entity(SelectAction action, EditorSector* sector, s32 index, u32 flags)
+	{
+		// TODO: Handle entity's outside of sectors.
+		if (!sector) { return false; }
+		const FeatureId id = createFeatureId(sector, index);
+		return selection_featureId(action, id);
+	}
+
+	bool selection_sector(SelectAction action, EditorSector* sector, u32 flags)
+	{
+		if (!sector) { return false; }
+		const FeatureId id = createFeatureId(sector);
+		return selection_featureId(action, id);
+	}
+
+	bool selection_guideline(SelectAction action, Guideline* guideline, u32 flags)
+	{
+		if (!guideline) { return false; }
+		const FeatureId id = createFeatureId(nullptr, guideline->id);
+		return selection_featureId(action, id);
+	}
+
+	bool selection_levelNote(SelectAction action, LevelNote* note, u32 flags)
+	{
+		if (!note) { return false; }
+		const FeatureId id = createFeatureId(nullptr, note->id);
+		return selection_featureId(action, id);
+	}
+
+	// Read interface.
+	// Pass in SEL_GET_HOVERED for the index to get the hovered feature (or false is none).
+	u32 selection_getCount(SelectionListId id)
+	{
+		return (u32)s_selectionList2[id >= SEL_CURRENT ? s_currentSelection : id].size();
+	}
+		
+	bool selection_getVertex(s32 index, EditorSector*& sector, s32& featureIndex, HitPart* part, bool* isOverlapped)
+	{
+		const FeatureId id = selection_getFeatureId(index, SEL_VERTEX);
+		if (id == FEATUREID_NULL) { return false; }
+		// Unpack the feature ID based on the type.
+		sector = unpackFeatureId(id, &featureIndex, (s32*)part, isOverlapped);
+		return true;
+	}
+
+	bool selection_getSurface(s32 index, EditorSector*& sector, s32& featureIndex, HitPart* part, bool* isOverlapped)
+	{
+		const FeatureId id = selection_getFeatureId(index, SEL_SURFACE);
+		if (id == FEATUREID_NULL) { return false; }
+		// Unpack the feature ID based on the type.
+		sector = unpackFeatureId(id, &featureIndex, (s32*)part, isOverlapped);
+		return true;
+	}
+
+	bool selection_getEntity(s32 index, EditorSector*& sector, s32& featureIndex)
+	{
+		const FeatureId id = selection_getFeatureId(index, SEL_ENTITY);
+		if (id == FEATUREID_NULL) { return false; }
+		// Unpack the feature ID based on the type.
+		sector = unpackFeatureId(id, &featureIndex);
+		return true;
+	}
+
+	bool selection_getSector(s32 index, EditorSector*& sector)
+	{
+		const FeatureId id = selection_getFeatureId(index, SEL_SECTOR);
+		if (id == FEATUREID_NULL) { return false; }
+		// Unpack the feature ID based on the type.
+		sector = unpackFeatureId(id);
+		return true;
+	}
+
+	bool selection_getGuideline(s32 index, Guideline*& guideline)
+	{
+		const FeatureId id = selection_getFeatureId(index, SEL_GUIDELINE);
+		if (id == FEATUREID_NULL) { return false; }
+		// Unpack the feature ID based on the type.
+		s32 featureIndex = -1;
+		unpackFeatureId(id, &featureIndex);
+		if (featureIndex >= 0 && featureIndex < (s32)s_level.guidelines.size())
+		{
+			guideline = &s_level.guidelines[featureIndex];
+			return true;
+		}
+		return false;
+	}
+
+	bool selection_getLevelNote(s32 index, LevelNote*& levelNote)
+	{
+		const FeatureId id = selection_getFeatureId(index, SEL_NOTE);
+		if (id == FEATUREID_NULL) { return false; }
+		// Unpack the feature ID based on the type.
+		s32 featureIndex = -1;
+		unpackFeatureId(id, &featureIndex);
+		if (featureIndex >= 0 && featureIndex < (s32)s_level.notes.size())
+		{
+			levelNote = &s_level.notes[featureIndex];
+			return true;
+		}
+		return false;
+	}
+
+	bool selection_featureInCurrentSelection(EditorSector* sector, s32 featureIndex/* = -1*/, HitPart part/* = HP_NONE*/)
+	{
+		switch (s_currentSelection)
+		{
+			case SEL_VERTEX:
+			{
+				return selection_vertex(SA_CHECK_INCLUSION, sector, featureIndex);
+			} break;
+			case SEL_SURFACE:
+			{
+				return selection_surface(SA_CHECK_INCLUSION, sector, featureIndex, part);
+			} break;
+			case SEL_SECTOR:
+			{
+				return selection_sector(SA_CHECK_INCLUSION, sector);
+			} break;
+			case SEL_ENTITY:
+			{
+				return selection_entity(SA_CHECK_INCLUSION, sector, featureIndex);
+			} break;
+			case SEL_GUIDELINE:
+			{
+				return featureIndex >= 0 && selection_guideline(SA_CHECK_INCLUSION, &s_level.guidelines[featureIndex]);
+			} break;
+			case SEL_NOTE:
+			{
+				return featureIndex >= 0 && selection_levelNote(SA_CHECK_INCLUSION, &s_level.notes[featureIndex]);
+			} break;
+		};
+		return false;
+	}
+
+	bool selection_featureHovered(EditorSector* sector, s32 featureIndex/* = -1*/, HitPart part/* = HP_NONE*/)
+	{
+		if (!selection_hasHovered()) { return false; }
+
+		s32 hoveredFeatureIndex = -1;
+		HitPart hoveredPart = HP_NONE;
+		EditorSector* hoveredSector = unpackFeatureId(s_hovered, &hoveredFeatureIndex, (s32*)&hoveredPart);
+
+		switch (s_currentSelection)
+		{
+			case SEL_VERTEX:
+			{
+				return sector == hoveredSector && featureIndex == hoveredFeatureIndex;
+			} break;
+			case SEL_SURFACE:
+			{
+				return sector == hoveredSector && featureIndex == hoveredFeatureIndex && (part == hoveredPart || part == HP_NONE);
+			} break;
+			case SEL_SECTOR:
+			{
+				return sector == hoveredSector;
+			} break;
+			case SEL_ENTITY:
+			{
+				return sector == hoveredSector && featureIndex == hoveredFeatureIndex;
+			} break;
+			case SEL_GUIDELINE:
+			{
+				return featureIndex == hoveredFeatureIndex;
+			} break;
+			case SEL_NOTE:
+			{
+				return featureIndex == hoveredFeatureIndex;
+			} break;
+		};
+		return false;
+	}
+
+	u32 selection_getList(FeatureId*& list, SelectionListId id)
+	{
+		SelectionList& selList = s_selectionList2[id >= SEL_CURRENT ? s_currentSelection : id];
+		u32 count = (u32)selList.size();
+		list = count > 0 ? selList.data() : nullptr;
+		return count;
+	}
+
+	////////////////////////////////////////////////////////////
+	// Internal
+	////////////////////////////////////////////////////////////
+	bool selection_insertVertex(FeatureId id, Vec2f value, EditorSector* root/*=nullptr*/, HitPart part/*=HP_FLOOR*/)
+	{
+		// Insert the vertex if not found.
+		const s32 count = (s32)s_selectionList2[SEL_VERTEX].size();
+		const FeatureId* featureId = s_selectionList2[SEL_VERTEX].data();
+		s32 matchId = -1;
+		for (s32 i = 0; i < count; i++)
+		{
+			if (featuresEqualNoData(featureId[i], id)) { return false; }
+
+			s32 index;
+			EditorSector* sector = unpackFeatureId(featureId[i], &index);
+			const Vec2f& srcValue = sector->vtx[index];
+
+			if (TFE_Polygon::vtxEqual(&value, &srcValue))
+			{
+				// Keep looking after this, the feature may still be in here...
+				matchId = i;
+			}
+		}
+
+		id = setIsOverlapped(id, matchId >= 0);
+		s_selectionList2[SEL_VERTEX].push_back(id);
+
+		// If root is non-null, then start from this sector and include potential overlaps from other sectors.
+		if (root)
+		{
+			s_searchKey++;
+
+			// Which walls share the vertex?
+			SectorList& stack = s_sectorChangeList;
+			stack.clear();
+
+			s32 featureIndex;
+			unpackFeatureId(id, &featureIndex);
+
+			root->searchKey = s_searchKey;
+			{
+				const size_t wallCount = root->walls.size();
+				EditorWall* wall = root->walls.data();
+				for (size_t w = 0; w < wallCount; w++, wall++)
+				{
+					if ((wall->idx[0] == featureIndex || wall->idx[1] == featureIndex) && wall->adjoinId >= 0)
+					{
+						EditorSector* next = &s_level.sectors[wall->adjoinId];
+						if (next->searchKey != s_searchKey)
+						{
+							stack.push_back(next);
+							next->searchKey = s_searchKey;
+						}
+					}
+				}
+			}
+
+			while (!stack.empty())
+			{
+				EditorSector* sector = stack.back();
+				stack.pop_back();
+
+				const size_t wallCount = sector->walls.size();
+				EditorWall* wall = sector->walls.data();
+				for (size_t w = 0; w < wallCount; w++, wall++)
+				{
+					s32 idx = -1;
+					if (TFE_Polygon::vtxEqual(&value, &sector->vtx[wall->idx[0]]))
+					{
+						idx = wall->idx[0];
+					}
+					else if (TFE_Polygon::vtxEqual(&value, &sector->vtx[wall->idx[1]]))
+					{
+						idx = wall->idx[1];
+					}
+
+					if (idx >= 0)
+					{
+						// Insert.
+						FeatureId newId = createFeatureId(sector, idx, part);
+						selection_insertVertex(newId, value, nullptr, part);
+
+						// Add the next sector to the stack, if it hasn't already been processed.
+						EditorSector* next = wall->adjoinId < 0 ? nullptr : &s_level.sectors[wall->adjoinId];
+						if (next && next->searchKey != s_searchKey)
+						{
+							stack.push_back(next);
+							next->searchKey = s_searchKey;
+						}
+					}
+				}
+			}
+		}
+
+		return true;
+	}
+
+	// Remove all vertices in the list at 'value'.
+	bool selection_removeVertex(FeatureId id, Vec2f value)
+	{
+		const s32 count = (s32)s_selectionList2[SEL_VERTEX].size();
+		const FeatureId* featureId = s_selectionList2[SEL_VERTEX].data();
+		std::vector<s32> idxToRemove;
+		for (s32 i = 0; i < count; i++)
+		{
+			if (featuresEqualNoData(featureId[i], id))
+			{
+				idxToRemove.push_back(i);
+			}
+			else
+			{
+				s32 index;
+				EditorSector* sector = unpackFeatureId(featureId[i], &index);
+				const Vec2f& srcValue = sector->vtx[index];
+
+				if (TFE_Polygon::vtxEqual(&value, &srcValue))
+				{
+					idxToRemove.push_back(i);
+				}
+			}
+		}
+		if (idxToRemove.empty()) { return false; }
+		const s32 delCount = (s32)idxToRemove.size();
+		const s32* idxList = idxToRemove.data();
+		for (s32 i = delCount - 1; i >= 0; i--)
+		{
+			s_selectionList2[SEL_VERTEX].erase(s_selectionList2[SEL_VERTEX].begin() + idxList[i]);
+		}
+		return true;
+	}
+
+	bool selection_isVertexInSet(FeatureId id)
+	{
+		// Insert the vertex if not found.
+		const s32 count = (s32)s_selectionList2[SEL_VERTEX].size();
+		const FeatureId* featureId = s_selectionList2[SEL_VERTEX].data();
+		for (s32 i = 0; i < count; i++)
+		{
+			if (featuresEqualNoData(featureId[i], id)) { return true; }
+		}
+		return false;
+	}
+		
+	bool selection_insertFeatureId(SelectionList& list, FeatureId id)
+	{
+		if (selection_isFeatureIdInSet(list, id)) { return false; }
+		list.push_back(id);
+		return true;
+	}
+
+	bool selection_removeFeatureId(SelectionList& list, FeatureId id)
+	{
+		s32 index;
+		selection_isFeatureIdInSet(list, id, &index);
+		if (index < 0) { return false; }
+
+		list.erase(list.begin() + index);
+		return true;
+	}
+
+	bool selection_isFeatureIdInSet(SelectionList& list, FeatureId id, s32* index)
+	{
+		const s32 count = (s32)list.size();
+		const FeatureId* listId = list.data();
+		if (index) { *index = -1; }
+		for (s32 i = 0; i < count; i++)
+		{
+			if (featuresEqual(listId[i], id))
+			{
+				if (index) { *index = i; }
 				return true;
 			}
 		}
 		return false;
 	}
 
-	bool selection_add(FeatureId id)
+	bool selection_featureId(SelectAction action, FeatureId id)
 	{
-		if (selection_doesFeatureExist(id)) { return false; }
-		s_selectionList.push_back(id);
-		return true;
-	}
-
-	void selection_remove(FeatureId id)
-	{
-		const u64 compareValue = u64(id) & FID_COMPARE_MASK;
-		const size_t count = s_selectionList.size();
-		const FeatureId* feature = s_selectionList.data();
-		for (size_t i = 0; i < count; i++, feature++)
+		bool buildDerived = false;
+		bool actionDone = false;
+		switch (action)
 		{
-			if ((u64(*feature) & FID_COMPARE_MASK) == compareValue)
+			case SA_SET:
 			{
-				s_selectionList.erase(s_selectionList.begin() + i);
-				return;
-			}
+				s_selectionList2[SEL_SURFACE].clear();
+				actionDone = selection_insertFeatureId(s_selectionList2[SEL_SURFACE], id);
+				buildDerived = actionDone;
+			} break;
+			case SA_ADD:
+			{
+				actionDone = selection_insertFeatureId(s_selectionList2[SEL_SURFACE], id);
+				buildDerived = actionDone;
+			} break;
+			case SA_REMOVE:
+			{
+				actionDone = selection_removeFeatureId(s_selectionList2[SEL_SURFACE], id);
+				buildDerived = actionDone;
+			} break;
+			case SA_TOGGLE:
+			{
+				if (selection_isFeatureIdInSet(s_selectionList2[SEL_SURFACE], id))
+				{
+					actionDone = selection_removeFeatureId(s_selectionList2[SEL_SURFACE], id);
+				}
+				else
+				{
+					actionDone = selection_insertFeatureId(s_selectionList2[SEL_SURFACE], id);
+				}
+				buildDerived = actionDone;
+			} break;
+			case SA_CHECK_INCLUSION:
+			{
+				actionDone = selection_isFeatureIdInSet(s_selectionList2[SEL_SURFACE], id);
+			} break;
+			case SA_SET_HOVERED:
+			{
+				s_hovered = id;
+				actionDone = true;
+			} break;
 		}
+
+		if (buildDerived)
+		{
+			selection_buildDerived();
+		}
+		return actionDone;
 	}
 
-	void selection_toggle(FeatureId id)
+	FeatureId selection_getFeatureId(s32 index, SelectionListId listId)
 	{
-		if (selection_doesFeatureExist(id))
-		{ 
-			selection_remove(id);
+		FeatureId id = FEATUREID_NULL;
+		if (index == SEL_INDEX_HOVERED && s_currentSelection == listId)
+		{
+			id = s_hovered;
+		}
+		else if (index >= 0 && index < (s32)s_selectionList2[listId].size())
+		{
+			id = s_selectionList2[listId][index];
+		}
+		return id;
+	}
+
+	void selection_insertWallVertices(EditorSector* sector, const EditorWall* wall)
+	{
+		FeatureId v0 = createFeatureId(sector, wall->idx[0]);
+		FeatureId v1 = createFeatureId(sector, wall->idx[1]);
+		selection_insertVertex(v0, sector->vtx[wall->idx[0]], sector);
+		selection_insertVertex(v1, sector->vtx[wall->idx[1]], sector);
+	}
+
+	void selection_buildDerived()
+	{
+		if (s_currentSelection != SEL_VERTEX && s_currentSelection != SEL_SURFACE && s_currentSelection != SEL_SECTOR)
+		{
 			return;
 		}
-		selection_add(id);
-	}
-		
-	// Vertex Selection
-	void vtxSelection_clear()
-	{
-		s_vertexList.clear();
-	}
-
-	bool vtxSelection_doesFeatureExist(FeatureId id)
-	{
-		const u64 compareValue = u64(id) & FID_COMPARE_MASK;
-		const size_t count = s_vertexList.size();
-		const FeatureId* feature = s_vertexList.data();
-		for (size_t i = 0; i < count; i++, feature++)
+		// Clear any geometry selection that does not match the current selection.
+		if (s_currentSelection != SEL_VERTEX) { s_selectionList2[SEL_VERTEX].clear(); }
+		if (s_currentSelection != SEL_SURFACE){ s_selectionList2[SEL_SURFACE].clear(); }
+		if (s_currentSelection != SEL_SECTOR) { s_selectionList2[SEL_SECTOR].clear(); }
+		// Setup derived selections.
+		if (s_currentSelection == SEL_VERTEX)
 		{
-			if ((u64(*feature) & FID_COMPARE_MASK) == compareValue)
+			// For now, vertices don't select anything.
+			// This may change.
+		}
+		else if (s_currentSelection == SEL_SURFACE)
+		{
+			// Surfaces select vertices.
+			const s32 count = (s32)s_selectionList2[SEL_SURFACE].size();
+			const FeatureId* list = s_selectionList2[SEL_SURFACE].data();
+			for (s32 i = 0; i < count; i++)
 			{
-				return true;
+				s32 featureIndex;
+				HitPart part;
+				EditorSector* sector = unpackFeatureId(list[i], &featureIndex, (s32*)&part);
+				// Skip flats.
+				if (part == HP_FLOOR || part == HP_CEIL) { continue; }
+
+				EditorWall* wall = &sector->walls[featureIndex];
+				selection_insertWallVertices(sector, wall);
+			}
+
+			// Surfaces may also select sectors, if floor and ceiling surfaces are selected.
+			for (s32 i = 0; i < count; i++)
+			{
+				s32 featureIndex;
+				HitPart part;
+				EditorSector* sector = unpackFeatureId(list[i], &featureIndex, (s32*)&part);
+				if (part != HP_FLOOR && part != HP_CEIL) { continue; }
+
+				FeatureId id = createFeatureId(sector);
+				selection_insertFeatureId(s_selectionList2[SEL_SECTOR], id);
 			}
 		}
-		return false;
-	}
-
-	bool vtxSelection_add(FeatureId id)
-	{
-		if (vtxSelection_doesFeatureExist(id)) { return false; }
-		s_vertexList.push_back(id);
-		return true;
-	}
-
-	void vtxSelection_remove(FeatureId id)
-	{
-		const u64 compareValue = u64(id) & FID_COMPARE_MASK;
-		const size_t count = s_vertexList.size();
-		const FeatureId* feature = s_selectionList.data();
-		for (size_t i = 0; i < count; i++, feature++)
+		else if (s_currentSelection == SEL_SECTOR)
 		{
-			if ((u64(*feature) & FID_COMPARE_MASK) == compareValue)
+			// Sectors select surfaces and vertices.
+			const s32 count = (s32)s_selectionList2[SEL_SECTOR].size();
+			const FeatureId* list = s_selectionList2[SEL_SECTOR].data();
+			for (s32 i = 0; i < count; i++)
 			{
-				s_vertexList.erase(s_vertexList.begin() + i);
-				return;
+				EditorSector* sector = unpackFeatureId(list[i]);
+				if (!sector) { continue; }
+
+				const s32 wallCount = (s32)sector->walls.size();
+				const EditorWall* wall = sector->walls.data();
+				for (s32 w = 0; w < wallCount; w++)
+				{
+					FeatureId id = createFeatureId(sector, w, HP_MID);
+					selection_insertFeatureId(s_selectionList2[SEL_SURFACE], id);
+					selection_insertWallVertices(sector, wall);
+				}
 			}
 		}
 	}

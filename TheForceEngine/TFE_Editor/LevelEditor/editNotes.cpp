@@ -179,7 +179,6 @@ namespace LevelEditor
 				else if (s_moveStartPos3d.x != s_cursor3d.x || s_moveStartPos3d.z != s_cursor3d.z)
 				{
 					Vec3f prevPos = note->pos;
-					EditorSector* prevSector = s_featureCur.sector;
 
 					if (getEditAction(ACTION_MOVE_X))
 					{

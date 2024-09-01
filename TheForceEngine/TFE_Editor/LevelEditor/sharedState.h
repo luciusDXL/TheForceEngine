@@ -53,10 +53,6 @@ namespace LevelEditor
 	extern u32 s_editFlags;
 	extern u32 s_lwinOpen;
 	extern s32 s_curLayer;
-
-	extern Feature s_featureHovered;
-	extern Feature s_featureCur;
-	extern Feature s_featureCurWall;
 	extern Feature s_featureTex;
 
 	extern Vec3f s_hoveredVtxPos;

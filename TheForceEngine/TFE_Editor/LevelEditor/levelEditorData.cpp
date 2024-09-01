@@ -1,5 +1,6 @@
 #include "levelEditorData.h"
 #include "levelDataSnapshot.h"
+#include "levelEditor.h"
 #include "selection.h"
 #include "entity.h"
 #include "error.h"
@@ -74,7 +75,6 @@ namespace LevelEditor
 	EditorLevel s_level = {};
 
 	extern AssetList s_levelTextureList;
-	extern void edit_clearSelections();
 	bool loadFromTFL(const char* name);
 
 	enum Constants
@@ -489,8 +489,7 @@ namespace LevelEditor
 
 		// Clear selection state.
 		selection_clear();
-		s_featureHovered = {};
-		s_featureCur = {};
+		selection_clearHovered();
 		s_featureTex = {};
 
 		// Clear notes.
@@ -2685,7 +2684,7 @@ namespace LevelEditor
 		for (u32 i = 0; i < objCount; i++, obj++)
 		{
 			if (obj->entityId < 0) { continue; }
-			assert(obj->entityId < entityCount);
+			assert(obj->entityId < (s32)entityCount);
 			obj->entityId = remapTableEntity[obj->entityId];
 		}
 	}

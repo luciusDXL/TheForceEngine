@@ -1246,9 +1246,6 @@
     <ClInclude Include="TFE_RenderShared\triDraw3d.h">
       <Filter>Source\TFE_RenderShared</Filter>
     </ClInclude>
-    <ClInclude Include="TFE_Editor\LevelEditor\selection.h">
-      <Filter>Source\TFE_Editor\LevelEditor</Filter>
-    </ClInclude>
     <ClInclude Include="TFE_Editor\LevelEditor\levelEditorHistory.h">
       <Filter>Source\TFE_Editor\LevelEditor</Filter>
     </ClInclude>
@@ -1369,9 +1366,6 @@
     <ClInclude Include="TFE_Editor\LevelEditor\dragSelect.h">
       <Filter>Source\TFE_Editor\LevelEditor</Filter>
     </ClInclude>
-    <ClInclude Include="TFE_Editor\LevelEditor\selection2.h">
-      <Filter>Source\TFE_Editor\LevelEditor</Filter>
-    </ClInclude>
     <ClInclude Include="TFE_Archive\zstdCompression.h">
       <Filter>Source\TFE_Archive</Filter>
     </ClInclude>
@@ -1383,6 +1377,15 @@
     </ClInclude>
     <ClInclude Include="TFE_Editor\historyView.h">
       <Filter>Source\TFE_Editor</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Editor\LevelEditor\editVertex.h">
+      <Filter>Source\TFE_Editor\LevelEditor</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Editor\LevelEditor\editCommon.h">
+      <Filter>Source\TFE_Editor\LevelEditor</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Editor\LevelEditor\selection.h">
+      <Filter>Source\TFE_Editor\LevelEditor</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -2280,9 +2283,6 @@
     <ClCompile Include="TFE_RenderShared\triDraw3d.cpp">
       <Filter>Source\TFE_RenderShared</Filter>
     </ClCompile>
-    <ClCompile Include="TFE_Editor\LevelEditor\selection.cpp">
-      <Filter>Source\TFE_Editor\LevelEditor</Filter>
-    </ClCompile>
     <ClCompile Include="TFE_Editor\LevelEditor\levelEditorHistory.cpp">
       <Filter>Source\TFE_Editor\LevelEditor</Filter>
     </ClCompile>
@@ -2394,9 +2394,6 @@
     <ClCompile Include="TFE_Editor\LevelEditor\dragSelect.cpp">
       <Filter>Source\TFE_Editor\LevelEditor</Filter>
     </ClCompile>
-    <ClCompile Include="TFE_Editor\LevelEditor\selection2.cpp">
-      <Filter>Source\TFE_Editor\LevelEditor</Filter>
-    </ClCompile>
     <ClCompile Include="TFE_Archive\zstdCompression.cpp">
       <Filter>Source\TFE_Archive</Filter>
     </ClCompile>
@@ -2408,6 +2405,15 @@
     </ClCompile>
     <ClCompile Include="TFE_Editor\historyView.cpp">
       <Filter>Source\TFE_Editor</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Editor\LevelEditor\editVertex.cpp">
+      <Filter>Source\TFE_Editor\LevelEditor</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Editor\LevelEditor\editCommon.cpp">
+      <Filter>Source\TFE_Editor\LevelEditor</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Editor\LevelEditor\selection.cpp">
+      <Filter>Source\TFE_Editor\LevelEditor</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

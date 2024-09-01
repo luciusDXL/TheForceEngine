@@ -1344,8 +1344,8 @@ namespace LevelEditor
 		std::vector<s32> changedSectors;
 		bool sectorsDeleted = edit_insertShape(heights, s_geoEdit.boolMode, firstVertex, allowSubsectorExtrude, changedSectors);
 
-		s_featureHovered = {};
-		selection_clear();
+		selection_clearHovered();
+		selection_clear(SEL_GEO | SEL_ENTITY_BIT);
 		infoPanelClearFeatures();
 
 		if (sectorsDeleted)
@@ -1384,8 +1384,8 @@ namespace LevelEditor
 		std::vector<s32> changedSectors;
 		bool sectorsDeleted = edit_insertShape(heights, s_geoEdit.boolMode, firstVertex, allowSubsectorExtrude, changedSectors);
 
-		s_featureHovered = {};
-		selection_clear();
+		selection_clearHovered();
+		selection_clear(SEL_GEO | SEL_ENTITY_BIT);
 		infoPanelClearFeatures();
 
 		if (sectorsDeleted)
@@ -1788,8 +1788,8 @@ namespace LevelEditor
 
 				mergeAdjoins(&s_level.sectors.back());
 
-				s_featureHovered = {};
-				selection_clear();
+				selection_clearHovered();
+				selection_clear(SEL_GEO | SEL_ENTITY_BIT);
 				infoPanelClearFeatures();
 			}
 		}
@@ -2242,11 +2242,11 @@ namespace LevelEditor
 		// Get the hover sector in 2D.
 		if (s_view == EDIT_VIEW_2D)
 		{
-			hoverSector = s_featureHovered.sector;
+			hoverSector = edit_getHoverSector2dAtCursor(s_curLayer);
 		}
-		else // Or the hit sector in 3D.
+		else if (hitInfo->hitSectorId >= 0) // Or the hit sector in 3D.
 		{
-			hoverSector = hitInfo->hitSectorId < 0 ? nullptr : &s_level.sectors[hitInfo->hitSectorId];
+			hoverSector = &s_level.sectors[hitInfo->hitSectorId];
 		}
 
 		// Snap the cursor to the grid.

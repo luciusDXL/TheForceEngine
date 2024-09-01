@@ -55,12 +55,10 @@ namespace LevelEditor
 	{
 		const s32 layer = (s_editFlags & LEF_SHOW_ALL_LAYERS) ? LAYER_ANY : s_curLayer;
 
+		selection_clearHovered();
 		EditorSector* hoverSector = nullptr;
 		if (s_view == EDIT_VIEW_2D) // Get the hover sector in 2D.
 		{
-			hoverSector = s_featureHovered.sector;
-			s_featureHovered = {};
-
 			f32 maxY = -FLT_MAX;
 			s32 maxObjId = -1;
 
@@ -108,12 +106,11 @@ namespace LevelEditor
 
 				if (maxObjId >= 0)
 				{
-					s_featureHovered.featureIndex = maxObjId;
-					s_featureHovered.sector = objSector;
-					s_featureHovered.prevSector = nullptr;
-					s_featureHovered.isObject = true;
+					selection_entity(SA_SET_HOVERED, objSector, maxObjId);
 				}
 			}
+			// Get the hovered sector as well for insertion later.
+			hoverSector = edit_getHoverSector2dAtCursor(layer);
 		}
 		else // Or the hit sector in 3D.
 		{
@@ -126,13 +123,14 @@ namespace LevelEditor
 			if (rayHit && hitInfoObj.dist < hitInfo->dist && hitInfoObj.hitObjId >= 0)
 			{
 				s_cursor3d = hitInfoObj.hitPos;
-
-				s_featureHovered.featureIndex = hitInfoObj.hitObjId;
-				s_featureHovered.sector = &s_level.sectors[hitInfoObj.hitSectorId];
-				s_featureHovered.prevSector = nullptr;
-				s_featureHovered.isObject = true;
+				selection_entity(SA_SET_HOVERED, &s_level.sectors[hitInfoObj.hitSectorId], hitInfoObj.hitObjId);
 			}
 		}
+
+		// Get the hovered object, if there is one.
+		EditorSector* hoveredObjSector = nullptr;
+		s32 hoveredObjIndex = -1;
+		selection_getEntity(SEL_INDEX_HOVERED, hoveredObjSector, hoveredObjIndex);
 
 		if (getEditAction(ACTION_PLACE) && hoverSector && s_selectedEntity >= 0 && s_selectedEntity < (s32)s_entityDefList.size())
 		{
@@ -156,11 +154,11 @@ namespace LevelEditor
 				cmd_objectListSnapshot(LName_AddObject, hoverSector->id);
 			}
 		}
-		else if (s_singleClick && s_featureHovered.isObject && s_featureHovered.sector && s_featureHovered.featureIndex >= 0)
+		else if (s_singleClick && hoveredObjSector)
 		{
-			s_featureCur = s_featureHovered;
+			selection_entity(SA_SET, hoveredObjSector, hoveredObjIndex);
 
-			EditorObject* obj = &s_featureCur.sector->obj[s_featureCur.featureIndex];
+			EditorObject* obj = &hoveredObjSector->obj[hoveredObjIndex];
 			s_editMove = true;
 			s_moveBasePos3d = obj->pos;
 
@@ -180,9 +178,15 @@ namespace LevelEditor
 		}
 		else if (s_leftMouseDown)
 		{
-			if (s_editMove && s_featureCur.isObject && s_featureCur.sector && s_featureCur.featureIndex >= 0)
+			// TODO: Proper selection movement.
+			// Get the "current" object, if there is one.
+			EditorSector* curObjSector = nullptr;
+			s32 curObjIndex = -1;
+			selection_getEntity(0, curObjSector, curObjIndex);
+
+			if (s_editMove && curObjSector)
 			{
-				EditorObject* obj = &s_featureCur.sector->obj[s_featureCur.featureIndex];
+				EditorObject* obj = &curObjSector->obj[curObjIndex];
 				if (s_view == EDIT_VIEW_2D)
 				{
 					s_cursor3d.y = obj->pos.y;
@@ -221,7 +225,7 @@ namespace LevelEditor
 				else if (s_moveStartPos3d.x != s_cursor3d.x || s_moveStartPos3d.z != s_cursor3d.z)
 				{
 					Vec3f prevPos = obj->pos;
-					EditorSector* prevSector = s_featureCur.sector;
+					EditorSector* prevSector = curObjSector;
 
 					if (getEditAction(ACTION_MOVE_X))
 					{
@@ -248,17 +252,18 @@ namespace LevelEditor
 						viewport_setRail(rail, 4, &moveDir);
 					}
 
-					if (!isPointInsideSector3d(s_featureCur.sector, obj->pos, layer))
+					if (!isPointInsideSector3d(curObjSector, obj->pos, layer))
 					{
 						EditorObject objCopy = *obj;
-						edit_deleteObject(s_featureCur.sector, s_featureCur.featureIndex);
-						s_featureHovered = {};
+						edit_deleteObject(curObjSector, curObjIndex);
+						selection_clearHovered();
 
 						EditorSector* newSector = findSector3d(objCopy.pos, layer);
 						if (newSector)
 						{
-							s_featureCur.featureIndex = (s32)newSector->obj.size();
-							s_featureCur.sector = newSector;
+							curObjSector = newSector;
+							curObjIndex = (s32)newSector->obj.size();
+							selection_entity(SA_SET, curObjSector, curObjIndex);
 							newSector->obj.push_back(objCopy);
 						}
 						else
@@ -268,9 +273,11 @@ namespace LevelEditor
 							newSector = findSector3d(testPos, layer);
 							if (newSector)
 							{
-								s_featureCur.featureIndex = (s32)newSector->obj.size();
-								s_featureCur.sector = newSector;
+								curObjSector = newSector;
+								curObjIndex = (s32)newSector->obj.size();
 								objCopy.pos.y = newSector->floorHeight;
+
+								selection_entity(SA_SET, curObjSector, curObjIndex);
 								newSector->obj.push_back(objCopy);
 							}
 							// Try the ceiling.
@@ -280,9 +287,11 @@ namespace LevelEditor
 								newSector = findSector3d(testPos, layer);
 								if (newSector)
 								{
-									s_featureCur.featureIndex = (s32)newSector->obj.size();
-									s_featureCur.sector = newSector;
+									curObjSector = newSector;
+									curObjIndex = (s32)newSector->obj.size();
 									objCopy.pos.y = newSector->ceilHeight;
+
+									selection_entity(SA_SET, curObjSector, curObjIndex);
 									newSector->obj.push_back(objCopy);
 								}
 							}
@@ -290,19 +299,21 @@ namespace LevelEditor
 							if (!newSector)
 							{
 								objCopy.pos = prevPos;
-								s_featureCur.featureIndex = (s32)prevSector->obj.size();
-								s_featureCur.sector = prevSector;
+								curObjIndex = (s32)prevSector->obj.size();
+								curObjSector = prevSector;
+
+								selection_entity(SA_SET, curObjSector, curObjIndex);
 								prevSector->obj.push_back(objCopy);
 							}
 						}
 					}
 				}
 
-				if (s_featureCur.isObject && s_featureCur.sector && s_featureCur.featureIndex >= 0)
+				if (curObjSector && curObjIndex >= 0)
 				{
-					obj = &s_featureCur.sector->obj[s_featureCur.featureIndex];
-					obj->pos.y = max(s_featureCur.sector->floorHeight, obj->pos.y);
-					obj->pos.y = min(s_featureCur.sector->ceilHeight, obj->pos.y);
+					obj = &curObjSector->obj[curObjIndex];
+					obj->pos.y = max(curObjSector->floorHeight, obj->pos.y);
+					obj->pos.y = min(curObjSector->ceilHeight, obj->pos.y);
 				}
 			}
 			else
@@ -314,17 +325,22 @@ namespace LevelEditor
 		{
 			s_editMove = false;
 		}
+
+		// Get the "current" object, if there is one.
+		EditorSector* curObjSector = nullptr;
+		s32 curObjIndex = -1;
+		selection_getEntity(0, curObjSector, curObjIndex);
 	
 		if (s_rotationDelta != 0 && getEditAction(ACTION_ROTATE))
 		{
 			EditorObject* obj = nullptr;
-			if (s_featureCur.isObject && s_featureCur.sector && s_featureCur.featureIndex >= 0)
+			if (curObjSector && curObjIndex >= 0)
 			{
-				obj = &s_featureCur.sector->obj[s_featureCur.featureIndex];
+				obj = &curObjSector->obj[curObjIndex];
 			}
-			else if (s_featureHovered.isObject && s_featureHovered.sector && s_featureHovered.featureIndex >= 0)
+			else if (hoveredObjSector && hoveredObjIndex >= 0)
 			{
-				obj = &s_featureHovered.sector->obj[s_featureHovered.featureIndex];
+				obj = &hoveredObjSector->obj[hoveredObjIndex];
 			}
 			if (obj)
 			{
@@ -340,22 +356,22 @@ namespace LevelEditor
 		{
 			bool deleted = false;
 			s32 sectorId = -1;
-			if (s_featureCur.isObject && s_featureCur.sector && s_featureCur.featureIndex >= 0)
+			if (curObjSector && curObjIndex >= 0)
 			{
-				edit_deleteObject(s_featureCur.sector, s_featureCur.featureIndex);
-				sectorId = s_featureCur.sector->id;
+				edit_deleteObject(curObjSector, curObjIndex);
+				sectorId = curObjSector->id;
 				deleted = true;
 			}
-			else if (s_featureHovered.isObject && s_featureHovered.sector && s_featureHovered.featureIndex >= 0)
+			else if (hoveredObjSector && hoveredObjIndex >= 0)
 			{
-				edit_deleteObject(s_featureHovered.sector, s_featureHovered.featureIndex);
-				sectorId = s_featureHovered.sector->id;
+				edit_deleteObject(hoveredObjSector, hoveredObjIndex);
+				sectorId = hoveredObjSector->id;
 				deleted = true;
 			}
 			if (deleted)
 			{
-				s_featureHovered = {};
-				s_featureCur = {};
+				selection_clearHovered();
+				selection_clear(SEL_ENTITY);
 			}
 			if (sectorId >= 0)
 			{

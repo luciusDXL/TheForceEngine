@@ -1,6 +1,7 @@
 #include "levelEditor.h"
 #include "levelEditorData.h"
 #include "levelEditorHistory.h"
+#include "editVertex.h"
 #include "guidelines.h"
 #include "tabControl.h"
 #include "camera.h"
@@ -340,27 +341,18 @@ namespace LevelEditor
 	{
 		// Clear the selection since some of it may be made non-interactable.
 		selection_clear();
-		if (s_featureCur.sector && s_featureCur.sector->groupId == group->id)
-		{
-			s_featureCur = {};
-		}
-		if (s_featureHovered.sector && s_featureHovered.sector->groupId == group->id)
-		{
-			s_featureHovered = {};
-		}
+		selection_clearHovered();
 	}
-
+		
 	void selectAndScrollToSector(EditorSector* sector)
 	{
 		// Clear the selection, select the sector.
 		selection_clear();
-		s_featureCur = {};
-		s_featureHovered = {};
-		s_featureCur.sector = sector;
 
 		// Set the edit mode to "Sector"
-		s_editMode = LEDIT_SECTOR;
-
+		edit_setEditMode(LEDIT_SECTOR);
+		selection_sector(SA_SET, sector);
+				
 		// Set the correct layer.
 		if (!(s_editFlags & LEF_SHOW_ALL_LAYERS))
 		{
@@ -433,7 +425,7 @@ namespace LevelEditor
 			{
 				continue;
 			}
-			if (sublist_item(sublist, sector->name.c_str(), s_featureCur.sector == sector))
+			if (sublist_item(sublist, sector->name.c_str(), selection_featureInCurrentSelection(sector)))
 			{
 				
 			}
@@ -658,14 +650,15 @@ namespace LevelEditor
 	{
 		s32 index = -1;
 		EditorSector* sector = nullptr;
-		if (s_featureCur.featureIndex < 0 && s_featureHovered.featureIndex < 0 && !s_selectionList.empty())
+
+		const u32 count = selection_getCount();
+		if (count)
 		{
-			sector = unpackFeatureId(s_selectionList[0], &index);
+			selection_getVertex(0, sector, index);
 		}
-		else
+		else if (selection_hasHovered())
 		{
-			sector = (s_featureCur.featureIndex >= 0) ? s_featureCur.sector : s_featureHovered.sector;
-			index = s_featureCur.featureIndex >= 0 ? s_featureCur.featureIndex : s_featureHovered.featureIndex;
+			selection_getVertex(SEL_INDEX_HOVERED, sector, index);
 		}
 
 		// If there is no selected vertex, just show vertex 0...
@@ -677,7 +670,7 @@ namespace LevelEditor
 		setPrevVertexFeature(sector, index);
 
 		Vec2f* vtx = sector->vtx.data() + index;
-		if (s_selectionList.size() > 1)
+		if (count > 1)
 		{
 			ImGui::Text("Multiple vertices selected, enter a movement delta.");
 		}
@@ -693,7 +686,7 @@ namespace LevelEditor
 
 		ImGui::SameLine();
 		Vec2f curPos = { 0 };
-		if (s_selectionList.size() <= 1)
+		if (count <= 1)
 		{
 			curPos = *vtx;
 		}
@@ -701,7 +694,7 @@ namespace LevelEditor
 		Vec2f prevPos = curPos;
 		if (inputVec2f("##VertexPosition", &curPos))
 		{
-			if (s_selectionList.size() <= 1) // Move the single vertex.
+			if (count <= 1) // Move the single vertex.
 			{
 				const FeatureId id = createFeatureId(sector, index, 0, false);
 				// cmd_addSetVertex(id, curPos);
@@ -711,7 +704,7 @@ namespace LevelEditor
 			{
 				const Vec2f delta = { curPos.x - prevPos.x, curPos.z - prevPos.z };
 				// cmd_addMoveVertices((s32)s_selectionList.size(), s_selectionList.data(), delta);
-				edit_moveVertices((s32)s_selectionList.size(), s_selectionList.data(), delta);
+				edit_moveSelectedVertices(delta);
 			}
 		}
 		ImGui::PopItemWidth();
@@ -767,19 +760,12 @@ namespace LevelEditor
 		index = s_prevWallFeature.featureIndex;
 	}
 
-	void setPrevWallFeature(EditorSector* sector, s32 index)
-	{
-		s_prevWallFeature.sector = sector;
-		s_prevWallFeature.featureIndex = index;
-	}
-
 	void infoPanelWall()
 	{
-		s32 wallId;
-		EditorSector* sector;
-		if (s_featureCur.featureIndex >= 0 && s_featureCur.sector) { sector = s_featureCur.sector; wallId = s_featureCur.featureIndex; }
-		else if (s_featureHovered.featureIndex >= 0 && s_featureHovered.sector) { sector = s_featureHovered.sector; wallId = s_featureHovered.featureIndex; }
-		else { getPrevWallFeature(sector, wallId); }
+		s32 wallId = -1;
+		EditorSector* sector = nullptr;
+		// TODO: Handle multi-select.
+		selection_getSurface(selection_getCount() ? 0 : SEL_INDEX_HOVERED, sector, wallId);
 		if (!sector || wallId < 0) { return; }
 
 		EditorSector* prevSector;
@@ -789,8 +775,6 @@ namespace LevelEditor
 		{
 			ImGui::SetWindowFocus(NULL);
 		}
-
-		setPrevWallFeature(sector, wallId);
 		s_wallShownLast = true;
 
 		bool insertTexture = s_selectedTexture >= 0 && TFE_Input::keyPressed(KEY_T);
@@ -1029,22 +1013,6 @@ namespace LevelEditor
 		}
 	}
 
-	void getPrevSectorFeature(EditorSector*& sector)
-	{
-		// Make sure the previous selection is still valid.
-		bool selectionInvalid = !s_prevSectorFeature.sector;
-		if (selectionInvalid)
-		{
-			s_prevSectorFeature.sector = s_level.sectors.empty() ? nullptr : &s_level.sectors[0];
-		}
-		sector = s_prevSectorFeature.sector;
-	}
-
-	void setPrevSectorFeature(EditorSector* sector)
-	{
-		s_prevSectorFeature.sector = sector;
-	}
-
 	void infoPanelSector()
 	{
 		bool insertTexture = s_selectedTexture >= 0 && TFE_Input::keyPressed(KEY_T);
@@ -1054,19 +1022,11 @@ namespace LevelEditor
 			texIndex = s_selectedTexture;
 		}
 
-		EditorSector* sector = s_featureCur.sector ? s_featureCur.sector : s_featureHovered.sector;
-		if (!sector) { getPrevSectorFeature(sector); }
+		s32 wallId = -1;
+		EditorSector* sector = nullptr;
+		// TODO: Handle multi-select.
+		selection_getSector(selection_getCount() ? 0 : SEL_INDEX_HOVERED, sector);
 		if (!sector) { return; }
-
-		// Keep text input from one sector from bleeding into the next.
-		EditorSector* prev;
-		getPrevSectorFeature(prev);
-		if (prev != sector)
-		{
-			ImGui::SetWindowFocus(NULL);
-		}
-
-		setPrevSectorFeature(sector);
 		s_wallShownLast = false;
 
 		ImGui::Text("Sector ID: %d      Wall Count: %u", sector->id, (u32)sector->walls.size());
@@ -1469,17 +1429,11 @@ namespace LevelEditor
 
 	void infoPanelObject()
 	{
-		EditorSector* sector = s_featureCur.sector ? s_featureCur.sector : s_featureHovered.sector;
-		s32 objIndex = s_featureCur.sector ? s_featureCur.featureIndex : s_featureHovered.featureIndex;
-		EditorObject* obj = sector && objIndex >= 0 ? &sector->obj[objIndex] : nullptr;
-
-		if (!sector || objIndex < 0)
-		{
-			getPrevObjectFeature(sector, objIndex);
-			obj = sector && objIndex >= 0 ? &sector->obj[objIndex] : nullptr;
-		}
-		if (!sector || objIndex < 0 || !obj) { return; }
-
+		s32 objIndex = -1;
+		EditorSector* sector = nullptr;
+		// TODO: Handle multi-select.
+		selection_getEntity(selection_getCount() ? 0 : SEL_INDEX_HOVERED, sector, objIndex);
+		
 		if (hasObjectSelectionChanged(sector, objIndex))
 		{
 			ImGui::SetWindowFocus(NULL);
@@ -1487,6 +1441,8 @@ namespace LevelEditor
 		}
 		setPrevObjectFeature(sector, objIndex);
 
+		if (!sector || objIndex < 0) { return; }
+		EditorObject* obj = &sector->obj[objIndex];
 		if (s_objEntity.id < 0)
 		{
 			s_objEntity = s_level.entities[obj->entityId];
@@ -1921,13 +1877,13 @@ namespace LevelEditor
 	
 	void infoPanelGuideline()
 	{
-		s32 id = s_curGuideline >= 0 ? s_curGuideline : s_hoveredGuideline;
+		const s32 id = s_curGuideline >= 0 ? s_curGuideline : s_hoveredGuideline;
 		if (id < 0) { return; }
 
 		Guideline* guideline = &s_level.guidelines[id];
 
 		sectionHeader("Settings");
-		f32 checkWidth = ImGui::CalcTextSize("Limit Height Shown").x + 8.0f;
+		const s32 checkWidth = (s32)ImGui::CalcTextSize("Limit Height Shown").x + 8;
 		optionCheckbox("Limit Height Shown", &guideline->flags, GLFLAG_LIMIT_HEIGHT, checkWidth);
 		optionCheckbox("Disable Snapping", &guideline->flags, GLFLAG_DISABLE_SNAPPING, checkWidth);
 		ImGui::Separator();
@@ -2054,13 +2010,28 @@ namespace LevelEditor
 
 					// Prioritize selected wall, selected sector, hovered wall, hovered sector.
 					// Allow sector views in wall mode, but NOT wall views in sector mode.
-					const bool curFeatureIsFlat = s_featureCur.part == HP_FLOOR || s_featureCur.part == HP_CEIL;
-					const bool hoverFeatureIsFlat = s_featureHovered.part == HP_FLOOR || s_featureHovered.part == HP_CEIL;
+					EditorSector* curSector = nullptr;
+					EditorSector* hoveredSector = nullptr;
+					s32 curFeatureIndex = -1, hoveredFeatureIndex = -1;
+					HitPart curPart = HP_NONE, hoveredPart = HP_NONE;
+					if (s_editMode == LEDIT_SECTOR)
+					{
+						selection_getSector(SEL_INDEX_HOVERED, hoveredSector);
+						selection_getSector(0, curSector);
+					}
+					else // LEDIT_WALL
+					{
+						selection_getSurface(SEL_INDEX_HOVERED, hoveredSector, hoveredFeatureIndex, &hoveredPart);
+						selection_getSurface(0, curSector, curFeatureIndex, &curPart);
+					}
 
-					if (s_editMode == LEDIT_WALL && s_featureCur.featureIndex >= 0 && !curFeatureIsFlat) { infoPanelWall(); }
-					else if (s_featureCur.sector) { infoPanelSector(); }
-					else if (s_editMode == LEDIT_WALL && s_featureHovered.featureIndex >= 0 && !hoverFeatureIsFlat) { infoPanelWall(); }
-					else if (s_featureHovered.sector) { infoPanelSector(); }
+					const bool curFeatureIsFlat   = s_editMode == LEDIT_SECTOR || (curPart == HP_FLOOR || curPart == HP_CEIL);
+					const bool hoverFeatureIsFlat = s_editMode == LEDIT_SECTOR || (hoveredPart == HP_FLOOR || hoveredPart == HP_CEIL);
+
+					if (s_editMode == LEDIT_WALL && curFeatureIndex >= 0 && !curFeatureIsFlat) { infoPanelWall(); }
+					else if (curSector) { infoPanelSector(); }
+					else if (s_editMode == LEDIT_WALL && hoveredFeatureIndex >= 0 && !hoverFeatureIsFlat) { infoPanelWall(); }
+					else if (hoveredSector) { infoPanelSector(); }
 					else if (showWall) { infoPanelWall(); }
 					else { infoPanelSector(); }
 				}

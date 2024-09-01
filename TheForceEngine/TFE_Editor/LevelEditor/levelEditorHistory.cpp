@@ -103,11 +103,13 @@ namespace LevelEditor
 	void levHistory_undo()
 	{
 		history_step(-1);
+		edit_clearSelections(false);
 	}
 
 	void levHistory_redo()
 	{
 		history_step(1);
+		edit_clearSelections(false);
 	}
 
 	////////////////////////////////
@@ -155,6 +157,8 @@ namespace LevelEditor
 		
 	void cmd_sectorSnapshot(u32 name, std::vector<s32>& sectorIds)
 	{
+		if (sectorIds.empty()) { return; }
+
 		s_workBuffer[0].clear();
 		s_workBuffer[1].clear();
 		level_createSectorSnapshot(&s_workBuffer[0], sectorIds);
