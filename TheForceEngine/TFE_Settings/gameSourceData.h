@@ -101,7 +101,7 @@ namespace TFE_Settings
 		"D:/Program Files (x86)/GOG.com/outlaws/",
 		"D:/GOG Games/outlaws/",
 	};
-	static const u32 c_hardcodedPathCount = TFE_ARRAYSIZE(c_darkForcesLocations);
+	static const u32 c_hardcodedPathCount[] = { TFE_ARRAYSIZE(c_darkForcesLocations), TFE_ARRAYSIZE(c_outlawsLocations) };
 
 	static const char* const * c_gameLocations[] =
 	{

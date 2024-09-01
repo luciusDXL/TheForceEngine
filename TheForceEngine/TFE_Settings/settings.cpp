@@ -232,7 +232,7 @@ namespace TFE_Settings
 			{
 				// Try various possible locations.
 				const char* const * locations = c_gameLocations[gameId];
-				for (u32 i = 0; i < c_hardcodedPathCount; i++)
+				for (u32 i = 0; i < c_hardcodedPathCount[gameId]; i++)
 				{
 					if (FileUtil::directoryExits(locations[i]))
 					{
