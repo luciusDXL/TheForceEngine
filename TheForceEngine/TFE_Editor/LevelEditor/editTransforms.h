@@ -13,14 +13,26 @@
 
 namespace LevelEditor
 {
-	// Helper sector list to track changes.
-	extern SectorList s_sectorChangeList;
-	// General movement.
-	extern bool s_moveStarted;
-	extern Vec2f s_moveStartPos;
-	extern Vec2f s_moveStartPos1;
-	extern Vec2f* s_moveVertexPivot;
-	extern Vec3f s_prevPos;
-	extern Vec2f s_wallNrm;
-	extern Vec2f s_wallTan;
+	enum TransformMode
+	{
+		TRANS_MOVE = 0,
+		TRANS_ROTATE,
+		TRANS_SCALE,
+		TRANS_COUNT
+	};
+
+	enum WallMoveMode
+	{
+		WMM_NORMAL = 0,
+		WMM_FREE,
+		WMM_COUNT
+	};
+
+	void edit_setTransformMode(TransformMode mode = TRANS_MOVE);
+	TransformMode edit_getTransformMode();
+	void edit_enableMoveTransform(bool enable = false);
+
+	void edit_transform(s32 mx = 0, s32 my = 0);
+
+	extern WallMoveMode s_wallMoveMode;
 }

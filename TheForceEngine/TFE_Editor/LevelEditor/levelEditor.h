@@ -95,6 +95,8 @@ namespace LevelEditor
 	void updateDragSelect(s32 mx, s32 my);
 
 	// TODO: Move?
+	Vec2f mouseCoordToWorldPos2d(s32 mx, s32 my);
+	void edit_endMove();
 	void checkForWallHit2d(Vec2f& worldPos, EditorSector*& wallSector, s32& wallIndex, HitPart& part, EditorSector* hoverSector);
 	void checkForWallHit3d(RayHitInfo* info, EditorSector*& wallSector, s32& wallIndex, HitPart& part, const EditorSector* hoverSector);
 
@@ -103,5 +105,6 @@ namespace LevelEditor
 
 	s32 getDefaultTextureIndex(WallPart part);
 	Vec3f moveAlongRail(Vec3f dir);
+	Vec3f moveAlongXZPlane(f32 yHeight);
 	bool isUiModal();
 }

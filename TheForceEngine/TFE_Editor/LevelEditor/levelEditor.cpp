@@ -19,6 +19,7 @@
 #include "editGuidelines.h"
 #include "editVertex.h"
 #include "editNotes.h"
+#include "editTransforms.h"
 #include "userPreferences.h"
 #include <TFE_FrontEndUI/frontEndUi.h>
 #include <TFE_Editor/AssetBrowser/assetBrowser.h>
@@ -72,24 +73,8 @@ namespace LevelEditor
 	const f32 c_defaultCameraHeight = 6.0f;
 	const f64 c_doubleClickThreshold = 0.25f;
 	const s32 c_vanillaDarkForcesNameLimit = 16;
-			
-	enum WallMoveMode
-	{
-		WMM_NORMAL = 0,
-		WMM_FREE,
-		WMM_COUNT
-	};
-
-	enum TransformMode
-	{
-		TRANS_MOVE = 0,
-		TRANS_ROTATE,
-		TRANS_SCALE,
-		TRANS_COUNT
-	};
 
 	static Asset* s_levelAsset = nullptr;
-	static WallMoveMode s_wallMoveMode = WMM_NORMAL;
 	static s32 s_outputHeight = 26*6;
 
 	// The TFE Level Editor format is different than the base format and contains extra 
@@ -98,7 +83,6 @@ namespace LevelEditor
 	// If the correct format already exists, though, then it is loaded directly.
 	AssetList s_levelTextureList;
 	LevelEditMode s_editMode = LEDIT_DRAW;
-	TransformMode s_transformMode = TRANS_MOVE;
 
 	u32 s_editFlags = LEF_DEFAULT;
 	u32 s_lwinOpen = LWIN_NONE;
@@ -138,16 +122,12 @@ namespace LevelEditor
 	
 	// Handle initial mouse movement before feature movement or snapping.
 	static const s32 c_moveThreshold = 3;
-	static bool s_canMoveFeature = false;
 	static Vec2i s_moveInitPos = { 0 };
 		
 	static char s_layerMem[4 * 31];
 	static char* s_layerStr[31];
 
 	// Wall editing
-	static Vec2f s_wallNrm;
-	static Vec2f s_wallTan;
-	static Vec3f s_prevPos = { 0 };
 	static s32 s_newWallTexOverride = -1;
 
 	// Texture Alignment
@@ -198,12 +178,10 @@ namespace LevelEditor
 	void resetZoom();
 	bool isViewportElementHovered();
 	void play();
-	Vec2f mouseCoordToWorldPos2d(s32 mx, s32 my);
 	Vec3f mouseCoordToWorldDir3d(s32 mx, s32 my);
 	Vec2i worldPos2dToMap(const Vec2f& worldPos);
 	bool worldPosToViewportCoord(Vec3f worldPos, Vec2f* screenPos);
 	
-	void moveFeatures(const Vec3f& newPos);
 	void handleTextureAlignment();
 
 	void snapSignToCursor(EditorSector* sector, EditorWall* wall, s32 signTexIndex, Vec2f* signOffset);
@@ -335,7 +313,7 @@ namespace LevelEditor
 		}
 		s_curLayer = std::min(1, s_level.layerRange[1]);
 
-		s_transformMode = TRANS_MOVE;
+		edit_setTransformMode();
 		s_sectorDrawMode = SDM_WIREFRAME;
 		s_gridFlags = GFLAG_NONE;
 		selection_clear();
@@ -2409,14 +2387,14 @@ namespace LevelEditor
 		if (s_singleClick)
 		{
 			s_moveInitPos = { mx, my };
-			s_canMoveFeature = false;
+			edit_enableMoveTransform(false);
 		}
 		else if (s_leftMouseDown)
 		{
 			const Vec2i delta = { ::abs(mx - s_moveInitPos.x), ::abs(my - s_moveInitPos.z) };
 			if (delta.x > c_moveThreshold || delta.z > c_moveThreshold)
 			{
-				s_canMoveFeature = true;
+				edit_enableMoveTransform(true);
 			}
 		}
 
@@ -3386,9 +3364,9 @@ namespace LevelEditor
 			for (u32 i = 0; i < 3; i++)
 			{
 				s32 xformMode = TransformMode(i + TRANS_MOVE);
-				if (iconButton(c_toolbarIcon[i + 8], toolbarTooltips[i + 8], xformMode == s_transformMode))
+				if (iconButton(c_toolbarIcon[i + 8], toolbarTooltips[i + 8], xformMode == edit_getTransformMode()))
 				{
-					s_transformMode = TransformMode(xformMode);
+					edit_setTransformMode(TransformMode(xformMode));
 				}
 				ImGui::SameLine();
 			}
@@ -3790,145 +3768,6 @@ namespace LevelEditor
 			sector->bounds[1].y = std::max(sector->floorHeight, sector->ceilHeight);
 		}
 	}
-		
-	void moveFlat()
-	{
-		EditorSector* sector = nullptr;
-		s32 wallIndex = -1;
-		HitPart part = HP_NONE;
-		selection_getSurface(0, sector, wallIndex, &part);
-		if (!sector) { return; }
-
-		if (!s_moveStarted)
-		{
-			s_moveStarted = true;
-			s_moveStartPos.x = part == HP_FLOOR ? sector->floorHeight : sector->ceilHeight;
-			s_moveStartPos.z = 0.0f;
-			s_prevPos = s_curVtxPos;
-		}
-
-		Vec3f worldPos = moveAlongRail({ 0.0f, 1.0f, 0.0f });
-		f32 y = worldPos.y;
-
-		snapToGridY(&y);
-		f32 heightDelta;
-		if (part == HP_FLOOR)
-		{
-			heightDelta = y - sector->floorHeight;
-		}
-		else
-		{
-			heightDelta = y - sector->ceilHeight;
-		}
-
-		edit_moveSelectedFlats(heightDelta);
-	}
-		
-	void moveWall(Vec3f worldPos)
-	{
-		EditorSector* sector = nullptr;
-		s32 wallIndex = -1;
-		HitPart part = HP_NONE;
-		selection_getSurface(0, sector, wallIndex, &part);
-		if (!sector) { return; }
-
-		// Overall movement since mousedown, for the history.
-		const EditorWall* wall = &sector->walls[wallIndex];
-		const Vec2f& v0 = sector->vtx[wall->idx[0]];
-		const Vec2f& v1 = sector->vtx[wall->idx[1]];
-		if (!s_moveStarted)
-		{
-			s_moveStarted = true;
-			s_moveStartPos  = v0;
-			s_moveStartPos1 = v1;
-
-			s_wallNrm = { -(v1.z - v0.z), v1.x - v0.x };
-			s_wallNrm = TFE_Math::normalize(&s_wallNrm);
-
-			s_wallTan = { v1.x - v0.x, v1.z - v0.z };
-			s_wallTan = TFE_Math::normalize(&s_wallTan);
-
-			if (s_view == EDIT_VIEW_3D)
-			{
-				s_prevPos = s_curVtxPos;
-			}
-		}
-		
-		Vec2f moveDir = s_wallNrm;
-		Vec2f startPos = s_moveStartPos;
-		if (s_view == EDIT_VIEW_3D)
-		{
-			if (s_wallMoveMode == WMM_NORMAL)
-			{
-				worldPos = moveAlongRail({ s_wallNrm.x, 0.0f, s_wallNrm.z });
-			}
-			else
-			{
-				worldPos = moveAlongXZPlane(s_curVtxPos.y);
-			}
-		}
-
-		if (s_wallMoveMode == WMM_FREE)
-		{
-			Vec2f delta = { worldPos.x - s_curVtxPos.x, worldPos.z - s_curVtxPos.z };
-
-			if (!TFE_Input::keyModDown(KEYMOD_ALT))
-			{
-				// Smallest snap distance.
-				Vec2f p0 = { s_moveStartPos.x + delta.x, s_moveStartPos.z + delta.z };
-				Vec2f p1 = { s_moveStartPos1.x + delta.x, s_moveStartPos1.z + delta.z };
-
-				Vec2f s0 = p0, s1 = p1;
-				snapToGrid(&s0);
-				snapToGrid(&s1);
-
-				Vec2f d0 = { p0.x - s0.x, p0.z - s0.z };
-				Vec2f d1 = { p1.x - s1.x, p1.z - s1.z };
-				if (TFE_Math::dot(&d0, &d0) <= TFE_Math::dot(&d1, &d1))
-				{
-					delta = { s0.x - v0.x, s0.z - v0.z };
-				}
-				else
-				{
-					delta = { s1.x - v1.x, s1.z - v1.z };
-				}
-			}
-			else
-			{
-				delta = { s_moveStartPos.x + delta.x - v0.x, s_moveStartPos.z + delta.z - v0.z };
-			}
-
-			// Move all of the vertices by the offset.
-			edit_moveSelectedVertices(delta);
-		}
-		else
-		{
-			// Compute the movement.
-			Vec2f offset = { worldPos.x - startPos.x, worldPos.z - startPos.z };
-			f32 nrmOffset = TFE_Math::dot(&offset, &moveDir);
-
-			if (!TFE_Input::keyModDown(KEYMOD_ALT))
-			{
-				// Find the snap point along the path from vertex 0 and vertex 1.
-				f32 v0Offset = snapAlongPath(s_moveStartPos, moveDir, s_moveStartPos, nrmOffset);
-				f32 v1Offset = snapAlongPath(s_moveStartPos1, moveDir, s_moveStartPos, nrmOffset);
-
-				// Finally determine which snap to take (whichever is the smallest).
-				if (v0Offset < FLT_MAX && fabsf(v0Offset - nrmOffset) < fabsf(v1Offset - nrmOffset))
-				{
-					nrmOffset = v0Offset;
-				}
-				else if (v1Offset < FLT_MAX)
-				{
-					nrmOffset = v1Offset;
-				}
-			}
-
-			// Move all of the vertices by the offset.
-			Vec2f delta = { s_moveStartPos.x + moveDir.x * nrmOffset - v0.x, s_moveStartPos.z + moveDir.z * nrmOffset - v0.z };
-			edit_moveSelectedVertices(delta);
-		}
-	}
 	
 	void cameraControl2d(s32 mx, s32 my)
 	{
@@ -3990,11 +3829,8 @@ namespace LevelEditor
 			s_viewportPos.z += (worldPos.z - newWorldPos.z);
 		}
 
-		if (s_editMove)
-		{
-			const Vec2f worldPos2d = mouseCoordToWorldPos2d(mx, my);
-			moveFeatures({worldPos2d.x, 0.0f, worldPos2d.z});
-		}
+		// Apply geometry transforms.
+		edit_transform(mx, my);
 	}
 		
 	void cameraControl3d(s32 mx, s32 my)
@@ -4059,27 +3895,8 @@ namespace LevelEditor
 		}
 		computeCameraTransform();
 
-		if (s_editMove)
-		{
-			Vec3f worldPos;
-			if (s_editMode == LEDIT_VERTEX)
-			{
-				const f32 u = (s_curVtxPos.y - s_camera.pos.y) / (s_cursor3d.y - s_camera.pos.y);
-				worldPos =
-				{
-					s_camera.pos.x + u * (s_cursor3d.x - s_camera.pos.x),
-					0.0f,
-					s_camera.pos.z + u * (s_cursor3d.z - s_camera.pos.z)
-				};
-			}
-			else if (s_editMode == LEDIT_WALL)
-			{
-				// When wall editing is enabled, then what we really want is a plane that passes through the cursor and is oriented along
-				// the direction of movement (aka, the normal is perpendicular to this movement).
-				worldPos = s_cursor3d;
-			}
-			moveFeatures(worldPos);
-		}
+		// Apply geometry transforms.
+		edit_transform();
 	}
 		
 	void toolbarBegin()
@@ -4315,46 +4132,7 @@ namespace LevelEditor
 		s_editMove = false;
 		s_moveStarted = false;
 	}
-
-	void moveFeatures(const Vec3f& newPos)
-	{
-		const bool hasSelection = selection_getCount() > 0;
-		if (s_editMode == LEDIT_VERTEX)
-		{
-			if (hasSelection && TFE_Input::mouseDown(MBUTTON_LEFT) && !TFE_Input::keyModDown(KEYMOD_CTRL) && !TFE_Input::keyModDown(KEYMOD_SHIFT))
-			{
-				if (s_canMoveFeature)
-				{
-					edit_moveVertices({ newPos.x, newPos.z });
-				}
-			}
-			else
-			{
-				edit_endMove();
-			}
-		}
-		else if (s_editMode == LEDIT_WALL)
-		{
-			EditorSector* sector = nullptr;
-			s32 featureIndex = -1;
-			HitPart part = HP_NONE;
-			selection_getSurface(0, sector, featureIndex, &part);
-
-			if (hasSelection && TFE_Input::mouseDown(MBUTTON_LEFT) && !TFE_Input::keyModDown(KEYMOD_CTRL) && !TFE_Input::keyModDown(KEYMOD_SHIFT))
-			{
-				if (s_canMoveFeature)
-				{
-					if (part == HP_FLOOR || part == HP_CEIL) { moveFlat(); }
-					else { moveWall(newPos); }
-				}
-			}
-			else
-			{
-				edit_endMove();
-			}
-		}
-	}
-
+	
 	void edit_clearSelections(bool endTransform)
 	{
 		if (endTransform)
@@ -4512,7 +4290,7 @@ namespace LevelEditor
 				if (delta.x || delta.z)
 				{
 					edit_moveSelectedTextures(delta);
-				} // delta.x || delta.z
+				}
 
 				if (!middleMousePressed && !middleMouseDown)
 				{
@@ -4680,7 +4458,7 @@ namespace LevelEditor
 				if (delta.x || delta.z)
 				{
 					edit_moveSelectedTextures(delta);
-				} // delta.x || delta.z
+				}
 
 				if (!middleMousePressed && !middleMouseDown)
 				{
