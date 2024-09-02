@@ -4308,6 +4308,7 @@ namespace LevelEditor
 				} break;
 			};
 			// Take a snapshot of changed sectors.
+			// TODO: Vertex snapshot of a set of sectors?
 			cmd_sectorSnapshot(name, s_idList);
 		}
 
@@ -4366,8 +4367,6 @@ namespace LevelEditor
 		clearLevelNoteSelection();
 		guideline_clearSelection();
 	}
-
-	static Vec2f s_texDelta = { 0 };
 
 	bool canMoveTexture(HitPart part)
 	{
@@ -4493,7 +4492,6 @@ namespace LevelEditor
 					s_featureTex.sector = hovered;
 					// Cancel out any key-based movement, cannot do both at once.
 					delta = { 0 };
-					s_texDelta = { 0 };
 				}
 				else if (middleMouseDown && s_startTexMove)
 				{
@@ -4505,7 +4503,6 @@ namespace LevelEditor
 
 					delta.x = offset.x * texScale;
 					delta.z = offset.z * texScale;
-					s_texDelta = delta;
 
 					Vec2f curOffset = getTextureOffset(hovered, part, 0);
 					delta.x = (s_startTexOffset.x + delta.x) - curOffset.x;
@@ -4625,7 +4622,6 @@ namespace LevelEditor
 
 					// Cancel out any key-based movement, cannot do both at once.
 					delta = { 0 };
-					s_texDelta = { 0 };
 				}
 				else if (middleMouseDown && s_startTexMove)
 				{
@@ -4644,7 +4640,6 @@ namespace LevelEditor
 
 						delta.x = offset.x * texScale;
 						delta.z = offset.z * texScale;
-						s_texDelta = delta;
 
 						Vec2f curOffset = getTextureOffset(hovered, part, featureIndex);
 						delta.x = (s_startTexOffset.x + delta.x) - curOffset.x;
@@ -4668,7 +4663,6 @@ namespace LevelEditor
 
 						delta.x = (offset.x * s_texTangent.x + offset.z * s_texTangent.z) * texScale;
 						delta.z = -offset.y * texScale;
-						s_texDelta = delta;
 
 						Vec2f curOffset = getTextureOffset(hovered, part, featureIndex);
 						if (part == HP_SIGN)
