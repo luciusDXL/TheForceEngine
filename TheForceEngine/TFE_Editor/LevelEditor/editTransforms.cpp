@@ -12,8 +12,8 @@ using namespace TFE_Editor;
 namespace LevelEditor
 {
 	static TransformMode s_transformMode = TRANS_MOVE;
+	static WallMoveMode s_wallMoveMode = WMM_NORMAL;
 	static bool s_enableMoveTransform = false;
-	WallMoveMode s_wallMoveMode = WMM_NORMAL;
 
 	void moveFeatures(const Vec3f& newPos);
 	void moveFlat();
@@ -32,6 +32,11 @@ namespace LevelEditor
 	void edit_enableMoveTransform(bool enable)
 	{
 		s_enableMoveTransform = enable;
+	}
+
+	void edit_setWallMoveMode(WallMoveMode mode)
+	{
+		s_wallMoveMode = mode;
 	}
 
 	void edit_transform(s32 mx, s32 my)

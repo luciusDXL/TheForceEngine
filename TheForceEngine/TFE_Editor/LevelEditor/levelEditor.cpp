@@ -1481,12 +1481,7 @@ namespace LevelEditor
 					s_editMove = true;
 
 					// TODO: Hotkeys...
-					// TODO: Should these just be removed to simplify things a bit?
-					s_wallMoveMode = WMM_FREE;
-					if (TFE_Input::keyDown(KEY_N))
-					{
-						s_wallMoveMode = WMM_NORMAL;
-					}
+					edit_setWallMoveMode(TFE_Input::keyDown(KEY_N) ? WMM_NORMAL : WMM_FREE);
 				}
 				else if (!s_editMove)
 				{
