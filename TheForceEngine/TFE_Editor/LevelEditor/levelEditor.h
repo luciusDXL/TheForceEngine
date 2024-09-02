@@ -98,11 +98,6 @@ namespace LevelEditor
 	void checkForWallHit2d(Vec2f& worldPos, EditorSector*& wallSector, s32& wallIndex, HitPart& part, EditorSector* hoverSector);
 	void checkForWallHit3d(RayHitInfo* info, EditorSector*& wallSector, s32& wallIndex, HitPart& part, const EditorSector* hoverSector);
 
-	// Change capture.
-	void edit_setWallCapture(bool capture);
-	void edit_addToWallCapture(s32 id);
-	std::vector<s32>* edit_getWallCaptureList();
-
 	// Grid?
 	void adjustGridHeight(EditorSector* sector);
 

@@ -135,7 +135,6 @@ namespace LevelEditor
 	static bool s_gravity = false;
 	static bool s_showAllLabels = false;
 	static bool s_modalUiActive = false;
-	static bool s_captureChangedWalls = false;
 	
 	// Handle initial mouse movement before feature movement or snapping.
 	static const s32 c_moveThreshold = 3;
@@ -728,7 +727,6 @@ namespace LevelEditor
 		{
 			EditorSector* matchSector = sectorList[s];
 			if (matchSector == sector) { continue; }
-			edit_addToWallCapture(matchSector->id);
 
 			const size_t wallCount = matchSector->walls.size();
 			EditorWall* wall = matchSector->walls.data();
@@ -774,7 +772,6 @@ namespace LevelEditor
 		// Example, split B into {B, N} : {A, B, C, D} -> {A, B, N, C, D}.
 		EditorWall* outWalls[2] = { nullptr };
 		splitWall(sector, wallIndex, newPos, outWalls);
-		edit_addToWallCapture(sector->id);
 		
 		// Find any references to > wallIndex and fix them up.
 		fixupWallMirrors(sector, wallIndex);
@@ -788,7 +785,6 @@ namespace LevelEditor
 			// Split the mirror wall.
 			EditorWall* outWallsAdjoin[2] = { nullptr };
 			splitWall(nextSector, mirrorWallIndex, newPos, outWallsAdjoin);
-			edit_addToWallCapture(nextSector->id);
 				
 			// Fix-up the mirrors for the adjoined sector.
 			fixupWallMirrors(nextSector, mirrorWallIndex);
@@ -5574,31 +5570,5 @@ namespace LevelEditor
 				drawViewportInfo(0, { s32(screenPos.x + 20.0f), s32(screenPos.z - 20.0f) }, info, 0, 0);
 			}
 		}
-	}
-
-	void edit_setWallCapture(bool capture)
-	{
-		s_captureChangedWalls = capture;
-		if (capture)
-		{
-			s_idList.clear();
-		}
-	}
-
-	void edit_addToWallCapture(s32 id)
-	{
-		if (!s_captureChangedWalls) { return; }
-		const s32 count = (s32)s_idList.size();
-		const s32* idList = s_idList.data();
-		for (s32 i = 0; i < count; i++)
-		{
-			if (idList[i] == id) { return; }
-		}
-		s_idList.push_back(id);
-	}
-
-	std::vector<s32>* edit_getWallCaptureList()
-	{
-		return &s_idList;
 	}
 }

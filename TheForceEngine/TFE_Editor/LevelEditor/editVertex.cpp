@@ -36,6 +36,8 @@ namespace LevelEditor
 		s32 leftWall, rightWall;
 	};
 	static std::vector<VertexWallGroup> s_vertexWallGroups;
+	static std::vector<EditorSector> s_sectorSnapshot;
+	static std::vector<s32> s_deltaSectors;
 
 	void findHoveredVertexOutside(Vec3f pos, f32 maxDist, bool use3dCheck);
 	void selectVerticesToDelete(EditorSector* root, s32 featureIndex, const Vec2f* rootVtx);
@@ -219,16 +221,15 @@ namespace LevelEditor
 
 		if (s > FLT_EPSILON && s < 1.0f - FLT_EPSILON)
 		{
-			edit_setWallCapture(true);
+			level_createLevelSectorSnapshotSameAssets(s_sectorSnapshot);
 			if (edit_splitWall(sector->id, wallIndex, newPos))
 			{
-				std::vector<s32>* listArr = edit_getWallCaptureList();
-				if (listArr && !listArr->empty())
+				level_getLevelSnapshotDelta(s_deltaSectors, s_sectorSnapshot);
+				if (!s_deltaSectors.empty())
 				{
-					cmd_sectorSnapshot(LName_InsertVertex, *listArr);
+					cmd_sectorSnapshot(LName_InsertVertex, s_deltaSectors);
 				}
 			}
-			edit_setWallCapture(false);
 		}
 	}
 		
@@ -320,8 +321,7 @@ namespace LevelEditor
 	void edit_deleteVertex(s32 sectorId, s32 vertexIndex, u32 nameId)
 	{
 		// Save a snapshot *before* delete.
-		std::vector<EditorSector> snapshot;
-		level_createLevelSectorSnapshotSameAssets(snapshot);
+		level_createLevelSectorSnapshotSameAssets(s_sectorSnapshot);
 
 		// Then get the position.
 		EditorSector* sector = &s_level.sectors[sectorId];
@@ -383,9 +383,8 @@ namespace LevelEditor
 		edit_clearSelections();
 
 		// Get the sectors that changed due to deletion and build a limited snapshot from that.
-		std::vector<s32> deltaSectors;
-		level_getLevelSnapshotDelta(deltaSectors, snapshot);
-		cmd_sectorSnapshot(nameId, deltaSectors);
+		level_getLevelSnapshotDelta(s_deltaSectors, s_sectorSnapshot);
+		cmd_sectorSnapshot(nameId, s_deltaSectors);
 	}
 
 	void vertexComputeDragSelect()
