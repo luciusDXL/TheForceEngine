@@ -2688,6 +2688,64 @@ namespace LevelEditor
 			obj->entityId = remapTableEntity[obj->entityId];
 		}
 	}
+
+	bool levelTextureEq(const LevelTexture& a, const LevelTexture& b)
+	{
+		return a.texIndex == b.texIndex && a.offset.x == b.offset.x && a.offset.z == b.offset.z;
+	}
+
+	bool vec3Eq(const Vec3f& a, const Vec3f& b)
+	{
+		return a.x == b.x && a.y == b.y && a.z == b.z;
+	}
+		
+	// Take a sector snapshot assuming the assets are going to stay the same.
+	void level_createLevelSectorSnapshotSameAssets(std::vector<EditorSector>& sectors)
+	{
+		sectors = s_level.sectors;
+	}
+		
+	void level_getLevelSnapshotDelta(std::vector<s32>& modifiedSectors, const std::vector<EditorSector>& sectorSnapshot)
+	{
+		modifiedSectors.clear();
+		s32 count = (s32)std::min(s_level.sectors.size(), sectorSnapshot.size());
+		const EditorSector* curSector = s_level.sectors.data();
+		const EditorSector* prevSector = sectorSnapshot.data();
+		for (s32 i = 0; i < count; i++, curSector++, prevSector++)
+		{
+			// Check the sizes and values.
+			// Assume that if the bounds match and all of the sizes/counts match - then the sectors match.
+			if (curSector->id != prevSector->id || curSector->groupId != prevSector->groupId || curSector->name != prevSector->name ||
+			   !levelTextureEq(curSector->floorTex, prevSector->floorTex) || !levelTextureEq(curSector->ceilTex, prevSector->ceilTex) ||
+			    curSector->floorHeight != prevSector->floorHeight || curSector->ceilHeight != prevSector->ceilHeight || curSector->secHeight != prevSector->secHeight ||
+			    curSector->ambient != prevSector->ambient || curSector->flags[0] != prevSector->flags[0] || curSector->flags[1] != prevSector->flags[1] ||
+				curSector->flags[2] != prevSector->flags[2] || !vec3Eq(curSector->bounds[0], prevSector->bounds[0]) ||
+				!vec3Eq(curSector->bounds[1], prevSector->bounds[1]) || curSector->layer != prevSector->layer ||
+				curSector->vtx.size() != prevSector->vtx.size() || curSector->walls.size() != prevSector->walls.size() ||
+				curSector->obj.size() != prevSector->obj.size())
+			{
+				modifiedSectors.push_back(i);
+				// Continue the loop and don't check the walls.
+				continue;
+			}
+
+			// However we still need to check the walls because the mirrors and adjoin values may have changed.
+			const s32 wallCount = (s32)curSector->walls.size();
+			const EditorWall* curWall = curSector->walls.data();
+			const EditorWall* prevWall = prevSector->walls.data();
+			for (s32 w = 0; w < wallCount; w++, curWall++, prevWall++)
+			{
+				if (curWall->idx[0] != prevWall->idx[0] || curWall->idx[1] != prevWall->idx[1] || curWall->adjoinId != prevWall->adjoinId ||
+					curWall->mirrorId != prevWall->mirrorId || curWall->flags[0] != prevWall->flags[0] || curWall->flags[1] != prevWall->flags[1] ||
+					curWall->flags[2] != prevWall->flags[2] || curWall->wallLight != prevWall->wallLight)
+				{
+					modifiedSectors.push_back(i);
+					// Break out of the wall checking loop.
+					break;
+				}
+			}
+		}
+	}
 				
 	void level_createSectorSnapshot(SnapshotBuffer* buffer, std::vector<s32>& sectorIds)
 	{

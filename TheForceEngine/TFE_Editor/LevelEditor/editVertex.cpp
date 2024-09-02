@@ -319,6 +319,11 @@ namespace LevelEditor
 	// Delete a vertex.
 	void edit_deleteVertex(s32 sectorId, s32 vertexIndex, u32 nameId)
 	{
+		// Save a snapshot *before* delete.
+		std::vector<EditorSector> snapshot;
+		level_createLevelSectorSnapshotSameAssets(snapshot);
+
+		// Then get the position.
 		EditorSector* sector = &s_level.sectors[sectorId];
 		const Vec2f* pos = &sector->vtx[vertexIndex];
 
@@ -377,8 +382,10 @@ namespace LevelEditor
 		// When deleting features, we need to clear out the selections.
 		edit_clearSelections();
 
-		// TODO: Use a cheaper method for storing the state...
-		levHistory_createSnapshot(history_getName(nameId));
+		// Get the sectors that changed due to deletion and build a limited snapshot from that.
+		std::vector<s32> deltaSectors;
+		level_getLevelSnapshotDelta(deltaSectors, snapshot);
+		cmd_sectorSnapshot(nameId, deltaSectors);
 	}
 
 	void vertexComputeDragSelect()

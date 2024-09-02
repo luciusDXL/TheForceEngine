@@ -256,6 +256,9 @@ namespace LevelEditor
 	void level_createSectorSnapshot(TFE_Editor::SnapshotBuffer* buffer, std::vector<s32>& sectorIds);
 	void level_createEntiyListSnapshot(TFE_Editor::SnapshotBuffer* buffer, s32 sectorId);
 
+	void level_createLevelSectorSnapshotSameAssets(std::vector<EditorSector>& sectors);
+	void level_getLevelSnapshotDelta(std::vector<s32>& modifiedSectors, const std::vector<EditorSector>& sectorSnapshot);
+
 	void level_unpackSnapshot(s32 id, u32 size, void* data);
 	void level_unpackSectorSnapshot(u32 size, void* data);
 	void level_unpackEntiyListSnapshot(u32 size, void* data);
