@@ -211,6 +211,7 @@ namespace LevelEditor
 	void displayMapEntityInfo();
 	void displayMapSectorLabels();
 	void displayMapSectorDrawInfo();
+	void displayTransformToolLabels();
 	
 	////////////////////////////////////////////////////////
 	// Public API
@@ -783,6 +784,9 @@ namespace LevelEditor
 
 	void edit_deleteSector(s32 sectorId)
 	{
+		std::vector<EditorSector> sectorSnapshot;
+		level_createLevelSectorSnapshotSameAssets(sectorSnapshot);
+
 		// First, go through all sectors and remove references.
 		s32 sectorCount = (s32)s_level.sectors.size();
 		EditorSector* sector = s_level.sectors.data();
@@ -830,7 +834,15 @@ namespace LevelEditor
 		}
 
 		// Selections are potentially invalid so clear.
-		edit_clearSelections();
+		edit_clearSelections(false);
+
+		// Handle history.
+		std::vector<s32> deltaSectors;
+		level_getLevelSnapshotDelta(deltaSectors, sectorSnapshot);
+		if (!deltaSectors.empty())
+		{
+			cmd_sectorSnapshot(LName_DeleteSector, deltaSectors);
+		}
 	}
 
 	// Try to adjoin wallId of sectorId to a matching wall.
@@ -2410,66 +2422,70 @@ namespace LevelEditor
 				handleSelectMode({ s_cursor3d.x, hoveredSector ? hoveredSector->floorHeight : 0.0f, s_cursor3d.z });
 			}
 
-			// TODO: Move to central hotkey list.
-			if (hoveredSector && TFE_Input::keyModDown(KEYMOD_CTRL) && TFE_Input::keyPressed(KEY_G))
+			// Avoid level interactions when interacting with a Gizmo
+			// (it is hovered or actively being used).
+			if (!edit_interactingWithGizmo())
 			{
-				adjustGridHeight(hoveredSector);
-			}
-
-			handleLevelNoteEdit(nullptr/*2d so no ray hit info*/, s_rayDir);
-			if (s_editMode == LEDIT_NOTES)
-			{
-				return;
-			}
-						
-			if (s_editMode == LEDIT_DRAW)
-			{
-				if (extrude) { handleSectorExtrude(nullptr/*2d so no ray hit info*/); }
-				else { handleSectorDraw(nullptr/*2d so no ray hit info*/); }
-				return;
-			}
-			else if (s_editMode == LEDIT_GUIDELINES)
-			{
-				handleGuidelinesEdit(nullptr/*2d so no ray hit info*/);
-				return;
-			}
-			else if (s_editMode == LEDIT_ENTITY)
-			{
-				handleEntityEdit(nullptr/*2d so no ray hit info*/, s_rayDir);
-				return;
-			}
-										
-			if (s_editMode == LEDIT_SECTOR)
-			{
-				selection_sector(SA_SET_HOVERED, hoveredSector);
-				handleMouseControlSector();
-			}
-
-			if (s_editMode == LEDIT_VERTEX)
-			{
-				findHoveredVertex2d(hoveredSector, worldPos);
-				handleMouseControlVertex(worldPos);
-			}
-
-			if (s_editMode == LEDIT_WALL)
-			{
-				s32 featureIndex = -1;
-				HitPart part = HP_NONE;
-				checkForWallHit2d(worldPos, hoveredSector, featureIndex, part, hoveredSector);
-				if (hoveredSector && !sector_isInteractable(hoveredSector))
+				// TODO: Move to central hotkey list.
+				if (hoveredSector && TFE_Input::keyModDown(KEYMOD_CTRL) && TFE_Input::keyPressed(KEY_G))
 				{
-					hoveredSector = nullptr;
-					selection_clearHovered();
+					adjustGridHeight(hoveredSector);
 				}
-				else if (hoveredSector && featureIndex >= 0)
-				{
-					selection_surface(SA_SET_HOVERED, hoveredSector, featureIndex, part);
-				}
-				handleMouseControlWall(worldPos);
-			}
 
-			// Texture alignment.
-			handleTextureAlignment();
+				handleLevelNoteEdit(nullptr/*2d so no ray hit info*/, s_rayDir);
+				if (s_editMode == LEDIT_NOTES)
+				{
+					return;
+				}
+
+				if (s_editMode == LEDIT_DRAW)
+				{
+					if (extrude) { handleSectorExtrude(nullptr/*2d so no ray hit info*/); }
+					else { handleSectorDraw(nullptr/*2d so no ray hit info*/); }
+					return;
+				}
+				else if (s_editMode == LEDIT_GUIDELINES)
+				{
+					handleGuidelinesEdit(nullptr/*2d so no ray hit info*/);
+					return;
+				}
+				else if (s_editMode == LEDIT_ENTITY)
+				{
+					handleEntityEdit(nullptr/*2d so no ray hit info*/, s_rayDir);
+					return;
+				}
+
+				if (s_editMode == LEDIT_SECTOR)
+				{
+					selection_sector(SA_SET_HOVERED, hoveredSector);
+					handleMouseControlSector();
+				}
+
+				if (s_editMode == LEDIT_VERTEX)
+				{
+					findHoveredVertex2d(hoveredSector, worldPos);
+					handleMouseControlVertex(worldPos);
+				}
+
+				if (s_editMode == LEDIT_WALL)
+				{
+					s32 featureIndex = -1;
+					HitPart part = HP_NONE;
+					checkForWallHit2d(worldPos, hoveredSector, featureIndex, part, hoveredSector);
+					if (hoveredSector && !sector_isInteractable(hoveredSector))
+					{
+						hoveredSector = nullptr;
+						selection_clearHovered();
+					}
+					else if (hoveredSector && featureIndex >= 0)
+					{
+						selection_surface(SA_SET_HOVERED, hoveredSector, featureIndex, part);
+					}
+					handleMouseControlWall(worldPos);
+				}
+				// Texture alignment.
+				handleTextureAlignment();
+			}
 		}
 		else if (s_view == EDIT_VIEW_3D)
 		{
@@ -3479,6 +3495,7 @@ namespace LevelEditor
 				{
 					displayMapSectorLabels();
 				}
+				displayTransformToolLabels();
 
 				// Level Notes
 				if (!(s_editorConfig.interfaceFlags & PIF_HIDE_NOTES))
@@ -4078,7 +4095,46 @@ namespace LevelEditor
 		ImGui::EndChild();
 	}
 
-	void edit_endMove()
+	void endTransformInternal()
+	{
+		if (edit_gizmoChangedGeo() && selection_getCount() > 0)
+		{
+			s_searchKey++;
+			s_idList.clear();
+
+			// Handle vertices connected to other sectors.
+			u32 vertexCount = (u32)selection_getCount(SEL_VERTEX);
+			EditorSector* sector = nullptr;
+			s32 featureIndex = -1;
+			for (u32 v = 0; v < vertexCount; v++)
+			{
+				selection_getVertex(v, sector, featureIndex);
+				if (sector->searchKey != s_searchKey)
+				{
+					sector->searchKey = s_searchKey;
+					s_idList.push_back(sector->id);
+				}
+			}
+
+			u32 name = 0;
+			if (s_editMode == LEDIT_SECTOR)
+			{
+				name = LName_RotateSector;
+			}
+			else if (s_editMode == LEDIT_WALL)
+			{
+				name = LName_RotateWall;
+			}
+			else if (s_editMode == LEDIT_VERTEX)
+			{
+				name = LName_RotateVertex;
+			}
+			cmd_sectorSnapshot(name, s_idList);
+			edit_resetGizmo();
+		}
+	}
+
+	void edit_endTransform()
 	{
 		const u32 count = selection_getCount();
 		if (s_editMove && s_moveStarted && count > 0)
@@ -4107,9 +4163,22 @@ namespace LevelEditor
 				{
 					EditorSector* sector = nullptr;
 					s32 featureIndex = -1;
+					HitPart part;
 					for (u32 i = 0; i < count; i++)
 					{
-						selection_getSurface(i, sector, featureIndex);
+						selection_getSurface(i, sector, featureIndex, &part);
+						if (sector->searchKey != s_searchKey)
+						{
+							sector->searchKey = s_searchKey;
+							s_idList.push_back(sector->id);
+						}
+					}
+
+					// Handle vertices connected to other sectors.
+					u32 vertexCount = (u32)selection_getCount(SEL_VERTEX);
+					for (u32 v = 0; v < vertexCount; v++)
+					{
+						selection_getVertex(v, sector, featureIndex);
 						if (sector->searchKey != s_searchKey)
 						{
 							sector->searchKey = s_searchKey;
@@ -4118,21 +4187,51 @@ namespace LevelEditor
 					}
 					name = LName_MoveWall;
 				} break;
+				case LEDIT_SECTOR:
+				{
+					EditorSector* sector = nullptr;
+					for (u32 i = 0; i < count; i++)
+					{
+						selection_getSector(i, sector);
+						if (sector->searchKey != s_searchKey)
+						{
+							sector->searchKey = s_searchKey;
+							s_idList.push_back(sector->id);
+						}
+					}
+
+					// Handle vertices connected to other sectors.
+					u32 vertexCount = (u32)selection_getCount(SEL_VERTEX);
+					s32 featureIndex = -1;
+					for (u32 v = 0; v < vertexCount; v++)
+					{
+						selection_getVertex(v, sector, featureIndex);
+						if (sector->searchKey != s_searchKey)
+						{
+							sector->searchKey = s_searchKey;
+							s_idList.push_back(sector->id);
+						}
+					}
+				} break;
 			};
 			// Take a snapshot of changed sectors.
 			// TODO: Vertex snapshot of a set of sectors?
 			cmd_sectorSnapshot(name, s_idList);
 		}
+		else
+		{
+			endTransformInternal();
+		}
 
 		s_editMove = false;
 		s_moveStarted = false;
 	}
-	
+		
 	void edit_clearSelections(bool endTransform)
 	{
 		if (endTransform)
 		{
-			edit_endMove();
+			edit_endTransform();
 		}
 
 		selection_clear(SEL_ALL);
@@ -5335,6 +5434,39 @@ namespace LevelEditor
 				char info[256];
 				floatToString(s_geoEdit.drawHeight[1] - s_geoEdit.drawHeight[0], info);
 				drawViewportInfo(0, { s32(screenPos.x + 20.0f), s32(screenPos.z - 20.0f) }, info, 0, 0);
+			}
+		}
+	}
+
+	void displayTransformToolLabels()
+	{
+		if (!edit_isTransformToolActive()) { return; }
+
+		TransformMode mode = edit_getTransformMode();
+		if (mode == TRANS_ROTATE)
+		{
+			const Vec3f center = edit_getTransformCenter();
+			const Vec3f rot = edit_getTransformRotation();
+
+			if (s_view == EDIT_VIEW_2D)
+			{
+				Vec2i screenPos = worldPos2dToMap({ center.x, center.z });
+				if (rot.z != 0.0f)
+				{
+					// Show the text at the top, above the outer circle.
+					screenPos.z -= 192;
+					const f32 angleInDeg = edit_getRotationGizmoAngleDegrees();
+
+					char info[256];
+					sprintf(info, "%0.1f", angleInDeg);
+					screenPos.x = s32(f32(screenPos.x) - ImGui::CalcTextSize(info).x*0.5f) - 8;
+
+					drawViewportInfo(0, screenPos, info, 0, 0);
+				}
+			}
+			else // EDIT_VIEW_3D
+			{
+				// TODO
 			}
 		}
 	}

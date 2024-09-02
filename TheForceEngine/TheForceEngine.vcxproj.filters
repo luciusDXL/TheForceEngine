@@ -1390,6 +1390,9 @@
     <ClInclude Include="TFE_Editor\LevelEditor\editTransforms.h">
       <Filter>Source\TFE_Editor\LevelEditor</Filter>
     </ClInclude>
+    <ClInclude Include="TFE_Editor\LevelEditor\Rendering\gizmo.h">
+      <Filter>Source\TFE_Editor\LevelEditor\Rendering</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -2420,6 +2423,9 @@
     </ClCompile>
     <ClCompile Include="TFE_Editor\LevelEditor\editTransforms.cpp">
       <Filter>Source\TFE_Editor\LevelEditor</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Editor\LevelEditor\Rendering\gizmo.cpp">
+      <Filter>Source\TFE_Editor\LevelEditor\Rendering</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

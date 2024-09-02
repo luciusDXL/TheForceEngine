@@ -1,6 +1,7 @@
 #include "levelEditor.h"
 #include "levelEditorData.h"
 #include "editCommon.h"
+#include "editTransforms.h"
 #include "selection.h"
 #include "sharedState.h"
 
@@ -37,6 +38,7 @@ namespace LevelEditor
 		{
 			s_dragSelect.active = false;
 		}
+		edit_setTransformChange();
 	}
 
 	void selection_setCurrent(SelectionListId id)
@@ -44,6 +46,7 @@ namespace LevelEditor
 		assert(id < SEL_CURRENT);
 		selection_clearHovered();
 		s_currentSelection = id;
+		edit_setTransformChange();
 	}
 
 	void selection_clearHovered()
@@ -129,6 +132,7 @@ namespace LevelEditor
 
 		if (buildDerived)
 		{
+			edit_setTransformChange();
 			selection_buildDerived();
 		}
 		return actionDone;
@@ -546,6 +550,7 @@ namespace LevelEditor
 
 		if (buildDerived)
 		{
+			edit_setTransformChange();
 			selection_buildDerived();
 		}
 		return actionDone;

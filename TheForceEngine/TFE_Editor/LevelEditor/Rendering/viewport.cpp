@@ -2,12 +2,14 @@
 #include "grid.h"
 #include "grid2d.h"
 #include "grid3d.h"
+#include "gizmo.h"
 #include <TFE_System/math.h>
 #include <TFE_Editor/editor.h>
 #include <TFE_Editor/editorMath.h>
 #include <TFE_Editor/editorConfig.h>
 #include <TFE_Editor/LevelEditor/editGeometry.h>
 #include <TFE_Editor/LevelEditor/editGuidelines.h>
+#include <TFE_Editor/LevelEditor/editTransforms.h>
 #include <TFE_Editor/LevelEditor/levelEditor.h>
 #include <TFE_Editor/LevelEditor/levelEditorData.h>
 #include <TFE_Editor/LevelEditor/sharedState.h>
@@ -88,7 +90,6 @@ namespace LevelEditor
 		INF_COLOR_EDIT_HELPER = 0xffc000ff,
 	};
 
-
 	const u32 c_connectMsgColor = 0xc0ff80ff;
 	const u32 c_connectClientColor = 0xc080ff80;
 	const u32 c_connectTargetColor = 0xc080ffff;
@@ -154,7 +155,6 @@ namespace LevelEditor
 	void drawEntity2d(const EditorSector* sector, const EditorObject* obj, s32 id, u32 objColor, bool drawEntityBounds);
 	void drawNoteIcon2d(LevelNote* note, s32 id, u32 objColor);
 	void renderSectorVertices2d();
-	void drawBox(const Vec3f* center, f32 side, f32 lineWidth, u32 color);
 	void drawBounds(const Vec3f* center, Vec3f size, f32 lineWidth, u32 color);
 	void drawOBB(const Vec3f* bounds, const Mat3* mtx, const Vec3f* pos, f32 lineWidth, u32 color);
 	void drawBounds2d(const Vec2f* center, Vec2f size, f32 lineWidth, u32 color, u32 fillColor);
@@ -312,6 +312,20 @@ namespace LevelEditor
 		camera.projMtx.m2.y = 1.0f / 4096.0f;
 		camera.projMtx.m2.w = 0.0f;
 		camera.projMtx.m3.w = 1.0f;
+	}
+
+	void drawTransformGizmo2d()
+	{
+		if (!edit_isTransformToolActive()) { return; }
+
+		TransformMode mode = edit_getTransformMode();
+		if (mode == TRANS_ROTATE)
+		{
+			Vec3f centerWS = edit_getTransformCenter();
+			Vec3f rotation = edit_getTransformRotation();
+
+			gizmo_drawRotation2d({ centerWS.x, centerWS.z });
+		}
 	}
 		
 	void renderLevel2D()
@@ -510,6 +524,9 @@ namespace LevelEditor
 			lineDraw2d_addLine(2.0f, &vtx[2], colors);
 			lineDraw2d_addLine(2.0f, &vtx[3], colors);
 		}
+
+		// Transform Gizmos
+		drawTransformGizmo2d();
 
 		// Compute the camera and projection for the model draw.
 		Camera3d camera;
@@ -3506,36 +3523,7 @@ namespace LevelEditor
 		};
 		triDraw3d_addColored(TRIMODE_OPAQUE, 36, 8, vtx, idx, color, false);
 	}
-
-	void drawBox(const Vec3f* center, f32 side, f32 lineWidth, u32 color)
-	{
-		const f32 w = side * 0.5f;
-		const Vec3f lines[] =
-		{
-			{center->x - w, center->y - w, center->z - w}, {center->x + w, center->y - w, center->z - w},
-			{center->x + w, center->y - w, center->z - w}, {center->x + w, center->y - w, center->z + w},
-			{center->x + w, center->y - w, center->z + w}, {center->x - w, center->y - w, center->z + w},
-			{center->x - w, center->y - w, center->z + w}, {center->x - w, center->y - w, center->z - w},
-
-			{center->x - w, center->y + w, center->z - w}, {center->x + w, center->y + w, center->z - w},
-			{center->x + w, center->y + w, center->z - w}, {center->x + w, center->y + w, center->z + w},
-			{center->x + w, center->y + w, center->z + w}, {center->x - w, center->y + w, center->z + w},
-			{center->x - w, center->y + w, center->z + w}, {center->x - w, center->y + w, center->z - w},
-
-			{center->x - w, center->y - w, center->z - w}, {center->x - w, center->y + w, center->z - w},
-			{center->x + w, center->y - w, center->z - w}, {center->x + w, center->y + w, center->z - w},
-			{center->x + w, center->y - w, center->z + w}, {center->x + w, center->y + w, center->z + w},
-			{center->x - w, center->y - w, center->z + w}, {center->x - w, center->y + w, center->z + w},
-		};
-		u32 colors[12];
-		for (u32 i = 0; i < 12; i++)
-		{
-			colors[i] = color;
-		}
-
-		lineDraw3d_addLines(12, lineWidth, lines, colors);
-	}
-
+	
 	void drawBounds(const Vec3f* center, Vec3f size, f32 lineWidth, u32 color)
 	{
 		const f32 w = size.x * 0.5f;

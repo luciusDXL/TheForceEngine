@@ -32,6 +32,18 @@ namespace LevelEditor
 	TransformMode edit_getTransformMode();
 	void edit_enableMoveTransform(bool enable = false);
 	void edit_setWallMoveMode(WallMoveMode mode);
+	void edit_setTransformChange();
 
 	void edit_transform(s32 mx = 0, s32 my = 0);
+
+	// Tools
+	bool edit_isTransformToolActive();
+	bool edit_interactingWithGizmo();
+	bool edit_gizmoChangedGeo();
+	void edit_resetGizmo();
+	Vec3f edit_getTransformCenter();
+	Vec3f edit_getTransformRotation();
+	u32 edit_getTransformRotationHover();
+	f32 edit_getRotationGizmoAngle();
+	f32 edit_getRotationGizmoAngleDegrees();
 }

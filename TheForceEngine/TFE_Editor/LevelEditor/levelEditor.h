@@ -96,7 +96,7 @@ namespace LevelEditor
 
 	// TODO: Move?
 	Vec2f mouseCoordToWorldPos2d(s32 mx, s32 my);
-	void edit_endMove();
+	void edit_endTransform();
 	void checkForWallHit2d(Vec2f& worldPos, EditorSector*& wallSector, s32& wallIndex, HitPart& part, EditorSector* hoverSector);
 	void checkForWallHit3d(RayHitInfo* info, EditorSector*& wallSector, s32& wallIndex, HitPart& part, const EditorSector* hoverSector);
 
