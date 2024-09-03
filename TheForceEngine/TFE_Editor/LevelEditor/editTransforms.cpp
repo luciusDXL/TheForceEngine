@@ -391,10 +391,6 @@ namespace LevelEditor
 						const f32 rotAngle = edit_getRotationGizmoAngle();
 						if (rotAngle != 0.0f)
 						{
-							if (!s_dataCaptured)
-							{
-								captureRotationData();
-							}
 							applyRotationToData(rotAngle);
 						}
 					}
@@ -645,11 +641,10 @@ namespace LevelEditor
 		s_dataCaptured = true;
 		if (s_transformMode == TRANS_ROTATE)
 		{
-			u32 vertexCount = selection_getCount(SEL_VERTEX);
-			if (!vertexCount) { return; }
+			EditorSector* sector = nullptr;
+			s32 index = -1;
 
-			EditorSector* sector;
-			s32 index;
+			const u32 vertexCount = selection_getCount(SEL_VERTEX);
 			s_vertexData.resize(vertexCount);
 			Vec2f* vtxData = s_vertexData.data();
 			for (u32 v = 0; v < vertexCount; v++)
@@ -662,8 +657,12 @@ namespace LevelEditor
 
 	void applyRotationToData(f32 angle)
 	{
-		u32 vertexCount = selection_getCount(SEL_VERTEX);
+		const u32 vertexCount = selection_getCount(SEL_VERTEX);
 		if (!vertexCount) { return; }
+		if (!s_dataCaptured)
+		{
+			captureRotationData();
+		}
 
 		const f32 ca = cosf(-angle), sa = sinf(-angle);
 		const Vec3f mtx[] =
