@@ -346,7 +346,7 @@ namespace LevelEditor
 							s_rotation.y = s_rotation.x;
 							s_rotationStartDir = dir;
 						}
-						else if (s_rotHover = RGP_CENTER)
+						else if (s_rotHover == RGP_CENTER)
 						{
 							s_rotAction = RACTION_MOVE;
 						}
