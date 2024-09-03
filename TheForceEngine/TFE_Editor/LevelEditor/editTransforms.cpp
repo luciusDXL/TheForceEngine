@@ -19,6 +19,7 @@ namespace LevelEditor
 		RACTION_NONE = 0,
 		RACTION_ROTATE,
 		RACTION_ROTATE_SNAP,
+		RACTION_MOVE,
 		RACTION_COUNT
 	};
 
@@ -115,7 +116,6 @@ namespace LevelEditor
 	{
 		s_rotHover = RGP_NONE;
 		s_dataCaptured = false;
-		s_transformChange = true;
 	}
 
 	void edit_applyTransformChange()
@@ -293,10 +293,12 @@ namespace LevelEditor
 				f32 r0 = gizmo_getRotationRadiusWS2d(RGP_CIRCLE_OUTER);
 				f32 r1 = gizmo_getRotationRadiusWS2d(RGP_CIRCLE_CENTER);
 				f32 r2 = gizmo_getRotationRadiusWS2d(RGP_CIRCLE_INNER);
+				f32 r3 = gizmo_getRotationRadiusWS2d(RGP_CENTER);
 				// Squared tests.
 				r0 *= r0;
 				r1 *= r1;
 				r2 *= r2;
+				r3 *= r3;
 				// Hover.
 				Vec2f offset = { s_cursor3d.x - s_center.x, s_cursor3d.z - s_center.z };
 				f32 rSq = offset.x*offset.x + offset.z*offset.z;
@@ -317,6 +319,10 @@ namespace LevelEditor
 					else if (rSq > r2 && rSq <= r1)
 					{
 						s_rotHover = RGP_CIRCLE_INNER;
+					}
+					else if (rSq <= r3)
+					{
+						s_rotHover = RGP_CENTER;
 					}
 
 					s_dataCaptured = false;
@@ -340,6 +346,10 @@ namespace LevelEditor
 							s_rotation.y = s_rotation.x;
 							s_rotationStartDir = dir;
 						}
+						else if (s_rotHover = RGP_CENTER)
+						{
+							s_rotAction = RACTION_MOVE;
+						}
 					}
 				}
 				else if (s_rotAction != RACTION_NONE && s_leftMouseDown)
@@ -347,7 +357,12 @@ namespace LevelEditor
 					f32 side = dir.x*s_rotationStartDir.z - dir.z*s_rotationStartDir.x;
 					side = (side < 0.0f) ? -1.0f : 1.0f;
 
-					if (s_rotAction == RACTION_ROTATE || s_rotAction == RACTION_ROTATE_SNAP)
+					if (s_rotAction == RACTION_MOVE)
+					{
+						s_center = s_cursor3d;
+						snapToGrid(&s_center);
+					}
+					else if (s_rotAction == RACTION_ROTATE || s_rotAction == RACTION_ROTATE_SNAP)
 					{
 						f32 curAngle;
 						const f32 s = angleInDeg < 0.0f ? -1.0f : 1.0f;

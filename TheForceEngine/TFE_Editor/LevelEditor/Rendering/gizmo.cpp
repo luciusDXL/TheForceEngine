@@ -20,9 +20,11 @@ namespace LevelEditor
 	struct RotationGizmo
 	{
 		f32 radius = 128.0f;
+		f32 centerRadius = 4.0f;
 		f32 spacing = 24.0f;
 		f32 tickSize = 8.0f;
 		u32 lineColor  = 0xffff8000;
+		u32 cenColor   = 0xffffff40;
 		u32 hoverColor = 0x40ff8000;
 		u32 highlight  = 0x800060ff;
 	};
@@ -182,7 +184,7 @@ namespace LevelEditor
 			} break;
 			case RGP_CENTER:
 			{
-				// TODO
+				radius = s_rotGizmo.centerRadius / s_viewportTrans2d.x;
 			} break;
 		};
 		return radius;
@@ -190,6 +192,7 @@ namespace LevelEditor
 		
 	void gizmo_drawRotation2d(Vec2f center)
 	{
+		RotationGizmoPart hoveredPart = (RotationGizmoPart)edit_getTransformRotationHover();
 		Vec2f cen = { center.x * s_viewportTrans2d.x + s_viewportTrans2d.y, center.z * s_viewportTrans2d.z + s_viewportTrans2d.w };
 		f32 r = s_rotGizmo.radius;
 
@@ -204,11 +207,13 @@ namespace LevelEditor
 		// Inner circle
 		drawCircle2d(cen, r - s_rotGizmo.spacing, s_rotGizmo.lineColor);
 
+		// Center
+		drawCircle2d(cen, s_rotGizmo.centerRadius, hoveredPart == RGP_CENTER ? s_rotGizmo.highlight : s_rotGizmo.cenColor);
+
 		// Draw snap markings.
 		drawCircleRuler2d(cen, r, s_rotGizmo.spacing, s_rotGizmo.tickSize, s_rotGizmo.lineColor);
 
 		// Draw hovered.
-		RotationGizmoPart hoveredPart = (RotationGizmoPart)edit_getTransformRotationHover();
 		if (hoveredPart == RGP_CIRCLE_OUTER)
 		{
 			drawCirclePath(cen, r + s_rotGizmo.spacing, r, s_rotGizmo.hoverColor);
@@ -216,6 +221,10 @@ namespace LevelEditor
 		else if (hoveredPart == RGP_CIRCLE_INNER)
 		{
 			drawCirclePath(cen, r, r - s_rotGizmo.spacing, s_rotGizmo.hoverColor);
+		}
+		else if (hoveredPart == RGP_CENTER)
+		{
+			drawCircle2d(cen, s_rotGizmo.centerRadius - 1.0f, s_rotGizmo.highlight);
 		}
 
 		// Draw rotation.
