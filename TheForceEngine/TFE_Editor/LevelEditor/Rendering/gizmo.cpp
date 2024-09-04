@@ -31,6 +31,19 @@ namespace LevelEditor
 	// TODO: This can be editable in future versions.
 	static RotationGizmo s_rotGizmo = {};
 
+	f32 getRotation3dScale(Vec3f* center);
+	void drawCircle2d(Vec2f cen, f32 r, u32 color);
+	void drawCircleRuler2d(Vec2f cen, f32 r0, f32 fullSize, f32 tickSize, u32 color);
+	void drawCirclePath2d(Vec2f cen, f32 r0, f32 r1, u32 color);
+	void drawCirclePathPartial2d(Vec2f cen, f32 r0, f32 r1, u32 color, f32 angle0Deg, f32 angle1Deg, f32 dir);
+	void drawCircle3d(Vec3f cen, f32 r, u32 color);
+	void drawCircleRuler3d(Vec3f cen, f32 r0, f32 fullSize, f32 tickSize, u32 color);
+	void drawCirclePath3d(Vec3f cen, f32 r0, f32 r1, u32 color);
+	void drawCirclePathPartial3d(Vec3f cen, f32 r0, f32 r1, u32 color, f32 angle0Deg, f32 angle1Deg, f32 dir);
+
+	//////////////////////////////////////////
+	// API
+	//////////////////////////////////////////
 	void drawBox(const Vec3f* center, f32 side, f32 lineWidth, u32 color)
 	{
 		const f32 w = side * 0.5f;
@@ -59,7 +72,135 @@ namespace LevelEditor
 
 		lineDraw3d_addLines(12, lineWidth, lines, colors);
 	}
+				
+	f32 gizmo_getRotationRadiusWS(RotationGizmoPart part, Vec3f* center)
+	{
+		const f32 scale = (!center) ? 1.0f / s_viewportTrans2d.x : getRotation3dScale(center);
 
+		f32 radius = 0.0f;
+		switch (part)
+		{
+			case RGP_CIRCLE_OUTER:
+			{
+				radius = scale * (s_rotGizmo.radius + s_rotGizmo.spacing);
+			} break;
+			case RGP_CIRCLE_CENTER:
+			{
+				radius = scale * (s_rotGizmo.radius);
+			} break;
+			case RGP_CIRCLE_INNER:
+			{
+				radius = scale * (s_rotGizmo.radius - s_rotGizmo.spacing);
+			} break;
+			case RGP_CENTER:
+			{
+				radius = scale * s_rotGizmo.centerRadius;
+			} break;
+		};
+		return radius;
+	}
+		
+	void gizmo_drawRotation2d(Vec2f center)
+	{
+		RotationGizmoPart hoveredPart = (RotationGizmoPart)edit_getTransformRotationHover();
+		Vec2f cen = { center.x * s_viewportTrans2d.x + s_viewportTrans2d.y, center.z * s_viewportTrans2d.z + s_viewportTrans2d.w };
+		f32 r = s_rotGizmo.radius;
+
+		// Draw circles
+		drawCircle2d(cen, r + s_rotGizmo.spacing, s_rotGizmo.lineColor);
+		drawCircle2d(cen, r, s_rotGizmo.lineColor);
+		drawCircle2d(cen, r - s_rotGizmo.spacing, s_rotGizmo.lineColor);
+		drawCircle2d(cen, s_rotGizmo.centerRadius, hoveredPart == RGP_CENTER ? s_rotGizmo.highlight : s_rotGizmo.cenColor);
+
+		// Draw snap markings.
+		drawCircleRuler2d(cen, r, s_rotGizmo.spacing, s_rotGizmo.tickSize, s_rotGizmo.lineColor);
+
+		// Draw hovered.
+		if (hoveredPart == RGP_CIRCLE_OUTER)
+		{
+			drawCirclePath2d(cen, r + s_rotGizmo.spacing, r, s_rotGizmo.hoverColor);
+		}
+		else if (hoveredPart == RGP_CIRCLE_INNER)
+		{
+			drawCirclePath2d(cen, r, r - s_rotGizmo.spacing, s_rotGizmo.hoverColor);
+		}
+		else if (hoveredPart == RGP_CENTER)
+		{
+			drawCircle2d(cen, s_rotGizmo.centerRadius - 1.0f, s_rotGizmo.highlight);
+		}
+
+		// Draw rotation.
+		Vec3f rot = edit_getTransformRotation();
+		if (rot.z != 0.0f)
+		{
+			if (hoveredPart == RGP_CIRCLE_OUTER)
+			{
+				drawCirclePathPartial2d(cen, r + s_rotGizmo.spacing, r, s_rotGizmo.highlight, rot.x, rot.y, rot.z);
+			}
+			else if (hoveredPart == RGP_CIRCLE_INNER)
+			{
+				drawCirclePathPartial2d(cen, r, r - s_rotGizmo.spacing, s_rotGizmo.highlight, rot.x, rot.y, rot.z);
+			}
+		}
+	}
+
+	void gizmo_drawRotation3d(Vec3f center)
+	{
+		const RotationGizmoPart hoveredPart = (RotationGizmoPart)edit_getTransformRotationHover();
+		const f32 scale = getRotation3dScale(&center);
+		const f32 r = s_rotGizmo.radius;
+		const f32 rOuter = scale * (r + s_rotGizmo.spacing);
+		const f32 rCenter = scale * r;
+		const f32 rInner = scale * (r - s_rotGizmo.spacing);
+		const f32 rTrans = scale * s_rotGizmo.centerRadius;
+
+		// Draw circles
+		drawCircle3d(center, rOuter, s_rotGizmo.lineColor);
+		drawCircle3d(center, rCenter, s_rotGizmo.lineColor);
+		drawCircle3d(center, rInner, s_rotGizmo.lineColor);
+		drawCircle3d(center, rTrans, hoveredPart == RGP_CENTER ? s_rotGizmo.highlight : s_rotGizmo.cenColor);
+
+		// Draw snap markings.
+		drawCircleRuler3d(center, rCenter, scale*s_rotGizmo.spacing, scale*s_rotGizmo.tickSize, s_rotGizmo.lineColor);
+
+		// Draw hovered.
+		if (hoveredPart == RGP_CIRCLE_OUTER)
+		{
+			drawCirclePath3d(center, rOuter, rCenter, s_rotGizmo.hoverColor);
+		}
+		else if (hoveredPart == RGP_CIRCLE_INNER)
+		{
+			drawCirclePath3d(center, rCenter, rInner, s_rotGizmo.hoverColor);
+		}
+		else if (hoveredPart == RGP_CENTER)
+		{
+			drawCircle3d(center, scale*(s_rotGizmo.centerRadius - 1.0f), s_rotGizmo.highlight);
+		}
+
+		// Draw rotation.
+		const Vec3f rot = edit_getTransformRotation();
+		if (rot.z != 0.0f)
+		{
+			if (hoveredPart == RGP_CIRCLE_OUTER)
+			{
+				drawCirclePathPartial3d(center, rOuter, rCenter, s_rotGizmo.highlight, rot.x, rot.y, rot.z);
+			}
+			else if (hoveredPart == RGP_CIRCLE_INNER)
+			{
+				drawCirclePathPartial3d(center, rCenter, rInner, s_rotGizmo.highlight, rot.x, rot.y, rot.z);
+			}
+		}
+	}
+
+	//////////////////////////////////////////
+	// Internal
+	//////////////////////////////////////////
+	f32 getRotation3dScale(Vec3f* center)
+	{
+		Vec3f offset = { center->x - s_camera.pos.x, center->y - s_camera.pos.y, center->z - s_camera.pos.z };
+		return sqrtf(offset.x*offset.x + offset.y*offset.y + offset.z*offset.z) / 384.0f;
+	}
+		
 	void drawCircle2d(Vec2f cen, f32 r, u32 color)
 	{
 		const u32 colors[] = { color, color };
@@ -91,7 +232,7 @@ namespace LevelEditor
 		for (s32 i = 0; i < tickCount; i++, angle += dA)
 		{
 			// 45 degree ticks occur every nine 5 degree ticks.
-			const f32 r1 = (i%9)==0 ? r0 - fullSize : r0 - tickSize;
+			const f32 r1 = (i % 9) == 0 ? r0 - fullSize : r0 - tickSize;
 			const f32 ca = cosf(angle), sa = sinf(angle);
 
 			vtx[0] = { ca*r0 + cen.x, sa*r0 + cen.z };
@@ -99,8 +240,8 @@ namespace LevelEditor
 			lineDraw2d_addLine(1.25f, &vtx[0], colors);
 		}
 	}
-
-	void drawCirclePath(Vec2f cen, f32 r0, f32 r1, u32 color)
+		
+	void drawCirclePath2d(Vec2f cen, f32 r0, f32 r1, u32 color)
 	{
 		const s32 edges = 64;
 		const f32 dA = 2.0f * PI / f32(edges);
@@ -127,7 +268,7 @@ namespace LevelEditor
 		}
 	}
 
-	void drawCirclePathPartial(Vec2f cen, f32 r0, f32 r1, u32 color, f32 angle0Deg, f32 angle1Deg, f32 dir)
+	void drawCirclePathPartial2d(Vec2f cen, f32 r0, f32 r1, u32 color, f32 angle0Deg, f32 angle1Deg, f32 dir)
 	{
 		f32 angle0 = angle0Deg * PI / 180.0f;
 		f32 angle1 = angle1Deg * PI / 180.0f;
@@ -165,80 +306,108 @@ namespace LevelEditor
 		}
 	}
 
-	f32 gizmo_getRotationRadiusWS2d(RotationGizmoPart part)
+	void drawCircle3d(Vec3f cen, f32 r, u32 color)
 	{
-		f32 radius = 0.0f;
-		switch (part)
+		const u32 colors[] = { color, color };
+		const s32 edges = 64;
+		const f32 dA = 2.0f * PI / f32(edges);
+		f32 angle = 0.0f;
+
+		Vec3f vtx[2];
+		vtx[0] = { cosf(angle)*r + cen.x, cen.y, sinf(angle)*r + cen.z };
+		angle += dA;
+		for (s32 i = 0; i < edges; i++, angle += dA)
 		{
-			case RGP_CIRCLE_OUTER:
-			{
-				radius = (s_rotGizmo.radius + s_rotGizmo.spacing) / s_viewportTrans2d.x;
-			} break;
-			case RGP_CIRCLE_CENTER:
-			{
-				radius = (s_rotGizmo.radius) / s_viewportTrans2d.x;
-			} break;
-			case RGP_CIRCLE_INNER:
-			{
-				radius = (s_rotGizmo.radius - s_rotGizmo.spacing) / s_viewportTrans2d.x;
-			} break;
-			case RGP_CENTER:
-			{
-				radius = s_rotGizmo.centerRadius / s_viewportTrans2d.x;
-			} break;
-		};
-		return radius;
+			vtx[1] = { cosf(angle)*r + cen.x, cen.y, sinf(angle)*r + cen.z };
+			lineDraw3d_addLine(2.0f, vtx, colors);
+
+			vtx[0] = vtx[1];
+		}
+	}
+
+	// Draw a tick mark every 5 degrees with seperations every 45.
+	void drawCircleRuler3d(Vec3f cen, f32 r0, f32 fullSize, f32 tickSize, u32 color)
+	{
+		const u32 colors[] = { color, color };
+		const s32 tickCount = 72; // 5 degree ticks, 360/5 = 72
+		const f32 dA = 2.0f * PI / f32(tickCount);
+		f32 angle = 0.0f;
+
+		Vec3f vtx[2];
+		for (s32 i = 0; i < tickCount; i++, angle += dA)
+		{
+			// 45 degree ticks occur every nine 5 degree ticks.
+			const f32 r1 = (i % 9) == 0 ? r0 - fullSize : r0 - tickSize;
+			const f32 ca = cosf(angle), sa = sinf(angle);
+
+			vtx[0] = { ca*r0 + cen.x, cen.y, sa*r0 + cen.z };
+			vtx[1] = { ca*r1 + cen.x, cen.y, sa*r1 + cen.z };
+			lineDraw3d_addLine(2.0f, vtx, colors);
+		}
 	}
 		
-	void gizmo_drawRotation2d(Vec2f center)
+	void drawCirclePath3d(Vec3f cen, f32 r0, f32 r1, u32 color)
 	{
-		RotationGizmoPart hoveredPart = (RotationGizmoPart)edit_getTransformRotationHover();
-		Vec2f cen = { center.x * s_viewportTrans2d.x + s_viewportTrans2d.y, center.z * s_viewportTrans2d.z + s_viewportTrans2d.w };
-		f32 r = s_rotGizmo.radius;
+		const s32 edges = 64;
+		const f32 dA = 2.0f * PI / f32(edges);
+		const s32 idx[6] = { 0, 2, 1, 1, 2, 3 };
+		f32 angle = 0.0f;
 
-		// For now just draw a rect in the center and a circle.
-		
-		// Outter circle
-		drawCircle2d(cen, r + s_rotGizmo.spacing, s_rotGizmo.lineColor);
+		Vec3f vtx[4];
+		f32 ca = cosf(angle), sa = sinf(angle);
+		vtx[0] = { ca*r0 + cen.x, cen.y, sa*r0 + cen.z };
+		vtx[1] = { ca*r1 + cen.x, cen.y, sa*r1 + cen.z };
+		angle += dA;
 
-		// Center circle
-		drawCircle2d(cen, r, s_rotGizmo.lineColor);
-
-		// Inner circle
-		drawCircle2d(cen, r - s_rotGizmo.spacing, s_rotGizmo.lineColor);
-
-		// Center
-		drawCircle2d(cen, s_rotGizmo.centerRadius, hoveredPart == RGP_CENTER ? s_rotGizmo.highlight : s_rotGizmo.cenColor);
-
-		// Draw snap markings.
-		drawCircleRuler2d(cen, r, s_rotGizmo.spacing, s_rotGizmo.tickSize, s_rotGizmo.lineColor);
-
-		// Draw hovered.
-		if (hoveredPart == RGP_CIRCLE_OUTER)
+		for (s32 i = 1; i <= edges; i++, angle += dA)
 		{
-			drawCirclePath(cen, r + s_rotGizmo.spacing, r, s_rotGizmo.hoverColor);
+			ca = cosf(angle); sa = sinf(angle);
+			vtx[2] = { ca*r0 + cen.x, cen.y, sa*r0 + cen.z };
+			vtx[3] = { ca*r1 + cen.x, cen.y, sa*r1 + cen.z };
+
+			// 2 triangles per step.
+			triDraw3d_addColored(TRIMODE_BLEND, 6, 4, vtx, idx, color, false, false);
+
+			vtx[0] = vtx[2];
+			vtx[1] = vtx[3];
 		}
-		else if (hoveredPart == RGP_CIRCLE_INNER)
+	}
+
+	void drawCirclePathPartial3d(Vec3f cen, f32 r0, f32 r1, u32 color, f32 angle0Deg, f32 angle1Deg, f32 dir)
+	{
+		f32 angle0 = angle0Deg * PI / 180.0f;
+		f32 angle1 = angle1Deg * PI / 180.0f;
+		if (dir > 0.0f && angle1 - angle0 < 0.0f)
 		{
-			drawCirclePath(cen, r, r - s_rotGizmo.spacing, s_rotGizmo.hoverColor);
+			angle1 += 2.0f * PI;
 		}
-		else if (hoveredPart == RGP_CENTER)
+		else if (dir < 0.0f && angle1 - angle0 > 0.0f)
 		{
-			drawCircle2d(cen, s_rotGizmo.centerRadius - 1.0f, s_rotGizmo.highlight);
+			angle1 -= 2.0f * PI;
 		}
 
-		// Draw rotation.
-		Vec3f rot = edit_getTransformRotation();
-		if (rot.z != 0.0f)
+		const s32 edges = 64;
+		const f32 dA = (angle1 - angle0) / f32(edges);
+		const s32 idx[6] = { 0, 2, 1, 1, 2, 3 };
+		f32 angle = angle0;
+
+		Vec3f vtx[4];
+		f32 ca = cosf(-angle), sa = sinf(-angle);
+		vtx[0] = { ca*r0 + cen.x, cen.y, sa*r0 + cen.z };
+		vtx[1] = { ca*r1 + cen.x, cen.y, sa*r1 + cen.z };
+		angle += dA;
+
+		for (s32 i = 1; i <= edges; i++, angle += dA)
 		{
-			if (hoveredPart == RGP_CIRCLE_OUTER)
-			{
-				drawCirclePathPartial(cen, r + s_rotGizmo.spacing, r, s_rotGizmo.highlight, rot.x, rot.y, rot.z);
-			}
-			else if (hoveredPart == RGP_CIRCLE_INNER)
-			{
-				drawCirclePathPartial(cen, r, r - s_rotGizmo.spacing, s_rotGizmo.highlight, rot.x, rot.y, rot.z);
-			}
+			ca = cosf(-angle); sa = sinf(-angle);
+			vtx[2] = { ca*r0 + cen.x, cen.y, sa*r0 + cen.z };
+			vtx[3] = { ca*r1 + cen.x, cen.y, sa*r1 + cen.z };
+
+			// 2 triangles per step.
+			triDraw3d_addColored(TRIMODE_BLEND, 6, 4, vtx, idx, color, false, false);
+
+			vtx[0] = vtx[2];
+			vtx[1] = vtx[3];
 		}
 	}
 }

@@ -2547,53 +2547,58 @@ namespace LevelEditor
 				handleSelectMode(s_cursor3d);
 			}
 
-			handleLevelNoteEdit(&hitInfo, s_rayDir);
-			if (s_editMode == LEDIT_NOTES)
+			// Avoid level interactions when interacting with a Gizmo
+			// (it is hovered or actively being used).
+			if (!edit_interactingWithGizmo())
 			{
-				return;
-			}
+				handleLevelNoteEdit(&hitInfo, s_rayDir);
+				if (s_editMode == LEDIT_NOTES)
+				{
+					return;
+				}
 
-			if (s_editMode == LEDIT_DRAW)
-			{
-				if (extrude) { handleSectorExtrude(&hitInfo); }
-				else { handleSectorDraw(&hitInfo); }
-				return;
-			}
-			else if (s_editMode == LEDIT_GUIDELINES)
-			{
-				handleGuidelinesEdit(&hitInfo);
-				return;
-			}
-			else if (s_editMode == LEDIT_ENTITY)
-			{
-				handleEntityEdit(&hitInfo, s_rayDir);
-				return;
-			}
-									
-			// Trace a ray through the mouse cursor.
-			if (rayHit)
-			{
-				handleHoverAndSelection(&hitInfo);
-			}
-			else
-			{
-				selection_clearHovered();
-				if (s_editMode == LEDIT_VERTEX)
+				if (s_editMode == LEDIT_DRAW)
 				{
-					handleMouseControlVertex({ s_cursor3d.x, s_cursor3d.z }, &hitInfo);
+					if (extrude) { handleSectorExtrude(&hitInfo); }
+					else { handleSectorDraw(&hitInfo); }
+					return;
 				}
-				else if (s_editMode == LEDIT_WALL)
+				else if (s_editMode == LEDIT_GUIDELINES)
 				{
-					handleMouseControlWall({ s_cursor3d.x, s_cursor3d.z });
+					handleGuidelinesEdit(&hitInfo);
+					return;
 				}
-				else if (s_singleClick)
+				else if (s_editMode == LEDIT_ENTITY)
 				{
-					selection_clear(SEL_GEO);
+					handleEntityEdit(&hitInfo, s_rayDir);
+					return;
 				}
+
+				// Trace a ray through the mouse cursor.
+				if (rayHit)
+				{
+					handleHoverAndSelection(&hitInfo);
+				}
+				else
+				{
+					selection_clearHovered();
+					if (s_editMode == LEDIT_VERTEX)
+					{
+						handleMouseControlVertex({ s_cursor3d.x, s_cursor3d.z }, &hitInfo);
+					}
+					else if (s_editMode == LEDIT_WALL)
+					{
+						handleMouseControlWall({ s_cursor3d.x, s_cursor3d.z });
+					}
+					else if (s_singleClick)
+					{
+						selection_clear(SEL_GEO);
+					}
+				}
+
+				// Texture alignment.
+				handleTextureAlignment();
 			}
-			
-			// Texture alignment.
-			handleTextureAlignment();
 		}
 	}
 

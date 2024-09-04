@@ -28,5 +28,6 @@ namespace LevelEditor
 
 	// Transform Gizmos.
 	void gizmo_drawRotation2d(Vec2f center);
-	f32 gizmo_getRotationRadiusWS2d(RotationGizmoPart part);
+	void gizmo_drawRotation3d(Vec3f center);
+	f32 gizmo_getRotationRadiusWS(RotationGizmoPart part, Vec3f* center = nullptr);
 }

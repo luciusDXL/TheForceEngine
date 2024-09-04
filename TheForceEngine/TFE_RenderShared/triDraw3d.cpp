@@ -520,15 +520,15 @@ namespace TFE_RenderShared
 		s_idxCount += idxCount;
 	}
 
-	void triDraw3d_draw(const Camera3d* camera, f32 width, f32 height, f32 gridScale, f32 gridOpacity)
+	void triDraw3d_draw(const Camera3d* camera, f32 width, f32 height, f32 gridScale, f32 gridOpacity, bool depthTest, bool culling)
 	{
 		if (s_vtxCount < 1 || s_idxCount < 1) { return; }
 
 		s_vertexBuffer.update(s_vertices, s_vtxCount * sizeof(Tri3dVertex));
 		s_indexBuffer.update(s_indices, s_idxCount * sizeof(s32));
 
-		TFE_RenderState::setStateEnable(true, STATE_DEPTH_WRITE | STATE_CULLING);
-		TFE_RenderState::setStateEnable(true, STATE_DEPTH_TEST);
+		TFE_RenderState::setStateEnable(culling, STATE_CULLING);
+		TFE_RenderState::setStateEnable(depthTest, STATE_DEPTH_TEST | STATE_DEPTH_WRITE);
 		TFE_RenderState::setDepthFunction(CMP_LEQUAL);
 
 		// Enable blending.

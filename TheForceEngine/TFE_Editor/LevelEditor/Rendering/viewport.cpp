@@ -172,6 +172,7 @@ namespace LevelEditor
 	void drawArrow3d(f32 width, f32 lenInPixels, Vec3f pos, Vec3f dir, Vec3f nrm, u32 color);
 	void drawArrow3d_Segment(f32 width, f32 lenInPixels, Vec3f pos0, Vec3f pos1, Vec3f nrm, u32 color);
 	void drawNoteIcon3d(LevelNote* note, s32 id, u32 objColor, const Vec3f& cameraRgt, const Vec3f& cameraUp);
+	void drawTransformGizmo3d();
 	bool computeSignCorners(const EditorSector* sector, const EditorWall* wall, Vec3f* corners);
 
 	void viewport_init()
@@ -1822,6 +1823,15 @@ namespace LevelEditor
 
 		triDraw3d_draw(&s_camera, (f32)s_viewportSize.x, (f32)s_viewportSize.z, s_grid.size, 0.0f);
 		lineDraw3d_drawLines(&s_camera, false, false);
+
+		// Draw transform gizmo, on top of other geometry.
+		triDraw3d_begin(&s_grid);
+		lineDraw3d_begin(s_viewportSize.x, s_viewportSize.z);
+
+		drawTransformGizmo3d();
+
+		triDraw3d_draw(&s_camera, (f32)s_viewportSize.x, (f32)s_viewportSize.z, s_grid.size, 0.0f, false, false);
+		lineDraw3d_drawLines(&s_camera, false, false);
 	}
 
 	void drawGrid3D(bool gridOver)
@@ -2114,6 +2124,20 @@ namespace LevelEditor
 		}
 
 		return u32(colorSum.x * 255.0f) | (u32(colorSum.y * 255.0f) << 8) | (u32(colorSum.z * 255.0f) << 16) | (u32(alpha * 255.0f) << 24);
+	}
+
+	void drawTransformGizmo3d()
+	{
+		if (!edit_isTransformToolActive()) { return; }
+
+		TransformMode mode = edit_getTransformMode();
+		if (mode == TRANS_ROTATE)
+		{
+			Vec3f centerWS = edit_getTransformCenter();
+			Vec3f rotation = edit_getTransformRotation();
+
+			gizmo_drawRotation3d(centerWS);
+		}
 	}
 
 	void renderLevel3D()
@@ -2432,7 +2456,7 @@ namespace LevelEditor
 			u32 objColor = (s_editMode == LEDIT_ENTITY && !locked) ? 0xffffffff : 0x80ffffff;
 			drawEntity3D(visObjSector[o], visObj[o], visObjId[o], objColor, cameraRgtXZ, !locked);
 		}
-				
+								
 		// Draw the 3D cursor.
 		{
 			const f32 distFromCam = TFE_Math::distance(&s_cursor3d, &s_camera.pos);
@@ -2446,7 +2470,7 @@ namespace LevelEditor
 		TFE_RenderShared::lineDraw3d_drawLines(&s_camera, true, false);
 		
 		renderHighlighted3d();
-				
+								
 		// Movement "rail", if active.
 		if (s_rail.active && s_rail.dirCount > 0)
 		{
@@ -2460,7 +2484,7 @@ namespace LevelEditor
 			}
 			TFE_RenderShared::lineDraw3d_drawLines(&s_camera, false, false);
 		}
-
+				
 		// Draw drag select, if active.
 		if (s_dragSelect.active)
 		{

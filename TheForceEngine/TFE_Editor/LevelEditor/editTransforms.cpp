@@ -145,8 +145,8 @@ namespace LevelEditor
 					// Get bounds based on vertex set.
 					s32 vertexIndex = -1;
 					EditorSector* sector = nullptr;
-					Vec2f boundsMin = { FLT_MAX, FLT_MAX };
-					Vec2f boundsMax = { -FLT_MAX,-FLT_MAX };
+					Vec3f boundsMin = { FLT_MAX, FLT_MAX, FLT_MAX };
+					Vec3f boundsMax = { -FLT_MAX,-FLT_MAX,-FLT_MAX };
 
 					for (u32 v = 0; v < vertexCount; v++)
 					{
@@ -156,9 +156,12 @@ namespace LevelEditor
 						boundsMin.z = std::min(boundsMin.z, vtx.z);
 						boundsMax.x = std::max(boundsMax.x, vtx.x);
 						boundsMax.z = std::max(boundsMax.z, vtx.z);
+
+						boundsMin.y = std::min(boundsMin.y, sector->floorHeight);
 					}
 					s_center.x = (boundsMin.x + boundsMax.x) * 0.5f;
 					s_center.z = (boundsMin.z + boundsMax.z) * 0.5f;
+					s_center.y = boundsMin.y;
 				}
 			}
 			else if (s_editMode == LEDIT_GUIDELINES)
@@ -288,122 +291,127 @@ namespace LevelEditor
 		}
 		else if (s_transformMode == TRANS_ROTATE)
 		{
-			if (s_view == EDIT_VIEW_2D)
+			f32 r0, r1, r2, r3;
+			Vec3f* center = (s_view == EDIT_VIEW_2D) ? nullptr : &s_center;
+			r0 = gizmo_getRotationRadiusWS(RGP_CIRCLE_OUTER, center);
+			r1 = gizmo_getRotationRadiusWS(RGP_CIRCLE_CENTER, center);
+			r2 = gizmo_getRotationRadiusWS(RGP_CIRCLE_INNER, center);
+			r3 = gizmo_getRotationRadiusWS(RGP_CENTER, center);
+			// Squared tests.
+			r0 *= r0;
+			r1 *= r1;
+			r2 *= r2;
+			r3 *= r3;
+			// Hover.
+			Vec2f offset = { s_cursor3d.x - s_center.x, s_cursor3d.z - s_center.z };
+			f32 rSq = offset.x*offset.x + offset.z*offset.z;
+								
+			f32 scale = rSq > FLT_EPSILON ? 1.0f / sqrtf(rSq) : 1.0f;
+			Vec2f dir = { offset.x * scale, offset.z * scale };
+
+			// Account of the height difference in 3D.
+			if (s_view == EDIT_VIEW_3D)
 			{
-				f32 r0 = gizmo_getRotationRadiusWS2d(RGP_CIRCLE_OUTER);
-				f32 r1 = gizmo_getRotationRadiusWS2d(RGP_CIRCLE_CENTER);
-				f32 r2 = gizmo_getRotationRadiusWS2d(RGP_CIRCLE_INNER);
-				f32 r3 = gizmo_getRotationRadiusWS2d(RGP_CENTER);
-				// Squared tests.
-				r0 *= r0;
-				r1 *= r1;
-				r2 *= r2;
-				r3 *= r3;
-				// Hover.
-				Vec2f offset = { s_cursor3d.x - s_center.x, s_cursor3d.z - s_center.z };
-				f32 rSq = offset.x*offset.x + offset.z*offset.z;
-				f32 scale = rSq > FLT_EPSILON ? 1.0f / sqrtf(rSq) : 1.0f;
-				Vec2f dir = { offset.x * scale, offset.z * scale };
+				f32 dy = s_cursor3d.y - s_center.y;
+				rSq += dy * dy;
+			}
 
-				// Result is in the -PI to +PI range, need to convert to 0, 2PI
-				f32 angleInDeg = atan2f(-offset.z, offset.x) * 180.0f / PI;
-				angleInDeg = fmodf(angleInDeg + 360.0f, 360.0f);
+			// Result is in the -PI to +PI range, need to convert to 0, 2PI
+			f32 angleInDeg = atan2f(-offset.z, offset.x) * 180.0f / PI;
+			angleInDeg = fmodf(angleInDeg + 360.0f, 360.0f);
 
-				if (s_rotAction == RACTION_NONE)
+			if (s_rotAction == RACTION_NONE)
+			{
+				s_rotHover = RGP_NONE;
+				if (rSq > r1 && rSq < r0)
 				{
-					s_rotHover = RGP_NONE;
-					if (rSq > r1 && rSq < r0)
-					{
-						s_rotHover = RGP_CIRCLE_OUTER;
-					}
-					else if (rSq > r2 && rSq <= r1)
-					{
-						s_rotHover = RGP_CIRCLE_INNER;
-					}
-					else if (rSq <= r3)
-					{
-						s_rotHover = RGP_CENTER;
-					}
-
-					s_dataCaptured = false;
-					if (s_singleClick)
-					{
-						s_rotation = { 0 };
-						s_rotationSide = 0.0f;
-						if (s_rotHover == RGP_CIRCLE_OUTER)
-						{
-							s_rotAction = RACTION_ROTATE;
-							const f32 s = angleInDeg < 0.0f ? -1.0f : 1.0f;
-							s_rotation.x = s * floorf(fabsf(angleInDeg) / 0.1f + 0.5f) * 0.1f;
-							s_rotation.y = angleInDeg;
-							s_rotationStartDir = dir;
-						}
-						else if (s_rotHover == RGP_CIRCLE_INNER)
-						{
-							s_rotAction = RACTION_ROTATE_SNAP;
-							const f32 s = angleInDeg < 0.0f ? -1.0f : 1.0f;
-							s_rotation.x = s * floorf(fabsf(angleInDeg)/5.0f + 0.5f) * 5.0f;
-							s_rotation.y = s_rotation.x;
-							s_rotationStartDir = dir;
-						}
-						else if (s_rotHover == RGP_CENTER)
-						{
-							s_rotAction = RACTION_MOVE;
-						}
-					}
+					s_rotHover = RGP_CIRCLE_OUTER;
 				}
-				else if (s_rotAction != RACTION_NONE && s_leftMouseDown)
+				else if (rSq > r2 && rSq <= r1)
 				{
-					f32 side = dir.x*s_rotationStartDir.z - dir.z*s_rotationStartDir.x;
-					side = (side < 0.0f) ? -1.0f : 1.0f;
-
-					if (s_rotAction == RACTION_MOVE)
-					{
-						s_center = s_cursor3d;
-						snapToGrid(&s_center);
-					}
-					else if (s_rotAction == RACTION_ROTATE || s_rotAction == RACTION_ROTATE_SNAP)
-					{
-						f32 curAngle;
-						const f32 s = angleInDeg < 0.0f ? -1.0f : 1.0f;
-						if (s_rotAction == RACTION_ROTATE)
-						{
-							curAngle = s * floorf(fabsf(angleInDeg) / 0.1f + 0.5f) * 0.1f;
-						}
-						else // RACTION_ROTATE_SNAP
-						{
-							curAngle = s * floorf(fabsf(angleInDeg) / 5.0f + 0.5f) * 5.0f;
-						}
-						const f32 diff = getAngleDifference(s_rotation.x, curAngle);
-
-						// Set the direction of rotation; 0 = none, positive = clockwise (+1), negative = counter-clockwise (-1).
-						if (diff == 0.0f)
-						{
-							s_rotation.z = 0.0f;
-						}
-						else if (fabsf(diff) < 45.0f && (s_rotation.z == 0.0f || s_rotationSide != side))
-						{
-							s_rotation.z = diff > 0.0f ? 1.0f : -1.0f;
-						}
-						s_rotationSide = side;
-						s_rotation.y = curAngle;
-
-						const f32 rotAngle = edit_getRotationGizmoAngle();
-						if (rotAngle != 0.0f)
-						{
-							applyRotationToData(rotAngle);
-						}
-					}
+					s_rotHover = RGP_CIRCLE_INNER;
 				}
-				else
+				else if (rSq <= r3)
 				{
-					edit_endTransform();
-					s_rotAction = RACTION_NONE;
+					s_rotHover = RGP_CENTER;
+				}
+
+				s_dataCaptured = false;
+				if (s_singleClick)
+				{
 					s_rotation = { 0 };
+					s_rotationSide = 0.0f;
+					if (s_rotHover == RGP_CIRCLE_OUTER)
+					{
+						s_rotAction = RACTION_ROTATE;
+						const f32 s = angleInDeg < 0.0f ? -1.0f : 1.0f;
+						s_rotation.x = s * floorf(fabsf(angleInDeg) / 0.1f + 0.5f) * 0.1f;
+						s_rotation.y = angleInDeg;
+						s_rotationStartDir = dir;
+					}
+					else if (s_rotHover == RGP_CIRCLE_INNER)
+					{
+						s_rotAction = RACTION_ROTATE_SNAP;
+						const f32 s = angleInDeg < 0.0f ? -1.0f : 1.0f;
+						s_rotation.x = s * floorf(fabsf(angleInDeg)/5.0f + 0.5f) * 5.0f;
+						s_rotation.y = s_rotation.x;
+						s_rotationStartDir = dir;
+					}
+					else if (s_rotHover == RGP_CENTER)
+					{
+						s_rotAction = RACTION_MOVE;
+					}
+				}
+			}
+			else if (s_rotAction != RACTION_NONE && s_leftMouseDown)
+			{
+				f32 side = dir.x*s_rotationStartDir.z - dir.z*s_rotationStartDir.x;
+				side = (side < 0.0f) ? -1.0f : 1.0f;
+
+				if (s_rotAction == RACTION_MOVE)
+				{
+					s_center.x = s_cursor3d.x;
+					s_center.z = s_cursor3d.z;
+					snapToGrid(&s_center);
+				}
+				else if (s_rotAction == RACTION_ROTATE || s_rotAction == RACTION_ROTATE_SNAP)
+				{
+					f32 curAngle;
+					const f32 s = angleInDeg < 0.0f ? -1.0f : 1.0f;
+					if (s_rotAction == RACTION_ROTATE)
+					{
+						curAngle = s * floorf(fabsf(angleInDeg) / 0.1f + 0.5f) * 0.1f;
+					}
+					else // RACTION_ROTATE_SNAP
+					{
+						curAngle = s * floorf(fabsf(angleInDeg) / 5.0f + 0.5f) * 5.0f;
+					}
+					const f32 diff = getAngleDifference(s_rotation.x, curAngle);
+
+					// Set the direction of rotation; 0 = none, positive = clockwise (+1), negative = counter-clockwise (-1).
+					if (diff == 0.0f)
+					{
+						s_rotation.z = 0.0f;
+					}
+					else if (fabsf(diff) < 45.0f && (s_rotation.z == 0.0f || s_rotationSide != side))
+					{
+						s_rotation.z = diff > 0.0f ? 1.0f : -1.0f;
+					}
+					s_rotationSide = side;
+					s_rotation.y = curAngle;
+
+					const f32 rotAngle = edit_getRotationGizmoAngle();
+					if (rotAngle != 0.0f)
+					{
+						applyRotationToData(rotAngle);
+					}
 				}
 			}
 			else
 			{
+				edit_endTransform();
+				s_rotAction = RACTION_NONE;
+				s_rotation = { 0 };
 			}
 		}
 	}
