@@ -37,6 +37,7 @@
 #include <TFE_Editor/EditorAsset/editorSprite.h>
 #include <TFE_Editor/LevelEditor/Rendering/grid.h>
 #include <TFE_Editor/LevelEditor/Rendering/grid2d.h>
+#include <TFE_Editor/LevelEditor/Rendering/gizmo.h>
 #include <TFE_Editor/LevelEditor/Scripting/levelEditorScripts.h>
 #include <TFE_Input/input.h>
 #include <TFE_RenderBackend/renderBackend.h>
@@ -5469,9 +5470,52 @@ namespace LevelEditor
 					drawViewportInfo(0, screenPos, info, 0, 0);
 				}
 			}
-			else // EDIT_VIEW_3D
+			else if (rot.z != 0.0f) // EDIT_VIEW_3D
 			{
-				// TODO
+				const f32 r = gizmo_getRotationRadiusWS(RGP_CIRCLE_OUTER, (Vec3f*)&center);
+				const Vec3f samplesWS[] =
+				{
+					// Center of the shape
+					center,
+					// Axis aligned points on outer circle.
+					{ center.x - r, center.y, center.z },
+					{ center.x + r, center.y, center.z },
+					{ center.x, center.y, center.z - r },
+					{ center.x, center.y, center.z + r },
+					// Diagonal points on circle.
+					{ center.x - r*0.7071f, center.y, center.z + r*0.7071f },
+					{ center.x + r*0.7071f, center.y, center.z + r*0.7071f },
+					{ center.x - r*0.7071f, center.y, center.z - r*0.7071f },
+					{ center.x + r*0.7071f, center.y, center.z - r*0.7071f },
+				};
+				Vec2f screenMin = { FLT_MAX, FLT_MAX };
+				Vec2f screenMax = {-FLT_MAX,-FLT_MAX };
+				s32 count = 0;
+				for (s32 i = 0; i < 9; i++)
+				{
+					Vec2f screenPos;
+					if (worldPosToViewportCoord(samplesWS[i], &screenPos))
+					{
+						screenMin.x = std::min(screenMin.x, screenPos.x);
+						screenMin.z = std::min(screenMin.z, screenPos.z);
+
+						screenMax.x = std::max(screenMax.x, screenPos.x);
+						screenMax.z = std::max(screenMax.z, screenPos.z);
+						count++;
+					}
+				}
+
+				if (count)
+				{
+					char info[256];
+					sprintf(info, "%0.1f", edit_getRotationGizmoAngleDegrees());
+
+					Vec2i pos2d = { s32((screenMin.x + screenMax.x)*0.5f), s32(screenMax.z) };
+					pos2d.x = s32(f32(pos2d.x) - ImGui::CalcTextSize(info).x*0.5f) - 8;
+					pos2d.z += 16;
+
+					drawViewportInfo(0, pos2d, info, 0, 0);
+				}
 			}
 		}
 	}
