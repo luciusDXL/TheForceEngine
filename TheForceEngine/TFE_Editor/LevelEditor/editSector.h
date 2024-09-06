@@ -16,5 +16,5 @@ namespace LevelEditor
 	void sectorComputeDragSelect();
 
 	// Transforms
-	
+	void edit_moveSector(Vec2f delta);
 }

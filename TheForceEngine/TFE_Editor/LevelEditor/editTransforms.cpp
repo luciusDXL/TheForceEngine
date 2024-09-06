@@ -1,5 +1,6 @@
 #include "editTransforms.h"
 #include "editCommon.h"
+#include "editSector.h"
 #include "hotkeys.h"
 #include "levelEditor.h"
 #include "editVertex.h"
@@ -30,6 +31,7 @@ namespace LevelEditor
 	static Vec3f s_rotation = { 0 };
 	static Vec2f s_rotationStartDir = { 0 };
 	static std::vector<Vec2f> s_vertexData;
+	static std::vector<Vec3f> s_objData;
 	static std::vector<s32> s_effectedSectors;
 	static f32 s_rotationSide = 0.0f;
 	static RotationAction s_rotAction = RACTION_NONE;
@@ -640,9 +642,46 @@ namespace LevelEditor
 		// Current movement.
 		const Vec2f delta = { worldPos.x - s_moveStartPos.x, worldPos.z - s_moveStartPos.z };
 		s_moveStartPos = { worldPos.x, worldPos.z };
-		edit_moveSelectedVertices(delta);
+		edit_moveSector(delta);
 	}
-		
+
+	u32 captureGetTotalObjectCount()
+	{
+		u32 totalObjCount = 0;
+		const u32 sectorCount = selection_getCount(SEL_SECTOR);
+		EditorSector* sector;
+		for (u32 s = 0; s < sectorCount; s++)
+		{
+			selection_getSector(s, sector);
+			totalObjCount += (u32)sector->obj.size();
+		}
+		return totalObjCount;
+	}
+
+	void captureObjectRotationData(u32 vertexCount)
+	{
+		if (s_editMode != LEDIT_SECTOR) { return; }
+		u32 totalObjectCount = captureGetTotalObjectCount();
+		if (!totalObjectCount) { return; }
+
+		const u32 sectorCount = selection_getCount(SEL_SECTOR);
+		EditorSector* sector;
+
+		s_objData.resize(totalObjectCount);
+		Vec3f* objData = s_objData.data();
+		for (u32 s = 0; s < sectorCount; s++)
+		{
+			selection_getSector(s, sector);
+			const u32 objCount = (u32)sector->obj.size();
+			EditorObject* obj = sector->obj.data();
+			for (u32 o = 0; o < objCount; o++, obj++)
+			{
+				objData[o] = { obj->pos.x, obj->pos.z, obj->angle };
+			}
+			objData += objCount;
+		}
+	}
+
 	void captureRotationData()
 	{
 		s_dataCaptured = true;
@@ -652,6 +691,7 @@ namespace LevelEditor
 			s32 index = -1;
 
 			const u32 vertexCount = selection_getCount(SEL_VERTEX);
+			const u32 totalObjCount = captureGetTotalObjectCount();
 			s_vertexData.resize(vertexCount);
 			Vec2f* vtxData = s_vertexData.data();
 			for (u32 v = 0; v < vertexCount; v++)
@@ -659,6 +699,35 @@ namespace LevelEditor
 				selection_getVertex(v, sector, index);
 				vtxData[v] = sector->vtx[index];
 			}
+			captureObjectRotationData(vertexCount);
+		}
+	}
+
+	void applyRotationToObjects(const Vec3f* mtx, f32 angle)
+	{
+		if (s_editMode != LEDIT_SECTOR) { return; }
+
+		const u32 sectorCount = selection_getCount(SEL_SECTOR);
+		EditorSector* sector;
+
+		Vec3f* srcData = s_objData.data();
+		for (u32 s = 0; s < sectorCount; s++)
+		{
+			selection_getSector(s, sector);
+			const u32 objCount = (u32)sector->obj.size();
+			EditorObject* obj = sector->obj.data();
+			for (u32 v = 0; v < objCount; v++, obj++)
+			{
+				obj->pos.x = (srcData[v].x - s_center.x) * mtx[0].x + (srcData[v].y - s_center.z) * mtx[0].y + mtx[0].z;
+				obj->pos.z = (srcData[v].x - s_center.x) * mtx[1].x + (srcData[v].y - s_center.z) * mtx[1].y + mtx[1].z;
+				obj->angle = srcData[v].z + angle;
+				
+				if (s_level.entities[obj->entityId].type == ETYPE_3D)
+				{
+					compute3x3Rotation(&obj->transform, obj->angle, obj->pitch, obj->roll);
+				}
+			}
+			srcData += objCount;
 		}
 	}
 
@@ -713,6 +782,7 @@ namespace LevelEditor
 				}
 			}
 		}
+		applyRotationToObjects(mtx, angle);
 		
 		// Update sectors after changes.
 		const size_t changeCount = s_sectorChangeList.size();

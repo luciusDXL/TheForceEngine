@@ -194,26 +194,31 @@ namespace LevelEditor
 			else
 			{
 				s_dragSelect.active = false;
+				edit_setTransformChange();
 			}
 		}
 		else if (s_dragSelect.active)
 		{
 			s_dragSelect.active = false;
+			edit_setTransformChange();
 		}
 
-		// Handle texture copy and paste.
-		if (hasHovered)
+		if (!s_dragSelect.active)
 		{
-			if ((s_editMode == LEDIT_WALL && s_view == EDIT_VIEW_3D) ||
-				(s_editMode == LEDIT_SECTOR && s_view == EDIT_VIEW_2D))
+			// Handle texture copy and paste.
+			if (hasHovered)
 			{
-				edit_applySurfaceTextures();
+				if ((s_editMode == LEDIT_WALL && s_view == EDIT_VIEW_3D) ||
+					(s_editMode == LEDIT_SECTOR && s_view == EDIT_VIEW_2D))
+				{
+					edit_applySurfaceTextures();
+				}
 			}
-		}
-		// Vertex insertion.
-		if (s_editMode == LEDIT_VERTEX || s_editMode == LEDIT_WALL)
-		{
-			handleVertexInsert(worldPos, info);
+			// Vertex insertion.
+			if (s_editMode == LEDIT_VERTEX || s_editMode == LEDIT_WALL)
+			{
+				handleVertexInsert(worldPos, info);
+			}
 		}
 	}
 }

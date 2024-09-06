@@ -83,6 +83,7 @@ namespace LevelEditor
 	// Simplified interface.
 	bool selection_get(s32 index, EditorSector*& sector, s32& featureIndex, HitPart* part = nullptr);
 	bool selection_action(SelectAction action, EditorSector* sector = nullptr, s32 featureIndex = -1, HitPart part = HP_FLOOR);
+	void selection_buildDerived();
 
 	// Read interface.
 	// Pass in SEL_GET_HOVERED for the index to get the hovered feature (or false if nothing hovered).

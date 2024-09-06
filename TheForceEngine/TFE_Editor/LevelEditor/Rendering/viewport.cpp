@@ -420,16 +420,13 @@ namespace LevelEditor
 
 			for (size_t i = 0; i < count; i++)
 			{
-				for (size_t i = 0; i < count; i++)
-				{
-					s32 featureIndex;
-					HitPart part;
-					bool overlapped;
-					EditorSector* sector = unpackFeatureId(list[i], &featureIndex, (s32*)&part, &overlapped);
-					if (overlapped || !sector || part == HP_FLOOR || part == HP_CEIL) { continue; }
+				s32 featureIndex;
+				HitPart part;
+				bool overlapped;
+				EditorSector* sector = unpackFeatureId(list[i], &featureIndex, (s32*)&part, &overlapped);
+				if (overlapped || !sector || part == HP_FLOOR || part == HP_CEIL) { continue; }
 
-					drawWall2d(sector, &sector->walls[featureIndex], 1.5f, HL_SELECTED, true);
-				}
+				drawWall2d(sector, &sector->walls[featureIndex], 1.5f, HL_SELECTED, true);
 			}
 		}
 

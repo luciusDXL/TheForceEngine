@@ -433,6 +433,7 @@ namespace LevelEditor
 		if (mx < 0 || my < 0 || mx >= s_viewportSize.x || my >= s_viewportSize.z)
 		{
 			s_dragSelect.active = false;
+			edit_setTransformChange();
 		}
 		else
 		{
@@ -1335,7 +1336,10 @@ namespace LevelEditor
 					handleFeatureEditInput(worldPos);
 				}
 				// Texture alignment.
-				handleTextureAlignment();
+				if (!s_dragSelect.active)
+				{
+					handleTextureAlignment();
+				}
 			}
 		}
 		else if (s_view == EDIT_VIEW_3D)

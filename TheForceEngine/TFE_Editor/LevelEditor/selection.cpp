@@ -13,6 +13,7 @@ namespace LevelEditor
 	SelectionList s_savedSelections[SEL_GEO_COUNT];
 	SelectionListId s_currentSelection = SEL_VERTEX;
 	FeatureId s_hovered = FEATUREID_NULL;
+	bool s_derivedBuildNeeded = false;
 
 	bool selection_insertVertex(FeatureId id, Vec2f value, EditorSector* root = nullptr, HitPart part = HP_FLOOR);
 	bool selection_removeVertex(FeatureId id, Vec2f value);
@@ -22,6 +23,7 @@ namespace LevelEditor
 	bool selection_isFeatureIdInSet(SelectionList& list, FeatureId id, s32* index = nullptr);
 	bool selection_featureId(SelectAction action, FeatureId id);
 	void selection_buildDerived();
+	void selection_derivedBuildNeeded();
 	FeatureId selection_getFeatureId(s32 index, SelectionListId listId);
 
 	// General Interface
@@ -133,7 +135,7 @@ namespace LevelEditor
 		if (buildDerived)
 		{
 			edit_setTransformChange();
-			selection_buildDerived();
+			selection_derivedBuildNeeded();
 		}
 		return actionDone;
 	}
@@ -180,11 +182,13 @@ namespace LevelEditor
 	// Pass in SEL_GET_HOVERED for the index to get the hovered feature (or false is none).
 	u32 selection_getCount(SelectionListId id)
 	{
+		if (id != SEL_CURRENT && id != s_currentSelection) { selection_buildDerived(); }
 		return (u32)s_selectionList2[id >= SEL_CURRENT ? s_currentSelection : id].size();
 	}
 		
 	bool selection_getVertex(s32 index, EditorSector*& sector, s32& featureIndex, HitPart* part, bool* isOverlapped)
 	{
+		if (s_currentSelection != SEL_VERTEX) { selection_buildDerived(); }
 		const FeatureId id = selection_getFeatureId(index, SEL_VERTEX);
 		if (id == FEATUREID_NULL) { return false; }
 		// Unpack the feature ID based on the type.
@@ -194,6 +198,7 @@ namespace LevelEditor
 
 	bool selection_getSurface(s32 index, EditorSector*& sector, s32& featureIndex, HitPart* part, bool* isOverlapped)
 	{
+		if (s_currentSelection != SEL_SURFACE) { selection_buildDerived(); }
 		const FeatureId id = selection_getFeatureId(index, SEL_SURFACE);
 		if (id == FEATUREID_NULL) { return false; }
 		// Unpack the feature ID based on the type.
@@ -212,6 +217,7 @@ namespace LevelEditor
 
 	bool selection_getSector(s32 index, EditorSector*& sector)
 	{
+		if (s_currentSelection != SEL_SECTOR) { selection_buildDerived(); }
 		const FeatureId id = selection_getFeatureId(index, SEL_SECTOR);
 		if (id == FEATUREID_NULL) { return false; }
 		// Unpack the feature ID based on the type.
@@ -321,6 +327,7 @@ namespace LevelEditor
 
 	u32 selection_getList(FeatureId*& list, SelectionListId id)
 	{
+		if (id != SEL_CURRENT && id != s_currentSelection) { selection_buildDerived(); }
 		SelectionList& selList = s_selectionList2[id >= SEL_CURRENT ? s_currentSelection : id];
 		u32 count = (u32)selList.size();
 		list = count > 0 ? selList.data() : nullptr;
@@ -597,7 +604,7 @@ namespace LevelEditor
 		if (buildDerived)
 		{
 			edit_setTransformChange();
-			selection_buildDerived();
+			selection_derivedBuildNeeded();
 		}
 		return actionDone;
 	}
@@ -624,7 +631,7 @@ namespace LevelEditor
 		selection_insertVertex(v1, sector->vtx[wall->idx[1]], sector);
 	}
 
-	void selection_buildDerived()
+	void selection_derivedBuildNeeded()
 	{
 		if (s_currentSelection != SEL_VERTEX && s_currentSelection != SEL_SURFACE && s_currentSelection != SEL_SECTOR)
 		{
@@ -632,8 +639,22 @@ namespace LevelEditor
 		}
 		// Clear any geometry selection that does not match the current selection.
 		if (s_currentSelection != SEL_VERTEX) { s_selectionList2[SEL_VERTEX].clear(); }
-		if (s_currentSelection != SEL_SURFACE){ s_selectionList2[SEL_SURFACE].clear(); }
+		if (s_currentSelection != SEL_SURFACE) { s_selectionList2[SEL_SURFACE].clear(); }
 		if (s_currentSelection != SEL_SECTOR) { s_selectionList2[SEL_SECTOR].clear(); }
+
+		s_derivedBuildNeeded = true;
+	}
+
+	void selection_buildDerived()
+	{
+		if (!s_derivedBuildNeeded || s_dragSelect.active) { return; }
+		s_derivedBuildNeeded = false;
+
+		if (s_currentSelection != SEL_VERTEX && s_currentSelection != SEL_SURFACE && s_currentSelection != SEL_SECTOR)
+		{
+			return;
+		}
+
 		// Setup derived selections.
 		if (s_currentSelection == SEL_VERTEX)
 		{

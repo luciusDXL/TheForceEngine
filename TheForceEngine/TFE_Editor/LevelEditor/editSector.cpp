@@ -190,4 +190,24 @@ namespace LevelEditor
 			}
 		}
 	}
+
+	void edit_moveSector(Vec2f delta)
+	{
+		edit_moveSelectedVertices(delta);
+		const u32 sectorCount = selection_getCount(SEL_SECTOR);
+		for (u32 i = 0; i < sectorCount; i++)
+		{
+			EditorSector* sector = nullptr;
+			selection_getSector(i, sector);
+			if (!sector) { continue; }
+
+			const u32 objCount = (u32)sector->obj.size();
+			EditorObject* obj = sector->obj.data();
+			for (u32 o = 0; o < objCount; o++, obj++)
+			{
+				obj->pos.x += delta.x;
+				obj->pos.z += delta.z;
+			}
+		}
+	}
 }
