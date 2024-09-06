@@ -17,6 +17,9 @@ using namespace TFE_RenderShared;
 
 namespace LevelEditor
 {
+	// Fixed size in 3D = tan(FOV/2) * Gizmo-Distance-From-Camera * radius/scaleFactor
+	// Reciprocal avoids the division.
+	const f32 c_rotationScaleFactor3d = 1.0f / 384.0f;
 	struct RotationGizmo
 	{
 		f32 radius = 128.0f;
@@ -197,10 +200,10 @@ namespace LevelEditor
 	//////////////////////////////////////////
 	f32 getRotation3dScale(Vec3f* center)
 	{
-		Vec3f offset = { center->x - s_camera.pos.x, center->y - s_camera.pos.y, center->z - s_camera.pos.z };
-		return sqrtf(offset.x*offset.x + offset.y*offset.y + offset.z*offset.z) / 384.0f;
+		const Vec3f offset = { center->x - s_camera.pos.x, center->y - s_camera.pos.y, center->z - s_camera.pos.z };
+		return sqrtf(offset.x*offset.x + offset.y*offset.y + offset.z*offset.z) * c_rotationScaleFactor3d;
 	}
-		
+
 	void drawCircle2d(Vec2f cen, f32 r, u32 color)
 	{
 		const u32 colors[] = { color, color };
@@ -336,7 +339,7 @@ namespace LevelEditor
 		Vec3f vtx[2];
 		for (s32 i = 0; i < tickCount; i++, angle += dA)
 		{
-			// 45 degree ticks occur every nine 5 degree ticks.
+			// 45 degree ticks occur every nine 5-degree ticks.
 			const f32 r1 = (i % 9) == 0 ? r0 - fullSize : r0 - tickSize;
 			const f32 ca = cosf(angle), sa = sinf(angle);
 

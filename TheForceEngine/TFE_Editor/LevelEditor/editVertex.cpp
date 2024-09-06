@@ -1,5 +1,6 @@
 #include "editVertex.h"
 #include "editCommon.h"
+#include "editTransforms.h"
 #include "levelEditor.h"
 #include "hotkeys.h"
 #include "error.h"
@@ -106,6 +107,7 @@ namespace LevelEditor
 					if (!selection_vertex(SA_CHECK_INCLUSION, sector, vertexIndex))
 					{
 						selection_vertex(SA_SET, sector, vertexIndex, part);
+						edit_applyTransformChange();
 					}
 
 					s_curVtxPos = s_hoveredVtxPos;
@@ -124,7 +126,6 @@ namespace LevelEditor
 			{
 				if (selToggleDrag && hasHovered && selection_getVertex(SEL_INDEX_HOVERED, sector, vertexIndex, &part))
 				{
-					s_editMove = true;
 					adjustGridHeight(sector);
 					selection_vertex(SA_ADD, sector, vertexIndex, part);
 				}

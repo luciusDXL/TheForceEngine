@@ -474,6 +474,7 @@ echo ^)";
     <ClInclude Include="TFE_Editor\LevelEditor\editGeometry.h" />
     <ClInclude Include="TFE_Editor\LevelEditor\editGuidelines.h" />
     <ClInclude Include="TFE_Editor\LevelEditor\editNotes.h" />
+    <ClInclude Include="TFE_Editor\LevelEditor\editSurface.h" />
     <ClInclude Include="TFE_Editor\LevelEditor\editTransforms.h" />
     <ClInclude Include="TFE_Editor\LevelEditor\editVertex.h" />
     <ClInclude Include="TFE_Editor\LevelEditor\entity.h" />
@@ -860,6 +861,7 @@ echo ^)";
     <ClCompile Include="TFE_Editor\LevelEditor\editGeometry.cpp" />
     <ClCompile Include="TFE_Editor\LevelEditor\editGuidelines.cpp" />
     <ClCompile Include="TFE_Editor\LevelEditor\editNotes.cpp" />
+    <ClCompile Include="TFE_Editor\LevelEditor\editSurface.cpp" />
     <ClCompile Include="TFE_Editor\LevelEditor\editTransforms.cpp" />
     <ClCompile Include="TFE_Editor\LevelEditor\editVertex.cpp" />
     <ClCompile Include="TFE_Editor\LevelEditor\entity.cpp" />
