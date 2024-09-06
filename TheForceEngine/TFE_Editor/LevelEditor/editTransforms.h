@@ -43,6 +43,7 @@ namespace LevelEditor
 	bool edit_interactingWithGizmo();
 	bool edit_gizmoChangedGeo();
 	void edit_resetGizmo();
+	Vec3f edit_gizmoCursor3d();
 	Vec3f edit_getTransformCenter();
 	Vec3f edit_getTransformRotation();
 	u32 edit_getTransformRotationHover();

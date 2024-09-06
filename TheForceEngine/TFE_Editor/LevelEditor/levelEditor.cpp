@@ -17,6 +17,7 @@
 #include "editEntity.h"
 #include "editGeometry.h"
 #include "editGuidelines.h"
+#include "editSector.h"
 #include "editSurface.h"
 #include "editVertex.h"
 #include "editNotes.h"
@@ -116,7 +117,6 @@ namespace LevelEditor
 	static Vec2i s_editWinPos = { 0, 69 };
 	static Vec2i s_editWinSize = { 0 };
 	static Vec2f s_editWinMapCorner = { 0 };
-	static Vec3f s_rayDir = { 0.0f, 0.0f, 1.0f };
 	static f32 s_zoom = c_defaultZoom;
 	static bool s_gravity = false;
 	static bool s_showAllLabels = false;
@@ -445,6 +445,10 @@ namespace LevelEditor
 			{
 				wallComputeDragSelect();
 			}
+			else if (s_editMode == LEDIT_SECTOR)
+			{
+				sectorComputeDragSelect();
+			}
 		}
 	}
 		
@@ -545,17 +549,20 @@ namespace LevelEditor
 		//////////////////////////////////////
 		if (s_editMode == LEDIT_WALL)
 		{
-			if (info->hitWallId >= 0)
+			if (hoveredSector)
 			{
-				selection_surface(SA_SET_HOVERED, hoveredSector, info->hitWallId, info->hitPart);
-			}
-			else
-			{
-				// See if we are close enough to "hover" a vertex
-				s32 wallIndex = info->hitWallId;
-				HitPart hoveredPart = info->hitPart;
-				edit_checkForWallHit3d(info, hoveredSector, wallIndex, hoveredPart, hoveredSector);
-				selection_surface(SA_SET_HOVERED, hoveredSector, wallIndex, hoveredPart);
+				if (info->hitWallId >= 0)
+				{
+					selection_surface(SA_SET_HOVERED, hoveredSector, info->hitWallId, info->hitPart);
+				}
+				else
+				{
+					// See if we are close enough to "hover" a vertex
+					s32 wallIndex = info->hitWallId;
+					HitPart hoveredPart = info->hitPart;
+					edit_checkForWallHit3d(info, hoveredSector, wallIndex, hoveredPart, hoveredSector);
+					selection_surface(SA_SET_HOVERED, hoveredSector, wallIndex, hoveredPart);
+				}
 			}
 			handleFeatureEditInput({ s_cursor3d.x, s_cursor3d.z });
 		}
@@ -1372,8 +1379,7 @@ namespace LevelEditor
 					
 			// TODO: Move out to common place for hotkeys.
 			bool hitBackfaces = TFE_Input::keyDown(KEY_B);
-			s_rayDir = mouseCoordToWorldDir3d(mx, my);
-
+			
 			RayHitInfo hitInfo;
 			Ray ray = { s_camera.pos, s_rayDir, 1000.0f, layer };
 			const bool rayHit = traceRay(&ray, &hitInfo, hitBackfaces, s_sectorDrawMode == SDM_TEXTURED_CEIL || s_sectorDrawMode == SDM_TEXTURED_FLOOR);
@@ -1381,7 +1387,11 @@ namespace LevelEditor
 			else  		{ s_cursor3d = rayGridPlaneHit(s_camera.pos, s_rayDir); }
 
 			// Note that the 3D cursor must be adjusted if the grid is shown over the geometry.
-			if ((s_gridFlags & GFLAG_OVER) && hitInfo.hitWallId < 0)
+			if (edit_interactingWithGizmo())
+			{
+				s_cursor3d = edit_gizmoCursor3d();
+			}
+			else if ((s_gridFlags & GFLAG_OVER) && hitInfo.hitWallId < 0)
 			{
 				s_cursor3d = rayGridPlaneHit(s_camera.pos, s_rayDir);
 			}
@@ -1425,12 +1435,11 @@ namespace LevelEditor
 				}
 				else
 				{
-					selection_clearHovered();
 					if (s_editMode == LEDIT_VERTEX)
 					{
 						handleFeatureEditInput({ s_cursor3d.x, s_cursor3d.z }, &hitInfo);
 					}
-					else if (s_editMode == LEDIT_WALL)
+					else if (s_editMode == LEDIT_WALL || s_editMode == LEDIT_SECTOR)
 					{
 						handleFeatureEditInput({ s_cursor3d.x, s_cursor3d.z });
 					}
@@ -2729,6 +2738,7 @@ namespace LevelEditor
 			TFE_Input::clearAccumulatedMouseMove();
 		}
 		computeCameraTransform();
+		s_rayDir = mouseCoordToWorldDir3d(mx, my);
 
 		// Apply geometry transforms.
 		edit_transform();

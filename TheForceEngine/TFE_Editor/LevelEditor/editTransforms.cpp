@@ -256,6 +256,16 @@ namespace LevelEditor
 		return angleDelta;
 	}
 
+	Vec3f edit_gizmoCursor3d()
+	{
+		f32 height = s_grid.height;
+		s_grid.height = s_center.y;
+		Vec3f cursor = rayGridPlaneHit(s_camera.pos, s_rayDir);
+		s_grid.height = height;
+
+		return cursor;
+	}
+
 	void edit_transform(s32 mx, s32 my)
 	{
 		edit_applyTransformChange();
@@ -302,17 +312,25 @@ namespace LevelEditor
 			r1 *= r1;
 			r2 *= r2;
 			r3 *= r3;
+
+			// Handle cursor.
+			Vec3f cursor = s_cursor3d;
+			if (s_view == EDIT_VIEW_3D)
+			{
+				cursor = edit_gizmoCursor3d();
+			}
+
 			// Hover.
-			Vec2f offset = { s_cursor3d.x - s_center.x, s_cursor3d.z - s_center.z };
+			Vec2f offset = { cursor.x - s_center.x, cursor.z - s_center.z };
 			f32 rSq = offset.x*offset.x + offset.z*offset.z;
-								
+
 			f32 scale = rSq > FLT_EPSILON ? 1.0f / sqrtf(rSq) : 1.0f;
 			Vec2f dir = { offset.x * scale, offset.z * scale };
 
 			// Account of the height difference in 3D.
 			if (s_view == EDIT_VIEW_3D)
 			{
-				f32 dy = s_cursor3d.y - s_center.y;
+				f32 dy = cursor.y - s_center.y;
 				rSq += dy * dy;
 			}
 
@@ -370,8 +388,8 @@ namespace LevelEditor
 
 				if (s_rotAction == RACTION_MOVE)
 				{
-					s_center.x = s_cursor3d.x;
-					s_center.z = s_cursor3d.z;
+					s_center.x = cursor.x;
+					s_center.z = cursor.z;
 					snapToGrid(&s_center);
 				}
 				else if (s_rotAction == RACTION_ROTATE || s_rotAction == RACTION_ROTATE_SNAP)

@@ -8,22 +8,13 @@
 //////////////////////////////////////////////////////////////////////
 #include <TFE_System/types.h>
 #include "levelEditorData.h"
-#include <vector>
-#include <string>
+#include "selection.h"
+#include "sharedState.h"
 
 namespace LevelEditor
 {
-	// Helper sector list to track changes.
-	extern SectorList s_sectorChangeList;
-	// General movement.
-	extern bool s_moveStarted;
-	extern Vec2f s_moveStartPos;
-	extern Vec2f s_moveStartPos1;
-	extern Vec2f* s_moveVertexPivot;
-	extern Vec3f s_prevPos;
-	extern Vec2f s_wallNrm;
-	extern Vec2f s_wallTan;
-	extern Vec3f s_rayDir;
+	void sectorComputeDragSelect();
 
-	void handleFeatureEditInput(Vec2f worldPos, RayHitInfo* info = nullptr);
+	// Transforms
+	
 }

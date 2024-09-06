@@ -21,6 +21,7 @@ namespace LevelEditor
 	Vec3f s_prevPos = { 0 };
 	Vec2f s_wallNrm;
 	Vec2f s_wallTan;
+	Vec3f s_rayDir = { 0.0f, 0.0f, 1.0f };
 
 	void handleDelete(bool hasFeature)
 	{
