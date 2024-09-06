@@ -1,5 +1,6 @@
 #include "editVertex.h"
 #include "editCommon.h"
+#include "editSurface.h"
 #include "editTransforms.h"
 #include "levelEditor.h"
 #include "hotkeys.h"
@@ -184,7 +185,7 @@ namespace LevelEditor
 				else
 				{
 					HitPart part = HP_NONE;
-					checkForWallHit3d(info, sector, wallIndex, part, sector);
+					edit_checkForWallHit3d(info, sector, wallIndex, part, sector);
 					if (!sector || wallIndex < 0 || part == HP_FLOOR || part == HP_CEIL)
 					{
 						return;
@@ -197,7 +198,7 @@ namespace LevelEditor
 				if (sector)
 				{
 					HitPart part = HP_NONE;
-					checkForWallHit2d(worldPos, sector, wallIndex, part, sector);
+					edit_checkForWallHit2d(worldPos, sector, wallIndex, part, sector);
 					if (!sector || wallIndex < 0 || part == HP_FLOOR || part == HP_CEIL)
 					{
 						return;
