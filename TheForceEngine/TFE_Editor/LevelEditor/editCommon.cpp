@@ -70,6 +70,13 @@ namespace LevelEditor
 					}
 				}
 			} break;
+			case LEDIT_SECTOR:
+			{
+				if (sector)
+				{
+					edit_deleteSector(sector->id);
+				}
+			} break;
 		}
 	}
 
@@ -193,11 +200,19 @@ namespace LevelEditor
 			s_dragSelect.active = false;
 		}
 
-		// Handle copy and paste.
-		if (s_editMode == LEDIT_WALL && s_view == EDIT_VIEW_3D && hasHovered)
+		// Handle texture copy and paste.
+		if (hasHovered)
 		{
-			edit_applySurfaceTextures();
+			if ((s_editMode == LEDIT_WALL && s_view == EDIT_VIEW_3D) ||
+				(s_editMode == LEDIT_SECTOR && s_view == EDIT_VIEW_2D))
+			{
+				edit_applySurfaceTextures();
+			}
 		}
-		handleVertexInsert(worldPos, info);
+		// Vertex insertion.
+		if (s_editMode == LEDIT_VERTEX || s_editMode == LEDIT_WALL)
+		{
+			handleVertexInsert(worldPos, info);
+		}
 	}
 }

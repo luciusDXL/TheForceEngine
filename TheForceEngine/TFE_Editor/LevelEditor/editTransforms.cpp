@@ -401,10 +401,7 @@ namespace LevelEditor
 					s_rotation.y = curAngle;
 
 					const f32 rotAngle = edit_getRotationGizmoAngle();
-					if (rotAngle != 0.0f)
-					{
-						applyRotationToData(rotAngle);
-					}
+					applyRotationToData(rotAngle);
 				}
 			}
 			else
@@ -609,38 +606,22 @@ namespace LevelEditor
 
 	void moveSector(Vec3f worldPos)
 	{
-		EditorSector* sector = nullptr;
-		selection_getSector(0, sector);
-		if (!sector) { return; }
-
+		snapToGrid(&worldPos);
 		if (!s_moveStarted)
 		{
 			s_moveStarted = true;
-			s_moveStartPos = sector->vtx[0];
+			s_moveStartPos = { worldPos.x, worldPos.z };
+
+			s_moveStarted = true;
 			if (s_view == EDIT_VIEW_3D)
 			{
 				s_prevPos = s_curVtxPos;
 			}
 		}
 
-		worldPos = moveAlongXZPlane(s_curVtxPos.y);
-		Vec2f delta = { worldPos.x - s_curVtxPos.x, worldPos.z - s_curVtxPos.z };
-
-		if (!TFE_Input::keyModDown(KEYMOD_ALT))
-		{
-			// Smallest snap distance.
-			Vec2f p0 = { s_moveStartPos.x + delta.x, s_moveStartPos.z + delta.z };
-
-			Vec2f s0 = p0;
-			snapToGrid(&s0);
-			delta = { s0.x - sector->vtx[0].x, s0.z - sector->vtx[0].z };
-		}
-		else
-		{
-			delta = { s_moveStartPos.x + delta.x - sector->vtx[0].x, s_moveStartPos.z + delta.z - sector->vtx[0].z };
-		}
-
-		// Move all of the vertices by the offset.
+		// Current movement.
+		const Vec2f delta = { worldPos.x - s_moveStartPos.x, worldPos.z - s_moveStartPos.z };
+		s_moveStartPos = { worldPos.x, worldPos.z };
 		edit_moveSelectedVertices(delta);
 	}
 		
@@ -685,19 +666,36 @@ namespace LevelEditor
 		EditorSector* sector;
 		s32 index;
 		const Vec2f* srcVtx = s_vertexData.data();
-		for (u32 v = 0; v < vertexCount; v++)
+		if (fabsf(angle) < 0.0001f)
 		{
-			selection_getVertex(v, sector, index);
-			sector->vtx[index].x = (srcVtx[v].x - s_center.x) * mtx[0].x + (srcVtx[v].z - s_center.z) * mtx[0].y + mtx[0].z;
-			sector->vtx[index].z = (srcVtx[v].x - s_center.x) * mtx[1].x + (srcVtx[v].z - s_center.z) * mtx[1].y + mtx[1].z;
-
-			if (sector->searchKey != s_searchKey)
+			// If the angle is very close to zero, then just copy the original data.
+			for (u32 v = 0; v < vertexCount; v++)
 			{
-				s_sectorChangeList.push_back(sector);
-				sector->searchKey = s_searchKey;
+				selection_getVertex(v, sector, index);
+				sector->vtx[index] = srcVtx[v];
+				if (sector->searchKey != s_searchKey)
+				{
+					s_sectorChangeList.push_back(sector);
+					sector->searchKey = s_searchKey;
+				}
 			}
 		}
-
+		else
+		{
+			// Otherwise apply the rotation.
+			for (u32 v = 0; v < vertexCount; v++)
+			{
+				selection_getVertex(v, sector, index);
+				sector->vtx[index].x = (srcVtx[v].x - s_center.x) * mtx[0].x + (srcVtx[v].z - s_center.z) * mtx[0].y + mtx[0].z;
+				sector->vtx[index].z = (srcVtx[v].x - s_center.x) * mtx[1].x + (srcVtx[v].z - s_center.z) * mtx[1].y + mtx[1].z;
+				if (sector->searchKey != s_searchKey)
+				{
+					s_sectorChangeList.push_back(sector);
+					sector->searchKey = s_searchKey;
+				}
+			}
+		}
+		
 		// Update sectors after changes.
 		const size_t changeCount = s_sectorChangeList.size();
 		EditorSector** list = s_sectorChangeList.data();

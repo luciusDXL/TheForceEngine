@@ -12,6 +12,7 @@ namespace LevelEditor
 		LName_SetVertex,
 		LName_MoveWall,
 		LName_MoveFlat,
+		LName_MoveSector,
 		LName_InsertVertex,
 		LName_DeleteVertex,
 		LName_DeleteWall,

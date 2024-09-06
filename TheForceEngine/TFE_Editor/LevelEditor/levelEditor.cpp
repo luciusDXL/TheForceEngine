@@ -510,45 +510,6 @@ namespace LevelEditor
 			cmd_sectorSnapshot(LName_DeleteSector, deltaSectors);
 		}
 	}
-				
-	void handleMouseControlSector()
-	{
-		const bool del = TFE_Input::keyPressed(KEY_DELETE);
-		const bool hasHovered = selection_hasHovered();
-		const bool hasFeature = selection_getCount() > 0;
-
-		EditorSector* sector = nullptr;
-		if (del && (hasHovered || hasFeature))
-		{
-			s32 sectorId = -1;
-			if (selection_getSector(hasFeature ? 0 : SEL_INDEX_HOVERED, sector))
-			{
-				sectorId = sector->id;
-			}
-			if (sectorId >= 0)
-			{
-				edit_deleteSector(sectorId);
-				// cmd_addDeleteSector(sectorId);
-			}
-			return;
-		}
-
-		if (s_singleClick)
-		{
-			sector = nullptr;
-			if (hasHovered) { selection_getSector(SEL_INDEX_HOVERED, sector); }
-
-			handleSelectMode(sector, -1);
-			selection_sector(SA_SET, sector);
-			adjustGridHeight(sector);
-		}
-
-		// Handle copy and paste.
-		if (s_view == EDIT_VIEW_2D && hasHovered)
-		{
-			edit_applySurfaceTextures();
-		}
-	}
 			
 	void handleHoverAndSelection(RayHitInfo* info)
 	{
@@ -567,7 +528,7 @@ namespace LevelEditor
 		if (s_editMode == LEDIT_SECTOR)
 		{
 			selection_sector(SA_SET_HOVERED, hoveredSector);
-			handleMouseControlSector();
+			handleFeatureEditInput({ s_cursor3d.x, s_cursor3d.z });
 		}
 
 		//////////////////////////////////////
@@ -1299,6 +1260,11 @@ namespace LevelEditor
 			// Always check for the hovered sector, since sectors can overlap.
 			selection_clearHovered();
 			EditorSector* hoveredSector = findSector2d(worldPos, s_curLayer);
+			if (hoveredSector && !sector_isInteractable(hoveredSector))
+			{
+				hoveredSector = nullptr;
+				selection_clearHovered();
+			}
 
 			if (s_singleClick)
 			{
@@ -1341,7 +1307,7 @@ namespace LevelEditor
 				if (s_editMode == LEDIT_SECTOR)
 				{
 					selection_sector(SA_SET_HOVERED, hoveredSector);
-					handleMouseControlSector();
+					handleFeatureEditInput(worldPos);
 				}
 
 				if (s_editMode == LEDIT_VERTEX)
@@ -1355,12 +1321,7 @@ namespace LevelEditor
 					s32 featureIndex = -1;
 					HitPart part = HP_NONE;
 					edit_checkForWallHit2d(worldPos, hoveredSector, featureIndex, part, hoveredSector);
-					if (hoveredSector && !sector_isInteractable(hoveredSector))
-					{
-						hoveredSector = nullptr;
-						selection_clearHovered();
-					}
-					else if (hoveredSector && featureIndex >= 0)
+					if (hoveredSector && featureIndex >= 0)
 					{
 						selection_surface(SA_SET_HOVERED, hoveredSector, featureIndex, part);
 					}
@@ -3074,6 +3035,7 @@ namespace LevelEditor
 							s_idList.push_back(sector->id);
 						}
 					}
+					name = LName_MoveSector;
 				} break;
 			};
 			// Take a snapshot of changed sectors.
