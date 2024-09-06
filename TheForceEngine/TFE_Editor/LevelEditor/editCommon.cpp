@@ -27,6 +27,7 @@ namespace LevelEditor
 		EditorSector* sector = nullptr;
 		s32 featureIndex = -1;
 		HitPart part = HP_FLOOR;
+		selection_get(hasFeature ? 0 : SEL_INDEX_HOVERED, sector, featureIndex, &part);
 
 		// Specific code for feature type.
 		switch (s_editMode)
@@ -35,7 +36,6 @@ namespace LevelEditor
 			{
 				// TODO: Currently, you can only delete one vertex at a time. It should be possible to delete multiple.
 				// Choose the selected feature over the hovered feature.
-				selection_getVertex(hasFeature ? 0 : SEL_INDEX_HOVERED, sector, featureIndex);
 				if (sector)
 				{
 					edit_deleteVertex(sector->id, featureIndex, LName_DeleteVertex);
@@ -43,31 +43,31 @@ namespace LevelEditor
 			} break;
 			case LEDIT_WALL:
 			{
-				selection_getSurface(hasFeature ? 0 : SEL_INDEX_HOVERED, sector, featureIndex, &part);
-				if (!sector) { return; }
-
-				if (part == HP_FLOOR || part == HP_CEIL)
+				if (sector)
 				{
-					edit_deleteSector(sector->id);
-				}
-				else if (part == HP_SIGN)
-				{
-					if (sector && featureIndex >= 0)
+					if (part == HP_FLOOR || part == HP_CEIL)
 					{
-						// Clear the selections when deleting a sign -
-						// otherwise the source wall will still be selected.
-						edit_clearSelections();
-
-						FeatureId id = createFeatureId(sector, featureIndex, HP_SIGN);
-						edit_clearTexture(1, &id);
+						edit_deleteSector(sector->id);
 					}
-				}
-				else
-				{
-					// Deleting a wall is the same as deleting vertex 0.
-					// So re-use the same command, but with the delete wall name.
-					const s32 vertexIndex = sector->walls[featureIndex].idx[0];
-					edit_deleteVertex(sector->id, vertexIndex, LName_DeleteWall);
+					else if (part == HP_SIGN)
+					{
+						if (featureIndex >= 0)
+						{
+							// Clear the selections when deleting a sign -
+							// otherwise the source wall will still be selected.
+							edit_clearSelections();
+
+							FeatureId id = createFeatureId(sector, featureIndex, HP_SIGN);
+							edit_clearTexture(1, &id);
+						}
+					}
+					else
+					{
+						// Deleting a wall is the same as deleting vertex 0.
+						// So re-use the same command, but with the delete wall name.
+						const s32 vertexIndex = sector->walls[featureIndex].idx[0];
+						edit_deleteVertex(sector->id, vertexIndex, LName_DeleteWall);
+					}
 				}
 			} break;
 		}
@@ -122,14 +122,14 @@ namespace LevelEditor
 				if (hasHovered && selection_get(SEL_INDEX_HOVERED, sector, featureIndex, &part))
 				{
 					s32 modeIndex = featureIndex;
-					if (part == HP_FLOOR || part == HP_CEIL || s_editMode == LEDIT_VERTEX)
+					if (part == HP_FLOOR || part == HP_CEIL || s_editMode == LEDIT_VERTEX || s_editMode == LEDIT_SECTOR)
 					{
 						modeIndex = -1;
 					}
 					handleSelectMode(sector, modeIndex);
 					if (!selection_action(SA_CHECK_INCLUSION, sector, featureIndex, part))
 					{
-						selection_surface(SA_SET, sector, featureIndex, part);
+						selection_action(SA_SET, sector, featureIndex, part);
 						edit_applyTransformChange();
 					}
 
@@ -152,7 +152,7 @@ namespace LevelEditor
 		}
 		else if (s_doubleClick && s_editMode == LEDIT_WALL) // functionality for vertices, sectors, etc.?
 		{
-			if (hasHovered && selection_getSurface(SEL_INDEX_HOVERED, sector, featureIndex, &part))
+			if (hasHovered && selection_get(SEL_INDEX_HOVERED, sector, featureIndex, &part))
 			{
 				if (!TFE_Input::keyModDown(KEYMOD_SHIFT))
 				{
