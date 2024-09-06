@@ -576,7 +576,7 @@ namespace LevelEditor
 		if (s_editMode == LEDIT_VERTEX)
 		{
 			findHoveredVertex3d(hoveredSector, info);
-			handleMouseControlVertex({ s_cursor3d.x, s_cursor3d.z }, info);
+			handleFeatureEditInput({ s_cursor3d.x, s_cursor3d.z }, info);
 		}
 
 		//////////////////////////////////////
@@ -596,7 +596,7 @@ namespace LevelEditor
 				edit_checkForWallHit3d(info, hoveredSector, wallIndex, hoveredPart, hoveredSector);
 				selection_surface(SA_SET_HOVERED, hoveredSector, wallIndex, hoveredPart);
 			}
-			handleMouseControlSurface({ s_cursor3d.x, s_cursor3d.z });
+			handleFeatureEditInput({ s_cursor3d.x, s_cursor3d.z });
 		}
 	}
 		
@@ -1347,7 +1347,7 @@ namespace LevelEditor
 				if (s_editMode == LEDIT_VERTEX)
 				{
 					findHoveredVertex2d(hoveredSector, worldPos);
-					handleMouseControlVertex(worldPos);
+					handleFeatureEditInput(worldPos);
 				}
 
 				if (s_editMode == LEDIT_WALL)
@@ -1364,7 +1364,7 @@ namespace LevelEditor
 					{
 						selection_surface(SA_SET_HOVERED, hoveredSector, featureIndex, part);
 					}
-					handleMouseControlSurface(worldPos);
+					handleFeatureEditInput(worldPos);
 				}
 				// Texture alignment.
 				handleTextureAlignment();
@@ -1467,11 +1467,11 @@ namespace LevelEditor
 					selection_clearHovered();
 					if (s_editMode == LEDIT_VERTEX)
 					{
-						handleMouseControlVertex({ s_cursor3d.x, s_cursor3d.z }, &hitInfo);
+						handleFeatureEditInput({ s_cursor3d.x, s_cursor3d.z }, &hitInfo);
 					}
 					else if (s_editMode == LEDIT_WALL)
 					{
-						handleMouseControlSurface({ s_cursor3d.x, s_cursor3d.z });
+						handleFeatureEditInput({ s_cursor3d.x, s_cursor3d.z });
 					}
 					else if (s_singleClick)
 					{

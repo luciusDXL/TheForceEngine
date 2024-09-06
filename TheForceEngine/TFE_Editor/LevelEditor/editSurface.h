@@ -13,8 +13,9 @@
 
 namespace LevelEditor
 {
-	void handleMouseControlSurface(Vec2f worldPos);
 	void wallComputeDragSelect();
+	void selectSimilarFlats(EditorSector* rootSector, HitPart part);
+	void selectSimilarWalls(EditorSector* rootSector, s32 wallIndex, HitPart part, bool autoAlign = false);
 	s32 wallHoveredOrSelected(EditorSector*& sector);
 
 	void edit_autoAlign(s32 sectorId, s32 wallIndex, HitPart part);

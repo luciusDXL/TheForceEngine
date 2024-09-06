@@ -326,6 +326,52 @@ namespace LevelEditor
 		list = count > 0 ? selList.data() : nullptr;
 		return count;
 	}
+		
+	// TODO: Finish
+	bool selection_get(s32 index, EditorSector*& sector, s32& featureIndex, HitPart* part)
+	{
+		bool result = false;
+		sector = nullptr;
+		featureIndex = -1;
+		if (part) { *part = HP_FLOOR; }
+		switch (s_currentSelection)
+		{
+			case SEL_VERTEX:
+			{
+				result = selection_getVertex(index, sector, featureIndex, part);
+			} break;
+			case SEL_SURFACE:
+			{
+				result = selection_getSurface(index, sector, featureIndex, part);
+			} break;
+			case SEL_SECTOR:
+			{
+				result = selection_getSector(index, sector);
+			} break;
+		}
+		return result;
+	}
+
+	bool selection_action(SelectAction action, EditorSector* sector, s32 featureIndex, HitPart part)
+	{
+		bool result = false;
+		switch (s_currentSelection)
+		{
+			case SEL_VERTEX:
+			{
+				result = selection_vertex(action, sector, featureIndex, part);
+			} break;
+			case SEL_SURFACE:
+			{
+				result = selection_surface(action, sector, featureIndex, part);
+			} break;
+			case SEL_SECTOR:
+			{
+				result = selection_sector(action, sector);
+			} break;
+		}
+		return result;
+	}
 
 	////////////////////////////////////////////////////////////
 	// Internal

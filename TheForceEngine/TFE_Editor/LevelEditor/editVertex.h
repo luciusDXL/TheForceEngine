@@ -13,7 +13,6 @@
 
 namespace LevelEditor
 {
-	void handleMouseControlVertex(Vec2f worldPos, RayHitInfo* info = nullptr);
 	void handleVertexInsert(Vec2f worldPos, RayHitInfo* info = nullptr);
 	void findHoveredVertex3d(EditorSector* hoveredSector, RayHitInfo* info);
 	void findHoveredVertex2d(EditorSector* hoveredSector, Vec2f worldPos);

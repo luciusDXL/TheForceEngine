@@ -80,6 +80,10 @@ namespace LevelEditor
 	bool selection_guideline(SelectAction action, Guideline* guideline, u32 flags = SEL_FLAG_NONE);
 	bool selection_levelNote(SelectAction action, LevelNote* note, u32 flags = SEL_FLAG_NONE);
 
+	// Simplified interface.
+	bool selection_get(s32 index, EditorSector*& sector, s32& featureIndex, HitPart* part = nullptr);
+	bool selection_action(SelectAction action, EditorSector* sector = nullptr, s32 featureIndex = -1, HitPart part = HP_FLOOR);
+
 	// Read interface.
 	// Pass in SEL_GET_HOVERED for the index to get the hovered feature (or false if nothing hovered).
 	u32  selection_getCount(SelectionListId id = SEL_CURRENT);

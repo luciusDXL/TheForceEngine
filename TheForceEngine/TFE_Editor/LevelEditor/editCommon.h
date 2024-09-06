@@ -23,4 +23,6 @@ namespace LevelEditor
 	extern Vec3f s_prevPos;
 	extern Vec2f s_wallNrm;
 	extern Vec2f s_wallTan;
+
+	void handleFeatureEditInput(Vec2f worldPos, RayHitInfo* info = nullptr);
 }
