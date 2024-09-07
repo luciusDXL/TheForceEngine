@@ -97,10 +97,11 @@ namespace LevelEditor
 	bool edit_interactingWithGizmo()
 	{
 		bool interacting = false;
-		if (s_transformToolActive)
+		if (edit_isTransformToolActive())
 		{
 			// Rotation
 			if (s_transformMode == TRANS_ROTATE && s_rotHover != RGP_NONE) { interacting = true; }
+			else if (s_transformMode == TRANS_MOVE && s_moveStarted) { interacting = true; }
 			// TODO: Other tools.
 		}
 		return interacting;
