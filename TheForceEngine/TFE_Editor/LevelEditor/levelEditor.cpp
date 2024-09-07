@@ -367,7 +367,7 @@ namespace LevelEditor
 		return false;
 	}
 
-	EditorSector* findSector2d(Vec2f pos, s32 layer)
+	EditorSector* findSector2d(Vec2f pos)
 	{
 		const size_t sectorCount = s_level.sectors.size();
 		EditorSector* sector = s_level.sectors.data();
@@ -375,8 +375,8 @@ namespace LevelEditor
 		for (size_t s = 0; s < sectorCount; s++, sector++)
 		{
 			// Make sure the sector is in a visible/unlocked group.
-			if (!sector_isInteractable(sector)) { continue; }
-			if (isPointInsideSector2d(sector, pos, layer))
+			if (!sector_isInteractable(sector) || !sector_onActiveLayer(sector)) { continue; }
+			if (isPointInsideSector2d(sector, pos))
 			{
 				// Gather all of the potentially selected sectors in a list.
 				s_sortedHoverSectors.push_back(sector);
@@ -449,6 +449,10 @@ namespace LevelEditor
 			else if (s_editMode == LEDIT_SECTOR)
 			{
 				sectorComputeDragSelect();
+			}
+			else if (s_editMode == LEDIT_ENTITY)
+			{
+				entityComputeDragSelect();
 			}
 		}
 	}
@@ -526,29 +530,20 @@ namespace LevelEditor
 		{
 			adjustGridHeight(hoveredSector);
 		}
-
-		//////////////////////////////////////
 		// SECTOR
-		//////////////////////////////////////
-		if (s_editMode == LEDIT_SECTOR)
+		else if (s_editMode == LEDIT_SECTOR)
 		{
 			selection_sector(SA_SET_HOVERED, hoveredSector);
 			handleFeatureEditInput({ s_cursor3d.x, s_cursor3d.z });
 		}
-
-		//////////////////////////////////////
 		// VERTEX
-		//////////////////////////////////////
-		if (s_editMode == LEDIT_VERTEX)
+		else if (s_editMode == LEDIT_VERTEX)
 		{
 			findHoveredVertex3d(hoveredSector, info);
 			handleFeatureEditInput({ s_cursor3d.x, s_cursor3d.z }, info);
 		}
-
-		//////////////////////////////////////
 		// WALL
-		//////////////////////////////////////
-		if (s_editMode == LEDIT_WALL)
+		else if (s_editMode == LEDIT_WALL)
 		{
 			if (hoveredSector)
 			{
@@ -566,6 +561,21 @@ namespace LevelEditor
 				}
 			}
 			handleFeatureEditInput({ s_cursor3d.x, s_cursor3d.z });
+		}
+		// ENTITY
+		else if (s_editMode == LEDIT_ENTITY)
+		{
+			const s32 layer = (s_editFlags & LEF_SHOW_ALL_LAYERS) ? LAYER_ANY : s_curLayer;
+			// We have to manually trace another ray and make sure it is closer than the geometry.
+			RayHitInfo hitInfoObj;
+			const Ray ray = { s_camera.pos, s_rayDir, 1000.0f, layer };
+			const bool rayHit = traceRay(&ray, &hitInfoObj, false, false, true/*canHitObjects*/);
+			if (rayHit && hitInfoObj.dist < info->dist && hitInfoObj.hitObjId >= 0)
+			{
+				s_cursor3d = hitInfoObj.hitPos;
+				selection_entity(SA_SET_HOVERED, &s_level.sectors[hitInfoObj.hitSectorId], hitInfoObj.hitObjId);
+			}
+			handleFeatureEditInput({ s_cursor3d.x, s_cursor3d.z }, info);
 		}
 	}
 		
@@ -1267,8 +1277,8 @@ namespace LevelEditor
 			
 			// Always check for the hovered sector, since sectors can overlap.
 			selection_clearHovered();
-			EditorSector* hoveredSector = findSector2d(worldPos, s_curLayer);
-			if (hoveredSector && !sector_isInteractable(hoveredSector))
+			EditorSector* hoveredSector = findSector2d(worldPos);
+			if (hoveredSector && (!sector_isInteractable(hoveredSector) || !sector_onActiveLayer(hoveredSector)))
 			{
 				hoveredSector = nullptr;
 				selection_clearHovered();
@@ -1299,39 +1309,34 @@ namespace LevelEditor
 				{
 					if (extrude) { handleSectorExtrude(nullptr/*2d so no ray hit info*/); }
 					else { handleSectorDraw(nullptr/*2d so no ray hit info*/); }
-					return;
 				}
 				else if (s_editMode == LEDIT_GUIDELINES)
 				{
 					handleGuidelinesEdit(nullptr/*2d so no ray hit info*/);
-					return;
 				}
-				else if (s_editMode == LEDIT_ENTITY)
+				else
 				{
-					handleEntityEdit(nullptr/*2d so no ray hit info*/, s_rayDir);
-					return;
-				}
-
-				if (s_editMode == LEDIT_SECTOR)
-				{
-					selection_sector(SA_SET_HOVERED, hoveredSector);
-					handleFeatureEditInput(worldPos);
-				}
-
-				if (s_editMode == LEDIT_VERTEX)
-				{
-					findHoveredVertex2d(hoveredSector, worldPos);
-					handleFeatureEditInput(worldPos);
-				}
-
-				if (s_editMode == LEDIT_WALL)
-				{
-					s32 featureIndex = -1;
-					HitPart part = HP_NONE;
-					edit_checkForWallHit2d(worldPos, hoveredSector, featureIndex, part, hoveredSector);
-					if (hoveredSector && featureIndex >= 0)
+					if (s_editMode == LEDIT_ENTITY)
 					{
-						selection_surface(SA_SET_HOVERED, hoveredSector, featureIndex, part);
+						findHoveredEntity2d(worldPos);
+					}
+					else if (s_editMode == LEDIT_SECTOR)
+					{
+						selection_sector(SA_SET_HOVERED, hoveredSector);
+					}
+					else if (s_editMode == LEDIT_VERTEX)
+					{
+						findHoveredVertex2d(hoveredSector, worldPos);
+					}
+					else if (s_editMode == LEDIT_WALL)
+					{
+						s32 featureIndex = -1;
+						HitPart part = HP_NONE;
+						edit_checkForWallHit2d(worldPos, hoveredSector, featureIndex, part, hoveredSector);
+						if (hoveredSector && featureIndex >= 0)
+						{
+							selection_surface(SA_SET_HOVERED, hoveredSector, featureIndex, part);
+						}
 					}
 					handleFeatureEditInput(worldPos);
 				}
@@ -1426,11 +1431,6 @@ namespace LevelEditor
 					handleGuidelinesEdit(&hitInfo);
 					return;
 				}
-				else if (s_editMode == LEDIT_ENTITY)
-				{
-					handleEntityEdit(&hitInfo, s_rayDir);
-					return;
-				}
 
 				// Trace a ray through the mouse cursor.
 				if (rayHit)
@@ -1446,6 +1446,10 @@ namespace LevelEditor
 					else if (s_editMode == LEDIT_WALL || s_editMode == LEDIT_SECTOR)
 					{
 						handleFeatureEditInput({ s_cursor3d.x, s_cursor3d.z });
+					}
+					else if (s_editMode == LEDIT_ENTITY)
+					{
+						handleFeatureEditInput({ s_cursor3d.x, s_cursor3d.z }, &hitInfo);
 					}
 					else if (s_singleClick)
 					{
@@ -3472,7 +3476,7 @@ namespace LevelEditor
 		start.pos = s_camera.pos;
 		start.yaw = s_camera.yaw;
 		start.pitch = s_camera.pitch;
-		start.sector = findSector3d(start.pos, s_curLayer);
+		start.sector = findSector3d(start.pos);
 		if (!start.sector)
 		{
 			LE_ERROR("Cannot test level, camera must be inside of a sector.");

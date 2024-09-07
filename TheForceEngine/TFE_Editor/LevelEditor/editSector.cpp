@@ -67,8 +67,7 @@ namespace LevelEditor
 			EditorSector* sector = s_level.sectors.data();
 			for (size_t s = 0; s < sectorCount; s++, sector++)
 			{
-				if (s_curLayer != sector->layer && s_curLayer != LAYER_ANY) { continue; }
-				if (!sector_isInteractable(sector)) { continue; }
+				if (!sector_isInteractable(sector) || !sector_onActiveLayer(sector)) { continue; }
 				if (!aabbOverlap2d(sector->bounds, aabb)) { continue; }
 
 				if (sector->bounds[0].x >= aabb[0].x && sector->bounds[1].x <= aabb[1].x &&
@@ -157,8 +156,7 @@ namespace LevelEditor
 			EditorSector* sector = s_level.sectors.data();
 			for (size_t s = 0; s < sectorCount; s++, sector++)
 			{
-				if (layer != sector->layer && layer != LAYER_ANY) { continue; }
-				if (!sector_isInteractable(sector)) { continue; }
+				if (!sector_isInteractable(sector) || !sector_onActiveLayer(sector)) { continue; }
 
 				// For now, do them all...
 				const size_t vertexCount = sector->vtx.size();

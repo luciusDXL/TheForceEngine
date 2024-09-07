@@ -180,7 +180,7 @@ namespace LevelEditor
 
 	void findHoveredVertex2d(EditorSector* hoveredSector, Vec2f worldPos)
 	{
-		if (hoveredSector && !sector_isInteractable(hoveredSector))
+		if (hoveredSector && (!sector_isInteractable(hoveredSector) || !sector_onActiveLayer(hoveredSector)))
 		{
 			hoveredSector = nullptr;
 			selection_clearHovered();
@@ -319,8 +319,7 @@ namespace LevelEditor
 			EditorSector* sector = s_level.sectors.data();
 			for (size_t s = 0; s < sectorCount; s++, sector++)
 			{
-				if (s_curLayer != sector->layer && s_curLayer != LAYER_ANY) { continue; }
-				if (!sector_isInteractable(sector)) { continue; }
+				if (!sector_isInteractable(sector) || !sector_onActiveLayer(sector)) { continue; }
 				if (!aabbOverlap2d(sector->bounds, aabb)) { continue; }
 
 				const size_t vtxCount = sector->vtx.size();
@@ -413,8 +412,7 @@ namespace LevelEditor
 			EditorSector* sector = s_level.sectors.data();
 			for (size_t s = 0; s < sectorCount; s++, sector++)
 			{
-				if (layer != sector->layer && layer != LAYER_ANY) { continue; }
-				if (!sector_isInteractable(sector)) { continue; }
+				if (!sector_isInteractable(sector) || !sector_onActiveLayer(sector)) { continue; }
 
 				// For now, do them all...
 				const size_t vtxCount = sector->vtx.size();
@@ -556,9 +554,8 @@ namespace LevelEditor
 
 		for (s32 i = 0; i < count; i++, sector++)
 		{
-			if (!sector_isInteractable(sector)) { continue; }
+			if (!sector_isInteractable(sector) || !sector_onActiveLayer(sector)) { continue; }
 			if (use3dCheck && (pos.y < sector->bounds[0].y || pos.y > sector->bounds[1].y)) { continue; }
-			if (!(s_editFlags & LEF_SHOW_ALL_LAYERS) && s_curLayer != sector->layer) { continue; }
 
 			if (pos.x + maxDist < sector->bounds[0].x || pos.x - maxDist > sector->bounds[1].x ||
 				pos.z + maxDist < sector->bounds[0].z || pos.z - maxDist > sector->bounds[1].z)

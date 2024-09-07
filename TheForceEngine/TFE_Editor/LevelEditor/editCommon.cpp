@@ -1,4 +1,5 @@
 #include "editCommon.h"
+#include "editEntity.h"
 #include "editVertex.h"
 #include "editSurface.h"
 #include "editTransforms.h"
@@ -78,6 +79,17 @@ namespace LevelEditor
 				if (sector)
 				{
 					edit_deleteSector(sector->id);
+				}
+			} break;
+			case LEDIT_ENTITY:
+			{
+				if (sector && featureIndex >= 0)
+				{
+					edit_deleteObject(sector, featureIndex);
+
+					selection_clearHovered();
+					selection_clear(SEL_ENTITY);
+					cmd_objectListSnapshot(LName_DeleteObject, sector->id);
 				}
 			} break;
 		}
@@ -220,6 +232,10 @@ namespace LevelEditor
 			if (s_editMode == LEDIT_VERTEX || s_editMode == LEDIT_WALL)
 			{
 				handleVertexInsert(worldPos, info);
+			}
+			else if (s_editMode == LEDIT_ENTITY)
+			{
+				handleEntityInsert({ worldPos.x, s_cursor3d.y, worldPos.z }, info);
 			}
 		}
 	}

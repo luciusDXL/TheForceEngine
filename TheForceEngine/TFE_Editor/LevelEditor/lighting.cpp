@@ -71,8 +71,7 @@ namespace LevelEditor
 			EditorSector* sector = s_level.sectors.data();
 			for (s32 s = 0; s < sectorCount; s++, sector++)
 			{
-				if (s_curLayer != sector->layer && s_curLayer != LAYER_ANY) { continue; }
-				if (!sector_isInteractable(sector)) { continue; }
+				if (!sector_isInteractable(sector) || !sector_onActiveLayer(sector)) { continue; }
 
 				const f32 ambientScale = std::min(1.0f, sector->ambient / 30.0f);
 				const s32 wallCount = (s32)sector->walls.size();

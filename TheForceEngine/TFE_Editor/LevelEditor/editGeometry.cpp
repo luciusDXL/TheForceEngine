@@ -768,10 +768,7 @@ namespace LevelEditor
 			sector = s_level.sectors.data();
 			for (s32 s = 0; s < sectorCount; s++, sector++)
 			{
-				// The layers have to match.
-				if (!(s_editFlags & LEF_SHOW_ALL_LAYERS) && s_curLayer != sector->layer) { continue; }
-				// The group has to be interactible.
-				if (!sector_isInteractable(sector)) { continue; }
+				if (!sector_isInteractable(sector) || !sector_onActiveLayer(sector)) { continue; }
 
 				const bool onFloor = fabsf(heights[0] - sector->floorHeight) < FLT_EPSILON;
 				const bool onCeil = fabsf(heights[0] - sector->ceilHeight) < FLT_EPSILON;
@@ -804,10 +801,7 @@ namespace LevelEditor
 		candidates->clear();
 		for (s32 s = 0; s < sectorCount; s++, sector++)
 		{
-			// The layers have to match.
-			if (!(s_editFlags & LEF_SHOW_ALL_LAYERS) && s_curLayer != sector->layer) { continue; }
-			// The group has to be interactible.
-			if (!sector_isInteractable(sector)) { continue; }
+			if (!sector_isInteractable(sector) || !sector_onActiveLayer(sector)) { continue; }
 			// The bounds have to overlap.
 			if (!aabbOverlap3d(shapeBounds, sector->bounds)) { continue; }
 			// Polygons have to overlap.
@@ -2667,10 +2661,7 @@ namespace LevelEditor
 		s_adjacencyMap.clear();
 		for (s32 s = 0; s < sectorCount; s++, sector++)
 		{
-			// The layers have to match.
-			if (!(s_editFlags & LEF_SHOW_ALL_LAYERS) && s_curLayer != sector->layer) { continue; }
-			// The group has to be interactible.
-			if (!sector_isInteractable(sector)) { continue; }
+			if (!sector_isInteractable(sector) || !sector_onActiveLayer(sector)) { continue; }
 			// The bounds have to overlap.
 			if (!aabbOverlap2d(shapeBounds, sector->bounds)) { continue; }
 

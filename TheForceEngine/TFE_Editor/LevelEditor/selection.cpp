@@ -355,6 +355,10 @@ namespace LevelEditor
 			{
 				result = selection_getSector(index, sector);
 			} break;
+			case SEL_ENTITY:
+			{
+				result = selection_getEntity(index, sector, featureIndex);
+			} break;
 		}
 		return result;
 	}
@@ -375,6 +379,10 @@ namespace LevelEditor
 			case SEL_SECTOR:
 			{
 				result = selection_sector(action, sector);
+			} break;
+			case SEL_ENTITY:
+			{
+				result = selection_entity(action, sector, featureIndex);
 			} break;
 		}
 		return result;

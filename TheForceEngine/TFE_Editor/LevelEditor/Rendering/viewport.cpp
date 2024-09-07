@@ -2024,17 +2024,15 @@ namespace LevelEditor
 		if (s_editMode == LEDIT_ENTITY && drawEntityBounds)
 		{
 			EditorSector* hoveredSector = nullptr;
-			EditorSector* curSector = nullptr;
-			s32 hoveredFeatureIndex, curFeatureIndex;
-			bool hasHovered = selection_getEntity(SEL_INDEX_HOVERED, hoveredSector, hoveredFeatureIndex);
-			bool hasCur = selection_getEntity(0, curSector, curFeatureIndex);
+			s32 hoveredFeatureIndex = -1;
+			selection_getEntity(SEL_INDEX_HOVERED, hoveredSector, hoveredFeatureIndex);
 
 			Highlight hl = HL_NONE;
-			if (hasHovered && sector == curSector && curFeatureIndex == id)
+			if (selection_entity(SA_CHECK_INCLUSION, (EditorSector*)sector, id))
 			{
 				hl = HL_SELECTED;
 			}
-			if (hasCur && sector == hoveredSector && hoveredFeatureIndex == id)
+			if (sector == hoveredSector && hoveredFeatureIndex == id)
 			{
 				hl = (hl == HL_SELECTED) ? Highlight(HL_SELECTED + 1) : HL_HOVERED;
 			}
@@ -2952,7 +2950,7 @@ namespace LevelEditor
 
 				// Draw bounds.
 				Highlight hl = HL_NONE;
-				if (sector == curSector && curFeatureIndex == id)
+				if (selection_entity(SA_CHECK_INCLUSION, (EditorSector*)sector, id))
 				{
 					hl = HL_SELECTED;
 				}
@@ -2971,7 +2969,7 @@ namespace LevelEditor
 				Vec2f size = { width*2.0f, width*2.0f };
 
 				Highlight hl = HL_NONE;
-				if (sector == curSector && curFeatureIndex == id)
+				if (selection_entity(SA_CHECK_INCLUSION, (EditorSector*)sector, id))
 				{
 					hl = HL_SELECTED;
 				}

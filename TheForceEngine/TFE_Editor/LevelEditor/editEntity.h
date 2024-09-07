@@ -13,6 +13,10 @@
 
 namespace LevelEditor
 {
+	void findHoveredEntity2d(Vec2f worldPos);
+	void handleEntityInsert(Vec3f worldPos, RayHitInfo* info = nullptr);
+	void entityComputeDragSelect();
+
 	void addEntityToSector(EditorSector* sector, Entity* entity, Vec3f* pos);
 	void handleEntityEdit(RayHitInfo* hitInfo, const Vec3f& rayDir);
 }

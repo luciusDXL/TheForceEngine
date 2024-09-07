@@ -2186,10 +2186,7 @@ namespace LevelEditor
 		// Loop through sectors in the world.
 		for (s32 s = 0; s < sectorCount; s++, sector++)
 		{
-			if (ray->layer != LAYER_ANY && ray->layer != sector->layer) { continue; }
-
-			// Make sure the sector is in a visible/unlocked group.
-			if (!sector_isInteractable(sector)) { continue; }
+			if (!sector_isInteractable(sector) || !sector_onActiveLayer(sector)) { continue; }
 
 			// Check the bounds.
 			//if (!rayHitAABB(ray, sector->bounds)) { continue; }
@@ -2471,11 +2468,11 @@ namespace LevelEditor
 		return true;
 	}
 
-	bool isPointInsideSector2d(EditorSector* sector, Vec2f pos, s32 layer)
+	bool isPointInsideSector2d(EditorSector* sector, Vec2f pos)
 	{
 		const f32 eps = 0.0001f;
 		// The layers need to match.
-		if (sector->layer != layer) { return false; }
+		if (!sector_onActiveLayer(sector)) { return false; }
 		// The point has to be within the bounding box.
 		if (pos.x < sector->bounds[0].x - eps || pos.x > sector->bounds[1].x + eps ||
 			pos.z < sector->bounds[0].z - eps || pos.z > sector->bounds[1].z + eps)
@@ -2488,11 +2485,11 @@ namespace LevelEditor
 		return inside;
 	}
 
-	bool isPointInsideSector3d(EditorSector* sector, Vec3f pos, s32 layer)
+	bool isPointInsideSector3d(EditorSector* sector, Vec3f pos)
 	{
 		const f32 eps = 0.0001f;
 		// The layers need to match.
-		if (sector->layer != layer) { return false; }
+		if (!sector_onActiveLayer(sector)) { return false; }
 		// The point has to be within the bounding box.
 		if (pos.x < sector->bounds[0].x - eps || pos.x > sector->bounds[1].x + eps ||
 			pos.y < sector->bounds[0].y - eps || pos.y > sector->bounds[1].y + eps ||
@@ -2506,13 +2503,19 @@ namespace LevelEditor
 		return inside;
 	}
 
-	EditorSector* findSector3d(Vec3f pos, s32 layer)
+	bool sector_onActiveLayer(EditorSector* sector)
+	{
+		if (s_editFlags & LEF_SHOW_ALL_LAYERS) { return true; }
+		return sector->layer == s_curLayer;
+	}
+
+	EditorSector* findSector3d(Vec3f pos)
 	{
 		const size_t sectorCount = s_level.sectors.size();
 		EditorSector* sector = s_level.sectors.data();
 		for (size_t s = 0; s < sectorCount; s++, sector++)
 		{
-			if (isPointInsideSector3d(sector, pos, layer))
+			if (isPointInsideSector3d(sector, pos))
 			{
 				return sector;
 			}
@@ -2560,10 +2563,7 @@ namespace LevelEditor
 		EditorSector* sector = s_level.sectors.data();
 		for (s32 i = 0; i < count; i++, sector++)
 		{
-			// It has to be on a visible layer.
-			if (sector->layer != LAYER_ANY && sector->layer != curLayer) { continue; }
-			// The group has to be interactible.
-			if (!sector_isInteractable(sector)) { continue; }
+			if (!sector_isInteractable(sector) || !sector_onActiveLayer(sector)) { continue; }
 			// The position has to be within the bounds of the sector.
 			// TODO: Increase the bounds range?
 			if (pos->x < sector->bounds[0].x-padding || pos->x > sector->bounds[1].x+padding ||

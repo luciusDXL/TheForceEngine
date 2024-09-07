@@ -270,8 +270,7 @@ namespace LevelEditor
 			EditorSector* sector = s_level.sectors.data();
 			for (size_t s = 0; s < sectorCount; s++, sector++)
 			{
-				if (s_curLayer != sector->layer && s_curLayer != LAYER_ANY) { continue; }
-				if (!sector_isInteractable(sector)) { continue; }
+				if (!sector_isInteractable(sector) || !sector_onActiveLayer(sector)) { continue; }
 				if (!aabbOverlap2d(sector->bounds, aabb)) { continue; }
 
 				const size_t wallCount = sector->walls.size();
@@ -369,8 +368,7 @@ namespace LevelEditor
 			EditorSector* sector = s_level.sectors.data();
 			for (size_t s = 0; s < sectorCount; s++, sector++)
 			{
-				if (layer != sector->layer && layer != LAYER_ANY) { continue; }
-				if (!sector_isInteractable(sector)) { continue; }
+				if (!sector_isInteractable(sector) || !sector_onActiveLayer(sector)) { continue; }
 
 				// For now, do them all...
 				const size_t wallCount = sector->walls.size();
@@ -486,7 +484,7 @@ namespace LevelEditor
 			EditorSector* conSector = overlap[s];
 			// Cannot connect to the same sector or to a sector part of a hidden or locked group.
 			if (conSector->id == sectorId) { continue; }
-			if (!sector_isInteractable(conSector)) { continue; }
+			if (!sector_isInteractable(conSector) || !sector_onActiveLayer(conSector)) { continue; }
 
 			EditorWall* conWall = conSector->walls.data();
 			const Vec2f* conVtx = conSector->vtx.data();

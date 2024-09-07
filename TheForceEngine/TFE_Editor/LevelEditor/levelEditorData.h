@@ -276,10 +276,10 @@ namespace LevelEditor
 	bool aabbOverlap2d(const Vec3f* aabb0, const Vec3f* aabb1);
 	bool pointInsideAABB3d(const Vec3f* aabb, const Vec3f* pt);
 	bool pointInsideAABB2d(const Vec3f* aabb, const Vec3f* pt);
-	bool isPointInsideSector2d(EditorSector* sector, Vec2f pos, s32 layer);
-	bool isPointInsideSector3d(EditorSector* sector, Vec3f pos, s32 layer);
+	bool isPointInsideSector2d(EditorSector* sector, Vec2f pos);
+	bool isPointInsideSector3d(EditorSector* sector, Vec3f pos);
 	s32 findClosestWallInSector(const EditorSector* sector, const Vec2f* pos, f32 maxDistSq, f32* minDistToWallSq);
-	EditorSector* findSector3d(Vec3f pos, s32 layer);
+	EditorSector* findSector3d(Vec3f pos);
 
 	bool rayAABBIntersection(const Ray* ray, const Vec3f* bounds, f32* hitDist);
 		
@@ -295,6 +295,8 @@ namespace LevelEditor
 		assert(group);
 		return group;
 	}
+
+	bool sector_onActiveLayer(EditorSector* sector);
 
 	inline bool sector_isHidden(EditorSector* sector)
 	{
