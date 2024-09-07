@@ -296,20 +296,34 @@ namespace LevelEditor
 
 		if (s_transformMode == TRANS_MOVE && s_editMove)
 		{
-			if (!s_moveStarted)
+			const u32 moveAxis = s_moveAxis;
+			// Get the new move axis.
+			s_moveAxis = AXIS_XZ;
+			if (TFE_Input::keyDown(KEY_X))
 			{
-				s_moveAxis = AXIS_XYZ;
-				if (TFE_Input::keyDown(KEY_X))
+				s_moveAxis = AXIS_X;
+			}
+			// Y-axis movement only works in 3D view.
+			else if (TFE_Input::keyDown(KEY_Y) && s_view != EDIT_VIEW_2D)
+			{
+				s_moveAxis = AXIS_Y;
+			}
+			else if (TFE_Input::keyDown(KEY_Z))
+			{
+				s_moveAxis = AXIS_Z;
+			}
+			// If the moveAxis has changed, we need to reset the movement and anchor at the current position.
+			if (moveAxis != s_moveAxis && s_moveStarted)
+			{
+				// Reset the move.
+				s_moveStarted = false;
+				// Reset the center height if moved in Y and recompute the cursor if needed.
+				if (moveAxis & AXIS_Y)
 				{
-					s_moveAxis = AXIS_X;
-				}
-				else if (TFE_Input::keyDown(KEY_Y))
-				{
-					s_moveAxis = AXIS_Y;
-				}
-				else if (TFE_Input::keyDown(KEY_Z))
-				{
-					s_moveAxis = AXIS_Z;
+					// Reset the center to the new height.
+					s_center.y = s_transformPos.y;
+					// Recalculate the cursor, since the plane height has changed.
+					s_cursor3d = edit_gizmoCursor3d();
 				}
 			}
 
@@ -685,7 +699,7 @@ namespace LevelEditor
 	void moveSector(Vec3f worldPos)
 	{
 		const u32 moveAxis = edit_getMoveAxis();
-		const bool moveOnYAxis = !(moveAxis & AXIS_X) && !(moveAxis & AXIS_Z) && (moveAxis & AXIS_Y);
+		const bool moveOnYAxis = (moveAxis & AXIS_Y) != 0u;
 
 		snapToGrid(&worldPos);
 		if (!s_moveStarted)
@@ -700,7 +714,8 @@ namespace LevelEditor
 			}
 
 			EditorSector* sector = nullptr;
-			selection_getSector(SA_SET_HOVERED, sector);
+			selection_getSector(selection_hasHovered() ? SEL_INDEX_HOVERED : 0, sector);
+
 			if (moveOnYAxis && sector)
 			{
 				const f32 dF = fabsf(worldPos.y - sector->floorHeight);
@@ -709,7 +724,13 @@ namespace LevelEditor
 			}
 			else
 			{
+				if (sector) { s_grid.height = sector->floorHeight; worldPos.y = s_grid.height; }
 				edit_setTransformAnchor({ s_moveStartPos.x, worldPos.y, s_moveStartPos.z });
+			}
+
+			if (moveOnYAxis)
+			{
+				s_curVtxPos = s_cursor3d;
 			}
 		}
 
