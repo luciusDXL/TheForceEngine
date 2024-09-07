@@ -7,6 +7,7 @@
 #include <TFE_Editor/editor.h>
 #include <TFE_Editor/editorMath.h>
 #include <TFE_Editor/editorConfig.h>
+#include <TFE_Editor/LevelEditor/editCommon.h>
 #include <TFE_Editor/LevelEditor/editGeometry.h>
 #include <TFE_Editor/LevelEditor/editGuidelines.h>
 #include <TFE_Editor/LevelEditor/editTransforms.h>
@@ -320,11 +321,15 @@ namespace LevelEditor
 		if (!edit_isTransformToolActive()) { return; }
 
 		TransformMode mode = edit_getTransformMode();
-		if (mode == TRANS_ROTATE)
+		if (mode == TRANS_MOVE)
 		{
-			Vec3f centerWS = edit_getTransformCenter();
-			Vec3f rotation = edit_getTransformRotation();
-
+			const Vec3f p0 = edit_getTransformAnchor();
+			const Vec3f p1 = edit_getTransformPos();
+			gizmo_drawMove2d(p0, p1);
+		}
+		else if (mode == TRANS_ROTATE)
+		{
+			const Vec3f centerWS = edit_getTransformAnchor();
 			gizmo_drawRotation2d({ centerWS.x, centerWS.z });
 		}
 	}
@@ -1740,7 +1745,7 @@ namespace LevelEditor
 	{
 		const f32 scale = TFE_Math::distance(vtx, &s_camera.pos) / f32(s_viewportSize.z);
 		const f32 size = 8.0f * scale;
-		drawBox(vtx, size, 3.0f, color);
+		drawBox3d(vtx, size, 3.0f, color);
 	}
 
 	// Render highlighted 3d elements.
@@ -2136,7 +2141,7 @@ namespace LevelEditor
 		TransformMode mode = edit_getTransformMode();
 		if (mode == TRANS_ROTATE)
 		{
-			Vec3f centerWS = edit_getTransformCenter();
+			Vec3f centerWS = edit_getTransformAnchor();
 			Vec3f rotation = edit_getTransformRotation();
 
 			gizmo_drawRotation3d(centerWS);
@@ -2465,7 +2470,7 @@ namespace LevelEditor
 			const f32 distFromCam = TFE_Math::distance(&s_cursor3d, &s_camera.pos);
 			const f32 size = distFromCam * 16.0f / f32(s_viewportSize.z);
 			const f32 sizeExp = distFromCam * 18.0f / f32(s_viewportSize.z);
-			drawBox(&s_cursor3d, size, 3.0f, 0x80ff8020);
+			drawBox3d(&s_cursor3d, size, 3.0f, 0x80ff8020);
 		}
 
 		TFE_RenderShared::triDraw3d_draw(&s_camera, (f32)s_viewportSize.x, (f32)s_viewportSize.z, s_grid.size, s_gridOpacity);

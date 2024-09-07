@@ -47,7 +47,24 @@ namespace LevelEditor
 	//////////////////////////////////////////
 	// API
 	//////////////////////////////////////////
-	void drawBox(const Vec3f* center, f32 side, f32 lineWidth, u32 color)
+	void drawBox2d(const Vec2f* cen, f32 side, f32 lineWidth, u32 color)
+	{
+		const u32 colors[] = { color, color };
+		Vec2f vtx[] =
+		{
+			{cen->x - side, cen->z - side},
+			{cen->x + side, cen->z - side},
+			{cen->x + side, cen->z + side},
+			{cen->x - side, cen->z + side},
+			{cen->x - side, cen->z - side},
+		};
+		for (s32 i = 0; i < 4; i++)
+		{
+			lineDraw2d_addLine(lineWidth, &vtx[i], colors);
+		}
+	}
+
+	void drawBox3d(const Vec3f* center, f32 side, f32 lineWidth, u32 color)
 	{
 		const f32 w = side * 0.5f;
 		const Vec3f lines[] =
@@ -101,6 +118,44 @@ namespace LevelEditor
 			} break;
 		};
 		return radius;
+	}
+
+	void gizmo_drawMove2d(Vec3f p0, Vec3f p1)
+	{
+		const u32 colorMain  = 0xff00a5ff;
+		const u32 colorXAxis = 0xff4040ff;
+		const u32 colorZAxis = 0xffff4040;
+		const Vec2f vtx[] =
+		{
+			{p0.x * s_viewportTrans2d.x + s_viewportTrans2d.y, p0.z * s_viewportTrans2d.z + s_viewportTrans2d.w},
+			{p1.x * s_viewportTrans2d.x + s_viewportTrans2d.y, p1.z * s_viewportTrans2d.z + s_viewportTrans2d.w}
+		};
+		const u32 colorsMain[] = { colorMain, colorMain };
+		const u32 colorsXAxis[] = { colorXAxis, colorXAxis };
+		const u32 colorsZAxis[] = { colorZAxis, colorZAxis };
+
+		f32 dx = fabsf(p1.x - p0.x);
+		f32 dz = fabsf(p1.z - p0.z);
+
+		lineDraw2d_setLineDrawMode(LINE_DRAW_DASHED);
+		// Draw movement line.
+		const u32* distColor = colorsMain;
+		if (dx < 0.001f) distColor = colorsZAxis;
+		else if (dz < 0.001f) distColor = colorsXAxis;
+		lineDraw2d_addLine(1.5f, vtx, distColor);
+		// Draw X & Y movement lines.
+		if (fabsf(p1.x - p0.x) > 0.001f && fabsf(p1.z - p0.z) > 0.001f)
+		{
+			const Vec2f zaxis[] = { {vtx[0].x, vtx[0].z}, {vtx[0].x, vtx[1].z} };
+			const Vec2f xaxis[] = { {vtx[0].x, vtx[1].z}, {vtx[1].x, vtx[1].z} };
+
+			lineDraw2d_addLine(1.5f, zaxis, colorsZAxis);
+			lineDraw2d_addLine(1.5f, xaxis, colorsXAxis);
+		}
+		lineDraw2d_setLineDrawMode();
+
+		drawBox2d(&vtx[0], 2.0f, 1.25f, colorMain);
+		drawBox2d(&vtx[1], 2.0f, 1.25f, colorMain);
 	}
 		
 	void gizmo_drawRotation2d(Vec2f center)
@@ -203,7 +258,7 @@ namespace LevelEditor
 		const Vec3f offset = { center->x - s_camera.pos.x, center->y - s_camera.pos.y, center->z - s_camera.pos.z };
 		return sqrtf(offset.x*offset.x + offset.y*offset.y + offset.z*offset.z) * c_rotationScaleFactor3d;
 	}
-
+		
 	void drawCircle2d(Vec2f cen, f32 r, u32 color)
 	{
 		const u32 colors[] = { color, color };

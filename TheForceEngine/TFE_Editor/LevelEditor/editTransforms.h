@@ -28,6 +28,15 @@ namespace LevelEditor
 		WMM_COUNT
 	};
 
+	enum MoveAxis
+	{
+		AXIS_X = FLAG_BIT(0),
+		AXIS_Y = FLAG_BIT(1),
+		AXIS_Z = FLAG_BIT(2),
+		AXIS_XZ = AXIS_X | AXIS_Z,
+		AXIS_XYZ = AXIS_X | AXIS_Y | AXIS_Z
+	};
+
 	void edit_setTransformMode(TransformMode mode = TRANS_MOVE);
 	TransformMode edit_getTransformMode();
 	void edit_enableMoveTransform(bool enable = false);
@@ -37,6 +46,11 @@ namespace LevelEditor
 	void edit_applyTransformChange();
 
 	void edit_transform(s32 mx = 0, s32 my = 0);
+	Vec3f edit_getTransformAnchor();
+	Vec3f edit_getTransformPos();
+	void edit_setTransformAnchor(Vec3f anchor);
+	void edit_setTransformPos(Vec3f pos);
+	u32 edit_getMoveAxis();
 
 	// Tools
 	bool edit_isTransformToolActive();
@@ -44,7 +58,6 @@ namespace LevelEditor
 	bool edit_gizmoChangedGeo();
 	void edit_resetGizmo();
 	Vec3f edit_gizmoCursor3d();
-	Vec3f edit_getTransformCenter();
 	Vec3f edit_getTransformRotation();
 	u32 edit_getTransformRotationHover();
 	f32 edit_getRotationGizmoAngle();

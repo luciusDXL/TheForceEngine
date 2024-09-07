@@ -516,9 +516,25 @@ namespace LevelEditor
 			s_moveStarted = true;
 			s_moveStartPos = sector->vtx[vertexIndex];
 			s_moveVertexPivot = &sector->vtx[vertexIndex];
+			edit_setTransformAnchor({ s_moveStartPos.x, s_cursor3d.y, s_moveStartPos.z });
 		}
 		// Current movement.
-		const Vec2f delta = { worldPos2d.x - s_moveVertexPivot->x, worldPos2d.z - s_moveVertexPivot->z };
+		u32 moveAxis = edit_getMoveAxis();
+		Vec2f delta = { worldPos2d.x - s_moveVertexPivot->x, worldPos2d.z - s_moveVertexPivot->z };
+		const Vec3f pos = edit_getTransformPos();
+		Vec3f transPos = { worldPos2d.x, pos.y, worldPos2d.z };
+		if (!(moveAxis & AXIS_X))
+		{
+			delta.x = 0.0f;
+			transPos.x = pos.x;
+		}
+		if (!(moveAxis & AXIS_Z))
+		{
+			delta.z = 0.0f;
+			transPos.z = pos.z;
+		}
+
+		edit_setTransformPos(transPos);
 		edit_moveSelectedVertices(delta);
 
 		s_curVtxPos.x = s_moveVertexPivot->x;

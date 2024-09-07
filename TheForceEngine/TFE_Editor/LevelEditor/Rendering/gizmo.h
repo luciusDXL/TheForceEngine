@@ -24,9 +24,11 @@ namespace LevelEditor
 	};
 
 	// Helper functions.
-	void drawBox(const Vec3f* center, f32 side, f32 lineWidth, u32 color);
+	void drawBox2d(const Vec2f* cen, f32 side, f32 lineWidth, u32 color);
+	void drawBox3d(const Vec3f* center, f32 side, f32 lineWidth, u32 color);
 
 	// Transform Gizmos.
+	void gizmo_drawMove2d(Vec3f p0, Vec3f p1);
 	void gizmo_drawRotation2d(Vec2f center);
 	void gizmo_drawRotation3d(Vec3f center);
 	f32 gizmo_getRotationRadiusWS(RotationGizmoPart part, Vec3f* center = nullptr);

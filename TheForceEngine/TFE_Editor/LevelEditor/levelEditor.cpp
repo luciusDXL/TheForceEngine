@@ -2300,7 +2300,7 @@ namespace LevelEditor
 				{
 					openViewportContextWindow();
 				}
-				else
+				else if (!edit_isTransformToolActive())
 				{
 					const bool hovered = editWinHovered && hasHovered;
 					switch (s_editMode)
@@ -4061,9 +4061,72 @@ namespace LevelEditor
 		if (!edit_isTransformToolActive()) { return; }
 
 		TransformMode mode = edit_getTransformMode();
-		if (mode == TRANS_ROTATE)
+		if (mode == TRANS_MOVE)
 		{
-			const Vec3f center = edit_getTransformCenter();
+			Vec3f p0 = edit_getTransformAnchor();
+			Vec3f p1 = edit_getTransformPos();
+
+			if (s_view == EDIT_VIEW_2D)
+			{
+				Vec2f offset = { p1.x - p0.x, p1.z - p0.z };
+				f32 dx = offset.x;
+				f32 dz = offset.z;
+
+				char dist[256], xDist[256], zDist[256];
+				floatToString(sqrtf(offset.x*offset.x + offset.z*offset.z), dist);
+				floatToString(dx, xDist);
+				floatToString(dz, zDist);
+
+				Vec2f distOffsetDir = { fabsf(offset.z), fabsf(offset.x) };
+				distOffsetDir = TFE_Math::normalize(&distOffsetDir);
+				distOffsetDir = { offset.x < 0.0f ? -distOffsetDir.x : 0.0f, offset.z < 0.0f ? -distOffsetDir.z : distOffsetDir.z };
+
+				ImVec2 textSize = ImGui::CalcTextSize(dist);
+				if (offset.x < 0.0f && offset.z < 0.0f)
+				{
+					distOffsetDir.x = -textSize.x - 16.0f;
+					distOffsetDir.z = -textSize.y - 16.0f;
+				}
+				else if (offset.x >= 0.0f && offset.z < 0.0f)
+				{
+					distOffsetDir.x =  4.0f;
+					distOffsetDir.z = -textSize.y - 16.0f;
+				}
+				else if (offset.x < 0.0f && offset.z >= 0.0f)
+				{
+					distOffsetDir.x = -textSize.x - 16.0f;
+					distOffsetDir.z = 4.0f;
+				}
+				else  if (offset.x >= 0.0f && offset.z >= 0.0f)
+				{
+					distOffsetDir.x = 4.0f;
+					distOffsetDir.z = 4.0f;
+				}
+
+				Vec2i p0map = worldPos2dToMap({ p0.x, p0.z });
+				Vec2i p1map = worldPos2dToMap({ p1.x, p1.z });
+				Vec2i pos;
+				pos.x = (p0map.x + p1map.x) / 2 + s32(distOffsetDir.x);
+				pos.z = (p0map.z + p1map.z) / 2 + s32(distOffsetDir.z);
+
+				Vec2i posX = { ((p0map.x + p1map.x) / 2), offset.z > 0.0f ? p1map.z - 40 : p1map.z + 8 };
+				Vec2i posZ = { offset.x < 0.0f ? 8 + p0map.x : -ImGui::CalcTextSize(zDist).x - 24 + p0map.x, ((p0map.z + p1map.z) / 2) };
+
+				const f32 threshold = 8.0f * s_zoom2d;
+				drawViewportInfo(1, pos, dist, 0, 0);
+				if (fabsf(offset.x) > threshold && fabsf(offset.z) > threshold)
+				{
+					drawViewportInfo(2, posX, xDist, 0, 0);
+					drawViewportInfo(3, posZ, zDist, 0, 0);
+				}
+			}
+			else // EDIT_VIEW_3D
+			{
+			}
+		}
+		else if (mode == TRANS_ROTATE)
+		{
+			const Vec3f center = edit_getTransformAnchor();
 			const Vec3f rot = edit_getTransformRotation();
 
 			if (s_view == EDIT_VIEW_2D)

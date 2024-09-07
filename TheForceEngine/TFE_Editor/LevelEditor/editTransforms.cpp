@@ -27,6 +27,7 @@ namespace LevelEditor
 	static TransformMode s_transformMode = TRANS_MOVE;
 	static WallMoveMode s_wallMoveMode = WMM_NORMAL;
 	static RotationGizmoPart s_rotHover = RGP_NONE;
+	static Vec3f s_transformPos = { 0 };
 	static Vec3f s_center = { 0 };
 	static Vec3f s_rotation = { 0 };
 	static Vec2f s_rotationStartDir = { 0 };
@@ -35,6 +36,7 @@ namespace LevelEditor
 	static std::vector<s32> s_effectedSectors;
 	static f32 s_rotationSide = 0.0f;
 	static RotationAction s_rotAction = RACTION_NONE;
+	static u32 s_moveAxis = AXIS_XYZ;
 	static bool s_enableMoveTransform = false;
 	static bool s_transformChange = false;
 	static bool s_transformToolActive = false;
@@ -79,12 +81,7 @@ namespace LevelEditor
 		
 	bool edit_isTransformToolActive()
 	{
-		return s_transformToolActive;
-	}
-
-	Vec3f edit_getTransformCenter()
-	{
-		return s_center;
+		return s_transformToolActive || (s_transformMode == TRANS_MOVE && s_moveStarted);
 	}
 
 	Vec3f edit_getTransformRotation()
@@ -267,6 +264,30 @@ namespace LevelEditor
 
 		return cursor;
 	}
+		
+	Vec3f edit_getTransformAnchor()
+	{
+		return s_center;
+	}
+	void edit_setTransformAnchor(Vec3f anchor)
+	{
+		s_center = anchor;
+		s_transformPos = anchor;
+	}
+		
+	Vec3f edit_getTransformPos()
+	{
+		return s_transformPos;
+	}
+	void edit_setTransformPos(Vec3f pos)
+	{
+		s_transformPos = pos;
+	}
+
+	u32 edit_getMoveAxis()
+	{
+		return s_moveAxis;
+	}
 
 	void edit_transform(s32 mx, s32 my)
 	{
@@ -274,6 +295,23 @@ namespace LevelEditor
 
 		if (s_transformMode == TRANS_MOVE && s_editMove)
 		{
+			if (!s_moveStarted)
+			{
+				s_moveAxis = AXIS_XYZ;
+				if (TFE_Input::keyDown(KEY_X))
+				{
+					s_moveAxis = AXIS_X;
+				}
+				else if (TFE_Input::keyDown(KEY_Y))
+				{
+					s_moveAxis = AXIS_Y;
+				}
+				else if (TFE_Input::keyDown(KEY_Z))
+				{
+					s_moveAxis = AXIS_Z;
+				}
+			}
+
 			if (s_view == EDIT_VIEW_2D)
 			{
 				const Vec2f worldPos2d = mouseCoordToWorldPos2d(mx, my);
@@ -500,6 +538,8 @@ namespace LevelEditor
 			s_moveStartPos.x = part == HP_FLOOR ? sector->floorHeight : sector->ceilHeight;
 			s_moveStartPos.z = 0.0f;
 			s_prevPos = s_curVtxPos;
+
+			edit_setTransformAnchor({ s_curVtxPos.x, s_moveStartPos.x, s_curVtxPos.z });
 		}
 
 		Vec3f worldPos = moveAlongRail({ 0.0f, 1.0f, 0.0f });
@@ -515,6 +555,8 @@ namespace LevelEditor
 		{
 			heightDelta = y - sector->ceilHeight;
 		}
+		Vec3f pos = edit_getTransformPos();
+		edit_setTransformPos({ pos.x, pos.y + heightDelta, pos.z });
 
 		edit_moveSelectedFlats(heightDelta);
 	}
@@ -532,8 +574,8 @@ namespace LevelEditor
 		const Vec2f& v1 = sector->vtx[wall->idx[1]];
 		if (!s_moveStarted)
 		{
-			s_moveStarted = true;
-			s_moveStartPos = v0;
+			s_moveStarted   = true;
+			s_moveStartPos  = v0;
 			s_moveStartPos1 = v1;
 
 			s_wallNrm = { -(v1.z - v0.z), v1.x - v0.x };
@@ -543,13 +585,17 @@ namespace LevelEditor
 			s_wallTan = TFE_Math::normalize(&s_wallTan);
 
 			if (s_view == EDIT_VIEW_3D)
-			{
+			{ 
 				s_prevPos = s_curVtxPos;
 			}
+
+			edit_setTransformAnchor({ worldPos.x, s_cursor3d.y, worldPos.z });
 		}
 
 		Vec2f moveDir = s_wallNrm;
 		Vec2f startPos = s_moveStartPos;
+		Vec3f pos = edit_getTransformPos();
+		const u32 moveAxis = edit_getMoveAxis();
 		if (s_view == EDIT_VIEW_3D)
 		{
 			if (s_wallMoveMode == WMM_NORMAL)
@@ -562,9 +608,18 @@ namespace LevelEditor
 			}
 		}
 
+		Vec3f transformPos = edit_getTransformPos();
 		if (s_wallMoveMode == WMM_FREE)
 		{
 			Vec2f delta = { worldPos.x - s_curVtxPos.x, worldPos.z - s_curVtxPos.z };
+			if (!(moveAxis & AXIS_X))
+			{
+				delta.x = 0.0f;
+			}
+			if (!(moveAxis & AXIS_Z))
+			{
+				delta.z = 0.0f;
+			}
 
 			if (!TFE_Input::keyModDown(KEYMOD_ALT))
 			{
@@ -593,6 +648,7 @@ namespace LevelEditor
 			}
 
 			// Move all of the vertices by the offset.
+			edit_setTransformPos({ transformPos.x + delta.x, transformPos.y, transformPos.z + delta.z });
 			edit_moveSelectedVertices(delta);
 		}
 		else
@@ -620,6 +676,7 @@ namespace LevelEditor
 
 			// Move all of the vertices by the offset.
 			Vec2f delta = { s_moveStartPos.x + moveDir.x * nrmOffset - v0.x, s_moveStartPos.z + moveDir.z * nrmOffset - v0.z };
+			edit_setTransformPos({ transformPos.x + delta.x, transformPos.y, transformPos.z + delta.z });
 			edit_moveSelectedVertices(delta);
 		}
 	}
@@ -637,11 +694,27 @@ namespace LevelEditor
 			{
 				s_prevPos = s_curVtxPos;
 			}
+			edit_setTransformAnchor({ s_moveStartPos.x, s_cursor3d.y, s_moveStartPos.z });
 		}
 
 		// Current movement.
-		const Vec2f delta = { worldPos.x - s_moveStartPos.x, worldPos.z - s_moveStartPos.z };
-		s_moveStartPos = { worldPos.x, worldPos.z };
+		Vec2f delta = { worldPos.x - s_moveStartPos.x, worldPos.z - s_moveStartPos.z };
+		const Vec3f pos = edit_getTransformPos();
+		const u32 moveAxis = edit_getMoveAxis();
+		Vec3f transPos = { worldPos.x, pos.y, worldPos.z };
+		if (!(moveAxis & AXIS_X))
+		{
+			delta.x = 0.0f;
+			transPos.x = pos.x;
+		}
+		if (!(moveAxis & AXIS_Z))
+		{
+			delta.z = 0.0f;
+			transPos.z = pos.z;
+		}
+
+		s_moveStartPos = { transPos.x, transPos.z };
+		edit_setTransformPos(transPos);
 		edit_moveSector(delta);
 	}
 
