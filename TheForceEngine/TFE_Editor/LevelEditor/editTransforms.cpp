@@ -578,17 +578,19 @@ namespace LevelEditor
 
 	void moveWall(Vec3f worldPos)
 	{
-		EditorSector* sector = nullptr;
-		s32 wallIndex = -1;
-		HitPart part = HP_NONE;
-		selection_getSurface(0, sector, wallIndex, &part);
-		if (!sector) { return; }
-
-		const EditorWall* wall = &sector->walls[wallIndex];
-		const Vec2f& v0 = sector->vtx[wall->idx[0]];
-		const Vec2f& v1 = sector->vtx[wall->idx[1]];
 		if (!s_moveStarted)
 		{
+			// Prefer hovered sector, but we must keep the sector and wall index since hovered may change later.
+			s_transformWallSector = nullptr;
+			s_transformWallIndex = -1;
+			selection_getSurface(selection_hasHovered() ? SEL_INDEX_HOVERED : 0, s_transformWallSector, s_transformWallIndex);
+			if (!s_transformWallSector) { return; }
+
+			const EditorSector* sector = s_transformWallSector;
+			const EditorWall* wall = &sector->walls[s_transformWallIndex];
+			const Vec2f& v0 = sector->vtx[wall->idx[0]];
+			const Vec2f& v1 = sector->vtx[wall->idx[1]];
+
 			s_moveStarted   = true;
 			s_moveStartPos  = v0;
 			s_moveStartPos1 = v1;
@@ -603,9 +605,14 @@ namespace LevelEditor
 			{ 
 				s_prevPos = s_curVtxPos;
 			}
+			s_curVtxPos = { worldPos.x, s_cursor3d.y, worldPos.z };
 
 			edit_setTransformAnchor({ worldPos.x, s_cursor3d.y, worldPos.z });
 		}
+		const EditorSector* sector = s_transformWallSector;
+		const EditorWall* wall = &sector->walls[s_transformWallIndex];
+		const Vec2f& v0 = sector->vtx[wall->idx[0]];
+		const Vec2f& v1 = sector->vtx[wall->idx[1]];
 
 		Vec2f moveDir = s_wallNrm;
 		Vec2f startPos = s_moveStartPos;

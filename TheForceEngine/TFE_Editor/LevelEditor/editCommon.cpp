@@ -15,6 +15,8 @@ namespace LevelEditor
 	SectorList s_sectorChangeList;
 
 	bool s_moveStarted = false;
+	EditorSector* s_transformWallSector = nullptr;
+	s32 s_transformWallIndex = -1;
 	Vec2f s_moveStartPos;
 	Vec2f s_moveStartPos1;
 	Vec2f* s_moveVertexPivot = nullptr;

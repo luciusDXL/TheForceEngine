@@ -17,6 +17,8 @@ namespace LevelEditor
 	extern SectorList s_sectorChangeList;
 	// General movement.
 	extern bool s_moveStarted;
+	extern EditorSector* s_transformWallSector;
+	extern s32 s_transformWallIndex;
 	extern Vec2f s_moveStartPos;
 	extern Vec2f s_moveStartPos1;
 	extern Vec2f* s_moveVertexPivot;
