@@ -2109,6 +2109,7 @@ namespace LevelEditor
 		{
 			selId = SelectionListId(SEL_VERTEX + mode - LEDIT_VERTEX);
 		}
+		selection_buildDerived();
 		selection_setCurrent(selId);
 		
 		s_editMode = mode;
