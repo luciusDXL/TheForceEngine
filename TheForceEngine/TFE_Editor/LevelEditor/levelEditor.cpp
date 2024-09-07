@@ -4056,6 +4056,27 @@ namespace LevelEditor
 		}
 	}
 
+	void displayViewportMoveTransformData(Vec3f p0, Vec3f p1, Vec2f v0, Vec2f v1, Vec2f v2, const char* distStr, const char* xDistStr, const char* zDistStr)
+	{
+		Vec2f offset = { p1.x - p0.x, p1.z - p0.z };
+
+		ImVec2 textSize = ImGui::CalcTextSize(distStr);
+		ImVec2 textSizeX = ImGui::CalcTextSize(xDistStr);
+		ImVec2 textSizeZ = ImGui::CalcTextSize(zDistStr);
+
+		Vec2i pos  = { s32(v0.x + v1.x) / 2, s32(v0.z + v1.z) / 2 };
+		Vec2i posX = { s32(v1.x + v2.x) / 2, s32(v1.z + v2.z) / 2 };
+		Vec2i posZ = { s32(v0.x + v2.x) / 2, s32(v0.z + v2.z) / 2 };
+
+		const f32 threshold = 0.01f;
+		drawViewportInfo(1, pos, distStr, 0, 0);
+		if (fabsf(offset.x) > threshold && fabsf(offset.z) > threshold)
+		{
+			drawViewportInfo(2, posX, xDistStr, 0, 0);
+			drawViewportInfo(3, posZ, zDistStr, 0, 0);
+		}
+	}
+
 	void displayTransformToolLabels()
 	{
 		if (!edit_isTransformToolActive()) { return; }
@@ -4066,21 +4087,18 @@ namespace LevelEditor
 			Vec3f p0 = edit_getTransformAnchor();
 			Vec3f p1 = edit_getTransformPos();
 
+			Vec2f offset = { p1.x - p0.x, p1.z - p0.z };
+			f32 dx = offset.x;
+			f32 dz = offset.z;
+
+			char dist[256], xDist[256], zDist[256];
+			floatToString(sqrtf(offset.x*offset.x + offset.z*offset.z), dist);
+			floatToString(dx, xDist);
+			floatToString(dz, zDist);
+
 			if (s_view == EDIT_VIEW_2D)
 			{
-				Vec2f offset = { p1.x - p0.x, p1.z - p0.z };
-				f32 dx = offset.x;
-				f32 dz = offset.z;
-
-				char dist[256], xDist[256], zDist[256];
-				floatToString(sqrtf(offset.x*offset.x + offset.z*offset.z), dist);
-				floatToString(dx, xDist);
-				floatToString(dz, zDist);
-
-				Vec2f distOffsetDir = { fabsf(offset.z), fabsf(offset.x) };
-				distOffsetDir = TFE_Math::normalize(&distOffsetDir);
-				distOffsetDir = { offset.x < 0.0f ? -distOffsetDir.x : 0.0f, offset.z < 0.0f ? -distOffsetDir.z : distOffsetDir.z };
-
+				Vec2f distOffsetDir = { 4.0f, 4.0f };
 				ImVec2 textSize = ImGui::CalcTextSize(dist);
 				if (offset.x < 0.0f && offset.z < 0.0f)
 				{
@@ -4097,11 +4115,6 @@ namespace LevelEditor
 					distOffsetDir.x = -textSize.x - 16.0f;
 					distOffsetDir.z = 4.0f;
 				}
-				else  if (offset.x >= 0.0f && offset.z >= 0.0f)
-				{
-					distOffsetDir.x = 4.0f;
-					distOffsetDir.z = 4.0f;
-				}
 
 				Vec2i p0map = worldPos2dToMap({ p0.x, p0.z });
 				Vec2i p1map = worldPos2dToMap({ p1.x, p1.z });
@@ -4111,7 +4124,6 @@ namespace LevelEditor
 
 				Vec2i posX = { ((p0map.x + p1map.x) / 2), offset.z > 0.0f ? p1map.z - 40 : p1map.z + 8 };
 				Vec2i posZ = { offset.x < 0.0f ? 8 + p0map.x : -ImGui::CalcTextSize(zDist).x - 24 + p0map.x, ((p0map.z + p1map.z) / 2) };
-
 				const f32 threshold = 8.0f * s_zoom2d;
 				drawViewportInfo(1, pos, dist, 0, 0);
 				if (fabsf(offset.x) > threshold && fabsf(offset.z) > threshold)
@@ -4122,6 +4134,14 @@ namespace LevelEditor
 			}
 			else // EDIT_VIEW_3D
 			{
+				// project the points onto the map.
+				Vec2f v0, v1, v2;
+				Vec3f p2 = { p0.x, p0.y, p1.z };
+				bool result = worldPosToViewportCoord(p0, &v0) && worldPosToViewportCoord(p1, &v1) && worldPosToViewportCoord(p2, &v2);
+				if (result)
+				{
+					displayViewportMoveTransformData(p0, p1, v0, v1, v2, dist, xDist, zDist);
+				}
 			}
 		}
 		else if (mode == TRANS_ROTATE)
