@@ -684,6 +684,9 @@ namespace LevelEditor
 
 	void moveSector(Vec3f worldPos)
 	{
+		const u32 moveAxis = edit_getMoveAxis();
+		const bool moveOnYAxis = !(moveAxis & AXIS_X) && !(moveAxis & AXIS_Z) && (moveAxis & AXIS_Y);
+
 		snapToGrid(&worldPos);
 		if (!s_moveStarted)
 		{
@@ -695,23 +698,59 @@ namespace LevelEditor
 			{
 				s_prevPos = s_curVtxPos;
 			}
-			edit_setTransformAnchor({ s_moveStartPos.x, s_cursor3d.y, s_moveStartPos.z });
+
+			EditorSector* sector = nullptr;
+			selection_getSector(SA_SET_HOVERED, sector);
+			if (moveOnYAxis && sector)
+			{
+				const f32 dF = fabsf(worldPos.y - sector->floorHeight);
+				const f32 dC = fabsf(worldPos.y - sector->ceilHeight);
+				edit_setTransformAnchor({ s_moveStartPos.x, dF <= dC ? sector->floorHeight : sector->ceilHeight, s_moveStartPos.z });
+			}
+			else
+			{
+				edit_setTransformAnchor({ s_moveStartPos.x, worldPos.y, s_moveStartPos.z });
+			}
+		}
+
+		if (moveOnYAxis)
+		{
+			worldPos = moveAlongRail({ 0.0f, 1.0f, 0.0f });
+			snapToGridY(&worldPos.y);
 		}
 
 		// Current movement.
-		Vec2f delta = { worldPos.x - s_moveStartPos.x, worldPos.z - s_moveStartPos.z };
 		const Vec3f pos = edit_getTransformPos();
-		const u32 moveAxis = edit_getMoveAxis();
-		Vec3f transPos = { worldPos.x, pos.y, worldPos.z };
-		if (!(moveAxis & AXIS_X))
+		Vec3f delta = { worldPos.x - s_moveStartPos.x, worldPos.y - pos.y, worldPos.z - s_moveStartPos.z };
+		Vec3f transPos = worldPos;
+		if (moveOnYAxis)
 		{
+			// Movement along Y axis.
 			delta.x = 0.0f;
-			transPos.x = pos.x;
-		}
-		if (!(moveAxis & AXIS_Z))
-		{
 			delta.z = 0.0f;
+			transPos.x = pos.x;
 			transPos.z = pos.z;
+		}
+		else
+		{
+			// Movement along XZ axis.
+			delta.y = 0.0f;
+			transPos.y = pos.y;
+
+			if (!(moveAxis & AXIS_X))
+			{
+				delta.x = 0.0f;
+				delta.y = 0.0f;
+				transPos.x = pos.x;
+				transPos.y = pos.y;
+			}
+			else if (!(moveAxis & AXIS_Z))
+			{
+				delta.z = 0.0f;
+				delta.y = 0.0f;
+				transPos.z = pos.z;
+				transPos.y = pos.y;
+			}
 		}
 
 		s_moveStartPos = { transPos.x, transPos.z };

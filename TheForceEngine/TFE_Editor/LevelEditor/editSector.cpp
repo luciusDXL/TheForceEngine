@@ -191,9 +191,9 @@ namespace LevelEditor
 		}
 	}
 
-	void edit_moveSector(Vec2f delta)
+	void edit_moveSector(Vec3f delta)
 	{
-		edit_moveSelectedVertices(delta);
+		edit_moveSelectedVertices({ delta.x, delta.z });
 		const u32 sectorCount = selection_getCount(SEL_SECTOR);
 		for (u32 i = 0; i < sectorCount; i++)
 		{
@@ -201,11 +201,17 @@ namespace LevelEditor
 			selection_getSector(i, sector);
 			if (!sector) { continue; }
 
+			// Move floors and ceilings.
+			sector->floorHeight += delta.y;
+			sector->ceilHeight += delta.y;
+
+			// Move objects.
 			const u32 objCount = (u32)sector->obj.size();
 			EditorObject* obj = sector->obj.data();
 			for (u32 o = 0; o < objCount; o++, obj++)
 			{
 				obj->pos.x += delta.x;
+				obj->pos.y += delta.y;
 				obj->pos.z += delta.z;
 			}
 		}

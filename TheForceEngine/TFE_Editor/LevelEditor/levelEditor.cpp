@@ -4057,9 +4057,9 @@ namespace LevelEditor
 		}
 	}
 
-	void displayViewportMoveTransformData(Vec3f p0, Vec3f p1, Vec2f v0, Vec2f v1, Vec2f v2, const char* distStr, const char* xDistStr, const char* zDistStr)
+	void displayViewportMoveTransformData(Vec3f p0, Vec3f p1, Vec2f v0, Vec2f v1, Vec2f v2, const char* distStr, const char* xDistStr, const char* yDistStr, const char* zDistStr)
 	{
-		Vec2f offset = { p1.x - p0.x, p1.z - p0.z };
+		const Vec3f offset = { fabsf(p1.x - p0.x), fabsf(p1.y - p0.y), fabsf(p1.z - p0.z) };
 
 		ImVec2 textSize = ImGui::CalcTextSize(distStr);
 		ImVec2 textSizeX = ImGui::CalcTextSize(xDistStr);
@@ -4069,12 +4069,19 @@ namespace LevelEditor
 		Vec2i posX = { s32(v1.x + v2.x) / 2, s32(v1.z + v2.z) / 2 };
 		Vec2i posZ = { s32(v0.x + v2.x) / 2, s32(v0.z + v2.z) / 2 };
 
-		const f32 threshold = 0.01f;
-		drawViewportInfo(1, pos, distStr, 0, 0);
-		if (fabsf(offset.x) > threshold && fabsf(offset.z) > threshold)
+		if (offset.y > offset.x && offset.y > offset.z && offset.y != 0.0f)
 		{
-			drawViewportInfo(2, posX, xDistStr, 0, 0);
-			drawViewportInfo(3, posZ, zDistStr, 0, 0);
+			drawViewportInfo(1, pos, yDistStr, 0, 0);
+		}
+		else
+		{
+			const f32 threshold = 0.01f;
+			drawViewportInfo(1, pos, distStr, 0, 0);
+			if (offset.x > threshold && offset.z > threshold)
+			{
+				drawViewportInfo(2, posX, xDistStr, 0, 0);
+				drawViewportInfo(3, posZ, zDistStr, 0, 0);
+			}
 		}
 	}
 
@@ -4088,13 +4095,15 @@ namespace LevelEditor
 			Vec3f p0 = edit_getTransformAnchor();
 			Vec3f p1 = edit_getTransformPos();
 
-			Vec2f offset = { p1.x - p0.x, p1.z - p0.z };
+			Vec3f offset = { p1.x - p0.x, p1.y- p0.y, p1.z - p0.z };
 			f32 dx = offset.x;
+			f32 dy = offset.y;
 			f32 dz = offset.z;
 
-			char dist[256], xDist[256], zDist[256];
+			char dist[256], xDist[256], yDist[256], zDist[256];
 			floatToString(sqrtf(offset.x*offset.x + offset.z*offset.z), dist);
 			floatToString(dx, xDist);
+			floatToString(dy, yDist);
 			floatToString(dz, zDist);
 
 			if (s_view == EDIT_VIEW_2D)
@@ -4141,7 +4150,7 @@ namespace LevelEditor
 				bool result = worldPosToViewportCoord(p0, &v0) && worldPosToViewportCoord(p1, &v1) && worldPosToViewportCoord(p2, &v2);
 				if (result)
 				{
-					displayViewportMoveTransformData(p0, p1, v0, v1, v2, dist, xDist, zDist);
+					displayViewportMoveTransformData(p0, p1, v0, v1, v2, dist, xDist, yDist, zDist);
 				}
 			}
 		}
