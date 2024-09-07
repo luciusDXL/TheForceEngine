@@ -202,6 +202,48 @@ namespace LevelEditor
 		}
 	}
 
+	void gizmo_drawMove3d(Vec3f p0, Vec3f p1)
+	{
+		Vec3f offset0 = { p0.x - s_camera.pos.x, p0.y - s_camera.pos.y, p0.z - s_camera.pos.z };
+		Vec3f offset1 = { p1.x - s_camera.pos.x, p1.y - s_camera.pos.y, p1.z - s_camera.pos.z };
+		f32 scale0 = sqrtf(TFE_Math::dot(&offset0, &offset0));
+		f32 scale1 = sqrtf(TFE_Math::dot(&offset1, &offset1));
+
+		const u32 colorMain = 0xff00a5ff;
+		const u32 colorXAxis = 0xff4040ff;
+		const u32 colorZAxis = 0xffff4040;
+		const Vec3f vtx[] =
+		{
+			p0, p1
+		};
+		const u32 colorsMain[] = { colorMain, colorMain };
+		const u32 colorsXAxis[] = { colorXAxis, colorXAxis };
+		const u32 colorsZAxis[] = { colorZAxis, colorZAxis };
+
+		f32 dx = fabsf(p1.x - p0.x);
+		f32 dz = fabsf(p1.z - p0.z);
+
+		lineDraw3d_setLineDrawMode(LINE_DRAW_DASHED);
+		// Draw movement line.
+		const u32* distColor = colorsMain;
+		if (dx < 0.001f) distColor = colorsZAxis;
+		else if (dz < 0.001f) distColor = colorsXAxis;
+		lineDraw3d_addLine(2.5f, vtx, distColor);
+		// Draw X & Y movement lines.
+		if (fabsf(p1.x - p0.x) > 0.001f && fabsf(p1.z - p0.z) > 0.001f)
+		{
+			const Vec3f zaxis[] = { {vtx[0].x, vtx[0].y, vtx[0].z}, {vtx[0].x, vtx[0].y, vtx[1].z} };
+			const Vec3f xaxis[] = { {vtx[0].x, vtx[0].y, vtx[1].z}, {vtx[1].x, vtx[0].y, vtx[1].z} };
+
+			lineDraw3d_addLine(2.5f, zaxis, colorsZAxis);
+			lineDraw3d_addLine(2.5f, xaxis, colorsXAxis);
+		}
+		lineDraw3d_setLineDrawMode();
+
+		drawBox3d(&vtx[0], 0.0075f * scale0, 2.0f, colorMain);
+		drawBox3d(&vtx[1], 0.0075f * scale1, 2.0f, colorMain);
+	}
+
 	void gizmo_drawRotation3d(Vec3f center)
 	{
 		const RotationGizmoPart hoveredPart = (RotationGizmoPart)edit_getTransformRotationHover();

@@ -173,7 +173,7 @@ namespace LevelEditor
 	void drawArrow3d(f32 width, f32 lenInPixels, Vec3f pos, Vec3f dir, Vec3f nrm, u32 color);
 	void drawArrow3d_Segment(f32 width, f32 lenInPixels, Vec3f pos0, Vec3f pos1, Vec3f nrm, u32 color);
 	void drawNoteIcon3d(LevelNote* note, s32 id, u32 objColor, const Vec3f& cameraRgt, const Vec3f& cameraUp);
-	void drawTransformGizmo3d();
+	void drawTransformGizmo();
 	bool computeSignCorners(const EditorSector* sector, const EditorWall* wall, Vec3f* corners);
 
 	void viewport_init()
@@ -316,21 +316,24 @@ namespace LevelEditor
 		camera.projMtx.m3.w = 1.0f;
 	}
 
-	void drawTransformGizmo2d()
+	void drawTransformGizmo()
 	{
 		if (!edit_isTransformToolActive()) { return; }
-
-		TransformMode mode = edit_getTransformMode();
-		if (mode == TRANS_MOVE)
+		switch (edit_getTransformMode())
 		{
-			const Vec3f p0 = edit_getTransformAnchor();
-			const Vec3f p1 = edit_getTransformPos();
-			gizmo_drawMove2d(p0, p1);
-		}
-		else if (mode == TRANS_ROTATE)
-		{
-			const Vec3f centerWS = edit_getTransformAnchor();
-			gizmo_drawRotation2d({ centerWS.x, centerWS.z });
+			case TRANS_MOVE:
+			{
+				const Vec3f p0 = edit_getTransformAnchor();
+				const Vec3f p1 = edit_getTransformPos();
+				if (s_view == EDIT_VIEW_2D) { gizmo_drawMove2d(p0, p1); }
+				else { gizmo_drawMove3d(p0, p1); }
+			} break;
+			case TRANS_ROTATE:
+			{
+				const Vec3f centerWS = edit_getTransformAnchor();
+				if (s_view == EDIT_VIEW_2D) { gizmo_drawRotation2d({ centerWS.x, centerWS.z }); }
+				else { gizmo_drawRotation3d(centerWS); }
+			} break;
 		}
 	}
 		
@@ -532,7 +535,7 @@ namespace LevelEditor
 		}
 
 		// Transform Gizmos
-		drawTransformGizmo2d();
+		drawTransformGizmo();
 
 		// Compute the camera and projection for the model draw.
 		Camera3d camera;
@@ -1836,7 +1839,7 @@ namespace LevelEditor
 		triDraw3d_begin(&s_grid);
 		lineDraw3d_begin(s_viewportSize.x, s_viewportSize.z);
 
-		drawTransformGizmo3d();
+		drawTransformGizmo();
 
 		triDraw3d_draw(&s_camera, (f32)s_viewportSize.x, (f32)s_viewportSize.z, s_grid.size, 0.0f, false, false);
 		lineDraw3d_drawLines(&s_camera, false, false);
@@ -2133,21 +2136,7 @@ namespace LevelEditor
 
 		return u32(colorSum.x * 255.0f) | (u32(colorSum.y * 255.0f) << 8) | (u32(colorSum.z * 255.0f) << 16) | (u32(alpha * 255.0f) << 24);
 	}
-
-	void drawTransformGizmo3d()
-	{
-		if (!edit_isTransformToolActive()) { return; }
-
-		TransformMode mode = edit_getTransformMode();
-		if (mode == TRANS_ROTATE)
-		{
-			Vec3f centerWS = edit_getTransformAnchor();
-			Vec3f rotation = edit_getTransformRotation();
-
-			gizmo_drawRotation3d(centerWS);
-		}
-	}
-
+		
 	void renderLevel3D()
 	{
 		viewport_updateRail();
