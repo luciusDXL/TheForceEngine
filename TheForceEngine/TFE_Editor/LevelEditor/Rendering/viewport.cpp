@@ -172,6 +172,7 @@ namespace LevelEditor
 	void drawPosition3d(f32 width, Vec3f pos, u32 color);
 	void drawArrow3d(f32 width, f32 lenInPixels, Vec3f pos, Vec3f dir, Vec3f nrm, u32 color);
 	void drawArrow3d_Segment(f32 width, f32 lenInPixels, Vec3f pos0, Vec3f pos1, Vec3f nrm, u32 color);
+	void drawEntity3D(const EditorSector* sector, const EditorObject* obj, s32 id, u32 objColor, const Vec3f& cameraRgtXZ, bool drawEntityBounds, bool drawHighlights);
 	void drawNoteIcon3d(LevelNote* note, s32 id, u32 objColor, const Vec3f& cameraRgt, const Vec3f& cameraUp);
 	void drawTransformGizmo();
 	bool computeSignCorners(const EditorSector* sector, const EditorWall* wall, Vec3f* corners);
@@ -1752,7 +1753,7 @@ namespace LevelEditor
 	}
 
 	// Render highlighted 3d elements.
-	void renderHighlighted3d()
+	void renderHighlighted3d(s32 visObjCount, const EditorSector** visObjSector, const EditorObject** visObj, const s32* visObjId, Vec3f cameraRgtXZ)
 	{
 		lineDraw3d_begin(s_viewportSize.x, s_viewportSize.z);
 		triDraw3d_begin(&s_grid);
@@ -1809,6 +1810,16 @@ namespace LevelEditor
 			if (hoveredFeatureIndex >= 0 && !alsoHovered)
 			{
 				drawVertex3d(&s_hoveredVtxPos, hoveredSector, c_vertexClr[HL_HOVERED]);
+			}
+		}
+		else if (s_editMode == LEDIT_ENTITY)
+		{
+			// Draw objects.
+			for (s32 o = 0; o < visObjCount; o++)
+			{
+				bool locked = sector_isLocked((EditorSector*)visObjSector[o]);
+				if (locked) { continue; }
+				drawEntity3D(visObjSector[o], visObj[o], visObjId[o], 0xffffffff, cameraRgtXZ, true, true);
 			}
 		}
 
@@ -1961,7 +1972,7 @@ namespace LevelEditor
 		}
 	}
 			
-	void drawEntity3D(const EditorSector* sector, const EditorObject* obj, s32 id, u32 objColor, const Vec3f& cameraRgtXZ, bool drawEntityBounds)
+	void drawEntity3D(const EditorSector* sector, const EditorObject* obj, s32 id, u32 objColor, const Vec3f& cameraRgtXZ, bool drawEntityBounds, bool drawHighlights)
 	{
 		const Entity* entity = &s_level.entities[obj->entityId];
 		const Vec3f pos = obj->pos;
@@ -1977,48 +1988,51 @@ namespace LevelEditor
 			y = pos.y + offset;
 		}
 
-		if (entity->obj3d)
+		if (!drawHighlights)
 		{
-			draw3dObject(obj, entity, sector, objColor);
-		}
-		else
-		{
-			const Vec2f* srcUv = entity->uv;
-			if (entity->views.size() >= 32)
+			if (entity->obj3d)
 			{
-				// Which direction?
-				f32 dir = fmodf(obj->angle / (2.0f * PI), 1.0f);
-				if (dir < 0.0f) { dir += 1.0f; }
-
-				f32 angleDiff = fmodf((s_camera.yaw - obj->angle) / (2.0f * PI), 1.0f);
-				if (angleDiff < 0.0f) { angleDiff += 1.0f; }
-
-				const s32 viewIndex = 31 - (s32(angleDiff * 32.0f) & 31);
-				assert(viewIndex >= 0 && viewIndex < 32);
-
-				const SpriteView* view = &entity->views[viewIndex];
-				srcUv = view->uv;
-
-				// Adjust the width.
-				width *= (view->st[1].x - view->st[0].x) / (entity->views[0].st[1].x - entity->views[0].st[0].x);
+				draw3dObject(obj, entity, sector, objColor);
 			}
+			else
+			{
+				const Vec2f* srcUv = entity->uv;
+				if (entity->views.size() >= 32)
+				{
+					// Which direction?
+					f32 dir = fmodf(obj->angle / (2.0f * PI), 1.0f);
+					if (dir < 0.0f) { dir += 1.0f; }
 
-			Vec3f corners[] =
-			{
-				{ pos.x - width * cameraRgtXZ.x, y + height, pos.z - width * cameraRgtXZ.z },
-				{ pos.x + width * cameraRgtXZ.x, y + height, pos.z + width * cameraRgtXZ.z },
-				{ pos.x + width * cameraRgtXZ.x, y,          pos.z + width * cameraRgtXZ.z },
-				{ pos.x - width * cameraRgtXZ.x, y,          pos.z - width * cameraRgtXZ.z }
-			};
-			Vec2f uv[] =
-			{
-				{ srcUv[0].x, srcUv[0].z },
-				{ srcUv[1].x, srcUv[0].z },
-				{ srcUv[1].x, srcUv[1].z },
-				{ srcUv[0].x, srcUv[1].z }
-			};
-			s32 idx[] = { 0, 1, 2, 0, 2, 3 };
-			triDraw3d_addTextured(TRIMODE_BLEND, 6, 4, corners, uv, idx, objColor, false, entity->image, false, false);
+					f32 angleDiff = fmodf((s_camera.yaw - obj->angle) / (2.0f * PI), 1.0f);
+					if (angleDiff < 0.0f) { angleDiff += 1.0f; }
+
+					const s32 viewIndex = 31 - (s32(angleDiff * 32.0f) & 31);
+					assert(viewIndex >= 0 && viewIndex < 32);
+
+					const SpriteView* view = &entity->views[viewIndex];
+					srcUv = view->uv;
+
+					// Adjust the width.
+					width *= (view->st[1].x - view->st[0].x) / (entity->views[0].st[1].x - entity->views[0].st[0].x);
+				}
+
+				Vec3f corners[] =
+				{
+					{ pos.x - width * cameraRgtXZ.x, y + height, pos.z - width * cameraRgtXZ.z },
+					{ pos.x + width * cameraRgtXZ.x, y + height, pos.z + width * cameraRgtXZ.z },
+					{ pos.x + width * cameraRgtXZ.x, y,          pos.z + width * cameraRgtXZ.z },
+					{ pos.x - width * cameraRgtXZ.x, y,          pos.z - width * cameraRgtXZ.z }
+				};
+				Vec2f uv[] =
+				{
+					{ srcUv[0].x, srcUv[0].z },
+					{ srcUv[1].x, srcUv[0].z },
+					{ srcUv[1].x, srcUv[1].z },
+					{ srcUv[0].x, srcUv[1].z }
+				};
+				s32 idx[] = { 0, 1, 2, 0, 2, 3 };
+				triDraw3d_addTextured(TRIMODE_BLEND, 6, 4, corners, uv, idx, objColor, false, entity->image, false, false);
+			}
 		}
 
 		if (s_editMode == LEDIT_ENTITY && drawEntityBounds)
@@ -2036,6 +2050,7 @@ namespace LevelEditor
 			{
 				hl = (hl == HL_SELECTED) ? Highlight(HL_SELECTED + 1) : HL_HOVERED;
 			}
+			if ((drawHighlights && hl == HL_NONE) || (!drawHighlights && hl != HL_NONE)) { return; }
 
 			// Draw bounds.
 			if (entity->obj3d)
@@ -2449,7 +2464,7 @@ namespace LevelEditor
 		{
 			bool locked = sector_isLocked((EditorSector*)visObjSector[o]);
 			u32 objColor = (s_editMode == LEDIT_ENTITY && !locked) ? 0xffffffff : 0x80ffffff;
-			drawEntity3D(visObjSector[o], visObj[o], visObjId[o], objColor, cameraRgtXZ, !locked);
+			drawEntity3D(visObjSector[o], visObj[o], visObjId[o], objColor, cameraRgtXZ, !locked, false);
 		}
 								
 		// Draw the 3D cursor.
@@ -2463,9 +2478,9 @@ namespace LevelEditor
 		TFE_RenderShared::triDraw3d_draw(&s_camera, (f32)s_viewportSize.x, (f32)s_viewportSize.z, s_grid.size, s_gridOpacity);
 		TFE_RenderShared::modelDraw_draw(&s_camera, (f32)s_viewportSize.x, (f32)s_viewportSize.z);
 		TFE_RenderShared::lineDraw3d_drawLines(&s_camera, true, false);
-		
-		renderHighlighted3d();
-								
+
+		renderHighlighted3d(visObjCount, visObjSector, visObj, visObjId, cameraRgtXZ);
+												
 		// Movement "rail", if active.
 		if (s_rail.active && s_rail.dirCount > 0)
 		{
