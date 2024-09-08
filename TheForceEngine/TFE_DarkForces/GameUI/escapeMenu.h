@@ -20,7 +20,7 @@ enum EscapeMenuAction
 namespace TFE_DarkForces
 {
 	// Preload.
-	void escapeMenu_load(LangHotkeys* hotkeys);
+	bool escapeMenu_load(LangHotkeys* hotkeys);
 
 	// Opens the escape menu, which sets up the background.
 	void escapeMenu_open(u8* framebuffer, u8* palette);

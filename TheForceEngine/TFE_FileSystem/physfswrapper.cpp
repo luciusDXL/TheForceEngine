@@ -302,21 +302,22 @@ static TFEFile _vpFileOpen(const char* filepath, bool matchcase)
 
 	f = (ret == 0) ? nullptr : PHYSFS_openRead(fp);
 
-	fprintf(stderr, "vpFileOpen(%s, %d) = %p\n", fp, matchcase, f);
 	free(fp);
 	return f;
 }
 
 TFEFile vpFileOpen(const char* filename, TFE_VPATH vpathid, bool matchcase)
 {
-	TFEFile f;
+	TFEFile f = nullptr;
 	char *fp = to_vpath(vpathid, filename);
 	if (!fp)
-		return nullptr;
+		goto out;
 
 	f = _vpFileOpen(fp, matchcase);
-	free(fp);
-
+out:
+	fprintf(stderr, "vpFileOpen(%s, %d) = %p\n", fp, matchcase, f);
+	if (fp)
+		free(fp);
 	return f;
 }
 
@@ -339,21 +340,23 @@ static SDL_RWops* _vpFileOpenRW(const char* filename, bool matchcase)
 
 	f = (ret == 0) ? nullptr : PHYSFSRWOPS_openRead(fp);
 
-	fprintf(stderr, "vpFileOpenRW(%s, %d) = %p\n", fp, matchcase, f);
 	free(fp);
 	return f;
 }
 
 SDL_RWops* vpFileOpenRW(const char* filename, TFE_VPATH vpathid, bool matchcase)
 {
-	SDL_RWops *f;
+	SDL_RWops *f = nullptr;
 	char *fp = to_vpath(vpathid, filename);
 	if (!fp)
-		return nullptr;
+		goto out;
 
 	f = _vpFileOpenRW(fp, matchcase);
-	free(fp);
 
+out:
+	fprintf(stderr, "vpFileOpenRW(%s, %d) = %p\n", fp, matchcase, f);
+	if (fp)
+		free(fp);
 	return f;
 }
 
@@ -372,6 +375,7 @@ TFEFile vpOpenWrite(const char* fn, TFE_WMODE wmode)
 	if (!f) {
 		fprintf(stderr, "x vpOpenWrite(%s) failed: %s\n", fn, PHYSFS_getErrorByCode(PHYSFS_getLastErrorCode()));
 	}
+	fprintf(stderr, "vpOpenWrite(%s) = %p\n", fn, f);
 	return f;
 }
 
@@ -389,6 +393,7 @@ SDL_RWops* vpOpenWriteRW(const char* fn, TFE_WMODE wmode)
 	if (!f) {
 		fprintf(stderr, "vpOpenWriteRW(%s) failed: %s\n", fn, PHYSFS_getErrorByCode(PHYSFS_getLastErrorCode()));
 	}
+	fprintf(stderr, "vpOpenWriteRW(%s) = %p\n", fn, f);
 	return f;
 }
 
@@ -437,6 +442,7 @@ TFEMount vpMountReal(const char* srcname, TFE_VPATH vpdst, bool front)
 		fprintf(stderr, "vpMount2(id:%s) failed: %s\n", srcname, PHYSFS_getErrorByCode(PHYSFS_getLastErrorCode()));
 		return nullptr;
 	}
+	fprintf(stderr, "vpMountReal(%s %d %d) = %p\n", srcname, vpdst, front, mnt);
 	return mnt;
 }
 
@@ -468,6 +474,7 @@ TFEMount vpMountVirt(TFE_VPATH vpsrc, const char *srcname, TFE_VPATH vpdst, bool
 		fprintf(stderr, "vpMountVirt(id:%s) failed: %s\n", srcname, PHYSFS_getErrorByCode(PHYSFS_getLastErrorCode()));
 		goto out2;
 	}
+	fprintf(stderr, "vpMountVirt(%s %d %d %d) = %p\n", fp, vpdst, front, matchcase, mnt);
 	return mnt;
 
 out2:
@@ -489,6 +496,7 @@ bool vpUnmount(TFEMount mnt)
 		return false;
 	}
 
+	fprintf(stderr, "vpUnmount(%s) = 1\n", mnt->mntname);
 	delMount(mnt);
 	return true;
 }

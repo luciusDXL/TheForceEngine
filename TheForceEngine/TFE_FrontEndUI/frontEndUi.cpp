@@ -218,6 +218,10 @@ namespace TFE_FrontEndUI
 
 	static IGame* s_game = nullptr;
 
+	static s32 s_gameIndex = 0;		// selected Game
+	static char s_gameEditboxDF[TFE_MAX_PATH];
+	static char s_gameEditboxOL[TFE_MAX_PATH];
+
 	static const char* c_axisBinding[] =
 	{
 		"X Left Axis",
@@ -281,7 +285,7 @@ namespace TFE_FrontEndUI
 	void menuItem_Editor();
 	void menuItem_Exit();
 
-	bool loadGpuImage(const char* localPath, UiImage* uiImage)
+	static bool loadGpuImage(const char* localPath, UiImage* uiImage)
 	{
 		SDL_Surface* image = TFE_Image::get(localPath, VPATH_TFE);
 		if (image)
@@ -366,7 +370,7 @@ namespace TFE_FrontEndUI
 			TFE_System::logWrite(LOG_ERROR, "SystemUI", "Cannot load title screen button images.");
 			return false;
 		}
-				
+
 		// Setup menu item callbacks
 		s_menuItemselected[0] = menuItem_Start;
 		s_menuItemselected[1] = menuItem_Load;
@@ -379,6 +383,7 @@ namespace TFE_FrontEndUI
 
 		// Try to open 'enhanced.gob'.
 		TFE_GameHeader* darkForces = TFE_Settings::getGameHeader("Dark Forces");
+		TFE_GameHeader* outlaws = TFE_Settings::getGameHeader("Outlaws");
 		if (darkForces && darkForces->sourcePath) {
 			TFEMount m = vpMountReal(darkForces->sourcePath, VPATH_TMP);
 			if (m) {
@@ -386,6 +391,9 @@ namespace TFE_FrontEndUI
 				vpUnmount(m);
 			}
 		}
+
+		strcpy(s_gameEditboxDF, darkForces->sourcePath);
+		strcpy(s_gameEditboxOL, outlaws->sourcePath);
 
 		return true;
 	}
@@ -493,8 +501,6 @@ namespace TFE_FrontEndUI
 
 	void showNoGameDataUI()
 	{
-		char settingsPath[TFE_MAX_PATH];
-		TFE_Paths::appendPath(PATH_USER_DOCUMENTS, "settings.ini", settingsPath);
 		const TFE_Game* game = TFE_Settings::getGame();
 
 		ImGui::PushFont(s_dialogFont);
@@ -1006,7 +1012,7 @@ namespace TFE_FrontEndUI
 	{
 		TFE_GameHeader* darkForces = TFE_Settings::getGameHeader("Dark Forces");
 		TFE_GameHeader* outlaws = TFE_Settings::getGameHeader("Outlaws");
-		
+
 		//////////////////////////////////////////////////////
 		// Source Game Data
 		//////////////////////////////////////////////////////
@@ -1026,25 +1032,14 @@ namespace TFE_FrontEndUI
 		}
 
 		ImGui::Text("Dark Forces:"); ImGui::SameLine(100*s_uiScale);
-		char utf8Path[TFE_MAX_PATH];
-		convertExtendedAsciiToUtf8(darkForces->sourcePath, utf8Path);
-		if (ImGui::InputText("##DarkForcesSource", utf8Path, 1024))
-		{
-			convertUtf8ToExtendedAscii(utf8Path, darkForces->sourcePath);
 
-			bool b = TFE_DarkForces::validateSourceData(darkForces->sourcePath);
-			if (!b)
-			{
-				s_drawNoGameDataMsg = true;
-				TFE_Paths::setPath(PATH_SOURCE_DATA, darkForces->sourcePath);
-			}
-		}
+		ImGui::InputText("##DarkForcesSource", s_gameEditboxDF, 1024);
 		ImGui::SameLine();
 		if (ImGui::Button("Browse##DarkForces") && !s_FEFileDialog)
 		{
 			const char *startpath;
 
-			if (FileUtil::directoryExits(darkForces->sourcePath))
+			if (FileUtil::directoryExits(darkForces->sourcePath) || FileUtil::exists(darkForces->sourcePath))
 				startpath = darkForces->sourcePath;
 			else
 				startpath = TFE_Paths::getPath(PATH_USER_DOCUMENTS);
@@ -1054,24 +1049,13 @@ namespace TFE_FrontEndUI
 		}
 
 		ImGui::Text("Outlaws:"); ImGui::SameLine(100*s_uiScale);
-		convertExtendedAsciiToUtf8(outlaws->sourcePath, utf8Path);
-		if (ImGui::InputText("##OutlawsSource", outlaws->sourcePath, 1024))
-		{
-			convertUtf8ToExtendedAscii(utf8Path, outlaws->sourcePath);
-
-			bool b = TFE_DarkForces::validateSourceData(darkForces->sourcePath);
-			if (!b)
-			{
-				s_drawNoGameDataMsg = true;
-				TFE_Paths::setPath(PATH_SOURCE_DATA, darkForces->sourcePath);
-			}
-		}
+		ImGui::InputText("##OutlawsSource", s_gameEditboxOL, 1024);
 		ImGui::SameLine();
 		if (ImGui::Button("Browse##Outlaws") && !s_FEFileDialog)
 		{
 			const char *startpath;
 
-			if (FileUtil::directoryExits(outlaws->sourcePath))
+			if (FileUtil::directoryExits(outlaws->sourcePath) || FileUtil::exists(outlaws->sourcePath))
 				startpath = outlaws->sourcePath;
 			else
 				startpath = TFE_Paths::getPath(PATH_USER_DOCUMENTS);
@@ -1089,7 +1073,6 @@ namespace TFE_FrontEndUI
 			"Dark Forces",
 			// "Outlaws",  -- TODO
 		};
-		static s32 s_gameIndex = 0;
 		ImGui::PushFont(s_dialogFont);
 		ImGui::LabelText("##ConfigLabel", "Current Game");
 		ImGui::PopFont();
@@ -1219,16 +1202,15 @@ namespace TFE_FrontEndUI
 						// then test the given path.
 						if (TFE_DarkForces::validateSourceData(filePath1))
 						{
+							strcpy(s_gameEditboxDF, filePath1);
 							strcpy(darkForces->sourcePath, filePath1);
-							TFE_Paths::setPath(PATH_SOURCE_DATA, darkForces->sourcePath);
-							TFE_System::logWrite(LOG_MSG,  "File Picker", "Picked DF Archive File");
-
+							fprintf(stderr, "UI FP: picked DF ARCH >%s<\n", filePath2);
 						}
 						else if (TFE_DarkForces::validateSourceData(filePath2))
 						{
+							strcpy(s_gameEditboxDF, filePath2);
 							strcpy(darkForces->sourcePath, filePath2);
-							TFE_Paths::setPath(PATH_SOURCE_DATA, darkForces->sourcePath);
-							TFE_System::logWrite(LOG_MSG,  "File Picker", "Picked DF Path");
+							fprintf(stderr, "UI FP: picked DF PATH >%s<\n", filePath2);
 						}
 						else
 						{
@@ -1251,14 +1233,12 @@ namespace TFE_FrontEndUI
 						if (TFE_Outlaws::validateSourceData(filePath1))
 						{
 							strcpy(outlaws->sourcePath, filePath1);
-							TFE_System::logWrite(LOG_MSG,  "File Picker", "Picked OL Archive");
-							//TFE_Paths::setPath(PATH_SOURCE_DATA, darkForces->sourcePath);
+							fprintf(stderr, "UI FP: picked OL ARCH >%s<\n", filePath2);
 						}
 						else if (TFE_Outlaws::validateSourceData(filePath2))
 						{
 							strcpy(outlaws->sourcePath, filePath2);
-							TFE_System::logWrite(LOG_MSG,  "File Picker", "Picked OL Path");
-							//TFE_Paths::setPath(PATH_SOURCE_DATA, darkForces->sourcePath);
+							fprintf(stderr, "UI FP: picked OL PATH >%s<\n", filePath2);
 						}
 						else
 						{

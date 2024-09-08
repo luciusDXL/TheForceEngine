@@ -34,27 +34,18 @@ namespace TFE_Markdown
 
 	bool init(f32 baseFontSize)
 	{
-		char *fb1, *fb2;
 		unsigned int fbs1, fbs2;
-		bool ok;
+		char *fb1, *fb2;
 
-		vpFile ttf1(VPATH_TFE, "Fonts/DroidSans.ttf");
-		ok = ttf1.readallocbuffer(&fb1, &fbs1);
-		ttf1.close();
-		if (!ok)
+		vpFile ttf1(VPATH_TFE, "Fonts/DroidSans.ttf", &fb1, &fbs1);
+		vpFile ttf2(VPATH_TFE, "Fonts/DroidSans-Bold.ttf", &fb2, &fbs2);
+		if (!ttf1 || !ttf2)
 		{
 			return false;
 		}
+
 		ImGuiIO& io = ImGui::GetIO();
 		s_baseFont = io.Fonts->AddFontFromMemoryTTF(fb1, fbs1, baseFontSize);
-
-		vpFile ttf2(VPATH_TFE, "Fonts/DroidSans-Bold.ttf");
-		ok = ttf2.readallocbuffer(&fb2, &fbs2);
-		ttf2.close();
-		if (!ok)
-		{
-			return false;
-		}
 
 		s_fontCfg.FontDataOwnedByAtlas = false;	// indicate to ImGui to not free() the fontdata buffer.
 		// Bold
@@ -63,7 +54,7 @@ namespace TFE_Markdown
 		s_mdConfig.headingFormats[0].font = io.Fonts->AddFontFromMemoryTTF(fb2, fbs2, baseFontSize * 2, &s_fontCfg);
 		// Heading H2
 		s_mdConfig.headingFormats[1].font = io.Fonts->AddFontFromMemoryTTF(fb2, fbs2, baseFontSize * 5/3, &s_fontCfg);
-		// Heading H3
+		// Heading H3 -> imgui may delete the atlas here.
 		s_mdConfig.headingFormats[2].font = io.Fonts->AddFontFromMemoryTTF(fb2, fbs2, baseFontSize * 4/3);
 
 		return true;
@@ -95,9 +86,9 @@ namespace TFE_Markdown
 			return;
 		}
 
-	#ifdef _WIN32
+#ifdef _WIN32
 		ShellExecute(nullptr, "open", url.c_str(), nullptr, nullptr, SW_SHOWNORMAL);
-	#endif
+#endif
 	}
 
 	TextureGpu* getTexture(const char* path)

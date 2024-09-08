@@ -59,6 +59,7 @@ namespace TFE_DarkForces
 	static LTick s_frameDelay;
 	static LActor* s_textCrawl = nullptr;
 	static Film* s_film = nullptr;
+	static TFEMount s_sceneArchive = nullptr;
 
 	extern CutsceneState* s_playSeq;
 	extern s32 s_soundVolume;
@@ -123,9 +124,27 @@ namespace TFE_DarkForces
 		if (s_playSeq[s_playId].id != SCENE_EXIT)
 		{
 			char name[16];
+			char vpath[32];
+
 			CutsceneState* scene = &s_playSeq[s_playId];
 			strcpy(name, scene->scene);
 			cutscenePlayer_setFramerate(scene->speed);
+
+			// mount the movie archive
+			if (s_sceneArchive) {
+				vpUnmount(s_sceneArchive);
+				s_sceneArchive = nullptr;
+			}
+			sprintf(vpath, "LFD/%s", scene->archive);
+			TFEMount s_sceneArchive = vpMountVirt(VPATH_GAME, vpath, VPATH_GAME, true, false);
+			if (!s_sceneArchive) {
+				s_sceneArchive = vpMountVirt(VPATH_GAME, scene->archive, VPATH_GAME, true, false);
+				if (!s_sceneArchive) {
+					TFE_System::logWrite(LOG_ERROR, "CutscenePlayer", "unable to load archive %s for scene %s", scene->archive, name);
+					s_scene = SCENE_EXIT;
+					return;
+				}
+			}
 
 			// Set the sound and music volume.
 			s32 baseMusicVol = cutscene_getMusicVolume();
@@ -249,6 +268,10 @@ namespace TFE_DarkForces
 			lmusic_stop();
 			lsystem_clearAllocator(LALLOC_CUTSCENE);
 			lsystem_setAllocator(LALLOC_PERSISTENT);
+			if (s_sceneArchive) {
+				vpUnmount(s_sceneArchive);
+				s_sceneArchive = nullptr;
+			}
 		}
 
 		return s_scene != SCENE_EXIT ? JTRUE : JFALSE;

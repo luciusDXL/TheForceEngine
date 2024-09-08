@@ -27,6 +27,7 @@ namespace TFE_DarkForces
 	static MemoryRegion* s_lmem = nullptr;
 	static MemoryRegion* s_lscene = nullptr;
 	MemoryRegion* s_alloc = nullptr;
+	static TFEMount s_mntjsfx;
 
 	enum LandruConstants
 	{
@@ -34,12 +35,17 @@ namespace TFE_DarkForces
 		CUTSCENE_MEMORY_BASE = 8 * 1024 * 1024, // 8 MB
 	};
 	
-	void lsystem_init()
+	bool lsystem_init()
 	{
-		if (s_lsystemInit) { return; }
+		if (s_lsystemInit) { return true; }
 		s_lmem = TFE_Memory::region_create("Landru", LANDRU_MEMORY_BASE);
 		s_lscene = TFE_Memory::region_create("Cutscene", CUTSCENE_MEMORY_BASE);
 		lsystem_setAllocator(LALLOC_PERSISTENT);
+
+		// cutscene audio container
+		s_mntjsfx = vpMountVirt(VPATH_GAME, "LFD/JEDISFX.LFD", VPATH_GAME, true, false);
+		if (!s_mntjsfx)
+			return false;
 
 		s_lsystemInit = JTRUE;
 		lcanvas_init(320, 200);
@@ -59,6 +65,7 @@ namespace TFE_DarkForces
 		// Default font used by in-game UI.
 		lfont_load("font8", 0);
 		lfont_set(0);
+		return true;
 	}
 
 	void lsystem_destroy()
@@ -79,6 +86,7 @@ namespace TFE_DarkForces
 		lactorAnim_destroy();
 		lactorDelt_destroy();
 		lactor_destroy();
+		vpUnmount(s_mntjsfx);
 
 		TFE_Memory::region_destroy(s_lmem);
 		TFE_Memory::region_destroy(s_lscene);

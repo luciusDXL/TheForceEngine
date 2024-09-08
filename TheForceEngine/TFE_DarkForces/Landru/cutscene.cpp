@@ -50,7 +50,7 @@ namespace TFE_DarkForces
 		// Re-initialize the canvas, so cutscenes run at the correct resolution even if it was changed for gameplay
 		// (i.e. high resolution support).
 		lcanvas_init(320, 200);
-		
+
 		// The original code then starts the cutscene loop here, and then returns when done.
 		// Instead we set a bool and then the calling code will call 'update' until it returns false.
 		s_playing = JTRUE;

@@ -111,7 +111,7 @@ namespace TFE_Settings
 	//////////////////////////////////////////////////////////////////////////////////
 	// Implementation
 	//////////////////////////////////////////////////////////////////////////////////
-	bool init(bool& firstRun)
+	bool init(bool& firstRun, bool portable)
 	{
 		// Clear out game settings.
 		s_gameSettings = {};
@@ -135,7 +135,7 @@ namespace TFE_Settings
 		}
 
 		firstRun = true;
-		autodetectGamePaths();
+		autodetectGamePaths(portable);
 		return writeToDisk();
 	}
 
@@ -146,7 +146,7 @@ namespace TFE_Settings
 	}
 
 	/* FIXME: this needs to be trimmed down considerably, or eliminated */
-	void autodetectGamePaths()
+	void autodetectGamePaths(bool portable)
 	{
 		for (u32 gameId = 0; gameId < Game_Count; gameId++)
 		{

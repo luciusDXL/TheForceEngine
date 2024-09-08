@@ -79,6 +79,7 @@ namespace TFE_DarkForces
 	
 	static char s_newAgentName[32];
 	static LangHotkeys* s_langKeys;
+	static TFEMount s_mntAgentMnu;
 
 	///////////////////////////////////////////
 	// Forward Declarations
@@ -446,14 +447,22 @@ namespace TFE_DarkForces
 		setPalette();
 	}
 
-	void agentMenu_load(LangHotkeys* langKeys)
+	bool agentMenu_load(LangHotkeys* langKeys)
 	{
+		s_mntAgentMnu = vpMountVirt(VPATH_GAME, "AGENTMNU.LFD", VPATH_GAME, true, false);
+		if (!s_mntAgentMnu) {
+			s_mntAgentMnu = vpMountVirt(VPATH_GAME, "LFD/AGENTMNU.LFD", VPATH_GAME, true, false);
+			if (!s_mntAgentMnu)
+				return false;
+		}
+
 		loadPaletteFromPltt("agentmnu.PLTT", s_menuPalette);
 		s_agentMenuCount = getFramesFromAnim("agentmnu.ANIM", &s_agentMenuFrames);
 		s_agentDlgCount = getFramesFromAnim("agentdlg.ANIM", &s_agentDlgFrames);
 		getFrameFromDelt("cursor.DELT", &s_cursor);
 		
 		s_langKeys = langKeys;
+		return true;
 	}
 		
 	void agentMenu_startup()

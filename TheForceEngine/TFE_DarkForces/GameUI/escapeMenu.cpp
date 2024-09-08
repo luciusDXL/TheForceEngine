@@ -75,6 +75,7 @@ namespace TFE_DarkForces
 	static const Vec2i c_escButtonDim = { 96, 16 };
 	static Vec4i s_confirmButtonRange[4];
 	static u32 s_escMenuPalette[256];
+	static TFEMount s_mntEscMnt;
 
 	struct EscapeMenuState
 	{
@@ -137,13 +138,16 @@ namespace TFE_DarkForces
 		return range;
 	}
 			
-	void escapeMenu_load(LangHotkeys* langKeys)
+	bool escapeMenu_load(LangHotkeys* langKeys)
 	{
 		s_emState.langKeys = langKeys;
 		if (!s_emState.escMenuFrames)
 		{
 			u8 paletteBuffer[768] = { 0 };
 
+			s_mntEscMnt = vpMountVirt(VPATH_GAME, "LFD/MENU.LFD", VPATH_GAME, true, false);
+			if (!s_mntEscMnt)
+				return false;
 			s_emState.escMenuFrameCount = getFramesFromAnim("escmenu.anim", &s_emState.escMenuFrames);
 			s_emState.confirmMenuFrameCount = getFramesFromAnim("yesno.anim", &s_emState.confirmMenuFrames);
 			loadPaletteFromPltt("menu.pltt", paletteBuffer);
@@ -176,6 +180,7 @@ namespace TFE_DarkForces
 			}
 			texturepacker_setConversionPalette(0, 8, paletteBuffer);
 		}
+		return true;
 	}
 
 	void escapeMenu_copyBackground(u8* framebuffer, u8* palette)

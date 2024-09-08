@@ -296,7 +296,7 @@ struct TFE_ModSettings
 
 namespace TFE_Settings
 {
-	bool init(bool& firstRun);
+	bool init(bool& firstRun, bool portable = false);
 	void shutdown();
 
 	bool writeToDisk();
@@ -328,7 +328,7 @@ namespace TFE_Settings
 	bool normalFix3do();
 
 	bool validatePath(const char* path, u32 game);
-	void autodetectGamePaths();
+	void autodetectGamePaths(bool portable = false);
 	void clearModSettings();
 	void loadCustomModSettings();
 }

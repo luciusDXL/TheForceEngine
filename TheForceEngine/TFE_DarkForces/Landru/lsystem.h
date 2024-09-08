@@ -19,7 +19,7 @@ enum LAllocator
 
 namespace TFE_DarkForces
 {
-	void lsystem_init();
+	bool lsystem_init();
 	void lsystem_destroy();
 
 	void lsystem_setAllocator(LAllocator alloc);

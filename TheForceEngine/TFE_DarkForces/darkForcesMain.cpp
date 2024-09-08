@@ -272,6 +272,7 @@ namespace TFE_DarkForces
 	{
 		TFEExtList telfd = { "lfd" };
 		TFEExtList tegob = { "gob" };
+		TFEFileList tl;
 		TFEMount m[1024];
 		int j, skipped;
 		bool loaddefgob;
@@ -324,10 +325,10 @@ namespace TFE_DarkForces
 			TFE_System::logWrite(LOG_MSG, "DarkForcesMain", m[j] ? "mounted %s" : "skipped %s", i);
 		}
 
+#if 0
 		/*
 		 * Add the contents of all the cutscene LFDs in the DF LFD/ subdir
 		 */
-		TFEFileList tl;
 		if (vpGetFileList(VPATH_GAME, "lfd/", tl, telfd, false))
 		{
 			char buf[32];
@@ -345,6 +346,7 @@ namespace TFE_DarkForces
 			TFE_System::logWrite(LOG_ERROR, "DarkForcesMain", "unable to enumerate LFD/ contents, aborting");
 			return false;
 		}
+#endif
 
 		/*
 		 * external MOD
@@ -491,7 +493,8 @@ namespace TFE_DarkForces
 		// TFE: Initially disable the reticle.
 		reticle_enable(false);
 
-		bool ok = mountGame(TFE_Paths::getPath(PATH_SOURCE_DATA), nullptr);
+		TFE_GameHeader *df = TFE_Settings::getGameHeader("Dark Forces");
+		bool ok = mountGame(df->sourcePath, nullptr);
 		if (!ok)
 		{
 			vpUnmountTree(VPATH_GAME);
@@ -551,16 +554,24 @@ namespace TFE_DarkForces
 		config_startup();
 		gameStartup();
 		loadAgentAndLevelData();
-		lsystem_init();
+
+		// cursors, fonts, ...
+		TFEMount m = vpMountVirt(VPATH_GAME, "LFD/STANDARD.LFD", VPATH_GAME, true, false);
+		if (!m)
+			return false;
+		if (!lsystem_init())
+			return false;
 
 		renderer_init();
 
 		// Handle start level
 		setInitialLevel(startLevel);
-		
+
 		// TFE Specific
-		agentMenu_load(&s_sharedState.langKeys);
-		escapeMenu_load(&s_sharedState.langKeys);
+		if (!agentMenu_load(&s_sharedState.langKeys))
+			return false;
+		if (!escapeMenu_load(&s_sharedState.langKeys))
+			return false;
 		// Add texture callbacks.
 		renderer_addHudTextureCallback(TFE_Jedi::level_getLevelTextures);
 		renderer_addHudTextureCallback(TFE_Jedi::level_getObjectTextures);
