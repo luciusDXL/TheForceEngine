@@ -166,6 +166,37 @@ namespace LevelEditor
 					s_center.y = boundsMin.y;
 				}
 			}
+			else if (s_editMode == LEDIT_ENTITY)
+			{
+				const u32 objCount = selection_getCount();
+				if (objCount)
+				{
+					s_transformToolActive = true;
+
+					// Get bounds based on vertex set.
+					s32 objIndex = -1;
+					EditorSector* sector = nullptr;
+					Vec3f boundsMin = { FLT_MAX, FLT_MAX, FLT_MAX };
+					Vec3f boundsMax = { -FLT_MAX,-FLT_MAX,-FLT_MAX };
+
+					for (u32 v = 0; v < objCount; v++)
+					{
+						selection_getEntity(v, sector, objIndex);
+						const EditorObject* obj = &sector->obj[objIndex];
+						boundsMin.x = std::min(boundsMin.x, obj->pos.x);
+						boundsMin.z = std::min(boundsMin.z, obj->pos.z);
+						boundsMax.x = std::max(boundsMax.x, obj->pos.x);
+						boundsMax.z = std::max(boundsMax.z, obj->pos.z);
+
+						const Entity* entity = &s_level.entities[obj->entityId];
+						const f32 base = (entity->type == ETYPE_3D) ? obj->pos.y + entity->obj3d->bounds[0].y : obj->pos.y;
+						boundsMin.y = std::min(boundsMin.y, obj->pos.y);
+					}
+					s_center.x = (boundsMin.x + boundsMax.x) * 0.5f;
+					s_center.z = (boundsMin.z + boundsMax.z) * 0.5f;
+					s_center.y = boundsMin.y;
+				}
+			}
 			else if (s_editMode == LEDIT_GUIDELINES)
 			{
 			}
@@ -927,7 +958,7 @@ namespace LevelEditor
 		return totalObjCount;
 	}
 
-	void captureObjectRotationData(u32 vertexCount)
+	void captureObjectRotationData()
 	{
 		if (s_editMode != LEDIT_SECTOR) { return; }
 		u32 totalObjectCount = captureGetTotalObjectCount();
@@ -959,16 +990,31 @@ namespace LevelEditor
 			EditorSector* sector = nullptr;
 			s32 index = -1;
 
-			const u32 vertexCount = selection_getCount(SEL_VERTEX);
-			const u32 totalObjCount = captureGetTotalObjectCount();
-			s_vertexData.resize(vertexCount);
-			Vec2f* vtxData = s_vertexData.data();
-			for (u32 v = 0; v < vertexCount; v++)
+			if (s_editMode == LEDIT_ENTITY)
 			{
-				selection_getVertex(v, sector, index);
-				vtxData[v] = sector->vtx[index];
+				const u32 objCount = selection_getCount(SEL_ENTITY);
+				s_objData.resize(objCount);
+				Vec3f* objData = s_objData.data();
+				for (u32 s = 0; s < objCount; s++)
+				{
+					selection_getEntity(s, sector, index);
+					EditorObject* obj = &sector->obj[index];
+					objData[s] = { obj->pos.x, obj->pos.z, obj->angle };
+				}
 			}
-			captureObjectRotationData(vertexCount);
+			else
+			{
+				const u32 vertexCount = selection_getCount(SEL_VERTEX);
+				const u32 totalObjCount = captureGetTotalObjectCount();
+				s_vertexData.resize(vertexCount);
+				Vec2f* vtxData = s_vertexData.data();
+				for (u32 v = 0; v < vertexCount; v++)
+				{
+					selection_getVertex(v, sector, index);
+					vtxData[v] = sector->vtx[index];
+				}
+				captureObjectRotationData();
+			}
 		}
 	}
 
@@ -1002,8 +1048,12 @@ namespace LevelEditor
 
 	void applyRotationToData(f32 angle)
 	{
-		const u32 vertexCount = selection_getCount(SEL_VERTEX);
-		if (!vertexCount) { return; }
+		if ((s_editMode == LEDIT_ENTITY && !selection_getCount()) ||
+			(s_editMode != LEDIT_ENTITY && !selection_getCount(SEL_VERTEX)))
+		{
+			return;
+		}
+
 		if (!s_dataCaptured)
 		{
 			captureRotationData();
@@ -1021,37 +1071,78 @@ namespace LevelEditor
 
 		EditorSector* sector;
 		s32 index;
-		const Vec2f* srcVtx = s_vertexData.data();
-		if (fabsf(angle) < 0.0001f)
+		if (s_editMode == LEDIT_ENTITY)
 		{
-			// If the angle is very close to zero, then just copy the original data.
-			for (u32 v = 0; v < vertexCount; v++)
+			const u32 objCount = selection_getCount();
+			const Vec3f* srcObjData = s_objData.data();
+			if (fabsf(angle) < 0.0001f)
 			{
-				selection_getVertex(v, sector, index);
-				sector->vtx[index] = srcVtx[v];
-				if (sector->searchKey != s_searchKey)
+				for (u32 o = 0; o < objCount; o++)
 				{
-					s_sectorChangeList.push_back(sector);
-					sector->searchKey = s_searchKey;
+					selection_getEntity(o, sector, index);
+					EditorObject* obj = &sector->obj[index];
+					obj->pos.x = srcObjData[o].x;
+					obj->pos.z = srcObjData[o].y;
+					obj->angle = srcObjData[o].z;
+					if (sector->searchKey != s_searchKey)
+					{
+						s_sectorChangeList.push_back(sector);
+						sector->searchKey = s_searchKey;
+					}
+				}
+			}
+			else
+			{
+				for (u32 o = 0; o < objCount; o++)
+				{
+					selection_getEntity(o, sector, index);
+					EditorObject* obj = &sector->obj[index];
+					obj->pos.x = (srcObjData[o].x - s_center.x) * mtx[0].x + (srcObjData[o].y - s_center.z) * mtx[0].y + mtx[0].z;
+					obj->pos.z = (srcObjData[o].x - s_center.x) * mtx[1].x + (srcObjData[o].y - s_center.z) * mtx[1].y + mtx[1].z;
+					obj->angle = srcObjData[o].z + angle;
+					if (sector->searchKey != s_searchKey)
+					{
+						s_sectorChangeList.push_back(sector);
+						sector->searchKey = s_searchKey;
+					}
 				}
 			}
 		}
 		else
 		{
-			// Otherwise apply the rotation.
-			for (u32 v = 0; v < vertexCount; v++)
+			const u32 vertexCount = selection_getCount(SEL_VERTEX);
+			const Vec2f* srcVtx = s_vertexData.data();
+			if (fabsf(angle) < 0.0001f)
 			{
-				selection_getVertex(v, sector, index);
-				sector->vtx[index].x = (srcVtx[v].x - s_center.x) * mtx[0].x + (srcVtx[v].z - s_center.z) * mtx[0].y + mtx[0].z;
-				sector->vtx[index].z = (srcVtx[v].x - s_center.x) * mtx[1].x + (srcVtx[v].z - s_center.z) * mtx[1].y + mtx[1].z;
-				if (sector->searchKey != s_searchKey)
+				// If the angle is very close to zero, then just copy the original data.
+				for (u32 v = 0; v < vertexCount; v++)
 				{
-					s_sectorChangeList.push_back(sector);
-					sector->searchKey = s_searchKey;
+					selection_getVertex(v, sector, index);
+					sector->vtx[index] = srcVtx[v];
+					if (sector->searchKey != s_searchKey)
+					{
+						s_sectorChangeList.push_back(sector);
+						sector->searchKey = s_searchKey;
+					}
 				}
 			}
+			else
+			{
+				// Otherwise apply the rotation.
+				for (u32 v = 0; v < vertexCount; v++)
+				{
+					selection_getVertex(v, sector, index);
+					sector->vtx[index].x = (srcVtx[v].x - s_center.x) * mtx[0].x + (srcVtx[v].z - s_center.z) * mtx[0].y + mtx[0].z;
+					sector->vtx[index].z = (srcVtx[v].x - s_center.x) * mtx[1].x + (srcVtx[v].z - s_center.z) * mtx[1].y + mtx[1].z;
+					if (sector->searchKey != s_searchKey)
+					{
+						s_sectorChangeList.push_back(sector);
+						sector->searchKey = s_searchKey;
+					}
+				}
+			}
+			applyRotationToObjects(mtx, angle);
 		}
-		applyRotationToObjects(mtx, angle);
 		
 		// Update sectors after changes.
 		const size_t changeCount = s_sectorChangeList.size();
