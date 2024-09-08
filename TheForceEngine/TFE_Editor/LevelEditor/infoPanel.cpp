@@ -2,6 +2,7 @@
 #include "levelEditorData.h"
 #include "levelEditorHistory.h"
 #include "editVertex.h"
+#include "editCommon.h"
 #include "guidelines.h"
 #include "tabControl.h"
 #include "camera.h"
@@ -646,68 +647,99 @@ namespace LevelEditor
 		s_prevVertexFeature.featureIndex = index;
 	}
 
+	bool editVertexPosition(EditorSector* sector, s32 index)
+	{
+		Vec2f curPos = sector->vtx[index];
+		ImGui::Text("Vertex %d of Sector %d", index, sector->id);
+
+		u32 compositeID = sector->id + (index << 16);
+		char vec2Id[512];
+		sprintf(vec2Id, "##VertexPosition%x", compositeID);
+		if (inputVec2f(vec2Id, &curPos))
+		{
+			sector->vtx[index] = curPos;
+			return true;
+		}
+		return false;
+	}
+
 	void infoPanelVertex()
 	{
 		s32 index = -1;
 		EditorSector* sector = nullptr;
 
-		const u32 count = selection_getCount();
-		if (count)
+		ImGui::BeginChild("##TextureList");
 		{
-			selection_getVertex(0, sector, index);
-		}
-		else if (selection_hasHovered())
-		{
-			selection_getVertex(SEL_INDEX_HOVERED, sector, index);
-		}
-
-		// If there is no selected vertex, just show vertex 0...
-		if (index < 0 || !sector)
-		{
-			getPrevVertexFeature(sector, index);
-		}
-		if (index < 0 || !sector) { return; }
-		setPrevVertexFeature(sector, index);
-
-		Vec2f* vtx = sector->vtx.data() + index;
-		if (count > 1)
-		{
-			ImGui::Text("Multiple vertices selected, enter a movement delta.");
-		}
-		else
-		{
-			ImGui::Text("Vertex %d of Sector %d", index, sector->id);
-		}
-
-		ImGui::NewLine();
-		ImGui::PushItemWidth(UI_SCALE(80));
-		ImGui::LabelText("##PositionLabel", "Position");
-		ImGui::PopItemWidth();
-
-		ImGui::SameLine();
-		Vec2f curPos = { 0 };
-		if (count <= 1)
-		{
-			curPos = *vtx;
-		}
-
-		Vec2f prevPos = curPos;
-		if (inputVec2f("##VertexPosition", &curPos))
-		{
-			if (count <= 1) // Move the single vertex.
+			const u32 count = selection_getCount();
+			if (count <= 1)
 			{
-				const FeatureId id = createFeatureId(sector, index, 0, false);
-				// cmd_addSetVertex(id, curPos);
-				edit_setVertexPos(id, curPos);
+				if (count)
+				{
+					selection_getVertex(0, sector, index);
+				}
+				else if (selection_hasHovered())
+				{
+					selection_getVertex(SEL_INDEX_HOVERED, sector, index);
+				}
+				else
+				{
+					getPrevVertexFeature(sector, index);
+				}
+				if (index < 0 || !sector) { return; }
+				setPrevVertexFeature(sector, index);
+				if (editVertexPosition(sector, index))
+				{
+					sectorToPolygon(sector);
+
+					s_idList.resize(1);
+					s_idList[0] = sector->id;
+					cmd_sectorSnapshot(LName_MoveVertex, s_idList);
+				}
 			}
-			else  // Move the whole group.
+			else
 			{
-				const Vec2f delta = { curPos.x - prevPos.x, curPos.z - prevPos.z };
-				// cmd_addMoveVertices((s32)s_selectionList.size(), s_selectionList.data(), delta);
-				edit_moveSelectedVertices(delta);
+				s_idList.clear();
+				s_searchKey++;
+
+				for (u32 i = 0; i < count; i++)
+				{
+					selection_getVertex(i, sector, index);
+					if (i == 0)
+					{
+						setPrevVertexFeature(sector, index);
+					}
+					if (editVertexPosition(sector, index))
+					{
+						if (sector->searchKey != s_searchKey)
+						{
+							sector->searchKey = s_searchKey;
+							s_idList.push_back(sector->id);
+						}
+					}
+					if (i < count - 1)
+					{
+						ImGui::Separator();
+					}
+				}
+
+				if (s_idList.empty())
+				{
+					// Take it back, no sectors added.
+					s_searchKey--;
+				}
+				else
+				{
+					const s32 sectorCount = (s32)s_idList.size();
+					const s32* idList = s_idList.data();
+					for (s32 i = 0; i < sectorCount; i++)
+					{
+						sectorToPolygon(&s_level.sectors[idList[i]]);
+					}
+					cmd_sectorSnapshot(LName_MoveVertex, s_idList);
+				}
 			}
 		}
-		ImGui::PopItemWidth();
+		ImGui::EndChild();
 	}
 
 	void infoLabel(const char* labelId, const char* labelText, u32 width)
