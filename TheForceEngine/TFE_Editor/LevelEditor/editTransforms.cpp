@@ -860,7 +860,6 @@ namespace LevelEditor
 			}
 			else
 			{
-				if (obj) { s_grid.height = yBase; }
 				edit_setTransformAnchor({ s_moveStartPos.x, worldPos.y, s_moveStartPos.z });
 			}
 
