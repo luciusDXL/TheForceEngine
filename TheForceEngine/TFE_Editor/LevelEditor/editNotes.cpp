@@ -60,7 +60,7 @@ namespace LevelEditor
 		else // Get hovered note 3D
 		{
 			// See if we can select an object.
-			Ray ray = { s_camera.pos, rayDir, 1000.0f, -1 };
+			Ray ray = { s_camera.pos, rayDir, 1000.0f };
 			f32 closestHit = FLT_MAX;
 			for (s32 n = 0; n < levelNoteCount; n++, note++)
 			{

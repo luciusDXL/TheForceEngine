@@ -565,10 +565,9 @@ namespace LevelEditor
 		// ENTITY
 		else if (s_editMode == LEDIT_ENTITY)
 		{
-			const s32 layer = (s_editFlags & LEF_SHOW_ALL_LAYERS) ? LAYER_ANY : s_curLayer;
 			// We have to manually trace another ray and make sure it is closer than the geometry.
 			RayHitInfo hitInfoObj;
-			const Ray ray = { s_camera.pos, s_rayDir, 1000.0f, layer };
+			const Ray ray = { s_camera.pos, s_rayDir, 1000.0f };
 			const bool rayHit = traceRay(&ray, &hitInfoObj, false, false, true/*canHitObjects*/);
 			if (rayHit && hitInfoObj.dist < info->dist && hitInfoObj.hitObjId >= 0)
 			{
@@ -1353,7 +1352,6 @@ namespace LevelEditor
 
 			cameraControl3d(mx, my);
 			selection_clearHovered();
-			s32 layer = (s_editFlags & LEF_SHOW_ALL_LAYERS) ? LAYER_ANY : s_curLayer;
 
 			// TODO: Hotkeys.
 			if (TFE_Input::keyPressed(KEY_G) && !TFE_Input::keyModDown(KEYMOD_CTRL))
@@ -1364,7 +1362,7 @@ namespace LevelEditor
 			}
 			if (s_gravity)
 			{
-				Ray ray = { s_camera.pos, { 0.0f, -1.0f, 0.0f}, 32.0f, layer };
+				Ray ray = { s_camera.pos, { 0.0f, -1.0f, 0.0f}, 32.0f };
 				RayHitInfo hitInfo;
 				if (traceRay(&ray, &hitInfo, false, false))
 				{
@@ -1390,7 +1388,7 @@ namespace LevelEditor
 			bool hitBackfaces = TFE_Input::keyDown(KEY_B);
 			
 			RayHitInfo hitInfo;
-			Ray ray = { s_camera.pos, s_rayDir, 1000.0f, layer };
+			Ray ray = { s_camera.pos, s_rayDir, 1000.0f };
 			const bool rayHit = traceRay(&ray, &hitInfo, hitBackfaces, s_sectorDrawMode == SDM_TEXTURED_CEIL || s_sectorDrawMode == SDM_TEXTURED_FLOOR);
 			if (rayHit) { s_cursor3d = hitInfo.hitPos; }
 			else  		{ s_cursor3d = rayGridPlaneHit(s_camera.pos, s_rayDir); }
@@ -2457,11 +2455,11 @@ namespace LevelEditor
 	#endif
 	}
 
-	EditorSector* edit_getHoverSector2dAtCursor(s32 layer)
+	EditorSector* edit_getHoverSector2dAtCursor()
 	{
 		EditorSector* hoverSector = nullptr;
 		const Vec2f pos2d = { s_cursor3d.x, s_cursor3d.z };
-		const s32 sectorId = findSector2d(layer, &pos2d);
+		const s32 sectorId = findSector2d(&pos2d);
 		if (sectorId >= 0) { hoverSector = &s_level.sectors[sectorId]; }
 		return hoverSector;
 	}
@@ -3886,10 +3884,9 @@ namespace LevelEditor
 	{
 		const s32 count = (s32)s_level.sectors.size();
 		EditorSector* sector = s_level.sectors.data();
-		s32 layer = ((s_editFlags & LEF_SHOW_ALL_LAYERS) && s_view != EDIT_VIEW_2D) ? LAYER_ANY : s_curLayer;
 		for (s32 i = 0; i < count; i++, sector++)
 		{
-			if (layer != LAYER_ANY && sector->layer != layer) { continue; }
+			if (!sector_onActiveLayer(sector)) { continue; }
 			if (sector->name.empty()) { continue; }
 
 			Vec2i mapPos;
@@ -4137,7 +4134,7 @@ namespace LevelEditor
 				pos.z = (p0map.z + p1map.z) / 2 + s32(distOffsetDir.z);
 
 				Vec2i posX = { ((p0map.x + p1map.x) / 2), offset.z > 0.0f ? p1map.z - 40 : p1map.z + 8 };
-				Vec2i posZ = { offset.x < 0.0f ? 8 + p0map.x : -ImGui::CalcTextSize(zDist).x - 24 + p0map.x, ((p0map.z + p1map.z) / 2) };
+				Vec2i posZ = { offset.x < 0.0f ? 8 + p0map.x : -s32(ImGui::CalcTextSize(zDist).x) - 24 + p0map.x, ((p0map.z + p1map.z) / 2) };
 				const f32 threshold = 8.0f * s_zoom2d;
 				drawViewportInfo(1, pos, dist, 0, 0);
 				if (fabsf(offset.x) > threshold && fabsf(offset.z) > threshold)

@@ -1954,7 +1954,7 @@ namespace LevelEditor
 		return -1;
 	}
 
-	s32 findSector2d(s32 layer, const Vec2f* pos)
+	s32 findSector2d(const Vec2f* pos)
 	{
 		if (s_level.sectors.empty()) { return -1; }
 
@@ -1963,7 +1963,7 @@ namespace LevelEditor
 
 		for (s32 i = 0; i < sectorCount; i++)
 		{
-			if (sectors[i].layer != layer) { continue; }
+			if (!sector_onActiveLayer(&sectors[i])) { continue; }
 			if (TFE_Polygon::pointInsidePolygon(&sectors[i].poly, *pos))
 			{
 				return i;
@@ -2554,7 +2554,7 @@ namespace LevelEditor
 	}
 
 	// TODO: Spatial data structure to handle cases where there are 10k, 100k, etc. sectors.
-	bool getOverlappingSectorsPt(const Vec3f* pos, s32 curLayer, SectorList* result, f32 padding)
+	bool getOverlappingSectorsPt(const Vec3f* pos, SectorList* result, f32 padding)
 	{
 		if (!pos || !result) { return false; }
 

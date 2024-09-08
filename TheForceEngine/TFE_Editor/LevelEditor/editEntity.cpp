@@ -107,14 +107,13 @@ namespace LevelEditor
 
 	void handleEntityInsert(Vec3f worldPos, RayHitInfo* info/*=nullptr*/)
 	{
-		const s32 layer = (s_editFlags & LEF_SHOW_ALL_LAYERS) ? LAYER_ANY : s_curLayer;
 		const bool insertEntity = getEditAction(ACTION_PLACE);
 		if (!insertEntity) { return; }
 
 		EditorSector* hoverSector = nullptr;
 		if (s_view == EDIT_VIEW_2D)
 		{
-			edit_getHoverSector2dAtCursor(layer);
+			edit_getHoverSector2dAtCursor();
 		}
 		else if (info)
 		{
@@ -204,9 +203,7 @@ namespace LevelEditor
 			// Trace forward at the screen center to get the likely focus sector.
 			Vec3f centerViewDir = edit_viewportCoordToWorldDir3d({ s_viewportSize.x / 2, s_viewportSize.z / 2 });
 			RayHitInfo hitInfo;
-
-			s32 layer = (s_editFlags & LEF_SHOW_ALL_LAYERS) ? LAYER_ANY : s_curLayer;
-			Ray ray = { s_camera.pos, centerViewDir, 1000.0f, layer };
+			Ray ray = { s_camera.pos, centerViewDir, 1000.0f };
 
 			f32 nearDist = 1.0f;
 			f32 farDist = 100.0f;
@@ -293,14 +290,12 @@ namespace LevelEditor
 	
 	void handleEntityEdit(RayHitInfo* hitInfo, const Vec3f& rayDir)
 	{
-		const s32 layer = (s_editFlags & LEF_SHOW_ALL_LAYERS) ? LAYER_ANY : s_curLayer;
-
 		selection_clearHovered();
 		EditorSector* hoverSector = nullptr;
 		if (s_view == EDIT_VIEW_2D) // Get the hover sector in 2D.
 		{
 			// Get the hovered sector as well for insertion later.
-			hoverSector = edit_getHoverSector2dAtCursor(layer);
+			hoverSector = edit_getHoverSector2dAtCursor();
 		}
 		else // Or the hit sector in 3D.
 		{
@@ -308,7 +303,7 @@ namespace LevelEditor
 
 			// See if we can select an object.
 			RayHitInfo hitInfoObj;
-			const Ray ray = { s_camera.pos, rayDir, 1000.0f, layer };
+			const Ray ray = { s_camera.pos, rayDir, 1000.0f };
 			const bool rayHit = traceRay(&ray, &hitInfoObj, false, false, true/*canHitObjects*/);
 			if (rayHit && hitInfoObj.dist < hitInfo->dist && hitInfoObj.hitObjId >= 0)
 			{

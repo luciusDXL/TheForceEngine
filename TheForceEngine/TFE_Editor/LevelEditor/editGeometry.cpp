@@ -62,7 +62,7 @@ namespace LevelEditor
 	{
 		SectorList sectorList;
 		Vec3f pos3d = { pos.x, s_grid.height, pos.z };
-		if (!getOverlappingSectorsPt(&pos3d, s_curLayer, &sectorList, 0.5f))
+		if (!getOverlappingSectorsPt(&pos3d, &sectorList, 0.5f))
 		{
 			return false;
 		}
@@ -145,7 +145,7 @@ namespace LevelEditor
 	bool snapToLine3d(Vec3f& pos3d, f32 maxDist, f32 maxCamDist, Vec2f& newPos, FeatureId& snappedFeature, f32* outDistSq, f32* outCameraDistSq)
 	{
 		SectorList sectorList;
-		if (!getOverlappingSectorsPt(&pos3d, s_curLayer, &sectorList, 0.5f))
+		if (!getOverlappingSectorsPt(&pos3d, &sectorList, 0.5f))
 		{
 			return false;
 		}
@@ -2236,7 +2236,7 @@ namespace LevelEditor
 		// Get the hover sector in 2D.
 		if (s_view == EDIT_VIEW_2D)
 		{
-			hoverSector = edit_getHoverSector2dAtCursor(s_curLayer);
+			hoverSector = edit_getHoverSector2dAtCursor();
 		}
 		else if (hitInfo->hitSectorId >= 0) // Or the hit sector in 3D.
 		{

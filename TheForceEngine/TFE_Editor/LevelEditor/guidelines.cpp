@@ -181,7 +181,7 @@ namespace LevelEditor
 
 		const s32 edgeCount = (s32)guideline->edge.size();
 		const GuidelineEdge* edge = guideline->edge.data();
-		const s32 offsetCount = guideline->offsets.size();
+		const s32 offsetCount = (s32)guideline->offsets.size();
 
 		f32 s, closestDist = FLT_MAX;
 		const Vec2f* vtx = guideline->vtx.data();

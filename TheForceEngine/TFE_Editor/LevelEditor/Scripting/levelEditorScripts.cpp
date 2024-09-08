@@ -114,7 +114,7 @@ namespace LevelEditor
 			std::vector<char> text;
 			const size_t size = file.getSize();
 			text.resize(size + 1);
-			file.readBuffer(text.data(), size);
+			file.readBuffer(text.data(), (u32)size);
 			text.data()[size] = 0;
 			file.close();
 

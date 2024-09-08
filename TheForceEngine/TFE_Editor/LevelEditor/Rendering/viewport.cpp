@@ -2207,10 +2207,10 @@ namespace LevelEditor
 			f32 ceilBias  = (s_camera.pos.y <= sector->ceilHeight)  ? -bias :  bias;
 
 			// Draw lines.
-			const size_t wallCount = sector->walls.size();
+			const s32 wallCount = (s32)sector->walls.size();
 			const Vec2f* vtx = sector->vtx.data();
 			EditorWall* wall = sector->walls.data();
-			for (size_t w = 0; w < wallCount; w++, wall++)
+			for (s32 w = 0; w < wallCount; w++, wall++)
 			{
 				// Skip hovered or selected walls.
 				bool skipLines = false;
@@ -2823,10 +2823,10 @@ namespace LevelEditor
 		}
 
 		// Draw lines.
-		const size_t wallCount = sector->walls.size();
+		const size_t wallCount = (s32)sector->walls.size();
 		const EditorWall* wall = sector->walls.data();
 		const Vec2f* vtx = sector->vtx.data();
-		for (size_t w = 0; w < wallCount; w++, wall++)
+		for (s32 w = 0; w < wallCount; w++, wall++)
 		{
 			// Skip hovered or selected walls.
 			if (s_editMode == LEDIT_WALL && ((hoveredSector == sector && hoveredFeatureIndex == w) ||

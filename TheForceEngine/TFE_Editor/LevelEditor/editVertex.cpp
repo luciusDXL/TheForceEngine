@@ -93,7 +93,7 @@ namespace LevelEditor
 			}
 			else if (s_view == EDIT_VIEW_2D)
 			{
-				sector = edit_getHoverSector2dAtCursor(s_curLayer);
+				sector = edit_getHoverSector2dAtCursor();
 				if (sector)
 				{
 					HitPart part = HP_NONE;
@@ -351,9 +351,7 @@ namespace LevelEditor
 			// Trace forward at the screen center to get the likely focus sector.
 			Vec3f centerViewDir = edit_viewportCoordToWorldDir3d({ s_viewportSize.x / 2, s_viewportSize.z / 2 });
 			RayHitInfo hitInfo;
-
-			s32 layer = (s_editFlags & LEF_SHOW_ALL_LAYERS) ? LAYER_ANY : s_curLayer;
-			Ray ray = { s_camera.pos, centerViewDir, 1000.0f, layer };
+			Ray ray = { s_camera.pos, centerViewDir, 1000.0f };
 
 			f32 nearDist = 1.0f;
 			f32 farDist = 100.0f;

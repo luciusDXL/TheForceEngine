@@ -86,7 +86,7 @@ namespace LevelEditor
 	void edit_deleteLevelNote(s32 index);
 	void edit_setEditMode(LevelEditMode mode);
 	void edit_cleanSectorList(const std::vector<s32>& selectedSectors);
-	EditorSector* edit_getHoverSector2dAtCursor(s32 layer);
+	EditorSector* edit_getHoverSector2dAtCursor();
 	Vec3f edit_viewportCoordToWorldDir3d(Vec2i vCoord);
 
 	// Drag Select: TODO Move?
