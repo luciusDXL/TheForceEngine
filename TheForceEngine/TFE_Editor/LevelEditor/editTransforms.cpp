@@ -811,14 +811,7 @@ namespace LevelEditor
 		if (!s_moveStarted)
 		{
 			s_moveStarted = true;
-			s_moveStartPos = { worldPos.x, worldPos.z };
-
-			s_moveStarted = true;
-			if (s_view == EDIT_VIEW_3D)
-			{
-				s_prevPos = s_curVtxPos;
-			}
-
+			
 			EditorSector* sector = nullptr;
 			EditorObject* obj = nullptr;
 			Entity* entity = nullptr;
@@ -842,15 +835,32 @@ namespace LevelEditor
 				top = obj->pos.y + entity->size.z;
 			}
 
+			const f32 dF = fabsf(worldPos.y - base);
+			const f32 dC = fabsf(worldPos.y - top);
+			const f32 yBase = dF <= dC ? base : top;
+
+			if (s_view == EDIT_VIEW_3D)
+			{
+				// If 3D, we want to grab the base or the top of the object since that is the plane that will be used to 
+				// move the object going forward.
+				edit_setTransformAnchor({ 0.0f, yBase, 0.0f });
+				s_cursor3d = edit_gizmoCursor3d();
+				Vec2f snapPos = { s_cursor3d.x, s_cursor3d.z };
+				snapToGrid(&snapPos);
+				s_cursor3d = { snapPos.x, s_cursor3d.y, snapPos.z };
+				worldPos = s_cursor3d;
+				s_curVtxPos = s_cursor3d;
+				s_prevPos = s_curVtxPos;
+			}
+			s_moveStartPos = { worldPos.x, worldPos.z };
+
 			if (moveOnYAxis && obj)
 			{
-				const f32 dF = fabsf(worldPos.y - base);
-				const f32 dC = fabsf(worldPos.y - top);
-				edit_setTransformAnchor({ s_moveStartPos.x, dF <= dC ? base : top, s_moveStartPos.z });
+				edit_setTransformAnchor(worldPos);
 			}
 			else
 			{
-				if (obj) { s_grid.height = base; worldPos.y = s_grid.height; }
+				if (obj) { s_grid.height = yBase; }
 				edit_setTransformAnchor({ s_moveStartPos.x, worldPos.y, s_moveStartPos.z });
 			}
 
