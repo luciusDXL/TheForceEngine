@@ -15,6 +15,7 @@ namespace LevelEditor
 {
 	// Helper sector list to track changes.
 	extern SectorList s_sectorChangeList;
+	extern std::vector<s32> s_idList;
 	// General movement.
 	extern bool s_moveStarted;
 	extern EditorSector* s_transformWallSector;

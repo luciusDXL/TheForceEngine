@@ -13,10 +13,17 @@
 
 namespace LevelEditor
 {
+	enum MoveTo
+	{
+		MOVETO_FLOOR = 0,
+		MOVETO_CEIL,
+	};
+
 	void findHoveredEntity2d(Vec2f worldPos);
 	void handleEntityInsert(Vec3f worldPos, RayHitInfo* info = nullptr);
 	void entityComputeDragSelect();
 	void addEntityToSector(EditorSector* sector, Entity* entity, Vec3f* pos);
 
+	void edit_entityMoveTo(MoveTo moveTo);
 	void edit_moveEntity(Vec3f delta);
 }

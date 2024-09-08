@@ -14,6 +14,7 @@ using namespace TFE_Editor;
 namespace LevelEditor
 {
 	SectorList s_sectorChangeList;
+	std::vector<s32> s_idList;
 
 	bool s_moveStarted = false;
 	EditorSector* s_transformWallSector = nullptr;
@@ -105,6 +106,9 @@ namespace LevelEditor
 		const bool selRem = TFE_Input::keyModDown(KEYMOD_ALT);
 		const bool selToggle = TFE_Input::keyModDown(KEYMOD_CTRL);
 		const bool selToggleDrag = selAdd && selToggle;
+
+		const bool moveToFloor = TFE_Input::keyPressed(KEY_F);
+		const bool moveToCeil  = TFE_Input::keyPressed(KEY_C);
 
 		const bool mousePressed = s_singleClick;
 		const bool mouseDown = TFE_Input::mouseDown(MouseButton::MBUTTON_LEFT);
@@ -236,6 +240,7 @@ namespace LevelEditor
 			else if (s_editMode == LEDIT_ENTITY)
 			{
 				handleEntityInsert({ worldPos.x, s_cursor3d.y, worldPos.z }, info);
+				if (moveToFloor || moveToCeil) { edit_entityMoveTo(moveToFloor ? MOVETO_FLOOR : MOVETO_CEIL); }
 			}
 		}
 	}

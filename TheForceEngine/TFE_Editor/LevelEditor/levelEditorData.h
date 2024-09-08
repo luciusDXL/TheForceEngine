@@ -264,7 +264,8 @@ namespace LevelEditor
 	
 	// Spatial Queries
 	s32  findSectorByName(const char* name, s32 excludeId = -1);
-	s32  findSector2d(const Vec2f* pos);
+	EditorSector* findSector2d(Vec2f pos);
+	EditorSector* findSector2d_closestHeight(Vec2f pos, f32 height);
 	bool traceRay(const Ray* ray, RayHitInfo* hitInfo, bool flipFaces, bool canHitSigns, bool canHitObjects = false);
 	// Get all sectors that have bounds that contain the point.
 	bool getOverlappingSectorsPt(const Vec3f* pos, SectorList* result, f32 padding = 0.0f);

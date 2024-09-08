@@ -108,7 +108,6 @@ namespace LevelEditor
 	// Search
 	u32 s_searchKey = 0;
 	static std::vector<EditorSector*> s_sortedHoverSectors;
-	static std::vector<s32> s_idList;
 
 	bool s_editMove = false;
 	static SectorList s_workList;
@@ -183,6 +182,7 @@ namespace LevelEditor
 	Vec3f mouseCoordToWorldDir3d(s32 mx, s32 my);
 	Vec2i worldPos2dToMap(const Vec2f& worldPos);
 	bool worldPosToViewportCoord(Vec3f worldPos, Vec2f* screenPos);
+	EditorSector* findHoverSector2d(Vec2f pos);
 	
 	void handleTextureAlignment();
 
@@ -367,15 +367,13 @@ namespace LevelEditor
 		return false;
 	}
 
-	EditorSector* findSector2d(Vec2f pos)
+	EditorSector* findHoverSector2d(Vec2f pos)
 	{
 		const size_t sectorCount = s_level.sectors.size();
 		EditorSector* sector = s_level.sectors.data();
 		s_sortedHoverSectors.clear();
 		for (size_t s = 0; s < sectorCount; s++, sector++)
 		{
-			// Make sure the sector is in a visible/unlocked group.
-			if (!sector_isInteractable(sector) || !sector_onActiveLayer(sector)) { continue; }
 			if (isPointInsideSector2d(sector, pos))
 			{
 				// Gather all of the potentially selected sectors in a list.
@@ -1276,7 +1274,7 @@ namespace LevelEditor
 			
 			// Always check for the hovered sector, since sectors can overlap.
 			selection_clearHovered();
-			EditorSector* hoveredSector = findSector2d(worldPos);
+			EditorSector* hoveredSector = findHoverSector2d(worldPos);
 			if (hoveredSector && (!sector_isInteractable(hoveredSector) || !sector_onActiveLayer(hoveredSector)))
 			{
 				hoveredSector = nullptr;
@@ -2457,11 +2455,7 @@ namespace LevelEditor
 
 	EditorSector* edit_getHoverSector2dAtCursor()
 	{
-		EditorSector* hoverSector = nullptr;
-		const Vec2f pos2d = { s_cursor3d.x, s_cursor3d.z };
-		const s32 sectorId = findSector2d(&pos2d);
-		if (sectorId >= 0) { hoverSector = &s_level.sectors[sectorId]; }
-		return hoverSector;
+		return findHoverSector2d({ s_cursor3d.x, s_cursor3d.z });
 	}
 
 	////////////////////////////////////////////////////////
@@ -2934,157 +2928,7 @@ namespace LevelEditor
 
 		ImGui::EndChild();
 	}
-
-	void endTransformInternal()
-	{
-		if (edit_gizmoChangedGeo() && selection_getCount() > 0)
-		{
-			s_searchKey++;
-			s_idList.clear();
-
-			// Handle vertices connected to other sectors.
-			u32 vertexCount = (u32)selection_getCount(SEL_VERTEX);
-			EditorSector* sector = nullptr;
-			s32 featureIndex = -1;
-			for (u32 v = 0; v < vertexCount; v++)
-			{
-				selection_getVertex(v, sector, featureIndex);
-				if (sector->searchKey != s_searchKey)
-				{
-					sector->searchKey = s_searchKey;
-					s_idList.push_back(sector->id);
-				}
-			}
-
-			u32 name = 0;
-			if (s_editMode == LEDIT_SECTOR)
-			{
-				name = LName_RotateSector;
-			}
-			else if (s_editMode == LEDIT_WALL)
-			{
-				name = LName_RotateWall;
-			}
-			else if (s_editMode == LEDIT_VERTEX)
-			{
-				name = LName_RotateVertex;
-			}
-			cmd_sectorSnapshot(name, s_idList);
-			edit_resetGizmo();
-		}
-	}
-
-	void edit_endTransform()
-	{
-		const u32 count = selection_getCount();
-		if (s_editMove && s_moveStarted && count > 0)
-		{
-			s_searchKey++;
-			s_idList.clear();
-			u32 name = 0;
-			switch (s_editMode)
-			{
-				case LEDIT_VERTEX:
-				{
-					EditorSector* sector = nullptr;
-					s32 featureIndex = -1;
-					for (u32 i = 0; i < count; i++)
-					{
-						selection_getVertex(i, sector, featureIndex);
-						if (sector->searchKey != s_searchKey)
-						{
-							sector->searchKey = s_searchKey;
-							s_idList.push_back(sector->id);
-						}
-					}
-					name = LName_MoveVertex;
-				} break;
-				case LEDIT_WALL:
-				{
-					EditorSector* sector = nullptr;
-					s32 featureIndex = -1;
-					HitPart part;
-					for (u32 i = 0; i < count; i++)
-					{
-						selection_getSurface(i, sector, featureIndex, &part);
-						if (sector->searchKey != s_searchKey)
-						{
-							sector->searchKey = s_searchKey;
-							s_idList.push_back(sector->id);
-						}
-					}
-
-					// Handle vertices connected to other sectors.
-					u32 vertexCount = (u32)selection_getCount(SEL_VERTEX);
-					for (u32 v = 0; v < vertexCount; v++)
-					{
-						selection_getVertex(v, sector, featureIndex);
-						if (sector->searchKey != s_searchKey)
-						{
-							sector->searchKey = s_searchKey;
-							s_idList.push_back(sector->id);
-						}
-					}
-					name = LName_MoveWall;
-				} break;
-				case LEDIT_SECTOR:
-				{
-					EditorSector* sector = nullptr;
-					for (u32 i = 0; i < count; i++)
-					{
-						selection_getSector(i, sector);
-						if (sector->searchKey != s_searchKey)
-						{
-							sector->searchKey = s_searchKey;
-							s_idList.push_back(sector->id);
-						}
-					}
-
-					// Handle vertices connected to other sectors.
-					u32 vertexCount = (u32)selection_getCount(SEL_VERTEX);
-					s32 featureIndex = -1;
-					for (u32 v = 0; v < vertexCount; v++)
-					{
-						selection_getVertex(v, sector, featureIndex);
-						if (sector->searchKey != s_searchKey)
-						{
-							sector->searchKey = s_searchKey;
-							s_idList.push_back(sector->id);
-						}
-					}
-					name = LName_MoveSector;
-				} break;
-				case LEDIT_ENTITY:
-				{
-					EditorSector* sector = nullptr;
-					s32 featureIndex = -1;
-
-					u32 entityCount = (u32)selection_getCount(SEL_ENTITY);
-					for (u32 v = 0; v < entityCount; v++)
-					{
-						selection_getEntity(v, sector, featureIndex);
-						if (sector->searchKey != s_searchKey)
-						{
-							sector->searchKey = s_searchKey;
-							s_idList.push_back(sector->id);
-						}
-					}
-					name = LName_MoveObject;
-				} break;
-			};
-			// Take a snapshot of changed sectors.
-			// TODO: Vertex snapshot of a set of sectors?
-			cmd_sectorSnapshot(name, s_idList);
-		}
-		else
-		{
-			endTransformInternal();
-		}
-
-		s_editMove = false;
-		s_moveStarted = false;
-	}
-		
+					
 	void edit_clearSelections(bool endTransform)
 	{
 		if (endTransform)

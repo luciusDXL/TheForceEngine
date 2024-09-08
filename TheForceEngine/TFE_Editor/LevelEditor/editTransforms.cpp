@@ -4,6 +4,7 @@
 #include "editSector.h"
 #include "hotkeys.h"
 #include "levelEditor.h"
+#include "levelEditorHistory.h"
 #include "editVertex.h"
 #include "sharedState.h"
 #include <TFE_Editor/LevelEditor/Rendering/grid.h>
@@ -50,6 +51,8 @@ namespace LevelEditor
 	void moveEntity(Vec3f worldPos);
 	void captureRotationData();
 	void applyRotationToData(f32 angle);
+	void addObjectToNewSector(EditorObject* obj, EditorSector* sector, s32 featureIndex, EditorSector* newSector);
+	void endTransformInternal();
 
 	void edit_setTransformMode(TransformMode mode)
 	{
@@ -517,6 +520,140 @@ namespace LevelEditor
 				s_rotation = { 0 };
 			}
 		}
+	}
+		
+	void edit_endTransform()
+	{
+		const u32 count = selection_getCount();
+		if (s_editMove && s_moveStarted && count > 0)
+		{
+			s_searchKey++;
+			s_idList.clear();
+			u32 name = 0;
+			switch (s_editMode)
+			{
+				case LEDIT_VERTEX:
+				{
+					EditorSector* sector = nullptr;
+					s32 featureIndex = -1;
+					for (u32 i = 0; i < count; i++)
+					{
+						selection_getVertex(i, sector, featureIndex);
+						if (sector->searchKey != s_searchKey)
+						{
+							sector->searchKey = s_searchKey;
+							s_idList.push_back(sector->id);
+						}
+					}
+					name = LName_MoveVertex;
+				} break;
+				case LEDIT_WALL:
+				{
+					EditorSector* sector = nullptr;
+					s32 featureIndex = -1;
+					HitPart part;
+					for (u32 i = 0; i < count; i++)
+					{
+						selection_getSurface(i, sector, featureIndex, &part);
+						if (sector->searchKey != s_searchKey)
+						{
+							sector->searchKey = s_searchKey;
+							s_idList.push_back(sector->id);
+						}
+					}
+
+					// Handle vertices connected to other sectors.
+					u32 vertexCount = (u32)selection_getCount(SEL_VERTEX);
+					for (u32 v = 0; v < vertexCount; v++)
+					{
+						selection_getVertex(v, sector, featureIndex);
+						if (sector->searchKey != s_searchKey)
+						{
+							sector->searchKey = s_searchKey;
+							s_idList.push_back(sector->id);
+						}
+					}
+					name = LName_MoveWall;
+				} break;
+				case LEDIT_SECTOR:
+				{
+					EditorSector* sector = nullptr;
+					for (u32 i = 0; i < count; i++)
+					{
+						selection_getSector(i, sector);
+						if (sector->searchKey != s_searchKey)
+						{
+							sector->searchKey = s_searchKey;
+							s_idList.push_back(sector->id);
+						}
+					}
+
+					// Handle vertices connected to other sectors.
+					u32 vertexCount = (u32)selection_getCount(SEL_VERTEX);
+					s32 featureIndex = -1;
+					for (u32 v = 0; v < vertexCount; v++)
+					{
+						selection_getVertex(v, sector, featureIndex);
+						if (sector->searchKey != s_searchKey)
+						{
+							sector->searchKey = s_searchKey;
+							s_idList.push_back(sector->id);
+						}
+					}
+					name = LName_MoveSector;
+				} break;
+				case LEDIT_ENTITY:
+				{
+					EditorSector* sector = nullptr;
+					s32 featureIndex = -1;
+
+					u32 entityCount = (u32)selection_getCount(SEL_ENTITY);
+					for (u32 v = 0; v < entityCount; v++)
+					{
+						selection_getEntity(v, sector, featureIndex);
+						if (sector->searchKey != s_searchKey)
+						{
+							sector->searchKey = s_searchKey;
+							s_idList.push_back(sector->id);
+						}
+
+						// Now check to see if the entity is still in the same sector.
+						EditorObject* obj = &sector->obj[featureIndex];
+						if (!isPointInsideSector3d(sector, obj->pos))
+						{
+							// Try to find a different sector.
+							EditorSector* newSector = findSector3d(obj->pos);
+							if (newSector)
+							{
+								addObjectToNewSector(obj, sector, featureIndex, newSector);
+							}
+							else if (!isPointInsideSector2d(sector, { obj->pos.x, obj->pos.z }))
+							{
+								// No longer in a sector, so try to find a 2D sector (maybe underneath).
+								newSector = findSector2d_closestHeight({ obj->pos.x, obj->pos.z }, obj->pos.y);
+								if (newSector)
+								{
+									addObjectToNewSector(obj, sector, featureIndex, newSector);
+								}
+
+								// Otherwise just leave it alone for now.
+							}
+						}
+					}
+					name = LName_MoveObject;
+				} break;
+			};
+			// Take a snapshot of changed sectors.
+			// TODO: Vertex snapshot of a set of sectors?
+			cmd_sectorSnapshot(name, s_idList);
+		}
+		else
+		{
+			endTransformInternal();
+		}
+
+		s_editMove = false;
+		s_moveStarted = false;
 	}
 
 	void moveFeatures(const Vec3f& newPos)
@@ -1151,6 +1288,63 @@ namespace LevelEditor
 		{
 			EditorSector* sector = list[i];
 			sectorToPolygon(sector);
+		}
+	}
+
+	void addObjectToNewSector(EditorObject* obj, EditorSector* sector, s32 featureIndex, EditorSector* newSector)
+	{
+		EditorObject objCopy = *obj;
+		edit_deleteObject(sector, featureIndex);
+		selection_clearHovered();
+		selection_entity(SA_REMOVE, sector, featureIndex);
+
+		s32 newIndex = (s32)newSector->obj.size();
+		selection_entity(SA_ADD, newSector, newIndex);
+		newSector->obj.push_back(objCopy);
+
+		if (newSector->searchKey != s_searchKey)
+		{
+			newSector->searchKey = s_searchKey;
+			s_idList.push_back(newSector->id);
+		}
+	}
+
+	void endTransformInternal()
+	{
+		if (edit_gizmoChangedGeo() && selection_getCount() > 0)
+		{
+			s_searchKey++;
+			s_idList.clear();
+
+			// Handle vertices connected to other sectors.
+			u32 vertexCount = (u32)selection_getCount(SEL_VERTEX);
+			EditorSector* sector = nullptr;
+			s32 featureIndex = -1;
+			for (u32 v = 0; v < vertexCount; v++)
+			{
+				selection_getVertex(v, sector, featureIndex);
+				if (sector->searchKey != s_searchKey)
+				{
+					sector->searchKey = s_searchKey;
+					s_idList.push_back(sector->id);
+				}
+			}
+
+			u32 name = 0;
+			if (s_editMode == LEDIT_SECTOR)
+			{
+				name = LName_RotateSector;
+			}
+			else if (s_editMode == LEDIT_WALL)
+			{
+				name = LName_RotateWall;
+			}
+			else if (s_editMode == LEDIT_VERTEX)
+			{
+				name = LName_RotateVertex;
+			}
+			cmd_sectorSnapshot(name, s_idList);
+			edit_resetGizmo();
 		}
 	}
 }

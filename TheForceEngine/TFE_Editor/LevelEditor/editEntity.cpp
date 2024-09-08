@@ -1,4 +1,5 @@
 #include "editEntity.h"
+#include "editCommon.h"
 #include "hotkeys.h"
 #include "levelEditor.h"
 #include "levelEditorData.h"
@@ -302,6 +303,84 @@ namespace LevelEditor
 			obj->pos.x += delta.x;
 			obj->pos.y += delta.y;
 			obj->pos.z += delta.z;
+		}
+	}
+
+	void edit_entityMoveTo(MoveTo moveTo)
+	{
+		s_searchKey++;
+		s_idList.clear();
+
+		u32 name = 0;
+		const u32 entityCount = selection_getCount(SEL_ENTITY);
+		for (u32 i = 0; i < entityCount; i++)
+		{
+			EditorSector* sector = nullptr;
+			s32 index = -1;
+			selection_getEntity(i, sector, index);
+			if (!sector || index < 0) { continue; }
+
+			EditorObject* obj = &sector->obj[index];
+			const Entity* entity = &s_level.entities[obj->entityId];
+			if (moveTo == MOVETO_FLOOR)
+			{
+				name = LName_MoveObjectToFloor;
+				f32 base = obj->pos.y;
+				if (entity->type == ETYPE_3D)
+				{
+					base = obj->pos.y + entity->obj3d->bounds[0].y;
+				}
+
+				if (base != sector->floorHeight)
+				{
+					if (entity->type == ETYPE_3D)
+					{
+						obj->pos.y = sector->floorHeight - entity->obj3d->bounds[0].y;
+					}
+					else
+					{
+						obj->pos.y = sector->floorHeight;
+					}
+					if (sector->searchKey != s_searchKey)
+					{
+						s_idList.push_back(sector->id);
+					}
+				}
+			}
+			else if (moveTo == MOVETO_CEIL)
+			{
+				name = LName_MoveObjectToCeil;
+				f32 top;
+				if (entity->type == ETYPE_3D)
+				{
+					top = obj->pos.y + entity->obj3d->bounds[1].y;
+				}
+				else
+				{
+					// Assume the pivot is at the ceiling.
+					top = obj->pos.y;
+				}
+
+				if (top != sector->ceilHeight)
+				{
+					if (entity->type == ETYPE_3D)
+					{
+						obj->pos.y = sector->ceilHeight - entity->obj3d->bounds[1].y;
+					}
+					else
+					{
+						obj->pos.y = sector->ceilHeight;
+					}
+					if (sector->searchKey != s_searchKey)
+					{
+						s_idList.push_back(sector->id);
+					}
+				}
+			}
+		}
+		if (!s_idList.empty())
+		{
+			cmd_sectorSnapshot(name, s_idList);
 		}
 	}
 	

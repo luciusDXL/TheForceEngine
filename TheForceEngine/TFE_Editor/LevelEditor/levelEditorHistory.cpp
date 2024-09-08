@@ -69,6 +69,8 @@ namespace LevelEditor
 		history_registerName(LName_MoveFlat, "Move Flat(s)");
 		history_registerName(LName_MoveSector, "Move Sector(s)");
 		history_registerName(LName_MoveObject, "Move Objects(s)");
+		history_registerName(LName_MoveObjectToFloor, "Move Object(s) to Floor");
+		history_registerName(LName_MoveObjectToCeil, "Move Object(s) to Ceiling");
 		history_registerName(LName_InsertVertex, "Insert Vertex");
 		history_registerName(LName_DeleteVertex, "Delete Vertex");
 		history_registerName(LName_DeleteWall, "Delete Wall");

@@ -1954,22 +1954,67 @@ namespace LevelEditor
 		return -1;
 	}
 
-	s32 findSector2d(const Vec2f* pos)
+	EditorSector* findSector2d(Vec2f pos)
 	{
-		if (s_level.sectors.empty()) { return -1; }
+		if (s_level.sectors.empty()) { return nullptr; }
 
 		const s32 sectorCount = (s32)s_level.sectors.size();
 		EditorSector* sectors = s_level.sectors.data();
 
 		for (s32 i = 0; i < sectorCount; i++)
 		{
-			if (!sector_onActiveLayer(&sectors[i])) { continue; }
-			if (TFE_Polygon::pointInsidePolygon(&sectors[i].poly, *pos))
+			if (!sector_isInteractable(&sectors[i]) || !sector_onActiveLayer(&sectors[i])) { continue; }
+			if (TFE_Polygon::pointInsidePolygon(&sectors[i].poly, pos))
 			{
-				return i;
+				return &sectors[i];
 			}
 		}
-		return -1;
+		return nullptr;
+	}
+
+	EditorSector* findSector2d_closestHeight(Vec2f pos, f32 height)
+	{
+		if (s_level.sectors.empty()) { return nullptr; }
+
+		const s32 sectorCount = (s32)s_level.sectors.size();
+		EditorSector* sector = s_level.sectors.data();
+
+		EditorSector* firstHit = nullptr;
+		EditorSector* closestInside = nullptr;
+		EditorSector* closestOutside = nullptr;
+		f32 distFromFloorInside = FLT_MAX;
+		f32 distFromFloorOutside = FLT_MAX;
+
+		for (s32 i = 0; i < sectorCount; i++, sector++)
+		{
+			if (!sector_isInteractable(sector) || !sector_onActiveLayer(sector)) { continue; }
+			if (TFE_Polygon::pointInsidePolygon(&sector->poly, pos))
+			{
+				if (!firstHit) { firstHit = sector; }
+				if (height >= sector->floorHeight && height <= sector->ceilHeight)
+				{
+					const f32 dH = height - sector->floorHeight;
+					if (dH < distFromFloorInside)
+					{
+						closestInside = sector;
+						distFromFloorInside = dH;
+					}
+				}
+				else
+				{
+					const f32 dH = fabsf(height - sector->floorHeight);
+					if (dH < distFromFloorOutside)
+					{
+						closestOutside = sector;
+						distFromFloorOutside = dH;
+					}
+				}
+			}
+		}
+
+		if (closestInside) { return closestInside; }
+		if (closestOutside) { return closestOutside; }
+		return firstHit;
 	}
 
 	bool rayHitAABB(const Ray* ray, const Vec3f* bounds)
@@ -2472,7 +2517,7 @@ namespace LevelEditor
 	{
 		const f32 eps = 0.0001f;
 		// The layers need to match.
-		if (!sector_onActiveLayer(sector)) { return false; }
+		if (!sector_isInteractable(sector) || !sector_onActiveLayer(sector)) { return false; }
 		// The point has to be within the bounding box.
 		if (pos.x < sector->bounds[0].x - eps || pos.x > sector->bounds[1].x + eps ||
 			pos.z < sector->bounds[0].z - eps || pos.z > sector->bounds[1].z + eps)
@@ -2489,7 +2534,7 @@ namespace LevelEditor
 	{
 		const f32 eps = 0.0001f;
 		// The layers need to match.
-		if (!sector_onActiveLayer(sector)) { return false; }
+		if (!sector_isInteractable(sector) || !sector_onActiveLayer(sector)) { return false; }
 		// The point has to be within the bounding box.
 		if (pos.x < sector->bounds[0].x - eps || pos.x > sector->bounds[1].x + eps ||
 			pos.y < sector->bounds[0].y - eps || pos.y > sector->bounds[1].y + eps ||
