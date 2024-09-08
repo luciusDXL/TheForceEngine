@@ -287,7 +287,26 @@ namespace LevelEditor
 			}
 		}
 	}
+
+	void edit_moveEntity(Vec3f delta)
+	{
+		const u32 entityCount = selection_getCount(SEL_ENTITY);
+		for (u32 i = 0; i < entityCount; i++)
+		{
+			EditorSector* sector = nullptr;
+			s32 index = -1;
+			selection_getEntity(i, sector, index);
+			if (!sector || index < 0) { continue; }
+
+			EditorObject* obj = &sector->obj[index];
+			obj->pos.x += delta.x;
+			obj->pos.y += delta.y;
+			obj->pos.z += delta.z;
+		}
+	}
 	
+	// TODO: Delete.
+#if 0
 	void handleEntityEdit(RayHitInfo* hitInfo, const Vec3f& rayDir)
 	{
 		selection_clearHovered();
@@ -564,4 +583,5 @@ namespace LevelEditor
 			}
 		}
 	}
+#endif
 }

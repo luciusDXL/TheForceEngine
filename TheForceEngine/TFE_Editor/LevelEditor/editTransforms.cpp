@@ -1,5 +1,6 @@
 #include "editTransforms.h"
 #include "editCommon.h"
+#include "editEntity.h"
 #include "editSector.h"
 #include "hotkeys.h"
 #include "levelEditor.h"
@@ -46,6 +47,7 @@ namespace LevelEditor
 	void moveFlat();
 	void moveWall(Vec3f worldPos);
 	void moveSector(Vec3f worldPos);
+	void moveEntity(Vec3f worldPos);
 	void captureRotationData();
 	void applyRotationToData(f32 angle);
 
@@ -537,6 +539,20 @@ namespace LevelEditor
 				edit_endTransform();
 			}
 		}
+		else if (s_editMode == LEDIT_ENTITY)
+		{
+			if (hasSelection && TFE_Input::mouseDown(MBUTTON_LEFT) && !TFE_Input::keyModDown(KEYMOD_CTRL) && !TFE_Input::keyModDown(KEYMOD_SHIFT))
+			{
+				if (s_enableMoveTransform)
+				{
+					moveEntity(newPos);
+				}
+			}
+			else
+			{
+				edit_endTransform();
+			}
+		}
 	}
 
 	void moveFlat()
@@ -784,6 +800,109 @@ namespace LevelEditor
 		s_moveStartPos = { transPos.x, transPos.z };
 		edit_setTransformPos(transPos);
 		edit_moveSector(delta);
+	}
+
+	void moveEntity(Vec3f worldPos)
+	{
+		const u32 moveAxis = edit_getMoveAxis();
+		const bool moveOnYAxis = (moveAxis & AXIS_Y) != 0u;
+
+		snapToGrid(&worldPos);
+		if (!s_moveStarted)
+		{
+			s_moveStarted = true;
+			s_moveStartPos = { worldPos.x, worldPos.z };
+
+			s_moveStarted = true;
+			if (s_view == EDIT_VIEW_3D)
+			{
+				s_prevPos = s_curVtxPos;
+			}
+
+			EditorSector* sector = nullptr;
+			EditorObject* obj = nullptr;
+			Entity* entity = nullptr;
+			s32 index = -1;
+			selection_getEntity(selection_hasHovered() ? SEL_INDEX_HOVERED : 0, sector, index);
+			if (sector && index >= 0)
+			{
+				obj = &sector->obj[index];
+				entity = &s_level.entities[obj->entityId];
+			}
+
+			f32 base, top;
+			if (entity->type == ETYPE_3D)
+			{
+				base = obj->pos.y + entity->obj3d->bounds[0].y;
+				top = obj->pos.y + entity->obj3d->bounds[1].y;
+			}
+			else
+			{
+				base = obj->pos.y;
+				top = obj->pos.y + entity->size.z;
+			}
+
+			if (moveOnYAxis && obj)
+			{
+				const f32 dF = fabsf(worldPos.y - base);
+				const f32 dC = fabsf(worldPos.y - top);
+				edit_setTransformAnchor({ s_moveStartPos.x, dF <= dC ? base : top, s_moveStartPos.z });
+			}
+			else
+			{
+				if (obj) { s_grid.height = base; worldPos.y = s_grid.height; }
+				edit_setTransformAnchor({ s_moveStartPos.x, worldPos.y, s_moveStartPos.z });
+			}
+
+			if (moveOnYAxis)
+			{
+				s_curVtxPos = s_cursor3d;
+			}
+		}
+
+		if (moveOnYAxis)
+		{
+			worldPos = moveAlongRail({ 0.0f, 1.0f, 0.0f });
+			snapToGridY(&worldPos.y);
+		}
+
+		// Current movement.
+		const Vec3f pos = edit_getTransformPos();
+		Vec3f delta = { worldPos.x - s_moveStartPos.x, worldPos.y - pos.y, worldPos.z - s_moveStartPos.z };
+		Vec3f transPos = worldPos;
+		if (moveOnYAxis)
+		{
+			// Movement along Y axis.
+			delta.x = 0.0f;
+			delta.z = 0.0f;
+			transPos.x = pos.x;
+			transPos.z = pos.z;
+		}
+		else
+		{
+			// Movement along XZ axis.
+			delta.y = 0.0f;
+			transPos.y = pos.y;
+
+			if (!(moveAxis & AXIS_X))
+			{
+				delta.x = 0.0f;
+				delta.y = 0.0f;
+				transPos.x = pos.x;
+				transPos.y = pos.y;
+			}
+			else if (!(moveAxis & AXIS_Z))
+			{
+				delta.z = 0.0f;
+				delta.y = 0.0f;
+				transPos.z = pos.z;
+				transPos.y = pos.y;
+			}
+		}
+
+		s_moveStartPos = { transPos.x, transPos.z };
+		edit_setTransformPos(transPos);
+		edit_moveEntity(delta);
 	}
 
 	u32 captureGetTotalObjectCount()

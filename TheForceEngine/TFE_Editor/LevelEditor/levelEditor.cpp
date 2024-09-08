@@ -3054,6 +3054,23 @@ namespace LevelEditor
 					}
 					name = LName_MoveSector;
 				} break;
+				case LEDIT_ENTITY:
+				{
+					EditorSector* sector = nullptr;
+					s32 featureIndex = -1;
+
+					u32 entityCount = (u32)selection_getCount(SEL_ENTITY);
+					for (u32 v = 0; v < entityCount; v++)
+					{
+						selection_getEntity(v, sector, featureIndex);
+						if (sector->searchKey != s_searchKey)
+						{
+							sector->searchKey = s_searchKey;
+							s_idList.push_back(sector->id);
+						}
+					}
+					name = LName_MoveObject;
+				} break;
 			};
 			// Take a snapshot of changed sectors.
 			// TODO: Vertex snapshot of a set of sectors?
