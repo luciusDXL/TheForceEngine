@@ -1971,6 +1971,26 @@ namespace LevelEditor
 			}
 		}
 	}
+
+	f32 adjustWidthForView(f32 width, const EditorObject* obj, const Entity* entity, const Vec2f** srcUv)
+	{
+		// Which direction?
+		f32 dir = fmodf(obj->angle / (2.0f * PI), 1.0f);
+		if (dir < 0.0f) { dir += 1.0f; }
+
+		f32 angleDiff = fmodf((s_camera.yaw - obj->angle) / (2.0f * PI), 1.0f);
+		if (angleDiff < 0.0f) { angleDiff += 1.0f; }
+
+		const s32 viewIndex = 31 - (s32(angleDiff * 32.0f) & 31);
+		assert(viewIndex >= 0 && viewIndex < 32);
+
+		const SpriteView* view = &entity->views[viewIndex];
+		if (srcUv) { *srcUv = view->uv; }
+
+		// Adjust the width.
+		width *= (view->st[1].x - view->st[0].x) / (entity->views[0].st[1].x - entity->views[0].st[0].x);
+		return width;
+	}
 			
 	void drawEntity3D(const EditorSector* sector, const EditorObject* obj, s32 id, u32 objColor, const Vec3f& cameraRgtXZ, bool drawEntityBounds, bool drawHighlights)
 	{
@@ -1999,21 +2019,7 @@ namespace LevelEditor
 				const Vec2f* srcUv = entity->uv;
 				if (entity->views.size() >= 32)
 				{
-					// Which direction?
-					f32 dir = fmodf(obj->angle / (2.0f * PI), 1.0f);
-					if (dir < 0.0f) { dir += 1.0f; }
-
-					f32 angleDiff = fmodf((s_camera.yaw - obj->angle) / (2.0f * PI), 1.0f);
-					if (angleDiff < 0.0f) { angleDiff += 1.0f; }
-
-					const s32 viewIndex = 31 - (s32(angleDiff * 32.0f) & 31);
-					assert(viewIndex >= 0 && viewIndex < 32);
-
-					const SpriteView* view = &entity->views[viewIndex];
-					srcUv = view->uv;
-
-					// Adjust the width.
-					width *= (view->st[1].x - view->st[0].x) / (entity->views[0].st[1].x - entity->views[0].st[0].x);
+					width = adjustWidthForView(width, obj, entity, &srcUv);
 				}
 
 				Vec3f corners[] =
@@ -2033,6 +2039,10 @@ namespace LevelEditor
 				s32 idx[] = { 0, 1, 2, 0, 2, 3 };
 				triDraw3d_addTextured(TRIMODE_BLEND, 6, 4, corners, uv, idx, objColor, false, entity->image, false, false);
 			}
+		}
+		else if (!entity->obj3d && entity->views.size() >= 32)
+		{
+			width = adjustWidthForView(width, obj, entity, nullptr);
 		}
 
 		if (s_editMode == LEDIT_ENTITY && drawEntityBounds)
