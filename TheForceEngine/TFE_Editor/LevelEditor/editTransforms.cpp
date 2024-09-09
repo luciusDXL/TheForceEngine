@@ -1173,7 +1173,7 @@ namespace LevelEditor
 				obj->pos.x = (srcData[v].x - s_center.x) * mtx[0].x + (srcData[v].y - s_center.z) * mtx[0].y + mtx[0].z;
 				obj->pos.z = (srcData[v].x - s_center.x) * mtx[1].x + (srcData[v].y - s_center.z) * mtx[1].y + mtx[1].z;
 				obj->angle = srcData[v].z + angle;
-				
+
 				if (s_level.entities[obj->entityId].type == ETYPE_3D)
 				{
 					compute3x3Rotation(&obj->transform, obj->angle, obj->pitch, obj->roll);
@@ -1221,6 +1221,12 @@ namespace LevelEditor
 					obj->pos.x = srcObjData[o].x;
 					obj->pos.z = srcObjData[o].y;
 					obj->angle = srcObjData[o].z;
+
+					if (s_level.entities[obj->entityId].type == ETYPE_3D)
+					{
+						compute3x3Rotation(&obj->transform, obj->angle, obj->pitch, obj->roll);
+					}
+
 					if (sector->searchKey != s_searchKey)
 					{
 						s_sectorChangeList.push_back(sector);
@@ -1237,6 +1243,12 @@ namespace LevelEditor
 					obj->pos.x = (srcObjData[o].x - s_center.x) * mtx[0].x + (srcObjData[o].y - s_center.z) * mtx[0].y + mtx[0].z;
 					obj->pos.z = (srcObjData[o].x - s_center.x) * mtx[1].x + (srcObjData[o].y - s_center.z) * mtx[1].y + mtx[1].z;
 					obj->angle = srcObjData[o].z + angle;
+
+					if (s_level.entities[obj->entityId].type == ETYPE_3D)
+					{
+						compute3x3Rotation(&obj->transform, obj->angle, obj->pitch, obj->roll);
+					}
+
 					if (sector->searchKey != s_searchKey)
 					{
 						s_sectorChangeList.push_back(sector);
