@@ -762,7 +762,7 @@ namespace LevelEditor
 		if (multi)
 		{
 			char buf[32] = { 0 };
-			result = ImGui::InputTextWithHint(labelId, "multi", buf, 32, ImGuiInputTextFlags_CharsDecimal);
+			result = ImGui::InputTextWithHint(labelId, "unset", buf, 32, ImGuiInputTextFlags_CharsDecimal);
 			if (result)
 			{
 				char* endPtr = nullptr;
