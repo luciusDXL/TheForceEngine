@@ -380,6 +380,18 @@ namespace TFE_Editor
 		return (u32)s_history.size();
 	}
 
+	void history_removeLast()
+	{
+		const u32 prevAddr = s_history.back();
+		s_history.pop_back();
+		s_historyBuffer.resize(prevAddr);
+
+		assert(s_curPosInHistory > 0);
+		s_curPosInHistory--;
+
+		s_curBufferAddr = (u32)s_historyBuffer.size();
+	}
+
 	void history_collapse()
 	{
 		// Clear the history.
@@ -387,7 +399,7 @@ namespace TFE_Editor
 		// Push the new snapshot.
 		history_createSnapshot("Collapse History");
 	}
-
+		
 	void history_collapseToPos(s32 pos)
 	{
 		// Remove all items from the history *after* pos.
@@ -462,18 +474,12 @@ namespace TFE_Editor
 		size += (u32)s_history.size() * sizeof(u32);
 		return size;
 	}
-		
-	bool history_canMergeCommand(u16 cmd, u16 name, const void* dataToMatch, u32 matchSize)
-	{
-		if (s_history.size() <= 1) { return false; }
 
+	void history_getPrevCmdAndName(u16& cmd, u16& name)
+	{
 		CommandHeader* header = hBuffer_getHeader(s_curPosInHistory);
-		if (header->cmdId == CMD_SNAPSHOT || header->cmdId != cmd || header->cmdName != name)
-		{
-			return false;
-		}
-		const u8* data = (u8*)header + sizeof(CommandHeader);
-		return memcmp(dataToMatch, data, matchSize) == 0;
+		cmd = header->cmdId;
+		name = header->cmdName;
 	}
 	
 	// Get values from the buffer.

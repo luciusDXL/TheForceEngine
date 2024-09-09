@@ -4,6 +4,7 @@
 #include "editTransforms.h"
 #include "selection.h"
 #include "sharedState.h"
+#include "infoPanel.h"
 
 using namespace TFE_Editor;
 
@@ -41,6 +42,7 @@ namespace LevelEditor
 			s_dragSelect.active = false;
 		}
 		edit_setTransformChange();
+		infoPanel_clearSelection();
 	}
 
 	void selection_setCurrent(SelectionListId id)
@@ -49,6 +51,7 @@ namespace LevelEditor
 		selection_clearHovered();
 		s_currentSelection = id;
 		edit_setTransformChange();
+		infoPanel_clearSelection();
 	}
 
 	void selection_clearHovered()
@@ -98,16 +101,19 @@ namespace LevelEditor
 				s_selectionList2[SEL_VERTEX].clear();
 				actionDone = selection_insertVertex(id, sector->vtx[index], sector, part);
 				buildDerived = actionDone;
+				infoPanel_clearSelection();
 			} break;
 			case SA_ADD:
 			{
 				actionDone = selection_insertVertex(id, sector->vtx[index], sector, part);
 				buildDerived = actionDone;
+				infoPanel_clearSelection();
 			} break;
 			case SA_REMOVE:
 			{
 				actionDone = selection_removeVertex(id, sector->vtx[index]);
 				buildDerived = actionDone;
+				infoPanel_clearSelection();
 			} break;
 			case SA_TOGGLE:
 			{
@@ -120,6 +126,7 @@ namespace LevelEditor
 					actionDone = selection_insertVertex(id, sector->vtx[index], sector, part);
 				}
 				buildDerived = actionDone;
+				infoPanel_clearSelection();
 			} break;
 			case SA_CHECK_INCLUSION:
 			{
@@ -575,16 +582,19 @@ namespace LevelEditor
 				s_selectionList2[s_currentSelection].clear();
 				actionDone = selection_insertFeatureId(s_selectionList2[s_currentSelection], id);
 				buildDerived = actionDone;
+				infoPanel_clearSelection();
 			} break;
 			case SA_ADD:
 			{
 				actionDone = selection_insertFeatureId(s_selectionList2[s_currentSelection], id);
 				buildDerived = actionDone;
+				infoPanel_clearSelection();
 			} break;
 			case SA_REMOVE:
 			{
 				actionDone = selection_removeFeatureId(s_selectionList2[s_currentSelection], id);
 				buildDerived = actionDone;
+				infoPanel_clearSelection();
 			} break;
 			case SA_TOGGLE:
 			{
@@ -597,6 +607,7 @@ namespace LevelEditor
 					actionDone = selection_insertFeatureId(s_selectionList2[s_currentSelection], id);
 				}
 				buildDerived = actionDone;
+				infoPanel_clearSelection();
 			} break;
 			case SA_CHECK_INCLUSION:
 			{

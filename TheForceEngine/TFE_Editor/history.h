@@ -35,13 +35,14 @@ namespace TFE_Editor
 	void history_init(UnpackSnapshotFunc snapshotUnpackFunc, CreateSnapshotFunc createSnapshotFunc);
 	void history_destroy();
 	void history_clear();
+	void history_removeLast();
 	HistoryErrorType history_validateCommandHeaders(s32& errorIndex, u32& badValue);
 
 	// Register general commands and names.
 	void history_registerCommand(u16 id, CmdApplyFunc func);
 	void history_registerName(u16 id, const char* name);
 	const char* history_getName(u16 id);
-	
+		
 	// Create new commands and snapshots.
 	void history_createSnapshot(const char* name=nullptr);
 	bool history_createCommand(u16 cmd, u16 name);
@@ -56,7 +57,7 @@ namespace TFE_Editor
 	const char* history_getItemNameAndState(u32 index, u32& parentId, bool& isHidden);
 
 	// Handle merging commands.
-	bool history_canMergeCommand(u16 cmd, u16 name, const void* dataToMatch, u32 matchSize);
+	void history_getPrevCmdAndName(u16& cmd, u16& name);
 
 	// Get values from the buffer.
 	u8    hBuffer_getU8();

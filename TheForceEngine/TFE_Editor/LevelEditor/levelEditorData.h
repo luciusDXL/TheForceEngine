@@ -139,6 +139,11 @@ namespace LevelEditor
 		u32 searchKey = 0;
 	};
 
+	struct IndexPair
+	{
+		s32 i0, i1;
+	};
+
 	enum GuidelineFlags
 	{
 		GLFLAG_NONE = 0,
@@ -253,6 +258,7 @@ namespace LevelEditor
 
 	void level_createSnapshot(TFE_Editor::SnapshotBuffer* buffer);
 	void level_createSectorSnapshot(TFE_Editor::SnapshotBuffer* buffer, std::vector<s32>& sectorIds);
+	void level_createSectorWallSnapshot(TFE_Editor::SnapshotBuffer* buffer, std::vector<IndexPair>& sectorWallIds);
 	void level_createEntiyListSnapshot(TFE_Editor::SnapshotBuffer* buffer, s32 sectorId);
 
 	void level_createLevelSectorSnapshotSameAssets(std::vector<EditorSector>& sectors);
@@ -260,6 +266,7 @@ namespace LevelEditor
 
 	void level_unpackSnapshot(s32 id, u32 size, void* data);
 	void level_unpackSectorSnapshot(u32 size, void* data);
+	void level_unpackSectorWallSnapshot(u32 size, void* data);
 	void level_unpackEntiyListSnapshot(u32 size, void* data);
 	
 	// Spatial Queries
@@ -348,4 +355,6 @@ namespace LevelEditor
 	}
 
 	extern std::vector<u8> s_fileData;
+	extern std::vector<IndexPair> s_pairs;
+	extern std::vector<IndexPair> s_prevPairs;
 }

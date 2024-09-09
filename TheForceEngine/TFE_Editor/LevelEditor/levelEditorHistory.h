@@ -33,6 +33,8 @@ namespace LevelEditor
 		LName_RotateSector,
 		LName_RotateWall,
 		LName_RotateVertex,
+		LName_ChangeWallAttrib,
+		LName_ChangeSectorAttrib,
 		LName_Count
 	};
 
@@ -61,9 +63,10 @@ namespace LevelEditor
 		SEC_ATTRIB_LAYER,
 		SEC_ATTRIB_COUNT
 	};
-
+	
 	void cmd_sectorChangeAttribute(u32 name, s32 count, const FeatureId* list, u32 attribId);
 	void cmd_sectorSetAttribute(u32 name, s32 count, const FeatureId* list, u32 attribId);
-	void cmd_sectorSnapshot(u32 name, std::vector<s32>& sectorIds);
+	void cmd_sectorSnapshot(u32 name, std::vector<s32>& sectorWallIds);
+	void cmd_sectorWallSnapshot(u32 name, std::vector<IndexPair>& sectorIds, bool idsChanged);
 	void cmd_objectListSnapshot(u32 name, s32 sectorId);
 }

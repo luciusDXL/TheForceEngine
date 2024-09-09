@@ -22,6 +22,7 @@
 #include <TFE_Jedi/Level/rwall.h>
 #include <TFE_Jedi/Level/rsector.h>
 #include <TFE_System/math.h>
+#include <TFE_System/system.h>
 #include <TFE_Ui/ui.h>
 
 #include <algorithm>
@@ -85,6 +86,10 @@ namespace LevelEditor
 	static char s_scriptLine[4096] = { 0 };
 	static char s_script[65536] = { 0 };
 	static bool s_allowScriptHistoryCallback = false;
+	
+	bool infoIntInput(const char* labelId, u32 width, s32* value, bool multi = false);
+	bool infoUIntInput(const char* labelId, u32 width, u32* value, bool multi = false);
+	bool infoFloatInput(const char* labelId, u32 width, f32* value, bool multi = false);
 		
 	void infoPanelClearMessages()
 	{
@@ -749,26 +754,71 @@ namespace LevelEditor
 		ImGui::PopItemWidth();
 		ImGui::SameLine();
 	}
-
-	void infoIntInput(const char* labelId, u32 width, s32* value)
+		
+	bool infoIntInput(const char* labelId, u32 width, s32* value, bool multi)
 	{
 		ImGui::PushItemWidth(f32(width));
-		ImGui::InputInt(labelId, value);
+		bool result = false;
+		if (multi)
+		{
+			char buf[32] = { 0 };
+			result = ImGui::InputTextWithHint(labelId, "multi", buf, 32, ImGuiInputTextFlags_CharsDecimal);
+			if (result)
+			{
+				char* endPtr = nullptr;
+				*value = strtol(buf, &endPtr, 10);
+			}
+		}
+		else
+		{
+			result = ImGui::InputInt(labelId, value);
+		}
 		ImGui::PopItemWidth();
+		return result;
 	}
 
-	void infoUIntInput(const char* labelId, u32 width, u32* value)
+	bool infoUIntInput(const char* labelId, u32 width, u32* value, bool multi)
 	{
 		ImGui::PushItemWidth(f32(width));
-		ImGui::InputUInt(labelId, value);
+		bool result = false;
+		if (multi)
+		{
+			char buf[32] = { 0 };
+			result = ImGui::InputTextWithHint(labelId, "multi", buf, 32, ImGuiInputTextFlags_CharsDecimal);
+			if (result)
+			{
+				char* endPtr = nullptr;
+				*value = strtoul(buf, &endPtr, 10);
+			}
+		}
+		else
+		{
+			result = ImGui::InputUInt(labelId, value);
+		}
 		ImGui::PopItemWidth();
+		return result;
 	}
 
-	void infoFloatInput(const char* labelId, u32 width, f32* value)
+	bool infoFloatInput(const char* labelId, u32 width, f32* value, bool multi)
 	{
 		ImGui::PushItemWidth(f32(width));
-		ImGui::InputFloat(labelId, value, 0.0f, 0.0f, "%.2f");
+		bool result = false;
+		if (multi)
+		{
+			char buf[32] = { 0 };
+			result = ImGui::InputTextWithHint(labelId, "multi", buf, 32, ImGuiInputTextFlags_CharsDecimal);
+			if (result)
+			{
+				char* endPtr = nullptr;
+				*value = (f32)strtod(buf, &endPtr);
+			}
+		}
+		else
+		{
+			result = ImGui::InputFloat(labelId, value, 0.0f, 0.0f, "%.2f");
+		}
 		ImGui::PopItemWidth();
+		return result;
 	}
 
 	void getPrevWallFeature(EditorSector*& sector, s32& index)
@@ -792,256 +842,518 @@ namespace LevelEditor
 		index = s_prevWallFeature.featureIndex;
 	}
 
+	struct WallInfo
+	{
+		EditorSector* sector;
+		s32 wallIndex;
+	};
+	std::vector<WallInfo> s_wallInfo;
+
+	void addWallInfo(EditorSector* sector, s32 wallIndex)
+	{
+		const s32 count = (s32)s_wallInfo.size();
+		const WallInfo* info = s_wallInfo.data();
+		for (s32 i = 0; i < count; i++, info++)
+		{
+			if (info->sector == sector && info->wallIndex == wallIndex) { return; }
+		}
+		s_wallInfo.push_back({ sector, wallIndex });
+	}
+
+	u32 getWallInfoList()
+	{
+		const u32 count = selection_getCount(SEL_SURFACE);
+		EditorSector* sector;
+		s32 wallIndex;
+		HitPart part;
+
+		s_wallInfo.clear();
+		for (u32 i = 0; i < count; i++)
+		{
+			selection_getSurface(i, sector, wallIndex, &part);
+			if (part != HP_FLOOR && part != HP_CEIL)
+			{
+				addWallInfo(sector, wallIndex);
+			}
+		}
+		return (u32)s_wallInfo.size();
+	}
+
+	enum WallChangeFlags : u32
+	{
+		WCF_NONE = 0,
+		WCF_LIGHT = FLAG_BIT(0),
+		WCF_FLAG1_SET = FLAG_BIT(1),
+		WCF_FLAG3_SET = FLAG_BIT(2),
+	};
+	struct WallChanges
+	{
+		bool applyChanges = false;
+		f64 timeStamp = 0.0;
+		s32 changes = WCF_NONE;
+		s32 flags1Changed = 0;
+		s32 flags3Changed = 0;
+		s32 flags1Value = 0;
+		s32 flags3Value = 0;
+		s32 light = 0;
+		s32 flags1_set = 0;
+		s32 flags3_set = 0;
+	};
+	static WallChanges s_wallChanges = {};
+
+	void infoPanel_addWallChangesToHistory()
+	{
+		// Add to history.
+		const s32 count = (s32)s_wallInfo.size();
+		if (count < 0) { return; }
+
+		const s32 countPrev = (s32)s_prevPairs.size();
+		bool pairsChanged = countPrev != count;
+
+		s_pairs.resize(count);
+		IndexPair* pair = s_pairs.data();
+		const WallInfo* info = s_wallInfo.data();
+		const IndexPair* prev = s_prevPairs.data();
+		for (s32 i = 0; i < count; i++, info++)
+		{
+			pair[i] = { info->sector->id, info->wallIndex };
+			if (!pairsChanged && (pair[i].i0 != prev[i].i0 || pair[i].i1 != prev[i].i1))
+			{
+				pairsChanged = true;
+			}
+		}
+
+		// Collapse all attribute changes when possible.
+		cmd_sectorWallSnapshot(LName_ChangeWallAttrib, s_pairs, pairsChanged);
+		if (pairsChanged)
+		{
+			s_prevPairs.resize(count);
+			memcpy(s_prevPairs.data(), s_pairs.data(), s_pairs.size() * sizeof(IndexPair));
+		}
+	}
+
+	void applyWallChanges()
+	{
+		if (!s_wallChanges.applyChanges) { return; }
+		s_wallChanges.applyChanges = false;
+		if (s_wallInfo.empty()) { return; }
+
+		s32 count = (s32)s_wallInfo.size();
+		WallInfo* info = s_wallInfo.data();
+		for (s32 i = 0; i < count; i++, info++)
+		{
+			EditorWall* wall = &info->sector->walls[info->wallIndex];
+			if (s_wallChanges.changes & WCF_LIGHT)
+			{
+				wall->wallLight = s_wallChanges.light;
+			}
+			if (s_wallChanges.changes & WCF_FLAG1_SET)
+			{
+				wall->flags[0] = s_wallChanges.flags1_set;
+			}
+			if (s_wallChanges.changes & WCF_FLAG3_SET)
+			{
+				wall->flags[2] = s_wallChanges.flags3_set;
+			}
+			// flags.
+			for (s32 f = 0; f < 31; f++)
+			{
+				s32 flagBit = 1 << f;
+				if (s_wallChanges.flags1Changed & flagBit)
+				{
+					if (s_wallChanges.flags1Value & flagBit)
+					{
+						wall->flags[0] |= flagBit;
+					}
+					else
+					{
+						wall->flags[0] &= ~flagBit;
+					}
+				}
+
+				if (s_wallChanges.flags3Changed & flagBit)
+				{
+					if (s_wallChanges.flags3Value & flagBit)
+					{
+						wall->flags[2] |= flagBit;
+					}
+					else
+					{
+						wall->flags[2] &= ~flagBit;
+					}
+				}
+			}
+		}
+		infoPanel_addWallChangesToHistory();
+	}
+		
+	void infoPanel_clearSelection()
+	{
+		// Clear out the wall change structure.
+		s_wallChanges = {};
+		s_prevPairs.clear();
+		s_wallInfo.clear();
+	}
+
+	void checkBoxMulti(const char* id, s32* flagsValue, s32* flagsChanged, s32 flagBit, f64 timestamp)
+	{
+		const bool showGrayedOut = !((*flagsChanged) & flagBit);
+
+		if (showGrayedOut) { ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.5f); }
+		{
+			bool enable = true;
+			if (!showGrayedOut && !((*flagsValue & flagBit)))
+			{
+				enable = false;
+			}
+
+			if (ImGui::CheckboxFlags(id, flagsValue, flagBit))
+			{
+				if (enable) { *flagsChanged |= flagBit; }
+				else { *flagsChanged &= ~flagBit; *flagsValue &= ~flagBit; }
+
+				s_wallChanges.timeStamp = timestamp;
+				s_wallChanges.applyChanges = true;
+			}
+		}
+		if (showGrayedOut) { ImGui::PopStyleVar(); }
+	}
+
 	void infoPanelWall()
 	{
 		s32 wallId = -1;
 		EditorSector* sector = nullptr;
-		// TODO: Handle multi-select.
-		selection_getSurface(selection_getCount() ? 0 : SEL_INDEX_HOVERED, sector, wallId);
-		if (!sector || wallId < 0) { return; }
+		u32 selWallCount = getWallInfoList();
 
-		EditorSector* prevSector;
-		s32 prevWallId;
-		getPrevWallFeature(prevSector, prevWallId);
-		if (prevSector != sector || prevWallId != wallId)
+		const bool insertTexture = s_selectedTexture >= 0 && TFE_Input::keyPressed(KEY_T);
+		const bool removeTexture = TFE_Input::mousePressed(MBUTTON_RIGHT);
+		const s32 texIndex = insertTexture ? s_selectedTexture  : -1;
+
+		if (selWallCount <= 1)
 		{
-			ImGui::SetWindowFocus(NULL);
-		}
-		s_wallShownLast = true;
+			bool changed = false;
+			if (selWallCount)
+			{
+				sector = s_wallInfo[0].sector;
+				wallId = s_wallInfo[0].wallIndex;
+			}
+			else
+			{
+				if (selection_hasHovered())
+				{
+					HitPart part;
+					selection_getSurface(SEL_INDEX_HOVERED, sector, wallId, &part);
+					if (part == HP_FLOOR || part == HP_CEIL)
+					{
+						getPrevWallFeature(sector, wallId);
+					}
+				}
+			}
+			if (!sector || wallId < 0) { return; }
 
-		bool insertTexture = s_selectedTexture >= 0 && TFE_Input::keyPressed(KEY_T);
-		bool removeTexture = TFE_Input::mousePressed(MBUTTON_RIGHT);
-		s32 texIndex = -1;
-		if (insertTexture)
-		{
-			texIndex = s_selectedTexture;
-		}
+			s_prevWallFeature.prevSector = sector;
+			s_prevWallFeature.featureIndex = wallId;
+			s_wallShownLast = true;
 
-		EditorWall* wall = sector->walls.data() + wallId;
-		Vec2f* vertices = sector->vtx.data();
-		f32 len = TFE_Math::distance(&vertices[wall->idx[0]], &vertices[wall->idx[1]]);
+			EditorWall* wall = sector->walls.data() + wallId;
+			Vec2f* vertices = sector->vtx.data();
+			f32 len = TFE_Math::distance(&vertices[wall->idx[0]], &vertices[wall->idx[1]]);
 
-		ImGui::Text("Wall ID: %d  Sector ID: %d  Length: %2.2f", wallId, sector->id, len);
-		ImGui::Text("Vertices: [%d](%2.2f, %2.2f), [%d](%2.2f, %2.2f)", wall->idx[0], vertices[wall->idx[0]].x, vertices[wall->idx[0]].z, wall->idx[1], vertices[wall->idx[1]].x, vertices[wall->idx[1]].z);
-		ImGui::Separator();
+			ImGui::Text("Wall ID: %d  Sector ID: %d  Length: %2.2f", wallId, sector->id, len);
+			ImGui::Text("Vertices: [%d](%2.2f, %2.2f), [%d](%2.2f, %2.2f)", wall->idx[0], vertices[wall->idx[0]].x, vertices[wall->idx[0]].z, wall->idx[1], vertices[wall->idx[1]].x, vertices[wall->idx[1]].z);
+			ImGui::Separator();
 
-		// Adjoin data (should be carefully and rarely edited directly).
-		ImGui::LabelText("##SectorAdjoin", "Adjoin"); ImGui::SameLine(64.0f);
-		infoIntInput("##SectorAdjoinInput", 96, &wall->adjoinId); ImGui::SameLine(180.0f);
+			// Adjoin data (should be carefully and rarely edited directly).
+			ImGui::LabelText("##SectorAdjoin", "Adjoin"); ImGui::SameLine(68.0f);
+			changed |= infoIntInput("##SectorAdjoinInput", 96, &wall->adjoinId); ImGui::SameLine(180.0f);
 
-		ImGui::LabelText("##SectorMirror", "Mirror"); ImGui::SameLine(240);
-		infoIntInput("##SectorMirrorInput", 96, &wall->mirrorId);
+			ImGui::LabelText("##SectorMirror", "Mirror"); ImGui::SameLine(240);
+			changed |= infoIntInput("##SectorMirrorInput", 96, &wall->mirrorId);
 
-		ImGui::SameLine(0.0f, 20.0f);
-		if (ImGui::Button("Edit INF"))
-		{
-			TFE_Editor::openEditorPopup(POPUP_EDIT_INF, wallId, sector->name.empty() ? nullptr : (void*)sector->name.c_str());
-		}
+			ImGui::SameLine(0.0f, 20.0f);
+			if (ImGui::Button("Edit INF"))
+			{
+				TFE_Editor::openEditorPopup(POPUP_EDIT_INF, wallId, sector->name.empty() ? nullptr : (void*)sector->name.c_str());
+			}
 
-		s32 light = wall->wallLight;
-		ImGui::LabelText("##SectorLight", "Light Adjustment"); ImGui::SameLine(148.0f);
-		infoIntInput("##SectorLightInput", 96, &light);
-		wall->wallLight = light;
+			s32 light = wall->wallLight;
+			ImGui::LabelText("##SectorLight", "Light Adjustment"); ImGui::SameLine(148.0f);
+			changed |= infoIntInput("##SectorLightInput", 96, &light);
+			wall->wallLight = light;
 
-		ImGui::Separator();
+			ImGui::Separator();
 
-		// Flags
-		infoLabel("##Flags1Label", "Flags1", 48);
-		infoUIntInput("##Flags1", 128, &wall->flags[0]);
-		ImGui::SameLine();
+			// Flags
+			infoLabel("##Flags1Label", "Flags1", 56);
+			changed |= infoUIntInput("##Flags1", 128, &wall->flags[0]);
+			ImGui::SameLine();
 
-		infoLabel("##Flags3Label", "Flags3", 48);
-		infoUIntInput("##Flags3", 128, &wall->flags[2]);
+			infoLabel("##Flags3Label", "Flags3", 56);
+			changed |= infoUIntInput("##Flags3", 128, &wall->flags[2]);
 
-		const f32 column[] = { 0.0f, 174.0f, 324.0f };
+			const f32 column[] = { 0.0f, 174.0f, 324.0f };
 
-		ImGui::CheckboxFlags("Mask Wall##WallFlag", &wall->flags[0], WF1_ADJ_MID_TEX); ImGui::SameLine(column[1]);
-		ImGui::CheckboxFlags("Illum Sign##WallFlag", &wall->flags[0], WF1_ILLUM_SIGN); ImGui::SameLine(column[2]);
-		ImGui::CheckboxFlags("Horz Flip Tex##SectorFlag", &wall->flags[0], WF1_FLIP_HORIZ);
+			changed |= ImGui::CheckboxFlags("Mask Wall##WallFlag", &wall->flags[0], WF1_ADJ_MID_TEX); ImGui::SameLine(column[1]);
+			changed |= ImGui::CheckboxFlags("Illum Sign##WallFlag", &wall->flags[0], WF1_ILLUM_SIGN); ImGui::SameLine(column[2]);
+			changed |= ImGui::CheckboxFlags("Horz Flip Tex##SectorFlag", &wall->flags[0], WF1_FLIP_HORIZ);
 
-		ImGui::CheckboxFlags("Change WallLight##WallFlag", &wall->flags[0], WF1_CHANGE_WALL_LIGHT); ImGui::SameLine(column[1]);
-		ImGui::CheckboxFlags("Tex Anchored##WallFlag", &wall->flags[0], WF1_TEX_ANCHORED); ImGui::SameLine(column[2]);
-		ImGui::CheckboxFlags("Wall Morphs##SectorFlag", &wall->flags[0], WF1_WALL_MORPHS);
+			changed |= ImGui::CheckboxFlags("Change WallLight##WallFlag", &wall->flags[0], WF1_CHANGE_WALL_LIGHT); ImGui::SameLine(column[1]);
+			changed |= ImGui::CheckboxFlags("Tex Anchored##WallFlag", &wall->flags[0], WF1_TEX_ANCHORED); ImGui::SameLine(column[2]);
+			changed |= ImGui::CheckboxFlags("Wall Morphs##SectorFlag", &wall->flags[0], WF1_WALL_MORPHS);
 
-		ImGui::CheckboxFlags("Scroll Top Tex##WallFlag", &wall->flags[0], WF1_SCROLL_TOP_TEX); ImGui::SameLine(column[1]);
-		ImGui::CheckboxFlags("Scroll Mid Tex##WallFlag", &wall->flags[0], WF1_SCROLL_MID_TEX); ImGui::SameLine(column[2]);
-		ImGui::CheckboxFlags("Scroll Bottom##SectorFlag", &wall->flags[0], WF1_SCROLL_BOT_TEX);
+			changed |= ImGui::CheckboxFlags("Scroll Top Tex##WallFlag", &wall->flags[0], WF1_SCROLL_TOP_TEX); ImGui::SameLine(column[1]);
+			changed |= ImGui::CheckboxFlags("Scroll Mid Tex##WallFlag", &wall->flags[0], WF1_SCROLL_MID_TEX); ImGui::SameLine(column[2]);
+			changed |= ImGui::CheckboxFlags("Scroll Bottom##SectorFlag", &wall->flags[0], WF1_SCROLL_BOT_TEX);
 
-		ImGui::CheckboxFlags("Scroll Sign##WallFlag", &wall->flags[0], WF1_SCROLL_SIGN_TEX); ImGui::SameLine(column[1]);
-		ImGui::CheckboxFlags("Hide On Map##WallFlag", &wall->flags[0], WF1_HIDE_ON_MAP); ImGui::SameLine(column[2]);
-		ImGui::CheckboxFlags("Show On Map##SectorFlag", &wall->flags[0], WF1_SHOW_NORMAL_ON_MAP);
+			changed |= ImGui::CheckboxFlags("Scroll Sign##WallFlag", &wall->flags[0], WF1_SCROLL_SIGN_TEX); ImGui::SameLine(column[1]);
+			changed |= ImGui::CheckboxFlags("Hide On Map##WallFlag", &wall->flags[0], WF1_HIDE_ON_MAP); ImGui::SameLine(column[2]);
+			changed |= ImGui::CheckboxFlags("Show On Map##SectorFlag", &wall->flags[0], WF1_SHOW_NORMAL_ON_MAP);
 
-		ImGui::CheckboxFlags("Sign Anchored##WallFlag", &wall->flags[0], WF1_SIGN_ANCHORED); ImGui::SameLine(column[1]);
-		ImGui::CheckboxFlags("Damage Wall##WallFlag", &wall->flags[0], WF1_DAMAGE_WALL); ImGui::SameLine(column[2]);
-		ImGui::CheckboxFlags("Show As Ledge##SectorFlag", &wall->flags[0], WF1_SHOW_AS_LEDGE_ON_MAP);
+			changed |= ImGui::CheckboxFlags("Sign Anchored##WallFlag", &wall->flags[0], WF1_SIGN_ANCHORED); ImGui::SameLine(column[1]);
+			changed |= ImGui::CheckboxFlags("Damage Wall##WallFlag", &wall->flags[0], WF1_DAMAGE_WALL); ImGui::SameLine(column[2]);
+			changed |= ImGui::CheckboxFlags("Show As Ledge##SectorFlag", &wall->flags[0], WF1_SHOW_AS_LEDGE_ON_MAP);
 
-		ImGui::CheckboxFlags("Show As Door##WallFlag", &wall->flags[0], WF1_SHOW_AS_DOOR_ON_MAP); ImGui::SameLine(column[1]);
-		ImGui::CheckboxFlags("Always Walk##WallFlag", &wall->flags[2], WF3_ALWAYS_WALK); ImGui::SameLine(column[2]);
-		ImGui::CheckboxFlags("Solid Wall##SectorFlag", &wall->flags[2], WF3_SOLID_WALL);
+			changed |= ImGui::CheckboxFlags("Show As Door##WallFlag", &wall->flags[0], WF1_SHOW_AS_DOOR_ON_MAP); ImGui::SameLine(column[1]);
+			changed |= ImGui::CheckboxFlags("Always Walk##WallFlag", &wall->flags[2], WF3_ALWAYS_WALK); ImGui::SameLine(column[2]);
+			changed |= ImGui::CheckboxFlags("Solid Wall##SectorFlag", &wall->flags[2], WF3_SOLID_WALL);
 
-		ImGui::CheckboxFlags("Player Walk Only##WallFlag", &wall->flags[2], WF3_PLAYER_WALK_ONLY); ImGui::SameLine(column[1]);
-		ImGui::CheckboxFlags("Cannot Shoot Thru##WallFlag", &wall->flags[2], WF3_CANNOT_FIRE_THROUGH);
+			changed |= ImGui::CheckboxFlags("Player Walk Only##WallFlag", &wall->flags[2], WF3_PLAYER_WALK_ONLY); ImGui::SameLine(column[1]);
+			changed |= ImGui::CheckboxFlags("Cannot Shoot Thru##WallFlag", &wall->flags[2], WF3_CANNOT_FIRE_THROUGH);
 
-		ImGui::Separator();
+			ImGui::Separator();
 
-		EditorTexture* midTex = getTexture(wall->tex[WP_MID].texIndex);
-		EditorTexture* topTex = getTexture(wall->tex[WP_TOP].texIndex);
-		EditorTexture* botTex = getTexture(wall->tex[WP_BOT].texIndex);
-		EditorTexture* sgnTex = getTexture(wall->tex[WP_SIGN].texIndex);
+			EditorTexture* midTex = getTexture(wall->tex[WP_MID].texIndex);
+			EditorTexture* topTex = getTexture(wall->tex[WP_TOP].texIndex);
+			EditorTexture* botTex = getTexture(wall->tex[WP_BOT].texIndex);
+			EditorTexture* sgnTex = getTexture(wall->tex[WP_SIGN].texIndex);
 
-		const f32 texCol = 150.0f;
-		// Labels
-		ImGui::Text("Mid Texture"); ImGui::SameLine(texCol);
-		ImGui::Text("Sign Texture");
-
-		// Textures - Mid / Sign
-		const f32 midScale = midTex ? 1.0f / (f32)std::max(midTex->width, midTex->height) : 0.0f;
-		const f32 sgnScale = sgnTex ? 1.0f / (f32)std::max(sgnTex->width, sgnTex->height) : 0.0f;
-		const f32 aspectMid[] = { midTex ? f32(midTex->width) * midScale : 1.0f, midTex ? f32(midTex->height) * midScale : 1.0f };
-		const f32 aspectSgn[] = { sgnTex ? f32(sgnTex->width) * sgnScale : 1.0f, sgnTex ? f32(sgnTex->height) * sgnScale : 1.0f };
-
-		ImGui::ImageButton(midTex ? TFE_RenderBackend::getGpuPtr(midTex->frames[0]) : nullptr, { 128.0f * aspectMid[0], 128.0f * aspectMid[1] }, { 0.0f, 1.0f }, { 1.0f, 0.0f });
-		if (texIndex >= 0 && ImGui::IsItemHovered())
-		{
-			FeatureId id = createFeatureId(sector, wallId, HP_MID);
-			edit_setTexture(1, &id, texIndex);
-			// cmd_addSetTexture(1, &id, texIndex, nullptr);
-		}
-
-		ImGui::SameLine(texCol);
-		ImGui::ImageButton(sgnTex ? TFE_RenderBackend::getGpuPtr(sgnTex->frames[0]) : nullptr, { 128.0f * aspectSgn[0], 128.0f * aspectSgn[1] }, { 0.0f, 1.0f }, { 1.0f, 0.0f });
-		if (texIndex >= 0 && ImGui::IsItemHovered())
-		{
-			FeatureId id = createFeatureId(sector, wallId, HP_SIGN);
-			edit_setTexture(1, &id, texIndex);
-			// cmd_addSetTexture(1, &id, texIndex, nullptr);
-		}
-		else if (removeTexture && ImGui::IsItemHovered())
-		{
-			FeatureId id = createFeatureId(sector, wallId, HP_SIGN);
-			edit_clearTexture(1, &id);
-			// cmd_addClearTexture(1, &id);
-		}
-
-		const ImVec2 imageLeft0 = ImGui::GetItemRectMin();
-		const ImVec2 imageRight0 = ImGui::GetItemRectMax();
-
-		// Names
-		ImGui::Text("%s", midTex ? midTex->name : "NONE"); ImGui::SameLine(texCol);
-		ImGui::Text("%s", sgnTex ? sgnTex->name : "NONE");
-
-		ImVec2 imageLeft1, imageRight1;
-		if (wall->adjoinId >= 0)
-		{
-			ImGui::NewLine();
-
-			// Textures - Top / Bottom
+			const f32 texCol = 150.0f;
 			// Labels
-			ImGui::Text("Top Texture"); ImGui::SameLine(texCol); ImGui::Text("Bottom Texture");
+			ImGui::Text("Mid Texture"); ImGui::SameLine(texCol);
+			ImGui::Text("Sign Texture");
 
-			const f32 topScale = topTex ? 1.0f / (f32)std::max(topTex->width, topTex->height) : 0.0f;
-			const f32 botScale = botTex ? 1.0f / (f32)std::max(botTex->width, botTex->height) : 0.0f;
-			const f32 aspectTop[] = { topTex ? f32(topTex->width) * topScale : 1.0f, topTex ? f32(topTex->height) * topScale : 1.0f };
-			const f32 aspectBot[] = { botTex ? f32(botTex->width) * botScale : 1.0f, botTex ? f32(botTex->height) * botScale : 1.0f };
+			// Textures - Mid / Sign
+			const f32 midScale = midTex ? 1.0f / (f32)std::max(midTex->width, midTex->height) : 0.0f;
+			const f32 sgnScale = sgnTex ? 1.0f / (f32)std::max(sgnTex->width, sgnTex->height) : 0.0f;
+			const f32 aspectMid[] = { midTex ? f32(midTex->width) * midScale : 1.0f, midTex ? f32(midTex->height) * midScale : 1.0f };
+			const f32 aspectSgn[] = { sgnTex ? f32(sgnTex->width) * sgnScale : 1.0f, sgnTex ? f32(sgnTex->height) * sgnScale : 1.0f };
 
-			ImGui::ImageButton(topTex ? TFE_RenderBackend::getGpuPtr(topTex->frames[0]) : nullptr, { 128.0f * aspectTop[0], 128.0f * aspectTop[1] }, { 0.0f, 1.0f }, { 1.0f, 0.0f });
+			ImGui::ImageButton(midTex ? TFE_RenderBackend::getGpuPtr(midTex->frames[0]) : nullptr, { 128.0f * aspectMid[0], 128.0f * aspectMid[1] }, { 0.0f, 1.0f }, { 1.0f, 0.0f });
 			if (texIndex >= 0 && ImGui::IsItemHovered())
 			{
-				FeatureId id = createFeatureId(sector, wallId, HP_TOP);
+				FeatureId id = createFeatureId(sector, wallId, HP_MID);
 				edit_setTexture(1, &id, texIndex);
 				// cmd_addSetTexture(1, &id, texIndex, nullptr);
 			}
 
 			ImGui::SameLine(texCol);
-			ImGui::ImageButton(botTex ? TFE_RenderBackend::getGpuPtr(botTex->frames[0]) : nullptr, { 128.0f * aspectBot[0], 128.0f * aspectBot[1] }, { 0.0f, 1.0f }, { 1.0f, 0.0f });
+			ImGui::ImageButton(sgnTex ? TFE_RenderBackend::getGpuPtr(sgnTex->frames[0]) : nullptr, { 128.0f * aspectSgn[0], 128.0f * aspectSgn[1] }, { 0.0f, 1.0f }, { 1.0f, 0.0f });
 			if (texIndex >= 0 && ImGui::IsItemHovered())
 			{
-				FeatureId id = createFeatureId(sector, wallId, HP_BOT);
+				FeatureId id = createFeatureId(sector, wallId, HP_SIGN);
 				edit_setTexture(1, &id, texIndex);
 				// cmd_addSetTexture(1, &id, texIndex, nullptr);
 			}
-
-			imageLeft1 = ImGui::GetItemRectMin();
-			imageRight1 = ImGui::GetItemRectMax();
-
-			// Names
-			ImGui::Text("%s", topTex ? topTex->name : "NONE"); ImGui::SameLine(texCol);
-			ImGui::Text("%s", botTex ? botTex->name : "NONE");
-		}
-
-		// Sign buttons.
-		ImVec2 signLeft = { imageLeft0.x + texCol - 8.0f, imageLeft0.y + 2.0f };
-		ImGui::SetNextWindowPos(signLeft);
-		ImGui::BeginChild("##SignOptions", { 32, 48 });
-		{
-			if (ImGui::Button("X") && wall->tex[HP_SIGN].texIndex >= 0)
+			else if (removeTexture && ImGui::IsItemHovered())
 			{
 				FeatureId id = createFeatureId(sector, wallId, HP_SIGN);
 				edit_clearTexture(1, &id);
 				// cmd_addClearTexture(1, &id);
 			}
-			if (ImGui::Button("C") && wall->tex[HP_SIGN].texIndex >= 0)
-			{
-				Vec2f prevOffset = wall->tex[HP_SIGN].offset;
-				centerSignOnSurface(sector, wall);
-				Vec2f delta = { wall->tex[HP_SIGN].offset.x - prevOffset.x, wall->tex[HP_SIGN].offset.z - prevOffset.z };
 
-				if (delta.x || delta.z)
+			const ImVec2 imageLeft0 = ImGui::GetItemRectMin();
+			const ImVec2 imageRight0 = ImGui::GetItemRectMax();
+
+			// Names
+			ImGui::Text("%s", midTex ? midTex->name : "NONE"); ImGui::SameLine(texCol);
+			ImGui::Text("%s", sgnTex ? sgnTex->name : "NONE");
+
+			ImVec2 imageLeft1, imageRight1;
+			if (wall->adjoinId >= 0)
+			{
+				ImGui::NewLine();
+
+				// Textures - Top / Bottom
+				// Labels
+				ImGui::Text("Top Texture"); ImGui::SameLine(texCol); ImGui::Text("Bottom Texture");
+
+				const f32 topScale = topTex ? 1.0f / (f32)std::max(topTex->width, topTex->height) : 0.0f;
+				const f32 botScale = botTex ? 1.0f / (f32)std::max(botTex->width, botTex->height) : 0.0f;
+				const f32 aspectTop[] = { topTex ? f32(topTex->width) * topScale : 1.0f, topTex ? f32(topTex->height) * topScale : 1.0f };
+				const f32 aspectBot[] = { botTex ? f32(botTex->width) * botScale : 1.0f, botTex ? f32(botTex->height) * botScale : 1.0f };
+
+				ImGui::ImageButton(topTex ? TFE_RenderBackend::getGpuPtr(topTex->frames[0]) : nullptr, { 128.0f * aspectTop[0], 128.0f * aspectTop[1] }, { 0.0f, 1.0f }, { 1.0f, 0.0f });
+				if (texIndex >= 0 && ImGui::IsItemHovered())
+				{
+					FeatureId id = createFeatureId(sector, wallId, HP_TOP);
+					edit_setTexture(1, &id, texIndex);
+					// cmd_addSetTexture(1, &id, texIndex, nullptr);
+				}
+
+				ImGui::SameLine(texCol);
+				ImGui::ImageButton(botTex ? TFE_RenderBackend::getGpuPtr(botTex->frames[0]) : nullptr, { 128.0f * aspectBot[0], 128.0f * aspectBot[1] }, { 0.0f, 1.0f }, { 1.0f, 0.0f });
+				if (texIndex >= 0 && ImGui::IsItemHovered())
+				{
+					FeatureId id = createFeatureId(sector, wallId, HP_BOT);
+					edit_setTexture(1, &id, texIndex);
+					// cmd_addSetTexture(1, &id, texIndex, nullptr);
+				}
+
+				imageLeft1 = ImGui::GetItemRectMin();
+				imageRight1 = ImGui::GetItemRectMax();
+
+				// Names
+				ImGui::Text("%s", topTex ? topTex->name : "NONE"); ImGui::SameLine(texCol);
+				ImGui::Text("%s", botTex ? botTex->name : "NONE");
+			}
+
+			// Sign buttons.
+			ImVec2 signLeft = { imageLeft0.x + texCol - 8.0f, imageLeft0.y + 2.0f };
+			ImGui::SetNextWindowPos(signLeft);
+			ImGui::BeginChild("##SignOptions", { 32, 48 });
+			{
+				if (ImGui::Button("X") && wall->tex[HP_SIGN].texIndex >= 0)
 				{
 					FeatureId id = createFeatureId(sector, wallId, HP_SIGN);
-					// cmd_addMoveTexture(1, &id, delta);
+					edit_clearTexture(1, &id);
+					// cmd_addClearTexture(1, &id);
+				}
+				if (ImGui::Button("C") && wall->tex[HP_SIGN].texIndex >= 0)
+				{
+					Vec2f prevOffset = wall->tex[HP_SIGN].offset;
+					centerSignOnSurface(sector, wall);
+					Vec2f delta = { wall->tex[HP_SIGN].offset.x - prevOffset.x, wall->tex[HP_SIGN].offset.z - prevOffset.z };
+
+					if (delta.x || delta.z)
+					{
+						FeatureId id = createFeatureId(sector, wallId, HP_SIGN);
+						// cmd_addMoveTexture(1, &id, delta);
+					}
 				}
 			}
-		}
-		ImGui::EndChild();
+			ImGui::EndChild();
 
-		// Texture Offsets
-		DisplayInfo displayInfo;
-		TFE_RenderBackend::getDisplayInfo(&displayInfo);
+			// Texture Offsets
+			DisplayInfo displayInfo;
+			TFE_RenderBackend::getDisplayInfo(&displayInfo);
 
-		// Set 0
-		ImVec2 offsetLeft = { imageLeft0.x + texCol + 8.0f + 16.0f, imageLeft0.y + 8.0f };
-		ImVec2 offsetSize = { displayInfo.width - (imageLeft0.x + texCol + 16.0f - 32.0f), 128.0f };
-		ImGui::SetNextWindowPos(offsetLeft);
-		// A child window is used here in order to place the controls in the desired position - to the right of the image buttons.
-		ImGui::BeginChild("##TextureOffsets0Wall", offsetSize);
-		{
-			ImGui::Text("Mid Offset");
-			ImGui::PushItemWidth(136.0f);
-			ImGui::InputFloat2("##MidOffsetInput", &wall->tex[WP_MID].offset.x, "%.3f");
-			ImGui::PopItemWidth();
-
-			ImGui::NewLine();
-
-			ImGui::Text("Sign Offset");
-			ImGui::PushItemWidth(136.0f);
-			ImGui::InputFloat2("##SignOffsetInput", &wall->tex[WP_SIGN].offset.x, "%.3f");
-			ImGui::PopItemWidth();
-		}
-		ImGui::EndChild();
-
-		// Set 1
-		if (wall->adjoinId >= 0)
-		{
-			offsetLeft = { imageLeft1.x + texCol + 8.0f, imageLeft1.y + 8.0f };
-			offsetSize = { displayInfo.width - (imageLeft1.x + texCol + 16.0f), 128.0f };
+			// Set 0
+			ImVec2 offsetLeft = { imageLeft0.x + texCol + 8.0f + 16.0f, imageLeft0.y + 8.0f };
+			ImVec2 offsetSize = { displayInfo.width - (imageLeft0.x + texCol + 16.0f - 32.0f), 128.0f };
 			ImGui::SetNextWindowPos(offsetLeft);
 			// A child window is used here in order to place the controls in the desired position - to the right of the image buttons.
-			ImGui::BeginChild("##TextureOffsets1Wall", offsetSize);
+			ImGui::BeginChild("##TextureOffsets0Wall", offsetSize);
 			{
-				ImGui::Text("Top Offset");
+				ImGui::Text("Mid Offset");
 				ImGui::PushItemWidth(136.0f);
-				ImGui::InputFloat2("##TopOffsetInput", &wall->tex[WP_TOP].offset.x, "%.3f");
+				ImGui::InputFloat2("##MidOffsetInput", &wall->tex[WP_MID].offset.x, "%.3f");
 				ImGui::PopItemWidth();
 
 				ImGui::NewLine();
 
-				ImGui::Text("Bottom Offset");
+				ImGui::Text("Sign Offset");
 				ImGui::PushItemWidth(136.0f);
-				ImGui::InputFloat2("##BotOffsetInput", &wall->tex[WP_BOT].offset.x, "%.3f");
+				ImGui::InputFloat2("##SignOffsetInput", &wall->tex[WP_SIGN].offset.x, "%.3f");
 				ImGui::PopItemWidth();
 			}
 			ImGui::EndChild();
+
+			// Set 1
+			if (wall->adjoinId >= 0)
+			{
+				offsetLeft = { imageLeft1.x + texCol + 8.0f, imageLeft1.y + 8.0f };
+				offsetSize = { displayInfo.width - (imageLeft1.x + texCol + 16.0f), 128.0f };
+				ImGui::SetNextWindowPos(offsetLeft);
+				// A child window is used here in order to place the controls in the desired position - to the right of the image buttons.
+				ImGui::BeginChild("##TextureOffsets1Wall", offsetSize);
+				{
+					ImGui::Text("Top Offset");
+					ImGui::PushItemWidth(136.0f);
+					ImGui::InputFloat2("##TopOffsetInput", &wall->tex[WP_TOP].offset.x, "%.3f");
+					ImGui::PopItemWidth();
+
+					ImGui::NewLine();
+
+					ImGui::Text("Bottom Offset");
+					ImGui::PushItemWidth(136.0f);
+					ImGui::InputFloat2("##BotOffsetInput", &wall->tex[WP_BOT].offset.x, "%.3f");
+					ImGui::PopItemWidth();
+				}
+				ImGui::EndChild();
+			}
+
+			if (changed)
+			{
+				infoPanel_addWallChangesToHistory();
+			}
+		}
+		else
+		{
+			const f64 timestamp = TFE_System::getTime();
+
+			ImGui::Text("Multiple Walls Selected");
+			ImGui::Separator();
+
+			s32 light = s_wallChanges.light;
+			ImGui::LabelText("##SectorLight", "Light Adjustment"); ImGui::SameLine(148.0f);
+			if (infoIntInput("##SectorLightInput", 96, &light, !(s_wallChanges.changes & WCF_LIGHT)))
+			{
+				s_wallChanges.light = light;
+				s_wallChanges.changes |= WCF_LIGHT;
+				s_wallChanges.timeStamp = timestamp;
+				s_wallChanges.applyChanges = true;
+			}
+			ImGui::Separator();
+
+			// Flags
+			infoLabel("##Flags1Label", "Flags1", 56);
+			if (infoIntInput("##Flags1", 128, &s_wallChanges.flags1_set, !(s_wallChanges.changes & WCF_FLAG1_SET)))
+			{
+				s_wallChanges.changes |= WCF_FLAG1_SET;
+				s_wallChanges.timeStamp = timestamp;
+				s_wallChanges.applyChanges = true;
+			}
+			ImGui::SameLine();
+
+			infoLabel("##Flags3Label", "Flags3", 56);
+			if (infoIntInput("##Flags3", 128, &s_wallChanges.flags3_set, !(s_wallChanges.changes & WCF_FLAG3_SET)))
+			{
+				s_wallChanges.changes |= WCF_FLAG3_SET;
+				s_wallChanges.timeStamp = timestamp;
+				s_wallChanges.applyChanges = true;
+			}
+
+			const f32 column[] = { 0.0f, 174.0f, 324.0f };
+
+			checkBoxMulti("Mask Wall##WallFlag", &s_wallChanges.flags1Value, &s_wallChanges.flags1Changed, WF1_ADJ_MID_TEX, timestamp); ImGui::SameLine(column[1]);
+			checkBoxMulti("Illum Sign##WallFlag", &s_wallChanges.flags1Value, &s_wallChanges.flags1Changed, WF1_ILLUM_SIGN, timestamp); ImGui::SameLine(column[2]);
+			checkBoxMulti("Horz Flip Tex##SectorFlag", &s_wallChanges.flags1Value, &s_wallChanges.flags1Changed, WF1_FLIP_HORIZ, timestamp);
+
+			checkBoxMulti("Change WallLight##WallFlag", &s_wallChanges.flags1Value, &s_wallChanges.flags1Changed, WF1_CHANGE_WALL_LIGHT, timestamp); ImGui::SameLine(column[1]);
+			checkBoxMulti("Tex Anchored##WallFlag", &s_wallChanges.flags1Value, &s_wallChanges.flags1Changed, WF1_TEX_ANCHORED, timestamp); ImGui::SameLine(column[2]);
+			checkBoxMulti("Wall Morphs##SectorFlag", &s_wallChanges.flags1Value, &s_wallChanges.flags1Changed, WF1_WALL_MORPHS, timestamp);
+
+			checkBoxMulti("Scroll Top Tex##WallFlag", &s_wallChanges.flags1Value, &s_wallChanges.flags1Changed, WF1_SCROLL_TOP_TEX, timestamp); ImGui::SameLine(column[1]);
+			checkBoxMulti("Scroll Mid Tex##WallFlag", &s_wallChanges.flags1Value, &s_wallChanges.flags1Changed, WF1_SCROLL_MID_TEX, timestamp); ImGui::SameLine(column[2]);
+			checkBoxMulti("Scroll Bottom##SectorFlag", &s_wallChanges.flags1Value, &s_wallChanges.flags1Changed, WF1_SCROLL_BOT_TEX, timestamp);
+
+			checkBoxMulti("Scroll Sign##WallFlag", &s_wallChanges.flags1Value, &s_wallChanges.flags1Changed, WF1_SCROLL_SIGN_TEX, timestamp); ImGui::SameLine(column[1]);
+			checkBoxMulti("Hide On Map##WallFlag", &s_wallChanges.flags1Value, &s_wallChanges.flags1Changed, WF1_HIDE_ON_MAP, timestamp); ImGui::SameLine(column[2]);
+			checkBoxMulti("Show On Map##SectorFlag", &s_wallChanges.flags1Value, &s_wallChanges.flags1Changed, WF1_SHOW_NORMAL_ON_MAP, timestamp);
+
+			checkBoxMulti("Sign Anchored##WallFlag", &s_wallChanges.flags1Value, &s_wallChanges.flags1Changed, WF1_SIGN_ANCHORED, timestamp); ImGui::SameLine(column[1]);
+			checkBoxMulti("Damage Wall##WallFlag", &s_wallChanges.flags1Value, &s_wallChanges.flags1Changed, WF1_DAMAGE_WALL, timestamp); ImGui::SameLine(column[2]);
+			checkBoxMulti("Show As Ledge##SectorFlag", &s_wallChanges.flags1Value, &s_wallChanges.flags1Changed, WF1_SHOW_AS_LEDGE_ON_MAP, timestamp);
+
+			checkBoxMulti("Show As Door##WallFlag", &s_wallChanges.flags1Value, &s_wallChanges.flags1Changed, WF1_SHOW_AS_DOOR_ON_MAP, timestamp); ImGui::SameLine(column[1]);
+			checkBoxMulti("Always Walk##WallFlag", &s_wallChanges.flags3Value, &s_wallChanges.flags3Changed, WF3_ALWAYS_WALK, timestamp); ImGui::SameLine(column[2]);
+			checkBoxMulti("Solid Wall##SectorFlag", &s_wallChanges.flags3Value, &s_wallChanges.flags3Changed, WF3_SOLID_WALL, timestamp);
+
+			checkBoxMulti("Player Walk Only##WallFlag", &s_wallChanges.flags3Value, &s_wallChanges.flags3Changed, WF3_PLAYER_WALK_ONLY, timestamp); ImGui::SameLine(column[1]);
+			checkBoxMulti("Cannot Shoot Thru##WallFlag", &s_wallChanges.flags3Value, &s_wallChanges.flags3Changed, WF3_CANNOT_FIRE_THROUGH, timestamp);
+
+			ImGui::Separator();
+			applyWallChanges();
 		}
 	}
 

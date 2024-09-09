@@ -66,6 +66,8 @@ namespace LevelEditor
 	std::vector<UniqueEntity> s_uniqueEntities;
 	
 	std::vector<u8> s_fileData;
+	std::vector<IndexPair> s_pairs;
+	std::vector<IndexPair> s_prevPairs;
 	static u32* s_palette = nullptr;
 	static s32 s_palIndex = 0;
 
@@ -2791,7 +2793,27 @@ namespace LevelEditor
 			}
 		}
 	}
-				
+
+	void level_createSectorWallSnapshot(SnapshotBuffer* buffer, std::vector<IndexPair>& sectorWallIds)
+	{
+		const u32 count = (u32)sectorWallIds.size();
+		assert(count > 0);
+		setSnapshotWriteBuffer(buffer);
+		writeU32(count);
+
+		// Write sectors walls only.
+		const IndexPair* pair = sectorWallIds.data();
+		writeData(pair, sizeof(IndexPair) * count);
+
+		for (u32 s = 0; s < count; s++, pair++)
+		{
+			const s32 i0 = pair->i0, i1 = pair->i1;
+			assert(i0 >= 0 && i0 < (s32)s_level.sectors.size());
+			assert(i1 >= 0 && i1 < (s32)s_level.sectors[i0].walls.size());
+			writeData(&s_level.sectors[i0].walls[i1], (u32)sizeof(EditorWall));
+		}
+	}
+						
 	void level_createSectorSnapshot(SnapshotBuffer* buffer, std::vector<s32>& sectorIds)
 	{
 		s_uniqueEntities.clear();
@@ -2947,6 +2969,27 @@ namespace LevelEditor
 			// Build the sector polygon for the editor.
 			sectorToPolygon(sector);
 			sector->searchKey = 0;
+		}
+	}
+
+	void level_unpackSectorWallSnapshot(u32 size, void* data)
+	{
+		setSnapshotReadBuffer((u8*)data, size);
+		const u32 count = readU32();
+		assert(count > 0);
+
+		s_pairs.resize(count);
+		readData(s_pairs.data(), sizeof(IndexPair) * count);
+
+		// Read sectors walls only.
+		IndexPair* pair = s_pairs.data();
+		for (u32 s = 0; s < count; s++, pair++)
+		{
+			s32 sectorId = pair->i0;
+			s32 wallId = pair->i1;
+			assert(sectorId >= 0 && sectorId < (s32)s_level.sectors.size());
+			assert(wallId >= 0 && wallId < (s32)s_level.sectors[sectorId].walls.size());
+			readData(&s_level.sectors[sectorId].walls[wallId], (u32)sizeof(EditorWall));
 		}
 	}
 		

@@ -148,6 +148,21 @@ namespace LevelEditor
 		writeData(sector->obj.data(), u32(sizeof(EditorObject) * sector->obj.size()));
 	}
 
+	void writeSectorAttribSnapshot(const EditorSector* sector)
+	{
+		writeU32(sector->groupId);
+		writeU32(sector->groupIndex);
+		writeString(sector->name);
+		writeData(&sector->floorTex, sizeof(LevelTexture));
+		writeData(&sector->ceilTex, sizeof(LevelTexture));
+		writeF32(sector->floorHeight);
+		writeF32(sector->ceilHeight);
+		writeF32(sector->secHeight);
+		writeU32(sector->ambient);
+		writeS32(sector->layer);
+		writeData(sector->flags, sizeof(u32) * 3);
+	}
+
 	void writeLevelNoteToSnapshot(const LevelNote* note)
 	{
 		writeS32(note->id);
@@ -223,6 +238,21 @@ namespace LevelEditor
 		readData(sector->vtx.data(), u32(sizeof(Vec2f) * sector->vtx.size()));
 		readData(sector->walls.data(), u32(sizeof(EditorWall) * sector->walls.size()));
 		readData(sector->obj.data(), u32(sizeof(EditorObject) * sector->obj.size()));
+	}
+
+	void readFromSectorAttribSnapshot(EditorSector* sector)
+	{
+		sector->groupId = readU32();
+		sector->groupIndex = readU32();
+		readString(sector->name);
+		readData(&sector->floorTex, sizeof(LevelTexture));
+		readData(&sector->ceilTex, sizeof(LevelTexture));
+		sector->floorHeight = readF32();
+		sector->ceilHeight = readF32();
+		sector->secHeight = readF32();
+		sector->ambient = readU32();
+		sector->layer = readS32();
+		readData(sector->flags, sizeof(u32) * 3);
 	}
 
 	void readLevelNoteFromSnapshot(LevelNote* note)

@@ -36,11 +36,13 @@ namespace LevelEditor
 
 	void writeEntityToSnapshot(const Entity* entity);
 	void writeSectorToSnapshot(const EditorSector* sector);
+	void writeSectorAttribSnapshot(const EditorSector* sector);
 	void writeLevelNoteToSnapshot(const LevelNote* note);
 	void writeGuidelineToSnapshot(const Guideline* guideline);
 
 	void readEntityFromSnapshot(Entity* entity);
 	void readSectorFromSnapshot(EditorSector* sector);
+	void readFromSectorAttribSnapshot(EditorSector* sector);
 	void readLevelNoteFromSnapshot(LevelNote* note);
 	void readGuidelineFromSnapshot(Guideline* guideline);
 }

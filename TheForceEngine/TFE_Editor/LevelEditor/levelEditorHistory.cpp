@@ -22,6 +22,7 @@ namespace LevelEditor
 	enum LevCommand
 	{
 		LCmd_Sector_Snapshot = CMD_START,
+		LCmd_Sector_Wall_Snapshot,
 		LCmd_ObjList_Snapshot,
 		LCmd_Single_Entity_Snapshot,
 		LCmd_Notes_Snapshot,
@@ -39,6 +40,7 @@ namespace LevelEditor
 				
 	// Command Functions
 	void cmd_applySectorSnapshot();
+	void cmd_applySectorWallSnapshot();
 	void cmd_applyObjListSnapshot();
 	void cmd_applySingleEntitySnapshot();
 	void cmd_applyNotesSnapshot();
@@ -55,6 +57,7 @@ namespace LevelEditor
 		history_init(level_unpackSnapshot, level_createSnapshot);
 
 		history_registerCommand(LCmd_Sector_Snapshot, cmd_applySectorSnapshot);
+		history_registerCommand(LCmd_Sector_Wall_Snapshot, cmd_applySectorWallSnapshot);
 		history_registerCommand(LCmd_ObjList_Snapshot, cmd_applyObjListSnapshot);
 		history_registerCommand(LCmd_Single_Entity_Snapshot, cmd_applySingleEntitySnapshot);
 		history_registerCommand(LCmd_Notes_Snapshot, cmd_applyNotesSnapshot);
@@ -88,6 +91,8 @@ namespace LevelEditor
 		history_registerName(LName_RotateSector, "Rotate Sector(s)");
 		history_registerName(LName_RotateWall, "Rotate Wall(s)");
 		history_registerName(LName_RotateVertex, "Rotate Vertices(s)");
+		history_registerName(LName_ChangeWallAttrib, "Change Wall Attributes");
+		history_registerName(LName_ChangeSectorAttrib, "Change Sector Attributes");
 
 		s_lastMoveTex = 0.0;
 	}
@@ -212,6 +217,43 @@ namespace LevelEditor
 		}
 
 		CMD_BEGIN(LCmd_ObjList_Snapshot, name);
+		{
+			hBuffer_addU32(uncompressedSize);
+			hBuffer_addU32(compressedSize);
+			hBuffer_addArrayU8(compressedSize, s_workBuffer[1].data());
+		}
+		CMD_END();
+	}
+
+	void cmd_sectorWallSnapshot(u32 name, std::vector<IndexPair>& sectorWallIds, bool idsChanged)
+	{
+		if (sectorWallIds.empty()) { return; }
+
+		u16 prevCmd, prevName;
+		history_getPrevCmdAndName(prevCmd, prevName);
+		if (prevCmd == LCmd_Sector_Wall_Snapshot && prevName == name && !idsChanged)
+		{
+			history_removeLast();
+		}
+
+		s_workBuffer[0].clear();
+		s_workBuffer[1].clear();
+		level_createSectorWallSnapshot(&s_workBuffer[0], sectorWallIds);
+		if (s_workBuffer[0].empty()) { return; }
+
+		const u32 uncompressedSize = (u32)s_workBuffer[0].size();
+		u32 compressedSize = 0;
+		if (zstd_compress(s_workBuffer[1], s_workBuffer[0].data(), uncompressedSize, 4))
+		{
+			compressedSize = (u32)s_workBuffer[1].size();
+		}
+		// ERROR
+		if (!compressedSize)
+		{
+			return;
+		}
+
+		CMD_BEGIN(LCmd_Sector_Wall_Snapshot, name);
 		{
 			hBuffer_addU32(uncompressedSize);
 			hBuffer_addU32(compressedSize);
@@ -364,6 +406,19 @@ namespace LevelEditor
 		if (zstd_decompress(s_workBuffer[0].data(), uncompressedSize, compressedData, compressedSize))
 		{
 			level_unpackEntiyListSnapshot(uncompressedSize, s_workBuffer[0].data());
+		}
+	}
+
+	void cmd_applySectorWallSnapshot()
+	{
+		const u32 uncompressedSize = hBuffer_getU32();
+		const u32 compressedSize = hBuffer_getU32();
+		const u8* compressedData = hBuffer_getArrayU8(compressedSize);
+
+		s_workBuffer[0].resize(uncompressedSize);
+		if (zstd_decompress(s_workBuffer[0].data(), uncompressedSize, compressedData, compressedSize))
+		{
+			level_unpackSectorWallSnapshot(uncompressedSize, s_workBuffer[0].data());
 		}
 	}
 
