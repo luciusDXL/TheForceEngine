@@ -32,15 +32,14 @@
  *
  * No other paths allow writing.
  *
- * GAME DATA
- * - Game support data can either be a directory on the host OR a ZIP/7Z file
- *   (i.e. you can have a darkforces.zip file with all of DF in it.
- *  * how to start DF:
- * - mount game support data at /game/
- * - mount /game/{textures.gob,sounds.gob,sprites.gob,enhanced.gob} at /game
- * - mount MOD ZIP/Folder at /game with front=true
- * - mount MOD GOBs at /game with front=true
+ * Unfortunately, we need to work around a few physfs shortcomings, like
+ *  mounting/unmounting is based on real archive names, not their virtual
+ * mountpoints, which is a problem when e.g. game is running and UI tries to
+ * validate the source data string:  you _can_ mount the source multiple times,
+ * but unmounting is based on the mount source string so it will unmount all
+ * mountpoints in a single physfs_unmount call.
  */
+
 #include <algorithm>
 #include <atomic>
 #include <cstring>
@@ -56,6 +55,14 @@
 #include "ignorecase.h"
 #include "physfsrwops.h"
 
+//#define DEBUG_PHYSFSWRAPPER
+#ifdef DEBUG_PHYSFSWRAPPER
+#define PWDBG fprintf
+#else
+#define PWDBG(...) do {} while (0)
+#endif
+
+
 static const char * const VIRT_PATH_ABS	  = "/";
 static const char * const VIRT_PATH_TFE	  = "/tfe/";
 static const char * const VIRT_PATH_GAME  = "/game/";
@@ -70,10 +77,15 @@ static const char * const _vpaths[6] = {
 
 
 typedef std::vector<std::string> TFEFileList;
+
+// internal structure to keep track of mount points and work around
+// (IMO) physfs api misdesign.
 struct vpMount {
 	TFE_VPATH vp;		// mount root
-	const char* mntname;	// src name of the mount, for unmounting
+	char* mntname;		// src name of the mount, for unmounting
 	unsigned int id;	// mount counter
+	TFEFile f;		// backing file
+	unsigned int refcnt;	// refcount for
 };
 
 
@@ -82,6 +94,13 @@ static const char *_tfe_userdir = nullptr;
 static std::vector<TFEMount> _vpmounts;
 static std::atomic_int _vpgenid;
 
+/*
+ * we keep track of all mounts we ever made, and do refcounting on them,
+ * so we cann dynamically mount/unmount the same source at multiple mountpoints.
+ * On unmount, physfs uses the source (not the mount point) to unmount, so
+ * things which are mounted at multiple locations will lose _All_ their mount-
+ * points on a single unmount call.  We do not want that.
+ */
 static TFEMount newMount(TFE_VPATH vp, const char *mpath)
 {
 	TFEMount m = new struct vpMount;
@@ -89,21 +108,58 @@ static TFEMount newMount(TFE_VPATH vp, const char *mpath)
 		return nullptr;
 	m->id = _vpgenid++;
 	m->vp = vp;
-	m->mntname = mpath;
+	m->mntname = strdup(mpath);
+	m->f = nullptr;
+	m->refcnt = 1;
+	PWDBG(stderr, "z newMount(%s) = %p\n", mpath, m);
 	_vpmounts.push_back(m);
 	return m;
 }
 
 static void delMount(TFEMount m)
 {
-	for (auto i = _vpmounts.begin(); i != _vpmounts.end(); i++) {
-		if (m == *i) {
-			_vpmounts.erase(i);
+	PWDBG(stderr, "z delMount(%s, %d)\n", m->mntname, m->refcnt);
+	auto it = _vpmounts.begin();
+	while (it != _vpmounts.end()) {
+		if (m == *it) {
+			if (m->refcnt < 1) {
+				free(m->mntname);
+				m->mntname = nullptr;
+				m->f = nullptr;
+				_vpmounts.erase(it);
+				// can't free the TFEMount since it may be
+				// used by multiple parts of the code,
+				// and freeing it here may crash the other part
+				// that tries to unmount it.
+				// use vpUnmountTree() to free() them all.
+				// which you should do when you close DF/OL.
+			}
 			break;
 		}
+		it++;
 	}
+}
 
-	free(m);
+static TFEMount findMount(const char *mntname, bool virt)
+{
+	TFEMount ret = nullptr;
+
+	for (auto i : _vpmounts)
+	{
+		if (i->refcnt < 1)
+			continue;
+		if (0 == strcasecmp(mntname, i->mntname)) {
+			if (virt && i->f) {
+				ret = i;
+				break;
+			} else if (!virt && !i->f) {
+				ret = i;
+				return i;
+			}
+		}
+	}
+	PWDBG(stderr, "z findMount(%s %d) = %p\n", mntname, virt, ret);
+	return ret;
 }
 
 /*
@@ -178,7 +234,9 @@ static void _vpUnmountTree(TFE_VPATH vpid)
 	auto it = _vpmounts.begin();
 	while (it != _vpmounts.end()) {
 		TFEMount m = *it;
-		if (m->vp == vpid) {
+		if (m->vp == vpid && m->refcnt > 0) {
+			PWDBG(stderr, "z vpUnmountTree(%s)\n", m->mntname);
+			free(m->mntname);
 			_vpmounts.erase(it);
 			int ret = PHYSFS_unmount(m->mntname);
 			delete m;
@@ -241,7 +299,7 @@ bool vpFileExists(const char* filepath, bool matchcase)
 	if (!matchcase) {
 		ret = PHYSFSEXT_locateCorrectCase(fp);
 		if (ret != 0) {
-			fprintf(stderr, "x matchcase(%s) err %d\n", fp, ret);
+			PWDBG(stderr, "x matchcase(%s) err %d\n", fp, ret);
 			found = false;
 		} else {
 			found = true;
@@ -253,7 +311,7 @@ bool vpFileExists(const char* filepath, bool matchcase)
 	}
 
 	free(fp);
-	fprintf(stderr, "vpFileExists(%s, %d) = %d\n", filepath, matchcase, found);
+	PWDBG(stderr, "vpFileExists(%s, %d) = %d\n", filepath, matchcase, found);
 	return found;
 }
 
@@ -270,6 +328,11 @@ bool vpFileExists(TFE_VPATH vpathid, const char* filename, bool matchcase)
 	return ret;
 }
 
+bool vpFileExists(TFEMount mnt, const char* filename, bool matchcase)
+{
+	return vpFileExists(mnt->vp, filename, matchcase);
+}
+
 /* vpMkdir("Screenshots")  -> /home/user/.local/TheForceEngine/Screenshots */
 bool vpMkdir(const char* dirname)
 {
@@ -277,9 +340,9 @@ bool vpMkdir(const char* dirname)
 		return false;
 	int ret = PHYSFS_mkdir(dirname);
 	if (ret == 0) {
-		fprintf(stderr, "x vpMkdir(%s) failed: %s\n", dirname, PHYSFS_getErrorByCode(PHYSFS_getLastErrorCode()));
+		PWDBG(stderr, "x vpMkdir(%s) failed: %s\n", dirname, PHYSFS_getErrorByCode(PHYSFS_getLastErrorCode()));
 	}
-	fprintf(stderr, "vpMkdir(%s): %d\n", dirname, ret);
+	PWDBG(stderr, "vpMkdir(%s): %d\n", dirname, ret);
 	return ret != 0;
 }
 
@@ -292,7 +355,7 @@ static TFEFile _vpFileOpen(const char* filepath, bool matchcase)
 	if (!matchcase) {
 		ret = PHYSFSEXT_locateCorrectCase(fp);
 		if (ret < 0) {
-			fprintf(stderr, "x matchcase(%s) err %d\n", fp, ret);
+			PWDBG(stderr, "x matchcase(%s) err %d\n", fp, ret);
 			ret = 0;
 		} else
 			ret = 1; // OK
@@ -315,7 +378,7 @@ TFEFile vpFileOpen(const char* filename, TFE_VPATH vpathid, bool matchcase)
 
 	f = _vpFileOpen(fp, matchcase);
 out:
-	fprintf(stderr, "vpFileOpen(%s, %d) = %p\n", fp, matchcase, f);
+	PWDBG(stderr, "vpFileOpen(%s, %d) = %p\n", fp, matchcase, f);
 	if (fp)
 		free(fp);
 	return f;
@@ -330,7 +393,7 @@ static SDL_RWops* _vpFileOpenRW(const char* filename, bool matchcase)
 	if (!matchcase) {
 		ret = PHYSFSEXT_locateCorrectCase(fp);
 		if (ret < 0) {
-			fprintf(stderr, "x matchcase(%s) err %d\n", fp, ret);
+			PWDBG(stderr, "x matchcase(%s) err %d\n", fp, ret);
 			ret = 0;
 		} else
 			ret = 1; // OK
@@ -354,7 +417,7 @@ SDL_RWops* vpFileOpenRW(const char* filename, TFE_VPATH vpathid, bool matchcase)
 	f = _vpFileOpenRW(fp, matchcase);
 
 out:
-	fprintf(stderr, "vpFileOpenRW(%s, %d) = %p\n", fp, matchcase, f);
+	PWDBG(stderr, "vpFileOpenRW(%s, %d) = %p\n", fp, matchcase, f);
 	if (fp)
 		free(fp);
 	return f;
@@ -373,9 +436,9 @@ TFEFile vpOpenWrite(const char* fn, TFE_WMODE wmode)
 		f = nullptr;
 
 	if (!f) {
-		fprintf(stderr, "x vpOpenWrite(%s) failed: %s\n", fn, PHYSFS_getErrorByCode(PHYSFS_getLastErrorCode()));
+		PWDBG(stderr, "x vpOpenWrite(%s) failed: %s\n", fn, PHYSFS_getErrorByCode(PHYSFS_getLastErrorCode()));
 	}
-	fprintf(stderr, "vpOpenWrite(%s) = %p\n", fn, f);
+	PWDBG(stderr, "vpOpenWrite(%s) = %p\n", fn, f);
 	return f;
 }
 
@@ -391,9 +454,9 @@ SDL_RWops* vpOpenWriteRW(const char* fn, TFE_WMODE wmode)
 		f = nullptr;
 
 	if (!f) {
-		fprintf(stderr, "vpOpenWriteRW(%s) failed: %s\n", fn, PHYSFS_getErrorByCode(PHYSFS_getLastErrorCode()));
+		PWDBG(stderr, "vpOpenWriteRW(%s) failed: %s\n", fn, PHYSFS_getErrorByCode(PHYSFS_getLastErrorCode()));
 	}
-	fprintf(stderr, "vpOpenWriteRW(%s) = %p\n", fn, f);
+	PWDBG(stderr, "vpOpenWriteRW(%s) = %p\n", fn, f);
 	return f;
 }
 
@@ -404,9 +467,9 @@ void vpCloseRW(SDL_RWops *rw)
 	int ret = (rw) ? SDL_RWclose(rw) : -1;
 	if (ret < 0)
 	{
-		fprintf(stderr, "x vpClose(RDL_RW %p) failed: %s\n", p, PHYSFS_getErrorByCode(PHYSFS_getLastErrorCode()));
+		PWDBG(stderr, "x vpClose(RDL_RW %p) failed: %s\n", p, PHYSFS_getErrorByCode(PHYSFS_getLastErrorCode()));
 	}
-	fprintf(stderr, "vpClose(SDLRW %p) %d\n", p, ret);
+	PWDBG(stderr, "vpClose(SDLRW %p) %d\n", p, ret);
 }
 
 void vpClose(TFEFile f)
@@ -416,7 +479,7 @@ void vpClose(TFEFile f)
 	{
 		fprintf(stderr, "x vpClose(TFEF %p) failed: %s\n", f, PHYSFS_getErrorByCode(PHYSFS_getLastErrorCode()));
 	}
-	fprintf(stderr, "vpClose(TFEFile %p) %d\n", f, ret);
+	PWDBG(stderr, "vpClose(TFEFile %p) = %d\n", f, ret);
 }
 
 void vpDeleteFile(const char* filename)
@@ -433,16 +496,29 @@ void vpDeleteFile(const char* filename)
 // Real Filesystem DIR/Container mount
 TFEMount vpMountReal(const char* srcname, TFE_VPATH vpdst, bool front)
 {
-	TFEMount mnt = newMount(vpdst, srcname);
-	if (!mnt)
-		return nullptr;
-	int ret = PHYSFS_mount(srcname, _vpaths[vpdst], front ? 0 : 1);
+	TFEMount mnt;
+	int ret = 0;
+
+	mnt = findMount(srcname, false);
+	if (mnt) {
+		++(mnt->refcnt);
+		goto done;
+	}
+
+	ret = PHYSFS_mount(srcname, _vpaths[vpdst], front ? 0 : 1);
 	if (!ret) {
 		delMount(mnt);
-		fprintf(stderr, "vpMount2(id:%s) failed: %s\n", srcname, PHYSFS_getErrorByCode(PHYSFS_getLastErrorCode()));
+		PWDBG(stderr, "vpMount2(id:%s) failed: %s\n", srcname, PHYSFS_getErrorByCode(PHYSFS_getLastErrorCode()));
 		return nullptr;
 	}
-	fprintf(stderr, "vpMountReal(%s %d %d) = %p\n", srcname, vpdst, front, mnt);
+	mnt = newMount(vpdst, srcname);
+	if (!mnt) {
+		PHYSFS_unmount(srcname);
+		return nullptr;
+	}
+
+done:
+	PWDBG(stderr, "vpMountReal(%s %d %d) = %p\n", srcname, vpdst, front, mnt);
 	return mnt;
 }
 
@@ -456,49 +532,70 @@ TFEMount vpMountVirt(TFE_VPATH vpsrc, const char *srcname, TFE_VPATH vpdst, bool
 	char *fp = to_vpath(vpsrc, srcname);
 	if (!fp)
 		goto out0;
-	mnt = newMount(vpdst, fp);
-	if (!mnt)
-		goto out1;
+
+	mnt = findMount(fp, true);
+	if (mnt) {
+		++mnt->refcnt;
+		PWDBG(stderr, "vpMountVirt(%s %d %d %d) = existing %p\n", fp, vpdst, front, matchcase, mnt);
+		return mnt;
+	}
 	if (!matchcase) {
 		int ret = PHYSFSEXT_locateCorrectCase(fp);
 		if (ret < 0) {
-			fprintf(stderr, "x matchcase(%s) err %d\n", fp, ret);
-			goto out2;
-		} else
-			ret = 1; // OK
+			PWDBG(stderr, "x matchcase(%s) err %d\n", fp, ret);
+			goto out1;
+		}
 	}
 	f = PHYSFS_openRead(fp);
 	if (!f)
-		goto out2;
-	if (!PHYSFS_mountHandle(f,  srcname, _vpaths[vpdst], front ? 0 : 1)) {
-		fprintf(stderr, "vpMountVirt(id:%s) failed: %s\n", srcname, PHYSFS_getErrorByCode(PHYSFS_getLastErrorCode()));
+		goto out1;
+
+	if (!PHYSFS_mountHandle(f, fp, _vpaths[vpdst], front ? 0 : 1)) {
+		fprintf(stderr, "vpMountVirt(id:%s) failed: %s\n", fp, PHYSFS_getErrorByCode(PHYSFS_getLastErrorCode()));
 		goto out2;
 	}
-	fprintf(stderr, "vpMountVirt(%s %d %d %d) = %p\n", fp, vpdst, front, matchcase, mnt);
+
+	mnt = newMount(vpdst, fp);
+	if (!mnt)
+		goto out3;
+
+	mnt->f = f;		// file to close
+	PWDBG(stderr, "vpMountVirt(%s %d %d %d %p) = %p\n", fp, vpdst, front, matchcase, f, mnt);
 	return mnt;
 
+out3:
+	PHYSFS_unmount(srcname);
 out2:
-	delMount(mnt);
+	PHYSFS_close(f);
 out1:
 	free(fp);
 out0:
-	fprintf(stderr, "x vpMountVirt(%s) failed:%s\n", srcname, PHYSFS_getErrorByCode(PHYSFS_getLastErrorCode()));
+	PWDBG(stderr, "x vpMountVirt(%s) failed:%s\n", srcname, PHYSFS_getErrorByCode(PHYSFS_getLastErrorCode()));
 	return nullptr;
 }
 
 bool vpUnmount(TFEMount mnt)
 {
-	int ret;
+	int ret, ok;
 
-	ret = PHYSFS_unmount(mnt->mntname);
-	if (!ret) {
-		fprintf(stderr, "vpUnmount: %s: failed: %s\n", mnt->mntname, PHYSFS_getErrorByCode(PHYSFS_getLastErrorCode()));
-		return false;
+	ok = true;
+	--mnt->refcnt;
+	if (mnt->refcnt < 1) {
+		ret = PHYSFS_unmount(mnt->mntname);
+		if (!ret) {
+			PWDBG(stderr, "vpUnmount: %s: failed: %s\n", mnt->mntname, PHYSFS_getErrorByCode(PHYSFS_getLastErrorCode()));
+			ok = false;
+		}
+		if (mnt->f) {
+			vpClose(mnt->f);
+			mnt->f = nullptr;
+		}
+		delMount(mnt);
+		free(mnt);
+		mnt = nullptr;
 	}
-
-	fprintf(stderr, "vpUnmount(%s) = 1\n", mnt->mntname);
-	delMount(mnt);
-	return true;
+	PWDBG(stderr, "vpUnmount(%p) = %d\n", mnt, ok);
+	return ok;
 }
 
 static bool hasext(const char *fn, const TFEExtList& exts)
@@ -527,7 +624,7 @@ static bool vpGetFileList(const char *path, TFEFileList& inout, TFEExtList& te, 
 			return false;
 		int lc = PHYSFSEXT_locateCorrectCase(xp);
 		if (lc < 0) {
-			fprintf(stderr, "x matchcase(%s) err %d\n", xp, lc);
+			PWDBG(stderr, "x matchcase(%s) err %d\n", xp, lc);
 			return false;
 		} else {
 			ret = PHYSFS_enumerateFiles(xp);
@@ -581,7 +678,7 @@ bool vpDirExists(const char* dirname, TFE_VPATH vpsrc)
 	if (rc)
 		rc = (s.filetype == PHYSFS_FILETYPE_DIRECTORY);
 
-	fprintf(stderr, "vpDirExists(%s): %d\n", fp, rc);
+	PWDBG(stderr, "vpDirExists(%s): %d\n", fp, rc);
 	free(fp);
 	return rc ? true : false;
 }
@@ -602,7 +699,7 @@ static const char* _vpGetFileContainer(char* fn, bool matchcase)
 	if (!matchcase) {
 		int ret = PHYSFSEXT_locateCorrectCase(fn);
 		if (ret < 0) {
-			fprintf(stderr, "x matchcase(%s) err %d\n", fn, ret);
+			PWDBG(stderr, "x matchcase(%s) err %d\n", fn, ret);
 			return nullptr;
 		}
 	}
@@ -626,7 +723,7 @@ const char* vpGetFileContainer(TFE_VPATH vpathid, const char *fn, bool matchcase
 		return nullptr;
 
 	const char *x = _vpGetFileContainer(fp, matchcase);
-	fprintf(stderr, "vpGetFileContainer(%s, %d) = %s\n", fp, matchcase, x);
+	PWDBG(stderr, "vpGetFileContainer(%s, %d) = %s\n", fp, matchcase, x);
 	free(fp);
 	return x;
 }
@@ -649,11 +746,26 @@ vpFile::vpFile(TFE_VPATH vpathid, const char* name, char** buf, unsigned int* si
 		error = true;
 }
 
+vpFile::vpFile(TFEMount m, const char* name, char** buf, unsigned int* size, bool matchcase)
+{
+	m_handle = nullptr;
+	error = false;
+	if (!openread(m->vp, name, matchcase) || !readallocbuffer(buf, size))
+		error = true;
+}
+
 vpFile::vpFile(TFE_VPATH vpathid, const char* name, bool matchcase)
 {
 	m_handle = nullptr;
 	error = false;
 	openread(vpathid, name, matchcase);
+}
+
+vpFile::vpFile(TFEMount mnt, const char* name, bool matchcase)
+{
+	m_handle = nullptr;
+	error = false;
+	openread(mnt->vp, name, matchcase);
 }
 
 vpFile::~vpFile()

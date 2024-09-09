@@ -57,6 +57,7 @@ bool vpGetFileList(TFE_VPATH vpathid, TFEFileList& inout, TFEExtList& te = TFEAl
 bool vpGetFileList(TFE_VPATH vpathid, const char* subpath, TFEFileList& inout, TFEExtList& te = TFEAllExts, bool matchcase = true);
 
 bool vpFileExists(const char* filename, bool matchcase = true);
+bool vpFileExists(TFEMount mnt, const char* filename, bool matchcase = true);
 bool vpFileExists(TFE_VPATH vpathid, const char* filename, bool matchcase = true);
 
 TFEMount vpMountReal(const char* srcname, TFE_VPATH vpdst, bool front = true);
@@ -78,7 +79,9 @@ class vpFile {
 public:
 	vpFile();
 	vpFile(TFE_VPATH vpathid, const char* name, char** buf, unsigned int* size, bool matchcase = true);
+	vpFile(TFEMount mnt, const char* name, char** buf, unsigned int* size, bool matchcase = true);
 	vpFile(TFE_VPATH vpathid, const char* name, bool matchcase = true);
+	vpFile(TFEMount mnt, const char* name, bool matchcase = true);
 	~vpFile();
 
 	/* openread: open a file for reading, relative to either the vpathid root

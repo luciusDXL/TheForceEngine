@@ -452,8 +452,10 @@ namespace TFE_DarkForces
 		s_mntAgentMnu = vpMountVirt(VPATH_GAME, "AGENTMNU.LFD", VPATH_GAME, true, false);
 		if (!s_mntAgentMnu) {
 			s_mntAgentMnu = vpMountVirt(VPATH_GAME, "LFD/AGENTMNU.LFD", VPATH_GAME, true, false);
-			if (!s_mntAgentMnu)
+			if (!s_mntAgentMnu) {
+				TFE_System::logWrite(LOG_ERROR, "AgentMenu", "unable to load AGENTMNU.LFD");
 				return false;
+			}
 		}
 
 		loadPaletteFromPltt("agentmnu.PLTT", s_menuPalette);

@@ -136,7 +136,7 @@ namespace TFE_DarkForces
 				s_sceneArchive = nullptr;
 			}
 			sprintf(vpath, "LFD/%s", scene->archive);
-			TFEMount s_sceneArchive = vpMountVirt(VPATH_GAME, vpath, VPATH_GAME, true, false);
+			s_sceneArchive = vpMountVirt(VPATH_GAME, vpath, VPATH_GAME, true, false);
 			if (!s_sceneArchive) {
 				s_sceneArchive = vpMountVirt(VPATH_GAME, scene->archive, VPATH_GAME, true, false);
 				if (!s_sceneArchive) {

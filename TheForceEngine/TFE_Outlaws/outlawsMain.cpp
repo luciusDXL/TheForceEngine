@@ -5,7 +5,6 @@ namespace TFE_Outlaws
 {
 	bool validateSourceData(const char *path)
 	{
-		fprintf(stderr, "OL(%s)\n", path);
 		static const char * const testfiles[] = {
 			"outlaws.lab", "olgeo.lab", "oltex.lab", "olobj.lab",
 			"olsfx.lab", "oltaunt.lab", "olweap.lab"
@@ -18,7 +17,7 @@ namespace TFE_Outlaws
 		ok = true;
 		for (auto i : testfiles)
 		{
-			if (!vpFileExists(VPATH_TMP, i, false))
+			if (!vpFileExists(m, i, false))
 			{
 				ok = false;
 				break;
@@ -26,7 +25,6 @@ namespace TFE_Outlaws
 		}
 		vpUnmount(m);
 out:
-		fprintf(stderr, "OL(%s) = %d\n", path, ok);
 		return ok;
 	}
 

@@ -44,8 +44,10 @@ namespace TFE_DarkForces
 
 		// cutscene audio container
 		s_mntjsfx = vpMountVirt(VPATH_GAME, "LFD/JEDISFX.LFD", VPATH_GAME, true, false);
-		if (!s_mntjsfx)
+		if (!s_mntjsfx) {
+			TFE_System::logWrite(LOG_ERROR, "Landru", "unable to load JEDISFX.LFD");
 			return false;
+		}
 
 		s_lsystemInit = JTRUE;
 		lcanvas_init(320, 200);

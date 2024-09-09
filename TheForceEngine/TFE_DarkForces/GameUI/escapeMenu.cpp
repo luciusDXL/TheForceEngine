@@ -146,11 +146,13 @@ namespace TFE_DarkForces
 			u8 paletteBuffer[768] = { 0 };
 
 			s_mntEscMnt = vpMountVirt(VPATH_GAME, "LFD/MENU.LFD", VPATH_GAME, true, false);
-			if (!s_mntEscMnt)
+			if (!s_mntEscMnt) {
+				TFE_System::logWrite(LOG_ERROR, "EscapeMenu", "unable to load MENU.LFD");
 				return false;
-			s_emState.escMenuFrameCount = getFramesFromAnim("escmenu.anim", &s_emState.escMenuFrames);
-			s_emState.confirmMenuFrameCount = getFramesFromAnim("yesno.anim", &s_emState.confirmMenuFrames);
-			loadPaletteFromPltt("menu.pltt", paletteBuffer);
+			}
+			s_emState.escMenuFrameCount = getFramesFromAnim("escmenu.ANIM", &s_emState.escMenuFrames);
+			s_emState.confirmMenuFrameCount = getFramesFromAnim("yesno.ANIM", &s_emState.confirmMenuFrames);
+			loadPaletteFromPltt("menu.PLTT", paletteBuffer);
 
 			// Adjust button ranges since different languages seem to move the menu around for some reason...
 			Vec4i range = getButtonRange(s_emState.escMenuFrames, 0);
