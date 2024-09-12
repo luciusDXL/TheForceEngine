@@ -87,9 +87,9 @@ namespace LevelEditor
 	static char s_script[65536] = { 0 };
 	static bool s_allowScriptHistoryCallback = false;
 	
-	bool infoIntInput(const char* labelId, u32 width, s32* value, bool multi = false);
-	bool infoUIntInput(const char* labelId, u32 width, u32* value, bool multi = false);
-	bool infoFloatInput(const char* labelId, u32 width, f32* value, bool multi = false);
+	bool infoIntInput(const char* labelId, u32 width, s32* value, bool unset = false);
+	bool infoUIntInput(const char* labelId, u32 width, u32* value, bool unset = false);
+	bool infoFloatInput(const char* labelId, u32 width, f32* value, bool unset = false);
 		
 	void infoPanelClearMessages()
 	{
@@ -755,11 +755,11 @@ namespace LevelEditor
 		ImGui::SameLine();
 	}
 		
-	bool infoIntInput(const char* labelId, u32 width, s32* value, bool multi)
+	bool infoIntInput(const char* labelId, u32 width, s32* value, bool unset)
 	{
 		ImGui::PushItemWidth(f32(width));
 		bool result = false;
-		if (multi)
+		if (unset)
 		{
 			char buf[32] = { 0 };
 			result = ImGui::InputTextWithHint(labelId, "unset", buf, 32, ImGuiInputTextFlags_CharsDecimal);
@@ -777,11 +777,11 @@ namespace LevelEditor
 		return result;
 	}
 
-	bool infoUIntInput(const char* labelId, u32 width, u32* value, bool multi)
+	bool infoUIntInput(const char* labelId, u32 width, u32* value, bool unset)
 	{
 		ImGui::PushItemWidth(f32(width));
 		bool result = false;
-		if (multi)
+		if (unset)
 		{
 			char buf[32] = { 0 };
 			result = ImGui::InputTextWithHint(labelId, "multi", buf, 32, ImGuiInputTextFlags_CharsDecimal);
@@ -799,11 +799,11 @@ namespace LevelEditor
 		return result;
 	}
 
-	bool infoFloatInput(const char* labelId, u32 width, f32* value, bool multi)
+	bool infoFloatInput(const char* labelId, u32 width, f32* value, bool unset)
 	{
 		ImGui::PushItemWidth(f32(width));
 		bool result = false;
-		if (multi)
+		if (unset)
 		{
 			char buf[32] = { 0 };
 			result = ImGui::InputTextWithHint(labelId, "multi", buf, 32, ImGuiInputTextFlags_CharsDecimal);
@@ -1382,7 +1382,7 @@ namespace LevelEditor
 		strcpy(sectorName, sector->name.c_str());
 		sprintf(inputName, "##NameSector%d", sector->id);
 
-		infoLabel("##NameLabel", "Name", 32);
+		infoLabel("##NameLabel", "Name", 42);
 		ImGui::PushItemWidth(240.0f);
 
 		// Turn the name red if it matches another sector.
@@ -1395,7 +1395,7 @@ namespace LevelEditor
 		ImGui::PopItemWidth();
 		if (otherNameId >= 0) { ImGui::PopStyleColor(); }
 
-		ImGui::SameLine(0.0f, 20.0f);
+		ImGui::SameLine(0.0f, 28.0f);
 		if (ImGui::Button("Edit INF"))
 		{
 			TFE_Editor::openEditorPopup(POPUP_EDIT_INF, 0xffffffff, sector->name.empty() ? nullptr : (void*)sector->name.c_str());
@@ -1415,36 +1415,36 @@ namespace LevelEditor
 			s_curLayer = layer;
 		}
 
-		ImGui::SameLine(0.0f, 16.0f);
+		ImGui::SameLine(0.0f, 8.0f);
 
 		s32 ambient = (s32)sector->ambient;
-		infoLabel("##AmbientLabel", "Ambient", 56);
+		infoLabel("##AmbientLabel", "Ambient", 64);
 		infoIntInput("##AmbientSector", 96, &ambient);
 		sector->ambient = std::max(0, std::min(31, ambient));
 
 		// Heights
-		infoLabel("##FloorHeightLabel", "Floor Ht", 66);
-		infoFloatInput("##FloorHeight", 64, &sector->floorHeight);
+		infoLabel("##FloorHeightLabel", "Floor", 42);
+		infoFloatInput("##FloorHeight", 64+8, &sector->floorHeight);
 		ImGui::SameLine();
 
-		infoLabel("##SecondHeightLabel", "Second Ht", 72);
+		infoLabel("##SecondHeightLabel", "Second", 52);
 		infoFloatInput("##SecondHeight", 64, &sector->secHeight);
 		ImGui::SameLine();
 
-		infoLabel("##CeilHeightLabel", "Ceiling Ht", 80);
+		infoLabel("##CeilHeightLabel", "Ceiling", 60);
 		infoFloatInput("##CeilHeight", 64, &sector->ceilHeight);
 
 		ImGui::Separator();
 
 		// Flags
-		infoLabel("##Flags1Label", "Flags1", 48);
+		infoLabel("##Flags1Label", "Flags1", 56);
 		infoUIntInput("##Flags1", 128, &sector->flags[0]);
 		ImGui::SameLine();
 
-		infoLabel("##Flags2Label", "Flags2", 48);
+		infoLabel("##Flags2Label", "Flags2", 56);
 		infoUIntInput("##Flags2", 128, &sector->flags[1]);
 
-		infoLabel("##Flags3Label", "Flags3", 48);
+		infoLabel("##Flags3Label", "Flags3", 56);
 		infoUIntInput("##Flags3", 128, &sector->flags[2]);
 
 		const f32 column[] = { 0.0f, 160.0f, 320.0f };
