@@ -784,7 +784,7 @@ namespace LevelEditor
 		if (unset)
 		{
 			char buf[32] = { 0 };
-			result = ImGui::InputTextWithHint(labelId, "multi", buf, 32, ImGuiInputTextFlags_CharsDecimal);
+			result = ImGui::InputTextWithHint(labelId, "unset", buf, 32, ImGuiInputTextFlags_CharsDecimal);
 			if (result)
 			{
 				char* endPtr = nullptr;
@@ -806,7 +806,7 @@ namespace LevelEditor
 		if (unset)
 		{
 			char buf[32] = { 0 };
-			result = ImGui::InputTextWithHint(labelId, "multi", buf, 32, ImGuiInputTextFlags_CharsDecimal);
+			result = ImGui::InputTextWithHint(labelId, "unset", buf, 32, ImGuiInputTextFlags_CharsDecimal);
 			if (result)
 			{
 				char* endPtr = nullptr;
@@ -847,7 +847,76 @@ namespace LevelEditor
 		EditorSector* sector;
 		s32 wallIndex;
 	};
+	
+	enum WallChangeFlags : u32
+	{
+		WCF_NONE = 0,
+		WCF_LIGHT = FLAG_BIT(0),
+		WCF_FLAG1_SET = FLAG_BIT(1),
+		WCF_FLAG3_SET = FLAG_BIT(2),
+	};
+	enum SectorChangeFlags : u32
+	{
+		SCF_NONE = 0,
+		SCF_LAYER = FLAG_BIT(0),
+		SCF_AMBIENT = FLAG_BIT(1),
+		SCF_FLOOR_HEIGHT = FLAG_BIT(2),
+		SCF_SEC_HEIGHT = FLAG_BIT(3),
+		SCF_CEIL_HEIGHT = FLAG_BIT(4),
+		SCF_FLAG1_SET = FLAG_BIT(5),
+		SCF_FLAG2_SET = FLAG_BIT(6),
+		SCF_FLAG3_SET = FLAG_BIT(7),
+	};
+
+	struct WallChanges
+	{
+		bool applyChanges = false;
+		u32 changes = WCF_NONE;
+		s32 flags1Changed = 0;
+		s32 flags3Changed = 0;
+		s32 flags1Value = 0;
+		s32 flags3Value = 0;
+		s32 light = 0;
+		s32 flags1_set = 0;
+		s32 flags3_set = 0;
+	};
+
+	struct SectorChanges
+	{
+		bool applyChanges = false;
+		u32 changes = SCF_NONE;
+		s32 layer = 0;
+		s32 ambient = 0;
+		f32 floorHeight = 0.0f;
+		f32 secHeight = 0.0f;
+		f32 ceilHeight = 0.0f;
+		s32 flags1Changed = 0;
+		s32 flags1Value = 0;
+		s32 flags1_set = 0;
+		s32 flags2_set = 0;
+		s32 flags3_set = 0;
+	};
+
+	static WallChanges s_wallChanges = {};
+	static SectorChanges s_sectorChanges = {};
 	std::vector<WallInfo> s_wallInfo;
+	std::vector<EditorSector*> s_sectorInfo;
+	static std::vector<s32> s_wallFlags;
+	static std::vector<s32> s_sectorFlags;
+
+	void addSectorInfo(EditorSector* sector)
+	{
+		const s32 count = (s32)s_sectorInfo.size();
+		EditorSector** infoSector = s_sectorInfo.data();
+		for (s32 i = 0; i < count; i++, infoSector++)
+		{
+			if (infoSector[i] == sector) { return; }
+		}
+		s_sectorInfo.push_back(sector);
+		s_sectorFlags.push_back(sector->flags[0]);
+		s_sectorFlags.push_back(sector->flags[1]);
+		s_sectorFlags.push_back(sector->flags[2]);
+	}
 
 	void addWallInfo(EditorSector* sector, s32 wallIndex)
 	{
@@ -858,16 +927,25 @@ namespace LevelEditor
 			if (info->sector == sector && info->wallIndex == wallIndex) { return; }
 		}
 		s_wallInfo.push_back({ sector, wallIndex });
+		s_wallFlags.push_back(sector->walls[wallIndex].flags[0]);
+		s_wallFlags.push_back(sector->walls[wallIndex].flags[1]);
+		s_wallFlags.push_back(sector->walls[wallIndex].flags[2]);
 	}
 
 	u32 getWallInfoList()
 	{
+		if (!s_wallInfo.empty())
+		{
+			return (u32)s_wallInfo.size();
+		}
+
 		const u32 count = selection_getCount(SEL_SURFACE);
 		EditorSector* sector;
 		s32 wallIndex;
 		HitPart part;
 
 		s_wallInfo.clear();
+		s_wallFlags.clear();
 		for (u32 i = 0; i < count; i++)
 		{
 			selection_getSurface(i, sector, wallIndex, &part);
@@ -879,28 +957,45 @@ namespace LevelEditor
 		return (u32)s_wallInfo.size();
 	}
 
-	enum WallChangeFlags : u32
+	u32 getSectorInfoList()
 	{
-		WCF_NONE = 0,
-		WCF_LIGHT = FLAG_BIT(0),
-		WCF_FLAG1_SET = FLAG_BIT(1),
-		WCF_FLAG3_SET = FLAG_BIT(2),
-	};
-	struct WallChanges
-	{
-		bool applyChanges = false;
-		f64 timeStamp = 0.0;
-		s32 changes = WCF_NONE;
-		s32 flags1Changed = 0;
-		s32 flags3Changed = 0;
-		s32 flags1Value = 0;
-		s32 flags3Value = 0;
-		s32 light = 0;
-		s32 flags1_set = 0;
-		s32 flags3_set = 0;
-	};
-	static WallChanges s_wallChanges = {};
+		if (!s_sectorInfo.empty())
+		{
+			return (u32)s_sectorInfo.size();
+		}
 
+		s_sectorInfo.clear();
+		s_sectorFlags.clear();
+		const u32 count = selection_getCount();
+		EditorSector* sector = nullptr;
+		if (s_editMode == LEDIT_SECTOR)
+		{
+			s_sectorInfo.resize(count);
+			for (s32 s = 0; s < count; s++)
+			{
+				selection_getSector(s, sector);
+				s_sectorInfo[s] = sector;
+				s_sectorFlags.push_back(sector->flags[0]);
+				s_sectorFlags.push_back(sector->flags[1]);
+				s_sectorFlags.push_back(sector->flags[2]);
+			}
+		}
+		else if (s_editMode == LEDIT_WALL)
+		{
+			s32 wallIndex;
+			HitPart part;
+			for (s32 s = 0; s < count; s++)
+			{
+				selection_getSurface(s, sector, wallIndex, &part);
+				if (part == HP_FLOOR || part == HP_CEIL)
+				{
+					addSectorInfo(sector);
+				}
+			}
+		}
+		return (u32)s_sectorInfo.size();
+	}
+		
 	void infoPanel_addWallChangesToHistory()
 	{
 		// Add to history.
@@ -932,6 +1027,37 @@ namespace LevelEditor
 		}
 	}
 
+	void infoPanel_addSectorChangesToHistory()
+	{
+		// Add to history.
+		const s32 count = (s32)s_sectorInfo.size();
+		if (count < 0) { return; }
+
+		const s32 countPrev = (s32)s_prevPairs.size();
+		bool pairsChanged = countPrev != count;
+
+		s_pairs.resize(count);
+		IndexPair* pair = s_pairs.data();
+		EditorSector** info = s_sectorInfo.data();
+		const IndexPair* prev = s_prevPairs.data();
+		for (s32 i = 0; i < count; i++)
+		{
+			pair[i] = { info[i]->id, -1 };
+			if (!pairsChanged && (pair[i].i0 != prev[i].i0 || pair[i].i1 != prev[i].i1))
+			{
+				pairsChanged = true;
+			}
+		}
+
+		// Collapse all attribute changes when possible.
+		cmd_sectorAttributeSnapshot(LName_ChangeSectorAttrib, s_pairs, pairsChanged);
+		if (pairsChanged)
+		{
+			s_prevPairs.resize(count);
+			memcpy(s_prevPairs.data(), s_pairs.data(), s_pairs.size() * sizeof(IndexPair));
+		}
+	}
+
 	void applyWallChanges()
 	{
 		if (!s_wallChanges.applyChanges) { return; }
@@ -951,9 +1077,17 @@ namespace LevelEditor
 			{
 				wall->flags[0] = s_wallChanges.flags1_set;
 			}
+			else
+			{
+				wall->flags[0] = s_wallFlags[i * 3 + 0];
+			}
 			if (s_wallChanges.changes & WCF_FLAG3_SET)
 			{
 				wall->flags[2] = s_wallChanges.flags3_set;
+			}
+			else
+			{
+				wall->flags[2] = s_wallFlags[i * 3 + 2];
 			}
 			// flags.
 			for (s32 f = 0; f < 31; f++)
@@ -986,16 +1120,105 @@ namespace LevelEditor
 		}
 		infoPanel_addWallChangesToHistory();
 	}
+
+	void applySectorChanges()
+	{
+		if (!s_sectorChanges.applyChanges) { return; }
+		s_sectorChanges.applyChanges = false;
+		if (s_sectorInfo.empty()) { return; }
+
+		s32 count = (s32)s_sectorInfo.size();
+		EditorSector** info = s_sectorInfo.data();
+		for (s32 i = 0; i < count; i++)
+		{
+			EditorSector* sector = info[i];
+			if (s_sectorChanges.changes & SCF_LAYER)
+			{
+				sector->layer = s_sectorChanges.layer;
+				// Adjust layer range.
+				s_level.layerRange[0] = std::min(s_level.layerRange[0], sector->layer);
+				s_level.layerRange[1] = std::max(s_level.layerRange[1], sector->layer);
+				// Change the current layer so we can still see the sector.
+				s_curLayer = sector->layer;
+			}
+			if (s_sectorChanges.changes & SCF_AMBIENT)
+			{
+				sector->ambient = (u32)s_sectorChanges.ambient;
+			}
+			if (s_sectorChanges.changes & SCF_FLOOR_HEIGHT)
+			{
+				sector->floorHeight = s_sectorChanges.floorHeight;
+			}
+			if (s_sectorChanges.changes & SCF_SEC_HEIGHT)
+			{
+				sector->secHeight = s_sectorChanges.secHeight;
+			}
+			if (s_sectorChanges.changes & SCF_CEIL_HEIGHT)
+			{
+				sector->ceilHeight = s_sectorChanges.ceilHeight;
+			}
+			if (s_sectorChanges.changes & SCF_FLAG1_SET)
+			{
+				sector->flags[0] = s_sectorChanges.flags1_set;
+			}
+			else
+			{
+				sector->flags[0] = s_sectorFlags[i * 3 + 0];
+			}
+			if (s_sectorChanges.changes & SCF_FLAG2_SET)
+			{
+				sector->flags[1] = s_sectorChanges.flags2_set;
+			}
+			else
+			{
+				sector->flags[1] = s_sectorFlags[i * 3 + 1];
+			}
+			if (s_sectorChanges.changes & SCF_FLAG3_SET)
+			{
+				sector->flags[2] = s_sectorChanges.flags3_set;
+			}
+			else
+			{
+				sector->flags[2] = s_sectorFlags[i * 3 + 2];
+			}
+			// flags.
+			for (s32 f = 0; f < 31; f++)
+			{
+				const s32 flagBit = 1 << f;
+				if (s_sectorChanges.flags1Changed & flagBit)
+				{
+					if (s_sectorChanges.flags1Value & flagBit)
+					{
+						sector->flags[0] |= flagBit;
+					}
+					else
+					{
+						sector->flags[0] &= ~flagBit;
+					}
+				}
+			}
+		}
+		infoPanel_addSectorChangesToHistory();
+	}
 		
 	void infoPanel_clearSelection()
 	{
 		// Clear out the wall change structure.
 		s_wallChanges = {};
+		s_sectorChanges = {};
 		s_prevPairs.clear();
 		s_wallInfo.clear();
+		s_sectorInfo.clear();
 	}
 
-	void checkBoxMulti(const char* id, s32* flagsValue, s32* flagsChanged, s32 flagBit, f64 timestamp)
+	enum InfoPanelId
+	{
+		IPANEL_VERTEX = 0,
+		IPANEL_WALL,
+		IPANEL_SECTOR,
+	};
+
+	void checkBoxMulti(const char* id, s32* flagsValue, s32* flagsChanged, s32 flagBit, InfoPanelId panelId)
 	{
 		const bool showGrayedOut = !((*flagsChanged) & flagBit);
 
@@ -1011,9 +1234,8 @@ namespace LevelEditor
 			{
 				if (enable) { *flagsChanged |= flagBit; }
 				else { *flagsChanged &= ~flagBit; *flagsValue &= ~flagBit; }
-
-				s_wallChanges.timeStamp = timestamp;
-				s_wallChanges.applyChanges = true;
+				if (panelId == IPANEL_WALL) { s_wallChanges.applyChanges = true; }
+				else if (panelId == IPANEL_SECTOR) { s_sectorChanges.applyChanges = true; }
 			}
 		}
 		if (showGrayedOut) { ImGui::PopStyleVar(); }
@@ -1289,8 +1511,6 @@ namespace LevelEditor
 		}
 		else
 		{
-			const f64 timestamp = TFE_System::getTime();
-
 			ImGui::Text("Multiple Walls Selected");
 			ImGui::Separator();
 
@@ -1300,7 +1520,6 @@ namespace LevelEditor
 			{
 				s_wallChanges.light = light;
 				s_wallChanges.changes |= WCF_LIGHT;
-				s_wallChanges.timeStamp = timestamp;
 				s_wallChanges.applyChanges = true;
 			}
 			ImGui::Separator();
@@ -1310,7 +1529,6 @@ namespace LevelEditor
 			if (infoIntInput("##Flags1", 128, &s_wallChanges.flags1_set, !(s_wallChanges.changes & WCF_FLAG1_SET)))
 			{
 				s_wallChanges.changes |= WCF_FLAG1_SET;
-				s_wallChanges.timeStamp = timestamp;
 				s_wallChanges.applyChanges = true;
 			}
 			ImGui::SameLine();
@@ -1319,38 +1537,37 @@ namespace LevelEditor
 			if (infoIntInput("##Flags3", 128, &s_wallChanges.flags3_set, !(s_wallChanges.changes & WCF_FLAG3_SET)))
 			{
 				s_wallChanges.changes |= WCF_FLAG3_SET;
-				s_wallChanges.timeStamp = timestamp;
 				s_wallChanges.applyChanges = true;
 			}
 
 			const f32 column[] = { 0.0f, 174.0f, 324.0f };
 
-			checkBoxMulti("Mask Wall##WallFlag", &s_wallChanges.flags1Value, &s_wallChanges.flags1Changed, WF1_ADJ_MID_TEX, timestamp); ImGui::SameLine(column[1]);
-			checkBoxMulti("Illum Sign##WallFlag", &s_wallChanges.flags1Value, &s_wallChanges.flags1Changed, WF1_ILLUM_SIGN, timestamp); ImGui::SameLine(column[2]);
-			checkBoxMulti("Horz Flip Tex##SectorFlag", &s_wallChanges.flags1Value, &s_wallChanges.flags1Changed, WF1_FLIP_HORIZ, timestamp);
+			checkBoxMulti("Mask Wall##WallFlag", &s_wallChanges.flags1Value, &s_wallChanges.flags1Changed, WF1_ADJ_MID_TEX, IPANEL_WALL); ImGui::SameLine(column[1]);
+			checkBoxMulti("Illum Sign##WallFlag", &s_wallChanges.flags1Value, &s_wallChanges.flags1Changed, WF1_ILLUM_SIGN, IPANEL_WALL); ImGui::SameLine(column[2]);
+			checkBoxMulti("Horz Flip Tex##SectorFlag", &s_wallChanges.flags1Value, &s_wallChanges.flags1Changed, WF1_FLIP_HORIZ, IPANEL_WALL);
 
-			checkBoxMulti("Change WallLight##WallFlag", &s_wallChanges.flags1Value, &s_wallChanges.flags1Changed, WF1_CHANGE_WALL_LIGHT, timestamp); ImGui::SameLine(column[1]);
-			checkBoxMulti("Tex Anchored##WallFlag", &s_wallChanges.flags1Value, &s_wallChanges.flags1Changed, WF1_TEX_ANCHORED, timestamp); ImGui::SameLine(column[2]);
-			checkBoxMulti("Wall Morphs##SectorFlag", &s_wallChanges.flags1Value, &s_wallChanges.flags1Changed, WF1_WALL_MORPHS, timestamp);
+			checkBoxMulti("Change WallLight##WallFlag", &s_wallChanges.flags1Value, &s_wallChanges.flags1Changed, WF1_CHANGE_WALL_LIGHT, IPANEL_WALL); ImGui::SameLine(column[1]);
+			checkBoxMulti("Tex Anchored##WallFlag", &s_wallChanges.flags1Value, &s_wallChanges.flags1Changed, WF1_TEX_ANCHORED, IPANEL_WALL); ImGui::SameLine(column[2]);
+			checkBoxMulti("Wall Morphs##SectorFlag", &s_wallChanges.flags1Value, &s_wallChanges.flags1Changed, WF1_WALL_MORPHS, IPANEL_WALL);
 
-			checkBoxMulti("Scroll Top Tex##WallFlag", &s_wallChanges.flags1Value, &s_wallChanges.flags1Changed, WF1_SCROLL_TOP_TEX, timestamp); ImGui::SameLine(column[1]);
-			checkBoxMulti("Scroll Mid Tex##WallFlag", &s_wallChanges.flags1Value, &s_wallChanges.flags1Changed, WF1_SCROLL_MID_TEX, timestamp); ImGui::SameLine(column[2]);
-			checkBoxMulti("Scroll Bottom##SectorFlag", &s_wallChanges.flags1Value, &s_wallChanges.flags1Changed, WF1_SCROLL_BOT_TEX, timestamp);
+			checkBoxMulti("Scroll Top Tex##WallFlag", &s_wallChanges.flags1Value, &s_wallChanges.flags1Changed, WF1_SCROLL_TOP_TEX, IPANEL_WALL); ImGui::SameLine(column[1]);
+			checkBoxMulti("Scroll Mid Tex##WallFlag", &s_wallChanges.flags1Value, &s_wallChanges.flags1Changed, WF1_SCROLL_MID_TEX, IPANEL_WALL); ImGui::SameLine(column[2]);
+			checkBoxMulti("Scroll Bottom##SectorFlag", &s_wallChanges.flags1Value, &s_wallChanges.flags1Changed, WF1_SCROLL_BOT_TEX, IPANEL_WALL);
 
-			checkBoxMulti("Scroll Sign##WallFlag", &s_wallChanges.flags1Value, &s_wallChanges.flags1Changed, WF1_SCROLL_SIGN_TEX, timestamp); ImGui::SameLine(column[1]);
-			checkBoxMulti("Hide On Map##WallFlag", &s_wallChanges.flags1Value, &s_wallChanges.flags1Changed, WF1_HIDE_ON_MAP, timestamp); ImGui::SameLine(column[2]);
-			checkBoxMulti("Show On Map##SectorFlag", &s_wallChanges.flags1Value, &s_wallChanges.flags1Changed, WF1_SHOW_NORMAL_ON_MAP, timestamp);
+			checkBoxMulti("Scroll Sign##WallFlag", &s_wallChanges.flags1Value, &s_wallChanges.flags1Changed, WF1_SCROLL_SIGN_TEX, IPANEL_WALL); ImGui::SameLine(column[1]);
+			checkBoxMulti("Hide On Map##WallFlag", &s_wallChanges.flags1Value, &s_wallChanges.flags1Changed, WF1_HIDE_ON_MAP, IPANEL_WALL); ImGui::SameLine(column[2]);
+			checkBoxMulti("Show On Map##SectorFlag", &s_wallChanges.flags1Value, &s_wallChanges.flags1Changed, WF1_SHOW_NORMAL_ON_MAP, IPANEL_WALL);
 
-			checkBoxMulti("Sign Anchored##WallFlag", &s_wallChanges.flags1Value, &s_wallChanges.flags1Changed, WF1_SIGN_ANCHORED, timestamp); ImGui::SameLine(column[1]);
-			checkBoxMulti("Damage Wall##WallFlag", &s_wallChanges.flags1Value, &s_wallChanges.flags1Changed, WF1_DAMAGE_WALL, timestamp); ImGui::SameLine(column[2]);
-			checkBoxMulti("Show As Ledge##SectorFlag", &s_wallChanges.flags1Value, &s_wallChanges.flags1Changed, WF1_SHOW_AS_LEDGE_ON_MAP, timestamp);
+			checkBoxMulti("Sign Anchored##WallFlag", &s_wallChanges.flags1Value, &s_wallChanges.flags1Changed, WF1_SIGN_ANCHORED, IPANEL_WALL); ImGui::SameLine(column[1]);
+			checkBoxMulti("Damage Wall##WallFlag", &s_wallChanges.flags1Value, &s_wallChanges.flags1Changed, WF1_DAMAGE_WALL, IPANEL_WALL); ImGui::SameLine(column[2]);
+			checkBoxMulti("Show As Ledge##SectorFlag", &s_wallChanges.flags1Value, &s_wallChanges.flags1Changed, WF1_SHOW_AS_LEDGE_ON_MAP, IPANEL_WALL);
 
-			checkBoxMulti("Show As Door##WallFlag", &s_wallChanges.flags1Value, &s_wallChanges.flags1Changed, WF1_SHOW_AS_DOOR_ON_MAP, timestamp); ImGui::SameLine(column[1]);
-			checkBoxMulti("Always Walk##WallFlag", &s_wallChanges.flags3Value, &s_wallChanges.flags3Changed, WF3_ALWAYS_WALK, timestamp); ImGui::SameLine(column[2]);
-			checkBoxMulti("Solid Wall##SectorFlag", &s_wallChanges.flags3Value, &s_wallChanges.flags3Changed, WF3_SOLID_WALL, timestamp);
+			checkBoxMulti("Show As Door##WallFlag", &s_wallChanges.flags1Value, &s_wallChanges.flags1Changed, WF1_SHOW_AS_DOOR_ON_MAP, IPANEL_WALL); ImGui::SameLine(column[1]);
+			checkBoxMulti("Always Walk##WallFlag", &s_wallChanges.flags3Value, &s_wallChanges.flags3Changed, WF3_ALWAYS_WALK, IPANEL_WALL); ImGui::SameLine(column[2]);
+			checkBoxMulti("Solid Wall##SectorFlag", &s_wallChanges.flags3Value, &s_wallChanges.flags3Changed, WF3_SOLID_WALL, IPANEL_WALL);
 
-			checkBoxMulti("Player Walk Only##WallFlag", &s_wallChanges.flags3Value, &s_wallChanges.flags3Changed, WF3_PLAYER_WALK_ONLY, timestamp); ImGui::SameLine(column[1]);
-			checkBoxMulti("Cannot Shoot Thru##WallFlag", &s_wallChanges.flags3Value, &s_wallChanges.flags3Changed, WF3_CANNOT_FIRE_THROUGH, timestamp);
+			checkBoxMulti("Player Walk Only##WallFlag", &s_wallChanges.flags3Value, &s_wallChanges.flags3Changed, WF3_PLAYER_WALK_ONLY, IPANEL_WALL); ImGui::SameLine(column[1]);
+			checkBoxMulti("Cannot Shoot Thru##WallFlag", &s_wallChanges.flags3Value, &s_wallChanges.flags3Changed, WF3_CANNOT_FIRE_THROUGH, IPANEL_WALL);
 
 			ImGui::Separator();
 			applyWallChanges();
@@ -1368,183 +1585,302 @@ namespace LevelEditor
 
 		s32 wallId = -1;
 		EditorSector* sector = nullptr;
-		// TODO: Handle multi-select.
-		selection_getSector(selection_getCount() ? 0 : SEL_INDEX_HOVERED, sector);
-		if (!sector) { return; }
-		s_wallShownLast = false;
-
-		ImGui::Text("Sector ID: %d      Wall Count: %u", sector->id, (u32)sector->walls.size());
-		ImGui::Separator();
-
-		// Sector Name (optional, used by INF)
-		char sectorName[64];
-		char inputName[256];
-		strcpy(sectorName, sector->name.c_str());
-		sprintf(inputName, "##NameSector%d", sector->id);
-
-		infoLabel("##NameLabel", "Name", 42);
-		ImGui::PushItemWidth(240.0f);
-
-		// Turn the name red if it matches another sector.
-		s32 otherNameId = findSectorByName(sectorName, sector->id);
-		if (otherNameId >= 0) { ImGui::PushStyleColor(ImGuiCol_Text, {1.0f, 0.2f, 0.2f, 1.0f}); }
-		if (ImGui::InputText(inputName, sectorName, getSectorNameLimit()))
+		u32 selSectorCount = getSectorInfoList();
+		if (selSectorCount <= 1)
 		{
-			sector->name = sectorName;
-		}
-		ImGui::PopItemWidth();
-		if (otherNameId >= 0) { ImGui::PopStyleColor(); }
+			bool changed = false;
+			if (selSectorCount < 1) { selection_getSector(SEL_INDEX_HOVERED, sector); }
+			else { sector = s_sectorInfo[0]; }
+			if (!sector) { return; }
+			s_wallShownLast = false;
 
-		ImGui::SameLine(0.0f, 28.0f);
-		if (ImGui::Button("Edit INF"))
-		{
-			TFE_Editor::openEditorPopup(POPUP_EDIT_INF, 0xffffffff, sector->name.empty() ? nullptr : (void*)sector->name.c_str());
-		}
+			ImGui::Text("Sector ID: %d      Wall Count: %u", sector->id, (u32)sector->walls.size());
+			ImGui::Separator();
 
-		// Layer and Ambient
-		s32 layer = sector->layer;
-		infoLabel("##LayerLabel", "Layer", 42);
-		infoIntInput("##LayerSector", 96, &layer);
-		if (layer != sector->layer)
-		{
-			sector->layer = layer;
-			// Adjust layer range.
-			s_level.layerRange[0] = std::min(s_level.layerRange[0], (s32)layer);
-			s_level.layerRange[1] = std::max(s_level.layerRange[1], (s32)layer);
-			// Change the current layer so we can still see the sector.
-			s_curLayer = layer;
-		}
+			// Sector Name (optional, used by INF)
+			char sectorName[64];
+			char inputName[256];
+			strcpy(sectorName, sector->name.c_str());
+			sprintf(inputName, "##NameSector%d", sector->id);
 
-		ImGui::SameLine(0.0f, 8.0f);
+			infoLabel("##NameLabel", "Name", 42);
+			ImGui::PushItemWidth(240.0f);
 
-		s32 ambient = (s32)sector->ambient;
-		infoLabel("##AmbientLabel", "Ambient", 64);
-		infoIntInput("##AmbientSector", 96, &ambient);
-		sector->ambient = std::max(0, std::min(31, ambient));
-
-		// Heights
-		infoLabel("##FloorHeightLabel", "Floor", 42);
-		infoFloatInput("##FloorHeight", 64+8, &sector->floorHeight);
-		ImGui::SameLine();
-
-		infoLabel("##SecondHeightLabel", "Second", 52);
-		infoFloatInput("##SecondHeight", 64, &sector->secHeight);
-		ImGui::SameLine();
-
-		infoLabel("##CeilHeightLabel", "Ceiling", 60);
-		infoFloatInput("##CeilHeight", 64, &sector->ceilHeight);
-
-		ImGui::Separator();
-
-		// Flags
-		infoLabel("##Flags1Label", "Flags1", 56);
-		infoUIntInput("##Flags1", 128, &sector->flags[0]);
-		ImGui::SameLine();
-
-		infoLabel("##Flags2Label", "Flags2", 56);
-		infoUIntInput("##Flags2", 128, &sector->flags[1]);
-
-		infoLabel("##Flags3Label", "Flags3", 56);
-		infoUIntInput("##Flags3", 128, &sector->flags[2]);
-
-		const f32 column[] = { 0.0f, 160.0f, 320.0f };
-
-		ImGui::CheckboxFlags("Exterior##SectorFlag", &sector->flags[0], SEC_FLAGS1_EXTERIOR); ImGui::SameLine(column[1]);
-		ImGui::CheckboxFlags("Pit##SectorFlag", &sector->flags[0], SEC_FLAGS1_PIT); ImGui::SameLine(column[2]);
-		ImGui::CheckboxFlags("No Walls##SectorFlag", &sector->flags[0], SEC_FLAGS1_NOWALL_DRAW);
-
-		ImGui::CheckboxFlags("Ext Ceil Adj##SectorFlag", &sector->flags[0], SEC_FLAGS1_EXT_ADJ); ImGui::SameLine(column[1]);
-		ImGui::CheckboxFlags("Ext Floor Adj##SectorFlag", &sector->flags[0], SEC_FLAGS1_EXT_FLOOR_ADJ);  ImGui::SameLine(column[2]);
-		ImGui::CheckboxFlags("Secret##SectorFlag", &sector->flags[0], SEC_FLAGS1_SECRET);
-
-		ImGui::CheckboxFlags("Door##SectorFlag", &sector->flags[0], SEC_FLAGS1_DOOR); ImGui::SameLine(column[1]);
-		ImGui::CheckboxFlags("Ice Floor##SectorFlag", &sector->flags[0], SEC_FLAGS1_ICE_FLOOR); ImGui::SameLine(column[2]);
-		ImGui::CheckboxFlags("Snow Floor##SectorFlag", &sector->flags[0], SEC_FLAGS1_SNOW_FLOOR);
-
-		ImGui::CheckboxFlags("Crushing##SectorFlag", &sector->flags[0], SEC_FLAGS1_CRUSHING); ImGui::SameLine(column[1]);
-		ImGui::CheckboxFlags("Low Damage##SectorFlag", &sector->flags[0], SEC_FLAGS1_LOW_DAMAGE); ImGui::SameLine(column[2]);
-		ImGui::CheckboxFlags("High Damage##SectorFlag", &sector->flags[0], SEC_FLAGS1_HIGH_DAMAGE);
-
-		ImGui::CheckboxFlags("No Smart Obj##SectorFlag", &sector->flags[0], SEC_FLAGS1_NO_SMART_OBJ); ImGui::SameLine(column[1]);
-		ImGui::CheckboxFlags("Smart Obj##SectorFlag", &sector->flags[0], SEC_FLAGS1_SMART_OBJ); ImGui::SameLine(column[2]);
-		ImGui::CheckboxFlags("Safe Sector##SectorFlag", &sector->flags[0], SEC_FLAGS1_SAFESECTOR);
-
-		ImGui::CheckboxFlags("Mag Seal##SectorFlag", &sector->flags[0], SEC_FLAGS1_MAG_SEAL); ImGui::SameLine(column[1]);
-		ImGui::CheckboxFlags("Exploding Wall##SectorFlag", &sector->flags[0], SEC_FLAGS1_EXP_WALL);
-
-		ImGui::Separator();
-
-		// Textures
-		EditorTexture* floorTex = getTexture(sector->floorTex.texIndex);
-		EditorTexture* ceilTex = getTexture(sector->ceilTex.texIndex);
-
-		void* floorPtr = floorTex ? TFE_RenderBackend::getGpuPtr(floorTex->frames[0]) : nullptr;
-		void* ceilPtr = ceilTex ? TFE_RenderBackend::getGpuPtr(ceilTex->frames[0]) : nullptr;
-
-		const f32 texCol = 150.0f;
-		// Labels
-		ImGui::Text("Floor Texture"); ImGui::SameLine(texCol);
-		ImGui::Text("Ceiling Texture");
-
-		// Textures
-		const f32 floorScale = floorTex ? 1.0f / (f32)std::max(floorTex->width, floorTex->height) : 1.0f;
-		const f32 ceilScale = ceilTex ? 1.0f / (f32)std::max(ceilTex->width, ceilTex->height) : 1.0f;
-		const f32 aspectFloor[] = { floorTex ? f32(floorTex->width) * floorScale : 1.0f, floorTex ? f32(floorTex->height) * floorScale : 1.0f };
-		const f32 aspectCeil[] = { ceilTex ? f32(ceilTex->width) * ceilScale : 1.0f, ceilTex ? f32(ceilTex->height) * ceilScale : 1.0f };
-
-		ImGui::ImageButton(floorPtr, { 128.0f * aspectFloor[0], 128.0f * aspectFloor[1] }, { 0.0f, 1.0f }, { 1.0f, 0.0f });
-		if (texIndex >= 0 && ImGui::IsItemHovered())
-		{
-			FeatureId id = createFeatureId(sector, 0, HP_FLOOR);
-			edit_setTexture(1, &id, texIndex);
-			// cmd_addSetTexture(1, &id, texIndex, nullptr);
-		}
-
-		ImGui::SameLine(texCol);
-		ImGui::ImageButton(ceilPtr, { 128.0f * aspectCeil[0], 128.0f * aspectCeil[1] }, { 0.0f, 1.0f }, { 1.0f, 0.0f });
-		if (texIndex >= 0 && ImGui::IsItemHovered())
-		{
-			FeatureId id = createFeatureId(sector, 0, HP_CEIL);
-			edit_setTexture(1, &id, texIndex);
-			// cmd_addSetTexture(1, &id, texIndex, nullptr);
-		}
-
-		const ImVec2 imageLeft = ImGui::GetItemRectMin();
-		const ImVec2 imageRight = ImGui::GetItemRectMax();
-
-		// Names
-		if (floorTex)
-		{
-			ImGui::Text("%s", floorTex->name); ImGui::SameLine(texCol);
-		}
-		if (ceilTex)
-		{
-			ImGui::Text("%s", ceilTex->name); ImGui::SameLine();
-		}
-
-		// Texture Offsets
-		DisplayInfo displayInfo;
-		TFE_RenderBackend::getDisplayInfo(&displayInfo);
-
-		ImVec2 offsetLeft = { imageLeft.x + texCol + 8.0f, imageLeft.y + 8.0f };
-		ImVec2 offsetSize = { displayInfo.width - (imageLeft.x + texCol + 16.0f), 128.0f };
-		ImGui::SetNextWindowPos(offsetLeft);
-		// A child window is used here in order to place the controls in the desired position - to the right of the image buttons.
-		ImGui::BeginChild("##TextureOffsetsSector", offsetSize);
-		{
-			ImGui::Text("Floor Offset");
-			ImGui::PushItemWidth(136.0f);
-			ImGui::InputFloat2("##FloorOffsetInput", &sector->floorTex.offset.x, "%.3f");
+			// Turn the name red if it matches another sector.
+			s32 otherNameId = findSectorByName(sectorName, sector->id);
+			if (otherNameId >= 0) { ImGui::PushStyleColor(ImGuiCol_Text, { 1.0f, 0.2f, 0.2f, 1.0f }); }
+			if (ImGui::InputText(inputName, sectorName, getSectorNameLimit()))
+			{
+				sector->name = sectorName;
+				changed = true;
+			}
 			ImGui::PopItemWidth();
+			if (otherNameId >= 0) { ImGui::PopStyleColor(); }
 
-			ImGui::NewLine();
+			ImGui::SameLine(0.0f, 28.0f);
+			if (ImGui::Button("Edit INF"))
+			{
+				TFE_Editor::openEditorPopup(POPUP_EDIT_INF, 0xffffffff, sector->name.empty() ? nullptr : (void*)sector->name.c_str());
+			}
 
-			ImGui::Text("Ceil Offset");
-			ImGui::PushItemWidth(136.0f);
-			ImGui::InputFloat2("##CeilOffsetInput", &sector->ceilTex.offset.x, "%.3f");
-			ImGui::PopItemWidth();
+			// Layer and Ambient
+			s32 layer = sector->layer;
+			infoLabel("##LayerLabel", "Layer", 42);
+			changed |= infoIntInput("##LayerSector", 96, &layer);
+			if (layer != sector->layer)
+			{
+				sector->layer = layer;
+				// Adjust layer range.
+				s_level.layerRange[0] = std::min(s_level.layerRange[0], (s32)layer);
+				s_level.layerRange[1] = std::max(s_level.layerRange[1], (s32)layer);
+				// Change the current layer so we can still see the sector.
+				s_curLayer = layer;
+			}
+
+			ImGui::SameLine(0.0f, 8.0f);
+
+			s32 ambient = (s32)sector->ambient;
+			infoLabel("##AmbientLabel", "Ambient", 64);
+			changed |= infoIntInput("##AmbientSector", 96, &ambient);
+			sector->ambient = std::max(0, std::min(31, ambient));
+
+			// Heights
+			infoLabel("##FloorHeightLabel", "Floor", 42);
+			changed |= infoFloatInput("##FloorHeight", 64 + 8, &sector->floorHeight);
+			ImGui::SameLine();
+
+			infoLabel("##SecondHeightLabel", "Second", 52);
+			changed |= infoFloatInput("##SecondHeight", 64, &sector->secHeight);
+			ImGui::SameLine();
+
+			infoLabel("##CeilHeightLabel", "Ceiling", 60);
+			changed |= infoFloatInput("##CeilHeight", 64, &sector->ceilHeight);
+
+			ImGui::Separator();
+
+			// Flags
+			infoLabel("##Flags1Label", "Flags1", 56);
+			changed |= infoUIntInput("##Flags1", 128, &sector->flags[0]);
+			ImGui::SameLine();
+
+			infoLabel("##Flags2Label", "Flags2", 56);
+			changed |= infoUIntInput("##Flags2", 128, &sector->flags[1]);
+
+			infoLabel("##Flags3Label", "Flags3", 56);
+			changed |= infoUIntInput("##Flags3", 128, &sector->flags[2]);
+
+			const f32 column[] = { 0.0f, 160.0f, 320.0f };
+
+			changed |= ImGui::CheckboxFlags("Exterior##SectorFlag", &sector->flags[0], SEC_FLAGS1_EXTERIOR); ImGui::SameLine(column[1]);
+			changed |= ImGui::CheckboxFlags("Pit##SectorFlag", &sector->flags[0], SEC_FLAGS1_PIT); ImGui::SameLine(column[2]);
+			changed |= ImGui::CheckboxFlags("No Walls##SectorFlag", &sector->flags[0], SEC_FLAGS1_NOWALL_DRAW);
+
+			changed |= ImGui::CheckboxFlags("Ext Ceil Adj##SectorFlag", &sector->flags[0], SEC_FLAGS1_EXT_ADJ); ImGui::SameLine(column[1]);
+			changed |= ImGui::CheckboxFlags("Ext Floor Adj##SectorFlag", &sector->flags[0], SEC_FLAGS1_EXT_FLOOR_ADJ);  ImGui::SameLine(column[2]);
+			changed |= ImGui::CheckboxFlags("Secret##SectorFlag", &sector->flags[0], SEC_FLAGS1_SECRET);
+
+			changed |= ImGui::CheckboxFlags("Door##SectorFlag", &sector->flags[0], SEC_FLAGS1_DOOR); ImGui::SameLine(column[1]);
+			changed |= ImGui::CheckboxFlags("Ice Floor##SectorFlag", &sector->flags[0], SEC_FLAGS1_ICE_FLOOR); ImGui::SameLine(column[2]);
+			changed |= ImGui::CheckboxFlags("Snow Floor##SectorFlag", &sector->flags[0], SEC_FLAGS1_SNOW_FLOOR);
+
+			changed |= ImGui::CheckboxFlags("Crushing##SectorFlag", &sector->flags[0], SEC_FLAGS1_CRUSHING); ImGui::SameLine(column[1]);
+			changed |= ImGui::CheckboxFlags("Low Damage##SectorFlag", &sector->flags[0], SEC_FLAGS1_LOW_DAMAGE); ImGui::SameLine(column[2]);
+			changed |= ImGui::CheckboxFlags("High Damage##SectorFlag", &sector->flags[0], SEC_FLAGS1_HIGH_DAMAGE);
+
+			changed |= ImGui::CheckboxFlags("No Smart Obj##SectorFlag", &sector->flags[0], SEC_FLAGS1_NO_SMART_OBJ); ImGui::SameLine(column[1]);
+			changed |= ImGui::CheckboxFlags("Smart Obj##SectorFlag", &sector->flags[0], SEC_FLAGS1_SMART_OBJ); ImGui::SameLine(column[2]);
+			changed |= ImGui::CheckboxFlags("Safe Sector##SectorFlag", &sector->flags[0], SEC_FLAGS1_SAFESECTOR);
+
+			changed |= ImGui::CheckboxFlags("Mag Seal##SectorFlag", &sector->flags[0], SEC_FLAGS1_MAG_SEAL); ImGui::SameLine(column[1]);
+			changed |= ImGui::CheckboxFlags("Exploding Wall##SectorFlag", &sector->flags[0], SEC_FLAGS1_EXP_WALL);
+
+			ImGui::Separator();
+
+			// Textures
+			EditorTexture* floorTex = getTexture(sector->floorTex.texIndex);
+			EditorTexture* ceilTex = getTexture(sector->ceilTex.texIndex);
+
+			void* floorPtr = floorTex ? TFE_RenderBackend::getGpuPtr(floorTex->frames[0]) : nullptr;
+			void* ceilPtr = ceilTex ? TFE_RenderBackend::getGpuPtr(ceilTex->frames[0]) : nullptr;
+
+			const f32 texCol = 150.0f;
+			// Labels
+			ImGui::Text("Floor Texture"); ImGui::SameLine(texCol);
+			ImGui::Text("Ceiling Texture");
+
+			// Textures
+			const f32 floorScale = floorTex ? 1.0f / (f32)std::max(floorTex->width, floorTex->height) : 1.0f;
+			const f32 ceilScale = ceilTex ? 1.0f / (f32)std::max(ceilTex->width, ceilTex->height) : 1.0f;
+			const f32 aspectFloor[] = { floorTex ? f32(floorTex->width) * floorScale : 1.0f, floorTex ? f32(floorTex->height) * floorScale : 1.0f };
+			const f32 aspectCeil[] = { ceilTex ? f32(ceilTex->width) * ceilScale : 1.0f, ceilTex ? f32(ceilTex->height) * ceilScale : 1.0f };
+
+			ImGui::ImageButton(floorPtr, { 128.0f * aspectFloor[0], 128.0f * aspectFloor[1] }, { 0.0f, 1.0f }, { 1.0f, 0.0f });
+			if (texIndex >= 0 && ImGui::IsItemHovered())
+			{
+				FeatureId id = createFeatureId(sector, 0, HP_FLOOR);
+				edit_setTexture(1, &id, texIndex);
+				// cmd_addSetTexture(1, &id, texIndex, nullptr);
+			}
+
+			ImGui::SameLine(texCol);
+			ImGui::ImageButton(ceilPtr, { 128.0f * aspectCeil[0], 128.0f * aspectCeil[1] }, { 0.0f, 1.0f }, { 1.0f, 0.0f });
+			if (texIndex >= 0 && ImGui::IsItemHovered())
+			{
+				FeatureId id = createFeatureId(sector, 0, HP_CEIL);
+				edit_setTexture(1, &id, texIndex);
+				// cmd_addSetTexture(1, &id, texIndex, nullptr);
+			}
+
+			const ImVec2 imageLeft = ImGui::GetItemRectMin();
+			const ImVec2 imageRight = ImGui::GetItemRectMax();
+
+			// Names
+			if (floorTex)
+			{
+				ImGui::Text("%s", floorTex->name); ImGui::SameLine(texCol);
+			}
+			if (ceilTex)
+			{
+				ImGui::Text("%s", ceilTex->name); ImGui::SameLine();
+			}
+
+			// Texture Offsets
+			DisplayInfo displayInfo;
+			TFE_RenderBackend::getDisplayInfo(&displayInfo);
+
+			ImVec2 offsetLeft = { imageLeft.x + texCol + 8.0f, imageLeft.y + 8.0f };
+			ImVec2 offsetSize = { displayInfo.width - (imageLeft.x + texCol + 16.0f), 128.0f };
+			ImGui::SetNextWindowPos(offsetLeft);
+			// A child window is used here in order to place the controls in the desired position - to the right of the image buttons.
+			ImGui::BeginChild("##TextureOffsetsSector", offsetSize);
+			{
+				ImGui::Text("Floor Offset");
+				ImGui::PushItemWidth(136.0f);
+				ImGui::InputFloat2("##FloorOffsetInput", &sector->floorTex.offset.x, "%.3f");
+				ImGui::PopItemWidth();
+
+				ImGui::NewLine();
+
+				ImGui::Text("Ceil Offset");
+				ImGui::PushItemWidth(136.0f);
+				ImGui::InputFloat2("##CeilOffsetInput", &sector->ceilTex.offset.x, "%.3f");
+				ImGui::PopItemWidth();
+			}
+			ImGui::EndChild();
+
+			if (changed)
+			{
+				infoPanel_addSectorChangesToHistory();
+			}
 		}
-		ImGui::EndChild();
+		else  // selSectorCount > 1
+		{
+			ImGui::Text("Multiple Sectors Selected");
+			ImGui::Separator();
+
+			// Layer and Ambient
+			s32 layer = s_sectorChanges.layer;
+			infoLabel("##LayerLabel", "Layer", 42);
+			if (infoIntInput("##LayerSector", 96, &layer, !(s_sectorChanges.changes & SCF_LAYER)))
+			{
+				s_sectorChanges.layer = layer;
+				s_sectorChanges.changes |= SCF_LAYER;
+				s_sectorChanges.applyChanges = true;
+			}
+
+			ImGui::SameLine(0.0f, 8.0f);
+
+			s32 ambient = (s32)s_sectorChanges.ambient;
+			infoLabel("##AmbientLabel", "Ambient", 64);
+			if (infoIntInput("##AmbientSector", 96, &ambient, !(s_sectorChanges.changes & SCF_AMBIENT)))
+			{
+				s_sectorChanges.ambient = std::max(0, std::min(31, ambient));
+				s_sectorChanges.changes |= SCF_AMBIENT;
+				s_sectorChanges.applyChanges = true;
+			}
+
+			// Heights
+			infoLabel("##FloorHeightLabel", "Floor", 42);
+			if (infoFloatInput("##FloorHeight", 64 + 8, &s_sectorChanges.floorHeight, !(s_sectorChanges.changes & SCF_FLOOR_HEIGHT)))
+			{
+				s_sectorChanges.changes |= SCF_FLOOR_HEIGHT;
+				s_sectorChanges.applyChanges = true;
+			}
+			ImGui::SameLine();
+
+			infoLabel("##SecondHeightLabel", "Second", 52);
+			if (infoFloatInput("##SecondHeight", 64, &s_sectorChanges.secHeight, !(s_sectorChanges.changes & SCF_SEC_HEIGHT)))
+			{
+				s_sectorChanges.changes |= SCF_SEC_HEIGHT;
+				s_sectorChanges.applyChanges = true;
+			}
+			ImGui::SameLine();
+
+			infoLabel("##CeilHeightLabel", "Ceiling", 60);
+			if (infoFloatInput("##CeilHeight", 64, &s_sectorChanges.ceilHeight, !(s_sectorChanges.changes & SCF_CEIL_HEIGHT)))
+			{
+				s_sectorChanges.changes |= SCF_CEIL_HEIGHT;
+				s_sectorChanges.applyChanges = true;
+			}
+			ImGui::Separator();
+
+			// Flags
+			infoLabel("##Flags1Label", "Flags1", 56);
+			u32 flags1 = s_sectorChanges.flags1_set;
+			if (infoUIntInput("##Flags1", 128, &flags1, !(s_sectorChanges.changes & SCF_FLAG1_SET)))
+			{
+				s_sectorChanges.flags1_set = flags1;
+				s_sectorChanges.changes |= SCF_FLAG1_SET;
+				s_sectorChanges.applyChanges = true;
+			}
+			ImGui::SameLine();
+
+			infoLabel("##Flags2Label", "Flags2", 56);
+			u32 flags2 = s_sectorChanges.flags2_set;
+			if (infoUIntInput("##Flags2", 128, &flags2, !(s_sectorChanges.changes & SCF_FLAG1_SET)))
+			{
+				s_sectorChanges.flags1_set = flags2;
+				s_sectorChanges.changes |= SCF_FLAG2_SET;
+				s_sectorChanges.applyChanges = true;
+			}
+
+			infoLabel("##Flags3Label", "Flags3", 56);
+			u32 flags3 = s_sectorChanges.flags3_set;
+			if (infoUIntInput("##Flags3", 128, &flags3, !(s_sectorChanges.changes & SCF_FLAG1_SET)))
+			{
+				s_sectorChanges.flags1_set = flags3;
+				s_sectorChanges.changes |= SCF_FLAG3_SET;
+				s_sectorChanges.applyChanges = true;
+			}
+
+			const f32 column[] = { 0.0f, 160.0f, 320.0f };
+
+			checkBoxMulti("Exterior##SectorFlag", &s_sectorChanges.flags1Value, &s_sectorChanges.flags1Changed, SEC_FLAGS1_EXTERIOR, IPANEL_SECTOR); ImGui::SameLine(column[1]);
+			checkBoxMulti("Pit##SectorFlag", &s_sectorChanges.flags1Value, &s_sectorChanges.flags1Changed, SEC_FLAGS1_PIT, IPANEL_SECTOR); ImGui::SameLine(column[2]);
+			checkBoxMulti("No Walls##SectorFlag", &s_sectorChanges.flags1Value, &s_sectorChanges.flags1Changed, SEC_FLAGS1_NOWALL_DRAW, IPANEL_SECTOR);
+
+			checkBoxMulti("Ext Ceil Adj##SectorFlag", &s_sectorChanges.flags1Value, &s_sectorChanges.flags1Changed, SEC_FLAGS1_EXT_ADJ, IPANEL_SECTOR); ImGui::SameLine(column[1]);
+			checkBoxMulti("Ext Floor Adj##SectorFlag", &s_sectorChanges.flags1Value, &s_sectorChanges.flags1Changed, SEC_FLAGS1_EXT_FLOOR_ADJ, IPANEL_SECTOR);  ImGui::SameLine(column[2]);
+			checkBoxMulti("Secret##SectorFlag", &s_sectorChanges.flags1Value, &s_sectorChanges.flags1Changed, SEC_FLAGS1_SECRET, IPANEL_SECTOR);
+
+			checkBoxMulti("Door##SectorFlag", &s_sectorChanges.flags1Value, &s_sectorChanges.flags1Changed, SEC_FLAGS1_DOOR, IPANEL_SECTOR); ImGui::SameLine(column[1]);
+			checkBoxMulti("Ice Floor##SectorFlag", &s_sectorChanges.flags1Value, &s_sectorChanges.flags1Changed, SEC_FLAGS1_ICE_FLOOR, IPANEL_SECTOR); ImGui::SameLine(column[2]);
+			checkBoxMulti("Snow Floor##SectorFlag", &s_sectorChanges.flags1Value, &s_sectorChanges.flags1Changed, SEC_FLAGS1_SNOW_FLOOR, IPANEL_SECTOR);
+
+			checkBoxMulti("Crushing##SectorFlag", &s_sectorChanges.flags1Value, &s_sectorChanges.flags1Changed, SEC_FLAGS1_CRUSHING, IPANEL_SECTOR); ImGui::SameLine(column[1]);
+			checkBoxMulti("Low Damage##SectorFlag", &s_sectorChanges.flags1Value, &s_sectorChanges.flags1Changed, SEC_FLAGS1_LOW_DAMAGE, IPANEL_SECTOR); ImGui::SameLine(column[2]);
+			checkBoxMulti("High Damage##SectorFlag", &s_sectorChanges.flags1Value, &s_sectorChanges.flags1Changed, SEC_FLAGS1_HIGH_DAMAGE, IPANEL_SECTOR);
+
+			checkBoxMulti("No Smart Obj##SectorFlag", &s_sectorChanges.flags1Value, &s_sectorChanges.flags1Changed, SEC_FLAGS1_NO_SMART_OBJ, IPANEL_SECTOR); ImGui::SameLine(column[1]);
+			checkBoxMulti("Smart Obj##SectorFlag", &s_sectorChanges.flags1Value, &s_sectorChanges.flags1Changed, SEC_FLAGS1_SMART_OBJ, IPANEL_SECTOR); ImGui::SameLine(column[2]);
+			checkBoxMulti("Safe Sector##SectorFlag", &s_sectorChanges.flags1Value, &s_sectorChanges.flags1Changed, SEC_FLAGS1_SAFESECTOR, IPANEL_SECTOR);
+
+			checkBoxMulti("Mag Seal##SectorFlag", &s_sectorChanges.flags1Value, &s_sectorChanges.flags1Changed, SEC_FLAGS1_MAG_SEAL, IPANEL_SECTOR); ImGui::SameLine(column[1]);
+			checkBoxMulti("Exploding Wall##SectorFlag", &s_sectorChanges.flags1Value, &s_sectorChanges.flags1Changed, SEC_FLAGS1_EXP_WALL, IPANEL_SECTOR);
+
+			ImGui::Separator();
+			applySectorChanges();
+		}
 	}
 
 	Entity s_objEntity = {};

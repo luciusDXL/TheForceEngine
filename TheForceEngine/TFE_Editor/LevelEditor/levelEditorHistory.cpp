@@ -23,31 +23,19 @@ namespace LevelEditor
 	{
 		LCmd_Sector_Snapshot = CMD_START,
 		LCmd_Sector_Wall_Snapshot,
+		LCmd_Sector_Attrib_Snapshot,
 		LCmd_ObjList_Snapshot,
-		LCmd_Single_Entity_Snapshot,
-		LCmd_Notes_Snapshot,
-		LCmd_Guidelines_Snapshot,
-		LCmd_Selection_Snapshot,
-		LCmd_Attrib_Change,
-		LCmd_Attrib_Set,
 		LCmd_Count
 	};
 
 	// Used to merge certain commands.
-	static f64 c_mergeThreshold = 1.0;
-	static f64 s_lastMoveTex = 0.0;
 	static TFE_Editor::SnapshotBuffer s_workBuffer[2];
 				
 	// Command Functions
 	void cmd_applySectorSnapshot();
 	void cmd_applySectorWallSnapshot();
+	void cmd_applySectorAttribSnapshot();
 	void cmd_applyObjListSnapshot();
-	void cmd_applySingleEntitySnapshot();
-	void cmd_applyNotesSnapshot();
-	void cmd_applyGuidelinesSnapshot();
-	void cmd_applySelectionSnapshot();
-	void cmd_applyAttribChange();
-	void cmd_applyAttribSet();
 
 	///////////////////////////////////
 	// API
@@ -58,13 +46,8 @@ namespace LevelEditor
 
 		history_registerCommand(LCmd_Sector_Snapshot, cmd_applySectorSnapshot);
 		history_registerCommand(LCmd_Sector_Wall_Snapshot, cmd_applySectorWallSnapshot);
+		history_registerCommand(LCmd_Sector_Attrib_Snapshot, cmd_applySectorAttribSnapshot);
 		history_registerCommand(LCmd_ObjList_Snapshot, cmd_applyObjListSnapshot);
-		history_registerCommand(LCmd_Single_Entity_Snapshot, cmd_applySingleEntitySnapshot);
-		history_registerCommand(LCmd_Notes_Snapshot, cmd_applyNotesSnapshot);
-		history_registerCommand(LCmd_Guidelines_Snapshot, cmd_applyGuidelinesSnapshot);
-		history_registerCommand(LCmd_Selection_Snapshot, cmd_applySelectionSnapshot);
-		history_registerCommand(LCmd_Attrib_Change, cmd_applyAttribChange);
-		history_registerCommand(LCmd_Attrib_Set, cmd_applyAttribSet);
 
 		history_registerName(LName_MoveVertex, "Move Vertice(s)");
 		history_registerName(LName_SetVertex, "Set Vertex Position");
@@ -93,8 +76,6 @@ namespace LevelEditor
 		history_registerName(LName_RotateVertex, "Rotate Vertices(s)");
 		history_registerName(LName_ChangeWallAttrib, "Change Wall Attributes");
 		history_registerName(LName_ChangeSectorAttrib, "Change Sector Attributes");
-
-		s_lastMoveTex = 0.0;
 	}
 
 	void levHistory_destroy()
@@ -127,46 +108,6 @@ namespace LevelEditor
 	////////////////////////////////
 	// Editor API
 	////////////////////////////////
-	enum HistoryType
-	{
-		HTYPE_VERTEX = 0,
-		HTYPE_WALL,
-		HTYPE_SECTOR,
-		HTYPE_ENTITY,
-		HTYPE_NOTE,
-		HTYPE_GUIDELINE,
-		HTYPE_COUNT
-	};
-	static std::vector<u8> s_cmdBuffer;
-		
-	void cmd_addAttributeChange(s32 count, const FeatureId* list, const u8* data, u32 name, HistoryType type, u32 attribId, u32 attribSize)
-	{
-		CMD_BEGIN(LCmd_Attrib_Change, name);
-		{
-			hBuffer_addS32(count);
-			hBuffer_addArrayU8(count * sizeof(FeatureId), (u8*)list);
-			hBuffer_addU8(type);
-			hBuffer_addU8(attribId);
-			hBuffer_addS16(attribSize);
-			hBuffer_addArrayU8(attribSize * count, data);
-		}
-		CMD_END();
-	}
-
-	void cmd_addAttributeSet(s32 count, const FeatureId* list, const u8* data, u32 name, HistoryType type, u32 attribId, u32 attribSize)
-	{
-		CMD_BEGIN(LCmd_Attrib_Set, name);
-		{
-			hBuffer_addS32(count);
-			hBuffer_addArrayU8(count * sizeof(FeatureId), (u8*)list);
-			hBuffer_addU8(type);
-			hBuffer_addU8(attribId);
-			hBuffer_addS16(attribSize);
-			hBuffer_addArrayU8(attribSize, data);
-		}
-		CMD_END();
-	}
-		
 	void cmd_sectorSnapshot(u32 name, std::vector<s32>& sectorIds)
 	{
 		if (sectorIds.empty()) { return; }
@@ -262,127 +203,46 @@ namespace LevelEditor
 		CMD_END();
 	}
 
-	////////////////////////////////
-	// Sector Attributes
-	////////////////////////////////
-	void getSectorAttributeInfo(u32 attribId, size_t& offset, size_t& attribSize)
+	void cmd_sectorAttributeSnapshot(u32 name, std::vector<IndexPair>& sectorIds, bool idsChanged)
 	{
-		switch (attribId)
-		{
-			case SEC_ATTRIB_GROUP_ID:
-			{
-				offset = offsetof(EditorSector, groupId);
-				attribSize = sizeof(EditorSector::groupId);
-			} break;
-			case SEC_ATTRIB_NAME:
-			{
-				offset = offsetof(EditorSector, name);
-				attribSize = getSectorNameLimit();
-			} break;
-			case SEC_ATTRIB_FLOOR_TEX:
-			{
-				offset = offsetof(EditorSector, floorTex);
-				attribSize = sizeof(EditorSector::floorTex);
-			} break;
-			case SEC_ATTRIB_CEIL_TEX:
-			{
-				offset = offsetof(EditorSector, ceilTex);
-				attribSize = sizeof(EditorSector::ceilTex);
-			} break;
-			case SEC_ATTRIB_FLOOR_HEIGHT:
-			{
-				offset = offsetof(EditorSector, floorHeight);
-				attribSize = sizeof(EditorSector::floorHeight);
-			} break;
-			case SEC_ATTRIB_CEIL_HEIGHT:
-			{
-				offset = offsetof(EditorSector, ceilHeight);
-				attribSize = sizeof(EditorSector::ceilHeight);
-			} break;
-			case SEC_ATTRIB_SEC_HEIGHT:
-			{
-				offset = offsetof(EditorSector, secHeight);
-				attribSize = sizeof(EditorSector::secHeight);
-			} break;
-			case SEC_ATTRIB_FLAGS1:
-			{
-				offset = offsetof(EditorSector, flags[0]);
-				attribSize = sizeof(EditorSector::flags[0]);
-			} break;
-			case SEC_ATTRIB_FLAGS2:
-			{
-				offset = offsetof(EditorSector, flags[1]);
-				attribSize = sizeof(EditorSector::flags[1]);
-			} break;
-			case SEC_ATTRIB_FLAGS3:
-			{
-				offset = offsetof(EditorSector, flags[2]);
-				attribSize = sizeof(EditorSector::flags[2]);
-			} break;
-			case SEC_ATTRIB_LAYER:
-			{
-				offset = offsetof(EditorSector, layer);
-				attribSize = sizeof(EditorSector::layer);
-			} break;
-		}
-	}
-		
-	// Pair of functions for each HistoryType.
-	void cmd_sectorChangeAttribute(u32 name, s32 count, const FeatureId* list, u32 attribId)
-	{
-		size_t offset, attribSize;
-		getSectorAttributeInfo(attribId, offset, attribSize);
+		if (sectorIds.empty()) { return; }
 
-		s_cmdBuffer.resize(count * attribSize);
-		u8* outbuffer = s_cmdBuffer.data();
-		// The name has to get special handling...
-		if (attribId == SEC_ATTRIB_NAME)
+		u16 prevCmd, prevName;
+		history_getPrevCmdAndName(prevCmd, prevName);
+		if (prevCmd == LCmd_Sector_Attrib_Snapshot && prevName == name && !idsChanged)
 		{
-			for (s32 i = 0; i < count; i++, outbuffer += attribSize)
-			{
-				EditorSector* sector = unpackFeatureId(list[i]);
-				memset(outbuffer, 0, attribSize);
-				memcpy(outbuffer, sector->name.c_str(), std::min(attribSize, sector->name.length()));
-			}
+			history_removeLast();
 		}
-		// Other attributes can be treated the same.
-		else
-		{
-			for (s32 i = 0; i < count; i++, outbuffer += attribSize)
-			{
-				EditorSector* sector = unpackFeatureId(list[i]);
-				memcpy(outbuffer, (u8*)sector + offset, attribSize);
-			}
-		}
-		cmd_addAttributeChange(count, list, s_cmdBuffer.data(), name, HTYPE_SECTOR, attribId, (u32)attribSize);
-	}
-	
-	// Set to a single value.
-	void cmd_sectorSetAttribute(u32 name, s32 count, const FeatureId* list, u32 attribId)
-	{
-		size_t offset, attribSize;
-		getSectorAttributeInfo(attribId, offset, attribSize);
 
-		s_cmdBuffer.resize(attribSize);
-		EditorSector* sector = unpackFeatureId(list[0]);
-		if (attribId == SEC_ATTRIB_NAME)
+		s_workBuffer[0].clear();
+		s_workBuffer[1].clear();
+		level_createSectorAttribSnapshot(&s_workBuffer[0], sectorIds);
+		if (s_workBuffer[0].empty()) { return; }
+
+		const u32 uncompressedSize = (u32)s_workBuffer[0].size();
+		u32 compressedSize = 0;
+		if (zstd_compress(s_workBuffer[1], s_workBuffer[0].data(), uncompressedSize, 4))
 		{
-			memset(s_cmdBuffer.data(), 0, attribSize);
-			memcpy(s_cmdBuffer.data(), sector->name.c_str(), std::min(attribSize, sector->name.length()));
+			compressedSize = (u32)s_workBuffer[1].size();
 		}
-		else
+		// ERROR
+		if (!compressedSize)
 		{
-			memcpy(s_cmdBuffer.data(), (u8*)sector + offset, attribSize);
+			return;
 		}
-		cmd_addAttributeSet(count, list, s_cmdBuffer.data(), name, HTYPE_SECTOR, attribId, (u32)attribSize);
+
+		CMD_BEGIN(LCmd_Sector_Attrib_Snapshot, name);
+		{
+			hBuffer_addU32(uncompressedSize);
+			hBuffer_addU32(compressedSize);
+			hBuffer_addArrayU8(compressedSize, s_workBuffer[1].data());
+		}
+		CMD_END();
 	}
 		
 	////////////////////////////////
 	// History Commands
 	////////////////////////////////
-	void cmd_sectorApplyChangeAttribute(s32 count, const FeatureId* list, u32 attribId, u32 attribSize, const u8* data);
-	void cmd_sectorApplySetAttribute(s32 count, const FeatureId* list, u32 attribId, u32 attribSize, const u8* data);
-
 	void cmd_applySectorSnapshot()
 	{
 		const u32 uncompressedSize = hBuffer_getU32();
@@ -422,110 +282,16 @@ namespace LevelEditor
 		}
 	}
 
-	void cmd_applySingleEntitySnapshot()
+	void cmd_applySectorAttribSnapshot()
 	{
-		// STUB
-	}
+		const u32 uncompressedSize = hBuffer_getU32();
+		const u32 compressedSize = hBuffer_getU32();
+		const u8* compressedData = hBuffer_getArrayU8(compressedSize);
 
-	void cmd_applyNotesSnapshot()
-	{
-		// STUB
-	}
-
-	void cmd_applyGuidelinesSnapshot()
-	{
-		// STUB
-	}
-
-	void cmd_applySelectionSnapshot()
-	{
-		// STUB
-	}
-
-	void cmd_applyAttribChange()
-	{
-		const s32 count = hBuffer_getS32();
-		const u8* featureIdData = hBuffer_getArrayU8(count * sizeof(FeatureId));
-		const u8 type = hBuffer_getU8();
-		const u8 attribId = hBuffer_getU8();
-		const s16 attribSize = hBuffer_getS16();
-		const u8* data = hBuffer_getArrayU8(attribSize * count);
-
-		std::vector<FeatureId> list(count);
-		memcpy(list.data(), featureIdData, count * sizeof(FeatureId));
-
-		switch (type)
+		s_workBuffer[0].resize(uncompressedSize);
+		if (zstd_decompress(s_workBuffer[0].data(), uncompressedSize, compressedData, compressedSize))
 		{
-			case HTYPE_SECTOR:
-			{
-				cmd_sectorApplyChangeAttribute(count, list.data(), attribId, attribSize, data);
-			} break;
-			//...
-		}
-	}
-
-	void cmd_applyAttribSet()
-	{
-		const s32 count = hBuffer_getS32();
-		const u8* featureIdData = hBuffer_getArrayU8(count * sizeof(FeatureId));
-		const u8 type = hBuffer_getU8();
-		const u8 attribId = hBuffer_getU8();
-		const s16 attribSize = hBuffer_getS16();
-		const u8* data = hBuffer_getArrayU8(attribSize);
-
-		std::vector<FeatureId> list(count);
-		memcpy(list.data(), featureIdData, count * sizeof(FeatureId));
-
-		switch (type)
-		{
-			case HTYPE_SECTOR:
-			{
-				cmd_sectorApplySetAttribute(count, list.data(), attribId, attribSize, data);
-			} break;
-			//...
-		}
-	}
-
-	////////////////////////////////
-	// Sector
-	////////////////////////////////
-	void cmd_sectorApplyChangeAttribute(s32 count, const FeatureId* list, u32 attribId, u32 attribSize, const u8* data)
-	{
-		size_t offset, attribSizeCheck;
-		getSectorAttributeInfo(attribId, offset, attribSizeCheck);
-		assert(attribSizeCheck == attribSize);
-
-		for (s32 i = 0; i < count; i++, data += attribSize)
-		{
-			EditorSector* sector = unpackFeatureId(list[i]);
-			if (attribId == SEC_ATTRIB_NAME)
-			{
-				sector->name = (const char*)data;
-			}
-			else
-			{
-				memcpy((u8*)sector + offset, data, attribSize);
-			}
-		}
-	}
-
-	void cmd_sectorApplySetAttribute(s32 count, const FeatureId* list, u32 attribId, u32 attribSize, const u8* data)
-	{
-		size_t offset, attribSizeCheck;
-		getSectorAttributeInfo(attribId, offset, attribSizeCheck);
-		assert(attribSizeCheck == attribSize);
-
-		for (s32 i = 0; i < count; i++)
-		{
-			EditorSector* sector = unpackFeatureId(list[i]);
-			if (attribId == SEC_ATTRIB_NAME)
-			{
-				sector->name = (const char*)data;
-			}
-			else
-			{
-				memcpy((u8*)sector + offset, data, attribSize);
-			}
+			level_unpackSectorAttribSnapshot(uncompressedSize, s_workBuffer[0].data());
 		}
 	}
 }

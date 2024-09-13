@@ -2813,6 +2813,52 @@ namespace LevelEditor
 			writeData(&s_level.sectors[i0].walls[i1], (u32)sizeof(EditorWall));
 		}
 	}
+
+	struct SectorAttrib
+	{
+		f32 floorHeight = 0.0f;
+		f32 ceilHeight = 0.0f;
+		f32 secHeight = 0.0f;
+
+		u32 ambient = 0;
+		s32 layer = 0;
+		u32 flags[3] = { 0 };
+	};
+	std::vector<s32> s_sectorIds;
+
+	void level_createSectorAttribSnapshot(SnapshotBuffer* buffer, std::vector<IndexPair>& sectorIds)
+	{
+		const u32 count = (u32)sectorIds.size();
+		assert(count > 0);
+		setSnapshotWriteBuffer(buffer);
+		writeU32(count);
+
+		// Write sectors only.
+		const IndexPair* pair = sectorIds.data();
+		s_sectorIds.resize(count);
+		for (s32 i = 0; i < count; i++)
+		{
+			s_sectorIds[i] = pair[i].i0;
+		}
+		writeData(s_sectorIds.data(), sizeof(s32) * count);
+
+		for (u32 s = 0; s < count; s++, pair++)
+		{
+			const s32 i0 = pair->i0;
+			assert(i0 >= 0 && i0 < (s32)s_level.sectors.size());
+			EditorSector* sector = &s_level.sectors[i0];
+			const SectorAttrib attrib = 
+			{
+				sector->floorHeight,
+				sector->ceilHeight,
+				sector->secHeight,
+				sector->ambient,
+				sector->layer,
+				{ sector->flags[0], sector->flags[1], sector->flags[2] }
+			};
+			writeData(&attrib, (u32)sizeof(SectorAttrib));
+		}
+	}
 						
 	void level_createSectorSnapshot(SnapshotBuffer* buffer, std::vector<s32>& sectorIds)
 	{
@@ -2990,6 +3036,36 @@ namespace LevelEditor
 			assert(sectorId >= 0 && sectorId < (s32)s_level.sectors.size());
 			assert(wallId >= 0 && wallId < (s32)s_level.sectors[sectorId].walls.size());
 			readData(&s_level.sectors[sectorId].walls[wallId], (u32)sizeof(EditorWall));
+		}
+	}
+
+	void level_unpackSectorAttribSnapshot(u32 size, void* data)
+	{
+		setSnapshotReadBuffer((u8*)data, size);
+		const u32 count = readU32();
+		assert(count > 0);
+
+		s_sectorIds.resize(count);
+		readData(s_sectorIds.data(), sizeof(s32) * count);
+
+		// Read sectors walls only.
+		s32* id = s_sectorIds.data();
+		for (u32 s = 0; s < count; s++)
+		{
+			const s32 sectorId = id[s];
+			assert(sectorId >= 0 && sectorId < (s32)s_level.sectors.size());
+			EditorSector* sector = &s_level.sectors[sectorId];
+			SectorAttrib attrib;
+			readData(&attrib, (u32)sizeof(SectorAttrib));
+
+			sector->floorHeight = attrib.floorHeight;
+			sector->ceilHeight = attrib.ceilHeight;
+			sector->secHeight = attrib.secHeight;
+			sector->ambient = attrib.ambient;
+			sector->layer = attrib.layer;
+			for (s32 i = 0; i < 3; i++) { sector->flags[i] = attrib.flags[i]; }
+			sector->bounds[0].y = std::min(sector->floorHeight, sector->ceilHeight);
+			sector->bounds[1].y = std::max(sector->floorHeight, sector->ceilHeight);
 		}
 	}
 		
