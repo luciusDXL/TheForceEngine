@@ -2111,273 +2111,274 @@ namespace LevelEditor
 	{
 		s32 objIndex = -1;
 		EditorSector* sector = nullptr;
-		// TODO: Handle multi-select.
 		selection_getEntity(selection_getCount() ? 0 : SEL_INDEX_HOVERED, sector, objIndex);
-		
+				
 		if (hasObjectSelectionChanged(sector, objIndex))
 		{
-			ImGui::SetWindowFocus(NULL);
 			commitCurEntityChanges();
 		}
 		setPrevObjectFeature(sector, objIndex);
 
 		if (!sector || objIndex < 0) { return; }
-		EditorObject* obj = &sector->obj[objIndex];
-		if (s_objEntity.id < 0)
-		{
-			s_objEntity = s_level.entities[obj->entityId];
-		}
 
-		if (s_browsing && !isPopupOpen())
+		if (selection_getCount() <= 1)
 		{
-			s_browsing = false;
-			const char* newAssetName = AssetBrowser::getSelectedAssetName();
-			if (newAssetName)
+			EditorObject* obj = &sector->obj[objIndex];
+			if (s_objEntity.id < 0)
 			{
-				s_objEntity.assetName = newAssetName;
+				s_objEntity = s_level.entities[obj->entityId];
 			}
-		}
 
-		ImGui::Text("Sector ID: %d, Object Index: %d", sector->id, objIndex);
-		ImGui::Separator();
-		// Entity Name
-		ImGui::Text("%s", "Name"); ImGui::SameLine(0.0f, 17.0f);
-		char name[256];
-		strcpy(name, s_objEntity.name.c_str());
-		ImGui::SetNextItemWidth(196.0f);
-
-		char inputName[256];
-		sprintf(inputName, "##NameInput_%d_%d", sector->id, objIndex);
-		if (ImGui::InputText(inputName, name, 256))
-		{
-			s_objEntity.name = name;
-		}
-		ImGui::SameLine(0.0f, 16.0f);
-		// Entity Class/Type
-		s32 classId = s_objEntity.type;
-		ImGui::Text("%s", "Class"); ImGui::SameLine(0.0f, 8.0f);
-		ImGui::SetNextItemWidth(96.0f);
-
-		EntityType prev = s_objEntity.type;
-		if (ImGui::Combo("##Class", (s32*)&classId, c_entityClassName, ETYPE_COUNT))
-		{
-			s_objEntity.type = EntityType(classId);
-			// We need a default asset if the class type has changed, since the current asset will not work.
-			if (prev != s_objEntity.type)
+			if (s_browsing && !isPopupOpen())
 			{
-				// So just search for the first entity in the template list of that type and use that asset.
-				const Entity* defEntity = getFirstEntityOfType(s_objEntity.type);
-				assert(defEntity);
-				if (defEntity)
+				s_browsing = false;
+				const char* newAssetName = AssetBrowser::getSelectedAssetName();
+				if (newAssetName)
 				{
-					s_objEntity.assetName = defEntity->assetName;
+					s_objEntity.assetName = newAssetName;
 				}
 			}
-		}
-		// Entity Asset
-		ImGui::Text("%s", "Asset"); ImGui::SameLine(0.0f, 8.0f);
-		char assetName[256];
-		strcpy(assetName, s_objEntity.assetName.c_str());
-		if (ImGui::InputText("##AssetName", assetName, 256))
-		{
-			s_objEntity.assetName = assetName;
-		}
-		ImGui::SameLine(0.0f, 8.0f);
-		if (ImGui::Button("Browse"))
-		{
-			AssetType assetType = TYPE_NOT_SET;
-			if (s_objEntity.type == ETYPE_SPRITE)
-			{
-				assetType = TYPE_SPRITE;
-			}
-			else if (s_objEntity.type == ETYPE_FRAME)
-			{
-				assetType = TYPE_FRAME;
-			}
-			else if (s_objEntity.type == ETYPE_3D)
-			{
-				assetType = TYPE_3DOBJ;
-			}
-			if (assetType != TYPE_NOT_SET)
-			{
-				openEditorPopup(TFE_Editor::POPUP_BROWSE, u32(assetType), (void*)s_objEntity.assetName.c_str());
-				s_browsing = true;
-			}
-		}
-		ImGui::Separator();
 
-		ImGui::Text("%s", "Position"); ImGui::SameLine(0.0f, 8.0f);
-		ImGui::InputFloat3("##Position", &obj->pos.x);
+			ImGui::Text("Sector ID: %d, Object Index: %d", sector->id, objIndex);
+			ImGui::Separator();
+			// Entity Name
+			ImGui::Text("%s", "Name"); ImGui::SameLine(0.0f, 17.0f);
+			char name[256];
+			strcpy(name, s_objEntity.name.c_str());
+			ImGui::SetNextItemWidth(196.0f);
 
-		bool orientAdjusted = false;
-		ImGui::Text("%s", "Angle"); ImGui::SameLine(0.0f, 32.0f);
-		ImGui::SetNextItemWidth(206.0f);
-		if (ImGui::SliderAngle("##Angle", &obj->angle, 0.0f))
-		{
-			orientAdjusted = true;
-		}
-		ImGui::SameLine(0.0f, 4.0f);
-		ImGui::SetNextItemWidth(96.0f);
-
-		f32 angle = obj->angle * 180.0f / PI;
-		if (ImGui::InputFloat("##AngleEdit", &angle))
-		{
-			obj->angle = angle * PI / 180.0f;
-			orientAdjusted = true;
-		}
-		
-		// Show pitch and roll.
-		if (s_objEntity.type == ETYPE_3D)
-		{
-			f32 pitch = obj->pitch * 180.0f / PI;
-			f32 roll  = obj->roll  * 180.0f / PI;
-
-			ImGui::Text("%s", "Pitch"); ImGui::SameLine(0.0f, 32.0f);
-			ImGui::SetNextItemWidth(128.0f);
-			if (ImGui::InputFloat("##PitchEdit", &pitch))
+			char inputName[256];
+			sprintf(inputName, "##NameInput_%d_%d", sector->id, objIndex);
+			if (ImGui::InputText(inputName, name, 256))
 			{
-				obj->pitch = pitch * PI / 180.0f;
+				s_objEntity.name = name;
+			}
+			ImGui::SameLine(0.0f, 16.0f);
+			// Entity Class/Type
+			s32 classId = s_objEntity.type;
+			ImGui::Text("%s", "Class"); ImGui::SameLine(0.0f, 8.0f);
+			ImGui::SetNextItemWidth(96.0f);
+
+			EntityType prev = s_objEntity.type;
+			if (ImGui::Combo("##Class", (s32*)&classId, c_entityClassName, ETYPE_COUNT))
+			{
+				s_objEntity.type = EntityType(classId);
+				// We need a default asset if the class type has changed, since the current asset will not work.
+				if (prev != s_objEntity.type)
+				{
+					// So just search for the first entity in the template list of that type and use that asset.
+					const Entity* defEntity = getFirstEntityOfType(s_objEntity.type);
+					assert(defEntity);
+					if (defEntity)
+					{
+						s_objEntity.assetName = defEntity->assetName;
+					}
+				}
+			}
+			// Entity Asset
+			ImGui::Text("%s", "Asset"); ImGui::SameLine(0.0f, 8.0f);
+			char assetName[256];
+			strcpy(assetName, s_objEntity.assetName.c_str());
+			if (ImGui::InputText("##AssetName", assetName, 256))
+			{
+				s_objEntity.assetName = assetName;
+			}
+			ImGui::SameLine(0.0f, 8.0f);
+			if (ImGui::Button("Browse"))
+			{
+				AssetType assetType = TYPE_NOT_SET;
+				if (s_objEntity.type == ETYPE_SPRITE)
+				{
+					assetType = TYPE_SPRITE;
+				}
+				else if (s_objEntity.type == ETYPE_FRAME)
+				{
+					assetType = TYPE_FRAME;
+				}
+				else if (s_objEntity.type == ETYPE_3D)
+				{
+					assetType = TYPE_3DOBJ;
+				}
+				if (assetType != TYPE_NOT_SET)
+				{
+					openEditorPopup(TFE_Editor::POPUP_BROWSE, u32(assetType), (void*)s_objEntity.assetName.c_str());
+					s_browsing = true;
+				}
+			}
+			ImGui::Separator();
+
+			ImGui::Text("%s", "Position"); ImGui::SameLine(0.0f, 8.0f);
+			ImGui::InputFloat3("##Position", &obj->pos.x);
+
+			bool orientAdjusted = false;
+			ImGui::Text("%s", "Angle"); ImGui::SameLine(0.0f, 32.0f);
+			ImGui::SetNextItemWidth(206.0f);
+			if (ImGui::SliderAngle("##Angle", &obj->angle, 0.0f))
+			{
 				orientAdjusted = true;
 			}
-			ImGui::SameLine(0.0f, 32.0f);
-			ImGui::Text("%s", "Roll"); ImGui::SameLine(0.0f, 8.0f);
-			ImGui::SetNextItemWidth(128.0f);
-			if (ImGui::InputFloat("##RollEdit", &roll))
+			ImGui::SameLine(0.0f, 4.0f);
+			ImGui::SetNextItemWidth(96.0f);
+
+			f32 angle = obj->angle * 180.0f / PI;
+			if (ImGui::InputFloat("##AngleEdit", &angle))
 			{
-				obj->roll = roll * PI / 180.0f;
+				obj->angle = angle * PI / 180.0f;
 				orientAdjusted = true;
 			}
 
-			if (orientAdjusted)
+			// Show pitch and roll.
+			if (s_objEntity.type == ETYPE_3D)
 			{
-				compute3x3Rotation(&obj->transform, obj->angle, obj->pitch, obj->roll);
-			}
-		}
+				f32 pitch = obj->pitch * 180.0f / PI;
+				f32 roll = obj->roll  * 180.0f / PI;
 
-		// Difficulty.
-		ImGui::Text("%s", "Difficulty"); ImGui::SameLine(0.0f, 8.0f);
-		s32 index = c_objDiffToIndex[obj->diff - c_objDiffStart];
-		ImGui::SetNextItemWidth(256.0f);
-		if (ImGui::Combo("##DiffCombo", (s32*)&index, c_objDifficulty, TFE_ARRAYSIZE(c_objDifficulty)))
-		{
-			obj->diff = c_objDiffValue[index];
-		}
-		ImGui::Separator();
-
-		const s32 listWidth = (s32)s_infoWith - 32;
-
-		// Logics
-		if (s_logicSelect >= (s32)s_objEntity.logic.size())
-		{
-			s_logicSelect = -1;
-		}
-		// Always select one of the them, if there are any to select.
-		if (s_logicSelect < 0 && !s_objEntity.logic.empty())
-		{
-			s_logicSelect = 0;
-		}
-
-		ImGui::Text("%s", "Logics");
-		ImGui::BeginChild("##LogicList", { (f32)min(listWidth, 400), 64 }, ImGuiChildFlags_Border);
-		{
-			s32 count = (s32)s_objEntity.logic.size();
-			EntityLogic* list = s_objEntity.logic.data();
-			for (s32 i = 0; i < count; i++)
-			{
-				char name[256];
-				sprintf(name, "%s##%d", list[i].name.c_str(), i);
-				bool sel = s_logicSelect == i;
-				ImGui::Selectable(name, &sel);
-				if (sel) { s_logicSelect = i; }
-				else if (s_logicSelect == i) { s_logicSelect = -1; }
-			}
-		}
-		ImGui::EndChild();
-		if (ImGui::Button("Add"))
-		{
-			LogicDef* def = &s_logicDefList[s_logicIndex];
-			EntityLogic newLogic = {};
-			newLogic.name = def->name;
-			s_objEntity.logic.push_back(newLogic);
-
-			EntityLogic* logic = &s_objEntity.logic.back();
-
-			// Add Variables automatically.
-			const s32 varCount = (s32)def->var.size();
-			const LogicVar* var = def->var.data();
-			for (s32 v = 0; v < varCount; v++, var++)
-			{
-				const EntityVarDef* varDef = &s_varDefList[var->varId];
-				if (var->type == VAR_TYPE_DEFAULT || var->type == VAR_TYPE_REQUIRED)
+				ImGui::Text("%s", "Pitch"); ImGui::SameLine(0.0f, 32.0f);
+				ImGui::SetNextItemWidth(128.0f);
+				if (ImGui::InputFloat("##PitchEdit", &pitch))
 				{
-					EntityVar newVar;
-					newVar.defId = var->varId;
-					newVar.value = varDef->defValue;
-					logic->var.push_back(newVar);
+					obj->pitch = pitch * PI / 180.0f;
+					orientAdjusted = true;
+				}
+				ImGui::SameLine(0.0f, 32.0f);
+				ImGui::Text("%s", "Roll"); ImGui::SameLine(0.0f, 8.0f);
+				ImGui::SetNextItemWidth(128.0f);
+				if (ImGui::InputFloat("##RollEdit", &roll))
+				{
+					obj->roll = roll * PI / 180.0f;
+					orientAdjusted = true;
+				}
+
+				if (orientAdjusted)
+				{
+					compute3x3Rotation(&obj->transform, obj->angle, obj->pitch, obj->roll);
 				}
 			}
-		}
 
-		ImGui::SameLine(0.0f, 8.0f);
-		ImGui::SetNextItemWidth(128.0f);
-		if (ImGui::BeginCombo("##LogicCombo", s_logicDefList[s_logicIndex].name.c_str()))
-		{
-			s32 count = (s32)s_logicDefList.size() - 1;
-			for (s32 i = 0; i < count; i++)
+			// Difficulty.
+			ImGui::Text("%s", "Difficulty"); ImGui::SameLine(0.0f, 8.0f);
+			s32 index = c_objDiffToIndex[obj->diff - c_objDiffStart];
+			ImGui::SetNextItemWidth(256.0f);
+			if (ImGui::Combo("##DiffCombo", (s32*)&index, c_objDifficulty, TFE_ARRAYSIZE(c_objDifficulty)))
 			{
-				if (ImGui::Selectable(s_logicDefList[i].name.c_str(), i == s_logicIndex))
+				obj->diff = c_objDiffValue[index];
+			}
+			ImGui::Separator();
+
+			const s32 listWidth = (s32)s_infoWith - 32;
+
+			// Logics
+			if (s_logicSelect >= (s32)s_objEntity.logic.size())
+			{
+				s_logicSelect = -1;
+			}
+			// Always select one of the them, if there are any to select.
+			if (s_logicSelect < 0 && !s_objEntity.logic.empty())
+			{
+				s_logicSelect = 0;
+			}
+
+			ImGui::Text("%s", "Logics");
+			ImGui::BeginChild("##LogicList", { (f32)min(listWidth, 400), 64 }, ImGuiChildFlags_Border);
+			{
+				s32 count = (s32)s_objEntity.logic.size();
+				EntityLogic* list = s_objEntity.logic.data();
+				for (s32 i = 0; i < count; i++)
 				{
-					s_logicIndex = i;
+					char name[256];
+					sprintf(name, "%s##%d", list[i].name.c_str(), i);
+					bool sel = s_logicSelect == i;
+					ImGui::Selectable(name, &sel);
+					if (sel) { s_logicSelect = i; }
+					else if (s_logicSelect == i) { s_logicSelect = -1; }
 				}
-				setTooltip(s_logicDefList[i].tooltip.c_str());
 			}
-			ImGui::EndCombo();
-		}
-
-		ImGui::SameLine(0.0f, 16.0f);
-		if (ImGui::Button("Remove") && s_logicSelect >= 0)
-		{
-			s32 count = (s32)s_objEntity.logic.size();
-			for (s32 i = s_logicSelect; i < count - 1; i++)
+			ImGui::EndChild();
+			if (ImGui::Button("Add"))
 			{
-				s_objEntity.logic[i] = s_objEntity.logic[i + 1];
-			}
-			s_objEntity.logic.pop_back();
-			s_logicSelect = -1;
-		}
+				LogicDef* def = &s_logicDefList[s_logicIndex];
+				EntityLogic newLogic = {};
+				newLogic.name = def->name;
+				s_objEntity.logic.push_back(newLogic);
 
-		ImGui::Separator();
-		
-		// Variables
-		static s32 varSel = -1;
+				EntityLogic* logic = &s_objEntity.logic.back();
 
-		// Select the variable list.
-		std::vector<EntityVar>* varList = &s_objEntity.var;
-		if (s_logicSelect >= 0 && s_logicSelect < (s32)s_objEntity.logic.size())
-		{
-			varList = &s_objEntity.logic[s_logicSelect].var;
-		}
-
-		const f32 varListHeight = s_objEntity.type == ETYPE_3D ? 114.0f : 140.0f;
-		ImGui::Text("%s", "Variables");
-		ImGui::BeginChild("##VariableList", { (f32)min(listWidth, 400), varListHeight }, ImGuiChildFlags_Border);
-		{
-			s32 count = (s32)varList->size();
-			EntityVar* list = varList->data();
-			for (s32 i = 0; i < count; i++)
-			{
-				EntityVarDef* def = getEntityVar(list[i].defId);
-
-				char name[256];
-				sprintf(name, "%s##%d", def->name.c_str(), i);
-				bool sel = varSel == i;
-				ImGui::Selectable(name, &sel, 0, { 100.0f,0.0f });
-				if (sel) { varSel = i; }
-				else if (varSel == i) { varSel = -1; }
-
-				if (def->type != EVARTYPE_FLAGS) { ImGui::SameLine(0.0f, 8.0f); }
-				switch (def->type)
+				// Add Variables automatically.
+				const s32 varCount = (s32)def->var.size();
+				const LogicVar* var = def->var.data();
+				for (s32 v = 0; v < varCount; v++, var++)
 				{
+					const EntityVarDef* varDef = &s_varDefList[var->varId];
+					if (var->type == VAR_TYPE_DEFAULT || var->type == VAR_TYPE_REQUIRED)
+					{
+						EntityVar newVar;
+						newVar.defId = var->varId;
+						newVar.value = varDef->defValue;
+						logic->var.push_back(newVar);
+					}
+				}
+			}
+
+			ImGui::SameLine(0.0f, 8.0f);
+			ImGui::SetNextItemWidth(128.0f);
+			if (ImGui::BeginCombo("##LogicCombo", s_logicDefList[s_logicIndex].name.c_str()))
+			{
+				s32 count = (s32)s_logicDefList.size() - 1;
+				for (s32 i = 0; i < count; i++)
+				{
+					if (ImGui::Selectable(s_logicDefList[i].name.c_str(), i == s_logicIndex))
+					{
+						s_logicIndex = i;
+					}
+					setTooltip(s_logicDefList[i].tooltip.c_str());
+				}
+				ImGui::EndCombo();
+			}
+
+			ImGui::SameLine(0.0f, 16.0f);
+			if (ImGui::Button("Remove") && s_logicSelect >= 0)
+			{
+				s32 count = (s32)s_objEntity.logic.size();
+				for (s32 i = s_logicSelect; i < count - 1; i++)
+				{
+					s_objEntity.logic[i] = s_objEntity.logic[i + 1];
+				}
+				s_objEntity.logic.pop_back();
+				s_logicSelect = -1;
+			}
+
+			ImGui::Separator();
+
+			// Variables
+			static s32 varSel = -1;
+
+			// Select the variable list.
+			std::vector<EntityVar>* varList = &s_objEntity.var;
+			if (s_logicSelect >= 0 && s_logicSelect < (s32)s_objEntity.logic.size())
+			{
+				varList = &s_objEntity.logic[s_logicSelect].var;
+			}
+
+			const f32 varListHeight = s_objEntity.type == ETYPE_3D ? 114.0f : 140.0f;
+			ImGui::Text("%s", "Variables");
+			ImGui::BeginChild("##VariableList", { (f32)min(listWidth, 400), varListHeight }, ImGuiChildFlags_Border);
+			{
+				s32 count = (s32)varList->size();
+				EntityVar* list = varList->data();
+				for (s32 i = 0; i < count; i++)
+				{
+					EntityVarDef* def = getEntityVar(list[i].defId);
+
+					char name[256];
+					sprintf(name, "%s##%d", def->name.c_str(), i);
+					bool sel = varSel == i;
+					ImGui::Selectable(name, &sel, 0, { 100.0f,0.0f });
+					if (sel) { varSel = i; }
+					else if (varSel == i) { varSel = -1; }
+
+					if (def->type != EVARTYPE_FLAGS) { ImGui::SameLine(0.0f, 8.0f); }
+					switch (def->type)
+					{
 					case EVARTYPE_BOOL:
 					{
 						sprintf(name, "##VarBool%d", i);
@@ -2437,86 +2438,94 @@ namespace LevelEditor
 							list[i].value.sValue1 = pair2;
 						}
 					} break;
+					}
 				}
 			}
-		}
-		ImGui::EndChild();
+			ImGui::EndChild();
 
-		s32 varComboList[256];
-		s32 varComboCount = 0;
-		if (s_logicSelect >= 0 && s_logicSelect < (s32)s_objEntity.logic.size())
-		{
-			addLogicVariables(s_objEntity.logic[s_logicSelect].name, varComboList, varComboCount);
-		}
-		else
-		{
-			addLogicVariables("", varComboList, varComboCount);
-		}
-
-		if (ImGui::Button("Add##Variable") && s_varIndex >= 0 && s_varIndex < varComboCount)
-		{
-			EntityVar var;
-			var.defId = varComboList[s_varIndex];
-			var.value = s_varDefList[var.defId].defValue;
-			varList->push_back(var);
-		}
-		ImGui::SameLine(0.0f, 8.0f);
-		ImGui::SetNextItemWidth(128.0f);
-
-		if (s_varIndex < 0 || s_varIndex >= varComboCount) { s_varIndex = 0; }
-
-		if (ImGui::BeginCombo("##VarCombo", varComboCount ? s_varDefList[varComboList[s_varIndex]].name.c_str() : ""))
-		{
-			for (s32 i = 0; i < varComboCount; i++)
+			s32 varComboList[256];
+			s32 varComboCount = 0;
+			if (s_logicSelect >= 0 && s_logicSelect < (s32)s_objEntity.logic.size())
 			{
-				if (ImGui::Selectable(s_varDefList[varComboList[i]].name.c_str(), i == s_varIndex))
+				addLogicVariables(s_objEntity.logic[s_logicSelect].name, varComboList, varComboCount);
+			}
+			else
+			{
+				addLogicVariables("", varComboList, varComboCount);
+			}
+
+			if (ImGui::Button("Add##Variable") && s_varIndex >= 0 && s_varIndex < varComboCount)
+			{
+				EntityVar var;
+				var.defId = varComboList[s_varIndex];
+				var.value = s_varDefList[var.defId].defValue;
+				varList->push_back(var);
+			}
+			ImGui::SameLine(0.0f, 8.0f);
+			ImGui::SetNextItemWidth(128.0f);
+
+			if (s_varIndex < 0 || s_varIndex >= varComboCount) { s_varIndex = 0; }
+
+			if (ImGui::BeginCombo("##VarCombo", varComboCount ? s_varDefList[varComboList[s_varIndex]].name.c_str() : ""))
+			{
+				for (s32 i = 0; i < varComboCount; i++)
 				{
-					s_varIndex = i;
+					if (ImGui::Selectable(s_varDefList[varComboList[i]].name.c_str(), i == s_varIndex))
+					{
+						s_varIndex = i;
+					}
+					// setTooltip(s_varDefList[varList[s_varIndex]].tooltip.c_str());
 				}
-				// setTooltip(s_varDefList[varList[s_varIndex]].tooltip.c_str());
+				ImGui::EndCombo();
 			}
-			ImGui::EndCombo();
-		}
 
-		ImGui::SameLine(0.0f, 16.0f);
-		if (ImGui::Button("Remove##Variable") && varSel >= 0 && varSel < (s32)varList->size())
-		{
-			s32 count = (s32)varList->size();
-			for (s32 i = varSel; i < count - 1; i++)
+			ImGui::SameLine(0.0f, 16.0f);
+			if (ImGui::Button("Remove##Variable") && varSel >= 0 && varSel < (s32)varList->size())
 			{
-				(*varList)[i] = (*varList)[i + 1];
+				s32 count = (s32)varList->size();
+				for (s32 i = varSel; i < count - 1; i++)
+				{
+					(*varList)[i] = (*varList)[i + 1];
+				}
+				varList->pop_back();
+				varSel = -1;
 			}
-			varList->pop_back();
-			varSel = -1;
-		}
-		ImGui::Separator();
+			ImGui::Separator();
 
-		// Buttons.
-		if (ImGui::Button("Category"))
-		{
-			openEditorPopup(TFE_Editor::POPUP_CATEGORY);
-			s_prevCategoryFlags = s_objEntity.categories;
-		}
-		ImGui::SameLine(0.0f, 8.0f);
-		if (ImGui::Button("Add to Entity Def"))
-		{
-			s_objEntity.categories |= 1;	// custom.
-			if (!doesEntityExistInProject(&s_objEntity))
+			// Buttons.
+			if (ImGui::Button("Category"))
 			{
-				s_projEntityDefList.push_back(s_objEntity);
-				s_entityDefList.push_back(s_objEntity);
-				saveProjectEntityList();
+				openEditorPopup(TFE_Editor::POPUP_CATEGORY);
+				s_prevCategoryFlags = s_objEntity.categories;
+			}
+			ImGui::SameLine(0.0f, 8.0f);
+			if (ImGui::Button("Add to Entity Def"))
+			{
+				s_objEntity.categories |= 1;	// custom.
+				if (!doesEntityExistInProject(&s_objEntity))
+				{
+					s_projEntityDefList.push_back(s_objEntity);
+					s_entityDefList.push_back(s_objEntity);
+					saveProjectEntityList();
+				}
+			}
+			ImGui::SameLine(0.0f, 8.0f);
+			if (ImGui::Button("Commit"))
+			{
+				commitCurEntityChanges();
+			}
+			ImGui::SameLine(0.0f, 8.0f);
+			if (ImGui::Button("Reset"))
+			{
+				s_objEntity = {};
 			}
 		}
-		ImGui::SameLine(0.0f, 8.0f);
-		if (ImGui::Button("Commit"))
+		else  // select count > 1
 		{
-			commitCurEntityChanges();
-		}
-		ImGui::SameLine(0.0f, 8.0f);
-		if (ImGui::Button("Reset"))
-		{
-			s_objEntity = {};
+			ImGui::Text("Multiple objects selected.");
+			ImGui::Separator();
+			ImGui::Text("Support for limited multi-select editing");
+			ImGui::Text("  coming in version Alpha-2 or later.");
 		}
 	}
 
