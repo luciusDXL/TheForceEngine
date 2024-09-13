@@ -1365,7 +1365,7 @@ namespace LevelEditor
 			{
 				FeatureId id = createFeatureId(sector, wallId, HP_MID);
 				edit_setTexture(1, &id, texIndex);
-				// cmd_addSetTexture(1, &id, texIndex, nullptr);
+				changed = true;
 			}
 
 			ImGui::SameLine(texCol);
@@ -1374,13 +1374,13 @@ namespace LevelEditor
 			{
 				FeatureId id = createFeatureId(sector, wallId, HP_SIGN);
 				edit_setTexture(1, &id, texIndex);
-				// cmd_addSetTexture(1, &id, texIndex, nullptr);
+				changed = true;
 			}
 			else if (removeTexture && ImGui::IsItemHovered())
 			{
 				FeatureId id = createFeatureId(sector, wallId, HP_SIGN);
 				edit_clearTexture(1, &id);
-				// cmd_addClearTexture(1, &id);
+				changed = true;
 			}
 
 			const ImVec2 imageLeft0 = ImGui::GetItemRectMin();
@@ -1409,7 +1409,7 @@ namespace LevelEditor
 				{
 					FeatureId id = createFeatureId(sector, wallId, HP_TOP);
 					edit_setTexture(1, &id, texIndex);
-					// cmd_addSetTexture(1, &id, texIndex, nullptr);
+					changed = true;
 				}
 
 				ImGui::SameLine(texCol);
@@ -1418,7 +1418,7 @@ namespace LevelEditor
 				{
 					FeatureId id = createFeatureId(sector, wallId, HP_BOT);
 					edit_setTexture(1, &id, texIndex);
-					// cmd_addSetTexture(1, &id, texIndex, nullptr);
+					changed = true;
 				}
 
 				imageLeft1 = ImGui::GetItemRectMin();
@@ -1438,7 +1438,7 @@ namespace LevelEditor
 				{
 					FeatureId id = createFeatureId(sector, wallId, HP_SIGN);
 					edit_clearTexture(1, &id);
-					// cmd_addClearTexture(1, &id);
+					changed = true;
 				}
 				if (ImGui::Button("C") && wall->tex[HP_SIGN].texIndex >= 0)
 				{
@@ -1449,7 +1449,7 @@ namespace LevelEditor
 					if (delta.x || delta.z)
 					{
 						FeatureId id = createFeatureId(sector, wallId, HP_SIGN);
-						// cmd_addMoveTexture(1, &id, delta);
+						changed = true;
 					}
 				}
 			}
@@ -1468,14 +1468,14 @@ namespace LevelEditor
 			{
 				ImGui::Text("Mid Offset");
 				ImGui::PushItemWidth(136.0f);
-				ImGui::InputFloat2("##MidOffsetInput", &wall->tex[WP_MID].offset.x, "%.3f");
+				changed |= ImGui::InputFloat2("##MidOffsetInput", &wall->tex[WP_MID].offset.x, "%.3f");
 				ImGui::PopItemWidth();
 
 				ImGui::NewLine();
 
 				ImGui::Text("Sign Offset");
 				ImGui::PushItemWidth(136.0f);
-				ImGui::InputFloat2("##SignOffsetInput", &wall->tex[WP_SIGN].offset.x, "%.3f");
+				changed |= ImGui::InputFloat2("##SignOffsetInput", &wall->tex[WP_SIGN].offset.x, "%.3f");
 				ImGui::PopItemWidth();
 			}
 			ImGui::EndChild();
@@ -1491,14 +1491,14 @@ namespace LevelEditor
 				{
 					ImGui::Text("Top Offset");
 					ImGui::PushItemWidth(136.0f);
-					ImGui::InputFloat2("##TopOffsetInput", &wall->tex[WP_TOP].offset.x, "%.3f");
+					changed |= ImGui::InputFloat2("##TopOffsetInput", &wall->tex[WP_TOP].offset.x, "%.3f");
 					ImGui::PopItemWidth();
 
 					ImGui::NewLine();
 
 					ImGui::Text("Bottom Offset");
 					ImGui::PushItemWidth(136.0f);
-					ImGui::InputFloat2("##BotOffsetInput", &wall->tex[WP_BOT].offset.x, "%.3f");
+					changed |= ImGui::InputFloat2("##BotOffsetInput", &wall->tex[WP_BOT].offset.x, "%.3f");
 					ImGui::PopItemWidth();
 				}
 				ImGui::EndChild();
@@ -1719,7 +1719,7 @@ namespace LevelEditor
 			{
 				FeatureId id = createFeatureId(sector, 0, HP_FLOOR);
 				edit_setTexture(1, &id, texIndex);
-				// cmd_addSetTexture(1, &id, texIndex, nullptr);
+				changed = true;
 			}
 
 			ImGui::SameLine(texCol);
@@ -1728,7 +1728,7 @@ namespace LevelEditor
 			{
 				FeatureId id = createFeatureId(sector, 0, HP_CEIL);
 				edit_setTexture(1, &id, texIndex);
-				// cmd_addSetTexture(1, &id, texIndex, nullptr);
+				changed = true;
 			}
 
 			const ImVec2 imageLeft = ImGui::GetItemRectMin();
@@ -1756,14 +1756,14 @@ namespace LevelEditor
 			{
 				ImGui::Text("Floor Offset");
 				ImGui::PushItemWidth(136.0f);
-				ImGui::InputFloat2("##FloorOffsetInput", &sector->floorTex.offset.x, "%.3f");
+				changed |= ImGui::InputFloat2("##FloorOffsetInput", &sector->floorTex.offset.x, "%.3f");
 				ImGui::PopItemWidth();
 
 				ImGui::NewLine();
 
 				ImGui::Text("Ceil Offset");
 				ImGui::PushItemWidth(136.0f);
-				ImGui::InputFloat2("##CeilOffsetInput", &sector->ceilTex.offset.x, "%.3f");
+				changed |= ImGui::InputFloat2("##CeilOffsetInput", &sector->ceilTex.offset.x, "%.3f");
 				ImGui::PopItemWidth();
 			}
 			ImGui::EndChild();
