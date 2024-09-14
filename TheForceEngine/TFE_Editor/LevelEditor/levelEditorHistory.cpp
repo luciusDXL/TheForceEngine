@@ -1,5 +1,6 @@
 #include "levelEditorHistory.h"
 #include "sharedState.h"
+#include "error.h"
 #include <TFE_System/system.h>
 #include <TFE_Editor/LevelEditor/levelEditor.h>
 #include <TFE_Editor/LevelEditor/levelEditorData.h>
@@ -31,6 +32,9 @@ namespace LevelEditor
 
 	// Used to merge certain commands.
 	static TFE_Editor::SnapshotBuffer s_workBuffer[2];
+
+	// Helper Functions.
+	u32 compressBuffer();
 				
 	// Command Functions
 	void cmd_applySectorSnapshot();
@@ -107,7 +111,7 @@ namespace LevelEditor
 		history_step(1);
 		edit_clearSelections(false);
 	}
-
+		
 	////////////////////////////////
 	// Editor API
 	////////////////////////////////
@@ -121,16 +125,8 @@ namespace LevelEditor
 		if (s_workBuffer[0].empty()) { return; }
 
 		const u32 uncompressedSize = (u32)s_workBuffer[0].size();
-		u32 compressedSize = 0;
-		if (zstd_compress(s_workBuffer[1], s_workBuffer[0].data(), uncompressedSize, 4))
-		{
-			compressedSize = (u32)s_workBuffer[1].size();
-		}
-		// ERROR
-		if (!compressedSize)
-		{
-			return;
-		}
+		const u32 compressedSize = compressBuffer();
+		if (!compressedSize) { return; }
 
 		CMD_BEGIN(LCmd_Sector_Snapshot, name);
 		{
@@ -149,16 +145,8 @@ namespace LevelEditor
 		if (s_workBuffer[0].empty()) { return; }
 
 		const u32 uncompressedSize = (u32)s_workBuffer[0].size();
-		u32 compressedSize = 0;
-		if (zstd_compress(s_workBuffer[1], s_workBuffer[0].data(), uncompressedSize, 4))
-		{
-			compressedSize = (u32)s_workBuffer[1].size();
-		}
-		// ERROR
-		if (!compressedSize)
-		{
-			return;
-		}
+		const u32 compressedSize = compressBuffer();
+		if (!compressedSize) { return; }
 
 		CMD_BEGIN(LCmd_ObjList_Snapshot, name);
 		{
@@ -188,16 +176,8 @@ namespace LevelEditor
 		if (s_workBuffer[0].empty()) { return; }
 
 		const u32 uncompressedSize = (u32)s_workBuffer[0].size();
-		u32 compressedSize = 0;
-		if (zstd_compress(s_workBuffer[1], s_workBuffer[0].data(), uncompressedSize, 4))
-		{
-			compressedSize = (u32)s_workBuffer[1].size();
-		}
-		// ERROR
-		if (!compressedSize)
-		{
-			return;
-		}
+		const u32 compressedSize = compressBuffer();
+		if (!compressedSize) { return; }
 
 		CMD_BEGIN(LCmd_Sector_Wall_Snapshot, name);
 		{
@@ -215,6 +195,7 @@ namespace LevelEditor
 
 		u16 prevCmd, prevName;
 		history_getPrevCmdAndName(prevCmd, prevName);
+		// Cannot combine commands if new textures are added to the level.
 		if (prevCmd == LCmd_Sector_Attrib_Snapshot && texList.list.empty() && prevName == name && !idsChanged)
 		{
 			history_removeLast();
@@ -226,16 +207,8 @@ namespace LevelEditor
 		if (s_workBuffer[0].empty()) { return; }
 
 		const u32 uncompressedSize = (u32)s_workBuffer[0].size();
-		u32 compressedSize = 0;
-		if (zstd_compress(s_workBuffer[1], s_workBuffer[0].data(), uncompressedSize, 4))
-		{
-			compressedSize = (u32)s_workBuffer[1].size();
-		}
-		// ERROR
-		if (!compressedSize)
-		{
-			return;
-		}
+		const u32 compressedSize = compressBuffer();
+		if (!compressedSize) { return; }
 
 		CMD_BEGIN(LCmd_Sector_Attrib_Snapshot, name);
 		{
@@ -256,16 +229,8 @@ namespace LevelEditor
 		if (s_workBuffer[0].empty()) { return; }
 
 		const u32 uncompressedSize = (u32)s_workBuffer[0].size();
-		u32 compressedSize = 0;
-		if (zstd_compress(s_workBuffer[1], s_workBuffer[0].data(), uncompressedSize, 4))
-		{
-			compressedSize = (u32)s_workBuffer[1].size();
-		}
-		// ERROR
-		if (!compressedSize)
-		{
-			return;
-		}
+		const u32 compressedSize = compressBuffer();
+		if (!compressedSize) { return; }
 
 		CMD_BEGIN(LCmd_Set_Textures, name);
 		{
@@ -342,5 +307,23 @@ namespace LevelEditor
 		{
 			level_unpackFeatureTextureSnapshot(uncompressedSize, s_workBuffer[0].data());
 		}
+	}
+
+	//////////////////////////////////////////////////
+	// Internal
+	//////////////////////////////////////////////////
+	u32 compressBuffer()
+	{
+		u32 compressedSize = 0;
+		if (zstd_compress(s_workBuffer[1], s_workBuffer[0].data(), (u32)s_workBuffer[0].size(), 4))
+		{
+			compressedSize = (u32)s_workBuffer[1].size();
+		}
+		if (!compressedSize)
+		{
+			LE_ERROR("Snapshot compression failed.");
+			return 0;
+		}
+		return compressedSize;
 	}
 }

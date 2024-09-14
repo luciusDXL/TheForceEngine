@@ -2920,7 +2920,7 @@ namespace LevelEditor
 		// Write sectors only.
 		const IndexPair* pair = sectorIds.data();
 		s_sectorIds.resize(count);
-		for (s32 i = 0; i < count; i++)
+		for (u32 i = 0; i < count; i++)
 		{
 			s_sectorIds[i] = pair[i].i0;
 		}
@@ -2931,10 +2931,10 @@ namespace LevelEditor
 			const s32 i0 = pair->i0;
 			assert(i0 >= 0 && i0 < (s32)s_level.sectors.size());
 			EditorSector* sector = &s_level.sectors[i0];
-			writeS32(sector->name.length());
+			writeU32((u32)sector->name.length());
 			if (sector->name.length())
 			{
-				writeData(sector->name.data(), sector->name.length());
+				writeData(sector->name.data(), (u32)sector->name.length());
 			}
 			const SectorAttrib attrib = 
 			{
