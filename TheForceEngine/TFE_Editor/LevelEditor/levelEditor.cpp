@@ -79,6 +79,7 @@ namespace LevelEditor
 
 	static Asset* s_levelAsset = nullptr;
 	static s32 s_outputHeight = 26*6;
+	static AppendTexList s_texAppendList = {};
 
 	// The TFE Level Editor format is different than the base format and contains extra 
 	// metadata, etc.
@@ -235,6 +236,7 @@ namespace LevelEditor
 
 		// Cleanup any existing level data.
 		destroy();
+		edit_clearTextureAppendList();
 
 		// Load definitions.
 		// TODO: Handle different games...
@@ -3314,11 +3316,37 @@ namespace LevelEditor
 			applyTextureToItem(sector, part, index, -1, nullptr);
 		}
 	}
-
-	void edit_setTexture(s32 count, const FeatureId* feature, s32 texIndex, Vec2f* offset)
+				
+	AppendTexList& edit_getTextureAppendList()
 	{
-		texIndex = getTextureIndex(s_levelTextureList[texIndex].name.c_str());
-		if (texIndex < 0) { return; }
+		return s_texAppendList;
+	}
+
+	void edit_clearTextureAppendList()
+	{
+		s_texAppendList.startIndex = -1;
+		s_texAppendList.list.clear();
+	}
+
+	bool edit_setTexture(s32 count, const FeatureId* feature, s32 texIndex, Vec2f* offset)
+	{
+		bool isNewTexture = false;
+		texIndex = getTextureIndex(s_levelTextureList[texIndex].name.c_str(), &isNewTexture);
+		if (texIndex < 0) { return false; }
+
+		if (isNewTexture)
+		{
+			if (s_texAppendList.startIndex < 0)
+			{
+				s_texAppendList.startIndex = (s32)s_level.textures.size() - 1;
+				s_texAppendList.list.resize(1);
+				s_texAppendList.list[0] = s_level.textures.back().name;
+			}
+			else
+			{
+				s_texAppendList.list.push_back(s_level.textures.back().name);
+			}
+		}
 
 		for (s32 i = 0; i < count; i++)
 		{
@@ -3327,6 +3355,7 @@ namespace LevelEditor
 			EditorSector* sector = unpackFeatureId(feature[i], &index, (s32*)&part);
 			applyTextureToItem(sector, part, index, texIndex, offset);
 		}
+		return isNewTexture;
 	}
 						
 	void play()

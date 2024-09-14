@@ -1448,7 +1448,6 @@ namespace LevelEditor
 
 					if (delta.x || delta.z)
 					{
-						FeatureId id = createFeatureId(sector, wallId, HP_SIGN);
 						changed = true;
 					}
 				}

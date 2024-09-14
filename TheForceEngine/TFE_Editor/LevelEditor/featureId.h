@@ -7,7 +7,6 @@
 // to "play" the game as intended.
 //////////////////////////////////////////////////////////////////////
 #include <TFE_System/types.h>
-#include "levelEditorData.h"
 #include <climits> 
 
 namespace LevelEditor

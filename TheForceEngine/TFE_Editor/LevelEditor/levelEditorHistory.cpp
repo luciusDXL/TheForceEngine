@@ -25,6 +25,7 @@ namespace LevelEditor
 		LCmd_Sector_Wall_Snapshot,
 		LCmd_Sector_Attrib_Snapshot,
 		LCmd_ObjList_Snapshot,
+		LCmd_Set_Textures,
 		LCmd_Count
 	};
 
@@ -36,6 +37,7 @@ namespace LevelEditor
 	void cmd_applySectorWallSnapshot();
 	void cmd_applySectorAttribSnapshot();
 	void cmd_applyObjListSnapshot();
+	void cmd_applySetTextures();
 
 	///////////////////////////////////
 	// API
@@ -48,6 +50,7 @@ namespace LevelEditor
 		history_registerCommand(LCmd_Sector_Wall_Snapshot, cmd_applySectorWallSnapshot);
 		history_registerCommand(LCmd_Sector_Attrib_Snapshot, cmd_applySectorAttribSnapshot);
 		history_registerCommand(LCmd_ObjList_Snapshot, cmd_applyObjListSnapshot);
+		history_registerCommand(LCmd_Set_Textures, cmd_applySetTextures);
 
 		history_registerName(LName_MoveVertex, "Move Vertice(s)");
 		history_registerName(LName_SetVertex, "Set Vertex Position");
@@ -169,10 +172,12 @@ namespace LevelEditor
 	void cmd_sectorWallSnapshot(u32 name, std::vector<IndexPair>& sectorWallIds, bool idsChanged)
 	{
 		if (sectorWallIds.empty()) { return; }
+		const AppendTexList& texList = edit_getTextureAppendList();
 
 		u16 prevCmd, prevName;
 		history_getPrevCmdAndName(prevCmd, prevName);
-		if (prevCmd == LCmd_Sector_Wall_Snapshot && prevName == name && !idsChanged)
+		// Only merge together attributes, not textures unless the level texture list is unchanged.
+		if (prevCmd == LCmd_Sector_Wall_Snapshot && texList.list.empty() && prevName == name && !idsChanged)
 		{
 			history_removeLast();
 		}
@@ -206,10 +211,11 @@ namespace LevelEditor
 	void cmd_sectorAttributeSnapshot(u32 name, std::vector<IndexPair>& sectorIds, bool idsChanged)
 	{
 		if (sectorIds.empty()) { return; }
+		const AppendTexList& texList = edit_getTextureAppendList();
 
 		u16 prevCmd, prevName;
 		history_getPrevCmdAndName(prevCmd, prevName);
-		if (prevCmd == LCmd_Sector_Attrib_Snapshot && prevName == name && !idsChanged)
+		if (prevCmd == LCmd_Sector_Attrib_Snapshot && texList.list.empty() && prevName == name && !idsChanged)
 		{
 			history_removeLast();
 		}
@@ -232,6 +238,36 @@ namespace LevelEditor
 		}
 
 		CMD_BEGIN(LCmd_Sector_Attrib_Snapshot, name);
+		{
+			hBuffer_addU32(uncompressedSize);
+			hBuffer_addU32(compressedSize);
+			hBuffer_addArrayU8(compressedSize, s_workBuffer[1].data());
+		}
+		CMD_END();
+	}
+
+	void cmd_setTextures(u32 name, s32 count, FeatureId* features)
+	{
+		if (count < 1 || !features) { return; }
+
+		s_workBuffer[0].clear();
+		s_workBuffer[1].clear();
+		level_createFeatureTextureSnapshot(&s_workBuffer[0], count, features);
+		if (s_workBuffer[0].empty()) { return; }
+
+		const u32 uncompressedSize = (u32)s_workBuffer[0].size();
+		u32 compressedSize = 0;
+		if (zstd_compress(s_workBuffer[1], s_workBuffer[0].data(), uncompressedSize, 4))
+		{
+			compressedSize = (u32)s_workBuffer[1].size();
+		}
+		// ERROR
+		if (!compressedSize)
+		{
+			return;
+		}
+
+		CMD_BEGIN(LCmd_Set_Textures, name);
 		{
 			hBuffer_addU32(uncompressedSize);
 			hBuffer_addU32(compressedSize);
@@ -292,6 +328,19 @@ namespace LevelEditor
 		if (zstd_decompress(s_workBuffer[0].data(), uncompressedSize, compressedData, compressedSize))
 		{
 			level_unpackSectorAttribSnapshot(uncompressedSize, s_workBuffer[0].data());
+		}
+	}
+
+	void cmd_applySetTextures()
+	{
+		const u32 uncompressedSize = hBuffer_getU32();
+		const u32 compressedSize = hBuffer_getU32();
+		const u8* compressedData = hBuffer_getArrayU8(compressedSize);
+
+		s_workBuffer[0].resize(uncompressedSize);
+		if (zstd_decompress(s_workBuffer[0].data(), uncompressedSize, compressedData, compressedSize))
+		{
+			level_unpackFeatureTextureSnapshot(uncompressedSize, s_workBuffer[0].data());
 		}
 	}
 }

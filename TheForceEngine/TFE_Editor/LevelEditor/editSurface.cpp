@@ -33,6 +33,7 @@ using namespace TFE_Jedi;
 
 namespace LevelEditor
 {
+	extern SelectionList s_featureList;
 	static Vec2f s_copiedTextureOffset = { 0 };
 
 	void snapSignToCursor(EditorSector* sector, EditorWall* wall, s32 signTexIndex, Vec2f* signOffset);
@@ -195,15 +196,36 @@ namespace LevelEditor
 				u32 count = selection_getList(list);
 				if (count && list)
 				{
+					// We need to fix up the sector list.
+					if (s_view == EDIT_VIEW_2D)
+					{
+						s_featureList.resize(count);
+						FeatureId* output = s_featureList.data();
+						for (s32 i = 0; i < count; i++)
+						{
+							EditorSector* sector = unpackFeatureId(list[i]);
+							output[i] = createFeatureId(sector, 0, s32((s_sectorDrawMode == SDM_TEXTURED_CEIL) ? HP_CEIL : HP_FLOOR));
+						}
+						list = output;
+					}
+
 					edit_setTexture(count, list, texIndex, offset);
+					cmd_setTextures(LName_SetTexture, count, list);
 				}
-				// cmd_addSetTexture(count, s_selectionList.data(), texIndex, offset);
 			}
 			else
 			{
-				FeatureId id = createFeatureId(sector, featureIndex, part);
+				FeatureId id;
+				if (s_view == EDIT_VIEW_2D)
+				{
+					id = createFeatureId(sector, 0, s32((s_sectorDrawMode == SDM_TEXTURED_CEIL) ? HP_CEIL : HP_FLOOR));
+				}
+				else
+				{
+					id = createFeatureId(sector, featureIndex, part);
+				}
 				edit_setTexture(1, &id, texIndex, offset);
-				// cmd_addSetTexture(1, &id, texIndex, offset);
+				cmd_setTextures(LName_SetTexture, 1, &id);
 			}
 		}
 	}
@@ -236,7 +258,7 @@ namespace LevelEditor
 
 		FeatureId id = createFeatureId(sector, featureIndex, WP_SIGN);
 		edit_setTexture(1, &id, signIndex, &offset);
-		// cmd_addSetTexture(1, &id, signIndex, &offset);
+		cmd_setTextures(LName_SetTexture, 1, &id);
 	}
 
 	void wallComputeDragSelect()

@@ -52,4 +52,5 @@ namespace LevelEditor
 	void cmd_sectorWallSnapshot(u32 name, std::vector<IndexPair>& sectorIds, bool idsChanged);
 	void cmd_sectorAttributeSnapshot(u32 name, std::vector<IndexPair>& sectorIds, bool idsChanged);
 	void cmd_objectListSnapshot(u32 name, s32 sectorId);
+	void cmd_setTextures(u32 name, s32 count, FeatureId* features);
 }

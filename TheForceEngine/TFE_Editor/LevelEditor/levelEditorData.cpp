@@ -85,6 +85,7 @@ namespace LevelEditor
 	std::vector<u8> s_fileData;
 	std::vector<IndexPair> s_pairs;
 	std::vector<IndexPair> s_prevPairs;
+	SelectionList s_featureList;
 	static u32* s_palette = nullptr;
 	static s32 s_palIndex = 0;
 
@@ -1886,8 +1887,10 @@ namespace LevelEditor
 		return nullptr;
 	}
 
-	s32 getTextureIndex(const char* name)
+	s32 getTextureIndex(const char* name, bool* isNewTexture)
 	{
+		if (isNewTexture) { *isNewTexture = false; }
+
 		const s32 count = (s32)s_level.textures.size();
 		const LevelTextureAsset* texAsset = s_level.textures.data();
 		for (s32 i = 0; i < count; i++, texAsset++)
@@ -1905,6 +1908,7 @@ namespace LevelEditor
 			newTex.name = name;
 			newTex.handle = asset->handle;
 			s_level.textures.push_back(newTex);
+			if (isNewTexture) { *isNewTexture = true; }
 			return newId;
 		}
 		return -1;
@@ -2811,11 +2815,81 @@ namespace LevelEditor
 		}
 	}
 
+	void level_appendTextureList()
+	{
+		// Texture List.
+		const AppendTexList& appendTex = edit_getTextureAppendList();
+		writeS32(appendTex.startIndex);
+		if (appendTex.startIndex >= 0)
+		{
+			s32 texCount = (s32)appendTex.list.size();
+			assert(texCount > 0);
+			writeS32(texCount);
+
+			const std::string* texAsset = appendTex.list.data();
+			for (s32 i = 0; i < texCount; i++, texAsset++)
+			{
+				s32 len = (s32)texAsset->length();
+				writeS32(len);
+				if (len > 0)
+				{
+					writeData(texAsset->c_str(), len);
+				}
+			}
+			edit_clearTextureAppendList();
+		}
+	}
+
+	void level_createFeatureTextureSnapshot(SnapshotBuffer* buffer, s32 count, const FeatureId* feature)
+	{
+		if (count < 1) { return; }
+		setSnapshotWriteBuffer(buffer);
+		// Texture List.
+		level_appendTextureList();
+		// Feature texture info.
+		s32 featureIndex = -1;
+		HitPart part = HP_FLOOR;
+		writeS32(count);
+		writeData(feature, sizeof(FeatureId) * count);
+		for (s32 f = 0; f < count; f++)
+		{
+			EditorSector* sector = unpackFeatureId(feature[f], &featureIndex, (s32*)&part);
+
+			switch (part)
+			{
+				case HP_FLOOR:
+				{
+					writeData(&sector->floorTex, sizeof(LevelTexture));
+				} break;
+				case HP_CEIL:
+				{
+					writeData(&sector->ceilTex, sizeof(LevelTexture));
+				} break;
+				case HP_MID:
+				case HP_TOP:
+				case HP_BOT:
+				case HP_SIGN:
+				{
+					writeData(&sector->walls[featureIndex].tex[part], sizeof(LevelTexture));
+				} break;
+				default:
+				{
+					// Invalid part!
+					assert(0);
+				}
+			};
+		}
+	}
+
 	void level_createSectorWallSnapshot(SnapshotBuffer* buffer, std::vector<IndexPair>& sectorWallIds)
 	{
 		const u32 count = (u32)sectorWallIds.size();
 		assert(count > 0);
 		setSnapshotWriteBuffer(buffer);
+		// Texture List.
+		level_appendTextureList();
+
+		// Wall attributes.
 		writeU32(count);
 
 		// Write sectors walls only.
@@ -2834,8 +2908,13 @@ namespace LevelEditor
 	void level_createSectorAttribSnapshot(SnapshotBuffer* buffer, std::vector<IndexPair>& sectorIds)
 	{
 		const u32 count = (u32)sectorIds.size();
+		if (count < 1) { return; }
+
 		assert(count > 0);
 		setSnapshotWriteBuffer(buffer);
+		// Texture List.
+		level_appendTextureList();
+
 		writeU32(count);
 
 		// Write sectors only.
@@ -3031,12 +3110,87 @@ namespace LevelEditor
 		}
 	}
 
+	void level_readTextureList()
+	{
+		const s32 startIndex = readS32();
+		if (startIndex >= 0)
+		{
+			assert(edit_getTextureAppendList().list.empty());
+			const s32 texCount = readS32();
+			assert(texCount > 0);
+			s_level.textures.resize(startIndex + texCount);
+
+			char name[256];
+			LevelTextureAsset* texAsset = s_level.textures.data() + startIndex;
+			for (s32 i = 0; i < texCount; i++, texAsset++)
+			{
+				const s32 len = readS32();
+				if (len > 0)
+				{
+					readData(name, len);
+					name[len] = 0;
+					texAsset->name = name;
+				}
+				else
+				{
+					texAsset->name.clear();
+				}
+				texAsset->handle = loadTexture(texAsset->name.c_str());
+			}
+			edit_clearTextureAppendList();
+		}
+	}
+
+	void level_unpackFeatureTextureSnapshot(u32 size, void* data)
+	{
+		setSnapshotReadBuffer((u8*)data, size);
+		level_readTextureList();
+
+		s32 count = readS32();
+		if (count < 1) { return; }
+		// Feature texture info.
+		s32 featureIndex = -1;
+		HitPart part = HP_FLOOR;
+		s_featureList.resize(count);
+		readData(s_featureList.data(), sizeof(FeatureId) * count);
+		const FeatureId* feature = s_featureList.data();
+		for (s32 f = 0; f < count; f++)
+		{
+			EditorSector* sector = unpackFeatureId(feature[f], &featureIndex, (s32*)&part);
+			switch (part)
+			{
+				case HP_FLOOR:
+				{
+					readData(&sector->floorTex, sizeof(LevelTexture));
+				} break;
+				case HP_CEIL:
+				{
+					readData(&sector->ceilTex, sizeof(LevelTexture));
+				} break;
+				case HP_MID:
+				case HP_TOP:
+				case HP_BOT:
+				case HP_SIGN:
+				{
+					assert(featureIndex >= 0 && featureIndex < (s32)sector->walls.size());
+					readData(&sector->walls[featureIndex].tex[part], sizeof(LevelTexture));
+				} break;
+				default:
+				{
+					// Invalid part!
+					assert(0);
+				}
+			};
+		}
+	}
+
 	void level_unpackSectorWallSnapshot(u32 size, void* data)
 	{
 		setSnapshotReadBuffer((u8*)data, size);
+		level_readTextureList();
+
 		const u32 count = readU32();
 		assert(count > 0);
-
 		s_pairs.resize(count);
 		readData(s_pairs.data(), sizeof(IndexPair) * count);
 
@@ -3055,6 +3209,8 @@ namespace LevelEditor
 	void level_unpackSectorAttribSnapshot(u32 size, void* data)
 	{
 		setSnapshotReadBuffer((u8*)data, size);
+		level_readTextureList();
+
 		const u32 count = readU32();
 		assert(count > 0);
 

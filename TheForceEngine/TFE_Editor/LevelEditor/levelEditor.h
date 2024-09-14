@@ -15,6 +15,12 @@ namespace LevelEditor
 {
 	struct EditorSector;
 
+	struct AppendTexList
+	{
+		s32 startIndex = -1;
+		std::vector<std::string> list;
+	};
+
 	enum LevelEditFlags
 	{
 		LEF_NONE = 0,
@@ -80,7 +86,10 @@ namespace LevelEditor
 	bool edit_createSectorFromRect(const f32* heights, const Vec2f* vtx, bool allowSubsectorExtrude=true);
 	bool edit_createSectorFromShape(const f32* heights, s32 vertexCount, const Vec2f* vtx, bool allowSubsectorExtrude=true);
 	void edit_moveSelectedTextures(s32 count, const FeatureId* featureList, Vec2f delta);
-	void edit_setTexture(s32 count, const FeatureId* feature, s32 texIndex, Vec2f* offset = nullptr);
+	// Return true if the assigned texture is new.
+	AppendTexList& edit_getTextureAppendList();
+	void edit_clearTextureAppendList();
+	bool edit_setTexture(s32 count, const FeatureId* feature, s32 texIndex, Vec2f* offset = nullptr);
 	void edit_clearTexture(s32 count, const FeatureId* feature);
 	void edit_deleteObject(EditorSector* sector, s32 index);
 	void edit_deleteLevelNote(s32 index);

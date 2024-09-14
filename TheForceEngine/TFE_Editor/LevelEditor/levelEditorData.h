@@ -10,6 +10,7 @@
 #include "entity.h"
 #include "groups.h"
 #include "note.h"
+#include "featureId.h"
 #include <TFE_Editor/EditorAsset/editorAsset.h>
 #include <TFE_Editor/EditorAsset/editorTexture.h>
 #include <TFE_Editor/editorProject.h>
@@ -250,7 +251,7 @@ namespace LevelEditor
 	s32 addLevelNoteToLevel(const LevelNote* newNote);
 
 	TFE_Editor::EditorTexture* getTexture(s32 index);
-	s32 getTextureIndex(const char* name);
+	s32 getTextureIndex(const char* name, bool* isNewTexture = nullptr);
 		
 	f32 getWallLength(const EditorSector* sector, const EditorWall* wall);
 	bool getSignExtents(const EditorSector* sector, const EditorWall* wall, Vec2f ext[2]);
@@ -260,6 +261,7 @@ namespace LevelEditor
 	void level_createSectorSnapshot(TFE_Editor::SnapshotBuffer* buffer, std::vector<s32>& sectorIds);
 	void level_createSectorWallSnapshot(TFE_Editor::SnapshotBuffer* buffer, std::vector<IndexPair>& sectorWallIds);
 	void level_createSectorAttribSnapshot(TFE_Editor::SnapshotBuffer* buffer, std::vector<IndexPair>& sectorIds);
+	void level_createFeatureTextureSnapshot(TFE_Editor::SnapshotBuffer* buffer, s32 count, const FeatureId* feature);
 	void level_createEntiyListSnapshot(TFE_Editor::SnapshotBuffer* buffer, s32 sectorId);
 
 	void level_createLevelSectorSnapshotSameAssets(std::vector<EditorSector>& sectors);
@@ -269,6 +271,7 @@ namespace LevelEditor
 	void level_unpackSectorSnapshot(u32 size, void* data);
 	void level_unpackSectorWallSnapshot(u32 size, void* data);
 	void level_unpackSectorAttribSnapshot(u32 size, void* data);
+	void level_unpackFeatureTextureSnapshot(u32 size, void* data);
 	void level_unpackEntiyListSnapshot(u32 size, void* data);
 	
 	// Spatial Queries
