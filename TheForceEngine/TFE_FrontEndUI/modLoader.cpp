@@ -444,6 +444,13 @@ namespace TFE_FrontEndUI
 			}
 			filterMods(s_viewMode != VIEW_FILE_LIST);
 		}
+
+		ImGui::SameLine(510.0f * uiScale);
+		if (ImGui::Button("Refresh Mod Listing"))
+		{
+			s_modsRead = false;
+			modLoader_read();
+		}
 		
 		ImGui::Separator();
 
