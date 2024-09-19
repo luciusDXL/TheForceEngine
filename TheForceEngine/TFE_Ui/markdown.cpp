@@ -35,12 +35,14 @@ namespace TFE_Markdown
 	bool init(f32 baseFontSize)
 	{
 		unsigned int fbs1, fbs2;
-		char *fb1, *fb2;
+		char *fb1 = nullptr, *fb2 = nullptr;
 
 		vpFile ttf1(VPATH_TFE, "Fonts/DroidSans.ttf", &fb1, &fbs1);
 		vpFile ttf2(VPATH_TFE, "Fonts/DroidSans-Bold.ttf", &fb2, &fbs2);
 		if (!ttf1 || !ttf2)
 		{
+			free(fb1);
+			free(fb2);
 			return false;
 		}
 

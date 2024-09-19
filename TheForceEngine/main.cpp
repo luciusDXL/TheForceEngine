@@ -1025,8 +1025,8 @@ int main(int argc, char* argv[])
 	if (ret) {
 		printf("vpInit(%s,%s) error %d\n", buf, fp, ret);
 		memset(buf, 0, PATH_MAX);
-		FileUtil::getFullPath("theforceengine.data", buf);
-		ret = vpInit("theforceengine.data", fp);
+		FileUtil::getFullPath(fp, buf);
+		ret = vpInit(buf, fp);
 		if (ret) {
 			printf("vpInit(%s,%s) error %d, giving up.\n", bp, fp, ret);
 			return PROGRAM_ERROR;

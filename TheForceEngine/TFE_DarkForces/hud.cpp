@@ -419,14 +419,21 @@ namespace TFE_DarkForces
 			offscreenBuffer_drawTexture(s_cachedHudRight, s_texIndex[HudTex_StatusR], 0, 0);
 		}
 
-		#if TFE_CONVERT_CAPS
+#if TFE_CONVERT_CAPS
 			hud_convertCapsToBM();
-		#endif
+#endif
 
 		// TFE:
-		// Load the caps
-		s_hudCapLeft  = hud_loadTexture("HudStatusLeftAddon.bm");
-		s_hudCapRight = hud_loadTexture("HudStatusRightAddon.bm");
+		// Load the caps, unfortunately they aren't at VPATH_GAME so we
+		// need to read them into memory and load a memory bitmap.
+		char *buf;
+		unsigned int sz;
+		vpFile hudtex(VPATH_TFE, "Mods/TFE/AdjustableHud/HudStatusLeftAddon.bm", &buf, &sz);
+		s_hudCapLeft  = hudtex ? bitmap_loadFromMemory((const u8*)buf, sz, 1) : nullptr;
+		free(buf);
+		vpFile hudtex2(VPATH_TFE, "Mods/TFE/AdjustableHud/HudStatusRightAddon.bm", &buf, &sz);
+		s_hudCapRight = hudtex2 ? bitmap_loadFromMemory((const u8*)buf, sz, 1) : nullptr;
+		free(buf);
 	}
 		
 	void hud_updateBasePalette(u8* srcBuffer, s32 offset, s32 count)

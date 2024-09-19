@@ -167,7 +167,7 @@ namespace TFE_A11Y  // a11y is industry slang for accessibility
 		TFEFileList tl;
 		TFEExtList te = {"ttf"};
 
-		bool ok = vpGetFileList(VPATH_TFE, DEFAULT_FONT_DIR, tl, te);
+		bool ok = vpGetFileList(VPATH_TFE, DEFAULT_FONT_DIR, tl, te, false);
 		if (!ok) {
 			TFE_System::logWrite(LOG_ERROR, "A11Y", "cannot enumerate Fonts");
 			return;
@@ -204,7 +204,7 @@ namespace TFE_A11Y  // a11y is industry slang for accessibility
 	void tryLoadFont(const std::string fname, bool clearAtlas)
 	{
 		std::string path = DEFAULT_FONT_DIR + fname;
-		if (!fname.empty() && vpFileExists(VPATH_TFE, path.c_str()))
+		if (!fname.empty() && vpFileExists(VPATH_TFE, path.c_str(), false))
 		{
 			loadFont(fname, clearAtlas);
 		}
@@ -271,7 +271,7 @@ namespace TFE_A11Y  // a11y is industry slang for accessibility
 		TFEFileList tl;
 		TFEExtList te = { "txt" };
 
-		if (!vpGetFileList(VPATH_TFE, DEFAULT_CAPTIONS_DIR, tl, te)) {
+		if (!vpGetFileList(VPATH_TFE, DEFAULT_CAPTIONS_DIR, tl, te, false)) {
 			TFE_System::logWrite(LOG_ERROR, "A11Y", "cannot enumerate Captions");
 			return;
 		}
@@ -310,7 +310,7 @@ namespace TFE_A11Y  // a11y is industry slang for accessibility
 
 		// Try to open the file
 		std::string fpath = DEFAULT_CAPTIONS_DIR + fname;
-		vpFile capfile(VPATH_TFE, fpath.c_str(), &s_captionsBuffer, &size);
+		vpFile capfile(VPATH_TFE, fpath.c_str(), &s_captionsBuffer, &size, false);
 		if (!capfile)
 		{
 			onFileError(fpath);

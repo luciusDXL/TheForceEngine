@@ -379,13 +379,6 @@ namespace TFE_DarkForces
 			return false;
 		}
 
-		/*
-		 * Adjustable HUD
-		 */
-		m[j] = vpMountVirt(VPATH_TFE, "Mods/TFE/AdjustableHud/", VPATH_GAME, true, false);
-		TFE_System::logWrite(LOG_MSG, "DarkForcesMain", m[j] ? "mounted %s" : "skipped %s", "Mods/TFE/AdjustableHud/");
-		j++;
-
 #if 0
 		{	// dump the file listing
 			TFEFileList tl;
@@ -1118,7 +1111,7 @@ namespace TFE_DarkForces
 		parseKey(&msgs, 260, &s_sharedState.langKeys.k_hard,  KEY_H);
 		parseKey(&msgs, 230, &s_sharedState.langKeys.k_canc,  KEY_C);
 	}
-				
+
 	void gameStartup()
 	{
 		hud_loadGraphics();
