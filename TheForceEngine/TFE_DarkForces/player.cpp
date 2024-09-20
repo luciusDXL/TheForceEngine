@@ -539,7 +539,23 @@ namespace TFE_DarkForces
 		if (boolMap.find("cannon") != boolMap.end())
 		{
 			s_playerInfo.itemCannon = boolMap["cannon"];
-		}		
+		}	
+
+		// Handle Items
+
+		if (boolMap.find("mask") != boolMap.end())
+		{
+			s_playerInfo.itemMask = boolMap["mask"];
+		}
+		if (boolMap.find("goggles") != boolMap.end())
+		{
+			s_playerInfo.itemGoggles = boolMap["goggles"];
+		}
+		if (boolMap.find("cleats") != boolMap.end())
+		{
+			s_playerInfo.itemCleats = boolMap["cleats"];
+		}
+
 
 		// Enable Activatable items
 
