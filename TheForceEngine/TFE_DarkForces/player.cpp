@@ -447,6 +447,157 @@ namespace TFE_DarkForces
 			s_playerInfo.maxWeapon = nextWpn;
 		}
 	}
+
+	void player_handleLevelOverrides(ModSettingLevelOverride modLevelOverride)
+	{
+		// Handle Integer Overrides
+		std::map<std::string, int> intMap = modLevelOverride.intOverrideMap;
+
+		// Handle Ammo/Shields/Lives/Battery
+		if (intMap.find("energy") != intMap.end())
+		{
+			s_playerInfo.ammoEnergy = pickup_addToValue(0, intMap["energy"], 999);
+		}
+		if (intMap.find("power") != intMap.end())
+		{
+			s_playerInfo.ammoPower = pickup_addToValue(0, intMap["power"], 999);
+		}
+		if (intMap.find("plasma") != intMap.end())
+		{
+			s_playerInfo.ammoPlasma = pickup_addToValue(0, intMap["plasma"], 999);
+		}
+		if (intMap.find("detonator") != intMap.end())
+		{
+			s_playerInfo.ammoDetonator = pickup_addToValue(0, intMap["detonator"], 999);
+		}
+		if (intMap.find("shell") != intMap.end())
+		{
+			s_playerInfo.ammoShell = pickup_addToValue(0, intMap["shell"], 999);
+		}
+		if (intMap.find("mine") != intMap.end())
+		{
+			s_playerInfo.ammoMine = pickup_addToValue(0, intMap["mine"], 999);
+		}
+		if (intMap.find("missile") != intMap.end())
+		{
+			s_playerInfo.ammoMissile = pickup_addToValue(0, intMap["missile"], 99);
+		}
+		if (intMap.find("shields") != intMap.end())
+		{
+			s_playerInfo.shields = pickup_addToValue(0, intMap["shields"], 999);
+		}
+		if (intMap.find("health") != intMap.end())
+		{
+			s_playerInfo.health = pickup_addToValue(0, intMap["health"], 999);
+		}
+		if (intMap.find("lives") != intMap.end())
+		{
+			s_lifeCount = pickup_addToValue(0, intMap["lives"], 9);
+		}
+		if (intMap.find("battery") != intMap.end())
+		{
+			fixed16_16 batteryPower = FIXED(2);
+			int batteryPowerPercent = pickup_addToValue(0, intMap["battery"], 100);
+			s_batteryPower = (batteryPower * batteryPowerPercent) / 100;
+		}
+
+		// Note - this doesn't check if the weapon is is in the inventory!
+		if (intMap.find("defaultWeapon") != intMap.end())
+		{
+			int weaponSwitchID = pickup_addToValue(0, intMap["defaultWeapon"], 9);
+			player_setNextWeapon(weaponSwitchID);
+		}
+
+		// Handle Boolean Overrides
+		std::map<std::string, bool> boolMap = modLevelOverride.boolOverrideMap;
+
+		// Handle Weapons
+		if (boolMap.find("pistol") != boolMap.end())
+		{
+			s_playerInfo.itemPistol = boolMap["pistol"];
+		}
+		if (boolMap.find("rifle") != boolMap.end())
+		{
+			s_playerInfo.itemRifle = boolMap["rifle"];
+		}
+		if (boolMap.find("autogun") != boolMap.end())
+		{
+			s_playerInfo.itemAutogun = boolMap["autogun"];
+		}
+		if (boolMap.find("mortar") != boolMap.end())
+		{
+			s_playerInfo.itemMortar = boolMap["mortar"];
+		}
+		if (boolMap.find("fusion") != boolMap.end())
+		{
+			s_playerInfo.itemFusion = boolMap["fusion"];
+		}
+		if (boolMap.find("concussion") != boolMap.end())
+		{
+			s_playerInfo.itemConcussion = boolMap["concussion"];
+		}
+		if (boolMap.find("cannon") != boolMap.end())
+		{
+			s_playerInfo.itemCannon = boolMap["cannon"];
+		}		
+
+		// Enable Activatable items
+
+		if (boolMap.find("enableMask") != boolMap.end())
+		{
+			if (boolMap["enableMask"])
+			{
+				s_playerInfo.itemMask = JTRUE;
+				enableMask();
+			}
+		}
+		if (boolMap.find("enableCleats") != boolMap.end())
+		{
+			if (boolMap["enableCleats"])
+			{
+				s_playerInfo.itemCleats = JTRUE;
+				enableCleats();
+			}
+		}
+		if (boolMap.find("enableNightVision") != boolMap.end())
+		{
+			if (boolMap["enableNightVision"])
+			{
+				s_playerInfo.itemGoggles = JTRUE;
+				enableNightVision();
+			}
+		}
+		if (boolMap.find("enableHeadlamp") != boolMap.end())
+		{
+			if (boolMap["enableHeadlamp"])
+			{
+				enableHeadlamp();
+			}
+		}
+
+		// Wipe everything and start only with Bryar Pistol Only
+
+		if (boolMap.find("bryarOnly") != boolMap.end() && boolMap["bryarOnly"] == MSO_TRUE)
+		{
+
+			// Wipe the player inventory settings.
+			u8* src = (u8*)&s_playerInfo;
+			size_t size = (size_t)&s_playerInfo.pileSaveMarker - (size_t)&s_playerInfo;
+			assert(size == 140);
+			memset(src, 0, size);
+
+			// Give player 100 blaster ammo and a Bryar Pistol
+			s_playerInfo.ammoEnergy = pickup_addToValue(0, 100, 999);
+			s_playerInfo.itemPistol = JTRUE;
+			player_setNextWeapon(1);
+
+			// Disable all activatable items
+			disableMask();
+			disableCleats();
+			disableNightVision();
+			hud_clearMessage();
+		}		
+	}
 		
 	void player_createController(JBool clearData)
 	{
@@ -469,7 +620,7 @@ namespace TFE_DarkForces
 		s_playerInfo.itemCode6    = JFALSE;
 		s_playerInfo.itemCode7    = JFALSE;
 		s_playerInfo.itemCode8    = JFALSE;
-		s_playerInfo.itemCode9    = JFALSE;
+		s_playerInfo.itemCode9    = JFALSE; 
 		s_playerInfo.itemRedKey   = JFALSE;
 		s_playerInfo.itemYellowKey= JFALSE;
 		s_playerInfo.itemBlueKey  = JFALSE;
@@ -556,7 +707,14 @@ namespace TFE_DarkForces
 		// Handle level-specific hacks.
 		const char* levelName = agent_getLevelName();
 		TFE_System::logWrite(LOG_MSG, "Player", "Setting up level '%s'", levelName);
-		if (!strcasecmp(levelName, "jabship"))
+
+		// Handle custom level player overrides
+		ModSettingLevelOverride modLevelOverride = TFE_Settings::getLevelOverrides(levelName);
+		if (!modLevelOverride.levName.empty())
+		{
+			player_handleLevelOverrides(modLevelOverride);
+		}
+		else if (!strcasecmp(levelName, "jabship"))
 		{
 			u8* src  = (u8*)&s_playerInfo;
 			size_t size = (size_t)&s_playerInfo.pileSaveMarker - (size_t)&s_playerInfo;
@@ -580,7 +738,7 @@ namespace TFE_DarkForces
 				player_setNextWeapon(0);
 				disableMask();
 				disableCleats();
-				disableNightvision();
+				disableNightVision();
 				hud_clearMessage();
 			}
 		}
@@ -589,6 +747,7 @@ namespace TFE_DarkForces
 			// Adjust the lighting on gromas in order to accenuate the fog effect.
 			s_levelAtten = 30;
 		}
+
 	}
 
 	void player_clearEyeObject()
@@ -1210,7 +1369,7 @@ namespace TFE_DarkForces
 				player_reset();
 				s_headlampActive = JFALSE;
 				s_nightvisionActive = JFALSE;
-				disableNightvisionInternal();
+				disableNightVisionInternal();
 
 				s_playerObject->yaw = s_curSafe->yaw;
 				s_playerYaw = s_curSafe->yaw;
@@ -2450,7 +2609,7 @@ namespace TFE_DarkForces
 				if (s_nightvisionActive)
 				{
 					s_nightvisionActive = JFALSE;
-					disableNightvisionInternal();
+					disableNightVisionInternal();
 					hud_sendTextMessage(9);
 				}
 				if (s_headlampActive)
