@@ -636,7 +636,7 @@ namespace TFE_DarkForces
 		s_playerInfo.itemCode6    = JFALSE;
 		s_playerInfo.itemCode7    = JFALSE;
 		s_playerInfo.itemCode8    = JFALSE;
-		s_playerInfo.itemCode9    = JFALSE; 
+		s_playerInfo.itemCode9    = JFALSE;
 		s_playerInfo.itemRedKey   = JFALSE;
 		s_playerInfo.itemYellowKey= JFALSE;
 		s_playerInfo.itemBlueKey  = JFALSE;
