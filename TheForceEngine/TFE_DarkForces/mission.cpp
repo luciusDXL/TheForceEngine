@@ -935,15 +935,15 @@ namespace TFE_DarkForces
 		s_visionFxCountdown = 2;
 	}
 
-	void disableNightvisionInternal()
+	void disableNightVisionInternal()
 	{
 		s_flatLighting = JFALSE;
 		s_visionFxEndCountdown = 3;
 	}
 		
-	void disableNightvision()
+	void disableNightVision()
 	{
-		disableNightvisionInternal();
+		disableNightVisionInternal();
 		s_nightvisionActive = JFALSE;
 		hud_sendTextMessage(9);
 	}
@@ -1304,7 +1304,7 @@ namespace TFE_DarkForces
 			{
 				if (s_nightvisionActive)
 				{
-					disableNightvision();
+					disableNightVision();
 				}
 				else
 				{
