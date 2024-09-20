@@ -763,7 +763,6 @@ namespace TFE_DarkForces
 			// Adjust the lighting on gromas in order to accenuate the fog effect.
 			s_levelAtten = 30;
 		}
-
 	}
 
 	void player_clearEyeObject()
