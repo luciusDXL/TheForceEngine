@@ -505,7 +505,16 @@ namespace TFE_DarkForces
 		if (intMap.find("defaultWeapon") != intMap.end())
 		{
 			int weaponSwitchID = pickup_addToValue(0, intMap["defaultWeapon"], 9);
-			player_setNextWeapon(weaponSwitchID);
+
+			// Map it to the weapon index on the KEYBOARD (Ex: 1 = fists, 2  = bryar etc..)
+			if (weaponSwitchID == 0)
+			{
+				player_setNextWeapon(9);
+			}
+			else 
+			{
+				player_setNextWeapon(weaponSwitchID - 1);
+			}
 		}
 
 		// Handle Boolean Overrides
