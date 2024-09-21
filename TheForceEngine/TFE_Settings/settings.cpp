@@ -1351,13 +1351,21 @@ namespace TFE_Settings
 	int parseJSonIntToOverride(const cJSON* item)
 	{
 		int value = 0;  // default
+
+		// Check if it is a json numerical
 		if (cJSON_IsNumber(item))
 		{
 			value = cJSON_GetNumberValue(item);
 		}
 		else
 		{
-			TFE_System::logWrite(LOG_WARNING, "MOD_CONF", "Override '%s' is an invalid type and should be an integer. Ignoring override.", item->string);
+			try {
+				value = std::stoi(item->valuestring);
+			}
+			catch (std::exception& e) {
+				TFE_System::logWrite(LOG_WARNING, "MOD_CONF", "Override '%s' is an invalid type and should be an integer. Ignoring override.", item->string);
+			}
+		
 		}
 		return value;
 	};
