@@ -1350,7 +1350,7 @@ namespace TFE_Settings
 
 	int parseJSonIntToOverride(const cJSON* item)
 	{
-		int value = 0;  // default
+		int value = -1;  // default is -1
 
 		// Check if it is a json numerical
 		if (cJSON_IsNumber(item))
@@ -1359,13 +1359,15 @@ namespace TFE_Settings
 		}
 		else
 		{
-			try {
-				value = std::stoi(item->valuestring);
+			std::string valueString = item->valuestring;
+			if (valueString.find_first_not_of("0123456789") == string::npos)
+			{
+				value = std::stoi(valueString);
 			}
-			catch (std::exception& e) {
+			else
+			{
 				TFE_System::logWrite(LOG_WARNING, "MOD_CONF", "Override '%s' is an invalid type and should be an integer. Ignoring override.", item->string);
 			}
-		
 		}
 		return value;
 	};
@@ -1441,9 +1443,15 @@ namespace TFE_Settings
 							bool isIntParam = false;
 							for (int i = 0; i < intArraySize; ++i) {
 								if (strcmp(modIntOverrides[i], overrideName) == 0) {
-									levelOverride.intOverrideMap[overrideName] = parseJSonIntToOverride(levelOverrideIter);
-									isIntParam = true;
-									break;
+
+									// Parse the integer value.
+									int jsonIntResult = parseJSonIntToOverride(levelOverrideIter);
+									if (jsonIntResult != -1)
+									{
+										levelOverride.intOverrideMap[overrideName] = jsonIntResult;
+										isIntParam = true;
+										break;
+									}
 								}
 							}
 
