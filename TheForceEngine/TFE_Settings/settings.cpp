@@ -1395,7 +1395,7 @@ namespace TFE_Settings
 		else if (strcasecmp(tfeOverride->string, "ignore3doLimits") == 0)
 		{
 			modSettings->ignore3doLimits = parseJSonBoolToOverride(tfeOverride);
-		} 
+		}
 		else if (strcasecmp(tfeOverride->string, "3doNormalFix") == 0)
 		{
 			modSettings->normalFix3do = parseJSonBoolToOverride(tfeOverride);
