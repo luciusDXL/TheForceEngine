@@ -300,7 +300,8 @@ static const char* modIntOverrides[] =
 	"battery",
 
 	// Custom int overrides
-	"defaultWeapon"
+	"defaultWeapon",
+	"fogLevel"
 };
 
 // Boolean overrides for mod levels 
@@ -309,7 +310,7 @@ static const char* modBoolOverrides[] =
 	// Enable inventory items on start
 	"enableMask",
 	"enableCleats",
-	"enableGoggles",
+	"enableNightVision",
 	"enableHeadlamp",
 	
 	// Add/Remove Weapons and Items 

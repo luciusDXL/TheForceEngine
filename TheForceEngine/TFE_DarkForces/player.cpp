@@ -517,6 +517,12 @@ namespace TFE_DarkForces
 			}
 		}
 
+		// Handle attenuation such as Gromas
+		if (intMap.find("fogLevel") != intMap.end())
+		{
+			s_levelAtten = pickup_addToValue(0, intMap["fogLevel"], 100);
+		}		
+
 		// Handle Boolean Overrides
 		std::map<std::string, bool> boolMap = modLevelOverride.boolOverrideMap;
 
