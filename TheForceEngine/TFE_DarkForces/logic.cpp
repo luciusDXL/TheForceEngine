@@ -145,6 +145,7 @@ namespace TFE_DarkForces
 				else if (logicId >= KW_TROOP && logicId <= KW_SCENERY)	// Enemies, explosives barrels, land mines, and scenery.
 				{
 					newLogic = obj_setEnemyLogic(obj, logicId);
+					setupFunc = nullptr;
 				}
 				else if (logicId == KW_KEY)         // Vue animation logic.
 				{
