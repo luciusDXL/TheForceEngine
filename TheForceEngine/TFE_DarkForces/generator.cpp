@@ -17,6 +17,7 @@
 #include <TFE_FileSystem/paths.h>
 #include <TFE_FileSystem/filestream.h>
 #include <TFE_Jedi/Serialization/serialization.h>
+#include <TFE_DarkForces/logic.h>
 
 using namespace TFE_Jedi;
 
@@ -38,6 +39,8 @@ namespace TFE_DarkForces
 		Tick       wanderTime;
 		Wax*       wax;
 		JBool      active;
+
+		string		logicName;		// JK: added to store a custom logic name
 	};
 
 	void generatorTaskFunc(MessageType msg)
@@ -104,13 +107,28 @@ namespace TFE_DarkForces
 
 				assert(gen->entities && allocator_validate(gen->entities));
 
+				TFE_Settings_Game* gameSettings = TFE_Settings::getGameSettings();
+
 				fixed16_16 dy = TFE_Jedi::abs(s_playerObject->posWS.y - spawn->posWS.y);
 				fixed16_16 dist = dy + distApprox(spawn->posWS.x, spawn->posWS.z, s_playerObject->posWS.x, s_playerObject->posWS.z);
 				if (dist >= gen->minDist && dist <= gen->maxDist && !actor_canSeeObject(spawn, s_playerObject))
 				{
 					sprite_setData(spawn, gen->wax);
-					obj_setEnemyLogic(spawn, gen->type);
+					
+					// Search the externally defined logics for a match
+					CustomActorLogic* customLogic;
+					customLogic = tryFindCustomActorLogic(gen->logicName.c_str());
+					if (customLogic && gameSettings->df_jsonAiLogics)
+					{
+						obj_setCustomActorLogic(spawn, customLogic);
+					}
+					else if (gen->type != -1)
+					{
+						obj_setEnemyLogic(spawn, gen->type);
+					}
+					
 					Logic** head = (Logic**)allocator_getHead_noIterUpdate((Allocator*)spawn->logic);
+					if (!head) { break; }		// JK: This is to prevent a crash happening when an invalid logic is set to a generator
 					ActorDispatch* actorLogic = *((ActorDispatch**)head);
 
 					actorLogic->flags &= ~1;
@@ -211,12 +229,13 @@ namespace TFE_DarkForces
 		return JFALSE;
 	}
 
-	Logic* obj_createGenerator(SecObject* obj, LogicSetupFunc* setupFunc, KEYWORD genType)
+	Logic* obj_createGenerator(SecObject* obj, LogicSetupFunc* setupFunc, KEYWORD genType, const char* logicName)
 	{
 		Generator* generator = (Generator*)level_alloc(sizeof(Generator));
 		memset(generator, 0, sizeof(Generator));
 
 		generator->type   = genType;
+		generator->logicName = string(logicName);
 		generator->active = 1;
 		generator->delay  = 0;
 

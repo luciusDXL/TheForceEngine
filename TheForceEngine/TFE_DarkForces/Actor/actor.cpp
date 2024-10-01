@@ -978,6 +978,7 @@ namespace TFE_DarkForces
 					break;
 				}
 
+				// Melee Attack
 				if (attackMod->attackFlags & ATTFLAG_MELEE)
 				{
 					attackMod->anim.state = STATE_ANIMATE1;
@@ -1012,23 +1013,41 @@ namespace TFE_DarkForces
 				SecObject* projObj = proj->logic.obj;
 				projObj->yaw = obj->yaw;
 				
-				// Handle x and z fire offset.
-				if (attackMod->fireOffset.x | attackMod->fireOffset.z)
+				// Vanilla DF did not handle arcing projectiles with STATE_FIRE1; this has been added
+				if (attackMod->projType == PROJ_THERMAL_DET || attackMod->projType == PROJ_MORTAR)
 				{
-					proj->delta.x = attackMod->fireOffset.x;
-					proj->delta.z = attackMod->fireOffset.z;
-					proj_handleMovement(proj);
+					// TDs are lobbed at an angle that depends on distance from target
+					proj->bounceCnt = 0;
+					proj->duration = 0xffffffff;
+					vec3_fixed target = { s_playerObject->posWS.x, s_eyePos.y + ONE_16, s_playerObject->posWS.z };
+					proj_aimArcing(proj, target, proj->speed);
+
+					if (attackMod->fireOffset.x | attackMod->fireOffset.z)
+					{
+						proj->delta.x = attackMod->fireOffset.x;
+						proj->delta.z = attackMod->fireOffset.z;
+						proj_handleMovement(proj);
+					}
 				}
-
-				// Aim at the target.
-				vec3_fixed target = { s_eyePos.x, s_eyePos.y + ONE_16, s_eyePos.z };
-				proj_aimAtTarget(proj, target);
-
-				if (attackMod->fireSpread)
+				else
 				{
-					proj->vel.x += random(attackMod->fireSpread*2) - attackMod->fireSpread;
-					proj->vel.y += random(attackMod->fireSpread*2) - attackMod->fireSpread;
-					proj->vel.z += random(attackMod->fireSpread*2) - attackMod->fireSpread;
+					// Handle x and z fire offset.
+					if (attackMod->fireOffset.x | attackMod->fireOffset.z)
+					{
+						proj->delta.x = attackMod->fireOffset.x;
+						proj->delta.z = attackMod->fireOffset.z;
+						proj_handleMovement(proj);
+					}
+
+					// Aim at the target.
+					vec3_fixed target = { s_eyePos.x, s_eyePos.y + ONE_16, s_eyePos.z };
+					proj_aimAtTarget(proj, target);
+					if (attackMod->fireSpread)
+					{
+						proj->vel.x += random(attackMod->fireSpread * 2) - attackMod->fireSpread;
+						proj->vel.y += random(attackMod->fireSpread * 2) - attackMod->fireSpread;
+						proj->vel.z += random(attackMod->fireSpread * 2) - attackMod->fireSpread;
+					}
 				}
 			} break;
 			case STATE_ANIMATE1:
@@ -1058,7 +1077,7 @@ namespace TFE_DarkForces
 
 				SecObject* projObj = proj->logic.obj;
 				projObj->yaw = obj->yaw;
-				if (attackMod->projType == PROJ_THERMAL_DET)
+				if (attackMod->projType == PROJ_THERMAL_DET || attackMod->projType == PROJ_MORTAR)
 				{
 					proj->bounceCnt = 0;
 					proj->duration = 0xffffffff;

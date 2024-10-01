@@ -506,6 +506,7 @@ namespace TFE_FrontEndUI
 		s_selectedModCmd[0] = 0;
 		s_relativeMode = false;
 		TFE_Input::enableRelativeMode(s_relativeMode);
+		TFE_Settings::getExternalLogics()->actorLogics.clear();
 
 		if (TFE_Settings::getSystemSettings()->returnToModLoader && s_modLoaded)
 		{
@@ -1202,6 +1203,12 @@ namespace TFE_FrontEndUI
 		if (ImGui::Checkbox("Enable unused inventory item \"ITEM10\"", &enableUnusedItem))
 		{
 			gameSettings->df_enableUnusedItem = enableUnusedItem;
+		}
+
+		bool jsonAiLogics = gameSettings->df_jsonAiLogics;
+		if (ImGui::Checkbox("Enable custom AI logics from JSON files", &jsonAiLogics))
+		{
+			gameSettings->df_jsonAiLogics = jsonAiLogics;
 		}
 
 		if (s_drawNoGameDataMsg)
@@ -3297,6 +3304,7 @@ namespace TFE_FrontEndUI
 				gameSettings->df_pitchLimit = (temp == TEMPLATE_MODERN) ? PITCH_MAXIMUM : PITCH_VANILLA_PLUS;
 				gameSettings->df_solidWallFlagFix = true;
 				gameSettings->df_enableUnusedItem = true;
+				gameSettings->df_jsonAiLogics = true;
 				// Graphics
 				graphicsSettings->rendererIndex = RENDERER_HARDWARE;
 				graphicsSettings->skyMode = SKYMODE_CYLINDER;
@@ -3347,6 +3355,7 @@ namespace TFE_FrontEndUI
 				gameSettings->df_smoothVUEs = false;
 				gameSettings->df_solidWallFlagFix = false;
 				gameSettings->df_enableUnusedItem = false;
+				gameSettings->df_jsonAiLogics = false;
 				// Graphics
 				graphicsSettings->rendererIndex = RENDERER_SOFTWARE;
 				graphicsSettings->widescreen = false;
