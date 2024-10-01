@@ -40,6 +40,8 @@ namespace TFE_Settings
 	static TFE_ModSettings s_modSettings = {};
 	static std::vector<char> s_iniBuffer;
 
+	static ExternalLogics s_externalLogics = {};
+
 	enum SectionID
 	{
 		SECTION_WINDOW = 0,
@@ -105,12 +107,16 @@ namespace TFE_Settings
 	void parseOutlawsSettings(const char* key, const char* value);
 	void parseCVars(const char* key, const char* value);
 	void checkGameData();
+	void loadCustomLogics();
 
 	//////////////////////////////////////////////////////////////////////////////////
 	// Implementation
 	//////////////////////////////////////////////////////////////////////////////////
 	bool init(bool& firstRun)
 	{
+		// JK: Just putting this here for now
+		loadCustomLogics();
+		
 		// Clear out game settings.
 		s_gameSettings = {};
 		for (u32 i = 0; i < Game_Count; i++)
@@ -1482,5 +1488,74 @@ namespace TFE_Settings
 			}
 		}
 		free(data);
+	}
+
+	void loadCustomLogics()
+	{
+		// JK: The aim here will be to load custom logics from a JSON. To be discussed.
+
+		CustomActorLogic custom1;
+		custom1.logicName = "CUSTOM";
+		custom1.hasGravity = false;
+		custom1.isFlying = true;
+		custom1.alertSound = "rodalert.voc";
+		custom1.painSound = "gonk.voc";
+		custom1.dieSound = "creatdie.voc";
+		custom1.attack1Sound = "axe-1.voc";
+		custom1.attack2Sound = "saber.voc";
+		custom1.hitPoints = 54;
+		custom1.dropItem = 2;	// nava card
+		custom1.hasRangedAttack = true;
+		custom1.hasMeleeAttack = true;
+		custom1.projectile = 17;	// probe proj
+		custom1.rangedAttackDelay = 300;
+		custom1.meleeAttackDelay = 100;
+		custom1.maxAttackDist = 100;
+		custom1.minAttackDist = 20;
+		custom1.meleeRange = 10;
+		custom1.meleeDamage = 1;
+		custom1.speed = 20;
+		custom1.verticalSpeed = 40;
+
+		CustomActorLogic custom2;
+		custom2.logicName = "Civilian";
+		custom2.hasGravity = true;
+		custom2.isFlying = false;
+		custom2.alertSound = "";
+		custom2.painSound = "";
+		custom2.dieSound = "";
+		custom2.attack1Sound = "";
+		custom2.attack2Sound = "";
+		custom2.hitPoints = 54;
+		custom2.dropItem = -1;	// nothing
+		custom2.hasRangedAttack = false;
+		custom2.hasMeleeAttack = false;
+		custom2.projectile = 0;
+		custom2.rangedAttackDelay = 100;
+		custom2.meleeAttackDelay = 100;
+		custom2.maxAttackDist = 0;
+		custom2.minAttackDist = 0;
+		custom2.meleeRange = 0;
+		custom2.meleeDamage = 0;
+		custom2.speed = 10;
+		custom2.verticalSpeed = 0;
+
+		CustomActorLogic custom3;
+		custom3.logicName = "Rodian";
+
+		CustomActorLogic custom4;
+		custom4.logicName = "ConcussionCommando";
+
+		/// etc. etc.
+
+		s_externalLogics.actorLogics.push_back(custom1);
+		s_externalLogics.actorLogics.push_back(custom2);
+		s_externalLogics.actorLogics.push_back(custom3);
+		s_externalLogics.actorLogics.push_back(custom4);
+	}
+
+	ExternalLogics* getExternalLogics()
+	{
+		return &s_externalLogics;
 	}
 }

@@ -9,6 +9,7 @@
 
 namespace TFE_DarkForces
 {
+	ThinkerModule* actor_createFlyingModule(Logic* logic);
 	Logic* intDroid_setup(SecObject* obj, LogicSetupFunc* setupFunc);
 	Logic* probeDroid_setup(SecObject* obj, LogicSetupFunc* setupFunc);
 	Logic* remote_setup(SecObject* obj, LogicSetupFunc* setupFunc);

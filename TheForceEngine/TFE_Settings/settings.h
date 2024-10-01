@@ -12,6 +12,7 @@
 #include <TFE_System/iniParser.h>
 #include <TFE_FileSystem/paths.h>
 #include <TFE_Audio/midiDevice.h>
+#include <TFE_DarkForces/logic.h>
 #include "gameSourceData.h"
 
 enum SkyMode
@@ -295,6 +296,11 @@ struct TFE_ModSettings
 	std::vector<ModHdIgnoreList> ignoreList;
 };
 
+struct ExternalLogics
+{
+	std::vector<CustomActorLogic> actorLogics;
+};
+
 namespace TFE_Settings
 {
 	bool init(bool& firstRun);
@@ -315,6 +321,8 @@ namespace TFE_Settings
 	TFE_Settings_Game* getGameSettings();
 	TFE_Settings_A11y* getA11ySettings();
 	TFE_ModSettings* getModSettings();
+	
+	ExternalLogics* getExternalLogics();
 
 	// Helper functions.
 	void setLevelName(const char* levelName);

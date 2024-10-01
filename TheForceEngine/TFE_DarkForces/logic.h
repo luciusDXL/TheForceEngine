@@ -49,6 +49,37 @@ struct Logic
 	LogicCleanupFunc cleanupFunc = nullptr;
 };
 
+// JK: This could go in TFE_Settings, or somewhere more appropriate. Putting here for now.
+struct CustomActorLogic
+{
+	const char* logicName;
+	bool hasGravity;
+	bool isFlying;
+	
+	const char* alertSound;
+	const char* painSound;
+	const char* attack1Sound;
+	const char* attack2Sound;
+	const char* dieSound;
+
+	u32 hitPoints;
+	u32 dropItem;
+
+	bool hasMeleeAttack;
+	bool hasRangedAttack;
+	u32 projectile;
+	u32 rangedAttackDelay;
+	u32 meleeAttackDelay;
+	u32 meleeRange;
+	u32 meleeDamage;
+	u32 meleeRate;
+	u32 minAttackDist;
+	u32 maxAttackDist;
+
+	u32 speed;
+	u32 verticalSpeed;
+};
+
 namespace TFE_DarkForces
 {		
 	void obj_addLogic(SecObject* obj, Logic* logic, LogicType type, Task* task, LogicCleanupFunc cleanupFunc);
@@ -56,6 +87,8 @@ namespace TFE_DarkForces
 	JBool object_parseSeq(SecObject* obj, TFE_Parser* parser, size_t* bufferPos);
 	Logic* obj_setEnemyLogic(SecObject* obj, KEYWORD logicId);
 	SecObject* logic_spawnEnemy(const char* waxName, const char* typeName);
+	Logic* obj_setCustomActorLogic(SecObject* obj, CustomActorLogic* customLogic);
+	CustomActorLogic* tryFindCustomActorLogic(char* logicName);
 
 	void logic_serialize(Logic*& logic, SecObject* obj, Stream* stream);
 
