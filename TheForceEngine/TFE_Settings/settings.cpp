@@ -1511,11 +1511,12 @@ namespace TFE_Settings
 		custom1.rangedAttackDelay = 300;
 		custom1.meleeAttackDelay = 100;
 		custom1.maxAttackDist = 100;
-		custom1.minAttackDist = 20;
-		custom1.meleeRange = 10;
+		custom1.minAttackDist = 30;
+		custom1.meleeRange = 15;
+		custom1.meleeRate = 10;
 		custom1.meleeDamage = 1;
-		custom1.speed = 20;
-		custom1.verticalSpeed = 40;
+		custom1.speed = 30;
+		custom1.verticalSpeed = 30;
 
 		CustomActorLogic custom2;
 		custom2.logicName = "Civilian";
@@ -1542,9 +1543,43 @@ namespace TFE_Settings
 
 		CustomActorLogic custom3;
 		custom3.logicName = "Rodian";
+		custom3.hasGravity = true;
+		custom3.isFlying = false;
+		custom3.alertSound = "rodalert.voc";
+		custom3.painSound = "rodpain.voc";
+		custom3.dieSound = "roddie.voc";
+		custom3.attack1Sound = "";
+		custom3.attack2Sound = "";
+		custom3.hitPoints = 27;
+		custom3.dropItem = 27;	// cleats
+		custom3.hasRangedAttack = true;
+		custom3.hasMeleeAttack = false;
+		custom3.projectile = 4;
+		custom3.rangedAttackDelay = 300;
+		custom3.maxAttackDist = 100;
+		custom3.minAttackDist = 10;
+		custom3.meleeDamage = 0;
+		custom3.speed = 30;
 
 		CustomActorLogic custom4;
 		custom4.logicName = "ConcussionCommando";
+		custom4.hasGravity = true;
+		custom4.isFlying = false;
+		custom4.alertSound = "ransto02.voc";
+		custom4.painSound = "st-hrt-1.voc";
+		custom4.dieSound = "st-die-1.voc";
+		custom4.attack1Sound = "intstun.voc";
+		custom4.attack2Sound = "";
+		custom4.hitPoints = 27;
+		custom4.dropItem = 22;	// shield
+		custom4.hasRangedAttack = true;
+		custom4.hasMeleeAttack = false;
+		custom4.projectile = 10;
+		custom4.rangedAttackDelay = 500;
+		custom4.maxAttackDist = 100;
+		custom4.minAttackDist = 30;
+		custom4.meleeDamage = 0;
+		custom4.speed = 10;
 
 		/// etc. etc.
 

@@ -201,8 +201,11 @@ namespace TFE_DarkForces
 
 		// Attack Module
 		AttackModule* attackMod = actor_createAttackModule(dispatch);
+		attackMod->attackFlags = 0;
 		if (cust->hasMeleeAttack) { attackMod->attackFlags |= ATTFLAG_MELEE; }
 		if (cust->hasRangedAttack) { attackMod->attackFlags |= ATTFLAG_RANGED; }
+		if (cust->litWithMeleeAttack) { attackMod->attackFlags |= ATTFLAG_LIT_MELEE; }
+		if (cust->litWithRangedAttack) { attackMod->attackFlags |= ATTFLAG_LIT_RNG; }
 		attackMod->projType = (ProjectileType)cust->projectile;
 		attackMod->attackPrimSndSrc = sound_load(cust->attack1Sound, SOUND_PRIORITY_LOW0);
 		attackMod->attackSecSndSrc = sound_load(cust->attack2Sound, SOUND_PRIORITY_LOW0);
@@ -211,6 +214,7 @@ namespace TFE_DarkForces
 		attackMod->maxDist = FIXED(cust->maxAttackDist);
 		attackMod->meleeRange = FIXED(cust->meleeRange);
 		attackMod->meleeDmg = FIXED(cust->meleeDamage);
+		attackMod->meleeRate = FIXED(cust->meleeRate);
 		attackMod->minDist = FIXED(cust->minAttackDist);
 		s_actorState.attackMod = attackMod;
 		actor_addModule(dispatch, (ActorModule*)attackMod);

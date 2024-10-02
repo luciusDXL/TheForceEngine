@@ -67,6 +67,8 @@ struct CustomActorLogic
 
 	bool hasMeleeAttack;
 	bool hasRangedAttack;
+	bool litWithMeleeAttack;
+	bool litWithRangedAttack;
 	u32 projectile;
 	u32 rangedAttackDelay;
 	u32 meleeAttackDelay;
