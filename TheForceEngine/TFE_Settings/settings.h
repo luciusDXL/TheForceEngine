@@ -12,8 +12,8 @@
 #include <TFE_System/iniParser.h>
 #include <TFE_FileSystem/paths.h>
 #include <TFE_Audio/midiDevice.h>
-#include <TFE_DarkForces/logic.h>
 #include "gameSourceData.h"
+#include "logics.h"
 
 enum SkyMode
 {
@@ -296,11 +296,6 @@ struct TFE_ModSettings
 	std::vector<ModHdIgnoreList> ignoreList;
 };
 
-struct ExternalLogics
-{
-	std::vector<CustomActorLogic> actorLogics;
-};
-
 namespace TFE_Settings
 {
 	bool init(bool& firstRun);
@@ -340,4 +335,5 @@ namespace TFE_Settings
 	void autodetectGamePaths();
 	void clearModSettings();
 	void loadCustomModSettings();
+	void loadCustomLogics();
 }

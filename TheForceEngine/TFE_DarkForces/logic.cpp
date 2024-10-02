@@ -16,7 +16,6 @@
 #include <TFE_DarkForces/generator.h>
 #include <TFE_DarkForces/random.h>
 #include <TFE_System/system.h>
-#include <TFE_Settings/settings.h>
 
 // Regular Enemies
 #include <TFE_DarkForces/Actor/exploders.h>
@@ -47,6 +46,13 @@ namespace TFE_DarkForces
 	char s_objSeqArg4[256];
 	char s_objSeqArg5[256];
 	s32  s_objSeqArgCount;
+
+	/////////////////////////////////////////////
+	// Forward Declarations
+	/////////////////////////////////////////////
+	Logic* obj_setCustomActorLogic(SecObject* obj, CustomActorLogic* customLogic);
+	CustomActorLogic* tryFindCustomActorLogic(char* logicName);
+
 
 	void obj_addLogic(SecObject* obj, Logic* logic, LogicType type, Task* task, LogicCleanupFunc cleanupFunc)
 	{

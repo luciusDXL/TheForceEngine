@@ -1205,6 +1205,9 @@ namespace TFE_DarkForces
 				
 	void gameStartup()
 	{
+		// JK: Just putting this here for now
+		TFE_Settings::loadCustomLogics();
+
 		hud_loadGraphics();
 		hud_loadGameMessages();
 		loadMapNumFont();

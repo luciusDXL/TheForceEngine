@@ -107,16 +107,12 @@ namespace TFE_Settings
 	void parseOutlawsSettings(const char* key, const char* value);
 	void parseCVars(const char* key, const char* value);
 	void checkGameData();
-	void loadCustomLogics();
 
 	//////////////////////////////////////////////////////////////////////////////////
 	// Implementation
 	//////////////////////////////////////////////////////////////////////////////////
 	bool init(bool& firstRun)
 	{
-		// JK: Just putting this here for now
-		loadCustomLogics();
-		
 		// Clear out game settings.
 		s_gameSettings = {};
 		for (u32 i = 0; i < Game_Count; i++)
