@@ -1,0 +1,218 @@
+#include <vector>
+#include <TFE_Settings/logics.h>
+#include <TFE_System/cJSON.h>
+#include <TFE_System/system.h>
+
+namespace TFE_Settings
+{
+	///////////////////////////
+	/// Forward declarations 
+	///////////////////////////
+	bool tryAssignProperty(cJSON* data, CustomActorLogic& customLogic);
+
+	
+	void parseLogicData(char* data, std::vector<CustomActorLogic> &actorLogics)
+	{
+		cJSON* root = cJSON_Parse(data);
+		if (root)
+		{
+			cJSON* section = root->child;
+			if (section && cJSON_IsArray(section) && strcasecmp(section->string, "logics") == 0)
+			{
+				cJSON* logic = section->child;
+				while (logic)
+				{
+					cJSON* logicName = logic->child;
+
+					// get the logic name
+					if (logicName && cJSON_IsString(logicName) && strcasecmp(logicName->string, "logicname") == 0)
+					{
+						CustomActorLogic customLogic;
+						customLogic.logicName = logicName->valuestring;
+
+						cJSON* logicData = logicName->next;
+						if (logicData && cJSON_IsObject(logicData))
+						{
+							cJSON* dataItem = logicData->child;
+
+							// iterate through the data and assign properties
+							while (dataItem)
+							{
+								tryAssignProperty(dataItem, customLogic);
+								dataItem = dataItem->next;
+							}
+						}
+
+						actorLogics.push_back(customLogic);
+					}
+
+					logic = logic->next;
+				}
+			}
+		}
+		else
+		{
+			const char* error = cJSON_GetErrorPtr();
+			if (error)
+			{
+				TFE_System::logWrite(LOG_ERROR, "LOGICS", "Failed to parse logics.json before\n%s", error);
+			}
+			else
+			{
+				TFE_System::logWrite(LOG_ERROR, "LOGICS", "Failed to parse logics.json");
+			}
+		}
+
+		std::vector<CustomActorLogic> test = actorLogics;
+	}
+
+	bool tryAssignProperty(cJSON* data, CustomActorLogic &customLogic)
+	{
+		if (!data)
+		{
+			return false;
+		}
+		
+		if (cJSON_IsBool(data) && strcasecmp(data->string, "hasGravity") == 0)
+		{
+			customLogic.hasGravity = cJSON_IsTrue(data);
+			return true;
+		}
+
+		if (cJSON_IsBool(data) && strcasecmp(data->string, "isFlying") == 0)
+		{
+			customLogic.isFlying = cJSON_IsTrue(data);
+			return true;
+		}
+
+		if (cJSON_IsString(data) && strcasecmp(data->string, "alertSound") == 0)
+		{
+			customLogic.alertSound = data->valuestring;
+			return true;
+		}
+		
+		if (cJSON_IsString(data) && strcasecmp(data->string, "painSound") == 0)
+		{
+			customLogic.painSound = data->valuestring;
+			return true;
+		}
+
+		if (cJSON_IsString(data) && strcasecmp(data->string, "dieSound") == 0)
+		{
+			customLogic.dieSound = data->valuestring;
+			return true;
+		}
+
+		if (cJSON_IsString(data) && strcasecmp(data->string, "attack1Sound") == 0)
+		{
+			customLogic.attack1Sound = data->valuestring;
+			return true;
+		}
+
+		if (cJSON_IsString(data) && strcasecmp(data->string, "attack2Sound") == 0)
+		{
+			customLogic.attack2Sound = data->valuestring;
+			return true;
+		}
+
+		if (cJSON_IsNumber(data) && strcasecmp(data->string, "hitPoints") == 0)
+		{
+			customLogic.hitPoints = data->valueint;
+			return true;
+		}
+
+		/****  replace with string lookup  ***/
+		if (cJSON_IsNumber(data) && strcasecmp(data->string, "dropItem") == 0)
+		{
+			customLogic.dropItem = data->valueint;
+			return true;
+		}
+
+		if (cJSON_IsBool(data) && strcasecmp(data->string, "hasMeleeAttack") == 0)
+		{
+			customLogic.hasMeleeAttack = cJSON_IsTrue(data);
+			return true;
+		}
+
+		if (cJSON_IsBool(data) && strcasecmp(data->string, "hasRangedAttack") == 0)
+		{
+			customLogic.hasRangedAttack = cJSON_IsTrue(data);
+			return true;
+		}
+
+		if (cJSON_IsBool(data) && strcasecmp(data->string, "litWithMeleeAttack") == 0)
+		{
+			customLogic.litWithMeleeAttack = cJSON_IsTrue(data);
+			return true;
+		}
+		
+		if (cJSON_IsBool(data) && strcasecmp(data->string, "litWithRangedAttack") == 0)
+		{
+			customLogic.litWithRangedAttack = cJSON_IsTrue(data);
+			return true;
+		}
+		
+		/****  replace with string lookup  ***/
+		if (cJSON_IsNumber(data) && strcasecmp(data->string, "projectile") == 0)
+		{
+			customLogic.projectile = data->valueint;
+			return true;
+		}
+
+		if (cJSON_IsNumber(data) && strcasecmp(data->string, "rangedAttackDelay") == 0)
+		{
+			customLogic.rangedAttackDelay = data->valueint;
+			return true;
+		}
+
+		if (cJSON_IsNumber(data) && strcasecmp(data->string, "meleeAttackDelay") == 0)
+		{
+			customLogic.meleeAttackDelay = data->valueint;
+			return true;
+		}
+
+		if (cJSON_IsNumber(data) && strcasecmp(data->string, "meleeRange") == 0)
+		{
+			customLogic.meleeRange = data->valueint;
+			return true;
+		}
+
+		if (cJSON_IsNumber(data) && strcasecmp(data->string, "meleeDamage") == 0)
+		{
+			customLogic.meleeDamage = data->valueint;
+			return true;
+		}
+
+		if (cJSON_IsNumber(data) && strcasecmp(data->string, "meleeRate") == 0)
+		{
+			customLogic.meleeRate = data->valueint;
+			return true;
+		}
+
+		if (cJSON_IsNumber(data) && strcasecmp(data->string, "minAttackDist") == 0)
+		{
+			customLogic.minAttackDist = data->valueint;
+			return true;
+		}
+
+		if (cJSON_IsNumber(data) && strcasecmp(data->string, "maxAttackDist") == 0)
+		{
+			customLogic.maxAttackDist = data->valueint;
+			return true;
+		}
+
+		if (cJSON_IsNumber(data) && strcasecmp(data->string, "speed") == 0)
+		{
+			customLogic.speed = data->valueint;
+			return true;
+		}
+
+		if (cJSON_IsNumber(data) && strcasecmp(data->string, "verticalSpeed") == 0)
+		{
+			customLogic.verticalSpeed = data->valueint;
+			return true;
+		}
+
+		return false;
+	}
+}

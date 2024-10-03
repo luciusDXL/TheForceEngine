@@ -1488,101 +1488,26 @@ namespace TFE_Settings
 
 	void loadCustomLogics()
 	{
-		// JK: The aim here will be to load custom logics from a JSON. To be discussed.
+		FilePath filePath;
+		FileStream file;
+		if (!TFE_Paths::getFilePath("logics.json", &filePath)) { return; }
+		if (!file.open(&filePath, FileStream::MODE_READ)) { return; }
 
-		CustomActorLogic custom1;
-		custom1.logicName = "CUSTOM";
-		custom1.hasGravity = false;
-		custom1.isFlying = true;
-		custom1.alertSound = "rodalert.voc";
-		custom1.painSound = "gonk.voc";
-		custom1.dieSound = "creatdie.voc";
-		custom1.attack1Sound = "axe-1.voc";
-		custom1.attack2Sound = "saber.voc";
-		custom1.hitPoints = 54;
-		custom1.dropItem = 2;	// nava card
-		custom1.hasRangedAttack = true;
-		custom1.hasMeleeAttack = true;
-		custom1.projectile = 17;	// probe proj
-		custom1.rangedAttackDelay = 300;
-		custom1.meleeAttackDelay = 100;
-		custom1.maxAttackDist = 100;
-		custom1.minAttackDist = 30;
-		custom1.meleeRange = 15;
-		custom1.meleeRate = 10;
-		custom1.meleeDamage = 1;
-		custom1.speed = 30;
-		custom1.verticalSpeed = 30;
+		TFE_System::logWrite(LOG_MSG, "LOGICS", "Parsing logics.json for custom mod.");
 
-		CustomActorLogic custom2;
-		custom2.logicName = "Civilian";
-		custom2.hasGravity = true;
-		custom2.isFlying = false;
-		custom2.alertSound = "";
-		custom2.painSound = "";
-		custom2.dieSound = "";
-		custom2.attack1Sound = "";
-		custom2.attack2Sound = "";
-		custom2.hitPoints = 54;
-		custom2.dropItem = -1;	// nothing
-		custom2.hasRangedAttack = false;
-		custom2.hasMeleeAttack = false;
-		custom2.projectile = 0;
-		custom2.rangedAttackDelay = 100;
-		custom2.meleeAttackDelay = 100;
-		custom2.maxAttackDist = 0;
-		custom2.minAttackDist = 0;
-		custom2.meleeRange = 0;
-		custom2.meleeDamage = 0;
-		custom2.speed = 10;
-		custom2.verticalSpeed = 0;
+		const size_t size = file.getSize();
+		char* data = (char*)malloc(size + 1);
+		if (!data || size == 0)
+		{
+			TFE_System::logWrite(LOG_ERROR, "LOGICS", "logics.json found but is %u bytes in size and cannot be read.", size);
+			return;
+		}
+		file.readBuffer(data, (u32)size);
+		data[size] = 0;
+		file.close();
 
-		CustomActorLogic custom3;
-		custom3.logicName = "Rodian";
-		custom3.hasGravity = true;
-		custom3.isFlying = false;
-		custom3.alertSound = "rodalert.voc";
-		custom3.painSound = "rodpain.voc";
-		custom3.dieSound = "roddie.voc";
-		custom3.attack1Sound = "";
-		custom3.attack2Sound = "";
-		custom3.hitPoints = 27;
-		custom3.dropItem = 27;	// cleats
-		custom3.hasRangedAttack = true;
-		custom3.hasMeleeAttack = false;
-		custom3.projectile = 4;
-		custom3.rangedAttackDelay = 300;
-		custom3.maxAttackDist = 100;
-		custom3.minAttackDist = 10;
-		custom3.meleeDamage = 0;
-		custom3.speed = 30;
-
-		CustomActorLogic custom4;
-		custom4.logicName = "ConcussionCommando";
-		custom4.hasGravity = true;
-		custom4.isFlying = false;
-		custom4.alertSound = "ransto02.voc";
-		custom4.painSound = "st-hrt-1.voc";
-		custom4.dieSound = "st-die-1.voc";
-		custom4.attack1Sound = "intstun.voc";
-		custom4.attack2Sound = "";
-		custom4.hitPoints = 27;
-		custom4.dropItem = 22;	// shield
-		custom4.hasRangedAttack = true;
-		custom4.hasMeleeAttack = false;
-		custom4.projectile = 10;
-		custom4.rangedAttackDelay = 500;
-		custom4.maxAttackDist = 100;
-		custom4.minAttackDist = 30;
-		custom4.meleeDamage = 0;
-		custom4.speed = 10;
-
-		/// etc. etc.
-
-		s_externalLogics.actorLogics.push_back(custom1);
-		s_externalLogics.actorLogics.push_back(custom2);
-		s_externalLogics.actorLogics.push_back(custom3);
-		s_externalLogics.actorLogics.push_back(custom4);
+		parseLogicData(data, s_externalLogics.actorLogics);
+		free(data);
 	}
 
 	ExternalLogics* getExternalLogics()

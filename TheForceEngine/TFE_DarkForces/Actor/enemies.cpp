@@ -251,7 +251,7 @@ namespace TFE_DarkForces
 			moveMod->collisionFlags |= 1;
 		}
 
-		dispatch->animTable = s_reeyeesAnimTable;           //***************************
+		dispatch->animTable = s_customAnimTable;
 		actor_setupInitAnimation();
 
 		return (Logic*)dispatch;
