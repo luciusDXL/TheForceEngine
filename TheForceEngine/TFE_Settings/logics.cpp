@@ -1,3 +1,4 @@
+#include <cstring>
 #include <vector>
 #include <TFE_Settings/logics.h>
 #include <TFE_System/cJSON.h>
@@ -62,8 +63,6 @@ namespace TFE_Settings
 				TFE_System::logWrite(LOG_ERROR, "LOGICS", "Failed to parse logics.json");
 			}
 		}
-
-		std::vector<CustomActorLogic> test = actorLogics;
 	}
 
 	bool tryAssignProperty(cJSON* data, CustomActorLogic &customLogic)

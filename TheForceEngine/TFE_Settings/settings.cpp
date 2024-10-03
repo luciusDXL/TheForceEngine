@@ -1506,6 +1506,7 @@ namespace TFE_Settings
 		data[size] = 0;
 		file.close();
 
+		s_externalLogics.actorLogics.clear();
 		parseLogicData(data, s_externalLogics.actorLogics);
 		free(data);
 	}
