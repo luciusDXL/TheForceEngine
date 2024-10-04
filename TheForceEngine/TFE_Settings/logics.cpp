@@ -6,6 +6,79 @@
 
 namespace TFE_Settings
 {
+	const char* s_projectileTable[] =
+	{
+		"punch",			// 0
+		"pistol_bolt",		// 1
+		"rifle_bolt",		// 2
+		"thermal_det",		// 3
+		"repeater",			// 4
+		"plasma",			// 5
+		"mortar",			// 6
+		"land_mine",		// 7
+		"land_mine_prox",	// 8
+		"land_mine_placed",	// 9
+		"concussion",		// 10
+		"cannon",			// 11
+		"missile",			// 12
+		"turret_bolt",		// 13
+		"remote_bolt",		// 14
+		"exp_barrel",		// 15
+		"homing_missile",	// 16
+		"probe_proj",		// 17
+		"bobafett_ball",	// 18
+	};
+	
+	const char* s_dropItemTable[] =
+	{
+		"PLANS",			// 0
+		"PHRIK",			// 1
+		"NAVA",				// 2
+		"DT_WEAPON",		// 3
+		"DATATAPE",			// 4
+		"RIFLE",			// 5
+		"AUTOGUN",			// 6
+		"MORTAR",			// 7
+		"FUSION",			// 8
+		"CONCUSSION",		// 9
+		"CANNON",			// 10
+		"ENERGY",			// 11
+		"POWER",			// 12
+		"PLASMA",			// 13
+		"DETONATOR",		// 14
+		"DETONATORS",		// 15
+		"SHELL",			// 16
+		"SHELLS",			// 17
+		"MINE",				// 18
+		"MINES",			// 19
+		"MISSILE",			// 20
+		"MISSILES",			// 21
+		"SHIELD",			// 22
+		"RED_KEY",			// 23
+		"YELLOW_KEY",		// 24
+		"BLUE_KEY",			// 25
+		"GOGGLES",			// 26
+		"CLEATS",			// 27
+		"MASK",				// 28
+		"BATTERY",			// 29
+		"CODE1",			// 30
+		"CODE2",			// 31
+		"CODE3",			// 32
+		"CODE4",			// 33
+		"CODE5",			// 34
+		"CODE6",			// 35
+		"CODE7",			// 36
+		"CODE8",			// 37
+		"CODE9",			// 38
+		"INVINCIBLE",		// 39
+		"SUPERCHARGE",		// 40
+		"REVIVE",			// 41
+		"LIFE",				// 42
+		"MEDKIT",			// 43
+		"PILE",				// 44
+	};
+
+
 	///////////////////////////
 	/// Forward declarations 
 	///////////////////////////
@@ -120,11 +193,26 @@ namespace TFE_Settings
 			return true;
 		}
 
-		/****  replace with string lookup  ***/
+		// Drop item as number
 		if (cJSON_IsNumber(data) && strcasecmp(data->string, "dropItem") == 0)
 		{
 			customLogic.dropItem = data->valueint;
 			return true;
+		}
+
+		// Drop item as string
+		if (cJSON_IsString(data) && strcasecmp(data->string, "dropItem") == 0)
+		{
+			for (int i = 0; i <= 44; i++)
+			{
+				if (strcasecmp(data->valuestring, s_dropItemTable[i]) == 0)
+				{
+					customLogic.dropItem = i;
+					return true;
+				}
+			}
+
+			return false;
 		}
 
 		if (cJSON_IsBool(data) && strcasecmp(data->string, "hasMeleeAttack") == 0)
@@ -151,11 +239,26 @@ namespace TFE_Settings
 			return true;
 		}
 		
-		/****  replace with string lookup  ***/
+		// Projectile as number
 		if (cJSON_IsNumber(data) && strcasecmp(data->string, "projectile") == 0)
 		{
 			customLogic.projectile = data->valueint;
 			return true;
+		}
+
+		// Projectile as string
+		if (cJSON_IsString(data) && strcasecmp(data->string, "projectile") == 0)
+		{
+			for (int i = 0; i <= 18; i++)
+			{
+				if (strcasecmp(data->valuestring, s_projectileTable[i]) == 0)
+				{
+					customLogic.projectile = i;
+					return true;
+				}
+			}
+
+			return false;
 		}
 
 		if (cJSON_IsNumber(data) && strcasecmp(data->string, "rangedAttackDelay") == 0)

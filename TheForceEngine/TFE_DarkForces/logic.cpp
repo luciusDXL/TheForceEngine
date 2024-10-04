@@ -177,7 +177,7 @@ namespace TFE_DarkForces
 					obj_createPickup(obj, itemId);
 					setupFunc = nullptr;
 				}
-				/***********JERETH ********/
+				/** New feature proposal **************************************/
 				else
 				{
 					// Search the externally defined logics for a match
@@ -190,7 +190,7 @@ namespace TFE_DarkForces
 						setupFunc = nullptr;
 					}
 				}
-				/***********JERETH ********/
+				/***************************************************************/
 			}
 			else if (key == KW_SEQEND)
 			{
