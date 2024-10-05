@@ -17,6 +17,7 @@
 #include <TFE_FileSystem/paths.h>
 #include <TFE_FileSystem/filestream.h>
 #include <TFE_Jedi/Serialization/serialization.h>
+#include <TFE_DarkForces/logic.h>
 
 using namespace TFE_Jedi;
 
@@ -38,6 +39,8 @@ namespace TFE_DarkForces
 		Tick       wanderTime;
 		Wax*       wax;
 		JBool      active;
+
+		string		logicName;		// JK: added to store a custom logic name
 	};
 
 	void generatorTaskFunc(MessageType msg)
@@ -109,7 +112,23 @@ namespace TFE_DarkForces
 				if (dist >= gen->minDist && dist <= gen->maxDist && !actor_canSeeObject(spawn, s_playerObject))
 				{
 					sprite_setData(spawn, gen->wax);
-					obj_setEnemyLogic(spawn, gen->type);
+					
+					if (gen->type != -1)
+					{
+						obj_setEnemyLogic(spawn, gen->type);
+					}
+					else
+					{
+						// Search the externally defined logics for a match
+						CustomActorLogic* customLogic;
+						customLogic = tryFindCustomActorLogic(gen->logicName.c_str());
+
+						if (customLogic)
+						{
+							obj_setCustomActorLogic(spawn, customLogic);
+						}
+					}
+					
 					Logic** head = (Logic**)allocator_getHead_noIterUpdate((Allocator*)spawn->logic);
 					ActorDispatch* actorLogic = *((ActorDispatch**)head);
 
@@ -211,12 +230,13 @@ namespace TFE_DarkForces
 		return JFALSE;
 	}
 
-	Logic* obj_createGenerator(SecObject* obj, LogicSetupFunc* setupFunc, KEYWORD genType)
+	Logic* obj_createGenerator(SecObject* obj, LogicSetupFunc* setupFunc, KEYWORD genType, const char* logicName)
 	{
 		Generator* generator = (Generator*)level_alloc(sizeof(Generator));
 		memset(generator, 0, sizeof(Generator));
 
 		generator->type   = genType;
+		generator->logicName = string(logicName);
 		generator->active = 1;
 		generator->delay  = 0;
 

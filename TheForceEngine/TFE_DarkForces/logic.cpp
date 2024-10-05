@@ -47,13 +47,6 @@ namespace TFE_DarkForces
 	char s_objSeqArg5[256];
 	s32  s_objSeqArgCount;
 
-	/////////////////////////////////////////////
-	// Forward Declarations
-	/////////////////////////////////////////////
-	Logic* obj_setCustomActorLogic(SecObject* obj, CustomActorLogic* customLogic);
-	CustomActorLogic* tryFindCustomActorLogic(char* logicName);
-
-
 	void obj_addLogic(SecObject* obj, Logic* logic, LogicType type, Task* task, LogicCleanupFunc cleanupFunc)
 	{
 		if (!obj->logic)
@@ -161,7 +154,7 @@ namespace TFE_DarkForces
 				else if (logicId == KW_GENERATOR)	// Enemy generator, used for in-level enemy spawning.
 				{
 					KEYWORD genType = getKeywordIndex(s_objSeqArg2);
-					newLogic = obj_createGenerator(obj, &setupFunc, genType);
+					newLogic = obj_createGenerator(obj, &setupFunc, genType, genType == -1 ? s_objSeqArg2 : "");
 				}
 				else if (logicId == KW_DISPATCH)
 				{
@@ -477,7 +470,7 @@ namespace TFE_DarkForces
 		return custom_actor_setup(obj, customLogic, setupFunc);
 	}
 
-	CustomActorLogic* tryFindCustomActorLogic(char* logicName)
+	CustomActorLogic* tryFindCustomActorLogic(const char* logicName)
 	{
 		ExternalLogics* externalLogics = TFE_Settings::getExternalLogics();
 		u32 actorCount = externalLogics->actorLogics.size();
