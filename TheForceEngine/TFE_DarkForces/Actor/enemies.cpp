@@ -190,11 +190,13 @@ namespace TFE_DarkForces
 	{
 		ActorDispatch* dispatch = actor_createDispatch(obj, setupFunc);
 		dispatch->alertSndSrc = sound_load(cust->alertSound, SOUND_PRIORITY_MED5);
+		dispatch->fov = cust->fov;
 
 		// Damage Module
 		DamageModule* damageMod = actor_createDamageModule(dispatch);
 		damageMod->hp = FIXED(cust->hitPoints);
 		damageMod->itemDropId = (ItemId)cust->dropItem;
+		damageMod->dieEffect = (HitEffectID)cust->dieEffect;
 		damageMod->hurtSndSrc = sound_load(cust->painSound, SOUND_PRIORITY_MED5);
 		damageMod->dieSndSrc = sound_load(cust->dieSound, SOUND_PRIORITY_MED5);
 		actor_addModule(dispatch, (ActorModule*)damageMod);
@@ -216,6 +218,7 @@ namespace TFE_DarkForces
 		attackMod->meleeDmg = FIXED(cust->meleeDamage);
 		attackMod->meleeRate = FIXED(cust->meleeRate);
 		attackMod->minDist = FIXED(cust->minAttackDist);
+		attackMod->fireSpread = FIXED(cust->fireSpread);
 		s_actorState.attackMod = attackMod;
 		actor_addModule(dispatch, (ActorModule*)attackMod);
 

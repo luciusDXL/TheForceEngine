@@ -10,6 +10,7 @@ struct CustomActorLogic
 	const char* logicName;
 	bool hasGravity = true;
 	bool isFlying = false;
+	u32 fov = 9557;
 
 	const char* alertSound = "";
 	const char* painSound = "";
@@ -20,6 +21,7 @@ struct CustomActorLogic
 	// Defaults are based on what is set by default in the original code
 	u32 hitPoints = 4;
 	s32 dropItem = -1;
+	s32 dieEffect = -1;
 
 	bool hasMeleeAttack = false;
 	bool hasRangedAttack = true;
@@ -33,6 +35,7 @@ struct CustomActorLogic
 	u32 meleeRate = 230;
 	u32 minAttackDist = 0;
 	u32 maxAttackDist = 160;
+	u32 fireSpread = 30;
 
 	u32 speed = 4;
 	u32 verticalSpeed = 10;

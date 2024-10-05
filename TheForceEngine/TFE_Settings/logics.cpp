@@ -78,6 +78,28 @@ namespace TFE_Settings
 		"PILE",				// 44
 	};
 
+	const char* s_dieEffectTable[] =
+	{
+		"SMALL_EXP",		// 0	// small "puff" - blaster weapons.
+		"THERMDET_EXP",		// 1	// thermal detonator explosion.
+		"PLASMA_EXP",		// 2	// plasma "puff".
+		"MORTAR_EXP",		// 3	// mortar explosion
+		"CONCUSSION",		// 4	// concussion - first stage.
+		"CONCUSSION2",		// 5	// concussion - second stage.
+		"MISSILE_EXP",		// 6	// missile explosion.
+		"MISSILE_WEAK",		// 7	// weaker version of the missle explosion.
+		"PUNCH",			// 8	// punch
+		"CANNON_EXP",		// 9	// cannon "puff".
+		"REPEATER_EXP",		// 10	// repeater "puff".
+		"LARGE_EXP",		// 11	// large explosion such as land mine.
+		"EXP_BARREL",		// 12	// exploding barrel.
+		"EXP_INVIS",		// 13	// an explosion that makes no sound and has no visual effect.
+		"SPLASH",			// 14	// water splash
+		"EXP_35",			// 15	// medium explosion, 35 damage.
+		"EXP_NO_DMG",		// 16	// medium explosion, no damage.
+		"EXP_25",			// 17	// medium explosion, 25 damage.
+	};
+
 
 	///////////////////////////
 	/// Forward declarations 
@@ -157,6 +179,12 @@ namespace TFE_Settings
 			return true;
 		}
 
+		if (cJSON_IsNumber(data) && strcasecmp(data->string, "fieldOfView") == 0)
+		{
+			customLogic.fov = data->valueint * 45;
+			return true;
+		}
+
 		if (cJSON_IsString(data) && strcasecmp(data->string, "alertSound") == 0)
 		{
 			customLogic.alertSound = data->valuestring;
@@ -208,6 +236,28 @@ namespace TFE_Settings
 				if (strcasecmp(data->valuestring, s_dropItemTable[i]) == 0)
 				{
 					customLogic.dropItem = i;
+					return true;
+				}
+			}
+
+			return false;
+		}
+
+		// Die effect as a number
+		if (cJSON_IsNumber(data) && strcasecmp(data->string, "dieEffect") == 0)
+		{
+			customLogic.dieEffect = data->valueint;
+			return true;
+		}
+
+		// Die effect as a string
+		if (cJSON_IsString(data) && strcasecmp(data->string, "dieEffect") == 0)
+		{
+			for (int i = 0; i <= 17; i++)
+			{
+				if (strcasecmp(data->valuestring, s_dieEffectTable[i]) == 0)
+				{
+					customLogic.dieEffect = i;
 					return true;
 				}
 			}
@@ -300,6 +350,12 @@ namespace TFE_Settings
 		if (cJSON_IsNumber(data) && strcasecmp(data->string, "maxAttackDist") == 0)
 		{
 			customLogic.maxAttackDist = data->valueint;
+			return true;
+		}
+
+		if (cJSON_IsNumber(data) && strcasecmp(data->string, "fireSpread") == 0)
+		{
+			customLogic.fireSpread = data->valueint;
 			return true;
 		}
 
