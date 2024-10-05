@@ -13,6 +13,7 @@
 #include <TFE_FileSystem/paths.h>
 #include <TFE_Audio/midiDevice.h>
 #include "gameSourceData.h"
+#include <map>
 
 enum SkyMode
 {
@@ -85,13 +86,13 @@ struct TFE_Settings_Graphics
 	f32  anisotropyQuality = 1.0f;	// quality of anisotropic filtering, 0 disables.
 
 	// Reticle
-	bool reticleEnable  = false;
-	s32  reticleIndex   = 6;
-	f32  reticleRed     = 0.25f;
-	f32  reticleGreen   = 1.00f;
-	f32  reticleBlue    = 0.25f;
+	bool reticleEnable = false;
+	s32  reticleIndex = 6;
+	f32  reticleRed = 0.25f;
+	f32  reticleGreen = 1.00f;
+	f32  reticleBlue = 0.25f;
 	f32  reticleOpacity = 1.00f;
-	f32  reticleScale   = 1.0f;
+	f32  reticleScale = 1.0f;
 
 	// Bloom options
 	bool bloomEnabled = false;
@@ -179,7 +180,7 @@ struct TFE_Settings_Sound
 	f32 cutsceneSoundFxVolume = 0.9f;
 	f32 cutsceneMusicVolume = 1.0f;
 	s32 audioDevice = -1;			// Use the audio device default.
-	s32 midiOutput  = -1;			// Use the midi type default.
+	s32 midiOutput = -1;			// Use the midi type default.
 	s32 midiType = MIDI_TYPE_DEFAULT;
 	bool use16Channels = false;
 	bool disableSoundInMenus = false;
@@ -193,9 +194,9 @@ struct TFE_Game
 
 struct TFE_GameHeader
 {
-	char gameName[64]="";
-	char sourcePath[TFE_MAX_PATH]="";
-	char emulatorPath[TFE_MAX_PATH]="";
+	char gameName[64] = "";
+	char sourcePath[TFE_MAX_PATH] = "";
+	char emulatorPath[TFE_MAX_PATH] = "";
 };
 
 struct TFE_Settings_Game
@@ -206,15 +207,15 @@ struct TFE_Settings_Game
 	s32  df_airControl = 0;				// Air control, default = 0, where 0 = speed/256 and 8 = speed; range = [0, 8]
 	bool df_bobaFettFacePlayer = false;	// Make Boba Fett try to face the player in all his attack phases.
 	bool df_smoothVUEs = false;			// Smooths VUE animations (e.g. the Moldy Crow entering and exiting levels)
-	bool df_disableFightMusic  = false;	// Set to true to disable fight music and music transitions during gameplay.
-	bool df_enableAutoaim      = true;  // Set to true to enable autoaim, false to disable.
+	bool df_disableFightMusic = false;	// Set to true to disable fight music and music transitions during gameplay.
+	bool df_enableAutoaim = true;  // Set to true to enable autoaim, false to disable.
 	bool df_showSecretFoundMsg = true;  // Show a message when the player finds a secret.
 	bool df_autorun = false;			// Run by default instead of walk.
 	bool df_crouchToggle = false;		// Use toggle instead of hold for crouch.
 	bool df_ignoreInfLimit = true;		// Ignore the vanilla INF limit.
 	bool df_stepSecondAlt = false;		// Allow the player to step up onto second heights, similar to the way normal stairs work.
 	bool df_solidWallFlagFix = true;	// Solid wall flag is enforced for collision with moving walls.
-	PitchLimit df_pitchLimit  = PITCH_VANILLA_PLUS;
+	PitchLimit df_pitchLimit = PITCH_VANILLA_PLUS;
 };
 
 struct TFE_Settings_System
@@ -283,15 +284,87 @@ struct ModHdIgnoreList
 	std::vector<std::string> waxIgnoreList;
 };
 
+// Int overrides for mod levels
+static const char* modIntOverrides[] =
+{
+	"energy",
+	"power",
+	"plasma",
+	"detonator",
+	"shell",
+	"mine",
+	"missile",
+	"shields",
+	"health",
+	"lives",
+	"battery",
+
+	// Custom int overrides
+	"defaultWeapon",
+	"fogLevel"
+};
+
+// Boolean overrides for mod levels 
+static const char* modBoolOverrides[] =
+{
+	// Enable inventory items on start
+	"enableMask",
+	"enableCleats",
+	"enableNightVision",
+	"enableHeadlamp",
+	
+	// Add/Remove Weapons
+	"pistol",
+	"rifle",
+	"autogun",
+	"mortar",
+	"fusion",
+	"concussion",
+	"cannon",
+
+	// Toggleable items
+	"mask",
+	"goggles",
+	"cleats",
+
+	// Inventory items
+	"plans",
+	"phrik",
+	"datatape",
+	"nava",
+	"dtWeapon",
+	"code1",
+	"code2",
+	"code3",
+	"code4",
+	"code5",
+
+	// Keys
+	"yellowKey",
+	"redKey",
+	"blueKey",
+
+	// Resets everything to only use bryar like the first mission.
+	"bryarOnly"
+};
+
+struct ModSettingLevelOverride
+{
+	std::string levName;
+	std::map<std::string, int>  intOverrideMap = {};
+	std::map<std::string, bool> boolOverrideMap = {};
+};
+
 struct TFE_ModSettings
 {
-	ModSettingOverride ignoreInfLimits   = MSO_NOT_SET;
-	ModSettingOverride stepSecondAlt     = MSO_NOT_SET;
-	ModSettingOverride solidWallFlagFix  = MSO_NOT_SET;
+	ModSettingOverride ignoreInfLimits = MSO_NOT_SET;
+	ModSettingOverride stepSecondAlt = MSO_NOT_SET;
+	ModSettingOverride solidWallFlagFix = MSO_NOT_SET;
 	ModSettingOverride extendAjoinLimits = MSO_NOT_SET;
-	ModSettingOverride ignore3doLimits   = MSO_NOT_SET;
-	ModSettingOverride normalFix3do      = MSO_NOT_SET;
+	ModSettingOverride ignore3doLimits = MSO_NOT_SET;
+	ModSettingOverride normalFix3do = MSO_NOT_SET;
 
+	std::map<std::string, ModSettingLevelOverride> levelOverrides;
 	std::vector<ModHdIgnoreList> ignoreList;
 };
 
@@ -327,6 +400,9 @@ namespace TFE_Settings
 	bool extendAdjoinLimits();
 	bool ignore3doLimits();
 	bool normalFix3do();
+
+	// Settings for level mod overrides.
+	ModSettingLevelOverride getLevelOverrides(string levelName);
 
 	bool validatePath(const char* path, const char* sentinel);
 	void autodetectGamePaths();
