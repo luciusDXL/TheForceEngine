@@ -60,6 +60,7 @@ namespace TFE_DarkForces
 		"ILIFE.WAX",    // ITEM_LIFE
 		"IMEDKIT.FME",  // ITEM_MEDKIT
 		"IPILE.FME",    // ITEM_PILE
+		"ITEMTEN.WAX",	// ITEM_UNUSED
 	};
 
 	///////////////////////////////////////////

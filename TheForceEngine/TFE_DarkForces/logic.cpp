@@ -160,9 +160,9 @@ namespace TFE_DarkForces
 				{
 					newLogic = (Logic*)actor_createDispatch(obj, &setupFunc);
 				}
-				else if ((logicId >= KW_BATTERY && logicId <= KW_AUTOGUN) || logicId == KW_ITEM)
+				else if ((logicId >= KW_BATTERY && logicId <= KW_AUTOGUN) || logicId == KW_ITEM || logicId == KW_ITEMTEN)
 				{
-					if (logicId >= KW_BATTERY && logicId <= KW_AUTOGUN)
+					if (logicId >= KW_BATTERY && logicId <= KW_AUTOGUN || logicId == KW_ITEMTEN)
 					{
 						strcpy(s_objSeqArg2, s_objSeqArg1);
 					}

@@ -57,7 +57,8 @@ namespace TFE_DarkForces
 		ITEM_LIFE = 42,			// 0x2a
 		ITEM_MEDKIT = 43,		// 0x2b
 		ITEM_PILE = 44,			// 0x2c
-		ITEM_COUNT = 45,		// 0x2d
+		ITEM_UNUSED = 45,		// 0x2d
+		ITEM_COUNT = 46,		// 0x2e
 	};
 
 	enum ItemType

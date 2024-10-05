@@ -113,6 +113,7 @@ namespace TFE_DarkForces
 			case KW_PILE:       id = ITEM_PILE;       break;
 			case KW_YELLOW:     id = ITEM_YELLOW_KEY; break;
 			case KW_AUTOGUN:    id = ITEM_AUTOGUN;    break;
+			case KW_ITEMTEN:	id = ITEM_UNUSED;	  break;
 			default:            id = ITEM_PLANS;
 		}
 		return id;
@@ -234,6 +235,10 @@ namespace TFE_DarkForces
 				case ITEM_DATATAPE:
 				{
 					s_levelState.complete[1][4] = JTRUE;
+				} break;
+				case ITEM_UNUSED:
+				{
+					s_levelState.complete[1][3] = JTRUE;
 				} break;
 			}
 		}
@@ -429,6 +434,14 @@ namespace TFE_DarkForces
 				pickup->type = ITYPE_OBJECTIVE;
 				pickup->item = &s_playerInfo.itemDatatape;
 				pickup->msgId[0] = 406;
+
+				obj->flags |= OBJ_FLAG_MISSION;
+			} break;
+			case ITEM_UNUSED:
+			{
+				pickup->type = ITYPE_OBJECTIVE;
+				pickup->item = &s_playerInfo.itemUnused;
+				pickup->msgId[0] = 403;
 
 				obj->flags |= OBJ_FLAG_MISSION;
 			} break;
@@ -800,6 +813,10 @@ namespace TFE_DarkForces
 			case ITEM_DATATAPE:
 			{
 				pickup->item = &s_playerInfo.itemDatatape;
+			} break;
+			case ITEM_UNUSED:
+			{
+				pickup->item = &s_playerInfo.itemUnused;
 			} break;
 			// WEAPONS
 			case ITEM_RIFLE:
