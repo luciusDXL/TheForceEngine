@@ -313,7 +313,7 @@ static const char* modBoolOverrides[] =
 	"enableNightVision",
 	"enableHeadlamp",
 	
-	// Add/Remove Weapons and Items 
+	// Add/Remove Weapons
 	"pistol",
 	"rifle",
 	"autogun",
@@ -321,9 +321,28 @@ static const char* modBoolOverrides[] =
 	"fusion",
 	"concussion",
 	"cannon",
+
+	// Toggleable items
 	"mask",
 	"goggles",
 	"cleats",
+
+	// Inventory items
+	"plans",
+	"phrik",
+	"datatape",
+	"nava",
+	"dtWeapon",
+	"code1",
+	"code2",
+	"code3",
+	"code4",
+	"code5",
+
+	// Keys
+	"yellowKey",
+	"redKey",
+	"blueKey",
 
 	// Resets everything to only use bryar like the first mission.
 	"bryarOnly"

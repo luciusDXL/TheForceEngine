@@ -556,7 +556,7 @@ namespace TFE_DarkForces
 			s_playerInfo.itemCannon = boolMap["cannon"];
 		}	
 
-		// Handle Items
+		// Handle Activatable Items
 
 		if (boolMap.find("mask") != boolMap.end())
 		{
@@ -571,6 +571,62 @@ namespace TFE_DarkForces
 			s_playerInfo.itemCleats = boolMap["cleats"];
 		}
 
+		// Handle Items 
+
+		if (boolMap.find("plans") != boolMap.end())
+		{
+			s_playerInfo.itemPlans = boolMap["plans"];
+		}
+		if (boolMap.find("phrik") != boolMap.end())
+		{
+			s_playerInfo.itemPhrik = boolMap["phrik"];
+		}
+		if (boolMap.find("nava") != boolMap.end())
+		{
+			s_playerInfo.itemNava = boolMap["nava"];
+		}
+		if (boolMap.find("datatape") != boolMap.end())
+		{
+			s_playerInfo.itemDatatape = boolMap["datatape"];
+		}
+		if (boolMap.find("dtWeapon") != boolMap.end())
+		{
+			s_playerInfo.itemDtWeapon = boolMap["dtWeapon"];
+		}
+		if (boolMap.find("code1") != boolMap.end())
+		{
+			s_playerInfo.itemCode1 = boolMap["code1"];
+		}
+		if (boolMap.find("code2") != boolMap.end())
+		{
+			s_playerInfo.itemCode2 = boolMap["code2"];
+		}
+		if (boolMap.find("code3") != boolMap.end())
+		{
+			s_playerInfo.itemCode3 = boolMap["code3"];
+		}
+		if (boolMap.find("code4") != boolMap.end())
+		{
+			s_playerInfo.itemCode4 = boolMap["code4"];
+		}
+		if (boolMap.find("code5") != boolMap.end())
+		{
+			s_playerInfo.itemCode5 = boolMap["code5"];
+		}
+
+		// Handle Keys
+		if (boolMap.find("redKey") != boolMap.end())
+		{
+			s_playerInfo.itemRedKey = boolMap["redKey"];
+		}
+		if (boolMap.find("yellowKey") != boolMap.end())
+		{
+			s_playerInfo.itemYellowKey = boolMap["yellowKey"];
+		}
+		if (boolMap.find("blueKey") != boolMap.end())
+		{
+			s_playerInfo.itemBlueKey = boolMap["blueKey"];
+		}	
 
 		// Enable Activatable items
 
