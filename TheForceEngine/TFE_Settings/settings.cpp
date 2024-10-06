@@ -1488,27 +1488,31 @@ namespace TFE_Settings
 
 	void loadCustomLogics()
 	{
-		FilePath filePath;
-		FileStream file;
-		if (!TFE_Paths::getFilePath("logics.json", &filePath)) { return; }
-		if (!file.open(&filePath, FileStream::MODE_READ)) { return; }
-
-		TFE_System::logWrite(LOG_MSG, "LOGICS", "Parsing logics.json for custom mod.");
-
-		const size_t size = file.getSize();
-		char* data = (char*)malloc(size + 1);
-		if (!data || size == 0)
-		{
-			TFE_System::logWrite(LOG_ERROR, "LOGICS", "logics.json found but is %u bytes in size and cannot be read.", size);
-			return;
-		}
-		file.readBuffer(data, (u32)size);
-		data[size] = 0;
-		file.close();
-
 		s_externalLogics.actorLogics.clear();
-		parseLogicData(data, s_externalLogics.actorLogics);
-		free(data);
+		vector<string> jsons;
+		TFE_Paths::getAllFilesFromSearchPaths("logics", "json", jsons);
+
+		for (u32 i = 0; i < jsons.size(); i++)
+		{
+			TFE_System::logWrite(LOG_MSG, "LOGICS", "Parsing logic JSON");
+			FileStream file;
+			const char* fileName = jsons[i].c_str();
+			if (!file.open(fileName, FileStream::MODE_READ)) { return; }
+
+			const size_t size = file.getSize();
+			char* data = (char*)malloc(size + 1);
+			if (!data || size == 0)
+			{
+				TFE_System::logWrite(LOG_ERROR, "LOGICS", "JSON found but is %u bytes in size and cannot be read.", size);
+				return;
+			}
+			file.readBuffer(data, (u32)size);
+			data[size] = 0;
+			file.close();
+
+			parseLogicData(data, s_externalLogics.actorLogics);
+			free(data);
+		}
 	}
 
 	ExternalLogics* getExternalLogics()

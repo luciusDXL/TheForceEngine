@@ -151,11 +151,11 @@ namespace TFE_Settings
 			const char* error = cJSON_GetErrorPtr();
 			if (error)
 			{
-				TFE_System::logWrite(LOG_ERROR, "LOGICS", "Failed to parse logics.json before\n%s", error);
+				TFE_System::logWrite(LOG_ERROR, "LOGICS", "Failed to parse json before\n%s", error);
 			}
 			else
 			{
-				TFE_System::logWrite(LOG_ERROR, "LOGICS", "Failed to parse logics.json");
+				TFE_System::logWrite(LOG_ERROR, "LOGICS", "Failed to parse json");
 			}
 		}
 	}
