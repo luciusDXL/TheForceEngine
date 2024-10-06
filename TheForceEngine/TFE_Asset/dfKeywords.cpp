@@ -225,7 +225,6 @@ static const char* c_keywords[] =
 	"PERSONALITY",
 	"SEQEND",
 	"M_TRIGGER",
-	"ITEMTEN",
 };
 
 #define KEYWORD_COUNT TFE_ARRAYSIZE(c_keywords)

@@ -163,15 +163,19 @@ namespace TFE_DarkForces
 				{
 					newLogic = (Logic*)actor_createDispatch(obj, &setupFunc);
 				}
-				else if ((logicId >= KW_BATTERY && logicId <= KW_AUTOGUN) || logicId == KW_ITEM 
-					|| (logicId == KW_ITEMTEN && gameSettings->df_enableUnusedItem))
+				else if ((logicId >= KW_BATTERY && logicId <= KW_AUTOGUN) || logicId == KW_ITEM)
 				{
-					if (logicId >= KW_BATTERY && logicId <= KW_AUTOGUN || logicId == KW_ITEMTEN)
+					if (logicId >= KW_BATTERY && logicId <= KW_AUTOGUN)
 					{
 						strcpy(s_objSeqArg2, s_objSeqArg1);
 					}
 					ItemId itemId = getPickupItemId(s_objSeqArg2);
 					obj_createPickup(obj, itemId);
+					setupFunc = nullptr;
+				}
+				else if (gameSettings->df_enableUnusedItem && strcasecmp(s_objSeqArg1, "itemten") == 0)
+				{
+					obj_createPickup(obj, ITEM_UNUSED);
 					setupFunc = nullptr;
 				}
 			}

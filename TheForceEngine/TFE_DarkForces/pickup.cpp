@@ -113,7 +113,6 @@ namespace TFE_DarkForces
 			case KW_PILE:       id = ITEM_PILE;       break;
 			case KW_YELLOW:     id = ITEM_YELLOW_KEY; break;
 			case KW_AUTOGUN:    id = ITEM_AUTOGUN;    break;
-			case KW_ITEMTEN:	id = ITEM_UNUSED;	  break;
 			default:            id = ITEM_PLANS;
 		}
 		return id;
