@@ -1399,6 +1399,9 @@
     <ClInclude Include="TFE_Editor\LevelEditor\editSector.h">
       <Filter>Source\TFE_Editor\LevelEditor</Filter>
     </ClInclude>
+    <ClInclude Include="TFE_Settings\logics.h">
+      <Filter>Source\TFE_Settings</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -2438,6 +2441,9 @@
     </ClCompile>
     <ClCompile Include="TFE_Editor\LevelEditor\editSector.cpp">
       <Filter>Source\TFE_Editor\LevelEditor</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Settings\logics.cpp">
+      <Filter>Source\TFE_Settings</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
