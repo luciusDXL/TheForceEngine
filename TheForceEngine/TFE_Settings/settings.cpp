@@ -533,6 +533,7 @@ namespace TFE_Settings
 				writeKeyValue_Bool(settings, "stepSecondAlt", s_gameSettings.df_stepSecondAlt);
 				writeKeyValue_Int(settings, "pitchLimit", s_gameSettings.df_pitchLimit);
 				writeKeyValue_Bool(settings, "solidWallFlagFix", s_gameSettings.df_solidWallFlagFix);
+				writeKeyValue_Bool(settings, "enableUnusedItem", s_gameSettings.df_enableUnusedItem);
 			}
 		}
 	}
@@ -1133,6 +1134,10 @@ namespace TFE_Settings
 		{
 			s_gameSettings.df_solidWallFlagFix = parseBool(value);
 		}
+		else if (strcasecmp("enableUnusedItem", key) == 0)
+		{
+			s_gameSettings.df_enableUnusedItem = parseBool(value);
+		}
 	}
 
 	void parseOutlawsSettings(const char* key, const char* value)
@@ -1283,6 +1288,15 @@ namespace TFE_Settings
 		return s_gameSettings.df_solidWallFlagFix;
 	}
 
+	bool enableUnusedItem()
+	{
+		if (s_modSettings.enableUnusedItem != MSO_NOT_SET)
+		{
+			return s_modSettings.enableUnusedItem == MSO_TRUE ? true : false;
+		}
+		return s_gameSettings.df_enableUnusedItem;
+	}
+
 	bool extendAdjoinLimits()
 	{
 		if (s_modSettings.extendAjoinLimits != MSO_NOT_SET)
@@ -1346,6 +1360,10 @@ namespace TFE_Settings
 		else if (strcasecmp(tfeOverride->string, "solidWallFlagFix") == 0)
 		{
 			modSettings->solidWallFlagFix = parseJSonBoolToOverride(tfeOverride);
+		}
+		else if (strcasecmp(tfeOverride->string, "enableUnusedItem") == 0)
+		{
+			modSettings->enableUnusedItem = parseJSonBoolToOverride(tfeOverride);
 		}
 		else if (strcasecmp(tfeOverride->string, "extendAjoinLimits") == 0)
 		{

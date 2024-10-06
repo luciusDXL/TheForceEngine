@@ -16,6 +16,7 @@
 #include <TFE_DarkForces/generator.h>
 #include <TFE_DarkForces/random.h>
 #include <TFE_System/system.h>
+#include <TFE_Settings/settings.h>
 
 // Regular Enemies
 #include <TFE_DarkForces/Actor/exploders.h>
@@ -109,6 +110,8 @@ namespace TFE_DarkForces
 
 	JBool object_parseSeq(SecObject* obj, TFE_Parser* parser, size_t* bufferPos)
 	{
+		TFE_Settings_Game* gameSettings = TFE_Settings::getGameSettings();
+		
 		LogicSetupFunc setupFunc = nullptr;
 
 		const char* line = parser->readLine(*bufferPos);
@@ -160,7 +163,8 @@ namespace TFE_DarkForces
 				{
 					newLogic = (Logic*)actor_createDispatch(obj, &setupFunc);
 				}
-				else if ((logicId >= KW_BATTERY && logicId <= KW_AUTOGUN) || logicId == KW_ITEM || logicId == KW_ITEMTEN)
+				else if ((logicId >= KW_BATTERY && logicId <= KW_AUTOGUN) || logicId == KW_ITEM 
+					|| (logicId == KW_ITEMTEN && gameSettings->df_enableUnusedItem))
 				{
 					if (logicId >= KW_BATTERY && logicId <= KW_AUTOGUN || logicId == KW_ITEMTEN)
 					{
