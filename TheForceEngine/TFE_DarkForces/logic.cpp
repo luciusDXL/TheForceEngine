@@ -128,7 +128,18 @@ namespace TFE_DarkForces
 			if (key == KW_TYPE || key == KW_LOGIC)
 			{
 				KEYWORD logicId = getKeywordIndex(s_objSeqArg1);
-				if (logicId == KW_PLAYER)  // Player Logic.
+				
+				// First, search the externally defined logics for a match
+				CustomActorLogic* customLogic;
+				customLogic = tryFindCustomActorLogic(s_objSeqArg1);
+				if (customLogic)
+				{
+					newLogic = obj_setCustomActorLogic(obj, customLogic);
+					setupFunc = nullptr;
+				}
+
+				// Then go to the hardcoded logics
+				else if (logicId == KW_PLAYER)  // Player Logic.
 				{
 					player_setupObject(obj);
 					setupFunc = nullptr;
@@ -170,20 +181,6 @@ namespace TFE_DarkForces
 					obj_createPickup(obj, itemId);
 					setupFunc = nullptr;
 				}
-				/** New feature proposal **************************************/
-				else
-				{
-					// Search the externally defined logics for a match
-					CustomActorLogic* customLogic;
-					customLogic = tryFindCustomActorLogic(s_objSeqArg1);
-
-					if (customLogic)
-					{
-						newLogic = obj_setCustomActorLogic(obj, customLogic);
-						setupFunc = nullptr;
-					}
-				}
-				/***************************************************************/
 			}
 			else if (key == KW_SEQEND)
 			{
