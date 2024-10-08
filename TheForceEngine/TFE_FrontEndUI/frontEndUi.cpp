@@ -506,6 +506,7 @@ namespace TFE_FrontEndUI
 		s_selectedModCmd[0] = 0;
 		s_relativeMode = false;
 		TFE_Input::enableRelativeMode(s_relativeMode);
+		TFE_Settings::getExternalLogics()->actorLogics.clear();
 
 		if (TFE_Settings::getSystemSettings()->returnToModLoader && s_modLoaded)
 		{

@@ -1488,7 +1488,6 @@ namespace TFE_Settings
 
 	void loadCustomLogics()
 	{
-		s_externalLogics.actorLogics.clear();
 		vector<string> jsons;
 		TFE_Paths::getAllFilesFromSearchPaths("logics", "json", jsons);
 
