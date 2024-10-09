@@ -131,7 +131,9 @@ namespace TFE_DarkForces
 				
 				// First, search the externally defined logics for a match (if the setting is enabled)
 				TFE_Settings_Game* gameSettings = TFE_Settings::getGameSettings();
-				CustomActorLogic* customLogic = tryFindCustomActorLogic(s_objSeqArg1);
+				CustomActorLogic* customLogic = (logicId != KW_PLAYER)
+					? tryFindCustomActorLogic(s_objSeqArg1)
+					: nullptr;		// do not allow "LOGIC: PLAYER" to be overridden !!
 
 				if (gameSettings->df_jsonAiLogics && customLogic)
 				{
