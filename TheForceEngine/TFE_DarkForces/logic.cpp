@@ -129,15 +129,15 @@ namespace TFE_DarkForces
 			{
 				KEYWORD logicId = getKeywordIndex(s_objSeqArg1);
 				
-				// First, search the externally defined logics for a match
-				CustomActorLogic* customLogic;
-				customLogic = tryFindCustomActorLogic(s_objSeqArg1);
-				if (customLogic)
+				// First, search the externally defined logics for a match (if the setting is enabled)
+				TFE_Settings_Game* gameSettings = TFE_Settings::getGameSettings();
+				CustomActorLogic* customLogic = tryFindCustomActorLogic(s_objSeqArg1);
+
+				if (gameSettings->df_jsonAiLogics && customLogic)
 				{
 					newLogic = obj_setCustomActorLogic(obj, customLogic);
 					setupFunc = nullptr;
 				}
-
 				// Then go to the hardcoded logics
 				else if (logicId == KW_PLAYER)  // Player Logic.
 				{

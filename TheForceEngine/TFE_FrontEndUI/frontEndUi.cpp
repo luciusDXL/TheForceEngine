@@ -1199,6 +1199,12 @@ namespace TFE_FrontEndUI
 			gameSettings->df_solidWallFlagFix = solidWallFlagFix;
 		}
 
+		bool jsonAiLogics = gameSettings->df_jsonAiLogics;
+		if (ImGui::Checkbox("Enable custom AI logics from JSON files", &jsonAiLogics))
+		{
+			gameSettings->df_jsonAiLogics = jsonAiLogics;
+		}
+
 		if (s_drawNoGameDataMsg)
 		{
 			ImGui::Separator();
@@ -3239,6 +3245,7 @@ namespace TFE_FrontEndUI
 				gameSettings->df_smoothVUEs = true;
 				gameSettings->df_pitchLimit = (temp == TEMPLATE_MODERN) ? PITCH_MAXIMUM : PITCH_VANILLA_PLUS;
 				gameSettings->df_solidWallFlagFix = true;
+				gameSettings->df_jsonAiLogics = true;
 				// Graphics
 				graphicsSettings->rendererIndex = RENDERER_HARDWARE;
 				graphicsSettings->skyMode = SKYMODE_CYLINDER;
@@ -3288,6 +3295,7 @@ namespace TFE_FrontEndUI
 				gameSettings->df_bobaFettFacePlayer = false;
 				gameSettings->df_smoothVUEs = false;
 				gameSettings->df_solidWallFlagFix = false;
+				gameSettings->df_jsonAiLogics = false;
 				// Graphics
 				graphicsSettings->rendererIndex = RENDERER_SOFTWARE;
 				graphicsSettings->widescreen = false;

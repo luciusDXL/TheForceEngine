@@ -535,6 +535,7 @@ namespace TFE_Settings
 				writeKeyValue_Bool(settings, "stepSecondAlt", s_gameSettings.df_stepSecondAlt);
 				writeKeyValue_Int(settings, "pitchLimit", s_gameSettings.df_pitchLimit);
 				writeKeyValue_Bool(settings, "solidWallFlagFix", s_gameSettings.df_solidWallFlagFix);
+				writeKeyValue_Bool(settings, "jsonAiLogics", s_gameSettings.df_jsonAiLogics);
 			}
 		}
 	}
@@ -1135,6 +1136,10 @@ namespace TFE_Settings
 		{
 			s_gameSettings.df_solidWallFlagFix = parseBool(value);
 		}
+		else if (strcasecmp("jsonAiLogics", key) == 0)
+		{
+			s_gameSettings.df_jsonAiLogics = parseBool(value);
+		}
 	}
 
 	void parseOutlawsSettings(const char* key, const char* value)
@@ -1311,6 +1316,15 @@ namespace TFE_Settings
 		}
 		return s_graphicsSettings.fix3doNormalOverflow;
 	}
+
+	bool jsonAiLogics()
+	{
+		if (s_modSettings.jsonAiLogics != MSO_NOT_SET)
+		{
+			return s_modSettings.jsonAiLogics == MSO_TRUE ? true : false;
+		}
+		return s_gameSettings.df_jsonAiLogics;
+	}
 		
 	//////////////////////////////////////////////////
 	// Mod Settings/Overrides.
@@ -1360,6 +1374,10 @@ namespace TFE_Settings
 		else if (strcasecmp(tfeOverride->string, "3doNormalFix") == 0)
 		{
 			modSettings->normalFix3do = parseJSonBoolToOverride(tfeOverride);
+		}
+		else if (strcasecmp(tfeOverride->string, "jsonAiLogics") == 0)
+		{
+			modSettings->jsonAiLogics = parseJSonBoolToOverride(tfeOverride);
 		}
 	}
 
