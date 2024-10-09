@@ -115,23 +115,20 @@ namespace TFE_DarkForces
 				{
 					sprite_setData(spawn, gen->wax);
 					
-					if (gen->type != -1)
+					// Search the externally defined logics for a match
+					CustomActorLogic* customLogic;
+					customLogic = tryFindCustomActorLogic(gen->logicName.c_str());
+					if (customLogic && gameSettings->df_jsonAiLogics)
+					{
+						obj_setCustomActorLogic(spawn, customLogic);
+					}
+					else if (gen->type != -1)
 					{
 						obj_setEnemyLogic(spawn, gen->type);
 					}
-					else if (gameSettings->df_jsonAiLogics)
-					{
-						// Search the externally defined logics for a match
-						CustomActorLogic* customLogic;
-						customLogic = tryFindCustomActorLogic(gen->logicName.c_str());
-
-						if (customLogic)
-						{
-							obj_setCustomActorLogic(spawn, customLogic);
-						}
-					}
 					
 					Logic** head = (Logic**)allocator_getHead_noIterUpdate((Allocator*)spawn->logic);
+					if (!head) { break; }		// JK: This is to prevent a crash happening when an invalid logic is set to a generator
 					ActorDispatch* actorLogic = *((ActorDispatch**)head);
 
 					actorLogic->flags &= ~1;

@@ -165,7 +165,7 @@ namespace TFE_DarkForces
 				else if (logicId == KW_GENERATOR)	// Enemy generator, used for in-level enemy spawning.
 				{
 					KEYWORD genType = getKeywordIndex(s_objSeqArg2);
-					newLogic = obj_createGenerator(obj, &setupFunc, genType, genType == -1 ? s_objSeqArg2 : "");
+					newLogic = obj_createGenerator(obj, &setupFunc, genType, s_objSeqArg2);
 				}
 				else if (logicId == KW_DISPATCH)
 				{
