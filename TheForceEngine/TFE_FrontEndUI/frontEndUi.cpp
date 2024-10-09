@@ -1198,6 +1198,12 @@ namespace TFE_FrontEndUI
 			gameSettings->df_solidWallFlagFix = solidWallFlagFix;
 		}
 
+		bool enableUnusedItem = gameSettings->df_enableUnusedItem;
+		if (ImGui::Checkbox("Enable unused inventory item \"ITEM10\"", &enableUnusedItem))
+		{
+			gameSettings->df_enableUnusedItem = enableUnusedItem;
+		}
+
 		if (s_drawNoGameDataMsg)
 		{
 			ImGui::Separator();
@@ -3238,6 +3244,7 @@ namespace TFE_FrontEndUI
 				gameSettings->df_smoothVUEs = true;
 				gameSettings->df_pitchLimit = (temp == TEMPLATE_MODERN) ? PITCH_MAXIMUM : PITCH_VANILLA_PLUS;
 				gameSettings->df_solidWallFlagFix = true;
+				gameSettings->df_enableUnusedItem = true;
 				// Graphics
 				graphicsSettings->rendererIndex = RENDERER_HARDWARE;
 				graphicsSettings->skyMode = SKYMODE_CYLINDER;
@@ -3287,6 +3294,7 @@ namespace TFE_FrontEndUI
 				gameSettings->df_bobaFettFacePlayer = false;
 				gameSettings->df_smoothVUEs = false;
 				gameSettings->df_solidWallFlagFix = false;
+				gameSettings->df_enableUnusedItem = false;
 				// Graphics
 				graphicsSettings->rendererIndex = RENDERER_SOFTWARE;
 				graphicsSettings->widescreen = false;
