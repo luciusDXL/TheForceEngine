@@ -173,7 +173,7 @@ namespace TFE_DarkForces
 					obj_createPickup(obj, itemId);
 					setupFunc = nullptr;
 				}
-				else if (gameSettings->df_enableUnusedItem && strcasecmp(s_objSeqArg1, "itemten") == 0)
+				else if (gameSettings->df_enableUnusedItem && strcasecmp(s_objSeqArg1, "ITEM10") == 0)
 				{
 					obj_createPickup(obj, ITEM_UNUSED);
 					setupFunc = nullptr;

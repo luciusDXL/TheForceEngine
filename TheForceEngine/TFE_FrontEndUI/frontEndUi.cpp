@@ -1199,7 +1199,7 @@ namespace TFE_FrontEndUI
 		}
 
 		bool enableUnusedItem = gameSettings->df_enableUnusedItem;
-		if (ImGui::Checkbox("Enable unused inventory item", &enableUnusedItem))
+		if (ImGui::Checkbox("Enable unused inventory item \"ITEM10\"", &enableUnusedItem))
 		{
 			gameSettings->df_enableUnusedItem = enableUnusedItem;
 		}
