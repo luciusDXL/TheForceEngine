@@ -36,4 +36,7 @@ namespace TFE_DarkForces
 	extern const s32 s_officerAnimTable[];
 	extern const s32 s_troopAnimTable[];
 	extern const s32 s_commandoAnimTable[];
+
+	// Custom
+	extern const s32 s_customAnimTable[];
 }  // namespace TFE_DarkForces

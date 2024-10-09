@@ -13,6 +13,7 @@
 #include <TFE_FileSystem/paths.h>
 #include <TFE_Audio/midiDevice.h>
 #include "gameSourceData.h"
+#include "logics.h"
 
 enum SkyMode
 {
@@ -214,6 +215,7 @@ struct TFE_Settings_Game
 	bool df_ignoreInfLimit = true;		// Ignore the vanilla INF limit.
 	bool df_stepSecondAlt = false;		// Allow the player to step up onto second heights, similar to the way normal stairs work.
 	bool df_solidWallFlagFix = true;	// Solid wall flag is enforced for collision with moving walls.
+	bool df_jsonAiLogics = true;		// AI logics can be loaded from external JSON files
 	PitchLimit df_pitchLimit  = PITCH_VANILLA_PLUS;
 };
 
@@ -291,6 +293,7 @@ struct TFE_ModSettings
 	ModSettingOverride extendAjoinLimits = MSO_NOT_SET;
 	ModSettingOverride ignore3doLimits   = MSO_NOT_SET;
 	ModSettingOverride normalFix3do      = MSO_NOT_SET;
+	ModSettingOverride jsonAiLogics      = MSO_NOT_SET;
 
 	std::vector<ModHdIgnoreList> ignoreList;
 };
@@ -315,6 +318,8 @@ namespace TFE_Settings
 	TFE_Settings_Game* getGameSettings();
 	TFE_Settings_A11y* getA11ySettings();
 	TFE_ModSettings* getModSettings();
+	
+	ExternalLogics* getExternalLogics();
 
 	// Helper functions.
 	void setLevelName(const char* levelName);
@@ -332,4 +337,5 @@ namespace TFE_Settings
 	void autodetectGamePaths();
 	void clearModSettings();
 	void loadCustomModSettings();
+	void loadCustomLogics();
 }

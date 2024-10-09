@@ -40,6 +40,8 @@ namespace TFE_Settings
 	static TFE_ModSettings s_modSettings = {};
 	static std::vector<char> s_iniBuffer;
 
+	static ExternalLogics s_externalLogics = {};
+
 	enum SectionID
 	{
 		SECTION_WINDOW = 0,
@@ -533,6 +535,7 @@ namespace TFE_Settings
 				writeKeyValue_Bool(settings, "stepSecondAlt", s_gameSettings.df_stepSecondAlt);
 				writeKeyValue_Int(settings, "pitchLimit", s_gameSettings.df_pitchLimit);
 				writeKeyValue_Bool(settings, "solidWallFlagFix", s_gameSettings.df_solidWallFlagFix);
+				writeKeyValue_Bool(settings, "jsonAiLogics", s_gameSettings.df_jsonAiLogics);
 			}
 		}
 	}
@@ -1133,6 +1136,10 @@ namespace TFE_Settings
 		{
 			s_gameSettings.df_solidWallFlagFix = parseBool(value);
 		}
+		else if (strcasecmp("jsonAiLogics", key) == 0)
+		{
+			s_gameSettings.df_jsonAiLogics = parseBool(value);
+		}
 	}
 
 	void parseOutlawsSettings(const char* key, const char* value)
@@ -1309,6 +1316,15 @@ namespace TFE_Settings
 		}
 		return s_graphicsSettings.fix3doNormalOverflow;
 	}
+
+	bool jsonAiLogics()
+	{
+		if (s_modSettings.jsonAiLogics != MSO_NOT_SET)
+		{
+			return s_modSettings.jsonAiLogics == MSO_TRUE ? true : false;
+		}
+		return s_gameSettings.df_jsonAiLogics;
+	}
 		
 	//////////////////////////////////////////////////
 	// Mod Settings/Overrides.
@@ -1358,6 +1374,10 @@ namespace TFE_Settings
 		else if (strcasecmp(tfeOverride->string, "3doNormalFix") == 0)
 		{
 			modSettings->normalFix3do = parseJSonBoolToOverride(tfeOverride);
+		}
+		else if (strcasecmp(tfeOverride->string, "jsonAiLogics") == 0)
+		{
+			modSettings->jsonAiLogics = parseJSonBoolToOverride(tfeOverride);
 		}
 	}
 
@@ -1482,5 +1502,38 @@ namespace TFE_Settings
 			}
 		}
 		free(data);
+	}
+
+	void loadCustomLogics()
+	{
+		vector<string> jsons;
+		TFE_Paths::getAllFilesFromSearchPaths("logics", "json", jsons);
+
+		for (u32 i = 0; i < jsons.size(); i++)
+		{
+			TFE_System::logWrite(LOG_MSG, "LOGICS", "Parsing logic JSON");
+			FileStream file;
+			const char* fileName = jsons[i].c_str();
+			if (!file.open(fileName, FileStream::MODE_READ)) { return; }
+
+			const size_t size = file.getSize();
+			char* data = (char*)malloc(size + 1);
+			if (!data || size == 0)
+			{
+				TFE_System::logWrite(LOG_ERROR, "LOGICS", "JSON found but is %u bytes in size and cannot be read.", size);
+				return;
+			}
+			file.readBuffer(data, (u32)size);
+			data[size] = 0;
+			file.close();
+
+			parseLogicData(data, s_externalLogics.actorLogics);
+			free(data);
+		}
+	}
+
+	ExternalLogics* getExternalLogics()
+	{
+		return &s_externalLogics;
 	}
 }
