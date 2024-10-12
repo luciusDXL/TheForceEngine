@@ -443,7 +443,10 @@ namespace TFE_DarkForces
 						reticle_enable(true);
 					}
 					s_flatLighting = JFALSE;
-					s_nightvisionActive = JFALSE;
+					
+					// Note: I am not sure why this is there but it overrides all player settings
+					// By default the player load disables night vision so it won't carry over from previous maps.
+					// s_nightvisionActive = JFALSE;
 				}
 			}
 			else // Loading from save.
@@ -935,15 +938,15 @@ namespace TFE_DarkForces
 		s_visionFxCountdown = 2;
 	}
 
-	void disableNightvisionInternal()
+	void disableNightVisionInternal()
 	{
 		s_flatLighting = JFALSE;
 		s_visionFxEndCountdown = 3;
 	}
 		
-	void disableNightvision()
+	void disableNightVision()
 	{
-		disableNightvisionInternal();
+		disableNightVisionInternal();
 		s_nightvisionActive = JFALSE;
 		hud_sendTextMessage(9);
 	}
@@ -1304,7 +1307,7 @@ namespace TFE_DarkForces
 			{
 				if (s_nightvisionActive)
 				{
-					disableNightvision();
+					disableNightVision();
 				}
 				else
 				{

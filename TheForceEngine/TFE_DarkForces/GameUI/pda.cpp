@@ -1,5 +1,5 @@
 #include <cstring>
-
+#include <SDL.h>
 #include "pda.h"
 #include "menu.h"
 #include "missionBriefing.h"
@@ -103,6 +103,8 @@ namespace TFE_DarkForces
 
 	static s32 s_briefingMaxY;
 	static s16 s_briefY;
+	static s32 mouseOldPosX = 0, mouseOldPosZ = 0;
+	static bool mouseMoveReset = true;
 		
 	void pda_handleInput();
 	void pda_drawCommonButtons();
@@ -349,6 +351,33 @@ namespace TFE_DarkForces
 		TFE_Input::getMouseWheel(&wdx, &wdy);
 		// Ensure that mouse movements are not lost between updates.
 		pda_handleMouseAccum(&wdx, &wdy);
+
+
+		// Handle Mouse Panning
+		if (TFE_Input::mouseDown(MBUTTON_LEFT))
+		{
+			s32 mouseX, mouseZ;
+			SDL_GetMouseState(&mouseX, &mouseZ);
+
+			// Calculate deltas
+			fixed16_16 deltaX = (mouseX - mouseOldPosX) << 16;
+			fixed16_16 deltaZ = (mouseZ - mouseOldPosZ) << 16;
+			
+			mouseOldPosX = mouseX;
+			mouseOldPosZ = mouseZ;
+
+			// Don't bother if this is the first time 
+			if (!mouseMoveReset)
+			{
+				automap_updateDeltaCoords(deltaX, deltaZ);
+			}
+			mouseMoveReset = false;
+		}
+		else
+		{
+			// Mouse Up - reset the offsets.
+			mouseMoveReset = true;
+		}
 
 		if (TFE_Input::mousePressed(MBUTTON_LEFT) || s_simulatePressed >= 0 || wdy)
 		{
