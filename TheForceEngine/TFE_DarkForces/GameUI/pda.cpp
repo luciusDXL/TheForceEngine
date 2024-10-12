@@ -103,7 +103,6 @@ namespace TFE_DarkForces
 
 	static s32 s_briefingMaxY;
 	static s16 s_briefY;
-	static s32 s_distance;
 	static s32 mouseOldPosX = 0, mouseOldPosZ = 0;
 	static bool mouseMoveReset = true;
 		
