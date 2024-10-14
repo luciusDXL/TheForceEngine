@@ -1402,6 +1402,9 @@
     <ClInclude Include="TFE_Settings\logics.h">
       <Filter>Source\TFE_Settings</Filter>
     </ClInclude>
+    <ClInclude Include="TFE_Settings\logicTables.h">
+      <Filter>Source\TFE_Settings</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -2443,6 +2446,9 @@
       <Filter>Source\TFE_Editor\LevelEditor</Filter>
     </ClCompile>
     <ClCompile Include="TFE_Settings\logics.cpp">
+      <Filter>Source\TFE_Settings</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Settings\logicTables.cpp">
       <Filter>Source\TFE_Settings</Filter>
     </ClCompile>
   </ItemGroup>
