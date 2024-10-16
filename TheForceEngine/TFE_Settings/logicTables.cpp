@@ -2,7 +2,7 @@
 
 namespace TFE_Settings
 {
-	const char* s_projectileTable[] =
+	const char* df_projectileTable[] =
 	{
 		"punch",			// 0
 		"pistol_bolt",		// 1
@@ -25,7 +25,7 @@ namespace TFE_Settings
 		"bobafett_ball",	// 18
 	};
 
-	const char* s_dropItemTable[] =
+	const char* df_dropItemTable[] =
 	{
 		"PLANS",			// 0
 		"PHRIK",			// 1
@@ -74,7 +74,7 @@ namespace TFE_Settings
 		"PILE",				// 44
 	};
 
-	const char* s_effectTable[] =
+	const char* df_effectTable[] =
 	{
 		"SMALL_EXP",		// 0	// small "puff" - blaster weapons.
 		"THERMDET_EXP",		// 1	// thermal detonator explosion.

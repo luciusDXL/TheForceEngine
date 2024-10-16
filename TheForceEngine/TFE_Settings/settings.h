@@ -13,7 +13,7 @@
 #include <TFE_FileSystem/paths.h>
 #include <TFE_Audio/midiDevice.h>
 #include "gameSourceData.h"
-#include "logics.h"
+#include "dfLogics.h"
 
 enum SkyMode
 {

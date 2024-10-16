@@ -1,6 +1,7 @@
 #include <cstring>
 #include <vector>
-#include <TFE_Settings/logics.h>
+#include <TFE_Settings/dfLogics.h>
+#include <TFE_Settings/logicTables.h>
 #include <TFE_System/cJSON.h>
 #include <TFE_System/system.h>
 #include "logicTables.h"
@@ -139,7 +140,7 @@ namespace TFE_Settings
 		{
 			for (int i = 0; i <= 44; i++)
 			{
-				if (strcasecmp(data->valuestring, s_dropItemTable[i]) == 0)
+				if (strcasecmp(data->valuestring, df_dropItemTable[i]) == 0)
 				{
 					customLogic.dropItem = i;
 					return true;
@@ -161,7 +162,7 @@ namespace TFE_Settings
 		{
 			for (int i = 0; i <= 17; i++)
 			{
-				if (strcasecmp(data->valuestring, s_effectTable[i]) == 0)
+				if (strcasecmp(data->valuestring, df_effectTable[i]) == 0)
 				{
 					customLogic.dieEffect = i;
 					return true;
@@ -207,7 +208,7 @@ namespace TFE_Settings
 		{
 			for (int i = 0; i <= 18; i++)
 			{
-				if (strcasecmp(data->valuestring, s_projectileTable[i]) == 0)
+				if (strcasecmp(data->valuestring, df_projectileTable[i]) == 0)
 				{
 					customLogic.projectile = i;
 					return true;

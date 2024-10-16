@@ -2,7 +2,8 @@
 
 namespace TFE_Settings
 {
-	const char* s_projectileTable[];
-	const char* s_dropItemTable[];
-	const char* s_effectTable[];
+	const char* df_projectileTable[];
+	const char* df_dropItemTable[];
+	const char* df_effectTable[];
 }
+
