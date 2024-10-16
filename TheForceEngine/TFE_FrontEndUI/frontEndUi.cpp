@@ -2874,6 +2874,18 @@ namespace TFE_FrontEndUI
 		s32 framerate = (s32)system->gifRecordingFramerate;
 		DrawLabelledIntSlider(labelW, valueW - 2, "GIF Recording Framerate", "##CBO", &framerate, 10, 30);
 		system->gifRecordingFramerate = (f32)framerate;
+
+		bool showGifRecordingCountdown = system->showGifRecordingCountdown;
+		if (ImGui::Checkbox("Show countdown before recording starts", &showGifRecordingCountdown))
+		{
+			system->showGifRecordingCountdown = showGifRecordingCountdown;
+		}
+
+		bool showGifPathConfirmation = system->showGifPathConfirmation;
+		if (ImGui::Checkbox("Show file path when recording ends", &showGifPathConfirmation))
+		{
+			system->showGifPathConfirmation = showGifPathConfirmation;
+		}
 	}
 
 	void DrawFontSizeCombo(float labelWidth, float valueWidth, const char* label, const char* comboTag, s32* currentValue)

@@ -9,6 +9,7 @@
 #include "gl.h"
 #include <assert.h>
 #include <TFE_Settings/settings.h>
+#include <TFE_Ui/imGUI/imgui.h>
 
 #ifdef _DEBUG
 	#define CHECK_GL_ERROR checkGlError();
@@ -125,7 +126,7 @@ void ScreenCapture::captureFrontBufferToMemory(u32* mem)
 void ScreenCapture::update(bool flush)
 {
 	// Automatically capture frames when recording.
-	if (m_recordingStarted)
+	if (m_state == RECORDING)
 	{
 		DisplayInfo displayInfo;
 		TFE_RenderBackend::getDisplayInfo(&displayInfo);
@@ -187,12 +188,12 @@ void ScreenCapture::update(bool flush)
 	}
 
 	// Handle write to disk or adding a frame to the recording.
-	if (m_recordingStarted && (m_readCount >= RECORD_FLUSH_COUNT || flush))
+	if (m_state == RECORDING && (m_readCount >= RECORD_FLUSH_COUNT || flush))
 	{
 		// Save the images.
 		recordImages();
 	}
-	else if (!m_recordingStarted && (m_readCount >= FLUSH_READ_COUNT || flush))
+	else if (m_state != RECORDING && (m_readCount >= FLUSH_READ_COUNT || flush))
 	{
 		writeFramesToDisk();
 	}
@@ -219,22 +220,143 @@ void ScreenCapture::captureFrame(const char* outputPath)
 
 void ScreenCapture::beginRecording(const char* path)
 {
-	m_recordingStarted = true;
+	m_capturePath = string(path);
+	if (TFE_Settings::getSystemSettings()->showGifRecordingCountdown)
+	{
+		startCountdown();
+	}
+	else
+	{
+		//startCapture();
+		
+		// This will flash the countdown timer UI for an instant before
+		// capture starts, so the user still sees some indication that
+		// capture is working.
+		startCountdown();
+		f32 framerateLimit = TFE_Settings::getGraphicsSettings()->frameRateLimit;
+		if (framerateLimit <= 0) { framerateLimit = 20; }
+		f32 messageDelay = 2.0 / framerateLimit;
+		if (messageDelay < 0.1) { messageDelay = 0.1; }
+		m_countdownTimeStart -= (COUNTDOWN_DURATION - messageDelay);
+	}
+}
+
+void ScreenCapture::startCountdown()
+{
+	m_countdownTimeStart = TFE_System::getTime();
+	m_state = COUNTDOWN;
+	m_countdownFinished = false;
+}
+
+void ScreenCapture::startCapture()
+{
+	m_state = RECORDING;
 	m_recordingFrame = 0;
 	m_recordingFrameStart = m_frame;
 	m_recordingTimeStart = 0.0;
 	m_recordingFrameLast = -1.0;
 
 	u32 framerate = (u32)TFE_Settings::getSystemSettings()->gifRecordingFramerate;
-	TFE_GIF::startGif(path, m_width, m_height, framerate);
+	TFE_GIF::startGif(m_capturePath.c_str(), m_width, m_height, framerate);
 }
 
 void ScreenCapture::endRecording()
 {
-	update(true);
-	m_recordingStarted = false;
+	if (m_state == RECORDING)
+	{
+		update(true);
 
-	TFE_GIF::write();
+		TFE_GIF::write();
+
+		m_state = CONFIRMATION;
+		m_confirmationTimeStart = TFE_System::getTime();
+		m_confirmationMessage = string("GIF saved to " + m_capturePath);
+	}
+	else 
+	{
+		m_state = IDLE;
+	}
+}
+
+ScreenCapture::ScreenCaptureState ScreenCapture::getState()
+{
+	return m_state;
+}
+
+bool ScreenCapture::wantsToDrawGui()
+{
+	return m_state == COUNTDOWN || m_state == CONFIRMATION;
+}
+
+void ScreenCapture::drawGui()
+{
+	if (m_state == COUNTDOWN)
+	{
+		f64 elapsed = TFE_System::getTime() - m_countdownTimeStart;
+		if (elapsed > COUNTDOWN_DURATION) {
+			if (m_countdownFinished) { startCapture(); }
+			else { m_countdownFinished = true; }
+			return;
+		}
+
+		//Create window.
+		ImVec2 windowSize = ImVec2(0, 0); // Auto-size.
+		ImGui::SetNextWindowSize(windowSize);
+		ImGui::SetNextWindowPos(ImVec2(10, 10));
+		ImGui::Begin("##CaptureStart", NULL, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoInputs);
+		ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1, 0, 0, 1)); // Font color.
+
+		// Draw text.
+		if (TFE_Settings::getSystemSettings()->showGifRecordingCountdown)
+		{
+			if (elapsed < COUNTDOWN_DURATION / 3.0) { ImGui::Text("3..."); }
+			else if (elapsed < COUNTDOWN_DURATION * (2.0 / 3.0)) { ImGui::Text("2..."); }
+			else if (elapsed <= COUNTDOWN_DURATION) { ImGui::Text("1..."); }
+		}
+		else
+		{
+			ImGui::Text("REC");
+		}
+
+		// End window.
+		ImGui::PopStyleColor(); // Font color.
+		ImGui::End();
+	}
+	else if (m_state == CONFIRMATION)
+	{
+		f64 elapsed = TFE_System::getTime() - m_confirmationTimeStart;
+		if (elapsed > CONFIRMATION_DURATION)
+		{
+			m_state = IDLE;
+			return;
+		}
+
+		ImVec2 windowSize;
+
+		// Fixed-width with wrap if we show full path; otherwise, auto-size.
+		if (TFE_Settings::getSystemSettings()->showGifPathConfirmation) { windowSize = ImVec2(CONFIRMATION_WIDTH, 0); }
+		else { windowSize = ImVec2(0, 0); }
+
+		// Create window.
+		ImGui::SetNextWindowSize(windowSize);
+		ImGui::SetNextWindowPos(ImVec2(10, 10));
+		ImGui::Begin("##CaptureEnd", NULL, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoInputs);
+
+		// Draw text.
+		ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1, 1, 0, 1));
+		if (TFE_Settings::getSystemSettings()->showGifPathConfirmation)
+		{
+			ImGui::TextWrapped(m_confirmationMessage.c_str());
+		}
+		else
+		{
+			ImGui::Text("Recording saved");
+		}
+
+		// End window.
+		ImGui::PopStyleColor(); // Font color
+		ImGui::End();
+	}
 }
 
 void ScreenCapture::writeFramesToDisk()

@@ -275,8 +275,9 @@ namespace TFE_RenderBackend
 		if (blitVirtualDisplay) { drawVirtualDisplay(); }
 		else { glClear(GL_COLOR_BUFFER_BIT); }
 
-		TFE_ZONE_BEGIN(systemUi, "System UI");
 		// Handle the UI.
+		TFE_ZONE_BEGIN(systemUi, "System UI");
+		if (TFE_Ui::isGuiFrameActive() && s_screenCapture->wantsToDrawGui()) { s_screenCapture->drawGui(); }
 		TFE_Ui::render();
 		// Reset the state due to UI changes.
 		TFE_RenderState::clear();
