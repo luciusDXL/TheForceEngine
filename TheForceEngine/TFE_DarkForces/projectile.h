@@ -62,7 +62,7 @@ namespace TFE_DarkForces
 	enum ProjectileFlags
 	{
 		PROJFLAG_CAMERA_PASS_SOUND = FLAG_BIT(0),
-		PROJFLAG_EXPLODE           = FLAG_BIT(1),
+		PROJFLAG_EXPLODE           = FLAG_BIT(1),		// Explodes when reaches end of life.
 	};
 
 	struct ProjectileLogic;
@@ -90,10 +90,10 @@ namespace TFE_DarkForces
 		fixed16_16 vertBounciness;
 		SecObject* prevColObj;
 		SecObject* prevObj;
-		SecObject* excludeObj;
+		SecObject* excludeObj;			  // Object which is excluded from damage (used to prevent AI from being hurt by their own weapons)
 		Tick duration;                    // How long the projectile continues to move before going out of range (and being destroyed).
 		angle14_32 homingAngleSpd;		  // How quickly a homing projectile lines up in angle units / second.
-		s32 bounceCnt;
+		s32 bounceCnt;					  // Number of remaining bounces / reflections. Used for magseal (positive numbers) and thermal detonator secondary fire (set to -1)
 		s32 reflVariation;
 		SoundEffectId flightSndId;        // Looping sound instance played while the projectile moves.
 		SoundSourceId flightSndSource;    // Source looping sound.

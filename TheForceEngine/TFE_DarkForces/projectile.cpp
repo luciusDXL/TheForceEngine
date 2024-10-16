@@ -3,6 +3,7 @@
 #include "random.h"
 #include "player.h"
 #include "sound.h"
+#include <cstring>
 #include <TFE_Asset/modelAsset_jedi.h>
 #include <TFE_Asset/spriteAsset_Jedi.h>
 #include <TFE_Jedi/Collision/collision.h>
@@ -13,6 +14,7 @@
 #include <TFE_Jedi/Level/rwall.h>
 #include <TFE_Jedi/Memory/allocator.h>
 #include <TFE_Jedi/Serialization/serialization.h>
+#include <TFE_ExternalData/weaponExternal.h>
 
 using namespace TFE_Jedi;
 
@@ -39,6 +41,15 @@ namespace TFE_DarkForces
 	// Internal State
 	//////////////////////////////////////////////////////////////
 	static Allocator* s_projectiles = nullptr;
+
+	// Arrays to hold projectile assets
+	static JediModel* s_projectileModels[PROJ_COUNT];
+	static WaxFrame*  s_projectileFrames[PROJ_COUNT];
+	static Wax*		  s_projectileWaxes[PROJ_COUNT];
+	
+	static SoundSourceId s_projectileCameraSnd[PROJ_COUNT];
+	static SoundSourceId s_projectileReflectSnd[PROJ_COUNT];
+	static SoundSourceId s_projectileFlightSnd[PROJ_COUNT];
 
 	static JediModel* s_boltModel;
 	static JediModel* s_greenBoltModel;
@@ -98,6 +109,8 @@ namespace TFE_DarkForces
 	ProjectileHitType landMineUpdateFunc(ProjectileLogic* logic);
 	ProjectileHitType arcingProjectileUpdateFunc(ProjectileLogic* logic);
 	ProjectileHitType homingMissileProjectileUpdateFunc(ProjectileLogic* logic);
+
+	ProjectileFunc getUpdateFunc(const char* type);
 	   
 	void projectileTaskFunc(MessageType msg);
 
@@ -114,29 +127,58 @@ namespace TFE_DarkForces
 	//////////////////////////////////////////////////////////////
 	void projectile_startup()
 	{
-		s_boltModel         = TFE_Model_Jedi::get("wrbolt.3do", POOL_GAME);
-		s_thermalDetProj    = TFE_Sprite_Jedi::getFrame("wdet.fme", POOL_GAME);
-		s_repeaterProj      = TFE_Sprite_Jedi::getFrame("bullet.fme", POOL_GAME);
-		s_plasmaProj        = TFE_Sprite_Jedi::getWax("wemiss.wax", POOL_GAME);
-		s_mortarProj        = TFE_Sprite_Jedi::getWax("wshell.wax", POOL_GAME);
-		s_landmineWpnFrame  = TFE_Sprite_Jedi::getFrame("wmine.fme", POOL_GAME);
-		s_cannonProj        = TFE_Sprite_Jedi::getWax("wplasma.wax", POOL_GAME);
-		s_missileProj       = TFE_Sprite_Jedi::getWax("wmsl.wax", POOL_GAME);
-		s_landmineFrame     = TFE_Sprite_Jedi::getFrame("wlmine.fme", POOL_GAME);
-		s_greenBoltModel    = TFE_Model_Jedi::get("wgbolt.3do", POOL_GAME);
-		s_probeProj         = TFE_Sprite_Jedi::getWax("widball.wax", POOL_GAME);
-		s_homingMissileProj = TFE_Sprite_Jedi::getWax("wdt3msl.wax", POOL_GAME);
-		s_bobafetBall       = TFE_Sprite_Jedi::getWax("bobaball.wax", POOL_GAME);
+		// TFE: Assets are now listed externally.
+		TFE_ExternalData::ExternalProjectile* externalProjectiles = TFE_ExternalData::getExternalProjectiles();
+		for (u32 p = 0; p < PROJ_COUNT; p++)
+		{
+			// Frame
+			if (strcasecmp(externalProjectiles[p].assetType, "frame") == 0)
+			{
+				s_projectileFrames[p] = TFE_Sprite_Jedi::getFrame(externalProjectiles[p].asset, POOL_GAME);
+			}
 
-		s_stdProjReflectSnd      = sound_load("boltref1.voc", SOUND_PRIORITY_LOW1);
-		s_thermalDetReflectSnd   = sound_load("thermal1.voc", SOUND_PRIORITY_LOW1);
-		s_plasmaReflectSnd       = sound_load("bigrefl1.voc", SOUND_PRIORITY_LOW1);
-		s_stdProjCameraSnd       = sound_load("lasrby.voc",   SOUND_PRIORITY_LOW3);
-		s_plasmaCameraSnd        = sound_load("emisby.voc",   SOUND_PRIORITY_LOW3);
-		s_missileLoopingSnd      = sound_load("rocket-1.voc", SOUND_PRIORITY_LOW3);
-		s_homingMissileFlightSnd = sound_load("tracker.voc",  SOUND_PRIORITY_LOW3);
-		s_bobaBallCameraSnd      = sound_load("fireball.voc", SOUND_PRIORITY_LOW3);
-		s_landMineTriggerSnd     = sound_load("beep-10.voc",  SOUND_PRIORITY_HIGH3);
+			// Wax
+			if (strcasecmp(externalProjectiles[p].assetType, "sprite") == 0)
+			{
+				s_projectileWaxes[p] = TFE_Sprite_Jedi::getWax(externalProjectiles[p].asset, POOL_GAME);
+			}
+
+			// 3D model
+			if (strcasecmp(externalProjectiles[p].assetType, "3d") == 0)
+			{
+				s_projectileModels[p] = TFE_Model_Jedi::get(externalProjectiles[p].asset, POOL_GAME);
+			}
+
+			// Sounds
+			s_projectileCameraSnd[p] = sound_load(externalProjectiles[p].cameraPassSound, SOUND_PRIORITY_LOW3);
+			s_projectileReflectSnd[p] = sound_load(externalProjectiles[p].reflectSound, SOUND_PRIORITY_LOW1);
+			s_projectileFlightSnd[p] = sound_load(externalProjectiles[p].flightSound, SOUND_PRIORITY_LOW3);
+		}
+
+		// This is the original list of hardcoded assets.
+		// s_boltModel         = TFE_Model_Jedi::get("wrbolt.3do", POOL_GAME);
+		// s_thermalDetProj    = TFE_Sprite_Jedi::getFrame("wdet.fme", POOL_GAME);
+		// s_repeaterProj      = TFE_Sprite_Jedi::getFrame("bullet.fme", POOL_GAME);
+		// s_plasmaProj        = TFE_Sprite_Jedi::getWax("wemiss.wax", POOL_GAME);
+		// s_mortarProj        = TFE_Sprite_Jedi::getWax("wshell.wax", POOL_GAME);
+		// s_landmineWpnFrame  = TFE_Sprite_Jedi::getFrame("wmine.fme", POOL_GAME);
+		// s_cannonProj        = TFE_Sprite_Jedi::getWax("wplasma.wax", POOL_GAME);
+		// s_missileProj       = TFE_Sprite_Jedi::getWax("wmsl.wax", POOL_GAME);
+		// s_landmineFrame     = TFE_Sprite_Jedi::getFrame("wlmine.fme", POOL_GAME);
+		// s_greenBoltModel    = TFE_Model_Jedi::get("wgbolt.3do", POOL_GAME);
+		// s_probeProj         = TFE_Sprite_Jedi::getWax("widball.wax", POOL_GAME);
+		// s_homingMissileProj = TFE_Sprite_Jedi::getWax("wdt3msl.wax", POOL_GAME);
+		// s_bobafetBall       = TFE_Sprite_Jedi::getWax("bobaball.wax", POOL_GAME);
+		// 
+		// s_stdProjReflectSnd      = sound_load("boltref1.voc", SOUND_PRIORITY_LOW1);
+		// s_thermalDetReflectSnd   = sound_load("thermal1.voc", SOUND_PRIORITY_LOW1);
+		// s_plasmaReflectSnd       = sound_load("bigrefl1.voc", SOUND_PRIORITY_LOW1);
+		// s_stdProjCameraSnd       = sound_load("lasrby.voc",   SOUND_PRIORITY_LOW3);
+		// s_plasmaCameraSnd        = sound_load("emisby.voc",   SOUND_PRIORITY_LOW3);
+		// s_missileLoopingSnd      = sound_load("rocket-1.voc", SOUND_PRIORITY_LOW3);
+		// s_homingMissileFlightSnd = sound_load("tracker.voc",  SOUND_PRIORITY_LOW3);
+		// s_bobaBallCameraSnd      = sound_load("fireball.voc", SOUND_PRIORITY_LOW3);
+		s_landMineTriggerSnd     = sound_load("beep-10.voc",  SOUND_PRIORITY_HIGH3);		// still used!
 	}
 
 	void projectile_clearState()
@@ -153,7 +195,93 @@ namespace TFE_DarkForces
 		s_projectileTask = createSubTask("projectiles", projectileTaskFunc);
 	}
 
-	// TODO: Move projectile data to an external file to avoid hardcoding it for TFE.
+	// TFE: Set the Projectile object from external data. These were hardcoded in vanilla DF.
+	void setProjectileObject(SecObject*& projObj, ProjectileType type, TFE_ExternalData::ExternalProjectile* externalProjectiles)
+	{
+		if (strcasecmp(externalProjectiles[type].assetType, "spirit") == 0)
+		{
+			spirit_setData(projObj);
+		}
+		else if (strcasecmp(externalProjectiles[type].assetType, "frame") == 0)
+		{
+			if (s_projectileFrames[type])
+			{
+				frame_setData(projObj, s_projectileFrames[type]);
+			}
+		}
+		else if (strcasecmp(externalProjectiles[type].assetType, "sprite") == 0)
+		{
+			if (s_projectileWaxes[type])
+			{
+				sprite_setData(projObj, s_projectileWaxes[type]);
+				obj_setSpriteAnim(projObj);		// Setup the looping wax animation.
+			}
+		}
+		else if (strcasecmp(externalProjectiles[type].assetType, "3d") == 0)
+		{
+			if (s_projectileModels[type])
+			{
+				obj3d_setData(projObj, s_projectileModels[type]);
+			}
+		}
+		else
+		{
+			spirit_setData(projObj);	// default to spirit
+		}
+
+		if (externalProjectiles[type].fullBright)
+		{
+			projObj->flags |= OBJ_FLAG_FULLBRIGHT;
+		}
+
+		if (externalProjectiles[type].autoAim)
+		{
+			projObj->flags |= OBJ_FLAG_AIM;		// this is only meaningful for homing missiles, which can be shot down
+		}
+
+		if (externalProjectiles[type].movable)
+		{
+			projObj->flags |= OBJ_FLAG_MOVABLE;		// thermal detonators & mines will be moved by elevators
+		}
+
+		if (externalProjectiles[type].zeroWidth)
+		{
+			projObj->worldWidth = 0;
+		}
+	}
+	
+	// TFE: Set the Projectile logic from external data. These were hardcoded in vanilla DF.
+	void setProjectileLogic(ProjectileLogic*& projLogic, ProjectileType type, TFE_ExternalData::ExternalProjectile* externalProjectiles)
+	{
+		projLogic->type = type;
+		projLogic->updateFunc = getUpdateFunc(externalProjectiles[type].updateFunc);
+		projLogic->dmg = FIXED(externalProjectiles[type].damage);
+		projLogic->falloffAmt = externalProjectiles[type].falloffAmount;
+		projLogic->nextFalloffTick = s_curTick + externalProjectiles[type].nextFalloffTick;
+		projLogic->dmgFalloffDelta = externalProjectiles[type].damageFalloffDelta;
+		projLogic->minDmg = FIXED(externalProjectiles[type].minDamage);
+
+		projLogic->projForce = externalProjectiles[type].force;
+		projLogic->speed = FIXED(externalProjectiles[type].speed);
+		projLogic->horzBounciness = externalProjectiles[type].horzBounciness;
+		projLogic->vertBounciness = externalProjectiles[type].vertBounciness;
+		projLogic->bounceCnt = externalProjectiles[type].bounceCount;
+		projLogic->reflVariation = externalProjectiles[type].reflectVariation;
+		projLogic->reflectEffectId = (HitEffectID)externalProjectiles[type].reflectEffectId;
+		projLogic->hitEffectId = (HitEffectID)externalProjectiles[type].hitEffectId;;
+		projLogic->duration = s_curTick + externalProjectiles[type].duration;
+		projLogic->homingAngleSpd = externalProjectiles[type].homingAngularSpeed;	// Starting homing rate
+
+		projLogic->cameraPassSnd = s_projectileCameraSnd[type];
+		projLogic->reflectSnd = s_projectileReflectSnd[type];
+		projLogic->flightSndSource = s_projectileFlightSnd[type];
+
+		if (externalProjectiles[type].explodeOnTimeout)
+		{
+			projLogic->flags |= PROJFLAG_EXPLODE;
+		}
+	}
+
 	Logic* createProjectile(ProjectileType type, RSector* sector, fixed16_16 x, fixed16_16 y, fixed16_16 z, SecObject* obj)
 	{
 		ProjectileLogic* projLogic = (ProjectileLogic*)allocator_newItem(s_projectiles);
@@ -186,508 +314,112 @@ namespace TFE_DarkForces
 
 		obj_addLogic(projObj, (Logic*)projLogic, LOGIC_PROJECTILE, s_projectileTask, projectileLogicCleanupFunc);
 		
+		TFE_ExternalData::ExternalProjectile* externalProjectiles = TFE_ExternalData::getExternalProjectiles();
+
 		switch (type)
 		{
 			case PROJ_PUNCH:
 			{
-				spirit_setData(projObj);
-
-				projLogic->type = PROJ_PUNCH;
-				projLogic->updateFunc = stdProjectileUpdateFunc;
-				projLogic->dmg = FIXED(6);
-				projLogic->falloffAmt = 0;
-				projLogic->projForce = 1310;
-				projLogic->speed = FIXED(230);
-				projLogic->horzBounciness = 0;
-				projLogic->vertBounciness = 0;
-				projLogic->bounceCnt = 0;
-				projLogic->reflectEffectId = HEFFECT_NONE;
-				projLogic->hitEffectId = HEFFECT_NONE;
-				projLogic->duration = s_curTick;
+				setProjectileObject(projObj, PROJ_PUNCH, externalProjectiles);
+				setProjectileLogic(projLogic, PROJ_PUNCH, externalProjectiles);
 			} break;
 			case PROJ_PISTOL_BOLT:
 			{
-				if (s_boltModel)
-				{
-					obj3d_setData(projObj, s_boltModel);
-				}
-				projObj->flags |= OBJ_FLAG_FULLBRIGHT;
-				projObj->worldWidth = 0;
-
-				projLogic->type = PROJ_PISTOL_BOLT;
-				projLogic->updateFunc = stdProjectileUpdateFunc;
-				projLogic->dmg = FIXED(10);
-				projLogic->minDmg = ONE_16;
-				projLogic->falloffAmt = ONE_16;
-				projLogic->dmgFalloffDelta = 14;
-
-				projLogic->projForce = 655;
-				projLogic->speed = FIXED(250);
-				projLogic->horzBounciness = ONE_16;
-				projLogic->vertBounciness = ONE_16;
-				projLogic->bounceCnt = 3;
-				projLogic->reflVariation = 9;
-				projLogic->nextFalloffTick = s_curTick + 14;	// ~0.1 seconds
-				projLogic->reflectEffectId = HEFFECT_SMALL_EXP;
-				projLogic->hitEffectId = HEFFECT_SMALL_EXP;
-				projLogic->duration = s_curTick + 436;	// ~3 seconds
-				projLogic->cameraPassSnd = s_stdProjCameraSnd;
-				projLogic->reflectSnd = s_stdProjReflectSnd;
+				setProjectileObject(projObj, PROJ_PISTOL_BOLT, externalProjectiles);
+				setProjectileLogic(projLogic, PROJ_PISTOL_BOLT, externalProjectiles);
 			} break;
 			case PROJ_RIFLE_BOLT:
 			{
-				if (s_boltModel)
-				{
-					obj3d_setData(projObj, s_boltModel);
-				}
-				projObj->flags |= OBJ_FLAG_FULLBRIGHT;
-				projObj->worldWidth = 0;
-
-				projLogic->type = PROJ_RIFLE_BOLT;
-				projLogic->updateFunc = stdProjectileUpdateFunc;
-				projLogic->dmg = FIXED(10);
-				projLogic->minDmg = ONE_16;
-				projLogic->falloffAmt = 52428;	// 0.8 damage
-				projLogic->dmgFalloffDelta = 14;
-
-				projLogic->projForce = 655;
-				projLogic->speed = FIXED(250);
-				projLogic->horzBounciness = ONE_16;
-				projLogic->vertBounciness = ONE_16;
-				projLogic->bounceCnt = 3;
-				projLogic->reflVariation = 9;
-				projLogic->nextFalloffTick = s_curTick + 14;	// ~0.1 seconds
-				projLogic->reflectEffectId = HEFFECT_SMALL_EXP;
-				projLogic->hitEffectId = HEFFECT_SMALL_EXP;
-				projLogic->duration = s_curTick + 582;	// ~4 seconds
-				projLogic->cameraPassSnd = s_stdProjCameraSnd;
-				projLogic->reflectSnd = s_stdProjReflectSnd;
+				setProjectileObject(projObj, PROJ_RIFLE_BOLT, externalProjectiles);
+				setProjectileLogic(projLogic, PROJ_RIFLE_BOLT, externalProjectiles);
 			} break;
 			case PROJ_THERMAL_DET:
 			{
-				if (s_thermalDetProj)
-				{
-					frame_setData(projObj, s_thermalDetProj);
-				}
-				projObj->flags |= OBJ_FLAG_MOVABLE;
-				projObj->worldWidth = 0;
-
-				projLogic->flags |= PROJFLAG_EXPLODE;
-				projLogic->type = PROJ_THERMAL_DET;
-				projLogic->updateFunc = arcingProjectileUpdateFunc;
-				projLogic->dmg = 0;
-				projLogic->minDmg = ONE_16;
-				projLogic->falloffAmt = 0;
-				projLogic->dmgFalloffDelta = 0;
-
-				projLogic->projForce = 6553;
-				projLogic->speed = FIXED(80);
-				projLogic->horzBounciness = 29491;	// 0.45
-				projLogic->vertBounciness = 58327;  // 0.89
-				projLogic->bounceCnt = -1;
-				projLogic->reflectEffectId = HEFFECT_NONE;
-				projLogic->hitEffectId = HEFFECT_THERMDET_EXP;
-				projLogic->duration = s_curTick + 436;	// ~3 seconds
-				projLogic->cameraPassSnd = NULL_SOUND;
-				projLogic->reflectSnd = s_thermalDetReflectSnd;
+				setProjectileObject(projObj, PROJ_THERMAL_DET, externalProjectiles);
+				setProjectileLogic(projLogic, PROJ_THERMAL_DET, externalProjectiles);
 			} break;
 			case PROJ_REPEATER:
 			{
-				if (s_repeaterProj)
-				{
-					frame_setData(projObj, s_repeaterProj);
-				}
-				projObj->flags |= OBJ_FLAG_FULLBRIGHT;
-				projObj->worldWidth = 0;
+				setProjectileObject(projObj, PROJ_REPEATER, externalProjectiles);
+				setProjectileLogic(projLogic, PROJ_REPEATER, externalProjectiles);
 
-				projLogic->type = PROJ_REPEATER;
-				projLogic->updateFunc = stdProjectileUpdateFunc;
-				projLogic->dmg = FIXED(10);
-				projLogic->minDmg = ONE_16;
-				projLogic->falloffAmt = 19660;	// 0.3 damage
-				projLogic->dmgFalloffDelta = 19660;	// 135 seconds, this probably should have been 0.3 seconds, or 43
-
-				projLogic->projForce = 1966;
-				projLogic->speed = FIXED(270);
-				projLogic->horzBounciness = 0;
-				projLogic->vertBounciness = 0;
-				projLogic->bounceCnt = 3;
-				projLogic->reflVariation = 9;
-				projLogic->nextFalloffTick = s_curTick + 19660;	// ~135 seconds, should have been ~0.3 seconds.
-				projLogic->reflectEffectId = HEFFECT_NONE;
-				projLogic->hitEffectId = HEFFECT_REPEATER_EXP;
-				projLogic->duration = s_curTick + 582;	// ~4 seconds
-				projLogic->cameraPassSnd = s_stdProjCameraSnd;
-				projLogic->reflectSnd = s_stdProjReflectSnd;
+				// dmgFalloffDelta was 19660 in the code; this probably should have been 0.3 seconds, or 43 ticks
 			} break;
 			case PROJ_PLASMA:
 			{
-				if (s_plasmaProj)
-				{
-					sprite_setData(projObj, s_plasmaProj);
-				}
-				projObj->flags |= OBJ_FLAG_FULLBRIGHT;
-				projObj->worldWidth = 0;
-				// Setup the looping wax animation.
-				obj_setSpriteAnim(projObj);
-
-				projLogic->type = PROJ_PLASMA;
-				projLogic->updateFunc = stdProjectileUpdateFunc;
-				projLogic->dmg = FIXED(15);
-				projLogic->minDmg = ONE_16;
-				projLogic->falloffAmt = 39321;		// 0.6 damage
-				projLogic->dmgFalloffDelta = 29;	// 0.2 seconds
-
-				projLogic->projForce = 3276;
-				projLogic->speed = FIXED(100);
-				projLogic->horzBounciness = 58982;	// 0.9
-				projLogic->vertBounciness = 58982;
-				projLogic->bounceCnt = 3;
-				projLogic->reflVariation = 9;
-				projLogic->nextFalloffTick = s_curTick + 29;	// ~0.2 second
-				projLogic->reflectEffectId = HEFFECT_NONE;
-				projLogic->hitEffectId = HEFFECT_PLASMA_EXP;
-				projLogic->duration = s_curTick + 1456;	// ~10 seconds
-				projLogic->cameraPassSnd = s_plasmaCameraSnd;
-				projLogic->reflectSnd = s_plasmaReflectSnd;
+				setProjectileObject(projObj, PROJ_PLASMA, externalProjectiles);
+				setProjectileLogic(projLogic, PROJ_PLASMA, externalProjectiles);
 			} break;
 			case PROJ_MORTAR:
 			{
-				if (s_mortarProj)
-				{
-					sprite_setData(projObj, s_mortarProj);
-				}
-				// Setup the looping wax animation.
-				obj_setSpriteAnim(projObj);
-				projObj->worldWidth = 0;
-
-				projLogic->type = PROJ_MORTAR;
-				projLogic->updateFunc = arcingProjectileUpdateFunc;
-				projLogic->dmg = 0;	// Damage is set to 0 for some reason.
-				projLogic->falloffAmt = 0;		// No falloff
-				projLogic->dmgFalloffDelta = 0;
-
-				projLogic->projForce = 13107;
-				projLogic->speed = FIXED(110);
-				projLogic->horzBounciness = 26214;	// 0.4
-				projLogic->vertBounciness = 39321;	// 0.6
-				projLogic->bounceCnt = 0;
-				projLogic->reflectEffectId = HEFFECT_NONE;
-				projLogic->hitEffectId = HEFFECT_MORTAR_EXP;
-				projLogic->duration = s_curTick + 582;	// ~4 seconds -> ~440 units
+				setProjectileObject(projObj, PROJ_MORTAR, externalProjectiles);
+				setProjectileLogic(projLogic, PROJ_MORTAR, externalProjectiles);
 			} break;
 			case PROJ_LAND_MINE:
 			{
-				if (s_landmineWpnFrame)
-				{
-					frame_setData(projObj, s_landmineWpnFrame);
-				}
+				setProjectileObject(projObj, PROJ_LAND_MINE, externalProjectiles);
 				projObj->entityFlags |= ETFLAG_LANDMINE_WPN;
-				projObj->flags |= OBJ_FLAG_MOVABLE;
-				projObj->worldWidth = 0;
-
-				projLogic->type = PROJ_LAND_MINE;
-				projLogic->updateFunc = arcingProjectileUpdateFunc;
-				projLogic->dmg = 0;
-				projLogic->falloffAmt = 0;
-				projLogic->dmgFalloffDelta = 0;
-
-				projLogic->projForce = 13107;
-				projLogic->speed = 0;
-				projLogic->horzBounciness = 0;
-				projLogic->vertBounciness = 0;
-				projLogic->bounceCnt = -1;
-				projLogic->reflectEffectId = HEFFECT_NONE;
-				projLogic->flags |= PROJFLAG_EXPLODE;
-				projLogic->hitEffectId = HEFFECT_LARGE_EXP;
-				projLogic->duration = s_curTick + 436;	// ~3 seconds
+				setProjectileLogic(projLogic, PROJ_LAND_MINE, externalProjectiles);
 			} break;
 			case PROJ_LAND_MINE_PROX:
 			{
-				if (s_landmineWpnFrame)
-				{
-					frame_setData(projObj, s_landmineWpnFrame);
-				}
+				setProjectileObject(projObj, PROJ_LAND_MINE_PROX, externalProjectiles);
 				projObj->entityFlags |= ETFLAG_LANDMINE_WPN;
-				projObj->flags |= OBJ_FLAG_MOVABLE;
-				projObj->worldWidth = 0;
-
-				projLogic->type = PROJ_LAND_MINE_PROX;
-				projLogic->updateFunc = arcingProjectileUpdateFunc;
-				projLogic->dmg = 0;
-				projLogic->falloffAmt = 0;
-				projLogic->dmgFalloffDelta = 0;
-
-				projLogic->projForce = 13107;
-				projLogic->speed = 0;
-				projLogic->horzBounciness = 0;
-				projLogic->vertBounciness = 0;
-				projLogic->bounceCnt = -1;
-				projLogic->reflectEffectId = HEFFECT_NONE;
-				projLogic->flags |= PROJFLAG_EXPLODE;
-				projLogic->hitEffectId = HEFFECT_LARGE_EXP;
-				projLogic->duration = s_curTick + 436;	// ~3 seconds
+				setProjectileLogic(projLogic, PROJ_LAND_MINE_PROX, externalProjectiles);
 			} break;
 			case PROJ_LAND_MINE_PLACED:
 			{
-				if (s_landmineFrame)
-				{
-					frame_setData(projObj, s_landmineFrame);
-				}
-				projLogic->type = PROJ_LAND_MINE_PLACED;
-				projObj->flags |= OBJ_FLAG_MOVABLE;
-				projObj->worldWidth = 0;
-
-				projLogic->updateFunc = landMineUpdateFunc;
-				projLogic->dmg = 0;
-				projLogic->falloffAmt = 0;
-				projLogic->projForce = 13107;
-				projLogic->speed = 0;
-				projLogic->horzBounciness = 0;
-				projLogic->vertBounciness = 0;
-				projLogic->bounceCnt = -1;
-				projLogic->duration = 0;
-				projLogic->reflectEffectId = HEFFECT_NONE;
-				projLogic->flags |= PROJFLAG_EXPLODE;
-				projLogic->hitEffectId = HEFFECT_LARGE_EXP;
+				setProjectileObject(projObj, PROJ_LAND_MINE_PLACED, externalProjectiles);
+				setProjectileLogic(projLogic, PROJ_LAND_MINE_PLACED, externalProjectiles);
 			} break;
 			case PROJ_CONCUSSION:
 			{
-				spirit_setData(projObj);
-				projObj->worldWidth = 0;
-
-				projLogic->type = PROJ_CONCUSSION;
-				projLogic->updateFunc = stdProjectileUpdateFunc;
-				projLogic->dmg = 0;
-				projLogic->falloffAmt = 0;
-				projLogic->dmgFalloffDelta = 0;
-
-				projLogic->projForce = 3932;
-				projLogic->speed = FIXED(190);
-				projLogic->horzBounciness = 58982;	// 0.9
-				projLogic->vertBounciness = 58982;
-				projLogic->bounceCnt = 0;
-				projLogic->reflectEffectId = HEFFECT_NONE;
-				projLogic->hitEffectId = HEFFECT_CONCUSSION;
-				projLogic->duration = s_curTick + 728;	// ~5 seconds
+				setProjectileObject(projObj, PROJ_CONCUSSION, externalProjectiles);
+				setProjectileLogic(projLogic, PROJ_CONCUSSION, externalProjectiles);
 			} break;
 			case PROJ_CANNON:
 			{
-				if (s_cannonProj)
-				{
-					sprite_setData(projObj, s_cannonProj);
-				}
-				projObj->flags |= OBJ_FLAG_FULLBRIGHT;
-				projObj->worldWidth = 0;
-				// Setup the looping wax animation.
-				obj_setSpriteAnim(projObj);
-
-				projLogic->type = PROJ_CANNON;
-				projLogic->updateFunc = stdProjectileUpdateFunc;
-				projLogic->dmg = FIXED(30);
-				projLogic->falloffAmt = 0;		// No falloff
-				projLogic->dmgFalloffDelta = 0;
-
-				projLogic->projForce = 4032;
-				projLogic->speed = FIXED(100);
-				projLogic->horzBounciness = 58982;	// 0.9
-				projLogic->vertBounciness = 58982;
-				projLogic->bounceCnt = 3;
-				projLogic->reflVariation = 18;
-				projLogic->reflectEffectId = HEFFECT_NONE;
-				projLogic->hitEffectId = HEFFECT_CANNON_EXP;
-				projLogic->duration = s_curTick + 582;	// ~4 seconds -> ~400 units
-				projLogic->cameraPassSnd = s_plasmaCameraSnd;
-				projLogic->reflectSnd = s_plasmaReflectSnd;
+				setProjectileObject(projObj, PROJ_CANNON, externalProjectiles);
+				setProjectileLogic(projLogic, PROJ_CANNON, externalProjectiles);
 			} break;
 			case PROJ_MISSILE:
 			{
-				if (s_missileProj)
-				{
-					sprite_setData(projObj, s_missileProj);
-				}
-				// Setup the looping wax animation.
-				obj_setSpriteAnim(projObj);
-				projObj->worldWidth = 0;
-
-				projLogic->type = PROJ_MISSILE;
-				projLogic->updateFunc = stdProjectileUpdateFunc;
-				projLogic->dmg = 0;	// Damage is set to 0 for some reason.
-				projLogic->falloffAmt = 0;		// No falloff
-				projLogic->dmgFalloffDelta = 0;
-
-				projLogic->projForce = ONE_16;
-				projLogic->speed = FIXED(74);
-				projLogic->horzBounciness = 58982;	// 0.9
-				projLogic->vertBounciness = 58982;
-				projLogic->bounceCnt = 0;
-				projLogic->reflectEffectId = HEFFECT_NONE;
-				projLogic->hitEffectId = HEFFECT_MISSILE_EXP;
-				projLogic->duration = s_curTick + 1019;	// ~7 seconds -> ~518 units
-				projLogic->flightSndSource = s_missileLoopingSnd;
+				setProjectileObject(projObj, PROJ_MISSILE, externalProjectiles);
+				setProjectileLogic(projLogic, PROJ_MISSILE, externalProjectiles);
 			} break;
 			case PROJ_TURRET_BOLT:
 			{
-				if (s_greenBoltModel)
-				{
-					obj3d_setData(projObj, s_greenBoltModel);
-				}
-				projObj->flags |= OBJ_FLAG_FULLBRIGHT;
-				projObj->worldWidth = 0;
-
-				projLogic->type = PROJ_TURRET_BOLT;
-				projLogic->updateFunc = stdProjectileUpdateFunc;
-				projLogic->dmg = FIXED(17);
-				projLogic->minDmg = ONE_16;
-				projLogic->falloffAmt = ONE_16;
-				projLogic->dmgFalloffDelta = 14;
-
-				projLogic->projForce = 1966;
-				projLogic->speed = FIXED(300);
-				projLogic->horzBounciness = ONE_16;
-				projLogic->vertBounciness = ONE_16;
-				projLogic->bounceCnt = 3;
-				projLogic->reflVariation = 9;
-				projLogic->nextFalloffTick = s_curTick + 14;	// ~0.1 seconds
-				projLogic->reflectEffectId = HEFFECT_SMALL_EXP;
-				projLogic->hitEffectId = HEFFECT_SMALL_EXP;
-				projLogic->duration = s_curTick + 436;	// ~3 seconds
-				projLogic->cameraPassSnd = s_stdProjCameraSnd;
-				projLogic->reflectSnd = s_stdProjReflectSnd;
+				setProjectileObject(projObj, PROJ_TURRET_BOLT, externalProjectiles);
+				setProjectileLogic(projLogic, PROJ_TURRET_BOLT, externalProjectiles);
 			} break;
 			case PROJ_REMOTE_BOLT:
 			{
-				if (s_greenBoltModel)
-				{
-					obj3d_setData(projObj, s_greenBoltModel);
-				}
-				projObj->flags |= OBJ_FLAG_FULLBRIGHT;
-				projObj->worldWidth = 0;
-
-				projLogic->type = PROJ_REMOTE_BOLT;
-				projLogic->updateFunc = stdProjectileUpdateFunc;
-				projLogic->dmg = ONE_16;
-				projLogic->minDmg = 0;
-				projLogic->falloffAmt = ONE_16;
-				projLogic->dmgFalloffDelta = 14;
-
-				projLogic->projForce = 655;
-				projLogic->speed = FIXED(300);
-				projLogic->horzBounciness = ONE_16;
-				projLogic->vertBounciness = ONE_16;
-				projLogic->bounceCnt = 3;
-				projLogic->reflVariation = 9;
-				projLogic->nextFalloffTick = s_curTick + 14;	// ~0.1 seconds
-				projLogic->reflectEffectId = HEFFECT_SMALL_EXP;
-				projLogic->hitEffectId = HEFFECT_SMALL_EXP;
-				projLogic->duration = s_curTick + 436;	// ~3 seconds
-				projLogic->cameraPassSnd = s_stdProjCameraSnd;
-				projLogic->reflectSnd = s_stdProjReflectSnd;
+				setProjectileObject(projObj, PROJ_REMOTE_BOLT, externalProjectiles);
+				setProjectileLogic(projLogic, PROJ_REMOTE_BOLT, externalProjectiles);
 			} break;
 			case PROJ_EXP_BARREL:
 			{
-				spirit_setData(projObj);
-
-				projLogic->type = PROJ_EXP_BARREL;
-				projLogic->updateFunc = stdProjectileUpdateFunc;
-				projLogic->dmg = 0;
-				projLogic->falloffAmt = 0;
-				projLogic->dmgFalloffDelta = 0;
-
-				projLogic->projForce = 0;
-				projLogic->speed = 0;
-				projLogic->horzBounciness = 0;
-				projLogic->vertBounciness = 0;
-				projLogic->bounceCnt = 0;
-				projLogic->reflectEffectId = HEFFECT_NONE;
-				projLogic->flags |= PROJFLAG_EXPLODE;
-				projLogic->hitEffectId = HEFFECT_EXP_BARREL;
-				projLogic->duration = s_curTick;
+				setProjectileObject(projObj, PROJ_EXP_BARREL, externalProjectiles);
+				setProjectileLogic(projLogic, PROJ_EXP_BARREL, externalProjectiles);
 			} break;
 			case PROJ_HOMING_MISSILE:
 			{
-				if (s_homingMissileProj)
-				{
-					sprite_setData(projObj, s_homingMissileProj);
-				}
-				obj_setSpriteAnim(projObj);
-				projObj->flags |= OBJ_FLAG_AIM;
+				setProjectileObject(projObj, PROJ_HOMING_MISSILE, externalProjectiles);
+				setProjectileLogic(projLogic, PROJ_HOMING_MISSILE, externalProjectiles);
 
-				projLogic->flags |= PROJFLAG_EXPLODE;
-				projLogic->type = PROJ_HOMING_MISSILE;
-				projLogic->updateFunc = homingMissileProjectileUpdateFunc;
-				projLogic->dmg = 0;
-				projLogic->minDmg = ONE_16;
-				projLogic->falloffAmt = 0;
-				projLogic->dmgFalloffDelta = ONE_16;
+				// projLogic->speed = FIXED(58) / 2;
+				// speed will be set to 29 externally; the value is correct according to the code, but they are slower in DOS.
 
-				projLogic->projForce = ONE_16;
-				projLogic->speed = FIXED(58) / 2; // try slowing them down...; the value is correct according to the code, but they are slower in DOS.
-				projLogic->horzBounciness = 58982;	// 0.9
-				projLogic->vertBounciness = 58982;
-				projLogic->bounceCnt = 0;
-				projLogic->homingAngleSpd = 455;	// Starting homing rate = 10 degrees / second
-				projLogic->reflectEffectId = HEFFECT_NONE;
-				projLogic->flightSndSource = s_homingMissileFlightSnd;
-				projLogic->hitEffectId = HEFFECT_MISSILE_EXP;
-				projLogic->duration = s_curTick + 1456;
-				projLogic->reflectSnd = 0;
 			} break;
 			case PROJ_PROBE_PROJ:
 			{
-				if (s_probeProj)
-				{
-					sprite_setData(projObj, s_probeProj);
-				}
-				projObj->flags |= OBJ_FLAG_FULLBRIGHT;
-				projObj->worldWidth = 0;
-				// Setup the looping wax animation.
-				obj_setSpriteAnim(projObj);
-
-				projLogic->type = PROJ_PROBE_PROJ;
-				projLogic->updateFunc = stdProjectileUpdateFunc;
-				projLogic->dmg = FIXED(10);
-				projLogic->minDmg = ONE_16;
-				projLogic->falloffAmt = ONE_16;		// 1.0 damage
-				projLogic->dmgFalloffDelta = 14;
-
-				projLogic->projForce = 2621;
-				projLogic->speed = FIXED(100);
-				projLogic->horzBounciness = 58982;	// 0.9
-				projLogic->vertBounciness = 58982;
-				projLogic->bounceCnt = 3;
-				projLogic->reflVariation = 9;
-				projLogic->nextFalloffTick = s_curTick + 14;
-				projLogic->reflectEffectId = HEFFECT_NONE;
-				projLogic->hitEffectId = HEFFECT_PLASMA_EXP;
-				projLogic->duration = s_curTick + 1165;	// ~8 seconds
-				projLogic->cameraPassSnd = s_plasmaCameraSnd;
-				projLogic->reflectSnd = s_plasmaReflectSnd;
+				setProjectileObject(projObj, PROJ_PROBE_PROJ, externalProjectiles);
+				setProjectileLogic(projLogic, PROJ_PROBE_PROJ, externalProjectiles);
 			} break;
 			case PROJ_BOBAFET_BALL:
 			{
-				if (s_bobafetBall)
-				{
-					sprite_setData(projObj, s_bobafetBall);
-				}
-				// Setup the looping wax animation.
-				obj_setSpriteAnim(projObj);
-				projObj->worldWidth = 0;
-
-				projLogic->type = PROJ_BOBAFET_BALL;
-				projLogic->updateFunc = stdProjectileUpdateFunc;
-				projLogic->dmg = 0;
-				projLogic->falloffAmt = 0;
-
-				projLogic->projForce = ONE_16;
-				projLogic->speed = FIXED(90);
-				projLogic->horzBounciness = 58982;	// 0.9
-				projLogic->vertBounciness = 58982;
-				projLogic->bounceCnt = 0;
-				projLogic->reflectEffectId = HEFFECT_NONE;
-				projLogic->hitEffectId = HEFFECT_EXP_25;
-				projLogic->duration = s_curTick + 1456;
-				projLogic->cameraPassSnd = s_bobaBallCameraSnd;
+				setProjectileObject(projObj, PROJ_BOBAFET_BALL, externalProjectiles);
+				setProjectileLogic(projLogic, PROJ_BOBAFET_BALL, externalProjectiles);
 			} break;
 		}
 		projLogic->col_speed = projLogic->speed;
@@ -856,6 +588,31 @@ namespace TFE_DarkForces
 		deleteLogicAndObject(logic);
 		allocator_deleteItem(s_projectiles, logic);
 		// Bug: allocator_release() is never called
+	}
+
+	ProjectileFunc getUpdateFunc(const char* type)
+	{
+		if (strcasecmp(type, "standard") == 0)
+		{
+			return stdProjectileUpdateFunc;
+		}
+
+		if (strcasecmp(type, "arcing") == 0)
+		{
+			return arcingProjectileUpdateFunc;
+		}
+
+		if (strcasecmp(type, "landmine") == 0)
+		{
+			return landMineUpdateFunc;
+		}
+
+		if (strcasecmp(type, "homing") == 0)
+		{
+			return homingMissileProjectileUpdateFunc;
+		}
+
+		return stdProjectileUpdateFunc;
 	}
 
 	// The "standard" update function - projectiles travel in a straight line with a fixed velocity.

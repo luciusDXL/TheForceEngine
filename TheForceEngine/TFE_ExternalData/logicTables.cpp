@@ -72,6 +72,7 @@ namespace TFE_ExternalData
 		"LIFE",				// 42
 		"MEDKIT",			// 43
 		"PILE",				// 44
+		"ITEM10",			// 45 - added for s_playerInfo.itemUnused
 	};
 
 	const char* df_effectTable[] =

@@ -1,0 +1,220 @@
+{
+    "effects": [
+        {
+            "type": "SMALL_EXP",
+            "data": {
+                "wax": "exptiny.wax",
+                "force": 0,
+                "damage": 0,
+                "explosiveRange": 0,
+                "wakeupRange": 40,
+                "soundEffect": "ex-tiny1.voc",
+                "soundPriority": 1
+            }
+        },
+        {
+            "type": "THERMDET_EXP",
+            "data": {
+                "wax": "detexp.wax",
+                "force": 50,
+                "damage": 60,
+                "explosiveRange": 30,
+                "wakeupRange": 50,
+                "soundEffect": "ex-small.voc",
+                "soundPriority": 1
+            }
+        },
+        {
+            "type": "PLASMA_EXP",
+            "data": {
+                "wax": "emisexp.wax",
+                "force": 0,
+                "damage": 0,
+                "explosiveRange": 0,
+                "wakeupRange": 40,
+                "soundEffect": "ex-tiny1.voc",
+                "soundPriority": 1
+            }
+        },
+        {
+            "type": "MORTAR_EXP",
+            "data": {
+                "wax": "mortexp.wax",
+                "force": 35,
+                "damage": 50,
+                "explosiveRange": 40,
+                "wakeupRange": 60,
+                "soundEffect": "ex-med1.voc",
+                "soundPriority": 115
+
+            }
+        },
+        {
+            "type": "CONCUSSION",
+            "data": {
+                "wax": "concexp.wax",
+                "force": 30,
+                "damage": 30,
+                "explosiveRange": 25,
+                "wakeupRange": 60,
+                "soundEffect": "ex-lrg1.voc",
+                "soundPriority": 115
+            }
+        },
+        {
+            "type": "CONCUSSION2",
+            "data": {
+                "wax": "",
+                "force": 30,
+                "damage": 30,
+                "explosiveRange": 25,
+                "wakeupRange": 60,
+                "soundEffect": "ex-lrg1.voc",
+                "soundPriority": 115
+            }                
+        },
+        {
+            "type": "MISSILE_EXP",
+            "data": {
+                "wax": "missexp.wax",
+                "force": 70,
+                "damage": 70,
+                "explosiveRange": 40,
+                "wakeupRange": 70,
+                "soundEffect": "ex-med1.voc",
+                "soundPriority": 115
+            }
+        },
+        {
+            "type": "MISSILE_WEAK",
+            "data": {
+                "wax": "missexp.wax",
+                "force": 50,
+                "damage": 25,
+                "explosiveRange": 40,
+                "wakeupRange": 70,
+                "soundEffect": "ex-med1.voc",
+                "soundPriority": 115
+            }
+        },
+        {
+            "type": "PUNCH",
+            "data": {
+                "wax": "",
+                "force": 0,
+                "damage": 0,
+                "explosiveRange": 0,
+                "wakeupRange": 10,
+                "soundEffect": "punch.voc",
+                "soundPriority": 4
+            }
+        },
+        {
+            "type": "CANNON_EXP",
+            "data": {
+                "wax": "plasexp.wax",
+                "force": 0,
+                "damage": 0,
+                "explosiveRange": 0,
+                "wakeupRange": 50,
+                "soundEffect": "ex-med1.voc",
+                "soundPriority": 1
+            }
+        },
+        {
+            "type": "REPEATER_EXP",
+            "data": {
+                "wax": "bullexp.wax",
+                "force": 0,
+                "damage": 0,
+                "explosiveRange": 0,
+                "wakeupRange": 50,
+                "soundEffect": "ex-tiny1.voc",
+                "soundPriority": 1
+            }
+        },
+        {
+            "type": "LARGE_EXP",
+            "data": {
+                "wax": "mineexp.wax",
+                "force": 80,
+                "damage": 90,
+                "explosiveRange": 45,
+                "wakeupRange": 90,
+                "soundEffect": "ex-lrg1.voc",
+                "soundPriority": 115
+            }
+        },
+        {
+            "type": "EXP_BARREL",
+            "data": {
+                "wax": "",
+                "force": 120,
+                "damage": 60,
+                "explosiveRange": 40,
+                "wakeupRange": 60,
+                "soundEffect": "ex-med1.voc",
+                "soundPriority": 76
+            }
+        },
+        {
+            "type": "EXP_INVIS",
+            "data": {
+                "wax": "",
+                "force": 60,
+                "damage": 40,
+                "explosiveRange": 20,
+                "wakeupRange": 60,
+                "soundEffect": ""
+            }
+        },
+        {
+            "type": "SPLASH",
+            "data": {
+                "wax": "splash.wax",
+                "force": 0,
+                "damage": 0,
+                "explosiveRange": 0,
+                "wakeupRange": 40,
+                "soundEffect": "swim-in.voc",
+                "soundPriority": 12
+            }
+        },
+        {
+            "type": "EXP_35",
+            "data": {
+                "wax": "genexp.wax",
+                "force": 30,
+                "damage": 35,
+                "explosiveRange": 30,
+                "wakeupRange": 50,
+                "soundEffect": "ex-med1.voc",
+                "soundPriority": 115
+            }
+        },
+        {
+            "type": "EXP_NO_DMG",
+            "data": {
+                "wax": "genexp.wax",
+                "force": 0,
+                "damage": 0,
+                "explosiveRange": 0,
+                "wakeupRange": 50,
+                "soundEffect": "ex-med1.voc",
+                "soundPriority": 115
+            }
+        },
+        {
+            "type": "EXP_25",
+            "data": {
+                "wax": "genexp.wax",
+                "force": 20,
+                "damage": 25,
+                "explosiveRange": 20,
+                "wakeupRange": 50,
+                "soundEffect": "ex-med1.voc",
+                "soundPriority": 115
+            }
+        }
+    ]
+}
