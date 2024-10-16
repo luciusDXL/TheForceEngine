@@ -218,10 +218,10 @@ void ScreenCapture::captureFrame(const char* outputPath)
 	m_writeBuffer = (m_writeBuffer + 1) % m_bufferCount;
 }
 
-void ScreenCapture::beginRecording(const char* path)
+void ScreenCapture::beginRecording(const char* path, bool skipCountdown)
 {
 	m_capturePath = string(path);
-	if (TFE_Settings::getSystemSettings()->showGifRecordingCountdown)
+	if (!skipCountdown && TFE_Settings::getSystemSettings()->showGifRecordingCountdown)
 	{
 		startCountdown();
 	}

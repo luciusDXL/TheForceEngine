@@ -39,7 +39,7 @@ public:
 
 	void captureFrontBufferToMemory(u32* mem);
 
-	void beginRecording(const char* path);
+	void beginRecording(const char* path, bool skipCountdown);
 	void endRecording();
 	
 	ScreenCaptureState getState();
