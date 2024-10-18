@@ -202,7 +202,7 @@ namespace TFE_DarkForces
 	JBool s_weaponFiringSec = JFALSE;
 	JBool s_wearingCleats = JFALSE;
 	JBool s_wearingGasmask = JFALSE;
-	JBool s_nightvisionActive = JFALSE;
+	JBool s_nightVisionActive = JFALSE;
 	JBool s_headlampActive = JFALSE;
 	JBool s_superCharge   = JFALSE;
 	JBool s_superChargeHud= JFALSE;
@@ -447,6 +447,244 @@ namespace TFE_DarkForces
 			s_playerInfo.maxWeapon = nextWpn;
 		}
 	}
+
+	void player_handleLevelOverrides(ModSettingLevelOverride modLevelOverride)
+	{
+		// Handle Integer Overrides
+		std::map<std::string, int> intMap = modLevelOverride.intOverrideMap;
+
+		// Handle Ammo/Shields/Lives/Battery
+		if (intMap.find("energy") != intMap.end())
+		{
+			s_playerInfo.ammoEnergy = pickup_addToValue(0, intMap["energy"], 999);
+		}
+		if (intMap.find("power") != intMap.end())
+		{
+			s_playerInfo.ammoPower = pickup_addToValue(0, intMap["power"], 999);
+		}
+		if (intMap.find("plasma") != intMap.end())
+		{
+			s_playerInfo.ammoPlasma = pickup_addToValue(0, intMap["plasma"], 999);
+		}
+		if (intMap.find("detonator") != intMap.end())
+		{
+			s_playerInfo.ammoDetonator = pickup_addToValue(0, intMap["detonator"], 999);
+		}
+		if (intMap.find("shell") != intMap.end())
+		{
+			s_playerInfo.ammoShell = pickup_addToValue(0, intMap["shell"], 999);
+		}
+		if (intMap.find("mine") != intMap.end())
+		{
+			s_playerInfo.ammoMine = pickup_addToValue(0, intMap["mine"], 999);
+		}
+		if (intMap.find("missile") != intMap.end())
+		{
+			s_playerInfo.ammoMissile = pickup_addToValue(0, intMap["missile"], 99);
+		}
+		if (intMap.find("shields") != intMap.end())
+		{
+			s_playerInfo.shields = pickup_addToValue(0, intMap["shields"], 999);
+		}
+		if (intMap.find("health") != intMap.end())
+		{
+			s_playerInfo.health = pickup_addToValue(0, intMap["health"], 999);
+		}
+		if (intMap.find("lives") != intMap.end())
+		{
+			s_lifeCount = pickup_addToValue(0, intMap["lives"], 9);
+		}
+		if (intMap.find("battery") != intMap.end())
+		{
+			fixed16_16 batteryPower = FIXED(2);
+			int batteryPowerPercent = pickup_addToValue(0, intMap["battery"], 100);
+			s_batteryPower = (batteryPower * batteryPowerPercent) / 100;
+		}
+
+		// Note - this doesn't check if the weapon is is in the inventory!
+		if (intMap.find("defaultWeapon") != intMap.end())
+		{
+			int weaponSwitchID = pickup_addToValue(0, intMap["defaultWeapon"], 9);
+
+			// Map it to the weapon index on the KEYBOARD (Ex: 1 = fists, 2  = bryar etc..)
+			if (weaponSwitchID == 0)
+			{
+				player_setNextWeapon(9);
+			}
+			else
+			{
+				player_setNextWeapon(weaponSwitchID - 1);
+			}
+		}
+
+		// Handle attenuation such as Gromas
+		if (intMap.find("fogLevel") != intMap.end())
+		{
+			s_levelAtten = pickup_addToValue(0, intMap["fogLevel"], 100);
+		}
+
+		// Handle Boolean Overrides
+		std::map<std::string, bool> boolMap = modLevelOverride.boolOverrideMap;
+
+		// Handle Weapons
+		if (boolMap.find("pistol") != boolMap.end())
+		{
+			s_playerInfo.itemPistol = boolMap["pistol"];
+		}
+		if (boolMap.find("rifle") != boolMap.end())
+		{
+			s_playerInfo.itemRifle = boolMap["rifle"];
+		}
+		if (boolMap.find("autogun") != boolMap.end())
+		{
+			s_playerInfo.itemAutogun = boolMap["autogun"];
+		}
+		if (boolMap.find("mortar") != boolMap.end())
+		{
+			s_playerInfo.itemMortar = boolMap["mortar"];
+		}
+		if (boolMap.find("fusion") != boolMap.end())
+		{
+			s_playerInfo.itemFusion = boolMap["fusion"];
+		}
+		if (boolMap.find("concussion") != boolMap.end())
+		{
+			s_playerInfo.itemConcussion = boolMap["concussion"];
+		}
+		if (boolMap.find("cannon") != boolMap.end())
+		{
+			s_playerInfo.itemCannon = boolMap["cannon"];
+		}
+
+		// Handle Activatable Items
+
+		if (boolMap.find("mask") != boolMap.end())
+		{
+			s_playerInfo.itemMask = boolMap["mask"];
+		}
+		if (boolMap.find("goggles") != boolMap.end())
+		{
+			s_playerInfo.itemGoggles = boolMap["goggles"];
+		}
+		if (boolMap.find("cleats") != boolMap.end())
+		{
+			s_playerInfo.itemCleats = boolMap["cleats"];
+		}
+
+		// Handle Items 
+
+		if (boolMap.find("plans") != boolMap.end())
+		{
+			s_playerInfo.itemPlans = boolMap["plans"];
+		}
+		if (boolMap.find("phrik") != boolMap.end())
+		{
+			s_playerInfo.itemPhrik = boolMap["phrik"];
+		}
+		if (boolMap.find("nava") != boolMap.end())
+		{
+			s_playerInfo.itemNava = boolMap["nava"];
+		}
+		if (boolMap.find("datatape") != boolMap.end())
+		{
+			s_playerInfo.itemDatatape = boolMap["datatape"];
+		}
+		if (boolMap.find("dtWeapon") != boolMap.end())
+		{
+			s_playerInfo.itemDtWeapon = boolMap["dtWeapon"];
+		}
+		if (boolMap.find("code1") != boolMap.end())
+		{
+			s_playerInfo.itemCode1 = boolMap["code1"];
+		}
+		if (boolMap.find("code2") != boolMap.end())
+		{
+			s_playerInfo.itemCode2 = boolMap["code2"];
+		}
+		if (boolMap.find("code3") != boolMap.end())
+		{
+			s_playerInfo.itemCode3 = boolMap["code3"];
+		}
+		if (boolMap.find("code4") != boolMap.end())
+		{
+			s_playerInfo.itemCode4 = boolMap["code4"];
+		}
+		if (boolMap.find("code5") != boolMap.end())
+		{
+			s_playerInfo.itemCode5 = boolMap["code5"];
+		}
+
+		// Handle Keys
+		if (boolMap.find("redKey") != boolMap.end())
+		{
+			s_playerInfo.itemRedKey = boolMap["redKey"];
+		}
+		if (boolMap.find("yellowKey") != boolMap.end())
+		{
+			s_playerInfo.itemYellowKey = boolMap["yellowKey"];
+		}
+		if (boolMap.find("blueKey") != boolMap.end())
+		{
+			s_playerInfo.itemBlueKey = boolMap["blueKey"];
+		}
+
+		// Enable Activatable items
+
+		if (boolMap.find("enableMask") != boolMap.end())
+		{
+			if (boolMap["enableMask"])
+			{
+				s_playerInfo.itemMask = JTRUE;
+				enableMask();
+			}
+		}
+		if (boolMap.find("enableCleats") != boolMap.end())
+		{
+			if (boolMap["enableCleats"])
+			{
+				s_playerInfo.itemCleats = JTRUE;
+				enableCleats();
+			}
+		}
+		if (boolMap.find("enableNightVision") != boolMap.end())
+		{
+			if (boolMap["enableNightVision"])
+			{
+				s_playerInfo.itemGoggles = JTRUE;
+				enableNightVision();
+			}
+		}
+		if (boolMap.find("enableHeadlamp") != boolMap.end())
+		{
+			if (boolMap["enableHeadlamp"])
+			{
+				enableHeadlamp();
+			}
+		}
+
+		// Wipe everything and start only with Bryar Pistol Only
+
+		if (boolMap.find("bryarOnly") != boolMap.end() && boolMap["bryarOnly"] == MSO_TRUE)
+		{
+
+			// Wipe the player inventory settings.
+			u8* src = (u8*)&s_playerInfo;
+			size_t size = (size_t)&s_playerInfo.pileSaveMarker - (size_t)&s_playerInfo;
+			assert(size == 140);
+			memset(src, 0, size);
+
+			// Give player 100 blaster ammo and a Bryar Pistol
+			s_playerInfo.ammoEnergy = pickup_addToValue(0, 100, 999);
+			s_playerInfo.itemPistol = JTRUE;
+			player_setNextWeapon(1);
+
+			// Disable all activatable items
+			disableMask();
+			disableCleats();
+			disableNightVision();
+			hud_clearMessage();
+		}
+	}
 		
 	void player_createController(JBool clearData)
 	{
@@ -550,13 +788,20 @@ namespace TFE_DarkForces
 
 		s_wearingGasmask    = JFALSE;
 		s_wearingCleats     = JFALSE;
-		s_nightvisionActive = JFALSE;
+		s_nightVisionActive = JFALSE;
 		s_headlampActive    = JFALSE;
 
 		// Handle level-specific hacks.
 		const char* levelName = agent_getLevelName();
 		TFE_System::logWrite(LOG_MSG, "Player", "Setting up level '%s'", levelName);
-		if (!strcasecmp(levelName, "jabship"))
+
+		// Handle custom level player overrides
+		ModSettingLevelOverride modLevelOverride = TFE_Settings::getLevelOverrides(levelName);
+		if (!modLevelOverride.levName.empty())
+		{
+			player_handleLevelOverrides(modLevelOverride);
+		}
+		else if (!strcasecmp(levelName, "jabship"))
 		{
 			u8* src  = (u8*)&s_playerInfo;
 			size_t size = (size_t)&s_playerInfo.pileSaveMarker - (size_t)&s_playerInfo;
@@ -580,7 +825,7 @@ namespace TFE_DarkForces
 				player_setNextWeapon(0);
 				disableMask();
 				disableCleats();
-				disableNightvision();
+				disableNightVision();
 				hud_clearMessage();
 			}
 		}
@@ -1209,8 +1454,8 @@ namespace TFE_DarkForces
 				player_revive();
 				player_reset();
 				s_headlampActive = JFALSE;
-				s_nightvisionActive = JFALSE;
-				disableNightvisionInternal();
+				s_nightVisionActive = JFALSE;
+				disableNightVisionInternal();
 
 				s_playerObject->yaw = s_curSafe->yaw;
 				s_playerYaw = s_curSafe->yaw;
@@ -2259,7 +2504,7 @@ namespace TFE_DarkForces
 				atten = max(headlamp, s_weaponLight + s_levelAtten);
 			}
 			s_baseAtten = atten;
-			if (s_nightvisionActive)
+			if (s_nightVisionActive)
 			{
 				atten = 0;
 			}
@@ -2440,17 +2685,17 @@ namespace TFE_DarkForces
 				fixed16_16 powerDelta = mul16(GASMASK_ENERGY_CONSUMPTION, s_deltaTime);
 				s_batteryPower -= powerDelta;
 			}
-			if (s_nightvisionActive)
+			if (s_nightVisionActive)
 			{
 				fixed16_16 powerDelta = mul16(GOGGLES_ENERGY_CONSUMPTION, s_deltaTime);
 				s_batteryPower -= powerDelta;
 			}
 			if (s_batteryPower <= 0)
 			{
-				if (s_nightvisionActive)
+				if (s_nightVisionActive)
 				{
-					s_nightvisionActive = JFALSE;
-					disableNightvisionInternal();
+					s_nightVisionActive = JFALSE;
+					disableNightVisionInternal();
 					hud_sendTextMessage(9);
 				}
 				if (s_headlampActive)
@@ -2920,7 +3165,7 @@ namespace TFE_DarkForces
 		SERIALIZE(ObjState_InitVersion, s_weaponFiringSec, 0);
 		SERIALIZE(ObjState_InitVersion, s_wearingCleats, 0);
 		SERIALIZE(ObjState_InitVersion, s_wearingGasmask, 0);
-		SERIALIZE(ObjState_InitVersion, s_nightvisionActive, 0);
+		SERIALIZE(ObjState_InitVersion, s_nightVisionActive, 0);
 		SERIALIZE(ObjState_InitVersion, s_headlampActive, 0);
 		SERIALIZE(ObjState_InitVersion, s_superCharge, 0);
 		SERIALIZE(ObjState_InitVersion, s_superChargeHud, 0);
@@ -2965,7 +3210,7 @@ namespace TFE_DarkForces
 			s_playerObject = playerObjId < 0 ? nullptr : objData_getObjectBySerializationId(playerObjId);
 			s_playerEye    = playerEyeId < 0 ? nullptr : objData_getObjectBySerializationId(playerEyeId);
 
-			if (s_nightvisionActive)
+			if (s_nightVisionActive)
 			{
 				TFE_Jedi::s_flatAmbient = 16;
 				TFE_Jedi::s_flatLighting = JTRUE;

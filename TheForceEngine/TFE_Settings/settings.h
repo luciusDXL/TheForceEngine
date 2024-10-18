@@ -13,6 +13,7 @@
 #include <TFE_FileSystem/paths.h>
 #include <TFE_Audio/midiDevice.h>
 #include "gameSourceData.h"
+#include <map>
 
 enum SkyMode
 {
@@ -283,6 +284,76 @@ struct ModHdIgnoreList
 	std::vector<std::string> waxIgnoreList;
 };
 
+static const char* modIntOverrides[] =
+{
+	"energy",
+	"power",
+	"plasma",
+	"detonator",
+	"shell",
+	"mine",
+	"missile",
+	"shields",
+	"health",
+	"lives",
+	"battery",
+
+	// Custom int overrides
+	"defaultWeapon",
+	"fogLevel"
+};
+
+// Boolean overrides for mod levels 
+static const char* modBoolOverrides[] =
+{
+	// Enable inventory items on start
+	"enableMask",
+	"enableCleats",
+	"enableNightVision",
+	"enableHeadlamp",
+
+	// Add/Remove Weapons
+	"pistol",
+	"rifle",
+	"autogun",
+	"mortar",
+	"fusion",
+	"concussion",
+	"cannon",
+
+	// Toggleable items
+	"mask",
+	"goggles",
+	"cleats",
+
+	// Inventory items
+	"plans",
+	"phrik",
+	"datatape",
+	"nava",
+	"dtWeapon",
+	"code1",
+	"code2",
+	"code3",
+	"code4",
+	"code5",
+
+	// Keys
+	"yellowKey",
+	"redKey",
+	"blueKey",
+
+	// Resets everything to only use bryar like the first mission.
+	"bryarOnly"
+};
+
+struct ModSettingLevelOverride
+{
+	std::string levName;
+	std::map<std::string, int>  intOverrideMap = {};
+	std::map<std::string, bool> boolOverrideMap = {};
+};
+
 struct TFE_ModSettings
 {
 	ModSettingOverride ignoreInfLimits   = MSO_NOT_SET;
@@ -292,6 +363,7 @@ struct TFE_ModSettings
 	ModSettingOverride ignore3doLimits   = MSO_NOT_SET;
 	ModSettingOverride normalFix3do      = MSO_NOT_SET;
 
+	std::map<std::string, ModSettingLevelOverride> levelOverrides;
 	std::vector<ModHdIgnoreList> ignoreList;
 };
 
@@ -327,6 +399,9 @@ namespace TFE_Settings
 	bool extendAdjoinLimits();
 	bool ignore3doLimits();
 	bool normalFix3do();
+
+	// Settings for level mod overrides.
+	ModSettingLevelOverride getLevelOverrides(string levelName);
 
 	bool validatePath(const char* path, const char* sentinel);
 	void autodetectGamePaths();

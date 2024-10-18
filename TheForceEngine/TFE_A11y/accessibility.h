@@ -73,4 +73,8 @@ namespace TFE_A11Y {
 	bool cutsceneCaptionsEnabled();
 	// True if captions or subtitles are enabled for gameplay
 	bool gameplayCaptionsEnabled();
+
+	// Helpers for External Use - this really should be in a separate file
+	string toUpper(string input);
+	string toLower(string input);
 }
