@@ -25,6 +25,10 @@
 #include <map>
 #include <algorithm>
 
+#ifdef _WIN32
+	#include <windows.h>
+#endif
+
 using namespace TFE_Input;
 
 namespace TFE_FrontEndUI
@@ -70,6 +74,7 @@ namespace TFE_FrontEndUI
 
 	static ViewMode s_viewMode = VIEW_IMAGES;
 
+	char programDirModDir[TFE_MAX_PATH];
 	static char s_modFilter[256] = { 0 };
 	static char s_prevModFilter[256] = { 0 };
 	static size_t s_filterLen = 0;
@@ -90,7 +95,8 @@ namespace TFE_FrontEndUI
 
 	void modLoader_read()
 	{
-		if (s_modsRead) { return; }
+		// Reuse the cached mods unless no mods have been read yet.
+		if (s_modsRead and s_mods.size() > 0) { return; }
 		s_modsRead = true;
 
 		s_mods.clear();
@@ -142,6 +148,7 @@ namespace TFE_FrontEndUI
 
 		if (!modPathCount)
 		{
+			s_modsRead = false;
 			return;
 		}
 
@@ -444,6 +451,21 @@ namespace TFE_FrontEndUI
 			}
 			filterMods(s_viewMode != VIEW_FILE_LIST);
 		}
+
+		ImGui::SameLine(510.0f * uiScale);
+		if (ImGui::Button("Refresh Mod Listing"))
+		{
+			s_modsRead = false;
+			modLoader_read();
+		}
+
+		#ifdef _WIN32
+		ImGui::SameLine(730.0f * uiScale);
+		if (ImGui::Button("Open Mod Folder"))
+		{
+			ShellExecute(NULL, "open", programDirModDir, NULL, NULL, SW_SHOWNORMAL);
+		}
+		#endif
 		
 		ImGui::Separator();
 
