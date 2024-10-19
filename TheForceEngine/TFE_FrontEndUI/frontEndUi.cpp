@@ -38,6 +38,10 @@
 
 #include <climits>
 
+#ifdef _WIN32
+	#include <windows.h>
+#endif
+
 using namespace TFE_Input;
 using namespace TFE_Audio;
 
@@ -1390,6 +1394,31 @@ namespace TFE_FrontEndUI
 		}
 	}
 
+	bool enhanceGOBExists()
+	{
+		TFE_GameHeader* darkForces = TFE_Settings::getGameHeader("Dark Forces");
+		char testFile[TFE_MAX_PATH];
+		sprintf(testFile, "%senhanced.gob", darkForces->sourcePath);
+		return FileUtil::exists(testFile);
+	}
+
+	// Expose the function to toggle enhancements.
+	bool toggleEnhancements()
+	{
+		if (enhanceGOBExists())
+		{
+			TFE_Settings_Enhancements* enhancements = TFE_Settings::getEnhancementsSettings();
+			bool useHdAssets = enhancements->enableHdTextures && enhancements->enableHdSprites && enhancements->enableHdHud;
+			enhancements->enableHdTextures = !useHdAssets;
+			enhancements->enableHdSprites = !useHdAssets;
+			enhancements->enableHdHud = !useHdAssets;
+
+			renderBackground(true);
+			return useHdAssets;
+		}
+		return false;
+	}
+
 	bool configEnhancements()
 	{
 		s32 browseWinOpen = -1;
@@ -1398,19 +1427,12 @@ namespace TFE_FrontEndUI
 		//////////////////////////////////////////////////////
 		// Source Game Data
 		//////////////////////////////////////////////////////
-		TFE_GameHeader* darkForces = TFE_Settings::getGameHeader("Dark Forces");
 		ImGui::PushFont(s_dialogFont);
 		ImGui::LabelText("##ConfigLabel", "Enhanced Assets");
 		ImGui::PopFont();
 
 		// Try to open 'enhanced.gob'.
-		bool enhancedGobExists = false;
-		char testFile[TFE_MAX_PATH];
-		sprintf(testFile, "%senhanced.gob", darkForces->sourcePath);
-		if (FileUtil::exists(testFile))
-		{
-			enhancedGobExists = true;
-		}
+		bool enhancedGobExists = enhanceGOBExists();
 
 		if (enhancedGobExists)
 		{
@@ -1445,6 +1467,15 @@ namespace TFE_FrontEndUI
 			enhancements->enableHdSprites = false;
 			enhancements->enableHdHud = false;
 		}
+
+		ImGui::Spacing();
+		bool useHdAssets = enhancements->enableHdTextures && enhancements->enableHdSprites && enhancements->enableHdHud;
+		if (ImGui::Checkbox("Use HD Assets", &useHdAssets))
+		{
+			toggleEnhancements();
+		}
+		ImGui::Separator();
+		ImGui::Spacing();
 
 		bool useHdTextures = enhancements->enableHdTextures;
 		if (ImGui::Checkbox("Use HD Textures", &useHdTextures))
@@ -2134,12 +2165,15 @@ namespace TFE_FrontEndUI
 				inputMapping("Headwave",          IADF_HEADWAVE_TOGGLE);
 				inputMapping("HUD Toggle",        IADF_HUD_TOGGLE);
 				inputMapping("Holster Weapon",    IADF_HOLSTER_WEAPON);
+				inputMapping("HD Asset Toggle",   IADF_HD_ASSET_TOGGLE);
 				inputMapping("Automount Toggle",  IADF_AUTOMOUNT_TOGGLE);
 				inputMapping("Cycle Prev Weapon", IADF_CYCLEWPN_PREV);
 				inputMapping("Cycle Next Weapon", IADF_CYCLEWPN_NEXT);
 				inputMapping("Prev Weapon",       IADF_WPN_PREV);
 				inputMapping("Pause",             IADF_PAUSE);
 				inputMapping("Automap",           IADF_AUTOMAP);
+				inputMapping("Screenshot",		  IADF_SCREENSHOT);
+				inputMapping("GIF Recording",     IADF_GIF_RECORD);
 								
 				ImGui::Separator();
 
@@ -2672,7 +2706,7 @@ namespace TFE_FrontEndUI
 		ImGui::Separator();
 
 		ImGui::SetNextItemWidth(196*s_uiScale);
-		ImGui::SliderFloat("Scale", &hud->scale, 0.0f, 15.0f, "%.2f"); ImGui::SameLine(0.0f, 32.0f*s_uiScale);
+		ImGui::SliderFloat("Scale", &hud->scale, 0.0f, 15.0f, "%.2f"); ImGui::SameLine(0.0f, 29.5f*s_uiScale);
 		ImGui::SetNextItemWidth(128 * s_uiScale);
 		ImGui::InputFloat("##HudScaleText", &hud->scale, 0.01f, 0.1f, "%.3f", ImGuiInputTextFlags_CharsHexadecimal);
 
@@ -2874,6 +2908,22 @@ namespace TFE_FrontEndUI
 		s32 framerate = (s32)system->gifRecordingFramerate;
 		DrawLabelledIntSlider(labelW, valueW - 2, "GIF Recording Framerate", "##CBO", &framerate, 10, 30);
 		system->gifRecordingFramerate = (f32)framerate;
+
+	#ifdef _WIN32
+		ImGui::Separator();
+		if (ImGui::Button("Open Log Folder"))
+		{
+			char logDir[TFE_MAX_PATH];
+			TFE_Paths::appendPath(TFE_PathType::PATH_USER_DOCUMENTS, "", logDir);
+			ShellExecute(NULL, "open", logDir, NULL, NULL, SW_SHOWNORMAL);
+		}
+		if (ImGui::Button("Open Screenshots Folder"))
+		{
+			char screenshotDir[TFE_MAX_PATH];
+			TFE_Paths::appendPath(TFE_PathType::PATH_USER_DOCUMENTS, "Screenshots/", screenshotDir);
+			ShellExecute(NULL, "open", screenshotDir, NULL, NULL, SW_SHOWNORMAL);
+		}
+	#endif
 	}
 
 	void DrawFontSizeCombo(float labelWidth, float valueWidth, const char* label, const char* comboTag, s32* currentValue)
