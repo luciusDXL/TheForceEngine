@@ -92,7 +92,6 @@ namespace TFE_FrontEndUI
 
 	static std::vector<ModData> s_mods;
 	static std::vector<ModData> s_webMods;
-	static std::vector<ModData> s_webModsCache;
 	static std::vector<ModData*> s_filteredMods;
 
 	static std::vector<char> s_fileBuffer;
@@ -115,6 +114,7 @@ namespace TFE_FrontEndUI
 	static bool s_filterUpdated = false;
 	static bool s_modsRead = false;
 	char programDirModDir[TFE_MAX_PATH];
+	char programDirModCacheDir[TFE_MAX_PATH];
 	static bool s_useWebModUI = false;
 	const char* ratings[] = {"5", "4", "3", "2", "1", "0"};
 	int ratingIndex = 0;
@@ -144,6 +144,26 @@ namespace TFE_FrontEndUI
 		int levelCount = 0;
 		s_webMods.clear();
 
+		// Create Directory if you plan to download mods.
+		sprintf(programDirModDir, "%sMods/", TFE_Paths::getPath(PATH_PROGRAM));
+		TFE_Paths::fixupPathAsDirectory(programDirModDir);
+		if (!FileUtil::directoryExists(programDirModDir))
+		{
+			FileUtil::makeDirectory(programDirModDir);
+		}
+
+		sprintf(programDirModCacheDir, "%sModCache/", TFE_Paths::getPath(PATH_PROGRAM));
+		TFE_Paths::fixupPathAsDirectory(programDirModCacheDir);
+
+		if (!FileUtil::directoryExists(programDirModCacheDir))
+		{
+			if (!FileUtil::makeDirectory(programDirModCacheDir))
+			{
+				TFE_System::logWrite(LOG_WARNING, "WEB_MODS", "Unable to create mod cache folder %s ", programDirModCacheDir);
+				return;
+			}
+		}
+
 		std::vector<std::string> stringModList;
 		string curlResult = Download::curlWeb(dfLevelJson);
 		const char* responseCharPtr = curlResult.c_str();
@@ -166,9 +186,6 @@ namespace TFE_FrontEndUI
 				else if (strcasecmp(curElem->string, "levels") == 0)
 				{
 					const cJSON* modsIter = curElem->child;
-
-					// Now that we have the level list, clear the current list
-					s_webModsCache.clear();
 							
 					if (!modsIter)
 					{
@@ -236,16 +253,47 @@ namespace TFE_FrontEndUI
 							{
 								webMod.rating = TFE_Settings::parseJSonIntToOverride(modIter);
 							}
-							webMod.relativePath = webMod.fileName;
-							webMod.gobFiles.push_back(webMod.fileName);
+
 						}
-						s_webModsCache.push_back(webMod);
+						webMod.relativePath = webMod.fileName;
+						webMod.gobFiles.push_back(webMod.fileName);
+
+						/// Create Cache Directory
+						char modCachePath[TFE_MAX_PATH];
+						sprintf(modCachePath, "%s%s", programDirModCacheDir, webMod.levelName.c_str());
+						TFE_Paths::fixupPathAsDirectory(modCachePath);
+
+						if (!FileUtil::directoryExists(modCachePath))
+						{
+							if (!FileUtil::makeDirectory(modCachePath))
+							{
+								TFE_System::logWrite(LOG_WARNING, "WEB_MODS", "Unable to create mod cache level folder %s ", modCachePath);
+								return;
+							}
+						}
+
+						// Save the meta from the JSON to the cache
+						char cachedModMeta[TFE_MAX_PATH];
+						sprintf(cachedModMeta, "%smod.json", modCachePath);
+
+						FILE* modCacheMeta = fopen(cachedModMeta, "w");
+						if (modCacheMeta == NULL)
+						{
+							TFE_System::logWrite(LOG_ERROR, "ModLoader", "Cannot write downloaded meta for path: '%s'", cachedModMeta);
+							continue;
+						}
+						char* jsonString = cJSON_Print(modsIter);
+						fputs(jsonString, modCacheMeta);
+						fclose(modCacheMeta);
+						free(jsonString);
+
+						s_webMods.push_back(webMod);
 					}
 				}
 			}
 		}
 
-		std::reverse(s_webModsCache.begin(), s_webModsCache.end());
+		std::reverse(s_webMods.begin(), s_webMods.end());
 		s_filteredMods.clear();
 		s_selectedMod = -1;
 		clearSelectedMod();
@@ -254,9 +302,9 @@ namespace TFE_FrontEndUI
 		s_webReadIndex = 0;
 
 		// Read in web paths
-		for (s32 i = 0; i < s_webModsCache.size(); i++)
+		for (s32 i = 0; i < s_webMods.size(); i++)
 		{
-			s_webReadQueue.push_back({ QREAD_WEB, s_webModsCache[i].filePath, "" });
+			s_webReadQueue.push_back({ QREAD_WEB, s_webMods[i].filePath, "" });
 		}
 
 		std::sort(s_webReadQueue.begin(), s_webReadQueue.end(), sortQueueByName);
@@ -416,7 +464,6 @@ namespace TFE_FrontEndUI
 		s_mods.clear();
 		s_filteredMods.clear();
 		s_webMods.clear();
-		s_webModsCache.clear();
 	}
 		
 	ViewMode modLoader_getViewMode()
@@ -632,33 +679,7 @@ namespace TFE_FrontEndUI
 	}
 
 	void handleWebQueueItem(ModData* mod)
-	{
-
-		char programDirModCacheDir[TFE_MAX_PATH];
-		sprintf(programDirModCacheDir, "%sModCache/", TFE_Paths::getPath(PATH_PROGRAM));
-		TFE_Paths::fixupPathAsDirectory(programDirModCacheDir);
-
-		if (!FileUtil::directoryExists(programDirModCacheDir))
-		{
-			if (!FileUtil::makeDirectory(programDirModCacheDir))
-			{
-				TFE_System::logWrite(LOG_WARNING, "WEB_MODS", "Unable to create mod cache folder %s ", programDirModCacheDir);
-				return;
-			}
-		}
-
-		char modCachePath[TFE_MAX_PATH];
-		sprintf(modCachePath, "%s%s", programDirModCacheDir, mod->levelName.c_str());
-		TFE_Paths::fixupPathAsDirectory(modCachePath);
-
-		if (!FileUtil::directoryExists(modCachePath))
-		{
-			if (!FileUtil::makeDirectory(modCachePath))
-			{
-				TFE_System::logWrite(LOG_WARNING, "WEB_MODS", "Unable to create mod cache level folder %s ", modCachePath);
-				return;
-			}
-		}
+	{		
 
 		char coverPath[TFE_MAX_PATH];
 		sprintf(coverPath, "%scover.png", modCachePath);
@@ -1035,12 +1056,12 @@ namespace TFE_FrontEndUI
 				open = false;
 			}
 
-			if (s_useWebModUI)
+			if (!s_filteredMods[s_selectedMod]->filePath.empty())
 			{
 				ImGui::SetCursorPos(ImVec2(cursor.x + 90 * uiScale, cursor.y + 400 * uiScale));
 				char levelUrl[TFE_MAX_PATH];
 				FileUtil::getFilePath(s_filteredMods[s_selectedMod]->filePath.c_str(), levelUrl);
-				
+
 				if (ImGui::Button("OPEN SITE", ImVec2(128 * uiScale, 32 * uiScale)) || TFE_Input::keyPressed(KEY_ESCAPE))
 				{
 				#ifdef _WIN32
@@ -1050,21 +1071,24 @@ namespace TFE_FrontEndUI
 					system(xdg_string.c_str());
 				#endif
 				}
+			}
 
+			int buttonOffset = 40;
+			if (!s_filteredMods[s_selectedMod]->review.empty())
+			{
 				// Keep track of button offset in case there are no reviews.
-				int buttonOffset = 40;
 				string reviewURL = s_filteredMods[s_selectedMod]->review;
 				if (reviewURL != "")
 				{
 					ImGui::SetCursorPos(ImVec2(cursor.x + 90 * uiScale, cursor.y + 440 * uiScale));
 					if (ImGui::Button("REVIEW", ImVec2(128 * uiScale, 32 * uiScale)) || TFE_Input::keyPressed(KEY_ESCAPE))
 					{
-						
+
 					#ifdef _WIN32
-							ShellExecute(0, 0, reviewURL.c_str(), 0, 0, SW_SHOW);
+						ShellExecute(0, 0, reviewURL.c_str(), 0, 0, SW_SHOW);
 					#else
-							string xdg_string = "xdg-open " + reviewURL;
-							system(xdg_string.c_str());
+						string xdg_string = "xdg-open " + reviewURL;
+						system(xdg_string.c_str());
 					#endif
 					}
 				}
@@ -1072,8 +1096,10 @@ namespace TFE_FrontEndUI
 				{
 					buttonOffset = 0;
 				}
+			}
 
-
+			if (!s_filteredMods[s_selectedMod]->walkthrough.empty())
+			{
 				string walkthroughURL = s_filteredMods[s_selectedMod]->walkthrough;
 				if (walkthroughURL != "")
 				{
@@ -1085,12 +1111,12 @@ namespace TFE_FrontEndUI
 						ShellExecute(0, 0, walkthroughURL.c_str(), 0, 0, SW_SHOW);
 					#else
 						string xdg_string = "xdg-open " + walkthroughURL;
-						system(xdg_string.c_str());
+						system(xdg_string.c_str());					
 					#endif
 					}
-				}			
-
+				}
 			}
+			
 
 
 			ImGui::PopFont();
@@ -1436,42 +1462,134 @@ namespace TFE_FrontEndUI
 		}
 	}
 
-	bool loadCoverPathFromMod(const char* modGobName, UiTexture* poster)
+	bool getCachedModDir(const char* modName, char* modCachedPath)
 	{
+		char modCachePathTemp[TFE_MAX_PATH];
 		// Check if any of the maps are of the df21 format split by underscores
 		// Ex: convert aons_modern.zip to aons to find it in the ModCache
-		const char* underscorePos = std::strchr(modGobName, '_');
-		char coverCachedPath[TFE_MAX_PATH];
+		const char* underscorePos = std::strchr(modName, '_');
 		if (underscorePos != nullptr)
 		{
 			// Copy characters from input up to the underscore
-			std::strncpy(coverCachedPath, modGobName, underscorePos - modGobName);
-			coverCachedPath[underscorePos - modGobName] = '\0';
+			std::strncpy(modCachedPath, modName, underscorePos - modName);
+			modCachedPath[underscorePos - modName] = '\0';
 		}
 		else
 		{
-			std::strcpy(coverCachedPath, underscorePos);
+			std::strcpy(modCachedPath, modName);
 		}
 
-		char modCachePath[TFE_MAX_PATH];
-		sprintf(modCachePath, "%sModCache/%s", TFE_Paths::getPath(PATH_PROGRAM), coverCachedPath);
-		TFE_Paths::fixupPathAsDirectory(modCachePath);
+		sprintf(modCachePathTemp, "%sModCache/%s", TFE_Paths::getPath(PATH_PROGRAM), modCachedPath);
+		TFE_Paths::fixupPathAsDirectory(modCachePathTemp);
 
-		if (!FileUtil::directoryExists(modCachePath))
+		if (!FileUtil::directoryExists(modCachePathTemp))
 		{
 			return false;
 		}
+		strcpy(modCachedPath, modCachePathTemp);
+		return true;
+	}
 
-		char coverPath[TFE_MAX_PATH];
-		sprintf(coverPath, "%scover.png", modCachePath, coverCachedPath);
-		FileUtil::fixupPath(coverPath);
+	bool loadCoverPathFromMod(const char* modGobName, UiTexture* poster)
+	{
+		char coverCachedPath[TFE_MAX_PATH];
 
-		if (FileUtil::exists(coverPath))
+		if (getCachedModDir(modGobName, coverCachedPath))
 		{
-			extractPosterFromImage("", nullptr, coverPath, poster);
-			return true;
+			char coverPath[TFE_MAX_PATH];
+			sprintf(coverPath, "%scover.png", coverCachedPath);
+			FileUtil::fixupPath(coverPath);
+
+			if (FileUtil::exists(coverPath))
+			{
+				extractPosterFromImage("", nullptr, coverPath, poster);
+				return true;
+			}
 		}
+
 		return false;
+	}
+
+	void updateModFromCacheMeta(ModData* mod)
+	{
+
+		// Check if we already downloaded this mod and update s_mods
+		// For now just use the filename and later 
+		// we may want to use libcrypto's MDP hash checking?
+		char modCachePath[TFE_MAX_PATH];
+		if (getCachedModDir(mod->gobFiles[0].c_str(), modCachePath))
+		{
+
+			// Load the meta from the JSON from the cache
+			char cachedModMeta[TFE_MAX_PATH];
+			sprintf(cachedModMeta, "%s%mod.json", modCachePath);
+
+			FileStream modFile;
+			if (!FileUtil::exists(cachedModMeta))
+			{
+				return;
+			}
+
+			if (!modFile.open(cachedModMeta, FileStream::MODE_READ))
+			{
+				return;
+			}
+
+			const size_t size = modFile.getSize();
+			char* data = (char*)malloc(size + 1);
+			if (!data || size == 0)
+			{
+				TFE_System::logWrite(LOG_ERROR, "ModLoader", "Mod Meta is empty %s", modCachePath);
+				return;
+			}
+			modFile.readBuffer(data, (u32)size);
+			data[size] = 0;
+			modFile.close();
+
+			cJSON* root = cJSON_Parse(data);
+
+			for (; root; root = root->next)
+			{
+				if (root->type == cJSON_Object)
+				{
+					cJSON* walkthrough = cJSON_GetObjectItem(root, "walkthrough");
+					if (walkthrough)
+					{
+						mod->walkthrough = walkthrough->valuestring;
+					}
+
+					cJSON* review = cJSON_GetObjectItem(root, "review");
+					if (review)
+					{
+						mod->review = review->valuestring;
+					}
+
+					cJSON* filePath = cJSON_GetObjectItem(root, "filePath");
+					if (filePath)
+					{
+						mod->filePath = filePath->valuestring;
+					}
+
+					cJSON* name = cJSON_GetObjectItem(root, "name");
+					if (name)
+					{
+						mod->name = name->valuestring;
+					}
+
+					// Use this later in a future commit to pretty print this data
+					/*
+					cJSON* text = cJSON_GetObjectItem(root, "text");
+					if (text)
+					{
+						mod->text = text->valuestring;
+					}
+					*/
+
+				}
+			}
+
+			cJSON_Delete(root);
+		}
 	}
 
 	void readFromQueue(size_t itemsPerFrame)
@@ -1545,12 +1663,12 @@ namespace TFE_FrontEndUI
 				}
 
 				mod.name = name;
+				updateModFromCacheMeta(&mod);
 			}
 			else if (reads[i].type == QREAD_WEB)
 			{
-				ModData cacheMod = s_webModsCache.back();
-				s_webMods.push_back(cacheMod);
-				s_webModsCache.pop_back();
+				// no op - maybe we should add some kind of thottling but 
+				// you really just load a simple json which is a few kilobytes. 
 			}
 			else
 			{
@@ -1621,6 +1739,9 @@ namespace TFE_FrontEndUI
 						extractPosterFromImage(modPath, mod.gobFiles[0].c_str(), zipArchive.getFileName(jpgFileIndex), &mod.image);
 						mod.invertImage = false;
 					}
+
+					// Override any settings from the cache
+					updateModFromCacheMeta(&mod);
 				}
 
 				zipArchive.close();
