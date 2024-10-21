@@ -13,6 +13,7 @@
 #include <TFE_FileSystem/paths.h>
 #include <TFE_Audio/midiDevice.h>
 #include "gameSourceData.h"
+#include <TFE_System/cJSON.h>
 
 enum SkyMode
 {
@@ -332,4 +333,5 @@ namespace TFE_Settings
 	void autodetectGamePaths();
 	void clearModSettings();
 	void loadCustomModSettings();
+	int parseJSonIntToOverride(const cJSON* item);
 }

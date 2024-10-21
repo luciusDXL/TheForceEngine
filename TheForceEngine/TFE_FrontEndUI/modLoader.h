@@ -16,6 +16,7 @@ namespace TFE_FrontEndUI
 		VIEW_IMAGES = 0,
 		VIEW_NAME_LIST,
 		VIEW_FILE_LIST,
+		VIEW_WEB_LIST,
 		VIEW_COUNT
 	};
 

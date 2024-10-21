@@ -197,7 +197,7 @@ namespace TFE_Paths
 	{
 		char workpath[TFE_MAX_PATH];
 
-		if (!FileUtil::directoryExits(fullPath, workpath))
+		if (!FileUtil::directoryExists(fullPath, workpath))
 			return;
 
 		for (auto it = s_searchPaths.begin(); it != s_searchPaths.end(); it++)
@@ -215,7 +215,7 @@ namespace TFE_Paths
 	{
 		char workpath[TFE_MAX_PATH];
 
-		if (!FileUtil::directoryExits(fullPath, workpath))
+		if (!FileUtil::directoryExists(fullPath, workpath))
 			return;
 
 		for (auto it = s_searchPaths.begin(); it != s_searchPaths.end(); it++)

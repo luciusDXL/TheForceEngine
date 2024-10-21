@@ -12,6 +12,11 @@
 #include <TFE_System/system.h>
 #include "fileutil.h"
 #include "filestream.h"
+#include <sys/stat.h>  // For mkdir
+#include <sys/types.h> // For mode_t
+#include <fstream>
+#include <iostream>
+
 
 // implement TFE FileUtil for Linux and compatibles.
 namespace FileUtil
@@ -230,7 +235,7 @@ namespace FileUtil
 		}
 	}
 
-	bool directoryExits(const char *path, char *outPath)
+	bool directoryExists(const char *path, char *outPath)
 	{
 		char *ret;
 
@@ -420,5 +425,11 @@ namespace FileUtil
 		{
 			strcpy(outPath, srcPath);
 		}
+	}
+
+	int getFilesize(const char* filename)
+	{
+		std::ifstream in(filename, std::ifstream::ate | std::ifstream::binary);
+		return in.tellg();
 	}
 }
