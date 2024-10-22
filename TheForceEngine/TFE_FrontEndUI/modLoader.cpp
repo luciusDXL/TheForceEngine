@@ -1092,10 +1092,10 @@ namespace TFE_FrontEndUI
 					#endif
 					}
 				}
-				else
-				{
-					buttonOffset = 0;
-				}
+			}
+			else
+			{
+				buttonOffset = 0;
 			}
 
 			if (!s_filteredMods[s_selectedMod]->walkthrough.empty())
