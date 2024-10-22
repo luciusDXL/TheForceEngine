@@ -13,7 +13,7 @@
 
 namespace TFE_DarkForces
 {
-	Logic* obj_createGenerator(SecObject* obj, LogicSetupFunc* setupFunc, KEYWORD genType);
+	Logic* obj_createGenerator(SecObject* obj, LogicSetupFunc* setupFunc, KEYWORD genType, const char* logicName);
 
 	// Serialization
 	void generatorLogic_serialize(Logic*& logic, SecObject* obj, Stream* stream);
