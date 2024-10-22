@@ -1522,7 +1522,7 @@ namespace TFE_FrontEndUI
 
 			// Load the meta from the JSON from the cache
 			char cachedModMeta[TFE_MAX_PATH];
-			sprintf(cachedModMeta, "%s%mod.json", modCachePath);
+			sprintf(cachedModMeta, "%smod.json", modCachePath);
 
 			FileStream modFile;
 			if (!FileUtil::exists(cachedModMeta))
@@ -1534,7 +1534,7 @@ namespace TFE_FrontEndUI
 			{
 				return;
 			}
-
+			
 			const size_t size = modFile.getSize();
 			char* data = (char*)malloc(size + 1);
 			if (!data || size == 0)
