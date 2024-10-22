@@ -224,19 +224,21 @@ namespace TFE_DarkForces
 
 		// Thinker Module
 		ThinkerModule* thinkerMod = actor_createThinkerModule(dispatch);
-		thinkerMod->target.speedRotation = 0x7fff;
+		thinkerMod->target.speedRotation = cust->rotationSpeed;
 		thinkerMod->target.speed = FIXED(cust->speed);
 		thinkerMod->anim.flags &= 0xfffffffe;
-		thinkerMod->startDelay = TICKS(2);
+		thinkerMod->delay = cust->delay;
+		thinkerMod->startDelay = TICKS(cust->startDelay);
 		actor_addModule(dispatch, (ActorModule*)thinkerMod);
 
 		// Flying Thinker Module (if flying enemy)
 		if (cust->isFlying)
 		{
 			ThinkerModule* flyingMod = actor_createFlyingModule((Logic*)dispatch);
-			flyingMod->target.speedRotation = 0x7fff;
+			flyingMod->target.speedRotation = cust->rotationSpeed;
 			flyingMod->target.speed = FIXED(cust->speed);
 			flyingMod->target.speedVert = FIXED(cust->verticalSpeed);
+			flyingMod->delay = cust->delay;
 			actor_addModule(dispatch, (ActorModule*)flyingMod);
 		}
 

@@ -278,6 +278,24 @@ namespace TFE_Settings
 			return true;
 		}
 
+		if (cJSON_IsNumber(data) && strcasecmp(data->string, "rotationSpeed") == 0)
+		{
+			customLogic.rotationSpeed = data->valueint * 45;
+			return true;
+		}
+
+		if (cJSON_IsNumber(data) && strcasecmp(data->string, "delay") == 0)
+		{
+			customLogic.delay = data->valueint;
+			return true;
+		}
+
+		if (cJSON_IsNumber(data) && strcasecmp(data->string, "startDelay") == 0)
+		{
+			customLogic.startDelay = data->valueint;
+			return true;
+		}
+
 		return false;
 	}
 }

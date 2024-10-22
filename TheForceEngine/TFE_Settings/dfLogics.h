@@ -39,6 +39,9 @@ struct CustomActorLogic
 
 	u32 speed = 4;
 	u32 verticalSpeed = 10;
+	u32 rotationSpeed = 0x7fff;
+	u32 delay = 72;
+	u32 startDelay = 2;
 };
 
 struct ExternalLogics
