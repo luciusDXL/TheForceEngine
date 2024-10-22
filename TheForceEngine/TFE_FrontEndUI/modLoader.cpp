@@ -145,13 +145,6 @@ namespace TFE_FrontEndUI
 		s_webMods.clear();
 
 		// Create Directory if you plan to download mods.
-		sprintf(programDirModDir, "%sMods/", TFE_Paths::getPath(PATH_PROGRAM));
-		TFE_Paths::fixupPathAsDirectory(programDirModDir);
-		if (!FileUtil::directoryExists(programDirModDir))
-		{
-			FileUtil::makeDirectory(programDirModDir);
-		}
-
 		sprintf(programDirModCacheDir, "%sModCache/", TFE_Paths::getPath(PATH_PROGRAM));
 		TFE_Paths::fixupPathAsDirectory(programDirModCacheDir);
 
@@ -940,20 +933,20 @@ namespace TFE_FrontEndUI
 			ImGui::SetCursorPosX(cursor.x + 10 * uiScale);
 			ImGui::Text("Type: Vanilla Compatible");
 			ImGui::SetCursorPosX(cursor.x + 10 * uiScale);
+
+			char modPath[TFE_MAX_PATH];
 			if (s_useWebModUI)
 			{
 				ImGui::Text("File: %s", s_filteredMods[s_selectedMod]->fileName.c_str());
+				sprintf(modPath, "%s%s", programDirModDir, s_filteredMods[s_selectedMod]->fileName.c_str());
 			}
 			else
 			{
 				ImGui::Text("File: %s", s_filteredMods[s_selectedMod]->gobFiles[0].c_str());
+				sprintf(modPath, "%s%s", programDirModDir, s_filteredMods[s_selectedMod]->gobFiles[0].c_str());
 			}
 			ImGui::PopStyleColor();
-
-			ImGui::SetCursorPos(ImVec2(cursor.x + 90 * uiScale, cursor.y + 320 * uiScale));
-
-			char modPath[TFE_MAX_PATH];
-			sprintf(modPath, "%s%s", programDirModDir, s_filteredMods[s_selectedMod]->fileName.c_str());
+			ImGui::SetCursorPos(ImVec2(cursor.x + 90 * uiScale, cursor.y + 320 * uiScale));			
 
 			bool alreadyDownloaded = FileUtil::exists(modPath);
 
