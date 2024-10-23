@@ -1,0 +1,43 @@
+{
+    "TFE_VERSION" : 3,
+    "TFE_OVERRIDES": {
+        "levelOverrides": {
+            "SECBASE.LEV": {
+                "pistol": "false",
+                "rifle": "true",
+                "power": 300,
+                "detonator": 5,
+                "shields": 150,
+                "lives": 1,
+                "mine": 999,
+                "goggles": "true",
+                "mask": "true",
+                "enableNightVision": "true",
+                "defaultWeapon": 3,
+                "fogLevel": 100,
+                "plans": "true",
+                "phrik": "true",
+                "datatape": "true",
+                "nava": "true",
+                "dtWeapon": "true",
+                "code1": "true",
+                "code2": "true",
+                "code3": "true",
+                "code4": "true",
+                "code5": "true",
+                "yellowKey": "true",
+                "redKey": "true",
+                "blueKey": "true"
+            },
+            "TALAY.LEV": {
+                "bryarOnly": "true",
+                "lives": 1
+            },
+            "GROMAS.LEV": {
+                "bryarOnly": "true",
+                "lives": 1,
+                "fogLevel": 30
+            }
+        }
+    }
+}

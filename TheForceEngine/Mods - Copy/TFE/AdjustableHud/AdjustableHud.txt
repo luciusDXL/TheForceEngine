@@ -1,0 +1,7 @@
+This is a built-in Mod based on the work by Paweł "Dzierzan" Dzierżanowski (https://twitter.com/Dzierzan23). The purpose of the mod is to allow the floating HUD elements in Dark Forces to be adjustable - specifically being able to move them away from the edges of the screen for widescreen displays.
+
+Usage of this mod is automatic. The original assets were cut in order to simplify the use in-engine and avoid palette indexing issues. If you plan on using this content for other purposes, please contact the original author first.
+
+* HudStatus*Addon.bm files were generated from the included PNG files.
+* Only the bm files are used in-game using the same rendering system as the rest of the HUD.
+* This mod works equally well with GPU or software rendering.

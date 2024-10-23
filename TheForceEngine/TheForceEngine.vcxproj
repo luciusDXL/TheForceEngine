@@ -734,7 +734,6 @@ echo ^)";
     <ClInclude Include="version.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="modloadertest.cpp" />
     <ClCompile Include="TFE_A11y\accessibility.cpp" />
     <ClCompile Include="TFE_A11y\filePathList.cpp" />
     <ClCompile Include="TFE_Archive\archive.cpp" />

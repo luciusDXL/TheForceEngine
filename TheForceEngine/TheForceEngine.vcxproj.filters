@@ -247,6 +247,9 @@
     <ClInclude Include="TFE_FileSystem\fileutil.h">
       <Filter>Source\TFE_FileSystem</Filter>
     </ClInclude>
+    <ClInclude Include="TFE_FileSystem\download.h">
+      <Filter>Source\TFE_FileSystem</Filter>
+    </ClInclude>
     <ClInclude Include="TFE_FileSystem\stream.h">
       <Filter>Source\TFE_FileSystem</Filter>
     </ClInclude>
@@ -2438,6 +2441,9 @@
     </ClCompile>
     <ClCompile Include="TFE_Editor\LevelEditor\editSector.cpp">
       <Filter>Source\TFE_Editor\LevelEditor</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_FileSystem\download.cpp">
+      <Filter>Source\TFE_FileSystem</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
