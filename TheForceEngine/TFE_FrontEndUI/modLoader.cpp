@@ -530,7 +530,7 @@ namespace TFE_FrontEndUI
 	{
 		DisplayInfo dispInfo;
 		TFE_RenderBackend::getDisplayInfo(&dispInfo);
-		f32 topPos = ImGui::GetCursorPosY();
+		f32 topPos = ImGui::GetCursorPosY() - 60;
 		s32 rowCount = (dispInfo.height - s32(topPos + 24 * uiScale)) / s32(28*uiScale) - 1;
 
 		char buttonLabel[32];
@@ -571,7 +571,7 @@ namespace TFE_FrontEndUI
 	{
 		DisplayInfo dispInfo;
 		TFE_RenderBackend::getDisplayInfo(&dispInfo);
-		f32 topPos = ImGui::GetCursorPosY();
+		f32 topPos = ImGui::GetCursorPosY() - 60;
 		s32 rowCount = (dispInfo.height - s32(topPos + 24 * uiScale)) / s32(28*uiScale) - 1;
 
 		char buttonLabel[32];
@@ -612,7 +612,7 @@ namespace TFE_FrontEndUI
 	{
 		DisplayInfo dispInfo;
 		TFE_RenderBackend::getDisplayInfo(&dispInfo);
-		f32 topPos = ImGui::GetCursorPosY();
+		f32 topPos = ImGui::GetCursorPosY() - 45;
 		s32 rowCount = (dispInfo.height - s32(topPos + 24 * uiScale)) / s32(28 * uiScale) - 1;
 
 		char buttonLabel[32];
