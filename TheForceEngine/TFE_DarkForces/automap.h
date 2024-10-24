@@ -35,6 +35,7 @@ namespace TFE_DarkForces
 	void automap_resetScale();
 	void automap_draw(u8* framebuffer);
 	void automap_setPdaActive(JBool enable);
+	void automap_updateDeltaCoords(s32 x, s32 z);
 
 	s32  automap_getLayer();
 	void automap_setLayer(s32 layer);

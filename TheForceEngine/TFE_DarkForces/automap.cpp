@@ -80,6 +80,7 @@ namespace TFE_DarkForces
 	void automap_drawSector(RSector* sector);
 	void automap_drawPlayer(s32 layer);
 	void automap_drawSectors();
+	void automap_updateDeltaCoords(s32 x, s32 z);
 
 	void automap_serialize(Stream* stream)
 	{
@@ -151,6 +152,12 @@ namespace TFE_DarkForces
 			fixed16_16 scaleFactor = div16(intToFixed16(height), FIXED(200));
 			s_screenScale = mul16(s_screenScale, scaleFactor);
 		}
+	}
+
+	void automap_updateDeltaCoords(s32 x, s32 z)
+	{
+		s_mapX1 -= div16(x, s_screenScale);
+		s_mapZ1 += div16(z, s_screenScale);
 	}
 
 	void automap_updateMapData(MapUpdateID id)
