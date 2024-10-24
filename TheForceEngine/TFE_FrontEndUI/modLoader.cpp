@@ -25,10 +25,6 @@
 #include <map>
 #include <algorithm>
 
-#ifdef _WIN32
-	#include <windows.h>
-#endif
-
 using namespace TFE_Input;
 
 namespace TFE_FrontEndUI
