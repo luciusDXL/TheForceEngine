@@ -1,5 +1,4 @@
 #include <cstring>
-#include <SDL.h>
 #include "pda.h"
 #include "menu.h"
 #include "missionBriefing.h"
