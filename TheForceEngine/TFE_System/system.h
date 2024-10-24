@@ -45,7 +45,7 @@ namespace TFE_System
 	// Return the delta time.
 	f64 getDeltaTime();
 	f64 getDeltaTimeRaw();
-	// Get the absolute time since the last start time.
+	// Get the absolute time since the last start time, in seconds.
 	f64 getTime();
 
 	u64 getCurrentTimeInTicks();

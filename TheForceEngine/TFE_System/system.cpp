@@ -167,7 +167,7 @@ namespace TFE_System
 		return s_dtRaw;
 	}
 
-	// Get time since "start time"
+	// Get time since "start time", in seconds.
 	f64 getTime()
 	{
 		const u64 uDt = s_time - s_startTime;

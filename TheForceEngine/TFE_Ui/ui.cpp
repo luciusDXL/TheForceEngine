@@ -13,6 +13,7 @@ namespace TFE_Ui
 {
 const char* glsl_version = "#version 130";
 static s32 s_uiScale = 100;
+static bool s_guiFrameActive;
 
 bool init(void* window, void* context, s32 uiScale)
 {
@@ -88,13 +89,17 @@ void begin()
 	ImGui_ImplOpenGL3_NewFrame();
 	ImGui_ImplSDL2_NewFrame();
 	ImGui::NewFrame();
+	s_guiFrameActive = true; // No way to check if we're inside a frame using ImGui's APIs?
 }
 
 void render()
 {
 	ImGui::Render();
 	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+	s_guiFrameActive = false;
 }
+
+bool isGuiFrameActive() { return s_guiFrameActive; }
 
 void invalidateFontAtlas()
 {
