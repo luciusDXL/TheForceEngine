@@ -16,6 +16,7 @@
 #include <TFE_DarkForces/generator.h>
 #include <TFE_DarkForces/random.h>
 #include <TFE_System/system.h>
+#include <TFE_Settings/settings.h>
 
 // Regular Enemies
 #include <TFE_DarkForces/Actor/exploders.h>
@@ -109,6 +110,8 @@ namespace TFE_DarkForces
 
 	JBool object_parseSeq(SecObject* obj, TFE_Parser* parser, size_t* bufferPos)
 	{
+		TFE_Settings_Game* gameSettings = TFE_Settings::getGameSettings();
+		
 		LogicSetupFunc setupFunc = nullptr;
 
 		const char* line = parser->readLine(*bufferPos);
@@ -168,6 +171,11 @@ namespace TFE_DarkForces
 					}
 					ItemId itemId = getPickupItemId(s_objSeqArg2);
 					obj_createPickup(obj, itemId);
+					setupFunc = nullptr;
+				}
+				else if (gameSettings->df_enableUnusedItem && strcasecmp(s_objSeqArg1, "ITEM10") == 0)
+				{
+					obj_createPickup(obj, ITEM_UNUSED);
 					setupFunc = nullptr;
 				}
 			}
