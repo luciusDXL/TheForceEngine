@@ -53,7 +53,6 @@ namespace TFE_System
 	f64 microsecondsToSeconds(f64 mu);
 
 	void getDateTimeString(char* output);
-	bool osShellExecute(const char* pathToExe, const char* exeDir, const char* param, bool waitForCompletion);
 
 	// Log
 	bool logOpen(const char* filename);
