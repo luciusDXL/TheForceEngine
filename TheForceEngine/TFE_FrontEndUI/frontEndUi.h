@@ -51,6 +51,7 @@ namespace TFE_FrontEndUI
 	bool isConsoleAnimating();
 	void logToConsole(const char* str);
 	bool uiControlsEnabled();
+	bool toggleEnhancements();
 
 	char* getSelectedMod();
 	void  clearSelectedMod();

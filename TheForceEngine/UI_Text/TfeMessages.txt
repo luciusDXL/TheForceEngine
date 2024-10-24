@@ -11,3 +11,4 @@
 "One-Hit Kill Toggle."  // TFE_MSG_ONEHITKILL
 "Hardcore Mode Toggle." // TFE_MSG_HARDCORE
 "Full-Bright Toggle."   // TFE_MSG_FULLBRIGHT
+"HD Assets Toggle."   // TFE_MSG_HD
