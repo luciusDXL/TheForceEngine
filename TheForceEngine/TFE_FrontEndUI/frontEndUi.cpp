@@ -38,10 +38,6 @@
 
 #include <climits>
 
-#ifdef _WIN32
-	#include <windows.h>
-#endif
-
 using namespace TFE_Input;
 using namespace TFE_Audio;
 
@@ -2915,13 +2911,19 @@ namespace TFE_FrontEndUI
 		{
 			char logDir[TFE_MAX_PATH];
 			TFE_Paths::appendPath(TFE_PathType::PATH_USER_DOCUMENTS, "", logDir);
-			ShellExecute(NULL, "open", logDir, NULL, NULL, SW_SHOWNORMAL);
+			if (!TFE_System::osShellExecute(logDir, NULL, NULL, false))
+			{
+				TFE_System::logWrite(LOG_ERROR, "Settings", "Failed to open directory: '%s'", logDir);
+			}
 		}
 		if (ImGui::Button("Open Screenshots Folder"))
 		{
 			char screenshotDir[TFE_MAX_PATH];
 			TFE_Paths::appendPath(TFE_PathType::PATH_USER_DOCUMENTS, "Screenshots/", screenshotDir);
-			ShellExecute(NULL, "open", screenshotDir, NULL, NULL, SW_SHOWNORMAL);
+			if (!TFE_System::osShellExecute(screenshotDir, NULL, NULL, false))
+			{
+				TFE_System::logWrite(LOG_ERROR, "Settings", "Failed to open directory: '%s'", screenshotDir);
+			}
 		}
 	#endif
 	}
