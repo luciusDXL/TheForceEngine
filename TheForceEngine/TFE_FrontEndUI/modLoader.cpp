@@ -96,7 +96,7 @@ namespace TFE_FrontEndUI
 	void modLoader_read()
 	{
 		// Reuse the cached mods unless no mods have been read yet.
-		if (s_modsRead and s_mods.size() > 0) { return; }
+		if (s_modsRead && s_mods.size() > 0) { return; }
 		s_modsRead = true;
 
 		s_mods.clear();
@@ -124,7 +124,6 @@ namespace TFE_FrontEndUI
 		sprintf(programDataModDir, "%sMods/", programData);
 		TFE_Paths::fixupPathAsDirectory(programDataModDir);
 
-		char programDirModDir[TFE_MAX_PATH];
 		sprintf(programDirModDir, "%sMods/", programDir);
 		TFE_Paths::fixupPathAsDirectory(programDirModDir);
 
@@ -463,7 +462,10 @@ namespace TFE_FrontEndUI
 		ImGui::SameLine(730.0f * uiScale);
 		if (ImGui::Button("Open Mod Folder"))
 		{
-			ShellExecute(NULL, "open", programDirModDir, NULL, NULL, SW_SHOWNORMAL);
+			if (!TFE_System::osShellExecute(programDirModDir, NULL, NULL, false))
+			{
+				TFE_System::logWrite(LOG_ERROR, "ModLoader", "Failed to open the directory: '%s'", programDirModDir);
+			}
 		}
 		#endif
 		
