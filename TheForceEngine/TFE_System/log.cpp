@@ -9,6 +9,8 @@
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <ctime>
+#include <chrono>
 
 #ifdef _WIN32
 	#include <Windows.h>
@@ -65,6 +67,19 @@ namespace TFE_System
 	{
 		if (type >= LOG_COUNT || !s_logFile.isOpen() || !tag || !str) { return; }
 
+		auto now = std::chrono::system_clock::now();
+		std::time_t now_c = std::chrono::system_clock::to_time_t(now);
+		std::tm now_tm;
+		
+		#ifdef _WIN32
+			localtime_s(&now_tm, &now_c);  // For thread safety on Windows
+		#else
+			localtime_r(&now_c, &now_tm);  // For thread safety on Linux
+		#endif
+
+		char timeStr[32];
+		strftime(timeStr, sizeof(timeStr), "%Y-%b-%d %H:%M:%S", &now_tm);
+
 		//Handle the variable input, "printf" style messages
 		va_list arg;
 		va_start(arg, str);
@@ -73,11 +88,11 @@ namespace TFE_System
 		//Format the message
 		if (type != LOG_MSG)
 		{
-			sprintf(s_workStr, "[%s : %s] %s\r\n", c_typeNames[type], tag, s_msgStr);
+			sprintf(s_workStr, "%s - [%s : %s] %s\r\n", timeStr, c_typeNames[type], tag, s_msgStr);
 		}
 		else
 		{
-			sprintf(s_workStr, "[%s] %s\r\n", tag, s_msgStr);
+			sprintf(s_workStr, "%s - [%s] %s\r\n", timeStr, tag, s_msgStr);
 		}
 		//Write to disk
 		s_logFile.writeBuffer(s_workStr, (u32)strlen(s_workStr));
@@ -98,7 +113,7 @@ namespace TFE_System
 			assert(0);
 		}
 
-		sprintf(s_workStr, "[%s] %s", tag, s_msgStr);
+		sprintf(s_workStr, "%s - [%s] %s", timeStr, tag, s_msgStr);
 		size_t len = strlen(s_msgStr);
 		char* msg = s_msgStr;
 		char* msgStart = msg;
