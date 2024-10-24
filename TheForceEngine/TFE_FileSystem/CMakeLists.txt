@@ -14,5 +14,6 @@ endif()
 target_sources(tfe PRIVATE
 		"${CMAKE_CURRENT_SOURCE_DIR}/filewriterAsync.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/memorystream.cpp"
+		"${CMAKE_CURRENT_SOURCE_DIR}/download.cpp"
 		)
 

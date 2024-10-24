@@ -131,8 +131,8 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>$(ProjectDir);$(ProjectDir)\TFE_ForceScript\Angelscript\angelscript\include;$(ProjectDir)\TFE_ForceScript\Angelscript\add_on;$(ProjectDir)\sdl2_win32\include;$(IncludePath)</IncludePath>
-    <LibraryPath>$(ProjectDir)\sdl2_win32\lib\x64;$(ProjectDir)\lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(ProjectDir);$(ProjectDir)\TFE_ForceScript\Angelscript\angelscript\include;$(ProjectDir)\TFE_ForceScript\Angelscript\add_on;$(ProjectDir)\sdl2_win32\include;$(ProjectDir)curl\include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(ProjectDir)curl\lib;$(ProjectDir)\sdl2_win32\lib\x64;$(ProjectDir)\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
@@ -145,8 +145,8 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(ProjectDir);$(ProjectDir)\TFE_ForceScript\Angelscript\angelscript\include;$(ProjectDir)\TFE_ForceScript\Angelscript\add_on;$(ProjectDir)\sdl2_win32\include;$(IncludePath)</IncludePath>
-    <LibraryPath>$(ProjectDir)\sdl2_win32\lib\x64;$(ProjectDir)\lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(ProjectDir);$(ProjectDir)\TFE_ForceScript\Angelscript\angelscript\include;$(ProjectDir)\TFE_ForceScript\Angelscript\add_on;$(ProjectDir)\curl\include;$(ProjectDir)\sdl2_win32\include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(ProjectDir)\sdl2_win32\lib\x64;$(ProjectDir)\lib;$(ProjectDir)\curl\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='BuildForRelease|x64'">
     <LinkIncremental>false</LinkIncremental>
@@ -157,6 +157,9 @@
     <LinkIncremental>false</LinkIncremental>
     <IncludePath>$(ProjectDir);$(ProjectDir)\TFE_ScriptSystem\AngelScript\sdk\angelscript\include;$(ProjectDir)\TFE_ScriptSystem\AngelScript\sdk\add_on;$(ProjectDir)\devILx64\include;$(ProjectDir)\sdl2_win32\include;$(IncludePath)</IncludePath>
     <LibraryPath>$(ProjectDir)\sdl2_win32\lib\x64;$(ProjectDir)\lib;$(ProjectDir)\devILx64\lib\x64\Release;$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
+  <PropertyGroup Label="Vcpkg">
+    <VcpkgEnabled>false</VcpkgEnabled>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -178,14 +181,16 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_WINDOWS;_CRT_SECURE_NO_WARNINGS;GLEW_STATIC;BUILD_SYSMIDI;WIN32_OPENGL;__WINDOWS_MM__;ASMJIT_EMBED;ASMJIT_STATIC;ASMJIT_NO_FOREIGN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;_WINDOWS;_CRT_SECURE_NO_WARNINGS;GLEW_STATIC;BUILD_SYSMIDI;WIN32_OPENGL;__WINDOWS_MM__;ASMJIT_EMBED;ASMJIT_STATIC;ASMJIT_NO_FOREIGN;CURL_STATICLIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <AdditionalIncludeDirectories>
+      </AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>%(AdditionalDependencies);C:\Users\Karjala\source\repos\TheForceEngine\TheForceEngine\curl\lib\libcurl.lib</AdditionalDependencies>
     </Link>
     <PreBuildEvent>
       <Command>
@@ -266,7 +271,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>%(AdditionalDependencies);$(ProjectDir)\curl\lib\libcurl.lib</AdditionalDependencies>
     </Link>
     <Manifest>
       <EnableDpiAwareness>PerMonitorHighDPIAware</EnableDpiAwareness>
@@ -512,6 +517,7 @@ echo ^)";
     <ClInclude Include="TFE_FileSystem\filestream.h" />
     <ClInclude Include="TFE_FileSystem\fileutil.h" />
     <ClInclude Include="TFE_FileSystem\memorystream.h" />
+    <ClInclude Include="TFE_FileSystem\download.h" />
     <ClInclude Include="TFE_FileSystem\paths.h" />
     <ClInclude Include="TFE_FileSystem\stream.h" />
     <ClInclude Include="TFE_ForceScript\Angelscript\add_on\scriptarray\scriptarray.h" />
@@ -897,6 +903,7 @@ echo ^)";
     <ClCompile Include="TFE_FileSystem\filestream.cpp" />
     <ClCompile Include="TFE_FileSystem\fileutil.cpp" />
     <ClCompile Include="TFE_FileSystem\memorystream.cpp" />
+    <ClCompile Include="TFE_FileSystem\download.cpp" />
     <ClCompile Include="TFE_FileSystem\paths.cpp" />
     <ClCompile Include="TFE_ForceScript\Angelscript\add_on\scriptarray\scriptarray.cpp" />
     <ClCompile Include="TFE_ForceScript\Angelscript\add_on\scriptbuilder\scriptbuilder.cpp" />

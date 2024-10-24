@@ -1,6 +1,8 @@
 #pragma once
 #include "fileutil.h"
 #include "filestream.h"
+#include <fstream>
+#include <TFE_System/system.h>
 
 #include <assert.h>
 #include <stdio.h>
@@ -13,6 +15,7 @@
 
 namespace FileUtil
 {
+
 	void readDirectory(const char* dir, const char* ext, FileList& fileList)
 	{
 		char searchStr[TFE_MAX_PATH];
@@ -68,7 +71,7 @@ namespace FileUtil
 		if (CreateDirectoryA(dir, NULL) || GetLastError() == ERROR_ALREADY_EXISTS)
 		{
 			return true;
-		}
+		}	
 	#endif
 
 		return false;
@@ -211,6 +214,22 @@ namespace FileUtil
 		name[c-start] = 0;
 	}
 
+	void getDirectoryFromPath(char * path, char* dir)
+	{	
+		std::string pathStr(path);
+		std::size_t lastSlash = pathStr.find_last_of("/\\");
+
+
+		if (lastSlash != std::string::npos) {
+			std::string directory = pathStr.substr(0, lastSlash);
+			std::strcpy(dir, directory.c_str());
+		}
+		else 
+		{
+			std::strcpy(dir, "");
+		}
+	}
+
 	void copyFile(const char* srcFile, const char* dstFile)
 	{
 		CopyFile(srcFile, dstFile, FALSE);
@@ -221,11 +240,13 @@ namespace FileUtil
 		DeleteFile(srcFile);
 	}
 
-	bool directoryExits(const char* path, char* outPath)
+	bool directoryExists(const char* path, char* outPath)
 	{
+	#ifdef _WIN32
 		DWORD attr = GetFileAttributesA(path);
 		if (GetFileAttributesA(path) == INVALID_FILE_ATTRIBUTES) { return false; }
-		return (attr & FILE_ATTRIBUTE_DIRECTORY) != 0;
+		return (attr & FILE_ATTRIBUTE_DIRECTORY) != 0;	
+	#endif
 	}
 
 	bool exists( const char *path )
@@ -340,5 +361,11 @@ namespace FileUtil
 		{
 			strcpy(outPath, srcPath);
 		}
+	}
+
+	int getFilesize(const char* filename)
+	{
+		std::ifstream in(filename, std::ifstream::ate | std::ifstream::binary);
+		return in.tellg();
 	}
 }

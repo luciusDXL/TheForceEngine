@@ -62,12 +62,14 @@ if(ENABLE_TFE)
 	if(UNIX)
 		find_package(PkgConfig REQUIRED)
 		find_package(SDL2 2.0.20 REQUIRED)
+                                          find_package(CURL REQUIRED)
 		pkg_check_modules(SDL2_IMAGE REQUIRED SDL2_image)
 		target_include_directories(tfe PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
+                                           target_include_directories(tfe PRIVATE ${CURL_INCLUDE_DIRS})
 		target_include_directories(tfe PRIVATE ${SDL2_INCLUDE_DIRS})
 		target_include_directories(tfe PRIVATE ${SDL2_IMAGE_INCLUDE_DIRS})
 		target_link_libraries(tfe PRIVATE SDL2::SDL2main SDL2::SDL2
-					${SDL2_IMAGE_LIBRARIES}
+					${SDL2_IMAGE_LIBRARIES} ${CURL_LIBRARIES}
 		)
 
 		# set up build directory to be able to run TFE immediately: symlink

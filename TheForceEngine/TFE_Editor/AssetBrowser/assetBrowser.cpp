@@ -2019,7 +2019,7 @@ namespace AssetBrowser
 
 	void exportSelected()
 	{
-		if (!FileUtil::directoryExits(s_editorConfig.exportPath))
+		if (!FileUtil::directoryExists(s_editorConfig.exportPath))
 		{
 			showMessageBox("ERROR", getErrorMsg(ERROR_INVALID_EXPORT_PATH), s_editorConfig.exportPath);
 			return;
@@ -2054,7 +2054,7 @@ namespace AssetBrowser
 
 			char subDir[TFE_MAX_PATH];
 			sprintf(subDir, "%s%s", path, assetSubPath[asset->type]);
-			if (!FileUtil::directoryExits(subDir))
+			if (!FileUtil::directoryExists(subDir))
 			{
 				FileUtil::makeDirectory(subDir);
 			}

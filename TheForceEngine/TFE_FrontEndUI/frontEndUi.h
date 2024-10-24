@@ -29,6 +29,9 @@ struct IGame;
 
 namespace TFE_FrontEndUI
 {
+	struct UiImage;
+
+	bool loadGpuImage(const char* localPath, UiImage* uiImage);
 	void init();
 	void initConsole();
 	void shutdown();

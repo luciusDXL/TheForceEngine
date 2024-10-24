@@ -234,7 +234,7 @@ namespace TFE_Settings
 				const char* const * locations = c_gameLocations[gameId];
 				for (u32 i = 0; i < c_hardcodedPathCount[gameId]; i++)
 				{
-					if (FileUtil::directoryExits(locations[i]))
+					if (FileUtil::directoryExists(locations[i]))
 					{
 						strcpy(s_gameSettings.header[gameId].sourcePath, locations[i]);
 						pathValid = true;
@@ -1181,7 +1181,7 @@ namespace TFE_Settings
 
 	bool validatePath(const char* path, const char* sentinel)
 	{
-		if (!FileUtil::directoryExits(path)) { return false; }
+		if (!FileUtil::directoryExists(path)) { return false; }
 
 		char sentinelPath[TFE_MAX_PATH];
 		sprintf(sentinelPath, "%s%s", path, sentinel);
@@ -1344,6 +1344,29 @@ namespace TFE_Settings
 		}
 		return value;
 	}
+
+	int parseJSonIntToOverride(const cJSON* item)
+	{
+		int value = -1;  // default is -1
+		// Check if it is a json numerical
+		if (cJSON_IsNumber(item))
+		{
+			value = cJSON_GetNumberValue(item);
+		}
+		else
+		{
+			std::string valueString = item->valuestring;
+			if (valueString.find_first_not_of("0123456789") == string::npos)
+			{
+				value = std::stoi(valueString);
+			}
+			else
+			{
+				TFE_System::logWrite(LOG_WARNING, "MOD_CONF", "Override '%s' is an invalid type and should be an integer. Ignoring override.", item->string);
+			}
+		}
+		return value;
+	};
 
 	void parseTfeOverride(TFE_ModSettings* modSettings, const cJSON* tfeOverride)
 	{
