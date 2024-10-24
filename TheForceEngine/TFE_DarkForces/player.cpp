@@ -501,7 +501,7 @@ namespace TFE_DarkForces
 			s_batteryPower = (batteryPower * batteryPowerPercent) / 100;
 		}
 
-		// Note - this doesn't check if the weapon is is in the inventory!
+		// Note - this doesn't check if the weapon is in the inventory!
 		if (intMap.find("defaultWeapon") != intMap.end())
 		{
 			int weaponSwitchID = pickup_addToValue(0, intMap["defaultWeapon"], 9);
