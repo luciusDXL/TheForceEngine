@@ -356,7 +356,7 @@ namespace TFE_DarkForces
 		if (TFE_Input::mouseDown(MBUTTON_LEFT))
 		{
 			s32 mouseX, mouseZ;
-			SDL_GetMouseState(&mouseX, &mouseZ);
+			TFE_Input::getMousePos(&mouseX, &mouseZ);
 
 			// Calculate deltas
 			fixed16_16 deltaX = (mouseX - mouseOldPosX) << 16;
