@@ -51,5 +51,5 @@ struct ExternalLogics
 
 namespace TFE_Settings
 {
-	void parseLogicData(char* data, std::vector<CustomActorLogic> &actorLogics);
+	void parseLogicData(char* data, const char* filename, std::vector<CustomActorLogic>& actorLogics);
 }

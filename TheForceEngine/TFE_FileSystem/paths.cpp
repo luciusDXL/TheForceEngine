@@ -393,7 +393,7 @@ namespace TFE_Paths
 		return false;
 	}
 
-	void getAllFilesFromSearchPaths(const char* subdirectory, const char* ext, FileList &allFiles)
+	void getAllFilesFromSearchPaths(const char* subdirectory, const char* ext, FileList& allFiles)
 	{
 		size_t pathCount = s_searchPaths.size();
 		for (size_t p = 0; p < pathCount; p++)

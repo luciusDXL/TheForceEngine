@@ -14,7 +14,7 @@ namespace TFE_Settings
 	bool tryAssignProperty(cJSON* data, CustomActorLogic& customLogic);
 
 	
-	void parseLogicData(char* data, std::vector<CustomActorLogic> &actorLogics)
+	void parseLogicData(char* data, const char* filename, std::vector<CustomActorLogic>& actorLogics)
 	{
 		cJSON* root = cJSON_Parse(data);
 		if (root)
@@ -58,11 +58,11 @@ namespace TFE_Settings
 			const char* error = cJSON_GetErrorPtr();
 			if (error)
 			{
-				TFE_System::logWrite(LOG_ERROR, "LOGICS", "Failed to parse json before\n%s", error);
+				TFE_System::logWrite(LOG_ERROR, "LOGICS", "Failed to parse %s before\n%s", filename, error);
 			}
 			else
 			{
-				TFE_System::logWrite(LOG_ERROR, "LOGICS", "Failed to parse json");
+				TFE_System::logWrite(LOG_ERROR, "LOGICS", "Failed to parse %s", filename);
 			}
 		}
 	}

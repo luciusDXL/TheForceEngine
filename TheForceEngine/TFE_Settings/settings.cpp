@@ -1657,9 +1657,9 @@ namespace TFE_Settings
 		vector<string> jsons;
 		TFE_Paths::getAllFilesFromSearchPaths("logics", "json", jsons);
 
+		TFE_System::logWrite(LOG_MSG, "LOGICS", "Parsing logic JSON(s)");
 		for (u32 i = 0; i < jsons.size(); i++)
 		{
-			TFE_System::logWrite(LOG_MSG, "LOGICS", "Parsing logic JSON");
 			FileStream file;
 			const char* fileName = jsons[i].c_str();
 			if (!file.open(fileName, FileStream::MODE_READ)) { return; }
@@ -1675,7 +1675,7 @@ namespace TFE_Settings
 			data[size] = 0;
 			file.close();
 
-			parseLogicData(data, s_externalLogics.actorLogics);
+			parseLogicData(data, fileName, s_externalLogics.actorLogics);
 			free(data);
 		}
 	}
