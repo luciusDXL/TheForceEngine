@@ -1011,10 +1011,13 @@ namespace TFE_DarkForces
 				{
 					TFE_Paths::addLocalArchive(archive);
 
-					// Handle LFD files.
 					char modPath[TFE_MAX_PATH];
 					FileUtil::getFilePath(archivePath.path, modPath);
 
+					// Add the Mod directory to head of search paths - so that assets here will be loaded preferentially
+					TFE_Paths::addAbsoluteSearchPathToHead(modPath);
+
+					// Handle LFD files.
 					// Look for LFD files.
 					lfdCount = 0;
 					briefingIndex = -1;
