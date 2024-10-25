@@ -443,7 +443,9 @@ namespace TFE_DarkForces
 						reticle_enable(true);
 					}
 					s_flatLighting = JFALSE;
-					s_nightvisionActive = JFALSE;
+					// Note: I am not sure why this is there but it overrides all player settings
+					// By default the player load disables night vision so it won't carry over from previous maps.
+					// s_nightvisionActive = JFALSE;
 				}
 			}
 			else // Loading from save.
@@ -935,16 +937,16 @@ namespace TFE_DarkForces
 		s_visionFxCountdown = 2;
 	}
 
-	void disableNightvisionInternal()
+	void disableNightVisionInternal()
 	{
 		s_flatLighting = JFALSE;
 		s_visionFxEndCountdown = 3;
 	}
 		
-	void disableNightvision()
+	void disableNightVision()
 	{
-		disableNightvisionInternal();
-		s_nightvisionActive = JFALSE;
+		disableNightVisionInternal();
+		s_nightVisionActive = JFALSE;
 		hud_sendTextMessage(9);
 	}
 
@@ -956,11 +958,11 @@ namespace TFE_DarkForces
 		{
 			hud_sendTextMessage(11);
 			sound_play(s_nightVisionDeactiveSoundSource);
-			s_nightvisionActive = JFALSE;
+			s_nightVisionActive = JFALSE;
 			return;
 		}
 
-		s_nightvisionActive = JTRUE;
+		s_nightVisionActive = JTRUE;
 		beginNightVision(16);
 		hud_sendTextMessage(10);
 		sound_play(s_nightVisionActiveSoundSource);
@@ -1302,9 +1304,9 @@ namespace TFE_DarkForces
 			}
 			if (inputMapping_getActionState(IADF_NIGHT_VISION_TOG) == STATE_PRESSED && s_playerInfo.itemGoggles)
 			{
-				if (s_nightvisionActive)
+				if (s_nightVisionActive)
 				{
-					disableNightvision();
+					disableNightVision();
 				}
 				else
 				{
