@@ -1,4 +1,5 @@
 #include <cstring>
+#include <cmath>
 
 #include "vueLogic.h"
 #include "time.h"
@@ -10,10 +11,12 @@
 #include <TFE_Jedi/Level/levelData.h>
 #include <TFE_Jedi/Level/rwall.h>
 #include <TFE_Jedi/Collision/collision.h>
+#include <TFE_System/math.h>
 #include <TFE_System/system.h>
 #include <TFE_FileSystem/paths.h>
 #include <TFE_FileSystem/filestream.h>
 #include <TFE_Jedi/Serialization/serialization.h>
+#include <TFE_Settings/settings.h>
 
 using namespace TFE_Jedi;
 
@@ -61,6 +64,9 @@ namespace TFE_DarkForces
 			JBool searchForSector;
 			SecObject* obj;
 			VueFrame* frame;
+			VueFrame* interpolatedFrame;
+			VueFrame* previous;
+			VueFrame* current;
 			Tick tick;
 			Tick pauseTick;
 			s32 prevFrame;
@@ -94,6 +100,20 @@ namespace TFE_DarkForces
 
 		return (Logic*)vueLogic;
 	}
+
+	void vueLogic_serializeFramePointer(Stream* stream, VueLogic* logic, VueFrame** frame, bool modeWrite, u32 version)
+	{
+		s32 index = -1;
+		if (modeWrite && logic->frames && *frame)
+		{
+			index = allocator_getIndex(logic->frames, *frame);
+		}
+		SERIALIZE(version, index, -1);
+		if (!modeWrite)
+		{
+			*frame = (index >= 0) ? (VueFrame*)allocator_getByIndex(logic->frames, index) : nullptr;
+		}
+	}
 		
 	void vueLogic_serializeTaskLocalMemory(Stream* stream, void* userData, void* mem)
 	{
@@ -119,16 +139,13 @@ namespace TFE_DarkForces
 				locals->obj = objData_getObjectBySerializationId(objIndex);
 			}
 		}
-		s32 index = -1;
-		if (modeWrite && self->frames && locals->frame)
-		{
-			index = allocator_getIndex(self->frames, locals->frame);
-		}
-		SERIALIZE(SaveVersionInit, index, -1);
-		if (!modeWrite)
-		{
-			locals->frame = (VueFrame*)allocator_getByIndex(self->frames, index);
-		}
+
+		// local frame pointers.
+		vueLogic_serializeFramePointer(stream, self, &locals->frame, modeWrite, SaveVersionInit);
+		vueLogic_serializeFramePointer(stream, self, &locals->interpolatedFrame, modeWrite, ObjState_VueSmoothing);
+		vueLogic_serializeFramePointer(stream, self, &locals->previous, modeWrite, ObjState_VueSmoothing);
+		vueLogic_serializeFramePointer(stream, self, &locals->current, modeWrite, ObjState_VueSmoothing);
+
 		SERIALIZE(SaveVersionInit, locals->tick, 0);
 		SERIALIZE(SaveVersionInit, locals->pauseTick, 0);
 		SERIALIZE(SaveVersionInit, locals->prevFrame, 0);
@@ -177,6 +194,8 @@ namespace TFE_DarkForces
 			for (s32 i = 0; i < frameCount; i++)
 			{
 				VueFrame* frame = (VueFrame*)allocator_newItem(vueLogic->frames);
+				if (!frame)
+					return;
 				SERIALIZE(ObjState_InitVersion, (*frame), { 0 });
 			}
 		}
@@ -205,6 +224,8 @@ namespace TFE_DarkForces
 					y1 = -y1;
 					y2 = -y2;
 					VueFrame* frame = (VueFrame*)allocator_newItem(vueList);
+					if (!frame)
+						return;
 					frame->offset.x = floatToFixed16(x1);
 					frame->offset.y = floatToFixed16(y1);
 					frame->offset.z = floatToFixed16(z1);
@@ -245,6 +266,8 @@ namespace TFE_DarkForces
 			mtx1[8] = 1;
 
 			VueFrame* frame = (VueFrame*)allocator_newItem(vueList);
+			if (!frame)
+				return;
 			frame->flags = VFRAME_FIRST;
 
 			while (1)
@@ -264,6 +287,8 @@ namespace TFE_DarkForces
 					if (transformName[0] == '*' || strcasecmp(name, transformName) == 0)
 					{
 						frame = (VueFrame*)allocator_newItem(vueList);
+						if (!frame)
+							return;
 
 						// Rotation/Scale matrix.
 						fixed16_16 frameMtx[9];
@@ -381,6 +406,7 @@ namespace TFE_DarkForces
 	{
 		vueLogic->frames = frames;
 		vueLogic->isCamera = isCamera;
+		assert(vueLogic->task);
 		task_makeActive(vueLogic->task);
 	}
 
@@ -439,6 +465,32 @@ namespace TFE_DarkForces
 		return JFALSE;
 	}
 
+	fixed16_16 lerp(fixed16_16 a, fixed16_16 b, f32 t)
+	{
+		fixed16_16 tfixed = floatToFixed16(t);
+		fixed16_16 invtfixed = floatToFixed16(1 - t);
+		return mul16(b, tfixed) + mul16(a, invtfixed);
+	}
+
+	// Interpolate from 'previous' to 'current' based on 't' and store the results in 'interpolatedFrame'.
+	void interpolateFrame(VueFrame* interpolatedFrame, const VueFrame* previous, const VueFrame* current, f32 t)
+	{
+		// This is a linear approximation that works due to the regular nature of the keyframes and small deltas.
+		for (s32 i = 0; i < 9; i++)
+		{
+			interpolatedFrame->mtx[i] = lerp(previous->mtx[i], current->mtx[i], t);
+		}
+		// Use linear interpolation for offset and angles.
+		interpolatedFrame->offset.x = lerp(previous->offset.x, current->offset.x, t);
+		interpolatedFrame->offset.y = lerp(previous->offset.y, current->offset.y, t);
+		interpolatedFrame->offset.z = lerp(previous->offset.z, current->offset.z, t);
+		interpolatedFrame->pitch = lerp(previous->pitch, current->pitch, t);
+		interpolatedFrame->yaw = lerp(previous->yaw, current->yaw, t);
+		interpolatedFrame->roll = lerp(previous->roll, current->roll, t);
+		// Copy the flags from the current frame.
+		interpolatedFrame->flags = current->flags;
+	}
+
 	void vueLogicTaskFunc(MessageType msg)
 	{
 		task_begin_ctx;
@@ -454,9 +506,10 @@ namespace TFE_DarkForces
 			{
 				if (local(vue)->isCamera > 0)
 				{
-					// TODO
-					assert(0);
-					continue;
+					// The original code sets the camera pointer to the VUE.
+					// But then this is never used.
+					//
+					// s_camera = local(vue);
 				}
 
 				local(frame) = (VueFrame*)allocator_getHead(local(vue)->frames);
@@ -539,13 +592,62 @@ namespace TFE_DarkForces
 						if (msg == MSG_FREE_TASK) { break; }
 
 						Tick dt = s_curTick - local(tick);
-						s32 frameIndex = dt / local(vue)->frameDelay;
+						s32 frameIndex;
+						f32 t = 0.0f;
+						bool smoothVUEs = TFE_Settings::getGameSettings()->df_smoothVUEs;
+						if (smoothVUEs)
+						{
+							f32 frameIndexF = f32(dt) / f32(local(vue)->frameDelay);
+							t = std::modf(frameIndexF, &frameIndexF); //normalized progress from prev to cur frame
+							frameIndex = s32(frameIndexF);
+						}
+						else
+						{
+							//vanilla behavior
+							frameIndex = dt / local(vue)->frameDelay;
+						}
+
 						for (; local(prevFrame) != frameIndex && local(frame); local(prevFrame)++)
 						{
 							local(frame) = (VueFrame*)allocator_getNext(local(vue)->frames);
+
+							// We added the interpolated frame to the end of the frame sequence, so we need to make sure we ignore it rather
+							// than trying to play it as part of the sequence.
+							if (local(interpolatedFrame) && local(frame) == local(interpolatedFrame)) { local(frame) = nullptr; }
+
+							if (smoothVUEs)
+							{
+								if (local(frame) && local(current) != local(frame)) {
+									local(previous) = local(current);
+									local(current) = local(frame);
+								}
+							}
+
 							if (!local(frame) || ((local(vue)->flags & VUE_PAUSED) && (local(frame)->flags & VFRAME_FIRST)))
 							{
 								break;
+							}
+						}
+
+						// If VUE smoothing is enabled, interpolate from previous frame to current frame, giving smooth motion at high framerates.
+						if (smoothVUEs)
+						{
+							// If distance between frames is longer than this, object teleported.
+							const fixed16_16 MAX_INTERP_DISTANCE = FIXED(2500); // FIXED(50 * 50)
+
+							if (!local(interpolatedFrame)) { local(interpolatedFrame) = (VueFrame*)allocator_newItem(local(vue)->frames); }
+							if (!local(interpolatedFrame))
+								return;
+							if (local(frame) && local(current) && local(previous))
+							{
+								const fixed16_16 dist = fixedSquaredDistance(local(current)->offset, local(previous)->offset);
+							
+								// Sanity check; distance will be less than 0 if it overflowed (e.g. talay takeoff animation)
+								if (dist >= 0 && dist < MAX_INTERP_DISTANCE)
+								{
+									interpolateFrame(local(interpolatedFrame), local(previous), local(current), t);
+									local(frame) = local(interpolatedFrame);
+								}
 							}
 						}
 					}
@@ -565,6 +667,7 @@ namespace TFE_DarkForces
 	{
 		deleteLogicAndObject(logic);
 		task_free(logic->task);
+		logic->task = nullptr;
 	}
 
 }  // TFE_DarkForces

@@ -19,8 +19,8 @@ flat out int Frag_TextureId;
 
 void unpackPortalInfo(uint portalInfo, out uint portalOffset, out uint portalCount)
 {
-	portalCount  = (portalInfo >> 13u) & 15u;
-	portalOffset = portalInfo & 8191u;
+	portalCount  = (portalInfo >> 16u) & 15u;
+	portalOffset = portalInfo & 65535u;
 }
 
 void main()
@@ -42,9 +42,12 @@ void main()
 	vtx_pos.xz = mix(posTextureXZ.xy, posTextureXZ.zw, u);
 	vtx_pos.y  = mix(posTextureYU.x, posTextureYU.y, v);
 
+	ivec2 sh = texelFetch(TextureTable, Frag_TextureId).yw;
+	float scaleFactor = 1.0 / float(sh.x >> 12);
+
 	vec2 vtx_uv;
 	vtx_uv.x = mix(posTextureYU.z, posTextureYU.w, u);
-	vtx_uv.y = v * float(texelFetch(TextureTable, Frag_TextureId).w);
+	vtx_uv.y = v * float(sh.y) * scaleFactor;
 
 	vec4 texture_data = vec4(0.0);
 	texture_data.y = float((tex_flags >> 16u) & 31u);

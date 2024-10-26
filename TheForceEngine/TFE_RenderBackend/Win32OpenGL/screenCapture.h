@@ -11,7 +11,8 @@
 class ScreenCapture
 {
 public:
-	ScreenCapture() : m_bufferCount(0), m_writeBuffer(0), m_readIndex(nullptr), m_stagingBuffers(nullptr), m_frame(0), m_readCount(0), m_recordingFrame(0), m_captures(0) {}
+	ScreenCapture() : m_bufferCount(0), m_captureHead(0), m_captureCount(0), m_readIndex(nullptr), m_readCount(0), m_writeBuffer(0),
+		m_frame(0), m_width(0), m_height(0), m_recordingStarted(false), m_recordingFrame(0), m_captures(0), m_stagingBuffers(nullptr) {}
 	~ScreenCapture();
 
 	bool create(u32 width, u32 height, u32 bufferCount);
@@ -51,7 +52,6 @@ private:
 	bool m_recordingStarted;
 	u32  m_recordingFrame;
 
-	f32 m_recordingFramerate = 15.0;
 	s32 m_recordingFrameStart = 0;
 	f64 m_recordingTimeStart = 0.0;
 	f64 m_recordingFrameLast = 0.0;

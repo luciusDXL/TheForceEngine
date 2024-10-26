@@ -31,11 +31,13 @@
 #include <TFE_Game/reticle.h>
 #include <TFE_Input/inputMapping.h>
 #include <TFE_Memory/memoryRegion.h>
+#include <TFE_Settings/settings.h>
 #include <TFE_System/system.h>
 #include <TFE_System/tfeMessage.h>
 #include <TFE_FileSystem/paths.h>
 #include <TFE_FileSystem/fileutil.h>
 #include <TFE_FileSystem/filestream.h>
+#include <TFE_A11y/accessibility.h>
 #include <TFE_Audio/midiPlayer.h>
 #include <TFE_Audio/audioSystem.h>
 #include <TFE_Asset/modelAsset_jedi.h>
@@ -72,6 +74,11 @@ namespace TFE_DarkForces
 		"SPRITES.GOB",
 	};
 
+	static const char* c_optionalGobFileNames[] =
+	{
+		"enhanced.gob",
+	};
+	
 	enum GameConstants
 	{
 		MAX_MOD_LFD = 16,
@@ -223,7 +230,7 @@ namespace TFE_DarkForces
 	void setInitialLevel(const char* levelName);
 	s32  loadLocalMessages();
 	void buildSearchPaths();
-	void openGobFiles();
+	bool openGobFiles();
 	void gameStartup();
 	void loadAgentAndLevelData();
 	void startNextMode();
@@ -282,11 +289,14 @@ namespace TFE_DarkForces
 		char startLevel[TFE_MAX_PATH] = "";
 		bitmap_setAllocator(s_gameRegion);
 
+		bitmap_setCoreArchives(c_gobFileNames, TFE_ARRAYSIZE(c_gobFileNames));
+
 		printGameInfo();
 		buildSearchPaths();
 		processCommandLineArgs(argCount, argv, startLevel);
 		loadLocalMessages();
-		openGobFiles();
+		if (!openGobFiles())
+			return false;
 
 		// Sound is initialized before the task system.
 		sound_open(s_gameRegion);
@@ -582,7 +592,11 @@ namespace TFE_DarkForces
 			} break;
 			case GSTATE_CUTSCENE:
 			{
-				if (!cutscene_update())
+				if (cutscene_update())
+				{
+					if (TFE_A11Y::cutsceneCaptionsEnabled()) { TFE_A11Y::drawCaptions(); }
+				}
+				else
 				{
 					s_runGameState.cutsceneIndex++;
 					if (s_cutsceneData[s_runGameState.cutsceneIndex].nextGameMode == GMODE_END)
@@ -594,6 +608,7 @@ namespace TFE_DarkForces
 					{
 						startNextMode();
 					}
+					TFE_A11Y::clearActiveCaptions();
 				}
 			} break;
 			case GSTATE_BRIEFING:
@@ -623,7 +638,11 @@ namespace TFE_DarkForces
 			{
 				// At this point the mission has already been launched.
 				// The task system will take over. Basically every frame we just check to see if there are any tasks running.
-				if (!task_getCount())
+				if (task_getCount())
+				{
+					if (!s_gamePaused && TFE_A11Y::gameplayCaptionsEnabled()) { TFE_A11Y::drawCaptions(); }
+				}
+				else
 				{
 					// We have returned from the mission tasks.
 					renderer_reset();
@@ -658,6 +677,7 @@ namespace TFE_DarkForces
 					bitmap_clearLevelData();
 					bitmap_setAllocator(s_gameRegion);
 					level_freeAllAssets();
+					TFE_A11Y::clearActiveCaptions();
 				}
 			} break;
 		}
@@ -790,6 +810,7 @@ namespace TFE_DarkForces
 	void processCommandLineArgs(s32 argCount, const char* argv[], char* startLevel)
 	{
 		s_sharedState.customGobName[0] = 0;
+		TFE_Settings::clearModSettings();
 
 		for (s32 i = 0; i < argCount; i++)
 		{
@@ -930,6 +951,7 @@ namespace TFE_DarkForces
 						zipArchive.closeFile();
 
 						GobMemoryArchive* gobArchive = new GobMemoryArchive();
+						gobArchive->setName(zipArchive.getFileName(gobIndex));
 						gobArchive->open(buffer, bufferLen);
 						TFE_Paths::addLocalArchive(gobArchive);
 					}
@@ -1047,6 +1069,8 @@ namespace TFE_DarkForces
 				}
 			}
 		}
+
+		TFE_Settings::loadCustomModSettings();
 	}
 
 	s32 loadLocalMessages()
@@ -1080,15 +1104,19 @@ namespace TFE_DarkForces
 		sprintf(path, "%sMods/", programData);
 		TFE_Paths::addAbsoluteSearchPath(path);
 
-		sprintf(path, "%sMods/", programDir);
+		sprintf(path, "%s", "Mods/");
+		if (!TFE_Paths::mapSystemPath(path))
+			sprintf(path, "%sMods/", programDir);
 		TFE_Paths::addAbsoluteSearchPath(path);
 
 		// Add the adjustable HUD.
-		sprintf(path, "%sMods/TFE/AdjustableHud", programDir);
+		sprintf(path, "%s", "Mods/TFE/AdjustableHud");
+		if (!TFE_Paths::mapSystemPath(path))
+			sprintf(path, "%sMods/TFE/AdjustableHud", programDir);
 		TFE_Paths::addAbsoluteSearchPath(path);
 	}
 
-	void openGobFiles()
+	bool openGobFiles()
 	{
 		for (s32 i = 0; i < TFE_ARRAYSIZE(c_gobFileNames); i++)
 		{
@@ -1105,8 +1133,24 @@ namespace TFE_DarkForces
 			else
 			{
 				TFE_System::logWrite(LOG_ERROR, "Dark Forces Main", "Cannot find required game data - '%s'.", c_gobFileNames[i]);
+				return false;
 			}
 		}
+		// Optional gobs
+		for (s32 i = 0; i < TFE_ARRAYSIZE(c_optionalGobFileNames); i++)
+		{
+			FilePath archivePath;
+			if (TFE_Paths::getFilePath(c_optionalGobFileNames[i], &archivePath))
+			{
+				assert(archivePath.path[0] != 0);
+				Archive* archive = Archive::getArchive(ARCHIVE_GOB, c_optionalGobFileNames[i], archivePath.path);
+				if (archive)
+				{
+					TFE_Paths::addLocalArchive(archive);
+				}
+			}
+		}
+		return true;
 	}
 		
 	void loadMapNumFont()

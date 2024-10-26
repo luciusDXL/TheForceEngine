@@ -1,0 +1,5 @@
+add_subdirectory(AssetBrowser/)
+add_subdirectory(EditorAsset/)
+add_subdirectory(LevelEditor/)
+file(GLOB SOURCES "*.cpp")
+target_sources(tfe PRIVATE ${SOURCES})

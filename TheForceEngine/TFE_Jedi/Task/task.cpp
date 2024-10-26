@@ -6,6 +6,7 @@
 #include <TFE_System/system.h>
 #include <TFE_Game/igame.h>
 #include <TFE_System/profiler.h>
+#include <TFE_FrontEndUI/console.h>
 #include <TFE_Jedi/Serialization/serialization.h>
 #include <stdarg.h>
 #include <tuple>
@@ -90,6 +91,7 @@ namespace TFE_Jedi
 	static f64 s_minIntervalInSec = 0.0;
 	static s32 s_frameActiveTaskCount = 0;
 	static JBool s_taskSystemPaused = JFALSE;
+	static bool s_enableTimeLimiter = true;
 	static Task* s_taskPauseTask = nullptr;
 
 	void selectNextTask();
@@ -108,6 +110,8 @@ namespace TFE_Jedi
 		s_curTask = &s_rootTask;
 		s_taskCount = 0;
 		s_frameActiveTaskCount = 0;
+
+		CVAR_BOOL(s_enableTimeLimiter, "d_enableTaskTimeLimiter", CVFLAG_DO_NOT_SERIALIZE, "Enable the task time limiter.");
 	}
 
 	Task* createSubTask(const char* name, TaskFunc func, TaskFunc localRunFunc)
@@ -519,7 +523,7 @@ namespace TFE_Jedi
 
 	JBool task_canRun()
 	{
-		if (s_taskCount)
+		if (s_taskCount && s_enableTimeLimiter)
 		{
 			const f64 time = TFE_System::getTime();
 			if (time - s_prevTime < s_minIntervalInSec)

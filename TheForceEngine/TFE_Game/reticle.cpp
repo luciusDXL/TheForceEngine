@@ -36,14 +36,14 @@ bool reticle_init()
 		TFE_Paths::appendPath(TFE_PathType::PATH_PROGRAM, "UI_Images/ReticleAtlas.png", imagePath, TFE_MAX_PATH);
 	}
 
-	Image* image = TFE_Image::get(imagePath);
+	SDL_Surface* image = TFE_Image::get(imagePath);
 	if (!image)
 	{
 		TFE_System::logWrite(LOG_ERROR, "Reticle", "Cannot load reticle atlas: '%s'.", imagePath);
 		return false;
 	}
 
-	s_reticleImage.texture = TFE_RenderBackend::createTexture(image->width, image->height, image->data);
+	s_reticleImage.texture = TFE_RenderBackend::createTexture(image->w, image->h, (u32*)image->pixels);
 	s_reticleImage.overlayX = 0;
 	s_reticleImage.overlayY = 0;
 	s_reticleImage.overlayWidth = 32;

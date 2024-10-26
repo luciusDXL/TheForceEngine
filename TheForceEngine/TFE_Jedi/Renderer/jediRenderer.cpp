@@ -30,6 +30,12 @@ namespace TFE_Jedi
 	static TFE_SubRenderer s_subRenderer = TSR_CLASSIC_FIXED;
 	static std::vector<TextureListCallback> s_hudTextureCallbacks;
 	static TFE_Sectors* s_sectorRendererCache[TSR_COUNT] = { nullptr };
+	static bool s_trueColor = false;
+	static bool s_enableMips = false;
+	static Vec3f s_lumMask = { 0 };
+	static Vec3f s_palFx = { 0 };
+	static u32 s_sourcePalette[256];
+	bool s_showWireframe = false;
 	TFE_Sectors* s_sectorRenderer = nullptr;
 	RendererType s_rendererType = RENDERER_SOFTWARE;
 
@@ -64,6 +70,8 @@ namespace TFE_Jedi
 		s_sectorRenderer = nullptr;
 		s_subRenderer = TSR_INVALID;
 		s_init = false;
+		s_trueColor = false;
+		s_enableMips = false;
 		vfb_setMode();
 	}
 
@@ -107,6 +115,7 @@ namespace TFE_Jedi
 		CVAR_INT(s_maxWallCount,  "d_maxWallCount",  CVFLAG_DO_NOT_SERIALIZE, "Maximum wall count for a given sector.");
 		CVAR_INT(s_maxDepthCount, "d_maxDepthCount", CVFLAG_DO_NOT_SERIALIZE, "Maximum adjoin depth count.");
 		CVAR_INT(s_sectorAmbient, "d_sectorAmbient", CVFLAG_DO_NOT_SERIALIZE, "Current Sector Ambient.");
+		CVAR_BOOL(s_showWireframe, "d_enableWireframe", CVFLAG_DO_NOT_SERIALIZE, "Enable wireframe rendering.");
 
 		// Remove temporarily until they do something useful again.
 		CCMD("rsetSubRenderer", console_setSubRenderer, 1, "Set the sub-renderer - valid values are: Classic_Fixed, Classic_Float, Classic_GPU.");
@@ -143,7 +152,7 @@ namespace TFE_Jedi
 
 	void renderer_setLimits()
 	{
-		if (TFE_Settings::getGraphicsSettings()->extendAjoinLimits)
+		if (TFE_Settings::extendAdjoinLimits())
 		{
 			s_maxSegCount = MAX_SEG_EXT;
 			s_maxAdjoinSegCount = MAX_ADJOIN_SEG_EXT;
@@ -224,12 +233,23 @@ namespace TFE_Jedi
 		};
 		TFE_Console::addToHistory(c_subRenderers[s_subRenderer]);
 	}
-		
-	JBool render_setResolution()
+
+	static s32 s_fov = -1;
+	static bool s_clearCachedTextures = false;
+
+	void render_clearCachedTextures()
+	{
+		s_clearCachedTextures = true;
+	}
+				
+	JBool render_setResolution(bool forceTextureUpdate)
 	{
 		TFE_Settings_Graphics* graphics = TFE_Settings::getGraphicsSettings();
 		DisplayInfo info;
 		TFE_RenderBackend::getDisplayInfo(&info);
+
+		const bool fovChanged = (graphics->fov != s_fov);
+		s_fov = graphics->fov;
 
 		s32 width  = graphics->gameResolution.x;
 		s32 height = graphics->gameResolution.z;
@@ -246,7 +266,26 @@ namespace TFE_Jedi
 
 		TFE_SubRenderer subRenderer = s_rendererType == RENDERER_HARDWARE ? TSR_CLASSIC_GPU : (width == 320 && height == 200) ? TSR_CLASSIC_FIXED : TSR_CLASSIC_FLOAT;
 		vfb_setMode(subRenderer == TSR_CLASSIC_GPU ? VFB_RENDER_TRAGET : VFB_TEXTURE);
-		if (!vfb_setResolution(width, height))
+		bool updateTexturePacking = forceTextureUpdate;
+		bool enableMips = s_trueColor && graphics->useMipmapping;
+		if (s_trueColor != (graphics->colorMode == COLORMODE_TRUE_COLOR))
+		{
+			s_trueColor = (graphics->colorMode == COLORMODE_TRUE_COLOR);
+			updateTexturePacking = true;
+		}
+		if (enableMips != s_enableMips)
+		{
+			s_enableMips = enableMips;
+			updateTexturePacking = true;
+		}
+		// Update the full packing on level change if true color.
+		if (s_clearCachedTextures)
+		{
+			s_clearCachedTextures = false;
+			updateTexturePacking = true;
+		}
+
+		if (!vfb_setResolution(width, height) && !fovChanged && !updateTexturePacking)
 		{
 			return JFALSE;
 		}
@@ -281,13 +320,26 @@ namespace TFE_Jedi
 		}
 		else
 		{
+			if (forceTextureUpdate)
+			{
+				TFE_Sectors_GPU* sectorRendererGpu = (TFE_Sectors_GPU*)renderer_getSectorRenderer(TSR_CLASSIC_GPU);
+				if (sectorRendererGpu)
+				{
+					sectorRendererGpu->flushTextureCache();
+				}
+			}
+
 			if (!s_sectorRenderer)
 			{
 				TFE_Sectors_GPU* sectorRendererGpu = (TFE_Sectors_GPU*)renderer_getSectorRenderer(TSR_CLASSIC_GPU);
-				screenGPU_setHudTextureCallbacks((s32)s_hudTextureCallbacks.size(), s_hudTextureCallbacks.data());
+				screenGPU_setHudTextureCallbacks((s32)s_hudTextureCallbacks.size(), s_hudTextureCallbacks.data(), updateTexturePacking);
 				s_sectorRenderer = sectorRendererGpu;
 				sectorRendererGpu->flushCache();
 				screenGPU_init();
+			}
+			else if (updateTexturePacking)
+			{
+				screenGPU_setHudTextureCallbacks((s32)s_hudTextureCallbacks.size(), s_hudTextureCallbacks.data(), true);
 			}
 			screen_enableGPU(true);
 			RClassic_GPU::changeResolution(width, height);
@@ -363,6 +415,28 @@ namespace TFE_Jedi
 	{
 		s_worldAmbient = MAX_LIGHT_LEVEL - value;
 	}
+		
+	void renderer_setSourcePalette(const u32* srcPalette)
+	{
+		memcpy(s_sourcePalette, srcPalette, sizeof(u32)*256);
+	}
+				
+	void renderer_setPalFx(const Vec3f* lumMask, const Vec3f* palFx)
+	{
+		s_lumMask = *lumMask;
+		s_palFx = *palFx;
+	}
+
+	void renderer_getPalFx(Vec3f* lumMask, Vec3f* palFx)
+	{
+		*lumMask = s_lumMask;
+		*palFx = s_palFx;
+	}
+
+	const u32* renderer_getSourcePalette()
+	{
+		return s_sourcePalette;
+	}
 
 	void renderer_setupCameraLight(JBool flatShading, JBool headlamp)
 	{
@@ -400,12 +474,7 @@ namespace TFE_Jedi
 		}
 		if (s_subRenderer == TSR_CLASSIC_GPU)
 		{
-		#ifdef _DEBUG
-			// Clear the color in debug in order to make it easier to see artifacts.
-			vfb_bindRenderTarget(true);
-		#else
-			vfb_bindRenderTarget(false);
-		#endif
+			vfb_bindRenderTarget(/*clearColor*/s_showWireframe);
 
 			u32 width, height;
 			vfb_getResolution(&width, &height);

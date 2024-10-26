@@ -18,6 +18,11 @@ extern u32  s_workBufferU32[1024];		//4k buffer.
 extern char s_workBufferChar[32768];	//32k buffer.
 
 
+namespace FileUtil {
+	extern bool existsNoCase(const char *filename);
+	extern char* findFileNoCase(const char *fn);
+}
+
 FileStream::FileStream() : Stream()
 {
 	m_file = nullptr;

@@ -1,5 +1,6 @@
 #pragma once
 #include <cstdio>
+#include <cstring>
 
 #include <TFE_System/types.h>
 #include <TFE_FileSystem/paths.h>
@@ -40,8 +41,11 @@ public:
 	virtual bool open(const char *archivePath) = 0;
 	virtual void close() = 0;
 
-	const char* getName() { return m_name; }
-	const char* getPath() { return m_archivePath; }
+	const char* getName() const { return m_name; }
+	const char* getPath() const { return m_archivePath; }
+	ArchiveType getType() const { return m_type; }
+
+	void setName(const char* name) { strcpy(m_name, name); }
 
 	// File Access
 	virtual bool openFile(const char *file) = 0;

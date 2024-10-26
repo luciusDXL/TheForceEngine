@@ -3,7 +3,7 @@
 #include "../dynamicTexture.h"
 #include "openGL_Caps.h"
 #include <TFE_System/system.h>
-#include <GL/glew.h>
+#include "gl.h"
 #include <assert.h>
 
 std::vector<u8> DynamicTexture::s_tempBuffer;
@@ -68,7 +68,7 @@ bool DynamicTexture::changeBufferCount(u32 newBufferCount, bool forceRealloc/* =
 	{
 		m_textures[i] = new TextureGpu();
 		// Create the texture itself.
-		m_textures[i]->create(m_width, m_height, m_format == DTEX_RGBA8 ? 4 : 1);
+		m_textures[i]->create(m_width, m_height, m_format == DTEX_RGBA8 ? TexFormat::TEX_RGBA8 : TexFormat::TEX_R8);
 		// Clear each buffer to avoid garbage as the buffers are used.
 		m_textures[i]->update(s_tempBuffer.data(), bufferSize);
 	}

@@ -38,3 +38,14 @@ Open the built-in editors. Note that the editors are currently disabled due to l
 
 **Exit**
 Exit the application.
+
+## Accessibility Settings
+The Accessibility Settings menu includes customization settings for closed captions/subtitles. You can separately enable or disable voice subtitles (e.g. "You there, stop where you are!") and captions (e.g. "[Mechanical death rattle]") for gameplay and cutscenes.
+### Custom captions and fonts
+It is possible to add custom caption files and fonts, for example to support subtitles in other languages.
+
+**Custom caption files**
+Custom caption files can be added to the `Captions` directory in your TFE install directory (e.g. **`C:\TheForceEngine\Captions`**) or in the TFE documents directory (e.g. **`C:\Users\UserName\Documents\TheForceEngine\Captions`** on Windows). The **`Captions`** directory in the TFE install directory includes a **`README.txt`** file with notes about the caption format. UTF-8 Unicode is supported, but make sure that you select a font which supports the necessary character set.
+
+**Custom fonts**
+Custom fonts in TrueType (.ttf) format can be added to the **`Fonts`** directory in your TFE install directory (e.g. **`C:\TheForceEngine\Fonts`**) or in the TFE documents directory (e.g. **`C:\Users\UserName\Documents\TheForceEngine\Fonts`** on Windows). Unicode character sets are supported.

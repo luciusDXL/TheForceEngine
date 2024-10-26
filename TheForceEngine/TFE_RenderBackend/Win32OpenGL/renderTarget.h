@@ -10,10 +10,10 @@
 class RenderTarget
 {
 public:
-	RenderTarget() : m_texture(nullptr), m_gpuHandle(0), m_depthBufferHandle(0) {}
+	RenderTarget() : m_texture{ nullptr }, m_textureCount(0), m_gpuHandle(0), m_depthBufferHandle(0) {}
 	~RenderTarget();
 
-	bool create(TextureGpu* texture, bool depthBuffer);
+	bool create(s32 textureCount, TextureGpu** textures, bool depthBuffer);
 	void bind();
 	void clear(const f32* color, f32 depth, u8 stencil = 0, bool clearColor = true);
 	void clearDepth(f32 depth);
@@ -22,10 +22,16 @@ public:
 	static void copyBackbufferToTarget(RenderTarget* dst);
 	static void unbind();
 
-	inline const TextureGpu* getTexture() const { return m_texture; }
+	inline const TextureGpu* getTexture(s32 index = 0) const { return m_texture[index]; }
 
 private:
-	const TextureGpu* m_texture;
+	enum RTConst
+	{
+		MAX_ATTACHMENT = 4,
+	};
+
+	const TextureGpu* m_texture[MAX_ATTACHMENT];
+	u32 m_textureCount;
 	u32 m_gpuHandle;
 	u32 m_depthBufferHandle;
 };

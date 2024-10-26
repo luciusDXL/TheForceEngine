@@ -2,12 +2,12 @@
 #include <TFE_Audio/midi.h>
 #include <TFE_Audio/midiPlayer.h>
 #include <TFE_System/system.h>
-#include <TFE_System/Threads/thread.h>
 #include <TFE_Memory/memoryRegion.h>
 #include <TFE_Jedi/Math/fixedPoint.h>
 #include <TFE_Jedi/Math/core_math.h>
 #include <TFE_FileSystem/filestream.h>
 #include <TFE_FileSystem/paths.h>
+#include <cstring>
 #include <assert.h>
 #include "imList.h"
 #include "imTrigger.h"
@@ -1296,7 +1296,7 @@ namespace TFE_Jedi
 
 	void ImHandleChannelPriorityChange(ImMidiPlayer* player, ImMidiOutChannel* channel)
 	{
-		channel->priority = channel->partPriority + player->priority;
+		channel->priority = min(channel->partPriority + player->priority, 127);
 		if (channel->data)
 		{
 			ImMidiChannelSetPriority(channel->data, channel->priority);
@@ -1842,7 +1842,10 @@ namespace TFE_Jedi
 				data += midi_getVariableLengthValue(&data);
 			}
 			// Length of message in "ticks"
-			s_midiTickDelta += midi_getVariableLengthValue(&data);
+			if (!s_midiTrackEnd)  // Avoid reading past the end of the buffer.
+			{
+				s_midiTickDelta += midi_getVariableLengthValue(&data);
+			}
 		}
 	}
 
@@ -1931,7 +1934,7 @@ namespace TFE_Jedi
 		{
 			midiChannel->sharedMidiChannel->priority = priority;
 			midiChannel->priority = priority;
-			ImControlChange(midiChannel->channelId, MID_GPC1_MSB, priority);
+			ImControlChange(midiChannel->channelId, MID_GPC3_MSB, priority);
 		}
 	}
 

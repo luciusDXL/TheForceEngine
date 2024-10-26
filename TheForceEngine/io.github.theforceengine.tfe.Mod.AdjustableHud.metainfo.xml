@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="addon">
+  <id>io.github.theforceengine.tfe.Mod.AdjustableHud</id>
+  <name>The&#x00A0;Force&#x00A0;Engine Adjustable Hud Mod</name>
+  <name xml:lang="de">„The&#x00A0;Force&#x00A0;Engine“ Einstellbare Bildschirmanzeigen Modifikation</name>
+  <name xml:lang="pl">Modyfikacja „The&#x00A0;Force&#x00A0;Engine” ustawiania wskaźników</name>
+  <developer id="com.twitter.dzierzan23">
+    <name>Paweł “Dzierzan” Dzierżanowski</name>
+    <name xml:lang="de">Paweł „Dzierzan“ Dzierżanowski</name>
+    <name xml:lang="pl">Paweł „Dzierzan” Dzierżanowski</name>
+    <url type="homepage">https://twitter.com/Dzierzan23</url>
+  </developer>
+  <summary>A “The&#x00A0;Force&#x00A0;Engine” built&#x2011;in mod enabling adjustable floating HUD elements in “STAR&#x00A0;WARS™:&#x00A0;Dark&#x00A0;Forces”</summary>
+  <summary xml:lang="de">Eine in „The&#x00A0;Force&#x00A0;Engine“ eingebaute Mod, die einstellbar bewegliche Bildschirmanzeigen in „STAR&#x00A0;WARS™:&#x00A0;Dark&#x00A0;Forces“ ermöglicht</summary>
+  <summary xml:lang="pl">W „The&#x00A0;Force&#x00A0;Engine” wbudowana modyfikacja, umożliwiająca ustawianie unoszących się wskaźników w „STAR&#x00A0;WARS™:&#x00A0;Dark&#x00A0;Forces”</summary>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>GPL-2.0</project_license>
+  <extends>io.github.theforceengine.tfe</extends>
+  <url type="homepage">https://theforceengine.github.io</url>
+  <url type="bugtracker">https://github.com/luciusDXL/TheForceEngine/issues</url>
+  <url type="help">https://theforceengine.github.io/Documentation.html</url>
+  <url type="vcs-browser">https://github.com/luciusDXL/TheForceEngine/tree/master/TheForceEngine/Mods/TFE/AdjustableHud</url>
+  <description>
+    <p>A “The&#x00A0;Force&#x00A0;Engine” built&#x2011;in mod based on the work by Paweł “Dzierzan” Dzierżanowski. The purpose of the mod is to enable the floating HUD elements in “STAR&#x00A0;WARS™:&#x00A0;Dark&#x00A0;Forces” to be adjustable – specifically being able to move them away from the edges of the screen on widescreen displays.</p>
+    <p xml:lang="de">Eine auf der Arbeit von Paweł „Dzierzan“ Dzierżanowski basierende in „The&#x00A0;Force&#x00A0;Engine“ eingebaute Mod. Die Mod hat zum Zwecke die Einstellbarkeit von beweglichen Bildschirmanzeigen in “STAR&#x00A0;WARS™:&#x00A0;Dark&#x00A0;Forces” zu ermöglichen, insbesondere sie weg von den Rändern auf Breitbildschirmen zu bewegen.</p>
+    <p xml:lang="pl">Wbudowana w „The&#x00A0;Force&#x00A0;Engine” modyfikacja na podstawie pracy Pawła „Dzierzan” Dzierżanowskiego. Celem modyfikacji jest umożliwienie ustawienia unoszących się wskaźników w „STAR&#x00A0;WARS™:&#x00A0;Dark&#x00A0;Forces”, zwłaszcza móc je odsunąć od krawędzi ekranu na szerokich ekranach.</p>
+  </description>
+  <categories>
+    <category>Game</category>
+    <category>Shooter</category>
+    <category>ActionGame</category>
+  </categories>
+  <update_contact>https://theforceengine.github.io</update_contact>
+  <requires>
+    <id>io.github.theforceengine.tfe</id>
+    <internet>offline-only</internet>
+  </requires>
+</component>

@@ -6,8 +6,9 @@
 #include <TFE_System/system.h>
 #include <TFE_Asset/imageAsset.h>	// For image saving, this should be refactored...
 #include <TFE_Asset/gifWriter.h>
-#include <GL/glew.h>
+#include "gl.h"
 #include <assert.h>
+#include <TFE_Settings/settings.h>
 
 #ifdef _DEBUG
 	#define CHECK_GL_ERROR checkGlError();
@@ -94,10 +95,31 @@ bool ScreenCapture::changeBufferCount(u32 newBufferCount, bool forceRealloc/* = 
 	return m_bufferCount;
 }
 
+static void flipVert32bpp(void* mem, u32 w, u32 h)
+{
+	const u32 stride = w * 4;
+	const u32 size = stride * h;
+	char* upper = (char *)mem;
+	char* lower = (char *)mem + size - stride;
+	char* tmpb = (char *)malloc(stride);
+	while (tmpb && (upper < lower)) {
+		memcpy(tmpb, upper, stride);
+		memcpy(upper, lower, stride);
+		memcpy(lower, tmpb, stride);
+		upper += stride;
+		lower -= stride;
+	}
+	free(tmpb);
+}
+
 void ScreenCapture::captureFrontBufferToMemory(u32* mem)
 {
 	glReadBuffer(GL_FRONT);
 	glReadPixels(0, 0, m_width, m_height, GL_RGBA, GL_UNSIGNED_BYTE, mem);
+
+	// Need to flip image upside-down. OpenGL has (0|0) at lower left
+	// corner, while the rest of the world places it in the upper left.
+	flipVert32bpp(mem, m_width, m_height);
 }
 
 void ScreenCapture::update(bool flush)
@@ -123,7 +145,7 @@ void ScreenCapture::update(bool flush)
 			recordingTime = f32(TFE_System::getTime() - m_recordingTimeStart);
 		}
 
-		f64 recordingFrame = floor(recordingTime * m_recordingFramerate);
+		f64 recordingFrame = floor(recordingTime * TFE_Settings::getSystemSettings()->gifRecordingFramerate);
 		if (m_recordingFrameLast != recordingFrame)
 		{
 			captureFrame("");
@@ -203,7 +225,8 @@ void ScreenCapture::beginRecording(const char* path)
 	m_recordingTimeStart = 0.0;
 	m_recordingFrameLast = -1.0;
 
-	TFE_GIF::startGif(path, m_width, m_height, (u32)m_recordingFramerate);
+	u32 framerate = (u32)TFE_Settings::getSystemSettings()->gifRecordingFramerate;
+	TFE_GIF::startGif(path, m_width, m_height, framerate);
 }
 
 void ScreenCapture::endRecording()

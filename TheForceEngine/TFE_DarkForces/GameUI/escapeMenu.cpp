@@ -12,6 +12,7 @@
 #include <TFE_Settings/settings.h>
 #include <TFE_Input/inputMapping.h>
 #include <TFE_RenderBackend/renderBackend.h>
+#include <TFE_RenderShared/texturePacker.h>
 #include <TFE_Jedi/Renderer/RClassic_GPU/screenDrawGPU.h>
 #include <TFE_Jedi/Renderer/jediRenderer.h>
 #include <TFE_Jedi/Math/core_math.h>
@@ -179,6 +180,7 @@ namespace TFE_DarkForces
 			{
 				s_escMenuPalette[i] = 0xffu << 24 | ((u32)pal[0]) | ((u32)(pal[1]) << 8) | ((u32)pal[2] << 16);
 			}
+			texturepacker_setConversionPalette(0, 8, paletteBuffer);
 		}
 	}
 
@@ -239,6 +241,7 @@ namespace TFE_DarkForces
 	{
 		// TFE
 		reticle_enable(false);
+		TFE_RenderBackend::bloomPostEnable(false);
 
 		pauseLevelSound();
 		s_emState.escMenuOpen = JTRUE;
@@ -263,6 +266,7 @@ namespace TFE_DarkForces
 
 		// TFE
 		reticle_enable(true);
+		TFE_RenderBackend::bloomPostEnable(true);
 	}
 
 	JBool escapeMenu_isOpen()
@@ -282,12 +286,15 @@ namespace TFE_DarkForces
 	{
 		for (u32 i = 0; i < s_emState.escMenuFrameCount; i++)
 		{
+			s_emState.escMenuFrames[i].texture.palIndex = 0;
 			escapeMenu_addDeltFrame(texList, &s_emState.escMenuFrames[i]);
 		}
 		for (u32 i = 0; i < s_emState.confirmMenuFrameCount; i++)
 		{
+			s_emState.confirmMenuFrames[i].texture.palIndex = 0;
 			escapeMenu_addDeltFrame(texList, &s_emState.confirmMenuFrames[i]);
 		}
+		s_cursor.texture.palIndex = 0;
 		escapeMenu_addDeltFrame(texList, &s_cursor);
 		return true;
 	}
@@ -534,6 +541,7 @@ namespace TFE_DarkForces
 
 			// TFE
 			reticle_enable(true);
+			TFE_RenderBackend::bloomPostEnable(true);
 		}
 
 		escapeMenu_draw(JTRUE, JTRUE);

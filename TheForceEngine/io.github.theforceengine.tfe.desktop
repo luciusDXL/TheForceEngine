@@ -1,0 +1,13 @@
+[Desktop Entry]
+Type=Application
+Name=The Force Engine
+Comment=A modern cross‑platform port of “STAR WARS: Dark Forces” with mod support
+Comment[de]=Eine moderne Plattformen übergreifende Portierung von „STAR WARS: Dark Forces“ mit Unterstützung für Modifikationen
+Comment[pl]=Nowoczesna wieloplatformowa konwersja „STAR WARS: Dark Forces” z obsługą modyfikacji
+Categories=Game;ActionGame;Shooter;
+Keywords=STAR;WARS;Dark;Forces;Trooper;FPS;first;person;shooter;Kyle;Katarn;Jan;Ors;Death;Star;
+Keywords[de]=STAR;WARS;Krieg;Sterne;Dark;Forces;Trooper;FPS;first;person;shooter;Kyle;Katarn;Jan;Ors;Todesstern;
+Keywords[pl]=STAR;WARS;gwiezdne;wojny;Dark;Forces;Trooper;FPS;strzelanka;Kyle;Katarn;Jan;Ors;gwiazda;śmierci;
+Exec=theforceengine
+Icon=io.github.theforceengine.tfe
+StartupWMClass=tfelnx

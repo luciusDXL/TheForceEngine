@@ -25,7 +25,8 @@ namespace TFE_Jedi
 	void screenGPU_beginQuads(u32 width, u32 height);
 	void screenGPU_endQuads();
 
-	void screenGPU_setHudTextureCallbacks(s32 count, TextureListCallback* callbacks);
+	void screenGPU_setHudTextureCallbacks(s32 count, TextureListCallback* callbacks, bool forceAllocation = false);
+	void screenGPU_setIndexedColors(u32 count, const Vec4f* colors);
 
 	void screenGPU_drawPoint(ScreenRect* rect, s32 x, s32 z, u8 color);
 	void screenGPU_drawLine(ScreenRect* rect, s32 x0, s32 z0, s32 x1, s32 z1, u8 color);

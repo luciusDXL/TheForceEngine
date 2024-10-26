@@ -171,8 +171,6 @@ namespace TFE_DarkForces
 	static JBool s_playerSecFire = JFALSE;
 	static JBool s_playerJumping = JFALSE;
 	static JBool s_playerInWater = JFALSE;
-	static JBool s_limitStepHeight = JTRUE;
-	static JBool s_smallModeEnabled = JFALSE;
 	JBool s_aiActive = JTRUE;
 	// Currently playing sound effects.
 	static SoundEffectId s_crushSoundId = 0;
@@ -209,8 +207,12 @@ namespace TFE_DarkForces
 	JBool s_superCharge   = JFALSE;
 	JBool s_superChargeHud= JFALSE;
 	JBool s_playerSecMoved = JFALSE;
+	JBool s_limitStepHeight = JTRUE;
+	JBool s_smallModeEnabled = JFALSE;
 	JBool s_flyMode = JFALSE;
 	JBool s_noclip = JFALSE;
+	JBool s_oneHitKillEnabled = JFALSE;
+	JBool s_instaDeathEnabled = JFALSE;
 	u32*  s_playerInvSaved = nullptr;
 
 	RSector* s_playerSector = nullptr;
@@ -218,7 +220,7 @@ namespace TFE_DarkForces
 	SecObject* s_playerEye = nullptr;
 	vec3_fixed s_eyePos = { 0 };	// s_camX, s_camY, s_camZ in the DOS code.
 	angle14_32 s_pitch = 0, s_yaw = 0, s_roll = 0;
-	u32 s_playerEyeFlags = 4;
+	u32 s_playerEyeFlags = OBJ_FLAG_NEEDS_TRANSFORM;
 	Tick s_playerTick;
 	Tick s_prevPlayerTick;
 	Tick s_nextShieldDmgTick;
@@ -257,6 +259,8 @@ namespace TFE_DarkForces
 	s32 s_jumpScale = 0;
 	s32 s_playerSlow = 0;
 	s32 s_onMovingSurface = 0;
+	// Other
+	s32 s_playerCrouch = 0;
 			   
 	///////////////////////////////////////////
 	// Forward Declarations
@@ -313,6 +317,8 @@ namespace TFE_DarkForces
 
 		CCMD("warp", player_warp, 3, "Warp to the specific x, y, z position.");
 		CCMD_NOREPEAT("sector", player_sector, 0, "Get the current sector ID.");
+
+		initPlayerCollision();
 	}
 
 	void player_setPitchLimit(PitchLimit limit)
@@ -493,6 +499,7 @@ namespace TFE_DarkForces
 		s_playerSlow  = 0;
 		s_onMovingSurface = 0;
 		s_reviveTick = 0;
+		s_playerCrouch = 0;
 
 		s_playerVelX   = 0;
 		s_playerUpVel  = 0;
@@ -531,6 +538,8 @@ namespace TFE_DarkForces
 		s_invincibility = 0;
 		s_flyMode = JFALSE;
 		s_noclip = JFALSE;
+		s_oneHitKillEnabled = JFALSE;
+		s_instaDeathEnabled = JFALSE;
 
 		// The player will always start a level with at least 100 shields, though if they have more it carries over.
 		s_playerInfo.shields = max(100, s_playerInfo.shields);
@@ -646,8 +655,8 @@ namespace TFE_DarkForces
 		player_setupCamera();
 
 		s_playerEye->flags |= OBJ_FLAG_EYE;
-		s_playerEyeFlags = s_playerEye->flags & 4;
-		s_playerEye->flags &= ~4;
+		s_playerEyeFlags = s_playerEye->flags & OBJ_FLAG_NEEDS_TRANSFORM;
+		s_playerEye->flags &= ~OBJ_FLAG_NEEDS_TRANSFORM;
 
 		s_eyePos.x = s_playerEye->posWS.x;
 		s_eyePos.y = s_playerEye->posWS.y;
@@ -847,7 +856,7 @@ namespace TFE_DarkForces
 		}
 	}
 
-	void cheat_enableNoheightCheck()
+	void cheat_toggleHeightCheck()
 	{
 		s_limitStepHeight = ~s_limitStepHeight;
 		hud_sendTextMessage(700);
@@ -941,6 +950,66 @@ namespace TFE_DarkForces
 			s_noclip   = JTRUE;
 			s_flyMode  = JTRUE;
 		}
+	}
+
+	void cheat_addLife()
+	{
+		if (s_lifeCount < 9)
+		{
+			s_lifeCount++;
+			const char* msg = TFE_System::getMessage(TFE_MSG_ADDLIFE);
+			if (msg) { hud_sendTextMessage(msg, 1); }
+		}
+		else
+		{
+			const char* msg = TFE_System::getMessage(TFE_MSG_ADDLIFEFAIL);
+			if (msg) { hud_sendTextMessage(msg, 1); }
+		}
+	}
+	
+	void cheat_subLife()
+	{
+		if (s_lifeCount > 0)
+		{
+			s_lifeCount--;
+			const char* msg = TFE_System::getMessage(TFE_MSG_SUBLIFE);
+			if (msg) { hud_sendTextMessage(msg, 1); }
+		}
+	}
+	
+	void cheat_maxLives()
+	{
+		s_lifeCount = 9;
+		const char* msg = TFE_System::getMessage(TFE_MSG_CAT);
+		if (msg) { hud_sendTextMessage(msg, 1); }
+	}
+
+	void cheat_die()
+	{
+		if (!s_playerDying)
+		{
+			player_applyDamage(FIXED(999), FIXED(999), JFALSE);
+			const char* msg = TFE_System::getMessage(TFE_MSG_DIE);
+			if (msg) { hud_sendTextMessage(msg, 1); }
+		}
+	}
+	
+	void cheat_oneHitKill()
+	{
+		s_oneHitKillEnabled = ~s_oneHitKillEnabled;
+		const char* msg = TFE_System::getMessage(TFE_MSG_ONEHITKILL);
+		if (msg) { hud_sendTextMessage(msg, 1); }
+	}
+	
+	void cheat_instaDeath()
+	{
+		// This way if we already had one-hit-kill enabled, we don't end
+		// up with one-hit kill off and insta-death on - though if the
+		// player wants that to happen, they can type LA_IMDEATH again
+		// after using this cheat.
+		s_instaDeathEnabled = ~s_instaDeathEnabled;
+		const char* msg = TFE_System::getMessage(TFE_MSG_HARDCORE);
+		if (msg) { hud_sendTextMessage(msg, 1); }
 	}
 
 	void player_setupCamera()
@@ -1046,6 +1115,11 @@ namespace TFE_DarkForces
 			{
 				shieldDmg = s_msgArg1;
 			}
+		}
+
+		if (s_instaDeathEnabled) // "Hardcore" cheat
+		{
+			shieldDmg = FIXED(999);
 		}
 
 		player_applyDamage(0, shieldDmg, playHitSound);
@@ -1320,10 +1394,20 @@ namespace TFE_DarkForces
 			}
 		}
 
-		s32 crouch = inputMapping_getActionState(IADF_CROUCH) ? 1 : 0;
+		if (settings->df_crouchToggle)	// TFE: Optional feature.
+		{
+			if (inputMapping_getActionState(IADF_CROUCH) == STATE_PRESSED)
+			{
+				s_playerCrouch = !s_playerCrouch;
+			}
+		}
+		else
+		{
+			s_playerCrouch = inputMapping_getActionState(IADF_CROUCH) ? 1 : 0;
+		}
 		if (s_flyMode)
 		{
-			if ((!s_onFloor || s_noclip) && crouch)
+			if ((!s_onFloor || s_noclip) && s_playerCrouch)
 			{
 				fixed16_16 speed = -(PLAYER_JUMP_IMPULSE << s_jumpScale);
 				s_playerUpVel = speed;
@@ -1337,7 +1421,7 @@ namespace TFE_DarkForces
 			s_playerCrouchSpd = 0;
 		}
 
-		if (s_onFloor & crouch)
+		if (s_onFloor & s_playerCrouch)
 		{
 			fixed16_16 speed = PLAYER_CROUCH_SPEED;
 			speed <<= s_playerRun;			// this will be '1' if running.
@@ -2027,7 +2111,7 @@ namespace TFE_DarkForces
 		// Headwave
 		s32 xWpnWaveOffset = 0;
 		s_headwaveVerticalOffset = 0;
-		if (s_config.headwave && (player->flags & OBJ_FLAG_EYE))
+		if (TFE_Settings::getA11ySettings()->enableHeadwave && (player->flags & OBJ_FLAG_EYE))
 		{
 			fixed16_16 playerSpeedAve = distApprox(0, 0, s_playerVelX, s_playerVelZ);
 			if (!moved)
@@ -2165,7 +2249,15 @@ namespace TFE_DarkForces
 				headlamp = floor16(mul16(batteryPower, FIXED(64)));
 				headlamp = min(MAX_LIGHT_LEVEL, headlamp);
 			}
-			s32 atten = max(headlamp, s_weaponLight + s_levelAtten);
+			s32 atten;
+			if (TFE_Settings::getA11ySettings()->disablePlayerWeaponLighting)
+			{
+				atten = max(headlamp, s_levelAtten);
+			}
+			else
+			{
+				atten = max(headlamp, s_weaponLight + s_levelAtten);
+			}
 			s_baseAtten = atten;
 			if (s_nightvisionActive)
 			{
@@ -2525,6 +2617,8 @@ namespace TFE_DarkForces
 				
 	void handlePlayerScreenFx()
 	{
+		if (TFE_Settings::getA11ySettings()->disableScreenFlashes) { return; }
+
 		s32 healthFx, shieldFx, flashFx;
 		if (s_healthDamageFx)
 		{
@@ -2832,6 +2926,9 @@ namespace TFE_DarkForces
 		SERIALIZE(ObjState_InitVersion, s_superChargeHud, 0);
 		SERIALIZE(ObjState_InitVersion, s_playerSecMoved, 0);
 		SERIALIZE(ObjState_FlyModeAdded, s_flyMode, JFALSE);
+		SERIALIZE(ObjState_OneHitCheats, s_oneHitKillEnabled, JFALSE);
+		SERIALIZE(ObjState_OneHitCheats, s_instaDeathEnabled, JFALSE);
+		SERIALIZE(ObjState_CrouchToggle, s_playerCrouch, 0);
 
 		s32 invSavedSize = 0;
 		if (serialization_getMode() == SMODE_WRITE && s_playerInvSaved)

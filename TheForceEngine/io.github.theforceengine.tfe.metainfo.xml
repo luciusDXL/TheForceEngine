@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>io.github.theforceengine.tfe</id>
+  <name>The&#x00A0;Force&#x00A0;Engine</name>
+  <developer id="io.github.theforceengine">
+    <name>“The&#x00A0;Force&#x00A0;Engine” Contributors</name>
+    <name xml:lang="de">Die Mitwirkenden an „The&#x00A0;Force&#x00A0;Engine“</name>
+    <name xml:lang="pl">Współautorzy „The&#x00A0;Force&#x00A0;Engine”</name>
+    <url type="homepage">https://theforceengine.github.io</url>
+  </developer>
+  <summary>A modern cross&#x2011;platform port of “STAR&#x00A0;WARS™:&#x00A0;Dark&#x00A0;Forces” with mod support</summary>
+  <summary xml:lang="de">Eine moderne Plattformen übergreifende Portierung von „STAR&#x00A0;WARS™:&#x00A0;Dark&#x00A0;Forces“ mit Unterstützung für Modifikationen</summary>
+  <summary xml:lang="pl">Nowoczesna wieloplatformowa konwersja „STAR&#x00A0;WARS™:&#x00A0;Dark&#x00A0;Forces” z obsługą modyfikacji</summary>
+  <icon type="remote" width="256" height="256">https://raw.githubusercontent.com/luciusDXL/TheForceEngine/master/TheForceEngine/io.github.theforceengine.tfe.png</icon>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>GPL-2.0</project_license>
+  <launchable type="desktop-id">io.github.theforceengine.tfe.desktop</launchable>
+  <url type="homepage">https://theforceengine.github.io</url>
+  <url type="bugtracker">https://github.com/luciusDXL/TheForceEngine/issues</url>
+  <url type="help">https://theforceengine.github.io/Documentation.html</url>
+  <url type="vcs-browser">https://github.com/luciusDXL/TheForceEngine</url>
+  <description>
+    <p>“The&#x00A0;Force&#x00A0;Engine” is a modernised, reverse engineered port of the “Jedi&#x00A0;Engine” used in “STAR&#x00A0;WARS™:&#x00A0;Dark&#x00A0;Forces” and “Outlaws”. Currently, only “STAR&#x00A0;WARS™:&#x00A0;Dark&#x00A0;Forces” is supported but there are already many technical and quality&#x2011;of&#x2011;life improvements:</p>
+    <p xml:lang="de">„The&#x00A0;Force&#x00A0;Engine“ ist eine modernisierte, rekonstruierte Portierung der in „STAR&#x00A0;WARS™:&#x00A0;Dark&#x00A0;Forces“ und „Outlaws“ verwendeten „Jedi&#x00A0;Engine“. Derzeit wird ausschließlich „STAR&#x00A0;WARS™:&#x00A0;Dark&#x00A0;Forces“ unterstützt, aber es gibt bereits viele technische und das Leben erleichternde Verbesserungen:</p>
+    <p xml:lang="en-US">“The&#x00A0;Force&#x00A0;Engine” is a modernized, reverse engineered port of the “Jedi&#x00A0;Engine” used in “STAR&#x00A0;WARS™:&#x00A0;Dark&#x00A0;Forces” and “Outlaws”. Currently, only “STAR&#x00A0;WARS™:&#x00A0;Dark&#x00A0;Forces” is supported but there are already many technical and quality&#x2011;of&#x2011;life improvements:</p>
+    <p xml:lang="pl">„The&#x00A0;Force&#x00A0;Engine”, to unowocześniona konwersja, odwrotnie inżynierowanego „Jedi&#x00A0;Engine”, który wykorzystywano do „STAR&#x00A0;WARS™:&#x00A0;Dark&#x00A0;Forces” i „Outlaws”. Na ten czas, wyłącznie „STAR&#x00A0;WARS™:&#x00A0;Dark&#x00A0;Forces” jest obsługiwane, lecz istnieje już wiele technicznych i życie ułatwiających ulepszeń:</p>
+    <ul>
+      <li>Controller support (except in menus)</li>
+      <li xml:lang="de">Unterstützung von Steuer&#x2011; und Eingabegeräten, ausgenommen in Menüs</li>
+      <li xml:lang="pl">Obsługa kontrolerów, za wyjątkiem w menu</li>
+      <li>Support for mouselook like in modern first&#x2011;person shooters</li>
+      <li xml:lang="de">Unterstützung von Mausumsicht, wie in modernen Ego&#x2011;Shootern</li>
+      <li xml:lang="pl">Obsługa patrzenia myszą, jak w nowoczesnych pierwszoosobowych strzelankach</li>
+      <li>Complete input remapping for in&#x2011;game controls</li>
+      <li xml:lang="de">Komplett frei belegbare Steuerung</li>
+      <li xml:lang="pl">Kompletnie dowolnie przypięcie akcji sterowania gry</li>
+      <li>Widescreen and high&#x2011;resolution support</li>
+      <li xml:lang="de">Unterstützung von Breitbildschirmen und hohen Auflösungen</li>
+      <li xml:lang="pl">Obsługa szerokich ekranów i wysokich rozdzielczości</li>
+      <li>Texture filtering and bloom effects on light sources</li>
+      <li xml:lang="de">Texturfilter und Lichteffekte auf Lichtquellen</li>
+      <li xml:lang="pl">Filtr tekstur i efekty lśnienia źródeł światła</li>
+      <li>Subtitles for dialog (including in&#x2011;game incidental dialog)</li>
+      <li xml:lang="de">Dialoguntertitel einschließlich situativer Dialoge im Spiel</li>
+      <li xml:lang="pl">Podtytuły dialogów, w tym okolicznościowych</li>
+      <li>Closed captioning for important audio cues in the game</li>
+      <li xml:lang="de">Untertitel bei wichtigen Audiohinweisen im Spiel</li>
+      <li xml:lang="pl">Napisy przy ważnych sygnałach dźwiękowych w grze</li>
+      <li>Translation support for subtitles/captions</li>
+      <li xml:lang="de">Unterstützung von Übersetzungen für Untertitel</li>
+      <li xml:lang="pl">Obsługa przetłumaczonych podtytułów i napisów</li>
+      <li>A built&#x2011;in mod loader</li>
+      <li xml:lang="de">Verbesserte Unterstützung für Mods mit integriertem Lademenü</li>
+      <li xml:lang="pl">Wbudowany ładownik modyfikacji</li>
+    </ul>
+    <p>Future plans include built&#x2011;in tools for creating mods and maps for the games as well as Outlaws support.</p>
+    <p xml:lang="de">Zukünftige Pläne beinhalten Werkzeuge zur Erstellung von Modifikationen und Karten für Spiele, sowie die Unterstützung von „Outlaws“.</p>
+    <p xml:lang="pl">Przyszłe plany zawierają narzędzia tworzenia modyfikacji i map do gier, jak i obsługę „Outlaws”.</p>
+  </description>
+  <screenshots>
+    <screenshot type="default">
+      <image type="source">https://theforceengine.github.io/screenshots/media1.jpg</image>
+      <caption>“Retro” mode: 4:3 aspect ratio and original game resolution, scaled up to modern full screen sizes</caption>
+      <caption xml:lang="de">Der „Retro&#x2011;Modus“ im 4:3&#x2011;Seitenverhältnis und Originalspielauflösung hoch skaliert auf moderne Vollbildgrößen</caption>
+      <caption xml:lang="pl">Tryb „Retro”, stosunek stron 4 do 3 i oryginalna rozdzielczość gry, przeskalowany na nowoczesne pełnoekranowe rozmiary</caption>
+    </screenshot>
+    <screenshot>
+      <image type="source">https://theforceengine.github.io/screenshots/media3.jpg</image>
+      <caption>The first level in high resolution</caption>
+      <caption xml:lang="de">Die erste Mission in hoher Auflösung</caption>
+      <caption xml:lang="pl">Pierwszy poziom w wysokiej rozdzielczości</caption>
+    </screenshot>
+    <screenshot>
+      <image type="source">https://theforceengine.github.io/screenshots/media7.jpg</image>
+      <caption>Load/Save menus with screenshots, timestamps, and custom save game names</caption>
+      <caption xml:lang="de">Lade&#x2011; und Speichermenüs mit Bildschirmfotos, Zeitstempeln und beschriftbaren Spielständen</caption>
+      <caption xml:lang="pl">Menu ładowania i zapisywania stanu gry z zrzutami ekranu, datami i o dowolnych nazwach</caption>
+    </screenshot>
+    <screenshot>
+      <image type="source">https://theforceengine.github.io/screenshots/media6.jpg</image>
+      <caption>Animated in&#x2011;game 3D objects</caption>
+      <caption xml:lang="de">Animierte 3D&#x2011;Objekte im Spiel</caption>
+      <caption xml:lang="pl">W grze animowane obiekty 3D</caption>
+    </screenshot>
+  </screenshots>
+  <categories>
+    <category>Game</category>
+    <category>Shooter</category>
+    <category>ActionGame</category>
+  </categories>
+  <releases type="external" url="https://raw.githubusercontent.com/flathub/io.github.theforceengine.tfe/master/io.github.theforceengine.tfe.releases.xml" />
+  <content_rating type="oars-1.1">
+    <content_attribute id="violence-fantasy">intense</content_attribute>
+  </content_rating>
+  <update_contact>https://theforceengine.github.io/</update_contact>
+  <supports>
+    <control>gamepad</control>
+  </supports>
+  <recommends>
+    <control>keyboard</control>
+    <control>pointing</control>
+  </recommends>
+  <requires>
+    <internet>offline-only</internet>
+  </requires>
+  <provides>
+    <binary>theforceengine</binary>
+  </provides>
+  <keywords>
+    <keyword>STAR</keyword>
+    <keyword xml:lang="de">Sterne</keyword>
+    <keyword xml:lang="pl">gwiezdne</keyword>
+    <keyword>WARS</keyword>
+    <keyword xml:lang="de">Krieg</keyword>
+    <keyword xml:lang="pl">wojny</keyword>
+    <keyword>Dark</keyword>
+    <keyword>Forces</keyword>
+    <keyword>Trooper</keyword>
+    <keyword>FPS</keyword>
+    <keyword>first</keyword>
+    <keyword>person</keyword>
+    <keyword>shooter</keyword>
+    <keyword xml:lang="de">Schießerei</keyword>
+    <keyword xml:lang="pl">strzelanka</keyword>
+    <keyword>Kyle</keyword>
+    <keyword>Katarn</keyword>
+    <keyword>Jan</keyword>
+    <keyword>Ors</keyword>
+    <keyword>Death</keyword>
+    <keyword xml:lang="pl">śmierci</keyword>
+    <keyword>Star</keyword>
+    <keyword xml:lang="pl">gwiazda</keyword>
+    <keyword xml:lang="de">Todesstern</keyword>
+  </keywords>
+</component>

@@ -61,6 +61,7 @@ public:
 	void setVariable(s32 id, ShaderVariableType type, const f32* data);
 	void setVariable(s32 id, ShaderVariableType type, const s32* data);
 	void setVariable(s32 id, ShaderVariableType type, const u32* data);
+	void setVariableArray(s32 id, ShaderVariableType type, const f32* data, u32 count);
 
 	s32  getVariables();
 

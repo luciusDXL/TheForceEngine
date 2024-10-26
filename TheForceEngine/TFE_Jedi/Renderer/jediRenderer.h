@@ -72,10 +72,16 @@ namespace TFE_Jedi
 	void beginRender();
 	void endRender();
 
-	JBool render_setResolution();
+	JBool render_setResolution(bool forceUpdate = false);
+	void render_clearCachedTextures();
 	void renderer_setVisionEffect(s32 effect);
 	void renderer_setupCameraLight(JBool flatShading, JBool headlamp);
 	void renderer_setWorldAmbient(s32 value);
+	void renderer_setSourcePalette(const u32* srcPalette);
+	void renderer_setPalFx(const Vec3f* lumMask, const Vec3f* palFx);
+	
+	const u32* renderer_getSourcePalette();
+	void renderer_getPalFx(Vec3f* lumMask, Vec3f* palFx);
 
 	// 2D
 	void blitTextureToScreen(TextureData* texture, s32 x0, s32 y0);
@@ -86,5 +92,6 @@ namespace TFE_Jedi
 	void renderer_addHudTextureCallback(TextureListCallback hudTextureCallback);
 
 	extern s32 s_drawnObjCount;
+	extern bool s_showWireframe;
 	extern SecObject* s_drawnObj[];
 }

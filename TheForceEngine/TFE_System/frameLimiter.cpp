@@ -4,7 +4,7 @@ namespace TFE_System
 {
 	static const f64 c_expAveF0 = 0.95;
 	static const f64 c_expAveF1 = 1.0 - c_expAveF0;
-	static const f64 c_epsilon = DBL_EPSILON;
+	static const f64 c_epsilon = DBL_EPSILON + 0.001;	// We sleep for ~1ms each iteration, so add 1ms to the epsilon.
 	
 	static f64 s_limitFPS = 0.0;
 	static f64 s_limitDelta = 0.0;
@@ -55,7 +55,7 @@ namespace TFE_System
 			while (dt < s_limitDelta)
 			{
 				// Give other threads a time slice.
-				TFE_System::sleep(0);
+				TFE_System::sleep(1);
 				// Update delta time.
 				curTick = TFE_System::getCurrentTimeInTicks();
 				curSec = TFE_System::convertFromTicksToSeconds(curTick);

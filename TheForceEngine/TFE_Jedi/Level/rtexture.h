@@ -24,6 +24,11 @@ struct BM_Header
 enum OpacityFlags
 {
 	OPACITY_TRANS = FLAG_BIT(3),
+	// TFE
+	OPACITY_MASK = FLAG_BIT(5) - 1,
+	INDEXED = FLAG_BIT(5),
+	ALWAYS_FULLBRIGHT = FLAG_BIT(6),
+	ENABLE_MIP_MAPS   = FLAG_BIT(7),
 };
 
 // was BM_SubHeader
@@ -50,14 +55,19 @@ struct TextureData
 	u32* columns;	// columns will be NULL except when compressed.
 
 	// 4 bytes
-	u8 flags;
-	u8 compressed; // 0 = not compressed, 1 = compressed (RLE), 2 = compressed (RLE0)
-	u8 pad3[2];
+	u8 flags = 0;
+	u8 compressed;  // 0 = not compressed, 1 = compressed (RLE), 2 = compressed (RLE0)
+	u8 palIndex = 1;// TFE - which palette to use.
+	u8 pad3;
 
 	// TFE
 	s32 animIndex = -1;
 	s32 frameIdx = 0;
 	void* animPtr = nullptr;
+
+	// HD Texture replacements.
+	s32 scaleFactor = 1;			// Fill with scale factor.
+	u8* hdAssetData = nullptr;		// True color asset data, size = width * height * scaleFactor * scaleFactor
 };
 #pragma pack(pop)
 
@@ -100,6 +110,7 @@ namespace TFE_Jedi
 
 	bool bitmap_getTextureIndex(TextureData* tex, s32* index, AssetPool* pool);
 	TextureData* bitmap_getTextureByIndex(s32 index, AssetPool pool);
+	const char* bitmap_getTextureName(s32 index, AssetPool pool);
 
 	// Used for tools.
 	TextureData* bitmap_loadFromMemory(const u8* data, size_t size, u32 decompress);
@@ -110,4 +121,6 @@ namespace TFE_Jedi
 
 	void bitmap_writeOpaque(const char* filePath, u16 width, u16 height, u8* image);
 	void bitmap_writeTransparent(const char* filePath, u16 width, u16 height, u8* image);
+
+	void bitmap_setCoreArchives(const char** coreArchives, s32 count);
 }

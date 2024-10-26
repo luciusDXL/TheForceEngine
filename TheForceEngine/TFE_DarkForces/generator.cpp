@@ -109,7 +109,7 @@ namespace TFE_DarkForces
 				if (dist >= gen->minDist && dist <= gen->maxDist && !actor_canSeeObject(spawn, s_playerObject))
 				{
 					sprite_setData(spawn, gen->wax);
-					obj_setEnemyLogic(spawn, gen->type, nullptr);
+					obj_setEnemyLogic(spawn, gen->type);
 					Logic** head = (Logic**)allocator_getHead_noIterUpdate((Allocator*)spawn->logic);
 					ActorDispatch* actorLogic = *((ActorDispatch**)head);
 
@@ -117,17 +117,24 @@ namespace TFE_DarkForces
 					actorLogic->freeTask = task_getCurrent();
 					gen->aliveCount++;
 					gen->numTerminate--;
-					if (gen->wanderTime == 0xffffffff)
+					// attackMod may be null, in DOS a global is used and it may reference the previous pointer -
+					// so it works by "accident" in DOS.
+					if (s_actorState.attackMod)
 					{
-						s_actorState.attackMod->timing.nextTick = 0xffffffff;
-					}
-					else
-					{
-						s32 randomWanderOffset = floor16(random(intToFixed16(gen->wanderTime >> 1)));
-						s_actorState.attackMod->timing.nextTick = s_curTick + gen->wanderTime + floor16(randomWanderOffset);
+						if (gen->wanderTime == 0xffffffff)
+						{
+							s_actorState.attackMod->timing.nextTick = 0xffffffff;
+						}
+						else
+						{
+							s32 randomWanderOffset = floor16(random(intToFixed16(gen->wanderTime >> 1)));
+							s_actorState.attackMod->timing.nextTick = s_curTick + gen->wanderTime + floor16(randomWanderOffset);
+						}
 					}
 
 					SecObject** entityPtr = (SecObject**)allocator_newItem(gen->entities);
+					if (!entityPtr)
+						return;
 					*entityPtr = spawn;
 					actor_removeRandomCorpse();
 				}
@@ -325,6 +332,8 @@ namespace TFE_DarkForces
 				if (entityId < 0) { continue; }
 
 				SecObject** entityPtr = (SecObject**)allocator_newItem(gen->entities);
+				if (!entityPtr)
+					return;
 				*entityPtr = objData_getObjectBySerializationId_NoValidation(entityId);
 			}
 		}

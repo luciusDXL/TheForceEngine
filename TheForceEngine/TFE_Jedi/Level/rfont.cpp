@@ -95,6 +95,9 @@ namespace TFE_Jedi
 			glyph->dataSize = pixelCount;
 			glyph->flags = 9;
 			glyph->compressed = 0;
+
+			glyph->scaleFactor = 1;
+			glyph->hdAssetData = nullptr;
 		}
 		file.close();
 

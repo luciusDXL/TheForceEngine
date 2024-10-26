@@ -5,7 +5,7 @@
 #include <TFE_System/system.h>
 #include <vector>
 
-#define QUAD_MAX 1024
+#define QUAD_MAX_NUM 1024
 
 namespace TFE_RenderShared
 {
@@ -40,7 +40,7 @@ namespace TFE_RenderShared
 	static u32 s_quadCount;
 	static u32 s_quadDrawCount;
 
-	static QuadDraw s_quadDraw[QUAD_MAX];
+	static QuadDraw s_quadDraw[QUAD_MAX_NUM];
 
 	static u32 s_width, s_height;
 
@@ -60,9 +60,9 @@ namespace TFE_RenderShared
 
 		// Create buffers
 		// Create vertex and index buffers.
-		u32* indices = new u32[6 * QUAD_MAX];
+		u32* indices = new u32[6 * QUAD_MAX_NUM];
 		u32* outIndices = indices;
-		for (u32 i = 0; i < QUAD_MAX; i++, outIndices += 6)
+		for (u32 i = 0; i < QUAD_MAX_NUM; i++, outIndices += 6)
 		{
 			outIndices[0] = i * 4 + 0;
 			outIndices[1] = i * 4 + 1;
@@ -72,10 +72,10 @@ namespace TFE_RenderShared
 			outIndices[4] = i * 4 + 2;
 			outIndices[5] = i * 4 + 3;
 		}
-		s_vertices = new QuadVertex[4 * QUAD_MAX];
+		s_vertices = new QuadVertex[4 * QUAD_MAX_NUM];
 
-		s_vertexBuffer.create(4 * QUAD_MAX, sizeof(QuadVertex), c_quadAttrCount, c_quadAttrMapping, true);
-		s_indexBuffer.create(6 * QUAD_MAX, sizeof(u32), false, indices);
+		s_vertexBuffer.create(4 * QUAD_MAX_NUM, sizeof(QuadVertex), c_quadAttrCount, c_quadAttrMapping, true);
+		s_indexBuffer.create(6 * QUAD_MAX_NUM, sizeof(u32), false, indices);
 
 		delete[] indices;
 		s_quadCount = 0;
@@ -110,7 +110,7 @@ namespace TFE_RenderShared
 		s_quadDrawCount++;
 
 		QuadVertex* vert = &s_vertices[s_quadCount * 4];
-		for (u32 i = 0; i < count && s_quadCount < QUAD_MAX; i++, quads += 2, quadColors += 2, vert += 4)
+		for (u32 i = 0; i < count && s_quadCount < QUAD_MAX_NUM; i++, quads += 2, quadColors += 2, vert += 4)
 		{
 			s_quadCount++;
 

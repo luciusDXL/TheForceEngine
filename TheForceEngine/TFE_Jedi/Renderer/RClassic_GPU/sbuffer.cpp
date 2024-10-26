@@ -751,10 +751,9 @@ namespace TFE_Jedi
 			return !(cameraSide1 >= 0.0f);
 		}
 
-		// If we still get here, just do a quick distance check.
-		f32 distSq0 = camera0.x*camera0.x + camera0.z*camera0.z;
-		f32 distSq1 = camera1.x*camera1.x + camera1.z*camera1.z;
-		return distSq1 < distSq0;
+		// The vanilla code defaults to "new segment" in front if the segments intersect.
+		// This behavior needs to be emulated to avoid errors.
+		return false;
 	}
 
 	SegmentClipped* sbuffer_getClippedSeg(Segment* seg)

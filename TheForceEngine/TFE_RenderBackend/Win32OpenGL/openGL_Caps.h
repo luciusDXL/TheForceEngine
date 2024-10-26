@@ -22,6 +22,7 @@ namespace OpenGL_Caps
 	bool supportsFbo();
 	bool supportsNonPow2Textures();
 	bool supportsTextureArrays();
+	bool supportsAniso();
 
 	bool deviceSupportsGpuBlit();
 	bool deviceSupportsGpuColorConversion();
@@ -29,4 +30,6 @@ namespace OpenGL_Caps
 
 	u32 getDeviceTier();
 	s32 getMaxTextureBufferSize();
+	f32 getMaxAnisotropy();
+	f32 getAnisotropyFromQuality(f32 quality);
 };

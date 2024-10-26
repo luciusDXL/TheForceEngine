@@ -93,8 +93,8 @@ namespace TFE_Jedi
 		s_displayListPos    = (Vec4f*)malloc(sizeof(Vec4f) * SECTOR_PASS_COUNT * MAX_DISP_ITEMS);
 		s_displayListData   = (Vec4ui*)malloc(sizeof(Vec4ui) * SECTOR_PASS_COUNT * MAX_DISP_ITEMS);
 		s_displayListPlanes = (Vec4f*)malloc(sizeof(Vec4f) * MAX_BUFFER_SIZE);
-		s_portalPlaneInfo   = (u32*)malloc(sizeof(u32) * MAX_DISP_ITEMS);
-		s_portalFrustumVert = (Frustum*)malloc(sizeof(Frustum) * MAX_DISP_ITEMS);
+		s_portalPlaneInfo   = (u32*)malloc(sizeof(u32) * MAX_BUFFER_SIZE);
+		s_portalFrustumVert = (Frustum*)malloc(sizeof(Frustum) * MAX_BUFFER_SIZE);
 
 		const ShaderBufferDef bufferDefDisplayListPos  = { 4, sizeof(f32), BUF_CHANNEL_FLOAT };
 		const ShaderBufferDef bufferDefDisplayListData = { 4, sizeof(u32), BUF_CHANNEL_UINT };
@@ -319,6 +319,27 @@ namespace TFE_Jedi
 		s_displayListPos[index] = pos;
 		s_displayListData[index] = data;
 	}
+
+	void reverseOrder(const SectorPass bufferIndex)
+	{
+		const s32 startIndex = MAX_DISP_ITEMS * bufferIndex;
+		const s32 count = s_displayListCount[bufferIndex];
+		const s32 swapCount = count >> 1;
+
+		// Use floor(count/2) swaps to reverse the order in-place.
+		// There are generally very few transparent edges - usually less than 10
+		// (so less than 5 swaps).
+		for (s32 i = 0; i < swapCount; i++)
+		{
+			std::swap( s_displayListPos[startIndex+i],  s_displayListPos[startIndex + count - 1 - i]);
+			std::swap(s_displayListData[startIndex+i], s_displayListData[startIndex + count - 1 - i]);
+		}
+	}
+
+	void sdisplayList_fixupTrans()
+	{
+		reverseOrder(SECTOR_PASS_TRANS);
+	}
 		
 	/*********************************
 	Current GPU Renderer Limits:
@@ -350,8 +371,11 @@ namespace TFE_Jedi
 		bool stretchToTop = false;
 
 		Vec4f pos = { wallSeg->v0.x, wallSeg->v0.z, wallSeg->v1.x, wallSeg->v1.z };
-		const Vec4ui data = {  nextId/*partId | nextSector*/, (u32)curSector->index/*sectorId*/,
+		Vec4ui data = {  nextId/*partId | nextSector*/, (u32)curSector->index/*sectorId*/,
 				    		   wallLight | portalInfo, 0u/*textureId*/ };
+
+		// TFE fullbright cheat (LABRIGHT); if enabled, add fullbright flag to the flags field:
+		if (s_fullBright) data.x |= SPARTID_FULLBRIGHT;
 
 		if (nextSector)
 		{
@@ -360,7 +384,7 @@ namespace TFE_Jedi
 				noTop = true;
 			}
 			if ((curSector->flags1 & SEC_FLAGS1_EXTERIOR) && (curSector->flags1 & SEC_FLAGS1_EXT_ADJ) && (srcWall->flags1 & WF1_ADJ_MID_TEX) &&
-				(nextSector->flags1 & SEC_FLAGS1_EXTERIOR))
+				(nextSector->flags1 & SEC_FLAGS1_EXTERIOR) && (nextSector->flags1 & SEC_FLAGS1_EXT_ADJ))
 			{
 				stretchToTop = true;
 			}
@@ -397,8 +421,8 @@ namespace TFE_Jedi
 				// If the floor and ceiling textures are different, split into two.
 				// Since no next sector is required, this is treated as a solid wall, the space is re-used as flags to differeniate between the three cases:
 				// (0) Both above and below the horizon using the same texture (the ceiling).
-				// (1) Below the horizon line, using the floor texture.
-				// (2) Above the horizon line, using the ceiling texture.
+				// (1) Below the horizon line, using the floor or wall texture.
+				// (2) Above the horizon line, using the ceiling or wall texture.
 				if (curSector->floorTex == curSector->ceilTex)
 				{
 					// Above AND below the horizon line (single quad).
@@ -409,14 +433,20 @@ namespace TFE_Jedi
 				else
 				{
 					// Below the horizon line.
-					u32 flags = 1 << 10;
+					u32 flags = ((curSector->flags1 & SEC_FLAGS1_PIT) || forceTreatAsSolid) ? (1 << 10) : (3 << 10);
+					u32 texId = ((curSector->flags1 & SEC_FLAGS1_PIT) || forceTreatAsSolid) ?
+						(curSector->floorTex && *curSector->floorTex ? (*curSector->floorTex)->textureId : 0) :
+						(srcWall->midTex && *srcWall->midTex ? (*srcWall->midTex)->textureId : 0);
 					addDisplayListItem(pos, { flags | SPARTID_WALL_MID | SPARTID_SKY, data.y, data.z,
-						wallGpuId | (curSector->floorTex && *curSector->floorTex ? (*curSector->floorTex)->textureId : 0) }, SECTOR_PASS_OPAQUE);
+						wallGpuId | texId }, SECTOR_PASS_OPAQUE);
 
 					// Above the horizon line.
-					flags = 2 << 10;
+					texId = ((curSector->flags1 & SEC_FLAGS1_EXTERIOR) || forceTreatAsSolid) ?
+						(curSector->ceilTex && *curSector->ceilTex ? (*curSector->ceilTex)->textureId : 0) :
+						(srcWall->midTex && *srcWall->midTex ? (*srcWall->midTex)->textureId : 0);
+					flags = ((curSector->flags1 & SEC_FLAGS1_EXTERIOR) || forceTreatAsSolid) ? (2 << 10) : (4 << 10);
 					addDisplayListItem(pos, { flags | SPARTID_WALL_MID | SPARTID_SKY, data.y, data.z,
-						wallGpuId | (curSector->ceilTex && *curSector->ceilTex ? (*curSector->ceilTex)->textureId : 0) }, SECTOR_PASS_OPAQUE);
+						wallGpuId | texId }, SECTOR_PASS_OPAQUE);
 				}
 			}
 			else
@@ -567,7 +597,7 @@ namespace TFE_Jedi
 		s_displayListDataGPU[passId].bind(s_dataIndex[passId]);
 		s_displayListPlanesGPU.bind(s_planesIndex);
 
-		TFE_RenderBackend::drawIndexedTriangles(2 * s_displayListCount[passId], sizeof(u16));
+		TFE_RenderBackend::drawIndexedTriangles(2 * s_displayListCount[passId], sizeof(u32));
 
 		s_displayListPosGPU[passId].unbind(s_posIndex[passId]);
 		s_displayListDataGPU[passId].unbind(s_dataIndex[passId]);

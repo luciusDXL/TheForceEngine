@@ -42,6 +42,7 @@ namespace RClassic_Fixed
 	const u8* computeLighting(fixed16_16 depth, s32 lightOffset)
 	{
 		if (s_sectorAmbient >= MAX_LIGHT_LEVEL) { return nullptr; }
+		if (s_fullBright) { return &s_colorMap[(MAX_LIGHT_LEVEL - 1) << 8]; } // TFE fullbright cheat (LABRIGHT)
 		depth = max(depth, 0);
 		s32 light = 0;
 

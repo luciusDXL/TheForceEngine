@@ -18,36 +18,36 @@ namespace TFE_DarkForces
 		s32 bitmapWidth = 0;
 		s32 bitmapHeight = 0;
 	};
-	static LDrawState s_state = {};
+	static LDrawState ldraw_state = {};
 
 	void ldraw_init(s16 w, s16 h)
 	{
-		if (w != s_state.bitmapWidth || h != s_state.bitmapHeight || !s_state.bitmap)
+		if (w != ldraw_state.bitmapWidth || h != ldraw_state.bitmapHeight || !ldraw_state.bitmap)
 		{
-			landru_free(s_state.bitmap);
-			s_state.bitmap = (u8*)landru_alloc(w * h);
-			memset(s_state.bitmap, 0, w * h);
+			landru_free(ldraw_state.bitmap);
+			ldraw_state.bitmap = (u8*)landru_alloc(w * h);
+			memset(ldraw_state.bitmap, 0, w * h);
 
-			s_state.bitmapWidth  = w;
-			s_state.bitmapHeight = h;
+			ldraw_state.bitmapWidth  = w;
+			ldraw_state.bitmapHeight = h;
 		}
 	}
 
 	void ldraw_destroy()
 	{
-		landru_free(s_state.bitmap);
-		s_state = {};
+		landru_free(ldraw_state.bitmap);
+		ldraw_state = {};
 	}
 
 	u8* ldraw_getBitmap()
 	{
-		return s_state.bitmap;
+		return ldraw_state.bitmap;
 	}
 
 	JBool drawClippedColorRect(LRect* rect, u8 color)
 	{
-		u8* framebuffer  = s_state.bitmap;
-		const u32 stride = s_state.bitmapWidth;
+		u8* framebuffer  = ldraw_state.bitmap;
+		const u32 stride = ldraw_state.bitmapWidth;
 
 		LRect clipRect;
 		lcanvas_getClip(&clipRect);
@@ -154,13 +154,13 @@ namespace TFE_DarkForces
 
 	void deltaImage(s16* data, s16 x, s16 y)
 	{
-		drawDeltaIntoBitmap(data, x, y, s_state.bitmap, s_state.bitmapWidth);
+		drawDeltaIntoBitmap(data, x, y, ldraw_state.bitmap, ldraw_state.bitmapWidth);
 	}
 
 	void deltaClip(s16* data, s16 x, s16 y)
 	{
-		u8* framebuffer = s_state.bitmap;
-		const u32 stride = s_state.bitmapWidth;
+		u8* framebuffer = ldraw_state.bitmap;
+		const u32 stride = ldraw_state.bitmapWidth;
 
 		LRect clipRect;
 		lcanvas_getClip(&clipRect);
@@ -233,8 +233,8 @@ namespace TFE_DarkForces
 
 	void deltaFlip(s16* data, s16 x, s16 y, s16 w)
 	{
-		u8* framebuffer = s_state.bitmap;
-		const u32 stride = s_state.bitmapWidth;
+		u8* framebuffer = ldraw_state.bitmap;
+		const u32 stride = ldraw_state.bitmapWidth;
 
 		const u8* srcImage = (u8*)data;
 		while (1)
@@ -295,8 +295,8 @@ namespace TFE_DarkForces
 
 	void deltaFlipClip(s16* data, s16 x, s16 y, s16 w)
 	{
-		u8* framebuffer = s_state.bitmap;
-		const u32 stride = s_state.bitmapWidth;
+		u8* framebuffer = ldraw_state.bitmap;
+		const u32 stride = ldraw_state.bitmapWidth;
 
 		LRect clipRect;
 		lcanvas_getClip(&clipRect);

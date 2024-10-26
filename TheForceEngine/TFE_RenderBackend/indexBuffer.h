@@ -17,8 +17,8 @@ public:
 
 	void update(const void* buffer, size_t size);
 	// bind() returns the size type that should be used in draw commands.
-	u32 bind();
-	void unbind();
+	u32 bind() const;
+	void unbind() const;
 
 	inline u32 getHandle() const { return m_gpuHandle; }
 

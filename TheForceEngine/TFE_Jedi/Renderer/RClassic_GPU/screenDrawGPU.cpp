@@ -9,13 +9,24 @@
 #include <TFE_RenderShared/lineDraw2d.h>
 #include <TFE_RenderShared/quadDraw2d.h>
 #include <TFE_RenderShared/texturePacker.h>
+#include <TFE_Settings/settings.h>
 
 #include "screenDrawGPU.h"
 #include "rsectorGPU.h"
+#include <algorithm>
+#include <cstring>
 
 namespace TFE_Jedi
 {
+	enum Const
+	{
+		MAX_INDEXED_COLORS = 8,
+	};
+
 	static bool s_initialized = false;
+	static s32 s_indexColorCount = 0;
+	static Vec4f s_indexedColors[MAX_INDEXED_COLORS];
+	extern TextureGpu* s_trueColorMapping;
 
 	struct ScreenQuadVertex
 	{
@@ -37,8 +48,18 @@ namespace TFE_Jedi
 
 	static s32 s_screenQuadCount = 0;
 	static s32 s_svScaleOffset = -1;
+	static s32 s_sIndexedColors = -1;
+	static s32 s_palFxLumMask = -1;
+	static s32 s_palFxFlash = -1;
 	static u32 s_scrQuadsWidth;
 	static u32 s_scrQuadsHeight;
+
+	struct ShaderSettingsSDGPU
+	{
+		bool bloom = false;
+		bool trueColor = false;
+	};
+	static ShaderSettingsSDGPU s_shaderSettings = {};
 
 	enum Constants
 	{
@@ -47,7 +68,22 @@ namespace TFE_Jedi
 
 	bool screenGPU_loadShaders()
 	{
-		if (!s_scrQuadShader.load("Shaders/gpu_render_quad.vert", "Shaders/gpu_render_quad.frag", 0, nullptr, SHADER_VER_STD))
+		u32 defineCount = 0;
+		ShaderDefine defines[16];
+		if (s_shaderSettings.bloom)
+		{
+			defines[defineCount].name = "OPT_BLOOM";
+			defines[defineCount].value = "1";
+			defineCount++;
+		}
+		if (s_shaderSettings.trueColor)
+		{
+			defines[defineCount].name = "OPT_TRUE_COLOR";
+			defines[defineCount].value = "1";
+			defineCount++;
+		}
+
+		if (!s_scrQuadShader.load("Shaders/gpu_render_quad.vert", "Shaders/gpu_render_quad.frag", defineCount, defines, SHADER_VER_STD))
 		{
 			return false;
 		}
@@ -57,6 +93,10 @@ namespace TFE_Jedi
 		{
 			return false;
 		}
+
+		s_sIndexedColors = s_scrQuadShader.getVariableId("IndexedColors");
+		s_palFxLumMask = s_scrQuadShader.getVariableId("PalFxLumMask");
+		s_palFxFlash = s_scrQuadShader.getVariableId("PalFxFlash");
 
 		s_scrQuadShader.bindTextureNameToSlot("Colormap",     0);
 		s_scrQuadShader.bindTextureNameToSlot("Palette",      1);
@@ -92,6 +132,8 @@ namespace TFE_Jedi
 			s_screenQuadCount = 0;
 
 			// Shaders and variables.
+			s_shaderSettings.bloom = TFE_Settings::getGraphicsSettings()->bloomEnabled;
+			s_shaderSettings.trueColor = TFE_Settings::getGraphicsSettings()->colorMode == COLORMODE_TRUE_COLOR;
 			screenGPU_loadShaders();
 		}
 		s_initialized = true;
@@ -109,13 +151,19 @@ namespace TFE_Jedi
 		}
 		s_scrQuads = nullptr;
 		s_initialized = false;
+		s_shaderSettings = {};
 	}
 
-	void screenGPU_setHudTextureCallbacks(s32 count, TextureListCallback* callbacks)
+	void screenGPU_setHudTextureCallbacks(s32 count, TextureListCallback* callbacks, bool forceAllocation)
 	{
 		if (count)
 		{
 			TexturePacker* texturePacker = texturepacker_getGlobal();
+			if (forceAllocation)
+			{
+				texturepacker_reset();
+			}
+
 			if (!texturepacker_hasReservedPages(texturePacker))
 			{
 				for (s32 i = 0; i < count; i++)
@@ -127,12 +175,28 @@ namespace TFE_Jedi
 			}
 		}
 	}
+
+	void screenGPU_setIndexedColors(u32 count, const Vec4f* colors)
+	{
+		s_indexColorCount = std::min((u32)MAX_INDEXED_COLORS, count);
+		memcpy(s_indexedColors, colors, sizeof(Vec4f)*s_indexColorCount);
+	}
 		
 	void screenGPU_beginQuads(u32 width, u32 height)
 	{
 		s_screenQuadCount = 0;
 		s_scrQuadsWidth = width;
 		s_scrQuadsHeight = height;
+
+		// Update the shaders if needed.
+		bool bloomEnabled = TFE_Settings::getGraphicsSettings()->bloomEnabled;
+		bool trueColorEnabled = TFE_Settings::getGraphicsSettings()->colorMode == COLORMODE_TRUE_COLOR;
+		if (s_shaderSettings.bloom != bloomEnabled || s_shaderSettings.trueColor != trueColorEnabled)
+		{
+			s_shaderSettings.bloom = bloomEnabled;
+			s_shaderSettings.trueColor = trueColorEnabled;
+			screenGPU_loadShaders();
+		}
 	}
 
 	void screenGPU_endQuads()
@@ -155,10 +219,30 @@ namespace TFE_Jedi
 			const f32 scaleOffset[] = { scaleX, scaleY, offsetX, offsetY };
 			s_scrQuadShader.setVariable(s_svScaleOffset, SVT_VEC4, scaleOffset);
 
+			if (s_sIndexedColors >= 0)
+			{
+				s_scrQuadShader.setVariableArray(s_sIndexedColors, SVT_VEC4, (f32*)s_indexedColors, s_indexColorCount);
+			}
+			if (s_palFxLumMask >= 0 && s_palFxFlash >= 0)
+			{
+				Vec3f lumMask, palFx;
+				renderer_getPalFx(&lumMask, &palFx);
+
+				s_scrQuadShader.setVariable(s_palFxLumMask, SVT_VEC3, lumMask.m);
+				s_scrQuadShader.setVariable(s_palFxFlash, SVT_VEC3, palFx.m);
+			}
+
 			const TextureGpu* palette  = TFE_RenderBackend::getPaletteTexture();
 			const TextureGpu* colormap = TFE_Sectors_GPU::getColormap();
 			colormap->bind(0);
-			palette->bind(1);
+			if (s_shaderSettings.trueColor)
+			{
+				s_trueColorMapping->bind(1);
+			}
+			else
+			{
+				palette->bind(1);
+			}
 
 			TexturePacker* texturePacker = texturepacker_getGlobal();
 			texturePacker->texture->bind(2);

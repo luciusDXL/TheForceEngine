@@ -35,12 +35,17 @@ namespace TFE_DarkForces
 	void disableCleats();
 	void disableNightvision();
 
-	void mission_render(s32 rendererIndex = 0);
+	void mission_render(s32 rendererIndex = 0, bool forceTextureUpdate = false);
 
 	void mission_setupTasks();
 	void mission_serialize(Stream* stream);
 	void mission_serializeColorMap(Stream* stream);
-		
+
+	void cheat_revealMap();
+	void cheat_supercharge();
+	void cheat_toggleData();
+	void cheat_toggleFullBright();
+	
 	extern JBool s_gamePaused;
 	extern GameMissionMode s_missionMode;
 	extern TextureData* s_loadScreen;

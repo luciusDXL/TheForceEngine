@@ -80,7 +80,11 @@ Archive* Archive::getArchive(ArchiveType type, const char* name, const char* pat
 	if (archive)
 	{
 		strcpy(archive->m_name, name);
-		archive->open(path);
+		if (!archive->open(path))
+		{
+			delete archive;
+			return nullptr;
+		}
 		archive->m_type = type;
 		(s_archives[type])[path] = archive;
 	}

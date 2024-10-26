@@ -58,6 +58,8 @@ namespace TFE_DarkForces
 		else
 		{
 			dispatch = (ActorDispatch*)allocator_newItem(s_istate.actorDispatch);
+			if (!dispatch)
+				return;
 			memset(dispatch, 0, sizeof(ActorDispatch));
 
 			logic = (Logic*)dispatch;

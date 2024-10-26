@@ -32,6 +32,9 @@ namespace TFE_Paths
 	static std::vector<std::string> s_searchPaths;
 	static std::vector<FileMapping> s_fileMappings;
 
+	bool insertString(char* text, const char* newFragment, const char* pattern);
+	bool isPortableInstall();
+
 	void setPath(TFE_PathType pathType, const char* path)
 	{
 		s_paths[pathType] = path;
@@ -39,6 +42,13 @@ namespace TFE_Paths
 
 	bool setProgramDataPath(const char* append)
 	{
+		// Support "Portable" methods as well.
+		if (isPortableInstall())
+		{
+			s_paths[PATH_PROGRAM_DATA] = s_paths[PATH_PROGRAM];
+			return !s_paths[PATH_PROGRAM_DATA].empty();
+		}
+
 #ifdef _WIN32
 		char path[TFE_MAX_PATH];
 		// Get path for each computer, non-user specific and non-roaming data.
@@ -67,7 +77,15 @@ namespace TFE_Paths
 
 	bool setUserDocumentsPath(const char* append)
 	{
+		// Support "Portable" methods as well.
+		if (isPortableInstall())
+		{
+			s_paths[PATH_USER_DOCUMENTS] = s_paths[PATH_PROGRAM];
+			return !s_paths[PATH_USER_DOCUMENTS].empty();
+		}
+
 #ifdef _WIN32
+		// Otherwise attempt to use the Windows User "Documents/" directory.
 		char path[TFE_MAX_PATH];
 		// Get path for each computer, non-user specific and non-roaming data.
 		if (SUCCEEDED(SHGetFolderPath(NULL, CSIDL_MYDOCUMENTS, NULL, 0, path)))
@@ -79,16 +97,28 @@ namespace TFE_Paths
 			s_paths[PATH_USER_DOCUMENTS] = path;
 			s_paths[PATH_USER_DOCUMENTS] += "\\";
 
-			FileUtil::makeDirectory(path);
-			return true;
+			if (FileUtil::makeDirectory(path))
+			{
+				return true;
+			}
+			else
+			{
+				// Try OneDrive.
+				insertString(path, "OneDrive\\", "Documents");
+				s_paths[PATH_USER_DOCUMENTS] = path;
+				s_paths[PATH_USER_DOCUMENTS] += "\\";
+
+				if (FileUtil::makeDirectory(path))
+				{
+					return true;
+				}
+			}
 		}
-		else
-		{
-			// If getting the documents folder fails, then revert back to using
-			// the program path if possible.
-			s_paths[PATH_USER_DOCUMENTS] = s_paths[PATH_PROGRAM];
-			return !s_paths[PATH_PROGRAM].empty();
-		}
+
+		// If getting the documents folder fails, then revert back to using
+		// the program path if possible.
+		s_paths[PATH_USER_DOCUMENTS] = s_paths[PATH_PROGRAM];
+		return !s_paths[PATH_PROGRAM].empty();
 #endif
 		return false;
 	}
@@ -324,6 +354,42 @@ namespace TFE_Paths
 		}
 
 		// Finally admit defeat.
+		return false;
+	}
+		
+	bool insertString(char* text, const char* newFragment, const char* pattern)
+	{
+		if (!text || !newFragment || !pattern)
+		{
+			return false;
+		}
+
+		char* loc = strstr(text, pattern);
+		if (!loc)
+		{
+			return false;
+		}
+
+		char workStr[TFE_MAX_PATH];
+		strncpy(workStr, text, size_t(loc - text));
+		workStr[size_t(loc - text)] = 0;
+
+		strcat(workStr, newFragment);
+		strcat(workStr, text + size_t(loc - text));
+		strcpy(text, workStr);
+
+		return true;
+	}
+
+	bool isPortableInstall()
+	{
+		// Support "Portable" methods as well.
+		char portableSettingsPath[TFE_MAX_PATH];
+		TFE_Paths::appendPath(PATH_PROGRAM, "settings.ini", portableSettingsPath);
+		if (FileUtil::exists(portableSettingsPath))
+		{
+			return true;
+		}
 		return false;
 	}
 }

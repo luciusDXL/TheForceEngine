@@ -39,7 +39,7 @@ namespace TFE_Jedi_Object3d
 		const fixed16_16 dz = vIn->z - v0->z;
 		fixed16_16 len;
 
-		if (TFE_Settings::getGraphicsSettings()->fix3doNormalOverflow)
+		if (TFE_Settings::normalFix3do())
 		{
 			// Convert to floating point before calculating the length to avoid
 			// fixed-point overflow.
@@ -445,7 +445,7 @@ namespace TFE_Model_Jedi
 			assert(0);
 			return false;
 		}
-		if (!TFE_Settings::getGraphicsSettings()->ignore3doLimits && vertexCount > MAX_VERTEX_COUNT_3DO)
+		if (!TFE_Settings::ignore3doLimits() && vertexCount > MAX_VERTEX_COUNT_3DO)
 		{
 			TFE_System::logWrite(LOG_ERROR, "Object3D_Load", "'%s' has too many vertices: %d / %d.", name, vertexCount, MAX_VERTEX_COUNT_3DO);
 			assert(0);
@@ -462,7 +462,7 @@ namespace TFE_Model_Jedi
 			assert(0);
 			return false;
 		}
-		if (!TFE_Settings::getGraphicsSettings()->ignore3doLimits && polygonCount > MAX_POLYGON_COUNT_3DO)
+		if (!TFE_Settings::ignore3doLimits() && polygonCount > MAX_POLYGON_COUNT_3DO)
 		{
 			TFE_System::logWrite(LOG_ERROR, "Object3D_Load", "'%s' has too many polygons: %d / %d.", name, polygonCount, MAX_POLYGON_COUNT_3DO);
 			assert(0);
@@ -509,6 +509,7 @@ namespace TFE_Model_Jedi
 				{
 					TFE_System::logWrite(LOG_WARNING, "Object3D_Load", "'%s' unable to parse TEXTURE: entry.", name);
 					*texture = TFE_Jedi::bitmap_load("default.bm", 1, pool);
+					if ((*texture)) { (*texture)->flags |= ENABLE_MIP_MAPS; }
 					continue;
 				}
 
@@ -521,6 +522,7 @@ namespace TFE_Model_Jedi
 						*texture = TFE_Jedi::bitmap_load("default.bm", 1, pool);
 					}
 				}
+				if ((*texture)) { (*texture)->flags |= ENABLE_MIP_MAPS; }
 			}
 		}
 		TFE_Jedi::bitmap_setAllocator(prevMemRegion);

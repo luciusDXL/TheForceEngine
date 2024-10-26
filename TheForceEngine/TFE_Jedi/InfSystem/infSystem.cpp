@@ -140,6 +140,8 @@ namespace TFE_Jedi
 	InfLink* allocateLink(Allocator* infLinks, InfElevator* elev)
 	{
 		InfLink* link = (InfLink*)allocator_newItem(infLinks);
+		if (!link)
+			return nullptr;
 		link->type = LTYPE_SECTOR;
 		link->entityMask = INF_ENTITY_PLAYER;
 		link->eventMask = INF_EVENT_NONE;
@@ -165,6 +167,8 @@ namespace TFE_Jedi
 		s32 index = allocator_getCount(stops);
 
 		Stop* stop = (Stop*)allocator_newItem(stops);
+		if (!stop)
+			return nullptr;
 		stop->value = 0;
 		stop->delay = TICKS(4);	// 4 seconds.
 		stop->messages = 0;
@@ -240,6 +244,8 @@ namespace TFE_Jedi
 	InfElevator* inf_allocateElevItem(RSector* sector, InfElevatorType type)
 	{
 		InfElevator* elev = (InfElevator*)allocator_newItem(s_infSerState.infElevators);
+		if (!elev)
+			return nullptr;
 		elev->trigMove = TRIGMOVE_HOLD;
 		elev->key = KEY_NONE;
 		elev->fixedStep = 0;
@@ -659,6 +665,8 @@ namespace TFE_Jedi
 			elev->slaves = allocator_create(sizeof(Slave));
 		}
 		Slave* slave = (Slave*)allocator_newItem(elev->slaves);
+		if (!slave)
+			return;
 		slave->sector = sector;
 		slave->value = value;
 	}
@@ -671,6 +679,8 @@ namespace TFE_Jedi
 	TriggerTarget* inf_addTriggerTarget(InfTrigger* trigger, RSector* targetSector, RWall* targetWall, u32 eventMask)
 	{
 		TriggerTarget* target = (TriggerTarget*)allocator_newItem(trigger->targets);
+		if (!target)
+			return nullptr;
 		target->sector = targetSector;
 		target->wall = targetWall;
 		target->eventMask = eventMask;
@@ -681,6 +691,8 @@ namespace TFE_Jedi
 	Teleport* inf_createTeleport(TeleportType type, RSector* sector)
 	{
 		Teleport* teleport = (Teleport*)allocator_newItem(s_infSerState.infTeleports);
+		if (!teleport)
+			return nullptr;
 		teleport->dstAngle[0] = 0;
 		teleport->dstAngle[1] = 0;
 		teleport->dstAngle[2] = 0;
@@ -694,6 +706,8 @@ namespace TFE_Jedi
 		}
 
 		InfLink* link = (InfLink*)allocator_newItem(sector->infLink);
+		if (!link)
+			return nullptr;
 		link->type = LTYPE_TELEPORT;
 		link->entityMask = INF_ENTITY_ANY;
 		link->eventMask = INF_EVENT_ENTER_SECTOR;
@@ -789,6 +803,7 @@ namespace TFE_Jedi
 				break;
 			default:
 				// Invalid type.
+				parser.readLine(bufferPos);
 				return false;
 			};
 			// index is mapped to a type internally.
@@ -839,6 +854,7 @@ namespace TFE_Jedi
 				break;
 			default:
 				// Invalid type.
+				parser.readLine(bufferPos);
 				return false;
 			}
 
@@ -1278,7 +1294,7 @@ namespace TFE_Jedi
 		}
 
 		// Verify that we are under or are ignoring the limit.
-		if (!TFE_Settings::getGameSettings()->df_ignoreInfLimit)
+		if (!TFE_Settings::ignoreInfLimits())
 		{
 			if (itemCount > MAX_INF_ITEMS)
 			{
@@ -1289,7 +1305,7 @@ namespace TFE_Jedi
 
 		// Then loop through all of the items and parse their classes.
 		s32 wallNum = 0;
-		for (s32 i = 0; i < itemCount; i++)
+		for (s32 i = 0; i < itemCount && line; i++)
 		{
 			line = parser.readLine(bufferPos);
 			if (!line)
@@ -1318,7 +1334,7 @@ namespace TFE_Jedi
 					line = parser.readLine(bufferPos);
 					if (line && strstr(line, "SEQ"))
 					{
-						while (line = parser.readLine(bufferPos))
+						while (nullptr != (line = parser.readLine(bufferPos)))
 						{
 							char itemName[256];
 							s32 argCount = sscanf(line, " %s %s %s %s %s %s %s", itemName, s_infArg0, s_infArg1, s_infArg2, s_infArg3, s_infArgExtra, s_infArgExtra);
@@ -2048,6 +2064,8 @@ namespace TFE_Jedi
 						stop->adjoinCmds = allocator_create(sizeof(AdjoinCmd));
 					}
 					AdjoinCmd* adjoinCmd = (AdjoinCmd*)allocator_newItem(stop->adjoinCmds);
+					if (!adjoinCmd)
+						return JFALSE;
 					MessageAddress* msgAddr0 = message_getAddress(s_infArg1);
 					MessageAddress* msgAddr1 = message_getAddress(s_infArg3);
 					RSector* sector0 = msgAddr0->sector;
@@ -2106,6 +2124,8 @@ namespace TFE_Jedi
 					}
 
 					InfMessage* msg = (InfMessage*)allocator_newItem(stop->messages);
+					if (!msg)
+						return JFALSE;
 					RSector* targetSector;
 					RWall* targetWall;
 					inf_getMessageTarget(s_infArg1, &targetSector, &targetWall);
@@ -3240,6 +3260,8 @@ namespace TFE_Jedi
 	InfTrigger* inf_createTrigger(TriggerType type, InfTriggerObject obj)
 	{
 		InfTrigger* trigger = (InfTrigger*)allocator_newItem(s_infSerState.infTriggers);
+		if (!trigger)
+			return nullptr;
 		memset(trigger, 0, sizeof(InfTrigger));
 		s_infSerState.activeTriggerCount++;
 
@@ -3258,6 +3280,8 @@ namespace TFE_Jedi
 					wall->infLink = allocator_create(sizeof(InfLink));
 				}
 				link = (InfLink*)allocator_newItem(wall->infLink);
+				if (!link)
+					return nullptr;
 				link->type = LTYPE_TRIGGER;
 				link->entityMask = INF_ENTITY_PLAYER;
 				link->eventMask = INF_EVENT_ANY;
@@ -3275,6 +3299,8 @@ namespace TFE_Jedi
 					sector->infLink = allocator_create(sizeof(InfLink));
 				}
 				link = (InfLink*)allocator_newItem(sector->infLink);
+				if (!link)
+					return nullptr;
 				link->type = LTYPE_TRIGGER;
 				link->entityMask = INF_ENTITY_PLAYER;
 				link->eventMask = INF_EVENT_ANY;
@@ -3295,6 +3321,8 @@ namespace TFE_Jedi
 					wall->infLink = allocator_create(sizeof(InfLink));
 				}
 				link = (InfLink*)allocator_newItem(wall->infLink);
+				if (!link)
+					return nullptr;
 				link->type = LTYPE_TRIGGER;
 				link->entityMask = INF_ENTITY_PLAYER;
 				link->eventMask = INF_EVENT_ANY;
@@ -3467,7 +3495,7 @@ namespace TFE_Jedi
 	fixed16_16 infUpdate_moveWall(InfElevator* elev, fixed16_16 delta)
 	{
 		// First attempt to move walls in the sector.
-		if (!sector_moveWalls(elev->sector, delta, elev->dirOrCenter.x, elev->dirOrCenter.z, elev->flags))
+		if (!sector_canMoveWalls(elev->sector, delta, elev->dirOrCenter.x, elev->dirOrCenter.z, elev->flags))
 		{
 			return elev->iValue;
 		}
@@ -3476,7 +3504,7 @@ namespace TFE_Jedi
 		Slave* child = (Slave*)allocator_getHead(elev->slaves);
 		while (child)
 		{
-			sector_moveWalls(child->sector, delta, elev->dirOrCenter.x, elev->dirOrCenter.z, elev->flags);
+			sector_canMoveWalls(child->sector, delta, elev->dirOrCenter.x, elev->dirOrCenter.z, elev->flags);
 			child = (Slave*)allocator_getNext(elev->slaves);
 		}
 

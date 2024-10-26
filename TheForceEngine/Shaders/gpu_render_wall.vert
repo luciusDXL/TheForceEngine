@@ -20,8 +20,8 @@ flat out int Frag_Flags;
 
 void unpackPortalInfo(uint portalInfo, out uint portalOffset, out uint portalCount)
 {
-	portalCount  = (portalInfo >> 13u) & 15u;
-	portalOffset = portalInfo & 8191u;
+	portalCount  = (portalInfo >> 16u) & 15u;
+	portalOffset = portalInfo & 65535u;
 }
 
 void main()
@@ -29,7 +29,7 @@ void main()
 	// We do our own vertex fetching and geometry expansion, so calculate the relevent values from the vertex ID.
 	int partIndex = gl_VertexID / 4;
 	int vertexId  = gl_VertexID & 3;
-	
+
 	// Read part position and data.
 	vec4 positions = texelFetch(DrawListPos, partIndex);
 	uvec4 data = texelFetch(DrawListData, partIndex);
@@ -47,7 +47,7 @@ void main()
 	int sectorId = int(data.y);
 	int lightOffset = int(data.z & 63u) - 32;
 	int flags = (fullbright ? 1 : 0) | (opaque ? 2 : 0);
-	bool flip    = (data.z & 64u) != 0u;
+	bool flip = (data.z & 64u) != 0u;
 	float scale = 1.0;
 
 	uint portalOffset, portalCount;
@@ -190,6 +190,20 @@ void main()
 			else if (nextId == 2)	// ceiling
 			{
 				vtx_pos.y = (vertexId < 2) ? vtx_pos.y : CameraPos.y;
+			}
+			// No wall case, but without sky mapping.
+			else if (nextId == 3)   // floor but not really sky
+			{
+				vtx_pos.y = (vertexId >= 2) ? vtx_pos.y : CameraPos.y;
+				vtx_uv.zw = texelFetch(Walls, wallId*3 + 1).xy;
+				sky = false;
+				flatIndex = 0;
+			}
+			else if (nextId == 4)	// ceiling but not really sky
+			{
+				vtx_pos.y = (vertexId < 2) ? vtx_pos.y : CameraPos.y;
+				vtx_uv.zw = texelFetch(Walls, wallId*3 + 1).xy;
+				sky = false;
 			}
 			vec4 sectorTexOffsets = texelFetch(Sectors, sectorId*2+1);
 			texture_data.xy = (flatIndex == 0) ? sectorTexOffsets.xy : sectorTexOffsets.zw;

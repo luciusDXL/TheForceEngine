@@ -1,8 +1,8 @@
 #include <cstring>
-
 #include "audioSystem.h"
 #include "audioDevice.h"
 #include "midiPlayer.h"
+#include <SDL_mutex.h>
 #include <TFE_System/system.h>
 #include <TFE_System/math.h>
 #include <TFE_Settings/settings.h>
@@ -67,7 +67,7 @@ namespace TFE_Audio
 
 	static u32 s_sourceCount;
 	static SoundSource s_sources[MAX_SOUND_SOURCES];
-	static Mutex s_mutex;
+	static SDL_mutex* s_mutex;
 	static bool s_paused = false;
 	static bool s_nullDevice = false;
 	static volatile s32 s_silentAudioFrames = 0;
@@ -75,7 +75,7 @@ namespace TFE_Audio
 	static AudioUpsampleFilter s_upsampleFilter = AUF_DEFAULT;
 	static AudioThreadCallback s_audioThreadCallback = nullptr;
 
-	s32 audioCallback(void *outputBuffer, void* inputBuffer, u32 bufferSize, f64 streamTime, u32 status, void* userData);
+	static void audioCallback(void*, unsigned char*, int);
 	void setSoundVolumeConsole(const ConsoleArgList& args);
 	void getSoundVolumeConsole(const ConsoleArgList& args);
 
@@ -124,7 +124,15 @@ namespace TFE_Audio
 			return false;
 		}
 
-		MUTEX_INITIALIZE(&s_mutex);
+		s_mutex = SDL_CreateMutex();
+		if (!s_mutex)
+		{
+			TFE_System::logWrite(LOG_ERROR, "Audio", "Cannot init SDL_mutex.");
+			TFE_AudioDevice::destroy();
+			s_nullDevice = true;
+			return false;
+		}
+
 		s_nullDevice = false;
 		return true;
 	}
@@ -137,21 +145,21 @@ namespace TFE_Audio
 		stopAllSounds();
 
 		TFE_AudioDevice::destroy();
-		MUTEX_DESTROY(&s_mutex);
+		SDL_DestroyMutex(s_mutex);
 	}
 
 	void stopAllSounds()
 	{
 		if (s_nullDevice) { return; }
 
-		MUTEX_LOCK(&s_mutex);
+		SDL_LockMutex(s_mutex);
 		s_sourceCount = 0u;
 		memset(s_sources, 0, sizeof(SoundSource) * MAX_SOUND_SOURCES);
 		for (s32 i = 0; i < MAX_SOUND_SOURCES; i++)
 		{
 			s_sources[i].slot = i;
 		}
-		MUTEX_UNLOCK(&s_mutex);
+		SDL_UnlockMutex(s_mutex);
 	}
 
 	void selectDevice(s32 id)
@@ -190,16 +198,16 @@ namespace TFE_Audio
 
 	void pause()
 	{
-		MUTEX_LOCK(&s_mutex);
+		SDL_LockMutex(s_mutex);
 		s_paused = true;
-		MUTEX_UNLOCK(&s_mutex);
+		SDL_UnlockMutex(s_mutex);
 	}
 
 	void resume()
 	{
-		MUTEX_LOCK(&s_mutex);
+		SDL_LockMutex(s_mutex);
 		s_paused = false;
-		MUTEX_UNLOCK(&s_mutex);
+		SDL_UnlockMutex(s_mutex);
 	}
 
 	// Really the buffered audio will continue to process so time advances properly.
@@ -214,9 +222,9 @@ namespace TFE_Audio
 	{
 		if (s_nullDevice) { return; }
 
-		MUTEX_LOCK(&s_mutex);
+		SDL_LockMutex(s_mutex);
 		s_audioThreadCallback = callback;
-		MUTEX_UNLOCK(&s_mutex);
+		SDL_UnlockMutex(s_mutex);
 	}
 
 	const OutputDeviceInfo* getOutputDeviceList(s32& count, s32& curOutput)
@@ -227,13 +235,13 @@ namespace TFE_Audio
 	void lock()
 	{
 		if (s_nullDevice) { return; }
-		MUTEX_LOCK(&s_mutex);
+		SDL_LockMutex(s_mutex);
 	}
 
 	void unlock()
 	{
 		if (s_nullDevice) { return; }
-		MUTEX_UNLOCK(&s_mutex);
+		SDL_UnlockMutex(s_mutex);
 	}
 
 	// One shot, play and forget. Only do this if the client needs no control until stopAllSounds() is called.
@@ -242,7 +250,7 @@ namespace TFE_Audio
 	{
 		if (!buffer || s_nullDevice) { return false; }
 
-		MUTEX_LOCK(&s_mutex);
+		SDL_LockMutex(s_mutex);
 		// Find the first inactive source.
 		SoundSource* snd = s_sources;
 		SoundSource* newSource = nullptr;
@@ -275,7 +283,7 @@ namespace TFE_Audio
 			newSource->finishedUserData = cbUserData;
 			newSource->finishedArg = cbArg;
 		}
-		MUTEX_UNLOCK(&s_mutex);
+		SDL_UnlockMutex(s_mutex);
 
 		return newSource != nullptr;
 	}
@@ -286,7 +294,7 @@ namespace TFE_Audio
 		if (!buffer || s_nullDevice) { return nullptr; }
 		assert(volume >= 0.0f && volume <= 1.0f);
 
-		MUTEX_LOCK(&s_mutex);
+		SDL_LockMutex(s_mutex);
 		// Find the first inactive source.
 		SoundSource* snd = s_sources;
 		SoundSource* newSource = nullptr;
@@ -314,7 +322,7 @@ namespace TFE_Audio
 			newSource->finishedCallback = callback;
 			newSource->finishedUserData = userData;
 		}
-		MUTEX_UNLOCK(&s_mutex);
+		SDL_UnlockMutex(s_mutex);
 
 		return newSource;
 	}
@@ -348,29 +356,29 @@ namespace TFE_Audio
 			return;
 		}
 		
-		MUTEX_LOCK(&s_mutex);
+		SDL_LockMutex(s_mutex);
 			source->flags |= SND_FLAG_PLAYING;
 			if (looping) { source->flags |= SND_FLAG_LOOPING; }
 			source->sampleIndex = 0u;
-		MUTEX_UNLOCK(&s_mutex);
+		SDL_UnlockMutex(s_mutex);
 	}
 
 	void stopSource(SoundSource* source)
 	{
 		if (!source || s_nullDevice) { return; }
-		MUTEX_LOCK(&s_mutex);
+		SDL_LockMutex(s_mutex);
 			source->flags &= ~SND_FLAG_PLAYING;
-		MUTEX_UNLOCK(&s_mutex);
+		SDL_UnlockMutex(s_mutex);
 	}
 	
 	void freeSource(SoundSource* source)
 	{
 		if (!source || s_nullDevice) { return; }
-		MUTEX_LOCK(&s_mutex);
+		SDL_LockMutex(s_mutex);
 			source->flags &= ~SND_FLAG_PLAYING;
 			source->flags &= ~SND_FLAG_ACTIVE;
 			source->buffer = nullptr;
-		MUTEX_UNLOCK(&s_mutex);
+		SDL_UnlockMutex(s_mutex);
 	}
 
 	void setSourceVolume(SoundSource* source, f32 volume)
@@ -383,10 +391,10 @@ namespace TFE_Audio
 	void setSourceBuffer(SoundSource* source, const SoundBuffer* buffer)
 	{
 		if (s_nullDevice) { return; }
-		MUTEX_LOCK(&s_mutex);
+		SDL_LockMutex(s_mutex);
 			source->sampleIndex = 0u;
 			source->buffer = buffer;
-		MUTEX_UNLOCK(&s_mutex);
+		SDL_UnlockMutex(s_mutex);
 	}
 
 	bool isSourcePlaying(SoundSource* source)
@@ -447,18 +455,20 @@ namespace TFE_Audio
 	}
 			
 	// Audio callback
-	s32 audioCallback(void *outputBuffer, void* inputBuffer, u32 bufferSize, f64 streamTime, u32 status, void* userData)
+	static void audioCallback(void* userData, unsigned char* outputBuffer, int bufsize)
 	{
 		f32* buffer = (f32*)outputBuffer;
+		u32 bufferSize = (u32)bufsize;
+		u32 frames = bufferSize / (AUDIO_CHANNEL_COUNT * sizeof(f32));
 
 	#if AUDIO_TIMING == 1
 		u64 soundIterStart = TFE_System::getCurrentTimeInTicks();
 	#endif
 
 		// First clear samples
-		memset(buffer, 0, sizeof(f32)*bufferSize*AUDIO_CHANNEL_COUNT);
+		memset(buffer, 0, bufferSize);
 			   
-		MUTEX_LOCK(&s_mutex);
+		SDL_LockMutex(s_mutex);
 		// Then call the audio thread callback
 		if (s_audioThreadCallback && !s_paused)
 		{
@@ -493,7 +503,7 @@ namespace TFE_Audio
 			if (snd->volume < SND_CULL_VOLUME)
 			{
 				// Pretend we played the sound and handle looping.
-				snd->sampleIndex += bufferSize;
+				snd->sampleIndex += frames;
 				if (snd->sampleIndex >= sndBufferSize)
 				{
 					if (snd->flags&SND_FLAG_LOOPING)
@@ -514,7 +524,7 @@ namespace TFE_Audio
 			buffer = (f32*)outputBuffer;
 			// The sound may be split into multiple iterations if it loops or the loop
 			// may end early, once we reach the end.
-			for (u32 i = 0; i < bufferSize;)
+			for (u32 i = 0; i < frames;)
 			{
 				if (snd->sampleIndex >= sndBufferSize)
 				{
@@ -533,7 +543,7 @@ namespace TFE_Audio
 
 				const SoundDataType type = snd->buffer->type;
 				const u8* data = snd->buffer->data;
-				const u32 end = std::min(sndBufferSize, snd->sampleIndex + bufferSize - i);
+				const u32 end = std::min(sndBufferSize, snd->sampleIndex + frames - i);
 				u32 sIndex = snd->sampleIndex;
 				for (; sIndex < end; i++, sIndex++, buffer += 2)
 				{
@@ -550,14 +560,14 @@ namespace TFE_Audio
 		// Handle midi synthesis results.
 		if (!s_paused)
 		{
-			TFE_MidiPlayer::synthesizeMidi((f32*)outputBuffer, bufferSize, !s_silentAudioFrames);
+			TFE_MidiPlayer::synthesizeMidi((f32*)outputBuffer, frames, !s_silentAudioFrames);
 		}
 		if (s_silentAudioFrames > 0) { s_silentAudioFrames--; }
-		MUTEX_UNLOCK(&s_mutex);
+		SDL_UnlockMutex(s_mutex);
 
 		// Handle out of range audio samples.
 		buffer = (f32*)outputBuffer;
-		for (u32 i = 0; i < bufferSize; i++, buffer += 2)
+		for (u32 i = 0; i < frames; i++, buffer += 2)
 		{
 			const f32 valueLeft  = buffer[0];
 			const f32 valueRight = buffer[1];
@@ -588,10 +598,8 @@ namespace TFE_Audio
 		s_soundIterAve = s32(s_soundIterAveF);
 		s_soundIterMax = s32(s_soundIterMaxF);
 	#endif
-		
-		return 0;
 	}
-		
+
 	// Console functions.
 	void setSoundVolumeConsole(const ConsoleArgList& args)
 	{

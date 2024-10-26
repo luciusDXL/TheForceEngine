@@ -9,7 +9,6 @@
 #include <TFE_Game/saveSystem.h>
 #include <TFE_Game/reticle.h>
 #include <TFE_Jedi/InfSystem/infSystem.h>
-//#include <TFE_Editor/editor.h>
 #include <TFE_FileSystem/fileutil.h>
 #include <TFE_Audio/audioSystem.h>
 #include <TFE_FileSystem/paths.h>
@@ -27,14 +26,21 @@
 #include <TFE_Asset/imageAsset.h>
 #include <TFE_Ui/ui.h>
 #include <TFE_FrontEndUI/frontEndUi.h>
-#include <TFE_ForceScript/vm.h>
+#include <TFE_FrontEndUI/modLoader.h>
+#include <TFE_A11y/accessibility.h>
 #include <algorithm>
 #include <cinttypes>
 #include <time.h>
 #include <sys/types.h>
 #include <sys/timeb.h>
 
-// Replace with music system
+#if ENABLE_EDITOR == 1
+#include <TFE_Editor/editor.h>
+#endif
+#if ENABLE_FORCE_SCRIPT == 1
+#include <TFE_ForceScript/forceScript.h>
+#endif
+
 #include <TFE_Audio/midiPlayer.h>
 
 #ifdef _WIN32
@@ -43,6 +49,7 @@
 #ifdef min
 #undef min
 #undef max
+#pragma comment(lib, "SDL2main.lib")
 #endif
 #endif
 
@@ -55,8 +62,8 @@
 #define INSTALL_CRASH_HANDLER 0
 #endif
 
-#pragma comment(lib, "SDL2main.lib")
 using namespace TFE_Input;
+using namespace TFE_A11Y;
 
 static bool s_loop  = true;
 static bool s_nullAudioDevice = false;
@@ -122,9 +129,9 @@ void handleEvent(SDL_Event& Event)
 		} break;
 		case SDL_KEYDOWN:
 		{
-			if (Event.key.keysym.scancode && Event.key.repeat == 0)
+			if (Event.key.keysym.scancode)
 			{
-				TFE_Input::setKeyDown(KeyboardCode(Event.key.keysym.scancode));
+				TFE_Input::setKeyDown(KeyboardCode(Event.key.keysym.scancode), Event.key.repeat != 0);
 			}
 
 			if (Event.key.keysym.scancode)
@@ -154,7 +161,7 @@ void handleEvent(SDL_Event& Event)
 					TFE_Paths::appendPath(TFE_PathType::PATH_USER_DOCUMENTS, "Screenshots/", screenshotDir);
 										
 					char screenshotPath[TFE_MAX_PATH];
-					sprintf(screenshotPath, "%stfe_screenshot_%s_%" PRIu64 ".jpg", screenshotDir, s_screenshotTime, _screenshotIndex);
+					sprintf(screenshotPath, "%stfe_screenshot_%s_%" PRIu64 ".png", screenshotDir, s_screenshotTime, _screenshotIndex);
 					_screenshotIndex++;
 
 					TFE_RenderBackend::queueScreenshot(screenshotPath);
@@ -239,13 +246,11 @@ void handleEvent(SDL_Event& Event)
 
 bool sdlInit()
 {
-	// Audio is handled outside of SDL2.
-	// Using the Force Engine Audio system for sound mixing, FluidSynth for Midi handling and rtAudio for audio I/O.
-	const int code = SDL_Init(SDL_INIT_TIMER | SDL_INIT_VIDEO | SDL_INIT_EVENTS | SDL_INIT_GAMECONTROLLER);
+	const int code = SDL_Init(SDL_INIT_TIMER | SDL_INIT_VIDEO | SDL_INIT_EVENTS | SDL_INIT_GAMECONTROLLER | SDL_INIT_AUDIO);
 	if (code != 0) { return false; }
 
 	TFE_Settings_Window* windowSettings = TFE_Settings::getWindowSettings();
-	bool fullscreen    = windowSettings->fullscreen;
+	bool fullscreen    = windowSettings->fullscreen || TFE_Settings::getTempSettings()->forceFullscreen;
 	s_displayWidth     = windowSettings->width;
 	s_displayHeight    = windowSettings->height;
 	s_baseWindowWidth  = windowSettings->baseWidth;
@@ -293,6 +298,10 @@ bool sdlInit()
 	s_monitorWidth  = mode.w;
 	s_monitorHeight = mode.h;
 
+#ifdef SDL_HINT_APP_NAME  // SDL 2.0.18+
+	SDL_SetHint(SDL_HINT_APP_NAME, "The Force Engine");
+#endif
+
 	return true;
 }
 
@@ -303,10 +312,12 @@ void setAppState(AppState newState, int argc, char* argv[])
 {
 	const TFE_Settings_Graphics* config = TFE_Settings::getGraphicsSettings();
 
+#if ENABLE_EDITOR == 1
 	if (newState != APP_STATE_EDITOR)
 	{
-		//TFE_Editor::disable();
+		TFE_Editor::disable();
 	}
+#endif
 
 	switch (newState)
 	{
@@ -314,11 +325,12 @@ void setAppState(AppState newState, int argc, char* argv[])
 	case APP_STATE_SET_DEFAULTS:
 		break;
 	case APP_STATE_EDITOR:
+
 		if (validatePath())
 		{
-			//renderer->changeResolution(640, 480, false, TFE_Settings::getGraphicsSettings()->asyncFramebuffer, false);
-			// TFE_GameUi::updateUiResolution();
-			//TFE_Editor::enable(renderer);
+		#if ENABLE_EDITOR == 1
+			TFE_Editor::enable();
+		#endif
 		}
 		else
 		{
@@ -607,7 +619,11 @@ int main(int argc, char* argv[])
 	
 	// Setup the GPU Device and Window.
 	u32 windowFlags = 0;
-	if (windowSettings->fullscreen) { TFE_System::logWrite(LOG_MSG, "Display", "Fullscreen enabled."); windowFlags |= WINFLAG_FULLSCREEN; }
+	if (windowSettings->fullscreen || TFE_Settings::getTempSettings()->forceFullscreen)
+	{
+		TFE_System::logWrite(LOG_MSG, "Display", "Fullscreen enabled.");
+		windowFlags |= WINFLAG_FULLSCREEN;
+	}
 	if (graphics->vsync) { TFE_System::logWrite(LOG_MSG, "Display", "Vertical Sync enabled."); windowFlags |= WINFLAG_VSYNC; }
 	
 	WindowState windowState =
@@ -632,13 +648,13 @@ int main(int argc, char* argv[])
 	TFE_FrontEndUI::initConsole();
 	TFE_Audio::init(s_nullAudioDevice, TFE_Settings::getSoundSettings()->audioDevice);
 	TFE_MidiPlayer::init(TFE_Settings::getSoundSettings()->midiOutput, (MidiDeviceType)TFE_Settings::getSoundSettings()->midiType);
-	TFE_Polygon::init();
 	TFE_Image::init();
 	TFE_Palette::createDefault256();
 	TFE_FrontEndUI::init();
 	game_init();
 	inputMapping_startup();
 	TFE_SaveSystem::init();
+	TFE_A11Y::init();
 
 	// Uncomment to test memory region allocator.
 	// TFE_Memory::region_test();
@@ -651,10 +667,10 @@ int main(int argc, char* argv[])
 	reticle_init();
 
 	// Test
-	#ifdef VM_ENABLE
-		TFE_ForceScript::test();
+	#ifdef ENABLE_FORCE_SCRIPT
+	TFE_ForceScript::init();
 	#endif
-
+		
 	// Start up the game and skip the title screen.
 	if (firstRun)
 	{
@@ -672,6 +688,9 @@ int main(int argc, char* argv[])
 	// Setup the framelimiter.
 	TFE_System::frameLimiter_set(graphics->frameRateLimit);
 
+	// Start reading the mods immediately?
+	TFE_FrontEndUI::modLoader_read();
+
 	// Game loop
 	u32 frame = 0u;
 	bool showPerf = false;
@@ -685,8 +704,17 @@ int main(int argc, char* argv[])
 		bool enableRelative = TFE_Input::relativeModeEnabled();
 		if (enableRelative != relativeMode)
 		{
-			relativeMode = enableRelative;
-			SDL_SetRelativeMouseMode(relativeMode ? SDL_TRUE : SDL_FALSE);
+			static bool showRelativeErrorOnce = true;
+			const s32 result = SDL_SetRelativeMouseMode(enableRelative ? SDL_TRUE : SDL_FALSE);
+			if (result >= 0)
+			{
+				relativeMode = enableRelative;
+			}
+			else if (showRelativeErrorOnce)
+			{
+				TFE_System::logWrite(LOG_ERROR, "System", "Changing relative mouse mode failed!");
+				showRelativeErrorOnce = false;
+			}
 		}
 
 		// System events
@@ -747,6 +775,7 @@ int main(int argc, char* argv[])
 			}
 		}
 
+		if (TFE_A11Y::hasPendingFont()) { TFE_A11Y::loadPendingFont(); } // Can't load new fonts between TFE_Ui::begin() and TFE_Ui::render();
 		TFE_Ui::begin();
 		TFE_System::update();
 
@@ -819,16 +848,20 @@ int main(int argc, char* argv[])
 			}
 		}
 
+		#ifdef ENABLE_FORCE_SCRIPT
+			TFE_ForceScript::update();
+		#endif
+
 		const bool isConsoleOpen = TFE_FrontEndUI::isConsoleOpen();
 		bool endInputFrame = true;
 		if (s_curState == APP_STATE_EDITOR)
 		{
-			/*
+		#if ENABLE_EDITOR == 1
 			if (TFE_Editor::update(isConsoleOpen))
 			{
 				TFE_FrontEndUI::setAppState(APP_STATE_MENU);
 			}
-			*/
+		#endif
 		}
 		else if (s_curState == APP_STATE_GAME)
 		{
@@ -862,10 +895,12 @@ int main(int argc, char* argv[])
 		}
 
 		bool swap = s_curState != APP_STATE_EDITOR && (s_curState != APP_STATE_MENU || TFE_FrontEndUI::isConfigMenuOpen());
+	#if ENABLE_EDITOR == 1
 		if (s_curState == APP_STATE_EDITOR)
 		{
-			//swap = TFE_Editor::render();
+			swap = TFE_Editor::render();
 		}
+	#endif
 
 		// Blit the frame to the window and draw UI.
 		TFE_RenderBackend::swap(swap);
@@ -901,7 +936,6 @@ int main(int argc, char* argv[])
 	TFE_FrontEndUI::shutdown();
 	TFE_Audio::shutdown();
 	TFE_MidiPlayer::destroy();
-	TFE_Polygon::shutdown();
 	TFE_Image::shutdown();
 	TFE_Palette::freeAll();
 	TFE_RenderBackend::updateSettings();
@@ -910,6 +944,10 @@ int main(int argc, char* argv[])
 	TFE_RenderBackend::destroy();
 	TFE_SaveSystem::destroy();
 	SDL_Quit();
+
+	#ifdef ENABLE_FORCE_SCRIPT
+	TFE_ForceScript::destroy();
+	#endif
 		
 	TFE_System::logWrite(LOG_MSG, "Progam Flow", "The Force Engine Game Loop Ended.");
 	TFE_System::logClose();
@@ -936,6 +974,14 @@ void parseOption(const char* name, const std::vector<const char*>& values, bool 
 			// -noaudio
 			s_nullAudioDevice = true;
 		}
+		else if (strcasecmp(name, "fullscreen") == 0)
+		{
+			TFE_Settings::getTempSettings()->forceFullscreen = true;
+		}
+		else if (strcasecmp(name, "skip_load_delay") == 0)
+		{
+			TFE_Settings::getTempSettings()->skipLoadDelay = true;
+		}
 	}
 	else  // long names use the more traditional style of arguments which allow for multiple values.
 	{
@@ -953,6 +999,14 @@ void parseOption(const char* name, const std::vector<const char*>& values, bool 
 		{
 			// --noaudio
 			s_nullAudioDevice = true;
+		}
+		else if (strcasecmp(name, "fullscreen") == 0)
+		{
+			TFE_Settings::getTempSettings()->forceFullscreen = true;
+		}
+		else if (strcasecmp(name, "skip_load_delay") == 0)
+		{
+			TFE_Settings::getTempSettings()->skipLoadDelay = true;
 		}
 	}
 }

@@ -11,9 +11,9 @@
 namespace TFE_Jedi
 {
 	// Pack portal info into a 16-bit value.
-	#define PACK_PORTAL_INFO(offset, count) (u32(offset) | (u32(count) << 13u))
-	#define UNPACK_PORTAL_INFO_COUNT(info) (info >> 13u)
-	#define UNPACK_PORTAL_INFO_OFFSET(info) (info & ((1u << 13u) - 1u))
+	#define PACK_PORTAL_INFO(offset, count) (u32(offset) | (u32(count) << 16u))
+	#define UNPACK_PORTAL_INFO_COUNT(info) (info >> 16u)
+	#define UNPACK_PORTAL_INFO_OFFSET(info) (info & ((1u << 16u) - 1u))
 
 	enum SectorPass
 	{
@@ -54,6 +54,7 @@ namespace TFE_Jedi
 	void sdisplayList_addSegment(RSector* curSector, GPUCachedSector* cached, SegmentClipped* wallSeg, bool forceTreatAsSolid=false);
 	bool sdisplayList_addPortal(Vec3f p0, Vec3f p1, s32 parentPortalId);
 	void sdisplayList_draw(SectorPass passId);
+	void sdisplayList_fixupTrans();
 
 	s32  sdisplayList_getSize(SectorPass passId = SECTOR_PASS_OPAQUE);
 

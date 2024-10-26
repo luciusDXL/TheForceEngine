@@ -1,7 +1,6 @@
 #include "Shaders/grid.h"
 
 uniform vec3 GridOpacitySubGrid;
-uniform sampler2D filterMap;
 
 in vec2 Frag_UV;
 in vec3 Frag_Pos;
@@ -14,11 +13,12 @@ void main()
 {
 	vec3 outColor = vec3(0.0);
 	float outAlpha = 0.0;
+	float gridOpacity = GridOpacitySubGrid.x;
+	float gridSize    = GridOpacitySubGrid.y;
 
 	float viewFalloff = computeViewFalloff(View_Pos, View_Up);
-	drawFloorGridLevels(outColor, outAlpha, GridOpacitySubGrid.x, Frag_UV.xy, viewFalloff, Frag_Pos);
-	drawXZAxis(outColor, outAlpha, Frag_UV.xy, viewFalloff, Frag_Pos);
+	drawFloorGridLevels(outColor, outAlpha, gridSize, Frag_UV.xy, viewFalloff, Frag_Pos);
 	
-    Out_Color.rgb = outColor;
-	Out_Color.a   = outAlpha;
+    Out_Color.rgb = outColor * gridOpacity;
+	Out_Color.a   = outAlpha * gridOpacity;
 }

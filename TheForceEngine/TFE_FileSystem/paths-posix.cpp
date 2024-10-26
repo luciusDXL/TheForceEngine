@@ -9,6 +9,11 @@
 #include <deque>
 #include <string>
 
+namespace FileUtil {
+	extern bool existsNoCase(const char *filename);
+	extern char *findDirNoCase(const char *dn);
+}
+
 namespace TFE_Paths
 {
 	struct FileMapping
@@ -22,6 +27,8 @@ namespace TFE_Paths
 	static std::deque<std::string> s_searchPaths;
 	static std::deque<FileMapping> s_fileMappings;
 	static std::deque<std::string> s_systemPaths;	// TFE Support data paths
+
+	bool isPortableInstall();
 
 	void setPath(TFE_PathType pathType, const char* path)
 	{
@@ -83,9 +90,14 @@ namespace TFE_Paths
 	//  to debug (non-)issues.
 	bool setProgramDataPath(const char *append)
 	{
-		std::string s;
-
 		s_systemPaths.push_back(getPath(PATH_PROGRAM));
+		if (isPortableInstall())
+		{
+			s_paths[PATH_PROGRAM_DATA] = s_paths[PATH_PROGRAM];
+			return true;
+		}
+
+		std::string s;
 		s = std::string("/usr/local/share/") + append + "/";
 		s_systemPaths.push_back(s);
 		s = std::string("/usr/share/") + append + "/";
@@ -98,6 +110,12 @@ namespace TFE_Paths
 
 	bool setUserDocumentsPath(const char *append)
 	{
+		if (isPortableInstall())
+		{
+			s_paths[PATH_USER_DOCUMENTS] = s_paths[PATH_PROGRAM];
+			return true;
+		}
+
 		// ensure SetProgramDataPath() was called before
 		assert(!s_paths[PATH_PROGRAM_DATA].empty());
 
@@ -163,6 +181,11 @@ namespace TFE_Paths
 		for (auto it = s_systemPaths.begin(); it != s_systemPaths.end(); it++) {
 			sprintf(fullname, "%s%s", it->c_str(), fname);
 			if (FileUtil::existsNoCase(fullname)) {
+				strncpy(fname, fullname, TFE_MAX_PATH);
+				return true;
+			}
+			// is it a dir?
+			if (FileUtil::findDirNoCase(fullname)) {
 				strncpy(fname, fullname, TFE_MAX_PATH);
 				return true;
 			}
@@ -319,5 +342,13 @@ namespace TFE_Paths
 
 		// Finally admit defeat.
 		return false;
+	}
+
+	// Return true if we want to use a "portable" install - 
+	// aka all data such as screenshots, settings, etc. are stored in the
+	// TFE directory.
+	bool isPortableInstall()
+	{
+		return FileUtil::exists("settings.ini");
 	}
 }

@@ -19,6 +19,7 @@ namespace TFE_Input
 
 	u8 s_keyDown[KEY_COUNT] = { 0 };
 	u8 s_keyPressed[KEY_COUNT] = { 0 };
+	u8 s_keyPressedRepeat[KEY_COUNT] = { 0 };
 
 	char s_bufferedText[BUFFERED_TEXT_LEN];
 	u8 s_bufferedKey[KEY_COUNT];
@@ -58,6 +59,7 @@ namespace TFE_Input
 		memset(s_buttonPressed, 0, CONTROLLER_BUTTON_COUNT);
 		memset(s_mousePressed,  0, MBUTTON_COUNT);
 		memset(s_keyPressed,    0, KEY_COUNT);
+		memset(s_keyPressedRepeat, 0, KEY_COUNT);
 		memset(s_bufferedKey,   0, KEY_COUNT);
 		memset(s_bufferedText,  0, BUFFERED_TEXT_LEN);
 	}
@@ -82,11 +84,15 @@ namespace TFE_Input
 		s_buttonDown[button] = 0;
 	}
 
-	void setKeyDown(KeyboardCode key)
+	void setKeyDown(KeyboardCode key, bool repeat)
 	{
-		if (!s_keyDown[key])
+		if (!s_keyDown[key] && !repeat)
 		{
 			s_keyPressed[key] = 1;
+		}
+		if (!s_keyDown[key] || repeat)
+		{
+			s_keyPressedRepeat[key] = 1;
 		}
 		s_keyDown[key] = 1;
 	}
@@ -213,11 +219,23 @@ namespace TFE_Input
 		return s_keyPressed[key] != 0;
 	}
 
+	bool keyPressedWithRepeat(KeyboardCode key)
+	{
+		return s_keyPressedRepeat[key] != 0;
+	}
+
 	void clearKeyPressed(KeyboardCode key)
 	{
 		s_keyPressed[key] = 0;
+		s_keyPressedRepeat[key] = 0;
 	}
 
+	void clearMouseButtonPressed(MouseButton btn)
+	{
+		s_mouseDown[btn] = 0;
+		s_mousePressed[btn] = 0;
+	}
+		
 	KeyboardCode getKeyPressed()
 	{
 		for (s32 i = 0; i < KEY_COUNT; i++)

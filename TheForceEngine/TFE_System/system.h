@@ -7,9 +7,17 @@
 #include <ctype.h>
 #include "types.h"
 
-#define TFE_MAJOR_VERSION 0
-#define TFE_MINOR_VERSION 2
-#define TFE_BUILD_VERSION 1
+#define TFE_MAJOR_VERSION 1
+#define TFE_MINOR_VERSION 10
+#define TFE_BUILD_VERSION 0
+
+#if defined(_WIN32) || defined(BUILD_EDITOR)
+#define ENABLE_EDITOR 1
+#endif
+
+#if defined(_WIN32) || defined(BUILD_FORCE_SCRIPT)
+#define ENABLE_FORCE_SCRIPT 1
+#endif
 
 enum LogWriteType
 {
@@ -56,6 +64,7 @@ namespace TFE_System
 
 	// System
 	bool osShellExecute(const char* pathToExe, const char* exeDir, const char* param, bool waitForCompletion);
+	void postErrorMessageBox(const char* msg, const char* title);
 	void sleep(u32 sleepDeltaMS);
 
 	void postQuitMessage();

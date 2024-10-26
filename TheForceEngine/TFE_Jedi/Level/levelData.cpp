@@ -193,6 +193,8 @@ namespace TFE_Jedi
 				for (s32 s = 0; s < safeCount; s++)
 				{
 					Safe* safe = (Safe*)allocator_newItem(s_levelState.safeLoc);
+					if (!safe)
+						return;
 					level_serializeSafe(stream, safe);
 				}
 			}
@@ -206,6 +208,8 @@ namespace TFE_Jedi
 				for (s32 s = 0; s < ambientSoundCount; s++)
 				{
 					AmbientSound* sound = (AmbientSound*)allocator_newItem(s_levelState.ambientSounds);
+					if (!sound)
+						return;
 					level_serializeAmbientSound(stream, sound);
 				}
 				if (!s_levelIntState.ambientSoundTask)
@@ -241,6 +245,7 @@ namespace TFE_Jedi
 			// texBase[] remains unmodified for serialization, whereas textures[] can be modified with animated textures.
 			if (read)
 			{
+				if (texBase[i]) { texBase[i]->flags |= ENABLE_MIP_MAPS; }
 				textures[i] = texBase[i];
 			}
 			if (read && s_levelState.textures[i] && s_levelState.textures[i]->uvWidth == BM_ANIMATED_TEXTURE)
@@ -258,7 +263,7 @@ namespace TFE_Jedi
 			std::ptrdiff_t offset = (std::ptrdiff_t(texData) - std::ptrdiff_t(s_levelState.textures)) / (std::ptrdiff_t)sizeof(TextureData**);
 			if ((*texData)->animIndex >= 0)
 			{
-				const u8 frameIndex = (*texData)->frameIdx < 0 ? 0xfff : (u8)(*texData)->frameIdx;
+				const u8 frameIndex = (*texData)->frameIdx < 0 ? 0xff : (u8)(*texData)->frameIdx;
 				texIndex = LEVTEX_TYPE_ANM | (frameIndex << 4) | ((u32)(*texData)->animIndex << 12u);
 			}
 			else

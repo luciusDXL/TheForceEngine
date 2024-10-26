@@ -5,7 +5,7 @@
 #include <TFE_FileSystem/filestream.h>
 #include <TFE_FileSystem/paths.h>
 #include <TFE_RenderBackend/renderBackend.h>
-#include <GL/glew.h>
+#include "gl.h"
 #include <assert.h>
 #include <vector>
 #include <string>
@@ -27,6 +27,7 @@ namespace ShaderGL
 	static const GLchar* c_glslVersionString[] = { "#version 130\n", "#version 330\n", "#version 450\n" };
 	static std::vector<char> s_buffers[2];
 	static std::string s_defineString;
+	static std::string s_vertexFile, s_fragmentFile;
 
 	// If you get an error please report on github. You may try different GL context version or GLSL version. See GL<>GLSL version table at the top of this file.
 	bool CheckShader(GLuint handle, const char* desc)
@@ -36,7 +37,7 @@ namespace ShaderGL
 		glGetShaderiv(handle, GL_INFO_LOG_LENGTH, &log_length);
 		if ((GLboolean)status == GL_FALSE)
 		{
-			TFE_System::logWrite(LOG_ERROR, "Shader", "Failed to compile %s!\n", desc);
+			TFE_System::logWrite(LOG_ERROR, "Shader", "Failed to compile '%s'!\n", desc);
 		}
 
 		if (log_length > 1)
@@ -80,13 +81,16 @@ bool Shader::create(const char* vertexShaderGLSL, const char* fragmentShaderGLSL
 	u32 vertHandle = glCreateShader(GL_VERTEX_SHADER);
 	glShaderSource(vertHandle, 3, vertex_shader_with_version, NULL);
 	glCompileShader(vertHandle);
-	if (!ShaderGL::CheckShader(vertHandle, "vertex shader")) { return false; }
+	if (!ShaderGL::CheckShader(vertHandle, ShaderGL::s_vertexFile.c_str())) { return false; }
 
 	const GLchar* fragment_shader_with_version[3] = { ShaderGL::c_glslVersionString[m_shaderVersion], defineString ? defineString : "", fragmentShaderGLSL };
 	u32 fragHandle = glCreateShader(GL_FRAGMENT_SHADER);
 	glShaderSource(fragHandle, 3, fragment_shader_with_version, NULL);
 	glCompileShader(fragHandle);
-	if (!ShaderGL::CheckShader(fragHandle, "fragment shader")) { return false; }
+	if (!ShaderGL::CheckShader(fragHandle, ShaderGL::s_fragmentFile.c_str()))
+	{
+		return false;
+	}
 
 	m_gpuHandle = glCreateProgram();
 	glAttachShader(m_gpuHandle, vertHandle);
@@ -108,8 +112,11 @@ bool Shader::load(const char* vertexShaderFile, const char* fragmentShaderFile, 
 	ShaderGL::s_buffers[0].clear();
 	ShaderGL::s_buffers[1].clear();
 
-	GLSLParser::parseFile(vertexShaderFile, ShaderGL::s_buffers[0]);
+	GLSLParser::parseFile(vertexShaderFile,   ShaderGL::s_buffers[0]);
 	GLSLParser::parseFile(fragmentShaderFile, ShaderGL::s_buffers[1]);
+
+	ShaderGL::s_vertexFile = vertexShaderFile;
+	ShaderGL::s_fragmentFile = fragmentShaderFile;
 
 	ShaderGL::s_buffers[0].push_back(0);
 	ShaderGL::s_buffers[1].push_back(0);
@@ -230,6 +237,39 @@ void Shader::setVariable(s32 id, ShaderVariableType type, const f32* data)
 		break;
 	case SVT_MAT4x4:
 		glUniformMatrix4fv(id, 1, false, data);
+		break;
+	default:
+		TFE_System::logWrite(LOG_ERROR, "Shader", "Mismatched parameter type.");
+		assert(0);
+	}
+}
+
+void Shader::setVariableArray(s32 id, ShaderVariableType type, const f32* data, u32 count)
+{
+	if (id < 0) { return; }
+
+	switch (type)
+	{
+	case SVT_SCALAR:
+		glUniform1fv(id, count, data);
+		break;
+	case SVT_VEC2:
+		glUniform2fv(id, count, data);
+		break;
+	case SVT_VEC3:
+		glUniform3fv(id, count, data);
+		break;
+	case SVT_VEC4:
+		glUniform4fv(id, count, data);
+		break;
+	case SVT_MAT3x3:
+		glUniformMatrix3fv(id, count, false, data);
+		break;
+	case SVT_MAT4x3:
+		glUniformMatrix4x3fv(id, count, false, data);
+		break;
+	case SVT_MAT4x4:
+		glUniformMatrix4fv(id, count, false, data);
 		break;
 	default:
 		TFE_System::logWrite(LOG_ERROR, "Shader", "Mismatched parameter type.");

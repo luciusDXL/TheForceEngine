@@ -48,51 +48,20 @@ namespace TFE_SaveSystem
 			s_imageBufferSize[0] = size;
 		}
 		TFE_RenderBackend::captureScreenToMemory(s_imageBuffer[0]);
-
-		// Scale and crop the image to fit inside 426 x 240 (widescreen).
-		s64 scale = SAVE_IMAGE_HEIGHT * 65536 / displayInfo.height;
-		s64 invScale = displayInfo.height * 65536 / SAVE_IMAGE_HEIGHT;
-		s32 scaledWidth = s32((displayInfo.width * scale) >> 16ll);
-		s32 newWidth = SAVE_IMAGE_WIDTH, newHeight = SAVE_IMAGE_HEIGHT;
-
-		s32 dstOffset = 0;
-		s64 srcOffset = 0;
-		if (scaledWidth < newWidth)
-		{
-			dstOffset = (newWidth - scaledWidth) / 2;
-		}
-		else if (scaledWidth > newWidth)
-		{
-			srcOffset = (scaledWidth - newWidth) / 2;
-			srcOffset = srcOffset * invScale;
-		}
-
-		size_t newSize = newWidth * newHeight * 4;
-		if (newSize > s_imageBufferSize[1])
-		{
-			s_imageBuffer[1] = (u32*)realloc(s_imageBuffer[1], newSize);
-			s_imageBufferSize[1] = newSize;
-		}
-
-		const u32 *src;
-		u32* dst = s_imageBuffer[1];
-		memset(dst, 0, newWidth * newHeight * 4);
-
-		s64 u  = srcOffset, v = 0;
-		s64 du = invScale, dv = invScale;
-		for (s32 y = 0; y < newHeight; y++, v += dv, dst += newWidth)
-		{
-			u = srcOffset;
-			src = &s_imageBuffer[0][(v >> 16ll) * displayInfo.width];
-			for (s32 x = dstOffset; x < newWidth - dstOffset; x++, u += du)
-			{
-				dst[x] = src[u >> 16ll];
-			}
-		}
-
 		// Save to memory.
-		u8* png;
-		u32 pngSize = (u32)TFE_Image::writeImageToMemory(png, newWidth, newHeight, s_imageBuffer[1]);
+		u8* png = (u8*)malloc(SAVE_IMAGE_WIDTH * SAVE_IMAGE_HEIGHT * 4);
+		u32 pngSize = 0;
+		if (png)
+		{
+			pngSize = (u32)TFE_Image::writeImageToMemory(png, displayInfo.width, displayInfo.height,
+								 SAVE_IMAGE_WIDTH, SAVE_IMAGE_HEIGHT,
+								 s_imageBuffer[0]);
+		}
+		else
+		{
+			pngSize = 0;
+			png = (u8*)s_imageBuffer[0];
+		}
 
 		// Master version.
 		u32 version = SVER_CUR;
@@ -129,6 +98,7 @@ namespace TFE_SaveSystem
 		// Image.
 		stream->write(&pngSize);
 		stream->writeBuffer(png, pngSize);
+		free(png);
 	}
 
 	void loadHeader(Stream* stream, SaveHeader* header, const char* fileName)
@@ -176,10 +146,14 @@ namespace TFE_SaveSystem
 		}
 		stream->readBuffer(s_imageBuffer[0], pngSize);
 
-		Image image = { 0 };
-		image.data = header->imageData;
+		SDL_Surface* image;
 		TFE_Image::readImageFromMemory(&image, pngSize, s_imageBuffer[0]);
-		assert(image.width == SAVE_IMAGE_WIDTH && image.height == SAVE_IMAGE_HEIGHT);
+		if (image)
+		{
+			const u32 sz = SAVE_IMAGE_WIDTH * SAVE_IMAGE_HEIGHT * sizeof(u32);
+			memcpy(header->imageData, image->pixels, sz);
+			TFE_Image::free(image);
+		}
 	}
 
 	void populateSaveDirectory(std::vector<SaveHeader>& dir)
@@ -208,6 +182,7 @@ namespace TFE_SaveSystem
 		{
 			free(s_imageBuffer[i]);
 			s_imageBufferSize[i] = 0;
+			s_imageBuffer[i] = nullptr;
 		}
 	}
 

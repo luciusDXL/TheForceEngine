@@ -43,6 +43,14 @@ namespace TFE_Jedi
 		s32 pageCount = 0;				// Number of texture pages.
 		s32 reservedPages = 0;			// Number of reserved pages.
 		s32 reservedTexturesPacked = 0;
+		u32 bytesPerTexel = 1;
+		u32 pageSize;
+		bool trueColor = false;
+
+		// Mip maps.
+		u32 mipCount = 1;
+		u32 mipPadding;
+		u32 mipOffset[8];
 
 		// For debugging.
 		char name[64];
@@ -74,4 +82,7 @@ namespace TFE_Jedi
 	// The client must provide a 'getList' function to get a list of 'TextureInfo' (see above).
 	// Note this may be called multiple times on the same texture packer, new pages are created as needed.
 	s32 texturepacker_pack(TextureListCallback getList, AssetPool pool);
+
+	void texturepacker_setIndexStart(s32 colorIndexStart = -1);
+	void texturepacker_setConversionPalette(s32 index, s32 bpp, const u8* input);
 }  // TFE_Jedi

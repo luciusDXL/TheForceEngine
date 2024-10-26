@@ -42,6 +42,13 @@ namespace TFE_DarkForces
 		"FLY",
 		"NOCLIP",
 		"TESTER",
+		"ADDLIFE",
+		"SUBLIFE",
+		"CAT",      // Get 9 lives, obviously.
+		"DIE",      // Does just what it says.
+		"IMDEATH",  // Enemies die in one hit.
+		"HARDCORE", // Player dies in one hit.
+		"BRIGHT"    // All sectors fullbright.
 	};
 
 	char s_cheatString[32] = { 0 };

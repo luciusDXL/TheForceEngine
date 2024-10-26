@@ -40,10 +40,8 @@ namespace RClassic_Float
 
 	const u8* computeLighting(f32 depth, s32 lightOffset)
 	{
-		if (s_sectorAmbient >= MAX_LIGHT_LEVEL)
-		{
-			return nullptr;
-		}
+		if (s_sectorAmbient >= MAX_LIGHT_LEVEL)	{ return nullptr; }
+		if (s_fullBright) {	return &s_colorMap[(MAX_LIGHT_LEVEL - 1) << 8]; } // TFE fullbright cheat (LABRIGHT)
 		depth = max(depth, 0.0f);
 		s32 light = 0;
 

@@ -5,8 +5,9 @@ struct GMidiAsset;
 
 namespace TFE_MidiPlayer
 {
-	bool init(s32 midiDeviceIndex, MidiDeviceType type = MIDI_TYPE_SYSTEM);
+	bool init(s32 midiDeviceIndex, MidiDeviceType type = MIDI_TYPE_OPL3);
 	void setDeviceType(MidiDeviceType type);
+	void selectDeviceOutput(s32 output);
 	MidiDeviceType getDeviceType();
 	void destroy();
 
@@ -33,7 +34,7 @@ namespace TFE_MidiPlayer
 
 	void pauseThread();
 	void resumeThread();
-		
+
 	// Pause the midi player, which also stops all sound channels.
 	void pause();
 	// Resume midi playback from where it left off.

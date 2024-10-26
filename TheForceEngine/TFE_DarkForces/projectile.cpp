@@ -157,7 +157,14 @@ namespace TFE_DarkForces
 	Logic* createProjectile(ProjectileType type, RSector* sector, fixed16_16 x, fixed16_16 y, fixed16_16 z, SecObject* obj)
 	{
 		ProjectileLogic* projLogic = (ProjectileLogic*)allocator_newItem(s_projectiles);
+		if (!projLogic)
+			return nullptr;
 		SecObject* projObj = allocateObject();
+		if (!projObj)
+		{
+			allocator_deleteItem(s_projectiles, projLogic);
+			return nullptr;
+		}
 
 		projObj->entityFlags |= ETFLAG_PROJECTILE;
 		projObj->flags &= ~OBJ_FLAG_MOVABLE;
@@ -1592,6 +1599,8 @@ namespace TFE_DarkForces
 		else
 		{
 			proj = (ProjectileLogic*)allocator_newItem(s_projectiles);
+			if (!proj)
+				return;
 			logic = (Logic*)proj;
 
 			proj->logic.task = s_projectileTask;

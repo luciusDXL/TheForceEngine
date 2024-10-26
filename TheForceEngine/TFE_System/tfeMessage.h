@@ -1,9 +1,6 @@
 #pragma once
 //////////////////////////////////////////////////////////////////////
-// The Force Engine Profiler
-// Simple "zone" based profiler.
-// Add TFE_PROFILE_ENABLED to preprocessor defines in the build to enable.
-// Currently does not respect the call path, that is TODO.
+// Constants linked to custom HUD messages used by The Force Engine.
 //////////////////////////////////////////////////////////////////////
 
 #include "types.h"
@@ -16,6 +13,14 @@ enum TFE_Message
 	TFE_MSG_FLYMODE,
 	TFE_MSG_NOCLIP,
 	TFE_MSG_TESTER,
+	TFE_MSG_ADDLIFE,
+	TFE_MSG_ADDLIFEFAIL,
+	TFE_MSG_SUBLIFE,
+	TFE_MSG_CAT,
+	TFE_MSG_DIE,
+	TFE_MSG_ONEHITKILL,
+	TFE_MSG_HARDCORE,
+	TFE_MSG_FULLBRIGHT,
 	TFE_MSG_COUNT
 };
 

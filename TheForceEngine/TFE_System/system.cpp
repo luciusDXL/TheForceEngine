@@ -227,23 +227,19 @@ namespace TFE_System
 		return false;
 	}
 
+	void postErrorMessageBox(const char* msg, const char* title)
+	{
+		TFE_System::logWrite(LOG_ERROR, title, msg);
 #ifdef _WIN32
-	void sleep(u32 sleepDeltaMS)
-	{
-		Sleep(sleepDeltaMS);
-	}
-#elif defined __linux__
-	void sleep(u32 sleepDeltaMS)
-	{
-		struct timespec ts = {0, 0};
-		while (sleepDeltaMS >= 1000) {
-			ts.tv_sec += 1;
-			sleepDeltaMS -= 1000;
-		}
-		ts.tv_nsec = sleepDeltaMS * 1000000;
-		nanosleep(&ts, NULL);
-	}
+		// Output to a popup message box.
+		MessageBoxA(NULL, (LPCSTR)msg, (LPCSTR)title, MB_OK | MB_ICONERROR | MB_SYSTEMMODAL);
 #endif
+	}
+
+	void sleep(u32 sleepDeltaMS)
+	{
+		SDL_Delay(sleepDeltaMS);
+	}
 
 	void postQuitMessage()
 	{

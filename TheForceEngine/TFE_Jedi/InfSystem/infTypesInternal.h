@@ -1,5 +1,6 @@
 #pragma once
 #include <TFE_System/types.h>
+#include <TFE_DarkForces/sound.h>
 #include <TFE_Jedi/Level/rsector.h>
 #include <TFE_Jedi/Level/rwall.h>
 #include <TFE_Jedi/Level/robject.h>

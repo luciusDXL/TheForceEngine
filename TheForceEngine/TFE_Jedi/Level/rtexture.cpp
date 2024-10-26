@@ -5,11 +5,13 @@
 #include <TFE_System/system.h>
 #include <TFE_Archive/archive.h>
 #include <TFE_Asset/assetSystem.h>
+#include <TFE_FileSystem/fileutil.h>
 #include <TFE_FileSystem/paths.h>
 #include <TFE_FileSystem/filestream.h>
 #include <TFE_Jedi/Task/task.h>
 #include <TFE_Jedi/Serialization/serialization.h>
 #include <TFE_System/math.h>
+#include <TFE_Settings/settings.h>
 #include <unordered_map>
 
 using namespace TFE_DarkForces;
@@ -44,6 +46,8 @@ namespace TFE_Jedi
 
 	static TextureList  s_textureList[POOL_COUNT];
 	static TextureTable s_textureTable[POOL_COUNT];
+
+	static std::vector<std::string> s_coreAchiveNames;
 
 	void decompressColumn_Type1(const u8* src, u8* dst, s32 pixelCount);
 	void decompressColumn_Type2(const u8* src, u8* dst, s32 pixelCount);
@@ -140,6 +144,11 @@ namespace TFE_Jedi
 		return s_textureList[pool][index].texture;
 	}
 
+	const char* bitmap_getTextureName(s32 index, AssetPool pool)
+	{
+		return s_textureList[pool][index].name.c_str();
+	}
+
 	// Serialize only level textures.
 	void bitmap_serializeLevelTextures(Stream* stream)
 	{
@@ -197,6 +206,107 @@ namespace TFE_Jedi
 		return list;
 	}
 
+	void bitmap_loadHD(const char* name, TextureData* texData, s32 scaleFactor, AssetPool pool)
+	{
+		texData->scaleFactor = 1;
+		texData->hdAssetData = nullptr;
+		// Verify that the HD texture *can* be loaded first.
+		if (pool == POOL_LEVEL && !TFE_Settings::isHdAssetValid(name, HD_ASSET_TYPE_BM))
+		{
+			return;
+		}
+
+		char hdPath[TFE_MAX_PATH];
+		FileUtil::replaceExtension(name, "raw", hdPath);
+
+		// If the file doesn't exist, just return - there is no HD asset.
+		FilePath filepath;
+		if (!TFE_Paths::getFilePath(hdPath, &filepath))
+		{
+			return;
+		}
+		FileStream file;
+		if (!file.open(&filepath, Stream::MODE_READ))
+		{
+			return;
+		}
+
+		// Load the raw data from disk.
+		size_t size = file.getSize();
+		s_buffer.resize(size);
+		file.readBuffer(s_buffer.data(), (u32)size);
+		file.close();
+
+		// Process the data based on the base texture.
+		s32 width  = texData->width  * scaleFactor;
+		s32 height = texData->height * scaleFactor;
+		s32 frameCount = 1;
+		if (texData->uvWidth == BM_ANIMATED_TEXTURE)
+		{
+			const u8* base = texData->image + 2;
+			const u32* textureOffsets = (u32*)base;
+			const TextureData* frame0 = (TextureData*)(base + textureOffsets[0]);
+
+			width  = frame0->width  * scaleFactor;
+			height = frame0->height * scaleFactor;
+			frameCount = texData->uvHeight;
+		}
+
+		const s32 hdFrameSize = width * height * 4;
+		// Verify this is a valid texture.
+		if (size != hdFrameSize * frameCount)
+		{
+			return;
+		}
+
+		// Process the HD data.
+		texData->scaleFactor = scaleFactor;
+		texData->hdAssetData = (u8*)region_alloc(s_texState.memoryRegion, hdFrameSize * frameCount);
+		memset(texData->hdAssetData, 0, hdFrameSize * frameCount);
+		
+		u8* dstData = texData->hdAssetData;
+		const u8* srcData = s_buffer.data();
+		for (s32 i = 0; i < frameCount; i++)
+		{
+			for (u32 y = 0; y < height; y++)
+			{
+				memcpy(&dstData[y*width*4], &srcData[(height - y - 1)*width*4], width * 4);
+			}
+			dstData += hdFrameSize;
+			srcData += hdFrameSize;
+		}
+	}
+
+	void bitmap_setCoreArchives(const char** coreArchives, s32 count)
+	{
+		if (!coreArchives || count < 1) { return; }
+
+		s_coreAchiveNames.resize(count + 1);
+		for (s32 i = 0; i < count; i++)
+		{
+			s_coreAchiveNames[i] = coreArchives[i];
+		}
+		s_coreAchiveNames[count] = "enhanced.gob";
+	}
+
+	// This only checks a few names (5 I think) but is still doing a bunch of string compares.
+	// TODO: Add a "core archive" flag to the archives themselves.
+	bool isAssetCustom(const char* archiveName)
+	{
+		if (!archiveName) { return true; }
+
+		const s32 count = (s32)s_coreAchiveNames.size();
+		const std::string* names = s_coreAchiveNames.data();
+		for (s32 i = 0; i < count; i++)
+		{
+			if (strcasecmp(names[i].c_str(), archiveName) == 0)
+			{
+				return false;
+			}
+		}
+		return true;
+	}
+
 	TextureData* bitmap_load(const char* name, u32 decompress, AssetPool pool, bool addToCache)
 	{
 		// TFE: Keep track of per-level texture state for serialization.
@@ -225,7 +335,10 @@ namespace TFE_Jedi
 		file.close();
 
 		TextureData* texture = (TextureData*)region_alloc(s_texState.memoryRegion, sizeof(TextureData));
+		memset(texture, 0, sizeof(TextureData));
+
 		const u8* data = s_buffer.data();
+		const u8* end = data + size;
 		const u8* fheader = data;
 		data += 3;
 
@@ -249,7 +362,12 @@ namespace TFE_Jedi
 		texture->flags = readByte(data);
 		texture->logSizeY = readByte(data);
 		texture->compressed = readByte(data);
-		texture->animSetup = 0;
+		texture->palIndex = 1;
+		texture->animIndex = -1;
+		texture->frameIdx = -1;
+		texture->animPtr = nullptr;
+		
+		texture->flags &= OPACITY_MASK;
 		// value is ignored.
 		data++;
 		
@@ -269,6 +387,7 @@ namespace TFE_Jedi
 
 				const u32* columns = (u32*)data;
 				data += sizeof(u32) * texture->width;
+				assert(data <= end);
 
 				if (texture->compressed == 1)
 				{
@@ -297,10 +416,12 @@ namespace TFE_Jedi
 				texture->image = (u8*)region_alloc(s_texState.memoryRegion, texture->dataSize);
 				memcpy(texture->image, data, texture->dataSize);
 				data += texture->dataSize;
+				assert(data <= end);
 
 				texture->columns = (u32*)region_alloc(s_texState.memoryRegion, texture->width * sizeof(u32));
 				memcpy(texture->columns, data, texture->width * sizeof(u32));
 				data += texture->width * sizeof(u32);
+				assert(data <= end);
 			}
 		}
 		else
@@ -309,14 +430,17 @@ namespace TFE_Jedi
 			// Datasize, ignored.
 			data += 4;
 			texture->columns = nullptr;
+			assert(data <= end);
 
 			// Padding, ignored.
 			data += 12;
+			assert(data <= end);
 
 			// Allocate and read the BM image.
 			texture->image = (u8*)region_alloc(s_texState.memoryRegion, texture->dataSize);
 			memcpy(texture->image, data, texture->dataSize);
 			data += texture->dataSize;
+			assert(data <= end);
 		}
 
 		// Add the texture to the level texture cache if appropriate.
@@ -327,9 +451,31 @@ namespace TFE_Jedi
 			s_textureTable[pool][name] = index;
 		}
 
-		texture->animIndex = -1;
-		texture->frameIdx = -1;
-		texture->animPtr = nullptr;
+		// Determine if a texture is "custom" or not, custom textures do not use HD Assets.
+		bool isCustomAsset = false;
+		if (filepath.archive)
+		{
+			const char* path = filepath.archive->getPath();
+			// Memory archive, from a zip file.
+			if (!path || path[0] == 0)
+			{
+				isCustomAsset = true;
+			}
+			// Regular archive path.
+			else
+			{
+				isCustomAsset = isAssetCustom(filepath.archive->getName());
+			}
+		}
+		if (!isCustomAsset)
+		{
+			bitmap_loadHD(name, texture, 2, pool);
+		}
+		else
+		{
+			texture->scaleFactor = 1;
+			texture->hdAssetData = nullptr;
+		}
 
 		return texture;
 	}
@@ -429,11 +575,16 @@ namespace TFE_Jedi
 
 			// Allocate and read the BM image.
 			texture->image = (u8*)malloc(texture->dataSize);
-			if (texture->image)
+			if (texture->image && intptr_t((u8*)data - (u8*)fheader) + texture->dataSize <= (intptr_t)size)
 			{
 				memcpy(texture->image, data, texture->dataSize);
 			}
-			data += texture->dataSize;
+			else
+			{
+				// Invalid data.
+				free(texture);
+				return nullptr;
+			}
 		}
 
 		return texture;
@@ -449,6 +600,8 @@ namespace TFE_Jedi
 		TextureData* tex = *texture;
 		frameRate = tex->image[0];
 		u8 animatedId = tex->image[1];
+		// TFE
+		bool enableMips = (tex->flags & ENABLE_MIP_MAPS) != 0;
 
 		// if animatedId != DF_ANIM_ID, then this is not a properly setup animated texture.
 		if (animatedId != DF_ANIM_ID)
@@ -461,6 +614,8 @@ namespace TFE_Jedi
 		// In the original DOS code, this is directly set to pointers. But since TFE is compiled as 64-bit, pointers are not the correct size.
 		const u32* textureOffsets = (u32*)(tex->image + 2);
 		AnimatedTexture* anim = (AnimatedTexture*)allocator_newItem(s_texState.textureAnimAlloc);
+		if (!anim)
+			return nullptr;
 
 		// 64 bit pointers are larger than the offsets, so we have to allocate more space (for now).
 		anim->frame = 0;
@@ -471,9 +626,11 @@ namespace TFE_Jedi
 		anim->frameList = (TextureData**)level_alloc(sizeof(TextureData**) * anim->count);
 		// Allocate frame memory here since load-in-place does not work because structure size changes.
 		TextureData* outFrames = (TextureData*)level_alloc(sizeof(TextureData) * anim->count);
+		memset(outFrames, 0, sizeof(TextureData) * anim->count);
 		assert(anim->frameList);
 
 		const u8* base = tex->image + 2;
+		const s64 imageBase = s64(tex->image);
 		for (s32 i = 0; i < anim->count; i++)
 		{
 			const TextureData* frame = (TextureData*)(base + textureOffsets[i]);
@@ -487,8 +644,14 @@ namespace TFE_Jedi
 
 			// Allocate an image buffer since everything no longer fits nicely.
 			outFrames[i].image = (u8*)level_alloc(outFrames[i].width * outFrames[i].height);
-			memcpy(outFrames[i].image, (u8*)frame + 0x1c, outFrames[i].width * outFrames[i].height);
-
+			memset(outFrames[i].image, 0, outFrames[i].width * outFrames[i].height);
+			
+			// Verify that we don't read past the end of the buffer.
+			const s64 curOffset = s64((u8*)frame + 0x1c - imageBase);
+			const s64 maxSize = tex->dataSize - curOffset;
+			const s64 sizeToCopy = max(0, min(maxSize, outFrames[i].width * outFrames[i].height));
+			memcpy(outFrames[i].image, (u8*)frame + 0x1c, sizeToCopy);
+			
 			// We have to make sure the structure offsets line up with DOS...
 			outFrames[i].flags = *((u8*)frame + 0x18);
 			outFrames[i].compressed = *((u8*)frame + 0x19);
@@ -496,7 +659,14 @@ namespace TFE_Jedi
 			outFrames[i].frameIdx = i;
 			outFrames[i].animPtr = anim;
 			outFrames[i].animSetup = 1;
+			outFrames[i].palIndex = 1;
 			outFrames[i].columns = nullptr;
+
+			outFrames[i].flags &= OPACITY_MASK;
+			if (enableMips)
+			{
+				outFrames[i].flags |= ENABLE_MIP_MAPS;
+			}
 
 			anim->frameList[i] = &outFrames[i];
 		}

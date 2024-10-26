@@ -83,6 +83,12 @@ namespace TFE_DarkForces
 	extern s32 s_weaponLight;
 	extern s32 s_baseAtten;
 	extern s32 s_invincibility;
+	extern JBool s_limitStepHeight;
+	extern JBool s_smallModeEnabled;
+	extern JBool s_flyMode;
+	extern JBool s_noclip;
+	extern JBool s_oneHitKillEnabled;
+	extern JBool s_instaDeathEnabled;
 	extern fixed16_16 s_gravityAccel;
 	extern JBool s_weaponFiring;
 	extern JBool s_weaponFiringSec;
@@ -152,7 +158,7 @@ namespace TFE_DarkForces
 	void computeDamagePushVelocity(ProjectileLogic* proj, vec3_fixed* vel);
 
 	void cheat_teleport();
-	void cheat_enableNoheightCheck();
+	void cheat_toggleHeightCheck();
 	void cheat_bugMode();
 	void cheat_pauseAI();
 	void cheat_postal();
@@ -165,6 +171,12 @@ namespace TFE_DarkForces
 	void cheat_fly();
 	void cheat_noclip();
 	void cheat_tester();
+	void cheat_addLife();
+	void cheat_subLife();
+	void cheat_maxLives();
+	void cheat_die();
+	void cheat_oneHitKill();
+	void cheat_instaDeath();
 
 	// Serialization
 	void playerLogic_serialize(Logic*& logic, SecObject* obj, Stream* stream);

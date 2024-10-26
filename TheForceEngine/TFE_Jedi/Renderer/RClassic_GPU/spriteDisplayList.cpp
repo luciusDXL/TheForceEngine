@@ -131,6 +131,10 @@ namespace TFE_Jedi
 		}
 
 		const WaxCell* cell = WAX_CellPtr(drawFrame->basePtr, drawFrame->frame);
+		if (!cell)
+		{
+			return;
+		}
 		assert(cell->textureId >= 0 && cell->textureId < 32768);
 
 		s32 flip = drawFrame->frame->flip ? 1 : 0;
@@ -180,7 +184,7 @@ namespace TFE_Jedi
 		s_displayListTexIdTextureGPU.bind(s_texIdTextureIndex);
 		objectPortalPlanes_bind(s_planesIndex);
 
-		TFE_RenderBackend::drawIndexedTriangles(2 * s_displayListCount, sizeof(u16));
+		TFE_RenderBackend::drawIndexedTriangles(2 * s_displayListCount, sizeof(u32));
 
 		s_displayListPosXZTextureGPU.unbind(s_posXZTextureIndex);
 		s_displayListPosYUTextureGPU.unbind(s_posYUTextureIndex);

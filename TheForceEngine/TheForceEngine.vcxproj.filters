@@ -8,18 +8,6 @@
     <Filter Include="Source">
       <UniqueIdentifier>{e4bc45f2-bc7c-4cea-bb69-be1fabdac498}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source\glew">
-      <UniqueIdentifier>{1228fb2e-d026-4eee-81f6-0d7df8c63143}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\glew\include">
-      <UniqueIdentifier>{b38077d4-3376-4bb4-ad37-f702496170b2}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\glew\src">
-      <UniqueIdentifier>{890e91d0-5f1b-4e50-bc46-c1e0a808a2ab}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\glew\include\GL">
-      <UniqueIdentifier>{1a85b53b-2818-4bf6-8676-6001bcaeb370}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source\TFE_System">
       <UniqueIdentifier>{ebf71e02-80ad-4702-a373-012052d406bc}</UniqueIdentifier>
     </Filter>
@@ -70,12 +58,6 @@
     </Filter>
     <Filter Include="Source\TFE_FrontEndUI">
       <UniqueIdentifier>{a8504c90-e13a-4a84-b3dc-faa166cfaabf}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\TFE_System\Threads">
-      <UniqueIdentifier>{f874d79b-66c7-41e5-a393-96ab92bea739}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\TFE_System\Threads\Win32">
-      <UniqueIdentifier>{1389f658-d350-4b30-91ca-293ec673341e}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\TFE_PostProcess">
       <UniqueIdentifier>{17a1b5a3-c20e-4777-bd0e-2774b8180e3e}</UniqueIdentifier>
@@ -155,15 +137,6 @@
     <Filter Include="Source\TFE_ForceScript">
       <UniqueIdentifier>{a70701f9-f711-4157-8ecd-e6719c505126}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source\TFE_ForceScript\asmjit">
-      <UniqueIdentifier>{25515132-b7a7-4feb-ad47-5aa9d3be1d1c}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\TFE_ForceScript\asmjit\core">
-      <UniqueIdentifier>{0a45dbde-7cd4-4710-958d-36bce76ab258}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\TFE_ForceScript\asmjit\x86">
-      <UniqueIdentifier>{f83126e9-8bef-43c5-9c86-5a1c46a26708}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source\TFE_Settings">
       <UniqueIdentifier>{ef6de83e-9331-4ec3-a8e7-1af08d047a9d}</UniqueIdentifier>
     </Filter>
@@ -176,6 +149,51 @@
     <Filter Include="Source\TFE_Audio\MidiSynth">
       <UniqueIdentifier>{92bc3a8b-84cf-4313-928e-cad926435b95}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\TFE_A11y">
+      <UniqueIdentifier>{5c2d10d7-1c36-45ae-9929-871859cf24b7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\TFE_Editor">
+      <UniqueIdentifier>{7f1d4b6d-31c7-431d-8458-e47f7949c742}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\TFE_Editor\EditorAsset">
+      <UniqueIdentifier>{59028c8c-f700-4749-b808-6603d9161958}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\TFE_Editor\AssetBrowser">
+      <UniqueIdentifier>{39aec0b3-0a4e-4584-989b-a78fd6583de5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\TFE_ForceScript\Angelscript">
+      <UniqueIdentifier>{c13790bd-e0c3-402a-a2e0-d33542d9a0c3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\TFE_ForceScript\Angelscript\add_on">
+      <UniqueIdentifier>{3fee4fb4-8992-40df-9ee8-5eb225a89484}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\TFE_ForceScript\Angelscript\angelscript">
+      <UniqueIdentifier>{f0c1002b-87e8-40c2-b7da-790e6398a8a8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\TFE_ForceScript\Angelscript\add_on\scriptarray">
+      <UniqueIdentifier>{4ea8f0e2-2268-4a55-bd0a-fc5125ef8471}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\TFE_ForceScript\Angelscript\add_on\scriptbuilder">
+      <UniqueIdentifier>{0dd08bcb-7f4e-42ff-bbce-d1bf2d5bceb6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\TFE_ForceScript\Angelscript\add_on\scriptstdstring">
+      <UniqueIdentifier>{ca2ff737-6f93-4fdf-a8da-159b86e48d3c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\TFE_ForceScript\Angelscript\angelscript\include">
+      <UniqueIdentifier>{0e4d6216-482b-495c-8b88-e1f75556d747}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\TFE_ForceScript\Angelscript\angelscript\source">
+      <UniqueIdentifier>{eda60bca-8bac-41ef-815b-769600dea4ef}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\TFE_Editor\LevelEditor">
+      <UniqueIdentifier>{d60dce85-e5d8-42e7-9e10-db1ae940accb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\TFE_Editor\LevelEditor\Rendering">
+      <UniqueIdentifier>{8e854a2b-4fb2-4f86-875a-daf00ab6b35a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\TFE_Editor\LevelEditor\Scripting">
+      <UniqueIdentifier>{edd9ea1a-0570-4524-a9d7-f703a2c09cad}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="main.h">
@@ -186,15 +204,6 @@
     </ClInclude>
     <ClInclude Include="targetver.h">
       <Filter>Source</Filter>
-    </ClInclude>
-    <ClInclude Include="glew\include\GL\glew.h">
-      <Filter>Source\glew\include\GL</Filter>
-    </ClInclude>
-    <ClInclude Include="glew\include\GL\glxew.h">
-      <Filter>Source\glew\include\GL</Filter>
-    </ClInclude>
-    <ClInclude Include="glew\include\GL\wglew.h">
-      <Filter>Source\glew\include\GL</Filter>
     </ClInclude>
     <ClInclude Include="TFE_System\types.h">
       <Filter>Source\TFE_System</Filter>
@@ -212,9 +221,6 @@
       <Filter>Source\TFE_Ui\imGUI</Filter>
     </ClInclude>
     <ClInclude Include="TFE_Ui\imGUI\imgui_impl_opengl3.h">
-      <Filter>Source\TFE_Ui\imGUI</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_Ui\imGUI\imgui_impl_sdl.h">
       <Filter>Source\TFE_Ui\imGUI</Filter>
     </ClInclude>
     <ClInclude Include="TFE_Ui\imGUI\imgui_internal.h">
@@ -298,9 +304,6 @@
     <ClInclude Include="TFE_Polygon\clipper.hpp">
       <Filter>Source\TFE_Polygon</Filter>
     </ClInclude>
-    <ClInclude Include="TFE_Polygon\MPE_fastpoly2tri.h">
-      <Filter>Source\TFE_Polygon</Filter>
-    </ClInclude>
     <ClInclude Include="TFE_Polygon\polygon.h">
       <Filter>Source\TFE_Polygon</Filter>
     </ClInclude>
@@ -343,9 +346,6 @@
     <ClInclude Include="TFE_Audio\audioSystem.h">
       <Filter>Source\TFE_Audio</Filter>
     </ClInclude>
-    <ClInclude Include="TFE_Audio\RtAudio.h">
-      <Filter>Source\TFE_Audio</Filter>
-    </ClInclude>
     <ClInclude Include="TFE_FrontEndUI\frontEndUi.h">
       <Filter>Source\TFE_FrontEndUI</Filter>
     </ClInclude>
@@ -360,24 +360,6 @@
     </ClInclude>
     <ClInclude Include="TFE_Audio\midiPlayer.h">
       <Filter>Source\TFE_Audio</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_System\Threads\mutex.h">
-      <Filter>Source\TFE_System\Threads</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_System\Threads\signal.h">
-      <Filter>Source\TFE_System\Threads</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_System\Threads\thread.h">
-      <Filter>Source\TFE_System\Threads</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_System\Threads\Win32\mutexWin32.h">
-      <Filter>Source\TFE_System\Threads\Win32</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_System\Threads\Win32\signalWin32.h">
-      <Filter>Source\TFE_System\Threads\Win32</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_System\Threads\Win32\threadWin32.h">
-      <Filter>Source\TFE_System\Threads\Win32</Filter>
     </ClInclude>
     <ClInclude Include="TFE_FrontEndUI\console.h">
       <Filter>Source\TFE_FrontEndUI</Filter>
@@ -790,9 +772,6 @@
     <ClInclude Include="TFE_FrontEndUI\modLoader.h">
       <Filter>Source\TFE_FrontEndUI</Filter>
     </ClInclude>
-    <ClInclude Include="TFE_FrontEndUI\editorTexture.h">
-      <Filter>Source\TFE_FrontEndUI</Filter>
-    </ClInclude>
     <ClInclude Include="TFE_DarkForces\Landru\lactor.h">
       <Filter>Source\TFE_DarkForces\Landru</Filter>
     </ClInclude>
@@ -955,228 +934,6 @@
     <ClInclude Include="TFE_Jedi\Renderer\textureInfo.h">
       <Filter>Source\TFE_Jedi\Renderer</Filter>
     </ClInclude>
-    <ClInclude Include="TFE_ForceScript\jit.h">
-      <Filter>Source\TFE_ForceScript</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_ForceScript\value.h">
-      <Filter>Source\TFE_ForceScript</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_ForceScript\vm.h">
-      <Filter>Source\TFE_ForceScript</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_ForceScript\vmConfig.h">
-      <Filter>Source\TFE_ForceScript</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_ForceScript\vmOps.h">
-      <Filter>Source\TFE_ForceScript</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_ForceScript\asmjit\asmjit.h">
-      <Filter>Source\TFE_ForceScript\asmjit</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_ForceScript\asmjit\asmjit-scope-begin.h">
-      <Filter>Source\TFE_ForceScript\asmjit</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_ForceScript\asmjit\asmjit-scope-end.h">
-      <Filter>Source\TFE_ForceScript\asmjit</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_ForceScript\asmjit\core.h">
-      <Filter>Source\TFE_ForceScript\asmjit</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_ForceScript\asmjit\x86.h">
-      <Filter>Source\TFE_ForceScript\asmjit</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_ForceScript\asmjit\core\api-build_p.h">
-      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_ForceScript\asmjit\core\api-config.h">
-      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_ForceScript\asmjit\core\archcommons.h">
-      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_ForceScript\asmjit\core\archtraits.h">
-      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_ForceScript\asmjit\core\assembler.h">
-      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_ForceScript\asmjit\core\builder.h">
-      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_ForceScript\asmjit\core\codebuffer.h">
-      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_ForceScript\asmjit\core\codeholder.h">
-      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_ForceScript\asmjit\core\codewriter_p.h">
-      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_ForceScript\asmjit\core\compiler.h">
-      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_ForceScript\asmjit\core\compilerdefs.h">
-      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_ForceScript\asmjit\core\constpool.h">
-      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_ForceScript\asmjit\core\cpuinfo.h">
-      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_ForceScript\asmjit\core\emithelper_p.h">
-      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_ForceScript\asmjit\core\emitter.h">
-      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_ForceScript\asmjit\core\emitterutils_p.h">
-      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_ForceScript\asmjit\core\environment.h">
-      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_ForceScript\asmjit\core\errorhandler.h">
-      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_ForceScript\asmjit\core\formatter.h">
-      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_ForceScript\asmjit\core\formatter_p.h">
-      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_ForceScript\asmjit\core\func.h">
-      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_ForceScript\asmjit\core\funcargscontext_p.h">
-      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_ForceScript\asmjit\core\globals.h">
-      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_ForceScript\asmjit\core\inst.h">
-      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_ForceScript\asmjit\core\jitallocator.h">
-      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_ForceScript\asmjit\core\jitruntime.h">
-      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_ForceScript\asmjit\core\logger.h">
-      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_ForceScript\asmjit\core\misc_p.h">
-      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_ForceScript\asmjit\core\operand.h">
-      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_ForceScript\asmjit\core\osutils.h">
-      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_ForceScript\asmjit\core\osutils_p.h">
-      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_ForceScript\asmjit\core\raassignment_p.h">
-      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_ForceScript\asmjit\core\rabuilders_p.h">
-      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_ForceScript\asmjit\core\radefs_p.h">
-      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_ForceScript\asmjit\core\ralocal_p.h">
-      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_ForceScript\asmjit\core\rapass_p.h">
-      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_ForceScript\asmjit\core\rastack_p.h">
-      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_ForceScript\asmjit\core\string.h">
-      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_ForceScript\asmjit\core\support.h">
-      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_ForceScript\asmjit\core\target.h">
-      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_ForceScript\asmjit\core\type.h">
-      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_ForceScript\asmjit\core\virtmem.h">
-      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_ForceScript\asmjit\core\zone.h">
-      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_ForceScript\asmjit\core\zonehash.h">
-      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_ForceScript\asmjit\core\zonelist.h">
-      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_ForceScript\asmjit\core\zonestack.h">
-      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_ForceScript\asmjit\core\zonestring.h">
-      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_ForceScript\asmjit\core\zonetree.h">
-      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_ForceScript\asmjit\core\zonevector.h">
-      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_ForceScript\asmjit\x86\x86archtraits_p.h">
-      <Filter>Source\TFE_ForceScript\asmjit\x86</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_ForceScript\asmjit\x86\x86assembler.h">
-      <Filter>Source\TFE_ForceScript\asmjit\x86</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_ForceScript\asmjit\x86\x86builder.h">
-      <Filter>Source\TFE_ForceScript\asmjit\x86</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_ForceScript\asmjit\x86\x86compiler.h">
-      <Filter>Source\TFE_ForceScript\asmjit\x86</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_ForceScript\asmjit\x86\x86emithelper_p.h">
-      <Filter>Source\TFE_ForceScript\asmjit\x86</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_ForceScript\asmjit\x86\x86emitter.h">
-      <Filter>Source\TFE_ForceScript\asmjit\x86</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_ForceScript\asmjit\x86\x86formatter_p.h">
-      <Filter>Source\TFE_ForceScript\asmjit\x86</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_ForceScript\asmjit\x86\x86func_p.h">
-      <Filter>Source\TFE_ForceScript\asmjit\x86</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_ForceScript\asmjit\x86\x86globals.h">
-      <Filter>Source\TFE_ForceScript\asmjit\x86</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_ForceScript\asmjit\x86\x86instapi_p.h">
-      <Filter>Source\TFE_ForceScript\asmjit\x86</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_ForceScript\asmjit\x86\x86instdb.h">
-      <Filter>Source\TFE_ForceScript\asmjit\x86</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_ForceScript\asmjit\x86\x86instdb_p.h">
-      <Filter>Source\TFE_ForceScript\asmjit\x86</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_ForceScript\asmjit\x86\x86opcode_p.h">
-      <Filter>Source\TFE_ForceScript\asmjit\x86</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_ForceScript\asmjit\x86\x86operand.h">
-      <Filter>Source\TFE_ForceScript\asmjit\x86</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_ForceScript\asmjit\x86\x86rapass_p.h">
-      <Filter>Source\TFE_ForceScript\asmjit\x86</Filter>
-    </ClInclude>
     <ClInclude Include="TFE_Jedi\InfSystem\infState.h">
       <Filter>Source\TFE_Jedi\InfSystem</Filter>
     </ClInclude>
@@ -1249,13 +1006,403 @@
     <ClInclude Include="TFE_Audio\MidiSynth\fm4Tables.h">
       <Filter>Source\TFE_Audio\MidiSynth</Filter>
     </ClInclude>
+    <ClInclude Include="TFE_A11y\accessibility.h">
+      <Filter>Source\TFE_A11y</Filter>
+    </ClInclude>
+    <ClInclude Include="Shaders\textureSampleFunc.h">
+      <Filter>Source\Shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="Shaders\lighting.h">
+      <Filter>Source\Shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="Shaders\filter.h">
+      <Filter>Source\Shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_PostProcess\bloomThreshold.h">
+      <Filter>Source\TFE_PostProcess</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_PostProcess\bloomDownsample.h">
+      <Filter>Source\TFE_PostProcess</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_PostProcess\bloomMerge.h">
+      <Filter>Source\TFE_PostProcess</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Jedi\Level\levelBin.h">
+      <Filter>Source\TFE_Jedi\Level</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_A11y\filePathList.h">
+      <Filter>Source\TFE_A11y</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Editor\editor.h">
+      <Filter>Source\TFE_Editor</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_FrontEndUI\uiTexture.h">
+      <Filter>Source\TFE_FrontEndUI</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Editor\editorConfig.h">
+      <Filter>Source\TFE_Editor</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Editor\EditorAsset\editorAsset.h">
+      <Filter>Source\TFE_Editor\EditorAsset</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Editor\EditorAsset\editorColormap.h">
+      <Filter>Source\TFE_Editor\EditorAsset</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Editor\EditorAsset\editorFrame.h">
+      <Filter>Source\TFE_Editor\EditorAsset</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Editor\EditorAsset\editorLevelPreview.h">
+      <Filter>Source\TFE_Editor\EditorAsset</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Editor\EditorAsset\editorObj3D.h">
+      <Filter>Source\TFE_Editor\EditorAsset</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Editor\EditorAsset\editorSprite.h">
+      <Filter>Source\TFE_Editor\EditorAsset</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Editor\EditorAsset\editorTexture.h">
+      <Filter>Source\TFE_Editor\EditorAsset</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Editor\AssetBrowser\assetBrowser.h">
+      <Filter>Source\TFE_Editor\AssetBrowser</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Editor\editorProject.h">
+      <Filter>Source\TFE_Editor</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Editor\errorMessages.h">
+      <Filter>Source\TFE_Editor</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Editor\editorResources.h">
+      <Filter>Source\TFE_Editor</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_System\iniParser.h">
+      <Filter>Source\TFE_System</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Editor\editorLevel.h">
+      <Filter>Source\TFE_Editor</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\forceScript.h">
+      <Filter>Source\TFE_ForceScript</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\Angelscript\add_on\scriptarray\scriptarray.h">
+      <Filter>Source\TFE_ForceScript\Angelscript\add_on\scriptarray</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\Angelscript\add_on\scriptbuilder\scriptbuilder.h">
+      <Filter>Source\TFE_ForceScript\Angelscript\add_on\scriptbuilder</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\Angelscript\add_on\scriptstdstring\scriptstdstring.h">
+      <Filter>Source\TFE_ForceScript\Angelscript\add_on\scriptstdstring</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\Angelscript\angelscript\include\angelscript.h">
+      <Filter>Source\TFE_ForceScript\Angelscript\angelscript\include</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\Angelscript\angelscript\source\as_array.h">
+      <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\Angelscript\angelscript\source\as_atomic.h">
+      <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\Angelscript\angelscript\source\as_builder.h">
+      <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\Angelscript\angelscript\source\as_bytecode.h">
+      <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\Angelscript\angelscript\source\as_callfunc.h">
+      <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\Angelscript\angelscript\source\as_compiler.h">
+      <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\Angelscript\angelscript\source\as_config.h">
+      <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\Angelscript\angelscript\source\as_configgroup.h">
+      <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\Angelscript\angelscript\source\as_context.h">
+      <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\Angelscript\angelscript\source\as_criticalsection.h">
+      <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\Angelscript\angelscript\source\as_datatype.h">
+      <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\Angelscript\angelscript\source\as_debug.h">
+      <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\Angelscript\angelscript\source\as_gc.h">
+      <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\Angelscript\angelscript\source\as_generic.h">
+      <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\Angelscript\angelscript\source\as_map.h">
+      <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\Angelscript\angelscript\source\as_memory.h">
+      <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\Angelscript\angelscript\source\as_module.h">
+      <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\Angelscript\angelscript\source\as_namespace.h">
+      <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\Angelscript\angelscript\source\as_objecttype.h">
+      <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\Angelscript\angelscript\source\as_outputbuffer.h">
+      <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\Angelscript\angelscript\source\as_parser.h">
+      <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\Angelscript\angelscript\source\as_property.h">
+      <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\Angelscript\angelscript\source\as_restore.h">
+      <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\Angelscript\angelscript\source\as_scriptcode.h">
+      <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\Angelscript\angelscript\source\as_scriptengine.h">
+      <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\Angelscript\angelscript\source\as_scriptfunction.h">
+      <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\Angelscript\angelscript\source\as_scriptnode.h">
+      <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\Angelscript\angelscript\source\as_scriptobject.h">
+      <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\Angelscript\angelscript\source\as_string.h">
+      <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\Angelscript\angelscript\source\as_string_util.h">
+      <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\Angelscript\angelscript\source\as_symboltable.h">
+      <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\Angelscript\angelscript\source\as_texts.h">
+      <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\Angelscript\angelscript\source\as_thread.h">
+      <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\Angelscript\angelscript\source\as_tokendef.h">
+      <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\Angelscript\angelscript\source\as_tokenizer.h">
+      <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\Angelscript\angelscript\source\as_typeinfo.h">
+      <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\Angelscript\angelscript\source\as_variablescope.h">
+      <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Editor\LevelEditor\levelEditor.h">
+      <Filter>Source\TFE_Editor\LevelEditor</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Editor\LevelEditor\levelEditorData.h">
+      <Filter>Source\TFE_Editor\LevelEditor</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Editor\LevelEditor\Rendering\grid2d.h">
+      <Filter>Source\TFE_Editor\LevelEditor\Rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Editor\LevelEditor\Rendering\viewport.h">
+      <Filter>Source\TFE_Editor\LevelEditor\Rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_RenderShared\triDraw2d.h">
+      <Filter>Source\TFE_RenderShared</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Editor\LevelEditor\infoPanel.h">
+      <Filter>Source\TFE_Editor\LevelEditor</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Editor\LevelEditor\sharedState.h">
+      <Filter>Source\TFE_Editor\LevelEditor</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Editor\LevelEditor\browser.h">
+      <Filter>Source\TFE_Editor\LevelEditor</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_RenderShared\lineDraw3d.h">
+      <Filter>Source\TFE_RenderShared</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Editor\LevelEditor\camera.h">
+      <Filter>Source\TFE_Editor\LevelEditor</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_RenderShared\camera3d.h">
+      <Filter>Source\TFE_RenderShared</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Editor\LevelEditor\Rendering\grid3d.h">
+      <Filter>Source\TFE_Editor\LevelEditor\Rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_RenderShared\triDraw3d.h">
+      <Filter>Source\TFE_RenderShared</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Editor\LevelEditor\levelEditorHistory.h">
+      <Filter>Source\TFE_Editor\LevelEditor</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Editor\history.h">
+      <Filter>Source\TFE_Editor</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Editor\LevelEditor\error.h">
+      <Filter>Source\TFE_Editor\LevelEditor</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Editor\LevelEditor\shell.h">
+      <Filter>Source\TFE_Editor\LevelEditor</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Editor\LevelEditor\entity.h">
+      <Filter>Source\TFE_Editor\LevelEditor</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_RenderShared\modelDraw.h">
+      <Filter>Source\TFE_RenderShared</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Editor\EditorAsset\editor3dThumbnails.h">
+      <Filter>Source\TFE_Editor\EditorAsset</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Editor\LevelEditor\levelEditorInf.h">
+      <Filter>Source\TFE_Editor\LevelEditor</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Editor\EditorAsset\editorSound.h">
+      <Filter>Source\TFE_Editor\EditorAsset</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Editor\LevelEditor\groups.h">
+      <Filter>Source\TFE_Editor\LevelEditor</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Editor\LevelEditor\Scripting\levelEditorScripts.h">
+      <Filter>Source\TFE_Editor\LevelEditor\Scripting</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Editor\LevelEditor\Rendering\grid.h">
+      <Filter>Source\TFE_Editor\LevelEditor\Rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_RenderShared\gridDef.h">
+      <Filter>Source\TFE_RenderShared</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Editor\LevelEditor\lighting.h">
+      <Filter>Source\TFE_Editor\LevelEditor</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_System\utf8.h">
+      <Filter>Source\TFE_System</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Editor\LevelEditor\editEntity.h">
+      <Filter>Source\TFE_Editor\LevelEditor</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Editor\LevelEditor\hotkeys.h">
+      <Filter>Source\TFE_Editor\LevelEditor</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Editor\LevelEditor\contextMenu.h">
+      <Filter>Source\TFE_Editor\LevelEditor</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Editor\LevelEditor\editGeometry.h">
+      <Filter>Source\TFE_Editor\LevelEditor</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_System\cJSON.h">
+      <Filter>Source\TFE_System</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Ui\imGUI\imgui_impl_sdl2.h">
+      <Filter>Source\TFE_Ui\imGUI</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Ui\imGUI\imgui_tfe_widgets.h">
+      <Filter>Source\TFE_Ui\imGUI</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Editor\LevelEditor\userPreferences.h">
+      <Filter>Source\TFE_Editor\LevelEditor</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Editor\LevelEditor\tabControl.h">
+      <Filter>Source\TFE_Editor\LevelEditor</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Editor\LevelEditor\editNotes.h">
+      <Filter>Source\TFE_Editor\LevelEditor</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Editor\LevelEditor\note.h">
+      <Filter>Source\TFE_Editor\LevelEditor</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_RenderBackend\Win32OpenGL\gl.h">
+      <Filter>Source\TFE_RenderBackend\Win32OpenGL</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_RenderShared\lineDrawMode.h">
+      <Filter>Source\TFE_RenderShared</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Editor\editorMath.h">
+      <Filter>Source\TFE_Editor</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Editor\LevelEditor\editGuidelines.h">
+      <Filter>Source\TFE_Editor\LevelEditor</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Editor\LevelEditor\guidelines.h">
+      <Filter>Source\TFE_Editor\LevelEditor</Filter>
+    </ClInclude>
+    <ClInclude Include="Shaders\curve.h">
+      <Filter>Source\Shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Editor\LevelEditor\Scripting\ls_system.h">
+      <Filter>Source\TFE_Editor\LevelEditor\Scripting</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Editor\LevelEditor\Scripting\ls_api.h">
+      <Filter>Source\TFE_Editor\LevelEditor\Scripting</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Editor\LevelEditor\Scripting\ls_level.h">
+      <Filter>Source\TFE_Editor\LevelEditor\Scripting</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\float2.h">
+      <Filter>Source\TFE_ForceScript</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Editor\LevelEditor\Scripting\ls_selection.h">
+      <Filter>Source\TFE_Editor\LevelEditor\Scripting</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Editor\LevelEditor\Scripting\ls_draw.h">
+      <Filter>Source\TFE_Editor\LevelEditor\Scripting</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Editor\LevelEditor\featureId.h">
+      <Filter>Source\TFE_Editor\LevelEditor</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Editor\LevelEditor\dragSelect.h">
+      <Filter>Source\TFE_Editor\LevelEditor</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Archive\zstdCompression.h">
+      <Filter>Source\TFE_Archive</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Editor\snapshotReaderWriter.h">
+      <Filter>Source\TFE_Editor</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Editor\LevelEditor\levelDataSnapshot.h">
+      <Filter>Source\TFE_Editor\LevelEditor</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Editor\historyView.h">
+      <Filter>Source\TFE_Editor</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Editor\LevelEditor\editVertex.h">
+      <Filter>Source\TFE_Editor\LevelEditor</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Editor\LevelEditor\editCommon.h">
+      <Filter>Source\TFE_Editor\LevelEditor</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Editor\LevelEditor\selection.h">
+      <Filter>Source\TFE_Editor\LevelEditor</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Editor\LevelEditor\editTransforms.h">
+      <Filter>Source\TFE_Editor\LevelEditor</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Editor\LevelEditor\Rendering\gizmo.h">
+      <Filter>Source\TFE_Editor\LevelEditor\Rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Editor\LevelEditor\editSurface.h">
+      <Filter>Source\TFE_Editor\LevelEditor</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Editor\LevelEditor\editSector.h">
+      <Filter>Source\TFE_Editor\LevelEditor</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
       <Filter>Source</Filter>
-    </ClCompile>
-    <ClCompile Include="glew\src\glew.c">
-      <Filter>Source\glew\src</Filter>
     </ClCompile>
     <ClCompile Include="TFE_Input\input.cpp">
       <Filter>Source\TFE_Input</Filter>
@@ -1270,9 +1417,6 @@
       <Filter>Source\TFE_Ui\imGUI</Filter>
     </ClCompile>
     <ClCompile Include="TFE_Ui\imGUI\imgui_impl_opengl3.cpp">
-      <Filter>Source\TFE_Ui\imGUI</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_Ui\imGUI\imgui_impl_sdl.cpp">
       <Filter>Source\TFE_Ui\imGUI</Filter>
     </ClCompile>
     <ClCompile Include="TFE_Ui\imGUI\imgui_widgets.cpp">
@@ -1386,9 +1530,6 @@
     <ClCompile Include="TFE_Audio\audioSystem.cpp">
       <Filter>Source\TFE_Audio</Filter>
     </ClCompile>
-    <ClCompile Include="TFE_Audio\RtAudio.cpp">
-      <Filter>Source\TFE_Audio</Filter>
-    </ClCompile>
     <ClCompile Include="TFE_FrontEndUI\frontEndUi.cpp">
       <Filter>Source\TFE_FrontEndUI</Filter>
     </ClCompile>
@@ -1400,15 +1541,6 @@
     </ClCompile>
     <ClCompile Include="TFE_Audio\midiPlayer.cpp">
       <Filter>Source\TFE_Audio</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_System\Threads\Win32\mutexWin32.cpp">
-      <Filter>Source\TFE_System\Threads\Win32</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_System\Threads\Win32\signalWin32.cpp">
-      <Filter>Source\TFE_System\Threads\Win32</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_System\Threads\Win32\threadWin32.cpp">
-      <Filter>Source\TFE_System\Threads\Win32</Filter>
     </ClCompile>
     <ClCompile Include="TFE_FrontEndUI\console.cpp">
       <Filter>Source\TFE_FrontEndUI</Filter>
@@ -1752,9 +1884,6 @@
     <ClCompile Include="TFE_FrontEndUI\modLoader.cpp">
       <Filter>Source\TFE_FrontEndUI</Filter>
     </ClCompile>
-    <ClCompile Include="TFE_FrontEndUI\editorTexture.cpp">
-      <Filter>Source\TFE_FrontEndUI</Filter>
-    </ClCompile>
     <ClCompile Include="TFE_DarkForces\Landru\lactor.cpp">
       <Filter>Source\TFE_DarkForces\Landru</Filter>
     </ClCompile>
@@ -1908,156 +2037,6 @@
     <ClCompile Include="TFE_Jedi\Level\levelTextures.cpp">
       <Filter>Source\TFE_Jedi\Level</Filter>
     </ClCompile>
-    <ClCompile Include="TFE_ForceScript\jit.cpp">
-      <Filter>Source\TFE_ForceScript</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_ForceScript\value.cpp">
-      <Filter>Source\TFE_ForceScript</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_ForceScript\vm.cpp">
-      <Filter>Source\TFE_ForceScript</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_ForceScript\asmjit\core\archtraits.cpp">
-      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_ForceScript\asmjit\core\assembler.cpp">
-      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_ForceScript\asmjit\core\builder.cpp">
-      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_ForceScript\asmjit\core\codeholder.cpp">
-      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_ForceScript\asmjit\core\codewriter.cpp">
-      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_ForceScript\asmjit\core\compiler.cpp">
-      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_ForceScript\asmjit\core\constpool.cpp">
-      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_ForceScript\asmjit\core\cpuinfo.cpp">
-      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_ForceScript\asmjit\core\emithelper.cpp">
-      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_ForceScript\asmjit\core\emitter.cpp">
-      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_ForceScript\asmjit\core\emitterutils.cpp">
-      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_ForceScript\asmjit\core\environment.cpp">
-      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_ForceScript\asmjit\core\errorhandler.cpp">
-      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_ForceScript\asmjit\core\formatter.cpp">
-      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_ForceScript\asmjit\core\func.cpp">
-      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_ForceScript\asmjit\core\funcargscontext.cpp">
-      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_ForceScript\asmjit\core\globals.cpp">
-      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_ForceScript\asmjit\core\inst.cpp">
-      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_ForceScript\asmjit\core\jitallocator.cpp">
-      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_ForceScript\asmjit\core\jitruntime.cpp">
-      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_ForceScript\asmjit\core\logger.cpp">
-      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_ForceScript\asmjit\core\operand.cpp">
-      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_ForceScript\asmjit\core\osutils.cpp">
-      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_ForceScript\asmjit\core\ralocal.cpp">
-      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_ForceScript\asmjit\core\rapass.cpp">
-      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_ForceScript\asmjit\core\rastack.cpp">
-      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_ForceScript\asmjit\core\string.cpp">
-      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_ForceScript\asmjit\core\support.cpp">
-      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_ForceScript\asmjit\core\target.cpp">
-      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_ForceScript\asmjit\core\type.cpp">
-      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_ForceScript\asmjit\core\virtmem.cpp">
-      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_ForceScript\asmjit\core\zone.cpp">
-      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_ForceScript\asmjit\core\zonehash.cpp">
-      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_ForceScript\asmjit\core\zonelist.cpp">
-      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_ForceScript\asmjit\core\zonestack.cpp">
-      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_ForceScript\asmjit\core\zonetree.cpp">
-      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_ForceScript\asmjit\core\zonevector.cpp">
-      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_ForceScript\asmjit\x86\x86assembler.cpp">
-      <Filter>Source\TFE_ForceScript\asmjit\x86</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_ForceScript\asmjit\x86\x86builder.cpp">
-      <Filter>Source\TFE_ForceScript\asmjit\x86</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_ForceScript\asmjit\x86\x86compiler.cpp">
-      <Filter>Source\TFE_ForceScript\asmjit\x86</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_ForceScript\asmjit\x86\x86emithelper.cpp">
-      <Filter>Source\TFE_ForceScript\asmjit\x86</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_ForceScript\asmjit\x86\x86formatter.cpp">
-      <Filter>Source\TFE_ForceScript\asmjit\x86</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_ForceScript\asmjit\x86\x86func.cpp">
-      <Filter>Source\TFE_ForceScript\asmjit\x86</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_ForceScript\asmjit\x86\x86instapi.cpp">
-      <Filter>Source\TFE_ForceScript\asmjit\x86</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_ForceScript\asmjit\x86\x86instdb.cpp">
-      <Filter>Source\TFE_ForceScript\asmjit\x86</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_ForceScript\asmjit\x86\x86operand.cpp">
-      <Filter>Source\TFE_ForceScript\asmjit\x86</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_ForceScript\asmjit\x86\x86rapass.cpp">
-      <Filter>Source\TFE_ForceScript\asmjit\x86</Filter>
-    </ClCompile>
     <ClCompile Include="TFE_Jedi\InfSystem\infState.cpp">
       <Filter>Source\TFE_Jedi\InfSystem</Filter>
     </ClCompile>
@@ -2112,6 +2091,354 @@
     <ClCompile Include="TFE_Audio\MidiSynth\fm4Opl3Device.cpp">
       <Filter>Source\TFE_Audio\MidiSynth</Filter>
     </ClCompile>
+    <ClCompile Include="TFE_A11y\accessibility.cpp">
+      <Filter>Source\TFE_A11y</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_PostProcess\bloomThreshold.cpp">
+      <Filter>Source\TFE_PostProcess</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_PostProcess\bloomDownsample.cpp">
+      <Filter>Source\TFE_PostProcess</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_PostProcess\bloomMerge.cpp">
+      <Filter>Source\TFE_PostProcess</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Jedi\Level\levelBin.cpp">
+      <Filter>Source\TFE_Jedi\Level</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_A11y\filePathList.cpp">
+      <Filter>Source\TFE_A11y</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Editor\editor.cpp">
+      <Filter>Source\TFE_Editor</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_FrontEndUI\uiTexture.cpp">
+      <Filter>Source\TFE_FrontEndUI</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Editor\editorConfig.cpp">
+      <Filter>Source\TFE_Editor</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Editor\EditorAsset\editorAsset.cpp">
+      <Filter>Source\TFE_Editor\EditorAsset</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Editor\EditorAsset\editorColormap.cpp">
+      <Filter>Source\TFE_Editor\EditorAsset</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Editor\EditorAsset\editorFrame.cpp">
+      <Filter>Source\TFE_Editor\EditorAsset</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Editor\EditorAsset\editorLevelPreview.cpp">
+      <Filter>Source\TFE_Editor\EditorAsset</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Editor\EditorAsset\editorObj3D.cpp">
+      <Filter>Source\TFE_Editor\EditorAsset</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Editor\EditorAsset\editorSprite.cpp">
+      <Filter>Source\TFE_Editor\EditorAsset</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Editor\EditorAsset\editorTexture.cpp">
+      <Filter>Source\TFE_Editor\EditorAsset</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Editor\AssetBrowser\assetBrowser.cpp">
+      <Filter>Source\TFE_Editor\AssetBrowser</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Editor\editorProject.cpp">
+      <Filter>Source\TFE_Editor</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Editor\errorMessages.cpp">
+      <Filter>Source\TFE_Editor</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Editor\editorResources.cpp">
+      <Filter>Source\TFE_Editor</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_System\iniParser.cpp">
+      <Filter>Source\TFE_System</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Editor\editorLevel.cpp">
+      <Filter>Source\TFE_Editor</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_ForceScript\forceScript.cpp">
+      <Filter>Source\TFE_ForceScript</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_ForceScript\Angelscript\add_on\scriptarray\scriptarray.cpp">
+      <Filter>Source\TFE_ForceScript\Angelscript\add_on\scriptarray</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_ForceScript\Angelscript\add_on\scriptbuilder\scriptbuilder.cpp">
+      <Filter>Source\TFE_ForceScript\Angelscript\add_on\scriptbuilder</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_ForceScript\Angelscript\add_on\scriptstdstring\scriptstdstring.cpp">
+      <Filter>Source\TFE_ForceScript\Angelscript\add_on\scriptstdstring</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_ForceScript\Angelscript\add_on\scriptstdstring\scriptstdstring_utils.cpp">
+      <Filter>Source\TFE_ForceScript\Angelscript\add_on\scriptstdstring</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_ForceScript\Angelscript\angelscript\source\as_atomic.cpp">
+      <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_ForceScript\Angelscript\angelscript\source\as_builder.cpp">
+      <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_ForceScript\Angelscript\angelscript\source\as_bytecode.cpp">
+      <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_ForceScript\Angelscript\angelscript\source\as_callfunc.cpp">
+      <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_ForceScript\Angelscript\angelscript\source\as_callfunc_x64_msvc.cpp">
+      <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_ForceScript\Angelscript\angelscript\source\as_callfunc_x86.cpp">
+      <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_ForceScript\Angelscript\angelscript\source\as_compiler.cpp">
+      <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_ForceScript\Angelscript\angelscript\source\as_configgroup.cpp">
+      <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_ForceScript\Angelscript\angelscript\source\as_context.cpp">
+      <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_ForceScript\Angelscript\angelscript\source\as_datatype.cpp">
+      <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_ForceScript\Angelscript\angelscript\source\as_gc.cpp">
+      <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_ForceScript\Angelscript\angelscript\source\as_generic.cpp">
+      <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_ForceScript\Angelscript\angelscript\source\as_globalproperty.cpp">
+      <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_ForceScript\Angelscript\angelscript\source\as_memory.cpp">
+      <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_ForceScript\Angelscript\angelscript\source\as_module.cpp">
+      <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_ForceScript\Angelscript\angelscript\source\as_objecttype.cpp">
+      <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_ForceScript\Angelscript\angelscript\source\as_outputbuffer.cpp">
+      <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_ForceScript\Angelscript\angelscript\source\as_parser.cpp">
+      <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_ForceScript\Angelscript\angelscript\source\as_restore.cpp">
+      <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_ForceScript\Angelscript\angelscript\source\as_scriptcode.cpp">
+      <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_ForceScript\Angelscript\angelscript\source\as_scriptengine.cpp">
+      <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_ForceScript\Angelscript\angelscript\source\as_scriptfunction.cpp">
+      <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_ForceScript\Angelscript\angelscript\source\as_scriptnode.cpp">
+      <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_ForceScript\Angelscript\angelscript\source\as_scriptobject.cpp">
+      <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_ForceScript\Angelscript\angelscript\source\as_string.cpp">
+      <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_ForceScript\Angelscript\angelscript\source\as_string_util.cpp">
+      <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_ForceScript\Angelscript\angelscript\source\as_thread.cpp">
+      <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_ForceScript\Angelscript\angelscript\source\as_tokenizer.cpp">
+      <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_ForceScript\Angelscript\angelscript\source\as_typeinfo.cpp">
+      <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_ForceScript\Angelscript\angelscript\source\as_variablescope.cpp">
+      <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Editor\LevelEditor\levelEditor.cpp">
+      <Filter>Source\TFE_Editor\LevelEditor</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Editor\LevelEditor\levelEditorData.cpp">
+      <Filter>Source\TFE_Editor\LevelEditor</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Editor\LevelEditor\Rendering\grid2d.cpp">
+      <Filter>Source\TFE_Editor\LevelEditor\Rendering</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Editor\LevelEditor\Rendering\viewport.cpp">
+      <Filter>Source\TFE_Editor\LevelEditor\Rendering</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_RenderShared\triDraw2d.cpp">
+      <Filter>Source\TFE_RenderShared</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Editor\LevelEditor\infoPanel.cpp">
+      <Filter>Source\TFE_Editor\LevelEditor</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Editor\LevelEditor\browser.cpp">
+      <Filter>Source\TFE_Editor\LevelEditor</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_RenderShared\lineDraw3d.cpp">
+      <Filter>Source\TFE_RenderShared</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Editor\LevelEditor\camera.cpp">
+      <Filter>Source\TFE_Editor\LevelEditor</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Editor\LevelEditor\Rendering\grid3d.cpp">
+      <Filter>Source\TFE_Editor\LevelEditor\Rendering</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_RenderShared\triDraw3d.cpp">
+      <Filter>Source\TFE_RenderShared</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Editor\LevelEditor\levelEditorHistory.cpp">
+      <Filter>Source\TFE_Editor\LevelEditor</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Editor\history.cpp">
+      <Filter>Source\TFE_Editor</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Editor\LevelEditor\shell.cpp">
+      <Filter>Source\TFE_Editor\LevelEditor</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Editor\LevelEditor\entity.cpp">
+      <Filter>Source\TFE_Editor\LevelEditor</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_RenderShared\modelDraw.cpp">
+      <Filter>Source\TFE_RenderShared</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Editor\EditorAsset\editor3dThumbnails.cpp">
+      <Filter>Source\TFE_Editor\EditorAsset</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Editor\LevelEditor\levelEditorInf.cpp">
+      <Filter>Source\TFE_Editor\LevelEditor</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Editor\EditorAsset\editorSound.cpp">
+      <Filter>Source\TFE_Editor\EditorAsset</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Editor\LevelEditor\groups.cpp">
+      <Filter>Source\TFE_Editor\LevelEditor</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Editor\LevelEditor\Scripting\levelEditorScripts.cpp">
+      <Filter>Source\TFE_Editor\LevelEditor\Scripting</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Editor\LevelEditor\Rendering\grid.cpp">
+      <Filter>Source\TFE_Editor\LevelEditor\Rendering</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Editor\LevelEditor\lighting.cpp">
+      <Filter>Source\TFE_Editor\LevelEditor</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_System\utf8.cpp">
+      <Filter>Source\TFE_System</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Editor\LevelEditor\editEntity.cpp">
+      <Filter>Source\TFE_Editor\LevelEditor</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Editor\LevelEditor\hotkeys.cpp">
+      <Filter>Source\TFE_Editor\LevelEditor</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Editor\LevelEditor\contextMenu.cpp">
+      <Filter>Source\TFE_Editor\LevelEditor</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Editor\LevelEditor\editGeometry.cpp">
+      <Filter>Source\TFE_Editor\LevelEditor</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_System\cJSON.c">
+      <Filter>Source\TFE_System</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Ui\imGUI\imgui_impl_sdl2.cpp">
+      <Filter>Source\TFE_Ui\imGUI</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Ui\imGUI\imgui_tfe_widgets.cpp">
+      <Filter>Source\TFE_Ui\imGUI</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Ui\imGUI\imgui_tables.cpp">
+      <Filter>Source\TFE_Ui\imGUI</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Editor\LevelEditor\userPreferences.cpp">
+      <Filter>Source\TFE_Editor\LevelEditor</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Editor\LevelEditor\tabControl.cpp">
+      <Filter>Source\TFE_Editor\LevelEditor</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Editor\LevelEditor\editNotes.cpp">
+      <Filter>Source\TFE_Editor\LevelEditor</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Editor\LevelEditor\note.cpp">
+      <Filter>Source\TFE_Editor\LevelEditor</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_RenderBackend\Win32OpenGL\glad.c">
+      <Filter>Source\TFE_RenderBackend\Win32OpenGL</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_RenderShared\lineDrawMode.cpp">
+      <Filter>Source\TFE_RenderShared</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Editor\editorMath.cpp">
+      <Filter>Source\TFE_Editor</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Editor\LevelEditor\editGuidelines.cpp">
+      <Filter>Source\TFE_Editor\LevelEditor</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Editor\LevelEditor\guidelines.cpp">
+      <Filter>Source\TFE_Editor\LevelEditor</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Editor\LevelEditor\Scripting\ls_system.cpp">
+      <Filter>Source\TFE_Editor\LevelEditor\Scripting</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Editor\LevelEditor\Scripting\ls_level.cpp">
+      <Filter>Source\TFE_Editor\LevelEditor\Scripting</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_ForceScript\float2.cpp">
+      <Filter>Source\TFE_ForceScript</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Editor\LevelEditor\Scripting\ls_selection.cpp">
+      <Filter>Source\TFE_Editor\LevelEditor\Scripting</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Editor\LevelEditor\Scripting\ls_draw.cpp">
+      <Filter>Source\TFE_Editor\LevelEditor\Scripting</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Editor\LevelEditor\featureId.cpp">
+      <Filter>Source\TFE_Editor\LevelEditor</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Editor\LevelEditor\dragSelect.cpp">
+      <Filter>Source\TFE_Editor\LevelEditor</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Archive\zstdCompression.cpp">
+      <Filter>Source\TFE_Archive</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Editor\snapshotReaderWriter.cpp">
+      <Filter>Source\TFE_Editor</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Editor\LevelEditor\levelDataSnapshot.cpp">
+      <Filter>Source\TFE_Editor\LevelEditor</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Editor\historyView.cpp">
+      <Filter>Source\TFE_Editor</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Editor\LevelEditor\editVertex.cpp">
+      <Filter>Source\TFE_Editor\LevelEditor</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Editor\LevelEditor\editCommon.cpp">
+      <Filter>Source\TFE_Editor\LevelEditor</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Editor\LevelEditor\selection.cpp">
+      <Filter>Source\TFE_Editor\LevelEditor</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Editor\LevelEditor\editTransforms.cpp">
+      <Filter>Source\TFE_Editor\LevelEditor</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Editor\LevelEditor\Rendering\gizmo.cpp">
+      <Filter>Source\TFE_Editor\LevelEditor\Rendering</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Editor\LevelEditor\editSurface.cpp">
+      <Filter>Source\TFE_Editor\LevelEditor</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Editor\LevelEditor\editSector.cpp">
+      <Filter>Source\TFE_Editor\LevelEditor</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="TheForceEngine.rc">
@@ -2143,12 +2470,6 @@
       <Filter>Source\Shaders</Filter>
     </None>
     <None Include="Shaders\line2d.vert">
-      <Filter>Source\Shaders</Filter>
-    </None>
-    <None Include="Shaders\tri2dColor.frag">
-      <Filter>Source\Shaders</Filter>
-    </None>
-    <None Include="Shaders\tri2dColor.vert">
       <Filter>Source\Shaders</Filter>
     </None>
     <None Include="Shaders\tri2dTextured.frag">
@@ -2301,5 +2622,34 @@
     <None Include="Shaders\quad2d.vert">
       <Filter>Source\Shaders</Filter>
     </None>
+    <None Include="Shaders\bloomThreshold.frag">
+      <Filter>Source\Shaders</Filter>
+    </None>
+    <None Include="Shaders\bloomDownsample.frag">
+      <Filter>Source\Shaders</Filter>
+    </None>
+    <None Include="Shaders\bloomMerge.frag">
+      <Filter>Source\Shaders</Filter>
+    </None>
+    <None Include="Shaders\bloom.vert">
+      <Filter>Source\Shaders</Filter>
+    </None>
+    <None Include="Shaders\tri3dWall.frag">
+      <Filter>Source\Shaders</Filter>
+    </None>
+    <None Include="Shaders\tri3dWall.vert">
+      <Filter>Source\Shaders</Filter>
+    </None>
+    <None Include="Shaders\mdl3d.vert">
+      <Filter>Source\Shaders</Filter>
+    </None>
+    <None Include="Shaders\mdl3d.frag">
+      <Filter>Source\Shaders</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="TFE_ForceScript\Angelscript\angelscript\source\as_callfunc_x64_msvc_asm.asm">
+      <Filter>Source\TFE_ForceScript\Angelscript\angelscript\source</Filter>
+    </CustomBuild>
   </ItemGroup>
 </Project>

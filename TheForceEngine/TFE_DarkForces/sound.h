@@ -50,7 +50,6 @@ namespace TFE_DarkForces
 	void sound_levelStop();
 
 	SoundEffectId sound_play(SoundSourceId sourceId);
-	SoundEffectId sound_playPriority(SoundSourceId id, s32 priority);
 	SoundEffectId sound_playCued(SoundSourceId id, vec3_fixed pos);
 	SoundEffectId sound_maintain(SoundEffectId idInstance, SoundSourceId idSound, vec3_fixed pos);
 	void sound_adjustCued(SoundEffectId id, vec3_fixed pos);

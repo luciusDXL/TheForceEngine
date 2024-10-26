@@ -1,4 +1,6 @@
+#include <algorithm>
 #include <cstring>
+#include <SDL_mutex.h>
 #include "midi.h"
 
 #include "systemMidiDevice.h"
@@ -8,7 +10,6 @@
  #include "RtMidi.h"
 #endif
 #include <TFE_System/system.h>
-#include <algorithm>
 
 #ifdef _WIN32
 // Windows library required to access the midi device(s).
@@ -30,9 +31,10 @@ namespace TFE_Audio
 
 	SystemMidiDevice::SystemMidiDevice()
 	{
-		m_outputId = -1;
+		m_outputId = 0;		// "Disabled" device.
 		m_midiout = new RtMidiOut();
 		m_midiout->setErrorCallback(midiErrorCallback);
+		portLock = SDL_CreateMutex();
 
 		getOutputCount();
 	}
@@ -40,18 +42,19 @@ namespace TFE_Audio
 	SystemMidiDevice::~SystemMidiDevice()
 	{
 		exit();
+		SDL_DestroyMutex(portLock);
+		portLock = nullptr;
 	}
 
 	void SystemMidiDevice::exit()
 	{
-		if (m_outputId >= 0)
+		if (m_outputId > 0) { m_midiout->closePort(); }
+		if (m_midiout)
 		{
-			m_midiout->closePort();
+			delete m_midiout;
+			m_midiout = nullptr;
 		}
-		delete m_midiout;
-		m_midiout = nullptr;
-
-		m_outputId = -1;
+		m_outputId = 0;
 	}
 
 	const char* SystemMidiDevice::getName()
@@ -59,16 +62,24 @@ namespace TFE_Audio
 		return c_SystemMidi_Name;
 	}
 
+	void SystemMidiDevice::message(const u8* msg, u32 len)
+	{
+		if (m_outputId > 0)
+		{
+			// this mutex is uncontended except for a short time
+			// after a midi device switch is done in the settings.
+			SDL_LockMutex(portLock);
+			m_midiout->sendMessage(msg, (size_t)len);
+			SDL_UnlockMutex(portLock);
+		}
+	}
+
 	void SystemMidiDevice::message(u8 type, u8 arg1, u8 arg2)
 	{
 		const u8 msg[3] = { type, arg1, arg2 };
-		if (m_midiout) { m_midiout->sendMessage(msg, 3); }
+		message(msg, 3);
 	}
-	
-	void SystemMidiDevice::message(const u8* msg, u32 len)
-	{
-		if (m_midiout) { m_midiout->sendMessage(msg, (size_t)len); }
-	}
+
 
 	void SystemMidiDevice::noteAllOff()
 	{
@@ -85,15 +96,19 @@ namespace TFE_Audio
 
 	u32 SystemMidiDevice::getOutputCount()
 	{
-		if (m_outputs.empty())
+		m_outputs.clear();
+		if (m_midiout)
 		{
 			u32 count = m_midiout->getPortCount();
-			m_outputs.resize(count);
+
+			m_outputs.push_back(count ? "Disabled" : "Disabled: no ports found");
 
 			for (u32 i = 0; i < count; i++)
 			{
-				m_outputs[i] = m_midiout->getPortName(i);
+				m_outputs.push_back(m_midiout->getPortName(i));
 			}
+		} else {
+			m_outputs.push_back("Disabled: internal MIDI error");
 		}
 		return (u32)m_outputs.size();
 	}
@@ -104,35 +119,38 @@ namespace TFE_Audio
 
 		const std::string& name = m_outputs[index];
 		const u32 copyLength = std::min((u32)name.length(), maxLength - 1);
-		strncpy(buffer, m_midiout->getPortName(index).c_str(), copyLength);
+		strncpy(buffer, name.c_str(), copyLength);
 		buffer[copyLength] = 0;
 	}
 
 	bool SystemMidiDevice::selectOutput(s32 index)
 	{
-		if (!m_midiout) { return false; }
 		if (index < 0 || index >= (s32)getOutputCount())
 		{
-			index = 0;
+			index = 0;	// "disabled" device
 		}
-		if (index != m_outputId && index < (s32)getOutputCount())
+		if (index != m_outputId && m_midiout)
 		{
-			m_midiout->closePort();
-			m_midiout->openPort(index);
-			m_outputId = (s32)index;
-			for (s32 i = 0; i < MIDI_CHANNEL_COUNT; i++)
+			noteAllOff();
+			if (m_outputId > 0)
+				m_midiout->closePort();
+			if (index > 0)	// real Device
 			{
-				u8 msg[2] = { u8(MID_PROGRAM_CHANGE | i), 0 };
-				message(msg, 2);
+				m_midiout->openPort(index - 1);
+				for (s32 i = 0; i < MIDI_CHANNEL_COUNT; i++)
+				{
+					u8 msg[2] = { u8(MID_PROGRAM_CHANGE | i), 0 };
+					message(msg, 2);
+				}
 			}
-			return true;
 		}
-		return false;
+		m_outputId = index;
+		return true;
 	}
 
 	s32 SystemMidiDevice::getActiveOutput(void)
 	{
-		return m_outputId > 0 ? m_outputId : 0;
+		return m_outputId;
 	}
 
 	void midiErrorCallback(RtMidiError::Type type, const std::string &errorText, void *userData)

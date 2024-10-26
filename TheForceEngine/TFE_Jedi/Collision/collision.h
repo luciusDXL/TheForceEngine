@@ -72,6 +72,24 @@ struct ColObject
 	};
 };
 
+enum RayHitType
+{
+	RHit_None = 0,
+	RHit_Floor,
+	RHit_Ceiling,
+	RHit_WallMid,
+	RHit_WallMid_Trans,
+	RHit_WallBot,
+	RHit_WallTop,
+	RHit_WallSign,
+};
+struct RayHitInfo
+{
+	RayHitType hit;
+	RWall* wall;
+	RSector* sector;
+};
+
 typedef void(*CollisionEffectFunc)(SecObject*);
 
 #define COL_INFINITY FIXED(9999)
@@ -97,6 +115,7 @@ namespace TFE_Jedi
 	void handleCollisionResponseSimple(fixed16_16 dirX, fixed16_16 dirZ, fixed16_16* moveX, fixed16_16* moveZ);
 
 	JBool inf_handleExplosion(RSector* sector, fixed16_16 x, fixed16_16 z, fixed16_16 range);
+	RayHitInfo collision_rayCast3d(RSector* sector, vec3_fixed p0, vec3_fixed p1, bool stopAtMidTex);
 
 	// Variables
 	extern fixed16_16 s_colObjOverlap;

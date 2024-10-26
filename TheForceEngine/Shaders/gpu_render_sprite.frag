@@ -1,63 +1,44 @@
+#include "Shaders/filter.h"
+#include "Shaders/textureSampleFunc.h"
+#include "Shaders/lighting.h"
+
 uniform vec3 CameraPos;
 uniform vec3 CameraDir;
 uniform vec4 LightData;
 uniform vec4 GlobalLightData;	// x = flat lighting, y = flat light value.
 uniform vec2 SkyParallax;
 
-uniform sampler2D Colormap;	// The color map has full RGB pre-backed in.
-uniform sampler2D Palette;
-uniform sampler2DArray Textures;
-
-uniform isamplerBuffer TextureTable;
-
 in vec2 Frag_Uv;
 in vec3 Frag_Pos;
+flat in vec3 Frag_Lighting;
 
 flat in int Frag_TextureId;
 flat in vec4 Texture_Data;
-out vec4 Out_Color;
-
-vec3 getAttenuatedColor(int baseColor, int light)
-{
-	int color = baseColor;
-	if (light < 31)
-	{
-		ivec2 uv = ivec2(color, light);
-		color = int(texelFetch(Colormap, uv, 0).r * 255.0);
-	}
-	return texelFetch(Palette, ivec2(color, 0), 0).rgb;
-}
-
-float sampleTextureClamp(int id, vec2 uv)
-{
-	ivec4 sampleData = texelFetch(TextureTable, id);
-	ivec3 iuv;
-	iuv.xy = ivec2(uv);
-	iuv.z = 0;
-
-	if ( any(lessThan(iuv.xy, ivec2(0))) || any(greaterThan(iuv.xy, sampleData.zw-1)) )
-	{
-		return 0.0;
-	}
-
-	iuv.xy += (sampleData.xy & ivec2(4095));
-	iuv.z = sampleData.x >> 12;
-	
-	return texelFetch(Textures, iuv, 0).r * 255.0;
-}
+#ifdef OPT_BLOOM
+	layout(location = 0) out vec4 Out_Color;
+	layout(location = 1) out vec4 Out_Material;
+#else
+	out vec4 Out_Color;
+#endif
 
 void main()
 {
     vec3 cameraRelativePos = Frag_Pos;
-
 	float light = 31.0;
-	float baseColor = 0.0;
 
+#ifdef OPT_TRUE_COLOR
+	vec4 baseColor = vec4(0.0);
+#else
+	float baseColor = 0.0;
+#endif
+
+	// Handle shading.
 	if (GlobalLightData.x == 0.0)
 	{
 		float z = dot(cameraRelativePos, CameraDir);
 		float sectorAmbient = float(Texture_Data.y);
 
+		// Only apply shading is sector ambient is less than max.
 		if (sectorAmbient < 31.0)
 		{
 			// Camera light and world ambient.
@@ -67,29 +48,56 @@ void main()
 			light = 0.0;
 			if (worldAmbient < 31.0 || cameraLightSource != 0.0)
 			{
-				float depthScaled = min(floor(z * 4.0), 127.0);
-				float lightSource = 31.0 - (texture(Colormap, vec2(depthScaled/256.0, 0.0)).g*255.0 + worldAmbient);
+				float lightSource = getLightRampValue(z, worldAmbient);
 				if (lightSource > 0)
 				{
 					light += lightSource;
 				}
 			}
 			light = max(light, sectorAmbient);
-
-			float minAmbient = sectorAmbient * 7.0 / 8.0;
-			float depthAtten = floor(z / 16.0f) + floor(z / 32.0f);
-			light = max(light - depthAtten, minAmbient);
-			light = clamp(light, 0.0, 31.0);
+			light = getDepthAttenuation(z, sectorAmbient, light, 0.0);
 		}
 	}
 
 	// Sample the texture.
 	baseColor = sampleTextureClamp(Frag_TextureId, Frag_Uv);
+	// if (discardPixel(baseColor, LightData.w)) { discard; }
+	// Either discard very close to the iso-value or
+	// do a two-pass filter - close cut with depth-write + alpha blend without depth-write.
+	#ifdef OPT_TRUE_COLOR
+	if (baseColor.a < 0.48 && LightData.w < 1.0)
+	{
+		discard;
+	}
+	#else
 	if (baseColor < 0.5 && LightData.w < 1.0)
 	{
 		discard;
 	}
+	#endif
 
-	Out_Color.rgb = LightData.w > 0.5 ? vec3(0.6, 0.8, 0.6) : getAttenuatedColor(int(baseColor), int(light));
-	Out_Color.a = 1.0;
+	// Get the emissive factor (0 = normal, 1 = 100% fullbright).
+	#ifdef OPT_TRUE_COLOR
+		float emissive = clamp((baseColor.a - 0.5) * 2.0, 0.0, 1.0);
+	#else
+		float emissive = baseColor;
+	#endif
+
+	// Get the final lit color, enable solid color for wireframe.
+	Out_Color = getFinalColor(baseColor, light, emissive);
+	Out_Color.rgb = LightData.w > 0.5 ? vec3(0.6, 0.8, 0.6) : handlePaletteFx(Out_Color.rgb);
+
+	// Handle pre-multiplied alpha blending.
+	#ifdef OPT_TRUE_COLOR
+	Out_Color.a = min(Out_Color.a * 2.008, 1.0);
+	#endif
+
+	#ifdef OPT_BLOOM
+		// Material (just emissive for now)
+		Out_Material = getMaterialColor(emissive);
+		#ifdef OPT_TRUE_COLOR
+			Out_Material.a = Out_Color.a;
+			Out_Material.rgb *= Out_Material.a;
+		#endif
+	#endif
 }

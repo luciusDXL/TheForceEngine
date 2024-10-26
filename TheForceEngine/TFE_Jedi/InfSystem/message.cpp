@@ -35,6 +35,8 @@ namespace TFE_Jedi
 			s_messageAddr = allocator_create(sizeof(MessageAddress));
 		}
 		MessageAddress* msgAddr = (MessageAddress*)allocator_newItem(s_messageAddr);
+		if (!msgAddr)
+			return;
 
 		assert(strlen(name) <= 16);
 		strncpy(msgAddr->name, name, 16);

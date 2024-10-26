@@ -1,7 +1,7 @@
 #include "modLoader.h"
 #include "frontEndUi.h"
 #include "console.h"
-#include "editorTexture.h"
+#include "uiTexture.h"
 #include "profilerView.h"
 #include <TFE_DarkForces/config.h>
 #include <TFE_RenderBackend/renderBackend.h>
@@ -19,7 +19,6 @@
 #include <TFE_Asset/imageAsset.h>
 #include <TFE_Ui/ui.h>
 #include <TFE_Ui/markdown.h>
-#include <TFE_Ui/imGUI/imgui.h>
 // Game
 #include <TFE_DarkForces/mission.h>
 #include <TFE_Jedi/Renderer/jediRenderer.h>
@@ -36,6 +35,7 @@ namespace TFE_FrontEndUI
 		QREAD_ZIP,
 		QREAD_COUNT
 	};
+	const u32 c_itemsPerFrame = 1;
 
 	struct QueuedRead
 	{
@@ -49,7 +49,7 @@ namespace TFE_FrontEndUI
 		std::vector<std::string> gobFiles;
 		std::string textFile;
 		std::string imageFile;
-		EditorTexture image;
+		UiTexture image;
 
 		std::string name;
 		std::string relativePath;
@@ -74,12 +74,13 @@ namespace TFE_FrontEndUI
 	static char s_prevModFilter[256] = { 0 };
 	static size_t s_filterLen = 0;
 	static bool s_filterUpdated = false;
+	static bool s_modsRead = false;
 
 	void fixupName(char* name);
 	void readFromQueue(size_t itemsPerFrame);
 	bool parseNameFromText(const char* textFileName, const char* path, char* name, std::string* fullText);
-	void extractPosterFromImage(const char* baseDir, const char* zipFile, const char* imageFileName, EditorTexture* poster);
-	void extractPosterFromMod(const char* baseDir, const char* archiveFileName, EditorTexture* poster);
+	void extractPosterFromImage(const char* baseDir, const char* zipFile, const char* imageFileName, UiTexture* poster);
+	bool extractPosterFromMod(const char* baseDir, const char* archiveFileName, UiTexture* poster);
 	void filterMods(bool filterByName, bool sort = true);
 
 	bool sortQueueByName(QueuedRead& a, QueuedRead& b)
@@ -89,6 +90,9 @@ namespace TFE_FrontEndUI
 
 	void modLoader_read()
 	{
+		if (s_modsRead) { return; }
+		s_modsRead = true;
+
 		s_mods.clear();
 		s_filteredMods.clear();
 		s_selectedMod = -1;
@@ -262,16 +266,16 @@ namespace TFE_FrontEndUI
 				{
 					drawList->AddImageRounded(TFE_RenderBackend::getGpuPtr(s_filteredMods[i]->image.texture), ImVec2((f32(x) * 268 + 16 - 2)*uiScale, yScrolled - 2*uiScale),
 						ImVec2((f32(x) * 268 + 16 + 256 + 2)*uiScale, yScrolled + (192 + 2)*uiScale), ImVec2(0.0f, s_filteredMods[i]->invertImage ? 1.0f : 0.0f),
-						ImVec2(1.0f, s_filteredMods[i]->invertImage ? 0.0f : 1.0f), 0xffffffff, 8.0f, ImDrawCornerFlags_All);
+						ImVec2(1.0f, s_filteredMods[i]->invertImage ? 0.0f : 1.0f), 0xffffffff, 8.0f, ImDrawFlags_RoundCornersAll);
 					drawList->AddImageRounded(getGradientTexture(), ImVec2((f32(x) * 268 + 16 - 2)*uiScale, yScrolled - 2*uiScale),
 						ImVec2((f32(x) * 268 + 16 + 256 + 2)*uiScale, yScrolled + (192 + 2)*uiScale), ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f),
-						0x40ffb080, 8.0f, ImDrawCornerFlags_All);
+						0x40ffb080, 8.0f, ImDrawFlags_RoundCornersAll);
 				}
 				else
 				{
 					drawList->AddImageRounded(TFE_RenderBackend::getGpuPtr(s_filteredMods[i]->image.texture), ImVec2((f32(x) * 268 + 16)*uiScale, yScrolled),
 						ImVec2((f32(x) * 268 + 16 + 256)*uiScale, yScrolled + 192*uiScale), ImVec2(0.0f, s_filteredMods[i]->invertImage ? 1.0f : 0.0f),
-						ImVec2(1.0f, s_filteredMods[i]->invertImage ? 0.0f : 1.0f), 0xffffffff, 8.0f, ImDrawCornerFlags_All);
+						ImVec2(1.0f, s_filteredMods[i]->invertImage ? 0.0f : 1.0f), 0xffffffff, 8.0f, ImDrawFlags_RoundCornersAll);
 				}
 
 				ImGui::SetCursorPos(ImVec2((f32(x) * 268 + 20)*uiScale, y + 192*uiScale));
@@ -377,6 +381,11 @@ namespace TFE_FrontEndUI
 		}
 		ImGui::PopFont();
 	}
+
+	void modLoader_preLoad()
+	{
+		readFromQueue(c_itemsPerFrame);
+	}
 		
 	bool modLoader_selectionUI()
 	{
@@ -384,7 +393,7 @@ namespace TFE_FrontEndUI
 		f32 uiScale = (f32)TFE_Ui::getUiScale() * 0.01f;
 
 		// Load in the mod data a few at a time so to limit waiting for loading.
-		readFromQueue(1);
+		readFromQueue(c_itemsPerFrame);
 		clearSelectedMod();
 		if (s_mods.empty()) { return stayOpen; }
 
@@ -487,11 +496,11 @@ namespace TFE_FrontEndUI
 
 			const u32 window_flags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoSavedSettings;
 			ImGui::SetCursorPos(ImVec2(10*uiScale, 10*uiScale));
-			ImGui::Begin("Mod Info", &open, ImVec2(f32(infoWidth), f32(infoHeight)), 1.0f, window_flags);
+			ImGui::Begin("Mod Info", &open, /*ImVec2(f32(infoWidth), f32(infoHeight)), 1.0f,*/ window_flags);
 			ImDrawList* drawList = ImGui::GetWindowDrawList();
 			ImVec2 cursor = ImGui::GetCursorPos();
 			drawList->AddImageRounded(TFE_RenderBackend::getGpuPtr(s_filteredMods[s_selectedMod]->image.texture), ImVec2(cursor.x + 64, cursor.y + 64), ImVec2(cursor.x + 64 + 320*uiScale, cursor.y + 64 + 200*uiScale),
-				ImVec2(0.0f, s_filteredMods[s_selectedMod]->invertImage ? 1.0f : 0.0f), ImVec2(1.0f, s_filteredMods[s_selectedMod]->invertImage ? 0.0f : 1.0f), 0xffffffff, 8.0f, ImDrawCornerFlags_All);
+				ImVec2(0.0f, s_filteredMods[s_selectedMod]->invertImage ? 1.0f : 0.0f), ImVec2(1.0f, s_filteredMods[s_selectedMod]->invertImage ? 0.0f : 1.0f), 0xffffffff, 8.0f, ImDrawFlags_RoundCornersAll);
 
 			ImGui::PushFont(getDialogFont());
 			ImGui::SetCursorPosX(cursor.x + (320 + 70)*uiScale);
@@ -536,11 +545,12 @@ namespace TFE_FrontEndUI
 			ImGui::SetCursorPos(ImVec2(cursor.x + 328*uiScale, cursor.y + 30*uiScale));
 			ImGui::BeginChild("###Mod Info Text", ImVec2(f32(infoWidth - 344*uiScale), f32(infoHeight - 68*uiScale)), true, ImGuiWindowFlags_NoBringToFrontOnFocus);
 			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 1.0f, 1.0f, 0.75f));
+			// TODO: Modify imGUI to make the internal "temp" text buffer at least as large as the input text.
 			ImGui::TextWrapped("%s", s_filteredMods[s_selectedMod]->text.c_str());
 			ImGui::PopStyleColor();
 			ImGui::EndChild();
 
-			if (!ImGui::IsRootWindowOrAnyChildFocused())
+			if (!ImGui::IsWindowFocused(ImGuiFocusedFlags_ChildWindows | ImGuiFocusedFlags_RootWindow))
 			{
 				open = false;
 			}
@@ -549,10 +559,6 @@ namespace TFE_FrontEndUI
 			if (!open)
 			{
 				s_selectedMod = -1;
-				if (retFromLoader)
-				{
-					modLoader_cleanupResources();
-				}
 			}
 		}
 		else if (TFE_Input::keyPressed(KEY_ESCAPE))
@@ -890,7 +896,11 @@ namespace TFE_FrontEndUI
 
 				if (mod.imageFile.empty())
 				{
-					extractPosterFromMod(subDir, mod.gobFiles[0].c_str(), &mod.image);
+					if (!extractPosterFromMod(subDir, mod.gobFiles[0].c_str(), &mod.image))
+					{
+						s_mods.pop_back();
+						continue;
+					}
 					mod.invertImage = true;
 				}
 				else
@@ -969,8 +979,14 @@ namespace TFE_FrontEndUI
 
 					if (jpgFileIndex < 0)
 					{
-						extractPosterFromMod(modPath, mod.gobFiles[0].c_str(), &mod.image);
-						mod.invertImage = true;
+						if (!extractPosterFromMod(modPath, mod.gobFiles[0].c_str(), &mod.image))
+						{
+							s_mods.pop_back();
+						}
+						else
+						{
+							mod.invertImage = true;
+						}
 					}
 					else
 					{
@@ -992,7 +1008,7 @@ namespace TFE_FrontEndUI
 		}
 	}
 
-	void extractPosterFromImage(const char* baseDir, const char* zipFile, const char* imageFileName, EditorTexture* poster)
+	void extractPosterFromImage(const char* baseDir, const char* zipFile, const char* imageFileName, UiTexture* poster)
 	{
 		if (zipFile && zipFile[0])
 		{
@@ -1008,16 +1024,15 @@ namespace TFE_FrontEndUI
 				zipArchive.readFile(s_imageBuffer.data(), imageSize);
 				zipArchive.closeFile();
 
-				Image* image = TFE_Image::loadFromMemory((u8*)s_imageBuffer.data(), imageSize);
+				SDL_Surface* image = TFE_Image::loadFromMemory((u8*)s_imageBuffer.data(), imageSize);
 				if (image)
 				{
-					TextureGpu* gpuImage = TFE_RenderBackend::createTexture(image->width, image->height, image->data, MAG_FILTER_LINEAR);
+					TextureGpu* gpuImage = TFE_RenderBackend::createTexture(image->w, image->h, (u32*)image->pixels, MAG_FILTER_LINEAR);
 					poster->texture = gpuImage;
-					poster->width = image->width;
-					poster->height = image->height;
+					poster->width = image->w;
+					poster->height = image->h;
 
-					delete[] image->data;
-					delete image;
+					TFE_Image::free(image);
 				}
 			}
 			zipArchive.close();
@@ -1027,18 +1042,18 @@ namespace TFE_FrontEndUI
 			char imagePath[TFE_MAX_PATH];
 			sprintf(imagePath, "%s%s", baseDir, imageFileName);
 
-			Image* image = TFE_Image::get(imagePath);
+			SDL_Surface* image = TFE_Image::get(imagePath);
 			if (image)
 			{
-				TextureGpu* gpuImage = TFE_RenderBackend::createTexture(image->width, image->height, image->data, MAG_FILTER_LINEAR);
+				TextureGpu* gpuImage = TFE_RenderBackend::createTexture(image->w, image->h, (u32*)image->pixels, MAG_FILTER_LINEAR);
 				poster->texture = gpuImage;
-				poster->width = image->width;
-				poster->height = image->height;
+				poster->width = image->w;
+				poster->height = image->h;
 			}
 		}
 	}
 
-	void extractPosterFromMod(const char* baseDir, const char* archiveFileName, EditorTexture* poster)
+	bool extractPosterFromMod(const char* baseDir, const char* archiveFileName, UiTexture* poster)
 	{
 		// Extract a "poster", if possible, from the GOB file.
 		// And then save it as a JPG in /ProgramData/TheForceEngine/ModPosters/NAME.jpg
@@ -1052,6 +1067,7 @@ namespace TFE_FrontEndUI
 		const char* archiveExt = &archiveFileName[len - 3];
 		Archive* archiveMod = nullptr;
 		bool archiveIsGob = true;
+		bool validGob = false;
 		if (strcasecmp(archiveExt, "zip") == 0)
 		{
 			archiveIsGob = false;
@@ -1082,12 +1098,18 @@ namespace TFE_FrontEndUI
 					const size_t lengthRead = zipArchive.readFile(buffer, bufferLen);
 					zipArchive.closeFile();
 
+					bool archiveRead = false;
 					if (lengthRead > 0)
 					{
-						gobMemArchive.open(buffer, bufferLen);
-						archiveMod = &gobMemArchive;
+						archiveRead = gobMemArchive.open(buffer, bufferLen);
+						if (archiveRead)
+						{
+							archiveMod = &gobMemArchive;
+							validGob = true;
+						}
 					}
-					else
+					
+					if (!archiveRead)
 					{
 						TFE_System::logWrite(LOG_ERROR, "ModLoader", "Cannot open zip: '%s'", modPath);
 					}
@@ -1099,6 +1121,7 @@ namespace TFE_FrontEndUI
 		else
 		{
 			archiveMod = Archive::getArchive(ARCHIVE_GOB, archiveFileName, modPath);
+			validGob = archiveMod != nullptr;
 		}
 		Archive* archiveTex = Archive::getArchive(ARCHIVE_GOB, "TEXTURES.GOB", srcPathTex);
 		Archive* archiveBase = Archive::getArchive(ARCHIVE_GOB, "DARK.GOB", srcPath);
@@ -1146,5 +1169,7 @@ namespace TFE_FrontEndUI
 		{
 			Archive::freeArchive(archiveMod);
 		}
+
+		return validGob;
 	}
 }

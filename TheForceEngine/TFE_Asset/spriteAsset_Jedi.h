@@ -19,6 +19,19 @@
 #define WAX_MAX_FRAMES 32
 #define WAX_DECOMPRESS_SIZE 1024
 
+struct HdWaxCell
+{
+	u32 id;
+	u32 pixelCount;
+	u32* data;
+};
+
+struct HdWax
+{
+	s32 entryCount;
+	HdWaxCell* cells;
+};
+
 #pragma pack(push)
 #pragma pack(1)
 struct WaxCell
@@ -26,7 +39,7 @@ struct WaxCell
 	s32 sizeX;
 	s32 sizeY;
 	s32 compressed;
-	s32 dataSize;
+	s32 id;				// TFE: Replace 'dataSize' with a unique cell ID since dataSize isn't used.
 	u32 columnOffset;
 	s32 textureId;		// TFE: Replace padding with textureID for the GPU renderer.
 };
@@ -40,7 +53,7 @@ struct WaxFrame
 	s32 widthWS;
 	s32 heightWS;
 	s32 pad1;
-	s32 pad2;
+	u32 pool;		// TFE: Pool the frame is loaded in.
 };
 
 struct WaxView
@@ -75,7 +88,7 @@ struct Wax
 	s32 xScale;
 	s32 yScale;
 	s32 xtraLight;
-	s32 pad4;
+	u32 pool;		// TFE: pool Wax allocated in.
 	s32 animOffsets[WAX_MAX_ANIM];
 };
 #pragma pack(pop)
@@ -92,8 +105,12 @@ namespace TFE_Sprite_Jedi
 {
 	JediFrame* getFrame(const char* name, AssetPool pool = POOL_LEVEL);
 	JediWax*   getWax(const char* name, AssetPool pool = POOL_LEVEL);
+	const HdWax* getHdWaxData(const void* srcWax);
 	void freeAll();
 	void freeLevelData();
+
+	JediFrame* loadFrameFromMemory(const u8* data, size_t size, bool transformOffsets = true);
+	JediWax* loadWaxFromMemory(const u8* data, size_t size, bool transformOffsets = true);
 
 	const std::vector<JediWax*>& getWaxList(AssetPool pool = POOL_LEVEL);
 	const std::vector<JediFrame*>& getFrameList(AssetPool pool = POOL_LEVEL);

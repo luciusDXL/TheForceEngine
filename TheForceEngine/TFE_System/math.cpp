@@ -142,4 +142,63 @@ namespace TFE_Math
 			mat[2] = {-sY,                cY * sX,                cY * cX };
 		}
 	}
+
+	// Returns true if the segment (a0, a1) intersects the line segment (b0, b1)
+	// intersection is: I = a0 + s*(a1-a0) = b0 + t*(b1 - b0)
+	// Returns false if the intersection occurs between the lines but not the segments.
+	bool lineSegmentIntersect(const Vec2f* a0, const Vec2f* a1, const Vec2f* b0, const Vec2f* b1, f32* s, f32* t)
+	{
+		const Vec2f u = { a1->x - a0->x, a1->z - a0->z };
+		const Vec2f v = { b1->x - b0->x, b1->z - b0->z };
+		const Vec2f w = { a0->x - b0->x, a0->z - b0->z };
+
+		f32 det = v.x*u.z - v.z*u.x;
+		if (fabsf(det) < FLT_EPSILON) { return false; }
+		det = 1.0f / det;
+
+		*s = (v.z*w.x - v.x*w.z) * det;
+		*t = -(u.x*w.z - u.z*w.x) * det;
+
+		return (*s) > -FLT_EPSILON && (*s) < 1.0f + FLT_EPSILON && (*t) > -FLT_EPSILON && (*t) < 1.0f + FLT_EPSILON;
+	}
+
+	// line: p0, p1; plane: planeHeight + planeDir (+/-Y)
+	// returns true if the intersection occurs within the segment
+	bool lineYPlaneIntersect(const Vec3f* p0, const Vec3f* p1, f32 planeHeight, Vec3f* hitPoint)
+	{
+		if (fabsf(p1->y - p0->y) < FLT_EPSILON) { return false; }
+
+		const f32 s = (planeHeight - p0->y) / (p1->y - p0->y);
+		if (s < -FLT_EPSILON || s > 1.0f + FLT_EPSILON) { return false; }
+
+		*hitPoint = { p0->x + s * (p1->x - p0->x), p0->y + s * (p1->y - p0->y), p0->z + s * (p1->z - p0->z) };
+		return true;
+	}
+
+	bool closestPointBetweenLines(const Vec3f* p1, const Vec3f* p2, const Vec3f* p3, const Vec3f* p4, f32* u, f32* v)
+	{
+		const f32 eps = 0.0001f;
+		// Delta between first vertex of each line.
+		const Vec3f p13 = { p1->x - p3->x, p1->y - p3->y, p1->z - p3->z };
+
+		// Compute line deltas, if either are 0 than return false.
+		const Vec3f p43 = { p4->x - p3->x, p4->y - p3->y, p4->z - p3->z };
+		const Vec3f p21 = { p2->x - p1->x, p2->y - p1->y, p2->z - p1->z };
+		if (fabsf(p43.x) < eps && fabsf(p43.y) < eps && fabsf(p43.z) < eps) { return false; }
+		if (fabsf(p21.x) < eps && fabsf(p21.y) < eps && fabsf(p21.z) < eps) { return false; }
+
+		const f32 d1343 = dot(&p13, &p43);
+		const f32 d4321 = dot(&p43, &p21);
+		const f32 d1321 = dot(&p13, &p21);
+		const f32 d4343 = dot(&p43, &p43);
+		const f32 d2121 = dot(&p21, &p21);
+
+		const f32 denom = d2121 * d4343 - d4321 * d4321;
+		if (fabsf(denom) < eps) { return false; }
+		const f32 numer = d1343 * d4321 - d1321 * d4343;
+
+		*u = numer / denom;
+		*v = (d1343 + d4321 * (*u)) / d4343;
+		return true;
+	}
 }

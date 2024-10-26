@@ -10,6 +10,10 @@
 #include <vector>
 #include <string>
 
+#include "imGUI/imgui.h"
+#include "imGUI/imgui_internal.h"
+#include "imGUI/imgui_tfe_widgets.h"
+
 #if _WIN32
 #define DEFAULT_PATH "C:\\"
 #else
@@ -29,6 +33,8 @@ namespace TFE_Ui
 
 	void setUiScale(s32 scale);
 	s32  getUiScale();
+
+	void invalidateFontAtlas();
 
 	// File dialogs use OS based dialogs in order to provide all of the features that users expect.
 	// These do NOT use imGUI so they may clash visually with the rest of the UI but that is a small price to pay for robustness.
