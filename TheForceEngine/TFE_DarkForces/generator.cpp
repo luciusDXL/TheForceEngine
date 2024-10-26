@@ -18,6 +18,7 @@
 #include <TFE_FileSystem/filestream.h>
 #include <TFE_Jedi/Serialization/serialization.h>
 #include <TFE_DarkForces/logic.h>
+#include <TFE_Settings/settings.h>
 
 using namespace TFE_Jedi;
 

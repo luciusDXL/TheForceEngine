@@ -12,7 +12,6 @@
 #include <TFE_System/iniParser.h>
 #include <TFE_FileSystem/paths.h>
 #include <TFE_Audio/midiDevice.h>
-#include <TFE_ExternalData/dfLogics.h>
 #include "gameSourceData.h"
 #include <map>
 
@@ -392,8 +391,6 @@ namespace TFE_Settings
 	TFE_Settings_Game* getGameSettings();
 	TFE_Settings_A11y* getA11ySettings();
 	TFE_ModSettings* getModSettings();
-	
-	TFE_ExternalData::ExternalLogics* getExternalLogics();
 
 	// Helper functions.
 	void setLevelName(const char* levelName);
@@ -414,5 +411,4 @@ namespace TFE_Settings
 	void autodetectGamePaths();
 	void clearModSettings();
 	void loadCustomModSettings();
-	void loadCustomLogics();
 }

@@ -27,6 +27,7 @@
 #include <TFE_Ui/ui.h>
 #include <TFE_Ui/markdown.h>
 #include <TFE_System/utf8.h>
+#include <TFE_ExternalData/dfLogics.h>
 // Game
 #include <TFE_DarkForces/mission.h>
 #include <TFE_DarkForces/gameMusic.h>
@@ -506,7 +507,7 @@ namespace TFE_FrontEndUI
 		s_selectedModCmd[0] = 0;
 		s_relativeMode = false;
 		TFE_Input::enableRelativeMode(s_relativeMode);
-		TFE_Settings::getExternalLogics()->actorLogics.clear();
+		TFE_ExternalData::getExternalLogics()->actorLogics.clear();		// clear custom logics
 
 		if (TFE_Settings::getSystemSettings()->returnToModLoader && s_modLoaded)
 		{

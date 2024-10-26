@@ -10,7 +10,7 @@
 #include <TFE_Jedi/Level/robject.h>
 #include <TFE_Jedi/Task/task.h>
 #include <TFE_System/parser.h>
-#include <TFE_Settings/settings.h>
+#include <TFE_ExternalData/dfLogics.h>
 
 struct Logic;
 typedef void(*LogicCleanupFunc)(Logic*);

@@ -41,7 +41,6 @@ namespace TFE_Settings
 	static TFE_ModSettings s_modSettings = {};
 	static std::vector<char> s_iniBuffer;
 
-	static TFE_ExternalData::ExternalLogics s_externalLogics = {};
 
 	//MOD CONF Version ENUM
 	enum ModConfVersion
@@ -1650,38 +1649,5 @@ namespace TFE_Settings
 			}
 		}
 		free(data);
-	}
-
-	void loadCustomLogics()
-	{
-		vector<string> jsons;
-		TFE_Paths::getAllFilesFromSearchPaths("logics", "json", jsons);
-
-		TFE_System::logWrite(LOG_MSG, "LOGICS", "Parsing logic JSON(s)");
-		for (u32 i = 0; i < jsons.size(); i++)
-		{
-			FileStream file;
-			const char* fileName = jsons[i].c_str();
-			if (!file.open(fileName, FileStream::MODE_READ)) { return; }
-
-			const size_t size = file.getSize();
-			char* data = (char*)malloc(size + 1);
-			if (!data || size == 0)
-			{
-				TFE_System::logWrite(LOG_ERROR, "LOGICS", "JSON found but is %u bytes in size and cannot be read.", size);
-				return;
-			}
-			file.readBuffer(data, (u32)size);
-			data[size] = 0;
-			file.close();
-
-			parseLogicData(data, fileName, s_externalLogics.actorLogics);
-			free(data);
-		}
-	}
-
-	TFE_ExternalData::ExternalLogics* getExternalLogics()
-	{
-		return &s_externalLogics;
 	}
 }

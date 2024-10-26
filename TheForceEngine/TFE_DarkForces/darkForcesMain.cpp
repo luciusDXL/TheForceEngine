@@ -949,7 +949,7 @@ namespace TFE_DarkForces
 								zipArchive.readFile(buffer, bufferLen);
 								zipArchive.closeFile();
 
-								TFE_ExternalData::ExternalLogics* logics = TFE_Settings::getExternalLogics();
+								TFE_ExternalData::ExternalLogics* logics = TFE_ExternalData::getExternalLogics();
 								TFE_ExternalData::parseLogicData(buffer, name, logics->actorLogics);
 							}
 						}
@@ -1239,7 +1239,7 @@ namespace TFE_DarkForces
 		weapon_startup();
 		loadLangHotkeys();
 
-		TFE_Settings::loadCustomLogics();
+		TFE_ExternalData::loadCustomLogics();
 
 		FilePath filePath;
 		TFE_Paths::getFilePath("swfont1.fnt", &filePath);

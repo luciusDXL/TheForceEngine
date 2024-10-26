@@ -56,5 +56,7 @@ namespace TFE_ExternalData
 		std::vector<CustomActorLogic> actorLogics;
 	};
 
+	ExternalLogics* getExternalLogics();
+	void loadCustomLogics(); 
 	void parseLogicData(char* data, const char* filename, std::vector<CustomActorLogic>& actorLogics);
 }
