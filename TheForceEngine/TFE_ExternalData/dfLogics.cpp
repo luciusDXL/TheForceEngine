@@ -88,7 +88,7 @@ namespace TFE_ExternalData
 
 		if (cJSON_IsNumber(data) && strcasecmp(data->string, "fieldOfView") == 0)
 		{
-			customLogic.fov = data->valueint * 45;
+			customLogic.fov = floatToAngle(data->valueint);
 			return true;
 		}
 
@@ -226,13 +226,13 @@ namespace TFE_ExternalData
 
 		if (cJSON_IsNumber(data) && strcasecmp(data->string, "rangedAttackDelay") == 0)
 		{
-			customLogic.rangedAttackDelay = data->valueint;
+			customLogic.rangedAttackDelay = u32(data->valuedouble * TICKS_PER_SECOND);
 			return true;
 		}
 
 		if (cJSON_IsNumber(data) && strcasecmp(data->string, "meleeAttackDelay") == 0)
 		{
-			customLogic.meleeAttackDelay = data->valueint;
+			customLogic.meleeAttackDelay = u32(data->valuedouble * TICKS_PER_SECOND);
 			return true;
 		}
 
@@ -292,7 +292,7 @@ namespace TFE_ExternalData
 
 		if (cJSON_IsNumber(data) && strcasecmp(data->string, "rotationSpeed") == 0)
 		{
-			customLogic.rotationSpeed = data->valueint * 45;
+			customLogic.rotationSpeed = floatToAngle(data->valueint);
 			return true;
 		}
 
