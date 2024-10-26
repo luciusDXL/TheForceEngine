@@ -2,6 +2,7 @@
 #include <vector>
 #include <TFE_System/cJSON.h>
 #include <TFE_System/system.h>
+#include <TFE_DarkForces/time.h>
 #include "dfLogics.h"
 #include "logicTables.h"
 
@@ -88,6 +89,12 @@ namespace TFE_ExternalData
 		if (cJSON_IsNumber(data) && strcasecmp(data->string, "fieldOfView") == 0)
 		{
 			customLogic.fov = data->valueint * 45;
+			return true;
+		}
+
+		if (cJSON_IsNumber(data) && strcasecmp(data->string, "awareRange") == 0)
+		{
+			customLogic.awareRange = data->valueint;
 			return true;
 		}
 
@@ -226,6 +233,12 @@ namespace TFE_ExternalData
 		if (cJSON_IsNumber(data) && strcasecmp(data->string, "meleeAttackDelay") == 0)
 		{
 			customLogic.meleeAttackDelay = data->valueint;
+			return true;
+		}
+
+		if (cJSON_IsNumber(data) && strcasecmp(data->string, "wanderTime") == 0)
+		{
+			customLogic.losDelay = data->valueint * TICKS_PER_SECOND;
 			return true;
 		}
 

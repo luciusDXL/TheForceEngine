@@ -191,6 +191,7 @@ namespace TFE_DarkForces
 		ActorDispatch* dispatch = actor_createDispatch(obj, setupFunc);
 		dispatch->alertSndSrc = sound_load(cust->alertSound, SOUND_PRIORITY_MED5);
 		dispatch->fov = cust->fov;
+		dispatch->awareRange = FIXED(cust->awareRange);
 
 		// Damage Module
 		DamageModule* damageMod = actor_createDamageModule(dispatch);
@@ -213,6 +214,7 @@ namespace TFE_DarkForces
 		attackMod->attackSecSndSrc = sound_load(cust->attack2Sound, SOUND_PRIORITY_LOW0);
 		attackMod->timing.rangedDelay = cust->rangedAttackDelay;
 		attackMod->timing.meleeDelay = cust->meleeAttackDelay;
+		attackMod->timing.losDelay = cust->losDelay;
 		attackMod->maxDist = FIXED(cust->maxAttackDist);
 		attackMod->meleeRange = FIXED(cust->meleeRange);
 		attackMod->meleeDmg = FIXED(cust->meleeDamage);

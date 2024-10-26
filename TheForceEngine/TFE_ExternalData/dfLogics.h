@@ -13,6 +13,7 @@ namespace TFE_ExternalData
 		bool hasGravity = true;
 		bool isFlying = false;
 		u32 fov = 9557;
+		u32 awareRange = 20;
 
 		const char* alertSound = "";
 		const char* painSound = "";
@@ -32,6 +33,7 @@ namespace TFE_ExternalData
 		s32 projectile = 2;
 		u32 rangedAttackDelay = 291;
 		u32 meleeAttackDelay = 0;
+		u32 losDelay = 43695;
 		u32 meleeRange = 0;
 		u32 meleeDamage = 0;
 		u32 meleeRate = 230;
