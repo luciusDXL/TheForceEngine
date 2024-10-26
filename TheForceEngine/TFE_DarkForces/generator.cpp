@@ -116,7 +116,7 @@ namespace TFE_DarkForces
 					sprite_setData(spawn, gen->wax);
 					
 					// Search the externally defined logics for a match
-					CustomActorLogic* customLogic;
+					TFE_ExternalData::CustomActorLogic* customLogic;
 					customLogic = tryFindCustomActorLogic(gen->logicName.c_str());
 					if (customLogic && gameSettings->df_jsonAiLogics)
 					{

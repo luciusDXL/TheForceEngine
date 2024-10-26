@@ -12,8 +12,8 @@
 #include <TFE_System/iniParser.h>
 #include <TFE_FileSystem/paths.h>
 #include <TFE_Audio/midiDevice.h>
+#include <TFE_ExternalData/dfLogics.h>
 #include "gameSourceData.h"
-#include "dfLogics.h"
 #include <map>
 
 enum SkyMode
@@ -393,7 +393,7 @@ namespace TFE_Settings
 	TFE_Settings_A11y* getA11ySettings();
 	TFE_ModSettings* getModSettings();
 	
-	ExternalLogics* getExternalLogics();
+	TFE_ExternalData::ExternalLogics* getExternalLogics();
 
 	// Helper functions.
 	void setLevelName(const char* levelName);

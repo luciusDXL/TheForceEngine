@@ -1,6 +1,6 @@
 #pragma once
 
-namespace TFE_Settings
+namespace TFE_ExternalData
 {
 	extern const char* df_projectileTable[];
 	extern const char* df_dropItemTable[];

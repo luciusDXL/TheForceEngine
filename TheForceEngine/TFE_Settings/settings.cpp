@@ -41,7 +41,7 @@ namespace TFE_Settings
 	static TFE_ModSettings s_modSettings = {};
 	static std::vector<char> s_iniBuffer;
 
-	static ExternalLogics s_externalLogics = {};
+	static TFE_ExternalData::ExternalLogics s_externalLogics = {};
 
 	//MOD CONF Version ENUM
 	enum ModConfVersion
@@ -1680,7 +1680,7 @@ namespace TFE_Settings
 		}
 	}
 
-	ExternalLogics* getExternalLogics()
+	TFE_ExternalData::ExternalLogics* getExternalLogics()
 	{
 		return &s_externalLogics;
 	}

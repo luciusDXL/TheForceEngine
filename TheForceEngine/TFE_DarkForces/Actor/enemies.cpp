@@ -186,7 +186,7 @@ namespace TFE_DarkForces
 	}
 
 	// SETUP CUSTOM LOGIC
-	Logic* custom_actor_setup(SecObject* obj, CustomActorLogic* cust, LogicSetupFunc* setupFunc)
+	Logic* custom_actor_setup(SecObject* obj, TFE_ExternalData::CustomActorLogic* cust, LogicSetupFunc* setupFunc)
 	{
 		ActorDispatch* dispatch = actor_createDispatch(obj, setupFunc);
 		dispatch->alertSndSrc = sound_load(cust->alertSound, SOUND_PRIORITY_MED5);

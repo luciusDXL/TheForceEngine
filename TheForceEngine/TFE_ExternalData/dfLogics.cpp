@@ -1,12 +1,11 @@
 #include <cstring>
 #include <vector>
-#include <TFE_Settings/dfLogics.h>
-#include <TFE_Settings/logicTables.h>
 #include <TFE_System/cJSON.h>
 #include <TFE_System/system.h>
+#include "dfLogics.h"
 #include "logicTables.h"
 
-namespace TFE_Settings
+namespace TFE_ExternalData
 {
 	///////////////////////////
 	/// Forward declarations 

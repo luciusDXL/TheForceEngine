@@ -194,6 +194,9 @@
     <Filter Include="Source\TFE_Editor\LevelEditor\Scripting">
       <UniqueIdentifier>{edd9ea1a-0570-4524-a9d7-f703a2c09cad}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\TFE_ExternalData">
+      <UniqueIdentifier>{1b022bdd-6cc1-453b-9ddb-47cd75ab9a49}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="main.h">
@@ -1399,11 +1402,11 @@
     <ClInclude Include="TFE_Editor\LevelEditor\editSector.h">
       <Filter>Source\TFE_Editor\LevelEditor</Filter>
     </ClInclude>
-    <ClInclude Include="TFE_Settings\dfLogics.h">
-      <Filter>Source\TFE_Settings</Filter>
+    <ClInclude Include="TFE_ExternalData\dfLogics.h">
+      <Filter>Source\TFE_ExternalData</Filter>
     </ClInclude>
-    <ClInclude Include="TFE_Settings\logicTables.h">
-      <Filter>Source\TFE_Settings</Filter>
+    <ClInclude Include="TFE_ExternalData\logicTables.h">
+      <Filter>Source\TFE_ExternalData</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -2445,11 +2448,11 @@
     <ClCompile Include="TFE_Editor\LevelEditor\editSector.cpp">
       <Filter>Source\TFE_Editor\LevelEditor</Filter>
     </ClCompile>
-    <ClCompile Include="TFE_Settings\dfLogics.cpp">
-      <Filter>Source\TFE_Settings</Filter>
+    <ClCompile Include="TFE_ExternalData\dfLogics.cpp">
+      <Filter>Source\TFE_ExternalData</Filter>
     </ClCompile>
-    <ClCompile Include="TFE_Settings\logicTables.cpp">
-      <Filter>Source\TFE_Settings</Filter>
+    <ClCompile Include="TFE_ExternalData\logicTables.cpp">
+      <Filter>Source\TFE_ExternalData</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

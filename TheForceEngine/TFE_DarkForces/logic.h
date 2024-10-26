@@ -60,8 +60,8 @@ namespace TFE_DarkForces
 
 	void logic_serialize(Logic*& logic, SecObject* obj, Stream* stream);
 
-	Logic* obj_setCustomActorLogic(SecObject* obj, CustomActorLogic* customLogic);
-	CustomActorLogic* tryFindCustomActorLogic(const char* logicName);
+	Logic* obj_setCustomActorLogic(SecObject* obj, TFE_ExternalData::CustomActorLogic* customLogic);
+	TFE_ExternalData::CustomActorLogic* tryFindCustomActorLogic(const char* logicName);
 
 	// Shared variables used for loading.
 	extern char s_objSeqArg0[];

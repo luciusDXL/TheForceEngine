@@ -1,6 +1,6 @@
 #include "logicTables.h"
 
-namespace TFE_Settings
+namespace TFE_ExternalData
 {
 	const char* df_projectileTable[] =
 	{

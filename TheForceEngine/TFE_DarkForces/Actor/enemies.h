@@ -14,5 +14,5 @@ namespace TFE_DarkForces
 	Logic* bossk_setup(SecObject* obj, LogicSetupFunc* setupFunc);
 	Logic* gamor_setup(SecObject* obj, LogicSetupFunc* setupFunc);
 
-	Logic* custom_actor_setup(SecObject* obj, CustomActorLogic* customEnemy, LogicSetupFunc* setupFunc);
+	Logic* custom_actor_setup(SecObject* obj, TFE_ExternalData::CustomActorLogic* customEnemy, LogicSetupFunc* setupFunc);
 }  // namespace TFE_DarkForces

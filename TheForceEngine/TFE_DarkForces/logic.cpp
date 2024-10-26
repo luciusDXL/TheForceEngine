@@ -134,7 +134,7 @@ namespace TFE_DarkForces
 				
 				// First, search the externally defined logics for a match (if the setting is enabled)
 				TFE_Settings_Game* gameSettings = TFE_Settings::getGameSettings();
-				CustomActorLogic* customLogic = (logicId != KW_PLAYER)
+				TFE_ExternalData::CustomActorLogic* customLogic = (logicId != KW_PLAYER)
 					? tryFindCustomActorLogic(s_objSeqArg1)
 					: nullptr;		// do not allow "LOGIC: PLAYER" to be overridden !!
 
@@ -465,7 +465,7 @@ namespace TFE_DarkForces
 	///////////////////////////////////////////////////
 	// Custom logics
 	///////////////////////////////////////////////////
-	Logic* obj_setCustomActorLogic(SecObject* obj, CustomActorLogic* customLogic)
+	Logic* obj_setCustomActorLogic(SecObject* obj, TFE_ExternalData::CustomActorLogic* customLogic)
 	{
 		obj->flags |= OBJ_FLAG_AIM;
 		obj->entityFlags = ETFLAG_AI_ACTOR;
@@ -477,9 +477,9 @@ namespace TFE_DarkForces
 		return custom_actor_setup(obj, customLogic, setupFunc);
 	}
 
-	CustomActorLogic* tryFindCustomActorLogic(const char* logicName)
+	TFE_ExternalData::CustomActorLogic* tryFindCustomActorLogic(const char* logicName)
 	{
-		ExternalLogics* externalLogics = TFE_Settings::getExternalLogics();
+		TFE_ExternalData::ExternalLogics* externalLogics = TFE_Settings::getExternalLogics();
 		u32 actorCount = externalLogics->actorLogics.size();
 
 		for (u32 a = 0; a < actorCount; a++)

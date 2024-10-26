@@ -949,8 +949,8 @@ namespace TFE_DarkForces
 								zipArchive.readFile(buffer, bufferLen);
 								zipArchive.closeFile();
 
-								ExternalLogics* logics = TFE_Settings::getExternalLogics();
-								TFE_Settings::parseLogicData(buffer, name, logics->actorLogics);
+								TFE_ExternalData::ExternalLogics* logics = TFE_Settings::getExternalLogics();
+								TFE_ExternalData::parseLogicData(buffer, name, logics->actorLogics);
 							}
 						}
 					}
