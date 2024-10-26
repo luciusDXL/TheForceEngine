@@ -284,6 +284,7 @@ namespace TFE_Settings
 			return true;
 		}
 
+		/* JK: Leaving these out for now until we have a better understanding of what they mean
 		if (cJSON_IsNumber(data) && strcasecmp(data->string, "delay") == 0)
 		{
 			customLogic.delay = data->valueint;
@@ -295,6 +296,7 @@ namespace TFE_Settings
 			customLogic.startDelay = data->valueint;
 			return true;
 		}
+		*/
 
 		return false;
 	}
