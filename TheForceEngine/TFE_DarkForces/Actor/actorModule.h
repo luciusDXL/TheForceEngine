@@ -39,8 +39,8 @@ enum LogicAnimState : u32
 	STATE_ANIMATE2,
 	STATE_COUNT,
 	//THINKER MODULE
-	STATE_WALK = 1u,
-	STATE_TURN = 2u
+	STATE_MOVE = 1u,
+	STATE_TURN = 2u,
 };
 
 typedef JBool(*ActorFunc)(ActorModule*, MovementModule*);
