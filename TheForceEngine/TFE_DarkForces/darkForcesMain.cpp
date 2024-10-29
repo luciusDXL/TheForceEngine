@@ -912,6 +912,7 @@ namespace TFE_DarkForces
 						const char* name = zipArchive.getFileName(i);
 						const size_t nameLen = strlen(name);
 						const char* zext = &name[nameLen - 3];
+						const char* zext4 = &name[nameLen - 4];
 						if (strcasecmp(zext, "gob") == 0)
 						{
 							// Avoid MacOS references, they aren't real files.
@@ -931,6 +932,25 @@ namespace TFE_DarkForces
 							else
 							{
 								lfdIndex[lfdCount++] = i;
+							}
+						}
+						else if (strcasecmp(zext4, "json") == 0)
+						{
+							char name2[TFE_MAX_PATH];
+							strcpy(name2, name);
+							const char* subdir = strtok(name2, "/");
+
+							// If in logics subdirectory, attempt to load logics from JSON
+							if (strcasecmp(subdir, "logics") == 0)
+							{
+								u32 bufferLen = (u32)zipArchive.getFileLength(i);
+								char* buffer = (char*)malloc(bufferLen);
+								zipArchive.openFile(i);
+								zipArchive.readFile(buffer, bufferLen);
+								zipArchive.closeFile();
+
+								TFE_ExternalData::ExternalLogics* logics = TFE_ExternalData::getExternalLogics();
+								TFE_ExternalData::parseLogicData(buffer, name, logics->actorLogics);
 							}
 						}
 					}
@@ -1218,6 +1238,8 @@ namespace TFE_DarkForces
 		hitEffect_startup();
 		weapon_startup();
 		loadLangHotkeys();
+
+		TFE_ExternalData::loadCustomLogics();
 
 		FilePath filePath;
 		TFE_Paths::getFilePath("swfont1.fnt", &filePath);

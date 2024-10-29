@@ -33,6 +33,10 @@ namespace TFE_DarkForces
 	const s32 s_commandoAnimTable[] =
 	{ 0, 1, 2, 3, 4, 5,  6, -1, -1, -1, -1, -1, 12, -1, -1, -1 };
 
+	// For custom sprites - based on enemies but with all anims available
+	const s32 s_customAnimTable[] =
+	{ 0, 1, 2, 3, 4, 5, 6, 7, 8, -1, -1, -1, 12, -1, -1, -1 };
+
 	// Internal State.
 	static const s32* const s_animTables[] =
 	{
