@@ -24,12 +24,17 @@ typedef std::vector<std::string> FileResult;
 
 namespace TFE_Ui
 {
+
 	bool init(void* window, void* context, s32 uiScale = 100);
 	void shutdown();
 
 	void setUiInput(const void* inputEvent);
 	void begin();
 	void render();
+	// Whether we are currently inside an Imgui frame and can safely use the
+	// Imgui API. If we try to create UI when this function is returning false,
+	// Imgui will throw an assertion error.
+	bool isGuiFrameActive();
 
 	void setUiScale(s32 scale);
 	s32  getUiScale();

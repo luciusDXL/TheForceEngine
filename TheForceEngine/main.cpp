@@ -827,8 +827,9 @@ int main(int argc, char* argv[])
 			TFE_RenderBackend::queueScreenshot(screenshotPath);
 		}
 
+		bool pressedRecordNoCountdown = inputMapping_getActionState(IADF_GIF_RECORD_NO_COUNTDOWN) == STATE_PRESSED;
 		// Gif recording handler
-		if (inputMapping_getActionState(IADF_GIF_RECORD) == STATE_PRESSED)
+		if (inputMapping_getActionState(IADF_GIF_RECORD) == STATE_PRESSED || pressedRecordNoCountdown)
 		{
 			static u64 _gifIndex = 0;
 			static bool _recording = false;
@@ -842,7 +843,7 @@ int main(int argc, char* argv[])
 				sprintf(gifPath, "%stfe_gif_%s_%" PRIu64 ".gif", screenshotDir, s_screenshotTime, _gifIndex);
 				_gifIndex++;
 
-				TFE_RenderBackend::startGifRecording(gifPath);
+				TFE_RenderBackend::startGifRecording(gifPath, pressedRecordNoCountdown);
 				_recording = true;
 			}
 			else
