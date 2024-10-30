@@ -45,7 +45,7 @@ namespace TFE_Settings
 	//MOD CONF Version ENUM
 	enum ModConfVersion
 	{
-		MOD_CONF_INIT_VER = 0x00010000,
+		MOD_CONF_INIT_VER = 0x0000001,
 		MOD_CONF_CUR_VERSION = MOD_CONF_INIT_VER
 	};
 
