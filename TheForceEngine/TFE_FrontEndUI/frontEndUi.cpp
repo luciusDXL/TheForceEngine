@@ -2916,7 +2916,8 @@ namespace TFE_FrontEndUI
 		f32 labelW = 140 * s_uiScale;
 		f32 valueW = 260 * s_uiScale - 10;
 		s32 framerate = (s32)system->gifRecordingFramerate;
-		DrawLabelledIntSlider(labelW, valueW - 2, "GIF Recording Framerate", "##CBO", &framerate, 10, 30);
+		DrawLabelledIntSlider(labelW, valueW - 2, "GIF Record Framerate", "##CBO", &framerate, 10, 30);
+		Tooltip("Number of frames per second to capture when recording a GIF.");
 		system->gifRecordingFramerate = (f32)framerate;
 
 		bool showGifRecordingCountdown = system->showGifRecordingCountdown;
@@ -2924,12 +2925,14 @@ namespace TFE_FrontEndUI
 		{
 			system->showGifRecordingCountdown = showGifRecordingCountdown;
 		}
+		Tooltip("Appears in upper-left of screen. If disabled, 'REC' will flash momentarily before recording starts.");
 
 		bool showGifPathConfirmation = system->showGifPathConfirmation;
 		if (ImGui::Checkbox("Show file path when recording ends", &showGifPathConfirmation))
 		{
 			system->showGifPathConfirmation = showGifPathConfirmation;
 		}
+		Tooltip("Appears in upper-left corner of screen. If disabled, a generic 'recording saved' message will be shown instead.");
 
 	#ifdef _WIN32
 		ImGui::Separator();
