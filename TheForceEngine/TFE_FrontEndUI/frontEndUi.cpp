@@ -27,6 +27,7 @@
 #include <TFE_Ui/ui.h>
 #include <TFE_Ui/markdown.h>
 #include <TFE_System/utf8.h>
+#include <TFE_ExternalData/dfLogics.h>
 // Game
 #include <TFE_DarkForces/mission.h>
 #include <TFE_DarkForces/gameMusic.h>
@@ -506,6 +507,7 @@ namespace TFE_FrontEndUI
 		s_selectedModCmd[0] = 0;
 		s_relativeMode = false;
 		TFE_Input::enableRelativeMode(s_relativeMode);
+		TFE_ExternalData::getExternalLogics()->actorLogics.clear();		// clear custom logics
 
 		if (TFE_Settings::getSystemSettings()->returnToModLoader && s_modLoaded)
 		{
@@ -1198,6 +1200,18 @@ namespace TFE_FrontEndUI
 			gameSettings->df_solidWallFlagFix = solidWallFlagFix;
 		}
 
+		bool enableUnusedItem = gameSettings->df_enableUnusedItem;
+		if (ImGui::Checkbox("Enable unused inventory item \"ITEM10\"", &enableUnusedItem))
+		{
+			gameSettings->df_enableUnusedItem = enableUnusedItem;
+		}
+
+		bool jsonAiLogics = gameSettings->df_jsonAiLogics;
+		if (ImGui::Checkbox("Enable custom AI logics from JSON files", &jsonAiLogics))
+		{
+			gameSettings->df_jsonAiLogics = jsonAiLogics;
+		}
+
 		if (s_drawNoGameDataMsg)
 		{
 			ImGui::Separator();
@@ -1390,6 +1404,31 @@ namespace TFE_FrontEndUI
 		}
 	}
 
+	bool enhanceGOBExists()
+	{
+		TFE_GameHeader* darkForces = TFE_Settings::getGameHeader("Dark Forces");
+		char testFile[TFE_MAX_PATH];
+		sprintf(testFile, "%senhanced.gob", darkForces->sourcePath);
+		return FileUtil::exists(testFile);
+	}
+
+	// Expose the function to toggle enhancements.
+	bool toggleEnhancements()
+	{
+		if (enhanceGOBExists())
+		{
+			TFE_Settings_Enhancements* enhancements = TFE_Settings::getEnhancementsSettings();
+			bool useHdAssets = enhancements->enableHdTextures && enhancements->enableHdSprites && enhancements->enableHdHud;
+			enhancements->enableHdTextures = !useHdAssets;
+			enhancements->enableHdSprites = !useHdAssets;
+			enhancements->enableHdHud = !useHdAssets;
+
+			renderBackground(true);
+			return useHdAssets;
+		}
+		return false;
+	}
+
 	bool configEnhancements()
 	{
 		s32 browseWinOpen = -1;
@@ -1398,19 +1437,12 @@ namespace TFE_FrontEndUI
 		//////////////////////////////////////////////////////
 		// Source Game Data
 		//////////////////////////////////////////////////////
-		TFE_GameHeader* darkForces = TFE_Settings::getGameHeader("Dark Forces");
 		ImGui::PushFont(s_dialogFont);
 		ImGui::LabelText("##ConfigLabel", "Enhanced Assets");
 		ImGui::PopFont();
 
 		// Try to open 'enhanced.gob'.
-		bool enhancedGobExists = false;
-		char testFile[TFE_MAX_PATH];
-		sprintf(testFile, "%senhanced.gob", darkForces->sourcePath);
-		if (FileUtil::exists(testFile))
-		{
-			enhancedGobExists = true;
-		}
+		bool enhancedGobExists = enhanceGOBExists();
 
 		if (enhancedGobExists)
 		{
@@ -1445,6 +1477,15 @@ namespace TFE_FrontEndUI
 			enhancements->enableHdSprites = false;
 			enhancements->enableHdHud = false;
 		}
+
+		ImGui::Spacing();
+		bool useHdAssets = enhancements->enableHdTextures && enhancements->enableHdSprites && enhancements->enableHdHud;
+		if (ImGui::Checkbox("Use HD Assets", &useHdAssets))
+		{
+			toggleEnhancements();
+		}
+		ImGui::Separator();
+		ImGui::Spacing();
 
 		bool useHdTextures = enhancements->enableHdTextures;
 		if (ImGui::Checkbox("Use HD Textures", &useHdTextures))
@@ -2134,12 +2175,15 @@ namespace TFE_FrontEndUI
 				inputMapping("Headwave",          IADF_HEADWAVE_TOGGLE);
 				inputMapping("HUD Toggle",        IADF_HUD_TOGGLE);
 				inputMapping("Holster Weapon",    IADF_HOLSTER_WEAPON);
+				inputMapping("HD Asset Toggle",   IADF_HD_ASSET_TOGGLE);
 				inputMapping("Automount Toggle",  IADF_AUTOMOUNT_TOGGLE);
 				inputMapping("Cycle Prev Weapon", IADF_CYCLEWPN_PREV);
 				inputMapping("Cycle Next Weapon", IADF_CYCLEWPN_NEXT);
 				inputMapping("Prev Weapon",       IADF_WPN_PREV);
 				inputMapping("Pause",             IADF_PAUSE);
 				inputMapping("Automap",           IADF_AUTOMAP);
+				inputMapping("Screenshot",		  IADF_SCREENSHOT);
+				inputMapping("GIF Recording",     IADF_GIF_RECORD);
 								
 				ImGui::Separator();
 
@@ -2672,7 +2716,7 @@ namespace TFE_FrontEndUI
 		ImGui::Separator();
 
 		ImGui::SetNextItemWidth(196*s_uiScale);
-		ImGui::SliderFloat("Scale", &hud->scale, 0.0f, 15.0f, "%.2f"); ImGui::SameLine(0.0f, 32.0f*s_uiScale);
+		ImGui::SliderFloat("Scale", &hud->scale, 0.0f, 15.0f, "%.2f"); ImGui::SameLine(0.0f, 29.5f*s_uiScale);
 		ImGui::SetNextItemWidth(128 * s_uiScale);
 		ImGui::InputFloat("##HudScaleText", &hud->scale, 0.01f, 0.1f, "%.3f", ImGuiInputTextFlags_CharsHexadecimal);
 
@@ -2886,6 +2930,28 @@ namespace TFE_FrontEndUI
 		{
 			system->showGifPathConfirmation = showGifPathConfirmation;
 		}
+
+	#ifdef _WIN32
+		ImGui::Separator();
+		if (ImGui::Button("Open Log Folder"))
+		{
+			char logDir[TFE_MAX_PATH];
+			TFE_Paths::appendPath(TFE_PathType::PATH_USER_DOCUMENTS, "", logDir);
+			if (!TFE_System::osShellExecute(logDir, NULL, NULL, false))
+			{
+				TFE_System::logWrite(LOG_ERROR, "Settings", "Failed to open directory: '%s'", logDir);
+			}
+		}
+		if (ImGui::Button("Open Screenshots Folder"))
+		{
+			char screenshotDir[TFE_MAX_PATH];
+			TFE_Paths::appendPath(TFE_PathType::PATH_USER_DOCUMENTS, "Screenshots/", screenshotDir);
+			if (!TFE_System::osShellExecute(screenshotDir, NULL, NULL, false))
+			{
+				TFE_System::logWrite(LOG_ERROR, "Settings", "Failed to open directory: '%s'", screenshotDir);
+			}
+		}
+	#endif
 	}
 
 	void DrawFontSizeCombo(float labelWidth, float valueWidth, const char* label, const char* comboTag, s32* currentValue)
@@ -3250,6 +3316,8 @@ namespace TFE_FrontEndUI
 				gameSettings->df_smoothVUEs = true;
 				gameSettings->df_pitchLimit = (temp == TEMPLATE_MODERN) ? PITCH_MAXIMUM : PITCH_VANILLA_PLUS;
 				gameSettings->df_solidWallFlagFix = true;
+				gameSettings->df_enableUnusedItem = true;
+				gameSettings->df_jsonAiLogics = true;
 				// Graphics
 				graphicsSettings->rendererIndex = RENDERER_HARDWARE;
 				graphicsSettings->skyMode = SKYMODE_CYLINDER;
@@ -3299,6 +3367,8 @@ namespace TFE_FrontEndUI
 				gameSettings->df_bobaFettFacePlayer = false;
 				gameSettings->df_smoothVUEs = false;
 				gameSettings->df_solidWallFlagFix = false;
+				gameSettings->df_enableUnusedItem = false;
+				gameSettings->df_jsonAiLogics = false;
 				// Graphics
 				graphicsSettings->rendererIndex = RENDERER_SOFTWARE;
 				graphicsSettings->widescreen = false;

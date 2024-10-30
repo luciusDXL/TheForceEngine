@@ -803,6 +803,7 @@ namespace TFE_Jedi
 				break;
 			default:
 				// Invalid type.
+				parser.readLine(bufferPos);
 				return false;
 			};
 			// index is mapped to a type internally.
@@ -853,6 +854,7 @@ namespace TFE_Jedi
 				break;
 			default:
 				// Invalid type.
+				parser.readLine(bufferPos);
 				return false;
 			}
 
@@ -1303,7 +1305,7 @@ namespace TFE_Jedi
 
 		// Then loop through all of the items and parse their classes.
 		s32 wallNum = 0;
-		for (s32 i = 0; i < itemCount; i++)
+		for (s32 i = 0; i < itemCount && line; i++)
 		{
 			line = parser.readLine(bufferPos);
 			if (!line)

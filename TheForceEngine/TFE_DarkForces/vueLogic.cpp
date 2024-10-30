@@ -406,6 +406,7 @@ namespace TFE_DarkForces
 	{
 		vueLogic->frames = frames;
 		vueLogic->isCamera = isCamera;
+		assert(vueLogic->task);
 		task_makeActive(vueLogic->task);
 	}
 
@@ -666,6 +667,7 @@ namespace TFE_DarkForces
 	{
 		deleteLogicAndObject(logic);
 		task_free(logic->task);
+		logic->task = nullptr;
 	}
 
 }  // TFE_DarkForces

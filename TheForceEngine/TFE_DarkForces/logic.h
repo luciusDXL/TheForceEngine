@@ -10,6 +10,7 @@
 #include <TFE_Jedi/Level/robject.h>
 #include <TFE_Jedi/Task/task.h>
 #include <TFE_System/parser.h>
+#include <TFE_ExternalData/dfLogics.h>
 
 struct Logic;
 typedef void(*LogicCleanupFunc)(Logic*);
@@ -58,6 +59,9 @@ namespace TFE_DarkForces
 	SecObject* logic_spawnEnemy(const char* waxName, const char* typeName);
 
 	void logic_serialize(Logic*& logic, SecObject* obj, Stream* stream);
+
+	Logic* obj_setCustomActorLogic(SecObject* obj, TFE_ExternalData::CustomActorLogic* customLogic);
+	TFE_ExternalData::CustomActorLogic* tryFindCustomActorLogic(const char* logicName);
 
 	// Shared variables used for loading.
 	extern char s_objSeqArg0[];
