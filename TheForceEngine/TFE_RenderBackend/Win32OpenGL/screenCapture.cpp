@@ -221,30 +221,29 @@ void ScreenCapture::captureFrame(const char* outputPath)
 void ScreenCapture::beginRecording(const char* path, bool skipCountdown)
 {
 	m_capturePath = string(path);
-	if (!skipCountdown && TFE_Settings::getSystemSettings()->showGifRecordingCountdown)
+	if (skipCountdown)
 	{
-		startCountdown();
-	}
-	else
-	{
-		//startCapture();
-		
 		// This will flash the countdown timer UI for an instant before
 		// capture starts, so the user still sees some indication that
 		// capture is working.
-		startCountdown();
+		startCountdown(false);
 		f32 framerateLimit = TFE_Settings::getGraphicsSettings()->frameRateLimit;
 		if (framerateLimit <= 0) { framerateLimit = 20; }
 		f32 messageDelay = 2.0 / framerateLimit;
 		if (messageDelay < 0.1) { messageDelay = 0.1; }
 		m_countdownTimeStart -= (COUNTDOWN_DURATION - messageDelay);
 	}
+	else
+	{
+		startCountdown(true);
+	}
 }
 
-void ScreenCapture::startCountdown()
+void ScreenCapture::startCountdown(bool fullCountdown)
 {
 	m_countdownTimeStart = TFE_System::getTime();
 	m_state = COUNTDOWN;
+	m_showFullCountdown = fullCountdown;
 	m_countdownFinished = false;
 }
 
@@ -307,7 +306,7 @@ void ScreenCapture::drawGui()
 		ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1, 0, 0, 1)); // Font color.
 
 		// Draw text.
-		if (TFE_Settings::getSystemSettings()->showGifRecordingCountdown)
+		if (m_showFullCountdown)
 		{
 			if (elapsed < COUNTDOWN_DURATION / 3.0) { ImGui::Text("3..."); }
 			else if (elapsed < COUNTDOWN_DURATION * (2.0 / 3.0)) { ImGui::Text("2..."); }

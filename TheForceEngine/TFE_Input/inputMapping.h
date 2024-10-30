@@ -83,6 +83,7 @@ namespace TFE_Input
 		// Screenshot and GIF record
 		IADF_SCREENSHOT,
 		IADF_GIF_RECORD,
+		IADF_GIF_RECORD_NO_COUNTDOWN,
 
 		IA_COUNT,
 		IAS_COUNT = IAS_SYSTEM_MENU + 1,

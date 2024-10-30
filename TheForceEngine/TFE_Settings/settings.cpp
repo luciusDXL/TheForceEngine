@@ -483,7 +483,6 @@ namespace TFE_Settings
 		writeKeyValue_Bool(settings, "gameExitsToMenu", s_systemSettings.gameQuitExitsToMenu);
 		writeKeyValue_Bool(settings, "returnToModLoader", s_systemSettings.returnToModLoader);
 		writeKeyValue_Float(settings, "gifRecordingFramerate", s_systemSettings.gifRecordingFramerate);
-		writeKeyValue_Bool(settings, "showGifRecordingCountdown", s_systemSettings.showGifRecordingCountdown);
 		writeKeyValue_Bool(settings, "showGifPathConfirmation", s_systemSettings.showGifPathConfirmation);
 	}
 
@@ -967,10 +966,6 @@ namespace TFE_Settings
 		else if (strcasecmp("gifRecordingFramerate", key) == 0)
 		{
 			s_systemSettings.gifRecordingFramerate = parseFloat(value);
-		}
-		else if (strcasecmp("showGifRecordingCountdown", key) == 0)
-		{
-			s_systemSettings.showGifRecordingCountdown = parseBool(value);
 		}
 		else if (strcasecmp("showGifPathConfirmation", key) == 0)
 		{

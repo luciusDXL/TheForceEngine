@@ -75,6 +75,7 @@ private:
 
 	ScreenCaptureState m_state;
 	f64 m_countdownTimeStart = 0.0;
+	bool m_showFullCountdown = true;
 	bool m_countdownFinished = false;
 	f64 m_confirmationTimeStart = 0.0;
 	u32  m_recordingFrame;
@@ -89,7 +90,8 @@ private:
 	u32* m_stagingBuffers;
 
 private:
-	void startCountdown();
+	// If `fullCountdown` is false, we'll just flash a brief message before capture starts.
+	void startCountdown(bool fullCountdown);
 	void startCapture();
 	void freeBuffers();
 	void writeFramesToDisk();

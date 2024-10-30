@@ -2182,9 +2182,12 @@ namespace TFE_FrontEndUI
 				inputMapping("Prev Weapon",       IADF_WPN_PREV);
 				inputMapping("Pause",             IADF_PAUSE);
 				inputMapping("Automap",           IADF_AUTOMAP);
-				inputMapping("Screenshot",		  IADF_SCREENSHOT);
+				inputMapping("Screenshot",        IADF_SCREENSHOT);
 				inputMapping("GIF Recording",     IADF_GIF_RECORD);
-								
+				Tooltip("Display a countdown and then start recording a GIF. Press again to stop recording.");
+				inputMapping("Instant GIF Record",IADF_GIF_RECORD_NO_COUNTDOWN);
+				Tooltip("Start recording immediately without the countdown. Press again to stop recording.");
+				
 				ImGui::Separator();
 
 				ImGui::PushFont(s_dialogFont);
@@ -2919,13 +2922,6 @@ namespace TFE_FrontEndUI
 		DrawLabelledIntSlider(labelW, valueW - 2, "GIF Record Framerate", "##CBO", &framerate, 10, 30);
 		Tooltip("Number of frames per second to capture when recording a GIF.");
 		system->gifRecordingFramerate = (f32)framerate;
-
-		bool showGifRecordingCountdown = system->showGifRecordingCountdown;
-		if (ImGui::Checkbox("Show countdown before recording starts", &showGifRecordingCountdown))
-		{
-			system->showGifRecordingCountdown = showGifRecordingCountdown;
-		}
-		Tooltip("Appears in upper-left of screen. If disabled, 'REC' will flash momentarily before recording starts.");
 
 		bool showGifPathConfirmation = system->showGifPathConfirmation;
 		if (ImGui::Checkbox("Show file path when recording ends", &showGifPathConfirmation))
