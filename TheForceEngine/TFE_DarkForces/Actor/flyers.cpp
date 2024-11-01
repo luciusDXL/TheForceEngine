@@ -22,12 +22,12 @@ namespace TFE_DarkForces
 	{
 		ThinkerModule* flyingMod = (ThinkerModule*)module;
 		SecObject* obj = flyingMod->header.obj;
-		if (flyingMod->anim.state == 0)
+		if (flyingMod->anim.state == STATE_DELAY)
 		{
-			flyingMod->anim.state = STATE_FIRE1;
+			flyingMod->anim.state = STATE_TURN;
 			return s_curTick + random(flyingMod->delay);
 		}
-		else if (flyingMod->anim.state == 1)
+		else if (flyingMod->anim.state == STATE_MOVE)
 		{
 			if (actor_handleSteps(moveMod, &flyingMod->target))
 			{
@@ -39,7 +39,7 @@ namespace TFE_DarkForces
 				flyingMod->anim.state = STATE_DELAY;
 			}
 		}
-		else if (flyingMod->anim.state == STATE_FIRE1)
+		else if (flyingMod->anim.state == STATE_TURN)
 		{
 			RSector* sector = obj->sector;
 			if (sector == s_playerObject->sector)
@@ -48,7 +48,7 @@ namespace TFE_DarkForces
 				fixed16_16 heightChange = random(FIXED(5)) - 0x18000;	// rand(5) - 1.5
 				flyingMod->target.pos.y = s_eyePos.y - heightChange;
 				flyingMod->target.flags |= TARGET_MOVE_Y;
-				flyingMod->anim.state = STATE_ANIMATEATTACK;
+				flyingMod->anim.state = STATE_MOVE;
 			}
 			else
 			{
@@ -66,25 +66,25 @@ namespace TFE_DarkForces
 		ActorTarget* target = &flyingMod->target;
 		SecObject* obj = flyingMod->header.obj;
 
-		if (flyingMod->anim.state == 0)
+		if (flyingMod->anim.state == STATE_DELAY)
 		{
-			flyingMod->anim.state = STATE_FIRE1;
+			flyingMod->anim.state = STATE_TURN;
 			return s_curTick + random(flyingMod->delay);
 		}
-		else if (flyingMod->anim.state == 1)
+		else if (flyingMod->anim.state == STATE_MOVE)
 		{
 			if (actor_arrivedAtTarget(target, obj))
 			{
 				flyingMod->anim.state = STATE_DELAY;
 			}
 		}
-		else if (flyingMod->anim.state == 2)
+		else if (flyingMod->anim.state == STATE_TURN)
 		{
 			target->yaw   = random_next() & ANGLE_MASK;
 			target->pitch = obj->pitch;
 			target->roll  = obj->roll;
 			target->flags |= TARGET_MOVE_ROT;
-			flyingMod->anim.state = STATE_ANIMATEATTACK;
+			flyingMod->anim.state = STATE_MOVE;
 		}
 
 		moveMod->updateTargetFunc(moveMod, target);
