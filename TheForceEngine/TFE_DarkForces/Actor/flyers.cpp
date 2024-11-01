@@ -24,7 +24,7 @@ namespace TFE_DarkForces
 		SecObject* obj = flyingMod->header.obj;
 		if (flyingMod->anim.state == STATE_DELAY)
 		{
-			flyingMod->anim.state = STATE_FIRE1;
+			flyingMod->anim.state = STATE_TURN;
 			return s_curTick + random(flyingMod->delay);
 		}
 		else if (flyingMod->anim.state == STATE_MOVE)
@@ -39,7 +39,7 @@ namespace TFE_DarkForces
 				flyingMod->anim.state = STATE_DELAY;
 			}
 		}
-		else if (flyingMod->anim.state == STATE_FIRE1)
+		else if (flyingMod->anim.state == STATE_TURN)
 		{
 			RSector* sector = obj->sector;
 			if (sector == s_playerObject->sector)
@@ -68,7 +68,7 @@ namespace TFE_DarkForces
 
 		if (flyingMod->anim.state == STATE_DELAY)
 		{
-			flyingMod->anim.state = STATE_FIRE1;
+			flyingMod->anim.state = STATE_TURN;
 			return s_curTick + random(flyingMod->delay);
 		}
 		else if (flyingMod->anim.state == STATE_MOVE)
@@ -78,7 +78,7 @@ namespace TFE_DarkForces
 				flyingMod->anim.state = STATE_DELAY;
 			}
 		}
-		else if (flyingMod->anim.state == STATE_FIRE1)
+		else if (flyingMod->anim.state == STATE_TURN)
 		{
 			target->yaw   = random_next() & ANGLE_MASK;
 			target->pitch = obj->pitch;

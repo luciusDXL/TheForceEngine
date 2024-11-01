@@ -30,8 +30,9 @@ enum LogicAnimFlags
 
 enum LogicAnimState : u32
 {
-	//ATTACK MODULE
+	//GENERAL
 	STATE_DELAY = 0u,
+	//ATTACK MODULE
 	STATE_ANIMATEATTACK,
 	STATE_FIRE1,
 	STATE_ANIMATE1,
@@ -39,7 +40,9 @@ enum LogicAnimState : u32
 	STATE_ANIMATE2,
 	STATE_COUNT,
 	//THINKER MODULE
+	// Move towards our destination
 	STATE_MOVE = 1u,
+	// Update our destination (generally moving towards the player).
 	STATE_TURN = 2u,
 };
 
