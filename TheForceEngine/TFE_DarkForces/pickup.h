@@ -21,8 +21,8 @@ namespace TFE_DarkForces
 		ItemId id;
 		s32 weaponIndex;
 		ItemType type;
-		JBool* playerItem;	// Player inventory item
-		s32* playerAmmo;	// Player ammo type, shields, or health 
+		JBool* playerItem;	// Points to s_playerInfo inventory item
+		s32* playerAmmo;	// Points to s_playerInfo ammo type, shields, or health 
 		s32 amount;
 		s32 msgId[2];
 		s32 maxAmount;

@@ -1,0 +1,493 @@
+{
+    "maxAmounts": {
+        "ammoEnergy": 500,
+        "ammoPower": 500,
+        "ammoShell": 50,
+        "ammoPlasma": 400,
+        "ammoDetonator": 50,
+        "ammoMine": 30,
+        "ammoMissile": 20,
+        "shields": 200,
+        "batteryPower": 100,
+        "health": 100
+    },
+    "pickups": [
+        {
+            "name": "PLANS",
+            "data": {
+                "type": "objective",
+                "playerItem": "itemPlans",
+                "message1": 400,
+                "fullbright": true,
+                "noRemove": true,
+                "asset": "IDPLANS.WAX"
+            }
+        },
+        {
+            "name": "PHRIK",
+            "data": {
+                "type": "objective",
+                "playerItem": "itemPhrik",
+                "message1": 401,
+                "fullbright": true,
+                "noRemove": true,
+                "asset": "IPHRIK.WAX"
+            }
+        },
+        {
+            "name": "NAVA",
+            "data": {
+                "type": "objective",
+                "playerItem": "itemNava",
+                "message1": 402,
+                "fullbright": true,
+                "noRemove": true,
+                "asset": "INAVA.WAX"
+            }
+        },
+        {
+            "name": "DT_WEAPON",
+            "data": {
+                "type": "objective",
+                "playerItem": "itemDtWeapon",
+                "message1": 405,
+                "noRemove": true,
+                "asset": "IDTGUN.WAX"
+            }
+        },
+        {
+            "name": "DATATAPE",
+            "data": {
+                "type": "objective",
+                "playerItem": "itemDatatape",
+                "message1": 406,
+                "noRemove": true,
+                "asset": "IDATA.FME"
+            }
+        },
+        {
+            "name": "ITEM10",
+            "data": {
+                "type": "objective",
+                "playerItem": "itemUnused",
+                "message1": 403,
+                "noRemove": true,
+                "asset": "ITEM10.WAX"
+            }
+        },
+        {
+            "name": "RIFLE",
+            "data": {
+                "weaponIndex": 2,
+                "type": "weapon",
+                "playerItem": "itemRifle",
+                "playerAmmo": "ammoEnergy",
+                "amount": 15,
+                "message1": 100,
+                "message2": 101,
+                "asset": "IST-GUNI.FME"
+            }
+        },
+        {
+            "name": "AUTOGUN",
+            "data": {
+                "weaponIndex": 4,
+                "type": "weapon",
+                "playerItem": "itemAutogun",
+                "playerAmmo": "ammoPower",
+                "amount": 30,
+                "message1": 103,
+                "message2": 104,
+                "asset": "IAUTOGUN.FME"
+            }
+        },
+        {
+            "name": "MORTAR",
+            "data": {
+                "weaponIndex": 6,
+                "type": "weapon",
+                "playerItem": "itemMortar",
+                "playerAmmo": "ammoShell",
+                "amount": 3,
+                "message1": 105,
+                "message2": 106,
+                "asset": "IMORTAR.FME"
+            }
+        },
+        {
+            "name": "FUSION",
+            "data": {
+                "weaponIndex": 5,
+                "type": "weapon",
+                "playerItem": "itemFusion",
+                "playerAmmo": "ammoPower",
+                "amount": 50,
+                "message1": 107,
+                "message2": 108,
+                "asset": "IFUSION.FME"
+            }
+        },
+        {
+            "name": "CONCUSSION",
+            "data": {
+                "weaponIndex": 8,
+                "type": "weapon",
+                "playerItem": "itemConcussion",
+                "playerAmmo": "ammoPower",
+                "amount": 100,
+                "message1": 110,
+                "message2": 111,
+                "asset": "ICONCUS.FME"
+            }
+        },
+        {
+            "name": "CANNON",
+            "data": {
+                "weaponIndex": 9,
+                "type": "weapon",
+                "playerItem": "itemCannon",
+                "playerAmmo": "ammoPlasma",
+                "amount": 30,
+                "message1": 112,
+                "message2": 113,
+                "asset": "ICANNON.FME"
+            }
+        },
+        {
+            "name": "ENERGY",
+            "data": {
+                "type": "ammo",
+                "playerAmmo": "ammoEnergy",
+                "amount": 15,
+                "message1": 200,
+                "asset": "IENERGY.FME"
+            }
+        },
+        {
+            "name": "POWER",
+            "data": {
+                "type": "ammo",
+                "playerAmmo": "ammoPower",
+                "amount": 10,
+                "message1": 201,
+                "asset": "IPOWER.FME"
+            }
+        },
+        {
+            "name": "PLASMA",
+            "data": {
+                "type": "ammo",
+                "playerAmmo": "ammoPlasma",
+                "amount": 20,
+                "message1": 202,
+                "asset": "IPLAZMA.FME"
+            }
+        },
+        {
+            "name": "DETONATOR",
+            "data": {
+                "type": "ammo",
+                "playerAmmo": "ammoDetonator",
+                "amount": 1,
+                "message1": 203,
+                "asset": "IDET.FME"
+            }
+        },
+        {
+            "name": "DETONATORS",
+            "data": {
+                "type": "ammo",
+                "playerAmmo": "ammoDetonator",
+                "amount": 5,
+                "message1": 204,
+                "asset": "IDETS.FME"
+            }
+        },
+        {
+            "name": "SHELL",
+            "data": {
+                "type": "ammo",
+                "playerAmmo": "ammoShell",
+                "amount": 1,
+                "message1": 205,
+                "asset": "ISHELL.FME"
+            }
+        },
+        {
+            "name": "SHELLS",
+            "data": {
+                "type": "ammo",
+                "playerAmmo": "ammoShell",
+                "amount": 5,
+                "message1": 206,
+                "asset": "ISHELLS.FME"
+            }
+        },
+        {
+            "name": "MINE",
+            "data": {
+                "type": "ammo",
+                "playerAmmo": "ammoMine",
+                "amount": 1,
+                "message1": 207,
+                "asset": "IMINE.FME"
+            }
+        },
+        {
+            "name": "MINES",
+            "data": {
+                "type": "ammo",
+                "playerAmmo": "ammoMine",
+                "amount": 5,
+                "message1": 208,
+                "asset": "IMINES.FME"
+            }
+        },
+        {
+            "name": "MISSILE",
+            "data": {
+                "type": "ammo",
+                "playerAmmo": "ammoMissile",
+                "amount": 1,
+                "message1": 209,
+                "asset": "IMSL.FME"
+            }
+        },
+        {
+            "name": "MISSILES",
+            "data": {
+                "type": "ammo",
+                "playerAmmo": "ammoMissile",
+                "amount": 5,
+                "message1": 210,
+                "asset": "IMSLS.FME"
+            }
+        },
+        {
+            "name": "SHIELD",
+            "data": {
+                "type": "ammo",
+                "playerAmmo": "shields",
+                "amount": 20,
+                "message1": 114,
+                "asset": "IARMOR.WAX"
+            }
+        },
+        {
+            "name": "RED_KEY",
+            "data": {
+                "type": "usable",
+                "playerItem": "itemRedKey",
+                "message1": 300,
+                "asset": "IKEYR.FME"
+            }
+        },
+        {
+            "name": "YELLOW_KEY",
+            "data": {
+                "type": "usable",
+                "playerItem": "itemYellowKey",
+                "message1": 301,
+                "asset": "IKEYY.FME"
+            }
+        },
+        {
+            "name": "BLUE_KEY",
+            "data": {
+                "type": "usable",
+                "playerItem": "itemBlueKey",
+                "message1": 302,
+                "asset": "IKEYB.FME"
+            }
+        },
+        {
+            "name": "GOGGLES",
+            "data": {
+                "type": "usable",
+                "playerItem": "itemGoggles",
+                "playerAmmo": "batteryPower",
+                "message1": 303,
+                "amount": 50,
+                "asset": "IGOGGLES.FME"
+            }
+        },
+        {
+            "name": "CLEATS",
+            "data": {
+                "type": "usable",
+                "playerItem": "itemCleats",
+                "message1": 304,
+                "asset": "ICLEATS.FME"
+            }
+        },
+        {
+            "name": "MASK",
+            "data": {
+                "type": "usable",
+                "playerItem": "itemMask",
+                "playerAmmo": "batteryPower",
+                "message1": 305,
+                "amount": 50,
+                "asset": "IMASK.FME"
+            }
+        },
+        {
+            "name": "BATTERY",
+            "data": {
+                "type": "ammo",
+                "playerAmmo": "batteryPower",
+                "message1": 211,
+                "amount": 50,
+                "asset": "IBATTERY.FME"
+            }
+        },
+        {
+            "name": "CODE1",
+            "data": {
+                "type": "codekey",
+                "playerItem": "itemCode1",
+                "message1": 501,
+                "fullbright": true,
+                "noRemove": true,
+                "asset": "DET_CODE.FME"
+            }
+        },
+        {
+            "name": "CODE2",
+            "data": {
+                "type": "codekey",
+                "playerItem": "itemCode2",
+                "message1": 502,
+                "fullbright": true,
+                "noRemove": true,
+                "asset": "DET_CODE.FME"
+            }
+        },
+        {
+            "name": "CODE3",
+            "data": {
+                "type": "codekey",
+                "playerItem": "itemCode3",
+                "message1": 503,
+                "fullbright": true,
+                "noRemove": true,
+                "asset": "DET_CODE.FME"
+            }
+        },
+        {
+            "name": "CODE4",
+            "data": {
+                "type": "codekey",
+                "playerItem": "itemCode4",
+                "message1": 504,
+                "fullbright": true,
+                "noRemove": true,
+                "asset": "DET_CODE.FME"
+            }
+        },
+        {
+            "name": "CODE5",
+            "data": {
+                "type": "codekey",
+                "playerItem": "itemCode5",
+                "message1": 505,
+                "fullbright": true,
+                "noRemove": true,
+                "asset": "DET_CODE.FME"
+            }
+        },
+        {
+            "name": "CODE6",
+            "data": {
+                "type": "codekey",
+                "playerItem": "itemCode6",
+                "message1": 506,
+                "fullbright": true,
+                "noRemove": true,
+                "asset": "DET_CODE.FME"
+            }
+        },
+        {
+            "name": "CODE7",
+            "data": {
+                "type": "codekey",
+                "playerItem": "itemCode7",
+                "message1": 507,
+                "fullbright": true,
+                "noRemove": true,
+                "asset": "DET_CODE.FME"
+            }
+        },
+        {
+            "name": "CODE8",
+            "data": {
+                "type": "codekey",
+                "playerItem": "itemCode8",
+                "message1": 508,
+                "fullbright": true,
+                "noRemove": true,
+                "asset": "DET_CODE.FME"
+            }
+        },
+        {
+            "name": "CODE9",
+            "data": {
+                "type": "codekey",
+                "playerItem": "itemCode9",
+                "message1": 509,
+                "fullbright": true,
+                "noRemove": true,
+                "asset": "DET_CODE.FME"
+            }
+        },
+        {
+            "name": "INVINCIBLE",
+            "data": {
+                "type": "powerup",
+                "message1": 306,
+                "asset": "IINVINC.WAX"
+            }
+        },
+        {
+            "name": "SUPERCHARGE",
+            "data": {
+                "type": "powerup",
+                "message1": 307,
+                "asset": "ICHARGE.FME"
+            }
+        },
+        {
+            "name": "REVIVE",
+            "data": {
+                "type": "powerup",
+                "message1": 308,
+                "asset": "IREVIVE.WAX"
+            }
+        },
+        {
+            "name": "LIFE",
+            "data": {
+                "type": "powerup",
+                "message1": 310,
+                "asset": "ILIFE.WAX"
+            }
+        },
+        {
+            "name": "MEDKIT",
+            "data": {
+                "type": "ammo",
+                "playerAmmo": "health",
+                "amount": 20,
+                "message1": 311,
+                "asset": "IMEDKIT.FME"
+            }
+        },
+        {
+            "name": "PILE",
+            "data": {
+                "type": "special",
+                "asset": "IPILE.FME"
+            }
+        }
+    ]
+}

@@ -706,7 +706,7 @@ namespace TFE_DarkForces
 				s_hudWorkPalette[3] = 55;
 				s_hudWorkPalette[4] = 55;
 
-				strcpy(shieldStr, "200");
+				sprintf(shieldStr, "%03d", s_shieldsMax);
 			}
 			else
 			{
@@ -984,7 +984,7 @@ namespace TFE_DarkForces
 					s_hudWorkPalette[3] = 55;
 					s_hudWorkPalette[4] = 55;
 
-					strcpy(shieldStr, "200");
+					sprintf(shieldStr, "%03d", s_shieldsMax);
 				}
 				else
 				{

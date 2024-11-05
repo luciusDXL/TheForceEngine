@@ -9,6 +9,7 @@
 #include <TFE_Jedi/Level/levelData.h>
 #include <TFE_Jedi/Task/task.h>
 #include <TFE_Jedi/Serialization/serialization.h>
+#include <TFE_ExternalData/pickupExternal.h>
 #include <cstring>
 
 using namespace TFE_Jedi;
@@ -267,11 +268,11 @@ namespace TFE_DarkForces
 				} break;
 				case ITEM_REVIVE:
 				{
-					if (s_playerInfo.health < 100 || s_playerInfo.shields < 200)
+					if (s_playerInfo.health < s_healthMax || s_playerInfo.shields < s_shieldsMax)
 					{
 						player_revive();
 						// The function sets shields to 100, so set it to the proper value here.
-						s_playerInfo.shields = 200;
+						s_playerInfo.shields = s_shieldsMax;
 					}
 					else
 					{
@@ -382,7 +383,75 @@ namespace TFE_DarkForces
 		task_end;
 	}
 
-	// TODO: Move pickup data to an external data file to avoid hardcoding.
+	// TFE: Pickups are set from external data instead of hardcoded as in vanilla DF
+	void setPickup(Pickup*& pickup, SecObject* obj, ItemId itemId, TFE_ExternalData::ExternalPickup* externalPickups)
+	{
+		// itemId will correspond to position in externalPickups array
+		pickup->type = ItemType(externalPickups[itemId].type);
+		pickup->weaponIndex = externalPickups[itemId].weaponIndex;
+		pickup->playerItem = externalPickups[itemId].playerItem;
+		pickup->playerAmmo = externalPickups[itemId].playerAmmo;
+		pickup->amount = pickup->playerAmmo == s_playerBatteryPower
+			? s32(externalPickups[itemId].amount / 100.0 * 2 * ONE_16)	// convert battery from a percentage
+			: externalPickups[itemId].amount;
+		
+		pickup->msgId[0] = externalPickups[itemId].message1;
+		pickup->msgId[1] = externalPickups[itemId].message2;
+
+		if (externalPickups[itemId].fullBright)
+		{
+			obj->flags |= OBJ_FLAG_FULLBRIGHT;
+		}
+
+		if (externalPickups[itemId].noRemove)
+		{
+			obj->flags |= OBJ_FLAG_NO_REMOVE;
+		}
+
+		// Set max amounts based on ammo type
+		TFE_ExternalData::MaxAmounts* maxAmounts = TFE_ExternalData::getMaxAmounts();
+		if (externalPickups[itemId].playerAmmo == s_playerAmmoEnergy)
+		{
+			pickup->maxAmount = maxAmounts->ammoEnergyMax;
+		}
+		else if (externalPickups[itemId].playerAmmo == s_playerAmmoPower)
+		{
+			pickup->maxAmount = maxAmounts->ammoPowerMax;
+		}
+		else if (externalPickups[itemId].playerAmmo == s_playerAmmoPlasma)
+		{
+			pickup->maxAmount = maxAmounts->ammoPlasmaMax;
+		}
+		else if (externalPickups[itemId].playerAmmo == s_playerAmmoShell)
+		{
+			pickup->maxAmount = maxAmounts->ammoShellMax;
+		}
+		else if (externalPickups[itemId].playerAmmo == s_playerAmmoDetonators)
+		{
+			pickup->maxAmount = maxAmounts->ammoDetonatorMax;
+		}
+		else if (externalPickups[itemId].playerAmmo == s_playerAmmoMines)
+		{
+			pickup->maxAmount = maxAmounts->ammoMineMax;
+		}
+		else if (externalPickups[itemId].playerAmmo == s_playerAmmoMissiles)
+		{
+			pickup->maxAmount = maxAmounts->ammoMissileMax;
+		}
+		else if (externalPickups[itemId].playerAmmo == s_playerShields)
+		{
+			pickup->maxAmount = maxAmounts->shieldsMax;
+		}
+		else if (externalPickups[itemId].playerAmmo == s_playerHealth)
+		{
+			pickup->maxAmount = maxAmounts->healthMax;
+		}
+		else if (externalPickups[itemId].playerAmmo == s_playerBatteryPower)
+		{
+			pickup->maxAmount = maxAmounts->batteryPowerMax;
+		}
+	}
+
 	Logic* obj_createPickup(SecObject* obj, ItemId id)
 	{
 		Pickup* pickup = (Pickup*)level_alloc(sizeof(Pickup));
@@ -399,382 +468,9 @@ namespace TFE_DarkForces
 		pickup->amount = 0;
 		pickup->msgId[0] = -1;
 		pickup->msgId[1] = -1;
+		pickup->maxAmount = 999;
 
-		switch (id)
-		{
-			// MISSION ITEMS
-			case ITEM_PLANS:
-			{
-				pickup->type = ITYPE_OBJECTIVE;
-				pickup->playerItem = &s_playerInfo.itemPlans;
-				pickup->msgId[0] = 400;
-
-				obj->flags |= (OBJ_FLAG_FULLBRIGHT | OBJ_FLAG_NO_REMOVE);
-			} break;
-			case ITEM_PHRIK:
-			{
-				pickup->type = ITYPE_OBJECTIVE;
-				pickup->playerItem = &s_playerInfo.itemPhrik;
-				pickup->msgId[0] = 401;
-
-				obj->flags |= (OBJ_FLAG_FULLBRIGHT | OBJ_FLAG_NO_REMOVE);
-			} break;
-			case ITEM_NAVA:
-			{
-				pickup->type = ITYPE_OBJECTIVE;
-				pickup->playerItem = &s_playerInfo.itemNava;
-				pickup->msgId[0] = 402;
-
-				obj->flags |= (OBJ_FLAG_FULLBRIGHT | OBJ_FLAG_NO_REMOVE);
-			} break;
-			case ITEM_DT_WEAPON:
-			{
-				pickup->type = ITYPE_OBJECTIVE;
-				pickup->playerItem = &s_playerInfo.itemDtWeapon;
-				pickup->msgId[0] = 405;
-
-				obj->flags |= OBJ_FLAG_NO_REMOVE;
-			} break;
-			case ITEM_DATATAPE:
-			{
-				pickup->type = ITYPE_OBJECTIVE;
-				pickup->playerItem = &s_playerInfo.itemDatatape;
-				pickup->msgId[0] = 406;
-
-				obj->flags |= OBJ_FLAG_NO_REMOVE;
-			} break;
-			case ITEM_UNUSED:
-			{
-				pickup->type = ITYPE_OBJECTIVE;
-				pickup->playerItem = &s_playerInfo.itemUnused;
-				pickup->msgId[0] = 403;
-
-				obj->flags |= OBJ_FLAG_NO_REMOVE;
-			} break;
-			// WEAPONS
-			case ITEM_RIFLE:
-			{
-				pickup->weaponIndex = 2;
-				pickup->type = ITYPE_WEAPON;
-				pickup->playerItem = &s_playerInfo.itemRifle;
-				pickup->playerAmmo = &s_playerInfo.ammoEnergy;
-				pickup->amount = 15;
-				pickup->msgId[0] = 100;
-				pickup->msgId[1] = 101;
-				pickup->maxAmount = 500;
-			} break;
-			case ITEM_AUTOGUN:
-			{
-				pickup->weaponIndex = 4;
-				pickup->type = ITYPE_WEAPON;
-				pickup->playerItem = &s_playerInfo.itemAutogun;
-				pickup->playerAmmo = &s_playerInfo.ammoPower;
-				pickup->amount = 30;
-				pickup->msgId[0] = 103;
-				pickup->msgId[1] = 104;
-				pickup->maxAmount = 500;
-			} break;
-			case ITEM_MORTAR:
-			{
-				pickup->weaponIndex = 6;
-				pickup->type = ITYPE_WEAPON;
-				pickup->playerItem = &s_playerInfo.itemMortar;
-				pickup->playerAmmo = &s_playerInfo.ammoShell;
-				pickup->amount = 3;
-				pickup->msgId[0] = 105;
-				pickup->msgId[1] = 106;
-				pickup->maxAmount = 50;
-			} break;
-			case ITEM_FUSION:
-			{
-				pickup->weaponIndex = 5;
-				pickup->type = ITYPE_WEAPON;
-				pickup->playerItem = &s_playerInfo.itemFusion;
-				pickup->playerAmmo = &s_playerInfo.ammoPower;
-				pickup->amount = 50;
-				pickup->msgId[0] = 107;
-				pickup->msgId[1] = 108;
-				pickup->maxAmount = 500;
-			} break;
-			case ITEM_CONCUSSION:
-			{
-				pickup->weaponIndex = 8;
-				pickup->type = ITYPE_WEAPON;
-				pickup->playerItem = &s_playerInfo.itemConcussion;
-				pickup->playerAmmo = &s_playerInfo.ammoPower;
-				pickup->amount = 100;
-				pickup->msgId[0] = 110;
-				pickup->msgId[1] = 111;
-				pickup->maxAmount = 500;
-			} break;
-			case ITEM_CANNON:
-			{
-				pickup->weaponIndex = 9;
-				pickup->type = ITYPE_WEAPON;
-				pickup->playerItem = &s_playerInfo.itemCannon;
-				pickup->playerAmmo = &s_playerInfo.ammoPlasma;
-				pickup->amount = 30;
-				pickup->msgId[0] = 112;
-				pickup->msgId[1] = 113;
-				pickup->maxAmount = 400;
-			} break;
-			// AMMO
-			case ITEM_ENERGY:
-			{
-				pickup->type = ITYPE_AMMO;
-				pickup->playerAmmo = &s_playerInfo.ammoEnergy;
-				pickup->amount = 15;
-				pickup->msgId[0] = 200;
-				pickup->maxAmount = 500;
-			} break;
-			case ITEM_POWER:
-			{
-				pickup->type = ITYPE_AMMO;
-				pickup->playerAmmo = &s_playerInfo.ammoPower;
-				pickup->amount = 10;
-				pickup->msgId[0] = 201;
-				pickup->maxAmount = 500;
-			} break;
-			case ITEM_PLASMA:
-			{
-				pickup->type = ITYPE_AMMO;
-				pickup->playerAmmo = &s_playerInfo.ammoPlasma;
-				pickup->amount = 20;
-				pickup->msgId[0] = 202;
-				pickup->maxAmount = 400;
-			} break;
-			case ITEM_DETONATOR:
-			{
-				pickup->type = ITYPE_AMMO;
-				pickup->playerAmmo = &s_playerInfo.ammoDetonator;
-				pickup->amount = 1;
-				pickup->msgId[0] = 203;
-				pickup->maxAmount = 50;
-			} break;
-			case ITEM_DETONATORS:
-			{
-				pickup->type = ITYPE_AMMO;
-				pickup->playerAmmo = &s_playerInfo.ammoDetonator;
-				pickup->amount = 5;
-				pickup->msgId[0] = 204;
-				pickup->maxAmount = 50;
-			} break;
-			case ITEM_SHELL:
-			{
-				pickup->type = ITYPE_AMMO;
-				pickup->playerAmmo = &s_playerInfo.ammoShell;
-				pickup->amount = 1;
-				pickup->msgId[0] = 205;
-				pickup->maxAmount = 50;
-			} break;
-			case ITEM_SHELLS:
-			{
-				pickup->type = ITYPE_AMMO;
-				pickup->playerAmmo = &s_playerInfo.ammoShell;
-				pickup->amount = 5;
-				pickup->msgId[0] = 206;
-				pickup->maxAmount = 50;
-			} break;
-			case ITEM_MINE:
-			{
-				pickup->type = ITYPE_AMMO;
-				pickup->playerAmmo = &s_playerInfo.ammoMine;
-				pickup->amount = 1;
-				pickup->msgId[0] = 207;
-				pickup->maxAmount = 30;
-			} break;
-			case ITEM_MINES:
-			{
-				pickup->type = ITYPE_AMMO;
-				pickup->playerAmmo = &s_playerInfo.ammoMine;
-				pickup->amount = 5;
-				pickup->msgId[0] = 208;
-				pickup->maxAmount = 30;
-			} break;
-			case ITEM_MISSILE:
-			{
-				pickup->type = ITYPE_AMMO;
-				pickup->playerAmmo = &s_playerInfo.ammoMissile;
-				pickup->amount = 1;
-				pickup->msgId[0] = 209;
-				pickup->maxAmount = 20;
-			} break;
-			case ITEM_MISSILES:
-			{
-				pickup->type = ITYPE_AMMO;
-				pickup->playerAmmo = &s_playerInfo.ammoMissile;
-				pickup->amount = 5;
-				pickup->msgId[0] = 210;
-				pickup->maxAmount = 20;
-			} break;
-			// PICKUPS & KEYS
-			case ITEM_SHIELD:
-			{
-				pickup->type = ITYPE_AMMO;
-				pickup->playerAmmo = &s_playerInfo.shields;
-				pickup->amount = 20;
-				pickup->msgId[0] = 114;
-				pickup->maxAmount = 200;
-			} break;
-			case ITEM_RED_KEY:
-			{
-				pickup->type = ITYPE_USABLE;
-				pickup->playerItem = &s_playerInfo.itemRedKey;
-				pickup->msgId[0] = 300;
-			} break;
-			case ITEM_YELLOW_KEY:
-			{
-				pickup->type = ITYPE_USABLE;
-				pickup->playerItem = &s_playerInfo.itemYellowKey;
-				pickup->msgId[0] = 301;
-			} break;
-			case ITEM_BLUE_KEY:
-			{
-				pickup->type = ITYPE_USABLE;
-				pickup->playerItem = &s_playerInfo.itemBlueKey;
-				pickup->msgId[0] = 302;
-			} break;
-			case ITEM_GOGGLES:
-			{
-				pickup->type = ITYPE_USABLE;
-				pickup->playerItem = &s_playerInfo.itemGoggles;
-				pickup->playerAmmo = &s_batteryPower;
-				pickup->msgId[0] = 303;
-				pickup->amount = ONE_16;
-				pickup->maxAmount = 2 * ONE_16;
-			} break;
-			case ITEM_CLEATS:
-			{
-				pickup->type = ITYPE_USABLE;
-				pickup->playerItem = &s_playerInfo.itemCleats;
-				pickup->msgId[0] = 304;
-			} break;
-			case ITEM_MASK:
-			{
-				pickup->type = ITYPE_USABLE;
-				pickup->playerItem = &s_playerInfo.itemMask;
-				pickup->playerAmmo = &s_batteryPower;
-				pickup->msgId[0] = 305;
-				pickup->amount = ONE_16;
-				pickup->maxAmount = 2 * ONE_16;
-			} break;
-			case ITEM_BATTERY:
-			{
-				pickup->type = ITYPE_AMMO;
-				pickup->playerAmmo = &s_batteryPower;
-				pickup->msgId[0] = 211;
-				pickup->amount = ONE_16;
-				pickup->maxAmount = 2 * ONE_16;
-			} break;
-			case ITEM_CODE1:
-			{
-				pickup->type = ITYPE_CODEKEY;
-				pickup->playerItem = &s_playerInfo.itemCode1;
-				pickup->msgId[0] = 501;
-
-				obj->flags |= (OBJ_FLAG_FULLBRIGHT | OBJ_FLAG_NO_REMOVE);
-			} break;
-			case ITEM_CODE2:
-			{
-				pickup->type = ITYPE_CODEKEY;
-				pickup->playerItem = &s_playerInfo.itemCode2;
-				pickup->msgId[0] = 502;
-
-				obj->flags |= (OBJ_FLAG_FULLBRIGHT | OBJ_FLAG_NO_REMOVE);
-			} break;
-			case ITEM_CODE3:
-			{
-				pickup->type = ITYPE_CODEKEY;
-				pickup->playerItem = &s_playerInfo.itemCode3;
-				pickup->msgId[0] = 503;
-
-				obj->flags |= (OBJ_FLAG_FULLBRIGHT | OBJ_FLAG_NO_REMOVE);
-			} break;
-			case ITEM_CODE4:
-			{
-				pickup->type = ITYPE_CODEKEY;
-				pickup->playerItem = &s_playerInfo.itemCode4;
-				pickup->msgId[0] = 504;
-
-				obj->flags |= (OBJ_FLAG_FULLBRIGHT | OBJ_FLAG_NO_REMOVE);
-			} break;
-			case ITEM_CODE5:
-			{
-				pickup->type = ITYPE_CODEKEY;
-				pickup->playerItem = &s_playerInfo.itemCode5;
-				pickup->msgId[0] = 505;
-
-				obj->flags |= (OBJ_FLAG_FULLBRIGHT | OBJ_FLAG_NO_REMOVE);
-			} break;
-			case ITEM_CODE6:
-			{
-				pickup->type = ITYPE_CODEKEY;
-				pickup->playerItem = &s_playerInfo.itemCode6;
-				pickup->msgId[0] = 506;
-
-				obj->flags |= (OBJ_FLAG_FULLBRIGHT | OBJ_FLAG_NO_REMOVE);
-			} break;
-			case ITEM_CODE7:
-			{
-				pickup->type = ITYPE_CODEKEY;
-				pickup->playerItem = &s_playerInfo.itemCode7;
-				pickup->msgId[0] = 507;
-
-				obj->flags |= (OBJ_FLAG_FULLBRIGHT | OBJ_FLAG_NO_REMOVE);
-			} break;
-			case ITEM_CODE8:
-			{
-				pickup->type = ITYPE_CODEKEY;
-				pickup->playerItem = &s_playerInfo.itemCode8;
-				pickup->msgId[0] = 508;
-
-				obj->flags |= (OBJ_FLAG_FULLBRIGHT | OBJ_FLAG_NO_REMOVE);
-			} break;
-			case ITEM_CODE9:
-			{
-				pickup->type = ITYPE_CODEKEY;
-				pickup->playerItem = &s_playerInfo.itemCode9;
-				pickup->msgId[0] = 509;
-
-				obj->flags |= (OBJ_FLAG_FULLBRIGHT | OBJ_FLAG_NO_REMOVE);
-			} break;
-			case ITEM_INVINCIBLE:
-			{
-				pickup->type = ITYPE_POWERUP;
-				pickup->playerItem = nullptr;
-				pickup->msgId[0] = 306;
-			} break;
-			case ITEM_SUPERCHARGE:
-			{
-				pickup->type = ITYPE_POWERUP;
-				pickup->playerItem = nullptr;
-				pickup->msgId[0] = 307;
-			} break;
-			case ITEM_REVIVE:
-			{
-				pickup->type = ITYPE_POWERUP;
-				pickup->playerItem = nullptr;
-				pickup->msgId[0] = 308;
-			} break;
-			case ITEM_LIFE:
-			{
-				pickup->type = ITYPE_POWERUP;
-				pickup->playerItem = nullptr;
-				pickup->msgId[0] = 310;
-			} break;
-			case ITEM_MEDKIT:
-			{
-				pickup->type = ITYPE_AMMO;
-				pickup->playerAmmo = &s_playerInfo.health;
-				pickup->amount = 20;
-				pickup->msgId[0] = 311;
-				pickup->maxAmount = 100;
-			} break;
-			case ITEM_PILE:
-			{
-				pickup->type = ITYPE_SPECIAL;
-			} break;
-		}
+		setPickup(pickup, obj, id, TFE_ExternalData::getExternalPickups());
 		return (Logic*)pickup;
 	}
 
@@ -1086,13 +782,13 @@ namespace TFE_DarkForces
 		for (taskCtx->i = 4; taskCtx->i >= 0; taskCtx->i--)
 		{
 			sound_play(s_invCountdownSound);
-			s_playerInfo.shields = 200;
+			s_playerInfo.shields = s_shieldsMax;
 			task_waitWhileIdNotZero(87);	// 0.6 seconds.
 
 			s_playerInfo.shields = 0xffffffff;
 			task_waitWhileIdNotZero(87);	// 0.6 seconds.
 		}
-		s_playerInfo.shields = 200;
+		s_playerInfo.shields = s_shieldsMax;
 		s_invincibility = 0;
 		s_invincibilityTask = nullptr;
 
@@ -1133,7 +829,7 @@ namespace TFE_DarkForces
 	void pickupInvincibility()
 	{
 		s_invincibility = -1;
-		s_playerInfo.shields = JTRUE;	// This seems like a bug...
+		s_playerInfo.shields = -1;		// When set to -1 the HUD will display shields as a special colour (eg. bright yellow)
 		// Free old invincibility task and create a new invincibility task.
 		if (s_invincibilityTask)
 		{
@@ -1185,13 +881,13 @@ namespace TFE_DarkForces
 			level_free(s_playerInvSaved);
 			s_playerInvSaved = nullptr;
 			// Clamp ammo values.
-			s_playerInfo.ammoEnergy    = pickup_addToValue(s_playerInfo.ammoEnergy,    0, 500);
-			s_playerInfo.ammoPower     = pickup_addToValue(s_playerInfo.ammoPower,     0, 500);
-			s_playerInfo.ammoPlasma    = pickup_addToValue(s_playerInfo.ammoPlasma,    0, 400);
-			s_playerInfo.ammoDetonator = pickup_addToValue(s_playerInfo.ammoDetonator, 0,  50);
-			s_playerInfo.ammoShell     = pickup_addToValue(s_playerInfo.ammoShell,     0,  50);
-			s_playerInfo.ammoMine      = pickup_addToValue(s_playerInfo.ammoMine,      0,  30);
-			s_playerInfo.ammoMissile   = pickup_addToValue(s_playerInfo.ammoMissile,   0,  20);
+			s_playerInfo.ammoEnergy    = pickup_addToValue(s_playerInfo.ammoEnergy,    0, s_ammoEnergyMax);
+			s_playerInfo.ammoPower     = pickup_addToValue(s_playerInfo.ammoPower,     0, s_ammoPowerMax);
+			s_playerInfo.ammoPlasma    = pickup_addToValue(s_playerInfo.ammoPlasma,    0, s_ammoPlasmaMax);
+			s_playerInfo.ammoDetonator = pickup_addToValue(s_playerInfo.ammoDetonator, 0, s_ammoDetonatorMax);
+			s_playerInfo.ammoShell     = pickup_addToValue(s_playerInfo.ammoShell,     0, s_ammoShellMax);
+			s_playerInfo.ammoMine      = pickup_addToValue(s_playerInfo.ammoMine,      0, s_ammoMineMax);
+			s_playerInfo.ammoMissile   = pickup_addToValue(s_playerInfo.ammoMissile,   0, s_ammoMissileMax);
 		}
 	}
 }  // TFE_DarkForces
