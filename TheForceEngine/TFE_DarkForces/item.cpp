@@ -67,8 +67,8 @@ namespace TFE_DarkForces
 	// Shared State
 	///////////////////////////////////////////
 	SoundSourceId s_powerupPickupSnd;
-	SoundSourceId s_invItemPickupSnd;
-	SoundSourceId s_wpnPickupSnd;
+	SoundSourceId s_objectivePickupSnd;
+	SoundSourceId s_itemPickupSnd;
 	ItemData      s_itemData[ITEM_COUNT];
 	
 	///////////////////////////////////////////
@@ -77,8 +77,8 @@ namespace TFE_DarkForces
 	void item_loadData()
 	{
 		s_powerupPickupSnd = sound_load("bonus.voc", SOUND_PRIORITY_HIGH4);
-		s_invItemPickupSnd = sound_load("complete.voc", SOUND_PRIORITY_HIGH5);
-		s_wpnPickupSnd     = sound_load("key.voc", SOUND_PRIORITY_MED5);
+		s_objectivePickupSnd = sound_load("complete.voc", SOUND_PRIORITY_HIGH5);
+		s_itemPickupSnd     = sound_load("key.voc", SOUND_PRIORITY_MED5);
 
 		for (s32 i = 0; i < ITEM_COUNT; i++)
 		{
