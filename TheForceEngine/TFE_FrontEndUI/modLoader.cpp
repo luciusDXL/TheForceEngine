@@ -116,7 +116,7 @@ namespace TFE_FrontEndUI
 	char programDirModDir[TFE_MAX_PATH];
 	char programDirModCacheDir[TFE_MAX_PATH];
 	static bool s_useWebModUI = false;
-	const char* ratings[] = {"5", "4", "3", "2", "1", "0"};
+	const char* ratings[] = {"6","5", "4", "3", "2", "1", "0"};
 	int ratingIndex = 0;
 	static bool s_loadedWebJson = false; 
 	bool downloadPopUp = false;
