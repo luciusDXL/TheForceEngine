@@ -248,7 +248,6 @@ namespace TFE_FrontEndUI
 							}
 
 						}
-						webMod.relativePath = webMod.fileName;
 						webMod.gobFiles.push_back(webMod.fileName);
 
 						/// Create Cache Directory
