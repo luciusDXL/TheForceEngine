@@ -3036,6 +3036,11 @@ namespace TFE_DarkForces
 		}
 	}
 
+	void rotate180()
+	{
+		s_playerYaw = (s_playerYaw + ANGLE_HALF) & ANGLE_MASK;
+	}
+
 	void player_sector(const ConsoleArgList& args)
 	{
 		RSector* sector = s_playerObject->sector;
