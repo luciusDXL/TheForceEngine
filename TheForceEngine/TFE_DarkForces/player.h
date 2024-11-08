@@ -150,6 +150,7 @@ namespace TFE_DarkForces
 	fixed16_16 player_getSquaredDistance(SecObject* obj);
 	void player_setupCamera();
 	void player_applyDamage(fixed16_16 healthDmg, fixed16_16 shieldDmg, JBool playHitSound);
+	void rotate180();
 
 	JBool player_hasWeapon(s32 weaponIndex);
 	JBool player_hasItem(s32 itemIndex);
