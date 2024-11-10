@@ -1682,7 +1682,7 @@ namespace TFE_Jedi
 
 								if (obj->entityFlags & ETFLAG_PLAYER)
 								{
-									// these player-state values also need to be transformed
+									// TFE: these player-state values also need to be transformed (they were not in the original code)
 									s_playerYPos = teleport->dstPosition.y;
 									s_playerYaw = teleport->dstAngle[1];
 								}
