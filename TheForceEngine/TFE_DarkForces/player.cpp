@@ -1890,7 +1890,7 @@ namespace TFE_DarkForces
 				// Lower friction means the player will stop sliding sooner.
 				friction = FRICTION_CLEATS;
 			}
-			else if (s_playerSector->secHeight - 1 >= 0)	// In water
+			else if (s_playerSector->secHeight - 1 >= 0 && !s_flyMode)	// In water
 			{
 				friction = FRICTION_DEFAULT;
 				s_playerRun = wearingCleats;		// Once you get cleats, you move faster through water.
