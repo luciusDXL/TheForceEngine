@@ -230,7 +230,11 @@ namespace TFE_DarkForces
 					frame->offset.y = floatToFixed16(y1);
 					frame->offset.z = floatToFixed16(z1);
 					frame->yaw   = vec2ToAngle(floatToFixed16(x2 - x1), floatToFixed16(z2 - z1));
-					frame->pitch = 0;
+					
+					f32 dx = x2 - x1;
+					f32 dz = z2 - z1;
+					double xzVec = sqrt(dx * dx + dz * dz);
+					frame->pitch = vec2ToAngle(floatToFixed16(y1 - y2), floatToFixed16(xzVec));
 					frame->roll  = angle14_32(r * 16383.0f / 360.0f);
 				}
 			}
@@ -586,6 +590,8 @@ namespace TFE_DarkForces
 
 							local(obj)->posWS = local(frame)->offset;
 							local(obj)->yaw = local(frame)->yaw;
+							local(obj)->pitch = local(frame)->pitch;
+							local(obj)->roll = local(frame)->roll;
 						task_localBlockEnd;
 
 						entity_yield(TASK_NO_DELAY);
