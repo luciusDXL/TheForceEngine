@@ -56,7 +56,7 @@ namespace TFE_ExternalData
 	{
 		const char* programDir = TFE_Paths::getPath(PATH_PROGRAM);
 		char extDataFile[TFE_MAX_PATH];
-		sprintf(extDataFile, "%sExternalData\\projectiles.json", programDir);
+		sprintf(extDataFile, "%sExternalData/projectiles.json", programDir);
 
 		TFE_System::logWrite(LOG_MSG, "EXTERNAL_DATA", "Loading projectile data");
 		FileStream file;
@@ -148,7 +148,7 @@ namespace TFE_ExternalData
 	{
 		const char* programDir = TFE_Paths::getPath(PATH_PROGRAM);
 		char extDataFile[TFE_MAX_PATH];
-		sprintf(extDataFile, "%sExternalData\\effects.json", programDir);
+		sprintf(extDataFile, "%sExternalData/effects.json", programDir);
 
 		TFE_System::logWrite(LOG_MSG, "EXTERNAL_DATA", "Loading effects data");
 		FileStream file;
