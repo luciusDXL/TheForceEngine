@@ -41,7 +41,7 @@ namespace TFE_DarkForces
 		Wax*       wax;
 		JBool      active;
 
-		string		logicName;		// JK: added to store a custom logic name
+		char	   logicName[256];		// JK: added to store a custom logic name
 	};
 
 	void generatorTaskFunc(MessageType msg)
@@ -118,7 +118,7 @@ namespace TFE_DarkForces
 					
 					// Search the externally defined logics for a match
 					TFE_ExternalData::CustomActorLogic* customLogic;
-					customLogic = tryFindCustomActorLogic(gen->logicName.c_str());
+					customLogic = tryFindCustomActorLogic(gen->logicName);
 					if (customLogic && gameSettings->df_jsonAiLogics)
 					{
 						obj_setCustomActorLogic(spawn, customLogic);
@@ -236,7 +236,7 @@ namespace TFE_DarkForces
 		memset(generator, 0, sizeof(Generator));
 
 		generator->type   = genType;
-		generator->logicName = string(logicName);
+		strncpy(generator->logicName, logicName, 255);
 		generator->active = 1;
 		generator->delay  = 0;
 
