@@ -10,6 +10,7 @@
 #include <TFE_DarkForces/hud.h>
 #include <TFE_DarkForces/agent.h>
 #include <TFE_DarkForces/sound.h>
+#include <TFE_DarkForces/automap.h>
 #include <TFE_FileSystem/paths.h>
 #include <TFE_Jedi/Memory/allocator.h>
 #include <TFE_Jedi/Level/level.h>
@@ -1050,7 +1051,7 @@ namespace TFE_Jedi
 			{
 				char* endPtr;
 				fixed16_16 dstPosX = floatToFixed16(strtof(s_infArg0, &endPtr));
-				fixed16_16 dstPosY = floatToFixed16(strtof(s_infArg1, &endPtr));
+				fixed16_16 dstPosY = floatToFixed16(strtof(s_infArg1, &endPtr));	// Note: the sign of the Y coord is not flipped here, therefore negative Y = up
 				fixed16_16 dstPosZ = floatToFixed16(strtof(s_infArg2, &endPtr));
 				angle14_16 yaw = floatToAngle(strtof(s_infArg3, &endPtr));
 
@@ -1678,6 +1679,13 @@ namespace TFE_Jedi
 								obj->yaw   = teleport->dstAngle[1];
 								obj->roll  = teleport->dstAngle[2];
 								sector_addObject(teleport->target, obj);
+
+								if (obj->entityFlags & ETFLAG_PLAYER)
+								{
+									// TFE: these player-state values also need to be transformed (they were not in the original code)
+									s_playerYPos = teleport->dstPosition.y;
+									s_playerYaw = teleport->dstAngle[1];
+								}
 							}
 							else if (type == TELEPORT_CHUTE)
 							{
@@ -1692,7 +1700,7 @@ namespace TFE_Jedi
 
 							if (obj->entityFlags & ETFLAG_PLAYER)
 							{
-								// automap_setLayer(obj->sector->layer);
+								automap_setLayer(obj->sector->layer);	// set the map layer to the target sector's layer
 							}
 						}  // if (obj)
 					}  // for (s32 i = 0; i < objCount; objList++)
