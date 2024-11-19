@@ -9,6 +9,9 @@
 #include <strings.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#ifdef __APPLE__
+#include <mach-o/dyld.h> // For macOS-specific executable path
+#endif
 #include <TFE_System/system.h>
 #include "fileutil.h"
 #include "filestream.h"
@@ -43,7 +46,7 @@ namespace FileUtil
 			ret = stat(buf, &st);
 			if (ret || !S_ISREG(st.st_mode))
 				continue;
-			
+
 			// skip dotfiles, dotdirs, too short and files without extensions.
 			if ((dl < (el + 2)) || (dn[0] == '.'))
 				continue;
@@ -56,7 +59,7 @@ namespace FileUtil
 			fileList.push_back(string(dn));
 		}
 		closedir(d);
-	}
+}
 
 	void readSubdirectories(const char *dir, FileList& dirList)
 	{
@@ -79,7 +82,7 @@ namespace FileUtil
 			ret = stat(fp, &st);
 			if (ret || !S_ISDIR(st.st_mode))
 				continue;
-					
+
 			if (!strcmp(dn, ".") || !strcmp(dn, ".."))
 				continue;
 
@@ -110,6 +113,23 @@ namespace FileUtil
 
 	void getExecutionDirectory(char *dir)
 	{
+#ifdef __APPLE__
+		char exe[PATH_MAX];
+		uint32_t size = PATH_MAX;
+
+		if (_NSGetExecutablePath(exe, &size) != 0) {
+				TFE_System::logWrite(LOG_CRITICAL, "getExecutionDirectory", "Failed to retrieve executable path");
+				return;
+		}
+
+		// Resolve symbolic links, if any.
+		realpath(exe, dir);
+
+		// Remove trailing slash.
+		char *c = strrchr(dir, '/');
+		if (c)
+				*c = '\0';
+#else
 		char exe[PATH_MAX], *c;
 		ssize_t r;
 
@@ -126,6 +146,7 @@ namespace FileUtil
 		c = strrchr(dir, '/');
 		if (c)
 			*c = 0;
+#endif
 	}
 
 	void setCurrentDirectory(const char *dir)
@@ -351,17 +372,20 @@ namespace FileUtil
 
 	u64 getModifiedTime(const char *path)
 	{
-		struct timespec tslw;
-		struct stat st;
-		u64 mtim;
+			struct stat st;
+			u64 mtim;
 
-		int ret = stat(path, &st);
-		if (ret) {
-			TFE_System::logWrite(LOG_WARNING, "getModifiedTime", "stat(%s) failed with %d\n", path, errno);
-			return (u64)-1;  // revisit
-		}
-		tslw = st.st_mtim;
-		mtim = (u64)tslw.tv_sec * 10000 + (u64) ((double)tslw.tv_nsec / 100.0);
+			int ret = stat(path, &st);
+			if (ret) {
+				TFE_System::logWrite(LOG_WARNING, "getModifiedTime", "stat(%s) failed with %d\n", path, errno);
+				return (u64)-1; // revisit
+			}
+
+#ifdef __APPLE__
+			mtim = (u64)st.st_mtimespec.tv_sec * 10000 + (u64)((double)st.st_mtimespec.tv_nsec / 100.0);
+#else
+			mtim = (u64)st.st_mtim.tv_sec * 10000 + (u64)((double)st.st_mtim.tv_nsec / 100.0);
+#endif
 
 		return mtim;
 	}
