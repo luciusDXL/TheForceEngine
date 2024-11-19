@@ -39,6 +39,32 @@ namespace OpenGL_Caps
 		glGetIntegerv(GL_MAJOR_VERSION, &gl_maj);
 		glGetIntegerv(GL_MINOR_VERSION, &gl_min);
 
+#ifdef __APPLE__
+		if (gl_maj >= 4) {
+			m_supportFlags = CAP_PBO | CAP_VBO | CAP_FBO | CAP_UBO | CAP_NON_POW_2 | CAP_TEXTURE_ARRAY;
+
+			if (SDL_GL_ExtensionSupported("GL_EXT_texture_filter_anisotropic")) {
+				m_supportFlags |= CAP_ANISO;
+			}
+
+			// Get texture buffer maximum size
+			glGetIntegerv(GL_MAX_TEXTURE_BUFFER_SIZE, &m_textureBufferMaxSize);
+
+			// Get max anisotropy if supported
+			if (m_supportFlags & CAP_ANISO) {
+				glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY, &m_maxAnisotropy);
+			} else {
+				m_maxAnisotropy = 0.0f;
+			}
+
+			// Set to Tier 2 as macOS OpenGL tops out at 4.1
+			if (m_textureBufferMaxSize >= GLSPEC_MAX_TEXTURE_BUFFER_SIZE_MIN) {
+				m_deviceTier = DEV_TIER_2;
+			}
+
+			return;
+		}
+#else
 		if (SDL_GL_ExtensionSupported("GL_ARB_pixel_buffer_object"))
 			m_supportFlags |= CAP_PBO | CAP_NON_POW_2;
 		if (SDL_GL_ExtensionSupported("GL_ARB_vertex_buffer_object"))
@@ -68,7 +94,7 @@ namespace OpenGL_Caps
 		(void)glGetError();
 
 		if ((gl_maj >= 4) && (gl_min >= 5) &&
-		    (m_textureBufferMaxSize >= GLSPEC_MAX_TEXTURE_BUFFER_SIZE_MIN))
+			(m_textureBufferMaxSize >= GLSPEC_MAX_TEXTURE_BUFFER_SIZE_MIN))
 		{
 			m_deviceTier = DEV_TIER_3;
 		}
@@ -81,70 +107,71 @@ namespace OpenGL_Caps
 		{
 			m_deviceTier = DEV_TIER_1;
 		}
+#endif
 	}
 
-	bool supportsPbo()
-	{
-		return (m_supportFlags&CAP_PBO) != 0;
-	}
-	
-	bool supportsVbo()
-	{
-		return (m_supportFlags&CAP_VBO) != 0;
-	}
+		bool supportsPbo()
+		{
+			return (m_supportFlags & CAP_PBO) != 0;
+		}
 
-	bool supportsFbo()
-	{
-		return (m_supportFlags&CAP_FBO) != 0;
-	}
+		bool supportsVbo()
+		{
+			return (m_supportFlags & CAP_VBO) != 0;
+		}
 
-	bool supportsNonPow2Textures()
-	{
-		return (m_supportFlags&CAP_NON_POW_2) != 0;
-	}
+		bool supportsFbo()
+		{
+			return (m_supportFlags & CAP_FBO) != 0;
+		}
 
-	bool supportsTextureArrays()
-	{
-		return (m_supportFlags&CAP_TEXTURE_ARRAY) != 0;
-	}
+		bool supportsNonPow2Textures()
+		{
+			return (m_supportFlags & CAP_NON_POW_2) != 0;
+		}
 
-	bool supportsAniso()
-	{
-		return (m_supportFlags & CAP_ANISO) != 0;
-	}
+		bool supportsTextureArrays()
+		{
+			return (m_supportFlags & CAP_TEXTURE_ARRAY) != 0;
+		}
 
-	bool deviceSupportsGpuBlit()
-	{
-		return m_deviceTier > DEV_TIER_0;
-	}
+		bool supportsAniso()
+		{
+			return (m_supportFlags & CAP_ANISO) != 0;
+		}
 
-	bool deviceSupportsGpuColorConversion()
-	{
-		return m_deviceTier > DEV_TIER_1;
-	}
+		bool deviceSupportsGpuBlit()
+		{
+			return m_deviceTier > DEV_TIER_0;
+		}
 
-	bool deviceSupportsGpuRenderer()
-	{
-		return m_deviceTier > DEV_TIER_1;
-	}
+		bool deviceSupportsGpuColorConversion()
+		{
+			return m_deviceTier > DEV_TIER_1;
+		}
 
-	s32 getMaxTextureBufferSize()
-	{
-		return m_textureBufferMaxSize;
-	}
+		bool deviceSupportsGpuRenderer()
+		{
+			return m_deviceTier > DEV_TIER_1;
+		}
 
-	f32 getMaxAnisotropy()
-	{
-		return m_maxAnisotropy;
-	}
+		s32 getMaxTextureBufferSize()
+		{
+			return m_textureBufferMaxSize;
+		}
 
-	f32 getAnisotropyFromQuality(f32 quality)
-	{
-		return std::max(1.0f, floorf(quality * m_maxAnisotropy + 0.1f));
-	}
+		f32 getMaxAnisotropy()
+		{
+			return m_maxAnisotropy;
+		}
 
-	u32 getDeviceTier()
-	{
-		return m_deviceTier;
-	}
+		f32 getAnisotropyFromQuality(f32 quality)
+		{
+			return std::max(1.0f, floorf(quality * m_maxAnisotropy + 0.1f));
+		}
+
+		u32 getDeviceTier()
+		{
+			return m_deviceTier;
+		}
 }

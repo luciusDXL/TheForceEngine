@@ -4,7 +4,7 @@
 // This handles low level access to the GPU device and is used by
 // both the software and hardware rendering systems in order to
 // provide basic access.
-// 
+//
 // Renderers will create a virtual display or render target.
 // swap() handles blitting this result and then rendering UI
 // on top.
@@ -149,7 +149,7 @@ namespace TFE_RenderBackend
 	void getRenderTargetDim(RenderTargetHandle rtHandle, u32* width, u32* height);
 	void setViewport(s32 x, s32 y, s32 w, s32 h);
 	void setScissorRect(bool enable, s32 x = 0, s32 y = 0, s32 w = 0, s32 h = 0);
-	   
+
 	// Create a GPU version of a texture, assumes RGBA8 and returns a GPU handle.
 	TextureGpu* createTexture(u32 width, u32 height, const u32* data, MagFilter magFilter = MAG_FILTER_NONE);
 	TextureGpu* createTexture(u32 width, u32 height, TexFormat format);
@@ -169,4 +169,7 @@ namespace TFE_RenderBackend
 
 	// Generic line draw.
 	void drawLines(u32 lineCount);
+
+	// [MacOS] Bind the global VAO
+  void bindGlobalVAO();
 };
