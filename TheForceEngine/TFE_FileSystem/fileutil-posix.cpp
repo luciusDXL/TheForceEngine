@@ -375,19 +375,19 @@ namespace FileUtil
 
 	u64 getModifiedTime(const char *path)
 	{
-			struct stat st;
-			u64 mtim;
+		struct stat st;
+		u64 mtim;
 
-			int ret = stat(path, &st);
-			if (ret) {
-				TFE_System::logWrite(LOG_WARNING, "getModifiedTime", "stat(%s) failed with %d\n", path, errno);
-				return (u64)-1; // revisit
-			}
+		int ret = stat(path, &st);
+		if (ret) {
+			TFE_System::logWrite(LOG_WARNING, "getModifiedTime", "stat(%s) failed with %d\n", path, errno);
+			return (u64)-1; // revisit
+		}
 
 #ifdef __APPLE__
-			mtim = (u64)st.st_mtimespec.tv_sec * 10000 + (u64)((double)st.st_mtimespec.tv_nsec / 100.0);
+		mtim = (u64)st.st_mtimespec.tv_sec * 10000 + (u64)((double)st.st_mtimespec.tv_nsec / 100.0);
 #else
-			mtim = (u64)st.st_mtim.tv_sec * 10000 + (u64)((double)st.st_mtim.tv_nsec / 100.0);
+		mtim = (u64)st.st_mtim.tv_sec * 10000 + (u64)((double)st.st_mtim.tv_nsec / 100.0);
 #endif
 
 		return mtim;
