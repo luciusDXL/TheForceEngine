@@ -22,6 +22,7 @@ static s32 s_uiScale = 100;
 static bool s_guiFrameActive;
 
 bool init(void* window, void* context, s32 uiScale)
+{
 	s_uiScale = uiScale;
 
 	// Setup Dear ImGui context
