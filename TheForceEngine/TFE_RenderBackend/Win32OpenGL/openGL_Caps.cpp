@@ -94,7 +94,7 @@ namespace OpenGL_Caps
 		(void)glGetError();
 
 		if ((gl_maj >= 4) && (gl_min >= 5) &&
-			(m_textureBufferMaxSize >= GLSPEC_MAX_TEXTURE_BUFFER_SIZE_MIN))
+		    (m_textureBufferMaxSize >= GLSPEC_MAX_TEXTURE_BUFFER_SIZE_MIN))
 		{
 			m_deviceTier = DEV_TIER_3;
 		}
@@ -110,68 +110,68 @@ namespace OpenGL_Caps
 #endif
 	}
 
-		bool supportsPbo()
-		{
-			return (m_supportFlags & CAP_PBO) != 0;
-		}
+	bool supportsPbo()
+	{
+		return (m_supportFlags&CAP_PBO) != 0;
+	}
 
-		bool supportsVbo()
-		{
-			return (m_supportFlags & CAP_VBO) != 0;
-		}
+	bool supportsVbo()
+	{
+		return (m_supportFlags&CAP_VBO) != 0;
+	}
 
-		bool supportsFbo()
-		{
-			return (m_supportFlags & CAP_FBO) != 0;
-		}
+	bool supportsFbo()
+	{
+		return (m_supportFlags&CAP_FBO) != 0;
+	}
 
-		bool supportsNonPow2Textures()
-		{
-			return (m_supportFlags & CAP_NON_POW_2) != 0;
-		}
+	bool supportsNonPow2Textures()
+	{
+		return (m_supportFlags&CAP_NON_POW_2) != 0;
+	}
 
-		bool supportsTextureArrays()
-		{
-			return (m_supportFlags & CAP_TEXTURE_ARRAY) != 0;
-		}
+	bool supportsTextureArrays()
+	{
+		return (m_supportFlags&CAP_TEXTURE_ARRAY) != 0;
+	}
 
-		bool supportsAniso()
-		{
-			return (m_supportFlags & CAP_ANISO) != 0;
-		}
+	bool supportsAniso()
+	{
+		return (m_supportFlags & CAP_ANISO) != 0;
+	}
 
-		bool deviceSupportsGpuBlit()
-		{
-			return m_deviceTier > DEV_TIER_0;
-		}
+	bool deviceSupportsGpuBlit()
+	{
+		return m_deviceTier > DEV_TIER_0;
+	}
 
-		bool deviceSupportsGpuColorConversion()
-		{
-			return m_deviceTier > DEV_TIER_1;
-		}
+	bool deviceSupportsGpuColorConversion()
+	{
+		return m_deviceTier > DEV_TIER_1;
+	}
 
-		bool deviceSupportsGpuRenderer()
-		{
-			return m_deviceTier > DEV_TIER_1;
-		}
+	bool deviceSupportsGpuRenderer()
+	{
+		return m_deviceTier > DEV_TIER_1;
+	}
 
-		s32 getMaxTextureBufferSize()
-		{
-			return m_textureBufferMaxSize;
-		}
+	s32 getMaxTextureBufferSize()
+	{
+		return m_textureBufferMaxSize;
+	}
 
-		f32 getMaxAnisotropy()
-		{
-			return m_maxAnisotropy;
-		}
+	f32 getMaxAnisotropy()
+	{
+		return m_maxAnisotropy;
+	}
 
-		f32 getAnisotropyFromQuality(f32 quality)
-		{
-			return std::max(1.0f, floorf(quality * m_maxAnisotropy + 0.1f));
-		}
+	f32 getAnisotropyFromQuality(f32 quality)
+	{
+		return std::max(1.0f, floorf(quality * m_maxAnisotropy + 0.1f));
+	}
 
-		u32 getDeviceTier()
-		{
-			return m_deviceTier;
-		}
+	u32 getDeviceTier()
+	{
+		return m_deviceTier;
+	}
 }
