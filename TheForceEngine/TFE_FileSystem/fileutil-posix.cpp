@@ -111,9 +111,9 @@ namespace FileUtil
 		}
 	}
 
+#ifdef __APPLE__
 	void getExecutionDirectory(char *dir)
 	{
-#ifdef __APPLE__
 		char exe[PATH_MAX];
 		uint32_t size = PATH_MAX;
 
@@ -129,7 +129,10 @@ namespace FileUtil
 		char *c = strrchr(dir, '/');
 		if (c)
 				*c = '\0';
-#else
+		}
+#else /* posix */
+	void getExecutionDirectory(char *dir)
+	{
 		char exe[PATH_MAX], *c;
 		ssize_t r;
 
@@ -146,8 +149,8 @@ namespace FileUtil
 		c = strrchr(dir, '/');
 		if (c)
 			*c = 0;
-#endif
 	}
+#endif
 
 	void setCurrentDirectory(const char *dir)
 	{
