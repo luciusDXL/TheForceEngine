@@ -57,17 +57,18 @@ option(ENABLE_ADJUSTABLEHUD_MOD "Install the build‑in “AdjustableHud mod” 
 
 if(ENABLE_TFE)
 	add_executable(tfe)
-	set_target_properties(tfe PROPERTIES OUTPUT_NAME "theforceengine_target") # rename the binary to "theforceengine_target" to avoid conflicts with the directory name on mac os x
+	set(FINAL_OUTPUT_NAME "theforceengine_${CMAKE_SYSTEM_NAME}")
+	set_target_properties(tfe PROPERTIES OUTPUT_NAME "${FINAL_OUTPUT_NAME}")
 
 	if(UNIX)
 		find_package(PkgConfig REQUIRED)
 		find_package(SDL2 2.0.20 REQUIRED)
-    pkg_check_modules(SDL2_IMAGE REQUIRED SDL2_image)
+		pkg_check_modules(SDL2_IMAGE REQUIRED SDL2_image)
 		target_include_directories(tfe PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 		target_include_directories(tfe PRIVATE ${SDL2_INCLUDE_DIRS})
 		target_include_directories(tfe PRIVATE ${SDL2_IMAGE_INCLUDE_DIRS})
 		target_link_directories(tfe PRIVATE ${SDL2_LIBRARY_DIRS} ${SDL2_IMAGE_LIBRARY_DIRS})
-				target_link_libraries(tfe PRIVATE SDL2::SDL2main SDL2::SDL2
+		target_link_libraries(tfe PRIVATE SDL2::SDL2main SDL2::SDL2
 					${SDL2_IMAGE_LIBRARIES}
 		)
 

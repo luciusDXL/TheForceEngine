@@ -1072,10 +1072,10 @@ void setupPostEffectChain(bool useDynamicTexture, bool useBloom)
 	}
 }
 
+#ifdef __APPLE__
 void bindGlobalVAO()
 {
-#ifdef __APPLE__
 	glBindVertexArray(s_globalVAO);
-#endif
 }
+#endif
 }  // namespace

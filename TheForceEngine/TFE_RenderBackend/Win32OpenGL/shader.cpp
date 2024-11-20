@@ -73,7 +73,7 @@ namespace ShaderGL
 	}
 }
 
-bool Shader::create(const char *vertexShaderGLSL, const char *fragmentShaderGLSL, const char *defineString, ShaderVersion version)
+bool Shader::create(const char* vertexShaderGLSL, const char* fragmentShaderGLSL, const char* defineString/* = nullptr*/, ShaderVersion version/* = SHADER_VER_COMPTABILE*/)
 {
 	m_shaderVersion = version;
 
