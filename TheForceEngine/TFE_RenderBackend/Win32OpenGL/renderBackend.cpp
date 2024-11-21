@@ -71,9 +71,8 @@ namespace TFE_RenderBackend
 	void drawVirtualDisplay();
 	void setupPostEffectChain(bool useDynamicTexture, bool useBloom);
 
-#ifdef __APPLE__
 	static GLuint s_globalVAO = 0;
-#endif
+	static bool s_isMacOS = false;
 
 	static void printGLInfo(void)
 	{
@@ -91,6 +90,7 @@ namespace TFE_RenderBackend
 	{
 		u32 windowFlags = SDL_WINDOW_OPENGL;
 		bool windowed = !(state.flags & WINFLAG_FULLSCREEN);
+		s_isMacOS = (strcmp(SDL_GetPlatform(), "Mac OS X") == 0);
 
 		TFE_Settings_Window* windowSettings = TFE_Settings::getWindowSettings();
 		
@@ -116,13 +116,13 @@ namespace TFE_RenderBackend
 
 		SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, true);
 
-#ifdef __APPLE__
-		// macOS specific OpenGL context setup
-		SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
-		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
-		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
-		SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_FORWARD_COMPATIBLE_FLAG);
-#endif
+		if (s_isMacOS) {
+			// macOS specific OpenGL context setup
+			SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+			SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
+			SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
+			SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_FORWARD_COMPATIBLE_FLAG);
+		}
 
 		TFE_System::logWrite(LOG_MSG, "RenderBackend", "SDL Videodriver: %s", SDL_GetCurrentVideoDriver());
 		SDL_Window* window = SDL_CreateWindow(state.name, x, y, state.width, state.height, windowFlags);
@@ -177,26 +177,26 @@ namespace TFE_RenderBackend
 			uiScale = 150;
 		}
 
-#ifdef __APPLE__
-		// macOS specific setup:
-		// Create and bind a global VAO for macOS
-		glGenVertexArrays(1, &s_globalVAO);
-		if (!s_globalVAO)
-		{
-			TFE_System::logWrite(LOG_ERROR, "RenderBackend", "Failed to create global VAO");
-			SDL_DestroyWindow(window);
-			return nullptr;
-		}
-		glBindVertexArray(s_globalVAO);
+    if (s_isMacOS) {
+			// macOS specific setup:
+			// Create and bind a global VAO for macOS
+			glGenVertexArrays(1, &s_globalVAO);
+			if (!s_globalVAO)
+			{
+				TFE_System::logWrite(LOG_ERROR, "RenderBackend", "Failed to create global VAO");
+				SDL_DestroyWindow(window);
+				return nullptr;
+			}
+			glBindVertexArray(s_globalVAO);
 
-		// handle Retina displays
-		s32 drawableWidth, drawableHeight;
-		SDL_GL_GetDrawableSize(window, &drawableWidth, &drawableHeight);
-		if (drawableWidth > state.width)
-		{
-			uiScale = (uiScale * drawableWidth) / state.width;
+			// handle Retina displays
+			s32 drawableWidth, drawableHeight;
+			SDL_GL_GetDrawableSize(window, &drawableWidth, &drawableHeight);
+			if (drawableWidth > state.width)
+			{
+				uiScale = (uiScale * drawableWidth) / state.width;
+			}
 		}
-#endif
 
 #ifndef _WIN32
 		SDL_SetWindowFullscreen(window, windowed ? 0 : SDL_WINDOW_FULLSCREEN_DESKTOP);
@@ -248,6 +248,12 @@ namespace TFE_RenderBackend
 
 	void destroy()
 	{
+		if (s_isMacOS && s_globalVAO) {
+			// Unbind and delete the global VAO for macOS
+			glDeleteVertexArrays(1, &s_globalVAO);
+			s_globalVAO = 0;
+		}
+
 		delete s_screenCapture;
 		s_screenCapture = nullptr;
 
@@ -1066,9 +1072,9 @@ namespace TFE_RenderBackend
 
 	void bindGlobalVAO(void)
 	{
-#ifdef __APPLE__
-		glBindVertexArray(s_globalVAO);
-#endif
+		if (s_isMacOS) {
+			glBindVertexArray(s_globalVAO);
+		}
 	}
 
 }  // namespace
