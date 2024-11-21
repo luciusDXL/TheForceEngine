@@ -421,7 +421,7 @@ namespace TFE_DarkForces
 
 		// Calculate the pan.
 		angle14_32 angle = vec2ToAngle(x - s_eyePos.x, z - s_eyePos.z);
-		angle = getAngleDifference(s_yaw, angle);
+		angle = getAngleDifference(s_eyeYaw, angle);
 		*pan = s_tPan[((angle + 8192) / 512) & 31];
 
 		// TFE subtitles/captions

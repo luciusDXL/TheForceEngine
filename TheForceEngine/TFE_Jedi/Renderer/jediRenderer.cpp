@@ -457,10 +457,14 @@ namespace TFE_Jedi
 		}
 	#endif
 
+		// Clamp the pitch to 60 degrees (vanilla plus) for software renderer
+		// Higher values may be passed in if the camera is being moved by a VUE or is attached to a non-player object
+		angle14_32 clampedPitch = clamp(pitch, -2730, 2730);
+
 		// For now compute both fixed-point and floating-point camera transforms so that it is easier to swap between sub-renderers.
 		// TODO: Find a cleaner alternative.
-		RClassic_Fixed::computeCameraTransform(sector, pitch, yaw, camX, camY, camZ);
-		RClassic_Float::computeCameraTransform(sector, f32(pitch), f32(yaw), fixed16ToFloat(camX), fixed16ToFloat(camY), fixed16ToFloat(camZ));
+		RClassic_Fixed::computeCameraTransform(sector, clampedPitch, yaw, camX, camY, camZ);
+		RClassic_Float::computeCameraTransform(sector, f32(clampedPitch), f32(yaw), fixed16ToFloat(camX), fixed16ToFloat(camY), fixed16ToFloat(camZ));
 		RClassic_GPU::computeCameraTransform(sector, f32(pitch), f32(yaw), fixed16ToFloat(camX), fixed16ToFloat(camY), fixed16ToFloat(camZ));
 	}
 		
