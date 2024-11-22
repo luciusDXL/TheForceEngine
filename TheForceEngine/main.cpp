@@ -152,43 +152,7 @@ void handleEvent(SDL_Event& Event)
 				{
 					windowSettings->fullscreen = !windowSettings->fullscreen;
 					TFE_RenderBackend::enableFullscreen(windowSettings->fullscreen);
-				}
-				else if (code == KeyboardCode::KEY_PRINTSCREEN)
-				{
-					static u64 _screenshotIndex = 0;
-
-					char screenshotDir[TFE_MAX_PATH];
-					TFE_Paths::appendPath(TFE_PathType::PATH_USER_DOCUMENTS, "Screenshots/", screenshotDir);
-										
-					char screenshotPath[TFE_MAX_PATH];
-					sprintf(screenshotPath, "%stfe_screenshot_%s_%" PRIu64 ".png", screenshotDir, s_screenshotTime, _screenshotIndex);
-					_screenshotIndex++;
-
-					TFE_RenderBackend::queueScreenshot(screenshotPath);
-				}
-				else if (code == KeyboardCode::KEY_F2 && altHeld)
-				{
-					static u64 _gifIndex = 0;
-					static bool _recording = false;
-
-					if (!_recording)
-					{
-						char screenshotDir[TFE_MAX_PATH];
-						TFE_Paths::appendPath(TFE_PathType::PATH_USER_DOCUMENTS, "Screenshots/", screenshotDir);
-
-						char gifPath[TFE_MAX_PATH];
-						sprintf(gifPath, "%stfe_gif_%s_%" PRIu64 ".gif", screenshotDir, s_screenshotTime, _gifIndex);
-						_gifIndex++;
-
-						TFE_RenderBackend::startGifRecording(gifPath);
-						_recording = true;
-					}
-					else
-					{
-						TFE_RenderBackend::stopGifRecording();
-						_recording = false;
-					}
-				}
+				}				
 			}
 		} break;
 		case SDL_TEXTINPUT:
@@ -845,6 +809,47 @@ int main(int argc, char* argv[])
 					s_curGame->pauseSound(false);
 				}
 				s_soundPaused = false;
+			}
+		}
+
+		// Take screenshot handler
+		if (inputMapping_getActionState(IADF_SCREENSHOT) == STATE_PRESSED)
+		{
+			static u64 _screenshotIndex = 0;
+
+			char screenshotDir[TFE_MAX_PATH];
+			TFE_Paths::appendPath(TFE_PathType::PATH_USER_DOCUMENTS, "Screenshots/", screenshotDir);
+
+			char screenshotPath[TFE_MAX_PATH];
+			sprintf(screenshotPath, "%stfe_screenshot_%s_%" PRIu64 ".png", screenshotDir, s_screenshotTime, _screenshotIndex);
+			_screenshotIndex++;
+
+			TFE_RenderBackend::queueScreenshot(screenshotPath);
+		}
+
+		bool pressedRecordNoCountdown = inputMapping_getActionState(IADF_GIF_RECORD_NO_COUNTDOWN) == STATE_PRESSED;
+		// Gif recording handler
+		if (inputMapping_getActionState(IADF_GIF_RECORD) == STATE_PRESSED || pressedRecordNoCountdown)
+		{
+			static u64 _gifIndex = 0;
+			static bool _recording = false;
+
+			if (!_recording)
+			{
+				char screenshotDir[TFE_MAX_PATH];
+				TFE_Paths::appendPath(TFE_PathType::PATH_USER_DOCUMENTS, "Screenshots/", screenshotDir);
+
+				char gifPath[TFE_MAX_PATH];
+				sprintf(gifPath, "%stfe_gif_%s_%" PRIu64 ".gif", screenshotDir, s_screenshotTime, _gifIndex);
+				_gifIndex++;
+
+				TFE_RenderBackend::startGifRecording(gifPath, pressedRecordNoCountdown);
+				_recording = true;
+			}
+			else
+			{
+				TFE_RenderBackend::stopGifRecording();
+				_recording = false;
 			}
 		}
 

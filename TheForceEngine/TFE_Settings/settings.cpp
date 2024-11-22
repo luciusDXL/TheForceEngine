@@ -7,6 +7,7 @@
 #include <TFE_System/cJSON.h>
 #include <TFE_System/parser.h>
 #include <TFE_System/system.h>
+#include <TFE_A11y/accessibility.h>
 #include <assert.h>
 #include <algorithm>
 #include <vector>
@@ -39,6 +40,14 @@ namespace TFE_Settings
 	static TFE_Settings_Game s_gameSettings = {};
 	static TFE_ModSettings s_modSettings = {};
 	static std::vector<char> s_iniBuffer;
+
+
+	//MOD CONF Version ENUM
+	enum ModConfVersion
+	{
+		MOD_CONF_INIT_VER = 0x00000001,
+		MOD_CONF_CUR_VERSION = MOD_CONF_INIT_VER
+	};
 
 	enum SectionID
 	{
@@ -432,6 +441,7 @@ namespace TFE_Settings
 		writeKeyValue_Int(settings, "renderer", s_graphicsSettings.rendererIndex);
 		writeKeyValue_Int(settings, "colorMode", s_graphicsSettings.colorMode);
 		writeKeyValue_Int(settings, "skyMode", s_graphicsSettings.skyMode);
+		writeKeyValue_Bool(settings, "forceGouraud", s_graphicsSettings.forceGouraudShading);
 	}
 
 	void writeEnhancementsSettings(FileStream& settings)
@@ -474,6 +484,7 @@ namespace TFE_Settings
 		writeKeyValue_Bool(settings, "gameExitsToMenu", s_systemSettings.gameQuitExitsToMenu);
 		writeKeyValue_Bool(settings, "returnToModLoader", s_systemSettings.returnToModLoader);
 		writeKeyValue_Float(settings, "gifRecordingFramerate", s_systemSettings.gifRecordingFramerate);
+		writeKeyValue_Bool(settings, "showGifPathConfirmation", s_systemSettings.showGifPathConfirmation);
 	}
 
 	void writeA11ySettings(FileStream& settings)
@@ -534,6 +545,7 @@ namespace TFE_Settings
 				writeKeyValue_Int(settings, "pitchLimit", s_gameSettings.df_pitchLimit);
 				writeKeyValue_Bool(settings, "solidWallFlagFix", s_gameSettings.df_solidWallFlagFix);
 				writeKeyValue_Bool(settings, "enableUnusedItem", s_gameSettings.df_enableUnusedItem);
+				writeKeyValue_Bool(settings, "jsonAiLogics", s_gameSettings.df_jsonAiLogics);
 			}
 		}
 	}
@@ -838,6 +850,10 @@ namespace TFE_Settings
 		{
 			s_graphicsSettings.skyMode = SkyMode(parseInt(value));
 		}
+		else if (strcasecmp("forceGouraud", key) == 0)
+		{
+			s_graphicsSettings.forceGouraudShading = parseBool(value);
+		}
 	}
 
 	void parseEnhancementsSettings(const char* key, const char* value)
@@ -955,6 +971,10 @@ namespace TFE_Settings
 		else if (strcasecmp("gifRecordingFramerate", key) == 0)
 		{
 			s_systemSettings.gifRecordingFramerate = parseFloat(value);
+		}
+		else if (strcasecmp("showGifPathConfirmation", key) == 0)
+		{
+			s_systemSettings.showGifPathConfirmation = parseBool(value);
 		}
 	}
 	
@@ -1137,6 +1157,10 @@ namespace TFE_Settings
 		else if (strcasecmp("enableUnusedItem", key) == 0)
 		{
 			s_gameSettings.df_enableUnusedItem = parseBool(value);
+		}
+		else if (strcasecmp("jsonAiLogics", key) == 0)
+		{
+			s_gameSettings.df_jsonAiLogics = parseBool(value);
 		}
 	}
 
@@ -1323,10 +1347,31 @@ namespace TFE_Settings
 		}
 		return s_graphicsSettings.fix3doNormalOverflow;
 	}
+
+	bool jsonAiLogics()
+	{
+		if (s_modSettings.jsonAiLogics != MSO_NOT_SET)
+		{
+			return s_modSettings.jsonAiLogics == MSO_TRUE ? true : false;
+		}
+		return s_gameSettings.df_jsonAiLogics;
+	}
 		
 	//////////////////////////////////////////////////
 	// Mod Settings/Overrides.
 	//////////////////////////////////////////////////
+
+	ModSettingLevelOverride getLevelOverrides(string levelName)
+	{
+		string lowerLevel = TFE_A11Y::toLower(levelName);
+		if (s_modSettings.levelOverrides.find(lowerLevel) != s_modSettings.levelOverrides.end())
+		{
+			return s_modSettings.levelOverrides[lowerLevel];
+		}
+		ModSettingLevelOverride empty;
+		return empty;
+	}
+
 	ModSettingOverride parseJSonBoolToOverride(const cJSON* item)
 	{
 		ModSettingOverride value = MSO_NOT_SET;  // default
@@ -1344,6 +1389,31 @@ namespace TFE_Settings
 		}
 		return value;
 	}
+
+	int parseJSonIntToOverride(const cJSON* item)
+	{
+		int value = -1;  // default is -1
+
+		// Check if it is a json numerical
+		if (cJSON_IsNumber(item))
+		{
+			value = cJSON_GetNumberValue(item);
+		}
+		else
+		{
+			std::string valueString = item->valuestring;
+			if (valueString.find_first_not_of("0123456789") == string::npos)
+			{
+				value = std::stoi(valueString);
+			}
+			else
+			{
+				TFE_System::logWrite(LOG_WARNING, "MOD_CONF", "Override '%s' is an invalid type and should be an integer. Ignoring override.", item->string);
+			}
+		}
+		return value;
+	};
+
 
 	void parseTfeOverride(TFE_ModSettings* modSettings, const cJSON* tfeOverride)
 	{
@@ -1376,6 +1446,84 @@ namespace TFE_Settings
 		else if (strcasecmp(tfeOverride->string, "3doNormalFix") == 0)
 		{
 			modSettings->normalFix3do = parseJSonBoolToOverride(tfeOverride);
+		}
+		else if (strcasecmp(tfeOverride->string, "jsonAiLogics") == 0)
+		{
+			modSettings->jsonAiLogics = parseJSonBoolToOverride(tfeOverride);
+		}
+		else if (strcasecmp(tfeOverride->string, "levelOverrides") == 0)
+		{
+			const cJSON* levelIter = tfeOverride->child;
+			if (!levelIter)
+			{
+				TFE_System::logWrite(LOG_WARNING, "MOD_CONF", "Level String is Empty", tfeOverride->string);
+			}
+			for (; levelIter; levelIter = levelIter->next)
+			{
+				if (!levelIter->string)
+				{
+					TFE_System::logWrite(LOG_WARNING, "MOD_CONF", "Level override for '%s' has no name, skipping.", levelIter->string);
+					continue;
+				}
+				else
+				{
+
+					// Remove the .lev extension if it exists.
+					std::string levelName = TFE_A11Y::toLower(levelIter->string);
+					if (levelName.size() >= 4 && levelName.rfind(".lev") == (levelName.size() - 4)) {
+						levelName.erase(levelName.size() - 4, 4);
+					}
+
+					ModSettingLevelOverride levelOverride;
+					levelOverride.levName = levelName;
+
+					const cJSON* levelOverrideIter = levelIter->child;
+					for (; levelOverrideIter; levelOverrideIter = levelOverrideIter->next)
+					{
+						if (!levelOverrideIter->string)
+						{
+							TFE_System::logWrite(LOG_WARNING, "MOD_CONF", "Level override for '%s' has no name, skipping.", levelOverrideIter->string);
+							continue;
+						}
+						else
+						{
+							const char* overrideName = levelOverrideIter->string;
+
+							// Check if it is an integer-type override
+							int intArraySize = sizeof(modIntOverrides) / sizeof(modIntOverrides[0]);
+							bool isIntParam = false;
+							for (int i = 0; i < intArraySize; ++i) {
+								if (strcmp(modIntOverrides[i], overrideName) == 0) {
+
+									// Parse the integer value.
+									int jsonIntResult = parseJSonIntToOverride(levelOverrideIter);
+									if (jsonIntResult != -1)
+									{
+										levelOverride.intOverrideMap[overrideName] = jsonIntResult;
+										isIntParam = true;
+										break;
+									}
+								}
+							}
+
+							// Skip checking if parameter is a boolean if it is of type integer.
+							if (isIntParam) {
+								continue;
+							}
+
+							// Check if it is an bool-type override
+							int boolArraySize = sizeof(modBoolOverrides) / sizeof(modBoolOverrides[0]);
+							for (int i = 0; i < boolArraySize; ++i) {
+								if (strcmp(modBoolOverrides[i], overrideName) == 0) {
+									levelOverride.boolOverrideMap[overrideName] = parseJSonBoolToOverride(levelOverrideIter) == MSO_TRUE ? JTRUE : JFALSE;
+									break;
+								}
+							}
+						}
+					}
+					modSettings->levelOverrides[levelName] = levelOverride;
+				}
+			}
 		}
 	}
 
@@ -1439,6 +1587,17 @@ namespace TFE_Settings
 			for (; curElem; curElem = curElem->next)
 			{
 				if (!curElem->string) { continue; }
+
+				// Ensure the version is supported.
+				if (strcasecmp(curElem->string, "TFE_VERSION") == 0)
+				{
+					int modVersion = parseJSonIntToOverride(curElem);
+					if (modVersion < MOD_CONF_CUR_VERSION)
+					{
+						TFE_System::logWrite(LOG_WARNING, "MOD_CONF", "This MOD Conf version is not supported by this Force Engine release.");
+						return;
+					}
+				}
 
 				if (strcasecmp(curElem->string, "TFE_OVERRIDES") == 0 && cJSON_IsObject(curElem))
 				{

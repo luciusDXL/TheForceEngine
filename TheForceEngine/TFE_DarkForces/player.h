@@ -94,7 +94,7 @@ namespace TFE_DarkForces
 	extern JBool s_weaponFiringSec;
 	extern JBool s_wearingCleats;
 	extern JBool s_wearingGasmask;
-	extern JBool s_nightvisionActive;
+	extern JBool s_nightVisionActive;
 	extern JBool s_headlampActive;
 	extern JBool s_superCharge;
 	extern JBool s_superChargeHud;
@@ -105,7 +105,7 @@ namespace TFE_DarkForces
 	extern fixed16_16 s_playerHeight;
 	extern fixed16_16 s_playerYPos;
 	extern vec3_fixed s_eyePos;	// s_camX, s_camY, s_camZ in the DOS code.
-	extern angle14_32 s_pitch, s_yaw, s_roll;
+	extern angle14_32 s_eyePitch, s_eyeYaw, s_eyeRoll;
 	extern angle14_32 s_playerYaw;
 	extern Tick s_playerTick;
 	extern Tick s_reviveTick;

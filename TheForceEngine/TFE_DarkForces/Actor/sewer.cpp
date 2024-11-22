@@ -191,7 +191,7 @@ namespace TFE_DarkForces
 				obj->flags |= OBJ_FLAG_NEEDS_TRANSFORM;
 				if (obj->type == OBJ_TYPE_SPRITE)
 				{
-					if (attackMod->anim.state == 2)  // Attack animation
+					if (attackMod->anim.state == STATE_FIRE1)  // Attack animation
 					{
 						actor_setupAnimation(1, &attackMod->anim);
 					}

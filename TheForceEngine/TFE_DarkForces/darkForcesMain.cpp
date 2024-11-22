@@ -53,6 +53,7 @@
 #include <TFE_Jedi/Task/task.h>
 #include <TFE_Jedi/IMuse/imuse.h>
 #include <TFE_Jedi/Serialization/serialization.h>
+#include <TFE_ExternalData/weaponExternal.h>
 #include <assert.h>
 
 // Add texture callbacks.
@@ -888,6 +889,17 @@ namespace TFE_DarkForces
 		s_runGameState.startLevel = agent_getLevelIndexFromName(levelName);
 	}
 
+	char* extractTextFileFromZip(ZipArchive& zip, u32 fileIndex)
+	{
+		u32 bufferLen = (u32)zip.getFileLength(fileIndex);
+		char* buffer = (char*)malloc(bufferLen);
+		zip.openFile(fileIndex);
+		zip.readFile(buffer, bufferLen);
+		zip.closeFile();
+
+		return buffer;
+	}
+
 	void loadCustomGob(const char* gobName)
 	{
 		FilePath archivePath;
@@ -917,6 +929,7 @@ namespace TFE_DarkForces
 						const char* name = zipArchive.getFileName(i);
 						const size_t nameLen = strlen(name);
 						const char* zext = &name[nameLen - 3];
+						const char* zext4 = &name[nameLen - 4];
 						if (strcasecmp(zext, "gob") == 0)
 						{
 							// Avoid MacOS references, they aren't real files.
@@ -936,6 +949,40 @@ namespace TFE_DarkForces
 							else
 							{
 								lfdIndex[lfdCount++] = i;
+							}
+						}
+						else if (strcasecmp(zext4, "json") == 0)
+						{
+							// Load external data overrides
+							char fname[TFE_MAX_PATH];
+							FileUtil::getFileNameFromPath(name, fname, true);
+
+							if (strcasecmp(fname, "projectiles.json") == 0)
+							{
+								char* buffer = extractTextFileFromZip(zipArchive, i);
+								TFE_ExternalData::parseExternalProjectiles(buffer, true);
+								free(buffer);
+							}
+							else if (strcasecmp(fname, "effects.json") == 0)
+							{
+								char* buffer = extractTextFileFromZip(zipArchive, i);
+								TFE_ExternalData::parseExternalEffects(buffer, true);
+								free(buffer);
+							}
+							else
+							{
+								char name2[TFE_MAX_PATH];
+								strcpy(name2, name);
+								const char* subdir = strtok(name2, "/");
+
+								// If in logics subdirectory, attempt to load logics from JSON
+								if (strcasecmp(subdir, "logics") == 0)
+								{
+									char* buffer = extractTextFileFromZip(zipArchive, i);
+									TFE_ExternalData::ExternalLogics* logics = TFE_ExternalData::getExternalLogics();
+									TFE_ExternalData::parseLogicData(buffer, name, logics->actorLogics);
+									free(buffer);
+								}
 							}
 						}
 					}
@@ -1016,10 +1063,13 @@ namespace TFE_DarkForces
 				{
 					TFE_Paths::addLocalArchive(archive);
 
-					// Handle LFD files.
 					char modPath[TFE_MAX_PATH];
 					FileUtil::getFilePath(archivePath.path, modPath);
 
+					// Add the Mod directory to head of search paths - so that assets here will be loaded preferentially
+					TFE_Paths::addAbsoluteSearchPathToHead(modPath);
+
+					// Handle LFD files.
 					// Look for LFD files.
 					lfdCount = 0;
 					briefingIndex = -1;
@@ -1070,6 +1120,45 @@ namespace TFE_DarkForces
 					{
 						sprintf(lfdPath, "%s%s", modPath, lfdName[i]);
 						TFE_Paths::addSingleFilePath(lfdName[i], lfdPath);
+					}
+
+					// Load external data overrides
+					char projectilesJsonPath[TFE_MAX_PATH];
+					sprintf(projectilesJsonPath, "%s%s", modPath, "projectiles.json");
+					if (FileUtil::exists(projectilesJsonPath))
+					{
+						FileStream file;
+						if (!file.open(projectilesJsonPath, FileStream::MODE_READ)) { return; }
+						const size_t size = file.getSize();
+						char* data = (char*)malloc(size + 1);
+
+						if (size > 0 && data)
+						{
+							file.readBuffer(data, (u32)size);
+							data[size] = 0;
+							file.close();
+							TFE_ExternalData::parseExternalProjectiles(data, true);
+							free(data);
+						}
+					}
+
+					char effectsJsonPath[TFE_MAX_PATH];
+					sprintf(effectsJsonPath, "%s%s", modPath, "effects.json");
+					if (FileUtil::exists(effectsJsonPath))
+					{
+						FileStream file;
+						if (!file.open(effectsJsonPath, FileStream::MODE_READ)) { return; }
+						const size_t size = file.getSize();
+						char* data = (char*)malloc(size + 1);
+
+						if (size > 0 && data)
+						{
+							file.readBuffer(data, (u32)size);
+							data[size] = 0;
+							file.close();
+							TFE_ExternalData::parseExternalEffects(data, true);
+							free(data);
+						}
 					}
 				}
 			}
@@ -1219,10 +1308,25 @@ namespace TFE_DarkForces
 		player_init();
 		actor_allocatePhysicsActorList();
 		loadCutsceneList();
-		projectile_startup();
-		hitEffect_startup();
 		weapon_startup();
 		loadLangHotkeys();
+
+		TFE_ExternalData::loadCustomLogics();
+
+		TFE_ExternalData::loadExternalProjectiles();
+		if (!TFE_ExternalData::validateExternalProjectiles())
+		{
+			TFE_System::logWrite(LOG_ERROR, "EXTERNAL_DATA", "Warning: Projectile data is incomplete. PROJECTILES.JSON may have been altered. Projectiles may not behave as expected.");
+		}
+
+		TFE_ExternalData::loadExternalEffects();
+		if (!TFE_ExternalData::validateExternalEffects())
+		{
+			TFE_System::logWrite(LOG_ERROR, "EXTERNAL_DATA", "Warning: Effect data is incomplete. EFFECTS.JSON may have been altered. Effects may not behave as expected.");
+		}
+
+		projectile_startup();
+		hitEffect_startup();
 
 		FilePath filePath;
 		TFE_Paths::getFilePath("swfont1.fnt", &filePath);

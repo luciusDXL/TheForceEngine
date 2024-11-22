@@ -4,6 +4,7 @@
 #include <TFE_Game/igame.h>
 #include <TFE_FileSystem/paths.h>
 #include <assert.h>
+#include <TFE_System/system.h>
 
 namespace TFE_Input
 {
@@ -12,7 +13,8 @@ namespace TFE_Input
 		INPUT_INIT_VER      = 0x00010000,
 		INPUT_ADD_QUICKSAVE = 0x00020001,
 		INPUT_ADD_DEADZONE  = 0x00020002,
-		INPUT_CUR_VERSION   = INPUT_ADD_DEADZONE
+		INPUT_ADD_HIGH_DEF = 0x00020003,
+		INPUT_CUR_VERSION = INPUT_ADD_HIGH_DEF
 	};
 
 	static const char* c_inputRemappingName = "tfe_input_remapping.bin";
@@ -86,6 +88,12 @@ namespace TFE_Input
 		// Saving
 		{ IAS_QUICK_SAVE, ITYPE_KEYBOARD, KEY_F5, KEYMOD_ALT },
 		{ IAS_QUICK_LOAD, ITYPE_KEYBOARD, KEY_F9, KEYMOD_ALT },
+
+		// HD Asset
+		{ IADF_HD_ASSET_TOGGLE, ITYPE_KEYBOARD, KEY_F3, KEYMOD_ALT },
+		{ IADF_SCREENSHOT, ITYPE_KEYBOARD, KEY_PRINTSCREEN },
+		{ IADF_GIF_RECORD, ITYPE_KEYBOARD, KEY_F2, KEYMOD_ALT},
+		{ IADF_GIF_RECORD_NO_COUNTDOWN, ITYPE_KEYBOARD, KEY_F2, KEYMOD_CTRL},
 	};
 
 	static InputBinding s_defaultControllerBinds[] =
@@ -254,6 +262,15 @@ namespace TFE_Input
 		{
 			inputMapping_addBinding(&s_defaultKeyboardBinds[IAS_QUICK_SAVE]);
 			inputMapping_addBinding(&s_defaultKeyboardBinds[IAS_QUICK_LOAD]);
+		}
+
+		// Add HD and other buttons
+		if (version < INPUT_ADD_HIGH_DEF)
+		{
+			inputMapping_addBinding(&s_defaultKeyboardBinds[IADF_HD_ASSET_TOGGLE]);
+			inputMapping_addBinding(&s_defaultKeyboardBinds[IADF_SCREENSHOT]);
+			inputMapping_addBinding(&s_defaultKeyboardBinds[IADF_GIF_RECORD]);
+			inputMapping_addBinding(&s_defaultKeyboardBinds[IADF_GIF_RECORD_NO_COUNTDOWN]);
 		}
 
 		return true;

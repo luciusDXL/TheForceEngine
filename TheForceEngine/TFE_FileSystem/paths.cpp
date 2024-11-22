@@ -392,4 +392,25 @@ namespace TFE_Paths
 		}
 		return false;
 	}
+
+	void getAllFilesFromSearchPaths(const char* subdirectory, const char* ext, FileList& allFiles)
+	{
+		size_t pathCount = s_searchPaths.size();
+		for (size_t p = 0; p < pathCount; p++)
+		{
+			std::vector<string> fileList;
+			char dir[TFE_MAX_PATH];
+			sprintf(dir, "%s%s%s", s_searchPaths[p].c_str(), subdirectory, "/");
+			FileUtil::readDirectory(dir, ext, fileList);
+
+			// Add each file in the fileList to the result
+			for (int f = 0; f < fileList.size(); f++)
+			{
+				char filePath[TFE_MAX_PATH];
+				string file = fileList[f];
+				sprintf(filePath, "%s%s", dir, file.c_str());
+				allFiles.push_back(filePath);
+			}
+		}
+	}
 }

@@ -697,6 +697,9 @@ echo ^)";
     <ClInclude Include="TFE_RenderShared\triDraw3d.h" />
     <ClInclude Include="TFE_Settings\gameSourceData.h" />
     <ClInclude Include="TFE_Settings\settings.h" />
+    <ClInclude Include="TFE_ExternalData\dfLogics.h" />
+    <ClInclude Include="TFE_ExternalData\logicTables.h" />
+    <ClInclude Include="TFE_ExternalData\weaponExternal.h" />
     <ClInclude Include="TFE_Settings\windows\registry.h" />
     <ClInclude Include="TFE_System\cJSON.h" />
     <ClInclude Include="TFE_System\CrashHandler\crashHandler.h" />
@@ -1052,6 +1055,9 @@ echo ^)";
     <ClCompile Include="TFE_RenderShared\triDraw2d.cpp" />
     <ClCompile Include="TFE_RenderShared\triDraw3d.cpp" />
     <ClCompile Include="TFE_Settings\settings.cpp" />
+    <ClCompile Include="TFE_ExternalData\dfLogics.cpp" />
+    <ClCompile Include="TFE_ExternalData\logicTables.cpp" />
+	<ClCompile Include="TFE_ExternalData\weaponExternal.cpp" />
     <ClCompile Include="TFE_Settings\windows\registry.cpp" />
     <ClCompile Include="TFE_System\cJSON.c" />
     <ClCompile Include="TFE_System\CrashHandler\crashHandlerWin32.cpp" />

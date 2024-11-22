@@ -27,6 +27,8 @@
 #include <TFE_Ui/ui.h>
 #include <TFE_Ui/markdown.h>
 #include <TFE_System/utf8.h>
+#include <TFE_ExternalData/dfLogics.h>
+#include <TFE_ExternalData/weaponExternal.h>
 // Game
 #include <TFE_DarkForces/mission.h>
 #include <TFE_DarkForces/gameMusic.h>
@@ -35,6 +37,7 @@
 #include <TFE_DarkForces/config.h>
 #include <TFE_DarkForces/player.h>
 #include <TFE_DarkForces/hud.h>
+#include <TFE_Jedi/Renderer/RClassic_Float/rlightingFloat.h>
 
 #include <climits>
 
@@ -73,6 +76,7 @@ namespace TFE_FrontEndUI
 		CONFIG_SOUND,
 		CONFIG_SYSTEM,
 		CONFIG_A11Y,
+		CONFIG_DEVELOPER,
 		CONFIG_COUNT,
 	};
 
@@ -100,7 +104,8 @@ namespace TFE_FrontEndUI
 		"Enhancements",
 		"Sound",
 		"System",
-		"Accessibility (beta)"
+		"Accessibility",
+		"Developer"
 	};
 
 	static const Vec2i c_resolutionDim[] =
@@ -259,6 +264,7 @@ namespace TFE_FrontEndUI
 	void DrawLabelledIntSlider(float labelWidth, float valueWidth, const char* label, const char* tag, int* value, int min, int max);
 	void DrawLabelledFloatSlider(float labelWidth, float valueWidth, const char* label, const char* tag, float* value, float min, float max);
 	void configA11y(s32 tabWidth, u32 height);
+	void configDeveloper();
 	void pickCurrentResolution();
 	void manual();
 	void credits();
@@ -506,6 +512,9 @@ namespace TFE_FrontEndUI
 		s_selectedModCmd[0] = 0;
 		s_relativeMode = false;
 		TFE_Input::enableRelativeMode(s_relativeMode);
+		TFE_ExternalData::getExternalLogics()->actorLogics.clear();		// clear custom logics
+		TFE_ExternalData::clearExternalProjectiles();					// clear projectiles
+		TFE_ExternalData::clearExternalEffects();						// clear effects
 
 		if (TFE_Settings::getSystemSettings()->returnToModLoader && s_modLoaded)
 		{
@@ -865,6 +874,12 @@ namespace TFE_FrontEndUI
 				TFE_Settings::writeToDisk();
 				inputMapping_serialize();
 			}
+			if (ImGui::Button("Developer", sideBarButtonSize))
+			{
+				s_configTab = CONFIG_DEVELOPER;
+				TFE_Settings::writeToDisk();
+				inputMapping_serialize();
+			}
 			ImGui::Separator();
 			if (ImGui::Button("Return", sideBarButtonSize))
 			{
@@ -890,9 +905,9 @@ namespace TFE_FrontEndUI
 
 			ImGui::End();
 
-			// adjust the width based on tab.
+			// Adjust the width based on tab.
 			s32 tabWidth = w - s32(160*s_uiScale);
-			if (s_configTab >= CONFIG_INPUT && s_configTab < CONFIG_SYSTEM || s_configTab == CONFIG_A11Y)
+			if (s_configTab >= CONFIG_INPUT && s_configTab < CONFIG_SYSTEM || s_configTab == CONFIG_A11Y || s_configTab == CONFIG_DEVELOPER)
 			{
 				tabWidth = s32(414*s_uiScale);
 			}
@@ -947,6 +962,9 @@ namespace TFE_FrontEndUI
 				break;
 			case CONFIG_A11Y:
 				configA11y(tabWidth, h);
+				break;
+			case CONFIG_DEVELOPER:
+				configDeveloper();
 				break;
 			};
 			renderBackground(forceTextureUpdate);
@@ -1204,6 +1222,12 @@ namespace TFE_FrontEndUI
 			gameSettings->df_enableUnusedItem = enableUnusedItem;
 		}
 
+		bool jsonAiLogics = gameSettings->df_jsonAiLogics;
+		if (ImGui::Checkbox("Enable custom AI logics from JSON files", &jsonAiLogics))
+		{
+			gameSettings->df_jsonAiLogics = jsonAiLogics;
+		}
+
 		if (s_drawNoGameDataMsg)
 		{
 			ImGui::Separator();
@@ -1396,6 +1420,31 @@ namespace TFE_FrontEndUI
 		}
 	}
 
+	bool enhanceGOBExists()
+	{
+		TFE_GameHeader* darkForces = TFE_Settings::getGameHeader("Dark Forces");
+		char testFile[TFE_MAX_PATH];
+		sprintf(testFile, "%senhanced.gob", darkForces->sourcePath);
+		return FileUtil::exists(testFile);
+	}
+
+	// Expose the function to toggle enhancements.
+	bool toggleEnhancements()
+	{
+		if (enhanceGOBExists())
+		{
+			TFE_Settings_Enhancements* enhancements = TFE_Settings::getEnhancementsSettings();
+			bool useHdAssets = enhancements->enableHdTextures && enhancements->enableHdSprites && enhancements->enableHdHud;
+			enhancements->enableHdTextures = !useHdAssets;
+			enhancements->enableHdSprites = !useHdAssets;
+			enhancements->enableHdHud = !useHdAssets;
+
+			renderBackground(true);
+			return useHdAssets;
+		}
+		return false;
+	}
+
 	bool configEnhancements()
 	{
 		s32 browseWinOpen = -1;
@@ -1404,19 +1453,12 @@ namespace TFE_FrontEndUI
 		//////////////////////////////////////////////////////
 		// Source Game Data
 		//////////////////////////////////////////////////////
-		TFE_GameHeader* darkForces = TFE_Settings::getGameHeader("Dark Forces");
 		ImGui::PushFont(s_dialogFont);
 		ImGui::LabelText("##ConfigLabel", "Enhanced Assets");
 		ImGui::PopFont();
 
 		// Try to open 'enhanced.gob'.
-		bool enhancedGobExists = false;
-		char testFile[TFE_MAX_PATH];
-		sprintf(testFile, "%senhanced.gob", darkForces->sourcePath);
-		if (FileUtil::exists(testFile))
-		{
-			enhancedGobExists = true;
-		}
+		bool enhancedGobExists = enhanceGOBExists();
 
 		if (enhancedGobExists)
 		{
@@ -1451,6 +1493,15 @@ namespace TFE_FrontEndUI
 			enhancements->enableHdSprites = false;
 			enhancements->enableHdHud = false;
 		}
+
+		ImGui::Spacing();
+		bool useHdAssets = enhancements->enableHdTextures && enhancements->enableHdSprites && enhancements->enableHdHud;
+		if (ImGui::Checkbox("Use HD Assets", &useHdAssets))
+		{
+			toggleEnhancements();
+		}
+		ImGui::Separator();
+		ImGui::Spacing();
 
 		bool useHdTextures = enhancements->enableHdTextures;
 		if (ImGui::Checkbox("Use HD Textures", &useHdTextures))
@@ -2140,13 +2191,19 @@ namespace TFE_FrontEndUI
 				inputMapping("Headwave",          IADF_HEADWAVE_TOGGLE);
 				inputMapping("HUD Toggle",        IADF_HUD_TOGGLE);
 				inputMapping("Holster Weapon",    IADF_HOLSTER_WEAPON);
+				inputMapping("HD Asset Toggle",   IADF_HD_ASSET_TOGGLE);
 				inputMapping("Automount Toggle",  IADF_AUTOMOUNT_TOGGLE);
 				inputMapping("Cycle Prev Weapon", IADF_CYCLEWPN_PREV);
 				inputMapping("Cycle Next Weapon", IADF_CYCLEWPN_NEXT);
 				inputMapping("Prev Weapon",       IADF_WPN_PREV);
 				inputMapping("Pause",             IADF_PAUSE);
 				inputMapping("Automap",           IADF_AUTOMAP);
-								
+				inputMapping("Screenshot",        IADF_SCREENSHOT);
+				inputMapping("GIF Recording",     IADF_GIF_RECORD);
+				Tooltip("Display a countdown and then start recording a GIF. Press again to stop recording.");
+				inputMapping("Instant GIF Record",IADF_GIF_RECORD_NO_COUNTDOWN);
+				Tooltip("Start recording immediately without the countdown. Press again to stop recording.");
+				
 				ImGui::Separator();
 
 				ImGui::PushFont(s_dialogFont);
@@ -2678,7 +2735,7 @@ namespace TFE_FrontEndUI
 		ImGui::Separator();
 
 		ImGui::SetNextItemWidth(196*s_uiScale);
-		ImGui::SliderFloat("Scale", &hud->scale, 0.0f, 15.0f, "%.2f"); ImGui::SameLine(0.0f, 32.0f*s_uiScale);
+		ImGui::SliderFloat("Scale", &hud->scale, 0.0f, 15.0f, "%.2f"); ImGui::SameLine(0.0f, 29.5f*s_uiScale);
 		ImGui::SetNextItemWidth(128 * s_uiScale);
 		ImGui::InputFloat("##HudScaleText", &hud->scale, 0.01f, 0.1f, "%.3f", ImGuiInputTextFlags_CharsHexadecimal);
 
@@ -2878,8 +2935,38 @@ namespace TFE_FrontEndUI
 		f32 labelW = 140 * s_uiScale;
 		f32 valueW = 260 * s_uiScale - 10;
 		s32 framerate = (s32)system->gifRecordingFramerate;
-		DrawLabelledIntSlider(labelW, valueW - 2, "GIF Recording Framerate", "##CBO", &framerate, 10, 30);
+		DrawLabelledIntSlider(labelW, valueW - 2, "GIF Record Framerate", "##CBO", &framerate, 10, 30);
+		Tooltip("Number of frames per second to capture when recording a GIF.");
 		system->gifRecordingFramerate = (f32)framerate;
+
+		bool showGifPathConfirmation = system->showGifPathConfirmation;
+		if (ImGui::Checkbox("Show file path when recording ends", &showGifPathConfirmation))
+		{
+			system->showGifPathConfirmation = showGifPathConfirmation;
+		}
+		Tooltip("Appears in upper-left corner of screen. If disabled, a generic 'recording saved' message will be shown instead.");
+
+	#ifdef _WIN32
+		ImGui::Separator();
+		if (ImGui::Button("Open Log Folder"))
+		{
+			char logDir[TFE_MAX_PATH];
+			TFE_Paths::appendPath(TFE_PathType::PATH_USER_DOCUMENTS, "", logDir);
+			if (!TFE_System::osShellExecute(logDir, NULL, NULL, false))
+			{
+				TFE_System::logWrite(LOG_ERROR, "Settings", "Failed to open directory: '%s'", logDir);
+			}
+		}
+		if (ImGui::Button("Open Screenshots Folder"))
+		{
+			char screenshotDir[TFE_MAX_PATH];
+			TFE_Paths::appendPath(TFE_PathType::PATH_USER_DOCUMENTS, "Screenshots/", screenshotDir);
+			if (!TFE_System::osShellExecute(screenshotDir, NULL, NULL, false))
+			{
+				TFE_System::logWrite(LOG_ERROR, "Settings", "Failed to open directory: '%s'", screenshotDir);
+			}
+		}
+	#endif
 	}
 
 	void DrawFontSizeCombo(float labelWidth, float valueWidth, const char* label, const char* comboTag, s32* currentValue)
@@ -2919,6 +3006,15 @@ namespace TFE_FrontEndUI
 		ImGui::SetNextItemWidth(valueWidth);
 		ImGui::SliderFloat(tag, value, min, max);
 	}
+
+	void DrawLabelledFloat3Slider(float labelWidth, float valueWidth, const char* label, const char* tag, float* value, float min, float max)
+	{
+		ImGui::SetNextItemWidth(labelWidth);
+		ImGui::LabelText("##ConfigLabel", "%s", label);
+		ImGui::SameLine();
+		ImGui::SetNextItemWidth(valueWidth);
+		ImGui::SliderFloat3(tag, value, min, max);
+	}
 	
 	void DrawLabelledIntSlider(float labelWidth, float valueWidth, const char* label, const char* tag, int* value, int min, int max)
 	{
@@ -2953,7 +3049,26 @@ namespace TFE_FrontEndUI
 		return currentFilePath;	
 	}
 
+	void pickCurrentResolution()
+	{
+		TFE_Settings_Graphics* graphics = TFE_Settings::getGraphicsSettings();
+
+		const size_t count = TFE_ARRAYSIZE(c_resolutionDim);
+		for (size_t i = 0; i < count; i++)
+		{
+			if (graphics->gameResolution.z == c_resolutionDim[i].z)
+			{
+				s_resIndex = s32(i);
+				return;
+			}
+		}
+		s_resIndex = count;
+
+	}
+
+	////////////////////////////////////////////////////////////////
 	// Accessibility
+	////////////////////////////////////////////////////////////////
 	void configA11y(s32 tabWidth, u32 height)
 	{
 		// WINDOW --------------------------------------------
@@ -3021,7 +3136,7 @@ namespace TFE_FrontEndUI
 		Tooltip("Reimport caption and font files. Use if you add, remove, or modify caption or font files in a TFE directory while TFE is running. Please wait a moment for files to refresh.");
 
 		// CUTSCENES -----------------------------------------
-		ImGui::Dummy(ImVec2(0.0f, 10.0f));
+		ImGui::Dummy(ImVec2(0.0f, 10.0f)); // Makes some empty space.
 		ImGui::PushFont(s_versionFont);
 		ImGui::LabelText("##ConfigLabel", "Cutscenes");
 		ImGui::PopFont();
@@ -3077,20 +3192,75 @@ namespace TFE_FrontEndUI
 		Tooltip("Disable illumination around the player caused by firing weapons.");
 	}
 
-	void pickCurrentResolution()
-	{
-		TFE_Settings_Graphics* graphics = TFE_Settings::getGraphicsSettings();
+	////////////////////////////////////////////////////////////////
+	// Developer controls
+	////////////////////////////////////////////////////////////////
 
-		const size_t count = TFE_ARRAYSIZE(c_resolutionDim);
-		for (size_t i = 0; i < count; i++)
+	void drawLightControls(s32 index) 
+	{
+		f32 labelW = 80 * s_uiScale;
+		f32 valueW = 260 * s_uiScale - 10;
+		string label1 = "Light " + to_string(index);
+		string tag2 = "##LB" + to_string(index);
+		string tag3 = "##LVS" + to_string(index);
+		string tag4 = "##LWS" + to_string(index);
+		ImGui::LabelText("##ConfigLabel3", label1.c_str());
+		DrawLabelledFloatSlider(labelW, valueW * 0.5f - 2, "  Brightness", tag2.c_str(), &RClassic_Float::s_cameraLight[index].brightness, 0.0f, 8.0f);
+		Tooltip("Values above 1.0 only affect obliquely lit faces.");
+
+		vec3_float* lightWS = &RClassic_Float::s_cameraLight[index].lightWS;
+		DrawLabelledFloat3Slider(labelW, valueW, "  WS", tag4.c_str(), &lightWS->x, -150, 150);
+		Tooltip("World-space position of the light source.");
+	}
+
+	void resetLighting() 
+	{
+		RClassic_Float::s_cameraLight[0].brightness = 1;
+		RClassic_Float::s_cameraLight[0].lightWS = { 0.0f, 0.0f, 1.0f };
+		RClassic_Float::s_cameraLight[1].brightness = 1;
+		RClassic_Float::s_cameraLight[1].lightWS = { 0.0f, 1.0f, 0.0f };
+		RClassic_Float::s_cameraLight[2].brightness = 1;
+		RClassic_Float::s_cameraLight[2].lightWS = { 1.0f, 0.0f, 0.0f };
+	}
+
+	void configDeveloper() 
+	{
+		ImGui::PushFont(s_dialogFont);
+		ImGui::LabelText("##ConfigLabel", "Lighting");
+		ImGui::PopFont();
+
+		TFE_Settings_Graphics* graphicsSettings = TFE_Settings::getGraphicsSettings();
+
+		ImGui::Checkbox("Force Gouraud Shading (Restart Required)", &graphicsSettings->forceGouraudShading);
+		Tooltip("Use gouraud shading for all 3DO models.");
+
+		bool wasOverrideEnabled = graphicsSettings->overrideLighting;
+		if (graphicsSettings->rendererIndex != 0)
 		{
-			if (graphics->gameResolution.z == c_resolutionDim[i].z)
-			{
-				s_resIndex = s32(i);
-				return;
-			}
+			ImGui::TextWrapped("Lighting controls are only available with the software renderer.");
+			return;
 		}
-		s_resIndex = count;
+		ImGui::Checkbox("Override 3DO Lighting (Software Renderer Only)", &graphicsSettings->overrideLighting);
+		Tooltip("If selected, 3DO lighting will be controlled manually from this screen, rather than using engine/map defaults. This setting is not saved.");
+
+		if (!graphicsSettings->overrideLighting) 
+		{
+			if (wasOverrideEnabled) { resetLighting(); }
+			return; 
+		}
+
+		ImGui::Dummy(ImVec2(0.0f, 10.0f)); // Makes some empty space.
+		ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.75f, 0.75f, 0, 1.0f));
+		ImGui::PopStyleColor();
+
+		drawLightControls(0);
+		drawLightControls(1);
+		drawLightControls(2);
+
+		if (ImGui::Button("Reset")) 
+		{
+			resetLighting();
+		}
 	}
 
 	////////////////////////////////////////////////////////////////
@@ -3245,6 +3415,7 @@ namespace TFE_FrontEndUI
 				gameSettings->df_pitchLimit = (temp == TEMPLATE_MODERN) ? PITCH_MAXIMUM : PITCH_VANILLA_PLUS;
 				gameSettings->df_solidWallFlagFix = true;
 				gameSettings->df_enableUnusedItem = true;
+				gameSettings->df_jsonAiLogics = true;
 				// Graphics
 				graphicsSettings->rendererIndex = RENDERER_HARDWARE;
 				graphicsSettings->skyMode = SKYMODE_CYLINDER;
@@ -3295,6 +3466,7 @@ namespace TFE_FrontEndUI
 				gameSettings->df_smoothVUEs = false;
 				gameSettings->df_solidWallFlagFix = false;
 				gameSettings->df_enableUnusedItem = false;
+				gameSettings->df_jsonAiLogics = false;
 				// Graphics
 				graphicsSettings->rendererIndex = RENDERER_SOFTWARE;
 				graphicsSettings->widescreen = false;
