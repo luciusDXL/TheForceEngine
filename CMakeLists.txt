@@ -74,6 +74,7 @@ if(ENABLE_TFE)
 		# the necessary support file directories into the build env.
 		execute_process(COMMAND ln -sf ${CMAKE_SOURCE_DIR}/TheForceEngine/Captions)
 		execute_process(COMMAND ln -sf ${CMAKE_SOURCE_DIR}/TheForceEngine/Documentation)
+		execute_process(COMMAND ln -sf ${CMAKE_SOURCE_DIR}/TheForceEngine/ExternalData)
 		execute_process(COMMAND ln -sf ${CMAKE_SOURCE_DIR}/TheForceEngine/Fonts)
 		execute_process(COMMAND ln -sf ${CMAKE_SOURCE_DIR}/TheForceEngine/Mods)
 		execute_process(COMMAND ln -sf ${CMAKE_SOURCE_DIR}/TheForceEngine/Shaders)
@@ -130,6 +131,7 @@ if(ENABLE_TFE)
 	install(DIRECTORY
 		"${CMAKE_CURRENT_SOURCE_DIR}/TheForceEngine/Captions"
 		"${CMAKE_CURRENT_SOURCE_DIR}/TheForceEngine/Documentation"
+		"${CMAKE_CURRENT_SOURCE_DIR}/TheForceEngine/ExternalData"
 		"${CMAKE_CURRENT_SOURCE_DIR}/TheForceEngine/UI_Text"
 		"${CMAKE_CURRENT_SOURCE_DIR}/TheForceEngine/UI_Images"
 		"${CMAKE_CURRENT_SOURCE_DIR}/TheForceEngine/EditorDef"
