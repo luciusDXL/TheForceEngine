@@ -219,7 +219,7 @@ namespace TFE_DarkForces
 	SecObject* s_playerObject = nullptr;
 	SecObject* s_playerEye = nullptr;
 	vec3_fixed s_eyePos = { 0 };	// s_camX, s_camY, s_camZ in the DOS code.
-	angle14_32 s_pitch = 0, s_yaw = 0, s_roll = 0;
+	angle14_32 s_eyePitch = 0, s_eyeYaw = 0, s_eyeRoll = 0;
 	u32 s_playerEyeFlags = OBJ_FLAG_NEEDS_TRANSFORM;
 	Tick s_playerTick;
 	Tick s_prevPlayerTick;
@@ -907,9 +907,9 @@ namespace TFE_DarkForces
 		s_eyePos.y = s_playerEye->posWS.y;
 		s_eyePos.z = s_playerEye->posWS.z;
 
-		s_pitch = s_playerEye->pitch;
-		s_yaw   = s_playerEye->yaw;
-		s_roll  = s_playerEye->roll;
+		s_eyePitch = s_playerEye->pitch;
+		s_eyeYaw   = s_playerEye->yaw;
+		s_eyeRoll  = s_playerEye->roll;
 
 		setCameraOffset(0, 0, 0);
 		setCameraAngleOffset(0, 0, 0);
@@ -1265,13 +1265,13 @@ namespace TFE_DarkForces
 			s_eyePos.y = s_playerEye->posWS.y + s_camOffset.y - s_playerEye->worldHeight;
 			s_eyePos.z = s_playerEye->posWS.z + s_camOffset.z;
 
-			s_pitch = s_playerEye->pitch + s_camOffsetPitch;
-			s_yaw   = s_playerEye->yaw   + s_camOffsetYaw;
-			s_roll  = s_playerEye->roll  + s_camOffsetRoll;
+			s_eyePitch = s_playerEye->pitch + s_camOffsetPitch;
+			s_eyeYaw   = s_playerEye->yaw   + s_camOffsetYaw;
+			s_eyeRoll  = s_playerEye->roll  + s_camOffsetRoll;
 
 			if (s_playerEye->sector)
 			{
-				renderer_computeCameraTransform(s_playerEye->sector, s_pitch, s_yaw, s_eyePos.x, s_eyePos.y, s_eyePos.z);
+				renderer_computeCameraTransform(s_playerEye->sector, s_eyePitch, s_eyeYaw, s_eyePos.x, s_eyePos.y, s_eyePos.z);
 			}
 			renderer_setWorldAmbient(s_playerLight);
 		}
@@ -3222,9 +3222,9 @@ namespace TFE_DarkForces
 		}
 
 		SERIALIZE(ObjState_InitVersion, s_eyePos, defV3);
-		SERIALIZE(ObjState_InitVersion, s_pitch, 0);
-		SERIALIZE(ObjState_InitVersion, s_yaw, 0);
-		SERIALIZE(ObjState_InitVersion, s_roll, 0);
+		SERIALIZE(ObjState_InitVersion, s_eyePitch, 0);
+		SERIALIZE(ObjState_InitVersion, s_eyeYaw, 0);
+		SERIALIZE(ObjState_InitVersion, s_eyeRoll, 0);
 		SERIALIZE(ObjState_InitVersion, s_playerEyeFlags, 0);
 		SERIALIZE(ObjState_InitVersion, s_playerTick, 0);
 		SERIALIZE(ObjState_InitVersion, s_prevPlayerTick, 0);

@@ -105,7 +105,7 @@ namespace TFE_DarkForces
 	extern fixed16_16 s_playerHeight;
 	extern fixed16_16 s_playerYPos;
 	extern vec3_fixed s_eyePos;	// s_camX, s_camY, s_camZ in the DOS code.
-	extern angle14_32 s_pitch, s_yaw, s_roll;
+	extern angle14_32 s_eyePitch, s_eyeYaw, s_eyeRoll;
 	extern angle14_32 s_playerYaw;
 	extern Tick s_playerTick;
 	extern Tick s_reviveTick;
