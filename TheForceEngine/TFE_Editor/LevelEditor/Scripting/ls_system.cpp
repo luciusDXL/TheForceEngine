@@ -2,8 +2,9 @@
 #include "levelEditorScripts.h"
 #include <TFE_System/system.h>
 #include <TFE_Editor/LevelEditor/infoPanel.h>
-#include <TFE_ForceScript/forceScript.h>
+#include <TFE_ForceScript/scriptInterface.h>
 #include <TFE_ForceScript/float2.h>
+#include <TFE_ForceScript/Angelscript/add_on/scriptarray/scriptarray.h>
 
 #ifdef ENABLE_FORCE_SCRIPT
 #include <angelscript.h>
@@ -12,6 +13,134 @@ namespace LevelEditor
 {
 	namespace  // Static helper functions.
 	{
+		std::string toString(CScriptArray* arr)
+		{
+			char output[4096] = "";
+			s32 typeId = arr->GetElementTypeId();
+			char tmp[256];
+
+			if (typeId == TFE_ForceScript::getObjectTypeId(TFE_ForceScript::FSTYPE_ARRAY))
+			{
+				// Can't handle multi-dimensional arrays yet.
+				return "?";
+			}
+
+			const u32 len = arr->GetSize();
+			for (u32 i = 0; i < len; i++)
+			{
+				const void* data = arr->At(i);
+				std::string value;
+				if (typeId == TFE_ForceScript::getObjectTypeId(TFE_ForceScript::FSTYPE_STRING))
+				{
+					value = *(std::string*)data;
+				}
+				else if (typeId == TFE_ForceScript::getObjectTypeId(TFE_ForceScript::FSTYPE_FLOAT2))
+				{
+					value = toString(*(TFE_ForceScript::float2*)data);
+				}
+				else
+				{
+					switch (typeId)
+					{
+						case 2:
+						{
+							char local = *(char*)(data);
+							sprintf(tmp, "%c", local);
+							value = tmp;
+							break;
+						}
+						case 3:
+						{
+							s16 local = *(s16*)(data);
+							sprintf(tmp, "%d", local);
+							value = tmp;
+							break;
+						}
+						case 4:
+						{
+							s32 local = *(s32*)(data);
+							sprintf(tmp, "%d", local);
+							value = tmp;
+							break;
+						}
+						case 5:
+						{
+							s64 local = *(s64*)(data);
+							sprintf(tmp, "%lld", local);
+							value = tmp;
+							break;
+						}
+						case 6:
+						{
+							u8 local = *(u8*)(data);
+							sprintf(tmp, "%u", local);
+							value = tmp;
+							break;
+						}
+						case 7:
+						{
+							u16 local = *(u16*)(data);
+							sprintf(tmp, "%u", local);
+							value = tmp;
+							break;
+						}
+						case 8:
+						{
+							u32 local = *(u32*)(data);
+							sprintf(tmp, "%u", local);
+							value = tmp;
+							break;
+						}
+						case 9:
+						{
+							u64 local = *(u64*)(data);
+							sprintf(tmp, "%llu", local);
+							value = tmp;
+							break;
+						}
+						case 10:
+						{
+							f32 local = *(f32*)(data);
+							sprintf(tmp, "%g", local);
+							value = tmp;
+							break;
+						}
+						case 11:
+						{
+							f64 local = *(f64*)(data);
+							sprintf(tmp, "%g", local);
+							value = tmp;
+							break;
+						}
+						default:
+						{
+							return "?";
+						}
+					}
+				}
+
+				char fmt[256];
+				if (len == 1)
+				{
+					sprintf(fmt, "(%s)", value.c_str());
+				}
+				else if (i == 0)
+				{
+					sprintf(fmt, "(%s, ", value.c_str());
+				}
+				else if (i < len - 1)
+				{
+					sprintf(fmt, "%s, ", value.c_str());
+				}
+				else
+				{
+					sprintf(fmt, "%s)", value.c_str());
+				}
+				strcat(output, fmt);
+			}
+			return output;
+		}
+
 		std::string formatValue(s32 typeId, void* ref)
 		{
 			std::string value;
@@ -20,6 +149,10 @@ namespace LevelEditor
 			if (typeId == TFE_ForceScript::getObjectTypeId(TFE_ForceScript::FSTYPE_STRING))
 			{
 				value = *(std::string*)ref;
+			}
+			else if (typeId == TFE_ForceScript::getObjectTypeId(TFE_ForceScript::FSTYPE_ARRAY))
+			{
+				value = toString((CScriptArray*)ref);
 			}
 			else if (typeId == TFE_ForceScript::getObjectTypeId(TFE_ForceScript::FSTYPE_FLOAT2))
 			{
@@ -165,7 +298,7 @@ namespace LevelEditor
 
 	void LS_System::runScript(std::string& scriptName)
 	{
-		runLevelScript(scriptName.c_str());
+		TFE_ScriptInterface::runScript(scriptName.c_str(), "main");
 	}
 
 	void LS_System::showScript(std::string& scriptName)
@@ -173,37 +306,32 @@ namespace LevelEditor
 		showLevelScript(scriptName.c_str());
 	}
 
-	bool LS_System::scriptRegister(asIScriptEngine* engine)
+	bool LS_System::scriptRegister(ScriptAPI api)
 	{
-		s32 res = 0;
-		// Object Type
-		res = engine->RegisterObjectType("System", sizeof(LS_System), asOBJ_VALUE | asOBJ_POD); assert(res >= 0);
-		// Properties
-		res = engine->RegisterObjectProperty("System", "int version", asOFFSET(LS_System, version));  assert(res >= 0);
+		ScriptClassBegin("System", "system", api);
+		{
+			// Member Variables
+			ScriptMemberVariable("int version", version);
 
-		//------------------------------------
-		// Functions
-		//------------------------------------
-		// Currently support up to 10 arguments + format string.
-		// This has to be a static member of the class since it use the GENERIC calling convention, but it is still added as an object method
-		// so the script API follows the desired `system.func()` pattern.
-		res = engine->RegisterObjectMethod("System",
-			"void error(const string &in, ?&in arg0 = 0, ?&in arg1 = 0, ?&in arg2 = 0, ?&in arg3 = 0, ?&in arg4 = 0, ?&in arg5 = 0, ?&in arg6 = 0, ?&in arg7 = 0, ?&in arg8 = 0, ?&in arg9 = 0)",
-			asFUNCTION(error), asCALL_GENERIC); assert(res >= 0);
-		res = engine->RegisterObjectMethod("System",
-			"void warning(const string &in, ?&in arg0 = 0, ?&in arg1 = 0, ?&in arg2 = 0, ?&in arg3 = 0, ?&in arg4 = 0, ?&in arg5 = 0, ?&in arg6 = 0, ?&in arg7 = 0, ?&in arg8 = 0, ?&in arg9 = 0)",
-			asFUNCTION(warning), asCALL_GENERIC); assert(res >= 0);
-		res = engine->RegisterObjectMethod("System",
-			"void print(const string &in, ?&in arg0 = 0, ?&in arg1 = 0, ?&in arg2 = 0, ?&in arg3 = 0, ?&in arg4 = 0, ?&in arg5 = 0, ?&in arg6 = 0, ?&in arg7 = 0, ?&in arg8 = 0, ?&in arg9 = 0)",
-			asFUNCTION(print), asCALL_GENERIC); assert(res >= 0);
+			// Functions
+			// Currently support up to 10 arguments + format string.
+			// This has to be a static member of the class since it use the GENERIC calling convention, but it is still added as an object method
+			// so the script API follows the desired `system.func()` pattern.
+			ScriptGenericMethod(
+				"void error(const string &in, ?&in arg0 = 0, ?&in arg1 = 0, ?&in arg2 = 0, ?&in arg3 = 0, ?&in arg4 = 0, ?&in arg5 = 0, ?&in arg6 = 0, ?&in arg7 = 0, ?&in arg8 = 0, ?&in arg9 = 0)",
+				error);
+			ScriptGenericMethod(
+				"void warning(const string &in, ?&in arg0 = 0, ?&in arg1 = 0, ?&in arg2 = 0, ?&in arg3 = 0, ?&in arg4 = 0, ?&in arg5 = 0, ?&in arg6 = 0, ?&in arg7 = 0, ?&in arg8 = 0, ?&in arg9 = 0)",
+				warning);
+			ScriptGenericMethod(
+				"void print(const string &in, ?&in arg0 = 0, ?&in arg1 = 0, ?&in arg2 = 0, ?&in arg3 = 0, ?&in arg4 = 0, ?&in arg5 = 0, ?&in arg6 = 0, ?&in arg7 = 0, ?&in arg8 = 0, ?&in arg9 = 0)",
+				print);
 
-		res = engine->RegisterObjectMethod("System", "void clearOutput()", asMETHOD(LS_System, clearOutput), asCALL_THISCALL);  assert(res >= 0);
-		res = engine->RegisterObjectMethod("System", "void runScript(const string &in)", asMETHOD(LS_System, runScript), asCALL_THISCALL);  assert(res >= 0);
-		res = engine->RegisterObjectMethod("System", "void showScript(const string &in)", asMETHOD(LS_System, showScript), asCALL_THISCALL);  assert(res >= 0);
-
-		// Script variable.
-		res = engine->RegisterGlobalProperty("System system", this);  assert(res >= 0);
-		return res >= 0;
+			ScriptObjMethod("void clearOutput()", clearOutput);
+			ScriptObjMethod("void runScript(const string &in)", runScript);
+			ScriptObjMethod("void showScript(const string &in)", showScript);
+		}
+		ScriptClassEnd();
 	}
 }
 

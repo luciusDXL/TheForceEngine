@@ -232,6 +232,8 @@ enum KEYWORD
 	KW_PERSONALITY,			// not implemented in DF
 	KW_SEQEND,
 	KW_M_TRIGGER,			// INF
+	// TFE ADDED
+	KW_SCRIPTCALL,
 	KW_COUNT
 };
 

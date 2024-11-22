@@ -4,15 +4,15 @@
 
 void main()
 {
-	string name = level.getName();
-	string slot = level.getSlot();
-	int sectorCount = level.getSectorCount();
-	int entityCount = level.getEntityCount();
-	int levelNoteCount = level.getLevelNoteCount();
-	int guidelineCount = level.getGuidelineCount();
-	int minLayer = level.getMinLayer();
-	int maxLayer = level.getMaxLayer();
-	float2 parallax = level.getParallax();
+	string name = level.name;
+	string slot = level.slot;
+	int sectorCount = level.sectorCount;
+	int entityCount = level.entityCount;
+	int levelNoteCount = level.levelNoteCount;
+	int guidelineCount = level.guidelineCount;
+	int minLayer = level.minLayer;
+	int maxLayer = level.maxLayer;
+	float2 parallax = level.parallax;
 	
 	system.print("==== Level Info ====\n"
 	             "Name: {}\n"

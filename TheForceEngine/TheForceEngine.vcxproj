@@ -498,7 +498,6 @@ echo ^)";
     <ClInclude Include="TFE_Editor\LevelEditor\Rendering\grid3d.h" />
     <ClInclude Include="TFE_Editor\LevelEditor\Rendering\viewport.h" />
     <ClInclude Include="TFE_Editor\LevelEditor\Scripting\levelEditorScripts.h" />
-    <ClInclude Include="TFE_Editor\LevelEditor\Scripting\ls_api.h" />
     <ClInclude Include="TFE_Editor\LevelEditor\Scripting\ls_draw.h" />
     <ClInclude Include="TFE_Editor\LevelEditor\Scripting\ls_level.h" />
     <ClInclude Include="TFE_Editor\LevelEditor\Scripting\ls_selection.h" />
@@ -557,6 +556,8 @@ echo ^)";
     <ClInclude Include="TFE_ForceScript\Angelscript\angelscript\source\as_variablescope.h" />
     <ClInclude Include="TFE_ForceScript\float2.h" />
     <ClInclude Include="TFE_ForceScript\forceScript.h" />
+    <ClInclude Include="TFE_ForceScript\scriptAPI.h" />
+    <ClInclude Include="TFE_ForceScript\scriptInterface.h" />
     <ClInclude Include="TFE_FrontEndUI\console.h" />
     <ClInclude Include="TFE_FrontEndUI\frontEndUi.h" />
     <ClInclude Include="TFE_FrontEndUI\modLoader.h" />
@@ -934,6 +935,7 @@ echo ^)";
     <ClCompile Include="TFE_ForceScript\Angelscript\angelscript\source\as_variablescope.cpp" />
     <ClCompile Include="TFE_ForceScript\float2.cpp" />
     <ClCompile Include="TFE_ForceScript\forceScript.cpp" />
+    <ClCompile Include="TFE_ForceScript\scriptInterface.cpp" />
     <ClCompile Include="TFE_FrontEndUI\console.cpp" />
     <ClCompile Include="TFE_FrontEndUI\frontEndUi.cpp" />
     <ClCompile Include="TFE_FrontEndUI\modLoader.cpp" />

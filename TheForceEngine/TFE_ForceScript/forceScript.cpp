@@ -12,6 +12,7 @@
 // TFE_ForceScript wraps Anglescript, so these includes should only exist here.
 #include <angelscript.h>
 #include <scriptstdstring/scriptstdstring.h>
+#include <scriptarray/scriptarray.h>
 #include <scriptbuilder/scriptbuilder.h>
 
 namespace TFE_ForceScript
@@ -80,6 +81,10 @@ namespace TFE_ForceScript
 		// Register std::string as the script string type.
 		RegisterStdString(s_engine);
 		s_typeId[FSTYPE_STRING] = GetStdStringObjectId();
+
+		// Register the default array type.
+		RegisterScriptArray(s_engine, true);
+		s_typeId[FSTYPE_ARRAY] = GetScriptArrayObjectId();
 
 		// Language features.
 		res = s_engine->RegisterGlobalFunction("void yield(float)", asFUNCTION(yield), asCALL_CDECL); assert(res >= 0);
@@ -158,15 +163,36 @@ namespace TFE_ForceScript
 	{
 		return s_engine;
 	}
+
+	ModuleHandle getModule(const char* moduleName)
+	{
+		return s_engine->GetModule(moduleName);
+	}
+
+	void deleteModule(const char* moduleName)
+	{
+		asIScriptModule* mod = s_engine->GetModule(moduleName);
+		if (!mod) { return; }
+		mod->Discard();
+	}
 		
-	ModuleHandle createModule(const char* moduleName, const char* filePath)
+	ModuleHandle createModule(const char* moduleName, const char* filePath, bool allowReadFromArchive, u32 accessMask)
 	{
 		CScriptBuilder builder;
+		builder.SetReadMode(!allowReadFromArchive); // true to read from disk, false to read from the TFE filesystem.
 		s32 res = builder.StartNewModule(s_engine, moduleName);
 		if (res < 0)
 		{
 			return nullptr;
 		}
+		// Set Access Mask
+		asIScriptModule* mod = builder.GetModule();
+		if (!mod)
+		{
+			return nullptr;
+		}
+		mod->SetAccessMask(accessMask);
+		// Load the source and build.
 		res = builder.AddSectionFromFile(filePath);
 		if (res < 0)
 		{
@@ -180,7 +206,7 @@ namespace TFE_ForceScript
 		return builder.GetModule();
 	}
 					
-	ModuleHandle createModule(const char* moduleName, const char* sectionName, const char* srcCode)
+	ModuleHandle createModule(const char* moduleName, const char* sectionName, const char* srcCode, u32 accessMask)
 	{
 		CScriptBuilder builder;
 		s32 res = builder.StartNewModule(s_engine, moduleName);
@@ -188,6 +214,14 @@ namespace TFE_ForceScript
 		{
 			return nullptr;
 		}
+		// Set Access Mask
+		asIScriptModule* mod = builder.GetModule();
+		if (!mod)
+		{
+			return nullptr;
+		}
+		mod->SetAccessMask(accessMask);
+		// Add the source and build.
 		res = builder.AddSectionFromMemory(sectionName, srcCode);
 		if (res < 0)
 		{
@@ -201,7 +235,7 @@ namespace TFE_ForceScript
 		return builder.GetModule();
 	}
 
-	FunctionHandle findScriptFunc(ModuleHandle modHandle, const char* funcName)
+	FunctionHandle findScriptFuncByDecl(ModuleHandle modHandle, const char* funcDecl)
 	{
 		if (!modHandle) { return nullptr; }
 
@@ -215,19 +249,44 @@ namespace TFE_ForceScript
 			return nullptr;
 		}
 
-		asIScriptFunction* func = mod->GetFunctionByDecl(funcName);
+		asIScriptFunction* func = mod->GetFunctionByDecl(funcDecl);
 		if (!func)
 		{
 			// The function couldn't be found. Instruct the script writer
 			// to include the expected function in the script.
-			TFE_System::logWrite(LOG_ERROR, "Script", "The script must have the function '%s'. Please add it and try again.\n", funcName);
+			TFE_System::logWrite(LOG_ERROR, "Script", "The script must have the function with declaration '%s'. Please add it and try again.\n", funcDecl);
 			return nullptr;
 		}
 		return func;
 	}
-		
+
+	FunctionHandle findScriptFuncByName(ModuleHandle modHandle, const char* funcName)
+	{
+		if (!modHandle) { return nullptr; }
+
+		// Find the function that is to be called. 
+		asIScriptModule* mod = (asIScriptModule*)modHandle;
+		if (!mod)
+		{
+			// The function couldn't be found. Instruct the script writer
+			// to include the expected function in the script.
+			TFE_System::logWrite(LOG_ERROR, "Script", "Cannot find module '%s'.\n", mod->GetName());
+			return nullptr;
+		}
+
+		asIScriptFunction* func = mod->GetFunctionByName(funcName);
+		if (!func)
+		{
+			// The function couldn't be found. Instruct the script writer
+			// to include the expected function in the script.
+			TFE_System::logWrite(LOG_ERROR, "Script", "The script must have the function with name '%s'. Please add it and try again.\n", funcName);
+			return nullptr;
+		}
+		return func;
+	}
+				
 	// Add a script function to be executed during the update.
-	s32 execFunc(FunctionHandle funcHandle)
+	s32 execFunc(FunctionHandle funcHandle, s32 argCount, const ScriptArg* arg)
 	{
 		s32 id = -1;
 		if (!funcHandle) { return id; }
@@ -246,6 +305,43 @@ namespace TFE_ForceScript
 		{
 			s_engine->ReturnContext(context);
 			return id;
+		}
+		// Set arguments.
+		argCount = std::min(argCount, (s32)func->GetParamCount());
+		for (s32 i = 0; i < argCount; i++)
+		{
+			switch (arg[i].type)
+			{
+				case ARG_S32:
+				{
+					context->SetArgDWord(i, *((asDWORD*)&arg[i].iValue));
+				} break;
+				case ARG_U32:
+				{
+					context->SetArgDWord(i, arg[i].uValue);
+				} break;
+				case ARG_F32:
+				{
+					context->SetArgFloat(i, arg[i].fValue);
+				} break;
+				case ARG_BOOL:
+				{
+					context->SetArgByte(i, arg[i].bValue ? 1 : 0);
+				} break;
+				case ARG_OBJECT:
+				{
+					context->SetArgObject(i, arg[i].objPtr);
+				} break;
+				case ARG_STRING:
+				{
+					context->SetArgObject(i, (void*)&arg[i].stdStr);
+				} break;
+				case ARG_FLOAT2:
+				{
+					float2 f2(arg[i].float2Value.x, arg[i].float2Value.z);
+					context->SetArgObject(i, (void*)&f2);
+				} break;
+			};
 		}
 		// Get the new thread ID and prepare it.
 		// The function will be executed during the next update.
@@ -287,7 +383,8 @@ namespace TFE_ForceScript
 	ModuleHandle createModule(const char* moduleName, const char* sectionName, const char* srcCode) { return nullptr; }
 	ModuleHandle createModule(const char* moduleName, const char* filePath) { return nullptr; }
 	// Find a specific script function in a module.
-	FunctionHandle findScriptFunc(ModuleHandle modHandle, const char* funcName) { return nullptr; }
+	FunctionHandle findScriptFuncByDecl(ModuleHandle modHandle, const char* funcDecl) { return nullptr; }
+	FunctionHandle findScriptFuncByName(ModuleHandle modHandle, const char* funcName) { return nullptr; }
 
 	// Types
 	s32 getObjectTypeId(FS_BuiltInType type) { return 0; }
@@ -297,7 +394,7 @@ namespace TFE_ForceScript
 	// ---------------------------------------
 	// Returns -1 on failure or id on success.
 	// Note id is only valid as long as the function is running.
-	s32 execFunc(FunctionHandle funcHandle) { return -1; }
+	s32 execFunc(FunctionHandle funcHandle, s32 argCount, const ScriptArg* arg) { return -1; }
 	// Resume a suspended script function given by id.
 	void resume(s32 id) { return; }
 }

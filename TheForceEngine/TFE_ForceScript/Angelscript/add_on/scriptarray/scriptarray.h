@@ -19,7 +19,7 @@
 // Some prefer to use property accessors to get/set the length of the array
 // This option registers the accessors instead of the method length()
 #ifndef AS_USE_ACCESSORS
-#define AS_USE_ACCESSORS 0
+#define AS_USE_ACCESSORS 1
 #endif
 
 BEGIN_AS_NAMESPACE
@@ -137,6 +137,7 @@ protected:
 };
 
 void RegisterScriptArray(asIScriptEngine *engine, bool defaultArray);
+int GetScriptArrayObjectId();
 
 END_AS_NAMESPACE
 

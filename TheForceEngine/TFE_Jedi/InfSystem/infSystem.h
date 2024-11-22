@@ -78,6 +78,9 @@ namespace TFE_Jedi
 	// Sounds
 	void inf_loadSounds();
 
+	// TFE: Load Scripts
+	void inf_loadScripts();
+
 	InfElevator* inf_allocateSpecialElevator(RSector* sector, InfSpecialElevator type);
 	InfElevator* inf_allocateElevItem(RSector* sector, InfElevatorType type);
 	void inf_sendSectorMessage(RSector* sector, MessageType msgType);

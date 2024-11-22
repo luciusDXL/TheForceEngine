@@ -9,19 +9,17 @@
 #include <TFE_System/system.h>
 #ifdef ENABLE_FORCE_SCRIPT
 #include <TFE_System/types.h>
-#include <TFE_ForceScript/float2.h>
-#include "ls_api.h"
-#include <angelscript.h>
+#include <TFE_ForceScript/scriptInterface.h>
 #include <string>
 
 namespace LevelEditor
 {
-	class LS_Selection : public LS_API
+	class LS_Selection : public ScriptAPIClass
 	{
 	public:
 		TFE_ForceScript::float2 getPositionXZ(s32 index = 0);
 		// System
-		bool scriptRegister(asIScriptEngine* engine) override;
+		bool scriptRegister(ScriptAPI api) override;
 	};
 }
 #endif

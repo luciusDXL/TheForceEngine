@@ -1345,9 +1345,6 @@
     <ClInclude Include="TFE_Editor\LevelEditor\Scripting\ls_system.h">
       <Filter>Source\TFE_Editor\LevelEditor\Scripting</Filter>
     </ClInclude>
-    <ClInclude Include="TFE_Editor\LevelEditor\Scripting\ls_api.h">
-      <Filter>Source\TFE_Editor\LevelEditor\Scripting</Filter>
-    </ClInclude>
     <ClInclude Include="TFE_Editor\LevelEditor\Scripting\ls_level.h">
       <Filter>Source\TFE_Editor\LevelEditor\Scripting</Filter>
     </ClInclude>
@@ -1398,6 +1395,12 @@
     </ClInclude>
     <ClInclude Include="TFE_Editor\LevelEditor\editSector.h">
       <Filter>Source\TFE_Editor\LevelEditor</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\scriptAPI.h">
+      <Filter>Source\TFE_ForceScript</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\scriptInterface.h">
+      <Filter>Source\TFE_ForceScript</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -2438,6 +2441,9 @@
     </ClCompile>
     <ClCompile Include="TFE_Editor\LevelEditor\editSector.cpp">
       <Filter>Source\TFE_Editor\LevelEditor</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_ForceScript\scriptInterface.cpp">
+      <Filter>Source\TFE_ForceScript</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

@@ -321,6 +321,11 @@ namespace TFE_DarkForces
 		renderer_addHudTextureCallback(TFE_Jedi::level_getLevelTextures);
 		renderer_addHudTextureCallback(TFE_Jedi::level_getObjectTextures);
 
+		if (!stream)
+		{
+			inf_loadScripts();
+		}
+
 		// Deserialize.
 		if (stream)
 		{

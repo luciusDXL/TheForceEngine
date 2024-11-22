@@ -223,7 +223,9 @@ namespace LevelEditor
 
 	bool init(Asset* asset)
 	{
-		registerScriptFunctions();
+		TFE_ScriptInterface::registerScriptInterface(API_LEVEL_EDITOR);
+		TFE_ScriptInterface::registerScriptInterface(API_SHARED);
+		TFE_ScriptInterface::setAPI(API_LEVEL_EDITOR, "EditorDef/Scripts");
 
 		s_levelAsset = asset;
 		// Initialize editors.
@@ -2123,7 +2125,8 @@ namespace LevelEditor
 		
 	void update()
 	{
-		levelScript_update();
+		// levelScript_update();
+		TFE_ScriptInterface::update();
 		updateViewportScroll();
 		handleHotkeys();
 		

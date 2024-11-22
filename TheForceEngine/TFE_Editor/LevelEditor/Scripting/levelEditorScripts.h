@@ -7,14 +7,11 @@
 // to "play" the game as intended.
 //////////////////////////////////////////////////////////////////////
 #include <TFE_System/types.h>
+#include <TFE_ForceScript/scriptInterface.h>
 
 namespace LevelEditor
 {
-	void registerScriptFunctions();
-
+	void registerScriptFunctions(ScriptAPI api);
 	void executeLine(const char* line);
-	void runLevelScript(const char* scriptName);
 	void showLevelScript(const char* scriptName);
-
-	void levelScript_update();
 }

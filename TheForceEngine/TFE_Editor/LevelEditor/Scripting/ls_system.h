@@ -9,13 +9,12 @@
 #include <TFE_System/system.h>
 #ifdef ENABLE_FORCE_SCRIPT
 #include <TFE_System/types.h>
-#include "ls_api.h"
-#include <angelscript.h>
+#include <TFE_ForceScript/scriptInterface.h>
 #include <string>
 
 namespace LevelEditor
 {
-	class LS_System : public LS_API
+	class LS_System : public ScriptAPIClass
 	{
 	public:
 		// Properties
@@ -28,7 +27,7 @@ namespace LevelEditor
 		void runScript(std::string& scriptName);
 		void showScript(std::string& scriptName);
 		// System
-		bool scriptRegister(asIScriptEngine* engine) override;
+		bool scriptRegister(ScriptAPI api) override;
 	};
 }
 #endif

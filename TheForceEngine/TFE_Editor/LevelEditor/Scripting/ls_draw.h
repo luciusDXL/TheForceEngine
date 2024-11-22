@@ -9,14 +9,12 @@
 #include <TFE_System/system.h>
 #ifdef ENABLE_FORCE_SCRIPT
 #include <TFE_System/types.h>
-#include <TFE_ForceScript/float2.h>
-#include "ls_api.h"
-#include <angelscript.h>
+#include <TFE_ForceScript/scriptInterface.h>
 #include <string>
 
 namespace LevelEditor
 {
-	class LS_Draw : public LS_API
+	class LS_Draw : public ScriptAPIClass
 	{
 	public:
 		void begin(TFE_ForceScript::float2 pos, f32 scale);
@@ -29,7 +27,7 @@ namespace LevelEditor
 		// Skip sector/wall properties for now.
 
 		// System
-		bool scriptRegister(asIScriptEngine* engine) override;
+		bool scriptRegister(ScriptAPI api) override;
 	private:
 		TFE_ForceScript::float2 m_startPos;
 		TFE_ForceScript::float2 m_cursor;
