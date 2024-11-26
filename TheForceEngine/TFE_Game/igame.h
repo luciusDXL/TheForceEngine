@@ -27,6 +27,7 @@ struct IGame
 	virtual void restartMusic() = 0;
 	virtual void loopGame() {};
 	virtual bool serializeGameState(Stream* stream, const char* filename, bool writeState) { return false; };
+	virtual void serializeVersion(Stream* stream) {}
 	virtual bool canSave() { return false; }
 	virtual bool isPaused() { return false; }
 	virtual void getLevelName(char* name) {};

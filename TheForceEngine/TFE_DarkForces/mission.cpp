@@ -37,6 +37,7 @@
 #include <TFE_System/system.h>
 #include <TFE_System/tfeMessage.h>
 #include <TFE_Input/inputMapping.h>
+#include <TFE_Input/replay.h>
 
 using namespace TFE_Jedi;
 using namespace TFE_Input;
@@ -73,6 +74,7 @@ namespace TFE_DarkForces
 	JBool s_lumMaskChanged = JFALSE;
 
 	JBool s_loadingFromSave = JFALSE;
+	JBool s_inMission = JFALSE;
 
 	s32 s_flashFxLevel = 0;
 	s32 s_healthFxLevel = 0;
@@ -393,6 +395,17 @@ namespace TFE_DarkForces
 			mission_addCheatCommands();
 			CCMD("spawnEnemy", console_spawnEnemy, 2, "spawnEnemy(waxName, enemyTypeName) - spawns an enemy 8 units away in the player direction. Example: spawnEnemy offcfin.wax i_officer");
 
+
+			if (TFE_Settings::getGameSettings()->df_enableReplay)
+			{
+				loadReplay();
+			}
+
+			if (TFE_Settings::getGameSettings()->df_enableRecording)
+			{
+				startRecording();
+			}
+
 			// Make sure the loading screen is displayed for at least 1 second.
 			if (!s_loadingFromSave)
 			{
@@ -405,7 +418,11 @@ namespace TFE_DarkForces
 				s_playerTick = s_curTick;
 				s_levelComplete = JFALSE;
 			}
+
+
+
 			s_mainTask = createTask("main task", mission_mainTaskFunc);
+			
 
 			s_invalidLevelIndex = JFALSE;
 			s_exitLevel = JFALSE;
@@ -441,6 +458,7 @@ namespace TFE_DarkForces
 						hud_startup(JFALSE);
 
 						reticle_enable(true);
+						s_inMission = JTRUE;
 					}
 					s_flatLighting = JFALSE;
 					// Note: I am not sure why this is there but it overrides all player settings
@@ -466,9 +484,16 @@ namespace TFE_DarkForces
 
 		// Cleanup - shut down all tasks.
 		task_freeAll();
+		s_inMission = JFALSE;
 
 		// End the task.
 		task_end;
+	}
+
+	JBool isMissionRunning()
+	{
+		return s_inMission;
+
 	}
 
 	void mission_setLoadMissionTask(Task* task)
@@ -663,7 +688,10 @@ namespace TFE_DarkForces
 				}
 			} while (msg != MSG_FREE_TASK && msg != MSG_RUN_TASK);
 		}
-
+		if (TFE_Input::isRecording())
+		{
+			endRecording();
+		}
 		s_mainTask = nullptr;
 		task_makeActive(s_missionLoadTask);
 		task_end;
@@ -1271,6 +1299,9 @@ namespace TFE_DarkForces
 
 	void handleGeneralInput()
 	{
+
+		//TFE_Input::playbackKeyState();
+
 		// Early out if the player is dying.
 		if (s_playerDying)
 		{

@@ -33,6 +33,9 @@
 #include <time.h>
 #include <sys/types.h>
 #include <sys/timeb.h>
+#include <TFE_DarkForces/hud.h>
+#include <TFE_DarkForces/mission.h>
+#include <TFE_Input/replay.h>
 
 #if ENABLE_EDITOR == 1
 #include <TFE_Editor/editor.h>
@@ -570,6 +573,10 @@ int main(int argc, char* argv[])
 	}
 	generateScreenshotTime();
 
+	// Create Replay Directory
+	initReplays();
+
+
 	// Initialize SDL
 	if (!sdlInit())
 	{
@@ -580,7 +587,7 @@ int main(int argc, char* argv[])
 	TFE_Settings_Window* windowSettings = TFE_Settings::getWindowSettings();
 	TFE_Settings_Graphics* graphics = TFE_Settings::getGraphicsSettings();
 	TFE_System::init(s_refreshRate, graphics->vsync, c_gitVersion);
-	
+
 	// Setup the GPU Device and Window.
 	u32 windowFlags = 0;
 	if (windowSettings->fullscreen || TFE_Settings::getTempSettings()->forceFullscreen)
@@ -657,14 +664,52 @@ int main(int argc, char* argv[])
 
 	// Game loop
 	u32 frame = 0u;
+	TFE_System::setFrame(frame);
 	bool showPerf = false;
 	bool relativeMode = false;
 	TFE_System::logWrite(LOG_MSG, "Progam Flow", "The Force Engine Game Loop Started");
+	Tick accum = 0;
+	Tick step = 300000;// hardcode to 3 ticks per frame. 
+	
+	Tick start = TFE_System::getCurrentTimeInTicks();
+	Tick maxdt = 0;
+	Tick avg = start;
+	int skipCount = 0; 
+	bool canwork = true;
+
 	while (s_loop && !TFE_System::quitMessagePosted())
 	{
-		TFE_FRAME_BEGIN();
+
+		/*
+		// Loop, called once per frame with the delta time (dt).
+		if (TFE_DarkForces::isMissionRunning())
+		{
+			canwork = false;
+			skipCount++;
+			Tick end = TFE_System::getCurrentTimeInTicks();
+			Tick dt = end - start;
+			accum += dt;
+
+			if (accum > step && skipCount > 3)
+			{
+				accum -= step;
+				canwork = true;
+			}
+				
+				
+
+			start = end;
+			//TFE_System::logWrite(LOG_MSG, "Progam Flow", "Cycle = %u end = %u DT = %u accum = %u", start, end, dt, accum);
+
+		}
+
+		if (!canwork)
+		{
+			//TFE_System::logWrite(LOG_MSG, "Progam Flow", "Skipping due to accum = %u", accum);
+			continue;
+		}*/
+
 		TFE_System::frameLimiter_begin();
-		
 		bool enableRelative = TFE_Input::relativeModeEnabled();
 		if (enableRelative != relativeMode)
 		{
@@ -685,14 +730,8 @@ int main(int argc, char* argv[])
 		SDL_Event event;
 		while (SDL_PollEvent(&event)) { handleEvent(event); }
 
-		// Handle mouse state.
-		s32 mouseX, mouseY;
-		s32 mouseAbsX, mouseAbsY;
-		u32 state = SDL_GetRelativeMouseState(&mouseX, &mouseY);
-		SDL_GetMouseState(&mouseAbsX, &mouseAbsY);
-		TFE_Input::setRelativeMousePos(mouseX, mouseY);
-		TFE_Input::setMousePos(mouseAbsX, mouseAbsY);
-		inputMapping_updateInput();
+		// Inputs Main Entry
+		handleInputs();
 
 		// Can we save?
 		TFE_FrontEndUI::setCanSave(s_curGame ? s_curGame->canSave() : false);
@@ -853,6 +892,17 @@ int main(int argc, char* argv[])
 			}
 		}
 
+		/*
+		if (inputMapping_getActionState(IADF_DEMO_RECORD) == STATE_PRESSED)
+		{
+			TFE_Settings_Game* gameSettings = TFE_Settings::getGameSettings();
+			gameSettings->df_enableRecording = !gameSettings->df_enableRecording;
+			TFE_Input::setRecordingAllowed(gameSettings->df_enableRecording);
+			string cur_setting = isRecordingAllowed() ? "true" : "false";
+			string message = "Toggling Recording. Currently " + cur_setting;
+			TFE_DarkForces::hud_sendTextMessage(message.c_str(), 1);
+		}*/
+
 		#ifdef ENABLE_FORCE_SCRIPT
 			TFE_ForceScript::update();
 		#endif
@@ -886,7 +936,7 @@ int main(int argc, char* argv[])
 			TFE_RenderBackend::clearWindow();
 		}
 
-		bool drawFps = s_curGame && graphics->showFps;
+		bool drawFps =  s_curGame&& graphics->showFps;
 		if (s_curGame) { drawFps = drawFps && (!s_curGame->isPaused()); }
 
 		TFE_FrontEndUI::setCurrentGame(s_curGame);
@@ -925,7 +975,10 @@ int main(int argc, char* argv[])
 		{
 			TFE_FRAME_END();
 		}
-	}
+	}	
+
+	TFE_System::logWrite(LOG_MSG, "Progam Flow", "END average = %u maxdt = %u", avg, maxdt);
+
 
 	if (s_curGame)
 	{

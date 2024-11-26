@@ -44,6 +44,7 @@ namespace TFE_System
 
 	void frameLimiter_end()
 	{
+		return;
 		if (s_limitDelta == 0.0) { return; }
 
 		u64 curTick = TFE_System::getCurrentTimeInTicks();

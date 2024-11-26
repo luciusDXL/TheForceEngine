@@ -538,6 +538,8 @@ namespace TFE_DarkForces
 	****************************************************/
 	void DarkForces::loopGame()
 	{
+		//TFE_System::logWrite(LOG_MSG, "LOOP", "FRAME COUNT");
+
 		updateTime();
 				
 		switch (s_runGameState.state)
@@ -1352,7 +1354,7 @@ namespace TFE_DarkForces
 		}
 	}
 
-	void serializeVersion(Stream* stream)
+	void DarkForces::serializeVersion(Stream* stream)
 	{
 		SERIALIZE_VERSION(SaveVersionInit);
 	}
@@ -1360,6 +1362,7 @@ namespace TFE_DarkForces
 	bool DarkForces::serializeGameState(Stream* stream, const char* filename, bool writeState)
 	{
 		if (!stream) { return false; }
+		SERIALIZE_VERSION(SaveVersionInit);
 		if (writeState && filename)
 		{
 			// Write the save message.

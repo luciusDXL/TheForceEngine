@@ -6,6 +6,7 @@
 #include <string.h>
 #include <assert.h>
 
+
 namespace TFE_Input
 {
 	#define BUFFERED_TEXT_LEN 64
@@ -86,6 +87,8 @@ namespace TFE_Input
 
 	void setKeyDown(KeyboardCode key, bool repeat)
 	{
+		
+		//TFE_System::logWrite(LOG_MSG, "Input", "DOWN '%d'", key);
 		if (!s_keyDown[key] && !repeat)
 		{
 			s_keyPressed[key] = 1;
@@ -99,6 +102,8 @@ namespace TFE_Input
 
 	void setKeyUp(KeyboardCode key)
 	{
+		
+		//TFE_System::logWrite(LOG_MSG, "Input", "UP '%d'", key);
 		s_keyDown[key] = 0;
 	}
 
@@ -124,6 +129,7 @@ namespace TFE_Input
 
 	void setRelativeMousePos(s32 x, s32 y)
 	{
+		//TFE_System::logWrite(LOG_MSG, "MOUSE RELATIVE Input", "X %d Y %d", x,y);
 		s_mouseMove[0] = x;
 		s_mouseMove[1] = y;
 		s_mouseMoveAccum[0] += x;
@@ -132,6 +138,7 @@ namespace TFE_Input
 
 	void setMousePos(s32 x, s32 y)
 	{
+		//TFE_System::logWrite(LOG_MSG, "MOUSE Input", "X %d Y %d", x, y);
 		s_mousePos[0] = x;
 		s_mousePos[1] = y;
 	}

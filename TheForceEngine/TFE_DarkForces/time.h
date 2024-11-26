@@ -52,6 +52,8 @@ namespace TFE_DarkForces
 	Tick time_frameRateToDelay(f32 frameRate);
 	void updateTime();
 	void time_pause(JBool pause);
-
+	void setTimeAccum(f64 timeAccum);
+	f64 getTimeAccum();
+	void resetTime();
 	void time_serialize(Stream* stream);
 }  // namespace TFE_DarkForces

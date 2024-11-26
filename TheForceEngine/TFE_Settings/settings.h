@@ -217,6 +217,8 @@ struct TFE_Settings_Game
 	bool df_solidWallFlagFix = true;	// Solid wall flag is enforced for collision with moving walls.
 	bool df_enableUnusedItem = true;	// Enables the unused item in the inventory (delt 10).
 	bool df_jsonAiLogics = true;		// AI logics can be loaded from external JSON files
+	bool df_enableRecording = false;    // Enable recording of gameplay.
+	bool df_enableReplay = false;       // Enable replay of gameplay.
 	PitchLimit df_pitchLimit  = PITCH_VANILLA_PLUS;
 };
 

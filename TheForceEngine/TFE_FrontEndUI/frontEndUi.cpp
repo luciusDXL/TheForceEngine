@@ -23,6 +23,7 @@
 #include <TFE_Archive/zipArchive.h>
 #include <TFE_Archive/gobMemoryArchive.h>
 #include <TFE_Input/inputMapping.h>
+#include <TFE_Input/replay.h>
 #include <TFE_Asset/imageAsset.h>
 #include <TFE_Ui/ui.h>
 #include <TFE_Ui/markdown.h>
@@ -1212,6 +1213,20 @@ namespace TFE_FrontEndUI
 			gameSettings->df_jsonAiLogics = jsonAiLogics;
 		}
 
+		bool enableRecord = gameSettings->df_enableRecording;
+		if (ImGui::Checkbox("Enable Replay Recording", &enableRecord))
+		{
+			gameSettings->df_enableRecording = enableRecord;
+			gameSettings->df_enableReplay = false;
+		}
+
+		bool enableReplay = gameSettings->df_enableReplay;
+		if (ImGui::Checkbox("Enable Replay", &enableReplay))
+		{
+			gameSettings->df_enableReplay = enableReplay;
+			gameSettings->df_enableRecording = false;
+		}
+
 		if (s_drawNoGameDataMsg)
 		{
 			ImGui::Separator();
@@ -2184,6 +2199,7 @@ namespace TFE_FrontEndUI
 				inputMapping("Automap",           IADF_AUTOMAP);
 				inputMapping("Screenshot",        IADF_SCREENSHOT);
 				inputMapping("GIF Recording",     IADF_GIF_RECORD);
+				inputMapping("Demo Record",		  IADF_DEMO_RECORD);
 				Tooltip("Display a countdown and then start recording a GIF. Press again to stop recording.");
 				inputMapping("Instant GIF Record",IADF_GIF_RECORD_NO_COUNTDOWN);
 				Tooltip("Start recording immediately without the countdown. Press again to stop recording.");

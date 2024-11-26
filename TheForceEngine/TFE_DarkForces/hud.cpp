@@ -19,6 +19,7 @@
 #include <TFE_Jedi/Level/roffscreenBuffer.h>
 #include <TFE_RenderShared/texturePacker.h>
 #include <cstring>
+#include <string>
 
 #define TFE_CONVERT_CAPS 0
 #if TFE_CONVERT_CAPS
@@ -211,7 +212,7 @@ namespace TFE_DarkForces
 		TFE_Console::addToHistory(msgText);
 	}
 
-	void hud_sendTextMessage(const char* msg, s32 priority)
+	void hud_sendTextMessage(const char* msg, s32 priority, bool skipPriority)
 	{
 		// Only display the message if it is the same or lower priority than the current message.
 		if (!msg || priority > s_hudMsgPriority)
@@ -222,7 +223,14 @@ namespace TFE_DarkForces
 		}
 		strCopyAndZero((char*)s_hudMessage, msg, 80);
 
-		s_hudMsgExpireTick = s_curTick + ((priority <= HUD_HIGH_PRIORITY) ? HUD_MSG_LONG_DUR : HUD_MSG_SHORT_DUR);
+		if (skipPriority)
+		{
+			s_hudMsgExpireTick = s_curTick;
+		}
+		else
+		{
+			s_hudMsgExpireTick = s_curTick + ((priority <= HUD_HIGH_PRIORITY) ? HUD_MSG_LONG_DUR : HUD_MSG_SHORT_DUR);
+		}		
 		s_hudCurrentMsgId  = 0;
 		s_hudMsgPriority   = priority;
 
@@ -519,6 +527,35 @@ namespace TFE_DarkForces
 		}
 		offscreenBuffer_drawTexture(s_cachedHudRight, s_hudLightOff, 19, 0);
 	}
+
+	string hud_getDataStr(bool includeYRP)
+	{
+		fixed16_16 x, z;
+		getCameraXZ(&x, &z);
+		char* dataStr = new char[64];
+		s32 xPos = floor16(x);
+		s32 yPos = -fixed16ToFloat(s_playerEye->posWS.y);
+		s32 zPos = floor16(z);
+		s32 h = fixed16ToFloat(s_playerEye->worldHeight);
+		s32 s = s_secretsPercent;
+		angle14_16 y, r, p;
+		y = s_playerEye->yaw;
+		r = s_playerEye->roll;
+		p = s_playerEye->pitch;
+
+		string format = "X:%04d Y:%.1f Z:%04d H:%.1f S:%d";
+		if (includeYRP)
+		{
+			format += " Y:%04d R:%04d P:%04d";
+			sprintf((char*)dataStr, format.c_str(), xPos, yPos, zPos, h, s, y, r, p);
+		}
+		else
+		{
+			sprintf((char*)dataStr, format.c_str(), xPos, yPos, zPos, h, s);
+		}
+		std::string result = string(dataStr);
+		return result; 
+	}
 		
 	void hud_drawMessage(u8* framebuffer)
 	{
@@ -536,13 +573,11 @@ namespace TFE_DarkForces
 
 		if (s_showData && s_playerEye)
 		{
-			fixed16_16 x, z;
-			getCameraXZ(&x, &z);
-
 			s32 xOffset = floor16(div16(intToFixed16(vfb_getWidescreenOffset()), vfb_getXScale()));
-
 			u8 dataStr[64];
-			sprintf((char*)dataStr, "X:%04d Y:%.1f Z:%04d H:%.1f S:%d%%", floor16(x), -fixed16ToFloat(s_playerEye->posWS.y), floor16(z), fixed16ToFloat(s_playerEye->worldHeight), s_secretsPercent);
+			string result = TFE_DarkForces::hud_getDataStr(true);
+			std::copy(result.begin(), result.end(), dataStr);
+			dataStr[result.size()] = '\0';
 			displayHudMessage(s_hudFont, (DrawRect*)vfb_getScreenRect(VFB_RECT_UI), 164 + xOffset, 10, dataStr, framebuffer);
 			// s_screenDirtyRight[s_curFrameBufferIdx] = JTRUE;
 		}

@@ -5,6 +5,7 @@
 #include <TFE_System/types.h>
 #include <TFE_FileSystem/paths.h>
 #include <TFE_Input/input.h>
+#include <TFE_Input/replay.h>
 
 namespace TFE_Input
 {
@@ -84,6 +85,7 @@ namespace TFE_Input
 		IADF_SCREENSHOT,
 		IADF_GIF_RECORD,
 		IADF_GIF_RECORD_NO_COUNTDOWN,
+		IADF_DEMO_RECORD,
 
 		IA_COUNT,
 		IAS_COUNT = IAS_SYSTEM_MENU + 1,
@@ -194,4 +196,8 @@ namespace TFE_Input
 	
 	f32 inputMapping_getHorzMouseSensitivity();
 	f32 inputMapping_getVertMouseSensitivity();
+	void resetCounter();
+	int getCounter();
+	void handleInputs();
+	void setMaxInputCounter(int counter);
 }  // TFE_Input

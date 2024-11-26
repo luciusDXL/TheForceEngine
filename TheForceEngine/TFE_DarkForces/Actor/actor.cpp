@@ -29,6 +29,8 @@
 #include <TFE_Jedi/Memory/list.h>
 #include <TFE_Jedi/Memory/allocator.h>
 #include <TFE_Jedi/Serialization/serialization.h>
+#include <TFE_System/system.h>
+#include <TFE_Input/inputMapping.h>
 
 using namespace TFE_Jedi;
 
@@ -425,6 +427,7 @@ namespace TFE_DarkForces
 	{
 		SecObject* obj = moveMod->header.obj;
 		Tick delta = Tick(s_curTick - (*prevColTick));
+		//TFE_System::logWrite(LOG_MSG, "MOUSEBOT", "DELTA DIR CHANGE %d", delta);
 		angle14_32 newAngle;
 		if (delta < 145)
 		{
@@ -1318,7 +1321,7 @@ namespace TFE_DarkForces
 	{
 		ActorDispatch* logic = (ActorDispatch*)s_actorState.curLogic;
 		logic->flags = (logic->flags | 1) & 0xfd;
-		logic->nextTick = s_curTick + logic->delay;
+		logic->nextTick = s_curTick +logic->delay;
 
 		SecObject* obj = logic->logic.obj;
 		obj->anim = actor_getAnimationIndex(5);
@@ -1626,7 +1629,9 @@ namespace TFE_DarkForces
 		if (approxDist < FIXED(256))
 		{
 			// Since random() is unsigned, the real visible range is [200, 256) because of the conditional above.
+		//	TFE_System::logWrite(LOG_MSG, "ACTOR", "ACTOR CALL RANDOM");
 			fixed16_16 rndDist = random(FIXED(256)) + FIXED(200);
+			//TFE_System::logWrite(LOG_MSG, "ACTOR", "ACTOR rndDist %d update = %d", rndDist, TFE_Input::getCounter());
 			if (approxDist < rndDist)
 			{
 				return actor_canSeeObject(actorObj, obj);
@@ -2058,7 +2063,7 @@ namespace TFE_DarkForces
 					{
 						if (dispatch->nextTick < s_curTick)
 						{
-							dispatch->nextTick = s_curTick + dispatch->delay;
+							dispatch->nextTick = s_curTick;// +dispatch->delay;
 							if (actor_isObjectVisible(obj, s_playerObject, dispatch->fov, dispatch->awareRange))
 							{
 								message_sendToObj(obj, MSG_WAKEUP, actor_hitEffectMsgFunc);
