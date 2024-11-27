@@ -8,6 +8,11 @@
 #include <algorithm>
 #include <deque>
 #include <string>
+#include <SDL.h>
+
+#ifdef __APPLE__
+#include <CoreServices/CoreServices.h>
+#endif
 
 namespace FileUtil {
 	extern bool existsNoCase(const char *filename);
@@ -55,7 +60,11 @@ namespace TFE_Paths
 		}
 
 		if (!tdh || strlen(tdh) < 1) {
-			snprintf(path, TFE_MAX_PATH, "%s/.local/share/%s/", home, tfe);
+			if (strcmp(SDL_GetPlatform(), "Mac OS X") == 0) {
+				snprintf(path, TFE_MAX_PATH, "%s/Library/Application Support/%s/", home, tfe);
+			} else {
+				snprintf(path, TFE_MAX_PATH, "%s/.local/share/%s/", home, tfe);
+			}
 		} else {
 			// remove trailing slashes in custom dir
 			i = strlen(tdh);
@@ -66,7 +75,11 @@ namespace TFE_Paths
 
 			// no, we don't touch root. Use the standard path.
 			if (tdh[0] == 0) {
-				snprintf(path, TFE_MAX_PATH, "%s/.local/share/%s/", home, tfe);
+				if (strcmp(SDL_GetPlatform(), "Mac OS X") == 0) {
+					snprintf(path, TFE_MAX_PATH, "%s/Library/Application Support/%s/", home, tfe);
+				} else {
+					snprintf(path, TFE_MAX_PATH, "%s/.local/share/%s/", home, tfe);
+				}
 			} else if (tdh[0] == '/') {
 				snprintf(path, TFE_MAX_PATH, "%s/", tdh);
 			} else {
@@ -98,10 +111,17 @@ namespace TFE_Paths
 		}
 
 		std::string s;
-		s = std::string("/usr/local/share/") + append + "/";
-		s_systemPaths.push_back(s);
-		s = std::string("/usr/share/") + append + "/";
-		s_systemPaths.push_back(s);
+		if (strcmp(SDL_GetPlatform(), "Mac OS X") == 0) {
+			s = std::string("/Library/Application Support/") + append + "/";
+			s_systemPaths.push_back(s);
+			s = std::string("/System/Library/Application Support/") + append + "/";
+			s_systemPaths.push_back(s);
+		} else {
+			s = std::string("/usr/local/share/") + append + "/";
+			s_systemPaths.push_back(s);
+			s = std::string("/usr/share/") + append + "/";
+			s_systemPaths.push_back(s);
+		}
 		setTFEPath(append, PATH_PROGRAM_DATA);
 		s_systemPaths.push_back(getPath(PATH_PROGRAM_DATA));
 
