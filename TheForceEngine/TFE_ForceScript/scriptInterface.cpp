@@ -80,9 +80,26 @@ namespace TFE_ScriptInterface
 		s_scriptsToRun.push_back({ scriptName, scriptFunc, 0 });
 	}
 
-	void recompileScript(const char* scriptName)
+	bool recompileScript(const char* scriptName)
 	{
-		// TODO
+		// Delete the existing module if it exists.
+		TFE_ForceScript::deleteModule(scriptName);
+
+		char scriptPath[TFE_MAX_PATH];
+		TFE_ForceScript::ModuleHandle scriptMod = nullptr;
+		// Reload and compile the script.
+		if (s_searchPath)
+		{
+			sprintf(scriptPath, "%s/%s.fs", s_searchPath, scriptName);
+			scriptMod = TFE_ForceScript::createModule(scriptName, scriptPath, false, s_api);
+		}
+		// Try loading from the archives and full search paths.
+		if (!scriptMod)
+		{
+			sprintf(scriptPath, "%s.fs", scriptName);
+			scriptMod = TFE_ForceScript::createModule(scriptName, scriptPath, true, s_api);
+		}
+		return scriptMod != nullptr;
 	}
 
 	void setAPI(ScriptAPI api, const char* searchPath)

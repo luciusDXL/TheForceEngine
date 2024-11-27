@@ -139,14 +139,13 @@ namespace TFE_ForceScript
 
 	void stopAllFunc()
 	{
-		const s32 count = (s32)s_scriptThreads.size();
-		ScriptThread* thread = s_scriptThreads.data();
 		if (s_engine)
 		{
+			const s32 count = (s32)s_scriptThreads.size();
+			ScriptThread* thread = s_scriptThreads.data();
+
 			for (s32 i = 0; i < count; i++)
 			{
-				// Allow for holes to keep IDs consistent.
-				// Fill holes with new threads.
 				if (thread[i].asContext == nullptr) { continue; }
 
 				asIScriptContext* context = thread[i].asContext;

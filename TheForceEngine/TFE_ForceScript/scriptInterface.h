@@ -24,7 +24,7 @@ namespace TFE_ScriptInterface
 	void setAPI(ScriptAPI api, const char* searchPath);
 
 	// Pre/re-compile a script.
-	void recompileScript(const char* scriptName);
+	bool recompileScript(const char* scriptName);
 
 	// Run Scripts, compile on demand.
 	// If a script has already been compiled, it will just use it by default.
