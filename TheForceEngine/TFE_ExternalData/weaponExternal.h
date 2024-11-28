@@ -54,14 +54,42 @@ namespace TFE_ExternalData
 		s32 soundPriority;
 	};
 
+	struct ExternalWeapon
+	{
+		const char* name = nullptr;
+		s32 frameCount = 0;
+		const char* textures[8] = {};
+		s32 xPos[8] = { 0 };
+		s32 yPos[8] = { 0 };
+		s32* ammo = nullptr;
+		s32* secondaryAmmo = nullptr;
+		s32 wakeupRange = 0;
+		s32 variation = 0;
+		s32 primaryFireConsumption = 1;
+		s32 secondaryFireConsumption = 1;
+	};
+
+	struct ExternalGasmask
+	{
+		const char* texture = "gmask.bm";
+		s32 xPos = 105;
+		s32 yPos = 141;
+	};
+
 	ExternalProjectile* getExternalProjectiles();
 	ExternalEffect* getExternalEffects();
+	ExternalWeapon* getExternalWeapons();
+	ExternalGasmask* getExternalGasmask();
 	void clearExternalProjectiles();
 	void clearExternalEffects();
+	void clearExternalWeapons();
 	void loadExternalProjectiles();
 	void parseExternalProjectiles(char* data, bool fromMod);
 	bool validateExternalProjectiles();
 	void loadExternalEffects();
 	void parseExternalEffects(char* data, bool fromMod);
 	bool validateExternalEffects();
+	void loadExternalWeapons();
+	void parseExternalWeapons(char* data, bool fromMod);
+	bool validateExternalWeapons();
 }

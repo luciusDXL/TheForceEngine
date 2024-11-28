@@ -980,6 +980,12 @@ namespace TFE_DarkForces
 								TFE_ExternalData::parseExternalPickups(buffer, true);
 								free(buffer);
 							}
+							else if (strcasecmp(fname, "weapons.json") == 0)
+							{
+								char* buffer = extractTextFileFromZip(*zipArchive, i);
+								TFE_ExternalData::parseExternalWeapons(buffer, true);
+								free(buffer);
+							}
 							else
 							{
 								char name2[TFE_MAX_PATH];
@@ -1140,12 +1146,13 @@ namespace TFE_DarkForces
 					}
 
 					// Load external data overrides
-					char projectilesJsonPath[TFE_MAX_PATH];
-					sprintf(projectilesJsonPath, "%s%s", modPath, "projectiles.json");
-					if (FileUtil::exists(projectilesJsonPath))
+					char jsonPath[TFE_MAX_PATH];
+
+					sprintf(jsonPath, "%s%s", modPath, "projectiles.json");
+					if (FileUtil::exists(jsonPath))
 					{
 						FileStream file;
-						if (!file.open(projectilesJsonPath, FileStream::MODE_READ)) { return; }
+						if (!file.open(jsonPath, FileStream::MODE_READ)) { return; }
 						const size_t size = file.getSize();
 						char* data = (char*)malloc(size + 1);
 
@@ -1159,12 +1166,11 @@ namespace TFE_DarkForces
 						}
 					}
 
-					char effectsJsonPath[TFE_MAX_PATH];
-					sprintf(effectsJsonPath, "%s%s", modPath, "effects.json");
-					if (FileUtil::exists(effectsJsonPath))
+					sprintf(jsonPath, "%s%s", modPath, "effects.json");
+					if (FileUtil::exists(jsonPath))
 					{
 						FileStream file;
-						if (!file.open(effectsJsonPath, FileStream::MODE_READ)) { return; }
+						if (!file.open(jsonPath, FileStream::MODE_READ)) { return; }
 						const size_t size = file.getSize();
 						char* data = (char*)malloc(size + 1);
 
@@ -1178,12 +1184,11 @@ namespace TFE_DarkForces
 						}
 					}
 
-					char pickupsJsonPath[TFE_MAX_PATH];
-					sprintf(pickupsJsonPath, "%s%s", modPath, "pickups.json");
-					if (FileUtil::exists(pickupsJsonPath))
+					sprintf(jsonPath, "%s%s", modPath, "pickups.json");
+					if (FileUtil::exists(jsonPath))
 					{
 						FileStream file;
-						if (!file.open(pickupsJsonPath, FileStream::MODE_READ)) { return; }
+						if (!file.open(jsonPath, FileStream::MODE_READ)) { return; }
 						const size_t size = file.getSize();
 						char* data = (char*)malloc(size + 1);
 
@@ -1193,6 +1198,24 @@ namespace TFE_DarkForces
 							data[size] = 0;
 							file.close();
 							TFE_ExternalData::parseExternalPickups(data, true);
+							free(data);
+						}
+					}
+
+					sprintf(jsonPath, "%s%s", modPath, "weapons.json");
+					if (FileUtil::exists(jsonPath))
+					{
+						FileStream file;
+						if (!file.open(jsonPath, FileStream::MODE_READ)) { return; }
+						const size_t size = file.getSize();
+						char* data = (char*)malloc(size + 1);
+
+						if (size > 0 && data)
+						{
+							file.readBuffer(data, (u32)size);
+							data[size] = 0;
+							file.close();
+							TFE_ExternalData::parseExternalWeapons(data, true);
 							free(data);
 						}
 					}
@@ -1342,7 +1365,6 @@ namespace TFE_DarkForces
 		actor_loadSounds();
 		actor_allocatePhysicsActorList();
 		loadCutsceneList();
-		weapon_startup();
 		loadLangHotkeys();
 
 		TFE_ExternalData::loadCustomLogics();
@@ -1365,8 +1387,15 @@ namespace TFE_DarkForces
 			TFE_System::logWrite(LOG_ERROR, "EXTERNAL_DATA", "Warning: Effect data is incomplete. EFFECTS.JSON may have been altered. Effects may not behave as expected.");
 		}
 
+		TFE_ExternalData::loadExternalWeapons();
+		if (!TFE_ExternalData::validateExternalWeapons())
+		{
+			TFE_System::logWrite(LOG_ERROR, "EXTERNAL_DATA", "Warning: Weapon data is incomplete. WEAPONS.JSON may have been altered. Weapons may not behave as expected.");
+		}
+
 		projectile_startup();
 		hitEffect_startup();
+		weapon_startup();
 		item_loadData();
 		player_init();
 

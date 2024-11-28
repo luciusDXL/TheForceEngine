@@ -163,6 +163,46 @@ namespace TFE_DarkForces
 		proj->dmg = FIXED(9999);
 	}
 
+	s32 getMaxAmmo(s32* ammo)
+	{
+		if (ammo == s_playerAmmoEnergy)
+		{
+			return s_ammoEnergyMax;
+		}
+
+		if (ammo == s_playerAmmoPower)
+		{
+			return s_ammoPowerMax;
+		}
+
+		if (ammo == s_playerAmmoPlasma)
+		{
+			return s_ammoPlasmaMax;
+		}
+
+		if (ammo == s_playerAmmoShell)
+		{
+			return s_ammoShellMax;
+		}
+
+		if (ammo == s_playerAmmoDetonators)
+		{
+			return s_ammoDetonatorMax;
+		}
+
+		if (ammo == s_playerAmmoMines)
+		{
+			return s_ammoMineMax;
+		}
+
+		if (ammo == s_playerAmmoMissiles)
+		{
+			return s_ammoMissileMax;
+		}
+
+		return 0;
+	}
+
 	void weaponFire_fist(MessageType msg)
 	{
 		struct LocalContext
@@ -323,7 +363,10 @@ namespace TFE_DarkForces
 				// it is true every other frame.
 				if (superChargeFrame | (s_fireFrame & 1))
 				{
-					*s_curPlayerWeapon->ammo = pickup_addToValue(s_playerInfo.ammoEnergy, -1, s_ammoEnergyMax);
+					*s_curPlayerWeapon->ammo = pickup_addToValue(
+						*s_curPlayerWeapon->ammo,
+						-s_curPlayerWeapon->primaryFireConsumption,
+						getMaxAmmo(s_curPlayerWeapon->ammo));
 				}
 
 				ProjectileLogic* projLogic;
@@ -508,7 +551,10 @@ namespace TFE_DarkForces
 				// it is true every other frame.
 				if (superChargeFrame | (s_fireFrame & 1))
 				{
-					*s_curPlayerWeapon->ammo = pickup_addToValue(s_playerInfo.ammoEnergy, -2, s_ammoEnergyMax);
+					*s_curPlayerWeapon->ammo = pickup_addToValue(
+						*s_curPlayerWeapon->ammo,
+						-s_curPlayerWeapon->primaryFireConsumption,
+						getMaxAmmo(s_curPlayerWeapon->ammo));
 				}
 
 				ProjectileLogic* projLogic;
@@ -632,7 +678,10 @@ namespace TFE_DarkForces
 		{
 			s_canFireWeaponPrim = 0;
 			s_canFireWeaponSec = 0;
-			*s_curPlayerWeapon->ammo = pickup_addToValue(s_playerInfo.ammoDetonator, -1, s_ammoDetonatorMax);
+			*s_curPlayerWeapon->ammo = pickup_addToValue(
+				*s_curPlayerWeapon->ammo,
+				-s_curPlayerWeapon->primaryFireConsumption,
+				getMaxAmmo(s_curPlayerWeapon->ammo));
 
 			// Weapon Frame 0.
 			s_curPlayerWeapon->frame = c_thermalDetAnim[0].waxFrame;
@@ -840,7 +889,10 @@ namespace TFE_DarkForces
 					// it is true every other frame.
 					if (superChargeFrame | (s_fireFrame & 1))
 					{
-						*s_curPlayerWeapon->ammo = pickup_addToValue(s_playerInfo.ammoPower, -3, s_ammoPowerMax);
+						*s_curPlayerWeapon->ammo = pickup_addToValue(
+							*s_curPlayerWeapon->ammo,
+							-s_curPlayerWeapon->secondaryFireConsumption,
+							getMaxAmmo(s_curPlayerWeapon->ammo));
 					}
 					
 					fixed16_16 yPos = s_playerObject->posWS.y - s_playerObject->worldHeight + s_headwaveVerticalOffset;
@@ -1002,7 +1054,10 @@ namespace TFE_DarkForces
 					// it is true every other frame.
 					if (superChargeFrame | (s_fireFrame & 1))
 					{
-						*s_curPlayerWeapon->ammo = pickup_addToValue(s_playerInfo.ammoPower, -1, s_ammoPowerMax);
+						*s_curPlayerWeapon->ammo = pickup_addToValue(
+							*s_curPlayerWeapon->ammo,
+							-s_curPlayerWeapon->primaryFireConsumption,
+							getMaxAmmo(s_curPlayerWeapon->ammo));
 					}
 
 					fixed16_16 yPos = s_playerObject->posWS.y - s_playerObject->worldHeight + s_headwaveVerticalOffset;
@@ -1160,7 +1215,10 @@ namespace TFE_DarkForces
 					// it is true every other frame.
 					if (superChargeFrame | (s_fireFrame & 1))
 					{
-						*s_curPlayerWeapon->ammo = pickup_addToValue(s_playerInfo.ammoPower, -8, s_ammoPowerMax);
+						*s_curPlayerWeapon->ammo = pickup_addToValue(
+							*s_curPlayerWeapon->ammo,
+							-s_curPlayerWeapon->secondaryFireConsumption,
+							getMaxAmmo(s_curPlayerWeapon->ammo));
 					}
 
 					fixed16_16 yPos = s_playerObject->posWS.y - s_playerObject->worldHeight + s_headwaveVerticalOffset;
@@ -1314,7 +1372,10 @@ namespace TFE_DarkForces
 					// it is true every other frame.
 					if (superChargeFrame | (s_fireFrame & 1))
 					{
-						*s_curPlayerWeapon->ammo = pickup_addToValue(s_playerInfo.ammoPower, -1, s_ammoPowerMax);
+						*s_curPlayerWeapon->ammo = pickup_addToValue(
+							*s_curPlayerWeapon->ammo,
+							-s_curPlayerWeapon->primaryFireConsumption,
+							getMaxAmmo(s_curPlayerWeapon->ammo));
 					}
 
 					fixed16_16 yPlayerPos = s_playerObject->posWS.y - s_playerObject->worldHeight + s_headwaveVerticalOffset;
@@ -1499,7 +1560,10 @@ namespace TFE_DarkForces
 				// it is true every other frame.
 				if (superChargeFrame | (s_fireFrame & 1))
 				{
-					*s_curPlayerWeapon->ammo = pickup_addToValue(s_playerInfo.ammoShell, -1, s_ammoShellMax);
+					*s_curPlayerWeapon->ammo = pickup_addToValue(
+						*s_curPlayerWeapon->ammo,
+						-s_curPlayerWeapon->primaryFireConsumption,
+						getMaxAmmo(s_curPlayerWeapon->ammo));
 				}
 
 				ProjectileLogic* projLogic;
@@ -1611,7 +1675,11 @@ namespace TFE_DarkForces
 		task_begin;
 		if (*s_curPlayerWeapon->ammo)
 		{
-			*s_curPlayerWeapon->ammo = pickup_addToValue(s_playerInfo.ammoMine, -1, s_ammoMineMax);
+			*s_curPlayerWeapon->ammo = pickup_addToValue(
+				*s_curPlayerWeapon->ammo,
+				-s_curPlayerWeapon->primaryFireConsumption,
+				getMaxAmmo(s_curPlayerWeapon->ammo));
+			
 			if (s_curPlayerWeapon->wakeupRange)
 			{
 				vec3_fixed origin = { s_playerObject->posWS.x, s_playerObject->posWS.y, s_playerObject->posWS.z };
@@ -1749,7 +1817,10 @@ namespace TFE_DarkForces
 				// it is true every other frame.
 				if (superChargeFrame | (s_fireFrame & 1))
 				{
-					*s_curPlayerWeapon->ammo = pickup_addToValue(s_playerInfo.ammoPower, -4, s_ammoPowerMax);
+					*s_curPlayerWeapon->ammo = pickup_addToValue(
+						*s_curPlayerWeapon->ammo,
+						-s_curPlayerWeapon->primaryFireConsumption,
+						getMaxAmmo(s_curPlayerWeapon->ammo));
 				}
 
 				ProjectileLogic* projLogic;
@@ -1918,7 +1989,10 @@ namespace TFE_DarkForces
 					s32 superChargeFrame = s_superCharge ? 0 : 1;
 					if (superChargeFrame | (s_fireFrame & 1))
 					{
-						*s_curPlayerWeapon->secondaryAmmo = pickup_addToValue(s_playerInfo.ammoMissile, -1, s_ammoMissileMax);
+						*s_curPlayerWeapon->secondaryAmmo = pickup_addToValue(
+							*s_curPlayerWeapon->secondaryAmmo,
+							-s_curPlayerWeapon->secondaryFireConsumption,
+							getMaxAmmo(s_curPlayerWeapon->secondaryAmmo));
 					}
 
 					fixed16_16 yPos = s_playerObject->posWS.y - s_playerObject->worldHeight + s_headwaveVerticalOffset;
@@ -2052,7 +2126,10 @@ namespace TFE_DarkForces
 					s32 superChargeFrame = s_superCharge ? 0 : 1;
 					if (superChargeFrame | (s_fireFrame & 1))
 					{
-						*s_curPlayerWeapon->ammo = pickup_addToValue(s_playerInfo.ammoPlasma, -1, s_ammoPlasmaMax);
+						*s_curPlayerWeapon->ammo = pickup_addToValue(
+							*s_curPlayerWeapon->ammo,
+							-s_curPlayerWeapon->primaryFireConsumption,
+							getMaxAmmo(s_curPlayerWeapon->ammo));
 					}
 
 					fixed16_16 yPos = s_playerObject->posWS.y - s_playerObject->worldHeight + s_headwaveVerticalOffset;
@@ -2105,6 +2182,7 @@ namespace TFE_DarkForces
 				s_weaponLight = 0;
 				if (s_isShooting)
 				{
+					taskCtx->delay = ((s_superCharge) ? 14 : 29) >> 1;	// this extra delay is equal to the delay of the single animation frame; it should be preserved if the animation is modded
 					do
 					{
 						task_yield(taskCtx->delay);

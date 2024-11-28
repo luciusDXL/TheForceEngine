@@ -35,6 +35,10 @@ namespace TFE_DarkForces
 		s32 u90;
 		fixed16_16 wakeupRange;
 		s32 variation;
+
+		// TFE
+		s32 primaryFireConsumption;
+		s32 secondaryFireConsumption;
 	};
 
 	struct WeaponAnimState

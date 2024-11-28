@@ -96,4 +96,18 @@ namespace TFE_ExternalData
 		"EXP_NO_DMG",		// 16	// medium explosion, no damage.
 		"EXP_25",			// 17	// medium explosion, 25 damage.
 	};
+
+	const char* df_weaponTable[] =
+	{
+		"FIST",				// 0
+		"PISTOL",			// 1
+		"RIFLE",			// 2
+		"THERMAL_DET",		// 3
+		"REPEATER",			// 4
+		"FUSION",			// 5
+		"MORTAR",			// 6
+		"MINE",				// 7
+		"CONCUSSION",		// 8
+		"CANNON",			// 9
+	};
 }
