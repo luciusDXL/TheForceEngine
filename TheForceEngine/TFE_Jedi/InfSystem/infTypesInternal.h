@@ -150,7 +150,7 @@ namespace TFE_Jedi
 	{
 		void* funcPtr;
 		s32 argCount;
-		TFE_ForceScript::ScriptArg args[4];
+		TFE_ForceScript::ScriptArg args[5];
 	};
 
 	struct Slave

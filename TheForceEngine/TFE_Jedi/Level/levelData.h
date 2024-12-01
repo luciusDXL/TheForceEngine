@@ -25,6 +25,7 @@
 #include <TFE_Jedi/Math/fixedPoint.h>
 #include <TFE_Asset/spriteAsset_Jedi.h>
 #include <TFE_Asset/modelAsset_jedi.h>
+#include <TFE_ForceScript/forceScript.h>
 #include "rsector.h"
 
 struct Task;
@@ -78,6 +79,9 @@ namespace TFE_Jedi
 
 		// TFE
 		char levelPaletteName[256];
+		TFE_ForceScript::ModuleHandle levelScript = nullptr;
+		TFE_ForceScript::FunctionHandle levelScriptStart = nullptr;
+		TFE_ForceScript::FunctionHandle levelScriptUpdate = nullptr;
 	};
 	
 	// State that should be reset.

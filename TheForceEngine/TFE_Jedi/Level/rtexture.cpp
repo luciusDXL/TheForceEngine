@@ -149,6 +149,16 @@ namespace TFE_Jedi
 		return s_textureList[pool][index].name.c_str();
 	}
 
+	s32 bitmap_getLevelTextureIndex(const char* name)
+	{
+		TextureTable::iterator iTex = s_textureTable[POOL_LEVEL].find(name);
+		if (iTex != s_textureTable[POOL_LEVEL].end())
+		{
+			return iTex->second;
+		}
+		return -1;
+	}
+
 	// Serialize only level textures.
 	void bitmap_serializeLevelTextures(Stream* stream)
 	{

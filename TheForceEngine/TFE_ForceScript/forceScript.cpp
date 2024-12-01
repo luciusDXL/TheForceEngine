@@ -87,7 +87,7 @@ namespace TFE_ForceScript
 		s_typeId[FSTYPE_ARRAY] = GetScriptArrayObjectId();
 
 		// Language features.
-		res = s_engine->RegisterGlobalFunction("void yield(float)", asFUNCTION(yield), asCALL_CDECL); assert(res >= 0);
+		res = s_engine->RegisterGlobalFunction("void yield(float = 0.0)", asFUNCTION(yield), asCALL_CDECL); assert(res >= 0);
 
 		registerScriptMath_float2(s_engine);
 		s_typeId[FSTYPE_FLOAT2] = getFloat2ObjectId();
@@ -109,9 +109,9 @@ namespace TFE_ForceScript
 		s_msgCallback = callback;
 	}
 
-	void update()
+	void update(f32 dt)
 	{
-		const f32 dt = (f32)TFE_System::getDeltaTime();
+		if (dt == 0.0f) { dt = (f32)TFE_System::getDeltaTime(); }
 		const s32 count = (s32)s_scriptThreads.size();
 		ScriptThread* thread = s_scriptThreads.data();
 		for (s32 i = 0; i < count; i++)
@@ -283,6 +283,38 @@ namespace TFE_ForceScript
 		}
 		return func;
 	}
+
+	FunctionHandle findScriptFuncByNameNoCase(ModuleHandle modHandle, const char* funcName)
+	{
+		if (!modHandle) { return nullptr; }
+
+		// Find the function that is to be called. 
+		asIScriptModule* mod = (asIScriptModule*)modHandle;
+		if (!mod)
+		{
+			// The function couldn't be found. Instruct the script writer
+			// to include the expected function in the script.
+			TFE_System::logWrite(LOG_ERROR, "Script", "Cannot find module '%s'.\n", mod->GetName());
+			return nullptr;
+		}
+
+		// Manually search.
+		u32 funcCount = mod->GetFunctionCount();
+		for (u32 f = 0; f < funcCount; f++)
+		{
+			asIScriptFunction* func = mod->GetFunctionByIndex(f);
+			const char* name = func->GetName();
+			if (strcasecmp(name, funcName) == 0)
+			{
+				return func;
+			}
+		}
+
+		// The function couldn't be found. Instruct the script writer
+		// to include the expected function in the script.
+		TFE_System::logWrite(LOG_ERROR, "Script", "The script must have the function with name '%s'. Please add it and try again.\n", funcName);
+		return nullptr;
+	}
 				
 	// Add a script function to be executed during the update.
 	s32 execFunc(FunctionHandle funcHandle, s32 argCount, const ScriptArg* arg)
@@ -371,7 +403,7 @@ namespace TFE_ForceScript
 	void destroy() {}
 	void overrideCallback(ScriptMessageCallback callback) {}
 	// Run any active script functions.
-	void update() {}
+	void update(f32 dt) {}
 	// Stop all running script functions.
 	void stopAllFunc() {}
 

@@ -68,10 +68,17 @@ namespace TFE_Jedi
 		// Settings helper
 		TFE_Settings::setLevelName(levelName);
 
+		// TFE - Level Script, loading before INF
+		loadLevelScript();
+
+		// Load level data.
 		if (!level_loadGeometry(levelName)) { return JFALSE; }
 		level_loadObjects(levelName, difficulty);
 		inf_load(levelName);
 		level_loadGoals(levelName);
+
+		// TFE - Level Script Level Start
+		startLevelScript(levelName);
 
 		return JTRUE;
 	}
@@ -1054,5 +1061,66 @@ namespace TFE_Jedi
 		obj->posWS.y = y;
 		obj->posWS.z = z;
 		sector_addObject(sector, obj);
+	}
+
+	//////////////////////////////////////////////
+	// TFE: Level Script
+	//////////////////////////////////////////////
+	const char* c_levelScriptName = "LevelScript";
+	const char* c_levelScriptFile = "LevelScript.fs";
+
+	void freeLevelScript()
+	{
+		TFE_ForceScript::deleteModule(c_levelScriptName);
+		s_levelState.levelScript = nullptr;
+		s_levelState.levelScriptStart = nullptr;
+		s_levelState.levelScriptUpdate = nullptr;
+	}
+
+	void loadLevelScript()
+	{
+		// Note: If the level script has already been loaded, createModule() just returns the script.
+		// This means that script state is persistent across levels.
+		s_levelState.levelScript = TFE_ForceScript::createModule(c_levelScriptName, c_levelScriptFile, true, API_GAME);
+		s_levelState.levelScriptStart = nullptr;
+		s_levelState.levelScriptUpdate = nullptr;
+		if (!s_levelState.levelScript) { return; }
+
+		// Get the start and update functions.
+		s_levelState.levelScriptStart  = TFE_ForceScript::findScriptFuncByDecl(s_levelState.levelScript, "void levelStart(string)");
+		s_levelState.levelScriptUpdate = TFE_ForceScript::findScriptFuncByDecl(s_levelState.levelScript, "void levelUpdate(float)");
+	}
+
+	void startLevelScript(const char* levelName)
+	{
+		if (s_levelState.levelScript && s_levelState.levelScriptStart)
+		{
+			TFE_ForceScript::ScriptArg arg;
+			arg.type = TFE_ForceScript::ARG_STRING;
+			arg.stdStr = levelName;
+			TFE_ForceScript::execFunc(s_levelState.levelScriptStart, 1, &arg);
+		}
+	}
+
+	void updateLevelScript(f32 dt)
+	{
+		if (s_levelState.levelScript && s_levelState.levelScriptUpdate)
+		{
+			TFE_ForceScript::ScriptArg arg;
+			arg.type = TFE_ForceScript::ARG_F32;
+			arg.fValue = dt;
+			TFE_ForceScript::execFunc(s_levelState.levelScriptUpdate, 1, &arg);
+		}
+	}
+
+	TFE_ForceScript::ModuleHandle getLevelScript()
+	{
+		return s_levelState.levelScript;
+	}
+
+	TFE_ForceScript::FunctionHandle getLevelScriptFunc(const char* funcName)
+	{
+		if (!s_levelState.levelScript) { return nullptr; }
+		return TFE_ForceScript::findScriptFuncByNameNoCase(s_levelState.levelScript, funcName);
 	}
 }

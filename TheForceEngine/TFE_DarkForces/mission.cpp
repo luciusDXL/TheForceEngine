@@ -547,13 +547,13 @@ namespace TFE_DarkForces
 			// Grab the current framebuffer in case in changed.
 			s_framebuffer = vfb_getCpuBuffer();
 			TFE_Jedi::beginRender();
-
+						
 			// Handle delta time.
 			s_deltaTime = div16(intToFixed16(s_curTick - s_prevTick), FIXED(TICKS_PER_SECOND));
 			s_deltaTime = min(s_deltaTime, MAX_DELTA_TIME);
 			s_prevTick  = s_curTick;
 			s_playerTick = s_curTick;
-
+						
 			if (!escapeMenu_isOpen() && !pda_isOpen())
 			{
 				player_setupCamera();
@@ -564,6 +564,9 @@ namespace TFE_DarkForces
 				}
 				else if (s_missionMode == MISSION_MODE_MAIN)
 				{
+					// TFE - Level Script Support.
+					updateLevelScript(fixed16ToFloat(s_deltaTime));
+					// Dark Forces Draw.
 					updateScreensize();
 					if (s_playerEye)
 					{
@@ -573,7 +576,7 @@ namespace TFE_DarkForces
 					handleVisionFx();
 				}
 			}
-
+						
 			if (!escapeMenu_isOpen() && !pda_isOpen())
 			{
 				handleGeneralInput();

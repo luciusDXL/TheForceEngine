@@ -107,6 +107,7 @@ namespace TFE_Jedi
 
 	Allocator* bitmap_getAnimatedTextures();
 	TextureData** bitmap_getTextures(s32* textureCount, AssetPool pool);
+	s32 bitmap_getLevelTextureIndex(const char* name);
 
 	bool bitmap_getTextureIndex(TextureData* tex, s32* index, AssetPool* pool);
 	TextureData* bitmap_getTextureByIndex(s32 index, AssetPool pool);

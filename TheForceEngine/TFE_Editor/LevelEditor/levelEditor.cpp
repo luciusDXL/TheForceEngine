@@ -224,7 +224,6 @@ namespace LevelEditor
 	bool init(Asset* asset)
 	{
 		TFE_ScriptInterface::registerScriptInterface(API_LEVEL_EDITOR);
-		TFE_ScriptInterface::registerScriptInterface(API_SHARED);
 		TFE_ScriptInterface::setAPI(API_LEVEL_EDITOR, "EditorDef/Scripts");
 
 		s_levelAsset = asset;
@@ -3700,7 +3699,7 @@ namespace LevelEditor
 	{
 		EditorSector* hoveredSector = nullptr;
 		selection_getSector(SEL_INDEX_HOVERED, hoveredSector);
-		if (!hoveredSector->name.empty())
+		if (hoveredSector && !hoveredSector->name.empty())
 		{
 			bool showInfo = true;
 			Vec2i mapPos;

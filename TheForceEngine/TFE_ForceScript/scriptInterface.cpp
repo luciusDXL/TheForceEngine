@@ -1,5 +1,7 @@
 #include "scriptInterface.h"
+#include <TFE_ForceScript/ScriptAPI-Shared/sharedScriptAPI.h>
 #include <TFE_Editor/LevelEditor/Scripting/levelEditorScripts.h>
+#include <TFE_DarkForces/Scripting/gameScripts.h>
 #include <TFE_System/math.h>
 #include <TFE_System/system.h>
 #include <TFE_Jedi/Math/core_math.h>
@@ -46,11 +48,9 @@ namespace TFE_ScriptInterface
 	{
 		switch (api)
 		{
-			case API_SHARED:
-			{
-			} break;
 			case API_LEVEL_EDITOR:
 			{
+				registerSharedScriptAPI(api);
 				LevelEditor::registerScriptFunctions(api);
 			} break;
 			case API_SYSTEM_UI:
@@ -58,6 +58,8 @@ namespace TFE_ScriptInterface
 			} break;
 			case API_GAME:
 			{
+				registerSharedScriptAPI(api);
+				TFE_DarkForces::registerScriptFunctions(api);
 			} break;
 		}
 	}

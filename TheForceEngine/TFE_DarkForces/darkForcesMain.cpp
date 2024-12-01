@@ -37,6 +37,7 @@
 #include <TFE_FileSystem/paths.h>
 #include <TFE_FileSystem/fileutil.h>
 #include <TFE_FileSystem/filestream.h>
+#include <TFE_ForceScript/scriptInterface.h>
 #include <TFE_A11y/accessibility.h>
 #include <TFE_Audio/midiPlayer.h>
 #include <TFE_Audio/audioSystem.h>
@@ -322,11 +323,6 @@ namespace TFE_DarkForces
 		renderer_addHudTextureCallback(TFE_Jedi::level_getLevelTextures);
 		renderer_addHudTextureCallback(TFE_Jedi::level_getObjectTextures);
 
-		if (!stream)
-		{
-			inf_loadScripts();
-		}
-
 		// Deserialize.
 		if (stream)
 		{
@@ -341,6 +337,11 @@ namespace TFE_DarkForces
 
 		s_sharedState.gameStarted = JTRUE;
 		sound_setLevelStart();
+
+		// TFE
+		TFE_ScriptInterface::registerScriptInterface(API_GAME);
+		TFE_ScriptInterface::setAPI(API_GAME, nullptr);
+
 		return true;
 	}
 
@@ -386,6 +387,7 @@ namespace TFE_DarkForces
 		TFE_Model_Jedi::freeAll();
 		reticle_enable(false);
 		texturepacker_reset();
+		freeLevelScript();
 
 		TFE_MidiPlayer::resume();
 		TFE_Audio::resume();

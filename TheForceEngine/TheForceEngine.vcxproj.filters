@@ -197,6 +197,12 @@
     <Filter Include="Source\TFE_ExternalData">
       <UniqueIdentifier>{1b022bdd-6cc1-453b-9ddb-47cd75ab9a49}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\TFE_DarkForces\Scripting">
+      <UniqueIdentifier>{0fefe9be-500f-4f57-9f8b-a2afea2a3e62}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\TFE_ForceScript\ScriptAPI-Shared">
+      <UniqueIdentifier>{5c672dc0-3db1-4561-a60b-669fd3874113}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="main.h">
@@ -1404,7 +1410,7 @@
     </ClInclude>
     <ClInclude Include="TFE_ForceScript\scriptInterface.h">
       <Filter>Source\TFE_ForceScript</Filter>
-	</ClInclude>
+    </ClInclude>
     <ClInclude Include="TFE_ExternalData\dfLogics.h">
       <Filter>Source\TFE_ExternalData</Filter>
     </ClInclude>
@@ -1413,6 +1419,21 @@
     </ClInclude>
     <ClInclude Include="TFE_ExternalData\weaponExternal.h">
       <Filter>Source\TFE_ExternalData</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_DarkForces\Scripting\gameScripts.h">
+      <Filter>Source\TFE_DarkForces\Scripting</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_DarkForces\Scripting\gs_level.h">
+      <Filter>Source\TFE_DarkForces\Scripting</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_DarkForces\Scripting\gs_system.h">
+      <Filter>Source\TFE_DarkForces\Scripting</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\ScriptAPI-Shared\scriptMath.h">
+      <Filter>Source\TFE_ForceScript\ScriptAPI-Shared</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\ScriptAPI-Shared\sharedScriptAPI.h">
+      <Filter>Source\TFE_ForceScript\ScriptAPI-Shared</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -2456,7 +2477,7 @@
     </ClCompile>
     <ClCompile Include="TFE_ForceScript\scriptInterface.cpp">
       <Filter>Source\TFE_ForceScript</Filter>
-	</ClCompile>
+    </ClCompile>
     <ClCompile Include="TFE_ExternalData\dfLogics.cpp">
       <Filter>Source\TFE_ExternalData</Filter>
     </ClCompile>
@@ -2465,6 +2486,21 @@
     </ClCompile>
     <ClCompile Include="TFE_ExternalData\weaponExternal.cpp">
       <Filter>Source\TFE_ExternalData</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_DarkForces\Scripting\gameScripts.cpp">
+      <Filter>Source\TFE_DarkForces\Scripting</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_DarkForces\Scripting\gs_level.cpp">
+      <Filter>Source\TFE_DarkForces\Scripting</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_DarkForces\Scripting\gs_system.cpp">
+      <Filter>Source\TFE_DarkForces\Scripting</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_ForceScript\ScriptAPI-Shared\scriptMath.cpp">
+      <Filter>Source\TFE_ForceScript\ScriptAPI-Shared</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_ForceScript\ScriptAPI-Shared\sharedScriptAPI.cpp">
+      <Filter>Source\TFE_ForceScript\ScriptAPI-Shared</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

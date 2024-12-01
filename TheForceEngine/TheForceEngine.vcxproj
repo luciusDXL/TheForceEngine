@@ -439,6 +439,9 @@ echo ^)";
     <ClInclude Include="TFE_DarkForces\playerLogic.h" />
     <ClInclude Include="TFE_DarkForces\projectile.h" />
     <ClInclude Include="TFE_DarkForces\random.h" />
+    <ClInclude Include="TFE_DarkForces\Scripting\gameScripts.h" />
+    <ClInclude Include="TFE_DarkForces\Scripting\gs_level.h" />
+    <ClInclude Include="TFE_DarkForces\Scripting\gs_system.h" />
     <ClInclude Include="TFE_DarkForces\sound.h" />
     <ClInclude Include="TFE_DarkForces\time.h" />
     <ClInclude Include="TFE_DarkForces\updateLogic.h" />
@@ -556,6 +559,8 @@ echo ^)";
     <ClInclude Include="TFE_ForceScript\Angelscript\angelscript\source\as_variablescope.h" />
     <ClInclude Include="TFE_ForceScript\float2.h" />
     <ClInclude Include="TFE_ForceScript\forceScript.h" />
+    <ClInclude Include="TFE_ForceScript\ScriptAPI-Shared\scriptMath.h" />
+    <ClInclude Include="TFE_ForceScript\ScriptAPI-Shared\sharedScriptAPI.h" />
     <ClInclude Include="TFE_ForceScript\scriptAPI.h" />
     <ClInclude Include="TFE_ForceScript\scriptInterface.h" />
     <ClInclude Include="TFE_FrontEndUI\console.h" />
@@ -831,6 +836,9 @@ echo ^)";
     <ClCompile Include="TFE_DarkForces\playerCollision.cpp" />
     <ClCompile Include="TFE_DarkForces\projectile.cpp" />
     <ClCompile Include="TFE_DarkForces\random.cpp" />
+    <ClCompile Include="TFE_DarkForces\Scripting\gameScripts.cpp" />
+    <ClCompile Include="TFE_DarkForces\Scripting\gs_level.cpp" />
+    <ClCompile Include="TFE_DarkForces\Scripting\gs_system.cpp" />
     <ClCompile Include="TFE_DarkForces\sound.cpp" />
     <ClCompile Include="TFE_DarkForces\time.cpp" />
     <ClCompile Include="TFE_DarkForces\updateLogic.cpp" />
@@ -938,6 +946,8 @@ echo ^)";
     <ClCompile Include="TFE_ForceScript\Angelscript\angelscript\source\as_variablescope.cpp" />
     <ClCompile Include="TFE_ForceScript\float2.cpp" />
     <ClCompile Include="TFE_ForceScript\forceScript.cpp" />
+    <ClCompile Include="TFE_ForceScript\ScriptAPI-Shared\scriptMath.cpp" />
+    <ClCompile Include="TFE_ForceScript\ScriptAPI-Shared\sharedScriptAPI.cpp" />
     <ClCompile Include="TFE_ForceScript\scriptInterface.cpp" />
     <ClCompile Include="TFE_FrontEndUI\console.cpp" />
     <ClCompile Include="TFE_FrontEndUI\frontEndUi.cpp" />
@@ -1057,7 +1067,7 @@ echo ^)";
     <ClCompile Include="TFE_Settings\settings.cpp" />
     <ClCompile Include="TFE_ExternalData\dfLogics.cpp" />
     <ClCompile Include="TFE_ExternalData\logicTables.cpp" />
-	<ClCompile Include="TFE_ExternalData\weaponExternal.cpp" />
+    <ClCompile Include="TFE_ExternalData\weaponExternal.cpp" />
     <ClCompile Include="TFE_Settings\windows\registry.cpp" />
     <ClCompile Include="TFE_System\cJSON.c" />
     <ClCompile Include="TFE_System\CrashHandler\crashHandlerWin32.cpp" />

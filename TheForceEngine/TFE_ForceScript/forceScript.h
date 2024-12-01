@@ -58,7 +58,7 @@ namespace TFE_ForceScript
 	void destroy();
 	void overrideCallback(ScriptMessageCallback callback = nullptr);
 	// Run any active script functions.
-	void update();
+	void update(f32 dt = 0.0f);
 	// Stop all running script functions.
 	void stopAllFunc();
 
@@ -73,6 +73,8 @@ namespace TFE_ForceScript
 	// Find a specific script function in a module.
 	FunctionHandle findScriptFuncByDecl(ModuleHandle modHandle, const char* funcDecl);
 	FunctionHandle findScriptFuncByName(ModuleHandle modHandle, const char* funcName);
+	// Normally function names are case-sensitive, this function ignores case.
+	FunctionHandle findScriptFuncByNameNoCase(ModuleHandle modHandle, const char* funcName);
 
 	// Types
 	s32 getObjectTypeId(FS_BuiltInType type);

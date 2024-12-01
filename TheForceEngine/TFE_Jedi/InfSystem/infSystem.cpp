@@ -93,6 +93,7 @@ namespace TFE_Jedi
 
 	void inf_stopAdjoinCommands(Stop* stop);
 	void inf_stopHandleMessages(MessageType msg);
+	void inf_stopHandleScriptCall(Stop* stop);
 	void inf_handleMsgLights();
 	void inf_elevatorStart(InfElevator* elev);
 	vec3_fixed inf_getElevSoundPos(InfElevator* elev);
@@ -1221,22 +1222,6 @@ namespace TFE_Jedi
 		return seqEnd;
 	}
 
-	static TFE_ForceScript::ModuleHandle s_infScriptMod = nullptr;
-
-	void inf_loadScripts()
-	{
-		const char* c_infScriptName = "InfScript";
-		const char* c_infScriptFile = "InfScript.fs";
-		TFE_ForceScript::deleteModule(c_infScriptName);
-		s_infScriptMod = TFE_ForceScript::createModule(c_infScriptName, c_infScriptFile, true, API_GAME);
-	}
-
-	TFE_ForceScript::FunctionHandle inf_getFunction(const char* name)
-	{
-		if (!s_infScriptMod) { return nullptr; }
-		return TFE_ForceScript::findScriptFuncByName(s_infScriptMod, name);
-	}
-
 	// For now load the INF data directly.
 	// Move back to asset later.
 	JBool inf_load(const char* levelName)
@@ -1598,8 +1583,11 @@ namespace TFE_Jedi
 								// Messages
 								s_infState.nextStop = taskCtx->nextStop;
 								task_callTaskFunc(inf_stopHandleMessages);
-
+																
 								task_localBlockBegin;
+								// ScriptCalls.
+								inf_stopHandleScriptCall(taskCtx->nextStop);
+
 								// Adjoin Commands.
 								inf_stopAdjoinCommands(taskCtx->nextStop);
 
@@ -1625,7 +1613,7 @@ namespace TFE_Jedi
 								{
 									sound_play(pageId);
 								}
-
+								
 								// Advance to the next stop.
 								taskCtx->elev->nextStop = inf_advanceStops(taskCtx->elev->stops, 0, 1);
 								task_localBlockEnd;
@@ -2051,6 +2039,11 @@ namespace TFE_Jedi
 				argCount++;
 			}
 		}
+
+		// Add an argument for the elevator ID, always the last argument.
+		arg[argCount].iValue = allocator_getIndex(s_infSerState.infElevators, elev);
+		arg[argCount].type = TFE_ForceScript::ARG_S32;
+
 		return argCount;
 	}
 		
@@ -2372,7 +2365,7 @@ namespace TFE_Jedi
 				Stop* stop = inf_getStopByIndex(elev, index);
 				if (stop)
 				{
-					TFE_ForceScript::FunctionHandle func = inf_getFunction(s_infArg1);
+					TFE_ForceScript::FunctionHandle func = getLevelScriptFunc(s_infArg1);
 					if (func)
 					{
 						if (!stop->scriptCalls)
@@ -3348,6 +3341,16 @@ namespace TFE_Jedi
 		} // while (msg)
 
 		task_end;
+	}
+
+	void inf_stopHandleScriptCall(Stop* stop)
+	{
+		InfScriptCall* call = (InfScriptCall*)allocator_getHead(stop->scriptCalls);
+		while (call)
+		{
+			TFE_ForceScript::execFunc(call->funcPtr, call->argCount, call->args);
+			call = (InfScriptCall*)allocator_getNext(stop->scriptCalls);
+		}
 	}
 		
 	void inf_handleMsgLights()

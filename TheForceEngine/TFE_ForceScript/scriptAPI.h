@@ -50,11 +50,15 @@ ScriptObjectVariable(typeInst)
 // Example: ScriptObjMethod(LS_Level, "Level", "string getSlot()", getSlot);
 //                      <C++ objType> <objName> <function decl>    <C++ member function>
 #define ScriptObjMethod(decl, funcName) res = engine->RegisterObjectMethod(s_typeName, decl, asMETHOD(ScriptCurType, funcName), asCALL_THISCALL);  assert(res >= 0);
+#define ScriptObjFunc(decl, funcName) res = engine->RegisterObjectMethod(s_typeName, decl, asFUNCTION(funcName), asCALL_CDECL_OBJLAST);  assert(res >= 0);
 
 #define ScriptGenericMethod(decl, funcName) res = engine->RegisterObjectMethod(s_typeName, decl, asFUNCTION(funcName), asCALL_GENERIC); assert(res >= 0)
 
 #define ScriptPropertyGet(decl, funcName) res = engine->RegisterObjectMethod(s_typeName, std::string(decl + std::string(" const property")).c_str(), asMETHOD(ScriptCurType, funcName), asCALL_THISCALL); assert(r >= 0);
 #define ScriptPropertySet(decl, funcName) res = engine->RegisterObjectMethod(s_typeName, std::string(decl + std::string(" property")).c_str(), asMETHOD(ScriptCurType, funcName), asCALL_THISCALL); assert(r >= 0);
+
+#define ScriptPropertyGetFunc(decl, funcName) res = engine->RegisterObjectMethod(s_typeName, std::string(decl + std::string(" const property")).c_str(), asFUNCTION(funcName), asCALL_CDECL_OBJLAST);  assert(res >= 0);
+#define ScriptPropertySetFunc(decl, funcName) res = engine->RegisterObjectMethod(s_typeName, std::string(decl + std::string(" property")).c_str(), asFUNCTION(funcName), asCALL_CDECL_OBJLAST);  assert(res >= 0);
 
 #define ScriptLambdaPropertyGet(decl, ret, lambda) res = engine->RegisterObjectMethod(s_typeName, std::string(decl + std::string(" const property")).c_str(), asFUNCTIONPR([]() lambda, (), ret), asCALL_CDECL_OBJLAST);  assert(res >= 0)
 #define ScriptLambdaPropertySet(decl, args, lambda) res = engine->RegisterObjectMethod(s_typeName, std::string(decl + std::string(" property")).c_str(), asFUNCTIONPR([]args lambda, args, void), asCALL_CDECL_OBJLAST);  assert(res >= 0)
@@ -72,7 +76,9 @@ ScriptObjectVariable(typeInst)
 // Called in script as: level.setName("Level Name");
 #define ScriptLambdaMethod(decl, args, ret, lambda) res = engine->RegisterObjectMethod(s_typeName, decl, asFUNCTIONPR([]args lambda, args, ret), asCALL_CDECL_OBJLAST);  assert(res >= 0)
 
+#define ScriptValueType(name) s_typeName = name; res = engine->RegisterObjectType(name, sizeof(ScriptCurType), asOBJ_VALUE | asOBJ_POD | asGetTypeTraits<ScriptCurType>()); assert(res >= 0)
 #define ScriptObjectType(objName) s_typeName = objName; res = engine->RegisterObjectType(objName, sizeof(ScriptCurType), asOBJ_VALUE | asOBJ_POD); assert(res >= 0)
 #define ScriptObjectVariable(objVar) s_objVar = objVar
+
 #define ScriptClass(decl) res = engine->RegisterGlobalProperty(decl, this);  assert(res >= 0)
 #define ScriptResult res >= 0

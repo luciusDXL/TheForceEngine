@@ -226,7 +226,7 @@ static const char* c_keywords[] =
 	"SEQEND",
 	"M_TRIGGER",
 	// TFE
-	"SCRIPTCALL",
+	"SCRIPTCALL:",
 };
 
 #define KEYWORD_COUNT TFE_ARRAYSIZE(c_keywords)

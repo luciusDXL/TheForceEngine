@@ -153,6 +153,7 @@ namespace LevelEditor
 		ISC_ADJOIN,
 		ISC_TEXTURE,
 		ISC_PAGE,
+		ISC_SCRIPTCALL,
 		ISC_COUNT
 	};
 
@@ -198,6 +199,17 @@ namespace LevelEditor
 		u32 arg[2] = { 0 };
 	};
 
+	struct Editor_ScriptCallArg
+	{
+		std::string value = "";
+	};
+
+	struct Editor_ScriptCall
+	{
+		std::string funcName;
+		Editor_ScriptCallArg arg[4];
+	};
+
 	struct Editor_InfStop
 	{
 		u32 overrideSet = ISO_NONE;		// InfStopOverride - Which values were overriden from the defaults.
@@ -212,6 +224,7 @@ namespace LevelEditor
 		std::vector<Editor_InfAdjoinCmd> adjoinCmd;
 		std::vector<Editor_InfTextureCmd> textureCmd;
 		std::vector<Editor_InfMessage> msg;
+		std::vector<Editor_ScriptCall> scriptCall;
 		std::string page;
 	};
 
