@@ -922,14 +922,15 @@ namespace TFE_DarkForces
 			if (strcasecmp(ext, "zip") == 0 || strcasecmp(ext, "pk3") == 0)
 			{
 				// In the case of a zip file, we want to extract the GOB into an in-memory format and use that directly.
-				ZipArchive zipArchive;
-				if (zipArchive.open(archivePath.path))
+				// Note that the archive will be deleted on exit, so we can safely allocate here and pass it along.
+				ZipArchive* zipArchive = new ZipArchive();
+				if (zipArchive->open(archivePath.path))
 				{
 					s32 gobIndex = -1;
-					const u32 count = zipArchive.getFileCount();
+					const u32 count = zipArchive->getFileCount();
 					for (u32 i = 0; i < count; i++)
 					{
-						const char* name = zipArchive.getFileName(i);
+						const char* name = zipArchive->getFileName(i);
 						const size_t nameLen = strlen(name);
 						const char* zext = &name[nameLen - 3];
 						const char* zext4 = &name[nameLen - 4];
@@ -962,19 +963,19 @@ namespace TFE_DarkForces
 
 							if (strcasecmp(fname, "projectiles.json") == 0)
 							{
-								char* buffer = extractTextFileFromZip(zipArchive, i);
+								char* buffer = extractTextFileFromZip(*zipArchive, i);
 								TFE_ExternalData::parseExternalProjectiles(buffer, true);
 								free(buffer);
 							}
 							else if (strcasecmp(fname, "effects.json") == 0)
 							{
-								char* buffer = extractTextFileFromZip(zipArchive, i);
+								char* buffer = extractTextFileFromZip(*zipArchive, i);
 								TFE_ExternalData::parseExternalEffects(buffer, true);
 								free(buffer);
 							}
 							else if (strcasecmp(fname, "pickups.json") == 0)
 							{
-								char* buffer = extractTextFileFromZip(zipArchive, i);
+								char* buffer = extractTextFileFromZip(*zipArchive, i);
 								TFE_ExternalData::parseExternalPickups(buffer, true);
 								free(buffer);
 							}
@@ -987,7 +988,7 @@ namespace TFE_DarkForces
 								// If in logics subdirectory, attempt to load logics from JSON
 								if (strcasecmp(subdir, "logics") == 0)
 								{
-									char* buffer = extractTextFileFromZip(zipArchive, i);
+									char* buffer = extractTextFileFromZip(*zipArchive, i);
 									TFE_ExternalData::ExternalLogics* logics = TFE_ExternalData::getExternalLogics();
 									TFE_ExternalData::parseLogicData(buffer, name, logics->actorLogics);
 									free(buffer);
@@ -1005,14 +1006,14 @@ namespace TFE_DarkForces
 
 					if (gobIndex >= 0)
 					{
-						u32 bufferLen = (u32)zipArchive.getFileLength(gobIndex);
+						u32 bufferLen = (u32)zipArchive->getFileLength(gobIndex);
 						u8* buffer = (u8*)malloc(bufferLen);
-						zipArchive.openFile(gobIndex);
-						zipArchive.readFile(buffer, bufferLen);
-						zipArchive.closeFile();
+						zipArchive->openFile(gobIndex);
+						zipArchive->readFile(buffer, bufferLen);
+						zipArchive->closeFile();
 
 						GobMemoryArchive* gobArchive = new GobMemoryArchive();
-						gobArchive->setName(zipArchive.getFileName(gobIndex));
+						gobArchive->setName(zipArchive->getFileName(gobIndex));
 						gobArchive->open(buffer, bufferLen);
 						TFE_Paths::addLocalArchive(gobArchive);
 					}
@@ -1022,11 +1023,11 @@ namespace TFE_DarkForces
 					// Extract and copy the briefing.
 					if (briefingIndex >= 0)
 					{
-						u32 bufferLen = (u32)zipArchive.getFileLength(briefingIndex);
+						u32 bufferLen = (u32)zipArchive->getFileLength(briefingIndex);
 						u8* buffer = (u8*)malloc(bufferLen);
-						zipArchive.openFile(briefingIndex);
-						zipArchive.readFile(buffer, bufferLen);
-						zipArchive.closeFile();
+						zipArchive->openFile(briefingIndex);
+						zipArchive->readFile(buffer, bufferLen);
+						zipArchive->closeFile();
 
 						char lfdPath[TFE_MAX_PATH];
 						sprintf(lfdPath, "%sdfbrief.lfd", tempPath);
@@ -1043,11 +1044,11 @@ namespace TFE_DarkForces
 					// Extract and copy the LFD.
 					for (s32 i = 0; i < lfdCount; i++)
 					{
-						u32 bufferLen = (u32)zipArchive.getFileLength(lfdIndex[i]);
+						u32 bufferLen = (u32)zipArchive->getFileLength(lfdIndex[i]);
 						u8* buffer = (u8*)malloc(bufferLen);
-						zipArchive.openFile(lfdIndex[i]);
-						zipArchive.readFile(buffer, bufferLen);
-						zipArchive.closeFile();
+						zipArchive->openFile(lfdIndex[i]);
+						zipArchive->readFile(buffer, bufferLen);
+						zipArchive->closeFile();
 
 						char lfdPath[TFE_MAX_PATH];
 						sprintf(lfdPath, "%scutscenes%d.lfd", tempPath, i);
@@ -1059,10 +1060,11 @@ namespace TFE_DarkForces
 						}
 						free(buffer);
 
-						TFE_Paths::addSingleFilePath(zipArchive.getFileName(lfdIndex[i]), lfdPath);
+						TFE_Paths::addSingleFilePath(zipArchive->getFileName(lfdIndex[i]), lfdPath);
 					}
 
-					zipArchive.close();
+					// Add the ZIP archive itself.
+					TFE_Paths::addLocalArchive(zipArchive);
 				}
 			}
 			else
