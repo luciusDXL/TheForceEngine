@@ -2043,6 +2043,7 @@ namespace TFE_Jedi
 		// Add an argument for the elevator ID, always the last argument.
 		arg[argCount].iValue = allocator_getIndex(s_infSerState.infElevators, elev);
 		arg[argCount].type = TFE_ForceScript::ARG_S32;
+		argCount++;
 
 		return argCount;
 	}
@@ -2376,7 +2377,7 @@ namespace TFE_Jedi
 						if (!scriptCall) { return JFALSE; }
 
 						// Up to 4 arguments.
-						scriptCall->argCount = inf_parseScriptCallArg(elev, stop, scriptCall->args, argCount - 2, s_infArg2, s_infArg3, s_infArg4, s_infArgExtra);
+						scriptCall->argCount = inf_parseScriptCallArg(elev, stop, scriptCall->args, argCount - 3, s_infArg2, s_infArg3, s_infArg4, s_infArgExtra);
 						scriptCall->funcPtr = func;
 					}
 				}
