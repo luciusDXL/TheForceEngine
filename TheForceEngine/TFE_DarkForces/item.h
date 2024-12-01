@@ -67,8 +67,8 @@ namespace TFE_DarkForces
 		ITYPE_OBJECTIVE= 1,  // Mission objective item.
 		ITYPE_WEAPON   = 2,  // Weapons
 		ITYPE_AMMO     = 4,  // Pickups that refill ammo, health, shields, etc.
-		ITYPE_KEY_ITEM = 8,  // Keys and usable inventory items.
-		ITYPE_INV_ITEM = 16, // Non-usable Inventory Items
+		ITYPE_USABLE   = 8,  // Keys and usable inventory items.
+		ITYPE_CODEKEY  = 16, // Code keys (Non-usable Inventory Items)
 		ITYPE_POWERUP  = 32, // Powerups & Extra lives.
 		ITYPE_SPECIAL  = 64, // Special - only a single item fits in this type (ITEM_PILE).
 	};
@@ -84,8 +84,8 @@ namespace TFE_DarkForces
 	};
 
 	extern SoundSourceId s_powerupPickupSnd;
-	extern SoundSourceId s_invItemPickupSnd;
-	extern SoundSourceId s_wpnPickupSnd;
+	extern SoundSourceId s_objectivePickupSnd;
+	extern SoundSourceId s_itemPickupSnd;
 	extern ItemData      s_itemData[ITEM_COUNT];
 
 	void item_loadData();

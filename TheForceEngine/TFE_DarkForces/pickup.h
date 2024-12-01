@@ -19,10 +19,10 @@ namespace TFE_DarkForces
 	{
 		Logic logic;		// Logic header.
 		ItemId id;
-		s32 index;
+		s32 weaponIndex;
 		ItemType type;
-		JBool* item;
-		s32* value;
+		JBool* playerItem;	// Points to s_playerInfo inventory item
+		s32* playerAmmo;	// Points to s_playerInfo ammo type, shields, or health 
 		s32 amount;
 		s32 msgId[2];
 		s32 maxAmount;

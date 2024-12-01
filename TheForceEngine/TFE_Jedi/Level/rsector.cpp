@@ -836,7 +836,7 @@ namespace TFE_Jedi
 				i++;
 
 				JBool canRemove = (obj->entityFlags & ETFLAG_CORPSE) != 0;
-				canRemove |= ((obj->entityFlags & ETFLAG_PICKUP) && !(obj->flags & OBJ_FLAG_MISSION));
+				canRemove |= ((obj->entityFlags & ETFLAG_PICKUP) && !(obj->flags & OBJ_FLAG_NO_REMOVE));
 
 				const u32 projType = (obj->projectileLogic) ? ((TFE_DarkForces::ProjectileLogic*)obj->projectileLogic)->type : (0);
 				const JBool isLandMine = projType == PROJ_LAND_MINE || projType == PROJ_LAND_MINE_PROX || projType == PROJ_LAND_MINE_PLACED;
