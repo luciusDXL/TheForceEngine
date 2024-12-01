@@ -33,18 +33,15 @@ namespace TFE_DarkForces
 
 	ScriptElev GS_Level::getElevator(s32 id)
 	{
-		ScriptElev elev(-1);
 		if (id < 0 || id >= allocator_getCount(s_infSerState.infElevators))
 		{
 			TFE_System::logWrite(LOG_ERROR, "Level Script", "Runtime error, invalid elevator ID %d.", id);
+			id = -1; // Invalid ID, elevator.isValid() == false
 		}
-		else
-		{
-			elev.m_id = id;
-		}
+		ScriptElev elev(id);
 		return elev;
 	}
-		
+
 	bool GS_Level::scriptRegister(ScriptAPI api)
 	{
 		ScriptElev scriptElev;
