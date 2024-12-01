@@ -14,6 +14,7 @@
 #include <TFE_System/system.h>
 #include <TFE_FrontEndUI/console.h>
 #include <TFE_Settings/settings.h>
+#include <TFE_ExternalData/pickupExternal.h>
 #include <TFE_Input/inputMapping.h>
 #include <TFE_Game/igame.h>
 #include <TFE_DarkForces/mission.h>
@@ -235,8 +236,10 @@ namespace TFE_DarkForces
 	angle14_32 s_camOffsetRoll = 0;
 	angle14_32 s_playerYaw;
 
-	JBool s_itemUnknown1;	// 0x282428
-	JBool s_itemUnknown2;	// 0x28242c
+	// Based on positioning in inventory, these were probably meant to represent thermal
+	// detonators and mines - see player_readInfo() and player_writeInfo()
+	JBool s_itemUnknown1;	// 0x282428	
+	JBool s_itemUnknown2;	// 0x28242c 
 
 	SoundSourceId s_landSplashSound;
 	SoundSourceId s_landSolidSound;
@@ -261,6 +264,30 @@ namespace TFE_DarkForces
 	s32 s_onMovingSurface = 0;
 	// Other
 	s32 s_playerCrouch = 0;
+
+	// Pointers to player ammo stores
+	s32* s_playerAmmoEnergy;
+	s32* s_playerAmmoPower;
+	s32* s_playerAmmoPlasma;
+	s32* s_playerAmmoShell;
+	s32* s_playerAmmoDetonators;
+	s32* s_playerAmmoMines;
+	s32* s_playerAmmoMissiles;
+	s32* s_playerShields;
+	s32* s_playerHealth;
+	fixed16_16* s_playerBatteryPower;
+
+	// Maximum values for ammo, etc.
+	s32 s_ammoEnergyMax;
+	s32 s_ammoPowerMax;
+	s32 s_ammoShellMax;
+	s32 s_ammoPlasmaMax;
+	s32 s_ammoDetonatorMax;
+	s32 s_ammoMineMax;
+	s32 s_ammoMissileMax;
+	s32 s_shieldsMax;
+	fixed16_16 s_batteryPowerMax;
+	s32 s_healthMax;
 			   
 	///////////////////////////////////////////
 	// Forward Declarations
@@ -303,14 +330,37 @@ namespace TFE_DarkForces
 		s_kyleScreamSoundSource          = sound_load("fall.voc",     SOUND_PRIORITY_MED4);
 		s_playerShieldHitSoundSource     = sound_load("shield1.voc",  SOUND_PRIORITY_MED5);
 
+		s_playerAmmoEnergy = &s_playerInfo.ammoEnergy;
+		s_playerAmmoPower = &s_playerInfo.ammoPower;
+		s_playerAmmoPlasma = &s_playerInfo.ammoPlasma;
+		s_playerAmmoShell = &s_playerInfo.ammoShell;
+		s_playerAmmoDetonators = &s_playerInfo.ammoDetonator;
+		s_playerAmmoMines = &s_playerInfo.ammoMine;
+		s_playerAmmoMissiles = &s_playerInfo.ammoMissile;
+		s_playerShields = &s_playerInfo.shields;
+		s_playerHealth = &s_playerInfo.health;
+		s_playerBatteryPower = &s_batteryPower;
+
+		TFE_ExternalData::MaxAmounts* maxAmounts = TFE_ExternalData::getMaxAmounts();
+		s_ammoEnergyMax = maxAmounts->ammoEnergyMax;
+		s_ammoPowerMax = maxAmounts->ammoPowerMax;
+		s_ammoShellMax = maxAmounts->ammoShellMax;
+		s_ammoPlasmaMax = maxAmounts->ammoPlasmaMax;
+		s_ammoDetonatorMax = maxAmounts->ammoDetonatorMax;
+		s_ammoMineMax = maxAmounts->ammoMineMax;
+		s_ammoMissileMax = maxAmounts->ammoMissileMax;
+		s_shieldsMax = maxAmounts->shieldsMax;
+		s_batteryPowerMax = maxAmounts->batteryPowerMax;
+		s_healthMax = maxAmounts->healthMax;
+
 		s_playerInfo = { 0 }; // Make sure this is clear...
-		s_playerInfo.ammoEnergy  = pickup_addToValue(0, 100, 999);
-		s_playerInfo.ammoPower   = pickup_addToValue(0, 100, 999);
-		s_playerInfo.ammoPlasma  = pickup_addToValue(0, 100, 999);
-		s_playerInfo.shields     = pickup_addToValue(0, 100, 200);
-		s_playerInfo.health      = pickup_addToValue(0, 100, 100);
+		s_playerInfo.ammoEnergy  = pickup_addToValue(0, 100, s_ammoEnergyMax);
+		s_playerInfo.ammoPower   = pickup_addToValue(0, 100, s_ammoPowerMax);
+		s_playerInfo.ammoPlasma  = pickup_addToValue(0, 100, s_ammoPlasmaMax);
+		s_playerInfo.shields     = pickup_addToValue(0, 100, s_shieldsMax);
+		s_playerInfo.health      = pickup_addToValue(0, 100, s_healthMax);
 		s_playerInfo.healthFract = 0;
-		s_batteryPower = FIXED(2);
+		s_batteryPower = s_batteryPowerMax;
 		s_reviveTick = 0;
 
 		s_automapLocked = JTRUE;
@@ -780,11 +830,11 @@ namespace TFE_DarkForces
 		s_instaDeathEnabled = JFALSE;
 
 		// The player will always start a level with at least 100 shields, though if they have more it carries over.
-		s_playerInfo.shields = max(100, s_playerInfo.shields);
+		s_playerInfo.shields = min(max(100, s_playerInfo.shields), s_shieldsMax);
 		// The player starts a new level with full health and energy.
-		s_playerInfo.health = 100;
+		s_playerInfo.health = s_healthMax;
 		s_playerInfo.healthFract = 0;
-		s_batteryPower = FIXED(2);
+		s_batteryPower = s_batteryPowerMax;
 
 		s_wearingGasmask    = JFALSE;
 		s_wearingCleats     = JFALSE;
@@ -919,8 +969,8 @@ namespace TFE_DarkForces
 	{
 		// player_revive() is called when the player respawns, which is why it sets 100 for shields here.
 		// In the case of picking up the item, the value is then set to 200 after the function call.
-		s_playerInfo.shields = 100;
-		s_playerInfo.health = 100;
+		s_playerInfo.shields = min(100, s_shieldsMax);
+		s_playerInfo.health = s_healthMax;
 		s_playerInfo.healthFract = 0;
 		s_playerDying = 0;
 	}
@@ -944,10 +994,10 @@ namespace TFE_DarkForces
 
 	void giveAllWeaponsAndHealth()
 	{
-		s_playerInfo.health = 100;
+		s_playerInfo.health = s_healthMax;
 		s_playerInfo.healthFract = 0;
 		s_playerDying = 0;
-		s_playerInfo.shields = 200;
+		s_playerInfo.shields = s_shieldsMax;
 
 		s_playerInfo.itemPistol = JTRUE;
 		s_playerInfo.itemRifle = JTRUE;
@@ -962,54 +1012,54 @@ namespace TFE_DarkForces
 		s_playerInfo.itemCleats = JTRUE;
 		s_playerInfo.itemMask = JTRUE;
 
-		s_playerInfo.ammoEnergy = 500;
-		s_playerInfo.ammoPower = 500;
-		s_playerInfo.ammoDetonator = 50;
-		s_playerInfo.ammoShell = 50;
-		s_playerInfo.ammoPlasma = 400;
-		s_playerInfo.ammoMine = 30;
-		s_playerInfo.ammoMissile = 20;
+		s_playerInfo.ammoEnergy = s_ammoEnergyMax;
+		s_playerInfo.ammoPower = s_ammoPowerMax;
+		s_playerInfo.ammoDetonator = s_ammoDetonatorMax;
+		s_playerInfo.ammoShell = s_ammoShellMax;
+		s_playerInfo.ammoPlasma = s_ammoPlasmaMax;
+		s_playerInfo.ammoMine = s_ammoMineMax;
+		s_playerInfo.ammoMissile = s_ammoMissileMax;
 
-		s_batteryPower = FIXED(2);
+		s_batteryPower = s_batteryPowerMax;
 		weapon_fixupAnim();
 	}
 
 	void giveHealthAndFullAmmo()
 	{
-		s_playerInfo.health = 100;
+		s_playerInfo.health = s_healthMax;
 		s_playerInfo.healthFract = 0;
 		s_playerDying = 0;
-		s_playerInfo.shields = 200;
-		s_playerInfo.ammoEnergy = 500;
+		s_playerInfo.shields = s_shieldsMax;
+		s_playerInfo.ammoEnergy = s_ammoEnergyMax;
 
 		if (s_playerInfo.itemAutogun || s_playerInfo.itemFusion || s_playerInfo.itemConcussion)
 		{
-			s_playerInfo.ammoPower = 500;
+			s_playerInfo.ammoPower = s_ammoPowerMax;
 		}
 		if (s_playerInfo.itemCannon)
 		{
-			s_playerInfo.ammoPlasma = 400;
+			s_playerInfo.ammoPlasma = s_ammoPlasmaMax;
 		}
-		s_playerInfo.ammoDetonator = 50;
+		s_playerInfo.ammoDetonator = s_ammoDetonatorMax;
 		if (s_playerInfo.itemMortar)
 		{
-			s_playerInfo.ammoShell = 50;
+			s_playerInfo.ammoShell = s_ammoShellMax;
 		}
-		s_playerInfo.ammoMine = 30;
+		s_playerInfo.ammoMine = s_ammoMineMax;
 		if (s_playerInfo.itemCannon)
 		{
-			s_playerInfo.ammoMissile = 20;
+			s_playerInfo.ammoMissile = s_ammoMissileMax;
 		}
-		s_batteryPower = FIXED(2);
+		s_batteryPower = s_batteryPowerMax;
 		weapon_fixupAnim();
 	}
 
 	void giveAllInventoryAndHealth()
 	{
-		s_playerInfo.health = 100;
+		s_playerInfo.health = s_healthMax;
 		s_playerInfo.healthFract = 0;
 		s_playerDying = 0;
-		s_playerInfo.shields = 200;
+		s_playerInfo.shields = s_shieldsMax;
 		s_playerInfo.itemPistol = JTRUE;
 		s_playerInfo.itemRifle = JTRUE;
 		// s_282428 = JTRUE;
@@ -1040,14 +1090,14 @@ namespace TFE_DarkForces
 		s_playerInfo.itemCode7 = JTRUE;
 		s_playerInfo.itemCode8 = JTRUE;
 		s_playerInfo.itemCode9 = JTRUE;
-		s_playerInfo.ammoEnergy = 500;
-		s_playerInfo.ammoPower = 500;
-		s_playerInfo.ammoDetonator = 50;
-		s_playerInfo.ammoShell = 50;
-		s_playerInfo.ammoMissile = 20;
-		s_playerInfo.ammoPlasma = 400;
-		s_playerInfo.ammoMine = 30;
-		s_batteryPower = FIXED(2);
+		s_playerInfo.ammoEnergy = s_ammoEnergyMax;
+		s_playerInfo.ammoPower = s_ammoPowerMax;
+		s_playerInfo.ammoDetonator = s_ammoDetonatorMax;
+		s_playerInfo.ammoShell = s_ammoShellMax;
+		s_playerInfo.ammoMissile = s_ammoMissileMax;
+		s_playerInfo.ammoPlasma = s_ammoPlasmaMax;
+		s_playerInfo.ammoMine = s_ammoMineMax;
+		s_batteryPower = s_batteryPowerMax;
 
 		weapon_fixupAnim();
 	}
@@ -2541,7 +2591,7 @@ namespace TFE_DarkForces
 				}
 				// Now take the other half away.
 				shields = max(0, shields - halfShieldDmg);
-				s_playerInfo.shields = pickup_addToValue(floor16(shields), 0, 200);
+				s_playerInfo.shields = pickup_addToValue(floor16(shields), 0, s_shieldsMax);
 				if (playHitSound)
 				{
 					sound_play(s_playerShieldHitSoundSource);
@@ -2559,7 +2609,7 @@ namespace TFE_DarkForces
 			{
 				s_playerInfo.healthFract = 0;
 				// We could just set the health to 0 here...
-				s_playerInfo.health = pickup_addToValue(0, 0, 100);
+				s_playerInfo.health = pickup_addToValue(0, 0, s_healthMax);
 				if (playHitSound)
 				{
 					sound_play(s_playerDeathSoundSource);
@@ -3258,7 +3308,7 @@ namespace TFE_DarkForces
 			{
 				s_playerInfo.healthFract = 0;
 				// We could just set the health to 0 here...
-				s_playerInfo.health = pickup_addToValue(0, 0, 100);
+				s_playerInfo.health = pickup_addToValue(0, 0, s_healthMax);
 				if (s_gasSectorTask)
 				{
 					task_free(s_gasSectorTask);

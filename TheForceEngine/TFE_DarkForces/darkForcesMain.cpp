@@ -54,6 +54,7 @@
 #include <TFE_Jedi/IMuse/imuse.h>
 #include <TFE_Jedi/Serialization/serialization.h>
 #include <TFE_ExternalData/weaponExternal.h>
+#include <TFE_ExternalData/pickupExternal.h>
 #include <assert.h>
 
 // Add texture callbacks.
@@ -964,6 +965,12 @@ namespace TFE_DarkForces
 								TFE_ExternalData::parseExternalEffects(buffer, true);
 								free(buffer);
 							}
+							else if (strcasecmp(fname, "pickups.json") == 0)
+							{
+								char* buffer = extractTextFileFromZip(zipArchive, i);
+								TFE_ExternalData::parseExternalPickups(buffer, true);
+								free(buffer);
+							}
 							else
 							{
 								char name2[TFE_MAX_PATH];
@@ -1155,6 +1162,25 @@ namespace TFE_DarkForces
 							free(data);
 						}
 					}
+
+					char pickupsJsonPath[TFE_MAX_PATH];
+					sprintf(pickupsJsonPath, "%s%s", modPath, "pickups.json");
+					if (FileUtil::exists(pickupsJsonPath))
+					{
+						FileStream file;
+						if (!file.open(pickupsJsonPath, FileStream::MODE_READ)) { return; }
+						const size_t size = file.getSize();
+						char* data = (char*)malloc(size + 1);
+
+						if (size > 0 && data)
+						{
+							file.readBuffer(data, (u32)size);
+							data[size] = 0;
+							file.close();
+							TFE_ExternalData::parseExternalPickups(data, true);
+							free(data);
+						}
+					}
 				}
 			}
 		}
@@ -1299,14 +1325,18 @@ namespace TFE_DarkForces
 		loadMapNumFont();
 		inf_loadSounds();
 		actor_loadSounds();
-		item_loadData();
-		player_init();
 		actor_allocatePhysicsActorList();
 		loadCutsceneList();
 		weapon_startup();
 		loadLangHotkeys();
 
 		TFE_ExternalData::loadCustomLogics();
+
+		TFE_ExternalData::loadExternalPickups();
+		if (!TFE_ExternalData::validateExternalPickups())
+		{
+			TFE_System::logWrite(LOG_ERROR, "EXTERNAL_DATA", "Warning: Pickup data is incomplete. PICKUPS.JSON may have been altered. Pickups may not behave as expected.");
+		}
 
 		TFE_ExternalData::loadExternalProjectiles();
 		if (!TFE_ExternalData::validateExternalProjectiles())
@@ -1322,6 +1352,8 @@ namespace TFE_DarkForces
 
 		projectile_startup();
 		hitEffect_startup();
+		item_loadData();
+		player_init();
 
 		FilePath filePath;
 		TFE_Paths::getFilePath("swfont1.fnt", &filePath);

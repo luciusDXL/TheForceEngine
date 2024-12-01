@@ -29,6 +29,7 @@
 #include <TFE_System/utf8.h>
 #include <TFE_ExternalData/dfLogics.h>
 #include <TFE_ExternalData/weaponExternal.h>
+#include <TFE_ExternalData/pickupExternal.h>
 // Game
 #include <TFE_DarkForces/mission.h>
 #include <TFE_DarkForces/gameMusic.h>
@@ -515,6 +516,7 @@ namespace TFE_FrontEndUI
 		TFE_ExternalData::getExternalLogics()->actorLogics.clear();		// clear custom logics
 		TFE_ExternalData::clearExternalProjectiles();					// clear projectiles
 		TFE_ExternalData::clearExternalEffects();						// clear effects
+		TFE_ExternalData::clearExternalPickups();						// clear pickups
 
 		if (TFE_Settings::getSystemSettings()->returnToModLoader && s_modLoaded)
 		{
