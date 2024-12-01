@@ -919,7 +919,8 @@ namespace TFE_DarkForces
 			// Is this really a gob?
 			const size_t len = strlen(gobName);
 			const char* ext = &gobName[len - 3];
-			if (strcasecmp(ext, "zip") == 0 || strcasecmp(ext, "pk3") == 0)
+			const char* ext4 = &gobName[len - 4];
+			if (strcasecmp(ext, "zip") == 0 || strcasecmp(ext, "pk3") == 0 || strcasecmp(ext4, "gobx") == 0)
 			{
 				// In the case of a zip file, we want to extract the GOB into an in-memory format and use that directly.
 				// Note that the archive will be deleted on exit, so we can safely allocate here and pass it along.
@@ -1065,6 +1066,11 @@ namespace TFE_DarkForces
 
 					// Add the ZIP archive itself.
 					TFE_Paths::addLocalArchive(zipArchive);
+				}
+				else
+				{
+					// Delete on read failure since the allocation is not added to TFE_Paths in this case.
+					delete zipArchive;
 				}
 			}
 			else
