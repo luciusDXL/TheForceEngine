@@ -108,8 +108,6 @@ namespace TFE_DarkForces
 
 				assert(gen->entities && allocator_validate(gen->entities));
 
-				TFE_Settings_Game* gameSettings = TFE_Settings::getGameSettings();
-
 				fixed16_16 dy = TFE_Jedi::abs(s_playerObject->posWS.y - spawn->posWS.y);
 				fixed16_16 dist = dy + distApprox(spawn->posWS.x, spawn->posWS.z, s_playerObject->posWS.x, s_playerObject->posWS.z);
 				if (dist >= gen->minDist && dist <= gen->maxDist && !actor_canSeeObject(spawn, s_playerObject))
@@ -119,7 +117,7 @@ namespace TFE_DarkForces
 					// Search the externally defined logics for a match
 					TFE_ExternalData::CustomActorLogic* customLogic;
 					customLogic = tryFindCustomActorLogic(gen->logicName);
-					if (customLogic && gameSettings->df_jsonAiLogics)
+					if (customLogic && TFE_Settings::jsonAiLogics())
 					{
 						obj_setCustomActorLogic(spawn, customLogic);
 					}
