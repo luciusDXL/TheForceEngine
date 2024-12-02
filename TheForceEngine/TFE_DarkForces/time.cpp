@@ -29,7 +29,7 @@ namespace TFE_DarkForces
 	{
 		s_curTick = 0;
 		s_prevTick = 0;
-		f64 s_timeAccum = 0.0;
+		s_timeAccum = 0.0;
 		s_deltaTime;
 		s_frameTicks[13] = { 0 };
 		s_pauseTimeUpdate = JFALSE;
@@ -77,24 +77,21 @@ namespace TFE_DarkForces
 		Tick prevTick = s_curTick;					
 		if (TFE_Input::isRecording())
 		{
-			TFE_Input::sTick(s_curTick);
+			TFE_Input::saveTick();
 			/*if (TFE_Input::getCounter() == 0)
 			{
 				resetTime();
 			}*/
            //  std::tuple < Tick, Tick, f64, fixed16_16> tData = { s_curTick, prevTick, s_timeAccum, s_deltaTime};
-			TFE_System::logWrite(LOG_MSG, "Progam Flow", "TIME curtick = %d prevtick = %d accum = %d delta = %d", s_curTick, s_prevTick, s_timeAccum, s_deltaTime);
+			//TFE_System::logWrite(LOG_MSG, "Progam Flow", "TIME curtick = %d prevtick = %d accum = %d delta = %d", s_curTick, s_prevTick, s_timeAccum, s_deltaTime);
 			//	TFE_System::logWrite(LOG_MSG, "Progam Flow", "SAVETICK %u %d", s_curTick, s_curTick);
 			//TFE_Input::saveTick(tData);
 		}
 		
 		if (TFE_Input::isDemoPlayback())
 		{			
-			Tick t = TFE_Input::lTick();
-			if (t != 0)
-			{
-				s_curTick = t;
-			}
+			TFE_Input::loadTick();
+			
 			//std::tuple < Tick, Tick, f64, fixed16_16> tData = TFE_Input::loadTick();
 				//s_curTick = std::get<0>(tData);
 				/*prevTick = std::get<1>(tData);

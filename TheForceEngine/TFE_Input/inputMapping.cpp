@@ -131,6 +131,7 @@ namespace TFE_Input
 	int inputCounter = 0;
 	int maxInputCounter = 0;
 	vector <KeyboardCode> currentKeys;
+	vector <KeyboardCode> currentKeyPresses;
 	vector <MouseButton> currentMouse;
 		
 	void addDefaultControlBinds();
@@ -347,9 +348,13 @@ namespace TFE_Input
 	{
 
 		std::vector<s32> keysDown;
+		std::vector<s32> keysPressed;
 		std::vector<s32> mouseDown;
+		std::vector<s32> mouseWheel;
 		int keyIndex = 0;
+		int keyPressIndex = 0;
 		int mouseIndex = 0;
+		int mouseWheelIndex = 0;
 
 		ReplayEvent event = TFE_Input::inputEvents[inputCounter];
 
@@ -360,10 +365,11 @@ namespace TFE_Input
 			{
 				// Replay Keys
 				keysDown = event.keysDown;
-				for (int i = 0; i < keysDown.size(); i++)
+				for (int i = 0; i < keysDown.size(); i+=2)
 				{
 					KeyboardCode key = (KeyboardCode)keysDown[i];
-					TFE_Input::setKeyDown(key, false);
+					bool repeat = keysDown[i+1];
+					TFE_Input::setKeyDown(key, repeat);
 					currentKeys.push_back(key);
 				}
 				for (int i = 0; i < currentKeys.size(); i++)
@@ -373,6 +379,32 @@ namespace TFE_Input
 					{
 						TFE_Input::setKeyUp(key);
 						currentKeys.erase(std::remove(currentKeys.begin(), currentKeys.end(), key), currentKeys.end());
+					}
+				}
+
+				// Replay Key Presses
+				keysPressed = event.keysPressed;
+				for (int i = 0; i < keysPressed.size(); i+=2)
+				{
+					KeyboardCode key = (KeyboardCode)keysPressed[i];
+					bool repeat = keysPressed[i + 1];
+					if (repeat)
+					{
+						TFE_Input::setKeyPressRepeat(key); 
+					}
+					else
+					{
+						TFE_Input::setKeyPress(key);
+					}
+					currentKeyPresses.push_back(key);
+				}
+				for (int i = 0; i < currentKeyPresses.size(); i++)
+				{
+					KeyboardCode key = (KeyboardCode)currentKeyPresses[i];
+					if (std::find(keysPressed.begin(), keysPressed.end(), key) == keysPressed.end())
+					{
+						TFE_Input::clearKeyPressed(key);
+						currentKeyPresses.erase(std::remove(currentKeyPresses.begin(), currentKeyPresses.end(), key), currentKeyPresses.end());
 					}
 				}
 
@@ -392,6 +424,13 @@ namespace TFE_Input
 						TFE_Input::setMouseButtonUp(key);
 						currentMouse.erase(std::remove(currentMouse.begin(), currentMouse.end(), key), currentMouse.end());
 					}
+				}
+
+				//Replay MouseWheel
+				mouseWheel = event.mouseWheel;
+				if (mouseWheel.size() > 0)
+				{
+					TFE_Input::setMouseWheel(mouseWheel[0], mouseWheel[1]);
 				}
 			}
 
@@ -413,6 +452,16 @@ namespace TFE_Input
 						if (TFE_Input::keyPressed(bind->keyCode))
 						{
 							s_actions[bind->action] = STATE_PRESSED;
+							if (TFE_Input::isRecording())
+							{
+								// Do not record Escape
+								if (bind->keyCode != KEY_ESCAPE)
+								{
+									keysPressed.push_back(bind->keyCode);
+									keysPressed.push_back(isRepeating());
+								}
+							}
+							keyPressIndex++;
 						}
 						else if (TFE_Input::keyDown(bind->keyCode) && s_actions[bind->action] != STATE_PRESSED)
 						{
@@ -422,15 +471,11 @@ namespace TFE_Input
 							//TFE_System::logWrite(LOG_MSG, "INPUT PUSH BACK", "INPUT UPDATE %d", bind->keyCode);
 							if (TFE_Input::isRecording())
 							{
-								if (keysDown.size() > 0)
-								{
-									int x = 2;
-									x = x + 3;
-								}
 								// Do not record Escape
 								if (bind->keyCode != KEY_ESCAPE)
 								{
 									keysDown.push_back(bind->keyCode);
+									keysDown.push_back(isRepeating());
 								}
 							}
 							keyIndex++;
@@ -460,6 +505,14 @@ namespace TFE_Input
 				{
 					s32 dx, dy;
 					TFE_Input::getMouseWheel(&dx, &dy);
+
+					if (TFE_Input::isRecording())
+					{
+						mouseWheel.push_back(dx);
+						mouseWheel.push_back(dy);
+						mouseWheelIndex++;
+					}
+
 					if ((bind->mouseWheel == MOUSEWHEEL_LEFT  && dx < 0) || 
 						(bind->mouseWheel == MOUSEWHEEL_RIGHT && dx > 0) ||
 						(bind->mouseWheel == MOUSEWHEEL_UP    && dy > 0) ||
@@ -504,9 +557,17 @@ namespace TFE_Input
 			{
 				event.keysDown = keysDown;
 			}
+			if (keyPressIndex > 0)
+			{
+				event.keysPressed = keysPressed;
+			}
 			if (mouseIndex > 0)
 			{
 				event.mouseDown = mouseDown;
+			}
+			if (mouseWheelIndex > 0)
+			{
+				event.mouseWheel = mouseWheel;
 			}
 			inputEvents[inputCounter] = event;
 		}
@@ -624,15 +685,29 @@ namespace TFE_Input
 		{
 			if (isDemoPlayback())
 			{
-			
-				TFE_Input::setDemoPlayback(false);
-			}
-			if (isRecording())
-			{
 				setDemoPlayback(false);
 				string msg = "DEMO Playback Complete!";
 				TFE_DarkForces::hud_sendTextMessage(msg.c_str(), 1, false);
+				for (int i = 0; i < currentKeys.size(); i++)
+				{
+					KeyboardCode key = (KeyboardCode)currentKeys[i];
+					TFE_Input::setKeyUp(key);										
+				}
+				currentKeys.clear();
+				for (int i = 0; i < currentKeyPresses.size(); i++)
+				{
+					KeyboardCode key = (KeyboardCode)currentKeyPresses[i];
+					TFE_Input::clearKeyPressed(key);
+				}
+				currentKeyPresses.clear();
+				TFE_System::logWrite(LOG_MSG, "LOG", "====================================== PLAYEND ======================================");
+
+
+			}
+			if (isRecording())
+			{
 				TFE_Input::endRecording();
+				TFE_System::logWrite(LOG_MSG, "LOG", "====================================== RECORDEND ======================================");
 			}
 		}
 
@@ -668,7 +743,7 @@ namespace TFE_Input
 				setDemoPlayback(false);
 				string msg = "DEMO Playback Complete!";
 				TFE_DarkForces::hud_sendTextMessage(msg.c_str(), 1, false);
-
+				inputMapping_updateInput();
 			}
 			else
 			{
@@ -717,23 +792,63 @@ namespace TFE_Input
 
 		if ((isRecording() || isDemoPlayback()) && TFE_DarkForces::s_playerEye)
 		{
+			if (inputCounter == 62)
+			{
+				if (isRecording())
+				{
+					TFE_System::logWrite(LOG_MSG, "LOG", "====================================== RECORDSTART ======================================");
+				}
+				else
+				{
+					TFE_System::logWrite(LOG_MSG, "LOG", "====================================== PLAYSTART ======================================");
+				}
+			}
+
+			if (isRecording() && inputCounter == 61)
+			{
+				recordEye();
+			}
+			if (isDemoPlayback() && inputCounter == 62)
+			{
+				setEye();
+			}
+
 			ReplayEvent event = TFE_Input::inputEvents[inputCounter];
-			hudData = TFE_DarkForces::hud_getDataStr(true);
+			vec3_fixed ws = TFE_DarkForces::s_playerEye->posWS;
+			vec3_fixed vs = TFE_DarkForces::s_playerEye->posVS;
+			hudData += " WS: X: " + std::to_string(ws.x) + " Y:" + std::to_string(ws.y) + " Z:" + std::to_string(ws.z);
+			//hudData += " VS: " + std::to_string(vs.x) + " " + std::to_string(vs.y) + " " + std::to_string(vs.z);
+
+			angle14_16 yaw = TFE_DarkForces::s_playerEye->yaw;
+			angle14_16 pitch = TFE_DarkForces::s_playerEye->pitch;
+			angle14_16 roll = TFE_DarkForces::s_playerEye->roll;
+			//TFE_DarkForces::s_playerEye->posWS.z
+			string playerpos = " X: " + std::to_string(TFE_DarkForces::s_playerObject->posWS.x) + " Y: " + std::to_string(TFE_DarkForces::s_playerObject->posWS.y) + " Z: " + std::to_string(TFE_DarkForces::s_playerObject->posWS.z);
+			hudData += playerpos;
+			hudData += " Y: " + std::to_string(yaw) + " P: " + std::to_string(pitch);
+			vec3_fixed vel = {};
+			TFE_DarkForces::player_getVelocity(&vel);
+			hudData += " V: " + std::to_string(vel.x) + " " + std::to_string(vel.z) + " ";
+			hudData += TFE_DarkForces::hud_getDataStr(true);
 			keys = convertToString(event.keysDown);
 			mouse = convertToString(event.mouseDown);
 		}
 
 		if ((isRecording() || isDemoPlayback()))
 		{
-			string hudDataStr = "Rec=%d, Play=%d, RecAllow=%d, PlayAllow=%d, upd=%d ";
+			string rec = isRecording() ? "REC " : "PLAY";			
+			string hudDataStr = rec + " upd=%d cur=%d pt=%d ptp=%d delta=%d";
+		
 			if (hudData.size() != 0) hudDataStr += hudData;
 			if (keys.size() != 0) hudDataStr += " Keys: " + keys;
 			if (mouse.size() != 0) hudDataStr += " Mouse: " + mouse;
 			if (mouseP.size() != 0) hudDataStr += " MousePos " + mouseP;
 
-			TFE_System::logWrite(LOG_MSG, "LOG", hudDataStr.c_str(), rec, play, recAllow, playAllow, inputCounter);
+			TFE_System::logWrite(LOG_MSG, "LOG", hudDataStr.c_str(), inputCounter, TFE_DarkForces::s_curTick, TFE_DarkForces::s_playerTick, TFE_DarkForces::s_prevPlayerTick, TFE_DarkForces::s_deltaTime);
 		}
+
 		
+		//TFE_System::logWrite(LOG_MSG, "LOG", "LOG input = %d", inputCounter);
 		inputCounter++;
 	}
 

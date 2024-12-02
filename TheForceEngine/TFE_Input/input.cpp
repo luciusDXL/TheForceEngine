@@ -34,6 +34,7 @@ namespace TFE_Input
 	s32 s_mousePos[2] = { 0 };
 
 	bool s_relativeMode = false;
+	bool s_isRepeating = false;
 
 	static const char* const* s_controllerAxisNames;
 	static const char* const* s_controllerButtonNames;
@@ -85,10 +86,30 @@ namespace TFE_Input
 		s_buttonDown[button] = 0;
 	}
 
+	void setKeyPress(KeyboardCode key)
+	{
+		s_keyPressed[key] = 1;
+	}
+
+	void setKeyPressRepeat(KeyboardCode key)
+	{
+		s_keyPressedRepeat[key] = 1;
+	}
+
+	void setRepeating(bool repeat)
+	{
+		s_isRepeating = repeat;
+	}
+
+	bool isRepeating()
+	{
+		return s_isRepeating;
+	}
+
 	void setKeyDown(KeyboardCode key, bool repeat)
 	{
-		
-		//TFE_System::logWrite(LOG_MSG, "Input", "DOWN '%d'", key);
+		const char* boolStr = repeat ? "true" : "false";
+	//	TFE_System::logWrite(LOG_MSG, "Input", "DOWN '%d' repeat = %s", key, boolStr);
 		if (!s_keyDown[key] && !repeat)
 		{
 			s_keyPressed[key] = 1;

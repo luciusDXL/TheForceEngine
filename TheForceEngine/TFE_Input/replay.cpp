@@ -17,6 +17,7 @@
 #include <string>
 #include <TFE_DarkForces/random.h>
 #include <TFE_DarkForces/time.h>
+#include <TFE_DarkForces/player.h>
 
 namespace TFE_Input
 {
@@ -30,6 +31,10 @@ namespace TFE_Input
 	static f64 replayTimeAccum = 0.0;
 	static fixed16_16 replayDeltaTime;
 	static fixed16_16 replayFrameTicks[13] = { 0 };
+	angle14_16 r_yaw = 0;
+	angle14_16 r_pitch = 0;
+	angle14_16 r_roll = 0;
+
 
 	std::unordered_map<int, ReplayEvent> inputEvents;
 	u64 s_startTime = 0;
@@ -101,32 +106,44 @@ namespace TFE_Input
 	{
 		int inputCounter = getCounter();
 		inputEvents[inputCounter].curTick = curTick;
-		TFE_System::logWrite(LOG_MSG, "Progam Flow", "STICK curtick = %d counter = %d ", curTick, inputCounter);
+		//TFE_System::logWrite(LOG_MSG, "Progam Flow", "STICK curtick = %d counter = %d ", curTick, inputCounter);
 
 	}
 
-	void saveTick(std::tuple<Tick, Tick, f64, fixed16_16> tData)
+	void saveTick()
 	{
 		int inputCounter = getCounter();		
-		TFE_System::logWrite(LOG_MSG, "Progam Flow", "SAVETICK curtick = %d prevtick = %d accum = %d delta = %d", get<0>(tData), get<1>(tData), get<2>(tData), get<3>(tData));
-		inputEvents[inputCounter].curTick = get<0>(tData);
-		inputEvents[inputCounter].timeData = tData;
+		//TFE_System::logWrite(LOG_MSG, "Progam Flow", "SAVETICK curtick = %d prevtick = %d accum = %d delta = %d", get<0>(tData), get<1>(tData), get<2>(tData), get<3>(tData));
+		if (inputCounter > 0)
+		{
+			inputEvents[inputCounter - 1].curTick = TFE_DarkForces::s_curTick;
+		}
+		else
+		{
+			inputEvents[inputCounter].curTick = TFE_DarkForces::s_curTick;
+		}
+		//inputEvents[inputCounter].prevTick = TFE_DarkForces::s_prevTick;
+		//inputEvents[inputCounter].deltaTime = TFE_DarkForces::s_deltaTime;
+		//inputEvents[inputCounter].timeAccum = TFE_DarkForces::getTimeAccum();
+		//memcpy(inputEvents[inputCounter].frameTicks, TFE_DarkForces::s_frameTicks, sizeof(fixed16_16) * TFE_ARRAYSIZE(TFE_DarkForces::s_frameTicks));
 	}
 
 	Tick lTick()
 	{
 		int inputCounter = getCounter();
 		Tick curTick = inputEvents[inputCounter].curTick;
-		TFE_System::logWrite(LOG_MSG, "Progam Flow", "LTICK curtick = %d counter = %d ", curTick, inputCounter);
+		//TFE_System::logWrite(LOG_MSG, "Progam Flow", "LTICK curtick = %d counter = %d ", curTick, inputCounter);
 		return curTick;
 	}
 
-	std::tuple<Tick, Tick, f64, fixed16_16> loadTick()
+	void loadTick()
 	{
 		int inputCounter = getCounter();
 		TFE_DarkForces::s_curTick = inputEvents[inputCounter].curTick;
-
-		return inputEvents[inputCounter].timeData;
+		//TFE_DarkForces::s_prevTick = inputEvents[inputCounter].prevTick;
+		//TFE_DarkForces::setTimeAccum(inputEvents[inputCounter].timeAccum);
+		//TFE_DarkForces::s_deltaTime = inputEvents[inputCounter].deltaTime;
+		//memcpy(TFE_DarkForces::s_frameTicks, inputEvents[inputCounter].frameTicks, sizeof(fixed16_16) * TFE_ARRAYSIZE(inputEvents[inputCounter].frameTicks));
 	}
 
 	void recordReplaySeed()
@@ -172,6 +189,10 @@ namespace TFE_Input
 		if (writeFlag)
 		{
 			keyString = convertToString(inputList);
+			if (keyString.size() == 0)
+			{
+				int x;
+			}
 			keySize = keyString.size();
 		}
 
@@ -183,7 +204,7 @@ namespace TFE_Input
 		SERIALIZE_BUF(ReplayVersionInit, &keyString[0], keySize);
 
 
-		if (!writeFlag)
+		if (!writeFlag && keySize > 0)
 		{
 			return convertFromString(keyString);
 		}
@@ -207,31 +228,52 @@ namespace TFE_Input
 			inputEvents.clear();
 		}
 
+
+
+
+
 		if (fileHandler > 0)
 		{
 			SERIALIZE_VERSION(ReplayVersionInit);
 			SERIALIZE(ReplayVersionInit, s_startTime, 0);
 			SERIALIZE(ReplayVersionInit, replay_seed, 0);
 
+
+			u32 plTick = TFE_DarkForces::s_playerTick;
+			u32 plPrevTick = TFE_DarkForces::s_prevPlayerTick;
+			SERIALIZE(ReplayVersionInit, plTick, 0);
+			SERIALIZE(ReplayVersionInit, plPrevTick, 0);
+
 			TFE_DarkForces::time_serialize(stream);
 
 			int inputListsSize = getCounter();
 			SERIALIZE(ReplayVersionInit, inputListsSize, 0);
 
+			SERIALIZE(ReplayVersionInit, r_yaw, 0);
+			SERIALIZE(ReplayVersionInit, r_pitch, 0);
+			SERIALIZE(ReplayVersionInit, r_roll, 0);
+
 			if (writeFlag)
 			{
+
 				// Loop through inputEvents	
 				for (const auto& pair : inputEvents)
 				{
 					updateCounter = pair.first;
+					
 					if (updateCounter > inputListsSize) continue;
 					SERIALIZE(ReplayVersionInit, updateCounter, 0);
 					serializeInputs(stream, pair.second.keysDown, writeFlag);
+					serializeInputs(stream, pair.second.keysPressed, writeFlag);
 					serializeInputs(stream, pair.second.mouseDown, writeFlag);
 					serializeInputs(stream, pair.second.mousePos, writeFlag);
 
+					//TFE_System::logWrite(LOG_MSG, "STORING", "upd = %d wheelsize = %d", updateCounter, pair.second.mouseWheel.size());
+					
+					serializeInputs(stream, pair.second.mouseWheel, writeFlag);
+
 					u32 curTick = pair.second.curTick;
-					TFE_System::logWrite(LOG_MSG, "STORING", "STORING CURTIME %d COUNTER %d", curTick, updateCounter);
+				//	TFE_System::logWrite(LOG_MSG, "STORING", "STORING CURTIME %d COUNTER %d", curTick, updateCounter);
 					SERIALIZE(ReplayVersionInit, curTick, 0);
 					/*
 					std::tuple<Tick, Tick, f64, fixed16_16> tData = pair.second.timeData;
@@ -248,17 +290,24 @@ namespace TFE_Input
 			}
 			else
 			{
+
+				TFE_DarkForces::s_playerTick = plTick;
+				TFE_DarkForces::s_prevPlayerTick = plPrevTick;
+
 				for (int i = 0; i < inputListsSize; i++)
 				{
 					SERIALIZE(ReplayVersionInit, updateCounter, 0);
 					ReplayEvent event = {};
 					event.keysDown = serializeInputs(stream, event.keysDown, writeFlag);
+					event.keysPressed = serializeInputs(stream, event.keysPressed, writeFlag);
 					event.mouseDown = serializeInputs(stream, event.mouseDown, writeFlag);
 					event.mousePos = serializeInputs(stream, event.mousePos, writeFlag);
+					event.mouseWheel = serializeInputs(stream, event.mouseWheel, writeFlag);
+					
 
 					u32 curTick = 0;
 					SERIALIZE(ReplayVersionInit, curTick, 0);
-					TFE_System::logWrite(LOG_MSG, "LOADING", "LOADING CURTIME %d COUNTER %d", curTick, updateCounter);
+					//TFE_System::logWrite(LOG_MSG, "LOADING", "LOADING CURTIME %d COUNTER %d", curTick, updateCounter);
 					event.curTick = curTick;
 					/*
 					u32 curTick;
@@ -297,12 +346,35 @@ namespace TFE_Input
 		TFE_DarkForces::time_pause(JFALSE);
 	}
 
+	void recordEye()
+	{
+		r_yaw = TFE_DarkForces::s_playerEye->yaw;
+		r_pitch = TFE_DarkForces::s_playerEye->pitch;
+		r_roll = TFE_DarkForces::s_playerEye->roll;
+		TFE_System::logWrite(LOG_MSG, "REPLAY", "Record yaw=%d pitch=%d roll=%d", r_yaw, r_pitch, r_roll);
+
+	}
+
+	void setEye()
+	{
+		TFE_DarkForces::s_playerEye->yaw = r_yaw;
+		TFE_DarkForces::s_playerEye->pitch = r_pitch;
+		TFE_DarkForces::s_playerEye->roll = r_roll;
+		TFE_System::logWrite(LOG_MSG, "REPLAY", "Set yaw=%d pitch=%d roll=%d", r_yaw, r_pitch, r_roll);
+	}
+
 	void startRecording()
 	{		
 		if (FileUtil::exists(s_replayPath))
 		{
 			FileUtil::deleteFile(s_replayPath);
 		}
+
+		for (int i = 0; i < inputEvents.size(); i++)
+		{
+			inputEvents[i].clear();
+		}
+
 		recordReplaySeed();
 		inputMapping_endFrame();
 		//TFE_DarkForces::resetTime();
@@ -336,8 +408,12 @@ namespace TFE_Input
 		FileStream* stream = &s_replayFile;
 		serializeDemo(&s_replayFile, false);
 		setDemoPlayback(true);
-		TFE_System::logWrite(LOG_MSG, "Progam Flow", "STARTTICK BEFORE  %d", TFE_DarkForces::s_curTick);
+		//TFE_System::logWrite(LOG_MSG, "Progam Flow", "STARTTICK BEFORE  %d", TFE_DarkForces::s_curTick);
 		TFE_DarkForces::s_curTick = inputEvents[1].curTick;
-		TFE_System::logWrite(LOG_MSG, "Progam Flow", "STARTTICK AFTER  %d", TFE_DarkForces::s_curTick);
+		TFE_DarkForces::s_prevTick = inputEvents[1].prevTick;
+		//TFE_DarkForces::setTimeAccum(inputEvents[1].timeAccum);
+		TFE_DarkForces::s_deltaTime = inputEvents[1].deltaTime;
+		memcpy(TFE_DarkForces::s_frameTicks, inputEvents[1].frameTicks, sizeof(fixed16_16) * TFE_ARRAYSIZE(inputEvents[1].frameTicks));
+		//TFE_System::logWrite(LOG_MSG, "Progam Flow", "STARTTICK AFTER  %d", TFE_DarkForces::s_curTick);
 	}
 }

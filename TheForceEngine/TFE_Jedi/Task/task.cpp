@@ -126,10 +126,8 @@ namespace TFE_Jedi
 
 		s_taskCount++;
 		strcpy(newTask->name, name);
-		if (std::string(newTask->name) == "main task")
-		{
-			TFE_System::logWrite(LOG_WARNING, "Task", "STARTING SUBTASK %s TASK COUNT = %d", name, s_taskCount);
-		}
+		TFE_System::logWrite(LOG_WARNING, "Task", "STARTING SUBTASK %s TASK COUNT = %d", name, s_taskCount);
+		
 		// Insert newTask at the head of the subtask list in the current "mainline" task.
 		newTask->next = s_curTask->subtaskNext;
 		newTask->prev = nullptr;
@@ -169,10 +167,9 @@ namespace TFE_Jedi
 		s_taskCount++;
 		// Insert the task after 's_taskIter'
 		strcpy(newTask->name, name);
-		if (std::string(newTask->name) == "main task")
-		{
-			TFE_System::logWrite(LOG_WARNING, "Task", "STARTING TASK %s TASK COUNT = %d", name, s_taskCount);
-		}
+
+		TFE_System::logWrite(LOG_WARNING, "Task", "STARTING TASK %s TASK COUNT = %d", name, s_taskCount);
+		
 		newTask->next = s_taskIter->next;
 		// This was missing?
 		if (s_taskIter->next)
@@ -262,7 +259,7 @@ namespace TFE_Jedi
 		}
 		if (std::string(task->name) == "main task")
 		{
-			TFE_System::logWrite(LOG_WARNING, "Task", "ENDING TASK %s TASK COUNT = %d", task->name, s_taskCount);
+			//TFE_System::logWrite(LOG_WARNING, "Task", "ENDING TASK %s TASK COUNT = %d", task->name, s_taskCount);
 		}
 		// Free any memory allocated for the local context.
 		freeToChunkedArray(s_stackBlocks, task->context.stackMem);
@@ -429,7 +426,7 @@ namespace TFE_Jedi
 				// Then execute the task.
 				if (std::string(task->name) == "main task")
 				{
-					TFE_System::logWrite(LOG_WARNING, "Task", "Root Task %s Next Tick %d curtick %d", task->name, task->nextTick, s_curTick);
+					//TFE_System::logWrite(LOG_WARNING, "Task", "Root Task %s Next Tick %d curtick %d", task->name, task->nextTick, s_curTick);
 				}
 				if (task->nextTick <= s_curTick || task->framebreak)
 				{
@@ -444,7 +441,7 @@ namespace TFE_Jedi
 				task = task->subtaskParent;
 				if (std::string(task->name) == "main task")
 				{
-					TFE_System::logWrite(LOG_WARNING, "Task", "SubTask %s Next Tick %d curtick %d", task->name, task->nextTick, s_curTick);
+					//TFE_System::logWrite(LOG_WARNING, "Task", "SubTask %s Next Tick %d curtick %d", task->name, task->nextTick, s_curTick);
 				}
 				if (task->nextTick <= s_curTick || task->framebreak)
 				{
@@ -485,7 +482,7 @@ namespace TFE_Jedi
 		}
 		if (retTask != s_curTask)
 		{
-			TFE_System::logWrite(LOG_WARNING, "Task", "Correction required upon returning for task_runAndReturn.");
+			//TFE_System::logWrite(LOG_WARNING, "Task", "Correction required upon returning for task_runAndReturn.");
 			s_curTask = retTask;
 			s_curContext = &s_curTask->context;
 		}
@@ -507,7 +504,7 @@ namespace TFE_Jedi
 		s_curContext->level--;
 		if (std::string(s_curTask->name) == "main task")
 		{
-			TFE_System::logWrite(LOG_WARNING, "Task", "Yielding task %s for %u ticks", s_curTask->name, delay);
+			//TFE_System::logWrite(LOG_WARNING, "Task", "Yielding task %s for %u ticks", s_curTask->name, delay);
 		}
 		TASK_MSG("Task yield: '%s' for %u ticks", s_curTask->name, delay);
 
@@ -524,7 +521,7 @@ namespace TFE_Jedi
 			s_curContext = &s_curTask->context;
 			if (std::string(s_curTask->name) == "main task")
 			{
-				TFE_System::logWrite(LOG_WARNING, "Task", "Return task %s", s_curTask->name);
+				//TFE_System::logWrite(LOG_WARNING, "Task", "Return task %s", s_curTask->name);
 			}
 			TASK_MSG("Return Task: '%s'", s_curTask->name);
 			return;
@@ -533,12 +530,12 @@ namespace TFE_Jedi
 		// Update the current tick based on the delay.
 		if (std::string(s_curTask->name) == "main task")
 		{
-			TFE_System::logWrite(LOG_WARNING, "Task", "Tick before %d delay=%d ", s_curTick, delay);
+			//TFE_System::logWrite(LOG_WARNING, "Task", "Tick before %d delay=%d ", s_curTick, delay);
 		}
 		s_curTask->nextTick = (delay < TASK_SLEEP) ? s_curTick + delay : delay;
 		if (std::string(s_curTask->name) == "main task")
 		{
-			TFE_System::logWrite(LOG_WARNING, "Task", "Tick after  %d ", s_curTick);
+			//TFE_System::logWrite(LOG_WARNING, "Task", "Tick after  %d ", s_curTick);
 		}
 		// Find the next task to run.
 		selectNextTask();

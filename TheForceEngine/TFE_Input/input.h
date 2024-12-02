@@ -56,6 +56,10 @@ namespace TFE_Input
 	bool mouseDown(MouseButton button);
 	bool mousePressed(MouseButton button);
 	bool relativeModeEnabled();
+	void setRepeating(bool repeat);
+	bool isRepeating();
+	void setKeyPress(KeyboardCode key);
+	void setKeyPressRepeat(KeyboardCode key);
 	void clearKeyPressed(KeyboardCode key);
 	void clearMouseButtonPressed(MouseButton btn);
 	void clearAccumulatedMouseMove();

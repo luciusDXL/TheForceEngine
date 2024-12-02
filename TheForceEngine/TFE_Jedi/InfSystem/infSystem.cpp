@@ -3476,6 +3476,7 @@ namespace TFE_Jedi
 			sector_adjustTextureMirrorOffsets_Floor(sector, floorDelta);
 		}
 		sector_adjustHeights(sector, floorDelta, ceilDelta, secHeightDelta);
+		TFE_System::logWrite(LOG_MSG, "INF", "sector = %d, floorDelta = %d, ceilDelta = %d, secHeightDelta = %d", sector->id, floorDelta, ceilDelta, secHeightDelta);
 
 		// Apply adjustments to "slave" sectors.
 		Slave* child = (Slave*)allocator_getHead(elev->slaves);

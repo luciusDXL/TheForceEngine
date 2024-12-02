@@ -141,6 +141,8 @@ void handleEvent(SDL_Event& Event)
 			{
 				TFE_Input::setBufferedKey(KeyboardCode(Event.key.keysym.scancode));
 			}
+
+			TFE_Input::setRepeating(Event.key.repeat > 0);
 		} break;
 		case SDL_KEYUP:
 		{
@@ -679,35 +681,6 @@ int main(int argc, char* argv[])
 
 	while (s_loop && !TFE_System::quitMessagePosted())
 	{
-
-		/*
-		// Loop, called once per frame with the delta time (dt).
-		if (TFE_DarkForces::isMissionRunning())
-		{
-			canwork = false;
-			skipCount++;
-			Tick end = TFE_System::getCurrentTimeInTicks();
-			Tick dt = end - start;
-			accum += dt;
-
-			if (accum > step && skipCount > 3)
-			{
-				accum -= step;
-				canwork = true;
-			}
-				
-				
-
-			start = end;
-			//TFE_System::logWrite(LOG_MSG, "Progam Flow", "Cycle = %u end = %u DT = %u accum = %u", start, end, dt, accum);
-
-		}
-
-		if (!canwork)
-		{
-			//TFE_System::logWrite(LOG_MSG, "Progam Flow", "Skipping due to accum = %u", accum);
-			continue;
-		}*/
 
 		TFE_System::frameLimiter_begin();
 		bool enableRelative = TFE_Input::relativeModeEnabled();

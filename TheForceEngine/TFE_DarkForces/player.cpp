@@ -1570,6 +1570,7 @@ namespace TFE_DarkForces
 
 		s32 mdx, mdy;
 		TFE_Input::getAccumulatedMouseMove(&mdx, &mdy);
+		TFE_System::logWrite(LOG_MSG, "PLAYER", "mdx=%d mdy=%d startdelta=%d", mdx, mdy, s_deltaTime);
 		InputConfig* inputConfig = TFE_Input::inputMapping_get();
 
 		// Yaw change
@@ -1613,6 +1614,8 @@ namespace TFE_DarkForces
 				}
 			}
 		}
+
+		TFE_System::logWrite(LOG_MSG, "PLAYER", "s_forwardSpd = %d", s_forwardSpd);
 
 		if (settings->df_autorun) // TFE: Optional feature.
 		{
@@ -1703,6 +1706,8 @@ namespace TFE_DarkForces
 			s_playerUpVel = 0;
 			s_playerUpVel2 = 0;
 		}
+
+		TFE_System::logWrite(LOG_MSG, "PLAYER", "s_playerUpVel = %d s_playerUpVel2 = %d", s_playerUpVel, s_playerUpVel2);	
 
 		//////////////////////////////////////////
 		// Pitch and Roll controls.
@@ -1814,6 +1819,8 @@ namespace TFE_DarkForces
 			s_forwardSpd >>= airControl;
 			s_strafeSpd  >>= airControl;
 		}
+
+		TFE_System::logWrite(LOG_MSG, "PLAYER", "s_forwardSpd = %d", s_forwardSpd);
 	}
 
 	fixed16_16 adjustForwardSpeed(fixed16_16 spd)
@@ -1915,6 +1922,7 @@ namespace TFE_DarkForces
 				s_playerVelX = 0;
 				s_playerVelZ = 0;
 			}
+			TFE_System::logWrite(LOG_MSG, "PLAYER move", "s_playerVelX = %d s_playerVelZ = %d", s_playerVelX, s_playerVelZ);
 		}
 
 		// Handle moving surfaces.
@@ -1948,7 +1956,7 @@ namespace TFE_DarkForces
 						fixed16_16 angularSpd;
 						vec3_fixed vel;
 						inf_getMovingElevatorVelocity(elev, &vel, &angularSpd);
-
+						TFE_System::logWrite(LOG_MSG, "PLAYER ELEV", "vel = %d %d %d angspd = %d", vel.x, vel.y, vel.z, angularSpd);
 						if (!angularSpd && secHeight > 0)
 						{
 							// liquid behavior - dampens velocity.
@@ -1964,6 +1972,7 @@ namespace TFE_DarkForces
 
 						if (vel.x || vel.z)
 						{
+							TFE_System::logWrite(LOG_MSG, "PLAYER VEL ", "velx = %d velz = %d", vel.x, vel.z);
 							if (!onMovingSurface)
 							{
 								s_externalVelX = vel.x;
@@ -2002,6 +2011,7 @@ namespace TFE_DarkForces
 			speed = adjustStrafeSpeed(s_strafeSpd);
 			computeMoveFromAngleAndSpeed(&s_playerVelX, &s_playerVelZ, player->yaw + 4095, speed);
 			limitVectorLength(&s_playerVelX, &s_playerVelZ, s_maxMoveDist);
+			TFE_System::logWrite(LOG_MSG, "PLAYER move ", "s_playerVelX = %d s_playerVelZ = %d s_maxMoveDist = %d", s_playerVelX, s_playerVelZ, s_maxMoveDist);
 		}
 
 		// Then convert from player velocity to per-frame movement.
@@ -2009,6 +2019,7 @@ namespace TFE_DarkForces
 		fixed16_16 moveZ = adjustForwardSpeed(s_playerVelZ);
 		s_playerLogic.move.x = mul16(moveX, s_deltaTime) + mul16(s_externalVelX, s_deltaTime);
 		s_playerLogic.move.z = mul16(moveZ, s_deltaTime) + mul16(s_externalVelZ, s_deltaTime);
+		TFE_System::logWrite(LOG_MSG, "PLAYER move ", "s_playerLogic.move.x = %d s_playerLogic.move.z = %d", s_playerLogic.move.x, s_playerLogic.move.z);	
 		s_playerLogic.stepHeight = s_limitStepHeight ? PLAYER_STEP : PLAYER_INF_STEP;
 		fixed16_16 width = (s_smallModeEnabled) ? PLAYER_SIZE_SMALL : PLAYER_WIDTH;
 		player->worldWidth = width;
@@ -2084,6 +2095,7 @@ namespace TFE_DarkForces
 					s_externalVelZ = mul16(projVel, slideDirZ);
 				}
 			}
+			TFE_System::logWrite(LOG_MSG, "PLAYER move ", "s_playerVelX = %d, s_playerVelZ = %d s_externalVelX = %d s_externalVelZ = %d", s_playerVelX, s_playerVelZ, s_externalVelX, s_externalVelZ);	
 
 			// If this fails, the system will treat it as if the player didn't move (see below).
 			// However, it should succeed since the original collision detection did.
@@ -2110,6 +2122,8 @@ namespace TFE_DarkForces
 			s_playerVelX = 0;
 			s_playerVelZ = 0;
 		}
+		TFE_System::logWrite(LOG_MSG, "PLAYER move ", "s_playerUpVel = %d", s_playerUpVel);
+
 		s_playerSector = s_colMinSector;
 
 		if (s_externalVelX || s_externalVelZ)
@@ -2199,11 +2213,13 @@ namespace TFE_DarkForces
 		{
 			s_playerUpVel2 += gravityAccelDt;
 		}
+		TFE_System::logWrite(LOG_MSG, "PLAYER move ", "player->posWS.y = %d s_playerUpVel2 = %d", player->posWS.y, s_playerUpVel2);
+
 		s_playerUpVel  = s_playerUpVel2;
 		s_playerYPos += mul16(s_playerUpVel, s_deltaTime);
 		s_playerLogic.move.y = s_playerYPos - player->posWS.y;
-		player->posWS.y = s_playerYPos;
-
+		player->posWS.y = s_playerYPos; 
+		TFE_System::logWrite(LOG_MSG, "PLAYER move ", "player->posWS.y = %d s_playerLogic.move.y = %d s_playerYPos = %d", player->posWS.y, s_playerLogic.move.y, s_playerYPos);
 		if (s_playerYPos >= s_colCurLowestFloor && (!s_noclip || !s_flyMode))
 		{
 			if (s_kyleScreamSoundId)
@@ -2236,6 +2252,7 @@ namespace TFE_DarkForces
 					s_postLandVel = min((s_playerUpVel >> 2) - ((s_playerUpVel - PLAYER_LAND_VEL_CHANGE) >> 3), PLAYER_LAND_VEL_MAX);
 				}
 				s_landUpVel = s_playerUpVel;
+				TFE_System::logWrite(LOG_MSG, "PLAYER move ", "s_landUpVel = %d s_postLandVel = %d", s_landUpVel, s_postLandVel);	
 			}
 			else
 			{
@@ -2248,6 +2265,7 @@ namespace TFE_DarkForces
 				{
 					player->worldHeight += (s_colCurBot - yPos + yMove);
 				}
+				TFE_System::logWrite(LOG_MSG, "PLAYER move ", "ypos = %d ymove = %d distFromFloor = %d", yPos, yMove, distFromFloor);
 			}
 
 			s_playerYPos = s_colCurLowestFloor;
@@ -2255,6 +2273,8 @@ namespace TFE_DarkForces
 			fixed16_16 newUpVel = min(0, s_playerUpVel2);
 			s_playerUpVel = newUpVel;
 			s_playerUpVel2 = newUpVel;
+			TFE_System::logWrite(LOG_MSG, "PLAYER move ", "s_playerUpVel = %d", s_playerUpVel);
+
 		}
 		else
 		{
@@ -2269,6 +2289,7 @@ namespace TFE_DarkForces
 				s_playerYPos = min(s_colCurLowestFloor, newPlayerBot);
 				player->posWS.y = s_playerYPos;
 			}
+			TFE_System::logWrite(LOG_MSG, "PLAYER move ", "s_playerUpVel = %d s_playerYPos = %d", s_playerUpVel, s_playerYPos);
 		}
 
 		// Crouch
@@ -2287,13 +2308,14 @@ namespace TFE_DarkForces
 		{
 			s_landUpVel = 0;
 		}
+		TFE_System::logWrite(LOG_MSG, "PLAYER move ", "s_landUpVel = %d s_postLandVel = %d", s_landUpVel, s_postLandVel);
 
 		fixed16_16 eyeToCeil = max(0, player->posWS.y - s_colCurHighestCeil);
 		fixed16_16 eyeHeight = eyeToCeil;
 		eyeToCeil = min(ONE_16, eyeToCeil);	// the player eye should be clamped to 1 unit below the ceiling if possible.
 		eyeHeight -= eyeToCeil;
 		eyeHeight = min(PLAYER_HEIGHT, eyeHeight);
-
+		TFE_System::logWrite(LOG_MSG, "PLAYER move ", "eyeToCeil = %d eyeHeight = %d", eyeToCeil, eyeHeight);
 		RSector* sector = player->sector;
 		fixed16_16 minEyeDistFromFloor = (s_smallModeEnabled) ? PLAYER_SIZE_SMALL : s_minEyeDistFromFloor;
 		secHeight = sector->secHeight;
@@ -2317,6 +2339,8 @@ namespace TFE_DarkForces
 			}
 			player->worldHeight = minDistToFloor;
 		}
+
+		TFE_System::logWrite(LOG_MSG, "PLAYER move ", "player->worldHeight = %d", player->worldHeight);
 		// Make sure eye height is clamped.
 		if (!s_noclip || !s_flyMode)
 		{
@@ -2476,6 +2500,8 @@ namespace TFE_DarkForces
 				player->worldHeight = yBot + s_camOffset.y;
 			}
 		}
+
+		TFE_System::logWrite(LOG_MSG, "PLAYER move ", "player->posWS.y = %d, s_playerYPos = %d player->worldHeight = %d", player->posWS.y, s_playerYPos, player->worldHeight);	
 
 		weapon->rollOffset = -s_playerRoll / 13;
 		weapon->pchOffset  = s_playerPitch / 64;

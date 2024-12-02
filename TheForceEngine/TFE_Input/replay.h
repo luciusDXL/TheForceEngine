@@ -20,10 +20,30 @@ namespace TFE_Input
 	struct ReplayEvent
 	{
 		std::vector<s32> keysDown;
+		std::vector<s32> keysPressed;
 		std::vector<s32> mouseDown;
 		std::vector<s32> mousePos;
+		std::vector<s32> mouseWheel;
 		Tick curTick;
-		std::tuple<Tick, Tick, f64, fixed16_16> timeData;
+		Tick prevTick;
+		fixed16_16 deltaTime;
+		f64 timeAccum;
+		fixed16_16 frameTicks[13];
+		//std::tuple<Tick, Tick, f64, fixed16_16> timeData;
+
+		void clear() {
+			keysDown.clear();
+			keysPressed.clear();
+			mouseDown.clear();
+			mousePos.clear();
+			mouseWheel.clear();
+			curTick = 0;
+			prevTick = 0;
+			deltaTime = 0;
+			timeAccum = 0.0;
+			std::fill(std::begin(frameTicks), std::end(frameTicks), 0);
+			//timeData = std::make_tuple(0, 0, 0.0, 0); // Reset tuple values
+		}
 	};
 
 	extern std::unordered_map<int, ReplayEvent> inputEvents;
@@ -42,10 +62,12 @@ namespace TFE_Input
 	void restoreReplaySeed();
 	void recordTiming();
 	void loadTiming();
-	void saveTick(std::tuple<Tick, Tick, f64, fixed16_16> tData);
+	void saveTick();
 	void sTick(Tick curTick);
 	Tick lTick();
-	std::tuple<Tick, Tick, f64, fixed16_16> loadTick();
+	void loadTick();
+	void recordEye();
+	void setEye();
 
 	std::string convertToString(std::vector<s32> keysDown);
 	std::vector<s32> convertFromString(std::string keyStr);

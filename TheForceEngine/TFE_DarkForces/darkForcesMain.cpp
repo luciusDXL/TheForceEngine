@@ -782,6 +782,17 @@ namespace TFE_DarkForces
 
 				task_reset();
 				inf_clearState();
+
+				if (TFE_Settings::getGameSettings()->df_enableReplay)
+				{
+					loadReplay();
+				}
+
+				if (TFE_Settings::getGameSettings()->df_enableRecording)
+				{
+					startRecording();
+				}
+
 				s_sharedState.loadMissionTask = createTask("start mission", mission_startTaskFunc, JTRUE);
 				mission_setLoadMissionTask(s_sharedState.loadMissionTask);
 
