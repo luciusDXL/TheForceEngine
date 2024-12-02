@@ -87,8 +87,8 @@ namespace TFE_DarkForces
 			type,															// type
 			TFE_Sprite_Jedi::getWax(extEffects[type].wax, POOL_GAME),		// spriteData
 			FIXED(extEffects[type].force),									// force
-			FIXED(extEffects[type].damage),								// damage
-			FIXED(extEffects[type].explosiveRange),						// explosiveRange
+			FIXED(extEffects[type].damage),									// damage
+			FIXED(extEffects[type].explosiveRange),							// explosiveRange
 			FIXED(extEffects[type].wakeupRange),							// wakeupRange
 			sound_load(extEffects[type].soundEffect, SoundPriority(extEffects[type].soundPriority)),	// soundEffect & priority
 		};
@@ -130,7 +130,7 @@ namespace TFE_DarkForces
 		SERIALIZE(SaveVersionInit, hasTask, 0);
 		if (hasTask && s_hitEffectTask)
 		{
-			task_serializeState(stream, s_hitEffectTask);
+			task_serializeState(stream, s_hitEffectTask, nullptr, nullptr, true/*resetIP*/);
 		}
 	}
 		
