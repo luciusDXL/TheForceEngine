@@ -41,7 +41,7 @@ namespace TFE_DarkForces
 		Wax*       wax;
 		JBool      active;
 
-		char	   logicName[256];		// JK: added to store a custom logic name
+		char	   logicName[64];		// JK: added to store a custom logic name
 	};
 
 	void generatorTaskFunc(MessageType msg)
@@ -234,7 +234,7 @@ namespace TFE_DarkForces
 		memset(generator, 0, sizeof(Generator));
 
 		generator->type   = genType;
-		strncpy(generator->logicName, logicName, 255);
+		strncpy(generator->logicName, logicName, 63);
 		generator->active = 1;
 		generator->delay  = 0;
 
@@ -361,5 +361,14 @@ namespace TFE_DarkForces
 		SERIALIZE(ObjState_InitVersion, gen->wanderTime, 0);
 		serialization_serializeWaxPtr(stream, ObjState_InitVersion, gen->wax);
 		SERIALIZE(ObjState_InitVersion, gen->active, 0);
+		
+		u32 len = 0;
+		if (serialization_getMode() == SMODE_WRITE)
+		{
+			len = (u32)strlen(gen->logicName);
+		}
+		SERIALIZE(ObjState_CustomLogics, len, 0);
+		SERIALIZE_BUF(ObjState_CustomLogics, gen->logicName, len);
+		gen->logicName[len] = 0;
 	}
 }  // TFE_DarkForces
