@@ -1303,7 +1303,7 @@ namespace TFE_Settings
 		return s_gameSettings.df_stepSecondAlt;
 	}
 
-	bool soidWallFlagFix()
+	bool solidWallFlagFix()
 	{
 		if (s_modSettings.solidWallFlagFix != MSO_NOT_SET)
 		{

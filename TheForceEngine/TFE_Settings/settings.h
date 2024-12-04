@@ -402,10 +402,12 @@ namespace TFE_Settings
 	// Settings factoring in mod overrides.
 	bool ignoreInfLimits();
 	bool stepSecondAlt();
-	bool soidWallFlagFix();
+	bool solidWallFlagFix();
 	bool extendAdjoinLimits();
 	bool ignore3doLimits();
 	bool normalFix3do();
+	bool enableUnusedItem();
+	bool jsonAiLogics();
 
 	// Settings for level mod overrides.
 	ModSettingLevelOverride getLevelOverrides(string levelName);
