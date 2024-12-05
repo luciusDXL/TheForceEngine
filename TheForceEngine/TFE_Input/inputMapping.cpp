@@ -329,6 +329,11 @@ namespace TFE_Input
 		return action >= IADF_FORWARD && action <= IADF_LOOK_DN;
 	}
 
+	void setCounter(int counter)
+	{
+		inputCounter = counter;
+	}
+
 	void resetCounter()
 	{
 		inputCounter = 0;
@@ -356,11 +361,14 @@ namespace TFE_Input
 		int mouseIndex = 0;
 		int mouseWheelIndex = 0;
 
-		ReplayEvent event = TFE_Input::inputEvents[inputCounter];
-
+		ReplayEvent event;
+		if (TFE_Input::isRecording())
+		{
+			event = TFE_Input::inputEvents[inputCounter];
+		}
 		if (TFE_Input::isDemoPlayback())
 		{
-
+			event = TFE_Input::inputEvents[inputCounter-1];
 			if (maxInputCounter > inputCounter)
 			{
 				// Replay Keys
@@ -630,7 +638,7 @@ namespace TFE_Input
 
 		return axisValue;
 	}
-		
+
 	f32 inputMapping_getHorzMouseSensitivity()
 	{
 		return s_inputConfig.mouseSensitivity[0] * ((s_inputConfig.mouseFlags & MFLAG_INVERT_HORZ) ? -1.0f : 1.0f);
@@ -691,7 +699,7 @@ namespace TFE_Input
 				for (int i = 0; i < currentKeys.size(); i++)
 				{
 					KeyboardCode key = (KeyboardCode)currentKeys[i];
-					TFE_Input::setKeyUp(key);										
+					TFE_Input::setKeyUp(key);
 				}
 				currentKeys.clear();
 				for (int i = 0; i < currentKeyPresses.size(); i++)
@@ -712,18 +720,19 @@ namespace TFE_Input
 		}
 
 
-		/*
-		if (inputCounter == 0)
+
+		if (inputCounter == 0 && TFE_DarkForces::s_playerEye)
 		{
-			if (isDemoPlayback())
-			{
-				loadTiming();
-			}
+			
 			if (isRecording())
 			{
-				recordTiming();
-			}		
-		}*/
+				recordEye();
+			}
+			if (isDemoPlayback())
+			{
+				setEye();
+			}
+		}
 		std::vector<s32> mousePos;
 		s32 mouseX, mouseY;
 		s32 mouseAbsX, mouseAbsY;
@@ -751,7 +760,7 @@ namespace TFE_Input
 				TFE_DarkForces::hud_sendTextMessage(msg.c_str(), 1, true);
 
 				inputMapping_endFrame();
-				ReplayEvent event = TFE_Input::inputEvents[inputCounter];
+				ReplayEvent event = TFE_Input::inputEvents[inputCounter-1];
 				mousePos = event.mousePos;
 				if (mousePos.size() == 4)
 				{
@@ -803,7 +812,7 @@ namespace TFE_Input
 					TFE_System::logWrite(LOG_MSG, "LOG", "====================================== PLAYSTART ======================================");
 				}
 			}
-
+			/*
 			if (isRecording() && inputCounter == 61)
 			{
 				recordEye();
@@ -811,9 +820,18 @@ namespace TFE_Input
 			if (isDemoPlayback() && inputCounter == 62)
 			{
 				setEye();
-			}
+			}*/
 
-			ReplayEvent event = TFE_Input::inputEvents[inputCounter];
+
+			ReplayEvent event;
+			if (isDemoPlayback())
+			{
+				event = TFE_Input::inputEvents[inputCounter-1];
+			}
+			else
+			{
+				event = TFE_Input::inputEvents[inputCounter];
+			}
 			vec3_fixed ws = TFE_DarkForces::s_playerEye->posWS;
 			vec3_fixed vs = TFE_DarkForces::s_playerEye->posVS;
 			hudData += " WS: X: " + std::to_string(ws.x) + " Y:" + std::to_string(ws.y) + " Z:" + std::to_string(ws.z);
@@ -848,8 +866,13 @@ namespace TFE_Input
 		}
 
 		
-		//TFE_System::logWrite(LOG_MSG, "LOG", "LOG input = %d", inputCounter);
+		TFE_System::logWrite(LOG_MSG, "LOG", "LOG input = %d", inputCounter);
 		inputCounter++;
+		/*
+		if (TFE_DarkForces::s_playerEye)
+		{
+			inputCounter++;
+		}*/
 	}
 
 }  // TFE_DarkForces

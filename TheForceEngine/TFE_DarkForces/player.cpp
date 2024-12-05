@@ -795,6 +795,8 @@ namespace TFE_DarkForces
 		const char* levelName = agent_getLevelName();
 		TFE_System::logWrite(LOG_MSG, "Player", "Setting up level '%s'", levelName);
 
+		//resetCounter();
+
 		// Handle custom level player overrides
 		ModSettingLevelOverride modLevelOverride = TFE_Settings::getLevelOverrides(levelName);
 		if (!modLevelOverride.levName.empty())
@@ -913,6 +915,8 @@ namespace TFE_DarkForces
 
 		setCameraOffset(0, 0, 0);
 		setCameraAngleOffset(0, 0, 0);
+		TFE_System::logWrite(LOG_MSG, "PLAYER", "EYE Created at s_curTick  = %d", s_curTick);
+
 	}
 
 	void player_revive()

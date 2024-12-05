@@ -67,6 +67,7 @@ namespace TFE_DarkForces
 
 	void updateTime()
 	{
+		
 		if (!s_pauseTimeUpdate)
 		{
 			s_timeAccum += TFE_System::getDeltaTime() * TIMER_FREQ;
@@ -105,7 +106,7 @@ namespace TFE_DarkForces
 		{
 			s_curTick = Tick(s_timeAccum);
 		}
-
+		TFE_System::logWrite(LOG_MSG, "TIME", "Update Tick s_curTick = %d prevTick = %d  s_=revTick = %d updateCounter = %d", s_curTick, prevTick, s_prevTick, TFE_Input::getCounter());
 		fixed16_16 dt = div16(intToFixed16(s_curTick - prevTick), FIXED(TICKS_PER_SECOND));
 		//TFE_System::logWrite(LOG_MSG, "Progam Flow", "DT %u %d", dt, dt);
 		for (s32 i = 0; i < 13; i++)

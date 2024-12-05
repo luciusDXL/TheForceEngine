@@ -60,11 +60,7 @@ namespace TFE_Input
 	void setDemoPlayback(bool playback);
 	void recordReplaySeed();
 	void restoreReplaySeed();
-	void recordTiming();
-	void loadTiming();
 	void saveTick();
-	void sTick(Tick curTick);
-	Tick lTick();
 	void loadTick();
 	void recordEye();
 	void setEye();

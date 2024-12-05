@@ -198,6 +198,7 @@ namespace TFE_Input
 	f32 inputMapping_getVertMouseSensitivity();
 	void resetCounter();
 	int getCounter();
+	void setCounter(int counter);
 	void handleInputs();
 	void setMaxInputCounter(int counter);
 }  // TFE_Input

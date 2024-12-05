@@ -8,6 +8,7 @@
 #include <TFE_System/profiler.h>
 #include <TFE_FrontEndUI/console.h>
 #include <TFE_Jedi/Serialization/serialization.h>
+#include <TFE_Input/inputMapping.h>
 #include <stdarg.h>
 #include <tuple>
 #include <vector>
@@ -126,8 +127,7 @@ namespace TFE_Jedi
 
 		s_taskCount++;
 		strcpy(newTask->name, name);
-		TFE_System::logWrite(LOG_WARNING, "Task", "STARTING SUBTASK %s TASK COUNT = %d", name, s_taskCount);
-		
+		TFE_System::logWrite(LOG_WARNING, "Task", "STARTING SUBTASK %s TASK COUNT = %d s_curTick = %d counter = %d", name, s_taskCount, s_curTick, TFE_Input::getCounter());
 		// Insert newTask at the head of the subtask list in the current "mainline" task.
 		newTask->next = s_curTask->subtaskNext;
 		newTask->prev = nullptr;
@@ -168,7 +168,7 @@ namespace TFE_Jedi
 		// Insert the task after 's_taskIter'
 		strcpy(newTask->name, name);
 
-		TFE_System::logWrite(LOG_WARNING, "Task", "STARTING TASK %s TASK COUNT = %d", name, s_taskCount);
+		TFE_System::logWrite(LOG_WARNING, "Task", "STARTING TASK %s TASK COUNT = %d s_curTick = %d counter = %d", name, s_taskCount, s_curTick, TFE_Input::getCounter());
 		
 		newTask->next = s_taskIter->next;
 		// This was missing?
