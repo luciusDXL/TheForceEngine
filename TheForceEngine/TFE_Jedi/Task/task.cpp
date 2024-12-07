@@ -621,6 +621,10 @@ namespace TFE_Jedi
 		{
 			TASK_MSG("Current Task: '%s'.", s_curTask->name);
 			JBool framebreak = s_curTask->framebreak;
+			if (s_curTask->name == "actor")
+			{
+				TFE_System::logWrite(LOG_WARNING, "Task", "Curtask nextTick = %d curtick = %d", s_curTask->nextTick, s_curTick);
+			}
 
 			// This should only be false when hitting the "framebreak" task which is sleeping.
 			if (s_curTask->nextTick <= s_curTick)

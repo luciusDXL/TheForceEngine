@@ -7,6 +7,7 @@
 #include <unordered_map>
 #include <string>
 #include <TFE_DarkForces/time.h>
+#include <TFE_Game/saveSystem.h>
 
 namespace TFE_Input
 {
@@ -42,7 +43,6 @@ namespace TFE_Input
 			deltaTime = 0;
 			timeAccum = 0.0;
 			std::fill(std::begin(frameTicks), std::end(frameTicks), 0);
-			//timeData = std::make_tuple(0, 0, 0.0, 0); // Reset tuple values
 		}
 	};
 
@@ -53,7 +53,9 @@ namespace TFE_Input
 	void startRecording();
 	void endRecording();
 	void loadReplay();
-
+	void populateReplayDirectory(std::vector<TFE_SaveSystem::SaveHeader>& dir);
+	bool loadReplayHeader(const char* filename, TFE_SaveSystem::SaveHeader* header);
+	void loadReplayWrapper(string replayFile, string modName, string levelName);
 	bool isRecording();
 	void setRecording(bool recording);
 	bool isDemoPlayback();
@@ -62,8 +64,7 @@ namespace TFE_Input
 	void restoreReplaySeed();
 	void saveTick();
 	void loadTick();
-	void recordEye();
-	void setEye();
+	void handleEye();
 
 	std::string convertToString(std::vector<s32> keysDown);
 	std::vector<s32> convertFromString(std::string keyStr);

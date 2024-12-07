@@ -36,6 +36,7 @@ namespace TFE_FrontEndUI
 	AppState update();
 	void draw(bool drawFrontEnd = true, bool noGameData = false, bool setDefaults = false, bool showFps = false);
 	void setCurrentGame(IGame* game);
+	IGame* getCurrentGame();
 
 	void setAppState(AppState state);
 	void enableConfigMenu();

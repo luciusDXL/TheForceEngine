@@ -35,6 +35,9 @@ namespace TFE_SaveSystem
 	// Load only the header for UI.
 	bool loadGameHeader(const char* filename, SaveHeader* header);
 
+	void saveHeader(Stream* stream, const char* saveName);
+	void loadHeader(Stream* stream, SaveHeader* header, const char* fileName);
+
 	void postLoadRequest(const char* filename);
 	void postSaveRequest(const char* filename, const char* saveName, s32 delay = 0);
 	const char* loadRequestFilename();

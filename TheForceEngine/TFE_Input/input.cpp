@@ -108,8 +108,7 @@ namespace TFE_Input
 
 	void setKeyDown(KeyboardCode key, bool repeat)
 	{
-		const char* boolStr = repeat ? "true" : "false";
-	//	TFE_System::logWrite(LOG_MSG, "Input", "DOWN '%d' repeat = %s", key, boolStr);
+
 		if (!s_keyDown[key] && !repeat)
 		{
 			s_keyPressed[key] = 1;

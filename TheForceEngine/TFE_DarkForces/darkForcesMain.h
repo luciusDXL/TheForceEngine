@@ -26,4 +26,5 @@ namespace TFE_DarkForces
 	};
 
 	extern void saveLevelStatus();
+	void enableCutscenes(JBool enable);
 }

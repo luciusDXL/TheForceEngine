@@ -395,17 +395,6 @@ namespace TFE_DarkForces
 			mission_addCheatCommands();
 			CCMD("spawnEnemy", console_spawnEnemy, 2, "spawnEnemy(waxName, enemyTypeName) - spawns an enemy 8 units away in the player direction. Example: spawnEnemy offcfin.wax i_officer");
 
-			/*
-			if (TFE_Settings::getGameSettings()->df_enableReplay)
-			{
-				loadReplay();
-			}
-
-			if (TFE_Settings::getGameSettings()->df_enableRecording)
-			{
-				startRecording();
-			}*/
-
 			// Make sure the loading screen is displayed for at least 1 second.
 			if (!s_loadingFromSave)
 			{

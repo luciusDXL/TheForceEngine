@@ -783,11 +783,13 @@ namespace TFE_DarkForces
 				task_reset();
 				inf_clearState();
 
+				// Entry point to recording a demo
 				if (TFE_Settings::getGameSettings()->df_enableReplay)
 				{
 					loadReplay();
 				}
 
+				// Entry point to load a demo
 				if (TFE_Settings::getGameSettings()->df_enableRecording)
 				{
 					startRecording();
@@ -834,7 +836,7 @@ namespace TFE_DarkForces
 			{
 				c = arg[1];
 				if (c == 'c' || c == 'C')
-				{
+				{	
 					enableCutscenes(arg[2] == '1' ? JTRUE : JFALSE);
 				}
 				else if ((c == 'l' || c == 'L') && arg[2])

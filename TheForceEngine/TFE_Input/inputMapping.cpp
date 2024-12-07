@@ -689,6 +689,7 @@ namespace TFE_Input
 	void handleInputs()
 	{
 		//  Allow escape during playback
+
 		if (keyPressed(KEY_ESCAPE))
 		{
 			if (isDemoPlayback())
@@ -721,18 +722,7 @@ namespace TFE_Input
 
 
 
-		if (inputCounter == 0 && TFE_DarkForces::s_playerEye)
-		{
-			
-			if (isRecording())
-			{
-				recordEye();
-			}
-			if (isDemoPlayback())
-			{
-				setEye();
-			}
-		}
+
 		std::vector<s32> mousePos;
 		s32 mouseX, mouseY;
 		s32 mouseAbsX, mouseAbsY;
@@ -812,16 +802,8 @@ namespace TFE_Input
 					TFE_System::logWrite(LOG_MSG, "LOG", "====================================== PLAYSTART ======================================");
 				}
 			}
-			/*
-			if (isRecording() && inputCounter == 61)
-			{
-				recordEye();
-			}
-			if (isDemoPlayback() && inputCounter == 62)
-			{
-				setEye();
-			}*/
 
+			handleEye();
 
 			ReplayEvent event;
 			if (isDemoPlayback())
@@ -862,11 +844,11 @@ namespace TFE_Input
 			if (mouse.size() != 0) hudDataStr += " Mouse: " + mouse;
 			if (mouseP.size() != 0) hudDataStr += " MousePos " + mouseP;
 
-			TFE_System::logWrite(LOG_MSG, "LOG", hudDataStr.c_str(), inputCounter, TFE_DarkForces::s_curTick, TFE_DarkForces::s_playerTick, TFE_DarkForces::s_prevPlayerTick, TFE_DarkForces::s_deltaTime);
+			//TFE_System::logWrite(LOG_MSG, "LOG", hudDataStr.c_str(), inputCounter, TFE_DarkForces::s_curTick, TFE_DarkForces::s_playerTick, TFE_DarkForces::s_prevPlayerTick, TFE_DarkForces::s_deltaTime);
 		}
 
 		
-		TFE_System::logWrite(LOG_MSG, "LOG", "LOG input = %d", inputCounter);
+		//TFE_System::logWrite(LOG_MSG, "LOG", "LOG input = %d", inputCounter);
 		inputCounter++;
 		/*
 		if (TFE_DarkForces::s_playerEye)

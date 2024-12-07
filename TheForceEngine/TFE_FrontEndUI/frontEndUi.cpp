@@ -68,6 +68,7 @@ namespace TFE_FrontEndUI
 		CONFIG_GAME,
 		CONFIG_SAVE,
 		CONFIG_LOAD,
+		CONFIG_REPLAY,
 		CONFIG_INPUT,
 		CONFIG_GRAPHICS,
 		CONFIG_HUD,
@@ -96,6 +97,7 @@ namespace TFE_FrontEndUI
 		"Game Settings",
 		"Save",
 		"Load",
+		"Replay",
 		"Input",
 		"Graphics",
 		"Hud",
@@ -197,6 +199,7 @@ namespace TFE_FrontEndUI
 	static ConfigTab s_configTab;
 	static bool s_modLoaded = false;
 	static bool s_saveLoadSetupRequired = true;
+	static bool s_replaySetupRequired = true;
 	static bool s_bindingPopupOpen = false;
 
 	static bool s_consoleActive = false;
@@ -253,6 +256,7 @@ namespace TFE_FrontEndUI
 	bool configEnhancements();
 	void configSave();
 	void configLoad();
+	void configReplay();
 	void configInput();
 	void configGraphics();
 	void configHud();
@@ -265,6 +269,7 @@ namespace TFE_FrontEndUI
 	void manual();
 	void credits();
 
+	void setupReplay();
 	void configSaveLoadBegin(bool save);
 	void renderBackground(bool forceTextureUpdate = false);
 	void Tooltip(const char* text);
@@ -555,6 +560,11 @@ namespace TFE_FrontEndUI
 		s_game = game;
 	}
 
+	IGame* getCurrentGame()
+	{
+		return s_game;
+	}
+
 	void draw(bool drawFrontEnd, bool noGameData, bool setDefaults, bool showFps)
 	{
 		const u32 windowInvisFlags = ImGuiWindowFlags_NoNav | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoInputs | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoSavedSettings;
@@ -832,6 +842,13 @@ namespace TFE_FrontEndUI
 				TFE_Settings::writeToDisk();
 				inputMapping_serialize();
 			}
+			if (ImGui::Button("Replay", sideBarButtonSize))
+			{
+				s_configTab = CONFIG_REPLAY;
+				setupReplay();
+				TFE_Settings::writeToDisk();
+				inputMapping_serialize();
+			}
 			if (ImGui::Button("Input", sideBarButtonSize))
 			{
 				s_configTab = CONFIG_INPUT;
@@ -932,6 +949,9 @@ namespace TFE_FrontEndUI
 				break;
 			case CONFIG_LOAD:
 				configLoad();
+				break;
+			case CONFIG_REPLAY:
+				configReplay();
 				break;
 			case CONFIG_INPUT:
 				configInput();
@@ -1860,6 +1880,238 @@ namespace TFE_FrontEndUI
 	void configLoad()
 	{
 		saveLoadDialog(false);
+	}
+
+	
+
+	///////////////////////////////////////////////////////////////////////////////
+	// Replay Demo UI
+	///////////////////////////////////////////////////////////////////////////////
+
+	static std::vector<TFE_SaveSystem::SaveHeader> s_replayDir;
+	static TextureGpu* s_replayImageView = nullptr;
+	static s32 s_selectedReplay = -1;
+	static s32 s_selectedReplaySlot = -1;
+	static char s_replayFileName[TFE_MAX_PATH];
+	static char s_replayGameConfirmMsg[TFE_MAX_PATH];
+	static char s_newReplayName[256];
+	static char s_modReplayName[256];
+	static char s_levelReplayName[256];
+
+	void clearReplayImage()
+	{
+		u32 zero[TFE_SaveSystem::SAVE_IMAGE_WIDTH * TFE_SaveSystem::SAVE_IMAGE_HEIGHT];
+		memset(zero, 0, sizeof(u32) * TFE_SaveSystem::SAVE_IMAGE_WIDTH * TFE_SaveSystem::SAVE_IMAGE_HEIGHT);
+		s_replayImageView->update(zero, TFE_SaveSystem::SAVE_IMAGE_WIDTH * TFE_SaveSystem::SAVE_IMAGE_HEIGHT * 4);
+	}
+
+	void updateReplayImage(s32 index)
+	{
+		s_replayImageView->update(s_replayDir[index].imageData, TFE_SaveSystem::SAVE_IMAGE_WIDTH * TFE_SaveSystem::SAVE_IMAGE_HEIGHT * 4);
+	}
+
+	void openReplayConfirmPopup()
+	{
+		sprintf(s_replayGameConfirmMsg, "Load '%s'?###SaveConfirm", s_newReplayName);
+		ImGui::OpenPopup(s_replayGameConfirmMsg);
+		s_popupOpen = true;
+		s_popupSetFocus = true;
+	}
+
+	void closeReplayEditPopup()
+	{
+		s_popupOpen = false;
+		s_popupSetFocus = false;
+		ImGui::CloseCurrentPopup();
+	}
+
+
+	void replayDialog()
+	{
+		if (s_replaySetupRequired)
+		{
+			setupReplay();
+		}
+
+		// Create the current display info to adjust menu sizes.
+		DisplayInfo displayInfo;
+		TFE_RenderBackend::getDisplayInfo(&displayInfo);
+
+		f32 leftColumn = displayInfo.width < 1200 ? 196.0f * s_uiScale : 256.0f * s_uiScale;
+		f32 rightColumn = leftColumn + ((f32)TFE_SaveSystem::SAVE_IMAGE_WIDTH + 32.0f) * s_uiScale;
+		const s32 listOffset = 0;
+
+		// Left Column
+		ImGui::SetNextWindowPos(ImVec2(leftColumn, floorf(displayInfo.height * 0.25f)));
+		ImGui::BeginChild("##ImageAndInfo");
+		{
+			// Image
+			ImVec2 size((f32)TFE_SaveSystem::SAVE_IMAGE_WIDTH, (f32)TFE_SaveSystem::SAVE_IMAGE_HEIGHT);
+			size.x *= s_uiScale;
+			size.y *= s_uiScale;
+
+			ImGui::Image(TFE_RenderBackend::getGpuPtr(s_replayImageView), size,
+				ImVec2(0, 0), ImVec2(1, 1), ImVec4(1, 1, 1, 1), ImVec4(0.5f, 0.5f, 0.5f, 1.0f));
+
+			// Info
+			size.y = 140 * s_uiScale;
+			ImGui::BeginChild("##InfoWithBorder", size, true, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
+			{
+				if (!s_replayDir.empty())
+				{
+					ImGui::PushFont(s_dialogFont);
+					ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
+
+					char textBuffer[TFE_MAX_PATH];
+					sprintf(textBuffer, "Game: Dark Forces\nTime: %s\nLevel: %s\nMods: %s\n", s_replayDir[s_selectedReplay - listOffset].dateTime,
+						s_replayDir[s_selectedReplay - listOffset].levelName, s_replayDir[s_selectedReplay - listOffset].modNames);
+					ImGui::InputTextMultiline("##Info", textBuffer, strlen(textBuffer) + 1, size, ImGuiInputTextFlags_ReadOnly);
+
+					ImGui::PopFont();
+					ImGui::PopStyleColor();
+				}
+				else
+				{
+					ImGui::PushFont(s_dialogFont);
+					ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
+
+					char textBuffer[TFE_MAX_PATH];
+					sprintf(textBuffer, "Game: Dark Forces\nTime:\n\nLevel:\nMods:\n");
+					ImGui::InputTextMultiline("##Info", textBuffer, strlen(textBuffer) + 1, size, ImGuiInputTextFlags_ReadOnly);
+
+					ImGui::PopFont();
+					ImGui::PopStyleColor();
+				}
+			}
+			ImGui::EndChild();
+		}
+		ImGui::EndChild();
+
+		// Right Column
+		f32 rwidth = 1024.0f * s_uiScale;
+		if (rightColumn + rwidth > displayInfo.width - 64.0f)
+		{
+			rwidth = displayInfo.width - 64.0f - rightColumn;
+		}
+
+		f32 rheight = displayInfo.height - 80.0f;
+		ImGui::SetNextWindowPos(ImVec2(rightColumn, 64.0f * s_uiScale));
+		ImGui::BeginChild("##FileList", ImVec2(rwidth, rheight), true);
+		{
+			const size_t count = s_replayDir.size() + size_t(listOffset);
+			const TFE_SaveSystem::SaveHeader* header = s_replayDir.data();
+			ImVec2 buttonSize(rwidth - 2.0f, floorf(20 * s_uiScale + 0.5f));
+			ImGui::PushFont(s_dialogFont);
+			ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
+			s32 prevSelected = s_selectedReplay;
+			for (size_t i = 0; i < count; i++)
+			{
+				bool selected = i == s_selectedReplay;
+				const char* replayName;
+				replayName = header[i - listOffset].saveName;
+
+				if (ImGui::Selectable(replayName, selected, ImGuiSelectableFlags_None, buttonSize))
+				{
+					if (!s_popupOpen)
+					{
+						s_selectedReplay = s32(i);
+						s_selectedReplaySlot = s_selectedReplay - listOffset;
+						bool shouldExit = false;
+						strcpy(s_replayFileName, s_replayDir[s_selectedReplaySlot].fileName);
+						strcpy(s_newReplayName, s_replayDir[s_selectedReplaySlot].saveName);
+						strcpy(s_modReplayName, s_replayDir[s_selectedReplaySlot].modNames);
+						strcpy(s_levelReplayName, s_replayDir[s_selectedReplaySlot].levelName);
+						openReplayConfirmPopup();
+						if (shouldExit)
+						{
+							exitLoadSaveMenu();
+						}
+					}
+				}
+				else if ((ImGui::IsItemHovered() || ImGui::IsItemClicked()) && !s_popupOpen)
+				{
+					s_selectedReplay = s32(i);
+				}
+			}
+			if (prevSelected != s_selectedReplay)
+			{
+				s32 index = s_selectedReplay - listOffset;
+				if (index >= 0)
+				{
+					updateReplayImage(s_selectedReplay - listOffset);
+				}
+				else
+				{
+					clearReplayImage();
+				}
+			}
+			prevSelected = s_selectedReplay;
+			if (ImGui::BeginPopupModal(s_replayGameConfirmMsg, NULL, ImGuiWindowFlags_AlwaysAutoResize))
+			{
+				bool shouldExit = false;
+				if (s_popupSetFocus)
+				{
+					ImGui::SetKeyboardFocusHere();
+					s_popupSetFocus = false;
+				}
+				ImGui::SetNextItemWidth(768 * s_uiScale);
+				 if (TFE_Input::keyPressed(KEY_RETURN))
+				{
+					shouldExit = true;
+					loadReplayWrapper(s_replayFileName, s_modReplayName, s_levelReplayName);
+				}
+				if (ImGui::Button("OK", ImVec2(120, 0)))
+				{
+					shouldExit = true;
+					loadReplayWrapper(s_replayFileName, s_modReplayName, s_levelReplayName);
+				}
+				ImGui::SameLine(0.0f, 32.0f);
+				if (ImGui::Button("Cancel", ImVec2(120, 0)))
+				{
+					shouldExit = false;
+					closeSaveNameEditPopup();
+				}
+				ImGui::EndPopup();
+
+				if (shouldExit)
+				{
+					exitLoadSaveMenu();
+				}
+			}
+			ImGui::PopFont();
+			ImGui::PopStyleColor();
+		}
+		ImGui::EndChild();
+		s_selectedReplaySlot = s_selectedReplay - listOffset;
+	}
+
+	void configReplay()
+	{
+		replayDialog();
+	}
+
+	void setupReplay()
+	{
+		s_selectedReplay = 0;
+
+		if (!s_replayImageView)
+		{
+			s_replayImageView = TFE_RenderBackend::createTexture(TFE_SaveSystem::SAVE_IMAGE_WIDTH, TFE_SaveSystem::SAVE_IMAGE_HEIGHT, TexFormat::TEX_RGBA8);
+		}
+		TFE_Input::populateReplayDirectory(s_replayDir);
+
+		if (!s_replayDir.empty())
+		{
+			updateReplayImage(s_selectedReplay);
+		}
+		else
+		{
+			clearReplayImage();
+		}
+
+		s_popupOpen = false;
+		s_replaySetupRequired = false;
+		s_popupSetFocus = false;
 	}
 		
 	void getBindingString(InputBinding* binding, char* inputName)

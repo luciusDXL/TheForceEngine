@@ -875,7 +875,7 @@ namespace TFE_DarkForces
 					}
 					attackMod->target.flags &= ~TARGET_ALL_MOVE;
 					// Next AI update.
-					return s_curTick + random(attackMod->timing.delay);
+					return s_curTick + random(attackMod->timing.delay);					
 				}
 			} break;
 			case STATE_ANIMATEATTACK:
@@ -907,6 +907,7 @@ namespace TFE_DarkForces
 				{
 					actor_updatePlayerVisiblity(JTRUE, s_eyePos.x, s_eyePos.z);
 					attackMod->timing.nextTick = s_curTick + attackMod->timing.losDelay;
+
 					fixed16_16 dist = distApprox(s_playerObject->posWS.x, s_playerObject->posWS.z, obj->posWS.x, obj->posWS.z);
 					fixed16_16 yDiff = TFE_Jedi::abs(obj->posWS.y - obj->worldHeight - s_eyePos.y);
 					angle14_32 vertAngle = vec2ToAngle(yDiff, dist);
@@ -1719,6 +1720,7 @@ namespace TFE_DarkForces
 	
 	JBool actor_advanceAnimation(LogicAnimation* anim, SecObject* obj)
 	{
+		
 		if (!anim->prevTick)
 		{
 			anim->prevTick = s_frameTicks[anim->frameRate];
@@ -2063,7 +2065,7 @@ namespace TFE_DarkForces
 					{
 						if (dispatch->nextTick < s_curTick)
 						{
-							dispatch->nextTick = s_curTick;// +dispatch->delay;
+							dispatch->nextTick = s_curTick +dispatch->delay;
 							if (actor_isObjectVisible(obj, s_playerObject, dispatch->fov, dispatch->awareRange))
 							{
 								message_sendToObj(obj, MSG_WAKEUP, actor_hitEffectMsgFunc);
@@ -2078,11 +2080,12 @@ namespace TFE_DarkForces
 						s_actorState.curAnimation = nullptr;
 						for (s32 i = 0; i < ACTOR_MAX_MODULES; i++)
 						{
-							ActorModule* module = dispatch->modules[ACTOR_MAX_MODULES - 1 - i];
+							ActorModule* module = dispatch->modules[ACTOR_MAX_MODULES - 1 - i];							
 							if (module && module->func && module->nextTick < s_curTick)
 							{
 								module->nextTick = module->func(module, dispatch->moveMod);
 							}
+							
 						}
 
 						if (s_actorState.curLogic && !(dispatch->flags & 1))
