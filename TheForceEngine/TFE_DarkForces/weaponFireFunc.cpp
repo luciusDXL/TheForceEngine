@@ -98,6 +98,7 @@ namespace TFE_DarkForces
 		{ 0, 0, 29, 29 },
 		{ 3, 0, 29, 29 },
 	};
+	/*
 	static const WeaponAnimFrame c_repeaterAnim[4] =
 	{
 		{ 1,  0,  2,  5 },	// primary
@@ -105,12 +106,48 @@ namespace TFE_DarkForces
 		{ 2, 33,  5, 11 },
 		{ 0,  0, 14, 29 },
 	};
+	*/
+	static const WeaponAnimFrame c_repeaterSecondaryAnim[3] =
+	{
+		{ 1,  0,  4,  8 },	// secondary
+		{ 2, 33,  5, 11 },
+		{ 0,  0, 14, 29 },
+	};
+	static const WeaponAnimFrame c_repeaterPrimaryAnim[2] =
+	{
+		{ 1,  0,  2,  5 },	// primary
+		{ 2, 33,  5, 11 },
+	};
+	static const WeaponAnimFrame c_fusionSecondaryAnim[2] =
+	{
+		{ 5, 34, 14, 29 },
+		{ 0,  0, 19, 39 },
+	};
+	static const WeaponAnimFrame c_fusionPrimaryAnim[5] =
+	{
+		{ 0,  0,  7, 14 },
+		{ 1, 34, 10, 20 },
+		{ 2, 34, 10, 20 },
+		{ 3, 34, 10, 20 },
+		{ 4, 34, 10, 20 },
+	};
 	static const WeaponAnimFrame c_concussionAnim[] =
 	{
 		{ 1, 36, 21, 43 },
 		{ 2,  0,  7, 14 },
 		{ 0,  0, 29, 58 },
 	};
+	static const WeaponAnimFrame c_cannonSecondaryAnim[3] =
+	{
+		{ 2,  0, 14, 29 },
+		{ 3, 33, 43, 87 },
+		{ 0,  0, 29, 58 },
+	};
+	static const WeaponAnimFrame c_cannonPrimaryAnim[1] =
+	{
+		{ 1, 34, 14 >> 1, 29 >> 1 },
+	};
+
 	static const angle14_32 c_repeaterYawOffset[3] = { 0, 136, -136 };
 	static const angle14_32 c_repeaterPitchOffset[3] = { 136, -136, -136 };
 	// Deltas for repeater - note the order is ZXY
@@ -861,8 +898,8 @@ namespace TFE_DarkForces
 				}
 
 				// Initial animation frame
-				taskCtx->delay = s_superCharge ? c_repeaterAnim[1].delaySupercharge : c_repeaterAnim[1].delayNormal;
-				s_curPlayerWeapon->frame = c_repeaterAnim[1].waxFrame;
+				taskCtx->delay = s_superCharge ? c_repeaterSecondaryAnim[0].delaySupercharge : c_repeaterSecondaryAnim[0].delayNormal;
+				s_curPlayerWeapon->frame = c_repeaterSecondaryAnim[0].waxFrame;
 				do
 				{
 					task_yield(taskCtx->delay);
@@ -948,11 +985,11 @@ namespace TFE_DarkForces
 				task_localBlockEnd;
 
 				// Animation
-				for (taskCtx->iFrame = 2; taskCtx->iFrame < TFE_ARRAYSIZE(c_repeaterAnim); taskCtx->iFrame++)
+				for (taskCtx->iFrame = 1; taskCtx->iFrame < TFE_ARRAYSIZE(c_repeaterSecondaryAnim); taskCtx->iFrame++)
 				{
-					s_curPlayerWeapon->frame = c_repeaterAnim[taskCtx->iFrame].waxFrame;
-					s_weaponLight = c_repeaterAnim[taskCtx->iFrame].weaponLight;
-					taskCtx->delay = (s_superCharge) ? c_repeaterAnim[taskCtx->iFrame].delaySupercharge : c_repeaterAnim[taskCtx->iFrame].delayNormal;
+					s_curPlayerWeapon->frame = c_repeaterSecondaryAnim[taskCtx->iFrame].waxFrame;
+					s_weaponLight = c_repeaterSecondaryAnim[taskCtx->iFrame].weaponLight;
+					taskCtx->delay = (s_superCharge) ? c_repeaterSecondaryAnim[taskCtx->iFrame].delaySupercharge : c_repeaterSecondaryAnim[taskCtx->iFrame].delayNormal;
 					do
 					{
 						task_yield(taskCtx->delay);
@@ -1015,8 +1052,8 @@ namespace TFE_DarkForces
 				}
 
 				// Initial animation frame
-				taskCtx->delay = s_superCharge ? c_repeaterAnim[0].delaySupercharge : c_repeaterAnim[0].delayNormal;
-				s_curPlayerWeapon->frame = c_repeaterAnim[0].waxFrame;
+				taskCtx->delay = s_superCharge ? c_repeaterPrimaryAnim[0].delaySupercharge : c_repeaterPrimaryAnim[0].delayNormal;
+				s_curPlayerWeapon->frame = c_repeaterPrimaryAnim[0].waxFrame;
 				do
 				{
 					task_yield(taskCtx->delay);
@@ -1119,9 +1156,9 @@ namespace TFE_DarkForces
 				task_localBlockEnd;
 
 				// Animation
-				taskCtx->delay = s_superCharge ? c_repeaterAnim[2].delaySupercharge : c_repeaterAnim[2].delayNormal;
-				s_weaponLight = c_repeaterAnim[2].weaponLight;
-				s_curPlayerWeapon->frame = c_repeaterAnim[2].waxFrame;
+				taskCtx->delay = s_superCharge ? c_repeaterPrimaryAnim[1].delaySupercharge : c_repeaterPrimaryAnim[1].delayNormal;
+				s_weaponLight = c_repeaterPrimaryAnim[1].weaponLight;
+				s_curPlayerWeapon->frame = c_repeaterPrimaryAnim[1].waxFrame;
 				do
 				{
 					task_yield(taskCtx->delay);
@@ -1284,19 +1321,18 @@ namespace TFE_DarkForces
 				task_localBlockEnd;
 
 				// Animation
-				// TODO: not using the tables for this due to differences - refactor later.
-				s_curPlayerWeapon->frame = 5;
-				s_weaponLight = 34;
-				taskCtx->delay = (s_superCharge) ? 14 : 29;
+				s_curPlayerWeapon->frame = c_fusionSecondaryAnim[0].waxFrame;
+				s_weaponLight = c_fusionSecondaryAnim[0].weaponLight;
+				taskCtx->delay = (s_superCharge) ? c_fusionSecondaryAnim[0].delaySupercharge : c_fusionSecondaryAnim[0].delayNormal;
 				do
 				{
 					task_yield(taskCtx->delay);
 					task_callTaskFunc(weapon_handleState);
 				} while (msg != MSG_RUN_TASK);
 
-				s_curPlayerWeapon->frame = 0;
-				s_weaponLight = 0;
-				taskCtx->delay = (s_superCharge) ? 19 : 39;
+				s_curPlayerWeapon->frame = c_fusionSecondaryAnim[1].waxFrame;
+				s_weaponLight = c_fusionSecondaryAnim[1].weaponLight;
+				taskCtx->delay = (s_superCharge) ? c_fusionSecondaryAnim[1].delaySupercharge : c_fusionSecondaryAnim[1].delayNormal;
 				do
 				{
 					task_yield(taskCtx->delay);
@@ -1446,9 +1482,9 @@ namespace TFE_DarkForces
 				task_localBlockEnd;
 
 				// Animation
-				taskCtx->delay = s_superCharge ? 10 : 20;
-				s_weaponLight = 34;
-				s_curPlayerWeapon->frame = s_fusionCylinder;
+				taskCtx->delay = s_superCharge ? c_fusionPrimaryAnim[s_fusionCylinder].delaySupercharge : c_fusionPrimaryAnim[s_fusionCylinder].delayNormal;
+				s_weaponLight = c_fusionPrimaryAnim[s_fusionCylinder].weaponLight;
+				s_curPlayerWeapon->frame = c_fusionPrimaryAnim[s_fusionCylinder].waxFrame;
 				do
 				{
 					task_yield(taskCtx->delay);
@@ -1474,9 +1510,9 @@ namespace TFE_DarkForces
 					}
 				}
 
-				taskCtx->delay = s_superCharge ? 7 : 14;
-				s_weaponLight = 0;
-				s_curPlayerWeapon->frame = 0;
+				taskCtx->delay = s_superCharge ? c_fusionPrimaryAnim[0].delaySupercharge : c_fusionPrimaryAnim[0].delayNormal;
+				s_weaponLight = c_fusionPrimaryAnim[0].weaponLight;
+				s_curPlayerWeapon->frame = c_fusionPrimaryAnim[0].waxFrame;
 				do
 				{
 					task_yield(taskCtx->delay);
@@ -1965,8 +2001,9 @@ namespace TFE_DarkForces
 			if (*s_curPlayerWeapon->secondaryAmmo)
 			{
 				// Initial animation frame
-				taskCtx->delay = (s_superCharge) ? 14 : 29;
-				s_curPlayerWeapon->frame = 2;
+				taskCtx->delay = (s_superCharge) ? c_cannonSecondaryAnim[0].delaySupercharge : c_cannonSecondaryAnim[0].delayNormal;
+				s_weaponLight = c_cannonSecondaryAnim[0].weaponLight;
+				s_curPlayerWeapon->frame = c_cannonSecondaryAnim[0].waxFrame;
 				do
 				{
 					task_yield(taskCtx->delay);
@@ -2078,18 +2115,18 @@ namespace TFE_DarkForces
 				task_localBlockEnd;
 
 				// Animation
-				s_curPlayerWeapon->frame = 3;
-				s_weaponLight = 33;
-				taskCtx->delay = (s_superCharge) ? 43 : 87;
+				s_curPlayerWeapon->frame = c_cannonSecondaryAnim[1].waxFrame;
+				s_weaponLight = c_cannonSecondaryAnim[1].weaponLight;
+				taskCtx->delay = (s_superCharge) ? c_cannonSecondaryAnim[1].delaySupercharge : c_cannonSecondaryAnim[1].delayNormal;
 				do
 				{
 					task_yield(taskCtx->delay);
 					task_callTaskFunc(weapon_handleState);
 				} while (msg != MSG_RUN_TASK);
 
-				s_curPlayerWeapon->frame = 0;
-				s_weaponLight = 0;
-				taskCtx->delay = (s_superCharge) ? 29 : 58;
+				s_curPlayerWeapon->frame = c_cannonSecondaryAnim[2].waxFrame;
+				s_weaponLight = c_cannonSecondaryAnim[2].weaponLight;
+				taskCtx->delay = (s_superCharge) ? c_cannonSecondaryAnim[2].delaySupercharge : c_cannonSecondaryAnim[2].delayNormal;
 				do
 				{
 					task_yield(taskCtx->delay);
@@ -2221,9 +2258,9 @@ namespace TFE_DarkForces
 				task_localBlockEnd;
 
 				// Animate
-				s_curPlayerWeapon->frame = 1;
-				s_weaponLight = 34;
-				taskCtx->delay = ((s_superCharge) ? 14 : 29) >> 1;
+				s_curPlayerWeapon->frame = c_cannonPrimaryAnim[0].waxFrame;
+				s_weaponLight = c_cannonPrimaryAnim[0].weaponLight;
+				taskCtx->delay = (s_superCharge) ? c_cannonPrimaryAnim[0].delaySupercharge : c_cannonPrimaryAnim[0].delayNormal;
 				do
 				{
 					task_yield(taskCtx->delay);
