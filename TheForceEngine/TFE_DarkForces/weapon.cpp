@@ -85,7 +85,7 @@ namespace TFE_DarkForces
 	void weapon_setFireRateInternal(WeaponFireMode mode, Tick delay, s32* canFire);
 	void weapon_playerWeaponTaskFunc(MessageType msg);
 	void weapon_handleOnAnimation(MessageType msg);
-	void weapon_prepareToFire();
+	void weapon_setIdle();
 	
 	static WeaponFireFunc s_weaponFireFunc[WPN_COUNT] =
 	{
@@ -395,6 +395,7 @@ namespace TFE_DarkForces
 		weapon_setFireRateInternal(WFIRE_PRIMARY,   0, nullptr);
 		weapon_setFireRateInternal(WFIRE_SECONDARY, 0, nullptr);
 
+		// These values are set but never read. Actual fire rate is determined by the animation frames durations.
 		switch (s_prevWeapon)
 		{
 			case WPN_PISTOL:
@@ -468,7 +469,8 @@ namespace TFE_DarkForces
 		s_superchargeTask = nullptr;
 	}
 
-	void weapon_fixupAnim()
+	// If using TDs or mines and no ammo, show empty right hand
+	void weapon_emptyAnim()
 	{
 		PlayerWeapon* weapon = s_curPlayerWeapon;
 		s32 ammo = weapon->ammo ? *weapon->ammo : 0;
@@ -519,6 +521,7 @@ namespace TFE_DarkForces
 		}
 	}
 
+	// Added for the early GPU renderer. No longer used
 	void weapon_addTexture(TextureInfoList& texList, TextureData* tex)
 	{
 		TextureInfo texInfo = {};
@@ -527,6 +530,7 @@ namespace TFE_DarkForces
 		texList.push_back(texInfo);
 	}
 
+	// Added for the early GPU renderer. No longer used
 	bool weapon_getTextures(TextureInfoList& texList)
 	{
 		// Get weapon textures.
@@ -591,7 +595,7 @@ namespace TFE_DarkForces
 		if (msg == MSG_STOP_FIRING)
 		{
 			s_isShooting = JFALSE;
-			weapon_prepareToFire();
+			weapon_setIdle();
 			s_curPlayerWeapon->flags |= 2;
 		}
 		else if (msg == MSG_START_FIRING)
@@ -786,7 +790,8 @@ namespace TFE_DarkForces
 		}
 	}
 
-	void weapon_prepareToFire()
+	// Set weapons back to their idle frame; stop looping sound
+	void weapon_setIdle()
 	{
 		PlayerWeapon* weapon = s_curPlayerWeapon;
 		if (s_prevWeapon == WPN_REPEATER)
@@ -868,13 +873,13 @@ namespace TFE_DarkForces
 				}
 				s_curPlayerWeapon->flags &= ~2;
 
-				weapon_prepareToFire();
+				weapon_setIdle();
 				weapon_setFireRate();
 			}
 			else if (msg == MSG_STOP_FIRING)
 			{
 				s_isShooting = JFALSE;
-				weapon_prepareToFire();
+				weapon_setIdle();
 				s_curPlayerWeapon->flags |= 2;
 			}
 			else if (msg == MSG_HOLSTER)
@@ -885,7 +890,7 @@ namespace TFE_DarkForces
 
 				if (!s_weaponOffAnim)
 				{
-					weapon_prepareToFire();
+					weapon_setIdle();
 					
 					s_weaponAnimState =
 					{
@@ -906,7 +911,7 @@ namespace TFE_DarkForces
 						sound_play(s_weaponChangeSnd);
 					}
 
-					weapon_fixupAnim();
+					weapon_emptyAnim();
 
 					s_weaponAnimState =
 					{

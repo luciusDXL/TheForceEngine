@@ -212,6 +212,7 @@ namespace TFE_DarkForces
 		};
 		task_begin_ctx;
 
+		// Initial animation frame
 		taskCtx->delay = (s_superCharge) ? c_punchAnim[0].delaySupercharge : c_punchAnim[0].delayNormal;
 		s_curPlayerWeapon->frame = c_punchAnim[0].waxFrame;
 		s_weaponLight = c_punchAnim[0].weaponLight;
@@ -221,12 +222,14 @@ namespace TFE_DarkForces
 			task_callTaskFunc(weapon_handleState);
 		} while (msg != MSG_RUN_TASK);
 
+		// Sound effect
 		if (s_punchSwingSndId)
 		{
 			sound_stop(s_punchSwingSndId);
 		}
 		s_punchSwingSndId = sound_play(s_punchSwingSndSrc);
 
+		// Wakeup AI within range
 		if (s_curPlayerWeapon->wakeupRange)
 		{
 			vec3_fixed origin = { s_playerObject->posWS.x, s_playerObject->posWS.y, s_playerObject->posWS.z };
@@ -234,6 +237,7 @@ namespace TFE_DarkForces
 		}
 
 		task_localBlockBegin;
+		// Aim and spawn projectiles
 		fixed16_16 mtx[9];
 		weapon_computeMatrix(mtx, -s_playerObject->pitch, -s_playerObject->yaw);
 
@@ -300,18 +304,21 @@ namespace TFE_DarkForces
 		if (*s_curPlayerWeapon->ammo)
 		{
 			task_localBlockBegin;
+			// Sound effect
 			if (s_pistolSndId)
 			{
 				sound_stop(s_pistolSndId);
 			}
 			s_pistolSndId = sound_play(s_pistolSndSrc);
 
+			// Wakeup AI within range
 			if (s_curPlayerWeapon->wakeupRange)
 			{
 				vec3_fixed origin = { s_playerObject->posWS.x, s_playerObject->posWS.y, s_playerObject->posWS.z };
 				collision_effectObjectsInRangeXZ(s_playerObject->sector, s_curPlayerWeapon->wakeupRange, origin, hitEffectWakeupFunc, s_playerObject, ETFLAG_AI_ACTOR);
 			}
 
+			// Aim projectile
 			fixed16_16 mtx[9];
 			weapon_computeMatrix(mtx, -s_playerObject->pitch, -s_playerObject->yaw);
 
@@ -488,18 +495,21 @@ namespace TFE_DarkForces
 		if (*s_curPlayerWeapon->ammo)
 		{
 			task_localBlockBegin;
+			// Sound effect
 			if (s_rifleSndId)
 			{
 				sound_stop(s_rifleSndId);
 			}
 			s_rifleSndId = sound_play(s_rifleSndSrc);
 
+			// Wakeup AI within range
 			if (s_curPlayerWeapon->wakeupRange)
 			{
 				vec3_fixed origin = { s_playerObject->posWS.x, s_playerObject->posWS.y, s_playerObject->posWS.z };
 				collision_effectObjectsInRangeXZ(s_playerObject->sector, s_curPlayerWeapon->wakeupRange, origin, hitEffectWakeupFunc, s_playerObject, ETFLAG_AI_ACTOR);
 			}
 
+			// Aim projectile
 			fixed16_16 mtx[9];
 			weapon_computeMatrix(mtx, -s_playerObject->pitch, -s_playerObject->yaw);
 
@@ -708,6 +718,7 @@ namespace TFE_DarkForces
 			task_callTaskFunc(weapon_handleState2);
 			fixed16_16 dt = intToFixed16(s_curTick - taskCtx->startTick);
 
+			// Wakeup AI within range
 			if (s_curPlayerWeapon->wakeupRange)
 			{
 				vec3_fixed origin = { s_playerObject->posWS.x, s_playerObject->posWS.y, s_playerObject->posWS.z };
@@ -785,7 +796,7 @@ namespace TFE_DarkForces
 					} while (msg != MSG_RUN_TASK);
 				}
 			}
-			else
+			else // no more ammo, show empty hand
 			{
 				s_curPlayerWeapon->frame = c_thermalDetAnim[4].waxFrame;
 				s_weaponLight = c_thermalDetAnim[4].weaponLight;
@@ -835,18 +846,21 @@ namespace TFE_DarkForces
 		{
 			if (*s_curPlayerWeapon->ammo)
 			{
+				// Sound effect
 				if (s_repeaterFireSndID1)
 				{
 					sound_stop(s_repeaterFireSndID1);
 				}
 				s_repeaterFireSndID1 = sound_play(s_repeater1SndSrc);
 
+				// Wakeup AI within range
 				if (s_curPlayerWeapon->wakeupRange)
 				{
 					vec3_fixed origin = { s_playerObject->posWS.x, s_playerObject->posWS.y, s_playerObject->posWS.z };
 					collision_effectObjectsInRangeXZ(s_playerObject->sector, s_curPlayerWeapon->wakeupRange, origin, hitEffectWakeupFunc, s_playerObject, ETFLAG_AI_ACTOR);
 				}
 
+				// Initial animation frame
 				taskCtx->delay = s_superCharge ? c_repeaterAnim[1].delaySupercharge : c_repeaterAnim[1].delayNormal;
 				s_curPlayerWeapon->frame = c_repeaterAnim[1].waxFrame;
 				do
@@ -856,6 +870,7 @@ namespace TFE_DarkForces
 				} while (msg != MSG_RUN_TASK);
 
 				task_localBlockBegin;
+				// Aim projectiles
 				fixed16_16 mtx[9];
 				weapon_computeMatrix(mtx, -s_playerObject->pitch, -s_playerObject->yaw);
 
@@ -875,6 +890,7 @@ namespace TFE_DarkForces
 					weapon_computeMatrix(mtx2, -s_weaponFirePitch, -s_weaponFireYaw);
 				}
 
+				// Spawn projectiles (x3)
 				fixed16_16 fire = intToFixed16(canFire);
 				while (canFire)
 				{
@@ -945,7 +961,7 @@ namespace TFE_DarkForces
 				}
 				s_canFireWeaponSec = 1;
 			}
-			else
+			else	// out of ammo
 			{
 				if (s_repeaterFireSndID)
 				{
@@ -980,6 +996,7 @@ namespace TFE_DarkForces
 		{
 			if (*s_curPlayerWeapon->ammo)
 			{
+				// Sound effect (includes looping sound effect)
 				if (!s_repeaterFireSndID)
 				{
 					if (s_repeaterFireSndID1)
@@ -990,12 +1007,14 @@ namespace TFE_DarkForces
 					s_repeaterFireSndID  = sound_play(s_repeaterSndSrc);
 				}
 
+				// Wakeup AI within range
 				if (s_curPlayerWeapon->wakeupRange)
 				{
 					vec3_fixed origin = { s_playerObject->posWS.x, s_playerObject->posWS.y, s_playerObject->posWS.z };
 					collision_effectObjectsInRangeXZ(s_playerObject->sector, s_curPlayerWeapon->wakeupRange, origin, hitEffectWakeupFunc, s_playerObject, ETFLAG_AI_ACTOR);
 				}
 
+				// Initial animation frame
 				taskCtx->delay = s_superCharge ? c_repeaterAnim[0].delaySupercharge : c_repeaterAnim[0].delayNormal;
 				s_curPlayerWeapon->frame = c_repeaterAnim[0].waxFrame;
 				do
@@ -1005,6 +1024,7 @@ namespace TFE_DarkForces
 				} while (msg != MSG_RUN_TASK);
 
 				task_localBlockBegin;
+				// Aim projectile
 				fixed16_16 mtx[9];
 				weapon_computeMatrix(mtx, -s_playerObject->pitch, -s_playerObject->yaw);
 
@@ -1040,6 +1060,7 @@ namespace TFE_DarkForces
 					weapon_computeMatrix(mtx2, -s_weaponFirePitch, -s_weaponFireYaw);
 				}
 
+				// Spawn projectile
 				fixed16_16 fire = intToFixed16(canFire);
 				while (canFire)
 				{
@@ -1097,6 +1118,7 @@ namespace TFE_DarkForces
 				}
 				task_localBlockEnd;
 
+				// Animation
 				taskCtx->delay = s_superCharge ? c_repeaterAnim[2].delaySupercharge : c_repeaterAnim[2].delayNormal;
 				s_weaponLight = c_repeaterAnim[2].weaponLight;
 				s_curPlayerWeapon->frame = c_repeaterAnim[2].waxFrame;
@@ -1121,7 +1143,7 @@ namespace TFE_DarkForces
 
 				s_canFireWeaponPrim = 1;
 			}
-			else
+			else	// out of ammo
 			{
 				if (s_repeaterFireSndID)
 				{
@@ -1169,12 +1191,14 @@ namespace TFE_DarkForces
 		{
 			if (*s_curPlayerWeapon->ammo)
 			{
+				// Sound effect
 				if (s_fusionFireSndID)
 				{
 					sound_stop(s_fusionFireSndID);
 				}
 				s_fusionFireSndID = sound_play(s_fusion1SndSrc);
 
+				// Wakeup AI within range
 				if (s_curPlayerWeapon->wakeupRange)
 				{
 					vec3_fixed origin = { s_playerObject->posWS.x, s_playerObject->posWS.y, s_playerObject->posWS.z };
@@ -1182,6 +1206,7 @@ namespace TFE_DarkForces
 				}
 
 				task_localBlockBegin;
+				// Aim projectiles
 				fixed16_16 mtx[9];
 				weapon_computeMatrix(mtx, -s_playerObject->pitch, -s_playerObject->yaw);
 
@@ -1201,6 +1226,7 @@ namespace TFE_DarkForces
 					weapon_computeMatrix(mtx2, -s_weaponFirePitch, -s_weaponFireYaw);
 				}
 
+				// Spawn projectiles
 				fixed16_16 fire = intToFixed16(canFire);
 				while (canFire)
 				{
@@ -1279,7 +1305,7 @@ namespace TFE_DarkForces
 
 				s_canFireWeaponSec = 1;
 			}
-			else
+			else	// out of ammo
 			{
 				if (s_fusionOutOfAmmoSndID)
 				{
@@ -1309,12 +1335,14 @@ namespace TFE_DarkForces
 		{
 			if (*s_curPlayerWeapon->ammo)
 			{
+				// Sound effect
 				if (s_fusionFireSndID)
 				{
 					sound_stop(s_fusionFireSndID);
 				}
 				s_fusionFireSndID = sound_play(s_fusion1SndSrc);
 
+				// Wakeup AI within range
 				if (s_curPlayerWeapon->wakeupRange)
 				{
 					vec3_fixed origin = { s_playerObject->posWS.x, s_playerObject->posWS.y, s_playerObject->posWS.z };
@@ -1322,6 +1350,7 @@ namespace TFE_DarkForces
 				}
 
 				task_localBlockBegin;
+				// Aim projectiles
 				fixed16_16 mtx[9];
 				weapon_computeMatrix(mtx, -s_playerObject->pitch, -s_playerObject->yaw);
 
@@ -1333,6 +1362,7 @@ namespace TFE_DarkForces
 					weapon_computeMatrix(mtx2, -s_weaponFirePitch, -s_weaponFireYaw);
 				}
 
+				// Spawn projectiles
 				fixed16_16 fire = intToFixed16(canFire);
 				while (canFire)
 				{
@@ -1415,6 +1445,7 @@ namespace TFE_DarkForces
 				}
 				task_localBlockEnd;
 
+				// Animation
 				taskCtx->delay = s_superCharge ? 10 : 20;
 				s_weaponLight = 34;
 				s_curPlayerWeapon->frame = s_fusionCylinder;
@@ -1454,7 +1485,7 @@ namespace TFE_DarkForces
 
 				s_canFireWeaponPrim = 1;
 			}
-			else
+			else	// out of ammo
 			{
 				if (s_fusionOutOfAmmoSndID)
 				{
@@ -1495,6 +1526,7 @@ namespace TFE_DarkForces
 
 		if (*s_curPlayerWeapon->ammo)
 		{
+			// Sound effect
 			task_localBlockBegin;
 			if (s_mortarFireSndID)
 			{
@@ -1502,12 +1534,14 @@ namespace TFE_DarkForces
 			}
 			s_mortarFireSndID = sound_play(s_mortarFireSndSrc);
 
+			// Wakeup AI within range
 			if (s_curPlayerWeapon->wakeupRange)
 			{
 				vec3_fixed origin = { s_playerObject->posWS.x, s_playerObject->posWS.y, s_playerObject->posWS.z };
 				collision_effectObjectsInRangeXZ(s_playerObject->sector, s_curPlayerWeapon->wakeupRange, origin, hitEffectWakeupFunc, s_playerObject, ETFLAG_AI_ACTOR);
 			}
 
+			// Aim projectile
 			fixed16_16 mtx[9];
 			weapon_computeMatrix(mtx, -s_playerObject->pitch, -s_playerObject->yaw);
 
@@ -1680,12 +1714,14 @@ namespace TFE_DarkForces
 				-s_curPlayerWeapon->primaryFireConsumption,
 				getMaxAmmo(s_curPlayerWeapon->ammo));
 			
+			// Wakeup AI within range
 			if (s_curPlayerWeapon->wakeupRange)
 			{
 				vec3_fixed origin = { s_playerObject->posWS.x, s_playerObject->posWS.y, s_playerObject->posWS.z };
 				collision_effectObjectsInRangeXZ(s_playerObject->sector, s_curPlayerWeapon->wakeupRange, origin, hitEffectWakeupFunc, s_playerObject, ETFLAG_AI_ACTOR);
 			}
 
+			// Animate (going down)
 			s_weaponAnimState =
 			{
 				1,		// frame
@@ -1703,12 +1739,14 @@ namespace TFE_DarkForces
 			ProjectileLogic* mine = (ProjectileLogic*)createProjectile(type, s_playerObject->sector, s_playerObject->posWS.x, floorHeight, s_playerObject->posWS.z, s_playerObject);
 			mine->vel = { 0, 0, 0 };
 
+			// Sound effect
 			if (s_mineSndId)
 			{
 				sound_stop(s_mineSndId);
 			}
 			s_mineSndId = sound_play(s_mineSndSrc);
 
+			// Animate (come back up; empty hand if no more ammo)
 			s32 frame = (*s_curPlayerWeapon->ammo) ? 0 : 2;
 			s_weaponAnimState =
 			{
@@ -1722,7 +1760,7 @@ namespace TFE_DarkForces
 
 			task_yield(2);
 		}
-		else
+		else	// out of ammo
 		{
 			if (s_weaponAutoMount2)
 			{
@@ -1755,18 +1793,21 @@ namespace TFE_DarkForces
 		if (*s_curPlayerWeapon->ammo)
 		{
 			task_localBlockBegin;
+			// Sound effect
 			if (s_concussionFireSndID)
 			{
 				sound_stop(s_concussionFireSndID);
 			}
 			s_concussionFireSndID = sound_play(s_concussion6SndSrc);
 
+			// Wakeup AI within range
 			if (s_curPlayerWeapon->wakeupRange)
 			{
 				vec3_fixed origin = { s_playerObject->posWS.x, s_playerObject->posWS.y, s_playerObject->posWS.z };
 				collision_effectObjectsInRangeXZ(s_playerObject->sector, s_curPlayerWeapon->wakeupRange, origin, hitEffectWakeupFunc, s_playerObject, ETFLAG_AI_ACTOR);
 			}
 
+			// Aim projectiles
 			fixed16_16 mtx[9];
 			weapon_computeMatrix(mtx, -s_playerObject->pitch, -s_playerObject->yaw);
 
@@ -1923,6 +1964,7 @@ namespace TFE_DarkForces
 		{
 			if (*s_curPlayerWeapon->secondaryAmmo)
 			{
+				// Initial animation frame
 				taskCtx->delay = (s_superCharge) ? 14 : 29;
 				s_curPlayerWeapon->frame = 2;
 				do
@@ -1931,12 +1973,14 @@ namespace TFE_DarkForces
 					task_callTaskFunc(weapon_handleState);
 				} while (msg != MSG_RUN_TASK);
 
+				// Sound effect
 				if (s_cannonFireSndID1)
 				{
 					sound_stop(s_cannonFireSndID1);
 				}
 				s_cannonFireSndID1 = sound_play(s_missile1SndSrc);
 
+				// Wakeup AI within range
 				if (s_curPlayerWeapon->wakeupRange)
 				{
 					vec3_fixed origin = { s_playerObject->posWS.x, s_playerObject->posWS.y, s_playerObject->posWS.z };
@@ -1944,6 +1988,7 @@ namespace TFE_DarkForces
 				}
 
 				task_localBlockBegin;
+				// Aim projectile
 				fixed16_16 mtx[9];
 				weapon_computeMatrix(mtx, -s_playerObject->pitch, -s_playerObject->yaw);
 
@@ -1980,6 +2025,7 @@ namespace TFE_DarkForces
 					weapon_computeMatrix(mtx2, -s_weaponFirePitch, -s_weaponFireYaw);
 				}
 
+				// Spawn projectile
 				fixed16_16 fire = intToFixed16(canFire);
 				while (canFire && *s_curPlayerWeapon->secondaryAmmo)
 				{
@@ -2052,7 +2098,7 @@ namespace TFE_DarkForces
 
 				s_canFireWeaponSec = 1;
 			}
-			else
+			else	// out of ammo
 			{
 				s_curPlayerWeapon->frame = 0;
 				taskCtx->delay = (s_superCharge) ? 3 : 7;
@@ -2069,12 +2115,14 @@ namespace TFE_DarkForces
 		{
 			if (*s_curPlayerWeapon->ammo)
 			{
+				// Sound effect
 				if (s_cannonFireSndID)
 				{
 					sound_stop(s_cannonFireSndID);
 				}
 				s_cannonFireSndID = sound_play(s_plasma4SndSrc);
 
+				// Wakeup AI within range
 				if (s_curPlayerWeapon->wakeupRange)
 				{
 					vec3_fixed origin = { s_playerObject->posWS.x, s_playerObject->posWS.y, s_playerObject->posWS.z };
@@ -2082,6 +2130,7 @@ namespace TFE_DarkForces
 				}
 
 				task_localBlockBegin;
+				// Aim projectiles
 				fixed16_16 mtx[9];
 				weapon_computeMatrix(mtx, -s_playerObject->pitch, -s_playerObject->yaw);
 
@@ -2117,6 +2166,7 @@ namespace TFE_DarkForces
 					weapon_computeMatrix(mtx2, -s_weaponFirePitch, -s_weaponFireYaw);
 				}
 
+				// Spawn projectiles
 				fixed16_16 fire = intToFixed16(canFire);
 				while (canFire && *s_curPlayerWeapon->ammo)
 				{
@@ -2170,6 +2220,7 @@ namespace TFE_DarkForces
 				}
 				task_localBlockEnd;
 
+				// Animate
 				s_curPlayerWeapon->frame = 1;
 				s_weaponLight = 34;
 				taskCtx->delay = ((s_superCharge) ? 14 : 29) >> 1;
@@ -2192,7 +2243,7 @@ namespace TFE_DarkForces
 
 				s_canFireWeaponPrim = 1;
 			}
-			else
+			else	// out of ammo
 			{
 				if (s_cannonOutOfAmmoSndID)
 				{

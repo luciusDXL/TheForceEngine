@@ -91,7 +91,7 @@ namespace TFE_DarkForces
 	void weapon_createPlayerWeaponTask();
 	void weapon_holster();
 	void weapon_draw(u8* display, DrawRect* rect);
-	void weapon_fixupAnim();
+	void weapon_emptyAnim();
 	void weapon_stopFiring();
 	void player_cycleWeapons(s32 change);
 	void weapon_computeMatrix(fixed16_16* mtx, angle14_32 pitch, angle14_32 yaw);
