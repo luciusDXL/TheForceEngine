@@ -30,6 +30,7 @@ namespace TFE_ExternalData
 	int getWeaponIndex(char* name);
 	bool tryAssignGasmaskProperty(cJSON* data);
 	bool tryAssignWeaponProperty(cJSON* data, ExternalWeapon& weapon);
+	void parseAnimationFrame(cJSON* element, WeaponAnimFrame& animFrame);
 
 
 	ExternalProjectile* getExternalProjectiles()
@@ -727,7 +728,7 @@ namespace TFE_ExternalData
 					weapon.textures[index] = element->valuestring;
 					index++;
 				}
-				if (index >= WEAPON_NUM_FRAMES) { break; }
+				if (index >= WEAPON_NUM_TEXTURES) { break; }
 			}
 		}
 
@@ -742,7 +743,7 @@ namespace TFE_ExternalData
 					weapon.xPos[index] = element->valueint;
 					index++;
 				}
-				if (index >= WEAPON_NUM_FRAMES) { break; }
+				if (index >= WEAPON_NUM_TEXTURES) { break; }
 			}
 		}
 
@@ -757,7 +758,7 @@ namespace TFE_ExternalData
 					weapon.yPos[index] = element->valueint;
 					index++;
 				}
-				if (index >= WEAPON_NUM_FRAMES) { break; }
+				if (index >= WEAPON_NUM_TEXTURES) { break; }
 			}
 		}
 		
@@ -879,6 +880,71 @@ namespace TFE_ExternalData
 			return true;
 		}
 
+		if (cJSON_IsArray(data) && strcasecmp(data->string, "animFrames") == 0)
+		{
+			cJSON* element;
+			s32 index = 0;
+			cJSON_ArrayForEach(element, data)
+			{
+				if (cJSON_IsObject(element))
+				{
+					parseAnimationFrame(element, weapon.animFrames[index]);
+					index++;
+				}
+				if (index >= WEAPON_NUM_ANIMFRAMES) { break; }
+			}
+
+			weapon.numAnimFrames = index;
+			return true;
+		}
+
+		if (cJSON_IsArray(data) && strcasecmp(data->string, "animFramesSecondary") == 0)
+		{
+			cJSON* element;
+			s32 index = 0;
+			cJSON_ArrayForEach(element, data)
+			{
+				if (cJSON_IsObject(element))
+				{
+					parseAnimationFrame(element, weapon.animFramesSecondary[index]);
+					index++;
+				}
+				if (index >= WEAPON_NUM_ANIMFRAMES) { break; }
+			}
+
+			weapon.numSecondaryAnimFrames = index;
+			return true;
+		}
+		
 		return false;
+	}
+
+	void parseAnimationFrame(cJSON* element, WeaponAnimFrame& animFrame)
+	{
+		cJSON* data = element->child;
+		while (data)
+		{
+			if (cJSON_IsNumber(data) && strcasecmp(data->string, "texture") == 0)
+			{
+				animFrame.texture = data->valueint;
+			}
+
+			if (cJSON_IsNumber(data) && strcasecmp(data->string, "light") == 0)
+			{
+				animFrame.light = data->valueint;
+			}
+
+			if (cJSON_IsNumber(data) && strcasecmp(data->string, "durationNormal") == 0)
+			{
+				animFrame.durationNormal = data->valueint;
+			}
+
+			if (cJSON_IsNumber(data) && strcasecmp(data->string, "durationSupercharge") == 0)
+			{
+				animFrame.durationSupercharge = data->valueint;
+			}
+
+			data = data->next;
+		}
 	}
 }

@@ -17,16 +17,16 @@ namespace TFE_DarkForces
 {
 	enum
 	{
-		WEAPON_NUM_FRAMES = 16,		// Originally 8 in vanilla DF
+		WEAPON_NUM_TEXTURES = 16,		// Originally 8 in vanilla DF
 	};
 
 	struct PlayerWeapon
 	{
 		s32 frameCount;
-		TextureData* frames[WEAPON_NUM_FRAMES];
+		TextureData* frames[WEAPON_NUM_TEXTURES];
 		s32 frame;
-		s32 xPos[WEAPON_NUM_FRAMES];
-		s32 yPos[WEAPON_NUM_FRAMES];
+		s32 xPos[WEAPON_NUM_TEXTURES];
+		s32 yPos[WEAPON_NUM_TEXTURES];
 		u32 flags;
 		s32 rollOffset;
 		s32 pchOffset;

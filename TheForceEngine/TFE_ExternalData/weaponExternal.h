@@ -9,7 +9,8 @@ namespace TFE_ExternalData
 {
 	enum
 	{
-		WEAPON_NUM_FRAMES = 16,
+		WEAPON_NUM_TEXTURES = 16,
+		WEAPON_NUM_ANIMFRAMES = 16,
 	};
 
 	struct ExternalProjectile
@@ -59,19 +60,34 @@ namespace TFE_ExternalData
 		s32 soundPriority;
 	};
 
+	// Maps to TFE_DarkForces::WeaponAnimFrame
+	struct WeaponAnimFrame
+	{
+		s32 texture = 0;
+		s32 light = 0;
+		u32 durationSupercharge = 0;
+		u32 durationNormal = 0;
+	};
+	
 	struct ExternalWeapon
 	{
 		const char* name = nullptr;
 		s32 frameCount = 0;
-		const char* textures[WEAPON_NUM_FRAMES] = {};
-		s32 xPos[WEAPON_NUM_FRAMES] = { 0 };
-		s32 yPos[WEAPON_NUM_FRAMES] = { 0 };
+		const char* textures[WEAPON_NUM_TEXTURES] = {};
+		s32 xPos[WEAPON_NUM_TEXTURES] = { 0 };
+		s32 yPos[WEAPON_NUM_TEXTURES] = { 0 };
 		s32* ammo = nullptr;
 		s32* secondaryAmmo = nullptr;
 		s32 wakeupRange = 0;
 		s32 variation = 0;
+		
 		s32 primaryFireConsumption = 1;
 		s32 secondaryFireConsumption = 1;
+
+		s32 numAnimFrames = 0;
+		WeaponAnimFrame animFrames[WEAPON_NUM_ANIMFRAMES];
+		s32 numSecondaryAnimFrames = 0;
+		WeaponAnimFrame animFramesSecondary[WEAPON_NUM_ANIMFRAMES];
 	};
 
 	struct ExternalGasmask

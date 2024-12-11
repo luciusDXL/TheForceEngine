@@ -13,7 +13,33 @@
                 "xPos": [172, 55, 59, 56],
                 "yPos": [141, 167, 114, 141],
                 "wakeupRange": 0,
-                "variation": 0
+                "variation": 0,
+                "animFrames": [
+                    {
+                        "texture": 1,
+                        "light": 0,
+                        "durationSupercharge": 5,
+                        "durationNormal": 10
+                    },
+                    {
+                        "texture": 2,
+                        "light": 0,
+                        "durationSupercharge": 10,
+                        "durationNormal": 21
+                    },
+                    {
+                        "texture": 3,
+                        "light": 0,
+                        "durationSupercharge": 10,
+                        "durationNormal": 21
+                    },
+                    {
+                        "texture": 0,
+                        "light": 0,
+                        "durationSupercharge": 10,
+                        "durationNormal": 21
+                    }
+                ]
             }
         },
         {
@@ -26,7 +52,27 @@
                 "ammo": "ammoEnergy",
                 "wakeupRange": 45,
                 "variation": 22,
-                "primaryFireConsumption": 1
+                "primaryFireConsumption": 1,
+                "animFrames": [
+                    {
+                        "texture": 1,
+                        "light": 40,
+                        "durationSupercharge": 7,
+                        "durationNormal": 14
+                    },
+                    {
+                        "texture": 2,
+                        "light": 0,
+                        "durationSupercharge": 7,
+                        "durationNormal": 14
+                    },
+                    {
+                        "texture": 0,
+                        "light": 0,
+                        "durationSupercharge": 21,
+                        "durationNormal": 43
+                    }
+                ]
             }
         },
         {
@@ -39,7 +85,21 @@
                 "ammo": "ammoEnergy",
                 "wakeupRange": 50,
                 "variation": 86,
-                "primaryFireConsumption": 2
+                "primaryFireConsumption": 2,
+                "animFrames": [
+                    {
+                        "texture": 1,
+                        "light": 40,
+                        "durationSupercharge": 3,
+                        "durationNormal": 7
+                    },
+                    {
+                        "texture": 0,
+                        "light": 0,
+                        "durationSupercharge": 7,
+                        "durationNormal": 14
+                    }
+                ]
             }
         },
         {
@@ -52,7 +112,39 @@
                 "ammo": "ammoDetonator",
                 "wakeupRange": 0,
                 "variation": 2949165,
-                "primaryFireConsumption": 1
+                "primaryFireConsumption": 1,
+                "animFrames": [
+                    {
+                        "texture": 1,
+                        "light": 0,
+                        "durationSupercharge": 11,
+                        "durationNormal": 11
+                    },
+                    {
+                        "texture": 2,
+                        "light": 0,
+                        "durationSupercharge": 58,
+                        "durationNormal": 58
+                    },
+                    {
+                        "texture": 1,
+                        "light": 0,
+                        "durationSupercharge": 29,
+                        "durationNormal": 29
+                    },
+                    {
+                        "texture": 0,
+                        "light": 0,
+                        "durationSupercharge": 29,
+                        "durationNormal": 29
+                    },
+                    {
+                        "texture": 3,
+                        "light": 0,
+                        "durationSupercharge": 29,
+                        "durationNormal": 29
+                    }
+                ]
             }
         },
         {
@@ -66,7 +158,41 @@
                 "wakeupRange": 60,
                 "variation": 2949165,
                 "primaryFireConsumption": 1,
-                "secondaryFireConsumption": 3
+                "secondaryFireConsumption": 3,
+                "animFrames": [
+                    {
+                        "texture": 1,
+                        "light": 0,
+                        "durationSupercharge": 2,
+                        "durationNormal": 5
+                    },
+                    {
+                        "texture": 2,
+                        "light": 33,
+                        "durationSupercharge": 5,
+                        "durationNormal": 11
+                    }
+                ],
+                "animFramesSecondary": [
+                    {
+                        "texture": 1,
+                        "light": 0,
+                        "durationSupercharge": 4,
+                        "durationNormal": 8
+                    },
+                    {
+                        "texture": 2,
+                        "light": 33,
+                        "durationSupercharge": 5,
+                        "durationNormal": 11
+                    },
+                    {
+                        "texture": 0,
+                        "light": 0,
+                        "durationSupercharge": 14,
+                        "durationNormal": 29
+                    }
+                ]
             }
         },
         {
@@ -80,7 +206,53 @@
                 "wakeupRange": 55,
                 "variation": 45,
                 "primaryFireConsumption": 1,
-                "secondaryFireConsumption": 8
+                "secondaryFireConsumption": 8,
+                "animFrames": [
+                    {
+                        "texture": 0,
+                        "light": 0,
+                        "durationSupercharge": 7,
+                        "durationNormal": 14
+                    },
+                    {
+                        "texture": 1,
+                        "light": 34,
+                        "durationSupercharge": 10,
+                        "durationNormal": 20
+                    },
+                    {
+                        "texture": 2,
+                        "light": 34,
+                        "durationSupercharge": 10,
+                        "durationNormal": 20
+                    },
+                    {
+                        "texture": 3,
+                        "light": 34,
+                        "durationSupercharge": 10,
+                        "durationNormal": 20
+                    },
+                    {
+                        "texture": 4,
+                        "light": 34,
+                        "durationSupercharge": 10,
+                        "durationNormal": 20
+                    }
+                ],
+                "animFramesSecondary": [
+                    {
+                        "texture": 5,
+                        "light": 34,
+                        "durationSupercharge": 14,
+                        "durationNormal": 29
+                    },
+                    {
+                        "texture": 0,
+                        "light": 0,
+                        "durationSupercharge": 19,
+                        "durationNormal": 39
+                    }
+                ]
             }
         },
         {
@@ -93,7 +265,33 @@
                 "ammo": "ammoShell",
                 "wakeupRange": 60,
                 "variation": 45,
-                "primaryFireConsumption": 1
+                "primaryFireConsumption": 1,
+                "animFrames": [
+                    {
+                        "texture": 1,
+                        "light": 36,
+                        "durationSupercharge": 29,
+                        "durationNormal": 58
+                    },
+                    {
+                        "texture": 2,
+                        "light": 36,
+                        "durationSupercharge": 7,
+                        "durationNormal": 14
+                    },
+                    {
+                        "texture": 3,
+                        "light": 36,
+                        "durationSupercharge": 7,
+                        "durationNormal": 14
+                    },
+                    {
+                        "texture": 0,
+                        "light": 0,
+                        "durationSupercharge": 7,
+                        "durationNormal": 14
+                    }
+                ]
             }
         },
         {
@@ -119,7 +317,27 @@
                 "ammo": "ammoPower",
                 "wakeupRange": 70,
                 "variation": 0,
-                "primaryFireConsumption": 4
+                "primaryFireConsumption": 4,
+                "animFrames":[
+                    {
+                        "texture": 1,
+                        "light": 36,
+                        "durationSupercharge": 21,
+                        "durationNormal": 43
+                    },
+                    {
+                        "texture": 2,
+                        "light": 0,
+                        "durationSupercharge": 7,
+                        "durationNormal": 14
+                    },
+                    {
+                        "texture": 0,
+                        "light": 0,
+                        "durationSupercharge": 29,
+                        "durationNormal": 58
+                    }
+                ]
             }
         },
         {
@@ -134,7 +352,35 @@
                 "wakeupRange": 55,
                 "variation": 2949165,
                 "primaryFireConsumption": 1,
-                "secondaryFireConsumption": 1
+                "secondaryFireConsumption": 1,
+                "animFrames": [
+                    {
+                        "texture": 1,
+                        "light": 34,
+                        "durationSupercharge": 7,
+                        "durationNormal": 14
+                    }
+                ],
+                "animFramesSecondary":[
+                    {
+                        "texture": 2,
+                        "light": 0,
+                        "durationSupercharge": 14,
+                        "durationNormal": 29
+                    },
+                    {
+                        "texture": 3,
+                        "light": 33,
+                        "durationSupercharge": 43,
+                        "durationNormal": 87
+                    },
+                    {
+                        "texture": 0,
+                        "light": 0,
+                        "durationSupercharge": 29,
+                        "durationNormal": 58
+                    }
+                ]
             }
         }
     ]

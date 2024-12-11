@@ -176,7 +176,7 @@ namespace TFE_DarkForces
 	// TFE: Set weapon data from external data
 	void setWeaponData(WeaponID id, TFE_ExternalData::ExternalWeapon* extWeapons)
 	{
-		s_playerWeaponList[id].frameCount = min(extWeapons[id].frameCount, WEAPON_NUM_FRAMES);
+		s_playerWeaponList[id].frameCount = min(extWeapons[id].frameCount, WEAPON_NUM_TEXTURES);
 		s_playerWeaponList[id].frame = 0;
 		
 		for (s32 f = 0; f < WEAPON_NUM_TEXTURES; f++)
@@ -202,6 +202,8 @@ namespace TFE_DarkForces
 		s_playerWeaponList[id].variation = extWeapons[id].variation;
 		s_playerWeaponList[id].primaryFireConsumption = extWeapons[id].primaryFireConsumption;
 		s_playerWeaponList[id].secondaryFireConsumption = extWeapons[id].secondaryFireConsumption;
+
+		setupAnimationFrames(id, extWeapons[id].numAnimFrames, extWeapons[id].animFrames, extWeapons[id].numSecondaryAnimFrames, extWeapons[id].animFramesSecondary);
 	}
 	
 	void weapon_startup()
