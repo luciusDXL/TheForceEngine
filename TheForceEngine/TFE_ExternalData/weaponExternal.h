@@ -7,6 +7,11 @@
 
 namespace TFE_ExternalData
 {
+	enum
+	{
+		WEAPON_NUM_FRAMES = 16,
+	};
+
 	struct ExternalProjectile
 	{
 		const char* type = nullptr;
@@ -58,9 +63,9 @@ namespace TFE_ExternalData
 	{
 		const char* name = nullptr;
 		s32 frameCount = 0;
-		const char* textures[8] = {};
-		s32 xPos[8] = { 0 };
-		s32 yPos[8] = { 0 };
+		const char* textures[WEAPON_NUM_FRAMES] = {};
+		s32 xPos[WEAPON_NUM_FRAMES] = { 0 };
+		s32 yPos[WEAPON_NUM_FRAMES] = { 0 };
 		s32* ammo = nullptr;
 		s32* secondaryAmmo = nullptr;
 		s32 wakeupRange = 0;

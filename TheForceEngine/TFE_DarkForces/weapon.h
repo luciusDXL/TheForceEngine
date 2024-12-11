@@ -15,13 +15,18 @@ namespace TFE_Jedi
 
 namespace TFE_DarkForces
 {
+	enum
+	{
+		WEAPON_NUM_FRAMES = 16,		// Originally 8 in vanilla DF
+	};
+
 	struct PlayerWeapon
 	{
 		s32 frameCount;
-		TextureData* frames[8];
+		TextureData* frames[WEAPON_NUM_FRAMES];
 		s32 frame;
-		s32 xPos[8];
-		s32 yPos[8];
+		s32 xPos[WEAPON_NUM_FRAMES];
+		s32 yPos[WEAPON_NUM_FRAMES];
 		u32 flags;
 		s32 rollOffset;
 		s32 pchOffset;

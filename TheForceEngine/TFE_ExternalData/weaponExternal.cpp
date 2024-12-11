@@ -727,7 +727,7 @@ namespace TFE_ExternalData
 					weapon.textures[index] = element->valuestring;
 					index++;
 				}
-				if (index >= 8) { break; }
+				if (index >= WEAPON_NUM_FRAMES) { break; }
 			}
 		}
 
@@ -742,7 +742,7 @@ namespace TFE_ExternalData
 					weapon.xPos[index] = element->valueint;
 					index++;
 				}
-				if (index >= 8) { break; }
+				if (index >= WEAPON_NUM_FRAMES) { break; }
 			}
 		}
 
@@ -757,7 +757,7 @@ namespace TFE_ExternalData
 					weapon.yPos[index] = element->valueint;
 					index++;
 				}
-				if (index >= 8) { break; }
+				if (index >= WEAPON_NUM_FRAMES) { break; }
 			}
 		}
 		

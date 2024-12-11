@@ -176,10 +176,10 @@ namespace TFE_DarkForces
 	// TFE: Set weapon data from external data
 	void setWeaponData(WeaponID id, TFE_ExternalData::ExternalWeapon* extWeapons)
 	{
-		s_playerWeaponList[id].frameCount = min(extWeapons[id].frameCount, 8);
+		s_playerWeaponList[id].frameCount = min(extWeapons[id].frameCount, WEAPON_NUM_FRAMES);
 		s_playerWeaponList[id].frame = 0;
 		
-		for (s32 f = 0; f < s_playerWeaponList[id].frameCount; f++)
+		for (s32 f = 0; f < WEAPON_NUM_TEXTURES; f++)
 		{
 			const char* tex = extWeapons[id].textures[f];
 			s_playerWeaponList[id].frames[f] = tex ? loadWeaponTexture(tex) : nullptr;
