@@ -9,6 +9,7 @@
 #include <TFE_System/types.h>
 #include "forceScript.h"
 #include "float2.h"
+#include "float3.h"
 #include "scriptAPI.h"
 
 class ScriptAPIClass
