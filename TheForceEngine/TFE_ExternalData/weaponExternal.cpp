@@ -3,7 +3,6 @@
 #include <TFE_System/cJSON.h>
 #include <TFE_System/system.h>
 #include <TFE_FileSystem/filestream.h>
-#include <TFE_DarkForces/player.h>
 #include <TFE_DarkForces/projectile.h>
 #include <TFE_DarkForces/weapon.h>
 #include "weaponExternal.h"
