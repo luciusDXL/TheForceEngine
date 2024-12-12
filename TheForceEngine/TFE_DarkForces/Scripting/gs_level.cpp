@@ -5,6 +5,7 @@
 #include "scriptSector.h"
 #include <TFE_System/system.h>
 #include <TFE_ForceScript/ScriptAPI-Shared/scriptMath.h>
+#include <TFE_ForceScript/Angelscript/add_on/scriptarray/scriptarray.h>
 #include <TFE_Jedi/InfSystem/infState.h>
 #include <TFE_Jedi/InfSystem/infTypesInternal.h>
 #include <TFE_Jedi/InfSystem/infSystem.h>
@@ -20,6 +21,20 @@ using namespace TFE_Jedi;
 
 namespace TFE_DarkForces
 {
+	static u32 s_lsSearchKey = 1002; // any non-zero value really.
+
+	enum SectorProperty
+	{
+		SECTORPROP_NONE = 0,
+		SECTORPROP_FLOOR_HEIGHT = FLAG_BIT(0),
+		SECTORPROP_CEIL_HEIGHT = FLAG_BIT(1),
+		SECTORPROP_SECOND_HEIGHT = FLAG_BIT(2),
+		SECTORPROP_FLOOR_TEX = FLAG_BIT(3),
+		SECTORPROP_CEIL_TEX = FLAG_BIT(4),
+		SECTORPROP_AMBIENT = FLAG_BIT(5),
+		SECTORPOP_END = FLAG_BIT(6),
+	};
+
 	ScriptSector GS_Level::getSectorById(s32 id)
 	{
 		if (id < 0 || id >= (s32)s_levelState.sectorCount)
@@ -40,6 +55,96 @@ namespace TFE_DarkForces
 		}
 		ScriptElev elev(id);
 		return elev;
+	}
+
+	bool doSectorPropMatch(RSector* s0, RSector* s1, u32 prop)
+	{
+		switch (prop)
+		{
+			case SECTORPROP_FLOOR_HEIGHT:
+			{
+				return s0->floorHeight == s1->floorHeight;
+			} break;
+			case SECTORPROP_CEIL_HEIGHT:
+			{
+				return s0->ceilingHeight == s1->ceilingHeight;
+			} break;
+			case SECTORPROP_SECOND_HEIGHT:
+			{
+				return s0->secHeight == s1->secHeight;
+			} break;
+			case SECTORPROP_FLOOR_TEX:
+			{
+				return s0->floorTex == s1->floorTex;
+			} break;
+			case SECTORPROP_CEIL_TEX:
+			{
+				return s0->ceilTex == s1->ceilTex;
+			} break;
+			case SECTORPROP_AMBIENT:
+			{
+				return s0->ambient == s1->ambient;
+			} break;
+			default:
+			{
+				// Invalid property.
+				assert(0);
+			}
+		}
+		return false;
+	}
+
+	void GS_Level::findConnectedSectors(ScriptSector initSector, u32 matchProp, CScriptArray& results)
+	{
+		results.Resize(0);
+		// Return an empty array if the init sector is invalid.
+		if (!isScriptSectorValid(&initSector)) { return; }
+
+		// Push the initial sector onto the array as the first element.
+		results.InsertLast(&initSector);
+
+		s_lsSearchKey++;
+		std::vector<RSector*> stack;
+		RSector* baseSector = &s_levelState.sectors[initSector.m_id];
+		baseSector->searchKey = s_lsSearchKey;
+
+		stack.push_back(baseSector);
+		while (!stack.empty())
+		{
+			RSector* sector = stack.back();
+			stack.pop_back();
+
+			const s32 wallCount = sector->wallCount;
+			RWall* wall = sector->walls;
+			for (s32 w = 0; w < wallCount; w++, wall++)
+			{
+				if (!wall->nextSector) { continue; }
+							   
+				RSector* next = wall->nextSector;
+				// Don't search sectors already touched.
+				if (next->searchKey == s_lsSearchKey) { continue; }
+				next->searchKey = s_lsSearchKey;
+
+				bool propMatch = true;
+				u32 prop = SECTORPROP_FLOOR_HEIGHT;
+				while (prop < SECTORPOP_END && propMatch)
+				{
+					if (prop & matchProp)
+					{
+						propMatch = propMatch && doSectorPropMatch(next, baseSector, prop);
+					}
+					prop <<= 1;
+				}
+
+				if (propMatch)
+				{
+					stack.push_back(next);
+
+					ScriptSector nextSector(next->id);
+					results.InsertLast(&nextSector);
+				}
+			}
+		}
 	}
 
 	bool GS_Level::scriptRegister(ScriptAPI api)
@@ -99,16 +204,26 @@ namespace TFE_DarkForces
 			ScriptEnum("WALL_FLAGS3_SOLID",            WF3_SOLID_WALL);
 			ScriptEnum("WALL_FLAGS3_PLAYER_WALK_ONLY", WF3_PLAYER_WALK_ONLY);
 			ScriptEnum("WALL_FLAGS3_CANNOT_FIRE_THRU", WF3_CANNOT_FIRE_THROUGH);
-						
+
+			ScriptEnumRegister("SectorProp");
+			ScriptEnumStr(SECTORPROP_FLOOR_HEIGHT);
+			ScriptEnumStr(SECTORPROP_CEIL_HEIGHT);
+			ScriptEnumStr(SECTORPROP_SECOND_HEIGHT);
+			ScriptEnumStr(SECTORPROP_FLOOR_TEX);
+			ScriptEnumStr(SECTORPROP_CEIL_TEX);
+			ScriptEnumStr(SECTORPROP_AMBIENT);
+
 			// Functions
 			ScriptObjMethod("Sector getSector(int)", getSectorById);
 			ScriptObjMethod("Elevator getElevator(int)", getElevator);
+			ScriptObjMethod("void findConnectedSectors(Sector initSector, uint, array<Sector>&)", findConnectedSectors);
 			// -- Getters --
 			ScriptLambdaPropertyGet("int get_minLayer()", s32, { return s_levelState.minLayer; });
 			ScriptLambdaPropertyGet("int get_maxLayer()", s32, { return s_levelState.maxLayer; });
 			ScriptLambdaPropertyGet("int get_sectorCount()", s32, { return (s32)s_levelState.sectorCount; });
 			ScriptLambdaPropertyGet("int get_secretCount()", s32, { return s_levelState.secretCount; });
 			ScriptLambdaPropertyGet("int get_textureCount()", s32, { return s_levelState.textureCount; });
+			ScriptLambdaPropertyGet("int get_elevatorCount()", s32, { return allocator_getCount(s_infSerState.infElevators); });
 			ScriptLambdaPropertyGet("float2 get_parallax()", TFE_ForceScript::float2, { return TFE_ForceScript::float2(fixed16ToFloat(s_levelState.parallax0), fixed16ToFloat(s_levelState.parallax1)); });
 
 			// Gameplay sector pointers.

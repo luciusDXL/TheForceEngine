@@ -18,7 +18,8 @@ namespace TFE_Jedi
 	enum SaveVersion : u32
 	{
 		SaveVersionInit = 1,
-		SaveVersionCur = SaveVersionInit,
+		SaveVersionLevelScriptV1,
+		SaveVersionCur = SaveVersionLevelScriptV1,
 	};
 
 	enum SerializationMode
@@ -51,11 +52,41 @@ namespace TFE_Jedi
 			if (s_sVersion >= v) { stream->readBuffer(&x, sizeof(x)); } \
 			else { x = def; } \
 		}
+	#define SERIALIZE_STRING(v, x) \
+		if (s_sMode == SMODE_WRITE && s_sVersion >= v) { stream->write(&x); } \
+		else if (s_sMode == SMODE_READ) \
+		{ \
+			if (s_sVersion >= v) { stream->read(&x); } \
+		}
 	#define SERIALIZE_BUF(v, x, s) if (s_sMode == SMODE_WRITE && s_sVersion >= v) { stream->writeBuffer(x, s); } \
 		else if (s_sMode == SMODE_READ) \
 		{ \
 			if (s_sVersion >= v) { stream->readBuffer(x, s); } \
 			else { memset(x, 0, s); } \
+		}
+
+	#define SERIALIZE_CSTRING_WRITE(v, x) \
+		{ \
+			u32 len = x ? (u32)strlen(x) : 0; \
+			SERIALIZE(v, len, 0); \
+			SERIALIZE_BUF(v, (void*)x, len); \
+		}
+
+	#define SERIALIZE_CSTRING(v, x) \
+		{ \
+			u32 len = s_sMode == SMODE_WRITE ? (u32)strlen(x) : 0; \
+			SERIALIZE(v, len, 0); \
+			SERIALIZE_BUF(v, (void*)x, len); \
+			if (s_sMode == SMODE_READ) { x[len] = 0; } \
+		}
+
+	#define SERIALIZE_CSTRING_GAME_ALLOC(v, x) \
+		{ \
+			u32 len = s_sMode == SMODE_WRITE ? (u32)strlen(x) : 0; \
+			SERIALIZE(v, len, 0); \
+			if (s_sMode == SMODE_READ) { x = (char*)game_alloc(len + 1); } \
+			SERIALIZE_BUF(v, x, len); \
+			if (s_sMode == SMODE_READ) { x[len] = 0; } \
 		}
 
 	// Discard values that were previously added. This might mean skipping over data in the stream and ignoring it.
@@ -67,6 +98,7 @@ namespace TFE_Jedi
 	inline void serialization_setVersion(u32 version) { s_sVersion = version; }
 	inline void serialization_setMode(SerializationMode mode) { s_sMode = mode; }
 	inline SerializationMode serialization_getMode() { return s_sMode; }
+	inline u32 serialization_getVersion() { return s_sVersion; }
 		
 	void serialization_serializeDfSound(Stream* stream, u32 version, SoundSourceId* id);
 	void serialization_serializeSectorPtr(Stream* stream, u32 version, RSector*& sector);

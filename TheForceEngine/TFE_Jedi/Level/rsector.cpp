@@ -52,6 +52,7 @@ namespace TFE_Jedi
 		sector->verticesWS = nullptr;
 		sector->verticesVS = nullptr;
 		sector->self = sector;
+		sector->searchKey = 0;
 	}
 
 	void sector_setupWallDrawFlags(RSector* sector)

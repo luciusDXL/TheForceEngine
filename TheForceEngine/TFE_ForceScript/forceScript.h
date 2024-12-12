@@ -5,6 +5,7 @@
 //////////////////////////////////////////////////////////////////////
 #include <TFE_System/types.h>
 #include <TFE_System/system.h>
+#include <TFE_FileSystem/stream.h>
 #include <string>
 
 namespace TFE_ForceScript
@@ -87,6 +88,8 @@ namespace TFE_ForceScript
 	s32 execFunc(FunctionHandle funcHandle, s32 argCount = 0, const ScriptArg* arg = nullptr);
 	// Resume a suspended script function given by id.
 	void resume(s32 id);
+
+	void serialize(Stream* stream);
 
 	///////////////////////////////////////////////////
 	// Helpers for handle variable number of arguments

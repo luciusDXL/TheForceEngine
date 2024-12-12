@@ -1,6 +1,7 @@
 #include "gameScripts.h"
 #include "gs_system.h"
 #include "gs_level.h"
+#include "gs_game.h"
 #include <TFE_System/math.h>
 #include <TFE_System/system.h>
 #include <TFE_Jedi/Math/core_math.h>
@@ -30,6 +31,7 @@ namespace TFE_DarkForces
 
 	GS_System s_gsSystem;
 	GS_Level s_gsLevel;
+	GS_Game s_gsGame;
 
 	// Print any script messages, warnings or errors to the editor output.
 	void scriptCallback(LogWriteType type, const char* section, s32 row, s32 col, const char* msg)
@@ -45,10 +47,11 @@ namespace TFE_DarkForces
 		
 		s_gsSystem.scriptRegister(api);
 		s_gsLevel.scriptRegister(api);
+		s_gsGame.scriptRegister(api);
 	}
 }
 #else
-namespace LevelEditor
+namespace TFE_DarkForces
 {
 	void registerScriptFunctions(ScriptAPI api) {}
 }

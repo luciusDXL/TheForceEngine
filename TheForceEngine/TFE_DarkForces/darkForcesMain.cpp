@@ -1450,18 +1450,7 @@ namespace TFE_DarkForces
 			SERIALIZE(SaveVersionInit, s_runGameState.argCount, 0);
 			for (s32 i = 0; i < s_runGameState.argCount; i++)
 			{
-				u32 length = 0;
-				if (serialization_getMode() == SMODE_WRITE)
-				{
-					length = (u32)strlen(s_runGameState.args[i]);
-				}
-				SERIALIZE(SaveVersionInit, length, 0);
-				if (serialization_getMode() == SMODE_READ)
-				{
-					s_runGameState.args[i] = (char*)game_alloc(length + 1);
-				}
-				SERIALIZE_BUF(SaveVersionInit, s_runGameState.args[i], length);
-				s_runGameState.args[i][length] = 0;
+				SERIALIZE_CSTRING_GAME_ALLOC(SaveVersionInit, s_runGameState.args[i]);
 			}
 
 			SERIALIZE(SaveVersionInit, s_runGameState.cutscenesEnabled, JTRUE);
@@ -1480,7 +1469,7 @@ namespace TFE_DarkForces
 
 	void serializeVersion(Stream* stream)
 	{
-		SERIALIZE_VERSION(SaveVersionInit);
+		SERIALIZE_VERSION(SaveVersionCur);
 	}
 
 	bool DarkForces::serializeGameState(Stream* stream, const char* filename, bool writeState)
@@ -1509,6 +1498,8 @@ namespace TFE_DarkForces
 		}
 
 		serializeVersion(stream);
+		const u32 curVersion = serialization_getVersion();
+
 		serializeLoopState(stream, this);
 		agent_serialize(stream);
 		time_serialize(stream);
@@ -1526,6 +1517,10 @@ namespace TFE_DarkForces
 		inf_serialize(stream);
 		pickupLogic_serializeTasks(stream);
 		mission_serialize(stream);
+
+		// TFE - Scripting.
+		serialization_setVersion(curVersion);
+		TFE_ForceScript::serialize(stream);
 
 		if (!writeState)
 		{

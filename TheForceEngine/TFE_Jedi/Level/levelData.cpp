@@ -362,6 +362,7 @@ namespace TFE_Jedi
 			sector->objectCount = 0;
 			sector->objectCapacity = 0;
 			sector->objectList = nullptr;
+			sector->searchKey = 0;
 		}
 
 		SERIALIZE(LevelState_InitVersion, sector->collisionFrame, 0);

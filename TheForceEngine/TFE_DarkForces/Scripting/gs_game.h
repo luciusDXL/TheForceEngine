@@ -9,21 +9,17 @@
 #include <TFE_System/system.h>
 #ifdef ENABLE_FORCE_SCRIPT
 #include <TFE_System/types.h>
-#include <TFE_Jedi/Level/rwall.h>
+#include <TFE_ForceScript/scriptInterface.h>
 
 namespace TFE_DarkForces
 {
-	class ScriptSector
+	class GS_Game : public ScriptAPIClass
 	{
 	public:
-		ScriptSector() : m_id(-1) {};
-		ScriptSector(s32 id) : m_id(id) {};
-		void registerType();
+		// System
+		bool scriptRegister(ScriptAPI api) override;
 
-	public:
-		s32 m_id;
+		f32 getGameTime();
 	};
-
-	extern bool isScriptSectorValid(ScriptSector* sector);
 }
 #endif

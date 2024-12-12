@@ -22,10 +22,14 @@ namespace TFE_DarkForces
 	void setFloorHeight(f32 height, ScriptSector* sector)
 	{
 		if (sector->m_id < 0) { return; }
-		const fixed16_16 offset = floatToFixed16(height) - s_levelState.sectors[sector->m_id].floorHeight;
-		sector_adjustTextureWallOffsets_Floor(&s_levelState.sectors[sector->m_id], offset);
-		sector_adjustTextureMirrorOffsets_Floor(&s_levelState.sectors[sector->m_id], offset);
-		sector_adjustHeights(&s_levelState.sectors[sector->m_id], offset, 0, 0);
+		RSector* lvlSector = &s_levelState.sectors[sector->m_id];
+		const fixed16_16 offset = floatToFixed16(height) - lvlSector->floorHeight;
+		if (offset != 0)
+		{
+			sector_adjustTextureWallOffsets_Floor(lvlSector, offset);
+			sector_adjustTextureMirrorOffsets_Floor(lvlSector, offset);
+			sector_adjustHeights(lvlSector, offset, 0, 0);
+		}
 	}
 	void setCeilHeight(f32 height, ScriptSector* sector)
 	{

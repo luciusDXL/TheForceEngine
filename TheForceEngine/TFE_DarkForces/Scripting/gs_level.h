@@ -12,11 +12,13 @@
 #include <TFE_ForceScript/scriptInterface.h>
 #include <string>
 
+class CScriptArray;
+
 namespace TFE_DarkForces
 {
 	class ScriptSector;
 	class ScriptElev;
-
+	
 	class GS_Level : public ScriptAPIClass
 	{
 	public:
@@ -25,6 +27,7 @@ namespace TFE_DarkForces
 
 		ScriptSector getSectorById(s32 id);
 		ScriptElev   getElevator(s32 id);
+		void findConnectedSectors(ScriptSector initSector, u32 matchProp, CScriptArray& results);
 	};
 }
 #endif

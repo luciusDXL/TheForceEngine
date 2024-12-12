@@ -132,6 +132,7 @@ struct RSector
 
 	// Added for TFE, to support floating point and GPU sub-renderers.
 	u32 dirtyFlags;
+	u32 searchKey;
 };
 
 namespace TFE_Jedi
