@@ -480,7 +480,7 @@ namespace TFE_DarkForces
 	TFE_ExternalData::CustomActorLogic* tryFindCustomActorLogic(const char* logicName)
 	{
 		TFE_ExternalData::ExternalLogics* externalLogics = TFE_ExternalData::getExternalLogics();
-		u32 actorCount = externalLogics->actorLogics.size();
+		u32 actorCount = (u32)externalLogics->actorLogics.size();
 
 		for (u32 a = 0; a < actorCount; a++)
 		{

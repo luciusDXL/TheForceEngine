@@ -20,6 +20,7 @@ namespace TFE_ForceScript
 		FSTYPE_STRING = 0,
 		FSTYPE_ARRAY,
 		FSTYPE_FLOAT2,
+		FSTYPE_FLOAT3,
 		FSTYPE_COUNT
 	};
 
@@ -32,6 +33,7 @@ namespace TFE_ForceScript
 		ARG_OBJECT,
 		ARG_STRING,
 		ARG_FLOAT2,
+		ARG_FLOAT3,
 	};
 
 	struct ScriptArg
@@ -45,6 +47,7 @@ namespace TFE_ForceScript
 			bool bValue;
 			void* objPtr;
 			Vec2f float2Value;
+			Vec3f float3Value;
 		};
 		std::string stdStr;
 	};
@@ -102,6 +105,7 @@ namespace TFE_ForceScript
 	inline ScriptArg scriptArg(const std::string& value) { ScriptArg arg; arg.type = ARG_STRING; arg.stdStr = value; return arg; }
 	inline ScriptArg scriptArg(const char* value) { ScriptArg arg; arg.type = ARG_STRING; arg.stdStr = value; return arg; }
 	inline ScriptArg scriptArg(Vec2f value) { ScriptArg arg; arg.type = ARG_FLOAT2; arg.float2Value = value; return arg; }
+	inline ScriptArg scriptArg(Vec3f value) { ScriptArg arg; arg.type = ARG_FLOAT3; arg.float3Value = value; return arg; }
 	inline ScriptArg scriptArg(void* value) { ScriptArg arg; arg.type = ARG_OBJECT; arg.objPtr = value; return arg; }
 
 	template<typename T>

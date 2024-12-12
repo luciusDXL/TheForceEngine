@@ -1453,6 +1453,9 @@
     <ClInclude Include="TFE_DarkForces\Scripting\gs_game.h">
       <Filter>Source\TFE_DarkForces\Scripting</Filter>
     </ClInclude>
+    <ClInclude Include="TFE_ForceScript\float3.h">
+      <Filter>Source\TFE_ForceScript</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -2537,6 +2540,9 @@
     </ClCompile>
     <ClCompile Include="TFE_DarkForces\Scripting\gs_game.cpp">
       <Filter>Source\TFE_DarkForces\Scripting</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_ForceScript\float3.cpp">
+      <Filter>Source\TFE_ForceScript</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

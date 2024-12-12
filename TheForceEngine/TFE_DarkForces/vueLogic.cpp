@@ -240,8 +240,8 @@ namespace TFE_DarkForces
 					// TFE: calculate pitch (this was not done in vanilla)
 					f32 dx = x2 - x1;
 					f32 dz = z2 - z1;
-					double xzVec = sqrt(dx * dx + dz * dz);
-					frame->pitch = vec2ToAngle(floatToFixed16(y1 - y2), floatToFixed16(xzVec));
+					f64 xzVec = sqrt(dx * dx + dz * dz);
+					frame->pitch = vec2ToAngle(floatToFixed16(y1 - y2), floatToFixed16((f32)xzVec));
 					frame->roll  = angle14_32(r * 16383.0f / 360.0f);
 				}
 			}

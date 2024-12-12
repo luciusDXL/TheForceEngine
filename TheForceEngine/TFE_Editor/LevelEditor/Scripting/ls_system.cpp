@@ -4,6 +4,7 @@
 #include <TFE_Editor/LevelEditor/infoPanel.h>
 #include <TFE_ForceScript/scriptInterface.h>
 #include <TFE_ForceScript/float2.h>
+#include <TFE_ForceScript/float3.h>
 #include <TFE_ForceScript/Angelscript/add_on/scriptarray/scriptarray.h>
 
 #ifdef ENABLE_FORCE_SCRIPT
@@ -37,6 +38,10 @@ namespace LevelEditor
 				else if (typeId == TFE_ForceScript::getObjectTypeId(TFE_ForceScript::FSTYPE_FLOAT2))
 				{
 					value = toString(*(TFE_ForceScript::float2*)data);
+				}
+				else if (typeId == TFE_ForceScript::getObjectTypeId(TFE_ForceScript::FSTYPE_FLOAT3))
+				{
+					value = toStringF3(*(TFE_ForceScript::float3*)data);
 				}
 				else
 				{
@@ -157,6 +162,10 @@ namespace LevelEditor
 			else if (typeId == TFE_ForceScript::getObjectTypeId(TFE_ForceScript::FSTYPE_FLOAT2))
 			{
 				value = toString(*(TFE_ForceScript::float2*)ref);
+			}
+			else if (typeId == TFE_ForceScript::getObjectTypeId(TFE_ForceScript::FSTYPE_FLOAT3))
+			{
+				value = toStringF3(*(TFE_ForceScript::float3*)ref);
 			}
 			else
 			{
