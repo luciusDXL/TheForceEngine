@@ -439,5 +439,7 @@ namespace TFE_ForceScript
 	void registerScriptMath_float4(asIScriptEngine *engine);
 	s32 getFloat4ObjectId();
 	std::string toStringF4(const float4& v);
+
+	inline f32 dot(float4 a, float4 b) { return a.x*b.x + a.y*b.y + a.z*b.z + a.w*b.w; }
 }  // TFE_ForceScript
 #endif

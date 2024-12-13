@@ -47,6 +47,18 @@ namespace LevelEditor
 				{
 					value = toStringF4(*(TFE_ForceScript::float4*)data);
 				}
+				else if (typeId == TFE_ForceScript::getObjectTypeId(TFE_ForceScript::FSTYPE_FLOAT2x2))
+				{
+					value = toStringF2x2(*(TFE_ForceScript::float2x2*)data);
+				}
+				else if (typeId == TFE_ForceScript::getObjectTypeId(TFE_ForceScript::FSTYPE_FLOAT3x3))
+				{
+					value = toStringF3x3(*(TFE_ForceScript::float3x3*)data);
+				}
+				else if (typeId == TFE_ForceScript::getObjectTypeId(TFE_ForceScript::FSTYPE_FLOAT4x4))
+				{
+					value = toStringF4x4(*(TFE_ForceScript::float4x4*)data);
+				}
 				else
 				{
 					switch (typeId)
@@ -171,9 +183,17 @@ namespace LevelEditor
 			{
 				value = toStringF3(*(TFE_ForceScript::float3*)ref);
 			}
-			else if (typeId == TFE_ForceScript::getObjectTypeId(TFE_ForceScript::FSTYPE_FLOAT4))
+			else if (typeId == TFE_ForceScript::getObjectTypeId(TFE_ForceScript::FSTYPE_FLOAT2x2))
 			{
-				value = toStringF4(*(TFE_ForceScript::float4*)ref);
+				value = toStringF2x2(*(TFE_ForceScript::float2x2*)ref);
+			}
+			else if (typeId == TFE_ForceScript::getObjectTypeId(TFE_ForceScript::FSTYPE_FLOAT3x3))
+			{
+				value = toStringF3x3(*(TFE_ForceScript::float3x3*)ref);
+			}
+			else if (typeId == TFE_ForceScript::getObjectTypeId(TFE_ForceScript::FSTYPE_FLOAT4x4))
+			{
+				value = toStringF4x4(*(TFE_ForceScript::float4x4*)ref);
 			}
 			else
 			{

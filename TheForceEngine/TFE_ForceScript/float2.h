@@ -66,5 +66,7 @@ namespace TFE_ForceScript
 	void registerScriptMath_float2(asIScriptEngine *engine);
 	s32 getFloat2ObjectId();
 	std::string toString(const float2& v);
+
+	inline f32 dot(float2 a, float2 b) { return a.x*b.x + a.y*b.y; }
 }  // TFE_ForceScript
 #endif

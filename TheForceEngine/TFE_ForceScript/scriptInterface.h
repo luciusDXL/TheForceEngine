@@ -11,6 +11,9 @@
 #include "float2.h"
 #include "float3.h"
 #include "float4.h"
+#include "float2x2.h"
+#include "float3x3.h"
+#include "float4x4.h"
 #include "scriptAPI.h"
 
 class ScriptAPIClass

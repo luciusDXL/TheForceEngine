@@ -1459,6 +1459,15 @@
     <ClInclude Include="TFE_ForceScript\float4.h">
       <Filter>Source\TFE_ForceScript</Filter>
     </ClInclude>
+    <ClInclude Include="TFE_ForceScript\float2x2.h">
+      <Filter>Source\TFE_ForceScript</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\float3x3.h">
+      <Filter>Source\TFE_ForceScript</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\float4x4.h">
+      <Filter>Source\TFE_ForceScript</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -2548,6 +2557,15 @@
       <Filter>Source\TFE_ForceScript</Filter>
     </ClCompile>
     <ClCompile Include="TFE_ForceScript\float4.cpp">
+      <Filter>Source\TFE_ForceScript</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_ForceScript\float2x2.cpp">
+      <Filter>Source\TFE_ForceScript</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_ForceScript\float3x3.cpp">
+      <Filter>Source\TFE_ForceScript</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_ForceScript\float4x4.cpp">
       <Filter>Source\TFE_ForceScript</Filter>
     </ClCompile>
   </ItemGroup>

@@ -292,9 +292,9 @@ namespace TFE_ForceScript
 			ScriptLambdaMethod("float distance(float3, float3)", (float3 a, float3 b), f32, { return distance(a, b); });
 			ScriptLambdaMethod("float distance(float4, float4)", (float4 a, float4 b), f32, { return distance(a, b); });
 			ScriptLambdaMethod("float dot(float, float)", (f32 a, f32 b), f32, { return a*b; });
-			ScriptLambdaMethod("float dot(float2, float2)", (float2 a, float2 b), f32, { return a.x*b.x + a.y*b.y; });
-			ScriptLambdaMethod("float dot(float3, float3)", (float3 a, float3 b), f32, { return a.x*b.x + a.y*b.y + a.z*b.z; });
-			ScriptLambdaMethod("float dot(float4, float4)", (float4 a, float4 b), f32, { return a.x*b.x + a.y*b.y + a.z*b.z + a.w*b.w; });
+			ScriptLambdaMethod("float dot(float2, float2)", (float2 a, float2 b), f32, { return dot(a,b); });
+			ScriptLambdaMethod("float dot(float3, float3)", (float3 a, float3 b), f32, { return dot(a,b); });
+			ScriptLambdaMethod("float dot(float4, float4)", (float4 a, float4 b), f32, { return dot(a,b); });
 			ScriptLambdaMethod("float length(float)", (f32 a), f32, { return fabsf(a); });
 			ScriptLambdaMethod("float length(float2)", (float2 a), f32, { return sqrtf(a.x*a.x + a.y*a.y); });
 			ScriptLambdaMethod("float length(float3)", (float3 a), f32, { return sqrtf(a.x*a.x + a.y*a.y + a.z*a.z); });

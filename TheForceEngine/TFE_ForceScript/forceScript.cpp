@@ -2,6 +2,9 @@
 #include "float2.h"
 #include "float3.h"
 #include "float4.h"
+#include "float2x2.h"
+#include "float3x3.h"
+#include "float4x4.h"
 #include <TFE_System/system.h>
 #include <TFE_FrontEndUI/frontEndUi.h>
 #include <TFE_Jedi/Serialization/serialization.h>
@@ -108,9 +111,15 @@ namespace TFE_ForceScript
 		registerScriptMath_float2(s_engine);
 		registerScriptMath_float3(s_engine);
 		registerScriptMath_float4(s_engine);
+		registerScriptMath_float2x2(s_engine);
+		registerScriptMath_float3x3(s_engine);
+		registerScriptMath_float4x4(s_engine);
 		s_typeId[FSTYPE_FLOAT2] = getFloat2ObjectId();
 		s_typeId[FSTYPE_FLOAT3] = getFloat3ObjectId();
 		s_typeId[FSTYPE_FLOAT4] = getFloat4ObjectId();
+		s_typeId[FSTYPE_FLOAT2x2] = getFloat2x2ObjectId();
+		s_typeId[FSTYPE_FLOAT3x3] = getFloat3x3ObjectId();
+		s_typeId[FSTYPE_FLOAT4x4] = getFloat4x4ObjectId();
 
 		s_modules.clear();
 	}

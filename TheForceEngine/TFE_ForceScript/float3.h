@@ -109,5 +109,7 @@ namespace TFE_ForceScript
 	void registerScriptMath_float3(asIScriptEngine *engine);
 	s32 getFloat3ObjectId();
 	std::string toStringF3(const float3& v);
+
+	inline f32 dot(float3 a, float3 b) { return a.x*b.x + a.y*b.y + a.z*b.z; }
 }  // TFE_ForceScript
 #endif
