@@ -44,6 +44,10 @@ namespace TFE_DarkForces
 				{
 					value = toStringF3(*(TFE_ForceScript::float3*)data);
 				}
+				else if (typeId == TFE_ForceScript::getObjectTypeId(TFE_ForceScript::FSTYPE_FLOAT4))
+				{
+					value = toStringF4(*(TFE_ForceScript::float4*)data);
+				}
 				else
 				{
 					switch (typeId)
@@ -167,6 +171,10 @@ namespace TFE_DarkForces
 			else if (typeId == TFE_ForceScript::getObjectTypeId(TFE_ForceScript::FSTYPE_FLOAT3))
 			{
 				value = toStringF3(*(TFE_ForceScript::float3*)ref);
+			}
+			else if (typeId == TFE_ForceScript::getObjectTypeId(TFE_ForceScript::FSTYPE_FLOAT4))
+			{
+				value = toStringF4(*(TFE_ForceScript::float4*)ref);
 			}
 			else
 			{

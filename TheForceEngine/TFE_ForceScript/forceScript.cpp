@@ -1,6 +1,7 @@
 #include "forceScript.h"
 #include "float2.h"
 #include "float3.h"
+#include "float4.h"
 #include <TFE_System/system.h>
 #include <TFE_FrontEndUI/frontEndUi.h>
 #include <TFE_Jedi/Serialization/serialization.h>
@@ -106,8 +107,10 @@ namespace TFE_ForceScript
 
 		registerScriptMath_float2(s_engine);
 		registerScriptMath_float3(s_engine);
+		registerScriptMath_float4(s_engine);
 		s_typeId[FSTYPE_FLOAT2] = getFloat2ObjectId();
 		s_typeId[FSTYPE_FLOAT3] = getFloat3ObjectId();
+		s_typeId[FSTYPE_FLOAT4] = getFloat4ObjectId();
 
 		s_modules.clear();
 	}
@@ -902,6 +905,11 @@ namespace TFE_ForceScript
 				{
 					float3 f3(arg[i].float3Value.x, arg[i].float3Value.y, arg[i].float3Value.z);
 					context->SetArgObject(i, (void*)&f3);
+				} break;
+				case ARG_FLOAT4:
+				{
+					float4 f4(arg[i].float4Value.x, arg[i].float4Value.y, arg[i].float4Value.z, arg[i].float4Value.w);
+					context->SetArgObject(i, (void*)&f4);
 				} break;
 			};
 		}

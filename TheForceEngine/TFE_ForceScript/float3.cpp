@@ -64,7 +64,7 @@ namespace TFE_ForceScript
 	{
 		x -= other.x;
 		y -= other.y;
-		y -= other.z;
+		z -= other.z;
 		return *this;
 	}
 	float3& float3::operator*=(const float3& other)
@@ -258,39 +258,39 @@ namespace TFE_ForceScript
 		r = engine->RegisterObjectMethod("float3", "float2 get_zz() const property", asMETHOD(float3, get_zz), asCALL_THISCALL); assert(r >= 0);
 		// Swizzle operators - float3
 		// x
-		r = engine->RegisterObjectMethod("float3", "float3 get_xxx() const property", asMETHOD(float3, get_xx), asCALL_THISCALL); assert(r >= 0);
-		r = engine->RegisterObjectMethod("float3", "float3 get_xxy() const property", asMETHOD(float3, get_xx), asCALL_THISCALL); assert(r >= 0);
-		r = engine->RegisterObjectMethod("float3", "float3 get_xxz() const property", asMETHOD(float3, get_xx), asCALL_THISCALL); assert(r >= 0);
-		r = engine->RegisterObjectMethod("float3", "float3 get_xyx() const property", asMETHOD(float3, get_xx), asCALL_THISCALL); assert(r >= 0);
-		r = engine->RegisterObjectMethod("float3", "float3 get_xyy() const property", asMETHOD(float3, get_xx), asCALL_THISCALL); assert(r >= 0);
-		r = engine->RegisterObjectMethod("float3", "float3 get_xyz() const property", asMETHOD(float3, get_xx), asCALL_THISCALL); assert(r >= 0);
-		r = engine->RegisterObjectMethod("float3", "float3 get_xzx() const property", asMETHOD(float3, get_xx), asCALL_THISCALL); assert(r >= 0);
-		r = engine->RegisterObjectMethod("float3", "float3 get_xzy() const property", asMETHOD(float3, get_xx), asCALL_THISCALL); assert(r >= 0);
-		r = engine->RegisterObjectMethod("float3", "float3 get_xzz() const property", asMETHOD(float3, get_xx), asCALL_THISCALL); assert(r >= 0);
+		r = engine->RegisterObjectMethod("float3", "float3 get_xxx() const property", asMETHOD(float3, get_xxx), asCALL_THISCALL); assert(r >= 0);
+		r = engine->RegisterObjectMethod("float3", "float3 get_xxy() const property", asMETHOD(float3, get_xxy), asCALL_THISCALL); assert(r >= 0);
+		r = engine->RegisterObjectMethod("float3", "float3 get_xxz() const property", asMETHOD(float3, get_xxz), asCALL_THISCALL); assert(r >= 0);
+		r = engine->RegisterObjectMethod("float3", "float3 get_xyx() const property", asMETHOD(float3, get_xyx), asCALL_THISCALL); assert(r >= 0);
+		r = engine->RegisterObjectMethod("float3", "float3 get_xyy() const property", asMETHOD(float3, get_xyy), asCALL_THISCALL); assert(r >= 0);
+		r = engine->RegisterObjectMethod("float3", "float3 get_xyz() const property", asMETHOD(float3, get_xyz), asCALL_THISCALL); assert(r >= 0);
+		r = engine->RegisterObjectMethod("float3", "float3 get_xzx() const property", asMETHOD(float3, get_xzx), asCALL_THISCALL); assert(r >= 0);
+		r = engine->RegisterObjectMethod("float3", "float3 get_xzy() const property", asMETHOD(float3, get_xzy), asCALL_THISCALL); assert(r >= 0);
+		r = engine->RegisterObjectMethod("float3", "float3 get_xzz() const property", asMETHOD(float3, get_xzz), asCALL_THISCALL); assert(r >= 0);
 		r = engine->RegisterObjectMethod("float3", "void   set_xyz(const float3 &in) property", asMETHOD(float3, set_xyz), asCALL_THISCALL); assert(r >= 0);
 		r = engine->RegisterObjectMethod("float3", "void   set_xzy(const float3 &in) property", asMETHOD(float3, set_xzy), asCALL_THISCALL); assert(r >= 0);
 		// y
-		r = engine->RegisterObjectMethod("float3", "float3 get_yxx() const property", asMETHOD(float3, get_xx), asCALL_THISCALL); assert(r >= 0);
-		r = engine->RegisterObjectMethod("float3", "float3 get_yxy() const property", asMETHOD(float3, get_xx), asCALL_THISCALL); assert(r >= 0);
-		r = engine->RegisterObjectMethod("float3", "float3 get_yxz() const property", asMETHOD(float3, get_xx), asCALL_THISCALL); assert(r >= 0);
-		r = engine->RegisterObjectMethod("float3", "float3 get_yyx() const property", asMETHOD(float3, get_xx), asCALL_THISCALL); assert(r >= 0);
-		r = engine->RegisterObjectMethod("float3", "float3 get_yyy() const property", asMETHOD(float3, get_xx), asCALL_THISCALL); assert(r >= 0);
-		r = engine->RegisterObjectMethod("float3", "float3 get_yyz() const property", asMETHOD(float3, get_xx), asCALL_THISCALL); assert(r >= 0);
-		r = engine->RegisterObjectMethod("float3", "float3 get_yzx() const property", asMETHOD(float3, get_xx), asCALL_THISCALL); assert(r >= 0);
-		r = engine->RegisterObjectMethod("float3", "float3 get_yzy() const property", asMETHOD(float3, get_xx), asCALL_THISCALL); assert(r >= 0);
-		r = engine->RegisterObjectMethod("float3", "float3 get_yzz() const property", asMETHOD(float3, get_xx), asCALL_THISCALL); assert(r >= 0);
+		r = engine->RegisterObjectMethod("float3", "float3 get_yxx() const property", asMETHOD(float3, get_yxx), asCALL_THISCALL); assert(r >= 0);
+		r = engine->RegisterObjectMethod("float3", "float3 get_yxy() const property", asMETHOD(float3, get_yxy), asCALL_THISCALL); assert(r >= 0);
+		r = engine->RegisterObjectMethod("float3", "float3 get_yxz() const property", asMETHOD(float3, get_yxz), asCALL_THISCALL); assert(r >= 0);
+		r = engine->RegisterObjectMethod("float3", "float3 get_yyx() const property", asMETHOD(float3, get_yyx), asCALL_THISCALL); assert(r >= 0);
+		r = engine->RegisterObjectMethod("float3", "float3 get_yyy() const property", asMETHOD(float3, get_yyy), asCALL_THISCALL); assert(r >= 0);
+		r = engine->RegisterObjectMethod("float3", "float3 get_yyz() const property", asMETHOD(float3, get_yyz), asCALL_THISCALL); assert(r >= 0);
+		r = engine->RegisterObjectMethod("float3", "float3 get_yzx() const property", asMETHOD(float3, get_yzx), asCALL_THISCALL); assert(r >= 0);
+		r = engine->RegisterObjectMethod("float3", "float3 get_yzy() const property", asMETHOD(float3, get_yzy), asCALL_THISCALL); assert(r >= 0);
+		r = engine->RegisterObjectMethod("float3", "float3 get_yzz() const property", asMETHOD(float3, get_yzz), asCALL_THISCALL); assert(r >= 0);
 		r = engine->RegisterObjectMethod("float3", "void   set_yxz(const float3 &in) property", asMETHOD(float3, set_yxz), asCALL_THISCALL); assert(r >= 0);
 		r = engine->RegisterObjectMethod("float3", "void   set_yzx(const float3 &in) property", asMETHOD(float3, set_yzx), asCALL_THISCALL); assert(r >= 0);
 		// z
-		r = engine->RegisterObjectMethod("float3", "float3 get_zxx() const property", asMETHOD(float3, get_xx), asCALL_THISCALL); assert(r >= 0);
-		r = engine->RegisterObjectMethod("float3", "float3 get_zxy() const property", asMETHOD(float3, get_xx), asCALL_THISCALL); assert(r >= 0);
-		r = engine->RegisterObjectMethod("float3", "float3 get_zxz() const property", asMETHOD(float3, get_xx), asCALL_THISCALL); assert(r >= 0);
-		r = engine->RegisterObjectMethod("float3", "float3 get_zyx() const property", asMETHOD(float3, get_xx), asCALL_THISCALL); assert(r >= 0);
-		r = engine->RegisterObjectMethod("float3", "float3 get_zyy() const property", asMETHOD(float3, get_xx), asCALL_THISCALL); assert(r >= 0);
-		r = engine->RegisterObjectMethod("float3", "float3 get_zyz() const property", asMETHOD(float3, get_xx), asCALL_THISCALL); assert(r >= 0);
-		r = engine->RegisterObjectMethod("float3", "float3 get_zzx() const property", asMETHOD(float3, get_xx), asCALL_THISCALL); assert(r >= 0);
-		r = engine->RegisterObjectMethod("float3", "float3 get_zzy() const property", asMETHOD(float3, get_xx), asCALL_THISCALL); assert(r >= 0);
-		r = engine->RegisterObjectMethod("float3", "float3 get_zzz() const property", asMETHOD(float3, get_xx), asCALL_THISCALL); assert(r >= 0);
+		r = engine->RegisterObjectMethod("float3", "float3 get_zxx() const property", asMETHOD(float3, get_zxx), asCALL_THISCALL); assert(r >= 0);
+		r = engine->RegisterObjectMethod("float3", "float3 get_zxy() const property", asMETHOD(float3, get_zxy), asCALL_THISCALL); assert(r >= 0);
+		r = engine->RegisterObjectMethod("float3", "float3 get_zxz() const property", asMETHOD(float3, get_zxz), asCALL_THISCALL); assert(r >= 0);
+		r = engine->RegisterObjectMethod("float3", "float3 get_zyx() const property", asMETHOD(float3, get_zyx), asCALL_THISCALL); assert(r >= 0);
+		r = engine->RegisterObjectMethod("float3", "float3 get_zyy() const property", asMETHOD(float3, get_zyy), asCALL_THISCALL); assert(r >= 0);
+		r = engine->RegisterObjectMethod("float3", "float3 get_zyz() const property", asMETHOD(float3, get_zyz), asCALL_THISCALL); assert(r >= 0);
+		r = engine->RegisterObjectMethod("float3", "float3 get_zzx() const property", asMETHOD(float3, get_zzx), asCALL_THISCALL); assert(r >= 0);
+		r = engine->RegisterObjectMethod("float3", "float3 get_zzy() const property", asMETHOD(float3, get_zzy), asCALL_THISCALL); assert(r >= 0);
+		r = engine->RegisterObjectMethod("float3", "float3 get_zzz() const property", asMETHOD(float3, get_zzz), asCALL_THISCALL); assert(r >= 0);
 		r = engine->RegisterObjectMethod("float3", "void   set_zxy(const float3 &in) property", asMETHOD(float3, set_zxy), asCALL_THISCALL); assert(r >= 0);
 		r = engine->RegisterObjectMethod("float3", "void   set_zyx(const float3 &in) property", asMETHOD(float3, set_zyx), asCALL_THISCALL); assert(r >= 0);
 

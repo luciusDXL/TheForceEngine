@@ -10,6 +10,7 @@
 #include "forceScript.h"
 #include "float2.h"
 #include "float3.h"
+#include "float4.h"
 #include "scriptAPI.h"
 
 class ScriptAPIClass
