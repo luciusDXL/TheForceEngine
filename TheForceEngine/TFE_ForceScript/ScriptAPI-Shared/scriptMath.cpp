@@ -1,5 +1,6 @@
 #include "scriptMath.h"
 #include <TFE_System/system.h>
+#include <TFE_System/math.h>
 #include <TFE_Jedi/Level/levelData.h>
 #include <TFE_Jedi/Level/rwall.h>
 #include <TFE_Jedi/Level/rsector.h>
@@ -115,6 +116,34 @@ namespace TFE_ForceScript
 	float3 cross(float3 s, float3 t)
 	{
 		return float3(s.y*t.z - s.z*t.y, s.z*t.x - s.x*t.z, s.x*t.y - s.y*t.x);
+	}
+
+	float2x2 transpose2x2(float2x2 m2x2)
+	{
+		return float2x2(m2x2.m[0], m2x2.m[2], m2x2.m[1], m2x2.m[3]);
+	}
+	float3x3 transpose3x3(float3x3 m3x3)
+	{
+		return float3x3(m3x3.m[0], m3x3.m[3], m3x3.m[6], m3x3.m[1], m3x3.m[4], m3x3.m[7], m3x3.m[2], m3x3.m[5], m3x3.m[8]);
+	}
+	float4x4 transpose4x4(float4x4 m4x4)
+	{
+		return float4x4(m4x4.m[0], m4x4.m[4], m4x4.m[8], m4x4.m[12], m4x4.m[1], m4x4.m[5], m4x4.m[9], m4x4.m[13], m4x4.m[2],
+			m4x4.m[6], m4x4.m[10], m4x4.m[14], m4x4.m[3], m4x4.m[7], m4x4.m[11], m4x4.m[15]);
+	}
+
+	float2x2 computeRotation2x2(f32 angle)
+	{
+		const f32 c = cosf(angle);
+		const f32 s = sinf(angle);
+		return float2x2(c, -s, s, c);
+	}
+	float3x3 computeRotation3x3(f32 pitch, f32 yaw, f32 roll)
+	{
+		Vec3f angles = { pitch, yaw, roll };
+		Vec3f mat[3];
+		TFE_Math::buildRotationMatrix(angles, mat);
+		return float3x3(mat[0].x, mat[0].y, mat[0].z, mat[1].x, mat[1].y, mat[1].z, mat[2].x, mat[2].y, mat[2].z);
 	}
 
 	bool ScriptMath::scriptRegister(ScriptAPI api)
@@ -305,6 +334,13 @@ namespace TFE_ForceScript
 			ScriptLambdaMethod("float4 normalize(float4)", (float4 a), float4, { return normalize(a); });
 			ScriptLambdaMethod("float  perp(float2, float2)", (float2 a, float2 b), f32, { return a.x*b.y - a.y*b.x; });
 			ScriptLambdaMethod("float3 cross(float3, float3)", (float3 a, float3 b), float3, { return cross(a, b); });
+						
+			ScriptObjFunc("float2x2 transpose(float2x2)", transpose2x2);
+			ScriptObjFunc("float3x3 transpose(float3x3)", transpose3x3);
+			ScriptObjFunc("float4x4 transpose(float4x4)", transpose4x4);
+
+			ScriptObjFunc("float2x2 rotationMatrix2x2(float)", computeRotation2x2);
+			ScriptObjFunc("float3x3 rotationMatrix3x3(float, float, float = 0.0)", computeRotation3x3);
 		}
 		ScriptClassEnd();
 	}
