@@ -22,6 +22,11 @@
 #ifdef ENABLE_FORCE_SCRIPT
 #include <angelscript.h>
 
+// Set to 0 to disable tests on load - this should be done for public builds.
+// Set to 1 to run tests - this should be done when making script system changes
+// to catch regressions.
+#define RUN_SCRIPT_TESTS 1
+
 using namespace TFE_Editor;
 using namespace TFE_Jedi;
 using namespace TFE_ForceScript;
@@ -32,6 +37,14 @@ const char* s_objVar;
 
 namespace TFE_ScriptInterface
 {
+#if RUN_SCRIPT_TESTS == 1
+	// Tests to run, they should all exist in `ScriptTests/` relative to the TFE executable/directory.
+	const char* c_scriptTests[] =
+	{
+		"Test_VectorMath",
+	};
+#endif
+
 	struct ScriptToRun
 	{
 		std::string moduleName;
@@ -111,6 +124,32 @@ namespace TFE_ScriptInterface
 			s_api = ScriptAPI(api | API_SHARED);
 		}
 		s_searchPath = searchPath;
+
+		// Automatically run tests if enabled, this will write the results to the console and 
+		// Output window in Visual Studio.
+	#if RUN_SCRIPT_TESTS == 1
+		const size_t testCount = TFE_ARRAYSIZE(c_scriptTests);
+		char path[TFE_MAX_PATH];
+		for (size_t i = 0; i < testCount; i++)
+		{
+			const char* name = c_scriptTests[i];
+			sprintf(path, "ScriptTests/%s.fs", name);
+
+			TFE_ForceScript::ModuleHandle scriptMod = TFE_ForceScript::getModule(name);
+			if (!scriptMod)
+			{
+				scriptMod = TFE_ForceScript::createModule(name, path, false, s_api);
+			}
+			if (scriptMod)
+			{
+				TFE_ForceScript::FunctionHandle func = TFE_ForceScript::findScriptFuncByName(scriptMod, "main");
+				if (func)
+				{
+					TFE_ForceScript::execFunc(func);
+				}
+			}
+		}
+	#endif
 	}
 		
 	void update()

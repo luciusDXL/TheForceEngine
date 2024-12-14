@@ -571,6 +571,7 @@ echo ^)";
     <ClInclude Include="TFE_ForceScript\float4x4.h" />
     <ClInclude Include="TFE_ForceScript\forceScript.h" />
     <ClInclude Include="TFE_ForceScript\ScriptAPI-Shared\scriptMath.h" />
+    <ClInclude Include="TFE_ForceScript\ScriptAPI-Shared\scriptTest.h" />
     <ClInclude Include="TFE_ForceScript\ScriptAPI-Shared\sharedScriptAPI.h" />
     <ClInclude Include="TFE_ForceScript\scriptAPI.h" />
     <ClInclude Include="TFE_ForceScript\scriptInterface.h" />
@@ -969,6 +970,7 @@ echo ^)";
     <ClCompile Include="TFE_ForceScript\float4x4.cpp" />
     <ClCompile Include="TFE_ForceScript\forceScript.cpp" />
     <ClCompile Include="TFE_ForceScript\ScriptAPI-Shared\scriptMath.cpp" />
+    <ClCompile Include="TFE_ForceScript\ScriptAPI-Shared\scriptTest.cpp" />
     <ClCompile Include="TFE_ForceScript\ScriptAPI-Shared\sharedScriptAPI.cpp" />
     <ClCompile Include="TFE_ForceScript\scriptInterface.cpp" />
     <ClCompile Include="TFE_FrontEndUI\console.cpp" />

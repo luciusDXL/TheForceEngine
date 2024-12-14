@@ -1,5 +1,6 @@
 #include "sharedScriptAPI.h"
 #include "scriptMath.h"
+#include "scriptTest.h"
 #include <TFE_System/math.h>
 #include <TFE_System/system.h>
 #include <TFE_Jedi/Math/core_math.h>
@@ -27,6 +28,7 @@ namespace TFE_ForceScript
 	bool s_sharedScriptRegistered = false;
 
 	ScriptMath s_math;
+	ScriptTest s_test;
 		
 	void registerSharedScriptAPI(ScriptAPI api)
 	{
@@ -34,6 +36,7 @@ namespace TFE_ForceScript
 		s_sharedScriptRegistered = true;
 
 		s_math.scriptRegister(api);
+		s_test.scriptRegister(api);
 	}
 }
 #else
