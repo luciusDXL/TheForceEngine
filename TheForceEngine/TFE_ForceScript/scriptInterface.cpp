@@ -25,7 +25,7 @@
 // Set to 0 to disable tests on load - this should be done for public builds.
 // Set to 1 to run tests - this should be done when making script system changes
 // to catch regressions.
-#define RUN_SCRIPT_TESTS 1
+#define RUN_SCRIPT_TESTS 0
 
 using namespace TFE_Editor;
 using namespace TFE_Jedi;
