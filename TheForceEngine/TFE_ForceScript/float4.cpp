@@ -283,8 +283,7 @@ namespace TFE_ForceScript
 	void   float4::set_xwyz(const float4& o) { x = o.x; w = o.y; y = o.z; z = o.w; }
 	void   float4::set_xwzy(const float4& o) { x = o.x; w = o.y; z = o.z; y = o.w; }
 	// y
-	float4 float4::get_yxxx() const { return float4(x, x, x, x);
-	}
+	float4 float4::get_yxxx() const { return float4(y, x, x, x); }
 	float4 float4::get_yxxy() const { return float4(y, x, x, y); }
 	float4 float4::get_yxxz() const { return float4(y, x, x, z); }
 	float4 float4::get_yxxw() const { return float4(y, x, x, w); }
@@ -355,8 +354,7 @@ namespace TFE_ForceScript
 	void   float4::set_ywxz(const float4& o) { y = o.x; w = o.y; x = o.z; z = o.w; }
 	void   float4::set_ywzx(const float4& o) { y = o.x; w = o.y; z = o.z; x = o.w; }
 	// z
-	float4 float4::get_zxxx() const { return float4(x, x, x, x);
-	}
+	float4 float4::get_zxxx() const { return float4(z, x, x, x); }
 	float4 float4::get_zxxy() const { return float4(z, x, x, y); }
 	float4 float4::get_zxxz() const { return float4(z, x, x, z); }
 	float4 float4::get_zxxw() const { return float4(z, x, x, w); }
@@ -427,8 +425,7 @@ namespace TFE_ForceScript
 	void   float4::set_zwyx(const float4& o) { z = o.x; w = o.y; y = o.z; x = o.w; }
 	void   float4::set_zwxy(const float4& o) { z = o.x; w = o.y; x = o.z; y = o.w; }
 	// w
-	float4 float4::get_wxxx() const { return float4(x, x, x, x);
-	}
+	float4 float4::get_wxxx() const { return float4(w, x, x, x); }
 	float4 float4::get_wxxy() const { return float4(w, x, x, y); }
 	float4 float4::get_wxxz() const { return float4(w, x, x, z); }
 	float4 float4::get_wxxw() const { return float4(w, x, x, w); }
@@ -643,9 +640,11 @@ namespace TFE_ForceScript
 		r = engine->RegisterObjectMethod("float4", "float3 get_zxx() const property", asMETHOD(float4, get_zxx), asCALL_THISCALL); assert(r >= 0);
 		r = engine->RegisterObjectMethod("float4", "float3 get_zxy() const property", asMETHOD(float4, get_zxy), asCALL_THISCALL); assert(r >= 0);
 		r = engine->RegisterObjectMethod("float4", "float3 get_zxz() const property", asMETHOD(float4, get_zxz), asCALL_THISCALL); assert(r >= 0);
+		r = engine->RegisterObjectMethod("float4", "float3 get_zxw() const property", asMETHOD(float4, get_zxw), asCALL_THISCALL); assert(r >= 0);
 		r = engine->RegisterObjectMethod("float4", "float3 get_zyx() const property", asMETHOD(float4, get_zyx), asCALL_THISCALL); assert(r >= 0);
 		r = engine->RegisterObjectMethod("float4", "float3 get_zyy() const property", asMETHOD(float4, get_zyy), asCALL_THISCALL); assert(r >= 0);
 		r = engine->RegisterObjectMethod("float4", "float3 get_zyz() const property", asMETHOD(float4, get_zyz), asCALL_THISCALL); assert(r >= 0);
+		r = engine->RegisterObjectMethod("float4", "float3 get_zyw() const property", asMETHOD(float4, get_zyw), asCALL_THISCALL); assert(r >= 0);
 		r = engine->RegisterObjectMethod("float4", "float3 get_zzx() const property", asMETHOD(float4, get_zzx), asCALL_THISCALL); assert(r >= 0);
 		r = engine->RegisterObjectMethod("float4", "float3 get_zzy() const property", asMETHOD(float4, get_zzy), asCALL_THISCALL); assert(r >= 0);
 		r = engine->RegisterObjectMethod("float4", "float3 get_zzz() const property", asMETHOD(float4, get_zzz), asCALL_THISCALL); assert(r >= 0);
@@ -658,9 +657,11 @@ namespace TFE_ForceScript
 		r = engine->RegisterObjectMethod("float4", "float3 get_wxx() const property", asMETHOD(float4, get_wxx), asCALL_THISCALL); assert(r >= 0);
 		r = engine->RegisterObjectMethod("float4", "float3 get_wxy() const property", asMETHOD(float4, get_wxy), asCALL_THISCALL); assert(r >= 0);
 		r = engine->RegisterObjectMethod("float4", "float3 get_wxz() const property", asMETHOD(float4, get_wxz), asCALL_THISCALL); assert(r >= 0);
+		r = engine->RegisterObjectMethod("float4", "float3 get_wxw() const property", asMETHOD(float4, get_wxw), asCALL_THISCALL); assert(r >= 0);
 		r = engine->RegisterObjectMethod("float4", "float3 get_wyx() const property", asMETHOD(float4, get_wyx), asCALL_THISCALL); assert(r >= 0);
 		r = engine->RegisterObjectMethod("float4", "float3 get_wyy() const property", asMETHOD(float4, get_wyy), asCALL_THISCALL); assert(r >= 0);
 		r = engine->RegisterObjectMethod("float4", "float3 get_wyz() const property", asMETHOD(float4, get_wyz), asCALL_THISCALL); assert(r >= 0);
+		r = engine->RegisterObjectMethod("float4", "float3 get_wyw() const property", asMETHOD(float4, get_wyw), asCALL_THISCALL); assert(r >= 0);
 		r = engine->RegisterObjectMethod("float4", "float3 get_wzx() const property", asMETHOD(float4, get_wzx), asCALL_THISCALL); assert(r >= 0);
 		r = engine->RegisterObjectMethod("float4", "float3 get_wzy() const property", asMETHOD(float4, get_wzy), asCALL_THISCALL); assert(r >= 0);
 		r = engine->RegisterObjectMethod("float4", "float3 get_wzz() const property", asMETHOD(float4, get_wzz), asCALL_THISCALL); assert(r >= 0);

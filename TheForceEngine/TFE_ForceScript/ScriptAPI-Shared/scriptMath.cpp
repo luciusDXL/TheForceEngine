@@ -12,9 +12,9 @@ using namespace TFE_Jedi;
 
 namespace TFE_ForceScript
 {
-	u32 countBits(u32 bits)
+	s32 countBits(u32 bits)
 	{
-		u32 count = 0;
+		s32 count = 0;
 		while (bits)
 		{
 			if (bits & 1) { count++; }
@@ -33,6 +33,67 @@ namespace TFE_ForceScript
 			ubits >>= 1;
 		}
 		return count;
+	}
+
+	s32 findLSB(u32 x)
+	{
+		s32 res = -1;
+		for (u32 i = 0; i < 32; i++)
+		{
+			const u32 mask = 1 << i;
+			if (x & mask)
+			{
+				res = i;
+				break;
+			}
+		}
+		return res;
+	}
+
+	s32 findLSB(s32 x)
+	{
+		s32 res = -1;
+		for (s32 i = 0; i < 32; i++)
+		{
+			const s32 mask = 1 << i;
+			if (x & mask)
+			{
+				res = i;
+				break;
+			}
+		}
+		return res;
+	}
+
+	s32 findMSB(u32 x)
+	{
+		s32 res = -1;
+		for (u32 i = 0; i < 32; i++)
+		{
+			const u32 mask = 0x80000000 >> i;
+			if (x & mask)
+			{
+				res = 31 - i;
+				break;
+			}
+		}
+		return res;
+	}
+
+	s32 findMSB(s32 x)
+	{
+		s32 res = -1;
+		if (x < 0) { x = ~x; }
+		for (u32 i = 0; i < 32; i++)
+		{
+			const u32 mask = 0x80000000 >> i;
+			if (x & mask)
+			{
+				res = 31 - i;
+				break;
+			}
+		}
+		return res;
 	}
 
 	f32 mix(f32 x, f32 y, f32 a)
@@ -156,8 +217,12 @@ namespace TFE_ForceScript
 			ScriptLambdaPropertyGet("float get_e()", f32, { return 2.718281828459045f; });
 
 			// Basic math functions - include overrides for different vector types.
-			ScriptLambdaMethod("uint countBits(uint)", (u32 x), u32, { return countBits(x); });
+			ScriptLambdaMethod("int countBits(uint)", (u32 x), s32, { return countBits(x); });
 			ScriptLambdaMethod("int countBits(int)", (s32 x), s32, { return countBits(x); });
+			ScriptLambdaMethod("int findLSB(uint)", (u32 x), s32, { return findLSB(x); });
+			ScriptLambdaMethod("int findLSB(int)", (s32 x), s32, { return findLSB(x); });
+			ScriptLambdaMethod("int findMSB(uint)", (u32 x), s32, { return findMSB(x); });
+			ScriptLambdaMethod("int findMSB(int)", (s32 x), s32, { return findMSB(x); });
 			ScriptLambdaMethod("int abs(int)", (s32 x), s32, { return x < 0 ? -x : x; });
 			ScriptLambdaMethod("float abs(float)", (f32 x), f32, { return fabsf(x); });
 			ScriptLambdaMethod("float2 abs(float2)", (float2 v), float2, { return float2(fabsf(v.x), fabsf(v.y)); });

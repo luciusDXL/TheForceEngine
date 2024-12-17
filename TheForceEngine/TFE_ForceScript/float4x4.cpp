@@ -176,6 +176,7 @@ namespace TFE_ForceScript
 		r = engine->RegisterObjectMethod("float4x4", "float4& opIndex(int)", asMETHOD(float4x4, get_opIndex), asCALL_THISCALL); assert(r >= 0);
 
 		r = engine->RegisterObjectMethod("float4x4", "float4x4 opMul(const float4x4 &in) const", asMETHODPR(float4x4, operator*, (const float4x4 &) const, float4x4), asCALL_THISCALL); assert(r >= 0);
+		r = engine->RegisterObjectMethod("float4x4", "float4x4 opMul(const float &in) const", asMETHODPR(float4x4, operator*, (const float &) const, float4x4), asCALL_THISCALL); assert(r >= 0);
 		r = engine->RegisterObjectMethod("float4x4", "float4 opMul(const float4 &in) const", asMETHODPR(float4x4, operator*, (const float4 &) const, float4), asCALL_THISCALL); assert(r >= 0);
 
 		r = engine->RegisterGlobalFunction("string toString(float4x4 m)", asFUNCTION(toStringF4x4), asCALL_CDECL); assert(r >= 0);

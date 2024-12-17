@@ -40,6 +40,9 @@ void test_float2_float2_math()
 	test.expectEq(math.perp(a, b), -2.0f);
 	test.expectEq(math.sincos(neg45), float2(-0.7071067812, 0.7071067812));
 	
+	// Test normalize with zero-vector (invalid).
+	test.expectEq(math.normalize(float2(0)), float2(0));
+	
 	test.expectEq(math.clamp(a, float2(0.5,2.5), float2(2,3)), float2(1.0, 2.5));
 	test.expectEq(math.clamp(a, 1.5, 3.0), float2(1.5, 2.0));
 	test.expectEq(math.max(a, b), float2(3, 4));
@@ -72,7 +75,7 @@ void test_float2_scalar_math()
 
 void main()
 {
-	test.beginSystem("Vector Math");
+	test.beginSystem("Float2");
 	{
 		test_float2_swizzle();
 		test_float2_float2_math();

@@ -41,7 +41,10 @@ namespace TFE_ScriptInterface
 	// Tests to run, they should all exist in `ScriptTests/` relative to the TFE executable/directory.
 	const char* c_scriptTests[] =
 	{
-		"Test_VectorMath",
+		"Test_float2",
+		"Test_float3",
+		"Test_float4",
+		"Test_float2x2",
 	};
 #endif
 

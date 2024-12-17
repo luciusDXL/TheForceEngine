@@ -32,7 +32,8 @@ namespace TFE_DarkForces
 		SECTORPROP_FLOOR_TEX = FLAG_BIT(3),
 		SECTORPROP_CEIL_TEX = FLAG_BIT(4),
 		SECTORPROP_AMBIENT = FLAG_BIT(5),
-		SECTORPOP_END = FLAG_BIT(6),
+		SECTORPROP_START = SECTORPROP_FLOOR_HEIGHT,
+		SECTORPROP_END = SECTORPROP_AMBIENT << 1,
 	};
 
 	ScriptSector GS_Level::getSectorById(s32 id)
@@ -126,8 +127,8 @@ namespace TFE_DarkForces
 				next->searchKey = s_lsSearchKey;
 
 				bool propMatch = true;
-				u32 prop = SECTORPROP_FLOOR_HEIGHT;
-				while (prop < SECTORPOP_END && propMatch)
+				u32 prop = SECTORPROP_START;
+				while (prop < SECTORPROP_END && propMatch)
 				{
 					if (prop & matchProp)
 					{
