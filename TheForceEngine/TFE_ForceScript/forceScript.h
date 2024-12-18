@@ -66,6 +66,7 @@ namespace TFE_ForceScript
 	// Initialize and destroy script system.
 	void init();
 	void destroy();
+	void stopAllFunc();
 	void overrideCallback(ScriptMessageCallback callback = nullptr);
 	// Run any active script functions.
 	void update(f32 dt = 0.0f);

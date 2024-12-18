@@ -27,6 +27,7 @@ namespace TFE_ScriptInterface
 	// API interface.
 	void registerScriptInterface(ScriptAPI api);
 	void setAPI(ScriptAPI api, const char* searchPath);
+	void reset();
 
 	// Pre/re-compile a script.
 	bool recompileScript(const char* scriptName);

@@ -396,6 +396,9 @@ namespace TFE_DarkForces
 		// Reset state.
 		s_sharedState = {};
 		s_runGameState = {};
+
+		// Script system.
+		TFE_ScriptInterface::reset();
 	}
 
 	void DarkForces::pauseGame(bool pause)

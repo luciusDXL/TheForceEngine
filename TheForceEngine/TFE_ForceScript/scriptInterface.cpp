@@ -154,6 +154,11 @@ namespace TFE_ScriptInterface
 		}
 	#endif
 	}
+
+	void reset()
+	{
+		TFE_ForceScript::stopAllFunc();
+	}
 		
 	void update()
 	{
