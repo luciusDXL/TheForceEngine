@@ -397,7 +397,7 @@ namespace TFE_DarkForces
 		s_sharedState = {};
 		s_runGameState = {};
 
-		// Script system.
+		// TFE - Script system.
 		TFE_ScriptInterface::reset();
 	}
 
@@ -671,6 +671,8 @@ namespace TFE_DarkForces
 
 					// TFE
 					reticle_enable(false);
+					// TFE - Script system.
+					TFE_ScriptInterface::reset();
 
 					if (!s_levelComplete)
 					{
