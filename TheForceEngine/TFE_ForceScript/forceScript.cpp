@@ -28,6 +28,8 @@ namespace TFE_ForceScript
 	struct ScriptThread
 	{
 		asIScriptContext* asContext;
+		std::string name;
+		std::string funcName;
 		f32 delay;
 	};
 
@@ -78,6 +80,19 @@ namespace TFE_ForceScript
 		}
 	}
 
+	void abort(const std::string& msg)
+	{
+		asIScriptContext* context = asGetActiveContext();
+		if (context)
+		{
+			const s32 id = (s32)((intptr_t)context->GetUserData(ThreadId));
+			assert(id >= 0 && id < (s32)s_scriptThreads.size());
+			TFE_System::logWrite(LOG_ERROR, "Force Script", "Script '%s', Entry Point '%s' Aborted! - '%s'.",
+				s_scriptThreads[id].name.c_str(), s_scriptThreads[id].funcName.c_str(), msg.c_str());
+			context->Abort();
+		}
+	}
+
 	void resume(s32 id)
 	{
 		s_scriptThreads[id].delay = 0.0f;
@@ -107,6 +122,7 @@ namespace TFE_ForceScript
 
 		// Language features.
 		res = s_engine->RegisterGlobalFunction("void yield(float = 0.0)", asFUNCTION(yield), asCALL_CDECL); assert(res >= 0);
+		res = s_engine->RegisterGlobalFunction("void abort(const string &in)", asFUNCTION(abort), asCALL_CDECL); assert(res >= 0);
 
 		registerScriptMath_float2(s_engine);
 		registerScriptMath_float3(s_engine);
@@ -524,6 +540,8 @@ namespace TFE_ForceScript
 						char modName[256], funcName[256];
 						SERIALIZE_CSTRING(SaveVersionLevelScriptV1, modName);
 						SERIALIZE_CSTRING(SaveVersionLevelScriptV1, funcName);
+						thread->name = modName;
+						thread->funcName = funcName;
 
 						asIScriptModule* mod = s_engine->GetModule(modName);
 						asIScriptFunction* scriptFunc = mod->GetFunctionByName(funcName);
@@ -647,7 +665,7 @@ namespace TFE_ForceScript
 			if (thread[i].delay == 0.0f)
 			{
 				asIScriptContext* context = thread[i].asContext;
-				s32 res = context->Execute();
+				const s32 res = context->Execute();
 				if (res != asEXECUTION_SUSPENDED)
 				{
 					// Finally done!
@@ -936,6 +954,8 @@ namespace TFE_ForceScript
 		}
 		s_scriptThreads[id].asContext = context;
 		s_scriptThreads[id].delay = 0.0f;
+		s_scriptThreads[id].name = func->GetModuleName();
+		s_scriptThreads[id].funcName = func->GetName();
 		context->SetUserData((void*)((intptr_t)id), ThreadId);
 
 		return id;
