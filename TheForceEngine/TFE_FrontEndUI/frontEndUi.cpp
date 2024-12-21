@@ -514,6 +514,7 @@ namespace TFE_FrontEndUI
 		s_relativeMode = false;
 		TFE_Input::enableRelativeMode(s_relativeMode);
 		TFE_ExternalData::getExternalLogics()->actorLogics.clear();		// clear custom logics
+		TFE_ExternalData::clearExternalWeapons();						// clear weapons
 		TFE_ExternalData::clearExternalProjectiles();					// clear projectiles
 		TFE_ExternalData::clearExternalEffects();						// clear effects
 		TFE_ExternalData::clearExternalPickups();						// clear pickups

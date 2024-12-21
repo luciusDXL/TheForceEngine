@@ -1,5 +1,6 @@
 #pragma once
 #include <TFE_System/types.h>
+#include <TFE_DarkForces/player.h>
 
 ///////////////////////////////////////////
 // TFE Externalised Weapon data
@@ -7,6 +8,12 @@
 
 namespace TFE_ExternalData
 {
+	enum
+	{
+		WEAPON_NUM_TEXTURES = 16,
+		WEAPON_NUM_ANIMFRAMES = 16,
+	};
+
 	struct ExternalProjectile
 	{
 		const char* type = nullptr;
@@ -54,14 +61,57 @@ namespace TFE_ExternalData
 		s32 soundPriority;
 	};
 
+	// Maps to TFE_DarkForces::WeaponAnimFrame
+	struct WeaponAnimFrame
+	{
+		s32 texture = 0;
+		s32 light = 0;
+		u32 durationSupercharge = 0;
+		u32 durationNormal = 0;
+	};
+	
+	struct ExternalWeapon
+	{
+		const char* name = nullptr;
+		s32 frameCount = 1;
+		const char* textures[WEAPON_NUM_TEXTURES] = { "default.bm" };
+		s32 xPos[WEAPON_NUM_TEXTURES] = { 0 };
+		s32 yPos[WEAPON_NUM_TEXTURES] = { 0 };
+		s32* ammo = &TFE_DarkForces::s_playerInfo.ammoEnergy;
+		s32* secondaryAmmo = nullptr;
+		s32 wakeupRange = 0;
+		s32 variation = 0;
+		
+		s32 primaryFireConsumption = 1;
+		s32 secondaryFireConsumption = 1;
+
+		s32 numAnimFrames = 1;
+		WeaponAnimFrame animFrames[WEAPON_NUM_ANIMFRAMES];
+		s32 numSecondaryAnimFrames = 1;
+		WeaponAnimFrame animFramesSecondary[WEAPON_NUM_ANIMFRAMES];
+	};
+
+	struct ExternalGasmask
+	{
+		const char* texture = "gmask.bm";
+		s32 xPos = 105;
+		s32 yPos = 141;
+	};
+
 	ExternalProjectile* getExternalProjectiles();
 	ExternalEffect* getExternalEffects();
+	ExternalWeapon* getExternalWeapons();
+	ExternalGasmask* getExternalGasmask();
 	void clearExternalProjectiles();
 	void clearExternalEffects();
+	void clearExternalWeapons();
 	void loadExternalProjectiles();
 	void parseExternalProjectiles(char* data, bool fromMod);
 	bool validateExternalProjectiles();
 	void loadExternalEffects();
 	void parseExternalEffects(char* data, bool fromMod);
 	bool validateExternalEffects();
+	void loadExternalWeapons();
+	void parseExternalWeapons(char* data, bool fromMod);
+	bool validateExternalWeapons();
 }

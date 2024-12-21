@@ -10,6 +10,7 @@
 #include <TFE_Jedi/Renderer/jediRenderer.h>
 #include <TFE_Jedi/Renderer/screenDraw.h>
 #include <TFE_Jedi/Serialization/serialization.h>
+#include <TFE_ExternalData/weaponExternal.h>
 
 namespace TFE_DarkForces
 {
@@ -22,6 +23,8 @@ namespace TFE_DarkForces
 	
 	static TextureData* s_rhand1 = nullptr;
 	static TextureData* s_gasmaskTexture = nullptr;
+	static s32 s_gasMaskXpos;
+	static s32 s_gasMaskYpos;
 	static PlayerWeapon s_playerWeaponList[WPN_COUNT];
 			
 	static Tick s_weaponDelayPrimary;
@@ -79,11 +82,10 @@ namespace TFE_DarkForces
 	// Forward Declarations
 	///////////////////////////////////////////
 	TextureData* loadWeaponTexture(const char* texName);
-	void weapon_loadTextures();
 	void weapon_setFireRateInternal(WeaponFireMode mode, Tick delay, s32* canFire);
 	void weapon_playerWeaponTaskFunc(MessageType msg);
 	void weapon_handleOnAnimation(MessageType msg);
-	void weapon_prepareToFire();
+	void weapon_setIdle();
 	
 	static WeaponFireFunc s_weaponFireFunc[WPN_COUNT] =
 	{
@@ -171,222 +173,57 @@ namespace TFE_DarkForces
 		}
 	}
 
+	// TFE: Set weapon data from external data
+	void setWeaponData(WeaponID id, TFE_ExternalData::ExternalWeapon* extWeapons)
+	{
+		s_playerWeaponList[id].frameCount = min(extWeapons[id].frameCount, WEAPON_NUM_TEXTURES);
+		s_playerWeaponList[id].frame = 0;
+		
+		for (s32 f = 0; f < WEAPON_NUM_TEXTURES; f++)
+		{
+			const char* tex = extWeapons[id].textures[f];
+			s_playerWeaponList[id].frames[f] = tex ? loadWeaponTexture(tex) : nullptr;
+			s_playerWeaponList[id].xPos[f] = extWeapons[id].xPos[f];
+			s_playerWeaponList[id].yPos[f] = extWeapons[id].yPos[f];
+		}
+
+		s_playerWeaponList[id].flags = 7;
+		s_playerWeaponList[id].rollOffset = 0;
+		s_playerWeaponList[id].pchOffset = 0;
+		s_playerWeaponList[id].xWaveOffset = 0;
+		s_playerWeaponList[id].yWaveOffset = 0;
+		s_playerWeaponList[id].xOffset = 0;
+		s_playerWeaponList[id].yOffset = 0;
+		s_playerWeaponList[id].ammo = extWeapons[id].ammo;
+		s_playerWeaponList[id].secondaryAmmo = extWeapons[id].secondaryAmmo;
+		s_playerWeaponList[id].u8c = 0;
+		s_playerWeaponList[id].u90 = 0;
+		s_playerWeaponList[id].wakeupRange = FIXED(extWeapons[id].wakeupRange);
+		s_playerWeaponList[id].variation = extWeapons[id].variation;
+		s_playerWeaponList[id].primaryFireConsumption = extWeapons[id].primaryFireConsumption;
+		s_playerWeaponList[id].secondaryFireConsumption = extWeapons[id].secondaryFireConsumption;
+
+		setupAnimationFrames(id, extWeapons[id].numAnimFrames, extWeapons[id].animFrames, extWeapons[id].numSecondaryAnimFrames, extWeapons[id].animFramesSecondary);
+	}
+	
 	void weapon_startup()
 	{
-		// TODO: Move this into data instead of hard coding it like vanilla Dark Forces.
-		s_playerWeaponList[WPN_FIST] =
-		{
-			4,						// frameCount
-			{nullptr},				// frames[]
-			0,						// frame
-			{172, 55, 59, 56},		// xPos[]
-			{141, 167, 114, 141},	// yPos[]
-			7,						// flags
-			0,						// rollOffset
-			0,						// pchOffset
-			0,						// xWaveOffset
-			0,						// yWaveOffset
-			0,						// xOffset
-			0,						// yOffset
-			nullptr,				// ammo
-			nullptr,				// secondaryAmmo
-			0,						// u8c
-			0,						// u90
-			0,						// wakeupRange
-			0,						// variation
-		};
-		s_playerWeaponList[WPN_PISTOL] =
-		{
-			3,						// frameCount
-			{nullptr},				// frames[]
-			0,						// frame
-			{0xa5, 0xa9, 0xa9},		// xPos[]
-			{0x8e, 0x88, 0x88},	    // yPos[]
-			7,						// flags
-			0,						// rollOffset
-			0,						// pchOffset
-			0,						// xWaveOffset
-			0,						// yWaveOffset
-			0,						// xOffset
-			0,						// yOffset
-			&s_playerInfo.ammoEnergy,// ammo
-			nullptr,				// secondaryAmmo
-			0,						// u8c
-			0,						// u90
-			FIXED(45),				// wakeupRange
-			22,						// variation
-		};
-		s_playerWeaponList[WPN_RIFLE] =
-		{
-			2,						// frameCount
-			{nullptr},				// frames[]
-			0,						// frame
-			{0x71, 0x70},			// xPos[]
-			{0x7f, 0x72},			// yPos[]
-			7,						// flags
-			0,						// rollOffset
-			0,						// pchOffset
-			0,						// xWaveOffset
-			0,						// yWaveOffset
-			0,						// xOffset
-			0,						// yOffset
-			&s_playerInfo.ammoEnergy,// ammo
-			nullptr,				// secondaryAmmo
-			0,						// u8c
-			0,						// u90
-			FIXED(50),				// wakeupRange
-			0x56,					// variation
-		};
-		s_playerWeaponList[WPN_THERMAL_DET] =
-		{
-			4,						// frameCount
-			{nullptr},				// frames[]
-			0,						// frame
-			{0xa1, 0xb3, 0xb4, 0x84},// xPos[]
-			{0x83, 0xa5, 0x66, 0x96},// yPos[]
-			7,						// flags
-			0,						// rollOffset
-			0,						// pchOffset
-			0,						// xWaveOffset
-			0,						// yWaveOffset
-			0,						// xOffset
-			0,						// yOffset
-			&s_playerInfo.ammoDetonator,// ammo
-			nullptr,				// secondaryAmmo
-			0,						// u8c
-			0,						// u90
-			0,						// wakeupRange
-			0x2d002d,				// variation
-		};
-		s_playerWeaponList[WPN_REPEATER] =
-		{
-			3,						// frameCount
-			{nullptr},				// frames[]
-			0,						// frame
-			{0x9c, 0xa3, 0xa3},		// xPos[]
-			{0x8a, 0x8c, 0x8c},		// yPos[]
-			7,						// flags
-			0,						// rollOffset
-			0,						// pchOffset
-			0,						// xWaveOffset
-			0,						// yWaveOffset
-			0,						// xOffset
-			0,						// yOffset
-			&s_playerInfo.ammoPower,// ammo
-			nullptr,				// secondaryAmmo
-			0,						// u8c
-			0,						// u90
-			FIXED(60),				// wakeupRange
-			0x2d002d,				// variation
-		};
-		s_playerWeaponList[WPN_FUSION] =
-		{
-			6,						// frameCount
-			{nullptr},				// frames[]
-			0,						// frame
-			{0x13, 0x17, 0x17, 0x17, 0x17, 0x17},// xPos[]
-			{0x98, 0x9b, 0x9b, 0x9b, 0x9b, 0x9b},// yPos[]
-			7,						// flags
-			0,						// rollOffset
-			0,						// pchOffset
-			0,						// xWaveOffset
-			0,						// yWaveOffset
-			0,						// xOffset
-			0,						// yOffset
-			&s_playerInfo.ammoPower,// ammo
-			nullptr,				// secondaryAmmo
-			0,						// u8c
-			0,						// u90
-			FIXED(55),				// wakeupRange
-			0x2d,					// variation
-		};
-		s_playerWeaponList[WPN_MORTAR] =
-		{
-			4,						// frameCount
-			{nullptr},				// frames[]
-			0,						// frame
-			{0x7b, 0x7e, 0x7f, 0x7b},// xPos[]
-			{0x77, 0x75, 0x77, 0x74},// yPos[]
-			7,						// flags
-			0,						// rollOffset
-			0,						// pchOffset
-			0,						// xWaveOffset
-			0,						// yWaveOffset
-			0,						// xOffset
-			0,						// yOffset
-			&s_playerInfo.ammoShell,// ammo
-			nullptr,				// secondaryAmmo
-			0,						// u8c
-			0,						// u90
-			FIXED(60),				// wakeupRange
-			0x2d,					// variation
-		};
-		s_playerWeaponList[WPN_MINE] =
-		{
-			3,						// frameCount
-			{nullptr},				// frames[]
-			0,						// frame
-			{0x69, 0x69, 0x84},		// xPos[]
-			{0x99, 0x99, 0x96},		// yPos[]
-			7,						// flags
-			0,						// rollOffset
-			0,						// pchOffset
-			0,						// xWaveOffset
-			0,						// yWaveOffset
-			0,						// xOffset
-			0,						// yOffset
-			&s_playerInfo.ammoMine, // ammo
-			nullptr,				// secondaryAmmo
-			0,						// u8c
-			0,						// u90
-			0,						// wakeupRange
-			0,						// variation
-		};
-		s_playerWeaponList[WPN_CONCUSSION] =
-		{
-			3,						// frameCount
-			{nullptr},				// frames[]
-			0,						// frame
-			{0x82, 0xbf, 0xbc},		// xPos[]
-			{0x83, 0x81, 0x84},		// yPos[]
-			7,						// flags
-			0,						// rollOffset
-			0,						// pchOffset
-			0,						// xWaveOffset
-			0,						// yWaveOffset
-			0,						// xOffset
-			0,						// yOffset
-			&s_playerInfo.ammoPower,// ammo
-			nullptr,				// secondaryAmmo
-			0,						// u8c
-			0,						// u90
-			FIXED(70),				// wakeupRange
-			0,						// variation
-		};
-		s_playerWeaponList[WPN_CANNON] =
-		{
-			4,						// frameCount
-			{nullptr},				// frames[]
-			0,						// frame
-			{206, 208, 224, 230},	// xPos[]
-			{-74, -60, 81, 86},     // yPos[]
-			7,						// flags
-			0,						// rollOffset
-			0,						// pchOffset
-			0,						// xWaveOffset
-			0,						// yWaveOffset
-			0,						// xOffset
-			0,						// yOffset
-			&s_playerInfo.ammoPlasma,// ammo
-			&s_playerInfo.ammoMissile,// secondaryAmmo
-			0,						// u8c
-			0,						// u90
-			FIXED(55),				// wakeupRange
-			0x2d002d,				// variation
-		};
+		// TFE: Weapon data is set from external data instead of being hardcoded as in vanilla DF
+		TFE_ExternalData::ExternalWeapon* externalWeapons = TFE_ExternalData::getExternalWeapons();
+		setWeaponData(WPN_FIST, externalWeapons);
+		setWeaponData(WPN_PISTOL, externalWeapons);
+		setWeaponData(WPN_RIFLE, externalWeapons);
+		setWeaponData(WPN_THERMAL_DET, externalWeapons);
+		setWeaponData(WPN_REPEATER, externalWeapons);
+		setWeaponData(WPN_FUSION, externalWeapons);
+		setWeaponData(WPN_MORTAR, externalWeapons);
+		setWeaponData(WPN_MINE, externalWeapons);
+		setWeaponData(WPN_CONCUSSION, externalWeapons);
+		setWeaponData(WPN_CANNON, externalWeapons);
 
-		// Load Textures.
-		weapon_loadTextures();
+		s_gasmaskTexture = loadWeaponTexture(TFE_ExternalData::getExternalGasmask()->texture);
+		s_gasMaskXpos = TFE_ExternalData::getExternalGasmask()->xPos;
+		s_gasMaskYpos = TFE_ExternalData::getExternalGasmask()->yPos;
 
 		// Load Sounds.
 		s_punchSwingSndSrc    = sound_load("swing.voc",    SOUND_PRIORITY_HIGH3);
@@ -560,6 +397,7 @@ namespace TFE_DarkForces
 		weapon_setFireRateInternal(WFIRE_PRIMARY,   0, nullptr);
 		weapon_setFireRateInternal(WFIRE_SECONDARY, 0, nullptr);
 
+		// These values are set but never read. Actual fire rate is determined by the animation frames durations.
 		switch (s_prevWeapon)
 		{
 			case WPN_PISTOL:
@@ -633,7 +471,8 @@ namespace TFE_DarkForces
 		s_superchargeTask = nullptr;
 	}
 
-	void weapon_fixupAnim()
+	// If using TDs or mines and no ammo, show empty right hand
+	void weapon_emptyAnim()
 	{
 		PlayerWeapon* weapon = s_curPlayerWeapon;
 		s32 ammo = weapon->ammo ? *weapon->ammo : 0;
@@ -684,6 +523,7 @@ namespace TFE_DarkForces
 		}
 	}
 
+	// Added for the early GPU renderer. No longer used
 	void weapon_addTexture(TextureInfoList& texList, TextureData* tex)
 	{
 		TextureInfo texInfo = {};
@@ -692,6 +532,7 @@ namespace TFE_DarkForces
 		texList.push_back(texInfo);
 	}
 
+	// Added for the early GPU renderer. No longer used
 	bool weapon_getTextures(TextureInfoList& texList)
 	{
 		// Get weapon textures.
@@ -705,63 +546,6 @@ namespace TFE_DarkForces
 			}
 		}
 		return true;
-	}
-
-	void weapon_loadTextures()
-	{
-		if (!s_weaponTexturesLoaded)
-		{
-			s_rhand1 = loadWeaponTexture("rhand1.bm");
-			s_gasmaskTexture = loadWeaponTexture("gmask.bm");
-
-			s_playerWeaponList[WPN_FIST].frames[0] = s_rhand1;
-			s_playerWeaponList[WPN_FIST].frames[1] = loadWeaponTexture("punch1.bm");
-			s_playerWeaponList[WPN_FIST].frames[2] = loadWeaponTexture("punch2.bm");
-			s_playerWeaponList[WPN_FIST].frames[3] = loadWeaponTexture("punch3.bm");
-
-			s_playerWeaponList[WPN_PISTOL].frames[0] = loadWeaponTexture("pistol1.bm");
-			s_playerWeaponList[WPN_PISTOL].frames[1] = loadWeaponTexture("pistol2.bm");
-			s_playerWeaponList[WPN_PISTOL].frames[2] = loadWeaponTexture("pistol3.bm");
-
-			s_playerWeaponList[WPN_RIFLE].frames[0] = loadWeaponTexture("rifle1.bm");
-			s_playerWeaponList[WPN_RIFLE].frames[1] = loadWeaponTexture("rifle2.bm");
-
-			s_playerWeaponList[WPN_THERMAL_DET].frames[0] = loadWeaponTexture("therm1.bm");
-			s_playerWeaponList[WPN_THERMAL_DET].frames[1] = loadWeaponTexture("therm2.bm");
-			s_playerWeaponList[WPN_THERMAL_DET].frames[2] = loadWeaponTexture("therm3.bm");
-			s_playerWeaponList[WPN_THERMAL_DET].frames[3] = s_rhand1;
-
-			s_playerWeaponList[WPN_REPEATER].frames[0] = loadWeaponTexture("autogun1.bm");
-			s_playerWeaponList[WPN_REPEATER].frames[1] = loadWeaponTexture("autogun2.bm");
-			s_playerWeaponList[WPN_REPEATER].frames[2] = loadWeaponTexture("autogun3.bm");
-
-			s_playerWeaponList[WPN_FUSION].frames[0] = loadWeaponTexture("fusion1.bm");
-			s_playerWeaponList[WPN_FUSION].frames[1] = loadWeaponTexture("fusion2.bm");
-			s_playerWeaponList[WPN_FUSION].frames[2] = loadWeaponTexture("fusion3.bm");
-			s_playerWeaponList[WPN_FUSION].frames[3] = loadWeaponTexture("fusion4.bm");
-			s_playerWeaponList[WPN_FUSION].frames[4] = loadWeaponTexture("fusion5.bm");
-			s_playerWeaponList[WPN_FUSION].frames[5] = loadWeaponTexture("fusion6.bm");
-
-			s_playerWeaponList[WPN_MORTAR].frames[0] = loadWeaponTexture("mortar1.bm");
-			s_playerWeaponList[WPN_MORTAR].frames[1] = loadWeaponTexture("mortar2.bm");
-			s_playerWeaponList[WPN_MORTAR].frames[2] = loadWeaponTexture("mortar3.bm");
-			s_playerWeaponList[WPN_MORTAR].frames[3] = loadWeaponTexture("mortar4.bm");
-
-			s_playerWeaponList[WPN_MINE].frames[0] = loadWeaponTexture("clay1.bm");
-			s_playerWeaponList[WPN_MINE].frames[1] = loadWeaponTexture("clay2.bm");
-			s_playerWeaponList[WPN_MINE].frames[2] = s_rhand1;
-
-			s_playerWeaponList[WPN_CONCUSSION].frames[0] = loadWeaponTexture("concuss1.bm");
-			s_playerWeaponList[WPN_CONCUSSION].frames[1] = loadWeaponTexture("concuss2.bm");
-			s_playerWeaponList[WPN_CONCUSSION].frames[2] = loadWeaponTexture("concuss3.bm");
-
-			s_playerWeaponList[WPN_CANNON].frames[0] = loadWeaponTexture("assault1.bm");
-			s_playerWeaponList[WPN_CANNON].frames[1] = loadWeaponTexture("assault2.bm");
-			s_playerWeaponList[WPN_CANNON].frames[2] = loadWeaponTexture("assault3.bm");
-			s_playerWeaponList[WPN_CANNON].frames[3] = loadWeaponTexture("assault4.bm");
-
-			s_weaponTexturesLoaded = JTRUE;
-		}
 	}
 
 	TextureData* loadWeaponTexture(const char* texName)
@@ -813,7 +597,7 @@ namespace TFE_DarkForces
 		if (msg == MSG_STOP_FIRING)
 		{
 			s_isShooting = JFALSE;
-			weapon_prepareToFire();
+			weapon_setIdle();
 			s_curPlayerWeapon->flags |= 2;
 		}
 		else if (msg == MSG_START_FIRING)
@@ -1008,7 +792,8 @@ namespace TFE_DarkForces
 		}
 	}
 
-	void weapon_prepareToFire()
+	// Set weapons back to their idle frame; stop looping sound
+	void weapon_setIdle()
 	{
 		PlayerWeapon* weapon = s_curPlayerWeapon;
 		if (s_prevWeapon == WPN_REPEATER)
@@ -1090,13 +875,13 @@ namespace TFE_DarkForces
 				}
 				s_curPlayerWeapon->flags &= ~2;
 
-				weapon_prepareToFire();
+				weapon_setIdle();
 				weapon_setFireRate();
 			}
 			else if (msg == MSG_STOP_FIRING)
 			{
 				s_isShooting = JFALSE;
-				weapon_prepareToFire();
+				weapon_setIdle();
 				s_curPlayerWeapon->flags |= 2;
 			}
 			else if (msg == MSG_HOLSTER)
@@ -1107,7 +892,7 @@ namespace TFE_DarkForces
 
 				if (!s_weaponOffAnim)
 				{
-					weapon_prepareToFire();
+					weapon_setIdle();
 					
 					s_weaponAnimState =
 					{
@@ -1128,7 +913,7 @@ namespace TFE_DarkForces
 						sound_play(s_weaponChangeSnd);
 					}
 
-					weapon_fixupAnim();
+					weapon_emptyAnim();
 
 					s_weaponAnimState =
 					{
@@ -1281,8 +1066,8 @@ namespace TFE_DarkForces
 
 		if (s_wearingGasmask)
 		{
-			s32 x = 105;
-			s32 y = 141;
+			s32 x = s_gasMaskXpos;
+			s32 y = s_gasMaskYpos;
 			if (weapon)
 			{
 				x -= (weapon->xWaveOffset >> 3);
