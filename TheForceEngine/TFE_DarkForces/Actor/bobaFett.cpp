@@ -145,7 +145,7 @@ namespace TFE_DarkForces
 				// Save Animation
 				memcpy(&local(tmp), local(anim), sizeof(LogicAnimation) - 4);
 
-				local(anim)->flags |= AFLAG_PLAYED;
+				local(anim)->flags |= AFLAG_PLAYONCE;
 				local(anim)->frameRate = 6;
 				actor_setupBossAnimation(local(obj), 12, local(anim));
 
@@ -203,7 +203,7 @@ namespace TFE_DarkForces
 				// Save Animation
 				memcpy(&local(tmp), local(anim), sizeof(LogicAnimation) - 4);
 
-				local(anim)->flags |= AFLAG_PLAYED;
+				local(anim)->flags |= AFLAG_PLAYONCE;
 				local(anim)->frameRate = 6;
 				actor_setupBossAnimation(local(obj), 12, local(anim));
 
@@ -606,7 +606,7 @@ namespace TFE_DarkForces
 		sound_stop(local(physicsActor)->moveSndId);
 		sound_playCued(s_shared.boba4SndID, local(obj)->posWS);
 
-		local(anim)->flags |= AFLAG_PLAYED;
+		local(anim)->flags |= AFLAG_PLAYONCE;
 		local(anim)->frameRate = 8;
 		actor_setupBossAnimation(local(obj), 2, local(anim));
 
@@ -956,7 +956,7 @@ namespace TFE_DarkForces
 		anim->frameCount = ONE_16;
 		anim->prevTick = 0;
 		anim->flags |= AFLAG_READY;
-		anim->flags &= ~AFLAG_PLAYED;
+		anim->flags &= ~AFLAG_PLAYONCE;
 		actor_setupBossAnimation(obj, 5, anim);
 
 		ActorTarget* target = &physicsActor->moveMod.target;

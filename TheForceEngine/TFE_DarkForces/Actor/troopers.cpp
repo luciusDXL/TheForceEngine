@@ -64,7 +64,7 @@ namespace TFE_DarkForces
 		thinkerMod->target.speedRotation = HALF_16 - 1;
 		thinkerMod->target.speed = FIXED(7);
 		thinkerMod->delay = 0;
-		thinkerMod->anim.flags &= 0xfffffffe;
+		thinkerMod->anim.flags &= ~AFLAG_PLAYONCE;
 		thinkerMod->startDelay = TICKS(2);
 		actor_addModule(dispatch, (ActorModule*)thinkerMod);
 
@@ -104,7 +104,7 @@ namespace TFE_DarkForces
 		thinkerMod->target.speedRotation = HALF_16 - 1;
 		thinkerMod->target.speed = FIXED(8);
 		thinkerMod->delay = 116;
-		thinkerMod->anim.flags &= 0xfffffffe;
+		thinkerMod->anim.flags &= ~AFLAG_PLAYONCE;
 		thinkerMod->startDelay = TICKS(2);
 		actor_addModule(dispatch, (ActorModule*)thinkerMod);
 
@@ -144,7 +144,7 @@ namespace TFE_DarkForces
 		thinkerMod->target.speedRotation = HALF_16 - 1;
 		thinkerMod->target.speed = FIXED(9);
 		thinkerMod->delay = 116;
-		thinkerMod->anim.flags &= 0xfffffffe;
+		thinkerMod->anim.flags &= ~AFLAG_PLAYONCE;
 		thinkerMod->startDelay = TICKS(1);
 		actor_addModule(dispatch, (ActorModule*)thinkerMod);
 

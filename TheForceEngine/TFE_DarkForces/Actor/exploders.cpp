@@ -19,7 +19,7 @@ namespace TFE_DarkForces
 			s_actorState.curAnimation = anim;
 			return JFALSE;
 		}
-		else if ((anim->flags & AFLAG_PLAYED) && damageMod->hp <= 0)
+		else if ((anim->flags & AFLAG_PLAYONCE) && damageMod->hp <= 0)
 		{
 			actor_kill();
 			return JFALSE;

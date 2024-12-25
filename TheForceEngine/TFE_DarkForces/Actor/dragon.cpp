@@ -122,7 +122,7 @@ namespace TFE_DarkForces
 						target->flags |= 8;
 						memcpy(&local(tmpAnim), local(anim), sizeof(LogicAnimation) - 4);
 
-						local(anim)->flags |= AFLAG_PLAYED;
+						local(anim)->flags |= AFLAG_PLAYONCE;
 						actor_setupBossAnimation(local(obj), 12, local(anim));
 						local(anim)->frameRate = 8;
 					task_localBlockEnd;
@@ -209,7 +209,7 @@ namespace TFE_DarkForces
 					memcpy(&local(tmp), local(anim), sizeof(LogicAnimation) - 4);
 
 					// Set the animation to 12.
-					local(anim)->flags |= AFLAG_PLAYED;
+					local(anim)->flags |= AFLAG_PLAYONCE;
 					actor_setupBossAnimation(local(obj), 12, local(anim));
 					local(anim)->frameRate = 8;
 
@@ -336,7 +336,7 @@ namespace TFE_DarkForces
 		local(prevColTick) = 0;
 		local(yawAligned) = JFALSE;
 
-		local(anim)->flags &= ~AFLAG_PLAYED;
+		local(anim)->flags &= ~AFLAG_PLAYONCE;
 		actor_setupBossAnimation(local(obj), 0, local(anim));
 
 		task_localBlockBegin;
@@ -462,7 +462,7 @@ namespace TFE_DarkForces
 		local(physicsActor) = &local(dragon)->actor;
 		local(anim) = &local(physicsActor)->anim;
 		local(target) = &local(physicsActor)->moveMod.target;
-		local(anim)->flags &= ~AFLAG_PLAYED;
+		local(anim)->flags &= ~AFLAG_PLAYONCE;
 
 		task_localBlockBegin;
 			actor_setupBossAnimation(local(obj), 0, local(anim));
@@ -559,7 +559,7 @@ namespace TFE_DarkForces
 			} while (msg != MSG_RUN_TASK);
 			if (local(physicsActor)->state != DRAGONSTATE_JUMPING) { break; }
 
-			local(anim)->flags |= AFLAG_PLAYED;
+			local(anim)->flags |= AFLAG_PLAYONCE;
 			actor_setupBossAnimation(local(obj), 9, local(anim));
 			local(anim)->frameRate = 8;
 			sound_playCued(s_shared.kellSound1, local(obj)->posWS);
@@ -688,7 +688,7 @@ namespace TFE_DarkForces
 				break;
 			}
 
-			local(anim)->flags |= AFLAG_PLAYED;
+			local(anim)->flags |= AFLAG_PLAYONCE;
 			actor_setupBossAnimation(local(obj), 1, local(anim));
 			local(anim)->frameRate = 8;
 
@@ -751,7 +751,7 @@ namespace TFE_DarkForces
 		local(target)->flags |= TARGET_FREEZE;
 		sound_playCued(s_shared.kellSound3, local(obj)->posWS);
 
-		local(anim)->flags |= AFLAG_PLAYED;
+		local(anim)->flags |= AFLAG_PLAYONCE;
 		actor_setupBossAnimation(local(obj), 2, local(anim));
 		local(anim)->frameRate = 8;
 
@@ -819,7 +819,7 @@ namespace TFE_DarkForces
 		local(delay) = 72;
 		local(speedRotation) = local(target)->speedRotation;
 
-		local(anim)->flags &= ~AFLAG_PLAYED;
+		local(anim)->flags &= ~AFLAG_PLAYONCE;
 		actor_setupBossAnimation(local(obj), 0, local(anim));
 		local(target)->flags &= ~TARGET_FREEZE;
 		local(target)->speedRotation = 0x3000;
@@ -1113,7 +1113,7 @@ namespace TFE_DarkForces
 
 		LogicAnimation* anim = &physicsActor->anim;
 		anim->frameRate = 5;
-		anim->flags = (anim->flags | AFLAG_READY) & (~AFLAG_PLAYED);
+		anim->flags = (anim->flags | AFLAG_READY) & (~AFLAG_PLAYONCE);
 		anim->frameCount = ONE_16;
 		anim->prevTick = 0;
 		actor_setupBossAnimation(obj, 5, anim);

@@ -285,7 +285,7 @@ namespace TFE_DarkForces
 		attackMod->fireOffset.z = 0;
 
 		attackMod->target.flags &= ~TARGET_ALL;
-		attackMod->anim.flags |= (AFLAG_PLAYED | AFLAG_READY);	// attack and damage module animations do not loop
+		attackMod->anim.flags |= (AFLAG_PLAYONCE | AFLAG_READY);	// attack and damage module animations do not loop
 		attackMod->timing.nextTick = s_curTick + 0x4446;	// ~120 seconds
 
 		SecObject* obj = attackMod->header.obj;
@@ -701,7 +701,7 @@ namespace TFE_DarkForces
 					actor_setDeathCollisionFlags();
 					sound_stop(logic->alertSndID);
 					sound_playCued(damageMod->dieSndSrc, obj->posWS);
-					attackMod->anim.flags |= 8;
+					attackMod->anim.flags |= AFLAG_BIT3;
 					if (proj->type == PROJ_PUNCH && obj->type == OBJ_TYPE_SPRITE)
 					{
 						actor_setupAnimation(2, anim);
@@ -799,7 +799,7 @@ namespace TFE_DarkForces
 				actor_setDeathCollisionFlags();
 				sound_stop(logic->alertSndID);
 				sound_playCued(damageMod->dieSndSrc, obj->posWS);
-				attackMod->anim.flags |= 8;
+				attackMod->anim.flags |= AFLAG_BIT3;
 				if (obj->type == OBJ_TYPE_SPRITE)
 				{
 					actor_setupAnimation(3, anim);
@@ -1722,10 +1722,12 @@ namespace TFE_DarkForces
 		allocator_deleteItem(s_istate.actorDispatch, dispatch);
 	}
 	
+	// Returns JTRUE when animation is finished, otherwise JFALSE
 	JBool actor_advanceAnimation(LogicAnimation* anim, SecObject* obj)
 	{
 		if (!anim->prevTick)
 		{
+			// Start the animation
 			anim->prevTick = s_frameTicks[anim->frameRate];
 			anim->flags &= ~AFLAG_READY;
 
@@ -1740,8 +1742,9 @@ namespace TFE_DarkForces
 			fixed16_16 endFrame = anim->startFrame + anim->frameCount;
 			if (anim->frame >= endFrame)
 			{
-				if (anim->flags & AFLAG_PLAYED)
+				if (anim->flags & AFLAG_PLAYONCE)
 				{
+					// Non-looping animation; animation will end at the final frame
 					endFrame -= ONE_16;
 					anim->frame = endFrame;
 					obj->frame = floor16(endFrame);
@@ -1750,6 +1753,7 @@ namespace TFE_DarkForces
 
 				while (anim->frame >= endFrame)
 				{
+					// Rewind to start of animation (looping animation)
 					anim->frame -= anim->frameCount;
 				}
 			}

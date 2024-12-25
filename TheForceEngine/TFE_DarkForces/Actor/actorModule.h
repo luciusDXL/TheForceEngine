@@ -24,8 +24,9 @@ struct Task;
 
 enum LogicAnimFlags
 {
-	AFLAG_PLAYED = FLAG_BIT(0),
-	AFLAG_READY  = FLAG_BIT(1),
+	AFLAG_PLAYONCE = FLAG_BIT(0),	// Indicates an animation will play through once only and not loop back to first frame
+	AFLAG_READY    = FLAG_BIT(1),
+	AFLAG_BIT3	   = FLAG_BIT(3),	// Unknown
 };
 
 enum LogicAnimState : u32
@@ -59,7 +60,7 @@ struct LogicAnimation
 	Tick prevTick;
 	fixed16_16 frame;
 	fixed16_16 startFrame;
-	u32 flags;
+	u32 flags;			// see LogicAnimFlags enum
 	s32 animId;
 	LogicAnimState state;
 };

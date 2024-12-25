@@ -49,7 +49,7 @@ namespace TFE_DarkForces
 		ThinkerModule* thinkerMod = actor_createThinkerModule(dispatch);
 		thinkerMod->target.speedRotation = 0x7fff;
 		thinkerMod->target.speed = FIXED(13);
-		thinkerMod->anim.flags &= 0xfffffffe;
+		thinkerMod->anim.flags &= ~AFLAG_PLAYONCE;
 		thinkerMod->startDelay = TICKS(2);
 		actor_addModule(dispatch, (ActorModule*)thinkerMod);
 
@@ -87,7 +87,7 @@ namespace TFE_DarkForces
 		ThinkerModule* thinkerMod = actor_createThinkerModule(dispatch);
 		thinkerMod->target.speedRotation = 0x7fff;
 		thinkerMod->target.speed = FIXED(13);
-		thinkerMod->anim.flags &= 0xfffffffe;
+		thinkerMod->anim.flags &= ~AFLAG_PLAYONCE;
 		thinkerMod->startDelay = TICKS(2);
 		actor_addModule(dispatch, (ActorModule*)thinkerMod);
 
@@ -129,7 +129,7 @@ namespace TFE_DarkForces
 		thinkerMod->delay = 0;
 		thinkerMod->target.speedRotation = 0x3fff;
 		thinkerMod->target.speed = FIXED(12);
-		thinkerMod->anim.flags &= 0xfffffffe;
+		thinkerMod->anim.flags &= ~AFLAG_PLAYONCE;
 		thinkerMod->startDelay = TICKS(2);
 		actor_addModule(dispatch, (ActorModule*)thinkerMod);
 
@@ -170,7 +170,7 @@ namespace TFE_DarkForces
 		thinkerMod->target.speedRotation = 0x7fff;
 		thinkerMod->target.speed = FIXED(9);
 		thinkerMod->delay = 0;
-		thinkerMod->anim.flags &= 0xfffffffe;
+		thinkerMod->anim.flags &= ~AFLAG_PLAYONCE;
 		thinkerMod->startDelay = TICKS(2);
 		actor_addModule(dispatch, (ActorModule*)thinkerMod);
 
@@ -228,7 +228,7 @@ namespace TFE_DarkForces
 		ThinkerModule* thinkerMod = actor_createThinkerModule(dispatch);
 		thinkerMod->target.speedRotation = cust->rotationSpeed;
 		thinkerMod->target.speed = FIXED(cust->speed);
-		thinkerMod->anim.flags &= 0xfffffffe;
+		thinkerMod->anim.flags &= ~AFLAG_PLAYONCE;		// Ensures that walking animations will loop
 		thinkerMod->startDelay = TICKS(2);
 		actor_addModule(dispatch, (ActorModule*)thinkerMod);
 

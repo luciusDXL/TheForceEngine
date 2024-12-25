@@ -130,7 +130,7 @@ namespace TFE_DarkForces
 		{
 			case STATE_DELAY:
 			{
-				if (attackMod->anim.flags & 2)
+				if (attackMod->anim.flags & AFLAG_READY)
 				{
 					obj->flags &= ~OBJ_FLAG_NEEDS_TRANSFORM;
 					obj->worldWidth = 0;
@@ -148,7 +148,7 @@ namespace TFE_DarkForces
 				if (!actor_canSeeObjFromDist(obj, s_playerObject))
 				{
 					actor_updatePlayerVisiblity(JFALSE, 0, 0);
-					attackMod->anim.flags |= 2;
+					attackMod->anim.flags |= AFLAG_READY;
 					attackMod->anim.state = STATE_DELAY;
 					if (s_curTick > attackMod->timing.nextTick)
 					{
@@ -203,7 +203,7 @@ namespace TFE_DarkForces
 			} break;
 			case STATE_ATTACK1:
 			{
-				if (attackMod->anim.flags & 2)
+				if (attackMod->anim.flags & AFLAG_READY)
 				{
 					attackMod->anim.state = STATE_ANIMATE1;
 					sound_playCued(attackMod->attackSecSndSrc, obj->posWS);
@@ -262,7 +262,7 @@ namespace TFE_DarkForces
 		thinkerMod->target.speed = FIXED(18);
 		thinkerMod->delay = 58;
 		thinkerMod->startDelay = 72;
-		thinkerMod->anim.flags &= 0xfffffffe;
+		thinkerMod->anim.flags &= ~AFLAG_PLAYONCE;
 		actor_addModule(dispatch, (ActorModule*)thinkerMod);
 
 		MovementModule* moveMod = actor_createMovementModule(dispatch);
