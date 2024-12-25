@@ -138,11 +138,11 @@ namespace TFE_DarkForces
 
 					moveMod->collisionFlags |= 1;
 					attackMod->target.flags &= ~TARGET_ALL;
-					attackMod->anim.state = STATE_ANIMATEATTACK;
+					attackMod->anim.state = STATE_DECIDE;
 					return s_curTick + random(attackMod->timing.delay);
 				}
 			} break;
-			case STATE_ANIMATEATTACK:
+			case STATE_DECIDE:
 			{
 				gameMusic_sustainFight();
 				if (!actor_canSeeObjFromDist(obj, s_playerObject))
@@ -166,7 +166,7 @@ namespace TFE_DarkForces
 				fixed16_16 dist = dy + distApprox(s_playerObject->posWS.x, s_playerObject->posWS.z, obj->posWS.x, obj->posWS.z);
 				if (dist <= attackMod->meleeRange)
 				{
-					attackMod->anim.state = STATE_FIRE1;
+					attackMod->anim.state = STATE_ATTACK1;
 					attackMod->timing.delay = attackMod->timing.meleeDelay;
 					attackMod->target.pos.x = obj->posWS.x;
 					attackMod->target.pos.z = obj->posWS.z;
@@ -191,7 +191,7 @@ namespace TFE_DarkForces
 				obj->flags |= OBJ_FLAG_NEEDS_TRANSFORM;
 				if (obj->type == OBJ_TYPE_SPRITE)
 				{
-					if (attackMod->anim.state == STATE_FIRE1)  // Attack animation
+					if (attackMod->anim.state == STATE_ATTACK1)  // Attack animation
 					{
 						actor_setupAnimation(1, &attackMod->anim);
 					}
@@ -201,7 +201,7 @@ namespace TFE_DarkForces
 					}
 				}
 			} break;
-			case STATE_FIRE1:
+			case STATE_ATTACK1:
 			{
 				if (attackMod->anim.flags & 2)
 				{

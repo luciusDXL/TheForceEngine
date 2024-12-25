@@ -33,11 +33,11 @@ enum LogicAnimState : u32
 	//GENERAL
 	STATE_DELAY = 0u,
 	//ATTACK MODULE
-	STATE_ANIMATEATTACK,
-	STATE_FIRE1,
-	STATE_ANIMATE1,
-	STATE_FIRE2,
-	STATE_ANIMATE2,
+	STATE_DECIDE,			// Decide whether to attack and which attack to use
+	STATE_ATTACK1,			// Primary attack (can be melee or ranged)
+	STATE_ANIMATE1,			// Animation played after attack (eg. weapon recoil)
+	STATE_ATTACK2,			// Secondary attack (always ranged)
+	STATE_ANIMATE2,			// Animation played after secondary attack
 	STATE_COUNT,
 	//THINKER MODULE
 	// Move towards our destination

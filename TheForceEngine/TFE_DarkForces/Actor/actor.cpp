@@ -285,7 +285,7 @@ namespace TFE_DarkForces
 		attackMod->fireOffset.z = 0;
 
 		attackMod->target.flags &= ~TARGET_ALL;
-		attackMod->anim.flags |= 3;
+		attackMod->anim.flags |= (AFLAG_PLAYED | AFLAG_READY);	// attack and damage module animations do not loop
 		attackMod->timing.nextTick = s_curTick + 0x4446;	// ~120 seconds
 
 		SecObject* obj = attackMod->header.obj;
@@ -585,7 +585,7 @@ namespace TFE_DarkForces
 		SecObject* obj = attackMod->header.obj;
 		RSector* sector = obj->sector;
 
-		if (!(attackMod->anim.flags & 2))
+		if (!(attackMod->anim.flags & AFLAG_READY))
 		{
 			if (obj->type == OBJ_TYPE_SPRITE)
 			{
@@ -847,11 +847,11 @@ namespace TFE_DarkForces
 		{
 			case STATE_DELAY:
 			{
-				if (attackMod->anim.flags & 2)
+				if (attackMod->anim.flags & AFLAG_READY)
 				{
 					// Clear attack based lighting.
 					obj->flags &= ~OBJ_FLAG_FULLBRIGHT;
-					attackMod->anim.state = STATE_ANIMATEATTACK;
+					attackMod->anim.state = STATE_DECIDE;
 
 					// Update the shooting accuracy.
 					if (attackMod->accuracyNextTick < s_curTick)
@@ -875,32 +875,34 @@ namespace TFE_DarkForces
 					return s_curTick + random(attackMod->timing.delay);
 				}
 			} break;
-			case STATE_ANIMATEATTACK:
+			case STATE_DECIDE:
 			{
 				gameMusic_sustainFight();
 				if (s_playerDying)
 				{
 					if (s_curTick >= s_reviveTick)
 					{
-						attackMod->anim.flags |= 2;
+						attackMod->anim.flags |= AFLAG_READY;
 						attackMod->anim.state = STATE_DELAY;
 						return attackMod->timing.delay;
 					}
 				}
 
+				// Check for player visibility
 				if (!actor_canSeeObjFromDist(obj, s_playerObject))
 				{
 					actor_updatePlayerVisiblity(JFALSE, 0, 0);
-					attackMod->anim.flags |= 2;
+					attackMod->anim.flags |= AFLAG_READY;
 					attackMod->anim.state = STATE_DELAY;
 					if (attackMod->timing.nextTick < s_curTick)
 					{
+						// Lost sight of player for sufficient length of time (losDelay) - return to idle state
 						attackMod->timing.delay = attackMod->timing.searchDelay;
 						actor_setupInitAnimation();
 					}
 					return attackMod->timing.delay;
 				}
-				else
+				else  // Player is visible
 				{
 					actor_updatePlayerVisiblity(JTRUE, s_eyePos.x, s_eyePos.z);
 					attackMod->timing.nextTick = s_curTick + attackMod->timing.losDelay;
@@ -917,41 +919,49 @@ namespace TFE_DarkForces
 						{
 							if (dist <= attackMod->meleeRange)
 							{
-								attackMod->anim.state = STATE_FIRE1;
+								// Within melee range => Perform melee (primary attack)
+								attackMod->anim.state = STATE_ATTACK1;
 								attackMod->timing.delay = attackMod->timing.meleeDelay;
 							}
 							else if (!(attackMod->attackFlags & ATTFLAG_RANGED) || dist < attackMod->minDist)
 							{
-								attackMod->anim.flags |= 2;
+								// Outside melee range && cannot do ranged attack => quit out
+								attackMod->anim.flags |= AFLAG_READY;
 								attackMod->anim.state = STATE_DELAY;
 								return attackMod->timing.delay;
 							}
 							else
 							{
-								attackMod->anim.state = STATE_FIRE2;
+								// Do ranged attack (secondary)
+								attackMod->anim.state = STATE_ATTACK2;
 								attackMod->timing.delay = attackMod->timing.rangedDelay;
 							}
 						}
-						else
+						else  // Actor does not have melee attack
 						{
 							if (dist < attackMod->minDist)
 							{
-								attackMod->anim.flags |= 2;
+								// Too close for ranged attack => quit out
+								attackMod->anim.flags |= AFLAG_READY;
 								attackMod->anim.state = STATE_DELAY;
 								return attackMod->timing.delay;
 							}
-							attackMod->anim.state = STATE_FIRE1;
+							
+							// Do ranged attack (primary)
+							attackMod->anim.state = STATE_ATTACK1;
 							attackMod->timing.delay = attackMod->timing.rangedDelay;
 						}
 
 						if (obj->type == OBJ_TYPE_SPRITE)
 						{
-							if (attackMod->anim.state == STATE_FIRE1)
+							if (attackMod->anim.state == STATE_ATTACK1)
 							{
+								// Use primary attack animation
 								actor_setupAnimation(1, &attackMod->anim);
 							}
 							else
 							{
+								// Use secondary attack animation
 								actor_setupAnimation(7, &attackMod->anim);
 							}
 						}
@@ -963,17 +973,17 @@ namespace TFE_DarkForces
 						attackMod->target.roll  = obj->roll;
 						attackMod->target.flags |= (TARGET_MOVE_XZ | TARGET_MOVE_ROT);
 					}
-					else
+					else   // Too far away or too high or too low to attack
 					{
-						attackMod->anim.flags |= 2;
+						attackMod->anim.flags |= AFLAG_READY;
 						attackMod->anim.state = STATE_DELAY;
 						return attackMod->timing.delay;
 					}
 				}
 			} break;
-			case STATE_FIRE1:
+			case STATE_ATTACK1:
 			{
-				if (!(attackMod->anim.flags & 2))
+				if (!(attackMod->anim.flags & AFLAG_READY))
 				{
 					break;
 				}
@@ -1013,7 +1023,7 @@ namespace TFE_DarkForces
 				SecObject* projObj = proj->logic.obj;
 				projObj->yaw = obj->yaw;
 				
-				// Vanilla DF did not handle arcing projectiles with STATE_FIRE1; this has been added
+				// Vanilla DF did not handle arcing projectiles with STATE_ATTACK1; this has been added
 				if (attackMod->projType == PROJ_THERMAL_DET || attackMod->projType == PROJ_MORTAR)
 				{
 					// TDs are lobbed at an angle that depends on distance from target
@@ -1058,9 +1068,9 @@ namespace TFE_DarkForces
 				}
 				attackMod->anim.state = STATE_DELAY;
 			} break;
-			case STATE_FIRE2:
+			case STATE_ATTACK2:
 			{
-				if (!(attackMod->anim.flags & 2))
+				if (!(attackMod->anim.flags & AFLAG_READY))
 				{
 					break;
 				}
@@ -1288,7 +1298,7 @@ namespace TFE_DarkForces
 		thinkerMod->delay = 72;
 		thinkerMod->nextTick = 0;
 		thinkerMod->playerLastSeen = 0xffffffff;
-		thinkerMod->anim.state = STATE_FIRE1;
+		thinkerMod->anim.state = STATE_TURN;
 		thinkerMod->maxWalkTime = 728;	// ~5 seconds between decision points.
 		thinkerMod->anim.frameRate = 5;
 		thinkerMod->anim.frameCount = ONE_16;
