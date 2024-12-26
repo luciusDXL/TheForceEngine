@@ -58,7 +58,7 @@ namespace TFE_DarkForces
 					// TODO: Move to the correct location.
 					actor_removeLogics(obj);
 
-					actor_setupAnimation(2/*animIndex*/, anim);
+					actor_setupAnimation(ANIM_DIE1/*animIndex*/, anim);
 					moveMod->updateTargetFunc(moveMod, &damageMod->attackMod.target);
 					retValue = JFALSE;
 				}
@@ -114,7 +114,7 @@ namespace TFE_DarkForces
 			// I have to remove the logics here in order to get this to work, but this doesn't actually happen here in the original code.
 			// TODO: Move to the correct location.
 			actor_removeLogics(obj);
-			actor_setupAnimation(2/*animIndex*/, anim);
+			actor_setupAnimation(ANIM_DIE1/*animIndex*/, anim);
 			retValue = JFALSE;
 		}
 		return retValue;

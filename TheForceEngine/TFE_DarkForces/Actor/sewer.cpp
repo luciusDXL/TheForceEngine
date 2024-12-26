@@ -45,7 +45,7 @@ namespace TFE_DarkForces
 		}
 
 		// Creature die.
-		s32 animIndex = actor_getAnimationIndex(4);
+		s32 animIndex = actor_getAnimationIndex(ANIM_DEAD);
 		if (animIndex != -1)
 		{
 			SecObject* corpse = allocateObject();
@@ -193,11 +193,11 @@ namespace TFE_DarkForces
 				{
 					if (attackMod->anim.state == STATE_ATTACK1)  // Attack animation
 					{
-						actor_setupAnimation(1, &attackMod->anim);
+						actor_setupAnimation(ANIM_ATTACK1, &attackMod->anim);
 					}
 					else // Look around animation
 					{
-						actor_setupAnimation(14, &attackMod->anim);
+						actor_setupAnimation(ANIM_SEARCH, &attackMod->anim);
 					}
 				}
 			} break;
@@ -218,7 +218,7 @@ namespace TFE_DarkForces
 			} break;
 			case STATE_ANIMATE1:
 			{
-				actor_setupAnimation(6, &attackMod->anim);
+				actor_setupAnimation(ANIM_ATTACK1_END, &attackMod->anim);
 				attackMod->anim.state = STATE_DELAY;
 			} break;
 		}
@@ -291,13 +291,13 @@ namespace TFE_DarkForces
 		sound_playCued(module->dieSndSrc, obj->posWS);
 		attackMod->target.flags |= TARGET_FREEZE;
 
-		if ((obj->anim == 1 || obj->anim == 6) && obj->type == OBJ_TYPE_SPRITE)
+		if ((obj->anim == ANIM_ATTACK1 || obj->anim == ANIM_ATTACK1_END) && obj->type == OBJ_TYPE_SPRITE)
 		{
-			actor_setupAnimation(2, &attackMod->anim);
+			actor_setupAnimation(ANIM_DIE1, &attackMod->anim);
 		}
 		else if (obj->type == OBJ_TYPE_SPRITE)
 		{
-			actor_setupAnimation(3, &attackMod->anim);
+			actor_setupAnimation(ANIM_DIE2, &attackMod->anim);
 		}
 
 		obj->posWS.y = sector->floorHeight;

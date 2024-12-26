@@ -639,7 +639,7 @@ namespace TFE_DarkForces
 						freeObject(item);
 					}
 				}
-				s32 animIndex = actor_getAnimationIndex(4);
+				s32 animIndex = actor_getAnimationIndex(ANIM_DEAD);
 				if (animIndex != -1)
 				{
 					RSector* sector = obj->sector;
@@ -704,11 +704,11 @@ namespace TFE_DarkForces
 					attackMod->anim.flags |= AFLAG_BIT3;
 					if (proj->type == PROJ_PUNCH && obj->type == OBJ_TYPE_SPRITE)
 					{
-						actor_setupAnimation(2, anim);
+						actor_setupAnimation(ANIM_DIE1, anim);
 					}
 					else if (obj->type == OBJ_TYPE_SPRITE)
 					{
-						actor_setupAnimation(3, anim);
+						actor_setupAnimation(ANIM_DIE2, anim);
 					}
 				}
 				else
@@ -725,7 +725,7 @@ namespace TFE_DarkForces
 					damageMod->hurtSndID = sound_playCued(damageMod->hurtSndSrc, obj->posWS);
 					if (obj->type == OBJ_TYPE_SPRITE)
 					{
-						actor_setupAnimation(12, anim);
+						actor_setupAnimation(ANIM_PAIN, anim);
 					}
 				}
 			}
@@ -765,7 +765,7 @@ namespace TFE_DarkForces
 					attackMod->target.flags |= 8;
 					if (obj->type == OBJ_TYPE_SPRITE)
 					{
-						actor_setupAnimation(3, anim);
+						actor_setupAnimation(ANIM_DIE2, anim);
 					}
 				}
 				else
@@ -775,7 +775,7 @@ namespace TFE_DarkForces
 					damageMod->hurtSndID = sound_playCued(damageMod->hurtSndSrc, obj->posWS);
 					if (obj->type == OBJ_TYPE_SPRITE)
 					{
-						actor_setupAnimation(12, anim);
+						actor_setupAnimation(ANIM_PAIN, anim);
 					}
 				}
 			}
@@ -802,7 +802,7 @@ namespace TFE_DarkForces
 				attackMod->anim.flags |= AFLAG_BIT3;
 				if (obj->type == OBJ_TYPE_SPRITE)
 				{
-					actor_setupAnimation(3, anim);
+					actor_setupAnimation(ANIM_DIE2, anim);
 				}
 			}
 		}
@@ -957,12 +957,12 @@ namespace TFE_DarkForces
 							if (attackMod->anim.state == STATE_ATTACK1)
 							{
 								// Use primary attack animation
-								actor_setupAnimation(1, &attackMod->anim);
+								actor_setupAnimation(ANIM_ATTACK1, &attackMod->anim);
 							}
 							else
 							{
 								// Use secondary attack animation
-								actor_setupAnimation(7, &attackMod->anim);
+								actor_setupAnimation(ANIM_ATTACK2, &attackMod->anim);
 							}
 						}
 
@@ -1064,7 +1064,7 @@ namespace TFE_DarkForces
 			{
 				if (obj->type == OBJ_TYPE_SPRITE)
 				{
-					actor_setupAnimation(6, anim);
+					actor_setupAnimation(ANIM_ATTACK1_END, anim);
 				}
 				attackMod->anim.state = STATE_DELAY;
 			} break;
@@ -1123,7 +1123,7 @@ namespace TFE_DarkForces
 			{
 				if (obj->type == OBJ_TYPE_SPRITE)
 				{
-					actor_setupAnimation(8, anim);
+					actor_setupAnimation(ANIM_ATTACK2_END, anim);
 				}
 				attackMod->anim.state = STATE_DELAY;
 			} break;
@@ -1264,7 +1264,7 @@ namespace TFE_DarkForces
 			{
 				if (obj->type == OBJ_TYPE_SPRITE)
 				{
-					actor_setupAnimation(0, &thinkerMod->anim);
+					actor_setupAnimation(ANIM_MOVE, &thinkerMod->anim);
 				}
 				logic->flags |= 2;
 			}
@@ -1331,7 +1331,7 @@ namespace TFE_DarkForces
 		logic->nextTick = s_curTick + logic->delay;
 
 		SecObject* obj = logic->logic.obj;
-		obj->anim = actor_getAnimationIndex(5);
+		obj->anim = actor_getAnimationIndex(ANIM_IDLE);
 		obj->frame = 0;
 	}
 
