@@ -94,7 +94,7 @@ namespace TFE_DarkForces
 	Logic* scenery_setup(SecObject* obj, LogicSetupFunc* setupFunc)
 	{
 		ActorDispatch* dispatch = actor_createDispatch(obj, setupFunc);
-		dispatch->flags &= ~(FLAG_BIT(0) | FLAG_BIT(2));
+		dispatch->flags &= ~(ACTOR_IDLE | ACTOR_NPC);
 		dispatch->animTable = s_sceneryAnimTable;
 
 		DamageModule* module = actor_createDamageModule(dispatch);

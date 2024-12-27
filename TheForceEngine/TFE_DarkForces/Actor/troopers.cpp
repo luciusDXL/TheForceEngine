@@ -42,7 +42,7 @@ namespace TFE_DarkForces
 	Logic* officer_setup(SecObject* obj, LogicSetupFunc* setupFunc, KEYWORD logicId)
 	{
 		ActorDispatch* dispatch = actor_createDispatch(obj, setupFunc);
-		dispatch->flags |= FLAG_BIT(4);	// Use Officer alert table.
+		dispatch->flags |= ACTOR_OFFIC_ALERT;	// Use Officer alert table.
 		dispatch->alertSndSrc = 0;
 
 		DamageModule* module = actor_createDamageModule(dispatch);
@@ -83,7 +83,7 @@ namespace TFE_DarkForces
 	Logic* trooper_setup(SecObject* obj, LogicSetupFunc* setupFunc)
 	{
 		ActorDispatch* dispatch = actor_createDispatch(obj, setupFunc);
-		dispatch->flags |= FLAG_BIT(5);	// Use Stormtrooper alert table.
+		dispatch->flags |= ACTOR_TROOP_ALERT;	// Use Stormtrooper alert table.
 		dispatch->alertSndSrc = 0;
 
 		DamageModule* module = actor_createDamageModule(dispatch);
@@ -123,7 +123,7 @@ namespace TFE_DarkForces
 	Logic* commando_setup(SecObject* obj, LogicSetupFunc* setupFunc)
 	{
 		ActorDispatch* dispatch = actor_createDispatch(obj, setupFunc);
-		dispatch->flags |= FLAG_BIT(5);	// Use Stormtrooper alert table.
+		dispatch->flags |= ACTOR_TROOP_ALERT;	// Use Stormtrooper alert table.
 		dispatch->alertSndSrc = 0;
 
 		DamageModule* module = actor_createDamageModule(dispatch);

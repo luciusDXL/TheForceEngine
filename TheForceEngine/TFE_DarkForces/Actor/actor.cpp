@@ -191,7 +191,7 @@ namespace TFE_DarkForces
 		dispatch->vel = { 0 };
 		dispatch->lastPlayerPos = { 0 };
 		dispatch->freeTask = nullptr;
-		dispatch->flags = 4;
+		dispatch->flags = ACTOR_NPC;	// this is later removed for barrels and scenery
 
 		if (obj)
 		{
@@ -418,7 +418,7 @@ namespace TFE_DarkForces
 	JBool actorLogic_isStopFlagSet()
 	{
 		ActorDispatch* logic = (ActorDispatch*)s_actorState.curLogic;
-		return (logic->flags & 8) ? JTRUE : JFALSE;
+		return (logic->flags & ACTOR_PLAYER_VISIBLE) ? JTRUE : JFALSE;
 	}
 
 	void actor_changeDirFromCollision(MovementModule* moveMod, ActorTarget* target, Tick* prevColTick)
@@ -563,7 +563,7 @@ namespace TFE_DarkForces
 		ActorDispatch* logic = (ActorDispatch*)s_actorState.curLogic;
 
 		// Update player visibility flag.
-		logic->flags &= ~8;
+		logic->flags &= ~ACTOR_PLAYER_VISIBLE;
 		logic->flags |= ((playerVis & 1) << 3);	// flag 8 = player visible.
 
 		if (playerVis)
@@ -1146,7 +1146,7 @@ namespace TFE_DarkForces
 		{
 			attackMod->timing.nextTick = s_curTick + attackMod->timing.losDelay;
 		}
-		if (logic->flags & 1)
+		if (logic->flags & ACTOR_IDLE)
 		{
 			return attackMod->timing.delay;
 		}
@@ -1260,20 +1260,20 @@ namespace TFE_DarkForces
 			thinkerMod->target.yaw = vec2ToAngle(dx, dz);
 			thinkerMod->target.flags |= TARGET_MOVE_ROT;
 						
-			if (!(logic->flags & 2))
+			if (!(logic->flags & ACTOR_MOVING))
 			{
 				if (obj->type == OBJ_TYPE_SPRITE)
 				{
 					actor_setupAnimation(ANIM_MOVE, &thinkerMod->anim);
 				}
-				logic->flags |= 2;
+				logic->flags |= ACTOR_MOVING;
 			}
 			thinkerMod->anim.state = STATE_MOVE;
 			thinkerMod->nextTick = s_curTick + thinkerMod->maxWalkTime;
 
 			if (obj->entityFlags & ETFLAG_REMOTE)
 			{
-				if (!(logic->flags & 1) && (logic->flags & 2))
+				if (!(logic->flags & ACTOR_IDLE) && (logic->flags & ACTOR_MOVING))
 				{
 					sound_playCued(s_agentSndSrc[AGENTSND_REMOTE_2], obj->posWS);
 				}
@@ -1327,7 +1327,7 @@ namespace TFE_DarkForces
 	void actor_setupInitAnimation()
 	{
 		ActorDispatch* logic = (ActorDispatch*)s_actorState.curLogic;
-		logic->flags = (logic->flags | 1) & 0xfd;
+		logic->flags = (logic->flags | ACTOR_IDLE) & ~ACTOR_MOVING;		// remove flag bit 1 (ACTOR_MOVING)
 		logic->nextTick = s_curTick + logic->delay;
 
 		SecObject* obj = logic->logic.obj;
@@ -1923,16 +1923,16 @@ namespace TFE_DarkForces
 
 		if (msg == MSG_WAKEUP)
 		{
-			if (dispatch->flags & 1)
+			if (dispatch->flags & ACTOR_IDLE)
 			{
 				gameMusic_startFight();
 			}
 
-			if ((dispatch->flags & 4) && (dispatch->flags & 1))
+			if ((dispatch->flags & ACTOR_NPC) && (dispatch->flags & ACTOR_IDLE))
 			{
 				if (s_actorState.nextAlertTick < s_curTick)
 				{
-					if (dispatch->flags & 16)  // Officer alert list.
+					if (dispatch->flags & ACTOR_OFFIC_ALERT)  // Officer alert list.
 					{
 						dispatch->alertSndID = sound_playCued(s_officerAlertSndSrc[s_actorState.officerAlertIndex], obj->posWS);
 						s_actorState.officerAlertIndex++;
@@ -1941,7 +1941,7 @@ namespace TFE_DarkForces
 							s_actorState.officerAlertIndex = 0;
 						}
 					}
-					else if (dispatch->flags & 32)  // Storm trooper alert list
+					else if (dispatch->flags & ACTOR_TROOP_ALERT)  // Storm trooper alert list
 					{
 						dispatch->alertSndID = sound_playCued(s_stormAlertSndSrc[s_actorState.stormtrooperAlertIndex], obj->posWS);
 						s_actorState.stormtrooperAlertIndex++;
@@ -1956,16 +1956,16 @@ namespace TFE_DarkForces
 					}
 					s_actorState.nextAlertTick = s_curTick + 291;	// ~2 seconds between alerts
 				}
-				dispatch->flags &= 0xfffffffe;
+				dispatch->flags &= ~ACTOR_IDLE;		// remove flag bit 0 (ACTOR_IDLE)
 			}
 		}
 		else if (msg == MSG_DAMAGE || msg == MSG_EXPLOSION)
 		{
-			if (dispatch->flags & 1)
+			if (dispatch->flags & ACTOR_IDLE)
 			{
 				gameMusic_startFight();
 			}
-			dispatch->flags &= ~1;
+			dispatch->flags &= ~ACTOR_IDLE;
 			s_actorState.curAnimation = nullptr;
 		}
 	}
@@ -2068,7 +2068,7 @@ namespace TFE_DarkForces
 				{
 					SecObject* obj = dispatch->logic.obj;
 					const u32 flags = dispatch->flags;
-					if ((flags & 1) && (flags & 4))
+					if ((flags & ACTOR_IDLE) && (flags & ACTOR_NPC))
 					{
 						if (dispatch->nextTick < s_curTick)
 						{
@@ -2094,7 +2094,7 @@ namespace TFE_DarkForces
 							}
 						}
 
-						if (s_actorState.curLogic && !(dispatch->flags & 1))
+						if (s_actorState.curLogic && !(dispatch->flags & ACTOR_IDLE))
 						{
 							MovementModule* moveMod = dispatch->moveMod;
 							if (moveMod && moveMod->header.func)

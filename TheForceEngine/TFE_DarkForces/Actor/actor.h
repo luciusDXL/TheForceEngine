@@ -84,6 +84,16 @@ enum
 	ACTOR_MAX_MODULES = 6,
 };
 
+enum ActorDispatchFlags
+{
+	ACTOR_IDLE				= FLAG_BIT(0),
+	ACTOR_MOVING			= FLAG_BIT(1),
+	ACTOR_NPC				= FLAG_BIT(2),	// set for AI characters, unset for scenery and exploders (these also use ActorDispatch)
+	ACTOR_PLAYER_VISIBLE	= FLAG_BIT(3),
+	ACTOR_OFFIC_ALERT		= FLAG_BIT(4),	// use officer alert sounds
+	ACTOR_TROOP_ALERT		= FLAG_BIT(5),	// use stormtrooper alert sounds
+};
+
 enum ActorCollisionFlags
 {
 	ACTORCOL_GRAVITY = FLAG_BIT(1),

@@ -124,7 +124,7 @@ namespace TFE_DarkForces
 	{
 		ActorDispatch* dispatch = actor_createDispatch(obj, setupFunc);
 
-		dispatch->flags &= ~(1 | 4);
+		dispatch->flags &= ~(ACTOR_IDLE | ACTOR_NPC);
 		dispatch->animTable = s_mineBarrelAnimTable;
 
 		DamageModule* module = actor_createDamageModule(dispatch);
@@ -153,8 +153,8 @@ namespace TFE_DarkForces
 	Logic* landmine_setup(SecObject* obj, LogicSetupFunc* setupFunc)
 	{
 		ActorDispatch* dispatch = actor_createDispatch(obj, setupFunc);
-		dispatch->flags &= ~4;
-		dispatch->flags &= ~1;
+		dispatch->flags &= ~ACTOR_NPC;
+		dispatch->flags &= ~ACTOR_IDLE;
 		dispatch->animTable = s_mineBarrelAnimTable;
 
 		DamageModule* module = actor_createDamageModule(dispatch);
@@ -179,7 +179,7 @@ namespace TFE_DarkForces
 		moveMod->target.speed = 0;
 		moveMod->target.speedRotation = 0;
 
-		dispatch->flags &= ~1;
+		dispatch->flags &= ~ACTOR_IDLE;
 		dispatch->animTable = s_mineBarrelAnimTable;
 
 		return (Logic*)dispatch;
