@@ -111,7 +111,7 @@ struct ActorTarget;
 
 // Logic for 'actors' -
 // an Actor is something with animated 'actions' that can move around in the world.
-// The "Dispatch" logic is the core actor, so rename to match.
+// The "Dispatch" logic is the core actor used for ordinary enemies, as well as scenery and exploders.
 struct ActorDispatch
 {
 	Logic logic;

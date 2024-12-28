@@ -415,7 +415,7 @@ namespace TFE_DarkForces
 		return JFALSE;
 	}
 
-	JBool actorLogic_isStopFlagSet()
+	JBool actorLogic_isVisibleFlagSet()
 	{
 		ActorDispatch* logic = (ActorDispatch*)s_actorState.curLogic;
 		return (logic->flags & ACTOR_PLAYER_VISIBLE) ? JTRUE : JFALSE;
@@ -1184,7 +1184,7 @@ namespace TFE_DarkForces
 			}
 			else
 			{
-				if (actorLogic_isStopFlagSet())
+				if (actorLogic_isVisibleFlagSet())
 				{
 					if (thinkerMod->playerLastSeen != 0xffffffff)
 					{
@@ -1202,7 +1202,7 @@ namespace TFE_DarkForces
 				if (actor_handleSteps(moveMod, target))
 				{
 					actor_changeDirFromCollision(moveMod, target, &thinkerMod->prevColTick);
-					if (!actorLogic_isStopFlagSet())
+					if (!actorLogic_isVisibleFlagSet())
 					{
 						thinkerMod->maxWalkTime += 218;
 						if (thinkerMod->maxWalkTime > 1456)
@@ -1230,7 +1230,7 @@ namespace TFE_DarkForces
 			}
 
 			fixed16_16 targetOffset;
-			if (!actorLogic_isStopFlagSet())
+			if (!actorLogic_isVisibleFlagSet())
 			{
 				// Offset the target by |dx| / 4
 				// This is obviously a typo and bug in the DOS code and should be min(|dx|, |dz|)
@@ -2055,6 +2055,8 @@ namespace TFE_DarkForces
 		}
 	}
 
+	// Task function for dispatch actors
+	// Iterates through all actors in s_istate.actorDispatch and updates them
 	void actorLogicTaskFunc(MessageType msg)
 	{
 		task_begin;
@@ -2075,13 +2077,14 @@ namespace TFE_DarkForces
 							dispatch->nextTick = s_curTick + dispatch->delay;
 							if (actor_isObjectVisible(obj, s_playerObject, dispatch->fov, dispatch->awareRange))
 							{
+								// Wake up, and alert other actors within a 150 unit range
 								message_sendToObj(obj, MSG_WAKEUP, actor_hitEffectMsgFunc);
 								gameMusic_startFight();
 								collision_effectObjectsInRangeXZ(obj->sector, FIXED(150), obj->posWS, hitEffectWakeupFunc, obj, ETFLAG_AI_ACTOR);
 							}
 						}
 					}
-					else
+					else  // actor is not idle
 					{
 						s_actorState.curLogic = (Logic*)dispatch;
 						s_actorState.curAnimation = nullptr;
@@ -2122,7 +2125,8 @@ namespace TFE_DarkForces
 		task_end;
 	}
 
-	// This is really a list of bosses:
+	// Task function for bosses, mousebots, welders, turrets
+	// Iterates through all actors in s_physicsActors and updates them
 	// TODO: Rename "physics" actor as appopriate.
 	void actorPhysicsTaskFunc(MessageType msg)
 	{

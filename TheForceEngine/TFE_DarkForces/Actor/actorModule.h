@@ -204,6 +204,10 @@ struct DamageModule
 	HitEffectID dieEffect;
 };
 
+// "PhysicsActor" is the core actor used for bosses, mousebots, turrets and welders
+// It only has a movement module
+// Damage, attack and other behaviour is coded specifically for each AI
+// Consider changing to a more suitable name?
 struct PhysicsActor
 {
 	MovementModule moveMod;
@@ -220,3 +224,4 @@ struct PhysicsActor
 	JBool alive;
 	s32 state;
 };
+
