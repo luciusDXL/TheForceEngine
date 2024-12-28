@@ -136,7 +136,7 @@ namespace TFE_DarkForces
 					obj->worldWidth = 0;
 					obj->posWS.y = sector->floorHeight + sector->secHeight;
 
-					moveMod->collisionFlags |= 1;
+					moveMod->collisionFlags |= ACTORCOL_NO_Y_MOVE;
 					attackMod->target.flags &= ~TARGET_ALL;
 					attackMod->anim.state = STATE_DECIDE;
 					return s_curTick + random(attackMod->timing.delay);
@@ -159,7 +159,7 @@ namespace TFE_DarkForces
 				}
 
 				actor_updatePlayerVisiblity(JTRUE, s_eyePos.x, s_eyePos.z);
-				moveMod->collisionFlags &= ~1;
+				moveMod->collisionFlags &= ~ACTORCOL_NO_Y_MOVE;
 
 				obj->posWS.y = sector->floorHeight;
 				fixed16_16 dy = TFE_Jedi::abs(obj->posWS.y - s_playerObject->posWS.y);
@@ -270,7 +270,7 @@ namespace TFE_DarkForces
 		dispatch->animTable = s_sewerCreatureAnimTable;
 		obj->entityFlags &= ~ETFLAG_SMART_OBJ;
 
-		moveMod->collisionFlags = (moveMod->collisionFlags | 1) & 0xfffffffd;
+		moveMod->collisionFlags = (moveMod->collisionFlags | ACTORCOL_NO_Y_MOVE) & ~ACTORCOL_GRAVITY;	// gravity is removed so they remain on the surface of water (floor height) rather than sinking down (second height)
 		moveMod->physics.yPos = 0;
 		moveMod->physics.botOffset = 0;
 		moveMod->physics.width = obj->worldWidth;
@@ -301,7 +301,7 @@ namespace TFE_DarkForces
 		}
 
 		obj->posWS.y = sector->floorHeight;
-		moveMod->collisionFlags &= 0xfffffffd;
+		moveMod->collisionFlags &= ~ACTORCOL_GRAVITY;
 
 		if (obj->type == OBJ_TYPE_SPRITE)
 		{

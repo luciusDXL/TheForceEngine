@@ -305,11 +305,12 @@ namespace TFE_DarkForces
 		return attackMod->fireOffset.y;
 	}
 
+	// Cause flying enemies fall to the ground when killed
 	void actor_setDeathCollisionFlags()
 	{
 		ActorDispatch* logic = (ActorDispatch*)s_actorState.curLogic;
 		MovementModule* moveMod = logic->moveMod;
-		moveMod->collisionFlags |= 2;
+		moveMod->collisionFlags |= ACTORCOL_GRAVITY;
 		// Added to disable auto-aim when dying.
 		logic->logic.obj->flags &= ~OBJ_FLAG_AIM;
 	}
@@ -385,7 +386,7 @@ namespace TFE_DarkForces
 		SecObject* obj = moveMod->header.obj;
 		if (moveMod->physics.responseStep || moveMod->collisionWall)
 		{
-			if (!(moveMod->collisionFlags & 1))
+			if (!(moveMod->collisionFlags & ACTORCOL_NO_Y_MOVE))		// i.e. actor is capable of vertical movement
 			{
 				RWall* wall = moveMod->physics.wall ? moveMod->physics.wall : moveMod->collisionWall;
 				if (!wall)
@@ -396,6 +397,7 @@ namespace TFE_DarkForces
 				RSector* nextSector = wall->nextSector;
 				if (nextSector)
 				{
+					// Actor has collided with adjoined wall; test if it can fit (vertically) through the adjoin
 					RSector* sector = wall->sector;
 					fixed16_16 floorHeight = min(nextSector->floorHeight, sector->floorHeight);
 					fixed16_16 ceilHeight  = max(nextSector->ceilingHeight, sector->ceilingHeight);
@@ -404,6 +406,7 @@ namespace TFE_DarkForces
 					// If the object can fit.
 					if (gap > objHeight)
 					{
+						// Move vertically to the middle of the gap
 						target->pos.y = floorHeight - (TFE_Jedi::abs(gap) >> 1) + (TFE_Jedi::abs(obj->worldHeight) >> 1);
 						target->flags |= 2;
 						return JFALSE;
@@ -1362,7 +1365,7 @@ namespace TFE_DarkForces
 				desiredMove.x = moveMod->target.pos.x - obj->posWS.x;
 				desiredMove.z = moveMod->target.pos.z - obj->posWS.z;
 			}
-			if (!(moveMod->collisionFlags & 1))
+			if (!(moveMod->collisionFlags & ACTORCOL_NO_Y_MOVE))		// i.e. actor is capable of vertical movement
 			{
 				if (moveMod->target.flags & TARGET_MOVE_Y)
 				{
@@ -1425,7 +1428,7 @@ namespace TFE_DarkForces
 					}
 				}
 				// Handles a single collision response + resolution step.
-				if (moveMod->collisionFlags & 4)
+				if (moveMod->collisionFlags & ACTORCOL_BIT2)
 				{
 					moveMod->collisionWall = wall;
 					dirX = physics->responseDir.x;
@@ -1446,7 +1449,7 @@ namespace TFE_DarkForces
 			handleCollision(physics);
 
 			// Handles a single collision response + resolution step from velocity delta.
-			if ((moveMod->collisionFlags & 4) && physics->responseStep)
+			if ((moveMod->collisionFlags & ACTORCOL_BIT2) && physics->responseStep)
 			{
 				moveMod->collisionWall = physics->wall;
 				dirX = physics->responseDir.x;
@@ -1588,7 +1591,7 @@ namespace TFE_DarkForces
 		moveMod->collisionWall = nullptr;
 		moveMod->unused = 0;
 
-		moveMod->collisionFlags = (moveMod->collisionFlags | 3) & 0xfffffffb;
+		moveMod->collisionFlags = (moveMod->collisionFlags | (ACTORCOL_NO_Y_MOVE | ACTORCOL_GRAVITY)) & ~ACTORCOL_BIT2;	// Set bits 0, 1 and clear bit 2. This creates a non-flying AI by default.
 		obj->entityFlags |= ETFLAG_SMART_OBJ;
 	}
 

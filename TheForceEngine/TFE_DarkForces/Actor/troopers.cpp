@@ -73,7 +73,7 @@ namespace TFE_DarkForces
 		dispatch->animTable = s_officerAnimTable;
 		s_actorState.curLogic = (Logic*)dispatch;
 
-		moveMod->collisionFlags |= 1;
+		moveMod->collisionFlags |= ACTORCOL_NO_Y_MOVE;
 		moveMod->physics.width = obj->worldWidth;
 		actor_setupInitAnimation();
 
@@ -113,7 +113,7 @@ namespace TFE_DarkForces
 		dispatch->animTable = s_troopAnimTable;
 		s_actorState.curLogic = (Logic*)dispatch;
 
-		moveMod->collisionFlags |= 1;
+		moveMod->collisionFlags |= ACTORCOL_NO_Y_MOVE;
 		moveMod->physics.width = obj->worldWidth;
 		actor_setupInitAnimation();
 
@@ -153,7 +153,7 @@ namespace TFE_DarkForces
 		dispatch->animTable = s_commandoAnimTable;
 		s_actorState.curLogic = (Logic*)dispatch;
 
-		moveMod->collisionFlags |= 1;
+		moveMod->collisionFlags |= ACTORCOL_NO_Y_MOVE;
 		moveMod->physics.width = obj->worldWidth;
 		actor_setupInitAnimation();
 

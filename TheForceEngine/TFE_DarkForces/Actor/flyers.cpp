@@ -157,7 +157,7 @@ namespace TFE_DarkForces
 				
 		MovementModule* moveMod = actor_createMovementModule(dispatch);
 		dispatch->moveMod = moveMod;
-		moveMod->collisionFlags = (moveMod->collisionFlags & 0xfffffff8) | 4;
+		moveMod->collisionFlags = (moveMod->collisionFlags & ~ACTORCOL_ALL) | ACTORCOL_BIT2;
 		moveMod->physics.yPos = FIXED(200);
 		moveMod->physics.width = obj->worldWidth;
 
@@ -207,7 +207,7 @@ namespace TFE_DarkForces
 
 		MovementModule* moveMod = actor_createMovementModule(dispatch);
 		dispatch->moveMod = moveMod;
-		moveMod->collisionFlags = (moveMod->collisionFlags & 0xfffffff8) | 4;
+		moveMod->collisionFlags = (moveMod->collisionFlags & ~ACTORCOL_ALL) | ACTORCOL_BIT2;
 		moveMod->physics.yPos = FIXED(200);
 		moveMod->physics.width = obj->worldWidth;
 
@@ -261,8 +261,8 @@ namespace TFE_DarkForces
 
 		MovementModule* moveMod = actor_createMovementModule(dispatch);
 		dispatch->moveMod = moveMod;
-		moveMod->collisionFlags &= 0xfffffff8;
-		moveMod->collisionFlags |= 4;
+		moveMod->collisionFlags &= ~ACTORCOL_ALL;
+		moveMod->collisionFlags |= ACTORCOL_BIT2;
 		moveMod->physics.yPos = FIXED(200);
 
 		// should be: 0xa7ec

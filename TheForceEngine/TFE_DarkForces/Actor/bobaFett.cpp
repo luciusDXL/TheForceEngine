@@ -660,7 +660,7 @@ namespace TFE_DarkForces
 		local(nextCheckForPlayerTick) = 0;
 		local(changeStateTick) = s_curTick + 8739;
 		local(nextChangePhaseTick) = s_curTick + 1456;
-		local(physicsActor)->moveMod.collisionFlags |= 4;
+		local(physicsActor)->moveMod.collisionFlags |= ACTORCOL_BIT2;
 
 		while (local(physicsActor)->state == BOBASTATE_SEARCH)
 		{
@@ -712,7 +712,7 @@ namespace TFE_DarkForces
 			}
 		}  // while (state == BOBASTATE_SEARCH)
 
-		local(physicsActor)->moveMod.collisionFlags |= 4;
+		local(physicsActor)->moveMod.collisionFlags |= ACTORCOL_BIT2;
 		task_end;
 	}
 
@@ -946,8 +946,8 @@ namespace TFE_DarkForces
 		physicsActor->moveMod.physics.width = FIXED(2);
 		physicsActor->moveMod.physics.botOffset = 0;
 
-		physicsActor->moveMod.collisionFlags &= 0xfffffff8;
-		physicsActor->moveMod.collisionFlags |= 6;
+		physicsActor->moveMod.collisionFlags &= ~ACTORCOL_ALL;
+		physicsActor->moveMod.collisionFlags |= (ACTORCOL_GRAVITY | ACTORCOL_BIT2);
 		physicsActor->moveMod.physics.yPos = COL_INFINITY;
 		physicsActor->moveMod.physics.height = obj->worldHeight;
 

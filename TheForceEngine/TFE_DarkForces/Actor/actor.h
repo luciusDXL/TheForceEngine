@@ -94,11 +94,6 @@ enum ActorDispatchFlags
 	ACTOR_TROOP_ALERT		= FLAG_BIT(5),	// use stormtrooper alert sounds
 };
 
-enum ActorCollisionFlags
-{
-	ACTORCOL_GRAVITY = FLAG_BIT(1),
-};
-
 // Forward Declarations.
 struct ActorModule;
 struct MovementModule;

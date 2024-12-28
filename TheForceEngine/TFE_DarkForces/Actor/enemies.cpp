@@ -57,7 +57,7 @@ namespace TFE_DarkForces
 		dispatch->moveMod = moveMod;
 		dispatch->animTable = s_reeyeesAnimTable;
 
-		moveMod->collisionFlags |= 1;
+		moveMod->collisionFlags |= ACTORCOL_NO_Y_MOVE;
 		moveMod->physics.width = obj->worldWidth;
 		actor_setupInitAnimation();
 
@@ -95,7 +95,7 @@ namespace TFE_DarkForces
 		dispatch->moveMod = moveMod;
 		dispatch->animTable = s_reeyeesAnimTable;
 
-		moveMod->collisionFlags |= 1;
+		moveMod->collisionFlags |= ACTORCOL_NO_Y_MOVE;
 		moveMod->physics.width = obj->worldWidth;
 		actor_setupInitAnimation();
 
@@ -137,7 +137,7 @@ namespace TFE_DarkForces
 		dispatch->moveMod = moveMod;
 		dispatch->animTable = s_gamorAnimTable;
 
-		moveMod->collisionFlags |= 1;
+		moveMod->collisionFlags |= ACTORCOL_NO_Y_MOVE;
 		moveMod->physics.width = obj->worldWidth;
 		actor_setupInitAnimation();
 
@@ -178,7 +178,7 @@ namespace TFE_DarkForces
 		dispatch->moveMod = moveMod;
 		dispatch->animTable = s_bosskAnimTable;
 
-		moveMod->collisionFlags |= 1;
+		moveMod->collisionFlags |= ACTORCOL_NO_Y_MOVE;
 		moveMod->physics.width = obj->worldWidth;
 		actor_setupInitAnimation();
 
@@ -248,12 +248,12 @@ namespace TFE_DarkForces
 		moveMod->physics.width = obj->worldWidth;
 		if (cust->isFlying)
 		{
-			moveMod->collisionFlags = (moveMod->collisionFlags & 0xfffffff8) | 4;
+			moveMod->collisionFlags = (moveMod->collisionFlags & ~ACTORCOL_ALL) | ACTORCOL_BIT2;	// Remove bits 0, 1 and set bit 2
 			moveMod->physics.yPos = FIXED(200);
 		}
 		else
 		{
-			moveMod->collisionFlags |= 1;
+			moveMod->collisionFlags |= ACTORCOL_NO_Y_MOVE;
 		}
 
 		dispatch->animTable = s_customAnimTable;

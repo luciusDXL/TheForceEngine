@@ -26,7 +26,7 @@ enum LogicAnimFlags
 {
 	AFLAG_PLAYONCE = FLAG_BIT(0),	// Indicates an animation will play through once only and not loop back to first frame
 	AFLAG_READY    = FLAG_BIT(1),
-	AFLAG_BIT3	   = FLAG_BIT(3),	// Unknown
+	AFLAG_BIT3	   = FLAG_BIT(3),	// Unknown, seems to be set but never read
 };
 
 enum LogicAnimState : u32
@@ -107,6 +107,14 @@ enum AttackFlags
 	ATTFLAG_ALL       = ATTFLAG_MELEE | ATTFLAG_RANGED | ATTFLAG_LIT_MELEE | ATTFLAG_LIT_RNG
 };
 
+enum ActorCollisionFlags
+{
+	ACTORCOL_NO_Y_MOVE	= FLAG_BIT(0),		// When _not_ set, an actor can move vertically. Set for non-flying enemies.
+	ACTORCOL_GRAVITY	= FLAG_BIT(1),
+	ACTORCOL_BIT2		= FLAG_BIT(2),		// Alters the way collision is handled. This is generally set for flying enemies and bosses
+	ACTORCOL_ALL		= ACTORCOL_NO_Y_MOVE | ACTORCOL_GRAVITY | ACTORCOL_BIT2
+};
+
 struct ActorModule
 {
 	ActorModuleType type;
@@ -166,7 +174,7 @@ struct MovementModule
 	vec3_fixed delta;
 	RWall* collisionWall;
 	u32 unused;	// member in structure but not actually used, other than being initialized.
-	u32 collisionFlags;
+	u32 collisionFlags;		// see ActorCollisionFlags
 };
 
 struct ThinkerModule

@@ -136,7 +136,7 @@ namespace TFE_DarkForces
 
 		MovementModule* moveMod = actor_createMovementModule(dispatch);
 		dispatch->moveMod = moveMod;
-		moveMod->collisionFlags |= 1;
+		moveMod->collisionFlags |= ACTORCOL_NO_Y_MOVE;
 		moveMod->physics.width = obj->worldWidth;
 		moveMod->target.flags = (moveMod->target.flags & ~TARGET_ALL_MOVE) | TARGET_FREEZE;
 		moveMod->target.speed = 0;
@@ -166,7 +166,7 @@ namespace TFE_DarkForces
 
 		MovementModule* moveMod = actor_createMovementModule(dispatch);
 		dispatch->moveMod = moveMod;
-		moveMod->collisionFlags |= 1;
+		moveMod->collisionFlags |= ACTORCOL_NO_Y_MOVE;
 		// This was cleared to 0 in createProjectile()
 		moveMod->physics.width = obj->worldWidth;
 

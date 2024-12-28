@@ -313,12 +313,12 @@ namespace TFE_DarkForces
 
 			local(target)->speed = FIXED(70);
 			local(flying) = JTRUE;
-			local(physicsActor)->moveMod.collisionFlags &= (~3);
+			local(physicsActor)->moveMod.collisionFlags &= (~(ACTORCOL_NO_Y_MOVE | ACTORCOL_GRAVITY));
 			local(physicsActor)->moveMod.physics.yPos = COL_INFINITY;
 		}
 		else
 		{
-			local(physicsActor)->moveMod.collisionFlags |= 3;
+			local(physicsActor)->moveMod.collisionFlags |= (ACTORCOL_NO_Y_MOVE | ACTORCOL_GRAVITY);
 			local(target)->speed = FIXED(25);
 			local(flying) = JFALSE;
 			local(anim)->flags &= ~AFLAG_PLAYONCE;
@@ -354,7 +354,7 @@ namespace TFE_DarkForces
 								task_callTaskFunc(phaseThree_handleMsg);
 							} while (msg != MSG_RUN_TASK || !(local(anim)->flags & AFLAG_READY));
 
-							local(physicsActor)->moveMod.collisionFlags |= 3;
+							local(physicsActor)->moveMod.collisionFlags |= (ACTORCOL_NO_Y_MOVE | ACTORCOL_GRAVITY);
 							local(physicsActor)->moveMod.physics.yPos = COL_INFINITY;
 							local(target)->speed = FIXED(25);
 							local(target)->flags &= ~TARGET_MOVE_Y;
@@ -536,7 +536,7 @@ namespace TFE_DarkForces
 		local(anim) = &local(physicsActor)->anim;
 
 		local(target)->flags &= ~TARGET_MOVE_XZ;
-		local(physicsActor)->moveMod.collisionFlags |= 3;
+		local(physicsActor)->moveMod.collisionFlags |= (ACTORCOL_NO_Y_MOVE | ACTORCOL_GRAVITY);
 		while (local(physicsActor)->state == P3STATE_FIRE_MISSILES)
 		{
 			do
@@ -615,7 +615,7 @@ namespace TFE_DarkForces
 		local(anim) = &local(physicsActor)->anim;
 
 		local(target)->flags &= ~TARGET_MOVE_XZ;
-		local(physicsActor)->moveMod.collisionFlags |= 3;
+		local(physicsActor)->moveMod.collisionFlags |= (ACTORCOL_NO_Y_MOVE | ACTORCOL_GRAVITY);
 
 		local(anim)->flags |= AFLAG_PLAYONCE;
 		actor_setupBossAnimation(local(obj), 1, local(anim));
@@ -697,7 +697,7 @@ namespace TFE_DarkForces
 
 		local(anim)->flags |= AFLAG_PLAYONCE;
 		actor_setupBossAnimation(local(obj), 2, local(anim));
-		local(physicsActor)->moveMod.collisionFlags |= 3;	// ground, gravity
+		local(physicsActor)->moveMod.collisionFlags |= (ACTORCOL_NO_Y_MOVE | ACTORCOL_GRAVITY);	// ground, gravity
 
 		// Wait for the animation to finish.
 		do
@@ -768,7 +768,7 @@ namespace TFE_DarkForces
 
 		local(target)->flags &= ~TARGET_FREEZE;
 		local(target)->speed = FIXED(30);
-		local(physicsActor)->moveMod.collisionFlags &= (~3);
+		local(physicsActor)->moveMod.collisionFlags &= (~(ACTORCOL_NO_Y_MOVE | ACTORCOL_GRAVITY));
 
 		while (local(physicsActor)->state == P3STATE_SEARCH || local(forceContinue))
 		{
@@ -1048,7 +1048,7 @@ namespace TFE_DarkForces
 		physicsActor->moveMod.physics.obj = obj;
 		actor_setupSmartObj(&physicsActor->moveMod);
 
-		physicsActor->moveMod.collisionFlags |= 7;
+		physicsActor->moveMod.collisionFlags |= ACTORCOL_ALL;
 		physicsActor->moveMod.physics.yPos = COL_INFINITY;
 
 		ActorTarget* target = &physicsActor->moveMod.target;

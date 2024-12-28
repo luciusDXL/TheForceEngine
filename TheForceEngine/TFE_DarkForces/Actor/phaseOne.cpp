@@ -938,8 +938,8 @@ namespace TFE_DarkForces
 		physicsActor->moveMod.physics.obj = obj;
 		actor_setupSmartObj(&physicsActor->moveMod);
 
-		physicsActor->moveMod.collisionFlags |= 3;
-		physicsActor->moveMod.collisionFlags &= 0xfffffffb;
+		physicsActor->moveMod.collisionFlags |= ACTORCOL_NO_Y_MOVE | ACTORCOL_GRAVITY;
+		physicsActor->moveMod.collisionFlags &= ~ACTORCOL_BIT2;
 
 		ActorTarget* target = &physicsActor->moveMod.target;
 		target->flags &= 0xfffffff0;

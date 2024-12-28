@@ -602,7 +602,7 @@ namespace TFE_DarkForces
 		MovementModule* moveMod = &physicsActor->moveMod;
 		moveMod->header.obj = obj;
 		moveMod->delta = { 0, 0, 0 };
-		moveMod->collisionFlags &= 0xfffffff8;
+		moveMod->collisionFlags &= ~ACTORCOL_ALL;
 
 		ActorTarget* target = &physicsActor->moveMod.target;
 		target->speed = 0;

@@ -1103,7 +1103,7 @@ namespace TFE_DarkForces
 		physics->botOffset = 0x60000;
 		physics->yPos = 0x80000;
 		physics->width = obj->worldWidth;
-		physicsActor->moveMod.collisionFlags |= 7;
+		physicsActor->moveMod.collisionFlags |= ACTORCOL_ALL;
 		physics->height = obj->worldHeight + HALF_16;
 
 		ActorTarget* target = &physicsActor->moveMod.target;
