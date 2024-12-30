@@ -119,7 +119,7 @@ namespace TFE_DarkForces
 				{
 					task_localBlockBegin;
 						ActorTarget* target = &local(physicsActor)->moveMod.target;
-						target->flags |= 8;
+						target->flags |= TARGET_FREEZE;
 						memcpy(&local(tmpAnim), local(anim), sizeof(LogicAnimation) - 4);
 
 						local(anim)->flags |= AFLAG_PLAYONCE;
@@ -137,7 +137,7 @@ namespace TFE_DarkForces
 						actor_setupBossAnimation(local(obj), local(anim)->animId, local(anim));
 
 						ActorTarget* target = &local(physicsActor)->moveMod.target;
-						target->flags &= 0xfffffff7;
+						target->flags &= ~TARGET_FREEZE;
 					task_localBlockEnd;
 				}
 				msg = MSG_DAMAGE;
@@ -305,13 +305,13 @@ namespace TFE_DarkForces
 		fixed16_16 sinYaw, cosYaw;
 		sinCosFixed(obj->yaw, &sinYaw, &cosYaw);
 
-		target->flags |= 4;
+		target->flags |= TARGET_MOVE_ROT;
 		target->speedRotation = 6826;
 
 		fixed16_16 animSpeed = s_kellDragonAnim[dragon->animIndex].speed;
 		target->pos.x = obj->posWS.x + mul16(sinYaw, animSpeed);
 		target->pos.z = obj->posWS.z + mul16(cosYaw, animSpeed);
-		target->flags |= 1;
+		target->flags |= TARGET_MOVE_XZ;
 	}
 
 	void kellDragon_handleState1(MessageType msg)
@@ -1107,7 +1107,7 @@ namespace TFE_DarkForces
 		physics->height = obj->worldHeight + HALF_16;
 
 		ActorTarget* target = &physicsActor->moveMod.target;
-		target->flags &= 0xfffffff0;
+		target->flags &= ~TARGET_ALL;
 		target->speedRotation = 43546;	// 956.8 degrees per second.
 		target->speed = FIXED(10);
 

@@ -942,7 +942,7 @@ namespace TFE_DarkForces
 		physicsActor->moveMod.collisionFlags &= ~ACTORCOL_BIT2;
 
 		ActorTarget* target = &physicsActor->moveMod.target;
-		target->flags &= 0xfffffff0;
+		target->flags &= ~TARGET_ALL;
 		target->speed = FIXED(30);
 		target->speedRotation = 0x3000;
 

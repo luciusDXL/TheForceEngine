@@ -541,7 +541,7 @@ namespace TFE_DarkForces
 
 		target->speed = 0;
 		target->speedRotation = 4551;	// ~100 degrees/second.
-		target->flags &= 0xfffffff0;
+		target->flags &= ~TARGET_ALL;
 		target->pitch = obj->pitch;
 		target->yaw   = obj->yaw;
 		target->roll  = obj->roll;

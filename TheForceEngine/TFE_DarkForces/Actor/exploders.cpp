@@ -171,7 +171,7 @@ namespace TFE_DarkForces
 		moveMod->physics.width = obj->worldWidth;
 
 		ActorTarget* target = &module->attackMod.target;
-		target->flags = (target->flags | 8) & 0xfffffff8;
+		target->flags = (target->flags | TARGET_FREEZE) & ~TARGET_ALL_MOVE;
 		target->speed = 0;
 		target->speedRotation = 0;
 

@@ -408,7 +408,7 @@ namespace TFE_DarkForces
 					{
 						// Move vertically to the middle of the gap
 						target->pos.y = floorHeight - (TFE_Jedi::abs(gap) >> 1) + (TFE_Jedi::abs(obj->worldHeight) >> 1);
-						target->flags |= 2;
+						target->flags |= TARGET_MOVE_Y;
 						return JFALSE;
 					}
 				}
@@ -765,7 +765,7 @@ namespace TFE_DarkForces
 					actor_setDeathCollisionFlags();
 					sound_stop(logic->alertSndID);
 					sound_playCued(damageMod->dieSndSrc, obj->posWS);
-					attackMod->target.flags |= 8;
+					attackMod->target.flags |= 8;			// possibly an error? FREEZE (bit 3) has already been added to target flags above
 					if (obj->type == OBJ_TYPE_SPRITE)
 					{
 						actor_setupAnimation(ANIM_DIE2, anim);
@@ -1542,9 +1542,9 @@ namespace TFE_DarkForces
 	// Updates the actor target with the passed in target based on the flags.
 	JBool defaultUpdateTargetFunc(MovementModule* moveMod, ActorTarget* target)
 	{
-		if (target->flags & 8)
+		if (target->flags & TARGET_FREEZE)
 		{
-			moveMod->target.flags |= 8;
+			moveMod->target.flags |= TARGET_FREEZE;
 		}
 		else
 		{

@@ -1092,7 +1092,7 @@ namespace TFE_DarkForces
 		physicsActor->moveMod.physics.yPos = COL_INFINITY;
 
 		ActorTarget* target = &physicsActor->moveMod.target;
-		target->flags &= 0xfffffff0;
+		target->flags &= ~TARGET_ALL;
 		target->speed = FIXED(15);
 		target->speedVert = FIXED(10);
 		target->speedRotation = 0x3000;
