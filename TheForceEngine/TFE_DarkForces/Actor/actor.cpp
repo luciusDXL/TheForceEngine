@@ -581,6 +581,7 @@ namespace TFE_DarkForces
 		return (ActorDispatch*)s_actorState.curLogic;
 	}
 
+	// Default damage module function for "dispatch" actors
 	JBool defaultDamageFunc(ActorModule* module, MovementModule* moveMod)
 	{
 		DamageModule* damageMod = (DamageModule*)module;
@@ -665,6 +666,8 @@ namespace TFE_DarkForces
 		return 0xffffffff;
 	}
 
+	// Default damage module message function for "dispatch" actors
+	// Delivers a message to the damage module
 	JBool defaultDamageMsgFunc(s32 msg, ActorModule* module, MovementModule* moveMod)
 	{
 		DamageModule* damageMod = (DamageModule*)module;
@@ -837,8 +840,11 @@ namespace TFE_DarkForces
 		return damageMod;
 	}
 		
+	// Default attack module function for "dispatch" actors
 	JBool defaultAttackFunc(ActorModule* module, MovementModule* moveMod)
 	{
+		// Note: the module passed into this function is an AttackModule*, not a DamageModule*, and should be cast directly to an AttackModule*
+		// however, the code casts it to a DamageModule* first (why?)
 		DamageModule* damageMod = (DamageModule*)module;
 		AttackModule* attackMod = &damageMod->attackMod;
 		ActorDispatch* logic = (ActorDispatch*)s_actorState.curLogic;
@@ -1140,8 +1146,12 @@ namespace TFE_DarkForces
 		return attackMod->timing.delay;
 	}
 
+	// Default attack module message function for "dispatch" actors
+	// Delivers a message to the attack module
 	JBool defaultAttackMsgFunc(s32 msg, ActorModule* module, MovementModule* moveMod)
 	{
+		// Note: the module passed into this function is an AttackModule*, not a DamageModule*, and should be cast directly to an AttackModule*
+		// however, the code casts it to a DamageModule* first (why?)
 		DamageModule* damageMod = (DamageModule*)module;
 		AttackModule* attackMod = &damageMod->attackMod;
 		ActorDispatch* logic = (ActorDispatch*)s_actorState.curLogic;
@@ -1168,6 +1178,7 @@ namespace TFE_DarkForces
 		return attackMod;
 	}
 
+	// Default thinker module function for "dispatch" actors
 	JBool defaultThinkerFunc(ActorModule* module, MovementModule* moveMod)
 	{
 		ThinkerModule* thinkerMod = (ThinkerModule*)module;
@@ -1521,6 +1532,7 @@ namespace TFE_DarkForces
 		}
 	}
 
+	// Default movement module function for "dispatch" actors
 	JBool defaultActorFunc(ActorModule* module, MovementModule* moveMod)
 	{
 		moveMod->physics.wall = nullptr;
@@ -2046,6 +2058,7 @@ namespace TFE_DarkForces
 		if (TFE_Jedi::abs(vel->z) < ACTOR_MIN_VELOCITY) { vel->z = 0; }
 	}
 
+	// Local run func for actor task
 	void actorLogicMsgFunc(MessageType msg)
 	{
 		if (msg == MSG_FREE)

@@ -22,6 +22,7 @@ namespace TFE_DarkForces
 {
 	u32 sewerCreatureDie(DamageModule* module, MovementModule* moveMod);
 		
+	// Damage module function for sewer creature
 	JBool sewerCreatureAiFunc(ActorModule* module, MovementModule* moveMod)
 	{
 		DamageModule* damageMod = (DamageModule*)module;
@@ -63,6 +64,7 @@ namespace TFE_DarkForces
 		return 0;
 	}
 	
+	// Damage module message function for sewer creature
 	JBool sewerCreatureAiMsgFunc(s32 msg, ActorModule* module, MovementModule* moveMod)
 	{
 		DamageModule* damageMod = (DamageModule*)module;
@@ -119,6 +121,7 @@ namespace TFE_DarkForces
 		return attackMod->header.nextTick;
 	}
 
+	// Attack module function for sewer creature
 	JBool sewerCreatureEnemyFunc(ActorModule* module, MovementModule* moveMod)
 	{
 		DamageModule* damageMod = (DamageModule*)module;
