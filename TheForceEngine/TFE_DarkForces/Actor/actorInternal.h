@@ -53,24 +53,24 @@ namespace TFE_DarkForces
 	extern List* s_physicsActors;			// Holds all the non-dispatch actors (bosses, mousebots, turrets...)
 
 	void actorLogicCleanupFunc(Logic* logic);
-	JBool defaultActorFunc(ActorModule* module, MovementModule* moveMod);
+	Tick defaultActorFunc(ActorModule* module, MovementModule* moveMod);
 	JBool defaultUpdateTargetFunc(MovementModule* moveMod, ActorTarget* target);
-	JBool defaultAttackFunc(ActorModule* module, MovementModule* moveMod);
-	JBool defaultAttackMsgFunc(s32 msg, ActorModule* module, MovementModule* moveMod);
-	JBool defaultDamageFunc(ActorModule* module, MovementModule* moveMod);
-	JBool defaultDamageMsgFunc(s32 msg, ActorModule* module, MovementModule* moveMod);
-	JBool defaultThinkerFunc(ActorModule* module, MovementModule* moveMod);
-	JBool flyingModuleFunc(ActorModule* module, MovementModule* moveMod);
-	JBool flyingModuleFunc_Remote(ActorModule* module, MovementModule* moveMod);
+	Tick defaultAttackFunc(ActorModule* module, MovementModule* moveMod);
+	Tick defaultAttackMsgFunc(s32 msg, ActorModule* module, MovementModule* moveMod);
+	Tick defaultDamageFunc(ActorModule* module, MovementModule* moveMod);
+	Tick defaultDamageMsgFunc(s32 msg, ActorModule* module, MovementModule* moveMod);
+	Tick defaultThinkerFunc(ActorModule* module, MovementModule* moveMod);
+	Tick flyingModuleFunc(ActorModule* module, MovementModule* moveMod);
+	Tick flyingModuleFunc_Remote(ActorModule* module, MovementModule* moveMod);
 
 	// Alternate Damage functions
-	JBool sceneryLogicFunc(ActorModule* module, MovementModule* moveMod);
-	JBool sceneryMsgFunc(s32 msg, ActorModule* module, MovementModule* moveMod);
-	JBool exploderFunc(ActorModule* module, MovementModule* moveMod);
-	JBool exploderMsgFunc(s32 msg, ActorModule* module, MovementModule* moveMod);
-	JBool sewerCreatureAiFunc(ActorModule* module, MovementModule* moveMod);
-	JBool sewerCreatureAiMsgFunc(s32 msg, ActorModule* module, MovementModule* moveMod);
+	Tick sceneryLogicFunc(ActorModule* module, MovementModule* moveMod);
+	Tick sceneryMsgFunc(s32 msg, ActorModule* module, MovementModule* moveMod);
+	Tick exploderFunc(ActorModule* module, MovementModule* moveMod);
+	Tick exploderMsgFunc(s32 msg, ActorModule* module, MovementModule* moveMod);
+	Tick sewerCreatureDamageFunc(ActorModule* module, MovementModule* moveMod);
+	Tick sewerCreatureDamageMsgFunc(s32 msg, ActorModule* module, MovementModule* moveMod);
 
 	// Alternate Attack function.
-	JBool sewerCreatureEnemyFunc(ActorModule* module, MovementModule* moveMod);
+	Tick sewerCreatureEnemyFunc(ActorModule* module, MovementModule* moveMod);
 }  // namespace TFE_DarkForces

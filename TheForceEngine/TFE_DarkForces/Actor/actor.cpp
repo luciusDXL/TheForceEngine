@@ -582,7 +582,7 @@ namespace TFE_DarkForces
 	}
 
 	// Default damage module function for "dispatch" actors
-	JBool defaultDamageFunc(ActorModule* module, MovementModule* moveMod)
+	Tick defaultDamageFunc(ActorModule* module, MovementModule* moveMod)
 	{
 		DamageModule* damageMod = (DamageModule*)module;
 		AttackModule* attackMod = &damageMod->attackMod;
@@ -596,7 +596,7 @@ namespace TFE_DarkForces
 				actor_setCurAnimation(&attackMod->anim);
 			}
 			moveMod->updateTargetFunc(moveMod, &attackMod->target);
-			return JFALSE;
+			return 0;
 		}
 
 		if (damageMod->hp <= 0)
@@ -608,7 +608,7 @@ namespace TFE_DarkForces
 					actor_setCurAnimation(&attackMod->anim);
 				}
 				moveMod->updateTargetFunc(moveMod, &attackMod->target);
-				return JFALSE;
+				return 0;
 			}
 			spawnHitEffect(damageMod->dieEffect, sector, obj->posWS, obj);
 
@@ -668,7 +668,7 @@ namespace TFE_DarkForces
 
 	// Default damage module message function for "dispatch" actors
 	// Delivers a message to the damage module
-	JBool defaultDamageMsgFunc(s32 msg, ActorModule* module, MovementModule* moveMod)
+	Tick defaultDamageMsgFunc(s32 msg, ActorModule* module, MovementModule* moveMod)
 	{
 		DamageModule* damageMod = (DamageModule*)module;
 		AttackModule* attackMod = &damageMod->attackMod;
@@ -741,7 +741,7 @@ namespace TFE_DarkForces
 				actor_setCurAnimation(&attackMod->anim);
 			}
 			moveMod->updateTargetFunc(moveMod, &attackMod->target);
-			return JFALSE;
+			return 0;
 		}
 		else if (msg == MSG_EXPLOSION)
 		{
@@ -790,7 +790,7 @@ namespace TFE_DarkForces
 				actor_setCurAnimation(&attackMod->anim);
 			}
 			moveMod->updateTargetFunc(moveMod, &attackMod->target);
-			return JFALSE;
+			return 0;
 		}
 		else if (msg == MSG_TERMINAL_VEL || msg == MSG_CRUSH)
 		{
@@ -813,7 +813,7 @@ namespace TFE_DarkForces
 			}
 		}
 
-		return JFALSE;
+		return 0;
 	}
 
 	DamageModule* actor_createDamageModule(ActorDispatch* dispatch)
@@ -841,7 +841,8 @@ namespace TFE_DarkForces
 	}
 		
 	// Default attack module function for "dispatch" actors
-	JBool defaultAttackFunc(ActorModule* module, MovementModule* moveMod)
+	// The returned value is set to the module's nextTick
+	Tick defaultAttackFunc(ActorModule* module, MovementModule* moveMod)
 	{
 		// Note: the module passed into this function is an AttackModule*, not a DamageModule*, and should be cast directly to an AttackModule*
 		// however, the code casts it to a DamageModule* first (why?)
@@ -1148,7 +1149,7 @@ namespace TFE_DarkForces
 
 	// Default attack module message function for "dispatch" actors
 	// Delivers a message to the attack module
-	JBool defaultAttackMsgFunc(s32 msg, ActorModule* module, MovementModule* moveMod)
+	Tick defaultAttackMsgFunc(s32 msg, ActorModule* module, MovementModule* moveMod)
 	{
 		// Note: the module passed into this function is an AttackModule*, not a DamageModule*, and should be cast directly to an AttackModule*
 		// however, the code casts it to a DamageModule* first (why?)
@@ -1179,7 +1180,7 @@ namespace TFE_DarkForces
 	}
 
 	// Default thinker module function for "dispatch" actors
-	JBool defaultThinkerFunc(ActorModule* module, MovementModule* moveMod)
+	Tick defaultThinkerFunc(ActorModule* module, MovementModule* moveMod)
 	{
 		ThinkerModule* thinkerMod = (ThinkerModule*)module;
 		SecObject* obj = thinkerMod->header.obj;
@@ -1533,7 +1534,7 @@ namespace TFE_DarkForces
 	}
 
 	// Default movement module function for "dispatch" actors
-	JBool defaultActorFunc(ActorModule* module, MovementModule* moveMod)
+	Tick defaultActorFunc(ActorModule* module, MovementModule* moveMod)
 	{
 		moveMod->physics.wall = nullptr;
 		moveMod->physics.u24 = 0;
@@ -1548,7 +1549,7 @@ namespace TFE_DarkForces
 			actor_handleMovementAndCollision(moveMod);
 		}
 		moveMod->target.flags &= ~TARGET_ALL_MOVE;
-		return JFALSE;
+		return 0;
 	}
 
 	// Updates the actor target with the passed in target based on the flags.
