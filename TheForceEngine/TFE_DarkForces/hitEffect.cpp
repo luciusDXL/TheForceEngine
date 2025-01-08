@@ -255,7 +255,7 @@ namespace TFE_DarkForces
 	///////////////////////////////////////
 	void hitEffectWakeupFunc(SecObject* obj)
 	{
-		message_sendToObj(obj, MSG_WAKEUP, actor_hitEffectMsgFunc);
+		message_sendToObj(obj, MSG_WAKEUP, actor_messageFunc);
 	}
 
 	void hitEffectExplodeFunc(SecObject* obj)
@@ -310,7 +310,7 @@ namespace TFE_DarkForces
 			fixed16_16 force = s_curEffectData->force;
 			fixed16_16 attenForce = mul16(div16(leftOverRadius, radius), force);
 			s_msgArg2 = attenForce;
-			message_sendToObj(obj, MSG_EXPLOSION, actor_hitEffectMsgFunc);
+			message_sendToObj(obj, MSG_EXPLOSION, actor_messageFunc);
 		}
 	}
 }  // TFE_DarkForces

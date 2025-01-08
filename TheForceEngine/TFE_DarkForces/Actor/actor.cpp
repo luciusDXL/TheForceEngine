@@ -1919,11 +1919,13 @@ namespace TFE_DarkForces
 		actorLogic->vel.z += pushZ;
 	}
 	
-	void actor_hitEffectMsgFunc(MessageType msg, void* logic)
+	void actor_messageFunc(MessageType msg, void* logic)
 	{
 		ActorDispatch* dispatch = (ActorDispatch*)logic;
 		s_actorState.curLogic = (Logic*)logic;
 		SecObject* obj = s_actorState.curLogic->obj;
+	
+		// Send the message to each module via the module's message function
 		for (s32 i = 0; i < ACTOR_MAX_MODULES; i++)
 		{
 			ActorModule* module = dispatch->modules[ACTOR_MAX_MODULES - 1 - i];
@@ -1937,6 +1939,7 @@ namespace TFE_DarkForces
 			}
 		}
 
+		// WAKEUP, DAMAGE and EXPLOSION messages will wake (alert) the actor from an idle state
 		if (msg == MSG_WAKEUP)
 		{
 			if (dispatch->flags & ACTOR_IDLE)
@@ -1988,7 +1991,7 @@ namespace TFE_DarkForces
 
 	void actor_sendTerminalVelMsg(SecObject* obj)
 	{
-		message_sendToObj(obj, MSG_TERMINAL_VEL, actor_hitEffectMsgFunc);
+		message_sendToObj(obj, MSG_TERMINAL_VEL, actor_messageFunc);
 	}
 
 	void actor_handlePhysics(MovementModule* moveMod, vec3_fixed* vel)
@@ -2068,7 +2071,7 @@ namespace TFE_DarkForces
 		}
 		else
 		{
-			actor_hitEffectMsgFunc(msg, s_msgTarget);
+			actor_messageFunc(msg, s_msgTarget);
 		}
 	}
 
@@ -2095,7 +2098,7 @@ namespace TFE_DarkForces
 							if (actor_isObjectVisible(obj, s_playerObject, dispatch->fov, dispatch->awareRange))
 							{
 								// Wake up, and alert other actors within a 150 unit range
-								message_sendToObj(obj, MSG_WAKEUP, actor_hitEffectMsgFunc);
+								message_sendToObj(obj, MSG_WAKEUP, actor_messageFunc);
 								gameMusic_startFight();
 								collision_effectObjectsInRangeXZ(obj->sector, FIXED(150), obj->posWS, hitEffectWakeupFunc, obj, ETFLAG_AI_ACTOR);
 							}
