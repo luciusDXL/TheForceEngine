@@ -42,7 +42,6 @@ namespace TFE_DarkForces
 	EffectData* s_curEffectData = nullptr;
 
 	EffectData setEffectData(HitEffectID type, TFE_ExternalData::ExternalEffect* extEffects);
-	void hitEffectWakeupFunc(SecObject* obj);
 	void hitEffectExplodeFunc(SecObject* obj);
 	void hitEffectTaskFunc(MessageType msg);
 
@@ -239,7 +238,7 @@ namespace TFE_DarkForces
 					{
 						// Wakes up all objects with a valid collision path to (x,y,z) that are within s_curEffectData->wakeupRange units.
 						vec3_fixed hitPos = { x, y, z };
-						collision_effectObjectsInRangeXZ(sector, s_curEffectData->wakeupRange, hitPos, hitEffectWakeupFunc, effect->excludeObj, ETFLAG_AI_ACTOR);
+						collision_effectObjectsInRangeXZ(sector, s_curEffectData->wakeupRange, hitPos, actor_sendWakeupMsg, effect->excludeObj, ETFLAG_AI_ACTOR);
 					}
 					allocator_deleteItem(s_hitEffects, effect);
 					// Since the current item is deleted, "head" is the next item in the list.
@@ -253,11 +252,6 @@ namespace TFE_DarkForces
 	///////////////////////////////////////
 	// Internal
 	///////////////////////////////////////
-	void hitEffectWakeupFunc(SecObject* obj)
-	{
-		message_sendToObj(obj, MSG_WAKEUP, actor_messageFunc);
-	}
-
 	void hitEffectExplodeFunc(SecObject* obj)
 	{
 		const u32 flags = ETFLAG_AI_ACTOR | ETFLAG_SCENERY | ETFLAG_LANDMINE | ETFLAG_LANDMINE_WPN | ETFLAG_PLAYER;

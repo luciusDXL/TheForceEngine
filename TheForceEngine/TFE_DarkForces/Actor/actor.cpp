@@ -1994,6 +1994,11 @@ namespace TFE_DarkForces
 		message_sendToObj(obj, MSG_TERMINAL_VEL, actor_messageFunc);
 	}
 
+	void actor_sendWakeupMsg(SecObject* obj)
+	{
+		message_sendToObj(obj, MSG_WAKEUP, actor_messageFunc);
+	}
+
 	void actor_handlePhysics(MovementModule* moveMod, vec3_fixed* vel)
 	{
 		SecObject* obj = moveMod->physics.obj;
@@ -2100,7 +2105,7 @@ namespace TFE_DarkForces
 								// Wake up, and alert other actors within a 150 unit range
 								message_sendToObj(obj, MSG_WAKEUP, actor_messageFunc);
 								gameMusic_startFight();
-								collision_effectObjectsInRangeXZ(obj->sector, FIXED(150), obj->posWS, hitEffectWakeupFunc, obj, ETFLAG_AI_ACTOR);
+								collision_effectObjectsInRangeXZ(obj->sector, FIXED(150), obj->posWS, actor_sendWakeupMsg, obj, ETFLAG_AI_ACTOR);
 							}
 						}
 					}
