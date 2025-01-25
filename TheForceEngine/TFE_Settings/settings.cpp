@@ -1414,6 +1414,21 @@ namespace TFE_Settings
 		return value;
 	};
 
+	float parseJsonFloatToOverride(const cJSON* item)
+	{
+		float value = -9999;
+
+		// Check if it is a json numerical
+		if (cJSON_IsNumber(item))
+		{
+			value = cJSON_GetNumberValue(item);
+		}
+		else
+		{
+			TFE_System::logWrite(LOG_WARNING, "MOD_CONF", "Override '%s' is an invalid type and should be a number. Ignoring override.", item->string);
+		}
+		return value;
+	};
 
 	void parseTfeOverride(TFE_ModSettings* modSettings, const cJSON* tfeOverride)
 	{
@@ -1493,7 +1508,7 @@ namespace TFE_Settings
 							int intArraySize = sizeof(modIntOverrides) / sizeof(modIntOverrides[0]);
 							bool isIntParam = false;
 							for (int i = 0; i < intArraySize; ++i) {
-								if (strcmp(modIntOverrides[i], overrideName) == 0) {
+								if (strcasecmp(modIntOverrides[i], overrideName) == 0) {
 
 									// Parse the integer value.
 									s32 jsonIntResult = parseJSonIntToOverride(levelOverrideIter);
@@ -1506,8 +1521,31 @@ namespace TFE_Settings
 								}
 							}
 
-							// Skip checking if parameter is a boolean if it is of type integer.
+							// Skip checking further if it is of type integer.
 							if (isIntParam) {
+								continue;
+							}
+
+							// Check if float-type override
+							int floatArraySize = sizeof(modFloatOverrides) / sizeof(modFloatOverrides[0]);
+							bool isFloatParam = false;
+							for (int i = 0; i < floatArraySize; i++)
+							{
+								if (strcasecmp(modFloatOverrides[i], overrideName) == 0)
+								{
+									float result = parseJsonFloatToOverride(levelOverrideIter);
+									if (result != -9999)
+									{
+										levelOverride.floatOverrideMap[overrideName] = result;
+										isFloatParam = true;
+										break;
+									}
+								}
+							}
+
+							// Skip checking further if it is of type float
+							if (isFloatParam)
+							{
 								continue;
 							}
 
@@ -1564,16 +1602,16 @@ namespace TFE_Settings
 
 		FilePath filePath;
 		FileStream file;
-		if (!TFE_Paths::getFilePath("MOD_CONF.txt", &filePath)) { return; }
+		if (!TFE_Paths::getFilePath("MOD_CONF.txt", &filePath) && !TFE_Paths::getFilePath("MOD_CONF.json", &filePath)) { return; }
 		if (!file.open(&filePath, FileStream::MODE_READ)) { return; }
 
-		TFE_System::logWrite(LOG_MSG, "MOD_CONF", "Parsing MOD_CONF.txt for custom mod.");
+		TFE_System::logWrite(LOG_MSG, "MOD_CONF", "Parsing MOD_CONF for custom mod.");
 
 		const size_t size = file.getSize();
 		char* data = (char*)malloc(size + 1);
 		if (!data || size == 0)
 		{
-			TFE_System::logWrite(LOG_ERROR, "MOD_CONF", "MOD_CONF.txt found but is %u bytes in size and cannot be read.", size);
+			TFE_System::logWrite(LOG_ERROR, "MOD_CONF", "MOD_CONF found but is %u bytes in size and cannot be read.", size);
 			return;
 		}
 		file.readBuffer(data, (u32)size);
@@ -1651,11 +1689,11 @@ namespace TFE_Settings
 			const char* error = cJSON_GetErrorPtr();
 			if (error)
 			{
-				TFE_System::logWrite(LOG_ERROR, "MOD_CONF", "Failed to parse MOD_CONF.txt before\n%s", error);
+				TFE_System::logWrite(LOG_ERROR, "MOD_CONF", "Failed to parse MOD_CONF before\n%s", error);
 			}
 			else
 			{
-				TFE_System::logWrite(LOG_ERROR, "MOD_CONF", "Failed to parse MOD_CONF.txt");
+				TFE_System::logWrite(LOG_ERROR, "MOD_CONF", "Failed to parse MOD_CONF");
 			}
 		}
 		free(data);
