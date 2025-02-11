@@ -63,12 +63,12 @@ if(ENABLE_TFE)
 		set(THREADS_PREFER_PTHREAD_FLAG ON)
 		find_package(Threads REQUIRED)
 		find_package(PkgConfig REQUIRED)
-		find_package(SDL2 2.0.20 REQUIRED)
+		find_package(SDL2 REQUIRED)
 		pkg_check_modules(SDL2_IMAGE REQUIRED SDL2_image)
 		target_include_directories(tfe PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 		target_include_directories(tfe PRIVATE ${SDL2_INCLUDE_DIRS})
 		target_include_directories(tfe PRIVATE ${SDL2_IMAGE_INCLUDE_DIRS})
-		target_link_libraries(tfe PRIVATE SDL2::SDL2main SDL2::SDL2
+		target_link_libraries(tfe PRIVATE ${SDL2_LIBRARIES}
 					${SDL2_IMAGE_LIBRARIES}
 					${CMAKE_DL_LIBS}
 					Threads::Threads
