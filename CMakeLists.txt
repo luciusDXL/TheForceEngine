@@ -60,6 +60,8 @@ if(ENABLE_TFE)
 	set_target_properties(tfe PROPERTIES OUTPUT_NAME "theforceengine")
 
 	if(UNIX)
+		set(THREADS_PREFER_PTHREAD_FLAG ON)
+		find_package(Threads REQUIRED)
 		find_package(PkgConfig REQUIRED)
 		find_package(SDL2 2.0.20 REQUIRED)
 		pkg_check_modules(SDL2_IMAGE REQUIRED SDL2_image)
@@ -68,6 +70,8 @@ if(ENABLE_TFE)
 		target_include_directories(tfe PRIVATE ${SDL2_IMAGE_INCLUDE_DIRS})
 		target_link_libraries(tfe PRIVATE SDL2::SDL2main SDL2::SDL2
 					${SDL2_IMAGE_LIBRARIES}
+					${CMAKE_DL_LIBS}
+					Threads::Threads
 		)
 
 		# set up build directory to be able to run TFE immediately: symlink
