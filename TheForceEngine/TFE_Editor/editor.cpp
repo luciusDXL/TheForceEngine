@@ -120,7 +120,7 @@ namespace TFE_Editor
 		TFE_RenderShared::modelDraw_init();
 		thumbnail_init(64);
 		TFE_Polygon::clipInit();
-		s_msgBox = {};
+		s_msgBox = MessageBox{};
 		s_gpuImages.clear();
 	}
 

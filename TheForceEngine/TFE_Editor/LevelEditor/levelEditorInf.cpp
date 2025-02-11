@@ -277,7 +277,7 @@ namespace LevelEditor
 		s_levelInf.elevator.clear();
 		s_levelInf.trigger.clear();
 		s_levelInf.teleport.clear();
-		s_overlayList = {};
+		s_overlayList = OverlayAssetList{};
 	}
 
 	void editor_infDestroy()

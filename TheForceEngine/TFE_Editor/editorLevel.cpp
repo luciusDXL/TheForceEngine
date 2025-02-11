@@ -46,7 +46,7 @@ namespace TFE_Editor
 
 	void level_prepareNew()
 	{
-		s_newLevel = {};
+		s_newLevel = NewLevel{};
 	}
 
 	bool level_createEmpty(NewLevel& level)

@@ -25,7 +25,7 @@ namespace TFE_Editor
 			if (strcasecmp(frame->name, name) == 0)
 			{
 				TFE_RenderBackend::freeTexture(frame->texGpu);
-				*frame = {};
+				*frame = EditorFrame{};
 				break;
 			}
 		}
@@ -45,7 +45,7 @@ namespace TFE_Editor
 	s32 allocateFrame(const char* name)
 	{
 		s32 index = (s32)s_frameList.size();
-		s_frameList.push_back({});
+		s_frameList.emplace_back();
 		return index;
 	}
 

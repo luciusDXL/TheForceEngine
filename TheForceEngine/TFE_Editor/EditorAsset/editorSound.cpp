@@ -37,7 +37,7 @@ namespace TFE_Editor
 		alreadyLoaded = false;
 		// Create a new sound.
 		s32 index = (s32)s_soundList.size();
-		s_soundList.push_back({});
+		s_soundList.emplace_back();
 		return index;
 	}
 
