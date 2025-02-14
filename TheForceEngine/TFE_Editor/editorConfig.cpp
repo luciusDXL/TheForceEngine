@@ -73,7 +73,7 @@ namespace TFE_Editor
 		parser.addCommentString(";");
 		parser.addCommentString("#");
 
-		s_editorConfig = {};
+		s_editorConfig = EditorConfig{};
 		clearRecents();
 
 		size_t bufferPos = 0;

@@ -394,7 +394,7 @@ namespace TFE_DarkForces
 		TFE_Audio::resume();
 
 		// Reset state.
-		s_sharedState = {};
+		s_sharedState = SharedGameState{};
 		s_runGameState = {};
 	}
 

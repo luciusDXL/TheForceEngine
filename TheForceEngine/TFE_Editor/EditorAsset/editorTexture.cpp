@@ -32,7 +32,7 @@ namespace TFE_Editor
 					TFE_RenderBackend::freeTexture(texture->frames[f]);
 				}
 				texture->frames.clear();
-				*texture = {};
+				*texture = EditorTexture{};
 				break;
 			}
 		}
@@ -55,7 +55,7 @@ namespace TFE_Editor
 	s32 allocateTexture(const char* name)
 	{
 		s32 index = (s32)s_textureList.size();
-		s_textureList.push_back({});
+		s_textureList.emplace_back();
 		return index;
 	}
 

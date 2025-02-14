@@ -25,7 +25,7 @@ namespace TFE_Editor
 			if (strcasecmp(lev->name, name) == 0)
 			{
 				TFE_RenderBackend::freeTexture(lev->thumbnail);
-				*lev = {};
+				*lev = EditorLevelPreview{};
 				break;
 			}
 		}
@@ -45,7 +45,7 @@ namespace TFE_Editor
 	s32 allocateLevelPreview(const char* name)
 	{
 		s32 index = (s32)s_levelPreviewList.size();
-		s_levelPreviewList.push_back({});
+		s_levelPreviewList.emplace_back();
 		return index;
 	}
 

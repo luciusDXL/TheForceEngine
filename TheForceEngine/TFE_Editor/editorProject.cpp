@@ -48,14 +48,14 @@ namespace TFE_Editor
 
 	void project_close()
 	{
-		s_curProject = {};
+		s_curProject = Project{};
 		resources_clear();
 		AssetBrowser::rebuildAssets();
 	}
 
 	void project_prepareNew()
 	{
-		s_newProject = {};
+		s_newProject = Project{};
 		s_createDir = true;
 	}
 
@@ -117,7 +117,7 @@ namespace TFE_Editor
 		parser.addCommentString(";");
 		parser.addCommentString("#");
 
-		s_curProject = {};
+		s_curProject = Project{};
 		s_curStringOut = nullptr;
 		size_t bufferPos = 0;
 		bool inResource = false;
@@ -170,7 +170,7 @@ namespace TFE_Editor
 			TFE_System::logWrite(LOG_ERROR, "Editor Project", "Editor Project Path '%s' does not exist.", s_curProject.path);
 			removeFromRecents(s_curProject.path);
 
-			s_curProject = {};
+			s_curProject = Project{};
 			return false;
 		}
 
