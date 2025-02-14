@@ -326,7 +326,7 @@ namespace TFE_DarkForces
 				// Set a new random target.
 				target->yaw   = random(ANGLE_MAX);
 				target->pitch = (-random(TURRET_PITCH_RANGE)) & ANGLE_MASK;
-				target->flags = (target->flags | 4) & 0xfffffffe;
+				target->flags = (target->flags | TARGET_MOVE_ROT) & (~TARGET_MOVE_XZ);
 				target->speedRotation = TURRET_OUT_OF_CONTROL_ROTATE_SPD;
 			}
 		}
@@ -602,11 +602,11 @@ namespace TFE_DarkForces
 		MovementModule* moveMod = &physicsActor->moveMod;
 		moveMod->header.obj = obj;
 		moveMod->delta = { 0, 0, 0 };
-		moveMod->collisionFlags &= 0xfffffff8;
+		moveMod->collisionFlags &= ~ACTORCOL_ALL;
 
 		ActorTarget* target = &physicsActor->moveMod.target;
 		target->speed = 0;
-		target->flags &= 0xfffffff0;
+		target->flags &= ~TARGET_ALL;
 		target->speedRotation = TURRET_ROTATION_SPD;
 		target->pitch = obj->pitch;
 		target->yaw   = obj->yaw;

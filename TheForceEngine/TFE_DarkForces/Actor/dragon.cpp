@@ -119,10 +119,10 @@ namespace TFE_DarkForces
 				{
 					task_localBlockBegin;
 						ActorTarget* target = &local(physicsActor)->moveMod.target;
-						target->flags |= 8;
+						target->flags |= TARGET_FREEZE;
 						memcpy(&local(tmpAnim), local(anim), sizeof(LogicAnimation) - 4);
 
-						local(anim)->flags |= AFLAG_PLAYED;
+						local(anim)->flags |= AFLAG_PLAYONCE;
 						actor_setupBossAnimation(local(obj), 12, local(anim));
 						local(anim)->frameRate = 8;
 					task_localBlockEnd;
@@ -137,7 +137,7 @@ namespace TFE_DarkForces
 						actor_setupBossAnimation(local(obj), local(anim)->animId, local(anim));
 
 						ActorTarget* target = &local(physicsActor)->moveMod.target;
-						target->flags &= 0xfffffff7;
+						target->flags &= ~TARGET_FREEZE;
 					task_localBlockEnd;
 				}
 				msg = MSG_DAMAGE;
@@ -209,7 +209,7 @@ namespace TFE_DarkForces
 					memcpy(&local(tmp), local(anim), sizeof(LogicAnimation) - 4);
 
 					// Set the animation to 12.
-					local(anim)->flags |= AFLAG_PLAYED;
+					local(anim)->flags |= AFLAG_PLAYONCE;
 					actor_setupBossAnimation(local(obj), 12, local(anim));
 					local(anim)->frameRate = 8;
 
@@ -305,13 +305,13 @@ namespace TFE_DarkForces
 		fixed16_16 sinYaw, cosYaw;
 		sinCosFixed(obj->yaw, &sinYaw, &cosYaw);
 
-		target->flags |= 4;
+		target->flags |= TARGET_MOVE_ROT;
 		target->speedRotation = 6826;
 
 		fixed16_16 animSpeed = s_kellDragonAnim[dragon->animIndex].speed;
 		target->pos.x = obj->posWS.x + mul16(sinYaw, animSpeed);
 		target->pos.z = obj->posWS.z + mul16(cosYaw, animSpeed);
-		target->flags |= 1;
+		target->flags |= TARGET_MOVE_XZ;
 	}
 
 	void kellDragon_handleState1(MessageType msg)
@@ -336,7 +336,7 @@ namespace TFE_DarkForces
 		local(prevColTick) = 0;
 		local(yawAligned) = JFALSE;
 
-		local(anim)->flags &= ~AFLAG_PLAYED;
+		local(anim)->flags &= ~AFLAG_PLAYONCE;
 		actor_setupBossAnimation(local(obj), 0, local(anim));
 
 		task_localBlockBegin;
@@ -462,7 +462,7 @@ namespace TFE_DarkForces
 		local(physicsActor) = &local(dragon)->actor;
 		local(anim) = &local(physicsActor)->anim;
 		local(target) = &local(physicsActor)->moveMod.target;
-		local(anim)->flags &= ~AFLAG_PLAYED;
+		local(anim)->flags &= ~AFLAG_PLAYONCE;
 
 		task_localBlockBegin;
 			actor_setupBossAnimation(local(obj), 0, local(anim));
@@ -559,7 +559,7 @@ namespace TFE_DarkForces
 			} while (msg != MSG_RUN_TASK);
 			if (local(physicsActor)->state != DRAGONSTATE_JUMPING) { break; }
 
-			local(anim)->flags |= AFLAG_PLAYED;
+			local(anim)->flags |= AFLAG_PLAYONCE;
 			actor_setupBossAnimation(local(obj), 9, local(anim));
 			local(anim)->frameRate = 8;
 			sound_playCued(s_shared.kellSound1, local(obj)->posWS);
@@ -688,7 +688,7 @@ namespace TFE_DarkForces
 				break;
 			}
 
-			local(anim)->flags |= AFLAG_PLAYED;
+			local(anim)->flags |= AFLAG_PLAYONCE;
 			actor_setupBossAnimation(local(obj), 1, local(anim));
 			local(anim)->frameRate = 8;
 
@@ -751,7 +751,7 @@ namespace TFE_DarkForces
 		local(target)->flags |= TARGET_FREEZE;
 		sound_playCued(s_shared.kellSound3, local(obj)->posWS);
 
-		local(anim)->flags |= AFLAG_PLAYED;
+		local(anim)->flags |= AFLAG_PLAYONCE;
 		actor_setupBossAnimation(local(obj), 2, local(anim));
 		local(anim)->frameRate = 8;
 
@@ -819,7 +819,7 @@ namespace TFE_DarkForces
 		local(delay) = 72;
 		local(speedRotation) = local(target)->speedRotation;
 
-		local(anim)->flags &= ~AFLAG_PLAYED;
+		local(anim)->flags &= ~AFLAG_PLAYONCE;
 		actor_setupBossAnimation(local(obj), 0, local(anim));
 		local(target)->flags &= ~TARGET_FREEZE;
 		local(target)->speedRotation = 0x3000;
@@ -1103,17 +1103,17 @@ namespace TFE_DarkForces
 		physics->botOffset = 0x60000;
 		physics->yPos = 0x80000;
 		physics->width = obj->worldWidth;
-		physicsActor->moveMod.collisionFlags |= 7;
+		physicsActor->moveMod.collisionFlags |= ACTORCOL_ALL;
 		physics->height = obj->worldHeight + HALF_16;
 
 		ActorTarget* target = &physicsActor->moveMod.target;
-		target->flags &= 0xfffffff0;
+		target->flags &= ~TARGET_ALL;
 		target->speedRotation = 43546;	// 956.8 degrees per second.
 		target->speed = FIXED(10);
 
 		LogicAnimation* anim = &physicsActor->anim;
 		anim->frameRate = 5;
-		anim->flags = (anim->flags | AFLAG_READY) & (~AFLAG_PLAYED);
+		anim->flags = (anim->flags | AFLAG_READY) & (~AFLAG_PLAYONCE);
 		anim->frameCount = ONE_16;
 		anim->prevTick = 0;
 		actor_setupBossAnimation(obj, 5, anim);

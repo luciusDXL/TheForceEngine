@@ -23,12 +23,12 @@ namespace TFE_DarkForces
 			s_actorState.curAnimation = anim;
 			return JFALSE;
 		}
-		else if (damageMod->hp <= 0 && actor_getAnimationIndex(4) != -1)
+		else if (damageMod->hp <= 0 && actor_getAnimationIndex(ANIM_DEAD) != -1)
 		{
 			SecObject* newObj = allocateObject();
 			sprite_setData(newObj, obj->wax);
 			newObj->frame = 0;
-			newObj->anim = actor_getAnimationIndex(4);
+			newObj->anim = actor_getAnimationIndex(ANIM_DEAD);
 			newObj->posWS = obj->posWS;
 			newObj->worldWidth = obj->worldWidth;
 
@@ -62,7 +62,7 @@ namespace TFE_DarkForces
 				}
 				else
 				{
-					actor_setupAnimation(4, anim);
+					actor_setupAnimation(ANIM_DEAD, anim);
 					actor_removeLogics(obj);
 					retValue = JFALSE;
 				}
@@ -83,7 +83,7 @@ namespace TFE_DarkForces
 			}
 			else
 			{
-				actor_setupAnimation(4, anim);
+				actor_setupAnimation(ANIM_DEAD, anim);
 				actor_removeLogics(obj);
 				retValue = JFALSE;
 			}
@@ -94,7 +94,7 @@ namespace TFE_DarkForces
 	Logic* scenery_setup(SecObject* obj, LogicSetupFunc* setupFunc)
 	{
 		ActorDispatch* dispatch = actor_createDispatch(obj, setupFunc);
-		dispatch->flags &= ~(FLAG_BIT(0) | FLAG_BIT(2));
+		dispatch->flags &= ~(ACTOR_IDLE | ACTOR_NPC);
 		dispatch->animTable = s_sceneryAnimTable;
 
 		DamageModule* module = actor_createDamageModule(dispatch);

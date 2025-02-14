@@ -144,7 +144,7 @@ namespace TFE_DarkForces
 		thinkerMod->target.speedRotation = 0;
 		thinkerMod->target.speed = FIXED(6);
 		thinkerMod->delay = 116;
-		thinkerMod->anim.flags &= ~FLAG_BIT(0);
+		thinkerMod->anim.flags &= ~AFLAG_PLAYONCE;
 		thinkerMod->startDelay = TICKS(2);	// (145.5)*2
 		actor_addModule(dispatch, (ActorModule*)thinkerMod);
 
@@ -157,7 +157,7 @@ namespace TFE_DarkForces
 				
 		MovementModule* moveMod = actor_createMovementModule(dispatch);
 		dispatch->moveMod = moveMod;
-		moveMod->collisionFlags = (moveMod->collisionFlags & 0xfffffff8) | 4;
+		moveMod->collisionFlags = (moveMod->collisionFlags & ~ACTORCOL_ALL) | ACTORCOL_BIT2;
 		moveMod->physics.yPos = FIXED(200);
 		moveMod->physics.width = obj->worldWidth;
 
@@ -194,7 +194,7 @@ namespace TFE_DarkForces
 		thinkerMod->target.speedRotation = 0;
 		thinkerMod->target.speed = FIXED(6);
 		thinkerMod->delay = 116;
-		thinkerMod->anim.flags &= ~FLAG_BIT(0);
+		thinkerMod->anim.flags &= ~AFLAG_PLAYONCE;
 		thinkerMod->startDelay = TICKS(2);	// (145.5)*2
 		actor_addModule(dispatch, (ActorModule*)thinkerMod);
 
@@ -207,7 +207,7 @@ namespace TFE_DarkForces
 
 		MovementModule* moveMod = actor_createMovementModule(dispatch);
 		dispatch->moveMod = moveMod;
-		moveMod->collisionFlags = (moveMod->collisionFlags & 0xfffffff8) | 4;
+		moveMod->collisionFlags = (moveMod->collisionFlags & ~ACTORCOL_ALL) | ACTORCOL_BIT2;
 		moveMod->physics.yPos = FIXED(200);
 		moveMod->physics.width = obj->worldWidth;
 
@@ -261,8 +261,8 @@ namespace TFE_DarkForces
 
 		MovementModule* moveMod = actor_createMovementModule(dispatch);
 		dispatch->moveMod = moveMod;
-		moveMod->collisionFlags &= 0xfffffff8;
-		moveMod->collisionFlags |= 4;
+		moveMod->collisionFlags &= ~ACTORCOL_ALL;
+		moveMod->collisionFlags |= ACTORCOL_BIT2;
 		moveMod->physics.yPos = FIXED(200);
 
 		// should be: 0xa7ec

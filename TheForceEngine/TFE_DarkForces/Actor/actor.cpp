@@ -191,7 +191,7 @@ namespace TFE_DarkForces
 		dispatch->vel = { 0 };
 		dispatch->lastPlayerPos = { 0 };
 		dispatch->freeTask = nullptr;
-		dispatch->flags = 4;
+		dispatch->flags = ACTOR_NPC;	// this is later removed for barrels and scenery
 
 		if (obj)
 		{
@@ -285,7 +285,7 @@ namespace TFE_DarkForces
 		attackMod->fireOffset.z = 0;
 
 		attackMod->target.flags &= ~TARGET_ALL;
-		attackMod->anim.flags |= 3;
+		attackMod->anim.flags |= (AFLAG_PLAYONCE | AFLAG_READY);	// attack and damage module animations do not loop
 		attackMod->timing.nextTick = s_curTick + 0x4446;	// ~120 seconds
 
 		SecObject* obj = attackMod->header.obj;
@@ -305,11 +305,12 @@ namespace TFE_DarkForces
 		return attackMod->fireOffset.y;
 	}
 
+	// Cause flying enemies fall to the ground when killed
 	void actor_setDeathCollisionFlags()
 	{
 		ActorDispatch* logic = (ActorDispatch*)s_actorState.curLogic;
 		MovementModule* moveMod = logic->moveMod;
-		moveMod->collisionFlags |= 2;
+		moveMod->collisionFlags |= ACTORCOL_GRAVITY;
 		// Added to disable auto-aim when dying.
 		logic->logic.obj->flags &= ~OBJ_FLAG_AIM;
 	}
@@ -385,7 +386,7 @@ namespace TFE_DarkForces
 		SecObject* obj = moveMod->header.obj;
 		if (moveMod->physics.responseStep || moveMod->collisionWall)
 		{
-			if (!(moveMod->collisionFlags & 1))
+			if (!(moveMod->collisionFlags & ACTORCOL_NO_Y_MOVE))		// i.e. actor is capable of vertical movement
 			{
 				RWall* wall = moveMod->physics.wall ? moveMod->physics.wall : moveMod->collisionWall;
 				if (!wall)
@@ -396,6 +397,7 @@ namespace TFE_DarkForces
 				RSector* nextSector = wall->nextSector;
 				if (nextSector)
 				{
+					// Actor has collided with adjoined wall; test if it can fit (vertically) through the adjoin
 					RSector* sector = wall->sector;
 					fixed16_16 floorHeight = min(nextSector->floorHeight, sector->floorHeight);
 					fixed16_16 ceilHeight  = max(nextSector->ceilingHeight, sector->ceilingHeight);
@@ -404,8 +406,9 @@ namespace TFE_DarkForces
 					// If the object can fit.
 					if (gap > objHeight)
 					{
+						// Move vertically to the middle of the gap
 						target->pos.y = floorHeight - (TFE_Jedi::abs(gap) >> 1) + (TFE_Jedi::abs(obj->worldHeight) >> 1);
-						target->flags |= 2;
+						target->flags |= TARGET_MOVE_Y;
 						return JFALSE;
 					}
 				}
@@ -415,10 +418,10 @@ namespace TFE_DarkForces
 		return JFALSE;
 	}
 
-	JBool actorLogic_isStopFlagSet()
+	JBool actorLogic_isVisibleFlagSet()
 	{
 		ActorDispatch* logic = (ActorDispatch*)s_actorState.curLogic;
-		return (logic->flags & 8) ? JTRUE : JFALSE;
+		return (logic->flags & ACTOR_PLAYER_VISIBLE) ? JTRUE : JFALSE;
 	}
 
 	void actor_changeDirFromCollision(MovementModule* moveMod, ActorTarget* target, Tick* prevColTick)
@@ -563,7 +566,7 @@ namespace TFE_DarkForces
 		ActorDispatch* logic = (ActorDispatch*)s_actorState.curLogic;
 
 		// Update player visibility flag.
-		logic->flags &= ~8;
+		logic->flags &= ~ACTOR_PLAYER_VISIBLE;
 		logic->flags |= ((playerVis & 1) << 3);	// flag 8 = player visible.
 
 		if (playerVis)
@@ -585,7 +588,7 @@ namespace TFE_DarkForces
 		SecObject* obj = attackMod->header.obj;
 		RSector* sector = obj->sector;
 
-		if (!(attackMod->anim.flags & 2))
+		if (!(attackMod->anim.flags & AFLAG_READY))
 		{
 			if (obj->type == OBJ_TYPE_SPRITE)
 			{
@@ -639,7 +642,7 @@ namespace TFE_DarkForces
 						freeObject(item);
 					}
 				}
-				s32 animIndex = actor_getAnimationIndex(4);
+				s32 animIndex = actor_getAnimationIndex(ANIM_DEAD);
 				if (animIndex != -1)
 				{
 					RSector* sector = obj->sector;
@@ -701,14 +704,14 @@ namespace TFE_DarkForces
 					actor_setDeathCollisionFlags();
 					sound_stop(logic->alertSndID);
 					sound_playCued(damageMod->dieSndSrc, obj->posWS);
-					attackMod->anim.flags |= 8;
+					attackMod->anim.flags |= AFLAG_BIT3;
 					if (proj->type == PROJ_PUNCH && obj->type == OBJ_TYPE_SPRITE)
 					{
-						actor_setupAnimation(2, anim);
+						actor_setupAnimation(ANIM_DIE1, anim);
 					}
 					else if (obj->type == OBJ_TYPE_SPRITE)
 					{
-						actor_setupAnimation(3, anim);
+						actor_setupAnimation(ANIM_DIE2, anim);
 					}
 				}
 				else
@@ -725,7 +728,7 @@ namespace TFE_DarkForces
 					damageMod->hurtSndID = sound_playCued(damageMod->hurtSndSrc, obj->posWS);
 					if (obj->type == OBJ_TYPE_SPRITE)
 					{
-						actor_setupAnimation(12, anim);
+						actor_setupAnimation(ANIM_PAIN, anim);
 					}
 				}
 			}
@@ -762,10 +765,10 @@ namespace TFE_DarkForces
 					actor_setDeathCollisionFlags();
 					sound_stop(logic->alertSndID);
 					sound_playCued(damageMod->dieSndSrc, obj->posWS);
-					attackMod->target.flags |= 8;
+					attackMod->target.flags |= 8;			// possibly an error? FREEZE (bit 3) has already been added to target flags above
 					if (obj->type == OBJ_TYPE_SPRITE)
 					{
-						actor_setupAnimation(3, anim);
+						actor_setupAnimation(ANIM_DIE2, anim);
 					}
 				}
 				else
@@ -775,7 +778,7 @@ namespace TFE_DarkForces
 					damageMod->hurtSndID = sound_playCued(damageMod->hurtSndSrc, obj->posWS);
 					if (obj->type == OBJ_TYPE_SPRITE)
 					{
-						actor_setupAnimation(12, anim);
+						actor_setupAnimation(ANIM_PAIN, anim);
 					}
 				}
 			}
@@ -799,10 +802,10 @@ namespace TFE_DarkForces
 				actor_setDeathCollisionFlags();
 				sound_stop(logic->alertSndID);
 				sound_playCued(damageMod->dieSndSrc, obj->posWS);
-				attackMod->anim.flags |= 8;
+				attackMod->anim.flags |= AFLAG_BIT3;
 				if (obj->type == OBJ_TYPE_SPRITE)
 				{
-					actor_setupAnimation(3, anim);
+					actor_setupAnimation(ANIM_DIE2, anim);
 				}
 			}
 		}
@@ -847,11 +850,11 @@ namespace TFE_DarkForces
 		{
 			case STATE_DELAY:
 			{
-				if (attackMod->anim.flags & 2)
+				if (attackMod->anim.flags & AFLAG_READY)
 				{
 					// Clear attack based lighting.
 					obj->flags &= ~OBJ_FLAG_FULLBRIGHT;
-					attackMod->anim.state = STATE_ANIMATEATTACK;
+					attackMod->anim.state = STATE_DECIDE;
 
 					// Update the shooting accuracy.
 					if (attackMod->accuracyNextTick < s_curTick)
@@ -875,32 +878,34 @@ namespace TFE_DarkForces
 					return s_curTick + random(attackMod->timing.delay);
 				}
 			} break;
-			case STATE_ANIMATEATTACK:
+			case STATE_DECIDE:
 			{
 				gameMusic_sustainFight();
 				if (s_playerDying)
 				{
 					if (s_curTick >= s_reviveTick)
 					{
-						attackMod->anim.flags |= 2;
+						attackMod->anim.flags |= AFLAG_READY;
 						attackMod->anim.state = STATE_DELAY;
 						return attackMod->timing.delay;
 					}
 				}
 
+				// Check for player visibility
 				if (!actor_canSeeObjFromDist(obj, s_playerObject))
 				{
 					actor_updatePlayerVisiblity(JFALSE, 0, 0);
-					attackMod->anim.flags |= 2;
+					attackMod->anim.flags |= AFLAG_READY;
 					attackMod->anim.state = STATE_DELAY;
 					if (attackMod->timing.nextTick < s_curTick)
 					{
+						// Lost sight of player for sufficient length of time (losDelay) - return to idle state
 						attackMod->timing.delay = attackMod->timing.searchDelay;
 						actor_setupInitAnimation();
 					}
 					return attackMod->timing.delay;
 				}
-				else
+				else  // Player is visible
 				{
 					actor_updatePlayerVisiblity(JTRUE, s_eyePos.x, s_eyePos.z);
 					attackMod->timing.nextTick = s_curTick + attackMod->timing.losDelay;
@@ -917,42 +922,50 @@ namespace TFE_DarkForces
 						{
 							if (dist <= attackMod->meleeRange)
 							{
-								attackMod->anim.state = STATE_FIRE1;
+								// Within melee range => Perform melee (primary attack)
+								attackMod->anim.state = STATE_ATTACK1;
 								attackMod->timing.delay = attackMod->timing.meleeDelay;
 							}
 							else if (!(attackMod->attackFlags & ATTFLAG_RANGED) || dist < attackMod->minDist)
 							{
-								attackMod->anim.flags |= 2;
+								// Outside melee range && cannot do ranged attack => quit out
+								attackMod->anim.flags |= AFLAG_READY;
 								attackMod->anim.state = STATE_DELAY;
 								return attackMod->timing.delay;
 							}
 							else
 							{
-								attackMod->anim.state = STATE_FIRE2;
+								// Do ranged attack (secondary)
+								attackMod->anim.state = STATE_ATTACK2;
 								attackMod->timing.delay = attackMod->timing.rangedDelay;
 							}
 						}
-						else
+						else  // Actor does not have melee attack
 						{
 							if (dist < attackMod->minDist)
 							{
-								attackMod->anim.flags |= 2;
+								// Too close for ranged attack => quit out
+								attackMod->anim.flags |= AFLAG_READY;
 								attackMod->anim.state = STATE_DELAY;
 								return attackMod->timing.delay;
 							}
-							attackMod->anim.state = STATE_FIRE1;
+							
+							// Do ranged attack (primary)
+							attackMod->anim.state = STATE_ATTACK1;
 							attackMod->timing.delay = attackMod->timing.rangedDelay;
 						}
 
 						if (obj->type == OBJ_TYPE_SPRITE)
 						{
-							if (attackMod->anim.state == STATE_FIRE1)
+							if (attackMod->anim.state == STATE_ATTACK1)
 							{
-								actor_setupAnimation(1, &attackMod->anim);
+								// Use primary attack animation
+								actor_setupAnimation(ANIM_ATTACK1, &attackMod->anim);
 							}
 							else
 							{
-								actor_setupAnimation(7, &attackMod->anim);
+								// Use secondary attack animation
+								actor_setupAnimation(ANIM_ATTACK2, &attackMod->anim);
 							}
 						}
 
@@ -963,17 +976,17 @@ namespace TFE_DarkForces
 						attackMod->target.roll  = obj->roll;
 						attackMod->target.flags |= (TARGET_MOVE_XZ | TARGET_MOVE_ROT);
 					}
-					else
+					else   // Too far away or too high or too low to attack
 					{
-						attackMod->anim.flags |= 2;
+						attackMod->anim.flags |= AFLAG_READY;
 						attackMod->anim.state = STATE_DELAY;
 						return attackMod->timing.delay;
 					}
 				}
 			} break;
-			case STATE_FIRE1:
+			case STATE_ATTACK1:
 			{
-				if (!(attackMod->anim.flags & 2))
+				if (!(attackMod->anim.flags & AFLAG_READY))
 				{
 					break;
 				}
@@ -1013,7 +1026,7 @@ namespace TFE_DarkForces
 				SecObject* projObj = proj->logic.obj;
 				projObj->yaw = obj->yaw;
 				
-				// Vanilla DF did not handle arcing projectiles with STATE_FIRE1; this has been added
+				// Vanilla DF did not handle arcing projectiles with STATE_ATTACK1; this has been added
 				if (attackMod->projType == PROJ_THERMAL_DET || attackMod->projType == PROJ_MORTAR)
 				{
 					// TDs are lobbed at an angle that depends on distance from target
@@ -1054,13 +1067,13 @@ namespace TFE_DarkForces
 			{
 				if (obj->type == OBJ_TYPE_SPRITE)
 				{
-					actor_setupAnimation(6, anim);
+					actor_setupAnimation(ANIM_ATTACK1_END, anim);
 				}
 				attackMod->anim.state = STATE_DELAY;
 			} break;
-			case STATE_FIRE2:
+			case STATE_ATTACK2:
 			{
-				if (!(attackMod->anim.flags & 2))
+				if (!(attackMod->anim.flags & AFLAG_READY))
 				{
 					break;
 				}
@@ -1113,7 +1126,7 @@ namespace TFE_DarkForces
 			{
 				if (obj->type == OBJ_TYPE_SPRITE)
 				{
-					actor_setupAnimation(8, anim);
+					actor_setupAnimation(ANIM_ATTACK2_END, anim);
 				}
 				attackMod->anim.state = STATE_DELAY;
 			} break;
@@ -1136,7 +1149,7 @@ namespace TFE_DarkForces
 		{
 			attackMod->timing.nextTick = s_curTick + attackMod->timing.losDelay;
 		}
-		if (logic->flags & 1)
+		if (logic->flags & ACTOR_IDLE)
 		{
 			return attackMod->timing.delay;
 		}
@@ -1174,7 +1187,7 @@ namespace TFE_DarkForces
 			}
 			else
 			{
-				if (actorLogic_isStopFlagSet())
+				if (actorLogic_isVisibleFlagSet())
 				{
 					if (thinkerMod->playerLastSeen != 0xffffffff)
 					{
@@ -1192,7 +1205,7 @@ namespace TFE_DarkForces
 				if (actor_handleSteps(moveMod, target))
 				{
 					actor_changeDirFromCollision(moveMod, target, &thinkerMod->prevColTick);
-					if (!actorLogic_isStopFlagSet())
+					if (!actorLogic_isVisibleFlagSet())
 					{
 						thinkerMod->maxWalkTime += 218;
 						if (thinkerMod->maxWalkTime > 1456)
@@ -1220,7 +1233,7 @@ namespace TFE_DarkForces
 			}
 
 			fixed16_16 targetOffset;
-			if (!actorLogic_isStopFlagSet())
+			if (!actorLogic_isVisibleFlagSet())
 			{
 				// Offset the target by |dx| / 4
 				// This is obviously a typo and bug in the DOS code and should be min(|dx|, |dz|)
@@ -1250,20 +1263,20 @@ namespace TFE_DarkForces
 			thinkerMod->target.yaw = vec2ToAngle(dx, dz);
 			thinkerMod->target.flags |= TARGET_MOVE_ROT;
 						
-			if (!(logic->flags & 2))
+			if (!(logic->flags & ACTOR_MOVING))
 			{
 				if (obj->type == OBJ_TYPE_SPRITE)
 				{
-					actor_setupAnimation(0, &thinkerMod->anim);
+					actor_setupAnimation(ANIM_MOVE, &thinkerMod->anim);
 				}
-				logic->flags |= 2;
+				logic->flags |= ACTOR_MOVING;
 			}
 			thinkerMod->anim.state = STATE_MOVE;
 			thinkerMod->nextTick = s_curTick + thinkerMod->maxWalkTime;
 
 			if (obj->entityFlags & ETFLAG_REMOTE)
 			{
-				if (!(logic->flags & 1) && (logic->flags & 2))
+				if (!(logic->flags & ACTOR_IDLE) && (logic->flags & ACTOR_MOVING))
 				{
 					sound_playCued(s_agentSndSrc[AGENTSND_REMOTE_2], obj->posWS);
 				}
@@ -1288,7 +1301,7 @@ namespace TFE_DarkForces
 		thinkerMod->delay = 72;
 		thinkerMod->nextTick = 0;
 		thinkerMod->playerLastSeen = 0xffffffff;
-		thinkerMod->anim.state = STATE_FIRE1;
+		thinkerMod->anim.state = STATE_TURN;
 		thinkerMod->maxWalkTime = 728;	// ~5 seconds between decision points.
 		thinkerMod->anim.frameRate = 5;
 		thinkerMod->anim.frameCount = ONE_16;
@@ -1317,11 +1330,11 @@ namespace TFE_DarkForces
 	void actor_setupInitAnimation()
 	{
 		ActorDispatch* logic = (ActorDispatch*)s_actorState.curLogic;
-		logic->flags = (logic->flags | 1) & 0xfd;
+		logic->flags = (logic->flags | ACTOR_IDLE) & ~ACTOR_MOVING;		// remove flag bit 1 (ACTOR_MOVING)
 		logic->nextTick = s_curTick + logic->delay;
 
 		SecObject* obj = logic->logic.obj;
-		obj->anim = actor_getAnimationIndex(5);
+		obj->anim = actor_getAnimationIndex(ANIM_IDLE);
 		obj->frame = 0;
 	}
 
@@ -1352,7 +1365,7 @@ namespace TFE_DarkForces
 				desiredMove.x = moveMod->target.pos.x - obj->posWS.x;
 				desiredMove.z = moveMod->target.pos.z - obj->posWS.z;
 			}
-			if (!(moveMod->collisionFlags & 1))
+			if (!(moveMod->collisionFlags & ACTORCOL_NO_Y_MOVE))		// i.e. actor is capable of vertical movement
 			{
 				if (moveMod->target.flags & TARGET_MOVE_Y)
 				{
@@ -1415,7 +1428,7 @@ namespace TFE_DarkForces
 					}
 				}
 				// Handles a single collision response + resolution step.
-				if (moveMod->collisionFlags & 4)
+				if (moveMod->collisionFlags & ACTORCOL_BIT2)
 				{
 					moveMod->collisionWall = wall;
 					dirX = physics->responseDir.x;
@@ -1436,7 +1449,7 @@ namespace TFE_DarkForces
 			handleCollision(physics);
 
 			// Handles a single collision response + resolution step from velocity delta.
-			if ((moveMod->collisionFlags & 4) && physics->responseStep)
+			if ((moveMod->collisionFlags & ACTORCOL_BIT2) && physics->responseStep)
 			{
 				moveMod->collisionWall = physics->wall;
 				dirX = physics->responseDir.x;
@@ -1529,9 +1542,9 @@ namespace TFE_DarkForces
 	// Updates the actor target with the passed in target based on the flags.
 	JBool defaultUpdateTargetFunc(MovementModule* moveMod, ActorTarget* target)
 	{
-		if (target->flags & 8)
+		if (target->flags & TARGET_FREEZE)
 		{
-			moveMod->target.flags |= 8;
+			moveMod->target.flags |= TARGET_FREEZE;
 		}
 		else
 		{
@@ -1578,7 +1591,7 @@ namespace TFE_DarkForces
 		moveMod->collisionWall = nullptr;
 		moveMod->unused = 0;
 
-		moveMod->collisionFlags = (moveMod->collisionFlags | 3) & 0xfffffffb;
+		moveMod->collisionFlags = (moveMod->collisionFlags | (ACTORCOL_NO_Y_MOVE | ACTORCOL_GRAVITY)) & ~ACTORCOL_BIT2;	// Set bits 0, 1 and clear bit 2. This creates a non-flying AI by default.
 		obj->entityFlags |= ETFLAG_SMART_OBJ;
 	}
 
@@ -1712,10 +1725,12 @@ namespace TFE_DarkForces
 		allocator_deleteItem(s_istate.actorDispatch, dispatch);
 	}
 	
+	// Returns JTRUE when animation is finished, otherwise JFALSE
 	JBool actor_advanceAnimation(LogicAnimation* anim, SecObject* obj)
 	{
 		if (!anim->prevTick)
 		{
+			// Start the animation
 			anim->prevTick = s_frameTicks[anim->frameRate];
 			anim->flags &= ~AFLAG_READY;
 
@@ -1730,8 +1745,9 @@ namespace TFE_DarkForces
 			fixed16_16 endFrame = anim->startFrame + anim->frameCount;
 			if (anim->frame >= endFrame)
 			{
-				if (anim->flags & AFLAG_PLAYED)
+				if (anim->flags & AFLAG_PLAYONCE)
 				{
+					// Non-looping animation; animation will end at the final frame
 					endFrame -= ONE_16;
 					anim->frame = endFrame;
 					obj->frame = floor16(endFrame);
@@ -1740,6 +1756,7 @@ namespace TFE_DarkForces
 
 				while (anim->frame >= endFrame)
 				{
+					// Rewind to start of animation (looping animation)
 					anim->frame -= anim->frameCount;
 				}
 			}
@@ -1909,16 +1926,16 @@ namespace TFE_DarkForces
 
 		if (msg == MSG_WAKEUP)
 		{
-			if (dispatch->flags & 1)
+			if (dispatch->flags & ACTOR_IDLE)
 			{
 				gameMusic_startFight();
 			}
 
-			if ((dispatch->flags & 4) && (dispatch->flags & 1))
+			if ((dispatch->flags & ACTOR_NPC) && (dispatch->flags & ACTOR_IDLE))
 			{
 				if (s_actorState.nextAlertTick < s_curTick)
 				{
-					if (dispatch->flags & 16)  // Officer alert list.
+					if (dispatch->flags & ACTOR_OFFIC_ALERT)  // Officer alert list.
 					{
 						dispatch->alertSndID = sound_playCued(s_officerAlertSndSrc[s_actorState.officerAlertIndex], obj->posWS);
 						s_actorState.officerAlertIndex++;
@@ -1927,7 +1944,7 @@ namespace TFE_DarkForces
 							s_actorState.officerAlertIndex = 0;
 						}
 					}
-					else if (dispatch->flags & 32)  // Storm trooper alert list
+					else if (dispatch->flags & ACTOR_TROOP_ALERT)  // Storm trooper alert list
 					{
 						dispatch->alertSndID = sound_playCued(s_stormAlertSndSrc[s_actorState.stormtrooperAlertIndex], obj->posWS);
 						s_actorState.stormtrooperAlertIndex++;
@@ -1942,16 +1959,16 @@ namespace TFE_DarkForces
 					}
 					s_actorState.nextAlertTick = s_curTick + 291;	// ~2 seconds between alerts
 				}
-				dispatch->flags &= 0xfffffffe;
+				dispatch->flags &= ~ACTOR_IDLE;		// remove flag bit 0 (ACTOR_IDLE)
 			}
 		}
 		else if (msg == MSG_DAMAGE || msg == MSG_EXPLOSION)
 		{
-			if (dispatch->flags & 1)
+			if (dispatch->flags & ACTOR_IDLE)
 			{
 				gameMusic_startFight();
 			}
-			dispatch->flags &= ~1;
+			dispatch->flags &= ~ACTOR_IDLE;
 			s_actorState.curAnimation = nullptr;
 		}
 	}
@@ -2041,6 +2058,8 @@ namespace TFE_DarkForces
 		}
 	}
 
+	// Task function for dispatch actors
+	// Iterates through all actors in s_istate.actorDispatch and updates them
 	void actorLogicTaskFunc(MessageType msg)
 	{
 		task_begin;
@@ -2054,20 +2073,21 @@ namespace TFE_DarkForces
 				{
 					SecObject* obj = dispatch->logic.obj;
 					const u32 flags = dispatch->flags;
-					if ((flags & 1) && (flags & 4))
+					if ((flags & ACTOR_IDLE) && (flags & ACTOR_NPC))
 					{
 						if (dispatch->nextTick < s_curTick)
 						{
 							dispatch->nextTick = s_curTick + dispatch->delay;
 							if (actor_isObjectVisible(obj, s_playerObject, dispatch->fov, dispatch->awareRange))
 							{
+								// Wake up, and alert other actors within a 150 unit range
 								message_sendToObj(obj, MSG_WAKEUP, actor_hitEffectMsgFunc);
 								gameMusic_startFight();
 								collision_effectObjectsInRangeXZ(obj->sector, FIXED(150), obj->posWS, hitEffectWakeupFunc, obj, ETFLAG_AI_ACTOR);
 							}
 						}
 					}
-					else
+					else  // actor is not idle
 					{
 						s_actorState.curLogic = (Logic*)dispatch;
 						s_actorState.curAnimation = nullptr;
@@ -2080,7 +2100,7 @@ namespace TFE_DarkForces
 							}
 						}
 
-						if (s_actorState.curLogic && !(dispatch->flags & 1))
+						if (s_actorState.curLogic && !(dispatch->flags & ACTOR_IDLE))
 						{
 							MovementModule* moveMod = dispatch->moveMod;
 							if (moveMod && moveMod->header.func)
@@ -2108,7 +2128,8 @@ namespace TFE_DarkForces
 		task_end;
 	}
 
-	// This is really a list of bosses:
+	// Task function for bosses, mousebots, welders, turrets
+	// Iterates through all actors in s_physicsActors and updates them
 	// TODO: Rename "physics" actor as appopriate.
 	void actorPhysicsTaskFunc(MessageType msg)
 	{

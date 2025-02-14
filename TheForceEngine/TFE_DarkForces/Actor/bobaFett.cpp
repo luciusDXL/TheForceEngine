@@ -145,7 +145,7 @@ namespace TFE_DarkForces
 				// Save Animation
 				memcpy(&local(tmp), local(anim), sizeof(LogicAnimation) - 4);
 
-				local(anim)->flags |= AFLAG_PLAYED;
+				local(anim)->flags |= AFLAG_PLAYONCE;
 				local(anim)->frameRate = 6;
 				actor_setupBossAnimation(local(obj), 12, local(anim));
 
@@ -203,7 +203,7 @@ namespace TFE_DarkForces
 				// Save Animation
 				memcpy(&local(tmp), local(anim), sizeof(LogicAnimation) - 4);
 
-				local(anim)->flags |= AFLAG_PLAYED;
+				local(anim)->flags |= AFLAG_PLAYONCE;
 				local(anim)->frameRate = 6;
 				actor_setupBossAnimation(local(obj), 12, local(anim));
 
@@ -606,7 +606,7 @@ namespace TFE_DarkForces
 		sound_stop(local(physicsActor)->moveSndId);
 		sound_playCued(s_shared.boba4SndID, local(obj)->posWS);
 
-		local(anim)->flags |= AFLAG_PLAYED;
+		local(anim)->flags |= AFLAG_PLAYONCE;
 		local(anim)->frameRate = 8;
 		actor_setupBossAnimation(local(obj), 2, local(anim));
 
@@ -660,7 +660,7 @@ namespace TFE_DarkForces
 		local(nextCheckForPlayerTick) = 0;
 		local(changeStateTick) = s_curTick + 8739;
 		local(nextChangePhaseTick) = s_curTick + 1456;
-		local(physicsActor)->moveMod.collisionFlags |= 4;
+		local(physicsActor)->moveMod.collisionFlags |= ACTORCOL_BIT2;
 
 		while (local(physicsActor)->state == BOBASTATE_SEARCH)
 		{
@@ -712,7 +712,7 @@ namespace TFE_DarkForces
 			}
 		}  // while (state == BOBASTATE_SEARCH)
 
-		local(physicsActor)->moveMod.collisionFlags |= 4;
+		local(physicsActor)->moveMod.collisionFlags |= ACTORCOL_BIT2;
 		task_end;
 	}
 
@@ -946,8 +946,8 @@ namespace TFE_DarkForces
 		physicsActor->moveMod.physics.width = FIXED(2);
 		physicsActor->moveMod.physics.botOffset = 0;
 
-		physicsActor->moveMod.collisionFlags &= 0xfffffff8;
-		physicsActor->moveMod.collisionFlags |= 6;
+		physicsActor->moveMod.collisionFlags &= ~ACTORCOL_ALL;
+		physicsActor->moveMod.collisionFlags |= (ACTORCOL_GRAVITY | ACTORCOL_BIT2);
 		physicsActor->moveMod.physics.yPos = COL_INFINITY;
 		physicsActor->moveMod.physics.height = obj->worldHeight;
 
@@ -956,7 +956,7 @@ namespace TFE_DarkForces
 		anim->frameCount = ONE_16;
 		anim->prevTick = 0;
 		anim->flags |= AFLAG_READY;
-		anim->flags &= ~AFLAG_PLAYED;
+		anim->flags &= ~AFLAG_PLAYONCE;
 		actor_setupBossAnimation(obj, 5, anim);
 
 		ActorTarget* target = &physicsActor->moveMod.target;
