@@ -3,13 +3,17 @@
 // Dark Forces Weapon Fire Functions
 // Logic for player weapons (not enemy weapons)
 //////////////////////////////////////////////////////////////////////
+#include "weapon.h"
 #include <TFE_System/types.h>
 #include <TFE_Jedi/InfSystem/message.h>
+#include <TFE_ExternalData/weaponExternal.h>
 
 namespace TFE_DarkForces
 {
 	typedef void(*WeaponFireFunc)(MessageType msg);
 
+	void setupAnimationFrames(WeaponID weaponId, s32 numPrimFrames, TFE_ExternalData::WeaponAnimFrame* extPrimFrames, s32 numSecondaryFrames, TFE_ExternalData::WeaponAnimFrame* extSecFrames);
+	
 	void weaponFire_fist(MessageType msg);
 	void weaponFire_pistol(MessageType msg);
 	void weaponFire_rifle(MessageType msg);
