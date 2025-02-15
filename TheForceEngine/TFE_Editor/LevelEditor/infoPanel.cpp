@@ -349,16 +349,9 @@ namespace LevelEditor
 		selection_clear();
 		selection_clearHovered();
 	}
-		
-	void selectAndScrollToSector(EditorSector* sector)
-	{
-		// Clear the selection, select the sector.
-		selection_clear();
 
-		// Set the edit mode to "Sector"
-		edit_setEditMode(LEDIT_SECTOR);
-		selection_sector(SA_SET, sector);
-				
+	void scrollToSector(EditorSector* sector)
+	{
 		// Set the correct layer.
 		if (!(s_editFlags & LEF_SHOW_ALL_LAYERS))
 		{
@@ -417,10 +410,22 @@ namespace LevelEditor
 		}
 	}
 		
+	void selectAndScrollToSector(EditorSector* sector)
+	{
+		// Clear the selection, select the sector.
+		selection_clear();
+
+		// Set the edit mode to "Sector"
+		edit_setEditMode(LEDIT_SECTOR);
+		selection_sector(SA_SET, sector);
+				
+		scrollToSector(sector);
+	}
+		
 	void listNamedSectorsInGroup(Group* group)
 	{
 		const s32 count = (s32)s_level.sectors.size();
-		const s32 groupId = group->id;
+		const s32 groupId = (s32)group->id;
 		EditorSector* sector = s_level.sectors.data();
 
 		Sublist sublist;
@@ -433,7 +438,24 @@ namespace LevelEditor
 			}
 			if (sublist_item(sublist, sector->name.c_str(), selection_featureInCurrentSelection(sector)))
 			{
-				
+				if (s_editMode == LEDIT_SECTOR)
+				{
+					const bool selToggle = TFE_Input::keyModDown(KEYMOD_CTRL);
+					const bool setOrAdd = !selToggle || !selection_sector(SA_CHECK_INCLUSION, sector);
+					if (selToggle)
+					{
+						selection_sector(setOrAdd ? SA_ADD : SA_REMOVE, sector);
+					}
+					else
+					{
+						selection_sector(SA_SET, sector);
+					}
+
+					if (setOrAdd)
+					{
+						scrollToSector(sector);
+					}
+				}
 			}
 		}
 		sublist_end(sublist);
