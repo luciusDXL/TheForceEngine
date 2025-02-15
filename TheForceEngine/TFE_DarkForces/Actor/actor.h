@@ -84,9 +84,14 @@ enum
 	ACTOR_MAX_MODULES = 6,
 };
 
-enum ActorCollisionFlags
+enum ActorDispatchFlags
 {
-	ACTORCOL_GRAVITY = FLAG_BIT(1),
+	ACTOR_IDLE				= FLAG_BIT(0),
+	ACTOR_MOVING			= FLAG_BIT(1),
+	ACTOR_NPC				= FLAG_BIT(2),	// set for AI characters, unset for scenery and exploders (these also use ActorDispatch)
+	ACTOR_PLAYER_VISIBLE	= FLAG_BIT(3),
+	ACTOR_OFFIC_ALERT		= FLAG_BIT(4),	// use officer alert sounds
+	ACTOR_TROOP_ALERT		= FLAG_BIT(5),	// use stormtrooper alert sounds
 };
 
 // Forward Declarations.
@@ -101,7 +106,7 @@ struct ActorTarget;
 
 // Logic for 'actors' -
 // an Actor is something with animated 'actions' that can move around in the world.
-// The "Dispatch" logic is the core actor, so rename to match.
+// The "Dispatch" logic is the core actor used for ordinary enemies, as well as scenery and exploders.
 struct ActorDispatch
 {
 	Logic logic;

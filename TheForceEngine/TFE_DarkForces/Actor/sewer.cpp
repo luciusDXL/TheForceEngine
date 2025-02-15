@@ -45,7 +45,7 @@ namespace TFE_DarkForces
 		}
 
 		// Creature die.
-		s32 animIndex = actor_getAnimationIndex(4);
+		s32 animIndex = actor_getAnimationIndex(ANIM_DEAD);
 		if (animIndex != -1)
 		{
 			SecObject* corpse = allocateObject();
@@ -130,25 +130,25 @@ namespace TFE_DarkForces
 		{
 			case STATE_DELAY:
 			{
-				if (attackMod->anim.flags & 2)
+				if (attackMod->anim.flags & AFLAG_READY)
 				{
 					obj->flags &= ~OBJ_FLAG_NEEDS_TRANSFORM;
 					obj->worldWidth = 0;
 					obj->posWS.y = sector->floorHeight + sector->secHeight;
 
-					moveMod->collisionFlags |= 1;
+					moveMod->collisionFlags |= ACTORCOL_NO_Y_MOVE;
 					attackMod->target.flags &= ~TARGET_ALL;
-					attackMod->anim.state = STATE_ANIMATEATTACK;
+					attackMod->anim.state = STATE_DECIDE;
 					return s_curTick + random(attackMod->timing.delay);
 				}
 			} break;
-			case STATE_ANIMATEATTACK:
+			case STATE_DECIDE:
 			{
 				gameMusic_sustainFight();
 				if (!actor_canSeeObjFromDist(obj, s_playerObject))
 				{
 					actor_updatePlayerVisiblity(JFALSE, 0, 0);
-					attackMod->anim.flags |= 2;
+					attackMod->anim.flags |= AFLAG_READY;
 					attackMod->anim.state = STATE_DELAY;
 					if (s_curTick > attackMod->timing.nextTick)
 					{
@@ -159,14 +159,14 @@ namespace TFE_DarkForces
 				}
 
 				actor_updatePlayerVisiblity(JTRUE, s_eyePos.x, s_eyePos.z);
-				moveMod->collisionFlags &= ~1;
+				moveMod->collisionFlags &= ~ACTORCOL_NO_Y_MOVE;
 
 				obj->posWS.y = sector->floorHeight;
 				fixed16_16 dy = TFE_Jedi::abs(obj->posWS.y - s_playerObject->posWS.y);
 				fixed16_16 dist = dy + distApprox(s_playerObject->posWS.x, s_playerObject->posWS.z, obj->posWS.x, obj->posWS.z);
 				if (dist <= attackMod->meleeRange)
 				{
-					attackMod->anim.state = STATE_FIRE1;
+					attackMod->anim.state = STATE_ATTACK1;
 					attackMod->timing.delay = attackMod->timing.meleeDelay;
 					attackMod->target.pos.x = obj->posWS.x;
 					attackMod->target.pos.z = obj->posWS.z;
@@ -191,19 +191,19 @@ namespace TFE_DarkForces
 				obj->flags |= OBJ_FLAG_NEEDS_TRANSFORM;
 				if (obj->type == OBJ_TYPE_SPRITE)
 				{
-					if (attackMod->anim.state == STATE_FIRE1)  // Attack animation
+					if (attackMod->anim.state == STATE_ATTACK1)  // Attack animation
 					{
-						actor_setupAnimation(1, &attackMod->anim);
+						actor_setupAnimation(ANIM_ATTACK1, &attackMod->anim);
 					}
 					else // Look around animation
 					{
-						actor_setupAnimation(14, &attackMod->anim);
+						actor_setupAnimation(ANIM_SEARCH, &attackMod->anim);
 					}
 				}
 			} break;
-			case STATE_FIRE1:
+			case STATE_ATTACK1:
 			{
-				if (attackMod->anim.flags & 2)
+				if (attackMod->anim.flags & AFLAG_READY)
 				{
 					attackMod->anim.state = STATE_ANIMATE1;
 					sound_playCued(attackMod->attackSecSndSrc, obj->posWS);
@@ -218,7 +218,7 @@ namespace TFE_DarkForces
 			} break;
 			case STATE_ANIMATE1:
 			{
-				actor_setupAnimation(6, &attackMod->anim);
+				actor_setupAnimation(ANIM_ATTACK1_END, &attackMod->anim);
 				attackMod->anim.state = STATE_DELAY;
 			} break;
 		}
@@ -262,7 +262,7 @@ namespace TFE_DarkForces
 		thinkerMod->target.speed = FIXED(18);
 		thinkerMod->delay = 58;
 		thinkerMod->startDelay = 72;
-		thinkerMod->anim.flags &= 0xfffffffe;
+		thinkerMod->anim.flags &= ~AFLAG_PLAYONCE;
 		actor_addModule(dispatch, (ActorModule*)thinkerMod);
 
 		MovementModule* moveMod = actor_createMovementModule(dispatch);
@@ -270,7 +270,7 @@ namespace TFE_DarkForces
 		dispatch->animTable = s_sewerCreatureAnimTable;
 		obj->entityFlags &= ~ETFLAG_SMART_OBJ;
 
-		moveMod->collisionFlags = (moveMod->collisionFlags | 1) & 0xfffffffd;
+		moveMod->collisionFlags = (moveMod->collisionFlags | ACTORCOL_NO_Y_MOVE) & ~ACTORCOL_GRAVITY;	// gravity is removed so they remain on the surface of water (floor height) rather than sinking down (second height)
 		moveMod->physics.yPos = 0;
 		moveMod->physics.botOffset = 0;
 		moveMod->physics.width = obj->worldWidth;
@@ -291,17 +291,17 @@ namespace TFE_DarkForces
 		sound_playCued(module->dieSndSrc, obj->posWS);
 		attackMod->target.flags |= TARGET_FREEZE;
 
-		if ((obj->anim == 1 || obj->anim == 6) && obj->type == OBJ_TYPE_SPRITE)
+		if ((obj->anim == ANIM_ATTACK1 || obj->anim == ANIM_ATTACK1_END) && obj->type == OBJ_TYPE_SPRITE)
 		{
-			actor_setupAnimation(2, &attackMod->anim);
+			actor_setupAnimation(ANIM_DIE1, &attackMod->anim);
 		}
 		else if (obj->type == OBJ_TYPE_SPRITE)
 		{
-			actor_setupAnimation(3, &attackMod->anim);
+			actor_setupAnimation(ANIM_DIE2, &attackMod->anim);
 		}
 
 		obj->posWS.y = sector->floorHeight;
-		moveMod->collisionFlags &= 0xfffffffd;
+		moveMod->collisionFlags &= ~ACTORCOL_GRAVITY;
 
 		if (obj->type == OBJ_TYPE_SPRITE)
 		{

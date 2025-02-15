@@ -93,7 +93,7 @@ namespace TFE_DarkForces
 				s_itemData[i].wax = TFE_Sprite_Jedi::getWax(item, POOL_GAME);
 				s_itemData[i].isWax = JTRUE;
 			}
-			else
+			else if (strcasecmp(ext, "FME") == 0)
 			{
 				s_itemData[i].frame = TFE_Sprite_Jedi::getFrame(item, POOL_GAME);
 				s_itemData[i].isWax = JFALSE;

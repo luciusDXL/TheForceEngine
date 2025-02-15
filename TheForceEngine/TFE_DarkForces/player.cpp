@@ -1021,7 +1021,7 @@ namespace TFE_DarkForces
 		s_playerInfo.ammoMissile = s_ammoMissileMax;
 
 		s_batteryPower = s_batteryPowerMax;
-		weapon_fixupAnim();
+		weapon_emptyAnim();
 	}
 
 	void giveHealthAndFullAmmo()
@@ -1051,7 +1051,7 @@ namespace TFE_DarkForces
 			s_playerInfo.ammoMissile = s_ammoMissileMax;
 		}
 		s_batteryPower = s_batteryPowerMax;
-		weapon_fixupAnim();
+		weapon_emptyAnim();
 	}
 
 	void giveAllInventoryAndHealth()
@@ -1099,7 +1099,7 @@ namespace TFE_DarkForces
 		s_playerInfo.ammoMine = s_ammoMineMax;
 		s_batteryPower = s_batteryPowerMax;
 
-		weapon_fixupAnim();
+		weapon_emptyAnim();
 	}
 
 	void giveKeys()

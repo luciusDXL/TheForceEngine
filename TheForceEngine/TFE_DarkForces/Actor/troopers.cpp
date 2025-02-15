@@ -42,7 +42,7 @@ namespace TFE_DarkForces
 	Logic* officer_setup(SecObject* obj, LogicSetupFunc* setupFunc, KEYWORD logicId)
 	{
 		ActorDispatch* dispatch = actor_createDispatch(obj, setupFunc);
-		dispatch->flags |= FLAG_BIT(4);	// Use Officer alert table.
+		dispatch->flags |= ACTOR_OFFIC_ALERT;	// Use Officer alert table.
 		dispatch->alertSndSrc = 0;
 
 		DamageModule* module = actor_createDamageModule(dispatch);
@@ -64,7 +64,7 @@ namespace TFE_DarkForces
 		thinkerMod->target.speedRotation = HALF_16 - 1;
 		thinkerMod->target.speed = FIXED(7);
 		thinkerMod->delay = 0;
-		thinkerMod->anim.flags &= 0xfffffffe;
+		thinkerMod->anim.flags &= ~AFLAG_PLAYONCE;
 		thinkerMod->startDelay = TICKS(2);
 		actor_addModule(dispatch, (ActorModule*)thinkerMod);
 
@@ -73,7 +73,7 @@ namespace TFE_DarkForces
 		dispatch->animTable = s_officerAnimTable;
 		s_actorState.curLogic = (Logic*)dispatch;
 
-		moveMod->collisionFlags |= 1;
+		moveMod->collisionFlags |= ACTORCOL_NO_Y_MOVE;
 		moveMod->physics.width = obj->worldWidth;
 		actor_setupInitAnimation();
 
@@ -83,7 +83,7 @@ namespace TFE_DarkForces
 	Logic* trooper_setup(SecObject* obj, LogicSetupFunc* setupFunc)
 	{
 		ActorDispatch* dispatch = actor_createDispatch(obj, setupFunc);
-		dispatch->flags |= FLAG_BIT(5);	// Use Stormtrooper alert table.
+		dispatch->flags |= ACTOR_TROOP_ALERT;	// Use Stormtrooper alert table.
 		dispatch->alertSndSrc = 0;
 
 		DamageModule* module = actor_createDamageModule(dispatch);
@@ -104,7 +104,7 @@ namespace TFE_DarkForces
 		thinkerMod->target.speedRotation = HALF_16 - 1;
 		thinkerMod->target.speed = FIXED(8);
 		thinkerMod->delay = 116;
-		thinkerMod->anim.flags &= 0xfffffffe;
+		thinkerMod->anim.flags &= ~AFLAG_PLAYONCE;
 		thinkerMod->startDelay = TICKS(2);
 		actor_addModule(dispatch, (ActorModule*)thinkerMod);
 
@@ -113,7 +113,7 @@ namespace TFE_DarkForces
 		dispatch->animTable = s_troopAnimTable;
 		s_actorState.curLogic = (Logic*)dispatch;
 
-		moveMod->collisionFlags |= 1;
+		moveMod->collisionFlags |= ACTORCOL_NO_Y_MOVE;
 		moveMod->physics.width = obj->worldWidth;
 		actor_setupInitAnimation();
 
@@ -123,7 +123,7 @@ namespace TFE_DarkForces
 	Logic* commando_setup(SecObject* obj, LogicSetupFunc* setupFunc)
 	{
 		ActorDispatch* dispatch = actor_createDispatch(obj, setupFunc);
-		dispatch->flags |= FLAG_BIT(5);	// Use Stormtrooper alert table.
+		dispatch->flags |= ACTOR_TROOP_ALERT;	// Use Stormtrooper alert table.
 		dispatch->alertSndSrc = 0;
 
 		DamageModule* module = actor_createDamageModule(dispatch);
@@ -144,7 +144,7 @@ namespace TFE_DarkForces
 		thinkerMod->target.speedRotation = HALF_16 - 1;
 		thinkerMod->target.speed = FIXED(9);
 		thinkerMod->delay = 116;
-		thinkerMod->anim.flags &= 0xfffffffe;
+		thinkerMod->anim.flags &= ~AFLAG_PLAYONCE;
 		thinkerMod->startDelay = TICKS(1);
 		actor_addModule(dispatch, (ActorModule*)thinkerMod);
 
@@ -153,7 +153,7 @@ namespace TFE_DarkForces
 		dispatch->animTable = s_commandoAnimTable;
 		s_actorState.curLogic = (Logic*)dispatch;
 
-		moveMod->collisionFlags |= 1;
+		moveMod->collisionFlags |= ACTORCOL_NO_Y_MOVE;
 		moveMod->physics.width = obj->worldWidth;
 		actor_setupInitAnimation();
 

@@ -19,7 +19,7 @@ namespace TFE_DarkForces
 			s_actorState.curAnimation = anim;
 			return JFALSE;
 		}
-		else if ((anim->flags & AFLAG_PLAYED) && damageMod->hp <= 0)
+		else if ((anim->flags & AFLAG_PLAYONCE) && damageMod->hp <= 0)
 		{
 			actor_kill();
 			return JFALSE;
@@ -58,7 +58,7 @@ namespace TFE_DarkForces
 					// TODO: Move to the correct location.
 					actor_removeLogics(obj);
 
-					actor_setupAnimation(2/*animIndex*/, anim);
+					actor_setupAnimation(ANIM_DIE1/*animIndex*/, anim);
 					moveMod->updateTargetFunc(moveMod, &damageMod->attackMod.target);
 					retValue = JFALSE;
 				}
@@ -114,7 +114,7 @@ namespace TFE_DarkForces
 			// I have to remove the logics here in order to get this to work, but this doesn't actually happen here in the original code.
 			// TODO: Move to the correct location.
 			actor_removeLogics(obj);
-			actor_setupAnimation(2/*animIndex*/, anim);
+			actor_setupAnimation(ANIM_DIE1/*animIndex*/, anim);
 			retValue = JFALSE;
 		}
 		return retValue;
@@ -124,7 +124,7 @@ namespace TFE_DarkForces
 	{
 		ActorDispatch* dispatch = actor_createDispatch(obj, setupFunc);
 
-		dispatch->flags &= ~(1 | 4);
+		dispatch->flags &= ~(ACTOR_IDLE | ACTOR_NPC);
 		dispatch->animTable = s_mineBarrelAnimTable;
 
 		DamageModule* module = actor_createDamageModule(dispatch);
@@ -136,7 +136,7 @@ namespace TFE_DarkForces
 
 		MovementModule* moveMod = actor_createMovementModule(dispatch);
 		dispatch->moveMod = moveMod;
-		moveMod->collisionFlags |= 1;
+		moveMod->collisionFlags |= ACTORCOL_NO_Y_MOVE;
 		moveMod->physics.width = obj->worldWidth;
 		moveMod->target.flags = (moveMod->target.flags & ~TARGET_ALL_MOVE) | TARGET_FREEZE;
 		moveMod->target.speed = 0;
@@ -153,8 +153,8 @@ namespace TFE_DarkForces
 	Logic* landmine_setup(SecObject* obj, LogicSetupFunc* setupFunc)
 	{
 		ActorDispatch* dispatch = actor_createDispatch(obj, setupFunc);
-		dispatch->flags &= ~4;
-		dispatch->flags &= ~1;
+		dispatch->flags &= ~ACTOR_NPC;
+		dispatch->flags &= ~ACTOR_IDLE;
 		dispatch->animTable = s_mineBarrelAnimTable;
 
 		DamageModule* module = actor_createDamageModule(dispatch);
@@ -166,12 +166,12 @@ namespace TFE_DarkForces
 
 		MovementModule* moveMod = actor_createMovementModule(dispatch);
 		dispatch->moveMod = moveMod;
-		moveMod->collisionFlags |= 1;
+		moveMod->collisionFlags |= ACTORCOL_NO_Y_MOVE;
 		// This was cleared to 0 in createProjectile()
 		moveMod->physics.width = obj->worldWidth;
 
 		ActorTarget* target = &module->attackMod.target;
-		target->flags = (target->flags | 8) & 0xfffffff8;
+		target->flags = (target->flags | TARGET_FREEZE) & ~TARGET_ALL_MOVE;
 		target->speed = 0;
 		target->speedRotation = 0;
 
@@ -179,7 +179,7 @@ namespace TFE_DarkForces
 		moveMod->target.speed = 0;
 		moveMod->target.speedRotation = 0;
 
-		dispatch->flags &= ~1;
+		dispatch->flags &= ~ACTOR_IDLE;
 		dispatch->animTable = s_mineBarrelAnimTable;
 
 		return (Logic*)dispatch;

@@ -4,6 +4,7 @@
 #include <TFE_System/system.h>
 #include <TFE_FileSystem/filestream.h>
 #include <TFE_DarkForces/projectile.h>
+#include <TFE_DarkForces/weapon.h>
 #include "weaponExternal.h"
 #include "logicTables.h"
 
@@ -11,9 +12,12 @@ namespace TFE_ExternalData
 {
 	static ExternalProjectile s_externalProjectiles[TFE_DarkForces::PROJ_COUNT];
 	static ExternalEffect s_externalEffects[HEFFECT_COUNT];
+	static ExternalWeapon s_externalWeapons[TFE_DarkForces::WPN_COUNT];
+	static ExternalGasmask s_externalGasmask;
 
 	static bool s_externalProjectilesFromMod = false;
 	static bool s_externalEffectsFromMod = false;
+	static bool s_externalWeaponsFromMod = false;
 
 	//////////////////////////////
 	// Forward Declarations
@@ -22,6 +26,10 @@ namespace TFE_ExternalData
 	bool tryAssignProjectileProperty(cJSON* data, ExternalProjectile& projectile);
 	int getEffectIndex(char* type);
 	bool tryAssignEffectProperty(cJSON* data, ExternalEffect& effect);
+	int getWeaponIndex(char* name);
+	bool tryAssignGasmaskProperty(cJSON* data);
+	bool tryAssignWeaponProperty(cJSON* data, ExternalWeapon& weapon);
+	void parseAnimationFrame(cJSON* element, WeaponAnimFrame& animFrame);
 
 
 	ExternalProjectile* getExternalProjectiles()
@@ -32,6 +40,16 @@ namespace TFE_ExternalData
 	ExternalEffect* getExternalEffects()
 	{
 		return s_externalEffects;
+	}
+
+	ExternalWeapon* getExternalWeapons()
+	{
+		return s_externalWeapons;
+	}
+
+	ExternalGasmask* getExternalGasmask()
+	{
+		return &s_externalGasmask;
 	}
 
 	void clearExternalProjectiles()
@@ -49,6 +67,15 @@ namespace TFE_ExternalData
 		for (int i = 0; i < HEFFECT_COUNT; i++)
 		{
 			s_externalEffects[i].type = nullptr;
+		}
+	}
+
+	void clearExternalWeapons()
+	{
+		s_externalWeaponsFromMod = false;
+		for (int i = 0; i < TFE_DarkForces::WPN_COUNT; i++)
+		{
+			s_externalWeapons[i].name = nullptr;
 		}
 	}
 
@@ -236,6 +263,113 @@ namespace TFE_ExternalData
 		}
 	}
 
+	void loadExternalWeapons()
+	{
+		const char* programDir = TFE_Paths::getPath(PATH_PROGRAM);
+		char extDataFile[TFE_MAX_PATH];
+		sprintf(extDataFile, "%sExternalData/DarkForces/weapons.json", programDir);
+
+		TFE_System::logWrite(LOG_MSG, "EXTERNAL_DATA", "Loading weapon data");
+		FileStream file;
+		if (!file.open(extDataFile, FileStream::MODE_READ)) { return; }
+
+		const size_t size = file.getSize();
+		char* data = (char*)malloc(size + 1);
+		if (!data || size == 0)
+		{
+			TFE_System::logWrite(LOG_ERROR, "EXTERNAL_DATA", "Weapons.json is %u bytes in size and cannot be read.", size);
+			return;
+		}
+		file.readBuffer(data, (u32)size);
+		data[size] = 0;
+		file.close();
+
+		parseExternalWeapons(data, false);
+		free(data);
+	}
+
+	void parseExternalWeapons(char* data, bool fromMod)
+	{
+		// If weapons have already been loaded from a mod, don't replace them
+		if (s_externalWeaponsFromMod)
+		{
+			return;
+		}
+
+		cJSON* root = cJSON_Parse(data);
+		if (root)
+		{
+			cJSON* section = root->child;
+			while (section)
+			{
+				if (cJSON_IsObject(section) && strcasecmp(section->string, "gasmask") == 0)
+				{
+					// parse the gas mask data
+					cJSON* dataItem = section->child;
+					while (dataItem)
+					{
+						tryAssignGasmaskProperty(dataItem);
+						dataItem = dataItem->next;
+					}
+				}
+				else if (cJSON_IsArray(section) && strcasecmp(section->string, "weapons") == 0)
+				{
+					cJSON* weapon = section->child;
+					while (weapon)
+					{
+						cJSON* weaponName = weapon->child;
+
+						// get the weapon name
+						if (weaponName && cJSON_IsString(weaponName) && strcasecmp(weaponName->string, "name") == 0)
+						{
+							// For now stick with the hardcoded DF list
+							int index = getWeaponIndex(weaponName->valuestring);
+
+							if (index >= 0)
+							{
+								ExternalWeapon extWeapon = {};
+								extWeapon.name = weaponName->valuestring;
+
+								cJSON* weaponData = weaponName->next;
+								if (weaponData && cJSON_IsObject(weaponData))
+								{
+									cJSON* dataItem = weaponData->child;
+
+									// iterate through the data and assign properties
+									while (dataItem)
+									{
+										tryAssignWeaponProperty(dataItem, extWeapon);
+										dataItem = dataItem->next;
+									}
+								}
+
+								s_externalWeapons[index] = extWeapon;
+							}
+						}
+
+						weapon = weapon->next;
+					}
+				}
+
+				section = section->next;
+			}
+
+			s_externalWeaponsFromMod = fromMod && validateExternalWeapons();
+		}
+		else
+		{
+			const char* error = cJSON_GetErrorPtr();
+			if (error)
+			{
+				TFE_System::logWrite(LOG_ERROR, "EXTERNAL_DATA", "Failed to parse json before\n%s", error);
+			}
+			else
+			{
+				TFE_System::logWrite(LOG_ERROR, "EXTERNAL_DATA", "Failed to parse json");
+			}
+		}
+	}
+
 	bool validateExternalProjectiles()
 	{
 		// If the type field is null, we can assume the projectile's data hasn't loaded properly
@@ -264,6 +398,20 @@ namespace TFE_ExternalData
 		return true;
 	}
 
+	bool validateExternalWeapons()
+	{
+		// If the name field is null, we can assume the weapon's data hasn't loaded properly
+		for (int i = 0; i < TFE_DarkForces::WPN_COUNT; i++)
+		{
+			if (!s_externalWeapons[i].name)
+			{
+				return false;
+			}
+		}
+
+		return true;
+	}
+
 	int getProjectileIndex(char* type)
 	{
 		for (int i = 0; i < TFE_DarkForces::PROJ_COUNT; i++)
@@ -282,6 +430,19 @@ namespace TFE_ExternalData
 		for (int i = 0; i < HEFFECT_COUNT; i++)
 		{
 			if (strcasecmp(type, TFE_ExternalData::df_effectTable[i]) == 0)
+			{
+				return i;
+			}
+		}
+
+		return -1;
+	}
+
+	int getWeaponIndex(char* name)
+	{
+		for (int i = 0; i < TFE_DarkForces::WPN_COUNT; i++)
+		{
+			if (strcasecmp(name, TFE_ExternalData::df_weaponTable[i]) == 0)
 			{
 				return i;
 			}
@@ -496,7 +657,7 @@ namespace TFE_ExternalData
 			effect.damage = data->valueint;
 			return true;
 		}
-		
+
 		if (cJSON_IsNumber(data) && strcasecmp(data->string, "explosiveRange") == 0)
 		{
 			effect.explosiveRange = data->valueint;
@@ -522,5 +683,267 @@ namespace TFE_ExternalData
 		}
 
 		return false;
+	}
+
+	bool tryAssignGasmaskProperty(cJSON* data)
+	{
+		if (cJSON_IsString(data) && strcasecmp(data->string, "texture") == 0)
+		{
+			s_externalGasmask.texture = data->valuestring;
+			return true;
+		}
+
+		if (cJSON_IsNumber(data) && strcasecmp(data->string, "xPos") == 0)
+		{
+			s_externalGasmask.xPos = data->valueint;
+			return true;
+		}
+
+		if (cJSON_IsNumber(data) && strcasecmp(data->string, "yPos") == 0)
+		{
+			s_externalGasmask.yPos = data->valueint;
+			return true;
+		}
+
+		return false;
+	}
+
+	bool tryAssignWeaponProperty(cJSON* data, ExternalWeapon& weapon)
+	{
+		if (cJSON_IsNumber(data) && strcasecmp(data->string, "frameCount") == 0)
+		{
+			weapon.frameCount = data->valueint;
+			return true;
+		}
+
+		if (cJSON_IsArray(data) && strcasecmp(data->string, "textures") == 0)
+		{
+			cJSON* element;
+			s32 index = 0;
+			cJSON_ArrayForEach(element, data)
+			{
+				if (cJSON_IsString(element))
+				{
+					weapon.textures[index] = element->valuestring;
+					index++;
+				}
+				if (index >= WEAPON_NUM_TEXTURES) { break; }
+			}
+		}
+
+		if (cJSON_IsArray(data) && strcasecmp(data->string, "xPos") == 0)
+		{
+			cJSON* element;
+			s32 index = 0;
+			cJSON_ArrayForEach(element, data)
+			{
+				if (cJSON_IsNumber(element))
+				{
+					weapon.xPos[index] = element->valueint;
+					index++;
+				}
+				if (index >= WEAPON_NUM_TEXTURES) { break; }
+			}
+		}
+
+		if (cJSON_IsArray(data) && strcasecmp(data->string, "yPos") == 0)
+		{
+			cJSON* element;
+			s32 index = 0;
+			cJSON_ArrayForEach(element, data)
+			{
+				if (cJSON_IsNumber(element))
+				{
+					weapon.yPos[index] = element->valueint;
+					index++;
+				}
+				if (index >= WEAPON_NUM_TEXTURES) { break; }
+			}
+		}
+		
+		if (cJSON_IsString(data) && strcasecmp(data->string, "ammo") == 0)
+		{
+			if (strcasecmp(data->valuestring, "ammoEnergy") == 0)
+			{
+				weapon.ammo = &TFE_DarkForces::s_playerInfo.ammoEnergy;
+				return true;
+			}
+
+			if (strcasecmp(data->valuestring, "ammoPower") == 0)
+			{
+				weapon.ammo = &TFE_DarkForces::s_playerInfo.ammoPower;
+				return true;
+			}
+
+			if (strcasecmp(data->valuestring, "ammoPlasma") == 0)
+			{
+				weapon.ammo = &TFE_DarkForces::s_playerInfo.ammoPlasma;
+				return true;
+			}
+
+			if (strcasecmp(data->valuestring, "ammoDetonator") == 0)
+			{
+				weapon.ammo = &TFE_DarkForces::s_playerInfo.ammoDetonator;
+				return true;
+			}
+
+			if (strcasecmp(data->valuestring, "ammoShell") == 0)
+			{
+				weapon.ammo = &TFE_DarkForces::s_playerInfo.ammoShell;
+				return true;
+			}
+
+			if (strcasecmp(data->valuestring, "ammoMine") == 0)
+			{
+				weapon.ammo = &TFE_DarkForces::s_playerInfo.ammoMine;
+				return true;
+			}
+
+			if (strcasecmp(data->valuestring, "ammoMissile") == 0)
+			{
+				weapon.ammo = &TFE_DarkForces::s_playerInfo.ammoMissile;
+				return true;
+			}
+
+			return false;
+		}
+
+		if (cJSON_IsString(data) && strcasecmp(data->string, "secondaryAmmo") == 0)
+		{
+			if (strcasecmp(data->valuestring, "ammoEnergy") == 0)
+			{
+				weapon.secondaryAmmo = &TFE_DarkForces::s_playerInfo.ammoEnergy;
+				return true;
+			}
+
+			if (strcasecmp(data->valuestring, "ammoPower") == 0)
+			{
+				weapon.secondaryAmmo = &TFE_DarkForces::s_playerInfo.ammoPower;
+				return true;
+			}
+
+			if (strcasecmp(data->valuestring, "ammoPlasma") == 0)
+			{
+				weapon.secondaryAmmo = &TFE_DarkForces::s_playerInfo.ammoPlasma;
+				return true;
+			}
+
+			if (strcasecmp(data->valuestring, "ammoDetonator") == 0)
+			{
+				weapon.secondaryAmmo = &TFE_DarkForces::s_playerInfo.ammoDetonator;
+				return true;
+			}
+
+			if (strcasecmp(data->valuestring, "ammoShell") == 0)
+			{
+				weapon.secondaryAmmo = &TFE_DarkForces::s_playerInfo.ammoShell;
+				return true;
+			}
+
+			if (strcasecmp(data->valuestring, "ammoMine") == 0)
+			{
+				weapon.secondaryAmmo = &TFE_DarkForces::s_playerInfo.ammoMine;
+				return true;
+			}
+
+			if (strcasecmp(data->valuestring, "ammoMissile") == 0)
+			{
+				weapon.secondaryAmmo = &TFE_DarkForces::s_playerInfo.ammoMissile;
+				return true;
+			}
+
+			return false;
+		}
+
+		if (cJSON_IsNumber(data) && strcasecmp(data->string, "wakeupRange") == 0)
+		{
+			weapon.wakeupRange = data->valueint;
+			return true;
+		}
+
+		if (cJSON_IsNumber(data) && strcasecmp(data->string, "variation") == 0)
+		{
+			weapon.variation = data->valueint;
+			return true;
+		}
+
+		if (cJSON_IsNumber(data) && strcasecmp(data->string, "primaryFireConsumption") == 0)
+		{
+			weapon.primaryFireConsumption = data->valueint;
+			return true;
+		}
+
+		if (cJSON_IsNumber(data) && strcasecmp(data->string, "secondaryFireConsumption") == 0)
+		{
+			weapon.secondaryFireConsumption = data->valueint;
+			return true;
+		}
+
+		if (cJSON_IsArray(data) && strcasecmp(data->string, "animFrames") == 0)
+		{
+			cJSON* element;
+			s32 index = 0;
+			cJSON_ArrayForEach(element, data)
+			{
+				if (cJSON_IsObject(element))
+				{
+					parseAnimationFrame(element, weapon.animFrames[index]);
+					index++;
+				}
+				if (index >= WEAPON_NUM_ANIMFRAMES) { break; }
+			}
+
+			weapon.numAnimFrames = index;
+			return true;
+		}
+
+		if (cJSON_IsArray(data) && strcasecmp(data->string, "animFramesSecondary") == 0)
+		{
+			cJSON* element;
+			s32 index = 0;
+			cJSON_ArrayForEach(element, data)
+			{
+				if (cJSON_IsObject(element))
+				{
+					parseAnimationFrame(element, weapon.animFramesSecondary[index]);
+					index++;
+				}
+				if (index >= WEAPON_NUM_ANIMFRAMES) { break; }
+			}
+
+			weapon.numSecondaryAnimFrames = index;
+			return true;
+		}
+		
+		return false;
+	}
+
+	void parseAnimationFrame(cJSON* element, WeaponAnimFrame& animFrame)
+	{
+		cJSON* data = element->child;
+		while (data)
+		{
+			if (cJSON_IsNumber(data) && strcasecmp(data->string, "texture") == 0)
+			{
+				animFrame.texture = data->valueint;
+			}
+
+			if (cJSON_IsNumber(data) && strcasecmp(data->string, "light") == 0)
+			{
+				animFrame.light = data->valueint;
+			}
+
+			if (cJSON_IsNumber(data) && strcasecmp(data->string, "durationNormal") == 0)
+			{
+				animFrame.durationNormal = data->valueint;
+			}
+
+			if (cJSON_IsNumber(data) && strcasecmp(data->string, "durationSupercharge") == 0)
+			{
+				animFrame.durationSupercharge = data->valueint;
+			}
+
+			data = data->next;
+		}
 	}
 }

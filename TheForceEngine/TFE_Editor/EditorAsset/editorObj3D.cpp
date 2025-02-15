@@ -37,7 +37,7 @@ namespace TFE_Editor
 			if (strcasecmp(obj3D[i]->name, name) == 0)
 			{
 				TFE_RenderBackend::freeTexture(obj3D[i]->thumbnail);
-				*obj3D[i] = {};
+				*obj3D[i] = EditorObj3D{};
 				break;
 			}
 		}
@@ -50,7 +50,7 @@ namespace TFE_Editor
 		for (size_t i = 0; i < count; i++)
 		{
 			TFE_RenderBackend::freeTexture(obj3D[i]->thumbnail);
-			*obj3D[i] = {};
+			*obj3D[i] = EditorObj3D{};
 		}
 		s_obj3DList.clear();
 	}
