@@ -1039,7 +1039,10 @@ namespace TFE_Editor
 		if (image)
 		{
 			gpuImage = TFE_RenderBackend::createTexture(image->w, image->h, (u32*)image->pixels, MAG_FILTER_LINEAR);
-			s_gpuImages[path] = gpuImage;
+			if (gpuImage)
+			{
+				s_gpuImages[path] = gpuImage;
+			}
 		}
 		return gpuImage;
 	}

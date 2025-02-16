@@ -3596,6 +3596,11 @@ namespace LevelEditor
 		EditorSector* hoveredSector = nullptr;
 		s32 hoveredFeatureIndex = -1;
 		selection_getVertex(SEL_INDEX_HOVERED, hoveredSector, hoveredFeatureIndex);
+		if (!hoveredSector || hoveredFeatureIndex < 0 || hoveredFeatureIndex >= (s32)hoveredSector->vtx.size())
+		{
+			selection_clearHovered();
+			return;
+		}
 
 		// Give the "world space" vertex position, get back to the pixel position for the UI.
 		const Vec2f vtx = hoveredSector->vtx[hoveredFeatureIndex];
