@@ -193,7 +193,7 @@ namespace LevelEditor
 			if (doesItemExist)
 			{
 				FeatureId* list = nullptr;
-				u32 count = selection_getList(list);
+				s32 count = (s32)selection_getList(list);
 				if (count && list)
 				{
 					// We need to fix up the sector list.

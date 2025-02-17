@@ -293,6 +293,10 @@ namespace TFE_Editor
 			{
 				ImGui::OpenPopup("Project");
 			} break;
+			case POPUP_EXPORT_PROJECT:
+			{
+				ImGui::OpenPopup("Export Project");
+			} break;
 			case POPUP_NEW_LEVEL:
 			{
 				ImGui::OpenPopup("New Level");
@@ -369,6 +373,14 @@ namespace TFE_Editor
 			case POPUP_EDIT_PROJECT:
 			{
 				if (project_editUi(false))
+				{
+					ImGui::CloseCurrentPopup();
+					s_editorPopup = POPUP_NONE;
+				}
+			} break;
+			case POPUP_EXPORT_PROJECT:
+			{
+				if (project_exportUi())
 				{
 					ImGui::CloseCurrentPopup();
 					s_editorPopup = POPUP_NONE;
@@ -679,11 +691,11 @@ namespace TFE_Editor
 				}
 				if (!projectActive) { enableNextItem(); }
 				ImGui::Separator();
-				disableNextItem();  // Disable until it does something...
 				if (ImGui::MenuItem("Export", NULL, (bool*)NULL))
 				{
+					s_editorPopup = POPUP_EXPORT_PROJECT;
+					project_prepareExportUi();
 				}
-				enableNextItem();
 				ImGui::Separator();
 				if (s_recents.empty()) { disableNextItem(); }
 				if (ImGui::BeginMenu("Recent Projects"))

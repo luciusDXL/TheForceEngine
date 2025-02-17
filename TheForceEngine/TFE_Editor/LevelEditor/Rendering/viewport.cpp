@@ -400,7 +400,14 @@ namespace LevelEditor
 		if (selection_hasHovered() && s_editMode == LEDIT_SECTOR)
 		{
 			selection_getSector(SEL_INDEX_HOVERED, sector);
-			drawSector2d(sector, HL_HOVERED);
+			if (sector)
+			{
+				drawSector2d(sector, HL_HOVERED);
+			}
+			else
+			{
+				selection_clearHovered();
+			}
 		}
 		if (selection_getCount() > 0 && s_editMode == LEDIT_SECTOR)
 		{
