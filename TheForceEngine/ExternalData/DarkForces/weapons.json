@@ -12,6 +12,7 @@
                 "textures": ["rhand1.bm", "punch1.bm", "punch2.bm", "punch3.bm"],
                 "xPos": [172, 55, 59, 56],
                 "yPos": [141, 167, 114, 141],
+                "ammo": "",
                 "wakeupRange": 0,
                 "variation": 0,
                 "animFrames": [
