@@ -774,8 +774,9 @@ namespace TFE_Input
 
 			if (printcounter != -1)
 			{
-				TFE_System::logWrite(LOG_MSG, "LOG", "----------------------------------------------------------------- %d ---------------------------------------------------------------------", printcounter);
-				TFE_System::logWrite(LOG_MSG, "LOG", hudDataStr.c_str(), printcounter, TFE_DarkForces::s_curTick, TFE_DarkForces::s_playerTick, TFE_DarkForces::s_prevPlayerTick, TFE_DarkForces::s_deltaTime);
+				// temp muting
+				//TFE_System::logWrite(LOG_MSG, "LOG", "----------------------------------------------------------------- %d ---------------------------------------------------------------------", printcounter);
+				//TFE_System::logWrite(LOG_MSG, "LOG", hudDataStr.c_str(), printcounter, TFE_DarkForces::s_curTick, TFE_DarkForces::s_playerTick, TFE_DarkForces::s_prevPlayerTick, TFE_DarkForces::s_deltaTime);
 			}
 		}
 
