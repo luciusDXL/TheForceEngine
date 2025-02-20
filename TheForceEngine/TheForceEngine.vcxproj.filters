@@ -217,6 +217,9 @@
     <ClInclude Include="TFE_Input\inputEnum.h">
       <Filter>Source\TFE_Input</Filter>
     </ClInclude>
+    <ClInclude Include="TFE_Input\replay.h">
+      <Filter>Source\TFE_Input</Filter>
+    </ClInclude>	
     <ClInclude Include="TFE_Ui\imGUI\imconfig.h">
       <Filter>Source\TFE_Ui\imGUI</Filter>
     </ClInclude>
@@ -1828,6 +1831,9 @@
       <Filter>Source\TFE_DarkForces\GameUI</Filter>
     </ClCompile>
     <ClCompile Include="TFE_Input\inputMapping.cpp">
+      <Filter>Source\TFE_Input</Filter>
+    </ClCompile>
+	<ClCompile Include="TFE_Input\replay.cpp">
       <Filter>Source\TFE_Input</Filter>
     </ClCompile>
     <ClCompile Include="TFE_Jedi\Renderer\RClassic_Fixed\rclassicFixedSharedState.cpp">
