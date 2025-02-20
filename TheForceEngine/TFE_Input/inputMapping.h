@@ -85,7 +85,11 @@ namespace TFE_Input
 		IADF_SCREENSHOT,
 		IADF_GIF_RECORD,
 		IADF_GIF_RECORD_NO_COUNTDOWN,
-		IADF_DEMO_RECORD,
+
+		// Demo handling
+		IADF_DEMO_PAUSE,
+		IADF_DEMO_SPEEDUP,
+		IADF_DEMO_SLOWDOWN,
 
 		IA_COUNT,
 		IAS_COUNT = IAS_SYSTEM_MENU + 1,
@@ -187,6 +191,11 @@ namespace TFE_Input
 	f32  inputMapping_getAnalogAxis(AnalogAxis axis);
 	void inputMapping_updateInput();
 	void inputMapping_removeState(InputAction action);
+
+	ActionState inputMapping_getAction(InputAction act);
+
+	void inputMapping_setStateDown(InputAction action);
+	void inputMapping_setStatePress(InputAction action);
 	void inputMapping_clearKeyBinding(KeyboardCode key);
 	void inputMapping_endFrame();
 
@@ -198,7 +207,7 @@ namespace TFE_Input
 	f32 inputMapping_getVertMouseSensitivity();
 	void resetCounter();
 	int getCounter();
-	void setCounter(int counter);
-	void handleInputs();
-	void setMaxInputCounter(int counter);
+	void setReplayCounter(int counter);
+	bool handleInputs();
+	void setMaxCounter(int counter);
 }  // TFE_Input

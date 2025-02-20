@@ -121,9 +121,7 @@ namespace TFE_Input
 	}
 
 	void setKeyUp(KeyboardCode key)
-	{
-		
-		//TFE_System::logWrite(LOG_MSG, "Input", "UP '%d'", key);
+	{		
 		s_keyDown[key] = 0;
 	}
 

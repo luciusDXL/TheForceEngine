@@ -54,6 +54,8 @@ namespace TFE_DarkForces
 	JBool s_canTeleport = JTRUE;
 	GameMissionMode s_missionMode = MISSION_MODE_MAIN;
 
+	JBool stopRecordEscOnly = JTRUE;
+
 	TextureData* s_loadScreen = nullptr;
 	u8 s_loadingScreenPal[768];
 	u8 s_levelPalette[768];
@@ -517,6 +519,16 @@ namespace TFE_DarkForces
 
 	void mission_exitLevel()
 	{
+		if (isDemoPlayback())
+		{
+			endReplay();
+		}
+
+		if (isRecording())
+		{
+			endRecording();
+		}
+
 		s_exitLevel = JTRUE;
 	}
 
@@ -677,7 +689,7 @@ namespace TFE_DarkForces
 				}
 			} while (msg != MSG_FREE_TASK && msg != MSG_RUN_TASK);
 		}
-		if (TFE_Input::isRecording())
+		if (TFE_Input::isRecording() && !stopRecordEscOnly)
 		{
 			endRecording();
 		}
@@ -1080,7 +1092,8 @@ namespace TFE_DarkForces
 
 	void executeCheat(CheatID cheatID)
 	{
-		if (cheatID == CHEAT_NONE)
+		// Do not allow cheats while recording
+		if (cheatID == CHEAT_NONE || isRecording())
 		{
 			return;
 		}

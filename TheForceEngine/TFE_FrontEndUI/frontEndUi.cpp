@@ -37,7 +37,7 @@
 #include <TFE_DarkForces/config.h>
 #include <TFE_DarkForces/player.h>
 #include <TFE_DarkForces/hud.h>
-
+#include <TFE_DarkForces/darkForcesMain.h>
 #include <climits>
 
 using namespace TFE_Input;
@@ -249,6 +249,7 @@ namespace TFE_FrontEndUI
 
 	// Mod Support
 	static char s_selectedModCmd[TFE_MAX_PATH] = "";
+	std::vector<std::string> s_selectedModOverride;
 
 	void configAbout();
 	void configGame();
@@ -471,7 +472,13 @@ namespace TFE_FrontEndUI
 
 	void logToConsole(const char* str)
 	{
-		TFE_Console::addToHistory(str);
+		try {
+			TFE_Console::addToHistory(str);
+		}
+		catch (...)
+		{
+
+		}
 	}
 
 	void toggleProfilerView()
@@ -1233,19 +1240,13 @@ namespace TFE_FrontEndUI
 			gameSettings->df_jsonAiLogics = jsonAiLogics;
 		}
 
-		bool enableRecord = gameSettings->df_enableRecording;
-		if (ImGui::Checkbox("Enable Replay Recording", &enableRecord))
-		{
-			gameSettings->df_enableRecording = enableRecord;
-			gameSettings->df_enableReplay = false;
-		}
-
+		/*
 		bool enableReplay = gameSettings->df_enableReplay;
 		if (ImGui::Checkbox("Enable Replay", &enableReplay))
 		{
 			gameSettings->df_enableReplay = enableReplay;
 			gameSettings->df_enableRecording = false;
-		}
+		}*/
 
 		if (s_drawNoGameDataMsg)
 		{
@@ -1888,15 +1889,37 @@ namespace TFE_FrontEndUI
 	// Replay Demo UI
 	///////////////////////////////////////////////////////////////////////////////
 
-	static std::vector<TFE_SaveSystem::SaveHeader> s_replayDir;
+	static std::vector<TFE_SaveSystem::SaveHeader> s_replayDirContents;
 	static TextureGpu* s_replayImageView = nullptr;
 	static s32 s_selectedReplay = -1;
 	static s32 s_selectedReplaySlot = -1;
 	static char s_replayFileName[TFE_MAX_PATH];
 	static char s_replayGameConfirmMsg[TFE_MAX_PATH];
 	static char s_newReplayName[256];
+	static char s_replayLevelId[256];
 	static char s_modReplayName[256];
 	static char s_levelReplayName[256];
+	static s32  s_replayVersion = 0;
+
+	static const char * c_frameRecording[] =
+	{
+		"30",
+		"60",
+		"90",
+		"120",
+		"240",
+	};
+
+	static const char* c_framePlayback[] =
+	{
+		"Original",
+		"30",
+		"60",
+		"90",
+		"120",
+		"240",
+		"Unlimited"
+	};
 
 	void clearReplayImage()
 	{
@@ -1907,12 +1930,12 @@ namespace TFE_FrontEndUI
 
 	void updateReplayImage(s32 index)
 	{
-		s_replayImageView->update(s_replayDir[index].imageData, TFE_SaveSystem::SAVE_IMAGE_WIDTH * TFE_SaveSystem::SAVE_IMAGE_HEIGHT * 4);
+		s_replayImageView->update(s_replayDirContents[index].imageData, TFE_SaveSystem::SAVE_IMAGE_WIDTH * TFE_SaveSystem::SAVE_IMAGE_HEIGHT * 4);
 	}
 
 	void openReplayConfirmPopup()
 	{
-		sprintf(s_replayGameConfirmMsg, "Load '%s'?###SaveConfirm", s_newReplayName);
+		sprintf(s_replayGameConfirmMsg, "   Load Replay?");
 		ImGui::OpenPopup(s_replayGameConfirmMsg);
 		s_popupOpen = true;
 		s_popupSetFocus = true;
@@ -1925,6 +1948,40 @@ namespace TFE_FrontEndUI
 		ImGui::CloseCurrentPopup();
 	}
 
+	void exitReplayMenu()
+	{
+		s_subUI = FEUI_NONE;
+		if (s_appState != APP_STATE_GAME)
+		{
+			s_appState = s_menuRetState;
+		}
+		s_drawNoGameDataMsg = false;
+		TFE_Input::enableRelativeMode(s_relativeMode);
+	}
+
+	void setupReplay()
+	{
+		s_selectedReplay = 0;
+
+		if (!s_replayImageView)
+		{
+			s_replayImageView = TFE_RenderBackend::createTexture(TFE_SaveSystem::SAVE_IMAGE_WIDTH, TFE_SaveSystem::SAVE_IMAGE_HEIGHT, TexFormat::TEX_RGBA8);
+		}
+		TFE_Input::populateReplayDirectory(s_replayDirContents);
+
+		if (!s_replayDirContents.empty())
+		{
+			updateReplayImage(s_selectedReplay);
+		}
+		else
+		{
+			clearReplayImage();
+		}
+
+		s_popupOpen = false;
+		s_replaySetupRequired = false;
+		s_popupSetFocus = false;
+	}
 
 	void replayDialog()
 	{
@@ -1942,7 +1999,7 @@ namespace TFE_FrontEndUI
 		const s32 listOffset = 0;
 
 		// Left Column
-		ImGui::SetNextWindowPos(ImVec2(leftColumn, floorf(displayInfo.height * 0.25f)));
+		ImGui::SetNextWindowPos(ImVec2(leftColumn, floorf(displayInfo.height * 0.07f)));
 		ImGui::BeginChild("##ImageAndInfo");
 		{
 			// Image
@@ -1951,20 +2008,29 @@ namespace TFE_FrontEndUI
 			size.y *= s_uiScale;
 
 			ImGui::Image(TFE_RenderBackend::getGpuPtr(s_replayImageView), size,
-				ImVec2(0, 0), ImVec2(1, 1), ImVec4(1, 1, 1, 1), ImVec4(0.5f, 0.5f, 0.5f, 1.0f));
+				ImVec2(0, 0), ImVec2(1, 1), ImVec4(1, 1, 1, 1), ImVec4(0.5f, 0.5f, 0.5f, 1.0f));			
 
-			// Info
-			size.y = 140 * s_uiScale;
+			// Replay Info
+			size.y = 200 * s_uiScale;
 			ImGui::BeginChild("##InfoWithBorder", size, true, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
 			{
-				if (!s_replayDir.empty())
+				if (!s_replayDirContents.empty())
 				{
 					ImGui::PushFont(s_dialogFont);
 					ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
 
 					char textBuffer[TFE_MAX_PATH];
-					sprintf(textBuffer, "Game: Dark Forces\nTime: %s\nLevel: %s\nMods: %s\n", s_replayDir[s_selectedReplay - listOffset].dateTime,
-						s_replayDir[s_selectedReplay - listOffset].levelName, s_replayDir[s_selectedReplay - listOffset].modNames);
+					bool modExist = modLoader_exist(s_replayDirContents[s_selectedReplay - listOffset].modNames);
+					char modExistStr[256];
+
+					string versionStr = std::to_string(s_replayDirContents[s_selectedReplay - listOffset].saveVersion);
+					if (!TFE_SaveSystem::versionValid(s_replayDirContents[s_selectedReplay - listOffset].saveVersion))
+					{
+						versionStr = versionStr + " ( INCOMPATIBLE! )";
+					}
+					sprintf(modExistStr, modExist ? "" : "Missing %s", s_replayDirContents[s_selectedReplay - listOffset].modNames);
+					sprintf(textBuffer, "Game: Dark Forces\nTime: %s\nLevel: %s\nLevel Id: %s\nMods: %s\n%s\nDuration: %d\nVersion: %s", s_replayDirContents[s_selectedReplay - listOffset].dateTime,
+						s_replayDirContents[s_selectedReplay - listOffset].levelName, s_replayDirContents[s_selectedReplay - listOffset].levelId, s_replayDirContents[s_selectedReplay - listOffset].modNames, modExistStr, s_replayDirContents[s_selectedReplay - listOffset].replayCounter, versionStr.c_str());
 					ImGui::InputTextMultiline("##Info", textBuffer, strlen(textBuffer) + 1, size, ImGuiInputTextFlags_ReadOnly);
 
 					ImGui::PopFont();
@@ -1976,7 +2042,7 @@ namespace TFE_FrontEndUI
 					ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
 
 					char textBuffer[TFE_MAX_PATH];
-					sprintf(textBuffer, "Game: Dark Forces\nTime:\n\nLevel:\nMods:\n");
+					sprintf(textBuffer, "Game: Dark Forces\nTime:\n\nLevel:\nLevel Id:\nMods:\n");
 					ImGui::InputTextMultiline("##Info", textBuffer, strlen(textBuffer) + 1, size, ImGuiInputTextFlags_ReadOnly);
 
 					ImGui::PopFont();
@@ -1984,6 +2050,121 @@ namespace TFE_FrontEndUI
 				}
 			}
 			ImGui::EndChild();
+
+			ImGui::Spacing();
+			ImGui::LabelText("##InfoReplay", "Note: Press the Escape key to cancel recording or demo play back");
+			ImGui::Spacing();
+
+			ImGui::PushFont(s_dialogFont);
+			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.0f, 0.0f, 0.8f));
+			ImGui::LabelText("##ConfigLabel", "Recording");
+			ImGui::PopStyleColor();
+			ImGui::PopFont();
+			ImGui::Spacing();
+
+			TFE_Settings_Game* gameSettings = TFE_Settings::getGameSettings();
+			bool enableRecordAll = gameSettings->df_enableRecordingAll;
+			bool enableRecord = gameSettings->df_enableRecording || enableRecordAll;
+
+			if (enableRecordAll)
+			{
+				enableRecord = true;
+			}
+
+			size.y = 120 * s_uiScale;
+			size.x = 420 * s_uiScale;
+			ImGui::BeginChild("##InfoWithBorderRecord", size, true);
+			{
+				ImGui::TextWrapped("When this checkbox is pressed simply start any mission and the game will record the mission for replay.");
+				ImGui::TextWrapped("Your recordings will be saved in the 'Replays' folder");
+				ImGui::Spacing();
+
+				// Change the colors if recording all.
+				if (enableRecordAll)
+				{
+					ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.5f, 0.5f, 0.5f, 0.8f));
+					ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.5f, 0.5f, 0.5f, 0.8f));
+					ImGui::PushStyleColor(ImGuiCol_FrameBgActive, ImVec4(0.5f, 0.5f, 0.5f, 0.8f));
+					ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, ImVec4(0.5f, 0.5f, 0.5f, 0.8f));
+				}
+
+				if (ImGui::Checkbox("Record next mission", &enableRecord))
+				{
+					gameSettings->df_enableRecording = enableRecord;
+					gameSettings->df_enableReplay = false;
+					TFE_DarkForces::enableCutscenes(true);
+				}
+
+				if (enableRecordAll)
+				{
+					ImGui::PopStyleColor();
+					ImGui::PopStyleColor();
+					ImGui::PopStyleColor();
+					ImGui::PopStyleColor();
+					gameSettings->df_enableRecording = true;
+				}
+
+				if (ImGui::Checkbox("Always Record missions", &enableRecordAll))
+				{
+					gameSettings->df_enableRecordingAll = enableRecordAll;
+					gameSettings->df_enableRecording = true;
+					gameSettings->df_enableReplay = false;
+					TFE_DarkForces::enableCutscenes(true);
+				}
+
+				ImGui::LabelText("##FrameRecord", "Recording FrameRate");
+				ImGui::SameLine(140 * s_uiScale);
+				ImGui::SetNextItemWidth(64.0f);
+				ImGui::Combo("##frameRecordingText", &gameSettings->df_recordFrameRate, c_frameRecording, IM_ARRAYSIZE(c_frameRecording));
+				ImGui::Spacing();
+
+			}
+			ImGui::EndChild();
+
+			ImGui::PushFont(s_dialogFont);
+			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.0f, 1.0f, 0.0f, 0.8f));
+
+			ImGui::LabelText("##InfoReplay5", "Playback");
+			ImGui::PopStyleColor();
+			ImGui::PopFont();
+
+			size.y = 80 * s_uiScale;
+			ImGui::BeginChild("##InfoWithBorderPlayBack", size, true);
+			{
+				ImGui::Spacing();
+				ImGui::LabelText("##InfoReplay6", "Playback FrameRate");
+				ImGui::SameLine(140 * s_uiScale);
+				ImGui::SetNextItemWidth(140.0f);
+				ImGui::Combo("##framePlayback", &gameSettings->df_playbackFrameRate, c_framePlayback, IM_ARRAYSIZE(c_framePlayback));
+				ImGui::Spacing();
+				ImGui::TextWrapped("You can speed-up or slow-down playback with Numpad + and -\nYou can rebind these in the Inputs section");
+
+				ImGui::Checkbox("Show Record/Playback progress", &gameSettings->df_showReplayCounter);
+			}
+			ImGui::EndChild();
+
+
+			ImGui::Spacing();
+			if (ImGui::Button("Open Replay Folder"))
+			{
+				if (!TFE_System::osShellExecute(s_replayDir, NULL, NULL, false))
+				{
+					TFE_System::logWrite(LOG_ERROR, "frontEndUi", "Failed to open the directory: '%s'", s_replayDir);
+				}
+			}
+			ImGui::Spacing();
+			if (ImGui::Button("Refresh Demo Folder"))
+			{
+				TFE_Input::populateReplayDirectory(s_replayDirContents);
+				if (!s_replayDirContents.empty())
+				{
+					updateReplayImage(s_selectedReplay - listOffset);
+				}
+				else
+				{
+					clearReplayImage();
+				}
+			}
 		}
 		ImGui::EndChild();
 
@@ -1994,21 +2175,38 @@ namespace TFE_FrontEndUI
 			rwidth = displayInfo.width - 64.0f - rightColumn;
 		}
 
-		f32 rheight = displayInfo.height - 80.0f;
+		f32 rheight = displayInfo.height - 100.0f;
 		ImGui::SetNextWindowPos(ImVec2(rightColumn, 64.0f * s_uiScale));
+		ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(1.0f, 0.0f, 0.0f, 0.0f));
 		ImGui::BeginChild("##FileList", ImVec2(rwidth, rheight), true);
 		{
-			const size_t count = s_replayDir.size() + size_t(listOffset);
-			const TFE_SaveSystem::SaveHeader* header = s_replayDir.data();
+			const size_t count = s_replayDirContents.size() + size_t(listOffset);
+			const TFE_SaveSystem::SaveHeader* header = s_replayDirContents.data();
 			ImVec2 buttonSize(rwidth - 2.0f, floorf(20 * s_uiScale + 0.5f));
 			ImGui::PushFont(s_dialogFont);
-			ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
 			s32 prevSelected = s_selectedReplay;
 			for (size_t i = 0; i < count; i++)
 			{
 				bool selected = i == s_selectedReplay;
 				const char* replayName;
-				replayName = header[i - listOffset].saveName;
+				replayName = header[i - listOffset].fileName;
+				
+				// Color things differently depending if the mod exists or if the version is valid.
+				if (!TFE_SaveSystem::versionValid(s_replayDirContents[s32(i) - listOffset].saveVersion))
+				{
+					ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.0f, 0.0f, 0.75f));
+				}
+				else
+				{
+					if (!modLoader_exist(s_replayDirContents[s32(i) - listOffset].modNames))
+					{
+						ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 1.0f, 0.0f, 0.75f));
+					}
+					else
+					{
+						ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.0f, 1.0f, 0.0f, 0.75f));
+					}
+				}
 
 				if (ImGui::Selectable(replayName, selected, ImGuiSelectableFlags_None, buttonSize))
 				{
@@ -2017,10 +2215,12 @@ namespace TFE_FrontEndUI
 						s_selectedReplay = s32(i);
 						s_selectedReplaySlot = s_selectedReplay - listOffset;
 						bool shouldExit = false;
-						strcpy(s_replayFileName, s_replayDir[s_selectedReplaySlot].fileName);
-						strcpy(s_newReplayName, s_replayDir[s_selectedReplaySlot].saveName);
-						strcpy(s_modReplayName, s_replayDir[s_selectedReplaySlot].modNames);
-						strcpy(s_levelReplayName, s_replayDir[s_selectedReplaySlot].levelName);
+						strcpy(s_replayFileName, s_replayDirContents[s_selectedReplaySlot].fileName);
+						strcpy(s_newReplayName, s_replayDirContents[s_selectedReplaySlot].saveName);
+						strcpy(s_modReplayName, s_replayDirContents[s_selectedReplaySlot].modNames);
+						strcpy(s_levelReplayName, s_replayDirContents[s_selectedReplaySlot].levelName);
+						strcpy(s_replayLevelId, s_replayDirContents[s_selectedReplaySlot].levelId);
+						s_replayVersion = s_replayDirContents[s_selectedReplaySlot].saveVersion;
 						openReplayConfirmPopup();
 						if (shouldExit)
 						{
@@ -2032,6 +2232,8 @@ namespace TFE_FrontEndUI
 				{
 					s_selectedReplay = s32(i);
 				}
+
+				ImGui::PopStyleColor();
 			}
 			if (prevSelected != s_selectedReplay)
 			{
@@ -2054,28 +2256,40 @@ namespace TFE_FrontEndUI
 					ImGui::SetKeyboardFocusHere();
 					s_popupSetFocus = false;
 				}
-				ImGui::SetNextItemWidth(768 * s_uiScale);
-				 if (TFE_Input::keyPressed(KEY_RETURN))
+
+				if (!TFE_SaveSystem::versionValid(s_replayVersion))
 				{
-					shouldExit = true;
-					loadReplayWrapper(s_replayFileName, s_modReplayName, s_levelReplayName);
+					ImGui::Text("Incompatible Replay Version", s_modReplayName);
 				}
-				if (ImGui::Button("OK", ImVec2(120, 0)))
+				else if (modLoader_exist(s_modReplayName))
 				{
-					shouldExit = true;
-					loadReplayWrapper(s_replayFileName, s_modReplayName, s_levelReplayName);
+					ImGui::SetNextItemWidth(768 * s_uiScale);
+					if (TFE_Input::keyPressed(KEY_RETURN))
+					{
+						shouldExit = true;
+						loadReplayWrapper(s_replayFileName, s_modReplayName, s_replayLevelId);
+					}
+					if (ImGui::Button("OK", ImVec2(120, 0)))
+					{
+						shouldExit = true;
+						loadReplayWrapper(s_replayFileName, s_modReplayName, s_replayLevelId);
+					}
+				}
+				else
+				{
+					ImGui::Text("Mod %s not found", s_modReplayName);
 				}
 				ImGui::SameLine(0.0f, 32.0f);
 				if (ImGui::Button("Cancel", ImVec2(120, 0)))
 				{
 					shouldExit = false;
-					closeSaveNameEditPopup();
+					closeReplayEditPopup();
 				}
 				ImGui::EndPopup();
 
 				if (shouldExit)
 				{
-					exitLoadSaveMenu();
+					exitReplayMenu();
 				}
 			}
 			ImGui::PopFont();
@@ -2085,34 +2299,24 @@ namespace TFE_FrontEndUI
 		s_selectedReplaySlot = s_selectedReplay - listOffset;
 	}
 
+	int getRecordFramerate()
+	{
+		TFE_Settings_Game* gameSettings = TFE_Settings::getGameSettings();
+		return std::atoi(c_frameRecording[gameSettings->df_recordFrameRate]);
+	}
+
+	std::string getPlaybackFramerate()
+	{
+		TFE_Settings_Game* gameSettings = TFE_Settings::getGameSettings();
+		return std::string(c_framePlayback[gameSettings->df_playbackFrameRate]);
+	}
+
 	void configReplay()
 	{
 		replayDialog();
 	}
 
-	void setupReplay()
-	{
-		s_selectedReplay = 0;
-
-		if (!s_replayImageView)
-		{
-			s_replayImageView = TFE_RenderBackend::createTexture(TFE_SaveSystem::SAVE_IMAGE_WIDTH, TFE_SaveSystem::SAVE_IMAGE_HEIGHT, TexFormat::TEX_RGBA8);
-		}
-		TFE_Input::populateReplayDirectory(s_replayDir);
-
-		if (!s_replayDir.empty())
-		{
-			updateReplayImage(s_selectedReplay);
-		}
-		else
-		{
-			clearReplayImage();
-		}
-
-		s_popupOpen = false;
-		s_replaySetupRequired = false;
-		s_popupSetFocus = false;
-	}
+	// INPUT HANDLING
 		
 	void getBindingString(InputBinding* binding, char* inputName)
 	{
@@ -2450,11 +2654,12 @@ namespace TFE_FrontEndUI
 				inputMapping("Pause",             IADF_PAUSE);
 				inputMapping("Automap",           IADF_AUTOMAP);
 				inputMapping("Screenshot",        IADF_SCREENSHOT);
-				inputMapping("GIF Recording",     IADF_GIF_RECORD);
-				inputMapping("Demo Record",		  IADF_DEMO_RECORD);
+				inputMapping("GIF Recording",     IADF_GIF_RECORD);				
 				Tooltip("Display a countdown and then start recording a GIF. Press again to stop recording.");
 				inputMapping("Instant GIF Record",IADF_GIF_RECORD_NO_COUNTDOWN);
 				Tooltip("Start recording immediately without the countdown. Press again to stop recording.");
+				inputMapping("Playback Speedup",  IADF_DEMO_SPEEDUP);
+				inputMapping("Playback Slowdown", IADF_DEMO_SLOWDOWN);
 				
 				ImGui::Separator();
 
@@ -3497,6 +3702,16 @@ namespace TFE_FrontEndUI
 	void setSelectedMod(const char* mod)
 	{
 		strcpy(s_selectedModCmd, mod);
+	}
+
+	void setModOverrides(std::vector<std::string> & argv)
+	{
+		s_selectedModOverride = argv;
+	}
+
+	std::vector<std::string> getModOverrides()
+	{
+		return s_selectedModOverride;
 	}
 
 	void* getGradientTexture()

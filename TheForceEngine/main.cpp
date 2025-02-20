@@ -354,7 +354,7 @@ void setAppState(AppState newState, int argc, char* argv[])
 		if (validatePath())
 		{
 			TFE_Game* gameInfo = TFE_Settings::getGame();
-			if (!s_curGame || gameInfo->id != s_curGame->id)
+			if (!s_curGame || gameInfo->id != s_curGame->id || startReplayStatus())
 			{
 				s_soundPaused = false;
 				if (s_curGame)
@@ -666,19 +666,9 @@ int main(int argc, char* argv[])
 
 	// Game loop
 	u32 frame = 0u;
-	TFE_System::setFrame(frame);
 	bool showPerf = false;
 	bool relativeMode = false;
 	TFE_System::logWrite(LOG_MSG, "Progam Flow", "The Force Engine Game Loop Started");
-	Tick accum = 0;
-	Tick step = 300000;// hardcode to 3 ticks per frame. 
-	
-	Tick start = TFE_System::getCurrentTimeInTicks();
-	Tick maxdt = 0;
-	Tick avg = start;
-	int skipCount = 0; 
-	bool canwork = true;
-
 	while (s_loop && !TFE_System::quitMessagePosted())
 	{
 
@@ -703,8 +693,13 @@ int main(int argc, char* argv[])
 		SDL_Event event;
 		while (SDL_PollEvent(&event)) { handleEvent(event); }
 
-		// Inputs Main Entry
-		handleInputs();
+		// Inputs Main Entry - skip frame any further processing during replay pause
+		if (!handleInputs())
+		{
+			TFE_Input::endFrame();
+			inputMapping_endFrame();
+			continue;
+		}
 
 		// Can we save?
 		TFE_FrontEndUI::setCanSave(s_curGame ? s_curGame->canSave() : false);
@@ -736,14 +731,36 @@ int main(int argc, char* argv[])
 
 			char* selectedMod = TFE_FrontEndUI::getSelectedMod();
 			if (selectedMod && selectedMod[0] && appState == APP_STATE_GAME)
-			{
+			{				
+
+				// Handle mod overrides and setings including calls from replay module
 				char* newArgs[16];
-				for (s32 i = 0; i < argc && i < 15; i++)
+				newArgs[0] = argv[0];
+
+				std::vector<std::string> modOverrides;
+				modOverrides = TFE_FrontEndUI::getModOverrides();
+
+				size_t newArgc = 0;
+				newArgs[newArgc] = argv[newArgc];
+				size_t modOverrideSize = modOverrides.size();
+				newArgc += modOverrideSize + 1;
+				if (modOverrideSize > 0)
 				{
-					newArgs[i] = argv[i];
+					for (s32 i = 0; i < modOverrides.size(); i++)
+					{		
+						newArgs[i+1] = new char[modOverrides[i].size() + 1];
+						std::strcpy(newArgs[i+1], modOverrides[i].c_str());
+					}					
 				}
-				newArgs[argc] = selectedMod;
-				setAppState(appState, argc + 1, newArgs);
+				else
+				{
+					for (s32 i = 1; i < argc && i < 15; i++)
+					{
+						newArgs[i] = argv[i];
+					}
+				}
+				newArgs[newArgc] = selectedMod;
+				setAppState(appState, newArgc + 1, newArgs);
 			}
 			else
 			{
@@ -865,17 +882,6 @@ int main(int argc, char* argv[])
 			}
 		}
 
-		/*
-		if (inputMapping_getActionState(IADF_DEMO_RECORD) == STATE_PRESSED)
-		{
-			TFE_Settings_Game* gameSettings = TFE_Settings::getGameSettings();
-			gameSettings->df_enableRecording = !gameSettings->df_enableRecording;
-			TFE_Input::setRecordingAllowed(gameSettings->df_enableRecording);
-			string cur_setting = isRecordingAllowed() ? "true" : "false";
-			string message = "Toggling Recording. Currently " + cur_setting;
-			TFE_DarkForces::hud_sendTextMessage(message.c_str(), 1);
-		}*/
-
 		#ifdef ENABLE_FORCE_SCRIPT
 			TFE_ForceScript::update();
 		#endif
@@ -949,9 +955,6 @@ int main(int argc, char* argv[])
 			TFE_FRAME_END();
 		}
 	}	
-
-	TFE_System::logWrite(LOG_MSG, "Progam Flow", "END average = %u maxdt = %u", avg, maxdt);
-
 
 	if (s_curGame)
 	{

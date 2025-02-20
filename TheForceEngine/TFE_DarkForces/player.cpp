@@ -311,6 +311,8 @@ namespace TFE_DarkForces
 		s_playerInfo.health      = pickup_addToValue(0, 100, 100);
 		s_playerInfo.healthFract = 0;
 		s_batteryPower = FIXED(2);
+		s_playerTick = 0;
+		s_prevPlayerTick = 0;
 		s_reviveTick = 0;
 
 		s_automapLocked = JTRUE;
@@ -869,6 +871,10 @@ namespace TFE_DarkForces
 	{
 		s_playerObject = obj;
 		obj_addLogic(obj, (Logic*)&s_playerLogic, LOGIC_PLAYER, s_playerTask, playerLogicCleanupFunc);
+		
+		// Wipe out the player logic.
+		s_playerLogic.move = {};
+		s_playerLogic.dir = {};
 
 		s_playerObject->entityFlags|= ETFLAG_PLAYER;
 		s_playerObject->flags      |= OBJ_FLAG_MOVABLE;
@@ -1322,7 +1328,7 @@ namespace TFE_DarkForces
 			s_playerVelX   += pushVel.x;
 			s_playerUpVel2 += pushVel.y;
 			s_playerVelZ   += pushVel.z;
-
+			
 			if (s_invincibility || s_config.superShield)
 			{
 				// TODO
@@ -1346,7 +1352,7 @@ namespace TFE_DarkForces
 			s_playerVelX   += mul16(force, pushDir.x);
 			s_playerUpVel2 += mul16(force, pushDir.y);
 			s_playerVelZ   += mul16(force, pushDir.z);
-
+			
 			if (s_invincibility || s_config.superShield)
 			{
 				// Return because no damage is applied.
@@ -1906,7 +1912,7 @@ namespace TFE_DarkForces
 		// Apply friction to existing velocity.
 		if (s_playerVelX || s_playerVelZ)
 		{
-			Tick dt = s_playerTick - s_prevPlayerTick;
+			Tick dt = s_playerTick - s_prevPlayerTick;			
 			// Exponential friction, this is the same as vel * friction^dt
 			for (Tick i = 0; i < dt; i++)
 			{
@@ -2001,11 +2007,11 @@ namespace TFE_DarkForces
 			}
 			fixed16_16 speed = adjustForwardSpeed(s_forwardSpd);
 			computeMoveFromAngleAndSpeed(&s_playerVelX, &s_playerVelZ, player->yaw, speed);
-
+			
 			// Add 90 degrees to get the strafe direction.
 			speed = adjustStrafeSpeed(s_strafeSpd);
 			computeMoveFromAngleAndSpeed(&s_playerVelX, &s_playerVelZ, player->yaw + 4095, speed);
-			limitVectorLength(&s_playerVelX, &s_playerVelZ, s_maxMoveDist);
+			limitVectorLength(&s_playerVelX, &s_playerVelZ, s_maxMoveDist);			
 		}
 
 		// Then convert from player velocity to per-frame movement.
@@ -2026,7 +2032,7 @@ namespace TFE_DarkForces
 		s_playerSlideWall = nullptr;
 		// Up to 4 iterations, to handle sliding on walls.
 		if (s_noclip)
-		{
+		{			
 			if (s_playerLogic.move.x || s_playerLogic.move.y)
 			{
 				moved = JTRUE;
@@ -2150,7 +2156,7 @@ namespace TFE_DarkForces
 			}
 			s_playerSecMoved = JFALSE;
 		}
-
+		
 		if (origSector != player->sector)
 		{
 			RSector* newSector = player->sector;
@@ -2208,7 +2214,7 @@ namespace TFE_DarkForces
 		s_playerUpVel  = s_playerUpVel2;
 		s_playerYPos += mul16(s_playerUpVel, s_deltaTime);
 		s_playerLogic.move.y = s_playerYPos - player->posWS.y;
-		player->posWS.y = s_playerYPos; 
+		player->posWS.y = s_playerYPos; 		
 		if (s_playerYPos >= s_colCurLowestFloor && (!s_noclip || !s_flyMode))
 		{
 			if (s_kyleScreamSoundId)

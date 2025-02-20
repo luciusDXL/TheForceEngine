@@ -528,7 +528,7 @@ namespace TFE_DarkForces
 		offscreenBuffer_drawTexture(s_cachedHudRight, s_hudLightOff, 19, 0);
 	}
 
-	string hud_getDataStr(bool includeYRP)
+	string hud_getDataStr()
 	{
 		fixed16_16 x, z;
 		getCameraXZ(&x, &z);
@@ -543,16 +543,8 @@ namespace TFE_DarkForces
 		r = s_playerEye->roll;
 		p = s_playerEye->pitch;
 
-		string format = "X:%04d Y:%.1f Z:%04d H:%.1f S:%d";
-		if (includeYRP)
-		{
-			format += " Y:%04d R:%04d P:%04d";
-			sprintf((char*)dataStr, format.c_str(), xPos, yPos, zPos, h, s, y, r, p);
-		}
-		else
-		{
-			sprintf((char*)dataStr, format.c_str(), xPos, yPos, zPos, h, s);
-		}
+		string format = "X:%04d Y:%.1f Z:%04d H:%.1f S:%d";		
+		sprintf((char*)dataStr, format.c_str(), xPos, yPos, zPos, h, s);		
 		std::string result = string(dataStr);
 		return result; 
 	}
@@ -568,18 +560,16 @@ namespace TFE_DarkForces
 				s_hudCurrentMsgId = 0;
 				s_hudMsgPriority  = HUD_LOWEST_PRIORITY;
 			}
-			// s_screenDirtyLeft[s_curFrameBufferIdx] = JTRUE;
 		}
 
 		if (s_showData && s_playerEye)
 		{
 			s32 xOffset = floor16(div16(intToFixed16(vfb_getWidescreenOffset()), vfb_getXScale()));
 			u8 dataStr[64];
-			string result = TFE_DarkForces::hud_getDataStr(true);
+			string result = TFE_DarkForces::hud_getDataStr();
 			std::copy(result.begin(), result.end(), dataStr);
 			dataStr[result.size()] = '\0';
 			displayHudMessage(s_hudFont, (DrawRect*)vfb_getScreenRect(VFB_RECT_UI), 164 + xOffset, 10, dataStr, framebuffer);
-			// s_screenDirtyRight[s_curFrameBufferIdx] = JTRUE;
 		}
 	}
 

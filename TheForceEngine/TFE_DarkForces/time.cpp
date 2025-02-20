@@ -11,7 +11,7 @@ namespace TFE_DarkForces
 {
 	Tick s_curTick = 0;
 	Tick s_prevTick = 0;
-	static f64 s_timeAccum = 0.0;
+	f64 s_timeAccum = 0.0;
 	fixed16_16 s_deltaTime;
 	fixed16_16 s_frameTicks[13] = { 0 };
 	JBool s_pauseTimeUpdate = JFALSE;

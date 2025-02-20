@@ -384,6 +384,20 @@ namespace TFE_FrontEndUI
 		ImGui::PopFont();
 	}
 
+	bool modLoader_exist(const char* modName)
+	{
+		char programDirModDir[TFE_MAX_PATH];
+		sprintf(programDirModDir, "%sMods/%s", TFE_Paths::getPath(PATH_PROGRAM), modName);
+		TFE_Paths::fixupPathAsDirectory(programDirModDir);
+
+		if (FileUtil::exists(programDirModDir))
+		{
+			return true;
+		}
+
+		return false;
+	}
+
 	void modLoader_preLoad()
 	{
 		readFromQueue(c_itemsPerFrame);

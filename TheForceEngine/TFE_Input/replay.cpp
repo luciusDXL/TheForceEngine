@@ -1,39 +1,76 @@
 #include <TFE_Input/replay.h>
-#include <TFE_FileSystem/paths.h>
-#include <TFE_FileSystem/fileutil.h>
-#include <TFE_FileSystem/filestream.h>
 #include <version.h>
-#include <TFE_System/system.h>
-#include <TFE_Jedi/Serialization/serialization.h>
-#include <TFE_Jedi/Memory/allocator.h>
 #include <sstream>
 #include <unordered_map>
 #include <windows.h>
 #include <thread>
-#include <TFE_Input/inputmapping.h>
 #include <array>
 #include <map>
-#include <TFE_Settings/settings.h>
 #include <string>
+#include <TFE_A11y/accessibility.h>
+#include <TFE_Settings/settings.h>
+#include <TFE_DarkForces/agent.h>
+#include <TFE_DarkForces/hud.h>
 #include <TFE_DarkForces/random.h>
 #include <TFE_DarkForces/time.h>
 #include <TFE_DarkForces/player.h>
-#include <TFE_Game/saveSystem.h>
+#include <TFE_DarkForces/playerCollision.h>
 #include <TFE_DarkForces/darkForcesMain.h>
+#include <TFE_DarkForces/weaponFireFunc.h>
+#include <TFE_DarkForces/Actor/mousebot.h>
+#include <TFE_DarkForces/Actor/turret.h>
+#include <TFE_DarkForces/GameUI/agentMenu.h>
+#include <TFE_DarkForces/GameUI/pda.h>
+#include <TFE_DarkForces/mission.h>
+#include <TFE_FileSystem/paths.h>
+#include <TFE_FileSystem/fileutil.h>
+#include <TFE_FileSystem/filestream.h>
 #include <TFE_FrontEndUI/frontEndUi.h>
+#include <TFE_Game/saveSystem.h>
+#include <TFE_Jedi/Serialization/serialization.h>
+#include <TFE_Jedi/Memory/allocator.h>
+#include <TFE_System/iniParser.h>
+#include <TFE_System/frameLimiter.h>
+#include <TFE_System/system.h>
 
 namespace TFE_Input
 {
 	// Handle replay File Paths
 	FileStream s_replayFile;
-	static char s_replayDir[TFE_MAX_PATH];
+	char s_replayDir[TFE_MAX_PATH];
+	char s_replayAgentPath[TFE_MAX_PATH];
 	static char s_replayPath[TFE_MAX_PATH];
+
+	static char s_headerName[256];
+	string replayFileName = "";
 
 	// Recording States
 	static bool s_recording = false;
 	static bool s_playback = false;
-	static bool eyeSet = false;
 
+	// Agent and Header values
+	LevelSaveData replayAgent;
+	TFE_Settings_Game replayGameSettings = {};
+	
+	// Mouse and Keyboard States
+	static int s_mouseMode = 0; 
+	static int s_mouseFlags = 0;
+	static f32 s_mouseSensitivity[2] = { 0, 0 };
+
+	// Settings preserved when replaying
+	int replayGraphicsType = 0;
+	bool playerHeadwave = false;
+	bool playerAutoAim = false; 
+	bool vsyncEnabled = false;
+	bool replayInitialized = false;
+	bool cutscenesEnabled = true;
+	bool pauseReplay = false; 
+
+	extern f64 gameFrameLimit = 0;	
+	extern f64 replayFrameLimit = 0;
+
+	// Player values
+	bool eyeSet = false;
 	angle14_16 r_yaw = 0;
 	angle14_16 r_pitch = 0;
 	angle14_16 r_roll = 0;
@@ -43,16 +80,44 @@ namespace TFE_Input
 	u64 replayStartTime = 0;
 	s32 replay_seed = 0;
 
+	int replayFilehandler = -1;
+	
+	std::vector<char> settingBuffer;
+
 	void initReplays()
 	{
-		sprintf(s_replayDir, "%sReplays/", TFE_Paths::getPath(PATH_USER_DOCUMENTS));
+
+		// TO DO - combine replays from both sources. 
+
+		sprintf(s_replayDir, "%sReplays/", TFE_Paths::getPath(PATH_PROGRAM));
 		TFE_Paths::fixupPathAsDirectory(s_replayDir);
 
+		// Check TFE/Replays first 
 		if (!FileUtil::directoryExits(s_replayDir))
 		{
-			FileUtil::makeDirectory(s_replayDir);
+			sprintf(s_replayDir, "%sReplays/", TFE_Paths::getPath(PATH_USER_DOCUMENTS));
+
+			// Otherwise check <USER>/TheForceEngine/Replays
+			if (!FileUtil::directoryExits(s_replayDir))
+			{
+				FileUtil::makeDirectory(s_replayDir);
+			}
 		}
-		sprintf(s_replayPath, "%stest.demo", s_replayDir);
+		else
+		{
+			sprintf(s_replayAgentPath, "%sreplay.agent", TFE_Paths::getPath(PATH_USER_DOCUMENTS));
+		}
+		TFE_System::logWrite(LOG_MSG, "Replay", "Loading Replays from %s ...", s_replayDir);
+
+		if (TFE_Settings::getGameSettings()->df_enableRecordingAll)
+		{
+			TFE_Settings::getGameSettings()->df_enableRecording = true;
+		}
+	}
+
+	void getAgentPath(char * agentPath)
+	{
+		agentPath = s_replayAgentPath;
 	}
 
 	bool isRecording()
@@ -78,33 +143,53 @@ namespace TFE_Input
 	void saveTick()
 	{
 		int inputCounter = getCounter();		
-		inputEvents[inputCounter].curTick = TFE_DarkForces::s_curTick;
-	}
-
-	
+		inputEvents[inputCounter].curTick = TFE_DarkForces::s_curTick;		
+	}	
 
 	void loadTick()
 	{
 		int inputCounter = getCounter();
-		TFE_DarkForces::s_curTick = inputEvents[inputCounter].curTick;		
+		TFE_DarkForces::s_curTick = inputEvents[inputCounter].curTick;				
+	}
+
+	void saveInitTime()
+	{
+		inputEvents[0].curTick = TFE_DarkForces::s_curTick;
+		inputEvents[0].prevTick = TFE_DarkForces::s_prevTick;
+		inputEvents[0].deltaTime = TFE_DarkForces::s_deltaTime;
+		inputEvents[0].timeAccum = TFE_DarkForces::s_timeAccum;
+		inputEvents[0].plTick = TFE_DarkForces::s_playerTick;
+		inputEvents[0].plPrevTick = TFE_DarkForces::s_prevPlayerTick;
+		memcpy(inputEvents[0].frameTicks, TFE_DarkForces::s_frameTicks, sizeof(fixed16_16) * TFE_ARRAYSIZE(TFE_DarkForces::s_frameTicks));
+	}
+	
+	void loadInitTime()
+	{
+		TFE_DarkForces::s_curTick = inputEvents[0].curTick;
+		TFE_DarkForces::s_prevTick = inputEvents[0].prevTick;
+		TFE_DarkForces::s_deltaTime = inputEvents[0].deltaTime;
+		TFE_DarkForces::s_timeAccum = inputEvents[0].timeAccum;
+		TFE_DarkForces::s_playerTick = inputEvents[0].plTick;
+		TFE_DarkForces::s_prevPlayerTick = inputEvents[0].plPrevTick;
+		memcpy(TFE_DarkForces::s_frameTicks, inputEvents[0].frameTicks, sizeof(fixed16_16) * TFE_ARRAYSIZE(inputEvents[0].frameTicks));
 	}
 
 	void recordReplaySeed()
 	{
 		replay_seed = TFE_DarkForces::getSeed();
-		TFE_System::logWrite(LOG_MSG, "REPLAY", "Recording Seed: %d", replay_seed);
+		TFE_System::logWrite(LOG_MSG, "Replay", "Recording Seed: %d", replay_seed);
 	}
-
-
+	
 	void restoreReplaySeed()
 	{
 		TFE_DarkForces::setSeed(replay_seed);
-		TFE_System::logWrite(LOG_MSG, "REPLAY", "Loading Seed: %d", replay_seed);
+		TFE_System::logWrite(LOG_MSG, "Replay", "Loading Seed: %d", replay_seed);
 	}
 
+	// Wipe all event history
 	void clearEvents()
 	{
-		int iSize = inputEvents.size();
+		size_t iSize = inputEvents.size();
 		for (int i = 0; i < iSize; i++)
 		{
 			inputEvents[i].clear();
@@ -112,16 +197,56 @@ namespace TFE_Input
 		inputEvents.clear();
 	}
 
+	void recordEvent(int action, KeyboardCode keyCode, bool isPress)
+	{		
+		// When recording, normally ignore the escape key unless the PDA is open
+		if (isRecording() && (keyCode != KEY_ESCAPE || TFE_DarkForces::pda_isOpen()))
+		{
+			int updateCounter = getCounter();
+			if (isPress)
+			{
+				inputEvents[updateCounter].keysPressed.push_back((InputAction)action);
+			}
+			else
+			{
+				inputEvents[updateCounter].keysDown.push_back((InputAction)action);
+			}
+		}
+	}
+
+	void replayEvent()
+	{
+		// Plays back the event from the inputEvents map
+		int updateCounter = getCounter();
+		ReplayEvent event = inputEvents[updateCounter-1];
+
+		// Handle key presses
+		for (int i = 0; i < event.keysPressed.size(); i++)
+		{
+			s32 act = event.keysPressed[i];
+			inputMapping_setStatePress((InputAction)act);
+		}
+
+		// Handle key downs
+		for (int i = 0; i < event.keysDown.size(); i++)
+		{
+			s32 act = event.keysDown[i];
+			inputMapping_setStateDown((InputAction)act);
+		}
+	}
+
+	// Stores the vectors as strings for writings
 	string convertToString(vector<s32> keysDown)
 	{
 		std::ostringstream oss;
-		for (size_t i = 0; i < keysDown.size(); ++i) {
+		for (int i = 0; i < keysDown.size(); ++i) {
 			if (i != 0) oss << ",";
 			oss << keysDown[i];
 		}
 		return oss.str();
 	}
 
+	// Loads the strings int values as vectors for replays
 	vector<s32> convertFromString(string keyStr)
 	{
 		std::vector<s32> intVector;
@@ -133,18 +258,18 @@ namespace TFE_Input
 		return intVector;
 	}
 
+	// Serializes the input events into the demo file from vectors to strings
 	vector<s32> serializeInputs(Stream* stream, vector<s32> inputList, bool writeFlag)
 	{
 		int keySize = 0;
 		string keyString;
 
+		// The Vector would consist of the key codes for the input events
+		// Or it will contain the mouse positions along with yaw/pitch/roll
+
 		if (writeFlag)
 		{
 			keyString = convertToString(inputList);
-			if (keyString.size() == 0)
-			{
-				int x;
-			}
 			keySize = keyString.size();
 		}
 
@@ -153,14 +278,125 @@ namespace TFE_Input
 		{
 			keyString.resize(keySize);
 		}
-		SERIALIZE_BUF(ReplayVersionInit, &keyString[0], keySize);
 
+		SERIALIZE_BUF(ReplayVersionInit, &keyString[0], keySize);
 
 		if (!writeFlag && keySize > 0)
 		{
 			return convertFromString(keyString);
 		}
 		return inputList;
+	}
+
+	void storePDAPosition(Vec2i pos)
+	{
+		int updateCounter = getCounter();
+		inputEvents[updateCounter].pdaPosition = pos;
+	}
+
+	Vec2i getPDAPosition()
+	{
+		int updateCounter = getCounter();
+		return inputEvents[updateCounter - 1].pdaPosition;
+	}
+
+	void copyGameSettings(TFE_Settings_Game* source, TFE_Settings_Game* dest)
+	{
+		dest->df_airControl = source->df_airControl;
+		dest->df_enableAutoaim = source->df_enableAutoaim;
+		dest->df_smoothVUEs = source->df_smoothVUEs;
+		dest->df_autorun = source->df_autorun;
+		dest->df_crouchToggle = source->df_crouchToggle;
+		dest->df_ignoreInfLimit = source->df_ignoreInfLimit;
+		dest->df_stepSecondAlt = source->df_stepSecondAlt;
+		dest->df_enableUnusedItem = source->df_enableUnusedItem;
+		dest->df_solidWallFlagFix = source->df_solidWallFlagFix;
+		dest->df_jsonAiLogics = source->df_jsonAiLogics;
+		dest->df_pitchLimit = source->df_pitchLimit;
+		dest->df_recordFrameRate = source->df_recordFrameRate;
+	}
+
+	// Loads the demo files from the replay folder. 
+	void populateReplayDirectory(std::vector<TFE_SaveSystem::SaveHeader>& dir)
+	{
+		dir.clear();
+		FileList fileList;
+		FileUtil::readDirectory(s_replayDir, "demo", fileList);
+		size_t saveCount = fileList.size();
+		dir.resize(saveCount);
+
+		const std::string* filenames = fileList.data();
+		TFE_SaveSystem::SaveHeader* headers = dir.data();
+		for (size_t i = 0; i < saveCount; i++)
+		{
+			loadReplayHeader(filenames[i].c_str(), &headers[i]);
+		}
+	}
+
+	bool setupPath()
+	{
+
+		// Replay Initialization - it will set the current game and level name
+		IGame* s_game = TFE_SaveSystem::getCurrentGame();
+		
+		char timeDate[256];
+		TFE_System::getDateTimeString(timeDate);
+
+		char levelName[256];
+		s_game->getLevelName(levelName);
+
+		char levelId[256];
+		s_game->getLevelId(levelId);
+
+		char modPath[256];
+		s_game->getModList(modPath);
+
+		int offset = 0;
+		if (strlen(modPath) == 0 )
+		{
+			// For now assume all replays are Dark Forces replays
+			strcpy(modPath, "dark_forces");
+		}
+				
+		char modName[256];
+		FileUtil::getFileNameFromPath(modPath, modName, true);
+
+		// Create the dmeo file path
+		sprintf(s_replayPath, "%s%s_%s.demo", s_replayDir, modName, levelId);
+
+		int offsetMax = 10000;
+		while (FileUtil::exists(s_replayPath) || offset > offsetMax)
+		{
+			offset++;
+			sprintf(s_replayPath, "%s%s_%s_%d.demo", s_replayDir, modName, levelId, offset);
+			if (offset > offsetMax)
+			{
+				TFE_System::logWrite(LOG_MSG, "REPLAY", "Failed to create replay file. Too many files with the same level name.");
+				return false;
+			}
+		}
+
+		// Ensure it is all lowercase
+		std::strcpy(s_replayPath, TFE_A11Y::toLower(string(s_replayPath)).c_str());
+
+		sprintf(s_headerName, "%s.demo", levelName);
+		return true;
+	}
+
+	s32 getFileHandler(Stream* stream, bool writeFlag)
+	{
+		s32 fileHandler = 0;
+		if (writeFlag)
+		{
+			serialization_setMode(SMODE_WRITE);
+			fileHandler = s_replayFile.open(s_replayPath, Stream::MODE_WRITE);
+		}
+		else
+		{
+			serialization_setMode(SMODE_READ);
+			fileHandler = s_replayFile.open(s_replayPath, Stream::MODE_READ);
+		}
+		return fileHandler;
 	}
 
 	bool loadReplayHeader(const char* filename, TFE_SaveSystem::SaveHeader* header)
@@ -180,124 +416,258 @@ namespace TFE_Input
 		return ret;
 	}
 
-	void populateReplayDirectory(std::vector<TFE_SaveSystem::SaveHeader>& dir)
+	// Handles the header and agent data for the replay
+	int serializeHeaderAgentInfo(Stream* stream, bool writeFlag)
 	{
-		dir.clear();
-		FileList fileList;
-		FileUtil::readDirectory(s_replayDir, "demo", fileList);
-		size_t saveCount = fileList.size();
-		dir.resize(saveCount);
 
-		const std::string* filenames = fileList.data();
-		TFE_SaveSystem::SaveHeader* headers = dir.data();
-		for (size_t i = 0; i < saveCount; i++)
+		// Reuse an existing file handler if it already exists
+		if (replayFilehandler > 0)
 		{
-			loadReplayHeader(filenames[i].c_str(), &headers[i]);
-		}
-	}
-
-	void serializeDemo(Stream* stream, bool writeFlag)
-	{
-		int fileHandler = 0;
-		int updateCounter = 0;
-		TFE_DarkForces::time_pause(JTRUE);
-		if (writeFlag)
-		{
-			serialization_setMode(SMODE_WRITE);
-			fileHandler = s_replayFile.open(s_replayPath, Stream::MODE_WRITE);
-			replayStartTime = TFE_System::getStartTime();
-			TFE_SaveSystem::saveHeader(stream, "TEST");
-
-			//void saveHeader(Stream * stream, const char* saveName);
-			//void loadHeader(Stream * stream, SaveHeader * header, const char* fileName);
-		}
-		else
-		{
-			serialization_setMode(SMODE_READ);
-			fileHandler = s_replayFile.open(s_replayPath, Stream::MODE_READ);
-			clearEvents();
-			TFE_SaveSystem::SaveHeader * header = new TFE_SaveSystem::SaveHeader();
-			TFE_SaveSystem::loadHeader(stream, header, "TEST");
+			return replayFilehandler;
 		}
 
+		// Load the Header and agent information
+		int fileHandler = getFileHandler(stream, writeFlag);
 		if (fileHandler > 0)
 		{
-			SERIALIZE_VERSION(ReplayVersionInit);
-			SERIALIZE(ReplayVersionInit, replayStartTime, 0);
-			SERIALIZE(ReplayVersionInit, replay_seed, 0);
 
-			u32 plTick = TFE_DarkForces::s_playerTick;
-			u32 plPrevTick = TFE_DarkForces::s_prevPlayerTick;
-			SERIALIZE(ReplayVersionInit, plTick, 0);
-			SERIALIZE(ReplayVersionInit, plPrevTick, 0);
+			// HEADER INFORMATION
 
-			TFE_DarkForces::time_serialize(stream);
-
-			int inputListsSize = getCounter();
-			SERIALIZE(ReplayVersionInit, inputListsSize, 0);
-
-			SERIALIZE(ReplayVersionInit, r_yaw, 0);
-			SERIALIZE(ReplayVersionInit, r_pitch, 0);
-			SERIALIZE(ReplayVersionInit, r_roll, 0);
-
+			// Store the replay header information including the mod name and level name
+			// As well as the final image of the demo
 			if (writeFlag)
 			{
-
-				// Loop through inputEvents	
-				for (const auto& pair : inputEvents)
-				{
-					updateCounter = pair.first;
-					
-					if (updateCounter > inputListsSize) continue;
-					SERIALIZE(ReplayVersionInit, updateCounter, 0);
-					serializeInputs(stream, pair.second.keysDown, writeFlag);
-					serializeInputs(stream, pair.second.keysPressed, writeFlag);
-					serializeInputs(stream, pair.second.mouseDown, writeFlag);
-					serializeInputs(stream, pair.second.mousePos, writeFlag);
-					serializeInputs(stream, pair.second.mouseWheel, writeFlag);
-
-					u32 curTick = pair.second.curTick;
-					SERIALIZE(ReplayVersionInit, curTick, 0);					
-				}
+				TFE_SaveSystem::saveHeader(stream, s_headerName);
 			}
 			else
 			{
+				TFE_SaveSystem::SaveHeader* header = new TFE_SaveSystem::SaveHeader();
+				TFE_SaveSystem::loadHeader(stream, header, s_headerName);
+			}
+			SERIALIZE_VERSION(ReplayVersionInit);
 
-				TFE_DarkForces::s_playerTick = plTick;
-				TFE_DarkForces::s_prevPlayerTick = plPrevTick;
+			// AGENT INFORMATION
+			
+			// This is where we save / load the agent inventory and difficulty 
+			LevelSaveData data;
+			if (writeFlag)
+			{
+				// Store the agent data from the current agent ID
+				agent_readSavedData(s_agentId, &data);
+				data.agentData.difficulty = s_agentData[s_agentId].difficulty;
+			}
 
-				for (int i = 0; i < inputListsSize; i++)
+			SERIALIZE(SaveVersionInit, data, { 0 });
+			if (!writeFlag)
+			{	
+				// Create new agent if you don't have any 
+				s32 curCount = getAgentCount();
+				if (curCount == 0)
 				{
-					SERIALIZE(ReplayVersionInit, updateCounter, 0);
+					agentMenu_createNewAgent();
+					setAgentName("replay");
+				}
+
+				// Back up current player from the first slot
+				agent_readSavedData(0, &replayAgent);
+
+				// Set the replay agent to the first slot and load the data to it
+				s_agentData[0] = data.agentData;
+				agent_writeSavedData(0, &data);
+			}
+		}	
+		return fileHandler;
+	}
+
+	// Main replay serialization function
+	// The demo file contains all the information needed to replay the game
+	// -----------------------------------------------------------
+	// 
+	// 1. It will contain the metadata of the replay such as then name and modname
+	// 2. It will contain the agent data for the replay
+	// 3. It will contain the input events for the replay
+	// 4. It will contain the game and graphical settings 
+	// 5. It will contain the seed and tick timing data
+	// 
+	// -----------------------------------------------------------
+	void serializeDemo(FileStream* stream, bool writeFlag)
+	{
+		// Initalize the events and frametick obj
+		int eventCounter = 0;
+		fixed16_16 frameTicks[13];
+
+		// Pause everything while we serialize
+		TFE_DarkForces::time_pause(JTRUE);
+
+		// Handle the header and agent data
+		int fileHandler = serializeHeaderAgentInfo(stream, writeFlag);
+
+		if (fileHandler > 0)
+		{
+
+			// Handle Tick timing
+			SERIALIZE(ReplayVersionInit, inputEvents[0].prevTick, 0);
+			SERIALIZE(ReplayVersionInit, inputEvents[0].deltaTime, 0);
+			SERIALIZE(ReplayVersionInit, inputEvents[0].timeAccum, 0);
+			SERIALIZE(ReplayVersionInit, inputEvents[0].plTick, 0);
+			SERIALIZE(ReplayVersionInit, inputEvents[0].plPrevTick, 0);
+
+			// Handle the frame ticks
+			if (writeFlag) 
+			{
+				replayStartTime = TFE_System::getStartTime();
+				memcpy(frameTicks, inputEvents[0].frameTicks, sizeof(fixed16_16) * TFE_ARRAYSIZE(inputEvents[0].frameTicks));
+			}
+
+			// Store the replay seed and start time 
+			SERIALIZE(ReplayVersionInit, replayStartTime, 0);
+			SERIALIZE(ReplayVersionInit, replay_seed, 0);
+
+			SERIALIZE_BUF(SaveVersionInit, frameTicks, sizeof(fixed16_16) * TFE_ARRAYSIZE(frameTicks));
+
+			// Handle events list size
+			int eventListsSize = getCounter();
+			SERIALIZE(ReplayVersionInit, eventListsSize, 0);
+
+			// handle the initial player eye position
+			SERIALIZE(ReplayVersionInit, r_yaw, 0);
+			SERIALIZE(ReplayVersionInit, r_pitch, 0);
+			SERIALIZE(ReplayVersionInit, r_roll, 0);	
+
+			// Settings and Input Handling 
+			TFE_Settings_Game* gameSettings = TFE_Settings::getGameSettings();
+			TFE_Settings_A11y* allySettings = TFE_Settings::getA11ySettings();
+			InputConfig* inputConfig = inputMapping_get();
+			int mouseMode = inputConfig->mouseMode;
+
+			// If you are not recording first store all the original values
+			if (!writeFlag)
+			{
+				copyGameSettings(gameSettings , &replayGameSettings);
+				playerHeadwave = allySettings->enableHeadwave;
+				s_mouseMode = inputConfig->mouseMode;
+				s_mouseFlags = inputConfig->mouseFlags;
+				s_mouseSensitivity[0] = inputConfig->mouseSensitivity[0];
+				s_mouseSensitivity[1] = inputConfig->mouseSensitivity[1];
+			}
+
+			// Serialize game and input settings
+			SERIALIZE(ReplayVersionInit, gameSettings->df_airControl, 0);
+			SERIALIZE(ReplayVersionInit, gameSettings->df_enableAutoaim, 0);
+			SERIALIZE(ReplayVersionInit, gameSettings->df_smoothVUEs, 0);
+			SERIALIZE(ReplayVersionInit, gameSettings->df_autorun, 0);
+			SERIALIZE(ReplayVersionInit, gameSettings->df_crouchToggle, 0);
+			SERIALIZE(ReplayVersionInit, gameSettings->df_ignoreInfLimit, 0);
+			SERIALIZE(ReplayVersionInit, gameSettings->df_stepSecondAlt, 0);
+			SERIALIZE(ReplayVersionInit, gameSettings->df_enableUnusedItem, 0);
+			SERIALIZE(ReplayVersionInit, gameSettings->df_solidWallFlagFix, 0);
+			SERIALIZE(ReplayVersionInit, gameSettings->df_jsonAiLogics, 0);
+			SERIALIZE(ReplayVersionInit, gameSettings->df_bobaFettFacePlayer, 0);
+			SERIALIZE(ReplayVersionInit, gameSettings->df_recordFrameRate, 0);
+			int pitchLimit = gameSettings->df_pitchLimit;
+			SERIALIZE(ReplayVersionInit, pitchLimit, 0);
+
+			SERIALIZE(ReplayVersionInit, allySettings->enableHeadwave, 0);
+			
+			SERIALIZE(ReplayVersionInit, inputConfig->mouseFlags, 0);			
+			SERIALIZE(ReplayVersionInit, mouseMode, 0);
+			SERIALIZE(ReplayVersionInit, inputConfig->mouseSensitivity[0], 0);
+			SERIALIZE(ReplayVersionInit, inputConfig->mouseSensitivity[1], 0);
+			
+			// Need to cast to the correct type for replays
+			if (!writeFlag)
+			{
+				gameSettings->df_pitchLimit = (PitchLimit)pitchLimit;
+				inputConfig->mouseMode = (MouseMode)mouseMode;
+			}
+
+			// Handle writing the events
+			if (writeFlag)
+			{
+
+				// Loop through inputEvents	Map
+				for (const auto& pair : inputEvents)
+				{
+					eventCounter = pair.first;
+
+					// Since the data structure is a Map it may have more values than allocated data
+					// Skip it if it is the case
+					if (eventCounter > eventListsSize) continue;
+
+					// Serialize the event 
+					SERIALIZE(ReplayVersionInit, eventCounter, 0);
+
+					// Serialize all the key and mouse inputs
+					serializeInputs(stream, pair.second.keysDown, writeFlag);
+					serializeInputs(stream, pair.second.keysPressed, writeFlag);
+					serializeInputs(stream, pair.second.mousePos, writeFlag);
+
+					// Critical tick timing data per event
+					u32 curTick = pair.second.curTick;
+					SERIALIZE(ReplayVersionInit, curTick, 0);
+
+					// Store the PDA positioning data
+					s32 pdaXpos = pair.second.pdaPosition.x;
+					s32 pdaZpos = pair.second.pdaPosition.z;
+					SERIALIZE(ReplayVersionInit, pdaXpos, 0);
+					SERIALIZE(ReplayVersionInit, pdaZpos, 0);
+				}
+
+			}
+			else
+			{
+				// Wipe the events and load them from the demo
+				clearEvents();
+
+				for (int i = 0; i < eventListsSize; i++)
+				{
+					SERIALIZE(ReplayVersionInit, eventCounter, 0);
+
+					// Create a new ReplayEvent object 
 					ReplayEvent event = {};
+
+					// Load the key and mouse inputs
 					event.keysDown = serializeInputs(stream, event.keysDown, writeFlag);
 					event.keysPressed = serializeInputs(stream, event.keysPressed, writeFlag);
-					event.mouseDown = serializeInputs(stream, event.mouseDown, writeFlag);
 					event.mousePos = serializeInputs(stream, event.mousePos, writeFlag);
-					event.mouseWheel = serializeInputs(stream, event.mouseWheel, writeFlag);
-					
 
+					// Critical tick timing data per event
 					u32 curTick = 0;
 					SERIALIZE(ReplayVersionInit, curTick, 0);
-					event.curTick = curTick;					
-					inputEvents[updateCounter] = event;
+					event.curTick = curTick;
+
+					// Load the PDA positioning data	
+					Vec2i pdaPos;
+					SERIALIZE(ReplayVersionInit, pdaPos.x, 0);
+					SERIALIZE(ReplayVersionInit, pdaPos.z, 0);
+					event.pdaPosition = pdaPos;
+
+					// Load the event into the map for playback
+					inputEvents[eventCounter] = event;
 				}
+
+				// Load the frame ticks 
+				memcpy(inputEvents[0].frameTicks, frameTicks, sizeof(fixed16_16) * TFE_ARRAYSIZE(frameTicks));
+				
+				// Wipe the event counter and set the max input counter
 				resetCounter();
-				setMaxInputCounter(updateCounter);
+				setMaxCounter(eventCounter);
+
+				// Set the new start time
+				TFE_System::setStartTime(replayStartTime);
 			}
 
 			s_replayFile.close();
 		}
 
-		if (!writeFlag)
-		{
-			TFE_System::setStartTime(replayStartTime);
-		}
+		// Resume the game
 		TFE_DarkForces::time_pause(JFALSE);
 	}
 
 	void handleEye()
 	{
+		// If the eye is set, then store or restore the eye position
+		// This only happens after the first 60 frames typically as the player obj is loaded 
 		if (!eyeSet)
 		{
 			if (isRecording())
@@ -316,29 +686,205 @@ namespace TFE_Input
 		}
 	}
 
-	void startRecording()
-	{		
-		if (FileUtil::exists(s_replayPath))
-		{
-			FileUtil::deleteFile(s_replayPath);
-		}
+	void disableReplayCheats()
+	{
+		TFE_DarkForces::s_invincibility = JFALSE;
+		TFE_DarkForces::s_aiActive = JTRUE;
+		TFE_DarkForces::s_smallModeEnabled = JFALSE;
+		TFE_DarkForces::s_flyMode = JFALSE;
+		TFE_DarkForces::s_noclip = JFALSE;
+		TFE_DarkForces::s_oneHitKillEnabled = JFALSE;
+		TFE_DarkForces::s_instaDeathEnabled = JFALSE;
+		TFE_DarkForces::s_limitStepHeight = JTRUE;
+	}
+
+	// This handles a lot of the common logic to ensure the replay is in a consistent state
+	void startCommonReplayStates()
+	{
+		// Wipe all the objects and player data.
+		objData_clear();
+		player_clearEyeObject();
 		eyeSet = false;
+
+		// Wipe all the previous events
 		clearEvents();
-		recordReplaySeed();
-		inputMapping_endFrame();
-		s_recording = true;		
-		setDemoPlayback(false);
+
+		// Wipe the weapon settings 
+		TFE_DarkForces::resetWeaponFunc();
+
+		// This is not really needed but for replay comparison reset the turret/mouse task IDs
+		TFE_DarkForces::resetMouseNum();
+		TFE_DarkForces::resetTurretNum();
+
+		// Player frame collisions affect logic and must be reset
+		initPlayerCollision();
+
+		// Wipes the frame counter so it is consistent 
 		resetCounter();
+
+		// Wipe all inputs
+		inputMapping_endFrame();
+
+		// Ensure that the PDA previous location is identical
+		TFE_DarkForces::pda_resetTab();
+
+		// Disable autoaim as window size will affect it
+		TFE_Settings_Game* gameSettings = TFE_Settings::getGameSettings();
+		playerAutoAim = gameSettings->df_enableAutoaim;
+		gameSettings->df_enableAutoaim = false;
+
+		// Enable VSYNC for replay playback - can be overriden during replays
+		vsyncEnabled = TFE_System::getVSync();
+		TFE_System::setVsync(true);
+
+		// Ensure we are always in GPU mode for consistency
+		TFE_Settings_Graphics* graphicSetting = TFE_Settings::getGraphicsSettings();
+		replayGraphicsType = graphicSetting->rendererIndex;
+		graphicSetting->rendererIndex = 1;
+		
+		// Preserve the original frame rate
+		gameFrameLimit = TFE_System::frameLimiter_get();
+
+		// Disable cheats that could affect the replay
+		disableReplayCheats();
+	}
+
+	void endCommonReplayStates()
+	{
+		// Restore settings to their original state
+		TFE_Settings::getGameSettings()->df_enableAutoaim = playerAutoAim;
+		TFE_System::setVsync(vsyncEnabled);
+		TFE_System::frameLimiter_set(gameFrameLimit);
+		TFE_Settings::getGraphicsSettings()->rendererIndex = replayGraphicsType;
+
+		if (TFE_Settings::getGameSettings()->df_enableRecordingAll)
+		{
+			TFE_Settings::getGameSettings()->df_enableRecording = true;
+		}
+	}
+
+	void handleFrameRate()
+	{
+		// Set the frame rate for replay playback.
+		string framePlaybackStr = TFE_FrontEndUI::getPlaybackFramerate();
+
+		if (strcmp(framePlaybackStr.c_str(), "Original") == 0)
+		{
+			s32 frameRate = TFE_FrontEndUI::getRecordFramerate();
+			TFE_System::frameLimiter_set(frameRate);
+			TFE_System::setVsync(true);
+		}
+		else if (strcmp(framePlaybackStr.c_str(), "Unlimited") == 0)
+		{
+			TFE_System::setVsync(false);
+		}
+		else
+		{
+			s32 playbackFrameRate = std::atoi(framePlaybackStr.c_str());
+			TFE_System::frameLimiter_set(playbackFrameRate);
+			TFE_System::setVsync(true);
+		}
+	}
+
+	void sendHudPauseMessage()
+	{
+		string msg = "Replay Paused";
+		if (!pauseReplay)
+		{
+			msg = "Replay Resumed";
+		}
+		TFE_System::logWrite(LOG_MSG, "Replay", msg.c_str());
+		TFE_DarkForces::hud_sendTextMessage(msg.c_str(), 0, false);
+	}
+
+	void toggleReplayPause()
+	{
+		pauseReplay = !pauseReplay;
+		sendHudPauseMessage();
+	}
+
+	void handleReplayPause()
+	{
+		mission_pause(pauseReplay);
+	}
+
+	void increaseReplayFrameRate()
+	{
+		TFE_Settings_Game* gameSettings = TFE_Settings::getGameSettings();	
+		if (gameSettings->df_playbackFrameRate == 0)
+		{
+			pauseReplay = false;
+			sendHudPauseMessage();
+		}
+
+		if (gameSettings->df_playbackFrameRate < 6)
+		{
+			gameSettings->df_playbackFrameRate++;
+			string msg = "Setting Replay Speed to " + TFE_FrontEndUI::getPlaybackFramerate();
+			TFE_DarkForces::hud_sendTextMessage(msg.c_str(), 0, false);
+			handleFrameRate();
+		}
+	}
+
+	void decreaseReplayFrameRate()
+	{
+		TFE_Settings_Game* gameSettings = TFE_Settings::getGameSettings();
+		if (gameSettings->df_playbackFrameRate > 0)
+		{
+			gameSettings->df_playbackFrameRate--;
+		}
+
+		if (gameSettings->df_playbackFrameRate == 0)
+		{
+			pauseReplay = true;
+			sendHudPauseMessage();
+		}
+		else
+		{
+			handleFrameRate();
+			string msg = "Setting Replay Speed to " + TFE_FrontEndUI::getPlaybackFramerate();
+			TFE_DarkForces::hud_sendTextMessage(msg.c_str(), 0, false);
+		}
+	}
+
+	void startRecording()
+	{
+		// Handle recording initialization
+		startCommonReplayStates();
+		recordReplaySeed();
+		setRecording(true);
+		setDemoPlayback(false);
 		saveTick();
-		setMaxInputCounter(0);
+		saveInitTime();
 	}
 
 	void endRecording()
 	{
-		s_recording = false;
-		FileStream* stream = &s_replayFile;
-		serializeDemo(&s_replayFile, true);
+		// Disable recording if it is not enabled for all when finished
+		if (!TFE_Settings::getGameSettings()->df_enableRecordingAll)
+		{
+			TFE_Settings::getGameSettings()->df_enableRecording = false;
+		}
+		
+		setRecording(false);
+		
+		// Seriaize the demo events
+		if (setupPath())
+		{
+			FileStream* stream = &s_replayFile;
+			serializeDemo(&s_replayFile, true);
+		}
+
+		// Re-enable cutscenes while recording
+		enableCutscenes(JTRUE);
+
+		// Wipe any latent input
 		inputMapping_endFrame();
+
+		endCommonReplayStates();
+
+		TFE_System::logWrite(LOG_MSG, "Replay", "Finished recording demo...");
+
 	}
 
 	void recordReplayTime(u64 startTime)
@@ -346,33 +892,153 @@ namespace TFE_Input
 		replayStartTime = startTime;
 	}
 
-	void loadReplayWrapper(string replayFile, string modName, string levelName)
+	bool startReplayStatus()
 	{
-		string x = replayFile; 
-		string y = modName;
-		string z = levelName;
-		TFE_Settings::getGameSettings()->df_enableRecording = true;
-		//IGame* curGame =  TFE_FrontEndUI::getCurrentGame();
-		//curGame->enable Cutscenes(JFALSE);
-		TFE_DarkForces::enableCutscenes(JFALSE);
-
+		return replayInitialized;
 	}
 
-	void loadReplay()
+	void sendEndPlaybackMsg()
 	{
-		if (TFE_Settings::getGameSettings()->df_enableRecording) return;
-		eyeSet = false;
-		clearEvents();
-		resetCounter();
-		setCounter(1);
-		inputMapping_endFrame();
+		string msg = "Playback Complete!";
+		TFE_DarkForces::hud_sendTextMessage(msg.c_str(), 1, false);
+	}
+
+	void sendEndRecordingMsg()
+	{
+		string msg = "Recording Ended...";
+		TFE_DarkForces::hud_sendTextMessage(msg.c_str(), 1, false);
+	}
+
+	// This is a replay wrapper that handles agents and replay configuration
+	void loadReplayWrapper(string replayFile, string modName, string levelId)
+	{
+		// If you are replaying a demo, you should not be recording.
+		TFE_Settings::getGameSettings()->df_enableRecording = false;
+		TFE_Settings::getGameSettings()->df_enableReplay = true;
+
+		// Ensure you exit the current game in case you are running
+		task_freeAll();
+		TFE_FrontEndUI::exitToMenu();
+
+		// Handle Agent 
+		setAgentCount(agent_loadData());
+
+		// Handle starting parameters
+		char selectedModCmd[TFE_MAX_PATH];
+		sprintf(selectedModCmd, "-u%s", modName.c_str());
+
+		std::vector<std::string> modOverrides;
+		modOverrides.push_back("-c0"); // No cutscenes		
+
+		// Override level
+		if (strlen(levelId.c_str()) > 0)
+		{
+			string levelOverride = "-l" + levelId;
+			modOverrides.push_back(levelOverride);
+		}
+
+		// Set the replay parameters
+		TFE_FrontEndUI::setModOverrides(modOverrides);
+
+		// Set the replay path	
+		sprintf(s_replayPath, "%s%s", s_replayDir, replayFile.c_str());
 		FileStream* stream = &s_replayFile;
+
+		// Load the replay header so we can get the agent data
+		replayFilehandler = serializeHeaderAgentInfo(&s_replayFile, false);		
+
+		// Set the selected mod and GAME state
+		TFE_FrontEndUI::setSelectedMod(selectedModCmd);
+		TFE_FrontEndUI::setState(APP_STATE_GAME);
+
+		// Preserve cutscene setting and disable them for the replay
+		cutscenesEnabled = getCutscenesEnabled();
+		enableCutscenes(JFALSE);
+
+		// Wipe any current game that may be running and wipe the menu
+		IGame* curGame = TFE_FrontEndUI::getCurrentGame();
+		curGame = nullptr;
+		TFE_FrontEndUI::clearMenuState();
+
+		// This is needed to check if the replay is initialized in Dark Forces Main
+		replayInitialized = true;
+
+		TFE_System::logWrite(LOG_MSG, "Loading replay %s", s_replayPath);
+	}
+
+	// This is called from the DarkForcesMain 
+	void loadReplay()
+	{	
+		startCommonReplayStates();
+	
+		// Start replaying with the first event
+		setReplayCounter(1);
+	
 		serializeDemo(&s_replayFile, false);
+
+		// Setup frame rate for replay playback
+		handleFrameRate();
+
+		// Load the timing and seeds 
+		loadInitTime();
 		restoreReplaySeed();
+
+		// Initialize Demo Playback
 		setDemoPlayback(true);
-		TFE_DarkForces::s_curTick = inputEvents[0].curTick;
-		TFE_DarkForces::s_prevTick = inputEvents[0].prevTick;
-		TFE_DarkForces::s_deltaTime = inputEvents[0].deltaTime;
-		//memcpy(TFE_DarkForces::s_frameTicks, inputEvents[0].frameTicks, sizeof(fixed16_16) * TFE_ARRAYSIZE(inputEvents[1].frameTicks));
+
+		// Reset the eye
+		TFE_DarkForces::player_clearEyeObject();
+
+		// Ensure you always load the first agent. 
+		s_agentId = 0;
+
+		TFE_System::logWrite(LOG_MSG, "Replay", "Started playing back demo...");
+	}
+
+	void restoreAgent()
+	{
+		// We always restore the first agent in the list
+		s_agentId = 0;
+		s_agentData[s_agentId] = replayAgent.agentData;
+		setAgentName(replayAgent.agentData.name);
+		agent_writeSavedData(s_agentId, &replayAgent);
+	}
+
+	void restoreGameSettings()
+	{
+		TFE_Settings_Game* gameSettings = TFE_Settings::getGameSettings();
+		copyGameSettings(&replayGameSettings, gameSettings);
+		TFE_Settings::getA11ySettings()->enableHeadwave = playerHeadwave;
+		TFE_Settings::getGameSettings()->df_enableReplay = false;
+	}
+
+	void restoreInputs()
+	{
+		InputConfig* inputConfig = inputMapping_get();
+		inputConfig->mouseMode = (MouseMode)s_mouseMode;
+		inputConfig->mouseFlags = s_mouseFlags;
+		inputConfig->mouseSensitivity[0] = s_mouseSensitivity[0];
+		inputConfig->mouseSensitivity[1] = s_mouseSensitivity[1];
+	}
+
+	void endReplay()
+	{
+		replayInitialized = false;
+		replayFilehandler = -1;
+		setDemoPlayback(false);
+
+		restoreAgent();
+		restoreGameSettings();
+		restoreInputs();
+
+		enableCutscenes(cutscenesEnabled);
+		endCommonReplayStates();
+
+		// End missiong and go back to Menu after replay. 
+		TFE_DarkForces::mission_exitLevel();
+		task_freeAll();
+		TFE_FrontEndUI::exitToMenu();
+
+		TFE_System::logWrite(LOG_MSG, "Replay", "Finished playing back demo...");
 	}
 }

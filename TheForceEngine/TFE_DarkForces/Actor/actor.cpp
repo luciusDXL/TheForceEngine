@@ -284,11 +284,10 @@ namespace TFE_DarkForces
 		attackMod->fireSpread = FIXED(30);
 		attackMod->accuracyNextTick = 0;
 		attackMod->fireOffset.x = 0;
-		attackMod->fireOffset.z = 0;
-
+		attackMod->fireOffset.z = 0;		
 		attackMod->target.flags &= ~TARGET_ALL;
 		attackMod->anim.flags |= 3;
-		attackMod->timing.nextTick = s_curTick + 0x4446;	// ~120 seconds
+			attackMod->timing.nextTick = s_curTick + 0x4446;	// ~120 seconds
 
 		SecObject* obj = attackMod->header.obj;
 		// world width and height was set from the sprite data.
@@ -427,7 +426,6 @@ namespace TFE_DarkForces
 	{
 		SecObject* obj = moveMod->header.obj;
 		Tick delta = Tick(s_curTick - (*prevColTick));
-		//TFE_System::logWrite(LOG_MSG, "MOUSEBOT", "DELTA DIR CHANGE %d", delta);
 		angle14_32 newAngle;
 		if (delta < 145)
 		{
@@ -587,7 +585,6 @@ namespace TFE_DarkForces
 		AttackModule* attackMod = &damageMod->attackMod;
 		SecObject* obj = attackMod->header.obj;
 		RSector* sector = obj->sector;
-
 		if (!(attackMod->anim.flags & 2))
 		{
 			if (obj->type == OBJ_TYPE_SPRITE)
@@ -671,7 +668,6 @@ namespace TFE_DarkForces
 		AttackModule* attackMod = &damageMod->attackMod;
 		SecObject* obj = attackMod->header.obj;
 		RSector* sector = obj->sector;
-
 		if (msg == MSG_DAMAGE)
 		{
 			if (damageMod->hp > 0)
@@ -809,7 +805,6 @@ namespace TFE_DarkForces
 				}
 			}
 		}
-
 		return JFALSE;
 	}
 
@@ -845,7 +840,7 @@ namespace TFE_DarkForces
 		SecObject* obj = attackMod->header.obj;
 		LogicAnimation* anim = &attackMod->anim;
 		s32 state = attackMod->anim.state;
-
+		
 		switch (state)
 		{
 			case STATE_DELAY:
@@ -875,7 +870,7 @@ namespace TFE_DarkForces
 					}
 					attackMod->target.flags &= ~TARGET_ALL_MOVE;
 					// Next AI update.
-					return s_curTick + random(attackMod->timing.delay);					
+					return s_curTick + random(attackMod->timing.delay);
 				}
 			} break;
 			case STATE_ANIMATEATTACK:
@@ -1630,9 +1625,7 @@ namespace TFE_DarkForces
 		if (approxDist < FIXED(256))
 		{
 			// Since random() is unsigned, the real visible range is [200, 256) because of the conditional above.
-		//	TFE_System::logWrite(LOG_MSG, "ACTOR", "ACTOR CALL RANDOM");
 			fixed16_16 rndDist = random(FIXED(256)) + FIXED(200);
-			//TFE_System::logWrite(LOG_MSG, "ACTOR", "ACTOR rndDist %d update = %d", rndDist, TFE_Input::getCounter());
 			if (approxDist < rndDist)
 			{
 				return actor_canSeeObject(actorObj, obj);
@@ -1670,7 +1663,6 @@ namespace TFE_DarkForces
 		
 		actor_initModule((ActorModule*)moveMod, (Logic*)dispatch);
 		actor_setupSmartObj(moveMod);
-
 		moveMod->header.func = defaultActorFunc;
 		moveMod->header.freeFunc = nullptr;
 		moveMod->header.type = ACTMOD_MOVE;
@@ -1720,7 +1712,7 @@ namespace TFE_DarkForces
 	
 	JBool actor_advanceAnimation(LogicAnimation* anim, SecObject* obj)
 	{
-		
+
 		if (!anim->prevTick)
 		{
 			anim->prevTick = s_frameTicks[anim->frameRate];
@@ -2080,10 +2072,11 @@ namespace TFE_DarkForces
 						s_actorState.curAnimation = nullptr;
 						for (s32 i = 0; i < ACTOR_MAX_MODULES; i++)
 						{
-							ActorModule* module = dispatch->modules[ACTOR_MAX_MODULES - 1 - i];							
+							ActorModule* module = dispatch->modules[ACTOR_MAX_MODULES - 1 - i];									
 							if (module && module->func && module->nextTick < s_curTick)
 							{
-								module->nextTick = module->func(module, dispatch->moveMod);
+								Tick newtick = module->func(module, dispatch->moveMod);								
+								module->nextTick = newtick;
 							}
 							
 						}
@@ -2096,7 +2089,7 @@ namespace TFE_DarkForces
 								actor_handlePhysics(moveMod, &dispatch->vel);
 								moveMod->header.func((ActorModule*)moveMod, moveMod);
 							}
-
+							
 							if ((obj->type & OBJ_TYPE_SPRITE) && s_actorState.curAnimation)
 							{
 								obj->anim = s_actorState.curAnimation->animId;

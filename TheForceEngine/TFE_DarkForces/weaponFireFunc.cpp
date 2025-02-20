@@ -141,6 +141,13 @@ namespace TFE_DarkForces
 	extern void weapon_animateOnOrOffscreen(MessageType msg);
 	JBool computeAutoaim(fixed16_16 xPos, fixed16_16 yPos, fixed16_16 zPos, angle14_32 pitch, angle14_32 yaw, s32 variation);
 
+	// Reset for replay consistency. 
+	void resetWeaponFunc()
+	{
+		s_weaponFirePitch = 0;
+		s_weaponFireYaw = 0;
+	}
+
 	// Adjust the speed - in TFE the framerate may be higher than expected by the original code, which means that this
 	// step (proj->delta) is too large for the 'speed'.
 	void tfe_adjustWeaponCollisionSpeed(ProjectileLogic* proj)

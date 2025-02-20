@@ -8,6 +8,8 @@
 //////////////////////////////////////////////////////////////////////
 
 #include <TFE_System/types.h>
+#include <vector>
+#include <string>
 
 enum AppState
 {
@@ -56,6 +58,10 @@ namespace TFE_FrontEndUI
 
 	char* getSelectedMod();
 	void  clearSelectedMod();
+	int getRecordFramerate();
+	std::string getPlaybackFramerate();
+	void  setModOverrides(std::vector<std::string>&);
+	std::vector<std::string> getModOverrides();
 	void  setSelectedMod(const char* mod);
 	void* getGradientTexture();
 	void  setState(AppState state);

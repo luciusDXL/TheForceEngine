@@ -20,4 +20,5 @@ namespace TFE_DarkForces
 	void weaponFire_mine(MessageType msg);
 	void weaponFire_concussion(MessageType msg);
 	void weaponFire_cannon(MessageType msg);
+	void resetWeaponFunc();
 }  // namespace TFE_DarkForces

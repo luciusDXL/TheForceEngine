@@ -37,6 +37,12 @@ namespace TFE_System
 		}
 	}
 
+	f64 frameLimiter_get()
+	{
+		return s_limitFPS;
+	}
+
+
 	void frameLimiter_begin()
 	{
 		s_beginTicks = getCurrentTimeInTicks();
@@ -44,7 +50,6 @@ namespace TFE_System
 
 	void frameLimiter_end()
 	{
-		return;
 		if (s_limitDelta == 0.0) { return; }
 
 		u64 curTick = TFE_System::getCurrentTimeInTicks();

@@ -16,5 +16,12 @@ namespace TFE_DarkForces
 	void agentMenu_load(LangHotkeys* hotkeys);
 
 	// Reset Presistent State.
+
+	s32 getAgentID();
+	void setAgentId(s32 id);
+	void setAgentCount(s32 count);
+	s32 getAgentCount();
+	void agentMenu_createNewAgent();
+	void setAgentName(const char* name);
 	void agentMenu_resetState();
 }

@@ -454,6 +454,19 @@ namespace TFE_DarkForces
 		}
 	}
 
+	void DarkForces::getLevelId(char* name)
+	{
+		const char* levelName = agent_getLevelName();
+		if (levelName)
+		{
+			strcpy(name, levelName);
+		}
+		else
+		{
+			name[0] = 0;
+		}
+	}
+
 	void skipToLevelNextScene(s32 index)
 	{
 		if (!index) { return; }
@@ -548,6 +561,12 @@ namespace TFE_DarkForces
 			{
 				s_runGameState.state = GSTATE_CUTSCENE;
 				s_invalidLevelIndex = JTRUE;
+
+				if (isDemoPlayback())
+				{
+					s_runGameState.cutscenesEnabled = JFALSE;
+				}
+
 				if (s_runGameState.cutscenesEnabled && !s_runGameState.startLevel)
 				{
 					cutscene_play(10);
@@ -782,15 +801,16 @@ namespace TFE_DarkForces
 
 				task_reset();
 				inf_clearState();
+				TFE_Settings_Game * gameSettings = TFE_Settings::getGameSettings();
 
-				// Entry point to recording a demo
-				if (TFE_Settings::getGameSettings()->df_enableReplay)
+				// Entry point to replay a demo
+				if (gameSettings->df_enableReplay && !isDemoPlayback())
 				{
 					loadReplay();
 				}
 
-				// Entry point to load a demo
-				if (TFE_Settings::getGameSettings()->df_enableRecording)
+				// Entry point to recording a demo
+				if (gameSettings->df_enableRecording && !isRecording())
 				{
 					startRecording();
 				}
@@ -888,6 +908,11 @@ namespace TFE_DarkForces
 	void enableCutscenes(JBool enable)
 	{
 		s_runGameState.cutscenesEnabled = enable;
+	}
+
+	bool getCutscenesEnabled()
+	{
+		return s_runGameState.cutscenesEnabled;
 	}
 
 	void setInitialLevel(const char* levelName)
