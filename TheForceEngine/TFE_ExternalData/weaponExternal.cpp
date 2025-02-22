@@ -763,6 +763,12 @@ namespace TFE_ExternalData
 		
 		if (cJSON_IsString(data) && strcasecmp(data->string, "ammo") == 0)
 		{
+			if (strcasecmp(data->valuestring, "") == 0)
+			{
+				weapon.ammo = nullptr;
+				return true;
+			}
+			
 			if (strcasecmp(data->valuestring, "ammoEnergy") == 0)
 			{
 				weapon.ammo = &TFE_DarkForces::s_playerInfo.ammoEnergy;
