@@ -1515,6 +1515,10 @@ namespace LevelEditor
 			for (s32 o = 0; o < objCount; o++, obj++)
 			{
 				const Entity* entity = &s_level.entities[obj->entityId];
+				if ((entity->categories & s_enemyCategoryFlag) && (s_editorConfig.levelEditorFlags & LEVEDITOR_FLAG_NO_ENEMIES))
+				{
+					continue;
+				}
 
 				s32 index = (s32)objList.size();
 				objList.push_back(obj);

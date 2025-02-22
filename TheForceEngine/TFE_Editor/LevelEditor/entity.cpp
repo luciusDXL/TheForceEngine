@@ -117,6 +117,7 @@ namespace LevelEditor
 	std::vector<LogicDef> s_logicDefList;
 	std::vector<EntityVarDef> s_varDefList;
 	std::vector<Category> s_categoryList;
+	u32 s_enemyCategoryFlag = 0;
 
 	void parseValue(const TokenList& tokens, EntityVarType type, EntityVarValue* value);
 
@@ -793,6 +794,11 @@ namespace LevelEditor
 								curCat->flag = 1 << index;
 								curCat->name = tokens[1];
 								curCat->tooltip = "";
+
+								if (curCat->name == "Enemy")
+								{
+									s_enemyCategoryFlag = curCat->flag;
+								}
 							}
 							else
 							{
