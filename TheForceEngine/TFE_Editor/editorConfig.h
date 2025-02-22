@@ -17,6 +17,9 @@ namespace TFE_Editor
 	enum LevelEditorFlags
 	{
 		LEVEDITOR_FLAG_RUN_TFE = FLAG_BIT(0),
+		LEVEDITOR_FLAG_NO_ENEMIES = FLAG_BIT(1),
+		LEVEDITOR_FLAG_EASY = FLAG_BIT(2),
+		LEVEDITOR_FLAG_HARD = FLAG_BIT(3),
 	};
 
 	struct EditorConfig

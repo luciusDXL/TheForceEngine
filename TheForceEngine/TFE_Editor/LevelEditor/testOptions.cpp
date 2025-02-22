@@ -54,6 +54,27 @@ namespace LevelEditor
 			ImGui::InputText("##ArgumentsDarkForces", s_editorConfig.darkForcesAddCmdLine, TFE_MAX_PATH);
 			ImGui::Text("Outlaws:"); ImGui::SameLine(UI_SCALE(120));
 			ImGui::InputText("##ArgumentsOutlaws", s_editorConfig.outlawsAddCmdLine, TFE_MAX_PATH);
+			ImGui::Separator();
+
+			ImGui::TextColored(ImVec4(0.5f, 1.0f, 1.0f, 1.0f), "Test Options");
+			ImGui::CheckboxFlags("No Enemies", &s_editorConfig.levelEditorFlags, LEVEDITOR_FLAG_NO_ENEMIES);
+			if (ImGui::CheckboxFlags("Easy", &s_editorConfig.levelEditorFlags, LEVEDITOR_FLAG_EASY))
+			{
+				if (s_editorConfig.levelEditorFlags&LEVEDITOR_FLAG_EASY) { s_editorConfig.levelEditorFlags &= ~LEVEDITOR_FLAG_HARD; }
+			}
+			bool medium = !(s_editorConfig.levelEditorFlags&LEVEDITOR_FLAG_EASY) && !(s_editorConfig.levelEditorFlags&LEVEDITOR_FLAG_HARD);
+			if (ImGui::Checkbox("Medium", &medium))
+			{
+				if (medium)
+				{
+					s_editorConfig.levelEditorFlags &= ~LEVEDITOR_FLAG_EASY;
+					s_editorConfig.levelEditorFlags &= ~LEVEDITOR_FLAG_HARD;
+				}
+			}
+			if (ImGui::CheckboxFlags("Hard", &s_editorConfig.levelEditorFlags, LEVEDITOR_FLAG_HARD))
+			{
+				if (s_editorConfig.levelEditorFlags&LEVEDITOR_FLAG_HARD) { s_editorConfig.levelEditorFlags &= ~LEVEDITOR_FLAG_EASY; }
+			}
 
 			ImGui::Separator();
 			if (ImGui::Button("Apply"))
