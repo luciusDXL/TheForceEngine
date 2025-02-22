@@ -43,6 +43,7 @@ namespace TFE_Editor
 	static char s_exportError[TFE_MAX_PATH];
 	static bool s_doProjectExport = false;
 	static bool s_exportSucceeded = false;
+	static u64 s_levelFlags = 0;
 
 	void parseProjectValue(const char* key, const char* value);
 
@@ -73,6 +74,18 @@ namespace TFE_Editor
 	{
 		s_doProjectExport = false;
 		s_exportSucceeded = false;
+
+		const AssetList& levels = AssetBrowser::getAssetList(TYPE_LEVEL);
+		s32 count = (s32)levels.size();
+		s_levelFlags = 0u;
+		for (s32 i = 0; i < count; i++)
+		{
+			if (levels[i].assetSource != ASRC_PROJECT)
+			{
+				continue;
+			}
+			s_levelFlags |= (1ull << u64(i));
+		}
 	}
 		
 	void project_save()
@@ -195,6 +208,17 @@ namespace TFE_Editor
 	bool handleProjectExport(char* exportPath, char* exportError)
 	{
 		sprintf(exportError, "Not yet implemented");
+		const AssetList& levels = AssetBrowser::getAssetList(TYPE_LEVEL);
+		s32 count = (s32)levels.size();
+		for (s32 i = 0; i < count; i++)
+		{
+			const u64 flag = 1ull << u64(i);
+			if (!(s_levelFlags & flag))
+			{
+				continue;
+			}
+			// Export level.
+		}
 		return false;
 	}
 		
@@ -230,7 +254,18 @@ namespace TFE_Editor
 			else // Waiting for input.
 			{
 				// Checkboxes for each level.
-
+				ImGui::Text("Levels");
+				ImGui::Separator();
+				const AssetList& levels = AssetBrowser::getAssetList(TYPE_LEVEL);
+				s32 count = (s32)levels.size();
+				for (s32 i = 0; i < count; i++)
+				{
+					if (levels[i].assetSource != ASRC_PROJECT)
+					{
+						continue;
+					}
+					ImGui::CheckboxFlags(levels[i].name.c_str(), &s_levelFlags, 1ull << u64(i));
+				}
 				ImGui::Separator();
 				if (ImGui::Button("Export"))
 				{

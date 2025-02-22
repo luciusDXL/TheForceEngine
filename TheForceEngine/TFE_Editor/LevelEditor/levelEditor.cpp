@@ -3643,6 +3643,7 @@ namespace LevelEditor
 		s32 hoveredFeatureIndex = -1;
 		HitPart hoveredPart = HP_NONE;
 		selection_getSurface(SEL_INDEX_HOVERED, hoveredSector, hoveredFeatureIndex, &hoveredPart);
+		if (!hoveredSector) { return; }
 
 		const EditorWall* wall = &hoveredSector->walls[hoveredFeatureIndex];
 		const Vec2f* v0 = &hoveredSector->vtx[wall->idx[0]];
