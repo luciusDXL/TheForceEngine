@@ -114,6 +114,11 @@ namespace TFE_Editor
 		// Level Editor
 		TFE_IniParser::writeKeyValue_Int(configFile, "Interface_Flags", s_editorConfig.interfaceFlags);
 		TFE_IniParser::writeKeyValue_Float(configFile, "Curve_SegmentSize", s_editorConfig.curve_segmentSize);
+		TFE_IniParser::writeKeyValue_String(configFile, "DarkForcesPort", s_editorConfig.darkForcesPort);
+		TFE_IniParser::writeKeyValue_String(configFile, "OutlawsPort", s_editorConfig.outlawsPort);
+		TFE_IniParser::writeKeyValue_String(configFile, "DarkForcesAddCmdLine", s_editorConfig.darkForcesAddCmdLine);
+		TFE_IniParser::writeKeyValue_String(configFile, "OutlawsAddCmdLine", s_editorConfig.outlawsAddCmdLine);
+		TFE_IniParser::writeKeyValue_Int(configFile, "LevelEditorFlags", s_editorConfig.levelEditorFlags);
 
 		// Recent files.
 		std::vector<RecentProject>* recentProjects = getRecentProjects();
@@ -277,6 +282,26 @@ namespace TFE_Editor
 		else if (strcasecmp(key, "Curve_SegmentSize") == 0)
 		{
 			s_editorConfig.curve_segmentSize = TFE_IniParser::parseFloat(value);
+		}
+		else if (strcasecmp(key, "DarkForcesPort") == 0)
+		{
+			strcpy(s_editorConfig.darkForcesPort, value);
+		}
+		else if (strcasecmp(key, "OutlawsPort") == 0)
+		{
+			strcpy(s_editorConfig.outlawsPort, value);
+		}
+		else if (strcasecmp(key, "DarkForcesAddCmdLine") == 0)
+		{
+			strcpy(s_editorConfig.darkForcesAddCmdLine, value);
+		}
+		else if (strcasecmp(key, "OutlawsAddCmdLine") == 0)
+		{
+			strcpy(s_editorConfig.outlawsAddCmdLine, value);
+		}
+		else if (strcasecmp(key, "LevelEditorFlags") == 0)
+		{
+			s_editorConfig.levelEditorFlags = TFE_IniParser::parseInt(value);
 		}
 		else if (strncasecmp(key, "Recent", strlen("Recent")) == 0)
 		{

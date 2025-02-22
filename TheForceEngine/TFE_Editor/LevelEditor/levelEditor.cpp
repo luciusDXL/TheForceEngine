@@ -23,6 +23,7 @@
 #include "editNotes.h"
 #include "editTransforms.h"
 #include "userPreferences.h"
+#include "testOptions.h"
 #include <TFE_FrontEndUI/frontEndUi.h>
 #include <TFE_Editor/AssetBrowser/assetBrowser.h>
 #include <TFE_Asset/imageAsset.h>
@@ -1501,7 +1502,7 @@ namespace LevelEditor
 			}
 			if (ImGui::MenuItem("Test Options", NULL, (bool*)NULL))
 			{
-				// TODO
+				openEditorPopup(POPUP_LEV_TEST_OPTIONS);
 			}
 			ImGui::Separator();
 			if (ImGui::MenuItem("INF Items", NULL, (bool*)NULL))

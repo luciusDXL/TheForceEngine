@@ -1822,10 +1822,6 @@ namespace LevelEditor
 		return true;
 	}
 
-	// Hack test path for now.
-	static const char* s_testPath = "D:/dev/TheForceEngine/TheForceEngine/Games/Dark Forces";
-	static const char* s_testAppPath = "D:/dev/TheForceEngine/Build/TheForceEngine.exe";
-
 	bool exportLevel(const char* path, const char* name, const StartPoint* start)
 	{
 		char levFile[TFE_MAX_PATH];
@@ -1846,21 +1842,43 @@ namespace LevelEditor
 		fileList.push_back(objFile);
 
 		char gobPath[TFE_MAX_PATH];
-		sprintf(gobPath, "%s/TFE_TEST.GOB", s_testPath);
+		const char* testPath = TFE_Paths::getPath(PATH_SOURCE_DATA);
+		if (!testPath || !testPath[0]) { return false; }
+		const size_t len = strlen(testPath);
+		if (testPath[len - 1] == '/' || testPath[len - 1] == '\\')
+		{
+			sprintf(gobPath, "%sTFE_TEST.GOB", testPath);
+		}
+		else
+		{
+			sprintf(gobPath, "%s/TFE_TEST.GOB", testPath);
+		}
 		writeGob(gobPath, fileList);
 
 		// Now run "TFE"
 		// Get the app directory and GOB name.
 		char appDir[TFE_MAX_PATH], gobName[TFE_MAX_PATH];
-		FileUtil::getFilePath(s_testAppPath, appDir);
+		FileUtil::getFilePath(s_editorConfig.darkForcesPort, appDir);
 		FileUtil::getFileNameFromPath(gobPath, gobName, true);
 
 		// Build the Commandline.
-		char cmdLine[1024];
-		sprintf(cmdLine, "-gDark -skip_load_delay -u%s -c0 -l%s", gobName, s_level.slot.c_str());
+		char cmdLine[TFE_MAX_PATH];
+		if (s_editorConfig.levelEditorFlags & LEVEDITOR_FLAG_RUN_TFE)
+		{
+			sprintf(cmdLine, "-gDark -skip_load_delay -u%s -c0 -l%s", gobName, s_level.slot.c_str());
+		}
+		else
+		{
+			sprintf(cmdLine, "-u%s -c0 -l%s", gobName, s_level.slot.c_str());
+		}
+		if (s_editorConfig.darkForcesAddCmdLine[0])
+		{
+			strcat(cmdLine, " ");
+			strcat(cmdLine, s_editorConfig.darkForcesAddCmdLine);
+		}
 
 		// Run the test app (TFE, etc.), this will block until finished.
-		osShellExecute(s_testAppPath, appDir, cmdLine, true);
+		osShellExecute(s_editorConfig.darkForcesPort, appDir, cmdLine, true);
 		// Then cleanup by deleting the test GOB.
 		FileUtil::deleteFile(gobPath);
 		

@@ -325,6 +325,10 @@ namespace TFE_Editor
 			{
 				ImGui::OpenPopup("User Preferences");
 			} break;
+			case POPUP_LEV_TEST_OPTIONS:
+			{
+				ImGui::OpenPopup("Test Options");
+			} break;
 			case POPUP_HISTORY_VIEW:
 			{
 				ImGui::OpenPopup("History View");
@@ -438,6 +442,14 @@ namespace TFE_Editor
 			case POPUP_LEV_USER_PREF:
 			{
 				if (LevelEditor::userPreferences())
+				{
+					ImGui::CloseCurrentPopup();
+					s_editorPopup = POPUP_NONE;
+				}
+			} break;
+			case POPUP_LEV_TEST_OPTIONS:
+			{
+				if (LevelEditor::testOptions())
 				{
 					ImGui::CloseCurrentPopup();
 					s_editorPopup = POPUP_NONE;

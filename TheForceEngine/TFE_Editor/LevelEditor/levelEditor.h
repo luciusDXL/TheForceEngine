@@ -61,6 +61,7 @@ namespace LevelEditor
 
 	bool levelLighting();
 	bool userPreferences();
+	bool testOptions();
 
 	void selectNone();
 	s32 getSectorNameLimit();
