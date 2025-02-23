@@ -671,7 +671,7 @@ int main(int argc, char* argv[])
 	TFE_System::logWrite(LOG_MSG, "Progam Flow", "The Force Engine Game Loop Started");
 	while (s_loop && !TFE_System::quitMessagePosted())
 	{
-
+		TFE_FRAME_BEGIN();
 		TFE_System::frameLimiter_begin();
 		bool enableRelative = TFE_Input::relativeModeEnabled();
 		if (enableRelative != relativeMode)

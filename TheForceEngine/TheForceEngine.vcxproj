@@ -39,60 +39,60 @@
     <ProjectGuid>{31CD2991-9EF0-4AA9-AEEB-BA1194D2DAB4}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>TheForceEngine</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.17763.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v143</PlatformToolset>
+    <PlatformToolset>v141</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v143</PlatformToolset>
+    <PlatformToolset>v141</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='BuildForRelease|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v143</PlatformToolset>
+    <PlatformToolset>v141</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Profile|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v143</PlatformToolset>
+    <PlatformToolset>v141</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v143</PlatformToolset>
+    <PlatformToolset>v141</PlatformToolset>
     <CharacterSet>NotSet</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v143</PlatformToolset>
+    <PlatformToolset>v141</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>NotSet</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='BuildForRelease|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v143</PlatformToolset>
+    <PlatformToolset>v141</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>NotSet</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Profile|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v143</PlatformToolset>
+    <PlatformToolset>v141</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>NotSet</CharacterSet>
   </PropertyGroup>
@@ -439,6 +439,14 @@ echo ^)";
     <ClInclude Include="TFE_DarkForces\playerLogic.h" />
     <ClInclude Include="TFE_DarkForces\projectile.h" />
     <ClInclude Include="TFE_DarkForces\random.h" />
+    <ClInclude Include="TFE_DarkForces\Scripting\gameScripts.h" />
+    <ClInclude Include="TFE_DarkForces\Scripting\gs_game.h" />
+    <ClInclude Include="TFE_DarkForces\Scripting\gs_level.h" />
+    <ClInclude Include="TFE_DarkForces\Scripting\gs_system.h" />
+    <ClInclude Include="TFE_DarkForces\Scripting\scriptElev.h" />
+    <ClInclude Include="TFE_DarkForces\Scripting\scriptSector.h" />
+    <ClInclude Include="TFE_DarkForces\Scripting\scriptTexture.h" />
+    <ClInclude Include="TFE_DarkForces\Scripting\scriptWall.h" />
     <ClInclude Include="TFE_DarkForces\sound.h" />
     <ClInclude Include="TFE_DarkForces\time.h" />
     <ClInclude Include="TFE_DarkForces\updateLogic.h" />
@@ -498,7 +506,6 @@ echo ^)";
     <ClInclude Include="TFE_Editor\LevelEditor\Rendering\grid3d.h" />
     <ClInclude Include="TFE_Editor\LevelEditor\Rendering\viewport.h" />
     <ClInclude Include="TFE_Editor\LevelEditor\Scripting\levelEditorScripts.h" />
-    <ClInclude Include="TFE_Editor\LevelEditor\Scripting\ls_api.h" />
     <ClInclude Include="TFE_Editor\LevelEditor\Scripting\ls_draw.h" />
     <ClInclude Include="TFE_Editor\LevelEditor\Scripting\ls_level.h" />
     <ClInclude Include="TFE_Editor\LevelEditor\Scripting\ls_selection.h" />
@@ -509,6 +516,7 @@ echo ^)";
     <ClInclude Include="TFE_Editor\LevelEditor\tabControl.h" />
     <ClInclude Include="TFE_Editor\LevelEditor\userPreferences.h" />
     <ClInclude Include="TFE_Editor\snapshotReaderWriter.h" />
+    <ClInclude Include="TFE_ExternalData\pickupExternal.h" />
     <ClInclude Include="TFE_FileSystem\filestream.h" />
     <ClInclude Include="TFE_FileSystem\fileutil.h" />
     <ClInclude Include="TFE_FileSystem\memorystream.h" />
@@ -556,7 +564,17 @@ echo ^)";
     <ClInclude Include="TFE_ForceScript\Angelscript\angelscript\source\as_typeinfo.h" />
     <ClInclude Include="TFE_ForceScript\Angelscript\angelscript\source\as_variablescope.h" />
     <ClInclude Include="TFE_ForceScript\float2.h" />
+    <ClInclude Include="TFE_ForceScript\float2x2.h" />
+    <ClInclude Include="TFE_ForceScript\float3.h" />
+    <ClInclude Include="TFE_ForceScript\float3x3.h" />
+    <ClInclude Include="TFE_ForceScript\float4.h" />
+    <ClInclude Include="TFE_ForceScript\float4x4.h" />
     <ClInclude Include="TFE_ForceScript\forceScript.h" />
+    <ClInclude Include="TFE_ForceScript\ScriptAPI-Shared\scriptMath.h" />
+    <ClInclude Include="TFE_ForceScript\ScriptAPI-Shared\scriptTest.h" />
+    <ClInclude Include="TFE_ForceScript\ScriptAPI-Shared\sharedScriptAPI.h" />
+    <ClInclude Include="TFE_ForceScript\scriptAPI.h" />
+    <ClInclude Include="TFE_ForceScript\scriptInterface.h" />
     <ClInclude Include="TFE_FrontEndUI\console.h" />
     <ClInclude Include="TFE_FrontEndUI\frontEndUi.h" />
     <ClInclude Include="TFE_FrontEndUI\modLoader.h" />
@@ -568,7 +586,7 @@ echo ^)";
     <ClInclude Include="TFE_Input\input.h" />
     <ClInclude Include="TFE_Input\inputEnum.h" />
     <ClInclude Include="TFE_Input\inputMapping.h" />
-    <ClInclude Include="TFE_Input\replay.h" />
+	<ClInclude Include="TFE_Input\replay.h" />
     <ClInclude Include="TFE_Jedi\Collision\collision.h" />
     <ClInclude Include="TFE_Jedi\IMuse\imConst.h" />
     <ClInclude Include="TFE_Jedi\IMuse\imDigitalSound.h" />
@@ -699,6 +717,7 @@ echo ^)";
     <ClInclude Include="TFE_Settings\settings.h" />
     <ClInclude Include="TFE_ExternalData\dfLogics.h" />
     <ClInclude Include="TFE_ExternalData\logicTables.h" />
+    <ClInclude Include="TFE_ExternalData\weaponExternal.h" />
     <ClInclude Include="TFE_Settings\windows\registry.h" />
     <ClInclude Include="TFE_System\cJSON.h" />
     <ClInclude Include="TFE_System\CrashHandler\crashHandler.h" />
@@ -830,6 +849,14 @@ echo ^)";
     <ClCompile Include="TFE_DarkForces\playerCollision.cpp" />
     <ClCompile Include="TFE_DarkForces\projectile.cpp" />
     <ClCompile Include="TFE_DarkForces\random.cpp" />
+    <ClCompile Include="TFE_DarkForces\Scripting\gameScripts.cpp" />
+    <ClCompile Include="TFE_DarkForces\Scripting\gs_game.cpp" />
+    <ClCompile Include="TFE_DarkForces\Scripting\gs_level.cpp" />
+    <ClCompile Include="TFE_DarkForces\Scripting\gs_system.cpp" />
+    <ClCompile Include="TFE_DarkForces\Scripting\scriptElev.cpp" />
+    <ClCompile Include="TFE_DarkForces\Scripting\scriptSector.cpp" />
+    <ClCompile Include="TFE_DarkForces\Scripting\scriptTexture.cpp" />
+    <ClCompile Include="TFE_DarkForces\Scripting\scriptWall.cpp" />
     <ClCompile Include="TFE_DarkForces\sound.cpp" />
     <ClCompile Include="TFE_DarkForces\time.cpp" />
     <ClCompile Include="TFE_DarkForces\updateLogic.cpp" />
@@ -897,6 +924,7 @@ echo ^)";
     <ClCompile Include="TFE_Editor\LevelEditor\tabControl.cpp" />
     <ClCompile Include="TFE_Editor\LevelEditor\userPreferences.cpp" />
     <ClCompile Include="TFE_Editor\snapshotReaderWriter.cpp" />
+    <ClCompile Include="TFE_ExternalData\pickupExternal.cpp" />
     <ClCompile Include="TFE_FileSystem\filestream.cpp" />
     <ClCompile Include="TFE_FileSystem\fileutil.cpp" />
     <ClCompile Include="TFE_FileSystem\memorystream.cpp" />
@@ -936,7 +964,16 @@ echo ^)";
     <ClCompile Include="TFE_ForceScript\Angelscript\angelscript\source\as_typeinfo.cpp" />
     <ClCompile Include="TFE_ForceScript\Angelscript\angelscript\source\as_variablescope.cpp" />
     <ClCompile Include="TFE_ForceScript\float2.cpp" />
+    <ClCompile Include="TFE_ForceScript\float2x2.cpp" />
+    <ClCompile Include="TFE_ForceScript\float3.cpp" />
+    <ClCompile Include="TFE_ForceScript\float3x3.cpp" />
+    <ClCompile Include="TFE_ForceScript\float4.cpp" />
+    <ClCompile Include="TFE_ForceScript\float4x4.cpp" />
     <ClCompile Include="TFE_ForceScript\forceScript.cpp" />
+    <ClCompile Include="TFE_ForceScript\ScriptAPI-Shared\scriptMath.cpp" />
+    <ClCompile Include="TFE_ForceScript\ScriptAPI-Shared\scriptTest.cpp" />
+    <ClCompile Include="TFE_ForceScript\ScriptAPI-Shared\sharedScriptAPI.cpp" />
+    <ClCompile Include="TFE_ForceScript\scriptInterface.cpp" />
     <ClCompile Include="TFE_FrontEndUI\console.cpp" />
     <ClCompile Include="TFE_FrontEndUI\frontEndUi.cpp" />
     <ClCompile Include="TFE_FrontEndUI\modLoader.cpp" />
@@ -1056,6 +1093,7 @@ echo ^)";
     <ClCompile Include="TFE_Settings\settings.cpp" />
     <ClCompile Include="TFE_ExternalData\dfLogics.cpp" />
     <ClCompile Include="TFE_ExternalData\logicTables.cpp" />
+    <ClCompile Include="TFE_ExternalData\weaponExternal.cpp" />
     <ClCompile Include="TFE_Settings\windows\registry.cpp" />
     <ClCompile Include="TFE_System\cJSON.c" />
     <ClCompile Include="TFE_System\CrashHandler\crashHandlerWin32.cpp" />
