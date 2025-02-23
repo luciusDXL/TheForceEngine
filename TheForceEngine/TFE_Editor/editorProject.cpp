@@ -43,7 +43,7 @@ namespace TFE_Editor
 	static char s_exportError[TFE_MAX_PATH];
 	static bool s_doProjectExport = false;
 	static bool s_exportSucceeded = false;
-	static u64 s_levelFlags = 0;
+	static u32 s_levelFlags = 0;
 
 	void parseProjectValue(const char* key, const char* value);
 
@@ -84,7 +84,7 @@ namespace TFE_Editor
 			{
 				continue;
 			}
-			s_levelFlags |= (1ull << u64(i));
+			s_levelFlags |= (1ull << i);
 		}
 	}
 		
@@ -212,7 +212,7 @@ namespace TFE_Editor
 		s32 count = (s32)levels.size();
 		for (s32 i = 0; i < count; i++)
 		{
-			const u64 flag = 1ull << u64(i);
+			const u32 flag = 1ull << u32(i);
 			if (!(s_levelFlags & flag))
 			{
 				continue;
