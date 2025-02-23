@@ -1389,6 +1389,11 @@ namespace TFE_DarkForces
 				TFE_FrontEndUI::toggleEnhancements();
 			}
 
+			if (inputMapping_getActionState(IADF_ROTATE_PLAYER) == STATE_PRESSED)
+			{
+				rotate180();
+			}
+
 			if (inputMapping_getActionState(IADF_AUTOMOUNT_TOGGLE) == STATE_PRESSED)
 			{
 				s_config.wpnAutoMount = ~s_config.wpnAutoMount;
