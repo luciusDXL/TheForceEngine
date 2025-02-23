@@ -134,7 +134,7 @@ namespace LevelEditor
 			worldPos.y = max(hoverSector->floorHeight, worldPos.y);
 			worldPos.y = min(hoverSector->ceilHeight, worldPos.y);
 		}
-		if (hoverSector)
+		if (hoverSector && s_selectedEntity >= 0)
 		{
 			addEntityToSector(hoverSector, &s_entityDefList[s_selectedEntity], &worldPos);
 			cmd_objectListSnapshot(LName_AddObject, hoverSector->id);
