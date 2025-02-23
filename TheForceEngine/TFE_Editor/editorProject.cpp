@@ -43,7 +43,7 @@ namespace TFE_Editor
 	static char s_exportError[TFE_MAX_PATH];
 	static bool s_doProjectExport = false;
 	static bool s_exportSucceeded = false;
-	static u32 s_levelFlags = 0;
+	static u32 s_levelFlags = 0u;
 
 	void parseProjectValue(const char* key, const char* value);
 
@@ -84,7 +84,7 @@ namespace TFE_Editor
 			{
 				continue;
 			}
-			s_levelFlags |= (1ull << i);
+			s_levelFlags |= (1u << i);
 		}
 	}
 		
@@ -212,7 +212,7 @@ namespace TFE_Editor
 		s32 count = (s32)levels.size();
 		for (s32 i = 0; i < count; i++)
 		{
-			const u32 flag = 1ull << u32(i);
+			const u32 flag = 1u << u32(i);
 			if (!(s_levelFlags & flag))
 			{
 				continue;
@@ -264,7 +264,7 @@ namespace TFE_Editor
 					{
 						continue;
 					}
-					ImGui::CheckboxFlags(levels[i].name.c_str(), &s_levelFlags, 1ull << u64(i));
+					ImGui::CheckboxFlags(levels[i].name.c_str(), &s_levelFlags, 1u << u32(i));
 				}
 				ImGui::Separator();
 				if (ImGui::Button("Export"))
