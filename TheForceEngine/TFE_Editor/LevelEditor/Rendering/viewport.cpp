@@ -1998,6 +1998,114 @@ namespace LevelEditor
 		width *= (view->st[1].x - view->st[0].x) / (entity->views[0].st[1].x - entity->views[0].st[0].x);
 		return width;
 	}
+
+	void computePlaneFromVtx(Vec3f v0, Vec3f v1, Vec3f v2, Vec4f* outPlane)
+	{
+		Vec3f s = { v1.x - v0.x, v1.y - v0.y, v1.z - v0.z };
+		Vec3f t = { v2.x - v0.x, v2.y - v0.y, v2.z - v0.z };
+		Vec3f n = TFE_Math::cross(&s, &t);
+		n = TFE_Math::normalize(&n);
+
+		outPlane->x = n.x;
+		outPlane->y = n.y;
+		outPlane->z = n.z;
+		outPlane->w = -TFE_Math::dot(&v0, &n);
+	}
+
+	// Compute planes from world positions.
+	void computePlanesFromOBBCorners(const Vec3f* vtxWorld, Vec4f* outPlanes)
+	{
+		// Top/Bottom
+		computePlaneFromVtx(vtxWorld[4], vtxWorld[5], vtxWorld[6], &outPlanes[0]);
+		computePlaneFromVtx(vtxWorld[0], vtxWorld[2], vtxWorld[1], &outPlanes[1]);
+		// Sides
+		for (s32 i = 0; i < 4; i++)
+		{
+			const s32 i0 = i, i1 = (i + 1) & 3, i2 = 4 + i1;
+			computePlaneFromVtx(vtxWorld[i0], vtxWorld[i1], vtxWorld[i2], &outPlanes[i + 2]);
+		}
+	}
+
+	// Planes are pointing inward.
+	void computeOBB(const Vec3f* bounds, const Mat3* mtx, const Vec3f* pos, Vec4f* outPlanes)
+	{
+		const Vec3f vtxLocal[8] =
+		{
+			{ bounds[0].x, bounds[0].y, bounds[0].z },
+			{ bounds[1].x, bounds[0].y, bounds[0].z },
+			{ bounds[1].x, bounds[0].y, bounds[1].z },
+			{ bounds[0].x, bounds[0].y, bounds[1].z },
+
+			{ bounds[0].x, bounds[1].y, bounds[0].z },
+			{ bounds[1].x, bounds[1].y, bounds[0].z },
+			{ bounds[1].x, bounds[1].y, bounds[1].z },
+			{ bounds[0].x, bounds[1].y, bounds[1].z },
+		};
+		Vec3f vtxWorld[8];
+		for (s32 v = 0; v < 8; v++)
+		{
+			vtxWorld[v].x = vtxLocal[v].x * mtx->m0.x + vtxLocal[v].y * mtx->m0.y + vtxLocal[v].z * mtx->m0.z + pos->x;
+			vtxWorld[v].y = vtxLocal[v].x * mtx->m1.x + vtxLocal[v].y * mtx->m1.y + vtxLocal[v].z * mtx->m1.z + pos->y;
+			vtxWorld[v].z = vtxLocal[v].x * mtx->m2.x + vtxLocal[v].y * mtx->m2.y + vtxLocal[v].z * mtx->m2.z + pos->z;
+		}
+
+		computePlanesFromOBBCorners(vtxWorld, outPlanes);
+	}
+
+	void computeOBB(const Vec3f* center, const Vec3f* size, Vec4f* outPlanes)
+	{
+		const f32 w = size->x * 0.5f;
+		const f32 h = size->y * 0.5f;
+		const f32 d = size->z * 0.5f;
+		const Vec3f vtxWorld[] =
+		{
+			{center->x - w, center->y - h, center->z - d},
+			{center->x + w, center->y - h, center->z - d},
+			{center->x + w, center->y - h, center->z + d},
+			{center->x - w, center->y - h, center->z + d},
+
+			{center->x - w, center->y + h, center->z - d},
+			{center->x + w, center->y + h, center->z - d},
+			{center->x + w, center->y + h, center->z + d},
+			{center->x - w, center->y + h, center->z + d},
+		};
+
+		computePlanesFromOBBCorners(vtxWorld, outPlanes);
+	}
+
+	void viewport_computeEntityBoundingPlanes(const EditorSector* sector, const EditorObject* obj, Vec4f* boundingPlanes)
+	{
+		const Entity* entity = &s_level.entities[obj->entityId];
+		const Vec3f pos = obj->pos;
+
+		f32 width = entity->size.x * 0.5f;
+		f32 height = entity->size.z;
+		f32 y = pos.y;
+		if (entity->type != ETYPE_SPIRIT && entity->type != ETYPE_SAFE)
+		{
+			f32 offset = -(entity->offset.y + fabsf(entity->st[1].z - entity->st[0].z)) * 0.1f;
+			// If the entity is on the floor, make sure it doesn't stick through it for editor visualization.
+			if (fabsf(pos.y - sector->floorHeight) < 0.5f) { offset = max(0.0f, offset); }
+			y = pos.y + offset;
+		}
+
+		// Adjust the width based on the view
+		if (!entity->obj3d && entity->views.size() >= 32)
+		{
+			width = adjustWidthForView(width, obj, entity, nullptr);
+		}
+
+		if (entity->obj3d)
+		{
+			computeOBB(entity->obj3d->bounds, &obj->transform, &obj->pos, boundingPlanes);
+		}
+		else
+		{
+			Vec3f center = { pos.x, y + height * 0.5f, pos.z };
+			Vec3f size = { width*2.0f, height, width*2.0f };
+			computeOBB(&center, &size, boundingPlanes);
+		}
+	}
 			
 	void drawEntity3D(const EditorSector* sector, const EditorObject* obj, s32 id, u32 objColor, const Vec3f& cameraRgtXZ, bool drawEntityBounds, bool drawHighlights)
 	{

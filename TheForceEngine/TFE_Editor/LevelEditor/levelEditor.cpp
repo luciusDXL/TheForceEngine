@@ -2515,7 +2515,7 @@ namespace LevelEditor
 		return worldPos;
 	}
 		
-	Vec3f moveAlongRail(Vec3f dir)
+	Vec3f moveAlongRail(Vec3f dir, bool adjustPosByView)
 	{
 		const Vec3f rail[] =
 		{
@@ -2543,7 +2543,7 @@ namespace LevelEditor
 			worldPos = s_prevPos;
 		}
 
-		f32 visCurY = fabsf(dir.y) > 0.75f ? s_cursor3d.y : s_curVtxPos.y;
+		f32 visCurY = (fabsf(dir.y) > 0.75f && adjustPosByView) ? s_cursor3d.y : s_curVtxPos.y;
 		Vec3f railVis[] =
 		{
 			{ s_curVtxPos.x, visCurY, s_curVtxPos.z },

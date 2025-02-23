@@ -111,7 +111,7 @@ namespace LevelEditor
 	void adjustGridHeight(EditorSector* sector);
 
 	s32 getDefaultTextureIndex(WallPart part);
-	Vec3f moveAlongRail(Vec3f dir);
+	Vec3f moveAlongRail(Vec3f dir, bool adjustPosByView = true);
 	Vec3f moveAlongXZPlane(f32 yHeight);
 	bool isUiModal();
 }
