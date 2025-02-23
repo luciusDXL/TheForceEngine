@@ -2140,7 +2140,7 @@ namespace LevelEditor
 		}
 		setPrevObjectFeature(sector, objIndex);
 
-		if (!sector || objIndex < 0) { return; }
+		if (!sector || objIndex < 0 || objIndex >= (s32)sector->obj.size()) { return; }
 
 		if (selection_getCount() <= 1)
 		{

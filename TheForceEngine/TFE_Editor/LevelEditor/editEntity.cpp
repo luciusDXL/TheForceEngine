@@ -114,7 +114,7 @@ namespace LevelEditor
 		EditorSector* hoverSector = nullptr;
 		if (s_view == EDIT_VIEW_2D)
 		{
-			edit_getHoverSector2dAtCursor();
+			hoverSector = edit_getHoverSector2dAtCursor();
 		}
 		else if (info)
 		{
