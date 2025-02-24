@@ -1889,7 +1889,7 @@ namespace LevelEditor
 			fileList.push_back(infFile);
 			fileList.push_back(objFile);
 
-			sprintf(jediLine, "%s,\t%s,\t%s\r\n", baseName, baseName, "L:\\LEVELS\\");
+			sprintf(jediLine, "%s,\t%s,\t%s\r\n", s_level.name.c_str(), baseName, "L:\\LEVELS\\");
 			jediLevel += jediLine;
 			levelCount++;
 		}
@@ -1905,7 +1905,7 @@ namespace LevelEditor
 		FileStream jediLvlFile;
 		if (jediLvlFile.open(jediLevelPath, FileStream::MODE_WRITE))
 		{
-			jediLvlFile.writeBuffer(jediLevel.c_str(), jediLevel.length());
+			jediLvlFile.writeBuffer(jediLevel.c_str(), (u32)jediLevel.length());
 			jediLvlFile.close();
 			fileList.push_back(jediLevelPath);
 		}

@@ -215,22 +215,16 @@ namespace TFE_Editor
 		for (s32 i = 0; i < count; i++)
 		{
 			const u32 flag = 1u << u32(i);
-			if (!(s_levelFlags & flag))
-			{
-				continue;
-			}
-
-
-
-			// Export level.
-			levelList.push_back({ levels[i].name, levels[i].name, &levels[i] });
+			if (!(s_levelFlags & flag)) { continue; }
+			// Add the level to the list to export.
+			levelList.push_back({ levels[i].name, &levels[i] });
 		}
 
 		char workPath[TFE_MAX_PATH];
 		getTempDirectory(workPath);
 		return LevelEditor::exportLevels(workPath, exportPath, s_curProject.name, levelList);
 	}
-		
+
 	bool project_exportUi()
 	{
 		// Make sure a project is active.

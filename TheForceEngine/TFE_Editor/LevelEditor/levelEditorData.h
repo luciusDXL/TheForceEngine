@@ -240,7 +240,6 @@ namespace LevelEditor
 
 	struct LevelExportInfo
 	{
-		std::string name;
 		std::string slot;
 		const TFE_Editor::Asset* asset;
 	};
