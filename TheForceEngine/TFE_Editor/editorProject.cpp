@@ -2,6 +2,7 @@
 #include <TFE_Editor/editorConfig.h>
 #include <TFE_Editor/editor.h>
 #include <TFE_Editor/AssetBrowser/assetBrowser.h>
+#include <TFE_Editor/LevelEditor/levelEditorData.h>
 #include <TFE_RenderBackend/renderBackend.h>
 #include <TFE_System/system.h>
 #include <TFE_System/parser.h>
@@ -207,9 +208,10 @@ namespace TFE_Editor
 
 	bool handleProjectExport(char* exportPath, char* exportError)
 	{
-		sprintf(exportError, "Not yet implemented");
 		const AssetList& levels = AssetBrowser::getAssetList(TYPE_LEVEL);
 		s32 count = (s32)levels.size();
+
+		std::vector<LevelEditor::LevelExportInfo> levelList;
 		for (s32 i = 0; i < count; i++)
 		{
 			const u32 flag = 1u << u32(i);
@@ -217,9 +219,16 @@ namespace TFE_Editor
 			{
 				continue;
 			}
+
+
+
 			// Export level.
+			levelList.push_back({ levels[i].name, levels[i].name, &levels[i] });
 		}
-		return false;
+
+		char workPath[TFE_MAX_PATH];
+		getTempDirectory(workPath);
+		return LevelEditor::exportLevels(workPath, exportPath, s_curProject.name, levelList);
 	}
 		
 	bool project_exportUi()
@@ -231,6 +240,7 @@ namespace TFE_Editor
 		bool finished = false;
 		ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysAutoResize;
 
+		strcpy(s_exportPath, s_curProject.path);
 		if (ImGui::BeginPopupModal("Export Project", nullptr, window_flags))
 		{
 			if (s_doProjectExport && s_exportSucceeded) // Succeeded
