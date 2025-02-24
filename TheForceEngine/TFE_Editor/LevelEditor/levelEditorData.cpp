@@ -252,7 +252,7 @@ namespace LevelEditor
 		}
 	}
 		
-	bool loadLevelObjFromAsset(Asset* asset)
+	bool loadLevelObjFromAsset(const Asset* asset)
 	{
 		char objFile[TFE_MAX_PATH];
 		s_fileData.clear();
@@ -496,7 +496,7 @@ namespace LevelEditor
 		return true;
 	}
 		
-	bool loadLevelFromAsset(Asset* asset)
+	bool loadLevelFromAsset(const Asset* asset)
 	{
 		EditorLevel* level = &s_level;
 		char slotName[256];
@@ -1484,9 +1484,6 @@ namespace LevelEditor
 			
 	bool exportDfObj(const char* oFile, const StartPoint* start)
 	{
-		// For now require the start point.
-		if (!start) { return false; }
-
 		FileStream file;
 		if (!file.open(oFile, FileStream::MODE_WRITE))
 		{
@@ -1576,13 +1573,21 @@ namespace LevelEditor
 
 		// For now just put in a start point.
 		const f32 radToDeg = 360.0f / (2.0f * PI);
-		const f32 yaw   = fmodf(start->yaw * radToDeg + 180.0f, 360.0f);
-		const f32 pitch = start->pitch * radToDeg;
-		const f32 y = std::max(start->sector->floorHeight, start->pos.y - 5.8f);
+		const f32 yaw   = start ? fmodf(start->yaw * radToDeg + 180.0f, 360.0f) : 0.0f;
+		const f32 pitch = start ? start->pitch * radToDeg : 0.0f;
+		const f32 y = start ? std::max(start->sector->floorHeight, start->pos.y - 5.8f) : 0.0f;
 
 		s32 objCount = (s32)objList.size();
 		s32 finalObjCount = objCount;
-		if (startPointId < 0) { finalObjCount++; }
+		if (startPointId < 0)
+		{
+			// If there is no start point, then we need to be provided one.
+			if (!start)
+			{
+				return false;
+			}
+			finalObjCount++;
+		}
 
 		WRITE_LINE("OBJECTS %d\r\n", finalObjCount);
 
@@ -1611,7 +1616,14 @@ namespace LevelEditor
 				{
 					if (i == startPointId)
 					{
-						WRITE_LINE("    CLASS: SPIRIT     DATA: 0   X: %0.2f Y: %0.2f Z: %0.2f PCH: %0.2f   YAW: %0.2f ROL: 0.00   DIFF: %d\r\n", start->pos.x, -y, start->pos.z, pitch, yaw, obj->diff);
+						if (start)
+						{
+							WRITE_LINE("    CLASS: SPIRIT     DATA: 0   X: %0.2f Y: %0.2f Z: %0.2f PCH: %0.2f   YAW: %0.2f ROL: 0.00   DIFF: %d\r\n", start->pos.x, -y, start->pos.z, pitch, yaw, obj->diff);
+						}
+						else
+						{
+							WRITE_LINE("    CLASS: SPIRIT     DATA: 0   X: %0.2f Y: %0.2f Z: %0.2f PCH: %0.2f   YAW: %0.2f ROL: %0.2f   DIFF: %d\r\n", obj->pos.x, -obj->pos.y, obj->pos.z, objPitch, objYaw, objRoll, obj->diff);
+						}
 						WRITE_LINE("        SEQ\r\n");
 						WRITE_LINE("            LOGIC:     PLAYER\r\n");
 						WRITE_LINE("            EYE:       TRUE\r\n");
@@ -1824,6 +1836,91 @@ namespace LevelEditor
 
 		fclose(gob);
 		return true;
+	}
+
+	bool exportLevels(const char* workPath, const char* exportPath, const char* gobName, const std::vector<LevelExportInfo>& levelList)
+	{
+		const size_t count = levelList.size();
+		char baseName[TFE_MAX_PATH];
+		char levFile[TFE_MAX_PATH];
+		char infFile[TFE_MAX_PATH];
+		char objFile[TFE_MAX_PATH];
+		char jediLine[TFE_MAX_PATH];
+
+		// Load definitions.
+		// TODO: Handle different games...
+		const char* gameLocalDir = "DarkForces";
+		loadVariableData(gameLocalDir);
+		loadEntityData(gameLocalDir, false);
+		loadLogicData(gameLocalDir);
+		groups_init();
+
+		Project* project = project_get();
+		if (project && project->active)
+		{
+			char projEntityDataPath[TFE_MAX_PATH];
+			sprintf(projEntityDataPath, "%s/%s.ini", project->path, "CustomEntityDef");
+			loadEntityData(projEntityDataPath, true);
+		}
+
+		const LevelExportInfo* levelInfo = levelList.data();
+		std::string jediLevel;
+		FileList fileList;
+		s32 levelCount = 0;
+		for (size_t i = 0; i < count; i++, levelInfo++)
+		{
+			FileUtil::getFileNameFromPath(levelInfo->slot.c_str(), baseName);
+
+			sprintf(levFile, "%s/%s.LEV", workPath, baseName);
+			sprintf(infFile, "%s/%s.INF", workPath, baseName);
+			sprintf(objFile, "%s/%s.O",   workPath, baseName);
+
+			// Load the level.
+			if (!loadLevelFromAsset(levelInfo->asset))
+			{
+				return false;
+			}
+
+			if (!exportDfLevel(levFile)) { return false; }
+			if (!exportDfInf(infFile)) { return false; }
+			if (!exportDfObj(objFile, nullptr)) { return false; }
+
+			fileList.push_back(levFile);
+			fileList.push_back(infFile);
+			fileList.push_back(objFile);
+
+			sprintf(jediLine, "%s,\t%s,\t%s\r\n", baseName, baseName, "L:\\LEVELS\\");
+			jediLevel += jediLine;
+			levelCount++;
+		}
+		sprintf(jediLine, "LEVELS %d\r\n", levelCount);
+		jediLevel = jediLine + jediLevel;
+		jediLevel += "\r\n\r\n";
+		jediLevel += "//      (Comments must be at the end of this file)\r\n";
+		jediLevel += "//      This file contains the list of all the levels in Jedi,\r\n";
+		jediLevel += "//      and the DOS names for those levels.\r\n";
+
+		char jediLevelPath[TFE_MAX_PATH];
+		sprintf(jediLevelPath, "%s/jedi.lvl", workPath);
+		FileStream jediLvlFile;
+		if (jediLvlFile.open(jediLevelPath, FileStream::MODE_WRITE))
+		{
+			jediLvlFile.writeBuffer(jediLevel.c_str(), jediLevel.length());
+			jediLvlFile.close();
+			fileList.push_back(jediLevelPath);
+		}
+
+		char gobPath[TFE_MAX_PATH];
+		const size_t len = strlen(exportPath);
+		if (exportPath[len - 1] == '/' || exportPath[len - 1] == '\\')
+		{
+			sprintf(gobPath, "%s%s.GOB", exportPath, gobName);
+		}
+		else
+		{
+			sprintf(gobPath, "%s/%s.GOB", exportPath, gobName);
+		}
+		return writeGob(gobPath, fileList);
 	}
 
 	bool exportLevel(const char* path, const char* name, const StartPoint* start)

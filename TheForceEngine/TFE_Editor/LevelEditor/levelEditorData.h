@@ -238,10 +238,19 @@ namespace LevelEditor
 		EditorSector* sector;
 	};
 
-	bool loadLevelFromAsset(TFE_Editor::Asset* asset);
+	struct LevelExportInfo
+	{
+		std::string name;
+		std::string slot;
+		const TFE_Editor::Asset* asset;
+	};
+
+	bool loadLevelFromAsset(const TFE_Editor::Asset* asset);
 	TFE_Editor::AssetHandle loadTexture(const char* bmTextureName);
 	TFE_Editor::AssetHandle loadPalette(const char* paletteName);
 	TFE_Editor::AssetHandle loadColormap(const char* colormapName);
+
+	bool exportLevels(const char* workPath, const char* exportPath, const char* gobName, const std::vector<LevelExportInfo>& levelList);
 	
 	bool saveLevel();
 	bool exportLevel(const char* path, const char* name, const StartPoint* start);
