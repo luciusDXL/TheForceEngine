@@ -702,14 +702,23 @@ namespace TFE_FrontEndUI
 			if (strncasecmp("Title", line, titleLen) == 0)
 			{
 				size_t lineLen = strlen(line);
-				for (size_t c = titleLen + 1; c < lineLen; c++)
+				for (size_t c = titleLen; c < lineLen; c++)
 				{
-					if (line[c] == ':' && line[c + 1] == ' ')
+					if (line[c] == ':' && (line[c + 1] == ' ' || line[c + 1] == '\t'))
 					{
+						// Next, skip past white space.
+						for (size_t c2 = c + 1; c2 < lineLen; c2++)
+						{
+							if (line[c2] != ' ' && line[c2] != '\t')
+							{
+								strcpy(name, &line[c2]);
+								foundTitle = true;
+								break;
+							}
+						}
+
 						// Found it.
-						strcpy(name, &line[c + 2]);
-						foundTitle = true;
-						break;
+						if (foundTitle) { break; }
 					}
 				}
 			}

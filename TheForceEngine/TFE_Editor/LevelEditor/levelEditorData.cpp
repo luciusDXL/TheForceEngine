@@ -21,6 +21,7 @@
 #include <TFE_Editor/EditorAsset/editorFrame.h>
 #include <TFE_Editor/EditorAsset/editorSprite.h>
 #include <TFE_Editor/AssetBrowser/assetBrowser.h>
+#include <TFE_Archive/zipArchive.h>
 #include <TFE_Jedi/Level/rwall.h>
 #include <TFE_Jedi/Level/rsector.h>
 #include <TFE_Jedi/Level/rtexture.h>
@@ -1838,7 +1839,31 @@ namespace LevelEditor
 		return true;
 	}
 
-	bool exportLevels(const char* workPath, const char* exportPath, const char* gobName, const std::vector<LevelExportInfo>& levelList)
+	bool writeZip(const char* path, FileList& fileList)
+	{
+		ZipArchive archive;
+		if (!archive.create(path)) { return false; }
+		const size_t count = fileList.size();
+		for (size_t i = 0; i < count; i++)
+		{
+			archive.addFile(fileList[i].c_str(), fileList[i].c_str());
+		}
+		archive.close();
+		return true;
+	}
+
+	const char* c_modHeaderTemplate =
+		"================================================================\r\n"
+		"Title:\t\t %s\r\n"
+		"Author:\t\t %s\r\n"
+		"Description: \r\n"
+		"%s\r\n"
+		"\r\n"
+		"Additional Credits:\r\n"
+		"================================================================\r\n"
+		"%s\r\n";
+
+	bool exportGob(const char* workPath, const char* exportPath, const char* gobName, const std::vector<LevelExportInfo>& levelList, char* gobTempPath)
 	{
 		const size_t count = levelList.size();
 		char baseName[TFE_MAX_PATH];
@@ -1873,7 +1898,7 @@ namespace LevelEditor
 
 			sprintf(levFile, "%s/%s.LEV", workPath, baseName);
 			sprintf(infFile, "%s/%s.INF", workPath, baseName);
-			sprintf(objFile, "%s/%s.O",   workPath, baseName);
+			sprintf(objFile, "%s/%s.O", workPath, baseName);
 
 			// Load the level.
 			if (!loadLevelFromAsset(levelInfo->asset))
@@ -1914,13 +1939,58 @@ namespace LevelEditor
 		const size_t len = strlen(exportPath);
 		if (exportPath[len - 1] == '/' || exportPath[len - 1] == '\\')
 		{
-			sprintf(gobPath, "%s%s.GOB", exportPath, gobName);
+			sprintf(gobPath, "%s%s.GOB", workPath, gobName);
 		}
 		else
 		{
-			sprintf(gobPath, "%s/%s.GOB", exportPath, gobName);
+			sprintf(gobPath, "%s/%s.GOB", workPath, gobName);
 		}
+		strcpy(gobTempPath, gobPath);
 		return writeGob(gobPath, fileList);
+	}
+
+	// TODO: Pack into a zip with:
+	// * (Done) GOB created here.
+	// * (Done) Text document based on project settings.
+	// * Any text documents, .fs files, .lfd files, and images contained in the project directory.
+	// TODO: Support "gobx" format - basically storing data in "loose" format if vanilla support is not required.
+	// TODO: Go through levels and include any resources not included in the base game.
+	bool exportLevels(const char* workPath, const char* exportPath, const char* gobName, const std::vector<LevelExportInfo>& levelList)
+	{
+		char gobTempPath[TFE_MAX_PATH];
+		if (!exportGob(workPath, exportPath, gobName, levelList, gobTempPath))
+		{
+			return false;
+		}
+		FileList fileList;
+		fileList.push_back(gobTempPath);
+
+		Project* project = project_get();
+		
+		char readme[4096];
+		sprintf(readme, c_modHeaderTemplate, project->name, project->authors.c_str(), project->desc.c_str(), project->credits.c_str());
+
+		char readmePath[TFE_MAX_PATH];
+		sprintf(readmePath, "%s/%s.txt", workPath, project->name);
+		FileStream readmeFile;
+		if (readmeFile.open(readmePath, FileStream::MODE_WRITE))
+		{
+			readmeFile.writeBuffer(readme, (u32)strlen(readme) + 1);
+			readmeFile.close();
+			fileList.push_back(readmePath);
+		}
+
+		char zipPath[TFE_MAX_PATH];
+		const size_t len = strlen(exportPath);
+		if (exportPath[len - 1] == '/' || exportPath[len - 1] == '\\')
+		{
+			sprintf(zipPath, "%s%s.zip", exportPath, gobName);
+		}
+		else
+		{
+			sprintf(zipPath, "%s/%s.zip", exportPath, gobName);
+		}
+		return writeZip(zipPath, fileList);
 	}
 
 	bool exportLevel(const char* path, const char* name, const StartPoint* start)

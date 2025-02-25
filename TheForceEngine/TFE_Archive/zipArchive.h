@@ -51,4 +51,12 @@ private:
 	u8* m_tempBuffer = nullptr;
 	size_t m_tempBufferSize = 0;
 	bool m_entryRead;
+
+	struct ZipNewFile
+	{
+		std::string name;
+		std::string path;
+		bool isDir;
+	};
+	std::vector<ZipNewFile> m_newFiles;
 };

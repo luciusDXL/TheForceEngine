@@ -30,7 +30,17 @@ ZipArchive::~ZipArchive()
 
 bool ZipArchive::create(const char *archivePath)
 {
-	return false;
+	m_curFile = INVALID_FILE;
+	m_entryCount = 0;
+	m_fileOffset = 0;
+	m_tempBuffer = nullptr;
+	m_tempBufferSize = 0;
+	m_newFiles.clear();
+
+	strcpy(m_archivePath, archivePath);
+	m_fileHandle = nullptr;
+
+	return true;
 }
 
 bool ZipArchive::open(const char *archivePath)
@@ -82,6 +92,19 @@ bool ZipArchive::open(const char *archivePath)
 
 void ZipArchive::close()
 {
+	// Flush new files.
+	if (!m_newFiles.empty())
+	{
+		const size_t fileCount = m_newFiles.size();
+		std::vector<const char*> filePaths;
+		for (size_t i = 0; i < fileCount; i++)
+		{
+			filePaths.push_back(m_newFiles[i].path.c_str());
+		}
+		zip_create(m_archivePath, filePaths.data(), fileCount);
+		m_newFiles.clear();
+	}
+
 	closeFile();
 
 	delete[] m_entries;
@@ -280,4 +303,5 @@ size_t ZipArchive::getFileLength(u32 index)
 // Edit
 void ZipArchive::addFile(const char* fileName, const char* filePath)
 {
+	m_newFiles.push_back({fileName, filePath, false});
 }
