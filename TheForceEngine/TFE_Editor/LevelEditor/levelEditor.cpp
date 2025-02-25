@@ -1639,10 +1639,13 @@ namespace LevelEditor
 				}
 				s_view = EDIT_VIEW_3D;
 			}
+			// Not working yet, so disable.
+			disableNextItem();
 			if (ImGui::MenuItem("3D (Game)", "Ctrl+3", s_view == EDIT_VIEW_3D_GAME))
 			{
 				s_view = EDIT_VIEW_3D_GAME;
 			}
+			enableNextItem();
 			ImGui::Separator();
 			if (ImGui::MenuItem("Reset Zoom", nullptr, (bool*)NULL))
 			{
