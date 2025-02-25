@@ -1949,10 +1949,6 @@ namespace LevelEditor
 		return writeGob(gobPath, fileList);
 	}
 
-	// TODO: Pack into a zip with:
-	// * (Done) GOB created here.
-	// * (Done) Text document based on project settings.
-	// * Any text documents, .fs files, .lfd files, and images contained in the project directory.
 	// TODO: Support "gobx" format - basically storing data in "loose" format if vanilla support is not required.
 	// TODO: Go through levels and include any resources not included in the base game.
 	bool exportLevels(const char* workPath, const char* exportPath, const char* gobName, const std::vector<LevelExportInfo>& levelList)
@@ -1978,6 +1974,33 @@ namespace LevelEditor
 			readmeFile.writeBuffer(readme, (u32)strlen(readme) + 1);
 			readmeFile.close();
 			fileList.push_back(readmePath);
+		}
+
+		// Search for any files in the project directory that include the following extensions:
+		const char* c_includeExt[] =
+		{
+			"txt",
+			"fs",
+			"lfd",
+			"png",
+			"jpg",
+			"webp",
+		};
+		const size_t extLen = TFE_ARRAYSIZE(c_includeExt);
+		FileList list;
+		char dir[TFE_MAX_PATH];
+		char filePath[TFE_MAX_PATH];
+		sprintf(dir, "%s/", project->path);
+		
+		for (size_t i = 0; i < extLen; i++)
+		{
+			list.clear();
+			FileUtil::readDirectory(dir, c_includeExt[i], list);
+			for (size_t j = 0; j < list.size(); j++)
+			{
+				sprintf(filePath, "%s%s", dir, list[j].c_str());
+				fileList.push_back(filePath);
+			}
 		}
 
 		char zipPath[TFE_MAX_PATH];
