@@ -2155,7 +2155,7 @@ namespace TFE_FrontEndUI
 			}
 			ImGui::EndChild();
 
-
+			#ifdef _WIN32
 			ImGui::Spacing();
 			if (ImGui::Button("Open Replay Folder")) 
 			{
@@ -2164,6 +2164,8 @@ namespace TFE_FrontEndUI
 					TFE_System::logWrite(LOG_ERROR, "frontEndUi", "Failed to open the directory: '%s'", s_replayDir);
 				}
 			}
+            #endif		
+
 			ImGui::SameLine(0.0f);
 			if (ImGui::Button("Refresh Demo Folder"))
 			{
