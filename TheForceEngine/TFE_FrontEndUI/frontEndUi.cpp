@@ -524,7 +524,7 @@ namespace TFE_FrontEndUI
 		TFE_ExternalData::clearExternalWeapons();						// clear weapons
 		TFE_ExternalData::clearExternalProjectiles();					// clear projectiles
 		TFE_ExternalData::clearExternalEffects();						// clear effects
-		TFE_ExternalData::clearExternalPickups();                       // clear pickups
+		TFE_ExternalData::clearExternalPickups();						// clear pickups
 
 		if (TFE_Settings::getSystemSettings()->returnToModLoader && s_modLoaded)
 		{
@@ -3661,10 +3661,10 @@ namespace TFE_FrontEndUI
 	}
 
 	////////////////////////////////////////////////////////////////
-// Developer controls
-////////////////////////////////////////////////////////////////
-
+  // Developer controls
+  ////////////////////////////////////////////////////////////////
 	void drawLightControls(s32 index)
+
 	{
 		f32 labelW = 80 * s_uiScale;
 		f32 valueW = 260 * s_uiScale - 10;

@@ -514,7 +514,7 @@ echo ^)";
     <ClInclude Include="TFE_Editor\LevelEditor\sharedState.h" />
     <ClInclude Include="TFE_Editor\LevelEditor\shell.h" />
     <ClInclude Include="TFE_Editor\LevelEditor\tabControl.h" />
-	<ClInclude Include="TFE_Editor\LevelEditor\testOptions.h" />
+    <ClInclude Include="TFE_Editor\LevelEditor\testOptions.h" />
     <ClInclude Include="TFE_Editor\LevelEditor\userPreferences.h" />
     <ClInclude Include="TFE_Editor\snapshotReaderWriter.h" />
     <ClInclude Include="TFE_ExternalData\pickupExternal.h" />
