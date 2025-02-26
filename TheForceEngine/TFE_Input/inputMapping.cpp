@@ -3,16 +3,11 @@
 #include "inputMapping.h"
 #include <TFE_Game/igame.h>
 #include <TFE_FileSystem/paths.h>
-#include <assert.h>
-#include <TFE_System/system.h>
-#include <array>
 #include <TFE_Settings/settings.h>
 #include <TFE_Input/replay.h>
 #include <TFE_DarkForces/hud.h>
 #include <TFE_DarkForces/player.h>
 #include <TFE_DarkForces/GameUI/pda.h>
-#include <TFE_FrontEndUI/frontEndUi.h>
-#include <TFE_Jedi/Renderer/virtualFramebuffer.h>
 
 namespace TFE_Input
 {
@@ -627,7 +622,7 @@ namespace TFE_Input
 		std::vector<s32> mousePos;
 		s32 mouseX, mouseY;
 		s32 mouseAbsX, mouseAbsY;
-		u32 state = SDL_GetRelativeMouseState(&mouseX, &mouseY);
+		SDL_GetRelativeMouseState(&mouseX, &mouseY);
 		SDL_GetMouseState(&mouseAbsX, &mouseAbsY);
 
 		// Handle Playback

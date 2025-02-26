@@ -17,21 +17,16 @@
 #include <TFE_ExternalData/pickupExternal.h>
 #include <TFE_Input/inputMapping.h>
 #include <TFE_Game/igame.h>
-#include <TFE_DarkForces/mission.h>
 #include <TFE_Jedi/Level/level.h>
-#include <TFE_Jedi/Level/levelData.h>
 #include <TFE_Jedi/InfSystem/infSystem.h>
 #include <TFE_Jedi/Renderer/rlimits.h>
 #include <TFE_Jedi/Serialization/serialization.h>
 // Internal types need to be included in this case.
 #include <TFE_Jedi/InfSystem/infTypesInternal.h>
 #include <TFE_Jedi/Renderer/jediRenderer.h>
-#include <TFE_Jedi/Renderer/RClassic_Fixed/rclassicFixed.h>
-#include <TFE_Audio/audioSystem.h>
 
 // TFE
 #include <TFE_System/tfeMessage.h>
-#include <TFE_Settings/settings.h>
 
 using namespace TFE_Input;
 

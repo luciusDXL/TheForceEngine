@@ -1,7 +1,5 @@
 #include <TFE_Input/replay.h>
 #include <sstream>
-#include <array>
-#include <map>
 #include <string>
 #include <TFE_A11y/accessibility.h>
 #include <TFE_Settings/settings.h>
@@ -23,7 +21,6 @@
 #include <TFE_FrontEndUI/frontEndUi.h>
 #include <TFE_Game/saveSystem.h>
 #include <TFE_Jedi/Serialization/serialization.h>
-#include <TFE_Jedi/Memory/allocator.h>
 #include <TFE_System/frameLimiter.h>
 #include <TFE_System/system.h>
 
@@ -848,7 +845,6 @@ namespace TFE_Input
 		// Seriaize the demo events
 		if (setupPath())
 		{
-			FileStream* stream = &s_replayFile;
 			serializeDemo(&s_replayFile, true);
 		}
 
@@ -922,7 +918,6 @@ namespace TFE_Input
 
 		// Set the replay path	
 		sprintf(s_replayPath, "%s%s", s_replayDir, replayFile.c_str());
-		FileStream* stream = &s_replayFile;
 
 		// Load the replay header so we can get the agent data
 		replayFilehandler = serializeHeaderAgentInfo(&s_replayFile, false);		
