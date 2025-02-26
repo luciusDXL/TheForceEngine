@@ -1,3 +1,4 @@
+#include <TFE_FileSystem/filestream.h>
 #include "scriptbuilder.h"
 #include <vector>
 #include <assert.h>
@@ -32,6 +33,8 @@ CScriptBuilder::CScriptBuilder()
 
 	pragmaCallback = 0;
 	pragmaParam = 0;
+
+	readStd = true;
 }
 
 void CScriptBuilder::SetIncludeCallback(INCLUDECALLBACK_t callback, void *userParam)
@@ -58,6 +61,11 @@ int CScriptBuilder::StartNewModule(asIScriptEngine *inEngine, const char *module
 	ClearAll();
 
 	return 0;
+}
+
+void CScriptBuilder::SetReadMode(bool _readStd)
+{
+	readStd = _readStd;
 }
 
 asIScriptEngine *CScriptBuilder::GetEngine()
@@ -95,7 +103,15 @@ int CScriptBuilder::AddSectionFromFile(const char *filename)
 {
 	// The file name stored in the set should be the fully resolved name because
 	// it is possible to name the same file in multiple ways using relative paths.
-	string fullpath = GetAbsolutePath(filename);
+	string fullpath;
+	if (readStd)
+	{
+		fullpath = GetAbsolutePath(filename);
+	}
+	else
+	{
+		fullpath = filename;
+	}
 
 	if( IncludeIfNotAlreadyIncluded(fullpath.c_str()) )
 	{
@@ -170,7 +186,29 @@ bool CScriptBuilder::IncludeIfNotAlreadyIncluded(const char *filename)
 	return true;
 }
 
-int CScriptBuilder::LoadScriptSection(const char *filename)
+s32 readScriptFileTFE(const char* filename, string& code, asIScriptEngine* engine)
+{
+	FilePath path;
+	FileStream file;
+	if (!TFE_Paths::getFilePath(filename, &path) || !file.open(&path, FileStream::MODE_READ))
+	{
+		// Write a message to the engine's message callback
+		string msg = "Failed to open script file '" + std::string(filename) + "'";
+		engine->WriteMessage(filename, 0, 0, asMSGTYPE_ERROR, msg.c_str());
+		// TODO: Write the file where this one was included from
+		return -1;
+	}
+
+	if (file.getSize() > 0)
+	{
+		code.resize(file.getSize());
+		file.readBuffer(&code[0], file.getSize());
+	}
+	file.close();
+	return 0;
+}
+
+s32 readScriptFile(const char* filename, string& code, asIScriptEngine* engine)
 {
 	// Open the script file
 	string scriptFile = filename;
@@ -180,14 +218,13 @@ int CScriptBuilder::LoadScriptSection(const char *filename)
 #else
 	FILE *f = fopen(scriptFile.c_str(), "rb");
 #endif
-	if( f == 0 )
+	if (f == 0)
 	{
 		// Write a message to the engine's message callback
 		string msg = "Failed to open script file '" + GetAbsolutePath(scriptFile) + "'";
 		engine->WriteMessage(filename, 0, 0, asMSGTYPE_ERROR, msg.c_str());
 
 		// TODO: Write the file where this one was included from
-
 		return -1;
 	}
 
@@ -200,9 +237,8 @@ int CScriptBuilder::LoadScriptSection(const char *filename)
 	// int len = _filelength(_fileno(f));
 
 	// Read the entire file
-	string code;
 	size_t c = 0;
-	if( len > 0 )
+	if (len > 0)
 	{
 		code.resize(len);
 		c = fread(&code[0], len, 1, f);
@@ -210,13 +246,29 @@ int CScriptBuilder::LoadScriptSection(const char *filename)
 
 	fclose(f);
 
-	if( c == 0 && len > 0 )
+	if (c == 0 && len > 0)
 	{
 		// Write a message to the engine's message callback
 		string msg = "Failed to load script file '" + GetAbsolutePath(scriptFile) + "'";
 		engine->WriteMessage(filename, 0, 0, asMSGTYPE_ERROR, msg.c_str());
 		return -1;
 	}
+	return 0;
+}
+
+int CScriptBuilder::LoadScriptSection(const char *filename)
+{
+	string code;
+	int c = 0;
+	if (readStd)
+	{
+		c = readScriptFile(filename, code, engine);
+	}
+	else
+	{
+		c = readScriptFileTFE(filename, code, engine);
+	}
+	if (c < 0) { return -1; }
 
 	// Process the script section even if it is zero length so that the name is registered
 	return ProcessScriptSection(code.c_str(), (unsigned int)(code.length()), filename, 0);

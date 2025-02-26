@@ -4,7 +4,7 @@
 #include <TFE_Editor/LevelEditor/infoPanel.h>
 #include <TFE_Editor/LevelEditor/editGeometry.h>
 #include <TFE_Editor/LevelEditor/Rendering/grid.h>
-#include <TFE_ForceScript/forceScript.h>
+#include <TFE_ForceScript/scriptInterface.h>
 #include <TFE_ForceScript/float2.h>
 
 #ifdef ENABLE_FORCE_SCRIPT
@@ -102,24 +102,16 @@ namespace LevelEditor
 		createSectorFromShape();
 	}
 
-	bool LS_Draw::scriptRegister(asIScriptEngine* engine)
+	bool LS_Draw::scriptRegister(ScriptAPI api)
 	{
-		s32 res = 0;
-		// Object Type
-		res = engine->RegisterObjectType("Draw", sizeof(LS_Draw), asOBJ_VALUE | asOBJ_POD); assert(res >= 0);
-		// Properties
-
-		//------------------------------------
-		// Functions
-		//------------------------------------
-		res = engine->RegisterObjectMethod("Draw", "void begin(const float2 &in = 0, float = 1)", asMETHOD(LS_Draw, begin), asCALL_THISCALL);  assert(res >= 0);
-		res = engine->RegisterObjectMethod("Draw", "void moveForward(float)", asMETHOD(LS_Draw, moveForward), asCALL_THISCALL);  assert(res >= 0);
-		res = engine->RegisterObjectMethod("Draw", "void rect(float, float, bool = false)", asMETHOD(LS_Draw, rect), asCALL_THISCALL);  assert(res >= 0);
-		res = engine->RegisterObjectMethod("Draw", "void polygon(float, int = 8, float = 0, bool = false)", asMETHOD(LS_Draw, polygon), asCALL_THISCALL);  assert(res >= 0);
-
-		// Script variable.
-		res = engine->RegisterGlobalProperty("Draw draw", this);  assert(res >= 0);
-		return res >= 0;
+		ScriptClassBegin("Draw", "draw", api);
+		{
+			ScriptObjMethod("void begin(const float2 &in = 0, float = 1)", begin);
+			ScriptObjMethod("void moveForward(float)", moveForward);
+			ScriptObjMethod("void rect(float, float, bool = false)", rect);
+			ScriptObjMethod("void polygon(float, int = 8, float = 0, bool = false)", polygon);
+		}
+		ScriptClassEnd();
 	}
 }
 

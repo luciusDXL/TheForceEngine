@@ -44,6 +44,7 @@ namespace TFE_Input
 	// Get
 	f32 getAxis(Axis axis);
 	void getMouseMove(s32* x, s32* y);
+	void getMouseMoveAccum(s32* x, s32* y);
 	void getAccumulatedMouseMove(s32* x, s32* y);
 	void getMousePos(s32* x, s32* y);
 	void getMouseWheel(s32* dx, s32* dy);

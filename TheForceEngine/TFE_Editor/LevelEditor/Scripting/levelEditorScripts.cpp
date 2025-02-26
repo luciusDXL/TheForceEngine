@@ -8,7 +8,7 @@
 #include <TFE_Jedi/Math/core_math.h>
 #include <TFE_Editor/editor.h>
 #include <TFE_Editor/errorMessages.h>
-#include <TFE_ForceScript/forceScript.h>
+#include <TFE_ForceScript/scriptInterface.h>
 #include <TFE_Editor/LevelEditor/infoPanel.h>
 #include <TFE_Editor/EditorAsset/editorTexture.h>
 #include <TFE_Editor/EditorAsset/editorFrame.h>
@@ -25,11 +25,11 @@
 
 using namespace TFE_Editor;
 using namespace TFE_Jedi;
+using namespace TFE_ForceScript;
 
 namespace LevelEditor
 {
 	static char s_scriptBuffer[4096];
-	static std::vector<std::string> s_scriptsToRun;
 
 	bool s_levelScriptRegistered = false;
 	bool s_execFromOutput = false;
@@ -60,18 +60,17 @@ namespace LevelEditor
 			infoPanelAddMsg(msgType[type], "%s %d, %d: %s", section, row, col, msg);
 		}
 	}
-
-	void registerScriptFunctions()
+		
+	void registerScriptFunctions(ScriptAPI api)
 	{
 		if (s_levelScriptRegistered) { return; }
 		s_levelScriptRegistered = true;
 		TFE_ForceScript::overrideCallback(scriptCallback);
-
-		asIScriptEngine* engine = (asIScriptEngine*)TFE_ForceScript::getEngine();
-		s_lsDraw.scriptRegister(engine);
-		s_lsSelection.scriptRegister(engine);
-		s_lsSystem.scriptRegister(engine);
-		s_lsLevel.scriptRegister(engine);
+		
+		s_lsDraw.scriptRegister(api);
+		s_lsSelection.scriptRegister(api);
+		s_lsSystem.scriptRegister(api);
+		s_lsLevel.scriptRegister(api);
 
 		// Math/Intrinsics.
 	}
@@ -89,19 +88,14 @@ namespace LevelEditor
 		strcat(s_scriptBuffer, line);
 		strcat(s_scriptBuffer, ";}\n");
 
-		TFE_ForceScript::ModuleHandle lineMod = TFE_ForceScript::createModule("LineMod", "LineMod", s_scriptBuffer);
+		TFE_ForceScript::ModuleHandle lineMod = TFE_ForceScript::createModule("LineMod", "LineMod", s_scriptBuffer, API_SHARED | API_LEVEL_EDITOR);
 		if (lineMod)
 		{
-			TFE_ForceScript::FunctionHandle func = TFE_ForceScript::findScriptFunc(lineMod, "void main()");
+			TFE_ForceScript::FunctionHandle func = TFE_ForceScript::findScriptFuncByName(lineMod, "main");
 			TFE_ForceScript::execFunc(func);
 		}
 
 		s_execFromOutput = false;
-	}
-		
-	void runLevelScript(const char* scriptName)
-	{
-		s_scriptsToRun.push_back(scriptName);
 	}
 
 	void showLevelScript(const char* scriptName)
@@ -122,25 +116,6 @@ namespace LevelEditor
 			sprintf(title, "Script - %s", scriptName);
 			TFE_Editor::showMessageBox(title, "%s", text.data());
 		}
-	}
-
-	void levelScript_update()
-	{
-		char scriptPath[TFE_MAX_PATH];
-		const s32 count = (s32)s_scriptsToRun.size();
-		const std::string* scriptName = s_scriptsToRun.data();
-		for (s32 i = 0; i < count; i++, scriptName++)
-		{
-			sprintf(scriptPath, "EditorDef/Scripts/%s.fs", scriptName->c_str());
-
-			TFE_ForceScript::ModuleHandle scriptMod = TFE_ForceScript::createModule(scriptName->c_str(), scriptPath);
-			if (scriptMod)
-			{
-				TFE_ForceScript::FunctionHandle func = TFE_ForceScript::findScriptFunc(scriptMod, "void main()");
-				TFE_ForceScript::execFunc(func);
-			}
-		}
-		s_scriptsToRun.clear();
 	}
 }
 #else

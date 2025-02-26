@@ -58,13 +58,11 @@ namespace TFE_System
 	{
 		return s_frame;
 	}
-		
-	
 
 	void init(f32 refreshRate, bool synced, const char* versionString)
 	{
 		TFE_System::logWrite(LOG_MSG, "Startup", "TFE_System::init");
-		s_time = 42156207250291;// SDL_GetPerformanceCounter();
+		s_time = SDL_GetPerformanceCounter();
 		s_lastSyncCheck = s_time;
 		s_startTime = s_time;
 		TFE_Input::recordReplayTime(s_startTime);
@@ -137,9 +135,8 @@ namespace TFE_System
 	{
 		// This assumes that SDL_GetPerformanceCounter() is monotonic.
 		// However if errors do occur, the dt clamp later should limit the side effects.
-		const u64 curTime = getTimePerf();
-		const u64 uDt = (curTime > s_time) ? (curTime - s_time) : 1;	// Make sure time is monotonic.
-		//TFE_System::logWrite(LOG_MSG, "Startup", "CURTIME = %d, UDT = %d", curTime, uDt);
+		const u64 curTime = SDL_GetPerformanceCounter();
+		const u64 uDt = (curTime > s_time) ? (curTime - s_time) : 1;	// Make sure time is monotonic.		
 		s_time = curTime;
 		if (s_resetStartTime)
 		{
@@ -287,8 +284,6 @@ namespace TFE_System
 	{
 		s_systemUiRequestPosted = true;
 	}
-
-
 
 	bool quitMessagePosted()
 	{

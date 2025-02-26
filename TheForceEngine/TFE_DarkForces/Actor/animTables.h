@@ -13,6 +13,21 @@
 
 namespace TFE_DarkForces
 {
+	enum
+	{
+		ANIM_MOVE = 0,
+		ANIM_ATTACK1 = 1,
+		ANIM_DIE1 = 2,		// Standard enemies: death from melee
+		ANIM_DIE2 = 3,
+		ANIM_DEAD = 4,
+		ANIM_IDLE = 5,
+		ANIM_ATTACK1_END = 6,
+		ANIM_ATTACK2 = 7,
+		ANIM_ATTACK2_END = 8,
+		ANIM_PAIN = 12,
+		ANIM_SEARCH = 14,	// Used by sewer creature
+	};
+
 	// Accessors for serialization.
 	s32 animTables_getIndex(const s32* table);
 	const s32* animTables_getTable(s32 index);

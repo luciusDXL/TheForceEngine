@@ -15,6 +15,7 @@ namespace TFE_DarkForces
 	enum WeaponFireConst
 	{
 		MAX_AUTOAIM_DIST = COL_INFINITY,
+		WPN_NUM_ANIMFRAMES = 16,
 	};
 
 	static SoundEffectId s_punchSwingSndId = 0;
@@ -65,52 +66,33 @@ namespace TFE_DarkForces
 		Tick delaySupercharge;
 		Tick delayNormal;
 	};
-	static const WeaponAnimFrame c_punchAnim[4] =
-	{
-		{ 1,  0,   5, 10 },
-		{ 2,  0,  10, 21 },
-		{ 3,  0,  10, 21 },
-		{ 0,  0,  10, 21 },
-	};
-	static const WeaponAnimFrame c_pistolAnim[3] =
-	{
-		{ 1, 40,  7, 14 },
-		{ 2,  0,  7, 14 },
-		{ 0,  0, 21, 43 },
-	};
-	static const WeaponAnimFrame c_rifleAnim[2] =
-	{
-		{ 1, 40,  3,  7 },
-		{ 0,  0,  7, 14 },
-	};
-	static const WeaponAnimFrame c_mortarAnim[4] =
-	{
-		{ 1, 36,  29, 58 },
-		{ 2, 36,   7, 14 },
-		{ 3, 36,   7, 14 },
-		{ 0,  0,   7, 14 },
-	};
-	static const WeaponAnimFrame c_thermalDetAnim[5] =
-	{
-		{ 1, 0, 11, 11 },
-		{ 2, 0, 58, 58 },
-		{ 1, 0, 29, 29 },
-		{ 0, 0, 29, 29 },
-		{ 3, 0, 29, 29 },
-	};
-	static const WeaponAnimFrame c_repeaterAnim[4] =
-	{
-		{ 1,  0,  2,  5 },	// primary
-		{ 1,  0,  4,  8 },	// secondary
-		{ 2, 33,  5, 11 },
-		{ 0,  0, 14, 29 },
-	};
-	static const WeaponAnimFrame c_concussionAnim[] =
-	{
-		{ 1, 36, 21, 43 },
-		{ 2,  0,  7, 14 },
-		{ 0,  0, 29, 58 },
-	};
+
+	static s32 s_punchNumFrames = 0;
+	static s32 s_pistolNumFrames = 0;
+	static s32 s_rifleNumFrames = 0;
+	static s32 s_thermalDetNumFrames = 0;
+	static s32 s_repeaterPrimaryNumFrames = 0;
+	static s32 s_repeaterSecondaryNumFrames = 0;
+	static s32 s_fusionPrimaryNumFrames = 0;
+	static s32 s_fusionSecondaryNumFrames = 0;
+	static s32 s_mortarNumFrames = 0;
+	static s32 s_concussionNumFrames = 0;
+	static s32 s_cannonPrimaryNumFrames = 0;
+	static s32 s_cannonSecondaryNumFrames = 0;
+
+	static WeaponAnimFrame s_punchAnim[WPN_NUM_ANIMFRAMES];
+	static WeaponAnimFrame s_pistolAnim[WPN_NUM_ANIMFRAMES];
+	static WeaponAnimFrame s_rifleAnim[WPN_NUM_ANIMFRAMES];
+	static WeaponAnimFrame s_thermalDetAnim[WPN_NUM_ANIMFRAMES];
+	static WeaponAnimFrame s_repeaterPrimaryAnim[WPN_NUM_ANIMFRAMES];
+	static WeaponAnimFrame s_repeaterSecondaryAnim[WPN_NUM_ANIMFRAMES];
+	static WeaponAnimFrame s_fusionPrimaryAnim[WPN_NUM_ANIMFRAMES];
+	static WeaponAnimFrame s_fusionSecondaryAnim[WPN_NUM_ANIMFRAMES];
+	static WeaponAnimFrame s_mortarAnim[WPN_NUM_ANIMFRAMES];
+	static WeaponAnimFrame s_concussionAnim[WPN_NUM_ANIMFRAMES];
+	static WeaponAnimFrame s_cannonPrimaryAnim[WPN_NUM_ANIMFRAMES];
+	static WeaponAnimFrame s_cannonSecondaryAnim[WPN_NUM_ANIMFRAMES];
+
 	static const angle14_32 c_repeaterYawOffset[3] = { 0, 136, -136 };
 	static const angle14_32 c_repeaterPitchOffset[3] = { 136, -136, -136 };
 	// Deltas for repeater - note the order is ZXY
@@ -141,11 +123,94 @@ namespace TFE_DarkForces
 	extern void weapon_animateOnOrOffscreen(MessageType msg);
 	JBool computeAutoaim(fixed16_16 xPos, fixed16_16 yPos, fixed16_16 zPos, angle14_32 pitch, angle14_32 yaw, s32 variation);
 
-	// Reset for replay consistency. 
+	// Ensure that the weapon is reset to the default states for replays
 	void resetWeaponFunc()
 	{
 		s_weaponFirePitch = 0;
 		s_weaponFireYaw = 0;
+	}
+	
+	// TFE: Set up animation frames from external data (these were hardcoded in vanilla DF)
+	void setupAnimationFrames(WeaponID weaponId, s32 numPrimFrames, TFE_ExternalData::WeaponAnimFrame* extPrimFrames, s32 numSecFrames, TFE_ExternalData::WeaponAnimFrame* extSecFrames)
+	{
+		WeaponAnimFrame* primaryFrames = nullptr;
+		WeaponAnimFrame* secondaryFrames = nullptr;
+
+		switch (weaponId)
+		{
+			case WPN_FIST:
+				s_punchNumFrames = numPrimFrames;
+				primaryFrames = s_punchAnim;
+				break;
+
+			case WPN_PISTOL:
+				s_pistolNumFrames = numPrimFrames;
+				primaryFrames = s_pistolAnim;
+				break;
+
+			case WPN_RIFLE:
+				s_rifleNumFrames = numPrimFrames;
+				primaryFrames = s_rifleAnim;
+				break;
+
+			case WPN_THERMAL_DET:
+				s_thermalDetNumFrames = numPrimFrames;
+				primaryFrames = s_thermalDetAnim;
+				break;
+
+			case WPN_REPEATER:
+				s_repeaterPrimaryNumFrames = numPrimFrames;
+				s_repeaterSecondaryNumFrames = numSecFrames;
+				primaryFrames = s_repeaterPrimaryAnim;
+				secondaryFrames = s_repeaterSecondaryAnim;
+				break;
+
+			case WPN_FUSION:
+				s_fusionPrimaryNumFrames = numPrimFrames;
+				s_fusionSecondaryNumFrames = numSecFrames;
+				primaryFrames = s_fusionPrimaryAnim;
+				secondaryFrames = s_fusionSecondaryAnim;
+				break;
+
+			case WPN_MORTAR:
+				s_mortarNumFrames = numPrimFrames;
+				primaryFrames = s_mortarAnim;
+				break;
+
+			case WPN_CONCUSSION:
+				s_concussionNumFrames = numPrimFrames;
+				primaryFrames = s_concussionAnim;
+				break;
+
+			case WPN_CANNON:
+				s_cannonPrimaryNumFrames = numPrimFrames;
+				s_cannonSecondaryNumFrames = numSecFrames;
+				primaryFrames = s_cannonPrimaryAnim;
+				secondaryFrames = s_cannonSecondaryAnim;
+				break;
+		}
+
+		if (primaryFrames)
+		{
+			for (s32 i = 0; i < numPrimFrames; i++)
+			{
+				primaryFrames[i].waxFrame = extPrimFrames[i].texture;
+				primaryFrames[i].weaponLight = extPrimFrames[i].light;
+				primaryFrames[i].delaySupercharge = extPrimFrames[i].durationSupercharge;
+				primaryFrames[i].delayNormal = extPrimFrames[i].durationNormal;
+			}
+		}
+
+		if (secondaryFrames)
+		{
+			for (s32 i = 0; i < numSecFrames; i++)
+			{
+				secondaryFrames[i].waxFrame = extSecFrames[i].texture;
+				secondaryFrames[i].weaponLight = extSecFrames[i].light;
+				secondaryFrames[i].delaySupercharge = extSecFrames[i].durationSupercharge;
+				secondaryFrames[i].delayNormal = extSecFrames[i].durationNormal;
+			}
+		}
 	}
 
 	// Adjust the speed - in TFE the framerate may be higher than expected by the original code, which means that this
@@ -170,6 +235,46 @@ namespace TFE_DarkForces
 		proj->dmg = FIXED(9999);
 	}
 
+	s32 getMaxAmmo(s32* ammo)
+	{
+		if (ammo == s_playerAmmoEnergy)
+		{
+			return s_ammoEnergyMax;
+		}
+
+		if (ammo == s_playerAmmoPower)
+		{
+			return s_ammoPowerMax;
+		}
+
+		if (ammo == s_playerAmmoPlasma)
+		{
+			return s_ammoPlasmaMax;
+		}
+
+		if (ammo == s_playerAmmoShell)
+		{
+			return s_ammoShellMax;
+		}
+
+		if (ammo == s_playerAmmoDetonators)
+		{
+			return s_ammoDetonatorMax;
+		}
+
+		if (ammo == s_playerAmmoMines)
+		{
+			return s_ammoMineMax;
+		}
+
+		if (ammo == s_playerAmmoMissiles)
+		{
+			return s_ammoMissileMax;
+		}
+
+		return 0;
+	}
+
 	void weaponFire_fist(MessageType msg)
 	{
 		struct LocalContext
@@ -179,21 +284,24 @@ namespace TFE_DarkForces
 		};
 		task_begin_ctx;
 
-		taskCtx->delay = (s_superCharge) ? c_punchAnim[0].delaySupercharge : c_punchAnim[0].delayNormal;
-		s_curPlayerWeapon->frame = c_punchAnim[0].waxFrame;
-		s_weaponLight = c_punchAnim[0].weaponLight;
+		// Initial animation frame
+		taskCtx->delay = (s_superCharge) ? s_punchAnim[0].delaySupercharge : s_punchAnim[0].delayNormal;
+		s_curPlayerWeapon->frame = s_punchAnim[0].waxFrame;
+		s_weaponLight = s_punchAnim[0].weaponLight;
 		do
 		{
 			task_yield(taskCtx->delay);
 			task_callTaskFunc(weapon_handleState);
 		} while (msg != MSG_RUN_TASK);
 
+		// Sound effect
 		if (s_punchSwingSndId)
 		{
 			sound_stop(s_punchSwingSndId);
 		}
 		s_punchSwingSndId = sound_play(s_punchSwingSndSrc);
 
+		// Wakeup AI within range
 		if (s_curPlayerWeapon->wakeupRange)
 		{
 			vec3_fixed origin = { s_playerObject->posWS.x, s_playerObject->posWS.y, s_playerObject->posWS.z };
@@ -201,6 +309,7 @@ namespace TFE_DarkForces
 		}
 
 		task_localBlockBegin;
+		// Aim and spawn projectiles
 		fixed16_16 mtx[9];
 		weapon_computeMatrix(mtx, -s_playerObject->pitch, -s_playerObject->yaw);
 
@@ -237,11 +346,11 @@ namespace TFE_DarkForces
 		task_localBlockEnd;
 
 		// Animation.
-		for (taskCtx->iFrame = 1; taskCtx->iFrame < TFE_ARRAYSIZE(c_punchAnim); taskCtx->iFrame++)
+		for (taskCtx->iFrame = 1; taskCtx->iFrame < s_punchNumFrames; taskCtx->iFrame++)
 		{
-			s_curPlayerWeapon->frame = c_punchAnim[taskCtx->iFrame].waxFrame;
-			s_weaponLight = c_punchAnim[taskCtx->iFrame].weaponLight;
-			taskCtx->delay = (s_superCharge) ? c_punchAnim[taskCtx->iFrame].delaySupercharge : c_punchAnim[taskCtx->iFrame].delayNormal;
+			s_curPlayerWeapon->frame = s_punchAnim[taskCtx->iFrame].waxFrame;
+			s_weaponLight = s_punchAnim[taskCtx->iFrame].weaponLight;
+			taskCtx->delay = (s_superCharge) ? s_punchAnim[taskCtx->iFrame].delaySupercharge : s_punchAnim[taskCtx->iFrame].delayNormal;
 
 			do
 			{
@@ -267,18 +376,21 @@ namespace TFE_DarkForces
 		if (*s_curPlayerWeapon->ammo)
 		{
 			task_localBlockBegin;
+			// Sound effect
 			if (s_pistolSndId)
 			{
 				sound_stop(s_pistolSndId);
 			}
 			s_pistolSndId = sound_play(s_pistolSndSrc);
 
+			// Wakeup AI within range
 			if (s_curPlayerWeapon->wakeupRange)
 			{
 				vec3_fixed origin = { s_playerObject->posWS.x, s_playerObject->posWS.y, s_playerObject->posWS.z };
 				collision_effectObjectsInRangeXZ(s_playerObject->sector, s_curPlayerWeapon->wakeupRange, origin, hitEffectWakeupFunc, s_playerObject, ETFLAG_AI_ACTOR);
 			}
 
+			// Aim projectile
 			fixed16_16 mtx[9];
 			weapon_computeMatrix(mtx, -s_playerObject->pitch, -s_playerObject->yaw);
 
@@ -330,7 +442,10 @@ namespace TFE_DarkForces
 				// it is true every other frame.
 				if (superChargeFrame | (s_fireFrame & 1))
 				{
-					*s_curPlayerWeapon->ammo = pickup_addToValue(s_playerInfo.ammoEnergy, -1, 500);
+					*s_curPlayerWeapon->ammo = pickup_addToValue(
+						*s_curPlayerWeapon->ammo,
+						-s_curPlayerWeapon->primaryFireConsumption,
+						getMaxAmmo(s_curPlayerWeapon->ammo));
 				}
 
 				ProjectileLogic* projLogic;
@@ -397,11 +512,11 @@ namespace TFE_DarkForces
 			task_localBlockEnd;
 			
 			// Animation.
-			for (taskCtx->iFrame = 0; taskCtx->iFrame < TFE_ARRAYSIZE(c_pistolAnim); taskCtx->iFrame++)
+			for (taskCtx->iFrame = 0; taskCtx->iFrame < s_pistolNumFrames; taskCtx->iFrame++)
 			{
-				s_curPlayerWeapon->frame = c_pistolAnim[taskCtx->iFrame].waxFrame;
-				s_weaponLight = c_pistolAnim[taskCtx->iFrame].weaponLight;
-				taskCtx->delay = (s_superCharge) ? c_pistolAnim[taskCtx->iFrame].delaySupercharge : c_pistolAnim[taskCtx->iFrame].delayNormal;
+				s_curPlayerWeapon->frame = s_pistolAnim[taskCtx->iFrame].waxFrame;
+				s_weaponLight = s_pistolAnim[taskCtx->iFrame].weaponLight;
+				taskCtx->delay = (s_superCharge) ? s_pistolAnim[taskCtx->iFrame].delaySupercharge : s_pistolAnim[taskCtx->iFrame].delayNormal;
 
 				do
 				{
@@ -452,18 +567,21 @@ namespace TFE_DarkForces
 		if (*s_curPlayerWeapon->ammo)
 		{
 			task_localBlockBegin;
+			// Sound effect
 			if (s_rifleSndId)
 			{
 				sound_stop(s_rifleSndId);
 			}
 			s_rifleSndId = sound_play(s_rifleSndSrc);
 
+			// Wakeup AI within range
 			if (s_curPlayerWeapon->wakeupRange)
 			{
 				vec3_fixed origin = { s_playerObject->posWS.x, s_playerObject->posWS.y, s_playerObject->posWS.z };
 				collision_effectObjectsInRangeXZ(s_playerObject->sector, s_curPlayerWeapon->wakeupRange, origin, hitEffectWakeupFunc, s_playerObject, ETFLAG_AI_ACTOR);
 			}
 
+			// Aim projectile
 			fixed16_16 mtx[9];
 			weapon_computeMatrix(mtx, -s_playerObject->pitch, -s_playerObject->yaw);
 
@@ -515,7 +633,10 @@ namespace TFE_DarkForces
 				// it is true every other frame.
 				if (superChargeFrame | (s_fireFrame & 1))
 				{
-					*s_curPlayerWeapon->ammo = pickup_addToValue(s_playerInfo.ammoEnergy, -2, 500);
+					*s_curPlayerWeapon->ammo = pickup_addToValue(
+						*s_curPlayerWeapon->ammo,
+						-s_curPlayerWeapon->primaryFireConsumption,
+						getMaxAmmo(s_curPlayerWeapon->ammo));
 				}
 
 				ProjectileLogic* projLogic;
@@ -582,11 +703,11 @@ namespace TFE_DarkForces
 			task_localBlockEnd;
 
 			// Animation.
-			for (taskCtx->iFrame = 0; taskCtx->iFrame < TFE_ARRAYSIZE(c_rifleAnim); taskCtx->iFrame++)
+			for (taskCtx->iFrame = 0; taskCtx->iFrame < s_rifleNumFrames; taskCtx->iFrame++)
 			{
-				s_curPlayerWeapon->frame = c_rifleAnim[taskCtx->iFrame].waxFrame;
-				s_weaponLight = c_rifleAnim[taskCtx->iFrame].weaponLight;
-				taskCtx->delay = (s_superCharge) ? c_rifleAnim[taskCtx->iFrame].delaySupercharge : c_rifleAnim[taskCtx->iFrame].delayNormal;
+				s_curPlayerWeapon->frame = s_rifleAnim[taskCtx->iFrame].waxFrame;
+				s_weaponLight = s_rifleAnim[taskCtx->iFrame].weaponLight;
+				taskCtx->delay = (s_superCharge) ? s_rifleAnim[taskCtx->iFrame].delaySupercharge : s_rifleAnim[taskCtx->iFrame].delayNormal;
 
 				do
 				{
@@ -639,13 +760,16 @@ namespace TFE_DarkForces
 		{
 			s_canFireWeaponPrim = 0;
 			s_canFireWeaponSec = 0;
-			*s_curPlayerWeapon->ammo = pickup_addToValue(s_playerInfo.ammoDetonator, -1, 50);
+			*s_curPlayerWeapon->ammo = pickup_addToValue(
+				*s_curPlayerWeapon->ammo,
+				-s_curPlayerWeapon->primaryFireConsumption,
+				getMaxAmmo(s_curPlayerWeapon->ammo));
 
 			// Weapon Frame 0.
-			s_curPlayerWeapon->frame = c_thermalDetAnim[0].waxFrame;
+			s_curPlayerWeapon->frame = s_thermalDetAnim[0].waxFrame;
 			do
 			{
-				task_yield(c_thermalDetAnim[0].delayNormal);
+				task_yield(s_thermalDetAnim[0].delayNormal);
 				task_callTaskFunc(weapon_handleState);
 			} while (msg != MSG_RUN_TASK);
 
@@ -666,6 +790,7 @@ namespace TFE_DarkForces
 			task_callTaskFunc(weapon_handleState2);
 			fixed16_16 dt = intToFixed16(s_curTick - taskCtx->startTick);
 
+			// Wakeup AI within range
 			if (s_curPlayerWeapon->wakeupRange)
 			{
 				vec3_fixed origin = { s_playerObject->posWS.x, s_playerObject->posWS.y, s_playerObject->posWS.z };
@@ -720,9 +845,9 @@ namespace TFE_DarkForces
 			s_curPlayerWeapon->yOffset = 0;
 
 			// The initial frame is the same regardless of ammo.
-			s_curPlayerWeapon->frame = c_thermalDetAnim[1].waxFrame;
-			s_weaponLight = c_thermalDetAnim[1].weaponLight;
-			taskCtx->delay = c_thermalDetAnim[1].delayNormal;
+			s_curPlayerWeapon->frame = s_thermalDetAnim[1].waxFrame;
+			s_weaponLight = s_thermalDetAnim[1].weaponLight;
+			taskCtx->delay = s_thermalDetAnim[1].delayNormal;
 			do
 			{
 				task_yield(taskCtx->delay);
@@ -733,9 +858,9 @@ namespace TFE_DarkForces
 			{
 				for (taskCtx->iFrame = 2; taskCtx->iFrame <= 3; taskCtx->iFrame++)
 				{
-					s_curPlayerWeapon->frame = c_thermalDetAnim[taskCtx->iFrame].waxFrame;
-					s_weaponLight = c_thermalDetAnim[taskCtx->iFrame].weaponLight;
-					taskCtx->delay = c_thermalDetAnim[taskCtx->iFrame].delayNormal;
+					s_curPlayerWeapon->frame = s_thermalDetAnim[taskCtx->iFrame].waxFrame;
+					s_weaponLight = s_thermalDetAnim[taskCtx->iFrame].weaponLight;
+					taskCtx->delay = s_thermalDetAnim[taskCtx->iFrame].delayNormal;
 					do
 					{
 						task_yield(taskCtx->delay);
@@ -743,11 +868,11 @@ namespace TFE_DarkForces
 					} while (msg != MSG_RUN_TASK);
 				}
 			}
-			else
+			else // no more ammo, show empty hand
 			{
-				s_curPlayerWeapon->frame = c_thermalDetAnim[4].waxFrame;
-				s_weaponLight = c_thermalDetAnim[4].weaponLight;
-				taskCtx->delay = c_thermalDetAnim[4].delayNormal;
+				s_curPlayerWeapon->frame = s_thermalDetAnim[4].waxFrame;
+				s_weaponLight = s_thermalDetAnim[4].weaponLight;
+				taskCtx->delay = s_thermalDetAnim[4].delayNormal;
 				do
 				{
 					task_yield(taskCtx->delay);
@@ -793,20 +918,23 @@ namespace TFE_DarkForces
 		{
 			if (*s_curPlayerWeapon->ammo)
 			{
+				// Sound effect
 				if (s_repeaterFireSndID1)
 				{
 					sound_stop(s_repeaterFireSndID1);
 				}
 				s_repeaterFireSndID1 = sound_play(s_repeater1SndSrc);
 
+				// Wakeup AI within range
 				if (s_curPlayerWeapon->wakeupRange)
 				{
 					vec3_fixed origin = { s_playerObject->posWS.x, s_playerObject->posWS.y, s_playerObject->posWS.z };
 					collision_effectObjectsInRangeXZ(s_playerObject->sector, s_curPlayerWeapon->wakeupRange, origin, hitEffectWakeupFunc, s_playerObject, ETFLAG_AI_ACTOR);
 				}
 
-				taskCtx->delay = s_superCharge ? c_repeaterAnim[1].delaySupercharge : c_repeaterAnim[1].delayNormal;
-				s_curPlayerWeapon->frame = c_repeaterAnim[1].waxFrame;
+				// Initial animation frame
+				taskCtx->delay = s_superCharge ? s_repeaterSecondaryAnim[0].delaySupercharge : s_repeaterSecondaryAnim[0].delayNormal;
+				s_curPlayerWeapon->frame = s_repeaterSecondaryAnim[0].waxFrame;
 				do
 				{
 					task_yield(taskCtx->delay);
@@ -814,6 +942,7 @@ namespace TFE_DarkForces
 				} while (msg != MSG_RUN_TASK);
 
 				task_localBlockBegin;
+				// Aim projectiles
 				fixed16_16 mtx[9];
 				weapon_computeMatrix(mtx, -s_playerObject->pitch, -s_playerObject->yaw);
 
@@ -833,6 +962,7 @@ namespace TFE_DarkForces
 					weapon_computeMatrix(mtx2, -s_weaponFirePitch, -s_weaponFireYaw);
 				}
 
+				// Spawn projectiles (x3)
 				fixed16_16 fire = intToFixed16(canFire);
 				while (canFire)
 				{
@@ -847,7 +977,10 @@ namespace TFE_DarkForces
 					// it is true every other frame.
 					if (superChargeFrame | (s_fireFrame & 1))
 					{
-						*s_curPlayerWeapon->ammo = pickup_addToValue(s_playerInfo.ammoPower, -3, 500);
+						*s_curPlayerWeapon->ammo = pickup_addToValue(
+							*s_curPlayerWeapon->ammo,
+							-s_curPlayerWeapon->secondaryFireConsumption,
+							getMaxAmmo(s_curPlayerWeapon->ammo));
 					}
 					
 					fixed16_16 yPos = s_playerObject->posWS.y - s_playerObject->worldHeight + s_headwaveVerticalOffset;
@@ -887,11 +1020,11 @@ namespace TFE_DarkForces
 				task_localBlockEnd;
 
 				// Animation
-				for (taskCtx->iFrame = 2; taskCtx->iFrame < TFE_ARRAYSIZE(c_repeaterAnim); taskCtx->iFrame++)
+				for (taskCtx->iFrame = 1; taskCtx->iFrame < s_repeaterSecondaryNumFrames; taskCtx->iFrame++)
 				{
-					s_curPlayerWeapon->frame = c_repeaterAnim[taskCtx->iFrame].waxFrame;
-					s_weaponLight = c_repeaterAnim[taskCtx->iFrame].weaponLight;
-					taskCtx->delay = (s_superCharge) ? c_repeaterAnim[taskCtx->iFrame].delaySupercharge : c_repeaterAnim[taskCtx->iFrame].delayNormal;
+					s_curPlayerWeapon->frame = s_repeaterSecondaryAnim[taskCtx->iFrame].waxFrame;
+					s_weaponLight = s_repeaterSecondaryAnim[taskCtx->iFrame].weaponLight;
+					taskCtx->delay = (s_superCharge) ? s_repeaterSecondaryAnim[taskCtx->iFrame].delaySupercharge : s_repeaterSecondaryAnim[taskCtx->iFrame].delayNormal;
 					do
 					{
 						task_yield(taskCtx->delay);
@@ -900,7 +1033,7 @@ namespace TFE_DarkForces
 				}
 				s_canFireWeaponSec = 1;
 			}
-			else
+			else	// out of ammo
 			{
 				if (s_repeaterFireSndID)
 				{
@@ -935,6 +1068,7 @@ namespace TFE_DarkForces
 		{
 			if (*s_curPlayerWeapon->ammo)
 			{
+				// Sound effect (includes looping sound effect)
 				if (!s_repeaterFireSndID)
 				{
 					if (s_repeaterFireSndID1)
@@ -945,14 +1079,16 @@ namespace TFE_DarkForces
 					s_repeaterFireSndID  = sound_play(s_repeaterSndSrc);
 				}
 
+				// Wakeup AI within range
 				if (s_curPlayerWeapon->wakeupRange)
 				{
 					vec3_fixed origin = { s_playerObject->posWS.x, s_playerObject->posWS.y, s_playerObject->posWS.z };
 					collision_effectObjectsInRangeXZ(s_playerObject->sector, s_curPlayerWeapon->wakeupRange, origin, hitEffectWakeupFunc, s_playerObject, ETFLAG_AI_ACTOR);
 				}
 
-				taskCtx->delay = s_superCharge ? c_repeaterAnim[0].delaySupercharge : c_repeaterAnim[0].delayNormal;
-				s_curPlayerWeapon->frame = c_repeaterAnim[0].waxFrame;
+				// Initial animation frame
+				taskCtx->delay = s_superCharge ? s_repeaterPrimaryAnim[0].delaySupercharge : s_repeaterPrimaryAnim[0].delayNormal;
+				s_curPlayerWeapon->frame = s_repeaterPrimaryAnim[0].waxFrame;
 				do
 				{
 					task_yield(taskCtx->delay);
@@ -960,6 +1096,7 @@ namespace TFE_DarkForces
 				} while (msg != MSG_RUN_TASK);
 
 				task_localBlockBegin;
+				// Aim projectile
 				fixed16_16 mtx[9];
 				weapon_computeMatrix(mtx, -s_playerObject->pitch, -s_playerObject->yaw);
 
@@ -995,6 +1132,7 @@ namespace TFE_DarkForces
 					weapon_computeMatrix(mtx2, -s_weaponFirePitch, -s_weaponFireYaw);
 				}
 
+				// Spawn projectile
 				fixed16_16 fire = intToFixed16(canFire);
 				while (canFire)
 				{
@@ -1009,7 +1147,10 @@ namespace TFE_DarkForces
 					// it is true every other frame.
 					if (superChargeFrame | (s_fireFrame & 1))
 					{
-						*s_curPlayerWeapon->ammo = pickup_addToValue(s_playerInfo.ammoPower, -1, 500);
+						*s_curPlayerWeapon->ammo = pickup_addToValue(
+							*s_curPlayerWeapon->ammo,
+							-s_curPlayerWeapon->primaryFireConsumption,
+							getMaxAmmo(s_curPlayerWeapon->ammo));
 					}
 
 					fixed16_16 yPos = s_playerObject->posWS.y - s_playerObject->worldHeight + s_headwaveVerticalOffset;
@@ -1049,14 +1190,18 @@ namespace TFE_DarkForces
 				}
 				task_localBlockEnd;
 
-				taskCtx->delay = s_superCharge ? c_repeaterAnim[2].delaySupercharge : c_repeaterAnim[2].delayNormal;
-				s_weaponLight = c_repeaterAnim[2].weaponLight;
-				s_curPlayerWeapon->frame = c_repeaterAnim[2].waxFrame;
-				do
+				// Animation
+				for (taskCtx->iFrame = 1; taskCtx->iFrame < s_repeaterPrimaryNumFrames; taskCtx->iFrame++)
 				{
-					task_yield(taskCtx->delay);
-					task_callTaskFunc(weapon_handleState);
-				} while (msg != MSG_RUN_TASK);
+					taskCtx->delay = s_superCharge ? s_repeaterPrimaryAnim[taskCtx->iFrame].delaySupercharge : s_repeaterPrimaryAnim[taskCtx->iFrame].delayNormal;
+					s_weaponLight = s_repeaterPrimaryAnim[taskCtx->iFrame].weaponLight;
+					s_curPlayerWeapon->frame = s_repeaterPrimaryAnim[taskCtx->iFrame].waxFrame;
+					do
+					{
+						task_yield(taskCtx->delay);
+						task_callTaskFunc(weapon_handleState);
+					} while (msg != MSG_RUN_TASK);
+				}
 
 				s_weaponLight = 0;
 
@@ -1073,7 +1218,7 @@ namespace TFE_DarkForces
 
 				s_canFireWeaponPrim = 1;
 			}
-			else
+			else	// out of ammo
 			{
 				if (s_repeaterFireSndID)
 				{
@@ -1121,12 +1266,14 @@ namespace TFE_DarkForces
 		{
 			if (*s_curPlayerWeapon->ammo)
 			{
+				// Sound effect
 				if (s_fusionFireSndID)
 				{
 					sound_stop(s_fusionFireSndID);
 				}
 				s_fusionFireSndID = sound_play(s_fusion1SndSrc);
 
+				// Wakeup AI within range
 				if (s_curPlayerWeapon->wakeupRange)
 				{
 					vec3_fixed origin = { s_playerObject->posWS.x, s_playerObject->posWS.y, s_playerObject->posWS.z };
@@ -1134,6 +1281,7 @@ namespace TFE_DarkForces
 				}
 
 				task_localBlockBegin;
+				// Aim projectiles
 				fixed16_16 mtx[9];
 				weapon_computeMatrix(mtx, -s_playerObject->pitch, -s_playerObject->yaw);
 
@@ -1153,6 +1301,7 @@ namespace TFE_DarkForces
 					weapon_computeMatrix(mtx2, -s_weaponFirePitch, -s_weaponFireYaw);
 				}
 
+				// Spawn projectiles
 				fixed16_16 fire = intToFixed16(canFire);
 				while (canFire)
 				{
@@ -1167,7 +1316,10 @@ namespace TFE_DarkForces
 					// it is true every other frame.
 					if (superChargeFrame | (s_fireFrame & 1))
 					{
-						*s_curPlayerWeapon->ammo = pickup_addToValue(s_playerInfo.ammoPower, -8, 500);
+						*s_curPlayerWeapon->ammo = pickup_addToValue(
+							*s_curPlayerWeapon->ammo,
+							-s_curPlayerWeapon->secondaryFireConsumption,
+							getMaxAmmo(s_curPlayerWeapon->ammo));
 					}
 
 					fixed16_16 yPos = s_playerObject->posWS.y - s_playerObject->worldHeight + s_headwaveVerticalOffset;
@@ -1207,28 +1359,21 @@ namespace TFE_DarkForces
 				task_localBlockEnd;
 
 				// Animation
-				// TODO: not using the tables for this due to differences - refactor later.
-				s_curPlayerWeapon->frame = 5;
-				s_weaponLight = 34;
-				taskCtx->delay = (s_superCharge) ? 14 : 29;
-				do
+				for (taskCtx->iFrame = 0; taskCtx->iFrame < s_fusionSecondaryNumFrames; taskCtx->iFrame++)
 				{
-					task_yield(taskCtx->delay);
-					task_callTaskFunc(weapon_handleState);
-				} while (msg != MSG_RUN_TASK);
-
-				s_curPlayerWeapon->frame = 0;
-				s_weaponLight = 0;
-				taskCtx->delay = (s_superCharge) ? 19 : 39;
-				do
-				{
-					task_yield(taskCtx->delay);
-					task_callTaskFunc(weapon_handleState);
-				} while (msg != MSG_RUN_TASK);
+					s_curPlayerWeapon->frame = s_fusionSecondaryAnim[taskCtx->iFrame].waxFrame;
+					s_weaponLight = s_fusionSecondaryAnim[taskCtx->iFrame].weaponLight;
+					taskCtx->delay = (s_superCharge) ? s_fusionSecondaryAnim[taskCtx->iFrame].delaySupercharge : s_fusionSecondaryAnim[taskCtx->iFrame].delayNormal;
+					do
+					{
+						task_yield(taskCtx->delay);
+						task_callTaskFunc(weapon_handleState);
+					} while (msg != MSG_RUN_TASK);
+				}
 
 				s_canFireWeaponSec = 1;
 			}
-			else
+			else	// out of ammo
 			{
 				if (s_fusionOutOfAmmoSndID)
 				{
@@ -1258,12 +1403,14 @@ namespace TFE_DarkForces
 		{
 			if (*s_curPlayerWeapon->ammo)
 			{
+				// Sound effect
 				if (s_fusionFireSndID)
 				{
 					sound_stop(s_fusionFireSndID);
 				}
 				s_fusionFireSndID = sound_play(s_fusion1SndSrc);
 
+				// Wakeup AI within range
 				if (s_curPlayerWeapon->wakeupRange)
 				{
 					vec3_fixed origin = { s_playerObject->posWS.x, s_playerObject->posWS.y, s_playerObject->posWS.z };
@@ -1271,6 +1418,7 @@ namespace TFE_DarkForces
 				}
 
 				task_localBlockBegin;
+				// Aim projectiles
 				fixed16_16 mtx[9];
 				weapon_computeMatrix(mtx, -s_playerObject->pitch, -s_playerObject->yaw);
 
@@ -1282,6 +1430,7 @@ namespace TFE_DarkForces
 					weapon_computeMatrix(mtx2, -s_weaponFirePitch, -s_weaponFireYaw);
 				}
 
+				// Spawn projectiles
 				fixed16_16 fire = intToFixed16(canFire);
 				while (canFire)
 				{
@@ -1321,7 +1470,10 @@ namespace TFE_DarkForces
 					// it is true every other frame.
 					if (superChargeFrame | (s_fireFrame & 1))
 					{
-						*s_curPlayerWeapon->ammo = pickup_addToValue(s_playerInfo.ammoPower, -1, 500);
+						*s_curPlayerWeapon->ammo = pickup_addToValue(
+							*s_curPlayerWeapon->ammo,
+							-s_curPlayerWeapon->primaryFireConsumption,
+							getMaxAmmo(s_curPlayerWeapon->ammo));
 					}
 
 					fixed16_16 yPlayerPos = s_playerObject->posWS.y - s_playerObject->worldHeight + s_headwaveVerticalOffset;
@@ -1361,9 +1513,10 @@ namespace TFE_DarkForces
 				}
 				task_localBlockEnd;
 
-				taskCtx->delay = s_superCharge ? 10 : 20;
-				s_weaponLight = 34;
-				s_curPlayerWeapon->frame = s_fusionCylinder;
+				// Animation
+				taskCtx->delay = s_superCharge ? s_fusionPrimaryAnim[s_fusionCylinder].delaySupercharge : s_fusionPrimaryAnim[s_fusionCylinder].delayNormal;
+				s_weaponLight = s_fusionPrimaryAnim[s_fusionCylinder].weaponLight;
+				s_curPlayerWeapon->frame = s_fusionPrimaryAnim[s_fusionCylinder].waxFrame;
 				do
 				{
 					task_yield(taskCtx->delay);
@@ -1389,9 +1542,9 @@ namespace TFE_DarkForces
 					}
 				}
 
-				taskCtx->delay = s_superCharge ? 7 : 14;
-				s_weaponLight = 0;
-				s_curPlayerWeapon->frame = 0;
+				taskCtx->delay = s_superCharge ? s_fusionPrimaryAnim[0].delaySupercharge : s_fusionPrimaryAnim[0].delayNormal;
+				s_weaponLight = s_fusionPrimaryAnim[0].weaponLight;
+				s_curPlayerWeapon->frame = s_fusionPrimaryAnim[0].waxFrame;
 				do
 				{
 					task_yield(taskCtx->delay);
@@ -1400,7 +1553,7 @@ namespace TFE_DarkForces
 
 				s_canFireWeaponPrim = 1;
 			}
-			else
+			else	// out of ammo
 			{
 				if (s_fusionOutOfAmmoSndID)
 				{
@@ -1441,6 +1594,7 @@ namespace TFE_DarkForces
 
 		if (*s_curPlayerWeapon->ammo)
 		{
+			// Sound effect
 			task_localBlockBegin;
 			if (s_mortarFireSndID)
 			{
@@ -1448,12 +1602,14 @@ namespace TFE_DarkForces
 			}
 			s_mortarFireSndID = sound_play(s_mortarFireSndSrc);
 
+			// Wakeup AI within range
 			if (s_curPlayerWeapon->wakeupRange)
 			{
 				vec3_fixed origin = { s_playerObject->posWS.x, s_playerObject->posWS.y, s_playerObject->posWS.z };
 				collision_effectObjectsInRangeXZ(s_playerObject->sector, s_curPlayerWeapon->wakeupRange, origin, hitEffectWakeupFunc, s_playerObject, ETFLAG_AI_ACTOR);
 			}
 
+			// Aim projectile
 			fixed16_16 mtx[9];
 			weapon_computeMatrix(mtx, -s_playerObject->pitch, -s_playerObject->yaw);
 
@@ -1506,7 +1662,10 @@ namespace TFE_DarkForces
 				// it is true every other frame.
 				if (superChargeFrame | (s_fireFrame & 1))
 				{
-					*s_curPlayerWeapon->ammo = pickup_addToValue(s_playerInfo.ammoShell, -1, 50);
+					*s_curPlayerWeapon->ammo = pickup_addToValue(
+						*s_curPlayerWeapon->ammo,
+						-s_curPlayerWeapon->primaryFireConsumption,
+						getMaxAmmo(s_curPlayerWeapon->ammo));
 				}
 
 				ProjectileLogic* projLogic;
@@ -1561,7 +1720,7 @@ namespace TFE_DarkForces
 			task_localBlockEnd;
 
 			// Animation.
-			for (taskCtx->iFrame = 0; taskCtx->iFrame < TFE_ARRAYSIZE(c_mortarAnim); taskCtx->iFrame++)
+			for (taskCtx->iFrame = 0; taskCtx->iFrame < s_mortarNumFrames; taskCtx->iFrame++)
 			{
 				if (taskCtx->iFrame == 1)
 				{
@@ -1572,9 +1731,9 @@ namespace TFE_DarkForces
 					s_mortarFireSndID2 = sound_play(s_mortarFireSndSrc2);
 				}
 
-				s_curPlayerWeapon->frame = c_mortarAnim[taskCtx->iFrame].waxFrame;
-				s_weaponLight = c_mortarAnim[taskCtx->iFrame].weaponLight;
-				taskCtx->delay = (s_superCharge) ? c_mortarAnim[taskCtx->iFrame].delaySupercharge : c_mortarAnim[taskCtx->iFrame].delayNormal;
+				s_curPlayerWeapon->frame = s_mortarAnim[taskCtx->iFrame].waxFrame;
+				s_weaponLight = s_mortarAnim[taskCtx->iFrame].weaponLight;
+				taskCtx->delay = (s_superCharge) ? s_mortarAnim[taskCtx->iFrame].delaySupercharge : s_mortarAnim[taskCtx->iFrame].delayNormal;
 
 				do
 				{
@@ -1618,13 +1777,19 @@ namespace TFE_DarkForces
 		task_begin;
 		if (*s_curPlayerWeapon->ammo)
 		{
-			*s_curPlayerWeapon->ammo = pickup_addToValue(s_playerInfo.ammoMine, -1, 30);
+			*s_curPlayerWeapon->ammo = pickup_addToValue(
+				*s_curPlayerWeapon->ammo,
+				-s_curPlayerWeapon->primaryFireConsumption,
+				getMaxAmmo(s_curPlayerWeapon->ammo));
+			
+			// Wakeup AI within range
 			if (s_curPlayerWeapon->wakeupRange)
 			{
 				vec3_fixed origin = { s_playerObject->posWS.x, s_playerObject->posWS.y, s_playerObject->posWS.z };
 				collision_effectObjectsInRangeXZ(s_playerObject->sector, s_curPlayerWeapon->wakeupRange, origin, hitEffectWakeupFunc, s_playerObject, ETFLAG_AI_ACTOR);
 			}
 
+			// Animate (going down)
 			s_weaponAnimState =
 			{
 				1,		// frame
@@ -1642,12 +1807,14 @@ namespace TFE_DarkForces
 			ProjectileLogic* mine = (ProjectileLogic*)createProjectile(type, s_playerObject->sector, s_playerObject->posWS.x, floorHeight, s_playerObject->posWS.z, s_playerObject);
 			mine->vel = { 0, 0, 0 };
 
+			// Sound effect
 			if (s_mineSndId)
 			{
 				sound_stop(s_mineSndId);
 			}
 			s_mineSndId = sound_play(s_mineSndSrc);
 
+			// Animate (come back up; empty hand if no more ammo)
 			s32 frame = (*s_curPlayerWeapon->ammo) ? 0 : 2;
 			s_weaponAnimState =
 			{
@@ -1661,7 +1828,7 @@ namespace TFE_DarkForces
 
 			task_yield(2);
 		}
-		else
+		else	// out of ammo
 		{
 			if (s_weaponAutoMount2)
 			{
@@ -1694,18 +1861,21 @@ namespace TFE_DarkForces
 		if (*s_curPlayerWeapon->ammo)
 		{
 			task_localBlockBegin;
+			// Sound effect
 			if (s_concussionFireSndID)
 			{
 				sound_stop(s_concussionFireSndID);
 			}
 			s_concussionFireSndID = sound_play(s_concussion6SndSrc);
 
+			// Wakeup AI within range
 			if (s_curPlayerWeapon->wakeupRange)
 			{
 				vec3_fixed origin = { s_playerObject->posWS.x, s_playerObject->posWS.y, s_playerObject->posWS.z };
 				collision_effectObjectsInRangeXZ(s_playerObject->sector, s_curPlayerWeapon->wakeupRange, origin, hitEffectWakeupFunc, s_playerObject, ETFLAG_AI_ACTOR);
 			}
 
+			// Aim projectiles
 			fixed16_16 mtx[9];
 			weapon_computeMatrix(mtx, -s_playerObject->pitch, -s_playerObject->yaw);
 
@@ -1756,7 +1926,10 @@ namespace TFE_DarkForces
 				// it is true every other frame.
 				if (superChargeFrame | (s_fireFrame & 1))
 				{
-					*s_curPlayerWeapon->ammo = pickup_addToValue(s_playerInfo.ammoPower, -4, 500);
+					*s_curPlayerWeapon->ammo = pickup_addToValue(
+						*s_curPlayerWeapon->ammo,
+						-s_curPlayerWeapon->primaryFireConsumption,
+						getMaxAmmo(s_curPlayerWeapon->ammo));
 				}
 
 				ProjectileLogic* projLogic;
@@ -1803,11 +1976,11 @@ namespace TFE_DarkForces
 			}
 			s_concussionFireSndID1 = sound_play(s_concussion5SndSrc);
 
-			for (taskCtx->iFrame = 0; taskCtx->iFrame < TFE_ARRAYSIZE(c_concussionAnim); taskCtx->iFrame++)
+			for (taskCtx->iFrame = 0; taskCtx->iFrame < s_concussionNumFrames; taskCtx->iFrame++)
 			{
-				s_curPlayerWeapon->frame = c_concussionAnim[taskCtx->iFrame].waxFrame;
-				s_weaponLight = c_concussionAnim[taskCtx->iFrame].weaponLight;
-				taskCtx->delay = (s_superCharge) ? c_concussionAnim[taskCtx->iFrame].delaySupercharge : c_concussionAnim[taskCtx->iFrame].delayNormal;
+				s_curPlayerWeapon->frame = s_concussionAnim[taskCtx->iFrame].waxFrame;
+				s_weaponLight = s_concussionAnim[taskCtx->iFrame].weaponLight;
+				taskCtx->delay = (s_superCharge) ? s_concussionAnim[taskCtx->iFrame].delaySupercharge : s_concussionAnim[taskCtx->iFrame].delayNormal;
 
 				do
 				{
@@ -1859,20 +2032,24 @@ namespace TFE_DarkForces
 		{
 			if (*s_curPlayerWeapon->secondaryAmmo)
 			{
-				taskCtx->delay = (s_superCharge) ? 14 : 29;
-				s_curPlayerWeapon->frame = 2;
+				// Initial animation frame
+				taskCtx->delay = (s_superCharge) ? s_cannonSecondaryAnim[0].delaySupercharge : s_cannonSecondaryAnim[0].delayNormal;
+				s_weaponLight = s_cannonSecondaryAnim[0].weaponLight;
+				s_curPlayerWeapon->frame = s_cannonSecondaryAnim[0].waxFrame;
 				do
 				{
 					task_yield(taskCtx->delay);
 					task_callTaskFunc(weapon_handleState);
 				} while (msg != MSG_RUN_TASK);
 
+				// Sound effect
 				if (s_cannonFireSndID1)
 				{
 					sound_stop(s_cannonFireSndID1);
 				}
 				s_cannonFireSndID1 = sound_play(s_missile1SndSrc);
 
+				// Wakeup AI within range
 				if (s_curPlayerWeapon->wakeupRange)
 				{
 					vec3_fixed origin = { s_playerObject->posWS.x, s_playerObject->posWS.y, s_playerObject->posWS.z };
@@ -1880,6 +2057,7 @@ namespace TFE_DarkForces
 				}
 
 				task_localBlockBegin;
+				// Aim projectile
 				fixed16_16 mtx[9];
 				weapon_computeMatrix(mtx, -s_playerObject->pitch, -s_playerObject->yaw);
 
@@ -1916,6 +2094,7 @@ namespace TFE_DarkForces
 					weapon_computeMatrix(mtx2, -s_weaponFirePitch, -s_weaponFireYaw);
 				}
 
+				// Spawn projectile
 				fixed16_16 fire = intToFixed16(canFire);
 				while (canFire && *s_curPlayerWeapon->secondaryAmmo)
 				{
@@ -1925,7 +2104,10 @@ namespace TFE_DarkForces
 					s32 superChargeFrame = s_superCharge ? 0 : 1;
 					if (superChargeFrame | (s_fireFrame & 1))
 					{
-						*s_curPlayerWeapon->secondaryAmmo = pickup_addToValue(s_playerInfo.ammoMissile, -1, 20);
+						*s_curPlayerWeapon->secondaryAmmo = pickup_addToValue(
+							*s_curPlayerWeapon->secondaryAmmo,
+							-s_curPlayerWeapon->secondaryFireConsumption,
+							getMaxAmmo(s_curPlayerWeapon->secondaryAmmo));
 					}
 
 					fixed16_16 yPos = s_playerObject->posWS.y - s_playerObject->worldHeight + s_headwaveVerticalOffset;
@@ -1965,27 +2147,21 @@ namespace TFE_DarkForces
 				task_localBlockEnd;
 
 				// Animation
-				s_curPlayerWeapon->frame = 3;
-				s_weaponLight = 33;
-				taskCtx->delay = (s_superCharge) ? 43 : 87;
-				do
+				for (taskCtx->iFrame = 1; taskCtx->iFrame < s_cannonSecondaryNumFrames; taskCtx->iFrame++)
 				{
-					task_yield(taskCtx->delay);
-					task_callTaskFunc(weapon_handleState);
-				} while (msg != MSG_RUN_TASK);
-
-				s_curPlayerWeapon->frame = 0;
-				s_weaponLight = 0;
-				taskCtx->delay = (s_superCharge) ? 29 : 58;
-				do
-				{
-					task_yield(taskCtx->delay);
-					task_callTaskFunc(weapon_handleState);
-				} while (msg != MSG_RUN_TASK);
+					s_curPlayerWeapon->frame = s_cannonSecondaryAnim[taskCtx->iFrame].waxFrame;
+					s_weaponLight = s_cannonSecondaryAnim[taskCtx->iFrame].weaponLight;
+					taskCtx->delay = (s_superCharge) ? s_cannonSecondaryAnim[taskCtx->iFrame].delaySupercharge : s_cannonSecondaryAnim[taskCtx->iFrame].delayNormal;
+					do
+					{
+						task_yield(taskCtx->delay);
+						task_callTaskFunc(weapon_handleState);
+					} while (msg != MSG_RUN_TASK);
+				}
 
 				s_canFireWeaponSec = 1;
 			}
-			else
+			else	// out of ammo
 			{
 				s_curPlayerWeapon->frame = 0;
 				taskCtx->delay = (s_superCharge) ? 3 : 7;
@@ -2002,12 +2178,14 @@ namespace TFE_DarkForces
 		{
 			if (*s_curPlayerWeapon->ammo)
 			{
+				// Sound effect
 				if (s_cannonFireSndID)
 				{
 					sound_stop(s_cannonFireSndID);
 				}
 				s_cannonFireSndID = sound_play(s_plasma4SndSrc);
 
+				// Wakeup AI within range
 				if (s_curPlayerWeapon->wakeupRange)
 				{
 					vec3_fixed origin = { s_playerObject->posWS.x, s_playerObject->posWS.y, s_playerObject->posWS.z };
@@ -2015,6 +2193,7 @@ namespace TFE_DarkForces
 				}
 
 				task_localBlockBegin;
+				// Aim projectiles
 				fixed16_16 mtx[9];
 				weapon_computeMatrix(mtx, -s_playerObject->pitch, -s_playerObject->yaw);
 
@@ -2050,6 +2229,7 @@ namespace TFE_DarkForces
 					weapon_computeMatrix(mtx2, -s_weaponFirePitch, -s_weaponFireYaw);
 				}
 
+				// Spawn projectiles
 				fixed16_16 fire = intToFixed16(canFire);
 				while (canFire && *s_curPlayerWeapon->ammo)
 				{
@@ -2059,7 +2239,10 @@ namespace TFE_DarkForces
 					s32 superChargeFrame = s_superCharge ? 0 : 1;
 					if (superChargeFrame | (s_fireFrame & 1))
 					{
-						*s_curPlayerWeapon->ammo = pickup_addToValue(s_playerInfo.ammoPlasma, -1, 400);
+						*s_curPlayerWeapon->ammo = pickup_addToValue(
+							*s_curPlayerWeapon->ammo,
+							-s_curPlayerWeapon->primaryFireConsumption,
+							getMaxAmmo(s_curPlayerWeapon->ammo));
 					}
 
 					fixed16_16 yPos = s_playerObject->posWS.y - s_playerObject->worldHeight + s_headwaveVerticalOffset;
@@ -2100,18 +2283,23 @@ namespace TFE_DarkForces
 				}
 				task_localBlockEnd;
 
-				s_curPlayerWeapon->frame = 1;
-				s_weaponLight = 34;
-				taskCtx->delay = ((s_superCharge) ? 14 : 29) >> 1;
-				do
+				// Animate
+				for (taskCtx->iFrame = 0; taskCtx->iFrame < s_cannonPrimaryNumFrames; taskCtx->iFrame++)
 				{
-					task_yield(taskCtx->delay);
-					task_callTaskFunc(weapon_handleState);
-				} while (msg != MSG_RUN_TASK);
+					s_curPlayerWeapon->frame = s_cannonPrimaryAnim[taskCtx->iFrame].waxFrame;
+					s_weaponLight = s_cannonPrimaryAnim[taskCtx->iFrame].weaponLight;
+					taskCtx->delay = (s_superCharge) ? s_cannonPrimaryAnim[taskCtx->iFrame].delaySupercharge : s_cannonPrimaryAnim[taskCtx->iFrame].delayNormal;
+					do
+					{
+						task_yield(taskCtx->delay);
+						task_callTaskFunc(weapon_handleState);
+					} while (msg != MSG_RUN_TASK);
+				}
 
 				s_weaponLight = 0;
 				if (s_isShooting)
 				{
+					taskCtx->delay = ((s_superCharge) ? 14 : 29) >> 1;	// this extra delay is equal to the delay of the single animation frame; it should be preserved if the animation is modded
 					do
 					{
 						task_yield(taskCtx->delay);
@@ -2121,7 +2309,7 @@ namespace TFE_DarkForces
 
 				s_canFireWeaponPrim = 1;
 			}
-			else
+			else	// out of ammo
 			{
 				if (s_cannonOutOfAmmoSndID)
 				{

@@ -29,6 +29,8 @@
 #include <TFE_Ui/markdown.h>
 #include <TFE_System/utf8.h>
 #include <TFE_ExternalData/dfLogics.h>
+#include <TFE_ExternalData/weaponExternal.h>
+#include <TFE_ExternalData/pickupExternal.h>
 // Game
 #include <TFE_DarkForces/mission.h>
 #include <TFE_DarkForces/gameMusic.h>
@@ -37,6 +39,7 @@
 #include <TFE_DarkForces/config.h>
 #include <TFE_DarkForces/player.h>
 #include <TFE_DarkForces/hud.h>
+#include <TFE_Jedi/Renderer/RClassic_Float/rlightingFloat.h>
 #include <TFE_DarkForces/darkForcesMain.h>
 #include <climits>
 
@@ -76,6 +79,7 @@ namespace TFE_FrontEndUI
 		CONFIG_SOUND,
 		CONFIG_SYSTEM,
 		CONFIG_A11Y,
+		CONFIG_DEVELOPER,
 		CONFIG_COUNT,
 	};
 
@@ -104,7 +108,8 @@ namespace TFE_FrontEndUI
 		"Enhancements",
 		"Sound",
 		"System",
-		"Accessibility (beta)"
+		"Accessibility",
+		"Developer"
 	};
 
 	static const Vec2i c_resolutionDim[] =
@@ -266,6 +271,7 @@ namespace TFE_FrontEndUI
 	void DrawLabelledIntSlider(float labelWidth, float valueWidth, const char* label, const char* tag, int* value, int min, int max);
 	void DrawLabelledFloatSlider(float labelWidth, float valueWidth, const char* label, const char* tag, float* value, float min, float max);
 	void configA11y(s32 tabWidth, u32 height);
+	void configDeveloper();
 	void pickCurrentResolution();
 	void manual();
 	void credits();
@@ -521,6 +527,10 @@ namespace TFE_FrontEndUI
 		s_relativeMode = false;
 		TFE_Input::enableRelativeMode(s_relativeMode);
 		TFE_ExternalData::getExternalLogics()->actorLogics.clear();		// clear custom logics
+		TFE_ExternalData::clearExternalWeapons();						// clear weapons
+		TFE_ExternalData::clearExternalProjectiles();					// clear projectiles
+		TFE_ExternalData::clearExternalEffects();						// clear effects
+		TFE_ExternalData::clearExternalPickups();                       // clear pickups
 
 		if (TFE_Settings::getSystemSettings()->returnToModLoader && s_modLoaded)
 		{
@@ -892,6 +902,12 @@ namespace TFE_FrontEndUI
 				TFE_Settings::writeToDisk();
 				inputMapping_serialize();
 			}
+			if (ImGui::Button("Developer", sideBarButtonSize))
+			{
+				s_configTab = CONFIG_DEVELOPER;
+				TFE_Settings::writeToDisk();
+				inputMapping_serialize();
+			}
 			ImGui::Separator();
 			if (ImGui::Button("Return", sideBarButtonSize))
 			{
@@ -917,9 +933,9 @@ namespace TFE_FrontEndUI
 
 			ImGui::End();
 
-			// adjust the width based on tab.
+			// Adjust the width based on tab.
 			s32 tabWidth = w - s32(160*s_uiScale);
-			if (s_configTab >= CONFIG_INPUT && s_configTab < CONFIG_SYSTEM || s_configTab == CONFIG_A11Y)
+			if (s_configTab >= CONFIG_INPUT && s_configTab < CONFIG_SYSTEM || s_configTab == CONFIG_A11Y || s_configTab == CONFIG_DEVELOPER)
 			{
 				tabWidth = s32(414*s_uiScale);
 			}
@@ -977,6 +993,9 @@ namespace TFE_FrontEndUI
 				break;
 			case CONFIG_A11Y:
 				configA11y(tabWidth, h);
+				break;
+			case CONFIG_DEVELOPER:
+				configDeveloper();
 				break;
 			};
 			renderBackground(forceTextureUpdate);
@@ -1494,7 +1513,7 @@ namespace TFE_FrontEndUI
 		}
 		ImGui::Spacing();
 
-		ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 1.0f, 0.25f, 1.0f));
+		ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.25f, 0.25f, 1.0f));
 		ImGui::TextWrapped("Note: HD Assets are only used if 'True Color' is enabled\n"
 						   "in the Graphics panel. To enable True Color select \n"
 						   "'GPU / OpenGL' as the Renderer, and 'True Color' as the\n"
@@ -1886,7 +1905,7 @@ namespace TFE_FrontEndUI
 	
 
 	///////////////////////////////////////////////////////////////////////////////
-	// Replay Demo UI
+	// Replay  UI
 	///////////////////////////////////////////////////////////////////////////////
 
 	static std::vector<TFE_SaveSystem::SaveHeader> s_replayDirContents;
@@ -2000,6 +2019,7 @@ namespace TFE_FrontEndUI
 
 		// Left Column
 		ImGui::SetNextWindowPos(ImVec2(leftColumn, floorf(displayInfo.height * 0.07f)));
+
 		ImGui::BeginChild("##ImageAndInfo");
 		{
 			// Image
@@ -2052,7 +2072,13 @@ namespace TFE_FrontEndUI
 			ImGui::EndChild();
 
 			ImGui::Spacing();
-			ImGui::LabelText("##InfoReplay", "Note: Press the Escape key to cancel recording or demo play back");
+			ImGui::TextWrapped("Note: Press the");
+			ImGui::SameLine(0.0f);
+			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 1.0f, 0.0f, 0.8f));
+			ImGui::TextWrapped("Escape");
+			ImGui::PopStyleColor();
+			ImGui::SameLine(0.0f);
+			ImGui::TextWrapped("key to cancel recording or demo playback");
 			ImGui::Spacing();
 
 			ImGui::PushFont(s_dialogFont);
@@ -2071,12 +2097,12 @@ namespace TFE_FrontEndUI
 				enableRecord = true;
 			}
 
-			size.y = 120 * s_uiScale;
 			size.x = 420 * s_uiScale;
+			size.y = 80 * s_uiScale;
+			
 			ImGui::BeginChild("##InfoWithBorderRecord", size, true);
 			{
 				ImGui::TextWrapped("When this checkbox is pressed simply start any mission and the game will record the mission for replay.");
-				ImGui::TextWrapped("Your recordings will be saved in the 'Replays' folder");
 				ImGui::Spacing();
 
 				// Change the colors if recording all.
@@ -2103,7 +2129,7 @@ namespace TFE_FrontEndUI
 					ImGui::PopStyleColor();
 					gameSettings->df_enableRecording = true;
 				}
-
+				ImGui::SameLine(0.0f);
 				if (ImGui::Checkbox("Always Record missions", &enableRecordAll))
 				{
 					gameSettings->df_enableRecordingAll = enableRecordAll;
@@ -2145,14 +2171,14 @@ namespace TFE_FrontEndUI
 
 
 			ImGui::Spacing();
-			if (ImGui::Button("Open Replay Folder"))
+			if (ImGui::Button("Open Replay Folder")) 
 			{
 				if (!TFE_System::osShellExecute(s_replayDir, NULL, NULL, false))
 				{
 					TFE_System::logWrite(LOG_ERROR, "frontEndUi", "Failed to open the directory: '%s'", s_replayDir);
 				}
 			}
-			ImGui::Spacing();
+			ImGui::SameLine(0.0f);
 			if (ImGui::Button("Refresh Demo Folder"))
 			{
 				TFE_Input::populateReplayDirectory(s_replayDirContents);
@@ -3463,6 +3489,15 @@ namespace TFE_FrontEndUI
 		ImGui::SetNextItemWidth(valueWidth);
 		ImGui::SliderFloat(tag, value, min, max);
 	}
+
+	void DrawLabelledFloat3Slider(float labelWidth, float valueWidth, const char* label, const char* tag, float* value, float min, float max)
+	{
+		ImGui::SetNextItemWidth(labelWidth);
+		ImGui::LabelText("##ConfigLabel", "%s", label);
+		ImGui::SameLine();
+		ImGui::SetNextItemWidth(valueWidth);
+		ImGui::SliderFloat3(tag, value, min, max);
+	}
 	
 	void DrawLabelledIntSlider(float labelWidth, float valueWidth, const char* label, const char* tag, int* value, int min, int max)
 	{
@@ -3497,7 +3532,9 @@ namespace TFE_FrontEndUI
 		return currentFilePath;	
 	}
 
+	////////////////////////////////////////////////////////////////
 	// Accessibility
+	////////////////////////////////////////////////////////////////
 	void configA11y(s32 tabWidth, u32 height)
 	{
 		// WINDOW --------------------------------------------
@@ -3565,7 +3602,7 @@ namespace TFE_FrontEndUI
 		Tooltip("Reimport caption and font files. Use if you add, remove, or modify caption or font files in a TFE directory while TFE is running. Please wait a moment for files to refresh.");
 
 		// CUTSCENES -----------------------------------------
-		ImGui::Dummy(ImVec2(0.0f, 10.0f));
+		ImGui::Dummy(ImVec2(0.0f, 10.0f)); // Makes some empty space.
 		ImGui::PushFont(s_versionFont);
 		ImGui::LabelText("##ConfigLabel", "Cutscenes");
 		ImGui::PopFont();
@@ -3619,6 +3656,77 @@ namespace TFE_FrontEndUI
 		Tooltip("Disable screen flashes when taking damage or collecting powerups.");
 		ImGui::Checkbox("Disable weapon lighting", &a11ySettings->disablePlayerWeaponLighting);
 		Tooltip("Disable illumination around the player caused by firing weapons.");
+	}
+
+	////////////////////////////////////////////////////////////////
+// Developer controls
+////////////////////////////////////////////////////////////////
+
+	void drawLightControls(s32 index)
+	{
+		f32 labelW = 80 * s_uiScale;
+		f32 valueW = 260 * s_uiScale - 10;
+		string label1 = "Light " + to_string(index);
+		string tag2 = "##LB" + to_string(index);
+		string tag3 = "##LVS" + to_string(index);
+		string tag4 = "##LWS" + to_string(index);
+		ImGui::LabelText("##ConfigLabel3", label1.c_str());
+		DrawLabelledFloatSlider(labelW, valueW * 0.5f - 2, "  Brightness", tag2.c_str(), &RClassic_Float::s_cameraLight[index].brightness, 0.0f, 8.0f);
+		Tooltip("Values above 1.0 only affect obliquely lit faces.");
+
+		vec3_float* lightWS = &RClassic_Float::s_cameraLight[index].lightWS;
+		DrawLabelledFloat3Slider(labelW, valueW, "  WS", tag4.c_str(), &lightWS->x, -150, 150);
+		Tooltip("World-space position of the light source.");
+	}
+
+	void resetLighting()
+	{
+		RClassic_Float::s_cameraLight[0].brightness = 1;
+		RClassic_Float::s_cameraLight[0].lightWS = { 0.0f, 0.0f, 1.0f };
+		RClassic_Float::s_cameraLight[1].brightness = 1;
+		RClassic_Float::s_cameraLight[1].lightWS = { 0.0f, 1.0f, 0.0f };
+		RClassic_Float::s_cameraLight[2].brightness = 1;
+		RClassic_Float::s_cameraLight[2].lightWS = { 1.0f, 0.0f, 0.0f };
+	}
+
+	void configDeveloper()
+	{
+		ImGui::PushFont(s_dialogFont);
+		ImGui::LabelText("##ConfigLabel", "Lighting");
+		ImGui::PopFont();
+
+		TFE_Settings_Graphics* graphicsSettings = TFE_Settings::getGraphicsSettings();
+
+		ImGui::Checkbox("Force Gouraud Shading (Restart Required)", &graphicsSettings->forceGouraudShading);
+		Tooltip("Use gouraud shading for all 3DO models.");
+
+		bool wasOverrideEnabled = graphicsSettings->overrideLighting;
+		if (graphicsSettings->rendererIndex != 0)
+		{
+			ImGui::TextWrapped("Lighting controls are only available with the software renderer.");
+			return;
+		}
+		ImGui::Checkbox("Override 3DO Lighting (Software Renderer Only)", &graphicsSettings->overrideLighting);
+		Tooltip("If selected, 3DO lighting will be controlled manually from this screen, rather than using engine/map defaults. This setting is not saved.");
+
+		if (!graphicsSettings->overrideLighting)
+		{
+			if (wasOverrideEnabled) { resetLighting(); }
+			return;
+		}
+
+		ImGui::Dummy(ImVec2(0.0f, 10.0f)); // Makes some empty space.
+		ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.75f, 0.75f, 0, 1.0f));
+		ImGui::PopStyleColor();
+
+		drawLightControls(0);
+		drawLightControls(1);
+		drawLightControls(2);
+
+		if (ImGui::Button("Reset"))
+		{
+			resetLighting();
+		}
 	}
 
 	void pickCurrentResolution()

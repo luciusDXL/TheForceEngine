@@ -971,7 +971,7 @@ namespace LevelEditor
 		if (s_editMode == LEDIT_SECTOR)
 		{
 			s_sectorInfo.resize(count);
-			for (s32 s = 0; s < count; s++)
+			for (s32 s = 0; s < (s32)count; s++)
 			{
 				selection_getSector(s, sector);
 				s_sectorInfo[s] = sector;
@@ -984,7 +984,7 @@ namespace LevelEditor
 		{
 			s32 wallIndex;
 			HitPart part;
-			for (s32 s = 0; s < count; s++)
+			for (s32 s = 0; s < (s32)count; s++)
 			{
 				selection_getSurface(s, sector, wallIndex, &part);
 				if (part == HP_FLOOR || part == HP_CEIL)

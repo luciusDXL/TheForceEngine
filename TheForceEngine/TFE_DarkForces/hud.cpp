@@ -19,7 +19,6 @@
 #include <TFE_Jedi/Level/roffscreenBuffer.h>
 #include <TFE_RenderShared/texturePacker.h>
 #include <cstring>
-#include <string>
 
 #define TFE_CONVERT_CAPS 0
 #if TFE_CONVERT_CAPS
@@ -527,27 +526,6 @@ namespace TFE_DarkForces
 		}
 		offscreenBuffer_drawTexture(s_cachedHudRight, s_hudLightOff, 19, 0);
 	}
-
-	string hud_getDataStr()
-	{
-		fixed16_16 x, z;
-		getCameraXZ(&x, &z);
-		char* dataStr = new char[64];
-		s32 xPos = floor16(x);
-		s32 yPos = -fixed16ToFloat(s_playerEye->posWS.y);
-		s32 zPos = floor16(z);
-		s32 h = fixed16ToFloat(s_playerEye->worldHeight);
-		s32 s = s_secretsPercent;
-		angle14_16 y, r, p;
-		y = s_playerEye->yaw;
-		r = s_playerEye->roll;
-		p = s_playerEye->pitch;
-
-		string format = "X:%04d Y:%.1f Z:%04d H:%.1f S:%d";		
-		sprintf((char*)dataStr, format.c_str(), xPos, yPos, zPos, h, s);		
-		std::string result = string(dataStr);
-		return result; 
-	}
 		
 	void hud_drawMessage(u8* framebuffer)
 	{
@@ -564,11 +542,13 @@ namespace TFE_DarkForces
 
 		if (s_showData && s_playerEye)
 		{
+			fixed16_16 x, z;
+			getCameraXZ(&x, &z);
+
 			s32 xOffset = floor16(div16(intToFixed16(vfb_getWidescreenOffset()), vfb_getXScale()));
+
 			u8 dataStr[64];
-			string result = TFE_DarkForces::hud_getDataStr();
-			std::copy(result.begin(), result.end(), dataStr);
-			dataStr[result.size()] = '\0';
+			sprintf((char*)dataStr, "X:%04d Y:%.1f Z:%04d H:%.1f S:%d%%", floor16(x), -fixed16ToFloat(s_playerEye->posWS.y), floor16(z), fixed16ToFloat(s_playerEye->worldHeight), s_secretsPercent);
 			displayHudMessage(s_hudFont, (DrawRect*)vfb_getScreenRect(VFB_RECT_UI), 164 + xOffset, 10, dataStr, framebuffer);
 		}
 	}
@@ -731,7 +711,7 @@ namespace TFE_DarkForces
 				s_hudWorkPalette[3] = 55;
 				s_hudWorkPalette[4] = 55;
 
-				strcpy(shieldStr, "200");
+				sprintf(shieldStr, "%03d", s_shieldsMax);
 			}
 			else
 			{
@@ -1009,7 +989,7 @@ namespace TFE_DarkForces
 					s_hudWorkPalette[3] = 55;
 					s_hudWorkPalette[4] = 55;
 
-					strcpy(shieldStr, "200");
+					sprintf(shieldStr, "%03d", s_shieldsMax);
 				}
 				else
 				{

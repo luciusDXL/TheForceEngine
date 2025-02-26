@@ -252,11 +252,18 @@ void RegisterScriptArray(asIScriptEngine *engine, bool defaultArray)
 	else
 		RegisterScriptArray_Generic(engine);
 
+	int r = 0;
 	if( defaultArray )
 	{
-		int r = engine->RegisterDefaultArrayType("array<T>"); assert( r >= 0 );
+		r = engine->RegisterDefaultArrayType("array<T>"); assert( r >= 0 );
 		UNUSED_VAR(r);
 	}
+}
+
+static int s_scriptArrayObjId = 268435480;
+int GetScriptArrayObjectId()
+{
+	return s_scriptArrayObjId;
 }
 
 static void RegisterScriptArray_Native(asIScriptEngine *engine)

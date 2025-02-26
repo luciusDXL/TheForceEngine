@@ -223,7 +223,8 @@ namespace LevelEditor
 
 	bool init(Asset* asset)
 	{
-		registerScriptFunctions();
+		TFE_ScriptInterface::registerScriptInterface(API_LEVEL_EDITOR);
+		TFE_ScriptInterface::setAPI(API_LEVEL_EDITOR, "EditorDef/Scripts");
 
 		s_levelAsset = asset;
 		// Initialize editors.
@@ -2123,7 +2124,8 @@ namespace LevelEditor
 		
 	void update()
 	{
-		levelScript_update();
+		// levelScript_update();
+		TFE_ScriptInterface::update();
 		updateViewportScroll();
 		handleHotkeys();
 		
@@ -3444,7 +3446,7 @@ namespace LevelEditor
 	};
 
 	const f32 c_scrollEps = 0.001f;
-	const f32 c_scrollMinScpeed = 128.0f;
+	const f32 c_scrollMinSpeed = 128.0f;
 	const f32 c_scrollAngularSpd = 3.0f;
 	
 	static ViewportScrollMode s_viewScrollMode;
@@ -3479,7 +3481,7 @@ namespace LevelEditor
 		s_scrollLen = sqrtf(delta.x*delta.x + delta.z*delta.z);
 		s_scrollDelta = delta;
 		s_scrollPos = 0.0f;
-		s_scrollSpeed = speed == 0.0f ? max(c_scrollMinScpeed, s_scrollLen) : speed;
+		s_scrollSpeed = speed == 0.0f ? max(c_scrollMinSpeed, s_scrollLen) : speed;
 		s_scrollView = true;
 		s_viewScrollMode = VSCROLL_2D;
 	}
@@ -3500,7 +3502,7 @@ namespace LevelEditor
 		s_scrollLen = sqrtf(delta.x*delta.x + delta.y*delta.y + delta.z*delta.z);
 		s_scrollDelta3d = delta;
 		s_scrollPos = 0.0f;
-		s_scrollSpeed = speed == 0.0f ? max(c_scrollMinScpeed, s_scrollLen) : speed;
+		s_scrollSpeed = speed == 0.0f ? max(c_scrollMinSpeed, s_scrollLen) : speed;
 
 		s_scrollSrcAngles = { fmodf(s_camera.yaw + 2.0f*PI, 2.0f*PI), s_camera.pitch };
 		s_scrollDstAngles = { targetYaw, targetPitch };
@@ -3697,7 +3699,7 @@ namespace LevelEditor
 	{
 		EditorSector* hoveredSector = nullptr;
 		selection_getSector(SEL_INDEX_HOVERED, hoveredSector);
-		if (!hoveredSector->name.empty())
+		if (hoveredSector && !hoveredSector->name.empty())
 		{
 			bool showInfo = true;
 			Vec2i mapPos;

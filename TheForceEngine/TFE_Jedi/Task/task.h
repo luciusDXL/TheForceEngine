@@ -41,7 +41,7 @@ namespace TFE_Jedi
 	// If local task function state includes pointers or other non-pod data, a local memory serialization callback
 	// needs to be provided and the state be properly serialized by the client. The callback should properly handle
 	// both saving and loading. See vueLogic_serializeTaskLocalMemory() in TFE_DarkForces/vueLogic.cpp for an example.
-	void task_serializeState(Stream* stream, Task* task, void* userData = nullptr, LocalMemorySerCallback localMemCallback = nullptr);
+	void task_serializeState(Stream* stream, Task* task, void* userData = nullptr, LocalMemorySerCallback localMemCallback = nullptr, bool resetIP = false);
 
 	Task* task_getCurrent();
 

@@ -4,6 +4,7 @@
 #include <TFE_Jedi/Level/rsector.h>
 #include <TFE_Jedi/Level/rwall.h>
 #include <TFE_Jedi/Level/robject.h>
+#include <TFE_ForceScript/scriptInterface.h>
 #include "infPublicTypes.h"
 
 struct TextureData;
@@ -105,6 +106,7 @@ namespace TFE_Jedi
 		InfLink* link;
 		AnimatedTexture* animTex;
 		Allocator* targets;
+		Allocator* scriptCalls;
 		MessageType cmd;
 		u32 event;
 		u32 arg0;
@@ -143,6 +145,14 @@ namespace TFE_Jedi
 		u32 arg2;
 	};
 
+	// TFE: Add "scriptcall" as an INF function, similar to message.
+	struct InfScriptCall
+	{
+		void* funcPtr;
+		s32 argCount;
+		TFE_ForceScript::ScriptArg args[5];
+	};
+
 	struct Slave
 	{
 		RSector* sector;
@@ -163,6 +173,7 @@ namespace TFE_Jedi
 		Tick delay;				// delay in 'ticks' (see TICKS_PER_SECOND in TFE_DarkForces/time.h)
 		Allocator* messages;
 		Allocator* adjoinCmds;
+		Allocator* scriptCalls;
 		SoundSourceId pageId;
 		TextureData** floorTex;
 		TextureData** ceilTex;

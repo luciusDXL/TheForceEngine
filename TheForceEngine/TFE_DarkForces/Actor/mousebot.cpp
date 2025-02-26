@@ -48,7 +48,7 @@ namespace TFE_DarkForces
 	static MouseBot* s_curMouseBot;
 	static s32 s_mouseNum = 0;
 
-	void resetMouseNum()
+	void mousebot_resetNum()
 	{
 		s_mouseNum = 0;
 	}
@@ -115,7 +115,6 @@ namespace TFE_DarkForces
 			MovementModule* moveMod;
 			CollisionInfo* colInfo;
 			Tick tick;
-			u32 frame;
 
 			JBool odd;
 			JBool flip;
@@ -150,7 +149,6 @@ namespace TFE_DarkForces
 
 			if (local(phyActor)->state != MBSTATE_ACTIVE) { break; }
 
-			//TFE_System::logWrite(LOG_MSG, "MOUSEBOT", "CUR TICK = %d", s_curTick);
 			// Go to sleep if the player hasn't been spotted in about 5 seconds.
 			if (actor_isObjectVisible(local(obj), s_playerObject, 0x4000/*360 degrees*/, FIXED(25)/*closeDist*/))
 			{
@@ -172,19 +170,15 @@ namespace TFE_DarkForces
 			if (actorYaw == yaw)
 			{
 				local(odd) = (s_curTick & 1) ? JTRUE : JFALSE;
-				//TFE_System::logWrite(LOG_MSG, "MOUSEBOT", "MOUSEBOT CALL RANDOM");
 				angle14_32 deltaYaw = random(16338);
-				local(moveMod)->target.yaw = local(odd) ? (local(obj)->yaw + deltaYaw) : (local(obj)->yaw - deltaYaw);
-				//TFE_System::logWrite(LOG_MSG, "MOUSEBOT", "MOUSEBOT CALL RANDOM2");
+				local(moveMod)->target.yaw = local(odd) ? (local(obj)->yaw + deltaYaw) : (local(obj)->yaw - deltaYaw);				
 				local(moveMod)->target.speedRotation = random(0x3555) + 0x555;
-//				TFE_System::logWrite(LOG_MSG, "MOUSEBOT", "delta Yaw %d speedrotate = %d update = %d", deltaYaw, local(moveMod)->target.speedRotation, TFE_Input::getCounter());
 				local(moveMod)->target.flags |= TARGET_MOVE_ROT;
 				local(flip) = JFALSE;
 			}
 
 			if (local(colInfo)->wall)
 			{
-				//TFE_System::logWrite(LOG_MSG, "MOUSEBOT", "MOUSEBOT CALL RANDOM3");
 				s32 rnd = random(100);
 				if (rnd <= 10)	// ~10% chance of playing a sound effect when hitting a wall.
 				{
@@ -198,7 +192,6 @@ namespace TFE_DarkForces
 				{
 					local(moveMod)->target.yaw -= 4096;
 				}
-				//TFE_System::logWrite(LOG_MSG, "MOUSEBOT", "MOUSEBOT CALL RANDOM4");
 				local(moveMod)->target.speedRotation = random(0x3555);
 				local(flip) = ~local(flip);
 			}
@@ -211,19 +204,6 @@ namespace TFE_DarkForces
 
 			local(moveMod)->target.speed = FIXED(22);
 			local(moveMod)->target.flags |= TARGET_MOVE_XZ;
-			//char botinfo[80];
-			fixed16_16 x = local(moveMod)->target.pos.x;
-			fixed16_16 z = local(moveMod)->target.pos.z;
-			angle14_16 myaw = local(moveMod)->target.yaw;
-			fixed16_16 mspeed = local(moveMod)->target.speed;
-			fixed16_16 rotspeed = local(moveMod)->target.speedRotation;
-			Tick curtick = local(tick);
-			//sprintf(botinfo, "X: %d Z: %d YAW: %d SPEED: %d ROT: %d TICK: %d", x, z, myaw, mspeed, rotspeed, curtick);
-
-			
-			//TFE_DarkForces::hud_sendTextMessage(botinfo, 1, false);
-			//TFE_System::logWrite(LOG_MSG, "MOUSEBOT", botinfo);
-
 		}
 		task_end;
 	}

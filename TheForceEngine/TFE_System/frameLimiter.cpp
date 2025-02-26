@@ -42,7 +42,6 @@ namespace TFE_System
 		return s_limitFPS;
 	}
 
-
 	void frameLimiter_begin()
 	{
 		s_beginTicks = getCurrentTimeInTicks();

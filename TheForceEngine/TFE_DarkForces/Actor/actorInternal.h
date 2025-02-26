@@ -49,8 +49,8 @@ namespace TFE_DarkForces
 		Task* actorPhysicsTask;
 		JBool objCollisionEnabled;
 	};
-	extern ActorInternalState s_istate;
-	extern List* s_physicsActors;
+	extern ActorInternalState s_istate;		// Holds all the "Dispatch" actors
+	extern List* s_physicsActors;			// Holds all the non-dispatch actors (bosses, mousebots, turrets...)
 
 	void actorLogicCleanupFunc(Logic* logic);
 	JBool defaultActorFunc(ActorModule* module, MovementModule* moveMod);

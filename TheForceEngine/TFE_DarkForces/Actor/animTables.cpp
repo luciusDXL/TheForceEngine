@@ -52,6 +52,7 @@ namespace TFE_DarkForces
 		s_officerAnimTable,
 		s_troopAnimTable,
 		s_commandoAnimTable,
+		s_customAnimTable,
 	};
 	static const s32 s_animTableCount = TFE_ARRAYSIZE(s_animTables);
 

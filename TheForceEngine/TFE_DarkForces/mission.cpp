@@ -54,8 +54,6 @@ namespace TFE_DarkForces
 	JBool s_canTeleport = JTRUE;
 	GameMissionMode s_missionMode = MISSION_MODE_MAIN;
 
-	JBool stopRecordEscOnly = JTRUE;
-
 	TextureData* s_loadScreen = nullptr;
 	u8 s_loadingScreenPal[768];
 	u8 s_levelPalette[768];
@@ -76,7 +74,6 @@ namespace TFE_DarkForces
 	JBool s_lumMaskChanged = JFALSE;
 
 	JBool s_loadingFromSave = JFALSE;
-	JBool s_inMission = JFALSE;
 
 	s32 s_flashFxLevel = 0;
 	s32 s_healthFxLevel = 0;
@@ -409,11 +406,7 @@ namespace TFE_DarkForces
 				s_playerTick = s_curTick;
 				s_levelComplete = JFALSE;
 			}
-
-
-
-			s_mainTask = createTask("main task", mission_mainTaskFunc);
-			
+			s_mainTask = createTask("main task", mission_mainTaskFunc);			
 
 			s_invalidLevelIndex = JFALSE;
 			s_exitLevel = JFALSE;
@@ -449,7 +442,6 @@ namespace TFE_DarkForces
 						hud_startup(JFALSE);
 
 						reticle_enable(true);
-						s_inMission = JTRUE;
 					}
 					s_flatLighting = JFALSE;
 					// Note: I am not sure why this is there but it overrides all player settings
@@ -475,16 +467,9 @@ namespace TFE_DarkForces
 
 		// Cleanup - shut down all tasks.
 		task_freeAll();
-		s_inMission = JFALSE;
 
 		// End the task.
 		task_end;
-	}
-
-	JBool isMissionRunning()
-	{
-		return s_inMission;
-
 	}
 
 	void mission_setLoadMissionTask(Task* task)
@@ -519,6 +504,7 @@ namespace TFE_DarkForces
 
 	void mission_exitLevel()
 	{
+		// Force the game to exit the replay modes in case you try to exit through the menu / console
 		if (isDemoPlayback())
 		{
 			endReplay();
@@ -590,6 +576,9 @@ namespace TFE_DarkForces
 				}
 				else if (s_missionMode == MISSION_MODE_MAIN)
 				{
+					// TFE - Level Script Support.
+					updateLevelScript(fixed16ToFloat(s_deltaTime));
+					// Dark Forces Draw.
 					updateScreensize();
 					if (s_playerEye)
 					{
@@ -689,7 +678,7 @@ namespace TFE_DarkForces
 				}
 			} while (msg != MSG_FREE_TASK && msg != MSG_RUN_TASK);
 		}
-		if (TFE_Input::isRecording() && !stopRecordEscOnly)
+		if (TFE_Input::isRecording())
 		{
 			endRecording();
 		}
@@ -1301,8 +1290,6 @@ namespace TFE_DarkForces
 
 	void handleGeneralInput()
 	{
-
-		//TFE_Input::playbackKeyState();
 
 		// Early out if the player is dying.
 		if (s_playerDying)

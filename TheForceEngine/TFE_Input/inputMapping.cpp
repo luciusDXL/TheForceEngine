@@ -13,6 +13,7 @@
 #include <TFE_DarkForces/player.h>
 #include <TFE_DarkForces/GameUI/pda.h>
 #include <TFE_FrontEndUI/frontEndUi.h>
+#include <TFE_Jedi/Renderer/virtualFramebuffer.h>
 
 namespace TFE_Input
 {
@@ -367,104 +368,95 @@ namespace TFE_Input
 	}
 
 	void inputMapping_updateInput()
-	{
-		
+	{		
 
-		// If you are playing back a demo just replay the events for that time frame.
-		if (isDemoPlayback())
-		{
-			replayEvent();
-		}
-		else
-		{
-			// For each bind record it if it is pressed or down.
-			for (u32 i = 0; i < s_inputConfig.bindCount; i++)
-			{				
-				InputBinding* bind = &s_inputConfig.binds[i];
-				switch (bind->type)
+		// For each bind record it if it is pressed or down.
+		for (u32 i = 0; i < s_inputConfig.bindCount; i++)
+		{				
+			InputBinding* bind = &s_inputConfig.binds[i];
+			switch (bind->type)
+			{
+				case ITYPE_KEYBOARD:
 				{
-					case ITYPE_KEYBOARD:
+					const bool keyIsMod = (s32)bind->keyMod == (s32)bind->keyCode || bind->keyMod == KEYMOD_NONE;
+					const bool keyIsAlt = bind->keyCode == KEY_LALT || bind->keyCode == KEY_RALT;
+					if (TFE_Input::keyModDown(bind->keyMod, inputMapping_isMovementAction(bind->action)) || (keyIsMod && keyIsAlt))
 					{
-						const bool keyIsMod = (s32)bind->keyMod == (s32)bind->keyCode || bind->keyMod == KEYMOD_NONE;
-						const bool keyIsAlt = bind->keyCode == KEY_LALT || bind->keyCode == KEY_RALT;
-						if (TFE_Input::keyModDown(bind->keyMod, inputMapping_isMovementAction(bind->action)) || (keyIsMod && keyIsAlt))
-						{
-							if (TFE_Input::keyPressed(bind->keyCode))
-							{
-								s_actions[bind->action] = STATE_PRESSED;
-								recordEvent(bind->action, bind->keyCode, true);
-							}
-							else if (TFE_Input::keyDown(bind->keyCode) && s_actions[bind->action] != STATE_PRESSED)
-							{
-								s_actions[bind->action] = STATE_DOWN;
-								recordEvent(bind->action, bind->keyCode, false);
-							}
-						}
-					} break;
-					case ITYPE_MOUSE:
-					{
-						if (TFE_Input::keyModDown(bind->keyMod, true))
-						{
-							if (TFE_Input::mousePressed(bind->mouseBtn))
-							{
-								s_actions[bind->action] = STATE_PRESSED;
-								recordEvent(bind->action, bind->keyCode, true);
-							}
-							else if (TFE_Input::mouseDown(bind->mouseBtn) && s_actions[bind->action] != STATE_PRESSED)
-							{
-								s_actions[bind->action] = STATE_DOWN;
-								recordEvent(bind->action, bind->keyCode, false);
-							}
-
-						}
-					} break;
-					case ITYPE_MOUSEWHEEL:
-					{
-						s32 dx, dy;
-						TFE_Input::getMouseWheel(&dx, &dy);
-
-						if ((bind->mouseWheel == MOUSEWHEEL_LEFT && dx < 0) ||
-							(bind->mouseWheel == MOUSEWHEEL_RIGHT && dx > 0) ||
-							(bind->mouseWheel == MOUSEWHEEL_UP && dy > 0) ||
-							(bind->mouseWheel == MOUSEWHEEL_DOWN && dy < 0))
+						if (TFE_Input::keyPressed(bind->keyCode))
 						{
 							s_actions[bind->action] = STATE_PRESSED;
 							recordEvent(bind->action, bind->keyCode, true);
 						}
-					} break;
-					case ITYPE_CONTROLLER:
-					{
-						if (!(s_inputConfig.controllerFlags & CFLAG_ENABLE))
+						else if (TFE_Input::keyDown(bind->keyCode) && s_actions[bind->action] != STATE_PRESSED)
 						{
-							break;
+							s_actions[bind->action] = STATE_DOWN;
+							recordEvent(bind->action, bind->keyCode, false);
 						}
-
-						if (TFE_Input::buttonPressed(bind->ctrlBtn))
+					}
+				} break;
+				case ITYPE_MOUSE:
+				{
+					if (TFE_Input::keyModDown(bind->keyMod, true))
+					{
+						if (TFE_Input::mousePressed(bind->mouseBtn))
 						{
 							s_actions[bind->action] = STATE_PRESSED;
 							recordEvent(bind->action, bind->keyCode, true);
 						}
-						else if (TFE_Input::buttonDown(bind->ctrlBtn) && s_actions[bind->action] != STATE_PRESSED)
+						else if (TFE_Input::mouseDown(bind->mouseBtn) && s_actions[bind->action] != STATE_PRESSED)
 						{
 							s_actions[bind->action] = STATE_DOWN;
 							recordEvent(bind->action, bind->keyCode, false);
-						}
-					} break;
-					case ITYPE_CONTROLLER_AXIS:
-					{
-						if (!(s_inputConfig.controllerFlags & CFLAG_ENABLE))
-						{
-							break;
 						}
 
-						if (TFE_Input::getAxis(bind->axis) > 0.5f)
-						{
-							s_actions[bind->action] = STATE_DOWN;
-							recordEvent(bind->action, bind->keyCode, false);
-						}
-					} break;
-				}
-			}
+					}
+				} break;
+				case ITYPE_MOUSEWHEEL:
+				{
+					s32 dx, dy;
+					TFE_Input::getMouseWheel(&dx, &dy);
+
+					if ((bind->mouseWheel == MOUSEWHEEL_LEFT && dx < 0) ||
+						(bind->mouseWheel == MOUSEWHEEL_RIGHT && dx > 0) ||
+						(bind->mouseWheel == MOUSEWHEEL_UP && dy > 0) ||
+						(bind->mouseWheel == MOUSEWHEEL_DOWN && dy < 0))
+					{
+						s_actions[bind->action] = STATE_PRESSED;
+						recordEvent(bind->action, bind->keyCode, true);
+					}
+				} break;
+				case ITYPE_CONTROLLER:
+				{
+					if (!(s_inputConfig.controllerFlags & CFLAG_ENABLE))
+					{
+						break;
+					}
+
+					if (TFE_Input::buttonPressed(bind->ctrlBtn))
+					{
+						s_actions[bind->action] = STATE_PRESSED;
+						recordEvent(bind->action, bind->keyCode, true);
+					}
+					else if (TFE_Input::buttonDown(bind->ctrlBtn) && s_actions[bind->action] != STATE_PRESSED)
+					{
+						s_actions[bind->action] = STATE_DOWN;
+						recordEvent(bind->action, bind->keyCode, false);
+					}
+				} break;
+				case ITYPE_CONTROLLER_AXIS:
+				{
+					if (!(s_inputConfig.controllerFlags & CFLAG_ENABLE))
+					{
+						break;
+					}
+
+					if (TFE_Input::getAxis(bind->axis) > 0.5f)
+					{
+						s_actions[bind->action] = STATE_DOWN;
+						recordEvent(bind->action, bind->keyCode, false);
+					}
+				} break;
+			}			
 		}
 	}
 
@@ -639,17 +631,13 @@ namespace TFE_Input
 		u32 state = SDL_GetRelativeMouseState(&mouseX, &mouseY);
 		SDL_GetMouseState(&mouseAbsX, &mouseAbsY);
 
-
-		string hudData = "";
-		string keys = "";
-		string mouse = "";
-		string mouseP = "";
-
+		// Handle Playback
 		if (isDemoPlayback())
 		{
 
-			handleReplayPause();
+			//handleReplayPause();
 
+			// Handle speed up and slowdowns of playback
 			if (isBindingPressed(IADF_DEMO_SPEEDUP))
 			{
 				increaseReplayFrameRate();
@@ -689,6 +677,8 @@ namespace TFE_Input
 				// Load Mouse positional information
 				mousePos = event.mousePos;
 
+
+
 				// Only load if it has mouse movement
 				if (mousePos.size() == 4)
 				{
@@ -696,11 +686,16 @@ namespace TFE_Input
 					mouseY = mousePos[1];
 					mouseAbsX = mousePos[2];
 					mouseAbsY = mousePos[3];
-					mouseP = convertToString(event.mousePos);
 				}
+
 			}
+
+			// Replay the event keys
+			replayEvent();
+
 		}
 
+		// Handle Recording
 		else if (isRecording())
 		{
 
@@ -718,72 +713,59 @@ namespace TFE_Input
 			mousePos.push_back(mouseAbsX);
 			mousePos.push_back(mouseAbsY);
 			event.mousePos = mousePos;
-			mouseP = convertToString(event.mousePos);
 			TFE_Input::inputEvents[replayCounter] = event;
 		}
 
 		// Apply the mouse position data we either got from SDL or from the demo
+
+
+
 		TFE_Input::setRelativeMousePos(mouseX, mouseY);
 		TFE_Input::setMousePos(mouseAbsX, mouseAbsY);
-		inputMapping_updateInput();
 
-		if ((isRecording() || isDemoPlayback()) && TFE_DarkForces::s_playerEye)
+
+		if (!isDemoPlayback())
 		{
-			handleEye();
-
-			ReplayEvent event;
-			if (isDemoPlayback())
-			{
-				event = TFE_Input::inputEvents[replayCounter - 1];
-			}
-			else
-			{
-				event = TFE_Input::inputEvents[replayCounter];
-			}
-			vec3_fixed ws = TFE_DarkForces::s_playerEye->posWS;
-			vec3_fixed vs = TFE_DarkForces::s_playerEye->posVS;
-			hudData += " WS: X: " + std::to_string(ws.x) + " Y:" + std::to_string(ws.y) + " Z:" + std::to_string(ws.z);
-			
-			angle14_16 yaw = TFE_DarkForces::s_playerEye->yaw;
-			angle14_16 pitch = TFE_DarkForces::s_playerEye->pitch;
-			angle14_16 roll = TFE_DarkForces::s_playerEye->roll;
-			string playerpos = " X: " + std::to_string(TFE_DarkForces::s_playerObject->posWS.x) + " Y: " + std::to_string(TFE_DarkForces::s_playerObject->posWS.y) + " Z: " + std::to_string(TFE_DarkForces::s_playerObject->posWS.z);
-			hudData += playerpos;
-			hudData += " Y: " + std::to_string(yaw) + " P: " + std::to_string(pitch);
-
-			if (isRecording())
-			{
-				TFE_Input::inputEvents[replayCounter] = event;
-			}
-			vec3_fixed vel = {};
-			TFE_DarkForces::player_getVelocity(&vel);
-			hudData += " V: " + std::to_string(vel.x) + " " + std::to_string(vel.z) + " ";
-			hudData += TFE_DarkForces::hud_getDataStr();
-			keys = convertToString(event.keysDown);
+			inputMapping_updateInput();
 		}
 
-		if ((isRecording() || isDemoPlayback()))
-		{		
-			string rec = "UPD";
-			string hudDataStr = rec + " upd=%d cur=%d pt=%d ptp=%d delta=%d";
 		
-			if (hudData.size() != 0) hudDataStr += hudData;
-			if (keys.size() != 0) hudDataStr += " Keys: " + keys;
-			if (mouseP.size() != 0) hudDataStr += " MousePos " + mouseP;
+		
+		if ((isRecording() || isDemoPlayback()))
+		{
 			int printcounter = isRecording() ? replayCounter : replayCounter - 1;
-
 			if (printcounter != -1)
 			{
-				// temp muting
-				//TFE_System::logWrite(LOG_MSG, "LOG", "----------------------------------------------------------------- %d ---------------------------------------------------------------------", printcounter);
-				//TFE_System::logWrite(LOG_MSG, "LOG", hudDataStr.c_str(), printcounter, TFE_DarkForces::s_curTick, TFE_DarkForces::s_playerTick, TFE_DarkForces::s_prevPlayerTick, TFE_DarkForces::s_deltaTime);
+				TFE_System::logWrite(LOG_MSG, "LOG", "----------------------------------------------------------------- %d ---------------------------------------------------------------------", printcounter);
+			}
+			if (TFE_DarkForces::s_playerEye)
+			{
+				handleEye();
+
+				if (isDemoPlayback())
+				{
+					replayEvent();
+				}
+
+				string hudDataStr = " upd=%d cur=%d pt=%d ptp=%d delta=%d X:%04d Y:%.1f Z:%04d Y=%d P=%d";
+
+				fixed16_16 x = TFE_DarkForces::s_eyePos.x;
+				fixed16_16 z = TFE_DarkForces::s_eyePos.z;
+
+
+				if (printcounter != -1)
+				{
+					// temp muting
+					TFE_System::logWrite(LOG_MSG, "LOG", hudDataStr.c_str(), printcounter, TFE_DarkForces::s_curTick, TFE_DarkForces::s_playerTick,
+						TFE_DarkForces::s_prevPlayerTick, TFE_DarkForces::s_deltaTime,
+						x, -fixed16ToFloat(TFE_DarkForces::s_playerEye->posWS.y), z, TFE_DarkForces::s_playerEye->yaw, TFE_DarkForces::s_playerEye->pitch);
+
+				}
 			}
 		}
 
 		// If you are replaying the demo and the game is paused, we should also halt all logic
-		bool skipUpdateCounter = isDemoPlayback() 
-			             && TFE_FrontEndUI::getCurrentGame()->isPaused() 
-			             && TFE_DarkForces::s_playerEye;		
+		bool skipUpdateCounter = isDemoPlayback() && isReplayPaused() && TFE_DarkForces::s_playerEye;		
 
 		if (skipUpdateCounter)
 		{

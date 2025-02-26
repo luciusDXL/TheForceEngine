@@ -51,8 +51,6 @@ namespace TFE_DarkForces
 	void cheat_toggleData();
 	void cheat_toggleFullBright();
 	void cheat_levelSkip();
-
-	JBool isMissionRunning();
 	
 	extern JBool s_gamePaused;
 	extern GameMissionMode s_missionMode;

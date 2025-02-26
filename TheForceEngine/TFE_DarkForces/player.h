@@ -105,7 +105,7 @@ namespace TFE_DarkForces
 	extern fixed16_16 s_playerHeight;
 	extern fixed16_16 s_playerYPos;
 	extern vec3_fixed s_eyePos;	// s_camX, s_camY, s_camZ in the DOS code.
-	extern angle14_32 s_pitch, s_yaw, s_roll;
+	extern angle14_32 s_eyePitch, s_eyeYaw, s_eyeRoll;
 	extern angle14_32 s_playerYaw;
 	extern Tick s_playerTick;
 	extern Tick s_prevPlayerTick;
@@ -137,6 +137,28 @@ namespace TFE_DarkForces
 	extern SoundSourceId s_playerHealthHitSoundSource;
 	extern SoundSourceId s_kyleScreamSoundSource;
 	extern SoundSourceId s_playerShieldHitSoundSource;
+
+	extern s32* s_playerAmmoEnergy;
+	extern s32* s_playerAmmoPower;
+	extern s32* s_playerAmmoPlasma;
+	extern s32* s_playerAmmoShell;
+	extern s32* s_playerAmmoDetonators;
+	extern s32* s_playerAmmoMines;
+	extern s32* s_playerAmmoMissiles;
+	extern s32* s_playerShields;
+	extern s32* s_playerHealth;
+	extern fixed16_16* s_playerBatteryPower;
+
+	extern s32 s_ammoEnergyMax;
+	extern s32 s_ammoPowerMax;
+	extern s32 s_ammoShellMax;
+	extern s32 s_ammoPlasmaMax;
+	extern s32 s_ammoDetonatorMax;
+	extern s32 s_ammoMineMax;
+	extern s32 s_ammoMissileMax;
+	extern s32 s_shieldsMax;
+	extern fixed16_16 s_batteryPowerMax;
+	extern s32 s_healthMax;
 
 	void player_init();
 	void player_readInfo(u8* inv, s32* ammo);

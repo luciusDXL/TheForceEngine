@@ -10,6 +10,7 @@
 #include <TFE_Jedi/Serialization/serialization.h>
 #include <TFE_Jedi/Memory/allocator.h>
 #include <TFE_Jedi/Task/task.h>
+#include <TFE_ExternalData/weaponExternal.h>
 
 using namespace TFE_Jedi;
 
@@ -40,6 +41,7 @@ namespace TFE_DarkForces
 	vec3_fixed s_explodePos;
 	EffectData* s_curEffectData = nullptr;
 
+	EffectData setEffectData(HitEffectID type, TFE_ExternalData::ExternalEffect* extEffects);
 	void hitEffectWakeupFunc(SecObject* obj);
 	void hitEffectExplodeFunc(SecObject* obj);
 	void hitEffectTaskFunc(MessageType msg);
@@ -54,192 +56,44 @@ namespace TFE_DarkForces
 
 	void hitEffect_startup()
 	{
-		// TODO: Move Hit Effect data to an external file instead of hardcoding here.
-		s_effectData[HEFFECT_SMALL_EXP] =
-		{
-			HEFFECT_SMALL_EXP,              // type
-			TFE_Sprite_Jedi::getWax("exptiny.wax", POOL_GAME),
-			0,                              // force
-			0,                              // damage
-			0,                              // explosiveRange
-			FIXED(40),                      // wakeupRange
-			sound_load("ex-tiny1.voc", SOUND_PRIORITY_LOW0),     // soundEffect
-		};
-		s_effectData[HEFFECT_THERMDET_EXP] =
-		{
-			HEFFECT_THERMDET_EXP,           // type
-			TFE_Sprite_Jedi::getWax("detexp.wax", POOL_GAME),
-			FIXED(50),                      // force
-			FIXED(60),                      // damage
-			FIXED(30),                      // explosiveRange
-			FIXED(50),                      // wakeupRange
-			sound_load("ex-small.voc", SOUND_PRIORITY_LOW0),		// soundEffect
-		};
-		s_effectData[HEFFECT_PLASMA_EXP] =
-		{
-			HEFFECT_PLASMA_EXP,	            // type
-			TFE_Sprite_Jedi::getWax("emisexp.wax", POOL_GAME),
-			0,                              // force
-			0,                              // damage
-			0,                              // explosiveRange
-			FIXED(40),                      // wakeupRange
-			sound_load("ex-tiny1.voc", SOUND_PRIORITY_LOW0),     // soundEffect
-		};
-		s_effectData[HEFFECT_MORTAR_EXP] =
-		{
-			HEFFECT_MORTAR_EXP,             // type
-			TFE_Sprite_Jedi::getWax("mortexp.wax", POOL_GAME),
-			FIXED(35),                      // force
-			FIXED(50),                      // damage
-			FIXED(40),                      // explosiveRange
-			FIXED(60),                      // wakeupRange
-			sound_load("ex-med1.voc", SOUND_PRIORITY_HIGH2),      // soundEffect
-		};
-		s_effectData[HEFFECT_CONCUSSION] =
-		{
-			HEFFECT_CONCUSSION,             // type
-			TFE_Sprite_Jedi::getWax("concexp.wax", POOL_GAME),
-			FIXED(30),                      // force
-			FIXED(30),                      // damage
-			FIXED(25),                      // explosiveRange
-			FIXED(60),                      // wakeupRange
-			sound_load("ex-lrg1.voc", SOUND_PRIORITY_HIGH2),      // soundEffect
-		};
-		s_effectData[HEFFECT_CONCUSSION2] =
-		{
-			HEFFECT_CONCUSSION2,            // type
-			nullptr,                        // spriteData
-			FIXED(30),                      // force
-			FIXED(30),                      // damage
-			FIXED(25),                      // explosiveRange
-			FIXED(60),                      // wakeupRange
-			sound_load("ex-lrg1.voc", SOUND_PRIORITY_HIGH2),      // soundEffect
-		};
-		s_effectData[HEFFECT_MISSILE_EXP] =
-		{
-			HEFFECT_MISSILE_EXP,            // type
-			TFE_Sprite_Jedi::getWax("missexp.wax", POOL_GAME),
-			FIXED(70),                      // force
-			FIXED(70),                      // damage
-			FIXED(40),                      // explosiveRange
-			FIXED(70),                      // wakeupRange
-			sound_load("ex-med1.voc", SOUND_PRIORITY_HIGH2),      // soundEffect
-		};
-		s_effectData[HEFFECT_MISSILE_WEAK] =
-		{
-			HEFFECT_MISSILE_WEAK,           // type
-			TFE_Sprite_Jedi::getWax("missexp.wax", POOL_GAME),
-			FIXED(50),                      // force
-			FIXED(25),                      // damage
-			FIXED(40),                      // explosiveRange
-			FIXED(70),                      // wakeupRange
-			sound_load("ex-med1.voc", SOUND_PRIORITY_HIGH2),      // soundEffect
-		};
-		s_effectData[HEFFECT_PUNCH] =
-		{
-			HEFFECT_PUNCH,                  // type
-			nullptr,                        // spriteData
-			0,                              // force
-			0,                              // damage
-			0,                              // explosiveRange
-			FIXED(10),                      // wakeupRange
-			sound_load("punch.voc", SOUND_PRIORITY_LOW1),        // soundEffect
-		};
-		s_effectData[HEFFECT_CANNON_EXP] =
-		{
-			HEFFECT_CANNON_EXP,             // type
-			TFE_Sprite_Jedi::getWax("plasexp.wax", POOL_GAME),
-			0,                              // force
-			0,                              // damage
-			0,                              // explosiveRange
-			FIXED(50),                      // wakeupRange
-			sound_load("ex-med1.voc", SOUND_PRIORITY_LOW0),      // soundEffect
-		};
-		s_effectData[HEFFECT_REPEATER_EXP] =
-		{
-			HEFFECT_REPEATER_EXP,           // type
-			TFE_Sprite_Jedi::getWax("bullexp.wax", POOL_GAME),
-			0,                              // force
-			0,                              // damage
-			0,                              // explosiveRange
-			FIXED(50),                      // wakeupRange
-			sound_load("ex-tiny1.voc", SOUND_PRIORITY_LOW0),     // soundEffect
-		};
-		s_effectData[HEFFECT_LARGE_EXP] =
-		{
-			HEFFECT_LARGE_EXP,              // type
-			TFE_Sprite_Jedi::getWax("mineexp.wax", POOL_GAME),
-			FIXED(80),                      // force
-			FIXED(90),                      // damage
-			FIXED(45),                      // explosiveRange
-			FIXED(90),                      // wakeupRange
-			sound_load("ex-lrg1.voc", SOUND_PRIORITY_HIGH2),      // soundEffect
-		};
-		s_effectData[HEFFECT_EXP_BARREL] =
-		{
-			HEFFECT_EXP_BARREL,             // type
-			nullptr,                        // spriteData
-			FIXED(120),                     // force
-			FIXED(60),                      // damage
-			FIXED(40),                      // explosiveRange
-			FIXED(60),                      // wakeupRange
-			sound_load("ex-med1.voc", SOUND_PRIORITY_MED3),      // soundEffect
-		};
-		s_effectData[HEFFECT_EXP_INVIS] =
-		{
-			HEFFECT_EXP_INVIS,              // type
-			nullptr,                        // spriteData
-			FIXED(60),                      // force
-			FIXED(40),                      // damage
-			FIXED(20),                      // explosiveRange
-			FIXED(60),                      // wakeupRange
-			0,                              // soundEffect
-		};
-		s_effectData[HEFFECT_SPLASH] =
-		{
-			HEFFECT_SPLASH,             // type
-			TFE_Sprite_Jedi::getWax("splash.wax", POOL_GAME),
-			0,                          // force
-			0,                          // damage
-			0,                          // explosiveRange
-			FIXED(40),                  // wakeupRange
-			sound_load("swim-in.voc", SOUND_PRIORITY_LOW3),  // soundEffect
-		};
+		// TFE: Effect data is now defined externally. These were hardcoded in vanilla DF.
+		TFE_ExternalData::ExternalEffect* externalEffects = TFE_ExternalData::getExternalEffects();
 
-		s_genExplosion = TFE_Sprite_Jedi::getWax("genexp.wax", POOL_GAME);
-		// Different types of explosions that use the above animation.
-		s_effectData[HEFFECT_EXP_35] =
-		{
-			HEFFECT_EXP_35,                 // type
-			s_genExplosion,                 // spriteData
-			FIXED(30),                      // force
-			FIXED(35),                      // damage
-			FIXED(30),                      // explosiveRange
-			FIXED(50),                      // wakeupRange
-			sound_load("ex-med1.voc", SOUND_PRIORITY_HIGH2),      // soundEffect
-		};
-		s_effectData[HEFFECT_EXP_NO_DMG] =
-		{
-			HEFFECT_EXP_NO_DMG,             // type
-			s_genExplosion,                 // spriteData
-			0,                              // force
-			0,                              // damage
-			0,                              // explosiveRange
-			FIXED(50),                      // wakeupRange
-			sound_load("ex-med1.voc", SOUND_PRIORITY_HIGH2),      // soundEffect
-		};
-		s_effectData[HEFFECT_EXP_25] =
-		{
-			HEFFECT_EXP_25,                 // type
-			s_genExplosion,                 // spriteData
-			FIXED(20),                      // force
-			FIXED(25),                      // damage
-			FIXED(20),                      // explosiveRange
-			FIXED(50),                      // wakeupRange
-			sound_load("ex-med1.voc", SOUND_PRIORITY_HIGH2),      // soundEffect
-		};
+		s_effectData[HEFFECT_SMALL_EXP] = setEffectData(HEFFECT_SMALL_EXP, externalEffects);
+		s_effectData[HEFFECT_THERMDET_EXP] = setEffectData(HEFFECT_THERMDET_EXP, externalEffects);
+		s_effectData[HEFFECT_PLASMA_EXP] = setEffectData(HEFFECT_PLASMA_EXP, externalEffects);
+		s_effectData[HEFFECT_MORTAR_EXP] = setEffectData(HEFFECT_MORTAR_EXP, externalEffects);
+		s_effectData[HEFFECT_CONCUSSION] = setEffectData(HEFFECT_CONCUSSION, externalEffects);
+		s_effectData[HEFFECT_CONCUSSION2] = setEffectData(HEFFECT_CONCUSSION2, externalEffects);
+		s_effectData[HEFFECT_MISSILE_EXP] = setEffectData(HEFFECT_MISSILE_EXP, externalEffects);
+		s_effectData[HEFFECT_MISSILE_WEAK] = setEffectData(HEFFECT_MISSILE_WEAK, externalEffects);
+		s_effectData[HEFFECT_PUNCH] = setEffectData(HEFFECT_PUNCH, externalEffects);
+		s_effectData[HEFFECT_CANNON_EXP] = setEffectData(HEFFECT_CANNON_EXP, externalEffects);
+		s_effectData[HEFFECT_REPEATER_EXP] = setEffectData(HEFFECT_REPEATER_EXP, externalEffects);
+		s_effectData[HEFFECT_LARGE_EXP] = setEffectData(HEFFECT_LARGE_EXP, externalEffects);
+		s_effectData[HEFFECT_EXP_BARREL] = setEffectData(HEFFECT_EXP_BARREL, externalEffects);
+		s_effectData[HEFFECT_EXP_INVIS] = setEffectData(HEFFECT_EXP_INVIS, externalEffects);
+		s_effectData[HEFFECT_SPLASH] = setEffectData(HEFFECT_SPLASH, externalEffects);
+		s_effectData[HEFFECT_EXP_35] = setEffectData(HEFFECT_EXP_35, externalEffects);
+		s_effectData[HEFFECT_EXP_NO_DMG] = setEffectData(HEFFECT_EXP_NO_DMG, externalEffects);
+		s_effectData[HEFFECT_EXP_25] = setEffectData(HEFFECT_EXP_25, externalEffects);
 	}
 	
+	// TFE: Set up effect from external data.
+	EffectData setEffectData(HitEffectID type, TFE_ExternalData::ExternalEffect* extEffects)
+	{
+		return
+		{
+			type,															// type
+			TFE_Sprite_Jedi::getWax(extEffects[type].wax, POOL_GAME),		// spriteData
+			FIXED(extEffects[type].force),									// force
+			FIXED(extEffects[type].damage),									// damage
+			FIXED(extEffects[type].explosiveRange),							// explosiveRange
+			FIXED(extEffects[type].wakeupRange),							// wakeupRange
+			sound_load(extEffects[type].soundEffect, SoundPriority(extEffects[type].soundPriority)),	// soundEffect & priority
+		};
+	}
+
 	void spawnHitEffect(HitEffectID hitEffectId, RSector* sector, vec3_fixed pos, SecObject* excludeObj)
 	{
 		if (hitEffectId != HEFFECT_NONE)
@@ -276,7 +130,7 @@ namespace TFE_DarkForces
 		SERIALIZE(SaveVersionInit, hasTask, 0);
 		if (hasTask && s_hitEffectTask)
 		{
-			task_serializeState(stream, s_hitEffectTask);
+			task_serializeState(stream, s_hitEffectTask, nullptr, nullptr, true/*resetIP*/);
 		}
 	}
 		

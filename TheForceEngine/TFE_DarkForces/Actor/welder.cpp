@@ -537,11 +537,11 @@ namespace TFE_DarkForces
 		physics->height = obj->worldHeight + HALF_16;
 
 		physicsActor->moveMod.delta = { 0, 0, 0 };
-		physicsActor->moveMod.collisionFlags &= 0xfffffff8;
+		physicsActor->moveMod.collisionFlags &= ~ACTORCOL_ALL;
 
 		target->speed = 0;
 		target->speedRotation = 4551;	// ~100 degrees/second.
-		target->flags &= 0xfffffff0;
+		target->flags &= ~TARGET_ALL;
 		target->pitch = obj->pitch;
 		target->yaw   = obj->yaw;
 		target->roll  = obj->roll;

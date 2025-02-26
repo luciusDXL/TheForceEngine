@@ -62,6 +62,8 @@ public:
 	// Start a new module
 	int StartNewModule(asIScriptEngine *engine, const char *moduleName);
 
+	void SetReadMode(bool readStd);
+
 	// Load a script section from a file on disk
 	// Returns  1 if the file was included
 	//          0 if the file had already been included before
@@ -128,6 +130,7 @@ protected:
 	int  ExcludeCode(int start);
 	void OverwriteCode(int start, int len);
 
+	bool readStd;
 	asIScriptEngine           *engine;
 	asIScriptModule           *module;
 	std::string                modifiedScript;

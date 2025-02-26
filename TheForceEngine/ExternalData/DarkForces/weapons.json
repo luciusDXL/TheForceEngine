@@ -1,0 +1,388 @@
+{
+    "gasmask": {
+        "texture": "gmask.bm",
+        "xPos": 105,
+        "yPos": 141
+    },
+    "weapons": [
+        {
+            "name": "FIST",
+            "data": {
+                "frameCount": 4,
+                "textures": ["rhand1.bm", "punch1.bm", "punch2.bm", "punch3.bm"],
+                "xPos": [172, 55, 59, 56],
+                "yPos": [141, 167, 114, 141],
+                "ammo": "",
+                "wakeupRange": 0,
+                "variation": 0,
+                "animFrames": [
+                    {
+                        "texture": 1,
+                        "light": 0,
+                        "durationSupercharge": 5,
+                        "durationNormal": 10
+                    },
+                    {
+                        "texture": 2,
+                        "light": 0,
+                        "durationSupercharge": 10,
+                        "durationNormal": 21
+                    },
+                    {
+                        "texture": 3,
+                        "light": 0,
+                        "durationSupercharge": 10,
+                        "durationNormal": 21
+                    },
+                    {
+                        "texture": 0,
+                        "light": 0,
+                        "durationSupercharge": 10,
+                        "durationNormal": 21
+                    }
+                ]
+            }
+        },
+        {
+            "name": "PISTOL",
+            "data": {
+                "frameCount": 3,
+                "textures": ["pistol1.bm", "pistol2.bm", "pistol3.bm"],
+                "xPos": [165, 169, 169],
+                "yPos": [142, 136, 136],
+                "ammo": "ammoEnergy",
+                "wakeupRange": 45,
+                "variation": 22,
+                "primaryFireConsumption": 1,
+                "animFrames": [
+                    {
+                        "texture": 1,
+                        "light": 40,
+                        "durationSupercharge": 7,
+                        "durationNormal": 14
+                    },
+                    {
+                        "texture": 2,
+                        "light": 0,
+                        "durationSupercharge": 7,
+                        "durationNormal": 14
+                    },
+                    {
+                        "texture": 0,
+                        "light": 0,
+                        "durationSupercharge": 21,
+                        "durationNormal": 43
+                    }
+                ]
+            }
+        },
+        {
+            "name": "RIFLE",
+            "data": {
+                "frameCount": 2,
+                "textures": ["rifle1.bm", "rifle2.bm"],
+                "xPos": [113, 112],
+                "yPos": [127, 114],
+                "ammo": "ammoEnergy",
+                "wakeupRange": 50,
+                "variation": 86,
+                "primaryFireConsumption": 2,
+                "animFrames": [
+                    {
+                        "texture": 1,
+                        "light": 40,
+                        "durationSupercharge": 3,
+                        "durationNormal": 7
+                    },
+                    {
+                        "texture": 0,
+                        "light": 0,
+                        "durationSupercharge": 7,
+                        "durationNormal": 14
+                    }
+                ]
+            }
+        },
+        {
+            "name": "THERMAL_DET",
+            "data": {
+                "frameCount": 4,
+                "textures": ["therm1.bm", "therm2.bm", "therm3.bm", "rhand1.bm"],
+                "xPos": [161, 179, 180, 132],
+                "yPos": [131, 165, 102, 150],
+                "ammo": "ammoDetonator",
+                "wakeupRange": 0,
+                "variation": 2949165,
+                "primaryFireConsumption": 1,
+                "animFrames": [
+                    {
+                        "texture": 1,
+                        "light": 0,
+                        "durationSupercharge": 11,
+                        "durationNormal": 11
+                    },
+                    {
+                        "texture": 2,
+                        "light": 0,
+                        "durationSupercharge": 58,
+                        "durationNormal": 58
+                    },
+                    {
+                        "texture": 1,
+                        "light": 0,
+                        "durationSupercharge": 29,
+                        "durationNormal": 29
+                    },
+                    {
+                        "texture": 0,
+                        "light": 0,
+                        "durationSupercharge": 29,
+                        "durationNormal": 29
+                    },
+                    {
+                        "texture": 3,
+                        "light": 0,
+                        "durationSupercharge": 29,
+                        "durationNormal": 29
+                    }
+                ]
+            }
+        },
+        {
+            "name": "REPEATER",
+            "data": {
+                "frameCount": 3,
+                "textures":["autogun1.bm", "autogun2.bm", "autogun3.bm"],
+                "xPos": [156, 163, 163],
+                "yPos": [138, 140, 140],
+                "ammo": "ammoPower",
+                "wakeupRange": 60,
+                "variation": 2949165,
+                "primaryFireConsumption": 1,
+                "secondaryFireConsumption": 3,
+                "animFrames": [
+                    {
+                        "texture": 1,
+                        "light": 0,
+                        "durationSupercharge": 2,
+                        "durationNormal": 5
+                    },
+                    {
+                        "texture": 2,
+                        "light": 33,
+                        "durationSupercharge": 5,
+                        "durationNormal": 11
+                    }
+                ],
+                "animFramesSecondary": [
+                    {
+                        "texture": 1,
+                        "light": 0,
+                        "durationSupercharge": 4,
+                        "durationNormal": 8
+                    },
+                    {
+                        "texture": 2,
+                        "light": 33,
+                        "durationSupercharge": 5,
+                        "durationNormal": 11
+                    },
+                    {
+                        "texture": 0,
+                        "light": 0,
+                        "durationSupercharge": 14,
+                        "durationNormal": 29
+                    }
+                ]
+            }
+        },
+        {
+            "name": "FUSION",
+            "data": {
+                "frameCount": 6,
+                "textures": ["fusion1.bm", "fusion2.bm", "fusion3.bm", "fusion4.bm", "fusion5.bm", "fusion6.bm"],
+                "xPos": [19, 23, 23, 23, 23, 23],
+                "yPos": [152, 155, 155, 155, 155, 155],
+                "ammo": "ammoPower",
+                "wakeupRange": 55,
+                "variation": 45,
+                "primaryFireConsumption": 1,
+                "secondaryFireConsumption": 8,
+                "animFrames": [
+                    {
+                        "texture": 0,
+                        "light": 0,
+                        "durationSupercharge": 7,
+                        "durationNormal": 14
+                    },
+                    {
+                        "texture": 1,
+                        "light": 34,
+                        "durationSupercharge": 10,
+                        "durationNormal": 20
+                    },
+                    {
+                        "texture": 2,
+                        "light": 34,
+                        "durationSupercharge": 10,
+                        "durationNormal": 20
+                    },
+                    {
+                        "texture": 3,
+                        "light": 34,
+                        "durationSupercharge": 10,
+                        "durationNormal": 20
+                    },
+                    {
+                        "texture": 4,
+                        "light": 34,
+                        "durationSupercharge": 10,
+                        "durationNormal": 20
+                    }
+                ],
+                "animFramesSecondary": [
+                    {
+                        "texture": 5,
+                        "light": 34,
+                        "durationSupercharge": 14,
+                        "durationNormal": 29
+                    },
+                    {
+                        "texture": 0,
+                        "light": 0,
+                        "durationSupercharge": 19,
+                        "durationNormal": 39
+                    }
+                ]
+            }
+        },
+        {
+            "name": "MORTAR",
+            "data": {
+                "frameCount": 4,
+                "textures": ["mortar1.bm", "mortar2.bm", "mortar3.bm", "mortar4.bm"],
+                "xPos": [123, 126, 127, 123],
+                "yPos": [119, 117, 119, 116],
+                "ammo": "ammoShell",
+                "wakeupRange": 60,
+                "variation": 45,
+                "primaryFireConsumption": 1,
+                "animFrames": [
+                    {
+                        "texture": 1,
+                        "light": 36,
+                        "durationSupercharge": 29,
+                        "durationNormal": 58
+                    },
+                    {
+                        "texture": 2,
+                        "light": 36,
+                        "durationSupercharge": 7,
+                        "durationNormal": 14
+                    },
+                    {
+                        "texture": 3,
+                        "light": 36,
+                        "durationSupercharge": 7,
+                        "durationNormal": 14
+                    },
+                    {
+                        "texture": 0,
+                        "light": 0,
+                        "durationSupercharge": 7,
+                        "durationNormal": 14
+                    }
+                ]
+            }
+        },
+        {
+            "name": "MINE",
+            "data": {
+                "frameCount": 3,
+                "textures": ["clay1.bm", "clay2.bm", "rhand1.bm"],
+                "xPos": [105, 105, 132],
+                "yPos": [153, 153, 150],
+                "ammo": "ammoMine",
+                "wakeupRange": 0,
+                "variation": 0,
+                "primaryFireConsumption": 1
+            }
+        },
+        {
+            "name": "CONCUSSION",
+            "data": {
+                "frameCount": 3,
+                "textures": ["concuss1.bm", "concuss2.bm", "concuss3.bm"],
+                "xPos": [130, 191, 188],
+                "yPos": [131, 129, 132],
+                "ammo": "ammoPower",
+                "wakeupRange": 70,
+                "variation": 0,
+                "primaryFireConsumption": 4,
+                "animFrames":[
+                    {
+                        "texture": 1,
+                        "light": 36,
+                        "durationSupercharge": 21,
+                        "durationNormal": 43
+                    },
+                    {
+                        "texture": 2,
+                        "light": 0,
+                        "durationSupercharge": 7,
+                        "durationNormal": 14
+                    },
+                    {
+                        "texture": 0,
+                        "light": 0,
+                        "durationSupercharge": 29,
+                        "durationNormal": 58
+                    }
+                ]
+            }
+        },
+        {
+            "name": "CANNON",
+            "data": {
+                "frameCount": 4,
+                "textures": ["assault1.bm", "assault2.bm", "assault3.bm", "assault4.bm"],
+                "xPos": [206, 208, 224, 230],
+                "yPos": [-74, -60, 81, 86],
+                "ammo": "ammoPlasma",
+                "secondaryAmmo": "ammoMissile",
+                "wakeupRange": 55,
+                "variation": 2949165,
+                "primaryFireConsumption": 1,
+                "secondaryFireConsumption": 1,
+                "animFrames": [
+                    {
+                        "texture": 1,
+                        "light": 34,
+                        "durationSupercharge": 7,
+                        "durationNormal": 14
+                    }
+                ],
+                "animFramesSecondary":[
+                    {
+                        "texture": 2,
+                        "light": 0,
+                        "durationSupercharge": 14,
+                        "durationNormal": 29
+                    },
+                    {
+                        "texture": 3,
+                        "light": 33,
+                        "durationSupercharge": 43,
+                        "durationNormal": 87
+                    },
+                    {
+                        "texture": 0,
+                        "light": 0,
+                        "durationSupercharge": 29,
+                        "durationNormal": 58
+                    }
+                ]
+            }
+        }
+    ]
+}

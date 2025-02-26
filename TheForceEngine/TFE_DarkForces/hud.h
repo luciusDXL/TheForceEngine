@@ -18,7 +18,6 @@ namespace TFE_DarkForces
 	void hud_sendTextMessage(s32 msgId);
 	void hud_sendTextMessage(const char* msg, s32 priority, bool skipPriority=true);
 	void hud_clearMessage();
-	std::string hud_getDataStr();
 
 	void hud_loadGameMessages();
 	void hud_loadGraphics();

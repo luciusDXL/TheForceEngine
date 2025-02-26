@@ -3,7 +3,7 @@
 #include <TFE_System/system.h>
 #include <TFE_Editor/LevelEditor/infoPanel.h>
 #include <TFE_Editor/LevelEditor/selection.h>
-#include <TFE_ForceScript/forceScript.h>
+#include <TFE_ForceScript/scriptInterface.h>
 #include <TFE_ForceScript/float2.h>
 #include <algorithm>
 
@@ -116,21 +116,13 @@ namespace LevelEditor
 		return pos;
 	}
 
-	bool LS_Selection::scriptRegister(asIScriptEngine* engine)
+	bool LS_Selection::scriptRegister(ScriptAPI api)
 	{
-		s32 res = 0;
-		// Object Type
-		res = engine->RegisterObjectType("Selection", sizeof(LS_Selection), asOBJ_VALUE | asOBJ_POD); assert(res >= 0);
-		// Properties
-
-		//------------------------------------
-		// Functions
-		//------------------------------------
-		res = engine->RegisterObjectMethod("Selection", "float2 getPositionXZ(int = 0)", asMETHOD(LS_Selection, getPositionXZ), asCALL_THISCALL);  assert(res >= 0);
-
-		// Script variable.
-		res = engine->RegisterGlobalProperty("Selection selection", this);  assert(res >= 0);
-		return res >= 0;
+		ScriptClassBegin("Selection", "selection", api);
+		{
+			ScriptObjMethod("float2 getPositionXZ(int = 0)", getPositionXZ);
+		}
+		ScriptClassEnd();
 	}
 }
 

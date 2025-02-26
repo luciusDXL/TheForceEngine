@@ -147,7 +147,6 @@ namespace TFE_Input
 
 	void setRelativeMousePos(s32 x, s32 y)
 	{
-		//TFE_System::logWrite(LOG_MSG, "MOUSE RELATIVE Input", "X %d Y %d", x,y);
 		s_mouseMove[0] = x;
 		s_mouseMove[1] = y;
 		s_mouseMoveAccum[0] += x;
@@ -156,7 +155,6 @@ namespace TFE_Input
 
 	void setMousePos(s32 x, s32 y)
 	{
-		//TFE_System::logWrite(LOG_MSG, "MOUSE Input", "X %d Y %d", x, y);
 		s_mousePos[0] = x;
 		s_mousePos[1] = y;
 	}
@@ -197,6 +195,12 @@ namespace TFE_Input
 
 		*x = s_mouseMove[0];
 		*y = s_mouseMove[1];
+	}
+
+	void getMouseMoveAccum(s32* x, s32* y)
+	{
+		*x = s_mouseMoveAccum[0];
+		*y = s_mouseMoveAccum[1];
 	}
 		
 	void getAccumulatedMouseMove(s32* x, s32* y)

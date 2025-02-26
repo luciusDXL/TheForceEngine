@@ -1411,6 +1411,9 @@
     <ClInclude Include="TFE_ExternalData\logicTables.h">
       <Filter>Source\TFE_ExternalData</Filter>
     </ClInclude>
+    <ClInclude Include="TFE_ExternalData\weaponExternal.h">
+      <Filter>Source\TFE_ExternalData</Filter>
+    </ClInclude>	
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -2458,6 +2461,9 @@
       <Filter>Source\TFE_ExternalData</Filter>
     </ClCompile>
     <ClCompile Include="TFE_ExternalData\logicTables.cpp">
+      <Filter>Source\TFE_ExternalData</Filter>
+    </ClCompile>
+	<ClCompile Include="TFE_ExternalData\weaponExternal.cpp">
       <Filter>Source\TFE_ExternalData</Filter>
     </ClCompile>
   </ItemGroup>

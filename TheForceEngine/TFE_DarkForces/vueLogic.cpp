@@ -213,6 +213,12 @@ namespace TFE_DarkForces
 		size_t bufferPos = 0;
 		if (!strcasecmp(transformName, "camera"))
 		{
+			// TFE: allocate a VFRAME_FIRST for camera transforms, same as with ordinary transforms
+			VueFrame* frame = (VueFrame*)allocator_newItem(vueList);
+			if (!frame)
+				return;
+			frame->flags = VFRAME_FIRST;
+
 			while (1)
 			{
 				const char* line = parser->readLine(bufferPos);
@@ -230,7 +236,12 @@ namespace TFE_DarkForces
 					frame->offset.y = floatToFixed16(y1);
 					frame->offset.z = floatToFixed16(z1);
 					frame->yaw   = vec2ToAngle(floatToFixed16(x2 - x1), floatToFixed16(z2 - z1));
-					frame->pitch = 0;
+					
+					// TFE: calculate pitch (this was not done in vanilla)
+					f32 dx = x2 - x1;
+					f32 dz = z2 - z1;
+					f64 xzVec = sqrt(dx * dx + dz * dz);
+					frame->pitch = vec2ToAngle(floatToFixed16(y1 - y2), floatToFixed16((f32)xzVec));
 					frame->roll  = angle14_32(r * 16383.0f / 360.0f);
 				}
 			}
@@ -586,6 +597,8 @@ namespace TFE_DarkForces
 
 							local(obj)->posWS = local(frame)->offset;
 							local(obj)->yaw = local(frame)->yaw;
+							local(obj)->pitch = local(frame)->pitch;	// TFE: copy pitch and roll to object (not done in vanilla)
+							local(obj)->roll = local(frame)->roll;
 						task_localBlockEnd;
 
 						entity_yield(TASK_NO_DELAY);

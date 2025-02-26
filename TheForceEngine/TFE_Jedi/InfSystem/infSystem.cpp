@@ -10,11 +10,13 @@
 #include <TFE_DarkForces/hud.h>
 #include <TFE_DarkForces/agent.h>
 #include <TFE_DarkForces/sound.h>
+#include <TFE_DarkForces/automap.h>
 #include <TFE_FileSystem/paths.h>
 #include <TFE_Jedi/Memory/allocator.h>
 #include <TFE_Jedi/Level/level.h>
 #include <TFE_Jedi/Level/levelData.h>
 #include <TFE_Jedi/Collision/collision.h>
+#include <TFE_ForceScript/scriptInterface.h>
 #include <TFE_Settings/settings.h>
 #include <TFE_System/parser.h>
 #include <TFE_System/system.h>
@@ -91,6 +93,7 @@ namespace TFE_Jedi
 
 	void inf_stopAdjoinCommands(Stop* stop);
 	void inf_stopHandleMessages(MessageType msg);
+	void inf_stopHandleScriptCall(Stop* stop);
 	void inf_handleMsgLights();
 	void inf_elevatorStart(InfElevator* elev);
 	vec3_fixed inf_getElevSoundPos(InfElevator* elev);
@@ -173,6 +176,7 @@ namespace TFE_Jedi
 		stop->delay = TICKS(4);	// 4 seconds.
 		stop->messages = 0;
 		stop->adjoinCmds = 0;
+		stop->scriptCalls = nullptr;
 		stop->pageId = 0;
 		stop->floorTex = nullptr;
 		stop->ceilTex = nullptr;
@@ -1050,7 +1054,7 @@ namespace TFE_Jedi
 			{
 				char* endPtr;
 				fixed16_16 dstPosX = floatToFixed16(strtof(s_infArg0, &endPtr));
-				fixed16_16 dstPosY = floatToFixed16(strtof(s_infArg1, &endPtr));
+				fixed16_16 dstPosY = floatToFixed16(strtof(s_infArg1, &endPtr));	// Note: the sign of the Y coord is not flipped here, therefore negative Y = up
 				fixed16_16 dstPosZ = floatToFixed16(strtof(s_infArg2, &endPtr));
 				angle14_16 yaw = floatToAngle(strtof(s_infArg3, &endPtr));
 
@@ -1579,8 +1583,11 @@ namespace TFE_Jedi
 								// Messages
 								s_infState.nextStop = taskCtx->nextStop;
 								task_callTaskFunc(inf_stopHandleMessages);
-
+																
 								task_localBlockBegin;
+								// ScriptCalls.
+								inf_stopHandleScriptCall(taskCtx->nextStop);
+
 								// Adjoin Commands.
 								inf_stopAdjoinCommands(taskCtx->nextStop);
 
@@ -1606,7 +1613,7 @@ namespace TFE_Jedi
 								{
 									sound_play(pageId);
 								}
-
+								
 								// Advance to the next stop.
 								taskCtx->elev->nextStop = inf_advanceStops(taskCtx->elev->stops, 0, 1);
 								task_localBlockEnd;
@@ -1678,6 +1685,13 @@ namespace TFE_Jedi
 								obj->yaw   = teleport->dstAngle[1];
 								obj->roll  = teleport->dstAngle[2];
 								sector_addObject(teleport->target, obj);
+
+								if (obj->entityFlags & ETFLAG_PLAYER)
+								{
+									// TFE: these player-state values also need to be transformed (they were not in the original code)
+									s_playerYPos = teleport->dstPosition.y;
+									s_playerYaw = teleport->dstAngle[1];
+								}
 							}
 							else if (type == TELEPORT_CHUTE)
 							{
@@ -1692,7 +1706,7 @@ namespace TFE_Jedi
 
 							if (obj->entityFlags & ETFLAG_PLAYER)
 							{
-								// automap_setLayer(obj->sector->layer);
+								automap_setLayer(obj->sector->layer);	// set the map layer to the target sector's layer
 							}
 						}  // if (obj)
 					}  // for (s32 i = 0; i < objCount; objList++)
@@ -1929,6 +1943,109 @@ namespace TFE_Jedi
 					*type = MSG_TRIGGER;
 				}
 		}
+	}
+
+	s32 inf_parseScriptCallArg(InfElevator* elev, Stop* stop, TFE_ForceScript::ScriptArg* arg, s32 maxArgCount, const char* arg0, const char* arg1, const char* arg2, const char* arg3)
+	{
+		const char* argList[] = { arg0, arg1, arg2, arg3 };
+		s32 argCount = 0;
+		for (s32 i = 0; i < maxArgCount; i++)
+		{
+			const char* value = argList[i];
+			if (!value || value[0] == 0) { continue; }
+
+			if (strcasecmp(value, "sectorId") == 0)
+			{
+				arg[argCount].iValue = elev->sector->id;
+				arg[argCount].type = TFE_ForceScript::ARG_S32;
+				argCount++;
+			}
+			else if (strcasecmp(value, "wallId") == 0)
+			{
+				arg[argCount].iValue = -1;
+				arg[argCount].type = TFE_ForceScript::ARG_S32;
+				argCount++;
+			}
+			else if (strcasecmp(value, "stopId") == 0)
+			{
+				arg[argCount].iValue = stop->index;
+				arg[argCount].type = TFE_ForceScript::ARG_S32;
+				argCount++;
+			}
+			else if (strcasecmp(value, "true") == 0)
+			{
+				arg[argCount].bValue = true;
+				arg[argCount].type = TFE_ForceScript::ARG_BOOL;
+				argCount++;
+			}
+			else if (strcasecmp(value, "false") == 0)
+			{
+				arg[argCount].bValue = false;
+				arg[argCount].type = TFE_ForceScript::ARG_BOOL;
+				argCount++;
+			}
+			else if (strcasecmp(value, "elevValue") == 0 && elev->value)
+			{
+				arg[argCount].fValue = fixed16ToFloat(*elev->value);
+				arg[argCount].type = TFE_ForceScript::ARG_F32;
+				argCount++;
+			}
+			else if (strcasecmp(value, "elevFlags") == 0)
+			{
+				arg[argCount].iValue = (s32)elev->flags;
+				arg[argCount].type = TFE_ForceScript::ARG_S32;
+				argCount++;
+			}
+			else if (strcasecmp(value, "elevSpeed") == 0)
+			{
+				arg[argCount].fValue = fixed16ToFloat(elev->speed);
+				arg[argCount].type = TFE_ForceScript::ARG_F32;
+				argCount++;
+			}
+			else if (strcasecmp(value, "elevDir") == 0 || strcasecmp(value, "elevCenter") == 0)
+			{
+				arg[argCount].float2Value.x = fixed16ToFloat(elev->dirOrCenter.x);
+				arg[argCount].float2Value.z = fixed16ToFloat(elev->dirOrCenter.z);
+				arg[argCount].type = TFE_ForceScript::ARG_FLOAT2;
+				argCount++;
+			}
+			else if (value[0] == '\"')
+			{
+				// Remove the quotes.
+				char unquotedStr[256];
+				s32 len = (s32)strlen(value);
+				s32 lastQuote = 0;
+				for (s32 c = 1; c < len; c++)
+				{
+					if (value[c] == '\"')
+					{
+						lastQuote = c;
+					}
+				}
+				s32 newLen = min(255, lastQuote - 1);
+				memcpy(unquotedStr, &value[1], lastQuote - 1);
+				unquotedStr[newLen] = 0;
+
+				arg[argCount].stdStr = unquotedStr;
+				arg[argCount].type = TFE_ForceScript::ARG_STRING;
+				argCount++;
+			}
+			// If it is a numerical value, assume float.
+			else
+			{
+				char* endPtr = nullptr;
+				arg[argCount].fValue = strtof(s_infArg0, &endPtr);
+				arg[argCount].type = TFE_ForceScript::ARG_F32;
+				argCount++;
+			}
+		}
+
+		// Add an argument for the elevator ID, always the last argument.
+		arg[argCount].iValue = allocator_getIndex(s_infSerState.infElevators, elev);
+		arg[argCount].type = TFE_ForceScript::ARG_S32;
+		argCount++;
+
+		return argCount;
 	}
 		
 	bool inf_parseElevatorCommand(s32 argCount, KEYWORD action, Allocator* linkAlloc, bool seqEnd, InfElevator*& elev, s32& initStopIndex, InfLink*& link)
@@ -2242,6 +2359,28 @@ namespace TFE_Jedi
 				s32 index = strToInt(s_infArg0);
 				Stop* stop = inf_getStopByIndex(elev, index);
 				if (stop) { stop->pageId = soundSourceId; }
+			} break;
+			case KW_SCRIPTCALL:
+			{
+				s32 index = strToInt(s_infArg0);
+				Stop* stop = inf_getStopByIndex(elev, index);
+				if (stop)
+				{
+					TFE_ForceScript::FunctionHandle func = getLevelScriptFunc(s_infArg1);
+					if (func)
+					{
+						if (!stop->scriptCalls)
+						{
+							stop->scriptCalls = allocator_create(sizeof(InfScriptCall));
+						}
+						InfScriptCall* scriptCall = (InfScriptCall*)allocator_newItem(stop->scriptCalls);
+						if (!scriptCall) { return JFALSE; }
+
+						// Up to 4 arguments.
+						scriptCall->argCount = inf_parseScriptCallArg(elev, stop, scriptCall->args, argCount - 3, s_infArg2, s_infArg3, s_infArg4, s_infArgExtra);
+						scriptCall->funcPtr = func;
+					}
+				}
 			} break;
 			case KW_SEQEND:
 			{
@@ -3204,6 +3343,16 @@ namespace TFE_Jedi
 
 		task_end;
 	}
+
+	void inf_stopHandleScriptCall(Stop* stop)
+	{
+		InfScriptCall* call = (InfScriptCall*)allocator_getHead(stop->scriptCalls);
+		while (call)
+		{
+			TFE_ForceScript::execFunc(call->funcPtr, call->argCount, call->args);
+			call = (InfScriptCall*)allocator_getNext(stop->scriptCalls);
+		}
+	}
 		
 	void inf_handleMsgLights()
 	{
@@ -3476,7 +3625,7 @@ namespace TFE_Jedi
 			sector_adjustTextureMirrorOffsets_Floor(sector, floorDelta);
 		}
 		sector_adjustHeights(sector, floorDelta, ceilDelta, secHeightDelta);
-		
+
 		// Apply adjustments to "slave" sectors.
 		Slave* child = (Slave*)allocator_getHead(elev->slaves);
 		while (child)

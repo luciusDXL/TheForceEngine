@@ -141,7 +141,8 @@ namespace LevelEditor
 		"Message", // ISC_MESSAGE
 		"Adjoin",  // ISC_ADJOIN
 		"Texture", // ISC_TEXTURE
-		"Page"     // ISC_PAGE
+		"Page",    // ISC_PAGE
+		"ScriptCall", // ISC_SCRIPTCALL
 	};
 
 	const char* c_infElevTypeName[] =
@@ -276,7 +277,7 @@ namespace LevelEditor
 		s_levelInf.elevator.clear();
 		s_levelInf.trigger.clear();
 		s_levelInf.teleport.clear();
-		s_overlayList = {};
+		s_overlayList = OverlayAssetList{};
 	}
 
 	void editor_infDestroy()
@@ -1626,6 +1627,7 @@ namespace LevelEditor
 	const ImVec4 colorKeywordOuterSel = { 0.453f, 0.918f, 1.00f, 1.0f };
 	const ImVec4 colorKeywordOuter = { 0.302f, 0.612f, 0.84f, 1.0f };
 	const ImVec4 colorKeywordInner = { 0.306f, 0.788f, 0.69f, 1.0f };
+	const ImVec4 colorKeywordArg = { 0.306f, 0.788f*0.5f, 0.69f, 1.0f };
 
 	const ImVec4 colorInnerHeaderBase = { 0.98f, 0.49f, 0.26f, 1.0f };
 	const ImVec4 colorInnerHeader = { colorInnerHeaderBase.x, colorInnerHeaderBase.y, colorInnerHeaderBase.z, 0.31f };
@@ -1730,6 +1732,7 @@ namespace LevelEditor
 				for (s32 s = 0; s < stopCount; s++, stop++)
 				{
 					*contentHeight += elemHeight * f32(stop->msg.size());
+					*contentHeight += elemHeight * f32(stop->scriptCall.size());
 					*contentHeight += elemHeight * f32(stop->adjoinCmd.size());
 					*contentHeight += elemHeight * f32(stop->textureCmd.size());
 					*contentHeight += (stop->overrideSet & ISO_PAGE) ? elemHeight : 0.0f;
@@ -2463,6 +2466,10 @@ namespace LevelEditor
 					stop->page = {};
 					stop->overrideSet |= ISO_PAGE;
 				} break;
+				case ISC_SCRIPTCALL:
+				{
+					stop->scriptCall.push_back({});
+				} break;
 			}
 		}
 		setTooltip("Add a new command to the selected stop.");
@@ -2472,6 +2479,7 @@ namespace LevelEditor
 			const s32 msgCount    = (s32)stop->msg.size();
 			const s32 adjoinCount = (s32)stop->adjoinCmd.size();
 			const s32 texCount    = (s32)stop->textureCmd.size();
+			const s32 scriptCallCount = (s32)stop->scriptCall.size();
 
 			s32 index = -1;
 			s32 cmdIndexOffset = 0;
@@ -2487,6 +2495,18 @@ namespace LevelEditor
 			}
 			cmdIndexOffset += msgCount;
 
+			if (index < 0 && s_infEditor.curStopCmdIndex < scriptCallCount + cmdIndexOffset)
+			{
+				index = s_infEditor.curStopCmdIndex - cmdIndexOffset;
+				for (s32 i = index; i < scriptCallCount - 1; i++)
+				{
+					stop->scriptCall[i] = stop->scriptCall[i + 1];
+				}
+				stop->scriptCall.pop_back();
+				s_infEditor.curStopCmdIndex = -1;
+			}
+			cmdIndexOffset += scriptCallCount;
+
 			if (index < 0 && s_infEditor.curStopCmdIndex < adjoinCount + cmdIndexOffset)
 			{
 				index = s_infEditor.curStopCmdIndex - cmdIndexOffset;
@@ -2497,9 +2517,9 @@ namespace LevelEditor
 				stop->adjoinCmd.pop_back();
 				s_infEditor.curStopCmdIndex = -1;
 			}
-			cmdIndexOffset += (s32)stop->adjoinCmd.size();
+			cmdIndexOffset += adjoinCount;
 
-			if (index < 0 && s_infEditor.curStopCmdIndex < (s32)stop->textureCmd.size() + cmdIndexOffset)
+			if (index < 0 && s_infEditor.curStopCmdIndex < texCount + cmdIndexOffset)
 			{
 				index = s_infEditor.curStopCmdIndex - cmdIndexOffset;
 				for (s32 i = index; i < texCount - 1; i++)
@@ -2509,7 +2529,7 @@ namespace LevelEditor
 				stop->textureCmd.pop_back();
 				s_infEditor.curStopCmdIndex = -1;
 			}
-			cmdIndexOffset += (s32)stop->textureCmd.size();
+			cmdIndexOffset += texCount;
 
 			if (index < 0 && s_infEditor.curStopCmdIndex <= cmdIndexOffset)
 			{
@@ -2517,6 +2537,7 @@ namespace LevelEditor
 				stop->overrideSet &= ~ISO_PAGE;
 				index = 0;
 			}
+			cmdIndexOffset++;
 		}
 		setTooltip("Remove the selected command from the stop.");
 		ImGui::SameLine(0.0f, 16.0f);
@@ -2821,6 +2842,35 @@ namespace LevelEditor
 				ImGui::SetCursorPosY(ImGui::GetCursorPosY() - 2);
 			}
 			cmdIndexOffset += msgCount;
+
+			const s32 scriptCallCount = (s32)stop->scriptCall.size();
+			Editor_ScriptCall* call = stop->scriptCall.data();
+			for (s32 c = 0; c < scriptCallCount; c++, call++)
+			{
+				bool cmdSelected = editor_stopCmdSelectable(elev, stop, itemClassIndex, c + cmdIndexOffset, "ScriptCall:");
+
+				ImGui::Text("Function"); ImGui::SameLine(0.0f, 8.0f);
+				strcpy(targetBuffer, call->funcName.c_str());
+				ImGui::SetNextItemWidth(128.0f);
+				if (ImGui::InputText(editor_getUniqueLabel(""), targetBuffer, 256))
+				{
+					call->funcName = targetBuffer;
+				}
+				ImGui::SameLine(0.0f, 16.0f);
+
+				ImGui::Text("Arguments"); ImGui::SameLine(0.0f, 8.0f);
+				for (s32 a = 0; a < 4; a++)
+				{
+					strcpy(targetBuffer, call->arg[a].value.c_str());
+					ImGui::SetNextItemWidth(96.0f);
+					if (ImGui::InputText(editor_getUniqueLabel(""), targetBuffer, 256))
+					{
+						call->arg[a].value = targetBuffer;
+					}
+					if (a < 3) { ImGui::SameLine(0.0f, 8.0f); }
+				}
+			}
+			cmdIndexOffset += scriptCallCount;
 
 			const s32 adjoinCount = (s32)stop->adjoinCmd.size();
 			Editor_InfAdjoinCmd* cmd = stop->adjoinCmd.data();
@@ -3621,6 +3671,22 @@ namespace LevelEditor
 							appendToBuffer(outStr, buffer);
 						}
 
+						const s32 scriptCallCount = (s32)stop->scriptCall.size();
+						const Editor_ScriptCall* call = stop->scriptCall.data();
+						for (s32 c = 0; c < scriptCallCount; c++, call++)
+						{
+							char argList[4096] = "";
+							for (s32 a = 0; a < 4; a++)
+							{
+								if (call->arg[a].value.empty() || call->arg[a].value == "") { break; }
+								strcat(argList, call->arg[a].value.c_str());
+								strcat(argList, " ");
+							}
+
+							sprintf(buffer, "%s%s%sScriptCall: %d %s %s", curTab, tab, tab, s, call->funcName.c_str(), argList);
+							appendToBuffer(outStr, buffer);
+						}
+
 						const s32 adjoinCount = (s32)stop->adjoinCmd.size();
 						const Editor_InfAdjoinCmd* adjoinCmd = stop->adjoinCmd.data();
 						for (s32 a = 0; a < adjoinCount; a++, adjoinCmd++)
@@ -4014,6 +4080,22 @@ namespace LevelEditor
 							ImGui::Text("%d", s); ImGui::SameLine(0.0f, 8.0f);
 							ImGui::Text("%s", stop->page.c_str());
 						}
+
+						const s32 scriptCallCount = (s32)stop->scriptCall.size();
+						const Editor_ScriptCall* call = stop->scriptCall.data();
+						for (s32 c = 0; c < scriptCallCount; c++, call++)
+						{
+							ImGui::Text("%s%s", tab, tab); ImGui::SameLine(0.0f, 0.0f);
+							ImGui::TextColored(colorKeywordInner, "ScriptCall:"); ImGui::SameLine(0.0f, 8.0f);
+							ImGui::Text("%d", s); ImGui::SameLine(0.0f, 8.0f);
+
+							ImGui::Text("%s", call->funcName.c_str()); ImGui::SameLine(0.0f, 8.0f);
+							for (s32 a = 0; a < 4; a++)
+							{
+								if (call->arg[a].value == "") { break; }
+								ImGui::TextColored(colorKeywordArg, "%s", call->arg[a].value.c_str()); ImGui::SameLine(0.0f, 8.0f);
+							}
+						}
 					}
 
 					const s32 slaveCount = (s32)elev->slaves.size();
@@ -4404,9 +4486,14 @@ namespace LevelEditor
 			for (s32 s = 0; s < stopCount; s++, stop++)
 			{
 				s32 adjoinCount, texCount, msgCount;
+				s32 scriptCallCount = 0;
 				file.read(&adjoinCount);
 				file.read(&texCount);
 				file.read(&msgCount);
+				if (version >= LEF_ScriptCall1)
+				{
+					file.read(&scriptCallCount);
+				}
 				stop->adjoinCmd.resize(adjoinCount);
 				stop->textureCmd.resize(texCount);
 				stop->msg.resize(msgCount);
@@ -4454,6 +4541,20 @@ namespace LevelEditor
 
 					file.read(&msg->eventFlags);
 					file.read(msg->arg, 2);
+				}
+
+				if (version >= LEF_ScriptCall1)
+				{
+					stop->scriptCall.resize(scriptCallCount);
+					Editor_ScriptCall* scriptCall = stop->scriptCall.data();
+					for (s32 s = 0; s < scriptCallCount; s++, scriptCall++)
+					{
+						file.read(&scriptCall->funcName);
+						for (s32 a = 0; a < 4; a++)
+						{
+							file.read(&scriptCall->arg[a].value);
+						}
+					}
 				}
 			}
 
@@ -4711,9 +4812,12 @@ namespace LevelEditor
 				const s32 adjoinCount = (s32)stop->adjoinCmd.size();
 				const s32 texCount = (s32)stop->textureCmd.size();
 				const s32 msgCount = (s32)stop->msg.size();
+				const s32 scriptCallCount = (s32)stop->scriptCall.size();
 				file.write(&adjoinCount);
 				file.write(&texCount);
 				file.write(&msgCount);
+				// version >= LEF_ScriptCall1
+				file.write(&scriptCallCount);
 
 				file.write(&stop->overrideSet);
 				s32 rel = stop->relative ? 1 : 0;
@@ -4752,6 +4856,17 @@ namespace LevelEditor
 					file.write(&type);
 					file.write(&msg->eventFlags);
 					file.write(msg->arg, 2);
+				}
+
+				// version >= LEF_ScriptCall1
+				const Editor_ScriptCall* scriptCall = stop->scriptCall.data();
+				for (s32 s = 0; s < scriptCallCount; s++, scriptCall++)
+				{
+					file.write(&scriptCall->funcName);
+					for (s32 a = 0; a < 4; a++)
+					{
+						file.write(&scriptCall->arg[a].value);
+					}
 				}
 			}
 

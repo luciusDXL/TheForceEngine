@@ -49,7 +49,7 @@ namespace TFE_DarkForces
 		ThinkerModule* thinkerMod = actor_createThinkerModule(dispatch);
 		thinkerMod->target.speedRotation = 0x7fff;
 		thinkerMod->target.speed = FIXED(13);
-		thinkerMod->anim.flags &= 0xfffffffe;
+		thinkerMod->anim.flags &= ~AFLAG_PLAYONCE;
 		thinkerMod->startDelay = TICKS(2);
 		actor_addModule(dispatch, (ActorModule*)thinkerMod);
 
@@ -57,7 +57,7 @@ namespace TFE_DarkForces
 		dispatch->moveMod = moveMod;
 		dispatch->animTable = s_reeyeesAnimTable;
 
-		moveMod->collisionFlags |= 1;
+		moveMod->collisionFlags |= ACTORCOL_NO_Y_MOVE;
 		moveMod->physics.width = obj->worldWidth;
 		actor_setupInitAnimation();
 
@@ -87,7 +87,7 @@ namespace TFE_DarkForces
 		ThinkerModule* thinkerMod = actor_createThinkerModule(dispatch);
 		thinkerMod->target.speedRotation = 0x7fff;
 		thinkerMod->target.speed = FIXED(13);
-		thinkerMod->anim.flags &= 0xfffffffe;
+		thinkerMod->anim.flags &= ~AFLAG_PLAYONCE;
 		thinkerMod->startDelay = TICKS(2);
 		actor_addModule(dispatch, (ActorModule*)thinkerMod);
 
@@ -95,7 +95,7 @@ namespace TFE_DarkForces
 		dispatch->moveMod = moveMod;
 		dispatch->animTable = s_reeyeesAnimTable;
 
-		moveMod->collisionFlags |= 1;
+		moveMod->collisionFlags |= ACTORCOL_NO_Y_MOVE;
 		moveMod->physics.width = obj->worldWidth;
 		actor_setupInitAnimation();
 
@@ -129,7 +129,7 @@ namespace TFE_DarkForces
 		thinkerMod->delay = 0;
 		thinkerMod->target.speedRotation = 0x3fff;
 		thinkerMod->target.speed = FIXED(12);
-		thinkerMod->anim.flags &= 0xfffffffe;
+		thinkerMod->anim.flags &= ~AFLAG_PLAYONCE;
 		thinkerMod->startDelay = TICKS(2);
 		actor_addModule(dispatch, (ActorModule*)thinkerMod);
 
@@ -137,7 +137,7 @@ namespace TFE_DarkForces
 		dispatch->moveMod = moveMod;
 		dispatch->animTable = s_gamorAnimTable;
 
-		moveMod->collisionFlags |= 1;
+		moveMod->collisionFlags |= ACTORCOL_NO_Y_MOVE;
 		moveMod->physics.width = obj->worldWidth;
 		actor_setupInitAnimation();
 
@@ -170,7 +170,7 @@ namespace TFE_DarkForces
 		thinkerMod->target.speedRotation = 0x7fff;
 		thinkerMod->target.speed = FIXED(9);
 		thinkerMod->delay = 0;
-		thinkerMod->anim.flags &= 0xfffffffe;
+		thinkerMod->anim.flags &= ~AFLAG_PLAYONCE;
 		thinkerMod->startDelay = TICKS(2);
 		actor_addModule(dispatch, (ActorModule*)thinkerMod);
 
@@ -178,7 +178,7 @@ namespace TFE_DarkForces
 		dispatch->moveMod = moveMod;
 		dispatch->animTable = s_bosskAnimTable;
 
-		moveMod->collisionFlags |= 1;
+		moveMod->collisionFlags |= ACTORCOL_NO_Y_MOVE;
 		moveMod->physics.width = obj->worldWidth;
 		actor_setupInitAnimation();
 
@@ -228,7 +228,7 @@ namespace TFE_DarkForces
 		ThinkerModule* thinkerMod = actor_createThinkerModule(dispatch);
 		thinkerMod->target.speedRotation = cust->rotationSpeed;
 		thinkerMod->target.speed = FIXED(cust->speed);
-		thinkerMod->anim.flags &= 0xfffffffe;
+		thinkerMod->anim.flags &= ~AFLAG_PLAYONCE;		// Ensures that walking animations will loop
 		thinkerMod->startDelay = TICKS(2);
 		actor_addModule(dispatch, (ActorModule*)thinkerMod);
 
@@ -248,12 +248,12 @@ namespace TFE_DarkForces
 		moveMod->physics.width = obj->worldWidth;
 		if (cust->isFlying)
 		{
-			moveMod->collisionFlags = (moveMod->collisionFlags & 0xfffffff8) | 4;
+			moveMod->collisionFlags = (moveMod->collisionFlags & ~ACTORCOL_ALL) | ACTORCOL_BIT2;	// Remove bits 0, 1 and set bit 2
 			moveMod->physics.yPos = FIXED(200);
 		}
 		else
 		{
-			moveMod->collisionFlags |= 1;
+			moveMod->collisionFlags |= ACTORCOL_NO_Y_MOVE;
 		}
 
 		dispatch->animTable = s_customAnimTable;

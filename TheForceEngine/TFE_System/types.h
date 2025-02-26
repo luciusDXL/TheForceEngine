@@ -132,6 +132,7 @@ enum JediBool : u32
 
 // Move to math
 #define PI 3.14159265358979323846f
+#define TWO_PI 6.28318530717958647693f
 
 enum AssetPool
 {

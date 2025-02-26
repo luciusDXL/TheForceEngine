@@ -4,6 +4,7 @@
 #include "pickup.h"
 #include "animLogic.h"
 #include <TFE_FileSystem/paths.h>
+#include <TFE_ExternalData/pickupExternal.h>
 
 using namespace TFE_Jedi;
 
@@ -12,7 +13,8 @@ namespace TFE_DarkForces
 	///////////////////////////////////////////
 	// Constants
 	///////////////////////////////////////////
-	// TODO: Move into data file for TFE, rather than hardcoding here.
+	
+	/* TFE: Moved to external data 
 	static const char* c_itemResoure[ITEM_COUNT] =
 	{
 		"IDPLANS.WAX",  // ITEM_PLANS
@@ -61,14 +63,14 @@ namespace TFE_DarkForces
 		"IMEDKIT.FME",  // ITEM_MEDKIT
 		"IPILE.FME",    // ITEM_PILE
 		"ITEM10.WAX",	// ITEM_UNUSED
-	};
+	}; */
 
 	///////////////////////////////////////////
 	// Shared State
 	///////////////////////////////////////////
 	SoundSourceId s_powerupPickupSnd;
-	SoundSourceId s_invItemPickupSnd;
-	SoundSourceId s_wpnPickupSnd;
+	SoundSourceId s_objectivePickupSnd;
+	SoundSourceId s_itemPickupSnd;
 	ItemData      s_itemData[ITEM_COUNT];
 	
 	///////////////////////////////////////////
@@ -77,22 +79,26 @@ namespace TFE_DarkForces
 	void item_loadData()
 	{
 		s_powerupPickupSnd = sound_load("bonus.voc", SOUND_PRIORITY_HIGH4);
-		s_invItemPickupSnd = sound_load("complete.voc", SOUND_PRIORITY_HIGH5);
-		s_wpnPickupSnd     = sound_load("key.voc", SOUND_PRIORITY_MED5);
+		s_objectivePickupSnd = sound_load("complete.voc", SOUND_PRIORITY_HIGH5);
+		s_itemPickupSnd     = sound_load("key.voc", SOUND_PRIORITY_MED5);
 
+		TFE_ExternalData::ExternalPickup* externalPickups = TFE_ExternalData::getExternalPickups();
+		char ext[16];
 		for (s32 i = 0; i < ITEM_COUNT; i++)
 		{
-			const char* item = c_itemResoure[i];
-			if (strstr(item, ".WAX"))
+			const char* item = externalPickups[i].asset;
+			FileUtil::getFileExtension(item, ext);
+			if (strcasecmp(ext, "WAX") == 0)
 			{
 				s_itemData[i].wax = TFE_Sprite_Jedi::getWax(item, POOL_GAME);
 				s_itemData[i].isWax = JTRUE;
 			}
-			else
+			else if (strcasecmp(ext, "FME") == 0)
 			{
 				s_itemData[i].frame = TFE_Sprite_Jedi::getFrame(item, POOL_GAME);
 				s_itemData[i].isWax = JFALSE;
 			}
+			// TODO: should we also add support for 3DO dropitems??
 		}
 	}
 
@@ -108,6 +114,7 @@ namespace TFE_DarkForces
 		{
 			frame_setData(newObj, s_itemData[itemId].frame);
 		}
+		// TODO: should we also add support for 3DO dropitems??
 
 		obj_createPickup(newObj, itemId);
 		if (s_itemData[itemId].isWax)

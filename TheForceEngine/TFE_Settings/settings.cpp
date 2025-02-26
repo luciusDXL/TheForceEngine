@@ -113,7 +113,6 @@ namespace TFE_Settings
 	void parseDark_ForcesSettings(const char* key, const char* value);
 	void parseOutlawsSettings(const char* key, const char* value);
 	void parseCVars(const char* key, const char* value);
-	void checkGameData(); // Is this necessary? It is not used. 
 
 	//////////////////////////////////////////////////////////////////////////////////
 	// Implementation
@@ -441,6 +440,8 @@ namespace TFE_Settings
 		writeKeyValue_Int(settings, "renderer", s_graphicsSettings.rendererIndex);
 		writeKeyValue_Int(settings, "colorMode", s_graphicsSettings.colorMode);
 		writeKeyValue_Int(settings, "skyMode", s_graphicsSettings.skyMode);
+		writeKeyValue_Bool(settings, "forceGouraud", s_graphicsSettings.forceGouraudShading);
+
 	}
 
 	void writeEnhancementsSettings(FileStream& settings)
@@ -859,6 +860,10 @@ namespace TFE_Settings
 		{
 			s_graphicsSettings.skyMode = SkyMode(parseInt(value));
 		}
+		else if (strcasecmp("forceGouraud", key) == 0)
+		{
+			s_graphicsSettings.forceGouraudShading = parseBool(value);
+		}	
 	}
 
 	void parseEnhancementsSettings(const char* key, const char* value)
@@ -1328,7 +1333,7 @@ namespace TFE_Settings
 		return s_gameSettings.df_stepSecondAlt;
 	}
 
-	bool soidWallFlagFix()
+	bool solidWallFlagFix()
 	{
 		if (s_modSettings.solidWallFlagFix != MSO_NOT_SET)
 		{

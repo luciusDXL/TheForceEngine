@@ -77,9 +77,12 @@ namespace TFE_Input
 	void setRecording(bool recording);
 	bool isDemoPlayback();
 	void setDemoPlayback(bool playback);
+	bool isReplaySystemLive();
 
-	void toggleReplayPause();
-	void handleReplayPause();
+	void recordEye();
+	void loadEye();
+
+	bool isReplayPaused();
 	void increaseReplayFrameRate();
 	void decreaseReplayFrameRate();
 

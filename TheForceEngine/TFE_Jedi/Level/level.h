@@ -24,6 +24,7 @@
 #include <TFE_Jedi/Math/core_math.h>
 #include <TFE_Jedi/Math/fixedPoint.h>
 #include <TFE_Jedi/InfSystem/message.h>
+#include <TFE_ForceScript/forceScript.h>
 #include "rsector.h"
 
 struct Safe
@@ -57,4 +58,12 @@ namespace TFE_Jedi
 	void level_postProcessGeometry();
 
 	void ambientSoundTaskFunc(MessageType msg);
+
+	// TFE: Level Script
+	void freeLevelScript();
+	void loadLevelScript();
+	void startLevelScript(const char* levelName);
+	void updateLevelScript(f32 dt);
+	TFE_ForceScript::ModuleHandle getLevelScript();
+	TFE_ForceScript::FunctionHandle getLevelScriptFunc(const char* funcName);
 }

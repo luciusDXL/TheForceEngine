@@ -52,6 +52,7 @@ namespace TFE_Jedi
 		sector->verticesWS = nullptr;
 		sector->verticesVS = nullptr;
 		sector->self = sector;
+		sector->searchKey = 0;
 	}
 
 	void sector_setupWallDrawFlags(RSector* sector)
@@ -836,7 +837,7 @@ namespace TFE_Jedi
 				i++;
 
 				JBool canRemove = (obj->entityFlags & ETFLAG_CORPSE) != 0;
-				canRemove |= ((obj->entityFlags & ETFLAG_PICKUP) && !(obj->flags & OBJ_FLAG_MISSION));
+				canRemove |= ((obj->entityFlags & ETFLAG_PICKUP) && !(obj->flags & OBJ_FLAG_NO_REMOVE));
 
 				const u32 projType = (obj->projectileLogic) ? ((TFE_DarkForces::ProjectileLogic*)obj->projectileLogic)->type : (0);
 				const JBool isLandMine = projType == PROJ_LAND_MINE || projType == PROJ_LAND_MINE_PROX || projType == PROJ_LAND_MINE_PLACED;
@@ -1130,8 +1131,7 @@ namespace TFE_Jedi
 		RSector* next = wall->nextSector;
 		if (next)
 		{
-			TFE_Settings_Game* gameSettings = TFE_Settings::getGameSettings();
-			if (!TFE_Settings::soidWallFlagFix() || !(wall->flags3 & WF3_SOLID_WALL || wall->mirrorWall->flags3 & WF3_SOLID_WALL))
+			if (!TFE_Settings::solidWallFlagFix() || !(wall->flags3 & WF3_SOLID_WALL || wall->mirrorWall->flags3 & WF3_SOLID_WALL))
 			{
 				RSector* sector = wall->sector;
 				if (sector->floorHeight >= obj->posWS.y)

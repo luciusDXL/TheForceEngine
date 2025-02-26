@@ -14,6 +14,7 @@
 #include <TFE_System/system.h>
 #include <TFE_FrontEndUI/console.h>
 #include <TFE_Settings/settings.h>
+#include <TFE_ExternalData/pickupExternal.h>
 #include <TFE_Input/inputMapping.h>
 #include <TFE_Game/igame.h>
 #include <TFE_DarkForces/mission.h>
@@ -219,7 +220,7 @@ namespace TFE_DarkForces
 	SecObject* s_playerObject = nullptr;
 	SecObject* s_playerEye = nullptr;
 	vec3_fixed s_eyePos = { 0 };	// s_camX, s_camY, s_camZ in the DOS code.
-	angle14_32 s_pitch = 0, s_yaw = 0, s_roll = 0;
+	angle14_32 s_eyePitch = 0, s_eyeYaw = 0, s_eyeRoll = 0;
 	u32 s_playerEyeFlags = OBJ_FLAG_NEEDS_TRANSFORM;
 	Tick s_playerTick;
 	Tick s_prevPlayerTick;
@@ -235,8 +236,10 @@ namespace TFE_DarkForces
 	angle14_32 s_camOffsetRoll = 0;
 	angle14_32 s_playerYaw;
 
-	JBool s_itemUnknown1;	// 0x282428
-	JBool s_itemUnknown2;	// 0x28242c
+	// Based on positioning in inventory, these were probably meant to represent thermal
+	// detonators and mines - see player_readInfo() and player_writeInfo()
+	JBool s_itemUnknown1;	// 0x282428	
+	JBool s_itemUnknown2;	// 0x28242c 
 
 	SoundSourceId s_landSplashSound;
 	SoundSourceId s_landSolidSound;
@@ -261,6 +264,30 @@ namespace TFE_DarkForces
 	s32 s_onMovingSurface = 0;
 	// Other
 	s32 s_playerCrouch = 0;
+
+	// Pointers to player ammo stores
+	s32* s_playerAmmoEnergy;
+	s32* s_playerAmmoPower;
+	s32* s_playerAmmoPlasma;
+	s32* s_playerAmmoShell;
+	s32* s_playerAmmoDetonators;
+	s32* s_playerAmmoMines;
+	s32* s_playerAmmoMissiles;
+	s32* s_playerShields;
+	s32* s_playerHealth;
+	fixed16_16* s_playerBatteryPower;
+
+	// Maximum values for ammo, etc.
+	s32 s_ammoEnergyMax;
+	s32 s_ammoPowerMax;
+	s32 s_ammoShellMax;
+	s32 s_ammoPlasmaMax;
+	s32 s_ammoDetonatorMax;
+	s32 s_ammoMineMax;
+	s32 s_ammoMissileMax;
+	s32 s_shieldsMax;
+	fixed16_16 s_batteryPowerMax;
+	s32 s_healthMax;
 			   
 	///////////////////////////////////////////
 	// Forward Declarations
@@ -303,14 +330,39 @@ namespace TFE_DarkForces
 		s_kyleScreamSoundSource          = sound_load("fall.voc",     SOUND_PRIORITY_MED4);
 		s_playerShieldHitSoundSource     = sound_load("shield1.voc",  SOUND_PRIORITY_MED5);
 
+		s_playerAmmoEnergy = &s_playerInfo.ammoEnergy;
+		s_playerAmmoPower = &s_playerInfo.ammoPower;
+		s_playerAmmoPlasma = &s_playerInfo.ammoPlasma;
+		s_playerAmmoShell = &s_playerInfo.ammoShell;
+		s_playerAmmoDetonators = &s_playerInfo.ammoDetonator;
+		s_playerAmmoMines = &s_playerInfo.ammoMine;
+		s_playerAmmoMissiles = &s_playerInfo.ammoMissile;
+		s_playerShields = &s_playerInfo.shields;
+		s_playerHealth = &s_playerInfo.health;
+		s_playerBatteryPower = &s_batteryPower;
+
+		TFE_ExternalData::MaxAmounts* maxAmounts = TFE_ExternalData::getMaxAmounts();
+		s_ammoEnergyMax = maxAmounts->ammoEnergyMax;
+		s_ammoPowerMax = maxAmounts->ammoPowerMax;
+		s_ammoShellMax = maxAmounts->ammoShellMax;
+		s_ammoPlasmaMax = maxAmounts->ammoPlasmaMax;
+		s_ammoDetonatorMax = maxAmounts->ammoDetonatorMax;
+		s_ammoMineMax = maxAmounts->ammoMineMax;
+		s_ammoMissileMax = maxAmounts->ammoMissileMax;
+		s_shieldsMax = maxAmounts->shieldsMax;
+		s_batteryPowerMax = maxAmounts->batteryPowerMax;
+		s_healthMax = maxAmounts->healthMax;
+
 		s_playerInfo = { 0 }; // Make sure this is clear...
-		s_playerInfo.ammoEnergy  = pickup_addToValue(0, 100, 999);
-		s_playerInfo.ammoPower   = pickup_addToValue(0, 100, 999);
-		s_playerInfo.ammoPlasma  = pickup_addToValue(0, 100, 999);
-		s_playerInfo.shields     = pickup_addToValue(0, 100, 200);
-		s_playerInfo.health      = pickup_addToValue(0, 100, 100);
+		s_playerInfo.ammoEnergy  = pickup_addToValue(0, 100, s_ammoEnergyMax);
+		s_playerInfo.ammoPower   = pickup_addToValue(0, 100, s_ammoPowerMax);
+		s_playerInfo.ammoPlasma  = pickup_addToValue(0, 100, s_ammoPlasmaMax);
+		s_playerInfo.shields     = pickup_addToValue(0, 100, s_shieldsMax);
+		s_playerInfo.health      = pickup_addToValue(0, 100, s_healthMax);
 		s_playerInfo.healthFract = 0;
-		s_batteryPower = FIXED(2);
+		s_batteryPower = s_batteryPowerMax;
+
+		// Always reset player ticks on init for replay consistency
 		s_playerTick = 0;
 		s_prevPlayerTick = 0;
 		s_reviveTick = 0;
@@ -782,11 +834,11 @@ namespace TFE_DarkForces
 		s_instaDeathEnabled = JFALSE;
 
 		// The player will always start a level with at least 100 shields, though if they have more it carries over.
-		s_playerInfo.shields = max(100, s_playerInfo.shields);
+		s_playerInfo.shields = min(max(100, s_playerInfo.shields), s_shieldsMax);
 		// The player starts a new level with full health and energy.
-		s_playerInfo.health = 100;
+		s_playerInfo.health = s_healthMax;
 		s_playerInfo.healthFract = 0;
-		s_batteryPower = FIXED(2);
+		s_batteryPower = s_batteryPowerMax;
 
 		s_wearingGasmask    = JFALSE;
 		s_wearingCleats     = JFALSE;
@@ -796,8 +848,6 @@ namespace TFE_DarkForces
 		// Handle level-specific hacks.
 		const char* levelName = agent_getLevelName();
 		TFE_System::logWrite(LOG_MSG, "Player", "Setting up level '%s'", levelName);
-
-		//resetCounter();
 
 		// Handle custom level player overrides
 		ModSettingLevelOverride modLevelOverride = TFE_Settings::getLevelOverrides(levelName);
@@ -871,8 +921,8 @@ namespace TFE_DarkForces
 	{
 		s_playerObject = obj;
 		obj_addLogic(obj, (Logic*)&s_playerLogic, LOGIC_PLAYER, s_playerTask, playerLogicCleanupFunc);
-		
-		// Wipe out the player logic.
+
+		// Wipe out the player logic for replay consistency
 		s_playerLogic.move = {};
 		s_playerLogic.dir = {};
 
@@ -915,20 +965,20 @@ namespace TFE_DarkForces
 		s_eyePos.y = s_playerEye->posWS.y;
 		s_eyePos.z = s_playerEye->posWS.z;
 
-		s_pitch = s_playerEye->pitch;
-		s_yaw   = s_playerEye->yaw;
-		s_roll  = s_playerEye->roll;
+		s_eyePitch = s_playerEye->pitch;
+		s_eyeYaw   = s_playerEye->yaw;
+		s_eyeRoll  = s_playerEye->roll;
 
 		setCameraOffset(0, 0, 0);
-		setCameraAngleOffset(0, 0, 0);		
+		setCameraAngleOffset(0, 0, 0);
 	}
 
 	void player_revive()
 	{
 		// player_revive() is called when the player respawns, which is why it sets 100 for shields here.
 		// In the case of picking up the item, the value is then set to 200 after the function call.
-		s_playerInfo.shields = 100;
-		s_playerInfo.health = 100;
+		s_playerInfo.shields = min(100, s_shieldsMax);
+		s_playerInfo.health = s_healthMax;
 		s_playerInfo.healthFract = 0;
 		s_playerDying = 0;
 	}
@@ -952,10 +1002,10 @@ namespace TFE_DarkForces
 
 	void giveAllWeaponsAndHealth()
 	{
-		s_playerInfo.health = 100;
+		s_playerInfo.health = s_healthMax;
 		s_playerInfo.healthFract = 0;
 		s_playerDying = 0;
-		s_playerInfo.shields = 200;
+		s_playerInfo.shields = s_shieldsMax;
 
 		s_playerInfo.itemPistol = JTRUE;
 		s_playerInfo.itemRifle = JTRUE;
@@ -970,54 +1020,54 @@ namespace TFE_DarkForces
 		s_playerInfo.itemCleats = JTRUE;
 		s_playerInfo.itemMask = JTRUE;
 
-		s_playerInfo.ammoEnergy = 500;
-		s_playerInfo.ammoPower = 500;
-		s_playerInfo.ammoDetonator = 50;
-		s_playerInfo.ammoShell = 50;
-		s_playerInfo.ammoPlasma = 400;
-		s_playerInfo.ammoMine = 30;
-		s_playerInfo.ammoMissile = 20;
+		s_playerInfo.ammoEnergy = s_ammoEnergyMax;
+		s_playerInfo.ammoPower = s_ammoPowerMax;
+		s_playerInfo.ammoDetonator = s_ammoDetonatorMax;
+		s_playerInfo.ammoShell = s_ammoShellMax;
+		s_playerInfo.ammoPlasma = s_ammoPlasmaMax;
+		s_playerInfo.ammoMine = s_ammoMineMax;
+		s_playerInfo.ammoMissile = s_ammoMissileMax;
 
-		s_batteryPower = FIXED(2);
-		weapon_fixupAnim();
+		s_batteryPower = s_batteryPowerMax;
+		weapon_emptyAnim();
 	}
 
 	void giveHealthAndFullAmmo()
 	{
-		s_playerInfo.health = 100;
+		s_playerInfo.health = s_healthMax;
 		s_playerInfo.healthFract = 0;
 		s_playerDying = 0;
-		s_playerInfo.shields = 200;
-		s_playerInfo.ammoEnergy = 500;
+		s_playerInfo.shields = s_shieldsMax;
+		s_playerInfo.ammoEnergy = s_ammoEnergyMax;
 
 		if (s_playerInfo.itemAutogun || s_playerInfo.itemFusion || s_playerInfo.itemConcussion)
 		{
-			s_playerInfo.ammoPower = 500;
+			s_playerInfo.ammoPower = s_ammoPowerMax;
 		}
 		if (s_playerInfo.itemCannon)
 		{
-			s_playerInfo.ammoPlasma = 400;
+			s_playerInfo.ammoPlasma = s_ammoPlasmaMax;
 		}
-		s_playerInfo.ammoDetonator = 50;
+		s_playerInfo.ammoDetonator = s_ammoDetonatorMax;
 		if (s_playerInfo.itemMortar)
 		{
-			s_playerInfo.ammoShell = 50;
+			s_playerInfo.ammoShell = s_ammoShellMax;
 		}
-		s_playerInfo.ammoMine = 30;
+		s_playerInfo.ammoMine = s_ammoMineMax;
 		if (s_playerInfo.itemCannon)
 		{
-			s_playerInfo.ammoMissile = 20;
+			s_playerInfo.ammoMissile = s_ammoMissileMax;
 		}
-		s_batteryPower = FIXED(2);
-		weapon_fixupAnim();
+		s_batteryPower = s_batteryPowerMax;
+		weapon_emptyAnim();
 	}
 
 	void giveAllInventoryAndHealth()
 	{
-		s_playerInfo.health = 100;
+		s_playerInfo.health = s_healthMax;
 		s_playerInfo.healthFract = 0;
 		s_playerDying = 0;
-		s_playerInfo.shields = 200;
+		s_playerInfo.shields = s_shieldsMax;
 		s_playerInfo.itemPistol = JTRUE;
 		s_playerInfo.itemRifle = JTRUE;
 		// s_282428 = JTRUE;
@@ -1048,16 +1098,16 @@ namespace TFE_DarkForces
 		s_playerInfo.itemCode7 = JTRUE;
 		s_playerInfo.itemCode8 = JTRUE;
 		s_playerInfo.itemCode9 = JTRUE;
-		s_playerInfo.ammoEnergy = 500;
-		s_playerInfo.ammoPower = 500;
-		s_playerInfo.ammoDetonator = 50;
-		s_playerInfo.ammoShell = 50;
-		s_playerInfo.ammoMissile = 20;
-		s_playerInfo.ammoPlasma = 400;
-		s_playerInfo.ammoMine = 30;
-		s_batteryPower = FIXED(2);
+		s_playerInfo.ammoEnergy = s_ammoEnergyMax;
+		s_playerInfo.ammoPower = s_ammoPowerMax;
+		s_playerInfo.ammoDetonator = s_ammoDetonatorMax;
+		s_playerInfo.ammoShell = s_ammoShellMax;
+		s_playerInfo.ammoMissile = s_ammoMissileMax;
+		s_playerInfo.ammoPlasma = s_ammoPlasmaMax;
+		s_playerInfo.ammoMine = s_ammoMineMax;
+		s_batteryPower = s_batteryPowerMax;
 
-		weapon_fixupAnim();
+		weapon_emptyAnim();
 	}
 
 	void giveKeys()
@@ -1273,13 +1323,13 @@ namespace TFE_DarkForces
 			s_eyePos.y = s_playerEye->posWS.y + s_camOffset.y - s_playerEye->worldHeight;
 			s_eyePos.z = s_playerEye->posWS.z + s_camOffset.z;
 
-			s_pitch = s_playerEye->pitch + s_camOffsetPitch;
-			s_yaw   = s_playerEye->yaw   + s_camOffsetYaw;
-			s_roll  = s_playerEye->roll  + s_camOffsetRoll;
+			s_eyePitch = s_playerEye->pitch + s_camOffsetPitch;
+			s_eyeYaw   = s_playerEye->yaw   + s_camOffsetYaw;
+			s_eyeRoll  = s_playerEye->roll  + s_camOffsetRoll;
 
 			if (s_playerEye->sector)
 			{
-				renderer_computeCameraTransform(s_playerEye->sector, s_pitch, s_yaw, s_eyePos.x, s_eyePos.y, s_eyePos.z);
+				renderer_computeCameraTransform(s_playerEye->sector, s_eyePitch, s_eyeYaw, s_eyePos.x, s_eyePos.y, s_eyePos.z);
 			}
 			renderer_setWorldAmbient(s_playerLight);
 		}
@@ -1328,7 +1378,7 @@ namespace TFE_DarkForces
 			s_playerVelX   += pushVel.x;
 			s_playerUpVel2 += pushVel.y;
 			s_playerVelZ   += pushVel.z;
-			
+
 			if (s_invincibility || s_config.superShield)
 			{
 				// TODO
@@ -1352,7 +1402,7 @@ namespace TFE_DarkForces
 			s_playerVelX   += mul16(force, pushDir.x);
 			s_playerUpVel2 += mul16(force, pushDir.y);
 			s_playerVelZ   += mul16(force, pushDir.z);
-			
+
 			if (s_invincibility || s_config.superShield)
 			{
 				// Return because no damage is applied.
@@ -1514,11 +1564,14 @@ namespace TFE_DarkForces
 		s_playerObjSector = s_playerObject->sector;
 		s_playerTick = s_curTick;
 		s_prevPlayerTick  = s_curTick;
+		TFE_System::logWrite(LOG_MSG, "PLAYER", "Task msg = %d", msg);
 
 		while (msg != MSG_FREE_TASK)
 		{
 			if (msg == MSG_RUN_TASK)
 			{
+				TFE_System::logWrite(LOG_MSG, "PLAYER", "Curtick = %d s_gamePaued = %d", s_curTick, s_gamePaused);
+
 				if (!s_gamePaused)
 				{
 					// TFE: Add pitch limit setting.
@@ -1543,7 +1596,8 @@ namespace TFE_DarkForces
 					}
 				}
 			}
-						
+			TFE_System::logWrite(LOG_MSG, "PLAYER", "Ending task  s_playerTick = %d", s_playerTick);
+
 			s_prevPlayerTick = s_playerTick;
 			task_yield(TASK_NO_DELAY);
 		}
@@ -1578,6 +1632,8 @@ namespace TFE_DarkForces
 
 		s32 mdx, mdy;
 		TFE_Input::getAccumulatedMouseMove(&mdx, &mdy);
+
+
 		InputConfig* inputConfig = TFE_Input::inputMapping_get();
 
 		// Yaw change
@@ -1621,7 +1677,6 @@ namespace TFE_DarkForces
 				}
 			}
 		}
-
 
 		if (settings->df_autorun) // TFE: Optional feature.
 		{
@@ -1713,7 +1768,6 @@ namespace TFE_DarkForces
 			s_playerUpVel2 = 0;
 		}
 
-		
 		//////////////////////////////////////////
 		// Pitch and Roll controls.
 		//////////////////////////////////////////
@@ -1824,7 +1878,6 @@ namespace TFE_DarkForces
 			s_forwardSpd >>= airControl;
 			s_strafeSpd  >>= airControl;
 		}
-
 	}
 
 	fixed16_16 adjustForwardSpeed(fixed16_16 spd)
@@ -1901,7 +1954,7 @@ namespace TFE_DarkForces
 				// Lower friction means the player will stop sliding sooner.
 				friction = FRICTION_CLEATS;
 			}
-			else if (s_playerSector->secHeight - 1 >= 0)	// In water
+			else if (s_playerSector->secHeight - 1 >= 0 && !s_flyMode)	// In water
 			{
 				friction = FRICTION_DEFAULT;
 				s_playerRun = wearingCleats;		// Once you get cleats, you move faster through water.
@@ -1909,10 +1962,12 @@ namespace TFE_DarkForces
 			}
 		}
 
+		TFE_System::logWrite(LOG_MSG, "PLAYER", "Player tick = %d prevplayerTick = %d s_playerVelX = %d s_playerVelZ = %d", s_playerTick, s_prevPlayerTick, s_playerVelX, s_playerVelZ);	
+ 
 		// Apply friction to existing velocity.
 		if (s_playerVelX || s_playerVelZ)
 		{
-			Tick dt = s_playerTick - s_prevPlayerTick;			
+			Tick dt = s_playerTick - s_prevPlayerTick;
 			// Exponential friction, this is the same as vel * friction^dt
 			for (Tick i = 0; i < dt; i++)
 			{
@@ -1959,6 +2014,7 @@ namespace TFE_DarkForces
 						fixed16_16 angularSpd;
 						vec3_fixed vel;
 						inf_getMovingElevatorVelocity(elev, &vel, &angularSpd);
+
 						if (!angularSpd && secHeight > 0)
 						{
 							// liquid behavior - dampens velocity.
@@ -2007,11 +2063,11 @@ namespace TFE_DarkForces
 			}
 			fixed16_16 speed = adjustForwardSpeed(s_forwardSpd);
 			computeMoveFromAngleAndSpeed(&s_playerVelX, &s_playerVelZ, player->yaw, speed);
-			
+
 			// Add 90 degrees to get the strafe direction.
 			speed = adjustStrafeSpeed(s_strafeSpd);
 			computeMoveFromAngleAndSpeed(&s_playerVelX, &s_playerVelZ, player->yaw + 4095, speed);
-			limitVectorLength(&s_playerVelX, &s_playerVelZ, s_maxMoveDist);			
+			limitVectorLength(&s_playerVelX, &s_playerVelZ, s_maxMoveDist);
 		}
 
 		// Then convert from player velocity to per-frame movement.
@@ -2032,7 +2088,7 @@ namespace TFE_DarkForces
 		s_playerSlideWall = nullptr;
 		// Up to 4 iterations, to handle sliding on walls.
 		if (s_noclip)
-		{			
+		{
 			if (s_playerLogic.move.x || s_playerLogic.move.y)
 			{
 				moved = JTRUE;
@@ -2120,8 +2176,10 @@ namespace TFE_DarkForces
 			s_playerVelX = 0;
 			s_playerVelZ = 0;
 		}
-
 		s_playerSector = s_colMinSector;
+
+		TFE_System::logWrite(LOG_MSG, "PLAYER", "friction Player tick = %d prevplayerTick = %d s_playerVelX = %d s_playerVelZ = %d", s_playerTick, s_prevPlayerTick, s_playerVelX, s_playerVelZ);
+
 
 		if (s_externalVelX || s_externalVelZ)
 		{
@@ -2156,7 +2214,7 @@ namespace TFE_DarkForces
 			}
 			s_playerSecMoved = JFALSE;
 		}
-		
+
 		if (origSector != player->sector)
 		{
 			RSector* newSector = player->sector;
@@ -2210,11 +2268,11 @@ namespace TFE_DarkForces
 		{
 			s_playerUpVel2 += gravityAccelDt;
 		}
-
 		s_playerUpVel  = s_playerUpVel2;
 		s_playerYPos += mul16(s_playerUpVel, s_deltaTime);
 		s_playerLogic.move.y = s_playerYPos - player->posWS.y;
-		player->posWS.y = s_playerYPos; 		
+		player->posWS.y = s_playerYPos;
+
 		if (s_playerYPos >= s_colCurLowestFloor && (!s_noclip || !s_flyMode))
 		{
 			if (s_kyleScreamSoundId)
@@ -2266,7 +2324,6 @@ namespace TFE_DarkForces
 			fixed16_16 newUpVel = min(0, s_playerUpVel2);
 			s_playerUpVel = newUpVel;
 			s_playerUpVel2 = newUpVel;
-
 		}
 		else
 		{
@@ -2305,6 +2362,7 @@ namespace TFE_DarkForces
 		eyeToCeil = min(ONE_16, eyeToCeil);	// the player eye should be clamped to 1 unit below the ceiling if possible.
 		eyeHeight -= eyeToCeil;
 		eyeHeight = min(PLAYER_HEIGHT, eyeHeight);
+
 		RSector* sector = player->sector;
 		fixed16_16 minEyeDistFromFloor = (s_smallModeEnabled) ? PLAYER_SIZE_SMALL : s_minEyeDistFromFloor;
 		secHeight = sector->secHeight;
@@ -2328,7 +2386,6 @@ namespace TFE_DarkForces
 			}
 			player->worldHeight = minDistToFloor;
 		}
-
 		// Make sure eye height is clamped.
 		if (!s_noclip || !s_flyMode)
 		{
@@ -2489,8 +2546,6 @@ namespace TFE_DarkForces
 			}
 		}
 
-
-
 		weapon->rollOffset = -s_playerRoll / 13;
 		weapon->pchOffset  = s_playerPitch / 64;
 
@@ -2555,7 +2610,7 @@ namespace TFE_DarkForces
 				}
 				// Now take the other half away.
 				shields = max(0, shields - halfShieldDmg);
-				s_playerInfo.shields = pickup_addToValue(floor16(shields), 0, 200);
+				s_playerInfo.shields = pickup_addToValue(floor16(shields), 0, s_shieldsMax);
 				if (playHitSound)
 				{
 					sound_play(s_playerShieldHitSoundSource);
@@ -2573,7 +2628,7 @@ namespace TFE_DarkForces
 			{
 				s_playerInfo.healthFract = 0;
 				// We could just set the health to 0 here...
-				s_playerInfo.health = pickup_addToValue(0, 0, 100);
+				s_playerInfo.health = pickup_addToValue(0, 0, s_healthMax);
 				if (playHitSound)
 				{
 					sound_play(s_playerDeathSoundSource);
@@ -3236,9 +3291,9 @@ namespace TFE_DarkForces
 		}
 
 		SERIALIZE(ObjState_InitVersion, s_eyePos, defV3);
-		SERIALIZE(ObjState_InitVersion, s_pitch, 0);
-		SERIALIZE(ObjState_InitVersion, s_yaw, 0);
-		SERIALIZE(ObjState_InitVersion, s_roll, 0);
+		SERIALIZE(ObjState_InitVersion, s_eyePitch, 0);
+		SERIALIZE(ObjState_InitVersion, s_eyeYaw, 0);
+		SERIALIZE(ObjState_InitVersion, s_eyeRoll, 0);
 		SERIALIZE(ObjState_InitVersion, s_playerEyeFlags, 0);
 		SERIALIZE(ObjState_InitVersion, s_playerTick, 0);
 		SERIALIZE(ObjState_InitVersion, s_prevPlayerTick, 0);
@@ -3272,7 +3327,7 @@ namespace TFE_DarkForces
 			{
 				s_playerInfo.healthFract = 0;
 				// We could just set the health to 0 here...
-				s_playerInfo.health = pickup_addToValue(0, 0, 100);
+				s_playerInfo.health = pickup_addToValue(0, 0, s_healthMax);
 				if (s_gasSectorTask)
 				{
 					task_free(s_gasSectorTask);

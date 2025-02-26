@@ -110,8 +110,6 @@ namespace TFE_DarkForces
 
 	JBool object_parseSeq(SecObject* obj, TFE_Parser* parser, size_t* bufferPos)
 	{
-		TFE_Settings_Game* gameSettings = TFE_Settings::getGameSettings();
-		
 		LogicSetupFunc setupFunc = nullptr;
 
 		const char* line = parser->readLine(*bufferPos);
@@ -133,12 +131,11 @@ namespace TFE_DarkForces
 				KEYWORD logicId = getKeywordIndex(s_objSeqArg1);
 				
 				// First, search the externally defined logics for a match (if the setting is enabled)
-				TFE_Settings_Game* gameSettings = TFE_Settings::getGameSettings();
 				TFE_ExternalData::CustomActorLogic* customLogic = (logicId != KW_PLAYER)
 					? tryFindCustomActorLogic(s_objSeqArg1)
 					: nullptr;		// do not allow "LOGIC: PLAYER" to be overridden !!
 
-				if (gameSettings->df_jsonAiLogics && customLogic)
+				if (TFE_Settings::jsonAiLogics() && customLogic)
 				{
 					newLogic = obj_setCustomActorLogic(obj, customLogic);
 					setupFunc = nullptr;
@@ -186,7 +183,7 @@ namespace TFE_DarkForces
 					obj_createPickup(obj, itemId);
 					setupFunc = nullptr;
 				}
-				else if (gameSettings->df_enableUnusedItem && strcasecmp(s_objSeqArg1, "ITEM10") == 0)
+				else if (TFE_Settings::enableUnusedItem() && strcasecmp(s_objSeqArg1, "ITEM10") == 0)
 				{
 					obj_createPickup(obj, ITEM_UNUSED);
 					setupFunc = nullptr;
@@ -480,7 +477,7 @@ namespace TFE_DarkForces
 	TFE_ExternalData::CustomActorLogic* tryFindCustomActorLogic(const char* logicName)
 	{
 		TFE_ExternalData::ExternalLogics* externalLogics = TFE_ExternalData::getExternalLogics();
-		u32 actorCount = externalLogics->actorLogics.size();
+		u32 actorCount = (u32)externalLogics->actorLogics.size();
 
 		for (u32 a = 0; a < actorCount; a++)
 		{

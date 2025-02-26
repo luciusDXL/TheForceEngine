@@ -87,7 +87,6 @@ namespace TFE_Input
 		IADF_GIF_RECORD_NO_COUNTDOWN,
 
 		// Demo handling
-		IADF_DEMO_PAUSE,
 		IADF_DEMO_SPEEDUP,
 		IADF_DEMO_SLOWDOWN,
 

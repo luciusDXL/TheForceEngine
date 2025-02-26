@@ -65,6 +65,7 @@ namespace TFE_Input
 	bool replayInitialized = false;
 	bool cutscenesEnabled = true;
 	bool pauseReplay = false; 
+	bool showReplayMsgFrame = false;
 
 	extern f64 gameFrameLimit = 0;	
 	extern f64 replayFrameLimit = 0;
@@ -81,6 +82,7 @@ namespace TFE_Input
 	s32 replay_seed = 0;
 
 	int replayFilehandler = -1;
+	int replayLogCounter = 0;
 	
 	std::vector<char> settingBuffer;
 
@@ -133,6 +135,11 @@ namespace TFE_Input
 	bool isDemoPlayback()
 	{
 		return s_playback;
+	}
+
+	bool isReplaySystemLive()
+	{
+		return s_recording || s_playback;
 	}
 
 	void setDemoPlayback(bool playback)
@@ -664,6 +671,23 @@ namespace TFE_Input
 		TFE_DarkForces::time_pause(JFALSE);
 	}
 
+
+	void recordEye()
+	{
+		r_yaw = TFE_DarkForces::s_playerEye->yaw;
+		r_pitch = TFE_DarkForces::s_playerEye->pitch;
+		r_roll = TFE_DarkForces::s_playerEye->roll;
+		TFE_System::logWrite(LOG_MSG, "Replay", "Recorded yaw = %d pitch = %d", TFE_DarkForces::s_playerEye->yaw, TFE_DarkForces::s_playerEye->pitch);
+	}
+
+	void loadEye()
+	{
+		TFE_DarkForces::s_playerEye->yaw = r_yaw;
+		TFE_DarkForces::s_playerEye->pitch = r_pitch;
+		TFE_DarkForces::s_playerEye->roll = r_roll;
+		TFE_System::logWrite(LOG_MSG, "Replay", "Loaded yaw = %d pitch = %d", TFE_DarkForces::s_playerEye->yaw, TFE_DarkForces::s_playerEye->pitch);
+	}
+
 	void handleEye()
 	{
 		// If the eye is set, then store or restore the eye position
@@ -672,15 +696,11 @@ namespace TFE_Input
 		{
 			if (isRecording())
 			{
-				r_yaw = TFE_DarkForces::s_playerEye->yaw;
-				r_pitch = TFE_DarkForces::s_playerEye->pitch;
-				r_roll = TFE_DarkForces::s_playerEye->roll;
+				recordEye();
 			}
 			if (isDemoPlayback())
 			{
-				TFE_DarkForces::s_playerEye->yaw = r_yaw;
-				TFE_DarkForces::s_playerEye->pitch = r_pitch;
-				TFE_DarkForces::s_playerEye->roll = r_roll;
+				loadEye();
 			}
 			eyeSet = true;
 		}
@@ -713,8 +733,8 @@ namespace TFE_Input
 		TFE_DarkForces::resetWeaponFunc();
 
 		// This is not really needed but for replay comparison reset the turret/mouse task IDs
-		TFE_DarkForces::resetMouseNum();
-		TFE_DarkForces::resetTurretNum();
+		TFE_DarkForces::mousebot_resetNum();
+		TFE_DarkForces::turret_resetNum();
 
 		// Player frame collisions affect logic and must be reset
 		initPlayerCollision();
@@ -789,23 +809,19 @@ namespace TFE_Input
 	void sendHudPauseMessage()
 	{
 		string msg = "Replay Paused";
-		if (!pauseReplay)
-		{
-			msg = "Replay Resumed";
-		}
 		TFE_System::logWrite(LOG_MSG, "Replay", msg.c_str());
 		TFE_DarkForces::hud_sendTextMessage(msg.c_str(), 0, false);
+		showReplayMsgFrame = true;
 	}
 
-	void toggleReplayPause()
+	bool isReplayPaused()
 	{
-		pauseReplay = !pauseReplay;
-		sendHudPauseMessage();
-	}
-
-	void handleReplayPause()
-	{
-		mission_pause(pauseReplay);
+		if (showReplayMsgFrame)
+		{
+			showReplayMsgFrame = false;
+			return false;
+		}
+		return pauseReplay;
 	}
 
 	void increaseReplayFrameRate()
@@ -813,8 +829,8 @@ namespace TFE_Input
 		TFE_Settings_Game* gameSettings = TFE_Settings::getGameSettings();	
 		if (gameSettings->df_playbackFrameRate == 0)
 		{
-			pauseReplay = false;
-			sendHudPauseMessage();
+			pauseReplay = false;			
+			clearAccumulatedMouseMove();
 		}
 
 		if (gameSettings->df_playbackFrameRate < 6)
@@ -856,6 +872,9 @@ namespace TFE_Input
 		setDemoPlayback(false);
 		saveTick();
 		saveInitTime();
+
+		TFE_System::logClose();
+		TFE_System::logOpen("record.log");
 	}
 
 	void endRecording()
@@ -884,6 +903,9 @@ namespace TFE_Input
 		endCommonReplayStates();
 
 		TFE_System::logWrite(LOG_MSG, "Replay", "Finished recording demo...");
+
+		TFE_System::logClose();
+		TFE_System::logOpen("main.log");
 
 	}
 
@@ -969,6 +991,8 @@ namespace TFE_Input
 	// This is called from the DarkForcesMain 
 	void loadReplay()
 	{	
+
+
 		startCommonReplayStates();
 	
 		// Start replaying with the first event
@@ -992,7 +1016,19 @@ namespace TFE_Input
 		// Ensure you always load the first agent. 
 		s_agentId = 0;
 
-		TFE_System::logWrite(LOG_MSG, "Replay", "Started playing back demo...");
+		TFE_System::logClose();
+		char replayLog[256];
+		if (replayLogCounter > 0)
+		{
+			sprintf(replayLog, "replay_%d.log", replayLogCounter);
+		}
+		else
+		{
+			sprintf(replayLog, "replay.log");
+		}
+
+		replayLogCounter++;
+		TFE_System::logOpen(replayLog);
 	}
 
 	void restoreAgent()
@@ -1040,5 +1076,7 @@ namespace TFE_Input
 		TFE_FrontEndUI::exitToMenu();
 
 		TFE_System::logWrite(LOG_MSG, "Replay", "Finished playing back demo...");
+		TFE_System::logClose();
+		TFE_System::logOpen("main.log");
 	}
 }

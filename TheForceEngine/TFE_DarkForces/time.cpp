@@ -3,7 +3,6 @@
 #include <TFE_Jedi/Serialization/serialization.h>
 #include <cstring>
 #include <TFE_Input/replay.h>
-#include <TFE_Input/inputMapping.h>
 
 using namespace TFE_Jedi;
 
@@ -46,8 +45,7 @@ namespace TFE_DarkForces
 	}
 
 	void updateTime()
-	{
-		
+	{		
 		if (!s_pauseTimeUpdate)
 		{
 			s_timeAccum += TFE_System::getDeltaTime() * TIMER_FREQ;

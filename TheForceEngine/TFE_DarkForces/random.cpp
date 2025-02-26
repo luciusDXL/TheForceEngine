@@ -23,11 +23,8 @@ namespace TFE_DarkForces
 		s_seed = seed; 
 	}
 
-
 	s32 random_next()
 	{
-		//TFE_System::logWrite(LOG_MSG, "RANDOM", "SEED START: %d", s_seed);
-
 		// Shift the seed by 1 (divide by two), and
 		// xor the top 8 bits with b10100011 (163) if the starting seed is odd.
 		// This has the effect of increasing the size of the seed if it gets too small due to the shifts, and increasing "randomness"
@@ -39,7 +36,6 @@ namespace TFE_DarkForces
 		{
 			s_seed = (s_seed >> 1);
 		}
-		//TFE_System::logWrite(LOG_MSG, "RANDOM", "SEED END: %d", s_seed);
 		return s32(s_seed);
 	}
 
@@ -49,7 +45,6 @@ namespace TFE_DarkForces
 	s32 random(s32 value)
 	{
 		s32 newValue = random_next();
-		//TFE_System::logWrite(LOG_MSG, "RANDOM", "NEW VALUE  %d", newValue);
 		if (newValue > value || newValue < 0)
 		{
 			// Note the value is cast to fixed16_16 but is not actually converted.
@@ -61,7 +56,6 @@ namespace TFE_DarkForces
 
 	void random_seed(u32 seed)
 	{
-		TFE_System::logWrite(LOG_MSG, "RANDOM", "Setting SEED to %d", seed);
 		s_seed = seed;
 	
 	}

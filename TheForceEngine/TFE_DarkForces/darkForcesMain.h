@@ -17,8 +17,7 @@ namespace TFE_DarkForces
 		void restartMusic() override;
 		void exitGame() override;
 		void loopGame() override;
-		bool serializeGameState(Stream* stream, const char* filename, bool writeState) override;
-		void serializeVersion(Stream* stream);
+		bool serializeGameState(Stream* stream, const char* filename, bool writeState) override;		
 		bool canSave() override;
 		bool isPaused() override;
 		void getLevelName(char* name) override;

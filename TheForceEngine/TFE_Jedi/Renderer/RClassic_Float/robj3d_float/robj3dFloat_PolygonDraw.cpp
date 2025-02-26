@@ -1,5 +1,6 @@
 #include <climits>
 
+#include <TFE_Settings/settings.h>
 #include <TFE_System/profiler.h>
 #include <TFE_Jedi/Level/robject.h>
 #include <TFE_Jedi/Level/rtexture.h>
@@ -97,7 +98,14 @@ namespace RClassic_Float
 
 	u8 robj3d_computePolygonColor(vec3_float* normal, u8 color, f32 z)
 	{
-		if (s_sectorAmbient >= 31) { return color; }
+		TFE_Settings_Graphics* graphicsSettings = TFE_Settings::getGraphicsSettings();
+		bool overrideLighting = graphicsSettings->overrideLighting;
+		s32 sectorAmbient = (overrideLighting ? 0 : s_sectorAmbient);
+		f32 sectorAmbientFraction = (overrideLighting) ? 1 : fixed16ToFloat(s_sectorAmbientFraction);
+		s32 worldAmbient = (overrideLighting ? 0 : s_worldAmbient);
+		s32 scaledAmbient = (overrideLighting ? 0 : s_scaledAmbient);
+
+		if (sectorAmbient >= MAX_LIGHT_LEVEL) { return color; }
 		s_polyColorMap = s_colorMap;
 		s32 lightLevel = 0;
 		
@@ -113,23 +121,23 @@ namespace RClassic_Float
 				lighting += L * brightness;
 			}
 		}
-		lightLevel += floorFloat(lighting * fixed16ToFloat(s_sectorAmbientFraction));
-		if (lightLevel >= 31) { return color; }
+		lightLevel += floorFloat(lighting * sectorAmbientFraction);
+		if (lightLevel >= MAX_LIGHT_LEVEL) { return color; }
 
-		if (s_worldAmbient < 31 || s_cameraLightSource)
+		if (worldAmbient < MAX_LIGHT_LEVEL || s_cameraLightSource)
 		{
 			const s32 depthScaled = (s32)min(z * 4.0f, 127.0f);
-			const s32 cameraSource = MAX_LIGHT_LEVEL - (s_lightSourceRamp[depthScaled] + s_worldAmbient);
+			const s32 cameraSource = MAX_LIGHT_LEVEL - (s_lightSourceRamp[depthScaled] + worldAmbient);
 			if (cameraSource > 0)
 			{
 				lightLevel += cameraSource;
 			}
 		}
-		lightLevel = max(lightLevel, s_sectorAmbient);
+		lightLevel = max(lightLevel, sectorAmbient);
 
 		z = max(z, 0.0f);
 		const s32 falloff = s32(z / 16.0f) + s32(z / 32.0f);
-		lightLevel = max(lightLevel - falloff, s_scaledAmbient);
+		lightLevel = max(lightLevel - falloff, scaledAmbient);
 
 		if (lightLevel >= 31) { return color; }
 		if (lightLevel <= 0) { return s_polyColorMap[color]; }
@@ -139,7 +147,14 @@ namespace RClassic_Float
 
 	u8 robj3d_computePolygonLightLevel(vec3_float* normal, f32 z)
 	{
-		if (s_sectorAmbient >= 31) { return 31; }
+		TFE_Settings_Graphics* graphicsSettings = TFE_Settings::getGraphicsSettings();
+		bool overrideLighting = graphicsSettings->overrideLighting;
+		s32 sectorAmbient = (overrideLighting ? 0 : s_sectorAmbient);
+		f32 sectorAmbientFraction = (overrideLighting) ? 1 : fixed16ToFloat(s_sectorAmbientFraction);
+		s32 worldAmbient = (overrideLighting ? 0 : s_worldAmbient);
+		s32 scaledAmbient = (overrideLighting ? 0 : s_scaledAmbient);
+
+		if (sectorAmbient >= MAX_LIGHT_LEVEL) { return MAX_LIGHT_LEVEL; }
 		s32 lightLevel = 0;
 
 		f32 lighting = 0.0f;
@@ -154,23 +169,23 @@ namespace RClassic_Float
 				lighting += L * brightness;
 			}
 		}
-		lightLevel += floorFloat(lighting * fixed16ToFloat(s_sectorAmbientFraction));
-		if (lightLevel >= 31) { return 31; }
+		lightLevel += floorFloat(lighting * sectorAmbientFraction);
+		if (lightLevel >= MAX_LIGHT_LEVEL) { return MAX_LIGHT_LEVEL; }
 
-		if (s_worldAmbient < 31 || s_cameraLightSource)
+		if (worldAmbient < MAX_LIGHT_LEVEL || s_cameraLightSource)
 		{
 			const s32 depthScaled = (s32)min(z * 4.0f, 127.0f);
-			const s32 cameraSource = MAX_LIGHT_LEVEL - (s_lightSourceRamp[depthScaled] + s_worldAmbient);
+			const s32 cameraSource = MAX_LIGHT_LEVEL - (s_lightSourceRamp[depthScaled] + worldAmbient);
 			if (cameraSource > 0)
 			{
 				lightLevel += cameraSource;
 			}
 		}
-		lightLevel = max(lightLevel, s_sectorAmbient);
+		lightLevel = max(lightLevel, sectorAmbient);
 
 		z = max(z, 0.0f);
 		const s32 falloff = s32(z / 16.0f) + s32(z / 32.0f);
-		lightLevel = max(lightLevel - falloff, s_scaledAmbient);
+		lightLevel = max(lightLevel - falloff, scaledAmbient);
 
 		return clamp(lightLevel, 0, MAX_LIGHT_LEVEL);
 	}

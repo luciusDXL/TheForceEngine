@@ -260,7 +260,6 @@ namespace TFE_Jedi
 		u32 texIndex = 0u;
 		if (serialization_getMode() == SMODE_WRITE && texData && *texData)
 		{
-			std::ptrdiff_t offset = (std::ptrdiff_t(texData) - std::ptrdiff_t(s_levelState.textures)) / (std::ptrdiff_t)sizeof(TextureData**);
 			if ((*texData)->animIndex >= 0)
 			{
 				const u8 frameIndex = (*texData)->frameIdx < 0 ? 0xff : (u8)(*texData)->frameIdx;
@@ -268,6 +267,7 @@ namespace TFE_Jedi
 			}
 			else
 			{
+				std::ptrdiff_t offset = (std::ptrdiff_t(texData) - std::ptrdiff_t(s_levelState.textures)) / (std::ptrdiff_t)sizeof(TextureData**);
 				if (offset >= 0 && offset < s_levelState.textureCount)
 				{
 					texIndex = LEVTEX_TYPE_TEX | ((u32)offset << 12u);
@@ -362,6 +362,7 @@ namespace TFE_Jedi
 			sector->objectCount = 0;
 			sector->objectCapacity = 0;
 			sector->objectList = nullptr;
+			sector->searchKey = 0;
 		}
 
 		SERIALIZE(LevelState_InitVersion, sector->collisionFrame, 0);

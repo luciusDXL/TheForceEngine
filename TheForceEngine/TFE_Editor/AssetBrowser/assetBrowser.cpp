@@ -123,7 +123,7 @@ namespace AssetBrowser
 		s_assetPalette.clear();
 		s_defaultPal = 0;
 
-		s_viewInfo = {};
+		s_viewInfo = ViewerInfo{};
 		s_viewAssetList.clear();
 		for (s32 i = 0; i < TYPE_COUNT; i++)
 		{

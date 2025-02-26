@@ -30,7 +30,7 @@ enum ObjectFlags
 	OBJ_FLAG_FULLBRIGHT      = FLAG_BIT(3),  // Rendered as fullbright (not lit).
 	OBJ_FLAG_MOVABLE         = FLAG_BIT(4),  // Object is movable.
 	OBJ_FLAG_BOSS            = FLAG_BIT(5),  // Boss enemy.
-	OBJ_FLAG_MISSION         = FLAG_BIT(6),
+	OBJ_FLAG_NO_REMOVE       = FLAG_BIT(6),  // Do not remove when crushed
 };
 
 enum EntityTypeFlags
@@ -62,7 +62,8 @@ enum ObjStateVersion : u32
 	ObjState_VueSmoothing = 3,
 	ObjState_OneHitCheats = 4,
 	ObjState_CrouchToggle = 5,
-	ObjState_CurVersion = ObjState_CrouchToggle,
+	ObjState_CustomLogics = 6,
+	ObjState_CurVersion = ObjState_CustomLogics,
 };
 
 #define SPRITE_SCALE_FIXED FIXED(10)

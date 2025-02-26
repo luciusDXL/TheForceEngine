@@ -29,7 +29,7 @@ namespace TFE_Editor
 			if (strcasecmp(sprite->name, name) == 0)
 			{
 				TFE_RenderBackend::freeTexture(sprite->texGpu);
-				*sprite = {};
+				*sprite = EditorSprite{};
 				break;
 			}
 		}
@@ -49,7 +49,7 @@ namespace TFE_Editor
 	s32 allocateSprite(const char* name)
 	{
 		s32 index = (s32)s_spriteList.size();
-		s_spriteList.push_back({});
+		s_spriteList.emplace_back();
 		return index;
 	}
 

@@ -271,16 +271,16 @@ namespace TFE_DarkForces
 		memset(&saveData, 0, sizeof(LevelSaveData));
 		memset(data, 0, sizeof(AgentData));
 
-		saveData.inv[0]  = 0xff;
-		saveData.inv[2]  = 0xff;
-		saveData.inv[6]  = 0xff;
-		saveData.inv[30] = WPN_PISTOL;
-		saveData.inv[31] = 3;
+		saveData.inv[0]  = 0xff;			// bryar pistol
+		saveData.inv[2]  = 0xff;			// s_itemUnknown1
+		saveData.inv[6]  = 0xff;			// s_itemUnknown2
+		saveData.inv[30] = WPN_PISTOL;		// current weapon
+		saveData.inv[31] = 3;				// lives
 
-		saveData.ammo[0] = 100;
-		saveData.ammo[7] = 100;
-		saveData.ammo[8] = 100;
-		saveData.ammo[9] = FIXED(2);
+		saveData.ammo[0] = min(s_ammoEnergyMax, 100);	// energy
+		saveData.ammo[7] = 100;				// shields
+		saveData.ammo[8] = 100;				// health
+		saveData.ammo[9] = FIXED(2);		// battery
 
 		strCopyAndZero(data->name, name, 32);
 		data->difficulty = 1;

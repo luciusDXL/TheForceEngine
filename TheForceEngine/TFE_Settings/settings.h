@@ -67,6 +67,8 @@ struct TFE_Settings_Graphics
 	bool  showFps = false;
 	bool  fix3doNormalOverflow = true;
 	bool  ignore3doLimits = true;
+	bool  forceGouraudShading = false;
+	bool  overrideLighting = false;
 	s32   frameRateLimit = 240;
 	f32   brightness = 1.0f;
 	f32   contrast = 1.0f;
@@ -406,10 +408,12 @@ namespace TFE_Settings
 	// Settings factoring in mod overrides.
 	bool ignoreInfLimits();
 	bool stepSecondAlt();
-	bool soidWallFlagFix();
+	bool solidWallFlagFix();
 	bool extendAdjoinLimits();
 	bool ignore3doLimits();
 	bool normalFix3do();
+	bool enableUnusedItem();
+	bool jsonAiLogics();
 
 	// Settings for level mod overrides.
 	ModSettingLevelOverride getLevelOverrides(string levelName);
