@@ -55,9 +55,13 @@ namespace TFE_ExternalData
 
 	void loadExternalPickups()
 	{
-		const char* programDir = TFE_Paths::getPath(PATH_PROGRAM);
 		char extDataFile[TFE_MAX_PATH];
-		sprintf(extDataFile, "%sExternalData/DarkForces/pickups.json", programDir);
+		strcpy(extDataFile, "ExternalData/DarkForces/pickups.json");
+		if (!TFE_Paths::mapSystemPath(extDataFile))
+		{
+			const char* programDir = TFE_Paths::getPath(PATH_PROGRAM);
+			sprintf(extDataFile, "%sExternalData/DarkForces/pickups.json", programDir);
+		}
 
 		TFE_System::logWrite(LOG_MSG, "EXTERNAL_DATA", "Loading pickup data");
 		FileStream file;
