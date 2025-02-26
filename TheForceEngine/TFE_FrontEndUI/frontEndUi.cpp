@@ -2084,7 +2084,7 @@ namespace TFE_FrontEndUI
 			}
 
 			size.x = 420 * s_uiScale;
-			size.y = 80 * s_uiScale;
+			size.y = 85 * s_uiScale;
 			
 			ImGui::BeginChild("##InfoWithBorderRecord", size, true);
 			{
@@ -2125,7 +2125,7 @@ namespace TFE_FrontEndUI
 				}
 
 				ImGui::LabelText("##FrameRecord", "Recording FrameRate");
-				ImGui::SameLine(140 * s_uiScale);
+				ImGui::SameLine(160 * s_uiScale);
 				ImGui::SetNextItemWidth(64.0f);
 				ImGui::Combo("##frameRecordingText", &gameSettings->df_recordFrameRate, c_frameRecording, IM_ARRAYSIZE(c_frameRecording));
 				ImGui::Spacing();
@@ -2140,7 +2140,7 @@ namespace TFE_FrontEndUI
 			ImGui::PopStyleColor();
 			ImGui::PopFont();
 
-			size.y = 80 * s_uiScale;
+			size.y = 100 * s_uiScale;
 			ImGui::BeginChild("##InfoWithBorderPlayBack", size, true);
 			{
 				ImGui::Spacing();
@@ -2149,7 +2149,7 @@ namespace TFE_FrontEndUI
 				ImGui::SetNextItemWidth(140.0f);
 				ImGui::Combo("##framePlayback", &gameSettings->df_playbackFrameRate, c_framePlayback, IM_ARRAYSIZE(c_framePlayback));
 				ImGui::Spacing();
-				ImGui::TextWrapped("You can speed-up or slow-down playback with Numpad + and -\nYou can rebind these in the Inputs section");
+				ImGui::TextWrapped("You can speed-up or slow-down playback with Numpad +/-\nYou can rebind these in the Inputs section");
 
 				ImGui::Checkbox("Show Record/Playback progress", &gameSettings->df_showReplayCounter);
 			}
@@ -2164,9 +2164,9 @@ namespace TFE_FrontEndUI
 					TFE_System::logWrite(LOG_ERROR, "frontEndUi", "Failed to open the directory: '%s'", s_replayDir);
 				}
 			}
+			ImGui::SameLine(0.0f);
             #endif		
 
-			ImGui::SameLine(0.0f);
 			if (ImGui::Button("Refresh Demo Folder"))
 			{
 				TFE_Input::populateReplayDirectory(s_replayDirContents);
@@ -2275,7 +2275,7 @@ namespace TFE_FrontEndUI
 				{
 					ImGui::Text("Incompatible Replay Version", s_modReplayName);
 				}
-				else if (modLoader_exist(s_modReplayName))
+				else if (modLoader_exist(s_modReplayName) || strlen(s_modReplayName) == 0)
 				{
 					ImGui::SetNextItemWidth(768 * s_uiScale);
 					if (TFE_Input::keyPressed(KEY_RETURN))
@@ -2289,7 +2289,7 @@ namespace TFE_FrontEndUI
 						loadReplayWrapper(s_replayFileName, s_modReplayName, s_replayLevelId);
 					}
 				}
-				else
+				else 
 				{
 					ImGui::Text("Mod %s not found", s_modReplayName);
 				}
