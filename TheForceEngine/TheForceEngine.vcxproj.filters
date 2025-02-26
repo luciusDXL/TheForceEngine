@@ -1357,9 +1357,6 @@
     <ClInclude Include="TFE_Editor\LevelEditor\Scripting\ls_system.h">
       <Filter>Source\TFE_Editor\LevelEditor\Scripting</Filter>
     </ClInclude>
-    <ClInclude Include="TFE_Editor\LevelEditor\Scripting\ls_api.h">
-      <Filter>Source\TFE_Editor\LevelEditor\Scripting</Filter>
-    </ClInclude>
     <ClInclude Include="TFE_Editor\LevelEditor\Scripting\ls_level.h">
       <Filter>Source\TFE_Editor\LevelEditor\Scripting</Filter>
     </ClInclude>

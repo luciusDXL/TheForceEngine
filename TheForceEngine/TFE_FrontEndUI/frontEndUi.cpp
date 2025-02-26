@@ -1499,7 +1499,7 @@ namespace TFE_FrontEndUI
 		}
 		ImGui::Spacing();
 
-		ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.25f, 0.25f, 1.0f));
+		ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 1.0f, 0.25f, 1.0f));
 		ImGui::TextWrapped("Note: HD Assets are only used if 'True Color' is enabled\n"
 						   "in the Graphics panel. To enable True Color select \n"
 						   "'GPU / OpenGL' as the Renderer, and 'True Color' as the\n"
