@@ -1564,14 +1564,11 @@ namespace TFE_DarkForces
 		s_playerObjSector = s_playerObject->sector;
 		s_playerTick = s_curTick;
 		s_prevPlayerTick  = s_curTick;
-		TFE_System::logWrite(LOG_MSG, "PLAYER", "Task msg = %d", msg);
 
 		while (msg != MSG_FREE_TASK)
 		{
 			if (msg == MSG_RUN_TASK)
 			{
-				TFE_System::logWrite(LOG_MSG, "PLAYER", "Curtick = %d s_gamePaued = %d", s_curTick, s_gamePaused);
-
 				if (!s_gamePaused)
 				{
 					// TFE: Add pitch limit setting.
@@ -1596,7 +1593,6 @@ namespace TFE_DarkForces
 					}
 				}
 			}
-			TFE_System::logWrite(LOG_MSG, "PLAYER", "Ending task  s_playerTick = %d", s_playerTick);
 
 			s_prevPlayerTick = s_playerTick;
 			task_yield(TASK_NO_DELAY);
@@ -1961,8 +1957,6 @@ namespace TFE_DarkForces
 				s_playerInWater = JTRUE;
 			}
 		}
-
-		TFE_System::logWrite(LOG_MSG, "PLAYER", "Player tick = %d prevplayerTick = %d s_playerVelX = %d s_playerVelZ = %d", s_playerTick, s_prevPlayerTick, s_playerVelX, s_playerVelZ);	
  
 		// Apply friction to existing velocity.
 		if (s_playerVelX || s_playerVelZ)
@@ -2177,8 +2171,6 @@ namespace TFE_DarkForces
 			s_playerVelZ = 0;
 		}
 		s_playerSector = s_colMinSector;
-
-		TFE_System::logWrite(LOG_MSG, "PLAYER", "friction Player tick = %d prevplayerTick = %d s_playerVelX = %d s_playerVelZ = %d", s_playerTick, s_prevPlayerTick, s_playerVelX, s_playerVelZ);
 
 
 		if (s_externalVelX || s_externalVelZ)

@@ -82,7 +82,6 @@ namespace TFE_Input
 	s32 replay_seed = 0;
 
 	int replayFilehandler = -1;
-	int replayLogCounter = 0;
 	
 	std::vector<char> settingBuffer;
 
@@ -137,6 +136,7 @@ namespace TFE_Input
 		return s_playback;
 	}
 
+	// Are you recording or playing back a demo
 	bool isReplaySystemLive()
 	{
 		return s_recording || s_playback;
@@ -149,13 +149,13 @@ namespace TFE_Input
 
 	void saveTick()
 	{
-		int inputCounter = getCounter();		
+		int inputCounter = inputMapping_getCounter();		
 		inputEvents[inputCounter].curTick = TFE_DarkForces::s_curTick;		
 	}	
 
 	void loadTick()
 	{
-		int inputCounter = getCounter();
+		int inputCounter = inputMapping_getCounter();
 		TFE_DarkForces::s_curTick = inputEvents[inputCounter].curTick;				
 	}
 
@@ -209,7 +209,7 @@ namespace TFE_Input
 		// When recording, normally ignore the escape key unless the PDA is open
 		if (isRecording() && (keyCode != KEY_ESCAPE || TFE_DarkForces::pda_isOpen()))
 		{
-			int updateCounter = getCounter();
+			int updateCounter = inputMapping_getCounter();
 			if (isPress)
 			{
 				inputEvents[updateCounter].keysPressed.push_back((InputAction)action);
@@ -224,7 +224,7 @@ namespace TFE_Input
 	void replayEvent()
 	{
 		// Plays back the event from the inputEvents map
-		int updateCounter = getCounter();
+		int updateCounter = inputMapping_getCounter();
 		ReplayEvent event = inputEvents[updateCounter-1];
 
 		// Handle key presses
@@ -297,13 +297,13 @@ namespace TFE_Input
 
 	void storePDAPosition(Vec2i pos)
 	{
-		int updateCounter = getCounter();
+		int updateCounter = inputMapping_getCounter();
 		inputEvents[updateCounter].pdaPosition = pos;
 	}
 
 	Vec2i getPDAPosition()
 	{
-		int updateCounter = getCounter();
+		int updateCounter = inputMapping_getCounter();
 		return inputEvents[updateCounter - 1].pdaPosition;
 	}
 
@@ -533,7 +533,7 @@ namespace TFE_Input
 			SERIALIZE_BUF(SaveVersionInit, frameTicks, sizeof(fixed16_16) * TFE_ARRAYSIZE(frameTicks));
 
 			// Handle events list size
-			int eventListsSize = getCounter();
+			int eventListsSize = inputMapping_getCounter();
 			SERIALIZE(ReplayVersionInit, eventListsSize, 0);
 
 			// handle the initial player eye position
@@ -657,8 +657,8 @@ namespace TFE_Input
 				memcpy(inputEvents[0].frameTicks, frameTicks, sizeof(fixed16_16) * TFE_ARRAYSIZE(frameTicks));
 				
 				// Wipe the event counter and set the max input counter
-				resetCounter();
-				setMaxCounter(eventCounter);
+				inputMapping_resetCounter();
+				inputMapping_setMaxCounter(eventCounter);
 
 				// Set the new start time
 				TFE_System::setStartTime(replayStartTime);
@@ -670,42 +670,6 @@ namespace TFE_Input
 		// Resume the game
 		TFE_DarkForces::time_pause(JFALSE);
 	}
-
-
-	void recordEye()
-	{
-		r_yaw = TFE_DarkForces::s_playerEye->yaw;
-		r_pitch = TFE_DarkForces::s_playerEye->pitch;
-		r_roll = TFE_DarkForces::s_playerEye->roll;
-		TFE_System::logWrite(LOG_MSG, "Replay", "Recorded yaw = %d pitch = %d", TFE_DarkForces::s_playerEye->yaw, TFE_DarkForces::s_playerEye->pitch);
-	}
-
-	void loadEye()
-	{
-		TFE_DarkForces::s_playerEye->yaw = r_yaw;
-		TFE_DarkForces::s_playerEye->pitch = r_pitch;
-		TFE_DarkForces::s_playerEye->roll = r_roll;
-		TFE_System::logWrite(LOG_MSG, "Replay", "Loaded yaw = %d pitch = %d", TFE_DarkForces::s_playerEye->yaw, TFE_DarkForces::s_playerEye->pitch);
-	}
-
-	void handleEye()
-	{
-		// If the eye is set, then store or restore the eye position
-		// This only happens after the first 60 frames typically as the player obj is loaded 
-		if (!eyeSet)
-		{
-			if (isRecording())
-			{
-				recordEye();
-			}
-			if (isDemoPlayback())
-			{
-				loadEye();
-			}
-			eyeSet = true;
-		}
-	}
-
 	void disableReplayCheats()
 	{
 		TFE_DarkForces::s_invincibility = JFALSE;
@@ -740,7 +704,7 @@ namespace TFE_Input
 		initPlayerCollision();
 
 		// Wipes the frame counter so it is consistent 
-		resetCounter();
+		inputMapping_resetCounter();
 
 		// Wipe all inputs
 		inputMapping_endFrame();
@@ -992,11 +956,10 @@ namespace TFE_Input
 	void loadReplay()
 	{	
 
-
 		startCommonReplayStates();
 	
 		// Start replaying with the first event
-		setReplayCounter(1);
+		inputMapping_setReplayCounter(1);
 	
 		serializeDemo(&s_replayFile, false);
 
@@ -1015,20 +978,6 @@ namespace TFE_Input
 
 		// Ensure you always load the first agent. 
 		s_agentId = 0;
-
-		TFE_System::logClose();
-		char replayLog[256];
-		if (replayLogCounter > 0)
-		{
-			sprintf(replayLog, "replay_%d.log", replayLogCounter);
-		}
-		else
-		{
-			sprintf(replayLog, "replay.log");
-		}
-
-		replayLogCounter++;
-		TFE_System::logOpen(replayLog);
 	}
 
 	void restoreAgent()
@@ -1076,7 +1025,5 @@ namespace TFE_Input
 		TFE_FrontEndUI::exitToMenu();
 
 		TFE_System::logWrite(LOG_MSG, "Replay", "Finished playing back demo...");
-		TFE_System::logClose();
-		TFE_System::logOpen("main.log");
 	}
 }

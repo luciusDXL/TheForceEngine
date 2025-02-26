@@ -694,7 +694,7 @@ int main(int argc, char* argv[])
 		while (SDL_PollEvent(&event)) { handleEvent(event); }
 
 		// Inputs Main Entry - skip frame any further processing during replay pause
-		if (!handleInputs())
+		if (!inputMapping_handleInputs())
 		{
 			TFE_Input::endFrame();
 			inputMapping_endFrame();

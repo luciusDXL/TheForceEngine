@@ -102,7 +102,7 @@ namespace TFE_SaveSystem
 		stream->writeBuffer(levelId, len);
 
 		// For Replays - Counter ID
-		int counter = getCounter();		
+		int counter = inputMapping_getCounter();		
 		len = sizeof(counter);
 		stream->write(&len);
 		stream->writeBuffer(&counter, len);

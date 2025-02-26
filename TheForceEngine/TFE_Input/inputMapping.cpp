@@ -347,22 +347,22 @@ namespace TFE_Input
 		return action >= IADF_FORWARD && action <= IADF_LOOK_DN;
 	}
 
-	void setReplayCounter(int counter)
+	void inputMapping_setReplayCounter(int counter)
 	{
 		replayCounter = counter;
 	}
 
-	void resetCounter()
+	void inputMapping_resetCounter()
 	{
 		replayCounter = 0;
 	}
 
-	int getCounter()
+	int inputMapping_getCounter()
 	{
 		return replayCounter;
 	}
 
-	void setMaxCounter(int counter)
+	void inputMapping_setMaxCounter(int counter)
 	{
 		maxReplayCounter = counter;
 	}
@@ -606,7 +606,7 @@ namespace TFE_Input
 		return false;
 	}
 
-	bool handleInputs()
+	bool inputMapping_handleInputs()
 	{
 		//  Allow escape during playback except when in PDA mode 
 		if (keyPressed(KEY_ESCAPE) && !TFE_DarkForces::pda_isOpen())
@@ -634,9 +634,6 @@ namespace TFE_Input
 		// Handle Playback
 		if (isDemoPlayback())
 		{
-
-			//handleReplayPause();
-
 			// Handle speed up and slowdowns of playback
 			if (isBindingPressed(IADF_DEMO_SPEEDUP))
 			{
@@ -677,8 +674,6 @@ namespace TFE_Input
 				// Load Mouse positional information
 				mousePos = event.mousePos;
 
-
-
 				// Only load if it has mouse movement
 				if (mousePos.size() == 4)
 				{
@@ -687,12 +682,10 @@ namespace TFE_Input
 					mouseAbsX = mousePos[2];
 					mouseAbsY = mousePos[3];
 				}
-
 			}
 
 			// Replay the event keys
 			replayEvent();
-
 		}
 
 		// Handle Recording
@@ -713,55 +706,19 @@ namespace TFE_Input
 			mousePos.push_back(mouseAbsX);
 			mousePos.push_back(mouseAbsY);
 			event.mousePos = mousePos;
+
+			// Store the mouse positions 
 			TFE_Input::inputEvents[replayCounter] = event;
 		}
 
 		// Apply the mouse position data we either got from SDL or from the demo
-
-
-
 		TFE_Input::setRelativeMousePos(mouseX, mouseY);
 		TFE_Input::setMousePos(mouseAbsX, mouseAbsY);
 
-
+		// If you are not playing back the demo - process the input keys.
 		if (!isDemoPlayback())
 		{
 			inputMapping_updateInput();
-		}
-
-		
-		
-		if ((isRecording() || isDemoPlayback()))
-		{
-			int printcounter = isRecording() ? replayCounter : replayCounter - 1;
-			if (printcounter != -1)
-			{
-				TFE_System::logWrite(LOG_MSG, "LOG", "----------------------------------------------------------------- %d ---------------------------------------------------------------------", printcounter);
-			}
-			if (TFE_DarkForces::s_playerEye)
-			{
-				handleEye();
-
-				if (isDemoPlayback())
-				{
-					replayEvent();
-				}
-
-				string hudDataStr = " upd=%d cur=%d pt=%d ptp=%d delta=%d X:%04d Y:%.1f Z:%04d Y=%d P=%d";
-
-				fixed16_16 x = TFE_DarkForces::s_eyePos.x;
-				fixed16_16 z = TFE_DarkForces::s_eyePos.z;
-
-
-				if (printcounter != -1)
-				{
-					// temp muting
-					TFE_System::logWrite(LOG_MSG, "LOG", hudDataStr.c_str(), printcounter, TFE_DarkForces::s_curTick, TFE_DarkForces::s_playerTick,
-						TFE_DarkForces::s_prevPlayerTick, TFE_DarkForces::s_deltaTime,
-						x, -fixed16ToFloat(TFE_DarkForces::s_playerEye->posWS.y), z, TFE_DarkForces::s_playerEye->yaw, TFE_DarkForces::s_playerEye->pitch);
-
-				}
-			}
 		}
 
 		// If you are replaying the demo and the game is paused, we should also halt all logic
