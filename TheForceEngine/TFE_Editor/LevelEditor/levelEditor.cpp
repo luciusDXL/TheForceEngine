@@ -1999,8 +1999,11 @@ namespace LevelEditor
 				TFE_Input::clearKeyPressed(KEY_ESCAPE);
 			}
 			// Clear out the context menu.
-			s_contextMenu = CONTEXTMENU_NONE;
-			s_modalUiActive = false;
+			if (s_contextMenu != CONTEXTMENU_NONE)
+			{
+				s_contextMenu = CONTEXTMENU_NONE;
+				s_modalUiActive = false;
+			}
 			return;
 		}
 
@@ -2089,8 +2092,11 @@ namespace LevelEditor
 		if (leftClick || TFE_Input::mousePressed(MBUTTON_RIGHT) || closeMenu)
 		{
 			// Clear the context menu and modal UI.
-			s_contextMenu = CONTEXTMENU_NONE;
-			s_modalUiActive = false;
+			if (s_contextMenu != CONTEXTMENU_NONE)
+			{
+				s_contextMenu = CONTEXTMENU_NONE;
+				s_modalUiActive = false;
+			}
 			// Clear mouse clicks.
 			s_singleClick = false;
 			s_doubleClick = false;
@@ -2149,6 +2155,7 @@ namespace LevelEditor
 		viewport_render(s_view, viewportRenderFlags);
 
 		// Toolbar
+		bool prevModal = s_modalUiActive;
 		s_modalUiActive = s_contextMenu != CONTEXTMENU_NONE;
 		toolbarBegin();
 		{
@@ -2278,6 +2285,7 @@ namespace LevelEditor
 			messagePanel(itemPos);
 		}
 		toolbarEnd();
+		const bool modalRelease = !s_modalUiActive && prevModal;
 
 		// Info Panel
 		drawInfoPanel(s_view);
@@ -2300,7 +2308,7 @@ namespace LevelEditor
 			const bool editWinHovered = mx >= s_editWinPos.x && mx < s_editWinPos.x + s_editWinSize.x && my >= s_editWinPos.z && my < s_editWinPos.z + s_editWinSize.z;
 			const bool hasHovered = selection_hasHovered();
 
-			if (!isUiModal())
+			if (!isUiModal() && !modalRelease)
 			{
 				const ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize
 					| ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoNav | ImGuiWindowFlags_AlwaysAutoResize;
