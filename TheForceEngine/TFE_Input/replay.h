@@ -79,9 +79,6 @@ namespace TFE_Input
 	void setDemoPlayback(bool playback);
 	bool isReplaySystemLive();
 
-	void recordEye();
-	void loadEye();
-
 	bool isReplayPaused();
 	void increaseReplayFrameRate();
 	void decreaseReplayFrameRate();
@@ -93,7 +90,6 @@ namespace TFE_Input
 
 	void saveTick(); 
 	void loadTick();
-	void handleEye();
 
 	void sendEndPlaybackMsg();
 	void sendEndRecordingMsg();

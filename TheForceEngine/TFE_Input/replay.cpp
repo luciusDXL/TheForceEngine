@@ -1,9 +1,5 @@
 #include <TFE_Input/replay.h>
-#include <version.h>
 #include <sstream>
-#include <unordered_map>
-#include <windows.h>
-#include <thread>
 #include <array>
 #include <map>
 #include <string>
@@ -22,14 +18,12 @@
 #include <TFE_DarkForces/GameUI/agentMenu.h>
 #include <TFE_DarkForces/GameUI/pda.h>
 #include <TFE_DarkForces/mission.h>
-#include <TFE_FileSystem/paths.h>
 #include <TFE_FileSystem/fileutil.h>
 #include <TFE_FileSystem/filestream.h>
 #include <TFE_FrontEndUI/frontEndUi.h>
 #include <TFE_Game/saveSystem.h>
 #include <TFE_Jedi/Serialization/serialization.h>
 #include <TFE_Jedi/Memory/allocator.h>
-#include <TFE_System/iniParser.h>
 #include <TFE_System/frameLimiter.h>
 #include <TFE_System/system.h>
 
