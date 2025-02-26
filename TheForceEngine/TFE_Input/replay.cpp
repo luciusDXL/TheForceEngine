@@ -88,7 +88,7 @@ namespace TFE_Input
 		if (!FileUtil::directoryExits(s_replayDir))
 		{
 			sprintf(s_replayDir, "%sReplays/", TFE_Paths::getPath(PATH_USER_DOCUMENTS));
-
+			TFE_Paths::fixupPathAsDirectory(s_replayDir);
 			// Otherwise check <USER>/TheForceEngine/Replays
 			if (!FileUtil::directoryExits(s_replayDir))
 			{
