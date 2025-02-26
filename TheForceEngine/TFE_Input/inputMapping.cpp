@@ -7,7 +7,6 @@
 #include <TFE_System/system.h>
 #include <array>
 #include <TFE_Settings/settings.h>
-#include <sdl.h>
 #include <TFE_Input/replay.h>
 #include <TFE_DarkForces/hud.h>
 #include <TFE_DarkForces/player.h>
