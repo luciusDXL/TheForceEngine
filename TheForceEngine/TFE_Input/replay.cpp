@@ -468,11 +468,11 @@ namespace TFE_Input
 			if (!writeFlag)
 			{	
 				// Create new agent if you don't have any 
-				s32 curCount = getAgentCount();
+				s32 curCount = agentMenu_getAgentCount();
 				if (curCount == 0)
 				{
 					agentMenu_createNewAgent();
-					setAgentName("replay");
+					agentMenu_setAgentName("replay");
 				}
 
 				// Back up current player from the first slot
@@ -907,7 +907,7 @@ namespace TFE_Input
 		TFE_FrontEndUI::exitToMenu();
 
 		// Handle Agent 
-		setAgentCount(agent_loadData());
+		agentMenu_setAgentCount(agent_loadData());
 
 		// Handle starting parameters
 		char selectedModCmd[TFE_MAX_PATH];
@@ -985,7 +985,7 @@ namespace TFE_Input
 		// We always restore the first agent in the list
 		s_agentId = 0;
 		s_agentData[s_agentId] = replayAgent.agentData;
-		setAgentName(replayAgent.agentData.name);
+		agentMenu_setAgentName(replayAgent.agentData.name);
 		agent_writeSavedData(s_agentId, &replayAgent);
 	}
 

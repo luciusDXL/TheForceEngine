@@ -117,6 +117,7 @@ namespace TFE_DarkForces
 			JBool flip;
 		};
 		task_begin_ctx;
+
 		local(mouseBot) = s_curMouseBot;
 		local(obj)      = local(mouseBot)->logic.obj;
 		local(phyActor) = &local(mouseBot)->actor;
@@ -169,6 +170,7 @@ namespace TFE_DarkForces
 				local(odd) = (s_curTick & 1) ? JTRUE : JFALSE;
 				angle14_32 deltaYaw = random(16338);
 				local(moveMod)->target.yaw = local(odd) ? (local(obj)->yaw + deltaYaw) : (local(obj)->yaw - deltaYaw);				
+				
 				local(moveMod)->target.speedRotation = random(0x3555) + 0x555;
 				local(moveMod)->target.flags |= TARGET_MOVE_ROT;
 				local(flip) = JFALSE;

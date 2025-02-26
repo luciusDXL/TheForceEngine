@@ -590,7 +590,6 @@ namespace TFE_Jedi
 			return JTRUE;
 		}
 
-
 		// Keep processing tasks until the "framebreak" task is hit.
 		// Once the framebreak task completes (if it is not sleeping), then break out of the loop - processing will resume
 		// on the next task on the next frame.

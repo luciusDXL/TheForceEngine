@@ -6,7 +6,6 @@
 #include <string.h>
 #include <assert.h>
 
-
 namespace TFE_Input
 {
 	#define BUFFERED_TEXT_LEN 64

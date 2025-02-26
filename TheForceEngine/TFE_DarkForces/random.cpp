@@ -56,7 +56,6 @@ namespace TFE_DarkForces
 
 	void random_seed(u32 seed)
 	{
-		s_seed = seed;
-	
+		s_seed = seed;	
 	}
 }  // TFE_DarkForces

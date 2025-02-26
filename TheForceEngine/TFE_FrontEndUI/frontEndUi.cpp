@@ -478,13 +478,7 @@ namespace TFE_FrontEndUI
 
 	void logToConsole(const char* str)
 	{
-		try {
-			TFE_Console::addToHistory(str);
-		}
-		catch (...)
-		{
-
-		}
+		TFE_Console::addToHistory(str);
 	}
 
 	void toggleProfilerView()
@@ -1258,14 +1252,6 @@ namespace TFE_FrontEndUI
 		{
 			gameSettings->df_jsonAiLogics = jsonAiLogics;
 		}
-
-		/*
-		bool enableReplay = gameSettings->df_enableReplay;
-		if (ImGui::Checkbox("Enable Replay", &enableReplay))
-		{
-			gameSettings->df_enableReplay = enableReplay;
-			gameSettings->df_enableRecording = false;
-		}*/
 
 		if (s_drawNoGameDataMsg)
 		{
@@ -3532,6 +3518,22 @@ namespace TFE_FrontEndUI
 		return currentFilePath;	
 	}
 
+	void pickCurrentResolution()
+	{
+		TFE_Settings_Graphics* graphics = TFE_Settings::getGraphicsSettings();
+
+		const size_t count = TFE_ARRAYSIZE(c_resolutionDim);
+		for (size_t i = 0; i < count; i++)
+		{
+			if (graphics->gameResolution.z == c_resolutionDim[i].z)
+			{
+				s_resIndex = s32(i);
+				return;
+			}
+		}
+		s_resIndex = count;
+	}
+
 	////////////////////////////////////////////////////////////////
 	// Accessibility
 	////////////////////////////////////////////////////////////////
@@ -3727,22 +3729,6 @@ namespace TFE_FrontEndUI
 		{
 			resetLighting();
 		}
-	}
-
-	void pickCurrentResolution()
-	{
-		TFE_Settings_Graphics* graphics = TFE_Settings::getGraphicsSettings();
-
-		const size_t count = TFE_ARRAYSIZE(c_resolutionDim);
-		for (size_t i = 0; i < count; i++)
-		{
-			if (graphics->gameResolution.z == c_resolutionDim[i].z)
-			{
-				s_resIndex = s32(i);
-				return;
-			}
-		}
-		s_resIndex = count;
 	}
 
 	////////////////////////////////////////////////////////////////

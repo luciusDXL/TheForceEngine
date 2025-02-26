@@ -92,8 +92,8 @@ namespace TFE_System
 		va_start(arg, str);
 		vsprintf(s_msgStr, str, arg);
 		va_end(arg);
-		//Format the message
-		/*
+
+		//Format the message		
 		if (type != LOG_MSG)
 		{
 			sprintf(s_workStr, "%s - [%s : %s] %s\r\n", timeStr, c_typeNames[type], tag, s_msgStr);
@@ -101,18 +101,7 @@ namespace TFE_System
 		else
 		{
 			sprintf(s_workStr, "%s - [%s] %s\r\n", timeStr, tag, s_msgStr);
-		}*/
-
-		if (type != LOG_MSG)
-		{
-			sprintf(s_workStr, "[%s : %s] %s\r\n", c_typeNames[type], tag, s_msgStr);
 		}
-		else
-		{
-			sprintf(s_workStr, "[%s] %s\r\n", tag, s_msgStr);
-		}
-
-
 
 		//Write to disk
 		s_logFile.writeBuffer(s_workStr, (u32)strlen(s_workStr));

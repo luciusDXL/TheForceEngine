@@ -1290,7 +1290,6 @@ namespace TFE_DarkForces
 
 	void handleGeneralInput()
 	{
-
 		// Early out if the player is dying.
 		if (s_playerDying)
 		{

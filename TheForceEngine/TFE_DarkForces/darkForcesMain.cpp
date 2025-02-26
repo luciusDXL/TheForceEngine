@@ -393,6 +393,8 @@ namespace TFE_DarkForces
 		TFE_MidiPlayer::resume();
 		TFE_Audio::resume();
 
+		TFE_Jedi::renderer_destroy();
+
 		// Reset state.
 		s_sharedState = SharedGameState{};
 		s_runGameState = {};

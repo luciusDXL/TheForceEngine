@@ -416,10 +416,10 @@ namespace TFE_Input
 					s32 dx, dy;
 					TFE_Input::getMouseWheel(&dx, &dy);
 
-					if ((bind->mouseWheel == MOUSEWHEEL_LEFT && dx < 0) ||
+					if ((bind->mouseWheel == MOUSEWHEEL_LEFT  && dx < 0) ||
 						(bind->mouseWheel == MOUSEWHEEL_RIGHT && dx > 0) ||
-						(bind->mouseWheel == MOUSEWHEEL_UP && dy > 0) ||
-						(bind->mouseWheel == MOUSEWHEEL_DOWN && dy < 0))
+						(bind->mouseWheel == MOUSEWHEEL_UP    && dy > 0) ||
+						(bind->mouseWheel == MOUSEWHEEL_DOWN  && dy < 0))
 					{
 						s_actions[bind->action] = STATE_PRESSED;
 						recordEvent(bind->action, bind->keyCode, true);

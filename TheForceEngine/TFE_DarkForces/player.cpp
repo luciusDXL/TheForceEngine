@@ -1628,8 +1628,6 @@ namespace TFE_DarkForces
 
 		s32 mdx, mdy;
 		TFE_Input::getAccumulatedMouseMove(&mdx, &mdy);
-
-
 		InputConfig* inputConfig = TFE_Input::inputMapping_get();
 
 		// Yaw change
@@ -2171,7 +2169,6 @@ namespace TFE_DarkForces
 			s_playerVelZ = 0;
 		}
 		s_playerSector = s_colMinSector;
-
 
 		if (s_externalVelX || s_externalVelZ)
 		{
