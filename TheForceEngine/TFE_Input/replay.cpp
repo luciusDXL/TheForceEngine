@@ -375,7 +375,7 @@ namespace TFE_Input
 		}
 
 		// Ensure it is all lowercase
-		std::strcpy(s_replayPath, TFE_A11Y::toLower(string(s_replayPath)).c_str());
+		strcpy(s_replayPath, TFE_A11Y::toLower(string(s_replayPath)).c_str());
 
 		sprintf(s_headerName, "%s.demo", levelName);
 		return true;
