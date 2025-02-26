@@ -827,9 +827,6 @@ namespace TFE_Input
 		setDemoPlayback(false);
 		saveTick();
 		saveInitTime();
-
-		TFE_System::logClose();
-		TFE_System::logOpen("record.log");
 	}
 
 	void endRecording()
@@ -857,10 +854,6 @@ namespace TFE_Input
 		endCommonReplayStates();
 
 		TFE_System::logWrite(LOG_MSG, "Replay", "Finished recording demo...");
-
-		TFE_System::logClose();
-		TFE_System::logOpen("main.log");
-
 	}
 
 	void recordReplayTime(u64 startTime)
