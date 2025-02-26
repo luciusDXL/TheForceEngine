@@ -361,7 +361,6 @@ namespace TFE_DarkForces
 		s_playerInfo.health      = pickup_addToValue(0, 100, s_healthMax);
 		s_playerInfo.healthFract = 0;
 		s_batteryPower = s_batteryPowerMax;
-
 		// Always reset player ticks on init for replay consistency
 		s_playerTick = 0;
 		s_prevPlayerTick = 0;
