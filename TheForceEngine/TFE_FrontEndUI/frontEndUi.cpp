@@ -2275,7 +2275,7 @@ namespace TFE_FrontEndUI
 				{
 					ImGui::Text("Incompatible Replay Version", s_modReplayName);
 				}
-				else if (modLoader_exist(s_modReplayName) || strlen(s_modReplayName) == 0)
+				else if (modLoader_exist(s_modReplayName))
 				{
 					ImGui::SetNextItemWidth(768 * s_uiScale);
 					if (TFE_Input::keyPressed(KEY_RETURN))

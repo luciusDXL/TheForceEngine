@@ -386,6 +386,12 @@ namespace TFE_FrontEndUI
 
 	bool modLoader_exist(const char* modName)
 	{
+		// If you are not passing in a mod (ie: base game level) then this is always true
+		if (strlen(modName) == 0)
+		{
+			return true;
+		}
+
 		char programDirModDir[TFE_MAX_PATH];
 		sprintf(programDirModDir, "%sMods/%s", TFE_Paths::getPath(PATH_PROGRAM), modName);
 		TFE_Paths::fixupPathAsDirectory(programDirModDir);
