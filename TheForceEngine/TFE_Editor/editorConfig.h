@@ -14,6 +14,14 @@
 
 namespace TFE_Editor
 {
+	enum LevelEditorFlags
+	{
+		LEVEDITOR_FLAG_RUN_TFE = FLAG_BIT(0),
+		LEVEDITOR_FLAG_NO_ENEMIES = FLAG_BIT(1),
+		LEVEDITOR_FLAG_EASY = FLAG_BIT(2),
+		LEVEDITOR_FLAG_HARD = FLAG_BIT(3),
+	};
+
 	struct EditorConfig
 	{
 		char editorPath[TFE_MAX_PATH] = "";
@@ -23,6 +31,11 @@ namespace TFE_Editor
 		// Level editor
 		s32 interfaceFlags = 0;
 		f32 curve_segmentSize = 2.0f;
+		char darkForcesPort[TFE_MAX_PATH] = "";
+		char outlawsPort[TFE_MAX_PATH] = "";
+		char darkForcesAddCmdLine[TFE_MAX_PATH] = "";
+		char outlawsAddCmdLine[TFE_MAX_PATH] = "";
+		u32 levelEditorFlags = LEVEDITOR_FLAG_RUN_TFE;
 	};
 	enum EditorFontConst
 	{

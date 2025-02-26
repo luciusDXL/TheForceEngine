@@ -136,6 +136,7 @@ namespace TFE_Jedi
 	void renderer_destroy()
 	{
 		renderer_resetState();
+		screenGPU_destroy();
 	}
 
 	void renderer_reset()

@@ -59,6 +59,8 @@ namespace TFE_Editor
 	void project_close();
 	void project_prepareNew();
 	void project_prepareEdit();
+	void project_prepareExportUi();
 	bool project_load(const char* filepath);
 	bool project_editUi(bool newProject);
+	bool project_exportUi();
 }

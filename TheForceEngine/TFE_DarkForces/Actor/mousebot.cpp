@@ -18,9 +18,6 @@
 #include <TFE_Jedi/Memory/list.h>
 #include <TFE_Jedi/Memory/allocator.h>
 #include <TFE_Jedi/Serialization/serialization.h>
-#include <TFE_Input/inputMapping.h>
-#include <TFE_DarkForces/hud.h>
-#include <cmath>
 
 namespace TFE_DarkForces
 {

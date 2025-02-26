@@ -163,6 +163,7 @@ namespace LevelEditor
 	extern std::vector<LogicDef> s_logicDefList;
 	extern std::vector<EntityVarDef> s_varDefList;
 	extern std::vector<Category> s_categoryList;
+	extern u32 s_enemyCategoryFlag;
 
 	struct EditorObject
 	{

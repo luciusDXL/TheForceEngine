@@ -7,6 +7,7 @@
 #include "levelEditorHistory.h"
 #include "editVertex.h"
 #include "sharedState.h"
+#include <TFE_Editor/LevelEditor/Rendering/viewport.h>
 #include <TFE_Editor/LevelEditor/Rendering/grid.h>
 #include <TFE_Editor/LevelEditor/Rendering/gizmo.h>
 #include <TFE_System/math.h>
@@ -292,6 +293,43 @@ namespace LevelEditor
 		return angleDelta;
 	}
 
+	bool rayPlaneIntersection(const Vec3f& origin, const Vec3f& dir, const Vec4f& plane, f32& dist)
+	{
+		const f32 d = plane.x*dir.x + plane.y*dir.y + plane.z*dir.z;
+		if (fabsf(d) < FLT_MIN) { return false; }
+
+		dist = -(plane.x*origin.x + plane.y*origin.y + plane.z*origin.z + plane.w) / d;
+		return dist >= FLT_MIN;
+	}
+
+	bool rayBoundingPlaneIntersection(const Vec4f* planes, Vec3f* it)
+	{
+		f32 closestHit = FLT_MAX;
+		for (s32 i = 0; i < 6; i++)
+		{
+			// Skip backfacing planes.
+			if (planes[i].x*s_rayDir.x + planes[i].y*s_rayDir.y + planes[i].z*s_rayDir.z > 0.0f)
+			{
+				continue;
+			}
+
+			f32 dist;
+			if (rayPlaneIntersection(s_camera.pos, s_rayDir, planes[i], dist))
+			{
+				if (dist < closestHit)
+				{
+					closestHit = dist;
+				}
+			}
+		}
+		if (closestHit <= 0.0f || closestHit == FLT_MAX) { return false; }
+
+		it->x = s_camera.pos.x + s_rayDir.x * closestHit;
+		it->y = s_camera.pos.y + s_rayDir.y * closestHit;
+		it->z = s_camera.pos.z + s_rayDir.z * closestHit;
+		return true;
+	}
+
 	Vec3f edit_gizmoCursor3d()
 	{
 		f32 height = s_grid.height;
@@ -381,7 +419,7 @@ namespace LevelEditor
 						s_camera.pos.z + u * (s_cursor3d.z - s_camera.pos.z)
 					};
 				}
-				else // if (s_editMode == LEDIT_WALL)
+				else
 				{
 					// When wall editing is enabled, then what we really want is a plane that passes through the cursor and is oriented along
 					// the direction of movement (aka, the normal is perpendicular to this movement).
@@ -1003,22 +1041,29 @@ namespace LevelEditor
 				top = obj->pos.y + entity->size.z;
 			}
 
-			const f32 dF = fabsf(worldPos.y - base);
-			const f32 dC = fabsf(worldPos.y - top);
-			const f32 yBase = dF <= dC ? base : top;
-
 			if (s_view == EDIT_VIEW_3D)
 			{
-				// If 3D, we want to grab the base or the top of the object since that is the plane that will be used to 
-				// move the object going forward.
-				edit_setTransformAnchor({ 0.0f, yBase, 0.0f });
-				s_cursor3d = edit_gizmoCursor3d();
+				Vec4f planes[6];
+				Vec3f it;
+				viewport_computeEntityBoundingPlanes(sector, obj, planes);
+				if (rayBoundingPlaneIntersection(planes, &it))
+				{
+					s_cursor3d = it;
+				}
+				else
+				{
+					s_cursor3d = edit_gizmoCursor3d();
+				}
+				
+				// Snap to the grid (XZ).
 				Vec2f snapPos = { s_cursor3d.x, s_cursor3d.z };
 				snapToGrid(&snapPos);
 				s_cursor3d = { snapPos.x, s_cursor3d.y, snapPos.z };
+
+				// Set the world position.
 				worldPos = s_cursor3d;
 				s_curVtxPos = s_cursor3d;
-				s_prevPos = s_curVtxPos;
+				s_prevPos = s_cursor3d;
 			}
 			s_moveStartPos = { worldPos.x, worldPos.z };
 
@@ -1039,7 +1084,7 @@ namespace LevelEditor
 
 		if (moveOnYAxis)
 		{
-			worldPos = moveAlongRail({ 0.0f, 1.0f, 0.0f });
+			worldPos = moveAlongRail({ 0.0f, 1.0f, 0.0f }, false);
 			snapToGridY(&worldPos.y);
 		}
 
@@ -1047,6 +1092,17 @@ namespace LevelEditor
 		const Vec3f pos = edit_getTransformPos();
 		Vec3f delta = { worldPos.x - s_moveStartPos.x, worldPos.y - pos.y, worldPos.z - s_moveStartPos.z };
 		Vec3f transPos = worldPos;
+
+		if (s_view == EDIT_VIEW_3D)
+		{
+			const Vec3f cameraDelta = { worldPos.x - s_camera.pos.x, worldPos.y - s_camera.pos.y, worldPos.z - s_camera.pos.z };
+			if (cameraDelta.x*s_rayDir.x + cameraDelta.z*s_rayDir.z < 0.0f && !moveOnYAxis)
+			{
+				// Do not allow the object to be moved behind the camera.
+				return;
+			}
+		}
+
 		if (moveOnYAxis)
 		{
 			// Movement along Y axis.

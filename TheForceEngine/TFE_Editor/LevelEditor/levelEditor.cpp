@@ -23,6 +23,7 @@
 #include "editNotes.h"
 #include "editTransforms.h"
 #include "userPreferences.h"
+#include "testOptions.h"
 #include <TFE_FrontEndUI/frontEndUi.h>
 #include <TFE_Editor/AssetBrowser/assetBrowser.h>
 #include <TFE_Asset/imageAsset.h>
@@ -1501,7 +1502,7 @@ namespace LevelEditor
 			}
 			if (ImGui::MenuItem("Test Options", NULL, (bool*)NULL))
 			{
-				// TODO
+				openEditorPopup(POPUP_LEV_TEST_OPTIONS);
 			}
 			ImGui::Separator();
 			if (ImGui::MenuItem("INF Items", NULL, (bool*)NULL))
@@ -2514,7 +2515,7 @@ namespace LevelEditor
 		return worldPos;
 	}
 		
-	Vec3f moveAlongRail(Vec3f dir)
+	Vec3f moveAlongRail(Vec3f dir, bool adjustPosByView)
 	{
 		const Vec3f rail[] =
 		{
@@ -2542,7 +2543,7 @@ namespace LevelEditor
 			worldPos = s_prevPos;
 		}
 
-		f32 visCurY = fabsf(dir.y) > 0.75f ? s_cursor3d.y : s_curVtxPos.y;
+		f32 visCurY = (fabsf(dir.y) > 0.75f && adjustPosByView) ? s_cursor3d.y : s_curVtxPos.y;
 		Vec3f railVis[] =
 		{
 			{ s_curVtxPos.x, visCurY, s_curVtxPos.z },
@@ -3596,6 +3597,11 @@ namespace LevelEditor
 		EditorSector* hoveredSector = nullptr;
 		s32 hoveredFeatureIndex = -1;
 		selection_getVertex(SEL_INDEX_HOVERED, hoveredSector, hoveredFeatureIndex);
+		if (!hoveredSector || hoveredFeatureIndex < 0 || hoveredFeatureIndex >= (s32)hoveredSector->vtx.size())
+		{
+			selection_clearHovered();
+			return;
+		}
 
 		// Give the "world space" vertex position, get back to the pixel position for the UI.
 		const Vec2f vtx = hoveredSector->vtx[hoveredFeatureIndex];
@@ -3638,6 +3644,7 @@ namespace LevelEditor
 		s32 hoveredFeatureIndex = -1;
 		HitPart hoveredPart = HP_NONE;
 		selection_getSurface(SEL_INDEX_HOVERED, hoveredSector, hoveredFeatureIndex, &hoveredPart);
+		if (!hoveredSector) { return; }
 
 		const EditorWall* wall = &hoveredSector->walls[hoveredFeatureIndex];
 		const Vec2f* v0 = &hoveredSector->vtx[wall->idx[0]];

@@ -67,8 +67,7 @@ namespace LevelEditor
 
 	void browserFreeIcons()
 	{
-		TFE_RenderBackend::freeTexture(s_icon3d);
-		s_icon3d = nullptr;
+		// All icons are freed later, so just leave it alone.
 	}
 	
 	void browserBegin(s32 offset)

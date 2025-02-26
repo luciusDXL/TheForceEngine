@@ -141,8 +141,6 @@ void handleEvent(SDL_Event& Event)
 			{
 				TFE_Input::setBufferedKey(KeyboardCode(Event.key.keysym.scancode));
 			}
-
-			TFE_Input::setRepeating(Event.key.repeat > 0);
 		} break;
 		case SDL_KEYUP:
 		{
@@ -772,6 +770,10 @@ int main(int argc, char* argv[])
 		TFE_Ui::begin();
 		TFE_System::update();
 
+		#ifdef ENABLE_FORCE_SCRIPT
+			TFE_ForceScript::update();
+		#endif
+
 		// Update
 		if (TFE_FrontEndUI::uiControlsEnabled() && task_canRun())
 		{
@@ -881,10 +883,6 @@ int main(int argc, char* argv[])
 				_recording = false;
 			}
 		}
-
-		#ifdef ENABLE_FORCE_SCRIPT
-			TFE_ForceScript::update();
-		#endif
 
 		const bool isConsoleOpen = TFE_FrontEndUI::isConsoleOpen();
 		bool endInputFrame = true;

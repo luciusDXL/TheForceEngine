@@ -293,6 +293,10 @@ namespace TFE_Editor
 			{
 				ImGui::OpenPopup("Project");
 			} break;
+			case POPUP_EXPORT_PROJECT:
+			{
+				ImGui::OpenPopup("Export Project");
+			} break;
 			case POPUP_NEW_LEVEL:
 			{
 				ImGui::OpenPopup("New Level");
@@ -320,6 +324,10 @@ namespace TFE_Editor
 			case POPUP_LEV_USER_PREF:
 			{
 				ImGui::OpenPopup("User Preferences");
+			} break;
+			case POPUP_LEV_TEST_OPTIONS:
+			{
+				ImGui::OpenPopup("Test Options");
 			} break;
 			case POPUP_HISTORY_VIEW:
 			{
@@ -369,6 +377,14 @@ namespace TFE_Editor
 			case POPUP_EDIT_PROJECT:
 			{
 				if (project_editUi(false))
+				{
+					ImGui::CloseCurrentPopup();
+					s_editorPopup = POPUP_NONE;
+				}
+			} break;
+			case POPUP_EXPORT_PROJECT:
+			{
+				if (project_exportUi())
 				{
 					ImGui::CloseCurrentPopup();
 					s_editorPopup = POPUP_NONE;
@@ -426,6 +442,14 @@ namespace TFE_Editor
 			case POPUP_LEV_USER_PREF:
 			{
 				if (LevelEditor::userPreferences())
+				{
+					ImGui::CloseCurrentPopup();
+					s_editorPopup = POPUP_NONE;
+				}
+			} break;
+			case POPUP_LEV_TEST_OPTIONS:
+			{
+				if (LevelEditor::testOptions())
 				{
 					ImGui::CloseCurrentPopup();
 					s_editorPopup = POPUP_NONE;
@@ -679,11 +703,11 @@ namespace TFE_Editor
 				}
 				if (!projectActive) { enableNextItem(); }
 				ImGui::Separator();
-				disableNextItem();  // Disable until it does something...
 				if (ImGui::MenuItem("Export", NULL, (bool*)NULL))
 				{
+					s_editorPopup = POPUP_EXPORT_PROJECT;
+					project_prepareExportUi();
 				}
-				enableNextItem();
 				ImGui::Separator();
 				if (s_recents.empty()) { disableNextItem(); }
 				if (ImGui::BeginMenu("Recent Projects"))
@@ -1039,7 +1063,10 @@ namespace TFE_Editor
 		if (image)
 		{
 			gpuImage = TFE_RenderBackend::createTexture(image->w, image->h, (u32*)image->pixels, MAG_FILTER_LINEAR);
-			s_gpuImages[path] = gpuImage;
+			if (gpuImage)
+			{
+				s_gpuImages[path] = gpuImage;
+			}
 		}
 		return gpuImage;
 	}
