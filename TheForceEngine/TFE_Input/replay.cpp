@@ -23,6 +23,7 @@
 #include <TFE_Jedi/Serialization/serialization.h>
 #include <TFE_System/frameLimiter.h>
 #include <TFE_System/system.h>
+#include <algorithm>
 
 namespace TFE_Input
 {
@@ -320,12 +321,16 @@ namespace TFE_Input
 		dir.clear();
 		FileList fileList;
 		FileUtil::readDirectory(s_replayDir, "demo", fileList);
-		size_t saveCount = fileList.size();
-		dir.resize(saveCount);
+
+		// Sort the files in alphabetical order
+		sort(fileList.begin(), fileList.end());
+
+		size_t replayCount = fileList.size();
+		dir.resize(replayCount);
 
 		const std::string* filenames = fileList.data();
 		TFE_SaveSystem::SaveHeader* headers = dir.data();
-		for (size_t i = 0; i < saveCount; i++)
+		for (size_t i = 0; i < replayCount; i++)
 		{
 			loadReplayHeader(filenames[i].c_str(), &headers[i]);
 		}
@@ -346,11 +351,13 @@ namespace TFE_Input
 		s_game->getLevelId(levelId);
 		strcpy(levelId, TFE_A11Y::toLower(string(levelId)).c_str());
 
-		char modPath[256];
+		char modPath[TFE_MAX_PATH];
 		s_game->getModList(modPath);
 		strcpy(modPath, TFE_A11Y::toLower(string(modPath)).c_str());
 
-		char modName[256];
+		char modName[TFE_MAX_PATH];
+		
+		// If you are not using a mod
 		if (strlen(modPath) == 0 )
 		{
 			// For now assume all replays are Dark Forces replays
@@ -649,8 +656,8 @@ namespace TFE_Input
 				memcpy(inputEvents[0].frameTicks, frameTicks, sizeof(fixed16_16) * TFE_ARRAYSIZE(frameTicks));
 				
 				// Wipe the event counter and set the max input counter
-				inputMapping_resetCounter();
-				inputMapping_setMaxCounter(eventCounter);
+				inputMapping_resetCounter();				
+				inputMapping_setMaxCounter(inputEvents.size());
 
 				// Set the new start time
 				TFE_System::setStartTime(replayStartTime);
@@ -805,7 +812,7 @@ namespace TFE_Input
 			gameSettings->df_playbackFrameRate--;
 		}
 
-		if (gameSettings->df_playbackFrameRate == 0)
+		if (gameSettings->df_playbackFrameRate == 0 && !pauseReplay)
 		{
 			pauseReplay = true;
 			sendHudPauseMessage();
