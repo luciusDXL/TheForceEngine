@@ -333,7 +333,6 @@ namespace TFE_Input
 
 	bool setupPath()
 	{
-
 		// Replay Initialization - it will set the current game and level name
 		IGame* s_game = TFE_SaveSystem::getCurrentGame();
 		
@@ -345,42 +344,42 @@ namespace TFE_Input
 
 		char levelId[256];
 		s_game->getLevelId(levelId);
+		strcpy(levelId, TFE_A11Y::toLower(string(levelId)).c_str());
 
 		char modPath[256];
 		s_game->getModList(modPath);
+		strcpy(modPath, TFE_A11Y::toLower(string(modPath)).c_str());
 
-		int offset = 0;
+		char modName[256];
 		if (strlen(modPath) == 0 )
 		{
 			// For now assume all replays are Dark Forces replays
-			strcpy(modPath, "dark_forces");
+			strcpy(modName, "dark_forces");
 		}
-				
-		char modName[256];
-		FileUtil::getFileNameFromPath(modPath, modName, true);
+		else
+		{
+			FileUtil::getFileNameFromPath(modPath, modName, true);
+		}
 
-		
-		// Create the dmeo file path
-		sprintf(s_replayPath, "%s%s_%s.demo", s_replayDir, modName, levelId);
-		TFE_System::logWrite(LOG_MSG, "Replay", "s_replayPath = %s modName = %s levelid = %s", s_replayPath, modName, levelId);
+		int offset = 0;
 		int offsetMax = 10000;
+
+		// Create the demo file path
+		sprintf(s_replayPath, "%s%s_%s.demo", s_replayDir, modName, levelId);
+
 		while (FileUtil::exists(s_replayPath) || offset > offsetMax)
 		{
 			offset++;
 			sprintf(s_replayPath, "%s%s_%s_%d.demo", s_replayDir, modName, levelId, offset);
-			TFE_System::logWrite(LOG_MSG, "Replay", "s_replayPath = %s ", s_replayPath);
 			if (offset > offsetMax)
 			{
 				TFE_System::logWrite(LOG_MSG, "REPLAY", "Failed to create replay file. Too many files with the same level name.");
 				return false;
 			}
 		}
-
-		// Ensure it is all lowercase
-		strcpy(s_replayPath, TFE_A11Y::toLower(string(s_replayPath)).c_str());
-
+		
+		// Store the demo name in the header
 		sprintf(s_headerName, "%s.demo", levelName);
-		TFE_System::logWrite(LOG_MSG, "Replay", "s_replayPath = %s s_headerName = %s", s_replayPath, s_headerName);
 		return true;
 	}
 
@@ -429,7 +428,6 @@ namespace TFE_Input
 
 		// Load the Header and agent information
 		int fileHandler = getFileHandler(stream, writeFlag);
-		TFE_System::logWrite(LOG_MSG, "Replay", "File handler = %d", fileHandler);
 		if (fileHandler > 0)
 		{
 
@@ -439,7 +437,6 @@ namespace TFE_Input
 			// As well as the final image of the demo
 			if (writeFlag)
 			{
-				TFE_System::logWrite(LOG_MSG, "Replay", "Save Header");
 				TFE_SaveSystem::saveHeader(stream, s_headerName);
 			}
 			else
@@ -455,7 +452,6 @@ namespace TFE_Input
 			LevelSaveData data;
 			if (writeFlag)
 			{
-				TFE_System::logWrite(LOG_MSG, "Replay", "Save Agent s_agentId = %d", s_agentId);
 				// Store the agent data from the current agent ID
 				agent_readSavedData(s_agentId, &data);
 				data.agentData.difficulty = s_agentData[s_agentId].difficulty;
@@ -503,14 +499,12 @@ namespace TFE_Input
 		// Pause everything while we serialize
 		TFE_DarkForces::time_pause(JTRUE);
 
-		TFE_System::logWrite(LOG_MSG, "Replay", "Serializing Demo");
 		// Handle the header and agent data
 		int fileHandler = serializeHeaderAgentInfo(stream, writeFlag);
 
 		if (fileHandler > 0)
 		{
 
-			TFE_System::logWrite(LOG_MSG, "Replay", "Serializing ticks");
 			// Handle Tick timing
 			SERIALIZE(ReplayVersionInit, inputEvents[0].prevTick, 0);
 			SERIALIZE(ReplayVersionInit, inputEvents[0].deltaTime, 0);
@@ -521,7 +515,6 @@ namespace TFE_Input
 			// Handle the frame ticks
 			if (writeFlag) 
 			{
-				TFE_System::logWrite(LOG_MSG, "Replay", "Serializing frame time");
 				replayStartTime = TFE_System::getStartTime();
 				memcpy(frameTicks, inputEvents[0].frameTicks, sizeof(fixed16_16) * TFE_ARRAYSIZE(inputEvents[0].frameTicks));
 			}
@@ -540,8 +533,6 @@ namespace TFE_Input
 			SERIALIZE(ReplayVersionInit, r_yaw, 0);
 			SERIALIZE(ReplayVersionInit, r_pitch, 0);
 			SERIALIZE(ReplayVersionInit, r_roll, 0);	
-
-			TFE_System::logWrite(LOG_MSG, "Replay", "Serializing settings");
 
 			// Settings and Input Handling 
 			TFE_Settings_Game* gameSettings = TFE_Settings::getGameSettings();
@@ -593,7 +584,6 @@ namespace TFE_Input
 			// Handle writing the events
 			if (writeFlag)
 			{
-				TFE_System::logWrite(LOG_MSG, "Replay", "Serializing inputs");
 				// Loop through inputEvents	Map
 				for (const auto& pair : inputEvents)
 				{
@@ -605,7 +595,7 @@ namespace TFE_Input
 
 					// Serialize the event 
 					SERIALIZE(ReplayVersionInit, eventCounter, 0);
-					TFE_System::logWrite(LOG_MSG, "Replay", "Serializing keys");
+
 					// Serialize all the key and mouse inputs
 					serializeInputs(stream, pair.second.keysDown, writeFlag);
 					serializeInputs(stream, pair.second.keysPressed, writeFlag);
@@ -616,7 +606,6 @@ namespace TFE_Input
 					SERIALIZE(ReplayVersionInit, curTick, 0);
 
 					// Store the PDA positioning data
-					TFE_System::logWrite(LOG_MSG, "Replay", "Serializing pda");
 					s32 pdaXpos = pair.second.pdaPosition.x;
 					s32 pdaZpos = pair.second.pdaPosition.z;
 					SERIALIZE(ReplayVersionInit, pdaXpos, 0);
@@ -669,7 +658,6 @@ namespace TFE_Input
 
 			s_replayFile.close();
 		}
-		TFE_System::logWrite(LOG_MSG, "Replay", "Done serializing");
 		// Resume the game
 		TFE_DarkForces::time_pause(JFALSE);
 	}
@@ -850,16 +838,13 @@ namespace TFE_Input
 		}
 		
 		setRecording(false);
-		
-		TFE_System::logWrite(LOG_MSG, "Replay", "Exiting recording mode...");
-
 
 		// Seriaize the demo events
 		if (setupPath())
 		{
 			serializeDemo(&s_replayFile, true);
 		}
-		TFE_System::logWrite(LOG_MSG, "Replay", "Finished Serializing Demo...");
+
 		// Re-enable cutscenes while recording
 		enableCutscenes(JTRUE);
 
@@ -868,7 +853,7 @@ namespace TFE_Input
 
 		endCommonReplayStates();
 
-		TFE_System::logWrite(LOG_MSG, "Replay", "Finished recording demo...");
+		TFE_System::logWrite(LOG_MSG, "Replay", "Writing demo to %s", s_replayPath);
 	}
 
 	void recordReplayTime(u64 startTime)

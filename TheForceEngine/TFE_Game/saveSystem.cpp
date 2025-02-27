@@ -69,8 +69,6 @@ namespace TFE_SaveSystem
 			png = (u8*)s_imageBuffer[0];
 		}
 
-
-		TFE_System::logWrite(LOG_MSG, "SAVE", "Saving Header");
 		// Master version.
 		u32 version = SVER_CUR;
 		stream->write(&version);
@@ -109,7 +107,6 @@ namespace TFE_SaveSystem
 		stream->write(&len);
 		stream->writeBuffer(&counter, len);
 
-
 		// Mod List
 		char modList[256];
 		s_game->getModList(modList);
@@ -121,7 +118,6 @@ namespace TFE_SaveSystem
 		stream->write(&pngSize);
 		stream->writeBuffer(png, pngSize);
 		free(png);
-		TFE_System::logWrite(LOG_MSG, "SAVE", "Done saving Header");
 	}
 
 	void loadHeader(Stream* stream, SaveHeader* header, const char* fileName)
