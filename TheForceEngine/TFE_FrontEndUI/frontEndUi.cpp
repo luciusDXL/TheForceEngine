@@ -2140,7 +2140,7 @@ namespace TFE_FrontEndUI
 			ImGui::PopStyleColor();
 			ImGui::PopFont();
 
-			size.y = 100 * s_uiScale;
+			size.y = 95 * s_uiScale;
 			ImGui::BeginChild("##InfoWithBorderPlayBack", size, true);
 			{
 				ImGui::Spacing();
