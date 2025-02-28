@@ -2084,7 +2084,11 @@ namespace TFE_FrontEndUI
 			}
 
 			size.x = 420 * s_uiScale;
+			#ifdef _WIN32
 			size.y = 85 * s_uiScale;
+			#else
+			size.y = 100 * s_uiScale;
+			#endif		
 			
 			ImGui::BeginChild("##InfoWithBorderRecord", size, true);
 			{
@@ -2140,7 +2144,12 @@ namespace TFE_FrontEndUI
 			ImGui::PopStyleColor();
 			ImGui::PopFont();
 
+			#ifdef _WIN32
 			size.y = 100 * s_uiScale;
+			#else
+			size.y = 120 * s_uiScale;
+			#endif		
+
 			ImGui::BeginChild("##InfoWithBorderPlayBack", size, true);
 			{
 				ImGui::Spacing();
