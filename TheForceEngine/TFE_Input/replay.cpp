@@ -590,7 +590,7 @@ namespace TFE_Input
 			// Handle writing the events
 			if (writeFlag)
 			{
-				// Loop through inputEvents	Map
+				// Loop through inputEvents	Map				
 				for (const auto& pair : inputEvents)
 				{
 					eventCounter = pair.first;
@@ -624,7 +624,7 @@ namespace TFE_Input
 				// Wipe the events and load them from the demo
 				clearEvents();
 
-				for (int i = 0; i < eventListsSize; i++)
+				for (int i = 0; i < eventListsSize + 1; i++)
 				{
 					SERIALIZE(ReplayVersionInit, eventCounter, 0);
 
