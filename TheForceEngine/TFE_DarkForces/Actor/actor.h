@@ -162,7 +162,8 @@ namespace TFE_DarkForces
 	MovementModule* actor_createMovementModule(ActorDispatch* dispatch);
 	void actor_addModule(ActorDispatch* dispatch, ActorModule* module);
 
-	void actor_hitEffectMsgFunc(MessageType msg, void* logic);
+	void actor_messageFunc(MessageType msg, void* logic);
+	void actor_sendWakeupMsg(SecObject* obj);
 	void actor_kill();
 	void actor_initModule(ActorModule* module, Logic* logic);
 	JBool actor_canDie(PhysicsActor* phyActor);

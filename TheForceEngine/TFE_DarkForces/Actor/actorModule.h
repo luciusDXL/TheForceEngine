@@ -121,7 +121,7 @@ struct ActorModule
 
 	ActorFunc       func;
 	ActorMsgFunc    msgFunc;
-	ActorAttribFunc attribFunc;
+	ActorAttribFunc attribFunc;		// Never used?
 	ActorFreeFunc   freeFunc;
 
 	Tick nextTick;
@@ -198,7 +198,7 @@ struct ThinkerModule
 
 struct DamageModule
 {
-	AttackModule attackMod;
+	AttackModule attackMod;		// A DamageModule starts with an AttackModule, which it uses for animation but the remainder of the struct is unused.
 	fixed16_16 hp;
 	ItemId itemDropId;
 
