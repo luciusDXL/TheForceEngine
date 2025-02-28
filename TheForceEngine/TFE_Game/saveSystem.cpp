@@ -23,7 +23,7 @@ namespace TFE_SaveSystem
 	enum SaveMasterVersion
 	{
 		SVER_INIT = 1,
-		SVER_REPLAY = 6,
+		SVER_REPLAY = 7,
 		SVER_CUR = SVER_REPLAY
 	};
 

@@ -20,6 +20,7 @@
 #include <TFE_FileSystem/filestream.h>
 #include <TFE_FrontEndUI/frontEndUi.h>
 #include <TFE_Game/saveSystem.h>
+#include <TFE_Input/inputMapping.h>
 #include <TFE_Jedi/Serialization/serialization.h>
 #include <TFE_System/frameLimiter.h>
 #include <TFE_System/system.h>
@@ -58,15 +59,12 @@ namespace TFE_Input
 	bool cutscenesEnabled = true;
 	bool pauseReplay = false; 
 	bool showReplayMsgFrame = false;
-
+	
 	extern f64 gameFrameLimit = 0;	
 	extern f64 replayFrameLimit = 0;
 
-	// Player values
-	bool eyeSet = false;
-	angle14_16 r_yaw = 0;
-	angle14_16 r_pitch = 0;
-	angle14_16 r_roll = 0;
+	// Notification for replay system initialization. 
+	bool demoStartNotified = false;
 
 	// Main storage of event structures. 
 	std::unordered_map<int, ReplayEvent> inputEvents;
@@ -77,9 +75,14 @@ namespace TFE_Input
 	
 	std::vector<char> settingBuffer;
 
+	enum ReplayVersion : u32
+	{
+		ReplayVersionInit = 1,
+		ReplayVersionCur = ReplayVersionInit
+	};
+
 	void initReplays()
 	{
-
 		// TO DO - combine replays from both sources. 
 
 		sprintf(s_replayDir, "%sReplays/", TFE_Paths::getPath(PATH_PROGRAM));
@@ -536,11 +539,6 @@ namespace TFE_Input
 			int eventListsSize = inputMapping_getCounter();
 			SERIALIZE(ReplayVersionInit, eventListsSize, 0);
 
-			// handle the initial player eye position
-			SERIALIZE(ReplayVersionInit, r_yaw, 0);
-			SERIALIZE(ReplayVersionInit, r_pitch, 0);
-			SERIALIZE(ReplayVersionInit, r_roll, 0);	
-
 			// Settings and Input Handling 
 			TFE_Settings_Game* gameSettings = TFE_Settings::getGameSettings();
 			TFE_Settings_A11y* allySettings = TFE_Settings::getA11ySettings();
@@ -680,13 +678,123 @@ namespace TFE_Input
 		TFE_DarkForces::s_limitStepHeight = JTRUE;
 	}
 
+	void setStartHudMessage(bool notify)
+	{
+		demoStartNotified = notify;
+	}
+
+	// Just used to create the initial Recording/Replaying notification.
+	bool sendHudStartMessage()
+	{
+		// Don't bother sending messages if the eye isn't present yet. 
+		if (!TFE_DarkForces::s_playerEye)
+		{
+			return false; 
+		}
+
+		if (demoStartNotified)
+		{
+			demoStartNotified = false;
+			if (isRecording())
+			{
+				TFE_DarkForces::hud_sendTextMessage("Recording started...", 0, false);
+				return true;
+			}
+			else if (isDemoPlayback())
+			{
+				TFE_DarkForces::hud_sendTextMessage("Playback started...", 0, false);
+				return true;
+			}
+		}
+		return false;
+	}
+
+	void sendHudPauseMessage()
+	{
+		string msg = "Replay Paused";
+		TFE_System::logWrite(LOG_MSG, "Replay", msg.c_str());
+		TFE_DarkForces::hud_sendTextMessage(msg.c_str(), 0, false);
+		showReplayMsgFrame = true;
+	}
+
+	bool isReplayPaused()
+	{
+		if (showReplayMsgFrame)
+		{
+			showReplayMsgFrame = false;
+			return false;
+		}
+		return pauseReplay;
+	}
+
+	void handleFrameRate()
+	{
+		// Set the frame rate for replay playback.
+		string framePlaybackStr = TFE_FrontEndUI::getPlaybackFramerate();
+
+		if (strcmp(framePlaybackStr.c_str(), "Original") == 0)
+		{
+			s32 frameRate = TFE_FrontEndUI::getRecordFramerate();
+			TFE_System::frameLimiter_set(frameRate);
+			TFE_System::setVsync(true);
+		}
+		else if (strcmp(framePlaybackStr.c_str(), "Unlimited") == 0)
+		{
+			TFE_System::setVsync(false);
+		}
+		else
+		{
+			s32 playbackFrameRate = std::atoi(framePlaybackStr.c_str());
+			TFE_System::frameLimiter_set(playbackFrameRate);
+			TFE_System::setVsync(true);
+		}
+	}
+
+	void increaseReplayFrameRate()
+	{
+		TFE_Settings_Game* gameSettings = TFE_Settings::getGameSettings();
+		if (gameSettings->df_playbackFrameRate == 0)
+		{
+			pauseReplay = false;
+			clearAccumulatedMouseMove();
+		}
+
+		if (gameSettings->df_playbackFrameRate < 6)
+		{
+			gameSettings->df_playbackFrameRate++;
+			string msg = "Setting Replay Speed to " + TFE_FrontEndUI::getPlaybackFramerate();
+			TFE_DarkForces::hud_sendTextMessage(msg.c_str(), 0, false);
+			handleFrameRate();
+		}
+	}
+
+	void decreaseReplayFrameRate()
+	{
+		TFE_Settings_Game* gameSettings = TFE_Settings::getGameSettings();
+		if (gameSettings->df_playbackFrameRate > 0)
+		{
+			gameSettings->df_playbackFrameRate--;
+		}
+
+		if (gameSettings->df_playbackFrameRate == 0 && !pauseReplay)
+		{
+			pauseReplay = true;
+			sendHudPauseMessage();
+		}
+		else
+		{
+			handleFrameRate();
+			string msg = "Setting Replay Speed to " + TFE_FrontEndUI::getPlaybackFramerate();
+			TFE_DarkForces::hud_sendTextMessage(msg.c_str(), 0, false);
+		}
+	}
+
 	// This handles a lot of the common logic to ensure the replay is in a consistent state
 	void startCommonReplayStates()
 	{
 		// Wipe all the objects and player data.
 		objData_clear();
 		player_clearEyeObject();
-		eyeSet = false;
 
 		// Wipe all the previous events
 		clearEvents();
@@ -729,6 +837,9 @@ namespace TFE_Input
 
 		// Disable cheats that could affect the replay
 		disableReplayCheats();
+
+		// Used 
+		setStartHudMessage(true);
 	}
 
 	void endCommonReplayStates()
@@ -742,86 +853,6 @@ namespace TFE_Input
 		if (TFE_Settings::getGameSettings()->df_enableRecordingAll)
 		{
 			TFE_Settings::getGameSettings()->df_enableRecording = true;
-		}
-	}
-
-	void handleFrameRate()
-	{
-		// Set the frame rate for replay playback.
-		string framePlaybackStr = TFE_FrontEndUI::getPlaybackFramerate();
-
-		if (strcmp(framePlaybackStr.c_str(), "Original") == 0)
-		{
-			s32 frameRate = TFE_FrontEndUI::getRecordFramerate();
-			TFE_System::frameLimiter_set(frameRate);
-			TFE_System::setVsync(true);
-		}
-		else if (strcmp(framePlaybackStr.c_str(), "Unlimited") == 0)
-		{
-			TFE_System::setVsync(false);
-		}
-		else
-		{
-			s32 playbackFrameRate = std::atoi(framePlaybackStr.c_str());
-			TFE_System::frameLimiter_set(playbackFrameRate);
-			TFE_System::setVsync(true);
-		}
-	}
-
-	void sendHudPauseMessage()
-	{
-		string msg = "Replay Paused";
-		TFE_System::logWrite(LOG_MSG, "Replay", msg.c_str());
-		TFE_DarkForces::hud_sendTextMessage(msg.c_str(), 0, false);
-		showReplayMsgFrame = true;
-	}
-
-	bool isReplayPaused()
-	{
-		if (showReplayMsgFrame)
-		{
-			showReplayMsgFrame = false;
-			return false;
-		}
-		return pauseReplay;
-	}
-
-	void increaseReplayFrameRate()
-	{
-		TFE_Settings_Game* gameSettings = TFE_Settings::getGameSettings();	
-		if (gameSettings->df_playbackFrameRate == 0)
-		{
-			pauseReplay = false;			
-			clearAccumulatedMouseMove();
-		}
-
-		if (gameSettings->df_playbackFrameRate < 6)
-		{
-			gameSettings->df_playbackFrameRate++;
-			string msg = "Setting Replay Speed to " + TFE_FrontEndUI::getPlaybackFramerate();
-			TFE_DarkForces::hud_sendTextMessage(msg.c_str(), 0, false);
-			handleFrameRate();
-		}
-	}
-
-	void decreaseReplayFrameRate()
-	{
-		TFE_Settings_Game* gameSettings = TFE_Settings::getGameSettings();
-		if (gameSettings->df_playbackFrameRate > 0)
-		{
-			gameSettings->df_playbackFrameRate--;
-		}
-
-		if (gameSettings->df_playbackFrameRate == 0 && !pauseReplay)
-		{
-			pauseReplay = true;
-			sendHudPauseMessage();
-		}
-		else
-		{
-			handleFrameRate();
-			string msg = "Setting Replay Speed to " + TFE_FrontEndUI::getPlaybackFramerate();
-			TFE_DarkForces::hud_sendTextMessage(msg.c_str(), 0, false);
 		}
 	}
 
@@ -859,6 +890,8 @@ namespace TFE_Input
 		inputMapping_endFrame();
 
 		endCommonReplayStates();
+
+		TFE_DarkForces::hud_sendTextMessage("Recording ended.", 0, false);
 
 		TFE_System::logWrite(LOG_MSG, "Replay", "Writing demo to %s", s_replayPath);
 	}
@@ -944,7 +977,6 @@ namespace TFE_Input
 	// This is called from the DarkForcesMain 
 	void loadReplay()
 	{	
-
 		startCommonReplayStates();
 	
 		// Start replaying with the first event

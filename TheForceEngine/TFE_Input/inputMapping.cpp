@@ -646,6 +646,8 @@ namespace TFE_Input
 			}
 			else
 			{
+				sendHudStartMessage();
+
 				// Show the complete message just before it exits for 60 frames otherwise you won't see it.
 				if (replayCounter + 60 >= maxReplayCounter)
 				{
@@ -685,6 +687,8 @@ namespace TFE_Input
 		// Handle Recording
 		else if (isRecording())
 		{
+
+			sendHudStartMessage();
 
 			if (TFE_Settings::getGameSettings()->df_showReplayCounter)
 			{

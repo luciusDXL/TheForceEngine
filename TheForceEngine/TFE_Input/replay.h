@@ -2,23 +2,14 @@
 
 #include <TFE_System/types.h>
 #include <TFE_Input/inputEnum.h>
-#include <TFE_Input/inputMapping.h>
-#include <array>
 #include <vector>
 #include <unordered_map>
 #include <string>
 #include <TFE_DarkForces/time.h>
 #include <TFE_Game/saveSystem.h>
-#include <TFE_System/types.h>
 
 namespace TFE_Input
 {
-	enum ReplayVersion : u32
-	{
-		ReplayVersionInit = 1,
-		ReplayVersionCur = ReplayVersionInit
-	};
-
 	// Struct for storing replay events
 	struct ReplayEvent
 	{
@@ -79,6 +70,7 @@ namespace TFE_Input
 	void setDemoPlayback(bool playback);
 	bool isReplaySystemLive();
 
+	bool sendHudStartMessage();
 	bool isReplayPaused();
 	void increaseReplayFrameRate();
 	void decreaseReplayFrameRate();
