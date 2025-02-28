@@ -2140,7 +2140,7 @@ namespace TFE_FrontEndUI
 			ImGui::PopStyleColor();
 			ImGui::PopFont();
 
-			size.y = 95 * s_uiScale;
+			size.y = 100 * s_uiScale;
 			ImGui::BeginChild("##InfoWithBorderPlayBack", size, true);
 			{
 				ImGui::Spacing();
@@ -2152,6 +2152,7 @@ namespace TFE_FrontEndUI
 				ImGui::TextWrapped("You can speed-up or slow-down playback with Numpad +/-\nYou can rebind these in the Inputs section");
 
 				ImGui::Checkbox("Show Record/Playback progress", &gameSettings->df_showReplayCounter);
+				ImGui::Checkbox("Enable Demo Logging", &gameSettings->df_demologging);
 			}
 			ImGui::EndChild();
 

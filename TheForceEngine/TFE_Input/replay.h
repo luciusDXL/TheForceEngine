@@ -80,6 +80,8 @@ namespace TFE_Input
 	void restoreReplaySeed();
 	void recordReplayTime(u64 startTime);
 
+	void logReplayPosition(int counter);
+
 	void saveTick(); 
 	void loadTick();
 

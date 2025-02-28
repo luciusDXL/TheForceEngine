@@ -707,8 +707,7 @@ namespace TFE_Input
 
 			// Store the mouse positions 
 			TFE_Input::inputEvents[replayCounter] = event;
-		}
-
+		}		
 		// Apply the mouse position data we either got from SDL or from the demo
 		TFE_Input::setRelativeMousePos(mouseX, mouseY);
 		TFE_Input::setMousePos(mouseAbsX, mouseAbsY);
@@ -717,6 +716,11 @@ namespace TFE_Input
 		if (!isDemoPlayback())
 		{
 			inputMapping_updateInput();
+		}
+
+		if (isReplaySystemLive())
+		{
+			logReplayPosition(replayCounter);
 		}
 
 		// If you are replaying the demo and the game is paused, we should also halt all logic

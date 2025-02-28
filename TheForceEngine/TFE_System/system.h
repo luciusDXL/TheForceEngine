@@ -58,7 +58,8 @@ namespace TFE_System
 	void getDateTimeString(char* output);
 
 	// Log
-	bool logOpen(const char* filename);
+	void logTimeToggle();
+	bool logOpen(const char* filename, bool append=false);
 	void logClose();
 	void logWrite(LogWriteType type, const char* tag, const char* str, ...);
 

@@ -542,6 +542,7 @@ namespace TFE_Settings
 		writeKeyValue_Int(settings,  "df_playbackFrameRate", s_gameSettings.df_playbackFrameRate);
 		writeKeyValue_Bool(settings, "df_enableRecording", s_gameSettings.df_enableRecording);
 		writeKeyValue_Bool(settings, "df_enableRecordingAll", s_gameSettings.df_enableRecordingAll);
+		writeKeyValue_Bool(settings, "df_demologging", s_gameSettings.df_demologging);
 	}
 
 	void writePerGameSettings(FileStream& settings)
@@ -1190,6 +1191,10 @@ namespace TFE_Settings
 		else if (strcasecmp("df_enableRecordingAll", key) == 0)
 		{
 			s_gameSettings.df_enableRecordingAll = parseBool(value);
+		}
+		else if (strcasecmp("df_demologging", key) == 0)
+		{
+			s_gameSettings.df_demologging = parseBool(value);
 		}
 	}
 

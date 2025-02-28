@@ -30,12 +30,25 @@ namespace TFE_System
 		"Critical", //LOG_CRITICAL,
 	};
 
-	bool logOpen(const char* filename)
+	bool includeTime = true;
+
+	void logTimeToggle()
+	{
+		includeTime = !includeTime;
+	}
+
+	bool logOpen(const char* filename, bool append)
 	{
 		char logPath[TFE_MAX_PATH];
 		TFE_Paths::appendPath(PATH_USER_DOCUMENTS, filename, logPath);
-
-		return s_logFile.open(logPath, Stream::MODE_WRITE);
+		if (append)
+		{
+			return s_logFile.open(logPath, Stream::MODE_READWRITE);
+		}
+		else
+		{
+			return s_logFile.open(logPath, Stream::MODE_WRITE);
+		}
 	}
 
 	void logClose()
@@ -81,11 +94,17 @@ namespace TFE_System
 			now.time_since_epoch()) % 1000;
 
 		char timeStr[40];
-		strftime(timeStr, sizeof(timeStr) - 4, "%Y-%b-%d %H:%M:%S", &now_tm); // Leave space for milliseconds
+		if (includeTime)
+		{
+			strftime(timeStr, sizeof(timeStr) - 4, "%Y-%b-%d %H:%M:%S", &now_tm); // Leave space for milliseconds
 
-		// Add milliseconds to the formatted time
-		snprintf(timeStr + strlen(timeStr), 5, ".%03lld", milliseconds.count());
-
+			// Add milliseconds to the formatted time
+			snprintf(timeStr + strlen(timeStr), 8, ".%03lld - ", milliseconds.count());
+		}
+		else
+		{
+			timeStr[0] = 0;
+		}
 
 		//Handle the variable input, "printf" style messages
 		va_list arg;
@@ -96,11 +115,11 @@ namespace TFE_System
 		//Format the message		
 		if (type != LOG_MSG)
 		{
-			sprintf(s_workStr, "%s - [%s : %s] %s\r\n", timeStr, c_typeNames[type], tag, s_msgStr);
+			sprintf(s_workStr, "%s[%s : %s] %s\r\n", timeStr, c_typeNames[type], tag, s_msgStr);
 		}
 		else
 		{
-			sprintf(s_workStr, "%s - [%s] %s\r\n", timeStr, tag, s_msgStr);
+			sprintf(s_workStr, "%s[%s] %s\r\n", timeStr, tag, s_msgStr);
 		}
 
 		//Write to disk

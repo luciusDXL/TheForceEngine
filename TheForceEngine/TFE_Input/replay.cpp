@@ -72,6 +72,7 @@ namespace TFE_Input
 	s32 replay_seed = 0;
 
 	int replayFilehandler = -1;
+	int replayLogCounter = 0;
 	
 	std::vector<char> settingBuffer;
 
@@ -854,6 +855,37 @@ namespace TFE_Input
 		{
 			TFE_Settings::getGameSettings()->df_enableRecording = true;
 		}
+
+		if (TFE_Settings::getGameSettings()->df_demologging)
+		{
+			TFE_System::logClose();
+			TFE_System::logOpen("the_force_engine_log.txt", true);
+			TFE_System::logTimeToggle();
+		}
+	}
+
+	void logReplayPosition(int counter)
+	{
+		if (TFE_Settings::getGameSettings()->df_demologging && TFE_DarkForces::s_playerEye)
+		{
+			if (isDemoPlayback()) counter--;
+
+			ReplayEvent event = TFE_Input::inputEvents[counter];			
+			string keys, keysPressed, mouse, hudData;
+
+			keys = convertToString(event.keysDown);
+			keysPressed = convertToString(event.keysPressed);
+			mouse = convertToString(event.mousePos);
+			s32 xPos = s_eyePos.x;
+			s32 yPos = s_playerEye->posWS.y * -1.0;
+			s32 zPos = s_eyePos.z;
+			angle14_16 yaw = s_playerEye->yaw;
+			angle14_16 pitch = s_playerEye->pitch;
+
+			string logMsg = "Update %d: X:%04d Y:%04d Z:%04d, yaw: %d, pitch: %d, keysDown: %s, keysPressed: %s, mouse: %s";
+			TFE_System::logWrite(LOG_MSG, "Replay", logMsg.c_str(), counter, xPos, yPos, zPos, yaw, pitch, 
+				                                    keys.c_str(), keysPressed.c_str(), mouse.c_str());
+		}
 	}
 
 	void startRecording()
@@ -865,6 +897,13 @@ namespace TFE_Input
 		setDemoPlayback(false);
 		saveTick();
 		saveInitTime();
+
+		if (TFE_Settings::getGameSettings()->df_demologging)
+		{
+			TFE_System::logClose();
+			TFE_System::logOpen("record.log");;
+			TFE_System::logTimeToggle();
+		}
 	}
 
 	void endRecording()
@@ -889,11 +928,10 @@ namespace TFE_Input
 		// Wipe any latent input
 		inputMapping_endFrame();
 
-		endCommonReplayStates();
-
 		TFE_DarkForces::hud_sendTextMessage("Recording ended.", 0, false);
-
 		TFE_System::logWrite(LOG_MSG, "Replay", "Writing demo to %s", s_replayPath);
+
+		endCommonReplayStates();
 	}
 
 	void recordReplayTime(u64 startTime)
@@ -999,6 +1037,23 @@ namespace TFE_Input
 
 		// Ensure you always load the first agent. 
 		s_agentId = 0;
+
+		if (TFE_Settings::getGameSettings()->df_demologging)
+		{
+			TFE_System::logClose();
+			if (replayLogCounter == 0)
+			{
+				TFE_System::logOpen("replay.log");
+			}
+			else
+			{
+				char logPath[256];
+				replayLogCounter++;
+				sprintf(logPath, "replay_%d.log", replayLogCounter);
+				TFE_System::logOpen(logPath);
+			}
+			TFE_System::logTimeToggle();
+		}
 	}
 
 	void restoreAgent()
@@ -1037,6 +1092,8 @@ namespace TFE_Input
 		restoreGameSettings();
 		restoreInputs();
 
+		TFE_System::logWrite(LOG_MSG, "Replay", "Finished playing back demo...");
+
 		enableCutscenes(cutscenesEnabled);
 		endCommonReplayStates();
 
@@ -1044,7 +1101,5 @@ namespace TFE_Input
 		TFE_DarkForces::mission_exitLevel();
 		task_freeAll();
 		TFE_FrontEndUI::exitToMenu();
-
-		TFE_System::logWrite(LOG_MSG, "Replay", "Finished playing back demo...");
 	}
 }
