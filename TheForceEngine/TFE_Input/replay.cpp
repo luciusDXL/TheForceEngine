@@ -1009,7 +1009,7 @@ namespace TFE_Input
 		// This is needed to check if the replay is initialized in Dark Forces Main
 		replayInitialized = true;
 
-		TFE_System::logWrite(LOG_MSG, "Loading replay %s", s_replayPath);
+		TFE_System::logWrite(LOG_MSG, "Replay", "Loading demo % s", s_replayPath);
 	}
 
 	// This is called from the DarkForcesMain 
