@@ -43,7 +43,7 @@ namespace TFE_System
 		TFE_Paths::appendPath(PATH_USER_DOCUMENTS, filename, logPath);
 		if (append)
 		{
-			return s_logFile.open(logPath, Stream::MODE_READWRITE);
+			return s_logFile.open(logPath, Stream::MODE_APPEND);
 		}
 		else
 		{

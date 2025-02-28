@@ -929,9 +929,9 @@ namespace TFE_Input
 		inputMapping_endFrame();
 
 		TFE_DarkForces::hud_sendTextMessage("Recording ended.", 0, false);
-		TFE_System::logWrite(LOG_MSG, "Replay", "Writing demo to %s", s_replayPath);
 
 		endCommonReplayStates();
+		TFE_System::logWrite(LOG_MSG, "Replay", "Writing demo to %s", s_replayPath);
 	}
 
 	void recordReplayTime(u64 startTime)
