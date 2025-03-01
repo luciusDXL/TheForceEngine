@@ -235,6 +235,12 @@ namespace TFE_Input
 
 		file.read(&s_inputConfig.bindCount);
 		file.read(&s_inputConfig.bindCapacity);
+		// This is shouldn't be needed, but is here in case bindCapacity was not set correctly in an earlier save.
+		if (s_inputConfig.bindCount > s_inputConfig.bindCapacity)
+		{
+			// Round it off to the nearest IA_COUNT and then increment by IA_COUNT
+			s_inputConfig.bindCapacity = ((s_inputConfig.bindCount + IA_COUNT - 1) / IA_COUNT) * IA_COUNT + IA_COUNT;
+		}
 		s_inputConfig.binds = (InputBinding*)realloc(s_inputConfig.binds, sizeof(InputBinding) * s_inputConfig.bindCapacity);
 		file.readBuffer(s_inputConfig.binds, sizeof(InputBinding), s_inputConfig.bindCount);
 
