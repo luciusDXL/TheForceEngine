@@ -1243,15 +1243,15 @@ namespace LevelEditor
 		// Fixup adjoin mirrors.
 		const s32 wallCount = (s32)sector->walls.size();
 		const s32 levelSectorCount = (s32)s_level.sectors.size();
-		EditorWall* wall = sector->walls.data();
-		for (s32 w = wallIndex + 2; w < wallCount; w++, wall)
+		EditorWall* walls = sector->walls.data();
+		for (s32 w = wallIndex + 2; w < wallCount; w++)
 		{
-			if (wall[w].adjoinId >= 0 && wall[w].adjoinId < levelSectorCount && wall[w].mirrorId >= 0)
+			if (walls[w].adjoinId >= 0 && walls[w].adjoinId < levelSectorCount && walls[w].mirrorId >= 0)
 			{
-				EditorSector* next = &s_level.sectors[wall[w].adjoinId];
-				if (next->walls[wall[w].mirrorId].adjoinId == sector->id)
+				EditorSector* next = &s_level.sectors[walls[w].adjoinId];
+				if (next->walls[walls[w].mirrorId].adjoinId == sector->id)
 				{
-					next->walls[wall[w].mirrorId].mirrorId = w;
+					next->walls[walls[w].mirrorId].mirrorId = w;
 				}
 			}
 		}
