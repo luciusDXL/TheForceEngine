@@ -900,8 +900,7 @@ namespace LevelEditor
 			return;
 		}
 
-		// At least one sector must be selected.
-		// If only one is selected, this will act as a "clean" - removing degenerate walls, re-ordering, etc.
+		// At least two sectors must be selected to join them.
 		const s32 count = (s32)selection_getCount(SEL_SECTOR);
 		if (count < 2)
 		{
