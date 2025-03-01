@@ -6,8 +6,6 @@
 #include <TFE_System/system.h>
 #include <string>
 #include "float2.h"
-
-#ifdef ENABLE_FORCE_SCRIPT
 #include <angelscript.h>
 
 namespace TFE_ForceScript
@@ -49,4 +47,3 @@ namespace TFE_ForceScript
 	s32 getFloat2x2ObjectId();
 	std::string toStringF2x2(const float2x2& v);
 }  // TFE_ForceScript
-#endif

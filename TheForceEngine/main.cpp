@@ -37,9 +37,7 @@
 #if ENABLE_EDITOR == 1
 #include <TFE_Editor/editor.h>
 #endif
-#if ENABLE_FORCE_SCRIPT == 1
 #include <TFE_ForceScript/forceScript.h>
-#endif
 
 #include <TFE_Audio/midiPlayer.h>
 
@@ -629,11 +627,8 @@ int main(int argc, char* argv[])
 
 	// Optional Reticle.
 	reticle_init();
-
-	// Test
-	#ifdef ENABLE_FORCE_SCRIPT
+	// Scripting system.
 	TFE_ForceScript::init();
-	#endif
 		
 	// Start up the game and skip the title screen.
 	if (firstRun)
@@ -742,10 +737,7 @@ int main(int argc, char* argv[])
 		if (TFE_A11Y::hasPendingFont()) { TFE_A11Y::loadPendingFont(); } // Can't load new fonts between TFE_Ui::begin() and TFE_Ui::render();
 		TFE_Ui::begin();
 		TFE_System::update();
-
-		#ifdef ENABLE_FORCE_SCRIPT
-			TFE_ForceScript::update();
-		#endif
+		TFE_ForceScript::update();
 
 		// Update
 		if (TFE_FrontEndUI::uiControlsEnabled() && task_canRun())
@@ -948,11 +940,8 @@ int main(int argc, char* argv[])
 	TFE_Jedi::texturepacker_freeGlobal();
 	TFE_RenderBackend::destroy();
 	TFE_SaveSystem::destroy();
-	SDL_Quit();
-
-	#ifdef ENABLE_FORCE_SCRIPT
 	TFE_ForceScript::destroy();
-	#endif
+	SDL_Quit();
 		
 	TFE_System::logWrite(LOG_MSG, "Progam Flow", "The Force Engine Game Loop Ended.");
 	TFE_System::logClose();

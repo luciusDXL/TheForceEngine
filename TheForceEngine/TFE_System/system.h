@@ -15,10 +15,6 @@
 #define ENABLE_EDITOR 1
 #endif
 
-#if defined(_WIN32) || defined(BUILD_FORCE_SCRIPT)
-#define ENABLE_FORCE_SCRIPT 1
-#endif
-
 enum LogWriteType
 {
 	LOG_MSG = 0,

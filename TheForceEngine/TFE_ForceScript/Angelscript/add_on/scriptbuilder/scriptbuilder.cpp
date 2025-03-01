@@ -202,7 +202,7 @@ s32 readScriptFileTFE(const char* filename, string& code, asIScriptEngine* engin
 	if (file.getSize() > 0)
 	{
 		code.resize(file.getSize());
-		file.readBuffer(&code[0], file.getSize());
+		file.readBuffer(&code[0], (u32)file.getSize());
 	}
 	file.close();
 	return 0;

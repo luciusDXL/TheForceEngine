@@ -192,7 +192,7 @@ namespace TFE_RenderShared
 		s_curveCount2d++;
 		// bounding box.
 		f32 maxOffset = 0.0f;
-		for (s32 i = 0; i < offsetCount; i++)
+		for (u32 i = 0; i < offsetCount; i++)
 		{
 			maxOffset = std::max(maxOffset, fabsf(offsets[i]));
 		}
@@ -216,7 +216,7 @@ namespace TFE_RenderShared
 
 		// Offsets
 		Vec4f offsetVec = { 0 };
-		for (s32 i = 0; i < offsetCount && i < 4; i++)
+		for (u32 i = 0; i < offsetCount && i < 4; i++)
 		{
 			offsetVec.m[i] = offsets[i];
 		}

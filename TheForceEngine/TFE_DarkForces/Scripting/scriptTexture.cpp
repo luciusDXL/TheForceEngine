@@ -1,7 +1,5 @@
 #include "scriptTexture.h"
 #include <TFE_ForceScript/ScriptAPI-Shared/scriptMath.h>
-
-#ifdef ENABLE_FORCE_SCRIPT
 #include <angelscript.h>
 
 using namespace TFE_Jedi;
@@ -37,4 +35,3 @@ namespace TFE_DarkForces
 		ScriptObjFunc("bool isValid()", isTextureValid);
 	}
 }
-#endif
