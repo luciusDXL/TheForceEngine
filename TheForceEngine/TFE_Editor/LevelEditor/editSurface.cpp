@@ -1240,6 +1240,22 @@ namespace LevelEditor
 		// This makes the process a bit more complicated, but keeps things clean.
 		sector->walls.insert(sector->walls.begin() + wallIndex + 1, newWall);
 
+		// Fixup adjoin mirrors.
+		const s32 wallCount = (s32)sector->walls.size();
+		const s32 levelSectorCount = (s32)s_level.sectors.size();
+		EditorWall* wall = sector->walls.data();
+		for (s32 w = wallIndex + 2; w < wallCount; w++, wall)
+		{
+			if (wall[w].adjoinId >= 0 && wall[w].adjoinId < levelSectorCount && wall[w].mirrorId >= 0)
+			{
+				EditorSector* next = &s_level.sectors[wall[w].adjoinId];
+				if (next->walls[wall[w].mirrorId].adjoinId == sector->id)
+				{
+					next->walls[wall[w].mirrorId].mirrorId = w;
+				}
+			}
+		}
+
 		// Pointers to the new walls (note that since the wall array was resized, the source wall
 		// pointer might have changed as well).
 		outWalls[0] = &sector->walls[wallIndex];

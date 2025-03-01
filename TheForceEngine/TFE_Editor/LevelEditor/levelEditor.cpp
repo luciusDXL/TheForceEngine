@@ -2235,11 +2235,11 @@ namespace LevelEditor
 							hasSolid |= wall->adjoinId < 0;
 							if (wall->adjoinId >= 0)
 							{
-								wallsToDisconnect.push_back({ sector, w });
+								addToWallIndexList(sector, w, wallsToDisconnect);
 							}
 							else
 							{
-								wallsToTryConnect.push_back({ sector, w });
+								addToWallIndexList(sector, w, wallsToTryConnect);
 							}
 						}
 						closeMenu |= contextWindowWallAdjoins(hasAdjoin, hasSolid, leftClick, wallIndicesValid, wallsToTryConnect, wallsToDisconnect);
@@ -2279,13 +2279,13 @@ namespace LevelEditor
 									if (!isIndexInList(curWall->adjoinId, sectorIndices))
 									{
 										hasAdjoin = true;
-										wallsToDisconnect.push_back({ curSector, w });
+										addToWallIndexList(curSector, w, wallsToDisconnect);
 									}
 								}
 								else
 								{
 									hasSolid = true;
-									wallsToTryConnect.push_back({ curSector, w });
+									addToWallIndexList(curSector, w, wallsToTryConnect);
 								}
 							}
 						}
