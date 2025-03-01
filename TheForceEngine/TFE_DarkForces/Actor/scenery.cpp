@@ -12,7 +12,7 @@
 namespace TFE_DarkForces
 {
 	// Actor function for exploders (i.e. landmines and exploding barrels).
-	JBool sceneryLogicFunc(ActorModule* module, MovementModule* moveMod)
+	Tick sceneryLogicFunc(ActorModule* module, MovementModule* moveMod)
 	{
 		DamageModule* damageMod = (DamageModule*)module;
 		LogicAnimation* anim = &damageMod->attackMod.anim;
@@ -21,7 +21,7 @@ namespace TFE_DarkForces
 		if (!(anim->flags & AFLAG_READY))
 		{
 			s_actorState.curAnimation = anim;
-			return JFALSE;
+			return 0;
 		}
 		else if (damageMod->hp <= 0 && actor_getAnimationIndex(ANIM_DEAD) != -1)
 		{
@@ -34,15 +34,15 @@ namespace TFE_DarkForces
 
 			sector_addObject(obj->sector, newObj);
 			actor_kill();
-			return JFALSE;
+			return 0;
 		}
-		return JTRUE;
+		return 0xffffffff;
 	}
 
 	// Actor message function for exploders, this is responsible for processing messages such as 
 	// projectile damage and explosions. For other AI message functions, it would also process
 	// "wake up" messages, but those messages are ignored for exploders.
-	JBool sceneryMsgFunc(s32 msg, ActorModule* module, MovementModule* moveMod)
+	Tick sceneryMsgFunc(s32 msg, ActorModule* module, MovementModule* moveMod)
 	{
 		JBool retValue = JFALSE;
 		DamageModule* damageMod = (DamageModule*)module;
@@ -55,16 +55,16 @@ namespace TFE_DarkForces
 			{
 				ProjectileLogic* proj = (ProjectileLogic*)s_msgEntity;
 				damageMod->hp -= proj->dmg;
-				JBool retValue;
+				Tick retValue;
 				if (damageMod->hp > 0)
 				{
-					retValue = JTRUE;
+					retValue = 0xffffffff;
 				}
 				else
 				{
 					actor_setupAnimation(ANIM_DEAD, anim);
 					actor_removeLogics(obj);
-					retValue = JFALSE;
+					retValue = 0;
 				}
 			}
 		}
@@ -72,20 +72,20 @@ namespace TFE_DarkForces
 		{
 			if (damageMod->hp <= 0)
 			{
-				return JTRUE;
+				return 0xffffffff;
 			}
 
 			fixed16_16 dmg = s_msgArg1;
 			damageMod->hp -= dmg;
 			if (damageMod->hp > 0)
 			{
-				retValue = JTRUE;
+				retValue = 0xffffffff;
 			}
 			else
 			{
 				actor_setupAnimation(ANIM_DEAD, anim);
 				actor_removeLogics(obj);
-				retValue = JFALSE;
+				retValue = 0;
 			}
 		}
 		return retValue;
