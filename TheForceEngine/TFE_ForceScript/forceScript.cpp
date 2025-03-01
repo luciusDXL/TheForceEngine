@@ -13,8 +13,6 @@
 #include <algorithm>
 #include <assert.h>
 
-#ifdef ENABLE_FORCE_SCRIPT
-
 // TFE_ForceScript wraps Anglescript, so these includes should only exist here.
 #include <angelscript.h>
 #include <scriptstdstring/scriptstdstring.h>
@@ -961,41 +959,3 @@ namespace TFE_ForceScript
 		return id;
 	}
 }  // TFE_ForceScript
-
-#else
-
-namespace TFE_ForceScript
-{
-	// Initialize and destroy script system.
-	void init() {}
-	void destroy() {}
-	void overrideCallback(ScriptMessageCallback callback) {}
-	// Run any active script functions.
-	void update(f32 dt) {}
-	// Stop all running script functions.
-	void stopAllFunc() {}
-
-	// Allow other systems to access the underlying engine.
-	void* getEngine() { return nullptr; }
-
-	// Compile module.
-	ModuleHandle createModule(const char* moduleName, const char* sectionName, const char* srcCode) { return nullptr; }
-	ModuleHandle createModule(const char* moduleName, const char* filePath) { return nullptr; }
-	// Find a specific script function in a module.
-	FunctionHandle findScriptFuncByDecl(ModuleHandle modHandle, const char* funcDecl) { return nullptr; }
-	FunctionHandle findScriptFuncByName(ModuleHandle modHandle, const char* funcName) { return nullptr; }
-
-	// Types
-	s32 getObjectTypeId(FS_BuiltInType type) { return 0; }
-
-	// Execute a script function.
-	// It won't be executed immediately, it will happen on the next TFE_ForceScript update.
-	// ---------------------------------------
-	// Returns -1 on failure or id on success.
-	// Note id is only valid as long as the function is running.
-	s32 execFunc(FunctionHandle funcHandle, s32 argCount, const ScriptArg* arg) { return -1; }
-	// Resume a suspended script function given by id.
-	void resume(s32 id) { return; }
-}
-
-#endif

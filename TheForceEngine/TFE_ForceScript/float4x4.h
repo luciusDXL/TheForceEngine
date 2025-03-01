@@ -6,8 +6,6 @@
 #include <TFE_System/system.h>
 #include <string>
 #include "float4.h"
-
-#ifdef ENABLE_FORCE_SCRIPT
 #include <angelscript.h>
 
 namespace TFE_ForceScript
@@ -49,4 +47,3 @@ namespace TFE_ForceScript
 	s32 getFloat4x4ObjectId();
 	std::string toStringF4x4(const float4x4& v);
 }  // TFE_ForceScript
-#endif

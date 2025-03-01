@@ -248,7 +248,7 @@ namespace TFE_ExternalData
 		if (strcasecmp(data->string, "batteryPower") == 0)
 		{
 			// battery power is exposed as a percentage
-			float fraction = data->valueint / 100.0;
+			f32 fraction = data->valueint / 100.0f;
 			s_externalMaxAmounts.batteryPowerMax = s32(fraction * 2 * ONE_16);
 			return true;
 		}

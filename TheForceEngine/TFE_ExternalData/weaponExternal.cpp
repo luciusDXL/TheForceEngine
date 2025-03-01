@@ -586,7 +586,7 @@ namespace TFE_ExternalData
 
 		if (cJSON_IsNumber(data) && strcasecmp(data->string, "angularSpeed") == 0)
 		{
-			projectile.homingAngularSpeed = floatToAngle(data->valueint);
+			projectile.homingAngularSpeed = floatToAngle((f32)data->valueint);
 			return true;
 		}
 

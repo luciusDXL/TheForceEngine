@@ -8,8 +8,6 @@
 #include <algorithm>
 #include <assert.h>
 
-#ifdef ENABLE_FORCE_SCRIPT
-
 // TFE_ForceScript wraps Anglescript, so these includes should only exist here.
 #include <angelscript.h>
 
@@ -297,5 +295,3 @@ namespace TFE_ForceScript
 		r = engine->RegisterGlobalFunction("string toString(float3 v)", asFUNCTION(toStringF3), asCALL_CDECL); assert(r >= 0);
 	}
 }  // TFE_ForceScript
-
-#endif

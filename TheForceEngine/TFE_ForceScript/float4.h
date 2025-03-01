@@ -7,8 +7,6 @@
 #include <string>
 #include "float2.h"
 #include "float3.h"
-
-#ifdef ENABLE_FORCE_SCRIPT
 #include <angelscript.h>
 
 namespace TFE_ForceScript
@@ -442,4 +440,3 @@ namespace TFE_ForceScript
 
 	inline f32 dot(float4 a, float4 b) { return a.x*b.x + a.y*b.y + a.z*b.z + a.w*b.w; }
 }  // TFE_ForceScript
-#endif

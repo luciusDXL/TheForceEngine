@@ -2,7 +2,6 @@
 #include <TFE_System/system.h>
 #include <TFE_DarkForces/time.h>
 
-#ifdef ENABLE_FORCE_SCRIPT
 #include <angelscript.h>
 
 using namespace TFE_Jedi;
@@ -26,4 +25,4 @@ namespace TFE_DarkForces
 		ScriptClassEnd();
 	}
 }
-#endif
+

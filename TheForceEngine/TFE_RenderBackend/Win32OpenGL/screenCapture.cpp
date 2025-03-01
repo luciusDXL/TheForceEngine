@@ -227,10 +227,10 @@ void ScreenCapture::beginRecording(const char* path, bool skipCountdown)
 		// capture starts, so the user still sees some indication that
 		// capture is working.
 		startCountdown(false);
-		f32 framerateLimit = TFE_Settings::getGraphicsSettings()->frameRateLimit;
-		if (framerateLimit <= 0) { framerateLimit = 20; }
-		f32 messageDelay = 2.0 / framerateLimit;
-		if (messageDelay < 0.1) { messageDelay = 0.1; }
+		f32 framerateLimit = (f32)TFE_Settings::getGraphicsSettings()->frameRateLimit;
+		if (framerateLimit <= 0.0f) { framerateLimit = 20.0f; }
+		f32 messageDelay = 2.0f / framerateLimit;
+		if (messageDelay < 0.1f) { messageDelay = 0.1f; }
 		m_countdownTimeStart -= (COUNTDOWN_DURATION - messageDelay);
 	}
 	else
