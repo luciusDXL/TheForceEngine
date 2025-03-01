@@ -48,8 +48,8 @@ namespace LevelEditor
 	void levHistory_redo();
 
 	// Commands
-	void cmd_sectorSnapshot(u32 name, std::vector<s32>& sectorWallIds);
-	void cmd_sectorWallSnapshot(u32 name, std::vector<IndexPair>& sectorIds, bool idsChanged);
+	void cmd_sectorSnapshot(u32 name, std::vector<s32>& sectorIds);
+	void cmd_sectorWallSnapshot(u32 name, std::vector<IndexPair>& sectorWallIds, bool idsChanged);
 	void cmd_sectorAttributeSnapshot(u32 name, std::vector<IndexPair>& sectorIds, bool idsChanged);
 	void cmd_objectListSnapshot(u32 name, s32 sectorId);
 	void cmd_setTextures(u32 name, s32 count, FeatureId* features);

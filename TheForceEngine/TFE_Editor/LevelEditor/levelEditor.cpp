@@ -1988,6 +1988,27 @@ namespace LevelEditor
 		s_modalUiActive = true;
 	}
 
+	struct WallIndex
+	{
+		EditorSector* sector;
+		s32 wallIndex;
+	};
+
+	void addToWallIndexList(EditorSector* sector, s32 wallIndex, std::vector<WallIndex>& walls)
+	{
+		const size_t count = walls.size();
+		const WallIndex* wall = walls.data();
+		for (size_t w = 0; w < count; w++, wall++)
+		{
+			// Already exists.
+			if (wall->sector == sector || wall->wallIndex == wallIndex)
+			{
+				return;
+			}
+		}
+		walls.push_back({ sector, wallIndex });
+	}
+
 	void updateContextWindow()
 	{
 		const bool escapePressed = TFE_Input::keyPressed(KEY_ESCAPE);
@@ -2014,6 +2035,99 @@ namespace LevelEditor
 		bool leftClick = TFE_Input::mousePressed(MBUTTON_LEFT);
 		if (ImGui::Begin("##ContextMenuFrame", &open, flags))
 		{
+			bool hasSelection = false;
+			if (s_editMode == LEDIT_SECTOR || s_editMode == LEDIT_ENTITY || s_editMode == LEDIT_WALL || s_editMode == LEDIT_VERTEX)
+			{
+				hasSelection = selection_hasHovered();
+			}
+			if (hasSelection)
+			{
+				EditorSector* sector = nullptr;
+				s32 wallIndex = -1;
+				HitPart part;
+				selection_get(SEL_INDEX_HOVERED, sector, wallIndex, &part);
+
+				LevelEditMode type = LEDIT_DRAW;
+				if (s_editMode == LEDIT_VERTEX) { type = LEDIT_VERTEX; }
+				else if (s_editMode == LEDIT_SECTOR) { type = LEDIT_SECTOR; }
+				else if (s_editMode == LEDIT_ENTITY) { type = LEDIT_ENTITY; }
+				else
+				{
+					// Choose the type based on hover for walls.
+					// Ignore any parts of the selection that don't match.
+					if (part == HP_FLOOR || part == HP_CEIL) { type = LEDIT_SECTOR; }
+					else { type = LEDIT_WALL; }
+				}
+
+				// Which adjoin types?
+				bool hasSolid = false, hasAdjoin = false;
+				if (type == LEDIT_WALL)
+				{
+					std::vector<WallIndex> walls;
+
+					const u32 count = selection_getCount();
+					if (count == 0)
+					{
+						hasAdjoin = sector->walls[wallIndex].adjoinId >= 0;
+						hasSolid = sector->walls[wallIndex].adjoinId < 0;
+						walls.push_back({sector, wallIndex});
+					}
+					else
+					{
+						for (u32 i = 0; i < count; i++)
+						{
+							EditorSector* curSector = nullptr;
+							s32 curWallIndex = -1;
+							HitPart curPart;
+							selection_get(i, curSector, curWallIndex, &curPart);
+							if (curPart == HP_FLOOR || curPart == HP_CEIL)
+							{
+								continue;
+							}
+							hasAdjoin = curSector->walls[curWallIndex].adjoinId >= 0;
+							hasSolid = curSector->walls[curWallIndex].adjoinId < 0;
+							addToWallIndexList(curSector, curWallIndex, walls);
+						}
+					}
+
+					const size_t finalCount = walls.size();
+					if (hasAdjoin)
+					{
+						ImGui::MenuItem("Disconnect (Remove Adjoin)", NULL, (bool*)NULL);
+						if (leftClick && mouseInsideItem())
+						{
+							
+
+							WallIndex* wallIndex = walls.data();
+							for (size_t w = 0; w < finalCount; w++, wallIndex++)
+							{
+								if (wallIndex->sector->walls[wallIndex->wallIndex].adjoinId >= 0)
+								{
+									edit_removeAdjoin(wallIndex->sector->id, wallIndex->wallIndex);
+								}
+							}
+							closeMenu = true;
+						}
+					}
+					if (hasSolid)
+					{
+						ImGui::MenuItem("Connect (Set Adjoin)", NULL, (bool*)NULL);
+						if (leftClick && mouseInsideItem())
+						{
+							WallIndex* wallIndex = walls.data();
+							for (size_t w = 0; w < finalCount; w++, wallIndex++)
+							{
+								if (wallIndex->sector->walls[wallIndex->wallIndex].adjoinId < 0)
+								{
+									edit_tryAdjoin(wallIndex->sector->id, wallIndex->wallIndex);
+								}
+							}
+							closeMenu = true;
+						}
+					}
+				}
+			}
+
 			EditorSector* curSector = sectorHoveredOrSelected();
 			EditorSector* wallSector = nullptr;
 			s32 curWallId = wallHoveredOrSelected(wallSector);
@@ -2089,7 +2203,7 @@ namespace LevelEditor
 		ImGui::End();
 
 		// Close the context menu on left-click, right-click, and menu item selection.
-		if (leftClick || TFE_Input::mousePressed(MBUTTON_RIGHT) || closeMenu)
+		if (leftClick || TFE_Input::mousePressed(MBUTTON_RIGHT) || closeMenu || !open)
 		{
 			// Clear the context menu and modal UI.
 			if (s_contextMenu != CONTEXTMENU_NONE)

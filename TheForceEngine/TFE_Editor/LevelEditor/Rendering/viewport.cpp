@@ -396,18 +396,11 @@ namespace LevelEditor
 
 		// Draw the hovered and selected sectors.
 		// Note they intentionally overlap if s_featureHovered.sector == s_featureCur.sector.
-		bool hasHovered = selection_hasHovered();
+		const bool hasHovered = selection_hasHovered();
 		if (selection_hasHovered() && s_editMode == LEDIT_SECTOR)
 		{
 			selection_getSector(SEL_INDEX_HOVERED, sector);
-			if (sector)
-			{
-				drawSector2d(sector, HL_HOVERED);
-			}
-			else
-			{
-				selection_clearHovered();
-			}
+			drawSector2d(sector, HL_HOVERED);
 		}
 		if (selection_getCount() > 0 && s_editMode == LEDIT_SECTOR)
 		{
@@ -420,7 +413,7 @@ namespace LevelEditor
 		}
 
 		// Draw the hovered and selected walls.
-		if (selection_hasHovered() && s_editMode == LEDIT_WALL)
+		if (hasHovered && s_editMode == LEDIT_WALL)
 		{
 			EditorSector* sector = nullptr;
 			s32 featureIndex = -1;
@@ -588,7 +581,7 @@ namespace LevelEditor
 			EditorSector* sector = nullptr;
 			HitPart part = HP_NONE;
 			s32 featureIndex = -1;
-			bool hasHovered = selection_hasHovered();
+			const bool hasHovered = selection_hasHovered();
 			if (s_editMode == LevelEditMode::LEDIT_SECTOR)
 			{
 				selection_getSector(hasHovered ? SEL_INDEX_HOVERED : 0, sector);
