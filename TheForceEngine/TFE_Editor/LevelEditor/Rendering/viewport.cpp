@@ -1197,7 +1197,7 @@ namespace LevelEditor
 					  { vtx[v].x, sector->ceilHeight + ceilBias, vtx[v].z } };
 					TFE_RenderShared::lineDraw3d_addLine(width, line2, &color);
 				}
-				else
+				else if (next)
 				{
 					// Top
 					if (next->ceilHeight < sector->ceilHeight)
@@ -2353,7 +2353,7 @@ namespace LevelEditor
 					skipLines = true;
 				}
 
-				EditorSector* next = wall->adjoinId < 0 ? nullptr : &s_level.sectors[wall->adjoinId];
+				EditorSector* next = (wall->adjoinId < 0 || wall->adjoinId >= (s32)count) ? nullptr : &s_level.sectors[wall->adjoinId];
 				const Vec2f& v0 = sector->vtx[wall->idx[0]];
 				const Vec2f& v1 = sector->vtx[wall->idx[1]];
 
