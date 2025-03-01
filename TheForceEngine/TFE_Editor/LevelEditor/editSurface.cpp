@@ -39,7 +39,6 @@ namespace LevelEditor
 
 	void snapSignToCursor(EditorSector* sector, EditorWall* wall, s32 signTexIndex, Vec2f* signOffset);
 	void splitWall(EditorSector* sector, s32 wallIndex, Vec2f newPos, EditorWall* outWalls[]);
-	void fixupWallMirrors(EditorSector* sector, s32 wallIndex);
 	bool canSplitWall(EditorSector* sector, s32 wallIndex, Vec2f newPos);
 
 	////////////////////////////////////////
@@ -466,9 +465,6 @@ namespace LevelEditor
 		EditorWall* outWalls[2] = { nullptr };
 		splitWall(sector, wallIndex, newPos, outWalls);
 
-		// Find any references to > wallIndex and fix them up.
-		fixupWallMirrors(sector, wallIndex);
-
 		// If the current wall is an adjoin, split the matching adjoin.
 		if (outWalls[0]->adjoinId >= 0 && outWalls[0]->mirrorId >= 0)
 		{
@@ -478,9 +474,6 @@ namespace LevelEditor
 			// Split the mirror wall.
 			EditorWall* outWallsAdjoin[2] = { nullptr };
 			splitWall(nextSector, mirrorWallIndex, newPos, outWallsAdjoin);
-
-			// Fix-up the mirrors for the adjoined sector.
-			fixupWallMirrors(nextSector, mirrorWallIndex);
 
 			// Connect the split edges together.
 			outWalls[0]->mirrorId = mirrorWallIndex + 1;
@@ -1260,49 +1253,6 @@ namespace LevelEditor
 		// pointer might have changed as well).
 		outWalls[0] = &sector->walls[wallIndex];
 		outWalls[1] = &sector->walls[wallIndex + 1];
-	}
-
-	void fixupWallMirrors(EditorSector* sector, s32 wallIndex)
-	{
-		bool hasWallsPastSplit = wallIndex + 1 < sector->walls.size();
-		if (!hasWallsPastSplit) { return; }
-
-		// Gather sectors that might need to be changed.
-		s_searchKey++;
-		s_sectorChangeList.clear();
-		const size_t wallCount = sector->walls.size();
-		const s32 levelSectorCount = (s32)s_level.sectors.size();
-		EditorWall* wall = sector->walls.data();
-		for (size_t w = 0; w < wallCount; w++, wall++)
-		{
-			if (wall->adjoinId < 0 || wall->adjoinId >= levelSectorCount) { continue; }
-			EditorSector* nextSector = &s_level.sectors[wall->adjoinId];
-			if (nextSector->searchKey != s_searchKey)
-			{
-				nextSector->searchKey = s_searchKey;
-				s_sectorChangeList.push_back(nextSector);
-			}
-		}
-
-		// Loop through potentially effected sectors and adjust mirrors.
-		const size_t sectorCount = s_sectorChangeList.size();
-		EditorSector** sectorList = s_sectorChangeList.data();
-		for (size_t s = 0; s < sectorCount; s++)
-		{
-			EditorSector* matchSector = sectorList[s];
-			if (matchSector == sector) { continue; }
-
-			const size_t wallCount = matchSector->walls.size();
-			EditorWall* wall = matchSector->walls.data();
-			for (size_t w = 0; w < wallCount; w++, wall++)
-			{
-				if (wall->adjoinId != sector->id) { continue; }
-				if (wall->mirrorId > wallIndex)
-				{
-					wall->mirrorId++;
-				}
-			}
-		}
 	}
 
 	bool canSplitWall(EditorSector* sector, s32 wallIndex, Vec2f newPos)
