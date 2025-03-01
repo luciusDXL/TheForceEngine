@@ -34,6 +34,7 @@ using namespace TFE_Jedi;
 namespace LevelEditor
 {
 	extern SelectionList s_featureList;
+	static std::vector<s32>* s_adjoinExcludeList = nullptr;
 	static Vec2f s_copiedTextureOffset = { 0 };
 
 	void snapSignToCursor(EditorSector* sector, EditorWall* wall, s32 signTexIndex, Vec2f* signOffset);
@@ -44,6 +45,23 @@ namespace LevelEditor
 	////////////////////////////////////////
 	// API
 	////////////////////////////////////////
+	void edit_setAdjoinExcludeList(std::vector<s32>* excludeList)
+	{
+		s_adjoinExcludeList = excludeList;
+	}
+
+	bool edit_isInAdjoinExcludeList(s32 sectorId)
+	{
+		if (!s_adjoinExcludeList || sectorId < 0) { return false; }
+		const size_t count = s_adjoinExcludeList->size();
+		const s32* idx = s_adjoinExcludeList->data();
+		for (size_t i = 0; i < count; i++)
+		{
+			if (sectorId == idx[i]) { return true; }
+		}
+		return false;
+	}
+
 	void edit_clearCopiedTextureOffset()
 	{
 		s_copiedTextureOffset = { 0 };
@@ -481,14 +499,15 @@ namespace LevelEditor
 	// Try to adjoin wallId of sectorId to a matching wall.
 	// if *exactMatch* is true, than the other wall vertices must match,
 	// otherwise if the walls overlap, vertices will be inserted.
-	void edit_tryAdjoin(s32 sectorId, s32 wallId, bool exactMatch)
+	// Return true if wall split, otherwise false.
+	bool edit_tryAdjoin(s32 sectorId, s32 wallId, bool exactMatch)
 	{
-		if (sectorId < 0 || sectorId >= (s32)s_level.sectors.size() || wallId < 0) { return; }
+		if (sectorId < 0 || sectorId >= (s32)s_level.sectors.size() || wallId < 0) { return false; }
 		EditorSector* srcSector = &s_level.sectors[sectorId];
 		const Vec3f* srcBounds = srcSector->bounds;
 		const Vec2f* srcVtx = srcSector->vtx.data();
 
-		if (wallId >= (s32)srcSector->walls.size()) { return; }
+		if (wallId >= (s32)srcSector->walls.size()) { return false; }
 		EditorWall* srcWall = &srcSector->walls[wallId];
 		const Vec2f s0 = srcVtx[srcWall->idx[0]];
 		const Vec2f s1 = srcVtx[srcWall->idx[1]];
@@ -505,6 +524,7 @@ namespace LevelEditor
 			// Cannot connect to the same sector or to a sector part of a hidden or locked group.
 			if (conSector->id == sectorId) { continue; }
 			if (!sector_isInteractable(conSector) || !sector_onActiveLayer(conSector)) { continue; }
+			if (edit_isInAdjoinExcludeList(conSector->id)) { continue; }
 
 			EditorWall* conWall = conSector->walls.data();
 			const Vec2f* conVtx = conSector->vtx.data();
@@ -524,7 +544,7 @@ namespace LevelEditor
 					conWall->adjoinId = sectorId;
 					conWall->mirrorId = wallId;
 					// Only one adjoin is possible.
-					return;
+					return false;
 				}
 				else if (!exactMatch)
 				{
@@ -543,18 +563,22 @@ namespace LevelEditor
 								// We found a good candidate, so split and add.
 								EditorWall* outWalls[2];
 								s32 wSplit = w;
+								bool splitNeeded = false;
 								if (v >= FLT_EPSILON)
 								{
 									splitWall(conSector, wSplit, p1, outWalls);
+									splitNeeded = true;
 									wSplit++;
 								}
 								if (u <= 1.0f - FLT_EPSILON)
 								{
 									splitWall(conSector, wSplit, p0, outWalls);
+									splitNeeded = true;
 								}
 								// Then try again, but expecting an exact match.
-								edit_tryAdjoin(sectorId, wallId, true);
-								return;
+								splitNeeded |= edit_tryAdjoin(sectorId, wallId, true);
+								// Wall was split, indices are no longer valid.
+								return splitNeeded;
 							}
 						}
 					}
@@ -572,24 +596,29 @@ namespace LevelEditor
 								// We found a good candidate, so split and add.
 								EditorWall* outWalls[2];
 								s32 wSplit = wallId;
+								bool splitNeeded = false;
 								if (v >= FLT_EPSILON)
 								{
 									splitWall(srcSector, wSplit, p1, outWalls);
+									splitNeeded = true;
 									wSplit++;
 								}
 								if (u <= 1.0f - FLT_EPSILON)
 								{
 									splitWall(srcSector, wSplit, p0, outWalls);
+									splitNeeded = true;
 								}
 								// Then try again, but expecting an exact match.
-								edit_tryAdjoin(sectorId, wSplit, true);
-								return;
+								splitNeeded |= edit_tryAdjoin(sectorId, wSplit, true);
+								// Wall was split, indices are no longer valid.
+								return splitNeeded;
 							}
 						}
 					}
 				}
 			}
 		}
+		return false;
 	}
 
 	// If the wall is adjoined, remove the adjoin and the mirror.

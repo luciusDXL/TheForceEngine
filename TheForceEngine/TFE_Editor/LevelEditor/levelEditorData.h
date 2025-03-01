@@ -46,6 +46,7 @@ namespace LevelEditor
 		// Special
 		LEDIT_GUIDELINES,
 		LEDIT_NOTES,
+		LEDIT_UNKNOWN,
 	};
 		
 	enum DrawMode

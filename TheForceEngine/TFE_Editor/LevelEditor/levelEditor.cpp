@@ -1990,9 +1990,40 @@ namespace LevelEditor
 
 	struct WallIndex
 	{
+		// Sectors are not expected to change while operating on walls.
 		EditorSector* sector;
+		// Fast path when wall indices are valid.
 		s32 wallIndex;
+		// Needed to find the wall index if the indices are invalid.
+		Vec2f v0, v1;
 	};
+	s32 getWallFromIndex(WallIndex* index, EditorSector*& sector, bool wallIndicesValid)
+	{
+		if (!index || !index->sector) { return -1; }
+		sector = index->sector;
+
+		s32 wallId = -1;
+		if (wallIndicesValid)
+		{
+			wallId = index->wallIndex;
+		}
+		else
+		{
+			// Wall indices are no longer valid, so search for a match.
+			const s32 wallCount = (s32)sector->walls.size();
+			const Vec2f* vtx = sector->vtx.data();
+			EditorWall* wall = sector->walls.data();
+			for (s32 w = 0; w < wallCount; w++, wall++)
+			{
+				if (TFE_Polygon::vtxEqual(&index->v0, &vtx[wall->idx[0]]) && TFE_Polygon::vtxEqual(&index->v1, &vtx[wall->idx[1]]))
+				{
+					wallId = w;
+					break;
+				}
+			}
+		}
+		return wallId;
+	}
 
 	void addToWallIndexList(EditorSector* sector, s32 wallIndex, std::vector<WallIndex>& walls)
 	{
@@ -2001,12 +2032,101 @@ namespace LevelEditor
 		for (size_t w = 0; w < count; w++, wall++)
 		{
 			// Already exists.
-			if (wall->sector == sector || wall->wallIndex == wallIndex)
+			if (wall->sector == sector && wall->wallIndex == wallIndex)
 			{
 				return;
 			}
 		}
-		walls.push_back({ sector, wallIndex });
+		const Vec2f v0 = sector->vtx[sector->walls[wallIndex].idx[0]];
+		const Vec2f v1 = sector->vtx[sector->walls[wallIndex].idx[1]];
+		walls.push_back({ sector, wallIndex, v0, v1 });
+	}
+
+	bool isIndexInList(s32 idx, std::vector<s32>& sectorIndices)
+	{
+		const size_t count = sectorIndices.size();
+		const s32* idxList = sectorIndices.data();
+		for (size_t s = 0; s < count; s++)
+		{
+			// Already exists.
+			if (idxList[s] == idx)
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+
+	void addToSectorIndexList(s32 idx, std::vector<s32>& sectorIndices)
+	{
+		const size_t count = sectorIndices.size();
+		const s32* idxList = sectorIndices.data();
+		for (size_t s = 0; s < count; s++)
+		{
+			// Already exists.
+			if (idxList[s] == idx)
+			{
+				return;
+			}
+		}
+		sectorIndices.push_back(idx);
+	}
+
+	bool contextWindowWallAdjoins(bool hasAdjoin, bool hasSolid, bool leftClick, bool& wallIndicesValid, std::vector<WallIndex>& wallsToTryConnect, std::vector<WallIndex>& wallsToDisconnect)
+	{
+		bool closeMenu = false;
+		if (hasAdjoin)
+		{
+			ImGui::MenuItem("Disconnect [Remove Adjoin(s)]", NULL, (bool*)NULL);
+			if (leftClick && mouseInsideItem())
+			{
+				const size_t disconnectCount = wallsToDisconnect.size();
+				WallIndex* wallIndex = wallsToDisconnect.data();
+				for (size_t w = 0; w < disconnectCount; w++, wallIndex++)
+				{
+					EditorSector* curSector = nullptr;
+					s32 wallId = getWallFromIndex(wallIndex, curSector, wallIndicesValid);
+					if (wallId >= 0 && curSector->walls[wallId].adjoinId >= 0)
+					{
+						// TODO: Merge walls back together if:
+						//   * Adjacent to the removed adjoin wall (not recursive).
+						//   * They have the same normal.
+						//   * Mid-textures match.
+						//   * Wall Light matches.
+						//   * Wall Flags match.
+						// This should be optional and should return true if merging does occur because
+						// this will invalid wall indices (similar to edit_tryAdjoin below).
+						edit_removeAdjoin(curSector->id, wallId);
+					}
+				}
+				closeMenu = true;
+			}
+		}
+		if (hasSolid)
+		{
+			ImGui::MenuItem("Connect [Create Adjoin(s)]", NULL, (bool*)NULL);
+			if (leftClick && mouseInsideItem())
+			{
+				const size_t tryConnectCount = wallsToTryConnect.size();
+				WallIndex* wallIndex = wallsToTryConnect.data();
+				for (size_t w = 0; w < tryConnectCount; w++, wallIndex++)
+				{
+					EditorSector* curSector = nullptr;
+					s32 wallId = getWallFromIndex(wallIndex, curSector, wallIndicesValid);
+					if (wallId >= 0 && curSector->walls[wallId].adjoinId < 0)
+					{
+						if (edit_tryAdjoin(curSector->id, wallId))
+						{
+							// if edit_tryAdjoin() returns true, than a wall needed to be split, so the existing
+							// wall indices can no longer be used.
+							wallIndicesValid = false;
+						}
+					}
+				}
+				closeMenu = true;
+			}
+		}
+		return closeMenu;
 	}
 
 	void updateContextWindow()
@@ -2035,42 +2155,44 @@ namespace LevelEditor
 		bool leftClick = TFE_Input::mousePressed(MBUTTON_LEFT);
 		if (ImGui::Begin("##ContextMenuFrame", &open, flags))
 		{
-			bool hasSelection = false;
-			if (s_editMode == LEDIT_SECTOR || s_editMode == LEDIT_ENTITY || s_editMode == LEDIT_WALL || s_editMode == LEDIT_VERTEX)
-			{
-				hasSelection = selection_hasHovered();
-			}
-			if (hasSelection)
+			// The context menu only opens if a feature is hovered.
+			const bool isHovered = selection_hasHovered();
+			if (isHovered)
 			{
 				EditorSector* sector = nullptr;
-				s32 wallIndex = -1;
+				s32 featureIndex = -1;
 				HitPart part;
-				selection_get(SEL_INDEX_HOVERED, sector, wallIndex, &part);
+				selection_get(SEL_INDEX_HOVERED, sector, featureIndex, &part);
 
-				LevelEditMode type = LEDIT_DRAW;
-				if (s_editMode == LEDIT_VERTEX) { type = LEDIT_VERTEX; }
-				else if (s_editMode == LEDIT_SECTOR) { type = LEDIT_SECTOR; }
-				else if (s_editMode == LEDIT_ENTITY) { type = LEDIT_ENTITY; }
-				else
+				LevelEditMode type = s_editMode;
+				if (s_editMode == LEDIT_WALL && (part == HP_FLOOR || part == HP_CEIL))
 				{
-					// Choose the type based on hover for walls.
-					// Ignore any parts of the selection that don't match.
-					if (part == HP_FLOOR || part == HP_CEIL) { type = LEDIT_SECTOR; }
-					else { type = LEDIT_WALL; }
+					type = LEDIT_SECTOR;
 				}
 
 				// Which adjoin types?
 				bool hasSolid = false, hasAdjoin = false;
+				bool wallIndicesValid = true;
+				std::vector<WallIndex> wallsToTryConnect;
+				std::vector<WallIndex> wallsToDisconnect;
 				if (type == LEDIT_WALL)
 				{
 					std::vector<WallIndex> walls;
-
+					
 					const u32 count = selection_getCount();
 					if (count == 0)
 					{
-						hasAdjoin = sector->walls[wallIndex].adjoinId >= 0;
-						hasSolid = sector->walls[wallIndex].adjoinId < 0;
-						walls.push_back({sector, wallIndex});
+						hasAdjoin = sector->walls[featureIndex].adjoinId >= 0;
+						hasSolid = sector->walls[featureIndex].adjoinId < 0;
+						walls.push_back({sector, featureIndex });
+						if (sector->walls[featureIndex].adjoinId >= 0)
+						{
+							wallsToDisconnect.push_back({ sector, featureIndex });
+						}
+						else
+						{
+							wallsToTryConnect.push_back({ sector, featureIndex });
+						}
 					}
 					else
 					{
@@ -2084,50 +2206,98 @@ namespace LevelEditor
 							{
 								continue;
 							}
-							hasAdjoin = curSector->walls[curWallIndex].adjoinId >= 0;
-							hasSolid = curSector->walls[curWallIndex].adjoinId < 0;
+							hasAdjoin |= curSector->walls[curWallIndex].adjoinId >= 0;
+							hasSolid |= curSector->walls[curWallIndex].adjoinId < 0;
 							addToWallIndexList(curSector, curWallIndex, walls);
+
+							if (curSector->walls[curWallIndex].adjoinId >= 0)
+							{
+								addToWallIndexList(curSector, curWallIndex, wallsToDisconnect);
+							}
+							else
+							{
+								addToWallIndexList(curSector, curWallIndex, wallsToTryConnect);
+							}
 						}
 					}
-
-					const size_t finalCount = walls.size();
-					if (hasAdjoin)
+					closeMenu |= contextWindowWallAdjoins(hasAdjoin, hasSolid, leftClick, wallIndicesValid, wallsToTryConnect, wallsToDisconnect);
+				}
+				else if (type == LEDIT_SECTOR)
+				{
+					const u32 count = selection_getCount();
+					if (count == 0)
 					{
-						ImGui::MenuItem("Disconnect (Remove Adjoin)", NULL, (bool*)NULL);
-						if (leftClick && mouseInsideItem())
+						// This works basically the same way as it would if all the walls were selected.
+						const s32 wallCount = (s32)sector->walls.size();
+						EditorWall* wall = sector->walls.data();
+						for (s32 w = 0; w < wallCount; w++, wall++)
 						{
-							
-
-							WallIndex* wallIndex = walls.data();
-							for (size_t w = 0; w < finalCount; w++, wallIndex++)
+							hasAdjoin |= wall->adjoinId >= 0;
+							hasSolid |= wall->adjoinId < 0;
+							if (wall->adjoinId >= 0)
 							{
-								if (wallIndex->sector->walls[wallIndex->wallIndex].adjoinId >= 0)
-								{
-									edit_removeAdjoin(wallIndex->sector->id, wallIndex->wallIndex);
-								}
+								wallsToDisconnect.push_back({ sector, w });
 							}
-							closeMenu = true;
+							else
+							{
+								wallsToTryConnect.push_back({ sector, w });
+							}
 						}
+						closeMenu |= contextWindowWallAdjoins(hasAdjoin, hasSolid, leftClick, wallIndicesValid, wallsToTryConnect, wallsToDisconnect);
 					}
-					if (hasSolid)
+					else
 					{
-						ImGui::MenuItem("Connect (Set Adjoin)", NULL, (bool*)NULL);
-						if (leftClick && mouseInsideItem())
+						// This is a bit more complex...
+						//   * Interior Adjoins are left alone.
+						//   * Interior Walls are not adjoined to other interior walls.
+						//   * Exterior Adjoins are connected/disconneced.
+						//   * A Interior Adjoin is one that points to a sector in the selection,
+						//   * whereas an Exterior Adjoin points to a sector NOT in the selection.
+						std::vector<s32> sectorIndices;
+						for (u32 s = 0; s < count; s++)
 						{
-							WallIndex* wallIndex = walls.data();
-							for (size_t w = 0; w < finalCount; w++, wallIndex++)
+							EditorSector* curSector = nullptr;
+							s32 curFeatureIndex = -1;
+							HitPart curPart;
+							selection_get(s, curSector, curFeatureIndex, &curPart);
+							if (curFeatureIndex != -1 && curPart != HP_FLOOR && curPart != HP_CEIL) { continue; }
+
+							addToSectorIndexList(curSector->id, sectorIndices);
+						}
+
+						const s32 sectorCount = (s32)sectorIndices.size();
+						const s32* idxList = sectorIndices.data();
+						for (s32 s = 0; s < sectorCount; s++)
+						{
+							EditorSector* curSector = &s_level.sectors[idxList[s]];
+							EditorWall* curWall = curSector->walls.data();
+							const s32 wallCount = (s32)curSector->walls.size();
+							for (s32 w = 0; w < wallCount; w++, curWall++)
 							{
-								if (wallIndex->sector->walls[wallIndex->wallIndex].adjoinId < 0)
+								if (curWall->adjoinId >= 0)
 								{
-									edit_tryAdjoin(wallIndex->sector->id, wallIndex->wallIndex);
+									// Internal adjoins are not modified.
+									if (!isIndexInList(curWall->adjoinId, sectorIndices))
+									{
+										hasAdjoin = true;
+										wallsToDisconnect.push_back({ curSector, w });
+									}
+								}
+								else
+								{
+									hasSolid = true;
+									wallsToTryConnect.push_back({ curSector, w });
 								}
 							}
-							closeMenu = true;
 						}
+						edit_setAdjoinExcludeList(&sectorIndices);
+						closeMenu |= contextWindowWallAdjoins(hasAdjoin, hasSolid, leftClick, wallIndicesValid, wallsToTryConnect, wallsToDisconnect);
+						edit_setAdjoinExcludeList();
 					}
 				}
 			}
 
+			/*
 			EditorSector* curSector = sectorHoveredOrSelected();
 			EditorSector* wallSector = nullptr;
 			s32 curWallId = wallHoveredOrSelected(wallSector);
@@ -2199,6 +2369,7 @@ namespace LevelEditor
 				// TODO
 				closeMenu = true;
 			}
+			*/
 		}
 		ImGui::End();
 
