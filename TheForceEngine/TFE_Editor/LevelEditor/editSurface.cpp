@@ -511,6 +511,7 @@ namespace LevelEditor
 		EditorWall* srcWall = &srcSector->walls[wallId];
 		const Vec2f s0 = srcVtx[srcWall->idx[0]];
 		const Vec2f s1 = srcVtx[srcWall->idx[1]];
+		const Vec2f srcDir = { s1.x - s0.x, s1.z - s0.z };
 
 		SectorList overlaps;
 		getOverlappingSectorsBounds(srcBounds, &overlaps);
@@ -534,6 +535,7 @@ namespace LevelEditor
 			{
 				const Vec2f t0 = conVtx[conWall->idx[0]];
 				const Vec2f t1 = conVtx[conWall->idx[1]];
+				const Vec2f curDir = { t1.x - t0.x, t1.z - t0.z };
 
 				// Walls must have the same vertex positions AND be going in opposite directions.
 				if (TFE_Polygon::vtxEqual(&s0, &t1) && TFE_Polygon::vtxEqual(&s1, &t0))
@@ -548,6 +550,9 @@ namespace LevelEditor
 				}
 				else if (!exactMatch)
 				{
+					// Verify that the walls are going in opposite directions.
+					if (TFE_Math::dot(&srcDir, &curDir) >= 0.0f) { continue; }
+
 					Vec2f p0, p1;
 					// First assume (s0,s1) is smaller than (t0,t1)
 					{
