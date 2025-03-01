@@ -333,7 +333,7 @@ namespace TFE_DarkForces
 		defaultDamageFunc,
 		sceneryLogicFunc,
 		exploderFunc,
-		sewerCreatureAiFunc,
+		sewerCreatureDamageFunc,
 	};
 
 	const ActorMsgFunc c_actorDamageMsgFunc[] =
@@ -341,7 +341,7 @@ namespace TFE_DarkForces
 		defaultDamageMsgFunc,
 		sceneryMsgFunc,
 		exploderMsgFunc,
-		sewerCreatureAiMsgFunc,
+		sewerCreatureDamageMsgFunc,
 	};
 
 	s32 actor_getDamageFuncIndex(ActorFunc func)

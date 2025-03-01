@@ -81,9 +81,13 @@ namespace TFE_ExternalData
 
 	void loadExternalProjectiles()
 	{
-		const char* programDir = TFE_Paths::getPath(PATH_PROGRAM);
 		char extDataFile[TFE_MAX_PATH];
-		sprintf(extDataFile, "%sExternalData/DarkForces/projectiles.json", programDir);
+		strcpy(extDataFile, "ExternalData/DarkForces/projectiles.json");
+		if (!TFE_Paths::mapSystemPath(extDataFile))
+		{
+			const char* programDir = TFE_Paths::getPath(PATH_PROGRAM);
+			sprintf(extDataFile, "%sExternalData/DarkForces/projectiles.json", programDir);
+		}
 
 		TFE_System::logWrite(LOG_MSG, "EXTERNAL_DATA", "Loading projectile data");
 		FileStream file;
@@ -173,9 +177,13 @@ namespace TFE_ExternalData
 
 	void loadExternalEffects()
 	{
-		const char* programDir = TFE_Paths::getPath(PATH_PROGRAM);
 		char extDataFile[TFE_MAX_PATH];
-		sprintf(extDataFile, "%sExternalData/DarkForces/effects.json", programDir);
+		strcpy(extDataFile, "ExternalData/DarkForces/effects.json");
+		if (!TFE_Paths::mapSystemPath(extDataFile))
+		{
+			const char* programDir = TFE_Paths::getPath(PATH_PROGRAM);
+			sprintf(extDataFile, "%sExternalData/DarkForces/effects.json", programDir);
+		}
 
 		TFE_System::logWrite(LOG_MSG, "EXTERNAL_DATA", "Loading effects data");
 		FileStream file;
@@ -265,9 +273,13 @@ namespace TFE_ExternalData
 
 	void loadExternalWeapons()
 	{
-		const char* programDir = TFE_Paths::getPath(PATH_PROGRAM);
 		char extDataFile[TFE_MAX_PATH];
-		sprintf(extDataFile, "%sExternalData/DarkForces/weapons.json", programDir);
+		strcpy(extDataFile, "ExternalData/DarkForces/weapons.json");
+		if (!TFE_Paths::mapSystemPath(extDataFile))
+		{
+			const char* programDir = TFE_Paths::getPath(PATH_PROGRAM);
+			sprintf(extDataFile, "%sExternalData/DarkForces/weapons.json", programDir);
+		}
 
 		TFE_System::logWrite(LOG_MSG, "EXTERNAL_DATA", "Loading weapon data");
 		FileStream file;

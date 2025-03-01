@@ -10,30 +10,30 @@
 namespace TFE_DarkForces
 {
 	// Actor function for exploders (i.e. landmines and exploding barrels).
-	JBool exploderFunc(ActorModule* module, MovementModule* moveMod)
+	Tick exploderFunc(ActorModule* module, MovementModule* moveMod)
 	{
 		DamageModule* damageMod = (DamageModule*)module;
 		LogicAnimation* anim = &damageMod->attackMod.anim;
 		if (!(anim->flags & AFLAG_READY))
 		{
 			s_actorState.curAnimation = anim;
-			return JFALSE;
+			return 0;
 		}
 		else if ((anim->flags & AFLAG_PLAYONCE) && damageMod->hp <= 0)
 		{
 			actor_kill();
-			return JFALSE;
+			return 0;
 		}
-		return JTRUE;
+		return 0xffffffff;
 	}
 
 	// Actor message function for exploders, this is responsible for processing messages such as 
 	// projectile damage and explosions. For other AI message functions, it would also process
 	// "wake up" messages, but those messages are ignored for exploders.
-	JBool exploderMsgFunc(s32 msg, ActorModule* module, MovementModule* moveMod)
+	Tick exploderMsgFunc(s32 msg, ActorModule* module, MovementModule* moveMod)
 	{
 		DamageModule* damageMod = (DamageModule*)module;
-		JBool retValue = JFALSE;
+		Tick retValue = 0;
 		SecObject* obj = damageMod->attackMod.header.obj;
 		LogicAnimation* anim = &damageMod->attackMod.anim;
 
@@ -43,10 +43,10 @@ namespace TFE_DarkForces
 			{
 				ProjectileLogic* proj = (ProjectileLogic*)s_msgEntity;
 				damageMod->hp -= proj->dmg;
-				JBool retValue;
+				Tick retValue;
 				if (damageMod->hp > 0)
 				{
-					retValue = JTRUE;
+					retValue = 0xffffffff;
 				}
 				else
 				{
@@ -60,7 +60,7 @@ namespace TFE_DarkForces
 
 					actor_setupAnimation(ANIM_DIE1/*animIndex*/, anim);
 					moveMod->updateTargetFunc(moveMod, &damageMod->attackMod.target);
-					retValue = JFALSE;
+					retValue = 0;
 				}
 			}
 		}
@@ -68,7 +68,7 @@ namespace TFE_DarkForces
 		{
 			if (damageMod->hp <= 0)
 			{
-				return JTRUE;
+				return 0xffffffff;
 			}
 
 			fixed16_16 dmg = s_msgArg1;
@@ -84,7 +84,7 @@ namespace TFE_DarkForces
 			if (damageMod->hp > 0)
 			{
 				actor_addVelocity(pushX >> 1, 0, pushZ >> 1);
-				return JTRUE;
+				return 0xffffffff;
 			}
 
 			obj->flags |= OBJ_FLAG_FULLBRIGHT;
@@ -115,7 +115,7 @@ namespace TFE_DarkForces
 			// TODO: Move to the correct location.
 			actor_removeLogics(obj);
 			actor_setupAnimation(ANIM_DIE1/*animIndex*/, anim);
-			retValue = JFALSE;
+			retValue = 0;
 		}
 		return retValue;
 	}

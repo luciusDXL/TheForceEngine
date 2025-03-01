@@ -581,7 +581,8 @@ namespace TFE_DarkForces
 		return (ActorDispatch*)s_actorState.curLogic;
 	}
 
-	JBool defaultDamageFunc(ActorModule* module, MovementModule* moveMod)
+	// Default damage module function for "dispatch" actors
+	Tick defaultDamageFunc(ActorModule* module, MovementModule* moveMod)
 	{
 		DamageModule* damageMod = (DamageModule*)module;
 		AttackModule* attackMod = &damageMod->attackMod;
@@ -595,7 +596,7 @@ namespace TFE_DarkForces
 				actor_setCurAnimation(&attackMod->anim);
 			}
 			moveMod->updateTargetFunc(moveMod, &attackMod->target);
-			return JFALSE;
+			return 0;
 		}
 
 		if (damageMod->hp <= 0)
@@ -607,7 +608,7 @@ namespace TFE_DarkForces
 					actor_setCurAnimation(&attackMod->anim);
 				}
 				moveMod->updateTargetFunc(moveMod, &attackMod->target);
-				return JFALSE;
+				return 0;
 			}
 			spawnHitEffect(damageMod->dieEffect, sector, obj->posWS, obj);
 
@@ -665,7 +666,9 @@ namespace TFE_DarkForces
 		return 0xffffffff;
 	}
 
-	JBool defaultDamageMsgFunc(s32 msg, ActorModule* module, MovementModule* moveMod)
+	// Default damage module message function for "dispatch" actors
+	// Delivers a message to the damage module
+	Tick defaultDamageMsgFunc(s32 msg, ActorModule* module, MovementModule* moveMod)
 	{
 		DamageModule* damageMod = (DamageModule*)module;
 		AttackModule* attackMod = &damageMod->attackMod;
@@ -738,7 +741,7 @@ namespace TFE_DarkForces
 				actor_setCurAnimation(&attackMod->anim);
 			}
 			moveMod->updateTargetFunc(moveMod, &attackMod->target);
-			return JFALSE;
+			return 0;
 		}
 		else if (msg == MSG_EXPLOSION)
 		{
@@ -787,7 +790,7 @@ namespace TFE_DarkForces
 				actor_setCurAnimation(&attackMod->anim);
 			}
 			moveMod->updateTargetFunc(moveMod, &attackMod->target);
-			return JFALSE;
+			return 0;
 		}
 		else if (msg == MSG_TERMINAL_VEL || msg == MSG_CRUSH)
 		{
@@ -810,7 +813,7 @@ namespace TFE_DarkForces
 			}
 		}
 
-		return JFALSE;
+		return 0;
 	}
 
 	DamageModule* actor_createDamageModule(ActorDispatch* dispatch)
@@ -837,8 +840,12 @@ namespace TFE_DarkForces
 		return damageMod;
 	}
 		
-	JBool defaultAttackFunc(ActorModule* module, MovementModule* moveMod)
+	// Default attack module function for "dispatch" actors
+	// The returned value is set to the module's nextTick
+	Tick defaultAttackFunc(ActorModule* module, MovementModule* moveMod)
 	{
+		// Note: the module passed into this function is an AttackModule*, not a DamageModule*, and should be cast directly to an AttackModule*
+		// however, the code casts it to a DamageModule* first (why?)
 		DamageModule* damageMod = (DamageModule*)module;
 		AttackModule* attackMod = &damageMod->attackMod;
 		ActorDispatch* logic = (ActorDispatch*)s_actorState.curLogic;
@@ -1140,8 +1147,12 @@ namespace TFE_DarkForces
 		return attackMod->timing.delay;
 	}
 
-	JBool defaultAttackMsgFunc(s32 msg, ActorModule* module, MovementModule* moveMod)
+	// Default attack module message function for "dispatch" actors
+	// Delivers a message to the attack module
+	Tick defaultAttackMsgFunc(s32 msg, ActorModule* module, MovementModule* moveMod)
 	{
+		// Note: the module passed into this function is an AttackModule*, not a DamageModule*, and should be cast directly to an AttackModule*
+		// however, the code casts it to a DamageModule* first (why?)
 		DamageModule* damageMod = (DamageModule*)module;
 		AttackModule* attackMod = &damageMod->attackMod;
 		ActorDispatch* logic = (ActorDispatch*)s_actorState.curLogic;
@@ -1168,7 +1179,8 @@ namespace TFE_DarkForces
 		return attackMod;
 	}
 
-	JBool defaultThinkerFunc(ActorModule* module, MovementModule* moveMod)
+	// Default thinker module function for "dispatch" actors
+	Tick defaultThinkerFunc(ActorModule* module, MovementModule* moveMod)
 	{
 		ThinkerModule* thinkerMod = (ThinkerModule*)module;
 		SecObject* obj = thinkerMod->header.obj;
@@ -1521,7 +1533,8 @@ namespace TFE_DarkForces
 		}
 	}
 
-	JBool defaultActorFunc(ActorModule* module, MovementModule* moveMod)
+	// Default movement module function for "dispatch" actors
+	Tick defaultActorFunc(ActorModule* module, MovementModule* moveMod)
 	{
 		moveMod->physics.wall = nullptr;
 		moveMod->physics.u24 = 0;
@@ -1536,7 +1549,7 @@ namespace TFE_DarkForces
 			actor_handleMovementAndCollision(moveMod);
 		}
 		moveMod->target.flags &= ~TARGET_ALL_MOVE;
-		return JFALSE;
+		return 0;
 	}
 
 	// Updates the actor target with the passed in target based on the flags.
@@ -1906,11 +1919,13 @@ namespace TFE_DarkForces
 		actorLogic->vel.z += pushZ;
 	}
 	
-	void actor_hitEffectMsgFunc(MessageType msg, void* logic)
+	void actor_messageFunc(MessageType msg, void* logic)
 	{
 		ActorDispatch* dispatch = (ActorDispatch*)logic;
 		s_actorState.curLogic = (Logic*)logic;
 		SecObject* obj = s_actorState.curLogic->obj;
+	
+		// Send the message to each module via the module's message function
 		for (s32 i = 0; i < ACTOR_MAX_MODULES; i++)
 		{
 			ActorModule* module = dispatch->modules[ACTOR_MAX_MODULES - 1 - i];
@@ -1924,6 +1939,7 @@ namespace TFE_DarkForces
 			}
 		}
 
+		// WAKEUP, DAMAGE and EXPLOSION messages will wake (alert) the actor from an idle state
 		if (msg == MSG_WAKEUP)
 		{
 			if (dispatch->flags & ACTOR_IDLE)
@@ -1975,7 +1991,12 @@ namespace TFE_DarkForces
 
 	void actor_sendTerminalVelMsg(SecObject* obj)
 	{
-		message_sendToObj(obj, MSG_TERMINAL_VEL, actor_hitEffectMsgFunc);
+		message_sendToObj(obj, MSG_TERMINAL_VEL, actor_messageFunc);
+	}
+
+	void actor_sendWakeupMsg(SecObject* obj)
+	{
+		message_sendToObj(obj, MSG_WAKEUP, actor_messageFunc);
 	}
 
 	void actor_handlePhysics(MovementModule* moveMod, vec3_fixed* vel)
@@ -2046,6 +2067,7 @@ namespace TFE_DarkForces
 		if (TFE_Jedi::abs(vel->z) < ACTOR_MIN_VELOCITY) { vel->z = 0; }
 	}
 
+	// Local run func for actor task
 	void actorLogicMsgFunc(MessageType msg)
 	{
 		if (msg == MSG_FREE)
@@ -2054,7 +2076,7 @@ namespace TFE_DarkForces
 		}
 		else
 		{
-			actor_hitEffectMsgFunc(msg, s_msgTarget);
+			actor_messageFunc(msg, s_msgTarget);
 		}
 	}
 
@@ -2081,9 +2103,9 @@ namespace TFE_DarkForces
 							if (actor_isObjectVisible(obj, s_playerObject, dispatch->fov, dispatch->awareRange))
 							{
 								// Wake up, and alert other actors within a 150 unit range
-								message_sendToObj(obj, MSG_WAKEUP, actor_hitEffectMsgFunc);
+								message_sendToObj(obj, MSG_WAKEUP, actor_messageFunc);
 								gameMusic_startFight();
-								collision_effectObjectsInRangeXZ(obj->sector, FIXED(150), obj->posWS, hitEffectWakeupFunc, obj, ETFLAG_AI_ACTOR);
+								collision_effectObjectsInRangeXZ(obj->sector, FIXED(150), obj->posWS, actor_sendWakeupMsg, obj, ETFLAG_AI_ACTOR);
 							}
 						}
 					}
