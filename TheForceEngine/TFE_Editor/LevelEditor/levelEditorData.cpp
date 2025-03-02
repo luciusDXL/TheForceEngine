@@ -2089,15 +2089,13 @@ namespace LevelEditor
 	// TODO:
 	//   Object data list.
 	//   Objects.
+	//   INF items?
 	bool importFromText(const std::string& buffer)
 	{
 		const size_t len = buffer.length();
 		const char* data = buffer.data();
 		if (!len || !data) { return false; }
-
-		// Create a snapshot.
-		levHistory_createSnapshot("Paste");
-
+				
 		TFE_Parser parser;
 		parser.init(data, len);
 		parser.enableBlockComments();
@@ -2458,6 +2456,12 @@ namespace LevelEditor
 		{
 			s_level.sectors.push_back(*sector);
 			selection_action(SA_ADD, sector);
+		}
+
+		// Create a snapshot.
+		if (sectorCount)
+		{
+			levHistory_createSnapshot("Paste");
 		}
 
 		return true;
