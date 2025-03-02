@@ -2041,36 +2041,6 @@ namespace LevelEditor
 		walls.push_back({ sector, wallIndex, v0, v1 });
 	}
 
-	bool isIndexInList(s32 idx, std::vector<s32>& sectorIndices)
-	{
-		const size_t count = sectorIndices.size();
-		const s32* idxList = sectorIndices.data();
-		for (size_t s = 0; s < count; s++)
-		{
-			// Already exists.
-			if (idxList[s] == idx)
-			{
-				return true;
-			}
-		}
-		return false;
-	}
-
-	void addToSectorIndexList(s32 idx, std::vector<s32>& sectorIndices)
-	{
-		const size_t count = sectorIndices.size();
-		const s32* idxList = sectorIndices.data();
-		for (size_t s = 0; s < count; s++)
-		{
-			// Already exists.
-			if (idxList[s] == idx)
-			{
-				return;
-			}
-		}
-		sectorIndices.push_back(idx);
-	}
-
 	bool contextWindowWallAdjoins(bool hasAdjoin, bool hasSolid, bool leftClick, bool& wallIndicesValid, std::vector<WallIndex>& wallsToTryConnect, std::vector<WallIndex>& wallsToDisconnect)
 	{
 		bool closeMenu = false;
@@ -2224,6 +2194,33 @@ namespace LevelEditor
 				else if (type == LEDIT_SECTOR)
 				{
 					const u32 count = selection_getCount();
+
+					ImGui::MenuItem("Add To Current Group", NULL, (bool*)NULL);
+					if (leftClick && mouseInsideItem())
+					{
+						u32 groupId = groups_getCurrentId();
+						if (count == 0)
+						{
+							sector->groupId = groupId;
+						}
+						else
+						{
+							for (u32 s = 0; s < count; s++)
+							{
+								EditorSector* curSector = nullptr;
+								s32 curFeatureIndex = -1;
+								HitPart curPart;
+								selection_get(s, curSector, curFeatureIndex, &curPart);
+								if (curFeatureIndex != -1 && curPart != HP_FLOOR && curPart != HP_CEIL) { continue; }
+
+								curSector->groupId = groupId;
+							}
+						}
+
+						closeMenu = true;
+					}
+					ImGui::Separator();
+
 					if (count == 0)
 					{
 						// This works basically the same way as it would if all the walls were selected.
@@ -2261,7 +2258,7 @@ namespace LevelEditor
 							selection_get(s, curSector, curFeatureIndex, &curPart);
 							if (curFeatureIndex != -1 && curPart != HP_FLOOR && curPart != HP_CEIL) { continue; }
 
-							addToSectorIndexList(curSector->id, sectorIndices);
+							insertIntoIntList(curSector->id, &sectorIndices);
 						}
 
 						const s32 sectorCount = (s32)sectorIndices.size();
@@ -2276,7 +2273,7 @@ namespace LevelEditor
 								if (curWall->adjoinId >= 0)
 								{
 									// Internal adjoins are not modified.
-									if (!isIndexInList(curWall->adjoinId, sectorIndices))
+									if (!isInIntList(curWall->adjoinId, &sectorIndices))
 									{
 										hasAdjoin = true;
 										addToWallIndexList(curSector, w, wallsToDisconnect);
@@ -2293,6 +2290,34 @@ namespace LevelEditor
 						closeMenu |= contextWindowWallAdjoins(hasAdjoin, hasSolid, leftClick, wallIndicesValid, wallsToTryConnect, wallsToDisconnect);
 						edit_setAdjoinExcludeList();
 					}
+				}
+
+				ImGui::Separator();
+
+				ImGui::MenuItem("Copy (Ctrl+C)", NULL, (bool*)NULL);
+				if (leftClick && mouseInsideItem())
+				{
+					closeMenu = true;
+				}
+				ImGui::MenuItem("Cut (Ctrl+X)", NULL, (bool*)NULL);
+				if (leftClick && mouseInsideItem())
+				{
+					closeMenu = true;
+				}
+				ImGui::MenuItem("Delete (Del)", NULL, (bool*)NULL);
+				if (leftClick && mouseInsideItem())
+				{
+					closeMenu = true;
+				}
+				ImGui::MenuItem("Duplicate (Ctrl+D)", NULL, (bool*)NULL);
+				if (leftClick && mouseInsideItem())
+				{
+					closeMenu = true;
+				}
+				ImGui::MenuItem("Paste (Ctrl+V)", NULL, (bool*)NULL);
+				if (leftClick && mouseInsideItem())
+				{
+					closeMenu = true;
 				}
 			}
 
