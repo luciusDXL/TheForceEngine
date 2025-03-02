@@ -2086,6 +2086,26 @@ namespace LevelEditor
 		return false;
 	}
 
+	void parseTexture(const TokenList& tokens, s32 offset, const std::vector<std::string>& textureList, LevelTexture* outTex, s32 defaultTexIndex)
+	{
+		char* endPtr = nullptr;
+		const s32 texId = strtol(tokens[offset].c_str(), &endPtr, 10);
+		const f32 offsetX = strtof(tokens[offset + 1].c_str(), &endPtr);
+		const f32 offsetY = strtof(tokens[offset + 2].c_str(), &endPtr);
+
+		outTex->texIndex = defaultTexIndex;
+		outTex->offset = { offsetX, offsetY };
+		if (texId >= 0 && texId < (s32)textureList.size())
+		{
+			bool isNewTexture = false;
+			const s32 texIndex = getTextureIndex(textureList[texId].c_str(), &isNewTexture);
+			if (texIndex >= 0)
+			{
+				outTex->texIndex = texIndex;
+			}
+		}
+	}
+
 	// TODO:
 	//   Object data list.
 	//   Objects.
@@ -2108,17 +2128,17 @@ namespace LevelEditor
 				
 		size_t bufferPos = 0;
 		const char* line = parser.readLine(bufferPos, true);
+		TokenList tokens;
 		char* endPtr = nullptr;
 		bool isNewTexture = false;
 		while (line)
 		{
-			TokenList tokens;
 			parser.tokenizeLine(line, tokens);
 			const s32 tokenCount = (s32)tokens.size();
 
 			if (tokenCount >= 2 && strncasecmp(tokens[0].c_str(), "TEXTURES", strlen("TEXTURES")) == 0)
 			{
-				s32 count = strtol(tokens[1].c_str(), &endPtr, 10);
+				const s32 count = strtol(tokens[1].c_str(), &endPtr, 10);
 				if (count > 0)
 				{
 					textureList.reserve(count);
@@ -2130,7 +2150,7 @@ namespace LevelEditor
 			}
 			else if (tokenCount >= 2 && strncasecmp(tokens[0].c_str(), "NUMSECTORS", strlen("NUMSECTORS")) == 0)
 			{
-				s32 count = strtol(tokens[1].c_str(), &endPtr, 10);
+				const s32 count = strtol(tokens[1].c_str(), &endPtr, 10);
 				if (count > 0)
 				{
 					sectorList.reserve(count);
@@ -2140,9 +2160,7 @@ namespace LevelEditor
 			{
 				sectorList.push_back({});
 				curSector = &sectorList.back();
-
-				s32 id = strtol(tokens[1].c_str(), &endPtr, 10);
-				curSector->id = id;
+				curSector->id = strtol(tokens[1].c_str(), &endPtr, 10);
 			}
 			else if (curSector)
 			{
@@ -2156,37 +2174,11 @@ namespace LevelEditor
 				}
 				else if (tokenCount >= 5 && strncasecmp(tokens[0].c_str(), "FLOOR", strlen("FLOOR")) == 0 && strncasecmp(tokens[1].c_str(), "TEXTURE", strlen("TEXTURE")) == 0)
 				{
-					s32 texId = strtol(tokens[2].c_str(), &endPtr, 10);
-					f32 offsetX = strtof(tokens[3].c_str(), &endPtr);
-					f32 offsetY = strtof(tokens[4].c_str(), &endPtr);
-
-					curSector->floorTex.texIndex = 0;
-					curSector->floorTex.offset = { offsetX, offsetY };
-					if (texId >= 0 && texId < (s32)textureList.size())
-					{
-						s32 texIndex = getTextureIndex(textureList[texId].c_str(), &isNewTexture);
-						if (texIndex >= 0)
-						{
-							curSector->floorTex.texIndex = texIndex;
-						}
-					}
+					parseTexture(tokens, 2, textureList, &curSector->floorTex, 0);
 				}
 				else if (tokenCount >= 5 && strncasecmp(tokens[0].c_str(), "CEILING", strlen("CEILING")) == 0 && strncasecmp(tokens[1].c_str(), "TEXTURE", strlen("TEXTURE")) == 0)
 				{
-					s32 texId = strtol(tokens[2].c_str(), &endPtr, 10);
-					f32 offsetX = strtof(tokens[3].c_str(), &endPtr);
-					f32 offsetY = strtof(tokens[4].c_str(), &endPtr);
-
-					curSector->ceilTex.texIndex = 0;
-					curSector->ceilTex.offset = { offsetX, offsetY };
-					if (texId >= 0 && texId < (s32)textureList.size())
-					{
-						s32 texIndex = getTextureIndex(textureList[texId].c_str(), &isNewTexture);
-						if (texIndex >= 0)
-						{
-							curSector->ceilTex.texIndex = texIndex;
-						}
-					}
+					parseTexture(tokens, 2, textureList, &curSector->ceilTex, 0);
 				}
 				else if (tokenCount >= 3 && strncasecmp(tokens[0].c_str(), "FLOOR", strlen("FLOOR")) == 0 && strncasecmp(tokens[1].c_str(), "ALTITUDE", strlen("ALTITUDE")) == 0)
 				{
@@ -2253,74 +2245,22 @@ namespace LevelEditor
 						}
 						else if (strncasecmp(token, "MID:", strlen("MID:")) == 0 && t < tokenCount - 5)
 						{
-							s32 texId = strtol(tokens[t + 1].c_str(), &endPtr, 10);
-							f32 offsetX = strtof(tokens[t + 2].c_str(), &endPtr);
-							f32 offsetY = strtof(tokens[t + 3].c_str(), &endPtr);
-
-							wall.tex[WP_MID].texIndex = 0;
-							wall.tex[WP_MID].offset = { offsetX, offsetY };
-							if (texId >= 0 && texId < (s32)textureList.size())
-							{
-								s32 texIndex = getTextureIndex(textureList[texId].c_str(), &isNewTexture);
-								if (texIndex >= 0)
-								{
-									wall.tex[WP_MID].texIndex = texIndex;
-								}
-							}
+							parseTexture(tokens, t + 1, textureList, &wall.tex[WP_MID], 0);
 							t += 5;
 						}
 						else if (strncasecmp(token, "TOP:", strlen("TOP:")) == 0 && t < tokenCount - 5)
 						{
-							s32 texId = strtol(tokens[t + 1].c_str(), &endPtr, 10);
-							f32 offsetX = strtof(tokens[t + 2].c_str(), &endPtr);
-							f32 offsetY = strtof(tokens[t + 3].c_str(), &endPtr);
-
-							wall.tex[WP_TOP].texIndex = 0;
-							wall.tex[WP_TOP].offset = { offsetX, offsetY };
-							if (texId >= 0 && texId < (s32)textureList.size())
-							{
-								s32 texIndex = getTextureIndex(textureList[texId].c_str(), &isNewTexture);
-								if (texIndex >= 0)
-								{
-									wall.tex[WP_TOP].texIndex = texIndex;
-								}
-							}
+							parseTexture(tokens, t + 1, textureList, &wall.tex[WP_TOP], 0);
 							t += 5;
 						}
 						else if (strncasecmp(token, "BOT:", strlen("BOT:")) == 0 && t < tokenCount - 5)
 						{
-							s32 texId = strtol(tokens[t + 1].c_str(), &endPtr, 10);
-							f32 offsetX = strtof(tokens[t + 2].c_str(), &endPtr);
-							f32 offsetY = strtof(tokens[t + 3].c_str(), &endPtr);
-
-							wall.tex[WP_BOT].texIndex = 0;
-							wall.tex[WP_BOT].offset = { offsetX, offsetY };
-							if (texId >= 0 && texId < (s32)textureList.size())
-							{
-								s32 texIndex = getTextureIndex(textureList[texId].c_str(), &isNewTexture);
-								if (texIndex >= 0)
-								{
-									wall.tex[WP_BOT].texIndex = texIndex;
-								}
-							}
+							parseTexture(tokens, t + 1, textureList, &wall.tex[WP_BOT], 0);
 							t += 5;
 						}
 						else if (strncasecmp(token, "SIGN:", strlen("SIGN:")) == 0 && t < tokenCount - 4)
 						{
-							s32 texId = strtol(tokens[t + 1].c_str(), &endPtr, 10);
-							f32 offsetX = strtof(tokens[t + 2].c_str(), &endPtr);
-							f32 offsetY = strtof(tokens[t + 3].c_str(), &endPtr);
-
-							wall.tex[WP_SIGN].texIndex = -1;
-							wall.tex[WP_SIGN].offset = { offsetX, offsetY };
-							if (texId >= 0 && texId < (s32)textureList.size())
-							{
-								s32 texIndex = getTextureIndex(textureList[texId].c_str(), &isNewTexture);
-								if (texIndex >= 0)
-								{
-									wall.tex[WP_SIGN].texIndex = texIndex;
-								}
-							}
+							parseTexture(tokens, t + 1, textureList, &wall.tex[WP_SIGN], -1);
 							t += 4;
 						}
 						else if (strncasecmp(token, "ADJOIN:", strlen("ADJOIN:")) == 0)
