@@ -191,8 +191,11 @@ namespace LevelEditor
 	void drawViewportInfo(s32 index, Vec2i mapPos, const char* info, f32 xOffset, f32 yOffset, f32 alpha=1.0f, u32 overrideColor=0u);
 	void getWallLengthText(const Vec2f* v0, const Vec2f* v1, char* text, Vec2i& mapPos, s32 index = -1, Vec2f* mapOffset = nullptr);
 
-	void copyToClipboard(const char* str);
-	bool copyFromClipboard(char* str);
+	void copyToClipboard(const std::string& str);
+	bool copyFromClipboard(std::string& str);
+	bool hasItemsInClipboard();
+	void copySelectionToClipboard();
+	void pasteFromClipboard();
 
 	void handleSelectMode(Vec3f pos);
 	void handleSelectMode(EditorSector* sector, s32 wallIndex);
@@ -2297,6 +2300,7 @@ namespace LevelEditor
 				ImGui::MenuItem("Copy (Ctrl+C)", NULL, (bool*)NULL);
 				if (leftClick && mouseInsideItem())
 				{
+					copySelectionToClipboard();
 					closeMenu = true;
 				}
 				ImGui::MenuItem("Cut (Ctrl+X)", NULL, (bool*)NULL);
@@ -2314,13 +2318,33 @@ namespace LevelEditor
 				{
 					closeMenu = true;
 				}
-				ImGui::MenuItem("Paste (Ctrl+V)", NULL, (bool*)NULL);
-				if (leftClick && mouseInsideItem())
+
+				const bool disable = !hasItemsInClipboard();
+				if (disable) { disableNextItem(); }
+					ImGui::MenuItem("Paste (Ctrl+V)", NULL, (bool*)NULL);
+					if (leftClick && mouseInsideItem())
+					{
+						pasteFromClipboard();
+						closeMenu = true;
+					}
+				if (disable) { enableNextItem(); }
+			}
+			else
+			{
+				if (s_editMode == LEDIT_SECTOR)
 				{
-					closeMenu = true;
+					const bool disable = !hasItemsInClipboard();
+					if (disable) { disableNextItem(); }
+						ImGui::MenuItem("Paste (Ctrl+V)", NULL, (bool*)NULL);
+						if (leftClick && mouseInsideItem())
+						{
+							pasteFromClipboard();
+							closeMenu = true;
+						}
+					if (disable) { enableNextItem(); }
 				}
 			}
-
+ 
 			/*
 			EditorSector* curSector = sectorHoveredOrSelected();
 			EditorSector* wallSector = nullptr;
@@ -3699,12 +3723,12 @@ namespace LevelEditor
 		exportLevel(exportPath, s_level.slot.c_str(), &start);
 	}
 	
-	void copyToClipboard(const char* str)
+	void copyToClipboard(const std::string& str)
 	{
-		SDL_SetClipboardText(str);
+		SDL_SetClipboardText(str.c_str());
 	}
 
-	bool copyFromClipboard(char* str)
+	bool copyFromClipboard(std::string& str)
 	{
 		bool hasText = SDL_HasClipboardText();
 		if (hasText)
@@ -3713,12 +3737,42 @@ namespace LevelEditor
 			hasText = false;
 			if (text && text[0])
 			{
-				strcpy(str, text);
+				str = text;
 				hasText = true;
 			}
 			SDL_free(text);
 		}
 		return hasText;
+	}
+
+	bool hasItemsInClipboard()
+	{
+		bool hasText = SDL_HasClipboardText();
+		if (!hasText) { return false; }
+
+		char* text = SDL_GetClipboardText();
+		if (!text || !text[0]) { return false; }
+
+		// Refine to check if it matches the format.
+		return true;
+	}
+		
+	void copySelectionToClipboard()
+	{
+		std::string buffer;
+		if (exportSelectionToText(buffer))
+		{
+			copyToClipboard(buffer);
+		}
+	}
+
+	void pasteFromClipboard()
+	{
+		std::string buffer;
+		if (copyFromClipboard(buffer))
+		{
+			importFromText(buffer);
+		}
 	}
 
 	s32 getDefaultTextureIndex(WallPart part)

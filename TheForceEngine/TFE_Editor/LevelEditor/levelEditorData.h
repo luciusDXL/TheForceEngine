@@ -254,12 +254,14 @@ namespace LevelEditor
 	
 	bool saveLevel();
 	bool exportLevel(const char* path, const char* name, const StartPoint* start);
+	bool exportSelectionToText(std::string& buffer);
+	bool importFromText(const std::string& buffer);
 	void sectorToPolygon(EditorSector* sector);
 	void polygonToSector(EditorSector* sector);
 
 	s32 addEntityToLevel(const Entity* newEntity);
 	s32 addLevelNoteToLevel(const LevelNote* newNote);
-
+		
 	TFE_Editor::EditorTexture* getTexture(s32 index);
 	s32 getTextureIndex(const char* name, bool* isNewTexture = nullptr);
 		

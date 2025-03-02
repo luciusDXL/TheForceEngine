@@ -1,5 +1,6 @@
 #include "levelEditorData.h"
 #include "levelDataSnapshot.h"
+#include "levelEditorHistory.h"
 #include "levelEditor.h"
 #include "selection.h"
 #include "entity.h"
@@ -21,6 +22,7 @@
 #include <TFE_Editor/EditorAsset/editorFrame.h>
 #include <TFE_Editor/EditorAsset/editorSprite.h>
 #include <TFE_Editor/AssetBrowser/assetBrowser.h>
+#include <TFE_Editor/LevelEditor/Rendering/grid.h>
 #include <TFE_Archive/zipArchive.h>
 #include <TFE_Jedi/Level/rwall.h>
 #include <TFE_Jedi/Level/rsector.h>
@@ -2076,6 +2078,388 @@ namespace LevelEditor
 		// Then cleanup by deleting the test GOB.
 		FileUtil::deleteFile(gobPath);
 		
+		return true;
+	}
+
+	bool exportSelectionToText(std::string& buffer)
+	{
+		return false;
+	}
+
+	// TODO:
+	//   Object data list.
+	//   Objects.
+	bool importFromText(const std::string& buffer)
+	{
+		const size_t len = buffer.length();
+		const char* data = buffer.data();
+		if (!len || !data) { return false; }
+
+		// Create a snapshot.
+		levHistory_createSnapshot("Paste");
+
+		TFE_Parser parser;
+		parser.init(data, len);
+		parser.enableBlockComments();
+		parser.addCommentString("//");
+		parser.addCommentString("#");
+
+		std::vector<std::string> textureList;
+		std::vector<EditorSector> sectorList;
+		EditorSector* curSector = nullptr;
+				
+		size_t bufferPos = 0;
+		const char* line = parser.readLine(bufferPos, true);
+		char* endPtr = nullptr;
+		bool isNewTexture = false;
+		while (line)
+		{
+			TokenList tokens;
+			parser.tokenizeLine(line, tokens);
+			const s32 tokenCount = (s32)tokens.size();
+
+			if (tokenCount >= 2 && strncasecmp(tokens[0].c_str(), "TEXTURES", strlen("TEXTURES")) == 0)
+			{
+				s32 count = strtol(tokens[1].c_str(), &endPtr, 10);
+				if (count > 0)
+				{
+					textureList.reserve(count);
+				}
+			}
+			else if (tokenCount >= 2 && strncasecmp(tokens[0].c_str(), "TEXTURE:", strlen("TEXTURE:")) == 0)
+			{
+				textureList.push_back(tokens[1]);
+			}
+			else if (tokenCount >= 2 && strncasecmp(tokens[0].c_str(), "NUMSECTORS", strlen("NUMSECTORS")) == 0)
+			{
+				s32 count = strtol(tokens[1].c_str(), &endPtr, 10);
+				if (count > 0)
+				{
+					sectorList.reserve(count);
+				}
+			}
+			else if (tokenCount >= 2 && strncasecmp(tokens[0].c_str(), "SECTOR", strlen("SECTOR")) == 0)
+			{
+				sectorList.push_back({});
+				curSector = &sectorList.back();
+
+				s32 id = strtol(tokens[1].c_str(), &endPtr, 10);
+				curSector->id = id;
+			}
+			else if (curSector)
+			{
+				if (tokenCount >= 2 && strncasecmp(tokens[0].c_str(), "NAME", strlen("NAME")) == 0)
+				{
+					curSector->name = tokens[1];
+				}
+				else if (tokenCount >= 2 && strncasecmp(tokens[0].c_str(), "AMBIENT", strlen("AMBIENT")) == 0)
+				{
+					curSector->ambient = strtol(tokens[1].c_str(), &endPtr, 10);
+				}
+				else if (tokenCount >= 5 && strncasecmp(tokens[0].c_str(), "FLOOR", strlen("FLOOR")) == 0 && strncasecmp(tokens[1].c_str(), "TEXTURE", strlen("TEXTURE")) == 0)
+				{
+					s32 texId = strtol(tokens[2].c_str(), &endPtr, 10);
+					f32 offsetX = strtof(tokens[3].c_str(), &endPtr);
+					f32 offsetY = strtof(tokens[4].c_str(), &endPtr);
+
+					curSector->floorTex.texIndex = 0;
+					curSector->floorTex.offset = { offsetX, offsetY };
+					if (texId >= 0 && texId < (s32)textureList.size())
+					{
+						s32 texIndex = getTextureIndex(textureList[texId].c_str(), &isNewTexture);
+						if (texIndex >= 0)
+						{
+							curSector->floorTex.texIndex = texIndex;
+						}
+					}
+				}
+				else if (tokenCount >= 5 && strncasecmp(tokens[0].c_str(), "CEILING", strlen("CEILING")) == 0 && strncasecmp(tokens[1].c_str(), "TEXTURE", strlen("TEXTURE")) == 0)
+				{
+					s32 texId = strtol(tokens[2].c_str(), &endPtr, 10);
+					f32 offsetX = strtof(tokens[3].c_str(), &endPtr);
+					f32 offsetY = strtof(tokens[4].c_str(), &endPtr);
+
+					curSector->ceilTex.texIndex = 0;
+					curSector->ceilTex.offset = { offsetX, offsetY };
+					if (texId >= 0 && texId < (s32)textureList.size())
+					{
+						s32 texIndex = getTextureIndex(textureList[texId].c_str(), &isNewTexture);
+						if (texIndex >= 0)
+						{
+							curSector->ceilTex.texIndex = texIndex;
+						}
+					}
+				}
+				else if (tokenCount >= 3 && strncasecmp(tokens[0].c_str(), "FLOOR", strlen("FLOOR")) == 0 && strncasecmp(tokens[1].c_str(), "ALTITUDE", strlen("ALTITUDE")) == 0)
+				{
+					curSector->floorHeight = -strtof(tokens[2].c_str(), &endPtr);
+				}
+				else if (tokenCount >= 3 && strncasecmp(tokens[0].c_str(), "CEILING", strlen("CEILING")) == 0 && strncasecmp(tokens[1].c_str(), "ALTITUDE", strlen("ALTITUDE")) == 0)
+				{
+					curSector->ceilHeight = -strtof(tokens[2].c_str(), &endPtr);
+				}
+				else if (tokenCount >= 3 && strncasecmp(tokens[0].c_str(), "SECOND", strlen("SECOND")) == 0 && strncasecmp(tokens[1].c_str(), "ALTITUDE", strlen("ALTITUDE")) == 0)
+				{
+					curSector->secHeight = -strtof(tokens[2].c_str(), &endPtr);
+				}
+				else if (tokenCount >= 4 && strncasecmp(tokens[0].c_str(), "FLAGS", strlen("FLAGS")) == 0)
+				{
+					curSector->flags[0] = strtol(tokens[1].c_str(), &endPtr, 10);
+					curSector->flags[1] = strtol(tokens[2].c_str(), &endPtr, 10);
+					curSector->flags[2] = strtol(tokens[3].c_str(), &endPtr, 10);
+				}
+				else if (tokenCount >= 2 && strncasecmp(tokens[0].c_str(), "LAYER", strlen("LAYER")) == 0)
+				{
+					curSector->layer = strtol(tokens[1].c_str(), &endPtr, 10);
+					if (s_level.layerRange[0] > curSector->layer) { s_level.layerRange[0] = curSector->layer; }
+					if (s_level.layerRange[1] < curSector->layer) { s_level.layerRange[1] = curSector->layer; }
+				}
+				else if (tokenCount >= 2 && strncasecmp(tokens[0].c_str(), "VERTICES", strlen("VERTICES")) == 0)
+				{
+					s32 count = strtol(tokens[1].c_str(), &endPtr, 10);
+					if (count > 0)
+					{
+						curSector->vtx.reserve(count);
+					}
+				}
+				else if (tokenCount >= 4 && strncasecmp(tokens[0].c_str(), "X:", strlen("X:")) == 0 && strncasecmp(tokens[2].c_str(), "Z:", strlen("Z:")) == 0)
+				{
+					Vec2f vtx = { 0 };
+					vtx.x = strtof(tokens[1].c_str(), &endPtr);
+					vtx.z = strtof(tokens[3].c_str(), &endPtr);
+					curSector->vtx.push_back(vtx);
+				}
+				else if (tokenCount >= 2 && strncasecmp(tokens[0].c_str(), "WALLS", strlen("WALLS")) == 0)
+				{
+					s32 count = strtol(tokens[1].c_str(), &endPtr, 10);
+					if (count > 0)
+					{
+						curSector->walls.reserve(count);
+					}
+				}
+				else if (tokenCount >= 5 && strncasecmp(tokens[0].c_str(), "WALL", strlen("WALL")) == 0)
+				{
+					EditorWall wall = {};
+					for (s32 t = 1; t < tokenCount - 1;)
+					{
+						const char* token = tokens[t].c_str();
+						if (strncasecmp(token, "LEFT:", strlen("LEFT:")) == 0)
+						{
+							wall.idx[0] = strtol(tokens[t + 1].c_str(), &endPtr, 10);
+							t += 2;
+						}
+						else if (strncasecmp(token, "RIGHT:", strlen("RIGHT:")) == 0)
+						{
+							wall.idx[1] = strtol(tokens[t + 1].c_str(), &endPtr, 10);
+							t += 2;
+						}
+						else if (strncasecmp(token, "MID:", strlen("MID:")) == 0 && t < tokenCount - 5)
+						{
+							s32 texId = strtol(tokens[t + 1].c_str(), &endPtr, 10);
+							f32 offsetX = strtof(tokens[t + 2].c_str(), &endPtr);
+							f32 offsetY = strtof(tokens[t + 3].c_str(), &endPtr);
+
+							wall.tex[WP_MID].texIndex = 0;
+							wall.tex[WP_MID].offset = { offsetX, offsetY };
+							if (texId >= 0 && texId < (s32)textureList.size())
+							{
+								s32 texIndex = getTextureIndex(textureList[texId].c_str(), &isNewTexture);
+								if (texIndex >= 0)
+								{
+									wall.tex[WP_MID].texIndex = texIndex;
+								}
+							}
+							t += 5;
+						}
+						else if (strncasecmp(token, "TOP:", strlen("TOP:")) == 0 && t < tokenCount - 5)
+						{
+							s32 texId = strtol(tokens[t + 1].c_str(), &endPtr, 10);
+							f32 offsetX = strtof(tokens[t + 2].c_str(), &endPtr);
+							f32 offsetY = strtof(tokens[t + 3].c_str(), &endPtr);
+
+							wall.tex[WP_TOP].texIndex = 0;
+							wall.tex[WP_TOP].offset = { offsetX, offsetY };
+							if (texId >= 0 && texId < (s32)textureList.size())
+							{
+								s32 texIndex = getTextureIndex(textureList[texId].c_str(), &isNewTexture);
+								if (texIndex >= 0)
+								{
+									wall.tex[WP_TOP].texIndex = texIndex;
+								}
+							}
+							t += 5;
+						}
+						else if (strncasecmp(token, "BOT:", strlen("BOT:")) == 0 && t < tokenCount - 5)
+						{
+							s32 texId = strtol(tokens[t + 1].c_str(), &endPtr, 10);
+							f32 offsetX = strtof(tokens[t + 2].c_str(), &endPtr);
+							f32 offsetY = strtof(tokens[t + 3].c_str(), &endPtr);
+
+							wall.tex[WP_BOT].texIndex = 0;
+							wall.tex[WP_BOT].offset = { offsetX, offsetY };
+							if (texId >= 0 && texId < (s32)textureList.size())
+							{
+								s32 texIndex = getTextureIndex(textureList[texId].c_str(), &isNewTexture);
+								if (texIndex >= 0)
+								{
+									wall.tex[WP_BOT].texIndex = texIndex;
+								}
+							}
+							t += 5;
+						}
+						else if (strncasecmp(token, "SIGN:", strlen("SIGN:")) == 0 && t < tokenCount - 4)
+						{
+							s32 texId = strtol(tokens[t + 1].c_str(), &endPtr, 10);
+							f32 offsetX = strtof(tokens[t + 2].c_str(), &endPtr);
+							f32 offsetY = strtof(tokens[t + 3].c_str(), &endPtr);
+
+							wall.tex[WP_SIGN].texIndex = -1;
+							wall.tex[WP_SIGN].offset = { offsetX, offsetY };
+							if (texId >= 0 && texId < (s32)textureList.size())
+							{
+								s32 texIndex = getTextureIndex(textureList[texId].c_str(), &isNewTexture);
+								if (texIndex >= 0)
+								{
+									wall.tex[WP_SIGN].texIndex = texIndex;
+								}
+							}
+							t += 4;
+						}
+						else if (strncasecmp(token, "ADJOIN:", strlen("ADJOIN:")) == 0)
+						{
+							wall.adjoinId = strtol(tokens[t + 1].c_str(), &endPtr, 10);
+							t += 2;
+						}
+						else if (strncasecmp(token, "MIRROR:", strlen("MIRROR:")) == 0)
+						{
+							wall.mirrorId = strtol(tokens[t + 1].c_str(), &endPtr, 10);
+							t += 2;
+						}
+						else if (strncasecmp(token, "WALK:", strlen("WALK:")) == 0)
+						{
+							// Unused
+							t += 2;
+						}
+						else if (strncasecmp(token, "FLAGS:", strlen("FLAGS:")) == 0 && t < tokenCount - 4)
+						{
+							wall.flags[0] = strtol(tokens[t + 1].c_str(), &endPtr, 10);
+							wall.flags[1] = strtol(tokens[t + 2].c_str(), &endPtr, 10);
+							wall.flags[2] = strtol(tokens[t + 3].c_str(), &endPtr, 10);
+							t += 4;
+						}
+						else if (strncasecmp(token, "LIGHT:", strlen("LIGHT:")) == 0)
+						{
+							wall.wallLight = strtol(tokens[t + 1].c_str(), &endPtr, 10);
+							t += 2;
+						}
+						else
+						{
+							// Unknown, keep stepping through the list.
+							t++;
+						}
+					}
+					curSector->walls.push_back(wall);
+				}
+			}
+
+			line = parser.readLine(bufferPos);
+		}
+
+		// Parse the results.
+		// 1. Create an ID map between new sector IDs and IDs in the data.
+		std::map<s32, s32> idMapping;
+		const s32 sectorCount = (s32)sectorList.size();
+		EditorSector* sector = sectorList.data();
+		s32 newId = (s32)s_level.sectors.size();
+		for (s32 s = 0; s < sectorCount; s++, sector++)
+		{
+			std::map<s32, s32>::iterator idMap = idMapping.find(sector->id);
+			if (idMap == idMapping.end())
+			{
+				idMapping[sector->id] = newId;
+				sector->id = newId;
+				newId++;
+			}
+			else
+			{
+				sector->id = idMap->second;
+			}
+		}
+
+		// 2. Iterate through adjoins, clear any with no mapping, update IDs based on mapping.
+		sector = sectorList.data();
+		for (s32 s = 0; s < sectorCount; s++, sector++)
+		{
+			const s32 wallCount = (s32)sector->walls.size();
+			EditorWall* wall = sector->walls.data();
+			for (s32 w = 0; w < wallCount; w++, wall++)
+			{
+				if (wall->adjoinId < 0) { continue; }
+				std::map<s32, s32>::iterator idMap = idMapping.find(wall->adjoinId);
+				if (idMap == idMapping.end())
+				{
+					// Adjoins to outside of the data, so clear.
+					wall->adjoinId = -1;
+					wall->mirrorId = -1;
+				}
+				else
+				{
+					// Fixup the adjoin to use the new ID.
+					wall->adjoinId = idMap->second;
+				}
+			}
+		}
+
+		// 3. Move sectors so they are centered on the mouse position.
+		sector = sectorList.data();
+		Vec2f bounds[2] = { {FLT_MAX, FLT_MAX}, {-FLT_MAX, -FLT_MAX} };
+		for (s32 s = 0; s < sectorCount; s++, sector++)
+		{
+			const s32 vtxCount = (s32)sector->vtx.size();
+			const Vec2f* vtx = sector->vtx.data();
+			for (s32 v = 0; v < vtxCount; v++, vtx++)
+			{
+				bounds[0].x = std::min(bounds[0].x, vtx->x);
+				bounds[0].z = std::min(bounds[0].z, vtx->z);
+
+				bounds[1].x = std::max(bounds[1].x, vtx->x);
+				bounds[1].z = std::max(bounds[1].z, vtx->z);
+			}
+		}
+		// Snap to grid.
+		Vec2f center = { (bounds[0].x + bounds[1].x) * 0.5f, (bounds[0].z + bounds[1].z) * 0.5f };
+		snapToGrid(&center);
+		Vec3f offset = { s_cursor3d.x - center.x, s_grid.height, s_cursor3d.z - center.z };
+		sector = sectorList.data();
+		for (s32 s = 0; s < sectorCount; s++, sector++)
+		{
+			sector->floorHeight += offset.y;
+			sector->ceilHeight += offset.y;
+			sector->groupId = groups_getCurrentId();
+			sector->groupIndex = 0;
+
+			const s32 vtxCount = (s32)sector->vtx.size();
+			Vec2f* vtx = sector->vtx.data();
+			for (s32 v = 0; v < vtxCount; v++, vtx++)
+			{
+				vtx->x += offset.x;
+				vtx->z += offset.z;
+			}
+
+			sectorToPolygon(sector);
+		}
+
+		// 4. Add the new sectors to the level.
+		selection_clear();
+		selection_clearHovered();
+
+		sector = sectorList.data();
+		for (s32 s = 0; s < sectorCount; s++, sector++)
+		{
+			s_level.sectors.push_back(*sector);
+			selection_action(SA_ADD, sector);
+		}
+
 		return true;
 	}
 
