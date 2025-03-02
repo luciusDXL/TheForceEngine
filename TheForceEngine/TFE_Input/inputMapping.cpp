@@ -94,6 +94,9 @@ namespace TFE_Input
 		{ IADF_SCREENSHOT, ITYPE_KEYBOARD, KEY_PRINTSCREEN },
 		{ IADF_GIF_RECORD, ITYPE_KEYBOARD, KEY_F2, KEYMOD_ALT},
 		{ IADF_GIF_RECORD_NO_COUNTDOWN, ITYPE_KEYBOARD, KEY_F2, KEYMOD_CTRL},
+
+		//Player Rotation
+		{ IADF_ROTATE_PLAYER, ITYPE_KEYBOARD, KEY_K }
 	};
 
 	static InputBinding s_defaultControllerBinds[] =
@@ -277,6 +280,7 @@ namespace TFE_Input
 			inputMapping_addBinding(&s_defaultKeyboardBinds[IADF_SCREENSHOT]);
 			inputMapping_addBinding(&s_defaultKeyboardBinds[IADF_GIF_RECORD]);
 			inputMapping_addBinding(&s_defaultKeyboardBinds[IADF_GIF_RECORD_NO_COUNTDOWN]);
+			inputMapping_addBinding(&s_defaultKeyboardBinds[IADF_ROTATE_PLAYER]);
 		}
 
 		return true;
