@@ -501,6 +501,35 @@ namespace TFE_DarkForces
 		menu_blitToScreen(s_framebuffer);
 	}
 
+	void agentMenu_setAgentName(const char* name)
+	{
+		if (s_agentId < 0 || s_agentId >= MAX_AGENT_COUNT)
+		{
+			return;
+		}
+		strncpy(s_agentData[s_agentId].name, name, 32);
+	}
+
+	s32 agentMenu_getAgentID()
+	{
+		return s_agentId;
+	}
+
+	void agentMenu_setAgentId(s32 id)
+	{
+		s_agentId = id;
+	}
+
+	void agentMenu_setAgentCount(s32 count)
+	{
+		s_agentCount = count;
+	}
+
+	s32 agentMenu_getAgentCount()
+	{
+		return s_agentCount;
+	}
+
 	void agentMenu_createNewAgent()
 	{
 		if (s_agentCount < MAX_AGENT_COUNT)
