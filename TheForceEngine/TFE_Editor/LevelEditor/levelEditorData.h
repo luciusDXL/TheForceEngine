@@ -255,7 +255,7 @@ namespace LevelEditor
 	bool saveLevel();
 	bool exportLevel(const char* path, const char* name, const StartPoint* start);
 	bool exportSelectionToText(std::string& buffer);
-	bool importFromText(const std::string& buffer);
+	bool importFromText(const std::string& buffer, bool centerOnMouse = true);
 	void sectorToPolygon(EditorSector* sector);
 	void polygonToSector(EditorSector* sector);
 

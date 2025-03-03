@@ -2493,7 +2493,7 @@ namespace LevelEditor
 	//   Object data list.
 	//   Objects.
 	//   INF items?
-	bool importFromText(const std::string& buffer)
+	bool importFromText(const std::string& buffer, bool centerOnMouse)
 	{
 		const size_t len = buffer.length();
 		const char* data = buffer.data();
@@ -3052,44 +3052,49 @@ namespace LevelEditor
 		// 3. Move sectors so they are centered on the mouse position.
 		const s32 objCount = (s32)objList.size();
 		sector = sectorList.data();
-		Vec2f bounds[2] = { {FLT_MAX, FLT_MAX}, {-FLT_MAX, -FLT_MAX} };
-		if (sectorCount > 0)
+		Vec3f offset = { 0 };
+		if (centerOnMouse)
 		{
-			for (s32 s = 0; s < sectorCount; s++, sector++)
+			Vec2f bounds[2] = { {FLT_MAX, FLT_MAX}, {-FLT_MAX, -FLT_MAX} };
+			if (sectorCount > 0)
 			{
-				const s32 vtxCount = (s32)sector->vtx.size();
-				const Vec2f* vtx = sector->vtx.data();
-				for (s32 v = 0; v < vtxCount; v++, vtx++)
+				for (s32 s = 0; s < sectorCount; s++, sector++)
 				{
-					bounds[0].x = std::min(bounds[0].x, vtx->x);
-					bounds[0].z = std::min(bounds[0].z, vtx->z);
+					const s32 vtxCount = (s32)sector->vtx.size();
+					const Vec2f* vtx = sector->vtx.data();
+					for (s32 v = 0; v < vtxCount; v++, vtx++)
+					{
+						bounds[0].x = std::min(bounds[0].x, vtx->x);
+						bounds[0].z = std::min(bounds[0].z, vtx->z);
 
-					bounds[1].x = std::max(bounds[1].x, vtx->x);
-					bounds[1].z = std::max(bounds[1].z, vtx->z);
+						bounds[1].x = std::max(bounds[1].x, vtx->x);
+						bounds[1].z = std::max(bounds[1].z, vtx->z);
+					}
 				}
 			}
-		}
-		else if (objCount > 0)
-		{
-			EditorObject* obj = objList.data();
-			for (s32 s = 0; s < objCount; s++, obj++)
+			else if (objCount > 0)
 			{
-				bounds[0].x = std::min(bounds[0].x, obj->pos.x);
-				bounds[0].z = std::min(bounds[0].z, obj->pos.z);
+				EditorObject* obj = objList.data();
+				for (s32 s = 0; s < objCount; s++, obj++)
+				{
+					bounds[0].x = std::min(bounds[0].x, obj->pos.x);
+					bounds[0].z = std::min(bounds[0].z, obj->pos.z);
 
-				bounds[1].x = std::max(bounds[1].x, obj->pos.x);
-				bounds[1].z = std::max(bounds[1].z, obj->pos.z);
+					bounds[1].x = std::max(bounds[1].x, obj->pos.x);
+					bounds[1].z = std::max(bounds[1].z, obj->pos.z);
+				}
 			}
-		}
-		else
-		{
-			bounds[0] = { 0 };
-			bounds[1] = { 0 };
+			else
+			{
+				bounds[0] = { 0 };
+				bounds[1] = { 0 };
+			}
+
+			Vec2f center = { (bounds[0].x + bounds[1].x) * 0.5f, (bounds[0].z + bounds[1].z) * 0.5f };
+			snapToGrid(&center);
+			offset = { s_cursor3d.x - center.x, s_grid.height, s_cursor3d.z - center.z };
 		}
 		// Snap to grid.
-		Vec2f center = { (bounds[0].x + bounds[1].x) * 0.5f, (bounds[0].z + bounds[1].z) * 0.5f };
-		snapToGrid(&center);
-		Vec3f offset = { s_cursor3d.x - center.x, s_grid.height, s_cursor3d.z - center.z };
 		sector = sectorList.data();
 		for (s32 s = 0; s < sectorCount; s++, sector++)
 		{

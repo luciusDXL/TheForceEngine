@@ -195,7 +195,7 @@ namespace LevelEditor
 	bool copyFromClipboard(std::string& str);
 	bool hasItemsInClipboard();
 	void copySelectionToClipboard();
-	void pasteFromClipboard();
+	void pasteFromClipboard(bool centerOnMouse = true);
 
 	void handleSelectMode(Vec3f pos);
 	void handleSelectMode(EditorSector* sector, s32 wallIndex);
@@ -1541,9 +1541,6 @@ namespace LevelEditor
 			if (ImGui::MenuItem("Paste", "Ctrl+V", (bool*)NULL))
 			{
 			}
-			if (ImGui::MenuItem("Duplicate", "Ctrl+D", (bool*)NULL))
-			{
-			}
 			if (ImGui::MenuItem("Delete", "Del", (bool*)NULL))
 			{
 			}
@@ -2302,12 +2299,6 @@ namespace LevelEditor
 					if (leftClick && mouseInsideItem())
 					{
 						copySelectionToClipboard();
-						closeMenu = true;
-					}
-
-					ImGui::MenuItem("Duplicate (Ctrl+D)", NULL, (bool*)NULL);
-					if (leftClick && mouseInsideItem())
-					{
 						closeMenu = true;
 					}
 
@@ -3692,12 +3683,12 @@ namespace LevelEditor
 		}
 	}
 
-	void pasteFromClipboard()
+	void pasteFromClipboard(bool centerOnMouse)
 	{
 		std::string buffer;
 		if (copyFromClipboard(buffer))
 		{
-			importFromText(buffer);
+			importFromText(buffer, centerOnMouse);
 		}
 	}
 
