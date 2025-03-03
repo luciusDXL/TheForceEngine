@@ -6,6 +6,7 @@
 //////////////////////////////////////////////////////////////////////
 #include <TFE_System/types.h>
 #include <TFE_Jedi/Math/core_math.h>
+#include <string>
 
 using namespace TFE_Jedi;
 
@@ -15,7 +16,7 @@ struct ScreenRect;
 namespace TFE_DarkForces
 {
 	void hud_sendTextMessage(s32 msgId);
-	void hud_sendTextMessage(const char* msg, s32 priority);
+	void hud_sendTextMessage(const char* msg, s32 priority, bool skipPriority=false);
 	void hud_clearMessage();
 
 	void hud_loadGameMessages();

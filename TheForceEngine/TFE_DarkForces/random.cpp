@@ -1,5 +1,6 @@
 #include "random.h"
 #include <TFE_Jedi/Serialization/serialization.h>
+#include <TFE_System/system.h>
 
 namespace TFE_DarkForces
 {
@@ -10,6 +11,16 @@ namespace TFE_DarkForces
 	void random_serialize(Stream* stream)
 	{
 		SERIALIZE(SaveVersionInit, s_seed, 0xf444bb3b);
+	}
+
+	s32 getSeed()
+	{
+		return s_seed;
+	}
+
+	void setSeed(s32 seed)
+	{
+		s_seed = seed; 
 	}
 
 	s32 random_next()
@@ -41,10 +52,10 @@ namespace TFE_DarkForces
 			newValue = mul16(fixed16_16(value), fract16(newValue));
 		}
 		return newValue;
-	}
+	} 
 
 	void random_seed(u32 seed)
 	{
-		s_seed = seed;
+		s_seed = seed;	
 	}
 }  // TFE_DarkForces

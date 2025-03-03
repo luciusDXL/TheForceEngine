@@ -211,7 +211,7 @@ namespace TFE_DarkForces
 		TFE_Console::addToHistory(msgText);
 	}
 
-	void hud_sendTextMessage(const char* msg, s32 priority)
+	void hud_sendTextMessage(const char* msg, s32 priority, bool skipPriority)
 	{
 		// Only display the message if it is the same or lower priority than the current message.
 		if (!msg || priority > s_hudMsgPriority)
@@ -222,7 +222,14 @@ namespace TFE_DarkForces
 		}
 		strCopyAndZero((char*)s_hudMessage, msg, 80);
 
-		s_hudMsgExpireTick = s_curTick + ((priority <= HUD_HIGH_PRIORITY) ? HUD_MSG_LONG_DUR : HUD_MSG_SHORT_DUR);
+		if (skipPriority)
+		{
+			s_hudMsgExpireTick = s_curTick;
+		}
+		else
+		{
+			s_hudMsgExpireTick = s_curTick + ((priority <= HUD_HIGH_PRIORITY) ? HUD_MSG_LONG_DUR : HUD_MSG_SHORT_DUR);
+		}		
 		s_hudCurrentMsgId  = 0;
 		s_hudMsgPriority   = priority;
 
@@ -531,7 +538,6 @@ namespace TFE_DarkForces
 				s_hudCurrentMsgId = 0;
 				s_hudMsgPriority  = HUD_LOWEST_PRIORITY;
 			}
-			// s_screenDirtyLeft[s_curFrameBufferIdx] = JTRUE;
 		}
 
 		if (s_showData && s_playerEye)
@@ -544,7 +550,6 @@ namespace TFE_DarkForces
 			u8 dataStr[64];
 			sprintf((char*)dataStr, "X:%04d Y:%.1f Z:%04d H:%.1f S:%d%%", floor16(x), -fixed16ToFloat(s_playerEye->posWS.y), floor16(z), fixed16ToFloat(s_playerEye->worldHeight), s_secretsPercent);
 			displayHudMessage(s_hudFont, (DrawRect*)vfb_getScreenRect(VFB_RECT_UI), 164 + xOffset, 10, dataStr, framebuffer);
-			// s_screenDirtyRight[s_curFrameBufferIdx] = JTRUE;
 		}
 	}
 

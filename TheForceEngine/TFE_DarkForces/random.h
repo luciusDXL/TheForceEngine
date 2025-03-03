@@ -18,4 +18,6 @@ namespace TFE_DarkForces
 	void random_serialize(Stream* stream);
 
 	void random_seed(u32 seed);
+	s32 getSeed();
+	void setSeed(s32 seed);
 }  // namespace TFE_DarkForces

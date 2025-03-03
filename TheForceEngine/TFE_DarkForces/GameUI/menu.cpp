@@ -17,6 +17,7 @@
 #include <TFE_System/system.h>
 #include <TFE_Jedi/Renderer/virtualFramebuffer.h>
 #include <TFE_Jedi/Renderer/screenDraw.h>
+#include <TFE_Input/replay.h>
 
 using namespace TFE_Jedi;
 
@@ -62,16 +63,31 @@ namespace TFE_DarkForces
 		s32 mx, my;
 		TFE_Input::getMousePos(&mx, &my);
 		s_cursorPosAccum = { 12*mx/10, my };	// Account for 320x200 in 4:3 scaling.
-
-		if (displayInfo.width >= displayInfo.height)
+		
+		// Load the replay PDA positions. 
+		if (TFE_Input::isDemoPlayback())
 		{
-			s_cursorPos.x = clamp(s_cursorPosAccum.x * (s32)height / (s32)displayInfo.height, 0, (s32)width - 3);
-			s_cursorPos.z = clamp(s_cursorPosAccum.z * (s32)height / (s32)displayInfo.height, 0, (s32)height - 3);
+			Vec2i pdap = TFE_Input::getPDAPosition();
+			s_cursorPos = pdap;
 		}
 		else
 		{
-			s_cursorPos.x = clamp(s_cursorPosAccum.x * (s32)width / (s32)displayInfo.width, 0, (s32)width - 3);
-			s_cursorPos.z = clamp(s_cursorPosAccum.z * (s32)width / (s32)displayInfo.width, 0, (s32)height - 3);
+			if (displayInfo.width >= displayInfo.height)
+			{
+				s_cursorPos.x = clamp(s_cursorPosAccum.x * (s32)height / (s32)displayInfo.height, 0, (s32)width - 3);
+				s_cursorPos.z = clamp(s_cursorPosAccum.z * (s32)height / (s32)displayInfo.height, 0, (s32)height - 3);
+			}
+			else
+			{
+				s_cursorPos.x = clamp(s_cursorPosAccum.x * (s32)width / (s32)displayInfo.width, 0, (s32)width - 3);
+				s_cursorPos.z = clamp(s_cursorPosAccum.z * (s32)width / (s32)displayInfo.width, 0, (s32)height - 3);
+			}
+		}
+
+		// Store the PDA positions for replay.
+		if (TFE_Input::isRecording())
+		{
+			TFE_Input::storePDAPosition(s_cursorPos);
 		}
 	}
 

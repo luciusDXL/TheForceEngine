@@ -19,6 +19,7 @@ public:
 		MODE_READ = 0,		//read-only  (will fail if the file doesn't exist)
 		MODE_WRITE,			//write      (will overwrite the file)
 		MODE_READWRITE,		//read-write (will create a new file if it doesn't exist, the file can be read from and written to).
+		MODE_APPEND,		//append mode (will append to a file if it exists).
 		MODE_COUNT,
 		MODE_INVALID = MODE_COUNT
 	};

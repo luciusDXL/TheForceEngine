@@ -123,6 +123,12 @@ namespace TFE_DarkForces
 	extern void weapon_animateOnOrOffscreen(MessageType msg);
 	JBool computeAutoaim(fixed16_16 xPos, fixed16_16 yPos, fixed16_16 zPos, angle14_32 pitch, angle14_32 yaw, s32 variation);
 
+	// Ensure that the weapon is reset to the default states for replays
+	void resetWeaponFunc()
+	{
+		s_weaponFirePitch = 0;
+		s_weaponFireYaw = 0;
+	}
 	
 	// TFE: Set up animation frames from external data (these were hardcoded in vanilla DF)
 	void setupAnimationFrames(WeaponID weaponId, s32 numPrimFrames, TFE_ExternalData::WeaponAnimFrame* extPrimFrames, s32 numSecFrames, TFE_ExternalData::WeaponAnimFrame* extSecFrames)
