@@ -2096,13 +2096,102 @@ namespace LevelEditor
 		return true;
 	}
 
+#define WRITE_TO_BUFFER(...) \
+		sprintf(appendBuffer, __VA_ARGS__); \
+		buffer.append(appendBuffer)
+
+	void writeVariablesToBuffer(const std::vector<EntityVar>& var, std::string& buffer)
+	{
+		char appendBuffer[1024];
+		s32 varCount = (s32)var.size();
+		// Variables.
+		for (s32 v = 0; v < varCount; v++)
+		{
+			const EntityVarDef* def = getEntityVar(var[v].defId);
+			if (strcasecmp(def->name.c_str(), "GenType") == 0)
+			{
+				continue;
+			}
+			switch (def->type)
+			{
+				case EVARTYPE_BOOL:
+				{
+					// If the bool doesn't match the "default" value - then don't write it at all.
+					if (var[v].value.bValue == def->defValue.bValue)
+					{
+						WRITE_TO_BUFFER("      %s: %s\r\n", def->name.c_str(), var[v].value.bValue ? "TRUE" : "FALSE");
+					}
+				} break;
+				case EVARTYPE_FLOAT:
+				{
+					WRITE_TO_BUFFER("      %s: %f\r\n", def->name.c_str(), var[v].value.fValue);
+				} break;
+				case EVARTYPE_INT:
+				case EVARTYPE_FLAGS:
+				{
+					WRITE_TO_BUFFER("      %s: %d\r\n", def->name.c_str(), var[v].value.iValue);
+				} break;
+				case EVARTYPE_STRING_LIST:
+				{
+					WRITE_TO_BUFFER("      %s: \"%s\"\r\n", def->name.c_str(), var[v].value.sValue.c_str());
+				} break;
+				case EVARTYPE_INPUT_STRING_PAIR:
+				{
+					if (!var[v].value.sValue.empty())
+					{
+						WRITE_TO_BUFFER("      %s: %s \"%s\"\r\n", def->name.c_str(), var[v].value.sValue.c_str(), var[v].value.sValue1.c_str());
+					}
+				} break;
+			}
+		}
+	}
+
+	void writeObjSequenceToBuffer(const EditorObject* obj, const Entity* entity, std::string& buffer)
+	{
+		char appendBuffer[256];
+		if (entity->logic.empty() && entity->var.empty()) { return; }
+
+		WRITE_TO_BUFFER("    SEQ\r\n");
+		const s32 logicCount = (s32)entity->logic.size();
+		if (logicCount)
+		{
+			for (s32 l = 0; l < logicCount; l++)
+			{
+				const std::vector<EntityVar>& var = entity->logic[l].var;
+				const s32 varCount = (s32)var.size();
+
+				if (strcasecmp(entity->logic[l].name.c_str(), "generator") == 0)
+				{
+					for (s32 v = 0; v < varCount; v++)
+					{
+						if (strcasecmp(getEntityVarName(var[v].defId), "GenType") == 0)
+						{
+							WRITE_TO_BUFFER("      LOGIC: %s %s\r\n", entity->logic[l].name.c_str(), var[v].value.sValue.c_str());
+							break;
+						}
+					}
+				}
+				else
+				{
+					WRITE_TO_BUFFER("      LOGIC: %s\r\n", entity->logic[l].name.c_str());
+				}
+				// Write logic variables.
+				writeVariablesToBuffer(var, buffer);
+			}
+		}
+		else if (!entity->var.empty())
+		{
+			writeVariablesToBuffer(entity->var, buffer);
+		}
+		WRITE_TO_BUFFER("    SEQEND\r\n");
+	}
+
 	// TODO:
-	//   Object data list.
-	//   Objects.
 	//   INF?
 	bool exportSelectionToText(std::string& buffer)
 	{
 		std::vector<s32> sectorList;
+		char appendBuffer[1024];
 		const s32 count = selection_getCount();
 		if (count == 0)
 		{
@@ -2141,82 +2230,121 @@ namespace LevelEditor
 			}
 		}
 
+		// Gather objects and entities.
+		std::vector<std::string> pods;
+		std::vector<std::string> sprites;
+		std::vector<std::string> frames;
+		std::vector<const EditorObject*> objList;
+		std::vector<s32> objData;
+
+		sectorIndex = sectorList.data();
+		for (s32 s = 0; s < sectorCount; s++)
+		{
+			EditorSector* sector = &s_level.sectors[sectorIndex[s]];
+			const s32 objCount = (s32)sector->obj.size();
+			const EditorObject* obj = sector->obj.data();
+			for (s32 o = 0; o < objCount; o++, obj++)
+			{
+				Entity* entity = &s_level.entities[obj->entityId];
+
+				s32 index = (s32)objList.size();
+				objList.push_back(obj);
+				s32 dataIndex = 0;
+				// TODO: Handle other types.
+				if (entity->type == ETYPE_FRAME || entity->type == ETYPE_SPRITE || entity->type == ETYPE_3D)
+				{
+					dataIndex = addObjAsset(entity->assetName, entity->type == ETYPE_FRAME ? frames : entity->type == ETYPE_SPRITE ? sprites : pods);
+				}
+				objData.push_back(dataIndex);
+			}
+		}
+				
 		// Next add Texture list.
-		char appendBuffer[1024];
 		const s32 textureCount = (s32)textureListIndices.size();
 		if (textureCount > 0)
 		{
-			sprintf(appendBuffer, "TEXTURES %d\r\n", textureCount);
-			buffer.append(appendBuffer);
+			WRITE_TO_BUFFER("TEXTURES %d\r\n", textureCount);
 
 			std::set<s32>::iterator iIndex = textureListIndices.begin();
 			for (; iIndex != textureListIndices.end(); ++iIndex)
 			{
 				const s32 index = *iIndex;
-				sprintf(appendBuffer, "  TEXTURE: %s\r\n", s_level.textures[index].name.c_str());
-				buffer.append(appendBuffer);
+				WRITE_TO_BUFFER("  TEXTURE: %s\r\n", s_level.textures[index].name.c_str());
 			}
+			buffer.append("\r\n");
 		}
-		buffer.append("\r\n");
+		
+		// Add object data list.
+		if (!objList.empty())
+		{
+			const s32 podCount = (s32)pods.size();
+			WRITE_TO_BUFFER("PODS %d\r\n", podCount);
 
-		// Finally write out the sector data.
+			const std::string* pod = pods.data();
+			for (s32 p = 0; p < podCount; p++, pod++)
+			{
+				WRITE_TO_BUFFER("  POD: %s\r\n", pod->c_str());
+			}
+			buffer.append("\r\n");
+
+			const s32 sprCount = (s32)sprites.size();
+			WRITE_TO_BUFFER("SPRS %d\r\n", sprCount);
+
+			const std::string* wax = sprites.data();
+			for (s32 w = 0; w < sprCount; w++, wax++)
+			{
+				WRITE_TO_BUFFER("  SPR: %s\r\n", wax->c_str());
+			}
+			buffer.append("\r\n");
+
+			const s32 fmeCount = (s32)frames.size();
+			WRITE_TO_BUFFER("FMES %d\r\n", fmeCount);
+
+			const std::string* frame = frames.data();
+			for (s32 f = 0; f < fmeCount; f++, frame++)
+			{
+				WRITE_TO_BUFFER("  FME: %s\r\n", frame->c_str());
+			}
+			buffer.append("\r\n");
+		}
+
+		// Write out the sector data.
 		// Note that texture indices will need to be remapped.
 		sectorIndex = sectorList.data();
-		sprintf(appendBuffer, "NUMSECTORS %d\r\n", sectorCount);
-		buffer.append(appendBuffer);
+		WRITE_TO_BUFFER("NUMSECTORS %d\r\n", sectorCount);
 		for (s32 s = 0; s < sectorCount; s++)
 		{
 			EditorSector* sector = &s_level.sectors[sectorIndex[s]];
-			sprintf(appendBuffer, "SECTOR %d\r\n", sector->id);
-			buffer.append(appendBuffer);
-
-			sprintf(appendBuffer, "  NAME %s\r\n", sector->name.c_str());
-			buffer.append(appendBuffer);
-
-			sprintf(appendBuffer, "  AMBIENT %u\r\n", sector->ambient);
-			buffer.append(appendBuffer);
+			WRITE_TO_BUFFER("SECTOR %d\r\n", sector->id);
+			WRITE_TO_BUFFER("  NAME %s\r\n", sector->name.c_str());
+			WRITE_TO_BUFFER("  AMBIENT %u\r\n", sector->ambient);
 
 			std::set<s32>::iterator iTex = textureListIndices.find(sector->floorTex.texIndex);
 			s32 floorIndex = (s32)std::distance(textureListIndices.begin(), iTex);
-			sprintf(appendBuffer, "  FLOOR TEXTURE %d %f %f %d\r\n", floorIndex, sector->floorTex.offset.x, sector->floorTex.offset.z, 0);
-			buffer.append(appendBuffer);
-
-			sprintf(appendBuffer, "  FLOOR ALTITUDE %f\r\n", -sector->floorHeight);
-			buffer.append(appendBuffer);
+			WRITE_TO_BUFFER("  FLOOR TEXTURE %d %f %f %d\r\n", floorIndex, sector->floorTex.offset.x, sector->floorTex.offset.z, 0);
+			WRITE_TO_BUFFER("  FLOOR ALTITUDE %f\r\n", -sector->floorHeight);
 
 			iTex = textureListIndices.find(sector->ceilTex.texIndex);
 			s32 ceilIndex = (s32)std::distance(textureListIndices.begin(), iTex);
-			sprintf(appendBuffer, "  CEILING TEXTURE %d %f %f %d\r\n", ceilIndex, sector->ceilTex.offset.x, sector->ceilTex.offset.z, 0);
-			buffer.append(appendBuffer);
-
-			sprintf(appendBuffer, "  CEILING ALTITUDE %f\r\n", -sector->ceilHeight);
-			buffer.append(appendBuffer);
-
-			sprintf(appendBuffer, "  SECOND ALTITUDE %f\r\n", -sector->secHeight);
-			buffer.append(appendBuffer);
-
-			sprintf(appendBuffer, "  FLAGS %d %d %d\r\n", sector->flags[0], sector->flags[1], sector->flags[2]);
-			buffer.append(appendBuffer);
-
-			sprintf(appendBuffer, "  LAYER %d\r\n", sector->layer);
-			buffer.append(appendBuffer);
+			WRITE_TO_BUFFER("  CEILING TEXTURE %d %f %f %d\r\n", ceilIndex, sector->ceilTex.offset.x, sector->ceilTex.offset.z, 0);
+			WRITE_TO_BUFFER("  CEILING ALTITUDE %f\r\n", -sector->ceilHeight);
+			WRITE_TO_BUFFER("  SECOND ALTITUDE %f\r\n", -sector->secHeight);
+			WRITE_TO_BUFFER("  FLAGS %d %d %d\r\n", sector->flags[0], sector->flags[1], sector->flags[2]);
+			WRITE_TO_BUFFER("  LAYER %d\r\n", sector->layer);
 			buffer.append("\r\n");
 
 			const s32 vtxCount = (s32)sector->vtx.size();
 			const Vec2f* vtx = sector->vtx.data();
-			sprintf(appendBuffer, "  VERTICES %d\r\n", vtxCount);
-			buffer.append(appendBuffer);
+			WRITE_TO_BUFFER("  VERTICES %d\r\n", vtxCount);
 			for (s32 v = 0; v < vtxCount; v++)
 			{
-				sprintf(appendBuffer, "    X: %f Z: %f\r\n", vtx[v].x, vtx[v].z);
-				buffer.append(appendBuffer);
+				WRITE_TO_BUFFER("    X: %f Z: %f\r\n", vtx[v].x, vtx[v].z);
 			}
 			buffer.append("\r\n");
 
 			const s32 wallCount = (s32)sector->walls.size();
 			const EditorWall* wall = sector->walls.data();
-			sprintf(appendBuffer, "  WALLS %d\r\n", wallCount);
-			buffer.append(appendBuffer);
+			WRITE_TO_BUFFER("  WALLS %d\r\n", wallCount);
 			for (s32 w = 0; w < wallCount; w++, wall++)
 			{
 				// Get the texture index.
@@ -2234,17 +2362,64 @@ namespace LevelEditor
 					}
 				}
 
-				sprintf(appendBuffer, "    WALL LEFT: %d RIGHT: %d MID: %d %f %f %d TOP: %d %f %f %d BOT: %d %f %f %d SIGN: %d %f %f ADJOIN: %d MIRROR: %d WALK: %d FLAGS: %d %d %d LIGHT: %d\r\n",
+				WRITE_TO_BUFFER("    WALL LEFT: %d RIGHT: %d MID: %d %f %f %d TOP: %d %f %f %d BOT: %d %f %f %d SIGN: %d %f %f ADJOIN: %d MIRROR: %d WALK: %d FLAGS: %d %d %d LIGHT: %d\r\n",
 					wall->idx[0], wall->idx[1],
 					texIndex[WP_MID], wall->tex[WP_MID].offset.x, wall->tex[WP_MID].offset.z, 0,
 					texIndex[WP_TOP], wall->tex[WP_TOP].offset.x, wall->tex[WP_TOP].offset.z, 0,
 					texIndex[WP_BOT], wall->tex[WP_BOT].offset.x, wall->tex[WP_BOT].offset.z, 0,
 					texIndex[WP_SIGN], wall->tex[WP_SIGN].offset.x, wall->tex[WP_SIGN].offset.z,
 					wall->adjoinId, wall->mirrorId, wall->adjoinId, wall->flags[0], wall->flags[1], wall->flags[2], wall->wallLight);
-				buffer.append(appendBuffer);
 			}
 			buffer.append("\r\n");
 		}
+
+		// Write out the object data.
+		const s32 objectCount = (s32)objList.size();
+		if (objectCount)
+		{
+			WRITE_TO_BUFFER("OBJECTS %d\r\n", objectCount);
+			const f32 radToDeg = 360.0f / (2.0f * PI);
+			for (s32 o = 0; o < objectCount; o++)
+			{
+				const EditorObject* obj = objList[o];
+				const Entity* entity = &s_level.entities[obj->entityId];
+				const f32 objYaw = fmodf(obj->angle * radToDeg, 360.0f);
+				const f32 objPitch = fmodf(obj->pitch * radToDeg, 360.0f);
+				const f32 objRoll = fmodf(obj->roll * radToDeg, 360.0f);
+				const s32 logicCount = (s32)entity->logic.size();
+
+				switch (entity->type)
+				{
+					case ETYPE_SPIRIT:
+					{
+						WRITE_TO_BUFFER("  CLASS: SPIRIT DATA: 0 X: %0.2f Y: %0.2f Z: %0.2f PCH: %0.2f YAW: %0.2f ROL: %0.2f DIFF: %d\r\n", obj->pos.x, -obj->pos.y, obj->pos.z, objPitch, objYaw, objRoll, obj->diff);
+						writeObjSequenceToBuffer(obj, entity, buffer);
+					} break;
+					case ETYPE_SAFE:
+					{
+						WRITE_TO_BUFFER("  CLASS: SAFE DATA: 0 X: %0.2f Y: %0.2f Z: %0.2f PCH: %0.2f YAW: %0.2f ROL: %0.2f DIFF: %d\r\n", obj->pos.x, -obj->pos.y, obj->pos.z, objPitch, objYaw, objRoll, obj->diff);
+						writeObjSequenceToBuffer(obj, entity, buffer);
+					} break;
+					case ETYPE_FRAME:
+					{
+						WRITE_TO_BUFFER("  CLASS: FRAME DATA: %d X: %0.2f Y: %0.2f Z: %0.2f PCH: %0.2f YAW: %0.2f ROL: %0.2f DIFF: %d\r\n", objData[o], obj->pos.x, -obj->pos.y, obj->pos.z, objPitch, objYaw, objRoll, obj->diff);
+						writeObjSequenceToBuffer(obj, entity, buffer);
+					} break;
+					case ETYPE_SPRITE:
+					{
+						WRITE_TO_BUFFER("  CLASS: SPRITE DATA: %d X: %0.2f Y: %0.2f Z: %0.2f PCH: %0.2f YAW: %0.2f ROL: %0.2f DIFF: %d\r\n", objData[o], obj->pos.x, -obj->pos.y, obj->pos.z, objPitch, objYaw, objRoll, obj->diff);
+						writeObjSequenceToBuffer(obj, entity, buffer);
+					} break;
+					case ETYPE_3D:
+					{
+						WRITE_TO_BUFFER("  CLASS: 3D DATA: %d X: %0.2f Y: %0.2f Z: %0.2f PCH: %0.2f YAW: %0.2f ROL: %0.2f DIFF: %d\r\n", objData[o], obj->pos.x, -obj->pos.y, obj->pos.z, objPitch, objYaw, objRoll, obj->diff);
+						writeObjSequenceToBuffer(obj, entity, buffer);
+					} break;
+				}
+			}
+			buffer.append("\r\n");
+		}
+
 		return true;
 	}
 
