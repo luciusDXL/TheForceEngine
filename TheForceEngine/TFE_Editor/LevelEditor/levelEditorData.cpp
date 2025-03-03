@@ -2,6 +2,7 @@
 #include "levelDataSnapshot.h"
 #include "levelEditorHistory.h"
 #include "levelEditor.h"
+#include "editGeometry.h"
 #include "selection.h"
 #include "entity.h"
 #include "error.h"
@@ -49,6 +50,7 @@
 #include <vector>
 #include <string>
 #include <map>
+#include <set>
 
 using namespace TFE_Editor;
 using namespace TFE_Jedi;
@@ -2081,9 +2083,169 @@ namespace LevelEditor
 		return true;
 	}
 
+	bool addFeatureToSectorList(s32 index, std::vector<s32>& sectorList)
+	{
+		EditorSector* sector = nullptr;
+		s32 featureIndex = -1;
+		HitPart part = HP_FLOOR;
+		if (!selection_get(index, sector, featureIndex, &part)) { return false; }
+		if (!sector) { return false; }
+		if (featureIndex != -1 && part != HP_FLOOR && part != HP_CEIL) { return false; }
+
+		insertIntoIntList(sector->id, &sectorList);
+		return true;
+	}
+
+	// TODO:
+	//   Object data list.
+	//   Objects.
+	//   INF?
 	bool exportSelectionToText(std::string& buffer)
 	{
-		return false;
+		std::vector<s32> sectorList;
+		const s32 count = selection_getCount();
+		if (count == 0)
+		{
+			addFeatureToSectorList(SEL_INDEX_HOVERED, sectorList);
+		}
+		else
+		{
+			for (s32 s = 0; s < count; s++)
+			{
+				addFeatureToSectorList(s, sectorList);
+			}
+		}
+		if (sectorList.empty()) { return false; }
+
+		// Gather texture indices.
+		std::set<s32> textureListIndices;
+		const s32 sectorCount = (s32)sectorList.size();
+		const s32* sectorIndex = sectorList.data();
+		for (s32 s = 0; s < sectorCount; s++)
+		{
+			EditorSector* sector = &s_level.sectors[sectorIndex[s]];
+			textureListIndices.insert(sector->floorTex.texIndex);
+			textureListIndices.insert(sector->ceilTex.texIndex);
+
+			const s32 wallCount = (s32)sector->walls.size();
+			const EditorWall* wall = sector->walls.data();
+			for (s32 w = 0; w < wallCount; w++, wall++)
+			{
+				for (s32 t = 0; t < WP_COUNT; t++)
+				{
+					if (wall->tex[t].texIndex >= 0)
+					{
+						textureListIndices.insert(wall->tex[t].texIndex);
+					}
+				}
+			}
+		}
+
+		// Next add Texture list.
+		char appendBuffer[1024];
+		const s32 textureCount = (s32)textureListIndices.size();
+		if (textureCount > 0)
+		{
+			sprintf(appendBuffer, "TEXTURES %d\r\n", textureCount);
+			buffer.append(appendBuffer);
+
+			std::set<s32>::iterator iIndex = textureListIndices.begin();
+			for (; iIndex != textureListIndices.end(); ++iIndex)
+			{
+				const s32 index = *iIndex;
+				sprintf(appendBuffer, "  TEXTURE: %s\r\n", s_level.textures[index].name.c_str());
+				buffer.append(appendBuffer);
+			}
+		}
+		buffer.append("\r\n");
+
+		// Finally write out the sector data.
+		// Note that texture indices will need to be remapped.
+		sectorIndex = sectorList.data();
+		sprintf(appendBuffer, "NUMSECTORS %d\r\n", sectorCount);
+		buffer.append(appendBuffer);
+		for (s32 s = 0; s < sectorCount; s++)
+		{
+			EditorSector* sector = &s_level.sectors[sectorIndex[s]];
+			sprintf(appendBuffer, "SECTOR %d\r\n", sector->id);
+			buffer.append(appendBuffer);
+
+			sprintf(appendBuffer, "  NAME %s\r\n", sector->name.c_str());
+			buffer.append(appendBuffer);
+
+			sprintf(appendBuffer, "  AMBIENT %u\r\n", sector->ambient);
+			buffer.append(appendBuffer);
+
+			std::set<s32>::iterator iTex = textureListIndices.find(sector->floorTex.texIndex);
+			s32 floorIndex = (s32)std::distance(textureListIndices.begin(), iTex);
+			sprintf(appendBuffer, "  FLOOR TEXTURE %d %f %f %d\r\n", floorIndex, sector->floorTex.offset.x, sector->floorTex.offset.z, 0);
+			buffer.append(appendBuffer);
+
+			sprintf(appendBuffer, "  FLOOR ALTITUDE %f\r\n", -sector->floorHeight);
+			buffer.append(appendBuffer);
+
+			iTex = textureListIndices.find(sector->ceilTex.texIndex);
+			s32 ceilIndex = (s32)std::distance(textureListIndices.begin(), iTex);
+			sprintf(appendBuffer, "  CEILING TEXTURE %d %f %f %d\r\n", ceilIndex, sector->ceilTex.offset.x, sector->ceilTex.offset.z, 0);
+			buffer.append(appendBuffer);
+
+			sprintf(appendBuffer, "  CEILING ALTITUDE %f\r\n", -sector->ceilHeight);
+			buffer.append(appendBuffer);
+
+			sprintf(appendBuffer, "  SECOND ALTITUDE %f\r\n", -sector->secHeight);
+			buffer.append(appendBuffer);
+
+			sprintf(appendBuffer, "  FLAGS %d %d %d\r\n", sector->flags[0], sector->flags[1], sector->flags[2]);
+			buffer.append(appendBuffer);
+
+			sprintf(appendBuffer, "  LAYER %d\r\n", sector->layer);
+			buffer.append(appendBuffer);
+			buffer.append("\r\n");
+
+			const s32 vtxCount = (s32)sector->vtx.size();
+			const Vec2f* vtx = sector->vtx.data();
+			sprintf(appendBuffer, "  VERTICES %d\r\n", vtxCount);
+			buffer.append(appendBuffer);
+			for (s32 v = 0; v < vtxCount; v++)
+			{
+				sprintf(appendBuffer, "    X: %f Z: %f\r\n", vtx[v].x, vtx[v].z);
+				buffer.append(appendBuffer);
+			}
+			buffer.append("\r\n");
+
+			const s32 wallCount = (s32)sector->walls.size();
+			const EditorWall* wall = sector->walls.data();
+			sprintf(appendBuffer, "  WALLS %d\r\n", wallCount);
+			buffer.append(appendBuffer);
+			for (s32 w = 0; w < wallCount; w++, wall++)
+			{
+				// Get the texture index.
+				s32 texIndex[WP_COUNT];
+				for (s32 t = 0; t < WP_COUNT; t++)
+				{
+					if (wall->tex[t].texIndex < 0)
+					{
+						texIndex[t] = -1;
+					}
+					else
+					{
+						std::set<s32>::iterator iTex = textureListIndices.find(wall->tex[t].texIndex);
+						texIndex[t] = (s32)std::distance(textureListIndices.begin(), iTex);
+					}
+				}
+
+				sprintf(appendBuffer, "    WALL LEFT: %d RIGHT: %d MID: %d %f %f %d TOP: %d %f %f %d BOT: %d %f %f %d SIGN: %d %f %f ADJOIN: %d MIRROR: %d WALK: %d FLAGS: %d %d %d LIGHT: %d\r\n",
+					wall->idx[0], wall->idx[1],
+					texIndex[WP_MID], wall->tex[WP_MID].offset.x, wall->tex[WP_MID].offset.z, 0,
+					texIndex[WP_TOP], wall->tex[WP_TOP].offset.x, wall->tex[WP_TOP].offset.z, 0,
+					texIndex[WP_BOT], wall->tex[WP_BOT].offset.x, wall->tex[WP_BOT].offset.z, 0,
+					texIndex[WP_SIGN], wall->tex[WP_SIGN].offset.x, wall->tex[WP_SIGN].offset.z,
+					wall->adjoinId, wall->mirrorId, wall->adjoinId, wall->flags[0], wall->flags[1], wall->flags[2], wall->wallLight);
+				buffer.append(appendBuffer);
+			}
+			buffer.append("\r\n");
+		}
+		return true;
 	}
 
 	void parseTexture(const TokenList& tokens, s32 offset, const std::vector<std::string>& textureList, LevelTexture* outTex, s32 defaultTexIndex)
