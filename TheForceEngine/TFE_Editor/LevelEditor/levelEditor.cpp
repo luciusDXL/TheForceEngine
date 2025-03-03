@@ -1535,9 +1535,6 @@ namespace LevelEditor
 				openEditorPopup(POPUP_HISTORY_VIEW);
 			}
 			ImGui::Separator();
-			if (ImGui::MenuItem("Cut", "Ctrl+X", (bool*)NULL))
-			{
-			}
 			if (ImGui::MenuItem("Copy", "Ctrl+C", (bool*)NULL))
 			{
 			}
@@ -2303,11 +2300,6 @@ namespace LevelEditor
 					copySelectionToClipboard();
 					closeMenu = true;
 				}
-				ImGui::MenuItem("Cut (Ctrl+X)", NULL, (bool*)NULL);
-				if (leftClick && mouseInsideItem())
-				{
-					closeMenu = true;
-				}
 				ImGui::MenuItem("Delete (Del)", NULL, (bool*)NULL);
 				if (leftClick && mouseInsideItem())
 				{
@@ -2383,12 +2375,6 @@ namespace LevelEditor
 			}
 			if (copyableItemHoveredOrSelected())
 			{
-				ImGui::MenuItem("Cut", "Ctrl+X", (bool*)NULL);
-				if (leftClick && mouseInsideItem())
-				{
-					// TODO
-					closeMenu = true;
-				}
 				ImGui::MenuItem("Copy", "Ctrl+C", (bool*)NULL);
 				if (leftClick && mouseInsideItem())
 				{
