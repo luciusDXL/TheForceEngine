@@ -2291,39 +2291,47 @@ namespace LevelEditor
 						edit_setAdjoinExcludeList();
 					}
 				}
-
-				ImGui::Separator();
-
-				ImGui::MenuItem("Copy (Ctrl+C)", NULL, (bool*)NULL);
-				if (leftClick && mouseInsideItem())
+				if (hasSolid || hasAdjoin)
 				{
-					copySelectionToClipboard();
-					closeMenu = true;
+					ImGui::Separator();
 				}
+
+				if (type == LEDIT_SECTOR || type == LEDIT_ENTITY)
+				{
+					ImGui::MenuItem("Copy (Ctrl+C)", NULL, (bool*)NULL);
+					if (leftClick && mouseInsideItem())
+					{
+						copySelectionToClipboard();
+						closeMenu = true;
+					}
+
+					ImGui::MenuItem("Duplicate (Ctrl+D)", NULL, (bool*)NULL);
+					if (leftClick && mouseInsideItem())
+					{
+						closeMenu = true;
+					}
+
+					const bool disable = !hasItemsInClipboard();
+					if (disable) { disableNextItem(); }
+						ImGui::MenuItem("Paste (Ctrl+V)", NULL, (bool*)NULL);
+						if (leftClick && mouseInsideItem())
+						{
+							pasteFromClipboard();
+							closeMenu = true;
+						}
+					if (disable) { enableNextItem(); }
+					ImGui::Separator();
+				}
+
 				ImGui::MenuItem("Delete (Del)", NULL, (bool*)NULL);
 				if (leftClick && mouseInsideItem())
 				{
 					closeMenu = true;
 				}
-				ImGui::MenuItem("Duplicate (Ctrl+D)", NULL, (bool*)NULL);
-				if (leftClick && mouseInsideItem())
-				{
-					closeMenu = true;
-				}
-
-				const bool disable = !hasItemsInClipboard();
-				if (disable) { disableNextItem(); }
-					ImGui::MenuItem("Paste (Ctrl+V)", NULL, (bool*)NULL);
-					if (leftClick && mouseInsideItem())
-					{
-						pasteFromClipboard();
-						closeMenu = true;
-					}
-				if (disable) { enableNextItem(); }
 			}
 			else
 			{
-				if (s_editMode == LEDIT_SECTOR)
+				if (s_editMode == LEDIT_SECTOR || s_editMode == LEDIT_ENTITY)
 				{
 					const bool disable = !hasItemsInClipboard();
 					if (disable) { disableNextItem(); }
@@ -2336,75 +2344,7 @@ namespace LevelEditor
 					if (disable) { enableNextItem(); }
 				}
 			}
- 
-			/*
-			EditorSector* curSector = sectorHoveredOrSelected();
-			EditorSector* wallSector = nullptr;
-			s32 curWallId = wallHoveredOrSelected(wallSector);
-			if (curWallId >= 0)
-			{
-				EditorWall* wall = &wallSector->walls[curWallId];
-				if (wall->adjoinId >= 0)
-				{
-					ImGui::MenuItem("Disconnect (Remove Adjoin)", NULL, (bool*)NULL);
-					if (leftClick && mouseInsideItem())
-					{
-						edit_removeAdjoin(wallSector->id, curWallId);
-						closeMenu = true;
-					}
-				}
-				else
-				{
-					ImGui::MenuItem("Connect (Set Adjoin)", NULL, (bool*)NULL);
-					if (leftClick && mouseInsideItem())
-					{
-						edit_tryAdjoin(wallSector->id, curWallId);
-						closeMenu = true;
-					}
-				}
-			}
-			else if (curSector)
-			{
-				ImGui::MenuItem("Add To Current Group", NULL, (bool*)NULL);
-				if (leftClick && mouseInsideItem())
-				{
-					curSector->groupId = groups_getCurrentId();
-					closeMenu = true;
-				}
-				ImGui::Separator();
-			}
-			if (copyableItemHoveredOrSelected())
-			{
-				ImGui::MenuItem("Copy", "Ctrl+C", (bool*)NULL);
-				if (leftClick && mouseInsideItem())
-				{
-					// TODO
-					closeMenu = true;
-				}
-				ImGui::MenuItem("Duplicate", "Ctrl+D", (bool*)NULL);
-				if (leftClick && mouseInsideItem())
-				{
-					// TODO
-					closeMenu = true;
-				}
-			}
-			if (itemHoveredOrSelected())
-			{
-				ImGui::MenuItem("Delete", "Del", (bool*)NULL);
-				if (leftClick && mouseInsideItem())
-				{
-					// TODO
-					closeMenu = true;
-				}
-			}
-			ImGui::MenuItem("Paste", "Ctrl+V", (bool*)NULL);
-			if (leftClick && mouseInsideItem())
-			{
-				// TODO
-				closeMenu = true;
-			}
-			*/
-		}
+ 		}
 		ImGui::End();
 
 		// Close the context menu on left-click, right-click, and menu item selection.

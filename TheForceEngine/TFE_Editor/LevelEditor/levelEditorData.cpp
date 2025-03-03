@@ -2191,20 +2191,49 @@ namespace LevelEditor
 	bool exportSelectionToText(std::string& buffer)
 	{
 		std::vector<s32> sectorList;
+		std::vector<const EditorObject*> objList;
 		char appendBuffer[1024];
 		const s32 count = selection_getCount();
-		if (count == 0)
+		if (s_editMode == LEDIT_ENTITY)
 		{
-			addFeatureToSectorList(SEL_INDEX_HOVERED, sectorList);
+			if (count == 0)
+			{
+				EditorSector* sector = nullptr;
+				s32 featureIndex = -1;
+				if (!selection_get(SEL_INDEX_HOVERED, sector, featureIndex)) { return false; }
+				if (!sector || featureIndex < 0) { return false; }
+
+				objList.push_back(&sector->obj[featureIndex]);
+			}
+			else
+			{
+				EditorSector* sector = nullptr;
+				s32 featureIndex = -1;
+				for (s32 s = 0; s < count; s++)
+				{
+					if (!selection_get(s, sector, featureIndex)) { return false; }
+					if (!sector || featureIndex < 0) { return false; }
+
+					objList.push_back(&sector->obj[featureIndex]);
+				}
+			}
+			if (objList.empty()) { return false; }
 		}
 		else
 		{
-			for (s32 s = 0; s < count; s++)
+			if (count == 0)
 			{
-				addFeatureToSectorList(s, sectorList);
+				addFeatureToSectorList(SEL_INDEX_HOVERED, sectorList);
 			}
+			else
+			{
+				for (s32 s = 0; s < count; s++)
+				{
+					addFeatureToSectorList(s, sectorList);
+				}
+			}
+			if (sectorList.empty()) { return false; }
 		}
-		if (sectorList.empty()) { return false; }
 
 		// Gather texture indices.
 		std::set<s32> textureListIndices;
@@ -2234,21 +2263,14 @@ namespace LevelEditor
 		std::vector<std::string> pods;
 		std::vector<std::string> sprites;
 		std::vector<std::string> frames;
-		std::vector<const EditorObject*> objList;
 		std::vector<s32> objData;
 
-		sectorIndex = sectorList.data();
-		for (s32 s = 0; s < sectorCount; s++)
+		if (s_editMode == LEDIT_ENTITY)
 		{
-			EditorSector* sector = &s_level.sectors[sectorIndex[s]];
-			const s32 objCount = (s32)sector->obj.size();
-			const EditorObject* obj = sector->obj.data();
-			for (s32 o = 0; o < objCount; o++, obj++)
+			const s32 objCount = (s32)objList.size();
+			for (s32 i = 0; i < objCount; i++)
 			{
-				Entity* entity = &s_level.entities[obj->entityId];
-
-				s32 index = (s32)objList.size();
-				objList.push_back(obj);
+				Entity* entity = &s_level.entities[objList[i]->entityId];
 				s32 dataIndex = 0;
 				// TODO: Handle other types.
 				if (entity->type == ETYPE_FRAME || entity->type == ETYPE_SPRITE || entity->type == ETYPE_3D)
@@ -2256,6 +2278,30 @@ namespace LevelEditor
 					dataIndex = addObjAsset(entity->assetName, entity->type == ETYPE_FRAME ? frames : entity->type == ETYPE_SPRITE ? sprites : pods);
 				}
 				objData.push_back(dataIndex);
+			}
+		}
+		else
+		{
+			sectorIndex = sectorList.data();
+			for (s32 s = 0; s < sectorCount; s++)
+			{
+				EditorSector* sector = &s_level.sectors[sectorIndex[s]];
+				const s32 objCount = (s32)sector->obj.size();
+				const EditorObject* obj = sector->obj.data();
+				for (s32 o = 0; o < objCount; o++, obj++)
+				{
+					Entity* entity = &s_level.entities[obj->entityId];
+
+					s32 index = (s32)objList.size();
+					objList.push_back(obj);
+					s32 dataIndex = 0;
+					// TODO: Handle other types.
+					if (entity->type == ETYPE_FRAME || entity->type == ETYPE_SPRITE || entity->type == ETYPE_3D)
+					{
+						dataIndex = addObjAsset(entity->assetName, entity->type == ETYPE_FRAME ? frames : entity->type == ETYPE_SPRITE ? sprites : pods);
+					}
+					objData.push_back(dataIndex);
+				}
 			}
 		}
 				
