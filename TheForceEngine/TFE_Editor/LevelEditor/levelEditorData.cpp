@@ -2460,8 +2460,15 @@ namespace LevelEditor
 		parser.addCommentString("#");
 
 		std::vector<std::string> textureList;
+		std::vector<std::string> podList;
+		std::vector<std::string> spriteList;
+		std::vector<std::string> frameList;
 		std::vector<EditorSector> sectorList;
+		std::vector<EditorObject> objList;
 		EditorSector* curSector = nullptr;
+		EditorObject* curObj = nullptr;
+		EntityLogic* curLogic = nullptr;
+		Entity objEntity = {};
 				
 		size_t bufferPos = 0;
 		const char* line = parser.readLine(bufferPos, true);
@@ -2485,6 +2492,42 @@ namespace LevelEditor
 			{
 				textureList.push_back(tokens[1]);
 			}
+			else if (tokenCount >= 2 && strncasecmp(tokens[0].c_str(), "PODS", strlen("PODS")) == 0)
+			{
+				const s32 count = strtol(tokens[1].c_str(), &endPtr, 10);
+				if (count > 0)
+				{
+					podList.reserve(count);
+				}
+			}
+			else if (tokenCount >= 2 && strncasecmp(tokens[0].c_str(), "POD:", strlen("POD:")) == 0)
+			{
+				podList.push_back(tokens[1]);
+			}
+			else if (tokenCount >= 2 && strncasecmp(tokens[0].c_str(), "SPRS", strlen("SPRS")) == 0)
+			{
+				const s32 count = strtol(tokens[1].c_str(), &endPtr, 10);
+				if (count > 0)
+				{
+					spriteList.reserve(count);
+				}
+			}
+			else if (tokenCount >= 2 && strncasecmp(tokens[0].c_str(), "SPR:", strlen("SPR:")) == 0)
+			{
+				spriteList.push_back(tokens[1]);
+			}
+			else if (tokenCount >= 2 && strncasecmp(tokens[0].c_str(), "FMES", strlen("FMES")) == 0)
+			{
+				const s32 count = strtol(tokens[1].c_str(), &endPtr, 10);
+				if (count > 0)
+				{
+					frameList.reserve(count);
+				}
+			}
+			else if (tokenCount >= 2 && strncasecmp(tokens[0].c_str(), "FME:", strlen("FME:")) == 0)
+			{
+				frameList.push_back(tokens[1]);
+			}
 			else if (tokenCount >= 2 && strncasecmp(tokens[0].c_str(), "NUMSECTORS", strlen("NUMSECTORS")) == 0)
 			{
 				const s32 count = strtol(tokens[1].c_str(), &endPtr, 10);
@@ -2495,9 +2538,156 @@ namespace LevelEditor
 			}
 			else if (tokenCount >= 2 && strncasecmp(tokens[0].c_str(), "SECTOR", strlen("SECTOR")) == 0)
 			{
+				curObj = nullptr;
+
 				sectorList.push_back({});
 				curSector = &sectorList.back();
 				curSector->id = strtol(tokens[1].c_str(), &endPtr, 10);
+			}
+			else if (tokenCount >= 2 && strncasecmp(tokens[0].c_str(), "OBJECTS", strlen("OBJECTS")) == 0)
+			{
+				const s32 count = strtol(tokens[1].c_str(), &endPtr, 10);
+				if (count > 0)
+				{
+					objList.reserve(count);
+				}
+			}
+			else if (tokenCount >= 2 && strncasecmp(tokens[0].c_str(), "CLASS:", strlen("CLASS:")) == 0)
+			{
+				// The previous object had no SEQEND.
+				if (curObj)
+				{
+					// Does this entity exist as a loaded definition? If so, take that name.
+					const s32 editorDefId = getEntityDefId(&objEntity);
+					if (editorDefId >= 0)
+					{
+						objEntity = s_entityDefList[editorDefId];
+					}
+					else
+					{
+						loadSingleEntityData(&objEntity);
+					}
+					curObj->entityId = addEntityToLevel(&objEntity);
+					curObj = nullptr;
+				}
+
+				curSector = nullptr;
+				std::string className = tokens[1];
+				objList.push_back({});
+				curObj = &objList.back();
+
+				const f32 degToRad = (2.0f * PI) / 360.0f;
+
+				s32 dataIndex = 0;
+				for (s32 t = 2; t < tokenCount - 1;)
+				{
+					const char* token = tokens[t].c_str();
+					if (strncasecmp(token, "DATA:", strlen("DATA:")) == 0)
+					{
+						dataIndex = strtol(tokens[t + 1].c_str(), &endPtr, 10);
+						t += 2;
+					}
+					else if (strncasecmp(token, "X:", strlen("X:")) == 0)
+					{
+						curObj->pos.x = strtof(tokens[t + 1].c_str(), &endPtr);
+						t += 2;
+					}
+					else if (strncasecmp(token, "Y:", strlen("Y:")) == 0)
+					{
+						curObj->pos.y = -strtof(tokens[t + 1].c_str(), &endPtr);
+						t += 2;
+					}
+					else if (strncasecmp(token, "Z:", strlen("Z:")) == 0)
+					{
+						curObj->pos.z = strtof(tokens[t + 1].c_str(), &endPtr);
+						t += 2;
+					}
+					else if (strncasecmp(token, "PCH:", strlen("PCH:")) == 0)
+					{
+						curObj->pitch = strtof(tokens[t + 1].c_str(), &endPtr) * degToRad;
+						t += 2;
+					}
+					else if (strncasecmp(token, "YAW:", strlen("YAW:")) == 0)
+					{
+						curObj->angle = strtof(tokens[t + 1].c_str(), &endPtr) * degToRad;
+						t += 2;
+					}
+					else if (strncasecmp(token, "ROL:", strlen("ROL:")) == 0)
+					{
+						curObj->roll = strtof(tokens[t + 1].c_str(), &endPtr) * degToRad;
+						t += 2;
+					}
+					else if (strncasecmp(token, "DIFF:", strlen("DIFF:")) == 0)
+					{
+						curObj->diff = strtol(tokens[t + 1].c_str(), &endPtr, 10);
+						t += 2;
+					}
+					else
+					{
+						t++;
+					}
+				}
+				compute3x3Rotation(&curObj->transform, curObj->angle, curObj->pitch, curObj->roll);
+
+				objEntity = {};
+				objEntity.logic.clear();
+				KEYWORD classType = getKeywordIndex(className.c_str());
+				switch (classType)
+				{
+					case KW_3D:
+					{
+						if (!podList.empty())
+						{
+							objEntity.type = ETYPE_3D;
+							objEntity.assetName = podList[dataIndex];
+
+							char name[256];
+							entityNameFromAssetName(objEntity.assetName.c_str(), name);
+							objEntity.name = name;
+						}
+					} break;
+					case KW_SPRITE:
+					{
+						if (!spriteList.empty())
+						{
+							objEntity.type = ETYPE_SPRITE;
+							objEntity.assetName = spriteList[dataIndex];
+
+							char name[256];
+							entityNameFromAssetName(objEntity.assetName.c_str(), name);
+							objEntity.name = name;
+						}
+					} break;
+					case KW_FRAME:
+					{
+						if (!frameList.empty())
+						{
+							objEntity.type = ETYPE_FRAME;
+							objEntity.assetName = frameList[dataIndex];
+
+							char name[256];
+							entityNameFromAssetName(objEntity.assetName.c_str(), name);
+							objEntity.name = name;
+						}
+					} break;
+					case KW_SPIRIT:
+					{
+						objEntity.name = "Spirit";
+						objEntity.type = ETYPE_SPIRIT;
+						objEntity.assetName = "SpiritObject.png";
+					} break;
+					case KW_SOUND:
+					{
+						//objEntity.type = ETYPE_SOUND;
+						//objEntity.assetName = "SpiritObject.png";
+					} break;
+					case KW_SAFE:
+					{
+						objEntity.name = "Safe";
+						objEntity.type = ETYPE_SAFE;
+						objEntity.assetName = "SafeObject.png";
+					} break;
+				}
 			}
 			else if (curSector)
 			{
@@ -2636,8 +2826,136 @@ namespace LevelEditor
 					curSector->walls.push_back(wall);
 				}
 			}
+			else if (curObj)
+			{
+				if (tokenCount >= 1 && strncasecmp(tokens[0].c_str(), "SEQEND", strlen("SEQEND")) == 0)
+				{
+					// Does this entity exist as a loaded definition? If so, take that name.
+					const s32 editorDefId = getEntityDefId(&objEntity);
+					if (editorDefId >= 0)
+					{
+						objEntity = s_entityDefList[editorDefId];
+					}
+					else
+					{
+						loadSingleEntityData(&objEntity);
+					}
+					curObj->entityId = addEntityToLevel(&objEntity);
+					curObj = nullptr;
+					curLogic = nullptr;
+				}
+				else if (tokenCount >= 1 && strncasecmp(tokens[0].c_str(), "SEQ", strlen("SEQ")) == 0)
+				{
+					// Start the sequence.
+					curLogic = nullptr;
+				}
+				else if (tokenCount >= 2 && (strncasecmp(tokens[0].c_str(), "LOGIC:", strlen("LOGIC:")) == 0 || strncasecmp(tokens[0].c_str(), "TYPE:", strlen("TYPE:")) == 0))
+				{
+					objEntity.logic.push_back({});
+					curLogic = &objEntity.logic.back();
+
+					KEYWORD logicId = getKeywordIndex(tokens[1].c_str());
+					if (logicId == KW_PLAYER)  // Player Logic.
+					{
+						curLogic->name = s_logicDefList[0].name;
+						objEntity.assetName = "PlayerStart.png";
+					}
+					else if (logicId == KW_ANIM)	// Animated Sprites Logic.
+					{
+						curLogic->name = s_logicDefList[1].name;
+					}
+					else if (logicId == KW_UPDATE)	// "Update" logic is usually used for rotating 3D objects, like the Death Star.
+					{
+						curLogic->name = s_logicDefList[2].name;
+					}
+					else if (logicId >= KW_TROOP && logicId <= KW_SCENERY)	// Enemies, explosives barrels, land mines, and scenery.
+					{
+						curLogic->name = s_logicDefList[3 + logicId - KW_TROOP].name;
+					}
+					else if (logicId == KW_KEY)         // Vue animation logic.
+					{
+						curLogic->name = "Key"; // 38
+					}
+					else if (logicId == KW_GENERATOR && tokenCount >= 3)	// Enemy generator, used for in-level enemy spawning.
+					{
+						curLogic->name = "Generator"; // 39
+						objEntity.name = "Generator";
+						objEntity.assetName = "STORMFIN.WAX";
+						// Add a variable for the type.
+						EntityVar genType;
+						genType.defId = getVariableId("GenType");
+						genType.value.sValue = tokens[2];
+						curLogic->var.push_back(genType);
+					}
+					else if (logicId == KW_DISPATCH)
+					{
+						curLogic->name = "Dispatch"; // 40
+					}
+					else if (logicId == KW_ITEM && tokenCount >= 3)
+					{
+						// Item LogicName
+						curLogic->name = tokens[2];
+					}
+					else  // Everything else.
+					{
+						curLogic->name = tokens[1];
+					}
+				}
+				else if (tokenCount >= 2)
+				{
+					char varName[256];
+					strcpy(varName, tokens[0].c_str());
+					s32 len = (s32)strlen(varName);
+					while (varName[len - 1] == ':')
+					{
+						varName[len - 1] = 0;
+						len--;
+					}
+
+					const s32 varId = getVariableId(varName);
+					if (varId >= 0)
+					{
+						const EntityVarDef* def = getEntityVar(varId);
+						EntityVar* var = nullptr;
+						if (curLogic)
+						{
+							curLogic->var.push_back({});
+							var = &curLogic->var.back();
+						}
+						else
+						{
+							objEntity.var.push_back({});
+							var = &objEntity.var.back();
+						}
+						var->defId = varId;
+
+						TokenList varTokens;
+						varTokens.push_back(varName);
+						varTokens.push_back(tokens[1]);
+						if (tokenCount >= 3) { varTokens.push_back(tokens[2]); }
+						parseValue(varTokens, def->type, &var->value);
+					}
+				}
+			}
 
 			line = parser.readLine(bufferPos);
+		}
+
+		// Final object?
+		if (curObj)
+		{
+			// Does this entity exist as a loaded definition? If so, take that name.
+			const s32 editorDefId = getEntityDefId(&objEntity);
+			if (editorDefId >= 0)
+			{
+				objEntity = s_entityDefList[editorDefId];
+			}
+			else
+			{
+				loadSingleEntityData(&objEntity);
+			}
+			curObj->entityId = addEntityToLevel(&objEntity);
+			curObj = nullptr;
 		}
 
 		// Parse the results.
@@ -2686,20 +3004,41 @@ namespace LevelEditor
 		}
 
 		// 3. Move sectors so they are centered on the mouse position.
+		const s32 objCount = (s32)objList.size();
 		sector = sectorList.data();
 		Vec2f bounds[2] = { {FLT_MAX, FLT_MAX}, {-FLT_MAX, -FLT_MAX} };
-		for (s32 s = 0; s < sectorCount; s++, sector++)
+		if (sectorCount > 0)
 		{
-			const s32 vtxCount = (s32)sector->vtx.size();
-			const Vec2f* vtx = sector->vtx.data();
-			for (s32 v = 0; v < vtxCount; v++, vtx++)
+			for (s32 s = 0; s < sectorCount; s++, sector++)
 			{
-				bounds[0].x = std::min(bounds[0].x, vtx->x);
-				bounds[0].z = std::min(bounds[0].z, vtx->z);
+				const s32 vtxCount = (s32)sector->vtx.size();
+				const Vec2f* vtx = sector->vtx.data();
+				for (s32 v = 0; v < vtxCount; v++, vtx++)
+				{
+					bounds[0].x = std::min(bounds[0].x, vtx->x);
+					bounds[0].z = std::min(bounds[0].z, vtx->z);
 
-				bounds[1].x = std::max(bounds[1].x, vtx->x);
-				bounds[1].z = std::max(bounds[1].z, vtx->z);
+					bounds[1].x = std::max(bounds[1].x, vtx->x);
+					bounds[1].z = std::max(bounds[1].z, vtx->z);
+				}
 			}
+		}
+		else if (objCount > 0)
+		{
+			EditorObject* obj = objList.data();
+			for (s32 s = 0; s < objCount; s++, obj++)
+			{
+				bounds[0].x = std::min(bounds[0].x, obj->pos.x);
+				bounds[0].z = std::min(bounds[0].z, obj->pos.z);
+
+				bounds[1].x = std::max(bounds[1].x, obj->pos.x);
+				bounds[1].z = std::max(bounds[1].z, obj->pos.z);
+			}
+		}
+		else
+		{
+			bounds[0] = { 0 };
+			bounds[1] = { 0 };
 		}
 		// Snap to grid.
 		Vec2f center = { (bounds[0].x + bounds[1].x) * 0.5f, (bounds[0].z + bounds[1].z) * 0.5f };
@@ -2728,19 +3067,43 @@ namespace LevelEditor
 		selection_clear();
 		selection_clearHovered();
 
-		sector = sectorList.data();
-		for (s32 s = 0; s < sectorCount; s++, sector++)
+		if (s_editMode == LEDIT_WALL || s_editMode == LEDIT_SECTOR)
 		{
-			s_level.sectors.push_back(*sector);
-			selection_action(SA_ADD, sector);
+			sector = sectorList.data();
+			for (s32 s = 0; s < sectorCount; s++, sector++)
+			{
+				s_level.sectors.push_back(*sector);
+				selection_action(SA_ADD, sector);
+			}
 		}
 
+		// 5. Add objects.
+		s32 validObjCount = 0;
+		EditorObject* obj = objList.data();
+		for (s32 i = 0; i < objCount; i++, obj++)
+		{
+			obj->pos.x += offset.x;
+			obj->pos.y += offset.y;
+			obj->pos.z += offset.z;
+
+			EditorSector* sector = findSectorDf(obj->pos);
+			if (sector)
+			{
+				sector->obj.push_back(*obj);
+				validObjCount++;
+
+				if (s_editMode == LEDIT_ENTITY)
+				{
+					selection_action(SA_ADD, sector, (s32)sector->obj.size() - 1);
+				}
+			}
+		}
+				
 		// Create a snapshot.
-		if (sectorCount)
+		if (sectorCount || validObjCount)
 		{
 			levHistory_createSnapshot("Paste");
 		}
-
 		return true;
 	}
 
