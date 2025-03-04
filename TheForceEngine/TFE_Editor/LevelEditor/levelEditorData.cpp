@@ -3056,7 +3056,7 @@ namespace LevelEditor
 		Vec3f offset = { 0 };
 		if (centerOnMouse)
 		{
-			Vec2f bounds[2] = { {FLT_MAX, FLT_MAX}, {-FLT_MAX, -FLT_MAX} };
+			Vec3f bounds[2] = { {FLT_MAX, FLT_MAX, FLT_MAX}, {-FLT_MAX, -FLT_MAX, -FLT_MAX} };
 			if (sectorCount > 0)
 			{
 				for (s32 s = 0; s < sectorCount; s++, sector++)
@@ -3071,6 +3071,8 @@ namespace LevelEditor
 						bounds[1].x = std::max(bounds[1].x, vtx->x);
 						bounds[1].z = std::max(bounds[1].z, vtx->z);
 					}
+					bounds[0].y = std::min(bounds[0].y, sector->floorHeight);
+					bounds[1].y = std::max(bounds[1].y, sector->ceilHeight);
 				}
 			}
 			else if (objCount > 0)
@@ -3083,6 +3085,9 @@ namespace LevelEditor
 
 					bounds[1].x = std::max(bounds[1].x, obj->pos.x);
 					bounds[1].z = std::max(bounds[1].z, obj->pos.z);
+
+					bounds[0].y = std::min(bounds[0].y, obj->pos.y);
+					bounds[1].y = std::max(bounds[1].y, obj->pos.y);
 				}
 			}
 			else
@@ -3091,9 +3096,11 @@ namespace LevelEditor
 				bounds[1] = { 0 };
 			}
 
-			Vec2f center = { (bounds[0].x + bounds[1].x) * 0.5f, (bounds[0].z + bounds[1].z) * 0.5f };
+			Vec3f center = { (bounds[0].x + bounds[1].x) * 0.5f, bounds[0].y, (bounds[0].z + bounds[1].z) * 0.5f };
 			snapToGrid(&center);
-			offset = { s_cursor3d.x - center.x, s_grid.height, s_cursor3d.z - center.z };
+
+			f32 yBase = s_view == EDIT_VIEW_3D ? s_cursor3d.y : s_grid.height;
+			offset = { s_cursor3d.x - center.x, yBase - center.y, s_cursor3d.z - center.z };
 		}
 		// Snap to grid.
 		sector = sectorList.data();
