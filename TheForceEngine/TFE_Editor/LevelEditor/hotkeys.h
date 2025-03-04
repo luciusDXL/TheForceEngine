@@ -16,17 +16,21 @@ namespace LevelEditor
 	// Entity
 	enum EditorActionFlag
 	{
-		ACTION_NONE = 0,
-		ACTION_PLACE = FLAG_BIT(0),
-		ACTION_MOVE_X = FLAG_BIT(1),
-		ACTION_MOVE_Y = FLAG_BIT(2),
-		ACTION_MOVE_Z = FLAG_BIT(3),
-		ACTION_DELETE = FLAG_BIT(4),
-		ACTION_ROTATE = FLAG_BIT(5),
+		ACTION_NONE = 0ull,
+		ACTION_PLACE = FLAG_BIT64(0),
+		ACTION_MOVE_X = FLAG_BIT64(1),
+		ACTION_MOVE_Y = FLAG_BIT64(2),
+		ACTION_MOVE_Z = FLAG_BIT64(3),
+		ACTION_DELETE = FLAG_BIT64(4),
+		ACTION_COPY   = FLAG_BIT64(5),
+		ACTION_PASTE  = FLAG_BIT64(6),
+		ACTION_ROTATE = FLAG_BIT64(7),
 
-		ACTION_UNDO = FLAG_BIT(6),
-		ACTION_REDO = FLAG_BIT(7),
-		ACTION_SHOW_ALL_LABELS = FLAG_BIT(8),
+		ACTION_UNDO = FLAG_BIT64(8),
+		ACTION_REDO = FLAG_BIT64(9),
+		ACTION_SHOW_ALL_LABELS = FLAG_BIT64(10),
+
+		ACTION_UNDEFINED = ~0x0ull
 	};
 
 	// Draw
@@ -49,10 +53,10 @@ namespace LevelEditor
 	extern Vec2i s_rightMousePos;
 
 	// Editor Hotkey Actions.
-	extern u32 s_editActions;
+	extern u64 s_editActions;
 	extern u32 s_drawActions;
 	extern s32 s_rotationDelta;
 
 	void handleHotkeys();
-	bool getEditAction(u32 action);
+	bool getEditAction(u64 action);
 }

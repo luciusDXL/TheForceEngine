@@ -2536,7 +2536,7 @@ namespace LevelEditor
 		}
 		toolbarEnd();
 		const bool modalRelease = !s_modalUiActive && prevModal;
-
+				
 		// Info Panel
 		drawInfoPanel(s_view);
 
@@ -2708,6 +2708,16 @@ namespace LevelEditor
 							ImGui::PopStyleColor();
 						}
 					}
+				}
+
+				// Copy/Paste
+				if (getEditAction(ACTION_COPY))
+				{
+					copySelectionToClipboard();
+				}
+				else if (getEditAction(ACTION_PASTE))
+				{
+					pasteFromClipboard();
 				}
 			}
 		}

@@ -112,8 +112,8 @@ namespace LevelEditor
 		const bool selToggle = TFE_Input::keyModDown(KEYMOD_CTRL);
 		const bool selToggleDrag = selAdd && selToggle;
 
-		const bool moveToFloor = TFE_Input::keyPressed(KEY_F);
-		const bool moveToCeil  = TFE_Input::keyPressed(KEY_C);
+		const bool moveToFloor = TFE_Input::keyPressed(KEY_F) && !selToggle;
+		const bool moveToCeil  = TFE_Input::keyPressed(KEY_C) && !selToggle;
 
 		const bool mousePressed = s_singleClick;
 		const bool mouseDown = TFE_Input::mouseDown(MouseButton::MBUTTON_LEFT);

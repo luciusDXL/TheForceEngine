@@ -26,7 +26,7 @@ namespace LevelEditor
 	Vec2i s_rightMousePos = { 0 };
 
 	// Entity
-	u32 s_editActions = ACTION_NONE;
+	u64 s_editActions = ACTION_NONE;
 	u32 s_drawActions = DRAW_ACTION_NONE;
 	s32 s_rotationDelta = 0;
 
@@ -165,7 +165,7 @@ namespace LevelEditor
 		}
 	}
 
-	bool getEditAction(u32 action)
+	bool getEditAction(u64 action)
 	{
 		return (s_editActions & action) != 0u;
 	}
@@ -189,6 +189,19 @@ namespace LevelEditor
 			if (s_editMode == LEDIT_GUIDELINES)
 			{
 				updateGuidelineHotkeys();
+			}
+		}
+
+		// Copy and Paste.
+		if (s_editMode == LEDIT_ENTITY || s_editMode == LEDIT_WALL || s_editMode == LEDIT_SECTOR)
+		{
+			if (TFE_Input::keyPressed(KEY_C) && TFE_Input::keyModDown(KEYMOD_CTRL))
+			{
+				s_editActions = ACTION_COPY;
+			}
+			else if (TFE_Input::keyPressed(KEY_V) && TFE_Input::keyModDown(KEYMOD_CTRL))
+			{
+				s_editActions = ACTION_PASTE;
 			}
 		}
 	}

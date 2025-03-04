@@ -110,6 +110,7 @@ namespace LevelEditor
 	};
 	
 	EditorSector* findSectorDf(const Vec3f pos);
+	EditorSector* findSectorDf(const Vec2f pos);
 
 	AssetHandle loadTexture(const char* bmTextureName)
 	{
@@ -3138,8 +3139,35 @@ namespace LevelEditor
 			obj->pos.z += offset.z;
 
 			EditorSector* sector = findSectorDf(obj->pos);
+			if (!sector)
+			{
+				obj->pos.y = s_view == EDIT_VIEW_3D ? s_cursor3d.y : s_grid.height;
+				sector = findSectorDf(obj->pos);
+			}
+			if (!sector)
+			{
+				const Vec2f pos = { obj->pos.x, obj->pos.z };
+				sector = findSectorDf(pos);
+				if (sector)
+				{
+					obj->pos.y = sector->floorHeight;
+				}
+			}
+
 			if (sector)
 			{
+				if (s_editMode == LEDIT_ENTITY)
+				{
+					if (s_view == EDIT_VIEW_3D)
+					{
+						obj->pos.y = s_cursor3d.y;
+					}
+					else
+					{
+						obj->pos.y = sector->floorHeight;
+					}
+				}
+
 				sector->obj.push_back(*obj);
 				validObjCount++;
 
@@ -4723,6 +4751,41 @@ namespace LevelEditor
 						prevSectorUnitArea = sectorUnitArea;
 						foundSector = sector;
 					}
+				}
+			}
+		}
+
+		return foundSector;
+	}
+
+	// Find a sector based on DF rules.
+	EditorSector* findSectorDf(const Vec2f pos)
+	{
+		const s32 count = (s32)s_level.sectors.size();
+		EditorSector* sector = s_level.sectors.data();
+		EditorSector* foundSector = nullptr;
+		s32 sectorUnitArea = 0;
+		s32 prevSectorUnitArea = INT_MAX;
+
+		for (s32 i = 0; i < count; i++, sector++)
+		{
+			const f32 sectorMaxX = sector->bounds[1].x;
+			const f32 sectorMinX = sector->bounds[0].x;
+			const f32 sectorMaxZ = sector->bounds[1].z;
+			const f32 sectorMinZ = sector->bounds[0].z;
+
+			const s32 dxInt = (s32)floorf(sectorMaxX - sectorMinX) + 1;
+			const s32 dzInt = (s32)floorf(sectorMaxZ - sectorMinZ) + 1;
+			sectorUnitArea = dzInt * dxInt;
+
+			s32 insideBounds = 0;
+			if (pos.x >= sectorMinX && pos.x <= sectorMaxX && pos.z >= sectorMinZ && pos.z <= sectorMaxZ)
+			{
+				// pick the containing sector with the smallest area.
+				if (sectorUnitArea < prevSectorUnitArea && TFE_Polygon::pointInsidePolygon(&sector->poly, { pos.x, pos.z }))
+				{
+					prevSectorUnitArea = sectorUnitArea;
+					foundSector = sector;
 				}
 			}
 		}
