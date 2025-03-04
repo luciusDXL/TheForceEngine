@@ -1697,6 +1697,113 @@ namespace LevelEditor
 		selection_clearHovered();
 	}
 
+	void selectAll()
+	{
+		selectNone();
+		const s32 sectorCount = (s32)s_level.sectors.size();
+		EditorSector* sector = s_level.sectors.data();
+		for (s32 s = 0; s < sectorCount; s++, sector++)
+		{
+			if (!sector_isInteractable(sector) || !sector_onActiveLayer(sector)) { continue; }
+
+			if (s_editMode == LEDIT_VERTEX)
+			{
+				const s32 vtxCount = (s32)sector->vtx.size();
+				for (s32 v = 0; v < vtxCount; v++)
+				{
+					selection_action(SA_ADD, sector, v);
+				}
+			}
+			else if (s_editMode == LEDIT_WALL)
+			{
+				const s32 wallCount = (s32)sector->walls.size();
+				for (s32 w = 0; w < wallCount; w++)
+				{
+					selection_action(SA_ADD, sector, w, HP_MID);
+				}
+			}
+			else if (s_editMode == LEDIT_SECTOR)
+			{
+				selection_action(SA_ADD, sector);
+			}
+			else if (s_editMode == LEDIT_ENTITY)
+			{
+				const s32 objCount = (s32)sector->obj.size();
+				for (s32 i = 0; i < objCount; i++)
+				{
+					selection_action(SA_ADD, sector, i);
+				}
+			}
+		}
+	}
+
+	void selectInvert()
+	{
+		const s32 sectorCount = (s32)s_level.sectors.size();
+		EditorSector* sector = s_level.sectors.data();
+		for (s32 s = 0; s < sectorCount; s++, sector++)
+		{
+			if (!sector_isInteractable(sector) || !sector_onActiveLayer(sector)) { continue; }
+
+			if (s_editMode == LEDIT_VERTEX)
+			{
+				const s32 vtxCount = (s32)sector->vtx.size();
+				for (s32 v = 0; v < vtxCount; v++)
+				{
+					if (selection_action(SA_CHECK_INCLUSION, sector, v))
+					{
+						selection_action(SA_REMOVE, sector, v);
+					}
+					else
+					{
+						selection_action(SA_ADD, sector, v);
+					}
+				}
+			}
+			else if (s_editMode == LEDIT_WALL)
+			{
+				const s32 wallCount = (s32)sector->walls.size();
+				for (s32 w = 0; w < wallCount; w++)
+				{
+					if (selection_action(SA_CHECK_INCLUSION, sector, w, HP_MID))
+					{
+						selection_action(SA_REMOVE, sector, w, HP_MID);
+					}
+					else
+					{
+						selection_action(SA_ADD, sector, w, HP_MID);
+					}
+				}
+			}
+			else if (s_editMode == LEDIT_SECTOR)
+			{
+				if (selection_action(SA_CHECK_INCLUSION, sector))
+				{
+					selection_action(SA_REMOVE, sector);
+				}
+				else
+				{
+					selection_action(SA_ADD, sector);
+				}
+			}
+			else if (s_editMode == LEDIT_ENTITY)
+			{
+				const s32 objCount = (s32)sector->obj.size();
+				for (s32 i = 0; i < objCount; i++)
+				{
+					if (selection_action(SA_CHECK_INCLUSION, sector, i))
+					{
+						selection_action(SA_REMOVE, sector, i);
+					}
+					else
+					{
+						selection_action(SA_ADD, sector, i);
+					}
+				}
+			}
+		}
+	}
+
 	s32 getSectorNameLimit()
 	{
 		return c_vanillaDarkForcesNameLimit;

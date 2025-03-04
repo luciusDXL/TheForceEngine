@@ -64,6 +64,8 @@ namespace LevelEditor
 	bool testOptions();
 
 	void selectNone();
+	void selectAll();
+	void selectInvert();
 	s32 getSectorNameLimit();
 
 	void setSelectMode(SelectMode mode = SELECTMODE_NONE);

@@ -646,6 +646,13 @@ namespace TFE_Editor
 					{
 						AssetBrowser::selectAll();
 					}
+					else if (s_editorMode == EDIT_ASSET)
+					{
+						if (s_editorAssetType == TYPE_LEVEL)
+						{
+							LevelEditor::selectAll();
+						}
+					}
 				}
 				if (ImGui::MenuItem("Select None", NULL, (bool*)NULL))
 				{
@@ -666,6 +673,13 @@ namespace TFE_Editor
 					if (s_editorMode == EDIT_ASSET_BROWSER)
 					{
 						AssetBrowser::invertSelection();
+					}
+					else if (s_editorMode == EDIT_ASSET)
+					{
+						if (s_editorAssetType == TYPE_LEVEL)
+						{
+							LevelEditor::selectInvert();
+						}
 					}
 				}
 				ImGui::EndMenu();
