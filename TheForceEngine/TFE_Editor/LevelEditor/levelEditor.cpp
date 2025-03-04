@@ -343,7 +343,7 @@ namespace LevelEditor
 		resetGrid();
 
 		levHistory_init();
-		levHistory_createSnapshot("Imported Level");
+		levHistory_createSnapshot("Loaded Level");
 
 		infoPanelClearFeatures();
 		TFE_RenderShared::init(false);
