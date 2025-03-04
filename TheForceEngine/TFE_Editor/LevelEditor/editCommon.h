@@ -29,4 +29,5 @@ namespace LevelEditor
 	extern Vec3f s_rayDir;
 
 	void handleFeatureEditInput(Vec2f worldPos, RayHitInfo* info = nullptr);
+	void handleDelete(bool hasFeature);
 }
