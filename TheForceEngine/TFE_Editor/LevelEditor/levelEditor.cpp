@@ -196,6 +196,8 @@ namespace LevelEditor
 	bool hasItemsInClipboard();
 	void copySelectionToClipboard();
 	void pasteFromClipboard(bool centerOnMouse = true);
+	bool canCopy();
+	bool canPaste();
 
 	void handleSelectMode(Vec3f pos);
 	void handleSelectMode(EditorSector* sector, s32 wallIndex);
@@ -1534,16 +1536,6 @@ namespace LevelEditor
 			{
 				openEditorPopup(POPUP_HISTORY_VIEW);
 			}
-			ImGui::Separator();
-			if (ImGui::MenuItem("Copy", "Ctrl+C", (bool*)NULL))
-			{
-			}
-			if (ImGui::MenuItem("Paste", "Ctrl+V", (bool*)NULL))
-			{
-			}
-			if (ImGui::MenuItem("Delete", "Del", (bool*)NULL))
-			{
-			}
 			ImGui::EndMenu();
 		}
 		if (ImGui::BeginMenu("Tools"))
@@ -2295,26 +2287,27 @@ namespace LevelEditor
 
 				if (type == LEDIT_SECTOR || type == LEDIT_ENTITY)
 				{
-					ImGui::MenuItem("Copy (Ctrl+C)", NULL, (bool*)NULL);
-					if (leftClick && mouseInsideItem())
-					{
-						copySelectionToClipboard();
-						closeMenu = true;
-					}
+					if (!canCopy()) { disableNextItem(); }
+						ImGui::MenuItem("Copy", "Ctrl+C", (bool*)NULL);
+						if (leftClick && mouseInsideItem())
+						{
+							copySelectionToClipboard();
+							closeMenu = true;
+						}
+					if (!canCopy()) { enableNextItem(); }
 
-					const bool disable = !hasItemsInClipboard();
-					if (disable) { disableNextItem(); }
-						ImGui::MenuItem("Paste (Ctrl+V)", NULL, (bool*)NULL);
+					if (!canPaste()) { disableNextItem(); }
+						ImGui::MenuItem("Paste", "Ctrl+V", (bool*)NULL);
 						if (leftClick && mouseInsideItem())
 						{
 							pasteFromClipboard();
 							closeMenu = true;
 						}
-					if (disable) { enableNextItem(); }
+					if (!canPaste()) { enableNextItem(); }
 					ImGui::Separator();
 				}
 
-				ImGui::MenuItem("Delete (Del)", NULL, (bool*)NULL);
+				ImGui::MenuItem("Delete", "Del", (bool*)NULL);
 				if (leftClick && mouseInsideItem())
 				{
 					closeMenu = true;
@@ -2711,11 +2704,11 @@ namespace LevelEditor
 				}
 
 				// Copy/Paste
-				if (getEditAction(ACTION_COPY))
+				if (getEditAction(ACTION_COPY) && canCopy())
 				{
 					copySelectionToClipboard();
 				}
-				else if (getEditAction(ACTION_PASTE))
+				else if (getEditAction(ACTION_PASTE) && canPaste())
 				{
 					pasteFromClipboard();
 				}
@@ -3682,6 +3675,36 @@ namespace LevelEditor
 
 		// Refine to check if it matches the format.
 		return true;
+	}
+		
+	bool canCopy()
+	{
+		if (s_editMode == LEDIT_ENTITY || s_editMode == LEDIT_SECTOR)
+		{
+			return selection_hasHovered();
+		}
+		else if (s_editMode == LEDIT_WALL)
+		{
+			if (selection_hasHovered())
+			{
+				EditorSector* curSector = nullptr;
+				s32 curWallIndex = -1;
+				HitPart curPart;
+				selection_get(SEL_INDEX_HOVERED, curSector, curWallIndex, &curPart);
+				if (curPart == HP_FLOOR || curPart == HP_CEIL)
+				{
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+
+	bool canPaste()
+	{
+		if (!hasItemsInClipboard()) { return false; }
+		if (s_editMode == LEDIT_ENTITY || s_editMode == LEDIT_SECTOR) { return true; }
+		return false;
 	}
 		
 	void copySelectionToClipboard()
