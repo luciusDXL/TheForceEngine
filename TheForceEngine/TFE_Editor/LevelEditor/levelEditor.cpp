@@ -1559,10 +1559,13 @@ namespace LevelEditor
 			{
 				openEditorPopup(POPUP_FIND_SECTOR);
 			}
+			disableNextItem();
 			if (ImGui::MenuItem("Find/Replace Texture", NULL, (bool*)NULL))
 			{
 				// TODO
+				// Disable for the Alpha release.
 			}
+			enableNextItem();
 			ImGui::EndMenu();
 		}
 		if (ImGui::BeginMenu("Grid"))
