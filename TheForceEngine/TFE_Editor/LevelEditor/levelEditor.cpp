@@ -738,7 +738,7 @@ namespace LevelEditor
 		return -1;
 	}
 
-	void edit_cleanSectorList(const std::vector<s32>& selectedSectors)
+	void edit_cleanSectorList(std::vector<s32>& selectedSectors)
 	{
 		// Re-check to make sure we have at least one sector.
 		const s32 sectorCount = (s32)selectedSectors.size();
@@ -862,32 +862,46 @@ namespace LevelEditor
 			}
 			sectorToPolygon(sector);
 		}
+
+		cmd_sectorSnapshot(LName_CleanSectors, selectedSectors);
 	}
 
-	void edit_cleanSectors()
+	void edit_cleanSectors(bool onlySelected)
 	{
-		// We must be in the wall (in 3D) or sector mode.
-		bool canSelectSectors = (s_editMode == LEDIT_WALL && s_view == EDIT_VIEW_3D) || s_editMode == LEDIT_SECTOR;
-		if (!canSelectSectors)
-		{
-			LE_WARNING("Clean Sector(s) - no sectors selected.");
-			return;
-		}
-
-		// At least one sector must be selected.
-		// If only one is selected, this will act as a "clean" - removing degenerate walls, re-ordering, etc.
-		const s32 count = (s32)selection_getCount(SEL_SECTOR);
-		if (count < 1)
-		{
-			LE_WARNING("Clean Sector(s) - no sectors selected.");
-			return;
-		}
-
 		std::vector<s32> selectedSectors;
-		for (s32 i = 0; i < count; i++)
+		if (onlySelected)
 		{
-			EditorSector* sector = nullptr;
-			if (selection_getSector(i, sector))
+			// We must be in the wall (in 3D) or sector mode.
+			bool canSelectSectors = (s_editMode == LEDIT_WALL && s_view == EDIT_VIEW_3D) || s_editMode == LEDIT_SECTOR;
+			if (!canSelectSectors)
+			{
+				LE_WARNING("Clean Sector(s) - no sectors selected.");
+				return;
+			}
+
+			// At least one sector must be selected.
+			// If only one is selected, this will act as a "clean" - removing degenerate walls, re-ordering, etc.
+			const s32 count = (s32)selection_getCount(SEL_SECTOR);
+			if (count < 1)
+			{
+				LE_WARNING("Clean Sector(s) - no sectors selected.");
+				return;
+			}
+
+			for (s32 i = 0; i < count; i++)
+			{
+				EditorSector* sector = nullptr;
+				if (selection_getSector(i, sector))
+				{
+					selectedSectors.push_back(sector->id);
+				}
+			}
+		}
+		else
+		{
+			const s32 count = (s32)s_level.sectors.size();
+			const EditorSector* sector = s_level.sectors.data();
+			for (s32 s = 0; s < count; s++, sector++)
 			{
 				selectedSectors.push_back(sector->id);
 			}
@@ -1554,7 +1568,11 @@ namespace LevelEditor
 			}
 			if (ImGui::MenuItem("Clean Sector(s)", NULL, (bool*)NULL))
 			{
-				edit_cleanSectors();
+				edit_cleanSectors(true);
+			}
+			if (ImGui::MenuItem("Clean All", NULL, (bool*)NULL))
+			{
+				edit_cleanSectors(false);
 			}
 			ImGui::Separator();
 			if (ImGui::MenuItem("Find Sector", NULL, (bool*)NULL))

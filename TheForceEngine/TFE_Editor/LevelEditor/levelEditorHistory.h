@@ -35,6 +35,7 @@ namespace LevelEditor
 		LName_RotateVertex,
 		LName_ChangeWallAttrib,
 		LName_ChangeSectorAttrib,
+		LName_CleanSectors,
 		LName_Count
 	};
 

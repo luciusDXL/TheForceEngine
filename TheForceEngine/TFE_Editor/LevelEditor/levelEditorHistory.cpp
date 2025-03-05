@@ -83,6 +83,7 @@ namespace LevelEditor
 		history_registerName(LName_RotateVertex, "Rotate Vertices(s)");
 		history_registerName(LName_ChangeWallAttrib, "Change Wall Attributes");
 		history_registerName(LName_ChangeSectorAttrib, "Change Sector Attributes");
+		history_registerName(LName_CleanSectors, "Clean Sectors");
 	}
 
 	void levHistory_destroy()
