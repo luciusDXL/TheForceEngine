@@ -520,6 +520,7 @@ namespace LevelEditor
 
 		// Clear notes.
 		s_level.notes.clear();
+		levelSetClean();
 
 		// First check to see if there is a "tfl" version of the level.
 		if (loadFromTFL(slotName))
@@ -1097,6 +1098,8 @@ namespace LevelEditor
 	// Save in the binary editor format.
 	bool saveLevel()
 	{
+		levelSetClean();
+
 		Project* project = project_get();
 		if (!project)
 		{

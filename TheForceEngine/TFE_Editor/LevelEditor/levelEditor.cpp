@@ -122,6 +122,7 @@ namespace LevelEditor
 	static bool s_gravity = false;
 	static bool s_showAllLabels = false;
 	static bool s_modalUiActive = false;
+	static s32 s_lastSavedHistoryPos = 0;
 	
 	// Handle initial mouse movement before feature movement or snapping.
 	static const s32 c_moveThreshold = 3;
@@ -333,6 +334,7 @@ namespace LevelEditor
 		s_selectedTexture = -1;
 		s_selectedEntity = -1;
 		edit_clearCopiedTextureOffset();
+		levelSetClean();
 
 		AssetBrowser::getLevelTextures(s_levelTextureList, asset->name.c_str());
 		s_camera = { 0 };
@@ -1692,6 +1694,16 @@ namespace LevelEditor
 		}
 
 		return menuActive;
+	}
+
+	bool levelIsDirty()
+	{
+		return s_lastSavedHistoryPos != history_getPos();
+	}
+
+	void levelSetClean()
+	{
+		s_lastSavedHistoryPos = history_getPos();
 	}
 
 	void selectNone()

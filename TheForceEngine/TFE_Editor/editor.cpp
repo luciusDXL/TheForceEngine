@@ -599,12 +599,25 @@ namespace TFE_Editor
 		const s32 winWidth = info.width;
 
 		const Project* project = project_get();
+		char fullTitle[1024];
 		const char* title = project->active ? project->name : c_readOnly;
-		const s32 titleWidth = (s32)ImGui::CalcTextSize(title).x;
+		if (s_editorAssetType == TYPE_LEVEL)
+		{
+			sprintf(fullTitle, "%s - %s", title, LevelEditor::s_level.name.c_str());
+			if (LevelEditor::levelIsDirty())
+			{
+				strcat(fullTitle, "*");
+			}
+		}
+		else
+		{
+			strcpy(fullTitle, title);
+		}
+		const s32 titleWidth = (s32)ImGui::CalcTextSize(fullTitle).x;
 
 		const ImVec4 titleColor = getTextColor(project->active ? TEXTCLR_TITLE_ACTIVE : TEXTCLR_TITLE_INACTIVE);
 		ImGui::SameLine(f32((winWidth - titleWidth)/2));
-		ImGui::TextColored(titleColor, "%s", title);
+		ImGui::TextColored(titleColor, "%s", fullTitle);
 	}
 
 	void menu()

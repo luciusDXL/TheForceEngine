@@ -59,6 +59,9 @@ namespace LevelEditor
 	void update();
 	bool menu();
 
+	bool levelIsDirty();
+	void levelSetClean();
+
 	bool levelLighting();
 	bool userPreferences();
 	bool testOptions();
