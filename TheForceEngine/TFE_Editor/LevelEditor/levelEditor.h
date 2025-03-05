@@ -91,7 +91,6 @@ namespace LevelEditor
 	void edit_clearSelections(bool endTransform = true);
 	bool edit_createSectorFromRect(const f32* heights, const Vec2f* vtx, bool allowSubsectorExtrude=true);
 	bool edit_createSectorFromShape(const f32* heights, s32 vertexCount, const Vec2f* vtx, bool allowSubsectorExtrude=true);
-	void edit_moveSelectedTextures(s32 count, const FeatureId* featureList, Vec2f delta);
 	// Return true if the assigned texture is new.
 	AppendTexList& edit_getTextureAppendList();
 	void edit_clearTextureAppendList();
