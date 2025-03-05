@@ -1509,11 +1509,11 @@ namespace LevelEditor
 				openEditorPopup(POPUP_LEV_TEST_OPTIONS);
 			}
 			ImGui::Separator();
+			disableNextItem(); // TODO
 			if (ImGui::MenuItem("INF Items", NULL, (bool*)NULL))
 			{
 				// TODO
 			}
-			disableNextItem(); // TODO
 			if (ImGui::MenuItem("Goals", NULL, (bool*)NULL))
 			{
 				// TODO
