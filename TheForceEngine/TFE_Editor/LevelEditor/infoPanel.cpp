@@ -461,6 +461,15 @@ namespace LevelEditor
 		sublist_end(sublist);
 	}
 
+	void infoPanelOpenGroup(s32 groupId)
+	{
+		Group* group = groups_getById(groupId);
+		if (group)
+		{
+			s_groupOpen = group->index;
+		}
+	}
+
 	void infoPanelMap()
 	{
 		const f32 iconBtnTint[] = { 103.0f / 255.0f, 122.0f / 255.0f, 139.0f / 255.0f, 1.0f };

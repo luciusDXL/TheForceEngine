@@ -1557,7 +1557,7 @@ namespace LevelEditor
 			ImGui::Separator();
 			if (ImGui::MenuItem("Find Sector", NULL, (bool*)NULL))
 			{
-				// TODO
+				openEditorPopup(POPUP_FIND_SECTOR);
 			}
 			if (ImGui::MenuItem("Find/Replace Texture", NULL, (bool*)NULL))
 			{

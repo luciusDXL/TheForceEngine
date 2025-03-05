@@ -21,7 +21,7 @@ namespace TFE_Editor
 	{
 		s_overlayList = OverlayAssetList{};
 	}
-		
+
 	bool editor_beginList()
 	{
 		ImGuiWindowFlags flags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize |

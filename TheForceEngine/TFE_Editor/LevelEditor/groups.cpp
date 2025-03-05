@@ -204,6 +204,15 @@ namespace LevelEditor
 		groups_buildIndexMap();
 	}
 
+	void groups_select(s32 id)
+	{
+		Group* group = groups_getById(id);
+		if (group)
+		{
+			s_groupCurrent = group->index;
+		}
+	}
+	   
 	void groups_swapSectorGroupID(u32 srcId, u32 dstId)
 	{
 		const s32 sectorCount = (s32)s_level.sectors.size();

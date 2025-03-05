@@ -44,6 +44,7 @@ namespace LevelEditor
 	void groups_remove(s32 index);
 	void groups_moveUp(s32 index);
 	void groups_moveDown(s32 index);
+	void groups_select(s32 id);
 
 	void groups_clearName();
 	bool groups_chooseName();
