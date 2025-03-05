@@ -19,6 +19,7 @@
 #include <TFE_Editor/editorProject.h>
 #include <TFE_Editor/editorResources.h>
 #include <TFE_Editor/editor.h>
+#include <TFE_Editor/editorComboBox.h>
 #include <TFE_Editor/EditorAsset/editorAsset.h>
 #include <TFE_Editor/EditorAsset/editorTexture.h>
 #include <TFE_Editor/EditorAsset/editorFrame.h>
@@ -112,18 +113,7 @@ namespace LevelEditor
 		s32 index0;
 		s32 index1;
 	};
-
-	struct OverlayAssetList
-	{
-		bool active = false;
-		s32 id = -1;
-		ImVec2 pos = { 0, 0 };
-		s32 listCount = 0;
-		s32 lastHovered = -1;
-		const TFE_Editor::Asset* assetList = nullptr;
-		char buffer[256] = "";
-	};
-
+		
 	struct InfSectorMod
 	{
 		Editor_InfItem* item = nullptr;
@@ -256,7 +246,6 @@ namespace LevelEditor
 
 	static InfEditor s_infEditor = {};
 	static InfEditorState s_infEditorState;
-	static OverlayAssetList s_overlayList = {};
 
 	static ImVec2 s_popupPos;
 	static s32 s_restorePos = 0;
@@ -277,7 +266,7 @@ namespace LevelEditor
 		s_levelInf.elevator.clear();
 		s_levelInf.trigger.clear();
 		s_levelInf.teleport.clear();
-		s_overlayList = OverlayAssetList{};
+		editor_comboBoxInit();
 	}
 
 	void editor_infDestroy()
@@ -1852,108 +1841,7 @@ namespace LevelEditor
 			ImGui::EndCombo();
 		}
 	}
-
-	const char* getSoundName(const TFE_Editor::Asset* asset)
-	{
-		return asset->name.c_str();
-	}
-		
-	bool editor_beginList()
-	{
-		ImGuiWindowFlags flags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize |
-			ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_ChildWindow;
-		const char* label = editor_getUniqueLabel("");
-		ImGui::OpenPopup(label);
-		return ImGui::BeginPopup(label, flags);
-	}
-
-	void editor_endList()
-	{
-		ImGui::EndPopup();
-	}
-
-	bool strInStrNoCase(const char* srcStr, const char* findStr)
-	{
-		const s32 lenSrc  = (s32)strlen(srcStr);
-		const s32 lenFind = (s32)strlen(findStr);
-		if (lenSrc < lenFind) { return false; }
-		const s32 end = lenSrc - lenFind + 1;
-		char f0 = tolower(findStr[0]);
-		for (s32 i = 0; i < end; i++)
-		{
-			// Check the first letter and early out if they don't match.
-			if (tolower(srcStr[i]) != f0) { continue; }
-			// Otherwise check the full "find" string.
-			if (strncasecmp(&srcStr[i], findStr, lenFind) == 0)
-			{
-				return true;
-			}
-		}
-		return false;
-	}
-
-	void editor_handleOverlayList()
-	{
-		if (!s_overlayList.active || s_overlayList.id < 0) { return; }
-		s_overlayList.lastHovered = -1;
-
-		ImGui::SetNextWindowPos(s_overlayList.pos);
-		ImGui::SetNextWindowSize(ImVec2(200, 400));
-		if (editor_beginList())
-		{
-			const size_t lenInput = strlen(s_overlayList.buffer);
-			for (s32 i = 0; i < s_overlayList.listCount; i++)
-			{
-				// Does it match the name.
-				const char* soundName = getSoundName(&s_overlayList.assetList[i]);
-				const size_t lenSound = strlen(soundName);
-				if (lenSound < lenInput || (lenInput && !strInStrNoCase(soundName, s_overlayList.buffer))) { continue; }
 				
-				// Add to the list.
-				ImGui::Selectable(soundName);
-				if (ImGui::IsItemHovered())
-				{
-					s_overlayList.lastHovered = i;
-				}
-			}
-		}
-		editor_endList();
-	}
-
-	bool editor_assetEditComboBox(s32 id, char* inputBuffer, size_t inputBufferSize, s32 listCount, const TFE_Editor::Asset* assetList)
-	{
-		// Text Input.
-		ImVec2 pos = ImGui::GetWindowPos();
-		pos.x += ImGui::GetCursorPosX();
-		pos.y += ImGui::GetCursorPosY();
-		bool update = ImGui::InputText(editor_getUniqueLabel(""), inputBuffer, inputBufferSize);
-
-		if (ImGui::IsItemActive())
-		{
-			pos.y += 26;
-			s_overlayList.id = id;
-			s_overlayList.active = true;
-			s_overlayList.lastHovered = -1;
-			s_overlayList.pos = pos;
-			s_overlayList.listCount = listCount;
-			s_overlayList.assetList = assetList;
-			strcpy(s_overlayList.buffer, inputBuffer);
-		}
-		else if (s_overlayList.id == id && s_overlayList.active)
-		{
-			//ImGui::CloseCurrentPopup();
-			if (s_overlayList.lastHovered >= 0)
-			{
-				strcpy(inputBuffer, getSoundName(&s_overlayList.assetList[s_overlayList.lastHovered]));
-				update = true;
-			}
-			s_overlayList.active = false;
-			s_overlayList.id = -1;
-		}
-
-		return update;
-	}
-
 	void editor_infEditElevProperties(Editor_InfElevator* elev, f32 propHeight, s32 itemClassIndex, const f32* btnTint)
 	{
 		const TFE_Editor::AssetList& soundList = AssetBrowser::getAssetList(TYPE_SOUND);

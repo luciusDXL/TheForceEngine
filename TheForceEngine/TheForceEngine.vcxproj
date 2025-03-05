@@ -465,6 +465,7 @@ echo ^)";
     <ClInclude Include="TFE_Editor\EditorAsset\editorSound.h" />
     <ClInclude Include="TFE_Editor\EditorAsset\editorSprite.h" />
     <ClInclude Include="TFE_Editor\EditorAsset\editorTexture.h" />
+    <ClInclude Include="TFE_Editor\editorComboBox.h" />
     <ClInclude Include="TFE_Editor\editorConfig.h" />
     <ClInclude Include="TFE_Editor\editorLevel.h" />
     <ClInclude Include="TFE_Editor\editorMath.h" />
@@ -875,6 +876,7 @@ echo ^)";
     <ClCompile Include="TFE_Editor\EditorAsset\editorSound.cpp" />
     <ClCompile Include="TFE_Editor\EditorAsset\editorSprite.cpp" />
     <ClCompile Include="TFE_Editor\EditorAsset\editorTexture.cpp" />
+    <ClCompile Include="TFE_Editor\editorComboBox.cpp" />
     <ClCompile Include="TFE_Editor\editorConfig.cpp" />
     <ClCompile Include="TFE_Editor\editorLevel.cpp" />
     <ClCompile Include="TFE_Editor\editorMath.cpp" />

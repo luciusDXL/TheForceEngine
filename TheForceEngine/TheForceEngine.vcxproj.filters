@@ -1474,6 +1474,9 @@
     <ClInclude Include="TFE_Editor\LevelEditor\testOptions.h">
       <Filter>Source\TFE_Editor\LevelEditor</Filter>
     </ClInclude>
+    <ClInclude Include="TFE_Editor\editorComboBox.h">
+      <Filter>Source\TFE_Editor</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -2579,6 +2582,9 @@
     </ClCompile>
     <ClCompile Include="TFE_Editor\LevelEditor\testOptions.cpp">
       <Filter>Source\TFE_Editor\LevelEditor</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Editor\editorComboBox.cpp">
+      <Filter>Source\TFE_Editor</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
