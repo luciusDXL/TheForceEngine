@@ -112,13 +112,13 @@ namespace LevelEditor
 		const bool selToggle = TFE_Input::keyModDown(KEYMOD_CTRL);
 		const bool selToggleDrag = selAdd && selToggle;
 
-		const bool moveToFloor = TFE_Input::keyPressed(KEY_F) && !selToggle;
-		const bool moveToCeil  = TFE_Input::keyPressed(KEY_C) && !selToggle;
+		const bool moveToFloor = isShortcutPressed(SHORTCUT_MOVE_TO_FLOOR);
+		const bool moveToCeil = isShortcutPressed(SHORTCUT_MOVE_TO_CEIL);
 
 		const bool mousePressed = s_singleClick;
 		const bool mouseDown = TFE_Input::mouseDown(MouseButton::MBUTTON_LEFT);
 
-		const bool del = TFE_Input::keyPressed(KEY_DELETE);
+		const bool del = isShortcutPressed(SHORTCUT_DELETE);
 		const bool hasHovered = selection_hasHovered();
 		const bool hasFeature = selection_getCount() > 0;
 
@@ -171,8 +171,7 @@ namespace LevelEditor
 
 					if (s_editMode == LEDIT_WALL)
 					{
-						// TODO: Hotkeys...
-						edit_setWallMoveMode(TFE_Input::keyDown(KEY_N) ? WMM_NORMAL : WMM_FREE);
+						edit_setWallMoveMode(isShortcutHeld(SHORTCUT_MOVE_NORMAL) ? WMM_NORMAL : WMM_FREE);
 					}
 				}
 				else if (!s_editMove)

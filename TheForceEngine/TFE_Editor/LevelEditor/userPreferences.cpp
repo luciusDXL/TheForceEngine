@@ -3,11 +3,14 @@
 #include "levelEditorData.h"
 #include "tabControl.h"
 #include "sharedState.h"
+#include "hotkeys.h"
 #include <TFE_Editor/editor.h>
 #include <TFE_Editor/editorConfig.h>
+#include <TFE_Input/input.h>
 #include <TFE_System/math.h>
 #include <TFE_Ui/ui.h>
 #include <algorithm>
+#include <map>
 
 using namespace TFE_Editor;
 
@@ -30,9 +33,13 @@ namespace LevelEditor
 		"Theme.\nEditor theme, UI and viewport colors.",
 	};
 	static PreferencesTab s_prefTab = PTAB_INTERFACE;
-	
+
 	void commitCurChanges(void);
-						
+	void interfacePref();
+	void editingPref();
+	void inputPref();
+	void themePref();
+								
 	bool userPreferences()
 	{
 		pushFont(FONT_SMALL);
@@ -50,22 +57,19 @@ namespace LevelEditor
 			{
 				case PTAB_INTERFACE:
 				{
-					sectionHeader("Viewport Options");
-					optionCheckbox("Hide Level Notes", (u32*)&s_editorConfig.interfaceFlags, PIF_HIDE_NOTES, 140);
-					optionCheckbox("Hide Guidelines", (u32*)&s_editorConfig.interfaceFlags, PIF_HIDE_GUIDELINES, 140);
-					ImGui::Separator();
+					interfacePref();
 				} break;
 				case PTAB_EDITING:
 				{
-					optionSliderEditFloat("Curve Segment Size", "%.2f", &s_editorConfig.curve_segmentSize, 0.1f, 100.0f, 0.1f);
+					editingPref();
 				} break;
 				case PTAB_INPUT:
 				{
-					ImGui::LabelText("##Label", "Input Placeholder");
+					inputPref();
 				} break;
 				case PTAB_THEME:
 				{
-					ImGui::LabelText("##Label", "Theme Placeholder");
+					themePref();
 				} break;
 			}
 
@@ -86,6 +90,28 @@ namespace LevelEditor
 		popFont();
 
 		return applyChanges || cancel;
+	}
+
+	void interfacePref()
+	{
+		sectionHeader("Viewport Options");
+		optionCheckbox("Hide Level Notes", (u32*)&s_editorConfig.interfaceFlags, PIF_HIDE_NOTES, 140);
+		optionCheckbox("Hide Guidelines", (u32*)&s_editorConfig.interfaceFlags, PIF_HIDE_GUIDELINES, 140);
+	}
+
+	void editingPref()
+	{
+		optionSliderEditFloat("Curve Segment Size", "%.2f", &s_editorConfig.curve_segmentSize, 0.1f, 100.0f, 0.1f);
+	}
+
+	void inputPref()
+	{
+		
+	}
+
+	void themePref()
+	{
+		ImGui::LabelText("##Label", "Theme Placeholder");
 	}
 
 	void commitCurChanges(void)

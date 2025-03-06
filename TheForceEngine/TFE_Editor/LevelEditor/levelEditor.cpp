@@ -194,7 +194,6 @@ namespace LevelEditor
 
 	void copyToClipboard(const std::string& str);
 	bool copyFromClipboard(std::string& str);
-	bool hasItemsInClipboard();
 	void copySelectionToClipboard();
 	void pasteFromClipboard(bool centerOnMouse = true);
 	bool canCopy();
@@ -232,6 +231,7 @@ namespace LevelEditor
 	{
 		TFE_ScriptInterface::registerScriptInterface(API_LEVEL_EDITOR);
 		TFE_ScriptInterface::setAPI(API_LEVEL_EDITOR, "EditorDef/Scripts");
+		setDefaultKeyboardShortcuts();
 
 		s_levelAsset = asset;
 		// Initialize editors.
@@ -2041,15 +2041,15 @@ namespace LevelEditor
 
 	void handleEditorActions()
 	{
-		if (getEditAction(ACTION_UNDO))
+		if (isShortcutPressed(SHORTCUT_UNDO))
 		{
 			levHistory_undo();
 		}
-		else if (getEditAction(ACTION_REDO))
+		else if (isShortcutPressed(SHORTCUT_REDO))
 		{
 			levHistory_redo();
 		}
-		if (getEditAction(ACTION_SHOW_ALL_LABELS))
+		if (isShortcutPressed(SHORTCUT_SHOW_ALL_LABELS))
 		{
 			s_showAllLabels = !s_showAllLabels;
 		}
@@ -2851,11 +2851,11 @@ namespace LevelEditor
 				}
 
 				// Copy/Paste
-				if (getEditAction(ACTION_COPY) && canCopy())
+				if (isShortcutPressed(SHORTCUT_COPY) && canCopy())
 				{
 					copySelectionToClipboard();
 				}
-				else if (getEditAction(ACTION_PASTE) && canPaste())
+				else if (isShortcutPressed(SHORTCUT_PASTE) && canPaste())
 				{
 					pasteFromClipboard();
 				}
@@ -3812,7 +3812,7 @@ namespace LevelEditor
 		return hasText;
 	}
 
-	bool hasItemsInClipboard()
+	bool edit_hasItemsInClipboard()
 	{
 		bool hasText = SDL_HasClipboardText();
 		if (!hasText) { return false; }
@@ -3822,6 +3822,11 @@ namespace LevelEditor
 
 		// Refine to check if it matches the format.
 		return true;
+	}
+
+	void edit_clearClipboard()
+	{
+		SDL_SetClipboardText(nullptr);
 	}
 		
 	bool canCopy()
@@ -3849,7 +3854,7 @@ namespace LevelEditor
 
 	bool canPaste()
 	{
-		if (!hasItemsInClipboard()) { return false; }
+		if (!edit_hasItemsInClipboard()) { return false; }
 		if (s_editMode == LEDIT_ENTITY || s_editMode == LEDIT_SECTOR) { return true; }
 		return false;
 	}

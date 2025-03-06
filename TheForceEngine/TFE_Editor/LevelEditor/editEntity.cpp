@@ -108,7 +108,7 @@ namespace LevelEditor
 
 	void handleEntityInsert(Vec3f worldPos, RayHitInfo* info/*=nullptr*/)
 	{
-		const bool insertEntity = getEditAction(ACTION_PLACE);
+		const bool insertEntity = isShortcutPressed(SHORTCUT_PLACE);
 		if (!insertEntity) { return; }
 
 		EditorSector* hoverSector = nullptr;

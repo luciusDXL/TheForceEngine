@@ -93,7 +93,7 @@ namespace LevelEditor
 			return;
 		}
 
-		if (getEditAction(ACTION_PLACE))
+		if (isShortcutPressed(SHORTCUT_PLACE))
 		{
 			Vec3f pos = s_cursor3d;
 			snapToGrid(&pos);
@@ -154,7 +154,7 @@ namespace LevelEditor
 					s_grid.height = gridHeight;
 				}
 
-				if (getEditAction(ACTION_MOVE_Y))
+				if (isShortcutHeld(SHORTCUT_MOVE_Y))
 				{
 					s_curVtxPos = s_moveStartPos3d;
 					f32 yNew = moveAlongRail({ 0.0f, 1.0f, 0.0f }).y;
@@ -180,11 +180,11 @@ namespace LevelEditor
 				{
 					Vec3f prevPos = note->pos;
 
-					if (getEditAction(ACTION_MOVE_X))
+					if (isShortcutHeld(SHORTCUT_MOVE_X))
 					{
 						note->pos.x = (s_cursor3d.x - s_moveStartPos3d.x) + s_moveBasePos3d.x;
 					}
-					else if (getEditAction(ACTION_MOVE_Z))
+					else if (isShortcutHeld(SHORTCUT_MOVE_Z))
 					{
 						note->pos.z = (s_cursor3d.z - s_moveStartPos3d.z) + s_moveBasePos3d.z;
 					}
@@ -216,7 +216,7 @@ namespace LevelEditor
 			s_editMove = false;
 		}
 
-		if (getEditAction(ACTION_DELETE))
+		if (isShortcutPressed(SHORTCUT_DELETE))
 		{
 			bool deleted = false;
 			if (s_curLevelNote >= 0)

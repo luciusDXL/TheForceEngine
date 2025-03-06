@@ -98,7 +98,7 @@ namespace LevelEditor
 		}
 		if (!sector) { return; }
 
-		if (TFE_Input::keyPressed(KEY_T) && TFE_Input::keyModDown(KEYMOD_CTRL))
+		if (isShortcutPressed(SHORTCUT_COPY_TEXTURE))
 		{
 			const LevelTextureAsset* textureAsset = nullptr;
 			if (s_view == EDIT_VIEW_2D)
@@ -166,21 +166,23 @@ namespace LevelEditor
 						break;
 					}
 				}
+				// Clear the clipboard.
+				edit_clearClipboard();
 			}
 		}
-		else if (TFE_Input::keyPressed(KEY_T) && TFE_Input::keyModDown(KEYMOD_SHIFT) && s_selectedTexture >= 0)
+		else if (isShortcutPressed(SHORTCUT_SET_SIGN) && s_selectedTexture >= 0)
 		{
 			edit_applySignToSelection(s_selectedTexture);
 		}
-		else if (TFE_Input::keyPressed(KEY_T) && s_selectedTexture >= 0)
+		else if (isShortcutPressed(SHORTCUT_SET_TEXTURE, 0) && s_selectedTexture >= 0)
 		{
 			edit_applyTextureToSelection(s_selectedTexture, nullptr);
 		}
-		else if (TFE_Input::keyPressed(KEY_V) && TFE_Input::keyModDown(KEYMOD_CTRL) && s_selectedTexture >= 0)
+		else if (isShortcutPressed(SHORTCUT_PASTE) && !edit_hasItemsInClipboard() && s_selectedTexture >= 0)
 		{
 			edit_applyTextureToSelection(s_selectedTexture, &s_copiedTextureOffset);
 		}
-		else if (TFE_Input::keyPressed(KEY_A) && TFE_Input::keyModDown(KEYMOD_CTRL))
+		else if (isShortcutPressed(SHORTCUT_AUTO_ALIGN))
 		{
 			edit_autoAlign(sector->id, index, part);
 		}

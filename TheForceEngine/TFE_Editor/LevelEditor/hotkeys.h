@@ -8,31 +8,12 @@
 //////////////////////////////////////////////////////////////////////
 #include <TFE_System/types.h>
 #include <TFE_FileSystem/filestream.h>
+#include <TFE_Input/input.h>
 #include <vector>
 #include <string>
 
 namespace LevelEditor
 {
-	// Entity
-	enum EditorActionFlag
-	{
-		ACTION_NONE = 0ull,
-		ACTION_PLACE = FLAG_BIT64(0),
-		ACTION_MOVE_X = FLAG_BIT64(1),
-		ACTION_MOVE_Y = FLAG_BIT64(2),
-		ACTION_MOVE_Z = FLAG_BIT64(3),
-		ACTION_DELETE = FLAG_BIT64(4),
-		ACTION_COPY   = FLAG_BIT64(5),
-		ACTION_PASTE  = FLAG_BIT64(6),
-		ACTION_ROTATE = FLAG_BIT64(7),
-
-		ACTION_UNDO = FLAG_BIT64(8),
-		ACTION_REDO = FLAG_BIT64(9),
-		ACTION_SHOW_ALL_LABELS = FLAG_BIT64(10),
-
-		ACTION_UNDEFINED = ~0x0ull
-	};
-
 	// Draw
 	enum DrawActionFlag
 	{
@@ -42,6 +23,34 @@ namespace LevelEditor
 		DRAW_ACTION_FINISH = FLAG_BIT(2),
 	};
 
+	enum ShortcutId
+	{
+		SHORTCUT_PLACE = 0,
+		SHORTCUT_MOVE_X,
+		SHORTCUT_MOVE_Y,
+		SHORTCUT_MOVE_Z,
+		SHORTCUT_MOVE_NORMAL,
+		SHORTCUT_COPY_TEXTURE,
+		SHORTCUT_SET_TEXTURE,
+		SHORTCUT_SET_SIGN,
+		SHORTCUT_AUTO_ALIGN,
+		SHORTCUT_MOVE_TO_FLOOR,
+		SHORTCUT_MOVE_TO_CEIL,
+		SHORTCUT_DELETE,
+		SHORTCUT_COPY,
+		SHORTCUT_PASTE,
+		SHORTCUT_ROTATE,
+		SHORTCUT_REDUCE_CURVE_SEGS,
+		SHORTCUT_INCREASE_CURVE_SEGS,
+		SHORTCUT_RESET_CURVE_SEGS,
+		SHORTCUT_SHOW_ALL_LABELS,
+		SHORTCUT_UNDO,
+		SHORTCUT_REDO,
+
+		SHORTCUT_COUNT,
+		SHORTCUT_NONE = SHORTCUT_COUNT,
+	};
+	
 	// General
 	extern bool s_singleClick;
 	extern bool s_doubleClick;
@@ -53,10 +62,16 @@ namespace LevelEditor
 	extern Vec2i s_rightMousePos;
 
 	// Editor Hotkey Actions.
-	extern u64 s_editActions;
 	extern u32 s_drawActions;
-	extern s32 s_rotationDelta;
 
 	void handleHotkeys();
-	bool getEditAction(u64 action);
+
+	void clearKeyboardShortcuts();
+	void setDefaultKeyboardShortcuts();
+	void addKeyboardShortcut(ShortcutId id, KeyboardCode code = KEY_UNKNOWN, KeyModifier mod = KEYMOD_NONE);
+	void removeKeyboardShortcut(ShortcutId id);
+	const char* getKeyboardShortcutDesc(ShortcutId id);
+	bool isShortcutPressed(ShortcutId shortcutId, u32 allowedKeyMods = (1 << KEYMOD_SHIFT) | (1 << KEYMOD_ALT));
+	bool isShortcutRepeat(ShortcutId shortcutId, u32 allowedKeyMods = (1 << KEYMOD_SHIFT) | (1 << KEYMOD_ALT));
+	bool isShortcutHeld(ShortcutId shortcutId, u32 allowedKeyMods = (1 << KEYMOD_SHIFT) | (1 << KEYMOD_ALT));
 }

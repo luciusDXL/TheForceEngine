@@ -109,7 +109,7 @@ namespace LevelEditor
 		{
 			findHoveredGuideline();
 		}
-		if (s_editActions & ACTION_DELETE)
+		if (isShortcutPressed(SHORTCUT_DELETE))
 		{
 			if (s_curGuideline >= 0)
 			{

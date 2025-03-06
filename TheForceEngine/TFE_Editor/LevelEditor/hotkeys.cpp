@@ -5,6 +5,7 @@
 #include <TFE_Editor/LevelEditor/Rendering/viewport.h>
 #include <TFE_Input/input.h>
 #include <TFE_System/system.h>
+#include <map>
 
 namespace LevelEditor
 {
@@ -24,11 +25,7 @@ namespace LevelEditor
 	// Right click.
 	bool s_rightPressed = false;
 	Vec2i s_rightMousePos = { 0 };
-
-	// Entity
-	u64 s_editActions = ACTION_NONE;
 	u32 s_drawActions = DRAW_ACTION_NONE;
-	s32 s_rotationDelta = 0;
 
 	void handleMouseClick()
 	{
@@ -93,45 +90,6 @@ namespace LevelEditor
 		}
 	}
 
-	void updateGeneralHotkeys()
-	{
-		if (TFE_Input::keyPressed(KEY_Z) && TFE_Input::keyModDown(KEYMOD_CTRL))
-		{
-			s_editActions = ACTION_UNDO;
-		}
-		else if (TFE_Input::keyPressed(KEY_Y) && TFE_Input::keyModDown(KEYMOD_CTRL))
-		{
-			s_editActions = ACTION_REDO;
-		}
-		if (TFE_Input::keyPressed(KEY_TAB))
-		{
-			s_editActions = ACTION_SHOW_ALL_LABELS;
-		}
-	}
-
-	void updateEntityEditHotkeys()
-	{
-		if (TFE_Input::keyPressed(KEY_INSERT)) { s_editActions = ACTION_PLACE; }
-		if (TFE_Input::keyPressed(KEY_DELETE)) { s_editActions = ACTION_DELETE; }
-
-		if (TFE_Input::keyDown(KEY_X)) { s_editActions |= ACTION_MOVE_X; }
-		if (TFE_Input::keyDown(KEY_Y) && s_view != EDIT_VIEW_2D) { s_editActions |= ACTION_MOVE_Y; }
-		if (TFE_Input::keyDown(KEY_Z)) { s_editActions |= ACTION_MOVE_Z; }
-		if (TFE_Input::keyModDown(KEYMOD_CTRL)) { s_editActions |= ACTION_ROTATE; }
-
-		if (s_editMode == LEDIT_ENTITY)
-		{
-			s32 dummy;
-			TFE_Input::getMouseWheel(&dummy, &s_rotationDelta);
-		}
-	}
-
-	void updateGuidelineHotkeys()
-	{
-		if (TFE_Input::keyPressed(KEY_INSERT)) { s_editActions = ACTION_PLACE; }
-		if (TFE_Input::keyPressed(KEY_DELETE)) { s_editActions = ACTION_DELETE; }
-	}
-
 	void updateDrawModeHotkeys()
 	{
 		if (TFE_Input::keyModDown(KeyModifier::KEYMOD_SHIFT))
@@ -150,59 +108,217 @@ namespace LevelEditor
 		if (s_editMode != LEDIT_GUIDELINES && s_geoEdit.drawMode == DMODE_CURVE_CONTROL)
 		{
 			s32 delta = getCurveSegDelta();
-			if (TFE_Input::keyPressedWithRepeat(KEY_LEFTBRACKET))
+			if (isShortcutRepeat(SHORTCUT_REDUCE_CURVE_SEGS))
 			{
 				setCurveSegDelta(delta - 1);
 			}
-			else if (TFE_Input::keyPressedWithRepeat(KEY_RIGHTBRACKET))
+			else if (isShortcutRepeat(SHORTCUT_INCREASE_CURVE_SEGS))
 			{
 				setCurveSegDelta(delta + 1);
 			}
-			else if (TFE_Input::keyPressed(KEY_BACKSLASH))
+			else if (isShortcutPressed(SHORTCUT_RESET_CURVE_SEGS))
 			{
 				setCurveSegDelta();
 			}
 		}
 	}
 
-	bool getEditAction(u64 action)
-	{
-		return (s_editActions & action) != 0u;
-	}
-
 	void handleHotkeys()
 	{
-		s_editActions = ACTION_NONE;
 		s_drawActions = DRAW_ACTION_NONE;
 		handleMouseClick();
 		if (isUiModal()) { return; }
 
-		updateGeneralHotkeys();
-		if (s_editMode == LEDIT_ENTITY || s_editMode == LEDIT_NOTES)
-		{
-			updateEntityEditHotkeys();
-		}
-		else if (s_editMode == LEDIT_DRAW || s_editMode == LEDIT_GUIDELINES)
+		if (s_editMode == LEDIT_DRAW || s_editMode == LEDIT_GUIDELINES)
 		{
 			updateDrawModeHotkeys();
-			// Guideline-only hotkeys.
-			if (s_editMode == LEDIT_GUIDELINES)
-			{
-				updateGuidelineHotkeys();
-			}
 		}
+	}
 
-		// Copy and Paste.
-		if (s_editMode == LEDIT_ENTITY || s_editMode == LEDIT_WALL || s_editMode == LEDIT_SECTOR)
+	struct KeyboardShortcut
+	{
+		KeyboardCode code = KEY_UNKNOWN;
+		KeyModifier mod = KEYMOD_NONE;
+		ShortcutId shortcutId = SHORTCUT_NONE;
+	};
+	const char* c_shortcutDesc[] =
+	{
+		"Insert Vertex/Object",								// SHORTCUT_PLACE
+		"Lock movement to X-Axis",							// SHORTCUT_MOVE_X
+		"Lock movement to Y-Axis",							// SHORTCUT_MOVE_Y
+		"Lock movement to Z-Axis",							// SHORTCUT_MOVE_Z
+		"Lock movement to wall normal",						// SHORTCUT_MOVE_NORMAL
+		"Copy texture from surface",						// SHORTCUT_COPY_TEXTURE
+		"Set current texture on surface or selection",		// SHORTCUT_SET_TEXTURE
+		"Apply the current texture as a sign at the current mouse position on the surface", // SHORTCUT_SET_SIGN
+		"Auto-align texture offsets on matching adjacent surfaces", // SHORTCUT_AUTO_ALIGN
+		"Move object to sector floor",						// SHORTCUT_MOVE_TO_FLOOR
+		"Move object to sector ceiling",					// SHORTCUT_MOVE_TO_CEIL
+		"Delete selection",									// SHORTCUT_DELETE
+		"Copy selection",									// SHORTCUT_COPY
+		"Paste from clipboard at cursor",					// SHORTCUT_PASTE
+		"Rotate with mousewheel while held",				// SHORTCUT_ROTATE
+		"Reduce curve segments",							// SHORTCUT_REDUCE_CURVE_SEGS
+		"Increase curve segments",							// SHORTCUT_INCREASE_CURVE_SEGS
+		"Reset curve segments to default",					// SHORTCUT_RESET_CURVE_SEGS
+		"Toggle Show all labels in viewport",				// SHORTCUT_SHOW_ALL_LABELS
+		"Undo",												// SHORTCUT_UNDO
+		"Redo",												// SHORTCUT_REDO
+	};
+
+	static std::vector<KeyboardShortcut> s_keyboardShortcutList;
+	static std::vector<u32> s_keyboardShortcutFreeList;
+	static std::map<u32, u32> s_keyboardShortcutMap;
+	
+	KeyboardShortcut* getShortcutFromId(ShortcutId id);
+	bool validateKeyMods(KeyboardShortcut* shortcut, u32 allowedKeyMods);
+
+	void addKeyboardShortcut(ShortcutId id, KeyboardCode code, KeyModifier mod)
+	{
+		KeyboardShortcut* shortcut = getShortcutFromId(id);
+		// Replace it.
+		if (shortcut)
 		{
-			if (TFE_Input::keyPressed(KEY_C) && TFE_Input::keyModDown(KEYMOD_CTRL))
+			shortcut->code = code;
+			shortcut->mod = mod;
+		}
+		// Add it.
+		else if (!s_keyboardShortcutFreeList.empty())
+		{
+			const u32 index = (u32)s_keyboardShortcutFreeList.back();
+			s_keyboardShortcutFreeList.pop_back();
+
+			s_keyboardShortcutList[index].code = code;
+			s_keyboardShortcutList[index].mod = mod;
+			s_keyboardShortcutList[index].shortcutId = id;
+			s_keyboardShortcutMap[id] = index;
+		}
+		else
+		{
+			const u32 index = (u32)s_keyboardShortcutList.size();
+			s_keyboardShortcutList.push_back({ code, mod, id });
+			s_keyboardShortcutMap[id] = index;
+		}
+	}
+
+	void removeKeyboardShortcut(ShortcutId id)
+	{
+		std::map<u32, u32>::iterator iShortcut = s_keyboardShortcutMap.find(id);
+		if (iShortcut != s_keyboardShortcutMap.end())
+		{
+			const u32 index = iShortcut->second;
+			s_keyboardShortcutFreeList.push_back(index);
+			s_keyboardShortcutList[index].shortcutId = SHORTCUT_NONE; // Invalid
+			s_keyboardShortcutMap.erase(iShortcut);
+		}
+	}
+
+	const char* getKeyboardShortcutDesc(ShortcutId id)
+	{
+		if (id < SHORTCUT_PLACE || id >= SHORTCUT_COUNT)
+		{
+			return nullptr;
+		}
+		return c_shortcutDesc[id];
+	}
+
+	void clearKeyboardShortcuts()
+	{
+		s_keyboardShortcutList.clear();
+		s_keyboardShortcutMap.clear();
+		s_keyboardShortcutFreeList.clear();
+	}
+
+	void setDefaultKeyboardShortcuts()
+	{
+		clearKeyboardShortcuts();
+		addKeyboardShortcut(SHORTCUT_PLACE, KEY_INSERT);
+		addKeyboardShortcut(SHORTCUT_MOVE_X, KEY_X);
+		addKeyboardShortcut(SHORTCUT_MOVE_Y, KEY_Y);
+		addKeyboardShortcut(SHORTCUT_MOVE_Z, KEY_Z);
+		addKeyboardShortcut(SHORTCUT_MOVE_NORMAL, KEY_N);
+		addKeyboardShortcut(SHORTCUT_COPY_TEXTURE, KEY_T, KEYMOD_CTRL);
+		addKeyboardShortcut(SHORTCUT_SET_TEXTURE, KEY_T);
+		addKeyboardShortcut(SHORTCUT_SET_SIGN, KEY_T, KEYMOD_SHIFT);
+		addKeyboardShortcut(SHORTCUT_AUTO_ALIGN, KEY_A, KEYMOD_CTRL);
+		addKeyboardShortcut(SHORTCUT_MOVE_TO_FLOOR, KEY_F);
+		addKeyboardShortcut(SHORTCUT_MOVE_TO_CEIL, KEY_C);
+		addKeyboardShortcut(SHORTCUT_DELETE, KEY_DELETE);
+		addKeyboardShortcut(SHORTCUT_COPY, KEY_C, KEYMOD_CTRL);
+		addKeyboardShortcut(SHORTCUT_PASTE, KEY_V, KEYMOD_CTRL);
+		addKeyboardShortcut(SHORTCUT_ROTATE, KEY_UNKNOWN, KEYMOD_CTRL);
+		addKeyboardShortcut(SHORTCUT_REDUCE_CURVE_SEGS, KEY_LEFTBRACKET);
+		addKeyboardShortcut(SHORTCUT_INCREASE_CURVE_SEGS, KEY_RIGHTBRACKET);
+		addKeyboardShortcut(SHORTCUT_RESET_CURVE_SEGS, KEY_BACKSLASH);
+		addKeyboardShortcut(SHORTCUT_SHOW_ALL_LABELS, KEY_TAB);
+		addKeyboardShortcut(SHORTCUT_UNDO, KEY_Z, KEYMOD_CTRL);
+		addKeyboardShortcut(SHORTCUT_REDO, KEY_Y, KEYMOD_CTRL);
+	}
+				
+	bool isShortcutPressed(ShortcutId shortcutId, u32 allowedKeyMods)
+	{
+		KeyboardShortcut* shortcut = getShortcutFromId(shortcutId);
+		if (!shortcut || shortcut->code == KEY_UNKNOWN) { return false; }
+
+		bool pressed = TFE_Input::keyPressed(shortcut->code);
+		pressed &= validateKeyMods(shortcut, allowedKeyMods);
+		return pressed;
+	}
+
+	bool isShortcutRepeat(ShortcutId shortcutId, u32 allowedKeyMods)
+	{
+		KeyboardShortcut* shortcut = getShortcutFromId(shortcutId);
+		if (!shortcut || shortcut->code == KEY_UNKNOWN) { return false; }
+
+		bool pressed = TFE_Input::keyPressedWithRepeat(shortcut->code);
+		pressed &= validateKeyMods(shortcut, allowedKeyMods);
+		return pressed;
+	}
+
+	bool isShortcutHeld(ShortcutId shortcutId, u32 allowedKeyMods)
+	{
+		KeyboardShortcut* shortcut = getShortcutFromId(shortcutId);
+		if (!shortcut) { return false; }
+
+		bool down = true;
+		if (shortcut->code != KEY_UNKNOWN)
+		{
+			down &= TFE_Input::keyDown(shortcut->code);
+		}
+		down &= validateKeyMods(shortcut, allowedKeyMods);
+		return down;
+	}
+
+	KeyboardShortcut* getShortcutFromId(ShortcutId id)
+	{
+		std::map<u32, u32>::iterator iShortcut = s_keyboardShortcutMap.find(id);
+		if (iShortcut == s_keyboardShortcutMap.end())
+		{
+			return nullptr;
+		}
+		return &s_keyboardShortcutList[iShortcut->second];
+	}
+
+	bool validateKeyMods(KeyboardShortcut* shortcut, u32 allowedKeyMods)
+	{
+		bool requiredModsDown = true;
+		u32 reqMods = 0;
+		if (shortcut->mod != KEYMOD_NONE)
+		{
+			reqMods = 1 << shortcut->mod;
+		}
+		for (u32 m = KEYMOD_NONE + 1; m <= KEYMOD_SHIFT; m++)
+		{
+			bool modDown = TFE_Input::keyModDown(KeyModifier(m));
+			if (reqMods & (1 << m))
 			{
-				s_editActions = ACTION_COPY;
+				requiredModsDown &= modDown;
 			}
-			else if (TFE_Input::keyPressed(KEY_V) && TFE_Input::keyModDown(KEYMOD_CTRL))
+			else if (modDown && !(allowedKeyMods & (1 << m)))
 			{
-				s_editActions = ACTION_PASTE;
+				requiredModsDown = false;
 			}
 		}
+		return requiredModsDown;
 	}
 }

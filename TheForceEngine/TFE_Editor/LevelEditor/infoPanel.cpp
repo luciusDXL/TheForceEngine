@@ -3,6 +3,7 @@
 #include "levelEditorHistory.h"
 #include "editVertex.h"
 #include "editCommon.h"
+#include "hotkeys.h"
 #include "guidelines.h"
 #include "tabControl.h"
 #include "camera.h"
@@ -1278,7 +1279,7 @@ namespace LevelEditor
 		EditorSector* sector = nullptr;
 		u32 selWallCount = getWallInfoList();
 
-		const bool insertTexture = s_selectedTexture >= 0 && TFE_Input::keyPressed(KEY_T);
+		const bool insertTexture = s_selectedTexture >= 0 && isShortcutPressed(SHORTCUT_SET_TEXTURE);
 		const bool removeTexture = TFE_Input::mousePressed(MBUTTON_RIGHT);
 		const s32 texIndex = insertTexture ? s_selectedTexture  : -1;
 

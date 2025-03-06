@@ -53,7 +53,7 @@ namespace LevelEditor
 		const bool mousePressed = s_singleClick;
 		const bool mouseDown = TFE_Input::mouseDown(MouseButton::MBUTTON_LEFT);
 		// TODO: Hotkeys.
-		const bool insertVtx = TFE_Input::keyPressed(KEY_INSERT);
+		const bool insertVtx = isShortcutPressed(SHORTCUT_PLACE);
 		const bool snapToGridEnabled = !TFE_Input::keyModDown(KEYMOD_ALT) && s_grid.size > 0.0f;
 
 		// Early out.

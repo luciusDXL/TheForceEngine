@@ -103,6 +103,9 @@ namespace LevelEditor
 	EditorSector* edit_getHoverSector2dAtCursor();
 	Vec3f edit_viewportCoordToWorldDir3d(Vec2i vCoord);
 
+	bool edit_hasItemsInClipboard();
+	void edit_clearClipboard();
+
 	// Drag Select: TODO Move?
 	void startDragSelect(s32 mx, s32 my, DragSelectMode mode);
 	void updateDragSelect(s32 mx, s32 my);

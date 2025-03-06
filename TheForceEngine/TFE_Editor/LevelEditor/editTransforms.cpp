@@ -373,16 +373,16 @@ namespace LevelEditor
 			const u32 moveAxis = s_moveAxis;
 			// Get the new move axis.
 			s_moveAxis = AXIS_XZ;
-			if (TFE_Input::keyDown(KEY_X))
+			if (isShortcutHeld(SHORTCUT_MOVE_X))
 			{
 				s_moveAxis = AXIS_X;
 			}
 			// Y-axis movement only works in 3D view.
-			else if (TFE_Input::keyDown(KEY_Y) && s_view != EDIT_VIEW_2D)
+			else if (isShortcutHeld(SHORTCUT_MOVE_Y) && s_view != EDIT_VIEW_2D)
 			{
 				s_moveAxis = AXIS_Y;
 			}
-			else if (TFE_Input::keyDown(KEY_Z))
+			else if (isShortcutHeld(SHORTCUT_MOVE_Z))
 			{
 				s_moveAxis = AXIS_Z;
 			}
