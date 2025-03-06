@@ -106,7 +106,37 @@ namespace LevelEditor
 
 	void inputPref()
 	{
-		
+		if (ImGui::BeginChild("###InputList", ImVec2(670.0f, 768.0f)))
+		{
+			for (s32 i = 0; i < SHORTCUT_COUNT; i++)
+			{
+				ShortcutId id = ShortcutId(i);
+				const char* desc = getKeyboardShortcutDesc(id);
+				KeyboardCode code = getShortcutKeyboardCode(id);
+				KeyModifier mod = getShortcutKeyMod(id);
+
+				char keyCombo[256];
+				keyCombo[0] = 0;
+				if (code != KEY_UNKNOWN && mod != KEYMOD_NONE)
+				{
+					sprintf(keyCombo, "%s + %s", TFE_Input::getKeyboardModifierName(mod), TFE_Input::getKeyboardName(code));
+				}
+				else if (code != KEY_UNKNOWN)
+				{
+					sprintf(keyCombo, "%s", TFE_Input::getKeyboardName(code));
+				}
+				else if (mod != KEYMOD_NONE)
+				{
+					sprintf(keyCombo, "%s", TFE_Input::getKeyboardModifierName(mod));
+				}
+
+				ImGui::Text("%s", desc); ImGui::SameLine(512.0f);
+				ImGui::SetNextItemWidth(128.0f);
+				ImGui::InputTextWithHint(editor_getUniqueLabel(""), "Shortcut", keyCombo, 256);
+				ImGui::Separator();
+			}
+		}
+		ImGui::EndChild();
 	}
 
 	void themePref()

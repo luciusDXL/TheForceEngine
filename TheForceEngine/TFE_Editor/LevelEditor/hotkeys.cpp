@@ -150,7 +150,7 @@ namespace LevelEditor
 		"Lock movement to wall normal",						// SHORTCUT_MOVE_NORMAL
 		"Copy texture from surface",						// SHORTCUT_COPY_TEXTURE
 		"Set current texture on surface or selection",		// SHORTCUT_SET_TEXTURE
-		"Apply the current texture as a sign at the current mouse position on the surface", // SHORTCUT_SET_SIGN
+		"Apply the current texture as a sign at mouse position", // SHORTCUT_SET_SIGN
 		"Auto-align texture offsets on matching adjacent surfaces", // SHORTCUT_AUTO_ALIGN
 		"Move object to sector floor",						// SHORTCUT_MOVE_TO_FLOOR
 		"Move object to sector ceiling",					// SHORTCUT_MOVE_TO_CEIL
@@ -220,6 +220,26 @@ namespace LevelEditor
 			return nullptr;
 		}
 		return c_shortcutDesc[id];
+	}
+
+	KeyboardCode getShortcutKeyboardCode(ShortcutId id)
+	{
+		KeyboardShortcut* shortcut = getShortcutFromId(id);
+		if (!shortcut)
+		{
+			return KEY_UNKNOWN;
+		}
+		return shortcut->code;
+	}
+
+	KeyModifier getShortcutKeyMod(ShortcutId id)
+	{
+		KeyboardShortcut* shortcut = getShortcutFromId(id);
+		if (!shortcut)
+		{
+			return KEYMOD_NONE;
+		}
+		return shortcut->mod;
 	}
 
 	void clearKeyboardShortcuts()

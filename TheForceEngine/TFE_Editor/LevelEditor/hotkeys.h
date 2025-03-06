@@ -71,6 +71,8 @@ namespace LevelEditor
 	void addKeyboardShortcut(ShortcutId id, KeyboardCode code = KEY_UNKNOWN, KeyModifier mod = KEYMOD_NONE);
 	void removeKeyboardShortcut(ShortcutId id);
 	const char* getKeyboardShortcutDesc(ShortcutId id);
+	KeyboardCode getShortcutKeyboardCode(ShortcutId id);
+	KeyModifier getShortcutKeyMod(ShortcutId id);
 	bool isShortcutPressed(ShortcutId shortcutId, u32 allowedKeyMods = (1 << KEYMOD_SHIFT) | (1 << KEYMOD_ALT));
 	bool isShortcutRepeat(ShortcutId shortcutId, u32 allowedKeyMods = (1 << KEYMOD_SHIFT) | (1 << KEYMOD_ALT));
 	bool isShortcutHeld(ShortcutId shortcutId, u32 allowedKeyMods = (1 << KEYMOD_SHIFT) | (1 << KEYMOD_ALT));
