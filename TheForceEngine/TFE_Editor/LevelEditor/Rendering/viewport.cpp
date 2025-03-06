@@ -2733,7 +2733,7 @@ namespace LevelEditor
 									if (!targetSector) { continue; }
 
 									Vec3f endPoint = { 0 };
-									if (targetWall < 0)
+									if (targetWall < 0 || targetWall >= (s32)targetSector->walls.size())
 									{
 										endPoint.x = (targetSector->bounds[0].x + targetSector->bounds[1].x) * 0.5f;
 										endPoint.y = (targetSector->bounds[0].y + targetSector->bounds[1].y) * 0.5f;
