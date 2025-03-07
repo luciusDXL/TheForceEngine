@@ -2292,7 +2292,7 @@ namespace LevelEditor
 		s_cursor3d.z = onGrid.z;
 
 		// Hot Key
-		const bool heightMove = TFE_Input::keyDown(KEY_H);
+		const bool heightMove = isShortcutHeld(SHORTCUT_MOVE_GRID);
 
 		// Two ways to draw: rectangle (shift + left click and drag, escape to cancel), shape (left click to start, backspace to go back one point, escape to cancel)
 		if (s_geoEdit.gridMoveStart)

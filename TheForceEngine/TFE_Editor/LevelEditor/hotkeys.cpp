@@ -153,6 +153,7 @@ namespace LevelEditor
 		"Lock movement to wall normal",						// SHORTCUT_MOVE_NORMAL
 		"Move object to sector floor",						// SHORTCUT_MOVE_TO_FLOOR
 		"Move object to sector ceiling",					// SHORTCUT_MOVE_TO_CEIL
+		"Select backfacing surfaces",						// SHORTCUT_SELECT_BACKFACES
 		"Rotate with mousewheel while held",				// SHORTCUT_ROTATE
 		"Copy texture from surface",						// SHORTCUT_COPY_TEXTURE
 		"Set current texture on surface or selection",		// SHORTCUT_SET_TEXTURE
@@ -165,6 +166,9 @@ namespace LevelEditor
 		"Reduce curve segments",							// SHORTCUT_REDUCE_CURVE_SEGS
 		"Increase curve segments",							// SHORTCUT_INCREASE_CURVE_SEGS
 		"Reset curve segments to default",					// SHORTCUT_RESET_CURVE_SEGS
+		"Set the grid to the selected floor/ceiling/sector height",// SHORTCUT_SET_GRID_HEIGHT
+		"Hold to move the grid up and down (3d view/sector draw)", // SHORTCUT_MOVE_GRID
+		"Toggle gravity (3d view only)",					// SHORTCUT_TOGGLE_GRAVITY
 		"Camera Forward",									// SHORTCUT_CAMERA_FWD
 		"Camera Backward",									// SHORTCUT_CAMERA_BACK
 		"Camera Strafe Left",								// SHORTCUT_CAMERA_LEFT
@@ -270,6 +274,7 @@ namespace LevelEditor
 		addKeyboardShortcut(SHORTCUT_MOVE_NORMAL, KEY_N);
 		addKeyboardShortcut(SHORTCUT_MOVE_TO_FLOOR, KEY_F);
 		addKeyboardShortcut(SHORTCUT_MOVE_TO_CEIL, KEY_C);
+		addKeyboardShortcut(SHORTCUT_SELECT_BACKFACES, KEY_B);
 		addKeyboardShortcut(SHORTCUT_ROTATE, KEY_UNKNOWN, KEYMOD_CTRL);
 		addKeyboardShortcut(SHORTCUT_COPY_TEXTURE, KEY_T, KEYMOD_CTRL);
 		addKeyboardShortcut(SHORTCUT_SET_TEXTURE, KEY_T);
@@ -282,6 +287,9 @@ namespace LevelEditor
 		addKeyboardShortcut(SHORTCUT_REDUCE_CURVE_SEGS, KEY_LEFTBRACKET);
 		addKeyboardShortcut(SHORTCUT_INCREASE_CURVE_SEGS, KEY_RIGHTBRACKET);
 		addKeyboardShortcut(SHORTCUT_RESET_CURVE_SEGS, KEY_BACKSLASH);
+		addKeyboardShortcut(SHORTCUT_SET_GRID_HEIGHT, KEY_G, KEYMOD_CTRL);
+		addKeyboardShortcut(SHORTCUT_MOVE_GRID, KEY_H);
+		addKeyboardShortcut(SHORTCUT_TOGGLE_GRAVITY, KEY_G);
 		addKeyboardShortcut(SHORTCUT_CAMERA_FWD, KEY_W);
 		addKeyboardShortcut(SHORTCUT_CAMERA_BACK, KEY_S);
 		addKeyboardShortcut(SHORTCUT_CAMERA_LEFT, KEY_A);

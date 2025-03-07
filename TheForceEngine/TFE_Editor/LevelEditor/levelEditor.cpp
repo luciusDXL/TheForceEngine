@@ -534,8 +534,7 @@ namespace LevelEditor
 		if (info->hitSectorId < 0) { return; }
 		EditorSector* hoveredSector = &s_level.sectors[info->hitSectorId];
 
-		// TODO: Move to central hotkey list.
-		if (TFE_Input::keyModDown(KEYMOD_CTRL) && TFE_Input::keyPressed(KEY_G))
+		if (isShortcutPressed(SHORTCUT_SET_GRID_HEIGHT))
 		{
 			adjustGridHeight(hoveredSector);
 		}
@@ -1315,7 +1314,7 @@ namespace LevelEditor
 			if (!edit_interactingWithGizmo())
 			{
 				// TODO: Move to central hotkey list.
-				if (hoveredSector && TFE_Input::keyModDown(KEYMOD_CTRL) && TFE_Input::keyPressed(KEY_G))
+				if (hoveredSector && isShortcutPressed(SHORTCUT_SET_GRID_HEIGHT))
 				{
 					adjustGridHeight(hoveredSector);
 				}
@@ -1375,8 +1374,7 @@ namespace LevelEditor
 			cameraControl3d(mx, my);
 			selection_clearHovered();
 
-			// TODO: Hotkeys.
-			if (TFE_Input::keyPressed(KEY_G) && !TFE_Input::keyModDown(KEYMOD_CTRL))
+			if (isShortcutPressed(SHORTCUT_TOGGLE_GRAVITY))
 			{
 				s_gravity = !s_gravity;
 				if (s_gravity) { LE_INFO("Gravity Enabled."); }
@@ -1406,11 +1404,9 @@ namespace LevelEditor
 				}
 			}
 					
-			// TODO: Move out to common place for hotkeys.
-			bool hitBackfaces = TFE_Input::keyDown(KEY_B);
-			
 			RayHitInfo hitInfo;
 			Ray ray = { s_camera.pos, s_rayDir, 1000.0f };
+			const bool hitBackfaces = isShortcutHeld(SHORTCUT_SELECT_BACKFACES);
 			const bool rayHit = traceRay(&ray, &hitInfo, hitBackfaces, s_sectorDrawMode == SDM_TEXTURED_CEIL || s_sectorDrawMode == SDM_TEXTURED_FLOOR);
 			if (rayHit) { s_cursor3d = hitInfo.hitPos; }
 			else  		{ s_cursor3d = rayGridPlaneHit(s_camera.pos, s_rayDir); }
