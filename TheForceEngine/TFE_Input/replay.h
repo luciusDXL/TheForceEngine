@@ -59,6 +59,7 @@ namespace TFE_Input
 	void storePDAPosition(Vec2i pos);
 	Vec2i getPDAPosition();
 
+	void loadReplayFromPath(const char* replayPath);
 	void populateReplayDirectory(std::vector<TFE_SaveSystem::SaveHeader>& dir);
 	bool loadReplayHeader(const char* filename, TFE_SaveSystem::SaveHeader* header);
 	void loadReplayWrapper(string replayFile, string modName, string levelName);

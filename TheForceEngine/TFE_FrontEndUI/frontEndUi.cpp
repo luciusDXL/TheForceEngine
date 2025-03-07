@@ -2056,15 +2056,13 @@ namespace TFE_FrontEndUI
 				}
 			}
 			ImGui::EndChild();
-
 			ImGui::Spacing();
-			ImGui::TextWrapped("Note: Press the");
-			ImGui::SameLine(0.0f);
+			ImGui::TextWrapped("Note: Pausing the game will stop recording Replay. Press the");
 			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 1.0f, 0.0f, 0.8f));
 			ImGui::TextWrapped("Escape");
 			ImGui::PopStyleColor();
 			ImGui::SameLine(0.0f);
-			ImGui::TextWrapped("key to cancel recording or demo playback");
+			ImGui::TextWrapped(" key to stop and save recording.");
 			ImGui::Spacing();
 
 			ImGui::PushFont(s_dialogFont);
@@ -2288,15 +2286,19 @@ namespace TFE_FrontEndUI
 				else if (modLoader_exist(s_modReplayName))
 				{
 					ImGui::SetNextItemWidth(768 * s_uiScale);
+
+					// Set the replay path	
+					char replayFilePath[TFE_MAX_PATH];
+					sprintf(replayFilePath, "%s%s", s_replayDir, s_replayFileName);
 					if (TFE_Input::keyPressed(KEY_RETURN))
 					{
 						shouldExit = true;
-						loadReplayWrapper(s_replayFileName, s_modReplayName, s_replayLevelId);
+						loadReplayWrapper(replayFilePath, s_modReplayName, s_replayLevelId);
 					}
 					if (ImGui::Button("OK", ImVec2(120, 0)))
 					{
 						shouldExit = true;
-						loadReplayWrapper(s_replayFileName, s_modReplayName, s_replayLevelId);
+						loadReplayWrapper(replayFilePath, s_modReplayName, s_replayLevelId);
 					}
 				}
 				else 
@@ -3975,5 +3977,10 @@ namespace TFE_FrontEndUI
 
 		TFE_Settings::writeToDisk();
 		inputMapping_serialize();
+	}
+
+	bool isModUI()
+	{
+		return s_subUI == FEUI_MODS;
 	}
 }

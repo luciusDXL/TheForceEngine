@@ -19,6 +19,7 @@
 #include <TFE_FileSystem/fileutil.h>
 #include <TFE_FileSystem/filestream.h>
 #include <TFE_FrontEndUI/frontEndUi.h>
+#include <TFE_FrontEndUI/modLoader.h>
 #include <TFE_Game/saveSystem.h>
 #include <TFE_Input/inputMapping.h>
 #include <TFE_Jedi/Serialization/serialization.h>
@@ -111,6 +112,11 @@ namespace TFE_Input
 			TFE_Settings::getGameSettings()->df_enableRecording = true;
 		}
 	}
+
+	bool shouldLogReplay()
+	{
+		return TFE_Settings::getGameSettings()->df_demologging || TFE_Settings::getTempSettings()->df_demologging;
+	}	
 
 	void getAgentPath(char * agentPath)
 	{
@@ -336,7 +342,9 @@ namespace TFE_Input
 		TFE_SaveSystem::SaveHeader* headers = dir.data();
 		for (size_t i = 0; i < replayCount; i++)
 		{
-			loadReplayHeader(filenames[i].c_str(), &headers[i]);
+			char filePath[TFE_MAX_PATH];
+			sprintf(filePath, "%s%s", s_replayDir, filenames[i].c_str());
+			loadReplayHeader(filePath, &headers[i]);
 		}
 	}
 
@@ -410,17 +418,16 @@ namespace TFE_Input
 		return fileHandler;
 	}
 
-	bool loadReplayHeader(const char* filename, TFE_SaveSystem::SaveHeader* header)
+	bool loadReplayHeader(const char* filePath, TFE_SaveSystem::SaveHeader* header)
 	{
-		char filePath[TFE_MAX_PATH];
-		sprintf(filePath, "%s%s", s_replayDir, filename);
-
 		bool ret = false;
 		FileStream stream;
+		char fileName[TFE_MAX_PATH];
+		FileUtil::getFileNameFromPath(filePath, fileName, true);
 		if (stream.open(filePath, Stream::MODE_READ))
 		{
-			loadHeader(&stream, header, filename);
-			strcpy(header->fileName, filename);
+			loadHeader(&stream, header, filePath);
+			strcpy(header->fileName, fileName);
 			stream.close();
 			ret = true;
 		}
@@ -856,7 +863,7 @@ namespace TFE_Input
 			TFE_Settings::getGameSettings()->df_enableRecording = true;
 		}
 
-		if (TFE_Settings::getGameSettings()->df_demologging)
+		if (shouldLogReplay())
 		{
 			TFE_System::logClose();
 			TFE_System::logOpen("the_force_engine_log.txt", true);
@@ -866,7 +873,7 @@ namespace TFE_Input
 
 	void logReplayPosition(int counter)
 	{
-		if (TFE_Settings::getGameSettings()->df_demologging && TFE_DarkForces::s_playerEye)
+		if (shouldLogReplay() && TFE_DarkForces::s_playerEye)
 		{
 			if (isDemoPlayback()) counter--;
 
@@ -898,7 +905,7 @@ namespace TFE_Input
 		saveTick();
 		saveInitTime();
 
-		if (TFE_Settings::getGameSettings()->df_demologging)
+		if (shouldLogReplay())
 		{
 			TFE_System::logClose();
 			TFE_System::logOpen("record.log");;
@@ -956,10 +963,28 @@ namespace TFE_Input
 		TFE_DarkForces::hud_sendTextMessage(msg.c_str(), 1, false);
 	}
 
+	void loadReplayFromPath(const char * sourceReplayPath)
+	{
+		char replayPath[TFE_MAX_PATH];
+		sprintf(replayPath, "%s", sourceReplayPath);
+
+		FileUtil::fixupPath(replayPath);
+
+		TFE_SaveSystem::SaveHeader header;
+		loadReplayHeader(replayPath, &header);
+
+		TFE_DarkForces::enableCutscenes(false);
+
+		loadReplayWrapper(replayPath, header.modNames, header.levelId);
+	}
+
 	// This is a replay wrapper that handles agents and replay configuration
 	void loadReplayWrapper(string replayFile, string modName, string levelId)
 	{
+		TFE_System::logWrite(LOG_MSG, "Replay", "modname = %s levelid = %s", modName.c_str(), levelId.c_str());
+
 		// If you are replaying a demo, you should not be recording.
+
 		TFE_Settings::getGameSettings()->df_enableRecording = false;
 		TFE_Settings::getGameSettings()->df_enableReplay = true;
 
@@ -987,11 +1012,15 @@ namespace TFE_Input
 		// Set the replay parameters
 		TFE_FrontEndUI::setModOverrides(modOverrides);
 
-		// Set the replay path	
-		sprintf(s_replayPath, "%s%s", s_replayDir, replayFile.c_str());
+
+		sprintf(s_replayPath, "%s", replayFile.c_str());
+
 
 		// Load the replay header so we can get the agent data
 		replayFilehandler = serializeHeaderAgentInfo(&s_replayFile, false);		
+
+		// Make sure you read all the mods before setting the selected mod
+		TFE_FrontEndUI::modLoader_read();
 
 		// Set the selected mod and GAME state
 		TFE_FrontEndUI::setSelectedMod(selectedModCmd);
@@ -1038,7 +1067,7 @@ namespace TFE_Input
 		// Ensure you always load the first agent. 
 		s_agentId = 0;
 
-		if (TFE_Settings::getGameSettings()->df_demologging)
+		if (shouldLogReplay())
 		{
 			TFE_System::logClose();
 			if (replayLogCounter == 0)

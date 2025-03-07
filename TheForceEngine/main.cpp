@@ -576,7 +576,6 @@ int main(int argc, char* argv[])
 	// Create Replay Directory
 	initReplays();
 
-
 	// Initialize SDL
 	if (!sdlInit())
 	{
@@ -745,10 +744,10 @@ int main(int argc, char* argv[])
 				if (modOverrideSize > 0)
 				{
 					for (s32 i = 0; i < modOverrides.size(); i++)
-					{		
-						newArgs[i+1] = new char[modOverrides[i].size() + 1];
-						std::strcpy(newArgs[i+1], modOverrides[i].c_str());
-					}					
+					{
+						newArgs[i + 1] = new char[modOverrides[i].size() + 1];
+						std::strcpy(newArgs[i + 1], modOverrides[i].c_str());
+					}
 				}
 				else
 				{
@@ -1001,6 +1000,11 @@ void parseOption(const char* name, const std::vector<const char*>& values, bool 
 				s_startupGame = Game_Dark_Forces;
 			}
 		}
+		else if (name[0] == 'r')
+		{
+			// -r<replay_path>
+			TFE_Input::loadReplayFromPath(&name[1]);
+		}
 		else if (strcasecmp(name, "nosound") == 0)
 		{
 			// -noaudio
@@ -1039,6 +1043,10 @@ void parseOption(const char* name, const std::vector<const char*>& values, bool 
 		else if (strcasecmp(name, "skip_load_delay") == 0)
 		{
 			TFE_Settings::getTempSettings()->skipLoadDelay = true;
+		}
+		else if (strcasecmp(name, "demo_logging") == 0)
+		{
+			TFE_Settings::getTempSettings()->df_demologging = true;
 		}
 	}
 }

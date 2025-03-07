@@ -41,6 +41,7 @@ struct TFE_Settings_Temp
 {
 	bool skipLoadDelay = false;
 	bool forceFullscreen = false;
+	bool df_demologging = false;
 };
 
 struct TFE_Settings_Window

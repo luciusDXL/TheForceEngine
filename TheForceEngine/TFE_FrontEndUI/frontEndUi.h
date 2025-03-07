@@ -75,4 +75,6 @@ namespace TFE_FrontEndUI
 
 	void toggleProfilerView();
 	void drawFps(s32 windowWidth);
+
+	bool isModUI();
 }

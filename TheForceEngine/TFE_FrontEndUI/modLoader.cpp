@@ -88,11 +88,11 @@ namespace TFE_FrontEndUI
 	{
 		return strcasecmp(a.fileName.c_str(), b.fileName.c_str()) < 0;
 	}
-
+	
 	void modLoader_read()
 	{
-		// Reuse the cached mods unless no mods have been read yet.
-		if (s_modsRead && s_mods.size() > 0) { return; }
+		// Only read the mods once unless you are looking at the mod UI and there are not mods.
+		if (s_modsRead && (s_mods.size() > 0 || !isModUI())) { return; }
 		s_modsRead = true;
 
 		s_mods.clear();
@@ -146,7 +146,7 @@ namespace TFE_FrontEndUI
 			s_modsRead = false;
 			return;
 		}
-
+		
 		FileList dirList, zipList;
 		for (s32 i = 0; i < modPathCount; i++)
 		{
