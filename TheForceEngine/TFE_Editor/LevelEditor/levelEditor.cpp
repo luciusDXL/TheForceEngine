@@ -231,7 +231,6 @@ namespace LevelEditor
 	{
 		TFE_ScriptInterface::registerScriptInterface(API_LEVEL_EDITOR);
 		TFE_ScriptInterface::setAPI(API_LEVEL_EDITOR, "EditorDef/Scripts");
-		setDefaultKeyboardShortcuts();
 
 		s_levelAsset = asset;
 		// Initialize editors.

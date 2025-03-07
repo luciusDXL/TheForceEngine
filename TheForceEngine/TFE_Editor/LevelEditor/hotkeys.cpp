@@ -13,6 +13,10 @@ namespace LevelEditor
 	static f64 s_lastRightClick = 0.0;
 	static char s_keyComboText[256];
 
+	static std::map<std::string, ShortcutId> s_shortcutNameMap;
+	static std::map<std::string, KeyboardCode> s_keyNameMap;
+	static std::map<std::string, KeyModifier> s_keyModMap;
+
 	const f64 c_doubleClickThreshold = 0.25f;
 	const f64 c_rightClickThreshold = 0.5;
 	const s32 c_rightClickMoveThreshold = 1;
@@ -142,6 +146,59 @@ namespace LevelEditor
 		KeyModifier mod = KEYMOD_NONE;
 		ShortcutId shortcutId = SHORTCUT_NONE;
 	};
+	const char* c_shortcutName[] =
+	{
+		// Insert/Delete/Copy/Paste
+		"LEV_SHORTCUT_PLACE",
+		"LEV_SHORTCUT_DELETE",
+		"LEV_SHORTCUT_COPY",
+		"LEV_SHORTCUT_PASTE",
+		// Translation & Rotation
+		"LEV_SHORTCUT_MOVE_X",
+		"LEV_SHORTCUT_MOVE_Y",
+		"LEV_SHORTCUT_MOVE_Z",
+		"LEV_SHORTCUT_MOVE_NORMAL",
+		"LEV_SHORTCUT_MOVE_TO_FLOOR",
+		"LEV_SHORTCUT_MOVE_TO_CEIL",
+		"LEV_SHORTCUT_SELECT_BACKFACES",
+		// Textures.
+		"LEV_SHORTCUT_COPY_TEXTURE",
+		"LEV_SHORTCUT_SET_TEXTURE",
+		"LEV_SHORTCUT_SET_SIGN",
+		"LEV_SHORTCUT_AUTO_ALIGN",
+		"LEV_SHORTCUT_TEXOFFSET_UP",
+		"LEV_SHORTCUT_TEXOFFSET_DOWN",
+		"LEV_SHORTCUT_TEXOFFSET_LEFT",
+		"LEV_SHORTCUT_TEXOFFSET_RIGHT",
+		// Drawing
+		"LEV_SHORTCUT_REDUCE_CURVE_SEGS",
+		"LEV_SHORTCUT_INCREASE_CURVE_SEGS",
+		"LEV_SHORTCUT_RESET_CURVE_SEGS",
+		"LEV_SHORTCUT_SET_GRID_HEIGHT",
+		"LEV_SHORTCUT_MOVE_GRID",
+		// Camera
+		"LEV_SHORTCUT_TOGGLE_GRAVITY",
+		"LEV_SHORTCUT_CAMERA_FWD",
+		"LEV_SHORTCUT_CAMERA_BACK",
+		"LEV_SHORTCUT_CAMERA_LEFT",
+		"LEV_SHORTCUT_CAMERA_RIGHT",
+		// Other
+		"LEV_SHORTCUT_SHOW_ALL_LABELS",
+		"LEV_SHORTCUT_UNDO",
+		"LEV_SHORTCUT_REDO",
+		// Menus
+		"LEV_SHORTCUT_SAVE",
+		"LEV_SHORTCUT_RELOAD",
+		"LEV_SHORTCUT_FIND_SECTOR",
+		"LEV_SHORTCUT_VIEW_2D",
+		"LEV_SHORTCUT_VIEW_3D",
+		"LEV_SHORTCUT_VIEW_WIREFRAME",
+		"LEV_SHORTCUT_VIEW_LIGHTING",
+		"LEV_SHORTCUT_VIEW_GROUP_COLOR",
+		"LEV_SHORTCUT_VIEW_TEXTURED_FLOOR",
+		"LEV_SHORTCUT_VIEW_TEXTURED_CEIL",
+		"LEV_SHORTCUT_VIEW_FULLBRIGHT",
+	};
 	const char* c_shortcutDesc[] =
 	{
 		"Insert Vertex/Object",								// SHORTCUT_PLACE
@@ -195,6 +252,13 @@ namespace LevelEditor
 	
 	KeyboardShortcut* getShortcutFromId(ShortcutId id);
 	bool validateKeyMods(KeyboardShortcut* shortcut, u32 allowedKeyMods);
+
+	ShortcutId stringToShortcutId(const std::string name);
+	KeyboardCode stringToKeyCode(const std::string name);
+	KeyModifier stringToKeyModifier(const std::string name);
+	const char* shortcutIdToString(ShortcutId id);
+	const char* keycodeToString(KeyboardCode id);
+	const char* keyModifierToString(KeyModifier id);
 
 	void addKeyboardShortcut(ShortcutId id, KeyboardCode code, KeyModifier mod)
 	{
@@ -264,12 +328,46 @@ namespace LevelEditor
 		}
 		return shortcut->mod;
 	}
-
+		
 	void clearKeyboardShortcuts()
 	{
 		s_keyboardShortcutList.clear();
 		s_keyboardShortcutMap.clear();
 		s_keyboardShortcutFreeList.clear();
+	}
+
+	void parseLevelEditorShortcut(const char* idName, const std::string* values, s32 valueCount)
+	{
+		const ShortcutId id = stringToShortcutId(idName);
+		if (id < 0 || id >= ShortcutId::SHORTCUT_COUNT) { return; }
+
+		KeyboardCode keyCode = KEY_UNKNOWN;
+		KeyModifier keyMod = KEYMOD_NONE;
+		if (valueCount >= 1)
+		{
+			keyCode = stringToKeyCode(values[0]);
+		}
+		if (valueCount >= 2)
+		{
+			keyMod = stringToKeyModifier(values[1]);
+		}
+
+		if (keyCode != KEY_UNKNOWN)
+		{
+			addKeyboardShortcut(id, keyCode, keyMod);
+		}
+	}
+
+	void writeLevelEditorShortcuts(FileStream& configFile)
+	{
+		char lineBuffer[TFE_MAX_PATH];
+		for (s32 i = 0; i < SHORTCUT_COUNT; i++)
+		{
+			ShortcutId id = ShortcutId(i);
+			KeyboardShortcut* shortcut = getShortcutFromId(id);
+			snprintf(lineBuffer, TFE_MAX_PATH, "%s=%s %s\r\n", shortcutIdToString(id), keycodeToString(shortcut->code), keyModifierToString(shortcut->mod));
+			configFile.writeBuffer(lineBuffer, (u32)strlen(lineBuffer));
+		}
 	}
 
 	void setDefaultKeyboardShortcuts()
@@ -406,5 +504,84 @@ namespace LevelEditor
 			}
 		}
 		return requiredModsDown;
+	}
+
+	///////////////////////////////////////////////////////////////
+	ShortcutId stringToShortcutId(const std::string name)
+	{
+		// Fill in the map to make lookups faster.
+		if (s_shortcutNameMap.empty())
+		{
+			for (s32 i = 0; i < SHORTCUT_COUNT; i++)
+			{
+				ShortcutId id = ShortcutId(i);
+				s_shortcutNameMap[c_shortcutName[i]] = id;
+			}
+		}
+		// Find the id.
+		std::map<std::string, ShortcutId>::iterator iShortcut = s_shortcutNameMap.find(name);
+		if (iShortcut != s_shortcutNameMap.end())
+		{
+			return iShortcut->second;
+		}
+		return SHORTCUT_NONE;
+	}
+
+	KeyboardCode stringToKeyCode(const std::string name)
+	{
+		// Fill in the map to make lookups faster.
+		if (s_keyNameMap.empty())
+		{
+			for (s32 i = 0; i <= KEY_LAST; i++)
+			{
+				KeyboardCode key = KeyboardCode(i);
+				s_keyNameMap[TFE_Input::getKeyboardName(key)] = key;
+			}
+		}
+		// Find the id.
+		std::map<std::string, KeyboardCode>::iterator iKeyCode = s_keyNameMap.find(name);
+		if (iKeyCode != s_keyNameMap.end())
+		{
+			return iKeyCode->second;
+		}
+		return KEY_UNKNOWN;
+	}
+
+	KeyModifier stringToKeyModifier(const std::string name)
+	{
+		// Fill in the map to make lookups faster.
+		if (s_keyModMap.empty())
+		{
+			for (s32 i = 0; i <= KEYMOD_SHIFT; i++)
+			{
+				KeyModifier mod = KeyModifier(i);
+				s_keyModMap[TFE_Input::getKeyboardModifierName(mod)] = mod;
+			}
+		}
+		// Find the id.
+		std::map<std::string, KeyModifier>::iterator iKeyMod = s_keyModMap.find(name);
+		if (iKeyMod != s_keyModMap.end())
+		{
+			return iKeyMod->second;
+		}
+		return KEYMOD_NONE;
+	}
+
+	const char* shortcutIdToString(ShortcutId id)
+	{
+		if (id < 0 || id >= SHORTCUT_NONE) { return nullptr; }
+		return c_shortcutName[id];
+	}
+
+	const char* keycodeToString(KeyboardCode id)
+	{
+		if (id < 0 || id > KEY_LAST) { return nullptr; }
+		return TFE_Input::getKeyboardName(id);
+	}
+
+	const char* keyModifierToString(KeyModifier id)
+	{
+		if (id < 0 || id > KEYMOD_SHIFT) { return nullptr; }
+		return TFE_Input::getKeyboardModifierName(id);
 	}
 }

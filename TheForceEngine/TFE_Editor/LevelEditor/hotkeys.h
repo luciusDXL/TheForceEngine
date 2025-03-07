@@ -95,6 +95,9 @@ namespace LevelEditor
 
 	void handleHotkeys();
 
+	void parseLevelEditorShortcut(const char* key, const std::string* values, s32 valueCount);
+	void writeLevelEditorShortcuts(FileStream& configFile);
+
 	void clearKeyboardShortcuts();
 	void setDefaultKeyboardShortcuts();
 	void addKeyboardShortcut(ShortcutId id, KeyboardCode code = KEY_UNKNOWN, KeyModifier mod = KEYMOD_NONE);
