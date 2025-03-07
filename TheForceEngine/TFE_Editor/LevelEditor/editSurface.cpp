@@ -75,7 +75,10 @@ namespace LevelEditor
 
 		// Find similar walls.
 		EditorSector* rootSector = &s_level.sectors[sectorId];
-		selectSimilarWalls(rootSector, wallIndex, part, true);
+		if (wallIndex >= 0 && wallIndex < (s32)rootSector->walls.size())
+		{
+			selectSimilarWalls(rootSector, wallIndex, part, true);
+		}
 
 		// Restore the selection.
 		selection_restoreGeoSelections();

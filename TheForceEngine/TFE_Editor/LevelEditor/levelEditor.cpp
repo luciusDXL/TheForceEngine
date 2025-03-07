@@ -3034,25 +3034,22 @@ namespace LevelEditor
 	{
 		// WASD controls.
 		const f32 moveSpd = s_zoom2d * f32(960.0 * TFE_System::getDeltaTime());
-		if (!TFE_Input::keyModDown(KEYMOD_CTRL))
+		if (isShortcutHeld(SHORTCUT_CAMERA_FWD))
 		{
-			if (TFE_Input::keyDown(KEY_W))
-			{
-				s_viewportPos.z -= moveSpd;
-			}
-			else if (TFE_Input::keyDown(KEY_S))
-			{
-				s_viewportPos.z += moveSpd;
-			}
+			s_viewportPos.z -= moveSpd;
+		}
+		else if (isShortcutHeld(SHORTCUT_CAMERA_BACK))
+		{
+			s_viewportPos.z += moveSpd;
+		}
 
-			if (TFE_Input::keyDown(KEY_A))
-			{
-				s_viewportPos.x -= moveSpd;
-			}
-			else if (TFE_Input::keyDown(KEY_D))
-			{
-				s_viewportPos.x += moveSpd;
-			}
+		if (isShortcutHeld(SHORTCUT_CAMERA_LEFT))
+		{
+			s_viewportPos.x -= moveSpd;
+		}
+		else if (isShortcutHeld(SHORTCUT_CAMERA_RIGHT))
+		{
+			s_viewportPos.x += moveSpd;
 		}
 
 		// Mouse scrolling.
@@ -3096,40 +3093,36 @@ namespace LevelEditor
 		
 	void cameraControl3d(s32 mx, s32 my)
 	{
-		// WASD controls.
 		f32 moveSpd = f32(16.0 * TFE_System::getDeltaTime());
 		if (TFE_Input::keyDown(KEY_LSHIFT) || TFE_Input::keyDown(KEY_RSHIFT))
 		{
 			moveSpd *= 10.0f;
 		}
 
-		if (!TFE_Input::keyModDown(KEYMOD_CTRL))
+		if (isShortcutHeld(SHORTCUT_CAMERA_FWD))
 		{
-			if (TFE_Input::keyDown(KEY_W))
-			{
-				s_camera.pos.x -= s_camera.viewMtx.m2.x * moveSpd;
-				s_camera.pos.y -= s_camera.viewMtx.m2.y * moveSpd;
-				s_camera.pos.z -= s_camera.viewMtx.m2.z * moveSpd;
-			}
-			else if (TFE_Input::keyDown(KEY_S))
-			{
-				s_camera.pos.x += s_camera.viewMtx.m2.x * moveSpd;
-				s_camera.pos.y += s_camera.viewMtx.m2.y * moveSpd;
-				s_camera.pos.z += s_camera.viewMtx.m2.z * moveSpd;
-			}
+			s_camera.pos.x -= s_camera.viewMtx.m2.x * moveSpd;
+			s_camera.pos.y -= s_camera.viewMtx.m2.y * moveSpd;
+			s_camera.pos.z -= s_camera.viewMtx.m2.z * moveSpd;
+		}
+		else if (isShortcutHeld(SHORTCUT_CAMERA_BACK))
+		{
+			s_camera.pos.x += s_camera.viewMtx.m2.x * moveSpd;
+			s_camera.pos.y += s_camera.viewMtx.m2.y * moveSpd;
+			s_camera.pos.z += s_camera.viewMtx.m2.z * moveSpd;
+		}
 
-			if (TFE_Input::keyDown(KEY_A))
-			{
-				s_camera.pos.x -= s_camera.viewMtx.m0.x * moveSpd;
-				s_camera.pos.y -= s_camera.viewMtx.m0.y * moveSpd;
-				s_camera.pos.z -= s_camera.viewMtx.m0.z * moveSpd;
-			}
-			else if (TFE_Input::keyDown(KEY_D))
-			{
-				s_camera.pos.x += s_camera.viewMtx.m0.x * moveSpd;
-				s_camera.pos.y += s_camera.viewMtx.m0.y * moveSpd;
-				s_camera.pos.z += s_camera.viewMtx.m0.z * moveSpd;
-			}
+		if (isShortcutHeld(SHORTCUT_CAMERA_LEFT))
+		{
+			s_camera.pos.x -= s_camera.viewMtx.m0.x * moveSpd;
+			s_camera.pos.y -= s_camera.viewMtx.m0.y * moveSpd;
+			s_camera.pos.z -= s_camera.viewMtx.m0.z * moveSpd;
+		}
+		else if (isShortcutHeld(SHORTCUT_CAMERA_RIGHT))
+		{
+			s_camera.pos.x += s_camera.viewMtx.m0.x * moveSpd;
+			s_camera.pos.y += s_camera.viewMtx.m0.y * moveSpd;
+			s_camera.pos.z += s_camera.viewMtx.m0.z * moveSpd;
 		}
 
 		// Turning.
@@ -3451,11 +3444,11 @@ namespace LevelEditor
 				{
 					const f32 move = TFE_Input::keyModDown(KEYMOD_SHIFT) ? 1.0f : 1.0f / 8.0f;
 
-					if (TFE_Input::keyPressedWithRepeat(KEY_RIGHT)) { delta.x += move; }
-					else if (TFE_Input::keyPressedWithRepeat(KEY_LEFT)) { delta.x -= move; }
+					if (isShortcutRepeat(SHORTCUT_TEXOFFSET_RIGHT)) { delta.x += move; }
+					else if (isShortcutRepeat(SHORTCUT_TEXOFFSET_LEFT)) { delta.x -= move; }
 
-					if (TFE_Input::keyPressedWithRepeat(KEY_UP)) { delta.z += move; }
-					else if (TFE_Input::keyPressedWithRepeat(KEY_DOWN)) { delta.z -= move; }
+					if (isShortcutRepeat(SHORTCUT_TEXOFFSET_UP)) { delta.z += move; }
+					else if (isShortcutRepeat(SHORTCUT_TEXOFFSET_DOWN)) { delta.z -= move; }
 
 					if (delta.x || delta.z)
 					{
@@ -3542,10 +3535,10 @@ namespace LevelEditor
 				if (!s_startTexMove)
 				{
 					f32 move = TFE_Input::keyModDown(KEYMOD_SHIFT) ? 1.0f : 1.0f / 8.0f;
-					if (TFE_Input::keyPressedWithRepeat(KEY_RIGHT)) { delta.x -= move; }
-					else if (TFE_Input::keyPressedWithRepeat(KEY_LEFT)) { delta.x += move; }
-					if (TFE_Input::keyPressedWithRepeat(KEY_UP)) { delta.z -= move; }
-					else if (TFE_Input::keyPressedWithRepeat(KEY_DOWN)) { delta.z += move; }
+					if (isShortcutRepeat(SHORTCUT_TEXOFFSET_RIGHT)) { delta.x -= move; }
+					else if (isShortcutRepeat(SHORTCUT_TEXOFFSET_LEFT)) { delta.x += move; }
+					if (isShortcutRepeat(SHORTCUT_TEXOFFSET_UP)) { delta.z -= move; }
+					else if (isShortcutRepeat(SHORTCUT_TEXOFFSET_DOWN)) { delta.z += move; }
 
 					if (delta.x || delta.z)
 					{

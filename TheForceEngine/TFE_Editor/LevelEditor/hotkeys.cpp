@@ -144,23 +144,31 @@ namespace LevelEditor
 	const char* c_shortcutDesc[] =
 	{
 		"Insert Vertex/Object",								// SHORTCUT_PLACE
+		"Delete selection",									// SHORTCUT_DELETE
+		"Copy selection",									// SHORTCUT_COPY
+		"Paste from clipboard at cursor",					// SHORTCUT_PASTE
 		"Lock movement to X-Axis",							// SHORTCUT_MOVE_X
 		"Lock movement to Y-Axis",							// SHORTCUT_MOVE_Y
 		"Lock movement to Z-Axis",							// SHORTCUT_MOVE_Z
 		"Lock movement to wall normal",						// SHORTCUT_MOVE_NORMAL
+		"Move object to sector floor",						// SHORTCUT_MOVE_TO_FLOOR
+		"Move object to sector ceiling",					// SHORTCUT_MOVE_TO_CEIL
+		"Rotate with mousewheel while held",				// SHORTCUT_ROTATE
 		"Copy texture from surface",						// SHORTCUT_COPY_TEXTURE
 		"Set current texture on surface or selection",		// SHORTCUT_SET_TEXTURE
 		"Apply the current texture as a sign at mouse position", // SHORTCUT_SET_SIGN
 		"Auto-align texture offsets on matching adjacent surfaces", // SHORTCUT_AUTO_ALIGN
-		"Move object to sector floor",						// SHORTCUT_MOVE_TO_FLOOR
-		"Move object to sector ceiling",					// SHORTCUT_MOVE_TO_CEIL
-		"Delete selection",									// SHORTCUT_DELETE
-		"Copy selection",									// SHORTCUT_COPY
-		"Paste from clipboard at cursor",					// SHORTCUT_PASTE
-		"Rotate with mousewheel while held",				// SHORTCUT_ROTATE
+		"Move texture offset up",							// SHORTCUT_TEXOFFSET_UP
+		"Move texture offset down",							// SHORTCUT_TEXOFFSET_DOWN
+		"Move texture offset left",							// SHORTCUT_TEXOFFSET_LEFT
+		"Move texture offset right",						// SHORTCUT_TEXOFFSET_RIGHT
 		"Reduce curve segments",							// SHORTCUT_REDUCE_CURVE_SEGS
 		"Increase curve segments",							// SHORTCUT_INCREASE_CURVE_SEGS
 		"Reset curve segments to default",					// SHORTCUT_RESET_CURVE_SEGS
+		"Camera Forward",									// SHORTCUT_CAMERA_FWD
+		"Camera Backward",									// SHORTCUT_CAMERA_BACK
+		"Camera Strafe Left",								// SHORTCUT_CAMERA_LEFT
+		"Camera Strafe Right",								// SHORTCUT_CAMERA_RIGHT
 		"Toggle Show all labels in viewport",				// SHORTCUT_SHOW_ALL_LABELS
 		"Undo",												// SHORTCUT_UNDO
 		"Redo",												// SHORTCUT_REDO
@@ -253,23 +261,31 @@ namespace LevelEditor
 	{
 		clearKeyboardShortcuts();
 		addKeyboardShortcut(SHORTCUT_PLACE, KEY_INSERT);
+		addKeyboardShortcut(SHORTCUT_DELETE, KEY_DELETE);
+		addKeyboardShortcut(SHORTCUT_COPY, KEY_C, KEYMOD_CTRL);
+		addKeyboardShortcut(SHORTCUT_PASTE, KEY_V, KEYMOD_CTRL);
 		addKeyboardShortcut(SHORTCUT_MOVE_X, KEY_X);
 		addKeyboardShortcut(SHORTCUT_MOVE_Y, KEY_Y);
 		addKeyboardShortcut(SHORTCUT_MOVE_Z, KEY_Z);
 		addKeyboardShortcut(SHORTCUT_MOVE_NORMAL, KEY_N);
+		addKeyboardShortcut(SHORTCUT_MOVE_TO_FLOOR, KEY_F);
+		addKeyboardShortcut(SHORTCUT_MOVE_TO_CEIL, KEY_C);
+		addKeyboardShortcut(SHORTCUT_ROTATE, KEY_UNKNOWN, KEYMOD_CTRL);
 		addKeyboardShortcut(SHORTCUT_COPY_TEXTURE, KEY_T, KEYMOD_CTRL);
 		addKeyboardShortcut(SHORTCUT_SET_TEXTURE, KEY_T);
 		addKeyboardShortcut(SHORTCUT_SET_SIGN, KEY_T, KEYMOD_SHIFT);
 		addKeyboardShortcut(SHORTCUT_AUTO_ALIGN, KEY_A, KEYMOD_CTRL);
-		addKeyboardShortcut(SHORTCUT_MOVE_TO_FLOOR, KEY_F);
-		addKeyboardShortcut(SHORTCUT_MOVE_TO_CEIL, KEY_C);
-		addKeyboardShortcut(SHORTCUT_DELETE, KEY_DELETE);
-		addKeyboardShortcut(SHORTCUT_COPY, KEY_C, KEYMOD_CTRL);
-		addKeyboardShortcut(SHORTCUT_PASTE, KEY_V, KEYMOD_CTRL);
-		addKeyboardShortcut(SHORTCUT_ROTATE, KEY_UNKNOWN, KEYMOD_CTRL);
+		addKeyboardShortcut(SHORTCUT_TEXOFFSET_UP, KEY_UP);
+		addKeyboardShortcut(SHORTCUT_TEXOFFSET_DOWN, KEY_DOWN);
+		addKeyboardShortcut(SHORTCUT_TEXOFFSET_LEFT, KEY_LEFT);
+		addKeyboardShortcut(SHORTCUT_TEXOFFSET_RIGHT, KEY_RIGHT);
 		addKeyboardShortcut(SHORTCUT_REDUCE_CURVE_SEGS, KEY_LEFTBRACKET);
 		addKeyboardShortcut(SHORTCUT_INCREASE_CURVE_SEGS, KEY_RIGHTBRACKET);
 		addKeyboardShortcut(SHORTCUT_RESET_CURVE_SEGS, KEY_BACKSLASH);
+		addKeyboardShortcut(SHORTCUT_CAMERA_FWD, KEY_W);
+		addKeyboardShortcut(SHORTCUT_CAMERA_BACK, KEY_S);
+		addKeyboardShortcut(SHORTCUT_CAMERA_LEFT, KEY_A);
+		addKeyboardShortcut(SHORTCUT_CAMERA_RIGHT, KEY_D);
 		addKeyboardShortcut(SHORTCUT_SHOW_ALL_LABELS, KEY_TAB);
 		addKeyboardShortcut(SHORTCUT_UNDO, KEY_Z, KEYMOD_CTRL);
 		addKeyboardShortcut(SHORTCUT_REDO, KEY_Y, KEYMOD_CTRL);
