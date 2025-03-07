@@ -11,6 +11,7 @@ namespace LevelEditor
 {
 	static f64 s_lastClickTime = 0.0;
 	static f64 s_lastRightClick = 0.0;
+	static char s_keyComboText[256];
 
 	const f64 c_doubleClickThreshold = 0.25f;
 	const f64 c_rightClickThreshold = 0.5;
@@ -176,6 +177,17 @@ namespace LevelEditor
 		"Toggle Show all labels in viewport",				// SHORTCUT_SHOW_ALL_LABELS
 		"Undo",												// SHORTCUT_UNDO
 		"Redo",												// SHORTCUT_REDO
+		"Save Level",										// SHORTCUT_SAVE
+		"Reload Level",										// SHORTCUT_RELOAD
+		"Find Sector",										// SHORTCUT_FIND_SECTOR
+		"2D View",											// SHORTCUT_VIEW_2D
+		"3D View",											// SHORTCUT_VIEW_3D
+		"Display Wireframe",								// SHORTCUT_VIEW_WIREFRAME
+		"Display Lighting",									// SHORTCUT_VIEW_LIGHTING
+		"Display Group Color",								// SHORTCUT_VIEW_GROUP_COLOR
+		"Display Textured Floors",							// SHORTCUT_VIEW_TEXTURED_FLOOR
+		"Display Texture Ceilings",							// SHORTCUT_VIEW_TEXTURED_CEIL
+		"Show Fullbright",									// SHORTCUT_VIEW_FULLBRIGHT
 	};
 
 	static std::vector<KeyboardShortcut> s_keyboardShortcutList;
@@ -297,6 +309,17 @@ namespace LevelEditor
 		addKeyboardShortcut(SHORTCUT_SHOW_ALL_LABELS, KEY_TAB);
 		addKeyboardShortcut(SHORTCUT_UNDO, KEY_Z, KEYMOD_CTRL);
 		addKeyboardShortcut(SHORTCUT_REDO, KEY_Y, KEYMOD_CTRL);
+		addKeyboardShortcut(SHORTCUT_SAVE, KEY_S, KEYMOD_CTRL);
+		addKeyboardShortcut(SHORTCUT_RELOAD, KEY_R, KEYMOD_CTRL);
+		addKeyboardShortcut(SHORTCUT_FIND_SECTOR, KEY_F, KEYMOD_CTRL);
+		addKeyboardShortcut(SHORTCUT_VIEW_2D, KEY_1, KEYMOD_CTRL);
+		addKeyboardShortcut(SHORTCUT_VIEW_3D, KEY_2, KEYMOD_CTRL);
+		addKeyboardShortcut(SHORTCUT_VIEW_WIREFRAME, KEY_4, KEYMOD_CTRL);
+		addKeyboardShortcut(SHORTCUT_VIEW_LIGHTING, KEY_5, KEYMOD_CTRL);
+		addKeyboardShortcut(SHORTCUT_VIEW_GROUP_COLOR, KEY_6, KEYMOD_CTRL);
+		addKeyboardShortcut(SHORTCUT_VIEW_TEXTURED_FLOOR, KEY_7, KEYMOD_CTRL);
+		addKeyboardShortcut(SHORTCUT_VIEW_TEXTURED_CEIL, KEY_8, KEYMOD_CTRL);
+		addKeyboardShortcut(SHORTCUT_VIEW_FULLBRIGHT, KEY_9, KEYMOD_CTRL);
 	}
 				
 	bool isShortcutPressed(ShortcutId shortcutId, u32 allowedKeyMods)
@@ -331,6 +354,27 @@ namespace LevelEditor
 		}
 		down &= validateKeyMods(shortcut, allowedKeyMods);
 		return down;
+	}
+
+	const char* getShortcutKeyComboText(ShortcutId id)
+	{
+		KeyboardCode code = getShortcutKeyboardCode(id);
+		KeyModifier mod = getShortcutKeyMod(id);
+
+		s_keyComboText[0] = 0;
+		if (code != KEY_UNKNOWN && mod != KEYMOD_NONE)
+		{
+			sprintf(s_keyComboText, "%s+%s", TFE_Input::getKeyboardModifierName(mod), TFE_Input::getKeyboardName(code));
+		}
+		else if (code != KEY_UNKNOWN)
+		{
+			sprintf(s_keyComboText, "%s", TFE_Input::getKeyboardName(code));
+		}
+		else if (mod != KEYMOD_NONE)
+		{
+			sprintf(s_keyComboText, "%s", TFE_Input::getKeyboardModifierName(mod));
+		}
+		return s_keyComboText;
 	}
 
 	KeyboardShortcut* getShortcutFromId(ShortcutId id)

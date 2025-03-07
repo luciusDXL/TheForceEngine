@@ -64,6 +64,18 @@ namespace LevelEditor
 		SHORTCUT_SHOW_ALL_LABELS,
 		SHORTCUT_UNDO,
 		SHORTCUT_REDO,
+		// Menus
+		SHORTCUT_SAVE,
+		SHORTCUT_RELOAD,
+		SHORTCUT_FIND_SECTOR,
+		SHORTCUT_VIEW_2D,
+		SHORTCUT_VIEW_3D,
+		SHORTCUT_VIEW_WIREFRAME,
+		SHORTCUT_VIEW_LIGHTING,
+		SHORTCUT_VIEW_GROUP_COLOR,
+		SHORTCUT_VIEW_TEXTURED_FLOOR,
+		SHORTCUT_VIEW_TEXTURED_CEIL,
+		SHORTCUT_VIEW_FULLBRIGHT,
 
 		SHORTCUT_COUNT,
 		SHORTCUT_NONE = SHORTCUT_COUNT,
@@ -91,6 +103,7 @@ namespace LevelEditor
 	const char* getKeyboardShortcutDesc(ShortcutId id);
 	KeyboardCode getShortcutKeyboardCode(ShortcutId id);
 	KeyModifier getShortcutKeyMod(ShortcutId id);
+	const char* getShortcutKeyComboText(ShortcutId id);
 	bool isShortcutPressed(ShortcutId shortcutId, u32 allowedKeyMods = (1 << KEYMOD_SHIFT) | (1 << KEYMOD_ALT));
 	bool isShortcutRepeat(ShortcutId shortcutId, u32 allowedKeyMods = (1 << KEYMOD_SHIFT) | (1 << KEYMOD_ALT));
 	bool isShortcutHeld(ShortcutId shortcutId, u32 allowedKeyMods = (1 << KEYMOD_SHIFT) | (1 << KEYMOD_ALT));

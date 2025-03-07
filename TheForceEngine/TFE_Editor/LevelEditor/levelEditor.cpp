@@ -1479,6 +1479,40 @@ namespace LevelEditor
 		}
 	}
 
+	void setView2D()
+	{
+		if (s_view == EDIT_VIEW_3D)
+		{
+			// Center the 2D map on the 3D camera position before changing.
+			Vec2f mapPos = { s_camera.pos.x, -s_camera.pos.z };
+			s_viewportPos.x = mapPos.x - (s_viewportSize.x / 2) * s_zoom2d;
+			s_viewportPos.z = mapPos.z - (s_viewportSize.z / 2) * s_zoom2d;
+		}
+		s_view = EDIT_VIEW_2D;
+	}
+
+	void setView3D()
+	{
+		// Put the 3D camera at the center of the 2D map.
+		if (s_view == EDIT_VIEW_2D)
+		{
+			Vec2f worldPos = mouseCoordToWorldPos2d(s_viewportSize.x / 2 + (s32)s_editWinMapCorner.x, s_viewportSize.z / 2 + (s32)s_editWinMapCorner.z);
+			s_camera.pos.x = worldPos.x;
+			s_camera.pos.z = worldPos.z;
+			computeCameraTransform();
+		}
+		s_view = EDIT_VIEW_3D;
+	}
+
+	void setFullbright()
+	{
+		bool fullbright = (s_editFlags & LEF_FULLBRIGHT) != 0;
+		fullbright = !fullbright;
+
+		if (fullbright) { s_editFlags |= LEF_FULLBRIGHT; }
+		else { s_editFlags &= ~LEF_FULLBRIGHT; }
+	}
+
 	bool menu()
 	{
 		bool menuActive = false;
@@ -1488,19 +1522,20 @@ namespace LevelEditor
 			// Disable Save/Backup when there is no project.
 			bool projectActive = project_get()->active;
 			if (!projectActive) { disableNextItem(); }
-			if (ImGui::MenuItem("Save", "Ctrl+S", (bool*)NULL))
+
+			if (ImGui::MenuItem("Save", getShortcutKeyComboText(SHORTCUT_SAVE), (bool*)NULL))
 			{
 				saveLevel();
 			}
-			if (ImGui::MenuItem("Reload", "Ctrl+R", (bool*)NULL))
+			if (ImGui::MenuItem("Reload", getShortcutKeyComboText(SHORTCUT_RELOAD), (bool*)NULL))
 			{
 				loadLevelFromAsset(s_levelAsset);
 			}
-			if (ImGui::MenuItem("Save Snapshot", "Ctrl+N", (bool*)NULL))
+			if (ImGui::MenuItem("Save Snapshot", nullptr, (bool*)NULL))
 			{
 				// Bring up a pop-up where the snapshot can be named.
 			}
-			if (ImGui::MenuItem("Load Snapshot", "Ctrl+L", (bool*)NULL))
+			if (ImGui::MenuItem("Load Snapshot", nullptr, (bool*)NULL))
 			{
 				// Bring up a pop-up where the desired named snapshot can be found.
 			}
@@ -1536,11 +1571,11 @@ namespace LevelEditor
 			}
 			enableNextItem(); // End TODO
 			ImGui::Separator();
-			if (ImGui::MenuItem("Undo", "Ctrl+Z", (bool*)NULL))
+			if (ImGui::MenuItem("Undo", getShortcutKeyComboText(SHORTCUT_UNDO), (bool*)NULL))
 			{
 				levHistory_undo();
 			}
-			if (ImGui::MenuItem("Redo", "Ctrl+Y", (bool*)NULL))
+			if (ImGui::MenuItem("Redo", getShortcutKeyComboText(SHORTCUT_REDO), (bool*)NULL))
 			{
 				levHistory_redo();
 			}
@@ -1571,7 +1606,7 @@ namespace LevelEditor
 				edit_cleanSectors(false);
 			}
 			ImGui::Separator();
-			if (ImGui::MenuItem("Find Sector", NULL, (bool*)NULL))
+			if (ImGui::MenuItem("Find Sector", getShortcutKeyComboText(SHORTCUT_FIND_SECTOR), (bool*)NULL))
 			{
 				openEditorPopup(POPUP_FIND_SECTOR);
 			}
@@ -1623,32 +1658,17 @@ namespace LevelEditor
 		if (ImGui::BeginMenu("View"))
 		{
 			menuActive = true;
-			if (ImGui::MenuItem("2D", "Ctrl+1", s_view == EDIT_VIEW_2D))
+			if (ImGui::MenuItem("2D", getShortcutKeyComboText(SHORTCUT_VIEW_2D), s_view == EDIT_VIEW_2D))
 			{
-				if (s_view == EDIT_VIEW_3D)
-				{
-					// Center the 2D map on the 3D camera position before changing.
-					Vec2f mapPos = { s_camera.pos.x, -s_camera.pos.z };
-					s_viewportPos.x = mapPos.x - (s_viewportSize.x / 2) * s_zoom2d;
-					s_viewportPos.z = mapPos.z - (s_viewportSize.z / 2) * s_zoom2d;
-				}
-				s_view = EDIT_VIEW_2D;
+				setView2D();
 			}
-			if (ImGui::MenuItem("3D (Editor)", "Ctrl+2", s_view == EDIT_VIEW_3D))
+			if (ImGui::MenuItem("3D (Editor)", getShortcutKeyComboText(SHORTCUT_VIEW_3D), s_view == EDIT_VIEW_3D))
 			{
-				// Put the 3D camera at the center of the 2D map.
-				if (s_view == EDIT_VIEW_2D)
-				{
-					Vec2f worldPos = mouseCoordToWorldPos2d(s_viewportSize.x / 2 + (s32)s_editWinMapCorner.x, s_viewportSize.z / 2 + (s32)s_editWinMapCorner.z);
-					s_camera.pos.x = worldPos.x;
-					s_camera.pos.z = worldPos.z;
-					computeCameraTransform();
-				}
-				s_view = EDIT_VIEW_3D;
+				setView3D();
 			}
 			// Not working yet, so disable.
 			disableNextItem();
-			if (ImGui::MenuItem("3D (Game)", "Ctrl+3", s_view == EDIT_VIEW_3D_GAME))
+			if (ImGui::MenuItem("3D (Game)", nullptr, s_view == EDIT_VIEW_3D_GAME))
 			{
 				s_view = EDIT_VIEW_3D_GAME;
 			}
@@ -1660,7 +1680,7 @@ namespace LevelEditor
 			}
 
 			bool showLower = (s_editFlags & LEF_SHOW_LOWER_LAYERS) != 0;
-			if (ImGui::MenuItem("Show Lower Layers", "Ctrl+L", showLower))
+			if (ImGui::MenuItem("Show Lower Layers", nullptr, showLower))
 			{
 				showLower = !showLower;
 				if (showLower) { s_editFlags |= LEF_SHOW_LOWER_LAYERS;  }
@@ -1668,7 +1688,7 @@ namespace LevelEditor
 			}
 
 			bool showAllEdges = (s_editFlags & LEF_SECTOR_EDGES) != 0;
-			if (ImGui::MenuItem("Show All Sector Edges", "Ctrl+E", showAllEdges))
+			if (ImGui::MenuItem("Show All Sector Edges", nullptr, showAllEdges))
 			{
 				showAllEdges = !showAllEdges;
 				if (showAllEdges) { s_editFlags |= LEF_SECTOR_EDGES; }
@@ -1676,33 +1696,31 @@ namespace LevelEditor
 			}
 
 			ImGui::Separator();
-			if (ImGui::MenuItem("Wireframe", "Ctrl+F1", s_sectorDrawMode == SDM_WIREFRAME))
+			if (ImGui::MenuItem("Wireframe", getShortcutKeyComboText(SHORTCUT_VIEW_WIREFRAME), s_sectorDrawMode == SDM_WIREFRAME))
 			{
 				s_sectorDrawMode = SDM_WIREFRAME;
 			}
-			if (ImGui::MenuItem("Lighting", "Ctrl+F2", s_sectorDrawMode == SDM_LIGHTING))
+			if (ImGui::MenuItem("Lighting", getShortcutKeyComboText(SHORTCUT_VIEW_LIGHTING), s_sectorDrawMode == SDM_LIGHTING))
 			{
 				s_sectorDrawMode = SDM_LIGHTING;
 			}
-			if (ImGui::MenuItem("Group Color", "Ctrl+F3", s_sectorDrawMode == SDM_GROUP_COLOR))
+			if (ImGui::MenuItem("Group Color", getShortcutKeyComboText(SHORTCUT_VIEW_GROUP_COLOR), s_sectorDrawMode == SDM_GROUP_COLOR))
 			{
 				s_sectorDrawMode = SDM_GROUP_COLOR;
 			}
-			if (ImGui::MenuItem("Textured (Floor)", "Ctrl+F4", s_sectorDrawMode == SDM_TEXTURED_FLOOR))
+			if (ImGui::MenuItem("Textured (Floor)", getShortcutKeyComboText(SHORTCUT_VIEW_TEXTURED_FLOOR), s_sectorDrawMode == SDM_TEXTURED_FLOOR))
 			{
 				s_sectorDrawMode = SDM_TEXTURED_FLOOR;
 			}
-			if (ImGui::MenuItem("Textured (Ceiling)", "Ctrl+F5", s_sectorDrawMode == SDM_TEXTURED_CEIL))
+			if (ImGui::MenuItem("Textured (Ceiling)", getShortcutKeyComboText(SHORTCUT_VIEW_TEXTURED_CEIL), s_sectorDrawMode == SDM_TEXTURED_CEIL))
 			{
 				s_sectorDrawMode = SDM_TEXTURED_CEIL;
 			}
 			ImGui::Separator();
 			bool fullbright = (s_editFlags & LEF_FULLBRIGHT) != 0;
-			if (ImGui::MenuItem("Fullbright", "Ctrl+F6", fullbright))
+			if (ImGui::MenuItem("Fullbright", getShortcutKeyComboText(SHORTCUT_VIEW_FULLBRIGHT), fullbright))
 			{
-				fullbright = !fullbright;
-				if (fullbright) { s_editFlags |= LEF_FULLBRIGHT; }
-				else { s_editFlags &= ~LEF_FULLBRIGHT; }
+				setFullbright();
 			}
 			ImGui::EndMenu();
 		}
@@ -2048,6 +2066,51 @@ namespace LevelEditor
 		if (isShortcutPressed(SHORTCUT_SHOW_ALL_LABELS))
 		{
 			s_showAllLabels = !s_showAllLabels;
+		}
+
+		if (isShortcutPressed(SHORTCUT_SAVE))
+		{
+			saveLevel();
+		}
+		if (isShortcutPressed(SHORTCUT_RELOAD))
+		{
+			loadLevelFromAsset(s_levelAsset);
+		}
+		if (isShortcutPressed(SHORTCUT_FIND_SECTOR))
+		{
+			openEditorPopup(POPUP_FIND_SECTOR);
+		}
+		if (isShortcutPressed(SHORTCUT_VIEW_2D))
+		{
+			setView2D();
+		}
+		if (isShortcutPressed(SHORTCUT_VIEW_3D))
+		{
+			setView3D();
+		}
+		if (isShortcutPressed(SHORTCUT_VIEW_WIREFRAME))
+		{
+			s_sectorDrawMode = SDM_WIREFRAME;
+		}
+		if (isShortcutPressed(SHORTCUT_VIEW_LIGHTING))
+		{
+			s_sectorDrawMode = SDM_LIGHTING;
+		}
+		if (isShortcutPressed(SHORTCUT_VIEW_GROUP_COLOR))
+		{
+			s_sectorDrawMode = SDM_GROUP_COLOR;
+		}
+		if (isShortcutPressed(SHORTCUT_VIEW_TEXTURED_FLOOR))
+		{
+			s_sectorDrawMode = SDM_TEXTURED_FLOOR;
+		}
+		if (isShortcutPressed(SHORTCUT_VIEW_TEXTURED_CEIL))
+		{
+			s_sectorDrawMode = SDM_TEXTURED_CEIL;
+		}
+		if (isShortcutPressed(SHORTCUT_VIEW_FULLBRIGHT))
+		{
+			setFullbright();
 		}
 	}
 		
@@ -2431,7 +2494,7 @@ namespace LevelEditor
 					if (type == LEDIT_SECTOR || type == LEDIT_ENTITY)
 					{
 						if (!canCopy()) { disableNextItem(); }
-							ImGui::MenuItem("Copy", "Ctrl+C", (bool*)NULL);
+							ImGui::MenuItem("Copy", getShortcutKeyComboText(SHORTCUT_COPY), (bool*)NULL);
 							if (leftClick && mouseInsideItem() && canCopy())
 							{
 								copySelectionToClipboard();
@@ -2440,7 +2503,7 @@ namespace LevelEditor
 						if (!canCopy()) { enableNextItem(); }
 
 						if (!canPaste()) { disableNextItem(); }
-							ImGui::MenuItem("Paste", "Ctrl+V", (bool*)NULL);
+							ImGui::MenuItem("Paste", getShortcutKeyComboText(SHORTCUT_PASTE), (bool*)NULL);
 							if (leftClick && mouseInsideItem() && canPaste())
 							{
 								pasteFromClipboard();
@@ -2450,7 +2513,7 @@ namespace LevelEditor
 						ImGui::Separator();
 					}
 
-					ImGui::MenuItem("Delete", "Del", (bool*)NULL);
+					ImGui::MenuItem("Delete", getShortcutKeyComboText(SHORTCUT_DELETE), (bool*)NULL);
 					if (leftClick && mouseInsideItem())
 					{
 						handleDelete(selection_getCount() > 0);
@@ -2462,7 +2525,7 @@ namespace LevelEditor
 					if (s_editMode == LEDIT_SECTOR || s_editMode == LEDIT_ENTITY)
 					{
 						if (!canPaste()) { disableNextItem(); }
-							ImGui::MenuItem("Paste (Ctrl+V)", NULL, (bool*)NULL);
+							ImGui::MenuItem("Paste", getShortcutKeyComboText(SHORTCUT_PASTE), (bool*)NULL);
 							if (leftClick && mouseInsideItem() && canPaste())
 							{
 								pasteFromClipboard();
