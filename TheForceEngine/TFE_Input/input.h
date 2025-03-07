@@ -63,7 +63,7 @@ namespace TFE_Input
 	const char* getBufferedText();
 	bool bufferedKeyDown(KeyboardCode key);
 
-	KeyboardCode getKeyPressed();
+	KeyboardCode getKeyPressed(bool ignoreModKeys = false);
 	KeyModifier  getKeyModifierDown();
 	Button getControllerButtonPressed();
 	Axis getControllerAnalogDown();

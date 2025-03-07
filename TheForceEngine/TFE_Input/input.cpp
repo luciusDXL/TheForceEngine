@@ -236,10 +236,15 @@ namespace TFE_Input
 		s_mousePressed[btn] = 0;
 	}
 		
-	KeyboardCode getKeyPressed()
+	KeyboardCode getKeyPressed(bool ignoreModKeys)
 	{
 		for (s32 i = 0; i < KEY_COUNT; i++)
 		{
+			if (ignoreModKeys && (i == KEY_LSHIFT || i == KEY_RSHIFT || i == KEY_LALT || i == KEY_RALT || i == KEY_LCTRL || i == KEY_RCTRL))
+			{
+				continue;
+			}
+
 			if (s_keyPressed[i])
 			{
 				return KeyboardCode(i);

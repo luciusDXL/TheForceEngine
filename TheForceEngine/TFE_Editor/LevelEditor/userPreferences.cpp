@@ -33,6 +33,7 @@ namespace LevelEditor
 		"Theme.\nEditor theme, UI and viewport colors.",
 	};
 	static PreferencesTab s_prefTab = PTAB_INTERFACE;
+	static s32 s_inputIndex = -1;
 
 	void commitCurChanges(void);
 	void interfacePref();
@@ -49,7 +50,13 @@ namespace LevelEditor
 		bool cancel = false;
 		if (ImGui::BeginPopupModal("User Preferences", nullptr, window_flags))
 		{
+			const s32 prevTab = s_prefTab;
 			s_prefTab = (PreferencesTab)handleTabs(s_prefTab, 0, 0, PTAB_COUNT, c_prefTabs, c_prefToolTips, commitCurChanges);
+			if (prevTab != s_prefTab)
+			{
+				// Clear state between tabs.
+				s_inputIndex = -1;
+			}
 			// Several tabs: Interface (Prompt quit, UI settings), Editing (undo settings, curve settings, etc.), Input (keyboard bindings), Theme (colors), 
 			ImGui::Separator();
 
@@ -103,7 +110,7 @@ namespace LevelEditor
 	{
 		optionSliderEditFloat("Curve Segment Size", "%.2f", &s_editorConfig.curve_segmentSize, 0.1f, 100.0f, 0.1f);
 	}
-
+		
 	void inputPref()
 	{
 		if (ImGui::Button("Reset To Defaults"))
@@ -111,6 +118,7 @@ namespace LevelEditor
 			setDefaultKeyboardShortcuts();
 		}
 		ImGui::Separator();
+		bool buttonPressed = false;
 		if (ImGui::BeginChild("###InputList", ImVec2(670.0f, 768.0f)))
 		{
 			for (s32 i = 0; i < SHORTCUT_COUNT; i++)
@@ -122,11 +130,35 @@ namespace LevelEditor
 
 				ImGui::Text("%s", desc); ImGui::SameLine(512.0f);
 				ImGui::SetNextItemWidth(128.0f);
-				ImGui::InputTextWithHint(editor_getUniqueLabel(""), "Shortcut", (char*)keyCombo, 256);
+				if (s_inputIndex != i)
+				{
+					if (ImGui::Button(editor_getUniqueLabel(keyCombo), ImVec2(128.0f, 0.0f)))
+					{
+						s_inputIndex = i;
+						buttonPressed = true;
+					}
+				}
+				else
+				{
+					ImGui::Button(editor_getUniqueLabel("Press Key"), ImVec2(128.0f, 0.0f));
+					const KeyboardCode key = TFE_Input::getKeyPressed(true);
+					const KeyModifier mod = TFE_Input::getKeyModifierDown();
+					if (key != KEY_UNKNOWN)
+					{
+						addKeyboardShortcut(id, key, mod);
+						s_inputIndex = -1;
+					}
+				}
 				ImGui::Separator();
 			}
 		}
 		ImGui::EndChild();
+
+		// Clear out the selected input if the mouse is pressed elsewhere...
+		if (!buttonPressed && TFE_Input::mousePressed(MouseButton::MBUTTON_LEFT))
+		{
+			s_inputIndex = -1;
+		}
 	}
 
 	void themePref()

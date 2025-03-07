@@ -155,7 +155,6 @@ namespace LevelEditor
 		"Move object to sector floor",						// SHORTCUT_MOVE_TO_FLOOR
 		"Move object to sector ceiling",					// SHORTCUT_MOVE_TO_CEIL
 		"Select backfacing surfaces",						// SHORTCUT_SELECT_BACKFACES
-		"Rotate with mousewheel while held",				// SHORTCUT_ROTATE
 		"Copy texture from surface",						// SHORTCUT_COPY_TEXTURE
 		"Set current texture on surface or selection",		// SHORTCUT_SET_TEXTURE
 		"Apply the current texture as a sign at mouse position", // SHORTCUT_SET_SIGN
@@ -287,7 +286,6 @@ namespace LevelEditor
 		addKeyboardShortcut(SHORTCUT_MOVE_TO_FLOOR, KEY_F);
 		addKeyboardShortcut(SHORTCUT_MOVE_TO_CEIL, KEY_C);
 		addKeyboardShortcut(SHORTCUT_SELECT_BACKFACES, KEY_B);
-		addKeyboardShortcut(SHORTCUT_ROTATE, KEY_UNKNOWN, KEYMOD_CTRL);
 		addKeyboardShortcut(SHORTCUT_COPY_TEXTURE, KEY_T, KEYMOD_CTRL);
 		addKeyboardShortcut(SHORTCUT_SET_TEXTURE, KEY_T);
 		addKeyboardShortcut(SHORTCUT_SET_SIGN, KEY_T, KEYMOD_SHIFT);
