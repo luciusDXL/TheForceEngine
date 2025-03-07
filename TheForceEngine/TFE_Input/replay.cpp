@@ -1126,9 +1126,16 @@ namespace TFE_Input
 		enableCutscenes(cutscenesEnabled);
 		endCommonReplayStates();
 
-		// End missiong and go back to Menu after replay. 
-		TFE_DarkForces::mission_exitLevel();
-		task_freeAll();
-		TFE_FrontEndUI::exitToMenu();
+		if (TFE_Settings::getTempSettings()->exit_after_replay)
+		{
+			TFE_FrontEndUI::setState(APP_STATE_QUIT);
+		}
+		else
+		{
+			// End mission and go back to Menu after replay. 
+			TFE_DarkForces::mission_exitLevel();
+			task_freeAll();
+			TFE_FrontEndUI::exitToMenu();
+		}
 	}
 }

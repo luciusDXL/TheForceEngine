@@ -1048,5 +1048,9 @@ void parseOption(const char* name, const std::vector<const char*>& values, bool 
 		{
 			TFE_Settings::getTempSettings()->df_demologging = true;
 		}
+		else if (strcasecmp(name, "exit_after_replay") == 0)
+		{
+			TFE_Settings::getTempSettings()->exit_after_replay = true;
+		}
 	}
 }
