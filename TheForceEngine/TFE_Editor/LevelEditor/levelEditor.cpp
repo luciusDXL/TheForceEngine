@@ -1521,22 +1521,19 @@ namespace LevelEditor
 			// Disable Save/Backup when there is no project.
 			bool projectActive = project_get()->active;
 			if (!projectActive) { disableNextItem(); }
-
-			if (ImGui::MenuItem("Save", getShortcutKeyComboText(SHORTCUT_SAVE), (bool*)NULL))
 			{
-				saveLevel();
-			}
-			if (ImGui::MenuItem("Reload", getShortcutKeyComboText(SHORTCUT_RELOAD), (bool*)NULL))
-			{
-				loadLevelFromAsset(s_levelAsset);
-			}
-			if (ImGui::MenuItem("Save Snapshot", nullptr, (bool*)NULL))
-			{
-				// Bring up a pop-up where the snapshot can be named.
-			}
-			if (ImGui::MenuItem("Load Snapshot", nullptr, (bool*)NULL))
-			{
-				// Bring up a pop-up where the desired named snapshot can be found.
+				if (ImGui::MenuItem("Save", getShortcutKeyComboText(SHORTCUT_SAVE), (bool*)NULL))
+				{
+					saveLevel();
+				}
+				if (ImGui::MenuItem("Reload", getShortcutKeyComboText(SHORTCUT_RELOAD), (bool*)NULL))
+				{
+					loadLevelFromAsset(s_levelAsset);
+				}
+				if (ImGui::MenuItem("Snapshots", nullptr, (bool*)NULL))
+				{
+					openEditorPopup(POPUP_SNAPSHOTS);
+				}
 			}
 			if (!projectActive) { enableNextItem(); }
 

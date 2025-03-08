@@ -14,6 +14,7 @@
 #include <TFE_Editor/LevelEditor/groups.h>
 #include <TFE_Editor/LevelEditor/lighting.h>
 #include <TFE_Editor/LevelEditor/findSectorUI.h>
+#include <TFE_Editor/LevelEditor/snapshotUI.h>
 #include <TFE_Editor/EditorAsset/editorAsset.h>
 #include <TFE_Editor/EditorAsset/editor3dThumbnails.h>
 #include <TFE_Input/input.h>
@@ -318,6 +319,10 @@ namespace TFE_Editor
 			{
 				ImGui::OpenPopup("Find Sector");
 			} break;
+			case POPUP_SNAPSHOTS:
+			{
+				ImGui::OpenPopup("Snapshots");
+			} break;
 			case POPUP_GROUP_NAME:
 			{
 				ImGui::OpenPopup("Choose Name");
@@ -431,6 +436,14 @@ namespace TFE_Editor
 			case POPUP_FIND_SECTOR:
 			{
 				if (LevelEditor::findSectorUI())
+				{
+					ImGui::CloseCurrentPopup();
+					s_editorPopup = POPUP_NONE;
+				}
+			} break;
+			case POPUP_SNAPSHOTS:
+			{
+				if (LevelEditor::snapshotUI())
 				{
 					ImGui::CloseCurrentPopup();
 					s_editorPopup = POPUP_NONE;
@@ -895,6 +908,10 @@ namespace TFE_Editor
 			case POPUP_FIND_SECTOR:
 			{
 				LevelEditor::findSectorUI_Begin();
+			} break;
+			case POPUP_SNAPSHOTS:
+			{
+				LevelEditor::snapshotUI_Begin();
 			} break;
 		}
 	}
