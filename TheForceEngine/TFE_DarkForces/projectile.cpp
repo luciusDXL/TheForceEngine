@@ -84,7 +84,7 @@ namespace TFE_DarkForces
 	static JBool      s_hitWater;
 	static RWall*     s_hitWall;
 
-	static s32		  s_projGravityAccel = PROJ_GRAVITY_ACCEL;		// TFE
+	static s32        s_projGravityAccel = PROJ_GRAVITY_ACCEL;		// TFE
 		
 	// Projectile specific collisions
 	static RSector*   s_colObjSector;
