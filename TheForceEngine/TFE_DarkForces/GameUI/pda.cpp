@@ -124,8 +124,6 @@ namespace TFE_DarkForces
 	///////////////////////////////////////////
 	void pda_start(const char* levelName)
 	{
-		TFE_System::logWrite(LOG_MSG, "PDA", "Opening PDA");
-
 		// TFE
 		reticle_enable(false);
 		s_mouseAccum = { 0 };
@@ -257,7 +255,6 @@ namespace TFE_DarkForces
 			TFE_Jedi::renderer_setLimits();
 		}
 
-		TFE_System::logWrite(LOG_MSG, "PDA", "Closing PDA");
 	}
 			
 	void pda_update()
