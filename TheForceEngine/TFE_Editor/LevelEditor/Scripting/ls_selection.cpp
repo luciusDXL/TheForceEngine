@@ -6,8 +6,6 @@
 #include <TFE_ForceScript/scriptInterface.h>
 #include <TFE_ForceScript/float2.h>
 #include <algorithm>
-
-#ifdef ENABLE_FORCE_SCRIPT
 #include <angelscript.h>
 
 namespace LevelEditor
@@ -125,5 +123,3 @@ namespace LevelEditor
 		ScriptClassEnd();
 	}
 }
-
-#endif

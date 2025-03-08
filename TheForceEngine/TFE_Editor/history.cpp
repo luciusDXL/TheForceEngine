@@ -239,11 +239,13 @@ namespace TFE_Editor
 
 	void history_step(s32 count)
 	{
-		if (count == 0) { return; }
-		if (count < 0 && s_curPosInHistory <= 0) { return; }
-		if (count > 0 && s_curPosInHistory >= (s32)s_history.size() - 1) { return; }
+		const s32 historyEnd = (s32)s_history.size() - 1;
+		s32 pos = (s32)s_curPosInHistory;
 
-		s32 pos = s_curPosInHistory;
+		if (count == 0) { return; }
+		if (count < 0 && pos <= 0) { return; }
+		if (count > 0 && pos >= historyEnd) { return; }
+
 		s32 curParent = pos;
 		if (count < 0)
 		{

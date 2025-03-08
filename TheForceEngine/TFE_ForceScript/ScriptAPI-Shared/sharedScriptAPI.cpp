@@ -17,8 +17,6 @@
 #include <vector>
 #include <string>
 #include <map>
-
-#ifdef ENABLE_FORCE_SCRIPT
 #include <angelscript.h>
 
 using namespace TFE_Jedi;
@@ -39,9 +37,3 @@ namespace TFE_ForceScript
 		s_test.scriptRegister(api);
 	}
 }
-#else
-namespace TFE_ForceScript
-{
-	void registerSharedScriptAPI(ScriptAPI api) {}
-}
-#endif

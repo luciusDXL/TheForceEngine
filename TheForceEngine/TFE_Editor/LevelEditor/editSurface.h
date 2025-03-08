@@ -18,13 +18,16 @@ namespace LevelEditor
 	void selectSimilarWalls(EditorSector* rootSector, s32 wallIndex, HitPart part, bool autoAlign = false);
 	s32 wallHoveredOrSelected(EditorSector*& sector);
 
+	void edit_setAdjoinExcludeList(std::vector<s32>* excludeList = nullptr);
+	bool edit_isInAdjoinExcludeList(s32 sectorId);
+
 	void edit_autoAlign(s32 sectorId, s32 wallIndex, HitPart part);
 	void edit_applySurfaceTextures();
 	void edit_clearCopiedTextureOffset();
 	void edit_applyTextureToSelection(s32 texIndex, Vec2f* offset);
 	void edit_applySignToSelection(s32 signIndex);
 	bool edit_splitWall(s32 sectorId, s32 wallIndex, Vec2f newPos);
-	void edit_tryAdjoin(s32 sectorId, s32 wallId, bool exactMatch);
+	bool edit_tryAdjoin(s32 sectorId, s32 wallId, bool exactMatch);
 	void edit_removeAdjoin(s32 sectorId, s32 wallId);
 	void edit_checkForWallHit2d(Vec2f& worldPos, EditorSector*& wallSector, s32& wallIndex, HitPart& part, EditorSector* hoverSector);
 	void edit_checkForWallHit3d(RayHitInfo* info, EditorSector*& wallSector, s32& wallIndex, HitPart& part, const EditorSector* hoverSector);

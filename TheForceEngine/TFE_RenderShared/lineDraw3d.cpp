@@ -187,7 +187,7 @@ namespace TFE_RenderShared
 		s_curveCount3d++;
 		// bounding box.
 		f32 maxOffset = 0.0f;
-		for (s32 i = 0; i < offsetCount; i++)
+		for (u32 i = 0; i < offsetCount; i++)
 		{
 			maxOffset = std::max(maxOffset, fabsf(offsets[i]));
 		}
@@ -195,7 +195,7 @@ namespace TFE_RenderShared
 
 		Vec2f boundsMin = vertices[0];
 		Vec2f boundsMax = vertices[0];
-		for (s32 i = 1; i < 3; i++)
+		for (u32 i = 1; i < 3; i++)
 		{
 			boundsMin.x = std::min(boundsMin.x, vertices[i].x);
 			boundsMin.z = std::min(boundsMin.z, vertices[i].z);
@@ -211,13 +211,13 @@ namespace TFE_RenderShared
 
 		// Offsets
 		Vec4f offsetVec = { 0 };
-		for (s32 i = 0; i < offsetCount && i < 4; i++)
+		for (u32 i = 0; i < offsetCount && i < 4; i++)
 		{
 			offsetVec.m[i] = offsets[i];
 		}
 
 		// store constant data in vertices to avoid draw calls.
-		for (s32 i = 0; i < 4; i++)
+		for (u32 i = 0; i < 4; i++)
 		{
 			vert[i].width = vertices[2]; // center value.
 			vert[i].linePos1 = { vertices[0].x, vertices[0].z, vertices[1].x, vertices[1].z };

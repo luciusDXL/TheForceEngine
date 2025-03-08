@@ -5,8 +5,6 @@
 #include <TFE_Jedi/InfSystem/infSystem.h>
 #include <TFE_Jedi/Memory/allocator.h>
 #include <TFE_System/system.h>
-
-#ifdef ENABLE_FORCE_SCRIPT
 #include <angelscript.h>
 
 using namespace TFE_Jedi;
@@ -39,4 +37,3 @@ namespace TFE_DarkForces
 		ScriptPropertyGetFunc("bool get_master()", getElevMaster);
 	}
 }
-#endif

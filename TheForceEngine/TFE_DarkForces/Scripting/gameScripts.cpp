@@ -19,7 +19,6 @@
 #include <string>
 #include <map>
 
-#ifdef ENABLE_FORCE_SCRIPT
 #include <angelscript.h>
 
 using namespace TFE_Jedi;
@@ -50,9 +49,3 @@ namespace TFE_DarkForces
 		s_gsGame.scriptRegister(api);
 	}
 }
-#else
-namespace TFE_DarkForces
-{
-	void registerScriptFunctions(ScriptAPI api) {}
-}
-#endif

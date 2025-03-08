@@ -7,7 +7,6 @@
 // to "play" the game as intended.
 //////////////////////////////////////////////////////////////////////
 #include <TFE_System/system.h>
-#ifdef ENABLE_FORCE_SCRIPT
 #include <TFE_System/types.h>
 #include <TFE_Jedi/Level/rtexture.h>
 
@@ -27,4 +26,3 @@ namespace TFE_DarkForces
 		s32 m_id;
 	};
 }
-#endif

@@ -50,6 +50,9 @@ namespace LevelEditor
 
 	void editGeometry_init();
 
+	bool isInIntList(s32 value, std::vector<s32>* list);
+	void insertIntoIntList(s32 value, std::vector<s32>* list);
+
 	void handleSectorDraw(RayHitInfo* hitInfo);
 	void handleSectorExtrude(RayHitInfo* hitInfo);
 	

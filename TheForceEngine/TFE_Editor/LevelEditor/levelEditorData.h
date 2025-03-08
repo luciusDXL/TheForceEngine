@@ -46,6 +46,7 @@ namespace LevelEditor
 		// Special
 		LEDIT_GUIDELINES,
 		LEDIT_NOTES,
+		LEDIT_UNKNOWN,
 	};
 		
 	enum DrawMode
@@ -238,19 +239,29 @@ namespace LevelEditor
 		EditorSector* sector;
 	};
 
-	bool loadLevelFromAsset(TFE_Editor::Asset* asset);
+	struct LevelExportInfo
+	{
+		std::string slot;
+		const TFE_Editor::Asset* asset;
+	};
+
+	bool loadLevelFromAsset(const TFE_Editor::Asset* asset);
 	TFE_Editor::AssetHandle loadTexture(const char* bmTextureName);
 	TFE_Editor::AssetHandle loadPalette(const char* paletteName);
 	TFE_Editor::AssetHandle loadColormap(const char* colormapName);
+
+	bool exportLevels(const char* workPath, const char* exportPath, const char* gobName, const std::vector<LevelExportInfo>& levelList);
 	
 	bool saveLevel();
 	bool exportLevel(const char* path, const char* name, const StartPoint* start);
+	bool exportSelectionToText(std::string& buffer);
+	bool importFromText(const std::string& buffer);
 	void sectorToPolygon(EditorSector* sector);
 	void polygonToSector(EditorSector* sector);
 
 	s32 addEntityToLevel(const Entity* newEntity);
 	s32 addLevelNoteToLevel(const LevelNote* newNote);
-
+		
 	TFE_Editor::EditorTexture* getTexture(s32 index);
 	s32 getTextureIndex(const char* name, bool* isNewTexture = nullptr);
 		

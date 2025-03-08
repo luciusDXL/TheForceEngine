@@ -59,9 +59,72 @@ namespace LevelEditor
 		s_hovered = FEATUREID_NULL;
 	}
 
+	// Is the feature valid in the current selection mode?
+	bool selection_isFeatureValidInMode(FeatureId featureId)
+	{
+		s32 featureIndex = -1;
+		HitPart part = HP_NONE;
+		EditorSector* sector = unpackFeatureId(featureId, &featureIndex, (s32*)&part);
+
+		switch (s_currentSelection)
+		{
+			case SEL_VERTEX:
+			{
+				if (!sector || featureIndex < 0 || featureIndex >= (s32)sector->vtx.size()) { return false; }
+			} break;
+			case SEL_SURFACE:
+			{
+				if (!sector) { return false; }
+				if (part != HP_FLOOR && part != HP_CEIL) 
+				{
+					if (featureIndex < 0 || featureIndex >= (s32)sector->walls.size())
+					{
+						return false;
+					}
+				}
+			} break;
+			case SEL_SECTOR:
+			{
+				if (!sector) { return false; }
+			} break;
+			case SEL_ENTITY:
+			{
+				if (!sector || featureIndex < 0 || featureIndex >= (s32)sector->obj.size())
+				{
+					return false;
+				}
+			} break;
+			case SEL_GUIDELINE:
+			{
+				if (featureIndex < 0 || featureIndex >= (s32)s_level.guidelines.size())
+				{
+					return false;
+				}
+			} break;
+			case SEL_NOTE:
+			{
+				if (featureIndex < 0 || featureIndex >= (s32)s_level.notes.size())
+				{
+					return false;
+				}
+			} break;
+		};
+		return true;
+	}
+
 	bool selection_hasHovered()
 	{
-		return s_hovered != FEATUREID_NULL;
+		// Check to see if the hovered feature is NULL.
+		if (s_hovered == FEATUREID_NULL) { return false; }
+		// Verify that the hovered feature is still valid.
+		if (!selection_isFeatureValidInMode(s_hovered))
+		{
+			// And if not, clear the hovered feature.
+			selection_clearHovered();
+			return false;
+		}
+		// Has valid hovered feature for the selection mode.
+		return true;
 	}
 
 	bool selection_hasSelection(SelectionListId id)

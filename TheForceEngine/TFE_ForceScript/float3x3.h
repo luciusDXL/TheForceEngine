@@ -6,8 +6,6 @@
 #include <TFE_System/system.h>
 #include <string>
 #include "float3.h"
-
-#ifdef ENABLE_FORCE_SCRIPT
 #include <angelscript.h>
 
 namespace TFE_ForceScript
@@ -49,4 +47,3 @@ namespace TFE_ForceScript
 	s32 getFloat3x3ObjectId();
 	std::string toStringF3x3(const float3x3& v);
 }  // TFE_ForceScript
-#endif

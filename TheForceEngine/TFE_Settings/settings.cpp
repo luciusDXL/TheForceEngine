@@ -1424,14 +1424,14 @@ namespace TFE_Settings
 		return value;
 	}
 
-	int parseJSonIntToOverride(const cJSON* item)
+	s32 parseJSonIntToOverride(const cJSON* item)
 	{
-		int value = -1;  // default is -1
+		s32 value = -1;  // default is -1
 
 		// Check if it is a json numerical
 		if (cJSON_IsNumber(item))
 		{
-			value = cJSON_GetNumberValue(item);
+			value = (s32)cJSON_GetNumberValue(item);
 		}
 		else
 		{
@@ -1530,7 +1530,7 @@ namespace TFE_Settings
 								if (strcmp(modIntOverrides[i], overrideName) == 0) {
 
 									// Parse the integer value.
-									int jsonIntResult = parseJSonIntToOverride(levelOverrideIter);
+									s32 jsonIntResult = parseJSonIntToOverride(levelOverrideIter);
 									if (jsonIntResult != -1)
 									{
 										levelOverride.intOverrideMap[overrideName] = jsonIntResult;
@@ -1625,7 +1625,7 @@ namespace TFE_Settings
 				// Ensure the version is supported.
 				if (strcasecmp(curElem->string, "TFE_VERSION") == 0)
 				{
-					int modVersion = parseJSonIntToOverride(curElem);
+					s32 modVersion = parseJSonIntToOverride(curElem);
 					if (modVersion < MOD_CONF_CUR_VERSION)
 					{
 						TFE_System::logWrite(LOG_WARNING, "MOD_CONF", "This MOD Conf version is not supported by this Force Engine release.");

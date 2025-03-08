@@ -4,8 +4,6 @@
 #include <TFE_Editor/LevelEditor/sharedState.h>
 #include <TFE_Jedi/Level/rwall.h>
 #include <TFE_Jedi/Level/rsector.h>
-
-#ifdef ENABLE_FORCE_SCRIPT
 #include <angelscript.h>
 namespace LevelEditor
 {
@@ -125,4 +123,3 @@ namespace LevelEditor
 		ScriptClassEnd();
 	}
 }
-#endif

@@ -4,7 +4,7 @@
 #include "player.h"
 #include "pickup.h"
 #include "projectile.h"
-#include "hitEffect.h"
+#include "Actor/actor.h"
 #include <TFE_Jedi/Collision/collision.h>
 #include <TFE_Jedi/Renderer/jediRenderer.h>
 // TFE
@@ -305,7 +305,7 @@ namespace TFE_DarkForces
 		if (s_curPlayerWeapon->wakeupRange)
 		{
 			vec3_fixed origin = { s_playerObject->posWS.x, s_playerObject->posWS.y, s_playerObject->posWS.z };
-			collision_effectObjectsInRangeXZ(s_playerObject->sector, s_curPlayerWeapon->wakeupRange, origin, hitEffectWakeupFunc, s_playerObject, ETFLAG_AI_ACTOR);
+			collision_effectObjectsInRangeXZ(s_playerObject->sector, s_curPlayerWeapon->wakeupRange, origin, actor_sendWakeupMsg, s_playerObject, ETFLAG_AI_ACTOR);
 		}
 
 		task_localBlockBegin;
@@ -387,7 +387,7 @@ namespace TFE_DarkForces
 			if (s_curPlayerWeapon->wakeupRange)
 			{
 				vec3_fixed origin = { s_playerObject->posWS.x, s_playerObject->posWS.y, s_playerObject->posWS.z };
-				collision_effectObjectsInRangeXZ(s_playerObject->sector, s_curPlayerWeapon->wakeupRange, origin, hitEffectWakeupFunc, s_playerObject, ETFLAG_AI_ACTOR);
+				collision_effectObjectsInRangeXZ(s_playerObject->sector, s_curPlayerWeapon->wakeupRange, origin, actor_sendWakeupMsg, s_playerObject, ETFLAG_AI_ACTOR);
 			}
 
 			// Aim projectile
@@ -578,7 +578,7 @@ namespace TFE_DarkForces
 			if (s_curPlayerWeapon->wakeupRange)
 			{
 				vec3_fixed origin = { s_playerObject->posWS.x, s_playerObject->posWS.y, s_playerObject->posWS.z };
-				collision_effectObjectsInRangeXZ(s_playerObject->sector, s_curPlayerWeapon->wakeupRange, origin, hitEffectWakeupFunc, s_playerObject, ETFLAG_AI_ACTOR);
+				collision_effectObjectsInRangeXZ(s_playerObject->sector, s_curPlayerWeapon->wakeupRange, origin, actor_sendWakeupMsg, s_playerObject, ETFLAG_AI_ACTOR);
 			}
 
 			// Aim projectile
@@ -794,7 +794,7 @@ namespace TFE_DarkForces
 			if (s_curPlayerWeapon->wakeupRange)
 			{
 				vec3_fixed origin = { s_playerObject->posWS.x, s_playerObject->posWS.y, s_playerObject->posWS.z };
-				collision_effectObjectsInRangeXZ(s_playerObject->sector, s_curPlayerWeapon->wakeupRange, origin, hitEffectWakeupFunc, s_playerObject, ETFLAG_AI_ACTOR);
+				collision_effectObjectsInRangeXZ(s_playerObject->sector, s_curPlayerWeapon->wakeupRange, origin, actor_sendWakeupMsg, s_playerObject, ETFLAG_AI_ACTOR);
 			}
 
 			fixed16_16 yPos = s_playerObject->posWS.y - s_playerObject->worldHeight + s_headwaveVerticalOffset;
@@ -929,7 +929,7 @@ namespace TFE_DarkForces
 				if (s_curPlayerWeapon->wakeupRange)
 				{
 					vec3_fixed origin = { s_playerObject->posWS.x, s_playerObject->posWS.y, s_playerObject->posWS.z };
-					collision_effectObjectsInRangeXZ(s_playerObject->sector, s_curPlayerWeapon->wakeupRange, origin, hitEffectWakeupFunc, s_playerObject, ETFLAG_AI_ACTOR);
+					collision_effectObjectsInRangeXZ(s_playerObject->sector, s_curPlayerWeapon->wakeupRange, origin, actor_sendWakeupMsg, s_playerObject, ETFLAG_AI_ACTOR);
 				}
 
 				// Initial animation frame
@@ -1083,7 +1083,7 @@ namespace TFE_DarkForces
 				if (s_curPlayerWeapon->wakeupRange)
 				{
 					vec3_fixed origin = { s_playerObject->posWS.x, s_playerObject->posWS.y, s_playerObject->posWS.z };
-					collision_effectObjectsInRangeXZ(s_playerObject->sector, s_curPlayerWeapon->wakeupRange, origin, hitEffectWakeupFunc, s_playerObject, ETFLAG_AI_ACTOR);
+					collision_effectObjectsInRangeXZ(s_playerObject->sector, s_curPlayerWeapon->wakeupRange, origin, actor_sendWakeupMsg, s_playerObject, ETFLAG_AI_ACTOR);
 				}
 
 				// Initial animation frame
@@ -1277,7 +1277,7 @@ namespace TFE_DarkForces
 				if (s_curPlayerWeapon->wakeupRange)
 				{
 					vec3_fixed origin = { s_playerObject->posWS.x, s_playerObject->posWS.y, s_playerObject->posWS.z };
-					collision_effectObjectsInRangeXZ(s_playerObject->sector, s_curPlayerWeapon->wakeupRange, origin, hitEffectWakeupFunc, s_playerObject, ETFLAG_AI_ACTOR);
+					collision_effectObjectsInRangeXZ(s_playerObject->sector, s_curPlayerWeapon->wakeupRange, origin, actor_sendWakeupMsg, s_playerObject, ETFLAG_AI_ACTOR);
 				}
 
 				task_localBlockBegin;
@@ -1414,7 +1414,7 @@ namespace TFE_DarkForces
 				if (s_curPlayerWeapon->wakeupRange)
 				{
 					vec3_fixed origin = { s_playerObject->posWS.x, s_playerObject->posWS.y, s_playerObject->posWS.z };
-					collision_effectObjectsInRangeXZ(s_playerObject->sector, s_curPlayerWeapon->wakeupRange, origin, hitEffectWakeupFunc, s_playerObject, ETFLAG_AI_ACTOR);
+					collision_effectObjectsInRangeXZ(s_playerObject->sector, s_curPlayerWeapon->wakeupRange, origin, actor_sendWakeupMsg, s_playerObject, ETFLAG_AI_ACTOR);
 				}
 
 				task_localBlockBegin;
@@ -1606,7 +1606,7 @@ namespace TFE_DarkForces
 			if (s_curPlayerWeapon->wakeupRange)
 			{
 				vec3_fixed origin = { s_playerObject->posWS.x, s_playerObject->posWS.y, s_playerObject->posWS.z };
-				collision_effectObjectsInRangeXZ(s_playerObject->sector, s_curPlayerWeapon->wakeupRange, origin, hitEffectWakeupFunc, s_playerObject, ETFLAG_AI_ACTOR);
+				collision_effectObjectsInRangeXZ(s_playerObject->sector, s_curPlayerWeapon->wakeupRange, origin, actor_sendWakeupMsg, s_playerObject, ETFLAG_AI_ACTOR);
 			}
 
 			// Aim projectile
@@ -1786,7 +1786,7 @@ namespace TFE_DarkForces
 			if (s_curPlayerWeapon->wakeupRange)
 			{
 				vec3_fixed origin = { s_playerObject->posWS.x, s_playerObject->posWS.y, s_playerObject->posWS.z };
-				collision_effectObjectsInRangeXZ(s_playerObject->sector, s_curPlayerWeapon->wakeupRange, origin, hitEffectWakeupFunc, s_playerObject, ETFLAG_AI_ACTOR);
+				collision_effectObjectsInRangeXZ(s_playerObject->sector, s_curPlayerWeapon->wakeupRange, origin, actor_sendWakeupMsg, s_playerObject, ETFLAG_AI_ACTOR);
 			}
 
 			// Animate (going down)
@@ -1872,7 +1872,7 @@ namespace TFE_DarkForces
 			if (s_curPlayerWeapon->wakeupRange)
 			{
 				vec3_fixed origin = { s_playerObject->posWS.x, s_playerObject->posWS.y, s_playerObject->posWS.z };
-				collision_effectObjectsInRangeXZ(s_playerObject->sector, s_curPlayerWeapon->wakeupRange, origin, hitEffectWakeupFunc, s_playerObject, ETFLAG_AI_ACTOR);
+				collision_effectObjectsInRangeXZ(s_playerObject->sector, s_curPlayerWeapon->wakeupRange, origin, actor_sendWakeupMsg, s_playerObject, ETFLAG_AI_ACTOR);
 			}
 
 			// Aim projectiles
@@ -2053,7 +2053,7 @@ namespace TFE_DarkForces
 				if (s_curPlayerWeapon->wakeupRange)
 				{
 					vec3_fixed origin = { s_playerObject->posWS.x, s_playerObject->posWS.y, s_playerObject->posWS.z };
-					collision_effectObjectsInRangeXZ(s_playerObject->sector, s_curPlayerWeapon->wakeupRange, origin, hitEffectWakeupFunc, s_playerObject, ETFLAG_AI_ACTOR);
+					collision_effectObjectsInRangeXZ(s_playerObject->sector, s_curPlayerWeapon->wakeupRange, origin, actor_sendWakeupMsg, s_playerObject, ETFLAG_AI_ACTOR);
 				}
 
 				task_localBlockBegin;
@@ -2189,7 +2189,7 @@ namespace TFE_DarkForces
 				if (s_curPlayerWeapon->wakeupRange)
 				{
 					vec3_fixed origin = { s_playerObject->posWS.x, s_playerObject->posWS.y, s_playerObject->posWS.z };
-					collision_effectObjectsInRangeXZ(s_playerObject->sector, s_curPlayerWeapon->wakeupRange, origin, hitEffectWakeupFunc, s_playerObject, ETFLAG_AI_ACTOR);
+					collision_effectObjectsInRangeXZ(s_playerObject->sector, s_curPlayerWeapon->wakeupRange, origin, actor_sendWakeupMsg, s_playerObject, ETFLAG_AI_ACTOR);
 				}
 
 				task_localBlockBegin;

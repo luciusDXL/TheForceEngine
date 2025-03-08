@@ -1239,7 +1239,7 @@ namespace LevelEditor
 		return true;
 	}
 
-	bool loadLevelInfFromAsset(Asset* asset)
+	bool loadLevelInfFromAsset(const Asset* asset)
 	{
 		char infFile[TFE_MAX_PATH];
 		s_fileData.clear();

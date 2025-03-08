@@ -86,7 +86,7 @@ namespace LevelEditor
 	std::vector<EditorSector> s_sectorSnapshot;
 	std::vector<UniqueTexture> s_uniqueTextures;
 	std::vector<UniqueEntity> s_uniqueEntities;
-
+	
 	std::vector<u8> s_fileData;
 	std::vector<IndexPair> s_pairs;
 	std::vector<IndexPair> s_prevPairs;
@@ -108,7 +108,7 @@ namespace LevelEditor
 		LevVersionMax = 21,
 		LevVersion_Layers_WallLight = 21,
 	};
-
+	
 	EditorSector* findSectorDf(const Vec3f pos);
 
 	AssetHandle loadTexture(const char* bmTextureName)
@@ -117,7 +117,7 @@ namespace LevelEditor
 		if (!texAsset) { return NULL_ASSET; }
 		return AssetBrowser::loadAssetData(texAsset);
 	}
-
+		
 	AssetHandle loadPalette(const char* paletteName)
 	{
 		Asset* palAsset = AssetBrowser::findAsset(paletteName, TYPE_PALETTE);
@@ -234,7 +234,7 @@ namespace LevelEditor
 						var = &entity->var.back();
 					}
 					var->defId = varId;
-
+					
 					TokenList tokens;
 					tokens.push_back(varName);
 					tokens.push_back(objSeqArg1);
@@ -256,7 +256,7 @@ namespace LevelEditor
 			name[i] = tolower(name[i]);
 		}
 	}
-
+		
 	bool loadLevelObjFromAsset(const Asset* asset)
 	{
 		char objFile[TFE_MAX_PATH];
@@ -407,7 +407,7 @@ namespace LevelEditor
 						obj->diff = objDiff;
 						obj->angle = yaw * PI / 180.0f;
 						obj->pitch = pch * PI / 180.0f;
-						obj->roll = rol * PI / 180.0f;
+						obj->roll  = rol * PI / 180.0f;
 						compute3x3Rotation(&obj->transform, obj->angle, obj->pitch, obj->roll);
 
 						Entity objEntity = {};
@@ -415,59 +415,59 @@ namespace LevelEditor
 						KEYWORD classType = getKeywordIndex(objClass);
 						switch (classType)
 						{
-						case KW_3D:
-						{
-							if (podCount)
+							case KW_3D:
 							{
-								objEntity.type = ETYPE_3D;
-								objEntity.assetName = pods[dataIndex];
+								if (podCount)
+								{
+									objEntity.type = ETYPE_3D;
+									objEntity.assetName = pods[dataIndex];
 
-								char name[256];
-								entityNameFromAssetName(objEntity.assetName.c_str(), name);
-								objEntity.name = name;
-							}
-						} break;
-						case KW_SPRITE:
-						{
-							if (spriteCount)
+									char name[256];
+									entityNameFromAssetName(objEntity.assetName.c_str(), name);
+									objEntity.name = name;
+								}
+							} break;
+							case KW_SPRITE:
 							{
-								objEntity.type = ETYPE_SPRITE;
-								objEntity.assetName = sprites[dataIndex];
-
-								char name[256];
-								entityNameFromAssetName(objEntity.assetName.c_str(), name);
-								objEntity.name = name;
-							}
-						} break;
-						case KW_FRAME:
-						{
-							if (frameCount)
+								if (spriteCount)
+								{
+									objEntity.type = ETYPE_SPRITE;
+									objEntity.assetName = sprites[dataIndex];
+									
+									char name[256];
+									entityNameFromAssetName(objEntity.assetName.c_str(), name);
+									objEntity.name = name;
+								}
+							} break;
+							case KW_FRAME:
 							{
-								objEntity.type = ETYPE_FRAME;
-								objEntity.assetName = frames[dataIndex];
+								if (frameCount)
+								{
+									objEntity.type = ETYPE_FRAME;
+									objEntity.assetName = frames[dataIndex];
 
-								char name[256];
-								entityNameFromAssetName(objEntity.assetName.c_str(), name);
-								objEntity.name = name;
-							}
-						} break;
-						case KW_SPIRIT:
-						{
-							objEntity.name = "Spirit";
-							objEntity.type = ETYPE_SPIRIT;
-							objEntity.assetName = "SpiritObject.png";
-						} break;
-						case KW_SOUND:
-						{
-							//objEntity.type = ETYPE_SOUND;
-							//objEntity.assetName = "SpiritObject.png";
-						} break;
-						case KW_SAFE:
-						{
-							objEntity.name = "Safe";
-							objEntity.type = ETYPE_SAFE;
-							objEntity.assetName = "SafeObject.png";
-						} break;
+									char name[256];
+									entityNameFromAssetName(objEntity.assetName.c_str(), name);
+									objEntity.name = name;
+								}
+							} break;
+							case KW_SPIRIT:
+							{
+								objEntity.name = "Spirit";
+								objEntity.type = ETYPE_SPIRIT;
+								objEntity.assetName = "SpiritObject.png";
+							} break;
+							case KW_SOUND:
+							{
+								//objEntity.type = ETYPE_SOUND;
+								//objEntity.assetName = "SpiritObject.png";
+							} break;
+							case KW_SAFE:
+							{
+								objEntity.name = "Safe";
+								objEntity.type = ETYPE_SAFE;
+								objEntity.assetName = "SafeObject.png";
+							} break;
 						}
 
 						// Invalid or unknown object or object type, just discard.
@@ -500,7 +500,7 @@ namespace LevelEditor
 
 		return true;
 	}
-
+		
 	bool loadLevelFromAsset(const Asset* asset)
 	{
 		EditorLevel* level = &s_level;
@@ -579,7 +579,7 @@ namespace LevelEditor
 			return false;
 		}
 		level->name = readBuffer;
-
+		
 		line = parser.readLine(bufferPos);
 		if (sscanf(line, " PALETTE %s", readBuffer) != 1)
 		{
@@ -640,7 +640,7 @@ namespace LevelEditor
 			line = parser.readLine(bufferPos);
 			readNext = false;
 		}
-
+		
 		// Load Sectors.
 		if (readNext)
 		{
@@ -698,7 +698,7 @@ namespace LevelEditor
 				return false;
 			}
 			sector->floorTex.texIndex = floorTexId;
-
+			
 			// Ceiling Texture & Offset
 			line = parser.readLine(bufferPos);
 			if (sscanf(line, " CEILING TEXTURE %d %f %f %d", &ceilTexId, &sector->ceilTex.offset.x, &sector->ceilTex.offset.z, &tmp) != 4)
@@ -722,8 +722,8 @@ namespace LevelEditor
 
 			// Note: the editor works with +Y up, so negate heights.
 			if (sector->floorHeight != 0.0f) { sector->floorHeight = -sector->floorHeight; }
-			if (sector->ceilHeight != 0.0f) { sector->ceilHeight = -sector->ceilHeight; }
-			if (sector->secHeight != 0.0f) { sector->secHeight = -sector->secHeight; }
+			if (sector->ceilHeight  != 0.0f) { sector->ceilHeight  = -sector->ceilHeight; }
+			if (sector->secHeight   != 0.0f) { sector->secHeight   = -sector->secHeight; }
 
 			// Sector flags
 			if (sscanf(line, " FLAGS %d %d %d", &sector->flags[0], &sector->flags[1], &sector->flags[2]) != 3)
@@ -746,7 +746,7 @@ namespace LevelEditor
 				return false;
 			}
 
-			sector->bounds[0] = { FLT_MAX,  FLT_MAX,  FLT_MAX };
+			sector->bounds[0] = {  FLT_MAX,  FLT_MAX,  FLT_MAX };
 			sector->bounds[1] = { -FLT_MAX, -FLT_MAX, -FLT_MAX };
 			sector->bounds[0].y = min(sector->floorHeight, sector->ceilHeight);
 			sector->bounds[1].y = max(sector->floorHeight, sector->ceilHeight);
@@ -810,11 +810,11 @@ namespace LevelEditor
 
 		// Original format level, so default to vanilla.
 		level->featureSet = FSET_VANILLA;
-
+		
 		// Compute the bounds.
-		level->bounds[0] = { FLT_MAX,  FLT_MAX,  FLT_MAX };
+		level->bounds[0] = {  FLT_MAX,  FLT_MAX,  FLT_MAX };
 		level->bounds[1] = { -FLT_MAX, -FLT_MAX, -FLT_MAX };
-		level->layerRange[0] = INT_MAX;
+		level->layerRange[0] =  INT_MAX;
 		level->layerRange[1] = -INT_MAX;
 		const size_t count = level->sectors.size();
 		sector = level->sectors.data();
@@ -1092,7 +1092,7 @@ namespace LevelEditor
 
 		return true;
 	}
-
+			
 	// Save in the binary editor format.
 	bool saveLevel()
 	{
@@ -1250,10 +1250,10 @@ namespace LevelEditor
 	}
 
 	// Export the level to the game format.
-#define WRITE_LINE(...) \
+	#define WRITE_LINE(...) \
 		sprintf(buffer, __VA_ARGS__); \
 		file.writeBuffer(buffer, (u32)strlen(buffer));
-#define NEW_LINE() file.writeBuffer(c_newLine, (u32)strlen(c_newLine))
+	#define NEW_LINE() file.writeBuffer(c_newLine, (u32)strlen(c_newLine))
 
 	void exportWriteTFEHeader(char* buffer, FileStream& file)
 	{
@@ -1369,7 +1369,7 @@ namespace LevelEditor
 				assert((mirrorId >= 0 && adjoinId >= 0) || (mirrorId < 0 && adjoinId < 0));
 
 				WRITE_LINE("    WALL LEFT:\t%d  RIGHT:\t%d  MID:\t%d\t%0.2f\t%0.2f\t%d  TOP:\t%d\t%0.2f\t%0.2f\t%d  BOT:\t%d\t%0.2f\t%0.2f\t%d  "
-					"SIGN:\t%d\t%0.2f\t%0.2f  ADJOIN:\t%d  MIRROR:\t%d  WALK:\t%d  FLAGS: %d %d %d  LIGHT: %d\r\n",
+					"SIGN:\t%d\t%0.2f\t%0.2f  ADJOIN:\t%d  MIRROR:\t%d  WALK:\t%d  FLAGS: %d %d %d  LIGHT: %d\r\n", 
 					wall->idx[0], wall->idx[1],
 					wall->tex[WP_MID].texIndex, wall->tex[WP_MID].offset.x, wall->tex[WP_MID].offset.z, 0,
 					wall->tex[WP_TOP].texIndex, wall->tex[WP_TOP].offset.x, wall->tex[WP_TOP].offset.z, 0,
@@ -1415,34 +1415,34 @@ namespace LevelEditor
 			}
 			switch (def->type)
 			{
-			case EVARTYPE_BOOL:
-			{
-				// If the bool doesn't match the "default" value - then don't write it at all.
-				if (var[v].value.bValue == def->defValue.bValue)
+				case EVARTYPE_BOOL:
 				{
-					WRITE_LINE("            %s:     %s\r\n", def->name.c_str(), var[v].value.bValue ? "TRUE" : "FALSE");
-				}
-			} break;
-			case EVARTYPE_FLOAT:
-			{
-				WRITE_LINE("            %s:     %f\r\n", def->name.c_str(), var[v].value.fValue);
-			} break;
-			case EVARTYPE_INT:
-			case EVARTYPE_FLAGS:
-			{
-				WRITE_LINE("            %s:     %d\r\n", def->name.c_str(), var[v].value.iValue);
-			} break;
-			case EVARTYPE_STRING_LIST:
-			{
-				WRITE_LINE("            %s:     \"%s\"\r\n", def->name.c_str(), var[v].value.sValue.c_str());
-			} break;
-			case EVARTYPE_INPUT_STRING_PAIR:
-			{
-				if (!var[v].value.sValue.empty())
+					// If the bool doesn't match the "default" value - then don't write it at all.
+					if (var[v].value.bValue == def->defValue.bValue)
+					{
+						WRITE_LINE("            %s:     %s\r\n", def->name.c_str(), var[v].value.bValue ? "TRUE" : "FALSE");
+					}
+				} break;
+				case EVARTYPE_FLOAT:
 				{
-					WRITE_LINE("            %s:     %s \"%s\"\r\n", def->name.c_str(), var[v].value.sValue.c_str(), var[v].value.sValue1.c_str());
-				}
-			} break;
+					WRITE_LINE("            %s:     %f\r\n", def->name.c_str(), var[v].value.fValue);
+				} break;
+				case EVARTYPE_INT:
+				case EVARTYPE_FLAGS:
+				{
+					WRITE_LINE("            %s:     %d\r\n", def->name.c_str(), var[v].value.iValue);
+				} break;
+				case EVARTYPE_STRING_LIST:
+				{
+					WRITE_LINE("            %s:     \"%s\"\r\n", def->name.c_str(), var[v].value.sValue.c_str());
+				} break;
+				case EVARTYPE_INPUT_STRING_PAIR:
+				{
+					if (!var[v].value.sValue.empty())
+					{
+						WRITE_LINE("            %s:     %s \"%s\"\r\n", def->name.c_str(), var[v].value.sValue.c_str(), var[v].value.sValue1.c_str());
+					}
+				} break;
 			}
 		}
 	}
@@ -1486,7 +1486,7 @@ namespace LevelEditor
 		}
 		WRITE_LINE("        SEQEND\r\n");
 	}
-
+			
 	bool exportDfObj(const char* oFile, const StartPoint* start)
 	{
 		FileStream file;
@@ -1578,7 +1578,7 @@ namespace LevelEditor
 
 		// For now just put in a start point.
 		const f32 radToDeg = 360.0f / (2.0f * PI);
-		const f32 yaw = start ? fmodf(start->yaw * radToDeg + 180.0f, 360.0f) : 0.0f;
+		const f32 yaw   = start ? fmodf(start->yaw * radToDeg + 180.0f, 360.0f) : 0.0f;
 		const f32 pitch = start ? start->pitch * radToDeg : 0.0f;
 		const f32 y = start ? std::max(start->sector->floorHeight, start->pos.y - 5.8f) : 0.0f;
 
@@ -1617,49 +1617,49 @@ namespace LevelEditor
 
 			switch (entity->type)
 			{
-			case ETYPE_SPIRIT:
-			{
-				if (i == startPointId)
+				case ETYPE_SPIRIT:
 				{
-					if (start)
+					if (i == startPointId)
 					{
-						WRITE_LINE("    CLASS: SPIRIT     DATA: 0   X: %0.2f Y: %0.2f Z: %0.2f PCH: %0.2f   YAW: %0.2f ROL: 0.00   DIFF: %d\r\n", start->pos.x, -y, start->pos.z, pitch, yaw, obj->diff);
+						if (start)
+						{
+							WRITE_LINE("    CLASS: SPIRIT     DATA: 0   X: %0.2f Y: %0.2f Z: %0.2f PCH: %0.2f   YAW: %0.2f ROL: 0.00   DIFF: %d\r\n", start->pos.x, -y, start->pos.z, pitch, yaw, obj->diff);
+						}
+						else
+						{
+							WRITE_LINE("    CLASS: SPIRIT     DATA: 0   X: %0.2f Y: %0.2f Z: %0.2f PCH: %0.2f   YAW: %0.2f ROL: %0.2f   DIFF: %d\r\n", obj->pos.x, -obj->pos.y, obj->pos.z, objPitch, objYaw, objRoll, obj->diff);
+						}
+						WRITE_LINE("        SEQ\r\n");
+						WRITE_LINE("            LOGIC:     PLAYER\r\n");
+						WRITE_LINE("            EYE:       TRUE\r\n");
+						WRITE_LINE("        SEQEND\r\n");
 					}
 					else
 					{
 						WRITE_LINE("    CLASS: SPIRIT     DATA: 0   X: %0.2f Y: %0.2f Z: %0.2f PCH: %0.2f   YAW: %0.2f ROL: %0.2f   DIFF: %d\r\n", obj->pos.x, -obj->pos.y, obj->pos.z, objPitch, objYaw, objRoll, obj->diff);
+						writeObjSequence(obj, entity, file);
 					}
-					WRITE_LINE("        SEQ\r\n");
-					WRITE_LINE("            LOGIC:     PLAYER\r\n");
-					WRITE_LINE("            EYE:       TRUE\r\n");
-					WRITE_LINE("        SEQEND\r\n");
-				}
-				else
+				} break;
+				case ETYPE_SAFE:
 				{
-					WRITE_LINE("    CLASS: SPIRIT     DATA: 0   X: %0.2f Y: %0.2f Z: %0.2f PCH: %0.2f   YAW: %0.2f ROL: %0.2f   DIFF: %d\r\n", obj->pos.x, -obj->pos.y, obj->pos.z, objPitch, objYaw, objRoll, obj->diff);
+					WRITE_LINE("    CLASS: SAFE     DATA: 0   X: %0.2f Y: %0.2f Z: %0.2f PCH: %0.2f   YAW: %0.2f ROL: %0.2f   DIFF: %d\r\n", obj->pos.x, -obj->pos.y, obj->pos.z, objPitch, objYaw, objRoll, obj->diff);
 					writeObjSequence(obj, entity, file);
-				}
-			} break;
-			case ETYPE_SAFE:
-			{
-				WRITE_LINE("    CLASS: SAFE     DATA: 0   X: %0.2f Y: %0.2f Z: %0.2f PCH: %0.2f   YAW: %0.2f ROL: %0.2f   DIFF: %d\r\n", obj->pos.x, -obj->pos.y, obj->pos.z, objPitch, objYaw, objRoll, obj->diff);
-				writeObjSequence(obj, entity, file);
-			} break;
-			case ETYPE_FRAME:
-			{
-				WRITE_LINE("    CLASS: FRAME     DATA: %d   X: %0.2f Y: %0.2f Z: %0.2f PCH: %0.2f   YAW: %0.2f ROL: %0.2f   DIFF: %d\r\n", objData[i], obj->pos.x, -obj->pos.y, obj->pos.z, objPitch, objYaw, objRoll, obj->diff);
-				writeObjSequence(obj, entity, file);
-			} break;
-			case ETYPE_SPRITE:
-			{
-				WRITE_LINE("    CLASS: SPRITE     DATA: %d   X: %0.2f Y: %0.2f Z: %0.2f PCH: %0.2f   YAW: %0.2f ROL: %0.2f   DIFF: %d\r\n", objData[i], obj->pos.x, -obj->pos.y, obj->pos.z, objPitch, objYaw, objRoll, obj->diff);
-				writeObjSequence(obj, entity, file);
-			} break;
-			case ETYPE_3D:
-			{
-				WRITE_LINE("    CLASS: 3D     DATA: %d   X: %0.2f Y: %0.2f Z: %0.2f PCH: %0.2f   YAW: %0.2f ROL: %0.2f   DIFF: %d\r\n", objData[i], obj->pos.x, -obj->pos.y, obj->pos.z, objPitch, objYaw, objRoll, obj->diff);
-				writeObjSequence(obj, entity, file);
-			} break;
+				} break;
+				case ETYPE_FRAME:
+				{
+					WRITE_LINE("    CLASS: FRAME     DATA: %d   X: %0.2f Y: %0.2f Z: %0.2f PCH: %0.2f   YAW: %0.2f ROL: %0.2f   DIFF: %d\r\n", objData[i], obj->pos.x, -obj->pos.y, obj->pos.z, objPitch, objYaw, objRoll, obj->diff);
+					writeObjSequence(obj, entity, file);
+				} break;
+				case ETYPE_SPRITE:
+				{
+					WRITE_LINE("    CLASS: SPRITE     DATA: %d   X: %0.2f Y: %0.2f Z: %0.2f PCH: %0.2f   YAW: %0.2f ROL: %0.2f   DIFF: %d\r\n", objData[i], obj->pos.x, -obj->pos.y, obj->pos.z, objPitch, objYaw, objRoll, obj->diff);
+					writeObjSequence(obj, entity, file);
+				} break;
+				case ETYPE_3D:
+				{
+					WRITE_LINE("    CLASS: 3D     DATA: %d   X: %0.2f Y: %0.2f Z: %0.2f PCH: %0.2f   YAW: %0.2f ROL: %0.2f   DIFF: %d\r\n", objData[i], obj->pos.x, -obj->pos.y, obj->pos.z, objPitch, objYaw, objRoll, obj->diff);
+					writeObjSequence(obj, entity, file);
+				} break;
 			}
 		}
 		NEW_LINE();
@@ -1966,7 +1966,7 @@ namespace LevelEditor
 		fileList.push_back(gobTempPath);
 
 		Project* project = project_get();
-
+		
 		char readme[4096];
 		sprintf(readme, c_modHeaderTemplate, project->name, project->authors.c_str(), project->desc.c_str(), project->credits.c_str());
 
@@ -1995,7 +1995,7 @@ namespace LevelEditor
 		char dir[TFE_MAX_PATH];
 		char filePath[TFE_MAX_PATH];
 		sprintf(dir, "%s/", project->path);
-
+		
 		for (size_t i = 0; i < extLen; i++)
 		{
 			list.clear();
@@ -2079,7 +2079,7 @@ namespace LevelEditor
 		osShellExecute(s_editorConfig.darkForcesPort, appDir, cmdLine, true);
 		// Then cleanup by deleting the test GOB.
 		FileUtil::deleteFile(gobPath);
-
+		
 		return true;
 	}
 
@@ -2114,34 +2114,34 @@ namespace LevelEditor
 			}
 			switch (def->type)
 			{
-			case EVARTYPE_BOOL:
-			{
-				// If the bool doesn't match the "default" value - then don't write it at all.
-				if (var[v].value.bValue == def->defValue.bValue)
+				case EVARTYPE_BOOL:
 				{
-					WRITE_TO_BUFFER("      %s: %s\r\n", def->name.c_str(), var[v].value.bValue ? "TRUE" : "FALSE");
-				}
-			} break;
-			case EVARTYPE_FLOAT:
-			{
-				WRITE_TO_BUFFER("      %s: %f\r\n", def->name.c_str(), var[v].value.fValue);
-			} break;
-			case EVARTYPE_INT:
-			case EVARTYPE_FLAGS:
-			{
-				WRITE_TO_BUFFER("      %s: %d\r\n", def->name.c_str(), var[v].value.iValue);
-			} break;
-			case EVARTYPE_STRING_LIST:
-			{
-				WRITE_TO_BUFFER("      %s: \"%s\"\r\n", def->name.c_str(), var[v].value.sValue.c_str());
-			} break;
-			case EVARTYPE_INPUT_STRING_PAIR:
-			{
-				if (!var[v].value.sValue.empty())
+					// If the bool doesn't match the "default" value - then don't write it at all.
+					if (var[v].value.bValue == def->defValue.bValue)
+					{
+						WRITE_TO_BUFFER("      %s: %s\r\n", def->name.c_str(), var[v].value.bValue ? "TRUE" : "FALSE");
+					}
+				} break;
+				case EVARTYPE_FLOAT:
 				{
-					WRITE_TO_BUFFER("      %s: %s \"%s\"\r\n", def->name.c_str(), var[v].value.sValue.c_str(), var[v].value.sValue1.c_str());
-				}
-			} break;
+					WRITE_TO_BUFFER("      %s: %f\r\n", def->name.c_str(), var[v].value.fValue);
+				} break;
+				case EVARTYPE_INT:
+				case EVARTYPE_FLAGS:
+				{
+					WRITE_TO_BUFFER("      %s: %d\r\n", def->name.c_str(), var[v].value.iValue);
+				} break;
+				case EVARTYPE_STRING_LIST:
+				{
+					WRITE_TO_BUFFER("      %s: \"%s\"\r\n", def->name.c_str(), var[v].value.sValue.c_str());
+				} break;
+				case EVARTYPE_INPUT_STRING_PAIR:
+				{
+					if (!var[v].value.sValue.empty())
+					{
+						WRITE_TO_BUFFER("      %s: %s \"%s\"\r\n", def->name.c_str(), var[v].value.sValue.c_str(), var[v].value.sValue1.c_str());
+					}
+				} break;
 			}
 		}
 	}
@@ -2304,7 +2304,7 @@ namespace LevelEditor
 				}
 			}
 		}
-
+				
 		// Next add Texture list.
 		const s32 textureCount = (s32)textureListIndices.size();
 		if (textureCount > 0)
@@ -2319,7 +2319,7 @@ namespace LevelEditor
 			}
 			buffer.append("\r\n");
 		}
-
+		
 		// Add object data list.
 		if (!objList.empty())
 		{
@@ -2436,31 +2436,31 @@ namespace LevelEditor
 
 				switch (entity->type)
 				{
-				case ETYPE_SPIRIT:
-				{
-					WRITE_TO_BUFFER("  CLASS: SPIRIT DATA: 0 X: %0.2f Y: %0.2f Z: %0.2f PCH: %0.2f YAW: %0.2f ROL: %0.2f DIFF: %d\r\n", obj->pos.x, -obj->pos.y, obj->pos.z, objPitch, objYaw, objRoll, obj->diff);
-					writeObjSequenceToBuffer(obj, entity, buffer);
-				} break;
-				case ETYPE_SAFE:
-				{
-					WRITE_TO_BUFFER("  CLASS: SAFE DATA: 0 X: %0.2f Y: %0.2f Z: %0.2f PCH: %0.2f YAW: %0.2f ROL: %0.2f DIFF: %d\r\n", obj->pos.x, -obj->pos.y, obj->pos.z, objPitch, objYaw, objRoll, obj->diff);
-					writeObjSequenceToBuffer(obj, entity, buffer);
-				} break;
-				case ETYPE_FRAME:
-				{
-					WRITE_TO_BUFFER("  CLASS: FRAME DATA: %d X: %0.2f Y: %0.2f Z: %0.2f PCH: %0.2f YAW: %0.2f ROL: %0.2f DIFF: %d\r\n", objData[o], obj->pos.x, -obj->pos.y, obj->pos.z, objPitch, objYaw, objRoll, obj->diff);
-					writeObjSequenceToBuffer(obj, entity, buffer);
-				} break;
-				case ETYPE_SPRITE:
-				{
-					WRITE_TO_BUFFER("  CLASS: SPRITE DATA: %d X: %0.2f Y: %0.2f Z: %0.2f PCH: %0.2f YAW: %0.2f ROL: %0.2f DIFF: %d\r\n", objData[o], obj->pos.x, -obj->pos.y, obj->pos.z, objPitch, objYaw, objRoll, obj->diff);
-					writeObjSequenceToBuffer(obj, entity, buffer);
-				} break;
-				case ETYPE_3D:
-				{
-					WRITE_TO_BUFFER("  CLASS: 3D DATA: %d X: %0.2f Y: %0.2f Z: %0.2f PCH: %0.2f YAW: %0.2f ROL: %0.2f DIFF: %d\r\n", objData[o], obj->pos.x, -obj->pos.y, obj->pos.z, objPitch, objYaw, objRoll, obj->diff);
-					writeObjSequenceToBuffer(obj, entity, buffer);
-				} break;
+					case ETYPE_SPIRIT:
+					{
+						WRITE_TO_BUFFER("  CLASS: SPIRIT DATA: 0 X: %0.2f Y: %0.2f Z: %0.2f PCH: %0.2f YAW: %0.2f ROL: %0.2f DIFF: %d\r\n", obj->pos.x, -obj->pos.y, obj->pos.z, objPitch, objYaw, objRoll, obj->diff);
+						writeObjSequenceToBuffer(obj, entity, buffer);
+					} break;
+					case ETYPE_SAFE:
+					{
+						WRITE_TO_BUFFER("  CLASS: SAFE DATA: 0 X: %0.2f Y: %0.2f Z: %0.2f PCH: %0.2f YAW: %0.2f ROL: %0.2f DIFF: %d\r\n", obj->pos.x, -obj->pos.y, obj->pos.z, objPitch, objYaw, objRoll, obj->diff);
+						writeObjSequenceToBuffer(obj, entity, buffer);
+					} break;
+					case ETYPE_FRAME:
+					{
+						WRITE_TO_BUFFER("  CLASS: FRAME DATA: %d X: %0.2f Y: %0.2f Z: %0.2f PCH: %0.2f YAW: %0.2f ROL: %0.2f DIFF: %d\r\n", objData[o], obj->pos.x, -obj->pos.y, obj->pos.z, objPitch, objYaw, objRoll, obj->diff);
+						writeObjSequenceToBuffer(obj, entity, buffer);
+					} break;
+					case ETYPE_SPRITE:
+					{
+						WRITE_TO_BUFFER("  CLASS: SPRITE DATA: %d X: %0.2f Y: %0.2f Z: %0.2f PCH: %0.2f YAW: %0.2f ROL: %0.2f DIFF: %d\r\n", objData[o], obj->pos.x, -obj->pos.y, obj->pos.z, objPitch, objYaw, objRoll, obj->diff);
+						writeObjSequenceToBuffer(obj, entity, buffer);
+					} break;
+					case ETYPE_3D:
+					{
+						WRITE_TO_BUFFER("  CLASS: 3D DATA: %d X: %0.2f Y: %0.2f Z: %0.2f PCH: %0.2f YAW: %0.2f ROL: %0.2f DIFF: %d\r\n", objData[o], obj->pos.x, -obj->pos.y, obj->pos.z, objPitch, objYaw, objRoll, obj->diff);
+						writeObjSequenceToBuffer(obj, entity, buffer);
+					} break;
 				}
 			}
 			buffer.append("\r\n");
@@ -2498,7 +2498,7 @@ namespace LevelEditor
 		const size_t len = buffer.length();
 		const char* data = buffer.data();
 		if (!len || !data) { return false; }
-
+				
 		TFE_Parser parser;
 		parser.init(data, len);
 		parser.enableBlockComments();
@@ -2515,7 +2515,7 @@ namespace LevelEditor
 		EditorObject* curObj = nullptr;
 		EntityLogic* curLogic = nullptr;
 		Entity objEntity = {};
-
+				
 		size_t bufferPos = 0;
 		const char* line = parser.readLine(bufferPos, true);
 		TokenList tokens;
@@ -2680,59 +2680,59 @@ namespace LevelEditor
 				KEYWORD classType = getKeywordIndex(className.c_str());
 				switch (classType)
 				{
-				case KW_3D:
-				{
-					if (!podList.empty())
+					case KW_3D:
 					{
-						objEntity.type = ETYPE_3D;
-						objEntity.assetName = podList[dataIndex];
+						if (!podList.empty())
+						{
+							objEntity.type = ETYPE_3D;
+							objEntity.assetName = podList[dataIndex];
 
-						char name[256];
-						entityNameFromAssetName(objEntity.assetName.c_str(), name);
-						objEntity.name = name;
-					}
-				} break;
-				case KW_SPRITE:
-				{
-					if (!spriteList.empty())
+							char name[256];
+							entityNameFromAssetName(objEntity.assetName.c_str(), name);
+							objEntity.name = name;
+						}
+					} break;
+					case KW_SPRITE:
 					{
-						objEntity.type = ETYPE_SPRITE;
-						objEntity.assetName = spriteList[dataIndex];
+						if (!spriteList.empty())
+						{
+							objEntity.type = ETYPE_SPRITE;
+							objEntity.assetName = spriteList[dataIndex];
 
-						char name[256];
-						entityNameFromAssetName(objEntity.assetName.c_str(), name);
-						objEntity.name = name;
-					}
-				} break;
-				case KW_FRAME:
-				{
-					if (!frameList.empty())
+							char name[256];
+							entityNameFromAssetName(objEntity.assetName.c_str(), name);
+							objEntity.name = name;
+						}
+					} break;
+					case KW_FRAME:
 					{
-						objEntity.type = ETYPE_FRAME;
-						objEntity.assetName = frameList[dataIndex];
+						if (!frameList.empty())
+						{
+							objEntity.type = ETYPE_FRAME;
+							objEntity.assetName = frameList[dataIndex];
 
-						char name[256];
-						entityNameFromAssetName(objEntity.assetName.c_str(), name);
-						objEntity.name = name;
-					}
-				} break;
-				case KW_SPIRIT:
-				{
-					objEntity.name = "Spirit";
-					objEntity.type = ETYPE_SPIRIT;
-					objEntity.assetName = "SpiritObject.png";
-				} break;
-				case KW_SOUND:
-				{
-					//objEntity.type = ETYPE_SOUND;
-					//objEntity.assetName = "SpiritObject.png";
-				} break;
-				case KW_SAFE:
-				{
-					objEntity.name = "Safe";
-					objEntity.type = ETYPE_SAFE;
-					objEntity.assetName = "SafeObject.png";
-				} break;
+							char name[256];
+							entityNameFromAssetName(objEntity.assetName.c_str(), name);
+							objEntity.name = name;
+						}
+					} break;
+					case KW_SPIRIT:
+					{
+						objEntity.name = "Spirit";
+						objEntity.type = ETYPE_SPIRIT;
+						objEntity.assetName = "SpiritObject.png";
+					} break;
+					case KW_SOUND:
+					{
+						//objEntity.type = ETYPE_SOUND;
+						//objEntity.assetName = "SpiritObject.png";
+					} break;
+					case KW_SAFE:
+					{
+						objEntity.name = "Safe";
+						objEntity.type = ETYPE_SAFE;
+						objEntity.assetName = "SafeObject.png";
+					} break;
 				}
 			}
 			else if (curSector)
@@ -3144,7 +3144,7 @@ namespace LevelEditor
 				}
 			}
 		}
-
+				
 		// Create a snapshot.
 		if (sectorCount || validObjCount)
 		{
@@ -3207,7 +3207,7 @@ namespace LevelEditor
 		poly.edge.resize(sector->walls.size());
 		poly.vtx.resize(sector->vtx.size());
 
-		poly.bounds[0] = { FLT_MAX,  FLT_MAX };
+		poly.bounds[0] = {  FLT_MAX,  FLT_MAX };
 		poly.bounds[1] = { -FLT_MAX, -FLT_MAX };
 
 		const size_t vtxCount = sector->vtx.size();
@@ -3402,7 +3402,7 @@ namespace LevelEditor
 		const Vec2f* v0 = &sector->vtx[wall->idx[0]];
 		const Vec2f* v1 = &sector->vtx[wall->idx[1]];
 		const Vec2f delta = { v1->x - v0->x, v1->z - v0->z };
-		return sqrtf(delta.x * delta.x + delta.z * delta.z);
+		return sqrtf(delta.x*delta.x + delta.z*delta.z);
 	}
 
 	bool getSignExtents(const EditorSector* sector, const EditorWall* wall, Vec2f ext[2])
@@ -3464,15 +3464,15 @@ namespace LevelEditor
 		}
 
 		f32 wallLen = getWallLength(sector, wall);
-		wall->tex[WP_SIGN].offset.x = uOffset + std::max(0.0f, (wallLen - signTex->width / 8.0f) * 0.5f);
-		wall->tex[WP_SIGN].offset.z = -std::max(0.0f, partHeight - signTex->height / 8.0f) * 0.5f;
+		wall->tex[WP_SIGN].offset.x = uOffset + std::max(0.0f, (wallLen - signTex->width/8.0f)*0.5f);
+		wall->tex[WP_SIGN].offset.z = -std::max(0.0f, partHeight - signTex->height/8.0f) * 0.5f;
 	}
 
 	bool rayAABBIntersection(const Ray* ray, const Vec3f* bounds, f32* hitDist)
 	{
-		const f32 ix = fabsf(ray->dir.x) > FLT_EPSILON ? 1.0f / ray->dir.x : FLT_MAX;
-		const f32 iy = fabsf(ray->dir.y) > FLT_EPSILON ? 1.0f / ray->dir.y : FLT_MAX;
-		const f32 iz = fabsf(ray->dir.z) > FLT_EPSILON ? 1.0f / ray->dir.z : FLT_MAX;
+		const f32 ix = fabsf(ray->dir.x) > FLT_EPSILON ? 1.0f/ray->dir.x : FLT_MAX;
+		const f32 iy = fabsf(ray->dir.y) > FLT_EPSILON ? 1.0f/ray->dir.y : FLT_MAX;
+		const f32 iz = fabsf(ray->dir.z) > FLT_EPSILON ? 1.0f/ray->dir.z : FLT_MAX;
 
 		const f32 tx1 = (bounds[0].x - ray->origin.x) * ix;
 		const f32 tx2 = (bounds[1].x - ray->origin.x) * ix;
@@ -3500,7 +3500,7 @@ namespace LevelEditor
 		// Transform the ray into AABB space using the inverse transform matrix.
 		// For an affine transform, this is simply the transpose. Note: this will break with non-uniform scale.
 		Ray aabbRay;
-
+				
 		// Transform the origin, relative to the position.
 		Vec3f relOrigin = { ray->origin.x - pos->x, ray->origin.y - pos->y, ray->origin.z - pos->z };
 		aabbRay.origin.x = relOrigin.x * mtx->m0.x + relOrigin.y * mtx->m1.x + relOrigin.z * mtx->m2.x;
@@ -3514,7 +3514,7 @@ namespace LevelEditor
 
 		return rayAABBIntersection(&aabbRay, bounds, hitDist);
 	}
-
+		
 	// Return true if a hit is found.
 	bool traceRay(const Ray* ray, RayHitInfo* hitInfo, bool flipFaces, bool canHitSigns, bool canHitObjects)
 	{
@@ -3523,7 +3523,7 @@ namespace LevelEditor
 		const s32 sectorCount = (s32)level->sectors.size();
 		EditorSector* sector = level->sectors.data();
 
-		f32 maxDist = ray->maxDist;
+		f32 maxDist  = ray->maxDist;
 		Vec3f origin = ray->origin;
 		Vec2f p0xz = { origin.x, origin.z };
 		Vec2f p1xz = { origin.x + ray->dir.x * maxDist, origin.z + ray->dir.z * maxDist };
@@ -3590,7 +3590,7 @@ namespace LevelEditor
 			if (closestWallId >= 0)
 			{
 				closestHit *= maxDist;
-				const Vec3f hitPoint = { origin.x + ray->dir.x * closestHit, origin.y + ray->dir.y * closestHit, origin.z + ray->dir.z * closestHit };
+				const Vec3f hitPoint = { origin.x + ray->dir.x*closestHit, origin.y + ray->dir.y*closestHit, origin.z + ray->dir.z*closestHit };
 
 				Vec2f signExt[2];
 				f32 hitU = 0.0f;
@@ -3612,7 +3612,7 @@ namespace LevelEditor
 						hitU = (hitPoint.z - v0->z) / wallDir.z;
 					}
 
-					hitSign = hitU >= signExt[0].x && hitU < signExt[1].x &&
+					hitSign = hitU >= signExt[0].x && hitU < signExt[1].x && 
 						hitPoint.y >= signExt[0].z && hitPoint.y < signExt[1].z;
 				}
 
@@ -3665,19 +3665,19 @@ namespace LevelEditor
 			}
 
 			// Test the floor and ceiling planes.
-			const Vec3f planeTest = { origin.x + ray->dir.x * maxDist, origin.y + ray->dir.y * maxDist, origin.z + ray->dir.z * maxDist };
+			const Vec3f planeTest = { origin.x + ray->dir.x*maxDist, origin.y + ray->dir.y*maxDist, origin.z + ray->dir.z*maxDist };
 			Vec3f hitPoint;
 
 			const bool canHitFloor = (!flipFaces && origin.y > sector->floorHeight && ray->dir.y < 0.0f) ||
-				(flipFaces && origin.y < sector->floorHeight && ray->dir.y > 0.0f);
+	               (flipFaces && origin.y < sector->floorHeight && ray->dir.y > 0.0f);
 			const bool canHitCeil = (!flipFaces && origin.y < sector->ceilHeight && ray->dir.y > 0.0f) ||
-				(flipFaces && origin.y > sector->ceilHeight && ray->dir.y < 0.0f);
+			      (flipFaces && origin.y > sector->ceilHeight && ray->dir.y < 0.0f);
 
 			if (canHitFloor && TFE_Math::lineYPlaneIntersect(&origin, &planeTest, sector->floorHeight, &hitPoint))
 			{
 				const Vec3f offset = { hitPoint.x - origin.x, hitPoint.y - origin.y, hitPoint.z - origin.z };
 				const f32 distSq = TFE_Math::dot(&offset, &offset);
-				if (overallClosestHit == FLT_MAX || distSq < overallClosestHit * overallClosestHit)
+				if (overallClosestHit == FLT_MAX || distSq < overallClosestHit*overallClosestHit)
 				{
 					// The ray hit the plane, but is it inside of the sector polygon?
 					Vec2f testPt = { hitPoint.x, hitPoint.z };
@@ -3698,7 +3698,7 @@ namespace LevelEditor
 			{
 				const Vec3f offset = { hitPoint.x - origin.x, hitPoint.y - origin.y, hitPoint.z - origin.z };
 				const f32 distSq = TFE_Math::dot(&offset, &offset);
-				if (overallClosestHit == FLT_MAX || distSq < overallClosestHit * overallClosestHit)
+				if (overallClosestHit == FLT_MAX || distSq < overallClosestHit*overallClosestHit)
 				{
 					// The ray hit the plane, but is it inside of the sector polygon?
 					Vec2f testPt = { hitPoint.x, hitPoint.z };
@@ -3754,7 +3754,7 @@ namespace LevelEditor
 						hitInfo->hitWallId = -1;
 						hitInfo->dist = overallClosestHit;
 						hitInfo->hitObjId = o;
-						hitInfo->hitPos = { ray->origin.x + ray->dir.x * dist, ray->origin.y + ray->dir.y * dist, ray->origin.z + ray->dir.z * dist };
+						hitInfo->hitPos = { ray->origin.x + ray->dir.x*dist, ray->origin.y + ray->dir.y*dist, ray->origin.z + ray->dir.z*dist };
 					}
 				}
 			}
@@ -3762,7 +3762,7 @@ namespace LevelEditor
 
 		return hitInfo->hitSectorId >= 0;
 	}
-
+	
 	bool pointInsideAABB3d(const Vec3f* aabb, const Vec3f* pt)
 	{
 		return (pt->x >= aabb[0].x && pt->x <= aabb[1].x &&
@@ -3892,7 +3892,7 @@ namespace LevelEditor
 			Vec2f pointOnSeg;
 			TFE_Polygon::closestPointOnLineSegment(*v0, *v1, *pos, &pointOnSeg);
 			const Vec2f diff = { pointOnSeg.x - pos->x, pointOnSeg.z - pos->z };
-			const f32 distSq = diff.x * diff.x + diff.z * diff.z;
+			const f32 distSq = diff.x*diff.x + diff.z*diff.z;
 
 			if (distSq < maxDistSq && distSq < minDistSq && (!minDistToWallSq || distSq < *minDistToWallSq))
 			{
@@ -3920,9 +3920,9 @@ namespace LevelEditor
 			if (!sector_isInteractable(sector) || !sector_onActiveLayer(sector)) { continue; }
 			// The position has to be within the bounds of the sector.
 			// TODO: Increase the bounds range?
-			if (pos->x < sector->bounds[0].x - padding || pos->x > sector->bounds[1].x + padding ||
-				pos->y < sector->bounds[0].y - padding || pos->y > sector->bounds[1].y + padding ||
-				pos->z < sector->bounds[0].z - padding || pos->z > sector->bounds[1].z + padding)
+			if (pos->x < sector->bounds[0].x-padding || pos->x > sector->bounds[1].x+padding ||
+				pos->y < sector->bounds[0].y-padding || pos->y > sector->bounds[1].y+padding ||
+				pos->z < sector->bounds[0].z-padding || pos->z > sector->bounds[1].z+padding)
 			{
 				continue;
 			}
@@ -3932,7 +3932,7 @@ namespace LevelEditor
 		// Are there any potential results?
 		return !result->empty();
 	}
-
+	   
 	bool getOverlappingSectorsBounds(const Vec3f bounds[2], SectorList* result)
 	{
 		if (!bounds || !result) { return false; }
@@ -4052,13 +4052,13 @@ namespace LevelEditor
 	{
 		return a.x == b.x && a.y == b.y && a.z == b.z;
 	}
-
+		
 	// Take a sector snapshot assuming the assets are going to stay the same.
 	void level_createLevelSectorSnapshotSameAssets(std::vector<EditorSector>& sectors)
 	{
 		sectors = s_level.sectors;
 	}
-
+		
 	void level_getLevelSnapshotDelta(std::vector<s32>& modifiedSectors, const std::vector<EditorSector>& sectorSnapshot)
 	{
 		modifiedSectors.clear();
@@ -4070,9 +4070,9 @@ namespace LevelEditor
 			// Check the sizes and values.
 			// Assume that if the bounds match and all of the sizes/counts match - then the sectors match.
 			if (curSector->id != prevSector->id || curSector->groupId != prevSector->groupId || curSector->name != prevSector->name ||
-				!levelTextureEq(curSector->floorTex, prevSector->floorTex) || !levelTextureEq(curSector->ceilTex, prevSector->ceilTex) ||
-				curSector->floorHeight != prevSector->floorHeight || curSector->ceilHeight != prevSector->ceilHeight || curSector->secHeight != prevSector->secHeight ||
-				curSector->ambient != prevSector->ambient || curSector->flags[0] != prevSector->flags[0] || curSector->flags[1] != prevSector->flags[1] ||
+			   !levelTextureEq(curSector->floorTex, prevSector->floorTex) || !levelTextureEq(curSector->ceilTex, prevSector->ceilTex) ||
+			    curSector->floorHeight != prevSector->floorHeight || curSector->ceilHeight != prevSector->ceilHeight || curSector->secHeight != prevSector->secHeight ||
+			    curSector->ambient != prevSector->ambient || curSector->flags[0] != prevSector->flags[0] || curSector->flags[1] != prevSector->flags[1] ||
 				curSector->flags[2] != prevSector->flags[2] || !vec3Eq(curSector->bounds[0], prevSector->bounds[0]) ||
 				!vec3Eq(curSector->bounds[1], prevSector->bounds[1]) || curSector->layer != prevSector->layer ||
 				curSector->vtx.size() != prevSector->vtx.size() || curSector->walls.size() != prevSector->walls.size() ||
@@ -4143,26 +4143,26 @@ namespace LevelEditor
 
 			switch (part)
 			{
-			case HP_FLOOR:
-			{
-				writeData(&sector->floorTex, sizeof(LevelTexture));
-			} break;
-			case HP_CEIL:
-			{
-				writeData(&sector->ceilTex, sizeof(LevelTexture));
-			} break;
-			case HP_MID:
-			case HP_TOP:
-			case HP_BOT:
-			case HP_SIGN:
-			{
-				writeData(&sector->walls[featureIndex].tex[part], sizeof(LevelTexture));
-			} break;
-			default:
-			{
-				// Invalid part!
-				assert(0);
-			}
+				case HP_FLOOR:
+				{
+					writeData(&sector->floorTex, sizeof(LevelTexture));
+				} break;
+				case HP_CEIL:
+				{
+					writeData(&sector->ceilTex, sizeof(LevelTexture));
+				} break;
+				case HP_MID:
+				case HP_TOP:
+				case HP_BOT:
+				case HP_SIGN:
+				{
+					writeData(&sector->walls[featureIndex].tex[part], sizeof(LevelTexture));
+				} break;
+				default:
+				{
+					// Invalid part!
+					assert(0);
+				}
 			};
 		}
 	}
@@ -4190,7 +4190,7 @@ namespace LevelEditor
 			writeData(&s_level.sectors[i0].walls[i1], (u32)sizeof(EditorWall));
 		}
 	}
-
+		
 	void level_createSectorAttribSnapshot(SnapshotBuffer* buffer, std::vector<IndexPair>& sectorIds)
 	{
 		const u32 count = (u32)sectorIds.size();
@@ -4222,7 +4222,7 @@ namespace LevelEditor
 			{
 				writeData(sector->name.data(), (u32)sector->name.length());
 			}
-			const SectorAttrib attrib =
+			const SectorAttrib attrib = 
 			{
 				sector->groupId,
 				sector->floorHeight,
@@ -4237,7 +4237,7 @@ namespace LevelEditor
 			writeData(&attrib, (u32)sizeof(SectorAttrib));
 		}
 	}
-
+						
 	void level_createSectorSnapshot(SnapshotBuffer* buffer, std::vector<s32>& sectorIds)
 	{
 		s_uniqueEntities.clear();
@@ -4318,7 +4318,7 @@ namespace LevelEditor
 	void level_unpackSectorSnapshot(u32 size, void* data)
 	{
 		setSnapshotReadBuffer((u8*)data, size);
-
+		
 		const u32 newSectorCount = readU32();   // Total sectors in level after snapshot.
 		const u32 texCount = readU32();         // Number of unique textures from sectors in snapshot.
 		const u32 sectorCount = readU32();      // Number of sectors *in* snapshot.
@@ -4445,27 +4445,27 @@ namespace LevelEditor
 			EditorSector* sector = unpackFeatureId(feature[f], &featureIndex, (s32*)&part);
 			switch (part)
 			{
-			case HP_FLOOR:
-			{
-				readData(&sector->floorTex, sizeof(LevelTexture));
-			} break;
-			case HP_CEIL:
-			{
-				readData(&sector->ceilTex, sizeof(LevelTexture));
-			} break;
-			case HP_MID:
-			case HP_TOP:
-			case HP_BOT:
-			case HP_SIGN:
-			{
-				assert(featureIndex >= 0 && featureIndex < (s32)sector->walls.size());
-				readData(&sector->walls[featureIndex].tex[part], sizeof(LevelTexture));
-			} break;
-			default:
-			{
-				// Invalid part!
-				assert(0);
-			}
+				case HP_FLOOR:
+				{
+					readData(&sector->floorTex, sizeof(LevelTexture));
+				} break;
+				case HP_CEIL:
+				{
+					readData(&sector->ceilTex, sizeof(LevelTexture));
+				} break;
+				case HP_MID:
+				case HP_TOP:
+				case HP_BOT:
+				case HP_SIGN:
+				{
+					assert(featureIndex >= 0 && featureIndex < (s32)sector->walls.size());
+					readData(&sector->walls[featureIndex].tex[part], sizeof(LevelTexture));
+				} break;
+				default:
+				{
+					// Invalid part!
+					assert(0);
+				}
 			};
 		}
 	}
@@ -4539,7 +4539,7 @@ namespace LevelEditor
 			sector->ceilTex = attrib.ceilTex;
 		}
 	}
-
+		
 	void level_createSnapshot(SnapshotBuffer* buffer)
 	{
 		assert(buffer);
@@ -4567,7 +4567,7 @@ namespace LevelEditor
 		writeU32(entityCount);
 		writeU32(levelNoteCount);
 		writeU32(guidelineCount);
-
+		
 		// Textures.
 		const LevelTextureAsset* texture = s_level.textures.data();
 		for (u32 i = 0; i < texCount; i++, texture++)

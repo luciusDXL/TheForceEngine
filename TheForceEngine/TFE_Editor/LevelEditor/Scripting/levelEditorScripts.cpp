@@ -19,8 +19,6 @@
 #include <vector>
 #include <string>
 #include <map>
-
-#ifdef ENABLE_FORCE_SCRIPT
 #include <angelscript.h>
 
 using namespace TFE_Editor;
@@ -118,15 +116,3 @@ namespace LevelEditor
 		}
 	}
 }
-#else
-namespace LevelEditor
-{
-	void registerScriptFunctions() {}
-
-	void executeLine(const char* line) {}
-	void runLevelScript(const char* scriptName) {}
-	void showLevelScript(const char* scriptName) {}
-
-	void levelScript_update() {}
-}
-#endif

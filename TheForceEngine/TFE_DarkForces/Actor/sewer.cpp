@@ -22,7 +22,8 @@ namespace TFE_DarkForces
 {
 	u32 sewerCreatureDie(DamageModule* module, MovementModule* moveMod);
 		
-	JBool sewerCreatureAiFunc(ActorModule* module, MovementModule* moveMod)
+	// Damage module function for sewer creature
+	Tick sewerCreatureDamageFunc(ActorModule* module, MovementModule* moveMod)
 	{
 		DamageModule* damageMod = (DamageModule*)module;
 		AttackModule* attackMod = &damageMod->attackMod;
@@ -63,7 +64,8 @@ namespace TFE_DarkForces
 		return 0;
 	}
 	
-	JBool sewerCreatureAiMsgFunc(s32 msg, ActorModule* module, MovementModule* moveMod)
+	// Damage module message function for sewer creature
+	Tick sewerCreatureDamageMsgFunc(s32 msg, ActorModule* module, MovementModule* moveMod)
 	{
 		DamageModule* damageMod = (DamageModule*)module;
 		AttackModule* attackMod = &damageMod->attackMod;
@@ -119,7 +121,9 @@ namespace TFE_DarkForces
 		return attackMod->header.nextTick;
 	}
 
-	JBool sewerCreatureEnemyFunc(ActorModule* module, MovementModule* moveMod)
+	// Attack module function for sewer creature
+	// The return value is set to the module's nextTick
+	Tick sewerCreatureEnemyFunc(ActorModule* module, MovementModule* moveMod)
 	{
 		DamageModule* damageMod = (DamageModule*)module;
 		AttackModule* attackMod = &damageMod->attackMod;
@@ -238,8 +242,8 @@ namespace TFE_DarkForces
 		dispatch->fov = ANGLE_MAX;
 
 		DamageModule* module = actor_createDamageModule(dispatch);
-		module->attackMod.header.func = sewerCreatureAiFunc;
-		module->attackMod.header.msgFunc = sewerCreatureAiMsgFunc;
+		module->attackMod.header.func = sewerCreatureDamageFunc;
+		module->attackMod.header.msgFunc = sewerCreatureDamageMsgFunc;
 		module->hp = FIXED(36);
 		module->hurtSndSrc = s_agentSndSrc[AGENTSND_CREATURE_HURT];
 		module->dieSndSrc = s_agentSndSrc[AGENTSND_CREATURE_DIE];

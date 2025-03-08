@@ -18,8 +18,6 @@
 #include <vector>
 #include <string>
 #include <map>
-
-#ifdef ENABLE_FORCE_SCRIPT
 #include <angelscript.h>
 
 // Set to 0 to disable tests on load - this should be done for public builds.
@@ -197,15 +195,3 @@ namespace TFE_ScriptInterface
 		s_scriptsToRun.clear();
 	}
 }
-#else
-namespace LevelEditor
-{
-	void registerScriptFunctions() {}
-
-	void executeLine(const char* line) {}
-	void runLevelScript(const char* scriptName) {}
-	void showLevelScript(const char* scriptName) {}
-
-	void levelScript_update() {}
-}
-#endif

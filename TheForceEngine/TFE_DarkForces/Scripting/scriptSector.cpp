@@ -5,8 +5,6 @@
 #include <TFE_Jedi/Level/levelData.h>
 #include <TFE_Jedi/Level/rwall.h>
 #include <TFE_Jedi/Level/rsector.h>
-
-#ifdef ENABLE_FORCE_SCRIPT
 #include <angelscript.h>
 
 using namespace TFE_Jedi;
@@ -201,4 +199,3 @@ namespace TFE_DarkForces
 		ScriptPropertySetFunc("void set_ceilTextureOffset(float2)", setCeilTextureOffset);
 	}
 }
-#endif
