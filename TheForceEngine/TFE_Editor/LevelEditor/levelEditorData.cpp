@@ -100,7 +100,6 @@ namespace LevelEditor
 	EditorLevel s_level = {};
 
 	extern AssetList s_levelTextureList;
-	bool loadFromTFL(const char* name);
 
 	enum Constants
 	{
@@ -501,6 +500,23 @@ namespace LevelEditor
 
 		return true;
 	}
+
+	void levelClear()
+	{
+		// Clear the INF data.
+		s_levelInf.elevator.clear();
+		s_levelInf.teleport.clear();
+		s_levelInf.trigger.clear();
+
+		// Clear selection state.
+		selection_clear();
+		selection_clearHovered();
+		s_featureTex = {};
+
+		// Clear notes.
+		s_level.notes.clear();
+		levelSetClean();
+	}
 		
 	bool loadLevelFromAsset(const Asset* asset)
 	{
@@ -874,17 +890,8 @@ namespace LevelEditor
 		return note.id;
 	}
 
-	bool loadFromTFL(const char* name)
+	bool loadFromTFLWithPath(const char* filePath)
 	{
-		// If there is no project, then the TFL can't exist.
-		Project* project = project_get();
-		if (!project)
-		{
-			return false;
-		}
-		char filePath[TFE_MAX_PATH];
-		sprintf(filePath, "%s/%s.tfl", project->path, name);
-
 		// Then try to open it based on the path, if it fails load the LEV file.
 		FileStream file;
 		if (!file.open(filePath, FileStream::MODE_READ))
@@ -1094,21 +1101,22 @@ namespace LevelEditor
 
 		return true;
 	}
-			
-	// Save in the binary editor format.
-	bool saveLevel()
+
+	bool loadFromTFL(const char* name)
+	{
+		// If there is no project, then the TFL can't exist.
+		Project* project = project_get();
+		if (!project) { return false; }
+
+		char filePath[TFE_MAX_PATH];
+		sprintf(filePath, "%s/%s.tfl", project->path, name);
+		return loadFromTFLWithPath(filePath);
+	}
+
+	bool saveLevelToPath(const char* filePath)
 	{
 		levelSetClean();
 
-		Project* project = project_get();
-		if (!project)
-		{
-			LE_ERROR("Cannot save if no project is open.");
-			return false;
-		}
-
-		char filePath[TFE_MAX_PATH];
-		sprintf(filePath, "%s/%s.tfl", project->path, s_level.slot.c_str());
 		LE_INFO("Saving level to '%s'", filePath);
 
 		FileStream file;
@@ -1251,6 +1259,21 @@ namespace LevelEditor
 
 		LE_INFO("Save Complete");
 		return true;
+	}
+			
+	// Save in the binary editor format.
+	bool saveLevel()
+	{
+		Project* project = project_get();
+		if (!project)
+		{
+			LE_ERROR("Cannot save if no project is open.");
+			return false;
+		}
+
+		char filePath[TFE_MAX_PATH];
+		sprintf(filePath, "%s/%s.tfl", project->path, s_level.slot.c_str());
+		return saveLevelToPath(filePath);
 	}
 
 	// Export the level to the game format.

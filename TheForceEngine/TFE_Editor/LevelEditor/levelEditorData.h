@@ -245,6 +245,7 @@ namespace LevelEditor
 		const TFE_Editor::Asset* asset;
 	};
 
+	void levelClear();
 	bool loadLevelFromAsset(const TFE_Editor::Asset* asset);
 	TFE_Editor::AssetHandle loadTexture(const char* bmTextureName);
 	TFE_Editor::AssetHandle loadPalette(const char* paletteName);
@@ -253,6 +254,10 @@ namespace LevelEditor
 	bool exportLevels(const char* workPath, const char* exportPath, const char* gobName, const std::vector<LevelExportInfo>& levelList);
 	
 	bool saveLevel();
+	bool saveLevelToPath(const char* filePath);
+	bool loadFromTFL(const char* name);
+	bool loadFromTFLWithPath(const char* filePath);
+
 	bool exportLevel(const char* path, const char* name, const StartPoint* start);
 	bool exportSelectionToText(std::string& buffer);
 	bool importFromText(const std::string& buffer, bool centerOnMouse = true);
