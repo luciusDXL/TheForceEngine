@@ -346,7 +346,7 @@ namespace TFE_DarkForces
 							fixed16_16 dz = z1 - z0;
 							fixed16_16 dx = x1 - x0;
 							// Check to see if the movement direction is not moving *away* from the wall.
-							side = mul16(dx, wall->wallDir.z) - mul16(dz, wall->wallDir.x);							
+							side = mul16(dx, wall->wallDir.z) - mul16(dz, wall->wallDir.x);
 							if (side > 0)
 							{
 								// The collision path is moving away from the wall.

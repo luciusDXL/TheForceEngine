@@ -20,7 +20,7 @@ namespace TFE_DarkForces
 
 	void setSeed(s32 seed)
 	{
-		s_seed = seed; 
+		s_seed = seed;
 	}
 
 	s32 random_next()
@@ -52,10 +52,10 @@ namespace TFE_DarkForces
 			newValue = mul16(fixed16_16(value), fract16(newValue));
 		}
 		return newValue;
-	} 
+	}
 
 	void random_seed(u32 seed)
 	{
-		s_seed = seed;	
+		s_seed = seed;
 	}
 }  // TFE_DarkForces

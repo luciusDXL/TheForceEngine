@@ -209,7 +209,9 @@ namespace TFE_Input
 	void recordEvent(int action, KeyboardCode keyCode, bool isPress)
 	{		
 		// When recording, normally ignore the escape key unless the PDA is open
-		if (isRecording() && (keyCode != KEY_ESCAPE || TFE_DarkForces::pda_isOpen()))
+		// Don't allow saving/reloading either as the state will become messed up.
+		if (isRecording() && (keyCode != KEY_ESCAPE || TFE_DarkForces::pda_isOpen()) 
+			&& !(isBindingPressed(IAS_QUICK_SAVE) || isBindingPressed(IAS_QUICK_LOAD)))
 		{
 			int updateCounter = inputMapping_getCounter();
 			if (isPress)

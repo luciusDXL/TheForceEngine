@@ -406,7 +406,7 @@ namespace TFE_DarkForces
 				s_playerTick = s_curTick;
 				s_levelComplete = JFALSE;
 			}
-			s_mainTask = createTask("main task", mission_mainTaskFunc);			
+			s_mainTask = createTask("main task", mission_mainTaskFunc);
 
 			s_invalidLevelIndex = JFALSE;
 			s_exitLevel = JFALSE;

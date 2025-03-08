@@ -2057,12 +2057,14 @@ namespace TFE_FrontEndUI
 			}
 			ImGui::EndChild();
 			ImGui::Spacing();
-			ImGui::TextWrapped("Note: Pausing the game will stop recording Replay. Press the");
+			ImGui::TextWrapped("Note: Pausing the game will stop demo playback/recording");
+			ImGui::TextWrapped("Press the");
+			ImGui::SameLine(0.0f);
 			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 1.0f, 0.0f, 0.8f));
 			ImGui::TextWrapped("Escape");
 			ImGui::PopStyleColor();
 			ImGui::SameLine(0.0f);
-			ImGui::TextWrapped(" key to stop and save recording.");
+			ImGui::TextWrapped("key to stop and save recording.");
 			ImGui::Spacing();
 
 			ImGui::PushFont(s_dialogFont);
@@ -2152,7 +2154,7 @@ namespace TFE_FrontEndUI
 			{
 				ImGui::Spacing();
 				ImGui::LabelText("##InfoReplay6", "Playback FrameRate");
-				ImGui::SameLine(140 * s_uiScale);
+				ImGui::SameLine(135 * s_uiScale);
 				ImGui::SetNextItemWidth(140.0f);
 				ImGui::Combo("##framePlayback", &gameSettings->df_playbackFrameRate, c_framePlayback, IM_ARRAYSIZE(c_framePlayback));
 				ImGui::Spacing();

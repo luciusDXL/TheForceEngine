@@ -353,7 +353,12 @@ namespace TFE_SaveSystem
 		const char* saveFilename = saveRequestFilename();
 
 		bool canSave = !lastState && s_game->canSave();
-		if (saveFilename && canSave)
+		if (isReplaySystemLive())
+		{
+			// no saving or loading during replay system
+			return;
+		}
+		else if (saveFilename && canSave)
 		{
 			saveGame(saveFilename, s_reqSavename);
 			lastState = 1;

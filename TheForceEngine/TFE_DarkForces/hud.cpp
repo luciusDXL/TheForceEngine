@@ -211,6 +211,7 @@ namespace TFE_DarkForces
 		TFE_Console::addToHistory(msgText);
 	}
 
+	// Add Skip Priority option so the message shows up immediately and is overwritten by the next. Used by replay updates.
 	void hud_sendTextMessage(const char* msg, s32 priority, bool skipPriority)
 	{
 		// Only display the message if it is the same or lower priority than the current message.

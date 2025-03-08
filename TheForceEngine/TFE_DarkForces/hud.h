@@ -6,7 +6,6 @@
 //////////////////////////////////////////////////////////////////////
 #include <TFE_System/types.h>
 #include <TFE_Jedi/Math/core_math.h>
-#include <string>
 
 using namespace TFE_Jedi;
 
