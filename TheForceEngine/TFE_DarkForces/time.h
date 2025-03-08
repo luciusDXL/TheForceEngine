@@ -46,6 +46,8 @@ namespace TFE_DarkForces
 	// Each computes dt*frameRate and the indexed framerate (i.e. s_frameTicks[12] = 12 fps).
 	extern fixed16_16 s_frameTicks[13];
 
+	extern f64 s_timeAccum;
+
 	// Convert from frames per second (fps) to Ticks.
 	Tick time_frameRateToDelay(u32 frameRate);
 	Tick time_frameRateToDelay(s32 frameRate);

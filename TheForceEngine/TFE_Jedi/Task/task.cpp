@@ -8,6 +8,7 @@
 #include <TFE_System/profiler.h>
 #include <TFE_FrontEndUI/console.h>
 #include <TFE_Jedi/Serialization/serialization.h>
+#include <TFE_Input/replay.h>
 #include <stdarg.h>
 #include <tuple>
 #include <vector>
@@ -557,7 +558,7 @@ namespace TFE_Jedi
 		// Limit the update rate by the minimum interval.
 		// Dark Forces uses discrete 'ticks' to track time and the game behavior is very odd with 0 tick frames.
 		const f64 time = TFE_System::getTime();
-		if (time - s_prevTime < s_minIntervalInSec)
+		if (time - s_prevTime < s_minIntervalInSec && !TFE_Input::isReplaySystemLive())
 		{
 			return JFALSE;
 		}

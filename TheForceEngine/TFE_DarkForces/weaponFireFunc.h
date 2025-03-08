@@ -13,7 +13,8 @@ namespace TFE_DarkForces
 	typedef void(*WeaponFireFunc)(MessageType msg);
 
 	void setupAnimationFrames(WeaponID weaponId, s32 numPrimFrames, TFE_ExternalData::WeaponAnimFrame* extPrimFrames, s32 numSecondaryFrames, TFE_ExternalData::WeaponAnimFrame* extSecFrames);
-	
+
+	void resetWeaponFunc();
 	void weaponFire_fist(MessageType msg);
 	void weaponFire_pistol(MessageType msg);
 	void weaponFire_rifle(MessageType msg);
