@@ -83,7 +83,7 @@ namespace TFE_DarkForces
 		HEADLAMP_ENERGY_CONSUMPTION = 0x111,    // fraction of energy consumed per second = ~0.004
 		GASMASK_ENERGY_CONSUMPTION  = 0x444,    // fraction of energy consumed per second = ~0.0167
 		GOGGLES_ENERGY_CONSUMPTION  = 0x444,    // fraction of energy consumed per second = ~0.0167
-		SUPERCHARGE_DURATION		= 6554,		// 45 seconds
+		SUPERCHARGE_DURATION        = 6554,     // 45 seconds
 	};
 
 	static const s32 c_pitchLimits[] =
@@ -849,13 +849,13 @@ namespace TFE_DarkForces
 		s_gravityAccel        = PLAYER_GRAVITY_ACCEL;
 
 		// TFE - reset constants that may have been previously overridden
-		s_lowFloorDamage			= PLAYER_DMG_FLOOR_LOW;
-		s_highFloorDamage			= PLAYER_DMG_FLOOR_HIGH;
-		s_gasDamage					= PLAYER_DMG_FLOOR_LOW;
-		s_wallDamage				= PLAYER_DMG_WALL;
-		s_headlampConsumption		= HEADLAMP_ENERGY_CONSUMPTION;
-		s_gogglesConsumption		= GOGGLES_ENERGY_CONSUMPTION;
-		s_gasmaskConsumption		= GASMASK_ENERGY_CONSUMPTION;
+		s_lowFloorDamage            = PLAYER_DMG_FLOOR_LOW;
+		s_highFloorDamage           = PLAYER_DMG_FLOOR_HIGH;
+		s_gasDamage                 = PLAYER_DMG_FLOOR_LOW;
+		s_wallDamage                = PLAYER_DMG_WALL;
+		s_headlampConsumption       = HEADLAMP_ENERGY_CONSUMPTION;
+		s_gogglesConsumption        = GOGGLES_ENERGY_CONSUMPTION;
+		s_gasmaskConsumption        = GASMASK_ENERGY_CONSUMPTION;
 		s_shieldSuperchargeDuration = SUPERCHARGE_DURATION;
 		s_weaponSuperchargeDuration = SUPERCHARGE_DURATION;
 		resetProjectileGravityAccel();
