@@ -25,7 +25,7 @@ namespace LevelEditor
 	};
 	std::vector<SnapshotInfo> s_snapshotInfo;
 
-	const char c_invalidFilenameChar[] = { '/', '<', '>', ':', '/"', '\\', '|', '?', '*' };
+	const char c_invalidFilenameChar[] = { '/', '<', '>', ':', '\"', '\\', '|', '?', '*' };
 	const s32 c_invalidLen = TFE_ARRAYSIZE(c_invalidFilenameChar);
 
 	const char* c_manifestFilename = "manifest.ini";
@@ -38,36 +38,9 @@ namespace LevelEditor
 
 	void readManifest();
 	void writeManifest();
-
-	bool isInvalidChar(char c)
-	{
-		if (c < 32 || c > 127) { return false; }
-
-		for (s32 i = 0; i < c_invalidLen; i++)
-		{
-			if (c == c_invalidFilenameChar[i]) { return true; }
-		}
-		return false;
-	}
-
-	void sanitizeFileName(const char* name, char* filename)
-	{
-		const size_t len = strlen(name);
-		for (size_t i = 0; i < len; i++)
-		{
-			filename[i] = name[i];
-			if (isInvalidChar(name[i]))
-			{
-				filename[i] = '_';
-			}
-		}
-		if (filename[len - 1] == '.')
-		{
-			filename[len - 1] = '_';
-		}
-		filename[len] = 0;
-	}
-		
+	void sanitizeName(char* name);
+	void sanitizeFileName(const char* name, char* filename);
+				
 	void snapshotUI_Begin()
 	{
 		s_snapshotInfo.clear();
@@ -110,6 +83,7 @@ namespace LevelEditor
 
 			if (ImGui::Button("Create Snapshot"))
 			{
+				sanitizeName(s_snapshotName);
 				sanitizeFileName(s_snapshotName, filename);
 				if (s_snapshotName[0] > 32)
 				{
@@ -252,5 +226,58 @@ namespace LevelEditor
 			}
 			manifest.close();
 		}
+	}
+
+	void sanitizeName(char* name)
+	{
+		char newName[TFE_MAX_PATH];
+		const size_t len = strlen(name);
+		// Remove quotes.
+		size_t newIndex = 0;
+		for (size_t i = 0; i < len; i++)
+		{
+			if (name[i] != '\"')
+			{
+				newName[newIndex++] = name[i];
+			}
+		}
+		newName[newIndex] = 0;
+		strcpy(name, newName);
+	}
+
+	bool isInvalidChar(char c)
+	{
+		if (c < 32 || c > 127) { return true; }
+
+		for (s32 i = 0; i < c_invalidLen; i++)
+		{
+			if (c == c_invalidFilenameChar[i]) { return true; }
+		}
+		return false;
+	}
+
+	void sanitizeFileName(const char* name, char* filename)
+	{
+		const size_t len = strlen(name);
+		for (size_t i = 0; i < len; i++)
+		{
+			filename[i] = name[i];
+			// Replace any invalid characters for Linux or Windows with underscore (_).
+			if (isInvalidChar(name[i]))
+			{
+				filename[i] = '_';
+			}
+		}
+		// Filenames cannot end with '.' on Windows.
+		if (filename[len - 1] == '.')
+		{
+			filename[len - 1] = '_';
+		}
+		// Filenames shouldn't start with space.
+		if (filename[0] == ' ')
+		{
+			filename[0] = '_';
+		}
+		filename[len] = 0;
 	}
 }  // namespace LevelEditor
