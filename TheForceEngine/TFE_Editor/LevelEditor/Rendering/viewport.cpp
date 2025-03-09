@@ -350,7 +350,7 @@ namespace LevelEditor
 		const Vec4f viewportBoundsWS = viewportBoundsWS2d(1.0f);
 
 		// Draw lower layers, if enabled.
-		if (s_editFlags & LEF_SHOW_LOWER_LAYERS)
+		if ((s_editFlags & LEF_SHOW_LOWER_LAYERS) && !(s_editFlags & LEF_SHOW_ALL_LAYERS))
 		{
 			renderSectorWalls2d(s_level.layerRange[0], s_curLayer - 1);
 		}
@@ -374,14 +374,20 @@ namespace LevelEditor
 		renderGuidelines2d(viewportBoundsWS);
 
 		// Draw the current layer.
-		renderSectorWalls2d(s_curLayer, s_curLayer);
+		s32 startLayer = s_curLayer, endLayer = s_curLayer;
+		if (s_editFlags & LEF_SHOW_ALL_LAYERS)
+		{
+			startLayer = s_level.layerRange[0];
+			endLayer = s_level.layerRange[1];
+		}
+		renderSectorWalls2d(startLayer, endLayer);
 
 		// Gather objects
 		const size_t count = s_level.sectors.size();
 		EditorSector* sector = s_level.sectors.data();
 		for (size_t s = 0; s < count; s++, sector++)
 		{
-			if (sector->layer < s_curLayer || sector->layer > s_curLayer) { continue; }
+			if (!edit_isLayerVis(sector->layer)) { continue; }
 			if (sector_isHidden(sector)) { continue; }
 			// TODO: Cull
 			const s32 objCount = (s32)sector->obj.size();
@@ -2267,7 +2273,7 @@ namespace LevelEditor
 
 		return u32(colorSum.x * 255.0f) | (u32(colorSum.y * 255.0f) << 8) | (u32(colorSum.z * 255.0f) << 16) | (u32(alpha * 255.0f) << 24);
 	}
-		
+				
 	void renderLevel3D()
 	{
 		viewport_updateRail();
@@ -2315,7 +2321,7 @@ namespace LevelEditor
 		for (size_t s = 0; s < count; s++, sector++)
 		{
 			// Skip other layers unless all layers is enabled.
-			if (sector->layer != s_curLayer && !(s_editFlags & LEF_SHOW_ALL_LAYERS)) { continue; }
+			if (!edit_isLayerVis(sector->layer)) { continue; }
 			if (sector_isHidden(sector)) { continue; }
 
 			// Add objects...
@@ -2918,7 +2924,7 @@ namespace LevelEditor
 		}
 
 		u32 baseColor;
-		if (s_curLayer != sector->layer)
+		if (s_curLayer != sector->layer && !(s_editFlags & LEF_SHOW_ALL_LAYERS))
 		{
 			u32 alpha = 0x40 / (s_curLayer - sector->layer);
 			baseColor = 0x00808000 | (alpha << 24);
@@ -2939,7 +2945,7 @@ namespace LevelEditor
 		selection_get(SEL_INDEX_HOVERED, hoveredSector, hoveredFeatureIndex);
 
 		// Draw a background polygon to help sectors stand out a bit.
-		if (sector->layer == s_curLayer)
+		if (edit_isLayerVis(sector->layer))
 		{
 			if (s_sectorDrawMode == SDM_GROUP_COLOR)
 			{
@@ -3164,14 +3170,14 @@ namespace LevelEditor
 		return a->floorHeight < b->floorHeight;
 	}
 
-	void sortSectorPolygons(s32 layer)
+	void sortSectorPolygons()
 	{
 		s_sortedSectors.clear();
 		const size_t count = s_level.sectors.size();
 		EditorSector* sector = s_level.sectors.data();
 		for (size_t s = 0; s < count; s++, sector++)
 		{
-			if (sector->layer != layer) { continue; }
+			if (!edit_isLayerVis(sector->layer)) { continue; }
 			if (sector_isHidden(sector)) { continue; }
 
 			s_sortedSectors.push_back(sector);
@@ -3184,7 +3190,7 @@ namespace LevelEditor
 		if (s_sectorDrawMode != SDM_TEXTURED_FLOOR && s_sectorDrawMode != SDM_TEXTURED_CEIL && s_sectorDrawMode != SDM_LIGHTING) { return; }
 
 		// Sort polygons.
-		sortSectorPolygons(s_curLayer);
+		sortSectorPolygons();
 
 		// Draw them bottom to top.
 		const size_t count = s_sortedSectors.size();

@@ -363,6 +363,11 @@ namespace LevelEditor
 		levHistory_destroy();
 		browserFreeIcons();
 	}
+
+	bool edit_isLayerVis(s32 layer)
+	{
+		return (layer != s_curLayer && !(s_editFlags & LEF_SHOW_ALL_LAYERS)) ? false : true;
+	}
 			
 	bool sortHoveredSectors(EditorSector* a, EditorSector* b)
 	{
