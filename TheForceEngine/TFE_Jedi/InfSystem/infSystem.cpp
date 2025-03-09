@@ -2013,7 +2013,7 @@ namespace TFE_Jedi
 			{
 				// Remove the quotes.
 				char unquotedStr[256];
-				s32 len = (s32)strlen(value);
+				const s32 len = (s32)strlen(value);
 				s32 lastQuote = 0;
 				for (s32 c = 1; c < len; c++)
 				{
@@ -2022,19 +2022,22 @@ namespace TFE_Jedi
 						lastQuote = c;
 					}
 				}
-				s32 newLen = min(255, lastQuote - 1);
-				memcpy(unquotedStr, &value[1], lastQuote - 1);
-				unquotedStr[newLen] = 0;
+				const s32 newLen = min(255, lastQuote - 1);
+				if (newLen >= 1)
+				{
+					memcpy(unquotedStr, &value[1], newLen);
+					unquotedStr[newLen] = 0;
 
-				arg[argCount].stdStr = unquotedStr;
-				arg[argCount].type = TFE_ForceScript::ARG_STRING;
-				argCount++;
+					arg[argCount].stdStr = std::string(unquotedStr);
+					arg[argCount].type = TFE_ForceScript::ARG_STRING;
+					argCount++;
+				}
 			}
 			// If it is a numerical value, assume float.
 			else
 			{
 				char* endPtr = nullptr;
-				arg[argCount].fValue = strtof(s_infArg0, &endPtr);
+				arg[argCount].fValue = strtof(value, &endPtr);
 				arg[argCount].type = TFE_ForceScript::ARG_F32;
 				argCount++;
 			}
