@@ -75,6 +75,7 @@ namespace LevelEditor
 	const f32 c_defaultZoom = 0.25f;
 	const f32 c_defaultYaw = PI;
 	const f32 c_defaultCameraHeight = 6.0f;
+	const f32 c_defaultViewDepth = 1000.0f;
 	const f64 c_doubleClickThreshold = 0.25f;
 	const s32 c_vanillaDarkForcesNameLimit = 16;
 
@@ -252,6 +253,7 @@ namespace LevelEditor
 		loadEntityData(gameLocalDir, false);
 		loadLogicData(gameLocalDir);
 		groups_init();
+		s_viewDepth = c_defaultViewDepth;
 
 		Project* project = project_get();
 		if (project && project->active)
@@ -362,11 +364,6 @@ namespace LevelEditor
 
 		levHistory_destroy();
 		browserFreeIcons();
-	}
-
-	bool edit_isLayerVis(s32 layer)
-	{
-		return (layer != s_curLayer && !(s_editFlags & LEF_SHOW_ALL_LAYERS)) ? false : true;
 	}
 			
 	bool sortHoveredSectors(EditorSector* a, EditorSector* b)

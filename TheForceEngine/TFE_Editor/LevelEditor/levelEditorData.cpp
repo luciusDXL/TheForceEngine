@@ -3923,8 +3923,9 @@ namespace LevelEditor
 		return inside;
 	}
 
-	bool sector_onActiveLayer(EditorSector* sector)
+	bool sector_onActiveLayer(const EditorSector* sector)
 	{
+		if (s_view == EDIT_VIEW_2D && sector->floorHeight > s_viewDepth) { return false; }
 		if (s_editFlags & LEF_SHOW_ALL_LAYERS) { return true; }
 		return sector->layer == s_curLayer;
 	}

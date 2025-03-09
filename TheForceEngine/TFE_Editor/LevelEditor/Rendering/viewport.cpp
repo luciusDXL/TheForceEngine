@@ -137,6 +137,7 @@ namespace LevelEditor
 	Vec4f s_viewportTrans2d = { 0 };
 	f32 s_gridOpacity = 0.5f;
 	f32 s_zoom2d = 0.25f;			// current zoom level in 2D.
+	f32 s_viewDepth = 1000.0f;
 	u32 s_viewportRenderFlags = VRF_NONE;
 
 	Rail s_rail = {};
@@ -387,7 +388,7 @@ namespace LevelEditor
 		EditorSector* sector = s_level.sectors.data();
 		for (size_t s = 0; s < count; s++, sector++)
 		{
-			if (!edit_isLayerVis(sector->layer)) { continue; }
+			if (!sector_onActiveLayer(sector)) { continue; }
 			if (sector_isHidden(sector)) { continue; }
 			// TODO: Cull
 			const s32 objCount = (s32)sector->obj.size();
@@ -2321,7 +2322,7 @@ namespace LevelEditor
 		for (size_t s = 0; s < count; s++, sector++)
 		{
 			// Skip other layers unless all layers is enabled.
-			if (!edit_isLayerVis(sector->layer)) { continue; }
+			if (!sector_onActiveLayer(sector)) { continue; }
 			if (sector_isHidden(sector)) { continue; }
 
 			// Add objects...
@@ -2945,7 +2946,7 @@ namespace LevelEditor
 		selection_get(SEL_INDEX_HOVERED, hoveredSector, hoveredFeatureIndex);
 
 		// Draw a background polygon to help sectors stand out a bit.
-		if (edit_isLayerVis(sector->layer))
+		if (sector_onActiveLayer(sector))
 		{
 			if (s_sectorDrawMode == SDM_GROUP_COLOR)
 			{
@@ -3177,7 +3178,7 @@ namespace LevelEditor
 		EditorSector* sector = s_level.sectors.data();
 		for (size_t s = 0; s < count; s++, sector++)
 		{
-			if (!edit_isLayerVis(sector->layer)) { continue; }
+			if (!sector_onActiveLayer(sector)) { continue; }
 			if (sector_isHidden(sector)) { continue; }
 
 			s_sortedSectors.push_back(sector);
@@ -3198,6 +3199,7 @@ namespace LevelEditor
 		for (size_t s = 0; s < count; s++)
 		{
 			EditorSector* sector = sectorList[s];
+			if (sector->floorHeight > s_viewDepth) { continue; }
 			bool locked = sector_isLocked(sector);
 			
 			const u32 colorIndex = (s_editFlags & LEF_FULLBRIGHT) && s_sectorDrawMode != SDM_LIGHTING ? 31 : sector->ambient;
@@ -3566,6 +3568,7 @@ namespace LevelEditor
 			if (sector->layer < layerStart || sector->layer > layerEnd) { continue; }
 			if (sector_isHidden(sector)) { continue; }
 			if (s_editMode == LEDIT_SECTOR && (sector == hoveredSector || selection_sector(SA_CHECK_INCLUSION, sector))) { continue; }
+			if (sector->floorHeight > s_viewDepth) { continue; }
 
 			drawSector2d(sector, sector_isLocked(sector) ? HL_LOCKED : HL_NONE);
 		}
@@ -3617,7 +3620,7 @@ namespace LevelEditor
 		EditorSector* sector = s_level.sectors.data();
 		for (size_t s = 0; s < sectorCount; s++, sector++)
 		{
-			if (sector->layer != s_curLayer) { continue; }
+			if (!sector_onActiveLayer(sector)) { continue; }
 			if (sector_isHidden(sector)) { continue; }
 
 			const size_t vtxCount = sector->vtx.size();

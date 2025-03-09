@@ -83,7 +83,6 @@ namespace LevelEditor
 	Vec4f viewportBoundsWS2d(f32 padding = 0.0f);
 
 	// Shared Edit Commands
-	bool edit_isLayerVis(s32 layer);
 	void edit_moveSelectedFlats(f32 delta);
 	bool edit_splitWall(s32 sectorId, s32 wallIndex, Vec2f newPos);
 	void edit_deleteSector(s32 sectorId);
