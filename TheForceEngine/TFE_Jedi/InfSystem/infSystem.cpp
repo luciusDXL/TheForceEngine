@@ -2026,7 +2026,7 @@ namespace TFE_Jedi
 				memcpy(unquotedStr, &value[1], lastQuote - 1);
 				unquotedStr[newLen] = 0;
 
-				arg[argCount].stdStr = unquotedStr;
+				arg[argCount].stdStr = std::string(unquotedStr);
 				arg[argCount].type = TFE_ForceScript::ARG_STRING;
 				argCount++;
 			}
@@ -2034,7 +2034,7 @@ namespace TFE_Jedi
 			else
 			{
 				char* endPtr = nullptr;
-				arg[argCount].fValue = strtof(s_infArg0, &endPtr);
+				arg[argCount].fValue = strtof(value, &endPtr);
 				arg[argCount].type = TFE_ForceScript::ARG_F32;
 				argCount++;
 			}
