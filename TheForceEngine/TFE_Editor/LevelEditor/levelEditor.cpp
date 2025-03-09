@@ -75,7 +75,7 @@ namespace LevelEditor
 	const f32 c_defaultZoom = 0.25f;
 	const f32 c_defaultYaw = PI;
 	const f32 c_defaultCameraHeight = 6.0f;
-	const f32 c_defaultViewDepth = 1000.0f;
+	const f32 c_defaultViewDepth[] = { 65536.0f, -65536.0f };
 	const f64 c_doubleClickThreshold = 0.25f;
 	const s32 c_vanillaDarkForcesNameLimit = 16;
 
@@ -253,7 +253,8 @@ namespace LevelEditor
 		loadEntityData(gameLocalDir, false);
 		loadLogicData(gameLocalDir);
 		groups_init();
-		s_viewDepth = c_defaultViewDepth;
+		s_viewDepth[0] = c_defaultViewDepth[0];
+		s_viewDepth[1] = c_defaultViewDepth[1];
 
 		Project* project = project_get();
 		if (project && project->active)

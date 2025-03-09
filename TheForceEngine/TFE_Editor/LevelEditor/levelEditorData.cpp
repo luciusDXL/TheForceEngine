@@ -3923,9 +3923,15 @@ namespace LevelEditor
 		return inside;
 	}
 
+	bool sector_inViewRange(const EditorSector* sector)
+	{
+		if (s_view == EDIT_VIEW_2D && (sector->floorHeight > s_viewDepth[0] || sector->floorHeight < s_viewDepth[1])) { return false; }
+		return true;
+	}
+
 	bool sector_onActiveLayer(const EditorSector* sector)
 	{
-		if (s_view == EDIT_VIEW_2D && sector->floorHeight > s_viewDepth) { return false; }
+		if (!sector_inViewRange(sector)) { return false; }
 		if (s_editFlags & LEF_SHOW_ALL_LAYERS) { return true; }
 		return sector->layer == s_curLayer;
 	}

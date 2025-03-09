@@ -137,7 +137,7 @@ namespace LevelEditor
 	Vec4f s_viewportTrans2d = { 0 };
 	f32 s_gridOpacity = 0.5f;
 	f32 s_zoom2d = 0.25f;			// current zoom level in 2D.
-	f32 s_viewDepth = 1000.0f;
+	f32 s_viewDepth[2] = { 65536.0f, -65536.0f };
 	u32 s_viewportRenderFlags = VRF_NONE;
 
 	Rail s_rail = {};
@@ -3199,7 +3199,7 @@ namespace LevelEditor
 		for (size_t s = 0; s < count; s++)
 		{
 			EditorSector* sector = sectorList[s];
-			if (sector->floorHeight > s_viewDepth) { continue; }
+			if (!sector_inViewRange(sector)) { continue; }
 			bool locked = sector_isLocked(sector);
 			
 			const u32 colorIndex = (s_editFlags & LEF_FULLBRIGHT) && s_sectorDrawMode != SDM_LIGHTING ? 31 : sector->ambient;
@@ -3568,7 +3568,7 @@ namespace LevelEditor
 			if (sector->layer < layerStart || sector->layer > layerEnd) { continue; }
 			if (sector_isHidden(sector)) { continue; }
 			if (s_editMode == LEDIT_SECTOR && (sector == hoveredSector || selection_sector(SA_CHECK_INCLUSION, sector))) { continue; }
-			if (sector->floorHeight > s_viewDepth) { continue; }
+			if (!sector_inViewRange(sector)) { continue; }
 
 			drawSector2d(sector, sector_isLocked(sector) ? HL_LOCKED : HL_NONE);
 		}

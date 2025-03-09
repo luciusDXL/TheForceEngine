@@ -325,6 +325,7 @@ namespace LevelEditor
 		return group;
 	}
 
+	bool sector_inViewRange(const EditorSector* sector);
 	bool sector_onActiveLayer(const EditorSector* sector);
 
 	inline bool sector_isHidden(EditorSector* sector)

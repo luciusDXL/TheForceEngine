@@ -487,16 +487,19 @@ namespace LevelEditor
 			s_level.bounds[1].x, s_level.bounds[1].y, s_level.bounds[1].z);
 		ImGui::Text("Layer Range: [%d, %d]", s_level.layerRange[0], s_level.layerRange[1]);
 		ImGui::LabelText("##GridLabel", "Grid Height");
-		ImGui::SameLine(128.0f);
-		ImGui::SetNextItemWidth(96.0f);
+		ImGui::SameLine(108.0f);
+		ImGui::SetNextItemWidth(80.0f);
 		ImGui::InputFloat("##GridHeight", &s_grid.height, 0.0f, 0.0f, "%0.2f", ImGuiInputTextFlags_CharsDecimal);
 
 		ImGui::SameLine(0.0f, 16.0f);
-		ImGui::SetNextItemWidth(96.0f);
-		ImGui::LabelText("##DepthLabel", "View Depth (2D)");
+		ImGui::SetNextItemWidth(86.0f);
+		ImGui::LabelText("##DepthLabel", "View Depth");
 		ImGui::SameLine(0.0f, 8.0f);
-		ImGui::SetNextItemWidth(96.0f);
-		ImGui::InputFloat("##ViewDepth", &s_viewDepth, 0.0f, 0.0f, "%0.2f", ImGuiInputTextFlags_CharsDecimal);
+		ImGui::SetNextItemWidth(80.0f);
+		ImGui::InputFloat("##ViewDepth0", &s_viewDepth[0], 0.0f, 0.0f, "%0.2f", ImGuiInputTextFlags_CharsDecimal);
+		ImGui::SameLine(0.0f, 4.0f);
+		ImGui::SetNextItemWidth(80.0f);
+		ImGui::InputFloat("##ViewDepth1", &s_viewDepth[1], 0.0f, 0.0f, "%0.2f", ImGuiInputTextFlags_CharsDecimal);
 			
 		ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize
 			| ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoFocusOnAppearing;
