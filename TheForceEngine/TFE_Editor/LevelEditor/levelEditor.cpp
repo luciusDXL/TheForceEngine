@@ -2701,10 +2701,13 @@ namespace LevelEditor
 			for (u32 i = 0; i < 3; i++)
 			{
 				s32 xformMode = TransformMode(i + TRANS_MOVE);
+				// Disable the scale tool for the initial release.
+				if (xformMode == TRANS_SCALE) { disableNextItem(); }
 				if (iconButton(c_toolbarIcon[i + 8], toolbarTooltips[i + 8], xformMode == edit_getTransformMode()))
 				{
 					edit_setTransformMode(TransformMode(xformMode));
 				}
+				if (xformMode == TRANS_SCALE) { enableNextItem(); }
 				ImGui::SameLine();
 			}
 
