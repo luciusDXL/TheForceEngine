@@ -715,7 +715,7 @@ namespace LevelEditor
 		s32 index = -1;
 		EditorSector* sector = nullptr;
 
-		ImGui::BeginChild("##TextureList");
+		ImGui::BeginChild("##VertexList");
 		{
 			const u32 count = selection_getCount();
 			if (count <= 1)

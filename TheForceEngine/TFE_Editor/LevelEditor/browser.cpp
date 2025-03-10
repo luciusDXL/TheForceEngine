@@ -45,19 +45,31 @@ namespace LevelEditor
 		s32 index;
 	};
 
+	struct UsedIndex
+	{
+		s32 id;
+		s32 count;
+	};
+
 	typedef std::vector<Asset*> FilteredAssetList;
 	typedef std::vector<FilteredEntity> FilteredEntityList;
+	typedef std::vector<UsedIndex> UsedCountList;
 
 	static char s_filter[32] = "";
 	static BrowseSort s_browseSort = BSORT_NAME;
 	static FilteredAssetList s_filteredList;
+	static FilteredAssetList s_filteredListCopy;
 	static FilteredEntityList s_filteredEntityList;
+	static UsedCountList s_usedCountList;
 	static s32 s_focusOnRow = -1;
 	static s32 s_entityCategory = -1;
 	static TextureGpu* s_icon3d = nullptr;
 
 	void browseTextures();
 	void browseEntities();
+	s32 getFilteredIndex(s32 unfilteredIndex);
+	s32 getUnfilteredIndex(s32 filteredIndex);
+	s32 getLevelTextureIndex(s32 id);
 		
 	void browserLoadIcons()
 	{
@@ -128,7 +140,12 @@ namespace LevelEditor
 		}
 		return false;
 	}
-			
+
+	bool sortByCount(UsedIndex& a, UsedIndex& b)
+	{
+		return a.count > b.count;
+	}
+					
 	void filterTextures()
 	{
 		// Textures must be a power of two.
@@ -147,6 +164,77 @@ namespace LevelEditor
 				s_filteredList.push_back(asset);
 			}
 		}
+
+		// Sort by most used to least used.
+		if (s_browseSort == BSORT_USED)
+		{
+			const s32 listCount = (s32)s_filteredList.size();
+			s_usedCountList.resize(listCount);
+			UsedIndex* usedCount = s_usedCountList.data();
+			for (s32 i = 0; i < listCount; i++)
+			{
+				usedCount[i].id = i;
+				usedCount[i].count = 0;
+			}
+
+			const s32 sectorCount = (s32)s_level.sectors.size();
+			const EditorSector* sector = s_level.sectors.data();
+			for (s32 s = 0; s < sectorCount; s++, sector++)
+			{
+				const s32 floorIndex = getLevelTextureIndex(sector->floorTex.texIndex);
+				const s32 ceilIndex = getLevelTextureIndex(sector->ceilTex.texIndex);
+				if (floorIndex >= 0)
+				{
+					usedCount[floorIndex].count++;
+				}
+				if (ceilIndex >= 0)
+				{
+					usedCount[ceilIndex].count++;
+				}
+
+				const s32 wallCount = (s32)sector->walls.size();
+				const EditorWall* wall = sector->walls.data();
+				for (s32 w = 0; w < wallCount; w++, wall++)
+				{
+					for (s32 t = 0; t < WP_COUNT; t++)
+					{
+						const s32 index = getLevelTextureIndex(wall->tex[t].texIndex);
+						if (index >= 0)
+						{
+							usedCount[index].count++;
+						}
+					}
+				}
+			}
+			std::sort(s_usedCountList.begin(), s_usedCountList.end(), sortByCount);
+
+			// Now re-order the filtered list.
+			s_filteredListCopy = s_filteredList;
+			Asset** dstList = s_filteredList.data();
+			Asset** srcList = s_filteredListCopy.data();
+			for (s32 i = 0; i < listCount; i++)
+			{
+				dstList[i] = srcList[s_usedCountList[i].id];
+			}
+		}
+	}
+
+	s32 getLevelTextureIndex(s32 id)
+	{
+		if (id < 0) { return -1; }
+		const char* srcName = s_level.textures[id].name.c_str();
+
+		const s32 count = (s32)s_filteredList.size();
+		Asset** assetList = s_filteredList.data();
+		for (s32 i = 0; i < count; i++)
+		{
+			const Asset* asset = assetList[i];
+			if (strcasecmp(asset->name.c_str(), srcName) == 0)
+			{
+				return i;
+			}
+		}
+		return -1;
 	}
 
 	s32 getFilteredIndex(s32 unfilteredIndex)
