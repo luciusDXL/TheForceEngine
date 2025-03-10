@@ -182,6 +182,9 @@ namespace LevelEditor
 		"LEV_SHORTCUT_CAMERA_BACK",
 		"LEV_SHORTCUT_CAMERA_LEFT",
 		"LEV_SHORTCUT_CAMERA_RIGHT",
+		"LEV_SHORTCUT_SET_TOP_DEPTH",
+		"LEV_SHORTCUT_SET_BOT_DEPTH",
+		"LEV_SHORTCUT_RESET_DEPTH",
 		// Other
 		"LEV_SHORTCUT_SHOW_ALL_LABELS",
 		"LEV_SHORTCUT_UNDO",
@@ -230,6 +233,9 @@ namespace LevelEditor
 		"Camera Backward",									// SHORTCUT_CAMERA_BACK
 		"Camera Strafe Left",								// SHORTCUT_CAMERA_LEFT
 		"Camera Strafe Right",								// SHORTCUT_CAMERA_RIGHT
+		"View Depth - set top height (2d view only)",		// SHORTCUT_SET_TOP_DEPTH
+		"View Depth - set bottom height (2d view only)",	// SHORTCUT_SET_BOT_DEPTH
+		"View Depth - reset (2d view only)",				// SHORTCUT_RESET_DEPTH
 		"Toggle Show all labels in viewport",				// SHORTCUT_SHOW_ALL_LABELS
 		"Undo",												// SHORTCUT_UNDO
 		"Redo",												// SHORTCUT_REDO
@@ -402,6 +408,9 @@ namespace LevelEditor
 		addKeyboardShortcut(SHORTCUT_CAMERA_BACK, KEY_S);
 		addKeyboardShortcut(SHORTCUT_CAMERA_LEFT, KEY_A);
 		addKeyboardShortcut(SHORTCUT_CAMERA_RIGHT, KEY_D);
+		addKeyboardShortcut(SHORTCUT_SET_TOP_DEPTH, KEY_Z, KEYMOD_CTRL);
+		addKeyboardShortcut(SHORTCUT_SET_BOT_DEPTH, KEY_Z, KEYMOD_SHIFT);
+		addKeyboardShortcut(SHORTCUT_RESET_DEPTH, KEY_Z);
 		addKeyboardShortcut(SHORTCUT_SHOW_ALL_LABELS, KEY_TAB);
 		addKeyboardShortcut(SHORTCUT_UNDO, KEY_Z, KEYMOD_CTRL);
 		addKeyboardShortcut(SHORTCUT_REDO, KEY_Y, KEYMOD_CTRL);

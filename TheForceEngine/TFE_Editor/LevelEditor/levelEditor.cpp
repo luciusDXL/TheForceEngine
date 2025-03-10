@@ -540,6 +540,19 @@ namespace LevelEditor
 		{
 			adjustGridHeight(hoveredSector);
 		}
+		if (isShortcutPressed(SHORTCUT_SET_TOP_DEPTH, 0) && hoveredSector)
+		{
+			s_viewDepth[0] = hoveredSector->floorHeight;
+		}
+		else if (isShortcutPressed(SHORTCUT_SET_BOT_DEPTH, 0) && hoveredSector)
+		{
+			s_viewDepth[1] = hoveredSector->floorHeight;
+		}
+		else if (isShortcutPressed(SHORTCUT_RESET_DEPTH, 0))
+		{
+			s_viewDepth[0] = c_defaultViewDepth[0];
+			s_viewDepth[1] = c_defaultViewDepth[1];
+		}
 		// SECTOR
 		else if (s_editMode == LEDIT_SECTOR)
 		{
@@ -1319,6 +1332,19 @@ namespace LevelEditor
 				if (hoveredSector && isShortcutPressed(SHORTCUT_SET_GRID_HEIGHT))
 				{
 					adjustGridHeight(hoveredSector);
+				}
+				if (isShortcutPressed(SHORTCUT_SET_TOP_DEPTH, 0) && hoveredSector)
+				{
+					s_viewDepth[0] = hoveredSector->floorHeight;
+				}
+				else if (isShortcutPressed(SHORTCUT_SET_BOT_DEPTH, 0) && hoveredSector)
+				{
+					s_viewDepth[1] = hoveredSector->floorHeight;
+				}
+				else if (isShortcutPressed(SHORTCUT_RESET_DEPTH, 0))
+				{
+					s_viewDepth[0] = c_defaultViewDepth[0];
+					s_viewDepth[1] = c_defaultViewDepth[1];
 				}
 
 				handleLevelNoteEdit(nullptr/*2d so no ray hit info*/, s_rayDir);
