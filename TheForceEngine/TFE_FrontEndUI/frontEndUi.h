@@ -8,6 +8,8 @@
 //////////////////////////////////////////////////////////////////////
 
 #include <TFE_System/types.h>
+#include <vector>
+#include <string>
 
 enum AppState
 {
@@ -36,6 +38,7 @@ namespace TFE_FrontEndUI
 	AppState update();
 	void draw(bool drawFrontEnd = true, bool noGameData = false, bool setDefaults = false, bool showFps = false);
 	void setCurrentGame(IGame* game);
+	IGame* getCurrentGame();
 
 	void setAppState(AppState state);
 	void enableConfigMenu();
@@ -55,6 +58,10 @@ namespace TFE_FrontEndUI
 
 	char* getSelectedMod();
 	void  clearSelectedMod();
+	int getRecordFramerate();
+	std::string getPlaybackFramerate();
+	void  setModOverrides(std::vector<std::string>&);
+	std::vector<std::string> getModOverrides();
 	void  setSelectedMod(const char* mod);
 	void* getGradientTexture();
 	void  setState(AppState state);
@@ -68,4 +75,6 @@ namespace TFE_FrontEndUI
 
 	void toggleProfilerView();
 	void drawFps(s32 windowWidth);
+
+	bool isModUI();
 }

@@ -148,7 +148,7 @@ namespace TFE_DarkForces
 				local(tick) = s_curTick;
 			}
 			else
-			{
+			{			
 				Tick dt = s_curTick - local(tick);
 				// If enough time has past since the player was last spotted, go back to sleep.
 				if (dt > 728) // ~5 seconds.
@@ -164,8 +164,8 @@ namespace TFE_DarkForces
 			{
 				local(odd) = (s_curTick & 1) ? JTRUE : JFALSE;
 				angle14_32 deltaYaw = random(16338);
-				local(moveMod)->target.yaw = local(odd) ? (local(obj)->yaw + deltaYaw) : (local(obj)->yaw - deltaYaw);
-
+				local(moveMod)->target.yaw = local(odd) ? (local(obj)->yaw + deltaYaw) : (local(obj)->yaw - deltaYaw);				
+				
 				local(moveMod)->target.speedRotation = random(0x3555) + 0x555;
 				local(moveMod)->target.flags |= TARGET_MOVE_ROT;
 				local(flip) = JFALSE;
