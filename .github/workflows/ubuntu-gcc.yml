@@ -31,12 +31,15 @@ jobs:
       # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
       run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DENABLE_FORCE_SCRIPT=ON -DENABLE_EDITOR=ON
 
-    - name: Build
+    #- name: Build
       # Build your program with the given configuration
-      run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
+    #  run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
 
     - name: Tests
       # Run TFE tests such as replay verification for any deltas
       run: |
-        chmod +x ${{github.workspace}}/Tests/runTests.sh
-        ${{github.workspace}}/build/runTests.sh
+        ls -tral ${{github.workspace}}/../
+        ls -tral ${{github.workspace}}
+        ls -tral ${{github.workspace}}/build/
+        chmod +x ${{github.workspace}}/build/Tests/runTests.sh
+        ${{github.workspace}}/build/Tests/runTests.sh
