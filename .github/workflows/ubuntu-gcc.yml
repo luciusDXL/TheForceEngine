@@ -38,5 +38,5 @@ jobs:
     - name: Tests
       # Run TFE tests such as replay verification for any deltas
       run: |
-        chmod +x ${{github.workspace}}/build/TheForceEngine/Tests/runTests.sh
-        ${{github.workspace}}/build/TheForceEngine/Tests/runTests.sh
+        chmod +x ${{github.workspace}}/Tests/runTests.sh
+        ${{github.workspace}}/build/runTests.sh
