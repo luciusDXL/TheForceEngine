@@ -85,6 +85,7 @@ if(ENABLE_TFE)
 		execute_process(COMMAND ln -sf ${CMAKE_SOURCE_DIR}/TheForceEngine/UI_Images)
 		execute_process(COMMAND ln -sf ${CMAKE_SOURCE_DIR}/TheForceEngine/UI_Text)
 		execute_process(COMMAND ln -sf ${CMAKE_SOURCE_DIR}/TheForceEngine/EditorDef)
+		execute_process(COMMAND ln -sf ${CMAKE_SOURCE_DIR}/TheForceEngine/Tests)
 		include(CreateGitVersionH.cmake)
 		create_git_version_h()
 	endif()
@@ -137,6 +138,7 @@ if(ENABLE_TFE)
 		"${CMAKE_CURRENT_SOURCE_DIR}/TheForceEngine/Shaders"
 		"${CMAKE_CURRENT_SOURCE_DIR}/TheForceEngine/SoundFonts"
 		"${CMAKE_CURRENT_SOURCE_DIR}/TheForceEngine/Fonts"
+		"${CMAKE_CURRENT_SOURCE_DIR}/TheForceEngine/Tests"
 		DESTINATION "${CMAKE_INSTALL_DATADIR}"
 		    FILE_PERMISSIONS
 		      OWNER_READ OWNER_WRITE
