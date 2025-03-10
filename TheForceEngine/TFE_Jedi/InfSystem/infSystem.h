@@ -86,5 +86,8 @@ namespace TFE_Jedi
 	void inf_sendSectorMessage(RSector* sector, MessageType msgType);
 	void inf_sendLinkMessages(Allocator* infLink, SecObject* entity, u32 evt, MessageType msgType);
 
+	// TFE - expose this method for scripting
+	void inf_getMessageTarget(const char* arg, RSector** sector, RWall** targetWall);
+
 	JBool sector_isDoor(RSector* sector);
 }
