@@ -16,6 +16,7 @@ namespace LevelEditor
 	static std::map<std::string, ShortcutId> s_shortcutNameMap;
 	static std::map<std::string, KeyboardCode> s_keyNameMap;
 	static std::map<std::string, KeyModifier> s_keyModMap;
+	static u8 s_keyRepeats[SHORTCUT_COUNT] = { 0 };
 
 	const f64 c_doubleClickThreshold = 0.25f;
 	const f64 c_rightClickThreshold = 0.5;
@@ -408,9 +409,9 @@ namespace LevelEditor
 		addKeyboardShortcut(SHORTCUT_CAMERA_BACK, KEY_S);
 		addKeyboardShortcut(SHORTCUT_CAMERA_LEFT, KEY_A);
 		addKeyboardShortcut(SHORTCUT_CAMERA_RIGHT, KEY_D);
-		addKeyboardShortcut(SHORTCUT_SET_TOP_DEPTH, KEY_Z, KEYMOD_CTRL);
-		addKeyboardShortcut(SHORTCUT_SET_BOT_DEPTH, KEY_Z, KEYMOD_SHIFT);
-		addKeyboardShortcut(SHORTCUT_RESET_DEPTH, KEY_Z);
+		addKeyboardShortcut(SHORTCUT_SET_TOP_DEPTH, KEY_Q, KEYMOD_CTRL);
+		addKeyboardShortcut(SHORTCUT_SET_BOT_DEPTH, KEY_E, KEYMOD_CTRL);
+		addKeyboardShortcut(SHORTCUT_RESET_DEPTH, KEY_Q);
 		addKeyboardShortcut(SHORTCUT_SHOW_ALL_LABELS, KEY_TAB);
 		addKeyboardShortcut(SHORTCUT_UNDO, KEY_Z, KEYMOD_CTRL);
 		addKeyboardShortcut(SHORTCUT_REDO, KEY_Y, KEYMOD_CTRL);
@@ -592,5 +593,28 @@ namespace LevelEditor
 	{
 		if (id < 0 || id > KEYMOD_SHIFT) { return nullptr; }
 		return TFE_Input::getKeyboardModifierName(id);
+	}
+
+	const u8* hotkeys_checkForKeyRepeats()
+	{
+		std::map<u32, u32> keyComboIndex;
+		for (s32 i = 0; i < SHORTCUT_COUNT; i++)
+		{
+			KeyboardShortcut* shortcut = &s_keyboardShortcutList[i];
+			u32 key = u32(shortcut->code) | u32(shortcut->mod << 24u);
+			s_keyRepeats[i] = 0;
+
+			std::map<u32, u32>::iterator iShortcut = keyComboIndex.find(key);
+			if (iShortcut != keyComboIndex.end())
+			{
+				s_keyRepeats[i] = 1;
+				s_keyRepeats[iShortcut->second] = 1;
+			}
+			else
+			{
+				keyComboIndex[key] = i;
+			}
+		}
+		return s_keyRepeats;
 	}
 }

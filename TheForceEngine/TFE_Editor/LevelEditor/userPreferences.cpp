@@ -113,6 +113,7 @@ namespace LevelEditor
 		
 	void inputPref()
 	{
+		const u8* repeatKeys = hotkeys_checkForKeyRepeats();
 		if (ImGui::Button("Reset To Defaults"))
 		{
 			setDefaultKeyboardShortcuts();
@@ -132,10 +133,20 @@ namespace LevelEditor
 				ImGui::SetNextItemWidth(128.0f);
 				if (s_inputIndex != i)
 				{
+					if (repeatKeys[i])
+					{
+						ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.0f, 0.0f, 1.0f));
+					}
+
 					if (ImGui::Button(editor_getUniqueLabel(keyCombo), ImVec2(128.0f, 0.0f)))
 					{
 						s_inputIndex = i;
 						buttonPressed = true;
+					}
+
+					if (repeatKeys[i])
+					{
+						ImGui::PopStyleColor();
 					}
 				}
 				else
