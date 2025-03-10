@@ -35,7 +35,7 @@ echo "Done running tfe"
 top -b -n 1 | head -n 20
 
 # Diff Results of the rest 
-result=`diff <(tail -n 1 $user_path/.local/share/TheForceEngine/replay.log) <(tail -n 1 $root_path/TheForceEngine/Tests/Replays/base_replay.log)`
+result=`diff <(tail -n 1 $user_path/.local/share/TheForceEngine/replay.log) <(tail -n 1 $root_path/TheForceEngine/Tests/Replays/base_replay_log.txt)`
 
 if $result > /dev/null; then
     echo "RESULTS MATCH!"
