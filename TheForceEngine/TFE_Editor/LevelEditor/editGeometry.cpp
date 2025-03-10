@@ -2285,7 +2285,7 @@ namespace LevelEditor
 				s_cursor3d = posOnGrid;
 				onGrid = { s_cursor3d.x, s_cursor3d.z };
 			}
-			snapToGrid(&onGrid);
+			onGrid = snapToGridOrGuidelines2d(onGrid);
 		}
 
 		s_cursor3d.x = onGrid.x;
