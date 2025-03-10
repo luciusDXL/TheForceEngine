@@ -39,13 +39,7 @@ jobs:
       # Run TFE tests such as replay verification for any deltas
       run: |
         chmod +x ${{github.workspace}}/TheForceEngine/Tests/runTests.sh
-        ls -tral ${{github.workspace}}/TheForceEngine/
-        ls -tral ${{github.workspace}}/build/
-        ls -tral ${{github.workspace}}/build/TheForceEngine/
         cp ${{github.workspace}}/build/theforceengine ${{github.workspace}}/TheForceEngine/
         cp ${{github.workspace}}/build/theforceengine ${{github.workspace}}/
-        cp ${{github.workspace}}/build/theforceengine ${{github.workspace}}/build/TheForceEngine/        
-        ls -tral ${{github.workspace}}/TheForceEngine/
-        ls -tral ${{github.workspace}}/
-        ls -tral ${{github.workspace}}/build/TheForceEngine/        
+        cp ${{github.workspace}}/build/theforceengine ${{github.workspace}}/build/TheForceEngine/       
         ${{github.workspace}}/TheForceEngine/Tests/runTests.sh ${{github.workspace}}
