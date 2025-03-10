@@ -40,4 +40,4 @@ jobs:
       run: |
         chmod +x ${{github.workspace}}/TheForceEngine/Tests/runTests.sh
         ls -tral ${{github.workspace}}/build/
-        ${{github.workspace}}/TheForceEngine/Tests/runTests.sh
+        ${{github.workspace}}/TheForceEngine/Tests/runTests.sh ${{github.workspace}}
