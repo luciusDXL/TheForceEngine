@@ -1123,10 +1123,10 @@ namespace TFE_Input
 		restoreGameSettings();
 		restoreInputs();
 
-		TFE_System::logWrite(LOG_MSG, "Replay", "Finished playing back demo...");
-
 		enableCutscenes(cutscenesEnabled);
 		endCommonReplayStates();
+
+		TFE_System::logWrite(LOG_MSG, "Replay", "Finished playing back demo...");
 
 		if (TFE_Settings::getTempSettings()->exit_after_replay)
 		{

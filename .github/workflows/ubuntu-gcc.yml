@@ -34,3 +34,10 @@ jobs:
     - name: Build
       # Build your program with the given configuration
       run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
+
+    - name: Tests
+      # Run TFE tests such as replay verification for any deltas
+    - name: Run Tests
+      run: |
+        chmod +x ${{github.workspace}}/build/TheForceEngine/Tests/runTests.sh
+        ${{github.workspace}}/build/TheForceEngine/Tests/runTests.sh
