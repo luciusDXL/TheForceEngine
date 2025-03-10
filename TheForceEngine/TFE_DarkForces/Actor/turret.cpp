@@ -83,11 +83,6 @@ namespace TFE_DarkForces
 		s_turretRes.sound1 = sound_load("TURRET-1.VOC", SOUND_PRIORITY_MED2);
 	}
 
-	void turret_resetNum()
-	{
-		s_turretNum = 0;
-	}
-
 	MessageType turret_handleDamage(MessageType msg, Turret* turret)
 	{
 		PhysicsActor* physicsActor = &turret->actor;

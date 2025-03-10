@@ -812,10 +812,6 @@ namespace TFE_Input
 		// Wipe the weapon settings 
 		TFE_DarkForces::resetWeaponFunc();
 
-		// This is not really needed but for replay comparison reset the turret/mouse task IDs
-		TFE_DarkForces::mousebot_resetNum();
-		TFE_DarkForces::turret_resetNum();
-
 		// Player frame collisions affect logic and must be reset
 		initPlayerCollision();
 

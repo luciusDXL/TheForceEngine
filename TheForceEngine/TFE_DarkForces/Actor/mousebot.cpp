@@ -45,11 +45,6 @@ namespace TFE_DarkForces
 	static MouseBot* s_curMouseBot;
 	static s32 s_mouseNum = 0;
 
-	void mousebot_resetNum()
-	{
-		s_mouseNum = 0;
-	}
-
 	MessageType mousebot_handleDamage(MessageType msg, MouseBot* mouseBot)
 	{
 		SecObject* obj = mouseBot->logic.obj;
