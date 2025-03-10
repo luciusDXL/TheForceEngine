@@ -20,7 +20,7 @@ echo "Done running tfe"
 
 find / -type d -iname the_force_engine_log.txt 2>/dev/null | xargs cat
 
-top -b
+top -b -n 1 | head -n 20
 
 # Diff Results of the rest 
 result=`diff <(tail -n 1 $user_path/.local/share/TheForceEngine/replay.log) <(tail -n 1 $root_path/Tests/Replays/base_replay.log)`
