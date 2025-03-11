@@ -60,11 +60,19 @@ fi
 
 # Run the demo and generate new log file
 pushd $root_path
+
+# LDD check
+
+ldd $root_path/theforceengine
+
 echo "Running TFE test..."
+date
 echo "Executing Command $root_path/theforceengine -gDark -r$demo_path --demo_logging --exit_after_replay ....."
 $root_path/theforceengine -gDark -r$demo_path --demo_logging --exit_after_replay
 result=$?
+date
 echo "Done running test. Result is $result"
+ls -tral $root_path/crashdump.dmp
 
 # TEMP HACK
 exit 0

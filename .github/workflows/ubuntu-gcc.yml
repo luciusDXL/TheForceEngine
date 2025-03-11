@@ -43,7 +43,6 @@ jobs:
         chmod +x ${{github.workspace}}/TheForceEngine/Tests/runTests.sh
         cp ${{github.workspace}}/build/theforceengine ${{github.workspace}}/       
         ${{github.workspace}}/TheForceEngine/Tests/runTests.sh ${{github.workspace}}
-        ls -tral ${{github.workspace}}/crashdump.dmp
         
     - uses: actions/upload-artifact@master
       with:
