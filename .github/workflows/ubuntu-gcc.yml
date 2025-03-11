@@ -45,3 +45,4 @@ jobs:
         cp ${{github.workspace}}/build/theforceengine ${{github.workspace}}/
         cp ${{github.workspace}}/build/theforceengine ${{github.workspace}}/build/TheForceEngine/       
         ${{github.workspace}}/TheForceEngine/Tests/runTests.sh
+        ls ${{github.workspace}}/crashdump.dmp
