@@ -35,7 +35,7 @@ jobs:
       # Build your program with the given configuration
       run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
       
-          - name: Tests
+    - name: Tests
       # Run TFE tests such as replay verification for any deltas
       run: |
         ulimit -c unlimited
