@@ -49,7 +49,7 @@ jobs:
     - uses: actions/upload-artifact@master
       with:
         name: crashdump.dmp
-        path: ${{github.workspace}}/
+        path: ${{github.workspace}}/crashdump.dmp
         
       
         
