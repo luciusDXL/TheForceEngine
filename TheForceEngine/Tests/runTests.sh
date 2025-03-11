@@ -97,6 +97,21 @@ fi
 if [ -f error.log ]; then
    cat error.log    
 fi
+date
+ls -tral $root_path
+date
+ls -tral $root_path/../
+date
+ls -tral $root_path/../../
+date
+
+$root_path/../theforceengine
+ls -tral $root_path/../
+date
+$root_path/../../theforceengine
+ls -tral $root_path/../../
+date
+
 
 # TEMP HACK
 exit 0
