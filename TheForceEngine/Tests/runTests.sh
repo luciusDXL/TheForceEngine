@@ -1,5 +1,6 @@
 # Setup theforceengine binary directory 
 root_path=""
+LIBGL_ALWAYS_SOFTWARE=1
 
 # If unset try to look in a common folder
 if [[ ! -s "$root_path" || ! -f "$root_path/theforceengine" ]]; then

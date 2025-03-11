@@ -41,8 +41,9 @@ jobs:
       run: |
         ulimit -c unlimited
         chmod +x ${{github.workspace}}/TheForceEngine/Tests/runTests.sh
-        cp ${{github.workspace}}/build/theforceengine ${{github.workspace}}/   
-        cp ${{github.workspace}}/build/theforceengine ${{github.workspace}}/TheForceEngine        
+        cp ${{github.workspace}}/build/theforceengine ${{github.workspace}}/TheForceEngine/
+        cp ${{github.workspace}}/build/theforceengine ${{github.workspace}}/
+        cp ${{github.workspace}}/build/theforceengine ${{github.workspace}}/build/TheForceEngine/              
         ${{github.workspace}}/TheForceEngine/Tests/runTests.sh ${{github.workspace}}
         
     - uses: actions/upload-artifact@master
