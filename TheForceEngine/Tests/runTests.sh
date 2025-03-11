@@ -106,7 +106,7 @@ ls -tral $root_path/../
 date
 ls -tral $root_path/../../
 date
-
+echo 
 $root_path/TheForceEngine/theforceengine
 ls -tral $root_path/TheForceEngine/
 date
@@ -117,7 +117,10 @@ $root_path/../../theforceengine
 ls -tral $root_path/../../
 date
 
-
+echo "looking for the log"
+find / -type f -iname the_force_engine_log.txt
+echo "done looking for the log"
+date
 # TEMP HACK
 exit 0
 
