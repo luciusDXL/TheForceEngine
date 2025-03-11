@@ -5,16 +5,16 @@ root_path=""
 if [[ ! -s "$root_path" || ! -f "$root_path/theforceengine" ]]; then
     root_path="$(dirname "$(realpath "$0")")"/../../
     if [ -f $root_path/theforceengine ]; then
-	echo "Found theforceengine in path $root_path"
+		echo "Found theforceengine in path $root_path"
     else
-	echo "WARNING: Cannot find theforceengine binary. Will try one folder up"
-	root_path="$(dirname "$(realpath "$0")")"/../../../
-	if [ -f $root_path/theforceengine ]; then
-	    echo "Found theforceengine in path $root_path"
-	else
-	    echo "ERROR: Cannot find theforceengine binary. Please set it in the script"
-	    exit 1
-	fi
+		echo "WARNING: Cannot find theforceengine binary. Will try one folder up"
+		root_path="$(dirname "$(realpath "$0")")"/../../../
+		if [ -f $root_path/theforceengine ]; then
+			echo "Found theforceengine in path $root_path"
+		else
+			echo "ERROR: Cannot find theforceengine binary. Please set it in the script"
+			exit 1
+		fi
     fi
 fi    
 
@@ -26,9 +26,9 @@ if [[ ! -s "$user_doc_path" || ! -d "$user_doc_path" ]]; then
     user_root=$(realpath ~)
     user_doc_path=$user_root/.local/share/TheForceEngine
     if [ -d $user_doc_path ]; then
-	echo "Found the user directory in $user_doc_path"
+		echo "Found the user directory in $user_doc_path"
     else
-	echo "WARNING: Cannot find the user tfe directory $user_doc_path. Hopefully it will be created by the executable"
+		echo "WARNING: Cannot find the user tfe directory $user_doc_path. Hopefully it will be created by the executable"
     fi
 fi
 
@@ -38,9 +38,9 @@ demo_path=""
 if [[ ! -s "$demo_path" || ! -f "$demo_path" ]]; then
     demo_path="$(dirname "$(realpath "$0")")"/Replays/base_test.demo
     if [ -f $demo_path ]; then
-	echo "Found the demo at $demo_path"
-    else
-	echo "ERROR: Cannot find the demo file $demo_path. It should be in the TheForceEngine/Tests/Replays folder"
+		echo "Found the demo at $demo_path"
+	else
+		echo "ERROR: Cannot find the demo file $demo_path. It should be in the TheForceEngine/Tests/Replays folder"
 	exit 1
     fi
 fi
@@ -51,9 +51,9 @@ demo_log_path=""
 if [[ ! -s "$demo_log_path" || ! -f "$demo_log_path" ]]; then
     demo_log_path="$(dirname "$(realpath "$0")")"/Replays/base_replay_log.txt
     if [ -f $demo_log_path ]; then
-	echo "Found the demo log at $demo_log_path"
-    else
-	echo "ERROR: Cannot find the demo log file $demo_log_path. It should be in the TheForceEngine/Tests/Replays folder"
+		echo "Found the demo log at $demo_log_path"
+	else
+		echo "ERROR: Cannot find the demo log file $demo_log_path. It should be in the TheForceEngine/Tests/Replays folder"
 	exit 1
     fi
 fi
