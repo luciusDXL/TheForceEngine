@@ -405,6 +405,8 @@ void parseCommandLine(s32 argc, char* argv[])
 		const char* opt = argv[i];
 		const size_t len = strlen(opt);
 
+		TFE_System::logWrite(LOG_MSG, "Main", "Parsing parameter %s", opt);
+
 		// Is this an option name or value?
 		const char* optValue = nullptr;
 		if (len && opt[0] == '-')

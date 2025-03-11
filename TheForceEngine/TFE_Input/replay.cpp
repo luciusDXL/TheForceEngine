@@ -965,8 +965,15 @@ namespace TFE_Input
 	{
 		char replayPath[TFE_MAX_PATH];
 		sprintf(replayPath, "%s", sourceReplayPath);
-
+		
 		FileUtil::fixupPath(replayPath);
+
+		if (!FileUtil::exists(replayPath))
+		{
+			TFE_System::logWrite(LOG_MSG, "Replay", "Replay file does not exist: %s . Exiting...", replayPath);
+			TFE_FrontEndUI::setState(APP_STATE_QUIT);
+			return;
+		}
 
 		TFE_SaveSystem::SaveHeader header;
 		loadReplayHeader(replayPath, &header);
@@ -979,7 +986,7 @@ namespace TFE_Input
 	// This is a replay wrapper that handles agents and replay configuration
 	void loadReplayWrapper(string replayFile, string modName, string levelId)
 	{
-		TFE_System::logWrite(LOG_MSG, "Replay", "modname = %s levelid = %s", modName.c_str(), levelId.c_str());
+		TFE_System::logWrite(LOG_MSG, "Replay", "Loading Replay File = %s Modname = %s Levelid = %s", replayFile.c_str(), modName.c_str(), levelId.c_str());
 
 		// If you are replaying a demo, you should not be recording.
 

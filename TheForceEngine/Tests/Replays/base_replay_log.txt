@@ -1,8 +1,11 @@
+[MemoryRegion] Allocated new memory block in region 'game' - new size is 3 blocks, total size is '25165824'
 [Player] Setting up level 'SECBASE'
 [Error : Dark Forces Game Script] LevelScript.fs (0, 0) : Failed to open script file 'LevelScript.fs'
+[MemoryRegion] Allocated new memory block in region 'level' - new size is 2 blocks, total size is '16777216'
 [Warning : level_loadGeometry] Could not open 'ZWIMP10L.BM', using 'default.bm' instead.
 [Warning : level_loadGeometry] Could not open 'ZWIMP11.BM', using 'default.bm' instead.
 [Warning : level_loadINF] Hit the end of INF 'SECBASE' before parsing all items: 58/60
+[MemoryRegion] Allocated new memory block in region 'game' - new size is 1 blocks, total size is '8388608'
 [Replay] Update 61: X:16140206 Y:2293760 Z:24754258, yaw: 8025, pitch: 0, keysDown: , keysPressed: , mouse: 0,1,1186,268
 [Replay] Update 62: X:16140206 Y:2289558 Z:24754258, yaw: 8025, pitch: -7, keysDown: , keysPressed: , mouse: 0,0,1186,268
 [Replay] Update 63: X:16140206 Y:2256850 Z:24754258, yaw: 8025, pitch: -7, keysDown: , keysPressed: , mouse: 0,0,1186,268
