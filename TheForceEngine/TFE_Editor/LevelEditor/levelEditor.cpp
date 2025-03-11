@@ -3553,7 +3553,7 @@ namespace LevelEditor
 
 					if (isShortcutRepeat(SHORTCUT_TEXOFFSET_UP)) { delta.z += move; }
 					else if (isShortcutRepeat(SHORTCUT_TEXOFFSET_DOWN)) { delta.z -= move; }
-
+					
 					if (delta.x || delta.z)
 					{
 						// TODO: Add command.
@@ -3643,6 +3643,52 @@ namespace LevelEditor
 					else if (isShortcutRepeat(SHORTCUT_TEXOFFSET_LEFT)) { delta.x += move; }
 					if (isShortcutRepeat(SHORTCUT_TEXOFFSET_UP)) { delta.z -= move; }
 					else if (isShortcutRepeat(SHORTCUT_TEXOFFSET_DOWN)) { delta.z += move; }
+
+					if (part == HP_FLOOR || part == HP_CEIL)
+					{
+						// Movement axis.
+						Vec2f S = { 1.0f, 0.0f };
+						Vec2f T = { 0.0f, 1.0f };
+
+						// Find the best movement axis based on the camera forward direction.
+						const Vec3f Zf = { 0.0f, 0.0f, 1.0f };
+						const Vec3f Zn = { 0.0f, 0.0f, -1.0f };
+						const Vec3f Xf = { 1.0f, 0.0f, 0.0f };
+						const Vec3f Xn = { -1.0f, 0.0f, 0.0f };
+						const f32 dZf = TFE_Math::dot(&s_viewDir, &Zf);
+						const f32 dZn = TFE_Math::dot(&s_viewDir, &Zn);
+						const f32 dXf = TFE_Math::dot(&s_viewDir, &Xf);
+						const f32 dXn = TFE_Math::dot(&s_viewDir, &Xn);
+						if (dZf >= dZn && dZf >= dXf && dZf >= dXn)
+						{
+							// +Z forward - no change.
+							S = { -1.0f, 0.0f };
+							T = { 0.0f, -1.0f };
+						}
+						else if (dZn >= dZf && dZn >= dXf && dZn >= dXn)
+						{
+							// -Z forward.
+							S = { 1.0f, 0.0f };
+							T = { 0.0f, 1.0f };
+						}
+						else if (dXf >= dXn && dXf >= dZf && dXf >= dZn)
+						{
+							// +X forward.
+							S = { 0.0f, -1.0f };
+							T = { 1.0f, 0.0f };
+						}
+						else
+						{
+							// -X forward.
+							S = { 0.0f, 1.0f };
+							T = { -1.0f, 0.0f };
+						}
+
+						// Rebuild the delta.
+						const Vec2f baseDelta = delta;
+						delta.x = baseDelta.x*S.x + baseDelta.z*S.z;
+						delta.z = baseDelta.x*T.x + baseDelta.z*T.z;
+					}
 
 					if (delta.x || delta.z)
 					{
