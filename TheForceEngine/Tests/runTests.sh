@@ -68,13 +68,35 @@ ldd $root_path/theforceengine
 echo "Running TFE test..."
 date
 echo "Executing Command $root_path/theforceengine -gDark -r$demo_path --demo_logging --exit_after_replay ....."
-$root_path/theforceengine -gDark -r$demo_path --demo_logging --exit_after_replay
+$root_path/theforceengine -gDark -r$demo_path --demo_logging --exit_after_replay > output.log 2>error.log
 result=$?
 date
+
+if [ -f output.log ]; then
+   cat output.log    
+fi
+
+if [ -f error.log ]; then
+   cat error.log    
+fi
+
 echo "Done running test. Result is $result"
 ls -tral $root_path/crashdump.dmp
+echo "looking for dump"
 
 find  $root_path/../../ -type f -iname crashdump.dmp 2>/dev/null
+date
+echo "done looking for dump"
+
+$root_path/theforceengine > output.log 2>error.log
+date
+if [ -f output.log ]; then
+   cat output.log    
+fi
+
+if [ -f error.log ]; then
+   cat error.log    
+fi
 
 # TEMP HACK
 exit 0
