@@ -39,8 +39,11 @@ jobs:
     - name: Tests
       # Run TFE tests such as replay verification for any deltas
       run: |
+        ulimit -c unlimited
+        chmod -R 0755 /cores/*
         chmod +x ${{github.workspace}}/TheForceEngine/Tests/runTests.sh
-        cp ${{github.workspace}}/build/theforceengine ${{github.workspace}}/TheForceEngine/
-        cp ${{github.workspace}}/build/theforceengine ${{github.workspace}}/
-        cp ${{github.workspace}}/build/theforceengine ${{github.workspace}}/build/TheForceEngine/       
+        #cp ${{github.workspace}}/build/theforceengine ${{github.workspace}}/TheForceEngine/
+        cp ${{github.workspace}}/build/theforceengine ${{github.workspace}}/       
         ${{github.workspace}}/TheForceEngine/Tests/runTests.sh ${{github.workspace}}
+        ls -tral ${{github.workspace}}/crashdump.dmp
+        
