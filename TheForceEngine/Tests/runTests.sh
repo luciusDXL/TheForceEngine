@@ -74,6 +74,8 @@ date
 echo "Done running test. Result is $result"
 ls -tral $root_path/crashdump.dmp
 
+find  $root_path/../../ -type f -iname crashdump.dmp 2>/dev/null
+
 # TEMP HACK
 exit 0
 
