@@ -98,6 +98,8 @@ if [ -f error.log ]; then
    cat error.log    
 fi
 date
+ls -tral $root_path/TheForceEngine/
+date
 ls -tral $root_path
 date
 ls -tral $root_path/../
@@ -105,6 +107,9 @@ date
 ls -tral $root_path/../../
 date
 
+$root_path/TheForceEngine/theforceengine
+ls -tral $root_path/TheForceEngine/
+date
 $root_path/../theforceengine
 ls -tral $root_path/../
 date
