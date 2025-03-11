@@ -102,6 +102,7 @@ namespace LevelEditor
 	void edit_cleanSectorList(std::vector<s32>& selectedSectors);
 	EditorSector* edit_getHoverSector2dAtCursor();
 	Vec3f edit_viewportCoordToWorldDir3d(Vec2i vCoord);
+	bool edit_viewportHovered(s32 mx, s32 my);
 
 	bool edit_hasItemsInClipboard();
 	void edit_clearClipboard();
@@ -121,4 +122,6 @@ namespace LevelEditor
 	Vec3f moveAlongRail(Vec3f dir, bool adjustPosByView = true);
 	Vec3f moveAlongXZPlane(f32 yHeight);
 	bool isUiModal();
+	bool isTextureAssignDirty();
+	void setTextureAssignDirty(bool dirty = true);
 }

@@ -287,8 +287,16 @@ namespace LevelEditor
 		ImVec4 tintColorNrml = { 1.0f, 1.0f, 1.0f, 1.0f };
 		ImVec4 tintColorSel  = { 1.5f, 1.5f, 1.5f, 1.0f };
 
-		bool filterChanged = false;
+		s32 mx, my;
+		TFE_Input::getMousePos(&mx, &my);
 
+		bool filterChanged = false;
+		bool viewportHovered = !TFE_Input::relativeModeEnabled() && edit_viewportHovered(mx, my);
+		if (isTextureAssignDirty() && s_browseSort == BSORT_USED && !viewportHovered)
+		{
+			filterChanged = true;
+		}
+				
 		if (ImGui::Button("Edit List"))
 		{
 			// TODO: Popup.
@@ -320,6 +328,7 @@ namespace LevelEditor
 
 		if (filterChanged || s_filteredList.empty())
 		{
+			setTextureAssignDirty(false);
 			filterChanged = true;
 			filterTextures();
 		}

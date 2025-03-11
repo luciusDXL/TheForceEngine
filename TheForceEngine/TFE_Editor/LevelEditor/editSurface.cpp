@@ -194,7 +194,7 @@ namespace LevelEditor
 	void edit_applyTextureToSelection(s32 texIndex, Vec2f* offset)
 	{
 		if (!selection_hasHovered()) { return; }
-
+		
 		bool doesItemExist = false;
 		EditorSector* sector = nullptr;
 		s32 featureIndex = -1;
@@ -249,6 +249,7 @@ namespace LevelEditor
 				edit_setTexture(1, &id, texIndex, offset);
 				cmd_setTextures(LName_SetTexture, 1, &id);
 			}
+			setTextureAssignDirty();
 		}
 	}
 
@@ -271,6 +272,7 @@ namespace LevelEditor
 		{
 			return;
 		}
+		setTextureAssignDirty();
 
 		// Center the sign on the mouse cursor.
 		EditorWall* wall = &sector->walls[featureIndex];

@@ -123,6 +123,7 @@ namespace LevelEditor
 	static bool s_gravity = false;
 	static bool s_showAllLabels = false;
 	static bool s_modalUiActive = false;
+	static bool s_textureAssignDirty = false;
 	static s32 s_lastSavedHistoryPos = 0;
 	
 	// Handle initial mouse movement before feature movement or snapping.
@@ -253,6 +254,7 @@ namespace LevelEditor
 		loadEntityData(gameLocalDir, false);
 		loadLogicData(gameLocalDir);
 		groups_init();
+		setTextureAssignDirty(true);
 		s_viewDepth[0] = c_defaultViewDepth[0];
 		s_viewDepth[1] = c_defaultViewDepth[1];
 
@@ -413,6 +415,16 @@ namespace LevelEditor
 	bool isViewportElementHovered()
 	{
 		return selection_hasHovered();// || selection_getCount() > 0;
+	}
+		
+	bool isTextureAssignDirty()
+	{
+		return s_textureAssignDirty;
+	}
+
+	void setTextureAssignDirty(bool dirty)
+	{
+		s_textureAssignDirty = dirty;
 	}
 	
 	void adjustGridHeight(EditorSector* sector)
@@ -1251,6 +1263,11 @@ namespace LevelEditor
 			wall->tex[WP_SIGN].offset.z += delta.z;
 		}
 	}
+
+	bool edit_viewportHovered(s32 mx, s32 my)
+	{
+		return mx >= s_editWinPos.x && mx < s_editWinPos.x + s_editWinSize.x && my >= s_editWinPos.z && my < s_editWinPos.z + s_editWinSize.z;
+	}
 				
 	void updateWindowControls()
 	{
@@ -1258,7 +1275,7 @@ namespace LevelEditor
 
 		s32 mx, my;
 		TFE_Input::getMousePos(&mx, &my);
-		if (!TFE_Input::relativeModeEnabled() && (mx < s_editWinPos.x || mx >= s_editWinPos.x + s_editWinSize.x || my < s_editWinPos.z || my >= s_editWinPos.z + s_editWinSize.z))
+		if (!TFE_Input::relativeModeEnabled() && !edit_viewportHovered(mx, my))
 		{
 			// Nothing is "hovered" if the mouse is not in the window.
 			selection_clearHovered();
@@ -2782,7 +2799,7 @@ namespace LevelEditor
 			// Display items on top of the viewport.
 			s32 mx, my;
 			TFE_Input::getMousePos(&mx, &my);
-			const bool editWinHovered = mx >= s_editWinPos.x && mx < s_editWinPos.x + s_editWinSize.x && my >= s_editWinPos.z && my < s_editWinPos.z + s_editWinSize.z;
+			const bool editWinHovered = edit_viewportHovered(mx, my);
 			const bool hasHovered = selection_hasHovered();
 
 			if (!isUiModal() && !modalRelease)
@@ -3408,7 +3425,7 @@ namespace LevelEditor
 
 		s32 mx, my;
 		TFE_Input::getMousePos(&mx, &my);
-		if (!isUiModal() && mx >= s_editWinPos.x && mx < s_editWinPos.x + s_editWinSize.x && my >= s_editWinPos.z && my < s_editWinPos.z + s_editWinSize.z)
+		if (!isUiModal() && edit_viewportHovered(mx, my))
 		{
 			if (s_view == EDIT_VIEW_2D)
 			{
@@ -3827,6 +3844,7 @@ namespace LevelEditor
 		bool isNewTexture = false;
 		texIndex = getTextureIndex(s_levelTextureList[texIndex].name.c_str(), &isNewTexture);
 		if (texIndex < 0) { return false; }
+		setTextureAssignDirty();
 
 		if (isNewTexture)
 		{
