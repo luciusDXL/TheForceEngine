@@ -80,6 +80,11 @@ namespace LevelEditor
 			selectSimilarWalls(rootSector, wallIndex, part, true);
 		}
 
+		// Add to the history.
+		FeatureId* list = nullptr;
+		const s32 count = (s32)selection_getList(list, SEL_SURFACE);
+		cmd_setTextures(LName_Autoalign, count, list);
+
 		// Restore the selection.
 		selection_restoreGeoSelections();
 	}

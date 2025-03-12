@@ -80,10 +80,13 @@ namespace LevelEditor
 	const f64 c_autosaveInterval = 10.0*60.0;	// 10 minutes.
 	const s32 c_autosaveMaxFile = 20;
 	const s32 c_vanillaDarkForcesNameLimit = 16;
+	const f64 c_textureMaxMoveMergeDelta = 3.0;	// 3 seconds.
 
 	static Asset* s_levelAsset = nullptr;
 	static s32 s_outputHeight = 26*6;
 	static AppendTexList s_texAppendList = {};
+	static std::vector<FeatureId> s_texMoveFeatures;
+	static f64 s_timeSinceLastUpdate = 0.0;
 
 	// The TFE Level Editor format is different than the base format and contains extra 
 	// metadata, etc.
@@ -260,6 +263,8 @@ namespace LevelEditor
 		setTextureAssignDirty(true);
 		s_viewDepth[0] = c_defaultViewDepth[0];
 		s_viewDepth[1] = c_defaultViewDepth[1];
+		s_texMoveFeatures.clear();
+		s_timeSinceLastUpdate = 0.0;
 
 		Project* project = project_get();
 		if (project && project->active)
@@ -3537,7 +3542,7 @@ namespace LevelEditor
 		return canApplyOffset;
 	}
 
-	void edit_moveSelectedTextures(Vec2f delta)
+	void edit_moveSelectedTextures(Vec2f delta, std::vector<FeatureId>& selected)
 	{
 		EditorSector* sector = nullptr;
 		s32 featureIndex = -1;
@@ -3550,6 +3555,7 @@ namespace LevelEditor
 			{
 				selection_getSector(SEL_INDEX_HOVERED, sector);
 				modifyTextureOffset(sector, s_featureTex.part, 0, delta);
+				selected.push_back(createFeatureId(sector, 0, s_featureTex.part));
 			}
 
 			// move the floor or ceiling based on hovered.
@@ -3557,6 +3563,7 @@ namespace LevelEditor
 			{
 				selection_getSector(i, sector);
 				modifyTextureOffset(sector, s_featureTex.part, 0, delta);
+				selected.push_back(createFeatureId(sector, 0, s_featureTex.part));
 			}
 		}
 		else if (s_editMode == LEDIT_WALL)
@@ -3567,6 +3574,7 @@ namespace LevelEditor
 				if (canMoveTexture(part))
 				{
 					modifyTextureOffset(sector, s_featureTex.part, featureIndex, delta);
+					selected.push_back(createFeatureId(sector, featureIndex, s_featureTex.part));
 				}
 			}
 
@@ -3576,8 +3584,76 @@ namespace LevelEditor
 				if (canMoveTexture(part))
 				{
 					modifyTextureOffset(sector, part, featureIndex, delta);
+					selected.push_back(createFeatureId(sector, featureIndex, s_featureTex.part));
 				}
 			}
+		}
+	}
+		
+	void mergeFeatureLists(std::vector<FeatureId>& outList, const std::vector<FeatureId>& inList)
+	{
+		const s32 inCount = (s32)inList.size();
+		const FeatureId* inId = inList.data();
+		for (s32 in = 0; in < inCount; in++)
+		{
+			FeatureId id = inId[in];
+			const s32 outCount = (s32)outList.size();
+			const FeatureId* outId = outList.data();
+			bool duplicate = false;
+			for (s32 out = 0; out < outCount; out++)
+			{
+				if (outId[out] == id)
+				{
+					duplicate = true;
+					break;
+				}
+			}
+			if (!duplicate)
+			{
+				outList.push_back(id);
+			}
+		}
+	}
+		
+	void updateTextureMoveFeatures(std::vector<FeatureId>& list, bool clearOnUpdate)
+	{
+		s_timeSinceLastUpdate += TFE_System::getDeltaTimeRaw();
+		if (list.empty())
+		{
+			if (clearOnUpdate) { s_texMoveFeatures.clear(); }
+			return;
+		}
+
+		// Can merge with the previous command if:
+		//   1) the previous command was the same.
+		//   2) not too much time has elapsed.
+		if (!s_texMoveFeatures.empty() && s_timeSinceLastUpdate < c_textureMaxMoveMergeDelta)
+		{
+			u16 prevCmd, prevName;
+			history_getPrevCmdAndName(prevCmd, prevName);
+			if (prevName == LName_MoveTexture)
+			{
+				history_removeLast();
+				mergeFeatureLists(s_texMoveFeatures, list);
+			}
+			else
+			{
+				s_texMoveFeatures = list;
+			}
+		}
+		else
+		{
+			s_texMoveFeatures = list;
+		}
+
+		if (!s_texMoveFeatures.empty())
+		{
+			s_timeSinceLastUpdate = 0.0;
+			cmd_setTextures(LName_MoveTexture, (s32)s_texMoveFeatures.size(), s_texMoveFeatures.data());
+		}
+		if (clearOnUpdate)
+		{
+			s_texMoveFeatures.clear();
 		}
 	}
 
@@ -3587,6 +3663,9 @@ namespace LevelEditor
 		bool hasHovered = selection_hasHovered();
 		bool hasFeature = selection_getCount() > 0;
 		bool canMoveTex = hasHovered || s_featureTex.sector;
+
+		std::vector<FeatureId> updatedList;
+		bool clearOnUpdate = false;
 
 		// TODO: Remove code duplication between the 2D and 3D versions.
 		if (s_view == EDIT_VIEW_2D && s_editMode == LEDIT_SECTOR && canMoveTex && (s_sectorDrawMode == SDM_TEXTURED_CEIL || s_sectorDrawMode == SDM_TEXTURED_FLOOR))
@@ -3620,11 +3699,6 @@ namespace LevelEditor
 
 					if (isShortcutRepeat(SHORTCUT_TEXOFFSET_UP)) { delta.z += move; }
 					else if (isShortcutRepeat(SHORTCUT_TEXOFFSET_DOWN)) { delta.z -= move; }
-					
-					if (delta.x || delta.z)
-					{
-						// TODO: Add command.
-					}
 				}
 
 				EditorSector* sector = hovered;
@@ -3665,12 +3739,16 @@ namespace LevelEditor
 
 				if (delta.x || delta.z)
 				{
-					edit_moveSelectedTextures(delta);
+					edit_moveSelectedTextures(delta, updatedList);
 				}
 
 				if (!middleMousePressed && !middleMouseDown)
 				{
-					// TODO: Add command.
+					if (s_startTexMove)
+					{
+						clearOnUpdate = true;
+					}
+					
 					s_startTexMove = false;
 					s_featureTex = {};
 				}
@@ -3763,7 +3841,6 @@ namespace LevelEditor
 						{
 							delta.x = -delta.x;
 						}
-						// TODO: Add command.
 					}
 				}
 
@@ -3874,12 +3951,16 @@ namespace LevelEditor
 				
 				if (delta.x || delta.z)
 				{
-					edit_moveSelectedTextures(delta);
+					edit_moveSelectedTextures(delta, updatedList);
 				}
 
 				if (!middleMousePressed && !middleMouseDown)
 				{
-					// TODO: Add command.
+					if (s_startTexMove)
+					{
+						clearOnUpdate = true;
+					}
+
 					s_startTexMove = false;
 					s_featureTex = {};
 				}
@@ -3893,11 +3974,13 @@ namespace LevelEditor
 		{
 			if (s_startTexMove)
 			{
-				// command...
 				s_startTexMove = false;
+				clearOnUpdate = true;
 			}
 			s_featureTex = {};
 		}
+
+		updateTextureMoveFeatures(updatedList, clearOnUpdate);
 	}
 
 	void applyTextureToItem(EditorSector* sector, HitPart part, s32 index, s32 texIndex, Vec2f* offset)
