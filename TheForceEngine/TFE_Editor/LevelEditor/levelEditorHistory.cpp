@@ -84,6 +84,7 @@ namespace LevelEditor
 		history_registerName(LName_ChangeWallAttrib, "Change Wall Attributes");
 		history_registerName(LName_ChangeSectorAttrib, "Change Sector Attributes");
 		history_registerName(LName_CleanSectors, "Clean Sectors");
+		history_registerName(LName_JoinSectors, "Join Sectors");
 	}
 
 	void levHistory_destroy()

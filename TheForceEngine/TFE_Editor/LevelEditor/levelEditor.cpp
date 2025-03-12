@@ -489,10 +489,13 @@ namespace LevelEditor
 		}
 	}
 		
-	void edit_deleteSector(s32 sectorId)
+	void edit_deleteSector(s32 sectorId, bool addToHistory)
 	{
 		std::vector<EditorSector> sectorSnapshot;
-		level_createLevelSectorSnapshotSameAssets(sectorSnapshot);
+		if (addToHistory)
+		{
+			level_createLevelSectorSnapshotSameAssets(sectorSnapshot);
+		}
 
 		// First, go through all sectors and remove references.
 		s32 sectorCount = (s32)s_level.sectors.size();
@@ -544,11 +547,14 @@ namespace LevelEditor
 		edit_clearSelections(false);
 
 		// Handle history.
-		std::vector<s32> deltaSectors;
-		level_getLevelSnapshotDelta(deltaSectors, sectorSnapshot);
-		if (!deltaSectors.empty())
+		if (addToHistory)
 		{
-			cmd_sectorSnapshot(LName_DeleteSector, deltaSectors);
+			std::vector<s32> deltaSectors;
+			level_getLevelSnapshotDelta(deltaSectors, sectorSnapshot);
+			if (!deltaSectors.empty())
+			{
+				cmd_sectorSnapshot(LName_DeleteSector, deltaSectors);
+			}
 		}
 	}
 			
@@ -946,6 +952,9 @@ namespace LevelEditor
 
 	void edit_joinSectors()
 	{
+		std::vector<EditorSector> sectorSnapshot;
+		level_createLevelSectorSnapshotSameAssets(sectorSnapshot);
+
 		std::vector<s32> selectedSectors;
 
 		// We must be in the wall (in 3D) or sector mode.
@@ -1059,14 +1068,36 @@ namespace LevelEditor
 		}
 		sectorToPolygon(sector);
 
-		// 3. Delete the extra sectors, note we don't delete sector[0]
+		// 3. Insert objects into primary sector.
+		for (s32 s = 1; s < sectorCount; s++)
+		{
+			const EditorSector* remSector = &s_level.sectors[indices[s]];
+			const s32 objCount = (s32)remSector->obj.size();
+			const EditorObject* obj = remSector->obj.data();
+
+			for (s32 ob = 0; ob < objCount; ob++, obj++)
+			{
+				sector->obj.push_back(*obj);
+			}
+		}
+
+		// 4. Delete the extra sectors, note we don't delete sector[0]
 		for (s32 s = sectorCount - 1; s > 0; s--)
 		{
-			edit_deleteSector(indices[s]);
+			// Do not add individual deletions to the history, the whole operation will be handled at once.
+			edit_deleteSector(indices[s], false);
 		}
 
 		// Clear the selection.
 		selection_clear(SEL_GEO | SEL_ENTITY_BIT);
+
+		// Add to history.
+		std::vector<s32> deltaSectors;
+		level_getLevelSnapshotDelta(deltaSectors, sectorSnapshot);
+		if (!deltaSectors.empty())
+		{
+			cmd_sectorSnapshot(LName_JoinSectors, deltaSectors);
+		}
 	}
 
 	s32 findNextEdge(s32 wallCount, const EditorWall* walls, s32 idxToFind, s32 side)
