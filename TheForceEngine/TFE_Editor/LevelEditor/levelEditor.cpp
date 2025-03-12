@@ -1575,11 +1575,11 @@ namespace LevelEditor
 				if (ImGui::MenuItem("Save", getShortcutKeyComboText(SHORTCUT_SAVE), (bool*)NULL))
 				{
 					saveLevel();
-					s_timeSinceLastAutosave = 0.0;
 				}
 				if (ImGui::MenuItem("Reload", getShortcutKeyComboText(SHORTCUT_RELOAD), (bool*)NULL))
 				{
 					loadLevelFromAsset(s_levelAsset);
+					s_timeSinceLastAutosave = 0.0;
 				}
 				if (ImGui::MenuItem("Snapshots", nullptr, (bool*)NULL))
 				{
@@ -2118,11 +2118,11 @@ namespace LevelEditor
 		if (isShortcutPressed(SHORTCUT_SAVE))
 		{
 			saveLevel();
-			s_timeSinceLastAutosave = 0.0;
 		}
 		if (isShortcutPressed(SHORTCUT_RELOAD))
 		{
 			loadLevelFromAsset(s_levelAsset);
+			s_timeSinceLastAutosave = 0.0;
 		}
 		if (isShortcutPressed(SHORTCUT_FIND_SECTOR))
 		{
