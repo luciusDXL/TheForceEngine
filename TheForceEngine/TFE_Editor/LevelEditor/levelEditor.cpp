@@ -1628,6 +1628,7 @@ namespace LevelEditor
 			{
 				// TODO: If the level has changed, pop up a warning and allow the level to be saved.
 				disableAssetEditor();
+				levHistory_clear();
 			}
 			ImGui::Separator();
 			if (ImGui::MenuItem("User Preferences", NULL, (bool*)NULL))
