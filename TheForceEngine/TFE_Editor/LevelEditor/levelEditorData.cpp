@@ -1113,10 +1113,12 @@ namespace LevelEditor
 		return loadFromTFLWithPath(filePath);
 	}
 
-	bool saveLevelToPath(const char* filePath)
+	bool saveLevelToPath(const char* filePath, bool cleanLevel)
 	{
-		levelSetClean();
-
+		if (cleanLevel)
+		{
+			levelSetClean();
+		}
 		LE_INFO("Saving level to '%s'", filePath);
 
 		FileStream file;

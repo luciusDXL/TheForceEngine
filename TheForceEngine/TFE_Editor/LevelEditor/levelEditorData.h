@@ -254,7 +254,7 @@ namespace LevelEditor
 	bool exportLevels(const char* workPath, const char* exportPath, const char* gobName, const std::vector<LevelExportInfo>& levelList);
 	
 	bool saveLevel();
-	bool saveLevelToPath(const char* filePath);
+	bool saveLevelToPath(const char* filePath, bool cleanLevel = true);
 	bool loadFromTFL(const char* name);
 	bool loadFromTFLWithPath(const char* filePath);
 

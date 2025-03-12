@@ -77,6 +77,8 @@ namespace LevelEditor
 	const f32 c_defaultCameraHeight = 6.0f;
 	const f32 c_defaultViewDepth[] = { 65536.0f, -65536.0f };
 	const f64 c_doubleClickThreshold = 0.25f;
+	const f64 c_autosaveInterval = 10.0*60.0;	// 10 minutes.
+	const s32 c_autosaveMaxFile = 20;
 	const s32 c_vanillaDarkForcesNameLimit = 16;
 
 	static Asset* s_levelAsset = nullptr;
@@ -125,6 +127,7 @@ namespace LevelEditor
 	static bool s_modalUiActive = false;
 	static bool s_textureAssignDirty = false;
 	static s32 s_lastSavedHistoryPos = 0;
+	static f64 s_timeSinceLastAutosave = 0.0;
 	
 	// Handle initial mouse movement before feature movement or snapping.
 	static const s32 c_moveThreshold = 3;
@@ -283,6 +286,7 @@ namespace LevelEditor
 		viewport_update((s32)UI_SCALE(480) + 16, (s32)UI_SCALE(68) + 18);
 		s_gridIndex = 7;
 		s_grid.size = c_gridSizeMap[s_gridIndex];
+		s_timeSinceLastAutosave = 0.0;
 
 		s_boolToolbarData = loadGpuImage("UI_Images/Boolean_32x3.png");
 		if (s_boolToolbarData)
@@ -1571,6 +1575,7 @@ namespace LevelEditor
 				if (ImGui::MenuItem("Save", getShortcutKeyComboText(SHORTCUT_SAVE), (bool*)NULL))
 				{
 					saveLevel();
+					s_timeSinceLastAutosave = 0.0;
 				}
 				if (ImGui::MenuItem("Reload", getShortcutKeyComboText(SHORTCUT_RELOAD), (bool*)NULL))
 				{
@@ -2113,6 +2118,7 @@ namespace LevelEditor
 		if (isShortcutPressed(SHORTCUT_SAVE))
 		{
 			saveLevel();
+			s_timeSinceLastAutosave = 0.0;
 		}
 		if (isShortcutPressed(SHORTCUT_RELOAD))
 		{
@@ -2622,9 +2628,70 @@ namespace LevelEditor
 		s_featureTex = {};
 		commitCurEntityChanges();
 	}
-		
+
+	void autosave()
+	{
+		Project* project = project_get();
+		if (!project->active) { return; }
+
+		char autosaveDir[TFE_MAX_PATH];
+		sprintf(autosaveDir, "%s/Autosaves/", project->path);
+		if (!FileUtil::directoryExits(autosaveDir))
+		{
+			FileUtil::makeDirectory(autosaveDir);
+		}
+		strcat(autosaveDir, s_level.slot.c_str());
+		strcat(autosaveDir, "/");
+		if (!FileUtil::directoryExits(autosaveDir))
+		{
+			FileUtil::makeDirectory(autosaveDir);
+		}
+
+		char autoSaveFilePath[TFE_MAX_PATH];
+		char timeDate[256];
+		TFE_System::getDateTimeStringForFile(timeDate);
+		sprintf(autoSaveFilePath, "%s%s_%s.tfl", autosaveDir, s_level.slot.c_str(), timeDate);
+		saveLevelToPath(autoSaveFilePath, false);
+
+		// Now see if there are too many files.
+		FileList fileList;
+		FileUtil::readDirectory(autosaveDir, "tfl", fileList);
+		const s32 fileCount = (s32)fileList.size();
+		if (fileCount > c_autosaveMaxFile)
+		{
+			u64 oldestFile = UINT64_MAX;
+			s32 index = -1;
+
+			// Find the oldest file.
+			for (s32 f = 0; f < fileCount; f++)
+			{
+				sprintf(autoSaveFilePath, "%s%s", autosaveDir, fileList[f].c_str());
+				u64 modTime = FileUtil::getModifiedTime(autoSaveFilePath);
+				if (modTime < oldestFile)
+				{
+					oldestFile = modTime;
+					index = f;
+				}
+			}
+
+			// Then delete it.
+			if (index >= 0)
+			{
+				sprintf(autoSaveFilePath, "%s%s", autosaveDir, fileList[index].c_str());
+				FileUtil::deleteFile(autoSaveFilePath);
+			}
+		}
+	}
+
 	void update()
 	{
+		s_timeSinceLastAutosave += TFE_System::getDeltaTimeRaw();
+		if (s_timeSinceLastAutosave > c_autosaveInterval && levelIsDirty())
+		{
+			s_timeSinceLastAutosave = 0.0;
+			autosave();
+		}
+
 		// levelScript_update();
 		TFE_ScriptInterface::update();
 		updateViewportScroll();

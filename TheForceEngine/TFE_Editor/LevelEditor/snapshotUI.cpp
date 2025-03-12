@@ -56,6 +56,12 @@ namespace LevelEditor
 		{
 			FileUtil::makeDirectory(s_snapshotDir);
 		}
+		strcat(s_snapshotDir, s_level.slot.c_str());
+		strcat(s_snapshotDir, "/");
+		if (!FileUtil::directoryExits(s_snapshotDir))
+		{
+			FileUtil::makeDirectory(s_snapshotDir);
+		}
 
 		sprintf(s_snapshotManifestPath, "%s%s", s_snapshotDir, c_manifestFilename);
 		readManifest();
@@ -90,7 +96,7 @@ namespace LevelEditor
 					s_snapshotInfo.push_back({ s_snapshotName, filename, s_snapshotNotes });
 					// Save level to file.
 					sprintf(filepath, "%s%s.tfl", s_snapshotDir, filename);
-					saveLevelToPath(filepath);
+					saveLevelToPath(filepath, false);
 					// Save to the manifest.
 					writeManifest();
 					// Select the new item.

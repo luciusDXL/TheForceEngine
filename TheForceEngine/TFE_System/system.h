@@ -49,6 +49,7 @@ namespace TFE_System
 	f64 microsecondsToSeconds(f64 mu);
 
 	void getDateTimeString(char* output);
+	void getDateTimeStringForFile(char* output);
 
 	// Log
 	bool logOpen(const char* filename);
