@@ -185,6 +185,11 @@ namespace TFE_Editor
 		}
 	}
 
+	void resources_dirty()
+	{
+		s_resChanged = true;
+	}
+
 	bool resources_listChanged()
 	{
 		bool changed = s_resChanged;
