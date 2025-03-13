@@ -85,6 +85,8 @@ namespace LevelEditor
 		history_registerName(LName_ChangeSectorAttrib, "Change Sector Attributes");
 		history_registerName(LName_CleanSectors, "Clean Sectors");
 		history_registerName(LName_JoinSectors, "Join Sectors");
+		history_registerName(LName_Connect, "Connect Sectors");
+		history_registerName(LName_Disconnect, "Disconnect Sectors");
 	}
 
 	void levHistory_destroy()

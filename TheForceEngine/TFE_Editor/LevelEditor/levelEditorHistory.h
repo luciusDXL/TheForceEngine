@@ -37,6 +37,8 @@ namespace LevelEditor
 		LName_ChangeSectorAttrib,
 		LName_CleanSectors,
 		LName_JoinSectors,
+		LName_Connect,
+		LName_Disconnect,
 		LName_Count
 	};
 

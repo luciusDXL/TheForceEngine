@@ -2344,12 +2344,29 @@ namespace LevelEditor
 			{
 				const size_t disconnectCount = wallsToDisconnect.size();
 				WallIndex* wallIndex = wallsToDisconnect.data();
+
+				std::vector<s32> changedSectors;
+				s_searchKey++;
+
 				for (size_t w = 0; w < disconnectCount; w++, wallIndex++)
 				{
 					EditorSector* curSector = nullptr;
 					s32 wallId = getWallFromIndex(wallIndex, curSector, wallIndicesValid);
 					if (wallId >= 0 && curSector->walls[wallId].adjoinId >= 0)
 					{
+						// Add to changed list for history.
+						if (curSector->searchKey != s_searchKey)
+						{
+							curSector->searchKey = s_searchKey;
+							changedSectors.push_back(curSector->id);
+						}
+						EditorSector* next = &s_level.sectors[curSector->walls[wallId].adjoinId];
+						if (next && next->searchKey != s_searchKey)
+						{
+							next->searchKey = s_searchKey;
+							changedSectors.push_back(next->id);
+						}
+
 						// TODO: Merge walls back together if:
 						//   * Adjacent to the removed adjoin wall (not recursive).
 						//   * They have the same normal.
@@ -2361,6 +2378,11 @@ namespace LevelEditor
 						edit_removeAdjoin(curSector->id, wallId);
 					}
 				}
+				if (!changedSectors.empty())
+				{
+					cmd_sectorSnapshot(LName_Disconnect, changedSectors);
+				}
+
 				closeMenu = true;
 			}
 		}
@@ -2371,12 +2393,23 @@ namespace LevelEditor
 			{
 				const size_t tryConnectCount = wallsToTryConnect.size();
 				WallIndex* wallIndex = wallsToTryConnect.data();
+
+				std::vector<s32> changedSectors;
+				s_searchKey++;
+
 				for (size_t w = 0; w < tryConnectCount; w++, wallIndex++)
 				{
 					EditorSector* curSector = nullptr;
 					s32 wallId = getWallFromIndex(wallIndex, curSector, wallIndicesValid);
 					if (wallId >= 0 && curSector->walls[wallId].adjoinId < 0)
 					{
+						// Add the current sector to the changed list.
+						if (curSector->searchKey != s_searchKey)
+						{
+							curSector->searchKey = s_searchKey;
+							changedSectors.push_back(curSector->id);
+						}
+
 						if (edit_tryAdjoin(curSector->id, wallId))
 						{
 							// if edit_tryAdjoin() returns true, than a wall needed to be split, so the existing
@@ -2385,9 +2418,35 @@ namespace LevelEditor
 						}
 					}
 				}
+
+				// Go through sectors already added and add their adjoins just in case.
+				if (!changedSectors.empty())
+				{
+					std::vector<s32> source = changedSectors;
+					const s32 count = (s32)source.size();
+					const s32* sourceIndices = source.data();
+					for (s32 i = 0; i < count; i++)
+					{
+						EditorSector* sector = &s_level.sectors[sourceIndices[i]];
+						const s32 wallCount = (s32)sector->walls.size();
+						EditorWall* wall = sector->walls.data();
+						for (s32 w = 0; w < wallCount; w++, wall++)
+						{
+							if (wall->adjoinId < 0) { continue; }
+							EditorSector* next = &s_level.sectors[wall->adjoinId];
+							if (next->searchKey != s_searchKey)
+							{
+								next->searchKey = s_searchKey;
+								changedSectors.push_back(next->id);
+							}
+						}
+					}
+					cmd_sectorSnapshot(LName_Connect, changedSectors);
+				}
 				closeMenu = true;
 			}
 		}
+		
 		return closeMenu;
 	}
 
