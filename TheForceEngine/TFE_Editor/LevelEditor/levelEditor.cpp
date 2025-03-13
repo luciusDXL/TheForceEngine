@@ -789,10 +789,18 @@ namespace LevelEditor
 			return;
 		}
 
+		s_searchKey++;
+		std::vector<s32> changedSet;
+
 		const s32* indices = selectedSectors.data();
 		for (s32 s = 0; s < sectorCount; s++)
 		{
 			EditorSector* sector = &s_level.sectors[indices[s]];
+			if (sector->searchKey != s_searchKey)
+			{
+				sector->searchKey = s_searchKey;
+				changedSet.push_back(indices[s]);
+			}
 
 			// 1. Record all of the walls we are keeping.
 			std::vector<EditorWallRaw> wallsToKeep;
@@ -806,6 +814,12 @@ namespace LevelEditor
 						if (wall->adjoinId >= 0 && wall->mirrorId >= 0)
 						{
 							EditorSector* next = &s_level.sectors[wall->adjoinId];
+							if (next && next->searchKey != s_searchKey)
+							{
+								next->searchKey = s_searchKey;
+								changedSet.push_back(next->id);
+							}
+
 							if (wall->mirrorId < (s32)next->walls.size())
 							{
 								next->walls[wall->mirrorId].adjoinId = -1;
@@ -845,6 +859,12 @@ namespace LevelEditor
 				else
 				{
 					EditorSector* next = &s_level.sectors[wallSrc->adjoinId];
+					if (next && next->searchKey != s_searchKey)
+					{
+						next->searchKey = s_searchKey;
+						changedSet.push_back(next->id);
+					}
+
 					const Vec2f v0 = wallSrc->vtx[0];
 					const Vec2f v1 = wallSrc->vtx[1];
 					if (wallSrc->mirrorId >= 0 && wallSrc->mirrorId < (s32)next->walls.size())
@@ -904,7 +924,7 @@ namespace LevelEditor
 			sectorToPolygon(sector);
 		}
 
-		cmd_sectorSnapshot(LName_CleanSectors, selectedSectors);
+		cmd_sectorSnapshot(LName_CleanSectors, changedSet);
 	}
 
 	void edit_cleanSectors(bool onlySelected)

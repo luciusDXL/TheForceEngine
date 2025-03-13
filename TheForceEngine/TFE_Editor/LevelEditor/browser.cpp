@@ -126,16 +126,13 @@ namespace LevelEditor
 		pushFont(FONT_SMALL);
 		ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysAutoResize;
 		bool exit = false;
-		char filename[256];
-		char filepath[TFE_MAX_PATH];
 		if (ImGui::BeginPopupModal("Texture Sources", nullptr, window_flags))
 		{
 			// Slots.
 			const s32 levelCount = TFE_Editor::level_getDarkForcesSlotCount();
-			s32 rowCount = 3;
-			s32 yCount = (levelCount + 2) / rowCount;
-			s32 idx = 0;
-			for (s32 y = 0; y < yCount; y++)
+			const s32 rowCount = 3;
+			const s32 yCount = (levelCount + 2) / rowCount;
+			for (s32 y = 0, idx = 0; y < yCount; y++)
 			{
 				for (s32 i = 0; i < rowCount && idx < levelCount; i++, idx++)
 				{
@@ -148,6 +145,7 @@ namespace LevelEditor
 					}
 				}
 			}
+			// External Resources.
 			ImGui::CheckboxFlags("Resources", &s_nextTextureSourceFlags, (1 << levelCount));
 
 			ImGui::Separator();
