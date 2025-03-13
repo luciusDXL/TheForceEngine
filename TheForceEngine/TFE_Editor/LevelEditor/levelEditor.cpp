@@ -4089,15 +4089,16 @@ namespace LevelEditor
 		start.yaw = s_camera.yaw;
 		start.pitch = s_camera.pitch;
 		start.sector = findSector3d(start.pos);
-		if (!start.sector)
-		{
-			LE_ERROR("Cannot test level, camera must be inside of a sector.");
-			return;
-		}
 
 		char exportPath[TFE_MAX_PATH];
 		getTempDirectory(exportPath);
-		exportLevel(exportPath, s_level.slot.c_str(), &start);
+		if (!exportLevel(exportPath, s_level.slot.c_str(), start.sector ? &start : nullptr))
+		{
+			if (!start.sector)
+			{
+				LE_ERROR("Cannot test level, camera must be inside of a sector or a start point placed.");
+			}
+		}
 	}
 	
 	void copyToClipboard(const std::string& str)

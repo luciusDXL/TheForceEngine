@@ -1637,14 +1637,17 @@ namespace AssetBrowser
 				sprintf(filepath, "%s%s", pathOS, fileName);
 				FileUtil::fixupPath(filepath);
 
-				// Handle archives inside of directories.
-				ArchiveType archiveType = getArchiveType(fileName);
-				if (archiveType != ARCHIVE_UNKNOWN)
+				// Exported results are archives too, so this doesn't work correctly for project directories.
+				if (assetSource != ASRC_PROJECT)
 				{
-					// Add the archive.
-					Archive* archive = Archive::getArchive(archiveType, fileName, filepath);
-					addArchiveFiles(archive, gameId, fileName, ASRC_EXTERNAL);
-					continue;
+					ArchiveType archiveType = getArchiveType(fileName);
+					if (archiveType != ARCHIVE_UNKNOWN)
+					{
+						// Add the archive.
+						Archive* archive = Archive::getArchive(archiveType, fileName, filepath);
+						addArchiveFiles(archive, gameId, fileName, ASRC_EXTERNAL);
+						continue;
+					}
 				}
 
 				AssetType type = getAssetType(ext);

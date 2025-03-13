@@ -1059,6 +1059,7 @@ namespace TFE_Editor
 	void disableAssetEditor()
 	{
 		s_editorMode = EDIT_ASSET_BROWSER;
+		s_editorAssetType = TYPE_NOT_SET;
 	}
 
 	void updateTooltips()
