@@ -168,11 +168,6 @@ namespace LevelEditor
 					s_curVtxPos = s_cursor3d;
 					adjustGridHeight(sector);
 					s_editMove = true;
-
-					if (s_editMode == LEDIT_WALL)
-					{
-						edit_setWallMoveMode(isShortcutHeld(SHORTCUT_MOVE_NORMAL) ? WMM_NORMAL : WMM_FREE);
-					}
 				}
 				else if (!s_editMove)
 				{

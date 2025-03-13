@@ -74,11 +74,6 @@ namespace LevelEditor
 		s_enableMoveTransform = enable;
 	}
 
-	void edit_setWallMoveMode(WallMoveMode mode)
-	{
-		s_wallMoveMode = mode;
-	}
-
 	// Call when the selection changes so that the transform can be reset.
 	void edit_setTransformChange()
 	{
@@ -371,8 +366,10 @@ namespace LevelEditor
 		if (s_transformMode == TRANS_MOVE && s_editMove)
 		{
 			const u32 moveAxis = s_moveAxis;
+			const WallMoveMode moveMode = s_wallMoveMode;
 			// Get the new move axis.
 			s_moveAxis = AXIS_XZ;
+			s_wallMoveMode = WMM_FREE;
 			if (isShortcutHeld(SHORTCUT_MOVE_X))
 			{
 				s_moveAxis = AXIS_X;
@@ -386,8 +383,13 @@ namespace LevelEditor
 			{
 				s_moveAxis = AXIS_Z;
 			}
+			// Normal 
+			if (isShortcutHeld(SHORTCUT_MOVE_NORMAL))
+			{
+				s_wallMoveMode = WMM_NORMAL;
+			}
 			// If the moveAxis has changed, we need to reset the movement and anchor at the current position.
-			if (moveAxis != s_moveAxis && s_moveStarted)
+			if ((moveAxis != s_moveAxis || moveMode != s_wallMoveMode) && s_moveStarted)
 			{
 				// Reset the move.
 				s_moveStarted = false;
@@ -831,6 +833,7 @@ namespace LevelEditor
 
 			edit_setTransformAnchor({ worldPos.x, s_cursor3d.y, worldPos.z });
 		}
+				
 		const EditorSector* sector = s_transformWallSector;
 		const EditorWall* wall = &sector->walls[s_transformWallIndex];
 		const Vec2f& v0 = sector->vtx[wall->idx[0]];
@@ -850,6 +853,13 @@ namespace LevelEditor
 			{
 				worldPos = moveAlongXZPlane(s_curVtxPos.y);
 			}
+
+			const Vec3f cameraDelta = { worldPos.x - s_camera.pos.x, worldPos.y - s_camera.pos.y, worldPos.z - s_camera.pos.z };
+			if (cameraDelta.x*s_rayDir.x + cameraDelta.z*s_rayDir.z < 0.0f)
+			{
+				// Do not allow the object to be moved behind the camera.
+				return;
+			}
 		}
 
 		Vec3f transformPos = edit_getTransformPos();
@@ -864,7 +874,7 @@ namespace LevelEditor
 			{
 				delta.z = 0.0f;
 			}
-
+					
 			if (!TFE_Input::keyModDown(KEYMOD_ALT))
 			{
 				// Smallest snap distance.
