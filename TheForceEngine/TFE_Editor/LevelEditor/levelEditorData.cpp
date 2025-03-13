@@ -110,6 +110,7 @@ namespace LevelEditor
 	
 	EditorSector* findSectorDf(const Vec3f pos);
 	EditorSector* findSectorDf(const Vec2f pos);
+	void gatherAssetList(const char* name, const char* levFile, const char* objFile, std::vector<Asset*>& assetList);
 
 	AssetHandle loadTexture(const char* bmTextureName)
 	{
@@ -1925,6 +1926,10 @@ namespace LevelEditor
 		std::string jediLevel;
 		FileList fileList;
 		s32 levelCount = 0;
+
+		std::vector<Asset*> assetList;
+		WorkBuffer buffer;
+
 		for (size_t i = 0; i < count; i++, levelInfo++)
 		{
 			FileUtil::getFileNameFromPath(levelInfo->slot.c_str(), baseName);
@@ -1950,6 +1955,8 @@ namespace LevelEditor
 			sprintf(jediLine, "%s,\t%s,\t%s\r\n", s_level.name.c_str(), baseName, "L:\\LEVELS\\");
 			jediLevel += jediLine;
 			levelCount++;
+
+			gatherAssetList(s_level.slot.c_str(), levFile, objFile, assetList);
 		}
 		sprintf(jediLine, "LEVELS %d\r\n", levelCount);
 		jediLevel = jediLine + jediLevel;
@@ -1957,6 +1964,26 @@ namespace LevelEditor
 		jediLevel += "//      (Comments must be at the end of this file)\r\n";
 		jediLevel += "//      This file contains the list of all the levels in Jedi,\r\n";
 		jediLevel += "//      and the DOS names for those levels.\r\n";
+
+		if (!assetList.empty())
+		{
+			char tmpDir[TFE_MAX_PATH];
+			getTempDirectory(tmpDir);
+
+			const size_t count = assetList.size();
+			Asset** list = assetList.data();
+			for (size_t i = 0; i < count; i++)
+			{
+				Asset* asset = list[i];
+				// Export
+				char exportPath[TFE_MAX_PATH];
+				sprintf(exportPath, "%s/%s", tmpDir, asset->name.c_str());
+				if (AssetBrowser::readWriteFile(exportPath, asset->name.c_str(), asset->archive, buffer))
+				{
+					fileList.push_back(exportPath);
+				}
+			}
+		}
 
 		char jediLevelPath[TFE_MAX_PATH];
 		sprintf(jediLevelPath, "%s/jedi.lvl", workPath);
@@ -1995,7 +2022,7 @@ namespace LevelEditor
 		fileList.push_back(gobTempPath);
 
 		Project* project = project_get();
-		
+
 		char readme[4096];
 		sprintf(readme, c_modHeaderTemplate, project->name, project->authors.c_str(), project->desc.c_str(), project->credits.c_str());
 
@@ -2024,7 +2051,7 @@ namespace LevelEditor
 		char dir[TFE_MAX_PATH];
 		char filePath[TFE_MAX_PATH];
 		sprintf(dir, "%s/", project->path);
-		
+
 		for (size_t i = 0; i < extLen; i++)
 		{
 			list.clear();
@@ -2049,6 +2076,212 @@ namespace LevelEditor
 		return writeZip(zipPath, fileList);
 	}
 
+	void addAssetToList(Asset* asset, std::vector<Asset*>& assetList)
+	{
+		const size_t count = assetList.size();
+		const Asset* const* list = assetList.data();
+		for (size_t i = 0; i < count; i++)
+		{
+			if (list[i] == asset) { return; }
+		}
+		assetList.push_back(asset);
+	}
+
+	void readSourceFileAndSetupParser(FileStream& file, TFE_Parser& parser)
+	{
+		size_t len = file.getSize();
+		s_fileData.resize(len + 1);
+		char* buffer = (char*)s_fileData.data();
+		file.readBuffer(buffer, (u32)len);
+		buffer[len] = 0;
+		file.close();
+
+		parser.init(buffer, len);
+		parser.enableBlockComments();
+		parser.addCommentString("//");
+		parser.addCommentString("#");
+	}
+
+	void gatherAssetList(const char* name, const char* levFile, const char* objFile, std::vector<Asset*>& assetList)
+	{
+		TFE_Parser parser;
+		FileStream file;
+		if (file.open(levFile, FileStream::MODE_READ))
+		{
+			readSourceFileAndSetupParser(file, parser);
+
+			std::vector<std::string> textureList;
+			std::string palette;
+			size_t bufferPos = 0;
+			const char* line = parser.readLine(bufferPos, true);
+			TokenList tokens;
+			char* endPtr = nullptr;
+			while (line)
+			{
+				parser.tokenizeLine(line, tokens);
+				const s32 tokenCount = (s32)tokens.size();
+
+				if (tokenCount >= 2 && strncasecmp(tokens[0].c_str(), "PALETTE", strlen("PALETTE")) == 0)
+				{
+					palette = tokens[1];
+				}
+				else if (tokenCount >= 2 && strncasecmp(tokens[0].c_str(), "TEXTURES", strlen("TEXTURES")) == 0)
+				{
+					const s32 count = strtol(tokens[1].c_str(), &endPtr, 10);
+					if (count > 0)
+					{
+						textureList.reserve(count);
+					}
+				}
+				else if (tokenCount >= 2 && strncasecmp(tokens[0].c_str(), "TEXTURE:", strlen("TEXTURE:")) == 0)
+				{
+					textureList.push_back(tokens[1]);
+				}
+				else if (tokenCount >= 2 && strncasecmp(tokens[0].c_str(), "NUMSECTORS", strlen("NUMSECTORS")) == 0)
+				{
+					break;
+				}
+
+				line = parser.readLine(bufferPos, true);
+			}
+
+			if (!textureList.empty())
+			{
+				const size_t textureCount = textureList.size();
+				const std::string* list = textureList.data();
+				for (size_t t = 0; t < textureCount; t++)
+				{
+					Asset* asset = AssetBrowser::findAsset(list[t].c_str(), TYPE_TEXTURE);
+					if (asset && asset->assetSource != ASRC_VANILLA)
+					{
+						addAssetToList(asset, assetList);
+					}
+				}
+			}
+
+			// Load the colormap.
+			if (!palette.empty())
+			{
+				char colorMap[TFE_MAX_PATH];
+				FileUtil::replaceExtension(palette.c_str(), "CMP", colorMap);
+				Asset* asset = AssetBrowser::findAsset(colorMap, TYPE_COLORMAP);
+				if (asset && asset->assetSource != ASRC_VANILLA)
+				{
+					addAssetToList(asset, assetList);
+				}
+			}
+
+			// Try to load the palette as well.
+			char paletteFile[TFE_MAX_PATH];
+			FileUtil::replaceExtension(name, "PAL", paletteFile);
+			Asset* asset = AssetBrowser::findAsset(paletteFile, TYPE_PALETTE);
+			if (asset && asset->assetSource != ASRC_VANILLA)
+			{
+				addAssetToList(asset, assetList);
+			}
+		}
+		if (file.open(objFile, FileStream::MODE_READ))
+		{
+			readSourceFileAndSetupParser(file, parser);
+
+			std::vector<std::string> podList;
+			std::vector<std::string> spriteList;
+			std::vector<std::string> frameList;
+			size_t bufferPos = 0;
+			const char* line = parser.readLine(bufferPos, true);
+			TokenList tokens;
+			char* endPtr = nullptr;
+			while (line)
+			{
+				parser.tokenizeLine(line, tokens);
+				const s32 tokenCount = (s32)tokens.size();
+
+				if (tokenCount >= 2 && strncasecmp(tokens[0].c_str(), "PODS", strlen("PODS")) == 0)
+				{
+					const s32 count = strtol(tokens[1].c_str(), &endPtr, 10);
+					if (count > 0)
+					{
+						podList.reserve(count);
+					}
+				}
+				else if (tokenCount >= 2 && strncasecmp(tokens[0].c_str(), "POD:", strlen("POD:")) == 0)
+				{
+					podList.push_back(tokens[1]);
+				}
+				else if (tokenCount >= 2 && strncasecmp(tokens[0].c_str(), "SPRS", strlen("SPRS")) == 0)
+				{
+					const s32 count = strtol(tokens[1].c_str(), &endPtr, 10);
+					if (count > 0)
+					{
+						spriteList.reserve(count);
+					}
+				}
+				else if (tokenCount >= 2 && strncasecmp(tokens[0].c_str(), "SPR:", strlen("SPR:")) == 0)
+				{
+					spriteList.push_back(tokens[1]);
+				}
+				else if (tokenCount >= 2 && strncasecmp(tokens[0].c_str(), "FMES", strlen("FMES")) == 0)
+				{
+					const s32 count = strtol(tokens[1].c_str(), &endPtr, 10);
+					if (count > 0)
+					{
+						frameList.reserve(count);
+					}
+				}
+				else if (tokenCount >= 2 && strncasecmp(tokens[0].c_str(), "FME:", strlen("FME:")) == 0)
+				{
+					frameList.push_back(tokens[1]);
+				}
+				else if (tokenCount >= 2 && strncasecmp(tokens[0].c_str(), "OBJECTS", strlen("OBJECTS")) == 0)
+				{
+					break;
+				}
+
+				line = parser.readLine(bufferPos, true);
+			}
+
+			if (!podList.empty())
+			{
+				const size_t count = podList.size();
+				const std::string* list = podList.data();
+				for (size_t t = 0; t < count; t++)
+				{
+					Asset* asset = AssetBrowser::findAsset(list[t].c_str(), TYPE_3DOBJ);
+					if (asset && asset->assetSource != ASRC_VANILLA)
+					{
+						addAssetToList(asset, assetList);
+					}
+				}
+			}
+			if (!spriteList.empty())
+			{
+				const size_t count = spriteList.size();
+				const std::string* list = spriteList.data();
+				for (size_t t = 0; t < count; t++)
+				{
+					Asset* asset = AssetBrowser::findAsset(list[t].c_str(), TYPE_SPRITE);
+					if (asset && asset->assetSource != ASRC_VANILLA)
+					{
+						addAssetToList(asset, assetList);
+					}
+				}
+			}
+			if (!frameList.empty())
+			{
+				const size_t count = frameList.size();
+				const std::string* list = frameList.data();
+				for (size_t t = 0; t < count; t++)
+				{
+					Asset* asset = AssetBrowser::findAsset(list[t].c_str(), TYPE_FRAME);
+					if (asset && asset->assetSource != ASRC_VANILLA)
+					{
+						addAssetToList(asset, assetList);
+					}
+				}
+			}
+		}
+	}
+
 	bool exportLevel(const char* path, const char* name, const StartPoint* start)
 	{
 		char levFile[TFE_MAX_PATH];
@@ -2067,6 +2300,30 @@ namespace LevelEditor
 		fileList.push_back(levFile);
 		fileList.push_back(infFile);
 		fileList.push_back(objFile);
+
+		// Now go through all of the assets and gather a unique list (only including non-vanilla).
+		std::vector<Asset*> assetList;
+		WorkBuffer buffer;
+		gatherAssetList(name, levFile, objFile, assetList);
+		if (!assetList.empty())
+		{
+			char tmpDir[TFE_MAX_PATH];
+			getTempDirectory(tmpDir);
+
+			const size_t count = assetList.size();
+			Asset** list = assetList.data();
+			for (size_t i = 0; i < count; i++)
+			{
+				Asset* asset = list[i];
+				// Export
+				char exportPath[TFE_MAX_PATH];
+				sprintf(exportPath, "%s/%s", tmpDir, asset->name.c_str());
+				if (AssetBrowser::readWriteFile(exportPath, asset->name.c_str(), asset->archive, buffer))
+				{
+					fileList.push_back(exportPath);
+				}
+			}
+		}
 
 		char gobPath[TFE_MAX_PATH];
 		const char* testPath = TFE_Paths::getPath(PATH_SOURCE_DATA);
