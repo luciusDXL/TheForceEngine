@@ -928,7 +928,26 @@ namespace LevelEditor
 			addToAdjoinFixupList(candidateList[i]->id, adjoinSectorsToFix);
 			addSectorToList(candidateList[i]->id, changedSectors);
 		}
+
+		// We need to add the next layer of adjoins to be fixed.
+		const s32 nextLayerCount = (s32)adjoinSectorsToFix.size();
+		for (s32 n = 0; n < nextLayerCount; n++)
+		{
+			EditorSector* sector = &s_level.sectors[adjoinSectorsToFix[n]];
+			const s32 wallCount = (s32)sector->walls.size();
+			EditorWall* wall = sector->walls.data();
+
+			for (s32 w = 0; w < wallCount; w++, wall++)
+			{
+				if (wall->adjoinId >= 0 && wall->mirrorId >= 0)
+				{
+					addToAdjoinFixupList(wall->adjoinId, adjoinSectorsToFix);
+				}
+			}
+		}
+
 		fixupSectorAdjoins(adjoinSectorsToFix);
+		edit_cleanSectorList(adjoinSectorsToFix, false);
 
 		// Now if the sector was adjoined to anything else, copy its attributes.
 		const s32 newWallCount = (s32)newSectorLvl->walls.size();
@@ -1041,6 +1060,22 @@ namespace LevelEditor
 					}
 					wall->adjoinId = -1;
 					wall->mirrorId = -1;
+				}
+			}
+		}
+		// We need to add the next layer of adjoins to be fixed.
+		const s32 nextLayerCount = (s32)adjoinSectorsToFix.size();
+		for (s32 n = 0; n < nextLayerCount; n++)
+		{
+			EditorSector* sector = &s_level.sectors[adjoinSectorsToFix[n]];
+			const s32 wallCount = (s32)sector->walls.size();
+			EditorWall* wall = sector->walls.data();
+
+			for (s32 w = 0; w < wallCount; w++, wall++)
+			{
+				if (wall->adjoinId >= 0 && wall->mirrorId >= 0)
+				{
+					addToAdjoinFixupList(wall->adjoinId, adjoinSectorsToFix);
 				}
 			}
 		}
@@ -1226,8 +1261,9 @@ namespace LevelEditor
 			}
 		}
 
-		// Fix-up adjoins.
+		// Fix-up adjoins and clean sectors.
 		fixupSectorAdjoins(adjoinSectorsToFix);
+		edit_cleanSectorList(adjoinSectorsToFix, false);
 
 		// Delete any sectors - note this should only happen in the SUBTRACT mode unless degenerate sectors are found.
 		bool sectorsDeleted = !deleteId.empty();

@@ -779,7 +779,7 @@ namespace LevelEditor
 		return -1;
 	}
 
-	void edit_cleanSectorList(std::vector<s32>& selectedSectors)
+	void edit_cleanSectorList(std::vector<s32>& selectedSectors, bool addToHistory)
 	{
 		// Re-check to make sure we have at least one sector.
 		const s32 sectorCount = (s32)selectedSectors.size();
@@ -923,8 +923,10 @@ namespace LevelEditor
 			}
 			sectorToPolygon(sector);
 		}
-
-		cmd_sectorSnapshot(LName_CleanSectors, changedSet);
+		if (addToHistory)
+		{
+			cmd_sectorSnapshot(LName_CleanSectors, changedSet);
+		}
 	}
 
 	void edit_cleanSectors(bool onlySelected)
@@ -2434,7 +2436,7 @@ namespace LevelEditor
 						{
 							if (wall->adjoinId < 0) { continue; }
 							EditorSector* next = &s_level.sectors[wall->adjoinId];
-							if (next->searchKey != s_searchKey)
+							if (next && next->searchKey != s_searchKey)
 							{
 								next->searchKey = s_searchKey;
 								changedSectors.push_back(next->id);
