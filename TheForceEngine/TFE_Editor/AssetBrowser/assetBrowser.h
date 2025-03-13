@@ -34,5 +34,8 @@ namespace AssetBrowser
 	void getLevelTextures(TFE_Editor::AssetList& list, const char* levelName);
 	const TFE_Editor::AssetList& getAssetList(TFE_Editor::AssetType type);
 
+	void setAssetLevel(const char* name, u32 levelIndex);
+	bool isAssetInLevel(const char* name, u32 levelIndex);
+
 	bool readWriteFile(const char* outFilePath, const char* assetName, Archive* archive, TFE_Editor::WorkBuffer& buffer);
 }

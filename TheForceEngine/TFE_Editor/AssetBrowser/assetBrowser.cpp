@@ -87,6 +87,7 @@ namespace AssetBrowser
 	static bool s_assetsNeedProcess = true;
 	static std::vector<Palette> s_palettes;
 	static std::map<std::string, s32> s_assetPalette;
+	static std::map<std::string, u32> s_assetLevels;
 	static s32 s_defaultPal = 0;
 
 	static s32 s_hovered = -1;
@@ -122,6 +123,7 @@ namespace AssetBrowser
 		s_assetsNeedProcess = true;
 		s_palettes.clear();
 		s_assetPalette.clear();
+		s_assetLevels.clear();
 		s_defaultPal = 0;
 
 		s_viewInfo = ViewerInfo{};
@@ -1212,6 +1214,29 @@ namespace AssetBrowser
 		return s_defaultPal;
 	}
 		
+	void setAssetLevel(const char* name, u32 levelIndex)
+	{
+		std::map<std::string, u32>::iterator iAssetPal = s_assetLevels.find(name);
+		if (iAssetPal == s_assetLevels.end())
+		{
+			s_assetLevels[name] = (1u << levelIndex);
+		}
+		else
+		{
+			iAssetPal->second |= (1u << levelIndex);
+		}
+	}
+
+	bool isAssetInLevel(const char* name, u32 levelIndex)
+	{
+		std::map<std::string, u32>::iterator iAssetPal = s_assetLevels.find(name);
+		if (iAssetPal != s_assetLevels.end())
+		{
+			return (iAssetPal->second & (1 << levelIndex)) != 0u;
+		}
+		return false;
+	}
+		
 	void addToLevelAssets(std::vector<std::string>& assetList, const char* assetName)
 	{
 		const size_t count = assetList.size();
@@ -1329,6 +1354,7 @@ namespace AssetBrowser
 						if (sscanf(line, " TEXTURE: %s ", textureName) == 1)
 						{
 							setAssetPalette(textureName, paletteId);
+							setAssetLevel(textureName, f);
 							addToLevelAssets(levelAssets.textures, textureName);
 						}
 					}
@@ -1337,6 +1363,7 @@ namespace AssetBrowser
 					while (sscanf(line, " TEXTURE: %s ", textureName) == 1)
 					{
 						setAssetPalette(textureName, paletteId);
+						setAssetLevel(textureName, f);
 						addToLevelAssets(levelAssets.textures, textureName);
 						line = parser.readLine(bufferPos);
 						readNext = false;
