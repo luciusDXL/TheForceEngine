@@ -5,6 +5,7 @@
 #include "infoPanel.h"
 #include "sharedState.h"
 #include <TFE_Editor/editor.h>
+#include <TFE_Editor/editorLevel.h>
 #include <TFE_Editor/errorMessages.h>
 #include <TFE_Editor/AssetBrowser/assetBrowser.h>
 #include <TFE_Editor/EditorAsset/editorTexture.h>
@@ -64,6 +65,8 @@ namespace LevelEditor
 	static s32 s_focusOnRow = -1;
 	static s32 s_entityCategory = -1;
 	static TextureGpu* s_icon3d = nullptr;
+	static u32 s_textureSourceFlags = 0xffffffffu;
+	static u32 s_nextTextureSourceFlags = 0xffffffffu;
 
 	void browseTextures();
 	void browseEntities();
@@ -75,6 +78,7 @@ namespace LevelEditor
 	{
 		// Load as a PNG.
 		s_icon3d = loadGpuImage("UI_Images/Obj-3d-Icon.png");
+		s_textureSourceFlags = 0xffffffffu;
 	}
 
 	void browserFreeIcons()
@@ -116,7 +120,58 @@ namespace LevelEditor
 		}
 		browserEnd();
 	}
-	
+
+	bool textureSourcesUI()
+	{
+		pushFont(FONT_SMALL);
+		ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysAutoResize;
+		bool exit = false;
+		char filename[256];
+		char filepath[TFE_MAX_PATH];
+		if (ImGui::BeginPopupModal("Texture Sources", nullptr, window_flags))
+		{
+			// Slots.
+			const s32 levelCount = TFE_Editor::level_getDarkForcesSlotCount();
+			s32 rowCount = 3;
+			s32 yCount = (levelCount + 2) / rowCount;
+			s32 idx = 0;
+			for (s32 y = 0; y < yCount; y++)
+			{
+				for (s32 i = 0; i < rowCount && idx < levelCount; i++, idx++)
+				{
+					const char* name = TFE_Editor::level_getDarkForcesSlotName(idx);
+					ImGui::CheckboxFlags(name, &s_nextTextureSourceFlags, (1 << idx));
+
+					if (i < rowCount - 1 && idx < levelCount - 1)
+					{
+						ImGui::SameLine(128.0f * (i + 1));
+					}
+				}
+			}
+			ImGui::CheckboxFlags("Resources", &s_nextTextureSourceFlags, (1 << levelCount));
+
+			ImGui::Separator();
+			if (ImGui::Button("Select All"))
+			{
+				s_nextTextureSourceFlags = 0xffffffffu;
+			}
+			ImGui::SameLine();
+			if (ImGui::Button("Select None"))
+			{
+				s_nextTextureSourceFlags = 0x0u;
+			}
+
+			ImGui::Separator();
+			if (ImGui::Button("Exit"))
+			{
+				exit = true;
+			}
+			ImGui::EndPopup();
+		}
+		popFont();
+
+		return exit;
+	}
 	
 	// Returns true if it passes the filter.
 	bool browserFilter(const char* name)
@@ -153,13 +208,35 @@ namespace LevelEditor
 		Asset* asset = s_levelTextureList.data();
 		s_filteredList.clear();
 
+		u32 levCount = level_getDarkForcesSlotCount();
+		u32 extFlag = 1 << levCount;
+
 		for (s32 i = 0; i < count; i++, asset++)
 		{
 			EditorTexture* texture = (EditorTexture*)getAssetData(asset->handle);
 			if (!texture) { continue; }
 			if (!TFE_Math::isPow2(texture->width) || !TFE_Math::isPow2(texture->height)) { continue; }
 
-			if (browserFilter(asset->name.c_str()))
+			// Sources.
+			bool isValidSource = true;
+			if (s_textureSourceFlags != 0xffffffffu)
+			{
+				if (!(s_textureSourceFlags & extFlag) && asset->assetSource != ASRC_VANILLA) { isValidSource = false; }
+				if (asset->assetSource == ASRC_VANILLA)
+				{
+					bool anyLevel = false;
+					for (u32 i = 0; i < levCount && isValidSource; i++)
+					{
+						if ((s_textureSourceFlags & (1 << i)) && AssetBrowser::isAssetInLevel(asset->name.c_str(), i))
+						{
+							anyLevel = true;
+							break;
+						}
+					}
+					if (!anyLevel) { isValidSource = false; }
+				}
+			}
+			if (isValidSource && browserFilter(asset->name.c_str()))
 			{
 				s_filteredList.push_back(asset);
 			}
@@ -296,10 +373,16 @@ namespace LevelEditor
 		{
 			filterChanged = true;
 		}
-				
-		if (ImGui::Button("Edit List"))
+		if (s_nextTextureSourceFlags != s_textureSourceFlags && !isPopupOpen())
 		{
-			// TODO: Popup.
+			filterChanged = true;
+			s_textureSourceFlags = s_nextTextureSourceFlags;
+		}
+				
+		if (ImGui::Button("Texture Sources"))
+		{
+			s_nextTextureSourceFlags = s_textureSourceFlags;
+			openEditorPopup(POPUP_TEX_SOURCES);
 		}
 		setTooltip("Edit which textures are displayed based on groups and tags");
 
@@ -311,7 +394,7 @@ namespace LevelEditor
 		}
 		setTooltip("Sort method, changes the order that items are listed");
 		ImGui::SameLine();
-		ImGui::SetNextItemWidth(256.0f);
+		ImGui::SetNextItemWidth(196.0f);
 
 		if (ImGui::InputText("##BrowserFilter", s_filter, 24))
 		{
@@ -402,12 +485,12 @@ namespace LevelEditor
 	void updateEntityFilter()
 	{
 		s_filteredEntityList.clear();
-		const u32 flag = s_entityCategory < 0 ? 0xffffffff : 1u << u32(s_entityCategory);
+		const u32 flag = s_entityCategory < 0 ? 0xffffffffu : 1u << u32(s_entityCategory);
 		const s32 count = (s32)s_entityDefList.size();
 		Entity* entity = s_entityDefList.data();
 		for (s32 i = 0; i < count; i++, entity++)
 		{
-			if (flag == 0xffffffff || (entity->categories & flag))
+			if (flag == 0xffffffffu || (entity->categories & flag))
 			{
 				s_filteredEntityList.push_back({entity, i});
 			}

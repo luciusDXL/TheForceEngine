@@ -15,6 +15,7 @@
 #include <TFE_Editor/LevelEditor/lighting.h>
 #include <TFE_Editor/LevelEditor/findSectorUI.h>
 #include <TFE_Editor/LevelEditor/snapshotUI.h>
+#include <TFE_Editor/LevelEditor/browser.h>
 #include <TFE_Editor/EditorAsset/editorAsset.h>
 #include <TFE_Editor/EditorAsset/editor3dThumbnails.h>
 #include <TFE_Input/input.h>
@@ -32,9 +33,6 @@
 
 namespace TFE_Editor
 {
-	// Set to 1 to enable
-	#define ENABLE_LEVEL_EDITOR 1
-
 	enum EditorMode
 	{
 		EDIT_ASSET_BROWSER = 0,
@@ -323,6 +321,10 @@ namespace TFE_Editor
 			{
 				ImGui::OpenPopup("Snapshots");
 			} break;
+			case POPUP_TEX_SOURCES:
+			{
+				ImGui::OpenPopup("Texture Sources");
+			} break;
 			case POPUP_GROUP_NAME:
 			{
 				ImGui::OpenPopup("Choose Name");
@@ -444,6 +446,14 @@ namespace TFE_Editor
 			case POPUP_SNAPSHOTS:
 			{
 				if (LevelEditor::snapshotUI())
+				{
+					ImGui::CloseCurrentPopup();
+					s_editorPopup = POPUP_NONE;
+				}
+			} break;
+			case POPUP_TEX_SOURCES:
+			{
+				if (LevelEditor::textureSourcesUI())
 				{
 					ImGui::CloseCurrentPopup();
 					s_editorPopup = POPUP_NONE;
@@ -1042,13 +1052,9 @@ namespace TFE_Editor
 		// TODO: Other asset editors.
 		if (asset->type == TYPE_LEVEL)
 		{
-		#if ENABLE_LEVEL_EDITOR
 			s_editorMode = EDIT_ASSET;
 			s_editorAssetType = asset->type;
 			LevelEditor::init(asset);
-		#else
-			showMessageBox("Warning", "The level editor is disabled and\nwill be enabled in the upcoming\nlevel editor release.");
-		#endif
 		}
 		else
 		{
