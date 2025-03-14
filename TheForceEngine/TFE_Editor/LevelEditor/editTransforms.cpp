@@ -784,6 +784,13 @@ namespace LevelEditor
 		Vec3f worldPos = moveAlongRail({ 0.0f, 1.0f, 0.0f });
 		f32 y = worldPos.y;
 
+		const Vec3f cameraDelta = { worldPos.x - s_camera.pos.x, worldPos.y - s_camera.pos.y, worldPos.z - s_camera.pos.z };
+		if (cameraDelta.x*s_rayDir.x + cameraDelta.z*s_rayDir.z < 0.0f)
+		{
+			// Do not allow the object to be moved behind the camera.
+			return;
+		}
+
 		snapToGridY(&y);
 		f32 heightDelta;
 		if (part == HP_FLOOR)
@@ -977,6 +984,16 @@ namespace LevelEditor
 		{
 			worldPos = moveAlongRail({ 0.0f, 1.0f, 0.0f });
 			snapToGridY(&worldPos.y);
+		}
+
+		if (s_view == EDIT_VIEW_3D)
+		{
+			const Vec3f cameraDelta = { worldPos.x - s_camera.pos.x, worldPos.y - s_camera.pos.y, worldPos.z - s_camera.pos.z };
+			if (cameraDelta.x*s_rayDir.x + cameraDelta.z*s_rayDir.z < 0.0f || (s_cursor3d.x == 0.0f && s_cursor3d.z == 0.0f))
+			{
+				// Do not allow the object to be moved behind the camera.
+				return;
+			}
 		}
 
 		// Current movement.
