@@ -3480,7 +3480,7 @@ namespace LevelEditor
 
 	EditorTexture* getTexture(s32 index)
 	{
-		if (index < 0) { return nullptr; }
+		if (index < 0 || index >= (s32)s_level.textures.size()) { return nullptr; }
 		return (EditorTexture*)getAssetData(s_level.textures[index].handle);
 	}
 

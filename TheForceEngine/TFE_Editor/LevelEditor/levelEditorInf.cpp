@@ -4191,7 +4191,16 @@ namespace LevelEditor
 					ImGui::SameLine(0.0f, 4.0f);
 					if (editor_button("-"))
 					{
-						// TODO
+						const s32 classCount = s_infEditor.item ? (s32)s_infEditor.item->classData.size() : 0;
+						if (s_infEditor.curClassIndex >= 0 && s_infEditor.curClassIndex < classCount)
+						{
+							for (s32 c = s_infEditor.curClassIndex; c < classCount - 1; c++)
+							{
+								s_infEditor.item->classData[c] = s_infEditor.item->classData[c + 1];
+							}
+							s_infEditor.item->classData.pop_back();
+							s_infEditor.curClassIndex = -1;
+						}
 					}
 					ImGui::SameLine(0.0f, 16.0f);
 					ImGui::SetNextItemWidth(128.0f);
