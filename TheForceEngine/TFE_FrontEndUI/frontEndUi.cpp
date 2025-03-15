@@ -2238,6 +2238,7 @@ namespace TFE_FrontEndUI
 				inputMapping("Look Up",           IADF_LOOK_UP);
 				inputMapping("Look Down",         IADF_LOOK_DN);
 				inputMapping("Center View",       IADF_CENTER_VIEW);
+				inputMapping("Rotate 180",        IADF_ROTATE_PLAYER);
 				inputMapping("Run",               IADF_RUN);
 				inputMapping("Walk Slowly",       IADF_SLOW);
 				inputMapping("Crouch",            IADF_CROUCH);
