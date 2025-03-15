@@ -151,8 +151,13 @@ namespace LevelEditor
 
 	Vec2f guideline_getOffsetKnot(const Guideline* guideline, const Vec4f* knot, f32 offset)
 	{
+		Vec2f zeroOffset = { 0 };
+		if (!knot) { return zeroOffset; }
+
 		const f32 t = knot->y;
 		const s32 edgeIndex = s32(knot->w + 0.5f);
+		if (edgeIndex < 0 || edgeIndex >= (s32)guideline->edge.size()) { return zeroOffset; }
+
 		const GuidelineEdge* edge = &guideline->edge[edgeIndex];
 		const Vec2f* vtx = guideline->vtx.data();
 

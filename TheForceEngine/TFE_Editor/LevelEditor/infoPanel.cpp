@@ -1615,6 +1615,19 @@ namespace LevelEditor
 		}
 	}
 
+	void fixupSectorName(char* sectorName)
+	{
+		const size_t len = strlen(sectorName);
+		for (size_t i = 0; i < len; i++)
+		{
+			// Spaces are not allowed in sector names, allowing them is a big source of issues.
+			if (sectorName[i] == ' ')
+			{
+				sectorName[i] = '-';
+			}
+		}
+	}
+
 	void infoPanelSector()
 	{
 		bool insertTexture = s_selectedTexture >= 0 && TFE_Input::keyPressed(KEY_T);
@@ -1652,6 +1665,7 @@ namespace LevelEditor
 			if (otherNameId >= 0) { ImGui::PushStyleColor(ImGuiCol_Text, { 1.0f, 0.2f, 0.2f, 1.0f }); }
 			if (ImGui::InputText(inputName, sectorName, getSectorNameLimit()))
 			{
+				fixupSectorName(sectorName);
 				sector->name = sectorName;
 				changed = true;
 			}
