@@ -296,6 +296,12 @@ namespace TFE_DarkForces
 		s_projGravityAccel = accel;
 	}
 
+	// TFE
+	s32 getProjectileGravityAccel()
+	{
+		return s_projGravityAccel;
+	}
+
 	Logic* createProjectile(ProjectileType type, RSector* sector, fixed16_16 x, fixed16_16 y, fixed16_16 z, SecObject* obj)
 	{
 		ProjectileLogic* projLogic = (ProjectileLogic*)allocator_newItem(s_projectiles);

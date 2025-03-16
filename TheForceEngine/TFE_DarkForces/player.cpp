@@ -3304,6 +3304,26 @@ namespace TFE_DarkForces
 		SERIALIZE(ObjState_OneHitCheats, s_oneHitKillEnabled, JFALSE);
 		SERIALIZE(ObjState_OneHitCheats, s_instaDeathEnabled, JFALSE);
 		SERIALIZE(ObjState_CrouchToggle, s_playerCrouch, 0);
+		SERIALIZE(ObjState_ConstOverrides, s_lowFloorDamage, PLAYER_DMG_FLOOR_LOW);
+		SERIALIZE(ObjState_ConstOverrides, s_highFloorDamage, PLAYER_DMG_FLOOR_HIGH);
+		SERIALIZE(ObjState_ConstOverrides, s_gasDamage, PLAYER_DMG_FLOOR_LOW);
+		SERIALIZE(ObjState_ConstOverrides, s_wallDamage, PLAYER_DMG_WALL);
+		SERIALIZE(ObjState_ConstOverrides, s_headlampConsumption, HEADLAMP_ENERGY_CONSUMPTION);
+		SERIALIZE(ObjState_ConstOverrides, s_gogglesConsumption, GOGGLES_ENERGY_CONSUMPTION);
+		SERIALIZE(ObjState_ConstOverrides, s_gasmaskConsumption, GASMASK_ENERGY_CONSUMPTION);
+		SERIALIZE(ObjState_ConstOverrides, s_shieldSuperchargeDuration, SUPERCHARGE_DURATION);
+		SERIALIZE(ObjState_ConstOverrides, s_weaponSuperchargeDuration, SUPERCHARGE_DURATION);
+		
+		s32 projectileGravity = 0;
+		if (serialization_getMode() == SMODE_WRITE)
+		{
+			projectileGravity = getProjectileGravityAccel();
+		}
+		SERIALIZE(ObjState_ConstOverrides, projectileGravity, FIXED(120));
+		if (serialization_getMode() == SMODE_READ)
+		{
+			setProjectileGravityAccel(projectileGravity);
+		}
 
 		s32 invSavedSize = 0;
 		if (serialization_getMode() == SMODE_WRITE && s_playerInvSaved)

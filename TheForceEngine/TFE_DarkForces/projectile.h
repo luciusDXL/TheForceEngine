@@ -126,6 +126,7 @@ namespace TFE_DarkForces
 	// TFE: Set projectile gravity
 	void resetProjectileGravityAccel();
 	void setProjectileGravityAccel(s32 accel);
+	s32 getProjectileGravityAccel();
 
 	// TFE: Serialization functionality.
 	s32 proj_getLogicIndex(ProjectileLogic* logic);
