@@ -30,6 +30,8 @@ namespace LevelEditor
 	static TransformMode s_transformMode = TRANS_MOVE;
 	static WallMoveMode s_wallMoveMode = WMM_NORMAL;
 	static RotationGizmoPart s_rotHover = RGP_NONE;
+	static EditorSector* s_moveSector = nullptr;
+	static HitPart s_movePart;
 	static Vec3f s_transformPos = { 0 };
 	static Vec3f s_center = { 0 };
 	static Vec3f s_rotation = { 0 };
@@ -718,7 +720,7 @@ namespace LevelEditor
 			EditorSector* sector = nullptr;
 			s32 featureIndex = -1;
 			HitPart part = HP_NONE;
-			selection_getSurface(0, sector, featureIndex, &part);
+			selection_getSurface(selection_hasHovered() ? SEL_INDEX_HOVERED : 0, sector, featureIndex, &part);
 
 			if (hasSelection && TFE_Input::mouseDown(MBUTTON_LEFT) && !TFE_Input::keyModDown(KEYMOD_CTRL) && !TFE_Input::keyModDown(KEYMOD_SHIFT))
 			{
@@ -762,26 +764,28 @@ namespace LevelEditor
 			}
 		}
 	}
-
+				
 	void moveFlat()
 	{
-		EditorSector* sector = nullptr;
-		s32 wallIndex = -1;
-		HitPart part = HP_NONE;
-		selection_getSurface(0, sector, wallIndex, &part);
-		if (!sector) { return; }
-
+		EditorSector* sector = s_moveSector;
 		if (!s_moveStarted)
 		{
+			s32 wallIndex = -1;
+			s_movePart = HP_NONE;
+			sector = nullptr;
+			selection_getSurface(selection_hasHovered() ? SEL_INDEX_HOVERED : 0, sector, wallIndex, &s_movePart);
+			if (!sector) { return; }
+
 			s_moveStarted = true;
-			s_moveStartPos.x = part == HP_FLOOR ? sector->floorHeight : sector->ceilHeight;
+			s_moveStartPos.x = s_movePart == HP_FLOOR ? sector->floorHeight : sector->ceilHeight;
 			s_moveStartPos.z = 0.0f;
 			s_prevPos = s_curVtxPos;
+			s_moveSector = sector;
 
 			edit_setTransformAnchor({ s_curVtxPos.x, s_moveStartPos.x, s_curVtxPos.z });
 		}
 
-		Vec3f worldPos = moveAlongRail({ 0.0f, 1.0f, 0.0f });
+		Vec3f worldPos = moveAlongRail({ 0.0f, 1.0f, 0.0f }, false);
 		f32 y = worldPos.y;
 
 		const Vec3f cameraDelta = { worldPos.x - s_camera.pos.x, worldPos.y - s_camera.pos.y, worldPos.z - s_camera.pos.z };
@@ -793,7 +797,7 @@ namespace LevelEditor
 
 		snapToGridY(&y);
 		f32 heightDelta;
-		if (part == HP_FLOOR)
+		if (s_movePart == HP_FLOOR)
 		{
 			heightDelta = y - sector->floorHeight;
 		}
@@ -801,9 +805,9 @@ namespace LevelEditor
 		{
 			heightDelta = y - sector->ceilHeight;
 		}
+
 		Vec3f pos = edit_getTransformPos();
 		edit_setTransformPos({ pos.x, pos.y + heightDelta, pos.z });
-
 		edit_moveSelectedFlats(heightDelta);
 	}
 
