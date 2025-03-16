@@ -280,6 +280,8 @@ namespace LevelEditor
 	void level_createSectorAttribSnapshot(TFE_Editor::SnapshotBuffer* buffer, std::vector<IndexPair>& sectorIds);
 	void level_createFeatureTextureSnapshot(TFE_Editor::SnapshotBuffer* buffer, s32 count, const FeatureId* feature);
 	void level_createEntiyListSnapshot(TFE_Editor::SnapshotBuffer* buffer, s32 sectorId);
+	void level_createGuidelineSnapshot(TFE_Editor::SnapshotBuffer* buffer);
+	void level_createSingleGuidelineSnapshot(TFE_Editor::SnapshotBuffer* buffer, s32 index);
 
 	void level_createLevelSectorSnapshotSameAssets(std::vector<EditorSector>& sectors);
 	void level_getLevelSnapshotDelta(std::vector<s32>& modifiedSectors, const std::vector<EditorSector>& sectorSnapshot);
@@ -290,6 +292,8 @@ namespace LevelEditor
 	void level_unpackSectorAttribSnapshot(u32 size, void* data);
 	void level_unpackFeatureTextureSnapshot(u32 size, void* data);
 	void level_unpackEntiyListSnapshot(u32 size, void* data);
+	void level_unpackGuidelineSnapshot(u32 size, void* data);
+	void level_unpackSingleGuidelineSnapshot(u32 size, void* data);
 	
 	// Spatial Queries
 	s32  findSectorByName(const char* name, s32 excludeId = -1);

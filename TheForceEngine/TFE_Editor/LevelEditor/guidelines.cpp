@@ -4,6 +4,7 @@
 #include "infoPanel.h"
 #include "sharedState.h"
 #include "editGeometry.h"
+#include "levelEditorHistory.h"
 #include "userPreferences.h"
 #include <TFE_Editor/LevelEditor/Rendering/grid.h>
 #include <TFE_Editor/editor.h>
@@ -60,6 +61,7 @@ namespace LevelEditor
 		}
 
 		guideline_clearSelection();
+		cmd_guidelineSnapshot(LName_Guideline_Delete);
 	}
 		
 	void guideline_computeBounds(Guideline* guideline)

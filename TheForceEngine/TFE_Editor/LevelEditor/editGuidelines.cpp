@@ -338,6 +338,8 @@ namespace LevelEditor
 		guideline_computeKnots(&guideline);
 		guideline.id = (s32)s_level.guidelines.size();
 		s_level.guidelines.push_back(guideline);
+
+		cmd_guidelineSnapshot(LName_Guideline_Create);
 	}
 
 	void createGuidelinesFromShape()
@@ -356,5 +358,7 @@ namespace LevelEditor
 		guideline_computeKnots(&guideline);
 		guideline.id = (s32)s_level.guidelines.size();
 		s_level.guidelines.push_back(guideline);
+
+		cmd_guidelineSnapshot(LName_Guideline_Create);
 	}
 }

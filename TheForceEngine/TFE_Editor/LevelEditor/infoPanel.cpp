@@ -2618,6 +2618,7 @@ namespace LevelEditor
 	}
 
 	static s32 s_selectedOffset = -1;
+	static s32 s_prevGuidelineId = -1;
 	
 	void infoPanelGuideline()
 	{
@@ -2625,11 +2626,14 @@ namespace LevelEditor
 		if (id < 0) { return; }
 
 		Guideline* guideline = &s_level.guidelines[id];
+		bool guidelineEdited = false;
 
 		sectionHeader("Settings");
 		const s32 checkWidth = (s32)ImGui::CalcTextSize("Limit Height Shown").x + 8;
+		const u32 prevFlags = guideline->flags;
 		optionCheckbox("Limit Height Shown", &guideline->flags, GLFLAG_LIMIT_HEIGHT, checkWidth);
 		optionCheckbox("Disable Snapping", &guideline->flags, GLFLAG_DISABLE_SNAPPING, checkWidth);
+		if (guideline->flags != prevFlags) { guidelineEdited = true; }
 		ImGui::Separator();
 
 		if ((guideline->flags & GLFLAG_LIMIT_HEIGHT) || !(guideline->flags & GLFLAG_DISABLE_SNAPPING))
@@ -2638,12 +2642,12 @@ namespace LevelEditor
 			s32 colWidth = s32(ImGui::CalcTextSize("Min Height Shown").x + 8.0f);
 			if (guideline->flags & GLFLAG_LIMIT_HEIGHT)
 			{
-				optionFloatInput("Min Height Shown", &guideline->minHeight, 0.1f, colWidth, 128, "%.2f");
-				optionFloatInput("Max Height Shown", &guideline->maxHeight, 0.1f, colWidth, 128, "%.2f");
+				guidelineEdited |= optionFloatInput("Min Height Shown", &guideline->minHeight, 0.1f, colWidth, 128, "%.2f");
+				guidelineEdited |= optionFloatInput("Max Height Shown", &guideline->maxHeight, 0.1f, colWidth, 128, "%.2f");
 			}
 			if (!(guideline->flags & GLFLAG_DISABLE_SNAPPING))
 			{
-				optionFloatInput("Max Snap Range", &guideline->maxSnapRange, 0.1f, colWidth, 128, "%.2f");
+				guidelineEdited |= optionFloatInput("Max Snap Range", &guideline->maxSnapRange, 0.1f, colWidth, 128, "%.2f");
 			}
 			ImGui::Separator();
 		}
@@ -2657,7 +2661,7 @@ namespace LevelEditor
 		{
 			char label[256];
 			sprintf(label, "Offset %d", i + 1);
-			optionFloatInput(label, &offsetValue[i], 0.1f, 0, 128, "%.2f");
+			guidelineEdited |= optionFloatInput(label, &offsetValue[i], 0.1f, 0, 128, "%.2f");
 			guideline->maxOffset = std::max(guideline->maxOffset, fabsf(offsetValue[i]));
 
 			ImGui::SameLine();
@@ -2673,6 +2677,7 @@ namespace LevelEditor
 		if (ImGui::Button("Add"))
 		{
 			guideline->offsets.push_back({ 0.0f });
+			guidelineEdited = true;
 		}
 		if (count >= 4) { enableNextItem(); }
 
@@ -2683,7 +2688,14 @@ namespace LevelEditor
 				guideline->offsets[i] = guideline->offsets[i + 1];
 			}
 			guideline->offsets.pop_back();
+			guidelineEdited = true;
 		}
+
+		if (guidelineEdited)
+		{
+			cmd_guidelineSingleSnapshot(LName_Guideline_Edit, id, s_prevGuidelineId != id);
+		}
+		s_prevGuidelineId = id;
 	}
 
 	void infoPanelNote()

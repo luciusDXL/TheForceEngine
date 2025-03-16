@@ -1063,9 +1063,12 @@ namespace LevelEditor
 			file.read(&guidelineCount);
 			s_level.guidelines.resize(guidelineCount);
 
-			Guideline* guideline = s_level.guidelines.data();
-			for (s32 i = 0; i < guidelineCount; i++, guideline++)
+			Guideline* guidelines = s_level.guidelines.data();
+			s32 validGuidelineCount = 0;
+			for (s32 i = 0; i < guidelineCount; i++)
 			{
+				Guideline* guideline = &guidelines[validGuidelineCount];
+
 				// Counts
 				s32 vtxCount = 0;
 				s32 knotCount = 0;
@@ -1095,6 +1098,16 @@ namespace LevelEditor
 				file.read(&guideline->maxHeight);
 				file.read(&guideline->minHeight);
 				file.read(&guideline->maxSnapRange);
+
+				// Deal with broken guidelines from earlier versions...
+				if (vtxCount > 0 && edgeCount > 0)
+				{
+					validGuidelineCount++;
+				}
+			}
+			if (validGuidelineCount != guidelineCount)
+			{
+				s_level.guidelines.resize(validGuidelineCount);
 			}
 		}
 
@@ -4569,7 +4582,7 @@ namespace LevelEditor
 			writeData(&attrib, (u32)sizeof(SectorAttrib));
 		}
 	}
-						
+							
 	void level_createSectorSnapshot(SnapshotBuffer* buffer, std::vector<s32>& sectorIds)
 	{
 		s_uniqueEntities.clear();
@@ -5017,6 +5030,57 @@ namespace LevelEditor
 		// For now until the way snapshot memory is handled is refactored, to avoid duplicate code that will be removed later.
 		// TODO: Handle edit state properly here too.
 		edit_clearSelections();
+	}
+		
+	void level_createGuidelineSnapshot(SnapshotBuffer* buffer)
+	{
+		setSnapshotWriteBuffer(buffer);
+		const u32 guidelineCount = s_level.guidelines.size();
+		const Guideline* guideline = s_level.guidelines.data();
+
+		writeU32(guidelineCount);
+		for (u32 g = 0; g < guidelineCount; g++, guideline++)
+		{
+			writeGuidelineToSnapshot(guideline);
+		}
+	}
+
+	void level_unpackGuidelineSnapshot(u32 size, void* data)
+	{
+		setSnapshotReadBuffer((u8*)data, size);
+
+		const u32 guidelineCount = readU32();
+		s_level.guidelines.resize(guidelineCount);
+
+		Guideline* guideline = s_level.guidelines.data();
+		for (u32 g = 0; g < guidelineCount; g++, guideline++)
+		{
+			readGuidelineFromSnapshot(guideline);
+		}
+	}
+		
+	void level_createSingleGuidelineSnapshot(SnapshotBuffer* buffer, s32 index)
+	{
+		assert(index >= 0 && index < (s32)s_level.guidelines.size());
+		setSnapshotWriteBuffer(buffer);
+
+		Guideline* guideline = &s_level.guidelines[index];
+		writeS32(index);
+		writeGuidelineToSnapshot(guideline);
+	}
+
+	void level_unpackSingleGuidelineSnapshot(u32 size, void* data)
+	{
+		setSnapshotReadBuffer((u8*)data, size);
+
+		const s32 index = readS32();
+		if (index < 0 || index >= (s32)s_level.guidelines.size())
+		{
+			return;
+		}
+
+		Guideline* guideline = &s_level.guidelines[index];
+		readGuidelineFromSnapshot(guideline);
 	}
 
 	// Find a sector based on DF rules.
