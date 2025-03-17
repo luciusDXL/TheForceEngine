@@ -177,6 +177,7 @@ namespace LevelEditor
 	void drawNoteIcon3d(LevelNote* note, s32 id, u32 objColor, const Vec3f& cameraRgt, const Vec3f& cameraUp);
 	void drawTransformGizmo();
 	bool computeSignCorners(const EditorSector* sector, const EditorWall* wall, Vec3f* corners);
+	void computeFlatUv(const Vec2f* pos, const Vec2f* offset, Vec2f* uv);
 
 	void viewport_init()
 	{
@@ -2544,8 +2545,8 @@ namespace LevelEditor
 			{
 				for (u32 v = 0; v < vtxCount; v++)
 				{
-					uvFlr[v]  = { (triVtx[v].x - floorOffset.x) / 8.0f, (triVtx[v].z - floorOffset.z) / 8.0f };
-					uvCeil[v] = { (triVtx[v].x - ceilOffset.x) / 8.0f, (triVtx[v].z - ceilOffset.z) / 8.0f };
+					computeFlatUv(&triVtx[v], &floorOffset, &uvFlr[v]);
+					computeFlatUv(&triVtx[v], &ceilOffset, &uvCeil[v]);
 				}
 			}
 
@@ -2879,6 +2880,12 @@ namespace LevelEditor
 		}
 	}
 
+	void computeFlatUv(const Vec2f* pos, const Vec2f* offset, Vec2f* uv)
+	{
+		uv->x =  (offset->x - pos->x) / 8.0f;
+		uv->z = -(offset->z - pos->z) / 8.0f;
+	}
+
 	void renderTexturedSectorPolygon2d(const Polygon* poly, u32 color, EditorTexture* tex, const Vec2f& offset)
 	{
 		const size_t idxCount = poly->triIdx.size();
@@ -2895,7 +2902,7 @@ namespace LevelEditor
 			for (size_t v = 0; v < vtxCount; v++, vtxData++)
 			{
 				transVtx[v] = { vtxData->x * s_viewportTrans2d.x + s_viewportTrans2d.y, vtxData->z * s_viewportTrans2d.z + s_viewportTrans2d.w };
-				uv[v] = { (vtxData->x - offset.x) / 8.0f, (vtxData->z - offset.z) / 8.0f };
+				computeFlatUv(vtxData, &offset, &uv[v]);
 			}
 			triDraw2D_addTextured((u32)idxCount, (u32)vtxCount, transVtx, uv, idxData, color, tex ? tex->frames[0] : nullptr);
 		}
