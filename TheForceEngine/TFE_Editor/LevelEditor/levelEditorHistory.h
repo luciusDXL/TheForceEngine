@@ -36,6 +36,7 @@ namespace LevelEditor
 		LName_RotateEntity,
 		LName_ChangeWallAttrib,
 		LName_ChangeSectorAttrib,
+		LName_SetSectorGroup,
 		LName_CleanSectors,
 		LName_JoinSectors,
 		LName_Connect,

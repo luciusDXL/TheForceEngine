@@ -90,6 +90,7 @@ namespace LevelEditor
 		history_registerName(LName_RotateEntity, "Rotate Object(s)");
 		history_registerName(LName_ChangeWallAttrib, "Change Wall Attributes");
 		history_registerName(LName_ChangeSectorAttrib, "Change Sector Attributes");
+		history_registerName(LName_SetSectorGroup, "Add Sector(s) to Group");
 		history_registerName(LName_CleanSectors, "Clean Sectors");
 		history_registerName(LName_JoinSectors, "Join Sectors");
 		history_registerName(LName_Connect, "Connect Sectors");

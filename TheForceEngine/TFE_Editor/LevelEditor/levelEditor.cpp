@@ -2560,12 +2560,16 @@ namespace LevelEditor
 						if (leftClick && mouseInsideItem())
 						{
 							u32 groupId = groups_getCurrentId();
+							std::vector<IndexPair> changedList;
 							if (count == 0)
 							{
 								sector->groupId = groupId;
+								changedList.push_back({ sector->id, -1 });
 							}
 							else
 							{
+								s_searchKey++;
+								
 								for (u32 s = 0; s < count; s++)
 								{
 									EditorSector* curSector = nullptr;
@@ -2575,9 +2579,17 @@ namespace LevelEditor
 									if (curFeatureIndex != -1 && curPart != HP_FLOOR && curPart != HP_CEIL) { continue; }
 
 									curSector->groupId = groupId;
+									if (curSector->searchKey != s_searchKey)
+									{
+										curSector->searchKey = s_searchKey;
+										changedList.push_back({ curSector->id, -1 });
+									}
 								}
 							}
-
+							if (!changedList.empty())
+							{
+								cmd_sectorAttributeSnapshot(LName_SetSectorGroup, changedList, true);
+							}
 							closeMenu = true;
 						}
 						ImGui::Separator();
