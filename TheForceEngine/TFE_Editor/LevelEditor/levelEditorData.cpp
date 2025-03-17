@@ -891,6 +891,41 @@ namespace LevelEditor
 		return note.id;
 	}
 
+	void updateBoundsWithSector(EditorSector* sector)
+	{
+		s_level.bounds[0].x = min(s_level.bounds[0].x, sector->bounds[0].x);
+		s_level.bounds[0].y = min(s_level.bounds[0].y, sector->bounds[0].y);
+		s_level.bounds[0].z = min(s_level.bounds[0].z, sector->bounds[0].z);
+
+		s_level.bounds[1].x = max(s_level.bounds[1].x, sector->bounds[1].x);
+		s_level.bounds[1].y = max(s_level.bounds[1].y, sector->bounds[1].y);
+		s_level.bounds[1].z = max(s_level.bounds[1].z, sector->bounds[1].z);
+
+		s_level.layerRange[0] = min(s_level.layerRange[0], sector->layer);
+		s_level.layerRange[1] = max(s_level.layerRange[1], sector->layer);
+	}
+
+	void updateLevelBounds(EditorSector* sector)
+	{
+		if (!sector)
+		{
+			s_level.bounds[0] = { FLT_MAX,  FLT_MAX,  FLT_MAX };
+			s_level.bounds[1] = { -FLT_MAX, -FLT_MAX, -FLT_MAX };
+			s_level.layerRange[0] = INT_MAX;
+			s_level.layerRange[1] = -INT_MAX;
+			const size_t count = s_level.sectors.size();
+			sector = s_level.sectors.data();
+			for (size_t i = 0; i < count; i++, sector++)
+			{
+				updateBoundsWithSector(sector);
+			}
+		}
+		else
+		{
+			updateBoundsWithSector(sector);
+		}
+	}
+
 	bool loadFromTFLWithPath(const char* filePath)
 	{
 		// Then try to open it based on the path, if it fails load the LEV file.
@@ -1112,7 +1147,7 @@ namespace LevelEditor
 		}
 
 		file.close();
-
+		
 		return true;
 	}
 
@@ -1141,6 +1176,9 @@ namespace LevelEditor
 			LE_ERROR("Cannot open '%s' for writing.", filePath);
 			return false;
 		}
+
+		// Update the level bounds.
+		updateLevelBounds();
 
 		// Version.
 		const u32 version = LEF_CurVersion;

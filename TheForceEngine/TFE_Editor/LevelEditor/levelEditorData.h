@@ -257,6 +257,7 @@ namespace LevelEditor
 	bool saveLevelToPath(const char* filePath, bool cleanLevel = true);
 	bool loadFromTFL(const char* name);
 	bool loadFromTFLWithPath(const char* filePath);
+	void updateLevelBounds(EditorSector* sector = nullptr);
 
 	bool exportLevel(const char* path, const char* name, const StartPoint* start);
 	bool exportSelectionToText(std::string& buffer);
