@@ -1416,16 +1416,35 @@ namespace LevelEditor
 			s_idList.clear();
 
 			// Handle vertices connected to other sectors.
-			u32 vertexCount = (u32)selection_getCount(SEL_VERTEX);
-			EditorSector* sector = nullptr;
-			s32 featureIndex = -1;
-			for (u32 v = 0; v < vertexCount; v++)
+			if (s_editMode != LEDIT_ENTITY)
 			{
-				selection_getVertex(v, sector, featureIndex);
-				if (sector->searchKey != s_searchKey)
+				u32 vertexCount = (u32)selection_getCount(SEL_VERTEX);
+				EditorSector* sector = nullptr;
+				s32 featureIndex = -1;
+				for (u32 v = 0; v < vertexCount; v++)
 				{
-					sector->searchKey = s_searchKey;
-					s_idList.push_back(sector->id);
+					selection_getVertex(v, sector, featureIndex);
+					if (sector->searchKey != s_searchKey)
+					{
+						sector->searchKey = s_searchKey;
+						s_idList.push_back(sector->id);
+					}
+				}
+			}
+			else // LEDIT_ENTITY
+			{
+				EditorSector* sector = nullptr;
+				s32 featureIndex = -1;
+
+				u32 entityCount = (u32)selection_getCount(SEL_ENTITY);
+				for (u32 v = 0; v < entityCount; v++)
+				{
+					selection_getEntity(v, sector, featureIndex);
+					if (sector->searchKey != s_searchKey)
+					{
+						sector->searchKey = s_searchKey;
+						s_idList.push_back(sector->id);
+					}
 				}
 			}
 
@@ -1441,6 +1460,10 @@ namespace LevelEditor
 			else if (s_editMode == LEDIT_VERTEX)
 			{
 				name = LName_RotateVertex;
+			}
+			else if (s_editMode == LEDIT_ENTITY)
+			{
+				name = LName_RotateEntity;
 			}
 			cmd_sectorSnapshot(name, s_idList);
 			edit_resetGizmo();

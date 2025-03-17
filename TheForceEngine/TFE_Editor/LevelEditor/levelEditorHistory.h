@@ -33,6 +33,7 @@ namespace LevelEditor
 		LName_RotateSector,
 		LName_RotateWall,
 		LName_RotateVertex,
+		LName_RotateEntity,
 		LName_ChangeWallAttrib,
 		LName_ChangeSectorAttrib,
 		LName_CleanSectors,

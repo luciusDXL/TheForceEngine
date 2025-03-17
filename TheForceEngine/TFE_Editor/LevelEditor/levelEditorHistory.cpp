@@ -87,6 +87,7 @@ namespace LevelEditor
 		history_registerName(LName_RotateSector, "Rotate Sector(s)");
 		history_registerName(LName_RotateWall, "Rotate Wall(s)");
 		history_registerName(LName_RotateVertex, "Rotate Vertices(s)");
+		history_registerName(LName_RotateEntity, "Rotate Object(s)");
 		history_registerName(LName_ChangeWallAttrib, "Change Wall Attributes");
 		history_registerName(LName_ChangeSectorAttrib, "Change Sector Attributes");
 		history_registerName(LName_CleanSectors, "Clean Sectors");
