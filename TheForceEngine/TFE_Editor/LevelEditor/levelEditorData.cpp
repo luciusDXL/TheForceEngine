@@ -9,6 +9,7 @@
 #include "shell.h"
 #include "levelEditorInf.h"
 #include "sharedState.h"
+#include "guidelines.h"
 #include <TFE_Editor/snapshotReaderWriter.h>
 #include <TFE_Editor/history.h>
 #include <TFE_Editor/errorMessages.h>
@@ -1113,7 +1114,7 @@ namespace LevelEditor
 				file.read(&knotCount);
 				file.read(&edgeCount);
 				file.read(&offsetCount);
-
+								
 				guideline->id = i;
 				guideline->vtx.resize(vtxCount);
 				guideline->knots.resize(knotCount);
@@ -1134,11 +1135,19 @@ namespace LevelEditor
 				file.read(&guideline->minHeight);
 				file.read(&guideline->maxSnapRange);
 
+				guideline->subDivLen = 0.0f;
+				if (version >= LEF_GuidelineV2)
+				{
+					file.read(&guideline->subDivLen);
+				}
+
 				// Deal with broken guidelines from earlier versions...
 				if (vtxCount > 0 && edgeCount > 0)
 				{
 					validGuidelineCount++;
 				}
+				// Compute the subdivion data.
+				guideline_computeSubdivision(guideline);
 			}
 			if (validGuidelineCount != guidelineCount)
 			{
@@ -1307,6 +1316,7 @@ namespace LevelEditor
 			file.write(&guideline->maxHeight);
 			file.write(&guideline->minHeight);
 			file.write(&guideline->maxSnapRange);
+			file.write(&guideline->subDivLen);
 		}
 
 		file.close();

@@ -3082,8 +3082,8 @@ namespace LevelEditor
 		const Vec2f p1 = { c.x + t0 * bc.x, c.z + t0 * bc.z };
 		return { p0.x + t * (p1.x - p0.x), p0.z + t * (p1.z - p0.z) };
 	}
-
-	f32 getQuadraticBezierArcLength(const Vec2f& a, const Vec2f& b, const Vec2f& c, f32 t, s32 maxIterationCount)
+	   
+	f32 getQuadraticBezierArcLength(const Vec2f& a, const Vec2f& b, const Vec2f& c, f32 t, s32 maxIterationCount, Vec2f* table)
 	{
 		// Approximate the total length to the current position.
 		// The stepCount controls the accuracy, higher values = more accurate,
@@ -3101,10 +3101,20 @@ namespace LevelEditor
 			evaluateQuadraticBezier(a, b, c, s, &p1);
 			len += TFE_Math::distance(&p0, &p1);
 			p0 = p1;
+			if (table)
+			{
+				table[i].x = s;
+				table[i].z = len;
+			}
 		}
 		// Take the remainder to get to the current position on the curve.
 		evaluateQuadraticBezier(a, b, c, t, &p1);
 		len += TFE_Math::distance(&p0, &p1);
+		if (table)
+		{
+			table[stepCount - 1].x = t;
+			table[stepCount - 1].z = len;
+		}
 
 		return len;
 	}

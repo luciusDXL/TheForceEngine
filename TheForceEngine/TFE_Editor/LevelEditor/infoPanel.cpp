@@ -2691,6 +2691,16 @@ namespace LevelEditor
 			guidelineEdited = true;
 		}
 
+		ImGui::Separator();
+		sectionHeader("Subdivision");
+		ImGui::TextColored(ImVec4(0.5f, 1.0f, 0.75f, 0.5f), "Subdivide into equal length segments,\ndefault (0) = no subdivision.");
+		s32 colWidth = s32(ImGui::CalcTextSize("Segment Length").x + 8.0f);
+		if (optionFloatInput("Segment Length", &guideline->subDivLen, 0.1f, colWidth, 128, "%.2f"))
+		{
+			guidelineEdited = true;
+			guideline_computeSubdivision(guideline);
+		}
+		
 		if (guidelineEdited)
 		{
 			cmd_guidelineSingleSnapshot(LName_Guideline_Edit, id, s_prevGuidelineId != id);

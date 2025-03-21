@@ -1105,6 +1105,41 @@ namespace LevelEditor
 				const Vec3f pos = { knot->x, s_grid.height, knot->z };
 				drawPositionKnot3d(2.0f, pos, 0xffffa500);
 			}
+
+			const size_t subdivCount = guideLine->subdiv.size();
+			const size_t offsetCount = guideLine->offsets.size();
+			const GuidelineSubDiv* subdiv = guideLine->subdiv.data();
+			const f32* offsets = guideLine->offsets.data();
+			const Vec2f* vtx = guideLine->vtx.data();
+			for (size_t k = 0; k < subdivCount; k++, subdiv++)
+			{
+				const s32 e = subdiv->edge;
+				const f32 u = subdiv->param;
+				const GuidelineEdge* edge = &guideLine->edge[e];
+				const Vec2f v0 = vtx[edge->idx[0]];
+				const Vec2f v1 = vtx[edge->idx[1]];
+				Vec2f pos, nrm;
+				if (edge->idx[2] >= 0) // Curve
+				{
+					const Vec2f c = vtx[edge->idx[2]];
+					evaluateQuadraticBezier(v0, v1, c, u, &pos, &nrm);
+				}
+				else // Line
+				{
+					pos.x = v0.x*(1.0f - u) + v1.x*u;
+					pos.z = v0.z*(1.0f - u) + v1.z*u;
+					nrm.x = -(v1.z - v0.z);
+					nrm.z = v1.x - v0.x;
+					nrm = TFE_Math::normalize(&nrm);
+				}
+
+				drawPositionKnot3d(1.5f, { pos.x, s_grid.height, pos.z }, 0x8000a5ff);
+				for (size_t o = 0; o < offsetCount; o++)
+				{
+					const Vec2f offsetPos = { pos.x + nrm.x * offsets[o], pos.z + nrm.z * offsets[o] };
+					drawPositionKnot3d(1.5f, { offsetPos.x, s_grid.height, offsetPos.z }, 0x8000a5ff);
+				}
+			}
 		}
 	}
 
@@ -3554,6 +3589,41 @@ namespace LevelEditor
 			{
 				const Vec2f pos = { knot->x, knot->z };
 				drawPositionKnot2d(2.0f, pos, 0xffffa500);
+			}
+
+			const size_t subdivCount = guideLine->subdiv.size();
+			const size_t offsetCount = guideLine->offsets.size();
+			const GuidelineSubDiv* subdiv = guideLine->subdiv.data();
+			const f32* offsets = guideLine->offsets.data();
+			const Vec2f* vtx = guideLine->vtx.data();
+			for (size_t k = 0; k < subdivCount; k++, subdiv++)
+			{
+				const s32 e = subdiv->edge;
+				const f32 u = subdiv->param;
+				const GuidelineEdge* edge = &guideLine->edge[e];
+				const Vec2f v0 = vtx[edge->idx[0]];
+				const Vec2f v1 = vtx[edge->idx[1]];
+				Vec2f pos, nrm;
+				if (edge->idx[2] >= 0) // Curve
+				{
+					const Vec2f c = vtx[edge->idx[2]];
+					evaluateQuadraticBezier(v0, v1, c, u, &pos, &nrm);
+				}
+				else // Line
+				{
+					pos.x = v0.x*(1.0f - u) + v1.x*u;
+					pos.z = v0.z*(1.0f - u) + v1.z*u;
+					nrm.x = -(v1.z - v0.z);
+					nrm.z =   v1.x - v0.x;
+					nrm = TFE_Math::normalize(&nrm);
+				}
+
+				drawPositionKnot2d(1.5f, pos, 0x8000a5ff);
+				for (size_t o = 0; o < offsetCount; o++)
+				{
+					const Vec2f offsetPos = { pos.x + nrm.x * offsets[o], pos.z + nrm.z * offsets[o] };
+					drawPositionKnot2d(1.5f, offsetPos, 0x8000a5ff);
+				}
 			}
 		}
 	}

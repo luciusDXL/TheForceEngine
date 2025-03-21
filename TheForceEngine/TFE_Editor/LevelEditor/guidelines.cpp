@@ -104,6 +104,90 @@ namespace LevelEditor
 		}
 	}
 
+	f32 getClosestParamOnCurve(s32 subCount, const Vec2f* table, f32 dist)
+	{
+		f32 a = 0.0f;
+		f32 p0 = 0.0f;
+		for (s32 i = 0; i < subCount; i++)
+		{
+			f32 b = table[i].z;
+			f32 p1 = table[i].x;
+			if (dist >= a && dist < b)
+			{
+				const f32 t = (dist - a) / (b - a);
+				const f32 param = p0 * (1.0f - t) + p1 * t;
+				assert(param >= 0.0f && param <= 1.0f);
+				return param;
+			}
+			a = b;
+			p0 = p1;
+		}
+		return 1.0f;
+	}
+
+	enum
+	{
+		CurveLenApproxIter = 64
+	};
+
+	void guideline_computeSubdivision(Guideline* guideline)
+	{
+		guideline->subdiv.clear();
+		const f32 subdivLen = guideline->subDivLen;
+		if (subdivLen < FLT_EPSILON) { return; }
+
+		const s32 edgeCount = (s32)guideline->edge.size();
+		const GuidelineEdge* edge = guideline->edge.data();
+		const Vec2f* vtx = guideline->vtx.data();
+		const s32 idx0 = edge->idx[0];
+		f32 accumLen = 0.0f;
+		Vec2f table[CurveLenApproxIter];
+		for (s32 e = 0; e < edgeCount; e++, edge++)
+		{
+			f32 param = 0.0f;
+			const Vec2f v0 = vtx[edge->idx[0]], v1 = vtx[edge->idx[1]];
+			if (edge->idx[2] >= 0)
+			{
+				const f32 len = getQuadraticBezierArcLength(v0, v1, vtx[edge->idx[2]], 1.0f, CurveLenApproxIter, table);
+
+				f32 leftOverLen = accumLen;
+				param = subdivLen - leftOverLen;
+				accumLen = accumLen + len - (subdivLen - leftOverLen);
+
+				while (accumLen >= subdivLen && param < len)
+				{
+					guideline->subdiv.push_back({ e, getClosestParamOnCurve(64, table, param) });
+					param += std::min(subdivLen, accumLen);
+					accumLen -= subdivLen;
+				}
+				if (param <= len)
+				{
+					guideline->subdiv.push_back({ e, getClosestParamOnCurve(64, table, param) });
+				}
+			}
+			else
+			{
+				const Vec2f dv = { v1.x - v0.x, v1.z - v0.z };
+				const f32 len = sqrtf(dv.x*dv.x + dv.z*dv.z);
+
+				f32 leftOverLen = accumLen;
+				param = (subdivLen - leftOverLen) / len;
+				accumLen = accumLen + len - (subdivLen - leftOverLen);
+
+				while (accumLen >= subdivLen && param < 1.0f)
+				{
+					guideline->subdiv.push_back({ e, param });
+					param += std::min(subdivLen, accumLen) / len;
+					accumLen -= subdivLen;
+				}
+				if (param <= 1.0f)
+				{
+					guideline->subdiv.push_back({ e, param });
+				}
+			}
+		}
+	}
+
 	f32 getClosestPointToCurve(Vec2f pos, Vec2f v0, Vec2f v1, Vec2f c, f32 offset, f32* t)
 	{
 		f32 sd = signedDistQuadraticBezier(v0, v1, c, pos, *t);
@@ -242,6 +326,65 @@ namespace LevelEditor
 					*edgeIndex = knotEdge;
 					*offsetIndex = o;
 					*t = knotT;
+					success = true;
+				}
+			}
+		}
+
+		// Finally snap to subdivisions.
+		const s32 subdivCount = (s32)guideline->subdiv.size();
+		const GuidelineSubDiv* subdiv = guideline->subdiv.data();
+		for (s32 k = 0; k < subdivCount; k++, subdiv++)
+		{
+			const s32 e = subdiv->edge;
+			const f32 kt = subdiv->param;
+			const f32* offsetList = guideline->offsets.data();
+
+			const GuidelineEdge* edge = &guideline->edge[e];
+			const Vec2f v0 = vtx[edge->idx[0]];
+			const Vec2f v1 = vtx[edge->idx[1]];
+			Vec2f subDivPos, nrm;
+			if (edge->idx[2] >= 0) // Curve
+			{
+				const Vec2f c = vtx[edge->idx[2]];
+				evaluateQuadraticBezier(v0, v1, c, kt, &subDivPos, &nrm);
+			}
+			else // Line
+			{
+				subDivPos.x = v0.x*(1.0f - kt) + v1.x*kt;
+				subDivPos.z = v0.z*(1.0f - kt) + v1.z*kt;
+				nrm.x = -(v1.z - v0.z);
+				nrm.z = v1.x - v0.x;
+				nrm = TFE_Math::normalize(&nrm);
+			}
+
+			Vec2f offset = { subDivPos.x - pos.x, subDivPos.z - pos.z };
+			f32 distSq = offset.x*offset.x + offset.z*offset.z;
+			if (distSq <= knotRadiusSq && distSq < minKnotDistSq)
+			{
+				minKnotDistSq = distSq;
+				closestPoint->x = subDivPos.x;
+				closestPoint->z = subDivPos.z;
+				*edgeIndex = e;
+				*offsetIndex = -1;
+				*t = kt;
+				success = true;
+			}
+
+			for (size_t o = 0; o < offsetCount; o++)
+			{
+				const Vec2f offsetPos = { subDivPos.x + nrm.x * offsetList[o], subDivPos.z + nrm.z * offsetList[o] };
+
+				Vec2f offset = { offsetPos.x - pos.x, offsetPos.z - pos.z };
+				f32 distSq = offset.x*offset.x + offset.z*offset.z;
+				if (distSq <= knotRadiusSq && distSq < minKnotDistSq)
+				{
+					minKnotDistSq = distSq;
+					closestPoint->x = offsetPos.x;
+					closestPoint->z = offsetPos.z;
+					*edgeIndex = e;
+					*offsetIndex = o;
+					*t = kt;
 					success = true;
 				}
 			}

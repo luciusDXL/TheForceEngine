@@ -32,7 +32,8 @@ namespace LevelEditor
 		LEF_LevelNotes =10,
 		LEF_Guidelines =11,
 		LEF_ScriptCall1=12,
-		LEF_CurVersion =12,
+		LEF_GuidelineV2=13,
+		LEF_CurVersion =13,
 	};
 
 	enum LevelEditMode
@@ -158,6 +159,12 @@ namespace LevelEditor
 	{
 		s32 idx[3] = { -1, -1, -1 };	// curve if idx[2] >= 0
 	};
+
+	struct GuidelineSubDiv
+	{
+		s32 edge;
+		f32 param;
+	};
 		
 	struct Guideline
 	{
@@ -171,11 +178,15 @@ namespace LevelEditor
 		Vec4f bounds = { 0 };
 		f32 maxOffset = 0.0f;
 
+		// Derived (don't serialize).
+		std::vector<GuidelineSubDiv> subdiv;
+
 		// Settings
 		u32 flags = GLFLAG_NONE;		// GuidelineFlags
 		f32 maxHeight = 0.0f;
 		f32 minHeight = 0.0f;
 		f32 maxSnapRange = 0.0f;		// Set based on the grid at creation time.
+		f32 subDivLen = 0.0f;			// Default = no subdivision.
 	};
 
 	typedef std::vector<EditorSector*> SectorList;

@@ -1,6 +1,7 @@
 #include "levelEditorData.h"
 #include "levelDataSnapshot.h"
 #include "sharedState.h"
+#include "guidelines.h"
 #include <TFE_Editor/snapshotReaderWriter.h>
 #include <TFE_Editor/history.h>
 #include <TFE_Editor/errorMessages.h>
@@ -195,6 +196,7 @@ namespace LevelEditor
 		writeF32(guideline->maxHeight);
 		writeF32(guideline->minHeight);
 		writeF32(guideline->maxSnapRange);
+		writeF32(guideline->subDivLen);
 
 		writeData(guideline->bounds.m, sizeof(Vec4f));
 		writeData(guideline->vtx.data(), sizeof(Vec2f) * vtxCount);
@@ -291,11 +293,14 @@ namespace LevelEditor
 		guideline->maxHeight = readF32();
 		guideline->minHeight = readF32();
 		guideline->maxSnapRange = readF32();
+		guideline->subDivLen = readF32();
 
 		readData(guideline->bounds.m, sizeof(Vec4f));
 		readData(guideline->vtx.data(), sizeof(Vec2f) * vtxCount);
 		readData(guideline->knots.data(), sizeof(Vec4f) * knotCount);
 		readData(guideline->edge.data(), sizeof(GuidelineEdge) * edgeCount);
 		readData(guideline->offsets.data(), sizeof(f32) * offsetCount);
+
+		guideline_computeSubdivision(guideline);
 	}
 }
