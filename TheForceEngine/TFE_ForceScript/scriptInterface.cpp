@@ -65,7 +65,9 @@ namespace TFE_ScriptInterface
 			case API_LEVEL_EDITOR:
 			{
 				registerSharedScriptAPI(api);
-				LevelEditor::registerScriptFunctions(api);
+				#if ENABLE_EDITOR == 1
+					LevelEditor::registerScriptFunctions(api);
+				#endif
 			} break;
 			case API_SYSTEM_UI:
 			{
