@@ -11,15 +11,17 @@ using namespace TFE_Jedi;
 
 namespace TFE_DarkForces
 {
-	f32 getFloorHeight(ScriptSector* sector) { return sector->m_id >= 0 ? fixed16ToFloat(s_levelState.sectors[sector->m_id].floorHeight) : 0; }
-	f32 getCeilHeight(ScriptSector* sector) { return sector->m_id >= 0 ? fixed16ToFloat(s_levelState.sectors[sector->m_id].ceilingHeight) : 0; }
-	f32 getSecondHeight(ScriptSector* sector) { return sector->m_id >= 0 ? fixed16ToFloat(s_levelState.sectors[sector->m_id].secHeight) : 0; }
+	f32 getFloorHeight(ScriptSector* sector) { return sector->m_id >= 0 ? -fixed16ToFloat(s_levelState.sectors[sector->m_id].floorHeight) : 0; }
+	f32 getCeilHeight(ScriptSector* sector) { return sector->m_id >= 0 ? -fixed16ToFloat(s_levelState.sectors[sector->m_id].ceilingHeight) : 0; }
+	f32 getSecondHeight(ScriptSector* sector) { return sector->m_id >= 0 ? -fixed16ToFloat(s_levelState.sectors[sector->m_id].secHeight) : 0; }
 	s32 getWallCount(ScriptSector* sector) { return sector->m_id >= 0 ? s_levelState.sectors[sector->m_id].wallCount : 0; }
 	f32 getAmbient(ScriptSector* sector) { return sector->m_id >= 0 ? fixed16ToFloat(s_levelState.sectors[sector->m_id].ambient) : 0; }
 
 	void setFloorHeight(f32 height, ScriptSector* sector)
 	{
 		if (sector->m_id < 0) { return; }
+		height = -height;
+
 		RSector* lvlSector = &s_levelState.sectors[sector->m_id];
 		const fixed16_16 offset = floatToFixed16(height) - lvlSector->floorHeight;
 		if (offset != 0)
@@ -32,12 +34,16 @@ namespace TFE_DarkForces
 	void setCeilHeight(f32 height, ScriptSector* sector)
 	{
 		if (sector->m_id < 0) { return; }
+		height = -height;
+
 		const fixed16_16 offset = floatToFixed16(height) - s_levelState.sectors[sector->m_id].ceilingHeight;
 		sector_adjustHeights(&s_levelState.sectors[sector->m_id], 0, offset, 0);
 	}
 	void setSecondHeight(f32 height, ScriptSector* sector)
 	{
 		if (sector->m_id < 0) { return; }
+		height = -height;
+
 		const fixed16_16 offset = floatToFixed16(height) - s_levelState.sectors[sector->m_id].secHeight;
 		sector_adjustHeights(&s_levelState.sectors[sector->m_id], 0, 0, offset);
 	}
