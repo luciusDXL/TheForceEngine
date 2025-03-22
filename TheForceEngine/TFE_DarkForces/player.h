@@ -160,6 +160,10 @@ namespace TFE_DarkForces
 	extern fixed16_16 s_batteryPowerMax;
 	extern s32 s_healthMax;
 
+	// TFE
+	extern s32 s_weaponSuperchargeDuration;
+	extern s32 s_shieldSuperchargeDuration;
+
 	void player_init();
 	void player_readInfo(u8* inv, s32* ammo);
 	void player_writeInfo(u8* inv, s32* ammo);

@@ -78,6 +78,7 @@ namespace TFE_DarkForces
 		HEADLAMP_ENERGY_CONSUMPTION = 0x111,    // fraction of energy consumed per second = ~0.004
 		GASMASK_ENERGY_CONSUMPTION  = 0x444,    // fraction of energy consumed per second = ~0.0167
 		GOGGLES_ENERGY_CONSUMPTION  = 0x444,    // fraction of energy consumed per second = ~0.0167
+		SUPERCHARGE_DURATION        = 6554,     // 45 seconds
 	};
 
 	static const s32 c_pitchLimits[] =
@@ -178,6 +179,15 @@ namespace TFE_DarkForces
 	static angle14_32 s_playerObjYaw;
 	static RSector* s_playerObjSector;
 	static RWall* s_playerSlideWall;
+
+	// TFE - constants which can be overridden
+	static s32 s_lowFloorDamage = PLAYER_DMG_FLOOR_LOW;
+	static s32 s_highFloorDamage = PLAYER_DMG_FLOOR_HIGH;
+	static s32 s_gasDamage = PLAYER_DMG_FLOOR_LOW;
+	static s32 s_wallDamage = PLAYER_DMG_WALL;
+	static s32 s_headlampConsumption = HEADLAMP_ENERGY_CONSUMPTION;
+	static s32 s_gogglesConsumption = GOGGLES_ENERGY_CONSUMPTION;
+	static s32 s_gasmaskConsumption = GASMASK_ENERGY_CONSUMPTION;
 	
 	///////////////////////////////////////////
 	// Shared State
@@ -260,7 +270,7 @@ namespace TFE_DarkForces
 	// Other
 	s32 s_playerCrouch = 0;
 
-	// Pointers to player ammo stores
+	// TFE - Pointers to player ammo stores
 	s32* s_playerAmmoEnergy;
 	s32* s_playerAmmoPower;
 	s32* s_playerAmmoPlasma;
@@ -272,7 +282,7 @@ namespace TFE_DarkForces
 	s32* s_playerHealth;
 	fixed16_16* s_playerBatteryPower;
 
-	// Maximum values for ammo, etc.
+	// TFE - Maximum values for ammo, etc.
 	s32 s_ammoEnergyMax;
 	s32 s_ammoPowerMax;
 	s32 s_ammoShellMax;
@@ -283,6 +293,10 @@ namespace TFE_DarkForces
 	s32 s_shieldsMax;
 	fixed16_16 s_batteryPowerMax;
 	s32 s_healthMax;
+
+	// TFE - constants which can be overridden
+	s32 s_weaponSuperchargeDuration;
+	s32 s_shieldSuperchargeDuration;
 			   
 	///////////////////////////////////////////
 	// Forward Declarations
@@ -498,8 +512,9 @@ namespace TFE_DarkForces
 
 	void player_handleLevelOverrides(ModSettingLevelOverride modLevelOverride)
 	{
-		// Handle Integer Overrides
+		// Handle Numeric Overrides
 		std::map<std::string, int> intMap = modLevelOverride.intOverrideMap;
+		std::map<std::string, float> floatMap = modLevelOverride.floatOverrideMap;
 
 		// Handle Ammo/Shields/Lives/Battery
 		if (intMap.find("energy") != intMap.end())
@@ -569,6 +584,59 @@ namespace TFE_DarkForces
 		if (intMap.find("fogLevel") != intMap.end())
 		{
 			s_levelAtten = pickup_addToValue(0, intMap["fogLevel"], 100);
+		}
+
+		// Constants
+		if (intMap.find("floorDamageLow") != intMap.end())
+		{
+			s_lowFloorDamage = FIXED(intMap["floorDamageLow"]);
+		}
+		if (intMap.find("floorDamageHigh") != intMap.end())
+		{
+			s_highFloorDamage = FIXED(intMap["floorDamageHigh"]);
+		}
+		if (intMap.find("gasDamage") != intMap.end())
+		{
+			s_gasDamage = FIXED(intMap["gasDamage"]);
+		}
+		if (intMap.find("wallDamage") != intMap.end())
+		{
+			s_wallDamage = FIXED(intMap["wallDamage"]);
+		}
+		if (intMap.find("gravity") != intMap.end())
+		{
+			s_gravityAccel = FIXED(intMap["gravity"]);
+		}
+		if (intMap.find("projectileGravity") != intMap.end())
+		{
+			setProjectileGravityAccel(FIXED(intMap["projectileGravity"]));
+		}
+
+		if (intMap.find("shieldSuperchargeDuration") != intMap.end())
+		{
+			s_shieldSuperchargeDuration = intMap["shieldSuperchargeDuration"] * TICKS_PER_SECOND;
+		}
+		if (intMap.find("weaponSuperchargeDuration") != intMap.end())
+		{
+			s_weaponSuperchargeDuration = intMap["weaponSuperchargeDuration"] * TICKS_PER_SECOND;
+		}
+
+		if (floatMap.find("headlampBatteryConsumption") != floatMap.end())
+		{
+			float* value = &floatMap["headlampBatteryConsumption"];
+			s_headlampConsumption = (s32) ((*value / 100.00) * FIXED(2));
+		}
+
+		if (floatMap.find("gogglesBatteryConsumption") != floatMap.end())
+		{
+			float* value = &floatMap["gogglesBatteryConsumption"];
+			s_gogglesConsumption = (s32)((*value / 100.00) * FIXED(2));
+		}
+
+		if (floatMap.find("maskBatteryConsumption") != floatMap.end())
+		{
+			float* value = &floatMap["maskBatteryConsumption"];
+			s_gasmaskConsumption = (s32)((*value / 100.00) * FIXED(2));
 		}
 
 		// Handle Boolean Overrides
@@ -777,6 +845,18 @@ namespace TFE_DarkForces
 		s_playerStopAccel     = PLAYER_STOP_ACCEL;
 		s_minEyeDistFromFloor = PLAYER_MIN_EYE_DIST_FLOOR;
 		s_gravityAccel        = PLAYER_GRAVITY_ACCEL;
+
+		// TFE - reset constants that may have been previously overridden
+		s_lowFloorDamage            = PLAYER_DMG_FLOOR_LOW;
+		s_highFloorDamage           = PLAYER_DMG_FLOOR_HIGH;
+		s_gasDamage                 = PLAYER_DMG_FLOOR_LOW;
+		s_wallDamage                = PLAYER_DMG_WALL;
+		s_headlampConsumption       = HEADLAMP_ENERGY_CONSUMPTION;
+		s_gogglesConsumption        = GOGGLES_ENERGY_CONSUMPTION;
+		s_gasmaskConsumption        = GASMASK_ENERGY_CONSUMPTION;
+		s_shieldSuperchargeDuration = SUPERCHARGE_DURATION;
+		s_weaponSuperchargeDuration = SUPERCHARGE_DURATION;
+		resetProjectileGravityAccel();
 
 		// Initialize values.
 		s_postLandVel = 0;
@@ -2467,17 +2547,17 @@ namespace TFE_DarkForces
 		// Handle damage floors.
 		if (dmgFlags == SEC_FLAGS1_LOW_DAMAGE && s_onFloor)
 		{
-			fixed16_16 dmg = mul16(PLAYER_DMG_FLOOR_LOW, s_deltaTime);
+			fixed16_16 dmg = mul16(s_lowFloorDamage, s_deltaTime);
 			player_applyDamage(dmg, 0, JTRUE);
 		}
 		else if (dmgFlags == SEC_FLAGS1_HIGH_DAMAGE && s_onFloor)
 		{
-			fixed16_16 dmg = mul16(PLAYER_DMG_FLOOR_HIGH, s_deltaTime);
+			fixed16_16 dmg = mul16(s_highFloorDamage, s_deltaTime);
 			player_applyDamage(dmg, 0, JTRUE);
 		}
 		else if (dmgFlags == lowAndHighFlag && !s_wearingGasmask && !s_playerDying)
 		{
-			fixed16_16 dmg = mul16(PLAYER_DMG_FLOOR_LOW, s_deltaTime);
+			fixed16_16 dmg = mul16(s_gasDamage, s_deltaTime);
 			player_applyDamage(dmg, 0, JFALSE);
 
 			if (!s_gasSectorTask)
@@ -2495,7 +2575,7 @@ namespace TFE_DarkForces
 		// Handle damage walls.
 		if (s_playerSlideWall && (s_playerSlideWall->flags1 & WF1_DAMAGE_WALL))
 		{
-			fixed16_16 dmg = mul16(PLAYER_DMG_WALL, s_deltaTime);
+			fixed16_16 dmg = mul16(s_wallDamage, s_deltaTime);
 			player_applyDamage(dmg, 0, JTRUE);
 		}
 
@@ -2729,17 +2809,17 @@ namespace TFE_DarkForces
 		{
 			if (s_headlampActive)
 			{
-				fixed16_16 powerDelta = mul16(HEADLAMP_ENERGY_CONSUMPTION, s_deltaTime);
+				fixed16_16 powerDelta = mul16(s_headlampConsumption, s_deltaTime);
 				s_batteryPower -= powerDelta;
 			}
 			if (s_wearingGasmask)
 			{
-				fixed16_16 powerDelta = mul16(GASMASK_ENERGY_CONSUMPTION, s_deltaTime);
+				fixed16_16 powerDelta = mul16(s_gasmaskConsumption, s_deltaTime);
 				s_batteryPower -= powerDelta;
 			}
 			if (s_nightVisionActive)
 			{
-				fixed16_16 powerDelta = mul16(GOGGLES_ENERGY_CONSUMPTION, s_deltaTime);
+				fixed16_16 powerDelta = mul16(s_gogglesConsumption, s_deltaTime);
 				s_batteryPower -= powerDelta;
 			}
 			if (s_batteryPower <= 0)
@@ -3226,6 +3306,26 @@ namespace TFE_DarkForces
 		SERIALIZE(ObjState_OneHitCheats, s_oneHitKillEnabled, JFALSE);
 		SERIALIZE(ObjState_OneHitCheats, s_instaDeathEnabled, JFALSE);
 		SERIALIZE(ObjState_CrouchToggle, s_playerCrouch, 0);
+		SERIALIZE(ObjState_ConstOverrides, s_lowFloorDamage, PLAYER_DMG_FLOOR_LOW);
+		SERIALIZE(ObjState_ConstOverrides, s_highFloorDamage, PLAYER_DMG_FLOOR_HIGH);
+		SERIALIZE(ObjState_ConstOverrides, s_gasDamage, PLAYER_DMG_FLOOR_LOW);
+		SERIALIZE(ObjState_ConstOverrides, s_wallDamage, PLAYER_DMG_WALL);
+		SERIALIZE(ObjState_ConstOverrides, s_headlampConsumption, HEADLAMP_ENERGY_CONSUMPTION);
+		SERIALIZE(ObjState_ConstOverrides, s_gogglesConsumption, GOGGLES_ENERGY_CONSUMPTION);
+		SERIALIZE(ObjState_ConstOverrides, s_gasmaskConsumption, GASMASK_ENERGY_CONSUMPTION);
+		SERIALIZE(ObjState_ConstOverrides, s_shieldSuperchargeDuration, SUPERCHARGE_DURATION);
+		SERIALIZE(ObjState_ConstOverrides, s_weaponSuperchargeDuration, SUPERCHARGE_DURATION);
+		
+		s32 projectileGravity = 0;
+		if (serialization_getMode() == SMODE_WRITE)
+		{
+			projectileGravity = getProjectileGravityAccel();
+		}
+		SERIALIZE(ObjState_ConstOverrides, projectileGravity, FIXED(120));
+		if (serialization_getMode() == SMODE_READ)
+		{
+			setProjectileGravityAccel(projectileGravity);
+		}
 
 		s32 invSavedSize = 0;
 		if (serialization_getMode() == SMODE_WRITE && s_playerInvSaved)

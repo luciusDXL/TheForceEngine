@@ -83,6 +83,8 @@ namespace TFE_DarkForces
 	static fixed16_16 s_projNextPosZ;
 	static JBool      s_hitWater;
 	static RWall*     s_hitWall;
+
+	static s32        s_projGravityAccel = PROJ_GRAVITY_ACCEL;		// TFE
 		
 	// Projectile specific collisions
 	static RSector*   s_colObjSector;
@@ -280,6 +282,24 @@ namespace TFE_DarkForces
 		{
 			projLogic->flags |= PROJFLAG_EXPLODE;
 		}
+	}
+
+	// TFE
+	void resetProjectileGravityAccel()
+	{
+		s_projGravityAccel = PROJ_GRAVITY_ACCEL;
+	}
+	
+	// TFE
+	void setProjectileGravityAccel(s32 accel)
+	{
+		s_projGravityAccel = accel;
+	}
+
+	// TFE
+	s32 getProjectileGravityAccel()
+	{
+		return s_projGravityAccel;
 	}
 
 	Logic* createProjectile(ProjectileType type, RSector* sector, fixed16_16 x, fixed16_16 y, fixed16_16 z, SecObject* obj)
@@ -638,7 +658,7 @@ namespace TFE_DarkForces
 		if (obj->posWS.y < floorHeight)
 		{
 			const fixed16_16 dt = s_deltaTime;
-			projLogic->vel.y  += mul16(PROJ_GRAVITY_ACCEL, dt);
+			projLogic->vel.y  += mul16(s_projGravityAccel, dt);
 			projLogic->delta.y = mul16(projLogic->vel.y, dt);
 			return proj_handleMovement(projLogic);
 		}
@@ -652,7 +672,7 @@ namespace TFE_DarkForces
 	{
 		const fixed16_16 dt = s_deltaTime;
 		// The projectile arcs due to gravity, accel = 120.0 units / s^2
-		projLogic->vel.y += mul16(PROJ_GRAVITY_ACCEL, dt);
+		projLogic->vel.y += mul16(s_projGravityAccel, dt);
 		// Get the frame delta from the velocity and delta time.
 		projLogic->delta.x = mul16(projLogic->vel.x, dt);
 		projLogic->delta.y = mul16(projLogic->vel.y, dt);
@@ -1322,7 +1342,7 @@ namespace TFE_DarkForces
 		SecObject* obj = proj->logic.obj;
 		fixed16_16 dist = distApprox(obj->posWS.x, obj->posWS.z, target.x, target.z);
 		fixed16_16 distOverSpd = speed ? div16(dist, speed) : dist;
-		fixed16_16 gravityHalfDistOverSpd = mul16(FIXED(120), distOverSpd >> 1);
+		fixed16_16 gravityHalfDistOverSpd = mul16(s_projGravityAccel, distOverSpd >> 1);
 
 		fixed16_16 dy = obj->posWS.y - target.y;
 		angle14_32 vertAngle = vec2ToAngle(dy, dist);

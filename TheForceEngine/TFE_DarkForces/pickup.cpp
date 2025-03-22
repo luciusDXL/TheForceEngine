@@ -777,7 +777,7 @@ namespace TFE_DarkForces
 			s32 i;
 		};
 		task_begin_ctx;
-		task_waitWhileIdNotZero(6554);	// ~45 seconds.
+		task_waitWhileIdNotZero(s_shieldSuperchargeDuration);
 
 		for (taskCtx->i = 4; taskCtx->i >= 0; taskCtx->i--)
 		{
@@ -808,7 +808,7 @@ namespace TFE_DarkForces
 
 		// This causes the task to be suspended for 45 seconds - which is the time the supercharge is active
 		// without the running out warning.
-		task_waitWhileIdNotZero(6554);	// ~45 seconds.
+		task_waitWhileIdNotZero(s_weaponSuperchargeDuration);
 
 		for (taskCtx->i = 4; taskCtx->i >= 0; taskCtx->i--)
 		{

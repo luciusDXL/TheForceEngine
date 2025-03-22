@@ -63,7 +63,8 @@ enum ObjStateVersion : u32
 	ObjState_OneHitCheats = 4,
 	ObjState_CrouchToggle = 5,
 	ObjState_CustomLogics = 6,
-	ObjState_CurVersion = ObjState_CustomLogics,
+	ObjState_ConstOverrides = 7,
+	ObjState_CurVersion = ObjState_ConstOverrides,
 };
 
 #define SPRITE_SCALE_FIXED FIXED(10)
