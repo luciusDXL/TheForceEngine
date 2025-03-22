@@ -62,6 +62,12 @@ namespace TFE_DarkForces
 				{
 					switch (typeId)
 					{
+						case 1:
+						{
+							bool local = *(bool*)(data);
+							value = local ? "true" : "false";
+							break;
+						}
 						case 2:
 						{
 							char local = *(char*)(data);
@@ -202,6 +208,12 @@ namespace TFE_DarkForces
 			{
 				switch (typeId)
 				{
+					case 1:
+					{
+						bool local = *(bool*)(ref);
+						value = local ? "true" : "false";
+						break;
+					}
 					case 2:
 					{
 						char local = *(char*)(ref);

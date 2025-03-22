@@ -51,4 +51,6 @@ namespace LevelEditor
 	void scrollToSector(EditorSector* sector);
 
 	void infoPanel_clearSelection();
+
+	void infoPanelOpenGroup(s32 groupId);
 }

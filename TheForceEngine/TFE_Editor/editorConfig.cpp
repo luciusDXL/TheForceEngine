@@ -1,5 +1,6 @@
 #include "editorConfig.h"
 #include "editor.h"
+#include <TFE_Editor/LevelEditor/hotkeys.h>
 #include <TFE_RenderBackend/renderBackend.h>
 #include <TFE_System/system.h>
 #include <TFE_System/parser.h>
@@ -16,7 +17,7 @@ namespace TFE_Editor
 	static bool s_configDefaultsSet = false;
 	EditorConfig s_editorConfig = {};
 
-	void parseValue(const char* key, const char* value);
+	void parseValue(const char* key, const std::string* values, s32 valueCount);
 	
 	bool configSetupRequired()
 	{
@@ -55,6 +56,8 @@ namespace TFE_Editor
 	{
 		char editorPath[TFE_MAX_PATH];
 		TFE_Paths::appendPath(PATH_USER_DOCUMENTS, "editor.ini", editorPath);
+		// Set to defaults before trying to load.
+		LevelEditor::setDefaultKeyboardShortcuts();
 
 		FileStream configFile;
 		if (!configFile.open(editorPath, Stream::MODE_READ))
@@ -75,7 +78,7 @@ namespace TFE_Editor
 
 		s_editorConfig = EditorConfig{};
 		clearRecents();
-
+		
 		size_t bufferPos = 0;
 		while (bufferPos < len)
 		{
@@ -84,12 +87,10 @@ namespace TFE_Editor
 
 			TokenList tokens;
 			parser.tokenizeLine(line, tokens);
-			if (tokens.size() < 1) { continue; }
+			const s32 tokenCount = (s32)tokens.size();
 
-			if (tokens.size() == 2)
-			{
-				parseValue(tokens[0].c_str(), tokens[1].c_str());
-			}
+			if (tokenCount < 2) { continue; }
+			parseValue(tokens[0].c_str(), &tokens[1], tokenCount - 1);
 		}
 		s_configLoaded = true;
 		return true;
@@ -132,6 +133,9 @@ namespace TFE_Editor
 				TFE_IniParser::writeKeyValue_String(configFile, key, (*recentProjects)[i].path.c_str());
 			}
 		}
+
+		// Keybindings
+		LevelEditor::writeLevelEditorShortcuts(configFile);
 
 		configFile.close();
 		s_configLoaded = true;
@@ -257,55 +261,61 @@ namespace TFE_Editor
 	//////////////////////////////////////////
 	// Internal
 	//////////////////////////////////////////
-	void parseValue(const char* key, const char* value)
+	void parseValue(const char* key, const std::string* values, s32 valueCount)
 	{
+		const char* value1 = values[0].c_str();
+
 		if (strcasecmp(key, "EditorPath") == 0)
 		{
-			strcpy(s_editorConfig.editorPath, value);
+			strcpy(s_editorConfig.editorPath, value1);
 		}
 		else if (strcasecmp(key, "ExportPath") == 0)
 		{
-			strcpy(s_editorConfig.exportPath, value);
+			strcpy(s_editorConfig.exportPath, value1);
 		}
 		else if (strcasecmp(key, "FontScale") == 0)
 		{
-			s_editorConfig.fontScale = TFE_IniParser::parseInt(value);
+			s_editorConfig.fontScale = TFE_IniParser::parseInt(value1);
 		}
 		else if (strcasecmp(key, "ThumbnailSize") == 0)
 		{
-			s_editorConfig.thumbnailSize = TFE_IniParser::parseInt(value);
+			s_editorConfig.thumbnailSize = TFE_IniParser::parseInt(value1);
 		}
 		else if (strcasecmp(key, "Interface_Flags") == 0)
 		{
-			s_editorConfig.interfaceFlags = TFE_IniParser::parseInt(value);
+			s_editorConfig.interfaceFlags = TFE_IniParser::parseInt(value1);
 		}
 		else if (strcasecmp(key, "Curve_SegmentSize") == 0)
 		{
-			s_editorConfig.curve_segmentSize = TFE_IniParser::parseFloat(value);
+			s_editorConfig.curve_segmentSize = TFE_IniParser::parseFloat(value1);
 		}
 		else if (strcasecmp(key, "DarkForcesPort") == 0)
 		{
-			strcpy(s_editorConfig.darkForcesPort, value);
+			strcpy(s_editorConfig.darkForcesPort, value1);
 		}
 		else if (strcasecmp(key, "OutlawsPort") == 0)
 		{
-			strcpy(s_editorConfig.outlawsPort, value);
+			strcpy(s_editorConfig.outlawsPort, value1);
 		}
 		else if (strcasecmp(key, "DarkForcesAddCmdLine") == 0)
 		{
-			strcpy(s_editorConfig.darkForcesAddCmdLine, value);
+			strcpy(s_editorConfig.darkForcesAddCmdLine, value1);
 		}
 		else if (strcasecmp(key, "OutlawsAddCmdLine") == 0)
 		{
-			strcpy(s_editorConfig.outlawsAddCmdLine, value);
+			strcpy(s_editorConfig.outlawsAddCmdLine, value1);
 		}
 		else if (strcasecmp(key, "LevelEditorFlags") == 0)
 		{
-			s_editorConfig.levelEditorFlags = TFE_IniParser::parseInt(value);
+			s_editorConfig.levelEditorFlags = TFE_IniParser::parseInt(value1);
 		}
 		else if (strncasecmp(key, "Recent", strlen("Recent")) == 0)
 		{
-			addToRecents(value);
+			addToRecents(value1);
+		}
+		else if (strncasecmp(key, "LEV_", 4) == 0)
+		{
+			LevelEditor::parseLevelEditorShortcut(key, values, valueCount);
 		}
 	}
 }

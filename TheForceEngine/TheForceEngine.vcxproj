@@ -465,6 +465,7 @@ echo ^)";
     <ClInclude Include="TFE_Editor\EditorAsset\editorSound.h" />
     <ClInclude Include="TFE_Editor\EditorAsset\editorSprite.h" />
     <ClInclude Include="TFE_Editor\EditorAsset\editorTexture.h" />
+    <ClInclude Include="TFE_Editor\editorComboBox.h" />
     <ClInclude Include="TFE_Editor\editorConfig.h" />
     <ClInclude Include="TFE_Editor\editorLevel.h" />
     <ClInclude Include="TFE_Editor\editorMath.h" />
@@ -489,6 +490,7 @@ echo ^)";
     <ClInclude Include="TFE_Editor\LevelEditor\entity.h" />
     <ClInclude Include="TFE_Editor\LevelEditor\error.h" />
     <ClInclude Include="TFE_Editor\LevelEditor\featureId.h" />
+    <ClInclude Include="TFE_Editor\LevelEditor\findSectorUI.h" />
     <ClInclude Include="TFE_Editor\LevelEditor\groups.h" />
     <ClInclude Include="TFE_Editor\LevelEditor\guidelines.h" />
     <ClInclude Include="TFE_Editor\LevelEditor\hotkeys.h" />
@@ -513,6 +515,7 @@ echo ^)";
     <ClInclude Include="TFE_Editor\LevelEditor\selection.h" />
     <ClInclude Include="TFE_Editor\LevelEditor\sharedState.h" />
     <ClInclude Include="TFE_Editor\LevelEditor\shell.h" />
+    <ClInclude Include="TFE_Editor\LevelEditor\snapshotUI.h" />
     <ClInclude Include="TFE_Editor\LevelEditor\tabControl.h" />
     <ClInclude Include="TFE_Editor\LevelEditor\testOptions.h" />
     <ClInclude Include="TFE_Editor\LevelEditor\userPreferences.h" />
@@ -876,6 +879,7 @@ echo ^)";
     <ClCompile Include="TFE_Editor\EditorAsset\editorSound.cpp" />
     <ClCompile Include="TFE_Editor\EditorAsset\editorSprite.cpp" />
     <ClCompile Include="TFE_Editor\EditorAsset\editorTexture.cpp" />
+    <ClCompile Include="TFE_Editor\editorComboBox.cpp" />
     <ClCompile Include="TFE_Editor\editorConfig.cpp" />
     <ClCompile Include="TFE_Editor\editorLevel.cpp" />
     <ClCompile Include="TFE_Editor\editorMath.cpp" />
@@ -899,6 +903,7 @@ echo ^)";
     <ClCompile Include="TFE_Editor\LevelEditor\editVertex.cpp" />
     <ClCompile Include="TFE_Editor\LevelEditor\entity.cpp" />
     <ClCompile Include="TFE_Editor\LevelEditor\featureId.cpp" />
+    <ClCompile Include="TFE_Editor\LevelEditor\findSectorUI.cpp" />
     <ClCompile Include="TFE_Editor\LevelEditor\groups.cpp" />
     <ClCompile Include="TFE_Editor\LevelEditor\guidelines.cpp" />
     <ClCompile Include="TFE_Editor\LevelEditor\hotkeys.cpp" />
@@ -922,6 +927,7 @@ echo ^)";
     <ClCompile Include="TFE_Editor\LevelEditor\Scripting\ls_system.cpp" />
     <ClCompile Include="TFE_Editor\LevelEditor\selection.cpp" />
     <ClCompile Include="TFE_Editor\LevelEditor\shell.cpp" />
+    <ClCompile Include="TFE_Editor\LevelEditor\snapshotUI.cpp" />
     <ClCompile Include="TFE_Editor\LevelEditor\tabControl.cpp" />
     <ClCompile Include="TFE_Editor\LevelEditor\testOptions.cpp" />	
     <ClCompile Include="TFE_Editor\LevelEditor\userPreferences.cpp" />

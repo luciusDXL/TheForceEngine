@@ -928,7 +928,26 @@ namespace LevelEditor
 			addToAdjoinFixupList(candidateList[i]->id, adjoinSectorsToFix);
 			addSectorToList(candidateList[i]->id, changedSectors);
 		}
+
+		// We need to add the next layer of adjoins to be fixed.
+		const s32 nextLayerCount = (s32)adjoinSectorsToFix.size();
+		for (s32 n = 0; n < nextLayerCount; n++)
+		{
+			EditorSector* sector = &s_level.sectors[adjoinSectorsToFix[n]];
+			const s32 wallCount = (s32)sector->walls.size();
+			EditorWall* wall = sector->walls.data();
+
+			for (s32 w = 0; w < wallCount; w++, wall++)
+			{
+				if (wall->adjoinId >= 0 && wall->mirrorId >= 0)
+				{
+					addToAdjoinFixupList(wall->adjoinId, adjoinSectorsToFix);
+				}
+			}
+		}
+
 		fixupSectorAdjoins(adjoinSectorsToFix);
+		edit_cleanSectorList(adjoinSectorsToFix, false);
 
 		// Now if the sector was adjoined to anything else, copy its attributes.
 		const s32 newWallCount = (s32)newSectorLvl->walls.size();
@@ -1041,6 +1060,22 @@ namespace LevelEditor
 					}
 					wall->adjoinId = -1;
 					wall->mirrorId = -1;
+				}
+			}
+		}
+		// We need to add the next layer of adjoins to be fixed.
+		const s32 nextLayerCount = (s32)adjoinSectorsToFix.size();
+		for (s32 n = 0; n < nextLayerCount; n++)
+		{
+			EditorSector* sector = &s_level.sectors[adjoinSectorsToFix[n]];
+			const s32 wallCount = (s32)sector->walls.size();
+			EditorWall* wall = sector->walls.data();
+
+			for (s32 w = 0; w < wallCount; w++, wall++)
+			{
+				if (wall->adjoinId >= 0 && wall->mirrorId >= 0)
+				{
+					addToAdjoinFixupList(wall->adjoinId, adjoinSectorsToFix);
 				}
 			}
 		}
@@ -1226,8 +1261,9 @@ namespace LevelEditor
 			}
 		}
 
-		// Fix-up adjoins.
+		// Fix-up adjoins and clean sectors.
 		fixupSectorAdjoins(adjoinSectorsToFix);
+		edit_cleanSectorList(adjoinSectorsToFix, false);
 
 		// Delete any sectors - note this should only happen in the SUBTRACT mode unless degenerate sectors are found.
 		bool sectorsDeleted = !deleteId.empty();
@@ -2285,14 +2321,14 @@ namespace LevelEditor
 				s_cursor3d = posOnGrid;
 				onGrid = { s_cursor3d.x, s_cursor3d.z };
 			}
-			snapToGrid(&onGrid);
+			onGrid = snapToGridOrGuidelines2d(onGrid);
 		}
 
 		s_cursor3d.x = onGrid.x;
 		s_cursor3d.z = onGrid.z;
 
 		// Hot Key
-		const bool heightMove = TFE_Input::keyDown(KEY_H);
+		const bool heightMove = isShortcutHeld(SHORTCUT_MOVE_GRID);
 
 		// Two ways to draw: rectangle (shift + left click and drag, escape to cancel), shape (left click to start, backspace to go back one point, escape to cancel)
 		if (s_geoEdit.gridMoveStart)
@@ -3046,8 +3082,8 @@ namespace LevelEditor
 		const Vec2f p1 = { c.x + t0 * bc.x, c.z + t0 * bc.z };
 		return { p0.x + t * (p1.x - p0.x), p0.z + t * (p1.z - p0.z) };
 	}
-
-	f32 getQuadraticBezierArcLength(const Vec2f& a, const Vec2f& b, const Vec2f& c, f32 t, s32 maxIterationCount)
+	   
+	f32 getQuadraticBezierArcLength(const Vec2f& a, const Vec2f& b, const Vec2f& c, f32 t, s32 maxIterationCount, Vec2f* table)
 	{
 		// Approximate the total length to the current position.
 		// The stepCount controls the accuracy, higher values = more accurate,
@@ -3065,10 +3101,20 @@ namespace LevelEditor
 			evaluateQuadraticBezier(a, b, c, s, &p1);
 			len += TFE_Math::distance(&p0, &p1);
 			p0 = p1;
+			if (table)
+			{
+				table[i].x = s;
+				table[i].z = len;
+			}
 		}
 		// Take the remainder to get to the current position on the curve.
 		evaluateQuadraticBezier(a, b, c, t, &p1);
 		len += TFE_Math::distance(&p0, &p1);
+		if (table)
+		{
+			table[stepCount - 1].x = t;
+			table[stepCount - 1].z = len;
+		}
 
 		return len;
 	}

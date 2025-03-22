@@ -19,25 +19,17 @@ using namespace TFE_Jedi;
 namespace LevelEditor
 {
 	typedef std::map<u32, u32> GroupIdToIndex;
-
-	struct GroupSearch
-	{
-		u32 id = 0;
-		Group* group = nullptr;
-	};
-	GroupSearch s_groupSearch;
-
 	std::vector<Group> s_groups;
 	s32 s_groupCurrent = 0;
 
 	static GroupIdToIndex s_groupIdToIndex;
 	static u32 s_uniqueId = 0;
-	static char s_nameInput[32];
+	static char s_nameInput[256];
 	void groups_buildIndexMap();
 
 	void groups_clearName()
 	{
-		memset(s_nameInput, 0, 32);
+		memset(s_nameInput, 0, 256);
 	}
 
 	bool groups_chooseName()
@@ -204,6 +196,15 @@ namespace LevelEditor
 		groups_buildIndexMap();
 	}
 
+	void groups_select(s32 id)
+	{
+		Group* group = groups_getById(id);
+		if (group)
+		{
+			s_groupCurrent = group->index;
+		}
+	}
+	   
 	void groups_swapSectorGroupID(u32 srcId, u32 dstId)
 	{
 		const s32 sectorCount = (s32)s_level.sectors.size();

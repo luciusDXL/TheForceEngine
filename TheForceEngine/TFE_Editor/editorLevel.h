@@ -16,4 +16,7 @@ namespace TFE_Editor
 {
 	void level_prepareNew();
 	bool level_newLevelUi();
+
+	const char* level_getDarkForcesSlotName(s32 index);
+	s32 level_getDarkForcesSlotCount();
 }

@@ -27,6 +27,8 @@ namespace LevelEditor
 		LCmd_Sector_Attrib_Snapshot,
 		LCmd_ObjList_Snapshot,
 		LCmd_Set_Textures,
+		LCmd_Guideline_Snapshot,
+		LCmd_Guideline_Snapshot_Single,
 		LCmd_Count
 	};
 
@@ -42,6 +44,8 @@ namespace LevelEditor
 	void cmd_applySectorAttribSnapshot();
 	void cmd_applyObjListSnapshot();
 	void cmd_applySetTextures();
+	void cmd_applyGuidelineSnapshot();
+	void cmd_applyGuidelineSingleSnapshot();
 
 	///////////////////////////////////
 	// API
@@ -55,6 +59,8 @@ namespace LevelEditor
 		history_registerCommand(LCmd_Sector_Attrib_Snapshot, cmd_applySectorAttribSnapshot);
 		history_registerCommand(LCmd_ObjList_Snapshot, cmd_applyObjListSnapshot);
 		history_registerCommand(LCmd_Set_Textures, cmd_applySetTextures);
+		history_registerCommand(LCmd_Guideline_Snapshot, cmd_applyGuidelineSnapshot);
+		history_registerCommand(LCmd_Guideline_Snapshot_Single, cmd_applyGuidelineSingleSnapshot);
 
 		history_registerName(LName_MoveVertex, "Move Vertice(s)");
 		history_registerName(LName_SetVertex, "Set Vertex Position");
@@ -81,8 +87,17 @@ namespace LevelEditor
 		history_registerName(LName_RotateSector, "Rotate Sector(s)");
 		history_registerName(LName_RotateWall, "Rotate Wall(s)");
 		history_registerName(LName_RotateVertex, "Rotate Vertices(s)");
+		history_registerName(LName_RotateEntity, "Rotate Object(s)");
 		history_registerName(LName_ChangeWallAttrib, "Change Wall Attributes");
 		history_registerName(LName_ChangeSectorAttrib, "Change Sector Attributes");
+		history_registerName(LName_SetSectorGroup, "Add Sector(s) to Group");
+		history_registerName(LName_CleanSectors, "Clean Sectors");
+		history_registerName(LName_JoinSectors, "Join Sectors");
+		history_registerName(LName_Connect, "Connect Sectors");
+		history_registerName(LName_Disconnect, "Disconnect Sectors");
+		history_registerName(LName_Guideline_Create, "Create Guidelines");
+		history_registerName(LName_Guideline_Delete, "Delete Guidelines");
+		history_registerName(LName_Guideline_Edit, "Edit Guidelines");
 	}
 
 	void levHistory_destroy()
@@ -240,6 +255,56 @@ namespace LevelEditor
 		}
 		CMD_END();
 	}
+
+	void cmd_guidelineSnapshot(u32 name)
+	{
+		s_workBuffer[0].clear();
+		s_workBuffer[1].clear();
+		level_createGuidelineSnapshot(&s_workBuffer[0]);
+		if (s_workBuffer[0].empty()) { return; }
+
+		const u32 uncompressedSize = (u32)s_workBuffer[0].size();
+		const u32 compressedSize = compressBuffer();
+		if (!compressedSize) { return; }
+
+		CMD_BEGIN(LCmd_Guideline_Snapshot, name);
+		{
+			hBuffer_addU32(uncompressedSize);
+			hBuffer_addU32(compressedSize);
+			hBuffer_addArrayU8(compressedSize, s_workBuffer[1].data());
+		}
+		CMD_END();
+	}
+
+	void cmd_guidelineSingleSnapshot(u32 name, s32 index, bool idChanged)
+	{
+		if (index < 0 || index >= (s32)s_level.guidelines.size()) { return; }
+
+		// Merge together single snapshot commands to make editing attributes easier.
+		u16 prevCmd, prevName;
+		history_getPrevCmdAndName(prevCmd, prevName);
+		if (prevCmd == LCmd_Guideline_Snapshot_Single && prevName == name && !idChanged)
+		{
+			history_removeLast();
+		}
+
+		s_workBuffer[0].clear();
+		s_workBuffer[1].clear();
+		level_createSingleGuidelineSnapshot(&s_workBuffer[0], index);
+		if (s_workBuffer[0].empty()) { return; }
+
+		const u32 uncompressedSize = (u32)s_workBuffer[0].size();
+		const u32 compressedSize = compressBuffer();
+		if (!compressedSize) { return; }
+
+		CMD_BEGIN(LCmd_Guideline_Snapshot_Single, name);
+		{
+			hBuffer_addU32(uncompressedSize);
+			hBuffer_addU32(compressedSize);
+			hBuffer_addArrayU8(compressedSize, s_workBuffer[1].data());
+		}
+		CMD_END();
+	}
 		
 	////////////////////////////////
 	// History Commands
@@ -306,6 +371,32 @@ namespace LevelEditor
 		if (zstd_decompress(s_workBuffer[0].data(), uncompressedSize, compressedData, compressedSize))
 		{
 			level_unpackFeatureTextureSnapshot(uncompressedSize, s_workBuffer[0].data());
+		}
+	}
+
+	void cmd_applyGuidelineSnapshot()
+	{
+		const u32 uncompressedSize = hBuffer_getU32();
+		const u32 compressedSize = hBuffer_getU32();
+		const u8* compressedData = hBuffer_getArrayU8(compressedSize);
+
+		s_workBuffer[0].resize(uncompressedSize);
+		if (zstd_decompress(s_workBuffer[0].data(), uncompressedSize, compressedData, compressedSize))
+		{
+			level_unpackGuidelineSnapshot(uncompressedSize, s_workBuffer[0].data());
+		}
+	}
+
+	void cmd_applyGuidelineSingleSnapshot()
+	{
+		const u32 uncompressedSize = hBuffer_getU32();
+		const u32 compressedSize = hBuffer_getU32();
+		const u8* compressedData = hBuffer_getArrayU8(compressedSize);
+
+		s_workBuffer[0].resize(uncompressedSize);
+		if (zstd_decompress(s_workBuffer[0].data(), uncompressedSize, compressedData, compressedSize))
+		{
+			level_unpackSingleGuidelineSnapshot(uncompressedSize, s_workBuffer[0].data());
 		}
 	}
 

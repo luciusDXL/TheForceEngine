@@ -7,6 +7,7 @@
 // to "play" the game as intended.
 //////////////////////////////////////////////////////////////////////
 #include <TFE_System/types.h>
+#include <TFE_Editor/editor.h>
 #include <TFE_Editor/EditorAsset/editorAsset.h>
 
 namespace AssetBrowser
@@ -32,4 +33,9 @@ namespace AssetBrowser
 	TFE_Editor::AssetHandle loadAssetData(const TFE_Editor::Asset* asset);
 	void getLevelTextures(TFE_Editor::AssetList& list, const char* levelName);
 	const TFE_Editor::AssetList& getAssetList(TFE_Editor::AssetType type);
+
+	void setAssetLevel(const char* name, u32 levelIndex);
+	bool isAssetInLevel(const char* name, u32 levelIndex);
+
+	bool readWriteFile(const char* outFilePath, const char* assetName, Archive* archive, TFE_Editor::WorkBuffer& buffer);
 }

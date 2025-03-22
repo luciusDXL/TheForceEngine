@@ -30,6 +30,8 @@ namespace LevelEditor
 	static TransformMode s_transformMode = TRANS_MOVE;
 	static WallMoveMode s_wallMoveMode = WMM_NORMAL;
 	static RotationGizmoPart s_rotHover = RGP_NONE;
+	static EditorSector* s_moveSector = nullptr;
+	static HitPart s_movePart;
 	static Vec3f s_transformPos = { 0 };
 	static Vec3f s_center = { 0 };
 	static Vec3f s_rotation = { 0 };
@@ -72,11 +74,6 @@ namespace LevelEditor
 	void edit_enableMoveTransform(bool enable)
 	{
 		s_enableMoveTransform = enable;
-	}
-
-	void edit_setWallMoveMode(WallMoveMode mode)
-	{
-		s_wallMoveMode = mode;
 	}
 
 	// Call when the selection changes so that the transform can be reset.
@@ -371,23 +368,30 @@ namespace LevelEditor
 		if (s_transformMode == TRANS_MOVE && s_editMove)
 		{
 			const u32 moveAxis = s_moveAxis;
+			const WallMoveMode moveMode = s_wallMoveMode;
 			// Get the new move axis.
 			s_moveAxis = AXIS_XZ;
-			if (TFE_Input::keyDown(KEY_X))
+			s_wallMoveMode = WMM_FREE;
+			if (isShortcutHeld(SHORTCUT_MOVE_X))
 			{
 				s_moveAxis = AXIS_X;
 			}
 			// Y-axis movement only works in 3D view.
-			else if (TFE_Input::keyDown(KEY_Y) && s_view != EDIT_VIEW_2D)
+			else if (isShortcutHeld(SHORTCUT_MOVE_Y) && s_view != EDIT_VIEW_2D)
 			{
 				s_moveAxis = AXIS_Y;
 			}
-			else if (TFE_Input::keyDown(KEY_Z))
+			else if (isShortcutHeld(SHORTCUT_MOVE_Z))
 			{
 				s_moveAxis = AXIS_Z;
 			}
+			// Normal 
+			if (isShortcutHeld(SHORTCUT_MOVE_NORMAL))
+			{
+				s_wallMoveMode = WMM_NORMAL;
+			}
 			// If the moveAxis has changed, we need to reset the movement and anchor at the current position.
-			if (moveAxis != s_moveAxis && s_moveStarted)
+			if ((moveAxis != s_moveAxis || moveMode != s_wallMoveMode) && s_moveStarted)
 			{
 				// Reset the move.
 				s_moveStarted = false;
@@ -716,7 +720,7 @@ namespace LevelEditor
 			EditorSector* sector = nullptr;
 			s32 featureIndex = -1;
 			HitPart part = HP_NONE;
-			selection_getSurface(0, sector, featureIndex, &part);
+			selection_getSurface(selection_hasHovered() ? SEL_INDEX_HOVERED : 0, sector, featureIndex, &part);
 
 			if (hasSelection && TFE_Input::mouseDown(MBUTTON_LEFT) && !TFE_Input::keyModDown(KEYMOD_CTRL) && !TFE_Input::keyModDown(KEYMOD_SHIFT))
 			{
@@ -760,31 +764,40 @@ namespace LevelEditor
 			}
 		}
 	}
-
+				
 	void moveFlat()
 	{
-		EditorSector* sector = nullptr;
-		s32 wallIndex = -1;
-		HitPart part = HP_NONE;
-		selection_getSurface(0, sector, wallIndex, &part);
-		if (!sector) { return; }
-
+		EditorSector* sector = s_moveSector;
 		if (!s_moveStarted)
 		{
+			s32 wallIndex = -1;
+			s_movePart = HP_NONE;
+			sector = nullptr;
+			selection_getSurface(selection_hasHovered() ? SEL_INDEX_HOVERED : 0, sector, wallIndex, &s_movePart);
+			if (!sector) { return; }
+
 			s_moveStarted = true;
-			s_moveStartPos.x = part == HP_FLOOR ? sector->floorHeight : sector->ceilHeight;
+			s_moveStartPos.x = s_movePart == HP_FLOOR ? sector->floorHeight : sector->ceilHeight;
 			s_moveStartPos.z = 0.0f;
 			s_prevPos = s_curVtxPos;
+			s_moveSector = sector;
 
 			edit_setTransformAnchor({ s_curVtxPos.x, s_moveStartPos.x, s_curVtxPos.z });
 		}
 
-		Vec3f worldPos = moveAlongRail({ 0.0f, 1.0f, 0.0f });
+		Vec3f worldPos = moveAlongRail({ 0.0f, 1.0f, 0.0f }, false);
 		f32 y = worldPos.y;
+
+		const Vec3f cameraDelta = { worldPos.x - s_camera.pos.x, worldPos.y - s_camera.pos.y, worldPos.z - s_camera.pos.z };
+		if (cameraDelta.x*s_rayDir.x + cameraDelta.z*s_rayDir.z < 0.0f)
+		{
+			// Do not allow the object to be moved behind the camera.
+			return;
+		}
 
 		snapToGridY(&y);
 		f32 heightDelta;
-		if (part == HP_FLOOR)
+		if (s_movePart == HP_FLOOR)
 		{
 			heightDelta = y - sector->floorHeight;
 		}
@@ -792,9 +805,9 @@ namespace LevelEditor
 		{
 			heightDelta = y - sector->ceilHeight;
 		}
+
 		Vec3f pos = edit_getTransformPos();
 		edit_setTransformPos({ pos.x, pos.y + heightDelta, pos.z });
-
 		edit_moveSelectedFlats(heightDelta);
 	}
 
@@ -831,6 +844,7 @@ namespace LevelEditor
 
 			edit_setTransformAnchor({ worldPos.x, s_cursor3d.y, worldPos.z });
 		}
+				
 		const EditorSector* sector = s_transformWallSector;
 		const EditorWall* wall = &sector->walls[s_transformWallIndex];
 		const Vec2f& v0 = sector->vtx[wall->idx[0]];
@@ -850,6 +864,13 @@ namespace LevelEditor
 			{
 				worldPos = moveAlongXZPlane(s_curVtxPos.y);
 			}
+
+			const Vec3f cameraDelta = { worldPos.x - s_camera.pos.x, worldPos.y - s_camera.pos.y, worldPos.z - s_camera.pos.z };
+			if (cameraDelta.x*s_rayDir.x + cameraDelta.z*s_rayDir.z < 0.0f)
+			{
+				// Do not allow the object to be moved behind the camera.
+				return;
+			}
 		}
 
 		Vec3f transformPos = edit_getTransformPos();
@@ -864,7 +885,7 @@ namespace LevelEditor
 			{
 				delta.z = 0.0f;
 			}
-
+					
 			if (!TFE_Input::keyModDown(KEYMOD_ALT))
 			{
 				// Smallest snap distance.
@@ -967,6 +988,16 @@ namespace LevelEditor
 		{
 			worldPos = moveAlongRail({ 0.0f, 1.0f, 0.0f });
 			snapToGridY(&worldPos.y);
+		}
+
+		if (s_view == EDIT_VIEW_3D)
+		{
+			const Vec3f cameraDelta = { worldPos.x - s_camera.pos.x, worldPos.y - s_camera.pos.y, worldPos.z - s_camera.pos.z };
+			if (cameraDelta.x*s_rayDir.x + cameraDelta.z*s_rayDir.z < 0.0f || (s_cursor3d.x == 0.0f && s_cursor3d.z == 0.0f))
+			{
+				// Do not allow the object to be moved behind the camera.
+				return;
+			}
 		}
 
 		// Current movement.
@@ -1385,16 +1416,35 @@ namespace LevelEditor
 			s_idList.clear();
 
 			// Handle vertices connected to other sectors.
-			u32 vertexCount = (u32)selection_getCount(SEL_VERTEX);
-			EditorSector* sector = nullptr;
-			s32 featureIndex = -1;
-			for (u32 v = 0; v < vertexCount; v++)
+			if (s_editMode != LEDIT_ENTITY)
 			{
-				selection_getVertex(v, sector, featureIndex);
-				if (sector->searchKey != s_searchKey)
+				u32 vertexCount = (u32)selection_getCount(SEL_VERTEX);
+				EditorSector* sector = nullptr;
+				s32 featureIndex = -1;
+				for (u32 v = 0; v < vertexCount; v++)
 				{
-					sector->searchKey = s_searchKey;
-					s_idList.push_back(sector->id);
+					selection_getVertex(v, sector, featureIndex);
+					if (sector->searchKey != s_searchKey)
+					{
+						sector->searchKey = s_searchKey;
+						s_idList.push_back(sector->id);
+					}
+				}
+			}
+			else // LEDIT_ENTITY
+			{
+				EditorSector* sector = nullptr;
+				s32 featureIndex = -1;
+
+				u32 entityCount = (u32)selection_getCount(SEL_ENTITY);
+				for (u32 v = 0; v < entityCount; v++)
+				{
+					selection_getEntity(v, sector, featureIndex);
+					if (sector->searchKey != s_searchKey)
+					{
+						sector->searchKey = s_searchKey;
+						s_idList.push_back(sector->id);
+					}
 				}
 			}
 
@@ -1410,6 +1460,10 @@ namespace LevelEditor
 			else if (s_editMode == LEDIT_VERTEX)
 			{
 				name = LName_RotateVertex;
+			}
+			else if (s_editMode == LEDIT_ENTITY)
+			{
+				name = LName_RotateEntity;
 			}
 			cmd_sectorSnapshot(name, s_idList);
 			edit_resetGizmo();

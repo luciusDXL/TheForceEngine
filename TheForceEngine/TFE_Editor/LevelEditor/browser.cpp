@@ -5,6 +5,7 @@
 #include "infoPanel.h"
 #include "sharedState.h"
 #include <TFE_Editor/editor.h>
+#include <TFE_Editor/editorLevel.h>
 #include <TFE_Editor/errorMessages.h>
 #include <TFE_Editor/AssetBrowser/assetBrowser.h>
 #include <TFE_Editor/EditorAsset/editorTexture.h>
@@ -45,24 +46,39 @@ namespace LevelEditor
 		s32 index;
 	};
 
+	struct UsedIndex
+	{
+		s32 id;
+		s32 count;
+	};
+
 	typedef std::vector<Asset*> FilteredAssetList;
 	typedef std::vector<FilteredEntity> FilteredEntityList;
+	typedef std::vector<UsedIndex> UsedCountList;
 
 	static char s_filter[32] = "";
 	static BrowseSort s_browseSort = BSORT_NAME;
 	static FilteredAssetList s_filteredList;
+	static FilteredAssetList s_filteredListCopy;
 	static FilteredEntityList s_filteredEntityList;
+	static UsedCountList s_usedCountList;
 	static s32 s_focusOnRow = -1;
 	static s32 s_entityCategory = -1;
 	static TextureGpu* s_icon3d = nullptr;
+	static u32 s_textureSourceFlags = 0xffffffffu;
+	static u32 s_nextTextureSourceFlags = 0xffffffffu;
 
 	void browseTextures();
 	void browseEntities();
+	s32 getFilteredIndex(s32 unfilteredIndex);
+	s32 getUnfilteredIndex(s32 filteredIndex);
+	s32 getLevelTextureIndex(s32 id);
 		
 	void browserLoadIcons()
 	{
 		// Load as a PNG.
 		s_icon3d = loadGpuImage("UI_Images/Obj-3d-Icon.png");
+		s_textureSourceFlags = 0xffffffffu;
 	}
 
 	void browserFreeIcons()
@@ -104,7 +120,56 @@ namespace LevelEditor
 		}
 		browserEnd();
 	}
-	
+
+	bool textureSourcesUI()
+	{
+		pushFont(FONT_SMALL);
+		ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysAutoResize;
+		bool exit = false;
+		if (ImGui::BeginPopupModal("Texture Sources", nullptr, window_flags))
+		{
+			// Slots.
+			const s32 levelCount = TFE_Editor::level_getDarkForcesSlotCount();
+			const s32 rowCount = 3;
+			const s32 yCount = (levelCount + 2) / rowCount;
+			for (s32 y = 0, idx = 0; y < yCount; y++)
+			{
+				for (s32 i = 0; i < rowCount && idx < levelCount; i++, idx++)
+				{
+					const char* name = TFE_Editor::level_getDarkForcesSlotName(idx);
+					ImGui::CheckboxFlags(name, &s_nextTextureSourceFlags, (1 << idx));
+
+					if (i < rowCount - 1 && idx < levelCount - 1)
+					{
+						ImGui::SameLine(128.0f * (i + 1));
+					}
+				}
+			}
+			// External Resources.
+			ImGui::CheckboxFlags("Resources", &s_nextTextureSourceFlags, (1 << levelCount));
+
+			ImGui::Separator();
+			if (ImGui::Button("Select All"))
+			{
+				s_nextTextureSourceFlags = 0xffffffffu;
+			}
+			ImGui::SameLine();
+			if (ImGui::Button("Select None"))
+			{
+				s_nextTextureSourceFlags = 0x0u;
+			}
+
+			ImGui::Separator();
+			if (ImGui::Button("Exit"))
+			{
+				exit = true;
+			}
+			ImGui::EndPopup();
+		}
+		popFont();
+
+		return exit;
+	}
 	
 	// Returns true if it passes the filter.
 	bool browserFilter(const char* name)
@@ -128,7 +193,12 @@ namespace LevelEditor
 		}
 		return false;
 	}
-			
+
+	bool sortByCount(UsedIndex& a, UsedIndex& b)
+	{
+		return a.count > b.count;
+	}
+					
 	void filterTextures()
 	{
 		// Textures must be a power of two.
@@ -136,17 +206,110 @@ namespace LevelEditor
 		Asset* asset = s_levelTextureList.data();
 		s_filteredList.clear();
 
+		u32 levCount = level_getDarkForcesSlotCount();
+		u32 extFlag = 1 << levCount;
+
 		for (s32 i = 0; i < count; i++, asset++)
 		{
 			EditorTexture* texture = (EditorTexture*)getAssetData(asset->handle);
 			if (!texture) { continue; }
 			if (!TFE_Math::isPow2(texture->width) || !TFE_Math::isPow2(texture->height)) { continue; }
 
-			if (browserFilter(asset->name.c_str()))
+			// Sources.
+			bool isValidSource = true;
+			if (s_textureSourceFlags != 0xffffffffu)
+			{
+				if (!(s_textureSourceFlags & extFlag) && asset->assetSource != ASRC_VANILLA) { isValidSource = false; }
+				if (asset->assetSource == ASRC_VANILLA)
+				{
+					bool anyLevel = false;
+					for (u32 i = 0; i < levCount && isValidSource; i++)
+					{
+						if ((s_textureSourceFlags & (1 << i)) && AssetBrowser::isAssetInLevel(asset->name.c_str(), i))
+						{
+							anyLevel = true;
+							break;
+						}
+					}
+					if (!anyLevel) { isValidSource = false; }
+				}
+			}
+			if (isValidSource && browserFilter(asset->name.c_str()))
 			{
 				s_filteredList.push_back(asset);
 			}
 		}
+
+		// Sort by most used to least used.
+		if (s_browseSort == BSORT_USED)
+		{
+			const s32 listCount = (s32)s_filteredList.size();
+			s_usedCountList.resize(listCount);
+			UsedIndex* usedCount = s_usedCountList.data();
+			for (s32 i = 0; i < listCount; i++)
+			{
+				usedCount[i].id = i;
+				usedCount[i].count = 0;
+			}
+
+			const s32 sectorCount = (s32)s_level.sectors.size();
+			const EditorSector* sector = s_level.sectors.data();
+			for (s32 s = 0; s < sectorCount; s++, sector++)
+			{
+				const s32 floorIndex = getLevelTextureIndex(sector->floorTex.texIndex);
+				const s32 ceilIndex = getLevelTextureIndex(sector->ceilTex.texIndex);
+				if (floorIndex >= 0)
+				{
+					usedCount[floorIndex].count++;
+				}
+				if (ceilIndex >= 0)
+				{
+					usedCount[ceilIndex].count++;
+				}
+
+				const s32 wallCount = (s32)sector->walls.size();
+				const EditorWall* wall = sector->walls.data();
+				for (s32 w = 0; w < wallCount; w++, wall++)
+				{
+					for (s32 t = 0; t < WP_COUNT; t++)
+					{
+						const s32 index = getLevelTextureIndex(wall->tex[t].texIndex);
+						if (index >= 0)
+						{
+							usedCount[index].count++;
+						}
+					}
+				}
+			}
+			std::sort(s_usedCountList.begin(), s_usedCountList.end(), sortByCount);
+
+			// Now re-order the filtered list.
+			s_filteredListCopy = s_filteredList;
+			Asset** dstList = s_filteredList.data();
+			Asset** srcList = s_filteredListCopy.data();
+			for (s32 i = 0; i < listCount; i++)
+			{
+				dstList[i] = srcList[s_usedCountList[i].id];
+			}
+		}
+	}
+
+	s32 getLevelTextureIndex(s32 id)
+	{
+		if (id < 0) { return -1; }
+		const char* srcName = s_level.textures[id].name.c_str();
+
+		const s32 count = (s32)s_filteredList.size();
+		Asset** assetList = s_filteredList.data();
+		for (s32 i = 0; i < count; i++)
+		{
+			const Asset* asset = assetList[i];
+			if (strcasecmp(asset->name.c_str(), srcName) == 0)
+			{
+				return i;
+			}
+		}
+		return -1;
 	}
 
 	s32 getFilteredIndex(s32 unfilteredIndex)
@@ -199,11 +362,25 @@ namespace LevelEditor
 		ImVec4 tintColorNrml = { 1.0f, 1.0f, 1.0f, 1.0f };
 		ImVec4 tintColorSel  = { 1.5f, 1.5f, 1.5f, 1.0f };
 
-		bool filterChanged = false;
+		s32 mx, my;
+		TFE_Input::getMousePos(&mx, &my);
 
-		if (ImGui::Button("Edit List"))
+		bool filterChanged = false;
+		bool viewportHovered = !TFE_Input::relativeModeEnabled() && edit_viewportHovered(mx, my);
+		if (isTextureAssignDirty() && s_browseSort == BSORT_USED && !viewportHovered)
 		{
-			// TODO: Popup.
+			filterChanged = true;
+		}
+		if (s_nextTextureSourceFlags != s_textureSourceFlags && !isPopupOpen())
+		{
+			filterChanged = true;
+			s_textureSourceFlags = s_nextTextureSourceFlags;
+		}
+				
+		if (ImGui::Button("Texture Sources"))
+		{
+			s_nextTextureSourceFlags = s_textureSourceFlags;
+			openEditorPopup(POPUP_TEX_SOURCES);
 		}
 		setTooltip("Edit which textures are displayed based on groups and tags");
 
@@ -215,7 +392,7 @@ namespace LevelEditor
 		}
 		setTooltip("Sort method, changes the order that items are listed");
 		ImGui::SameLine();
-		ImGui::SetNextItemWidth(256.0f);
+		ImGui::SetNextItemWidth(196.0f);
 
 		if (ImGui::InputText("##BrowserFilter", s_filter, 24))
 		{
@@ -232,6 +409,7 @@ namespace LevelEditor
 
 		if (filterChanged || s_filteredList.empty())
 		{
+			setTextureAssignDirty(false);
 			filterChanged = true;
 			filterTextures();
 		}
@@ -305,12 +483,12 @@ namespace LevelEditor
 	void updateEntityFilter()
 	{
 		s_filteredEntityList.clear();
-		const u32 flag = s_entityCategory < 0 ? 0xffffffff : 1u << u32(s_entityCategory);
+		const u32 flag = s_entityCategory < 0 ? 0xffffffffu : 1u << u32(s_entityCategory);
 		const s32 count = (s32)s_entityDefList.size();
 		Entity* entity = s_entityDefList.data();
 		for (s32 i = 0; i < count; i++, entity++)
 		{
-			if (flag == 0xffffffff || (entity->categories & flag))
+			if (flag == 0xffffffffu || (entity->categories & flag))
 			{
 				s_filteredEntityList.push_back({entity, i});
 			}

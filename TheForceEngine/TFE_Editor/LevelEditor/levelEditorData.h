@@ -32,7 +32,8 @@ namespace LevelEditor
 		LEF_LevelNotes =10,
 		LEF_Guidelines =11,
 		LEF_ScriptCall1=12,
-		LEF_CurVersion =12,
+		LEF_GuidelineV2=13,
+		LEF_CurVersion =13,
 	};
 
 	enum LevelEditMode
@@ -158,6 +159,12 @@ namespace LevelEditor
 	{
 		s32 idx[3] = { -1, -1, -1 };	// curve if idx[2] >= 0
 	};
+
+	struct GuidelineSubDiv
+	{
+		s32 edge;
+		f32 param;
+	};
 		
 	struct Guideline
 	{
@@ -171,11 +178,15 @@ namespace LevelEditor
 		Vec4f bounds = { 0 };
 		f32 maxOffset = 0.0f;
 
+		// Derived (don't serialize).
+		std::vector<GuidelineSubDiv> subdiv;
+
 		// Settings
 		u32 flags = GLFLAG_NONE;		// GuidelineFlags
 		f32 maxHeight = 0.0f;
 		f32 minHeight = 0.0f;
 		f32 maxSnapRange = 0.0f;		// Set based on the grid at creation time.
+		f32 subDivLen = 0.0f;			// Default = no subdivision.
 	};
 
 	typedef std::vector<EditorSector*> SectorList;
@@ -245,6 +256,7 @@ namespace LevelEditor
 		const TFE_Editor::Asset* asset;
 	};
 
+	void levelClear();
 	bool loadLevelFromAsset(const TFE_Editor::Asset* asset);
 	TFE_Editor::AssetHandle loadTexture(const char* bmTextureName);
 	TFE_Editor::AssetHandle loadPalette(const char* paletteName);
@@ -253,9 +265,14 @@ namespace LevelEditor
 	bool exportLevels(const char* workPath, const char* exportPath, const char* gobName, const std::vector<LevelExportInfo>& levelList);
 	
 	bool saveLevel();
+	bool saveLevelToPath(const char* filePath, bool cleanLevel = true);
+	bool loadFromTFL(const char* name);
+	bool loadFromTFLWithPath(const char* filePath);
+	void updateLevelBounds(EditorSector* sector = nullptr);
+
 	bool exportLevel(const char* path, const char* name, const StartPoint* start);
 	bool exportSelectionToText(std::string& buffer);
-	bool importFromText(const std::string& buffer);
+	bool importFromText(const std::string& buffer, bool centerOnMouse = true);
 	void sectorToPolygon(EditorSector* sector);
 	void polygonToSector(EditorSector* sector);
 
@@ -275,6 +292,8 @@ namespace LevelEditor
 	void level_createSectorAttribSnapshot(TFE_Editor::SnapshotBuffer* buffer, std::vector<IndexPair>& sectorIds);
 	void level_createFeatureTextureSnapshot(TFE_Editor::SnapshotBuffer* buffer, s32 count, const FeatureId* feature);
 	void level_createEntiyListSnapshot(TFE_Editor::SnapshotBuffer* buffer, s32 sectorId);
+	void level_createGuidelineSnapshot(TFE_Editor::SnapshotBuffer* buffer);
+	void level_createSingleGuidelineSnapshot(TFE_Editor::SnapshotBuffer* buffer, s32 index);
 
 	void level_createLevelSectorSnapshotSameAssets(std::vector<EditorSector>& sectors);
 	void level_getLevelSnapshotDelta(std::vector<s32>& modifiedSectors, const std::vector<EditorSector>& sectorSnapshot);
@@ -285,6 +304,8 @@ namespace LevelEditor
 	void level_unpackSectorAttribSnapshot(u32 size, void* data);
 	void level_unpackFeatureTextureSnapshot(u32 size, void* data);
 	void level_unpackEntiyListSnapshot(u32 size, void* data);
+	void level_unpackGuidelineSnapshot(u32 size, void* data);
+	void level_unpackSingleGuidelineSnapshot(u32 size, void* data);
 	
 	// Spatial Queries
 	s32  findSectorByName(const char* name, s32 excludeId = -1);
@@ -320,7 +341,8 @@ namespace LevelEditor
 		return group;
 	}
 
-	bool sector_onActiveLayer(EditorSector* sector);
+	bool sector_inViewRange(const EditorSector* sector);
+	bool sector_onActiveLayer(const EditorSector* sector);
 
 	inline bool sector_isHidden(EditorSector* sector)
 	{

@@ -23,4 +23,6 @@ namespace LevelEditor
 
 	void browserLoadIcons();
 	void browserFreeIcons();
+
+	bool textureSourcesUI();
 }

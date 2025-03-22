@@ -19,6 +19,7 @@ namespace LevelEditor
 
 	void guideline_computeBounds(Guideline* guideline);
 	void guideline_computeKnots(Guideline* guideline);
+	void guideline_computeSubdivision(Guideline* guideline);
 	bool guideline_getClosestPoint(const Guideline* guideline, const Vec2f& pos, s32* edgeIndex, s32* offsetIndex, f32* t, Vec2f* closestPoint = nullptr);
 	Vec2f guideline_getPosition(const Guideline* guideline, s32 edgeIndex, s32 offsetIndex, f32 t);
 

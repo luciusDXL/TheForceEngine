@@ -35,6 +35,7 @@ namespace TFE_Editor
 	void resources_clear();
 	void resources_setGame(GameID gameId);
 	bool resources_listChanged();
+	void resources_dirty();
 	bool resources_ignoreVanillaAssets();
 
 	void resources_save(FileStream& outFile);

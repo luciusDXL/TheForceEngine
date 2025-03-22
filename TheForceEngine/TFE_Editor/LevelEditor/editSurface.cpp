@@ -75,7 +75,15 @@ namespace LevelEditor
 
 		// Find similar walls.
 		EditorSector* rootSector = &s_level.sectors[sectorId];
-		selectSimilarWalls(rootSector, wallIndex, part, true);
+		if (wallIndex >= 0 && wallIndex < (s32)rootSector->walls.size())
+		{
+			selectSimilarWalls(rootSector, wallIndex, part, true);
+		}
+
+		// Add to the history.
+		FeatureId* list = nullptr;
+		const s32 count = (s32)selection_getList(list, SEL_SURFACE);
+		cmd_setTextures(LName_Autoalign, count, list);
 
 		// Restore the selection.
 		selection_restoreGeoSelections();
@@ -98,7 +106,7 @@ namespace LevelEditor
 		}
 		if (!sector) { return; }
 
-		if (TFE_Input::keyPressed(KEY_T) && TFE_Input::keyModDown(KEYMOD_CTRL))
+		if (isShortcutPressed(SHORTCUT_COPY_TEXTURE))
 		{
 			const LevelTextureAsset* textureAsset = nullptr;
 			if (s_view == EDIT_VIEW_2D)
@@ -166,21 +174,23 @@ namespace LevelEditor
 						break;
 					}
 				}
+				// Clear the clipboard.
+				edit_clearClipboard();
 			}
 		}
-		else if (TFE_Input::keyPressed(KEY_T) && TFE_Input::keyModDown(KEYMOD_SHIFT) && s_selectedTexture >= 0)
+		else if (isShortcutPressed(SHORTCUT_SET_SIGN) && s_selectedTexture >= 0)
 		{
 			edit_applySignToSelection(s_selectedTexture);
 		}
-		else if (TFE_Input::keyPressed(KEY_T) && s_selectedTexture >= 0)
+		else if (isShortcutPressed(SHORTCUT_SET_TEXTURE, 0) && s_selectedTexture >= 0)
 		{
 			edit_applyTextureToSelection(s_selectedTexture, nullptr);
 		}
-		else if (TFE_Input::keyPressed(KEY_V) && TFE_Input::keyModDown(KEYMOD_CTRL) && s_selectedTexture >= 0)
+		else if (isShortcutPressed(SHORTCUT_PASTE) && !edit_hasItemsInClipboard() && s_selectedTexture >= 0)
 		{
 			edit_applyTextureToSelection(s_selectedTexture, &s_copiedTextureOffset);
 		}
-		else if (TFE_Input::keyPressed(KEY_A) && TFE_Input::keyModDown(KEYMOD_CTRL))
+		else if (isShortcutPressed(SHORTCUT_AUTO_ALIGN))
 		{
 			edit_autoAlign(sector->id, index, part);
 		}
@@ -189,7 +199,7 @@ namespace LevelEditor
 	void edit_applyTextureToSelection(s32 texIndex, Vec2f* offset)
 	{
 		if (!selection_hasHovered()) { return; }
-
+		
 		bool doesItemExist = false;
 		EditorSector* sector = nullptr;
 		s32 featureIndex = -1;
@@ -244,6 +254,7 @@ namespace LevelEditor
 				edit_setTexture(1, &id, texIndex, offset);
 				cmd_setTextures(LName_SetTexture, 1, &id);
 			}
+			setTextureAssignDirty();
 		}
 	}
 
@@ -266,6 +277,7 @@ namespace LevelEditor
 		{
 			return;
 		}
+		setTextureAssignDirty();
 
 		// Center the sign on the mouse cursor.
 		EditorWall* wall = &sector->walls[featureIndex];

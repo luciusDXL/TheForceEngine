@@ -40,7 +40,6 @@ namespace LevelEditor
 	void edit_setTransformMode(TransformMode mode = TRANS_MOVE);
 	TransformMode edit_getTransformMode();
 	void edit_enableMoveTransform(bool enable = false);
-	void edit_setWallMoveMode(WallMoveMode mode);
 	void edit_setTransformChange();
 	// Only do this is specific cases.
 	void edit_applyTransformChange();

@@ -87,6 +87,7 @@ namespace AssetBrowser
 	static bool s_assetsNeedProcess = true;
 	static std::vector<Palette> s_palettes;
 	static std::map<std::string, s32> s_assetPalette;
+	static std::map<std::string, u32> s_assetLevels;
 	static s32 s_defaultPal = 0;
 
 	static s32 s_hovered = -1;
@@ -107,6 +108,7 @@ namespace AssetBrowser
 	void unselect(s32 index);
 	void select(s32 index);
 	void exportSelected();
+	void importSelected();
 	s32 getAssetPalette(const char* name);
 	void drawAssetList(s32 w, s32 h);
 
@@ -121,6 +123,7 @@ namespace AssetBrowser
 		s_assetsNeedProcess = true;
 		s_palettes.clear();
 		s_assetPalette.clear();
+		s_assetLevels.clear();
 		s_defaultPal = 0;
 
 		s_viewInfo = ViewerInfo{};
@@ -321,6 +324,21 @@ namespace AssetBrowser
 				}
 				ImGui::Separator();
 			}
+
+			// Import
+			if (type == TYPE_LEVEL)
+			{
+				Project* project = project_get();
+				bool canImport = project && project->active && s_viewAssetList[s_selected[0]].assetSource != ASRC_PROJECT;
+				if (!canImport) { disableNextItem(); }
+				if (ImGui::Button("Import"))
+				{
+					importSelected();
+				}
+				if (!canImport) { enableNextItem(); }
+				ImGui::SameLine();
+			}
+
 			if (ImGui::Button("Export"))
 			{
 				exportSelected();
@@ -340,6 +358,21 @@ namespace AssetBrowser
 			if (!s_selected.empty())
 			{
 				ImGui::Separator();
+
+				// Import
+				if (asset->type == TYPE_LEVEL)
+				{
+					Project* project = project_get();
+					bool canImport = project && project->active && asset->assetSource != ASRC_PROJECT;
+					if (!canImport) { disableNextItem(); }
+					if (ImGui::Button("Import"))
+					{
+						importSelected();
+					}
+					if (!canImport) { enableNextItem(); }
+					ImGui::SameLine();
+				}
+
 				if (ImGui::Button("Export"))
 				{
 					exportSelected();
@@ -1181,6 +1214,29 @@ namespace AssetBrowser
 		return s_defaultPal;
 	}
 		
+	void setAssetLevel(const char* name, u32 levelIndex)
+	{
+		std::map<std::string, u32>::iterator iAssetPal = s_assetLevels.find(name);
+		if (iAssetPal == s_assetLevels.end())
+		{
+			s_assetLevels[name] = (1u << levelIndex);
+		}
+		else
+		{
+			iAssetPal->second |= (1u << levelIndex);
+		}
+	}
+
+	bool isAssetInLevel(const char* name, u32 levelIndex)
+	{
+		std::map<std::string, u32>::iterator iAssetPal = s_assetLevels.find(name);
+		if (iAssetPal != s_assetLevels.end())
+		{
+			return (iAssetPal->second & (1 << levelIndex)) != 0u;
+		}
+		return false;
+	}
+		
 	void addToLevelAssets(std::vector<std::string>& assetList, const char* assetName)
 	{
 		const size_t count = assetList.size();
@@ -1298,6 +1354,7 @@ namespace AssetBrowser
 						if (sscanf(line, " TEXTURE: %s ", textureName) == 1)
 						{
 							setAssetPalette(textureName, paletteId);
+							setAssetLevel(textureName, f);
 							addToLevelAssets(levelAssets.textures, textureName);
 						}
 					}
@@ -1306,6 +1363,7 @@ namespace AssetBrowser
 					while (sscanf(line, " TEXTURE: %s ", textureName) == 1)
 					{
 						setAssetPalette(textureName, paletteId);
+						setAssetLevel(textureName, f);
 						addToLevelAssets(levelAssets.textures, textureName);
 						line = parser.readLine(bufferPos);
 						readNext = false;
@@ -1606,14 +1664,17 @@ namespace AssetBrowser
 				sprintf(filepath, "%s%s", pathOS, fileName);
 				FileUtil::fixupPath(filepath);
 
-				// Handle archives inside of directories.
-				ArchiveType archiveType = getArchiveType(fileName);
-				if (archiveType != ARCHIVE_UNKNOWN)
+				// Exported results are archives too, so this doesn't work correctly for project directories.
+				if (assetSource != ASRC_PROJECT)
 				{
-					// Add the archive.
-					Archive* archive = Archive::getArchive(archiveType, fileName, filepath);
-					addArchiveFiles(archive, gameId, fileName, ASRC_EXTERNAL);
-					continue;
+					ArchiveType archiveType = getArchiveType(fileName);
+					if (archiveType != ARCHIVE_UNKNOWN)
+					{
+						// Add the archive.
+						Archive* archive = Archive::getArchive(archiveType, fileName, filepath);
+						addArchiveFiles(archive, gameId, fileName, ASRC_EXTERNAL);
+						continue;
+					}
 				}
 
 				AssetType type = getAssetType(ext);
@@ -2090,6 +2151,7 @@ namespace AssetBrowser
 				char assetObj[TFE_MAX_PATH];
 				char assetInf[TFE_MAX_PATH];
 				FileUtil::replaceExtension(asset->name.c_str(), "O", assetObj);
+				FileUtil::replaceExtension(asset->name.c_str(), "INF", assetInf);
 				if (archive->openFile(assetObj))
 				{ 
 					len = archive->getFileLength();
@@ -2104,7 +2166,6 @@ namespace AssetBrowser
 						outFile.close();
 					}
 				}
-				FileUtil::replaceExtension(asset->name.c_str(), "INF", assetInf);
 				if (archive->openFile(assetInf))
 				{
 					len = archive->getFileLength();
@@ -2151,5 +2212,87 @@ namespace AssetBrowser
 				writeGpuTextureAsPng(sprite->texGpu, pngFile);
 			}
 		}
+	}
+
+	bool readWriteFile(const char* outFilePath, const char* assetName, Archive* archive, WorkBuffer& buffer)
+	{
+		if (!archive->openFile(assetName)) { return false; }
+
+		bool success = false;
+		size_t len = archive->getFileLength();
+		buffer.resize(len);
+		archive->readFile(buffer.data(), len);
+		archive->closeFile();
+
+		FileStream outFile;
+		if (outFile.open(outFilePath, FileStream::MODE_WRITE))
+		{
+			outFile.writeBuffer(buffer.data(), (u32)len);
+			outFile.close();
+			success = true;
+		}
+		return success;
+	}
+
+	void importSelected()
+	{
+		if (!FileUtil::directoryExits(s_editorConfig.editorPath))
+		{
+			showMessageBox("ERROR", getErrorMsg(ERROR_INVALID_EXPORT_PATH), s_editorConfig.editorPath);
+			return;
+		}
+
+		Project* project = project_get();
+		if (!project || !project->active) { return; }
+
+		char tmpDir[TFE_MAX_PATH];
+		getTempDirectory(tmpDir);
+
+		const s32 count = (s32)s_selected.size();
+		const s32* index = s_selected.data();
+		for (s32 i = 0; i < count; i++)
+		{
+			Asset* asset = &s_viewAssetList[index[i]];
+			if (asset->type != TYPE_LEVEL || asset->assetSource == ASRC_PROJECT) { continue; }
+
+			char levPath[TFE_MAX_PATH];
+			sprintf(levPath, "%s/%s", tmpDir, asset->name.c_str());
+
+			// Read the full contents.
+			Archive* archive = asset->archive;
+			if (!archive) { continue; }
+
+			// Write files to the temp directory.
+			WorkBuffer buffer;
+			if (!readWriteFile(levPath, asset->name.c_str(), archive, buffer)) { continue; }
+
+			char objPath[TFE_MAX_PATH];
+			char infPath[TFE_MAX_PATH];
+			FileUtil::replaceExtension(levPath, "O", objPath);
+			FileUtil::replaceExtension(levPath, "INF", infPath);
+
+			char assetObj[TFE_MAX_PATH];
+			char assetInf[TFE_MAX_PATH];
+			FileUtil::replaceExtension(asset->name.c_str(), "O", assetObj);
+			FileUtil::replaceExtension(asset->name.c_str(), "INF", assetInf);
+
+			// These are mostly optional, so we continue even if they don't exist.
+			readWriteFile(objPath, assetObj, archive, buffer);
+			readWriteFile(infPath, assetInf, archive, buffer);
+
+			// Then copy them into the project directory.
+			char dstLevPath[TFE_MAX_PATH];
+			char dstObjPath[TFE_MAX_PATH];
+			char dstInfPath[TFE_MAX_PATH];
+			sprintf(dstLevPath, "%s/%s", project->path, asset->name.c_str());
+			sprintf(dstObjPath, "%s/%s", project->path, assetObj);
+			sprintf(dstInfPath, "%s/%s", project->path, assetInf);
+
+			FileUtil::copyFile(levPath, dstLevPath);
+			FileUtil::copyFile(objPath, dstObjPath);
+			FileUtil::copyFile(infPath, dstInfPath);
+		}
+
+		if (count) { resources_dirty(); }
 	}
 }

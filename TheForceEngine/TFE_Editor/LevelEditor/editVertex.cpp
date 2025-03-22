@@ -53,7 +53,7 @@ namespace LevelEditor
 		const bool mousePressed = s_singleClick;
 		const bool mouseDown = TFE_Input::mouseDown(MouseButton::MBUTTON_LEFT);
 		// TODO: Hotkeys.
-		const bool insertVtx = TFE_Input::keyPressed(KEY_INSERT);
+		const bool insertVtx = isShortcutPressed(SHORTCUT_PLACE);
 		const bool snapToGridEnabled = !TFE_Input::keyModDown(KEYMOD_ALT) && s_grid.size > 0.0f;
 
 		// Early out.
@@ -519,6 +519,18 @@ namespace LevelEditor
 		Vec2f delta = { worldPos2d.x - s_moveVertexPivot->x, worldPos2d.z - s_moveVertexPivot->z };
 		const Vec3f pos = edit_getTransformPos();
 		Vec3f transPos = { worldPos2d.x, pos.y, worldPos2d.z };
+				
+		if (s_view == EDIT_VIEW_3D)
+		{
+			// Avoid singularities.
+			const Vec2f cameraDelta = { transPos.x - s_camera.pos.x, transPos.z - s_camera.pos.z };
+			if (cameraDelta.x*s_rayDir.x + cameraDelta.z*s_rayDir.z < 0.0f || (s_cursor3d.x == 0.0f && s_cursor3d.z == 0.0f))
+			{
+				// Do not allow the object to be moved behind the camera.
+				return;
+			}
+		}
+
 		if (!(moveAxis & AXIS_X))
 		{
 			delta.x = 0.0f;

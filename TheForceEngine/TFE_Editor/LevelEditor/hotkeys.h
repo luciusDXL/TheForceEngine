@@ -8,27 +8,12 @@
 //////////////////////////////////////////////////////////////////////
 #include <TFE_System/types.h>
 #include <TFE_FileSystem/filestream.h>
+#include <TFE_Input/input.h>
 #include <vector>
 #include <string>
 
 namespace LevelEditor
 {
-	// Entity
-	enum EditorActionFlag
-	{
-		ACTION_NONE = 0,
-		ACTION_PLACE = FLAG_BIT(0),
-		ACTION_MOVE_X = FLAG_BIT(1),
-		ACTION_MOVE_Y = FLAG_BIT(2),
-		ACTION_MOVE_Z = FLAG_BIT(3),
-		ACTION_DELETE = FLAG_BIT(4),
-		ACTION_ROTATE = FLAG_BIT(5),
-
-		ACTION_UNDO = FLAG_BIT(6),
-		ACTION_REDO = FLAG_BIT(7),
-		ACTION_SHOW_ALL_LABELS = FLAG_BIT(8),
-	};
-
 	// Draw
 	enum DrawActionFlag
 	{
@@ -38,6 +23,66 @@ namespace LevelEditor
 		DRAW_ACTION_FINISH = FLAG_BIT(2),
 	};
 
+	enum ShortcutId
+	{
+		// Insert/Delete/Copy/Paste
+		SHORTCUT_PLACE = 0,
+		SHORTCUT_DELETE,
+		SHORTCUT_COPY,
+		SHORTCUT_PASTE,
+		// Translation & Rotation
+		SHORTCUT_MOVE_X,
+		SHORTCUT_MOVE_Y,
+		SHORTCUT_MOVE_Z,
+		SHORTCUT_MOVE_NORMAL,
+		SHORTCUT_MOVE_TO_FLOOR,
+		SHORTCUT_MOVE_TO_CEIL,
+		SHORTCUT_SELECT_BACKFACES,
+		// Textures.
+		SHORTCUT_COPY_TEXTURE,
+		SHORTCUT_SET_TEXTURE,
+		SHORTCUT_SET_SIGN,
+		SHORTCUT_AUTO_ALIGN,
+		SHORTCUT_TEXOFFSET_UP,
+		SHORTCUT_TEXOFFSET_DOWN,
+		SHORTCUT_TEXOFFSET_LEFT,
+		SHORTCUT_TEXOFFSET_RIGHT,
+		// Drawing
+		SHORTCUT_REDUCE_CURVE_SEGS,
+		SHORTCUT_INCREASE_CURVE_SEGS,
+		SHORTCUT_RESET_CURVE_SEGS,
+		SHORTCUT_SET_GRID_HEIGHT,
+		SHORTCUT_MOVE_GRID,
+		// Camera
+		SHORTCUT_TOGGLE_GRAVITY,
+		SHORTCUT_CAMERA_FWD,
+		SHORTCUT_CAMERA_BACK,
+		SHORTCUT_CAMERA_LEFT,
+		SHORTCUT_CAMERA_RIGHT,
+		SHORTCUT_SET_TOP_DEPTH,
+		SHORTCUT_SET_BOT_DEPTH,
+		SHORTCUT_RESET_DEPTH,
+		// Other
+		SHORTCUT_SHOW_ALL_LABELS,
+		SHORTCUT_UNDO,
+		SHORTCUT_REDO,
+		// Menus
+		SHORTCUT_SAVE,
+		SHORTCUT_RELOAD,
+		SHORTCUT_FIND_SECTOR,
+		SHORTCUT_VIEW_2D,
+		SHORTCUT_VIEW_3D,
+		SHORTCUT_VIEW_WIREFRAME,
+		SHORTCUT_VIEW_LIGHTING,
+		SHORTCUT_VIEW_GROUP_COLOR,
+		SHORTCUT_VIEW_TEXTURED_FLOOR,
+		SHORTCUT_VIEW_TEXTURED_CEIL,
+		SHORTCUT_VIEW_FULLBRIGHT,
+
+		SHORTCUT_COUNT,
+		SHORTCUT_NONE = SHORTCUT_COUNT,
+	};
+	
 	// General
 	extern bool s_singleClick;
 	extern bool s_doubleClick;
@@ -49,10 +94,24 @@ namespace LevelEditor
 	extern Vec2i s_rightMousePos;
 
 	// Editor Hotkey Actions.
-	extern u32 s_editActions;
 	extern u32 s_drawActions;
-	extern s32 s_rotationDelta;
 
 	void handleHotkeys();
-	bool getEditAction(u32 action);
+
+	void parseLevelEditorShortcut(const char* key, const std::string* values, s32 valueCount);
+	void writeLevelEditorShortcuts(FileStream& configFile);
+
+	void clearKeyboardShortcuts();
+	void setDefaultKeyboardShortcuts();
+	void addKeyboardShortcut(ShortcutId id, KeyboardCode code = KEY_UNKNOWN, KeyModifier mod = KEYMOD_NONE);
+	void removeKeyboardShortcut(ShortcutId id);
+	const char* getKeyboardShortcutDesc(ShortcutId id);
+	KeyboardCode getShortcutKeyboardCode(ShortcutId id);
+	KeyModifier getShortcutKeyMod(ShortcutId id);
+	const char* getShortcutKeyComboText(ShortcutId id);
+	bool isShortcutPressed(ShortcutId shortcutId, u32 allowedKeyMods = (1 << KEYMOD_SHIFT) | (1 << KEYMOD_ALT));
+	bool isShortcutRepeat(ShortcutId shortcutId, u32 allowedKeyMods = (1 << KEYMOD_SHIFT) | (1 << KEYMOD_ALT));
+	bool isShortcutHeld(ShortcutId shortcutId, u32 allowedKeyMods = (1 << KEYMOD_SHIFT) | (1 << KEYMOD_ALT));
+
+	const u8* hotkeys_checkForKeyRepeats();
 }

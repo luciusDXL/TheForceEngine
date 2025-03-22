@@ -52,6 +52,7 @@ namespace TFE_System
 	void setStartTime(u64 startTime);
 
 	void getDateTimeString(char* output);
+	void getDateTimeStringForFile(char* output);
 
 	// Log
 	void logTimeToggle();

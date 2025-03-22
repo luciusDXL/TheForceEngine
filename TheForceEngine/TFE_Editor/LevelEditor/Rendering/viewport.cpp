@@ -137,6 +137,7 @@ namespace LevelEditor
 	Vec4f s_viewportTrans2d = { 0 };
 	f32 s_gridOpacity = 0.5f;
 	f32 s_zoom2d = 0.25f;			// current zoom level in 2D.
+	f32 s_viewDepth[2] = { 65536.0f, -65536.0f };
 	u32 s_viewportRenderFlags = VRF_NONE;
 
 	Rail s_rail = {};
@@ -176,6 +177,7 @@ namespace LevelEditor
 	void drawNoteIcon3d(LevelNote* note, s32 id, u32 objColor, const Vec3f& cameraRgt, const Vec3f& cameraUp);
 	void drawTransformGizmo();
 	bool computeSignCorners(const EditorSector* sector, const EditorWall* wall, Vec3f* corners);
+	void computeFlatUv(const Vec2f* pos, const Vec2f* offset, Vec2f* uv);
 
 	void viewport_init()
 	{
@@ -350,7 +352,7 @@ namespace LevelEditor
 		const Vec4f viewportBoundsWS = viewportBoundsWS2d(1.0f);
 
 		// Draw lower layers, if enabled.
-		if (s_editFlags & LEF_SHOW_LOWER_LAYERS)
+		if ((s_editFlags & LEF_SHOW_LOWER_LAYERS) && !(s_editFlags & LEF_SHOW_ALL_LAYERS))
 		{
 			renderSectorWalls2d(s_level.layerRange[0], s_curLayer - 1);
 		}
@@ -374,14 +376,20 @@ namespace LevelEditor
 		renderGuidelines2d(viewportBoundsWS);
 
 		// Draw the current layer.
-		renderSectorWalls2d(s_curLayer, s_curLayer);
+		s32 startLayer = s_curLayer, endLayer = s_curLayer;
+		if (s_editFlags & LEF_SHOW_ALL_LAYERS)
+		{
+			startLayer = s_level.layerRange[0];
+			endLayer = s_level.layerRange[1];
+		}
+		renderSectorWalls2d(startLayer, endLayer);
 
 		// Gather objects
 		const size_t count = s_level.sectors.size();
 		EditorSector* sector = s_level.sectors.data();
 		for (size_t s = 0; s < count; s++, sector++)
 		{
-			if (sector->layer < s_curLayer || sector->layer > s_curLayer) { continue; }
+			if (!sector_onActiveLayer(sector)) { continue; }
 			if (sector_isHidden(sector)) { continue; }
 			// TODO: Cull
 			const s32 objCount = (s32)sector->obj.size();
@@ -1096,6 +1104,41 @@ namespace LevelEditor
 			{
 				const Vec3f pos = { knot->x, s_grid.height, knot->z };
 				drawPositionKnot3d(2.0f, pos, 0xffffa500);
+			}
+
+			const size_t subdivCount = guideLine->subdiv.size();
+			const size_t offsetCount = guideLine->offsets.size();
+			const GuidelineSubDiv* subdiv = guideLine->subdiv.data();
+			const f32* offsets = guideLine->offsets.data();
+			const Vec2f* vtx = guideLine->vtx.data();
+			for (size_t k = 0; k < subdivCount; k++, subdiv++)
+			{
+				const s32 e = subdiv->edge;
+				const f32 u = subdiv->param;
+				const GuidelineEdge* edge = &guideLine->edge[e];
+				const Vec2f v0 = vtx[edge->idx[0]];
+				const Vec2f v1 = vtx[edge->idx[1]];
+				Vec2f pos, nrm;
+				if (edge->idx[2] >= 0) // Curve
+				{
+					const Vec2f c = vtx[edge->idx[2]];
+					evaluateQuadraticBezier(v0, v1, c, u, &pos, &nrm);
+				}
+				else // Line
+				{
+					pos.x = v0.x*(1.0f - u) + v1.x*u;
+					pos.z = v0.z*(1.0f - u) + v1.z*u;
+					nrm.x = -(v1.z - v0.z);
+					nrm.z = v1.x - v0.x;
+					nrm = TFE_Math::normalize(&nrm);
+				}
+
+				drawPositionKnot3d(1.5f, { pos.x, s_grid.height, pos.z }, 0x8000a5ff);
+				for (size_t o = 0; o < offsetCount; o++)
+				{
+					const Vec2f offsetPos = { pos.x + nrm.x * offsets[o], pos.z + nrm.z * offsets[o] };
+					drawPositionKnot3d(1.5f, { offsetPos.x, s_grid.height, offsetPos.z }, 0x8000a5ff);
+				}
 			}
 		}
 	}
@@ -2267,7 +2310,7 @@ namespace LevelEditor
 
 		return u32(colorSum.x * 255.0f) | (u32(colorSum.y * 255.0f) << 8) | (u32(colorSum.z * 255.0f) << 16) | (u32(alpha * 255.0f) << 24);
 	}
-		
+				
 	void renderLevel3D()
 	{
 		viewport_updateRail();
@@ -2315,7 +2358,7 @@ namespace LevelEditor
 		for (size_t s = 0; s < count; s++, sector++)
 		{
 			// Skip other layers unless all layers is enabled.
-			if (sector->layer != s_curLayer && !(s_editFlags & LEF_SHOW_ALL_LAYERS)) { continue; }
+			if (!sector_onActiveLayer(sector)) { continue; }
 			if (sector_isHidden(sector)) { continue; }
 
 			// Add objects...
@@ -2480,7 +2523,7 @@ namespace LevelEditor
 						if (!botSign && wall->tex[WP_SIGN].texIndex >= 0 && (s_sectorDrawMode == SDM_TEXTURED_FLOOR || s_sectorDrawMode == SDM_TEXTURED_CEIL))
 						{
 							const EditorTexture* tex = calculateSignTextureCoords(wall, &wall->tex[WP_TOP], &wall->tex[WP_SIGN], wallLengthTexels, topHeight, false, uvCorners);
-							TFE_RenderShared::triDraw3d_addQuadTextured(TRIMODE_CLAMP, corners, uvCorners, wallColor, tex->frames[0]);
+							if (tex) { TFE_RenderShared::triDraw3d_addQuadTextured(TRIMODE_CLAMP, corners, uvCorners, wallColor, tex->frames[0]); }
 						}
 					}
 					// Mid only for mask textures.
@@ -2490,7 +2533,7 @@ namespace LevelEditor
 											{v1.x, max(next->floorHeight, sector->floorHeight), v1.z} };
 
 						const EditorTexture* tex = calculateTextureCoords(wall, &wall->tex[WP_MID], wallLengthTexels, fabsf(corners[1].y - corners[0].y), flipHorz, uvCorners);
-						TFE_RenderShared::triDraw3d_addQuadTextured(TRIMODE_BLEND, corners, uvCorners, wallColor, tex->frames[0]);
+						if (tex) { TFE_RenderShared::triDraw3d_addQuadTextured(TRIMODE_BLEND, corners, uvCorners, wallColor, tex->frames[0]); }
 					}
 				}
 			}
@@ -2537,8 +2580,8 @@ namespace LevelEditor
 			{
 				for (u32 v = 0; v < vtxCount; v++)
 				{
-					uvFlr[v]  = { (triVtx[v].x - floorOffset.x) / 8.0f, (triVtx[v].z - floorOffset.z) / 8.0f };
-					uvCeil[v] = { (triVtx[v].x - ceilOffset.x) / 8.0f, (triVtx[v].z - ceilOffset.z) / 8.0f };
+					computeFlatUv(&triVtx[v], &floorOffset, &uvFlr[v]);
+					computeFlatUv(&triVtx[v], &ceilOffset, &uvCeil[v]);
 				}
 			}
 
@@ -2733,7 +2776,7 @@ namespace LevelEditor
 									if (!targetSector) { continue; }
 
 									Vec3f endPoint = { 0 };
-									if (targetWall < 0)
+									if (targetWall < 0 || targetWall >= (s32)targetSector->walls.size())
 									{
 										endPoint.x = (targetSector->bounds[0].x + targetSector->bounds[1].x) * 0.5f;
 										endPoint.y = (targetSector->bounds[0].y + targetSector->bounds[1].y) * 0.5f;
@@ -2872,6 +2915,12 @@ namespace LevelEditor
 		}
 	}
 
+	void computeFlatUv(const Vec2f* pos, const Vec2f* offset, Vec2f* uv)
+	{
+		uv->x =  (offset->x - pos->x) / 8.0f;
+		uv->z = -(offset->z - pos->z) / 8.0f;
+	}
+
 	void renderTexturedSectorPolygon2d(const Polygon* poly, u32 color, EditorTexture* tex, const Vec2f& offset)
 	{
 		const size_t idxCount = poly->triIdx.size();
@@ -2888,7 +2937,7 @@ namespace LevelEditor
 			for (size_t v = 0; v < vtxCount; v++, vtxData++)
 			{
 				transVtx[v] = { vtxData->x * s_viewportTrans2d.x + s_viewportTrans2d.y, vtxData->z * s_viewportTrans2d.z + s_viewportTrans2d.w };
-				uv[v] = { (vtxData->x - offset.x) / 8.0f, (vtxData->z - offset.z) / 8.0f };
+				computeFlatUv(vtxData, &offset, &uv[v]);
 			}
 			triDraw2D_addTextured((u32)idxCount, (u32)vtxCount, transVtx, uv, idxData, color, tex ? tex->frames[0] : nullptr);
 		}
@@ -2918,7 +2967,7 @@ namespace LevelEditor
 		}
 
 		u32 baseColor;
-		if (s_curLayer != sector->layer)
+		if (s_curLayer != sector->layer && !(s_editFlags & LEF_SHOW_ALL_LAYERS))
 		{
 			u32 alpha = 0x40 / (s_curLayer - sector->layer);
 			baseColor = 0x00808000 | (alpha << 24);
@@ -2939,7 +2988,7 @@ namespace LevelEditor
 		selection_get(SEL_INDEX_HOVERED, hoveredSector, hoveredFeatureIndex);
 
 		// Draw a background polygon to help sectors stand out a bit.
-		if (sector->layer == s_curLayer)
+		if (sector_onActiveLayer(sector))
 		{
 			if (s_sectorDrawMode == SDM_GROUP_COLOR)
 			{
@@ -3164,14 +3213,14 @@ namespace LevelEditor
 		return a->floorHeight < b->floorHeight;
 	}
 
-	void sortSectorPolygons(s32 layer)
+	void sortSectorPolygons()
 	{
 		s_sortedSectors.clear();
 		const size_t count = s_level.sectors.size();
 		EditorSector* sector = s_level.sectors.data();
 		for (size_t s = 0; s < count; s++, sector++)
 		{
-			if (sector->layer != layer) { continue; }
+			if (!sector_onActiveLayer(sector)) { continue; }
 			if (sector_isHidden(sector)) { continue; }
 
 			s_sortedSectors.push_back(sector);
@@ -3184,7 +3233,7 @@ namespace LevelEditor
 		if (s_sectorDrawMode != SDM_TEXTURED_FLOOR && s_sectorDrawMode != SDM_TEXTURED_CEIL && s_sectorDrawMode != SDM_LIGHTING) { return; }
 
 		// Sort polygons.
-		sortSectorPolygons(s_curLayer);
+		sortSectorPolygons();
 
 		// Draw them bottom to top.
 		const size_t count = s_sortedSectors.size();
@@ -3192,6 +3241,7 @@ namespace LevelEditor
 		for (size_t s = 0; s < count; s++)
 		{
 			EditorSector* sector = sectorList[s];
+			if (!sector_inViewRange(sector)) { continue; }
 			bool locked = sector_isLocked(sector);
 			
 			const u32 colorIndex = (s_editFlags & LEF_FULLBRIGHT) && s_sectorDrawMode != SDM_LIGHTING ? 31 : sector->ambient;
@@ -3540,6 +3590,41 @@ namespace LevelEditor
 				const Vec2f pos = { knot->x, knot->z };
 				drawPositionKnot2d(2.0f, pos, 0xffffa500);
 			}
+
+			const size_t subdivCount = guideLine->subdiv.size();
+			const size_t offsetCount = guideLine->offsets.size();
+			const GuidelineSubDiv* subdiv = guideLine->subdiv.data();
+			const f32* offsets = guideLine->offsets.data();
+			const Vec2f* vtx = guideLine->vtx.data();
+			for (size_t k = 0; k < subdivCount; k++, subdiv++)
+			{
+				const s32 e = subdiv->edge;
+				const f32 u = subdiv->param;
+				const GuidelineEdge* edge = &guideLine->edge[e];
+				const Vec2f v0 = vtx[edge->idx[0]];
+				const Vec2f v1 = vtx[edge->idx[1]];
+				Vec2f pos, nrm;
+				if (edge->idx[2] >= 0) // Curve
+				{
+					const Vec2f c = vtx[edge->idx[2]];
+					evaluateQuadraticBezier(v0, v1, c, u, &pos, &nrm);
+				}
+				else // Line
+				{
+					pos.x = v0.x*(1.0f - u) + v1.x*u;
+					pos.z = v0.z*(1.0f - u) + v1.z*u;
+					nrm.x = -(v1.z - v0.z);
+					nrm.z =   v1.x - v0.x;
+					nrm = TFE_Math::normalize(&nrm);
+				}
+
+				drawPositionKnot2d(1.5f, pos, 0x8000a5ff);
+				for (size_t o = 0; o < offsetCount; o++)
+				{
+					const Vec2f offsetPos = { pos.x + nrm.x * offsets[o], pos.z + nrm.z * offsets[o] };
+					drawPositionKnot2d(1.5f, offsetPos, 0x8000a5ff);
+				}
+			}
 		}
 	}
 	
@@ -3560,6 +3645,7 @@ namespace LevelEditor
 			if (sector->layer < layerStart || sector->layer > layerEnd) { continue; }
 			if (sector_isHidden(sector)) { continue; }
 			if (s_editMode == LEDIT_SECTOR && (sector == hoveredSector || selection_sector(SA_CHECK_INCLUSION, sector))) { continue; }
+			if (!sector_inViewRange(sector)) { continue; }
 
 			drawSector2d(sector, sector_isLocked(sector) ? HL_LOCKED : HL_NONE);
 		}
@@ -3611,7 +3697,7 @@ namespace LevelEditor
 		EditorSector* sector = s_level.sectors.data();
 		for (size_t s = 0; s < sectorCount; s++, sector++)
 		{
-			if (sector->layer != s_curLayer) { continue; }
+			if (!sector_onActiveLayer(sector)) { continue; }
 			if (sector_isHidden(sector)) { continue; }
 
 			const size_t vtxCount = sector->vtx.size();

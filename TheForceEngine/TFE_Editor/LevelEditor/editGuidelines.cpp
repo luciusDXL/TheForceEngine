@@ -109,7 +109,7 @@ namespace LevelEditor
 		{
 			findHoveredGuideline();
 		}
-		if (s_editActions & ACTION_DELETE)
+		if (isShortcutPressed(SHORTCUT_DELETE))
 		{
 			if (s_curGuideline >= 0)
 			{
@@ -338,6 +338,8 @@ namespace LevelEditor
 		guideline_computeKnots(&guideline);
 		guideline.id = (s32)s_level.guidelines.size();
 		s_level.guidelines.push_back(guideline);
+
+		cmd_guidelineSnapshot(LName_Guideline_Create);
 	}
 
 	void createGuidelinesFromShape()
@@ -356,5 +358,7 @@ namespace LevelEditor
 		guideline_computeKnots(&guideline);
 		guideline.id = (s32)s_level.guidelines.size();
 		s_level.guidelines.push_back(guideline);
+
+		cmd_guidelineSnapshot(LName_Guideline_Create);
 	}
 }
