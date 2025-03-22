@@ -164,7 +164,8 @@ if(ENABLE_TFE)
 			FILES "${CMAKE_CURRENT_SOURCE_DIR}/TheForceEngine/io.github.theforceengine.tfe.desktop" DESTINATION "share/applications"
 		)
 		install(
-			FILES "${CMAKE_CURRENT_SOURCE_DIR}/TheForceEngine/io.github.theforceengine.tfe.png" DESTINATION "${TFE_ICONDIR}/256x256/apps"
+			FILES "${CMAKE_CURRENT_SOURCE_DIR}/TheForceEngine/TheForceEngine.svg" DESTINATION "${TFE_ICONDIR}/scalable/apps"
+   			RENAME "io.github.theforceengine.tfe.svg"
 		)
 		install(
 			FILES "${CMAKE_CURRENT_SOURCE_DIR}/TheForceEngine/io.github.theforceengine.tfe.metainfo.xml"
