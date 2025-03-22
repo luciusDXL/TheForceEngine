@@ -61,9 +61,11 @@
 .vs/
 Internal/
 TheForceEngine/Games/
+TheForceEngine/ModCache/
 TheForceEngine/Mods/
 TheForceEngine/screenshots/
 TheForceEngine/Reference/
+TheForceEngine/Replays/
 TheForceEngine/LawMaker/
 TheForceEngine/Backup/
 TheForceEngine/Exports/

@@ -504,7 +504,6 @@ namespace TFE_Jedi
 			}
 			return ImStartDigitalSound(soundId, priority);
 		}
-		return imSuccess;
 	}
 
 	s32 ImStopSound(ImSoundId soundId)

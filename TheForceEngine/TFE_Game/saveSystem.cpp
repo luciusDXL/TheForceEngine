@@ -23,7 +23,8 @@ namespace TFE_SaveSystem
 	enum SaveMasterVersion
 	{
 		SVER_INIT = 1,
-		SVER_CUR = SVER_INIT
+		SVER_REPLAY = 7,
+		SVER_CUR = SVER_REPLAY
 	};
 
 	static SaveRequest s_req = SF_REQ_NONE;
@@ -35,6 +36,11 @@ namespace TFE_SaveSystem
 
 	static u32* s_imageBuffer[2] = { nullptr, nullptr };
 	static size_t s_imageBufferSize[2] = { 0 };
+
+	bool versionValid(s32 version)
+	{
+		return version == SVER_CUR;
+	}
 
 	void saveHeader(Stream* stream, const char* saveName)
 	{
@@ -88,6 +94,19 @@ namespace TFE_SaveSystem
 		stream->write(&len);
 		stream->writeBuffer(levelName, len);
 
+		//Level ID
+		char levelId[256];
+		s_game->getLevelId(levelId);
+		len = (u8)strlen(levelId);
+		stream->write(&len);
+		stream->writeBuffer(levelId, len);
+
+		// For Replays - Counter ID
+		int counter = inputMapping_getCounter();		
+		len = sizeof(counter);
+		stream->write(&len);
+		stream->writeBuffer(&counter, len);
+
 		// Mod List
 		char modList[256];
 		s_game->getModList(modList);
@@ -106,6 +125,7 @@ namespace TFE_SaveSystem
 		// Master version.
 		u32 version;
 		stream->read(&version);
+		header->saveVersion = version;
 
 		// Save Name.
 		u8 len;
@@ -130,6 +150,18 @@ namespace TFE_SaveSystem
 		stream->read(&len);
 		stream->readBuffer(header->levelName, len);
 		header->levelName[len] = 0;
+
+		if (version >= SVER_REPLAY)
+		{
+			// Level ID
+			stream->read(&len);
+			stream->readBuffer(header->levelId, len);
+			header->levelId[len] = 0;
+
+			// Counter
+			stream->read(&len);
+			stream->readBuffer(&header->replayCounter, len);
+		}
 
 		// Mod List
 		stream->read(&len);
@@ -308,6 +340,11 @@ namespace TFE_SaveSystem
 		setCurrentGame(game->id);
 	}
 
+	IGame* getCurrentGame()
+	{
+		return s_game;
+	}
+
 	void update()
 	{
 		if (!s_game) { return; }
@@ -316,7 +353,12 @@ namespace TFE_SaveSystem
 		const char* saveFilename = saveRequestFilename();
 
 		bool canSave = !lastState && s_game->canSave();
-		if (saveFilename && canSave)
+		if (isReplaySystemLive())
+		{
+			// no saving or loading during replay system
+			return;
+		}
+		else if (saveFilename && canSave)
 		{
 			saveGame(saveFilename, s_reqSavename);
 			lastState = 1;

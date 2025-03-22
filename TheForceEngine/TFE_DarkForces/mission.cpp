@@ -37,6 +37,7 @@
 #include <TFE_System/system.h>
 #include <TFE_System/tfeMessage.h>
 #include <TFE_Input/inputMapping.h>
+#include <TFE_Input/replay.h>
 
 using namespace TFE_Jedi;
 using namespace TFE_Input;
@@ -503,6 +504,17 @@ namespace TFE_DarkForces
 
 	void mission_exitLevel()
 	{
+		// Force the game to exit the replay modes in case you try to exit through the menu / console
+		if (isDemoPlayback())
+		{
+			endReplay();
+		}
+
+		if (isRecording())
+		{
+			endRecording();
+		}
+
 		s_exitLevel = JTRUE;
 	}
 
@@ -666,7 +678,10 @@ namespace TFE_DarkForces
 				}
 			} while (msg != MSG_FREE_TASK && msg != MSG_RUN_TASK);
 		}
-
+		if (TFE_Input::isRecording())
+		{
+			endRecording();
+		}
 		s_mainTask = nullptr;
 		task_makeActive(s_missionLoadTask);
 		task_end;
@@ -1066,7 +1081,8 @@ namespace TFE_DarkForces
 
 	void executeCheat(CheatID cheatID)
 	{
-		if (cheatID == CHEAT_NONE)
+		// Do not allow cheats while recording
+		if (cheatID == CHEAT_NONE || isRecording())
 		{
 			return;
 		}

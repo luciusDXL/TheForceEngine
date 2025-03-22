@@ -587,6 +587,7 @@ echo ^)";
     <ClInclude Include="TFE_Input\input.h" />
     <ClInclude Include="TFE_Input\inputEnum.h" />
     <ClInclude Include="TFE_Input\inputMapping.h" />
+	<ClInclude Include="TFE_Input\replay.h" />
     <ClInclude Include="TFE_Jedi\Collision\collision.h" />
     <ClInclude Include="TFE_Jedi\IMuse\imConst.h" />
     <ClInclude Include="TFE_Jedi\IMuse\imDigitalSound.h" />
@@ -922,7 +923,7 @@ echo ^)";
     <ClCompile Include="TFE_Editor\LevelEditor\selection.cpp" />
     <ClCompile Include="TFE_Editor\LevelEditor\shell.cpp" />
     <ClCompile Include="TFE_Editor\LevelEditor\tabControl.cpp" />
-    <ClCompile Include="TFE_Editor\LevelEditor\testOptions.cpp" />
+    <ClCompile Include="TFE_Editor\LevelEditor\testOptions.cpp" />	
     <ClCompile Include="TFE_Editor\LevelEditor\userPreferences.cpp" />
     <ClCompile Include="TFE_Editor\snapshotReaderWriter.cpp" />
     <ClCompile Include="TFE_ExternalData\pickupExternal.cpp" />
@@ -985,6 +986,7 @@ echo ^)";
     <ClCompile Include="TFE_Game\saveSystem.cpp" />
     <ClCompile Include="TFE_Input\input.cpp" />
     <ClCompile Include="TFE_Input\inputMapping.cpp" />
+    <ClCompile Include="TFE_Input\replay.cpp" />
     <ClCompile Include="TFE_Jedi\Collision\collision.cpp" />
     <ClCompile Include="TFE_Jedi\IMuse\imConst.cpp" />
     <ClCompile Include="TFE_Jedi\IMuse\imDigitalSound.cpp" />

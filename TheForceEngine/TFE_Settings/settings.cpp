@@ -113,7 +113,6 @@ namespace TFE_Settings
 	void parseDark_ForcesSettings(const char* key, const char* value);
 	void parseOutlawsSettings(const char* key, const char* value);
 	void parseCVars(const char* key, const char* value);
-	void checkGameData();
 
 	//////////////////////////////////////////////////////////////////////////////////
 	// Implementation
@@ -522,6 +521,30 @@ namespace TFE_Settings
 		writeKeyValue_String(settings, "game", s_game.game);
 	}
 
+	void writeDarkForcesGameSettings(FileStream& settings)
+	{
+		writeKeyValue_Int(settings, "airControl", s_gameSettings.df_airControl);
+		writeKeyValue_Bool(settings, "bobaFettFacePlayer", s_gameSettings.df_bobaFettFacePlayer);
+		writeKeyValue_Bool(settings, "smoothVUEs", s_gameSettings.df_smoothVUEs);
+		writeKeyValue_Bool(settings, "disableFightMusic", s_gameSettings.df_disableFightMusic);
+		writeKeyValue_Bool(settings, "enableAutoaim", s_gameSettings.df_enableAutoaim);
+		writeKeyValue_Bool(settings, "showSecretFoundMsg", s_gameSettings.df_showSecretFoundMsg);
+		writeKeyValue_Bool(settings, "autorun", s_gameSettings.df_autorun);
+		writeKeyValue_Bool(settings, "crouchToggle", s_gameSettings.df_crouchToggle);
+		writeKeyValue_Bool(settings, "ignoreInfLimit", s_gameSettings.df_ignoreInfLimit);
+		writeKeyValue_Bool(settings, "stepSecondAlt", s_gameSettings.df_stepSecondAlt);
+		writeKeyValue_Int(settings, "pitchLimit", s_gameSettings.df_pitchLimit);
+		writeKeyValue_Bool(settings, "solidWallFlagFix", s_gameSettings.df_solidWallFlagFix);
+		writeKeyValue_Bool(settings, "enableUnusedItem", s_gameSettings.df_enableUnusedItem);
+		writeKeyValue_Bool(settings, "jsonAiLogics", s_gameSettings.df_jsonAiLogics);
+		writeKeyValue_Bool(settings, "df_showReplayCounter", s_gameSettings.df_showReplayCounter);
+		writeKeyValue_Int(settings,  "df_recordFrameRate", s_gameSettings.df_recordFrameRate);
+		writeKeyValue_Int(settings,  "df_playbackFrameRate", s_gameSettings.df_playbackFrameRate);
+		writeKeyValue_Bool(settings, "df_enableRecording", s_gameSettings.df_enableRecording);
+		writeKeyValue_Bool(settings, "df_enableRecordingAll", s_gameSettings.df_enableRecordingAll);
+		writeKeyValue_Bool(settings, "df_demologging", s_gameSettings.df_demologging);
+	}
+
 	void writePerGameSettings(FileStream& settings)
 	{
 		for (u32 i = 0; i < Game_Count; i++)
@@ -532,20 +555,7 @@ namespace TFE_Settings
 
 			if (i == Game_Dark_Forces)
 			{
-				writeKeyValue_Int(settings, "airControl", s_gameSettings.df_airControl);
-				writeKeyValue_Bool(settings, "bobaFettFacePlayer", s_gameSettings.df_bobaFettFacePlayer);
-				writeKeyValue_Bool(settings, "smoothVUEs", s_gameSettings.df_smoothVUEs);
-				writeKeyValue_Bool(settings, "disableFightMusic", s_gameSettings.df_disableFightMusic);
-				writeKeyValue_Bool(settings, "enableAutoaim", s_gameSettings.df_enableAutoaim);
-				writeKeyValue_Bool(settings, "showSecretFoundMsg", s_gameSettings.df_showSecretFoundMsg);
-				writeKeyValue_Bool(settings, "autorun", s_gameSettings.df_autorun);
-				writeKeyValue_Bool(settings, "crouchToggle", s_gameSettings.df_crouchToggle);
-				writeKeyValue_Bool(settings, "ignoreInfLimit", s_gameSettings.df_ignoreInfLimit);
-				writeKeyValue_Bool(settings, "stepSecondAlt", s_gameSettings.df_stepSecondAlt);
-				writeKeyValue_Int(settings, "pitchLimit", s_gameSettings.df_pitchLimit);
-				writeKeyValue_Bool(settings, "solidWallFlagFix", s_gameSettings.df_solidWallFlagFix);
-				writeKeyValue_Bool(settings, "enableUnusedItem", s_gameSettings.df_enableUnusedItem);
-				writeKeyValue_Bool(settings, "jsonAiLogics", s_gameSettings.df_jsonAiLogics);
+				writeDarkForcesGameSettings(settings);
 			}
 		}
 	}
@@ -853,7 +863,7 @@ namespace TFE_Settings
 		else if (strcasecmp("forceGouraud", key) == 0)
 		{
 			s_graphicsSettings.forceGouraudShading = parseBool(value);
-		}
+		}	
 	}
 
 	void parseEnhancementsSettings(const char* key, const char* value)
@@ -1161,6 +1171,30 @@ namespace TFE_Settings
 		else if (strcasecmp("jsonAiLogics", key) == 0)
 		{
 			s_gameSettings.df_jsonAiLogics = parseBool(value);
+		}
+		else if (strcasecmp("df_showReplayCounter", key) == 0)
+		{
+			s_gameSettings.df_showReplayCounter = parseBool(value);
+		}		
+		else if (strcasecmp("df_recordFrameRate", key) == 0)
+		{
+			s_gameSettings.df_recordFrameRate = parseInt(value);
+		}
+		else if (strcasecmp("df_playbackFrameRate", key) == 0)
+		{
+			s_gameSettings.df_playbackFrameRate = parseInt(value);
+		}
+		else if (strcasecmp("df_enableRecording", key) == 0)
+		{
+			s_gameSettings.df_enableRecording = parseBool(value);
+		}
+		else if (strcasecmp("df_enableRecordingAll", key) == 0)
+		{
+			s_gameSettings.df_enableRecordingAll = parseBool(value);
+		}
+		else if (strcasecmp("df_demologging", key) == 0)
+		{
+			s_gameSettings.df_demologging = parseBool(value);
 		}
 	}
 

@@ -202,7 +202,7 @@
     </Filter>
     <Filter Include="Source\TFE_ForceScript\ScriptAPI-Shared">
       <UniqueIdentifier>{5c672dc0-3db1-4561-a60b-669fd3874113}</UniqueIdentifier>
-    </Filter>
+    </Filter>	
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="main.h">
@@ -223,6 +223,9 @@
     <ClInclude Include="TFE_Input\inputEnum.h">
       <Filter>Source\TFE_Input</Filter>
     </ClInclude>
+    <ClInclude Include="TFE_Input\replay.h">
+      <Filter>Source\TFE_Input</Filter>
+    </ClInclude>	
     <ClInclude Include="TFE_Ui\imGUI\imconfig.h">
       <Filter>Source\TFE_Ui\imGUI</Filter>
     </ClInclude>
@@ -1473,7 +1476,7 @@
     </ClInclude>
     <ClInclude Include="TFE_Editor\LevelEditor\testOptions.h">
       <Filter>Source\TFE_Editor\LevelEditor</Filter>
-    </ClInclude>
+    </ClInclude>	
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -1894,6 +1897,9 @@
       <Filter>Source\TFE_DarkForces\GameUI</Filter>
     </ClCompile>
     <ClCompile Include="TFE_Input\inputMapping.cpp">
+      <Filter>Source\TFE_Input</Filter>
+    </ClCompile>
+	<ClCompile Include="TFE_Input\replay.cpp">
       <Filter>Source\TFE_Input</Filter>
     </ClCompile>
     <ClCompile Include="TFE_Jedi\Renderer\RClassic_Fixed\rclassicFixedSharedState.cpp">
@@ -2579,7 +2585,7 @@
     </ClCompile>
     <ClCompile Include="TFE_Editor\LevelEditor\testOptions.cpp">
       <Filter>Source\TFE_Editor\LevelEditor</Filter>
-    </ClCompile>
+    </ClCompile>	
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="TheForceEngine.rc">

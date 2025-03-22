@@ -19,6 +19,7 @@ namespace TFE_FrontEndUI
 		VIEW_COUNT
 	};
 
+	bool modLoader_exist(const char* modName);
 	void modLoader_read();
 	void modLoader_cleanupResources();
 	bool modLoader_selectionUI();

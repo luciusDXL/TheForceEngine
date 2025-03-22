@@ -278,7 +278,7 @@ namespace TFE_DarkForces
 			s_colCurBot = s_colCurLowestFloor;
 			s_colMinSector = sector;
 		}
-
+		
 		if (ignore || (s_colCurBot >= s_colBottom && s_colCurTop <= s_colTop && TFE_Jedi::abs(s_colCurBot - s_colCurTop) >= s_colHeight && curFloor <= s_colY1))
 		{
 			s_collidedObj = col_findObjectCollision(sector);
@@ -353,7 +353,7 @@ namespace TFE_DarkForces
 								continue;
 							}
 						}
-
+						
 						// This wall might be passable.
 						if (canPass)
 						{
@@ -494,7 +494,7 @@ namespace TFE_DarkForces
 
 		s_colDstPosX = obj->posWS.x + playerLogic->move.x;
 		s_colDstPosZ = obj->posWS.z + playerLogic->move.z;
-
+		
 		// If there was no collision, return false.
 		if (col_computeCollisionResponse(sector, yVel))
 		{
@@ -712,6 +712,9 @@ namespace TFE_DarkForces
 
 	void initPlayerCollision()
 	{
+		// Reset to 0 on all collisions to ensure replay consistency. 
+		s_collisionFrameSector = 0;
+		s_collisionFrameWall = 0;
 		CCMD("exportTexture", console_exportTexture, 0, "Export the texture at the center of the screen.");
 	}
 

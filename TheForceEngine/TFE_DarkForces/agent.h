@@ -48,13 +48,15 @@ namespace TFE_DarkForces
 
 	void agent_serialize(Stream* stream);
 	void agent_restartEndLevelTask();
+
 	s32 agent_loadData();
 	JBool agent_loadLevelList(const char* fileName);
 	void  agent_updateAgentSavedData();
 	void  agent_levelEndTask();
-
 	JBool agent_readConfigData(FileStream* file, s32 agentId, LevelSaveData* saveData);
 	JBool agent_writeAgentConfigData(FileStream* file, s32 agentId, const LevelSaveData* saveData);
+	void  agent_writeSavedData(s32 agentId, LevelSaveData* saveData);
+	void  agent_readSavedData(s32 agentId, LevelSaveData* levelData);
 	void  agent_readSavedDataForLevel(s32 agentId, s32 levelIndex);
 	void  agent_saveLevelCompletion(u8 diff, s32 levelIndex);
 	s32   agent_saveInventory(s32 agentId, s32 nextLevel);
@@ -72,6 +74,8 @@ namespace TFE_DarkForces
 
 	void agent_levelComplete();
 	void agent_createLevelEndTask();
+
+	JBool createDarkPilotConfig(const char* path);
 	   
 	extern AgentData s_agentData[MAX_AGENT_COUNT];
 	extern s32 s_maxLevelIndex;

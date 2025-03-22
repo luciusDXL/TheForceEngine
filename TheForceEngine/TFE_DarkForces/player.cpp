@@ -17,21 +17,16 @@
 #include <TFE_ExternalData/pickupExternal.h>
 #include <TFE_Input/inputMapping.h>
 #include <TFE_Game/igame.h>
-#include <TFE_DarkForces/mission.h>
 #include <TFE_Jedi/Level/level.h>
-#include <TFE_Jedi/Level/levelData.h>
 #include <TFE_Jedi/InfSystem/infSystem.h>
 #include <TFE_Jedi/Renderer/rlimits.h>
 #include <TFE_Jedi/Serialization/serialization.h>
 // Internal types need to be included in this case.
 #include <TFE_Jedi/InfSystem/infTypesInternal.h>
 #include <TFE_Jedi/Renderer/jediRenderer.h>
-#include <TFE_Jedi/Renderer/RClassic_Fixed/rclassicFixed.h>
-#include <TFE_Audio/audioSystem.h>
 
 // TFE
 #include <TFE_System/tfeMessage.h>
-#include <TFE_Settings/settings.h>
 
 using namespace TFE_Input;
 
@@ -361,6 +356,9 @@ namespace TFE_DarkForces
 		s_playerInfo.health      = pickup_addToValue(0, 100, s_healthMax);
 		s_playerInfo.healthFract = 0;
 		s_batteryPower = s_batteryPowerMax;
+		// Always reset player ticks on init for replay consistency
+		s_playerTick = 0;
+		s_prevPlayerTick = 0;
 		s_reviveTick = 0;
 
 		s_automapLocked = JTRUE;
@@ -917,6 +915,10 @@ namespace TFE_DarkForces
 	{
 		s_playerObject = obj;
 		obj_addLogic(obj, (Logic*)&s_playerLogic, LOGIC_PLAYER, s_playerTask, playerLogicCleanupFunc);
+
+		// Wipe out the player logic for replay consistency
+		s_playerLogic.move = {};
+		s_playerLogic.dir = {};
 
 		s_playerObject->entityFlags|= ETFLAG_PLAYER;
 		s_playerObject->flags      |= OBJ_FLAG_MOVABLE;
@@ -1585,7 +1587,7 @@ namespace TFE_DarkForces
 					}
 				}
 			}
-						
+
 			s_prevPlayerTick = s_playerTick;
 			task_yield(TASK_NO_DELAY);
 		}
@@ -1947,7 +1949,7 @@ namespace TFE_DarkForces
 				s_playerInWater = JTRUE;
 			}
 		}
-
+ 
 		// Apply friction to existing velocity.
 		if (s_playerVelX || s_playerVelZ)
 		{

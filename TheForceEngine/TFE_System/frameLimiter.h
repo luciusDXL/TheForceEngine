@@ -11,6 +11,7 @@ namespace TFE_System
 	// Set the frame limit in Frames Per Second (FPS).
 	// A value of 0 sets no limit.
 	void frameLimiter_set(f64 limitFPS = 0.0);
+	f64 frameLimiter_get();
 	f64 frameLimiter_getAccuracy();
 
 	void frameLimiter_begin();

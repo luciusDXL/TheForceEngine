@@ -32,7 +32,7 @@ bool FileStream::exists(const char* filename)
 
 bool FileStream::open(const char* filename, AccessMode mode)
 {
-	const char* modeStrings[] = { "rb", "wb", "rb+" };
+	const char* modeStrings[] = { "rb", "wb", "rb+", "ab"};
 	m_file = fopen(filename, modeStrings[mode]);
 	m_mode = mode;
 
@@ -63,7 +63,7 @@ void FileStream::close()
 {
 	if (m_file)
 	{
-		if (m_mode == MODE_WRITE || m_mode == MODE_READWRITE) 
+		if (m_mode == MODE_WRITE || m_mode == MODE_READWRITE || m_mode == MODE_APPEND)
 		{ 
 			fflush(m_file); 
 		}
@@ -201,7 +201,7 @@ bool FileStream::isOpen() const
 
 u32 FileStream::readBuffer(void* ptr, u32 size, u32 count)
 {
-	assert(m_mode == MODE_READ || m_mode == MODE_READWRITE);
+	assert(m_mode == MODE_READ || m_mode == MODE_READWRITE || m_mode == MODE_APPEND);
 	if (m_file)
 	{
 		// fread() returns the number of *elements* read, but we want the number of bytes read.
@@ -216,7 +216,7 @@ u32 FileStream::readBuffer(void* ptr, u32 size, u32 count)
 
 void FileStream::writeBuffer(const void* ptr, u32 size, u32 count)
 {
-	assert(m_mode == MODE_WRITE || m_mode == MODE_READWRITE);
+	assert(m_mode == MODE_WRITE || m_mode == MODE_READWRITE || m_mode == MODE_APPEND);
 	if (m_file)
 	{
 		fwrite(ptr, size, count, m_file);
@@ -226,7 +226,7 @@ void FileStream::writeBuffer(const void* ptr, u32 size, u32 count)
 void FileStream::writeString(const char* fmt, ...)
 {
 	static char tmpStr[4096];
-	assert(m_mode == MODE_WRITE || m_mode == MODE_READWRITE);
+	assert(m_mode == MODE_WRITE || m_mode == MODE_READWRITE || m_mode == MODE_APPEND);
 
 	if (m_file)
 	{
@@ -250,7 +250,7 @@ void FileStream::flush()
 
 void FileStream::readString(std::string* ptr, u32 count)
 {
-	assert(m_mode == MODE_READ || m_mode == MODE_READWRITE);
+	assert(m_mode == MODE_READ || m_mode == MODE_READWRITE || m_mode == MODE_APPEND);
 	assert(count <= 256);
 	//first read the length.
 	readBuffer(s_workBufferU32, sizeof(u32), count);
@@ -268,7 +268,7 @@ void FileStream::readString(std::string* ptr, u32 count)
 
 void FileStream::writeString(const std::string* ptr, u32 count)
 {
-	assert(m_mode == MODE_WRITE || m_mode == MODE_READWRITE);
+	assert(m_mode == MODE_WRITE || m_mode == MODE_READWRITE || m_mode == MODE_APPEND);
 	assert(m_file);	// TODO: Add Archive support.
 	assert(count <= 256);
 	//first read the length.

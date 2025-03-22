@@ -108,6 +108,7 @@ namespace TFE_DarkForces
 	extern angle14_32 s_eyePitch, s_eyeYaw, s_eyeRoll;
 	extern angle14_32 s_playerYaw;
 	extern Tick s_playerTick;
+	extern Tick s_prevPlayerTick;
 	extern Tick s_reviveTick;
 
 	extern SecObject* s_playerObject;

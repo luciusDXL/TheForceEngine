@@ -41,6 +41,8 @@ struct TFE_Settings_Temp
 {
 	bool skipLoadDelay = false;
 	bool forceFullscreen = false;
+	bool df_demologging = false;
+	bool exit_after_replay = false;
 };
 
 struct TFE_Settings_Window
@@ -219,6 +221,13 @@ struct TFE_Settings_Game
 	bool df_solidWallFlagFix = true;	// Solid wall flag is enforced for collision with moving walls.
 	bool df_enableUnusedItem = true;	// Enables the unused item in the inventory (delt 10).
 	bool df_jsonAiLogics = true;		// AI logics can be loaded from external JSON files
+	bool df_enableRecording = false;    // Enable recording of gameplay
+	bool df_enableRecordingAll = false; // Always record gameplay. 
+	bool df_enableReplay = false;       // Enable replay of gameplay.
+	bool df_showReplayCounter = false;  // Show the replay counter on the HUD.
+	bool df_demologging = false;        // Log the record/playback logging
+	s32  df_recordFrameRate = 4;        // Recording Framerate value
+	s32  df_playbackFrameRate = 2;      // Playback Framerate value
 	PitchLimit df_pitchLimit  = PITCH_VANILLA_PLUS;
 };
 
@@ -416,4 +425,6 @@ namespace TFE_Settings
 	void autodetectGamePaths();
 	void clearModSettings();
 	void loadCustomModSettings();
+	void parseIniFile(const char* buffer, size_t len);
+	void writeDarkForcesGameSettings(FileStream& settings);
 }
