@@ -1079,9 +1079,15 @@ namespace TFE_Jedi
 
 	void loadLevelScript()
 	{
-		// Note: If the level script has already been loaded, createModule() just returns the script.
-		// This means that script state is persistent across levels.
-		s_levelState.levelScript = TFE_ForceScript::createModule(c_levelScriptName, c_levelScriptFile, true, API_GAME);
+		TFE_ForceScript::ModuleHandle scriptMod = TFE_ForceScript::getModule(c_levelScriptName);
+		if (scriptMod)
+		{
+			s_levelState.levelScript = scriptMod;
+		}
+		else
+		{
+			s_levelState.levelScript = TFE_ForceScript::createModule(c_levelScriptName, c_levelScriptFile, true, API_GAME);
+		}
 		s_levelState.levelScriptStart = nullptr;
 		s_levelState.levelScriptUpdate = nullptr;
 		if (!s_levelState.levelScript) { return; }
