@@ -54,8 +54,8 @@ ScriptObjectVariable(typeInst)
 
 #define ScriptGenericMethod(decl, funcName) res = engine->RegisterObjectMethod(s_typeName, decl, asFUNCTION(funcName), asCALL_GENERIC); assert(res >= 0)
 
-#define ScriptPropertyGet(decl, funcName) res = engine->RegisterObjectMethod(s_typeName, std::string(decl + std::string(" const property")).c_str(), asMETHOD(ScriptCurType, funcName), asCALL_THISCALL); assert(r >= 0);
-#define ScriptPropertySet(decl, funcName) res = engine->RegisterObjectMethod(s_typeName, std::string(decl + std::string(" property")).c_str(), asMETHOD(ScriptCurType, funcName), asCALL_THISCALL); assert(r >= 0);
+#define ScriptPropertyGet(decl, funcName) res = engine->RegisterObjectMethod(s_typeName, std::string(decl + std::string(" const property")).c_str(), asMETHOD(ScriptCurType, funcName), asCALL_THISCALL); assert(res >= 0);
+#define ScriptPropertySet(decl, funcName) res = engine->RegisterObjectMethod(s_typeName, std::string(decl + std::string(" property")).c_str(), asMETHOD(ScriptCurType, funcName), asCALL_THISCALL); assert(res >= 0);
 
 #define ScriptPropertyGetFunc(decl, funcName) res = engine->RegisterObjectMethod(s_typeName, std::string(decl + std::string(" const property")).c_str(), asFUNCTION(funcName), asCALL_CDECL_OBJLAST);  assert(res >= 0);
 #define ScriptPropertySetFunc(decl, funcName) res = engine->RegisterObjectMethod(s_typeName, std::string(decl + std::string(" property")).c_str(), asFUNCTION(funcName), asCALL_CDECL_OBJLAST);  assert(res >= 0);
