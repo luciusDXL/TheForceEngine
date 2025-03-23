@@ -27,5 +27,7 @@ namespace TFE_DarkForces
 		ScriptSector getSectorById(s32 id);
 		ScriptElev   getElevator(s32 id);
 		void findConnectedSectors(ScriptSector initSector, u32 matchProp, CScriptArray& results);
+		void setGravity(s32 grav);
+		void setProjectileGravity(s32 grav);
 	};
 }

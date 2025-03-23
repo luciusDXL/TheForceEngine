@@ -442,6 +442,7 @@ echo ^)";
     <ClInclude Include="TFE_DarkForces\Scripting\gameScripts.h" />
     <ClInclude Include="TFE_DarkForces\Scripting\gs_game.h" />
     <ClInclude Include="TFE_DarkForces\Scripting\gs_level.h" />
+    <ClInclude Include="TFE_DarkForces\Scripting\gs_player.h" />
     <ClInclude Include="TFE_DarkForces\Scripting\gs_system.h" />
     <ClInclude Include="TFE_DarkForces\Scripting\scriptElev.h" />
     <ClInclude Include="TFE_DarkForces\Scripting\scriptSector.h" />
@@ -856,6 +857,7 @@ echo ^)";
     <ClCompile Include="TFE_DarkForces\Scripting\gameScripts.cpp" />
     <ClCompile Include="TFE_DarkForces\Scripting\gs_game.cpp" />
     <ClCompile Include="TFE_DarkForces\Scripting\gs_level.cpp" />
+    <ClCompile Include="TFE_DarkForces\Scripting\gs_player.cpp" />
     <ClCompile Include="TFE_DarkForces\Scripting\gs_system.cpp" />
     <ClCompile Include="TFE_DarkForces\Scripting\scriptElev.cpp" />
     <ClCompile Include="TFE_DarkForces\Scripting\scriptSector.cpp" />
