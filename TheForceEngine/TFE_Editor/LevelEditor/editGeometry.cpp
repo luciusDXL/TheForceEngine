@@ -2223,6 +2223,13 @@ namespace LevelEditor
 		// 2. Determine the number of segments from the length.
 		const s32 segCount = max(s32(arcLen / s_editorConfig.curve_segmentSize) + s_curveSegDelta, 2);
 
+		// Clamp s_curveSegDelta.
+		s32 clampValue = 2 - s32(arcLen / s_editorConfig.curve_segmentSize);
+		if (s_curveSegDelta < clampValue)
+		{
+			s_curveSegDelta = clampValue;
+		}
+
 		// TODO: Support even wall lengths versus denser sampling in areas with more change.
 		// Even sampling will be more expensive and approximate, so default to variable sampling.
 
