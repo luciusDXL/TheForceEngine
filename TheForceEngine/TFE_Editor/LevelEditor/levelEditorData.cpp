@@ -2421,11 +2421,15 @@ namespace LevelEditor
 			strcat(cmdLine, " ");
 			strcat(cmdLine, s_editorConfig.darkForcesAddCmdLine);
 		}
+		const bool waitForCompletion = s_editorConfig.waitForPlayCompletion;
 
 		// Run the test app (TFE, etc.), this will block until finished.
-		osShellExecute(s_editorConfig.darkForcesPort, appDir, cmdLine, true);
+		osShellExecute(s_editorConfig.darkForcesPort, appDir, cmdLine, waitForCompletion);
 		// Then cleanup by deleting the test GOB.
-		FileUtil::deleteFile(gobPath);
+		if (waitForCompletion)
+		{
+			FileUtil::deleteFile(gobPath);
+		}
 		
 		return true;
 	}

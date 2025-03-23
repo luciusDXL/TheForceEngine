@@ -31,6 +31,7 @@ namespace TFE_Editor
 		// Level editor
 		s32 interfaceFlags = 0;
 		f32 curve_segmentSize = 2.0f;
+		bool waitForPlayCompletion = true;
 		char darkForcesPort[TFE_MAX_PATH] = "";
 		char outlawsPort[TFE_MAX_PATH] = "";
 		char darkForcesAddCmdLine[TFE_MAX_PATH] = "";
