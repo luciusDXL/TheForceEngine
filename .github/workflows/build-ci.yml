@@ -21,17 +21,23 @@ jobs:
         runner:
           - ubuntu-latest
           - ubuntu-24.04-arm
-          # - windows-latest
-          # - macos-latest
+          - windows-latest
+          - macos-latest
 
     steps:
     - uses: actions/checkout@v4
 
-    - name: Install Dependencies
+    - name: Dependencies (Linux)
+      if: runner.os == 'linux'
       shell: bash
       run: sudo apt-get update -qq && sudo apt-get install -y libsdl2-dev libsdl2-image-dev
 
-    - name: Configure cmake
+    - name: Dependencies (vcpkg)
+      if: runner.os != 'linux'
+      shell: bash
+      run: vcpkg install
+
+    - name: cmake Configure
       shell: bash
       run: |
         cmake -B ./build \
@@ -39,6 +45,6 @@ jobs:
           -DENABLE_FORCE_SCRIPT=ON \
           -DENABLE_EDITOR=ON
 
-    - name: Build
+    - name: cmake Build
       shell: bash
       run: cmake --build ./build --config ${{env.BUILD_TYPE}}
