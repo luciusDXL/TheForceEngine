@@ -22,6 +22,7 @@
 #include "editVertex.h"
 #include "editNotes.h"
 #include "editTransforms.h"
+#include "shell.h"
 #include "userPreferences.h"
 #include "testOptions.h"
 #include <TFE_FrontEndUI/frontEndUi.h>
@@ -1626,6 +1627,13 @@ namespace LevelEditor
 		if (ImGui::BeginMenu("Level"))
 		{
 			menuActive = true;
+			if (ImGui::MenuItem("Help / Manual", NULL, (bool*)NULL))
+			{
+				// TODO - replace with TFE editor link.
+				osShellOpenUrl("https://df-21.net/wiki/?title=TFE-EDITOR");
+			}
+			ImGui::Separator();
+
 			// Disable Save/Backup when there is no project.
 			bool projectActive = project_get()->active;
 			if (!projectActive) { disableNextItem(); }

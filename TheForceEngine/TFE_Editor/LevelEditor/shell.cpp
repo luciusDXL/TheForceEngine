@@ -4,6 +4,13 @@
 #include <io.h>
 #endif
 
+void osShellOpenUrl(const char* url)
+{
+#ifdef _WIN32
+	ShellExecute(nullptr, "open", url, nullptr, nullptr, SW_SHOWNORMAL);
+#endif
+}
+
 bool osShellExecute(const char* pathToExe, const char* exeDir, const char* param, bool waitForCompletion)
 {
 #ifdef _WIN32

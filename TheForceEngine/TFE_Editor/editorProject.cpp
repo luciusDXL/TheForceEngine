@@ -192,11 +192,17 @@ namespace TFE_Editor
 		// Validate that the path exists.
 		if (!FileUtil::directoryExits(s_curProject.path))
 		{
-			TFE_System::logWrite(LOG_ERROR, "Editor Project", "Editor Project Path '%s' does not exist.", s_curProject.path);
-			removeFromRecents(s_curProject.path);
+			// Replace it with the current path.
+			FileUtil::getFilePath(filepath, s_curProject.path);
 
-			s_curProject = Project{};
-			return false;
+			if (!FileUtil::directoryExits(s_curProject.path))
+			{
+				TFE_System::logWrite(LOG_ERROR, "Editor Project", "Editor Project Path '%s' does not exist.", s_curProject.path);
+				removeFromRecents(s_curProject.path);
+
+				s_curProject = Project{};
+				return false;
+			}
 		}
 
 		s_curProject.active = true;
