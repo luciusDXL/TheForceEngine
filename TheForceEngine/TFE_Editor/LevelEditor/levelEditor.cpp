@@ -3360,7 +3360,7 @@ namespace LevelEditor
 		{
 			s_viewportPos.x += moveSpd;
 		}
-
+				
 		// Mouse scrolling.
 		if (TFE_Input::mouseDown(MBUTTON_RIGHT))
 		{
@@ -3432,6 +3432,15 @@ namespace LevelEditor
 			s_camera.pos.x += s_camera.viewMtx.m0.x * moveSpd;
 			s_camera.pos.y += s_camera.viewMtx.m0.y * moveSpd;
 			s_camera.pos.z += s_camera.viewMtx.m0.z * moveSpd;
+		}
+
+		if (isShortcutHeld(SHORTCUT_CAMERA_UP, 0))
+		{
+			s_camera.pos.y += moveSpd;
+		}
+		else if (isShortcutHeld(SHORTCUT_CAMERA_DOWN, 0))
+		{
+			s_camera.pos.y -= moveSpd;
 		}
 
 		// Turning.

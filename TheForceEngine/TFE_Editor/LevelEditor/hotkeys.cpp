@@ -183,6 +183,8 @@ namespace LevelEditor
 		"LEV_SHORTCUT_CAMERA_BACK",
 		"LEV_SHORTCUT_CAMERA_LEFT",
 		"LEV_SHORTCUT_CAMERA_RIGHT",
+		"LEV_SHORTCUT_CAMERA_UP",
+		"LEV_SHORTCUT_CAMERA_DOWN",
 		"LEV_SHORTCUT_SET_TOP_DEPTH",
 		"LEV_SHORTCUT_SET_BOT_DEPTH",
 		"LEV_SHORTCUT_RESET_DEPTH",
@@ -234,6 +236,8 @@ namespace LevelEditor
 		"Camera Backward",									// SHORTCUT_CAMERA_BACK
 		"Camera Strafe Left",								// SHORTCUT_CAMERA_LEFT
 		"Camera Strafe Right",								// SHORTCUT_CAMERA_RIGHT
+		"Camera Move Up",									// SHORTCUT_CAMERA_UP,
+		"Camera Move Down",									// SHORTCUT_CAMERA_DOWN,
 		"View Depth - set top height (2d view only)",		// SHORTCUT_SET_TOP_DEPTH
 		"View Depth - set bottom height (2d view only)",	// SHORTCUT_SET_BOT_DEPTH
 		"View Depth - reset (2d view only)",				// SHORTCUT_RESET_DEPTH
@@ -409,6 +413,8 @@ namespace LevelEditor
 		addKeyboardShortcut(SHORTCUT_CAMERA_BACK, KEY_S);
 		addKeyboardShortcut(SHORTCUT_CAMERA_LEFT, KEY_A);
 		addKeyboardShortcut(SHORTCUT_CAMERA_RIGHT, KEY_D);
+		addKeyboardShortcut(SHORTCUT_CAMERA_UP, KEY_SPACE);
+		addKeyboardShortcut(SHORTCUT_CAMERA_DOWN, KEY_SPACE, KEYMOD_CTRL);
 		addKeyboardShortcut(SHORTCUT_SET_TOP_DEPTH, KEY_Q, KEYMOD_CTRL);
 		addKeyboardShortcut(SHORTCUT_SET_BOT_DEPTH, KEY_E, KEYMOD_CTRL);
 		addKeyboardShortcut(SHORTCUT_RESET_DEPTH, KEY_Q);
