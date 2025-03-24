@@ -754,7 +754,7 @@ int main(int argc, char* argv[])
 					}
 				}
 				newArgs[newArgc] = selectedMod;
-				setAppState(appState, newArgc + 1, newArgs);
+				setAppState(appState, (s32)newArgc + 1, newArgs);
 			}
 			else
 			{
