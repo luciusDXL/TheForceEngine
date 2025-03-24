@@ -15,6 +15,7 @@ namespace LevelEditor
 
 	static std::map<std::string, ShortcutId> s_shortcutNameMap;
 	static std::map<std::string, KeyboardCode> s_keyNameMap;
+	static std::map<std::string, MouseButton> s_mouseButtonNameMap;
 	static std::map<std::string, KeyModifier> s_keyModMap;
 	static u8 s_keyRepeats[SHORTCUT_COUNT] = { 0 };
 
@@ -144,8 +145,10 @@ namespace LevelEditor
 	struct KeyboardShortcut
 	{
 		KeyboardCode code = KEY_UNKNOWN;
+		MouseButton mbtn = MBUTTON_UNKNOWN;
 		KeyModifier mod = KEYMOD_NONE;
 		ShortcutId shortcutId = SHORTCUT_NONE;
+		bool allowDuplicates = false;
 	};
 	const char* c_shortcutName[] =
 	{
@@ -171,6 +174,7 @@ namespace LevelEditor
 		"LEV_SHORTCUT_TEXOFFSET_DOWN",
 		"LEV_SHORTCUT_TEXOFFSET_LEFT",
 		"LEV_SHORTCUT_TEXOFFSET_RIGHT",
+		"LEV_SHORTCUT_TEXOFFSET_PAN",
 		// Drawing
 		"LEV_SHORTCUT_REDUCE_CURVE_SEGS",
 		"LEV_SHORTCUT_INCREASE_CURVE_SEGS",
@@ -185,6 +189,8 @@ namespace LevelEditor
 		"LEV_SHORTCUT_CAMERA_RIGHT",
 		"LEV_SHORTCUT_CAMERA_UP",
 		"LEV_SHORTCUT_CAMERA_DOWN",
+		"LEV_SHORTCUT_CAMERA_PAN2D",
+		"LEV_SHORTCUT_CAMERA_ROTATE3D",
 		"LEV_SHORTCUT_SET_TOP_DEPTH",
 		"LEV_SHORTCUT_SET_BOT_DEPTH",
 		"LEV_SHORTCUT_RESET_DEPTH",
@@ -226,6 +232,7 @@ namespace LevelEditor
 		"Move texture offset down",							// SHORTCUT_TEXOFFSET_DOWN
 		"Move texture offset left",							// SHORTCUT_TEXOFFSET_LEFT
 		"Move texture offset right",						// SHORTCUT_TEXOFFSET_RIGHT
+		"Hold to pan the texture with the mouse",			// SHORTCUT_TEXOFFSET_PAN
 		"Reduce curve segments",							// SHORTCUT_REDUCE_CURVE_SEGS
 		"Increase curve segments",							// SHORTCUT_INCREASE_CURVE_SEGS
 		"Reset curve segments to default",					// SHORTCUT_RESET_CURVE_SEGS
@@ -238,6 +245,8 @@ namespace LevelEditor
 		"Camera Strafe Right",								// SHORTCUT_CAMERA_RIGHT
 		"Camera Move Up",									// SHORTCUT_CAMERA_UP,
 		"Camera Move Down",									// SHORTCUT_CAMERA_DOWN,
+		"Camera Mouse Pan 2D",								// SHORTCUT_CAMERA_PAN2D,
+		"Camera Mouse Rotate 3D",							// SHORTCUT_CAMERA_ROTATE3D,
 		"View Depth - set top height (2d view only)",		// SHORTCUT_SET_TOP_DEPTH
 		"View Depth - set bottom height (2d view only)",	// SHORTCUT_SET_BOT_DEPTH
 		"View Depth - reset (2d view only)",				// SHORTCUT_RESET_DEPTH
@@ -266,19 +275,24 @@ namespace LevelEditor
 
 	ShortcutId stringToShortcutId(const std::string name);
 	KeyboardCode stringToKeyCode(const std::string name);
+	MouseButton stringToMouseButton(const std::string name);
 	KeyModifier stringToKeyModifier(const std::string name);
 	const char* shortcutIdToString(ShortcutId id);
+	const char* mouseButtonToString(MouseButton id);
 	const char* keycodeToString(KeyboardCode id);
 	const char* keyModifierToString(KeyModifier id);
 
-	void addKeyboardShortcut(ShortcutId id, KeyboardCode code, KeyModifier mod)
+	void addKeyboardShortcut(ShortcutId id, KeyboardCode code, KeyModifier mod, MouseButton mbtn)
 	{
 		KeyboardShortcut* shortcut = getShortcutFromId(id);
+		bool allowDup = (id == SHORTCUT_CAMERA_PAN2D || id == SHORTCUT_CAMERA_ROTATE3D);
 		// Replace it.
 		if (shortcut)
 		{
 			shortcut->code = code;
+			shortcut->mbtn = mbtn;
 			shortcut->mod = mod;
+			shortcut->allowDuplicates = allowDup;
 		}
 		// Add it.
 		else if (!s_keyboardShortcutFreeList.empty())
@@ -288,13 +302,15 @@ namespace LevelEditor
 
 			s_keyboardShortcutList[index].code = code;
 			s_keyboardShortcutList[index].mod = mod;
+			s_keyboardShortcutList[index].mbtn = mbtn;
+			s_keyboardShortcutList[index].allowDuplicates = allowDup;
 			s_keyboardShortcutList[index].shortcutId = id;
 			s_keyboardShortcutMap[id] = index;
 		}
 		else
 		{
 			const u32 index = (u32)s_keyboardShortcutList.size();
-			s_keyboardShortcutList.push_back({ code, mod, id });
+			s_keyboardShortcutList.push_back({ code, mbtn, mod, id, allowDup });
 			s_keyboardShortcutMap[id] = index;
 		}
 	}
@@ -339,6 +355,16 @@ namespace LevelEditor
 		}
 		return shortcut->mod;
 	}
+
+	MouseButton getShortcutMouseButton(ShortcutId id)
+	{
+		KeyboardShortcut* shortcut = getShortcutFromId(id);
+		if (!shortcut)
+		{
+			return MBUTTON_UNKNOWN;
+		}
+		return shortcut->mbtn;
+	}
 		
 	void clearKeyboardShortcuts()
 	{
@@ -353,6 +379,7 @@ namespace LevelEditor
 		if (id < 0 || id >= ShortcutId::SHORTCUT_COUNT) { return; }
 
 		KeyboardCode keyCode = KEY_UNKNOWN;
+		MouseButton mbtn = MBUTTON_UNKNOWN;
 		KeyModifier keyMod = KEYMOD_NONE;
 		if (valueCount >= 1)
 		{
@@ -362,10 +389,14 @@ namespace LevelEditor
 		{
 			keyMod = stringToKeyModifier(values[1]);
 		}
-
-		if (keyCode != KEY_UNKNOWN)
+		if (valueCount >= 3)
 		{
-			addKeyboardShortcut(id, keyCode, keyMod);
+			mbtn = stringToMouseButton(values[2]);
+		}
+
+		if (keyCode != KEY_UNKNOWN || mbtn != MBUTTON_UNKNOWN)
+		{
+			addKeyboardShortcut(id, keyCode, keyMod, mbtn);
 		}
 	}
 
@@ -376,7 +407,15 @@ namespace LevelEditor
 		{
 			ShortcutId id = ShortcutId(i);
 			KeyboardShortcut* shortcut = getShortcutFromId(id);
-			snprintf(lineBuffer, TFE_MAX_PATH, "%s=%s %s\r\n", shortcutIdToString(id), keycodeToString(shortcut->code), keyModifierToString(shortcut->mod));
+			const char* mbtnString = mouseButtonToString(shortcut->mbtn);
+			if (mbtnString && mbtnString[0] != 0)
+			{
+				snprintf(lineBuffer, TFE_MAX_PATH, "%s=%s %s %s\r\n", shortcutIdToString(id), keycodeToString(shortcut->code), keyModifierToString(shortcut->mod), mbtnString);
+			}
+			else
+			{
+				snprintf(lineBuffer, TFE_MAX_PATH, "%s=%s %s\r\n", shortcutIdToString(id), keycodeToString(shortcut->code), keyModifierToString(shortcut->mod));
+			}
 			configFile.writeBuffer(lineBuffer, (u32)strlen(lineBuffer));
 		}
 	}
@@ -403,6 +442,7 @@ namespace LevelEditor
 		addKeyboardShortcut(SHORTCUT_TEXOFFSET_DOWN, KEY_DOWN);
 		addKeyboardShortcut(SHORTCUT_TEXOFFSET_LEFT, KEY_LEFT);
 		addKeyboardShortcut(SHORTCUT_TEXOFFSET_RIGHT, KEY_RIGHT);
+		addKeyboardShortcut(SHORTCUT_TEXOFFSET_PAN, KEY_UNKNOWN, KEYMOD_NONE, MBUTTON_MIDDLE);
 		addKeyboardShortcut(SHORTCUT_REDUCE_CURVE_SEGS, KEY_LEFTBRACKET);
 		addKeyboardShortcut(SHORTCUT_INCREASE_CURVE_SEGS, KEY_RIGHTBRACKET);
 		addKeyboardShortcut(SHORTCUT_RESET_CURVE_SEGS, KEY_BACKSLASH);
@@ -415,6 +455,8 @@ namespace LevelEditor
 		addKeyboardShortcut(SHORTCUT_CAMERA_RIGHT, KEY_D);
 		addKeyboardShortcut(SHORTCUT_CAMERA_UP, KEY_SPACE);
 		addKeyboardShortcut(SHORTCUT_CAMERA_DOWN, KEY_SPACE, KEYMOD_CTRL);
+		addKeyboardShortcut(SHORTCUT_CAMERA_PAN2D, KEY_UNKNOWN, KEYMOD_NONE, MBUTTON_RIGHT);
+		addKeyboardShortcut(SHORTCUT_CAMERA_ROTATE3D, KEY_UNKNOWN, KEYMOD_NONE, MBUTTON_RIGHT);
 		addKeyboardShortcut(SHORTCUT_SET_TOP_DEPTH, KEY_Q, KEYMOD_CTRL);
 		addKeyboardShortcut(SHORTCUT_SET_BOT_DEPTH, KEY_E, KEYMOD_CTRL);
 		addKeyboardShortcut(SHORTCUT_RESET_DEPTH, KEY_Q);
@@ -437,9 +479,17 @@ namespace LevelEditor
 	bool isShortcutPressed(ShortcutId shortcutId, u32 allowedKeyMods)
 	{
 		KeyboardShortcut* shortcut = getShortcutFromId(shortcutId);
-		if (!shortcut || shortcut->code == KEY_UNKNOWN) { return false; }
+		if (!shortcut || (shortcut->code == KEY_UNKNOWN && shortcut->mbtn == MBUTTON_UNKNOWN)) { return false; }
 
-		bool pressed = TFE_Input::keyPressed(shortcut->code);
+		bool pressed = false;
+		if (shortcut->code != KEY_UNKNOWN)
+		{
+			pressed = TFE_Input::keyPressed(shortcut->code);
+		}
+		else if (shortcut->mbtn != MBUTTON_UNKNOWN)
+		{
+			pressed = TFE_Input::mousePressed(shortcut->mbtn);
+		}
 		pressed &= validateKeyMods(shortcut, allowedKeyMods);
 		return pressed;
 	}
@@ -447,9 +497,17 @@ namespace LevelEditor
 	bool isShortcutRepeat(ShortcutId shortcutId, u32 allowedKeyMods)
 	{
 		KeyboardShortcut* shortcut = getShortcutFromId(shortcutId);
-		if (!shortcut || shortcut->code == KEY_UNKNOWN) { return false; }
+		if (!shortcut || (shortcut->code == KEY_UNKNOWN && shortcut->mbtn == MBUTTON_UNKNOWN)) { return false; }
 
-		bool pressed = TFE_Input::keyPressedWithRepeat(shortcut->code);
+		bool pressed = false;
+		if (shortcut->code != KEY_UNKNOWN)
+		{
+			pressed = TFE_Input::keyPressedWithRepeat(shortcut->code);
+		}
+		else if (shortcut->mbtn != MBUTTON_UNKNOWN)
+		{
+			pressed = TFE_Input::mousePressed(shortcut->mbtn);
+		}
 		pressed &= validateKeyMods(shortcut, allowedKeyMods);
 		return pressed;
 	}
@@ -464,6 +522,10 @@ namespace LevelEditor
 		{
 			down &= TFE_Input::keyDown(shortcut->code);
 		}
+		else if (shortcut->mbtn != MBUTTON_UNKNOWN)
+		{
+			down &= TFE_Input::mouseDown(shortcut->mbtn);
+		}
 		down &= validateKeyMods(shortcut, allowedKeyMods);
 		return down;
 	}
@@ -472,6 +534,7 @@ namespace LevelEditor
 	{
 		KeyboardCode code = getShortcutKeyboardCode(id);
 		KeyModifier mod = getShortcutKeyMod(id);
+		MouseButton mbtn = getShortcutMouseButton(id);
 
 		s_keyComboText[0] = 0;
 		if (code != KEY_UNKNOWN && mod != KEYMOD_NONE)
@@ -481,6 +544,14 @@ namespace LevelEditor
 		else if (code != KEY_UNKNOWN)
 		{
 			sprintf(s_keyComboText, "%s", TFE_Input::getKeyboardName(code));
+		}
+		else if (mbtn != MBUTTON_UNKNOWN && mod != KEYMOD_NONE)
+		{
+			sprintf(s_keyComboText, "%s+%s", TFE_Input::getKeyboardModifierName(mod), TFE_Input::getMouseButtonName(mbtn));
+		}
+		else if (mbtn != MBUTTON_UNKNOWN)
+		{
+			sprintf(s_keyComboText, "%s", TFE_Input::getMouseButtonName(mbtn));
 		}
 		else if (mod != KEYMOD_NONE)
 		{
@@ -543,6 +614,26 @@ namespace LevelEditor
 		return SHORTCUT_NONE;
 	}
 
+	MouseButton stringToMouseButton(const std::string name)
+	{
+		// Fill in the map to make lookups faster.
+		if (s_mouseButtonNameMap.empty())
+		{
+			for (s32 i = 0; i < MBUTTON_COUNT; i++)
+			{
+				MouseButton mbtn = MouseButton(i);
+				s_mouseButtonNameMap[TFE_Input::getMouseButtonName(mbtn)] = mbtn;
+			}
+		}
+		// Find the id.
+		std::map<std::string, MouseButton>::iterator iBtn = s_mouseButtonNameMap.find(name);
+		if (iBtn != s_mouseButtonNameMap.end())
+		{
+			return iBtn->second;
+		}
+		return MBUTTON_UNKNOWN;
+	}
+
 	KeyboardCode stringToKeyCode(const std::string name)
 	{
 		// Fill in the map to make lookups faster.
@@ -589,6 +680,12 @@ namespace LevelEditor
 		return c_shortcutName[id];
 	}
 
+	const char* mouseButtonToString(MouseButton id)
+	{
+		if (id < 0 || id >= MBUTTON_COUNT) { return nullptr; }
+		return TFE_Input::getMouseButtonName(id);
+	}
+
 	const char* keycodeToString(KeyboardCode id)
 	{
 		if (id < 0 || id > KEY_LAST) { return nullptr; }
@@ -607,14 +704,20 @@ namespace LevelEditor
 		for (s32 i = 0; i < SHORTCUT_COUNT; i++)
 		{
 			KeyboardShortcut* shortcut = &s_keyboardShortcutList[i];
-			u32 key = u32(shortcut->code) | u32(shortcut->mod << 24u);
+
+			const u32 key = u32(shortcut->code) | u32(shortcut->mbtn << 18u) | u32(shortcut->mod << 24u);
 			s_keyRepeats[i] = 0;
 
 			std::map<u32, u32>::iterator iShortcut = keyComboIndex.find(key);
 			if (iShortcut != keyComboIndex.end())
 			{
-				s_keyRepeats[i] = 1;
-				s_keyRepeats[iShortcut->second] = 1;
+				const bool prevDup = s_keyboardShortcutList[iShortcut->second].allowDuplicates;
+
+				if (!shortcut->allowDuplicates || !prevDup)
+				{
+					s_keyRepeats[i] = 1;
+					s_keyRepeats[iShortcut->second] = 1;
+				}
 			}
 			else
 			{

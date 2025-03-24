@@ -158,9 +158,10 @@ namespace LevelEditor
 					ImGui::Button(editor_getUniqueLabel("Press Key"), ImVec2(128.0f, 0.0f));
 					const KeyboardCode key = TFE_Input::getKeyPressed(true);
 					const KeyModifier mod = TFE_Input::getKeyModifierDown();
-					if (key != KEY_UNKNOWN)
+					const MouseButton mbtn = TFE_Input::getMouseButtonPressed();
+					if (key != KEY_UNKNOWN || (mbtn != MBUTTON_UNKNOWN && mbtn != MBUTTON_LEFT))
 					{
-						addKeyboardShortcut(id, key, mod);
+						addKeyboardShortcut(id, key, mod, mbtn);
 						s_inputIndex = -1;
 					}
 				}

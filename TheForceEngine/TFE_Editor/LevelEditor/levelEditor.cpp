@@ -3362,7 +3362,7 @@ namespace LevelEditor
 		}
 				
 		// Mouse scrolling.
-		if (TFE_Input::mouseDown(MBUTTON_RIGHT))
+		if (isShortcutHeld(SHORTCUT_CAMERA_PAN2D, 0))
 		{
 			s32 dx, dy;
 			TFE_Input::getMouseMove(&dx, &dy);
@@ -3444,7 +3444,7 @@ namespace LevelEditor
 		}
 
 		// Turning.
-		if (TFE_Input::mouseDown(MBUTTON_RIGHT))
+		if (isShortcutHeld(SHORTCUT_CAMERA_ROTATE3D, 0))
 		{
 			s32 dx, dy;
 			TFE_Input::getAccumulatedMouseMove(&dx, &dy);
@@ -3851,9 +3851,9 @@ namespace LevelEditor
 					snapToGrid(&cursor);
 				}
 
-				bool middleMousePressed = TFE_Input::mousePressed(MBUTTON_MIDDLE);
-				bool middleMouseDown = TFE_Input::mouseDown(MBUTTON_MIDDLE);
-				if (middleMousePressed && !s_startTexMove)
+				bool texPanPressed = isShortcutPressed(SHORTCUT_TEXOFFSET_PAN, 0);
+				bool texPanDown = isShortcutHeld(SHORTCUT_TEXOFFSET_PAN, 0);
+				if (texPanPressed && !s_startTexMove)
 				{
 					s_startTexMove = true;
 					s_startTexPos = { cursor.x, 0.0f, cursor.z };
@@ -3863,7 +3863,7 @@ namespace LevelEditor
 					// Cancel out any key-based movement, cannot do both at once.
 					delta = { 0 };
 				}
-				else if (middleMouseDown && s_startTexMove)
+				else if (texPanDown && s_startTexMove)
 				{
 					Vec2f offset = { 0 };
 					const f32 texScale = 1.0f;
@@ -3884,7 +3884,7 @@ namespace LevelEditor
 					edit_moveSelectedTextures(delta, updatedList);
 				}
 
-				if (!middleMousePressed && !middleMouseDown)
+				if (!texPanPressed && !texPanDown)
 				{
 					if (s_startTexMove)
 					{
@@ -4001,9 +4001,9 @@ namespace LevelEditor
 					}
 				}
 										
-				bool middleMousePressed = TFE_Input::mousePressed(MBUTTON_MIDDLE);
-				bool middleMouseDown = TFE_Input::mouseDown(MBUTTON_MIDDLE);
-				if (middleMousePressed && !s_startTexMove)
+				bool texPanPressed = isShortcutPressed(SHORTCUT_TEXOFFSET_PAN, 0);
+				bool texPanDown = isShortcutHeld(SHORTCUT_TEXOFFSET_PAN, 0);
+				if (texPanPressed && !s_startTexMove)
 				{
 					s_startTexMove = true;
 					s_startTexPos = cursor;
@@ -4037,7 +4037,7 @@ namespace LevelEditor
 					// Cancel out any key-based movement, cannot do both at once.
 					delta = { 0 };
 				}
-				else if (middleMouseDown && s_startTexMove)
+				else if (texPanDown && s_startTexMove)
 				{
 					Vec3f offset = { 0 };
 					const f32 texScale = 1.0f;
@@ -4096,7 +4096,7 @@ namespace LevelEditor
 					edit_moveSelectedTextures(delta, updatedList);
 				}
 
-				if (!middleMousePressed && !middleMouseDown)
+				if (!texPanPressed && !texPanDown)
 				{
 					if (s_startTexMove)
 					{

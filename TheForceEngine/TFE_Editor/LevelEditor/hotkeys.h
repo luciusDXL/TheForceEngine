@@ -47,6 +47,7 @@ namespace LevelEditor
 		SHORTCUT_TEXOFFSET_DOWN,
 		SHORTCUT_TEXOFFSET_LEFT,
 		SHORTCUT_TEXOFFSET_RIGHT,
+		SHORTCUT_TEXOFFSET_PAN,
 		// Drawing
 		SHORTCUT_REDUCE_CURVE_SEGS,
 		SHORTCUT_INCREASE_CURVE_SEGS,
@@ -61,6 +62,8 @@ namespace LevelEditor
 		SHORTCUT_CAMERA_RIGHT,
 		SHORTCUT_CAMERA_UP,
 		SHORTCUT_CAMERA_DOWN,
+		SHORTCUT_CAMERA_PAN2D,
+		SHORTCUT_CAMERA_ROTATE3D,
 		SHORTCUT_SET_TOP_DEPTH,
 		SHORTCUT_SET_BOT_DEPTH,
 		SHORTCUT_RESET_DEPTH,
@@ -105,10 +108,11 @@ namespace LevelEditor
 
 	void clearKeyboardShortcuts();
 	void setDefaultKeyboardShortcuts();
-	void addKeyboardShortcut(ShortcutId id, KeyboardCode code = KEY_UNKNOWN, KeyModifier mod = KEYMOD_NONE);
+	void addKeyboardShortcut(ShortcutId id, KeyboardCode code = KEY_UNKNOWN, KeyModifier mod = KEYMOD_NONE, MouseButton mbtn = MBUTTON_UNKNOWN);
 	void removeKeyboardShortcut(ShortcutId id);
 	const char* getKeyboardShortcutDesc(ShortcutId id);
 	KeyboardCode getShortcutKeyboardCode(ShortcutId id);
+	MouseButton getShortcutMouseButton(ShortcutId id);
 	KeyModifier getShortcutKeyMod(ShortcutId id);
 	const char* getShortcutKeyComboText(ShortcutId id);
 	bool isShortcutPressed(ShortcutId shortcutId, u32 allowedKeyMods = (1 << KEYMOD_SHIFT) | (1 << KEYMOD_ALT));
