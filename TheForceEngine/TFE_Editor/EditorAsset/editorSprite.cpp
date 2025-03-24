@@ -99,7 +99,7 @@ namespace TFE_Editor
 
 	s32 loadEditorSprite(SpriteSourceType type, Archive* archive, const char* filename, const u32* palette, s32 palIndex, s32 id)
 	{
-		if (!archive && !filename) { return -1; }
+		if (!archive || !filename) { return -1; }
 		buildIdentityTable();
 
 		if (!archive->openFile(filename))
