@@ -209,9 +209,9 @@ namespace LevelEditor
 		"Delete selection",									// SHORTCUT_DELETE
 		"Copy selection",									// SHORTCUT_COPY
 		"Paste from clipboard at cursor",					// SHORTCUT_PASTE
-		"Lock movement to X-Axis",							// SHORTCUT_MOVE_X
-		"Lock movement to Y-Axis",							// SHORTCUT_MOVE_Y
-		"Lock movement to Z-Axis",							// SHORTCUT_MOVE_Z
+		"Lock movement to X-Axis (sector, wall, vertex, object)",// SHORTCUT_MOVE_X
+		"Lock movement to Y-Axis (sector, wall, vertex, object)",// SHORTCUT_MOVE_Y
+		"Lock movement to Z-Axis (sector, wall, vertex, object)",// SHORTCUT_MOVE_Z
 		"Lock movement to wall normal",						// SHORTCUT_MOVE_NORMAL
 		"Move object to sector floor",						// SHORTCUT_MOVE_TO_FLOOR
 		"Move object to sector ceiling",					// SHORTCUT_MOVE_TO_CEIL
