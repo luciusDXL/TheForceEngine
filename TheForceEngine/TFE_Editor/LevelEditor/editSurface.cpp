@@ -943,7 +943,7 @@ namespace LevelEditor
 
 					// Add adjoin to the list.
 					// Then go left and right from the adjoin.
-					if (sector_onActiveLayer(next))
+					if (sector_onActiveLayer(next) && sector_isInteractable(next))
 					{
 						if (texOffset)
 						{
@@ -1012,7 +1012,7 @@ namespace LevelEditor
 					{
 						// Add adjoin to the list.
 						// Then go left and right from the adjoin.
-						if (sector_onActiveLayer(next))
+						if (sector_onActiveLayer(next) && sector_isInteractable(next))
 						{
 							if (texOffset)
 							{
@@ -1069,6 +1069,7 @@ namespace LevelEditor
 		else
 		{
 			EditorSector* next = &s_level.sectors[rootWall->adjoinId];
+
 			if (next->ceilHeight < rootSector->ceilHeight)
 			{
 				s32 curTexId = getPartTextureIndex(rootWall, HP_TOP);
@@ -1142,7 +1143,8 @@ namespace LevelEditor
 			{
 				if (wall->adjoinId < 0) { continue; }
 				EditorSector* next = &s_level.sectors[wall->adjoinId];
-				if (next->searchKey != s_searchKey)
+
+				if (next && next->searchKey != s_searchKey)
 				{
 					next->searchKey = s_searchKey;
 					if ((part == HP_FLOOR && next->floorHeight == rootSector->floorHeight) || (part == HP_CEIL && next->ceilHeight == rootSector->ceilHeight))
