@@ -115,6 +115,7 @@ namespace LevelEditor
 	MouseButton getShortcutMouseButton(ShortcutId id);
 	KeyModifier getShortcutKeyMod(ShortcutId id);
 	const char* getShortcutKeyComboText(ShortcutId id);
+	bool isMouseInvertEnabled();
 	bool isShortcutPressed(ShortcutId shortcutId, u32 allowedKeyMods = (1 << KEYMOD_SHIFT) | (1 << KEYMOD_ALT));
 	bool isShortcutRepeat(ShortcutId shortcutId, u32 allowedKeyMods = (1 << KEYMOD_SHIFT) | (1 << KEYMOD_ALT));
 	bool isShortcutHeld(ShortcutId shortcutId, u32 allowedKeyMods = (1 << KEYMOD_SHIFT) | (1 << KEYMOD_ALT));

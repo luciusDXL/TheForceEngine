@@ -20,6 +20,8 @@ namespace TFE_Editor
 		LEVEDITOR_FLAG_NO_ENEMIES = FLAG_BIT(1),
 		LEVEDITOR_FLAG_EASY = FLAG_BIT(2),
 		LEVEDITOR_FLAG_HARD = FLAG_BIT(3),
+		// Empty space for related flags.
+		LEVEDITOR_FLAG_INVERT_Y = FLAG_BIT(10),
 	};
 
 	struct EditorConfig

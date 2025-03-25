@@ -3448,6 +3448,7 @@ namespace LevelEditor
 		{
 			s32 dx, dy;
 			TFE_Input::getAccumulatedMouseMove(&dx, &dy);
+			if (isMouseInvertEnabled()) { dy = -dy; }
 
 			const f32 turnSpeed = 0.01f;
 			s_camera.yaw   += f32(dx) * turnSpeed;

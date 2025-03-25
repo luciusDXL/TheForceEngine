@@ -3,9 +3,12 @@
 #include "levelEditor.h"
 #include "editGeometry.h"
 #include <TFE_Editor/LevelEditor/Rendering/viewport.h>
+#include <TFE_Editor/editorConfig.h>
 #include <TFE_Input/input.h>
 #include <TFE_System/system.h>
 #include <map>
+
+using namespace TFE_Editor;
 
 namespace LevelEditor
 {
@@ -281,7 +284,7 @@ namespace LevelEditor
 	const char* mouseButtonToString(MouseButton id);
 	const char* keycodeToString(KeyboardCode id);
 	const char* keyModifierToString(KeyModifier id);
-
+		
 	void addKeyboardShortcut(ShortcutId id, KeyboardCode code, KeyModifier mod, MouseButton mbtn)
 	{
 		KeyboardShortcut* shortcut = getShortcutFromId(id);
@@ -474,6 +477,11 @@ namespace LevelEditor
 		addKeyboardShortcut(SHORTCUT_VIEW_TEXTURED_FLOOR, KEY_7, KEYMOD_CTRL);
 		addKeyboardShortcut(SHORTCUT_VIEW_TEXTURED_CEIL, KEY_8, KEYMOD_CTRL);
 		addKeyboardShortcut(SHORTCUT_VIEW_FULLBRIGHT, KEY_9, KEYMOD_CTRL);
+	}
+
+	bool isMouseInvertEnabled()
+	{
+		return (s_editorConfig.levelEditorFlags&LEVEDITOR_FLAG_INVERT_Y) != 0;
 	}
 				
 	bool isShortcutPressed(ShortcutId shortcutId, u32 allowedKeyMods)

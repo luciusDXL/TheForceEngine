@@ -117,6 +117,9 @@ namespace LevelEditor
 		
 	void inputPref()
 	{
+		optionCheckbox("Camera Rotation - Invert Y Axis", (u32*)&s_editorConfig.levelEditorFlags, LEVEDITOR_FLAG_INVERT_Y, 260);
+		ImGui::Separator();
+
 		const u8* repeatKeys = hotkeys_checkForKeyRepeats();
 		if (ImGui::Button("Reset To Defaults"))
 		{
