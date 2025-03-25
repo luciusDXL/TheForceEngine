@@ -1082,7 +1082,6 @@ namespace TFE_Input
 			else
 			{
 				char logPath[256];
-				replayLogCounter++;
 				sprintf(logPath, "replay_%d.log", replayLogCounter);
 				TFE_System::logOpen(logPath);
 			}
