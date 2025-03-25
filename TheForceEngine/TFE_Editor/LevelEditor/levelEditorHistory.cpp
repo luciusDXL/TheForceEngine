@@ -78,6 +78,7 @@ namespace LevelEditor
 		history_registerName(LName_CreateSectorFromShape, "Create Sector (Shape)");
 		history_registerName(LName_ExtrudeSectorFromWall, "Extrude Sectors from Wall");
 		history_registerName(LName_MoveTexture, "Move Texture");
+		history_registerName(LName_ClearTextureOffset, "Reset Texture Offsets");
 		history_registerName(LName_SetTexture, "Set Texture");
 		history_registerName(LName_CopyTexture, "Copy Texture");
 		history_registerName(LName_ClearTexture, "Clear Texture");

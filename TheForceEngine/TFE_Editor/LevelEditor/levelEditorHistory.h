@@ -24,6 +24,7 @@ namespace LevelEditor
 		LName_CreateSectorFromShape,
 		LName_ExtrudeSectorFromWall,
 		LName_MoveTexture,
+		LName_ClearTextureOffset,
 		LName_SetTexture,
 		LName_CopyTexture,
 		LName_ClearTexture,

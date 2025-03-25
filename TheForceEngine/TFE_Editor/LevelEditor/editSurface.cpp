@@ -106,7 +106,7 @@ namespace LevelEditor
 		}
 		if (!sector) { return; }
 
-		if (isShortcutPressed(SHORTCUT_COPY_TEXTURE))
+		if (isShortcutPressed(SHORTCUT_COPY_TEXTURE, 0))
 		{
 			const LevelTextureAsset* textureAsset = nullptr;
 			if (s_view == EDIT_VIEW_2D)
@@ -178,7 +178,7 @@ namespace LevelEditor
 				edit_clearClipboard();
 			}
 		}
-		else if (isShortcutPressed(SHORTCUT_SET_SIGN) && s_selectedTexture >= 0)
+		else if (isShortcutPressed(SHORTCUT_SET_SIGN, 0) && s_selectedTexture >= 0)
 		{
 			edit_applySignToSelection(s_selectedTexture);
 		}

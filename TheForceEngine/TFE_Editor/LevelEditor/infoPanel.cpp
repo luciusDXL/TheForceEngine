@@ -1289,7 +1289,7 @@ namespace LevelEditor
 		EditorSector* sector = nullptr;
 		u32 selWallCount = getWallInfoList();
 
-		const bool insertTexture = s_selectedTexture >= 0 && isShortcutPressed(SHORTCUT_SET_TEXTURE);
+		const bool insertTexture = s_selectedTexture >= 0 && isShortcutPressed(SHORTCUT_SET_TEXTURE, 0);
 		const bool removeTexture = TFE_Input::mousePressed(MBUTTON_RIGHT);
 		const s32 texIndex = insertTexture ? s_selectedTexture  : -1;
 
