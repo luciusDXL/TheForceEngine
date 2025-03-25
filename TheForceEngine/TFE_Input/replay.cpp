@@ -1085,6 +1085,7 @@ namespace TFE_Input
 				sprintf(logPath, "replay_%d.log", replayLogCounter);
 				TFE_System::logOpen(logPath);
 			}
+			replayLogCounter++;
 			TFE_System::logTimeToggle();
 		}
 	}
