@@ -213,6 +213,12 @@ namespace LevelEditor
 		"LEV_SHORTCUT_VIEW_TEXTURED_FLOOR",
 		"LEV_SHORTCUT_VIEW_TEXTURED_CEIL",
 		"LEV_SHORTCUT_VIEW_FULLBRIGHT",
+		// Edit Modes
+		"LEV_SHORTCUT_MODE_DRAW",
+		"LEV_SHORTCUT_MODE_VERTEX",
+		"LEV_SHORTCUT_MODE_WALL",
+		"LEV_SHORTCUT_MODE_SECTOR",
+		"LEV_SHORTCUT_MODE_ENTITY",
 	};
 	const char* c_shortcutDesc[] =
 	{
@@ -267,6 +273,11 @@ namespace LevelEditor
 		"Display Textured Floors",							// SHORTCUT_VIEW_TEXTURED_FLOOR
 		"Display Texture Ceilings",							// SHORTCUT_VIEW_TEXTURED_CEIL
 		"Show Fullbright",									// SHORTCUT_VIEW_FULLBRIGHT
+		"Edit Mode - Draw",									// SHORTCUT_MODE_DRAW
+		"Edit Mode - Vertex",								// SHORTCUT_MODE_VERTEX
+		"Edit Mode - Wall/Surface",							// SHORTCUT_MODE_WALL
+		"Edit Mode - Sector",								// SHORTCUT_MODE_SECTOR
+		"Edit Mode - Entity",								// SHORTCUT_MODE_ENTITY
 	};
 
 	static std::vector<KeyboardShortcut> s_keyboardShortcutList;
@@ -477,6 +488,11 @@ namespace LevelEditor
 		addKeyboardShortcut(SHORTCUT_VIEW_TEXTURED_FLOOR, KEY_7, KEYMOD_CTRL);
 		addKeyboardShortcut(SHORTCUT_VIEW_TEXTURED_CEIL, KEY_8, KEYMOD_CTRL);
 		addKeyboardShortcut(SHORTCUT_VIEW_FULLBRIGHT, KEY_9, KEYMOD_CTRL);
+		addKeyboardShortcut(SHORTCUT_MODE_DRAW, KEY_D, KEYMOD_ALT);
+		addKeyboardShortcut(SHORTCUT_MODE_VERTEX, KEY_V, KEYMOD_ALT);
+		addKeyboardShortcut(SHORTCUT_MODE_WALL, KEY_W, KEYMOD_ALT);
+		addKeyboardShortcut(SHORTCUT_MODE_SECTOR, KEY_S, KEYMOD_ALT);
+		addKeyboardShortcut(SHORTCUT_MODE_ENTITY, KEY_E, KEYMOD_ALT);
 	}
 
 	bool isMouseInvertEnabled()

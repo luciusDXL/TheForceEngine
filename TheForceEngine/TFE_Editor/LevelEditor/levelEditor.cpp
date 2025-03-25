@@ -2227,6 +2227,28 @@ namespace LevelEditor
 		{
 			setFullbright();
 		}
+
+		// Modes
+		if (isShortcutPressed(SHORTCUT_MODE_DRAW, 0))
+		{
+			edit_setEditMode(LEDIT_DRAW);
+		}
+		else if (isShortcutPressed(SHORTCUT_MODE_VERTEX, 0))
+		{
+			edit_setEditMode(LEDIT_VERTEX);
+		}
+		else if (isShortcutPressed(SHORTCUT_MODE_WALL, 0))
+		{
+			edit_setEditMode(LEDIT_WALL);
+		}
+		else if (isShortcutPressed(SHORTCUT_MODE_SECTOR, 0))
+		{
+			edit_setEditMode(LEDIT_SECTOR);
+		}
+		else if (isShortcutPressed(SHORTCUT_MODE_ENTITY, 0))
+		{
+			edit_setEditMode(LEDIT_ENTITY);
+		}
 	}
 		
 	EditorSector* sectorHoveredOrSelected()
@@ -3343,26 +3365,26 @@ namespace LevelEditor
 	{
 		// WASD controls.
 		const f32 moveSpd = s_zoom2d * f32(960.0 * TFE_System::getDeltaTime());
-		if (isShortcutHeld(SHORTCUT_CAMERA_FWD))
+		if (isShortcutHeld(SHORTCUT_CAMERA_FWD, 1 << KEYMOD_SHIFT))
 		{
 			s_viewportPos.z -= moveSpd;
 		}
-		else if (isShortcutHeld(SHORTCUT_CAMERA_BACK))
+		else if (isShortcutHeld(SHORTCUT_CAMERA_BACK, 1 << KEYMOD_SHIFT))
 		{
 			s_viewportPos.z += moveSpd;
 		}
 
-		if (isShortcutHeld(SHORTCUT_CAMERA_LEFT))
+		if (isShortcutHeld(SHORTCUT_CAMERA_LEFT, 1 << KEYMOD_SHIFT))
 		{
 			s_viewportPos.x -= moveSpd;
 		}
-		else if (isShortcutHeld(SHORTCUT_CAMERA_RIGHT))
+		else if (isShortcutHeld(SHORTCUT_CAMERA_RIGHT, 1 << KEYMOD_SHIFT))
 		{
 			s_viewportPos.x += moveSpd;
 		}
 				
 		// Mouse scrolling.
-		if (isShortcutHeld(SHORTCUT_CAMERA_PAN2D, 0))
+		if (isShortcutHeld(SHORTCUT_CAMERA_PAN2D, 1 << KEYMOD_SHIFT))
 		{
 			s32 dx, dy;
 			TFE_Input::getMouseMove(&dx, &dy);
@@ -3408,26 +3430,26 @@ namespace LevelEditor
 			moveSpd *= 10.0f;
 		}
 
-		if (isShortcutHeld(SHORTCUT_CAMERA_FWD))
+		if (isShortcutHeld(SHORTCUT_CAMERA_FWD, 1 << KEYMOD_SHIFT))
 		{
 			s_camera.pos.x -= s_camera.viewMtx.m2.x * moveSpd;
 			s_camera.pos.y -= s_camera.viewMtx.m2.y * moveSpd;
 			s_camera.pos.z -= s_camera.viewMtx.m2.z * moveSpd;
 		}
-		else if (isShortcutHeld(SHORTCUT_CAMERA_BACK))
+		else if (isShortcutHeld(SHORTCUT_CAMERA_BACK, 1 << KEYMOD_SHIFT))
 		{
 			s_camera.pos.x += s_camera.viewMtx.m2.x * moveSpd;
 			s_camera.pos.y += s_camera.viewMtx.m2.y * moveSpd;
 			s_camera.pos.z += s_camera.viewMtx.m2.z * moveSpd;
 		}
 
-		if (isShortcutHeld(SHORTCUT_CAMERA_LEFT))
+		if (isShortcutHeld(SHORTCUT_CAMERA_LEFT, 1 << KEYMOD_SHIFT))
 		{
 			s_camera.pos.x -= s_camera.viewMtx.m0.x * moveSpd;
 			s_camera.pos.y -= s_camera.viewMtx.m0.y * moveSpd;
 			s_camera.pos.z -= s_camera.viewMtx.m0.z * moveSpd;
 		}
-		else if (isShortcutHeld(SHORTCUT_CAMERA_RIGHT))
+		else if (isShortcutHeld(SHORTCUT_CAMERA_RIGHT, 1 << KEYMOD_SHIFT))
 		{
 			s_camera.pos.x += s_camera.viewMtx.m0.x * moveSpd;
 			s_camera.pos.y += s_camera.viewMtx.m0.y * moveSpd;
@@ -3444,7 +3466,7 @@ namespace LevelEditor
 		}
 
 		// Turning.
-		if (isShortcutHeld(SHORTCUT_CAMERA_ROTATE3D, 0))
+		if (isShortcutHeld(SHORTCUT_CAMERA_ROTATE3D, 1 << KEYMOD_SHIFT))
 		{
 			s32 dx, dy;
 			TFE_Input::getAccumulatedMouseMove(&dx, &dy);
