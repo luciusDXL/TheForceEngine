@@ -249,6 +249,84 @@ namespace TFE_DarkForces
 		s_playerInfo.itemMask = JFALSE;
 	}
 
+	void giveCodeKey(s32 num)
+	{
+		switch (num)
+		{
+			case 1:
+				s_playerInfo.itemCode1 = JTRUE;
+				return;
+
+			case 2:
+				s_playerInfo.itemCode2 = JTRUE;
+				return;
+
+			case 3:
+				s_playerInfo.itemCode3 = JTRUE;
+				return;
+
+			case 4:
+				s_playerInfo.itemCode4 = JTRUE;
+				return;
+
+			case 5:
+				s_playerInfo.itemCode5 = JTRUE;
+				return;
+
+			case 6:
+				s_playerInfo.itemCode6 = JTRUE;
+				return;
+
+			case 7:
+				s_playerInfo.itemCode7 = JTRUE;
+				return;
+
+			case 8:
+				s_playerInfo.itemCode8 = JTRUE;
+				return;
+
+			case 9:
+				s_playerInfo.itemCode9 = JTRUE;
+				return;
+
+			default:
+				return;
+		}
+	}
+
+	void giveItem(s32 item)
+	{
+		switch (item)
+		{
+			case ITEM_PLANS:
+				s_playerInfo.itemPlans = JTRUE;
+				return;
+
+			case ITEM_PHRIK:
+				s_playerInfo.itemPhrik = JTRUE;
+				return;
+
+			case ITEM_NAVA:
+				s_playerInfo.itemNava = JTRUE;
+				return;
+
+			case ITEM_DT_WEAPON:
+				s_playerInfo.itemDtWeapon = JTRUE;
+				return;
+
+			case ITEM_DATATAPE:
+				s_playerInfo.itemDatatape = JTRUE;
+				return;
+
+			case ITEM_UNUSED:
+				s_playerInfo.itemUnused = JTRUE;
+				return;
+
+			default:
+				return;
+		}
+	}
+
 	bool hasWeapon(s32 weapon)
 	{
 		switch (weapon)
@@ -379,7 +457,6 @@ namespace TFE_DarkForces
 			default:
 				return;
 		}
-		
 	}
 
 	bool GS_Player::scriptRegister(ScriptAPI api)
@@ -451,6 +528,9 @@ namespace TFE_DarkForces
 			ScriptObjFunc("void removeGoggles()", removeGoggles);
 			ScriptObjFunc("void removeCleats()", removeCleats);
 			ScriptObjFunc("void removeMask()", removeMask);
+
+			ScriptObjFunc("void giveCodeKey(int)", giveCodeKey);
+			ScriptObjFunc("void giveItem(int)", giveItem);
 
 			// Weapons
 			ScriptObjFunc("bool hasWeapon(int)", hasWeapon);
