@@ -195,6 +195,7 @@ namespace LevelEditor
 	Vec2i worldPos2dToMap(const Vec2f& worldPos);
 	bool worldPosToViewportCoord(Vec3f worldPos, Vec2f* screenPos);
 	EditorSector* findHoverSector2d(Vec2f pos);
+	void alignGridToSelectedEdge();
 	
 	void handleTextureAlignment();
 
@@ -1736,7 +1737,7 @@ namespace LevelEditor
 		if (ImGui::BeginMenu("Grid"))
 		{
 			menuActive = true;
-			if (ImGui::MenuItem("Reset", ""))
+			if (ImGui::MenuItem("Reset", getShortcutKeyComboText(SHORTCUT_RESET_GRID)))
 			{
 				s_gridFlags = GFLAG_NONE;
 				resetGrid();
@@ -1748,23 +1749,9 @@ namespace LevelEditor
 				else { s_gridFlags |= GFLAG_OVER; }
 			}
 			ImGui::Separator();
-			if (ImGui::MenuItem("Align To Edge", ""))
+			if (ImGui::MenuItem("Align To Edge", getShortcutKeyComboText(SHORTCUT_ALIGN_GRID)))
 			{
-				if (s_editMode == LEDIT_WALL && selection_getCount())
-				{
-					EditorSector* sector = nullptr;
-					s32 featureIndex = -1;
-					HitPart part = HP_NONE;
-					bool selected = selection_getSurface(0, sector, featureIndex, &part);
-
-					// If an edge is selected.
-					if (selected && part != HP_CEIL && part != HP_FLOOR)
-					{
-						const Vec2f* vtx = sector->vtx.data();
-						const EditorWall* wall = &sector->walls[featureIndex];
-						alignGridToEdge(vtx[wall->idx[0]], vtx[wall->idx[1]]);
-					}
-				}
+				alignGridToSelectedEdge();
 			}
 
 			ImGui::EndMenu();
@@ -2167,6 +2154,25 @@ namespace LevelEditor
 		return y;
 	}
 
+	void alignGridToSelectedEdge()
+	{
+		if (s_editMode == LEDIT_WALL && selection_getCount())
+		{
+			EditorSector* sector = nullptr;
+			s32 featureIndex = -1;
+			HitPart part = HP_NONE;
+			bool selected = selection_getSurface(0, sector, featureIndex, &part);
+
+			// If an edge is selected.
+			if (selected && part != HP_CEIL && part != HP_FLOOR)
+			{
+				const Vec2f* vtx = sector->vtx.data();
+				const EditorWall* wall = &sector->walls[featureIndex];
+				alignGridToEdge(vtx[wall->idx[0]], vtx[wall->idx[1]]);
+			}
+		}
+	}
+
 	void handleEditorActions()
 	{
 		if (isShortcutPressed(SHORTCUT_UNDO))
@@ -2248,6 +2254,17 @@ namespace LevelEditor
 		else if (isShortcutPressed(SHORTCUT_MODE_ENTITY, 0))
 		{
 			edit_setEditMode(LEDIT_ENTITY);
+		}
+
+		// Grid
+		if (isShortcutPressed(SHORTCUT_RESET_GRID, 0))
+		{
+			s_gridFlags = GFLAG_NONE;
+			resetGrid();
+		}
+		else if (isShortcutPressed(SHORTCUT_ALIGN_GRID, 0))
+		{
+			alignGridToSelectedEdge();
 		}
 	}
 		
