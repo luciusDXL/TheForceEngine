@@ -477,6 +477,7 @@ echo ^)";
     <ClInclude Include="TFE_Editor\historyView.h" />
     <ClInclude Include="TFE_Editor\LevelEditor\browser.h" />
     <ClInclude Include="TFE_Editor\LevelEditor\camera.h" />
+    <ClInclude Include="TFE_Editor\LevelEditor\confirmDialogs.h" />
     <ClInclude Include="TFE_Editor\LevelEditor\contextMenu.h" />
     <ClInclude Include="TFE_Editor\LevelEditor\dragSelect.h" />
     <ClInclude Include="TFE_Editor\LevelEditor\editCommon.h" />
@@ -892,6 +893,7 @@ echo ^)";
     <ClCompile Include="TFE_Editor\historyView.cpp" />
     <ClCompile Include="TFE_Editor\LevelEditor\browser.cpp" />
     <ClCompile Include="TFE_Editor\LevelEditor\camera.cpp" />
+    <ClCompile Include="TFE_Editor\LevelEditor\confirmDialogs.cpp" />
     <ClCompile Include="TFE_Editor\LevelEditor\contextMenu.cpp" />
     <ClCompile Include="TFE_Editor\LevelEditor\dragSelect.cpp" />
     <ClCompile Include="TFE_Editor\LevelEditor\editCommon.cpp" />

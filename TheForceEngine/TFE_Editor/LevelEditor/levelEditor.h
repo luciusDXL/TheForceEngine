@@ -100,6 +100,8 @@ namespace LevelEditor
 	void edit_deleteLevelNote(s32 index);
 	void edit_setEditMode(LevelEditMode mode);
 	void edit_cleanSectorList(std::vector<s32>& selectedSectors, bool addToHistory = true);
+	void editor_reloadLevel();
+	void editor_closeLevel(bool saveBeforeClosing);
 	EditorSector* edit_getHoverSector2dAtCursor();
 	Vec3f edit_viewportCoordToWorldDir3d(Vec2i vCoord);
 	bool edit_viewportHovered(s32 mx, s32 my);

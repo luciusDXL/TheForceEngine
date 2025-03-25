@@ -202,7 +202,7 @@
     </Filter>
     <Filter Include="Source\TFE_ForceScript\ScriptAPI-Shared">
       <UniqueIdentifier>{5c672dc0-3db1-4561-a60b-669fd3874113}</UniqueIdentifier>
-    </Filter>	
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="main.h">
@@ -225,7 +225,7 @@
     </ClInclude>
     <ClInclude Include="TFE_Input\replay.h">
       <Filter>Source\TFE_Input</Filter>
-    </ClInclude>	
+    </ClInclude>
     <ClInclude Include="TFE_Ui\imGUI\imconfig.h">
       <Filter>Source\TFE_Ui\imGUI</Filter>
     </ClInclude>
@@ -1476,7 +1476,7 @@
     </ClInclude>
     <ClInclude Include="TFE_Editor\LevelEditor\testOptions.h">
       <Filter>Source\TFE_Editor\LevelEditor</Filter>
-    </ClInclude>	
+    </ClInclude>
     <ClInclude Include="TFE_Editor\editorComboBox.h">
       <Filter>Source\TFE_Editor</Filter>
     </ClInclude>
@@ -1488,6 +1488,9 @@
     </ClInclude>
     <ClInclude Include="TFE_DarkForces\Scripting\gs_player.h">
       <Filter>Source\TFE_DarkForces\Scripting</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Editor\LevelEditor\confirmDialogs.h">
+      <Filter>Source\TFE_Editor\LevelEditor</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -1911,7 +1914,7 @@
     <ClCompile Include="TFE_Input\inputMapping.cpp">
       <Filter>Source\TFE_Input</Filter>
     </ClCompile>
-	<ClCompile Include="TFE_Input\replay.cpp">
+    <ClCompile Include="TFE_Input\replay.cpp">
       <Filter>Source\TFE_Input</Filter>
     </ClCompile>
     <ClCompile Include="TFE_Jedi\Renderer\RClassic_Fixed\rclassicFixedSharedState.cpp">
@@ -2597,7 +2600,7 @@
     </ClCompile>
     <ClCompile Include="TFE_Editor\LevelEditor\testOptions.cpp">
       <Filter>Source\TFE_Editor\LevelEditor</Filter>
-    </ClCompile>	
+    </ClCompile>
     <ClCompile Include="TFE_Editor\editorComboBox.cpp">
       <Filter>Source\TFE_Editor</Filter>
     </ClCompile>
@@ -2609,6 +2612,9 @@
     </ClCompile>
     <ClCompile Include="TFE_DarkForces\Scripting\gs_player.cpp">
       <Filter>Source\TFE_DarkForces\Scripting</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Editor\LevelEditor\confirmDialogs.cpp">
+      <Filter>Source\TFE_Editor\LevelEditor</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

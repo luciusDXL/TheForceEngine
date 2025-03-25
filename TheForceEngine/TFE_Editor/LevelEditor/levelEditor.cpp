@@ -1645,8 +1645,7 @@ namespace LevelEditor
 				}
 				if (ImGui::MenuItem("Reload", getShortcutKeyComboText(SHORTCUT_RELOAD), (bool*)NULL))
 				{
-					loadLevelFromAsset(s_levelAsset);
-					s_timeSinceLastAutosave = 0.0;
+					openEditorPopup(POPUP_RELOAD_CONFIRM);
 				}
 				if (ImGui::MenuItem("Snapshots", nullptr, (bool*)NULL))
 				{
@@ -1657,9 +1656,14 @@ namespace LevelEditor
 
 			if (ImGui::MenuItem("Close", NULL, (bool*)NULL))
 			{
-				// TODO: If the level has changed, pop up a warning and allow the level to be saved.
-				disableAssetEditor();
-				levHistory_clear();
+				if (levelIsDirty())
+				{
+					openEditorPopup(POPUP_EXIT_SAVE_CONFIRM);
+				}
+				else
+				{
+					editor_closeLevel(false);
+				}
 			}
 			ImGui::Separator();
 			if (ImGui::MenuItem("User Preferences", NULL, (bool*)NULL))
@@ -2173,6 +2177,22 @@ namespace LevelEditor
 		}
 	}
 
+	void editor_reloadLevel()
+	{
+		loadLevelFromAsset(s_levelAsset);
+		s_timeSinceLastAutosave = 0.0;
+	}
+
+	void editor_closeLevel(bool saveBeforeClosing)
+	{
+		if (saveBeforeClosing)
+		{
+			saveLevel();
+		}
+		disableAssetEditor();
+		levHistory_clear();
+	}
+
 	void handleEditorActions()
 	{
 		if (isShortcutPressed(SHORTCUT_UNDO))
@@ -2194,8 +2214,7 @@ namespace LevelEditor
 		}
 		if (isShortcutPressed(SHORTCUT_RELOAD))
 		{
-			loadLevelFromAsset(s_levelAsset);
-			s_timeSinceLastAutosave = 0.0;
+			openEditorPopup(POPUP_RELOAD_CONFIRM);
 		}
 		if (isShortcutPressed(SHORTCUT_FIND_SECTOR))
 		{

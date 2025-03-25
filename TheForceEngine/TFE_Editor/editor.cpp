@@ -16,6 +16,7 @@
 #include <TFE_Editor/LevelEditor/findSectorUI.h>
 #include <TFE_Editor/LevelEditor/snapshotUI.h>
 #include <TFE_Editor/LevelEditor/browser.h>
+#include <TFE_Editor/LevelEditor/confirmDialogs.h>
 #include <TFE_Editor/EditorAsset/editorAsset.h>
 #include <TFE_Editor/EditorAsset/editor3dThumbnails.h>
 #include <TFE_Input/input.h>
@@ -325,6 +326,14 @@ namespace TFE_Editor
 			{
 				ImGui::OpenPopup("Texture Sources");
 			} break;
+			case POPUP_RELOAD_CONFIRM:
+			{
+				ImGui::OpenPopup("Reload Confirmation");
+			} break;
+			case POPUP_EXIT_SAVE_CONFIRM:
+			{
+				ImGui::OpenPopup("Exit Without Saving");
+			} break;
 			case POPUP_GROUP_NAME:
 			{
 				ImGui::OpenPopup("Choose Name");
@@ -454,6 +463,22 @@ namespace TFE_Editor
 			case POPUP_TEX_SOURCES:
 			{
 				if (LevelEditor::textureSourcesUI())
+				{
+					ImGui::CloseCurrentPopup();
+					s_editorPopup = POPUP_NONE;
+				}
+			} break;
+			case POPUP_RELOAD_CONFIRM:
+			{
+				if (LevelEditor::reloadConfirmation())
+				{
+					ImGui::CloseCurrentPopup();
+					s_editorPopup = POPUP_NONE;
+				}
+			} break;
+			case POPUP_EXIT_SAVE_CONFIRM:
+			{
+				if (LevelEditor::exitSaveConfirmation())
 				{
 					ImGui::CloseCurrentPopup();
 					s_editorPopup = POPUP_NONE;
@@ -665,6 +690,10 @@ namespace TFE_Editor
 				ImGui::Separator();
 				if (ImGui::MenuItem("Asset Browser", NULL, s_editorMode == EDIT_ASSET_BROWSER))
 				{
+					if (s_editorMode == EDIT_ASSET && s_editorAssetType == TYPE_LEVEL && LevelEditor::levelIsDirty())
+					{
+						openEditorPopup(POPUP_EXIT_SAVE_CONFIRM);
+					}
 					s_editorMode = EDIT_ASSET_BROWSER;
 				}
 
@@ -682,7 +711,14 @@ namespace TFE_Editor
 				ImGui::Separator();
 				if (ImGui::MenuItem("Return to Game", NULL, (bool*)NULL))
 				{
-					s_exitEditor = true;
+					if (s_editorMode == EDIT_ASSET && s_editorAssetType == TYPE_LEVEL && LevelEditor::levelIsDirty())
+					{
+						openEditorPopup(POPUP_EXIT_SAVE_CONFIRM);
+					}
+					else
+					{
+						s_exitEditor = true;
+					}
 				}
 				ImGui::EndMenu();
 			}
