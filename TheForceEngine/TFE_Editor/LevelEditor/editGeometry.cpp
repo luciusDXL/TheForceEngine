@@ -722,8 +722,16 @@ namespace LevelEditor
 		// Just copy for now.
 		bool hasSectors = !s_level.sectors.empty();
 
-		sector->floorTex.texIndex = hasSectors ? s_level.sectors[0].floorTex.texIndex : getTextureIndex("DEFAULT.BM");
-		sector->ceilTex.texIndex = hasSectors ? s_level.sectors[0].ceilTex.texIndex : getTextureIndex("DEFAULT.BM");
+		if (s_editorConfig.levelEditorFlags & LEVEDITOR_FLAG_ALWAYS_USE_DEFTEX)
+		{
+			sector->floorTex.texIndex = getTextureIndex("DEFAULT.BM");
+			sector->ceilTex.texIndex  = getTextureIndex("DEFAULT.BM");
+		}
+		else
+		{
+			sector->floorTex.texIndex = hasSectors ? s_level.sectors[0].floorTex.texIndex : getTextureIndex("DEFAULT.BM");
+			sector->ceilTex.texIndex = hasSectors ? s_level.sectors[0].ceilTex.texIndex : getTextureIndex("DEFAULT.BM");
+		}
 
 		sector->floorHeight = std::min(heights[0], heights[1]);
 		sector->ceilHeight = std::max(heights[0], heights[1]);

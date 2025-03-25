@@ -4360,6 +4360,11 @@ namespace LevelEditor
 	s32 getDefaultTextureIndex(WallPart part)
 	{
 		s32 index = getTextureIndex("DEFAULT.BM");
+		if (s_editorConfig.levelEditorFlags & LEVEDITOR_FLAG_ALWAYS_USE_DEFTEX)
+		{
+			return index;
+		}
+
 		const s32 count = (s32)s_level.sectors.size();
 		const EditorSector* sector = s_level.sectors.data();
 		for (s32 i = 0; i < count; i++, sector++)

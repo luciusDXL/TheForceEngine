@@ -22,6 +22,7 @@ namespace TFE_Editor
 		LEVEDITOR_FLAG_HARD = FLAG_BIT(3),
 		// Empty space for related flags.
 		LEVEDITOR_FLAG_INVERT_Y = FLAG_BIT(10),
+		LEVEDITOR_FLAG_ALWAYS_USE_DEFTEX = FLAG_BIT(11),
 	};
 
 	struct EditorConfig
