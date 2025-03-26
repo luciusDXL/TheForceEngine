@@ -1745,7 +1745,7 @@ namespace LevelEditor
 				openEditorPopup(POPUP_LIGHTING);
 			}
 			ImGui::Separator();
-			if (ImGui::MenuItem("Join Sectors", NULL, (bool*)NULL))
+			if (ImGui::MenuItem("Join Sectors", getShortcutKeyComboText(SHORTCUT_JOIN_SECTORS), (bool*)NULL))
 			{
 				edit_joinSectors();
 			}
@@ -2252,6 +2252,10 @@ namespace LevelEditor
 		if (isShortcutPressed(SHORTCUT_FIND_SECTOR))
 		{
 			openEditorPopup(POPUP_FIND_SECTOR);
+		}
+		if (isShortcutPressed(SHORTCUT_JOIN_SECTORS, 0))
+		{
+			edit_joinSectors();
 		}
 		if (isShortcutPressed(SHORTCUT_VIEW_2D))
 		{

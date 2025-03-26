@@ -208,6 +208,7 @@ namespace LevelEditor
 		"LEV_SHORTCUT_SAVE",
 		"LEV_SHORTCUT_RELOAD",
 		"LEV_SHORTCUT_FIND_SECTOR",
+		"LEV_SHORTCUT_JOIN_SECTORS",
 		"LEV_SHORTCUT_VIEW_2D",
 		"LEV_SHORTCUT_VIEW_3D",
 		"LEV_SHORTCUT_VIEW_WIREFRAME",
@@ -271,6 +272,7 @@ namespace LevelEditor
 		"Save Level",										// SHORTCUT_SAVE
 		"Reload Level",										// SHORTCUT_RELOAD
 		"Find Sector",										// SHORTCUT_FIND_SECTOR
+		"Join Sectors",										// SHORTCUT_JOIN_SECTORS
 		"2D View",											// SHORTCUT_VIEW_2D
 		"3D View",											// SHORTCUT_VIEW_3D
 		"Display Wireframe",								// SHORTCUT_VIEW_WIREFRAME
@@ -489,6 +491,7 @@ namespace LevelEditor
 		addKeyboardShortcut(SHORTCUT_SAVE, KEY_S, KEYMOD_CTRL);
 		addKeyboardShortcut(SHORTCUT_RELOAD, KEY_R, KEYMOD_CTRL);
 		addKeyboardShortcut(SHORTCUT_FIND_SECTOR, KEY_F, KEYMOD_CTRL);
+		addKeyboardShortcut(SHORTCUT_JOIN_SECTORS, KEY_J, KEYMOD_CTRL);
 		addKeyboardShortcut(SHORTCUT_VIEW_2D, KEY_1, KEYMOD_CTRL);
 		addKeyboardShortcut(SHORTCUT_VIEW_3D, KEY_2, KEYMOD_CTRL);
 		addKeyboardShortcut(SHORTCUT_VIEW_WIREFRAME, KEY_4, KEYMOD_CTRL);
