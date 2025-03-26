@@ -25,6 +25,7 @@ namespace TFE_DarkForces
 		bool scriptRegister(ScriptAPI api) override;
 
 		ScriptSector getSectorById(s32 id);
+		ScriptSector getSectorByName(std::string name);
 		ScriptElev   getElevator(s32 id);
 		void findConnectedSectors(ScriptSector initSector, u32 matchProp, CScriptArray& results);
 		void setGravity(s32 grav);
