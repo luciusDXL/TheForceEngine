@@ -494,6 +494,7 @@ namespace LevelEditor
 	void edit_deleteSector(s32 sectorId, bool addToHistory)
 	{
 		std::vector<EditorSector> sectorSnapshot;
+		size_t prevSectorCount = s_level.sectors.size();
 		if (addToHistory)
 		{
 			level_createLevelSectorSnapshotSameAssets(sectorSnapshot);
@@ -553,7 +554,7 @@ namespace LevelEditor
 		{
 			std::vector<s32> deltaSectors;
 			level_getLevelSnapshotDelta(deltaSectors, sectorSnapshot);
-			if (!deltaSectors.empty())
+			if (!deltaSectors.empty() || prevSectorCount != s_level.sectors.size())
 			{
 				cmd_sectorSnapshot(LName_DeleteSector, deltaSectors);
 			}

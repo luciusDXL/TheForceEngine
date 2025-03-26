@@ -125,13 +125,23 @@ namespace TFE_Editor
 		s_gpuImages.clear();
 	}
 
-	void disable()
+	bool disable()
 	{
-		AssetBrowser::destroy();
-		thumbnail_destroy();
-		TFE_RenderShared::modelDraw_destroy();
-		freeGpuImages();
-		TFE_Polygon::clipDestroy();
+		if (s_editorAssetType == TYPE_LEVEL && LevelEditor::levelIsDirty() && s_editorPopup != POPUP_EXIT_SAVE_CONFIRM)
+		{
+			openEditorPopup(POPUP_EXIT_SAVE_CONFIRM);
+		}
+
+		if (!isPopupOpen() || s_editorPopup != POPUP_EXIT_SAVE_CONFIRM)
+		{
+			AssetBrowser::destroy();
+			thumbnail_destroy();
+			TFE_RenderShared::modelDraw_destroy();
+			freeGpuImages();
+			TFE_Polygon::clipDestroy();
+			return true;
+		}
+		return false;
 	}
 		
 	bool loadIcons()

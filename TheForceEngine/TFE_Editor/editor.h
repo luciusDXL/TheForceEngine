@@ -116,7 +116,7 @@ namespace TFE_Editor
 	#define LIST_SELECT(label, arr, index) listSelection(label, arr, IM_ARRAYSIZE(arr), (s32*)&index)
 		
 	void enable();
-	void disable();
+	bool disable();
 	bool update(bool consoleOpen = false);
 	bool render();
 	TextureGpu* getIconAtlas();

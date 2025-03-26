@@ -947,6 +947,40 @@ int main(int argc, char* argv[])
 		}
 	}	
 
+#if ENABLE_EDITOR == 1
+	if (s_curState == APP_STATE_EDITOR)
+	{
+		bool canExit = TFE_Editor::disable();
+		while (!canExit)
+		{
+			//////////////////////////////////////////////////////
+			TFE_FRAME_BEGIN();
+
+			// System events
+			SDL_Event event;
+			while (SDL_PollEvent(&event)) { handleEvent(event); }
+
+			TFE_Ui::begin();
+			TFE_System::update();
+
+			TFE_Editor::update();
+			bool swap = TFE_Editor::render();
+
+			// Blit the frame to the window and draw UI.
+			TFE_RenderBackend::swap(swap);
+
+			// Clear transitory input state.
+			TFE_Input::endFrame();
+			inputMapping_endFrame();
+			frame++;
+			TFE_FRAME_END();
+
+			//////////////////////////////////////////////////////
+			canExit = TFE_Editor::disable();
+		}
+	}
+#endif
+
 	if (s_curGame)
 	{
 		freeGame(s_curGame);

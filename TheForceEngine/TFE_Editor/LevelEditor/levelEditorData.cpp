@@ -4644,7 +4644,7 @@ namespace LevelEditor
 		// Sort by id from smallest to largest.
 		std::sort(sectorIds.begin(), sectorIds.end());
 		// Get the new sector count, which must be large enough to hold the largest sector ID.
-		u32 newSectorCount = std::max((s32)s_level.sectors.size(), sectorIds.back() + 1);
+		u32 newSectorCount = sectorIds.empty() ? (s32)s_level.sectors.size() : std::max((s32)s_level.sectors.size(), sectorIds.back() + 1);
 		// Extract unique textures and entities.
 		// Create a set of sectors to serialize.
 		const s32 idCount = (s32)sectorIds.size();
