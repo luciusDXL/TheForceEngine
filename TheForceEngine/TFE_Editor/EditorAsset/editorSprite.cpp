@@ -207,7 +207,7 @@ namespace TFE_Editor
 			// Super basic packing.
 			s32 rows = (totalWidth + 4095) / 4096;
 			s32 texW = totalWidth <= 4096 ? totalWidth : 4096;
-			s32 texH = rows * maxHeight;
+			s32 texH = min(8192, (rows + 1) * maxHeight);
 
 			// make sure the texture size is divisible by 4.
 			texW = ((texW + 3) >> 2) << 2;
