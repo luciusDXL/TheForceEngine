@@ -16,6 +16,7 @@
 #include <TFE_DarkForces/GameUI/agentMenu.h>
 #include <TFE_DarkForces/GameUI/pda.h>
 #include <TFE_DarkForces/mission.h>
+#include <TFE_DarkForces/time.h>
 #include <TFE_FileSystem/fileutil.h>
 #include <TFE_FileSystem/filestream.h>
 #include <TFE_FrontEndUI/frontEndUi.h>
@@ -887,8 +888,8 @@ namespace TFE_Input
 			angle14_16 yaw = s_playerEye->yaw;
 			angle14_16 pitch = s_playerEye->pitch;
 
-			string logMsg = "Update %d: X:%04d Y:%04d Z:%04d, yaw: %d, pitch: %d, keysDown: %s, keysPressed: %s, mouse: %s";
-			TFE_System::logWrite(LOG_MSG, "Replay", logMsg.c_str(), counter, xPos, yPos, zPos, yaw, pitch, 
+			string logMsg = "Update %d: Tick = %d X:%04d Y:%04d Z:%04d, yaw: %d, pitch: %d, keysDown: %s, keysPressed: %s, mouse: %s";
+			TFE_System::logWrite(LOG_MSG, "Replay", logMsg.c_str(), counter, s_curTick, xPos, yPos, zPos, yaw, pitch,
 				                                    keys.c_str(), keysPressed.c_str(), mouse.c_str());
 		}
 	}
