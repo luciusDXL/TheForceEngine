@@ -600,6 +600,10 @@ namespace TFE_Input
 			InputBinding* binding = inputMapping_getBindingByIndex(indices[0]);
 			if (TFE_Input::keyPressed(binding->keyCode))
 			{
+				if (binding->keyMod && !TFE_Input::keyModDown(binding->keyMod, true))
+				{
+					return false; 
+				}
 				return true;
 			}
 		}
