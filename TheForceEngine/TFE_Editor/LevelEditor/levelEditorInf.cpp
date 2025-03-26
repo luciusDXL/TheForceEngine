@@ -3060,11 +3060,25 @@ namespace LevelEditor
 		}
 	}
 
-	void editor_infEdit_UI()
+	void selectableClassName(const char* className, ImVec2 itemStart, s32 classIndex)
+	{
+		ImVec2 itemEnd = ImGui::GetCursorPos();
+		ImGui::TextColored(colorKeywordInner, className);
+		itemEnd.x += ImGui::CalcTextSize(className).x;
+		ImVec2 itemNext = ImGui::GetCursorPos();
+
+		ImGui::SetCursorPos(itemStart);
+		if (ImGui::InvisibleButton(editor_getUniqueLabel(""), ImVec2(itemEnd.x - itemStart.x, 28.0f)))
+		{
+			editor_infSelectEditClass(classIndex);
+		}
+		ImGui::SetCursorPos(itemNext);
+	}
+
+	void editor_infEdit_UI(s32 deleteIndex)
 	{
 		const f32 tint[] = { 103.0f / 255.0f, 122.0f / 255.0f, 139.0f / 255.0f, 1.0f };
 
-		s32 deleteIndex = -1;
 		bool modifiedSector = false;
 		const s32 count = (s32)s_infEditor.item->classData.size();
 		Editor_InfClass** dataList = s_infEditor.item->classData.data();
@@ -3077,6 +3091,8 @@ namespace LevelEditor
 			if (ImGui::BeginChild(editor_getUniqueLabel(""), { 0, childHeight }, ImGuiChildFlags_Border))
 			{
 				// Class label.
+				ImVec2 itemStart = ImGui::GetCursorPos();
+
 				ImGui::TextColored(i == s_infEditor.curClassIndex ? colorKeywordOuterSel : colorKeywordOuter, "Class:");
 				ImGui::SameLine(0.0f, 8.0f);
 
@@ -3085,7 +3101,7 @@ namespace LevelEditor
 					case IIC_ELEVATOR:
 					{
 						// Class name.
-						ImGui::TextColored(colorKeywordInner, "Elevator");
+						selectableClassName("Elevator", itemStart, i);
 						ImGui::SameLine(0.0f, 8.0f);
 
 						// Class data.
@@ -3093,7 +3109,7 @@ namespace LevelEditor
 						assert(elev);
 						// Elevator Type.
 						editor_infSelectElevType(elev);
-
+												
 						// Properties.
 						editor_infEditElevProperties(elev, propHeight, i, tint);
 						editor_infAddOrRemoveElevProperty(elev, i);
@@ -3172,7 +3188,7 @@ namespace LevelEditor
 					case IIC_TRIGGER:
 					{
 						// Class name.
-						ImGui::TextColored(colorKeywordInner, "Trigger");
+						selectableClassName("Trigger", itemStart, i);
 
 						// Class data.
 						Editor_InfTrigger* trigger = getTriggerFromClassData(data);
@@ -3210,7 +3226,7 @@ namespace LevelEditor
 					case IIC_TELEPORTER:
 					{
 						// Class name.
-						ImGui::TextColored(colorKeywordInner, "Teleporter");
+						selectableClassName("Teleporter", itemStart, i);
 
 						// Class data.
 						Editor_InfTeleporter* teleporter = getTeleporterFromClassData(data);
@@ -3297,6 +3313,7 @@ namespace LevelEditor
 				s_infEditor.item->classData[i] = s_infEditor.item->classData[i + 1];
 			}
 			s_infEditor.item->classData.pop_back();
+			
 		}
 
 		editor_handleOverlayList();
@@ -4126,6 +4143,7 @@ namespace LevelEditor
 		TFE_RenderBackend::getDisplayInfo(&info);
 		const f32 winWidth  = min(940.0f, (f32)info.width - 16);
 		const f32 winHeight = (f32)info.height - 16;
+		s32 deleteIndex = -1;
 				
 		pushFont(TFE_Editor::FONT_SMALL);
 
@@ -4191,16 +4209,7 @@ namespace LevelEditor
 					ImGui::SameLine(0.0f, 4.0f);
 					if (editor_button("-"))
 					{
-						const s32 classCount = s_infEditor.item ? (s32)s_infEditor.item->classData.size() : 0;
-						if (s_infEditor.curClassIndex >= 0 && s_infEditor.curClassIndex < classCount)
-						{
-							for (s32 c = s_infEditor.curClassIndex; c < classCount - 1; c++)
-							{
-								s_infEditor.item->classData[c] = s_infEditor.item->classData[c + 1];
-							}
-							s_infEditor.item->classData.pop_back();
-							s_infEditor.curClassIndex = -1;
-						}
+						deleteIndex = s_infEditor.curClassIndex;
 					}
 					ImGui::SameLine(0.0f, 16.0f);
 					ImGui::SetNextItemWidth(128.0f);
@@ -4233,7 +4242,7 @@ namespace LevelEditor
 					ImGui::SameLine(0.0f, 4.0f);
 					if (editor_button("-"))
 					{
-						// TODO
+						deleteIndex = s_infEditor.curClassIndex;
 					}
 				}
 
@@ -4258,7 +4267,7 @@ namespace LevelEditor
 				{
 					if (s_infEditor.mode == INF_MODE_UI)
 					{
-						editor_infEdit_UI();
+						editor_infEdit_UI(deleteIndex);
 					}
 					else
 					{
@@ -4868,7 +4877,9 @@ namespace LevelEditor
 		ctrl->type = InfVpControl_None;
 		if (!s_infEditor.item || s_infEditor.item->classData.empty()) { return; }
 
-		const s32 classIndex = max(0, s_infEditor.curClassIndex);
+		const s32 classIndex = min(max(0, s_infEditor.curClassIndex), (s32)s_infEditor.item->classData.size()-1);
+		if (classIndex < 0) { return; }
+
 		const Editor_InfClass* classData = s_infEditor.item->classData[classIndex];
 		if (classData->classId == IIC_ELEVATOR)
 		{
