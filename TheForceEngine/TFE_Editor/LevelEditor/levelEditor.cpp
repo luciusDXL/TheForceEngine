@@ -4386,6 +4386,24 @@ namespace LevelEditor
 						
 	void play()
 	{
+		// For now assume Dark Forces - TODO: Fix for Outlaws support.
+		size_t len = strlen(s_editorConfig.darkForcesPort);
+		bool invalidPort = false;
+		if (len == 0) { invalidPort = true; }
+	#ifdef _WIN32
+		char ext[32];
+		FileUtil::getFileExtension(s_editorConfig.darkForcesPort, ext);
+		if (strcasecmp(ext, "exe"))
+		{
+			invalidPort = true;
+		}
+	#endif
+		if (invalidPort)
+		{
+			showMessageBox("Error", "You need to set a source port before you can test.\nOpen the Level menu and choose Test Options to set.");
+			return;
+		}
+
 		StartPoint start = {};
 		start.pos = s_camera.pos;
 		start.yaw = s_camera.yaw;
