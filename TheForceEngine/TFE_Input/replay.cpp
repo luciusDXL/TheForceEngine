@@ -23,6 +23,7 @@
 #include <TFE_FrontEndUI/modLoader.h>
 #include <TFE_Game/saveSystem.h>
 #include <TFE_Input/inputMapping.h>
+#include <TFE_Jedi/Renderer/rcommon.h>
 #include <TFE_Jedi/Serialization/serialization.h>
 #include <TFE_System/frameLimiter.h>
 #include <TFE_System/system.h>
@@ -61,6 +62,7 @@ namespace TFE_Input
 	bool cutscenesEnabled = true;
 	bool pauseReplay = false; 
 	bool showReplayMsgFrame = false;
+	bool alwaysRecord = false;
 	
 	extern f64 gameFrameLimit = 0;	
 	extern f64 replayFrameLimit = 0;
@@ -579,12 +581,12 @@ namespace TFE_Input
 			SERIALIZE(ReplayVersionInit, gameSettings->df_solidWallFlagFix, 0);
 			SERIALIZE(ReplayVersionInit, gameSettings->df_jsonAiLogics, 0);
 			SERIALIZE(ReplayVersionInit, gameSettings->df_bobaFettFacePlayer, 0);
-			SERIALIZE(ReplayVersionInit, gameSettings->df_recordFrameRate, 0);
+			SERIALIZE(ReplayVersionInit, gameSettings->df_recordFrameRate, 0);			
 			int pitchLimit = gameSettings->df_pitchLimit;
 			SERIALIZE(ReplayVersionInit, pitchLimit, 0);
 
 			SERIALIZE(ReplayVersionInit, allySettings->enableHeadwave, 0);
-			
+
 			SERIALIZE(ReplayVersionInit, inputConfig->mouseFlags, 0);			
 			SERIALIZE(ReplayVersionInit, mouseMode, 0);
 			SERIALIZE(ReplayVersionInit, inputConfig->mouseSensitivity[0], 0);
@@ -687,6 +689,7 @@ namespace TFE_Input
 		TFE_DarkForces::s_oneHitKillEnabled = JFALSE;
 		TFE_DarkForces::s_instaDeathEnabled = JFALSE;
 		TFE_DarkForces::s_limitStepHeight = JTRUE;
+		TFE_Jedi::s_fullBright = JFALSE;
 	}
 
 	void setStartHudMessage(bool notify)
@@ -976,6 +979,10 @@ namespace TFE_Input
 			return;
 		}
 
+		// Always set this to false as we are loading a replay from path
+		alwaysRecord = TFE_Settings::getGameSettings()->df_enableRecordingAll;
+		TFE_Settings::getGameSettings()->df_enableRecordingAll = false;
+
 		TFE_SaveSystem::SaveHeader header;
 		loadReplayHeader(replayPath, &header);
 
@@ -1054,7 +1061,7 @@ namespace TFE_Input
 	
 		// Start replaying with the first event
 		inputMapping_setReplayCounter(1);
-	
+
 		serializeDemo(&s_replayFile, false);
 
 		// Setup frame rate for replay playback
@@ -1088,7 +1095,7 @@ namespace TFE_Input
 			}
 			replayLogCounter++;
 			TFE_System::logTimeToggle();
-		}
+		}		
 	}
 
 	void restoreAgent()
@@ -1134,6 +1141,8 @@ namespace TFE_Input
 
 		if (TFE_Settings::getTempSettings()->exit_after_replay)
 		{
+			// Reset the recording settings
+			TFE_Settings::getGameSettings()->df_enableRecordingAll = alwaysRecord;
 			TFE_FrontEndUI::setState(APP_STATE_QUIT);
 		}
 		else
