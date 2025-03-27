@@ -4,6 +4,8 @@
 #include <TFE_DarkForces/mission.h>
 #include <TFE_DarkForces/pickup.h>
 #include <TFE_DarkForces/weapon.h>
+#include <TFE_Jedi/Collision/collision.h>
+#include <TFE_FrontEndUI/frontEndUi.h>
 #include <TFE_System/system.h>
 #include <angelscript.h>
 
@@ -31,6 +33,91 @@ namespace TFE_DarkForces
 		s_gasSectorTask = nullptr;
 		s_playerDying = JTRUE;
 		s_reviveTick = s_curTick + 436;
+	}
+
+	vec3_float getPlayerPosition()
+	{
+		return
+		{
+			fixed16ToFloat(s_playerObject->posWS.x),
+			-fixed16ToFloat(s_playerObject->posWS.y),
+			fixed16ToFloat(s_playerObject->posWS.z),
+		};
+	}
+
+	void setPlayerPosition(vec3_float position)
+	{
+		fixed16_16 newX = floatToFixed16(position.x);
+		fixed16_16 newY = -floatToFixed16(position.y);
+		fixed16_16 newZ = floatToFixed16(position.z);
+
+		// Check if player object has moved out of its current sector
+		// Start with a bounds check
+		bool outOfHorzBounds = newX < s_playerObject->sector->boundsMin.x || newX > s_playerObject->sector->boundsMax.x ||
+			newZ < s_playerObject->sector->boundsMin.z || newZ > s_playerObject->sector->boundsMax.z;
+		bool outOfVertBounds = newY < s_playerObject->sector->ceilingHeight || newY > s_playerObject->sector->floorHeight;
+
+		// If within bounds, check if it has passed through a wall
+		RWall* collisionWall = nullptr;
+		if (!outOfHorzBounds && !outOfVertBounds)
+		{
+			collisionWall = collision_wallCollisionFromPath(s_playerObject->sector, s_playerObject->posWS.x, s_playerObject->posWS.z, newX, newZ);
+		}
+
+		if (collisionWall || outOfHorzBounds || outOfVertBounds)
+		{
+			// Try to find a new sector for the player object; if there is none, don't move it
+			RSector* sector = sector_which3D(newX, newY, newZ);
+			if (sector)
+			{
+				if (sector != s_playerObject->sector)
+				{
+					sector_addObject(sector, s_playerObject);
+				}
+			}
+			else
+			{
+				TFE_FrontEndUI::logToConsole("Cannot find a sector to move player to.");
+				return;
+			}
+		}
+
+		s_playerObject->posWS.x = newX;
+		s_playerObject->posWS.y = newY;
+		s_playerObject->posWS.z = newZ;
+		s_playerYPos = newY;
+	}
+
+	float getPlayerYaw()
+	{
+		return angleToFloat(s_playerObject->yaw);
+	}
+
+	void setPlayerYaw(float value)
+	{
+		float yaw = floatToAngle(value);
+		s_playerObject->yaw = yaw;
+		s_playerYaw = yaw;
+	}
+
+	vec3_float getPlayerVelocity()
+	{
+		vec3_fixed velFixed;
+		TFE_DarkForces::player_getVelocity(&velFixed);
+
+		return {
+			fixed16ToFloat(velFixed.x),
+			-fixed16ToFloat(velFixed.y),
+			fixed16ToFloat(velFixed.z),
+		};
+	}
+	
+	void setPlayerVelocity(vec3_float vel)
+	{
+		s_playerVelX = floatToFixed16(vel.x);
+		s_playerUpVel  = -floatToFixed16(vel.y);
+		s_playerUpVel2 = -floatToFixed16(vel.y);
+		s_playerVelZ = floatToFixed16(vel.z);
 	}
 
 	s32 getBatteryPercent()
@@ -491,6 +578,14 @@ namespace TFE_DarkForces
 			ScriptEnumStr(AMMO_MISSILE);
 
 			ScriptObjFunc("void kill()", killPlayer);
+			
+			// Position and velocity
+			ScriptPropertyGetFunc("float3 get_position()", getPlayerPosition);
+			ScriptPropertySetFunc("void set_position(float3)", setPlayerPosition);
+			ScriptPropertyGetFunc("float get_yaw()", getPlayerYaw);
+			ScriptPropertySetFunc("void set_yaw(float)", setPlayerYaw);
+			ScriptPropertyGetFunc("float3 get_velocity()", getPlayerVelocity);
+			ScriptPropertySetFunc("void set_velocity(float3)", setPlayerVelocity);
 			
 			// Health / ammo getters
 			ScriptLambdaPropertyGet("int get_health()", s32, { return s_playerInfo.health; });
