@@ -169,7 +169,7 @@ namespace TFE_Editor
 	bool editorStringFilter(const char* str, const char* filter, size_t filterLength);
 
 	void clearRecents();
-	void addToRecents(const char* path);
+	void addToRecents(const char* path, bool saveConfig = true);
 	void removeFromRecents(const char* path);
 	std::vector<RecentProject>* getRecentProjects();
 	

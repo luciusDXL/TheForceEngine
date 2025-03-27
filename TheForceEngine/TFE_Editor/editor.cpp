@@ -1123,7 +1123,7 @@ namespace TFE_Editor
 		s_recents.clear();
 	}
 		
-	void addToRecents(const char* path)
+	void addToRecents(const char* path, bool _saveConfig)
 	{
 		char name[TFE_MAX_PATH];
 		FileUtil::getFileNameFromPath(path, name);
@@ -1151,7 +1151,10 @@ namespace TFE_Editor
 			// Otherwise add it.
 			s_recents.push_back({name, path});
 		}
-		saveConfig();
+		if (_saveConfig)
+		{
+			saveConfig();
+		}
 	}
 
 	void removeFromRecents(const char* path)

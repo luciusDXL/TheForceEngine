@@ -311,7 +311,7 @@ namespace TFE_Editor
 		}
 		else if (strncasecmp(key, "Recent", strlen("Recent")) == 0)
 		{
-			addToRecents(value1);
+			addToRecents(value1, false);
 		}
 		else if (strncasecmp(key, "LEV_", 4) == 0)
 		{
