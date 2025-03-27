@@ -685,6 +685,11 @@ namespace TFE_Editor
 		ImGui::TextColored(titleColor, "%s", fullTitle);
 	}
 
+	void popupCallback_openAssetBrowser(EditorPopup popupId)
+	{
+		s_editorMode = EDIT_ASSET_BROWSER;
+	}
+
 	void popupCallback_exitEditor(EditorPopup popupId)
 	{
 		s_exitEditor = true;
@@ -735,11 +740,19 @@ namespace TFE_Editor
 				ImGui::Separator();
 				if (ImGui::MenuItem("Asset Browser", NULL, s_editorMode == EDIT_ASSET_BROWSER))
 				{
+					bool exitSavePopup = false;
 					if (s_editorMode == EDIT_ASSET && s_editorAssetType == TYPE_LEVEL)
 					{
-						LevelEditor::edit_closeLevelCheckSave();
+						exitSavePopup = LevelEditor::edit_closeLevelCheckSave();
 					}
-					s_editorMode = EDIT_ASSET_BROWSER;
+					if (exitSavePopup)
+					{
+						setPopupEndCallback(popupCallback_openAssetBrowser);
+					}
+					else
+					{
+						s_editorMode = EDIT_ASSET_BROWSER;
+					}
 				}
 
 				// Disable the Asset Editor menu item, unless actually in an Asset Editor.
