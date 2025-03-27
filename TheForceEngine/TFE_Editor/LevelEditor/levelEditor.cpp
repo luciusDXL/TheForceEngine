@@ -1655,6 +1655,21 @@ namespace LevelEditor
 		else { s_editFlags &= ~LEF_FULLBRIGHT; }
 	}
 
+	bool edit_closeLevelCheckSave()
+	{
+		bool popupOpen = false;
+		if (levelIsDirty())
+		{
+			popupOpen = true;
+			openEditorPopup(POPUP_EXIT_SAVE_CONFIRM);
+		}
+		else
+		{
+			editor_closeLevel(false);
+		}
+		return popupOpen;
+	}
+
 	bool menu()
 	{
 		bool menuActive = false;

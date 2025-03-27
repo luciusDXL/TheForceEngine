@@ -112,6 +112,7 @@ namespace TFE_Editor
 		ICON_TRASHCAN,
 		ICON_COUNT
 	};
+	typedef void(*PopupEndCallback)(EditorPopup);
 
 	#define LIST_SELECT(label, arr, index) listSelection(label, arr, IM_ARRAYSIZE(arr), (s32*)&index)
 		
@@ -128,6 +129,7 @@ namespace TFE_Editor
 	void openEditorPopup(EditorPopup popup, u32 userData = 0, void* userPtr = nullptr);
 	void hidePopup();
 	void showPopup();
+	void setPopupEndCallback(PopupEndCallback callback = nullptr);
 	EditorPopup getCurrentPopup();
 	void listSelection(const char* labelText, const char** listValues, size_t listLen, s32* index, s32 comboOffset=96, s32 comboWidth=0);
 	void setTooltip(const char* msg, ...);

@@ -126,4 +126,6 @@ namespace LevelEditor
 	bool isUiModal();
 	bool isTextureAssignDirty();
 	void setTextureAssignDirty(bool dirty = true);
+
+	bool edit_closeLevelCheckSave();
 }

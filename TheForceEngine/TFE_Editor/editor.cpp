@@ -83,6 +83,7 @@ namespace TFE_Editor
 	static Vec2i s_prevMousePos = { 0 };
 	static const f64 c_tooltipDelay = 0.2;
 	static bool s_canShowTooltips = false;
+	static PopupEndCallback s_popupEndCallback = nullptr;
 
 	static std::map<std::string, TextureGpu*> s_gpuImages;
 
@@ -366,11 +367,12 @@ namespace TFE_Editor
 			} break;
 		}
 	}
-
+		
 	void handlePopupEnd()
 	{
 		if (s_editorPopup == POPUP_NONE || s_hidePopup) { return; }
 
+		const EditorPopup popupId = s_editorPopup;
 		switch (s_editorPopup)
 		{
 			case POPUP_MSG_BOX:
@@ -558,6 +560,11 @@ namespace TFE_Editor
 				s_exitEditor = true;
 			}
 		}
+		if (s_popupEndCallback && s_editorPopup == POPUP_NONE && s_editorPopup != popupId)
+		{
+			s_popupEndCallback(popupId);
+			s_popupEndCallback = nullptr;
+		}
 	}
 
 	bool update(bool consoleOpen)
@@ -678,6 +685,34 @@ namespace TFE_Editor
 		ImGui::TextColored(titleColor, "%s", fullTitle);
 	}
 
+	void popupCallback_exitEditor(EditorPopup popupId)
+	{
+		s_exitEditor = true;
+	}
+
+	void popupCallback_newProject(EditorPopup popupId)
+	{
+		s_editorPopup = POPUP_NEW_PROJECT;
+		project_prepareNew();
+	}
+
+	void popupCallback_openProject(EditorPopup popupId)
+	{
+		FileResult res = TFE_Ui::openFileDialog("Open Project", s_projectPath, { "Project", "*.INI *.ini" });
+		if (!res.empty())
+		{
+			char filePath[TFE_MAX_PATH];
+			strcpy(filePath, res[0].c_str());
+			FileUtil::fixupPath(filePath);
+			project_load(filePath);
+		}
+	}
+
+	void popupCallback_closeProject(EditorPopup popupId)
+	{
+		project_close();
+	}
+
 	void menu()
 	{
 		pushFont(FONT_SMALL);
@@ -700,9 +735,9 @@ namespace TFE_Editor
 				ImGui::Separator();
 				if (ImGui::MenuItem("Asset Browser", NULL, s_editorMode == EDIT_ASSET_BROWSER))
 				{
-					if (s_editorMode == EDIT_ASSET && s_editorAssetType == TYPE_LEVEL && LevelEditor::levelIsDirty())
+					if (s_editorMode == EDIT_ASSET && s_editorAssetType == TYPE_LEVEL)
 					{
-						openEditorPopup(POPUP_EXIT_SAVE_CONFIRM);
+						LevelEditor::edit_closeLevelCheckSave();
 					}
 					s_editorMode = EDIT_ASSET_BROWSER;
 				}
@@ -721,9 +756,14 @@ namespace TFE_Editor
 				ImGui::Separator();
 				if (ImGui::MenuItem("Return to Game", NULL, (bool*)NULL))
 				{
-					if (s_editorMode == EDIT_ASSET && s_editorAssetType == TYPE_LEVEL && LevelEditor::levelIsDirty())
+					bool exitSavePopup = false;
+					if (s_editorMode == EDIT_ASSET && s_editorAssetType == TYPE_LEVEL)
 					{
-						openEditorPopup(POPUP_EXIT_SAVE_CONFIRM);
+						exitSavePopup = LevelEditor::edit_closeLevelCheckSave();
+					}
+					if (exitSavePopup)
+					{
+						setPopupEndCallback(popupCallback_exitEditor);
 					}
 					else
 					{
@@ -784,18 +824,42 @@ namespace TFE_Editor
 				s_menuActive = true;
 				if (ImGui::MenuItem("New", NULL, (bool*)NULL))
 				{
-					s_editorPopup = POPUP_NEW_PROJECT;
-					project_prepareNew();
+					bool exitSavePopup = false;
+					if (s_editorMode == EDIT_ASSET && s_editorAssetType == TYPE_LEVEL)
+					{
+						exitSavePopup = LevelEditor::edit_closeLevelCheckSave();
+					}
+					if (exitSavePopup)
+					{
+						setPopupEndCallback(popupCallback_newProject);
+					}
+					else
+					{
+						s_editorPopup = POPUP_NEW_PROJECT;
+						project_prepareNew();
+					}
 				}
 				if (ImGui::MenuItem("Open", NULL, (bool*)NULL))
 				{
-					FileResult res = TFE_Ui::openFileDialog("Open Project", s_projectPath, { "Project", "*.INI *.ini" });
-					if (!res.empty())
+					bool exitSavePopup = false;
+					if (s_editorMode == EDIT_ASSET && s_editorAssetType == TYPE_LEVEL)
 					{
-						char filePath[TFE_MAX_PATH];
-						strcpy(filePath, res[0].c_str());
-						FileUtil::fixupPath(filePath);
-						project_load(filePath);
+						exitSavePopup = LevelEditor::edit_closeLevelCheckSave();
+					}
+					if (exitSavePopup)
+					{
+						setPopupEndCallback(popupCallback_openProject);
+					}
+					else
+					{
+						FileResult res = TFE_Ui::openFileDialog("Open Project", s_projectPath, { "Project", "*.INI *.ini" });
+						if (!res.empty())
+						{
+							char filePath[TFE_MAX_PATH];
+							strcpy(filePath, res[0].c_str());
+							FileUtil::fixupPath(filePath);
+							project_load(filePath);
+						}
 					}
 				}
 				ImGui::Separator();
@@ -808,7 +872,19 @@ namespace TFE_Editor
 				}
 				if (ImGui::MenuItem("Close", NULL, (bool*)NULL))
 				{
-					project_close();
+					bool exitSavePopup = false;
+					if (s_editorMode == EDIT_ASSET && s_editorAssetType == TYPE_LEVEL)
+					{
+						exitSavePopup = LevelEditor::edit_closeLevelCheckSave();
+					}
+					if (exitSavePopup)
+					{
+						setPopupEndCallback(popupCallback_closeProject);
+					}
+					else
+					{
+						project_close();
+					}
 				}
 				if (!projectActive) { enableNextItem(); }
 				ImGui::Separator();
@@ -830,7 +906,13 @@ namespace TFE_Editor
 						sprintf(item, "%d %s", (s32)i + 1, recents[i].name.c_str());
 						if (ImGui::MenuItem(item, NULL, (bool*)NULL))
 						{
-							if (!project_load(recents[i].path.c_str()))
+							bool exitSavePopup = false;
+							if (s_editorMode == EDIT_ASSET && s_editorAssetType == TYPE_LEVEL)
+							{
+								exitSavePopup = LevelEditor::edit_closeLevelCheckSave();
+							}
+
+							if (!exitSavePopup && !project_load(recents[i].path.c_str()))
 							{
 								// Remove from recents if it is no longer valid.
 								removeId = s32(i);
@@ -912,6 +994,11 @@ namespace TFE_Editor
 	void popFont()
 	{
 		ImGui::PopFont();
+	}
+
+	void setPopupEndCallback(PopupEndCallback callback)
+	{
+		s_popupEndCallback = callback;
 	}
 		
 	void showMessageBox(const char* type, const char* msg, ...)
