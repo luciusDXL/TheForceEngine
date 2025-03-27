@@ -76,7 +76,6 @@ This can be overridden by defining the `TFE_DATA_HOME` environment variable.
   ```sh
   cmake -S /path/to/tfe-source
   ```
-  You can add `-DDISABLE_SYSMIDI=ON` to disable RtMidi (external MIDI synthesizer support)
 * Build it:
   ```sh
   make
