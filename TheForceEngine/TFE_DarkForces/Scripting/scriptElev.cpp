@@ -23,6 +23,14 @@ namespace TFE_DarkForces
 		return (data->updateFlags & ELEV_MASTER_ON) != 0;
 	}
 
+	void setElevSpeed(s32 value, ScriptElev* elev)
+	{
+		if (!ScriptElev::isScriptElevValid(elev)) { return; }
+
+		InfElevator* data = (InfElevator*)allocator_getByIndex(s_infSerState.infElevators, elev->m_id);
+		data->speed = data->type == IELEV_ROTATE_WALL ? FIXED(floatToAngle(value)) : FIXED(value);
+	}
+
 	void ScriptElev::registerType()
 	{
 		s32 res = 0;
@@ -35,5 +43,7 @@ namespace TFE_DarkForces
 		ScriptObjFunc("bool isValid()", isScriptElevValid);
 		// Properties
 		ScriptPropertyGetFunc("bool get_master()", getElevMaster);
+		
+		ScriptPropertySetFunc("void set_speed(int)", setElevSpeed);
 	}
 }

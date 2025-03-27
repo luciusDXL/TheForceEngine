@@ -142,10 +142,6 @@ namespace TFE_DarkForces
 	static fixed16_16 s_minEyeDistFromFloor;
 	static fixed16_16 s_postLandVel;
 	static fixed16_16 s_landUpVel = 0;
-	static fixed16_16 s_playerVelX;
-	static fixed16_16 s_playerUpVel;
-	static fixed16_16 s_playerUpVel2;
-	static fixed16_16 s_playerVelZ;
 	static fixed16_16 s_externalVelX;
 	static fixed16_16 s_externalVelZ;
 	static fixed16_16 s_playerCrouchSpd;
@@ -240,6 +236,12 @@ namespace TFE_DarkForces
 	angle14_32 s_camOffsetYaw = 0;
 	angle14_32 s_camOffsetRoll = 0;
 	angle14_32 s_playerYaw;
+
+	// Expose player velocity for scripting
+	fixed16_16 s_playerVelX;
+	fixed16_16 s_playerUpVel;
+	fixed16_16 s_playerUpVel2;
+	fixed16_16 s_playerVelZ;
 
 	// Based on positioning in inventory, these were probably meant to represent thermal
 	// detonators and mines - see player_readInfo() and player_writeInfo()
