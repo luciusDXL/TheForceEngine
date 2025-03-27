@@ -1004,6 +1004,11 @@ namespace TFE_Jedi
 
 						if (obj)
 						{
+							obj_addToRefList(obj, ObjRefType_Startup);	// Scripting
+						}
+
+						if (obj)
+						{
 							readNextLine = object_parseSeq(obj, &parser, &bufferPos);
 							if (obj->entityFlags & ETFLAG_PLAYER)
 							{
