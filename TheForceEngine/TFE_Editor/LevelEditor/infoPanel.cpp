@@ -1024,12 +1024,11 @@ namespace LevelEditor
 			return (u32)s_sectorInfo.size();
 		}
 
-		// TODO: Debug why this happens.
+		// If the mode selection changed suddenly - due to the INF editor - abort.
 		SelectionListId selectType = selection_getCurrent();
 		if (s_editMode == LEDIT_SECTOR && selectType != SEL_SECTOR ||
 			s_editMode == LEDIT_WALL && selectType != SEL_SURFACE)
 		{
-			assert(0);
 			return 0;
 		}
 
