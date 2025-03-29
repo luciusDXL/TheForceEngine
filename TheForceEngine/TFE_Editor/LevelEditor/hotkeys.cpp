@@ -179,6 +179,8 @@ namespace LevelEditor
 		"LEV_SHORTCUT_TEXOFFSET_RIGHT",
 		"LEV_SHORTCUT_TEXOFFSET_PAN",
 		"LEV_SHORTCUT_TEXOFFSET_RESET",
+		// Lighting
+		"LEV_SHORTCUT_ADJUST_LIGHTING",
 		// Drawing
 		"LEV_SHORTCUT_REDUCE_CURVE_SEGS",
 		"LEV_SHORTCUT_INCREASE_CURVE_SEGS",
@@ -247,6 +249,7 @@ namespace LevelEditor
 		"Move texture offset right",						// SHORTCUT_TEXOFFSET_RIGHT
 		"Hold to pan the texture with the mouse",			// SHORTCUT_TEXOFFSET_PAN
 		"Reset the texture offset",							// SHORTCUT_TEXOFFSET_RESET
+		"Adjust lighting of surface or sector with mousewheel", // SHORTCUT_ADJUST_LIGHTING
 		"Reduce curve segments",							// SHORTCUT_REDUCE_CURVE_SEGS
 		"Increase curve segments",							// SHORTCUT_INCREASE_CURVE_SEGS
 		"Reset curve segments to default",					// SHORTCUT_RESET_CURVE_SEGS
@@ -466,6 +469,7 @@ namespace LevelEditor
 		addKeyboardShortcut(SHORTCUT_TEXOFFSET_RIGHT, KEY_RIGHT);
 		addKeyboardShortcut(SHORTCUT_TEXOFFSET_PAN, KEY_UNKNOWN, KEYMOD_NONE, MBUTTON_MIDDLE);
 		addKeyboardShortcut(SHORTCUT_TEXOFFSET_RESET, KEY_T, KEYMOD_ALT);
+		addKeyboardShortcut(SHORTCUT_ADJUST_LIGHTING, KEY_L);
 		addKeyboardShortcut(SHORTCUT_REDUCE_CURVE_SEGS, KEY_LEFTBRACKET);
 		addKeyboardShortcut(SHORTCUT_INCREASE_CURVE_SEGS, KEY_RIGHTBRACKET);
 		addKeyboardShortcut(SHORTCUT_RESET_CURVE_SEGS, KEY_BACKSLASH);

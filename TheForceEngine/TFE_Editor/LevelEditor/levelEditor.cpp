@@ -2249,6 +2249,102 @@ namespace LevelEditor
 		levHistory_clear();
 	}
 
+	void edit_adjustSelectionLighting(s32 dL)
+	{
+		bool hovered = selection_hasHovered();
+		s32 count = selection_getCount();
+		if (s_editMode != LEDIT_WALL && s_editMode != LEDIT_SECTOR) { return; }
+		if (!hovered && count < 1) { return; }
+
+		EditorSector* hoveredSector = nullptr;
+		if (s_editMode == LEDIT_SECTOR)
+		{
+			if (count < 1)
+			{
+				// Hovered.
+				selection_getSector(SEL_INDEX_HOVERED, hoveredSector);
+				if (hoveredSector)
+				{
+					const s32 curAmbient = (s32)hoveredSector->ambient;
+					hoveredSector->ambient = (u32)std::max(0, std::min(31, curAmbient + dL));
+				}
+			}
+			else
+			{
+				// Selection.
+				EditorSector* sector = nullptr;
+				for (s32 i = 0; i < count; i++)
+				{
+					selection_getSector(i, sector);
+					if (!sector) { continue; }
+
+					const s32 curAmbient = (s32)sector->ambient;
+					sector->ambient = (u32)std::max(0, std::min(31, curAmbient + dL));
+				}
+			}
+		}
+		else
+		{
+			s32 wallIndex;
+			HitPart part;
+			if (count < 1)
+			{
+				// Hovered.
+				selection_getSurface(SEL_INDEX_HOVERED, hoveredSector, wallIndex, &part);
+				if (hoveredSector)
+				{
+					if (part == HP_FLOOR || part == HP_CEIL)
+					{
+						const s32 curAmbient = (s32)hoveredSector->ambient;
+						hoveredSector->ambient = (u32)std::max(0, std::min(31, curAmbient + dL));
+					}
+					else
+					{
+						EditorWall* wall = nullptr;
+						if (wallIndex >= 0 && wallIndex < (s32)hoveredSector->walls.size())
+						{
+							wall = &hoveredSector->walls[wallIndex];
+							wall->wallLight = std::max(-31, std::min(31, wall->wallLight + dL));
+						}
+					}
+				}
+			}
+			else
+			{
+				s_searchKey++;
+
+				// Selection.
+				EditorSector* sector = nullptr;
+				for (s32 i = 0; i < count; i++)
+				{
+					selection_getSurface(i, sector, wallIndex, &part);
+					if (!sector) { continue; }
+
+					if (part == HP_FLOOR || part == HP_CEIL)
+					{
+						// Avoid double-lighting a sector if *both* floor and ceiling are selected.
+						if (sector->searchKey != s_searchKey)
+						{
+							sector->searchKey = s_searchKey;
+
+							const s32 curAmbient = (s32)sector->ambient;
+							sector->ambient = (u32)std::max(0, std::min(31, curAmbient + dL));
+						}
+					}
+					else
+					{
+						EditorWall* wall = nullptr;
+						if (wallIndex >= 0 && wallIndex < (s32)sector->walls.size())
+						{
+							wall = &sector->walls[wallIndex];
+							wall->wallLight = std::max(-31, std::min(31, wall->wallLight + dL));
+						}
+					}
+				}
+			}
+		}
+	}
+
 	void handleEditorActions()
 	{
 		if (isShortcutPressed(SHORTCUT_UNDO))
@@ -2311,6 +2407,14 @@ namespace LevelEditor
 		if (isShortcutPressed(SHORTCUT_VIEW_FULLBRIGHT))
 		{
 			setFullbright();
+		}
+
+		// Lighting
+		if (isShortcutHeld(SHORTCUT_ADJUST_LIGHTING, 0))
+		{
+			s32 dx, dy;
+			TFE_Input::getMouseWheel(&dx, &dy);
+			edit_adjustSelectionLighting(dy);
 		}
 
 		// Modes
@@ -3498,7 +3602,7 @@ namespace LevelEditor
 
 		s32 dx, dy;
 		TFE_Input::getMouseWheel(&dx, &dy);
-		if (dy != 0 && !TFE_Input::keyModDown(KEYMOD_CTRL))
+		if (dy != 0 && !TFE_Input::keyModDown(KEYMOD_CTRL) && !isShortcutHeld(SHORTCUT_ADJUST_LIGHTING, 0))
 		{
 			// We want to zoom into the mouse position.
 			s32 relX = s32(mx - s_editWinMapCorner.x);
