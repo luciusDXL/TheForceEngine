@@ -567,8 +567,14 @@ namespace TFE_Editor
 		}
 	}
 
-	bool update(bool consoleOpen)
+	bool update(bool consoleOpen, bool minimized)
 	{
+		// If the program is minimized, the editor should skip any processing.
+		if (minimized)
+		{
+			return s_exitEditor;
+		}
+
 		editor_clearUid();
 		thumbnail_update();
 
@@ -656,7 +662,7 @@ namespace TFE_Editor
 		ImGui::PopItemFlag();
 		ImGui::PopStyleVar();
 	}
-		
+
 	void drawTitle()
 	{
 		DisplayInfo info;

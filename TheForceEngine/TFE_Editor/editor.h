@@ -118,7 +118,7 @@ namespace TFE_Editor
 		
 	void enable();
 	bool disable();
-	bool update(bool consoleOpen = false);
+	bool update(bool consoleOpen = false, bool minimized = false);
 	bool render();
 	TextureGpu* getIconAtlas();
 

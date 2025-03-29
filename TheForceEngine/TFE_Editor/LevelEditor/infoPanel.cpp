@@ -80,6 +80,7 @@ namespace LevelEditor
 	static Feature s_prevObjectFeature = {};
 	static bool s_wallShownLast = false;
 	static s32 s_prevCategoryFlags = 0;
+	static bool s_textInputFocused = false;
 
 	static s32 s_groupOpen = -1;
 	static s32 s_scrollToBottom = SCROLL_FALSE;
@@ -476,12 +477,15 @@ namespace LevelEditor
 		const f32 iconBtnTint[] = { 103.0f / 255.0f, 122.0f / 255.0f, 139.0f / 255.0f, 1.0f };
 		char name[64];
 		strcpy(name, s_level.name.c_str());
-
+		
 		ImGui::Text("Level Name:"); ImGui::SameLine();
+
 		if (ImGui::InputText("##InputLevelName", name, 64))
 		{
 			s_level.name = name;
 		}
+		s_textInputFocused |= ImGui::IsItemActive();
+
 		ImGui::Text("Sector Count: %u", (u32)s_level.sectors.size());
 		ImGui::Text("Bounds: (%0.3f, %0.3f, %0.3f)\n        (%0.3f, %0.3f, %0.3f)", s_level.bounds[0].x, s_level.bounds[0].y, s_level.bounds[0].z,
 			s_level.bounds[1].x, s_level.bounds[1].y, s_level.bounds[1].z);
@@ -489,17 +493,23 @@ namespace LevelEditor
 		ImGui::LabelText("##GridLabel", "Grid Height");
 		ImGui::SameLine(108.0f);
 		ImGui::SetNextItemWidth(80.0f);
+
 		ImGui::InputFloat("##GridHeight", &s_grid.height, 0.0f, 0.0f, "%0.2f", ImGuiInputTextFlags_CharsDecimal);
+		s_textInputFocused |= ImGui::IsItemActive();
 
 		ImGui::SameLine(0.0f, 16.0f);
 		ImGui::SetNextItemWidth(86.0f);
 		ImGui::LabelText("##DepthLabel", "View Depth");
 		ImGui::SameLine(0.0f, 8.0f);
 		ImGui::SetNextItemWidth(80.0f);
+
 		ImGui::InputFloat("##ViewDepth0", &s_viewDepth[0], 0.0f, 0.0f, "%0.2f", ImGuiInputTextFlags_CharsDecimal);
+		s_textInputFocused |= ImGui::IsItemActive();
+
 		ImGui::SameLine(0.0f, 4.0f);
 		ImGui::SetNextItemWidth(80.0f);
 		ImGui::InputFloat("##ViewDepth1", &s_viewDepth[1], 0.0f, 0.0f, "%0.2f", ImGuiInputTextFlags_CharsDecimal);
+		s_textInputFocused |= ImGui::IsItemActive();
 			
 		ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize
 			| ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoFocusOnAppearing;
@@ -647,6 +657,7 @@ namespace LevelEditor
 				hadFocusX = true;
 			}
 		}
+		s_textInputFocused |= ImGui::IsItemActive();
 		bool lostFocusX = !ImGui::IsItemFocused() && !ImGui::IsItemHovered() && !ImGui::IsItemActive();
 
 		ImGui::SameLine();
@@ -658,6 +669,7 @@ namespace LevelEditor
 				hadFocusZ = true;
 			}
 		}
+		s_textInputFocused |= ImGui::IsItemActive();
 		bool lostFocusZ = !ImGui::IsItemFocused() && !ImGui::IsItemHovered() && !ImGui::IsItemActive();
 
 		// Only update the value and add the edit when the input loses focus (clicking away or on another control) or
@@ -810,10 +822,12 @@ namespace LevelEditor
 				char* endPtr = nullptr;
 				*value = strtol(buf, &endPtr, 10);
 			}
+			s_textInputFocused |= ImGui::IsItemActive();
 		}
 		else
 		{
 			result = ImGui::InputInt(labelId, value);
+			s_textInputFocused |= ImGui::IsItemActive();
 		}
 		ImGui::PopItemWidth();
 		return result;
@@ -832,10 +846,12 @@ namespace LevelEditor
 				char* endPtr = nullptr;
 				*value = strtoul(buf, &endPtr, 10);
 			}
+			s_textInputFocused |= ImGui::IsItemActive();
 		}
 		else
 		{
 			result = ImGui::InputUInt(labelId, value);
+			s_textInputFocused |= ImGui::IsItemActive();
 		}
 		ImGui::PopItemWidth();
 		return result;
@@ -854,10 +870,12 @@ namespace LevelEditor
 				char* endPtr = nullptr;
 				*value = (f32)strtod(buf, &endPtr);
 			}
+			s_textInputFocused |= ImGui::IsItemActive();
 		}
 		else
 		{
 			result = ImGui::InputFloat(labelId, value, 0.0f, 0.0f, "%.2f");
+			s_textInputFocused |= ImGui::IsItemActive();
 		}
 		ImGui::PopItemWidth();
 		return result;
@@ -1004,6 +1022,15 @@ namespace LevelEditor
 		if (!s_sectorInfo.empty())
 		{
 			return (u32)s_sectorInfo.size();
+		}
+
+		// TODO: Debug why this happens.
+		SelectionListId selectType = selection_getCurrent();
+		if (s_editMode == LEDIT_SECTOR && selectType != SEL_SECTOR ||
+			s_editMode == LEDIT_WALL && selectType != SEL_SURFACE)
+		{
+			assert(0);
+			return 0;
 		}
 
 		s_sectorInfo.clear();
@@ -1510,6 +1537,7 @@ namespace LevelEditor
 				ImGui::Text("Mid Offset");
 				ImGui::PushItemWidth(136.0f);
 				changed |= ImGui::InputFloat2("##MidOffsetInput", &wall->tex[WP_MID].offset.x, "%.3f");
+				s_textInputFocused |= ImGui::IsItemActive();
 				ImGui::PopItemWidth();
 
 				ImGui::NewLine();
@@ -1517,6 +1545,7 @@ namespace LevelEditor
 				ImGui::Text("Sign Offset");
 				ImGui::PushItemWidth(136.0f);
 				changed |= ImGui::InputFloat2("##SignOffsetInput", &wall->tex[WP_SIGN].offset.x, "%.3f");
+				s_textInputFocused |= ImGui::IsItemActive();
 				ImGui::PopItemWidth();
 			}
 			ImGui::EndChild();
@@ -1533,6 +1562,7 @@ namespace LevelEditor
 					ImGui::Text("Top Offset");
 					ImGui::PushItemWidth(136.0f);
 					changed |= ImGui::InputFloat2("##TopOffsetInput", &wall->tex[WP_TOP].offset.x, "%.3f");
+					s_textInputFocused |= ImGui::IsItemActive();
 					ImGui::PopItemWidth();
 
 					ImGui::NewLine();
@@ -1540,6 +1570,7 @@ namespace LevelEditor
 					ImGui::Text("Bottom Offset");
 					ImGui::PushItemWidth(136.0f);
 					changed |= ImGui::InputFloat2("##BotOffsetInput", &wall->tex[WP_BOT].offset.x, "%.3f");
+					s_textInputFocused |= ImGui::IsItemActive();
 					ImGui::PopItemWidth();
 				}
 				ImGui::EndChild();
@@ -1669,6 +1700,7 @@ namespace LevelEditor
 				sector->name = sectorName;
 				changed = true;
 			}
+			s_textInputFocused |= ImGui::IsItemActive();
 			ImGui::PopItemWidth();
 			if (otherNameId >= 0) { ImGui::PopStyleColor(); }
 
@@ -1812,6 +1844,7 @@ namespace LevelEditor
 				ImGui::Text("Floor Offset");
 				ImGui::PushItemWidth(136.0f);
 				changed |= ImGui::InputFloat2("##FloorOffsetInput", &sector->floorTex.offset.x, "%.3f");
+				s_textInputFocused |= ImGui::IsItemActive();
 				ImGui::PopItemWidth();
 
 				ImGui::NewLine();
@@ -1819,6 +1852,7 @@ namespace LevelEditor
 				ImGui::Text("Ceil Offset");
 				ImGui::PushItemWidth(136.0f);
 				changed |= ImGui::InputFloat2("##CeilOffsetInput", &sector->ceilTex.offset.x, "%.3f");
+				s_textInputFocused |= ImGui::IsItemActive();
 				ImGui::PopItemWidth();
 			}
 			ImGui::EndChild();
@@ -2208,6 +2242,7 @@ namespace LevelEditor
 			{
 				s_objEntity.name = name;
 			}
+			s_textInputFocused |= ImGui::IsItemActive();
 			ImGui::SameLine(0.0f, 16.0f);
 			// Entity Class/Type
 			s32 classId = s_objEntity.type;
@@ -2238,6 +2273,7 @@ namespace LevelEditor
 			{
 				s_objEntity.assetName = assetName;
 			}
+			s_textInputFocused |= ImGui::IsItemActive();
 			ImGui::SameLine(0.0f, 8.0f);
 			if (ImGui::Button("Browse"))
 			{
@@ -2264,6 +2300,7 @@ namespace LevelEditor
 
 			ImGui::Text("%s", "Position"); ImGui::SameLine(0.0f, 8.0f);
 			ImGui::InputFloat3("##Position", &obj->pos.x);
+			s_textInputFocused |= ImGui::IsItemActive();
 
 			bool orientAdjusted = false;
 			ImGui::Text("%s", "Angle"); ImGui::SameLine(0.0f, 32.0f);
@@ -2281,6 +2318,7 @@ namespace LevelEditor
 				obj->angle = angle * PI / 180.0f;
 				orientAdjusted = true;
 			}
+			s_textInputFocused |= ImGui::IsItemActive();
 
 			// Show pitch and roll.
 			if (s_objEntity.type == ETYPE_3D)
@@ -2295,6 +2333,7 @@ namespace LevelEditor
 					obj->pitch = pitch * PI / 180.0f;
 					orientAdjusted = true;
 				}
+				s_textInputFocused |= ImGui::IsItemActive();
 				ImGui::SameLine(0.0f, 32.0f);
 				ImGui::Text("%s", "Roll"); ImGui::SameLine(0.0f, 8.0f);
 				ImGui::SetNextItemWidth(128.0f);
@@ -2303,6 +2342,7 @@ namespace LevelEditor
 					obj->roll = roll * PI / 180.0f;
 					orientAdjusted = true;
 				}
+				s_textInputFocused |= ImGui::IsItemActive();
 
 				if (orientAdjusted)
 				{
@@ -2443,11 +2483,13 @@ namespace LevelEditor
 					{
 						sprintf(name, "##VarFloat%d", i);
 						ImGui::InputFloat(name, &list[i].value.fValue);
+						s_textInputFocused |= ImGui::IsItemActive();
 					} break;
 					case EVARTYPE_INT:
 					{
 						sprintf(name, "##VarInt%d", i);
 						ImGui::InputInt(name, &list[i].value.iValue);
+						s_textInputFocused |= ImGui::IsItemActive();
 					} break;
 					case EVARTYPE_FLAGS:
 					{
@@ -2486,12 +2528,14 @@ namespace LevelEditor
 						{
 							list[i].value.sValue = pair1;
 						}
+						s_textInputFocused |= ImGui::IsItemActive();
 						ImGui::SameLine(0.0f, 8.0f);
 						ImGui::SetNextItemWidth(128.0f);
 						if (ImGui::InputText("###Pair2", pair2, 256))
 						{
 							list[i].value.sValue1 = pair2;
 						}
+						s_textInputFocused |= ImGui::IsItemActive();
 					} break;
 					}
 				}
@@ -2614,7 +2658,9 @@ namespace LevelEditor
 		ImGui::SetNextItemWidth(textWidth);
 		ImGui::LabelText("##Label", "%s", label); ImGui::SameLine();
 		if (width) { ImGui::SetNextItemWidth((f32)width); }
-		return ImGui::InputFloat(editor_getUniqueLabel(""), value, step, 10.0f * step, prec);
+		bool changed = ImGui::InputFloat(editor_getUniqueLabel(""), value, step, 10.0f * step, prec);
+		s_textInputFocused |= ImGui::IsItemActive();
+		return changed;
 	}
 
 	static s32 s_selectedOffset = -1;
@@ -2723,10 +2769,12 @@ namespace LevelEditor
 		ImGui::LabelText("##Label", "Start Fade (3D)"); ImGui::SameLine();
 		ImGui::SetNextItemWidth(128.0f);
 		ImGui::InputFloat("##StartFade", &note->fade.x, 1.0f, 10.0f, "%.1f");
+		s_textInputFocused |= ImGui::IsItemActive();
 		ImGui::SetNextItemWidth(128.0f);
 		ImGui::LabelText("##Label", "End Fade (3D)"); ImGui::SameLine();
 		ImGui::SetNextItemWidth(128.0f);
 		ImGui::InputFloat("##EndFade", &note->fade.z, 1.0f, 10.0f, "%.1f");
+		s_textInputFocused |= ImGui::IsItemActive();
 		ImGui::Separator();
 		ImGui::SetNextItemWidth(128.0f);
 		ImGui::LabelText("##Label", "Icon Color"); ImGui::SameLine();
@@ -2753,11 +2801,13 @@ namespace LevelEditor
 		{
 			note->note = tmpBuffer;
 		}
+		s_textInputFocused |= ImGui::IsItemActive();
 	}
 		
-	void drawInfoPanel(EditorView view)
+	bool drawInfoPanel(EditorView view)
 	{
 		bool show = getSelectMode() == SELECTMODE_NONE;
+		s_textInputFocused = false;
 
 		// Draw the info bars.
 		s_infoHeight = 486 + 44;
@@ -2820,6 +2870,7 @@ namespace LevelEditor
 			}
 		}
 		infoToolEnd();
+		return s_textInputFocused;
 	}
 		
 	void infoToolEnd()

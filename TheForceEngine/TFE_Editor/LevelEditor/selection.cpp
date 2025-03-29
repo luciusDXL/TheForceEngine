@@ -54,6 +54,11 @@ namespace LevelEditor
 		infoPanel_clearSelection();
 	}
 
+	SelectionListId selection_getCurrent()
+	{
+		return s_currentSelection;
+	}
+
 	void selection_clearHovered()
 	{
 		s_hovered = FEATUREID_NULL;

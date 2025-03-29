@@ -68,8 +68,8 @@ namespace LevelEditor
 	static u32 s_textureSourceFlags = 0xffffffffu;
 	static u32 s_nextTextureSourceFlags = 0xffffffffu;
 
-	void browseTextures();
-	void browseEntities();
+	bool browseTextures();
+	bool browseEntities();
 	s32 getFilteredIndex(s32 unfilteredIndex);
 	s32 getUnfilteredIndex(s32 filteredIndex);
 	s32 getLevelTextureIndex(s32 id);
@@ -106,19 +106,23 @@ namespace LevelEditor
 		ImGui::End();
 	}
 
-	void drawBrowser(BrowseMode mode)
+	bool drawBrowser(BrowseMode mode)
 	{
+		bool uiHasFocus = false;
+
 		browserBegin(infoPanelGetHeight());
 		switch (mode)
 		{
 			case BROWSE_TEXTURE:
-				browseTextures();
+				uiHasFocus = browseTextures();
 				break;
 			case BROWSE_ENTITY:
-				browseEntities();
+				uiHasFocus = browseEntities();
 				break;
 		}
 		browserEnd();
+
+		return uiHasFocus;
 	}
 
 	bool textureSourcesUI()
@@ -356,8 +360,10 @@ namespace LevelEditor
 		}
 	}
 
-	void browseTextures()
+	bool browseTextures()
 	{
+		bool uiHasFocus = false;
+
 		ImVec4 bgColor       = { 0.0f, 0.0f, 0.0f, 0.0f };
 		ImVec4 tintColorNrml = { 1.0f, 1.0f, 1.0f, 1.0f };
 		ImVec4 tintColorSel  = { 1.5f, 1.5f, 1.5f, 1.0f };
@@ -398,6 +404,7 @@ namespace LevelEditor
 		{
 			filterChanged = true;
 		}
+		uiHasFocus |= ImGui::IsItemActive();
 		setTooltip("Filter textures by string");
 		ImGui::SameLine();
 		if (ImGui::Button("X##BrowserFilterClear"))
@@ -478,6 +485,7 @@ namespace LevelEditor
 			}
 		}
 		ImGui::EndChild();
+		return uiHasFocus;
 	}
 
 	void updateEntityFilter()
@@ -495,8 +503,10 @@ namespace LevelEditor
 		}
 	}
 
-	void browseEntities()
+	bool browseEntities()
 	{
+		bool uiHasFocus = false;
+
 		// Do sort stuff later....
 		ImGui::Text("Category: ");
 		ImGui::SameLine(0.0f, 8.0f);
@@ -598,5 +608,6 @@ namespace LevelEditor
 			}
 		}
 		ImGui::EndChild();
+		return uiHasFocus;
 	}
 }

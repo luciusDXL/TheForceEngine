@@ -130,6 +130,7 @@ namespace LevelEditor
 	static bool s_showAllLabels = false;
 	static bool s_modalUiActive = false;
 	static bool s_textureAssignDirty = false;
+	static bool s_isUiFocused = false;
 	static s32 s_lastSavedHistoryPos = 0;
 	static f64 s_timeSinceLastAutosave = 0.0;
 	
@@ -267,6 +268,7 @@ namespace LevelEditor
 		s_viewDepth[1] = c_defaultViewDepth[1];
 		s_texMoveFeatures.clear();
 		s_timeSinceLastUpdate = 0.0;
+		s_isUiFocused = false;
 
 		Project* project = project_get();
 		if (project && project->active)
@@ -2934,23 +2936,30 @@ namespace LevelEditor
 	void update()
 	{
 		s_timeSinceLastAutosave += TFE_System::getDeltaTimeRaw();
-		if (s_timeSinceLastAutosave > c_autosaveInterval && levelIsDirty())
+		// Do not autosave when a popup is open - this means the user is in the middle of editing something like INF or settings.
+		if (s_timeSinceLastAutosave > c_autosaveInterval && levelIsDirty() && !isPopupOpen())
 		{
 			s_timeSinceLastAutosave = 0.0;
 			autosave();
 		}
 
 		// levelScript_update();
-		TFE_ScriptInterface::update();
-		updateViewportScroll();
-		handleHotkeys();
+		if (!s_isUiFocused)
+		{
+			TFE_ScriptInterface::update();
+			updateViewportScroll();
+			handleHotkeys();
+		}
 		
 		pushFont(TFE_Editor::FONT_SMALL);
-		updateContextWindow();
-		updateWindowControls();
-		handleEditorActions();
+		if (!s_isUiFocused)
+		{
+			updateContextWindow();
+			updateWindowControls();
+			handleEditorActions();
+		}
 		updateOutput();
-
+		
 		u32 viewportRenderFlags = 0u;
 		if (s_drawActions & DRAW_ACTION_CURVE)
 		{
@@ -3097,10 +3106,10 @@ namespace LevelEditor
 		const bool modalRelease = !s_modalUiActive && prevModal;
 				
 		// Info Panel
-		drawInfoPanel(s_view);
+		s_isUiFocused = drawInfoPanel(s_view);
 
 		// Browser
-		drawBrowser(s_editMode == LEDIT_ENTITY ? BROWSE_ENTITY : BROWSE_TEXTURE);
+		s_isUiFocused |= drawBrowser(s_editMode == LEDIT_ENTITY ? BROWSE_ENTITY : BROWSE_TEXTURE);
 
 		// Main viewport view.
 		levelEditWinBegin();
@@ -3117,7 +3126,7 @@ namespace LevelEditor
 			const bool editWinHovered = edit_viewportHovered(mx, my);
 			const bool hasHovered = selection_hasHovered();
 
-			if (!isUiModal() && !modalRelease)
+			if (!isUiModal() && !modalRelease && !s_isUiFocused)
 			{
 				const ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize
 					| ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoNav | ImGuiWindowFlags_AlwaysAutoResize;
