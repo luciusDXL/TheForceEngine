@@ -966,7 +966,7 @@ int main(int argc, char* argv[])
 			TFE_Ui::begin();
 			TFE_System::update();
 
-			TFE_Editor::update();
+			TFE_Editor::update(false, false, /*exiting*/true);
 			bool swap = TFE_Editor::render();
 
 			// Blit the frame to the window and draw UI.
