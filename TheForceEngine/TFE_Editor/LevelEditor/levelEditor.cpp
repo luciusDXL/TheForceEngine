@@ -1883,9 +1883,15 @@ namespace LevelEditor
 		return menuActive;
 	}
 
+	bool canSaveLevel()
+	{
+		const Project* project = project_get();
+		return project && project->active;
+	}
+
 	bool levelIsDirty()
 	{
-		return s_lastSavedHistoryPos != history_getPos();
+		return s_lastSavedHistoryPos != history_getPos() && canSaveLevel();
 	}
 
 	void levelSetClean()
