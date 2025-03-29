@@ -111,6 +111,12 @@ namespace TFE_DarkForces
 	extern Tick s_prevPlayerTick;
 	extern Tick s_reviveTick;
 
+	// Velocity - exposed for scripting
+	extern fixed16_16 s_playerVelX;
+	extern fixed16_16 s_playerUpVel;
+	extern fixed16_16 s_playerUpVel2;
+	extern fixed16_16 s_playerVelZ;
+
 	extern SecObject* s_playerObject;
 	extern SecObject* s_playerEye;
 
