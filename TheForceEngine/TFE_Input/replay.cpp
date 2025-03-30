@@ -275,7 +275,7 @@ namespace TFE_Input
 	// Serializes the input events into the demo file from vectors to strings
 	vector<s32> serializeInputs(Stream* stream, vector<s32> inputList, bool writeFlag)
 	{
-		int keySize = 0;
+		s32 keySize = 0;
 		string keyString;
 
 		// The Vector would consist of the key codes for the input events
@@ -284,7 +284,7 @@ namespace TFE_Input
 		if (writeFlag)
 		{
 			keyString = convertToString(inputList);
-			keySize = keyString.size();
+			keySize = (s32)keyString.size();
 		}
 
 		SERIALIZE(ReplayVersionInit, keySize, 0);
@@ -549,7 +549,7 @@ namespace TFE_Input
 			SERIALIZE_BUF(SaveVersionInit, frameTicks, sizeof(fixed16_16) * TFE_ARRAYSIZE(frameTicks));
 
 			// Handle events list size
-			int eventListsSize = inputMapping_getCounter();
+			s32 eventListsSize = inputMapping_getCounter();
 			SERIALIZE(ReplayVersionInit, eventListsSize, 0);
 
 			// Settings and Input Handling 
@@ -636,7 +636,7 @@ namespace TFE_Input
 				// Wipe the events and load them from the demo
 				clearEvents();
 
-				for (int i = 0; i < eventListsSize + 1; i++)
+				for (s32 i = 0; i < eventListsSize + 1; i++)
 				{
 					SERIALIZE(ReplayVersionInit, eventCounter, 0);
 
@@ -668,7 +668,7 @@ namespace TFE_Input
 				
 				// Wipe the event counter and set the max input counter
 				inputMapping_resetCounter();				
-				inputMapping_setMaxCounter(inputEvents.size());
+				inputMapping_setMaxCounter((s32)inputEvents.size());
 
 				// Set the new start time
 				TFE_System::setStartTime(replayStartTime);
@@ -886,7 +886,7 @@ namespace TFE_Input
 			keysPressed = convertToString(event.keysPressed);
 			mouse = convertToString(event.mousePos);
 			s32 xPos = s_eyePos.x;
-			s32 yPos = s_playerEye->posWS.y * -1.0;
+			s32 yPos = -s_playerEye->posWS.y;
 			s32 zPos = s_eyePos.z;
 			angle14_16 yaw = s_playerEye->yaw;
 			angle14_16 pitch = s_playerEye->pitch;

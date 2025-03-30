@@ -95,7 +95,7 @@ namespace TFE_DarkForces
 
 	void setPlayerYaw(float value)
 	{
-		float yaw = floatToAngle(value);
+		angle14_32 yaw = floatToAngle(value);
 		s_playerObject->yaw = yaw;
 		s_playerYaw = yaw;
 	}

@@ -28,7 +28,7 @@ namespace TFE_DarkForces
 		if (!ScriptElev::isScriptElevValid(elev)) { return; }
 
 		InfElevator* data = (InfElevator*)allocator_getByIndex(s_infSerState.infElevators, elev->m_id);
-		data->speed = data->type == IELEV_ROTATE_WALL ? FIXED(floatToAngle(value)) : FIXED(value);
+		data->speed = data->type == IELEV_ROTATE_WALL ? FIXED(floatToAngle((f32)value)) : FIXED(value);
 	}
 
 	void ScriptElev::registerType()
