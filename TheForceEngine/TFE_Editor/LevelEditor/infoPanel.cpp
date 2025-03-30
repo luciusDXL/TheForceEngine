@@ -1309,6 +1309,14 @@ namespace LevelEditor
 		if (showGrayedOut) { ImGui::PopStyleVar(); }
 	}
 
+	void textureTooltip(EditorTexture* tex)
+	{
+		if (!tex) { return; }
+		char texInfo[256];
+		sprintf(texInfo, "%s %dx%d", tex->name, tex->width, tex->height);
+		setTooltip(texInfo);
+	}
+
 	void infoPanelWall()
 	{
 		s32 wallId = -1;
@@ -1429,6 +1437,7 @@ namespace LevelEditor
 			const f32 aspectSgn[] = { sgnTex ? f32(sgnTex->width) * sgnScale : 1.0f, sgnTex ? f32(sgnTex->height) * sgnScale : 1.0f };
 
 			ImGui::ImageButton(midTex ? TFE_RenderBackend::getGpuPtr(midTex->frames[0]) : nullptr, { 128.0f * aspectMid[0], 128.0f * aspectMid[1] }, { 0.0f, 1.0f }, { 1.0f, 0.0f });
+			textureTooltip(midTex);
 			if (texIndex >= 0 && ImGui::IsItemHovered())
 			{
 				FeatureId id = createFeatureId(sector, wallId, HP_MID);
@@ -1438,6 +1447,7 @@ namespace LevelEditor
 
 			ImGui::SameLine(texCol);
 			ImGui::ImageButton(sgnTex ? TFE_RenderBackend::getGpuPtr(sgnTex->frames[0]) : nullptr, { 128.0f * aspectSgn[0], 128.0f * aspectSgn[1] }, { 0.0f, 1.0f }, { 1.0f, 0.0f });
+			textureTooltip(sgnTex);
 			if (texIndex >= 0 && ImGui::IsItemHovered())
 			{
 				FeatureId id = createFeatureId(sector, wallId, HP_SIGN);
@@ -1473,6 +1483,7 @@ namespace LevelEditor
 				const f32 aspectBot[] = { botTex ? f32(botTex->width) * botScale : 1.0f, botTex ? f32(botTex->height) * botScale : 1.0f };
 
 				ImGui::ImageButton(topTex ? TFE_RenderBackend::getGpuPtr(topTex->frames[0]) : nullptr, { 128.0f * aspectTop[0], 128.0f * aspectTop[1] }, { 0.0f, 1.0f }, { 1.0f, 0.0f });
+				textureTooltip(topTex);
 				if (texIndex >= 0 && ImGui::IsItemHovered())
 				{
 					FeatureId id = createFeatureId(sector, wallId, HP_TOP);
@@ -1482,6 +1493,7 @@ namespace LevelEditor
 
 				ImGui::SameLine(texCol);
 				ImGui::ImageButton(botTex ? TFE_RenderBackend::getGpuPtr(botTex->frames[0]) : nullptr, { 128.0f * aspectBot[0], 128.0f * aspectBot[1] }, { 0.0f, 1.0f }, { 1.0f, 0.0f });
+				textureTooltip(botTex);
 				if (texIndex >= 0 && ImGui::IsItemHovered())
 				{
 					FeatureId id = createFeatureId(sector, wallId, HP_BOT);
@@ -1801,6 +1813,7 @@ namespace LevelEditor
 			const f32 aspectCeil[] = { ceilTex ? f32(ceilTex->width) * ceilScale : 1.0f, ceilTex ? f32(ceilTex->height) * ceilScale : 1.0f };
 
 			ImGui::ImageButton(floorPtr, { 128.0f * aspectFloor[0], 128.0f * aspectFloor[1] }, { 0.0f, 1.0f }, { 1.0f, 0.0f });
+			textureTooltip(floorTex);
 			if (texIndex >= 0 && ImGui::IsItemHovered())
 			{
 				FeatureId id = createFeatureId(sector, 0, HP_FLOOR);
@@ -1810,6 +1823,7 @@ namespace LevelEditor
 
 			ImGui::SameLine(texCol);
 			ImGui::ImageButton(ceilPtr, { 128.0f * aspectCeil[0], 128.0f * aspectCeil[1] }, { 0.0f, 1.0f }, { 1.0f, 0.0f });
+			textureTooltip(ceilTex);
 			if (texIndex >= 0 && ImGui::IsItemHovered())
 			{
 				FeatureId id = createFeatureId(sector, 0, HP_CEIL);
