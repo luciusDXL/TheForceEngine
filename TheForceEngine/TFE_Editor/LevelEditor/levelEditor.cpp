@@ -201,7 +201,7 @@ namespace LevelEditor
 	void handleTextureAlignment();
 
 	void drawViewportInfo(s32 index, Vec2i mapPos, const char* info, f32 xOffset, f32 yOffset, f32 alpha=1.0f, u32 overrideColor=0u);
-	void getWallLengthText(const Vec2f* v0, const Vec2f* v1, char* text, Vec2i& mapPos, s32 index = -1, Vec2f* mapOffset = nullptr);
+	void getWallLengthText(const Vec2f* v0, const Vec2f* v1, char* text, Vec2i& mapPos, s32 index = -1, Vec2f* mapOffset = nullptr, f32 height = FLT_MAX);
 
 	void copyToClipboard(const std::string& str);
 	bool copyFromClipboard(std::string& str);
@@ -2160,7 +2160,7 @@ namespace LevelEditor
 		}
 	}
 
-	void getWallLengthText(const Vec2f* v0, const Vec2f* v1, char* text, Vec2i& mapPos, s32 index, Vec2f* mapOffset_)
+	void getWallLengthText(const Vec2f* v0, const Vec2f* v1, char* text, Vec2i& mapPos, s32 index, Vec2f* mapOffset_, f32 height)
 	{
 		Vec2f c = { (v0->x + v1->x) * 0.5f, (v0->z + v1->z)*0.5f };
 		Vec2f n = { -(v1->z - v0->z), v1->x - v0->x };
@@ -2169,11 +2169,18 @@ namespace LevelEditor
 		Vec2f offset = { v1->x - v0->x, v1->z - v0->z };
 		f32 len = sqrtf(offset.x*offset.x + offset.z*offset.z);
 
-		char num[256];
-		floatToString(len, num);
-
-		if (index >= 0) { sprintf(text, "%d: %s", index, num); }
-		else { strcpy(text, num); }
+		char lnum[256], hnum[256];
+		floatToString(len, lnum);
+		if (height < FLT_MAX && index >= 0)
+		{
+			floatToString(height, hnum);
+			sprintf(text, "%d: %s(l) x %s(h)", index, lnum, hnum);
+		}
+		else if (index >= 0)
+		{
+			sprintf(text, "%d: %s", index, lnum);
+		}
+		else { strcpy(text, lnum); }
 
 		mapPos = worldPos2dToMap(c);
 		Vec2f mapOffset = { ImGui::CalcTextSize(text).x + 16.0f, -20 };
@@ -2190,6 +2197,60 @@ namespace LevelEditor
 		mapPos.x += s32(mapOffset.x);
 		mapPos.z += s32(mapOffset.z);
 		if (mapOffset_) { *mapOffset_ = mapOffset; }
+	}
+
+	bool getWallInfoText3D(const Vec2f* v0, const Vec2f* v1, EditorSector* hoveredSector, s32 hoveredFeatureIndex, HitPart hoveredPart, Vec2i& mapPos, char* text)
+	{
+		const f32 yPos = std::min(hoveredSector->ceilHeight - 1.0f, std::max(hoveredSector->floorHeight +  1.0f, s_cursor3d.y));
+		const Vec3f worldPos = { (v0->x + v1->x) * 0.5f, yPos, (v0->z + v1->z) * 0.5f };
+		Vec2f screenPos;
+		bool validCoord = false;
+		if (worldPosToViewportCoord(worldPos, &screenPos))
+		{
+			validCoord = true;
+
+			mapPos = { s32(screenPos.x), s32(screenPos.z) - 20 };
+			Vec2f offset = { v1->x - v0->x, v1->z - v0->z };
+			f32 len = sqrtf(offset.x*offset.x + offset.z*offset.z);
+
+			f32 height = 0.0f;
+			s32 adjoinId = hoveredSector->walls[hoveredFeatureIndex].adjoinId;
+			EditorSector* next = (adjoinId >= 0 && adjoinId < (s32)s_level.sectors.size()) ? &s_level.sectors[adjoinId] : nullptr;
+			s32 signTexIndex = hoveredSector->walls[hoveredFeatureIndex].tex[WP_SIGN].texIndex;
+			if (hoveredPart == HP_TOP && next)
+			{
+				height = hoveredSector->ceilHeight - next->ceilHeight;
+			}
+			else if (hoveredPart == HP_BOT && next)
+			{
+				height = next->floorHeight - hoveredSector->floorHeight;
+			}
+			else if (hoveredPart == HP_SIGN && signTexIndex >= 0)
+			{
+				const EditorTexture* tex = getTexture(signTexIndex);
+				if (tex)
+				{
+					height = f32(tex->height) / 8.0f;
+				}
+			}
+			else // MID
+			{
+				height = hoveredSector->ceilHeight - hoveredSector->floorHeight;
+			}
+
+			char lnum[256], hnum[256];
+			floatToString(len, lnum);
+			if (height < FLT_MAX)
+			{
+				floatToString(height, hnum);
+				sprintf(text, "%d: %s(l) x %s(h)", hoveredFeatureIndex, lnum, hnum);
+			}
+			else
+			{
+				sprintf(text, "%d: %s", hoveredFeatureIndex, lnum);
+			}
+		}
+		return validCoord;
 	}
 
 	f32 getEntityLabelPos(const Vec3f pos, const Entity* entity, const EditorSector* sector)
@@ -4905,7 +4966,7 @@ namespace LevelEditor
 		char lenStr[256];
 		if (s_view == EDIT_VIEW_2D)
 		{
-			getWallLengthText(v0, v1, lenStr, mapPos, hoveredFeatureIndex);
+			getWallLengthText(v0, v1, lenStr, mapPos, hoveredFeatureIndex, nullptr, hoveredSector->ceilHeight - hoveredSector->floorHeight);
 		}
 		else if (s_view == EDIT_VIEW_3D)
 		{
@@ -4927,22 +4988,7 @@ namespace LevelEditor
 			}
 			else
 			{
-				Vec3f worldPos = { (v0->x + v1->x) * 0.5f, hoveredSector->floorHeight + 1.0f, (v0->z + v1->z) * 0.5f };
-				Vec2f screenPos;
-				if (worldPosToViewportCoord(worldPos, &screenPos))
-				{
-					mapPos = { s32(screenPos.x), s32(screenPos.z) - 20 };
-					Vec2f offset = { v1->x - v0->x, v1->z - v0->z };
-					f32 len = sqrtf(offset.x*offset.x + offset.z*offset.z);
-
-					char num[256];
-					floatToString(len, num);
-					sprintf(lenStr, "%d: %s", hoveredFeatureIndex, num);
-				}
-				else
-				{
-					showInfo = false;
-				}
+				showInfo = getWallInfoText3D(v0, v1, hoveredSector, hoveredFeatureIndex, hoveredPart, mapPos, lenStr);
 			}
 		}
 
@@ -5300,7 +5346,40 @@ namespace LevelEditor
 				bool result = worldPosToViewportCoord(p0, &v0) && worldPosToViewportCoord(p1, &v1) && worldPosToViewportCoord(p2, &v2);
 				if (result)
 				{
-					displayViewportMoveTransformData(p0, p1, v0, v1, v2, dist, xDist, yDist, zDist);
+					// Add the total height to the yDist string.
+					char yDistAndHeight[256];
+					EditorSector* hovered = nullptr;
+					f32 height = FLT_MAX;
+					if (s_editMode == LEDIT_WALL && (selection_hasHovered() || selection_getCount() > 0))
+					{
+						s32 wallIndex;
+						HitPart part;
+						if (selection_hasHovered())
+						{
+							selection_get(SEL_INDEX_HOVERED, hovered, wallIndex, &part);
+						}
+						else
+						{
+							selection_get(0, hovered, wallIndex, &part);
+						}
+						if (hovered && wallIndex >= 0 && wallIndex < (s32)hovered->walls.size() && (part == HP_FLOOR || part == HP_CEIL))
+						{
+							height = hovered->ceilHeight - hovered->floorHeight;
+						}
+					}
+
+					if (height < FLT_MAX)
+					{
+						char heightStr[256];
+						floatToString(height, heightStr);
+						sprintf(yDistAndHeight, "Delta: %s, SecHeight: %s", yDist, heightStr);
+					}
+					else
+					{
+						strcpy(yDistAndHeight, yDist);
+					}
+
+					displayViewportMoveTransformData(p0, p1, v0, v1, v2, dist, xDist, yDistAndHeight, zDist);
 				}
 			}
 		}
