@@ -31,6 +31,7 @@ enum ObjectFlags
 	OBJ_FLAG_MOVABLE         = FLAG_BIT(4),  // Object is movable.
 	OBJ_FLAG_BOSS            = FLAG_BIT(5),  // Boss enemy.
 	OBJ_FLAG_NO_REMOVE       = FLAG_BIT(6),  // Do not remove when crushed
+	OBJ_FLAG_CAMERA			 = FLAG_BIT(7),  // New in TFE
 };
 
 enum EntityTypeFlags
