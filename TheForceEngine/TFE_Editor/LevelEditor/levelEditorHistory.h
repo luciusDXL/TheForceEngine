@@ -31,6 +31,7 @@ namespace LevelEditor
 		LName_Autoalign,
 		LName_DeleteObject,
 		LName_AddObject,
+		LName_ReplaceObject,
 		LName_RotateSector,
 		LName_RotateWall,
 		LName_RotateVertex,

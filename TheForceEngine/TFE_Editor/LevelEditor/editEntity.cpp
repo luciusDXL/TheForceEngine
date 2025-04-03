@@ -106,9 +106,9 @@ namespace LevelEditor
 		}
 	}
 
-	void handleEntityInsert(Vec3f worldPos, RayHitInfo* info/*=nullptr*/)
+	void handleEntityInsert(Vec3f worldPos, RayHitInfo* info/*=nullptr*/, bool forcePlacement/*=false*/)
 	{
-		const bool insertEntity = isShortcutPressed(SHORTCUT_PLACE);
+		const bool insertEntity = isShortcutPressed(SHORTCUT_PLACE) || forcePlacement;
 		if (!insertEntity) { return; }
 
 		EditorSector* hoverSector = nullptr;

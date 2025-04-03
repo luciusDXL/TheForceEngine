@@ -1317,6 +1317,25 @@ namespace LevelEditor
 		setTooltip(texInfo);
 	}
 
+	void handleWallDragAndDrop(EditorSector* sector, s32 wallId, bool& changed, HitPart part)
+	{
+		if (ImGui::BeginDragDropTarget())
+		{
+			const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("Texture", ImGuiDragDropFlags_AcceptNoDrawDefaultRect);
+			if (payload)
+			{
+				const s32 index = *((s32*)payload->Data);
+				if (index >= 0)
+				{
+					FeatureId id = createFeatureId(sector, wallId, part);
+					edit_setTexture(1, &id, index);
+					changed = true;
+				}
+			}
+			ImGui::EndDragDropTarget();
+		}
+	}
+
 	void infoPanelWall()
 	{
 		s32 wallId = -1;
@@ -1444,6 +1463,10 @@ namespace LevelEditor
 				edit_setTexture(1, &id, texIndex);
 				changed = true;
 			}
+			else
+			{
+				handleWallDragAndDrop(sector, wallId, changed, HP_MID);
+			}
 
 			ImGui::SameLine(texCol);
 			ImGui::ImageButton(sgnTex ? TFE_RenderBackend::getGpuPtr(sgnTex->frames[0]) : nullptr, { 128.0f * aspectSgn[0], 128.0f * aspectSgn[1] }, { 0.0f, 1.0f }, { 1.0f, 0.0f });
@@ -1459,6 +1482,10 @@ namespace LevelEditor
 				FeatureId id = createFeatureId(sector, wallId, HP_SIGN);
 				edit_clearTexture(1, &id);
 				changed = true;
+			}
+			else
+			{
+				handleWallDragAndDrop(sector, wallId, changed, HP_SIGN);
 			}
 
 			const ImVec2 imageLeft0 = ImGui::GetItemRectMin();
@@ -1490,6 +1517,10 @@ namespace LevelEditor
 					edit_setTexture(1, &id, texIndex);
 					changed = true;
 				}
+				else
+				{
+					handleWallDragAndDrop(sector, wallId, changed, HP_TOP);
+				}
 
 				ImGui::SameLine(texCol);
 				ImGui::ImageButton(botTex ? TFE_RenderBackend::getGpuPtr(botTex->frames[0]) : nullptr, { 128.0f * aspectBot[0], 128.0f * aspectBot[1] }, { 0.0f, 1.0f }, { 1.0f, 0.0f });
@@ -1499,6 +1530,10 @@ namespace LevelEditor
 					FeatureId id = createFeatureId(sector, wallId, HP_BOT);
 					edit_setTexture(1, &id, texIndex);
 					changed = true;
+				}
+				else
+				{
+					handleWallDragAndDrop(sector, wallId, changed, HP_BOT);
 				}
 
 				imageLeft1 = ImGui::GetItemRectMin();
@@ -1820,6 +1855,21 @@ namespace LevelEditor
 				edit_setTexture(1, &id, texIndex);
 				changed = true;
 			}
+			else if (ImGui::BeginDragDropTarget())
+			{
+				const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("Texture", ImGuiDragDropFlags_AcceptNoDrawDefaultRect);
+				if (payload)
+				{
+					const s32 index = *((s32*)payload->Data);
+					if (index >= 0)
+					{
+						FeatureId id = createFeatureId(sector, 0, HP_FLOOR);
+						edit_setTexture(1, &id, index);
+						changed = true;
+					}
+				}
+				ImGui::EndDragDropTarget();
+			}
 
 			ImGui::SameLine(texCol);
 			ImGui::ImageButton(ceilPtr, { 128.0f * aspectCeil[0], 128.0f * aspectCeil[1] }, { 0.0f, 1.0f }, { 1.0f, 0.0f });
@@ -1829,6 +1879,21 @@ namespace LevelEditor
 				FeatureId id = createFeatureId(sector, 0, HP_CEIL);
 				edit_setTexture(1, &id, texIndex);
 				changed = true;
+			}
+			else if (ImGui::BeginDragDropTarget())
+			{
+				const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("Texture", ImGuiDragDropFlags_AcceptNoDrawDefaultRect);
+				if (payload)
+				{
+					const s32 index = *((s32*)payload->Data);
+					if (index >= 0)
+					{
+						FeatureId id = createFeatureId(sector, 0, HP_CEIL);
+						edit_setTexture(1, &id, index);
+						changed = true;
+					}
+				}
+				ImGui::EndDragDropTarget();
 			}
 
 			const ImVec2 imageLeft = ImGui::GetItemRectMin();
