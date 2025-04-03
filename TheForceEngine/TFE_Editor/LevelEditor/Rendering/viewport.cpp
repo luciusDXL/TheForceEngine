@@ -407,16 +407,20 @@ namespace LevelEditor
 		const bool hasHovered = selection_hasHovered();
 		if (selection_hasHovered() && s_editMode == LEDIT_SECTOR)
 		{
-			selection_getSector(SEL_INDEX_HOVERED, sector);
-			drawSector2d(sector, HL_HOVERED);
+			if (selection_getSector(SEL_INDEX_HOVERED, sector))
+			{
+				drawSector2d(sector, HL_HOVERED);
+			}
 		}
 		if (selection_getCount() > 0 && s_editMode == LEDIT_SECTOR)
 		{
 			uint32_t count = selection_getCount();
 			for (u32 i = 0; i < count; i++)
 			{
-				selection_getSector(i, sector);
-				drawSector2d(sector, HL_SELECTED);
+				if (selection_getSector(i, sector))
+				{
+					drawSector2d(sector, HL_SELECTED);
+				}
 			}
 		}
 
@@ -426,8 +430,10 @@ namespace LevelEditor
 			EditorSector* sector = nullptr;
 			s32 featureIndex = -1;
 
-			selection_getSurface(SEL_INDEX_HOVERED, sector, featureIndex);
-			drawWall2d(sector, &sector->walls[featureIndex], 1.5f, HL_HOVERED, /*draw normal*/true);
+			if (selection_getSurface(SEL_INDEX_HOVERED, sector, featureIndex))
+			{
+				drawWall2d(sector, &sector->walls[featureIndex], 1.5f, HL_HOVERED, /*draw normal*/true);
+			}
 		}
 		if (s_editMode == LEDIT_WALL)
 		{
