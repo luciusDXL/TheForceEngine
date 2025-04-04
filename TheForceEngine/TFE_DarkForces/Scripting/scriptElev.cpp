@@ -46,6 +46,7 @@ namespace TFE_DarkForces
 
 		ScriptValueType("Elevator");
 
+
 		// Variables
 		ScriptMemberVariable("int id", m_id);
 		// Functions
