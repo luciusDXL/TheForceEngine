@@ -45,6 +45,7 @@ namespace TFE_DarkForces
 		asIScriptEngine* engine = (asIScriptEngine*)TFE_ForceScript::getEngine();
 
 		ScriptValueType("Elevator");
+
 		// Variables
 		ScriptMemberVariable("int id", m_id);
 		// Functions
