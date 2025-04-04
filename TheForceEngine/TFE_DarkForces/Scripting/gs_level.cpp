@@ -48,6 +48,30 @@ namespace TFE_DarkForces
 		return sector;
 	}
 
+	ScriptSector GS_Level::getSectorByName(std::string name)
+	{
+		const char* sectorName = name.c_str();
+		
+		MessageAddress* msgAddr = message_getAddress(sectorName);
+		if (msgAddr)
+		{
+			u32 sectorCount = s_levelState.sectorCount;
+			for (u32 s = 0; s < sectorCount; s++)
+			{
+				RSector* sec = &s_levelState.sectors[s];
+				if (sec == msgAddr->sector)
+				{
+					ScriptSector sector(s);
+					return sector;
+				}
+			}
+		}
+
+		// Could not find the sector
+		ScriptSector sector(-1);
+		return sector;
+	}
+
 	ScriptElev GS_Level::getElevator(s32 id)
 	{
 		if (id < 0 || id >= allocator_getCount(s_infSerState.infElevators))
@@ -227,6 +251,7 @@ namespace TFE_DarkForces
 
 			// Functions
 			ScriptObjMethod("Sector getSector(int)", getSectorById);
+			ScriptObjMethod("Sector getSector(string)", getSectorByName);
 			ScriptObjMethod("Elevator getElevator(int)", getElevator);
 			ScriptObjMethod("void findConnectedSectors(Sector initSector, uint, array<Sector>&)", findConnectedSectors);
 
