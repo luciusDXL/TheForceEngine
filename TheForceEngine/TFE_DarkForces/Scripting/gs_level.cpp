@@ -3,6 +3,7 @@
 #include "scriptElev.h"
 #include "scriptWall.h"
 #include "scriptSector.h"
+#include <TFE_DarkForces/agent.h>
 #include <TFE_DarkForces/player.h>
 #include <TFE_DarkForces/projectile.h>
 #include <TFE_System/system.h>
@@ -241,6 +242,8 @@ namespace TFE_DarkForces
 			ScriptLambdaPropertyGet("int get_textureCount()", s32, { return s_levelState.textureCount; });
 			ScriptLambdaPropertyGet("int get_elevatorCount()", s32, { return allocator_getCount(s_infSerState.infElevators); });
 			ScriptLambdaPropertyGet("float2 get_parallax()", TFE_ForceScript::float2, { return TFE_ForceScript::float2(fixed16ToFloat(s_levelState.parallax0), fixed16ToFloat(s_levelState.parallax1)); });
+			
+			ScriptLambdaPropertyGet("int get_difficulty()", u8, { return s_agentData[s_agentId].difficulty; });
 
 			// Gameplay sector pointers.
 			ScriptLambdaPropertyGet("Sector get_bossSector()", ScriptSector, { ScriptSector sector(-1); if (s_levelState.bossSector) { sector.m_id = s_levelState.bossSector->id; } return sector; });
