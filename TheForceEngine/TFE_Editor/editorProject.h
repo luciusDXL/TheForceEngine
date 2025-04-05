@@ -51,6 +51,7 @@ namespace TFE_Editor
 		FeatureSet featureSet = FSET_VANILLA;
 
 		u32 flags = PFLAG_NONE;	// See ProjectFlags
+		char levelToOpen[TFE_MAX_PATH] = "";
 	};
 
 	Project* project_get();

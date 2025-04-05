@@ -1719,6 +1719,27 @@ namespace LevelEditor
 		return popupOpen;
 	}
 
+	void edit_newLevel(EditorPopup popupId)
+	{
+		Project* project = project_get();
+		if (project && project->levelToOpen[0] != 0)
+		{
+			char levelFile[TFE_MAX_PATH];
+			sprintf(levelFile, "%s.LEV", project->levelToOpen);
+
+			Asset* asset = AssetBrowser::findAsset(levelFile, AssetType::TYPE_LEVEL);
+			init(asset);
+		}
+	}
+
+	void edit_openLevel(EditorPopup popupId)
+	{
+		const char* assetName = AssetBrowser::getSelectedAssetName();
+		if (!assetName) { return; }
+		Asset* asset = AssetBrowser::findAsset(assetName, AssetType::TYPE_LEVEL);
+		init(asset);
+	}
+
 	bool menu()
 	{
 		bool menuActive = false;
@@ -1738,7 +1759,8 @@ namespace LevelEditor
 			{
 				if (ImGui::MenuItem("New", NULL, (bool*)NULL))
 				{
-
+					setPopupEndCallback(edit_newLevel);
+					openEditorPopup(POPUP_NEW_LEVEL);
 				}
 				if (ImGui::MenuItem("Import", NULL, (bool*)NULL))
 				{
@@ -1748,6 +1770,9 @@ namespace LevelEditor
 			if (!projectActive) { enableNextItem(); }
 			if (ImGui::MenuItem("Open", NULL, (bool*)NULL))
 			{
+				setPopupEndCallback(edit_openLevel);
+				openEditorPopup(TFE_Editor::POPUP_BROWSE, TYPE_LEVEL, nullptr);
+
 				// No project - Open Vanilla / Resources
 				// Project - Prefer to open Project maps.
 			}

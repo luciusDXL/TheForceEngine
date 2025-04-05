@@ -65,12 +65,20 @@ namespace TFE_Editor
 		Project* project = project_get();
 		assert(project);
 
+		char tflPath[TFE_MAX_PATH];
+		sprintf(tflPath, "%s/%s.tfl", project->path, c_darkForcesSlots[level.slotId]);
+		if (FileUtil::exists(tflPath))
+		{
+			FileUtil::deleteFile(tflPath);
+		}
+
 		sprintf(levelPath, "%s/%s.LEV", project->path, c_darkForcesSlots[level.slotId]);
 		FileStream file;
 		if (!file.open(levelPath, Stream::MODE_WRITE))
 		{
 			return false;
 		}
+		strcpy(project->levelToOpen, c_darkForcesSlots[level.slotId]);
 
 		char buffer[256];
 		strcpy(buffer, "LEV 2.1\r\n");
