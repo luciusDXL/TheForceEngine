@@ -297,6 +297,15 @@ namespace TFE_Editor
 		return finished;
 
 	}
+
+	bool project_supportsFeature(FeatureSupport feature)
+	{
+		if (!s_curProject.active) { return false; }
+		// Super set (for now, this may change once Outlaws editing is supported).
+		if (s_curProject.featureSet == FSET_TFE) { return true; }
+		// TODO: Some features are available in Outlaws, even when FSET_VANILLA is true.
+		return false;
+	}
 		
 	bool project_editUi(bool newProject)
 	{
