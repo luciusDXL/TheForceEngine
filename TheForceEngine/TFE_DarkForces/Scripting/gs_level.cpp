@@ -1,3 +1,4 @@
+#include <cstring>
 #include "gs_level.h"
 #include "scriptTexture.h"
 #include "scriptElev.h"
