@@ -3362,7 +3362,7 @@ namespace TFE_DarkForces
 		if (serialization_getMode() == SMODE_READ)
 		{
 			s_playerObject = playerObjId < 0 ? nullptr : objData_getObjectBySerializationId(playerObjId);
-			s_playerEye    = playerEyeId < 0 ? nullptr : objData_getObjectBySerializationId(playerEyeId);
+			s_playerEye    = playerEyeId < 0 ? nullptr : objData_getObjectBySerializationId_NoValidation(playerEyeId);
 
 			if (s_nightVisionActive)
 			{
