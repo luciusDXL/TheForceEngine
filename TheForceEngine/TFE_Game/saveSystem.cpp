@@ -1,11 +1,11 @@
 #include "saveSystem.h"
-#include <TFE_Input/inputMapping.h>
-#include <TFE_System/system.h>
-#include <TFE_Settings/gameSourceData.h>
-#include <TFE_FileSystem/fileutil.h>
-
-#include <TFE_RenderBackend/renderBackend.h>
 #include <TFE_Asset/imageAsset.h>
+#include <TFE_DarkForces/hud.h>
+#include <TFE_FileSystem/fileutil.h>
+#include <TFE_Input/inputMapping.h>
+#include <TFE_RenderBackend/renderBackend.h>
+#include <TFE_Settings/gameSourceData.h>
+#include <TFE_System/system.h>
 #include <cassert>
 #include <cstring>
 
@@ -370,8 +370,18 @@ namespace TFE_SaveSystem
 		}
 		else if (inputMapping_getActionState(IAS_QUICK_LOAD) == STATE_PRESSED && !lastState)
 		{
-			postLoadRequest(c_quickSaveName);
-			lastState = 1;
+			char filePath[TFE_MAX_PATH];
+			sprintf(filePath, "%s%s", s_gameSavePath, c_quickSaveName);
+			if (FileUtil::exists(filePath))
+			{
+				postLoadRequest(c_quickSaveName);
+				lastState = 1;
+			}
+			else
+			{
+				TFE_DarkForces::hud_sendTextMessage("No Quicksave Found", 0, false);
+				lastState = 0;
+			}
 		}
 		else
 		{
