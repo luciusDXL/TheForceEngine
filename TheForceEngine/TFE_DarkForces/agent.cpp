@@ -541,10 +541,19 @@ namespace TFE_DarkForces
 				}
 				else
 				{
-					// Finally generate a new one.
-					TFE_System::logWrite(LOG_WARNING, "DarkForcesMain", "Cannot find 'DARKPILO.CFG' at '%s'. Creating a new file for save data.", sourcePath);
-newpilo:
-					createDarkPilotConfig(documentsPath);
+					// Also check the remaster documents path.
+					TFE_Paths::appendPath(PATH_REMASTER_DOCS, "DARKPILO.CFG", sourcePath);
+					if (FileUtil::exists(sourcePath))
+					{
+						FileUtil::copyFile(sourcePath, documentsPath);
+					}
+					else
+					{
+						// Finally generate a new one.
+						TFE_System::logWrite(LOG_WARNING, "DarkForcesMain", "Cannot find 'DARKPILO.CFG' at '%s'. Creating a new file for save data.", sourcePath);
+					newpilo:
+						createDarkPilotConfig(documentsPath);
+					}
 				}
 			}
 		}
