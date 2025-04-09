@@ -140,15 +140,14 @@ namespace TFE_Paths
 			s_paths[PATH_REMASTER_DOCS] = s_paths[PATH_PROGRAM];
 			return true;
 		}
-		
-		string id = to_string(c_steamRemasterProductId[game]);
-		string append = "steamapps/compatdata/" + id + "/pfx/drive_c/users/steamuser/Saved Games/Nightdive Studios";
+		string strId = to_string((int)TFE_Settings::c_steamRemasterProductId[game]);
+		string append = "steamapps/compatdata/" + strId + "/pfx/drive_c/users/steamuser/Saved Games/Nightdive Studios";
 
-		if (id == Game_Dark_Forces)
+		if (game == Game_Dark_Forces)
 		{
 			append += "/Dark Forces Remaster/";
 		}
-		else if (id == Game_Outlaws)
+		else if (game == Game_Outlaws)
 		{
 			append += "/Outlaws Remaster/";
 		}
