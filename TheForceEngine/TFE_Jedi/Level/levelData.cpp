@@ -22,11 +22,6 @@ namespace TFE_DarkForces
 
 namespace TFE_Jedi
 {
-	enum LevelStateVersion : u32
-	{
-		LevelState_InitVersion = 1,
-		LevelState_CurVersion = LevelState_InitVersion,
-	};
 	enum LevelTextureType : u32
 	{
 		LEVTEX_TYPE_TEX = 1,
@@ -220,6 +215,9 @@ namespace TFE_Jedi
 
 			level_serializeFixupMirrors();
 		}
+
+		// Serialise sector names - so the scripting system can access sectors by their names after save & load
+		level_serializeMessageAddresses(stream);
 
 		// Serialize objects.
 		objData_serialize(stream);
