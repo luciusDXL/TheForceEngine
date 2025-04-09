@@ -211,6 +211,11 @@ namespace TFE_DarkForces
 		if (yaw > 360.0) { yaw -= 360.0; }
 		if (yaw < -360.0) { yaw += 360.0; }
 		obj->yaw = floatToAngle(yaw);
+
+		if (obj->type == OBJ_TYPE_3D)
+		{
+			obj3d_computeTransform(obj);
+		}
 	}
 
 	void setWorldWidth(float wWidth, ScriptObject* sObject)
