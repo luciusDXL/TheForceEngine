@@ -24,10 +24,20 @@ namespace TFE_Jedi
 		ChunkedArray* objectList = nullptr;
 	};
 	static SectorObjectData s_objData = {};
-		
+
+	// TFE - immutable reference list of objects for scripting
+	// Entries are never deleted from this list so objects will keep a unique ID based on their position in the list
+	std::vector<ObjectRef> s_objectRefList;
+	
+	// Forward declarations
+	void obj_refListClear();
+	void objRefList_serialize(Stream* stream);
+
+
 	void objData_clear()
 	{
 		s_objData = {};
+		obj_refListClear();
 	}
 
 	SecObject* objData_allocFromArray()
@@ -260,5 +270,138 @@ namespace TFE_Jedi
 				allocator_restoreIter((Allocator*)obj->logic);
 			}
 		}
+
+		objRefList_serialize(stream);
 	}
+
+	////////////////////////////////////////////
+	// Scripting - global object reference list
+	////////////////////////////////////////////
+	void obj_refListClear()
+	{
+		s_objectRefList.clear();
+	}
+	
+	void obj_addToRefList(SecObject* obj, ObjectRefType refType)
+	{
+		if (!obj) {	return;	}	// don't bother adding a null object
+		
+		ObjectRef objRef;
+		memset(objRef.name, 0, sizeof(objRef.name));
+		objRef.object = obj;
+		objRef.type = refType;
+
+		s_objectRefList.push_back(objRef);
+	}
+
+	ObjectRef* obj_getRef(SecObject* obj)
+	{
+		if (!obj || s_objectRefList.empty())
+		{
+			return nullptr;
+		}
+
+		for (s32 i = 0; i < s_objectRefList.size(); i++)
+		{
+			if (s_objectRefList[i].object == obj)
+			{
+				return &s_objectRefList[i];
+			}
+		}
+
+		return nullptr;	// object is not in the list
+	}
+
+	s32 obj_getRefIndex(SecObject* obj)
+	{
+		if (!obj || s_objectRefList.empty())
+		{
+			return -1;
+		}
+
+		for (s32 i = 0; i < s_objectRefList.size(); i++)
+		{
+			if (s_objectRefList[i].object == obj)
+			{
+				return i;
+			}
+		}
+
+		return -1;	// object is not in the list
+	}
+
+	void obj_removeFromRefList(SecObject* obj)
+	{
+		// Remove the object pointer, and mark the object as removed.
+		// This creates an "empty space" in the list so the Ids of other objects don't change
+		ObjectRef* objRef = obj_getRef(obj);
+		if (!objRef) { return; }
+
+		objRef->object = nullptr;
+		objRef->type = ObjRefType_Removed;
+	}
+
+	void obj_addName(const char* name, SecObject* obj)
+	{
+		if (strlen(name) == 0) { return; }
+
+		ObjectRef* objRef = obj_getRef(obj);
+		if (objRef)
+		{
+			memset(objRef->name, 0, 32);
+			strncpy(objRef->name, name, 31);
+		}
+	}
+
+	void objRefList_serialize(Stream* stream)
+	{
+		if (serialization_getMode() == SMODE_READ)
+		{
+			obj_refListClear();
+		}
+		
+		s32 refListSize = s_objectRefList.size();
+		SERIALIZE(ObjState_RefList, refListSize, 0);
+
+		for (int o = 0; o < refListSize; o++)
+		{
+			ObjectRef objRef = {};
+			s32 objId;
+
+			if (serialization_getMode() == SMODE_WRITE)
+			{
+				objRef = s_objectRefList[o];
+				objId = objRef.object ? objRef.object->serializeIndex : -1;
+			}
+			SERIALIZE(ObjState_RefList, objId, -1);
+			if (serialization_getMode() == SMODE_READ)
+			{
+				objRef.object = objId >= 0 ? objData_getObjectBySerializationId(objId) : nullptr;
+			}
+
+			SERIALIZE(ObjState_RefList, objRef.type, ObjRefType_Removed);
+
+			if (serialization_getMode() == SMODE_READ) 
+			{
+				memset(objRef.name, 0, sizeof(objRef.name));
+			}
+				
+			s32 nameLength = 0;
+			if (serialization_getMode() == SMODE_WRITE)
+			{
+				nameLength = strlen(objRef.name);
+			}
+			SERIALIZE(ObjState_RefList, nameLength, 0);
+			for (int i = 0; i < nameLength; i++)
+			{
+				SERIALIZE(ObjState_RefList, objRef.name[i], 0);
+			}
+
+			if (serialization_getMode() == SMODE_READ)
+			{
+				s_objectRefList.push_back(objRef);
+			}
+		}
+	}
+
 } // namespace TFE_Jedi

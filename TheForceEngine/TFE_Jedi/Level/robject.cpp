@@ -52,6 +52,7 @@ namespace TFE_Jedi
 
 		allocator_free((Allocator*)obj->logic);
 		sector_removeObject(obj);
+		obj_removeFromRefList(obj);		// mark as removed in scripting ref list
 		objData_freeToArray(obj);
 
 		s_freeObjLock = JFALSE;
