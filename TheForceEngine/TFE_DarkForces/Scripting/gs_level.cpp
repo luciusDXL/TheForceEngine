@@ -176,7 +176,7 @@ namespace TFE_DarkForces
 	ScriptObject GS_Level::getObjectByName(std::string name)
 	{
 		const char* cname = name.c_str();
-		if (!cname || strcmp(cname, "") == 0 || s_objectRefList.empty())
+		if (!cname || name.empty() || s_objectRefList.empty())
 		{
 			ScriptObject object(-1);
 			return object;
@@ -196,16 +196,15 @@ namespace TFE_DarkForces
 		return object;
 	}
 
-	// Objects will be contained in the results array. Return value is the number of objects in the result.
-	int GS_Level::getAllObjectsByName(std::string name, CScriptArray& results)
+	// Objects will be contained in the results array
+	void GS_Level::getAllObjectsByName(std::string name, CScriptArray& results)
 	{
 		const char* cname = name.c_str();
-		if (!cname || strcmp(cname, "") == 0 || s_objectRefList.empty())
+		if (!cname || name.empty() || s_objectRefList.empty())
 		{
-			return 0;
+			return;
 		}
 		
-		int count = 0;
 		results.Resize(0);
 		for (s32 i = 0; i < s_objectRefList.size(); i++)
 		{
@@ -213,11 +212,8 @@ namespace TFE_DarkForces
 			{
 				ScriptObject sObject(i);
 				results.InsertLast(&sObject);
-				count++;
 			}
 		}
-
-		return count;
 	}
 
 	bool GS_Level::scriptRegister(ScriptAPI api)

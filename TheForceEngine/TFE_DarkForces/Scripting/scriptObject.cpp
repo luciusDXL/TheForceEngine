@@ -58,15 +58,8 @@ namespace TFE_DarkForces
 			SecObject* obj = s_objectRefList[sObject->m_id].object;
 			if (obj && obj->sector)
 			{
-				RSector* sector = s_levelState.sectors;
-				for (u32 i = 0; i < s_levelState.sectorCount; i++, sector++)
-				{
-					if (obj->sector == sector)
-					{
-						ScriptSector sSector(i);
-						return sSector;
-					}
-				}
+				ScriptSector sSector(obj->sector->index);
+				return sSector;
 			}
 		}
 
