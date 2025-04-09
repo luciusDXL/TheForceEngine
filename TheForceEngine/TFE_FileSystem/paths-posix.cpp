@@ -3,6 +3,7 @@
 #include "paths.h"
 #include "fileutil.h"
 #include "filestream.h"
+#include <TFE_Settings/gameSourceData.h>
 #include <TFE_System/system.h>
 #include <TFE_Archive/archive.h>
 #include <algorithm>
@@ -130,6 +131,8 @@ namespace TFE_Paths
 		return true;
 	}
 
+	// There is no official remaster support on linux
+	// Lets approximate proton save locations. 
 	bool setRemasterDocsPath(GameID game)
 	{
 		if (isPortableInstall())
@@ -137,9 +140,23 @@ namespace TFE_Paths
 			s_paths[PATH_REMASTER_DOCS] = s_paths[PATH_PROGRAM];
 			return true;
 		}
+		
+		string id = to_string(c_steamRemasterProductId[game]);
+		string append = "steamapps/compatdata/" + id + "/pfx/drive_c/users/steamuser/Saved Games/Nightdive Studios";
 
-		// TO DO - find out where (if?) the remaster docs are available on Linux
-		return false;
+		if (id == Game_Dark_Forces)
+		{
+			append += "/Dark Forces Remaster/";
+		}
+		else if (id == Game_Outlaws)
+		{
+			append += "/Outlaws Remaster/";
+		}
+		{
+			return false;
+		}
+		s_paths[PATH_REMASTER_DOCS] = append;
+		return !s_paths[PATH_REMASTER_DOCS].empty();
 	}
 
 	bool setProgramPath(void)
