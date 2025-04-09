@@ -130,6 +130,18 @@ namespace TFE_Paths
 		return true;
 	}
 
+	bool setRemasterDocsPath(GameID game)
+	{
+		if (isPortableInstall())
+		{
+			s_paths[PATH_REMASTER_DOCS] = s_paths[PATH_PROGRAM];
+			return true;
+		}
+
+		// TO DO - find out where (if?) the remaster docs are available on Linux
+		return false;
+	}
+
 	bool setProgramPath(void)
 	{
 		char p[TFE_MAX_PATH];
