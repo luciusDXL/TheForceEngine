@@ -1,6 +1,7 @@
 #pragma once
 #include "fileutil.h"
 #include <TFE_System/types.h>
+#include <TFE_Settings/gameSourceData.h>
 
 enum TFE_PathType
 {
@@ -10,6 +11,7 @@ enum TFE_PathType
 	PATH_SOURCE_DATA,		// This is the location of the source data, such as maps, textures, etc.
 	PATH_EMULATOR,			// Path to the dosbox exe (for the editor).
 	PATH_MOD,				// Use this to reference mods.
+	PATH_REMASTER_DOCS,     // Path for Remaster Document Folder. 
 	PATH_COUNT
 };
 
@@ -34,6 +36,7 @@ namespace TFE_Paths
 	bool setProgramDataPath(const char* append);
 	bool setUserDocumentsPath(const char* append);
 	// Platform specific executable path.
+	bool setRemasterDocsPath(GameID game);
 	bool setProgramPath();
 	// find a relative path in a TFE system directory. true if mapping was done.
 	bool mapSystemPath(char *path);

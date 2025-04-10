@@ -547,6 +547,7 @@ int main(int argc, char* argv[])
 	const TFE_GameHeader* gameHeader = TFE_Settings::getGameHeader(game->game);
 	TFE_Paths::setPath(PATH_SOURCE_DATA, gameHeader->sourcePath);
 	TFE_Paths::setPath(PATH_EMULATOR, gameHeader->emulatorPath);
+	TFE_Paths::setRemasterDocsPath(game->id);
 
 	// Validate the current game path.
 	validatePath();
