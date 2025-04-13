@@ -19,6 +19,7 @@ namespace TFE_DarkForces
 		bool scriptRegister(ScriptAPI api) override;
 
 		f32 getGameTime();
+		s32 scriptRandom(s32 value);
 	};
 }
 

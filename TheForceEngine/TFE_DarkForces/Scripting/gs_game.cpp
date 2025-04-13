@@ -1,6 +1,7 @@
 #include "gs_game.h"
-#include <TFE_System/system.h>
+#include <TFE_DarkForces/random.h>
 #include <TFE_DarkForces/time.h>
+#include <TFE_System/system.h>
 
 #include <angelscript.h>
 
@@ -15,12 +16,18 @@ namespace TFE_DarkForces
 		return f32(s_curTick) * c_timeScale;
 	}
 
+	s32 GS_Game::scriptRandom(s32 value)
+	{
+		return random(value);
+	}
+
 	bool GS_Game::scriptRegister(ScriptAPI api)
 	{
 		ScriptClassBegin("Game", "game", api);
 		{
 			// Functions
 			ScriptObjMethod("float getGameTime()", getGameTime);
+			ScriptObjMethod("int random(int)", scriptRandom);
 		}
 		ScriptClassEnd();
 	}
