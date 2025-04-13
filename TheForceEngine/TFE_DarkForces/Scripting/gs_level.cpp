@@ -159,6 +159,18 @@ namespace TFE_DarkForces
 		setProjectileGravityAccel(FIXED(pGrav));
 	}
 
+	void sendMessageToSector(ScriptSector sSector, MessageType messageType, u32 evt, u32 msgArg1 = 0)
+	{
+		if (!isScriptSectorValid(&sSector))
+		{
+			return;
+		}
+
+		s_msgArg1 = msgArg1;
+		RSector* sector = &s_levelState.sectors[sSector.m_id];
+		message_sendToSector(sector, nullptr, evt, messageType);
+	}
+
 	bool GS_Level::scriptRegister(ScriptAPI api)
 	{
 		ScriptElev scriptElev;
@@ -225,6 +237,16 @@ namespace TFE_DarkForces
 			ScriptEnumStr(SECTORPROP_CEIL_TEX);
 			ScriptEnumStr(SECTORPROP_AMBIENT);
 
+			ScriptEnumRegister("MessageType");
+			ScriptEnum("M_TRIGGER",   MSG_TRIGGER);
+			ScriptEnum("NEXT_STOP",   MSG_NEXT_STOP);
+			ScriptEnum("PREV_STOP",   MSG_PREV_STOP);
+			ScriptEnum("GOTO_STOP",   MSG_GOTO_STOP);
+			ScriptEnum("DONE",        MSG_DONE);
+			ScriptEnum("WAKEUP",      MSG_WAKEUP);
+			ScriptEnum("MASTER_ON",   MSG_MASTER_ON);
+			ScriptEnum("MASTER_OFF",  MSG_MASTER_OFF);
+
 			// Functions
 			ScriptObjMethod("Sector getSector(int)", getSectorById);
 			ScriptObjMethod("Elevator getElevator(int)", getElevator);
@@ -232,6 +254,9 @@ namespace TFE_DarkForces
 
 			ScriptPropertySet("void set_gravity(int)", setGravity);
 			ScriptPropertySet("void set_projectileGravity(int)", setProjectileGravity);
+
+			ScriptObjFunc("void sendMessage(Sector, int, uint, uint)", sendMessageToSector);
+			ScriptObjFunc("void sendMessage(Sector, int, uint)", sendMessageToSector);
 
 			// -- Getters --
 			ScriptLambdaPropertyGet("int get_minLayer()", s32, { return s_levelState.minLayer; });
