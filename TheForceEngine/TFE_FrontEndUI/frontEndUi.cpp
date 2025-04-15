@@ -1254,7 +1254,7 @@ namespace TFE_FrontEndUI
 		}
 
 		bool autoEndMission = gameSettings->df_autoEndMission;
-		if (ImGui::Checkbox("Automattically end mission when objectives are complete", &autoEndMission))
+		if (ImGui::Checkbox("Automatically end mission when objectives are complete", &autoEndMission))
 		{
 			gameSettings->df_autoEndMission = autoEndMission;
 		}
