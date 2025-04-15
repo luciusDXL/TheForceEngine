@@ -1253,6 +1253,12 @@ namespace TFE_FrontEndUI
 			gameSettings->df_jsonAiLogics = jsonAiLogics;
 		}
 
+		bool autoEndMission = gameSettings->df_autoEndMission;
+		if (ImGui::Checkbox("Automattically end mission when objectives are complete", &autoEndMission))
+		{
+			gameSettings->df_autoEndMission = autoEndMission;
+		}
+
 		if (s_drawNoGameDataMsg)
 		{
 			ImGui::Separator();
