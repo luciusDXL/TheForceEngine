@@ -655,7 +655,7 @@ namespace LevelEditor
 				}
 				else
 				{
-					// See if we are close enough to "hover" a vertex
+					// See if we are close enough to "hover" a wall
 					s32 wallIndex = info->hitWallId;
 					HitPart hoveredPart = info->hitPart;
 					edit_checkForWallHit3d(info, hoveredSector, wallIndex, hoveredPart, hoveredSector);
@@ -1578,7 +1578,7 @@ namespace LevelEditor
 				if (traceRay(&ray, &hitInfo, false, false))
 				{
 					EditorSector* colSector = &s_level.sectors[hitInfo.hitSectorId];
-					f32 floorHeight = colSector->floorHeight;
+					f32 floorHeight = getFloorAtXZ(colSector, {s_camera.pos.x, s_camera.pos.z});
 					if (colSector->secHeight < 0) { floorHeight += colSector->secHeight; }
 					else if (colSector->secHeight > 0)
 					{
@@ -4731,6 +4731,8 @@ namespace LevelEditor
 			showMessageBox("Error", "You need to set a source port before you can test.\nOpen the Level menu and choose Test Options to set.");
 			return;
 		}
+		// Fix-up any issues that may cause a crash.
+		fixupLevel();
 
 		StartPoint start = {};
 		start.pos = s_camera.pos;

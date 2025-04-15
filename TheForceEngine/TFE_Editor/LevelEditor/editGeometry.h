@@ -32,6 +32,7 @@ namespace LevelEditor
 		// Extrude
 		bool extrudeEnabled = false;
 		ExtrudePlane extrudePlane = { 0 };
+		EditorSector* parentSector = nullptr;
 		// Shape
 		std::vector<Vec2f> shape;
 		Polygon shapePolygon;
@@ -72,4 +73,8 @@ namespace LevelEditor
 	void evaluateQuadraticBezier(const Vec2f& a, const Vec2f& b, const Vec2f& c, f32 t, Vec2f* pos, Vec2f* nrm = nullptr);
 	f32  signedDistQuadraticBezier(const Vec2f& p0, const Vec2f& p1, const Vec2f& pc, const Vec2f& pos, f32& t);
 	f32  getQuadraticBezierArcLength(const Vec2f& a, const Vec2f& b, const Vec2f& c, f32 t = 1.0f, s32 maxIterationCount = 8, Vec2f* table = nullptr);
+
+	f32 slope_getHeightAtXZ(const SlopedPlane* plane, Vec2f pos);
+	f32 slope_getHeightDeltaByDir(const SlopedPlane* plane, Vec2f dir);
+	SlopedPlane slope_calculatePlane(u32 anchorSectorId, u32 anchorWallId, u32 slopedSectorId, f32 height, f32 angle);
 }

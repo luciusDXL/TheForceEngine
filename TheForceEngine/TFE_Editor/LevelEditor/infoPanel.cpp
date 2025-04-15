@@ -1935,6 +1935,46 @@ namespace LevelEditor
 			}
 			ImGui::EndChild();
 
+			if (project_supportsFeature(FEATURE_SLOPES))
+			{
+				ImGui::Separator();
+				u32 prevFlags = sector->flags[0];
+				changed |= ImGui::CheckboxFlags("Floor Slope##SectorFlag", &sector->flags[0], SEC_FLAGS1_SLOPEDFLOOR); ImGui::SameLine(column[1]);
+				changed |= ImGui::CheckboxFlags("Ceiling Slope##SectorFlag", &sector->flags[0], SEC_FLAGS1_SLOPEDCEILING);
+				if (sector->flags[0] & SEC_FLAGS1_SLOPEDFLOOR)
+				{
+					if (!(prevFlags & SEC_FLAGS1_SLOPEDFLOOR))
+					{
+						sector->slope.floorAnchorSectorId = sector->id;
+					}
+
+					ImGui::Separator();
+					ImGui::Text("Floor Slope");
+					ImGui::PushItemWidth(128.0f);
+					ImGui::InputUInt("Wall Anchor Sector ID##FloorSlope", &sector->slope.floorAnchorSectorId);
+					ImGui::PushItemWidth(128.0f);
+					ImGui::InputUInt("Wall Anchor Wall ID##FloorSlope", &sector->slope.floorAnchorWallId);
+					ImGui::PushItemWidth(128.0f);
+					ImGui::InputFloat("Slope Angle##FloorSlope", &sector->slope.floorSlopeAngle);
+				}
+				if (sector->flags[0] & SEC_FLAGS1_SLOPEDCEILING)
+				{
+					if (!(prevFlags & SEC_FLAGS1_SLOPEDCEILING))
+					{
+						sector->slope.ceilAnchorSectorId = sector->id;
+					}
+
+					ImGui::Separator();
+					ImGui::Text("Ceiling Slope");
+					ImGui::PushItemWidth(128.0f);
+					ImGui::InputUInt("Wall Anchor Sector ID##CeilSlope", &sector->slope.ceilAnchorSectorId);
+					ImGui::PushItemWidth(128.0f);
+					ImGui::InputUInt("Wall Anchor Wall ID##CeilSlope", &sector->slope.ceilAnchorWallId);
+					ImGui::PushItemWidth(128.0f);
+					ImGui::InputFloat("Slope Angle##CeilSlope", &sector->slope.ceilSlopeAngle);
+				}
+			}
+
 			if (changed)
 			{
 				infoPanel_addSectorChangesToHistory();
