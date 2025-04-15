@@ -2657,11 +2657,17 @@ namespace LevelEditor
 					// Mid only for mask textures.
 					if (next && (wall->flags[0] & WF1_ADJ_MID_TEX) && (s_sectorDrawMode == SDM_TEXTURED_FLOOR || s_sectorDrawMode == SDM_TEXTURED_CEIL))
 					{
-						Vec3f corners[] = { {v0.x, min(next->ceilHeight, sector->ceilHeight), v0.z},
-											{v1.x, max(next->floorHeight, sector->floorHeight), v1.z} };
-
-						const EditorTexture* tex = calculateTextureCoords(wall, &wall->tex[WP_MID], wallLengthTexels, fabsf(corners[1].y - corners[0].y), flipHorz, uvCorners);
-						if (tex) { TFE_RenderShared::triDraw3d_addQuadTextured(TRIMODE_BLEND, corners, uvCorners, wallColor, tex->frames[0]); }
+						Vec3f vtx[] =
+						{
+							{ v0.x, std::max(getFloorAtXZ(next, v0), getFloorAtXZ(sector, v0)), v0.z },
+							{ v0.x, std::min(getCeilAtXZ(next,  v0), getCeilAtXZ(sector,  v0)), v0.z },
+							{ v1.x, std::min(getCeilAtXZ(next,  v1), getCeilAtXZ(sector,  v1)), v1.z },
+							{ v1.x, std::max(getFloorAtXZ(next, v1), getFloorAtXZ(sector, v1)), v1.z },
+						};
+						Vec2f uvVtx[4];
+						f32 fh = max(next->floorHeight, sector->floorHeight);
+						const EditorTexture* tex = calculateTextureCoordsSlope(wall, &wall->tex[WP_MID], wallLengthTexels, fh, vtx[0].y, vtx[1].y, vtx[3].y, vtx[2].y, flipHorz, uvVtx);
+						if (tex) { TFE_RenderShared::triDraw3d_addDeformedQuadTextured(TRIMODE_BLEND, vtx, uvVtx, wallColor, tex->frames[0]); }
 					}
 				}
 			}
