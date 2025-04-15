@@ -814,10 +814,7 @@ namespace LevelEditor
 		if (!tex) { return nullptr; }
 
 		const Vec2f texScale = { 1.0f / f32(tex->width), 1.0f / f32(tex->height) };
-
-		// TODO: Does this break anything?
-		//Vec2f offset = { baseTex->offset.x - ltex->offset.x, -TFE_Math::fract(std::max(baseTex->offset.z, 0.0f)) + ltex->offset.z };
-		Vec2f offset = { baseTex->offset.x - ltex->offset.x, ltex->offset.z };
+		const Vec2f offset = { baseTex->offset.x - ltex->offset.x, ltex->offset.z };
 
 		uvCorners[0] = { offset.x * 8.0f, (offset.z + partHeight) * 8.0f };
 		uvCorners[1] = { uvCorners[0].x + wallLengthTexels, offset.z * 8.0f };
@@ -2560,7 +2557,8 @@ namespace LevelEditor
 						const EditorTexture* tex = calculateSignTextureCoords(wall, &wall->tex[WP_MID], &wall->tex[WP_SIGN], wallLengthTexels, sectorHeight, false, uvCorners);
 						if (tex)
 						{
-							TFE_RenderShared::triDraw3d_addQuadTextured(TRIMODE_CLAMP, corners, uvCorners, wallColor, tex->frames[0]);
+							const Vec2f uvVtx[] = { {uvCorners[0].x, uvCorners[1].z}, {uvCorners[0].x, uvCorners[0].z}, {uvCorners[1].x, uvCorners[0].z}, {uvCorners[1].x, uvCorners[1].z} };
+							TFE_RenderShared::triDraw3d_addDeformedQuadTextured(TRIMODE_CLAMP, vtx, uvVtx, wallColor, tex->frames[0]);
 						}
 					}
 				}
@@ -2605,8 +2603,12 @@ namespace LevelEditor
 						if (wall->tex[WP_SIGN].texIndex >= 0 && (s_sectorDrawMode == SDM_TEXTURED_FLOOR || s_sectorDrawMode == SDM_TEXTURED_CEIL))
 						{
 							const EditorTexture* tex = calculateSignTextureCoords(wall, &wall->tex[WP_BOT], &wall->tex[WP_SIGN], wallLengthTexels, botHeight, false, uvCorners);
-							TFE_RenderShared::triDraw3d_addQuadTextured(TRIMODE_CLAMP, corners, uvCorners, wallColor, tex->frames[0]);
-							botSign = true;
+							if (tex)
+							{
+								const Vec2f uvVtx[] = { {uvCorners[0].x, uvCorners[1].z}, {uvCorners[0].x, uvCorners[0].z}, {uvCorners[1].x, uvCorners[0].z}, {uvCorners[1].x, uvCorners[1].z} };
+								TFE_RenderShared::triDraw3d_addDeformedQuadTextured(TRIMODE_CLAMP, vtx, uvVtx, wallColor, tex->frames[0]);
+								botSign = true;
+							}
 						}
 					}
 					// Top
@@ -2645,7 +2647,11 @@ namespace LevelEditor
 						if (!botSign && wall->tex[WP_SIGN].texIndex >= 0 && (s_sectorDrawMode == SDM_TEXTURED_FLOOR || s_sectorDrawMode == SDM_TEXTURED_CEIL))
 						{
 							const EditorTexture* tex = calculateSignTextureCoords(wall, &wall->tex[WP_TOP], &wall->tex[WP_SIGN], wallLengthTexels, topHeight, false, uvCorners);
-							if (tex) { TFE_RenderShared::triDraw3d_addQuadTextured(TRIMODE_CLAMP, corners, uvCorners, wallColor, tex->frames[0]); }
+							if (tex)
+							{
+								const Vec2f uvVtx[] = { {uvCorners[0].x, uvCorners[1].z}, {uvCorners[0].x, uvCorners[0].z}, {uvCorners[1].x, uvCorners[0].z}, {uvCorners[1].x, uvCorners[1].z} };
+								TFE_RenderShared::triDraw3d_addDeformedQuadTextured(TRIMODE_CLAMP, vtx, uvVtx, wallColor, tex->frames[0]);
+							}
 						}
 					}
 					// Mid only for mask textures.
