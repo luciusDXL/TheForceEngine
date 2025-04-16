@@ -1178,7 +1178,7 @@ namespace TFE_FrontEndUI
 		// TO DO - switch setting options based on the game. 
 		TFE_Settings_Game* gameSettings = TFE_Settings::getGameSettings();
 
-		ImGui::PushFont(s_dialogFont);
+		ImGui::PushFont(s_versionFont);
 		ImGui::LabelText("##ConfigLabel", "Game Settings");
 		ImGui::PopFont();
 
@@ -1232,7 +1232,7 @@ namespace TFE_FrontEndUI
 
 		ImGui::Separator();
 
-		ImGui::PushFont(s_dialogFont);
+		ImGui::PushFont(s_versionFont);
 		ImGui::LabelText("##ConfigLabel", "Engine Settings");
 		ImGui::PopFont();
 		
@@ -1341,6 +1341,7 @@ namespace TFE_FrontEndUI
 			ImGui::EndPopup();
 		}
 
+		ImGui::Separator();
 		ImGui::Spacing();
 		ImGui::PushFont(s_versionFont);
 		ImGui::LabelText("##ConfigLabel", "Cheats");
