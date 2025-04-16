@@ -186,7 +186,8 @@ namespace TFE_Image
 	{
 		const size_t bytes = num * size;
 		const ptrdiff_t space = context->hidden.mem.stop - context->hidden.mem.here;
-		if (space >= (ptrdiff_t)bytes)
+		// Double-check all of the pointers.
+		if (space >= (ptrdiff_t)bytes && ptr && context->hidden.mem.here)
 		{
 			memcpy(context->hidden.mem.here, ptr, bytes);
 			context->hidden.mem.here += bytes;
