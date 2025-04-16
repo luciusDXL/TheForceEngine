@@ -6,8 +6,10 @@
 #include "hud.h"
 #include "weapon.h"
 #include <TFE_Game/igame.h>
+#include <TFE_DarkForces/mission.h>
 #include <TFE_FileSystem/fileutil.h>
 #include <TFE_FileSystem/paths.h>
+#include <TFE_Settings/settings.h>
 #include <TFE_System/system.h>
 #include <TFE_System/parser.h>
 #include <TFE_Jedi/Serialization/serialization.h>
@@ -180,12 +182,23 @@ namespace TFE_DarkForces
 	void levelEndTaskFunc(MessageType msg)
 	{
 		task_begin;
-		while (1)
+
+		// If you are using the auto end mission setting, then just wait a few seconds and end the level.
+		if (TFE_Settings::getGameSettings()->df_autoEndMission)
 		{
-			hud_sendTextMessage(461);
-			task_yield(582);			// ~4 seconds
-			hud_sendTextMessage(462);
-			task_yield(4369);			// ~30 seconds
+			task_yield(873); // ~ 6 seconds
+			mission_setExitLevel(JTRUE);
+		}
+		else 
+		{		
+			// Otherwise loop the end level message until the player exits through the escape menu.
+			while (1)
+			{
+				hud_sendTextMessage(461);
+				task_yield(582);			// ~4 seconds
+				hud_sendTextMessage(462);
+				task_yield(4369);			// ~30 seconds		
+			}	
 		}
 		task_end;
 	}
@@ -541,10 +554,19 @@ namespace TFE_DarkForces
 				}
 				else
 				{
-					// Finally generate a new one.
-					TFE_System::logWrite(LOG_WARNING, "DarkForcesMain", "Cannot find 'DARKPILO.CFG' at '%s'. Creating a new file for save data.", sourcePath);
-newpilo:
-					createDarkPilotConfig(documentsPath);
+					// Also check the remaster documents path.
+					TFE_Paths::appendPath(PATH_REMASTER_DOCS, "DARKPILO.CFG", sourcePath);
+					if (FileUtil::exists(sourcePath))
+					{
+						FileUtil::copyFile(sourcePath, documentsPath);
+					}
+					else
+					{
+						// Finally generate a new one.
+						TFE_System::logWrite(LOG_WARNING, "DarkForcesMain", "Cannot find 'DARKPILO.CFG' at '%s'. Creating a new file for save data.", sourcePath);
+					newpilo:
+						createDarkPilotConfig(documentsPath);
+					}
 				}
 			}
 		}

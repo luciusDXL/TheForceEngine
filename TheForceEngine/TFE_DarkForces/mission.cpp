@@ -518,6 +518,11 @@ namespace TFE_DarkForces
 		s_exitLevel = JTRUE;
 	}
 
+	void mission_setExitLevel(JBool exitLevel)
+	{
+		s_exitLevel = exitLevel;
+	}
+
 	void mission_render(s32 rendererIndex, bool forceTextureUpdate)
 	{
 		if (task_getCount() > 1 && s_missionMode == MISSION_MODE_MAIN)

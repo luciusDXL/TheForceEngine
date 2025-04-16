@@ -123,6 +123,35 @@ namespace TFE_Paths
 		return false;
 	}
 
+	// This is the path to the Remaster documents folder.
+	bool setRemasterDocsPath(GameID game)	
+	{
+	#ifdef _WIN32
+		char path[TFE_MAX_PATH];
+		
+		if (SUCCEEDED(SHGetFolderPath(NULL, CSIDL_PROFILE, NULL, 0, path)))
+		{
+			// Append product-specific path
+			if (game == Game_Dark_Forces)
+			{
+				PathAppend(path, "Saved Games\\Nightdive Studios\\Dark Forces Remaster");
+			}
+			else if (game == Game_Outlaws)
+			{
+				PathAppend(path, "Saved Games\\Nightdive Studios\\Outlaws Remaster");
+			}
+			else
+			{
+				return false;
+			}
+			s_paths[PATH_REMASTER_DOCS] = path;
+			s_paths[PATH_REMASTER_DOCS] += "\\";
+		}
+		return !s_paths[PATH_REMASTER_DOCS].empty();
+	#endif
+		return false;
+	}
+
 	bool setProgramPath()
 	{
 		char path[TFE_MAX_PATH];

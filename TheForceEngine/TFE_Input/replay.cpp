@@ -57,6 +57,7 @@ namespace TFE_Input
 	int replayGraphicsType = 0;
 	bool playerHeadwave = false;
 	bool playerAutoAim = false; 
+	bool autoEndMission = false;
 	bool vsyncEnabled = false;
 	bool replayInitialized = false;
 	bool cutscenesEnabled = true;
@@ -329,6 +330,7 @@ namespace TFE_Input
 		dest->df_jsonAiLogics = source->df_jsonAiLogics;
 		dest->df_pitchLimit = source->df_pitchLimit;
 		dest->df_recordFrameRate = source->df_recordFrameRate;
+		dest->df_autoEndMission = source->df_autoEndMission;
 	}
 
 	// Loads the demo files from the replay folder. 
@@ -834,6 +836,10 @@ namespace TFE_Input
 		playerAutoAim = gameSettings->df_enableAutoaim;
 		gameSettings->df_enableAutoaim = false;
 
+		// Disable auto mission ending - we don't support it for replays yet
+		autoEndMission = gameSettings->df_autoEndMission;
+		gameSettings->df_autoEndMission = false;
+
 		// Enable VSYNC for replay playback - can be overriden during replays
 		vsyncEnabled = TFE_System::getVSync();
 		TFE_System::setVsync(true);
@@ -863,6 +869,7 @@ namespace TFE_Input
 	{
 		// Restore settings to their original state
 		TFE_Settings::getGameSettings()->df_enableAutoaim = playerAutoAim;
+		TFE_Settings::getGameSettings()->df_autoEndMission = autoEndMission;
 		TFE_System::setVsync(vsyncEnabled);
 		TFE_System::frameLimiter_set(gameFrameLimit);
 		TFE_Settings::getGraphicsSettings()->rendererIndex = replayGraphicsType;
