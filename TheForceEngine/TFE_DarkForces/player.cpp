@@ -2033,21 +2033,26 @@ namespace TFE_DarkForces
 		}
  
 		// Apply friction to existing velocity.
+		const bool useSmoothDt = TFE_Settings::getGraphicsSettings()->useSmoothDeltaTime;
 		if (s_playerVelX || s_playerVelZ)
 		{
 			Tick dt = s_playerTick - s_prevPlayerTick;
-			// Exponential friction, this is the same as vel * friction^dt
-			for (Tick i = 0; i < dt; i++)
+			if (dt || !useSmoothDt)
 			{
-				s_playerVelX = mul16(friction, s_playerVelX);
-				s_playerVelZ = mul16(friction, s_playerVelZ);
-			}
-			// Just stop moving if the velocity is low enough, to avoid jittering forever.
-			// Note: The jitter threshold has been halved in TFE in order to work at higher framerates.
-			if (distApprox(0, 0, s_playerVelX, s_playerVelZ) < HALF_16/2)
-			{
-				s_playerVelX = 0;
-				s_playerVelZ = 0;
+				// Exponential friction, this is the same as vel * friction^dt
+				for (Tick i = 0; i < dt; i++)
+				{
+					s_playerVelX = mul16(friction, s_playerVelX);
+					s_playerVelZ = mul16(friction, s_playerVelZ);
+				}
+				// Just stop moving if the velocity is low enough, to avoid jittering forever.
+				// Note: The jitter threshold has been halved in TFE in order to work at higher framerates.
+				const fixed16_16 threshold = useSmoothDt ? HALF_16 / 8 : HALF_16 / 2;
+				if (distApprox(0, 0, s_playerVelX, s_playerVelZ) < threshold)
+				{
+					s_playerVelX = 0;
+					s_playerVelZ = 0;
+				}
 			}
 		}
 

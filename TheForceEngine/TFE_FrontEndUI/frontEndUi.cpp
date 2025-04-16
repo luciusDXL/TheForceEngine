@@ -3014,6 +3014,9 @@ namespace TFE_FrontEndUI
 		ImGui::LabelText("##ConfigLabel", "Rendering");
 		ImGui::PopFont();
 
+		// Smooth deltatime.
+		ImGui::Checkbox("Smooth Deltatime", &graphics->useSmoothDeltaTime);
+
 		// 3DO normal fix
 		ImGui::Checkbox("3DO Normal Fix (Restart Required)", &graphics->fix3doNormalOverflow);
 		ImGui::Checkbox("3DO Ignore Limits (Restart Required)", &graphics->ignore3doLimits);

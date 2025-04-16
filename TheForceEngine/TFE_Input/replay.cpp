@@ -60,6 +60,7 @@ namespace TFE_Input
 	bool vsyncEnabled = false;
 	bool replayInitialized = false;
 	bool cutscenesEnabled = true;
+	bool smoothDeltaTime = true;
 	bool pauseReplay = false; 
 	bool showReplayMsgFrame = false;
 	bool alwaysRecord = false;
@@ -841,10 +842,16 @@ namespace TFE_Input
 		TFE_Settings_Graphics* graphicSetting = TFE_Settings::getGraphicsSettings();
 		replayGraphicsType = graphicSetting->rendererIndex;
 		graphicSetting->rendererIndex = 1;
+
+		// Preserve the original smoothDeltaTime option
+		// Disable useSmoothDeltaTime for now.
+		// TODO: Add a new version that allows this setting?
+		smoothDeltaTime = graphicSetting->useSmoothDeltaTime;
+		graphicSetting->useSmoothDeltaTime = false;
 		
 		// Preserve the original frame rate
 		gameFrameLimit = TFE_System::frameLimiter_get();
-
+		
 		// Disable cheats that could affect the replay
 		disableReplayCheats();
 
@@ -859,6 +866,7 @@ namespace TFE_Input
 		TFE_System::setVsync(vsyncEnabled);
 		TFE_System::frameLimiter_set(gameFrameLimit);
 		TFE_Settings::getGraphicsSettings()->rendererIndex = replayGraphicsType;
+		TFE_Settings::getGraphicsSettings()->useSmoothDeltaTime = smoothDeltaTime;
 
 		if (TFE_Settings::getGameSettings()->df_enableRecordingAll)
 		{
