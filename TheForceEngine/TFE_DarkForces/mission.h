@@ -26,6 +26,7 @@ namespace TFE_DarkForces
 	void mission_startTaskFunc(MessageType msg);
 	void mission_setLoadMissionTask(Task* task);
 	void mission_exitLevel();
+	void mission_setExitLevel(JBool exitLevel);
 	void mission_pause(JBool pause);
 
 	void setScreenFxLevels(s32 healthFx, s32 shieldFx, s32 flashFx);
