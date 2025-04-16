@@ -32,6 +32,13 @@ struct Task;
 
 namespace TFE_Jedi
 {
+	enum LevelStateVersion : u32
+	{
+		LevelState_InitVersion = 1,
+		LevelState_SaveSectorNames = 2,
+		LevelState_CurVersion = LevelState_SaveSectorNames,
+	};
+
 	enum GoalConstants
 	{
 		COMPL_TRIG = 0,
