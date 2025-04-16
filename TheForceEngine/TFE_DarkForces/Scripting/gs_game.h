@@ -6,6 +6,7 @@
 // in order to properly test elements in isolation without having
 // to "play" the game as intended.
 //////////////////////////////////////////////////////////////////////
+#include <string>
 #include <TFE_System/system.h>
 #include <TFE_System/types.h>
 #include <TFE_ForceScript/scriptInterface.h>
@@ -19,6 +20,8 @@ namespace TFE_DarkForces
 		bool scriptRegister(ScriptAPI api) override;
 
 		f32 getGameTime();
+		s32 scriptRandom(s32 value);
+		void text(std::string msg);
 	};
 }
 
