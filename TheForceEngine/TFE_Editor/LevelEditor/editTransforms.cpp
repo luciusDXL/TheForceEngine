@@ -768,7 +768,7 @@ namespace LevelEditor
 			if (!sector) { return; }
 
 			s_moveStarted = true;
-			s_moveStartPos.x = s_movePart == HP_FLOOR ? sector->floorHeight : sector->ceilHeight;
+			s_moveStartPos.x = s_movePart == HP_FLOOR ? getFloorAtXZ(sector, {s_curVtxPos.x, s_curVtxPos.z}) : getCeilAtXZ(sector, { s_curVtxPos.x, s_curVtxPos.z });
 			s_moveStartPos.z = 0.0f;
 			s_prevPos = s_curVtxPos;
 			s_moveSector = sector;
@@ -790,11 +790,11 @@ namespace LevelEditor
 		f32 heightDelta;
 		if (s_movePart == HP_FLOOR)
 		{
-			heightDelta = y - sector->floorHeight;
+			heightDelta = y - getFloorAtXZ(sector, { worldPos.x, worldPos.z });
 		}
 		else
 		{
-			heightDelta = y - sector->ceilHeight;
+			heightDelta = y - getCeilAtXZ(sector, { worldPos.x, worldPos.z });
 		}
 
 		Vec3f pos = edit_getTransformPos();

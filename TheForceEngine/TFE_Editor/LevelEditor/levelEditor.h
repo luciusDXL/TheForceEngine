@@ -21,6 +21,12 @@ namespace LevelEditor
 		std::vector<std::string> list;
 	};
 
+	struct SlopeAnchor
+	{
+		s32 sectorId = -1;
+		s32 wallId = -1;
+	};
+
 	enum LevelEditFlags
 	{
 		LEF_NONE = 0,
@@ -100,7 +106,6 @@ namespace LevelEditor
 	void edit_deleteLevelNote(s32 index);
 	void edit_setEditMode(LevelEditMode mode);
 	void edit_cleanSectorList(std::vector<s32>& selectedSectors, bool addToHistory = true);
-	void edit_placeEntity(s32 id);
 	void editor_reloadLevel();
 	void editor_closeLevel(bool saveBeforeClosing);
 	EditorSector* edit_getHoverSector2dAtCursor();
@@ -109,6 +114,7 @@ namespace LevelEditor
 
 	bool edit_hasItemsInClipboard();
 	void edit_clearClipboard();
+	SlopeAnchor edit_getSlopeAnchor();
 
 	// Drag Select: TODO Move?
 	void startDragSelect(s32 mx, s32 my, DragSelectMode mode);

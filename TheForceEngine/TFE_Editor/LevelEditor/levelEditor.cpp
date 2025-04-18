@@ -88,6 +88,7 @@ namespace LevelEditor
 	static AppendTexList s_texAppendList = {};
 	static std::vector<FeatureId> s_texMoveFeatures;
 	static f64 s_timeSinceLastUpdate = 0.0;
+	static SlopeAnchor s_slopeAnchor = {};
 
 	// The TFE Level Editor format is different than the base format and contains extra 
 	// metadata, etc.
@@ -269,6 +270,7 @@ namespace LevelEditor
 		s_texMoveFeatures.clear();
 		s_timeSinceLastUpdate = 0.0;
 		s_isUiFocused = false;
+		s_slopeAnchor = {};
 
 		Project* project = project_get();
 		if (project && project->active)
@@ -342,6 +344,7 @@ namespace LevelEditor
 		selection_clear();
 		selection_clearHovered();
 		s_featureTex = {};
+		s_slopeAnchor = {};
 		s_editMove = false;
 		s_gravity = false;
 		s_showAllLabels = false;
@@ -1443,6 +1446,7 @@ namespace LevelEditor
 			{
 				edit_clearSelections();
 			}
+			s_slopeAnchor = {};
 		}
 
 		// 2D extrude - hover over line, left click and drag.
@@ -2386,6 +2390,31 @@ namespace LevelEditor
 		}
 	}
 
+	SlopeAnchor edit_getSlopeAnchor()
+	{
+		return s_slopeAnchor;
+	}
+		
+	void setSlopeAnchor()
+	{
+		s_slopeAnchor = {};
+
+		if (s_editMode != LEDIT_WALL || !selection_hasHovered())
+		{
+			return;
+		}
+
+		EditorSector* hoverSector = nullptr;
+		s32 wallIndex = -1;
+		HitPart part = HP_MID;
+		if (!selection_get(SEL_INDEX_HOVERED, hoverSector, wallIndex, &part)) { return; }
+		if (wallIndex < 0 || part == HP_FLOOR || part == HP_CEIL) { return; }
+
+		s_slopeAnchor.sectorId = hoverSector->id;
+		s_slopeAnchor.wallId = wallIndex;
+		selection_clear();
+	}
+
 	void editor_reloadLevel()
 	{
 		loadLevelFromAsset(s_levelAsset);
@@ -2601,6 +2630,12 @@ namespace LevelEditor
 		else if (isShortcutPressed(SHORTCUT_ALIGN_GRID, 0))
 		{
 			alignGridToSelectedEdge();
+		}
+
+		// Slopes
+		if (isShortcutPressed(SHORTCUT_SLOPE_ANCHOR, 0))
+		{
+			setSlopeAnchor();
 		}
 	}
 		
@@ -3139,6 +3174,7 @@ namespace LevelEditor
 		s_editMove = false;
 		s_startTexMove = false;
 		s_featureTex = {};
+		s_slopeAnchor = {};
 		commitCurEntityChanges();
 	}
 
@@ -4085,6 +4121,7 @@ namespace LevelEditor
 
 		selection_clear(SEL_ALL);
 		s_featureTex = {};
+		s_slopeAnchor = {};
 		clearLevelNoteSelection();
 		guideline_clearSelection();
 	}
