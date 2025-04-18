@@ -3370,6 +3370,7 @@ namespace TFE_DarkForces
 		SERIALIZE(ObjState_DisablePlayerMovement, s_disablePlayerMovement, JFALSE);
 		SERIALIZE(ObjState_DisablePlayerMovement, s_disablePlayerRotation, JFALSE);
 		SERIALIZE(ObjState_DisablePlayerMovement, s_disablePlayerFire, JFALSE);
+		SERIALIZE(ObjState_ExternalCamera, s_externalCameraMode, JFALSE);
 
 		s32 invSavedSize = 0;
 		if (serialization_getMode() == SMODE_WRITE && s_playerInvSaved)
