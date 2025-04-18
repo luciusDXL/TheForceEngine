@@ -111,7 +111,7 @@ namespace TFE_Editor
 
 		TFE_IniParser::writeKeyValue_String(proj, "ProjectType", c_projTypes[s_curProject.type]);
 		TFE_IniParser::writeKeyValue_String(proj, "Game", TFE_Settings::c_gameName[s_curProject.game]);
-		TFE_IniParser::writeKeyValue_String(proj, "FeatureSet", c_featureSet[s_curProject.game]);
+		TFE_IniParser::writeKeyValue_String(proj, "FeatureSet", c_featureSet[s_curProject.featureSet]);
 		TFE_IniParser::writeKeyValue_Int(proj, "Flags", (s32)s_curProject.flags);
 
 		// Save Resources.
@@ -349,8 +349,6 @@ namespace TFE_Editor
 			listSelection("Project Type", c_projTypes, TFE_ARRAYSIZE(c_projTypes), (s32*)&s_newProject.type, 128, 196);
 			listSelection("Game", TFE_Settings::c_gameName, TFE_ARRAYSIZE(TFE_Settings::c_gameName), (s32*)&s_newProject.game, 128, 196);
 			listSelection("Feature Set", c_featureSet, TFE_ARRAYSIZE(c_featureSet), (s32*)&s_newProject.featureSet, 128, 196);
-
-			ImGui::CheckboxFlags("True Color Only", &s_newProject.flags, PFLAG_TRUE_COLOR);
 			ImGui::Separator();
 
 			// TODO: Handle word wrap...
