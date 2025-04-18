@@ -474,6 +474,15 @@ namespace LevelEditor
 					}
 					setTooltip("%s %dx%d", texture->name, texture->width, texture->height);
 
+					// Drag and drop the texture.
+					if (ImGui::BeginDragDropSource())
+					{
+						const s32 unfilteredIndex = getUnfilteredIndex(index);
+						ImGui::SetDragDropPayload("Texture", &unfilteredIndex, sizeof(s32));
+						ImGui::Image(ptr, ImVec2(f32(w), f32(h)), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f));
+						ImGui::EndDragDropSource();
+					}
+
 					if (isSelected)
 					{
 						ImGui::PopStyleColor();
@@ -599,6 +608,14 @@ namespace LevelEditor
 				}
 				ImGui::PopID();
 				setTooltip("%s", entity->name.c_str());
+
+				// Drag and drop the entity.
+				if (ImGui::BeginDragDropSource())
+				{
+					ImGui::SetDragDropPayload("Entity", &index, sizeof(s32));
+					ImGui::Image(ptr, ImVec2(f32(w), f32(h)), ImVec2(uv0.x, uv0.z), ImVec2(uv1.x, uv1.z));
+					ImGui::EndDragDropSource();
+				}
 
 				if (isSelected)
 				{

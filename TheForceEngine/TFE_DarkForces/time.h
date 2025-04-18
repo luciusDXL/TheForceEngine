@@ -36,8 +36,10 @@ namespace TFE_DarkForces
 
 	// Current game-time in "ticks"
 	extern Tick s_curTick;
+	extern fixed16_16 s_curTickFract;
 	// Previous frame time in "ticks" - used when calculating s_deltaTime.
 	extern Tick s_prevTick;
+	extern fixed16_16 s_prevTickFract;
 	// Delta-time since the last frame in "seconds" - though it is derived from the delta in ticks, so the smallest non-zero
 	// delta is 1.0 / 145.0, i.e. s_deltaTime = (s_curTick - s_prevTick) / 145.0
 	// This is used for movement, physics, elevator value changes based on speed, and similar situations.

@@ -26,6 +26,7 @@ namespace TFE_DarkForces
 		bool scriptRegister(ScriptAPI api) override;
 
 		ScriptSector getSectorById(s32 id);
+		ScriptSector getSectorByName(std::string name);
 		ScriptElev   getElevator(s32 id);
 		ScriptObject getObjectById(s32 id);
 		static ScriptObject getObjectByName(std::string name);

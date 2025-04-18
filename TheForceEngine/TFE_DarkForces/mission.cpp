@@ -518,6 +518,11 @@ namespace TFE_DarkForces
 		s_exitLevel = JTRUE;
 	}
 
+	void mission_setExitLevel(JBool exitLevel)
+	{
+		s_exitLevel = exitLevel;
+	}
+
 	void mission_render(s32 rendererIndex, bool forceTextureUpdate)
 	{
 		if (task_getCount() > 1 && s_missionMode == MISSION_MODE_MAIN)
@@ -542,7 +547,7 @@ namespace TFE_DarkForces
 			vfb_swap();
 		}
 	}
-		
+				
 	void mission_mainTaskFunc(MessageType msg)
 	{
 		task_begin;
@@ -561,9 +566,20 @@ namespace TFE_DarkForces
 			TFE_Jedi::beginRender();
 						
 			// Handle delta time.
-			s_deltaTime = div16(intToFixed16(s_curTick - s_prevTick), FIXED(TICKS_PER_SECOND));
+			if (!TFE_Settings::getGraphicsSettings()->useSmoothDeltaTime)
+			{
+				s_deltaTime = div16(intToFixed16(s_curTick - s_prevTick), FIXED(TICKS_PER_SECOND));
+			}
+			else
+			{
+				s64 curTickF = s64(intToFixed16(s_curTick)) + s_curTickFract;
+				s64 prevTickF = s64(intToFixed16(s_prevTick)) + s_prevTickFract;
+				s_deltaTime = div16(fixed16_16(curTickF - prevTickF), FIXED(TICKS_PER_SECOND));
+			}
+
 			s_deltaTime = min(s_deltaTime, MAX_DELTA_TIME);
 			s_prevTick  = s_curTick;
+			s_prevTickFract = s_curTickFract;
 			s_playerTick = s_curTick;
 						
 			if (!escapeMenu_isOpen() && !pda_isOpen())

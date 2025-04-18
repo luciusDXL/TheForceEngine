@@ -106,9 +106,9 @@ namespace LevelEditor
 		}
 	}
 
-	void handleEntityInsert(Vec3f worldPos, RayHitInfo* info/*=nullptr*/)
+	void handleEntityInsert(Vec3f worldPos, RayHitInfo* info/*=nullptr*/, bool forcePlacement/*=false*/)
 	{
-		const bool insertEntity = isShortcutPressed(SHORTCUT_PLACE);
+		const bool insertEntity = isShortcutPressed(SHORTCUT_PLACE) || forcePlacement;
 		if (!insertEntity) { return; }
 
 		EditorSector* hoverSector = nullptr;
@@ -331,15 +331,16 @@ namespace LevelEditor
 					base = obj->pos.y + entity->obj3d->bounds[0].y;
 				}
 
-				if (base != sector->floorHeight)
+				const f32 floorHeight = getFloorAtXZ(sector, { obj->pos.x, obj->pos.z });
+				if (base != floorHeight)
 				{
 					if (entity->type == ETYPE_3D)
 					{
-						obj->pos.y = sector->floorHeight - entity->obj3d->bounds[0].y;
+						obj->pos.y = floorHeight - entity->obj3d->bounds[0].y;
 					}
 					else
 					{
-						obj->pos.y = sector->floorHeight;
+						obj->pos.y = floorHeight;
 					}
 					if (sector->searchKey != s_searchKey)
 					{
@@ -361,15 +362,16 @@ namespace LevelEditor
 					top = obj->pos.y;
 				}
 
-				if (top != sector->ceilHeight)
+				const f32 ceilHeight = getCeilAtXZ(sector, { obj->pos.x, obj->pos.z });
+				if (top != ceilHeight)
 				{
 					if (entity->type == ETYPE_3D)
 					{
-						obj->pos.y = sector->ceilHeight - entity->obj3d->bounds[1].y;
+						obj->pos.y = ceilHeight - entity->obj3d->bounds[1].y;
 					}
 					else
 					{
-						obj->pos.y = sector->ceilHeight;
+						obj->pos.y = ceilHeight;
 					}
 					if (sector->searchKey != s_searchKey)
 					{

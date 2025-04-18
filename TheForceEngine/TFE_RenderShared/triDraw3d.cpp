@@ -284,6 +284,97 @@ namespace TFE_RenderShared
 		s_vtxCount += 4;
 		s_idxCount += 6;
 	}
+
+	void triDraw3d_addDeformedQuadTextured(DrawMode pass, Vec3f* vtx, const Vec2f* uvVtx, const u32 color, TextureGpu* texture, bool sky)
+	{
+		if (!s_vertices) { return; }
+		const s32 idxOffset = s_idxCount;
+		const s32 vtxOffset = s_vtxCount;
+
+		// Compute the corners in grid-space.
+		Vec3f gridCorners[] =
+		{
+			posToGrid(s_gridDef, vtx[0]),
+			posToGrid(s_gridDef, vtx[1]),
+			posToGrid(s_gridDef, vtx[2]),
+			posToGrid(s_gridDef, vtx[3])
+		};
+		const f32 dx = fabsf(gridCorners[2].x - gridCorners[1].x);
+		const f32 dz = fabsf(gridCorners[2].z - gridCorners[1].z);
+
+		// Do we have enough room for the vertices and indices?
+		if (s_vtxCount + 4 > VTX3D_MAX || s_idxCount + 6 > IDX3D_MAX)
+		{
+			return;
+		}
+
+		// New draw call or add to the existing call?
+		u32 drawFlags = setDrawFlags(true, sky);
+		if (canMergeDraws(pass, texture))
+		{
+			// Append to the previous draw call.
+			s_triDraw[pass][s_triDrawCount[pass] - 1].vtxCount += 4;
+			s_triDraw[pass][s_triDrawCount[pass] - 1].idxCount += 6;
+		}
+		else
+		{
+			// Too many draw calls?
+			Tri3dDraw* draw = getTriDraw(pass);
+			// Add a new draw call.
+			if (draw)
+			{
+				draw->texture = texture;
+				draw->mode = pass;
+				draw->vtxOffset = vtxOffset;
+				draw->idxOffset = idxOffset;
+				draw->vtxCount = 4;
+				draw->idxCount = 6;
+				draw->drawFlags = drawFlags;
+			}
+			else
+			{
+				return;
+			}
+		}
+
+		Tri3dVertex* outVert = &s_vertices[s_vtxCount];
+		s32* outIdx = &s_indices[s_idxCount];
+
+		outVert[0].pos = vtx[0];
+		outVert[0].uv = { 0.0f, 0.0f };
+		outVert[0].uv1 = { (dx >= dz) ? gridCorners[0].x : gridCorners[0].z, gridCorners[0].y };
+		outVert[0].uv2 = uvVtx[0];
+		outVert[0].color = color;
+
+		outVert[1].pos = vtx[1];
+		outVert[1].uv = { 1.0f, 0.0f };
+		outVert[1].uv1 = { (dx >= dz) ? gridCorners[1].x : gridCorners[1].z, gridCorners[1].y };
+		outVert[1].uv2 = uvVtx[1];
+		outVert[1].color = color;
+
+		outVert[2].pos = vtx[2];
+		outVert[2].uv = { 1.0f, 1.0f };
+		outVert[2].uv1 = { (dx >= dz) ? gridCorners[2].x : gridCorners[2].z, gridCorners[2].y };
+		outVert[2].uv2 = uvVtx[2];
+		outVert[2].color = color;
+
+		outVert[3].pos = vtx[3];
+		outVert[3].uv = { 0.0f, 1.0f };
+		outVert[3].uv1 = { (dx >= dz) ? gridCorners[3].x : gridCorners[3].z, gridCorners[3].y };
+		outVert[3].uv2 = uvVtx[3];
+		outVert[3].color = color;
+
+		outIdx[0] = vtxOffset + 0;
+		outIdx[1] = vtxOffset + 1;
+		outIdx[2] = vtxOffset + 2;
+
+		outIdx[3] = vtxOffset + 0;
+		outIdx[4] = vtxOffset + 2;
+		outIdx[5] = vtxOffset + 3;
+
+		s_vtxCount += 4;
+		s_idxCount += 6;
+	}
 		
 	void triDraw3d_addTextured(DrawMode pass, u32 idxCount, u32 vtxCount, const Vec3f* vertices, const Vec2f* uv, const s32* indices, const u32 color, bool invSide, TextureGpu* texture, bool showGrid, bool sky)
 	{
@@ -432,6 +523,92 @@ namespace TFE_RenderShared
 		outVert[3].pos = { corners[0].x, corners[1].y, corners[0].z };
 		outVert[3].uv = { 0.0f, 1.0f };
 		outVert[3].uv1 = { (dx >= dz) ? gridCorners[0].x : gridCorners[0].z, gridCorners[1].y };
+		outVert[3].color = color;
+
+		outIdx[0] = vtxOffset + 0;
+		outIdx[1] = vtxOffset + 1;
+		outIdx[2] = vtxOffset + 2;
+
+		outIdx[3] = vtxOffset + 0;
+		outIdx[4] = vtxOffset + 2;
+		outIdx[5] = vtxOffset + 3;
+
+		s_vtxCount += 4;
+		s_idxCount += 6;
+	}
+
+	void triDraw3d_addDeformedQuadColored(DrawMode pass, Vec3f* vtx, const u32 color)
+	{
+		if (!s_vertices) { return; }
+		const s32 idxOffset = s_idxCount;
+		const s32 vtxOffset = s_vtxCount;
+
+		// Compute the corners in grid-space.
+		Vec3f gridCorners[] =
+		{
+			posToGrid(s_gridDef, vtx[0]),
+			posToGrid(s_gridDef, vtx[1]),
+			posToGrid(s_gridDef, vtx[2]),
+			posToGrid(s_gridDef, vtx[3])
+		};
+		const f32 dx = fabsf(gridCorners[2].x - gridCorners[1].x);
+		const f32 dz = fabsf(gridCorners[2].z - gridCorners[1].z);
+
+		// Do we have enough room for the vertices and indices?
+		if (s_vtxCount + 4 > VTX3D_MAX || s_idxCount + 6 > IDX3D_MAX)
+		{
+			return;
+		}
+
+		// New draw call or add to the existing call?
+		if (canMergeDraws(pass, nullptr))
+		{
+			// Append to the previous draw call.
+			s_triDraw[pass][s_triDrawCount[pass] - 1].vtxCount += 4;
+			s_triDraw[pass][s_triDrawCount[pass] - 1].idxCount += 6;
+		}
+		else
+		{
+			// Too many draw calls?
+			Tri3dDraw* draw = getTriDraw(pass);
+			// Add a new draw call.
+			if (draw)
+			{
+				draw->texture = nullptr;
+				draw->mode = pass;
+				draw->vtxOffset = vtxOffset;
+				draw->idxOffset = idxOffset;
+				draw->vtxCount = 4;
+				draw->idxCount = 6;
+				draw->drawFlags = TFLAG_NONE;
+			}
+			else
+			{
+				return;
+			}
+		}
+
+		Tri3dVertex* outVert = &s_vertices[s_vtxCount];
+		s32* outIdx = &s_indices[s_idxCount];
+
+		outVert[0].pos = vtx[0];
+		outVert[0].uv = { 0.0f, 0.0f };
+		outVert[0].uv1 = { (dx >= dz) ? gridCorners[0].x : gridCorners[0].z, gridCorners[0].y };
+		outVert[0].color = color;
+
+		outVert[1].pos = vtx[1];
+		outVert[1].uv = { 1.0f, 0.0f };
+		outVert[1].uv1 = { (dx >= dz) ? gridCorners[1].x : gridCorners[1].z, gridCorners[1].y };
+		outVert[1].color = color;
+
+		outVert[2].pos = vtx[2];
+		outVert[2].uv = { 1.0f, 1.0f };
+		outVert[2].uv1 = { (dx >= dz) ? gridCorners[2].x : gridCorners[2].z, gridCorners[2].y };
+		outVert[2].color = color;
+
+		outVert[3].pos = vtx[3];
+		outVert[3].uv = { 0.0f, 1.0f };
+		outVert[3].uv1 = { (dx >= dz) ? gridCorners[3].x : gridCorners[3].z, gridCorners[3].y };
 		outVert[3].color = color;
 
 		outIdx[0] = vtxOffset + 0;

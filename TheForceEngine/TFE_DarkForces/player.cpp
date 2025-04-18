@@ -299,6 +299,11 @@ namespace TFE_DarkForces
 	// TFE - constants which can be overridden
 	s32 s_weaponSuperchargeDuration;
 	s32 s_shieldSuperchargeDuration;
+
+	// Scripting
+	JBool s_disablePlayerMovement = JFALSE;
+	JBool s_disablePlayerRotation = JFALSE;
+	JBool s_disablePlayerFire = JFALSE;
 			   
 	///////////////////////////////////////////
 	// Forward Declarations
@@ -890,6 +895,9 @@ namespace TFE_DarkForces
 		s_playerPrimaryFire = JFALSE;
 		s_playerSecFire     = JFALSE;
 		s_playerJumping     = JFALSE;
+		s_disablePlayerMovement = JFALSE;
+		s_disablePlayerRotation = JFALSE;
+		s_disablePlayerFire     = JFALSE;
 
 		s_crushSoundId = 0;
 		s_kyleScreamSoundId = 0;
@@ -1449,11 +1457,16 @@ namespace TFE_DarkForces
 		{
 			ProjectileLogic* proj = (ProjectileLogic*)s_msgEntity;
 			vec3_fixed pushVel;
-			computeDamagePushVelocity(proj, &pushVel);
+			
+			// TFE: Don't push the player if movement disabled
+			if (!s_disablePlayerMovement)
+			{
+				computeDamagePushVelocity(proj, &pushVel);
 
-			s_playerVelX   += pushVel.x;
-			s_playerUpVel2 += pushVel.y;
-			s_playerVelZ   += pushVel.z;
+				s_playerVelX += pushVel.x;
+				s_playerUpVel2 += pushVel.y;
+				s_playerVelZ += pushVel.z;
+			}
 
 			if (s_invincibility || s_config.superShield)
 			{
@@ -1474,10 +1487,14 @@ namespace TFE_DarkForces
 			vec3_fixed pushDir;
 			computeExplosionPushDir(&pos, &pushDir);
 
-			fixed16_16 force = s_msgArg2;
-			s_playerVelX   += mul16(force, pushDir.x);
-			s_playerUpVel2 += mul16(force, pushDir.y);
-			s_playerVelZ   += mul16(force, pushDir.z);
+			// TFE: Don't push the player if movement disabled
+			if (!s_disablePlayerMovement)
+			{
+				fixed16_16 force = s_msgArg2;
+				s_playerVelX += mul16(force, pushDir.x);
+				s_playerUpVel2 += mul16(force, pushDir.y);
+				s_playerVelZ += mul16(force, pushDir.z);
+			}
 
 			if (s_invincibility || s_config.superShield)
 			{
@@ -1534,6 +1551,9 @@ namespace TFE_DarkForces
 		s_playerCrouchSpd = 0;
 		s_prevDistFromFloor = 0;
 		s_playerObject->worldHeight = 0x5cccc;	// 5.8
+		s_disablePlayerMovement = JFALSE;
+		s_disablePlayerRotation = JFALSE;
+		s_disablePlayerFire = JFALSE;
 	}
 
 	void player_changeSector(RSector* newSector)
@@ -1707,7 +1727,7 @@ namespace TFE_DarkForces
 		InputConfig* inputConfig = TFE_Input::inputMapping_get();
 
 		// Yaw change
-		if (inputConfig->mouseMode == MMODE_TURN || inputConfig->mouseMode == MMODE_LOOK)
+		if ((inputConfig->mouseMode == MMODE_TURN || inputConfig->mouseMode == MMODE_LOOK) && !s_disablePlayerRotation)
 		{
 			s_playerYaw += s32(f32(mdx * PLAYER_MOUSE_TURN_SPD) * inputMapping_getHorzMouseSensitivity());
 			s_playerYaw &= ANGLE_MASK;
@@ -1722,7 +1742,7 @@ namespace TFE_DarkForces
 		}
 
 		// Controls
-		if (s_automapLocked)
+		if (s_automapLocked && !s_disablePlayerMovement)
 		{
 			if (inputMapping_getActionState(IADF_FORWARD))
 			{
@@ -1810,7 +1830,7 @@ namespace TFE_DarkForces
 
 		JBool wasJumping = s_playerJumping;
 		s_playerJumping = JFALSE;
-		if (inputMapping_getActionState(IADF_JUMP))
+		if (inputMapping_getActionState(IADF_JUMP) && !s_disablePlayerMovement)
 		{
 			if (!s_onFloor || wasJumping)
 			{
@@ -1838,12 +1858,10 @@ namespace TFE_DarkForces
 			s_playerUpVel2 = 0;
 		}
 
-		//////////////////////////////////////////
 		// Pitch and Roll controls.
-		//////////////////////////////////////////
 		if (s_automapLocked)
 		{
-			if (inputMapping_getActionState(IADF_TURN_LT))
+			if (inputMapping_getActionState(IADF_TURN_LT) && !s_disablePlayerRotation)
 			{
 				fixed16_16 turnSpeed = PLAYER_KB_TURN_SPD;	// angle units per second.
 				fixed16_16 dYaw = mul16(turnSpeed, s_deltaTime);
@@ -1853,7 +1871,7 @@ namespace TFE_DarkForces
 				s_playerYaw -= dYaw;
 				s_playerYaw &= ANGLE_MASK;
 			}
-			else if (inputMapping_getActionState(IADF_TURN_RT))
+			else if (inputMapping_getActionState(IADF_TURN_RT) && !s_disablePlayerRotation)
 			{
 				fixed16_16 turnSpeed = PLAYER_KB_TURN_SPD;	// angle units per second.
 				fixed16_16 dYaw = mul16(turnSpeed, s_deltaTime);
@@ -1863,7 +1881,7 @@ namespace TFE_DarkForces
 				s_playerYaw += dYaw;
 				s_playerYaw &= ANGLE_MASK;
 			}
-			else if (inputMapping_getAnalogAxis(AA_LOOK_HORZ))
+			else if (inputMapping_getAnalogAxis(AA_LOOK_HORZ) && !s_disablePlayerRotation)
 			{
 				fixed16_16 turnSpeed = mul16(mul16(PLAYER_CONTROLLER_TURN_SPD, s_deltaTime), floatToFixed16(inputMapping_getAnalogAxis(AA_LOOK_HORZ)));
 				s_playerYaw += turnSpeed;
@@ -1901,17 +1919,18 @@ namespace TFE_DarkForces
 				s_playerRoll = 0;
 			}
 
-			if (inputMapping_getActionState(IADF_STRAFE_RT))
+			// Strafe movement
+			if (inputMapping_getActionState(IADF_STRAFE_RT) && !s_disablePlayerMovement)
 			{
 				fixed16_16 speed = mul16(PLAYER_STRAFE_SPEED, s_deltaTime);
 				s_strafeSpd = max(speed, s_strafeSpd);
 			}
-			else if (inputMapping_getActionState(IADF_STRAFE_LT))
+			else if (inputMapping_getActionState(IADF_STRAFE_LT) && !s_disablePlayerMovement)
 			{
 				fixed16_16 speed = -mul16(PLAYER_STRAFE_SPEED, s_deltaTime);
 				s_strafeSpd = min(speed, s_strafeSpd);
 			}
-			else if (inputMapping_getAnalogAxis(AA_STRAFE))
+			else if (inputMapping_getAnalogAxis(AA_STRAFE) && !s_disablePlayerMovement)
 			{
 				fixed16_16 speed = mul16(mul16(PLAYER_STRAFE_SPEED, s_deltaTime), floatToFixed16(clamp(inputMapping_getAnalogAxis(AA_STRAFE), -1.0f, 1.0f)));
 				if (speed < 0)
@@ -1930,11 +1949,11 @@ namespace TFE_DarkForces
 			s_playerUse = JTRUE;
 		}
 
-		if (inputMapping_getActionState(IADF_PRIMARY_FIRE))
+		if (inputMapping_getActionState(IADF_PRIMARY_FIRE) && !s_disablePlayerFire)
 		{
 			s_playerPrimaryFire = JTRUE;
 		}
-		else if (inputMapping_getActionState(IADF_SECONDARY_FIRE))
+		else if (inputMapping_getActionState(IADF_SECONDARY_FIRE) && !s_disablePlayerFire)
 		{
 			s_playerSecFire = JTRUE;
 		}
@@ -2033,21 +2052,26 @@ namespace TFE_DarkForces
 		}
  
 		// Apply friction to existing velocity.
+		const bool useSmoothDt = TFE_Settings::getGraphicsSettings()->useSmoothDeltaTime;
 		if (s_playerVelX || s_playerVelZ)
 		{
 			Tick dt = s_playerTick - s_prevPlayerTick;
-			// Exponential friction, this is the same as vel * friction^dt
-			for (Tick i = 0; i < dt; i++)
+			if (dt || !useSmoothDt)
 			{
-				s_playerVelX = mul16(friction, s_playerVelX);
-				s_playerVelZ = mul16(friction, s_playerVelZ);
-			}
-			// Just stop moving if the velocity is low enough, to avoid jittering forever.
-			// Note: The jitter threshold has been halved in TFE in order to work at higher framerates.
-			if (distApprox(0, 0, s_playerVelX, s_playerVelZ) < HALF_16/2)
-			{
-				s_playerVelX = 0;
-				s_playerVelZ = 0;
+				// Exponential friction, this is the same as vel * friction^dt
+				for (Tick i = 0; i < dt; i++)
+				{
+					s_playerVelX = mul16(friction, s_playerVelX);
+					s_playerVelZ = mul16(friction, s_playerVelZ);
+				}
+				// Just stop moving if the velocity is low enough, to avoid jittering forever.
+				// Note: The jitter threshold has been halved in TFE in order to work at higher framerates.
+				const fixed16_16 threshold = useSmoothDt ? HALF_16 / 8 : HALF_16 / 2;
+				if (distApprox(0, 0, s_playerVelX, s_playerVelZ) < threshold)
+				{
+					s_playerVelX = 0;
+					s_playerVelZ = 0;
+				}
 			}
 		}
 
@@ -2141,8 +2165,16 @@ namespace TFE_DarkForces
 		// Then convert from player velocity to per-frame movement.
 		fixed16_16 moveX = adjustForwardSpeed(s_playerVelX);
 		fixed16_16 moveZ = adjustForwardSpeed(s_playerVelZ);
-		s_playerLogic.move.x = mul16(moveX, s_deltaTime) + mul16(s_externalVelX, s_deltaTime);
-		s_playerLogic.move.z = mul16(moveZ, s_deltaTime) + mul16(s_externalVelZ, s_deltaTime);
+		if (s_disablePlayerMovement) // TFE scripting option
+		{
+			s_playerLogic.move.x = 0;
+			s_playerLogic.move.z = 0;
+		}
+		else // normal behaviour
+		{
+			s_playerLogic.move.x = mul16(moveX, s_deltaTime) + mul16(s_externalVelX, s_deltaTime);
+			s_playerLogic.move.z = mul16(moveZ, s_deltaTime) + mul16(s_externalVelZ, s_deltaTime);
+		}
 		s_playerLogic.stepHeight = s_limitStepHeight ? PLAYER_STEP : PLAYER_INF_STEP;
 		fixed16_16 width = (s_smallModeEnabled) ? PLAYER_SIZE_SMALL : PLAYER_WIDTH;
 		player->worldWidth = width;
@@ -3328,6 +3360,10 @@ namespace TFE_DarkForces
 		{
 			setProjectileGravityAccel(projectileGravity);
 		}
+
+		SERIALIZE(ObjState_DisablePlayerMovement, s_disablePlayerMovement, JFALSE);
+		SERIALIZE(ObjState_DisablePlayerMovement, s_disablePlayerRotation, JFALSE);
+		SERIALIZE(ObjState_DisablePlayerMovement, s_disablePlayerFire, JFALSE);
 
 		s32 invSavedSize = 0;
 		if (serialization_getMode() == SMODE_WRITE && s_playerInvSaved)

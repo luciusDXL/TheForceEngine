@@ -652,7 +652,10 @@ namespace TFE_DarkForces
 					corpse->frame = 0;
 					corpse->anim = animIndex;
 					corpse->posWS.x = obj->posWS.x;
-					corpse->posWS.y = (sector->colSecHeight < obj->posWS.y) ? sector->colSecHeight : obj->posWS.y;
+					// The original code here was:
+					// corpse->posWS.y = (sector->colSecHeight < obj->posWS.y) ? sector->colSecHeight : obj->posWS.y;
+					// This causes corpses to always end up on top of bridges in vanilla DF, even if the actor dies under the bridge
+					corpse->posWS.y = obj->posWS.y;
 					corpse->posWS.z = obj->posWS.z;
 					corpse->worldHeight = 0;
 					corpse->worldWidth = 0;

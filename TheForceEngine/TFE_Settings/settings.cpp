@@ -413,6 +413,7 @@ namespace TFE_Settings
 		writeKeyValue_Bool(settings, "3doNormalFix", s_graphicsSettings.fix3doNormalOverflow);
 		writeKeyValue_Bool(settings, "ignore3doLimits", s_graphicsSettings.ignore3doLimits);
 		writeKeyValue_Bool(settings, "ditheredBilinear", s_graphicsSettings.ditheredBilinear);
+		writeKeyValue_Bool(settings, "useSmoothDeltaTime", s_graphicsSettings.useSmoothDeltaTime);
 
 		writeKeyValue_Bool(settings, "useBilinear", s_graphicsSettings.useBilinear);
 		writeKeyValue_Bool(settings, "useMipmapping", s_graphicsSettings.useMipmapping);
@@ -543,6 +544,7 @@ namespace TFE_Settings
 		writeKeyValue_Bool(settings, "df_enableRecording", s_gameSettings.df_enableRecording);
 		writeKeyValue_Bool(settings, "df_enableRecordingAll", s_gameSettings.df_enableRecordingAll);
 		writeKeyValue_Bool(settings, "df_demologging", s_gameSettings.df_demologging);
+		writeKeyValue_Bool(settings, "df_autoNextMission", s_gameSettings.df_autoEndMission);
 	}
 
 	void writePerGameSettings(FileStream& settings)
@@ -779,6 +781,10 @@ namespace TFE_Settings
 		else if (strcasecmp("useMipmapping", key) == 0)
 		{
 			s_graphicsSettings.useMipmapping = parseBool(value);
+		}
+		else if (strcasecmp("useSmoothDeltaTime", key) == 0)
+		{
+			s_graphicsSettings.useSmoothDeltaTime = parseBool(value);
 		}
 		else if (strcasecmp("bilinearSharpness", key) == 0)
 		{
@@ -1195,6 +1201,10 @@ namespace TFE_Settings
 		else if (strcasecmp("df_demologging", key) == 0)
 		{
 			s_gameSettings.df_demologging = parseBool(value);
+		}
+		else if (strcasecmp("df_autoNextMission", key) == 0)
+		{
+			s_gameSettings.df_autoEndMission = parseBool(value);
 		}
 	}
 

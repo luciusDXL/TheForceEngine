@@ -64,7 +64,8 @@ enum ObjStateVersion : u32
 	ObjState_CrouchToggle = 5,
 	ObjState_CustomLogics = 6,
 	ObjState_ConstOverrides = 7,
-	ObjState_RefList = 8,
+	ObjState_DisablePlayerMovement = 8,
+	ObjState_RefList = 9,
 	ObjState_CurVersion = ObjState_RefList,
 };
 
