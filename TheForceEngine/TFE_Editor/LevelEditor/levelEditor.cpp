@@ -1684,6 +1684,7 @@ namespace LevelEditor
 			s_viewportPos.z = mapPos.z - (s_viewportSize.z / 2) * s_zoom2d;
 		}
 		s_view = EDIT_VIEW_2D;
+		s_slopeAnchor = {};
 	}
 
 	void setView3D()
@@ -3174,8 +3175,12 @@ namespace LevelEditor
 		s_editMove = false;
 		s_startTexMove = false;
 		s_featureTex = {};
-		s_slopeAnchor = {};
 		commitCurEntityChanges();
+
+		if (mode != LEDIT_WALL && mode != LEDIT_VERTEX)
+		{
+			s_slopeAnchor = {};
+		}
 	}
 
 	void autosave()
@@ -3623,6 +3628,11 @@ namespace LevelEditor
 				{
 					pasteFromClipboard();
 				}
+			}
+
+			if (s_slopeAnchor.wallId >= 0 && s_slopeAnchor.sectorId >= 0)
+			{
+				drawViewportInfo((s32)s_level.sectors.size(), {(s32)s_editWinMapCorner.x + 8, (s32)s_editWinMapCorner.z + 8 }, "Slope Mode: Anchor", 0, 0, 1.0f, 0xff80ff80);
 			}
 		}
 		levelEditWinEnd();
@@ -4108,7 +4118,7 @@ namespace LevelEditor
 				ImGui::TextColored({ 0.5f, 0.5f, 0.5f, 0.75f }, "Pos %0.3f, %0.3f, %0.3f", s_camera.pos.x, s_camera.pos.y, s_camera.pos.z);
 			}
 		}
-
+		
 		ImGui::EndChild();
 	}
 					
