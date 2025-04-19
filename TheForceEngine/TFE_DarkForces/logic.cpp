@@ -102,15 +102,15 @@ namespace TFE_DarkForces
 		{
 			obj->worldWidth = floatToFixed16(strtof(s_objSeqArg1, &endPtr));
 		}
+		// TFE - scripting
+		else if (key == KW_NAME)
+		{
+			TFE_Jedi::obj_addName(s_objSeqArg1, obj);
+		}
 		// New in TFE
 		else if (key == KW_CAMERA)
 		{
 			obj->flags |= OBJ_FLAG_CAMERA;
-		}
-		else if (key == KW_NAME)
-		{
-			// TFE - scripting
-			TFE_Jedi::obj_addName(s_objSeqArg1, obj);
 		}
 		else  // Invalid key.
 		{

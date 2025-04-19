@@ -603,6 +603,12 @@ namespace TFE_DarkForces
 		return result;
 	}
 
+	void setCamera()
+	{
+		player_setupEyeObject(s_playerObject);
+		s_externalCameraMode = JFALSE;
+	}
+
 	bool GS_Player::scriptRegister(ScriptAPI api)
 	{
 		ScriptClassBegin("Player", "player", api);
@@ -644,6 +650,7 @@ namespace TFE_DarkForces
 			ScriptObjFunc("void disableActions(uint)", disableActions);
 			ScriptObjFunc("void enableActions(uint)", enableActions);
 			ScriptPropertyGetFunc("uint get_disabledActions()", getDisabledActions);
+			ScriptObjFunc("void setCamera()", setCamera);
 
 			// Position and velocity
 			ScriptPropertyGetFunc("float3 get_position()", getPlayerPosition);
