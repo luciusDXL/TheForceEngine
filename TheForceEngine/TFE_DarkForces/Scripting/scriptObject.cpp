@@ -6,6 +6,7 @@
 #include <TFE_Asset/dfKeywords.h>
 #include <TFE_DarkForces/logic.h>
 #include <TFE_DarkForces/animLogic.h>
+#include <TFE_DarkForces/pickup.h>
 #include <TFE_ForceScript/forceScript.h>
 #include <TFE_ForceScript/scriptAPI.h>
 #include <TFE_Jedi/Level/levelData.h>
@@ -259,7 +260,7 @@ namespace TFE_DarkForces
 		}
 		else if (logicId >= KW_BATTERY && logicId <= KW_AUTOGUN)
 		{
-			// TODO
+			obj_createPickup(obj, getPickupItemId(logic.c_str()));
 		}
 		// TODO enable adding custom logic
 	}
