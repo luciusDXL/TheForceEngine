@@ -1492,6 +1492,9 @@
     <ClInclude Include="TFE_Editor\LevelEditor\confirmDialogs.h">
       <Filter>Source\TFE_Editor\LevelEditor</Filter>
     </ClInclude>
+    <ClInclude Include="TFE_DarkForces\Scripting\scriptObject.h">
+      <Filter>Source\TFE_DarkForces\Scripting</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -2615,6 +2618,9 @@
     </ClCompile>
     <ClCompile Include="TFE_Editor\LevelEditor\confirmDialogs.cpp">
       <Filter>Source\TFE_Editor\LevelEditor</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_DarkForces\Scripting\scriptObject.cpp">
+      <Filter>Source\TFE_DarkForces\Scripting</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

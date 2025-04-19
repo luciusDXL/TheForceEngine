@@ -33,6 +33,7 @@ namespace TFE_DarkForces
 			newObj->worldWidth = obj->worldWidth;
 
 			sector_addObject(obj->sector, newObj);
+			obj_addToRefList(newObj, ObjRefType_Corpse);	// scripting
 			actor_kill();
 			return 0;
 		}

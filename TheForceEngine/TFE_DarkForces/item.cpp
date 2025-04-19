@@ -122,6 +122,7 @@ namespace TFE_DarkForces
 			obj_setSpriteAnim(newObj);
 		}
 
+		obj_addToRefList(newObj, ObjRefType_SpawnItem);	// scripting
 		return newObj;
 	}
 }  // TFE_DarkForces
