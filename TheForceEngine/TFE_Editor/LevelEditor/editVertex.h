@@ -13,6 +13,8 @@
 
 namespace LevelEditor
 {
+	struct SlopeAnchor;
+
 	void handleVertexInsert(Vec2f worldPos, RayHitInfo* info = nullptr);
 	void findHoveredVertex3d(EditorSector* hoveredSector, RayHitInfo* info);
 	void findHoveredVertex2d(EditorSector* hoveredSector, Vec2f worldPos);
@@ -23,4 +25,5 @@ namespace LevelEditor
 	void edit_setVertexPos(FeatureId id, Vec2f pos);
 	void edit_moveSelectedVertices(Vec2f delta);
 	void edit_moveVertices(Vec2f worldPos2d);
+	void edit_moveVerticesSlope(Vec3f worldPos, const SlopeAnchor* anchor);
 }

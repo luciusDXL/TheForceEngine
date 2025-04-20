@@ -14,6 +14,7 @@
 #include "guidelines.h"
 #include <TFE_System/math.h>
 #include <TFE_Jedi/Math/core_math.h>
+#include <TFE_Jedi/Level/rsector.h>
 #include <TFE_Editor/errorMessages.h>
 #include <TFE_Editor/editor.h>
 #include <TFE_Editor/editorConfig.h>
@@ -40,6 +41,10 @@ namespace LevelEditor
 	static std::vector<VertexWallGroup> s_vertexWallGroups;
 	static std::vector<EditorSector> s_sectorSnapshot;
 	static std::vector<s32> s_deltaSectors;
+
+	static EditorSector* s_slopeSector;
+	static HitPart s_slopePart;
+	static f32 s_slopeLineDist;
 
 	void findHoveredVertexOutside(Vec3f pos, f32 maxDist, bool use3dCheck);
 	void selectVerticesToDelete(EditorSector* root, s32 featureIndex, const Vec2f* rootVtx);
@@ -491,6 +496,72 @@ namespace LevelEditor
 		{
 			EditorSector* sector = list[i];
 			sectorToPolygon(sector);
+		}
+	}
+		
+	void edit_moveVerticesSlope(Vec3f worldPos, const SlopeAnchor* anchor)
+	{
+		// Overall movement since mousedown, for the history.
+		if (!s_moveStarted)
+		{
+			EditorSector* sector = nullptr;
+			s32 vertexIndex = -1;
+			if (!selection_getVertex(SEL_INDEX_HOVERED, sector, vertexIndex))
+			{
+				return;
+			}
+
+			// Make sure there is a valid distance to the anchor line, otherwise this should fail.
+			// The vertex being moved *cannot* be on the anchor line.
+			const EditorSector* anchorSector = &s_level.sectors[anchor->sectorId];
+			const EditorWall* anchorWall = &anchorSector->walls[anchor->wallId];
+			const Vec2f v0 = anchorSector->vtx[anchorWall->idx[0]];
+			const Vec2f v1 = anchorSector->vtx[anchorWall->idx[1]];
+			const Vec2f v = sector->vtx[vertexIndex];
+
+			Vec2f it;
+			const f32 s = TFE_Polygon::closestPointOnLine(v0, v1, v, &it);
+			if (s == FLT_MAX) { return; }
+			s_slopeLineDist = TFE_Math::distance(&v, &it);
+
+			s_moveStarted = true;
+			s_moveStartPos = sector->vtx[vertexIndex];
+			s_moveVertexPivot = &sector->vtx[vertexIndex];
+
+			const f32 floorAtVtx = getFloorAtXZ(sector, *s_moveVertexPivot);
+			const f32 ceilAtVtx = getCeilAtXZ(sector, *s_moveVertexPivot);
+			s_slopePart = HP_FLOOR;
+			if (fabsf(ceilAtVtx - s_cursor3d.y) < fabsf(floorAtVtx - s_cursor3d.y))
+			{
+				s_slopePart = HP_CEIL;
+			}
+			const f32 y0 = s_slopePart == HP_FLOOR ? floorAtVtx : ceilAtVtx;
+			s_slopeSector = sector;
+			edit_setTransformAnchor({ s_moveStartPos.x, y0, s_moveStartPos.z });
+		}
+		// Move the vertex up and down, using the original position as an anchor.
+		worldPos = moveAlongRail({ 0.0f, 1.0f, 0.0f }, false);
+		
+		const Vec3f cameraDelta = { worldPos.x - s_camera.pos.x, worldPos.y - s_camera.pos.y, worldPos.z - s_camera.pos.z };
+		if (cameraDelta.x*s_rayDir.x + cameraDelta.z*s_rayDir.z < 0.0f)
+		{
+			// Do not allow the object to be moved behind the camera.
+			return;
+		}
+
+		f32 y = worldPos.y;
+		snapToGridY(&y);
+		const f32 dy = y - (s_slopePart == HP_FLOOR ? s_slopeSector->floorHeight : s_slopeSector->ceilHeight);
+		if (fabsf(dy) > FLT_EPSILON)
+		{
+			s_slopeSector->flags[0] |= (s_slopePart == HP_FLOOR) ? SEC_FLAGS1_SLOPEDFLOOR : SEC_FLAGS1_SLOPEDCEILING;
+			u32* slopeSectorId = (s_slopePart == HP_FLOOR) ? &s_slopeSector->slope.floorAnchorSectorId : &s_slopeSector->slope.ceilAnchorSectorId;
+			u32* slopeWallId   = (s_slopePart == HP_FLOOR) ? &s_slopeSector->slope.floorAnchorWallId   : &s_slopeSector->slope.ceilAnchorWallId;
+			f32* slopeAngle    = (s_slopePart == HP_FLOOR) ? &s_slopeSector->slope.floorSlopeAngle     : &s_slopeSector->slope.ceilSlopeAngle;
+			
+			*slopeSectorId = anchor->sectorId;
+			*slopeWallId = anchor->wallId;
+			*slopeAngle = TFE_Math::radToDeg(atanf(dy / s_slopeLineDist));
 		}
 	}
 

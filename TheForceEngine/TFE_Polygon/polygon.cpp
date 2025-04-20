@@ -1640,6 +1640,23 @@ namespace TFE_Polygon
 		return s;
 	}
 
+	f32 closestPointOnLine(Vec2f p0, Vec2f p1, Vec2f p2, Vec2f* point)
+	{
+		const Vec2f r = { p2.x - p0.x, p2.z - p0.z };
+		const Vec2f d = { p1.x - p0.x, p1.z - p0.z };
+		const f32 denom = d.x*d.x + d.z*d.z;
+		if (fabsf(denom) < FLT_EPSILON)
+		{
+			*point = p0;
+			return FLT_MAX;
+		}
+
+		const f32 s = (r.x*d.x + r.z*d.z) / denom;
+		point->x = p0.x + s*d.x;
+		point->z = p0.z + s*d.z;
+		return s;
+	}
+
 	bool lineSegmentsIntersect(Vec2f a0, Vec2f a1, Vec2f b0, Vec2f b1, Vec2f* vI, f32* u, f32* v, f32 sEps/* = 0.0f*/)
 	{
 		const f32 tEps = 0.001f;

@@ -10,6 +10,7 @@
 #include <TFE_Editor/LevelEditor/Rendering/viewport.h>
 #include <TFE_Editor/LevelEditor/Rendering/grid.h>
 #include <TFE_Editor/LevelEditor/Rendering/gizmo.h>
+#include <TFE_Jedi/Level/rsector.h>
 #include <TFE_System/math.h>
 #include <TFE_Input/input.h>
 #include <algorithm>
@@ -47,9 +48,13 @@ namespace LevelEditor
 	static bool s_transformToolActive = false;
 	static bool s_dataCaptured = false;
 
+	static f32 s_slopeLineDist = 0.0f;
+
 	void moveFeatures(const Vec3f& newPos);
 	void moveFlat();
+	void moveFlatSlope(const SlopeAnchor* anchor);
 	void moveWall(Vec3f worldPos);
+	void moveWallSlope(Vec3f worldPos, const SlopeAnchor* anchor);
 	void moveSector(Vec3f worldPos);
 	void moveEntity(Vec3f worldPos);
 	void captureRotationData();
@@ -691,12 +696,19 @@ namespace LevelEditor
 
 	void moveFeatures(const Vec3f& newPos)
 	{
+		const SlopeAnchor slopeAnchor = edit_getSlopeAnchor();
+		const bool slopeAnchorEnabled = slopeAnchor.sectorId >= 0 && slopeAnchor.wallId >= 0;
+
 		const bool hasSelection = selection_getCount() > 0;
 		if (s_editMode == LEDIT_VERTEX)
 		{
 			if (hasSelection && TFE_Input::mouseDown(MBUTTON_LEFT) && !TFE_Input::keyModDown(KEYMOD_CTRL) && !TFE_Input::keyModDown(KEYMOD_SHIFT))
 			{
-				if (s_enableMoveTransform)
+				if (s_enableMoveTransform && slopeAnchorEnabled)
+				{
+					edit_moveVerticesSlope(newPos, &slopeAnchor);
+				}
+				else if (s_enableMoveTransform)
 				{
 					edit_moveVertices({ newPos.x, newPos.z });
 				}
@@ -715,7 +727,12 @@ namespace LevelEditor
 
 			if (hasSelection && TFE_Input::mouseDown(MBUTTON_LEFT) && !TFE_Input::keyModDown(KEYMOD_CTRL) && !TFE_Input::keyModDown(KEYMOD_SHIFT))
 			{
-				if (s_enableMoveTransform)
+				if (s_enableMoveTransform && slopeAnchorEnabled)
+				{
+					if (part == HP_FLOOR || part == HP_CEIL) { moveFlatSlope(&slopeAnchor); }
+					else { moveWallSlope(newPos, &slopeAnchor); }
+				}
+				else if (s_enableMoveTransform)
 				{
 					if (part == HP_FLOOR || part == HP_CEIL) { moveFlat(); }
 					else { moveWall(newPos); }
@@ -753,6 +770,64 @@ namespace LevelEditor
 			{
 				edit_endTransform();
 			}
+		}
+	}
+
+	void moveFlatSlope(const SlopeAnchor* anchor)
+	{
+		EditorSector* sector = s_moveSector;
+		if (!s_moveStarted)
+		{
+			s32 wallIndex = -1;
+			s_movePart = HP_NONE;
+			sector = nullptr;
+			selection_getSurface(selection_hasHovered() ? SEL_INDEX_HOVERED : 0, sector, wallIndex, &s_movePart);
+			if (!sector) { return; }
+
+			// Make sure there is a valid distance to the anchor line, otherwise this should fail.
+			// The vertex being moved *cannot* be on the anchor line.
+			const EditorSector* anchorSector = &s_level.sectors[anchor->sectorId];
+			const EditorWall* anchorWall = &anchorSector->walls[anchor->wallId];
+			const Vec2f v0 = anchorSector->vtx[anchorWall->idx[0]];
+			const Vec2f v1 = anchorSector->vtx[anchorWall->idx[1]];
+			const Vec2f v = { s_curVtxPos.x, s_curVtxPos.z };
+
+			Vec2f it;
+			const f32 s = TFE_Polygon::closestPointOnLine(v0, v1, v, &it);
+			if (s == FLT_MAX) { return; }
+			s_slopeLineDist = TFE_Math::distance(&v, &it);
+
+			s_moveStarted = true;
+			s_moveStartPos.x = s_movePart == HP_FLOOR ? getFloorAtXZ(sector, { s_curVtxPos.x, s_curVtxPos.z }) : getCeilAtXZ(sector, { s_curVtxPos.x, s_curVtxPos.z });
+			s_moveStartPos.z = 0.0f;
+			s_prevPos = s_curVtxPos;
+			s_moveSector = sector;
+
+			edit_setTransformAnchor({ s_curVtxPos.x, s_moveStartPos.x, s_curVtxPos.z });
+		}
+
+		Vec3f worldPos = moveAlongRail({ 0.0f, 1.0f, 0.0f }, false);
+		f32 y = worldPos.y;
+
+		const Vec3f cameraDelta = { worldPos.x - s_camera.pos.x, worldPos.y - s_camera.pos.y, worldPos.z - s_camera.pos.z };
+		if (cameraDelta.x*s_rayDir.x + cameraDelta.z*s_rayDir.z < 0.0f)
+		{
+			// Do not allow the object to be moved behind the camera.
+			return;
+		}
+
+		snapToGridY(&y);
+		const f32 dy = y - (s_movePart == HP_FLOOR ? sector->floorHeight : sector->ceilHeight);
+		if (fabsf(dy) > FLT_EPSILON)
+		{
+			sector->flags[0] |= (s_movePart == HP_FLOOR) ? SEC_FLAGS1_SLOPEDFLOOR : SEC_FLAGS1_SLOPEDCEILING;
+			u32* slopeSectorId = (s_movePart == HP_FLOOR) ? &sector->slope.floorAnchorSectorId : &sector->slope.ceilAnchorSectorId;
+			u32* slopeWallId = (s_movePart == HP_FLOOR) ? &sector->slope.floorAnchorWallId : &sector->slope.ceilAnchorWallId;
+			f32* slopeAngle = (s_movePart == HP_FLOOR) ? &sector->slope.floorSlopeAngle : &sector->slope.ceilSlopeAngle;
+			
+			*slopeSectorId = anchor->sectorId;
+			*slopeWallId = anchor->wallId;
+			*slopeAngle = TFE_Math::radToDeg(atanf(dy / s_slopeLineDist));
 		}
 	}
 				
@@ -800,6 +875,85 @@ namespace LevelEditor
 		Vec3f pos = edit_getTransformPos();
 		edit_setTransformPos({ pos.x, pos.y + heightDelta, pos.z });
 		edit_moveSelectedFlats(heightDelta);
+	}
+
+	void moveWallSlope(Vec3f worldPos, const SlopeAnchor* anchor)
+	{
+		if (!s_moveStarted)
+		{
+			// Prefer hovered sector, but we must keep the sector and wall index since hovered may change later.
+			s_transformWallSector = nullptr;
+			s_transformWallIndex = -1;
+			selection_getSurface(selection_hasHovered() ? SEL_INDEX_HOVERED : 0, s_transformWallSector, s_transformWallIndex);
+			if (!s_transformWallSector) { return; }
+
+			const EditorSector* sector = s_transformWallSector;
+			const EditorWall* wall = &sector->walls[s_transformWallIndex];
+			const Vec2f& v0 = sector->vtx[wall->idx[0]];
+			const Vec2f& v1 = sector->vtx[wall->idx[1]];
+
+			// Find the closest point on the line.
+			Vec2f pointOnWall;
+			TFE_Polygon::closestPointOnLineSegment(v0, v1, { worldPos.x, worldPos.z }, &pointOnWall);
+			const f32 floorHeight = getFloorAtXZ(sector, pointOnWall);
+			const f32 ceilHeight = getCeilAtXZ(sector, pointOnWall);
+			s_movePart = HP_CEIL;
+			if (fabsf(floorHeight - s_cursor3d.y) <= fabsf(ceilHeight - s_cursor3d.y))
+			{
+				s_movePart = HP_FLOOR;
+			}
+
+			// Figure out the slope distance.
+			// Make sure there is a valid distance to the anchor line, otherwise this should fail.
+			// The vertex being moved *cannot* be on the anchor line.
+			const EditorSector* anchorSector = &s_level.sectors[anchor->sectorId];
+			const EditorWall* anchorWall = &anchorSector->walls[anchor->wallId];
+			const Vec2f a0 = anchorSector->vtx[anchorWall->idx[0]];
+			const Vec2f a1 = anchorSector->vtx[anchorWall->idx[1]];
+
+			Vec2f it;
+			const f32 s = TFE_Polygon::closestPointOnLine(a0, a1, pointOnWall, &it);
+			if (s == FLT_MAX) { return; }
+			s_slopeLineDist = TFE_Math::distance(&pointOnWall, &it);
+
+			//
+			s_moveStarted = true;
+			s_moveStartPos = pointOnWall;
+
+			if (s_view == EDIT_VIEW_3D)
+			{
+				s_prevPos = s_curVtxPos;
+			}
+			s_curVtxPos = { pointOnWall.x, s_movePart == HP_FLOOR ? floorHeight : ceilHeight, pointOnWall.z };
+			edit_setTransformAnchor(s_curVtxPos);
+		}
+
+		EditorSector* sector = s_transformWallSector;
+
+		// Move the vertex up and down, using the original position as an anchor.
+		worldPos = moveAlongRail({ 0.0f, 1.0f, 0.0f }, false);
+
+		const Vec3f cameraDelta = { worldPos.x - s_camera.pos.x, worldPos.y - s_camera.pos.y, worldPos.z - s_camera.pos.z };
+		if (cameraDelta.x*s_rayDir.x + cameraDelta.z*s_rayDir.z < 0.0f)
+		{
+			// Do not allow the object to be moved behind the camera.
+			return;
+		}
+
+		f32 y = worldPos.y;
+		snapToGridY(&y);
+		const f32 dy = y - (s_movePart == HP_FLOOR ? sector->floorHeight : sector->ceilHeight);
+		if (fabsf(dy) > FLT_EPSILON)
+		{
+			sector->flags[0] |= (s_movePart == HP_FLOOR) ? SEC_FLAGS1_SLOPEDFLOOR : SEC_FLAGS1_SLOPEDCEILING;
+			u32* slopeSectorId = (s_movePart == HP_FLOOR) ? &sector->slope.floorAnchorSectorId : &sector->slope.ceilAnchorSectorId;
+			u32* slopeWallId = (s_movePart == HP_FLOOR) ? &sector->slope.floorAnchorWallId : &sector->slope.ceilAnchorWallId;
+			f32* slopeAngle = (s_movePart == HP_FLOOR) ? &sector->slope.floorSlopeAngle : &sector->slope.ceilSlopeAngle;
+
+			*slopeSectorId = anchor->sectorId;
+			*slopeWallId = anchor->wallId;
+			*slopeAngle = TFE_Math::radToDeg(atanf(dy / s_slopeLineDist));
+		}
 	}
 
 	void moveWall(Vec3f worldPos)

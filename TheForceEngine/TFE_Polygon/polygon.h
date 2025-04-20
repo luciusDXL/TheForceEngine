@@ -67,6 +67,7 @@ namespace TFE_Polygon
 
 	bool lineSegmentsIntersect(Vec2f a0, Vec2f a1, Vec2f b0, Vec2f b1, Vec2f* vI = nullptr, f32* u = nullptr, f32* v = nullptr, f32 sEps = 0.0f);
 	f32 closestPointOnLineSegment(Vec2f p0, Vec2f p1, Vec2f p2, Vec2f* point);
+	f32 closestPointOnLine(Vec2f p0, Vec2f p1, Vec2f p2, Vec2f* point);
 
 	bool vtxEqual(const Vec2f* a, const Vec2f* b);
 	bool vtxEqual(const Vec3f* a, const Vec3f* b);
