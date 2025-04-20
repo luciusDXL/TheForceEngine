@@ -773,6 +773,35 @@ namespace LevelEditor
 		}
 	}
 
+	void computeSlopeFromYPosition(EditorSector* sector, HitPart part, const SlopeAnchor* anchor, f32 distToHinge, f32 yValue)
+	{
+		// If the distance to the hinge is too small, no slope can be formed.
+		const f32 hingeDistEps = 0.0001f;
+		if (distToHinge < hingeDistEps)
+		{
+			sector->flags[0] &= ~((part == HP_FLOOR) ? SEC_FLAGS1_SLOPEDFLOOR : SEC_FLAGS1_SLOPEDCEILING);
+			return;
+		}
+
+		snapToGridY(&yValue);
+		const f32 dy = yValue - (part == HP_FLOOR ? sector->floorHeight : sector->ceilHeight);
+		if (fabsf(dy) > FLT_EPSILON)
+		{
+			sector->flags[0] |= (part == HP_FLOOR) ? SEC_FLAGS1_SLOPEDFLOOR : SEC_FLAGS1_SLOPEDCEILING;
+			u32* slopeSectorId = (part == HP_FLOOR) ? &sector->slope.floorAnchorSectorId : &sector->slope.ceilAnchorSectorId;
+			u32* slopeWallId = (part == HP_FLOOR) ? &sector->slope.floorAnchorWallId : &sector->slope.ceilAnchorWallId;
+			f32* slopeAngle = (part == HP_FLOOR) ? &sector->slope.floorSlopeAngle : &sector->slope.ceilSlopeAngle;
+
+			*slopeSectorId = anchor->sectorId;
+			*slopeWallId = anchor->wallId;
+			*slopeAngle = TFE_Math::radToDeg(atanf(dy / distToHinge));
+		}
+		else  // y is now on the floor or ceiling - so remove the slope flag.
+		{
+			sector->flags[0] &= ~((part == HP_FLOOR) ? SEC_FLAGS1_SLOPEDFLOOR : SEC_FLAGS1_SLOPEDCEILING);
+		}
+	}
+
 	void moveFlatSlope(const SlopeAnchor* anchor)
 	{
 		EditorSector* sector = s_moveSector;
@@ -807,28 +836,14 @@ namespace LevelEditor
 		}
 
 		Vec3f worldPos = moveAlongRail({ 0.0f, 1.0f, 0.0f }, false);
-		f32 y = worldPos.y;
-
 		const Vec3f cameraDelta = { worldPos.x - s_camera.pos.x, worldPos.y - s_camera.pos.y, worldPos.z - s_camera.pos.z };
 		if (cameraDelta.x*s_rayDir.x + cameraDelta.z*s_rayDir.z < 0.0f)
 		{
 			// Do not allow the object to be moved behind the camera.
 			return;
 		}
-
-		snapToGridY(&y);
-		const f32 dy = y - (s_movePart == HP_FLOOR ? sector->floorHeight : sector->ceilHeight);
-		if (fabsf(dy) > FLT_EPSILON)
-		{
-			sector->flags[0] |= (s_movePart == HP_FLOOR) ? SEC_FLAGS1_SLOPEDFLOOR : SEC_FLAGS1_SLOPEDCEILING;
-			u32* slopeSectorId = (s_movePart == HP_FLOOR) ? &sector->slope.floorAnchorSectorId : &sector->slope.ceilAnchorSectorId;
-			u32* slopeWallId = (s_movePart == HP_FLOOR) ? &sector->slope.floorAnchorWallId : &sector->slope.ceilAnchorWallId;
-			f32* slopeAngle = (s_movePart == HP_FLOOR) ? &sector->slope.floorSlopeAngle : &sector->slope.ceilSlopeAngle;
-			
-			*slopeSectorId = anchor->sectorId;
-			*slopeWallId = anchor->wallId;
-			*slopeAngle = TFE_Math::radToDeg(atanf(dy / s_slopeLineDist));
-		}
+		// Compute the slope.
+		computeSlopeFromYPosition(sector, s_movePart, anchor, s_slopeLineDist, worldPos.y);
 	}
 				
 	void moveFlat()
@@ -932,28 +947,14 @@ namespace LevelEditor
 
 		// Move the vertex up and down, using the original position as an anchor.
 		worldPos = moveAlongRail({ 0.0f, 1.0f, 0.0f }, false);
-
 		const Vec3f cameraDelta = { worldPos.x - s_camera.pos.x, worldPos.y - s_camera.pos.y, worldPos.z - s_camera.pos.z };
 		if (cameraDelta.x*s_rayDir.x + cameraDelta.z*s_rayDir.z < 0.0f)
 		{
 			// Do not allow the object to be moved behind the camera.
 			return;
 		}
-
-		f32 y = worldPos.y;
-		snapToGridY(&y);
-		const f32 dy = y - (s_movePart == HP_FLOOR ? sector->floorHeight : sector->ceilHeight);
-		if (fabsf(dy) > FLT_EPSILON)
-		{
-			sector->flags[0] |= (s_movePart == HP_FLOOR) ? SEC_FLAGS1_SLOPEDFLOOR : SEC_FLAGS1_SLOPEDCEILING;
-			u32* slopeSectorId = (s_movePart == HP_FLOOR) ? &sector->slope.floorAnchorSectorId : &sector->slope.ceilAnchorSectorId;
-			u32* slopeWallId = (s_movePart == HP_FLOOR) ? &sector->slope.floorAnchorWallId : &sector->slope.ceilAnchorWallId;
-			f32* slopeAngle = (s_movePart == HP_FLOOR) ? &sector->slope.floorSlopeAngle : &sector->slope.ceilSlopeAngle;
-
-			*slopeSectorId = anchor->sectorId;
-			*slopeWallId = anchor->wallId;
-			*slopeAngle = TFE_Math::radToDeg(atanf(dy / s_slopeLineDist));
-		}
+		// Compute the slope.
+		computeSlopeFromYPosition(sector, s_movePart, anchor, s_slopeLineDist, worldPos.y);
 	}
 
 	void moveWall(Vec3f worldPos)

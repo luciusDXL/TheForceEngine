@@ -161,8 +161,8 @@ namespace LevelEditor
 			for (size_t v = 0; v < vtxCount; v++)
 			{
 				// Check against the floor and ceiling vertex of each vertex.
-				const Vec3f floorVtx = { vtx[v].x, floor, vtx[v].z };
-				const Vec3f ceilVtx = { vtx[v].x, ceil,  vtx[v].z };
+				const Vec3f floorVtx = { vtx[v].x, getFloorAtXZ(hoveredSector, vtx[v]), vtx[v].z };
+				const Vec3f ceilVtx = { vtx[v].x, getCeilAtXZ(hoveredSector, vtx[v]),  vtx[v].z };
 				const f32 floorDistSq = TFE_Math::distanceSq(&floorVtx, refPos);
 				const f32 ceilDistSq = TFE_Math::distanceSq(&ceilVtx, refPos);
 
@@ -548,21 +548,8 @@ namespace LevelEditor
 			// Do not allow the object to be moved behind the camera.
 			return;
 		}
-
-		f32 y = worldPos.y;
-		snapToGridY(&y);
-		const f32 dy = y - (s_slopePart == HP_FLOOR ? s_slopeSector->floorHeight : s_slopeSector->ceilHeight);
-		if (fabsf(dy) > FLT_EPSILON)
-		{
-			s_slopeSector->flags[0] |= (s_slopePart == HP_FLOOR) ? SEC_FLAGS1_SLOPEDFLOOR : SEC_FLAGS1_SLOPEDCEILING;
-			u32* slopeSectorId = (s_slopePart == HP_FLOOR) ? &s_slopeSector->slope.floorAnchorSectorId : &s_slopeSector->slope.ceilAnchorSectorId;
-			u32* slopeWallId   = (s_slopePart == HP_FLOOR) ? &s_slopeSector->slope.floorAnchorWallId   : &s_slopeSector->slope.ceilAnchorWallId;
-			f32* slopeAngle    = (s_slopePart == HP_FLOOR) ? &s_slopeSector->slope.floorSlopeAngle     : &s_slopeSector->slope.ceilSlopeAngle;
-			
-			*slopeSectorId = anchor->sectorId;
-			*slopeWallId = anchor->wallId;
-			*slopeAngle = TFE_Math::radToDeg(atanf(dy / s_slopeLineDist));
-		}
+		// Compute the slope.
+		computeSlopeFromYPosition(s_slopeSector, s_slopePart, anchor, s_slopeLineDist, worldPos.y);
 	}
 
 	void edit_moveVertices(Vec2f worldPos2d)

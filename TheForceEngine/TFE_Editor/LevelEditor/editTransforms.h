@@ -13,6 +13,8 @@
 
 namespace LevelEditor
 {
+	struct SlopeAnchor;
+
 	enum TransformMode
 	{
 		TRANS_MOVE = 0,
@@ -61,4 +63,7 @@ namespace LevelEditor
 	u32 edit_getTransformRotationHover();
 	f32 edit_getRotationGizmoAngle();
 	f32 edit_getRotationGizmoAngleDegrees();
+
+	// Helper
+	void computeSlopeFromYPosition(EditorSector* sector, HitPart part, const SlopeAnchor* anchor, f32 distToHinge, f32 yValue);
 }
