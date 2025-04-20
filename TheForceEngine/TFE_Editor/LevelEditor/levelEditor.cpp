@@ -89,6 +89,7 @@ namespace LevelEditor
 	static std::vector<FeatureId> s_texMoveFeatures;
 	static f64 s_timeSinceLastUpdate = 0.0;
 	static SlopeAnchor s_slopeAnchor = {};
+	static bool s_slopeAutoHinge = false;
 
 	// The TFE Level Editor format is different than the base format and contains extra 
 	// metadata, etc.
@@ -271,6 +272,7 @@ namespace LevelEditor
 		s_timeSinceLastUpdate = 0.0;
 		s_isUiFocused = false;
 		s_slopeAnchor = {};
+		s_slopeAutoHinge = false;
 
 		Project* project = project_get();
 		if (project && project->active)
@@ -345,6 +347,7 @@ namespace LevelEditor
 		selection_clearHovered();
 		s_featureTex = {};
 		s_slopeAnchor = {};
+		s_slopeAutoHinge = false;
 		s_editMove = false;
 		s_gravity = false;
 		s_showAllLabels = false;
@@ -1447,6 +1450,7 @@ namespace LevelEditor
 				edit_clearSelections();
 			}
 			s_slopeAnchor = {};
+			s_slopeAutoHinge = false;
 		}
 
 		// 2D extrude - hover over line, left click and drag.
@@ -1685,6 +1689,7 @@ namespace LevelEditor
 		}
 		s_view = EDIT_VIEW_2D;
 		s_slopeAnchor = {};
+		s_slopeAutoHinge = false;
 	}
 
 	void setView3D()
@@ -2395,10 +2400,29 @@ namespace LevelEditor
 	{
 		return s_slopeAnchor;
 	}
+
+	bool edit_isSlopeAutoHingeEnabled()
+	{
+		return s_slopeAutoHinge;
+	}
+
+	void setSlopeAutoHinge()
+	{
+		s_slopeAnchor = {};
+		if ((s_editMode != LEDIT_WALL && s_editMode != LEDIT_VERTEX) || s_view != EDIT_VIEW_3D)
+		{
+			s_slopeAutoHinge = false;
+		}
+		else
+		{
+			s_slopeAutoHinge = true;
+		}
+	}
 		
 	void setSlopeAnchor()
 	{
 		s_slopeAnchor = {};
+		s_slopeAutoHinge = false;
 
 		if (s_editMode != LEDIT_WALL || !selection_hasHovered())
 		{
@@ -2637,6 +2661,10 @@ namespace LevelEditor
 		if (isShortcutPressed(SHORTCUT_SLOPE_ANCHOR, 0))
 		{
 			setSlopeAnchor();
+		}
+		else if (isShortcutPressed(SHORTCUT_SLOPE_AUTOHINGE, 0))
+		{
+			setSlopeAutoHinge();
 		}
 	}
 		
@@ -3180,6 +3208,7 @@ namespace LevelEditor
 		if (mode != LEDIT_WALL && mode != LEDIT_VERTEX)
 		{
 			s_slopeAnchor = {};
+			s_slopeAutoHinge = false;
 		}
 	}
 
@@ -3630,7 +3659,11 @@ namespace LevelEditor
 				}
 			}
 
-			if (s_slopeAnchor.wallId >= 0 && s_slopeAnchor.sectorId >= 0)
+			if (edit_isSlopeAutoHingeEnabled())
+			{
+				drawViewportInfo((s32)s_level.sectors.size(), { (s32)s_editWinMapCorner.x + 8, (s32)s_editWinMapCorner.z + 8 }, "Slope Mode: Auto-Hinge", 0, 0, 1.0f, 0xff80ff80);
+			}
+			else if (s_slopeAnchor.wallId >= 0 && s_slopeAnchor.sectorId >= 0)
 			{
 				drawViewportInfo((s32)s_level.sectors.size(), {(s32)s_editWinMapCorner.x + 8, (s32)s_editWinMapCorner.z + 8 }, "Slope Mode: Anchor", 0, 0, 1.0f, 0xff80ff80);
 			}
@@ -4132,6 +4165,7 @@ namespace LevelEditor
 		selection_clear(SEL_ALL);
 		s_featureTex = {};
 		s_slopeAnchor = {};
+		s_slopeAutoHinge = false;
 		clearLevelNoteSelection();
 		guideline_clearSelection();
 	}

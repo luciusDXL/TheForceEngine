@@ -115,6 +115,7 @@ namespace LevelEditor
 	bool edit_hasItemsInClipboard();
 	void edit_clearClipboard();
 	SlopeAnchor edit_getSlopeAnchor();
+	bool edit_isSlopeAutoHingeEnabled();
 
 	// Drag Select: TODO Move?
 	void startDragSelect(s32 mx, s32 my, DragSelectMode mode);

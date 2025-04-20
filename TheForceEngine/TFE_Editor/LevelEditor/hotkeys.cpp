@@ -169,6 +169,7 @@ namespace LevelEditor
 		"LEV_SHORTCUT_MOVE_TO_CEIL",
 		"LEV_SHORTCUT_SELECT_BACKFACES",
 		"LEV_SHORTCUT_SLOPE_ANCHOR",
+		"LEV_SHORTCUT_SLOPE_AUTOHINGE",
 		// Textures.
 		"LEV_SHORTCUT_COPY_TEXTURE",
 		"LEV_SHORTCUT_SET_TEXTURE",
@@ -241,6 +242,7 @@ namespace LevelEditor
 		"Move object to sector ceiling",					// SHORTCUT_MOVE_TO_CEIL
 		"Select backfacing surfaces",						// SHORTCUT_SELECT_BACKFACES
 		"Set wall as the anchor/hinge for sloping floor/ceil",	// SHORTCUT_SLOPE_ANCHOR
+		"Automatically determine the slope hinge",			// SHORTCUT_SLOPE_AUTOHINGE
 		"Copy texture from surface",						// SHORTCUT_COPY_TEXTURE
 		"Set current texture on surface or selection",		// SHORTCUT_SET_TEXTURE
 		"Apply the current texture as a sign at mouse position", // SHORTCUT_SET_SIGN
@@ -462,6 +464,7 @@ namespace LevelEditor
 		addKeyboardShortcut(SHORTCUT_MOVE_TO_CEIL, KEY_C);
 		addKeyboardShortcut(SHORTCUT_SELECT_BACKFACES, KEY_B);
 		addKeyboardShortcut(SHORTCUT_SLOPE_ANCHOR, KEY_P, KEYMOD_CTRL);
+		addKeyboardShortcut(SHORTCUT_SLOPE_AUTOHINGE, KEY_P, KEYMOD_SHIFT);
 		addKeyboardShortcut(SHORTCUT_COPY_TEXTURE, KEY_T, KEYMOD_CTRL);
 		addKeyboardShortcut(SHORTCUT_SET_TEXTURE, KEY_T);
 		addKeyboardShortcut(SHORTCUT_SET_SIGN, KEY_T, KEYMOD_SHIFT);

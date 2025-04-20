@@ -26,4 +26,6 @@ namespace LevelEditor
 	void edit_moveSelectedVertices(Vec2f delta);
 	void edit_moveVertices(Vec2f worldPos2d);
 	void edit_moveVerticesSlope(Vec3f worldPos, const SlopeAnchor* anchor);
+
+	void edit_computeVertexAutoSlopeAnchor(Vec3f worldPos);
 }

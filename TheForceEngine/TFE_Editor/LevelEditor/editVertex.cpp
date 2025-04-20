@@ -498,6 +498,120 @@ namespace LevelEditor
 			sectorToPolygon(sector);
 		}
 	}
+
+	extern SlopeAnchor s_autoSlopeAnchor;
+	struct AdjWall
+	{
+		Vec2f v0, v1;
+		Vec2f wallDir;
+		s32 wallIndex;
+	};
+
+	void edit_computeVertexAutoSlopeAnchor(Vec3f worldPos)
+	{
+		if (!s_moveStarted)
+		{
+			s_autoSlopeAnchor = {};
+
+			EditorSector* sector = nullptr;
+			s32 vertexIndex = -1;
+			if (!selection_getVertex(SEL_INDEX_HOVERED, sector, vertexIndex))
+			{
+				return;
+			}
+
+			const Vec2f v = sector->vtx[vertexIndex];
+			const s32 wallCount = (s32)sector->walls.size();
+			const Vec2f* vtx = sector->vtx.data();
+
+			// First find the adjacent edges.
+			s32 adjEdgeCount = 0;
+			s32 bestFitAdj = -1;
+			AdjWall adjWalls[16];
+			const EditorWall* wall = sector->walls.data();
+			f32 closestDist = FLT_MAX;
+			for (s32 w = 0; w < wallCount && adjEdgeCount < 16; w++, wall++)
+			{
+				if (wall->idx[0] == vertexIndex || wall->idx[1] == vertexIndex)
+				{
+					Vec2f v0 = vtx[wall->idx[0]];
+					Vec2f v1 = vtx[wall->idx[1]];
+
+					adjWalls[adjEdgeCount].v0 = v0;
+					adjWalls[adjEdgeCount].v1 = v1;
+					adjWalls[adjEdgeCount].wallIndex = w;
+
+					Vec2f wallDir = { v1.x - v0.x, v1.z - v0.z };
+					adjWalls[adjEdgeCount].wallDir = TFE_Math::normalize(&wallDir);
+
+					Vec2f closestPoint;
+					Vec2f cursor = { worldPos.x, worldPos.z };
+					TFE_Polygon::closestPointOnLineSegment(v0, v1, cursor, &closestPoint);
+					f32 distSq = TFE_Math::distanceSq(&cursor, &closestPoint);
+					if (distSq < closestDist)
+					{
+						closestDist = distSq;
+						bestFitAdj = adjEdgeCount;
+					}
+
+					adjEdgeCount++;
+				}
+			}
+			if (bestFitAdj < 0) { return; }
+			const Vec2f baseWallNrm = { -adjWalls[bestFitAdj].wallDir.z, adjWalls[bestFitAdj].wallDir.x };
+
+			s32 bestFitAnchor = -1;
+			closestDist = -FLT_MAX;
+			wall = sector->walls.data();
+			for (s32 w = 0; w < wallCount; w++, wall++)
+			{
+				Vec2f v0 = vtx[wall->idx[0]];
+				Vec2f v1 = vtx[wall->idx[1]];
+								
+				bool adjOrParallel = false;
+				for (s32 a = 0; a < adjEdgeCount; a++)
+				{
+					// 1. Cannot be an adjacent edge.
+					if (adjWalls[a].wallIndex == w) { adjOrParallel = true; break; }
+
+					// 2. Cannot be on the same line as an adjacent wall.
+					const Vec2f offset0 = { v0.x - adjWalls[a].v0.x, v0.z - adjWalls[a].v0.z };
+					const Vec2f offset1 = { v1.x - adjWalls[a].v0.x, v1.z - adjWalls[a].v0.z };
+					const f32 len0 = sqrtf(TFE_Math::dot(&offset0, &offset0));
+					const f32 len1 = sqrtf(TFE_Math::dot(&offset1, &offset1));
+					const f32 d0 = TFE_Math::dot(&offset0, &adjWalls[a].wallDir) / len0;
+					const f32 d1 = TFE_Math::dot(&offset1, &adjWalls[a].wallDir) / len1;
+
+					const f32 eps = 0.0001f;
+					if (fabsf(d0) > 1.0f - eps && fabsf(d1) > 1.0f - eps)
+					{
+						adjOrParallel = true;
+					}
+
+					// 3. The hinge should not be "behind" the current wall.
+					if (TFE_Math::dot(&baseWallNrm, &offset0) > 0.0f && TFE_Math::dot(&baseWallNrm, &offset1) > 0.0f)
+					{
+						adjOrParallel = true;
+					}
+				}
+				if (adjOrParallel) { continue; }
+
+				// 4. Closest to being parallel to one of the two adjacent lines.
+				Vec2f wallDir = { v1.x - v0.x, v1.z - v0.z };
+				wallDir = TFE_Math::normalize(&wallDir);
+				f32 dist = fabsf(TFE_Math::dot(&wallDir, &adjWalls[bestFitAdj].wallDir));
+				if (dist > closestDist)
+				{
+					closestDist = dist;
+					bestFitAnchor = w;
+				}
+			}
+			if (bestFitAnchor < 0) { return; }
+
+			s_autoSlopeAnchor.sectorId = sector->id;
+			s_autoSlopeAnchor.wallId = bestFitAnchor;
+		}
+	}
 		
 	void edit_moveVerticesSlope(Vec3f worldPos, const SlopeAnchor* anchor)
 	{
@@ -523,6 +637,11 @@ namespace LevelEditor
 			const f32 s = TFE_Polygon::closestPointOnLine(v0, v1, v, &it);
 			if (s == FLT_MAX) { return; }
 			s_slopeLineDist = TFE_Math::distance(&v, &it);
+			// The distance should be signed, based on which side 'v' of the hinge-line is on.
+			const Vec2f U = { v1.x - v0.x, v1.z - v0.z };
+			const Vec2f V = { v.x - v0.x, v.z - v0.z };
+			const f32 yCross = U.z*V.x - V.z*U.x;
+			if (yCross < 0.0f) { s_slopeLineDist = -s_slopeLineDist; }
 
 			s_moveStarted = true;
 			s_moveStartPos = sector->vtx[vertexIndex];
