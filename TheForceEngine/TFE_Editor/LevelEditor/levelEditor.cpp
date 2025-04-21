@@ -199,6 +199,7 @@ namespace LevelEditor
 	bool worldPosToViewportCoord(Vec3f worldPos, Vec2f* screenPos);
 	EditorSector* findHoverSector2d(Vec2f pos);
 	void alignGridToSelectedEdge();
+	void setSlopeAutoHinge();
 	
 	void handleTextureAlignment();
 
@@ -1752,6 +1753,9 @@ namespace LevelEditor
 
 	bool menu()
 	{
+		const Project* project = project_get();
+		const bool canUseSlopes = project->game != Game_Dark_Forces || project->featureSet != FSET_VANILLA;
+
 		bool menuActive = false;
 		if (ImGui::BeginMenu("Level"))
 		{
@@ -1876,6 +1880,27 @@ namespace LevelEditor
 			{
 				edit_cleanSectors(false);
 			}
+
+			if (canUseSlopes)
+			{
+				ImGui::Separator();
+				bool canAutoHinge = s_editMode == LEDIT_VERTEX || s_editMode == LEDIT_WALL;
+				bool autoHingeEnabled = s_slopeAutoHinge && canAutoHinge;
+				if (!canAutoHinge) { disableNextItem(); }
+				if (ImGui::MenuItem("Enable Slope Auto-Hinge", getShortcutKeyComboText(SHORTCUT_SLOPE_AUTOHINGE), &autoHingeEnabled))
+				{
+					if (autoHingeEnabled)
+					{
+						setSlopeAutoHinge();
+					}
+					else
+					{
+						s_slopeAutoHinge = false;
+					}
+				}
+				if (!canAutoHinge) { enableNextItem(); }
+			}
+
 			ImGui::Separator();
 			if (ImGui::MenuItem("Find Sector", getShortcutKeyComboText(SHORTCUT_FIND_SECTOR), (bool*)NULL))
 			{
@@ -2901,6 +2926,8 @@ namespace LevelEditor
 
 	void updateContextWindow()
 	{
+		const Project* project = project_get();
+		const bool canUseSlopes = project->game != Game_Dark_Forces || project->featureSet != FSET_VANILLA;
 		const bool escapePressed = TFE_Input::keyPressed(KEY_ESCAPE);
 		if (s_contextMenu == CONTEXTMENU_NONE || s_editMode == LEDIT_DRAW || escapePressed)
 		{
@@ -2998,6 +3025,16 @@ namespace LevelEditor
 							}
 						}
 						closeMenu |= contextWindowWallAdjoins(hasAdjoin, hasSolid, leftClick, wallIndicesValid, wallsToTryConnect, wallsToDisconnect);
+
+						if (canUseSlopes)
+						{
+							ImGui::Separator();
+							ImGui::MenuItem("Set As Slope Anchor", getShortcutKeyComboText(SHORTCUT_SLOPE_ANCHOR), (bool*)NULL);
+							if (leftClick && mouseInsideItem())
+							{
+								setSlopeAnchor();
+							}
+						}
 					}
 					else if (type == LEDIT_SECTOR)
 					{
