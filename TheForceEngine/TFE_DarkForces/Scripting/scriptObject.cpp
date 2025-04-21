@@ -9,13 +9,21 @@
 #include <TFE_DarkForces/pickup.h>
 #include <TFE_DarkForces/player.h>
 #include <TFE_DarkForces/mission.h>
+#include <TFE_DarkForces/Actor/actor.h>
 #include <TFE_ForceScript/forceScript.h>
 #include <TFE_ForceScript/scriptAPI.h>
 #include <TFE_Jedi/Level/levelData.h>
 #include <TFE_Jedi/Collision/collision.h>
+#include <TFE_Jedi/Memory/allocator.h>
 
 namespace TFE_DarkForces
 {
+	struct SpecialActor	
+	{
+		Logic logic;
+		PhysicsActor actor;
+	};
+
 	bool isScriptObjectValid(ScriptObject* sObject)
 	{
 		return sObject->m_id >= 0 && sObject->m_id < s_objectRefList.size();
@@ -277,6 +285,87 @@ namespace TFE_DarkForces
 		if (s_nightVisionActive) { disableNightVision(); }
 	}
 
+	// Helper function - gets the first Dispatch actor linked to an object
+	ActorDispatch* getDispatch(SecObject* obj)
+	{
+		Logic** logicPtr = (Logic**)allocator_getHead((Allocator*)obj->logic);
+		while (logicPtr)
+		{
+			Logic* logic = *logicPtr;
+			if (logic->type == LOGIC_DISPATCH)
+			{
+				return (ActorDispatch*)logic;
+			}
+			logicPtr = (Logic**)allocator_getNext((Allocator*)obj->logic);
+		}
+
+		return nullptr;
+	}
+
+	// Helper function - gets the damage module from a dispatch logic
+	DamageModule* getDamageModule(ActorDispatch* dispatch)
+	{
+		for (s32 i = 0; i < ACTOR_MAX_MODULES; i++)
+		{
+			ActorModule* module = dispatch->modules[ACTOR_MAX_MODULES - 1 - i];
+			if (module && module->type == ACTMOD_DAMAGE)
+			{
+				return (DamageModule*)module;
+			}
+		}
+
+		return nullptr;
+	}
+
+	int getHitPoints(ScriptObject* sObject)
+	{
+		if (!doesObjectExist(sObject)) { return -1; }
+		SecObject* obj = TFE_Jedi::s_objectRefList[sObject->m_id].object;
+
+		// First try to find a dispatch logic
+		ActorDispatch* dispatch = getDispatch(obj);
+		if (dispatch)
+		{
+			DamageModule* damageMod = getDamageModule(dispatch);
+			if (damageMod)
+			{
+				return floor16(damageMod->hp);
+			}
+		}
+
+		// Then try other logics
+		Logic** logicPtr = (Logic**)allocator_getHead((Allocator*)obj->logic);
+		while (logicPtr)
+		{
+			Logic* logic = *logicPtr;
+			PhysicsActor* actor = nullptr;
+
+			switch (logic->type)
+			{
+				case LOGIC_BOBA_FETT:
+				case LOGIC_DRAGON:
+				case LOGIC_PHASE_ONE:
+				case LOGIC_PHASE_TWO:
+				case LOGIC_PHASE_THREE:
+				case LOGIC_TURRET:
+				case LOGIC_WELDER:
+				case LOGIC_MOUSEBOT:
+					SpecialActor* data = (SpecialActor*)logic;
+					actor = &data->actor;
+					break;
+			}
+			
+			if (actor)
+			{
+				return floor16(actor->hp);
+			}
+			
+			logicPtr = (Logic**)allocator_getNext((Allocator*)obj->logic);
+		}
+
+		return -1;
+	}
+
 	void ScriptObject::registerType()
 	{
 		s32 res = 0;
@@ -314,5 +403,8 @@ namespace TFE_DarkForces
 		ScriptObjFunc("void delete()", deleteObject);
 		ScriptObjFunc("void addLogic(string)", addLogicToObject);
 		ScriptObjFunc("void setCamera()", setCamera);
+
+		// Logic getters
+		ScriptPropertyGetFunc("int get_hitPoints()", getHitPoints);
 	}
 }
