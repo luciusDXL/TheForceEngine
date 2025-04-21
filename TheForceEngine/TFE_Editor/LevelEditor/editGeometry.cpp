@@ -10,8 +10,10 @@
 #include "guidelines.h"
 #include <TFE_System/math.h>
 #include <TFE_Jedi/Math/core_math.h>
+#include <TFE_Jedi/Level/rsector.h>
 #include <TFE_Editor/errorMessages.h>
 #include <TFE_Editor/editor.h>
+#include <TFE_Editor/editorMath.h>
 #include <TFE_Editor/editorConfig.h>
 #include <TFE_Editor/LevelEditor/Rendering/grid.h>
 #include <TFE_Input/input.h>
@@ -1708,10 +1710,164 @@ namespace LevelEditor
 		polygonToSector(sector0);
 	}
 
+	s32 extrudeSlopedSectorFromRect()
+	{
+		const Project* proj = project_get();
+		const bool dualAdjoinSupported = false; // proj->featureSet != FSET_VANILLA || proj->game != Game_Dark_Forces;
+
+		s_geoEdit.drawStarted = false;
+		s_geoEdit.extrudeEnabled = false;
+		s32 nextWallId = -1;
+
+		const f32 minDelta = 1.0f / 64.0f;
+		EditorSector* sector = &s_level.sectors[s_geoEdit.extrudePlane.sectorId];
+		assert(s_geoEdit.extrudePlane.sectorId >= 0 && s_geoEdit.extrudePlane.sectorId < (s32)s_level.sectors.size());
+
+		// Extrude away - create a new sector.
+		if (s_geoEdit.drawHeight[1] > 0.0f)
+		{
+			EditorWall* extrudeWall = &sector->walls[s_geoEdit.extrudePlane.wallId];
+			assert(s_geoEdit.extrudePlane.wallId >= 0 && s_geoEdit.extrudePlane.wallId < (s32)sector->walls.size());
+
+			// Does the wall already have an ajoin?
+			if (extrudeWall->adjoinId >= 0 && !dualAdjoinSupported)
+			{
+				LE_ERROR("Cannot complete operation:");
+				LE_ERROR("  Dual adjoins are not supported using this FeatureSet.");
+				return -1;
+			}
+			const f32 floorHeight = std::min(s_geoEdit.shape[1].x, s_geoEdit.shape[1].z) + s_geoEdit.extrudePlane.origin.y;
+			const f32 ceilHeight = std::min(s_geoEdit.shape[2].x, s_geoEdit.shape[2].z) + s_geoEdit.extrudePlane.origin.y;
+
+			// When extruding inward, copy the mid-texture to the top and bottom.
+			extrudeWall->tex[WP_BOT] = extrudeWall->tex[WP_MID];
+			extrudeWall->tex[WP_TOP] = extrudeWall->tex[WP_MID];
+			extrudeWall->tex[WP_TOP].offset.z += (ceilHeight - sector->floorHeight);
+
+			const f32 x0 = std::min(s_geoEdit.shape[0].x, s_geoEdit.shape[0].z);
+			const f32 x1 = std::max(s_geoEdit.shape[0].x, s_geoEdit.shape[0].z);
+			const f32 d = s_geoEdit.drawHeight[1];
+			if (fabsf(ceilHeight - floorHeight) >= minDelta && fabsf(x1 - x0) >= minDelta)
+			{
+				// Build the sector shape.
+				EditorSector newSector;
+				const f32 heights[] = { floorHeight, ceilHeight };
+				createNewSector(&newSector, heights);
+				// Copy from the sector being extruded from.
+				newSector.floorTex = sector->floorTex;
+				newSector.ceilTex = sector->ceilTex;
+				newSector.ambient = sector->ambient;
+
+				// Create a slope if needed.
+				// Floor
+				const f32 floor0 = s_geoEdit.shape[1].x;
+				const f32 floor1 = s_geoEdit.shape[1].z;
+				const f32 dx = x1 - x0;
+				if (floor0 != floor1)
+				{
+					newSector.flags[0] |= SEC_FLAGS1_SLOPEDFLOOR;
+					const f32 dy = fabsf(floor1 - floor0);
+
+					newSector.slope.floorAnchorSectorId = newSector.id;
+					newSector.slope.floorSlopeAngle = TFE_Math::radToDeg(atanf(dy / dx));
+					newSector.slope.floorAnchorWallId = (floor0 < floor1) ? 0 : 2;
+				}
+				// Ceiling
+				const f32 ceil0 = s_geoEdit.shape[2].x;
+				const f32 ceil1 = s_geoEdit.shape[2].z;
+				if (ceil0 != ceil1)
+				{
+					newSector.flags[0] |= SEC_FLAGS1_SLOPEDCEILING;
+					const f32 dy = fabsf(ceil1 - ceil0);
+
+					newSector.slope.ceilAnchorSectorId = newSector.id;
+					newSector.slope.ceilSlopeAngle = TFE_Math::radToDeg(atanf(dy / dx));
+					newSector.slope.ceilAnchorWallId = (ceil0 > ceil1) ? 2 : 0;
+				}
+
+				s32 count = 4;
+				newSector.vtx.resize(count);
+				newSector.walls.resize(count);
+				const Vec3f rect[] =
+				{
+					extrudePoint2dTo3d({x0, 0.0f}, s_geoEdit.drawHeight[0]),
+					extrudePoint2dTo3d({x0, 0.0f}, s_geoEdit.drawHeight[1]),
+					extrudePoint2dTo3d({x1, 0.0f}, s_geoEdit.drawHeight[1]),
+					extrudePoint2dTo3d({x1, 0.0f}, s_geoEdit.drawHeight[0])
+				};
+
+				Vec2f* outVtx = newSector.vtx.data();
+				for (s32 v = 0; v < count; v++)
+				{
+					outVtx[v] = { rect[v].x, rect[v].z };
+				}
+
+				EditorWall* wall = newSector.walls.data();
+				for (s32 w = 0; w < count; w++, wall++)
+				{
+					const s32 a = w;
+					const s32 b = (w + 1) % count;
+
+					*wall = {};
+					wall->idx[0] = a;
+					wall->idx[1] = b;
+
+					// Copy from the wall being extruded from.
+					s32 texIndex = extrudeWall->tex[WP_MID].texIndex;
+					if (texIndex < 0) { texIndex = getTextureIndex("DEFAULT.BM"); }
+					wall->tex[WP_MID].texIndex = texIndex;
+					wall->tex[WP_TOP].texIndex = texIndex;
+					wall->tex[WP_BOT].texIndex = texIndex;
+				}
+
+				// Split the wall if needed.
+				s32 extrudeSectorId = s_geoEdit.extrudePlane.sectorId;
+				s32 extrudeWallId = s_geoEdit.extrudePlane.wallId;
+				nextWallId = extrudeWallId;
+				if (x0 > 0.0f)
+				{
+					if (edit_splitWall(extrudeSectorId, extrudeWallId, { rect[0].x, rect[0].z }))
+					{
+						extrudeWallId++;
+						nextWallId++;
+					}
+				}
+				if (x1 < s_geoEdit.extrudePlane.ext.x)
+				{
+					if (edit_splitWall(extrudeSectorId, extrudeWallId, { rect[3].x, rect[3].z }))
+					{
+						nextWallId++;
+					}
+				}
+
+				// Link wall 3 to the wall extruded from.
+				wall = &newSector.walls.back();
+				wall->adjoinId = extrudeSectorId;
+				wall->mirrorId = extrudeWallId;
+
+				EditorWall* exWall = &s_level.sectors[extrudeSectorId].walls[extrudeWallId];
+				exWall->adjoinId = (s32)s_level.sectors.size();
+				exWall->mirrorId = count - 1;
+
+				newSector.groupId = groups_getCurrentId();
+				s_level.sectors.push_back(newSector);
+				sectorToPolygon(&s_level.sectors.back());
+
+				mergeAdjoins(&s_level.sectors.back());
+
+				selection_clearHovered();
+				selection_clear(SEL_GEO | SEL_ENTITY_BIT);
+				infoPanelClearFeatures();
+			}
+		}
+
+		return nextWallId;
+	}
+
 	s32 extrudeSectorFromRect()
 	{
 		const Project* proj = project_get();
-		const bool dualAdjoinSupported = proj->featureSet != FSET_VANILLA || proj->game != Game_Dark_Forces;
+		const bool dualAdjoinSupported = false; // proj->featureSet != FSET_VANILLA || proj->game != Game_Dark_Forces;
 
 		s_geoEdit.drawStarted = false;
 		s_geoEdit.extrudeEnabled = false;
@@ -1931,7 +2087,40 @@ namespace LevelEditor
 
 	std::vector<Vec2f> s_testShape;
 
-	void getExtrudeHeightExtends(f32 x, Vec2f* ext)
+	void getExtrudeHeightExtents(f32 x0, f32 x1, Vec2f* top, Vec2f* bot)
+	{
+		*top = { -FLT_MAX, -FLT_MAX };
+		*bot = { FLT_MAX, FLT_MAX };
+
+		const s32 vtxCount = (s32)s_testShape.size();
+		const Vec2f* vtx = s_testShape.data();
+		for (s32 v = 0; v < vtxCount; v++)
+		{
+			const Vec2f* v0 = &vtx[v];
+			const Vec2f* v1 = &vtx[(v + 1) % vtxCount];
+			// Only check edges with a horizontal component.
+			if (v0->x == v1->x) { continue; }
+			// Only check edges that overlap the slice range (x0, x1).
+			const f32 minX = std::min(v0->x, v1->x);
+			const f32 maxX = std::max(v0->x, v1->x);
+			if (!intervalOverlap(minX, maxX, x0, x1)) { continue; }
+			// Calculate the x intersections for the slice.
+			const f32 u0 = (x0 - v0->x) / (v1->x - v0->x);
+			const f32 u1 = (x1 - v0->x) / (v1->x - v0->x);
+			if (u0 < -FLT_EPSILON || u0 > 1.0f + FLT_EPSILON) { continue; }
+			if (u1 < -FLT_EPSILON || u1 > 1.0f + FLT_EPSILON) { continue; }
+			// Given the x intersections, calculate the y values at those intersections.
+			const f32 y0 = v0->z + u0*(v1->z - v0->z);
+			const f32 y1 = v0->z + u1*(v1->z - v0->z);
+			// Build up the maximum/minimum heights for both ends of the slice.
+			top->x = std::max(top->x, y0);
+			top->z = std::max(top->z, y1);
+			bot->x = std::min(bot->x, y0);
+			bot->z = std::min(bot->z, y1);
+		}
+	}
+
+	void getExtrudeHeightExtents(f32 x, Vec2f* ext)
 	{
 		*ext = { FLT_MAX, -FLT_MAX };
 
@@ -1956,7 +2145,7 @@ namespace LevelEditor
 		}
 	}
 
-	void extrudeSectorFromShape()
+	void extrudeSectorFromShape(bool allowSlopes)
 	{
 		s_geoEdit.drawStarted = false;
 		s_geoEdit.extrudeEnabled = false;
@@ -1977,21 +2166,41 @@ namespace LevelEditor
 		s32 extrudeWallId = s_geoEdit.extrudePlane.wallId;
 
 		s_testShape = s_geoEdit.shape;
-		s_geoEdit.shape.resize(2);
+		s_geoEdit.shape.resize(3);
 		const s32 splitCount = (s32)splits.size();
 		for (s32 i = 0; i < splitCount - 1 && extrudeWallId >= 0; i++)
 		{
-			Vec2f ext;
-			f32 xHalf = (splits[i] + splits[i + 1]) * 0.5f;
-			getExtrudeHeightExtends(xHalf, &ext);
-			if (ext.x < FLT_MAX && ext.z > -FLT_MAX)
+			if (allowSlopes)
 			{
-				s_geoEdit.shape[0] = { splits[i], ext.x };
-				s_geoEdit.shape[1] = { splits[i + 1], ext.z };
-				s_geoEdit.extrudePlane.sectorId = extrudeSectorId;
-				s_geoEdit.extrudePlane.wallId = extrudeWallId;
+				// Given splits[i] and splits[i+1]
+				// Get the maximum and minimum height values.
+				Vec2f top, bot;
+				getExtrudeHeightExtents(splits[i], splits[i+1], &top, &bot);
+				if (top.x < FLT_MAX && top.z < FLT_MAX && bot.x > -FLT_MAX && bot.z > -FLT_MAX)
+				{
+					s_geoEdit.shape[0] = { splits[i], splits[i + 1] };
+					s_geoEdit.shape[1] = bot;
+					s_geoEdit.shape[2] = top;
+					s_geoEdit.extrudePlane.sectorId = extrudeSectorId;
+					s_geoEdit.extrudePlane.wallId = extrudeWallId;
 
-				extrudeWallId = extrudeSectorFromRect();
+					extrudeWallId = extrudeSlopedSectorFromRect();
+				}
+			}
+			else
+			{
+				Vec2f ext;
+				f32 xHalf = (splits[i] + splits[i + 1]) * 0.5f;
+				getExtrudeHeightExtents(xHalf, &ext);
+				if (ext.x < FLT_MAX && ext.z > -FLT_MAX)
+				{
+					s_geoEdit.shape[0] = { splits[i], ext.x };
+					s_geoEdit.shape[1] = { splits[i + 1], ext.z };
+					s_geoEdit.extrudePlane.sectorId = extrudeSectorId;
+					s_geoEdit.extrudePlane.wallId = extrudeWallId;
+
+					extrudeWallId = extrudeSectorFromRect();
+				}
 			}
 		}
 	}
@@ -2192,7 +2401,7 @@ namespace LevelEditor
 				}
 				else if (s_singleClick)
 				{
-					if (s_geoEdit.drawMode == DMODE_SHAPE_VERT) { extrudeSectorFromShape(); }
+					if (s_geoEdit.drawMode == DMODE_SHAPE_VERT) { extrudeSectorFromShape(allowSlopes); }
 					else { extrudeSectorFromRect(); }
 
 					// TODO: Replace with local sector snapshot.
