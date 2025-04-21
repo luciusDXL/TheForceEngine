@@ -141,6 +141,7 @@ namespace LevelEditor
 		writeU32(sector->ambient);
 		writeS32(sector->layer);
 		writeData(sector->flags, sizeof(u32) * 3);
+		writeData(&sector->slope, u32(sizeof(EditorSlope)));
 		writeU32((u32)sector->vtx.size());
 		writeU32((u32)sector->walls.size());
 		writeU32((u32)sector->obj.size());
@@ -162,6 +163,7 @@ namespace LevelEditor
 		writeU32(sector->ambient);
 		writeS32(sector->layer);
 		writeData(sector->flags, sizeof(u32) * 3);
+		writeData(&sector->slope, u32(sizeof(EditorSlope)));
 	}
 
 	void writeLevelNoteToSnapshot(const LevelNote* note)
@@ -234,6 +236,7 @@ namespace LevelEditor
 		sector->ambient = readU32();
 		sector->layer = readS32();
 		readData(sector->flags, sizeof(u32) * 3);
+		readData(&sector->slope, u32(sizeof(EditorSlope)));
 
 		const u32 vtxCount = readU32();
 		const u32 wallCount = readU32();
@@ -260,6 +263,7 @@ namespace LevelEditor
 		sector->ambient = readU32();
 		sector->layer = readS32();
 		readData(sector->flags, sizeof(u32) * 3);
+		readData(&sector->slope, u32(sizeof(EditorSlope)));
 	}
 
 	void readLevelNoteFromSnapshot(LevelNote* note)

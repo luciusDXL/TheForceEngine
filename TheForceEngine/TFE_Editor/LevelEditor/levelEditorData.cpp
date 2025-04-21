@@ -5327,7 +5327,7 @@ namespace LevelEditor
 		
 	void updateSlopeData(EditorSector* sector)
 	{
-		if (s_viewFrame == sector->slopeFrame) { return; }
+		if (!sector || s_viewFrame == sector->slopeFrame) { return; }
 		sector->slopeFrame = s_viewFrame;
 
 		if (sector->flags[0] & SEC_FLAGS1_SLOPEDFLOOR)

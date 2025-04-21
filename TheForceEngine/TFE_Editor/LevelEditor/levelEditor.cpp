@@ -1884,7 +1884,7 @@ namespace LevelEditor
 			if (canUseSlopes)
 			{
 				ImGui::Separator();
-				bool canAutoHinge = s_editMode == LEDIT_VERTEX || s_editMode == LEDIT_WALL;
+				const bool canAutoHinge = (s_editMode == LEDIT_VERTEX || s_editMode == LEDIT_WALL) && s_view == EDIT_VIEW_3D;
 				bool autoHingeEnabled = s_slopeAutoHinge && canAutoHinge;
 				if (!canAutoHinge) { disableNextItem(); }
 				if (ImGui::MenuItem("Enable Slope Auto-Hinge", getShortcutKeyComboText(SHORTCUT_SLOPE_AUTOHINGE), &autoHingeEnabled))
