@@ -57,9 +57,11 @@ namespace TFE_Input
 	int replayGraphicsType = 0;
 	bool playerHeadwave = false;
 	bool playerAutoAim = false; 
+	bool autoEndMission = false;
 	bool vsyncEnabled = false;
 	bool replayInitialized = false;
 	bool cutscenesEnabled = true;
+	bool smoothDeltaTime = true;
 	bool pauseReplay = false; 
 	bool showReplayMsgFrame = false;
 	bool alwaysRecord = false;
@@ -328,6 +330,7 @@ namespace TFE_Input
 		dest->df_jsonAiLogics = source->df_jsonAiLogics;
 		dest->df_pitchLimit = source->df_pitchLimit;
 		dest->df_recordFrameRate = source->df_recordFrameRate;
+		dest->df_autoEndMission = source->df_autoEndMission;
 	}
 
 	// Loads the demo files from the replay folder. 
@@ -833,6 +836,10 @@ namespace TFE_Input
 		playerAutoAim = gameSettings->df_enableAutoaim;
 		gameSettings->df_enableAutoaim = false;
 
+		// Disable auto mission ending - we don't support it for replays yet
+		autoEndMission = gameSettings->df_autoEndMission;
+		gameSettings->df_autoEndMission = false;
+
 		// Enable VSYNC for replay playback - can be overriden during replays
 		vsyncEnabled = TFE_System::getVSync();
 		TFE_System::setVsync(true);
@@ -841,10 +848,16 @@ namespace TFE_Input
 		TFE_Settings_Graphics* graphicSetting = TFE_Settings::getGraphicsSettings();
 		replayGraphicsType = graphicSetting->rendererIndex;
 		graphicSetting->rendererIndex = 1;
+
+		// Preserve the original smoothDeltaTime option
+		// Disable useSmoothDeltaTime for now.
+		// TODO: Add a new version that allows this setting?
+		smoothDeltaTime = graphicSetting->useSmoothDeltaTime;
+		graphicSetting->useSmoothDeltaTime = false;
 		
 		// Preserve the original frame rate
 		gameFrameLimit = TFE_System::frameLimiter_get();
-
+		
 		// Disable cheats that could affect the replay
 		disableReplayCheats();
 
@@ -856,9 +869,11 @@ namespace TFE_Input
 	{
 		// Restore settings to their original state
 		TFE_Settings::getGameSettings()->df_enableAutoaim = playerAutoAim;
+		TFE_Settings::getGameSettings()->df_autoEndMission = autoEndMission;
 		TFE_System::setVsync(vsyncEnabled);
 		TFE_System::frameLimiter_set(gameFrameLimit);
 		TFE_Settings::getGraphicsSettings()->rendererIndex = replayGraphicsType;
+		TFE_Settings::getGraphicsSettings()->useSmoothDeltaTime = smoothDeltaTime;
 
 		if (TFE_Settings::getGameSettings()->df_enableRecordingAll)
 		{

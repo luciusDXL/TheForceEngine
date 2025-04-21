@@ -60,6 +60,9 @@ namespace TFE_Jedi
 	void message_sendToObj(SecObject* obj, MessageType msgType, MessageFunc func);
 	void message_sendToSector(RSector* sector, SecObject* entity, u32 evt, MessageType msgType);
 
+	// Serialisation
+	void level_serializeMessageAddresses(Stream* stream);
+
 	// Optional message values - set these before calling message_XXX() and read inside the message function.
 	extern void* s_msgEntity;
 	extern void* s_msgTarget;

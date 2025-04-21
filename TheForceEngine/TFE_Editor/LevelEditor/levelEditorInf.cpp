@@ -2431,7 +2431,14 @@ namespace LevelEditor
 		ImGui::SameLine(0.0f, 16.0f);
 
 		ImGui::SetNextItemWidth(128.0f);
-		ImGui::Combo(editor_getUniqueLabel(""), &s_infEditor.comboElevCmdIndex, c_elevStopCmdName, TFE_ARRAYSIZE(c_elevStopCmdName));
+		if (project_supportsFeature(FEATURE_FORCE_SCRIPT))
+		{
+			ImGui::Combo(editor_getUniqueLabel(""), &s_infEditor.comboElevCmdIndex, c_elevStopCmdName, TFE_ARRAYSIZE(c_elevStopCmdName));
+		}
+		else
+		{
+			ImGui::Combo(editor_getUniqueLabel(""), &s_infEditor.comboElevCmdIndex, c_elevStopCmdName, TFE_ARRAYSIZE(c_elevStopCmdName) - 1);
+		}
 		setTooltip("Type of stop command to add.");
 	}
 

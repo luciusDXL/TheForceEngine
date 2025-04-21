@@ -186,7 +186,8 @@ namespace TFE_Image
 	{
 		const size_t bytes = num * size;
 		const ptrdiff_t space = context->hidden.mem.stop - context->hidden.mem.here;
-		if (space >= (ptrdiff_t)bytes)
+		// Double-check all of the pointers.
+		if (space >= (ptrdiff_t)bytes && ptr && context->hidden.mem.here)
 		{
 			memcpy(context->hidden.mem.here, ptr, bytes);
 			context->hidden.mem.here += bytes;
@@ -239,9 +240,23 @@ namespace TFE_Image
 			return 0;
 		}
 		memops->write = _sdl_wop_mem;
-		ret = IMG_SavePNG_RW(surf, memops, 0);
+
+		// I'm not a fan of this, but a few people on Linux have run into crashes executing this function.
+		// Given it is from a third-party library, there is only so much I can do.
+		bool imageSaveSuccess = true;
+		try
+		{
+			ret = IMG_SavePNG_RW(surf, memops, 0);
+		}
+		catch (std::exception& ex)
+		{
+			written = 0;
+			imageSaveSuccess = false;
+			TFE_System::logWrite(LOG_ERROR, "Serialization", "Failed to generate a PNG for the save file, IMG_SavePNG_RW failed with exception '%s'", ex.what());
+		};
+
 		SDL_FreeSurface(surf);
-		if (ret == 0)
+		if (ret == 0 && imageSaveSuccess)
 		{
 			written = memops->hidden.mem.here - memops->hidden.mem.base;
 		}

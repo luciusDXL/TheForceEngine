@@ -35,6 +35,12 @@ namespace TFE_Editor
 		PFLAG_TRUE_COLOR = FLAG_BIT(0),
 	};
 
+	enum FeatureSupport
+	{
+		FEATURE_FORCE_SCRIPT = 0,
+		FEATURE_SLOPES,
+	};
+
 	struct Project
 	{
 		// Use raw character strings for ease of use and to reduce memory allocations.
@@ -51,6 +57,7 @@ namespace TFE_Editor
 		FeatureSet featureSet = FSET_VANILLA;
 
 		u32 flags = PFLAG_NONE;	// See ProjectFlags
+		char levelToOpen[TFE_MAX_PATH] = "";
 	};
 
 	Project* project_get();
@@ -63,4 +70,5 @@ namespace TFE_Editor
 	bool project_load(const char* filepath);
 	bool project_editUi(bool newProject);
 	bool project_exportUi();
+	bool project_supportsFeature(FeatureSupport feature);
 }

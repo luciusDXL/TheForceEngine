@@ -675,7 +675,7 @@ namespace LevelEditor
 
 	void edit_checkForWallHit3d(RayHitInfo* info, EditorSector*& wallSector, s32& wallIndex, HitPart& part, const EditorSector* hoverSector)
 	{
-		// See if we are close enough to "hover" a vertex
+		// See if we are close enough to "hover" a wall
 		wallIndex = -1;
 		if (info->hitWallId >= 0 && info->hitSectorId >= 0)
 		{
@@ -697,17 +697,18 @@ namespace LevelEditor
 			{
 				const EditorWall* wall = &hoverSector->walls[wallIndex];
 				const EditorSector* next = wall->adjoinId >= 0 ? &s_level.sectors[wall->adjoinId] : nullptr;
+				const u32 adjType = getAdjoinType(hoverSector, wall);
 				if (!next)
 				{
 					part = HP_MID;
 				}
 				else if (info->hitPart == HP_FLOOR)
 				{
-					part = (next->floorHeight > hoverSector->floorHeight) ? HP_BOT : HP_MID;
+					part = (adjType & ADJ_TYPE_BOT) ? HP_BOT : HP_MID;
 				}
 				else if (info->hitPart == HP_CEIL)
 				{
-					part = (next->ceilHeight < hoverSector->ceilHeight) ? HP_TOP : HP_MID;
+					part = (adjType & ADJ_TYPE_TOP) ? HP_TOP : HP_MID;
 				}
 			}
 			else

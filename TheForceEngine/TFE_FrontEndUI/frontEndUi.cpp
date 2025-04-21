@@ -1175,10 +1175,11 @@ namespace TFE_FrontEndUI
 		//////////////////////////////////////////////////////
 		ImGui::Separator();
 
+		// TO DO - switch setting options based on the game. 
 		TFE_Settings_Game* gameSettings = TFE_Settings::getGameSettings();
 
-		ImGui::PushFont(s_dialogFont);
-		ImGui::LabelText("##ConfigLabel", "Dark Forces Settings");
+		ImGui::PushFont(s_versionFont);
+		ImGui::LabelText("##ConfigLabel", "Game Settings");
 		ImGui::PopFont();
 
 		bool disableFightMusic = gameSettings->df_disableFightMusic;
@@ -1216,13 +1217,25 @@ namespace TFE_FrontEndUI
 		{
 			gameSettings->df_bobaFettFacePlayer = bobaFettFacePlayer;
 		}
-		
+
 		bool smoothVUEs = gameSettings->df_smoothVUEs;
 		if (ImGui::Checkbox("Smooth VUEs", &smoothVUEs))
 		{
 			gameSettings->df_smoothVUEs = smoothVUEs;
 		}
 
+		bool autoEndMission = gameSettings->df_autoEndMission;
+		if (ImGui::Checkbox("Automatically end mission when objectives are complete", &autoEndMission))
+		{
+			gameSettings->df_autoEndMission = autoEndMission;
+		}
+
+		ImGui::Separator();
+
+		ImGui::PushFont(s_versionFont);
+		ImGui::LabelText("##ConfigLabel", "Engine Settings");
+		ImGui::PopFont();
+		
 		bool ignoreInfLimit = gameSettings->df_ignoreInfLimit;
 		if (ImGui::Checkbox("Remove INF Item Limit (requires restart)", &ignoreInfLimit))
 		{
@@ -1251,7 +1264,7 @@ namespace TFE_FrontEndUI
 		if (ImGui::Checkbox("Enable custom AI logics from JSON files", &jsonAiLogics))
 		{
 			gameSettings->df_jsonAiLogics = jsonAiLogics;
-		}
+		}		
 
 		if (s_drawNoGameDataMsg)
 		{
@@ -1328,6 +1341,7 @@ namespace TFE_FrontEndUI
 			ImGui::EndPopup();
 		}
 
+		ImGui::Separator();
 		ImGui::Spacing();
 		ImGui::PushFont(s_versionFont);
 		ImGui::LabelText("##ConfigLabel", "Cheats");
@@ -3013,6 +3027,9 @@ namespace TFE_FrontEndUI
 		ImGui::PushFont(s_dialogFont);
 		ImGui::LabelText("##ConfigLabel", "Rendering");
 		ImGui::PopFont();
+
+		// Smooth deltatime.
+		ImGui::Checkbox("Smooth Deltatime", &graphics->useSmoothDeltaTime);
 
 		// 3DO normal fix
 		ImGui::Checkbox("3DO Normal Fix (Restart Required)", &graphics->fix3doNormalOverflow);

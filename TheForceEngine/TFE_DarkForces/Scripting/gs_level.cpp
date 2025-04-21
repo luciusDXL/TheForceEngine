@@ -48,6 +48,30 @@ namespace TFE_DarkForces
 		return sector;
 	}
 
+	ScriptSector GS_Level::getSectorByName(std::string name)
+	{
+		const char* sectorName = name.c_str();
+		
+		MessageAddress* msgAddr = message_getAddress(sectorName);
+		if (msgAddr)
+		{
+			u32 sectorCount = s_levelState.sectorCount;
+			for (u32 s = 0; s < sectorCount; s++)
+			{
+				RSector* sec = &s_levelState.sectors[s];
+				if (sec == msgAddr->sector)
+				{
+					ScriptSector sector(s);
+					return sector;
+				}
+			}
+		}
+
+		// Could not find the sector
+		ScriptSector sector(-1);
+		return sector;
+	}
+
 	ScriptElev GS_Level::getElevator(s32 id)
 	{
 		if (id < 0 || id >= allocator_getCount(s_infSerState.infElevators))
@@ -192,6 +216,9 @@ namespace TFE_DarkForces
 			ScriptEnum("SECTOR_FLAG1_SAFE_SECTOR",     SEC_FLAGS1_SAFESECTOR);
 			ScriptEnum("SECTOR_FLAG1_PLAYER",          SEC_FLAGS1_PLAYER);
 			ScriptEnum("SECTOR_FLAG1_SECRET",          SEC_FLAGS1_SECRET);
+			// Outlaws
+			ScriptEnum("SECTOR_FLAG1_SLOPEDFLOOR",	   SEC_FLAGS1_SLOPEDFLOOR);
+			ScriptEnum("SECTOR_FLAG1_SLOPEDCEILING",   SEC_FLAGS1_SLOPEDCEILING);
 
 			ScriptEnumRegister("WallFlags1");
 			ScriptEnum("WALL_FLAGS1_TRANSPARENT_MIDTEX", WF1_ADJ_MID_TEX);
@@ -227,6 +254,7 @@ namespace TFE_DarkForces
 
 			// Functions
 			ScriptObjMethod("Sector getSector(int)", getSectorById);
+			ScriptObjMethod("Sector getSector(string)", getSectorByName);
 			ScriptObjMethod("Elevator getElevator(int)", getElevator);
 			ScriptObjMethod("void findConnectedSectors(Sector initSector, uint, array<Sector>&)", findConnectedSectors);
 

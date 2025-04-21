@@ -2108,6 +2108,7 @@ namespace LevelEditor
 						{
 							s_geoEdit.drawStarted = false;
 							s_geoEdit.extrudeEnabled = false;
+							s_geoEdit.parentSector = nullptr;
 						}
 					}
 					else
@@ -2176,6 +2177,7 @@ namespace LevelEditor
 						{
 							s_geoEdit.drawStarted = false;
 							s_geoEdit.extrudeEnabled = false;
+							s_geoEdit.parentSector = nullptr;
 						}
 					}
 				}
@@ -2508,17 +2510,20 @@ namespace LevelEditor
 				s_grid.height = hoverSector->floorHeight;
 				if (s_view == EDIT_VIEW_3D)
 				{
-					if (fabsf(s_cursor3d.y - hoverSector->floorHeight) < FLT_EPSILON)
+					if (fabsf(s_cursor3d.y - getFloorAtXZ(hoverSector, { s_cursor3d.x, s_cursor3d.z })) < FLT_EPSILON)
 					{
 						s_grid.height = hoverSector->floorHeight;
+						s_geoEdit.parentSector = hoverSector;
 					}
-					else if (fabsf(s_cursor3d.y - hoverSector->ceilHeight) < FLT_EPSILON)
+					else if (fabsf(s_cursor3d.y - getCeilAtXZ(hoverSector, { s_cursor3d.x, s_cursor3d.z })) < FLT_EPSILON)
 					{
 						s_grid.height = hoverSector->ceilHeight;
+						s_geoEdit.parentSector = hoverSector;
 					}
 					else if (hitInfo->hitWallId >= 0 && (hitInfo->hitPart == HP_BOT || hitInfo->hitPart == HP_TOP || hitInfo->hitPart == HP_MID))
 					{
 						s_geoEdit.extrudeEnabled = true;
+						s_geoEdit.parentSector = hoverSector;
 
 						// Extrude from wall.
 						s_geoEdit.extrudePlane.sectorId = hoverSector->id;
@@ -3132,5 +3137,115 @@ namespace LevelEditor
 		}
 
 		return len;
+	}
+		
+	f32 slope_getHeightAtXZ(const SlopedPlane* plane, Vec2f pos)
+	{
+		return plane->dp - pos.x*plane->normal.x - pos.z*plane->normal.z;
+	}
+
+	f32 slope_getHeightDeltaByDir(const SlopedPlane* plane, Vec2f dir)
+	{
+		return -(dir.x*plane->normal.x + dir.z*plane->normal.z);
+	}
+
+	SlopedPlane slope_calculatePlane(u32 anchorSectorId, u32 anchorWallId, u32 slopedSectorId, f32 height, f32 angle)
+	{
+		SlopedPlane plane = { 0 };
+		if (anchorSectorId >= (u32)s_level.sectors.size() || slopedSectorId >= (u32)s_level.sectors.size()) { return plane; }
+
+		const EditorSector* anchorSector = &s_level.sectors[anchorSectorId];
+		if (anchorWallId >= (u32)anchorSector->walls.size()) { return plane; }
+
+		const EditorWall* wall = &anchorSector->walls[anchorWallId];
+		plane.hingeSector = anchorSectorId;
+		plane.hingeWall = anchorWallId;
+		plane.angle = angle;
+
+		const Vec3f v0 = { anchorSector->vtx[wall->idx[0]].x, height, anchorSector->vtx[wall->idx[0]].z };
+		const Vec3f v1 = { anchorSector->vtx[wall->idx[1]].x, height, anchorSector->vtx[wall->idx[1]].z };
+		plane.hinge[0] = v0;
+		plane.hinge[1] = v1;
+
+		// Note: math intentionally mirrors Outlaws behavior.
+		const Vec3f basePoint = v1;
+
+		// vect1 is on rotation axis (in XZ plane) so that sector is on your left
+		const Vec3f vect1 = { v0.x - v1.x, v0.y - v1.y, v0.z - v1.z };
+		const f32 wallLen = sqrtf(vect1.x*vect1.x + vect1.z*vect1.z);
+
+		// vect2 is orthogonal to vect1, and in sloped plane
+		Vec3f vect2 = { -vect1.z, 0.0f, vect1.x };
+
+		// Get third point on plane
+		const Vec3f planePoint =
+		{
+			basePoint.x + vect2.x,
+			basePoint.y + wallLen * tanf(angle),
+			basePoint.z + vect2.z
+		};
+
+		// vect2 is orthogonal to vect1, and in sloped plane
+		vect2.x = planePoint.x - basePoint.x;
+		vect2.y = planePoint.y - basePoint.y;
+		vect2.z = planePoint.z - basePoint.z;
+
+		// This is the true normal.
+		Vec3f cross =
+		{
+			vect1.z*vect2.y - vect2.z*vect1.y,
+			vect1.x*vect2.z - vect2.x*vect1.z,
+			vect1.y*vect2.x - vect2.y*vect1.x
+		};
+		
+		// Vertical slopes (normal.y == 0) are not allowed.
+		if (fabsf(cross.y) < FLT_EPSILON)
+		{
+			plane.normal = { 0 };
+			plane.dp = -height;
+			plane.s = { 1.0f, 0.0f };
+			plane.t = { 0.0f, 1.0f };
+			plane.sDotRightPoint = 0.0f;
+			plane.tDotRightPoint = 0.0f;
+			plane.minHeight = height;
+			plane.maxHeight = height;
+			plane.plane = { 0.0f, 1.0f, 0.0f, -height };
+			return plane;
+		}
+		const Vec3f trueNormal = TFE_Math::normalize(&cross);
+		const f32 d = -TFE_Math::dot(&trueNormal, &basePoint);
+		plane.plane = { trueNormal.x, trueNormal.y, trueNormal.z, d };
+
+		// normalize so normalY = 1
+		const f32 invCrossY = 1.0f / cross.y;
+		const f32 normalX = cross.x * invCrossY;
+		const f32 normalZ = cross.z * invCrossY;
+		plane.normal = { normalX, normalZ };
+
+		// compute useful dotProd (remember normalY = 1)
+		plane.dp = basePoint.x*normalX + basePoint.y + basePoint.z*normalZ;
+
+		// compute the coordinate space (hinge = s axis).
+		plane.s = TFE_Math::normalize(&vect1);
+		plane.sDotRightPoint = vect1.x*basePoint.x + vect1.y*basePoint.y + vect1.z*basePoint.z;
+
+		plane.t = TFE_Math::normalize(&vect2);
+		plane.tDotRightPoint = vect2.x*basePoint.x + vect2.y*basePoint.y + vect2.z*basePoint.z;
+
+		const EditorSector* slopeSector = &s_level.sectors[slopedSectorId];
+		const Vec2f* vtx = slopeSector->vtx.data();
+		const s32 vtxCount = (s32)slopeSector->vtx.size();
+
+		f32 minHeight = slope_getHeightAtXZ(&plane, vtx[0]);
+		f32 maxHeight = minHeight;
+		for (s32 i = 1; i < vtxCount; i++)
+		{
+			const f32 height = slope_getHeightAtXZ(&plane, vtx[i]);
+			minHeight = std::min(minHeight, height);
+			maxHeight = std::max(maxHeight, height);
+		}
+		plane.minHeight = minHeight;
+		plane.maxHeight = maxHeight;
+		return plane;
 	}
 }

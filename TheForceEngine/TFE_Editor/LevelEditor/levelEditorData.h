@@ -110,6 +110,35 @@ namespace LevelEditor
 		s32 wallLight = 0;
 	};
 
+	struct EditorSlope
+	{
+		u32 floorAnchorSectorId = 0;
+		u32 floorAnchorWallId = 0;
+		f32 floorSlopeAngle = 0.0f;
+
+		u32 ceilAnchorSectorId = 0;
+		u32 ceilAnchorWallId = 0;
+		f32 ceilSlopeAngle = 0.0f;
+	};
+
+	// This structure closely mirrors the same structure in Outlaws, with a few editor tweaks.
+	struct SlopedPlane
+	{
+		s32 hingeSector = -1;   // Indices since pointers can change with editing.
+		s32 hingeWall = -1;
+		f32 angle = 0.0f;		// Radians.
+		f32 minHeight = 0.0f;
+		f32 maxHeight = 0.0f;
+		f32 dp = 0.0f;
+		f32 sDotRightPoint = 0.0f;
+		f32 tDotRightPoint = 0.0f;
+		Vec2f normal = { 0 };	// Assumes normal.y = 1.0
+		Vec3f hinge[2] = { 0 };	// Two hinge points.
+		Vec3f s = { 0 };
+		Vec3f t = { 0 };		// coordinate space.
+		Vec4f plane = { 0 };	// actual plane for intersections.
+	};
+
 	struct EditorSector
 	{
 		s32 id = 0;
@@ -131,6 +160,7 @@ namespace LevelEditor
 		std::vector<Vec2f> vtx;
 		std::vector<EditorWall> walls;
 		std::vector<EditorObject> obj;
+		EditorSlope slope = {};
 
 		// Bounds
 		Vec3f bounds[2];
@@ -138,6 +168,11 @@ namespace LevelEditor
 
 		// Polygon
 		Polygon poly;
+
+		// Slopes - Derived data, do not serialize.
+		u32 slopeFrame = 0;
+		SlopedPlane floorPlane = {};
+		SlopedPlane ceilPlane = {};
 
 		// For searches.
 		u32 searchKey = 0;
@@ -153,6 +188,13 @@ namespace LevelEditor
 		GLFLAG_NONE = 0,
 		GLFLAG_LIMIT_HEIGHT = FLAG_BIT(0),
 		GLFLAG_DISABLE_SNAPPING = FLAG_BIT(1),
+	};
+
+	enum AdjType
+	{
+		ADJ_TYPE_NONE = 0,
+		ADJ_TYPE_TOP = FLAG_BIT(0),
+		ADJ_TYPE_BOT = FLAG_BIT(1),
 	};
 
 	struct GuidelineEdge
@@ -316,6 +358,7 @@ namespace LevelEditor
 	bool getOverlappingSectorsPt(const Vec3f* pos, SectorList* result, f32 padding = 0.0f);
 	// Get all sectors that have bounds that overlap the input bounds.
 	bool getOverlappingSectorsBounds(const Vec3f bounds[2], SectorList* result);
+	void fixupLevel(bool createSnapshot = true);
 	// Helpers
 	bool aabbOverlap3d(const Vec3f* aabb0, const Vec3f* aabb1);
 	bool aabbOverlap2d(const Vec3f* aabb0, const Vec3f* aabb1);
@@ -343,6 +386,13 @@ namespace LevelEditor
 
 	bool sector_inViewRange(const EditorSector* sector);
 	bool sector_onActiveLayer(const EditorSector* sector);
+
+	void updateSlopeData(EditorSector* sector);
+	f32 getFloorAtXZ(const EditorSector* sector, Vec2f pos);
+	f32 getCeilAtXZ(const EditorSector* sector, Vec2f pos);
+	u32 getAdjoinType(const EditorSector* sector, const EditorWall* wall);
+
+	bool rayPlaneIntersection(const Vec3f& origin, const Vec3f& dir, const Vec4f& plane, f32& dist);
 
 	inline bool sector_isHidden(EditorSector* sector)
 	{

@@ -562,6 +562,53 @@ namespace LevelEditor
 			}
 		}
 	}
+
+	void edit_placeEntity(s32 id, bool replaceObj)
+	{
+		const s32 curEntityId = s_selectedEntity;
+		s_selectedEntity = id;
+
+		bool objReplaced = false;
+		// Replace an existing object instead of placing one.
+		if (replaceObj && s_editMode == LEDIT_ENTITY && selection_hasHovered())
+		{
+			s32 objIndex = -1;
+			EditorSector* sector = nullptr;
+			selection_get(SEL_INDEX_HOVERED, sector, objIndex);
+			if (sector && objIndex >= 0 && objIndex < (s32)sector->obj.size())
+			{
+				objReplaced = true;
+				EditorObject* obj = &sector->obj[objIndex];
+				obj->entityId = addEntityToLevel(&s_entityDefList[s_selectedEntity]);
+
+				cmd_objectListSnapshot(LName_ReplaceObject, sector->id);
+			}
+		}
+
+		if (!objReplaced)
+		{
+			if (s_view == EDIT_VIEW_2D)
+			{
+				s32 mx, my;
+				TFE_Input::getMousePos(&mx, &my);
+				Vec2f worldPos = mouseCoordToWorldPos2d(mx, my);
+				handleEntityInsert({ worldPos.x, s_cursor3d.y, worldPos.z }, nullptr, true);
+			}
+			else
+			{
+				RayHitInfo hitInfo;
+				Ray ray = { s_camera.pos, s_rayDir, 1000.0f };
+				const bool hitBackfaces = isShortcutHeld(SHORTCUT_SELECT_BACKFACES);
+				const bool rayHit = traceRay(&ray, &hitInfo, hitBackfaces, s_sectorDrawMode == SDM_TEXTURED_CEIL || s_sectorDrawMode == SDM_TEXTURED_FLOOR);
+				if (rayHit) { s_cursor3d = hitInfo.hitPos; }
+				else { s_cursor3d = rayGridPlaneHit(s_camera.pos, s_rayDir); }
+
+				handleEntityInsert(s_cursor3d, &hitInfo, true);
+			}
+		}
+
+		s_selectedEntity = curEntityId;
+	}
 			
 	void handleHoverAndSelection(RayHitInfo* info)
 	{
@@ -608,7 +655,7 @@ namespace LevelEditor
 				}
 				else
 				{
-					// See if we are close enough to "hover" a vertex
+					// See if we are close enough to "hover" a wall
 					s32 wallIndex = info->hitWallId;
 					HitPart hoveredPart = info->hitPart;
 					edit_checkForWallHit3d(info, hoveredSector, wallIndex, hoveredPart, hoveredSector);
@@ -1531,7 +1578,7 @@ namespace LevelEditor
 				if (traceRay(&ray, &hitInfo, false, false))
 				{
 					EditorSector* colSector = &s_level.sectors[hitInfo.hitSectorId];
-					f32 floorHeight = colSector->floorHeight;
+					f32 floorHeight = getFloorAtXZ(colSector, {s_camera.pos.x, s_camera.pos.z});
 					if (colSector->secHeight < 0) { floorHeight += colSector->secHeight; }
 					else if (colSector->secHeight > 0)
 					{
@@ -1672,6 +1719,27 @@ namespace LevelEditor
 		return popupOpen;
 	}
 
+	void edit_newLevel(EditorPopup popupId)
+	{
+		Project* project = project_get();
+		if (project && project->levelToOpen[0] != 0)
+		{
+			char levelFile[TFE_MAX_PATH];
+			sprintf(levelFile, "%s.LEV", project->levelToOpen);
+
+			Asset* asset = AssetBrowser::findAsset(levelFile, AssetType::TYPE_LEVEL);
+			init(asset);
+		}
+	}
+
+	void edit_openLevel(EditorPopup popupId)
+	{
+		const char* assetName = AssetBrowser::getSelectedAssetName();
+		if (!assetName) { return; }
+		Asset* asset = AssetBrowser::findAsset(assetName, AssetType::TYPE_LEVEL);
+		init(asset);
+	}
+
 	bool menu()
 	{
 		bool menuActive = false;
@@ -1687,6 +1755,30 @@ namespace LevelEditor
 
 			// Disable Save/Backup when there is no project.
 			bool projectActive = project_get()->active;
+			if (!projectActive) { disableNextItem(); }
+			{
+				if (ImGui::MenuItem("New", NULL, (bool*)NULL))
+				{
+					setPopupEndCallback(edit_newLevel);
+					openEditorPopup(POPUP_NEW_LEVEL);
+				}
+				if (ImGui::MenuItem("Import", NULL, (bool*)NULL))
+				{
+
+				}
+			}
+			if (!projectActive) { enableNextItem(); }
+			if (ImGui::MenuItem("Open", NULL, (bool*)NULL))
+			{
+				setPopupEndCallback(edit_openLevel);
+				openEditorPopup(TFE_Editor::POPUP_BROWSE, TYPE_LEVEL, nullptr);
+
+				// No project - Open Vanilla / Resources
+				// Project - Prefer to open Project maps.
+			}
+			
+			ImGui::Separator();
+
 			if (!projectActive) { disableNextItem(); }
 			{
 				if (ImGui::MenuItem("Save", getShortcutKeyComboText(SHORTCUT_SAVE), (bool*)NULL))
@@ -3291,6 +3383,43 @@ namespace LevelEditor
 			const ImVec2 itemPos = ImGui::GetItemRectMin();
 			s_editWinMapCorner = { itemPos.x, itemPos.y };
 
+			// Drag and drop.
+			if (ImGui::BeginDragDropTarget())
+			{
+				if (s_editMode == LEDIT_ENTITY)
+				{
+					const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("Entity", ImGuiDragDropFlags_AcceptNoDrawDefaultRect);
+					if (payload)
+					{
+						const s32 index = *((s32*)payload->Data);
+						if (index >= 0)
+						{
+							edit_placeEntity(index, TFE_Input::keyModDown(KEYMOD_SHIFT));
+						}
+					}
+				}
+				else
+				{
+					const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("Texture", ImGuiDragDropFlags_AcceptNoDrawDefaultRect);
+					if (payload)
+					{
+						const s32 index = *((s32*)payload->Data);
+						if (index >= 0)
+						{
+							if (TFE_Input::keyModDown(KEYMOD_SHIFT))
+							{
+								edit_applySignToSelection(index);
+							}
+							else
+							{
+								edit_applyTextureToSelection(index, nullptr);
+							}
+						}
+					}
+				}
+				ImGui::EndDragDropTarget();
+			}
+
 			// Display items on top of the viewport.
 			s32 mx, my;
 			TFE_Input::getMousePos(&mx, &my);
@@ -4602,6 +4731,8 @@ namespace LevelEditor
 			showMessageBox("Error", "You need to set a source port before you can test.\nOpen the Level menu and choose Test Options to set.");
 			return;
 		}
+		// Fix-up any issues that may cause a crash.
+		fixupLevel();
 
 		StartPoint start = {};
 		start.pos = s_camera.pos;

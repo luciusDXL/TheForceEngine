@@ -66,6 +66,7 @@ namespace TFE_DarkForces
 namespace LevelEditor
 {
 	const char* c_newLine = "\r\n";
+	const f32 adjoinEps = 0.0001f;
 
 	// Sector attributes, geometry not included.
 	struct SectorAttrib
@@ -101,6 +102,7 @@ namespace LevelEditor
 	EditorLevel s_level = {};
 
 	extern AssetList s_levelTextureList;
+	extern u32 s_viewFrame;
 
 	enum Constants
 	{
@@ -855,6 +857,7 @@ namespace LevelEditor
 		}
 		loadLevelObjFromAsset(asset);
 		loadLevelInfFromAsset(asset);
+		fixupLevel(false);
 
 		return true;
 	}
@@ -1156,6 +1159,7 @@ namespace LevelEditor
 		}
 
 		file.close();
+		fixupLevel(false);
 		
 		return true;
 	}
@@ -1334,6 +1338,7 @@ namespace LevelEditor
 			LE_ERROR("Cannot save if no project is open.");
 			return false;
 		}
+		fixupLevel();
 
 		char filePath[TFE_MAX_PATH];
 		sprintf(filePath, "%s/%s.tfl", project->path, s_level.slot.c_str());
@@ -3904,7 +3909,26 @@ namespace LevelEditor
 
 		return rayAABBIntersection(&aabbRay, bounds, hitDist);
 	}
-		
+
+	bool planeIntersectionInPolygon(EditorSector* sector, Vec3f hitPoint, f32 dist, HitPart part, f32& overallClosestHit, RayHitInfo* hitInfo)
+	{
+		bool rayInSector = false;
+		// The ray hit the plane, but is it inside of the sector polygon?
+		Vec2f testPt = { hitPoint.x, hitPoint.z };
+		if (TFE_Polygon::pointInsidePolygon(&sector->poly, testPt))
+		{
+			overallClosestHit = dist;
+			hitInfo->hitSectorId = sector->id;
+			hitInfo->hitWallId = -1;
+			hitInfo->hitObjId = -1;
+			hitInfo->hitPart = part;
+			hitInfo->hitPos = hitPoint;
+			hitInfo->dist = overallClosestHit;
+			rayInSector = true;
+		}
+		return rayInSector;
+	}
+			
 	// Return true if a hit is found.
 	bool traceRay(const Ray* ray, RayHitInfo* hitInfo, bool flipFaces, bool canHitSigns, bool canHitObjects)
 	{
@@ -3935,6 +3959,8 @@ namespace LevelEditor
 			// Check the bounds.
 			//if (!rayHitAABB(ray, sector->bounds)) { continue; }
 
+			const bool isSectorSloped = (sector->flags[0] & SEC_FLAGS1_SLOPEDFLOOR) != 0 || (sector->flags[0] & SEC_FLAGS1_SLOPEDCEILING) != 0;
+
 			// Now check against the walls.
 			const u32 wallCount = (u32)sector->walls.size();
 			const EditorWall* wall = sector->walls.data();
@@ -3942,6 +3968,7 @@ namespace LevelEditor
 			f32 closestHit = FLT_MAX;
 			s32 closestWallId = -1;
 			bool rayInSector = false;
+			HitPart closestPart = HP_MID;
 			for (u32 w = 0; w < wallCount; w++, wall++)
 			{
 				const Vec2f* v0 = &vtx[wall->idx[0]];
@@ -3950,24 +3977,106 @@ namespace LevelEditor
 				if (flipFaces && TFE_Math::dot(&dirxz, &nrm) > 0.0f) { continue; }
 				else if (!flipFaces && TFE_Math::dot(&dirxz, &nrm) < 0.0f) { continue; }
 
+				EditorSector* next = nullptr;
+				bool isSloped = isSectorSloped;
+				if (wall->adjoinId >= 0 && wall->adjoinId < (s32)s_level.sectors.size())
+				{
+					next = &s_level.sectors[wall->adjoinId];
+					isSloped = isSloped || (next->flags[0] & SEC_FLAGS1_SLOPEDFLOOR) != 0 || (next->flags[0] & SEC_FLAGS1_SLOPEDCEILING) != 0;
+				}
+
 				f32 s, t;
 				if (TFE_Math::lineSegmentIntersect(&p0xz, &p1xz, v0, v1, &s, &t))
 				{
 					if (s < closestHit)
 					{
 						const f32 yAtHit = origin.y + ray->dir.y * s * maxDist;
-						if (yAtHit > sector->floorHeight - FLT_EPSILON && yAtHit < sector->ceilHeight + FLT_EPSILON)
+						if (isSloped)
+						{
+							const f32 f00 = getFloorAtXZ(sector, *v0);
+							const f32 f01 = getFloorAtXZ(sector, *v1);
+							const f32 c00 = getCeilAtXZ(sector, *v0);
+							const f32 c01 = getCeilAtXZ(sector, *v1);
+
+							const f32 dx = v1->x - v0->x;
+							const f32 dz = v1->z - v0->z;
+							f32 u = 0.0f;
+							if (fabsf(dx) >= fabsf(dz))
+							{
+								u = (origin.x + ray->dir.x * s * maxDist - v0->x) / dx;
+							}
+							else
+							{
+								u = (origin.z + ray->dir.z * s * maxDist - v0->z) / dz;
+							}
+							u = std::max(0.0f, std::min(1.0f, u));
+							const f32 floor = f00 * (1.0f - u) + f01 * u;
+							const f32 ceil = c00 * (1.0f - u) + c01 * u;
+							if (yAtHit > floor - FLT_EPSILON && yAtHit < ceil + FLT_EPSILON)
+							{
+								bool canHit = true;
+								HitPart part = HP_MID;
+								if (wall->adjoinId >= 0 && next)
+								{
+									canHit = false;
+									const f32 f10 = getFloorAtXZ(next, *v0);
+									const f32 f11 = getFloorAtXZ(next, *v1);
+									const f32 c10 = getCeilAtXZ(next, *v0);
+									const f32 c11 = getCeilAtXZ(next, *v1);
+									const f32 nextFloor = f10 * (1.0f - u) + f11 * u;
+									const f32 nextCeil = c10 * (1.0f - u) + c11 * u;
+									if (yAtHit <= nextFloor)
+									{
+										part = HP_BOT;
+										canHit = true;
+									}
+									else if (yAtHit >= nextCeil)
+									{
+										part = HP_TOP;
+										canHit = true;
+									}
+									else if (wall->flags[0] & WF1_ADJ_MID_TEX)
+									{
+										part = HP_MID;
+										canHit = true;
+									}
+								}
+								if (canHit)
+								{
+									closestHit = s;
+									closestWallId = w;
+									closestPart = part;
+								}
+							}
+						}
+						else if (yAtHit > sector->floorHeight - FLT_EPSILON && yAtHit < sector->ceilHeight + FLT_EPSILON)
 						{
 							bool canHit = true;
-							if (wall->adjoinId >= 0)
+							HitPart part = HP_MID;
+							if (wall->adjoinId >= 0 && next)
 							{
-								const EditorSector* next = &level->sectors[wall->adjoinId];
-								canHit = (yAtHit <= next->floorHeight) || (yAtHit >= next->ceilHeight) || (wall->flags[0] & WF1_ADJ_MID_TEX);
+								canHit = false;
+								if (yAtHit <= next->floorHeight)
+								{
+									part = HP_BOT;
+									canHit = true;
+								}
+								else if (yAtHit >= next->ceilHeight)
+								{
+									part = HP_TOP;
+									canHit = true;
+								}
+								else if (wall->flags[0] & WF1_ADJ_MID_TEX)
+								{
+									part = HP_MID;
+									canHit = true;
+								}
 							}
 							if (canHit)
 							{
 								closestHit = s;
 								closestWallId = w;
+								closestPart = part;
 							}
 						}
 						rayInSector = true;
@@ -4006,49 +4115,13 @@ namespace LevelEditor
 						hitPoint.y >= signExt[0].z && hitPoint.y < signExt[1].z;
 				}
 
-				if (hitSign && closestHit < overallClosestHit)
+				if (closestHit < overallClosestHit)
 				{
 					overallClosestHit = closestHit;
 					hitInfo->hitSectorId = sector->id;
 					hitInfo->hitWallId = closestWallId;
 					hitInfo->hitObjId = -1;
-					hitInfo->hitPart = HP_SIGN;
-					hitInfo->hitPos = hitPoint;
-					hitInfo->dist = closestHit;
-				}
-				else if (wall[closestWallId].adjoinId >= 0)
-				{
-					// given the hit point, is it below the next floor or above the next ceiling?
-					const EditorSector* next = &level->sectors[wall[closestWallId].adjoinId];
-					if ((hitPoint.y <= next->floorHeight || hitPoint.y >= next->ceilHeight) && closestHit < overallClosestHit)
-					{
-						overallClosestHit = closestHit;
-						hitInfo->hitSectorId = sector->id;
-						hitInfo->hitWallId = closestWallId;
-						hitInfo->hitObjId = -1;
-						hitInfo->hitPart = hitPoint.y <= next->floorHeight ? HP_BOT : HP_TOP;
-						hitInfo->hitPos = hitPoint;
-						hitInfo->dist = closestHit;
-					}
-					else if ((wall[closestWallId].flags[0] & WF1_ADJ_MID_TEX) && closestHit < overallClosestHit)
-					{
-						overallClosestHit = closestHit;
-						hitInfo->hitSectorId = sector->id;
-						hitInfo->hitWallId = closestWallId;
-						hitInfo->hitObjId = -1;
-						hitInfo->hitPart = HP_MID;
-						hitInfo->hitPos = hitPoint;
-						hitInfo->dist = closestHit;
-					}
-					// TODO: Handle Sign.
-				}
-				else if (closestHit < overallClosestHit)
-				{
-					overallClosestHit = closestHit;
-					hitInfo->hitSectorId = sector->id;
-					hitInfo->hitWallId = closestWallId;
-					hitInfo->hitObjId = -1;
-					hitInfo->hitPart = HP_MID;
+					hitInfo->hitPart = hitSign ? HP_SIGN : closestPart;
 					hitInfo->hitPos = hitPoint;
 					hitInfo->dist = closestHit;
 				}
@@ -4058,50 +4131,70 @@ namespace LevelEditor
 			const Vec3f planeTest = { origin.x + ray->dir.x*maxDist, origin.y + ray->dir.y*maxDist, origin.z + ray->dir.z*maxDist };
 			Vec3f hitPoint;
 
-			const bool canHitFloor = (!flipFaces && origin.y > sector->floorHeight && ray->dir.y < 0.0f) ||
-	               (flipFaces && origin.y < sector->floorHeight && ray->dir.y > 0.0f);
-			const bool canHitCeil = (!flipFaces && origin.y < sector->ceilHeight && ray->dir.y > 0.0f) ||
-			      (flipFaces && origin.y > sector->ceilHeight && ray->dir.y < 0.0f);
-
-			if (canHitFloor && TFE_Math::lineYPlaneIntersect(&origin, &planeTest, sector->floorHeight, &hitPoint))
+			if (sector->flags[0] & SEC_FLAGS1_SLOPEDFLOOR)
 			{
-				const Vec3f offset = { hitPoint.x - origin.x, hitPoint.y - origin.y, hitPoint.z - origin.z };
-				const f32 distSq = TFE_Math::dot(&offset, &offset);
-				if (overallClosestHit == FLT_MAX || distSq < overallClosestHit*overallClosestHit)
+				updateSlopeData(sector);
+
+				const bool canHitFloor = (!flipFaces && origin.y > sector->floorPlane.minHeight && ray->dir.y < 0.0f) ||
+					(flipFaces && origin.y < sector->floorPlane.maxHeight && ray->dir.y > 0.0f);
+
+				f32 dist;
+				if (canHitFloor && rayPlaneIntersection(origin, ray->dir, sector->floorPlane.plane, dist))
 				{
-					// The ray hit the plane, but is it inside of the sector polygon?
-					Vec2f testPt = { hitPoint.x, hitPoint.z };
-					if (TFE_Polygon::pointInsidePolygon(&sector->poly, testPt))
+					if (overallClosestHit == FLT_MAX || dist < overallClosestHit)
 					{
-						overallClosestHit = sqrtf(distSq);
-						hitInfo->hitSectorId = sector->id;
-						hitInfo->hitWallId = -1;
-						hitInfo->hitObjId = -1;
-						hitInfo->hitPart = HP_FLOOR;
-						hitInfo->hitPos = hitPoint;
-						hitInfo->dist = overallClosestHit;
-						rayInSector = true;
+						// The ray hit the plane, but is it inside of the sector polygon?
+						hitPoint = Vec3f{ origin.x + ray->dir.x*dist, origin.y + ray->dir.y*dist, origin.z + ray->dir.z*dist };
+						rayInSector |= planeIntersectionInPolygon(sector, hitPoint, dist, HP_FLOOR, overallClosestHit, hitInfo);
 					}
 				}
 			}
-			if (canHitCeil && TFE_Math::lineYPlaneIntersect(&origin, &planeTest, sector->ceilHeight, &hitPoint))
+			else
 			{
-				const Vec3f offset = { hitPoint.x - origin.x, hitPoint.y - origin.y, hitPoint.z - origin.z };
-				const f32 distSq = TFE_Math::dot(&offset, &offset);
-				if (overallClosestHit == FLT_MAX || distSq < overallClosestHit*overallClosestHit)
+				const bool canHitFloor = (!flipFaces && origin.y > sector->floorHeight && ray->dir.y < 0.0f) ||
+					(flipFaces && origin.y < sector->floorHeight && ray->dir.y > 0.0f);
+				if (canHitFloor && TFE_Math::lineYPlaneIntersect(&origin, &planeTest, sector->floorHeight, &hitPoint))
 				{
-					// The ray hit the plane, but is it inside of the sector polygon?
-					Vec2f testPt = { hitPoint.x, hitPoint.z };
-					if (TFE_Polygon::pointInsidePolygon(&sector->poly, testPt))
+					const Vec3f offset = { hitPoint.x - origin.x, hitPoint.y - origin.y, hitPoint.z - origin.z };
+					const f32 distSq = TFE_Math::dot(&offset, &offset);
+					if (overallClosestHit == FLT_MAX || distSq < overallClosestHit*overallClosestHit)
 					{
-						overallClosestHit = sqrtf(distSq);
-						hitInfo->hitSectorId = sector->id;
-						hitInfo->hitWallId = -1;
-						hitInfo->hitObjId = -1;
-						hitInfo->hitPart = HP_CEIL;
-						hitInfo->hitPos = hitPoint;
-						hitInfo->dist = overallClosestHit;
-						rayInSector = true;
+						// The ray hit the plane, but is it inside of the sector polygon?
+						rayInSector |= planeIntersectionInPolygon(sector, hitPoint, sqrtf(distSq), HP_FLOOR, overallClosestHit, hitInfo);
+					}
+				}
+			}
+
+			if (sector->flags[0] & SEC_FLAGS1_SLOPEDCEILING)
+			{
+				updateSlopeData(sector);
+
+				const bool canHitCeil = (!flipFaces && origin.y < sector->ceilPlane.maxHeight && ray->dir.y > 0.0f) ||
+					(flipFaces && origin.y > sector->ceilPlane.minHeight && ray->dir.y < 0.0f);
+
+				f32 dist;
+				if (canHitCeil && rayPlaneIntersection(origin, ray->dir, sector->ceilPlane.plane, dist))
+				{
+					if (overallClosestHit == FLT_MAX || dist < overallClosestHit)
+					{
+						// The ray hit the plane, but is it inside of the sector polygon?
+						hitPoint = Vec3f{ origin.x + ray->dir.x*dist, origin.y + ray->dir.y*dist, origin.z + ray->dir.z*dist };
+						rayInSector |= planeIntersectionInPolygon(sector, hitPoint, dist, HP_CEIL, overallClosestHit, hitInfo);
+					}
+				}
+			}
+			else
+			{
+				const bool canHitCeil = (!flipFaces && origin.y < sector->ceilHeight && ray->dir.y > 0.0f) ||
+					(flipFaces && origin.y > sector->ceilHeight && ray->dir.y < 0.0f);
+				if (canHitCeil && TFE_Math::lineYPlaneIntersect(&origin, &planeTest, sector->ceilHeight, &hitPoint))
+				{
+					const Vec3f offset = { hitPoint.x - origin.x, hitPoint.y - origin.y, hitPoint.z - origin.z };
+					const f32 distSq = TFE_Math::dot(&offset, &offset);
+					if (overallClosestHit == FLT_MAX || distSq < overallClosestHit*overallClosestHit)
+					{
+						// The ray hit the plane, but is it inside of the sector polygon?
+						rayInSector |= planeIntersectionInPolygon(sector, hitPoint, sqrtf(distSq), HP_CEIL, overallClosestHit, hitInfo);
 					}
 				}
 			}
@@ -5102,7 +5195,7 @@ namespace LevelEditor
 	void level_createGuidelineSnapshot(SnapshotBuffer* buffer)
 	{
 		setSnapshotWriteBuffer(buffer);
-		const u32 guidelineCount = s_level.guidelines.size();
+		const u32 guidelineCount = (u32)s_level.guidelines.size();
 		const Guideline* guideline = s_level.guidelines.data();
 
 		writeU32(guidelineCount);
@@ -5221,5 +5314,131 @@ namespace LevelEditor
 		}
 
 		return foundSector;
+	}
+
+	bool rayPlaneIntersection(const Vec3f& origin, const Vec3f& dir, const Vec4f& plane, f32& dist)
+	{
+		const f32 d = plane.x*dir.x + plane.y*dir.y + plane.z*dir.z;
+		if (fabsf(d) < FLT_MIN) { return false; }
+
+		dist = -(plane.x*origin.x + plane.y*origin.y + plane.z*origin.z + plane.w) / d;
+		return dist >= FLT_MIN;
+	}
+		
+	void updateSlopeData(EditorSector* sector)
+	{
+		if (s_viewFrame == sector->slopeFrame) { return; }
+		sector->slopeFrame = s_viewFrame;
+
+		if (sector->flags[0] & SEC_FLAGS1_SLOPEDFLOOR)
+		{
+			sector->floorPlane = slope_calculatePlane(sector->slope.floorAnchorSectorId, sector->slope.floorAnchorWallId, sector->id, sector->floorHeight,
+				TFE_Math::degToRad(sector->slope.floorSlopeAngle));
+		}
+		if (sector->flags[0] & SEC_FLAGS1_SLOPEDCEILING)
+		{
+			sector->ceilPlane = slope_calculatePlane(sector->slope.ceilAnchorSectorId, sector->slope.ceilAnchorWallId, sector->id, sector->ceilHeight,
+				TFE_Math::degToRad(sector->slope.ceilSlopeAngle));
+		}
+	}
+
+	f32 getFloorAtXZ(const EditorSector* sector, Vec2f pos)
+	{
+		updateSlopeData((EditorSector*)sector);
+		if (sector->flags[0] & SEC_FLAGS1_SLOPEDFLOOR)
+		{
+			return slope_getHeightAtXZ(&sector->floorPlane, pos);
+		}
+		return sector->floorHeight;
+	}
+
+	f32 getCeilAtXZ(const EditorSector* sector, Vec2f pos)
+	{
+		updateSlopeData((EditorSector*)sector);
+		if (sector->flags[0] & SEC_FLAGS1_SLOPEDCEILING)
+		{
+			return slope_getHeightAtXZ(&sector->ceilPlane, pos);
+		}
+		return sector->ceilHeight;
+	}
+
+	u32 getAdjoinType(const EditorSector* sector, const EditorWall* wall)
+	{
+		const EditorSector* next = (wall->adjoinId >= 0 && wall->adjoinId < (s32)s_level.sectors.size()) ? &s_level.sectors[wall->adjoinId] : nullptr;
+		u32 adjType = ADJ_TYPE_NONE;
+		if (!next) { return adjType; }
+
+		const Vec2f v0 = sector->vtx[wall->idx[0]];
+		const Vec2f v1 = sector->vtx[wall->idx[1]];
+
+		// Calculate the heights at the adjoin vertices.
+		f32 f00 = getFloorAtXZ(sector, v0);
+		f32 f01 = getFloorAtXZ(sector, v1);
+		f32 f10 = getFloorAtXZ(next, v0);
+		f32 f11 = getFloorAtXZ(next, v1);
+
+		f32 c00 = getCeilAtXZ(sector, v0);
+		f32 c01 = getCeilAtXZ(sector, v1);
+		f32 c10 = getCeilAtXZ(next, v0);
+		f32 c11 = getCeilAtXZ(next, v1);
+
+		// Handle numerical error.
+		if (fabsf(f00 - f10) < adjoinEps) { f10 = f00; }
+		if (fabsf(f01 - f11) < adjoinEps) { f11 = f01; }
+		if (fabsf(c00 - c10) < adjoinEps) { c10 = c00; }
+		if (fabsf(c01 - c11) < adjoinEps) { c11 = c01; }
+
+		// Outlaws generates an error if slopes cross on adjoins.
+		if ((c00 >= c10 && c01 > c11) || (c00 > c10 && c01 >= c11))
+		{
+			adjType |= ADJ_TYPE_TOP;
+		}
+		if ((f00 <= f10 && f01 < f11) || (f00 < f10 && f01 <= f11))
+		{
+			adjType |= ADJ_TYPE_BOT;
+		}
+
+		return adjType;
+	}
+
+	// General level fix-up:
+	//   * Remove Zero-Wall and Zero-Vertex sectors.
+	//   * TODO: Other issues that may cause crashes, etc.
+	// This should be done when:
+	//   * Saving.
+	//   * Loading.
+	//   * When testing (on Play).
+	// If any changes are required:
+	//   * Post a warning.
+	//   * Create a snapshot in the history.
+	void fixupLevel(bool createSnapshot)
+	{
+		const s32 sectorCount = (s32)s_level.sectors.size();
+		const EditorSector* sector = s_level.sectors.data();
+		std::vector<s32> deleteList;
+		for (s32 s = 0; s < sectorCount; s++, sector++)
+		{
+			if (sector->walls.empty() || sector->vtx.empty())
+			{
+				deleteList.push_back(s);
+			}
+		}
+
+		// Sectors to delete.
+		if (!deleteList.empty())
+		{
+			const s32 delCount = (s32)deleteList.size();
+			const s32* delIndices = deleteList.data();
+			
+			LE_WARNING("%d Sectors found with zero(0) walls and/or vertices. Removing erroneous sectors.", delCount);
+			for (s32 i = delCount - 1; i >= 0; i--)
+			{
+				edit_deleteSector(delIndices[i], false);
+			}
+			if (createSnapshot)
+			{
+				levHistory_createSnapshot("Clean Zero-Sectors");
+			}
+		}
 	}
 }

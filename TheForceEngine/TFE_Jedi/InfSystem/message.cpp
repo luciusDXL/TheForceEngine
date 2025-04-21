@@ -7,6 +7,8 @@
 #include <TFE_Jedi/InfSystem/infSystem.h>
 #include <TFE_Jedi/Task/task.h>
 #include <TFE_Jedi/Level/robject.h>
+#include <TFE_Jedi/Serialization/serialization.h>
+#include <TFE_Jedi/Level/levelData.h>
 #include <TFE_DarkForces/logic.h>
 #include <assert.h>
 #include <stdio.h>
@@ -98,5 +100,53 @@ namespace TFE_Jedi
 		// Changed: inf_sendSectorMessageInternal() -> inf_sendSectorMessage()
 		inf_sendSectorMessage(sector, msgType);
 		inf_sendLinkMessages(sector->infLink, entity, evt, msgType);
+	}
+
+	// Serialisation
+	// param0 and param1 are not serialised because they appear to be always set to 0 and never used
+	void level_serializeMessageAddresses(Stream* stream)
+	{
+		if (serialization_getMode() == SMODE_READ)
+		{
+			message_free();
+			s_messageAddr = allocator_create(sizeof(MessageAddress));
+
+			s32 msgCount = 0;
+			SERIALIZE(LevelState_SaveSectorNames, msgCount, 0);
+
+			for (s32 m = 0; m < msgCount; m++)
+			{
+				MessageAddress* msgAddr = (MessageAddress*)allocator_newItem(s_messageAddr);
+
+				u32 nameLength = 0;
+				SERIALIZE(LevelState_SaveSectorNames, nameLength, 0);
+				for (s32 i = 0; i < nameLength; i++)
+				{
+					SERIALIZE(LevelState_SaveSectorNames, msgAddr->name[i], 0);
+				}
+
+				serialization_serializeSectorPtr(stream, LevelState_SaveSectorNames, msgAddr->sector);
+			}
+		}
+		else if (serialization_getMode() == SMODE_WRITE)
+		{
+			s32 msgCount = allocator_getCount(s_messageAddr);
+			SERIALIZE(LevelState_SaveSectorNames, msgCount, 0);
+			
+			MessageAddress* msgAddr = (MessageAddress*)allocator_getHead(s_messageAddr);
+			while (msgAddr)
+			{
+				u32 nameLength = strlen(msgAddr->name);
+				SERIALIZE(LevelState_SaveSectorNames, nameLength, 0);
+				for (s32 i = 0; i < nameLength; i++)
+				{
+					SERIALIZE(LevelState_SaveSectorNames, msgAddr->name[i], 0);
+				}
+
+				serialization_serializeSectorPtr(stream, LevelState_SaveSectorNames, msgAddr->sector);
+
+				msgAddr = (MessageAddress*)allocator_getNext(s_messageAddr);
+			}
+		}
 	}
 }

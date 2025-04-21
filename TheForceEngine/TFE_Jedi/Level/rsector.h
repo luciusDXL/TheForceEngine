@@ -36,6 +36,10 @@ enum SectorFlags1
 	SEC_FLAGS1_RENDERED      = FLAG_BIT(17),
 	SEC_FLAGS1_PLAYER        = FLAG_BIT(18),
 	SEC_FLAGS1_SECRET        = FLAG_BIT(19),
+
+	// Outlaws
+	SEC_FLAGS1_SLOPEDFLOOR   = FLAG_BIT(30),
+	SEC_FLAGS1_SLOPEDCEILING = FLAG_BIT(31),
 };
 
 // Added for TFE to support floating point and GPU sub-renderers.
