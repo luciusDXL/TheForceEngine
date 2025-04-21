@@ -72,7 +72,7 @@ namespace TFE_Jedi
 		}
 
 	protected:
-		SectorSaveValues s_sectorStack[MAX_ADJOIN_DEPTH];
+		SectorSaveValues s_sectorStack[MAX_ADJOIN_DEPTH_EXT];
 
 		RSector* s_curSector;
 		MemoryPool* s_memPool;
