@@ -28,7 +28,7 @@ namespace TFE_DarkForces
 		if (!ScriptElev::isScriptElevValid(elev)) { return 0; }
 
 		InfElevator* data = (InfElevator*)allocator_getByIndex(s_infSerState.infElevators, elev->m_id);
-		return data->type == IELEV_ROTATE_WALL ? angleToFloat(data->speed >> FRAC_BITS_16) : fixed16ToFloat(data->speed);
+		return data->type == IELEV_ROTATE_WALL ? angleToFloat(fixed16ToFloat(data->speed)) : fixed16ToFloat(data->speed);
 	}
 
 	void setElevSpeed(float value, ScriptElev* elev)
@@ -36,7 +36,7 @@ namespace TFE_DarkForces
 		if (!ScriptElev::isScriptElevValid(elev)) { return; }
 
 		InfElevator* data = (InfElevator*)allocator_getByIndex(s_infSerState.infElevators, elev->m_id);
-		data->speed = data->type == IELEV_ROTATE_WALL ? intToFixed16(floatToAngle(value)) : floatToFixed16(value);
+		data->speed = data->type == IELEV_ROTATE_WALL ? floatToFixed16(floatToAngle(value)) : floatToFixed16(value);
 	}
 
 	void ScriptElev::registerType()
