@@ -18,6 +18,7 @@
 
 namespace TFE_DarkForces
 {
+	// The "special" actors can all be cast to this struct (eg. bosses, dark troopers, mousebot, turret)
 	struct SpecialActor	
 	{
 		Logic logic;
@@ -285,6 +286,11 @@ namespace TFE_DarkForces
 		if (s_nightVisionActive) { disableNightVision(); }
 	}
 
+
+	//////////////////////////////////////////////////////
+	// Logic related functionality
+	//////////////////////////////////////////////////////
+
 	// Helper function - gets the first Dispatch actor linked to an object
 	ActorDispatch* getDispatch(SecObject* obj)
 	{
@@ -311,6 +317,21 @@ namespace TFE_DarkForces
 			if (module && module->type == ACTMOD_DAMAGE)
 			{
 				return (DamageModule*)module;
+			}
+		}
+
+		return nullptr;
+	}
+
+	// Helper function - gets the attack module from a dispatch logic
+	AttackModule* getAttackModule(ActorDispatch* dispatch)
+	{
+		for (s32 i = 0; i < ACTOR_MAX_MODULES; i++)
+		{
+			ActorModule* module = dispatch->modules[ACTOR_MAX_MODULES - 1 - i];
+			if (module && module->type == ACTMOD_ATTACK)
+			{
+				return (AttackModule*)module;
 			}
 		}
 
@@ -366,6 +387,71 @@ namespace TFE_DarkForces
 		return -1;
 	}
 
+	void setHitPoints(int hitpoints, ScriptObject* sObject)
+	{
+		if (!doesObjectExist(sObject)) { return; }
+		SecObject* obj = TFE_Jedi::s_objectRefList[sObject->m_id].object;
+
+		// First try to find a dispatch logic
+		ActorDispatch* dispatch = getDispatch(obj);
+		if (dispatch)
+		{
+			DamageModule* damageMod = getDamageModule(dispatch);
+			if (damageMod)
+			{
+				damageMod->hp = FIXED(hitpoints);
+				return;
+			}
+		}
+
+		// Then try other logics
+		Logic** logicPtr = (Logic**)allocator_getHead((Allocator*)obj->logic);
+		while (logicPtr)
+		{
+			Logic* logic = *logicPtr;
+			PhysicsActor* actor = nullptr;
+
+			switch (logic->type)
+			{
+				case LOGIC_BOBA_FETT:
+				case LOGIC_DRAGON:
+				case LOGIC_PHASE_ONE:
+				case LOGIC_PHASE_TWO:
+				case LOGIC_PHASE_THREE:
+				case LOGIC_TURRET:
+				case LOGIC_WELDER:
+				case LOGIC_MOUSEBOT:
+					SpecialActor* data = (SpecialActor*)logic;
+					actor = &data->actor;
+					break;
+			}
+
+			if (actor)
+			{
+				actor->hp = FIXED(hitpoints);
+				return;
+			}
+
+			logicPtr = (Logic**)allocator_getNext((Allocator*)obj->logic);
+		}
+	}
+
+	void setProjectile(ProjectileType projectile, ScriptObject* sObject)
+	{
+		if (!doesObjectExist(sObject)) { return; }
+		SecObject* obj = TFE_Jedi::s_objectRefList[sObject->m_id].object;
+
+		ActorDispatch* dispatch = getDispatch(obj);
+		if (dispatch)
+		{
+			AttackModule* attackMod = getAttackModule(dispatch);
+			if (attackMod)
+			{
+				attackMod->projType = projectile;
+			}
+		}
+	}
+
 	void ScriptObject::registerType()
 	{
 		s32 res = 0;
@@ -374,6 +460,28 @@ namespace TFE_DarkForces
 		ScriptValueType("Object");
 		// Variables
 		ScriptMemberVariable("int id", m_id);
+
+		// Enums
+		ScriptEnumRegister("Projectiles");
+		ScriptEnumStr(PROJ_PUNCH);
+		ScriptEnumStr(PROJ_PISTOL_BOLT);
+		ScriptEnumStr(PROJ_RIFLE_BOLT);
+		ScriptEnumStr(PROJ_THERMAL_DET);
+		ScriptEnumStr(PROJ_REPEATER);
+		ScriptEnumStr(PROJ_PLASMA);
+		ScriptEnumStr(PROJ_MORTAR);
+		ScriptEnumStr(PROJ_LAND_MINE);
+		ScriptEnumStr(PROJ_LAND_MINE_PROX);
+		ScriptEnumStr(PROJ_LAND_MINE_PLACED);
+		ScriptEnumStr(PROJ_CONCUSSION);
+		ScriptEnumStr(PROJ_CANNON);
+		ScriptEnumStr(PROJ_MISSILE);
+		ScriptEnumStr(PROJ_TURRET_BOLT);
+		ScriptEnumStr(PROJ_REMOTE_BOLT);
+		ScriptEnumStr(PROJ_EXP_BARREL);
+		ScriptEnumStr(PROJ_HOMING_MISSILE);
+		ScriptEnumStr(PROJ_PROBE_PROJ);
+		ScriptEnum("PROJ_BOBAFETT_BALL", PROJ_BOBAFET_BALL);
 
 		// Checks
 		ScriptObjFunc("bool isValid()", isScriptObjectValid);
@@ -404,7 +512,9 @@ namespace TFE_DarkForces
 		ScriptObjFunc("void addLogic(string)", addLogicToObject);
 		ScriptObjFunc("void setCamera()", setCamera);
 
-		// Logic getters
+		// Logic getters & setters
 		ScriptPropertyGetFunc("int get_hitPoints()", getHitPoints);
+		ScriptPropertySetFunc("void set_hitPoints(int)", setHitPoints);
+		ScriptPropertySetFunc("void set_projectile(int)", setProjectile);
 	}
 }
