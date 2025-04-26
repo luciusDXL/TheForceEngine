@@ -526,14 +526,11 @@ namespace LevelEditor
 		
 	bool loadLevelFromAsset(const Asset* asset)
 	{
+		editor_infInit();
+
 		EditorLevel* level = &s_level;
 		char slotName[256];
 		FileUtil::stripExtension(asset->name.c_str(), slotName);
-
-		// Clear the INF data.
-		s_levelInf.elevator.clear();
-		s_levelInf.teleport.clear();
-		s_levelInf.trigger.clear();
 
 		// Clear selection state.
 		selection_clear();
@@ -934,6 +931,8 @@ namespace LevelEditor
 
 	bool loadFromTFLWithPath(const char* filePath)
 	{
+		editor_infInit();
+
 		// Then try to open it based on the path, if it fails load the LEV file.
 		FileStream file;
 		if (!file.open(filePath, FileStream::MODE_READ))

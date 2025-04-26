@@ -1230,6 +1230,8 @@ namespace LevelEditor
 
 	bool loadLevelInfFromAsset(const Asset* asset)
 	{
+		editor_infInit();
+
 		char infFile[TFE_MAX_PATH];
 		s_fileData.clear();
 		if (asset->archive)
