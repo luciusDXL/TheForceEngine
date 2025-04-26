@@ -1261,7 +1261,7 @@ namespace TFE_FrontEndUI
 		}
 
 		bool jsonAiLogics = gameSettings->df_jsonAiLogics;
-		if (ImGui::Checkbox("Enable custom AI logics from JSON files", &jsonAiLogics))
+		if (ImGui::Checkbox("Enhanced AI logics (requires restart)", &jsonAiLogics))
 		{
 			gameSettings->df_jsonAiLogics = jsonAiLogics;
 		}		
