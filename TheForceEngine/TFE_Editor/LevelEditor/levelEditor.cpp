@@ -4912,7 +4912,7 @@ namespace LevelEditor
 	{
 		if (s_editMode == LEDIT_ENTITY || s_editMode == LEDIT_SECTOR)
 		{
-			return selection_hasHovered();
+			return selection_hasHovered() || selection_getCount() > 0;
 		}
 		else if (s_editMode == LEDIT_WALL)
 		{
