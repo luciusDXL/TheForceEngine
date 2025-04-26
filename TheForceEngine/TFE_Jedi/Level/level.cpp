@@ -443,8 +443,21 @@ namespace TFE_Jedi
 				s_levelState.secretCount++;
 			}
 
-			// Layer
 			line = parser.readLine(bufferPos);
+
+			// Sloped Floor and Ceiling - optional
+			s32 slopeSectorId = -1, hingeWallId = -1;
+			f32 slopeAngle = 0.0f;
+			if (sscanf(line, " SLOPEDFLOOR %d %d %f ", &slopeSectorId, &hingeWallId, &slopeAngle) == 3)
+			{
+				line = parser.readLine(bufferPos);
+			}
+			if (sscanf(line, " SLOPEDCEILING %d %d %f ", &slopeSectorId, &hingeWallId, &slopeAngle) == 3)
+			{
+				line = parser.readLine(bufferPos);
+			}
+
+			// Layer
 			if (sscanf(line, " LAYER %d", &sector->layer) != 1)
 			{
 				TFE_System::logWrite(LOG_ERROR, "level_loadGeometry", "Cannot read sector layer.");

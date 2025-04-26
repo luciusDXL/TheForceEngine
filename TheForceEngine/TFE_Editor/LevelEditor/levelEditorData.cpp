@@ -67,6 +67,8 @@ namespace LevelEditor
 {
 	const char* c_newLine = "\r\n";
 	const f32 adjoinEps = 0.0001f;
+	const f32 c_degToJediAngle = 16384.0f / 360.0f;
+	const f32 c_jediAngleToDeg = 360.0f / 16384.0f;
 
 	// Sector attributes, geometry not included.
 	struct SectorAttrib
@@ -997,6 +999,14 @@ namespace LevelEditor
 			file.read(&sector->secHeight);
 			file.read(&sector->ambient);
 			file.read(sector->flags, 3);
+			if (version >= LEF_Slopes)
+			{
+				file.readBuffer(&sector->slope, sizeof(EditorSlope));
+			}
+			else
+			{
+				sector->slope = {};
+			}
 
 			u32 vtxCount;
 			file.read(&vtxCount);
@@ -1231,6 +1241,8 @@ namespace LevelEditor
 			file.write(&sector->secHeight);
 			file.write(&sector->ambient);
 			file.write(sector->flags, 3);
+			// LEF_Slopes
+			file.writeBuffer(&sector->slope, sizeof(EditorSlope));
 
 			u32 vtxCount = (u32)sector->vtx.size();
 			file.write(&vtxCount);
@@ -1431,6 +1443,16 @@ namespace LevelEditor
 			WRITE_LINE("  CEILING ALTITUDE\t%0.2f\r\n", -sector->ceilHeight);
 			WRITE_LINE("  SECOND ALTITUDE\t%0.2f\r\n", -sector->secHeight);
 			WRITE_LINE("  FLAGS %u %u %u\r\n", sector->flags[0], sector->flags[1], sector->flags[2]);
+			if (sector->flags[0] & SEC_FLAGS1_SLOPEDFLOOR)
+			{
+				// Convert from degrees to Jedi angle units.
+				WRITE_LINE("  SLOPEDFLOOR %d %d %f\r\n", sector->slope.floorAnchorSectorId, sector->slope.floorAnchorWallId, sector->slope.floorSlopeAngle * c_degToJediAngle);
+			}
+			if (sector->flags[0] & SEC_FLAGS1_SLOPEDCEILING)
+			{
+				// Convert from degrees to Jedi angle units.
+				WRITE_LINE("  SLOPEDCEILING %d %d %f\r\n", sector->slope.ceilAnchorSectorId, sector->slope.ceilAnchorWallId, sector->slope.ceilSlopeAngle * c_degToJediAngle);
+			}
 			WRITE_LINE("  LAYER %d\r\n", sector->layer);
 			NEW_LINE();
 
@@ -2732,6 +2754,16 @@ namespace LevelEditor
 			WRITE_TO_BUFFER("  CEILING ALTITUDE %f\r\n", -sector->ceilHeight);
 			WRITE_TO_BUFFER("  SECOND ALTITUDE %f\r\n", -sector->secHeight);
 			WRITE_TO_BUFFER("  FLAGS %d %d %d\r\n", sector->flags[0], sector->flags[1], sector->flags[2]);
+			if (sector->flags[0] & SEC_FLAGS1_SLOPEDFLOOR)
+			{
+				// Convert from degrees to Jedi angle units.
+				WRITE_TO_BUFFER("  SLOPEDFLOOR %d %d %f\r\n", sector->slope.floorAnchorSectorId, sector->slope.floorAnchorWallId, sector->slope.floorSlopeAngle * c_degToJediAngle);
+			}
+			if (sector->flags[0] & SEC_FLAGS1_SLOPEDCEILING)
+			{
+				// Convert from degrees to Jedi angle units.
+				WRITE_TO_BUFFER("  SLOPEDCEILING %d %d %f\r\n", sector->slope.ceilAnchorSectorId, sector->slope.ceilAnchorWallId, sector->slope.ceilSlopeAngle * c_degToJediAngle);
+			}
 			WRITE_TO_BUFFER("  LAYER %d\r\n", sector->layer);
 			buffer.append("\r\n");
 
@@ -3126,6 +3158,18 @@ namespace LevelEditor
 					curSector->flags[0] = strtol(tokens[1].c_str(), &endPtr, 10);
 					curSector->flags[1] = strtol(tokens[2].c_str(), &endPtr, 10);
 					curSector->flags[2] = strtol(tokens[3].c_str(), &endPtr, 10);
+				}
+				else if (tokenCount >= 4 && strncasecmp(tokens[0].c_str(), "SLOPEDFLOOR", strlen("SLOPEDFLOOR")) == 0)
+				{
+					curSector->slope.floorAnchorSectorId = strtol(tokens[1].c_str(), &endPtr, 10);
+					curSector->slope.floorAnchorWallId = strtol(tokens[2].c_str(), &endPtr, 10);
+					curSector->slope.floorSlopeAngle = strtof(tokens[3].c_str(), &endPtr) * c_jediAngleToDeg;
+				}
+				else if (tokenCount >= 4 && strncasecmp(tokens[0].c_str(), "SLOPEDCEILING", strlen("SLOPEDCEILING")) == 0)
+				{
+					curSector->slope.ceilAnchorSectorId = strtol(tokens[1].c_str(), &endPtr, 10);
+					curSector->slope.ceilAnchorWallId = strtol(tokens[2].c_str(), &endPtr, 10);
+					curSector->slope.ceilSlopeAngle = strtof(tokens[3].c_str(), &endPtr) * c_jediAngleToDeg;
 				}
 				else if (tokenCount >= 2 && strncasecmp(tokens[0].c_str(), "LAYER", strlen("LAYER")) == 0)
 				{

@@ -33,7 +33,8 @@ namespace LevelEditor
 		LEF_Guidelines =11,
 		LEF_ScriptCall1=12,
 		LEF_GuidelineV2=13,
-		LEF_CurVersion =13,
+		LEF_Slopes     =14,
+		LEF_CurVersion =14,
 	};
 
 	enum LevelEditMode
