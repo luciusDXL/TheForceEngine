@@ -334,19 +334,29 @@ namespace TFE_ExternalData
 			return true;
 		}
 
-		/* JK: Leaving these out for now until we have a better understanding of what they mean
-		if (cJSON_IsNumber(data) && strcasecmp(data->string, "delay") == 0)
+		if (cJSON_IsBool(data) && strcasecmp(data->string, "stopOnDamage") == 0)
 		{
-			customLogic.delay = data->valueint;
+			customLogic.stopOnDamage = cJSON_IsTrue(data);
 			return true;
 		}
 
-		if (cJSON_IsNumber(data) && strcasecmp(data->string, "startDelay") == 0)
+		if (cJSON_IsNumber(data) && strcasecmp(data->string, "approachVariation") == 0)
 		{
-			customLogic.startDelay = data->valueint;
+			customLogic.approachVariation = floatToAngle((f32)data->valueint);
 			return true;
 		}
-		*/
+
+		if (cJSON_IsNumber(data) && strcasecmp(data->string, "approachOffset") == 0)
+		{
+			customLogic.approachOffset = data->valueint;
+			return true;
+		}
+
+		if (cJSON_IsNumber(data) && strcasecmp(data->string, "thinkerDelay") == 0)
+		{
+			customLogic.thinkerDelay = data->valueint;
+			return true;
+		}
 
 		return false;
 	}

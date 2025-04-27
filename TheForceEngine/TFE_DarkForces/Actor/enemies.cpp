@@ -200,6 +200,7 @@ namespace TFE_DarkForces
 		damageMod->dieEffect = (HitEffectID)cust->dieEffect;
 		damageMod->hurtSndSrc = sound_load(cust->painSound, SOUND_PRIORITY_MED5);
 		damageMod->dieSndSrc = sound_load(cust->dieSound, SOUND_PRIORITY_MED5);
+		damageMod->stopOnHit = cust->stopOnDamage ? JTRUE : JFALSE;
 		actor_addModule(dispatch, (ActorModule*)damageMod);
 
 		// Attack Module
@@ -228,8 +229,10 @@ namespace TFE_DarkForces
 		ThinkerModule* thinkerMod = actor_createThinkerModule(dispatch);
 		thinkerMod->target.speedRotation = cust->rotationSpeed;
 		thinkerMod->target.speed = FIXED(cust->speed);
+		thinkerMod->approachVariation = cust->approachVariation;
+		thinkerMod->targetOffset = FIXED(cust->approachOffset);
+		thinkerMod->startDelay = TICKS(cust->thinkerDelay);
 		thinkerMod->anim.flags &= ~AFLAG_PLAYONCE;		// Ensures that walking animations will loop
-		thinkerMod->startDelay = TICKS(2);
 		actor_addModule(dispatch, (ActorModule*)thinkerMod);
 
 		// Flying Thinker Module (if flying enemy)
