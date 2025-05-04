@@ -48,6 +48,9 @@ namespace TFE_ExternalData
 		u32 approachVariation = 4096;
 		u32 approachOffset = 3;
 		u32 thinkerDelay = 2;
+
+		f32 collisionWidth = -1;
+		f32 collisionHeight = -1;
 	};
 
 	struct ExternalLogics

@@ -248,7 +248,9 @@ namespace TFE_DarkForces
 		// Movement Module
 		MovementModule* moveMod = actor_createMovementModule(dispatch);
 		dispatch->moveMod = moveMod;
-		moveMod->physics.width = obj->worldWidth;
+		moveMod->physics.width = cust->collisionWidth < 0 ? obj->worldWidth : floatToFixed16(cust->collisionWidth);
+		moveMod->physics.height = cust->collisionHeight < 0 ? moveMod->physics.height : floatToFixed16(cust->collisionHeight);
+		
 		if (cust->isFlying)
 		{
 			moveMod->collisionFlags = (moveMod->collisionFlags & ~ACTORCOL_ALL) | ACTORCOL_BIT2;	// Remove bits 0, 1 and set bit 2

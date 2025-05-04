@@ -358,6 +358,18 @@ namespace TFE_ExternalData
 			return true;
 		}
 
+		if (cJSON_IsNumber(data) && strcasecmp(data->string, "collisionWidth") == 0)
+		{
+			customLogic.collisionWidth = data->valuedouble;
+			return true;
+		}
+
+		if (cJSON_IsNumber(data) && strcasecmp(data->string, "collisionHeight") == 0)
+		{
+			customLogic.collisionHeight = data->valuedouble;
+			return true;
+		}
+
 		return false;
 	}
 }
