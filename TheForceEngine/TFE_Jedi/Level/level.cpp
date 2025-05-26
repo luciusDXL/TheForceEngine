@@ -4,6 +4,7 @@
 #include "level.h"
 #include "levelBin.h"
 #include "levelData.h"
+#include "rslope.h"
 #include "rwall.h"
 #include "rtexture.h"
 #include <TFE_Game/igame.h>
@@ -72,6 +73,8 @@ namespace TFE_Jedi
 		loadLevelScript();
 
 		// Load level data.
+		slope_init(s_levelRegion);
+
 		if (!level_loadGeometry(levelName)) { return JFALSE; }
 		level_loadObjects(levelName, difficulty);
 		inf_load(levelName);
@@ -141,6 +144,22 @@ namespace TFE_Jedi
 			if ((sector->flags1 & SEC_FLAGS1_PIT) && (*sector->floorTex))
 			{
 				(*sector->floorTex)->flags |= ALWAYS_FULLBRIGHT;
+			}
+		}
+
+		// Handle slopes
+		sector = s_levelState.sectors;
+		for (u32 i = 0; i < s_levelState.sectorCount; i++, sector++)
+		{
+			if (sector->floorSlope)
+			{
+				slope_compute(sector->floorSlope, fixed16ToFloat(sector->floorHeight));
+				sector->flags1 |= SEC_FLAGS1_SLOPEDFLOOR;
+			}
+			if (sector->ceilSlope)
+			{
+				slope_compute(sector->ceilSlope, fixed16ToFloat(sector->ceilingHeight));
+				sector->flags1 |= SEC_FLAGS1_SLOPEDCEILING;
 			}
 		}
 
@@ -446,14 +465,19 @@ namespace TFE_Jedi
 			line = parser.readLine(bufferPos);
 
 			// Sloped Floor and Ceiling - optional
+			sector->floorSlope = nullptr;
+			sector->ceilSlope = nullptr;
+
 			s32 slopeSectorId = -1, hingeWallId = -1;
 			f32 slopeAngle = 0.0f;
 			if (sscanf(line, " SLOPEDFLOOR %d %d %f ", &slopeSectorId, &hingeWallId, &slopeAngle) == 3)
 			{
+				sector->floorSlope = slope_alloc(slopeSectorId, hingeWallId, sector, slopeAngle);
 				line = parser.readLine(bufferPos);
 			}
 			if (sscanf(line, " SLOPEDCEILING %d %d %f ", &slopeSectorId, &hingeWallId, &slopeAngle) == 3)
 			{
+				sector->ceilSlope = slope_alloc(slopeSectorId, hingeWallId, sector, slopeAngle);
 				line = parser.readLine(bufferPos);
 			}
 

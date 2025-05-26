@@ -87,7 +87,7 @@ namespace TFE_Jedi
 		return mul16(v0->x, v1->x) + mul16(v0->y, v1->y) + mul16(v0->z, v1->z);
 	}
 
-	void normalizeVec3(vec3_fixed* vIn, vec3_fixed* vOut);
+	void normalizeVec3(const vec3_fixed* vIn, vec3_fixed* vOut);
 	void rotateVectorM3x3(vec3_fixed* inVec, vec3_fixed* outVec, s32* mtx);
 
 	inline fixed16_16 tanFixed(angle14_32 angle)
@@ -298,7 +298,7 @@ namespace TFE_Jedi
 		return v0->x*v1->x + v0->y*v1->y + v0->z*v1->z;
 	}
 
-	void normalizeVec3(vec3_float* vIn, vec3_float* vOut);
+	void normalizeVec3(const vec3_float* vIn, vec3_float* vOut);
 	void rotateVectorM3x3(vec3_float* inVec, vec3_float* outVec, f32* mtx);
 
 	// Returns an DF angle, where 360 degrees = 16384 angular units (~45.5 units / degree).

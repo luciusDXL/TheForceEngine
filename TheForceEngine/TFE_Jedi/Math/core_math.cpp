@@ -36,7 +36,7 @@ namespace TFE_Jedi
 		transform[8] = mul16(cosPch, cosYaw);
 	}
 		
-	void normalizeVec3(vec3_fixed* vIn, vec3_fixed* vOut)
+	void normalizeVec3(const vec3_fixed* vIn, vec3_fixed* vOut)
 	{
 		fixed16_16 distSq = mul16(vIn->x, vIn->x) + mul16(vIn->y, vIn->y) + mul16(vIn->z, vIn->z);
 		fixed16_16 dist = fixedSqrt(distSq);
@@ -218,7 +218,7 @@ namespace TFE_Jedi
 		transform[8] = cosPch * cosYaw;
 	}
 
-	void normalizeVec3(vec3_float* vIn, vec3_float* vOut)
+	void normalizeVec3(const vec3_float* vIn, vec3_float* vOut)
 	{
 		f32 distSq = vIn->x*vIn->x + vIn->y*vIn->y + vIn->z*vIn->z;
 		f32 dist = sqrtf(distSq);

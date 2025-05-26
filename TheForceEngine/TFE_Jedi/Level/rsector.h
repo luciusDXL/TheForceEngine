@@ -12,6 +12,7 @@ struct Allocator;
 struct TextureData;
 
 struct RWall;
+struct RSlope;
 struct SecObject;
 
 enum SectorFlags1
@@ -133,6 +134,10 @@ struct RSector
 	// Bounds
 	vec2_fixed boundsMin;
 	vec2_fixed boundsMax;
+
+	// Slope data
+	RSlope* floorSlope = nullptr;
+	RSlope* ceilSlope = nullptr;
 
 	// Added for TFE, to support floating point and GPU sub-renderers.
 	u32 dirtyFlags;

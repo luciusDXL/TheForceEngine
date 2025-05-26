@@ -620,6 +620,7 @@ echo ^)";
     <ClInclude Include="TFE_Jedi\Level\robject.h" />
     <ClInclude Include="TFE_Jedi\Level\roffscreenBuffer.h" />
     <ClInclude Include="TFE_Jedi\Level\rsector.h" />
+    <ClInclude Include="TFE_Jedi\Level\rslope.h" />
     <ClInclude Include="TFE_Jedi\Level\rtexture.h" />
     <ClInclude Include="TFE_Jedi\Level\rwall.h" />
     <ClInclude Include="TFE_Jedi\Math\core_math.h" />
@@ -1019,6 +1020,7 @@ echo ^)";
     <ClCompile Include="TFE_Jedi\Level\robject.cpp" />
     <ClCompile Include="TFE_Jedi\Level\roffscreenBuffer.cpp" />
     <ClCompile Include="TFE_Jedi\Level\rsector.cpp" />
+    <ClCompile Include="TFE_Jedi\Level\rslope.cpp" />
     <ClCompile Include="TFE_Jedi\Level\rtexture.cpp" />
     <ClCompile Include="TFE_Jedi\Level\rwall.cpp" />
     <ClCompile Include="TFE_Jedi\Math\core_math.cpp" />

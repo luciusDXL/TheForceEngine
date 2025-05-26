@@ -1492,6 +1492,9 @@
     <ClInclude Include="TFE_Editor\LevelEditor\confirmDialogs.h">
       <Filter>Source\TFE_Editor\LevelEditor</Filter>
     </ClInclude>
+    <ClInclude Include="TFE_Jedi\Level\rslope.h">
+      <Filter>Source\TFE_Jedi\Level</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -2615,6 +2618,9 @@
     </ClCompile>
     <ClCompile Include="TFE_Editor\LevelEditor\confirmDialogs.cpp">
       <Filter>Source\TFE_Editor\LevelEditor</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Jedi\Level\rslope.cpp">
+      <Filter>Source\TFE_Jedi\Level</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
