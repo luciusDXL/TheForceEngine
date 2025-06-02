@@ -2786,26 +2786,50 @@ namespace TFE_Jedi
 
 			// Does the player have the key?
 			KeyItem key = elev->key;
-			if (key == KEY_RED && !s_playerInfo.itemRedKey)
+			if (key == KEY_RED)
 			{
-				// "You need the red key."
-				hud_sendTextMessage(6);
-				sound_play(s_needKeySoundId);
-				return;
+				if (TFE_Settings::getGameSettings()->df_showKeyUsed &&  s_playerInfo.itemRedKey)
+				{
+					string msg = "Using the Red Key";
+					TFE_DarkForces::hud_sendTextMessage(msg.c_str(), 1, false);
+				}
+				else if (!s_playerInfo.itemRedKey)
+				{
+					// "You need the red key."
+					hud_sendTextMessage(6);
+					sound_play(s_needKeySoundId);
+					return;
+				}
 			}
-			else if (key == KEY_YELLOW && !s_playerInfo.itemYellowKey)
+			else if (key == KEY_YELLOW)
 			{
-				// "You need the yellow key."
-				hud_sendTextMessage(7);
-				sound_play(s_needKeySoundId);
-				return;
+				if (TFE_Settings::getGameSettings()->df_showKeyUsed && s_playerInfo.itemYellowKey)
+				{
+					string msg = "Using the Yellow Key";
+					TFE_DarkForces::hud_sendTextMessage(msg.c_str(), 1, false);
+				}
+				else if (!s_playerInfo.itemYellowKey)
+				{
+					// "You need the yellow key."
+					hud_sendTextMessage(7);
+					sound_play(s_needKeySoundId);
+					return;
+				}
 			}
-			else if (key == KEY_BLUE && !s_playerInfo.itemBlueKey)
+			else if (key == KEY_BLUE)
 			{
-				// "You need the blue key."
-				hud_sendTextMessage(8);
-				sound_play(s_needKeySoundId);
-				return;
+				if (TFE_Settings::getGameSettings()->df_showKeyUsed && s_playerInfo.itemBlueKey)
+				{
+					string msg = "Using the Blue Key";
+					TFE_DarkForces::hud_sendTextMessage(msg.c_str(), 1, false);
+				}
+				else if (!s_playerInfo.itemBlueKey)	
+				{
+					// "You need the blue key."
+					hud_sendTextMessage(8);
+					sound_play(s_needKeySoundId);
+					return;
+				}
 			}
 		}
 				

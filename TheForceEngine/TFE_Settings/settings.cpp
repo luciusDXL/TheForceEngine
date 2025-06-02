@@ -545,6 +545,7 @@ namespace TFE_Settings
 		writeKeyValue_Bool(settings, "df_enableRecordingAll", s_gameSettings.df_enableRecordingAll);
 		writeKeyValue_Bool(settings, "df_demologging", s_gameSettings.df_demologging);
 		writeKeyValue_Bool(settings, "df_autoNextMission", s_gameSettings.df_autoEndMission);
+		writeKeyValue_Bool(settings, "df_showKeyUsed", s_gameSettings.df_showKeyUsed);
 	}
 
 	void writePerGameSettings(FileStream& settings)

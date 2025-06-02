@@ -1230,6 +1230,12 @@ namespace TFE_FrontEndUI
 			gameSettings->df_autoEndMission = autoEndMission;
 		}
 
+		bool showKeysUsed = gameSettings->df_showKeyUsed;
+		if (ImGui::Checkbox("Show Key Used messages when opening doors", &showKeysUsed))
+		{
+			gameSettings->df_showKeyUsed = showKeysUsed;
+		}
+
 		ImGui::Separator();
 
 		ImGui::PushFont(s_versionFont);
