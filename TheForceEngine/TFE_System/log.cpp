@@ -162,7 +162,7 @@ namespace TFE_System
 		}
 	}
 
-	void logRotatingLogFile(const char* fileName, bool append)
+	void openRotatingLog(const char* fileName, bool append)
 	{
 		if (!fileName) { return; }
 

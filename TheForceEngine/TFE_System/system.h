@@ -59,7 +59,7 @@ namespace TFE_System
 	bool logOpen(const char* filename, bool append=false);
 	void logClose();
 	void logWrite(LogWriteType type, const char* tag, const char* str, ...);
-	void logRotatingLogFile(const char* fileName, bool append=false);
+	void openRotatingLog(const char* fileName, bool append=false);
 
 	// Lighter weight debug output (only useful when running in a terminal or debugger).
 	void debugWrite(const char* tag, const char* str, ...);
