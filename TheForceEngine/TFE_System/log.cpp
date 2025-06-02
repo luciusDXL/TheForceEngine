@@ -31,6 +31,7 @@ namespace TFE_System
 	};
 
 	bool includeTime = true;
+	int maxLogRotations = 3;
 
 	void logTimeToggle()
 	{
@@ -55,7 +56,7 @@ namespace TFE_System
 	{
 		s_logFile.close();
 	}
-	
+
 	void debugWrite(const char* tag, const char* str, ...)
 	{
 		if (!tag || !str) { return; }
@@ -69,11 +70,11 @@ namespace TFE_System
 		sprintf(s_workStr, "[%s] %s\r\n", tag, s_msgStr);
 
 		//Write to the debugger or terminal output.
-		#ifdef _WIN32
-			OutputDebugStringA(s_workStr);
-		#else
-			fprintf(stderr, "%s", s_workStr);
-		#endif
+#ifdef _WIN32
+		OutputDebugStringA(s_workStr);
+#else
+		fprintf(stderr, "%s", s_workStr);
+#endif
 	}
 
 	void logWrite(LogWriteType type, const char* tag, const char* str, ...)
@@ -83,12 +84,12 @@ namespace TFE_System
 		auto now = std::chrono::system_clock::now();
 		std::time_t now_c = std::chrono::system_clock::to_time_t(now);
 		std::tm now_tm;
-		
-		#ifdef _WIN32
-			localtime_s(&now_tm, &now_c);  // For thread safety on Windows
-		#else
-			localtime_r(&now_c, &now_tm);  // For thread safety on Linux
-		#endif
+
+#ifdef _WIN32
+		localtime_s(&now_tm, &now_c);  // For thread safety on Windows
+#else
+		localtime_r(&now_c, &now_tm);  // For thread safety on Linux
+#endif
 
 		auto milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(
 			now.time_since_epoch()) % 1000;
@@ -130,11 +131,11 @@ namespace TFE_System
 			s_logFile.flush();
 		}
 		//Write to the debugger or terminal output.
-		#ifdef _WIN32
-			OutputDebugStringA(s_workStr);
-		#else
-			fprintf(stderr, "%s", s_workStr);
-		#endif
+#ifdef _WIN32
+		OutputDebugStringA(s_workStr);
+#else
+		fprintf(stderr, "%s", s_workStr);
+#endif
 		//Critical log messages also act as asserts in the debugger.
 		if (type == LOG_CRITICAL)
 		{
@@ -160,4 +161,37 @@ namespace TFE_System
 			TFE_FrontEndUI::logToConsole(msgStart);
 		}
 	}
+
+	void logRotatingLogFile(const char* fileName, bool append)
+	{
+		if (!fileName) { return; }
+
+		char logPath[TFE_MAX_PATH];
+		TFE_Paths::appendPath(PATH_USER_DOCUMENTS, fileName, logPath);
+
+		// Handle rotations
+		for (int i = maxLogRotations; i > 0; i--)
+		{
+			char oldLogPath[TFE_MAX_PATH];
+			char newLogPath[TFE_MAX_PATH];
+			if (i == 1)
+			{
+				sprintf(oldLogPath, "%s", logPath);
+			}
+			else
+			{
+				sprintf(oldLogPath, "%s.%d", logPath, i - 1);
+			}
+
+			if (FileUtil::exists(oldLogPath))
+			{
+				sprintf(newLogPath, "%s.%d", logPath, i);
+				FileUtil::copyFile(oldLogPath, newLogPath);
+			}
+		}
+
+		// Open file as normal
+		logOpen(fileName, append);
+	}
 }
+	

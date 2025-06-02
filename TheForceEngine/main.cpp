@@ -509,7 +509,7 @@ int main(int argc, char* argv[])
 	pathsSet &= TFE_Paths::setProgramPath();
 	pathsSet &= TFE_Paths::setProgramDataPath("TheForceEngine");
 	pathsSet &= TFE_Paths::setUserDocumentsPath("TheForceEngine");
-	TFE_System::logOpen("the_force_engine_log.txt");
+	TFE_System::logRotatingLogFile("the_force_engine_log.txt");
 	TFE_System::logWrite(LOG_MSG, "Main", "The Force Engine %s", c_gitVersion);
 	if (!pathsSet)
 	{
