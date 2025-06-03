@@ -447,4 +447,6 @@ namespace TFE_Settings
 	void loadCustomModSettings();
 	void parseIniFile(const char* buffer, size_t len);
 	void writeDarkForcesGameSettings(FileStream& settings);
+	void resetGameSettings();
+	void resetAllSettings();
 }

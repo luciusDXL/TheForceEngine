@@ -28,6 +28,7 @@ namespace TFE_Settings
 	// Local State
 	//////////////////////////////////////////////////////////////////////////////////
 	static char s_settingsPath[TFE_MAX_PATH];
+	static char s_defaultSettingsPath[TFE_MAX_PATH];
 	static TFE_Settings_Window s_windowSettings = {};
 	static TFE_Settings_Graphics s_graphicsSettings = {};
 	static TFE_Settings_Enhancements s_enhancementsSettings = {};
@@ -41,6 +42,8 @@ namespace TFE_Settings
 	static TFE_ModSettings s_modSettings = {};
 	static std::vector<char> s_iniBuffer;
 
+	// Default container for game settings.
+	static TFE_Settings_Game s_defaultGameSettings = {};
 
 	//MOD CONF Version ENUM
 	enum ModConfVersion
@@ -127,7 +130,15 @@ namespace TFE_Settings
 		}
 		strcpy(s_game.game, s_gameSettings.header[0].gameName);
 
+		// Make a backup of the default game settings.
+		memcpy(&s_defaultGameSettings, &s_gameSettings, sizeof(TFE_Settings_Game));
+
 		TFE_Paths::appendPath(PATH_USER_DOCUMENTS, "settings.ini", s_settingsPath);
+		TFE_Paths::appendPath(PATH_USER_DOCUMENTS, "settings_default.ini", s_defaultSettingsPath);
+
+		// Make a backup of the default settings.
+		FileUtil::copyFile(s_settingsPath, s_defaultSettingsPath);
+
 		if (FileUtil::exists(s_settingsPath))
 		{
 			// This is still the first run if the settings.ini file is empty.
@@ -1741,5 +1752,18 @@ namespace TFE_Settings
 			}
 		}
 		free(data);
+	}
+
+	void resetGameSettings()
+	{
+		// Make a backup of the default game settings.
+		memcpy(&s_gameSettings, &s_defaultGameSettings, sizeof(TFE_Settings_Game));
+	}
+
+	void resetAllSettings()
+	{
+		FileUtil::copyFile(s_defaultSettingsPath, s_settingsPath);
+		bool firstRun = false;
+		TFE_Settings::init(firstRun);
 	}
 }

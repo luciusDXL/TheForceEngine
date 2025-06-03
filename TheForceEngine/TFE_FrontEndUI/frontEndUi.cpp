@@ -1341,6 +1341,13 @@ namespace TFE_FrontEndUI
 			ImGui::EndPopup();
 		}
 
+		
+		if (ImGui::Button("Reset Game Settings"))
+		{
+			TFE_Settings::resetGameSettings();
+			TFE_Settings::autodetectGamePaths();
+		}
+
 		ImGui::Separator();
 		ImGui::Spacing();
 		ImGui::PushFont(s_versionFont);
@@ -2959,6 +2966,43 @@ namespace TFE_FrontEndUI
 		ImGui::Separator();
 
 		//////////////////////////////////////////////////////
+		// Reset Settings
+		//////////////////////////////////////////////////////
+		ImGui::PushFont(s_dialogFont);
+		ImGui::LabelText("##ConfigLabel", "Switch Graphical Settings");
+		ImGui::PopFont();
+
+		// Allow player to reset Graphic Settings
+		if (ImGui::Button("Modern"))
+		{
+			setSettingsTemplate(TEMPLATE_MODERN);
+			s_appState = APP_STATE_MENU;
+		}
+		ImGui::SameLine();
+		ImGui::SetNextItemWidth(600);
+		ImGui::LabelText("##ConfigLabel", "Like Retro and adds modern effects such as bloom.");
+
+		if (ImGui::Button("Retro"))
+		{
+			setSettingsTemplate(TEMPLATE_RETRO);
+			s_appState = APP_STATE_MENU;
+		}
+		ImGui::SameLine();
+		ImGui::SetNextItemWidth(600);
+		ImGui::LabelText("##ConfigLabel", " Play in high res, widescreen, and modern controls.");
+
+		if (ImGui::Button("Vanilla"))
+		{
+			setSettingsTemplate(TEMPLATE_VANILLA);
+			s_appState = APP_STATE_MENU;
+		}
+		ImGui::SameLine();
+		ImGui::SetNextItemWidth(600);
+		ImGui::LabelText("##ConfigLabel", "Play using the original resolution and controls.");
+
+		ImGui::Separator();
+
+		//////////////////////////////////////////////////////
 		// Resolution
 		//////////////////////////////////////////////////////
 		bool widescreen = graphics->widescreen;
@@ -3218,7 +3262,7 @@ namespace TFE_FrontEndUI
 		}
 
 		const ColorCorrection colorCorrection = { graphics->brightness, graphics->contrast, graphics->saturation, graphics->gamma };
-		TFE_RenderBackend::setColorCorrection(graphics->colorCorrection, &colorCorrection, bloomChanged);
+		TFE_RenderBackend::setColorCorrection(graphics->colorCorrection, &colorCorrection, bloomChanged);		
 	}
 
 	void configHud()
@@ -3469,6 +3513,11 @@ namespace TFE_FrontEndUI
 			}
 		}
 	#endif
+
+		if (ImGui::Button("Reset All Settings"))
+		{
+			TFE_Settings::resetAllSettings();
+		}
 	}
 
 	void DrawFontSizeCombo(float labelWidth, float valueWidth, const char* label, const char* comboTag, s32* currentValue)
