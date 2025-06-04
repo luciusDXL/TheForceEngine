@@ -3513,11 +3513,34 @@ namespace TFE_FrontEndUI
 			}
 		}
 	#endif
+		const char * resetMsg = "             Reset All Settings";
 
 		if (ImGui::Button("Reset All Settings"))
 		{
-			TFE_Settings::resetAllSettings();
-		}
+			ImGui::OpenPopup(resetMsg);
+		}	
+
+
+		if (ImGui::BeginPopupModal(resetMsg, NULL, ImGuiWindowFlags_AlwaysAutoResize))
+		{
+			ImGui::Text("Are you sure you want to reset all settings?");
+			ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 80);
+
+			if (ImGui::Button("OK", ImVec2(120, 0)))
+			{
+				TFE_Settings::resetAllSettings();
+				ImGui::CloseCurrentPopup();
+			}
+
+			ImGui::SameLine(0.0f, 32.0f);
+			if (ImGui::Button("Cancel", ImVec2(120, 0)))
+			{
+				ImGui::CloseCurrentPopup();
+			}
+
+			ImGui::EndPopup();
+			
+		}		
 	}
 
 	void DrawFontSizeCombo(float labelWidth, float valueWidth, const char* label, const char* comboTag, s32* currentValue)
@@ -3976,6 +3999,7 @@ namespace TFE_FrontEndUI
 				gameSettings->df_solidWallFlagFix = true;
 				gameSettings->df_enableUnusedItem = true;
 				gameSettings->df_jsonAiLogics = true;
+				gameSettings->df_enableUnusedItem = true;
 				// Graphics
 				graphicsSettings->rendererIndex = RENDERER_HARDWARE;
 				graphicsSettings->skyMode = SKYMODE_CYLINDER;

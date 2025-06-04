@@ -130,14 +130,17 @@ namespace TFE_Settings
 		}
 		strcpy(s_game.game, s_gameSettings.header[0].gameName);
 
-		// Make a backup of the default game settings.
-		memcpy(&s_defaultGameSettings, &s_gameSettings, sizeof(TFE_Settings_Game));
-
 		TFE_Paths::appendPath(PATH_USER_DOCUMENTS, "settings.ini", s_settingsPath);
 		TFE_Paths::appendPath(PATH_USER_DOCUMENTS, "settings_default.ini", s_defaultSettingsPath);
 
+		// Make a backup of the default game settings.
+		memcpy(&s_defaultGameSettings, &s_gameSettings, sizeof(TFE_Settings_Game));
+
 		// Make a backup of the default settings.
-		FileUtil::copyFile(s_settingsPath, s_defaultSettingsPath);
+		if (!FileUtil::exists(s_defaultSettingsPath))
+		{
+			writeToDisk(true);
+		}
 
 		if (FileUtil::exists(s_settingsPath))
 		{
@@ -296,10 +299,19 @@ namespace TFE_Settings
 		return false;
 	}
 
-	bool writeToDisk()
+	bool writeToDisk(bool writeDefaultSettings)
 	{
+		static char settingFilePath[TFE_MAX_PATH];
+		if (writeDefaultSettings)
+		{
+			strcpy(settingFilePath, s_defaultSettingsPath);
+		}
+		else
+		{
+			strcpy(settingFilePath, s_settingsPath);
+		}
 		FileStream settings;
-		if (settings.open(s_settingsPath, Stream::MODE_WRITE))
+		if (settings.open(settingFilePath, Stream::MODE_WRITE))
 		{
 			writeWindowSettings(settings);
 			writeGraphicsSettings(settings);
