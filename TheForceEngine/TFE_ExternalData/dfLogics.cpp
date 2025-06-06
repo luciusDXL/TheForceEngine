@@ -334,6 +334,41 @@ namespace TFE_ExternalData
 			return true;
 		}
 
+		// When it comes to offsets these are considered from the perspective of the actor.
+		//
+		// Projectile spawn details guide.
+		// 
+		// Z value positive =  projectile spawns to the LEFT of actor
+		// Z value negative =  projectile spawns to the RIGHT of actor 
+		// X value postivie =  projectile spawns in FRONT of actor
+		// X value negative =  projectile spawns BEHIND the actor
+		// Y value positive =  projectile spawns BELOW the actor
+		// Y value negative =  projectile spawns ABOVE the actor
+		//
+		if (cJSON_IsArray(data) && strcasecmp(data->string, "fireOffset") == 0)
+		{
+
+			if (cJSON_GetArraySize(data) == 3)
+			{
+				customLogic.fireOffset.x =  cJSON_GetArrayItem(data, 0)->valueint;
+				customLogic.fireOffset.y =  cJSON_GetArrayItem(data, 1)->valueint;
+				customLogic.fireOffset.z =  cJSON_GetArrayItem(data, 2)->valueint;
+				return true;
+			}
+			return false;
+		}
+		if (cJSON_IsArray(data) && strcasecmp(data->string, "altFireOffset") == 0)
+		{
+			if (cJSON_GetArraySize(data) == 3)
+			{
+				customLogic.altFireOffset.x = cJSON_GetArrayItem(data, 0)->valueint;
+				customLogic.altFireOffset.y = cJSON_GetArrayItem(data, 1)->valueint;
+				customLogic.altFireOffset.z = cJSON_GetArrayItem(data, 2)->valueint;
+				return true;
+			}
+			return false;
+		}
+
 		/* JK: Leaving these out for now until we have a better understanding of what they mean
 		if (cJSON_IsNumber(data) && strcasecmp(data->string, "delay") == 0)
 		{

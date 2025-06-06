@@ -284,6 +284,10 @@ namespace TFE_DarkForces
 		SERIALIZE(SaveVersionInit, attackMod->fireSpread, 0);
 		SERIALIZE(SaveVersionInit, attackMod->accuracyNextTick, 0);
 		SERIALIZE(SaveVersionInit, attackMod->fireOffset, {0});
+
+
+		// I think we may need to update Serialization Version? 
+		SERIALIZE(SaveVersionInit, attackMod->altFireOffset, { 0 });
 		SERIALIZE(SaveVersionInit, attackMod->projType, PROJ_COUNT);
 		serialization_serializeDfSound(stream, SaveVersionInit, &attackMod->attackSecSndSrc);
 		serialization_serializeDfSound(stream, SaveVersionInit, &attackMod->attackPrimSndSrc);
