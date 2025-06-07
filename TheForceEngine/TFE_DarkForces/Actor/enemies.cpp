@@ -20,7 +20,7 @@
 namespace TFE_DarkForces
 {
 	static const s32 s_reeyeeMinDist = FIXED(30);
-	
+
 	Logic* reeyees_setup(SecObject* obj, LogicSetupFunc* setupFunc)
 	{
 		ActorDispatch* dispatch = actor_createDispatch(obj, setupFunc);
@@ -221,12 +221,12 @@ namespace TFE_DarkForces
 		attackMod->meleeRate = FIXED(cust->meleeRate);
 		attackMod->minDist = FIXED(cust->minAttackDist);
 		attackMod->fireSpread = FIXED(cust->fireSpread);
-		attackMod->fireOffset.x = FIXED(cust->fireOffset.x);
-		attackMod->fireOffset.y = FIXED(cust->fireOffset.y);
-		attackMod->fireOffset.z = FIXED(cust->fireOffset.z);
-		attackMod->altFireOffset.x = FIXED(cust->altFireOffset.x);
-		attackMod->altFireOffset.y = FIXED(cust->altFireOffset.y);
-		attackMod->altFireOffset.z = FIXED(cust->altFireOffset.z);
+		attackMod->fireOffset.x = cust->fireOffset.x;
+		attackMod->fireOffset.y = cust->fireOffset.y;
+		attackMod->fireOffset.z = cust->fireOffset.z;
+		attackMod->altFireOffset.x = cust->altFireOffset.x;
+		attackMod->altFireOffset.y = cust->altFireOffset.y;
+		attackMod->altFireOffset.z = cust->altFireOffset.z;
 
 
 		s_actorState.attackMod = attackMod;

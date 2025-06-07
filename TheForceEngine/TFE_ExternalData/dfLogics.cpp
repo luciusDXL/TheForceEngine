@@ -18,7 +18,7 @@ namespace TFE_ExternalData
 	void parseLogicData(char* data, const char* filename, std::vector<CustomActorLogic>& actorLogics);
 	bool tryAssignProperty(cJSON* data, CustomActorLogic& customLogic);
 
-	
+
 	ExternalLogics* getExternalLogics()
 	{
 		return &s_externalLogics;
@@ -105,13 +105,13 @@ namespace TFE_ExternalData
 		}
 	}
 
-	bool tryAssignProperty(cJSON* data, CustomActorLogic &customLogic)
+	bool tryAssignProperty(cJSON* data, CustomActorLogic& customLogic)
 	{
 		if (!data)
 		{
 			return false;
 		}
-		
+
 		if (cJSON_IsBool(data) && strcasecmp(data->string, "hasGravity") == 0)
 		{
 			customLogic.hasGravity = cJSON_IsTrue(data);
@@ -141,7 +141,7 @@ namespace TFE_ExternalData
 			customLogic.alertSound = data->valuestring;
 			return true;
 		}
-		
+
 		if (cJSON_IsString(data) && strcasecmp(data->string, "painSound") == 0)
 		{
 			customLogic.painSound = data->valuestring;
@@ -233,13 +233,13 @@ namespace TFE_ExternalData
 			customLogic.litWithMeleeAttack = cJSON_IsTrue(data);
 			return true;
 		}
-		
+
 		if (cJSON_IsBool(data) && strcasecmp(data->string, "litWithRangedAttack") == 0)
 		{
 			customLogic.litWithRangedAttack = cJSON_IsTrue(data);
 			return true;
 		}
-		
+
 		// Projectile as number
 		if (cJSON_IsNumber(data) && strcasecmp(data->string, "projectile") == 0)
 		{
@@ -350,9 +350,9 @@ namespace TFE_ExternalData
 
 			if (cJSON_GetArraySize(data) == 3)
 			{
-				customLogic.fireOffset.x =  cJSON_GetArrayItem(data, 0)->valueint;
-				customLogic.fireOffset.y =  cJSON_GetArrayItem(data, 1)->valueint;
-				customLogic.fireOffset.z =  cJSON_GetArrayItem(data, 2)->valueint;
+				customLogic.fireOffset.x = floatToFixed16(cJSON_GetArrayItem(data, 0)->valuedouble);
+				customLogic.fireOffset.y = floatToFixed16(cJSON_GetArrayItem(data, 1)->valuedouble);
+				customLogic.fireOffset.z = floatToFixed16(cJSON_GetArrayItem(data, 2)->valuedouble);
 				return true;
 			}
 			return false;
@@ -361,9 +361,9 @@ namespace TFE_ExternalData
 		{
 			if (cJSON_GetArraySize(data) == 3)
 			{
-				customLogic.altFireOffset.x = cJSON_GetArrayItem(data, 0)->valueint;
-				customLogic.altFireOffset.y = cJSON_GetArrayItem(data, 1)->valueint;
-				customLogic.altFireOffset.z = cJSON_GetArrayItem(data, 2)->valueint;
+				customLogic.altFireOffset.x = floatToFixed16(cJSON_GetArrayItem(data, 0)->valuedouble);
+				customLogic.altFireOffset.y = floatToFixed16(cJSON_GetArrayItem(data, 1)->valuedouble);
+				customLogic.altFireOffset.z = floatToFixed16(cJSON_GetArrayItem(data, 2)->valuedouble);
 				return true;
 			}
 			return false;

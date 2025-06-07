@@ -37,7 +37,7 @@ using namespace TFE_Jedi;
 namespace TFE_DarkForces
 {
 	typedef void(*ActorModuleSerializeFn)(Stream*, ActorModule*&, ActorDispatch*);
-	static const ActorModuleSerializeFn c_moduleSerFn[]=
+	static const ActorModuleSerializeFn c_moduleSerFn[] =
 	{
 		actor_serializeMovementModule,    // ACTMOD_MOVE
 		actor_serializeAttackModule,      // ACTMOD_ATTACK
@@ -47,7 +47,7 @@ namespace TFE_DarkForces
 		actor_serializeFlyerRemoteModule, // ACTMOD_FLYER_REMOTE
 		nullptr,						  // ACTMOD_INVALID
 	};
-	   
+
 	void actorDispatch_serialize(Logic*& logic, SecObject* obj, Stream* stream)
 	{
 		ActorDispatch* dispatch = nullptr;
@@ -74,8 +74,8 @@ namespace TFE_DarkForces
 		SERIALIZE(SaveVersionInit, dispatch->nextTick, 0);
 		SERIALIZE(SaveVersionInit, dispatch->fov, 9557);			// ~210 degrees
 		SERIALIZE(SaveVersionInit, dispatch->awareRange, FIXED(20));
-		SERIALIZE(SaveVersionInit, dispatch->vel, {0});
-		SERIALIZE(SaveVersionInit, dispatch->lastPlayerPos, {0});
+		SERIALIZE(SaveVersionInit, dispatch->vel, { 0 });
+		SERIALIZE(SaveVersionInit, dispatch->lastPlayerPos, { 0 });
 		SERIALIZE(SaveVersionInit, dispatch->flags, 4);
 		// Animation Table.
 		s32 animTableIndex = -1;
@@ -141,7 +141,7 @@ namespace TFE_DarkForces
 			dispatch->freeTask = nullptr;
 		}
 	}
-		
+
 	void actor_serializeObject(Stream* stream, SecObject*& obj)
 	{
 		s32 objId;
@@ -193,8 +193,8 @@ namespace TFE_DarkForces
 		SERIALIZE(SaveVersionInit, colInfo->width, 0);
 		SERIALIZE(SaveVersionInit, colInfo->flags, 0);
 		SERIALIZE(SaveVersionInit, colInfo->responseStep, 0);
-		SERIALIZE(SaveVersionInit, colInfo->responseDir, {0});
-		SERIALIZE(SaveVersionInit, colInfo->responsePos, {0});
+		SERIALIZE(SaveVersionInit, colInfo->responseDir, { 0 });
+		SERIALIZE(SaveVersionInit, colInfo->responsePos, { 0 });
 		SERIALIZE(SaveVersionInit, colInfo->responseAngle, 0);
 
 		if (serialization_getMode() == SMODE_READ)
@@ -205,7 +205,7 @@ namespace TFE_DarkForces
 
 	void actor_serializeTarget(Stream* stream, ActorTarget* target)
 	{
-		SERIALIZE(SaveVersionInit, target->pos, {0});
+		SERIALIZE(SaveVersionInit, target->pos, { 0 });
 		SERIALIZE(SaveVersionInit, target->pitch, 0);
 		SERIALIZE(SaveVersionInit, target->yaw, 0);
 		SERIALIZE(SaveVersionInit, target->roll, 0);
@@ -219,12 +219,12 @@ namespace TFE_DarkForces
 			target->pad = 0;
 		}
 	}
-		
+
 	void actor_serializeTiming(Stream* stream, ActorTiming* timing)
 	{
 		SERIALIZE(SaveVersionInit, timing->delay, 0);
 		SERIALIZE(SaveVersionInit, timing->searchDelay, 0);
-		SERIALIZE(SaveVersionInit, timing->meleeDelay,  0);
+		SERIALIZE(SaveVersionInit, timing->meleeDelay, 0);
 		SERIALIZE(SaveVersionInit, timing->rangedDelay, 0);
 		SERIALIZE(SaveVersionInit, timing->losDelay, 0);
 		SERIALIZE(SaveVersionInit, timing->nextTick, 0);
@@ -283,11 +283,11 @@ namespace TFE_DarkForces
 		actor_serializeLogicAnim(stream, &attackMod->anim);
 		SERIALIZE(SaveVersionInit, attackMod->fireSpread, 0);
 		SERIALIZE(SaveVersionInit, attackMod->accuracyNextTick, 0);
-		SERIALIZE(SaveVersionInit, attackMod->fireOffset, {0});
+		SERIALIZE(SaveVersionInit, attackMod->fireOffset, { 0 });
 
 
 		// I think we may need to update Serialization Version? 
-		SERIALIZE(SaveVersionInit, attackMod->altFireOffset, { 0 });
+		// SERIALIZE(SaveVersionInit, attackMod->altFireOffset, { 0 });
 		SERIALIZE(SaveVersionInit, attackMod->projType, PROJ_COUNT);
 		serialization_serializeDfSound(stream, SaveVersionInit, &attackMod->attackSecSndSrc);
 		serialization_serializeDfSound(stream, SaveVersionInit, &attackMod->attackPrimSndSrc);
@@ -315,7 +315,7 @@ namespace TFE_DarkForces
 			mod = (ActorModule*)attackMod;
 			memset(attackMod, 0, sizeof(AttackModule));
 			actor_initModule(mod, (Logic*)dispatch);
-			
+
 			attackMod->header.func = funcIdx == 0 ? defaultAttackFunc : sewerCreatureEnemyFunc;
 			attackMod->header.freeFunc = nullptr;
 			attackMod->header.msgFunc = defaultAttackMsgFunc;
@@ -332,7 +332,7 @@ namespace TFE_DarkForces
 		actor_serializeAttackModuleBase(stream, attackMod, dispatch);
 	}
 
-	const ActorFunc c_actorDamageFunc[] = 
+	const ActorFunc c_actorDamageFunc[] =
 	{
 		defaultDamageFunc,
 		sceneryLogicFunc,
@@ -414,7 +414,7 @@ namespace TFE_DarkForces
 		SERIALIZE(SaveVersionInit, damageMod->stopOnHit, JFALSE);
 		SERIALIZE(SaveVersionInit, damageMod->dieEffect, HEFFECT_CANNON_EXP);
 	}
-		
+
 	void actor_serializeThinkerModule(Stream* stream, ActorModule*& mod, ActorDispatch* dispatch)
 	{
 		ThinkerModule* thinkerMod;
@@ -451,7 +451,7 @@ namespace TFE_DarkForces
 		SERIALIZE(SaveVersionInit, thinkerMod->targetVariation, 0);
 		SERIALIZE(SaveVersionInit, thinkerMod->approachVariation, 0);
 	}
-		
+
 	void actor_serializeFlyerModule(Stream* stream, ActorModule*& mod, ActorDispatch* dispatch)
 	{
 		actor_serializeThinkerModule(stream, mod, dispatch);
