@@ -82,6 +82,29 @@ namespace TFE_Settings
 		"CVar",
 	};
 
+	TFE_Settings_Map_Colors defaultAutoMapColors[] = {
+		{"WCOLOR_INVISIBLE", "Invisible Wall",  0, {0, 0, 0, 255}},
+		{"WCOLOR_NORMAL", "Normal Wall", 10, {0, 252, 0, 255}},
+		{"WCOLOR_LEDGE", "Ledge Wall", 12, {0, 152, 0, 255}},
+		{"WCOLOR_GRAYED_OUT", "Grayed Out Wall", 13, {0, 92, 0, 255}},
+		{"WCOLOR_DOOR", "Door Wall", 20, {244, 184, 52, 255}},
+		{"WCOLOR_SECRET", "Secret Wall", 22, {216, 88, 12, 255}},
+		{"WCOLOR_SECRET_NOT_FOUND", "Secret Not Found Wall", 4, {124, 204, 252, 255}},
+		{"KEY_COLOR_RED", "Red Key Wall", 6, {252, 0, 0, 255}},
+		{"KEY_COLOR_BLUE", "Blue Key Wall", 17, {0, 16, 188, 255}},
+		{"KEY_COLOR_YELLOW", "Yellow Key Wall", 19, {248, 224, 96, 255}},
+		{"MOBJCOLOR_DEFAULT", "Default Object", 19,  {248, 224, 96, 255}},
+		{"MOBJCOLOR_PROJ", "Projectile Object", 6, {252, 0, 0, 255}},
+		{"MOBJCOLOR_CORPSE", "Corpse Object", 2, {208, 236, 252, 255}},
+		{"MOBJCOLOR_LANDMINE", "Landmine Object", 1, {252, 252, 252, 255}},
+		{"MOBJCOLOR_PICKUP", "Pickup Object", 16,{0, 36, 240, 255}},
+		{"MOBJCOLOR_SCENERY", "Scenery Object",21, {184, 44, 4, 255}}
+	};
+
+	int autoMapColorsLen = sizeof(defaultAutoMapColors) / sizeof(defaultAutoMapColors[0]);
+
+	std::vector <TFE_Settings_Map_Colors> autoMapColors;
+
 	//////////////////////////////////////////////////////////////////////////////////
 	// Forward Declarations
 	//////////////////////////////////////////////////////////////////////////////////
@@ -116,7 +139,7 @@ namespace TFE_Settings
 
 	//////////////////////////////////////////////////////////////////////////////////
 	// Implementation
-	//////////////////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////////////////	
 	bool init(bool& firstRun)
 	{
 		// Clear out game settings.
@@ -150,6 +173,7 @@ namespace TFE_Settings
 	{
 		// Write any settings to disk before shutting down.
 		writeToDisk();
+		writeRGBAToJSON();
 	}
 
 	void autodetectGamePaths()
@@ -545,6 +569,9 @@ namespace TFE_Settings
 		writeKeyValue_Bool(settings, "df_enableRecordingAll", s_gameSettings.df_enableRecordingAll);
 		writeKeyValue_Bool(settings, "df_demologging", s_gameSettings.df_demologging);
 		writeKeyValue_Bool(settings, "df_autoNextMission", s_gameSettings.df_autoEndMission);
+		writeKeyValue_Bool(settings, "df_showKeyColors", s_gameSettings.df_showKeyColors);
+		writeKeyValue_Bool(settings, "df_showMapSecrets", s_gameSettings.df_showMapSecrets);
+		writeKeyValue_Bool(settings, "df_showMapObjects", s_gameSettings.df_showMapObjects);
 	}
 
 	void writePerGameSettings(FileStream& settings)
@@ -1206,6 +1233,18 @@ namespace TFE_Settings
 		{
 			s_gameSettings.df_autoEndMission = parseBool(value);
 		}
+		else if (strcasecmp("df_showKeyColors", key) == 0)
+		{
+			s_gameSettings.df_showKeyColors = parseBool(value);
+		}
+		else if (strcasecmp("df_showMapSecrets", key) == 0)
+		{
+			s_gameSettings.df_showMapSecrets = parseBool(value);
+		}
+		else if (strcasecmp("df_showMapObjects", key) == 0)
+		{
+			s_gameSettings.df_showMapObjects = parseBool(value);
+		}
 	}
 
 	void parseOutlawsSettings(const char* key, const char* value)
@@ -1741,5 +1780,174 @@ namespace TFE_Settings
 			}
 		}
 		free(data);
+	}
+
+	// Once the GPU PDA is setup we will not need this function
+	void updateRGBAFromJson(cJSON* array, string RGBName) {
+		if (cJSON_IsArray(array) && cJSON_GetArraySize(array) == 4) {
+			cJSON* rItem = cJSON_GetArrayItem(array, 0);
+			cJSON* gItem = cJSON_GetArrayItem(array, 1);
+			cJSON* bItem = cJSON_GetArrayItem(array, 2);
+			cJSON* alpha = cJSON_GetArrayItem(array, 3);
+
+			if (cJSON_IsNumber(rItem) && cJSON_IsNumber(gItem) && cJSON_IsNumber(bItem)) {
+
+				for (int i = 0; i < autoMapColorsLen; i++)
+				{
+					if (strcasecmp(autoMapColors[i].name.c_str(), RGBName.c_str()) == 0)
+					{
+						tuple<int, int, int> key = { rItem->valueint, gItem->valueint, bItem->valueint };
+						int RGBidx = rgbToIndexMap.find(key) != rgbToIndexMap.end() ? rgbToIndexMap[key] : -1;
+						if (RGBidx != -1)
+						{
+							autoMapColors[i].RGBA = { rItem->valueint, gItem->valueint, bItem->valueint, alpha->valueint };
+							autoMapColors[i].colorMapIndex = RGBidx;
+							break;
+						}
+						else {
+							TFE_System::logWrite(LOG_ERROR, "Settings", "map_colors.txt color array for %s is invalid", RGBName);
+						}
+					}
+				}
+			}
+			TFE_System::logWrite(LOG_ERROR, "Settings", "map_colors.txt color array is invalid");
+		}
+	}
+
+	void writeRGBAToJSON()
+	{
+		FileStream file;
+		char fileName[TFE_MAX_PATH];
+		sprintf(fileName, "%smap_colors.txt", TFE_Paths::getPath(PATH_USER_DOCUMENTS));
+		FileUtil::fixupPath(fileName);
+
+		int fileHandler = file.open(fileName, Stream::MODE_WRITE);
+		if (!fileHandler) { 
+			TFE_System::logWrite(LOG_ERROR, "Settings", "Cannot Write %s for new colors", fileName);
+			return;
+		}
+
+		TFE_System::logWrite(LOG_MSG, "Settings", "Writing map_colors.txt for new colors");
+
+		cJSON* root = cJSON_CreateObject();
+		for (int i = 0; i < autoMapColorsLen; i++)
+		{
+			cJSON* colorArray = cJSON_CreateArray();
+
+			u8 r = get<0>(autoMapColors[i].RGBA);
+			u8 g = get<1>(autoMapColors[i].RGBA);
+			u8 b = get<2>(autoMapColors[i].RGBA);
+			u8 a = get<3>(autoMapColors[i].RGBA);
+
+			cJSON_AddItemToArray(colorArray, cJSON_CreateNumber(r));
+			cJSON_AddItemToArray(colorArray, cJSON_CreateNumber(g));
+			cJSON_AddItemToArray(colorArray, cJSON_CreateNumber(b));
+			cJSON_AddItemToArray(colorArray, cJSON_CreateNumber(a));
+			cJSON_AddItemToObject(root, autoMapColors[i].name.c_str(), colorArray);
+		}
+		char* jsonString = cJSON_Print(root);
+		file.writeBuffer(jsonString, strlen(jsonString));
+		free(jsonString);
+		cJSON_Delete(root);
+		file.close();
+	}
+
+	void resetMapColorsFromDefault()
+	{
+		// copy the automap colors from the default one.
+		autoMapColors.assign(std::begin(defaultAutoMapColors), std::end(defaultAutoMapColors));
+
+	}
+
+	// Update all the colors from map_colors.txt 
+	void updateWallColorsFromJson() {
+
+		// Populates the color index to RGB map.
+		for (const auto& pair : rgbToIndexMap) {
+			indexToRGBMap[pair.second] = pair.first;
+		}
+
+		resetMapColorsFromDefault();
+		defaultAutoMapColors[0].colorMapIndex = 5;
+		autoMapColors[0].colorMapIndex = 7;
+		TFE_System::logWrite(LOG_MSG, "Settings", "idx = %d", defaultAutoMapColors[0].colorMapIndex);
+
+		FileStream file;
+		char fileName[TFE_MAX_PATH];
+		sprintf(fileName, "%smap_colors.txt", TFE_Paths::getPath(PATH_USER_DOCUMENTS));
+		FileUtil::fixupPath(fileName);
+
+		int fileHandler = file.open(fileName, Stream::MODE_READ);
+		if (!fileHandler) { return; }
+
+		TFE_System::logWrite(LOG_MSG, "Settings", "Parsing map_colors.txt for new colors");
+
+		const size_t size = file.getSize();
+		char* data = (char*)malloc(size + 1);
+		if (!data || size == 0)
+		{
+			TFE_System::logWrite(LOG_ERROR, "Settings", "map_colors.txt found but is %u bytes in size and cannot be read.", size);
+			return;
+		}
+		file.readBuffer(data, (u32)size);
+		data[size] = 0;
+		file.close();
+
+		cJSON* root = cJSON_Parse(data);
+		if (root)
+		{
+			cJSON* curElem = root->child;
+
+			// Loop through all the color definitions.
+			for (; curElem; curElem = curElem->next)
+			{
+				if (!curElem->string) { continue; }
+
+				updateRGBAFromJson(curElem, curElem->string);
+			}
+		}
+	}
+
+	TFE_Settings_Map_Colors * getMapColorByName(string name)
+	{
+		for (int i = 0; i < autoMapColorsLen; i++)
+		{
+			if (strcasecmp(autoMapColors[i].description.c_str(), name.c_str()) == 0)
+			{
+				return &autoMapColors[i];
+			}
+		}
+		TFE_System::logWrite(LOG_ERROR, "Settings", "BAD STRING  %s", name);
+
+		TFE_Settings_Map_Colors empty;
+		return &empty;
+	}	
+
+
+	TFE_Settings_Map_Colors* getMapColorByCMPIndex(int index)
+	{
+		for (int i = 0; i < autoMapColorsLen; i++)
+		{
+			if (autoMapColors[i].colorMapIndex == index)
+			{
+				return &autoMapColors[i];
+			}
+		}
+		TFE_Settings_Map_Colors empty;
+		return &empty;
+	}
+
+	void setMapColor(string mapTypeColor, int index)
+	{
+		for (int i = 0; i < autoMapColorsLen; i++)
+		{
+			if (strcasecmp(autoMapColors[i].description.c_str(), mapTypeColor.c_str()) == 0)
+			{
+				autoMapColors[i].colorMapIndex = index;
+				tuple<int, int, int> rgb = indexToRGBMap[index];
+				autoMapColors[i].RGBA = { get<0>(rgb), get<1>(rgb), get<2>(rgb), 255 };
+				break;
+			}
+		}
 	}
 }

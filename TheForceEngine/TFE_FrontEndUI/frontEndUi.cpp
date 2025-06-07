@@ -2,6 +2,7 @@
 #include "console.h"
 #include "profilerView.h"
 #include "modLoader.h"
+#include <tuple>
 #include <TFE_A11y/accessibility.h>
 #include <TFE_Audio/audioSystem.h>
 #include <TFE_Audio/midiPlayer.h>
@@ -18,6 +19,7 @@
 #include <TFE_FileSystem/paths.h>
 #include <TFE_FileSystem/filestream.h>
 #include <TFE_Archive/archive.h>
+#include <TFE_System/cJSON.h>
 #include <TFE_Settings/settings.h>
 #include <TFE_Asset/imageAsset.h>
 #include <TFE_Archive/zipArchive.h>
@@ -32,15 +34,18 @@
 #include <TFE_ExternalData/weaponExternal.h>
 #include <TFE_ExternalData/pickupExternal.h>
 // Game
+#include <TFE_DarkForces/automap.h>
 #include <TFE_DarkForces/mission.h>
 #include <TFE_DarkForces/gameMusic.h>
 #include <TFE_Jedi/Renderer/jediRenderer.h>
 #include <TFE_Jedi/Renderer/rcommon.h>
+#include <TFE_DarkForces/GameUI/agentMenu.h>
 #include <TFE_DarkForces/config.h>
 #include <TFE_DarkForces/player.h>
 #include <TFE_DarkForces/hud.h>
 #include <TFE_Jedi/Renderer/RClassic_Float/rlightingFloat.h>
 #include <TFE_DarkForces/darkForcesMain.h>
+#include <TFE_Editor/LevelEditor/infoPanel.h>
 #include <climits>
 
 using namespace TFE_Input;
@@ -186,6 +191,57 @@ namespace TFE_FrontEndUI
 		"True Color",           // COLORMODE_TRUE_COLOR
 	};
 
+	//  This is temporary until we can select GPU cololrs for everything. 
+	//  We'll use the first 24 colors 
+	static const char* c_hudMapColorNames[] =
+	{
+		"Black",
+		"White",
+		"Light gray",
+		"Sky blue",
+		"Medium light blue",
+		"Mid blue",
+		"Bright red",
+		"Deep red",
+		"Dark burgundy",
+		"Very dark red",
+		"Neon green",
+		"Lime green",
+		"Forest green",
+		"Dark green",
+		"Dark teal",
+		"Bright blue",
+		"Medium blue",
+		"Royal blue",
+		"Navy blue",
+		"Yellow",
+		"Golden yellow",
+		"Orange",
+		"Dark orange",
+		"Reddish brown",
+	};
+
+	const int numColors = sizeof(c_hudMapColorNames) / sizeof(c_hudMapColorNames[0]);
+
+	static const char* c_hudMapColors[] =
+	{		
+		"Normal Wall",
+		"Ledge Wall",
+		"Grayed Out Wall",
+		"Door or Elevator Wall",
+		"Secret Wall",
+		"Secret Not Found Wall",
+		"Red Key Wall",
+		"Blue Key Wall",
+		"Yellow Key Wall",
+		"Default Object",
+		"Projectile Object",
+		"Corpse Object",
+		"Landmine Object",
+		"Pickup Object",
+		"Scenery Object",
+	};
+
 	typedef void(*MenuItemSelected)();
 
 	static s32 s_resIndex = 0;
@@ -193,6 +249,11 @@ namespace TFE_FrontEndUI
 	static char* s_aboutDisplayStr = nullptr;
 	static char* s_manualDisplayStr = nullptr;
 	static char* s_creditsDisplayStr = nullptr;
+
+	static s32 s_mapColorIndex = 0;
+	static bool s_colorSet = false;
+	static s32 s_origMapColorIndex = 0;
+	static s32 s_mapColor = 0;
 
 	static AppState s_appState;
 	static AppState s_menuRetState;
@@ -352,6 +413,21 @@ namespace TFE_FrontEndUI
 		{
 			TFE_System::logWrite(LOG_ERROR, "SystemUI", "Cannot load TFE Title: \"UI_Images/Gradient.png\"");
 		}
+		//colorMap["Normal"] = WCOLOR_NORMAL;
+
+		enum MapWallColor
+		{
+			WCOLOR_INVISIBLE = 0,
+			WCOLOR_NORMAL = 10,
+			WCOLOR_LEDGE = 12,
+			WCOLOR_GRAYED_OUT = 13,
+			WCOLOR_DOOR = 20,
+			WCOLOR_SECRET = 1,
+		};
+
+		/*for (int i = 0; i < numColors; ++i) {
+			colorMap[c_hudMapColorNames[i]] = c_hudMapColors[i];
+		}*/
 
 		bool buttonsLoaded = true;
 		buttonsLoaded &= loadGpuImage("UI_Images/TFE_StartNormal.png", &s_buttonNormal[0]);
@@ -3255,6 +3331,111 @@ namespace TFE_FrontEndUI
 		ImGui::SliderInt("Offset Y", &hud->pixelOffset[2], -512, 512); ImGui::SameLine(0.0f, 10.0f*s_uiScale);
 		ImGui::SetNextItemWidth(128 * s_uiScale);
 		ImGui::InputInt("##HudOffsetYText", &hud->pixelOffset[2], 1, 10);
+
+		ImGui::Separator();
+		ImGui::LabelText("##", "AutoMap Colors");
+
+		ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 10.0f * s_uiScale);
+
+		TFE_Settings_Game* gameSettings = TFE_Settings::getGameSettings();
+
+		bool showKeyColors = gameSettings->df_showKeyColors;
+		if (ImGui::Checkbox("Apply a key color to locked key doors and switches ", &showKeyColors))
+		{
+			gameSettings->df_showKeyColors = showKeyColors;
+		}
+
+		bool showMapSecrets = gameSettings->df_showMapSecrets;
+		if (ImGui::Checkbox("Show Secrets on the AutoMap", &showMapSecrets))
+		{
+			gameSettings->df_showMapSecrets = showMapSecrets;
+		}
+
+		bool showMapObjects = gameSettings->df_showMapObjects;
+		if (ImGui::Checkbox("Show Objects on the AutoMap", &showMapObjects))
+		{
+			gameSettings->df_showMapObjects = showMapObjects;
+		}
+
+		ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 10.0f * s_uiScale);
+		ImGui::LabelText("##AutoMapType", "Map Color Type:");
+
+		ImGui::SetNextItemWidth(160 * s_uiScale);
+		if (ImGui::Combo("##MapWall", &s_mapColor, c_hudMapColors, IM_ARRAYSIZE(c_hudMapColors), IM_ARRAYSIZE(c_hudMapColors)))
+		{
+			s_colorSet = false;
+		}
+
+		string colorMapTitle = c_hudMapColors[s_mapColor];
+		TFE_Settings_Map_Colors * colorStruct = TFE_Settings::getMapColorByName(colorMapTitle);
+		s_mapColorIndex = colorStruct->colorMapIndex;
+
+		if (!s_colorSet)
+		{
+			s_origMapColorIndex = s_mapColorIndex;
+			s_colorSet = true;
+		}
+
+		// Get the color RGB
+		std::tuple<int, int, int, int> rgba = colorStruct->RGBA;
+		ImU32 imguiColor = IM_COL32(std::get<0>(rgba), std::get<1>(rgba), std::get<2>(rgba), std::get<3>(rgba));	
+
+
+		ImGui::LabelText("##AutoMapColor", "Choose your color:");
+		ImGui::SetNextItemWidth(160 * s_uiScale);
+
+		// Update the color as you hover over something. 
+		const float max_height = ImGui::GetTextLineHeightWithSpacing() * 25;
+		ImGui::SetNextWindowSizeConstraints(ImVec2(0, 0), ImVec2(FLT_MAX, max_height));
+
+		if (ImGui::BeginCombo("##MapColors", c_hudMapColorNames[s_mapColorIndex]))
+		{
+			for (int i = 0; i < IM_ARRAYSIZE(c_hudMapColorNames); i++)
+			{		
+				const bool isSelected = (s_mapColorIndex == i);
+				if (ImGui::Selectable(c_hudMapColorNames[i], isSelected))
+				{
+					s_origMapColorIndex = i;
+				}
+				if (ImGui::IsItemHovered())
+				{
+					s_mapColorIndex = i;
+					TFE_Settings::setMapColor(colorMapTitle, s_mapColorIndex);
+				}
+			}
+			ImGui::EndCombo();
+		}
+		else
+		{
+			TFE_Settings::setMapColor(colorMapTitle, s_origMapColorIndex);
+		}
+
+		ImGui::SameLine(0.0f, 10.0f * s_uiScale);
+		ImDrawList* draw_list = ImGui::GetWindowDrawList();
+		ImVec2 pos = ImGui::GetCursorScreenPos(); // current position in layout
+		draw_list->AddRectFilled(pos,
+			ImVec2(pos.x + 50, pos.y + 50),
+			imguiColor);
+		// Reserve space so layout continues below the square
+		ImGui::Dummy(ImVec2(50, 50));
+
+		ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 10.0f * s_uiScale);
+		ImGui::Separator();
+		ImGui::TextWrapped("Map Colors are saved in the file map_colors.txt");
+
+		if (ImGui::Button("Reset Colors to Default"))
+		{
+			s_colorSet = false;
+			TFE_Settings::resetMapColorsFromDefault();
+		}
+
+		if (ImGui::Button("Open AutoMap Config Folder"))
+		{
+			if (!TFE_System::osShellExecute(TFE_Paths::getPath(PATH_USER_DOCUMENTS), NULL, NULL, false))
+			{
+				TFE_System::logWrite(LOG_ERROR, "frontEndUi", "Failed to open the directory: '%s'", s_replayDir);
+			}
+		}
 
 		// Clamp pixel offsets to avoid fixed-point overflow.
 		const s32 maxOffset = 16383;

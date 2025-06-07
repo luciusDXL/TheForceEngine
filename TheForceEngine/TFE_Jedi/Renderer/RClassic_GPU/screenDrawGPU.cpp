@@ -54,6 +54,8 @@ namespace TFE_Jedi
 	static u32 s_scrQuadsWidth;
 	static u32 s_scrQuadsHeight;
 
+	float lineThickness = 1.5f;
+
 	struct ShaderSettingsSDGPU
 	{
 		bool bloom = false;
@@ -315,13 +317,18 @@ namespace TFE_Jedi
 		TFE_RenderShared::lineDraw2d_addLine(1.5f, &vtx[3], colors);
 	}
 
+	void setLineThickness(f32 thickness)
+	{
+		lineThickness = thickness;
+	}	
+
 	void screenGPU_drawLine(ScreenRect* rect, s32 x0, s32 z0, s32 x1, s32 z1, u8 color)
 	{
 		u32 color32 = vfb_getPalette()[color];
 		u32 colors[] = { color32, color32 };
 		Vec2f vtx[] = { f32(x0), f32(z0), f32(x1), f32(z1) };
 
-		TFE_RenderShared::lineDraw2d_addLine(1.5f, vtx, colors);
+		TFE_RenderShared::lineDraw2d_addLine(lineThickness, vtx, colors);
 	}
 
 	void screenGPU_blitTexture(TextureData* texture, DrawRect* rect, s32 x0, s32 y0, JBool forceTransparency, JBool forceOpaque)

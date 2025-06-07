@@ -87,4 +87,5 @@ namespace TFE_Jedi
 	void inf_sendLinkMessages(Allocator* infLink, SecObject* entity, u32 evt, MessageType msgType);
 
 	JBool sector_isDoor(RSector* sector);
+	u8 sector_getKey(RSector * sec);
 }
