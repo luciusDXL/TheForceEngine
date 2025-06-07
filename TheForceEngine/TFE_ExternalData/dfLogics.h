@@ -40,6 +40,8 @@ namespace TFE_ExternalData
 		u32 minAttackDist = 0;
 		u32 maxAttackDist = 160;
 		u32 fireSpread = 30;
+		vec3_fixed fireOffset = { 0, 0, 0 };
+		vec3_fixed altFireOffset = { 0, 0, 0 };
 
 		u32 speed = 4;
 		u32 verticalSpeed = 10;

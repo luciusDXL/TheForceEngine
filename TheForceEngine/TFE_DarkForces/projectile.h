@@ -9,6 +9,7 @@
 #include <TFE_Asset/dfKeywords.h>
 #include <TFE_Jedi/Level/rsector.h>
 #include <TFE_Jedi/Level/robject.h>
+#include <TFE_Asset/modelAsset_jedi.h>
 #include "logic.h"
 #include "hitEffect.h"
 #include "sound.h"
@@ -137,4 +138,5 @@ namespace TFE_DarkForces
 
 	extern WallHitFlag s_hitWallFlag;
 	extern angle14_32 s_projReflectOverrideYaw;
+	void transformFireOffsets(SecObject* obj, vec3_fixed * sourceOffset, vec3* offset);
 }  // namespace TFE_DarkForces

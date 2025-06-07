@@ -282,7 +282,11 @@ namespace TFE_DarkForces
 		attackMod->fireSpread = FIXED(30);
 		attackMod->accuracyNextTick = 0;
 		attackMod->fireOffset.x = 0;
+		attackMod->fireOffset.y = 0;
 		attackMod->fireOffset.z = 0;
+		attackMod->altFireOffset.x = 0;
+		attackMod->altFireOffset.y = 0;
+		attackMod->altFireOffset.z = 0;
 
 		attackMod->target.flags &= ~TARGET_ALL;
 		attackMod->anim.flags |= (AFLAG_PLAYONCE | AFLAG_READY);	// attack and damage module animations do not loop
@@ -291,6 +295,7 @@ namespace TFE_DarkForces
 		SecObject* obj = attackMod->header.obj;
 		// world width and height was set from the sprite data.
 		attackMod->fireOffset.y = -((TFE_Jedi::abs(obj->worldHeight) >> 1) + ONE_16);
+		attackMod->altFireOffset.y = -((TFE_Jedi::abs(obj->worldHeight) >> 1) + ONE_16);
 
 		attackMod->projType = PROJ_RIFLE_BOLT;
 		attackMod->attackSecSndSrc = 0;
@@ -302,6 +307,7 @@ namespace TFE_DarkForces
 		attackMod->meleeRate = FIXED(230);
 		attackMod->attackFlags = ATTFLAG_RANGED | ATTFLAG_LIT_RNG;
 
+		// Why is this being returned? This function maybe should be a void? 
 		return attackMod->fireOffset.y;
 	}
 
@@ -1024,11 +1030,15 @@ namespace TFE_DarkForces
 				{
 					obj->flags |= OBJ_FLAG_FULLBRIGHT;
 				}
-
 				attackMod->anim.state = STATE_ANIMATE1;
-				ProjectileLogic* proj = (ProjectileLogic*)createProjectile(attackMod->projType, obj->sector, obj->posWS.x, attackMod->fireOffset.y + obj->posWS.y, obj->posWS.z, obj);
-				sound_playCued(attackMod->attackPrimSndSrc, obj->posWS);
+				vec3 fireOffset = {};
 
+				// Calculate the X,Z fire offsets based on where the enemy is facing. It doesn't matter for Y. 
+				transformFireOffsets(obj, &attackMod->fireOffset, &fireOffset);
+
+				ProjectileLogic* proj = (ProjectileLogic*)createProjectile(attackMod->projType, obj->sector, fireOffset.x + obj->posWS.x, fireOffset.y + obj->posWS.y, fireOffset.z + obj->posWS.z, obj);
+				sound_playCued(attackMod->attackPrimSndSrc, obj->posWS);
+				
 				proj->prevColObj = obj;
 				proj->prevObj = obj;
 				proj->excludeObj = obj;
@@ -1045,20 +1055,22 @@ namespace TFE_DarkForces
 					vec3_fixed target = { s_playerObject->posWS.x, s_eyePos.y + ONE_16, s_playerObject->posWS.z };
 					proj_aimArcing(proj, target, proj->speed);
 
-					if (attackMod->fireOffset.x | attackMod->fireOffset.z)
+					if (fireOffset.x | fireOffset.y | fireOffset.z)
 					{
-						proj->delta.x = attackMod->fireOffset.x;
-						proj->delta.z = attackMod->fireOffset.z;
+						proj->delta.x = fireOffset.x;
+						proj->delta.y = fireOffset.y;
+						proj->delta.z = fireOffset.z;
 						proj_handleMovement(proj);
 					}
 				}
 				else
 				{
 					// Handle x and z fire offset.
-					if (attackMod->fireOffset.x | attackMod->fireOffset.z)
+					if (fireOffset.x | fireOffset.y | fireOffset.z)
 					{
-						proj->delta.x = attackMod->fireOffset.x;
-						proj->delta.z = attackMod->fireOffset.z;
+						proj->delta.x = fireOffset.x;
+						proj->delta.y = fireOffset.y;
+						proj->delta.z = fireOffset.z;
 						proj_handleMovement(proj);
 					}
 
@@ -1093,7 +1105,13 @@ namespace TFE_DarkForces
 				}
 
 				attackMod->anim.state = STATE_ANIMATE2;
-				ProjectileLogic* proj = (ProjectileLogic*)createProjectile(attackMod->projType, obj->sector, obj->posWS.x, attackMod->fireOffset.y + obj->posWS.y, obj->posWS.z, obj);
+
+				vec3 altFireOffset = {};
+				
+				// Calculate the fire ffsets based on where the enemy is facing. It doesn't matter for Y. 
+				transformFireOffsets(obj, &attackMod->altFireOffset, &altFireOffset);
+
+				ProjectileLogic* proj = (ProjectileLogic*)createProjectile(attackMod->projType, obj->sector, altFireOffset.x, altFireOffset.y + obj->posWS.y, altFireOffset.z, obj);
 				sound_playCued(attackMod->attackPrimSndSrc, obj->posWS);
 				proj->prevColObj = obj;
 				proj->excludeObj = obj;
@@ -1107,19 +1125,21 @@ namespace TFE_DarkForces
 					vec3_fixed target = { s_playerObject->posWS.x, s_eyePos.y + ONE_16, s_playerObject->posWS.z };
 					proj_aimArcing(proj, target, proj->speed);
 
-					if (attackMod->fireOffset.x | attackMod->fireOffset.z)
+					if (altFireOffset.x | altFireOffset.y | altFireOffset.z)
 					{
-						proj->delta.x = attackMod->fireOffset.x;
-						proj->delta.z = attackMod->fireOffset.z;
+						proj->delta.x = altFireOffset.x;
+						proj->delta.y = altFireOffset.y;
+						proj->delta.z = altFireOffset.z;
 						proj_handleMovement(proj);
 					}
 				}
 				else
 				{
-					if (attackMod->fireOffset.x | attackMod->fireOffset.z)
+					if (altFireOffset.x | altFireOffset.y | altFireOffset.z)
 					{
-						proj->delta.x = attackMod->fireOffset.x;
-						proj->delta.z = attackMod->fireOffset.z;
+						proj->delta.x = altFireOffset.x;
+						proj->delta.y = altFireOffset.y;
+						proj->delta.z = altFireOffset.z;
 						proj_handleMovement(proj);
 					}
 					vec3_fixed target = { s_eyePos.x, s_eyePos.y + ONE_16, s_eyePos.z };

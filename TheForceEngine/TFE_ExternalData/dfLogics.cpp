@@ -18,7 +18,7 @@ namespace TFE_ExternalData
 	void parseLogicData(char* data, const char* filename, std::vector<CustomActorLogic>& actorLogics);
 	bool tryAssignProperty(cJSON* data, CustomActorLogic& customLogic);
 
-	
+
 	ExternalLogics* getExternalLogics()
 	{
 		return &s_externalLogics;
@@ -105,13 +105,13 @@ namespace TFE_ExternalData
 		}
 	}
 
-	bool tryAssignProperty(cJSON* data, CustomActorLogic &customLogic)
+	bool tryAssignProperty(cJSON* data, CustomActorLogic& customLogic)
 	{
 		if (!data)
 		{
 			return false;
 		}
-		
+
 		if (cJSON_IsBool(data) && strcasecmp(data->string, "hasGravity") == 0)
 		{
 			customLogic.hasGravity = cJSON_IsTrue(data);
@@ -141,7 +141,7 @@ namespace TFE_ExternalData
 			customLogic.alertSound = data->valuestring;
 			return true;
 		}
-		
+
 		if (cJSON_IsString(data) && strcasecmp(data->string, "painSound") == 0)
 		{
 			customLogic.painSound = data->valuestring;
@@ -233,13 +233,13 @@ namespace TFE_ExternalData
 			customLogic.litWithMeleeAttack = cJSON_IsTrue(data);
 			return true;
 		}
-		
+
 		if (cJSON_IsBool(data) && strcasecmp(data->string, "litWithRangedAttack") == 0)
 		{
 			customLogic.litWithRangedAttack = cJSON_IsTrue(data);
 			return true;
 		}
-		
+
 		// Projectile as number
 		if (cJSON_IsNumber(data) && strcasecmp(data->string, "projectile") == 0)
 		{
@@ -332,6 +332,41 @@ namespace TFE_ExternalData
 		{
 			customLogic.rotationSpeed = floatToAngle((f32)data->valueint);
 			return true;
+		}
+
+		// When it comes to offsets these are considered from the perspective of the actor.
+		//
+		// Projectile spawn details guide.
+		// 
+		// Z value positive =  projectile spawns to the LEFT of actor
+		// Z value negative =  projectile spawns to the RIGHT of actor 
+		// X value postivie =  projectile spawns in FRONT of actor
+		// X value negative =  projectile spawns BEHIND the actor
+		// Y value positive =  projectile spawns BELOW the actor
+		// Y value negative =  projectile spawns ABOVE the actor
+		//
+		if (cJSON_IsArray(data) && strcasecmp(data->string, "fireOffset") == 0)
+		{
+
+			if (cJSON_GetArraySize(data) == 3)
+			{
+				customLogic.fireOffset.x = floatToFixed16(cJSON_GetArrayItem(data, 0)->valuedouble);
+				customLogic.fireOffset.y = floatToFixed16(cJSON_GetArrayItem(data, 1)->valuedouble);
+				customLogic.fireOffset.z = floatToFixed16(cJSON_GetArrayItem(data, 2)->valuedouble);
+				return true;
+			}
+			return false;
+		}
+		if (cJSON_IsArray(data) && strcasecmp(data->string, "altFireOffset") == 0)
+		{
+			if (cJSON_GetArraySize(data) == 3)
+			{
+				customLogic.altFireOffset.x = floatToFixed16(cJSON_GetArrayItem(data, 0)->valuedouble);
+				customLogic.altFireOffset.y = floatToFixed16(cJSON_GetArrayItem(data, 1)->valuedouble);
+				customLogic.altFireOffset.z = floatToFixed16(cJSON_GetArrayItem(data, 2)->valuedouble);
+				return true;
+			}
+			return false;
 		}
 
 		/* JK: Leaving these out for now until we have a better understanding of what they mean
