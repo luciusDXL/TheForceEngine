@@ -350,9 +350,9 @@ namespace TFE_ExternalData
 
 			if (cJSON_GetArraySize(data) == 3)
 			{
-				customLogic.fireOffset.x = floatToFixed16(cJSON_GetArrayItem(data, 0)->valuedouble);
-				customLogic.fireOffset.y = floatToFixed16(cJSON_GetArrayItem(data, 1)->valuedouble);
-				customLogic.fireOffset.z = floatToFixed16(cJSON_GetArrayItem(data, 2)->valuedouble);
+				customLogic.fireOffset.x =  cJSON_GetArrayItem(data, 0)->valueint;
+				customLogic.fireOffset.y =  cJSON_GetArrayItem(data, 1)->valueint;
+				customLogic.fireOffset.z =  cJSON_GetArrayItem(data, 2)->valueint;
 				return true;
 			}
 			return false;
@@ -361,9 +361,9 @@ namespace TFE_ExternalData
 		{
 			if (cJSON_GetArraySize(data) == 3)
 			{
-				customLogic.altFireOffset.x = floatToFixed16(cJSON_GetArrayItem(data, 0)->valuedouble);
-				customLogic.altFireOffset.y = floatToFixed16(cJSON_GetArrayItem(data, 1)->valuedouble);
-				customLogic.altFireOffset.z = floatToFixed16(cJSON_GetArrayItem(data, 2)->valuedouble);
+				customLogic.altFireOffset.x = cJSON_GetArrayItem(data, 0)->valueint;
+				customLogic.altFireOffset.y = cJSON_GetArrayItem(data, 1)->valueint;
+				customLogic.altFireOffset.z = cJSON_GetArrayItem(data, 2)->valueint;
 				return true;
 			}
 			return false;
