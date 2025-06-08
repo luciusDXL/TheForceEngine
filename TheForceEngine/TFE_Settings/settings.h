@@ -230,7 +230,7 @@ struct TFE_Settings_Game
 	bool df_autoEndMission = false;     // Automatically skip to the next mission
 	s32  df_recordFrameRate = 4;        // Recording Framerate value
 	s32  df_playbackFrameRate = 2;      // Playback Framerate value
-	bool df_showKeyUsed = false; 	    // Show a message when a key is used.
+	bool df_showKeyUsed = true; 	    // Show a message when a key is used.
 	PitchLimit df_pitchLimit  = PITCH_VANILLA_PLUS;
 };
 

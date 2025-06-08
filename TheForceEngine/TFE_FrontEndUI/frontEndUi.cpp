@@ -1200,6 +1200,12 @@ namespace TFE_FrontEndUI
 			gameSettings->df_showSecretFoundMsg = showSecretMsg;
 		}
 
+		bool showKeysUsed = gameSettings->df_showKeyUsed;
+		if (ImGui::Checkbox("Show Key Used messages", &showKeysUsed))
+		{
+			gameSettings->df_showKeyUsed = showKeysUsed;
+		}
+
 		bool autorun = gameSettings->df_autorun;
 		if (ImGui::Checkbox("Autorun", &autorun))
 		{
@@ -1228,12 +1234,6 @@ namespace TFE_FrontEndUI
 		if (ImGui::Checkbox("Automatically end mission when objectives are complete", &autoEndMission))
 		{
 			gameSettings->df_autoEndMission = autoEndMission;
-		}
-
-		bool showKeysUsed = gameSettings->df_showKeyUsed;
-		if (ImGui::Checkbox("Show Key Used messages when opening doors", &showKeysUsed))
-		{
-			gameSettings->df_showKeyUsed = showKeysUsed;
 		}
 
 		ImGui::Separator();

@@ -22,6 +22,7 @@
 #include <TFE_System/system.h>
 #include <TFE_System/memoryPool.h>
 #include <TFE_System/math.h>
+#include <TFE_System/tfeMessage.h>
 #include <TFE_Jedi/Level/rtexture.h>
 #include <TFE_Jedi/Task/task.h>
 // TODO: This will make adding Outlaws harder, fix the abstraction.
@@ -2741,6 +2742,11 @@ namespace TFE_Jedi
 		}
 	}
 
+	void showDoorUsedMessage(KeyItem key)
+	{
+
+	}
+
 	void infElevatorMessageInternal(MessageType msgType)
 	{
 		u32 event = s_msgEvent;
@@ -2786,12 +2792,13 @@ namespace TFE_Jedi
 
 			// Does the player have the key?
 			KeyItem key = elev->key;
+			char keyBuffer[100];
 			if (key == KEY_RED)
 			{
 				if (TFE_Settings::getGameSettings()->df_showKeyUsed &&  s_playerInfo.itemRedKey)
 				{
-					string msg = "Using the Red Key";
-					TFE_DarkForces::hud_sendTextMessage(msg.c_str(), 1, false);
+					sprintf(keyBuffer, "Using the %s Key", TFE_System::getMessage(TFE_MSG_RED));
+					TFE_DarkForces::hud_sendTextMessage(keyBuffer, 1, false);
 				}
 				else if (!s_playerInfo.itemRedKey)
 				{
@@ -2805,8 +2812,8 @@ namespace TFE_Jedi
 			{
 				if (TFE_Settings::getGameSettings()->df_showKeyUsed && s_playerInfo.itemYellowKey)
 				{
-					string msg = "Using the Yellow Key";
-					TFE_DarkForces::hud_sendTextMessage(msg.c_str(), 1, false);
+					sprintf(keyBuffer, "Using the %s Key", TFE_System::getMessage(TFE_MSG_YELLOW));
+					TFE_DarkForces::hud_sendTextMessage(keyBuffer, 1, false);
 				}
 				else if (!s_playerInfo.itemYellowKey)
 				{
@@ -2820,8 +2827,8 @@ namespace TFE_Jedi
 			{
 				if (TFE_Settings::getGameSettings()->df_showKeyUsed && s_playerInfo.itemBlueKey)
 				{
-					string msg = "Using the Blue Key";
-					TFE_DarkForces::hud_sendTextMessage(msg.c_str(), 1, false);
+					sprintf(keyBuffer, "Using the %s Key", TFE_System::getMessage(TFE_MSG_BLUE));
+					TFE_DarkForces::hud_sendTextMessage(keyBuffer, 1, false);
 				}
 				else if (!s_playerInfo.itemBlueKey)	
 				{
