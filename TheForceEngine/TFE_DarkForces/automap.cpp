@@ -277,7 +277,7 @@ namespace TFE_DarkForces
 			case MAP_INCR_SECTOR_MODE:
 			{
 				s_mapShowSectorMode++;
-				if (s_mapShowSectorMode >= 3)
+				if (s_mapShowSectorMode >= 4)
 				{
 					s_mapShowSectorMode = 0;
 				}
@@ -544,7 +544,7 @@ namespace TFE_DarkForces
 				color = TFE_Settings::getMapColorByName("Normal Wall")->colorMapIndex;
 			}
 		}		
-		else if (s_mapShowSectorMode != 0 && !wall->seen)
+		else if (s_mapShowSectorMode == 3 && !wall->seen)
 		{
 			color = TFE_Settings::getMapColorByName("Undiscovered Wall")->colorMapIndex;
 		}
