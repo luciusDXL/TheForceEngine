@@ -229,6 +229,7 @@ namespace TFE_FrontEndUI
 		"Ledge Wall",
 		"Grayed Out Wall",
 		"Door or Elevator Wall",
+		"Undiscovered Wall",
 		"Secret Wall",
 		"Secret Not Found Wall",
 		"Red Key Wall",

@@ -82,9 +82,11 @@ namespace TFE_Settings
 		"CVar",
 	};
 
+	// Note I think we can just get rid of the WCOLOR keywords. I left them for the POC. 
 	TFE_Settings_Map_Colors defaultAutoMapColors[] = {
 		{"WCOLOR_INVISIBLE", "Invisible Wall",  0, {0, 0, 0, 255}},
 		{"WCOLOR_NORMAL", "Normal Wall", 10, {0, 252, 0, 255}},
+		{"WCOLOR_UNDISCOVERED", "Undiscovered Wall", 1, {252, 252, 252, 255} },
 		{"WCOLOR_LEDGE", "Ledge Wall", 12, {0, 152, 0, 255}},
 		{"WCOLOR_GRAYED_OUT", "Grayed Out Wall", 13, {0, 92, 0, 255}},
 		{"WCOLOR_DOOR", "Door Wall", 20, {244, 184, 52, 255}},

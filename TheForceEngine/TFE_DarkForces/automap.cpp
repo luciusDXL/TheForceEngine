@@ -543,6 +543,10 @@ namespace TFE_DarkForces
 			{
 				color = TFE_Settings::getMapColorByName("Normal Wall")->colorMapIndex;
 			}
+		}		
+		else if (s_mapShowSectorMode != 0 && !wall->seen)
+		{
+			color = TFE_Settings::getMapColorByName("Undiscovered Wall")->colorMapIndex;
 		}
 		else if (!wall->nextSector)
 		{
