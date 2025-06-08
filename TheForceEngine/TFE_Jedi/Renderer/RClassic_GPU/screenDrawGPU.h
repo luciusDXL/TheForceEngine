@@ -28,6 +28,7 @@ namespace TFE_Jedi
 	void screenGPU_setHudTextureCallbacks(s32 count, TextureListCallback* callbacks, bool forceAllocation = false);
 	void screenGPU_setIndexedColors(u32 count, const Vec4f* colors);
 
+	void setLineThickness(f32 thickness);
 	void screenGPU_drawPoint(ScreenRect* rect, s32 x, s32 z, u8 color);
 	void screenGPU_drawLine(ScreenRect* rect, s32 x0, s32 z0, s32 x1, s32 z1, u8 color);
 

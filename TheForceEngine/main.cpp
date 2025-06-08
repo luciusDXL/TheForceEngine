@@ -627,6 +627,8 @@ int main(int argc, char* argv[])
 	TFE_SaveSystem::init();
 	TFE_A11Y::init();
 
+	TFE_Settings::updateWallColorsFromJson();
+
 	// Uncomment to test memory region allocator.
 	// TFE_Memory::region_test();
 

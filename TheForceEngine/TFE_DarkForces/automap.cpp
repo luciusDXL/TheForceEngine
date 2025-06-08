@@ -2,38 +2,24 @@
 #include "player.h"
 #include "hud.h"
 #include <TFE_DarkForces/sound.h>
+#include <TFE_FrontEndUI/frontEndUi.h>
 #include <TFE_Jedi/Level/level.h>
 #include <TFE_Jedi/Level/levelData.h>
 #include <TFE_Jedi/Level/rsector.h>
 #include <TFE_Jedi/Level/rwall.h>
 #include <TFE_Jedi/Memory/list.h>
 #include <TFE_Jedi/InfSystem/infSystem.h>
+#include <TFE_Jedi/InfSystem/infTypesInternal.h>
 #include <TFE_Jedi/Renderer/jediRenderer.h>
 #include <TFE_Jedi/Renderer/screenDraw.h>
+#include <TFE_Jedi/Renderer/RClassic_GPU/screenDrawGPU.h>
 #include <TFE_Jedi/Serialization/serialization.h>
+#include <TFE_Settings/settings.h>
 
 using namespace TFE_Jedi;
 
 namespace TFE_DarkForces
 {
-	enum MapWallColor
-	{
-		WCOLOR_INVISIBLE  = 0,
-		WCOLOR_NORMAL     = 10,
-		WCOLOR_LEDGE      = 12,
-		WCOLOR_GRAYED_OUT = 13,
-		WCOLOR_DOOR       = 19,
-	};
-
-	enum MapObjectColor
-	{
-		MOBJCOLOR_DEFAULT  = 19,
-		MOBJCOLOR_PROJ     = 6,
-		MOBJCOLOR_CORPSE   = 48,
-		MOBJCOLOR_LANDMINE = 1,
-		MOBJCOLOR_PICKUP   = 152,
-		MOBJCOLOR_SCENERY  = 21,
-	};
 
 	enum MapConstants
 	{
@@ -112,7 +98,7 @@ namespace TFE_DarkForces
 		SERIALIZE(SaveVersionInit, s_mapZ0, 0);
 		SERIALIZE(SaveVersionInit, s_mapZ1, 0);
 		SERIALIZE(SaveVersionInit, s_mapLayer, 0);
-	}
+	}	
 
 	// _computeScreenBounds() and computeScaledScreenBounds() in the original source:
 	// computeScaledScreenBounds() calls _computeScreenBounds() - so merged here.
@@ -291,7 +277,7 @@ namespace TFE_DarkForces
 			case MAP_INCR_SECTOR_MODE:
 			{
 				s_mapShowSectorMode++;
-				if (s_mapShowSectorMode >= 3)
+				if (s_mapShowSectorMode >= 4)
 				{
 					s_mapShowSectorMode = 0;
 				}
@@ -489,32 +475,90 @@ namespace TFE_DarkForces
 		automap_drawLine(x0, z0, x1, z1, color);
 	}
 
+	// Note it assumes the wall adjoins a door sector
+	u8 getDoorKeyColor(RWall* wall)
+	{	
+		KeyItem key = (KeyItem)sector_getKey(wall->sector);
+		if (key == KEY_NONE)
+		{
+			key = (KeyItem)sector_getKey(wall->nextSector);	
+		}
+		switch (key)
+		{
+			case KEY_YELLOW:
+				return 	TFE_Settings::getMapColorByName("Yellow Key Wall")->colorMapIndex;
+			case KEY_RED:
+				return TFE_Settings::getMapColorByName("Red Key Wall")->colorMapIndex;
+			case KEY_BLUE:
+				return TFE_Settings::getMapColorByName("Blue Key Wall")->colorMapIndex;
+			default:
+				return TFE_Settings::getMapColorByName("Door or Elevator Wall")->colorMapIndex;
+		}
+	}
+
 	u8 automap_getWallColor(RWall* wall)
 	{
 		u8 color;
+		// Default thickness - GPU only 
+		setLineThickness(1.5f);
+
 		if (wall->flags1 & WF1_HIDE_ON_MAP)
 		{
-			color = WCOLOR_INVISIBLE;
+			color = TFE_Settings::getMapColorByName("Invisible Wall")->colorMapIndex;
 		}
 		else if (wall->flags1 & WF1_SHOW_AS_LEDGE_ON_MAP)
 		{
-			color = WCOLOR_LEDGE;
+			color = TFE_Settings::getMapColorByName("Ledge Wall")->colorMapIndex;
 		}
 		else if (wall->flags1 & WF1_SHOW_AS_DOOR_ON_MAP)
 		{
-			color = WCOLOR_DOOR;
+			color = TFE_Settings::getMapColorByName("Door or Elevator Wall")->colorMapIndex;
 		}
-		else if ((wall->flags1 & WF1_SHOW_NORMAL_ON_MAP) || !wall->nextSector)
+		else if (wall->flags1 & WF1_SHOW_NORMAL_ON_MAP)
 		{
-			color = WCOLOR_NORMAL;
+			color = TFE_Settings::getMapColorByName("Normal Wall")->colorMapIndex;
+		}
+		else if (TFE_Settings::getGameSettings()->df_showKeyColors && (sector_getKey(wall->sector) || (wall->nextSector && sector_getKey(wall->nextSector))))
+		{
+			setLineThickness(2.0f);
+			color = getDoorKeyColor(wall);
+		}
+		else if (TFE_Settings::getGameSettings()->df_showMapSecrets && isSecretSector(wall->sector) || wall->nextSector && isSecretSector(wall->nextSector))
+		{
+
+			// If Secret is discovered color it as such. Do not show nextsector secrets if they are not on your current layer. 
+			if (wall->sector->secretDiscovered || (wall->nextSector  && wall->nextSector->secretDiscovered && wall->nextSector->layer == s_mapLayer))
+			{
+
+				color = TFE_Settings::getMapColorByName("Secret Wall")->colorMapIndex;
+			}
+			// If you have map reveal show the secret as not found. Do not show adjoined walls that don't match the current layer. 
+			else if (s_mapShowSectorMode != 0 && isSecretSector(wall->sector) && wall->sector->layer == s_mapLayer 
+				     && !(wall->nextSector && wall->nextSector->layer != s_mapLayer))
+			{
+				color = TFE_Settings::getMapColorByName("Secret Not Found Wall")->colorMapIndex;				
+			}
+			// Show it as a normal sector if no cheats and you didn't discover it.
+			else
+			{
+				color = TFE_Settings::getMapColorByName("Normal Wall")->colorMapIndex;
+			}
+		}		
+		else if (s_mapShowSectorMode == 3 && !wall->seen)
+		{
+			color = TFE_Settings::getMapColorByName("Undiscovered Wall")->colorMapIndex;
+		}
+		else if (!wall->nextSector)
+		{
+			color = TFE_Settings::getMapColorByName("Normal Wall")->colorMapIndex;
 		}
 		else if (sector_isDoor(wall->sector) || sector_isDoor(wall->nextSector))
 		{
-			color = WCOLOR_DOOR;
+			color = TFE_Settings::getMapColorByName("Door or Elevator Wall")->colorMapIndex;
 		}
 		else if (s_mapShowSectorMode == 2)
 		{
-			color = WCOLOR_GRAYED_OUT;
+			color = TFE_Settings::getMapColorByName("Grayed Out Wall")->colorMapIndex;
 		}
 		else
 		{
@@ -525,11 +569,11 @@ namespace TFE_DarkForces
 			fixed16_16 floorDelta = TFE_Jedi::abs(curFloorHeight - nextFloorHeight);
 			if (floorDelta >= 0x4000)	// 0.25 units
 			{
-				color = WCOLOR_LEDGE;
+				color = TFE_Settings::getMapColorByName("Ledge Wall")->colorMapIndex;
 			}
 			else
 			{
-				color = WCOLOR_INVISIBLE;
+				color = TFE_Settings::getMapColorByName("Invisible Wall")->colorMapIndex;
 			}
 		}
 
@@ -552,7 +596,7 @@ namespace TFE_DarkForces
 			}
 
 			u8 color = automap_getWallColor(wall);
-			if (color != WCOLOR_INVISIBLE)
+			if (color != TFE_Settings::getMapColorByName("Invisible Wall")->colorMapIndex)
 			{
 				automap_drawWall(wall, color);
 			}
@@ -579,28 +623,34 @@ namespace TFE_DarkForces
 		
 	void automap_drawObject(SecObject* obj)
 	{
-		u8 color = MOBJCOLOR_DEFAULT;
+		
+		if (!TFE_Settings::getGameSettings()->df_showMapObjects)
+		{
+			return;
+		}
+
+		u8 color = TFE_Settings::getMapColorByName("Default Object")->colorMapIndex;
 		if (obj->flags & OBJ_FLAG_NEEDS_TRANSFORM)
 		{
 			if (obj->entityFlags & ETFLAG_PROJECTILE)
 			{
-				color = MOBJCOLOR_PROJ;
+				color = TFE_Settings::getMapColorByName("Projectile Object")->colorMapIndex;
 			}
 			else if (obj->entityFlags & ETFLAG_CORPSE)
 			{
-				color = MOBJCOLOR_CORPSE;
+				color = TFE_Settings::getMapColorByName("Corpse Object")->colorMapIndex;
 			}
 			else if (obj->entityFlags & ETFLAG_LANDMINE)
 			{
-				color = MOBJCOLOR_LANDMINE;
+				color = TFE_Settings::getMapColorByName("Landmine Object")->colorMapIndex;
 			}
 			else if (obj->entityFlags & ETFLAG_PICKUP)
 			{
-				color = MOBJCOLOR_PICKUP;
+				color = TFE_Settings::getMapColorByName("Pickup Object")->colorMapIndex;
 			}
 			else if (obj->entityFlags & ETFLAG_SCENERY)
 			{
-				color = MOBJCOLOR_SCENERY;
+				color = TFE_Settings::getMapColorByName("Scenery Object")->colorMapIndex;
 			}
 
 			ObjectType type = obj->type;

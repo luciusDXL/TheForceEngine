@@ -3835,4 +3835,27 @@ namespace TFE_Jedi
 		}
 		return JFALSE;
 	}
+
+	u8 sector_getKey(RSector * sec)
+	{
+		Allocator* links = sec->infLink;
+		InfLink* link = (InfLink*)allocator_getHead(links);
+		KeyItem key = KEY_NONE;
+		while (link)
+		{
+			if (link->elev)
+			{					
+				KeyItem infKey = link->elev->key;
+				if (infKey == KEY_BLUE ||
+					infKey == KEY_RED ||
+					infKey == KEY_YELLOW)
+				{
+					return infKey;
+				}
+			}
+			link = (InfLink*)allocator_getNext(links);
+		}
+		if (!link) return 0;
+		return key;
+	}
 }

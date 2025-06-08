@@ -6,6 +6,7 @@
 #include <TFE_System/types.h>
 #include <TFE_Jedi/Math/core_math.h>
 #include <TFE_FileSystem/stream.h>
+#include <map>
 
 namespace TFE_DarkForces
 {

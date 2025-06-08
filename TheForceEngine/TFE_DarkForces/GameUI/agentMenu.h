@@ -24,4 +24,5 @@ namespace TFE_DarkForces
 	void agentMenu_createNewAgent();
 	void agentMenu_setAgentName(const char* name);
 	void agentMenu_resetState();
+	void setPalette();
 }

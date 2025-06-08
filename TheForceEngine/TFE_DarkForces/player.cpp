@@ -2324,13 +2324,15 @@ namespace TFE_DarkForces
 				}
 			}
 
-			if (newSector->flags1 & SEC_FLAGS1_SECRET)
+			if (isSecretSector(newSector) && !newSector->secretDiscovered)
 			{
 				// If enabled, show the secret found message.
 				tfe_showSecretFoundMsg();
+				newSector->secretDiscovered = true;
 
 				// Remove the flag so the secret isn't counted twice.
-				newSector->flags1 &= ~SEC_FLAGS1_SECRET;
+				// No Longer needed ? 
+				// newSector->flags1 &= ~SEC_FLAGS1_SECRET;
 				s_secretsFound++;
 				level_updateSecretPercent();
 			}

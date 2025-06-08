@@ -164,6 +164,45 @@ static const char* c_tfePitchLimit[] =
 	"Maximum"
 };
 
+
+// This mapping will no longer be needed once GPU colors are setup.
+static std::map<std::tuple<int, int, int>, int> rgbToIndexMap = {
+	{{0, 0, 0}, 0},
+	{{252, 252, 252}, 1},
+	{{208, 236, 252}, 2},
+	{{168, 220, 252}, 3},
+	{{124, 204, 252}, 4},
+	{{84, 192, 252}, 5},
+	{{252, 0, 0}, 6},
+	{{204, 0, 0}, 7},
+	{{144, 0, 0}, 8},
+	{{68, 0, 0}, 9},
+	{{0, 252, 0}, 10},
+	{{0, 200, 0}, 11},
+	{{0, 152, 0}, 12},
+	{{0, 92, 0}, 13},
+	{{0, 52, 0}, 14},
+	{{0, 88, 252}, 15},
+	{{0, 36, 240}, 16},
+	{{0, 16, 188}, 17},
+	{{0, 4, 140}, 18},
+	{{248, 224, 96}, 19},
+	{{244, 184, 52}, 20},
+	{{244, 136, 12}, 21},
+	{{216, 88, 12}, 22},
+	{{180, 44, 4}, 23}
+};
+
+static std::map<int, std::tuple<int, int, int>> indexToRGBMap = {};
+
+struct TFE_Settings_Map_Colors
+{
+	string name;
+	string description;
+	u8 colorMapIndex = 0;
+	std::tuple<int, int, int, int> RGBA = { 0, 0, 0, 0 }; // RGBA
+};
+
 struct TFE_Settings_Hud
 {
 	// Determines whether the HUD stays the same size on screen regardless of resolution or if it gets smaller with higher resolution.
@@ -227,9 +266,12 @@ struct TFE_Settings_Game
 	bool df_enableReplay = false;       // Enable replay of gameplay.
 	bool df_showReplayCounter = false;  // Show the replay counter on the HUD.
 	bool df_demologging = false;        // Log the record/playback logging
-	bool df_autoEndMission = false;    // Automatically skip to the next mission
+	bool df_autoEndMission = false;     // Automatically skip to the next mission
 	s32  df_recordFrameRate = 4;        // Recording Framerate value
 	s32  df_playbackFrameRate = 2;      // Playback Framerate value
+	bool df_showKeyColors = true;	    // Show key colors in the automap.
+	bool df_showMapSecrets = true;	    // Show secrets on the automap.
+	bool df_showMapObjects = true;      // Show objects on the automap.
 	PitchLimit df_pitchLimit  = PITCH_VANILLA_PLUS;
 };
 
@@ -405,6 +447,8 @@ struct TFE_ModSettings
 
 namespace TFE_Settings
 {
+	extern std::vector<TFE_Settings_Map_Colors> autoMapColors;
+	extern int autoMapColorsLen;
 	bool init(bool& firstRun);
 	void shutdown();
 
@@ -447,4 +491,10 @@ namespace TFE_Settings
 	void loadCustomModSettings();
 	void parseIniFile(const char* buffer, size_t len);
 	void writeDarkForcesGameSettings(FileStream& settings);
+	void updateWallColorsFromJson();
+	void writeRGBAToJSON();
+	TFE_Settings_Map_Colors * getMapColorByName(string name);
+	TFE_Settings_Map_Colors * getMapColorByCMPIndex(int index);
+	void setMapColor(string mapTypeColor, int index);
+	void resetMapColorsFromDefault();
 }
