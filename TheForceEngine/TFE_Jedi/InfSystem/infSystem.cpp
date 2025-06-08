@@ -3840,14 +3840,22 @@ namespace TFE_Jedi
 	{
 		Allocator* links = sec->infLink;
 		InfLink* link = (InfLink*)allocator_getHead(links);
+		KeyItem key = KEY_NONE;
 		while (link)
 		{
 			if (link->elev)
-			{
-				return link->elev->key;
+			{					
+				KeyItem infKey = link->elev->key;
+				if (infKey == KEY_BLUE ||
+					infKey == KEY_RED ||
+					infKey == KEY_YELLOW)
+				{
+					return infKey;
+				}
 			}
 			link = (InfLink*)allocator_getNext(links);
 		}
 		if (!link) return 0;
+		return key;
 	}
 }

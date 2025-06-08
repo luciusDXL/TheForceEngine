@@ -492,7 +492,7 @@ namespace TFE_DarkForces
 			case KEY_BLUE:
 				return TFE_Settings::getMapColorByName("Blue Key Wall")->colorMapIndex;
 			default:
-				return TFE_Settings::getMapColorByName("Door Wall")->colorMapIndex;
+				return TFE_Settings::getMapColorByName("Door or Elevator Wall")->colorMapIndex;
 		}
 	}
 
@@ -512,7 +512,7 @@ namespace TFE_DarkForces
 		}
 		else if (wall->flags1 & WF1_SHOW_AS_DOOR_ON_MAP)
 		{
-			color = TFE_Settings::getMapColorByName("Door Wall")->colorMapIndex;
+			color = TFE_Settings::getMapColorByName("Door or Elevator Wall")->colorMapIndex;
 		}
 		else if (wall->flags1 & WF1_SHOW_NORMAL_ON_MAP)
 		{
@@ -554,7 +554,7 @@ namespace TFE_DarkForces
 		}
 		else if (sector_isDoor(wall->sector) || sector_isDoor(wall->nextSector))
 		{
-			color = TFE_Settings::getMapColorByName("Door Wall")->colorMapIndex;
+			color = TFE_Settings::getMapColorByName("Door or Elevator Wall")->colorMapIndex;
 		}
 		else if (s_mapShowSectorMode == 2)
 		{

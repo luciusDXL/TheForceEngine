@@ -89,7 +89,7 @@ namespace TFE_Settings
 		{"WCOLOR_UNDISCOVERED", "Undiscovered Wall", 1, {252, 252, 252, 255} },
 		{"WCOLOR_LEDGE", "Ledge Wall", 12, {0, 152, 0, 255}},
 		{"WCOLOR_GRAYED_OUT", "Grayed Out Wall", 13, {0, 92, 0, 255}},
-		{"WCOLOR_DOOR", "Door Wall", 20, {244, 184, 52, 255}},
+		{"WCOLOR_DOOR", "Door or Elevator Wall", 20, {244, 184, 52, 255}},
 		{"WCOLOR_SECRET", "Secret Wall", 22, {216, 88, 12, 255}},
 		{"WCOLOR_SECRET_NOT_FOUND", "Secret Not Found Wall", 4, {124, 204, 252, 255}},
 		{"KEY_COLOR_RED", "Red Key Wall", 6, {252, 0, 0, 255}},
