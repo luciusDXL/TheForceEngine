@@ -302,6 +302,7 @@ namespace TFE_DarkForces
 		attackMod->meleeRate = FIXED(230);
 		attackMod->attackFlags = ATTFLAG_RANGED | ATTFLAG_LIT_RNG;
 
+		// Why is this being returned? This function maybe should be a void? 
 		return attackMod->fireOffset.y;
 	}
 
@@ -1026,9 +1027,14 @@ namespace TFE_DarkForces
 				}
 
 				attackMod->anim.state = STATE_ANIMATE1;
-				ProjectileLogic* proj = (ProjectileLogic*)createProjectile(attackMod->projType, obj->sector, obj->posWS.x, attackMod->fireOffset.y + obj->posWS.y, obj->posWS.z, obj);
-				sound_playCued(attackMod->attackPrimSndSrc, obj->posWS);
+				vec3_fixed fireOffset = {};
 
+				// Calculate the X,Z fire offsets based on where the enemy is facing. It doesn't matter for Y. 
+				transformFireOffsets(obj->yaw, &attackMod->fireOffset, &fireOffset);
+
+				ProjectileLogic* proj = (ProjectileLogic*)createProjectile(attackMod->projType, obj->sector, fireOffset.x + obj->posWS.x, fireOffset.y + obj->posWS.y, fireOffset.z + obj->posWS.z, obj);
+				sound_playCued(attackMod->attackPrimSndSrc, obj->posWS);
+				
 				proj->prevColObj = obj;
 				proj->prevObj = obj;
 				proj->excludeObj = obj;
@@ -1045,22 +1051,25 @@ namespace TFE_DarkForces
 					vec3_fixed target = { s_playerObject->posWS.x, s_eyePos.y + ONE_16, s_playerObject->posWS.z };
 					proj_aimArcing(proj, target, proj->speed);
 
-					if (attackMod->fireOffset.x | attackMod->fireOffset.z)
-					{
-						proj->delta.x = attackMod->fireOffset.x;
-						proj->delta.z = attackMod->fireOffset.z;
-						proj_handleMovement(proj);
-					}
+					// This code was never hit in original DF because x and z fire offsets were always 0
+					// It causes strange collision effects to happen, so commenting out.
+					//if (fireOffset.x | fireOffset.z)
+					//{
+					//	proj->delta.x = fireOffset.x;
+					//	proj->delta.z = fireOffset.z;
+					//	proj_handleMovement(proj);
+					//}
 				}
 				else
 				{
 					// Handle x and z fire offset.
-					if (attackMod->fireOffset.x | attackMod->fireOffset.z)
-					{
-						proj->delta.x = attackMod->fireOffset.x;
-						proj->delta.z = attackMod->fireOffset.z;
-						proj_handleMovement(proj);
-					}
+					// Commenting out - see note above
+					//if (fireOffset.x | fireOffset.z)
+					//{
+					//	proj->delta.x = fireOffset.x;
+					//	proj->delta.z = fireOffset.z;
+					//	proj_handleMovement(proj);
+					//}
 
 					// Aim at the target.
 					vec3_fixed target = { s_eyePos.x, s_eyePos.y + ONE_16, s_eyePos.z };
@@ -1093,7 +1102,13 @@ namespace TFE_DarkForces
 				}
 
 				attackMod->anim.state = STATE_ANIMATE2;
-				ProjectileLogic* proj = (ProjectileLogic*)createProjectile(attackMod->projType, obj->sector, obj->posWS.x, attackMod->fireOffset.y + obj->posWS.y, obj->posWS.z, obj);
+
+				vec3_fixed fireOffset = {};
+				
+				// Calculate the fire offsets based on where the enemy is facing. It doesn't matter for Y. 
+				transformFireOffsets(obj->yaw, &attackMod->fireOffset, &fireOffset);
+
+				ProjectileLogic* proj = (ProjectileLogic*)createProjectile(attackMod->projType, obj->sector, fireOffset.x + obj->posWS.x, fireOffset.y + obj->posWS.y, fireOffset.z + obj->posWS.z, obj);
 				sound_playCued(attackMod->attackPrimSndSrc, obj->posWS);
 				proj->prevColObj = obj;
 				proj->excludeObj = obj;
@@ -1107,21 +1122,23 @@ namespace TFE_DarkForces
 					vec3_fixed target = { s_playerObject->posWS.x, s_eyePos.y + ONE_16, s_playerObject->posWS.z };
 					proj_aimArcing(proj, target, proj->speed);
 
-					if (attackMod->fireOffset.x | attackMod->fireOffset.z)
-					{
-						proj->delta.x = attackMod->fireOffset.x;
-						proj->delta.z = attackMod->fireOffset.z;
-						proj_handleMovement(proj);
-					}
+					// Commenting out - see note above
+					//if (fireOffset.x | fireOffset.z)
+					//{
+					//	proj->delta.x = fireOffset.x;
+					//	proj->delta.z = fireOffset.z;
+					//	proj_handleMovement(proj);
+					//}
 				}
 				else
 				{
-					if (attackMod->fireOffset.x | attackMod->fireOffset.z)
-					{
-						proj->delta.x = attackMod->fireOffset.x;
-						proj->delta.z = attackMod->fireOffset.z;
-						proj_handleMovement(proj);
-					}
+					// Commenting out - see note above
+					//if (fireOffset.x | fireOffset.z)
+					//{
+					//	proj->delta.x = fireOffset.x;
+					//	proj->delta.z = fireOffset.z;
+					//	proj_handleMovement(proj);
+					//}
 					vec3_fixed target = { s_eyePos.x, s_eyePos.y + ONE_16, s_eyePos.z };
 					proj_aimAtTarget(proj, target);
 					if (attackMod->fireSpread)
