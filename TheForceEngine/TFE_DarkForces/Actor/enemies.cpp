@@ -190,7 +190,7 @@ namespace TFE_DarkForces
 	{
 		ActorDispatch* dispatch = actor_createDispatch(obj, setupFunc);
 		dispatch->alertSndSrc = sound_load(cust->alertSound, SOUND_PRIORITY_MED5);
-		dispatch->fov = cust->fov;
+		dispatch->fov = floatToAngle((f32)cust->fov);
 		dispatch->awareRange = FIXED(cust->awareRange);
 
 		// Damage Module
@@ -230,9 +230,9 @@ namespace TFE_DarkForces
 
 		// Thinker Module
 		ThinkerModule* thinkerMod = actor_createThinkerModule(dispatch);
-		thinkerMod->target.speedRotation = cust->rotationSpeed;
+		thinkerMod->target.speedRotation = floatToAngle((f32)cust->rotationSpeed);
 		thinkerMod->target.speed = FIXED(cust->speed);
-		thinkerMod->approachVariation = cust->approachVariation;
+		thinkerMod->approachVariation = floatToAngle((f32)cust->approachVariation);
 		thinkerMod->targetOffset = FIXED(cust->approachOffset);
 		thinkerMod->startDelay = TICKS(cust->thinkerDelay);
 		thinkerMod->anim.flags &= ~AFLAG_PLAYONCE;		// Ensures that walking animations will loop
@@ -242,7 +242,7 @@ namespace TFE_DarkForces
 		if (cust->isFlying)
 		{
 			ThinkerModule* flyingMod = actor_createFlyingModule((Logic*)dispatch);
-			flyingMod->target.speedRotation = cust->rotationSpeed;
+			flyingMod->target.speedRotation = floatToAngle((f32)cust->rotationSpeed);
 			flyingMod->target.speed = FIXED(cust->speed);
 			flyingMod->target.speedVert = FIXED(cust->verticalSpeed);
 			actor_addModule(dispatch, (ActorModule*)flyingMod);

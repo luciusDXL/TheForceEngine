@@ -126,7 +126,7 @@ namespace TFE_ExternalData
 
 		if (cJSON_IsNumber(data) && strcasecmp(data->string, "fieldOfView") == 0)
 		{
-			customLogic.fov = floatToAngle((f32)data->valueint);
+			customLogic.fov = data->valueint;
 			return true;
 		}
 
@@ -330,7 +330,7 @@ namespace TFE_ExternalData
 
 		if (cJSON_IsNumber(data) && strcasecmp(data->string, "rotationSpeed") == 0)
 		{
-			customLogic.rotationSpeed = floatToAngle((f32)data->valueint);
+			customLogic.rotationSpeed = data->valueint;
 			return true;
 		}
 
@@ -342,7 +342,7 @@ namespace TFE_ExternalData
 
 		if (cJSON_IsNumber(data) && strcasecmp(data->string, "approachVariation") == 0)
 		{
-			customLogic.approachVariation = floatToAngle((f32)data->valueint);
+			customLogic.approachVariation = data->valueint;
 			return true;
 		}
 
