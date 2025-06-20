@@ -2742,11 +2742,6 @@ namespace TFE_Jedi
 		}
 	}
 
-	void showDoorUsedMessage(KeyItem key)
-	{
-
-	}
-
 	void infElevatorMessageInternal(MessageType msgType)
 	{
 		u32 event = s_msgEvent;
@@ -2792,7 +2787,7 @@ namespace TFE_Jedi
 
 			// Does the player have the key?
 			KeyItem key = elev->key;
-			char keyBuffer[100];
+			char keyBuffer[50];
 			if (key == KEY_RED)
 			{
 				if (TFE_Settings::getGameSettings()->df_showKeyUsed &&  s_playerInfo.itemRedKey)

@@ -28,6 +28,7 @@
 #include <TFE_Ui/ui.h>
 #include <TFE_Ui/markdown.h>
 #include <TFE_System/utf8.h>
+#include <TFE_System/tfeMessage.h>
 #include <TFE_ExternalData/dfLogics.h>
 #include <TFE_ExternalData/weaponExternal.h>
 #include <TFE_ExternalData/pickupExternal.h>
@@ -525,6 +526,12 @@ namespace TFE_FrontEndUI
 		TFE_ExternalData::clearExternalProjectiles();					// clear projectiles
 		TFE_ExternalData::clearExternalEffects();						// clear effects
 		TFE_ExternalData::clearExternalPickups();						// clear pickups
+
+		// Restore the default messages if you are exiting a mod. 
+		if (TFE_System::modMessagesLoaded())
+		{
+			TFE_System::restoreDefaultMessages();
+		}
 
 		if (TFE_Settings::getSystemSettings()->returnToModLoader && s_modLoaded)
 		{
@@ -1786,7 +1793,21 @@ namespace TFE_FrontEndUI
 								s_selectedSaveSlot = (s32)s_saveDir.size();
 								// If no quicksave exists, skip over it when generating the name.
 								const s32 saveIndex = s_selectedSaveSlot + (s_hasQuicksave ? 0 : 1);
-								TFE_SaveSystem::getSaveFilenameFromIndex(saveIndex, s_fileName);
+
+								// Make sure you save to a feil that doesn't already exist unless you are overwriting. 
+								char * gameDir = TFE_SaveSystem::getSaveDir();
+								TFE_Paths::fixupPathAsDirectory(gameDir);
+								for (int i = saveIndex; i >= 0; i--)
+								{
+									TFE_SaveSystem::getSaveFilenameFromIndex(i, s_fileName);
+									char saveFilePath[TFE_MAX_PATH];
+									sprintf(saveFilePath, "%s%s", gameDir, s_fileName);
+
+									if (!FileUtil::exists(saveFilePath))
+									{
+										break;
+									}
+								}
 
 								s_newSaveName[0] = 0;
 								openSaveNameEditPopup(s_newSaveName);

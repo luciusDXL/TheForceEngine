@@ -1049,6 +1049,26 @@ namespace TFE_DarkForces
 								}
 							}
 						}
+
+						else if (strcasecmp(zext, "txt") == 0)
+						{
+							char fname[TFE_MAX_PATH];
+							FileUtil::getFileNameFromPath(name, fname, true);
+
+							if (strcasecmp(fname, "tfemessages.txt") == 0)
+							{
+								char* buffer = extractTextFileFromZip(*zipArchive, i);
+								int bufferLen = zipArchive->getFileLength(i);
+
+								// Load Mod TFE Messages
+								if (!TFE_System::loadMessagesBuffer(buffer, bufferLen, true))
+								{
+									TFE_System::logWrite(LOG_ERROR, "Main", "Cannot load mod TFE messages.");
+								}
+
+								free(buffer);
+							}
+						}
 					}
 
 					// If there is only 1 LFD, assume it is mission briefings.
@@ -1597,6 +1617,8 @@ namespace TFE_DarkForces
 		// TFE - Scripting.
 		serialization_setVersion(curVersion);
 		TFE_ForceScript::serialize(stream);
+
+		TFE_System::messages_serialize(stream);
 
 		if (!writeState)
 		{

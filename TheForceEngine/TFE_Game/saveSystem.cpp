@@ -388,4 +388,10 @@ namespace TFE_SaveSystem
 			lastState = 0;
 		}
 	}
+
+	char * getSaveDir()
+	{
+		return s_gameSavePath;
+	}
+
 }
