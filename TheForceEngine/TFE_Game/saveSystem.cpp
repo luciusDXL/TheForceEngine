@@ -389,9 +389,4 @@ namespace TFE_SaveSystem
 		}
 	}
 
-	char * getSaveDir()
-	{
-		return s_gameSavePath;
-	}
-
 }

@@ -52,5 +52,4 @@ namespace TFE_SaveSystem
 	void getSaveFilenameFromIndex(s32 index, char* name);
 
 	void populateSaveDirectory(std::vector<SaveHeader>& dir);
-	char* getSaveDir();
 }

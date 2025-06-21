@@ -1793,21 +1793,7 @@ namespace TFE_FrontEndUI
 								s_selectedSaveSlot = (s32)s_saveDir.size();
 								// If no quicksave exists, skip over it when generating the name.
 								const s32 saveIndex = s_selectedSaveSlot + (s_hasQuicksave ? 0 : 1);
-
-								// Make sure you save to a feil that doesn't already exist unless you are overwriting. 
-								char * gameDir = TFE_SaveSystem::getSaveDir();
-								TFE_Paths::fixupPathAsDirectory(gameDir);
-								for (int i = saveIndex; i >= 0; i--)
-								{
-									TFE_SaveSystem::getSaveFilenameFromIndex(i, s_fileName);
-									char saveFilePath[TFE_MAX_PATH];
-									sprintf(saveFilePath, "%s%s", gameDir, s_fileName);
-
-									if (!FileUtil::exists(saveFilePath))
-									{
-										break;
-									}
-								}
+								TFE_SaveSystem::getSaveFilenameFromIndex(saveIndex, s_fileName);
 
 								s_newSaveName[0] = 0;
 								openSaveNameEditPopup(s_newSaveName);
