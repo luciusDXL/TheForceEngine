@@ -113,7 +113,7 @@ namespace TFE_System
 		{
 			for (s32 i = 0; i < TFE_MSG_COUNT; i++)
 			{
-				s_tfeMessageOrig[i] = _strdup(s_tfeMessage[i]);
+				s_tfeMessageOrig[i] = strdup(s_tfeMessage[i]);
 				if (!s_tfeMessageOrig[i])
 				{
 					freeMessages();
