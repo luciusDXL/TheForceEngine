@@ -5,6 +5,10 @@
 #include <cassert>
 #include <cstring>
 
+#ifdef _WIN32
+#define strdup _strdup  
+#endif
+
 namespace TFE_System
 {
 	static char* s_tfeMessage[TFE_MSG_COUNT];
@@ -42,7 +46,7 @@ namespace TFE_System
 			for (s32 i = 0; i < TFE_MSG_COUNT; i++)
 			{
 				free(s_tfeMessage[i]);
-				s_tfeMessage[i] = _strdup(s_tfeMessageOrig[i]);
+				s_tfeMessage[i] = strdup(s_tfeMessageOrig[i]);
 			}
 			s_modMessagesLoaded = false;
 		}
