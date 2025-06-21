@@ -388,5 +388,4 @@ namespace TFE_SaveSystem
 			lastState = 0;
 		}
 	}
-
 }
