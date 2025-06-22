@@ -81,12 +81,12 @@ namespace TFE_DarkForces
 	{
 		"enhanced.gob",
 	};
-	
+
 	enum GameConstants
 	{
 		MAX_MOD_LFD = 16,
 	};
-	   
+
 	enum GameState
 	{
 		GSTATE_STARTUP_CUTSCENES = 0,
@@ -111,7 +111,7 @@ namespace TFE_DarkForces
 		GameMode nextGameMode;
 		s32 cutscene;
 	};
-		
+
 	static CutsceneData s_cutsceneData[] =
 	{
 		{ 1,  GMODE_CUTSCENE, 100 },
@@ -197,12 +197,12 @@ namespace TFE_DarkForces
 		char* args[64] = { 0 };
 
 		JBool cutscenesEnabled = JTRUE;
-		JBool localMsgLoaded   = JFALSE;
-		s32   startLevel       = 0;
-		GameState state        = GSTATE_STARTUP_CUTSCENES;
-		s32   levelIndex       = 0;
-		s32   cutsceneIndex    = 0;
-		JBool abortLevel       = JFALSE;
+		JBool localMsgLoaded = JFALSE;
+		s32   startLevel = 0;
+		GameState state = GSTATE_STARTUP_CUTSCENES;
+		s32   levelIndex = 0;
+		s32   cutsceneIndex = 0;
+		JBool abortLevel = JFALSE;
 	};
 	struct SharedGameState
 	{
@@ -222,7 +222,7 @@ namespace TFE_DarkForces
 	};
 	static RunGameState   s_runGameState = {};
 	static SharedGameState s_sharedState = {};
-				
+
 	/////////////////////////////////////////////
 	// Forward Declarations
 	/////////////////////////////////////////////
@@ -244,7 +244,7 @@ namespace TFE_DarkForces
 	/////////////////////////////////////////////
 	// API
 	/////////////////////////////////////////////
-		
+
 	// This is the equivalent of the initial part of main() in Dark Forces DOS.
 	// This part loads and sets up the game.
 	bool DarkForces::runGame(s32 argCount, const char* argv[], Stream* stream)
@@ -316,7 +316,7 @@ namespace TFE_DarkForces
 
 		// Handle start level
 		setInitialLevel(startLevel);
-		
+
 		// TFE Specific
 		agentMenu_load(&s_sharedState.langKeys);
 		escapeMenu_load(&s_sharedState.langKeys);
@@ -360,7 +360,7 @@ namespace TFE_DarkForces
 		cutsceneFilm_reset();
 		lsystem_destroy();
 		bitmap_clearAll();
-		
+
 		// Clear paths and archives.
 		TFE_Paths::clearSearchPaths();
 		TFE_Paths::clearLocalArchives();
@@ -382,7 +382,7 @@ namespace TFE_DarkForces
 		vue_resetState();
 		lsystem_destroy();
 		hud_reset();
-		
+
 		// TFE
 		TFE_Sprite_Jedi::freeAll();
 		TFE_Model_Jedi::freeAll();
@@ -425,7 +425,7 @@ namespace TFE_DarkForces
 		ImReintializeMidi();
 		gameMusic_setState(MUS_STATE_STALK);
 	}
-		
+
 	void handleLevelComplete()
 	{
 		s32 completedLevelIndex = agent_getLevelIndex();
@@ -524,7 +524,7 @@ namespace TFE_DarkForces
 		}
 		// Then do some init setup for the next level ahead of time; the actual loading will happen after the cutscenes and mission briefing.
 		setLevelByIndex(levelIndex);
-		
+
 		// The inner most loop - this cycles through the cutscene entries, each of which lists the game mode.
 		// TFE: Again this becomes a game state, where each iteration through this loop is from a single function call into loopGame().
 		while (!s_invalidLevelIndex && !s_abortLevel)
@@ -566,156 +566,156 @@ namespace TFE_DarkForces
 	void DarkForces::loopGame()
 	{
 		updateTime();
-				
+
 		switch (s_runGameState.state)
 		{
-			case GSTATE_STARTUP_CUTSCENES:
-			{
-				s_runGameState.state = GSTATE_CUTSCENE;
-				s_invalidLevelIndex = JTRUE;
+		case GSTATE_STARTUP_CUTSCENES:
+		{
+			s_runGameState.state = GSTATE_CUTSCENE;
+			s_invalidLevelIndex = JTRUE;
 
-				// Always force cutscenes off for demo playbac for cutscenes. 
-				if (isDemoPlayback())
+			// Always force cutscenes off for demo playbac for cutscenes. 
+			if (isDemoPlayback())
+			{
+				s_runGameState.cutscenesEnabled = JFALSE;
+			}
+
+			if (s_runGameState.cutscenesEnabled && !s_runGameState.startLevel)
+			{
+				cutscene_play(10);
+			}
+			else
+			{
+				startNextMode();
+			}
+		} break;
+		case GSTATE_AGENT_MENU:
+		{
+			bool levelSelected = false;
+			if (s_runGameState.startLevel)
+			{
+				s_runGameState.abortLevel = JFALSE;
+				s_runGameState.levelIndex = s_runGameState.startLevel;
+				s_runGameState.startLevel = 0;
+				levelSelected = true;
+			}
+			else if (!agentMenu_update(&s_runGameState.levelIndex))
+			{
+				agent_updateAgentSavedData();
+				levelSelected = true;
+			}
+
+			if (levelSelected)
+			{
+				s_invalidLevelIndex = JTRUE;
+				for (s32 i = 0; i < TFE_ARRAYSIZE(s_cutsceneData); i++)
 				{
-					s_runGameState.cutscenesEnabled = JFALSE;
+					if (s_cutsceneData[i].levelIndex >= 0 && s_cutsceneData[i].levelIndex == s_runGameState.levelIndex)
+					{
+						s_runGameState.cutsceneIndex = i;
+						s_invalidLevelIndex = JFALSE;
+						break;
+					}
 				}
 
-				if (s_runGameState.cutscenesEnabled && !s_runGameState.startLevel)
+				lmusic_reset();
+				s_runGameState.abortLevel = JFALSE;
+				agent_setNextLevelByIndex(s_runGameState.levelIndex);
+				startNextMode();
+			}
+		} break;
+		case GSTATE_CUTSCENE:
+		{
+			if (cutscene_update())
+			{
+				if (TFE_A11Y::cutsceneCaptionsEnabled()) { TFE_A11Y::drawCaptions(); }
+			}
+			else
+			{
+				s_runGameState.cutsceneIndex++;
+				if (s_cutsceneData[s_runGameState.cutsceneIndex].nextGameMode == GMODE_END)
 				{
-					cutscene_play(10);
+					s_runGameState.state = GSTATE_AGENT_MENU;
+					s_invalidLevelIndex = JTRUE;
 				}
 				else
 				{
 					startNextMode();
 				}
-			} break;
-			case GSTATE_AGENT_MENU:
+				TFE_A11Y::clearActiveCaptions();
+			}
+		} break;
+		case GSTATE_BRIEFING:
+		{
+			s32 skill;
+			JBool abort;
+			lmusic_reset();	// Fix a Dark Forces bug where music won't play when entering a cutscene again without restarting.
+			if (!missionBriefing_update(&skill, &abort))
 			{
-				bool levelSelected = false;
-				if (s_runGameState.startLevel)
-				{
-					s_runGameState.abortLevel = JFALSE;
-					s_runGameState.levelIndex = s_runGameState.startLevel;
-					s_runGameState.startLevel = 0;
-					levelSelected = true;
-				}
-				else if (!agentMenu_update(&s_runGameState.levelIndex))
-				{
-					agent_updateAgentSavedData();
-					levelSelected = true;
-				}
+				missionBriefing_cleanup();
+				TFE_Input::clearAccumulatedMouseMove();
 
-				if (levelSelected)
+				if (abort)
 				{
 					s_invalidLevelIndex = JTRUE;
-					for (s32 i = 0; i < TFE_ARRAYSIZE(s_cutsceneData); i++)
-					{
-						if (s_cutsceneData[i].levelIndex >= 0 && s_cutsceneData[i].levelIndex == s_runGameState.levelIndex)
-						{
-							s_runGameState.cutsceneIndex = i;
-							s_invalidLevelIndex = JFALSE;
-							break;
-						}
-					}
-
-					lmusic_reset();
-					s_runGameState.abortLevel = JFALSE;
-					agent_setNextLevelByIndex(s_runGameState.levelIndex);
-					startNextMode();
+					s_runGameState.cutsceneIndex--;
 				}
-			} break;
-			case GSTATE_CUTSCENE:
-			{
-				if (cutscene_update())
+				else
 				{
-					if (TFE_A11Y::cutsceneCaptionsEnabled()) { TFE_A11Y::drawCaptions(); }
+					s_agentData[s_agentId].difficulty = skill;
+					s_runGameState.cutsceneIndex++;
+				}
+				startNextMode();
+			}
+		} break;
+		case GSTATE_MISSION:
+		{
+			// At this point the mission has already been launched.
+			// The task system will take over. Basically every frame we just check to see if there are any tasks running.
+			if (task_getCount())
+			{
+				if (!s_gamePaused && TFE_A11Y::gameplayCaptionsEnabled()) { TFE_A11Y::drawCaptions(); }
+			}
+			else
+			{
+				// We have returned from the mission tasks.
+				renderer_reset();
+				gameMusic_stop();
+				sound_levelStop();
+				agent_levelEndTask();
+				lmusic_reset();	// Fix a Dark Forces bug where music won't play when entering a cutscene again without restarting.
+				pda_cleanup();
+
+				// Reset
+				TFE_Jedi::renderer_setType(RENDERER_SOFTWARE);
+				TFE_Jedi::render_setResolution();
+				TFE_Jedi::renderer_setLimits();
+
+				// TFE
+				reticle_enable(false);
+				// TFE - Script system.
+				TFE_ScriptInterface::reset();
+
+				if (!s_levelComplete)
+				{
+					s_runGameState.abortLevel = JTRUE;
+					s_runGameState.cutsceneIndex--;
 				}
 				else
 				{
 					s_runGameState.cutsceneIndex++;
-					if (s_cutsceneData[s_runGameState.cutsceneIndex].nextGameMode == GMODE_END)
-					{
-						s_runGameState.state = GSTATE_AGENT_MENU;
-						s_invalidLevelIndex = JTRUE;
-					}
-					else
-					{
-						startNextMode();
-					}
-					TFE_A11Y::clearActiveCaptions();
+					handleLevelComplete();
 				}
-			} break;
-			case GSTATE_BRIEFING:
-			{
-				s32 skill;
-				JBool abort;
-				lmusic_reset();	// Fix a Dark Forces bug where music won't play when entering a cutscene again without restarting.
-				if (!missionBriefing_update(&skill, &abort))
-				{
-					missionBriefing_cleanup();
-					TFE_Input::clearAccumulatedMouseMove();
 
-					if (abort)
-					{
-						s_invalidLevelIndex = JTRUE;
-						s_runGameState.cutsceneIndex--;
-					}
-					else
-					{
-						s_agentData[s_agentId].difficulty = skill;
-						s_runGameState.cutsceneIndex++;
-					}
-					startNextMode();
-				}
-			} break;
-			case GSTATE_MISSION:
-			{
-				// At this point the mission has already been launched.
-				// The task system will take over. Basically every frame we just check to see if there are any tasks running.
-				if (task_getCount())
-				{
-					if (!s_gamePaused && TFE_A11Y::gameplayCaptionsEnabled()) { TFE_A11Y::drawCaptions(); }
-				}
-				else
-				{
-					// We have returned from the mission tasks.
-					renderer_reset();
-					gameMusic_stop();
-					sound_levelStop();
-					agent_levelEndTask();
-					lmusic_reset();	// Fix a Dark Forces bug where music won't play when entering a cutscene again without restarting.
-					pda_cleanup();
+				startNextMode();
 
-					// Reset
-					TFE_Jedi::renderer_setType(RENDERER_SOFTWARE);
-					TFE_Jedi::render_setResolution();
-					TFE_Jedi::renderer_setLimits();
-
-					// TFE
-					reticle_enable(false);
-					// TFE - Script system.
-					TFE_ScriptInterface::reset();
-
-					if (!s_levelComplete)
-					{
-						s_runGameState.abortLevel = JTRUE;
-						s_runGameState.cutsceneIndex--;
-					}
-					else
-					{
-						s_runGameState.cutsceneIndex++;
-						handleLevelComplete();
-					}
-					
-					startNextMode();
-
-					region_clear(s_levelRegion);
-					bitmap_clearLevelData();
-					bitmap_setAllocator(s_gameRegion);
-					level_freeAllAssets();
-					TFE_A11Y::clearActiveCaptions();
-				}
-			} break;
+				region_clear(s_levelRegion);
+				bitmap_clearLevelData();
+				bitmap_setAllocator(s_gameRegion);
+				level_freeAllAssets();
+				TFE_A11Y::clearActiveCaptions();
+			}
+		} break;
 		}
 	}
 
@@ -724,7 +724,7 @@ namespace TFE_DarkForces
 		s_sharedState.cutsceneList = cutsceneList_load("cutscene.lst");
 		cutscene_init(s_sharedState.cutsceneList);
 	}
-	
+
 	void freeAllMidi()
 	{
 		gameMusic_stop();
@@ -758,93 +758,93 @@ namespace TFE_DarkForces
 		GameMode mode = s_cutsceneData[s_runGameState.cutsceneIndex].nextGameMode;
 		switch (mode)
 		{
-			case GMODE_END:
+		case GMODE_END:
+		{
+			s_runGameState.cutsceneIndex = 0;
+			s_invalidLevelIndex = JTRUE;
+			startNextMode();
+		} break;
+		case GMODE_CUTSCENE:
+		{
+			if (s_runGameState.cutscenesEnabled && cutscene_play(s_cutsceneData[s_runGameState.cutsceneIndex].cutscene))
 			{
-				s_runGameState.cutsceneIndex = 0;
-				s_invalidLevelIndex = JTRUE;
-				startNextMode();
-			} break;
-			case GMODE_CUTSCENE:
-			{
-				if (s_runGameState.cutscenesEnabled && cutscene_play(s_cutsceneData[s_runGameState.cutsceneIndex].cutscene))
-				{
-					s_runGameState.state = GSTATE_CUTSCENE;
-				}
-				else
-				{
-					s_runGameState.cutsceneIndex++;
-					startNextMode();
-				}
-			} break;
-			case GMODE_BRIEFING:
-			{
-				BriefingInfo* brief = nullptr;
-				if (s_runGameState.cutscenesEnabled)
-				{
-					const char* levelName = agent_getLevelName();
-					s32 briefingIndex = 0;
-					for (s32 i = 0; i < s_sharedState.briefingList.count; i++)
-					{
-						if (strcasecmp(levelName, s_sharedState.briefingList.briefing[i].mission) == 0)
-						{
-							briefingIndex = i;
-							break;
-						}
-					}
-
-					s32 skill = (s32)s_agentData[s_agentId].difficulty;
-					brief = &s_sharedState.briefingList.briefing[briefingIndex];
-					if (brief)
-					{
-						missionBriefing_start(brief->archive, brief->bgAnim, levelName, brief->palette, skill, &s_sharedState.langKeys);
-						s_runGameState.state = GSTATE_BRIEFING;
-					}
-				}
-
-				if (!brief)
-				{
-					s_runGameState.cutsceneIndex++;
-					startNextMode();
-				}
-			}  break;
-			case GMODE_MISSION:
-			{
-				sound_levelStart();
-
-				bitmap_setAllocator(s_levelRegion);
-				actor_clearState();
-
-				task_reset();
-				inf_clearState();
-
-				TFE_Settings_Game* gameSettings = TFE_Settings::getGameSettings();
-
-				// Entry point to replay a demo
-				if (gameSettings->df_enableReplay && !isDemoPlayback())
-				{
-					loadReplay();
-				}
-
-				// Entry point to recording a demo
-				if (gameSettings->df_enableRecording && !isRecording())
-				{
-					startRecording();
-				}
-
-				s_sharedState.loadMissionTask = createTask("start mission", mission_startTaskFunc, JTRUE);
-				mission_setLoadMissionTask(s_sharedState.loadMissionTask);
-
-				s32 levelIndex = agent_getLevelIndex();
-				gameMusic_start(levelIndex);
-
-				agent_setLevelComplete(JFALSE);
-				agent_readSavedDataForLevel(s_agentId, levelIndex);
-
-				// The load mission task should begin immediately once the Task System updates,
-				// so launchCurrentTask() is not required here.
-				// In the original, the task system would simply loop here.
-				s_runGameState.state = GSTATE_MISSION;
+				s_runGameState.state = GSTATE_CUTSCENE;
 			}
+			else
+			{
+				s_runGameState.cutsceneIndex++;
+				startNextMode();
+			}
+		} break;
+		case GMODE_BRIEFING:
+		{
+			BriefingInfo* brief = nullptr;
+			if (s_runGameState.cutscenesEnabled)
+			{
+				const char* levelName = agent_getLevelName();
+				s32 briefingIndex = 0;
+				for (s32 i = 0; i < s_sharedState.briefingList.count; i++)
+				{
+					if (strcasecmp(levelName, s_sharedState.briefingList.briefing[i].mission) == 0)
+					{
+						briefingIndex = i;
+						break;
+					}
+				}
+
+				s32 skill = (s32)s_agentData[s_agentId].difficulty;
+				brief = &s_sharedState.briefingList.briefing[briefingIndex];
+				if (brief)
+				{
+					missionBriefing_start(brief->archive, brief->bgAnim, levelName, brief->palette, skill, &s_sharedState.langKeys);
+					s_runGameState.state = GSTATE_BRIEFING;
+				}
+			}
+
+			if (!brief)
+			{
+				s_runGameState.cutsceneIndex++;
+				startNextMode();
+			}
+		}  break;
+		case GMODE_MISSION:
+		{
+			sound_levelStart();
+
+			bitmap_setAllocator(s_levelRegion);
+			actor_clearState();
+
+			task_reset();
+			inf_clearState();
+
+			TFE_Settings_Game* gameSettings = TFE_Settings::getGameSettings();
+
+			// Entry point to replay a demo
+			if (gameSettings->df_enableReplay && !isDemoPlayback())
+			{
+				loadReplay();
+			}
+
+			// Entry point to recording a demo
+			if (gameSettings->df_enableRecording && !isRecording())
+			{
+				startRecording();
+			}
+
+			s_sharedState.loadMissionTask = createTask("start mission", mission_startTaskFunc, JTRUE);
+			mission_setLoadMissionTask(s_sharedState.loadMissionTask);
+
+			s32 levelIndex = agent_getLevelIndex();
+			gameMusic_start(levelIndex);
+
+			agent_setLevelComplete(JFALSE);
+			agent_readSavedDataForLevel(s_agentId, levelIndex);
+
+			// The load mission task should begin immediately once the Task System updates,
+			// so launchCurrentTask() is not required here.
+			// In the original, the task system would simply loop here.
+			s_runGameState.state = GSTATE_MISSION;
+		}
 		}
 	}
 
@@ -914,7 +914,7 @@ namespace TFE_DarkForces
 					TFE_Paths::fixupPathAsDirectory(path);
 					TFE_Paths::addAbsoluteSearchPath(path);
 					TFE_System::logWrite(LOG_MSG, "DarkForces", "Drag and Drop Mod File: '%s'; Path: '%s'", fileName, path);
-					
+
 					loadCustomGob(fileName);
 				}
 			}
@@ -1049,26 +1049,6 @@ namespace TFE_DarkForces
 								}
 							}
 						}
-
-						else if (strcasecmp(zext, "txt") == 0)
-						{
-							char fname[TFE_MAX_PATH];
-							FileUtil::getFileNameFromPath(name, fname, true);
-
-							if (strcasecmp(fname, "tfemessages.txt") == 0)
-							{
-								char* buffer = extractTextFileFromZip(*zipArchive, i);
-								int bufferLen = zipArchive->getFileLength(i);
-
-								// Load Mod TFE Messages
-								if (!TFE_System::loadMessagesBuffer(buffer, bufferLen, true))
-								{
-									TFE_System::logWrite(LOG_ERROR, "Main", "Cannot load mod TFE messages.");
-								}
-
-								free(buffer);
-							}
-						}
 					}
 
 					// If there is only 1 LFD, assume it is mission briefings.
@@ -1168,7 +1148,7 @@ namespace TFE_DarkForces
 					FileUtil::readDirectory(modPath, "lfd", fileList);
 					const size_t count = fileList.size();
 					const std::string* file = fileList.data();
-															
+
 					for (size_t i = 0; i < count; i++, file++)
 					{
 						const size_t len = file->length();
@@ -1310,7 +1290,7 @@ namespace TFE_DarkForces
 		TFE_Paths::addLocalSearchPath("");
 		TFE_Paths::addLocalSearchPath("LFD/");
 		// Dark Forces also adds C:/ and C:/LFD but TFE won't be doing that for obvious reasons...
-		
+
 		// Add some extra directories, if they exist.
 		// Obviously these were not in the original code.
 		TFE_Paths::addLocalSearchPath("Mods/");
@@ -1320,7 +1300,7 @@ namespace TFE_DarkForces
 		const char* programData = TFE_Paths::getPath(PATH_PROGRAM_DATA);
 		const char* programDir = TFE_Paths::getPath(PATH_PROGRAM);
 		char path[TFE_MAX_PATH];
-		
+
 		sprintf(path, "%sMods/", programData);
 		TFE_Paths::addAbsoluteSearchPath(path);
 
@@ -1372,7 +1352,7 @@ namespace TFE_DarkForces
 		}
 		return true;
 	}
-		
+
 	void loadMapNumFont()
 	{
 		FilePath filePath;
@@ -1399,7 +1379,7 @@ namespace TFE_DarkForces
 			c = toupper(m->text[0]);
 			if ((c >= 'A') && (c <= 'Z'))
 			{
-				*dest = (KeyboardCode)((u32)(KEY_A) + (c - 'A'));
+				*dest = (KeyboardCode)((u32)(KEY_A)+(c - 'A'));
 			}
 		}
 	}
@@ -1411,18 +1391,18 @@ namespace TFE_DarkForces
 
 		TFE_Paths::getFilePath("HOTKEYS.MSG", &fp);
 		parseMessageFile(&msgs, &fp, 1);
-		parseKey(&msgs, 160, &s_sharedState.langKeys.k_yes,   KEY_Y);
-		parseKey(&msgs, 350, &s_sharedState.langKeys.k_quit,  KEY_Q);
-		parseKey(&msgs, 330, &s_sharedState.langKeys.k_cont,  KEY_R);
-		parseKey(&msgs, 340, &s_sharedState.langKeys.k_conf,  KEY_C);
+		parseKey(&msgs, 160, &s_sharedState.langKeys.k_yes, KEY_Y);
+		parseKey(&msgs, 350, &s_sharedState.langKeys.k_quit, KEY_Q);
+		parseKey(&msgs, 330, &s_sharedState.langKeys.k_cont, KEY_R);
+		parseKey(&msgs, 340, &s_sharedState.langKeys.k_conf, KEY_C);
 		parseKey(&msgs, 110, &s_sharedState.langKeys.k_agdel, KEY_R);
 		parseKey(&msgs, 130, &s_sharedState.langKeys.k_begin, KEY_B);
-		parseKey(&msgs, 240, &s_sharedState.langKeys.k_easy,  KEY_E);
-		parseKey(&msgs, 250, &s_sharedState.langKeys.k_med,   KEY_M);
-		parseKey(&msgs, 260, &s_sharedState.langKeys.k_hard,  KEY_H);
-		parseKey(&msgs, 230, &s_sharedState.langKeys.k_canc,  KEY_C);
+		parseKey(&msgs, 240, &s_sharedState.langKeys.k_easy, KEY_E);
+		parseKey(&msgs, 250, &s_sharedState.langKeys.k_med, KEY_M);
+		parseKey(&msgs, 260, &s_sharedState.langKeys.k_hard, KEY_H);
+		parseKey(&msgs, 230, &s_sharedState.langKeys.k_canc, KEY_C);
 	}
-				
+
 	void gameStartup()
 	{
 		hud_loadGraphics();
@@ -1507,7 +1487,7 @@ namespace TFE_DarkForces
 			TFE_System::logWrite(LOG_ERROR, "DarkForcesMain", "Failed to load diskerr image.");
 		}
 	}
-		
+
 	void startMissionFromSave(s32 levelIndex)
 	{
 		// We have returned from the mission tasks.
@@ -1617,8 +1597,6 @@ namespace TFE_DarkForces
 		// TFE - Scripting.
 		serialization_setVersion(curVersion);
 		TFE_ForceScript::serialize(stream);
-
-		TFE_System::messages_serialize(stream);
 
 		if (!writeState)
 		{

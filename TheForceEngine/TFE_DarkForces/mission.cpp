@@ -515,12 +515,6 @@ namespace TFE_DarkForces
 			endRecording();
 		}
 
-		// Restore the default messages if you are exiting a mod. 
-		if (TFE_System::modMessagesLoaded())
-		{
-			TFE_System::restoreDefaultMessages();
-		}
-
 		s_exitLevel = JTRUE;
 	}
 

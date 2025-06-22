@@ -33,9 +33,5 @@ namespace TFE_System
 {
 	const char* getMessage(TFE_Message msg);
 	bool loadMessages(const char* path);
-	bool modMessagesLoaded();
-	bool loadMessagesBuffer(char* contents, int len, bool isMod = false);
-	void restoreDefaultMessages();
 	void freeMessages();
-	void messages_serialize(Stream* stream);
 }
