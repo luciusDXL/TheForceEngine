@@ -49,7 +49,7 @@ namespace TFE_SaveSystem
 	const char* loadRequestFilename();
 	const char* saveRequestFilename();
 
-	void getSaveFilenameFromIndex(s32 index, char* name);
-
+	void getSaveFilename(char* filename, s32 index);
 	void populateSaveDirectory(std::vector<SaveHeader>& dir);
+
 }
