@@ -197,12 +197,12 @@ namespace TFE_DarkForces
 		char* args[64] = { 0 };
 
 		JBool cutscenesEnabled = JTRUE;
-		JBool localMsgLoaded   = JFALSE;
-		s32   startLevel       = 0;
-		GameState state        = GSTATE_STARTUP_CUTSCENES;
-		s32   levelIndex       = 0;
-		s32   cutsceneIndex    = 0;
-		JBool abortLevel       = JFALSE;
+		JBool localMsgLoaded = JFALSE;
+		s32   startLevel = 0;
+		GameState state = GSTATE_STARTUP_CUTSCENES;
+		s32   levelIndex = 0;
+		s32   cutsceneIndex = 0;
+		JBool abortLevel = JFALSE;
 	};
 	struct SharedGameState
 	{
@@ -1379,7 +1379,7 @@ namespace TFE_DarkForces
 			c = toupper(m->text[0]);
 			if ((c >= 'A') && (c <= 'Z'))
 			{
-				*dest = (KeyboardCode)((u32)(KEY_A) + (c - 'A'));
+				*dest = (KeyboardCode)((u32)(KEY_A)+(c - 'A'));
 			}
 		}
 	}
@@ -1391,16 +1391,16 @@ namespace TFE_DarkForces
 
 		TFE_Paths::getFilePath("HOTKEYS.MSG", &fp);
 		parseMessageFile(&msgs, &fp, 1);
-		parseKey(&msgs, 160, &s_sharedState.langKeys.k_yes,   KEY_Y);
-		parseKey(&msgs, 350, &s_sharedState.langKeys.k_quit,  KEY_Q);
-		parseKey(&msgs, 330, &s_sharedState.langKeys.k_cont,  KEY_R);
-		parseKey(&msgs, 340, &s_sharedState.langKeys.k_conf,  KEY_C);
+		parseKey(&msgs, 160, &s_sharedState.langKeys.k_yes, KEY_Y);
+		parseKey(&msgs, 350, &s_sharedState.langKeys.k_quit, KEY_Q);
+		parseKey(&msgs, 330, &s_sharedState.langKeys.k_cont, KEY_R);
+		parseKey(&msgs, 340, &s_sharedState.langKeys.k_conf, KEY_C);
 		parseKey(&msgs, 110, &s_sharedState.langKeys.k_agdel, KEY_R);
 		parseKey(&msgs, 130, &s_sharedState.langKeys.k_begin, KEY_B);
-		parseKey(&msgs, 240, &s_sharedState.langKeys.k_easy,  KEY_E);
-		parseKey(&msgs, 250, &s_sharedState.langKeys.k_med,   KEY_M);
-		parseKey(&msgs, 260, &s_sharedState.langKeys.k_hard,  KEY_H);
-		parseKey(&msgs, 230, &s_sharedState.langKeys.k_canc,  KEY_C);
+		parseKey(&msgs, 240, &s_sharedState.langKeys.k_easy, KEY_E);
+		parseKey(&msgs, 250, &s_sharedState.langKeys.k_med, KEY_M);
+		parseKey(&msgs, 260, &s_sharedState.langKeys.k_hard, KEY_H);
+		parseKey(&msgs, 230, &s_sharedState.langKeys.k_canc, KEY_C);
 	}
 
 	void gameStartup()
