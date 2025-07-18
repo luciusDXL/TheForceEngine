@@ -1207,6 +1207,10 @@ namespace TFE_Settings
 		{
 			s_gameSettings.df_autoEndMission = parseBool(value);
 		}
+		else if (strcasecmp("df_showKeyUsed", key) == 0)
+		{
+			s_gameSettings.df_showKeyUsed = parseBool(value);
+		}
 	}
 
 	void parseOutlawsSettings(const char* key, const char* value)

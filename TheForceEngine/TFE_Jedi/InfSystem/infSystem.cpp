@@ -2788,11 +2788,14 @@ namespace TFE_Jedi
 			// Does the player have the key?
 			KeyItem key = elev->key;
 			char keyBuffer[50];
+			char keyBufferWrapper[50];
+			sprintf(keyBufferWrapper, "%s", TFE_System::getMessage(TFE_MSG_KEY));
+
 			if (key == KEY_RED)
 			{
 				if (TFE_Settings::getGameSettings()->df_showKeyUsed &&  s_playerInfo.itemRedKey)
 				{
-					sprintf(keyBuffer, "Using the %s Key", TFE_System::getMessage(TFE_MSG_RED));
+					sprintf(keyBuffer, keyBufferWrapper, TFE_System::getMessage(TFE_MSG_RED));
 					TFE_DarkForces::hud_sendTextMessage(keyBuffer, 1, false);
 				}
 				else if (!s_playerInfo.itemRedKey)
@@ -2807,7 +2810,7 @@ namespace TFE_Jedi
 			{
 				if (TFE_Settings::getGameSettings()->df_showKeyUsed && s_playerInfo.itemYellowKey)
 				{
-					sprintf(keyBuffer, "Using the %s Key", TFE_System::getMessage(TFE_MSG_YELLOW));
+					sprintf(keyBuffer, keyBufferWrapper, TFE_System::getMessage(TFE_MSG_YELLOW));
 					TFE_DarkForces::hud_sendTextMessage(keyBuffer, 1, false);
 				}
 				else if (!s_playerInfo.itemYellowKey)
@@ -2822,7 +2825,7 @@ namespace TFE_Jedi
 			{
 				if (TFE_Settings::getGameSettings()->df_showKeyUsed && s_playerInfo.itemBlueKey)
 				{
-					sprintf(keyBuffer, "Using the %s Key", TFE_System::getMessage(TFE_MSG_BLUE));
+					sprintf(keyBuffer, keyBufferWrapper, TFE_System::getMessage(TFE_MSG_BLUE));
 					TFE_DarkForces::hud_sendTextMessage(keyBuffer, 1, false);
 				}
 				else if (!s_playerInfo.itemBlueKey)	
