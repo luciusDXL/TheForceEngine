@@ -8,9 +8,11 @@
 #include <TFE_Jedi/Level/rwall.h>
 #include <TFE_Jedi/Memory/list.h>
 #include <TFE_Jedi/InfSystem/infSystem.h>
+#include <TFE_Jedi/InfSystem/infTypesInternal.h>
 #include <TFE_Jedi/Renderer/jediRenderer.h>
 #include <TFE_Jedi/Renderer/screenDraw.h>
 #include <TFE_Jedi/Serialization/serialization.h>
+#include <TFE_Settings/settings.h>
 
 using namespace TFE_Jedi;
 
@@ -33,6 +35,14 @@ namespace TFE_DarkForces
 		MOBJCOLOR_LANDMINE = 1,
 		MOBJCOLOR_PICKUP   = 152,
 		MOBJCOLOR_SCENERY  = 21,
+	};
+
+	enum MapKeyColor
+	{
+		KEY_COLOR_RED = 6,
+		KEY_COLOR_BLUE = 17,
+		// Not sure which yellow to use which overlaps with elevators (19). 
+		KEY_COLOR_YELLOW = 20
 	};
 
 	enum MapConstants
@@ -489,9 +499,31 @@ namespace TFE_DarkForces
 		automap_drawLine(x0, z0, x1, z1, color);
 	}
 
+	// Note it assumes the wall adjoins a door sector
+	u8 getDoorKeyColor(RWall* wall)
+	{	
+		KeyItem key = (KeyItem)sector_getKey(wall->sector);
+		if (key == KEY_NONE)
+		{
+			key = (KeyItem)sector_getKey(wall->nextSector);	
+		}
+		switch (key)
+		{
+			case KEY_YELLOW:
+				return KEY_COLOR_YELLOW;
+			case KEY_RED:
+				return KEY_COLOR_RED;
+			case KEY_BLUE:
+				return KEY_COLOR_BLUE;
+			default:
+				return WCOLOR_DOOR;
+		}
+	}
+
 	u8 automap_getWallColor(RWall* wall)
 	{
 		u8 color;
+		bool showKeyDoors = TFE_Settings::getGameSettings()->df_showKeyColors;
 		if (wall->flags1 & WF1_HIDE_ON_MAP)
 		{
 			color = WCOLOR_INVISIBLE;
@@ -508,7 +540,11 @@ namespace TFE_DarkForces
 		{
 			color = WCOLOR_NORMAL;
 		}
-		else if (sector_isDoor(wall->sector) || sector_isDoor(wall->nextSector))
+		else if (showKeyDoors && (sector_getKey(wall->nextSector) || sector_getKey(wall->sector)))
+		{
+			color = getDoorKeyColor(wall);
+		}		
+		else if (sector_isDoor(wall->sector) || sector_isDoor(wall->nextSector) )
 		{
 			color = WCOLOR_DOOR;
 		}

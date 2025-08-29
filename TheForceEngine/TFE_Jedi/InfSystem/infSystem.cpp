@@ -3835,4 +3835,15 @@ namespace TFE_Jedi
 		}
 		return JFALSE;
 	}
+
+	u8 sector_getKey(RSector* sector)
+	{
+		InfLink* link = (InfLink*)allocator_getHead(sector->infLink);
+		if (link && link->type == LTYPE_SECTOR)
+		{
+			InfElevator* elev = link->elev;
+			return elev->key;			
+		}
+		return KEY_NONE;
+	}
 }

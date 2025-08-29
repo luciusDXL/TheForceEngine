@@ -1230,6 +1230,12 @@ namespace TFE_FrontEndUI
 			gameSettings->df_autoEndMission = autoEndMission;
 		}
 
+		bool showKeyColors = gameSettings->df_showKeyColors;
+		if (ImGui::Checkbox("Show the key color of the door on the map", &showKeyColors))
+		{
+			gameSettings->df_showKeyColors = showKeyColors;
+		}
+
 		ImGui::Separator();
 
 		ImGui::PushFont(s_versionFont);
