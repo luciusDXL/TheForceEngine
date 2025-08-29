@@ -450,6 +450,7 @@ namespace TFE_DarkForces
 		sector_addObject(sector, projObj);
 		task_makeActive(s_projectileTask);
 
+		obj_addToRefList(projObj, ObjRefType_Projectile);	// scripting
 		return (Logic*)projLogic;
 	}
 		

@@ -65,7 +65,21 @@ enum ObjStateVersion : u32
 	ObjState_CustomLogics = 6,
 	ObjState_ConstOverrides = 7,
 	ObjState_DisablePlayerMovement = 8,
-	ObjState_CurVersion = ObjState_DisablePlayerMovement,
+	ObjState_RefList = 9,
+	ObjState_CurVersion = ObjState_RefList,
+};
+
+// TFE Scripting
+enum ObjectRefType : s32
+{
+	ObjRefType_Startup           = 0,		// Present at level start
+	ObjRefType_Projectile        = 1,
+	ObjRefType_Effect            = 2,
+	ObjRefType_SpawnItem         = 3,		// Item spawned at runtime
+	ObjRefType_Corpse            = 4,
+	ObjRefType_GeneratorSpawn    = 5,
+	ObjRefType_ConsoleSpawn      = 6,
+	ObjRefType_Removed           = -1,		// Object no longer exists
 };
 
 #define SPRITE_SCALE_FIXED FIXED(10)
@@ -117,6 +131,15 @@ struct SecObject
 
 namespace TFE_Jedi
 {
+	// TFE - reference list of objects for scripting
+	struct ObjectRef
+	{
+		SecObject* object;
+		ObjectRefType type;
+		char name[32];
+	};
+	extern std::vector<ObjectRef> s_objectRefList;
+	
 	void objData_clear();
 	SecObject* objData_allocFromArray();
 	void objData_freeToArray(SecObject* obj);
@@ -126,4 +149,9 @@ namespace TFE_Jedi
 	// Used for downstream serialization, to get the object from the serialized object ID.
 	SecObject* objData_getObjectBySerializationId(u32 id);
 	SecObject* objData_getObjectBySerializationId_NoValidation(u32 id);
+
+	// TFE - scripting
+	void obj_addToRefList(SecObject* obj, ObjectRefType refType);
+	void obj_removeFromRefList(SecObject* obj);
+	void obj_addName(const char* name, SecObject* obj);
 }

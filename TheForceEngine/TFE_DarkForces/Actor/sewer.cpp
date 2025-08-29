@@ -59,6 +59,8 @@ namespace TFE_DarkForces
 			corpse->entityFlags |= ETFLAG_CORPSE;
 			corpse->worldWidth = 0;
 			sector_addObject(sector, corpse);
+
+			obj_addToRefList(corpse, ObjRefType_Corpse);	// scripting
 		}
 		actor_kill();
 		return 0;
