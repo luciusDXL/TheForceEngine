@@ -29,6 +29,7 @@
 #include <TFE_Jedi/Memory/list.h>
 #include <TFE_Jedi/Memory/allocator.h>
 #include <TFE_Jedi/Serialization/serialization.h>
+#include <TFE_Settings/settings.h>
 
 using namespace TFE_Jedi;
 
@@ -1353,6 +1354,21 @@ namespace TFE_DarkForces
 		SecObject* obj = logic->logic.obj;
 		obj->anim = actor_getAnimationIndex(ANIM_IDLE);
 		obj->frame = 0;
+
+		// TFE: Find the thinker module and set its animation to the idle animation
+		if (TFE_Settings::jsonAiLogics())
+		{
+			for (s32 i = 0; i < ACTOR_MAX_MODULES; i++)
+			{
+				ActorModule* module = logic->modules[ACTOR_MAX_MODULES - 1 - i];
+				if (module && module->type == ACTMOD_THINKER)
+				{
+					ThinkerModule* thinkerMod = (ThinkerModule*)module;
+					actor_setupAnimation(ANIM_IDLE, &thinkerMod->anim);
+					break;
+				}
+			}
+		}
 	}
 
 	void actor_addModule(ActorDispatch* dispatch, ActorModule* module)
@@ -2111,6 +2127,36 @@ namespace TFE_DarkForces
 								message_sendToObj(obj, MSG_WAKEUP, actor_messageFunc);
 								gameMusic_startFight();
 								collision_effectObjectsInRangeXZ(obj->sector, FIXED(150), obj->posWS, actor_sendWakeupMsg, obj, ETFLAG_AI_ACTOR);
+							}
+						}
+
+						// TFE: Animate in idle state
+						if (TFE_Settings::jsonAiLogics())
+						{
+							s_actorState.curAnimation = nullptr;
+							if (obj->type & OBJ_TYPE_SPRITE)
+							{
+								// Find the thinker module and set its animation as the current animation
+								for (s32 i = 0; i < ACTOR_MAX_MODULES; i++)
+								{
+									ActorModule* module = dispatch->modules[ACTOR_MAX_MODULES - 1 - i];
+									if (module && module->type == ACTMOD_THINKER)
+									{
+										ThinkerModule* thinkerMod = (ThinkerModule*)module;
+										actor_setCurAnimation(&thinkerMod->anim);
+										break;
+									}
+								}
+
+								if (s_actorState.curAnimation)
+								{
+									obj->anim = s_actorState.curAnimation->animId;
+									if (actor_advanceAnimation(s_actorState.curAnimation, obj))
+									{
+										// The animation has finished.
+										s_actorState.curAnimation->flags |= AFLAG_READY;
+									}
+								}
 							}
 						}
 					}
