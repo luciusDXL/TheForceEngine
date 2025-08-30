@@ -70,7 +70,7 @@ namespace TFE_FrontEndUI
 
 	static ViewMode s_viewMode = VIEW_IMAGES;
 
-	char programDirModDir[TFE_MAX_PATH];
+	static char programDirModDir[TFE_MAX_PATH];
 	static char s_modFilter[256] = { 0 };
 	static char s_prevModFilter[256] = { 0 };
 	static size_t s_filterLen = 0;
@@ -88,6 +88,16 @@ namespace TFE_FrontEndUI
 	{
 		return strcasecmp(a.fileName.c_str(), b.fileName.c_str()) < 0;
 	}
+
+	void createModDirIfNeeded(char * directory)
+	{
+		TFE_Paths::fixupPathAsDirectory(directory);
+		if (!FileUtil::directoryExits(directory))
+		{
+			FileUtil::makeDirectory(directory);
+		}
+	}
+
 	
 	void modLoader_read()
 	{
@@ -122,6 +132,7 @@ namespace TFE_FrontEndUI
 
 		sprintf(programDirModDir, "%sMods/", programDir);
 		TFE_Paths::fixupPathAsDirectory(programDirModDir);
+		createModDirIfNeeded(programDirModDir);
 
 		s32 modPathCount = 0;
 		char modPaths[3][TFE_MAX_PATH];
@@ -384,6 +395,7 @@ namespace TFE_FrontEndUI
 		ImGui::PopFont();
 	}
 
+	// Checks whether a mod exists
 	bool modLoader_exist(const char* modName)
 	{
 		// If you are not passing in a mod (ie: base game level) then this is always true
@@ -412,12 +424,11 @@ namespace TFE_FrontEndUI
 	bool modLoader_selectionUI()
 	{
 		bool stayOpen = true;
-		f32 uiScale = (f32)TFE_Ui::getUiScale() * 0.01f;
+		f32 uiScale = (f32)TFE_Ui::getUiScale() * 0.01f;	
 
 		// Load in the mod data a few at a time so to limit waiting for loading.
 		readFromQueue(c_itemsPerFrame);
 		clearSelectedMod();
-		if (s_mods.empty()) { return stayOpen; }
 
 		ImGui::Separator();
 		ImGui::PushFont(getDialogFont());
@@ -478,6 +489,8 @@ namespace TFE_FrontEndUI
 		ImGui::SameLine(730.0f * uiScale);
 		if (ImGui::Button("Open Mod Folder"))
 		{
+			// Create the empty folder is needed
+			createModDirIfNeeded(programDirModDir);
 			if (!TFE_System::osShellExecute(programDirModDir, NULL, NULL, false))
 			{
 				TFE_System::logWrite(LOG_ERROR, "ModLoader", "Failed to open the directory: '%s'", programDirModDir);
@@ -509,6 +522,10 @@ namespace TFE_FrontEndUI
 			filterMods(s_viewMode != VIEW_FILE_LIST);
 		}
 
+		ImVec4 infoColor = ImVec4(0.2f, 0.8f, 0.4f, 1.0f);  // RGBA
+
+		ImGui::TextColored(infoColor, "Showing %d out of %d mods.", s_filteredMods.size(), s_mods.size());
+
 		ImGui::Separator();
 					   
 		if (s_viewMode == VIEW_IMAGES)
@@ -523,6 +540,9 @@ namespace TFE_FrontEndUI
 		{
 			modLoader_FileListUI(uiScale);
 		}
+
+		// Always show the menu and filter before exiting
+		if (s_mods.empty()) { return stayOpen; }
 
 		if (s_selectedMod >= 0)
 		{
