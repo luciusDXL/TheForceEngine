@@ -37,6 +37,7 @@ enum MessageType
 	MSG_CLEAR_BITS   = 32,
 	MSG_COMPLETE     = 33,
 	MSG_LIGHTS       = 34,
+	MSG_CAMERA		 = 35,		// TFE - camera feature
 	MSG_COUNT
 };
 
