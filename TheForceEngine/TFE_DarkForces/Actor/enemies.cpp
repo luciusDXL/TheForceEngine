@@ -20,7 +20,7 @@
 namespace TFE_DarkForces
 {
 	static const s32 s_reeyeeMinDist = FIXED(30);
-	
+
 	Logic* reeyees_setup(SecObject* obj, LogicSetupFunc* setupFunc)
 	{
 		ActorDispatch* dispatch = actor_createDispatch(obj, setupFunc);
@@ -190,7 +190,7 @@ namespace TFE_DarkForces
 	{
 		ActorDispatch* dispatch = actor_createDispatch(obj, setupFunc);
 		dispatch->alertSndSrc = sound_load(cust->alertSound, SOUND_PRIORITY_MED5);
-		dispatch->fov = cust->fov;
+		dispatch->fov = floatToAngle((f32)cust->fov);
 		dispatch->awareRange = FIXED(cust->awareRange);
 
 		// Damage Module
@@ -200,6 +200,7 @@ namespace TFE_DarkForces
 		damageMod->dieEffect = (HitEffectID)cust->dieEffect;
 		damageMod->hurtSndSrc = sound_load(cust->painSound, SOUND_PRIORITY_MED5);
 		damageMod->dieSndSrc = sound_load(cust->dieSound, SOUND_PRIORITY_MED5);
+		damageMod->stopOnHit = cust->stopOnDamage ? JTRUE : JFALSE;
 		actor_addModule(dispatch, (ActorModule*)damageMod);
 
 		// Attack Module
@@ -221,22 +222,27 @@ namespace TFE_DarkForces
 		attackMod->meleeRate = FIXED(cust->meleeRate);
 		attackMod->minDist = FIXED(cust->minAttackDist);
 		attackMod->fireSpread = FIXED(cust->fireSpread);
+		attackMod->fireOffset.x = floatToFixed16(cust->fireOffset.x);
+		attackMod->fireOffset.y = cust->fireOffset.y < -999 ? attackMod->fireOffset.y : floatToFixed16(cust->fireOffset.y);		// if -1000 use the default value 
+		attackMod->fireOffset.z = floatToFixed16(cust->fireOffset.z);
 		s_actorState.attackMod = attackMod;
 		actor_addModule(dispatch, (ActorModule*)attackMod);
 
 		// Thinker Module
 		ThinkerModule* thinkerMod = actor_createThinkerModule(dispatch);
-		thinkerMod->target.speedRotation = cust->rotationSpeed;
+		thinkerMod->target.speedRotation = floatToAngle((f32)cust->rotationSpeed);
 		thinkerMod->target.speed = FIXED(cust->speed);
+		thinkerMod->approachVariation = floatToAngle((f32)cust->approachVariation);
+		thinkerMod->targetOffset = FIXED(cust->approachOffset);
+		thinkerMod->startDelay = TICKS(cust->thinkerDelay);
 		thinkerMod->anim.flags &= ~AFLAG_PLAYONCE;		// Ensures that walking animations will loop
-		thinkerMod->startDelay = TICKS(2);
 		actor_addModule(dispatch, (ActorModule*)thinkerMod);
 
 		// Flying Thinker Module (if flying enemy)
 		if (cust->isFlying)
 		{
 			ThinkerModule* flyingMod = actor_createFlyingModule((Logic*)dispatch);
-			flyingMod->target.speedRotation = cust->rotationSpeed;
+			flyingMod->target.speedRotation = floatToAngle((f32)cust->rotationSpeed);
 			flyingMod->target.speed = FIXED(cust->speed);
 			flyingMod->target.speedVert = FIXED(cust->verticalSpeed);
 			actor_addModule(dispatch, (ActorModule*)flyingMod);
@@ -245,7 +251,9 @@ namespace TFE_DarkForces
 		// Movement Module
 		MovementModule* moveMod = actor_createMovementModule(dispatch);
 		dispatch->moveMod = moveMod;
-		moveMod->physics.width = obj->worldWidth;
+		moveMod->physics.width = cust->collisionWidth < 0 ? obj->worldWidth : floatToFixed16(cust->collisionWidth);
+		moveMod->physics.height = cust->collisionHeight < 0 ? moveMod->physics.height : floatToFixed16(cust->collisionHeight);
+		
 		if (cust->isFlying)
 		{
 			moveMod->collisionFlags = (moveMod->collisionFlags & ~ACTORCOL_ALL) | ACTORCOL_BIT2;	// Remove bits 0, 1 and set bit 2
