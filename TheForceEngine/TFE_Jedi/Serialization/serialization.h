@@ -21,7 +21,8 @@ namespace TFE_Jedi
 		SaveVersionLevelScriptV1,
 		SaveVersionHitEffectTaskUpdate,
 		SaveVersionSmoothDeltatime,
-		SaveVersionCur = SaveVersionSmoothDeltatime,
+		SavVersionTFEMessages,
+		SaveVersionCur = SavVersionTFEMessages,
 	};
 
 	enum SerializationMode
