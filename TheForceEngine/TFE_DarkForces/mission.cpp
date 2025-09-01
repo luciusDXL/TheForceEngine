@@ -515,6 +515,12 @@ namespace TFE_DarkForces
 			endRecording();
 		}
 
+		// Restore the default messages if you are exiting a mod. 
+		if (TFE_System::modMessagesLoaded())
+		{
+			TFE_System::restoreDefaultMessages();
+		}
+
 		s_exitLevel = JTRUE;
 	}
 
@@ -986,7 +992,7 @@ namespace TFE_DarkForces
 
 	void enableNightVision()
 	{
-		if (!s_playerInfo.itemGoggles) { return; }
+		if (!s_playerInfo.itemGoggles || s_externalCameraMode) { return; }
 
 		if (!s_batteryPower)
 		{

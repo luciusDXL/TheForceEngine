@@ -1494,6 +1494,9 @@
     </ClInclude>
     <ClInclude Include="TFE_Jedi\Level\rslope.h">
       <Filter>Source\TFE_Jedi\Level</Filter>
+	</ClInclude>
+    <ClInclude Include="TFE_DarkForces\Scripting\scriptObject.h">
+      <Filter>Source\TFE_DarkForces\Scripting</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -2621,6 +2624,9 @@
     </ClCompile>
     <ClCompile Include="TFE_Jedi\Level\rslope.cpp">
       <Filter>Source\TFE_Jedi\Level</Filter>
+	</ClCompile>
+    <ClCompile Include="TFE_DarkForces\Scripting\scriptObject.cpp">
+      <Filter>Source\TFE_DarkForces\Scripting</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

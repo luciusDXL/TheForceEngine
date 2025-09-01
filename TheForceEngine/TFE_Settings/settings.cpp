@@ -28,6 +28,7 @@ namespace TFE_Settings
 	// Local State
 	//////////////////////////////////////////////////////////////////////////////////
 	static char s_settingsPath[TFE_MAX_PATH];
+	static char s_defaultSettingsPath[TFE_MAX_PATH];
 	static TFE_Settings_Window s_windowSettings = {};
 	static TFE_Settings_Graphics s_graphicsSettings = {};
 	static TFE_Settings_Enhancements s_enhancementsSettings = {};
@@ -41,6 +42,8 @@ namespace TFE_Settings
 	static TFE_ModSettings s_modSettings = {};
 	static std::vector<char> s_iniBuffer;
 
+	// Default container for game settings.
+	static TFE_Settings_Game s_defaultGameSettings = {};
 
 	//MOD CONF Version ENUM
 	enum ModConfVersion
@@ -128,6 +131,17 @@ namespace TFE_Settings
 		strcpy(s_game.game, s_gameSettings.header[0].gameName);
 
 		TFE_Paths::appendPath(PATH_USER_DOCUMENTS, "settings.ini", s_settingsPath);
+		TFE_Paths::appendPath(PATH_USER_DOCUMENTS, "settings_default.ini", s_defaultSettingsPath);
+
+		// Make a backup of the default game settings.
+		memcpy(&s_defaultGameSettings, &s_gameSettings, sizeof(TFE_Settings_Game));
+
+		// Make a backup of the default settings.
+		if (!FileUtil::exists(s_defaultSettingsPath))
+		{
+			writeToDisk(true);
+		}
+
 		if (FileUtil::exists(s_settingsPath))
 		{
 			// This is still the first run if the settings.ini file is empty.
@@ -204,6 +218,13 @@ namespace TFE_Settings
 			{
 				// Remaster - search here first so that new assets are readily available.
 				pathValid = WindowsRegistry::getSteamPathFromRegistry(c_steamRemasterProductId[gameId], c_steamRemasterLocalPath[gameId], c_steamRemasterLocalSubPath[gameId], c_validationFile[gameId], s_gameSettings.header[gameId].sourcePath);
+				
+				// Try special case for trademark in Star Wars title
+				if (!pathValid)
+				{
+					pathValid = WindowsRegistry::getSteamPathFromRegistry(c_steamRemasterProductId[gameId], c_steamRemasterTMLocalPath[gameId], c_steamRemasterLocalSubPath[gameId], c_validationFile[gameId], s_gameSettings.header[gameId].sourcePath);
+				}
+
 				// Remaster on GOG.
 				if (!pathValid)
 				{
@@ -285,10 +306,19 @@ namespace TFE_Settings
 		return false;
 	}
 
-	bool writeToDisk()
+	bool writeToDisk(bool writeDefaultSettings)
 	{
+		static char settingFilePath[TFE_MAX_PATH];
+		if (writeDefaultSettings)
+		{
+			strcpy(settingFilePath, s_defaultSettingsPath);
+		}
+		else
+		{
+			strcpy(settingFilePath, s_settingsPath);
+		}
 		FileStream settings;
-		if (settings.open(s_settingsPath, Stream::MODE_WRITE))
+		if (settings.open(settingFilePath, Stream::MODE_WRITE))
 		{
 			writeWindowSettings(settings);
 			writeGraphicsSettings(settings);
@@ -545,6 +575,7 @@ namespace TFE_Settings
 		writeKeyValue_Bool(settings, "df_enableRecordingAll", s_gameSettings.df_enableRecordingAll);
 		writeKeyValue_Bool(settings, "df_demologging", s_gameSettings.df_demologging);
 		writeKeyValue_Bool(settings, "df_autoNextMission", s_gameSettings.df_autoEndMission);
+		writeKeyValue_Bool(settings, "df_showKeyColors", s_gameSettings.df_showKeyColors);
 	}
 
 	void writePerGameSettings(FileStream& settings)
@@ -1206,6 +1237,10 @@ namespace TFE_Settings
 		{
 			s_gameSettings.df_autoEndMission = parseBool(value);
 		}
+		else if (strcasecmp("df_showKeyColors", key) == 0)
+		{
+			s_gameSettings.df_showKeyColors = parseBool(value);
+		}
 	}
 
 	void parseOutlawsSettings(const char* key, const char* value)
@@ -1741,5 +1776,18 @@ namespace TFE_Settings
 			}
 		}
 		free(data);
+	}
+
+	void resetGameSettings()
+	{
+		// Make a backup of the default game settings.
+		memcpy(&s_gameSettings, &s_defaultGameSettings, sizeof(TFE_Settings_Game));
+	}
+
+	void resetAllSettings()
+	{
+		FileUtil::copyFile(s_defaultSettingsPath, s_settingsPath);
+		bool firstRun = false;
+		TFE_Settings::init(firstRun);
 	}
 }

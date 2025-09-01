@@ -9,6 +9,7 @@
 #include "projectile.h"
 #include <TFE_DarkForces/Actor/actorSerialization.h>
 #include <TFE_Jedi/Level/robject.h>
+#include <TFE_Jedi/Level/robjData.h>
 #include <TFE_Jedi/Memory/allocator.h>
 #include <TFE_Jedi/Collision/collision.h>
 #include <TFE_Jedi/Level/rwall.h>
@@ -100,6 +101,16 @@ namespace TFE_DarkForces
 		else if (key == KW_RADIUS)
 		{
 			obj->worldWidth = floatToFixed16(strtof(s_objSeqArg1, &endPtr));
+		}
+		// TFE - scripting
+		else if (key == KW_NAME)
+		{
+			TFE_Jedi::obj_addName(s_objSeqArg1, obj);
+		}
+		// New in TFE
+		else if (key == KW_CAMERA)
+		{
+			obj->flags |= OBJ_FLAG_CAMERA;
 		}
 		else  // Invalid key.
 		{
@@ -402,6 +413,7 @@ namespace TFE_DarkForces
 		sprite_setData(spawn, wax);
 		obj_setEnemyLogic(spawn, type);
 
+		obj_addToRefList(spawn, ObjRefType_ConsoleSpawn);	// scripting
 		return spawn;
 	}
 

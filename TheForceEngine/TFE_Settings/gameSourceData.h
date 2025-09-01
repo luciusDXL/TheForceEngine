@@ -40,6 +40,13 @@ namespace TFE_Settings
 		"outlaws/",				// Game_Outlaws
 	};
 
+	// Special case - some remasters include a ™ in their name breaking the path.	
+	static const char* c_steamRemasterTMLocalPath[Game_Count] =
+	{
+		"Star Wars™ Dark Forces Remaster/",	// Game_Dark_Forces
+		"outlaws/",				// Game_Outlaws
+	};
+
 	static const char* c_steamLocalSubPath[Game_Count] =
 	{
 		"Game/",	// Game_Dark_Forces
