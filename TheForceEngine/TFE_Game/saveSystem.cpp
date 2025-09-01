@@ -27,6 +27,8 @@ namespace TFE_SaveSystem
 		SVER_CUR = SVER_REPLAY
 	};
 
+	const int TFE_MAX_SAVES = 1024; 
+
 	static SaveRequest s_req = SF_REQ_NONE;
 	static char s_reqFilename[TFE_MAX_PATH];
 	static char s_reqSavename[TFE_MAX_PATH];
@@ -387,5 +389,38 @@ namespace TFE_SaveSystem
 		{
 			lastState = 0;
 		}
+	}
+
+	void getSaveFilename(char* filename, s32 index)
+	{
+		char saveFilePath[TFE_MAX_PATH];
+		TFE_SaveSystem::getSaveFilenameFromIndex(index, filename);
+		sprintf(saveFilePath, "%s%s", s_gameSavePath, filename);
+		
+		// If the file doesn't exist or we are overwriting, use the saveFilePath - ex: save015.tfe
+		if (!FileUtil::exists(saveFilePath))
+		{
+			filename = saveFilePath;
+			return;
+		}
+		else
+		{
+			// If the file already exists you must have deleted an older one so lets find the right index
+			// Ex: save000.tfe save001.tfe save003.tfe (skipped 2) or you have custom save names. 
+			for (int i = 0; i < TFE_MAX_SAVES; i++)
+			{
+				TFE_SaveSystem::getSaveFilenameFromIndex(i, filename);
+				sprintf(saveFilePath, "%s%s", s_gameSavePath, filename);
+
+				if (!FileUtil::exists(saveFilePath))
+				{
+					filename = saveFilePath;
+					return;
+				}
+			}
+		}
+
+		TFE_System::logWrite(LOG_MSG, "SaveSystem", "Unable to create a save file after %d attempts", TFE_MAX_SAVES);
+		assert(0);				
 	}
 }

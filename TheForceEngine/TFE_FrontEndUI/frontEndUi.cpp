@@ -1724,8 +1724,8 @@ namespace TFE_FrontEndUI
 					ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
 
 					char textBuffer[TFE_MAX_PATH];
-					sprintf(textBuffer, "Game: Dark Forces\nTime: %s\nLevel: %s\nMods: %s\n", s_saveDir[s_selectedSave - listOffset].dateTime,
-						s_saveDir[s_selectedSave - listOffset].levelName, s_saveDir[s_selectedSave - listOffset].modNames);
+					sprintf(textBuffer, "Game: Dark Forces\nTime: %s\nLevel: %s\nMods: %s\nFileName: %s\n", s_saveDir[s_selectedSave - listOffset].dateTime,
+						s_saveDir[s_selectedSave - listOffset].levelName, s_saveDir[s_selectedSave - listOffset].modNames, s_saveDir[s_selectedSave - listOffset].fileName);
 					ImGui::InputTextMultiline("##Info", textBuffer, strlen(textBuffer) + 1, size, ImGuiInputTextFlags_ReadOnly);
 
 					ImGui::PopFont();
@@ -1788,12 +1788,13 @@ namespace TFE_FrontEndUI
 						bool shouldExit = false;
 						if (save)
 						{
+							// New Save Created
 							if (s_selectedSave == 0)
 							{
 								s_selectedSaveSlot = (s32)s_saveDir.size();
 								// If no quicksave exists, skip over it when generating the name.
 								const s32 saveIndex = s_selectedSaveSlot + (s_hasQuicksave ? 0 : 1);
-								TFE_SaveSystem::getSaveFilenameFromIndex(saveIndex, s_fileName);
+								TFE_SaveSystem::getSaveFilename(s_fileName, saveIndex);
 
 								s_newSaveName[0] = 0;
 								openSaveNameEditPopup(s_newSaveName);
