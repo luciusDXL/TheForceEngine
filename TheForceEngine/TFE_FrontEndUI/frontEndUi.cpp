@@ -2658,7 +2658,7 @@ namespace TFE_FrontEndUI
 		ImGui::EndChild();
 		ImGui::SetNextWindowPos(ImVec2(165.0f*s_uiScale, yNext - scroll));
 		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, { 0.0f, 0.0f });
-		f32 inputMappingHeight = 1516.0f*s_uiScale;
+		f32 inputMappingHeight = 1638.0f*s_uiScale;
 		if (ImGui::BeginChild("##Input Mapping", ImVec2(390.0f*s_uiScale, s_inputMappingOpen ? inputMappingHeight : 29.0f*s_uiScale), true, window_flags))
 		{
 			if (ImGui::Button("Input Mapping", ImVec2(370.0f*s_uiScale, 0.0f)))
