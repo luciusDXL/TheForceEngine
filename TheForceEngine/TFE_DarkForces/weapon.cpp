@@ -892,6 +892,7 @@ namespace TFE_DarkForces
 
 				if (!s_weaponOffAnim)
 				{
+					// Remove weapon from screen
 					weapon_setIdle();
 					
 					s_weaponAnimState =
@@ -906,6 +907,7 @@ namespace TFE_DarkForces
 				}
 				else
 				{
+					// Return weapon to screen
 					s_weaponOffAnim = JFALSE;
 					if (s_curWeapon == WPN_PISTOL || s_curWeapon == WPN_RIFLE || s_curWeapon == WPN_REPEATER || s_curWeapon == WPN_FUSION || s_curWeapon == WPN_MORTAR ||
 						s_curWeapon == WPN_CONCUSSION || s_curWeapon == WPN_CANNON)
@@ -986,6 +988,12 @@ namespace TFE_DarkForces
 	// for TFE I split it out to limit the amount of game code in the renderer.
 	void weapon_draw(u8* display, DrawRect* rect)
 	{
+		// TFE - don't draw weapon in external camera mode
+		if (s_externalCameraMode)
+		{
+			return;
+		}
+
 		const fixed16_16 weaponLightingZDist  = FIXED(6);
 		const fixed16_16 gasmaskLightingZDist = FIXED(2);
 
@@ -1009,7 +1017,7 @@ namespace TFE_DarkForces
 				x += weapon->xOffset;
 				y += weapon->yOffset;
 			}
-						
+			
 			const u8* atten = RClassic_Fixed::computeLighting(weaponLightingZDist, 0);
 			TextureData* tex = weapon->frames[weapon->frame];
 			if (weapon->ammo && *weapon->ammo == 0 && (weapon->ammo == &s_playerInfo.ammoDetonator || weapon->ammo == &s_playerInfo.ammoMine))

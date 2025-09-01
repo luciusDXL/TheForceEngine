@@ -11,6 +11,7 @@
 #include <TFE_DarkForces/agent.h>
 #include <TFE_DarkForces/sound.h>
 #include <TFE_DarkForces/automap.h>
+#include <TFE_DarkForces/mission.h>
 #include <TFE_FileSystem/paths.h>
 #include <TFE_Jedi/Memory/allocator.h>
 #include <TFE_Jedi/Level/level.h>
@@ -1921,6 +1922,10 @@ namespace TFE_Jedi
 			case KW_LIGHTS:
 				*type = MSG_LIGHTS;
 				break;
+			// TFE - camera feature
+			case KW_CAMERA:
+				*type = MSG_CAMERA;
+				break;
 			case KW_M_TRIGGER:
 			default:
 				if (elevator)
@@ -3231,6 +3236,42 @@ namespace TFE_Jedi
 						i++;
 					}
 				}
+			} break;
+			// TFE - camera feature
+			case MSG_CAMERA:
+			{
+				if (s_externalCameraMode == JFALSE)
+				{
+					// Change EYE to external camera if there is one
+					s32 objCount = sector->objectCount;
+					s32 objCapacity = sector->objectCapacity;
+					SecObject** objList = sector->objectList;
+
+					for (s32 i = 0; i < objCount && i < objCapacity; objList++)
+					{
+						SecObject* obj = *objList;
+						if (obj)
+						{
+							if (obj->flags & OBJ_FLAG_CAMERA)
+							{
+								// Disable night vision
+								if (s_nightVisionActive) { disableNightVision(); }
+
+								player_setupEyeObject(obj);
+								s_externalCameraMode = JTRUE;
+								break;
+							}
+							i++;
+						}
+					}
+				}
+				else
+				{
+					// Move EYE back to player
+					player_setupEyeObject(s_playerObject);
+					s_externalCameraMode = JFALSE;
+				}
+				
 			} break;
 			case MSG_SET_BITS:
 			{
