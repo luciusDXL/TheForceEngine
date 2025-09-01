@@ -5387,6 +5387,12 @@ namespace LevelEditor
 
 	f32 getFloorAtXZ(const EditorSector* sector, Vec2f pos)
 	{
+		if (!sector)
+		{
+			LE_ERROR("Attempting to get the slope floor height of an invalid sector.");
+			return 0.0f;
+		}
+
 		updateSlopeData((EditorSector*)sector);
 		if (sector->flags[0] & SEC_FLAGS1_SLOPEDFLOOR)
 		{
@@ -5397,6 +5403,12 @@ namespace LevelEditor
 
 	f32 getCeilAtXZ(const EditorSector* sector, Vec2f pos)
 	{
+		if (!sector)
+		{
+			LE_ERROR("Attempting to get the slope ceiling height of an invalid sector.");
+			return 0.0f;
+		}
+
 		updateSlopeData((EditorSector*)sector);
 		if (sector->flags[0] & SEC_FLAGS1_SLOPEDCEILING)
 		{
