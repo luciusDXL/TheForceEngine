@@ -409,7 +409,7 @@ namespace TFE_Settings
 	bool init(bool& firstRun);
 	void shutdown();
 
-	bool writeToDisk();
+	bool writeToDisk(bool writeDefaultSettings = false);
 
 	// Get and set settings.
 	TFE_Settings_Window* getWindowSettings();
@@ -448,4 +448,6 @@ namespace TFE_Settings
 	void loadCustomModSettings();
 	void parseIniFile(const char* buffer, size_t len);
 	void writeDarkForcesGameSettings(FileStream& settings);
+	void resetGameSettings();
+	void resetAllSettings();
 }

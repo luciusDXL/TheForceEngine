@@ -1347,6 +1347,13 @@ namespace TFE_FrontEndUI
 			ImGui::EndPopup();
 		}
 
+		
+		if (ImGui::Button("Reset Game Settings"))
+		{
+			TFE_Settings::resetGameSettings();
+			TFE_Settings::autodetectGamePaths();
+		}
+
 		ImGui::Separator();
 		ImGui::Spacing();
 		ImGui::PushFont(s_versionFont);
@@ -2965,6 +2972,43 @@ namespace TFE_FrontEndUI
 		ImGui::Separator();
 
 		//////////////////////////////////////////////////////
+		// Reset Settings
+		//////////////////////////////////////////////////////
+		ImGui::PushFont(s_dialogFont);
+		ImGui::LabelText("##ConfigLabel", "Switch Graphical Settings");
+		ImGui::PopFont();
+
+		// Allow player to reset Graphic Settings
+		if (ImGui::Button("Modern"))
+		{
+			setSettingsTemplate(TEMPLATE_MODERN);
+			s_appState = APP_STATE_MENU;
+		}
+		ImGui::SameLine();
+		ImGui::SetNextItemWidth(600);
+		ImGui::LabelText("##ConfigLabel", "Like Retro and adds modern effects such as bloom.");
+
+		if (ImGui::Button("Retro"))
+		{
+			setSettingsTemplate(TEMPLATE_RETRO);
+			s_appState = APP_STATE_MENU;
+		}
+		ImGui::SameLine();
+		ImGui::SetNextItemWidth(600);
+		ImGui::LabelText("##ConfigLabel", " Play in high res, widescreen, and modern controls.");
+
+		if (ImGui::Button("Vanilla"))
+		{
+			setSettingsTemplate(TEMPLATE_VANILLA);
+			s_appState = APP_STATE_MENU;
+		}
+		ImGui::SameLine();
+		ImGui::SetNextItemWidth(600);
+		ImGui::LabelText("##ConfigLabel", "Play using the original resolution and controls.");
+
+		ImGui::Separator();
+
+		//////////////////////////////////////////////////////
 		// Resolution
 		//////////////////////////////////////////////////////
 		bool widescreen = graphics->widescreen;
@@ -3224,7 +3268,7 @@ namespace TFE_FrontEndUI
 		}
 
 		const ColorCorrection colorCorrection = { graphics->brightness, graphics->contrast, graphics->saturation, graphics->gamma };
-		TFE_RenderBackend::setColorCorrection(graphics->colorCorrection, &colorCorrection, bloomChanged);
+		TFE_RenderBackend::setColorCorrection(graphics->colorCorrection, &colorCorrection, bloomChanged);		
 	}
 
 	void configHud()
@@ -3475,6 +3519,34 @@ namespace TFE_FrontEndUI
 			}
 		}
 	#endif
+		const char * resetMsg = "             Reset All Settings";
+
+		if (ImGui::Button("Reset All Settings"))
+		{
+			ImGui::OpenPopup(resetMsg);
+		}	
+
+
+		if (ImGui::BeginPopupModal(resetMsg, NULL, ImGuiWindowFlags_AlwaysAutoResize))
+		{
+			ImGui::Text("Are you sure you want to reset all settings?");
+			ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 80);
+
+			if (ImGui::Button("OK", ImVec2(120, 0)))
+			{
+				TFE_Settings::resetAllSettings();
+				ImGui::CloseCurrentPopup();
+			}
+
+			ImGui::SameLine(0.0f, 32.0f);
+			if (ImGui::Button("Cancel", ImVec2(120, 0)))
+			{
+				ImGui::CloseCurrentPopup();
+			}
+
+			ImGui::EndPopup();
+			
+		}		
 	}
 
 	void DrawFontSizeCombo(float labelWidth, float valueWidth, const char* label, const char* comboTag, s32* currentValue)
@@ -3933,6 +4005,7 @@ namespace TFE_FrontEndUI
 				gameSettings->df_solidWallFlagFix = true;
 				gameSettings->df_enableUnusedItem = true;
 				gameSettings->df_jsonAiLogics = true;
+				gameSettings->df_enableUnusedItem = true;
 				// Graphics
 				graphicsSettings->rendererIndex = RENDERER_HARDWARE;
 				graphicsSettings->skyMode = SKYMODE_CYLINDER;
