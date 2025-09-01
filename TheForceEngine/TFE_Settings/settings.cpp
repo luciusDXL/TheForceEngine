@@ -204,6 +204,13 @@ namespace TFE_Settings
 			{
 				// Remaster - search here first so that new assets are readily available.
 				pathValid = WindowsRegistry::getSteamPathFromRegistry(c_steamRemasterProductId[gameId], c_steamRemasterLocalPath[gameId], c_steamRemasterLocalSubPath[gameId], c_validationFile[gameId], s_gameSettings.header[gameId].sourcePath);
+				
+				// Try special case for trademark in Star Wars title
+				if (!pathValid)
+				{
+					pathValid = WindowsRegistry::getSteamPathFromRegistry(c_steamRemasterProductId[gameId], c_steamRemasterTMLocalPath[gameId], c_steamRemasterLocalSubPath[gameId], c_validationFile[gameId], s_gameSettings.header[gameId].sourcePath);
+				}
+
 				// Remaster on GOG.
 				if (!pathValid)
 				{
