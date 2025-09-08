@@ -24,7 +24,7 @@ namespace TFE_ExternalData
 	
 	struct ExternalPickup
 	{
-		const char* name = "";
+		const char* name = nullptr;
 		s32 type;
 		s32 weaponIndex = -1;
 		JBool* playerItem = nullptr;

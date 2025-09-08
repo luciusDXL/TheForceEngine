@@ -450,6 +450,7 @@ namespace TFE_DarkForces
 		sector_addObject(sector, projObj);
 		task_makeActive(s_projectileTask);
 
+		obj_addToRefList(projObj, ObjRefType_Projectile);	// scripting
 		return (Logic*)projLogic;
 	}
 		
@@ -1532,6 +1533,18 @@ namespace TFE_DarkForces
 		}
 
 		return JFALSE;
+	}
+
+	// TFE - Transform the spawn offset of a projectile based on orientation (yaw)
+	void transformFireOffsets(angle14_16 yaw, vec3_fixed* sourceOffset, vec3_fixed* offset)
+	{
+		fixed16_16 sinYaw;
+		fixed16_16 cosYaw;
+
+		sinCosFixed(yaw, &sinYaw, &cosYaw);
+		offset->x = mul16(sourceOffset->x,cosYaw) + mul16(sourceOffset->z, sinYaw);
+		offset->z = -mul16(sourceOffset->x,sinYaw) + mul16(sourceOffset->z, cosYaw);
+		offset->y = sourceOffset->y;
 	}
 
 }  // TFE_DarkForces

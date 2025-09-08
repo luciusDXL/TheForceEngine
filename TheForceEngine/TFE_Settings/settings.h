@@ -227,7 +227,8 @@ struct TFE_Settings_Game
 	bool df_enableReplay = false;       // Enable replay of gameplay.
 	bool df_showReplayCounter = false;  // Show the replay counter on the HUD.
 	bool df_demologging = false;        // Log the record/playback logging
-	bool df_autoEndMission = false;    // Automatically skip to the next mission
+	bool df_autoEndMission = false;     // Automatically skip to the next mission
+	bool df_showKeyColors = false;      // Shows the door key color on the minimap
 	s32  df_recordFrameRate = 4;        // Recording Framerate value
 	s32  df_playbackFrameRate = 2;      // Playback Framerate value
 	PitchLimit df_pitchLimit  = PITCH_VANILLA_PLUS;
@@ -408,7 +409,7 @@ namespace TFE_Settings
 	bool init(bool& firstRun);
 	void shutdown();
 
-	bool writeToDisk();
+	bool writeToDisk(bool writeDefaultSettings = false);
 
 	// Get and set settings.
 	TFE_Settings_Window* getWindowSettings();
@@ -447,4 +448,6 @@ namespace TFE_Settings
 	void loadCustomModSettings();
 	void parseIniFile(const char* buffer, size_t len);
 	void writeDarkForcesGameSettings(FileStream& settings);
+	void resetGameSettings();
+	void resetAllSettings();
 }

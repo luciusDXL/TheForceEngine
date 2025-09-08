@@ -105,6 +105,7 @@ namespace TFE_DarkForces
 				spawn->yaw   = random_next() & ANGLE_MASK;
 				spawn->worldHeight = FIXED(7);
 				sector_addObject(obj->sector, spawn);
+				obj_addToRefList(spawn, ObjRefType_GeneratorSpawn);	// scripting
 
 				assert(gen->entities && allocator_validate(gen->entities));
 
