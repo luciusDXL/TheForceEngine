@@ -2789,7 +2789,7 @@ namespace TFE_Jedi
 			KeyItem key = elev->key;
 			char keyBuffer[50];
 			char keyBufferWrapper[50];
-			sprintf(keyBufferWrapper, "%s", TFE_System::getMessage(TFE_MSG_KEY));
+			snprintf(keyBufferWrapper, 50, "%s", TFE_System::getMessage(TFE_MSG_KEY));
 
 			if (key == KEY_RED)
 			{
