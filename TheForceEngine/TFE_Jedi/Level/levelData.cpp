@@ -299,6 +299,52 @@ namespace TFE_Jedi
 		}
 	}
 
+	void level_serializeTexturePointer(Stream* stream, TextureData*& texData)
+	{
+		u32 texIndex = 0u;
+		if (serialization_getMode() == SMODE_WRITE && texData)
+		{
+			if (texData->animIndex >= 0)
+			{
+				const u8 frameIndex = texData->frameIdx < 0 ? 0xff : (u8)texData->frameIdx;
+				texIndex = LEVTEX_TYPE_ANM | (frameIndex << 4) | ((u32)texData->animIndex << 12u);
+			}
+			else
+			{
+				std::ptrdiff_t offset = (std::ptrdiff_t(&texData) - std::ptrdiff_t(s_levelState.textures)) / (std::ptrdiff_t)sizeof(TextureData**);
+				if (offset >= 0 && offset < s_levelState.textureCount)
+				{
+					texIndex = LEVTEX_TYPE_TEX | ((u32)offset << 12u);
+				}
+				assert(texIndex && s_levelState.textures[offset] == texData);
+			}
+		}
+		SERIALIZE(LevelState_InitVersion, texIndex, 0u);
+
+		if (serialization_getMode() == SMODE_READ)
+		{
+			s32 index = texIndex >> 12;
+			s32 frameIdx = (texIndex >> 4) & 255;
+			if (frameIdx == 0xff) { frameIdx = -1; }
+
+			assert(index >= 0 && index < s_levelState.textureCount);
+			texData = (texIndex == 0) ? nullptr : s_levelState.textures[index];
+			if (texData)
+			{
+				if ((texIndex & 3) == LEVTEX_TYPE_ANM && frameIdx >= 0)
+				{
+					AnimatedTexture* anim = (AnimatedTexture*)texData->animPtr;
+					if (anim)
+					{
+						texData = anim->frameList[frameIdx];
+					}
+				}
+				texData->animIndex = ((texIndex & 3) == LEVTEX_TYPE_ANM) ? index : -1;
+				texData->frameIdx = frameIdx;
+			}
+		}
+	}
+
 	void level_serializeSector(Stream* stream, RSector* sector)
 	{
 		if (serialization_getMode() == SMODE_READ)

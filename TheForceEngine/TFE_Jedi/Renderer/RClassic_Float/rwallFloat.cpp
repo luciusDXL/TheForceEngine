@@ -746,7 +746,7 @@ namespace RClassic_Float
 
 		RWall* srcWall = cachedWall->wall;
 		RSector* sector = srcWall->sector;
-		TextureData* texture = srcWall->midTex ? *srcWall->midTex : nullptr;
+		TextureData* texture = srcWall->midTex ? srcWall->midTex : nullptr;
 		if (!texture) { return; }
 
 		f32 ceilingHeight = cachedSector->ceilingHeight;
@@ -915,7 +915,7 @@ namespace RClassic_Float
 
 		RWall* srcWall = cachedWall->wall;
 		RSector* sector = srcWall->sector;
-		TextureData* texture = srcWall->midTex ? *srcWall->midTex : nullptr;
+		TextureData* texture = srcWall->midTex ? srcWall->midTex : nullptr;
 
 		f32 z0 = wallSegment->z0;
 		f32 yC0 = edge->yCeil0;
@@ -1108,7 +1108,7 @@ namespace RClassic_Float
 		RWall* srcWall = cachedWall->wall;
 		RSector* sector = srcWall->sector;
 		RSector* nextSector = srcWall->nextSector;
-		TextureData* tex = srcWall->botTex ? *srcWall->botTex : nullptr;
+		TextureData* tex = srcWall->botTex ? srcWall->botTex : nullptr;
 		if (!tex) { return; }
 
 		f32 z0 = wallSegment->z0;
@@ -1344,7 +1344,7 @@ namespace RClassic_Float
 		RWall* srcWall = cachedWall->wall;
 		RSector* sector = srcWall->sector;
 		RSector* next = srcWall->nextSector;
-		TextureData* texture = srcWall->topTex ? *srcWall->topTex : nullptr;
+		TextureData* texture = srcWall->topTex ? srcWall->topTex : nullptr;
 		if (!texture) { return; }
 
 		f32 z0 = wallSegment->z0;
@@ -1562,7 +1562,7 @@ namespace RClassic_Float
 
 		RWall* srcWall = cachedWall->wall;
 		RSector* sector = srcWall->sector;
-		TextureData* topTex = srcWall->topTex ? *srcWall->topTex : nullptr;
+		TextureData* topTex = srcWall->topTex ? srcWall->topTex : nullptr;
 
 		f32 z0 = wallSegment->z0;
 		f32 z1 = wallSegment->z1;
@@ -1732,7 +1732,7 @@ namespace RClassic_Float
 
 		f32 yF0 = next_fProj0;
 		f32 yF1 = fProj0;
-		TextureData* botTex = srcWall->botTex ? *srcWall->botTex : nullptr;
+		TextureData* botTex = srcWall->botTex ? srcWall->botTex : nullptr;
 		f0_pixel = roundFloat(next_fProj0);
 		f1_pixel = roundFloat(next_fProj1);
 

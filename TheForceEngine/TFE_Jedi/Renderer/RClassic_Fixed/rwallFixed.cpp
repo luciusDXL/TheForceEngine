@@ -710,7 +710,7 @@ namespace RClassic_Fixed
 	{
 		RWall* srcWall = wallSegment->srcWall;
 		RSector* sector = srcWall->sector;
-		TextureData* texture = srcWall->midTex ? *srcWall->midTex : nullptr;
+		TextureData* texture = srcWall->midTex ? srcWall->midTex : nullptr;
 		if (!texture) { return; }
 
 		fixed16_16 ceilingHeight = sector->ceilingHeight;
@@ -877,7 +877,7 @@ namespace RClassic_Fixed
 	{
 		RWall* srcWall = wallSegment->srcWall;
 		RSector* sector = srcWall->sector;
-		TextureData* texture = *srcWall->midTex;
+		TextureData* texture = srcWall->midTex;
 
 		fixed16_16 z0 = wallSegment->z0;
 		fixed16_16 yC0 = edge->yCeil0;
@@ -1063,7 +1063,7 @@ namespace RClassic_Fixed
 		RWall* wall = wallSegment->srcWall;
 		RSector* sector = wall->sector;
 		RSector* nextSector = wall->nextSector;
-		TextureData* tex = *wall->botTex;
+		TextureData* tex = wall->botTex;
 		if (!tex) { return; }
 
 		fixed16_16 z0 = wallSegment->z0;
@@ -1296,7 +1296,7 @@ namespace RClassic_Fixed
 		RWall* srcWall = wallSegment->srcWall;
 		RSector* sector = srcWall->sector;
 		RSector* next = srcWall->nextSector;
-		TextureData* texture = *srcWall->topTex;
+		TextureData* texture = srcWall->topTex;
 		if (!texture) { return; }
 
 		fixed16_16 z0 = wallSegment->z0;
@@ -1511,7 +1511,7 @@ namespace RClassic_Fixed
 	{
 		RWall* srcWall = wallSegment->srcWall;
 		RSector* sector = srcWall->sector;
-		TextureData* topTex = *srcWall->topTex;
+		TextureData* topTex = srcWall->topTex;
 		fixed16_16 z0 = wallSegment->z0;
 		fixed16_16 z1 = wallSegment->z1;
 		s32 x0 = wallSegment->wallX0;
@@ -1682,7 +1682,7 @@ namespace RClassic_Fixed
 
 		fixed16_16 yF0 = next_fProj0;
 		fixed16_16 yF1 = fProj0;
-		TextureData* botTex = *srcWall->botTex;
+		TextureData* botTex = srcWall->botTex;
 		f0_pixel = round16(next_fProj0);
 		f1_pixel = round16(next_fProj1);
 

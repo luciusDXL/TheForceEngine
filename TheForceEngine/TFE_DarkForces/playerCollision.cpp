@@ -754,15 +754,15 @@ namespace TFE_DarkForces
 		}
 		else if (hitInfo.hit == RHit_WallMid || hitInfo.hit == RHit_WallMid_Trans)
 		{
-			hitTex = hitInfo.wall->midTex ? *hitInfo.wall->midTex : nullptr;
+			hitTex = hitInfo.wall->midTex ? hitInfo.wall->midTex : nullptr;
 		}
 		else if (hitInfo.hit == RHit_WallBot)
 		{
-			hitTex = hitInfo.wall->botTex ? *hitInfo.wall->botTex : nullptr;
+			hitTex = hitInfo.wall->botTex ? hitInfo.wall->botTex : nullptr;
 		}
 		else if (hitInfo.hit == RHit_WallTop)
 		{
-			hitTex = hitInfo.wall->topTex ? *hitInfo.wall->topTex : nullptr;
+			hitTex = hitInfo.wall->topTex ? hitInfo.wall->topTex : nullptr;
 		}
 		else if (hitInfo.hit == RHit_WallSign)
 		{
