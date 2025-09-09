@@ -213,6 +213,9 @@ namespace TFE_DarkForces
 
 							setupAnimationFromLogic(animLogic, 0/*animIndex*/, 0/*firstFrame*/, 0xffffffff/*lastFrame*/, 1/*loopCount*/);
 							obj->worldWidth = 0;
+							
+							// Add this if we want scripting access to effects
+							// obj_addToRefList(obj, ObjRefType_Effect);	// scripting
 						}
 					}
 					if (s_curEffectData->soundEffect)
@@ -292,6 +295,9 @@ namespace TFE_DarkForces
 				SpriteAnimLogic* logic = (SpriteAnimLogic*)obj_setSpriteAnim(newObj);
 				setupAnimationFromLogic(logic, 0/*animIndex*/, 0/*firstFrame*/, 0xffffffff/*lastFrame*/, 1/*loopCount*/);
 				sound_playCued(s_concussionExplodeSnd, newObj->posWS);
+
+				// Add this if we want scripting access to effects
+				// obj_addToRefList(obj, ObjRefType_Effect);	// scripting
 
 				s_msgArg1 = s_curEffectData->damage;
 			}
