@@ -12,7 +12,7 @@ namespace TFE_ExternalData
 		const char* logicName;
 		bool hasGravity = true;
 		bool isFlying = false;
-		u32 fov = 9557;
+		u32 fov = 210;			// 9557 in DF angle
 		u32 awareRange = 20;
 
 		const char* alertSound = "";
@@ -45,8 +45,8 @@ namespace TFE_ExternalData
 
 		u32 speed = 4;
 		u32 verticalSpeed = 10;
-		u32 rotationSpeed = 0x7fff;
-		u32 approachVariation = 4096;
+		u32 rotationSpeed = 720;	// 0x7fff in DF angle
+		u32 approachVariation = 90;		// 4096 in DF angle
 		u32 approachOffset = 3;
 		u32 thinkerDelay = 2;
 
