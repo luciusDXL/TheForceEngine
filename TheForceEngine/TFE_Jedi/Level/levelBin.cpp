@@ -265,17 +265,17 @@ namespace TFE_Jedi
 			wall->sector = sector;
 
 			s32 index = BufferReadS16(WallMidTex);
-			wall->midTex = index >= 0 ? &s_levelState.textures[index] : nullptr;
+			wall->midTex = index >= 0 ? s_levelState.textures[index] : nullptr;
 			wall->midOffset.x = BufferReadFixed16(WallMidX);
 			wall->midOffset.z = BufferReadFixed16(WallMidZ);
 
 			index = BufferReadS16(WallTopTex);
-			wall->topTex = index >= 0 ? &s_levelState.textures[index] : nullptr;
+			wall->topTex = index >= 0 ? s_levelState.textures[index] : nullptr;
 			wall->topOffset.x = BufferReadFixed16(WallTopX);
 			wall->topOffset.z = BufferReadFixed16(WallTopZ);
 
 			index = BufferReadS16(WallBotTex);
-			wall->botTex = index >= 0 ? &s_levelState.textures[index] : nullptr;
+			wall->botTex = index >= 0 ? s_levelState.textures[index] : nullptr;
 			wall->botOffset.x = BufferReadFixed16(WallBotX);
 			wall->botOffset.z = BufferReadFixed16(WallBotZ);
 

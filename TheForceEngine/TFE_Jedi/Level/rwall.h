@@ -70,9 +70,9 @@ struct RWall
 	vec2_fixed* v1;
 
 	// Textures - pointer-to-pointer so that pointers can be changed by texture animation.
-	TextureData** topTex;
-	TextureData** midTex;
-	TextureData** botTex;
+	TextureData* topTex;
+	TextureData* midTex;
+	TextureData* botTex;
 	TextureData** signTex;
 
 	// Wall length in texels.

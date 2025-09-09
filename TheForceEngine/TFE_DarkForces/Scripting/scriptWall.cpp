@@ -61,9 +61,9 @@ namespace TFE_DarkForces
 			RWall* lvlWall = &s_levelState.sectors[wall->m_sectorId].walls[wall->m_wallId];
 			switch (part)
 			{
-			case WP_MIDDLE: tex.m_id = ScriptTexture::getTextureIdFromData(lvlWall->midTex); break;
-			case WP_TOP:    tex.m_id = ScriptTexture::getTextureIdFromData(lvlWall->topTex); break;
-			case WP_BOTTOM: tex.m_id = ScriptTexture::getTextureIdFromData(lvlWall->botTex); break;
+			case WP_MIDDLE: tex.m_id = ScriptTexture::getTextureIdFromData(&lvlWall->midTex); break;
+			case WP_TOP:    tex.m_id = ScriptTexture::getTextureIdFromData(&lvlWall->topTex); break;
+			case WP_BOTTOM: tex.m_id = ScriptTexture::getTextureIdFromData(&lvlWall->botTex); break;
 			case WP_SIGN:   tex.m_id = ScriptTexture::getTextureIdFromData(lvlWall->signTex); break;
 			}
 		}
@@ -177,9 +177,9 @@ namespace TFE_DarkForces
 			TextureData** data = &s_levelState.textures[tex.m_id];
 			switch (part)
 			{
-			case WP_MIDDLE: lvlWall->midTex = data; break;
-			case WP_TOP:    lvlWall->topTex = data; break;
-			case WP_BOTTOM: lvlWall->botTex = data; break;
+			case WP_MIDDLE: lvlWall->midTex = *data; break;
+			case WP_TOP:    lvlWall->topTex = *data; break;
+			case WP_BOTTOM: lvlWall->botTex = *data; break;
 			case WP_SIGN:   lvlWall->signTex = data; break;
 			}
 		}

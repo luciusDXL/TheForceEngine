@@ -546,7 +546,7 @@ namespace TFE_Jedi
 				wall->midTex = nullptr;
 				if (midTex != -1)
 				{
-					wall->midTex = &s_levelState.textures[midTex];
+					wall->midTex = s_levelState.textures[midTex];
 					wall->midOffset.x = floatToFixed16(midOffsetX) * 8;
 					wall->midOffset.z = floatToFixed16(midOffsetZ) * 8;
 				}
@@ -554,7 +554,7 @@ namespace TFE_Jedi
 				wall->topTex = nullptr;
 				if (topTex != -1)
 				{
-					wall->topTex = &s_levelState.textures[topTex];
+					wall->topTex = s_levelState.textures[topTex];
 					wall->topOffset.x = floatToFixed16(topOffsetX) * 8;
 					wall->topOffset.z = floatToFixed16(topOffsetZ) * 8;
 				}
@@ -562,7 +562,7 @@ namespace TFE_Jedi
 				wall->botTex = nullptr;
 				if (botTex != -1)
 				{
-					wall->botTex = &s_levelState.textures[botTex];
+					wall->botTex = s_levelState.textures[botTex];
 					wall->botOffset.x = floatToFixed16(botOffsetX) * 8;
 					wall->botOffset.z = floatToFixed16(botOffsetZ) * 8;
 				}

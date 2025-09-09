@@ -1207,6 +1207,12 @@ namespace TFE_FrontEndUI
 			gameSettings->df_showSecretFoundMsg = showSecretMsg;
 		}
 
+		bool showKeysUsed = gameSettings->df_showKeyUsed;
+		if (ImGui::Checkbox("Show Key Used messages", &showKeysUsed))
+		{
+			gameSettings->df_showKeyUsed = showKeysUsed;
+		}
+
 		bool autorun = gameSettings->df_autorun;
 		if (ImGui::Checkbox("Autorun", &autorun))
 		{

@@ -436,14 +436,14 @@ namespace TFE_Jedi
 					u32 flags = ((curSector->flags1 & SEC_FLAGS1_PIT) || forceTreatAsSolid) ? (1 << 10) : (3 << 10);
 					u32 texId = ((curSector->flags1 & SEC_FLAGS1_PIT) || forceTreatAsSolid) ?
 						(curSector->floorTex && *curSector->floorTex ? (*curSector->floorTex)->textureId : 0) :
-						(srcWall->midTex && *srcWall->midTex ? (*srcWall->midTex)->textureId : 0);
+						(srcWall->midTex ? srcWall->midTex->textureId : 0);
 					addDisplayListItem(pos, { flags | SPARTID_WALL_MID | SPARTID_SKY, data.y, data.z,
 						wallGpuId | texId }, SECTOR_PASS_OPAQUE);
 
 					// Above the horizon line.
 					texId = ((curSector->flags1 & SEC_FLAGS1_EXTERIOR) || forceTreatAsSolid) ?
 						(curSector->ceilTex && *curSector->ceilTex ? (*curSector->ceilTex)->textureId : 0) :
-						(srcWall->midTex && *srcWall->midTex ? (*srcWall->midTex)->textureId : 0);
+						(srcWall->midTex ? srcWall->midTex->textureId : 0);
 					flags = ((curSector->flags1 & SEC_FLAGS1_EXTERIOR) || forceTreatAsSolid) ? (2 << 10) : (4 << 10);
 					addDisplayListItem(pos, { flags | SPARTID_WALL_MID | SPARTID_SKY, data.y, data.z,
 						wallGpuId | texId }, SECTOR_PASS_OPAQUE);
@@ -452,29 +452,29 @@ namespace TFE_Jedi
 			else
 			{
 				addDisplayListItem(pos, {data.x | SPARTID_WALL_MID, data.y, data.z | flip,
-					wallGpuId | (srcWall->midTex && *srcWall->midTex ? (*srcWall->midTex)->textureId : 0) }, SECTOR_PASS_OPAQUE);
+					wallGpuId | (srcWall->midTex ? srcWall->midTex->textureId : 0) }, SECTOR_PASS_OPAQUE);
 			}
 		}
-		else if (srcWall->midTex && (*srcWall->midTex) && nextSector && (srcWall->flags1 & WF1_ADJ_MID_TEX))
+		else if (srcWall->midTex && nextSector && (srcWall->flags1 & WF1_ADJ_MID_TEX))
 		{
 			// Funky stretching adjoins...
 			if (!(curSector->flags1 & SEC_FLAGS1_EXTERIOR) && (nextSector->flags1 & SEC_FLAGS1_EXTERIOR) && curSector->ceilingHeight < nextSector->ceilingHeight)
 			{
 				// Transparent mid-texture.
 				addDisplayListItem(pos, { data.x | SPARTID_WALL_MID | SPARTID_STRETCH, data.y, data.z | flip,
-					wallGpuId | (*srcWall->midTex ? (*srcWall->midTex)->textureId : 0) }, SECTOR_PASS_TRANS);
+					wallGpuId | (srcWall->midTex ? srcWall->midTex->textureId : 0) }, SECTOR_PASS_TRANS);
 			}
 			else if (stretchToTop)
 			{
 				// Transparent mid-texture.
 				addDisplayListItem(pos, { data.x | SPARTID_WALL_MID | SPARTID_STRETCH_TO_TOP, data.y, data.z | flip,
-					wallGpuId | (*srcWall->midTex ? (*srcWall->midTex)->textureId : 0) }, SECTOR_PASS_TRANS);
+					wallGpuId | (srcWall->midTex ? srcWall->midTex->textureId : 0) }, SECTOR_PASS_TRANS);
 			}
 			else
 			{
 				// Transparent mid-texture.
 				addDisplayListItem(pos, {data.x | SPARTID_WALL_MID, data.y, data.z | flip,
-					wallGpuId | (*srcWall->midTex ? (*srcWall->midTex)->textureId : 0) }, SECTOR_PASS_TRANS);
+					wallGpuId | (srcWall->midTex ? srcWall->midTex->textureId : 0) }, SECTOR_PASS_TRANS);
 			}
 		}
 
@@ -484,7 +484,7 @@ namespace TFE_Jedi
 		if ((srcWall->drawFlags & WDF_TOP) && nextSector && !(nextSector->flags1 & SEC_FLAGS1_EXT_ADJ) && !noWallDraw && !noTop)
 		{
 			addDisplayListItem(pos, {data.x | SPARTID_WALL_TOP, data.y, data.z | flip,
-				wallGpuId | (srcWall->topTex && *srcWall->topTex ? (*srcWall->topTex)->textureId : 0) }, SECTOR_PASS_OPAQUE);
+				wallGpuId | (srcWall->topTex ? srcWall->topTex->textureId : 0) }, SECTOR_PASS_OPAQUE);
 		}
 		else if ((srcWall->drawFlags & WDF_TOP) && nextSector && noWallDraw && !noTop)
 		{
@@ -500,7 +500,7 @@ namespace TFE_Jedi
 		if ((srcWall->drawFlags & WDF_BOT) && nextSector && !(nextSector->flags1 & SEC_FLAGS1_EXT_FLOOR_ADJ) && !noWallDraw)
 		{
 			addDisplayListItem(pos, { data.x | SPARTID_WALL_BOT, data.y, data.z | flip,
-				wallGpuId | (srcWall->botTex && *srcWall->botTex ? (*srcWall->botTex)->textureId : 0) }, SECTOR_PASS_OPAQUE);
+				wallGpuId | (srcWall->botTex ? srcWall->botTex->textureId : 0) }, SECTOR_PASS_OPAQUE);
 		}
 		else if ((srcWall->drawFlags & WDF_BOT) && nextSector && noWallDraw)
 		{
