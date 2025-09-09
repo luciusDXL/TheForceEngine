@@ -137,6 +137,16 @@ namespace TFE_Jedi
 		return fixed16_16(16384.0f * angle / 360.0f);
 	}
 
+	inline f32 fixedAngleToDegrees(fixed16_16 angle)
+	{
+		return fixed16ToFloat(angle) / 45.5111f;
+	}
+
+	inline fixed16_16 degreesToFixedAngle(f32 angle)
+	{
+		return floatToFixed16(angle * 45.5111f);
+	}
+
 	inline s32 fixed16to12(fixed16_16 x)
 	{
 		return s32(x >> 4);

@@ -23,12 +23,20 @@ namespace TFE_DarkForces
 		return (data->updateFlags & ELEV_MASTER_ON) != 0;
 	}
 
-	void setElevSpeed(s32 value, ScriptElev* elev)
+	float getElevSpeed(ScriptElev* elev)
+	{
+		if (!ScriptElev::isScriptElevValid(elev)) { return 0; }
+
+		InfElevator* data = (InfElevator*)allocator_getByIndex(s_infSerState.infElevators, elev->m_id);
+		return data->type == IELEV_ROTATE_WALL ? fixedAngleToDegrees(data->speed) : fixed16ToFloat(data->speed);
+	}
+
+	void setElevSpeed(float value, ScriptElev* elev)
 	{
 		if (!ScriptElev::isScriptElevValid(elev)) { return; }
 
 		InfElevator* data = (InfElevator*)allocator_getByIndex(s_infSerState.infElevators, elev->m_id);
-		data->speed = data->type == IELEV_ROTATE_WALL ? FIXED(floatToAngle((f32)value)) : FIXED(value);
+		data->speed = data->type == IELEV_ROTATE_WALL ? degreesToFixedAngle(value) : floatToFixed16(value);
 	}
 
 	void ScriptElev::registerType()
@@ -37,13 +45,15 @@ namespace TFE_DarkForces
 		asIScriptEngine* engine = (asIScriptEngine*)TFE_ForceScript::getEngine();
 
 		ScriptValueType("Elevator");
+
 		// Variables
 		ScriptMemberVariable("int id", m_id);
 		// Functions
 		ScriptObjFunc("bool isValid()", isScriptElevValid);
 		// Properties
 		ScriptPropertyGetFunc("bool get_master()", getElevMaster);
-		
-		ScriptPropertySetFunc("void set_speed(int)", setElevSpeed);
+
+		ScriptPropertyGetFunc("float get_speed()", getElevSpeed);
+		ScriptPropertySetFunc("void set_speed(float)", setElevSpeed);
 	}
 }
