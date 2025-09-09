@@ -228,9 +228,10 @@ struct TFE_Settings_Game
 	bool df_showReplayCounter = false;  // Show the replay counter on the HUD.
 	bool df_demologging = false;        // Log the record/playback logging
 	bool df_autoEndMission = false;     // Automatically skip to the next mission
-	bool df_showKeyColors = false;      // Shows the door key color on the minimap
+  bool df_showKeyColors = false;      // Shows the door key color on the minimap
 	s32  df_recordFrameRate = 4;        // Recording Framerate value
 	s32  df_playbackFrameRate = 2;      // Playback Framerate value
+	bool df_showKeyUsed = true; 	    // Show a message when a key is used.
 	PitchLimit df_pitchLimit  = PITCH_VANILLA_PLUS;
 };
 

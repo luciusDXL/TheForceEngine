@@ -23,6 +23,7 @@
 #include <TFE_System/system.h>
 #include <TFE_System/memoryPool.h>
 #include <TFE_System/math.h>
+#include <TFE_System/tfeMessage.h>
 #include <TFE_Jedi/Level/rtexture.h>
 #include <TFE_Jedi/Task/task.h>
 // TODO: This will make adding Outlaws harder, fix the abstraction.
@@ -2791,26 +2792,54 @@ namespace TFE_Jedi
 
 			// Does the player have the key?
 			KeyItem key = elev->key;
-			if (key == KEY_RED && !s_playerInfo.itemRedKey)
+			char keyBuffer[50];
+			char keyBufferWrapper[50];
+			snprintf(keyBufferWrapper, 50, "%s", TFE_System::getMessage(TFE_MSG_KEY));
+
+			if (key == KEY_RED)
 			{
-				// "You need the red key."
-				hud_sendTextMessage(6);
-				sound_play(s_needKeySoundId);
-				return;
+				if (TFE_Settings::getGameSettings()->df_showKeyUsed &&  s_playerInfo.itemRedKey)
+				{
+					sprintf(keyBuffer, keyBufferWrapper, TFE_System::getMessage(TFE_MSG_RED));
+					TFE_DarkForces::hud_sendTextMessage(keyBuffer, 1, false);
+				}
+				else if (!s_playerInfo.itemRedKey)
+				{
+					// "You need the red key."
+					hud_sendTextMessage(6);
+					sound_play(s_needKeySoundId);
+					return;
+				}
 			}
-			else if (key == KEY_YELLOW && !s_playerInfo.itemYellowKey)
+			else if (key == KEY_YELLOW)
 			{
-				// "You need the yellow key."
-				hud_sendTextMessage(7);
-				sound_play(s_needKeySoundId);
-				return;
+				if (TFE_Settings::getGameSettings()->df_showKeyUsed && s_playerInfo.itemYellowKey)
+				{
+					sprintf(keyBuffer, keyBufferWrapper, TFE_System::getMessage(TFE_MSG_YELLOW));
+					TFE_DarkForces::hud_sendTextMessage(keyBuffer, 1, false);
+				}
+				else if (!s_playerInfo.itemYellowKey)
+				{
+					// "You need the yellow key."
+					hud_sendTextMessage(7);
+					sound_play(s_needKeySoundId);
+					return;
+				}
 			}
-			else if (key == KEY_BLUE && !s_playerInfo.itemBlueKey)
+			else if (key == KEY_BLUE)
 			{
-				// "You need the blue key."
-				hud_sendTextMessage(8);
-				sound_play(s_needKeySoundId);
-				return;
+				if (TFE_Settings::getGameSettings()->df_showKeyUsed && s_playerInfo.itemBlueKey)
+				{
+					sprintf(keyBuffer, keyBufferWrapper, TFE_System::getMessage(TFE_MSG_BLUE));
+					TFE_DarkForces::hud_sendTextMessage(keyBuffer, 1, false);
+				}
+				else if (!s_playerInfo.itemBlueKey)	
+				{
+					// "You need the blue key."
+					hud_sendTextMessage(8);
+					sound_play(s_needKeySoundId);
+					return;
+				}
 			}
 		}
 				
