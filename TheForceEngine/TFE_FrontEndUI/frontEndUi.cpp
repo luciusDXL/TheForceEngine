@@ -27,6 +27,7 @@
 #include <TFE_Asset/imageAsset.h>
 #include <TFE_Ui/ui.h>
 #include <TFE_Ui/markdown.h>
+#include <TFE_System/tfeMessage.h>
 #include <TFE_System/utf8.h>
 #include <TFE_ExternalData/dfLogics.h>
 #include <TFE_ExternalData/weaponExternal.h>
@@ -525,6 +526,12 @@ namespace TFE_FrontEndUI
 		TFE_ExternalData::clearExternalProjectiles();					// clear projectiles
 		TFE_ExternalData::clearExternalEffects();						// clear effects
 		TFE_ExternalData::clearExternalPickups();						// clear pickups
+
+		// Restore the default messages if you are exiting a mod. 
+		if (TFE_System::modMessagesLoaded())
+		{
+			TFE_System::restoreDefaultMessages();
+		}
 
 		if (TFE_Settings::getSystemSettings()->returnToModLoader && s_modLoaded)
 		{
@@ -1236,6 +1243,12 @@ namespace TFE_FrontEndUI
 			gameSettings->df_autoEndMission = autoEndMission;
 		}
 
+		bool showKeyColors = gameSettings->df_showKeyColors;
+		if (ImGui::Checkbox("Show the key color of the door on the map", &showKeyColors))
+		{
+			gameSettings->df_showKeyColors = showKeyColors;
+		}
+
 		ImGui::Separator();
 
 		ImGui::PushFont(s_versionFont);
@@ -1267,7 +1280,7 @@ namespace TFE_FrontEndUI
 		}
 
 		bool jsonAiLogics = gameSettings->df_jsonAiLogics;
-		if (ImGui::Checkbox("Enable custom AI logics from JSON files", &jsonAiLogics))
+		if (ImGui::Checkbox("Enhanced AI logics (requires restart)", &jsonAiLogics))
 		{
 			gameSettings->df_jsonAiLogics = jsonAiLogics;
 		}		
@@ -1345,6 +1358,13 @@ namespace TFE_FrontEndUI
 
 			if (ImGui::Button("OK", ImVec2(120, 0))) { ImGui::CloseCurrentPopup(); }
 			ImGui::EndPopup();
+		}
+
+		
+		if (ImGui::Button("Reset Game Settings"))
+		{
+			TFE_Settings::resetGameSettings();
+			TFE_Settings::autodetectGamePaths();
 		}
 
 		ImGui::Separator();
@@ -1717,8 +1737,8 @@ namespace TFE_FrontEndUI
 					ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
 
 					char textBuffer[TFE_MAX_PATH];
-					sprintf(textBuffer, "Game: Dark Forces\nTime: %s\nLevel: %s\nMods: %s\n", s_saveDir[s_selectedSave - listOffset].dateTime,
-						s_saveDir[s_selectedSave - listOffset].levelName, s_saveDir[s_selectedSave - listOffset].modNames);
+					sprintf(textBuffer, "Game: Dark Forces\nTime: %s\nLevel: %s\nMods: %s\nFileName: %s\n", s_saveDir[s_selectedSave - listOffset].dateTime,
+						s_saveDir[s_selectedSave - listOffset].levelName, s_saveDir[s_selectedSave - listOffset].modNames, s_saveDir[s_selectedSave - listOffset].fileName);
 					ImGui::InputTextMultiline("##Info", textBuffer, strlen(textBuffer) + 1, size, ImGuiInputTextFlags_ReadOnly);
 
 					ImGui::PopFont();
@@ -1781,12 +1801,13 @@ namespace TFE_FrontEndUI
 						bool shouldExit = false;
 						if (save)
 						{
+							// New Save Created
 							if (s_selectedSave == 0)
 							{
 								s_selectedSaveSlot = (s32)s_saveDir.size();
 								// If no quicksave exists, skip over it when generating the name.
 								const s32 saveIndex = s_selectedSaveSlot + (s_hasQuicksave ? 0 : 1);
-								TFE_SaveSystem::getSaveFilenameFromIndex(saveIndex, s_fileName);
+								TFE_SaveSystem::getSaveFilename(s_fileName, saveIndex);
 
 								s_newSaveName[0] = 0;
 								openSaveNameEditPopup(s_newSaveName);
@@ -2650,7 +2671,7 @@ namespace TFE_FrontEndUI
 		ImGui::EndChild();
 		ImGui::SetNextWindowPos(ImVec2(165.0f*s_uiScale, yNext - scroll));
 		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, { 0.0f, 0.0f });
-		f32 inputMappingHeight = 1516.0f*s_uiScale;
+		f32 inputMappingHeight = 1638.0f*s_uiScale;
 		if (ImGui::BeginChild("##Input Mapping", ImVec2(390.0f*s_uiScale, s_inputMappingOpen ? inputMappingHeight : 29.0f*s_uiScale), true, window_flags))
 		{
 			if (ImGui::Button("Input Mapping", ImVec2(370.0f*s_uiScale, 0.0f)))
@@ -2965,6 +2986,43 @@ namespace TFE_FrontEndUI
 		ImGui::Separator();
 
 		//////////////////////////////////////////////////////
+		// Reset Settings
+		//////////////////////////////////////////////////////
+		ImGui::PushFont(s_dialogFont);
+		ImGui::LabelText("##ConfigLabel", "Switch Graphical Settings");
+		ImGui::PopFont();
+
+		// Allow player to reset Graphic Settings
+		if (ImGui::Button("Modern"))
+		{
+			setSettingsTemplate(TEMPLATE_MODERN);
+			s_appState = APP_STATE_MENU;
+		}
+		ImGui::SameLine();
+		ImGui::SetNextItemWidth(600);
+		ImGui::LabelText("##ConfigLabel", "Like Retro and adds modern effects such as bloom.");
+
+		if (ImGui::Button("Retro"))
+		{
+			setSettingsTemplate(TEMPLATE_RETRO);
+			s_appState = APP_STATE_MENU;
+		}
+		ImGui::SameLine();
+		ImGui::SetNextItemWidth(600);
+		ImGui::LabelText("##ConfigLabel", " Play in high res, widescreen, and modern controls.");
+
+		if (ImGui::Button("Vanilla"))
+		{
+			setSettingsTemplate(TEMPLATE_VANILLA);
+			s_appState = APP_STATE_MENU;
+		}
+		ImGui::SameLine();
+		ImGui::SetNextItemWidth(600);
+		ImGui::LabelText("##ConfigLabel", "Play using the original resolution and controls.");
+
+		ImGui::Separator();
+
+		//////////////////////////////////////////////////////
 		// Resolution
 		//////////////////////////////////////////////////////
 		bool widescreen = graphics->widescreen;
@@ -3224,7 +3282,7 @@ namespace TFE_FrontEndUI
 		}
 
 		const ColorCorrection colorCorrection = { graphics->brightness, graphics->contrast, graphics->saturation, graphics->gamma };
-		TFE_RenderBackend::setColorCorrection(graphics->colorCorrection, &colorCorrection, bloomChanged);
+		TFE_RenderBackend::setColorCorrection(graphics->colorCorrection, &colorCorrection, bloomChanged);		
 	}
 
 	void configHud()
@@ -3475,6 +3533,34 @@ namespace TFE_FrontEndUI
 			}
 		}
 	#endif
+		const char * resetMsg = "             Reset All Settings";
+
+		if (ImGui::Button("Reset All Settings"))
+		{
+			ImGui::OpenPopup(resetMsg);
+		}	
+
+
+		if (ImGui::BeginPopupModal(resetMsg, NULL, ImGuiWindowFlags_AlwaysAutoResize))
+		{
+			ImGui::Text("Are you sure you want to reset all settings?");
+			ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 80);
+
+			if (ImGui::Button("OK", ImVec2(120, 0)))
+			{
+				TFE_Settings::resetAllSettings();
+				ImGui::CloseCurrentPopup();
+			}
+
+			ImGui::SameLine(0.0f, 32.0f);
+			if (ImGui::Button("Cancel", ImVec2(120, 0)))
+			{
+				ImGui::CloseCurrentPopup();
+			}
+
+			ImGui::EndPopup();
+			
+		}		
 	}
 
 	void DrawFontSizeCombo(float labelWidth, float valueWidth, const char* label, const char* comboTag, s32* currentValue)
@@ -3933,6 +4019,7 @@ namespace TFE_FrontEndUI
 				gameSettings->df_solidWallFlagFix = true;
 				gameSettings->df_enableUnusedItem = true;
 				gameSettings->df_jsonAiLogics = true;
+				gameSettings->df_enableUnusedItem = true;
 				// Graphics
 				graphicsSettings->rendererIndex = RENDERER_HARDWARE;
 				graphicsSettings->skyMode = SKYMODE_CYLINDER;

@@ -780,6 +780,8 @@ namespace TFE_DarkForces
 				corpse->worldHeight = 0;
 				corpse->entityFlags |= (ETFLAG_CORPSE | ETFLAG_KEEP_CORPSE);
 				sector_addObject(sector, corpse);
+				
+				obj_addToRefList(corpse, ObjRefType_Corpse);	// scripting
 			}
 			local(physicsActor)->alive = JFALSE;
 			actor_handleBossDeath(local(physicsActor));

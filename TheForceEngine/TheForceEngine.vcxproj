@@ -445,6 +445,7 @@ echo ^)";
     <ClInclude Include="TFE_DarkForces\Scripting\gs_player.h" />
     <ClInclude Include="TFE_DarkForces\Scripting\gs_system.h" />
     <ClInclude Include="TFE_DarkForces\Scripting\scriptElev.h" />
+    <ClInclude Include="TFE_DarkForces\Scripting\scriptObject.h" />
     <ClInclude Include="TFE_DarkForces\Scripting\scriptSector.h" />
     <ClInclude Include="TFE_DarkForces\Scripting\scriptTexture.h" />
     <ClInclude Include="TFE_DarkForces\Scripting\scriptWall.h" />
@@ -861,6 +862,7 @@ echo ^)";
     <ClCompile Include="TFE_DarkForces\Scripting\gs_player.cpp" />
     <ClCompile Include="TFE_DarkForces\Scripting\gs_system.cpp" />
     <ClCompile Include="TFE_DarkForces\Scripting\scriptElev.cpp" />
+    <ClCompile Include="TFE_DarkForces\Scripting\scriptObject.cpp" />
     <ClCompile Include="TFE_DarkForces\Scripting\scriptSector.cpp" />
     <ClCompile Include="TFE_DarkForces\Scripting\scriptTexture.cpp" />
     <ClCompile Include="TFE_DarkForces\Scripting\scriptWall.cpp" />
