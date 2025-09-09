@@ -515,7 +515,18 @@ namespace TFE_DarkForces
 			endRecording();
 		}
 
+		// Restore the default messages if you are exiting a mod. 
+		if (TFE_System::modMessagesLoaded())
+		{
+			TFE_System::restoreDefaultMessages();
+		}
+
 		s_exitLevel = JTRUE;
+	}
+
+	void mission_setExitLevel(JBool exitLevel)
+	{
+		s_exitLevel = exitLevel;
 	}
 
 	void mission_render(s32 rendererIndex, bool forceTextureUpdate)
@@ -542,7 +553,7 @@ namespace TFE_DarkForces
 			vfb_swap();
 		}
 	}
-		
+				
 	void mission_mainTaskFunc(MessageType msg)
 	{
 		task_begin;
@@ -561,9 +572,20 @@ namespace TFE_DarkForces
 			TFE_Jedi::beginRender();
 						
 			// Handle delta time.
-			s_deltaTime = div16(intToFixed16(s_curTick - s_prevTick), FIXED(TICKS_PER_SECOND));
+			if (!TFE_Settings::getGraphicsSettings()->useSmoothDeltaTime)
+			{
+				s_deltaTime = div16(intToFixed16(s_curTick - s_prevTick), FIXED(TICKS_PER_SECOND));
+			}
+			else
+			{
+				s64 curTickF = s64(intToFixed16(s_curTick)) + s_curTickFract;
+				s64 prevTickF = s64(intToFixed16(s_prevTick)) + s_prevTickFract;
+				s_deltaTime = div16(fixed16_16(curTickF - prevTickF), FIXED(TICKS_PER_SECOND));
+			}
+
 			s_deltaTime = min(s_deltaTime, MAX_DELTA_TIME);
 			s_prevTick  = s_curTick;
+			s_prevTickFract = s_curTickFract;
 			s_playerTick = s_curTick;
 						
 			if (!escapeMenu_isOpen() && !pda_isOpen())
@@ -970,7 +992,7 @@ namespace TFE_DarkForces
 
 	void enableNightVision()
 	{
-		if (!s_playerInfo.itemGoggles) { return; }
+		if (!s_playerInfo.itemGoggles || s_externalCameraMode) { return; }
 
 		if (!s_batteryPower)
 		{

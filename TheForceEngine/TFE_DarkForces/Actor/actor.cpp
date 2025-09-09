@@ -29,6 +29,7 @@
 #include <TFE_Jedi/Memory/list.h>
 #include <TFE_Jedi/Memory/allocator.h>
 #include <TFE_Jedi/Serialization/serialization.h>
+#include <TFE_Settings/settings.h>
 
 using namespace TFE_Jedi;
 
@@ -302,6 +303,7 @@ namespace TFE_DarkForces
 		attackMod->meleeRate = FIXED(230);
 		attackMod->attackFlags = ATTFLAG_RANGED | ATTFLAG_LIT_RNG;
 
+		// Why is this being returned? This function maybe should be a void? 
 		return attackMod->fireOffset.y;
 	}
 
@@ -652,12 +654,17 @@ namespace TFE_DarkForces
 					corpse->frame = 0;
 					corpse->anim = animIndex;
 					corpse->posWS.x = obj->posWS.x;
-					corpse->posWS.y = (sector->colSecHeight < obj->posWS.y) ? sector->colSecHeight : obj->posWS.y;
+					// The original code here was:
+					// corpse->posWS.y = (sector->colSecHeight < obj->posWS.y) ? sector->colSecHeight : obj->posWS.y;
+					// This causes corpses to always end up on top of bridges in vanilla DF, even if the actor dies under the bridge
+					corpse->posWS.y = obj->posWS.y;
 					corpse->posWS.z = obj->posWS.z;
 					corpse->worldHeight = 0;
 					corpse->worldWidth = 0;
 					corpse->entityFlags |= ETFLAG_CORPSE;
 					sector_addObject(obj->sector, corpse);
+
+					obj_addToRefList(corpse, ObjRefType_Corpse);	// scripting
 				}
 			}
 			actor_kill();
@@ -1023,9 +1030,14 @@ namespace TFE_DarkForces
 				}
 
 				attackMod->anim.state = STATE_ANIMATE1;
-				ProjectileLogic* proj = (ProjectileLogic*)createProjectile(attackMod->projType, obj->sector, obj->posWS.x, attackMod->fireOffset.y + obj->posWS.y, obj->posWS.z, obj);
-				sound_playCued(attackMod->attackPrimSndSrc, obj->posWS);
+				vec3_fixed fireOffset = {};
 
+				// Calculate the X,Z fire offsets based on where the enemy is facing. It doesn't matter for Y. 
+				transformFireOffsets(obj->yaw, &attackMod->fireOffset, &fireOffset);
+
+				ProjectileLogic* proj = (ProjectileLogic*)createProjectile(attackMod->projType, obj->sector, fireOffset.x + obj->posWS.x, fireOffset.y + obj->posWS.y, fireOffset.z + obj->posWS.z, obj);
+				sound_playCued(attackMod->attackPrimSndSrc, obj->posWS);
+				
 				proj->prevColObj = obj;
 				proj->prevObj = obj;
 				proj->excludeObj = obj;
@@ -1042,22 +1054,25 @@ namespace TFE_DarkForces
 					vec3_fixed target = { s_playerObject->posWS.x, s_eyePos.y + ONE_16, s_playerObject->posWS.z };
 					proj_aimArcing(proj, target, proj->speed);
 
-					if (attackMod->fireOffset.x | attackMod->fireOffset.z)
-					{
-						proj->delta.x = attackMod->fireOffset.x;
-						proj->delta.z = attackMod->fireOffset.z;
-						proj_handleMovement(proj);
-					}
+					// This code was never hit in original DF because x and z fire offsets were always 0
+					// It causes strange collision effects to happen, so commenting out.
+					//if (fireOffset.x | fireOffset.z)
+					//{
+					//	proj->delta.x = fireOffset.x;
+					//	proj->delta.z = fireOffset.z;
+					//	proj_handleMovement(proj);
+					//}
 				}
 				else
 				{
 					// Handle x and z fire offset.
-					if (attackMod->fireOffset.x | attackMod->fireOffset.z)
-					{
-						proj->delta.x = attackMod->fireOffset.x;
-						proj->delta.z = attackMod->fireOffset.z;
-						proj_handleMovement(proj);
-					}
+					// Commenting out - see note above
+					//if (fireOffset.x | fireOffset.z)
+					//{
+					//	proj->delta.x = fireOffset.x;
+					//	proj->delta.z = fireOffset.z;
+					//	proj_handleMovement(proj);
+					//}
 
 					// Aim at the target.
 					vec3_fixed target = { s_eyePos.x, s_eyePos.y + ONE_16, s_eyePos.z };
@@ -1090,7 +1105,13 @@ namespace TFE_DarkForces
 				}
 
 				attackMod->anim.state = STATE_ANIMATE2;
-				ProjectileLogic* proj = (ProjectileLogic*)createProjectile(attackMod->projType, obj->sector, obj->posWS.x, attackMod->fireOffset.y + obj->posWS.y, obj->posWS.z, obj);
+
+				vec3_fixed fireOffset = {};
+				
+				// Calculate the fire offsets based on where the enemy is facing. It doesn't matter for Y. 
+				transformFireOffsets(obj->yaw, &attackMod->fireOffset, &fireOffset);
+
+				ProjectileLogic* proj = (ProjectileLogic*)createProjectile(attackMod->projType, obj->sector, fireOffset.x + obj->posWS.x, fireOffset.y + obj->posWS.y, fireOffset.z + obj->posWS.z, obj);
 				sound_playCued(attackMod->attackPrimSndSrc, obj->posWS);
 				proj->prevColObj = obj;
 				proj->excludeObj = obj;
@@ -1104,21 +1125,23 @@ namespace TFE_DarkForces
 					vec3_fixed target = { s_playerObject->posWS.x, s_eyePos.y + ONE_16, s_playerObject->posWS.z };
 					proj_aimArcing(proj, target, proj->speed);
 
-					if (attackMod->fireOffset.x | attackMod->fireOffset.z)
-					{
-						proj->delta.x = attackMod->fireOffset.x;
-						proj->delta.z = attackMod->fireOffset.z;
-						proj_handleMovement(proj);
-					}
+					// Commenting out - see note above
+					//if (fireOffset.x | fireOffset.z)
+					//{
+					//	proj->delta.x = fireOffset.x;
+					//	proj->delta.z = fireOffset.z;
+					//	proj_handleMovement(proj);
+					//}
 				}
 				else
 				{
-					if (attackMod->fireOffset.x | attackMod->fireOffset.z)
-					{
-						proj->delta.x = attackMod->fireOffset.x;
-						proj->delta.z = attackMod->fireOffset.z;
-						proj_handleMovement(proj);
-					}
+					// Commenting out - see note above
+					//if (fireOffset.x | fireOffset.z)
+					//{
+					//	proj->delta.x = fireOffset.x;
+					//	proj->delta.z = fireOffset.z;
+					//	proj_handleMovement(proj);
+					//}
 					vec3_fixed target = { s_eyePos.x, s_eyePos.y + ONE_16, s_eyePos.z };
 					proj_aimAtTarget(proj, target);
 					if (attackMod->fireSpread)
@@ -1348,6 +1371,21 @@ namespace TFE_DarkForces
 		SecObject* obj = logic->logic.obj;
 		obj->anim = actor_getAnimationIndex(ANIM_IDLE);
 		obj->frame = 0;
+
+		// TFE: Find the thinker module and set its animation to the idle animation
+		if (TFE_Settings::jsonAiLogics())
+		{
+			for (s32 i = 0; i < ACTOR_MAX_MODULES; i++)
+			{
+				ActorModule* module = logic->modules[ACTOR_MAX_MODULES - 1 - i];
+				if (module && module->type == ACTMOD_THINKER)
+				{
+					ThinkerModule* thinkerMod = (ThinkerModule*)module;
+					actor_setupAnimation(ANIM_IDLE, &thinkerMod->anim);
+					break;
+				}
+			}
+		}
 	}
 
 	void actor_addModule(ActorDispatch* dispatch, ActorModule* module)
@@ -2106,6 +2144,36 @@ namespace TFE_DarkForces
 								message_sendToObj(obj, MSG_WAKEUP, actor_messageFunc);
 								gameMusic_startFight();
 								collision_effectObjectsInRangeXZ(obj->sector, FIXED(150), obj->posWS, actor_sendWakeupMsg, obj, ETFLAG_AI_ACTOR);
+							}
+						}
+
+						// TFE: Animate in idle state
+						if (TFE_Settings::jsonAiLogics())
+						{
+							s_actorState.curAnimation = nullptr;
+							if (obj->type & OBJ_TYPE_SPRITE)
+							{
+								// Find the thinker module and set its animation as the current animation
+								for (s32 i = 0; i < ACTOR_MAX_MODULES; i++)
+								{
+									ActorModule* module = dispatch->modules[ACTOR_MAX_MODULES - 1 - i];
+									if (module && module->type == ACTMOD_THINKER)
+									{
+										ThinkerModule* thinkerMod = (ThinkerModule*)module;
+										actor_setCurAnimation(&thinkerMod->anim);
+										break;
+									}
+								}
+
+								if (s_actorState.curAnimation)
+								{
+									obj->anim = s_actorState.curAnimation->animId;
+									if (actor_advanceAnimation(s_actorState.curAnimation, obj))
+									{
+										// The animation has finished.
+										s_actorState.curAnimation->flags |= AFLAG_READY;
+									}
+								}
 							}
 						}
 					}

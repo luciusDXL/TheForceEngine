@@ -57,9 +57,11 @@ namespace TFE_Input
 	int replayGraphicsType = 0;
 	bool playerHeadwave = false;
 	bool playerAutoAim = false; 
+	bool autoEndMission = false;
 	bool vsyncEnabled = false;
 	bool replayInitialized = false;
 	bool cutscenesEnabled = true;
+	bool smoothDeltaTime = true;
 	bool pauseReplay = false; 
 	bool showReplayMsgFrame = false;
 	bool alwaysRecord = false;
@@ -275,7 +277,7 @@ namespace TFE_Input
 	// Serializes the input events into the demo file from vectors to strings
 	vector<s32> serializeInputs(Stream* stream, vector<s32> inputList, bool writeFlag)
 	{
-		int keySize = 0;
+		s32 keySize = 0;
 		string keyString;
 
 		// The Vector would consist of the key codes for the input events
@@ -284,7 +286,7 @@ namespace TFE_Input
 		if (writeFlag)
 		{
 			keyString = convertToString(inputList);
-			keySize = keyString.size();
+			keySize = (s32)keyString.size();
 		}
 
 		SERIALIZE(ReplayVersionInit, keySize, 0);
@@ -328,6 +330,7 @@ namespace TFE_Input
 		dest->df_jsonAiLogics = source->df_jsonAiLogics;
 		dest->df_pitchLimit = source->df_pitchLimit;
 		dest->df_recordFrameRate = source->df_recordFrameRate;
+		dest->df_autoEndMission = source->df_autoEndMission;
 	}
 
 	// Loads the demo files from the replay folder. 
@@ -549,7 +552,7 @@ namespace TFE_Input
 			SERIALIZE_BUF(SaveVersionInit, frameTicks, sizeof(fixed16_16) * TFE_ARRAYSIZE(frameTicks));
 
 			// Handle events list size
-			int eventListsSize = inputMapping_getCounter();
+			s32 eventListsSize = inputMapping_getCounter();
 			SERIALIZE(ReplayVersionInit, eventListsSize, 0);
 
 			// Settings and Input Handling 
@@ -636,7 +639,7 @@ namespace TFE_Input
 				// Wipe the events and load them from the demo
 				clearEvents();
 
-				for (int i = 0; i < eventListsSize + 1; i++)
+				for (s32 i = 0; i < eventListsSize + 1; i++)
 				{
 					SERIALIZE(ReplayVersionInit, eventCounter, 0);
 
@@ -668,7 +671,7 @@ namespace TFE_Input
 				
 				// Wipe the event counter and set the max input counter
 				inputMapping_resetCounter();				
-				inputMapping_setMaxCounter(inputEvents.size());
+				inputMapping_setMaxCounter((s32)inputEvents.size());
 
 				// Set the new start time
 				TFE_System::setStartTime(replayStartTime);
@@ -833,6 +836,10 @@ namespace TFE_Input
 		playerAutoAim = gameSettings->df_enableAutoaim;
 		gameSettings->df_enableAutoaim = false;
 
+		// Disable auto mission ending - we don't support it for replays yet
+		autoEndMission = gameSettings->df_autoEndMission;
+		gameSettings->df_autoEndMission = false;
+
 		// Enable VSYNC for replay playback - can be overriden during replays
 		vsyncEnabled = TFE_System::getVSync();
 		TFE_System::setVsync(true);
@@ -841,10 +848,16 @@ namespace TFE_Input
 		TFE_Settings_Graphics* graphicSetting = TFE_Settings::getGraphicsSettings();
 		replayGraphicsType = graphicSetting->rendererIndex;
 		graphicSetting->rendererIndex = 1;
+
+		// Preserve the original smoothDeltaTime option
+		// Disable useSmoothDeltaTime for now.
+		// TODO: Add a new version that allows this setting?
+		smoothDeltaTime = graphicSetting->useSmoothDeltaTime;
+		graphicSetting->useSmoothDeltaTime = false;
 		
 		// Preserve the original frame rate
 		gameFrameLimit = TFE_System::frameLimiter_get();
-
+		
 		// Disable cheats that could affect the replay
 		disableReplayCheats();
 
@@ -856,9 +869,11 @@ namespace TFE_Input
 	{
 		// Restore settings to their original state
 		TFE_Settings::getGameSettings()->df_enableAutoaim = playerAutoAim;
+		TFE_Settings::getGameSettings()->df_autoEndMission = autoEndMission;
 		TFE_System::setVsync(vsyncEnabled);
 		TFE_System::frameLimiter_set(gameFrameLimit);
 		TFE_Settings::getGraphicsSettings()->rendererIndex = replayGraphicsType;
+		TFE_Settings::getGraphicsSettings()->useSmoothDeltaTime = smoothDeltaTime;
 
 		if (TFE_Settings::getGameSettings()->df_enableRecordingAll)
 		{
@@ -886,7 +901,7 @@ namespace TFE_Input
 			keysPressed = convertToString(event.keysPressed);
 			mouse = convertToString(event.mousePos);
 			s32 xPos = s_eyePos.x;
-			s32 yPos = s_playerEye->posWS.y * -1.0;
+			s32 yPos = -s_playerEye->posWS.y;
 			s32 zPos = s_eyePos.z;
 			angle14_16 yaw = s_playerEye->yaw;
 			angle14_16 pitch = s_playerEye->pitch;

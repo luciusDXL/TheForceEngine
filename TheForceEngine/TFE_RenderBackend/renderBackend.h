@@ -94,6 +94,7 @@ namespace TFE_RenderBackend
 	void destroy();
 	bool getVsyncEnabled();
 	void enableVsync(bool enable);
+	bool isWindowMinimized();
 
 	void setClearColor(const f32* color);
 	void swap(bool blitVirtualDisplay);

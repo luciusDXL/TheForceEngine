@@ -30,7 +30,7 @@ namespace LevelEditor
 	};
 
 	void infoToolBegin(s32 height);
-	void drawInfoPanel(EditorView view);
+	bool drawInfoPanel(EditorView view);
 	void infoToolEnd();
 
 	bool categoryPopupUI();

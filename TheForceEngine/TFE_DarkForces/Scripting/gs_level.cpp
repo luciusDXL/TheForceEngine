@@ -1,8 +1,10 @@
+#include <cstring>
 #include "gs_level.h"
 #include "scriptTexture.h"
 #include "scriptElev.h"
 #include "scriptWall.h"
 #include "scriptSector.h"
+#include "scriptObject.h"
 #include <TFE_DarkForces/agent.h>
 #include <TFE_DarkForces/player.h>
 #include <TFE_DarkForces/projectile.h>
@@ -46,6 +48,30 @@ namespace TFE_DarkForces
 			id = -1; // Invalid ID, sector.isValid() == false
 		}
 		ScriptSector sector(id);
+		return sector;
+	}
+
+	ScriptSector GS_Level::getSectorByName(std::string name)
+	{
+		const char* sectorName = name.c_str();
+		
+		MessageAddress* msgAddr = message_getAddress(sectorName);
+		if (msgAddr)
+		{
+			u32 sectorCount = s_levelState.sectorCount;
+			for (u32 s = 0; s < sectorCount; s++)
+			{
+				RSector* sec = &s_levelState.sectors[s];
+				if (sec == msgAddr->sector)
+				{
+					ScriptSector sector(s);
+					return sector;
+				}
+			}
+		}
+
+		// Could not find the sector
+		ScriptSector sector(-1);
 		return sector;
 	}
 
@@ -160,16 +186,73 @@ namespace TFE_DarkForces
 		setProjectileGravityAccel(FIXED(pGrav));
 	}
 
+	ScriptObject GS_Level::getObjectById(s32 id)
+	{
+		if (id < 0 || id >= s_objectRefList.size())
+		{
+			TFE_System::logWrite(LOG_ERROR, "Level Script", "Runtime error, invalid objectID %d.", id);
+			id = -1;
+		}
+		
+		ScriptObject object(id);
+		return object;
+	}
+
+	ScriptObject GS_Level::getObjectByName(std::string name)
+	{
+		const char* cname = name.c_str();
+		if (!cname || name.empty() || s_objectRefList.empty())
+		{
+			ScriptObject object(-1);
+			return object;
+		}
+
+		s32 objectId = -1;
+		for (s32 i = 0; i < s_objectRefList.size(); i++)
+		{
+			if (strcasecmp(cname, s_objectRefList[i].name) == 0)
+			{
+				objectId = i;
+				break;
+			}
+		}
+		
+		ScriptObject object(objectId);
+		return object;
+	}
+
+	// Objects will be contained in the results array
+	void GS_Level::getAllObjectsByName(std::string name, CScriptArray& results)
+	{
+		const char* cname = name.c_str();
+		if (!cname || name.empty() || s_objectRefList.empty())
+		{
+			return;
+		}
+		
+		results.Resize(0);
+		for (s32 i = 0; i < s_objectRefList.size(); i++)
+		{
+			if (strcasecmp(cname, s_objectRefList[i].name) == 0)
+			{
+				ScriptObject sObject(i);
+				results.InsertLast(&sObject);
+			}
+		}
+	}
+
 	bool GS_Level::scriptRegister(ScriptAPI api)
 	{
 		ScriptElev scriptElev;
 		ScriptTexture scriptTex;
 		ScriptSector scriptSector;
 		ScriptWall scriptWall;
+		ScriptObject scriptObject;
 		scriptElev.registerType();
 		scriptTex.registerType();
 		scriptWall.registerType();
 		scriptSector.registerType();
+		scriptObject.registerType();
 		
 		ScriptClassBegin("Level", "level", api);
 		{
@@ -193,6 +276,9 @@ namespace TFE_DarkForces
 			ScriptEnum("SECTOR_FLAG1_SAFE_SECTOR",     SEC_FLAGS1_SAFESECTOR);
 			ScriptEnum("SECTOR_FLAG1_PLAYER",          SEC_FLAGS1_PLAYER);
 			ScriptEnum("SECTOR_FLAG1_SECRET",          SEC_FLAGS1_SECRET);
+			// Outlaws
+			ScriptEnum("SECTOR_FLAG1_SLOPEDFLOOR",	   SEC_FLAGS1_SLOPEDFLOOR);
+			ScriptEnum("SECTOR_FLAG1_SLOPEDCEILING",   SEC_FLAGS1_SLOPEDCEILING);
 
 			ScriptEnumRegister("WallFlags1");
 			ScriptEnum("WALL_FLAGS1_TRANSPARENT_MIDTEX", WF1_ADJ_MID_TEX);
@@ -228,8 +314,12 @@ namespace TFE_DarkForces
 
 			// Functions
 			ScriptObjMethod("Sector getSector(int)", getSectorById);
+			ScriptObjMethod("Sector getSector(string)", getSectorByName);
 			ScriptObjMethod("Elevator getElevator(int)", getElevator);
 			ScriptObjMethod("void findConnectedSectors(Sector initSector, uint, array<Sector>&)", findConnectedSectors);
+			ScriptObjMethod("Object getObject(int)", getObjectById);
+			ScriptObjFunc("Object getObject(string)", getObjectByName);
+			ScriptObjFunc("int getObjectsByName(string, array<Object>&)", getAllObjectsByName);
 
 			ScriptPropertySet("void set_gravity(int)", setGravity);
 			ScriptPropertySet("void set_projectileGravity(int)", setProjectileGravity);

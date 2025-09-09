@@ -65,6 +65,7 @@ namespace LevelEditor
 	// General Interface
 	void selection_clear(u32 selections = SEL_ALL, bool clearDragSelect = true); // see SelectionListBit
 	void selection_setCurrent(SelectionListId id);
+	SelectionListId selection_getCurrent();
 	void selection_clearHovered();
 	bool selection_hasHovered();
 	bool selection_hasSelection(SelectionListId id = SEL_CURRENT);

@@ -17,7 +17,7 @@ namespace LevelEditor
 	};
 
 	void browserBegin(s32 offset);
-	void drawBrowser(BrowseMode mode = BROWSE_TEXTURE);
+	bool drawBrowser(BrowseMode mode = BROWSE_TEXTURE);
 	void browserEnd();
 	void browserScrollToSelection();
 

@@ -450,6 +450,7 @@ namespace TFE_DarkForces
 		sector_addObject(sector, projObj);
 		task_makeActive(s_projectileTask);
 
+		obj_addToRefList(projObj, ObjRefType_Projectile);	// scripting
 		return (Logic*)projLogic;
 	}
 		
@@ -768,6 +769,12 @@ namespace TFE_DarkForces
 
 	void proj_computeTransform3D(SecObject* obj, fixed16_16 sinPitch, fixed16_16 cosPitch, fixed16_16 sinYaw, fixed16_16 cosYaw, fixed16_16 dt)
 	{
+		// Projectile size is scaled by the delta-time.
+		// But this breaks down if the delta-time is too small.
+		// Given the original game had an average frame time of 2 ticks, then the minimum
+		// ~ 2 * ONE_SECOND / 145 = 2 * 65536 / 145 = 903. I use 900 because it is a nice round number.
+		if (dt < 900) { dt = 900; }
+
 		fixed16_16* transform = obj->transform;
 		transform[0] = cosYaw;
 		transform[1] = mul16(sinPitch, sinYaw);
@@ -1526,6 +1533,18 @@ namespace TFE_DarkForces
 		}
 
 		return JFALSE;
+	}
+
+	// TFE - Transform the spawn offset of a projectile based on orientation (yaw)
+	void transformFireOffsets(angle14_16 yaw, vec3_fixed* sourceOffset, vec3_fixed* offset)
+	{
+		fixed16_16 sinYaw;
+		fixed16_16 cosYaw;
+
+		sinCosFixed(yaw, &sinYaw, &cosYaw);
+		offset->x = mul16(sourceOffset->x,cosYaw) + mul16(sourceOffset->z, sinYaw);
+		offset->z = -mul16(sourceOffset->x,sinYaw) + mul16(sourceOffset->z, cosYaw);
+		offset->y = sourceOffset->y;
 	}
 
 }  // TFE_DarkForces

@@ -85,6 +85,7 @@ namespace LevelEditor
 		history_registerName(LName_Autoalign, "Autoalign Textures");
 		history_registerName(LName_DeleteObject, "Delete Object(s)");
 		history_registerName(LName_AddObject, "Added Object(s)");
+		history_registerName(LName_ReplaceObject, "Replace Object");
 		history_registerName(LName_RotateSector, "Rotate Sector(s)");
 		history_registerName(LName_RotateWall, "Rotate Wall(s)");
 		history_registerName(LName_RotateVertex, "Rotate Vertices(s)");

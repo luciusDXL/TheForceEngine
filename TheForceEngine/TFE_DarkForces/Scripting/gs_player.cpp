@@ -22,6 +22,21 @@ namespace TFE_DarkForces
 		AMMO_MISSILE,
 	};
 
+	enum ActionFlags : u32
+	{
+		ACTION_NONE        = 0u,
+		ACTION_MOVE        = FLAG_BIT(0),
+		ACTION_ROTATE      = FLAG_BIT(1),
+		ACTION_FIRE        = FLAG_BIT(2),
+		ACTION_ALL         = ACTION_MOVE | ACTION_ROTATE | ACTION_FIRE,
+		
+		// Others that could be implemented if desired?
+		// ACTION_PITCH
+		// ACTION_CROUCH
+		// ACTION_USE
+		// ACTION_HEADLAMP
+	};
+
 	void killPlayer()
 	{
 		sound_play(s_playerDeathSoundSource);
@@ -95,7 +110,7 @@ namespace TFE_DarkForces
 
 	void setPlayerYaw(float value)
 	{
-		float yaw = floatToAngle(value);
+		angle14_32 yaw = floatToAngle(value);
 		s_playerObject->yaw = yaw;
 		s_playerYaw = yaw;
 	}
@@ -546,6 +561,54 @@ namespace TFE_DarkForces
 		}
 	}
 
+	void disableActions(u32 flags)
+	{
+		if (flags & ACTION_MOVE)
+		{
+			s_disablePlayerMovement = JTRUE;
+		}
+		if (flags & ACTION_ROTATE)
+		{
+			s_disablePlayerRotation = JTRUE;
+		}
+		if (flags & ACTION_FIRE)
+		{
+			s_disablePlayerFire = JTRUE;
+		}
+	}
+
+	void enableActions(u32 flags)
+	{
+		if (flags & ACTION_MOVE)
+		{
+			s_disablePlayerMovement = JFALSE;
+		}
+		if (flags & ACTION_ROTATE)
+		{
+			s_disablePlayerRotation = JFALSE;
+		}
+		if (flags & ACTION_FIRE)
+		{
+			s_disablePlayerFire = JFALSE;
+		}
+	}
+
+	u32 getDisabledActions()
+	{
+		u32 result = 0;
+		if (s_disablePlayerMovement) { result |= ACTION_MOVE; }
+		if (s_disablePlayerRotation) { result |= ACTION_ROTATE; }
+		if (s_disablePlayerFire)     { result |= ACTION_FIRE; }
+		
+		return result;
+	}
+
+	void setCamera()
+	{
+		player_setupEyeObject(s_playerObject);
+		s_externalCameraMode = JFALSE;
+	}
+
 	bool GS_Player::scriptRegister(ScriptAPI api)
 	{
 		ScriptClassBegin("Player", "player", api);
@@ -577,8 +640,18 @@ namespace TFE_DarkForces
 			ScriptEnumStr(AMMO_MINE);
 			ScriptEnumStr(AMMO_MISSILE);
 
+			ScriptEnumRegister("PlayerActions");
+			ScriptEnumStr(ACTION_MOVE);
+			ScriptEnumStr(ACTION_ROTATE);
+			ScriptEnumStr(ACTION_FIRE);
+			ScriptEnumStr(ACTION_ALL);
+
 			ScriptObjFunc("void kill()", killPlayer);
-			
+			ScriptObjFunc("void disableActions(uint)", disableActions);
+			ScriptObjFunc("void enableActions(uint)", enableActions);
+			ScriptPropertyGetFunc("uint get_disabledActions()", getDisabledActions);
+			ScriptObjFunc("void setCamera()", setCamera);
+
 			// Position and velocity
 			ScriptPropertyGetFunc("float3 get_position()", getPlayerPosition);
 			ScriptPropertySetFunc("void set_position(float3)", setPlayerPosition);

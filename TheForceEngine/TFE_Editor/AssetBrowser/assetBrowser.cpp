@@ -1995,7 +1995,7 @@ namespace AssetBrowser
 			for (u32 i = 0; i < count; i++, projAsset++)
 			{
 				const char* name = projAsset->name.c_str();
-				if (!editorFilter(name) || !isLevel3D(name)) { continue; }
+				if (!editorFilter(name)) { continue; }
 
 				// Only show levels from the project.
 				if (project->active && s_viewInfo.showOnlyModLevels && projAsset->assetSource != ASRC_PROJECT)

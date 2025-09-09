@@ -168,6 +168,7 @@ namespace LevelEditor
 		"LEV_SHORTCUT_MOVE_TO_FLOOR",
 		"LEV_SHORTCUT_MOVE_TO_CEIL",
 		"LEV_SHORTCUT_SELECT_BACKFACES",
+		"LEV_SHORTCUT_SLOPE_ANCHOR",
 		// Textures.
 		"LEV_SHORTCUT_COPY_TEXTURE",
 		"LEV_SHORTCUT_SET_TEXTURE",
@@ -179,6 +180,8 @@ namespace LevelEditor
 		"LEV_SHORTCUT_TEXOFFSET_RIGHT",
 		"LEV_SHORTCUT_TEXOFFSET_PAN",
 		"LEV_SHORTCUT_TEXOFFSET_RESET",
+		// Lighting
+		"LEV_SHORTCUT_ADJUST_LIGHTING",
 		// Drawing
 		"LEV_SHORTCUT_REDUCE_CURVE_SEGS",
 		"LEV_SHORTCUT_INCREASE_CURVE_SEGS",
@@ -237,6 +240,7 @@ namespace LevelEditor
 		"Move object to sector floor",						// SHORTCUT_MOVE_TO_FLOOR
 		"Move object to sector ceiling",					// SHORTCUT_MOVE_TO_CEIL
 		"Select backfacing surfaces",						// SHORTCUT_SELECT_BACKFACES
+		"Set wall as the anchor/hinge for sloping floor/ceil",	// SHORTCUT_SLOPE_ANCHOR
 		"Copy texture from surface",						// SHORTCUT_COPY_TEXTURE
 		"Set current texture on surface or selection",		// SHORTCUT_SET_TEXTURE
 		"Apply the current texture as a sign at mouse position", // SHORTCUT_SET_SIGN
@@ -247,6 +251,7 @@ namespace LevelEditor
 		"Move texture offset right",						// SHORTCUT_TEXOFFSET_RIGHT
 		"Hold to pan the texture with the mouse",			// SHORTCUT_TEXOFFSET_PAN
 		"Reset the texture offset",							// SHORTCUT_TEXOFFSET_RESET
+		"Adjust lighting of surface or sector with mousewheel", // SHORTCUT_ADJUST_LIGHTING
 		"Reduce curve segments",							// SHORTCUT_REDUCE_CURVE_SEGS
 		"Increase curve segments",							// SHORTCUT_INCREASE_CURVE_SEGS
 		"Reset curve segments to default",					// SHORTCUT_RESET_CURVE_SEGS
@@ -456,6 +461,7 @@ namespace LevelEditor
 		addKeyboardShortcut(SHORTCUT_MOVE_TO_FLOOR, KEY_F);
 		addKeyboardShortcut(SHORTCUT_MOVE_TO_CEIL, KEY_C);
 		addKeyboardShortcut(SHORTCUT_SELECT_BACKFACES, KEY_B);
+		addKeyboardShortcut(SHORTCUT_SLOPE_ANCHOR, KEY_P, KEYMOD_CTRL);
 		addKeyboardShortcut(SHORTCUT_COPY_TEXTURE, KEY_T, KEYMOD_CTRL);
 		addKeyboardShortcut(SHORTCUT_SET_TEXTURE, KEY_T);
 		addKeyboardShortcut(SHORTCUT_SET_SIGN, KEY_T, KEYMOD_SHIFT);
@@ -466,6 +472,7 @@ namespace LevelEditor
 		addKeyboardShortcut(SHORTCUT_TEXOFFSET_RIGHT, KEY_RIGHT);
 		addKeyboardShortcut(SHORTCUT_TEXOFFSET_PAN, KEY_UNKNOWN, KEYMOD_NONE, MBUTTON_MIDDLE);
 		addKeyboardShortcut(SHORTCUT_TEXOFFSET_RESET, KEY_T, KEYMOD_ALT);
+		addKeyboardShortcut(SHORTCUT_ADJUST_LIGHTING, KEY_L);
 		addKeyboardShortcut(SHORTCUT_REDUCE_CURVE_SEGS, KEY_LEFTBRACKET);
 		addKeyboardShortcut(SHORTCUT_INCREASE_CURVE_SEGS, KEY_RIGHTBRACKET);
 		addKeyboardShortcut(SHORTCUT_RESET_CURVE_SEGS, KEY_BACKSLASH);

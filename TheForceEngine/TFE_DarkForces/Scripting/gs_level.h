@@ -17,6 +17,7 @@ namespace TFE_DarkForces
 {
 	class ScriptSector;
 	class ScriptElev;
+	class ScriptObject;
 	
 	class GS_Level : public ScriptAPIClass
 	{
@@ -25,7 +26,11 @@ namespace TFE_DarkForces
 		bool scriptRegister(ScriptAPI api) override;
 
 		ScriptSector getSectorById(s32 id);
+		ScriptSector getSectorByName(std::string name);
 		ScriptElev   getElevator(s32 id);
+		ScriptObject getObjectById(s32 id);
+		static ScriptObject getObjectByName(std::string name);
+		static void getAllObjectsByName(std::string name, CScriptArray& result);
 		void findConnectedSectors(ScriptSector initSector, u32 matchProp, CScriptArray& results);
 		void setGravity(s32 grav);
 		void setProjectileGravity(s32 grav);

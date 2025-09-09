@@ -62,10 +62,13 @@ namespace LevelEditor
 				editor_closeLevel(/*save*/false);
 				exit = true;
 			}
-			ImGui::SameLine();
-			if (ImGui::Button("Cancel"))
+			if (TFE_Editor::isInAssetEditor() && !TFE_Editor::isProgramExiting())
 			{
-				exit = true;
+				ImGui::SameLine();
+				if (ImGui::Button("Cancel"))
+				{
+					exit = true;
+				}
 			}
 			ImGui::EndPopup();
 		}

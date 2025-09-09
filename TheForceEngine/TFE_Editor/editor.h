@@ -118,7 +118,7 @@ namespace TFE_Editor
 		
 	void enable();
 	bool disable();
-	bool update(bool consoleOpen = false);
+	bool update(bool consoleOpen = false, bool minimized = false, bool exiting = false);
 	bool render();
 	TextureGpu* getIconAtlas();
 
@@ -179,4 +179,7 @@ namespace TFE_Editor
 
 	Vec2i getEditorVersion();
 	bool mouseInsideItem();
+
+	bool isInAssetEditor();
+	bool isProgramExiting();
 }

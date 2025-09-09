@@ -253,6 +253,8 @@ namespace TFE_DarkForces
 				newObj->worldWidth = 0;
 				newObj->worldHeight = 0;
 				sector_addObject(local(sector), newObj);
+				
+				obj_addToRefList(newObj, ObjRefType_Corpse);	// scripting
 			}
 
 			// Spawn a battery.

@@ -289,16 +289,7 @@ namespace LevelEditor
 		}
 		return angleDelta;
 	}
-
-	bool rayPlaneIntersection(const Vec3f& origin, const Vec3f& dir, const Vec4f& plane, f32& dist)
-	{
-		const f32 d = plane.x*dir.x + plane.y*dir.y + plane.z*dir.z;
-		if (fabsf(d) < FLT_MIN) { return false; }
-
-		dist = -(plane.x*origin.x + plane.y*origin.y + plane.z*origin.z + plane.w) / d;
-		return dist >= FLT_MIN;
-	}
-
+		
 	bool rayBoundingPlaneIntersection(const Vec4f* planes, Vec3f* it)
 	{
 		f32 closestHit = FLT_MAX;

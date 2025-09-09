@@ -68,6 +68,8 @@ namespace TFE_RenderBackend
 	static BloomMerge* s_bloomMerge;
 	static std::vector<SDL_Rect> s_displayBounds;
 
+	static SDL_Window* s_window = nullptr;
+
 	void drawVirtualDisplay();
 	void setupPostEffectChain(bool useDynamicTexture, bool useBloom);
 
@@ -81,6 +83,11 @@ namespace TFE_RenderBackend
 		}
 		const char* gl_ren = (const char *)glGetString(GL_RENDERER);
 		TFE_System::logWrite(LOG_MSG, "RenderBackend", "GL Info: %s, %s", gl_ver, gl_ren);
+	}
+
+	bool isWindowMinimized()
+	{
+		return (SDL_GetWindowFlags(s_window) & SDL_WINDOW_MINIMIZED) != 0;
 	}
 		
 	SDL_Window* createWindow(const WindowState& state)
@@ -119,6 +126,7 @@ namespace TFE_RenderBackend
 			TFE_System::logWrite(LOG_ERROR, "RenderBackend", "SDL_CreateWindow() failed: %s", SDL_GetError());
 			return nullptr;
 		}
+		s_window = window;
 
 		SDL_GLContext context = SDL_GL_CreateContext(window);
 		if (!context)

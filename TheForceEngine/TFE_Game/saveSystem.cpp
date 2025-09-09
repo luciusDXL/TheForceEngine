@@ -1,11 +1,11 @@
 #include "saveSystem.h"
-#include <TFE_Input/inputMapping.h>
-#include <TFE_System/system.h>
-#include <TFE_Settings/gameSourceData.h>
-#include <TFE_FileSystem/fileutil.h>
-
-#include <TFE_RenderBackend/renderBackend.h>
 #include <TFE_Asset/imageAsset.h>
+#include <TFE_DarkForces/hud.h>
+#include <TFE_FileSystem/fileutil.h>
+#include <TFE_Input/inputMapping.h>
+#include <TFE_RenderBackend/renderBackend.h>
+#include <TFE_Settings/gameSourceData.h>
+#include <TFE_System/system.h>
 #include <cassert>
 #include <cstring>
 
@@ -26,6 +26,8 @@ namespace TFE_SaveSystem
 		SVER_REPLAY = 7,
 		SVER_CUR = SVER_REPLAY
 	};
+
+	const int TFE_MAX_SAVES = 1024; 
 
 	static SaveRequest s_req = SF_REQ_NONE;
 	static char s_reqFilename[TFE_MAX_PATH];
@@ -370,12 +372,55 @@ namespace TFE_SaveSystem
 		}
 		else if (inputMapping_getActionState(IAS_QUICK_LOAD) == STATE_PRESSED && !lastState)
 		{
-			postLoadRequest(c_quickSaveName);
-			lastState = 1;
+			char filePath[TFE_MAX_PATH];
+			sprintf(filePath, "%s%s", s_gameSavePath, c_quickSaveName);
+			if (FileUtil::exists(filePath))
+			{
+				postLoadRequest(c_quickSaveName);
+				lastState = 1;
+			}
+			else
+			{
+				TFE_DarkForces::hud_sendTextMessage("No Quicksave Found", 0, false);
+				lastState = 0;
+			}
 		}
 		else
 		{
 			lastState = 0;
 		}
+	}
+
+	void getSaveFilename(char* filename, s32 index)
+	{
+		char saveFilePath[TFE_MAX_PATH];
+		TFE_SaveSystem::getSaveFilenameFromIndex(index, filename);
+		sprintf(saveFilePath, "%s%s", s_gameSavePath, filename);
+		
+		// If the file doesn't exist or we are overwriting, use the saveFilePath - ex: save015.tfe
+		if (!FileUtil::exists(saveFilePath))
+		{
+			filename = saveFilePath;
+			return;
+		}
+		else
+		{
+			// If the file already exists you must have deleted an older one so lets find the right index
+			// Ex: save000.tfe save001.tfe save003.tfe (skipped 2) or you have custom save names. 
+			for (int i = 0; i < TFE_MAX_SAVES; i++)
+			{
+				TFE_SaveSystem::getSaveFilenameFromIndex(i, filename);
+				sprintf(saveFilePath, "%s%s", s_gameSavePath, filename);
+
+				if (!FileUtil::exists(saveFilePath))
+				{
+					filename = saveFilePath;
+					return;
+				}
+			}
+		}
+
+		TFE_System::logWrite(LOG_MSG, "SaveSystem", "Unable to create a save file after %d attempts", TFE_MAX_SAVES);
+		assert(0);				
 	}
 }

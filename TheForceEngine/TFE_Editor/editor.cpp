@@ -70,6 +70,7 @@ namespace TFE_Editor
 	static u32 s_editorPopupUserData = 0;
 	static void* s_editorPopupUserPtr = nullptr;
 	static bool s_exitEditor = false;
+	static bool s_programExiting = false;
 	static bool s_configView = false;
 	static WorkBuffer s_workBuffer;
 	static char s_projectPath[TFE_MAX_PATH] = "";
@@ -115,6 +116,7 @@ namespace TFE_Editor
 		// Ui begin/render is called so we have a "UI Frame" in which to setup UI state.
 		s_editorMode = EDIT_ASSET_BROWSER;
 		s_exitEditor = false;
+		s_programExiting = false;
 		loadFonts();
 		loadIcons();
 		loadConfig();
@@ -567,8 +569,15 @@ namespace TFE_Editor
 		}
 	}
 
-	bool update(bool consoleOpen)
+	bool update(bool consoleOpen, bool minimized, bool exiting)
 	{
+		// If the program is minimized, the editor should skip any processing.
+		if (minimized)
+		{
+			return s_exitEditor;
+		}
+		s_programExiting = exiting;
+
 		editor_clearUid();
 		thumbnail_update();
 
@@ -656,7 +665,17 @@ namespace TFE_Editor
 		ImGui::PopItemFlag();
 		ImGui::PopStyleVar();
 	}
-		
+
+	bool isInAssetEditor()
+	{
+		return s_editorMode == EDIT_ASSET;
+	}
+
+	bool isProgramExiting()
+	{
+		return s_programExiting;
+	}
+
 	void drawTitle()
 	{
 		DisplayInfo info;

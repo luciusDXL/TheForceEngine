@@ -509,7 +509,7 @@ int main(int argc, char* argv[])
 	pathsSet &= TFE_Paths::setProgramPath();
 	pathsSet &= TFE_Paths::setProgramDataPath("TheForceEngine");
 	pathsSet &= TFE_Paths::setUserDocumentsPath("TheForceEngine");
-	TFE_System::logOpen("the_force_engine_log.txt");
+	TFE_System::openRotatingLog("the_force_engine_log.txt");
 	TFE_System::logWrite(LOG_MSG, "Main", "The Force Engine %s", c_gitVersion);
 	if (!pathsSet)
 	{
@@ -547,6 +547,7 @@ int main(int argc, char* argv[])
 	const TFE_GameHeader* gameHeader = TFE_Settings::getGameHeader(game->game);
 	TFE_Paths::setPath(PATH_SOURCE_DATA, gameHeader->sourcePath);
 	TFE_Paths::setPath(PATH_EMULATOR, gameHeader->emulatorPath);
+	TFE_Paths::setRemasterDocsPath(game->id);
 
 	// Validate the current game path.
 	validatePath();
@@ -662,9 +663,12 @@ int main(int argc, char* argv[])
 	u32 frame = 0u;
 	bool showPerf = false;
 	bool relativeMode = false;
+	bool minimized = false;
 	TFE_System::logWrite(LOG_MSG, "Progam Flow", "The Force Engine Game Loop Started");
 	while (s_loop && !TFE_System::quitMessagePosted())
 	{
+		minimized = TFE_RenderBackend::isWindowMinimized();
+
 		TFE_FRAME_BEGIN();
 		TFE_System::frameLimiter_begin();
 		bool enableRelative = TFE_Input::relativeModeEnabled();
@@ -882,7 +886,7 @@ int main(int argc, char* argv[])
 		if (s_curState == APP_STATE_EDITOR)
 		{
 		#if ENABLE_EDITOR == 1
-			if (TFE_Editor::update(isConsoleOpen))
+			if (TFE_Editor::update(isConsoleOpen, minimized))
 			{
 				TFE_FrontEndUI::setAppState(APP_STATE_MENU);
 			}
@@ -963,7 +967,7 @@ int main(int argc, char* argv[])
 			TFE_Ui::begin();
 			TFE_System::update();
 
-			TFE_Editor::update();
+			TFE_Editor::update(false, false, /*exiting*/true);
 			bool swap = TFE_Editor::render();
 
 			// Blit the frame to the window and draw UI.

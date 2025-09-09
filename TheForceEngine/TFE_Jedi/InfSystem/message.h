@@ -37,6 +37,7 @@ enum MessageType
 	MSG_CLEAR_BITS   = 32,
 	MSG_COMPLETE     = 33,
 	MSG_LIGHTS       = 34,
+	MSG_CAMERA		 = 35,		// TFE - camera feature
 	MSG_COUNT
 };
 
@@ -59,6 +60,9 @@ namespace TFE_Jedi
 	// Send a message to either an object or sector.
 	void message_sendToObj(SecObject* obj, MessageType msgType, MessageFunc func);
 	void message_sendToSector(RSector* sector, SecObject* entity, u32 evt, MessageType msgType);
+
+	// Serialisation
+	void level_serializeMessageAddresses(Stream* stream);
 
 	// Optional message values - set these before calling message_XXX() and read inside the message function.
 	extern void* s_msgEntity;
