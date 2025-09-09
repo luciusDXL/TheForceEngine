@@ -477,16 +477,9 @@ namespace TFE_Jedi
 				isCustomAsset = isAssetCustom(filepath.archive->getName());
 			}
 		}
-		if (!isCustomAsset)
-		{
-			bitmap_loadHD(name, texture, 2, pool);
-		}
-		else
-		{
-			texture->scaleFactor = 1;
-			texture->hdAssetData = nullptr;
-		}
 
+		// Always allow custom HD assets.
+		bitmap_loadHD(name, texture, 2, pool);
 		return texture;
 	}
 

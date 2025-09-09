@@ -37,6 +37,8 @@ namespace TFE_Jedi
 	void level_serializeWall(Stream* stream, RWall* wall, RSector* sector);
 	void level_serializeTextureList(Stream* stream);
 
+	s32 findTextureIndex(const TextureData* texData);
+
 	/////////////////////////////////////////////
 	// Implementation
 	/////////////////////////////////////////////
@@ -298,7 +300,7 @@ namespace TFE_Jedi
 			}
 		}
 	}
-
+		
 	void level_serializeTexturePointer(Stream* stream, TextureData*& texData)
 	{
 		u32 texIndex = 0u;
@@ -311,7 +313,7 @@ namespace TFE_Jedi
 			}
 			else
 			{
-				std::ptrdiff_t offset = (std::ptrdiff_t(&texData) - std::ptrdiff_t(s_levelState.textures)) / (std::ptrdiff_t)sizeof(TextureData**);
+				s32 offset = findTextureIndex(texData);
 				if (offset >= 0 && offset < s_levelState.textureCount)
 				{
 					texIndex = LEVTEX_TYPE_TEX | ((u32)offset << 12u);
@@ -524,5 +526,17 @@ namespace TFE_Jedi
 		SERIALIZE(LevelState_InitVersion, wall->worldPos0, def);
 		SERIALIZE(LevelState_InitVersion, wall->wallLight, 0);
 		SERIALIZE(LevelState_InitVersion, wall->angle, 0);
+	}
+
+	s32 findTextureIndex(const TextureData* texData)
+	{
+		for (s32 i = 0; i < s_levelState.textureCount; i++)
+		{
+			if (texData == s_levelState.textures[i])
+			{
+				return i;
+			}
+		}
+		return -1;
 	}
 }
