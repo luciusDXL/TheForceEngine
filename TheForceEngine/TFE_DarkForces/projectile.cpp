@@ -724,7 +724,7 @@ namespace TFE_DarkForces
 		{
 			vAngle = 0;
 		}
-		angle14_32 vAngleDiff = getAngleDifference(missileObj->pitch, homingAngleDelta);
+		angle14_32 vAngleDiff = getAngleDifference(missileObj->pitch, vAngle);
 		if (vAngleDiff > homingAngleDelta)
 		{
 			vAngleDiff = homingAngleDelta;
