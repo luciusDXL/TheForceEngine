@@ -577,6 +577,8 @@ namespace TFE_Settings
 		writeKeyValue_Bool(settings, "df_autoNextMission", s_gameSettings.df_autoEndMission);
 		writeKeyValue_Bool(settings, "df_showKeyUsed", s_gameSettings.df_showKeyUsed);
 		writeKeyValue_Bool(settings, "df_showKeyColors", s_gameSettings.df_showKeyColors);
+		writeKeyValue_Bool(settings, "df_showMapSecrets", s_gameSettings.df_showMapSecrets);
+		writeKeyValue_Bool(settings, "df_showMapObjects", s_gameSettings.df_showMapObjects);
 	}
 
 	void writePerGameSettings(FileStream& settings)
@@ -1241,11 +1243,19 @@ namespace TFE_Settings
 		else if (strcasecmp("df_showKeyUsed", key) == 0)
 		{
 			s_gameSettings.df_showKeyUsed = parseBool(value);
-    }
+		}
 		else if (strcasecmp("df_showKeyColors", key) == 0)
 		{
 			s_gameSettings.df_showKeyColors = parseBool(value);
 		}
+		else if (strcasecmp("df_showMapSecrets", key) == 0)
+		{
+			s_gameSettings.df_showMapSecrets = parseBool(value);
+		}
+		else if (strcasecmp("df_showMapObjects", key) == 0)
+		{
+			s_gameSettings.df_showMapObjects = parseBool(value);
+		}	
 	}
 
 	void parseOutlawsSettings(const char* key, const char* value)
