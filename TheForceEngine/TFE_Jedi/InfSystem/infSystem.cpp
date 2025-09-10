@@ -2790,6 +2790,14 @@ namespace TFE_Jedi
 				return;
 			}
 
+			// Leave the original behavior in place - there is a vanilla bug where if a Master_Off message is sent to an elevator that requires
+			// a key that the player doesn't have, the "Need key" message will be displayed and the Master_Off message dropped/ignored.
+			// Changing that may have behavior implications in mods.
+			//
+			// However new behavior was added to display a message when a key is used, which is *also* displayed on Master_Off - this is not
+			// desirable, so this behavior is being fixed while the original bug is left alone.
+			const bool showKeyUsed = TFE_Settings::getGameSettings()->df_showKeyUsed && msgType != MSG_MASTER_OFF;
+
 			// Does the player have the key?
 			KeyItem key = elev->key;
 			char keyBuffer[50];
@@ -2798,7 +2806,7 @@ namespace TFE_Jedi
 
 			if (key == KEY_RED)
 			{
-				if (TFE_Settings::getGameSettings()->df_showKeyUsed &&  s_playerInfo.itemRedKey)
+				if (showKeyUsed && s_playerInfo.itemRedKey)
 				{
 					sprintf(keyBuffer, keyBufferWrapper, TFE_System::getMessage(TFE_MSG_RED));
 					TFE_DarkForces::hud_sendTextMessage(keyBuffer, 1, false);
@@ -2813,7 +2821,7 @@ namespace TFE_Jedi
 			}
 			else if (key == KEY_YELLOW)
 			{
-				if (TFE_Settings::getGameSettings()->df_showKeyUsed && s_playerInfo.itemYellowKey)
+				if (showKeyUsed && s_playerInfo.itemYellowKey)
 				{
 					sprintf(keyBuffer, keyBufferWrapper, TFE_System::getMessage(TFE_MSG_YELLOW));
 					TFE_DarkForces::hud_sendTextMessage(keyBuffer, 1, false);
@@ -2828,7 +2836,7 @@ namespace TFE_Jedi
 			}
 			else if (key == KEY_BLUE)
 			{
-				if (TFE_Settings::getGameSettings()->df_showKeyUsed && s_playerInfo.itemBlueKey)
+				if (showKeyUsed && s_playerInfo.itemBlueKey)
 				{
 					sprintf(keyBuffer, keyBufferWrapper, TFE_System::getMessage(TFE_MSG_BLUE));
 					TFE_DarkForces::hud_sendTextMessage(keyBuffer, 1, false);
