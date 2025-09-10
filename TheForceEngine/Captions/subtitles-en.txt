@@ -84,7 +84,7 @@ m04jan01.voc "Jan: That's all we need. Let's get out of here, I'm getting nervou
 m05kyl01.voc "Kyle: Kyle to Jan, charge set. Ready to clear."
 m05kyl02.voc "Kyle: Jan, you better get me out of here. I think I just finished off a Dark Trooper. I don't wanna find out if there are any more around."
 m05jan01.voc "Jan: OK Kyle, sounds good to me."
-m05kyl03.voc "Kyle: If that thing down there is any indicatio6n of what we're dealing with, we're going to need more firepower."
+m05kyl03.voc "Kyle: If that thing down there is any indication of what we're dealing with, we're going to need more firepower."
 //M06 (Detention Center)
 m06kyl01.voc "Kyle: Okay Jan, I've rescued Madine."
 m06jan01.voc "Jan: Don't hang around, let's get out of here before any more troopers arrive."
