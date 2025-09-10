@@ -24,6 +24,7 @@
 // Internal types need to be included in this case.
 #include <TFE_Jedi/InfSystem/infTypesInternal.h>
 #include <TFE_Jedi/Renderer/jediRenderer.h>
+#include <TFE_DarkForces/Scripting/gs_player.h>
 
 // TFE
 #include <TFE_System/tfeMessage.h>
@@ -807,6 +808,19 @@ namespace TFE_DarkForces
 			disableCleats();
 			disableNightVision();
 			hud_clearMessage();
+		}
+
+		// Don't start the game with a weapon you don't have after overrides.
+		if (!hasWeapon(s_playerInfo.curWeapon))
+		{
+			if (s_playerInfo.itemPistol)
+			{
+				s_playerInfo.curWeapon = WPN_PISTOL;
+			}
+			else
+			{
+				s_playerInfo.curWeapon = WPN_FIST;
+			}
 		}
 	}
 		
