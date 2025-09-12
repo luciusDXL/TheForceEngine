@@ -321,6 +321,7 @@ namespace TFE_DarkForces
 			ScriptEnum("WAKEUP",      MSG_WAKEUP);
 			ScriptEnum("MASTER_ON",   MSG_MASTER_ON);
 			ScriptEnum("MASTER_OFF",  MSG_MASTER_OFF);
+			ScriptEnum("CRUSH",       MSG_CRUSH);
 
 			// Functions
 			ScriptObjMethod("Sector getSector(int)", getSectorById);
