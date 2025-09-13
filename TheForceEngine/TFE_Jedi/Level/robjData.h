@@ -156,4 +156,5 @@ namespace TFE_Jedi
 	void obj_addToRefList(SecObject* obj, ObjectRefType refType);
 	void obj_removeFromRefList(SecObject* obj);
 	void obj_addName(const char* name, SecObject* obj);
+	s32 obj_getRefIndex(SecObject* obj);
 }

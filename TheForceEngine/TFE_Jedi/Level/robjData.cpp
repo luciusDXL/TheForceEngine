@@ -38,6 +38,7 @@ namespace TFE_Jedi
 	{
 		s_objData = {};
 		obj_refListClear();
+		TFE_DarkForces::logic_clearScriptCalls();
 	}
 
 	SecObject* objData_allocFromArray()

@@ -129,6 +129,10 @@ struct ActorDispatch
 
 	Task* freeTask;
 	u32 flags;
+
+	// Scriptcall indexes
+	s32 deathScriptCall;
+	s32 alertScriptCall;
 };
 
 struct ActorState
