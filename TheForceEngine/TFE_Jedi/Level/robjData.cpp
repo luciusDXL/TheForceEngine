@@ -304,6 +304,8 @@ namespace TFE_Jedi
 
 		for (s32 i = 0; i < s_objectRefList.size(); i++)
 		{
+			if (!s_objectRefList[i].object) { continue; }
+
 			if (s_objectRefList[i].object == obj)
 			{
 				return &s_objectRefList[i];
@@ -322,6 +324,8 @@ namespace TFE_Jedi
 
 		for (s32 i = 0; i < s_objectRefList.size(); i++)
 		{
+			if (!s_objectRefList[i].object) { continue; }
+			
 			if (s_objectRefList[i].object == obj)
 			{
 				return i;
