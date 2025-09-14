@@ -1108,7 +1108,7 @@ namespace TFE_Jedi
 		{
 			TFE_ForceScript::ScriptArg arg;
 			arg.type = TFE_ForceScript::ARG_STRING;
-			arg.stdStr = levelName;
+			strcpy(arg.strValue, levelName);
 			TFE_ForceScript::execFunc(s_levelState.levelScriptStart, 1, &arg);
 		}
 	}
@@ -1131,7 +1131,7 @@ namespace TFE_Jedi
 
 	TFE_ForceScript::FunctionHandle getLevelScriptFunc(const char* funcName)
 	{
-		if (!s_levelState.levelScript) { return nullptr; }
+		if (!s_levelState.levelScript || !funcName) { return nullptr; }
 		return TFE_ForceScript::findScriptFuncByNameNoCase(s_levelState.levelScript, funcName);
 	}
 }

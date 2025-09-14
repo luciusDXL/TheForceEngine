@@ -288,6 +288,14 @@ namespace TFE_DarkForces
 	}
 
 
+	void sendMessageToObject(MessageType messageType, ScriptObject* sObject)
+	{
+		if (!doesObjectExist(sObject)) { return; }
+		
+		SecObject* obj = TFE_Jedi::s_objectRefList[sObject->m_id].object;
+		message_sendToObj(obj, messageType, actor_messageFunc);
+	}
+
 	//////////////////////////////////////////////////////
 	// Logic related functionality
 	//////////////////////////////////////////////////////
@@ -629,6 +637,7 @@ namespace TFE_DarkForces
 		ScriptObjFunc("void delete()", deleteObject);
 		ScriptObjFunc("void addLogic(string)", addLogicToObject);
 		ScriptObjFunc("void setCamera()", setCamera);
+		ScriptObjFunc("void sendMessage(int)", sendMessageToObject);
 
 		// Logic getters & setters
 		ScriptPropertyGetFunc("int get_hitPoints()", getHitPoints);
