@@ -1,4 +1,5 @@
 #include "gs_level.h"
+#include "gs_player.h"
 #include "scriptObject.h"
 #include "scriptSector.h"
 #include <angelscript.h>
@@ -451,6 +452,123 @@ namespace TFE_DarkForces
 			}
 		}
 	}
+	
+	vec3_float getVelocity(ScriptObject* sObject)
+	{
+		if (!doesObjectExist(sObject)) { return { 0, 0, 0,}; }
+		SecObject* obj = TFE_Jedi::s_objectRefList[sObject->m_id].object;
+
+		// Is it the player?
+		if (obj->entityFlags & ETFLAG_PLAYER)
+		{
+			return getPlayerVelocity();
+		}
+
+		// First try to find a dispatch logic
+		ActorDispatch* dispatch = getDispatch(obj);
+		if (dispatch)
+		{
+			return
+			{
+				fixed16ToFloat(dispatch->vel.x),
+				-fixed16ToFloat(dispatch->vel.y),
+				fixed16ToFloat(dispatch->vel.z)
+			};
+		}
+
+		// Then try other logics
+		Logic** logicPtr = (Logic**)allocator_getHead((Allocator*)obj->logic);
+		while (logicPtr)
+		{
+			Logic* logic = *logicPtr;
+			PhysicsActor* actor = nullptr;
+
+			switch (logic->type)
+			{
+			case LOGIC_BOBA_FETT:
+			case LOGIC_DRAGON:
+			case LOGIC_PHASE_ONE:
+			case LOGIC_PHASE_TWO:
+			case LOGIC_PHASE_THREE:
+			case LOGIC_TURRET:
+			case LOGIC_WELDER:
+			case LOGIC_MOUSEBOT:
+				SpecialActor* data = (SpecialActor*)logic;
+				actor = &data->actor;
+				break;
+			}
+
+			if (actor)
+			{
+				return
+				{
+					fixed16ToFloat(actor->vel.x),
+					-fixed16ToFloat(actor->vel.y),
+					fixed16ToFloat(actor->vel.z)
+				};
+			}
+
+			logicPtr = (Logic**)allocator_getNext((Allocator*)obj->logic);
+		}
+
+		return { 0, 0, 0 };
+	}
+
+	void setVelocity(vec3_float vel, ScriptObject* sObject)
+	{
+		if (!doesObjectExist(sObject)) { return; }
+		SecObject* obj = TFE_Jedi::s_objectRefList[sObject->m_id].object;
+
+		// Is it the player?
+		if (obj->entityFlags & ETFLAG_PLAYER)
+		{
+			setPlayerVelocity(vel);
+			return;
+		}
+		
+		// First try to find a dispatch logic
+		ActorDispatch* dispatch = getDispatch(obj);
+		if (dispatch)
+		{
+			dispatch->vel.x = floatToFixed16(vel.x);
+			dispatch->vel.y = -floatToFixed16(vel.y);
+			dispatch->vel.z = floatToFixed16(vel.z);
+			return;
+		}
+
+		// Then try other logics
+		Logic** logicPtr = (Logic**)allocator_getHead((Allocator*)obj->logic);
+		while (logicPtr)
+		{
+			Logic* logic = *logicPtr;
+			PhysicsActor* actor = nullptr;
+
+			switch (logic->type)
+			{
+			case LOGIC_BOBA_FETT:
+			case LOGIC_DRAGON:
+			case LOGIC_PHASE_ONE:
+			case LOGIC_PHASE_TWO:
+			case LOGIC_PHASE_THREE:
+			case LOGIC_TURRET:
+			case LOGIC_WELDER:
+			case LOGIC_MOUSEBOT:
+				SpecialActor* data = (SpecialActor*)logic;
+				actor = &data->actor;
+				break;
+			}
+
+			if (actor)
+			{
+				actor->vel.x = floatToFixed16(vel.x);
+				actor->vel.y = -floatToFixed16(vel.y);
+				actor->vel.z = floatToFixed16(vel.z);
+				return;
+			}
+
+			logicPtr = (Logic**)allocator_getNext((Allocator*)obj->logic);
+		}
+	}
 
 	void ScriptObject::registerType()
 	{
@@ -516,5 +634,7 @@ namespace TFE_DarkForces
 		ScriptPropertyGetFunc("int get_hitPoints()", getHitPoints);
 		ScriptPropertySetFunc("void set_hitPoints(int)", setHitPoints);
 		ScriptPropertySetFunc("void set_projectile(int)", setProjectile);
+		ScriptPropertyGetFunc("float3 get_velocity()", getVelocity);
+		ScriptPropertySetFunc("void set_velocity(float3)", setVelocity);
 	}
 }
