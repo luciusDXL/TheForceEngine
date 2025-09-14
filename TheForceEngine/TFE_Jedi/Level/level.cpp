@@ -142,6 +142,12 @@ namespace TFE_Jedi
 			{
 				(*sector->floorTex)->flags |= ALWAYS_FULLBRIGHT;
 			}
+
+			// Update secret status for the automap
+			if (sector->flags1 & SEC_FLAGS1_SECRET)
+			{
+				sector->secretSector = JTRUE;
+			}
 		}
 
 		// Setup the control sector.

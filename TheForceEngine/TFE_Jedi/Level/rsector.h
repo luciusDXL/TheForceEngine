@@ -137,6 +137,10 @@ struct RSector
 	// Added for TFE, to support floating point and GPU sub-renderers.
 	u32 dirtyFlags;
 	u32 searchKey;
+
+	// For visualization on the map
+	bool secretDiscovered = false;
+	bool secretSector = false;
 };
 
 namespace TFE_Jedi
@@ -172,4 +176,6 @@ namespace TFE_Jedi
 	JBool sector_canRotateWalls(RSector* sector, angle14_32 angle, fixed16_16 centerX, fixed16_16 centerZ);
 	void  sector_rotateWalls(RSector* sector, fixed16_16 centerX, fixed16_16 centerZ, angle14_32 angle, u32 rotateFlags);
 	void  sector_rotateObjects(RSector* sector, angle14_32 deltaAngle, fixed16_16 centerX, fixed16_16 centerZ, u32 flags);
+
+	bool isSecretSector(RSector* sector);
 }

@@ -25,6 +25,9 @@ namespace TFE_DarkForces
 		WCOLOR_LEDGE      = 12,
 		WCOLOR_GRAYED_OUT = 13,
 		WCOLOR_DOOR       = 19,
+		WCOLOR_SECRET     = 22,
+		WCOLOR_SECRET_ALL = 4,
+		WCOLOR_UNEXPLORED = 1
 	};
 
 	enum MapObjectColor
@@ -48,6 +51,14 @@ namespace TFE_DarkForces
 	enum MapConstants
 	{
 		MOBJSPRITE_DRAW_LEN = FIXED(2)
+	};
+
+	enum MapSectorMode
+	{
+		MAP_MODE_NORMAL = 0,         // Normal Exploration
+		MAP_MODE_REVEAL_MAP,         // Full Map Revealed
+		MAP_MODE_REVEAL_MAP_LEDGE,   // Full Map Revealed with ledges
+		MAP_MODE_REVEAL_UNEXPLORED,  // Full Map Revealed showing unexplored areas. 
 	};
 
 	static fixed16_16 s_screenScale = 0xc000;	// 0.75
@@ -301,7 +312,7 @@ namespace TFE_DarkForces
 			case MAP_INCR_SECTOR_MODE:
 			{
 				s_mapShowSectorMode++;
-				if (s_mapShowSectorMode >= 3)
+				if (s_mapShowSectorMode >= 4)
 				{
 					s_mapShowSectorMode = 0;
 				}
@@ -520,6 +531,14 @@ namespace TFE_DarkForces
 		}
 	}
 
+	bool isLedgeHeightDelta(RSector* curSector, RSector* nextSector)
+	{
+		fixed16_16 curFloorHeight = curSector->floorHeight;
+		fixed16_16 nextFloorHeight = nextSector->floorHeight;
+		fixed16_16 floorDelta = TFE_Jedi::abs(curFloorHeight - nextFloorHeight);
+		return (floorDelta >= 0x400);
+	}
+
 	u8 automap_getWallColor(RWall* wall)
 	{
 		u8 color;
@@ -536,19 +555,47 @@ namespace TFE_DarkForces
 		{
 			color = WCOLOR_DOOR;
 		}
-		else if ((wall->flags1 & WF1_SHOW_NORMAL_ON_MAP) || !wall->nextSector)
-		{
-			color = WCOLOR_NORMAL;
-		}
-		else if (showKeyDoors && (sector_getKey(wall->nextSector) || sector_getKey(wall->sector)))
+		else if (showKeyDoors && (sector_getKey(wall->sector) || wall->nextSector && sector_getKey(wall->nextSector)))
 		{
 			color = getDoorKeyColor(wall);
 		}		
-		else if (sector_isDoor(wall->sector) || sector_isDoor(wall->nextSector) )
+		else if (TFE_Settings::getGameSettings()->df_showMapSecrets && (isSecretSector(wall->sector) || wall->nextSector && isSecretSector(wall->nextSector)))
+		{
+			// If Secret is discovered color it as such. Do not show nextsector secrets if they are not on your current layer. 
+			if (wall->sector->secretDiscovered || (wall->nextSector && wall->nextSector->secretDiscovered && wall->nextSector->layer == s_mapLayer))
+			{
+
+				color = WCOLOR_SECRET;
+			}
+			// If you have full map reveal show all the secrets you haven't found. Do not show adjoined walls that don't match the current layer. 
+			else if (s_mapShowSectorMode != MAP_MODE_NORMAL && (isSecretSector(wall->sector) && wall->sector->layer == s_mapLayer || (wall->nextSector && isSecretSector(wall->nextSector) && wall->nextSector->layer == s_mapLayer)
+				&& !(wall->nextSector && wall->nextSector->layer != s_mapLayer)))
+			{
+				color = WCOLOR_SECRET_ALL;
+			}
+			// If you are not using Full Map cheats - show it as a normal wall.
+			else
+			{
+				color = WCOLOR_NORMAL;
+			}
+		}
+		else if (s_mapShowSectorMode == MAP_MODE_REVEAL_UNEXPLORED && !(wall->seen || (wall->mirrorWall && wall->mirrorWall->seen)))
+		{
+			color = WCOLOR_UNEXPLORED;
+		}
+		else if (wall->flags1 & WF1_SHOW_NORMAL_ON_MAP)
+		{
+			color = WCOLOR_NORMAL;
+		}
+		else if (!wall->nextSector)
+		{
+			color = WCOLOR_NORMAL;
+		}
+		else if (sector_isDoor(wall->sector) || sector_isDoor(wall->nextSector))
 		{
 			color = WCOLOR_DOOR;
 		}
-		else if (s_mapShowSectorMode == 2)
+		else if (s_mapShowSectorMode == MAP_MODE_REVEAL_MAP_LEDGE)
 		{
 			color = WCOLOR_GRAYED_OUT;
 		}
@@ -559,7 +606,9 @@ namespace TFE_DarkForces
 			fixed16_16 curFloorHeight = curSector->floorHeight;
 			fixed16_16 nextFloorHeight = nextSector->floorHeight;
 			fixed16_16 floorDelta = TFE_Jedi::abs(curFloorHeight - nextFloorHeight);
-			if (floorDelta >= 0x4000)	// 0.25 units
+
+			// 0.25 units  or in Reveal mode. 
+			if (floorDelta >= 0x4000  || s_mapShowSectorMode == MAP_MODE_REVEAL_UNEXPLORED)
 			{
 				color = WCOLOR_LEDGE;
 			}
@@ -615,6 +664,12 @@ namespace TFE_DarkForces
 		
 	void automap_drawObject(SecObject* obj)
 	{
+
+		if (!TFE_Settings::getGameSettings()->df_showMapObjects)
+		{
+			return;
+		}
+
 		u8 color = MOBJCOLOR_DEFAULT;
 		if (obj->flags & OBJ_FLAG_NEEDS_TRANSFORM)
 		{
