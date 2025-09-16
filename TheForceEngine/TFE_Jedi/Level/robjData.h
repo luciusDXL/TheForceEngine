@@ -153,7 +153,7 @@ namespace TFE_Jedi
 	SecObject* objData_getObjectBySerializationId_NoValidation(u32 id);
 
 	// TFE - scripting
-	void obj_addToRefList(SecObject* obj, ObjectRefType refType);
+	s32 obj_addToRefList(SecObject* obj, ObjectRefType refType);
 	void obj_removeFromRefList(SecObject* obj);
 	void obj_addName(const char* name, SecObject* obj);
 	s32 obj_getRefIndex(SecObject* obj);

@@ -669,8 +669,7 @@ namespace TFE_DarkForces
 					corpse->entityFlags |= ETFLAG_CORPSE;
 					sector_addObject(obj->sector, corpse);
 
-					obj_addToRefList(corpse, ObjRefType_Corpse);	// scripting
-					corpseId = obj_getRefIndex(corpse);
+					corpseId = obj_addToRefList(corpse, ObjRefType_Corpse);	// scripting
 				}
 			}
 

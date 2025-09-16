@@ -283,9 +283,10 @@ namespace TFE_Jedi
 		s_objectRefList.clear();
 	}
 	
-	void obj_addToRefList(SecObject* obj, ObjectRefType refType)
+	// Returns the index of the object ref in the list
+	s32 obj_addToRefList(SecObject* obj, ObjectRefType refType)
 	{
-		if (!obj) {	return;	}	// don't bother adding a null object
+		if (!obj) {	return -1;	}	// don't bother adding a null object
 		
 		ObjectRef objRef;
 		memset(objRef.name, 0, sizeof(objRef.name));
@@ -293,6 +294,7 @@ namespace TFE_Jedi
 		objRef.type = refType;
 
 		s_objectRefList.push_back(objRef);
+		return s_objectRefList.size() - 1;
 	}
 
 	ObjectRef* obj_getRef(SecObject* obj)
