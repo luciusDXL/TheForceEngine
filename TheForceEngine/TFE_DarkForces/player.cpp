@@ -24,7 +24,6 @@
 // Internal types need to be included in this case.
 #include <TFE_Jedi/InfSystem/infTypesInternal.h>
 #include <TFE_Jedi/Renderer/jediRenderer.h>
-#include <TFE_DarkForces/Scripting/gs_player.h>
 
 // TFE
 #include <TFE_System/tfeMessage.h>

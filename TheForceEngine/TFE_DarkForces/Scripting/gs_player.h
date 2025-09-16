@@ -11,5 +11,4 @@ namespace TFE_DarkForces
 	public:
 		bool scriptRegister(ScriptAPI api) override;
 	};
-	bool hasWeapon(s32 weapon);
 }
