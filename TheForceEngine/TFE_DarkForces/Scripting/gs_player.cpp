@@ -433,29 +433,29 @@ namespace TFE_DarkForces
 	{
 		switch (weapon)
 		{
-		case WPN_PISTOL:
-			return s_playerInfo.itemPistol == JTRUE;
+			case WPN_PISTOL:
+				return s_playerInfo.itemPistol == JTRUE;
 
-		case WPN_RIFLE:
-			return s_playerInfo.itemRifle == JTRUE;
+			case WPN_RIFLE:
+				return s_playerInfo.itemRifle == JTRUE;
 
-		case WPN_REPEATER:
-			return s_playerInfo.itemAutogun == JTRUE;
+			case WPN_REPEATER:
+				return s_playerInfo.itemAutogun == JTRUE;
 
-		case WPN_FUSION:
-			return s_playerInfo.itemFusion == JTRUE;
+			case WPN_FUSION:
+				return s_playerInfo.itemFusion == JTRUE;
 
-		case WPN_MORTAR:
-			return s_playerInfo.itemMortar == JTRUE;
+			case WPN_MORTAR:
+				return s_playerInfo.itemMortar == JTRUE;
 
-		case WPN_CONCUSSION:
-			return s_playerInfo.itemConcussion == JTRUE;
+			case WPN_CONCUSSION:
+				return s_playerInfo.itemConcussion == JTRUE;
 
-		case WPN_CANNON:
-			return s_playerInfo.itemCannon == JTRUE;
+			case WPN_CANNON:
+				return s_playerInfo.itemCannon == JTRUE;
 
-		default:
-			return false;
+			default:
+				return false;
 		}
 	}
 
