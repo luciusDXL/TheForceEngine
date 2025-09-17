@@ -273,6 +273,7 @@ namespace TFE_Jedi
 		}
 
 		objRefList_serialize(stream);
+		TFE_DarkForces::logic_serializeScriptCalls(stream);
 	}
 
 	////////////////////////////////////////////

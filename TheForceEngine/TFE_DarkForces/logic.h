@@ -84,6 +84,8 @@ namespace TFE_DarkForces
 
 	LogicScriptCall* logic_getScriptCall(s32 index);
 	void logic_clearScriptCalls();
+	void logic_serializeScriptCalls(Stream* stream);
+	void logic_fixupScriptCalls();
 
 	// Shared variables used for loading.
 	extern char s_objSeqArg0[];

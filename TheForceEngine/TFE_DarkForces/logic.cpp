@@ -671,4 +671,56 @@ namespace TFE_DarkForces
 		};
 	}
 
+	void logic_serializeScriptCalls(Stream* stream)
+	{
+		s32 count;
+		if (serialization_getMode() == SMODE_WRITE)
+		{
+			count = s_logicScriptCalls.size();
+		}
+		else if (serialization_getMode() == SMODE_READ)
+		{
+			logic_clearScriptCalls();
+			count = 0;
+		}
+
+		SERIALIZE(ObjState_LogicScriptCallV1, count, 0);
+
+		for (s32 i = 0; i < count; i++)
+		{
+			LogicScriptCall* scriptCall = nullptr;
+			if (serialization_getMode() == SMODE_READ)
+			{
+				LogicScriptCall newCall = {};
+				scriptCall = &newCall;
+			}
+			else
+			{
+				scriptCall = &s_logicScriptCalls[i];
+			}
+
+			SERIALIZE(ObjState_LogicScriptCallV1, scriptCall->argCount, 0);
+			for (s32 arg = 0; arg < scriptCall->argCount; arg++)
+			{
+				serialization_serializeScriptArg(stream, ObjState_LogicScriptCallV1, &scriptCall->args[arg]);
+			}
+
+			SERIALIZE_CSTRING(ObjState_LogicScriptCallV1, scriptCall->funcName);
+			if (serialization_getMode() == SMODE_READ)
+			{
+				scriptCall->funcPtr = nullptr;
+				s_logicScriptCalls.push_back(*scriptCall);
+			}
+		}
+	}
+
+	void logic_fixupScriptCalls()
+	{
+		// Fixup the function pointers
+		for (s32 i = 0; i < s_logicScriptCalls.size(); i++)
+		{
+			s_logicScriptCalls[i].funcPtr = getLevelScriptFunc(s_logicScriptCalls[i].funcName);
+		}
+	}
+
 }  // TFE_DarkForces
