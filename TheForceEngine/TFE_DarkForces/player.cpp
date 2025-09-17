@@ -811,7 +811,7 @@ namespace TFE_DarkForces
 		}
 
 		// Don't start the game with a weapon you don't have after overrides.
-		if (!player_hasWeapon(s_playerInfo.curWeapon))
+		if (!player_hasWeapon(s_playerInfo.curWeapon + 1))
 		{
 			if (s_playerInfo.itemPistol)
 			{
