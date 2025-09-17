@@ -77,6 +77,11 @@ namespace TFE_DarkForces
 		SERIALIZE(SaveVersionInit, dispatch->vel, {0});
 		SERIALIZE(SaveVersionInit, dispatch->lastPlayerPos, {0});
 		SERIALIZE(SaveVersionInit, dispatch->flags, 4);
+
+		// Indexes to ScriptCalls
+		SERIALIZE(ObjState_LogicScriptCallV1, dispatch->deathScriptCall, -1);
+		SERIALIZE(ObjState_LogicScriptCallV1, dispatch->alertScriptCall, -1);
+
 		// Animation Table.
 		s32 animTableIndex = -1;
 		if (serialization_getMode() == SMODE_WRITE)

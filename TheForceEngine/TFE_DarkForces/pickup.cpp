@@ -575,6 +575,9 @@ namespace TFE_DarkForces
 		SERIALIZE_BUF(ObjState_InitVersion, pickup->msgId, sizeof(pickup->msgId[0]) * 2);
 		SERIALIZE(ObjState_InitVersion, pickup->maxAmount, 0);
 
+		// Index to ScriptCall
+		SERIALIZE(ObjState_LogicScriptCallV1, pickup->pickupScriptCall, -1);
+
 		if (serialization_getMode() == SMODE_READ)
 		{
 			pickup->logic.task = s_pickupTask;
