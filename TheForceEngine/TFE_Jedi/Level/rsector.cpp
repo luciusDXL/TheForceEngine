@@ -1311,4 +1311,10 @@ namespace TFE_Jedi
 	{
 		return (p1.x - p0.x) * (p2.z - p0.z) - (p2.x - p0.x) * (p1.z - p0.z);
 	}
+
+	// Is sector a secret sector?
+	bool isSecretSector(RSector* sector)
+	{
+		return sector->secretSector;
+	}
 } // namespace TFE_Jedi

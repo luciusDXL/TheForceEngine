@@ -420,6 +420,8 @@ namespace TFE_Jedi
 		SERIALIZE(LevelState_InitVersion, sector->layer, 0);
 		SERIALIZE(LevelState_InitVersion, sector->boundsMin, def);
 		SERIALIZE(LevelState_InitVersion, sector->boundsMax, def);
+		SERIALIZE(LevelState_SecretUpdate, sector->secretDiscovered , false);
+		SERIALIZE(LevelState_SecretUpdate, sector->secretSector, false);		
 
 		// dirty flags will be set on deserialization.
 		if (serialization_getMode() == SMODE_READ)
