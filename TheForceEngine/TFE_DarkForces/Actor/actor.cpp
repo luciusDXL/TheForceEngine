@@ -680,9 +680,9 @@ namespace TFE_DarkForces
 				LogicScriptCall* scriptCall = logic_getScriptCall(scriptCallIndex);
 				if (scriptCall && scriptCall->funcPtr)
 				{
+					scriptCall->args[scriptCall->argCount].type = TFE_ForceScript::ARG_S32;
+					scriptCall->args[scriptCall->argCount].iValue = corpseId;
 					scriptCall->argCount++;
-					scriptCall->args[scriptCall->argCount - 1].type = TFE_ForceScript::ARG_S32;
-					scriptCall->args[scriptCall->argCount - 1].iValue = corpseId;
 					TFE_ForceScript::execFunc(scriptCall->funcPtr, scriptCall->argCount, scriptCall->args);
 				}
 			}
@@ -2041,9 +2041,9 @@ namespace TFE_DarkForces
 					LogicScriptCall* scriptCall = logic_getScriptCall(dispatch->alertScriptCall);
 					if (scriptCall && scriptCall->funcPtr)
 					{
+						scriptCall->args[scriptCall->argCount].type = TFE_ForceScript::ARG_S32;
+						scriptCall->args[scriptCall->argCount].iValue = obj_getRefIndex(obj);
 						scriptCall->argCount++;
-						scriptCall->args[scriptCall->argCount - 1].type = TFE_ForceScript::ARG_S32;
-						scriptCall->args[scriptCall->argCount - 1].iValue = obj_getRefIndex(obj);
 						TFE_ForceScript::execFunc(scriptCall->funcPtr, scriptCall->argCount, scriptCall->args);
 					}
 				}
@@ -2061,9 +2061,9 @@ namespace TFE_DarkForces
 					LogicScriptCall* scriptCall = logic_getScriptCall(dispatch->alertScriptCall);
 					if (scriptCall && scriptCall->funcPtr)
 					{
+						scriptCall->args[scriptCall->argCount].type = TFE_ForceScript::ARG_S32;
+						scriptCall->args[scriptCall->argCount].iValue = obj_getRefIndex(obj);
 						scriptCall->argCount++;
-						scriptCall->args[scriptCall->argCount - 1].type = TFE_ForceScript::ARG_S32;
-						scriptCall->args[scriptCall->argCount - 1].iValue = obj_getRefIndex(obj);
 						TFE_ForceScript::execFunc(scriptCall->funcPtr, scriptCall->argCount, scriptCall->args);
 					}
 				}

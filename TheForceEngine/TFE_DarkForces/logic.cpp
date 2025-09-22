@@ -627,6 +627,7 @@ namespace TFE_DarkForces
 				case SCRIPTCALL_PAIN:
 					// not yet implemented
 				default:
+					TFE_System::logWrite(LOG_WARNING, "Logic", "Unsupported scriptcall type for LOGIC_DISPATCH.");
 					break;
 				}
 			}
