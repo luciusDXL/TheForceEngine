@@ -49,6 +49,15 @@ namespace TFE_DarkForces
 	char s_objSeqArg5[256];
 	s32  s_objSeqArgCount;
 
+	// TFE Scriptcalls from Logics
+	std::vector<LogicScriptCall> s_logicScriptCalls;
+
+	///////////////////////////////////
+	// Forward declarations
+	///////////////////////////////////
+	void logic_addScriptCall(SecObject* obj, LogicScriptCallType callType);
+
+
 	void obj_addLogic(SecObject* obj, Logic* logic, LogicType type, Task* task, LogicCleanupFunc cleanupFunc)
 	{
 		if (!obj->logic)
@@ -111,6 +120,18 @@ namespace TFE_DarkForces
 		else if (key == KW_CAMERA)
 		{
 			obj->flags |= OBJ_FLAG_CAMERA;
+		}
+		else if (key == KW_DEATHSCRIPTCALL)
+		{
+			logic_addScriptCall(obj, SCRIPTCALL_DEATH);
+		}
+		else if (key == KW_ALERTSCRIPTCALL)
+		{
+			logic_addScriptCall(obj, SCRIPTCALL_ALERT);
+		}
+		else if (key == KW_PICKUPSCRIPTCALL)
+		{
+			logic_addScriptCall(obj, SCRIPTCALL_PICKUP);
 		}
 		else  // Invalid key.
 		{
@@ -501,4 +522,206 @@ namespace TFE_DarkForces
 
 		return nullptr;
 	}
+
+
+	///////////////////////////////////////////////////
+	// Scriptcalls
+	///////////////////////////////////////////////////
+
+	void logic_clearScriptCalls()
+	{
+		s_logicScriptCalls.clear();
+	}
+
+	LogicScriptCall* logic_getScriptCall(s32 index)
+	{
+		if (index < 0 || index >= s_logicScriptCalls.size())
+		{
+			return nullptr;
+		}
+		
+		return &s_logicScriptCalls[index];
+	}
+
+	s32 logic_parseScriptCallArg(SecObject* obj, TFE_ForceScript::ScriptArg* arg, s32 maxArgCount, const char* arg0, const char* arg1, const char* arg2, const char* arg3)
+	{
+		const char* argList[] = { arg0, arg1, arg2, arg3 };
+		s32 argCount = 0;
+		for (s32 i = 0; i < maxArgCount; i++)
+		{
+			const char* value = argList[i];
+			if (!value || value[0] == 0) { continue; }
+
+			if (strcasecmp(value, "true") == 0)
+			{
+				arg[argCount].bValue = true;
+				arg[argCount].type = TFE_ForceScript::ARG_BOOL;
+				argCount++;
+			}
+			else if (strcasecmp(value, "false") == 0)
+			{
+				arg[argCount].bValue = false;
+				arg[argCount].type = TFE_ForceScript::ARG_BOOL;
+				argCount++;
+			}
+			else if (value[0] == '\"')
+			{
+				// Remove the quotes.
+				char unquotedStr[256];
+				const s32 len = (s32)strlen(value);
+				s32 lastQuote = 0;
+				for (s32 c = 1; c < len; c++)
+				{
+					if (value[c] == '\"')
+					{
+						lastQuote = c;
+					}
+				}
+				const s32 newLen = min(255, lastQuote - 1);
+				if (newLen >= 1)
+				{
+					memcpy(unquotedStr, &value[1], newLen);
+					unquotedStr[newLen] = 0;
+
+					// Force string to fixed-size.
+					unquotedStr[31] = 0;
+					strcpy(arg[argCount].strValue, unquotedStr);
+					arg[argCount].type = TFE_ForceScript::ARG_STRING;
+					argCount++;
+				}
+			}
+			// If it is a numerical value, assume float.
+			else
+			{
+				char* endPtr = nullptr;
+				arg[argCount].fValue = strtof(value, &endPtr);
+				arg[argCount].type = TFE_ForceScript::ARG_F32;
+				argCount++;
+			}
+		}
+
+		return argCount;
+	}
+
+	void logic_addScriptCall(SecObject* obj, LogicScriptCallType callType)
+	{
+		Logic** logicPtr = (Logic**)allocator_getHead((Allocator*)obj->logic);
+		while (logicPtr)
+		{
+			Logic* logic = *logicPtr;
+			s32* scriptCallIndex = nullptr;
+
+			// DISPATCH logic can have a deathScriptCall and alertScriptCall
+			if (logic && logic->type == LOGIC_DISPATCH)
+			{
+				ActorDispatch* actor = (ActorDispatch*)logic;
+
+				switch (callType)
+				{
+				case SCRIPTCALL_DEATH:
+					scriptCallIndex = &actor->deathScriptCall;
+					break;
+				case SCRIPTCALL_ALERT:
+					scriptCallIndex = &actor->alertScriptCall;
+					break;
+				case SCRIPTCALL_PAIN:
+					// not yet implemented
+				default:
+					TFE_System::logWrite(LOG_WARNING, "Logic", "Unsupported scriptcall type for LOGIC_DISPATCH.");
+					break;
+				}
+			}
+			// PICKUP logic can have pickupScriptCall
+			else if (logic && logic->type == LOGIC_PICKUP)
+			{
+				if (callType == SCRIPTCALL_PICKUP)
+				{
+					Pickup* pickup = (Pickup*)logic;
+					scriptCallIndex = &pickup->pickupScriptCall;
+				}
+			}
+
+			if (scriptCallIndex)
+			{
+				std::string funcName = s_objSeqArg1;
+				TFE_ForceScript::FunctionHandle func = getLevelScriptFunc(funcName.c_str());
+
+				if (func)
+				{
+					LogicScriptCall scriptCall = {};
+					scriptCall.funcPtr = func;
+					scriptCall.argCount = logic_parseScriptCallArg(obj, scriptCall.args, s_objSeqArgCount - 2, s_objSeqArg2, s_objSeqArg3, s_objSeqArg4, s_objSeqArg5);
+
+					// Copy the name, zero out any unused space to avoid saving to disk.
+					memset(scriptCall.funcName, 0, TFE_ForceScript::MAX_SCRIPT_CALL_NAME_LEN);
+					if (funcName.length() >= TFE_ForceScript::MAX_SCRIPT_CALL_NAME_LEN)
+					{
+						TFE_System::logWrite(LOG_ERROR, "Serialization", "Function name %s too long, the limit is 63 characters.", funcName.c_str());
+					}
+					else
+					{
+						strcpy(scriptCall.funcName, funcName.c_str());
+					}
+
+					s_logicScriptCalls.push_back(scriptCall);
+					*scriptCallIndex = s_logicScriptCalls.size() - 1;
+				}
+			}
+
+			logicPtr = (Logic**)allocator_getNext((Allocator*)obj->logic);
+		};
+	}
+
+	void logic_serializeScriptCalls(Stream* stream)
+	{
+		s32 count;
+		if (serialization_getMode() == SMODE_WRITE)
+		{
+			count = s_logicScriptCalls.size();
+		}
+		else if (serialization_getMode() == SMODE_READ)
+		{
+			logic_clearScriptCalls();
+			count = 0;
+		}
+
+		SERIALIZE(ObjState_LogicScriptCallV1, count, 0);
+
+		for (s32 i = 0; i < count; i++)
+		{
+			LogicScriptCall* scriptCall = nullptr;
+			if (serialization_getMode() == SMODE_READ)
+			{
+				LogicScriptCall newCall = {};
+				scriptCall = &newCall;
+			}
+			else
+			{
+				scriptCall = &s_logicScriptCalls[i];
+			}
+
+			SERIALIZE(ObjState_LogicScriptCallV1, scriptCall->argCount, 0);
+			for (s32 arg = 0; arg < scriptCall->argCount; arg++)
+			{
+				serialization_serializeScriptArg(stream, ObjState_LogicScriptCallV1, &scriptCall->args[arg]);
+			}
+
+			SERIALIZE_CSTRING(ObjState_LogicScriptCallV1, scriptCall->funcName);
+			if (serialization_getMode() == SMODE_READ)
+			{
+				scriptCall->funcPtr = nullptr;
+				s_logicScriptCalls.push_back(*scriptCall);
+			}
+		}
+	}
+
+	void logic_fixupScriptCalls()
+	{
+		// Fixup the function pointers
+		for (s32 i = 0; i < s_logicScriptCalls.size(); i++)
+		{
+			s_logicScriptCalls[i].funcPtr = getLevelScriptFunc(s_logicScriptCalls[i].funcName);
+		}
+	}
+
 }  // TFE_DarkForces

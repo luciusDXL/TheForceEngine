@@ -331,6 +331,16 @@ namespace TFE_DarkForces
 			sound_play(s_itemPickupSnd);
 		}
 
+		// TFE - Call Pickup script
+		if (pickup->pickupScriptCall >= 0)
+		{
+			LogicScriptCall* scriptCall = logic_getScriptCall(pickup->pickupScriptCall);
+			if (scriptCall && scriptCall->funcPtr)
+			{
+				TFE_ForceScript::execFunc(scriptCall->funcPtr, scriptCall->argCount, scriptCall->args);
+			}
+		}
+
 		// Initialize effect
 		s_flashEffect = FIXED(15);
 		task_makeActive(s_pickupTask);
@@ -469,6 +479,8 @@ namespace TFE_DarkForces
 		pickup->msgId[0] = -1;
 		pickup->msgId[1] = -1;
 		pickup->maxAmount = 999;
+		
+		pickup->pickupScriptCall = -1;
 
 		setPickup(pickup, obj, id, TFE_ExternalData::getExternalPickups());
 		return (Logic*)pickup;
@@ -562,6 +574,9 @@ namespace TFE_DarkForces
 		SERIALIZE(ObjState_InitVersion, pickup->amount, 0);
 		SERIALIZE_BUF(ObjState_InitVersion, pickup->msgId, sizeof(pickup->msgId[0]) * 2);
 		SERIALIZE(ObjState_InitVersion, pickup->maxAmount, 0);
+
+		// Index to ScriptCall
+		SERIALIZE(ObjState_LogicScriptCallV1, pickup->pickupScriptCall, -1);
 
 		if (serialization_getMode() == SMODE_READ)
 		{

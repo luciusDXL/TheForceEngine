@@ -194,6 +194,9 @@ namespace TFE_DarkForces
 		dispatch->freeTask = nullptr;
 		dispatch->flags = ACTOR_NPC;	// this is later removed for barrels and scenery
 
+		dispatch->deathScriptCall = -1;
+		dispatch->alertScriptCall = -1;
+
 		if (obj)
 		{
 			obj_addLogic(obj, (Logic*)dispatch, LOGIC_DISPATCH, s_istate.actorTask, actorLogicCleanupFunc);
@@ -614,6 +617,8 @@ namespace TFE_DarkForces
 			}
 			spawnHitEffect(damageMod->dieEffect, sector, obj->posWS, obj);
 
+			s32 corpseId = -1;	// corpseId to be passed to a deathscriptcall
+
 			// If the secHeight is <= 0, then it is not a water sector.
 			if (sector->secHeight - 1 < 0)
 			{
@@ -664,9 +669,24 @@ namespace TFE_DarkForces
 					corpse->entityFlags |= ETFLAG_CORPSE;
 					sector_addObject(obj->sector, corpse);
 
-					obj_addToRefList(corpse, ObjRefType_Corpse);	// scripting
+					corpseId = obj_addToRefList(corpse, ObjRefType_Corpse);	// scripting
 				}
 			}
+
+			// TFE - call deathscript, add corpse's ObjectId as the final arg
+			s32 scriptCallIndex = ((ActorDispatch*)s_actorState.curLogic)->deathScriptCall;
+			if (scriptCallIndex >= 0)
+			{
+				LogicScriptCall* scriptCall = logic_getScriptCall(scriptCallIndex);
+				if (scriptCall && scriptCall->funcPtr)
+				{
+					scriptCall->args[scriptCall->argCount].type = TFE_ForceScript::ARG_S32;
+					scriptCall->args[scriptCall->argCount].iValue = corpseId;
+					scriptCall->argCount++;
+					TFE_ForceScript::execFunc(scriptCall->funcPtr, scriptCall->argCount, scriptCall->args);
+				}
+			}
+
 			actor_kill();
 			return 0;
 		}
@@ -2014,6 +2034,19 @@ namespace TFE_DarkForces
 					s_actorState.nextAlertTick = s_curTick + 291;	// ~2 seconds between alerts
 				}
 				dispatch->flags &= ~ACTOR_IDLE;		// remove flag bit 0 (ACTOR_IDLE)
+
+				// TFE - call alertscript, add the ObjectId as the final arg
+				if (dispatch->alertScriptCall >= 0)
+				{
+					LogicScriptCall* scriptCall = logic_getScriptCall(dispatch->alertScriptCall);
+					if (scriptCall && scriptCall->funcPtr)
+					{
+						scriptCall->args[scriptCall->argCount].type = TFE_ForceScript::ARG_S32;
+						scriptCall->args[scriptCall->argCount].iValue = obj_getRefIndex(obj);
+						scriptCall->argCount++;
+						TFE_ForceScript::execFunc(scriptCall->funcPtr, scriptCall->argCount, scriptCall->args);
+					}
+				}
 			}
 		}
 		else if (msg == MSG_DAMAGE || msg == MSG_EXPLOSION)
@@ -2021,6 +2054,19 @@ namespace TFE_DarkForces
 			if (dispatch->flags & ACTOR_IDLE)
 			{
 				gameMusic_startFight();
+
+				// TFE - call alertscript, add the ObjectId as the final arg
+				if (dispatch->alertScriptCall >= 0)
+				{
+					LogicScriptCall* scriptCall = logic_getScriptCall(dispatch->alertScriptCall);
+					if (scriptCall && scriptCall->funcPtr)
+					{
+						scriptCall->args[scriptCall->argCount].type = TFE_ForceScript::ARG_S32;
+						scriptCall->args[scriptCall->argCount].iValue = obj_getRefIndex(obj);
+						scriptCall->argCount++;
+						TFE_ForceScript::execFunc(scriptCall->funcPtr, scriptCall->argCount, scriptCall->args);
+					}
+				}
 			}
 			dispatch->flags &= ~ACTOR_IDLE;
 			s_actorState.curAnimation = nullptr;

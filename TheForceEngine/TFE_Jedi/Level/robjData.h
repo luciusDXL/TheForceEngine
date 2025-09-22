@@ -68,7 +68,8 @@ enum ObjStateVersion : u32
 	ObjState_DisablePlayerMovement = 8,
 	ObjState_RefList = 9,
 	ObjState_ExternalCamera = 10,
-	ObjState_CurVersion = ObjState_ExternalCamera,
+	ObjState_LogicScriptCallV1 = 11,	// adds ScriptCalls on pickup, death, alert
+	ObjState_CurVersion = ObjState_LogicScriptCallV1,
 };
 
 // TFE Scripting
@@ -153,7 +154,8 @@ namespace TFE_Jedi
 	SecObject* objData_getObjectBySerializationId_NoValidation(u32 id);
 
 	// TFE - scripting
-	void obj_addToRefList(SecObject* obj, ObjectRefType refType);
+	s32 obj_addToRefList(SecObject* obj, ObjectRefType refType);
 	void obj_removeFromRefList(SecObject* obj);
 	void obj_addName(const char* name, SecObject* obj);
+	s32 obj_getRefIndex(SecObject* obj);
 }

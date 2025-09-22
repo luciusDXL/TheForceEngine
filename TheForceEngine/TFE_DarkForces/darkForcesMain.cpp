@@ -1619,9 +1619,10 @@ namespace TFE_DarkForces
 		TFE_ForceScript::serialize(stream);
 		if (!writeState)
 		{
-			// Setup the level script after script serialization and fixup INF function pointers.
+			// Setup the level script after script serialization and fixup ScriptCall function pointers.
 			loadLevelScript();
 			inf_fixupScriptCalls();
+			logic_fixupScriptCalls();
 		}
 
 		TFE_System::messages_serialize(stream);

@@ -16,6 +16,12 @@ namespace TFE_ForceScript
 		TFE_MAX_SCRIPT_ARG = 16,
 	};
 
+	enum ScriptCallConst
+	{
+		MAX_SCRIPT_CALL_NAME_LEN = 64,
+		MAX_SCRIPT_CALL_ARG = 5,
+	};
+
 	enum FS_BuiltInType
 	{
 		FSTYPE_STRING = 0,

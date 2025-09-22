@@ -11,6 +11,7 @@
 #include <TFE_Jedi/Task/task.h>
 #include <TFE_System/parser.h>
 #include <TFE_ExternalData/dfLogics.h>
+#include <TFE_ForceScript/forceScript.h>
 
 struct Logic;
 typedef void(*LogicCleanupFunc)(Logic*);
@@ -50,6 +51,24 @@ struct Logic
 	LogicCleanupFunc cleanupFunc = nullptr;
 };
 
+// TFE: ScriptCall from a logic.
+struct LogicScriptCall
+{
+	void* funcPtr = nullptr;
+	s32 argCount;
+	TFE_ForceScript::ScriptArg args[TFE_ForceScript::MAX_SCRIPT_CALL_ARG];     // up to 4 arguments passed from the O file, plus an ObjectId in some cases
+	char funcName[TFE_ForceScript::MAX_SCRIPT_CALL_NAME_LEN];	// Needed for serialization.
+};
+
+enum LogicScriptCallType
+{
+	SCRIPTCALL_NONE = 0,
+	SCRIPTCALL_DEATH,
+	SCRIPTCALL_ALERT,
+	SCRIPTCALL_PAIN,
+	SCRIPTCALL_PICKUP,
+};
+
 namespace TFE_DarkForces
 {		
 	void obj_addLogic(SecObject* obj, Logic* logic, LogicType type, Task* task, LogicCleanupFunc cleanupFunc);
@@ -62,6 +81,11 @@ namespace TFE_DarkForces
 
 	Logic* obj_setCustomActorLogic(SecObject* obj, TFE_ExternalData::CustomActorLogic* customLogic);
 	TFE_ExternalData::CustomActorLogic* tryFindCustomActorLogic(const char* logicName);
+
+	LogicScriptCall* logic_getScriptCall(s32 index);
+	void logic_clearScriptCalls();
+	void logic_serializeScriptCalls(Stream* stream);
+	void logic_fixupScriptCalls();
 
 	// Shared variables used for loading.
 	extern char s_objSeqArg0[];

@@ -229,6 +229,9 @@ static const char* c_keywords[] =
 	"SCRIPTCALL:",
 	"NAME:",
 	"CAMERA",
+	"DEATHSCRIPTCALL:",
+	"ALERTSCRIPTCALL:",
+	"PICKUPSCRIPTCALL:",
 };
 
 #define KEYWORD_COUNT TFE_ARRAYSIZE(c_keywords)
