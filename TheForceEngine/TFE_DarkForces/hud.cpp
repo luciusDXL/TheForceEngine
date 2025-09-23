@@ -1300,13 +1300,14 @@ namespace TFE_DarkForces
 			fixed16_16 xScale = vfb_getXScale();
 			fixed16_16 yScale = vfb_getYScale();
 
-			xScale /= fntScale;
-			yScale /= fntScale;
-
 			bool centerText = TFE_Settings::getGameSettings()->df_centerHudPosition;
 
 			// Center X Offset otherwise use the font centered scaling
-			fixed16_16 xf = mul16(intToFixed16(x), centerText ? xScale : vfb_getXScale());
+			fixed16_16 xf = mul16(intToFixed16(x), centerText ? xScale / 2 : xScale);
+
+			xScale /= fntScale;
+			yScale /= fntScale;
+
 			fixed16_16 yf = mul16(intToFixed16(y), yScale);
 			fixed16_16 x0 = xf;
 						
