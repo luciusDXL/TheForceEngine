@@ -2593,6 +2593,7 @@ namespace LevelEditor
 					switch (def->type)
 					{
 					case EVARTYPE_BOOL:
+					case EVARTYPE_BOOL2:
 					{
 						sprintf(name, "##VarBool%d", i);
 						ImGui::Checkbox(name, &list[i].value.bValue);

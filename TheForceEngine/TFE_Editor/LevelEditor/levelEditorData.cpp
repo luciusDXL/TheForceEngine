@@ -1519,6 +1519,14 @@ namespace LevelEditor
 						WRITE_LINE("            %s:     %s\r\n", def->name.c_str(), var[v].value.bValue ? "TRUE" : "FALSE");
 					}
 				} break;
+				case EVARTYPE_BOOL2:
+				{
+					// If the bool doesn't match the "default" value - then don't write it at all.
+					if (var[v].value.bValue == def->defValue.bValue)
+					{
+						WRITE_LINE("            %s\r\n", def->name.c_str());
+					}
+				} break;
 				case EVARTYPE_FLOAT:
 				{
 					WRITE_LINE("            %s:     %f\r\n", def->name.c_str(), var[v].value.fValue);
@@ -2480,6 +2488,14 @@ namespace LevelEditor
 					if (var[v].value.bValue == def->defValue.bValue)
 					{
 						WRITE_TO_BUFFER("      %s: %s\r\n", def->name.c_str(), var[v].value.bValue ? "TRUE" : "FALSE");
+					}
+				} break;
+				case EVARTYPE_BOOL2:
+				{
+					// If the bool doesn't match the "default" value - then don't write it at all.
+					if (var[v].value.bValue == def->defValue.bValue)
+					{
+						WRITE_TO_BUFFER("      %s\r\n", def->name.c_str());
 					}
 				} break;
 				case EVARTYPE_FLOAT:
