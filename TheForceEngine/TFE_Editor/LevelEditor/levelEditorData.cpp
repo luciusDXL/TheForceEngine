@@ -1539,6 +1539,10 @@ namespace LevelEditor
 						WRITE_LINE("            %s:     %s \"%s\"\r\n", def->name.c_str(), var[v].value.sValue.c_str(), var[v].value.sValue1.c_str());
 					}
 				} break;
+				case EVARTYPE_INPUT_STRING:
+				{
+					WRITE_LINE("            %s:     %s\r\n", def->name.c_str(), var[v].value.sValue.c_str());
+				} break;
 			}
 		}
 	}
@@ -2497,6 +2501,10 @@ namespace LevelEditor
 					{
 						WRITE_TO_BUFFER("      %s: %s \"%s\"\r\n", def->name.c_str(), var[v].value.sValue.c_str(), var[v].value.sValue1.c_str());
 					}
+				} break;
+				case EVARTYPE_INPUT_STRING:
+				{
+					WRITE_TO_BUFFER("      %s: %s\r\n", def->name.c_str(), var[v].value.sValue.c_str());
 				} break;
 			}
 		}

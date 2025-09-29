@@ -357,6 +357,11 @@ namespace LevelEditor
 			{
 				sprintf(varBuffer, "\"%s\" \"%s\"", var->value.sValue.c_str(), var->value.sValue1.c_str());
 			} break;
+			case EVARTYPE_INPUT_STRING:
+			{
+				sprintf(varBuffer, "\"%s\"", var->value.sValue.c_str());
+			} break;
+
 		}
 	}
 
@@ -491,6 +496,10 @@ namespace LevelEditor
 				file->write(&var->value.sValue);
 				file->write(&var->value.sValue1);
 			} break;
+			case EVARTYPE_INPUT_STRING:
+			{
+				file->write(&var->value.sValue);
+			} break;
 		}
 	}
 
@@ -526,6 +535,10 @@ namespace LevelEditor
 			{
 				file->read(&var->value.sValue);
 				file->read(&var->value.sValue1);
+			} break;
+			case EVARTYPE_INPUT_STRING:
+			{
+				file->read(&var->value.sValue);
 			} break;
 		}
 	}
@@ -1044,6 +1057,10 @@ namespace LevelEditor
 						{
 							curVar->type = EVARTYPE_INPUT_STRING_PAIR;
 						}
+						else if (strcasecmp(typeStr, "InputString") == 0)
+						{
+							curVar->type = EVARTYPE_INPUT_STRING;
+						}
 						else
 						{
 							curVar->type = EVARTYPE_BOOL; // Just assume bool.
@@ -1155,6 +1172,10 @@ namespace LevelEditor
 				removeQuotes(valueStr1, fixedStr1);
 				value->sValue1 = fixedStr1;
 			} break;
+			case EVARTYPE_INPUT_STRING:
+			{
+				value->sValue = valueStr;
+			} break;
 		}
 	}
 
@@ -1191,6 +1212,10 @@ namespace LevelEditor
 				{
 					if (strcasecmp(var0->value.sValue.c_str(), var1->value.sValue.c_str()) != 0) { return false; }
 					if (strcasecmp(var0->value.sValue1.c_str(), var1->value.sValue1.c_str()) != 0) { return false; }
+				} break;
+				case EVARTYPE_INPUT_STRING:
+				{
+					if (strcasecmp(var0->value.sValue.c_str(), var1->value.sValue.c_str()) != 0) { return false; }
 				} break;
 			}
 		}

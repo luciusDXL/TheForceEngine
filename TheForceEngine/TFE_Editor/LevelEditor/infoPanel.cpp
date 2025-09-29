@@ -2655,6 +2655,17 @@ namespace LevelEditor
 						}
 						s_textInputFocused |= ImGui::IsItemActive();
 					} break;
+					case EVARTYPE_INPUT_STRING:
+					{
+						char str[256];
+						strcpy(str, list[i].value.sValue.c_str());
+						ImGui::SetNextItemWidth(192.0f);
+						if (ImGui::InputText("##Str", str, 256))
+						{
+							list[i].value.sValue = str;
+						}
+						s_textInputFocused |= ImGui::IsItemActive();
+					}
 					}
 				}
 			}
