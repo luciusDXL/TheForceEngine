@@ -477,6 +477,9 @@ namespace LevelEditor
 			case KW_LIGHTS:
 				*type = IMT_LIGHTS;
 				break;
+			case KW_CAMERA:
+				*type = IMT_CAMERA;
+				break;
 			case KW_M_TRIGGER:
 			default:
 				if (elevator)
@@ -1611,6 +1614,7 @@ namespace LevelEditor
 		"M_Trigger",	// IMT_TRIGGER,
 		"Done",			// IMT_DONE,
 		"Wakeup",		// IMT_WAKEUP,
+		"Camera",       // IMT_CAMERA,
 	};
 		
 	const ImVec4 colorKeywordOuterSel = { 0.453f, 0.918f, 1.00f, 1.0f };
@@ -2181,6 +2185,7 @@ namespace LevelEditor
 						case IMT_MASTER_OFF:
 						case IMT_LIGHTS:
 						case IMT_TRIGGER:
+						case IMT_CAMERA:
 						{
 							// Nothing
 						} break;
@@ -2693,6 +2698,7 @@ namespace LevelEditor
 					case IMT_TRIGGER:
 					case IMT_DONE:
 					case IMT_WAKEUP:
+					case IMT_CAMERA:
 					{
 						// Nothing
 					} break;
