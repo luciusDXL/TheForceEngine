@@ -2634,14 +2634,16 @@ namespace LevelEditor
 						strcpy(pair1, list[i].value.sValue.c_str());
 						strcpy(pair2, list[i].value.sValue1.c_str());
 						ImGui::SetNextItemWidth(128.0f);
-						if (ImGui::InputText("###Pair1", pair1, 256))
+						sprintf(name, "##Pair1_%d", i);
+						if (ImGui::InputText(name, pair1, 256))
 						{
 							list[i].value.sValue = pair1;
 						}
 						s_textInputFocused |= ImGui::IsItemActive();
 						ImGui::SameLine(0.0f, 8.0f);
 						ImGui::SetNextItemWidth(128.0f);
-						if (ImGui::InputText("###Pair2", pair2, 256))
+						sprintf(name, "##Pair2_%d", i);
+						if (ImGui::InputText(name, pair2, 256))
 						{
 							list[i].value.sValue1 = pair2;
 						}
@@ -2652,7 +2654,8 @@ namespace LevelEditor
 						char str[256];
 						strcpy(str, list[i].value.sValue.c_str());
 						ImGui::SetNextItemWidth(192.0f);
-						if (ImGui::InputText("##Str", str, 256))
+						sprintf(name, "##VarStr%d", i);
+						if (ImGui::InputText(name, str, 256))
 						{
 							list[i].value.sValue = str;
 						}
