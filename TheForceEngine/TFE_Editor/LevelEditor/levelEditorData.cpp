@@ -1544,7 +1544,18 @@ namespace LevelEditor
 				{
 					if (!var[v].value.sValue.empty())
 					{
-						WRITE_LINE("            %s:     %s \"%s\"\r\n", def->name.c_str(), var[v].value.sValue.c_str(), var[v].value.sValue1.c_str());
+						const char* varName = def->name.c_str();
+						const char* sValue1 = var[v].value.sValue1.c_str();
+						
+						if ((strcasecmp(varName, "Vue") == 0 || strcasecmp(varName, "Vue_Append") == 0) && strcasecmp(sValue1, "camera") == 0)
+						{
+							// Special case for vue camera, don't write quote marks
+							WRITE_LINE("            %s:     %s %s\r\n", varName, var[v].value.sValue.c_str(), sValue1);
+						}
+						else
+						{
+							WRITE_LINE("            %s:     %s \"%s\"\r\n", varName, var[v].value.sValue.c_str(), sValue1);
+						}
 					}
 				} break;
 				case EVARTYPE_INPUT_STRING:
@@ -2515,7 +2526,18 @@ namespace LevelEditor
 				{
 					if (!var[v].value.sValue.empty())
 					{
-						WRITE_TO_BUFFER("      %s: %s \"%s\"\r\n", def->name.c_str(), var[v].value.sValue.c_str(), var[v].value.sValue1.c_str());
+						const char* varName = def->name.c_str();
+						const char* sValue1 = var[v].value.sValue1.c_str();
+
+						if ((strcasecmp(varName, "Vue") == 0 || strcasecmp(varName, "Vue_Append") == 0) && strcasecmp(sValue1, "camera") == 0)
+						{
+							// Special case for vue camera, don't write quote marks
+							WRITE_TO_BUFFER("      %s: %s %s\r\n", varName, var[v].value.sValue.c_str(), sValue1);
+						}
+						else
+						{
+							WRITE_TO_BUFFER("      %s: %s \"%s\"\r\n", varName, var[v].value.sValue.c_str(), sValue1);
+						}
 					}
 				} break;
 				case EVARTYPE_INPUT_STRING:
