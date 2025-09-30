@@ -326,6 +326,7 @@ namespace TFE_DarkForces
 	// TFE
 	void player_warp(const ConsoleArgList& args);
 	void player_sector(const ConsoleArgList& args);
+	JBool player_hasWeapon(s32 weapon);
 		
 	///////////////////////////////////////////
 	// API Implentation
@@ -807,6 +808,19 @@ namespace TFE_DarkForces
 			disableCleats();
 			disableNightVision();
 			hud_clearMessage();
+		}
+
+		// Don't start the game with a weapon you don't have after overrides.
+		if (!player_hasWeapon(s_playerInfo.curWeapon + 1))
+		{
+			if (s_playerInfo.itemPistol)
+			{
+				s_playerInfo.curWeapon = WPN_PISTOL;
+			}
+			else
+			{
+				s_playerInfo.curWeapon = WPN_FIST;
+			}
 		}
 	}
 		
