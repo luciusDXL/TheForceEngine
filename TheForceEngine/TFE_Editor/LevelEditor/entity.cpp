@@ -337,6 +337,7 @@ namespace LevelEditor
 		switch (def->type)
 		{
 			case EVARTYPE_BOOL:
+			case EVARTYPE_BOOL2:
 			{
 				sprintf(varBuffer, "%s", var->value.bValue ? "True" : "False");
 			} break;
@@ -356,6 +357,10 @@ namespace LevelEditor
 			case EVARTYPE_INPUT_STRING_PAIR:
 			{
 				sprintf(varBuffer, "\"%s\" \"%s\"", var->value.sValue.c_str(), var->value.sValue1.c_str());
+			} break;
+			case EVARTYPE_INPUT_STRING:
+			{
+				sprintf(varBuffer, "\"%s\"", var->value.sValue.c_str());
 			} break;
 		}
 	}
@@ -469,6 +474,7 @@ namespace LevelEditor
 		switch (def->type)
 		{
 			case EVARTYPE_BOOL:
+			case EVARTYPE_BOOL2:
 			{
 				const s32 bValue = var->value.bValue ? 1 : 0;
 				file->write(&bValue);
@@ -491,6 +497,10 @@ namespace LevelEditor
 				file->write(&var->value.sValue);
 				file->write(&var->value.sValue1);
 			} break;
+			case EVARTYPE_INPUT_STRING:
+			{
+				file->write(&var->value.sValue);
+			} break;
 		}
 	}
 
@@ -504,6 +514,7 @@ namespace LevelEditor
 		switch (def->type)
 		{
 			case EVARTYPE_BOOL:
+			case EVARTYPE_BOOL2:
 			{
 				s32 bValue = 0;
 				file->read(&bValue);
@@ -526,6 +537,10 @@ namespace LevelEditor
 			{
 				file->read(&var->value.sValue);
 				file->read(&var->value.sValue1);
+			} break;
+			case EVARTYPE_INPUT_STRING:
+			{
+				file->read(&var->value.sValue);
 			} break;
 		}
 	}
@@ -1044,6 +1059,14 @@ namespace LevelEditor
 						{
 							curVar->type = EVARTYPE_INPUT_STRING_PAIR;
 						}
+						else if (strcasecmp(typeStr, "InputString") == 0)
+						{
+							curVar->type = EVARTYPE_INPUT_STRING;
+						}
+						else if (strcasecmp(typeStr, "Bool2") == 0)
+						{
+							curVar->type = EVARTYPE_BOOL2;
+						}
 						else
 						{
 							curVar->type = EVARTYPE_BOOL; // Just assume bool.
@@ -1131,6 +1154,7 @@ namespace LevelEditor
 		switch (type)
 		{
 			case EVARTYPE_BOOL:
+			case EVARTYPE_BOOL2:
 			{
 				value->bValue = strcasecmp(valueStr, "True") == 0 || strcasecmp(valueStr, "1") == 0;
 			} break;
@@ -1155,6 +1179,10 @@ namespace LevelEditor
 				removeQuotes(valueStr1, fixedStr1);
 				value->sValue1 = fixedStr1;
 			} break;
+			case EVARTYPE_INPUT_STRING:
+			{
+				value->sValue = valueStr;
+			} break;
 		}
 	}
 
@@ -1171,6 +1199,7 @@ namespace LevelEditor
 			switch (def->type)
 			{
 				case EVARTYPE_BOOL:
+				case EVARTYPE_BOOL2:
 				{
 					if (var0->value.bValue != var1->value.bValue) { return false; }
 				} break;
@@ -1191,6 +1220,10 @@ namespace LevelEditor
 				{
 					if (strcasecmp(var0->value.sValue.c_str(), var1->value.sValue.c_str()) != 0) { return false; }
 					if (strcasecmp(var0->value.sValue1.c_str(), var1->value.sValue1.c_str()) != 0) { return false; }
+				} break;
+				case EVARTYPE_INPUT_STRING:
+				{
+					if (strcasecmp(var0->value.sValue.c_str(), var1->value.sValue.c_str()) != 0) { return false; }
 				} break;
 			}
 		}

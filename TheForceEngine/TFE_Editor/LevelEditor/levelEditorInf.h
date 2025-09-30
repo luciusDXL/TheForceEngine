@@ -66,6 +66,7 @@ namespace LevelEditor
 		// Elevator only
 		IMT_DONE,
 		IMT_WAKEUP,
+		IMT_CAMERA,
 		IMT_COUNT,
 	};
 		

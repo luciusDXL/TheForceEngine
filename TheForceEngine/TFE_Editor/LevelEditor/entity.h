@@ -38,11 +38,13 @@ namespace LevelEditor
 	enum EntityVarType
 	{
 		EVARTYPE_BOOL = 0,
+		EVARTYPE_BOOL2,		// a boolean type that will be written without a colon ':' (used for the camera variable)
 		EVARTYPE_FLOAT,
 		EVARTYPE_INT,
 		EVARTYPE_FLAGS,
 		EVARTYPE_STRING_LIST,
 		EVARTYPE_INPUT_STRING_PAIR,
+		EVARTYPE_INPUT_STRING,
 		EVARTYPE_COUNT,
 		EVARTYPE_UNKNOWN = EVARTYPE_COUNT
 	};
