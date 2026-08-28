@@ -492,6 +492,150 @@ namespace LevelEditor
 			}
 		}
 	}
+
+	s32 getNextAvailableSectorReverse(s32 sectorId, std::vector<s32>& deletedIds)
+	{
+		bool found = false;
+		for (s32 i = sectorId - 1; i >= 0; i--)
+		{
+			found = true;
+			for (s32 j = 0; j < deletedIds.size(); j++)
+			{
+				if (deletedIds[j] == i)
+				{
+					found = false;
+					break;
+				}
+			}
+
+			if (found == true)
+			{
+				return i;
+			}
+		}
+		return -1;
+	}
+
+	// Find all instances of wall adjoinId = x and replace with y.
+	void edit_remapAdjoinIds(std::vector<IndexPair>& adjoinRefs)
+	{
+		size_t sectorCount = s_level.sectors.size();
+		size_t adjoinRefCount = adjoinRefs.size();
+		if (sectorCount > 0 && adjoinRefCount > 0)
+		{
+			EditorSector* sector = s_level.sectors.data();
+			for (s32 s = 0; s < sectorCount; s++, sector++)
+			{
+				const s32 wallCount = (s32)sector->walls.size();
+				EditorWall* wall = sector->walls.data();
+				for (s32 w = 0; w < wallCount; w++, wall++)
+				{
+					for (s32 i = 0; i < adjoinRefs.size(); i++)
+					{
+						if (wall->adjoinId == adjoinRefs[i].i0)
+						{
+							wall->adjoinId = adjoinRefs[i].i1;
+							break;
+						}
+					}
+				}
+			}
+		}
+	}
+
+	// Patch gaps in sector data with valid sectors from the end of the vec,
+	// then resize the vec as needed. This method should be kinder on the 
+	// history system as we arent re-iding everything
+	// 
+	// Note: ensure no adjoins point to the deleted sectors prior to
+	// calling this function. Those ids are getting reused!
+	void edit_insertValidSectorsFromEnd(std::vector<s32>& deletedSectorIds)
+	{
+		// Associations of deleted ids with good sector ids its patched over with for repairing adjoins later.
+		// i0 = original id of sector at end of vec which was re-id'd
+		// i1 = the id assigned
+		std::vector<IndexPair> sectorRefs;
+		s32 delSectorCount = (s32)deletedSectorIds.size();
+		s32 availableSectorId = (s32)s_level.sectors.size();
+
+		for (s32 i = 0; i < delSectorCount; i++)
+		{
+			// Get next available sectorId (ie not in the deleted Id vec).
+			availableSectorId = getNextAvailableSectorReverse(availableSectorId, deletedSectorIds);
+			if (availableSectorId < 0)
+			{
+				// No more available sectors.
+				break;
+			}
+			else if (availableSectorId < deletedSectorIds[i])
+			{
+				// Enough deleted ids have been swapped out that no more gaps need plugging
+				break;
+			}
+
+			// swap and update id to maintain id == vec[index] parity
+			sectorRefs.push_back({ availableSectorId, deletedSectorIds[i] });
+			std::swap(s_level.sectors[deletedSectorIds[i]], s_level.sectors[availableSectorId]);
+			s_level.sectors[deletedSectorIds[i]].id = deletedSectorIds[i];
+		}
+		s_level.sectors.resize((s32)s_level.sectors.size() - delSectorCount);
+
+		// Finally fix-up any references due to the prior swapping
+		edit_remapAdjoinIds(sectorRefs);
+	}
+
+	void edit_deleteSectors(std::vector<s32>& sectorIds, bool addToHistory)
+	{
+		std::sort(sectorIds.begin(), sectorIds.end()); // ids need to be sorted. mixing drag select & ctrl clicking wont be ordered.
+
+		std::vector<EditorSector> sectorSnapshot;
+		s32 delSectorCount = (s32)sectorIds.size();
+		size_t prevSectorCount = s_level.sectors.size();
+		if (addToHistory)
+		{
+			level_createLevelSectorSnapshotSameAssets(sectorSnapshot);
+		}
+
+		// First, go through all sectors and remove references.
+		s32 sectorCount = (s32)s_level.sectors.size();
+		EditorSector* sector = s_level.sectors.data();
+		for (s32 s = 0; s < sectorCount; s++, sector++)
+		{
+			if (std::find(sectorIds.begin(), sectorIds.end(), sector->id) != sectorIds.end())
+			{
+				continue;
+			}
+
+			const s32 wallCount = (s32)sector->walls.size();
+			EditorWall* wall = sector->walls.data();
+			for (s32 w = 0; w < wallCount; w++, wall++)
+			{
+				if (std::find(sectorIds.begin(), sectorIds.end(), wall->adjoinId) != sectorIds.end())
+				{
+					wall->adjoinId = -1;
+					wall->mirrorId = -1;
+				}
+			}
+		}
+
+		// Now no adjoins point to deleted sector ids. Plug those weak-deleted sectors with active
+		// sector data from the back of the sector vec.
+		edit_insertValidSectorsFromEnd(sectorIds);
+
+		// Selections are potentially invalid so clear.
+		edit_clearSelections(false);
+
+		// Handle history.
+		if (addToHistory)
+		{
+			std::vector<s32> deltaSectors;
+			level_getLevelSnapshotDelta(deltaSectors, sectorSnapshot);
+			if (!deltaSectors.empty() || prevSectorCount != s_level.sectors.size())
+			{
+				cmd_sectorSnapshot(LName_DeleteSector, deltaSectors);
+			}
+		}
+	}
 		
 	void edit_deleteSector(s32 sectorId, bool addToHistory)
 	{
