@@ -975,6 +975,24 @@ namespace LevelEditor
 		return -1;
 	}
 
+	bool sectorContainsLoopbackWall(EditorSector* sector)
+	{
+		for (size_t i = 0; i < sector->walls.size() - 1; i++)
+		{
+			for (size_t j = i + 1; j < sector->walls.size(); j++)
+			{
+				if (sector->walls[i].idx[0] == sector->walls[j].idx[1] &&
+					sector->walls[i].idx[1] == sector->walls[j].idx[0])
+				{
+					//LE_WARNING("Loopback wall found in sector: %d", sector->id);
+					return true;
+				}
+			}
+		}
+
+		return false;
+	}
+
 	void edit_cleanSectorList(std::vector<s32>& selectedSectors, bool addToHistory)
 	{
 		// Re-check to make sure we have at least one sector.
@@ -987,6 +1005,7 @@ namespace LevelEditor
 
 		s_searchKey++;
 		std::vector<s32> changedSet;
+		s_brokenSectorIds.clear();
 
 		const s32* indices = selectedSectors.data();
 		for (s32 s = 0; s < sectorCount; s++)
@@ -1117,11 +1136,15 @@ namespace LevelEditor
 					}
 				}
 			}
-			sectorToPolygon(sector);
-		}
-		if (addToHistory)
-		{
-			cmd_sectorSnapshot(LName_CleanSectors, changedSet);
+
+			if (sector->vtx.size() < 3 || sector->walls.size() < 3 || sectorContainsLoopbackWall(sector)) // Broken sector
+			{
+				s_brokenSectorIds.push_back(sector->id);
+			}
+			else
+			{
+				sectorToPolygon(sector);
+			}
 		}
 	}
 

@@ -32,19 +32,26 @@ namespace LevelEditor
 		EditorSector* sector = nullptr;
 		s32 featureIndex = -1;
 		HitPart part = HP_FLOOR;
-		selection_get(hasFeature ? 0 : SEL_INDEX_HOVERED, sector, featureIndex, &part);
+		bool found = selection_get(hasFeature ? 0 : SEL_INDEX_HOVERED, sector, featureIndex, &part);
+		assert(found);
 
 		// Specific code for feature type.
 		switch (s_editMode)
 		{
 			case LEDIT_VERTEX:
 			{
-				// TODO: Currently, you can only delete one vertex at a time. It should be possible to delete multiple.
-				// Choose the selected feature over the hovered feature.
-				if (sector)
+				if (hasFeature)
 				{
+					FeatureId* vertices;
+					u32 vtxCount = selection_getList(vertices, SEL_VERTEX);
+					edit_deleteVertices(vertices, vtxCount, LName_DeleteVertex);
+				}
+				else
+				{
+					// Hovered item
+					FeatureId singleVtx = createFeatureId(sector, featureIndex);
 					selection_clearHovered();
-					edit_beginDeleteVertices();
+					edit_deleteVertices(&singleVtx, 1, LName_DeleteVertex);
 				}
 			} break;
 			case LEDIT_WALL:
@@ -71,11 +78,22 @@ namespace LevelEditor
 					}
 					else
 					{
-						selection_clearHovered();
-						// Deleting a wall is the same as deleting vertex 0.
-						// So re-use the same command, but with the delete wall name.
-						const s32 vertexIndex = sector->walls[featureIndex].idx[0];
-						edit_deleteVertex(sector->id, vertexIndex, LName_DeleteWall);
+						FeatureId* walls;
+						u32 wallCount = selection_getList(walls, SEL_SURFACE);
+						if (wallCount > 0)
+						{
+							edit_deleteWalls(walls, wallCount);
+						}
+						else
+						{
+							// Hovered item
+							FeatureId wallVerts[2];
+							selection_get(SEL_INDEX_HOVERED, sector, featureIndex, &part);
+							EditorWall* wall = &sector->walls[featureIndex];
+							wallVerts[0] = createFeatureId(sector, wall->idx[0]);
+							wallVerts[1] = createFeatureId(sector, wall->idx[1]);
+							edit_deleteVertices(wallVerts, 2, LName_DeleteWall);
+						}
 					}
 				}
 			} break;
