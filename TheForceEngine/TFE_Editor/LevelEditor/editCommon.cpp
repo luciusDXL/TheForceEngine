@@ -33,7 +33,10 @@ namespace LevelEditor
 		s32 featureIndex = -1;
 		HitPart part = HP_FLOOR;
 		bool found = selection_get(hasFeature ? 0 : SEL_INDEX_HOVERED, sector, featureIndex, &part);
-		assert(found);
+		if (!found || !sector)
+		{
+			return;
+		}
 
 		// Specific code for feature type.
 		switch (s_editMode)
@@ -42,9 +45,11 @@ namespace LevelEditor
 			{
 				if (hasFeature)
 				{
-					FeatureId* vertices;
-					u32 vtxCount = selection_getList(vertices, SEL_VERTEX);
-					edit_deleteVertices(vertices, vtxCount, LName_DeleteVertex);
+					// Selected item(s)
+					FeatureId* vertices = nullptr;
+					u32 vtxSelectionCount = selection_getList(vertices, SEL_VERTEX);
+					if (vertices == nullptr) { return; }
+					edit_deleteVertices(vertices, vtxSelectionCount, LName_DeleteVertex);
 				}
 				else
 				{
@@ -56,66 +61,69 @@ namespace LevelEditor
 			} break;
 			case LEDIT_WALL:
 			{
-				if (sector)
+				if (part == HP_FLOOR || part == HP_CEIL)
 				{
-					if (part == HP_FLOOR || part == HP_CEIL)
+					selection_clearHovered();
+					edit_deleteSector(sector->id);
+				}
+				else if (part == HP_SIGN)
+				{
+					if (featureIndex >= 0)
 					{
 						selection_clearHovered();
-						edit_deleteSector(sector->id);
-					}
-					else if (part == HP_SIGN)
-					{
-						if (featureIndex >= 0)
-						{
-							selection_clearHovered();
-							// Clear the selections when deleting a sign -
-							// otherwise the source wall will still be selected.
-							edit_clearSelections();
+						// Clear the selections when deleting a sign -
+						// otherwise the source wall will still be selected.
+						edit_clearSelections();
 
-							FeatureId id = createFeatureId(sector, featureIndex, HP_SIGN);
-							edit_clearTexture(1, &id);
-						}
+						FeatureId id = createFeatureId(sector, featureIndex, HP_SIGN);
+						edit_clearTexture(1, &id);
+					}
+				}
+				else
+				{
+					if (hasFeature)
+					{
+						// Selected item(s)
+						FeatureId* walls;
+						u32 wallSelectionCount = selection_getList(walls, SEL_SURFACE);
+						edit_deleteWalls(walls, wallSelectionCount);
 					}
 					else
 					{
-						FeatureId* walls;
-						u32 wallCount = selection_getList(walls, SEL_SURFACE);
-						if (wallCount > 0)
-						{
-							edit_deleteWalls(walls, wallCount);
-						}
-						else
-						{
-							// Hovered item
-							FeatureId wallVerts[2];
-							selection_get(SEL_INDEX_HOVERED, sector, featureIndex, &part);
-							EditorWall* wall = &sector->walls[featureIndex];
-							wallVerts[0] = createFeatureId(sector, wall->idx[0]);
-							wallVerts[1] = createFeatureId(sector, wall->idx[1]);
-							edit_deleteVertices(wallVerts, 2, LName_DeleteWall);
-						}
+						// Hovered item
+						FeatureId wallVerts[2];
+						EditorWall* wall = &sector->walls[featureIndex];
+						wallVerts[0] = createFeatureId(sector, wall->idx[0]);
+						wallVerts[1] = createFeatureId(sector, wall->idx[1]);
+						edit_deleteVertices(wallVerts, 2, LName_DeleteWall);
 					}
 				}
 			} break;
 			case LEDIT_SECTOR:
 			{
-				if (sector)
+				if (hasFeature)
 				{
-					// Multidelete
-					std::vector<s32>sectorIds;
+					// Selected item(s)
 					FeatureId* sectors;
-					u32 sectorCount = selection_getList(sectors, SEL_SECTOR);
-					for (u32 i = 0; i < sectorCount; i++, sectors++)
+					u32 sectorSelectionCount = selection_getList(sectors, SEL_SECTOR);
+					std::vector<s32> sectorIds;
+					for (u32 i = 0; i < sectorSelectionCount; i++, sectors++)
 					{
-						sectorIds.push_back((s32)*sectors);
+						sectorIds.push_back((s32)*sectors); // First 32 bits of FeatureIds are the sector Id (unsigned). We assume not going over 2M sectors?
 					}
-					selection_clearHovered();
 					edit_deleteSectors(sectorIds);
+				}
+				else
+				{
+					// Hovered item
+					std::vector<s32> sectorId = { sector->id };
+					selection_clearHovered();
+					edit_deleteSectors(sectorId);
 				}
 			} break;
 			case LEDIT_ENTITY:
 			{
-				if (sector && featureIndex >= 0)
+				if (featureIndex >= 0)
 				{
 					edit_deleteObject(sector, featureIndex);
 
@@ -123,6 +131,14 @@ namespace LevelEditor
 					selection_clear(SEL_ENTITY);
 					cmd_objectListSnapshot(LName_DeleteObject, sector->id);
 				}
+			} break;
+			case LEDIT_NOTES:
+			{
+				return; // TODO
+			} break;
+			case LEDIT_GUIDELINES:
+			{
+				return; // TODO
 			} break;
 		}
 	}

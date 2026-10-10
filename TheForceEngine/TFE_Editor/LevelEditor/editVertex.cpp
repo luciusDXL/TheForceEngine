@@ -466,73 +466,77 @@ namespace LevelEditor
 		return result;
 	}
 
-	// Returns true if sector should be deleted instead
-	bool edit_applyVertexDeletions(EditorSector* sector, std::vector<s32>& vertIds)
+	bool findNextStrandStart(const std::vector<IndexPair>& vertIdMap, s32* id)
 	{
-		std::vector<s32> strand; // FIXME: this
+		for (const auto idMap : vertIdMap)
+		{
+			if (idMap.i1 == 0)
+			{
+				*id = idMap.i0;
+				return true;
+			}
+		}
+		return false;
+	}
+
+	// Returns true if sector should be deleted instead
+	bool edit_applyVertexDeletionsToSector(EditorSector* sector, std::vector<s32>& vertIds)
+	{
 		std::vector<IndexPair> vertIdMap; // Track with vertIds have been captured by setting .i1 > 0
+		s32 currentVtx = -1;
 
 		for (const s32 id : vertIds) { vertIdMap.push_back({ id, 0 }); }
 
 		// find an available id, search backwards to find the wall that will be re-idx1'd, then forwards to find the end
-		while (strand.size() < vertIds.size())
+		while (findNextStrandStart(vertIdMap, &currentVtx))
 		{
-			for (size_t i = 0; i < vertIdMap.size(); i++)
+			StrandResult returnedStrand = createStrand(sector, vertIds, currentVtx);
+			assert(!returnedStrand.strand.empty());
+
+			// Update the geometry based on this strand
+			if (returnedStrand.isCircuit)
 			{
-				if (vertIdMap[i].i1 == 0) // We have a free id
+				// If exterior wall, delete sector. Else, degen the walls
+				std::vector<Vec2f> vtx;
+				for (size_t j = 0; j < returnedStrand.strand.size(); j++)
 				{
-					s32 currentVtx = vertIdMap[i].i0;
-					StrandResult returnedStrand = createStrand(sector, vertIds, currentVtx);
-					strand.insert(strand.end(), returnedStrand.strand.begin(), returnedStrand.strand.end());
+					vtx.push_back(sector->vtx[returnedStrand.strand[j]]);
+				}
 
-					assert(!returnedStrand.strand.empty());
+				s32 vtxCount = (s32)vtx.size();
+				if (!(TFE_Polygon::signedArea(vtxCount, vtx.data()) > 0.0f))
+				{
+					// Get the "first" wall of a circuit
+					s32 startWall = findWallByVertId(sector, returnedStrand.strand[0]);
+					if (startWall == -1) { return true; } // Something is very wrong. Delete.
+					edit_markWallsForDeleteByStrand(sector, returnedStrand.strand, startWall, returnedStrand.isCircuit);
+				}
+				else
+				{
+					return true; // Exterior wall deleted. Delete sector and early out.
+				}
+			}
+			else
+			{
+				// Not a circuit. Figure out correct start and end walls, factoring in broken sectors (deadends, etc), so
+				// we can "stitch" the walls at either end of the strand back together.
+				StrandProperty strandProp = calcStrandProperty(sector, returnedStrand.strand);
+				edit_markWallsForDeleteByStrand(sector, returnedStrand.strand, strandProp.startWall, returnedStrand.isCircuit);
 
-					// Update the geometry based on this strand
-					if (returnedStrand.isCircuit)
-					{
-						// If exterior wall, delete sector. Else, degen the walls
-						std::vector<Vec2f> vtx;
-						for (size_t j = 0; j < returnedStrand.strand.size(); j++)
-						{
-							vtx.push_back(sector->vtx[returnedStrand.strand[j]]);
-						}
-
-						s32 vtxCount = (s32)vtx.size();
-						if (!(TFE_Polygon::signedArea(vtxCount, vtx.data()) > 0.0f))
-						{
-							// Get the "first" wall of a circuit
-							s32 startWall = findWallByVertId(sector, returnedStrand.strand[0]);
-							if (startWall == -1) { return true; } // Something is very wrong. Delete.
-							edit_markWallsForDeleteByStrand(sector, returnedStrand.strand, startWall, returnedStrand.isCircuit);
-						}
-						else
-						{
-							return true; // Exterior wall deleted. Delete sector and early out.
-						}
-					}
-					else
-					{
-						// Not a circuit. Figure out correct start and end walls, factoring in broken sectors (deadends, etc), so
-						// we can "stitch" the walls at either end of the strand back together.
-						StrandProperty strandProp = calcStrandProperty(sector, returnedStrand.strand);
-						edit_markWallsForDeleteByStrand(sector, returnedStrand.strand, strandProp.startWall, returnedStrand.isCircuit);
-
-						// Connect start and end walls dependant on deadends detected
-						if (strandProp.deadEndEnd || strandProp.deadEndStart)
-						{
-							// No end wall to stitch to, so kill startwall
-							// or start wall is part of the cull
-							sector->walls[strandProp.startWall].idx[0] = sector->walls[strandProp.startWall].idx[1];
-						}
-						else
-						{
-							sector->walls[strandProp.startWall].idx[1] = sector->walls[strandProp.endWall].idx[1];
-							sector->walls[strandProp.endWall].idx[1] = sector->walls[strandProp.endWall].idx[0];
-						}
-					}
-					updateVertIdMapWithFoundIndexes(vertIdMap, returnedStrand.strand);
-				} // if (vertIdMap[i].i1 == 0)
-			} // for (size_t i = 0; i < vertIdMap.size(); i++)
+				// Connect start and end walls dependent on deadends detected
+				if (strandProp.deadEndEnd || strandProp.deadEndStart)
+				{
+					// No end wall to stitch to, so kill startwall
+					// or start wall is part of the cull
+					sector->walls[strandProp.startWall].idx[0] = sector->walls[strandProp.startWall].idx[1];
+				}
+				else
+				{
+					sector->walls[strandProp.startWall].idx[1] = sector->walls[strandProp.endWall].idx[1];
+					sector->walls[strandProp.endWall].idx[1] = sector->walls[strandProp.endWall].idx[0];
+				}
+			}
+			updateVertIdMapWithFoundIndexes(vertIdMap, returnedStrand.strand);
 		} // while
 
 		return false;
@@ -543,7 +547,6 @@ namespace LevelEditor
 	{
 		std::vector<s32> sectorIdsToDelete; // Sectors to delete because all verts captured
 		std::vector<s32> cleanSectorList; // Modified sectors
-		std::vector<EditorSector*> changedSectorList; // Modified sectors
 		std::unordered_map<s32, std::vector<s32>> sectorVtxMap; // Vertexes to delete grouped by sector
 
 		s32 featureIndex;
@@ -580,7 +583,7 @@ namespace LevelEditor
 		}
 
 		// Remove future deleted sectors from the hashmap
-		for (const s32 id : sectorIdsToDelete) { sectorVtxMap.erase(id); }
+		for (s32 id : sectorIdsToDelete) { sectorVtxMap.erase(id); }
 
 		// Iterate and delete
 		for (auto entry : sectorVtxMap)
@@ -588,8 +591,7 @@ namespace LevelEditor
 			EditorSector* sector = &s_level.sectors[entry.first];
 			if (entry.second.size() > 0)
 			{
-				changedSectorList.push_back(sector);
-				if (edit_applyVertexDeletions(sector, entry.second))
+				if (edit_applyVertexDeletionsToSector(sector, entry.second))
 				{
 					sectorIdsToDelete.push_back(sector->id);
 				}
