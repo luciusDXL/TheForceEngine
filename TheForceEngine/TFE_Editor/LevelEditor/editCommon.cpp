@@ -123,8 +123,18 @@ namespace LevelEditor
 			} break;
 			case LEDIT_ENTITY:
 			{
-				if (featureIndex >= 0)
+				if (hasFeature)
 				{
+					// Selected item(s)
+					FeatureId* objects;
+					u32 objectCount = selection_getList(objects, SEL_ENTITY);
+
+					edit_deleteObjects(objects, objectCount);
+					selection_clear();
+				}
+				else if (featureIndex >= 0)
+				{
+					// Hovered item
 					edit_deleteObject(sector, featureIndex);
 
 					selection_clearHovered();

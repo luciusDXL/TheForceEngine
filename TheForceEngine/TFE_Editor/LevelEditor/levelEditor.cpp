@@ -67,6 +67,7 @@
 #include <vector>
 #include <string>
 #include <map>
+#include <unordered_map>
 
 using namespace TFE_Editor;
 #define SHOW_EDITOR_FPS 0
@@ -1446,6 +1447,58 @@ namespace LevelEditor
 			curWall = &walls[nextEdge];
 		}
 		return count >= 64 ? -1 : count;
+	}
+
+	void edit_deleteObjects(FeatureId* objFeatIDs, u32 objCount, bool addToHistory)
+	{
+		std::vector<EditorSector> sectorSnapshot;
+		if (addToHistory)
+		{
+			level_createLevelSectorSnapshotSameAssets(sectorSnapshot);
+		}
+
+		EditorSector* sector = nullptr;
+		s32 featureIndex;
+		
+		// Fill the hashmap with sectors and entity ids
+		std::unordered_map<s32, std::vector<s32>> sectorEntityMap;
+		for (u32 i = 0; i < objCount; i++, objFeatIDs++)
+		{
+			sector = unpackFeatureId(*objFeatIDs, &featureIndex);
+			if (sectorEntityMap.count(sector->id) > 0)
+			{
+				sectorEntityMap.at(sector->id).push_back(featureIndex);
+			}
+			else
+			{
+				sectorEntityMap.emplace(sector->id, std::vector<s32>());
+				sectorEntityMap.at(sector->id).push_back(featureIndex);
+			}
+		}
+
+		// Sort then erase in reverse order to preseve ids
+		for (auto mapId : sectorEntityMap)
+		{
+			assert(mapId.first < (s32)s_level.sectors.size());
+			std::sort(mapId.second.begin(), mapId.second.end());
+			sector = &s_level.sectors[mapId.first];
+			for (s32 i = (s32)mapId.second.size() - 1; i >= 0; i--)
+			{
+				sector->obj.erase(sector->obj.begin() + mapId.second[i]);
+			}
+		}
+
+		clearEntityChanges();
+
+		if (addToHistory)
+		{
+			std::vector<s32> deltaSectors;
+			level_getLevelSnapshotDelta(deltaSectors, sectorSnapshot);
+			if (!deltaSectors.empty())
+			{
+				cmd_sectorSnapshot(LName_DeleteObject, deltaSectors);
+			}
+		}
 	}
 
 	void edit_deleteObject(EditorSector* sector, s32 index)

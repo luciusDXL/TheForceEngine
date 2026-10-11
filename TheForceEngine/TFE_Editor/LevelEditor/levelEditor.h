@@ -97,6 +97,7 @@ namespace LevelEditor
 	void edit_clearTextureAppendList();
 	bool edit_setTexture(s32 count, const FeatureId* feature, s32 texIndex, Vec2f* offset = nullptr);
 	void edit_clearTexture(s32 count, const FeatureId* feature);
+	void edit_deleteObjects(FeatureId* objFeatIDs, u32 objCount, bool addToHistory = true);
 	void edit_deleteObject(EditorSector* sector, s32 index);
 	void edit_deleteLevelNote(s32 index);
 	void edit_setEditMode(LevelEditMode mode);
