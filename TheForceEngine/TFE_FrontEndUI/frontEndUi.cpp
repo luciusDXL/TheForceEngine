@@ -1485,18 +1485,24 @@ namespace TFE_FrontEndUI
 		char testFile1[TFE_MAX_PATH];
 		char testFile2[TFE_MAX_PATH];
 		char testFile3[TFE_MAX_PATH];
+		char testFile4[TFE_MAX_PATH];
+		char testFile5[TFE_MAX_PATH];
 		sprintf(testDir1, "%slfd/enhanced/menu", darkForces->sourcePath);
 		sprintf(testDir2, "%slfd/enhanced/dfbrief", darkForces->sourcePath);
 		sprintf(testFile1, "%slfd/enhanced/menu/ANIMpda_0.png", darkForces->sourcePath);
 		sprintf(testFile2, "%slfd/enhanced/dfbrief/ANIMguns_0.png", darkForces->sourcePath);
 		sprintf(testFile3, "%slfd/enhanced/dfbrief/ANIMitems_0.png", darkForces->sourcePath);
+		sprintf(testFile4, "%slfd/enhanced/dfbrief/ANIMbrf-mon_0.png", darkForces->sourcePath);
+		sprintf(testFile5, "%slfd/enhanced/dfbrief/DELTsecbase.png", darkForces->sourcePath);
 
-		// Test for the existence of the 2 required enhanced LFD directories and 3 of the files
+		// Test for the existence of the 2 required enhanced LFD directories and 5 of the important files
 		return FileUtil::directoryExists(testDir1) &&
 			FileUtil::directoryExists(testDir2) &&
 			FileUtil::exists(testFile1) && 
 			FileUtil::exists(testFile2) &&
-			FileUtil::exists(testFile3);
+			FileUtil::exists(testFile3) &&
+			FileUtil::exists(testFile4) &&
+			FileUtil::exists(testFile5);
 	}
 
 	// Expose the function to toggle enhancements.
