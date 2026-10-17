@@ -506,10 +506,33 @@ namespace LevelEditor
 		return true;
 	}
 
+	void clearInfData(Editor_LevelInf* levelInf)
+	{
+		for (size_t i = 0; i < levelInf->elevator.size(); i++)
+		{
+			delete levelInf->elevator[i];
+		}
+
+		for (size_t i = 0; i < levelInf->trigger.size(); i++)
+		{
+			delete levelInf->trigger[i];
+		}
+
+		for (size_t i = 0; i < levelInf->teleport.size(); i++)
+		{
+			delete levelInf->teleport[i];
+		}
+
+		levelInf->item.clear();
+		levelInf->elevator.clear();
+		levelInf->trigger.clear();
+		levelInf->teleport.clear();
+	}
+
 	void levelClear()
 	{
 		// Clear the INF data.
-		editor_infDestroy();
+		clearInfData(&s_levelInf);
 
 		// Clear selection state.
 		selection_clear();
@@ -528,7 +551,7 @@ namespace LevelEditor
 		FileUtil::stripExtension(asset->name.c_str(), slotName);
 
 		// Clear the INF data.
-		editor_infDestroy();
+		clearInfData(&s_levelInf);
 
 		// Clear selection state.
 		selection_clear();
@@ -5100,29 +5123,6 @@ namespace LevelEditor
 		}
 	}
 
-	void clearInfData(Editor_LevelInf* levelInf)
-	{
-		for (size_t i = 0; i < levelInf->elevator.size(); i++)
-		{
-			delete levelInf->elevator[i];
-		}
-
-		for (size_t i = 0; i < levelInf->trigger.size(); i++)
-		{
-			delete levelInf->trigger[i];
-		}
-
-		for (size_t i = 0; i < levelInf->teleport.size(); i++)
-		{
-			delete levelInf->teleport[i];
-		}
-
-		levelInf->item.clear();
-		levelInf->elevator.clear();
-		levelInf->trigger.clear();
-		levelInf->teleport.clear();
-	}
-
 	// Reimplemention of getClassIndex() for the snapshot
 	s32 getClassIndexSnapshot(Editor_InfItemClass classId, const void* classPtr)
 	{
@@ -5499,12 +5499,6 @@ namespace LevelEditor
 
 		// Then copy the snapshot to the level data itself. Its the new state.
 		s_level = s_curSnapshot;
-
-		// ACAC: test
-		//if (!compareLevelInfs(s_infSnapshot, s_levelInf))
-		//{
-		//	LE_WARNING("INF NO MATCH");
-		//}
 
 		// Repopulate the Inf struct
 		copyInfData(&s_infSnapshot, &s_levelInf);

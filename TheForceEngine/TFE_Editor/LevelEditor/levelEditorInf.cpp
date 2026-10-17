@@ -274,29 +274,6 @@ namespace LevelEditor
 		editor_comboBoxInit();
 	}
 
-	void editor_infDestroy()
-	{
-		s32 count = (s32)s_levelInf.elevator.size();
-		for (s32 i = 0; i < count; i++)
-		{
-			delete s_levelInf.elevator[i];
-		}
-
-		count = (s32)s_levelInf.trigger.size();
-		for (s32 i = 0; i < count; i++)
-		{
-			delete s_levelInf.trigger[i];
-		}
-
-		count = (s32)s_levelInf.teleport.size();
-		for (s32 i = 0; i < count; i++)
-		{
-			delete s_levelInf.teleport[i];
-		}
-
-		editor_infInit();
-	}
-
 	Editor_InfElevator* allocElev(Editor_InfItem* item)
 	{
 		Editor_InfElevator* elev = new Editor_InfElevator();
