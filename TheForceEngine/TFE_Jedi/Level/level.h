@@ -60,6 +60,9 @@ namespace TFE_Jedi
 	void ambientSoundTaskFunc(MessageType msg);
 
 	// TFE: Level Script
+	extern const char* const c_levelScriptName;
+	extern const char* const c_levelScriptFile;
+
 	void freeLevelScript();
 	void loadLevelScript();
 	void startLevelScript(const char* levelName);
