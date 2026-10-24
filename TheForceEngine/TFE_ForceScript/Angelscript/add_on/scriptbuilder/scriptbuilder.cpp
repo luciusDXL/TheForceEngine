@@ -196,7 +196,7 @@ s32 readScriptFileTFE(const char* filename, string& code, asIScriptEngine* engin
 	if (!TFE_Paths::getFilePath(filename, &path))
 	{
 		// Only throw errors if it is an include instead of the main LevelScript.fs
-		if (filename != TFE_Jedi::c_levelScriptFile)
+		if (strcasecmp(filename, TFE_Jedi::c_levelScriptFile) != 0)
 		{
 			string msg = "Script file not found: '" + std::string(filename) + "'";
 			engine->WriteMessage(filename, 0, 0, asMSGTYPE_ERROR, msg.c_str());
@@ -204,7 +204,7 @@ s32 readScriptFileTFE(const char* filename, string& code, asIScriptEngine* engin
 		// File is missing
 		return -1;
 	}
-		
+
 	if (!file.open(&path, FileStream::MODE_READ))
 	{
 		// Write a message to the engine's message callback
@@ -212,8 +212,7 @@ s32 readScriptFileTFE(const char* filename, string& code, asIScriptEngine* engin
 		engine->WriteMessage(filename, 0, 0, asMSGTYPE_ERROR, msg.c_str());
 		// TODO: Write the file where this one was included from
 		return -1;
-	}		
-		
+	}
 
 	if (file.getSize() > 0)
 	{
